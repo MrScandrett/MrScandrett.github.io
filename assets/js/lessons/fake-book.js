@@ -490,7 +490,7 @@
 
   /* ================================================================ state */
   var DEFAULTS = {
-    tune: 'twinkle', key: null, instr: 'concert', octave: 0, names: false, nameStyle: 'notes',
+    tune: 'twinkle', key: null, instr: 'concert', octave: 0, names: false, nameStyle: 'notes', zoom: 1,
     melody: 'original', rhythm: 'written', voicing: 'smooth',
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
@@ -910,6 +910,7 @@
 
     nowEls = []; barEls = {};
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
+    buildMap();
     paintLoop();
   }
 
@@ -939,10 +940,13 @@
     }
     if (legendEl) legendEl.hidden = true;
     var W = Math.max(300, Math.floor(sheetEl.clientWidth || 900));
-    var S = W >= 900 ? 10 : W >= 620 ? 9 : 7;
+    // Zoom: zooming out shrinks the notation and fits more bars on each line (an overview of a long song).
+    var zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, opts.zoom || 1));
+    var S = Math.max(3.4, (W >= 900 ? 10 : W >= 620 ? 9 : 7) * zoom);
     var t = tune, M = t.M, ins = INSTR[opts.instr], C = MN.clefs[ins.clef];
     var sig = keySig(view.writtenKey), bars = layoutBars(view.written, t);
-    var bpl = W >= 900 ? 4 : W >= 620 ? 3 : 2;
+    var bpl = Math.max(1, Math.round((W >= 900 ? 4 : W >= 620 ? 3 : 2) / zoom));
+    barsPerLine = bpl;
     var systems = [], cur = [];
     bars.forEach(function (b) {
       cur.push(b);
@@ -1411,6 +1415,7 @@
       MN.escape(t.raw.title + ' lead sheet, written in ' + keyLabel(view.writtenKey) + ', ' + t.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
     nowEls = []; barEls = {};
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
+    buildMap();
     paintLoop();
   }
 
@@ -1890,9 +1895,10 @@
       g.gain.setTargetAtTime(0, t, 0.03);
       setTimeout(function () { try { g.disconnect(); } catch (e) { /* gone */ } }, 400);
     });
-    P = null;
+    P = null; mapCur = 0;
     setPlaying(false);
     clearNow();
+    paintMap();
     beatDots(-1);
     banner('');
   }
@@ -1903,7 +1909,7 @@
   var followPaused = false;
   var musicScroller = root.closest('.ll-sim') || document.scrollingElement;
   function pauseFollow() {
-    if (P && opts.follow) followPaused = true;
+    if (P && opts.follow) { followPaused = true; paintMap(); }
   }
   musicScroller.addEventListener('wheel', pauseFollow, { passive: true });
   musicScroller.addEventListener('touchmove', pauseFollow, { passive: true });
@@ -1937,6 +1943,7 @@
     else if (e.ui === 'bar') {
       Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
       if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
+      mapCur = e.bar; paintMap();
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       if (e.meter) { dotsEl.innerHTML = new Array(e.meter[0] + 1).join('<i></i>'); banner('Bar ' + e.bar + ' · ' + e.meter.join('/')); }
       paintChangesNow(e.bar);
@@ -2995,6 +3002,97 @@
       barEls[k].classList.toggle('yours', opts.mode === 'trade' && b >= r.from && b <= r.to && yours(b, r.from));
     });
     paintChangesLoop();
+    paintMap();
+  }
+
+  /* ================================================================ song map + zoom */
+  var ZOOM_MIN = 0.25, ZOOM_MAX = 1.5, ZOOM_STEPS = [0.25, 0.33, 0.4, 0.5, 0.6, 0.75, 0.9, 1, 1.2, 1.5], barsPerLine = 4;
+  var mapCur = 0, mapCells = {}, mapView = [0, 0];
+  var navEl = el('[data-fb-nav]'), mapEl = el('[data-fb-map]');
+  function buildMap() {
+    if (!navEl || !mapEl || !tune) return;
+    var n = tune.bars, show = n > 12;
+    navEl.hidden = !show;
+    root.classList.toggle('has-nav', show);
+    if (!show) return;
+    var html = '', step = 1, trackW = mapEl.clientWidth || 600;
+    [1, 2, 4, 5, 8, 10, 16, 20, 25, 50, 100].some(function (c) { step = c; return trackW / n * c >= 30; });
+    for (var b = 1; b <= n; b++) {
+      var sec = tune.sectionsByBar && tune.sectionsByBar[b];
+      html += '<i data-map-bar="' + b + '"' + (sec ? ' class="has-sec"' : '') + (sec ? ' title="' + MN.escape(sec) + '"' : '') + '>' +
+        (sec && String(sec).length <= 3 ? '<b>' + MN.escape(sec) + '</b>' : (b === 1 || b % step === 0 ? '<u>' + b + '</u>' : '')) + '</i>';
+    }
+    mapEl.innerHTML = html;
+    mapCells = {};
+    mapEl.querySelectorAll('[data-map-bar]').forEach(function (c) { mapCells[c.getAttribute('data-map-bar')] = c; });
+    mapEl.style.setProperty('--fb-map-bars', n);
+    var zv = el('[data-fb-zoom-val]'); if (zv) zv.textContent = Math.round((opts.zoom || 1) * 100) + '%';
+    var inp = el('[data-fb-goto]'); if (inp) { inp.max = n; }
+    paintMap(); queueMapView();
+  }
+  function paintMap() {
+    if (!mapEl || navEl.hidden) return;
+    var r = loopRange(), full = r.from === 1 && r.to === tune.bars;
+    Object.keys(mapCells).forEach(function (k) {
+      var b = Number(k), c = mapCells[k];
+      c.classList.toggle('in-loop', !full && b >= r.from && b <= r.to);
+      c.classList.toggle('is-start', startBar > 0 && b === startBar);
+      c.classList.toggle('is-cur', P && b === mapCur);
+      c.classList.toggle('in-view', b >= mapView[0] && b <= mapView[1]);
+    });
+    var fb = el('[data-fb-map-follow]'); if (fb) fb.hidden = !(P && followPaused && opts.follow !== false);
+  }
+  // Which bars are on screen right now (below the sticky play bar), shown as a window on the map.
+  function paintMapView() {
+    if (!navEl || navEl.hidden) return;
+    var tr = el('.fb-transport'), top = tr ? tr.getBoundingClientRect().bottom : 0, lo = 0, hi = 0;
+    Object.keys(barEls).forEach(function (k) {
+      var b = Number(k); if (!b) return;
+      var q = barEls[k].getBoundingClientRect();
+      if (q.bottom > top + 4 && q.top < innerHeight - 4) { if (!lo || b < lo) lo = b; if (b > hi) hi = b; }
+    });
+    if (lo !== mapView[0] || hi !== mapView[1]) { mapView = [lo, hi]; paintMap(); }
+  }
+  var mapRaf = 0;
+  function queueMapView() { if (!mapRaf) mapRaf = requestAnimationFrame(function () { mapRaf = 0; paintMapView(); }); }
+  function goToBar(b, opt) {
+    opt = opt || {};
+    b = Math.max(1, Math.min(tune.bars, Math.round(b) || 1));
+    startBar = b; paintLoop();
+    var gi = el('[data-fb-goto]'); if (gi) gi.value = b;
+    if (barEls[b] && opt.scroll !== false) barEls[b].scrollIntoView({ block: 'center', behavior: opt.instant ? 'auto' : 'smooth' });
+    if (P && !opt.hold) { followPaused = false; respin(); }
+    queueMapView();
+  }
+  function setZoom(z) {
+    z = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+    if (Math.abs(z - (opts.zoom || 1)) < 1e-6) return;
+    var keep = mapView[0] || startBar || 1;
+    opts.zoom = z; save(); renderSheet();
+    var zv = el('[data-fb-zoom-val]'); if (zv) zv.textContent = Math.round(z * 100) + '%';
+    if (barEls[keep]) barEls[keep].scrollIntoView({ block: 'start', behavior: 'auto' });
+    queueMapView();
+  }
+  function stepZoom(dir) {
+    var cur = opts.zoom || 1, i;
+    if (dir > 0) { for (i = 0; i < ZOOM_STEPS.length; i++) if (ZOOM_STEPS[i] > cur + 1e-6) return setZoom(ZOOM_STEPS[i]); }
+    else { for (i = ZOOM_STEPS.length - 1; i >= 0; i--) if (ZOOM_STEPS[i] < cur - 1e-6) return setZoom(ZOOM_STEPS[i]); }
+  }
+  // The largest zoom at which the whole song fits on one screen (or the smallest zoom there is).
+  function fitSong() {
+    var tr = el('.fb-transport'), room = innerHeight - (tr ? tr.getBoundingClientRect().bottom : 0) - 60, pick = ZOOM_MIN;
+    for (var i = ZOOM_STEPS.length - 1; i >= 0; i--) {
+      opts.zoom = ZOOM_STEPS[i]; renderSheet();
+      var svg = sheetEl.querySelector('svg');
+      if (svg && svg.getBoundingClientRect().height <= room) { pick = ZOOM_STEPS[i]; break; }
+    }
+    opts.zoom = pick; save(); renderSheet();
+    var zv = el('[data-fb-zoom-val]'); if (zv) zv.textContent = Math.round(pick * 100) + '%';
+    sheetEl.scrollIntoView({ block: 'start', behavior: 'auto' }); queueMapView();
+  }
+  function stepSystem(dir) {
+    var base = startBar || mapView[0] || 1;
+    goToBar(base + dir * barsPerLine, { hold: !P });
   }
 
   function bind() {
@@ -3189,6 +3287,60 @@
       if (Math.abs(w - lastW) < 8) return;
       lastW = w; clearTimeout(rt); rt = setTimeout(renderSheet, 120);
     }).observe(sheetEl);
+    // ---- song map, zoom and traversal (long scores)
+    if (navEl) {
+      var scrubbing = false;
+      function mapBarAt(ev) {
+        var q = mapEl.getBoundingClientRect(), f = Math.max(0, Math.min(0.9999, (ev.clientX - q.left) / q.width));
+        return Math.floor(f * tune.bars) + 1;
+      }
+      mapEl.addEventListener('pointerdown', function (ev) {
+        scrubbing = true; try { mapEl.setPointerCapture(ev.pointerId); } catch (e) { /* ignore */ }
+        goToBar(mapBarAt(ev), { hold: true, instant: true });
+      });
+      mapEl.addEventListener('pointermove', function (ev) {
+        if (scrubbing) goToBar(mapBarAt(ev), { hold: true, instant: true });
+        else { var b = mapBarAt(ev); mapEl.title = 'Bar ' + b; }
+      });
+      function endScrub() { if (scrubbing) { scrubbing = false; if (P) { followPaused = false; respin(); } } }
+      mapEl.addEventListener('pointerup', endScrub);
+      mapEl.addEventListener('pointercancel', function () { scrubbing = false; });
+      navEl.addEventListener('click', function (ev) {
+        var t = ev.target;
+        var z = t.closest('[data-fb-zoom]');
+        if (z) { var v = z.getAttribute('data-fb-zoom'); if (v === 'fit') fitSong(); else if (v === 'reset') setZoom(1); else stepZoom(Number(v)); return; }
+        var st = t.closest('[data-fb-nav-step]');
+        if (st) { stepSystem(Number(st.getAttribute('data-fb-nav-step'))); return; }
+        if (t.closest('[data-fb-map-follow]')) {
+          followPaused = false; paintMap();
+          if (barEls[mapCur]) barEls[mapCur].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      });
+      var gi = el('[data-fb-goto]');
+      gi.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); goToBar(Number(gi.value), { hold: !P }); gi.blur(); } });
+      gi.addEventListener('change', function () { goToBar(Number(gi.value), { hold: !P }); });
+      // Ctrl+wheel (also a trackpad pinch) zooms the sheet; plain scrolling is untouched.
+      var wheelAcc = 0;
+      sheetEl.addEventListener('wheel', function (ev) {
+        if (!ev.ctrlKey) return;
+        ev.preventDefault(); wheelAcc += ev.deltaY;
+        if (Math.abs(wheelAcc) > 40) { stepZoom(wheelAcc < 0 ? 1 : -1); wheelAcc = 0; }
+      }, { passive: false });
+      window.addEventListener('scroll', queueMapView, { passive: true });
+      musicScroller.addEventListener('scroll', queueMapView, { passive: true });
+      window.addEventListener('resize', queueMapView);
+      // Keys (when no field has focus): [ and ] move one line back/forward, - and = zoom, 0 resets zoom, F fits the song.
+      document.addEventListener('keydown', function (ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.altKey || navEl.hidden) return;
+        if (ev.target.closest && ev.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+        if (ev.key === '[') { stepSystem(-1); ev.preventDefault(); }
+        else if (ev.key === ']') { stepSystem(1); ev.preventDefault(); }
+        else if (ev.key === '-') { stepZoom(-1); ev.preventDefault(); }
+        else if (ev.key === '=' || ev.key === '+') { stepZoom(1); ev.preventDefault(); }
+        else if (ev.key === '0') { setZoom(1); ev.preventDefault(); }
+        else if (ev.key === 'f' || ev.key === 'F') { fitSong(); ev.preventDefault(); }
+      });
+    }
     el('[data-fb-reset-loop]').addEventListener('click', function () { startBar = 0; opts.from = 1; opts.to = tune.bars; syncControls(); paintLoop(); save(); respin(); });
   }
 
