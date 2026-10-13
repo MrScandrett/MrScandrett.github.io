@@ -496,7 +496,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead',
-    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score',
+    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open',
@@ -606,7 +606,23 @@
     view.tabLines = 6;
     if (t.staves.tab) { view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines; }
     else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat);
+    view.pos = null;
+    if (posOn() && window.FakeBookPosition) {
+      var pm = [];
+      view.concert.forEach(function (e) {
+        if (!e.p) return;
+        var pbar = e.start < 0 ? 0 : Math.floor(e.start / t.M + EPS) + 1;
+        if (t.scoreBars) {
+          var sbar = t.scoreBars.filter(function (x) { return e.start >= x.start - EPS && e.start < x.start + x.len - EPS; })[0];
+          if (sbar) pbar = sbar.bar;
+        }
+        pm.push({ bar: pbar, midi: e.p.midi, name: noteName(e.p) });
+      });
+      view.pos = window.FakeBookPosition.plan(opts.posInst, pm);
+    }
   }
+  // Finger positions: one small fingerboard per measure under the staff, in place of tab.
+  function posOn() { return !!opts.showPos && !tune.chordsOnly && opts.sheetView !== 'drums'; }
   // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
   function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
 
@@ -991,7 +1007,7 @@
     var chordsByBar = {};
     view.writtenChords.forEach(function (c, ci) { (chordsByBar[c.bar] = chordsByBar[c.bar] || []).push({ c: c, ci: ci }); });
     // Extra staves from an imported score, drawn under the melody and lined up with it in time.
-    var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn());
+    var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn()), showPos = !!view.pos;
     var CB = MN.clefs.bass, sigB = keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
     renderTabNote();
     if (showBass) layoutBars(view.bass, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
@@ -1063,6 +1079,11 @@
         tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S);
         rowsBottom = tabTop + (tabLines - 1) * tabGap + 1.2 * S;
       }
+      var POSH = showPos ? window.FakeBookPosition.height(view.pos.inst, S) : 0, posTop = 0;
+      if (showPos) {
+        posTop = (showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + 0.4 * S;
+        rowsBottom = posTop + POSH + 0.6 * S;
+      }
       var x = header;
       out.push('<g class="fb-system">');
       // bar backgrounds (click / highlight targets)
@@ -1109,6 +1130,10 @@
         ['T', 'A', 'B'].forEach(function (ch, ci) {
           out.push(txt(hx + 1.7 * S, tabMid + (ci - 1) * tabStep + 0.75 * S, ch, 'fb-tab-clef', ' font-size="' + (1.45 * S) + '" text-anchor="middle"'));
         });
+      }
+      if (showPos) {
+        out.push(txt(hx + 1.7 * S, posTop + POSH / 2 + 0.7 * S, window.FakeBookPosition.TAG[view.pos.inst], 'fb-tab-clef', ' font-size="' + (1.05 * S) + '" text-anchor="middle"'));
+        out.push(line(hx, posTop, bx, posTop, Math.max(1, S * 0.08), 'fb-pos-rule'));
       }
       var sysBot = showTab ? tabTop + (tabLines - 1) * tabGap : showBass ? bassBot : staffBot;
       if (sysBot !== staffBot) out.push(line(hx, staffTop, hx, sysBot, Math.max(1, S * 0.13)));
@@ -1266,6 +1291,7 @@
         });
         if (showBass) drawBassBar(b, xAt);
         if (showTab) drawTabBar(b, xAt);
+        if (showPos && view.pos.bars[b.i]) out.push(window.FakeBookPosition.draw(view.pos.inst, view.pos.bars[b.i], b.x, posTop, b.w, POSH, S));
         // bar line (through each staff of the system)
         var last = si === systems.length - 1 && k === sys.length - 1;
         var ex = b.x + b.w;
@@ -1280,7 +1306,7 @@
       });
       out.push('</g>');
       sys.endX = bx; sys.startX = header;
-      y = showBass || showTab ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S;
+      y = showBass || showTab || showPos ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S;
 
       // One bar of the bass-clef staff: notes and chords at the melody's x for the same beat.
       function drawBassBar(b, xAt) {
@@ -2340,6 +2366,10 @@
       stv.querySelector('[data-fb-has="bass"]').hidden = !hasB;
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
       el('[data-fb-show-tab]').checked = tabOn();
+      el('[data-fb-show-pos]').checked = !!opts.showPos;
+      var pil = el('[data-fb-pos-inst]');
+      pil.value = opts.posInst || 'guitar';
+      pil.closest('label').hidden = !opts.showPos;
       var tp = el('[data-fb-tab-pos]');
       tp.value = opts.tabPos || 'auto';
       tp.closest('label').hidden = !tabOn() || !!tune.staves.tab;
@@ -3164,7 +3194,9 @@
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
-      else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; if (t.checked) opts.showPos = false; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-pos-inst]')) { opts.posInst = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }

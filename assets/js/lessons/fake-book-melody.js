@@ -290,6 +290,25 @@
     return best;
   }
 
+  /* ================================================================ whole-melody routes for other views */
+  // Route a melody (concert-pitch midi numbers) on an instrument in one pass, so bar N starts
+  // where bar N-1 ended. Returns { shift, plan, positions }; plan[i] is the spot for raw[i].
+  function fitRoute(inst, raw, pos) {
+    var shift, plan, positions;
+    if (inst === 'violin') {
+      shift = bestShift(raw, 55, 76 + V_MAX_OFF, 72);
+      var vm = raw.map(function (m) { return m + shift; });
+      positions = violinPositions(vm);
+      plan = violinRoute(vm, pos === undefined || pos === 'auto' ? 'auto' : Number(pos));
+    } else {
+      shift = bestShift(raw, 52, 76 + MAX_FRET, 69);
+      var gm = raw.map(function (m) { return m + shift; });
+      positions = guitarPositions(gm);
+      plan = guitarRoute(gm, pos === undefined || pos === 'auto' ? 'auto' : Number(pos));
+    }
+    return { shift: shift, plan: plan, positions: positions };
+  }
+
   /* ================================================================ viewer */
   var STORE = 'fakebook:melody-view:v1';
   var DEFAULTS = { inst: 'guitar', gpos: 'auto', pmode: 'smooth', hand: 'right', octave: 0, hidden: false, vpos: 'auto' };
@@ -711,7 +730,7 @@
 
   var exported = {
     create: create, inPosition: inPosition, guitarPositions: guitarPositions, guitarRoute: guitarRoute,
-    violinInPosition: violinInPosition, violinPositions: violinPositions, violinRoute: violinRoute,
+    fitRoute: fitRoute, positionFrets: positionFrets, ROMAN: ROMAN, violinInPosition: violinInPosition, violinPositions: violinPositions, violinRoute: violinRoute,
     pianoSmooth: pianoSmooth, pianoFive: pianoFive, bestShift: bestShift, OPEN: OPEN, V_OPEN: V_OPEN
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
