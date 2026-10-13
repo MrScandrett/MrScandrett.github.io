@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 396 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 398 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -498,7 +498,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 93 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 95 lessons
 
 ## Visual Art & Design (DES)
 
@@ -565,6 +565,8 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **LAN-17** — John Milton’s Paradise Lost
 - **LAN-18** — John Bunyan’s The Pilgrim’s Progress
 - **LAN-19** — Tolkien and the Art of Worldbuilding
+- **LAN-20** — Learning Egyptian Hieroglyphs
+- **LAN-21** — Learning Cuneiform
 
 ## History, Economics & Social Systems (SYS)
 

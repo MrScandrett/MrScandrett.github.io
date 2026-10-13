@@ -290,6 +290,9 @@
     var timeW = (tsDigits.length * 1.8 + 1.2) * S;
     var left = 0.5 * S + braceW;
     function headerW(first) { return 3.6 * S + keyW + (first ? timeW : 0) + 0.6 * S; }
+    // A dense single bar must fit even when the requested viewport is narrow.
+    // The figure can scroll horizontally; cropping the notes loses music.
+    width = Math.max(width, Math.ceil(left + headerW(true) + Math.max.apply(null, bars.map(function (bar) { return bar.width; })) + 2 * S));
 
     // Break into systems.
     var systems = [], cur = null, avail;
@@ -380,7 +383,7 @@
       if (sIndex === 0 && model.score.tempoText) {
         out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (sysTop - 1.2 * S - (ext[0].hi > 10 ? (ext[0].hi - 10) * h : 0)) + '" font-size="' + (1.45 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
       }
-      var firstBarNo = sys.bars[0] + (model.pickup ? 0 : 1);
+      var firstBarNo = sys.bars[0] + (model.score.startMeasure || 1) - (model.pickup ? 1 : 0);
       if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[0].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
 
       var bx0 = x0 + sys.header;
@@ -447,7 +450,7 @@
     return name + (ev.dots ? ' dotted' : '') + ' note';
   }
   function eventLabel(ev, model) {
-    var bar = model.pickup && ev.bar === 0 ? 'pickup' : 'bar ' + (ev.bar + (model.pickup ? 0 : 1));
+    var bar = model.pickup && ev.bar === 0 ? 'pickup' : 'bar ' + (ev.bar + (model.score.startMeasure || 1) - (model.pickup ? 1 : 0));
     var at = ev.start === 0 ? 'beat 1' : 'beat ' + (ev.start + 1);
     var pitches = ev.kind === 'rest' ? 'rest' : ev.pitches.map(function (p) { return root.MusicNotation.pitchName(p); }).join(' plus ');
     return pitches + ', ' + durationLabel(ev) + ', ' + bar + ', ' + at;
@@ -818,7 +821,21 @@
 
     var player = new Player(fig, model);
     players.push(player);
-    var layout = null, lit = [], cursorEl = null;
+    var layout = null, lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
+    if (fig.hasAttribute('data-score-zoom')) {
+      var sizeLabel = el('label', { class: 'se-inst' });
+      sizeLabel.appendChild(el('span', {}, 'Staff size'));
+      var sizeSelect = el('select', { 'aria-label': 'Staff size' });
+      [100, 125, 150, 200].forEach(function (size) {
+        sizeSelect.appendChild(el('option', { value: String(size) }, size + '%'));
+      });
+      sizeLabel.appendChild(sizeSelect); bar.appendChild(sizeLabel);
+      paper.style.overflowX = 'auto';
+      sizeSelect.addEventListener('change', function () {
+        staffScale = +sizeSelect.value / 100;
+        layout = null; draw();
+      });
+    }
     var noteList = el('ol', { class: 'se-note-list', hidden: '' });
     var noteListToggle = el('button', { type: 'button', class: 'se-note-list-toggle', 'aria-expanded': 'false', 'aria-controls': 'score-notes-' + (score.id || 'score') }, 'Show note list');
     noteList.id = 'score-notes-' + (score.id || 'score');
@@ -861,11 +878,12 @@
     }
 
     function draw() {
-      var w = Math.max(280, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
-      if (layout && Math.abs(layout.width - w) < 2) return;
+      var w = Math.max(280, Math.round((svgWrap.clientWidth || paper.clientWidth || 640) / staffScale));
+      if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) return;
+      lastDrawWidth = w;
       layout = engrave(model, w);
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
-      svgWrap.innerHTML = '<svg class="se-score" role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + layout.width + '" height="' + layout.height + '">' +
+      svgWrap.innerHTML = '<svg class="se-score" role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
       cursorEl = svgWrap.querySelector('.se-cursor');
       lit = [];

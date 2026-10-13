@@ -19,7 +19,22 @@
 (function () {
   'use strict';
 
-  var FALLBACK_SWATCH = ['#05010f', '#6a0dad', '#ff8c00', '#ffd23f'];
+  var FALLBACK_SWATCH = ['#05010f', '#5b0e9b', '#ff8c00', '#ffd23f'];
+
+  var MANDELBROT_THEME_PALETTES = {
+    day:         ['#020b17', '#004b99', '#0071e3', '#7cd0ff'],
+    sakura:      ['#13020b', '#731346', '#ff6b9d', '#ffd4e5'],
+    diamond:     ['#020d18', '#004c66', '#00c6ff', '#d0f8ff'],
+    emerald:     ['#021308', '#0a4d29', '#22c55e', '#a7f3d0'],
+    topaz:       ['#140b01', '#663d00', '#ff9f00', '#ffe875'],
+    goldfish:    ['#140601', '#8c2c04', '#ff6a1a', '#ffc233'],
+    cobblestone: ['#0a0b0d', '#33373d', '#8a8d91', '#e2e6eb'],
+    bark:        ['#120a05', '#4a2c14', '#c48238', '#fcd385'],
+    night:       ['#03050d', '#142247', '#3b82f6', '#a5c9ff'],
+    vaporwave:   ['#07000d', '#590059', '#ff007f', '#00ffff'],
+    mandelbrot:  ['#05010f', '#5b0e9b', '#ff8c00', '#ffd23f'],
+    lavalamp:    ['#0a0103', '#7a081a', '#ff1a40', '#ff8ca3']
+  };
 
   /* Each stop: a point on the boundary and how deep to dive there.
    * Checked numerically to keep detail (not solid interior or empty
@@ -33,8 +48,8 @@
     { name: 'Triple spiral',    x: -0.0883,             y: 0.6549,             depth: 3e-4 }
   ];
   var RHO = Math.SQRT2;     // van Wijk–Nuij zoom/pan trade-off
-  var SPEED = 0.34;         // path units per second
-  var DWELL = 5;            // seconds resting (still turning) at each depth
+  var SPEED = 0.085;        // path units per second (calm, meditative floating)
+  var DWELL = 20;           // seconds resting at each depth (chill, lava-lamp pace)
   var MAX_ITER = 480;       // shader loop bound; per-frame count scales with depth
 
   /* ── van Wijk & Nuij, "Smooth and efficient zooming and panning" ── */
@@ -88,17 +103,20 @@
     return { x: last.x, y: last.y, w: last.depth, stop: last.name };
   }
 
+  function hexToRgb01(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.replace(/./g, '$&$&');
+    var n = parseInt(hex, 16);
+    return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+  }
+
   function themeSwatch() {
     var registry = window.ClassroomOSThemeRegistry;
     var id = document.documentElement.dataset.theme || 'day';
-    var swatch = (registry && registry.getSwatch(id)) || FALLBACK_SWATCH;
-    if (swatch.length < 3) swatch = FALLBACK_SWATCH;
-    return swatch.slice(0, 4).map(function (hex) {
-      hex = hex.replace('#', '');
-      if (hex.length === 3) hex = hex.replace(/./g, '$&$&');
-      var n = parseInt(hex, 16);
-      return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
-    });
+    var swatch = (registry && typeof registry.getMandelSwatch === 'function')
+      ? registry.getMandelSwatch(id)
+      : (MANDELBROT_THEME_PALETTES[id] || FALLBACK_SWATCH);
+    return swatch.slice(0, 4).map(hexToRgb01);
   }
 
   var VERTEX = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
@@ -112,6 +130,7 @@
     'uniform float phase;',
     'uniform vec2 jitter;',
     'uniform vec3 c0; uniform vec3 c1; uniform vec3 c2; uniform vec3 c3;',
+    'uniform float scaleTexture;',
     // Looping palette base → c1 → c2 → c3 → c2 → c1 → base, so it cycles without seams.
     'vec3 pal(float t){',
     '  t = fract(t) * 6.0; float f = smoothstep(0.0, 1.0, fract(t));',
@@ -152,11 +171,23 @@
     '    float dzl = length(dz);',
     // Distance to the set in pixels: <1 on a filament, growing outward.
     '    float de = dzl > 0.0 ? 0.5 * log(r2) * sqrt(r2) / dzl / px : 0.0;',
-    '    float near = exp(-de * 0.05);',
-    '    vec3 band = pal(log2(max(mu, 1.0)) * 1.15 + phase);',
-    '    col = mix(c0 * 2.0, band, 0.3 + 0.6 * near);',
-    '    float glow = exp(-de * 1.3);',
-    '    col += mix(c3, vec3(1.0), 0.3) * glow * 0.6;',
+    '    float near = exp(-de * 0.04);',
+    '    vec3 band = pal(log2(max(mu, 1.0)) * 0.38 + phase);',
+    '    col = mix(c0 * 1.8, band, 0.25 + 0.65 * near);',
+    '    float glow = exp(-de * 0.9);',
+    '    col += mix(c3, vec3(1.0), 0.25) * glow * 0.45;',
+    '  }',
+    '  if (scaleTexture > 0.5) {',
+    '    vec2 scUv = gl_FragCoord.xy / 32.0;',
+    '    float scRow = floor(scUv.y);',
+    '    if (mod(scRow, 2.0) == 1.0) scUv.x += 0.5;',
+    '    vec2 fsc = fract(scUv);',
+    '    float scDist = length(fsc - vec2(0.5, 0.0));',
+    '    float scShimmer = 0.82 + 0.32 * sin(scUv.x * 1.6 + scUv.y * 2.4 + phase * 6.28318);',
+    '    float scEdge = smoothstep(0.42, 0.49, scDist) * (1.0 - smoothstep(0.49, 0.56, scDist));',
+    '    float scSpec = pow(clamp(1.0 - abs(scDist - 0.42) * 4.5, 0.0, 1.0), 2.5) * scShimmer;',
+    '    float scBody = (1.0 - smoothstep(0.0, 0.48, scDist) * 0.18);',
+    '    col = col * scBody + scEdge * c3 * 0.42 + scSpec * c3 * 0.35;',
     '  }',
     '  gl_FragColor = vec4(col * shade + dither, 1.0);',
     '}'
@@ -197,7 +228,7 @@
     gl.enableVertexAttribArray(attr);
     gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0);
     var loc = {};
-    ['res', 'center', 'halfH', 'rot', 'maxIter', 'phase', 'jitter', 'c0', 'c1', 'c2', 'c3'].forEach(function (n) { loc[n] = gl.getUniformLocation(program, n); });
+    ['res', 'center', 'halfH', 'rot', 'maxIter', 'phase', 'jitter', 'c0', 'c1', 'c2', 'c3', 'scaleTexture'].forEach(function (n) { loc[n] = gl.getUniformLocation(program, n); });
 
     // Resolution is in CSS pixels × renderScale (never device pixels: the
     // glow is already soft). It steps down when frames run long, and the
@@ -259,19 +290,24 @@
         var clock = seconds != null ? seconds : Date.now() / 1000;
         var v = view(clock);
         current = v;
-        var angle = clock * 0.035;
+        var angle = clock * 0.004 + Math.sin(clock * 0.012) * 0.06;
         var depth = Math.max(0, Math.log2(1.25 / v.w));
         var iter = Math.round(Math.min(MAX_ITER, 72 + 30 * depth));
 
         var theme = document.documentElement.dataset.theme || 'day';
-        if (theme !== swatchTheme) { swatchTheme = theme; swatch = themeSwatch(); }
+        if (theme !== swatchTheme) {
+          swatchTheme = theme;
+          swatch = themeSwatch();
+          fresh = true;
+        }
 
         gl.uniform2f(loc.res, surface.width, surface.height);
         gl.uniform2f(loc.center, v.x, v.y);
         gl.uniform1f(loc.halfH, v.w);
         gl.uniform2f(loc.rot, Math.cos(angle), Math.sin(angle));
         gl.uniform1i(loc.maxIter, iter);
-        gl.uniform1f(loc.phase, (clock * 0.02) % 1);
+        gl.uniform1f(loc.phase, (clock * 0.0035) % 1);
+        gl.uniform1f(loc.scaleTexture, theme === 'goldfish' ? 1.0 : 0.0);
         var j = JITTER[frames % JITTER.length];
         gl.uniform2f(loc.jitter, j[0] - 0.5, j[1] - 0.5);
         if (fresh) gl.disable(gl.BLEND);

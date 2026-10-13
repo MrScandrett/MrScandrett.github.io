@@ -340,7 +340,7 @@
       { id: "diamond",     label: "Diamond",     detail: "Icy teal blue — crisp, cool, and focused.",              tone: "light", swatch: ["#091224", "#00c6ff"],                     accentRGB: [80, 190, 255] },
       { id: "emerald",     label: "Emerald",     detail: "Fresh leaf green — calm and easy on the eyes.",          tone: "light", swatch: ["#f4fff7", "#50db82"],                     accentRGB: [50, 180, 100] },
       { id: "topaz",       label: "Honey",       detail: "Warm amber — like afternoon sunlight through a window.", tone: "light", swatch: ["#fff9e3", "#ffb900"],                     accentRGB: [255, 185, 0] },
-      { id: "goldfish",    label: "Goldfish",    detail: "Saturated goldfish orange with a scale-textured glow.",  tone: "light", swatch: ["#fff3e6", "#ff6a1a"],                     accentRGB: [255, 106, 26] },
+      { id: "goldfish",    label: "Goldfish",    detail: "Saturated goldfish orange with graceful swimming fish and a scale-textured glow.",  tone: "light", swatch: ["#fff3e6", "#ff6a1a"],                     accentRGB: [255, 106, 26] },
       { id: "cobblestone", label: "Cobblestone", detail: "Light grey stone tones — quiet and understated.",        tone: "light", swatch: ["#f3f2f1", "#8a8d91"],                     accentRGB: [138, 141, 145] },
       { id: "bark",        label: "Bark",        detail: "Warm dark wood tones with a rough bark texture.",        tone: "dark",  swatch: ["#241a12", "#d99a54"],                     accentRGB: [217, 154, 84] },
       { id: "night",       label: "Night",       detail: "Easy on the eyes after dark — full dark mode.",          tone: "dark",  swatch: ["#445c93", "#111827"],                     accentRGB: [105, 168, 255] },
@@ -361,11 +361,12 @@
     { id: "aurora",    label: "Aurora",    detail: "Flowing light bands.",        icon: "≋" },
     { id: "petals",    label: "Petals",    detail: "Falling blossoms drifting on the wind.", icon: "❀" },
     { id: "hive",      label: "Bee Hive",  detail: "Bees crawling the hive walls.", icon: "🐝" },
+    { id: "goldfish",  label: "Goldfish",  detail: "Graceful goldfish swimming through calm water.", icon: "🐟" },
     { id: "mandelbrot", label: "Mandelbrot", detail: "A live fractal, slowly revolving.", icon: "◈" },
     { id: "lavalamp",  label: "Lava Lamp",  detail: "Molten wax that follows your theme palette.", icon: "♨" }
   ];
 
-  var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive", mandelbrot: "mandelbrot", lavalamp: "lavalamp" };
+  var CANVAS_THEME_DEFAULT = { sakura: "petals", topaz: "hive", goldfish: "goldfish", mandelbrot: "mandelbrot", lavalamp: "lavalamp" };
 
   var STORAGE_CANVAS = "classroomos-canvas-bg";
   var CANVAS_EVENT   = "classroomos:canvasbgchange";

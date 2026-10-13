@@ -32,6 +32,7 @@ class AnimalSorter {
       desert: []
     };
     this.correctMappings = this.initializeCorrectMappings();
+    this.completed = false;
     this.currentDraggedCard = null;
     this.selectedCard = null;
     this.placedAnimals = new Set();
@@ -65,7 +66,7 @@ class AnimalSorter {
       { id: 'parrot', name: 'Parrot', desc: 'Colorful bird that can mimic sounds and words', type: 'vertebrate', subtype: 'bird', habitat: 'forest' },
 
       // VERTEBRATES - MAMMALS (3)
-      { id: 'whale', name: 'Whale', desc: 'Largest animal on Earth that lives in the ocean', type: 'vertebrate', subtype: 'mammal', habitat: 'ocean' },
+      { id: 'whale', name: 'Whale', desc: 'Aquatic mammal that breathes air with lungs', type: 'vertebrate', subtype: 'mammal', habitat: 'ocean' },
       { id: 'lion', name: 'Lion', desc: 'Large furry mammal with a golden mane that hunts in groups', type: 'vertebrate', subtype: 'mammal', habitat: 'forest' },
       { id: 'bat', name: 'Bat', desc: 'Furry mammal with wings that flies at night', type: 'vertebrate', subtype: 'mammal', habitat: 'forest' },
 
@@ -99,6 +100,11 @@ class AnimalSorter {
     this.renderAnimalPool();
     this.renderDropZones();
     this.attachEventListeners();
+    const progress = document.createElement('p');
+    progress.id = 'sorter-progress';
+    progress.setAttribute('role', 'status');
+    this.container.prepend(progress);
+    this.updateProgress();
   }
 
   /**
@@ -276,7 +282,7 @@ class AnimalSorter {
   }
 
   placeSelected(zone) {
-    if (!this.selectedCard) return;
+    if (!this.selectedCard) { this.showFeedback('info', 'Select an animal card first, then choose a group.'); return; }
     this.placeCard(this.selectedCard, zone);
   }
 
@@ -284,7 +290,7 @@ class AnimalSorter {
     const animalId = card.dataset.animalId;
     const animal = this.animals.find(a => a.id === animalId);
     if (!this.validatePlacement(animalId, zone.dataset.zone)) {
-      this.showFeedback('incorrect', `${animal.name} does not belong in ${zone.querySelector('.drop-zone-label').textContent}. Try the other group.`);
+      this.showFeedback('incorrect', `${animal.name}: ${animal.type === 'vertebrate' ? 'it has an internal backbone, even if you cannot see it from outside' : 'it has no backbone; a shell or exoskeleton is not a spine'}. Use that evidence to try again.`);
       this.animateCardBounceBack(card);
       return;
     }
@@ -296,7 +302,8 @@ class AnimalSorter {
     card.classList.remove('selected');
     card.setAttribute('aria-pressed', 'false');
     card.tabIndex = -1;
-    this.showFeedback('correct', `${animal.name} sorted into ${zone.querySelector('.drop-zone-label').textContent}.`);
+    this.updateProgress();
+    this.showFeedback('correct', `${animal.name} belongs with ${animal.type}s because it ${animal.type === 'vertebrate' ? 'has' : 'does not have'} a backbone.`);
     zone.querySelector('.place-animal-btn').focus();
     setTimeout(() => this.checkCompletion(), this.options.animateSnapDuration);
   }
@@ -389,8 +396,12 @@ class AnimalSorter {
         poolCard.style.pointerEvents = 'auto';
         poolCard.classList.remove('placed');
         poolCard.tabIndex = 0;
+        poolCard.draggable = true;
+        poolCard.focus();
       }
 
+      this.completed = false;
+      this.updateProgress();
       this.showFeedback('info', 'Card returned to the pool.');
     }
   }
@@ -403,11 +414,7 @@ class AnimalSorter {
     feedbackElement.textContent = message;
     feedbackElement.className = `sorter-feedback sorter-feedback-${type}`;
 
-    clearTimeout(this.feedbackTimer);
-    this.feedbackTimer = setTimeout(() => {
-      feedbackElement.textContent = '';
-      feedbackElement.className = 'sorter-feedback';
-    }, this.options.feedbackDuration);
+
   }
 
   /**
@@ -419,7 +426,8 @@ class AnimalSorter {
       return this.zones[correctZone] && this.zones[correctZone].includes(animal.id);
     });
 
-    if (allCorrectlyPlaced) {
+    if (allCorrectlyPlaced && !this.completed) {
+      this.completed = true;
       this.showCompletion();
     }
   }
@@ -438,7 +446,7 @@ class AnimalSorter {
    */
   showCompletion() {
     const feedbackElement = this.container.querySelector('#sorter-feedback');
-    feedbackElement.innerHTML = '🎉 <strong>Excellent!</strong> All animals are correctly sorted!';
+    feedbackElement.innerHTML = '🎉 <strong>Excellent!</strong> All animals are correctly sorted. Explain: why is a whale a vertebrate while an octopus is an invertebrate?';
     feedbackElement.className = 'sorter-feedback sorter-feedback-celebration';
 
     // Add celebration effect to the game container
@@ -465,6 +473,8 @@ class AnimalSorter {
     });
     this.placedAnimals.clear();
     this.selectedCard = null;
+    this.completed = false;
+    this.updateProgress();
 
     // Reset animal cards
     document.querySelectorAll('.animal-card').forEach(card => {
@@ -493,6 +503,10 @@ class AnimalSorter {
   /**
    * Attach event listeners
    */
+  updateProgress() {
+    this.container.querySelector('#sorter-progress').textContent = `${this.placedAnimals.size} of ${this.animals.length} animals sorted by backbone evidence`;
+  }
+
   attachEventListeners() {
     const resetBtn = this.container.querySelector('#sorter-reset');
     if (resetBtn) {

@@ -1930,7 +1930,7 @@
           '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
           '<strong>' + MN.escape(raw.title) + '</strong>' +
           '<small>' + MN.escape(raw.composer) + '</small>' +
-          '<span class="fb-tune-tags"><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
+          '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
           '</div>';
       }).join('');
     }
@@ -2202,7 +2202,7 @@
   }
   function tips() {
     if (tune.chordsOnly) {
-      el('[data-fb-melody-tip]').textContent = 'Chords only: this chart has no melody line to transform. Pick a built-in tune to explore melody variations.';
+      el('[data-fb-melody-tip]').textContent = 'Chords only: this chart has no melody line to transform. Pick a tune labeled Melody + chords to explore melody variations.';
       el('[data-fb-rhythm-tip]').textContent = 'Chords only: the melody line is rests.';
     } else {
       el('[data-fb-melody-tip]').textContent = MELODY[opts.melody].tip;

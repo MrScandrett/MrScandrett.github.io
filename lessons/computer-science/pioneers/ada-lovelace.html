@@ -335,6 +335,45 @@
 .al-table-scroll { overflow-x:auto; } .al-python { overflow:auto; padding:1rem; background:var(--bg); color:var(--text); }
 #al-tour { border:2px solid var(--accent); padding:1rem; margin-top:1rem; } #al-tour label { display:block; padding:.5rem; }
 #al-sec-simulator [hidden] { display:none !important; }
+
+/* A visible instruction path: teal reads, brass writes, labels explain both. */
+.al-learning { --learn-read: #0f766e; --learn-write: #92500c; }
+.al-learning .al-learning-intro { font-size:1rem; max-width:60ch; }
+.al-learning h3 { font-size:1.15rem; }
+.al-learning-stage { padding:1.3rem 0; border-top:1px solid var(--line); }
+.al-memory-strip { display:flex; flex-wrap:wrap; gap:.75rem; margin:1rem 0; }
+.al-memory-box { flex:1 1 100px; border:2px solid var(--learn-read); border-radius:5px 5px 14px 14px; text-align:center; overflow:hidden; min-width:0; }
+.al-memory-box > span { display:block; padding:.35rem; background:var(--learn-read); color:white; font-weight:700; }
+.al-memory-box strong { display:block; font:700 2.1rem/1.3 ui-monospace,monospace; padding:.5rem; color:var(--text); }
+.al-memory-box small { display:block; padding:0 .4rem .65rem; color:var(--text-secondary); }
+.al-memory-box[data-written="true"] { border-color:var(--learn-write); }
+.al-memory-box[data-written="true"] > span { background:var(--learn-write); }
+.al-workbench { border:1px solid var(--line); border-radius:14px; padding:1rem; background:var(--bg); }
+.al-workbench .al-instruction { font:700 clamp(1.2rem,3vw,1.8rem)/1.5 ui-monospace,monospace; margin:.6rem 0; color:var(--text); }
+.al-flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:.6rem; margin:1rem 0; }
+.al-flow > div { text-align:center; padding:.8rem .5rem; border:1px solid var(--line); border-radius:8px; }
+.al-flow strong { display:block; font-size:1.25rem; margin:.25rem 0; }
+.al-flow small { display:block; color:var(--text-secondary); }
+.al-flow .al-flow-arrow { font-size:1.6rem; color:var(--text); }
+.al-learning button { min-height:44px; }
+.al-learning :focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+.al-symbol-key { display:flex; flex-wrap:wrap; gap:.5rem; margin:.8rem 0; }
+.al-symbol-key span { border-bottom:2px solid var(--line); padding:.5rem; }
+.al-symbol-key b { font:700 1.3rem ui-monospace,monospace; margin-right:.4rem; }
+.al-function { display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:.75rem; align-items:center; margin:1rem 0; }
+.al-function > div { padding:1rem; text-align:center; border:1px solid var(--line); border-radius:8px; }
+.al-function .al-function-machine { border:2px solid var(--learn-read); }
+.al-function strong { display:block; font-size:1.3rem; margin:.5rem 0; }
+.al-loop-path { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin:1rem 0; }
+.al-loop-path > div { padding:1rem; border-left:4px solid var(--learn-read); background:var(--bg); }
+.al-loop-path strong { display:block; font-size:1.2rem; margin:.3rem 0; }
+.al-loop-path .al-loop-stop { border-color:var(--learn-write); }
+.al-math-ladder { list-style:none; padding:0; counter-reset:math; margin:1rem 0; }
+.al-math-ladder li { counter-increment:math; display:grid; grid-template-columns:2rem minmax(0,1fr); gap:.75rem; padding:1rem 0; border-bottom:1px solid var(--line); }
+.al-math-ladder li::before { content:counter(math); display:grid; place-items:center; align-self:start; width:2rem;height:2rem; border-radius:50%; background:var(--learn-read,#0f766e);color:white;font-weight:700; }
+.al-math-ladder code { display:block; font-size:clamp(1rem,2.5vw,1.35rem); white-space:normal; overflow-wrap:anywhere; margin-bottom:.4rem; }
+@media(max-width:600px) { .al-flow { grid-template-columns:1fr; } .al-flow .al-flow-arrow { text-align:center; transform:rotate(90deg); } .al-function,.al-loop-path { grid-template-columns:1fr; } .al-learning-stage { padding:1rem 0; } }
+
 </style>
   <script src="../../../assets/js/sim-kit.js"></script>
   <script src="../../../assets/js/photo-lightbox.js" defer></script>
@@ -395,6 +434,7 @@
           <a href="#al-sec-bio">Biography</a>
           <a href="#al-sec-gallery">Gallery</a>
           <a href="#al-sec-timeline">Timeline</a>
+          <a href="#al-sec-foundations">Start Here</a>
           <a href="#al-sec-algorithm">Algorithm</a>
           <a href="#al-sec-cards">Punched Cards</a>
           <a href="#al-sec-poetical">Poetical Science</a>
@@ -492,16 +532,87 @@
         </section>
 
         <!-- The Algorithm Explained -->
+        <section class="al-card al-learning" id="al-sec-foundations" style="--card-accent:#0f766e;">
+          <h2>Watch an idea become an algorithm</h2>
+          <p class="al-learning-intro">Four tickets. Ten dollars each. A six-dollar fee. Two people sharing the bill. Let's teach a machine to find each person's share.</p>
+          <nav class="al-symbol-key" aria-label="Learning sequence"><a href="#al-learn-memory">1. Store</a><a href="#al-learn-calculate">2. Calculate</a><a href="#al-learn-function">3. Reuse</a><a href="#al-learn-loop">4. Repeat</a></nav>
+          <div class="al-learning-stage" id="al-learn-memory">
+            <h3>1. Give each value a home</h3>
+            <p>A <strong>variable</strong> names a stored value. A <strong>register</strong> is a machine's storage location. The label stays; the number inside can change.</p>
+            <div class="al-memory-strip" aria-label="Input registers">
+              <div class="al-memory-box"><span>V0</span><strong>10</strong><small>Dollars per ticket</small></div>
+              <div class="al-memory-box"><span>V1</span><strong>4</strong><small>Tickets</small></div>
+              <div class="al-memory-box"><span>V2</span><strong>6</strong><small>Fee in dollars</small></div>
+            </div>
+            <p><code>V1</code> is a location's name, not V × 1. Its current value is 4.</p>
+          </div>
+          <div class="al-learning-stage" id="al-learn-calculate">
+            <h3>2. Read → calculate → store</h3>
+            <p>An <strong>algorithm</strong> is a precise, ordered list of instructions. Step through this one and watch its memory change.</p>
+            <div class="al-workbench">
+              <p id="al-learn-progress">Ready · inputs loaded</p>
+              <div class="al-instruction" id="al-learn-instruction">Find the ticket cost, add the fee, then share.</div>
+              <div class="al-flow">
+                <div><small>Read</small><strong id="al-learn-read">10 and 4</strong><small id="al-learn-source">From V0 and V1</small></div>
+                <span class="al-flow-arrow" aria-hidden="true">→</span>
+                <div><small>Calculate</small><strong id="al-learn-math">10 × 4</strong><small id="al-learn-meaning">Ticket cost</small></div>
+                <span class="al-flow-arrow" aria-hidden="true">→</span>
+                <div><small>Store</small><strong id="al-learn-write">V3 is waiting</strong><small id="al-learn-dest">A home for the result</small></div>
+              </div>
+              <div class="al-memory-strip" aria-label="Result registers">
+                <div class="al-memory-box" id="al-learn-box-3"><span>V3</span><strong>—</strong><small>Ticket cost</small></div>
+                <div class="al-memory-box" id="al-learn-box-4"><span>V4</span><strong>—</strong><small>Total bill</small></div>
+                <div class="al-memory-box" id="al-learn-box-5"><span>V5</span><strong>—</strong><small>Each person's share</small></div>
+              </div>
+              <p id="al-learn-status" role="status">Predict the ticket cost, then run the first instruction. A dash means no value is stored yet.</p>
+              <div class="al-dock"><button type="button" id="al-learn-next">Run instruction 1</button><button type="button" id="al-learn-reset">Start again</button></div>
+            </div>
+            <div class="al-symbol-key" aria-label="Arithmetic symbols"><span><b>+</b>Add</span><span><b>−</b>Subtract</span><span><b>×</b>Multiply</span><span><b>÷</b>Divide</span><span><b>←</b>Store in</span></div>
+            <details class="ll-accordion"><summary>How does this look in Python?</summary><div class="ll-accordion-body"><code>v3 = v0 * v1</code> means calculate v0 times v1, then store the result in v3. Python uses <code>*</code> for multiplication, <code>/</code> for division, and <code>=</code> for assignment. The mathematical equation 10 × 4 = 40 states equality; the program instruction tells the machine what to do.</div></details>
+            <details class="ll-accordion"><summary>Predict: replace V3 with 7. Does V4 change too?</summary><div class="ll-accordion-body">V3 becomes 7. V4 stays 46. A saved result does not automatically recalculate. Run the addition again to update V4. This is called overwriting: one current value replaces another.</div></details>
+          </div>
+          <div class="al-learning-stage" id="al-learn-function">
+            <h3>3. Keep the recipe. Change the inputs.</h3>
+            <p>A <strong>function</strong> is a reusable calculation that takes inputs and returns a result. These supplied inputs are its <strong>arguments</strong>. A subroutine is a reusable instruction block; it need not return a value.</p>
+            <div class="al-function">
+              <div>Inputs<strong>10, 4, 6</strong>Price, tickets, fee</div>
+              <div class="al-function-machine">Function: share the bill<strong>(price × tickets + fee) ÷ 2</strong>Multiply → add → divide</div>
+              <div>Output<strong>23 dollars</strong>Each person's share</div>
+            </div>
+            <details class="ll-accordion"><summary>Same function, two tickets: predict the new share</summary><div class="ll-accordion-body">(10 × 2 + 6) ÷ 2 = 26 ÷ 2 = 13 dollars each. The arguments changed; the recipe stayed the same. Parentheses group the bill calculation before division.</div></details>
+            <p>The simulator below uses a different five-instruction subroutine. These first three calculations are its opening steps; its remaining steps are memory exercises.</p>
+          </div>
+          <div class="al-learning-stage" id="al-learn-loop">
+            <h3>4. Repeat only when the test says “yes”</h3>
+            <p>A <strong>loop</strong> repeats instructions. In the simulator, the counter <code>n</code> records the pass number. The test <code>n &lt; 2</code> asks “is n smaller than 2?”</p>
+            <div class="al-loop-path">
+              <div>After pass 1<strong>1 &lt; 2 → True</strong>Prepare new inputs → set n to 2 → run the same block again.</div>
+              <div class="al-loop-stop">After pass 2<strong>2 &lt; 2 → False</strong>Leave the loop → print the saved results.</div>
+            </div>
+            <p>That choice of what happens next is <strong>conditional branching</strong>.</p>
+            <details class="ll-accordion"><summary>What if we forget to change n?</summary><div class="ll-accordion-body">If n stays 1, the test keeps saying true. A loop controlled only by that test never stops. We need both progress and a stopping rule.</div></details>
+          </div>
+          <a class="al-check-btn" href="#al-sec-trace">Try the register trace</a>
+        </section>
+
         <section class="al-card" id="al-sec-algorithm" style="--card-accent:#0f766e;">
           <h2>What Is an Algorithm — and Why Did It Matter?</h2>
-          <p>An algorithm is a <strong>finite, ordered sequence of unambiguous instructions</strong> to solve a problem. Before Ada, "computing" meant human clerks doing arithmetic by hand. Babbage's Analytical Engine could follow programmed instructions on punched cards — but no one had described how to write those instructions systematically.</p>
-          <p>Ada was the first to describe: <strong>conditional branching</strong> (if X then do Y), <strong>loops</strong> (repeat until), and <strong>subroutines</strong> (reusable named operations). Her Bernoulli algorithm used a loop that updated 8 variables across 25 operation steps — structurally identical to a for-loop in any modern language.</p>
+          <p>An algorithm is a finite, ordered sequence of precise instructions for solving a problem. Ada's 1843 Note G showed in detail how the proposed Analytical Engine could calculate Bernoulli numbers. It connected mathematical rules to operations, storage locations, and repeated steps.</p>
+          <p>Our simple trace teaches the same kinds of programming ideas using small whole numbers. Once you can explain reading, calculating, storing, and repeating, you are ready to ask what the more advanced mathematics is for.</p>
           <p>Most radically, she wrote that the Engine "might act upon other things besides number... supposing, for instance, that the fundamental relations of pitched sounds in the science of harmony and of musical composition were susceptible of such expression... the Engine might compose elaborate and scientific pieces of music." — 1843</p>
 
-          <div class="al-formula-box" role="img" aria-label="Ada Lovelace's Bernoulli algorithm loop — for n from 1 to 8, compute Bn from previous values, output B8">
-            <span class="al-formula-sym">FOR n FROM 1 TO 8:<br>&nbsp;&nbsp;&nbsp;&nbsp;Bn ← f(B0, B1, ..., Bn-1)<br>OUTPUT: B8 &larr; Bernoulli number</span>
-            <p class="al-formula-note">Ada's Note G contained this structure — the world's first loop in a published algorithm.</p>
-          </div>
+          <h3>What is a Bernoulli number?</h3>
+          <p>Bernoulli numbers are a particular sequence of numbers used in formulas, including formulas for sums of powers such as 1² + 2² + 3². They are not register names. <code>B₂</code> means “the Bernoulli number at index 2,” not B × 2 or B squared. An <strong>index</strong> identifies a position in a sequence. A <strong>fraction</strong> such as 1/6 is one divided by six; −1/2 is negative one-half.</p>
+          <p>Using the modern convention in our Python reference, B₀ = 1 and B₁ = −1/2. A <strong>recurrence</strong> is a rule that finds a new sequence value using earlier values. Here is the small case that finds B₂:</p>
+          <ol class="al-math-ladder">
+            <li><div><code>B₀ + 3 × B₁ + 3 × B₂ = 0</code>Our rule. B₂ is the unknown; B₀ and B₁ are already known.</div></li>
+            <li><div><code>1 + 3 × (−1/2) + 3 × B₂ = 0</code>Substitute B₀ = 1 and B₁ = −1/2.</div></li>
+            <li><div><code>−1/2 + 3 × B₂ = 0</code>Combine the known terms: 1 − 3/2 = −1/2.</div></li>
+            <li><div><code>3 × B₂ = 1/2</code>Add 1/2 to both sides. The unknown term stands alone.</div></li>
+            <li><div><code>B₂ = (1/2) ÷ 3 = 1/6</code>Divide both sides by 3. Save the result for the next calculation.</div></li>
+          </ol>
+          <p>The full recurrence handles larger indices with more earlier terms. The key programming task is to keep those earlier values, compute each contribution, add the contributions, and store the new result. You do not need to derive the full formula to understand that process. Ada's historical indexing differs from this modern convention.</p>
+          <p><a href="https://www.fourmilab.ch/babbage/sketch.html" target="_blank" rel="noopener">Read the 1843 translation and Notes, including Note G</a>. Our worked example and Python below are modern teaching explanations, not a transcription of her operation table.</p>
 
           <h3>The Engine's Four Parts — Mapped to a Modern Computer</h3>
           <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">The Analytical Engine had every major part a computer still has today, just built from brass and steam instead of silicon.</p>
@@ -533,11 +644,11 @@
           </div>
 
           <h3>From Ada's Notation to Modern Code</h3>
-          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">Ada wrote in tables and arrows because no programming language existed yet. Every concept she used has a direct equivalent in a language like Python — the ideas didn't change, only the syntax did.</p>
+          <p style="font-size:0.84rem;color:var(--text-muted, #64748b);">Compare our classroom notation with Python. These examples explain programming concepts; they do not reproduce Ada's historical instructions.</p>
           <div style="overflow-x:auto;">
           <table class="al-code-table">
             <thead>
-              <tr><th>Concept</th><th>Ada's Note G (1843)</th><th>Modern Python</th></tr>
+              <tr><th>Concept</th><th>Classroom notation</th><th>Modern Python</th></tr>
             </thead>
             <tbody>
               <tr>
@@ -557,8 +668,8 @@
               </tr>
               <tr>
                 <td class="al-code-concept">Output</td>
-                <td><code>Output: B3 = −1/30</code></td>
-                <td class="al-code-python"><code>print(b3)</code></td>
+                <td><code>Output: V6</code></td>
+                <td class="al-code-python"><code>print(v6)</code></td>
               </tr>
             </tbody>
           </table>
@@ -679,6 +790,7 @@
         <section class="al-card" id="al-sec-trace" style="--card-accent:#b45309;">
           <h2>Trace It Yourself: Predict the Registers</h2>
           <p>Before you watch the simulator run, try being the engine. This classroom exercise uses easy inputs rather than computing Bernoulli numbers. Steps 4–8 form the core reusable subroutine (five operations), called twice in the simulator below. The last two rows are extra practice in overwriting and scaling, separate from the simulator’s Steps 9–10.</p>
+          <p><strong>How to read this table:</strong> each row shows memory <em>after</em> that instruction. Only the destination changes; carry the other values forward. A dash means no value has been loaded yet, not zero. Steps 1–3 loaded the three given inputs, so the arithmetic starts at Step 4. For the first blank, read V0 = 10 and V1 = 4, multiply them, and write the result in V3.</p>
           <div class="al-trace-given">
             <span>V0 = 10</span><span>V1 = 4</span><span>V2 = 6</span>
           </div>
@@ -763,7 +875,7 @@
           <p id="al-tape" class="al-callout">Printer tape: waiting for derived results.</p>
           <p>Steps 4–8 and 11–15 execute the same five instructions with different inputs. Step back restores a saved teaching state; it does not reverse a physical engine.</p>
           </div>
-          <div id="al-code-view" hidden><h3>Modern Exact Bernoulli Recurrence (Python Reference)</h3><p>This modern calculation uses exact fractions. It is separate from the classroom trace and is not a card-by-card reconstruction of Note G. Odd indices greater than 1 are zero; this function returns B₀, B₁ and even indices.</p><pre class="al-python"><code id="al-python-code"></code></pre><p>Through B₈: 1, −½, ⅙, 0, −1/30, 0, 1/42, 0, −1/30.</p></div>
+          <div id="al-code-view" hidden><h3>Modern Exact Bernoulli Recurrence (Python Reference)</h3><p>This modern calculation uses exact fractions. It is separate from the classroom trace and is not a card-by-card reconstruction of Note G. Odd indices greater than 1 are zero; this function returns B₀, B₁ and even indices.</p><details class="ll-accordion"><summary>Advanced reading guide: what do the Python names mean?</summary><div class="ll-accordion-body"><p><code>B</code> is a collection of saved Bernoulli values; <code>B[j]</code> retrieves the value at index j. <code>limit</code> is the largest index requested. <code>m</code> counts the even-index calculations, and <code>j = 2 * m</code> makes j equal 2, 4, 6, and so on. <code>k</code> selects earlier even-index values.</p><p><code>Fraction(1, 2)</code> stores an exact half. <code>comb(a, b)</code> counts the ways to choose b items from a items; here it supplies a coefficient in the recurrence. <code>sum(...)</code> adds the contributions. <code>acc</code>, short for accumulator, holds their running total. <code>acc += ...</code> adds another contribution to that total. Finally, <code>B[j] = -acc / (j + 1)</code> stores the new number: negate the known total, then divide by its coefficient, just as we solved for B₂ above. <code>return B</code> gives the saved collection back to the caller.</p><p>This is a reference to read, not an in-page Python runner. Start with the small worked example before trying to follow the whole function.</p></div></details><pre class="al-python"><code id="al-python-code"></code></pre><p>Through B₈: 1, −½, ⅙, 0, −1/30, 0, 1/42, 0, −1/30.</p></div>
         </section>
 
         <!-- Key Contributions -->
@@ -1012,7 +1124,7 @@
 
         <div class="ll-pane" id="al-pane-guide">
           <dl class="ll-details-list">
-            <div><dt>Algorithm</dt><dd>A finite, ordered set of unambiguous instructions. Ada's 1843 Bernoulli algorithm is history's first published one.</dd></div>
+            <div><dt>Algorithm</dt><dd>A finite, ordered set of unambiguous instructions. Ada's Note G presented a detailed algorithm for a proposed computing machine.</dd></div>
             <div><dt>Loop</dt><dd>Repeat a block of instructions until a condition is met. Ada described this structure before any computer existed.</dd></div>
             <div><dt>Conditional Branch</dt><dd>Execute different instructions depending on a result. Origin of if/then/else in all languages.</dd></div>
             <div><dt>Subroutine</dt><dd>A named, reusable block of operations. The simulator’s Steps 4–8 and 11–15 call the same five-instruction subroutine with different inputs.</dd></div>
@@ -1766,6 +1878,36 @@ print(bernoulli_recurrence(8))`;
     drawFrame();
   })();
 
+})();
+</script>
+
+<script>
+(() => {
+  const get = id => document.getElementById('al-learn-' + id);
+  const steps = [
+    {formula:'V3 ← V0 × V1',read:'10 and 4',source:'From V0 and V1',math:'10 × 4 = 40',meaning:'Ticket cost',dest:3,value:40,note:'Read 10 and 4. Store 40 in V3. Both inputs stay unchanged. Next: predict 40 + 6.'},
+    {formula:'V4 ← V3 + V2',read:'40 and 6',source:'From V3 and V2',math:'40 + 6 = 46',meaning:'Total bill',dest:4,value:46,note:'Read the saved 40 and the fee 6. Store 46 in V4. Next: predict 46 divided by 2.'},
+    {formula:'V5 ← V4 ÷ 2',read:'46 and 2',source:'From V4 and the instruction',math:'46 ÷ 2 = 23',meaning:'Split between two people',dest:5,value:23,note:'Store 23 in V5: each person pays 23 dollars. V4 keeps the intermediate total, 46.'}
+  ];
+  let next = 0;
+  get('next').addEventListener('click', () => {
+    const step = steps[next]; if (!step) return;
+    ['instruction','read','source','math','meaning'].forEach((key) => get(key).textContent = key === 'instruction' ? step.formula : step[key]);
+    get('write').textContent = 'V' + step.dest + ' ← ' + step.value;
+    get('dest').textContent = 'Result saved'; get('status').textContent = step.note;
+    [3,4,5].forEach(i => get('box-' + i).dataset.written = String(i === step.dest));
+    get('box-' + step.dest).querySelector('strong').textContent = step.value;
+    next++; get('progress').textContent = 'Instruction ' + next + ' of 3' + (next === 3 ? ' · complete' : '');
+    get('next').textContent = next === 3 ? 'All three instructions complete' : 'Run instruction ' + (next + 1);
+    get('next').disabled = next === 3;
+  });
+  get('reset').addEventListener('click', () => {
+    next = 0; get('progress').textContent = 'Ready · inputs loaded'; get('instruction').textContent = 'Find the ticket cost, add the fee, then share.';
+    get('read').textContent='10 and 4';get('source').textContent='From V0 and V1';get('math').textContent='10 × 4';get('meaning').textContent='Ticket cost';get('write').textContent='V3 is waiting';get('dest').textContent='A home for the result';
+    get('status').textContent='Predict the ticket cost, then run the first instruction. A dash means no value is stored yet.';
+    [3,4,5].forEach(i => {get('box-' + i).dataset.written='false';get('box-' + i).querySelector('strong').textContent='—';});
+    get('next').disabled=false;get('next').textContent='Run instruction 1';
+  });
 })();
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

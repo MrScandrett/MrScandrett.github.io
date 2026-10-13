@@ -5,12 +5,24 @@
   var root = document.getElementById('fakebook');
   var scroller = document.querySelector('.ll-sim');
   if (!button || !root) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    var family = document.querySelector('.music-family .mf-fold');
+    if (family) family.open = false;
+    function revealTopic() {
+      if (/^#(read|grow|practice|free|teachers)$/.test(location.hash)) {
+        document.querySelector('.fb-learning').open = true;
+        document.querySelector(location.hash).scrollIntoView();
+      }
+    }
+    window.addEventListener('hashchange', revealTopic);
+    revealTopic();
+  });
   var previousScroll = 0;
   function setStand(on) {
     if (on) previousScroll = scroller.scrollTop;
     document.body.classList.toggle('fb-standing', on);
     button.setAttribute('aria-pressed', String(on));
-    button.textContent = on ? 'Exit music stand' : 'Music stand view';
+    button.textContent = on ? 'Exit stand' : 'Stand';
     if (on) scroller.scrollTop = 0;
     else scroller.scrollTop = previousScroll;
   }
@@ -26,6 +38,36 @@
   var stage = document.querySelector('.ll-stage');
   var STORE = 'fakebook:dock:v1';
   var openTab = null;
+  var toolsButton = root.querySelector('[data-fb-tools]');
+  function closeTools() {
+    setTab(null);
+    dock.hidden = true;
+    toolsButton.setAttribute('aria-expanded', 'false');
+    toolsButton.focus({ preventScroll: true });
+  }
+  toolsButton.addEventListener('click', function () {
+    if (!dock.hidden) { closeTools(); return; }
+    dock.hidden = false;
+    toolsButton.setAttribute('aria-expanded', 'true');
+    setTab('key');
+    tabs.find(function (tab) { return tab.dataset.fbDockTab === 'key'; }).focus();
+  });
+  root.querySelector('[data-fb-tools-close]').addEventListener('click', closeTools);
+  document.querySelector('[data-fb-guide]').addEventListener('click', function () {
+    if (window.LessonLayout) window.LessonLayout.openPanel(true);
+    else document.querySelector('.ll-open-btn').click();
+  });
+  var task = 0;
+  var tasks = ['Listen once. Follow the highlighted notes.', 'Play or sing one phrase. Slow the tempo if you need to.', 'Predict how a new rhythm will sound. Open Tools, choose Rhythm, and compare.', 'What changed? Describe what you heard, then try another tune.'];
+  root.querySelector('[data-fb-task-next]').addEventListener('click', function (event) {
+    task = (task + 1) % tasks.length;
+    root.querySelector('[data-fb-task]').textContent = tasks[task];
+    event.currentTarget.textContent = task === tasks.length - 1 ? 'Start again' : 'Next task';
+  });
+  root.querySelector('.fb-library').addEventListener('click', function (event) {
+    if (event.target.closest('[data-tune]')) root.querySelector('.fb-library-wrap').open = false;
+  });
+
 
   function remember() {
     try { localStorage.setItem(STORE, JSON.stringify({ tab: openTab })); } catch (e) { /* storage blocked */ }
@@ -99,7 +141,7 @@
       var t = ev.target.closest('[data-fb-dock-tab]');
       if (t) {
         var id = t.getAttribute('data-fb-dock-tab');
-        setTab(openTab === id ? null : id, false);
+        setTab(id, false);
         return;
       }
       if (ev.target.closest('[data-fb-drawer-close]')) {
@@ -123,9 +165,7 @@
       var n = root.querySelector(sel);
       if (n) watch.observe(n, { childList: true, characterData: true, subtree: true });
     });
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (e) { saved = null; }
-    setTab(saved && saved.tab && dock.querySelector('[data-fb-dock-tab="' + saved.tab + '"]') ? saved.tab : null);
+    setTab(null);
     placeDock();
     window.addEventListener('resize', placeDock);
     // The music-family nav is injected after load and the guide drawer resizes
@@ -136,11 +176,9 @@
 
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
-    if (openTab && drawer && (drawer.contains(document.activeElement) || button.getAttribute('aria-pressed') !== 'true')) {
-      var was = openTab;
-      setTab(null);
-      var back = dock.querySelector('[data-fb-dock-tab="' + was + '"]');
-      if (back) back.focus();
+    if (!dock.hidden) {
+      event.preventDefault();
+      closeTools();
       return;
     }
     if (button.getAttribute('aria-pressed') === 'true') {

@@ -3,7 +3,7 @@
  * Settings panel (nav-mobile.js) writes the preference; this file reads it
  * and renders the selected background behind shared ClassroomOS pages.
  *
- * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive' | 'mandelbrot' | 'lavalamp'
+ * Modes: 'none' | 'mesh' | 'particles' | 'aurora' | 'petals' | 'hive' | 'goldfish' | 'mandelbrot' | 'lavalamp'
  * Storage key: classroomos-canvas-bg
  * Change event: classroomos:canvasbgchange  →  { detail: { bg: 'mesh' } }
  */
@@ -55,13 +55,13 @@
   }
   var w = 0, h = 0, t = 0;
   var currentBg = 'none';
-  var blobs = null, pts = null, petals = null, bees = null, mandel = null, lavaBlobs = null, lavaBubbles = null;
+  var blobs = null, pts = null, petals = null, bees = null, goldfishSchool = null, goldfishRipples = null, goldfishBubbles = null, mandel = null, lavaBlobs = null, lavaBubbles = null;
   var lavaMouse = { x: -1000, y: -1000, vx: 0, vy: 0, lastX: -1000, lastY: -1000, active: false };
   var beeImg = null, beeImgReady = false;
 
   /* Theme → the falling/crawling background it debuts with, until a
    * visitor picks their own from the settings panel (for that theme). */
-  var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive', mandelbrot: 'mandelbrot', lavalamp: 'lavalamp' };
+  var THEME_DEFAULT_BG = { sakura: 'petals', topaz: 'hive', goldfish: 'goldfish', mandelbrot: 'mandelbrot', lavalamp: 'lavalamp' };
 
   /* ── Storage ─────────────────────────────────────────────────── */
   function currentTheme() {
@@ -116,13 +116,29 @@
 
   /* Falls back to the Mandelbrot theme's own palette when this page never
    * loaded theme-registry.js — same reasoning as accentRGB() above. */
-  var MANDELBROT_PALETTE_HEX = ['#05010f', '#6a0dad', '#ff8c00', '#ffd23f'];
+  var MANDELBROT_PALETTE_HEX = ['#05010f', '#5b0e9b', '#ff8c00', '#ffd23f'];
+
+  var MANDELBROT_THEME_PALETTES = {
+    day:         ['#020b17', '#004b99', '#0071e3', '#7cd0ff'],
+    sakura:      ['#13020b', '#731346', '#ff6b9d', '#ffd4e5'],
+    diamond:     ['#020d18', '#004c66', '#00c6ff', '#d0f8ff'],
+    emerald:     ['#021308', '#0a4d29', '#22c55e', '#a7f3d0'],
+    topaz:       ['#140b01', '#663d00', '#ff9f00', '#ffe875'],
+    goldfish:    ['#140601', '#8c2c04', '#ff6a1a', '#ffc233'],
+    cobblestone: ['#0a0b0d', '#33373d', '#8a8d91', '#e2e6eb'],
+    bark:        ['#120a05', '#4a2c14', '#c48238', '#fcd385'],
+    night:       ['#03050d', '#142247', '#3b82f6', '#a5c9ff'],
+    vaporwave:   ['#07000d', '#590059', '#ff007f', '#00ffff'],
+    mandelbrot:  ['#05010f', '#5b0e9b', '#ff8c00', '#ffd23f'],
+    lavalamp:    ['#0a0103', '#7a081a', '#ff1a40', '#ff8ca3']
+  };
 
   function themePalette() {
     var theme = document.documentElement.dataset.theme || 'day';
     var registry = window.ClassroomOSThemeRegistry;
-    var swatch = (registry && registry.getSwatch(theme)) || MANDELBROT_PALETTE_HEX;
-    if (swatch.length < 3) swatch = MANDELBROT_PALETTE_HEX;
+    var swatch = (registry && typeof registry.getMandelSwatch === 'function')
+      ? registry.getMandelSwatch(theme)
+      : (MANDELBROT_THEME_PALETTES[theme] || MANDELBROT_PALETTE_HEX);
     return swatch.map(hexToRgb);
   }
 
@@ -304,57 +320,360 @@
     }
   }
 
-  /* ── Petals (falling blossoms/leaves, wind + gravity) ────────
-   * Same idea as jhammann/sakura (rain of gradient petals swayed by
-   * wind), reworked onto this file's canvas/rAF loop instead of DOM
-   * sprites so it shares the theme-aware colour + perf guards below. */
-  function spawnPetal(y) {
+  /* ── Petals (falling sakura & rose blossoms, 3D aerodynamics) ─
+   * Realistic cherry blossom & rose petals falling with true 3D
+   * physics: pendulum glide & aerodynamic lift, edge-on tumbling
+   * (coupled pitch, roll, and yaw), variable terminal velocity
+   * based on projected surface area, subtle air turbulence, interactive
+   * mouse wake, depth-of-field z-layers, botanical cleft notch &
+   * cupped geometries, and multi-stop translucent blush shading. */
+  var petalMouse = { x: -1000, y: -1000, vx: 0, vy: 0, lastX: -1000, lastY: -1000, active: false };
+  var petalMouseBound = false;
+
+  function onPetalMouseMove(e) {
+    if (currentBg !== 'petals') return;
+    var x = e.clientX, y = e.clientY;
+    if (petalMouse.active) {
+      petalMouse.vx = (x - petalMouse.lastX) * 0.35;
+      petalMouse.vy = (y - petalMouse.lastY) * 0.35;
+    }
+    petalMouse.x = x;
+    petalMouse.y = y;
+    petalMouse.lastX = x;
+    petalMouse.lastY = y;
+    petalMouse.active = true;
+  }
+
+  function spawnPetal(customY) {
+    // Continuous depth layer: 0.36 (distant, soft, slow) to 1.15 (foreground, large, crisp)
+    var z = 0.36 + Math.random() * 0.79;
+    // 0: classic sakura (cleft notch), 1: velvety cupped rose petal, 2: slender curled petal
+    var typeRand = Math.random();
+    var type = typeRand < 0.58 ? 0 : (typeRand < 0.86 ? 1 : 2);
+    var baseLength = (type === 1 ? 11 : (type === 0 ? 12.5 : 10)) + Math.random() * 7;
+    var length = baseLength * z;
+    var aspectRatio = (type === 1 ? 0.88 : (type === 0 ? 0.76 : 0.58)) + (Math.random() - 0.5) * 0.14;
+    var baseRotZ = (Math.random() - 0.5) * Math.PI * 0.85;
+
     return {
-      x:          Math.random() * w,
-      y:          (y === undefined) ? -10 - Math.random() * h : y,
-      size:       5 + Math.random() * 7,
-      speed:      0.35 + Math.random() * 0.55,
-      drift:      (Math.random() - 0.5) * 0.5,
-      swingAmp:   0.4 + Math.random() * 0.7,
-      swingFreq:  0.006 + Math.random() * 0.01,
-      swingPhase: Math.random() * Math.PI * 2,
-      rot:        Math.random() * Math.PI * 2,
-      rotSpeed:   (Math.random() - 0.5) * 0.03,
-      shade:      Math.random()
+      x:            Math.random() * (w || 960),
+      y:            (customY !== undefined) ? customY : -20 - Math.random() * (h || 720),
+      z:            z,
+      type:         type,
+      length:       length,
+      width:        length * aspectRatio,
+      notch:        0.18 + Math.random() * 0.16,
+      asym:         (Math.random() - 0.5) * 0.14,
+      curl:         (Math.random() - 0.5) * 0.28,
+      baseSpeed:    0.42 + Math.random() * 0.38,
+      swayAmp:      14 + Math.random() * 22,
+      swayFreq:     0.012 + Math.random() * 0.012,
+      swayPhase:    Math.random() * Math.PI * 2,
+      baseRotZ:     baseRotZ,
+      rotZ:         baseRotZ,
+      pitch:        Math.random() * Math.PI * 2,
+      pitchSpeed:   (0.012 + Math.random() * 0.02) * (Math.random() < 0.5 ? 1 : -1),
+      roll:         Math.random() * Math.PI * 2,
+      rollSpeed:    (0.016 + Math.random() * 0.022) * (Math.random() < 0.5 ? 1 : -1),
+      flutterFreq:  0.035 + Math.random() * 0.05,
+      flutterAmp:   0.25 + Math.random() * 0.45,
+      flutterPhase: Math.random() * Math.PI * 2,
+      shade:        Math.random(),
+      alpha:        0.55 + z * 0.38,
+      vx:           0,
+      vy:           0
     };
   }
 
   function makePetals() {
+    if (!petalMouseBound && typeof window !== 'undefined') {
+      window.addEventListener('mousemove', onPetalMouseMove, { passive: true });
+      window.addEventListener('touchmove', function (e) {
+        if (e.touches && e.touches[0]) onPetalMouseMove(e.touches[0]);
+      }, { passive: true });
+      petalMouseBound = true;
+    }
     petals = [];
-    var count = Math.max(12, Math.min(26, Math.floor(w / 44)));
-    for (var i = 0; i < count; i++) petals.push(spawnPetal(Math.random() * h));
+    var count = Math.max(16, Math.min(32, Math.floor((w || 960) / 40)));
+    for (var i = 0; i < count; i++) {
+      petals.push(spawnPetal(Math.random() * (h || 720)));
+    }
+  }
+
+  function getPetalPalette(theme, rgb, p) {
+    if (theme === 'sakura') {
+      if (p.type === 1) {
+        // Velvety rose petal
+        return {
+          base:     [206 - Math.round(p.shade * 18), 30 + Math.round(p.shade * 10), 84],
+          mid:      [244, 92 + Math.round(p.shade * 25), 142 + Math.round(p.shade * 15)],
+          tip:      [255, 218 + Math.round(p.shade * 20), 232],
+          rim:      [255, 175, 205],
+          crease:   [172, 22, 68],
+          backBase: [216, 60, 108],
+          backMid:  [248, 138, 174],
+          backTip:  [255, 225, 238]
+        };
+      }
+      // Classic sakura cherry blossom petal
+      return {
+        base:     [218 - Math.round(p.shade * 22), 42 + Math.round(p.shade * 14), 104],
+        mid:      [255, 178 + Math.round(p.shade * 25), 202 + Math.round(p.shade * 18)],
+        tip:      [255, 245, 249],
+        rim:      [255, 210, 228],
+        crease:   [192, 32, 88],
+        backBase: [228, 74, 122],
+        backMid:  [252, 186, 210],
+        backTip:  [255, 240, 246]
+      };
+    }
+
+    // Theme-coordinated petal palette
+    var r = rgb[0], g = rgb[1], b = rgb[2];
+    var baseR = Math.round(r * 0.8), baseG = Math.round(g * 0.72), baseB = Math.round(b * 0.8);
+    var tipR = Math.min(255, Math.round(r * 0.35 + 165));
+    var tipG = Math.min(255, Math.round(g * 0.35 + 165));
+    var tipB = Math.min(255, Math.round(b * 0.35 + 165));
+    return {
+      base:     [baseR, baseG, baseB],
+      mid:      rgb,
+      tip:      [tipR, tipG, tipB],
+      rim:      [Math.min(255, tipR + 25), Math.min(255, tipG + 25), Math.min(255, tipB + 25)],
+      crease:   [Math.round(baseR * 0.85), Math.round(baseG * 0.85), Math.round(baseB * 0.85)],
+      backBase: [Math.round(r * 0.9), Math.round(g * 0.85), Math.round(b * 0.9)],
+      backMid:  [Math.min(255, Math.round(r * 0.6 + 100)), Math.min(255, Math.round(g * 0.6 + 100)), Math.min(255, Math.round(b * 0.6 + 100))],
+      backTip:  [tipR, tipG, tipB]
+    };
+  }
+
+  function tracePetalPath(ctx, p, L, W) {
+    ctx.beginPath();
+    if (p.type === 0) {
+      // Classic Sakura petal with apical cleft notch
+      var baseY = L * 0.82;
+      var tipY = -L * 0.88;
+      var notchY = tipY + L * (0.26 + p.notch * 0.16);
+      var rightW = W * (1 + p.asym);
+      var leftW = W * (1 - p.asym);
+
+      ctx.moveTo(0, baseY);
+      // Right flank
+      ctx.bezierCurveTo(
+        rightW * 0.52, baseY - L * 0.28,
+        rightW * 1.08, baseY - L * 0.92,
+        rightW * 0.92, tipY + L * 0.54
+      );
+      // Right lobe crown
+      ctx.bezierCurveTo(
+        rightW * 0.82, tipY + L * 0.18,
+        rightW * 0.52, tipY - L * 0.04,
+        rightW * 0.28, tipY
+      );
+      // Notch dip
+      ctx.bezierCurveTo(
+        rightW * 0.12, tipY + L * 0.06,
+        0, notchY - L * 0.05,
+        0, notchY
+      );
+      // Left lobe rise
+      ctx.bezierCurveTo(
+        0, notchY - L * 0.05,
+        -leftW * 0.12, tipY + L * 0.06,
+        -leftW * 0.28, tipY
+      );
+      // Left lobe crown
+      ctx.bezierCurveTo(
+        -leftW * 0.52, tipY - L * 0.04,
+        -leftW * 0.82, tipY + L * 0.18,
+        -leftW * 0.92, tipY + L * 0.54
+      );
+      // Left flank back to base
+      ctx.bezierCurveTo(
+        -leftW * 1.08, baseY - L * 0.92,
+        -leftW * 0.52, baseY - L * 0.28,
+        0, baseY
+      );
+    } else if (p.type === 1) {
+      // Velvety cupped rose petal with broad scalloped crown
+      var baseY = L * 0.85;
+      var tipY = -L * 0.86;
+      var rightW = W * 1.15 * (1 + p.asym);
+      var leftW = W * 1.15 * (1 - p.asym);
+
+      ctx.moveTo(0, baseY);
+      ctx.bezierCurveTo(
+        rightW * 0.5, baseY - L * 0.22,
+        rightW * 1.14, baseY - L * 0.88,
+        rightW * 0.96, tipY + L * 0.55
+      );
+      ctx.bezierCurveTo(
+        rightW * 0.86, tipY + L * 0.14,
+        rightW * 0.44, tipY - L * 0.06,
+        0, tipY
+      );
+      ctx.bezierCurveTo(
+        -leftW * 0.44, tipY - L * 0.06,
+        -leftW * 0.86, tipY + L * 0.14,
+        -leftW * 0.96, tipY + L * 0.55
+      );
+      ctx.bezierCurveTo(
+        -leftW * 1.14, baseY - L * 0.88,
+        -leftW * 0.5, baseY - L * 0.22,
+        0, baseY
+      );
+    } else {
+      // Slender curled petal
+      var baseY = L * 0.88;
+      var tipY = -L * 0.88;
+      var midW = W * 0.72;
+
+      ctx.moveTo(0, baseY);
+      ctx.bezierCurveTo(midW * 0.4, baseY - L * 0.32, midW * 1.05, 0, midW * 0.72, tipY + L * 0.42);
+      ctx.bezierCurveTo(midW * 0.5, tipY + L * 0.12, midW * 0.22, tipY, 0, tipY);
+      ctx.bezierCurveTo(-midW * 0.12, tipY, -midW * 0.42, tipY + L * 0.2, -midW * 0.65, tipY + L * 0.52);
+      ctx.bezierCurveTo(-midW * 0.82, 0, -midW * 0.42, baseY - L * 0.32, 0, baseY);
+    }
+    ctx.closePath();
   }
 
   function drawPetals() {
     ctx.clearRect(0, 0, w, h);
+    var theme = currentTheme();
     var rgb = accentRGB();
+
+    // Ambient wind with natural waves and occasional gusts
+    var windBase = 0.32 + Math.sin(t * 0.0009) * 0.24;
+    var windGust = Math.sin(t * 0.0031) * Math.sin(t * 0.0011) * 0.32;
+    var wind = windBase + windGust;
+
+    // Damp mouse wake velocity
+    if (petalMouse.active) {
+      petalMouse.vx *= 0.92;
+      petalMouse.vy *= 0.92;
+      if (Math.abs(petalMouse.vx) < 0.01) petalMouse.vx = 0;
+      if (Math.abs(petalMouse.vy) < 0.01) petalMouse.vy = 0;
+    }
+
+    // Sort back-to-front by depth
+    petals.sort(function (a, b) { return a.z - b.z; });
 
     for (var i = 0; i < petals.length; i++) {
       var p = petals[i];
-      p.y   += p.speed;
-      p.x   += p.drift + Math.sin(t * p.swingFreq + p.swingPhase) * p.swingAmp;
-      p.rot += p.rotSpeed;
 
-      if (p.y - p.size > h) { petals[i] = spawnPetal(-10 - Math.random() * 30); continue; }
-      if (p.x < -20) p.x = w + 20;
-      if (p.x > w + 20) p.x = -20;
+      // Interactive mouse wake push
+      if (petalMouse.active && (Math.abs(petalMouse.vx) + Math.abs(petalMouse.vy) > 0.1)) {
+        var mdx = p.x - petalMouse.x;
+        var mdy = p.y - petalMouse.y;
+        var mDistSq = mdx * mdx + mdy * mdy;
+        var maxDist = 135;
+        if (mDistSq < maxDist * maxDist) {
+          var mDist = Math.sqrt(mDistSq);
+          var push = (1 - mDist / maxDist);
+          p.vx += (petalMouse.vx * 0.25 + (mdx / (mDist || 1)) * 0.8) * push;
+          p.vy += (petalMouse.vy * 0.15 - 0.75) * push; // gentle updraft
+          p.pitchSpeed += (Math.random() - 0.5) * push * 0.06;
+          p.rollSpeed += (Math.random() - 0.5) * push * 0.06;
+        }
+      }
 
-      var alpha = 0.5 + p.shade * 0.3;
+      // Air resistance damping on impulse
+      p.vx *= 0.94;
+      p.vy *= 0.94;
+
+      // 3D rotation update
+      p.pitch += p.pitchSpeed;
+      p.roll  += p.rollSpeed;
+
+      // Aerodynamic pendulum sway
+      var swayAngle = t * p.swayFreq + p.swayPhase;
+      var swayVel = Math.cos(swayAngle);
+
+      // Petal turns its 2D heading into the glide direction
+      var targetRotZ = p.baseRotZ + (swayVel * 0.52);
+      p.rotZ += (targetRotZ - p.rotZ) * 0.055;
+
+      // Micro flutter
+      var flutter = Math.sin(t * p.flutterFreq + p.flutterPhase) * p.flutterAmp;
+
+      // Projected area: aerodynamic drag slows descent when broadside, speeds up when edge-on
+      var cosRoll = Math.cos(p.roll);
+      var cosPitch = Math.cos(p.pitch);
+      var isBackface = (cosRoll * cosPitch) < 0;
+      var projectedArea = Math.abs(cosRoll * cosPitch);
+      var drag = 0.42 + projectedArea * 0.58;
+      var vy = (p.baseSpeed / drag) * p.z;
+
+      p.y += vy + p.vy;
+      p.x += (wind + swayVel * 0.88 + flutter + p.vx) * p.z;
+
+      // Recycle when falling past screen bottom
+      if (p.y - p.length * 2 > h) {
+        petals[i] = spawnPetal(-20 - Math.random() * 35);
+        continue;
+      }
+      if (p.x < -35) p.x = w + 30;
+      if (p.x > w + 35) p.x = -30;
+
+      // Render 3D petal
+      var scaleX = Math.max(0.08, Math.abs(cosRoll));
+      var scaleY = Math.max(0.12, Math.abs(cosPitch));
+      var pal = getPetalPalette(theme, rgb, p);
+      var alpha = p.alpha;
+      var L = p.length;
+      var W = p.width;
+
       ctx.save();
       ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      var g = ctx.createLinearGradient(-p.size, -p.size, p.size, p.size);
-      g.addColorStop(0, rgba(rgb, alpha));
-      g.addColorStop(1, rgba(rgb, alpha * 0.45));
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, Math.PI * 2);
+      ctx.rotate(p.rotZ);
+
+      // Affine 3D transform: pitch, roll, and gentle perspective curl
+      ctx.transform(scaleX, (isBackface ? -1 : 1) * p.curl * scaleY * 0.35, 0, scaleY, 0, 0);
+
+      // 1. Trace petal path
+      tracePetalPath(ctx, p, L, W);
+
+      // 2. Base-to-tip blush gradient
+      var grad = ctx.createLinearGradient(0, L * 0.85, 0, -L * 0.88);
+      if (!isBackface) {
+        grad.addColorStop(0, rgba(pal.base, alpha * 0.95));
+        grad.addColorStop(0.35, rgba(pal.mid, alpha * 0.86));
+        grad.addColorStop(0.82, rgba(pal.tip, alpha * 0.80));
+        grad.addColorStop(1, rgba(pal.rim, alpha * 0.70));
+      } else {
+        grad.addColorStop(0, rgba(pal.backBase, alpha * 0.84));
+        grad.addColorStop(0.42, rgba(pal.backMid, alpha * 0.76));
+        grad.addColorStop(1, rgba(pal.backTip, alpha * 0.62));
+      }
+      ctx.fillStyle = grad;
       ctx.fill();
+
+      // 3. 3D cupping / dimensional half-tone shading (clipped strictly to petal interior)
+      ctx.save();
+      ctx.clip();
+
+      var shadeGrad = ctx.createLinearGradient(-W, 0, W, 0);
+      shadeGrad.addColorStop(0, 'rgba(255, 255, 255, ' + (alpha * 0.22) + ')');
+      shadeGrad.addColorStop(0.46, 'rgba(255, 255, 255, 0.02)');
+      shadeGrad.addColorStop(0.54, rgba(pal.crease, alpha * 0.14));
+      shadeGrad.addColorStop(1, rgba(pal.crease, alpha * 0.05));
+      ctx.fillStyle = shadeGrad;
+      ctx.fillRect(-W * 1.5, -L * 1.5, W * 3, L * 3);
+
+      // 4. Center crease / fold line
+      ctx.beginPath();
+      ctx.moveTo(0, L * 0.75);
+      ctx.quadraticCurveTo(W * p.curl * 0.4, 0, 0, -L * 0.45);
+      ctx.strokeStyle = rgba(pal.crease, alpha * (isBackface ? 0.12 : 0.20));
+      ctx.lineWidth = Math.max(0.6, 0.85 * p.z);
+      ctx.stroke();
+
+      ctx.restore(); // unclip
+
+      // 5. Delicate translucent rim highlight
+      ctx.strokeStyle = rgba(pal.rim, alpha * (isBackface ? 0.26 : 0.42));
+      ctx.lineWidth = Math.max(0.55, 0.75 * p.z);
+      ctx.stroke();
+
       ctx.restore();
     }
   }
@@ -429,6 +748,465 @@
     }
   }
 
+  /* ── Goldfish (tranquil swimming koi pond, flowing veil fins) ────
+   * Renders a school of graceful goldfish seen from an overhead pond
+   * perspective, with smooth undulating spine physics, burst-and-glide
+   * swimming locomotion, gossamer veil tails that ripple like silk,
+   * gentle water ripples, rising micro-bubbles, and reactive mouse steering. */
+  var pondMouse = { x: -1000, y: -1000, vx: 0, vy: 0, lastX: -1000, lastY: -1000, active: false };
+  var pondMouseBound = false;
+
+  function onPondMouseMove(e) {
+    if (currentBg !== 'goldfish') return;
+    var x = e.clientX, y = e.clientY;
+    if (pondMouse.active) {
+      pondMouse.vx = (x - pondMouse.lastX) * 0.25;
+      pondMouse.vy = (y - pondMouse.lastY) * 0.25;
+    }
+    pondMouse.x = x;
+    pondMouse.y = y;
+    pondMouse.lastX = x;
+    pondMouse.lastY = y;
+    pondMouse.active = true;
+
+    // Moving mouse across pond creates occasional gentle surface ripple
+    if (goldfishRipples && Math.random() < 0.16 && (Math.abs(pondMouse.vx) + Math.abs(pondMouse.vy) > 1.2)) {
+      if (goldfishRipples.length < 18) {
+        goldfishRipples.push({
+          x: x + (Math.random() - 0.5) * 16,
+          y: y + (Math.random() - 0.5) * 16,
+          r: 4,
+          maxR: 35 + Math.random() * 25,
+          speed: 1.2 + Math.random() * 0.6,
+          alpha: 0.38
+        });
+      }
+    }
+  }
+
+  function spawnGoldfish() {
+    var length = 32 + Math.random() * 22; // 32 to 54px body length
+    var angle = Math.random() * Math.PI * 2;
+    var baseSpeed = 0.45 + Math.random() * 0.4;
+    return {
+      x: Math.random() * (w || 800),
+      y: Math.random() * (h || 600),
+      heading: angle,
+      targetHeading: angle,
+      turnTimer: 45 + Math.floor(Math.random() * 90),
+      speed: baseSpeed,
+      baseSpeed: baseSpeed,
+      burstTimer: Math.floor(Math.random() * 120),
+      length: length,
+      width: length * 0.36,
+      swimPhase: Math.random() * Math.PI * 2,
+      finPhase: Math.random() * Math.PI * 2,
+      variant: Math.floor(Math.random() * 4), // 0: Kohaku orange/cream, 1: Yamabuki gold, 2: Sarasa carnelian, 3: Sunrise pearl
+      wakeCooldown: Math.floor(Math.random() * 60)
+    };
+  }
+
+  function spawnPondBubble(customY) {
+    return {
+      x: Math.random() * (w || 800),
+      y: (customY !== undefined) ? customY : Math.random() * (h || 600),
+      r: 1.2 + Math.random() * 2.2,
+      speed: 0.35 + Math.random() * 0.55,
+      drift: (Math.random() - 0.5) * 0.25,
+      seed: Math.random() * 100,
+      alpha: 0.25 + Math.random() * 0.35
+    };
+  }
+
+  function makeGoldfish() {
+    if (!pondMouseBound && typeof window !== 'undefined') {
+      window.addEventListener('mousemove', onPondMouseMove, { passive: true });
+      pondMouseBound = true;
+    }
+    goldfishSchool = [];
+    var count = Math.max(5, Math.min(10, Math.floor((w || 800) / 130)));
+    for (var i = 0; i < count; i++) {
+      goldfishSchool.push(spawnGoldfish());
+    }
+
+    goldfishRipples = [];
+
+    goldfishBubbles = [];
+    var bubbleCount = Math.max(8, Math.min(16, Math.floor((w || 800) / 90)));
+    for (var b = 0; b < bubbleCount; b++) {
+      goldfishBubbles.push(spawnPondBubble());
+    }
+  }
+
+  function drawGoldfish() {
+    ctx.clearRect(0, 0, w, h);
+    var rgb = accentRGB();
+
+    // 1. Soft sunlight caustics drifting across pond bottom
+    var c1x = (0.32 + Math.sin(t * 0.00035) * 0.18) * w;
+    var c1y = (0.38 + Math.cos(t * 0.00028) * 0.16) * h;
+    var c1r = Math.max(w, h) * 0.38;
+    var g1 = ctx.createRadialGradient(c1x, c1y, 0, c1x, c1y, c1r);
+    g1.addColorStop(0, rgba(rgb, 0.08));
+    g1.addColorStop(0.5, rgba(rgb, 0.03));
+    g1.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, w, h);
+
+    var c2x = (0.72 + Math.cos(t * 0.00032) * 0.16) * w;
+    var c2y = (0.68 + Math.sin(t * 0.00038) * 0.18) * h;
+    var c2r = Math.max(w, h) * 0.42;
+    var g2 = ctx.createRadialGradient(c2x, c2y, 0, c2x, c2y, c2r);
+    g2.addColorStop(0, rgba([255, 215, 120], 0.06));
+    g2.addColorStop(0.5, rgba([255, 215, 120], 0.02));
+    g2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. Water micro-bubbles gently rising
+    if (goldfishBubbles) {
+      for (var bi = 0; bi < goldfishBubbles.length; bi++) {
+        var bub = goldfishBubbles[bi];
+        bub.y -= bub.speed;
+        bub.x += bub.drift + Math.sin(t * 0.025 + bub.seed) * 0.35;
+        if (bub.y < -12) {
+          goldfishBubbles[bi] = spawnPondBubble(h + 12 + Math.random() * 20);
+          continue;
+        }
+        if (bub.x < 0) bub.x = w;
+        if (bub.x > w) bub.x = 0;
+
+        ctx.beginPath();
+        ctx.arc(bub.x, bub.y, bub.r, 0, Math.PI * 2);
+        ctx.strokeStyle = rgba(rgb, bub.alpha * 0.4);
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(bub.x - bub.r * 0.3, bub.y - bub.r * 0.3, bub.r * 0.35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, ' + (bub.alpha * 0.75) + ')';
+        ctx.fill();
+      }
+    }
+
+    // 3. Water surface ripples expanding
+    if (goldfishRipples) {
+      for (var ri = goldfishRipples.length - 1; ri >= 0; ri--) {
+        var rip = goldfishRipples[ri];
+        rip.r += rip.speed;
+        var progress = rip.r / rip.maxR;
+        if (progress >= 1.0) {
+          goldfishRipples.splice(ri, 1);
+          continue;
+        }
+        var ripAlpha = rip.alpha * (1.0 - progress);
+
+        // Outer specular ripple ring
+        ctx.beginPath();
+        ctx.arc(rip.x, rip.y, rip.r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, ' + (ripAlpha * 0.55) + ')';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Inner refraction ring
+        ctx.beginPath();
+        ctx.arc(rip.x, rip.y, rip.r * 0.82, 0, Math.PI * 2);
+        ctx.strokeStyle = rgba(rgb, ripAlpha * 0.28);
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+      }
+    }
+
+    // Random calm pond drop ripple every now and then
+    if (goldfishRipples && Math.random() < 0.007 && goldfishRipples.length < 12) {
+      goldfishRipples.push({
+        x: 40 + Math.random() * Math.max(10, w - 80),
+        y: 40 + Math.random() * Math.max(10, h - 80),
+        r: 3,
+        maxR: 45 + Math.random() * 30,
+        speed: 1.1 + Math.random() * 0.5,
+        alpha: 0.32
+      });
+    }
+
+    // 4. Update and render Goldfish School
+    if (!goldfishSchool) return;
+
+    var margin = 55;
+    for (var fi = 0; fi < goldfishSchool.length; fi++) {
+      var f = goldfishSchool[fi];
+
+      // Swimming rhythm: burst-and-glide cycle
+      f.burstTimer--;
+      if (f.burstTimer <= 0) {
+        f.burstTimer = 80 + Math.floor(Math.random() * 120);
+        f.speed = f.baseSpeed * (1.3 + Math.random() * 0.5);
+      } else {
+        f.speed += (f.baseSpeed - f.speed) * 0.025; // Ease back to cruising glide
+      }
+
+      // Smooth steering & turning
+      f.turnTimer--;
+      if (f.turnTimer <= 0) {
+        f.targetHeading += (Math.random() - 0.5) * 1.2;
+        f.turnTimer = 60 + Math.floor(Math.random() * 100);
+      }
+
+      // Boundary avoidance (smooth turn back into pond)
+      if (f.x < margin)     f.targetHeading = (f.targetHeading + (0 - f.targetHeading) * 0.2);
+      if (f.x > w - margin) f.targetHeading = (f.targetHeading + (Math.PI - f.targetHeading) * 0.2);
+      if (f.y < margin)     f.targetHeading = (f.targetHeading + (Math.PI * 0.5 - f.targetHeading) * 0.2);
+      if (f.y > h - margin) f.targetHeading = (f.targetHeading + (-Math.PI * 0.5 - f.targetHeading) * 0.2);
+
+      // Mouse evasion / interaction
+      if (pondMouse.active) {
+        var mdx = f.x - pondMouse.x;
+        var mdy = f.y - pondMouse.y;
+        var mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mdist < 140 && mdist > 1) {
+          var repulseAngle = Math.atan2(mdy, mdx);
+          var repulseStr = (1 - mdist / 140) * 0.45;
+          f.targetHeading = repulseAngle;
+          f.speed = Math.min(f.baseSpeed * 2.4, f.speed + repulseStr * 0.8);
+          // Tail flick wake ripple
+          if (goldfishRipples && f.wakeCooldown <= 0 && Math.random() < 0.4) {
+            goldfishRipples.push({
+              x: f.x - Math.cos(f.heading) * f.length * 0.5,
+              y: f.y - Math.sin(f.heading) * f.length * 0.5,
+              r: 3,
+              maxR: 40 + Math.random() * 20,
+              speed: 1.4,
+              alpha: 0.35
+            });
+            f.wakeCooldown = 30;
+          }
+        }
+      }
+
+      // Smooth heading interpolation (shortest angular path)
+      var dHeading = f.targetHeading - f.heading;
+      while (dHeading < -Math.PI) dHeading += Math.PI * 2;
+      while (dHeading > Math.PI)  dHeading -= Math.PI * 2;
+      f.heading += dHeading * 0.045;
+
+      // Position update
+      f.x += Math.cos(f.heading) * f.speed;
+      f.y += Math.sin(f.heading) * f.speed;
+
+      // Keep inside bounds wrap cushion
+      if (f.x < -f.length) f.x = w + f.length;
+      if (f.x > w + f.length) f.x = -f.length;
+      if (f.y < -f.length) f.y = h + f.length;
+      if (f.y > h + f.length) f.y = -f.length;
+
+      // Phase updates
+      f.swimPhase += f.speed * 0.18 + 0.032;
+      f.finPhase  += f.speed * 0.14 + 0.045;
+      if (f.wakeCooldown > 0) f.wakeCooldown--;
+
+      // ── Render Fish Geometry ──
+      var L = f.length;
+      var W = f.width;
+
+      // 5 Spine Vertebrae Nodes: 0=snout, 1=gills, 2=mid, 3=rear, 4=peduncle
+      var segLens = [0, L * 0.22, L * 0.28, L * 0.28, L * 0.22];
+      var nodes = [{ x: f.x, y: f.y, angle: f.heading }];
+      for (var si = 1; si <= 4; si++) {
+        var prevNode = nodes[si - 1];
+        var waveLag = f.swimPhase - si * 0.82;
+        var segAng = f.heading + Math.sin(waveLag) * (0.04 + si * 0.075);
+        nodes.push({
+          x: prevNode.x - Math.cos(segAng) * segLens[si],
+          y: prevNode.y - Math.sin(segAng) * segLens[si],
+          angle: segAng
+        });
+      }
+
+      // Colors by variant
+      var colPrimary, colSpine, colBelly, colFin;
+      if (f.variant === 0) {
+        // Classic Kohaku orange & pearl
+        colPrimary = 'rgba(255, 106, 26, 0.92)';
+        colSpine   = 'rgba(220, 68, 8, 0.95)';
+        colBelly   = 'rgba(255, 248, 238, 0.92)';
+        colFin     = [255, 120, 40];
+      } else if (f.variant === 1) {
+        // Yamabuki golden amber
+        colPrimary = 'rgba(255, 175, 18, 0.92)';
+        colSpine   = 'rgba(230, 130, 0, 0.95)';
+        colBelly   = 'rgba(255, 252, 235, 0.92)';
+        colFin     = [255, 190, 50];
+      } else if (f.variant === 2) {
+        // Sarasa deep carnelian red-orange
+        colPrimary = 'rgba(235, 60, 15, 0.92)';
+        colSpine   = 'rgba(185, 35, 5, 0.96)';
+        colBelly   = 'rgba(255, 235, 225, 0.90)';
+        colFin     = [240, 75, 25];
+      } else {
+        // Sunrise pearl with fiery fins
+        colPrimary = 'rgba(255, 135, 45, 0.90)';
+        colSpine   = 'rgba(255, 85, 15, 0.94)';
+        colBelly   = 'rgba(255, 255, 255, 0.95)';
+        colFin     = [255, 140, 55];
+      }
+
+      // Step A: Pectoral Fins (Left & Right attached at gills / node 1)
+      var gillNode = nodes[1];
+      var finLen = L * 0.44;
+      var finFlutter = Math.sin(f.finPhase) * 0.22;
+
+      for (var side = -1; side <= 1; side += 2) {
+        var baseFinAng = gillNode.angle + side * (Math.PI * 0.68) + finFlutter * side;
+        var fTipX = gillNode.x + Math.cos(baseFinAng) * finLen;
+        var fTipY = gillNode.y + Math.sin(baseFinAng) * finLen;
+        var fMidX = gillNode.x + Math.cos(baseFinAng + side * 0.4) * (finLen * 0.65);
+        var fMidY = gillNode.y + Math.sin(baseFinAng + side * 0.4) * (finLen * 0.65);
+
+        ctx.beginPath();
+        ctx.moveTo(gillNode.x, gillNode.y);
+        ctx.quadraticCurveTo(fMidX, fMidY, fTipX, fTipY);
+        ctx.quadraticCurveTo(gillNode.x + Math.cos(baseFinAng - side * 0.3) * (finLen * 0.5), gillNode.y + Math.sin(baseFinAng - side * 0.3) * (finLen * 0.5), gillNode.x, gillNode.y);
+        ctx.closePath();
+
+        var finGrad = ctx.createLinearGradient(gillNode.x, gillNode.y, fTipX, fTipY);
+        finGrad.addColorStop(0, 'rgba(' + colFin[0] + ',' + colFin[1] + ',' + colFin[2] + ', 0.65)');
+        finGrad.addColorStop(0.6, 'rgba(' + colFin[0] + ',' + colFin[1] + ',' + colFin[2] + ', 0.28)');
+        finGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+        ctx.fillStyle = finGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      }
+
+      // Step B: Flowing Gossamer Caudal (Tail) Fin (Twin veil lobes at node 4)
+      var tailBase = nodes[4];
+      var tailLen = L * 0.95;
+      var tailWave1 = Math.sin(f.swimPhase - 3.4) * 0.42;
+      var tailWave2 = Math.sin(f.swimPhase - 4.1) * 0.52;
+
+      // Draw 2 overlapping translucent veil tail lobes (upper & lower)
+      var lobes = [
+        { angle: tailBase.angle + Math.PI + 0.32 + tailWave1, len: tailLen, width: W * 0.65, alpha: 0.55 },
+        { angle: tailBase.angle + Math.PI - 0.32 + tailWave2, len: tailLen * 0.9, width: W * 0.60, alpha: 0.48 }
+      ];
+
+      for (var li = 0; li < lobes.length; li++) {
+        var lb = lobes[li];
+        var tTipX = tailBase.x + Math.cos(lb.angle) * lb.len;
+        var tTipY = tailBase.y + Math.sin(lb.angle) * lb.len;
+
+        var ctrl1X = tailBase.x + Math.cos(lb.angle - 0.28) * (lb.len * 0.45);
+        var ctrl1Y = tailBase.y + Math.sin(lb.angle - 0.28) * (lb.len * 0.45);
+        var ctrl2X = tailBase.x + Math.cos(lb.angle + 0.38) * (lb.len * 0.72);
+        var ctrl2Y = tailBase.y + Math.sin(lb.angle + 0.38) * (lb.len * 0.72);
+
+        ctx.beginPath();
+        ctx.moveTo(tailBase.x, tailBase.y);
+        ctx.bezierCurveTo(ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, tTipX, tTipY);
+        var returnCtrlX = tailBase.x + Math.cos(lb.angle - 0.45) * (lb.len * 0.55);
+        var returnCtrlY = tailBase.y + Math.sin(lb.angle - 0.45) * (lb.len * 0.55);
+        ctx.quadraticCurveTo(returnCtrlX, returnCtrlY, tailBase.x, tailBase.y);
+        ctx.closePath();
+
+        var tGrad = ctx.createLinearGradient(tailBase.x, tailBase.y, tTipX, tTipY);
+        tGrad.addColorStop(0, 'rgba(' + colFin[0] + ',' + colFin[1] + ',' + colFin[2] + ', ' + lb.alpha + ')');
+        tGrad.addColorStop(0.45, 'rgba(' + colFin[0] + ',' + colFin[1] + ',' + colFin[2] + ', ' + (lb.alpha * 0.5) + ')');
+        tGrad.addColorStop(0.85, 'rgba(255, 245, 220, ' + (lb.alpha * 0.25) + ')');
+        tGrad.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+        ctx.fillStyle = tGrad;
+        ctx.fill();
+
+        // Delicate fin ray striations
+        for (var ray = -2; ray <= 2; ray++) {
+          var rayAng = lb.angle + ray * 0.11;
+          ctx.beginPath();
+          ctx.moveTo(tailBase.x, tailBase.y);
+          ctx.quadraticCurveTo(
+            tailBase.x + Math.cos(rayAng) * (lb.len * 0.5),
+            tailBase.y + Math.sin(rayAng) * (lb.len * 0.5),
+            tailBase.x + Math.cos(rayAng) * (lb.len * 0.92),
+            tailBase.y + Math.sin(rayAng) * (lb.len * 0.92)
+          );
+          ctx.strokeStyle = 'rgba(255, 255, 255, ' + (lb.alpha * 0.4) + ')';
+          ctx.lineWidth = 0.65;
+          ctx.stroke();
+        }
+      }
+
+      // Step C: Fish Body Outline (Smooth continuous Bezier contour)
+      // Half-widths along vertebrae: 0=snout, 1=gills, 2=mid, 3=rear, 4=peduncle
+      var hw = [W * 0.20, W * 0.48, W * 0.52, W * 0.35, W * 0.15];
+      var leftPts = [];
+      var rightPts = [];
+      for (var ni = 0; ni <= 4; ni++) {
+        var n = nodes[ni];
+        var perpX = -Math.sin(n.angle) * hw[ni];
+        var perpY =  Math.cos(n.angle) * hw[ni];
+        leftPts.push({ x: n.x + perpX, y: n.y + perpY });
+        rightPts.push({ x: n.x - perpX, y: n.y - perpY });
+      }
+
+      ctx.beginPath();
+      // Start at snout tip
+      ctx.moveTo(nodes[0].x, nodes[0].y);
+      // Curve down left flank
+      ctx.bezierCurveTo(leftPts[0].x, leftPts[0].y, leftPts[1].x, leftPts[1].y, leftPts[2].x, leftPts[2].y);
+      ctx.bezierCurveTo(leftPts[3].x, leftPts[3].y, leftPts[4].x, leftPts[4].y, nodes[4].x, nodes[4].y);
+      // Curve back up right flank
+      ctx.bezierCurveTo(rightPts[4].x, rightPts[4].y, rightPts[3].x, rightPts[3].y, rightPts[2].x, rightPts[2].y);
+      ctx.bezierCurveTo(rightPts[1].x, rightPts[1].y, rightPts[0].x, rightPts[0].y, nodes[0].x, nodes[0].y);
+      ctx.closePath();
+
+      // Rounded 3D Body Shading Gradient
+      var midN = nodes[2];
+      var bGrad = ctx.createRadialGradient(midN.x, midN.y, W * 0.12, midN.x, midN.y, W * 0.68);
+      bGrad.addColorStop(0, colSpine);
+      bGrad.addColorStop(0.48, colPrimary);
+      bGrad.addColorStop(0.85, colBelly);
+      bGrad.addColorStop(1, colPrimary);
+      ctx.fillStyle = bGrad;
+      ctx.fill();
+
+      // Delicate spine line and scale sheen
+      ctx.beginPath();
+      ctx.moveTo(nodes[1].x, nodes[1].y);
+      ctx.quadraticCurveTo(nodes[2].x, nodes[2].y, nodes[3].x, nodes[3].y);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      // Glistening scale crescents along the dorsal line
+      for (var sc = 1; sc <= 3; sc++) {
+        var scNode = nodes[sc];
+        ctx.beginPath();
+        ctx.arc(scNode.x, scNode.y, W * 0.22, scNode.angle - 0.9, scNode.angle + 0.9);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+      }
+
+      // Step D: Eyes & Snout Specular
+      for (var eyeSide = -1; eyeSide <= 1; eyeSide += 2) {
+        var eyeAng = nodes[0].angle + eyeSide * 0.72;
+        var eyeDist = L * 0.13;
+        var eyeX = nodes[0].x + Math.cos(eyeAng) * eyeDist;
+        var eyeY = nodes[0].y + Math.sin(eyeAng) * eyeDist;
+
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#1c0802';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(eyeX - 0.4, eyeY - 0.4, 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+    }
+  }
+
   /* ── Aurora (sine-wave light bands) ─────────────────────────── */
   function drawAurora() {
     ctx.clearRect(0, 0, w, h);
@@ -488,15 +1266,20 @@
     var data = img.data;
     var pal = themePalette();
 
-    var angle = t * 0.00055;
+    var angle = t * 0.00012;
     var cosA = Math.cos(angle), sinA = Math.sin(angle);
-    var zoomPulse = 1 + Math.sin(t * 0.00023) * 0.4 + Math.sin(t * 0.00061) * 0.15;
+    var zoomPulse = 1 + Math.sin(t * 0.00008) * 0.25;
     var scale = (MANDEL_ZOOM / cw) / zoomPulse;
-    var driftX = Math.sin(t * 0.00037) * 0.16 + Math.sin(t * 0.00081) * 0.06;
-    var driftY = Math.cos(t * 0.00029) * 0.13 + Math.cos(t * 0.00068) * 0.05;
-    var colorPhase = t * 0.0011;
+    var driftX = Math.sin(t * 0.00009) * 0.12;
+    var driftY = Math.cos(t * 0.00007) * 0.10;
+    var colorPhase = t * 0.00025;
+
+    var themeId = currentTheme();
+    var isGoldfish = (themeId === 'goldfish');
 
     for (var py = 0; py < ch; py++) {
+      var scY = Math.floor(py / 6);
+      var scRowOffset = (scY % 2 === 1) ? 3 : 0;
       for (var px = 0; px < cw; px++) {
         var nx = (px - cw / 2) * scale;
         var ny = (py - ch / 2) * scale;
@@ -523,8 +1306,14 @@
           var logZn = Math.log(x2 + y2) / 2;
           var nu = Math.log(logZn / Math.LN2) / Math.LN2;
           var smooth = (iter + 1 - nu) / MANDEL_MAX_ITER;
-          col = paletteColor(pal, smooth * 2.2 + colorPhase);
-          data[idx] = col[0]; data[idx + 1] = col[1]; data[idx + 2] = col[2];
+          col = paletteColor(pal, smooth * 0.85 + colorPhase);
+          var r = col[0], g = col[1], b = col[2];
+          if (isGoldfish) {
+            var scX = (px + scRowOffset) % 6 - 3;
+            var scD = Math.sqrt(scX * scX + (py % 6) * (py % 6));
+            if (scD >= 2.0 && scD <= 3.2) { r = Math.min(255, r + 45); g = Math.min(255, g + 35); }
+          }
+          data[idx] = r; data[idx + 1] = g; data[idx + 2] = b;
         }
         data[idx + 3] = 255;
       }
@@ -931,6 +1720,7 @@
     else if (currentBg === 'aurora')    drawAurora();
     else if (currentBg === 'petals')    drawPetals();
     else if (currentBg === 'hive')      drawHive();
+    else if (currentBg === 'goldfish')  drawGoldfish();
     else if (currentBg === 'mandelbrot') drawMandelbrot(now);
     else if (currentBg === 'lavalamp') {
       if (!lavaRenderer || !lavaRenderer.draw(ctx, w, h, now, lavaMouse)) {
@@ -964,12 +1754,14 @@
 
     if (!canvas && !mount()) return;
     canvas.style.display = '';
+    canvas.dataset.bg = bg;
 
     // Re-init data if switching modes
     if (bg === 'mesh')      { blobs  = null; makeBlobs();     }
     if (bg === 'particles') { pts    = null; makeParticles(); }
     if (bg === 'petals')    { petals = null; makePetals();    }
     if (bg === 'hive')      { bees   = null; makeHive();      }
+    if (bg === 'goldfish')  { goldfishSchool = null; goldfishRipples = null; goldfishBubbles = null; makeGoldfish(); }
     if (bg === 'mandelbrot') { loadMandelRenderer(); mandel = null; makeMandelbrot(); }
     if (bg === 'lavalamp')  { loadLavaRenderer(); lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
 
@@ -1029,6 +1821,7 @@
       if (currentBg === 'particles') { pts    = null; makeParticles(); }
       if (currentBg === 'petals')    { petals = null; makePetals();    }
       if (currentBg === 'hive')      { bees   = null; makeHive();      }
+      if (currentBg === 'goldfish')  { goldfishSchool = null; goldfishRipples = null; goldfishBubbles = null; makeGoldfish(); }
       if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
       if (currentBg === 'lavalamp' && lavaBlobs) {
         lavaBlobs.forEach(function (b) { b.x *= w / (b._width || w); b.y *= h / (b._height || h); b._width = w; b._height = h; });
@@ -1049,6 +1842,9 @@
       var bg = bgForTheme(theme);
       if (bg !== currentBg) start(bg);
       if (currentBg === 'mesh') makeBlobs();
+      if (currentBg === 'petals') { petals = null; makePetals(); }
+      if (currentBg === 'goldfish') { goldfishSchool = null; goldfishRipples = null; goldfishBubbles = null; makeGoldfish(); }
+      if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
     });
   }
 

@@ -202,7 +202,8 @@
         self.setPlayed(str.label, 0);
         Audio.blip(freqOfMidi(str.openMidi), 550);
       });
-      lane.appendChild(head);
+      head.classList.add('vln-hue-' + str.hue);
+      document.getElementById('vlnOpenStrings').appendChild(head);
 
       var track = document.createElement('div');
       track.className = 'vln-track';
@@ -355,19 +356,17 @@
     track.addEventListener('pointerdown', onDown);
   };
 
-  var NECK_TAPER = 0.09; /* must match the clip-path inset in violin.css */
 
   FingerboardWidget.prototype.render = function () {
     var self = this;
-    /* The board narrows toward the nut (see NECK_TAPER); the E string sits flush against
-       that outer edge, so its note labels need extra clearance near the top or the taper
-       clips them. Measured once per render since it depends on the rendered board width. */
-    var taperMaxPx = self.root.getBoundingClientRect().width * NECK_TAPER;
+    self.root.classList.toggle('has-pattern', !!self.highlight);
     self.root.dataset.span = self.span === FIRST_SPAN ? 'first' : 'full';
 
     STRINGS.forEach(function (str) {
       var entry = self.laneEls[str.label];
       var track = entry.track;
+      var openButton = document.querySelector('.vln-open-strings .vln-hue-' + str.hue);
+      openButton.setAttribute('aria-pressed', String(self.played[str.label] === 0));
       track.setAttribute('aria-valuemax', String(self.span));
       if (self.played[str.label] !== undefined) {
         track.setAttribute('aria-valuenow', String(self.played[str.label]));
@@ -396,12 +395,16 @@
         });
       }
 
+      var openPC = mod12(str.openMidi);
+      openButton.classList.toggle('is-pattern-note', !!highlightSet && highlightSet.hasOwnProperty(openPC));
+      openButton.classList.toggle('is-outside-pattern', !!highlightSet && !highlightSet.hasOwnProperty(openPC));
+
       var lastLabelY = -Infinity;
-      for (var i = 0; i <= self.span; i++) {
+      for (var i = 1; i <= self.span; i++) {
         var midi = str.openMidi + i;
         var posPct = (semitoneFrac(i) / semitoneFrac(self.span)) * 100;
         var tick = document.createElement('div');
-        tick.className = 'vln-tick' + (i === 0 ? ' vln-tick-open' : '');
+        tick.className = 'vln-tick' + (i === 0 ? ' vln-tick-open' : '') + (self.span === FIRST_SPAN ? ' vln-teaching-dot' : '');
         tick.style.top = posPct + '%';
         tick.setAttribute('data-semitones', String(i));
         tick.setAttribute('data-midi', String(midi));
@@ -436,7 +439,7 @@
           var name = document.createElement('span');
           name.className = 'vln-tick-name';
           name.textContent = noteName(midi);
-          if (str.label === 'E') name.style.right = (3 + taperMaxPx * (1 - posPct / 100)) + 'px';
+
           tick.appendChild(name);
         }
 
@@ -671,10 +674,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateRelated();
     compact.addEventListener('change', updateRelated);
     var guide = document.querySelector('.vln-guide');
-    var phone = window.matchMedia('(max-width: 600px)');
-    function updateGuide() { guide.open = !phone.matches; }
-    updateGuide();
-    phone.addEventListener('change', updateGuide);
+    if (guide) guide.open = false;
   });
 
   var readout = document.getElementById('vlnReadout');

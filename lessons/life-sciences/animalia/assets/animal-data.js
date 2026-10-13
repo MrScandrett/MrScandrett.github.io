@@ -9,12 +9,12 @@ const ANIMAL_KINGDOM_DATA = {
     "Porifera": {
       name: "Porifera",
       commonName: "Sponges",
-      description: "The most primitive animals, lacking true tissues and organized nervous systems. They are filter feeders that pull nutrients from water.",
+      description: "Sponges are living animals without true tissues or a nervous system. Water flowing through pores brings food particles to specialized cells.",
       traits: ["No true tissues", "Asymmetrical", "Sessile (Fixed in place)", "Filter feeders"],
       examples: ["Barrel Sponge", "Glass Sponge", "Red Sponge"],
-      keyFact: "They are the only animals that can be put through a blender and will reform into a sponge!",
+      keyFact: "In some sponge species, separated cells can reaggregate under suitable laboratory conditions. This is not a property of every sponge.",
       symmetry: "Asymmetrical",
-      skeleton: "None (Spicules)",
+      skeleton: "Spicules and/or spongin fibers",
       movement: "Sessile"
     },
     "Cnidaria": {
@@ -23,10 +23,10 @@ const ANIMAL_KINGDOM_DATA = {
       description: "Named for their stinging cells (Cnidocytes), these radially symmetric animals use tentacles to capture prey. Ancient lineage with simple nervous systems.",
       traits: ["Radial Symmetry", "Cnidocytes (Stinging cells)", "Two tissue layers", "Gastrovascular cavity"],
       examples: ["Moon Jellyfish", "Sea Anemone", "Brain Coral", "Portuguese Man o' War"],
-      keyFact: "Some jellyfish are effectively immortal, able to revert their cells to a younger state through a process called transdifferentiation.",
+      keyFact: "Some jellyfish can return to an earlier life stage under certain conditions; they can still die from disease or predation.",
       symmetry: "Radial",
-      skeleton: "Gelatinous (No solid support)",
-      movement: "Drift or limited movement"
+      skeleton: "Hydrostatic support; corals may build calcium carbonate skeletons",
+      movement: "Swimming medusae; mostly attached polyps"
     },
     "Mollusca": {
       name: "Mollusca",
@@ -45,7 +45,7 @@ const ANIMAL_KINGDOM_DATA = {
       description: "By far the largest phylum. Characterized by segmented bodies, jointed appendages, and a rigid exoskeleton made of chitin. Includes insects, spiders, crustaceans.",
       traits: ["Exoskeleton (Chitin)", "Segmented bodies", "Jointed appendages", "Open circulatory system"],
       examples: ["Honeybee", "Lobster", "Black Widow Spider", "Monarch Butterfly"],
-      keyFact: "Arthropods account for over 80% of all known living animal species—roughly 1.4 million described species.",
+      keyFact: "Arthropoda contains more described animal species than any other phylum. Species counts change as scientists discover and revise species.",
       symmetry: "Bilateral",
       skeleton: "External (Chitin Exoskeleton)",
       movement: "Jointed legs, wings, or swimming"
@@ -56,20 +56,20 @@ const ANIMAL_KINGDOM_DATA = {
       description: "Unique radially symmetric animals with remarkable regenerative abilities. They use a water vascular system for movement and feeding.",
       traits: ["Five-part Radial Symmetry", "Water Vascular System", "Regeneration", "Tube feet"],
       examples: ["Sea Star (Starfish)", "Purple Sea Urchin", "Sea Cucumber", "Brittle Star"],
-      keyFact: "Sea stars don't have blood; they use filtered seawater to pump nutrients through their water vascular system.",
-      symmetry: "Radial (Five-part)",
+      keyFact: "The water vascular system operates tube feet for movement, feeding, and gas exchange. It is not simply a replacement blood circulation system.",
+      symmetry: "Usually five-part radial as adults; bilateral larvae",
       skeleton: "Internal (Calcite ossicles)",
       movement: "Water vascular system, tube feet"
     },
     "Chordata": {
       name: "Chordata",
       commonName: "Vertebrates & Kin",
-      description: "The phylum containing all vertebrates (animals with backbones) plus some primitive relatives. Characterized by a notochord, dorsal nerve cord, and pharyngeal slits.",
-      traits: ["Notochord (becomes spine)", "Hollow Nerve Cord (becomes brain/spinal cord)", "Pharyngeal Slits", "Post-anal Tail"],
+      description: "The phylum containing all vertebrates (animals with backbones) plus invertebrate relatives such as tunicates and lancelets. Characterized by a notochord, dorsal nerve cord, and pharyngeal slits.",
+      traits: ["Notochord (supporting rod at some life stage)", "Hollow Nerve Cord (becomes brain/spinal cord)", "Pharyngeal Slits", "Post-anal Tail"],
       examples: ["Great White Shark", "Bald Eagle", "African Elephant", "Human", "Blue Whale"],
-      keyFact: "While most Chordates are vertebrates, some primitive members like the 'Sea Squirt' lose their backbone-equivalent as adults.",
+      keyFact: "Tunicate larvae have a notochord but no vertebral column. Chordata and Vertebrata are not interchangeable groups.",
       symmetry: "Bilateral",
-      skeleton: "Internal (Bone or Cartilage)",
+      skeleton: "Bone/cartilage in vertebrates; notochord in other chordates",
       movement: "Muscle and skeletal system"
     }
   },
@@ -84,17 +84,17 @@ const ANIMAL_KINGDOM_DATA = {
     "Amphibia": {
       commonName: "Amphibians",
       examples: ["Frog", "Salamander", "Newt"],
-      traits: ["Moist skin", "Double life (water & land)", "Cold-blooded"]
+      traits: ["Moist skin", "Double life (water & land)", "Ectothermic (depends on external heat)"]
     },
     "Reptilia": {
       commonName: "Reptiles",
       examples: ["Snake", "Turtle", "Komodo Dragon"],
-      traits: ["Dry, scaly skin", "Cold-blooded", "Lay eggs on land"]
+      traits: ["Dry, scaly skin", "Ectothermic (depends on external heat)", "Many lay shelled eggs; some give live birth"]
     },
     "Aves": {
       commonName: "Birds",
       examples: ["Bald Eagle", "Penguin", "Hummingbird"],
-      traits: ["Feathers", "Warm-blooded", "Hollow bones", "Lay eggs"]
+      traits: ["Feathers", "Warm-blooded", "Many bones have air spaces", "Lay eggs"]
     },
     "Mammalia": {
       commonName: "Mammals",

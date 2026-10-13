@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fake Book · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="A fake book of public-domain lead sheets: transpose for any instrument, turn melodies upside down and backwards, change the rhythm, explore chord inversions, and play along with a metronome and a band." />
+  <meta name="description" content="A fake book of public-domain lead sheets and jazz chord practice charts: transpose for any instrument, turn melodies upside down and backwards, change the rhythm, explore chord inversions, and play along with a metronome and a band." />
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../../assets/css/lessons/fake-book.css" />
   <script src="../../assets/js/music-notation.js"></script>
 </head>
-<body class="theme-liquid-woodland theme-steam">
+<body class="fb-focused theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <div class="ll-viewport">
@@ -47,35 +47,145 @@
     <div class="ll-stage">
       <div class="ll-sim">
         <main id="main-content" class="fb-shell" data-glossary-root>
-          <section class="fb-hero">
-            <p class="eyebrow">Fake book · Public-domain tunes · Play along with a band</p>
-            <h1>Fake book &amp; practice stand.</h1>
-            <p class="hero-lede">Choose a tune, set your instrument and key, then play. Build your repertoire, hear the changes, and keep time with the band.</p>
-          </section>
-
-          <nav class="ll-lesson-steps" aria-label="Lesson sections">
-            <a href="#book"><b>01</b> Fake book</a>
-            <a href="#read"><b>02</b> Read a lead sheet</a>
-            <a href="#grow"><b>03</b> Grow an idea</a>
-            <a href="#practice"><b>04</b> Practice plan</a>
-            <a href="#free"><b>05</b> Why it’s free</a>
-            <a href="#teachers"><b>06</b> For teachers</a>
-          </nav>
-
+          <header class="fb-intro"><h1>Fake book</h1><p>Choose a tune, listen, then play along.</p><button type="button" class="fb-btn" data-fb-guide>Guide</button></header>
           <section id="book" class="fb-section" aria-labelledby="bookHead">
             <p class="section-kicker">01 · The fake book</p>
             <h2 id="bookHead">Pick a tune, press play</h2>
-            <p class="section-lede">Every tune here is in the <span data-glossary="public domain">public domain</span> or was written for this site, so you can copy it, perform it and change it. Your settings are saved in this browser. Press <kbd>Space</kbd> to start and stop.</p>
+            <p class="section-lede">Settings stay in this browser. Press <kbd>Space</kbd> to play or stop.</p>
 
             <div class="fb" id="fakebook" data-src="../../data/fake-book.json">
               <details class="fb-library-wrap fb-disclosure">
                 <summary>Choose a tune</summary>
                 <div class="fb-library-head">
                   <h3 class="fb-library-heading">Built-in tunes</h3>
-                  <p class="fb-library-sub">Public-domain lead sheets with full melody and band arrangements</p>
+                  <p class="fb-library-sub">Public-domain melodies and jazz chord charts · check each tune’s label</p>
                 </div>
                 <div class="fb-library" data-fb-library role="group" aria-label="Built-in tunes in the fake book"></div>
               </details>
+
+              <div class="fb-transport" id="fbTransport" role="group" aria-label="Play-along controls">
+                <button type="button" class="fb-play" data-fb-play aria-pressed="false">
+                  <svg class="fb-ico-play" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z" fill="currentColor"/></svg>
+                  <svg class="fb-ico-stop" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="4.5" width="11" height="11" rx="1.5" fill="currentColor"/></svg>
+                  <span>Play</span>
+                </button>
+                <div class="fb-tempo">
+                  <label for="fbTempo">Tempo</label>
+                  <button type="button" class="fb-mini" data-fb-tempo-step="-4" aria-label="Slower">−</button>
+                  <input id="fbTempo" type="range" min="40" max="240" step="1" data-fb-tempo />
+                  <button type="button" class="fb-mini" data-fb-tempo-step="4" aria-label="Faster">+</button>
+                  <input type="number" min="40" max="240" data-fb-tempo-num aria-label="Tempo in beats per minute" />
+                  <span class="fb-unit">BPM</span>
+                </div>
+                <div class="fb-dots" data-fb-dots aria-hidden="true"></div>
+                <button type="button" class="fb-btn fb-stand-toggle" data-fb-stand aria-pressed="false">Stand</button>
+                <button type="button" class="fb-btn" data-fb-tools aria-expanded="false" aria-controls="fbTools">Tools</button>
+                <p class="fb-banner" data-fb-banner role="status" hidden></p>
+              </div>
+              <button type="button" class="fb-floating-stop" data-fb-floating-stop hidden aria-label="Stop playback">■ <span>Stop music</span></button>
+
+              <div class="fb-next-task"><p data-fb-task aria-live="polite">Listen once. Follow the highlighted notes.</p><button type="button" class="fb-btn" data-fb-task-next>Next task</button></div>
+              <section data-fb-score-parts aria-label="Score practice voices" hidden></section>
+
+              <article class="fb-sheet-card" aria-labelledby="fbTitle">
+                <header class="fb-sheet-head">
+                  <div>
+                    <h3 id="fbTitle" data-fb-title>Loading…</h3>
+                  </div>
+                  <div class="fb-sheet-head-actions">
+                    <p class="fb-keyline" data-fb-keyline></p>
+                    <div class="fb-view-switch" role="group" aria-label="Sheet display mode">
+                      <button type="button" class="fb-view-tab is-active" data-fb-view="lead" aria-pressed="true">𝄞 Lead sheet</button>
+                      <button type="button" class="fb-view-tab" data-fb-view="drums" aria-pressed="false">🥁 Drum notation</button>
+                    </div>
+                    <div class="fb-staff-toggles" data-fb-staff-toggles role="group" aria-label="Extra staves from the imported score" hidden>
+                      <label class="fb-check" data-fb-has="bass"><input type="checkbox" data-fb-show-bass checked /> <span>𝄢 Bass clef</span></label>
+                      <label class="fb-check" data-fb-has="tab"><input type="checkbox" data-fb-show-tab /> <span>Tab</span></label>
+                      <label class="fb-field fb-tab-pos"><span>Fingering</span>
+                        <select data-fb-tab-pos aria-label="Where on the neck the tab is fingered">
+                          <option value="auto">Auto: fewest shifts</option>
+                          <option value="0">Open position</option>
+                          <option value="2">2nd position</option>
+                          <option value="3">3rd position</option>
+                          <option value="5">5th position</option>
+                          <option value="7">7th position</option>
+                          <option value="9">9th position</option>
+                          <option value="12">12th position</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                </header>
+                <p class="fb-tab-note" data-fb-tab-note role="status" hidden></p>
+                <div class="fb-sheet" data-fb-sheet data-contrast-guard-skip></div>
+                <details class="fb-instrument-help fb-disclosure"><summary>Instrument help · chords and melody fingering</summary>
+                <section class="fb-live-chords" data-fb-live-chords aria-label="Live chord changes and instrument shapes">
+                  <div class="fb-live-chords-bar">
+                    <div class="fb-live-curr-wrap">
+                      <span class="fb-live-badge">Now</span>
+                      <strong class="fb-live-chordname" data-fb-live-chordname>--</strong>
+                      <span class="fb-live-chordnotes" data-fb-live-chordnotes></span>
+                      <span class="fb-live-chordinfo" data-fb-live-chordinfo></span>
+                    </div>
+                    <div class="fb-live-next-wrap" data-fb-live-next-wrap>
+                      <span class="fb-live-next-badge">Next</span>
+                      <span class="fb-live-next-text" data-fb-live-chordnext>--</span>
+                    </div>
+                    <div class="fb-live-controls">
+                      <div class="fb-instr-tabs fb-live-tabs" role="tablist" aria-label="Chord visualizer instrument">
+                        <button type="button" class="fb-instr-tab is-active" data-engine-inst="piano" role="tab" aria-selected="true">🎹 Piano</button>
+                        <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
+                      </div>
+                      <label class="fb-check fb-live-follow-check" title="Auto-scroll sheet music as tune plays">
+                        <input type="checkbox" data-fb-follow-sync checked />
+                        <span>Follow music</span>
+                      </label>
+                      <button type="button" class="fb-btn fb-btn-small fb-live-toggle" data-fb-live-toggle aria-pressed="true">Hide shapes</button>
+                    </div>
+                  </div>
+                  <div class="fb-live-visualizer" data-fb-live-visualizer>
+                    <div class="fb-visualizer-container">
+                      <div class="fb-keys" data-fb-keys></div>
+                      <div class="fb-fretboard" data-fb-fretboard hidden></div>
+                    </div>
+                  </div>
+                </section>
+                <section class="fb-melody-view" data-fb-melody-view data-contrast-guard-skip aria-label="Play the melody on piano or guitar"></section>
+                </details>
+                <div class="fb-drum-legend" data-fb-drum-legend hidden>
+                  <span class="fb-drum-legend-title">🥁 Drum key:</span>
+                  <span>Top line / space (✕) = Hi-hat / Ride cymbal</span>
+                  <span>Middle space (●) = Snare (✕ = Rim click)</span>
+                  <span>Bottom space (●) = Bass drum (Kick)</span>
+                  <span>Below staff (✕) = Hi-hat foot pedal</span>
+                </div>
+                <div class="fb-barpop" data-fb-barpop role="dialog" aria-labelledby="fbBarPopTitle" hidden>
+                  <div class="fb-barpop-head">
+                    <strong id="fbBarPopTitle" data-fb-barpop-title>Bar</strong>
+                    <div class="fb-instr-tabs" role="tablist" aria-label="Show shapes for">
+                      <button type="button" class="fb-instr-tab is-active" data-engine-inst="piano" role="tab" aria-selected="true">🎹 Piano</button>
+                      <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
+                    </div>
+                    <button type="button" class="fb-drawer-close" data-fb-barpop-close aria-label="Close bar chords">✕</button>
+                  </div>
+                  <div class="fb-barpop-cards" data-fb-barpop-cards></div>
+                  <p class="fb-barpop-note" data-fb-barpop-note></p>
+                </div>
+                <div class="fb-sheet-hint">
+                  <span>Click a chord symbol to see and hear it.</span>
+                  <span class="fb-barclick" role="radiogroup" aria-label="What clicking a bar does">
+                    <span>Click a bar to</span>
+                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="shapes" checked /><span>show its chord shapes</span></label>
+                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="loop" /><span>start a loop there</span></label>
+                  </span>
+                  <span>Shift-click a bar to end the loop there.</span>
+                </div>
+                <details class="fb-disclosure"><summary>About this tune and its source</summary>
+                <p class="fb-meta" data-fb-meta></p>
+                <p class="fb-about" data-fb-about></p>
+                <p class="fb-source"><strong>Source:</strong> <span data-fb-source></span></p>
+                </details>
+              </article>
 
               <div class="fb-imports-wrap" data-fb-imports-wrap hidden>
                 <div class="fb-library-head">
@@ -115,137 +225,9 @@
                 </div>
               </details>
 
-              <div class="fb-transport" id="fbTransport" role="group" aria-label="Play-along controls">
-                <button type="button" class="fb-play" data-fb-play aria-pressed="false">
-                  <svg class="fb-ico-play" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3.5v13l11-6.5z" fill="currentColor"/></svg>
-                  <svg class="fb-ico-stop" viewBox="0 0 20 20" aria-hidden="true"><rect x="4.5" y="4.5" width="11" height="11" rx="1.5" fill="currentColor"/></svg>
-                  <span>Play</span>
-                </button>
-                <div class="fb-tempo">
-                  <label for="fbTempo">Tempo</label>
-                  <button type="button" class="fb-mini" data-fb-tempo-step="-4" aria-label="Slower">−</button>
-                  <input id="fbTempo" type="range" min="40" max="240" step="1" data-fb-tempo />
-                  <button type="button" class="fb-mini" data-fb-tempo-step="4" aria-label="Faster">+</button>
-                  <input type="number" min="40" max="240" data-fb-tempo-num aria-label="Tempo in beats per minute" />
-                  <span class="fb-unit">BPM</span>
-                </div>
-                <div class="fb-dots" data-fb-dots aria-hidden="true"></div>
-                <label class="fb-field fb-field-inline">
-                  <span>Play</span>
-                  <select data-fb-mode>
-                    <option value="score" disabled>Play the score</option>
-                    <option value="all">Melody + band</option>
-                    <option value="band">Band only: you play the tune</option>
-                    <option value="trade">Trade fours</option>
-                    <option value="melody">Melody + click</option>
-                    <option value="click">Click only</option>
-                  </select>
-                </label>
-                <button type="button" class="fb-btn fb-stand-toggle" data-fb-stand aria-pressed="false">Music stand view</button>
-                <p class="fb-banner" data-fb-banner role="status" hidden></p>
-              </div>
-              <button type="button" class="fb-floating-stop" data-fb-floating-stop hidden aria-label="Stop playback">■ <span>Stop music</span></button>
-
-              <section data-fb-score-parts aria-label="Score practice voices" hidden></section>
-
-              <article class="fb-sheet-card" aria-labelledby="fbTitle">
-                <header class="fb-sheet-head">
-                  <div>
-                    <h3 id="fbTitle" data-fb-title>Loading…</h3>
-                    <p class="fb-meta" data-fb-meta></p>
-                  </div>
-                  <div class="fb-sheet-head-actions">
-                    <p class="fb-keyline" data-fb-keyline></p>
-                    <div class="fb-view-switch" role="group" aria-label="Sheet display mode">
-                      <button type="button" class="fb-view-tab is-active" data-fb-view="lead" aria-pressed="true">𝄞 Lead sheet</button>
-                      <button type="button" class="fb-view-tab" data-fb-view="drums" aria-pressed="false">🥁 Drum notation</button>
-                    </div>
-                    <div class="fb-staff-toggles" data-fb-staff-toggles role="group" aria-label="Extra staves from the imported score" hidden>
-                      <label class="fb-check" data-fb-has="bass"><input type="checkbox" data-fb-show-bass checked /> <span>𝄢 Bass clef</span></label>
-                      <label class="fb-check" data-fb-has="tab"><input type="checkbox" data-fb-show-tab /> <span>Tab</span></label>
-                      <label class="fb-field fb-tab-pos"><span>Fingering</span>
-                        <select data-fb-tab-pos aria-label="Where on the neck the tab is fingered">
-                          <option value="auto">Auto: fewest shifts</option>
-                          <option value="0">Open position</option>
-                          <option value="2">2nd position</option>
-                          <option value="3">3rd position</option>
-                          <option value="5">5th position</option>
-                          <option value="7">7th position</option>
-                          <option value="9">9th position</option>
-                          <option value="12">12th position</option>
-                        </select>
-                      </label>
-                    </div>
-                  </div>
-                </header>
-                <section class="fb-live-chords" data-fb-live-chords aria-label="Live chord changes and instrument shapes">
-                  <div class="fb-live-chords-bar">
-                    <div class="fb-live-curr-wrap">
-                      <span class="fb-live-badge">Now</span>
-                      <strong class="fb-live-chordname" data-fb-live-chordname>--</strong>
-                      <span class="fb-live-chordnotes" data-fb-live-chordnotes></span>
-                      <span class="fb-live-chordinfo" data-fb-live-chordinfo></span>
-                    </div>
-                    <div class="fb-live-next-wrap" data-fb-live-next-wrap>
-                      <span class="fb-live-next-badge">Next</span>
-                      <span class="fb-live-next-text" data-fb-live-chordnext>--</span>
-                    </div>
-                    <div class="fb-live-controls">
-                      <div class="fb-instr-tabs fb-live-tabs" role="tablist" aria-label="Chord visualizer instrument">
-                        <button type="button" class="fb-instr-tab is-active" data-engine-inst="piano" role="tab" aria-selected="true">🎹 Piano</button>
-                        <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
-                      </div>
-                      <label class="fb-check fb-live-follow-check" title="Auto-scroll sheet music as tune plays">
-                        <input type="checkbox" data-fb-follow-sync checked />
-                        <span>Follow music</span>
-                      </label>
-                      <button type="button" class="fb-btn fb-btn-small fb-live-toggle" data-fb-live-toggle aria-pressed="true">Hide shapes</button>
-                    </div>
-                  </div>
-                  <div class="fb-live-visualizer" data-fb-live-visualizer>
-                    <div class="fb-visualizer-container">
-                      <div class="fb-keys" data-fb-keys></div>
-                      <div class="fb-fretboard" data-fb-fretboard hidden></div>
-                    </div>
-                  </div>
-                </section>
-                <section class="fb-melody-view" data-fb-melody-view data-contrast-guard-skip aria-label="Play the melody on piano or guitar"></section>
-                <p class="fb-tab-note" data-fb-tab-note role="status" hidden></p>
-                <div class="fb-sheet" data-fb-sheet data-contrast-guard-skip></div>
-                <div class="fb-drum-legend" data-fb-drum-legend hidden>
-                  <span class="fb-drum-legend-title">🥁 Drum key:</span>
-                  <span>Top line / space (✕) = Hi-hat / Ride cymbal</span>
-                  <span>Middle space (●) = Snare (✕ = Rim click)</span>
-                  <span>Bottom space (●) = Bass drum (Kick)</span>
-                  <span>Below staff (✕) = Hi-hat foot pedal</span>
-                </div>
-                <div class="fb-barpop" data-fb-barpop role="dialog" aria-labelledby="fbBarPopTitle" hidden>
-                  <div class="fb-barpop-head">
-                    <strong id="fbBarPopTitle" data-fb-barpop-title>Bar</strong>
-                    <div class="fb-instr-tabs" role="tablist" aria-label="Show shapes for">
-                      <button type="button" class="fb-instr-tab is-active" data-engine-inst="piano" role="tab" aria-selected="true">🎹 Piano</button>
-                      <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
-                    </div>
-                    <button type="button" class="fb-drawer-close" data-fb-barpop-close aria-label="Close bar chords">✕</button>
-                  </div>
-                  <div class="fb-barpop-cards" data-fb-barpop-cards></div>
-                  <p class="fb-barpop-note" data-fb-barpop-note></p>
-                </div>
-                <div class="fb-sheet-hint">
-                  <span>Click a chord symbol to see and hear it.</span>
-                  <span class="fb-barclick" role="radiogroup" aria-label="What clicking a bar does">
-                    <span>Click a bar to</span>
-                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="shapes" checked /><span>show its chord shapes</span></label>
-                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="loop" /><span>start a loop there</span></label>
-                  </span>
-                  <span>Shift-click a bar to end the loop there.</span>
-                </div>
-                <p class="fb-about" data-fb-about></p>
-                <p class="fb-source"><strong>Source:</strong> <span data-fb-source></span></p>
-              </article>
-
-              <div class="fb-dock" data-fb-dock>
-                <div class="fb-dock-rail" data-contrast-guard-skip role="tablist" aria-label="Practice settings" aria-orientation="vertical">
+              <div class="fb-dock" id="fbTools" data-fb-dock hidden role="dialog" aria-label="Practice tools">
+                <div class="fb-tools-head"><strong>Practice tools</strong><button type="button" class="fb-btn" data-fb-tools-close aria-label="Close practice tools">Close</button></div>
+                <div class="fb-dock-rail" data-contrast-guard-skip role="tablist" aria-label="Practice settings" aria-orientation="horizontal">
                   <span class="fb-dock-head" aria-hidden="true">⚙<br />Settings</span>
                   <button type="button" class="fb-dock-tab" id="fbTab-changes" role="tab" aria-selected="false" aria-controls="fbPane-changes" data-fb-dock-tab="changes"><span class="fb-dock-ico" aria-hidden="true">𝄆</span><span class="fb-dock-lbl">Changes</span><span class="fb-dock-val" data-fb-dock-val="changes"></span></button>
                   <button type="button" class="fb-dock-tab" id="fbTab-notes" role="tab" aria-selected="false" aria-controls="fbPane-notes" data-fb-dock-tab="notes"><span class="fb-dock-ico" aria-hidden="true">♫</span><span class="fb-dock-lbl">Liner notes</span><span class="fb-dock-val" data-fb-dock-val="notes"></span></button>
@@ -414,6 +396,18 @@
                   <div class="fb-dock-pane" id="fbPane-band" role="tabpanel" aria-labelledby="fbTab-band" data-fb-pane="band" hidden>
                 <section class="fb-panel fb-panel-wide" aria-labelledby="fbBandHead">
                   <h3 id="fbBandHead">Band &amp; metronome</h3>
+                <label class="fb-field fb-field-inline">
+                  <span>Play</span>
+                  <select data-fb-mode>
+                    <option value="score" disabled>Play the score</option>
+                    <option value="all">Melody + band</option>
+                    <option value="band">Band only: you play the tune</option>
+                    <option value="trade">Trade fours</option>
+                    <option value="melody">Melody + click</option>
+                    <option value="click">Click only</option>
+                  </select>
+                </label>
+
                   <div class="fb-grid">
                     <label class="fb-field"><span>Band style</span><select data-fb-style></select></label>
                     <label class="fb-field"><span>Feel</span><select data-fb-feel><option value="straight">Straight eighths</option><option value="swing">Swing eighths</option></select></label>
@@ -461,6 +455,8 @@
             </div>
           </section>
 
+          <details class="fb-learning fb-disclosure"><summary>Learn and practice · reading, experiments, and teaching notes</summary>
+          <nav class="ll-lesson-steps" aria-label="Learning topics"><a href="#read">Read a lead sheet</a><a href="#grow">Change an idea</a><a href="#practice">Practice plan</a><a href="#free">Sources and rights</a><a href="#teachers">For teachers</a></nav>
           <section id="read" class="fb-section" aria-labelledby="readHead">
             <p class="section-kicker">02 · Read a lead sheet</p>
             <h2 id="readHead">One line of melody, a row of chords</h2>
@@ -528,7 +524,7 @@
               <article><h3>The 95-year rule</h3><p>In the United States, a song published between 1927 and 1977 is protected for 95 years. So as of 2026, everything published before 1931 is in the public domain. Most of these tunes are much older: Greensleeves was registered in London in 1580.</p></article>
               <article><h3>The tune, not every version</h3><p>A new arrangement, new lyrics, or a recording can have its own copyright even when the melody is free. That is why these lead sheets were written for this site from the old melodies, with simple chords added.</p></article>
               <article><h3>Made here, free to share</h3><p>“Classroom Blues” is an original riff written for this site over the <span data-glossary="twelve-bar blues">twelve-bar blues</span> form. Any class may copy it, play it and change it.</p></article>
-              <article><h3>Elsewhere in the world</h3><p>Copyright terms are different in other countries. The tunes here are traditional or centuries old, so they are free in most places. Check before you publish a recording.</p></article>
+              <article><h3>Elsewhere in the world</h3><p>Copyright terms are different in other countries. Melody charts identify their early sources. Newer jazz standards are labeled Chords only: these practice arrangements include harmony and form, without melody, lyrics or recordings. Check before you publish a recording.</p></article>
             </div>
           </section>
 
@@ -541,10 +537,11 @@
               <li><strong>Play the melody.</strong> Under the chord shapes, the melody panel shows each note of the tune on piano (finger numbers, smooth fingering or five-finger positions, either hand) or guitar (string, fret and finger in open position, a fixed position, or an automatic route). It follows the band, or step through it with ◀ ▶.</li>
               <li><strong>Theory on demand.</strong> Click any chord symbol to show its notes on the keyboard. Switch voicings to compare root position, inversions and smooth voice leading.</li>
               <li><strong>Composition prompt.</strong> Students pick one tune and one transformation, then write their own 4-bar variation in the <a href="sheet-music-trainer.html">Sheet Music Trainer</a> or play it on the <a href="piano.html">piano</a>.</li>
-              <li><strong>Adding tunes.</strong> Tunes live in <code>data/fake-book.json</code>. The <code>format</code> block at the top explains the notation. Add only public-domain or original melodies, and say where each one came from.</li>
+              <li><strong>Adding tunes.</strong> Tunes live in <code>data/fake-book.json</code>. The <code>format</code> block at the top explains the notation. Add only public-domain or original melodies, and say where each one came from. Harmony-only practice charts must be labeled Chords only, with section markers and a clear arrangement note.</li>
               <li><strong>Link straight to a tune.</strong> Add <code>#tune=saints</code> (or any tune id) to the page address.</li>
             </ul>
           </section>
+          </details>
         </main>
       </div>
 
@@ -596,7 +593,6 @@
   <script src="../../assets/js/lessons/fake-book-tab.js"></script>
   <script src="../../assets/js/lessons/fake-book-musicxml.js"></script>
   <script src="../../assets/js/lessons/fake-book.js"></script>
-  <script src="../../assets/js/lessons/fake-book-layout.js"></script>
   <script src="../../assets/js/site-glossary.js"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>
@@ -605,5 +601,6 @@
   <script src="../../assets/js/lesson-content.js"></script>
   <script src="../../assets/js/music-family.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lessons/fake-book-layout.js"></script>
 </body>
 </html>

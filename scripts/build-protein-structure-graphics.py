@@ -4,6 +4,7 @@ Run: python3 scripts/build-protein-structure-graphics.py
 """
 from pathlib import Path
 import json, math
+from html import escape
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'assets/images/protein-structure'
 DATA=json.loads((OUT/'coordinates.json').read_text())
@@ -26,12 +27,12 @@ for x,y,el in pts:
  if el=='Cα':
   yy=y-85 if x!=380 else y+85
   line(a,x,y,x,yy,'#16a34a',5);a.append(f'<circle cx="{x}" cy="{yy}" r="26" fill="#16865d"/>');text(a,x,yy+7,'R',22,'white')
- a.append(f'<circle cx="{x}" cy="{y}" r="23" fill="'+('#2563eb' if el=='N' else 'url(#atom)')+'"/>');text(a,x,y+6,el,17,'white')
-text(a,400,80,'PRIMARY · amino-acid order',28)
-text(a,400,120,'Repeating backbone, different side chains',20)
+ a.append(f'<circle cx="{x}" cy="{y}" r="23" fill="'+('#2563eb' if el=='N' else '#475569')+'"/>');text(a,x,y+6,el,17,'white')
+text(a,400,65,'PRIMARY · amino-acid order',30)
+text(a,400,108,'Repeating backbone, different side chains',24)
 text(a,80,365,'N end',18);text(a,710,365,'C end',18)
 text(a,400,455,'Purple links: C–N peptide bonds · green: side chains',20)
-text(a,400,493,'Three-residue fragment · hydrogens omitted · schematic geometry',16)
+text(a,400,500,'Fragment · hydrogens omitted · schematic geometry',20)
 save(a,'primary')
 # Secondary: projected 3D idealized right-handed helix plus pleated sheet.
 a=start('Secondary structure: a right-handed alpha helix and a pleated beta sheet')
@@ -56,7 +57,7 @@ for row in range(3):
  if row<2:
   for x in [430,510,590,670]:line(a,x,y+42,x,y+66,'#64748b',2,'4 5')
 text(a,170,455,'α-helix',24);text(a,555,455,'β-sheet',24)
-text(a,400,503,'Dashed lines: backbone hydrogen bonds (schematic)',18)
+text(a,400,505,'Dashed: backbone hydrogen bonds · idealized motifs',22)
 save(a,'secondary')
 # Smooth actual C-alpha coordinates with Catmull–Rom, project and depth-sort.
 def smooth(points):
@@ -66,6 +67,7 @@ def smooth(points):
   for j in range(7):
    t=j/7
    result.append([.5*(2*p1[k]+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t*t+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t*t*t) for k in range(3)])
+ result.append(points[-1])
  return result
 
 def folded(name,chains,title,subtitle):
@@ -75,15 +77,59 @@ def folded(name,chains,title,subtitle):
   x,y,z=[p[k]-center[k] for k in range(3)]
   return (x*.87+z*.5, y*.94-(z*.87-x*.5)*.34, y*.34+(z*.87-x*.5)*.94)
  coords={c:[rot(p) for p in smooth(ps)] for c,ps in chains.items()}
- points=[p for ps in coords.values() for p in ps];scale=min(570/(max(p[0] for p in points)-min(p[0] for p in points)),345/(max(p[1] for p in points)-min(p[1] for p in points)))
+ points=[p for ps in coords.values() for p in ps];scale=min(570/(max(p[0] for p in points)-min(p[0] for p in points)),300/(max(p[1] for p in points)-min(p[1] for p in points)))
+ midx=(max(p[0] for p in points)+min(p[0] for p in points))/2
+ midy=(max(p[1] for p in points)+min(p[1] for p in points))/2
  colors=['#8652d1','#287da9','#c77127','#279173'];segs=[]
  for idx,(c,ps) in enumerate(coords.items()):
   for p,q in zip(ps,ps[1:]):segs.append(((p[2]+q[2])/2,p,q,colors[idx]))
+ # Depth-dependent shade makes front and rear segments distinguishable.
+ zmin=min(t[0] for t in segs);zmax=max(t[0] for t in segs)
  for z,p,q,color in sorted(segs):
-  x,y=400+p[0]*scale,275-p[1]*scale;X,Y=400+q[0]*scale,275-q[1]*scale
-  line(a,x,y,X,Y,color,8 if len(chains)==1 else 5.5)
+  x,y=400+(p[0]-midx)*scale,265-(p[1]-midy)*scale;X,Y=400+(q[0]-midx)*scale,265-(q[1]-midy)*scale
+  depth=(z-zmin)/(zmax-zmin or 1)
+  rgb=[int(color[k:k+2],16) for k in [1,3,5]]
+  shade='#'+''.join(f'{round(v*(.60+.40*depth)):02x}' for v in rgb)
+  width=12 if len(chains)==1 else 9
+  line(a,x,y,X,Y,shade,width)
+ # Keyed chain labels avoid relying on color alone.
+ if len(chains)>1:
+  for i,(c,ps) in enumerate(coords.items()):
+   text(a,140+i*175,450,('α' if c in ['A','C'] else 'β')+' · chain '+c,23,colors[i])
+ else:
+  text(a,400,450,'One continuous chain · depth-shaded Cα trace',22)
  text(a,400,485,subtitle,20)
- text(a,400,520,'Experimental Cα trace · colors identify chains · other atoms omitted',16)
+ text(a,400,522,'wwPDB coordinates · smoothed trace · other atoms omitted',20)
  save(a,name)
 folded('tertiary',DATA['1MBN'],'TERTIARY · one folded chain','Myoglobin · PDB 1MBN · one continuous polypeptide')
 folded('quaternary',DATA['4HHB'],'QUATERNARY · assembled subunits','Hemoglobin · PDB 4HHB · two α and two β chains')
+
+# Free amino-acid anatomy: bonds terminate at labels rather than crossing them.
+a=start('Free alpha-amino acid in its zwitterionic form')
+text(a,400,55,'FREE AMINO ACID · near neutral pH',28)
+for x,y,X,Y in [(235,273,125,273),(305,273,415,273),(270,235,270,165),(270,311,270,390)]:line(a,x,y,X,Y,'#475569',4)
+a.append('<circle cx="270" cy="273" r="35" fill="#e2e8f0" stroke="#475569" stroke-width="3"/>')
+text(a,270,283,'Cα',26,'#1e293b');text(a,90,283,'H',28,'#1e293b')
+text(a,270,150,'COO⁻',32,'#b91c1c');text(a,478,283,'NH₃⁺',32,'#1d4ed8')
+a.append('<rect x="230" y="390" width="80" height="60" rx="14" fill="#ede9fe" stroke="#6d28d9" stroke-width="3"/>')
+text(a,270,430,'R',32,'#6d28d9')
+text(a,560,130,'Carboxylate: −1',23,'#b91c1c');line(a,345,143,450,125,'#b91c1c',2,'5 5')
+text(a,560,360,'Amino group: +1',23,'#1d4ed8');line(a,478,300,478,329,'#1d4ed8',2,'5 5')
+text(a,530,425,'Variable side chain',23,'#6d28d9');line(a,321,420,411,420,'#6d28d9',2,'5 5')
+text(a,400,510,'General backbone · R = H for glycine · proline has a ring',21)
+save(a,'amino-backbone')
+# Net condensation is separated into reactants and a readable product.
+a=start('Net peptide bond formation between two free amino acids')
+text(a,400,55,'PEPTIDE BOND · net condensation',29)
+text(a,400,97,'Bookkeeping of atoms, not the ribosome mechanism',22)
+text(a,185,177,'H₂N–CH(R₁)–COOH',26,'#1e293b');text(a,400,177,'+',30)
+text(a,610,177,'H₂N–CH(R₂)–COOH',26,'#1e293b')
+line(a,400,213,400,257,'#6d28d9',5)
+a.append('<path d="M389 247 L400 265 L411 247" fill="#6d28d9"/>')
+for x,t in [(80,'H₂N'),(200,'CH(R₁)'),(330,'C'),(430,'N'),(550,'CH(R₂)'),(700,'COOH')]:text(a,x,316,t,28,'#1e293b')
+for x,X in [(112,142),(259,312),(349,411),(449,491),(609,650)]:line(a,x,307,X,307,'#6d28d9' if x==349 else '#475569',6 if x==349 else 3)
+line(a,326,328,326,365,'#b91c1c',3);line(a,334,328,334,365,'#b91c1c',3)
+text(a,330,399,'O',27,'#b91c1c');line(a,430,328,430,363,'#475569',3);text(a,430,399,'H',27,'#1e293b')
+text(a,400,451,'New C–N bond + one H₂O equivalent',26,'#6d28d9')
+text(a,400,510,'Two residues → one peptide bond · R groups remain',22)
+save(a,'peptide-bond')

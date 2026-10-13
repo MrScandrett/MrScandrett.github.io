@@ -21,6 +21,16 @@
     .aa-investigation select { display:block; width:100%; max-width:440px; margin:.5rem 0 1rem; padding:.7rem; border:1px solid #746298; border-radius:8px; color:#1a1535; background:white; font:inherit; }
     .aa-btn:disabled { opacity:.5; cursor:default; }
     .aa-chain-controls { flex-wrap:wrap; }
+    .aa-evidence { overflow-x:auto; margin-top:1rem; }
+    .aa-evidence table { width:100%; border-collapse:collapse; color:#352452; background:#fff; }
+    .aa-evidence caption { text-align:left; font-weight:800; padding:.6rem 0; color:inherit; }
+    .aa-evidence th, .aa-evidence td { text-align:left; padding:.65rem; border:1px solid #d6cce5; font-size:.85rem; }
+    .aa-evidence code { overflow-wrap:anywhere; }
+    .aa-investigation label { display:block; color:#352452; font-weight:700; }
+    .aa-investigation textarea { display:block; width:100%; min-height:100px; margin:.5rem 0; padding:.75rem; border:1px solid #746298; border-radius:8px; background:#fff; color:#352452; font:inherit; }
+    .aa-page :is(button, input, select, textarea, a, [role="button"]):focus-visible { outline:3px solid #6d28d9; outline-offset:4px; }
+    .aa-print-explanation { display:none; }
+    @media print { .aa-print-explanation { display:block; white-space:pre-wrap; overflow-wrap:anywhere; } #lab-explanation { display:none; } .aa-evidence { overflow:visible; } .aa-investigation textarea { min-height:110px; } .aa-investigation .aa-builder-tools { display:none; } }
     /* ── page base ── */
     body.aa-page {
       font-family: var(--font-sans);
@@ -644,7 +654,21 @@
         radial-gradient(circle at 50% 45%, rgba(124,58,237,0.09), transparent 42%),
         linear-gradient(145deg, rgba(248,245,255,0.9), rgba(239,248,255,0.85));
     }
-    .aa-fold-stage svg { display: block; width: 100%; height: 230px; }
+    .aa-fold-stage { overflow-x:auto; background:#f8fafc; }
+    .aa-fold-stage svg { display:none; }
+    .aa-fold-stage figure { margin:0; }
+    #fold-image { display:block; width:100%; min-width:600px; height:auto; }
+    .aa-diagram { margin:0; width:100%; background:#f8f7fc; color:#352452; border-radius:14px; overflow:hidden; }
+    .aa-diagram img { display:block; width:100%; height:auto; }
+    .aa-diagram figcaption, .aa-fold-stage figcaption { padding:.75rem; font-size:.85rem; line-height:1.55; color:#352452; background:#f8f7fc; }
+    .aa-svg-wrap.aa-diagram { display:block; padding:0; max-width:520px; }
+    .aa-anatomy-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+    .aa-detail-svg { width: min(320px,100%); padding:0; }
+    .aa-detail-svg img { width:100%; }
+    .aa-level-visual { aspect-ratio:auto; }
+    .aa-level-visual figcaption { position:static; width:auto; height:auto; padding:.65rem; overflow:visible; clip-path:none; white-space:normal; font-size:.8rem; line-height:1.5; color:#352452; background:#f8f7fc; }
+    @media (max-width:760px) { .aa-anatomy-grid { grid-template-columns:1fr; } .aa-svg-wrap.aa-diagram { max-width:none; } }
+    @media print { #fold-image { min-width:0; width:100% !important; } .aa-diagram, .aa-level-visual { break-inside:avoid; } }
     .aa-fold-empty {
       position: absolute;
       inset: 0;
@@ -936,10 +960,10 @@
       .aa-essential-grid { grid-template-columns: 1fr; }
       .aa-map-label { display: none; }
       .aa-detail.is-open { grid-template-columns: 1fr; }
-      .aa-detail-svg { display: none; }
+      .aa-detail-svg { display:block; }
       .aa-levels, .aa-glossary { grid-template-columns: 1fr; }
-      .aa-ion-state { grid-template-columns: 1fr; }
-      .aa-ion-bond { transform: rotate(90deg); }
+      .aa-ion-state { display:flex; justify-content:center; gap:.35rem; flex-wrap:wrap; }
+      .aa-ion-bond { transform:none; }
       .aa-reference-row { grid-template-columns: 1fr; gap: 0.2rem; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -961,6 +985,14 @@
     @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .aa-card [style*="color:#4a3870"], :where(html:not([data-lighting])) .aa-card [style*="color: #4a3870"], :where(html:not([data-lighting])) .aa-card [style*="color:#1a0a3d"], :where(html:not([data-lighting])) .aa-card [style*="color: #1a0a3d"], :where(html:not([data-lighting])) .aa-card [style*="color:#6b5a9e"], :where(html:not([data-lighting])) .aa-card [style*="color: #6b5a9e"] { color: #e4dcff !important; } }
     :where(html[data-lighting="night"]) .aa-card .aa-investigation [style*="color"] { color: #4a3870 !important; }
     @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .aa-card .aa-investigation [style*="color"] { color: #4a3870 !important; } }
+    .aa-page .aa-levels { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    @media (max-width:480px) { .aa-page .aa-levels { grid-template-columns:1fr; } }
+    /* Diagram surfaces stay light in every theme for consistent atom colors. */
+    .aa-page .aa-level-visual { aspect-ratio:auto; }
+    .aa-page .aa-level-visual figcaption { position:static; width:auto; height:auto; padding:.7rem; overflow:visible; clip-path:none; white-space:normal; font-size:.8rem; line-height:1.5; color:#352452; background:#f8f7fc; }
+    .aa-page .aa-svg-wrap.aa-diagram { display:block; padding:0; }
+    .aa-page .aa-detail-svg { display:block; padding:0; }
+    .aa-page .aa-fold-stage [hidden] { display:none; }
   </style>
 </head>
 <body class="aa-page">
@@ -997,7 +1029,7 @@
       <div class="aa-hero-text">
         <p class="aa-eyebrow">Life Sciences · Biochemistry</p>
         <h1>Amino<br><em>Acids</em></h1>
-        <p class="aa-lede">The molecular alphabet of life — 21 building blocks that link together to form every protein in your body, from your hair to your enzymes to the antibodies in your blood.</p>
+        <p class="aa-lede">How can one changed building block affect a protein? Explore the 20 standard amino acids and the specially encoded 21st, selenocysteine, then test how side-chain chemistry changes a peptide model.</p>
         <div class="aa-meta">
           <span class="aa-pill">21 Human Proteinogenic</span>
           <span class="aa-pill">9 Essential</span>
@@ -1039,50 +1071,23 @@
       <a class="aa-map-link" href="#check">Check</a>
     </nav>
 
+    <section class="aa-card" aria-labelledby="route-title">
+      <p class="aa-kicker">Your investigation · 20–25 minutes</p>
+      <h2 id="route-title">Change one residue. Keep the rest constant.</h2>
+      <p><strong>Learn:</strong> identify the shared backbone and changing R group. <strong>Test:</strong> replace Phe with Lys in an eight-residue chain. <strong>Explain:</strong> use sequence, bond count, and side-chain properties as evidence.</p>
+      <p>Start with <a href="#structure">the structure diagram</a>, then go to <a href="#builder">the substitution lab</a> and <a href="#check">check your understanding</a>. Use discovery, chemistry, and nutrition as deeper explorations.</p>
+    </section>
+
     <!-- ── STRUCTURE ANATOMY ── -->
     <section class="aa-card" id="structure" data-lesson-section="Structure">
       <p class="aa-kicker">Structure</p>
       <h2>Anatomy of an amino acid</h2>
-      <p style="color:#4a3870;font-size:0.97rem;margin:0.2rem 0 0;">Every amino acid shares the same core backbone — the unique <strong>R group (side chain)</strong> is what makes each one different.</p>
+      <p style="color:#4a3870;font-size:0.97rem;margin:0.2rem 0 0;">These protein-building α-amino acids share a core backbone — the unique <strong>R group (side chain)</strong> is what makes each one different.</p>
       <div class="aa-anatomy-grid">
-        <div class="aa-svg-wrap">
-          <svg viewBox="0 0 300 200" width="260" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Backbone line art -->
-            <!-- COOH -->
-            <text x="80" y="30" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O</text>
-            <text x="80" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#ef4444">‖</text>
-            <text x="50" y="62" text-anchor="end" font-family="IBM Plex Mono" font-size="14" fill="#ef4444" font-weight="700">O⁻</text>
-            <text x="80" y="62" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#222" font-weight="700">C</text>
-            <line x1="52" y1="57" x2="72" y2="57" stroke="#ef4444" stroke-width="2"/>
-            <!-- C to alpha -->
-            <line x1="80" y1="67" x2="80" y2="92" stroke="#555" stroke-width="2"/>
-            <!-- alpha C -->
-            <text x="80" y="108" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#222" font-weight="800">Cα</text>
-            <circle cx="80" cy="102" r="16" stroke="#555" stroke-width="1.5" fill="rgba(0,0,0,0.03)"/>
-            <!-- H above left -->
-            <line x1="68" y1="92" x2="52" y2="78" stroke="#aaa" stroke-width="1.5"/>
-            <text x="48" y="76" font-family="IBM Plex Mono" font-size="12" fill="#888">H</text>
-            <!-- NH3 to right -->
-            <line x1="96" y1="102" x2="140" y2="102" stroke="#555" stroke-width="2"/>
-            <text x="168" y="107" text-anchor="middle" font-family="IBM Plex Mono" font-size="14" fill="#2563eb" font-weight="700">NH₃⁺</text>
-            <!-- R group down -->
-            <line x1="80" y1="118" x2="80" y2="158" stroke="#555" stroke-width="2"/>
-            <rect x="52" y="158" width="56" height="36" rx="10" fill="rgba(167,139,250,0.2)" stroke="#7c3aed" stroke-width="1.8"/>
-            <text x="80" y="180" text-anchor="middle" font-family="Manrope" font-size="15" fill="#5b21b6" font-weight="800">R</text>
-            <!-- colored labels right side -->
-            <rect x="210" y="42" width="80" height="20" rx="6" fill="rgba(239,68,68,0.1)"/>
-            <text x="250" y="56" text-anchor="middle" font-family="Manrope" font-size="10" fill="#b91c1c" font-weight="700">CARBOXYL</text>
-            <line x1="52" y1="58" x2="210" y2="52" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
-
-            <rect x="210" y="88" width="78" height="20" rx="6" fill="rgba(37,99,235,0.1)"/>
-            <text x="249" y="102" text-anchor="middle" font-family="Manrope" font-size="10" fill="#1d4ed8" font-weight="700">AMINO</text>
-            <line x1="152" y1="102" x2="210" y2="98" stroke="#2563eb" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
-
-            <rect x="210" y="160" width="82" height="20" rx="6" fill="rgba(124,58,237,0.1)"/>
-            <text x="251" y="174" text-anchor="middle" font-family="Manrope" font-size="10" fill="#5b21b6" font-weight="700">R GROUP</text>
-            <line x1="108" y1="176" x2="210" y2="170" stroke="#7c3aed" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
-          </svg>
-        </div>
+        <figure class="aa-svg-wrap aa-diagram" data-zoomable data-lightbox-group="amino-diagrams">
+          <img src="../../assets/images/protein-structure/amino-backbone.svg" width="800" height="560" alt="Free amino acid: alpha carbon bonded to hydrogen, carboxylate, amino group, and variable side chain.">
+          <figcaption>The shared α-amino-acid backbone near neutral pH. The amino and carboxylate groups have opposite charges. Glycine has R = H; proline’s side chain reconnects to nitrogen. Original classroom schematic.</figcaption>
+        </figure>
         <div class="aa-anatomy-labels">
           <div class="aa-label-row">
             <div class="aa-label-dot" style="background:#ef4444;"></div>
@@ -1398,34 +1403,10 @@
         </div>
         <div class="aa-bond-svg-wrap">
           <span class="aa-bond-label">Condensation reaction</span>
-          <svg viewBox="0 0 280 200" width="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- AA1 -->
-            <rect x="4" y="60" width="88" height="80" rx="14" fill="rgba(167,139,250,0.15)" stroke="#a78bfa" stroke-width="1.5"/>
-            <text x="48" y="84" text-anchor="middle" font-family="Manrope" font-size="10" fill="#5b21b6" font-weight="700">Amino Acid 1</text>
-            <text x="48" y="104" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#1a0a3d" font-weight="600">H₂N–Cα–</text>
-            <text x="48" y="122" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#ef4444" font-weight="700">COOH</text>
-            <!-- AA2 -->
-            <rect x="188" y="60" width="88" height="80" rx="14" fill="rgba(147,197,253,0.18)" stroke="#93c5fd" stroke-width="1.5"/>
-            <text x="232" y="84" text-anchor="middle" font-family="Manrope" font-size="10" fill="#1d4ed8" font-weight="700">Amino Acid 2</text>
-            <text x="232" y="104" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#2563eb" font-weight="700">H₂N</text>
-            <text x="232" y="122" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" fill="#1a0a3d" font-weight="600">–Cα–COOH</text>
-
-            <!-- arrow -->
-            <line x1="92" y1="100" x2="188" y2="100" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,3"/>
-            <polygon points="182,95 192,100 182,105" fill="#7c3aed"/>
-
-            <!-- water drop out -->
-            <text x="140" y="92" text-anchor="middle" font-family="Manrope" font-size="9" fill="#7c3aed" font-weight="700">react</text>
-
-            <!-- result -->
-            <rect x="30" y="158" width="220" height="36" rx="12" fill="rgba(124,58,237,0.08)" stroke="#7c3aed" stroke-width="1.5"/>
-            <text x="140" y="176" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" fill="#1a0a3d" font-weight="600">…–Cα–CO–NH–Cα–…</text>
-            <text x="140" y="189" text-anchor="middle" font-family="Manrope" font-size="9" fill="#5b21b6" font-weight="700">peptide bond  +  H₂O equivalents (net condensation)</text>
-
-            <!-- water label -->
-            <text x="140" y="46" text-anchor="middle" font-family="IBM Plex Mono" font-size="13" fill="#0ea5e9" font-weight="700">+ H₂O ↑</text>
-            <text x="140" y="56" text-anchor="middle" font-family="Manrope" font-size="8" fill="#0369a1">(released)</text>
-          </svg>
+          <figure class="aa-diagram" data-zoomable data-lightbox-group="amino-diagrams">
+            <img src="../../assets/images/protein-structure/peptide-bond.svg" width="800" height="560" alt="Two amino acids join through a highlighted carbonyl carbon–nitrogen peptide bond; side chains remain attached.">
+            <figcaption>The purple C–N link is the new peptide bond. Combining two free amino acids corresponds to one water molecule in net condensation bookkeeping. In cells, activated amino acids are delivered by tRNAs; this is not a drawing of that mechanism. Original classroom schematic.</figcaption>
+          </figure>
           <div style="font-size:0.83rem;color:#4a3870;text-align:center;max-width:28ch;line-height:1.5;">Short chains are often called peptides; longer chains are polypeptides. There is no universal length cutoff, and one or more folded chains can make a functional protein.</div>
         </div>
       </div>
@@ -1443,6 +1424,18 @@
         <select id="mutation-prediction"><option value="">Choose a prediction</option><option value="out">the water-facing exterior</option><option value="in">the hydrophobic interior</option></select>
         <div class="aa-builder-tools"><button class="aa-btn aa-btn-ghost" id="mutation-start">Load original chain</button><button class="aa-btn aa-btn-primary" id="mutation-test">Test Phe → Lys</button><button class="aa-btn aa-btn-ghost" id="mutation-reset">Restore Phe</button></div>
         <p id="mutation-feedback" role="status">Load the original, make a prediction, then test the substitution.</p>
+        <div class="aa-evidence">
+          <table><caption>Controlled comparison · near pH 7</caption><thead><tr><th scope="col">Evidence</th><th scope="col">Original</th><th scope="col">After Phe → Lys</th></tr></thead>
+          <tbody><tr><th scope="row">Sequence, N → C</th><td><code>LVIFAMWL</code></td><td id="evidence-sequence">Test to reveal</td></tr>
+          <tr><th scope="row">Residues / peptide bonds</th><td>8 / 7</td><td id="evidence-bonds">—</td></tr>
+          <tr><th scope="row">Residue 4 side chain</th><td>Phe: hydrophobic aromatic ring</td><td id="evidence-property">—</td></tr>
+          <tr><th scope="row">Model placement of residue 4</th><td>Near the center</td><td id="evidence-placement">—</td></tr></tbody></table>
+        </div>
+        <label for="lab-explanation">Explain with evidence</label>
+        <p id="explanation-prompt">“Replacing ___ with ___ changed ___, while ___ stayed constant. This supports ___, but does not prove ___.”</p>
+        <textarea id="lab-explanation" aria-describedby="explanation-prompt" placeholder="Use the comparison table and the model’s limits."></textarea>
+        <p class="aa-print-explanation" id="print-explanation">Write an explanation using the evidence above.</p>
+        <p style="font-size:.8rem;">Your explanation stays on this page until you reload. Print the lesson to keep your evidence and explanation.</p>
       </div>
       <div class="aa-builder-layout">
         <div class="aa-builder-palette">
@@ -1470,18 +1463,19 @@
         </div>
       </div>
       <div style="margin-top:1rem;">
-        <div class="aa-palette-label">Sequence → shape preview</div>
+        <div class="aa-palette-label">Sequence → side-chain placement</div>
         <div class="aa-fold-stage" aria-label="Simplified two-dimensional folding preview">
           <svg id="fold-preview" viewBox="0 0 900 230" role="img" aria-labelledby="fold-title fold-desc">
             <title id="fold-title">Simplified peptide folding preview</title>
             <desc id="fold-desc">A conceptual view showing hydrophobic residues drawn toward the center and charged or polar residues toward the water-facing exterior.</desc>
           </svg>
+          <figure data-zoomable data-lightbox-group="peptide-model"><img id="fold-image" alt="Residue positions in a conceptual side-chain placement model" hidden><figcaption id="fold-caption" hidden>Each numbered circle is one residue. Positions indicate category tendencies, not a calculated fold. Original classroom model. Scroll sideways for a long chain; click to enlarge.</figcaption></figure>
           <div class="aa-fold-empty" id="fold-empty">Build a chain of at least 3 residues to see how side-chain chemistry can influence folding.</div>
         </div>
         <div class="aa-fold-legend" aria-hidden="true">
           <span style="--legend:#7c3aed">charged</span><span style="--legend:#2563eb">polar</span><span style="--legend:#d97706">special</span><span style="--legend:#16a34a">hydrophobic</span>
         </div>
-        <p style="font-size:0.78rem;color:#6b5a9e;margin:0.55rem 0 0;"><strong>Model note:</strong> this is a concept model, not a structure prediction. Real folding also depends on sequence order, temperature, pH, solvent, chaperones, and many other interactions.</p>
+        <p style="font-size:0.78rem;color:#6b5a9e;margin:0.55rem 0 0;"><strong>Model note:</strong> this is a side-chain placement diagram, not a structure prediction. Positions are assigned by category and sequence index; “special” residues are placed outside for display and have no single shared water preference; it does not calculate energy, bond geometry, or a physically possible fold. Hydrophobic regions of membrane proteins can face lipids instead of being buried in a water-soluble core. Real folding also depends on sequence order, temperature, pH, solvent, chaperones, and many other interactions.</p>
       </div>
     </section>
 
@@ -1491,9 +1485,9 @@
       <h2>How a gene becomes a working protein</h2>
       <p class="aa-chapter-intro">A protein’s amino-acid order is its <strong>primary structure</strong>. That sequence constrains how the chain folds, and the resulting three-dimensional shape controls what the protein can bind, catalyze, carry, or support.</p>
       <div class="aa-code-flow" aria-label="Flow from DNA to folded protein">
-        <article class="aa-code-step"><span class="aa-code-step-num">1</span><h3>DNA stores the recipe</h3><p>A gene contains nucleotide bases. During transcription, one DNA strand acts as a template for messenger RNA.</p><span class="aa-code-example">DNA: TAC–AAA–CGG</span></article>
+        <article class="aa-code-step"><span class="aa-code-step-num">1</span><h3>DNA stores the recipe</h3><p>A gene contains nucleotide bases. During transcription, one DNA strand acts as a template for messenger RNA.</p><span class="aa-code-example">Template DNA: 3′–TAC–AAA–CGG–5′</span></article>
         <span class="aa-code-arrow" aria-hidden="true">→</span>
-        <article class="aa-code-step"><span class="aa-code-step-num">2</span><h3>mRNA carries codons</h3><p>The ribosome reads mRNA three bases at a time. Each three-base codon specifies an amino acid or a stop signal.</p><span class="aa-code-example">mRNA: AUG–UUU–GCC</span></article>
+        <article class="aa-code-step"><span class="aa-code-step-num">2</span><h3>mRNA carries codons</h3><p>The ribosome reads mRNA three bases at a time. Each three-base codon specifies an amino acid or a stop signal.</p><span class="aa-code-example">mRNA: 5′–AUG–UUU–GCC–3′</span></article>
         <span class="aa-code-arrow" aria-hidden="true">→</span>
         <article class="aa-code-step"><span class="aa-code-step-num">3</span><h3>The chain folds</h3><p>tRNAs deliver amino acids. The ribosome links them N-terminus to C-terminus; interactions then guide folding and modification.</p><span class="aa-code-example">Met–Phe–Ala → shape</span></article>
       </div>
@@ -1501,19 +1495,19 @@
       <h3 style="margin-top:1.2rem;font-size:1.08rem;color:#1a0a3d;">The four levels of protein structure</h3>
       <div class="aa-levels">
         <article class="aa-level-card">
-          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/primary.svg" alt="Primary structure: follow the repeating nitrogen–alpha carbon–carbonyl backbone. Purple links are peptide bonds; green R groups vary between residues. This is a schematic fragment, with hydrogens omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>Primary structure: follow the repeating nitrogen–alpha carbon–carbonyl backbone. Purple links are peptide bonds; green R groups vary between residues. This is a schematic fragment, with hydrogens omitted.</figcaption></figure>
+          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/primary.svg" alt="Primary structure: follow the repeating nitrogen–alpha carbon–carbonyl backbone. Purple links are peptide bonds; green R groups vary between residues. This is a schematic fragment, with hydrogens omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>Purple C–N links are peptide bonds; green R groups vary. Original schematic fragment; hydrogens omitted.</figcaption></figure>
           <div class="aa-level-copy"><span>Level 1</span><h3>Primary</h3><p>The covalent amino-acid sequence. A single substitution can alter folding or function, as in sickle-cell hemoglobin.</p></div>
         </article>
         <article class="aa-level-card">
-          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/secondary.svg" alt="Secondary structure: a right-handed alpha helix coils the backbone; beta strands form a pleated sheet. Dashed lines indicate backbone hydrogen bonds. These are idealized local motifs, not an experimental structure." loading="lazy" decoding="async" width="800" height="560"><figcaption>Secondary structure: a right-handed alpha helix coils the backbone; beta strands form a pleated sheet. Dashed lines indicate backbone hydrogen bonds. These are idealized local motifs, not an experimental structure.</figcaption></figure>
+          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/secondary.svg" alt="Secondary structure: a right-handed alpha helix coils the backbone; beta strands form a pleated sheet. Dashed lines indicate backbone hydrogen bonds. These are idealized local motifs, not an experimental structure." loading="lazy" decoding="async" width="800" height="560"><figcaption>α-helices and β-sheets are local backbone motifs. Dashed lines represent backbone hydrogen bonds. Original idealized schematic.</figcaption></figure>
           <div class="aa-level-copy"><span>Level 2</span><h3>Secondary</h3><p>Local α-helices, β-sheets, and turns stabilized mainly by hydrogen bonds between backbone groups.</p></div>
         </article>
         <article class="aa-level-card">
-          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/tertiary.svg" alt="Tertiary structure: the experimental alpha-carbon trace of myoglobin (PDB 1MBN) shows one continuous chain folded into a compact, helix-rich shape. Other atoms, including the heme cofactor, are omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>Tertiary structure: the experimental alpha-carbon trace of myoglobin (PDB 1MBN) shows one continuous chain folded into a compact, helix-rich shape. Other atoms, including the heme cofactor, are omitted.</figcaption></figure>
+          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/tertiary.svg" alt="Tertiary structure: the experimental alpha-carbon trace of myoglobin (PDB 1MBN) shows one continuous chain folded into a compact, helix-rich shape. Other atoms, including the heme cofactor, are omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>One continuous myoglobin chain (PDB 1MBN). Smoothed experimental Cα coordinates; heme and other atoms omitted. wwPDB data: CC0.</figcaption></figure>
           <div class="aa-level-copy"><span>Level 3</span><h3>Tertiary</h3><p>The overall 3-D shape of one chain, stabilized by hydrophobic packing, hydrogen bonds, ionic attractions, and disulfide bonds.</p></div>
         </article>
         <article class="aa-level-card">
-          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/quaternary.svg" alt="Quaternary structure: experimental hemoglobin coordinates (PDB 4HHB) show four folded chains assembled together. Purple and orange are alpha chains; blue and green are beta chains. Heme and other atoms are omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>Quaternary structure: experimental hemoglobin coordinates (PDB 4HHB) show four folded chains assembled together. Purple and orange are alpha chains; blue and green are beta chains. Heme and other atoms are omitted.</figcaption></figure>
+          <figure class="aa-level-visual" data-zoomable data-lightbox-group="protein-levels"><img src="../../assets/images/protein-structure/quaternary.svg" alt="Quaternary structure: experimental hemoglobin coordinates (PDB 4HHB) show four folded chains assembled together. Purple and orange are alpha chains; blue and green are beta chains. Heme and other atoms are omitted." loading="lazy" decoding="async" width="800" height="560"><figcaption>Hemoglobin has four folded subunits (PDB 4HHB): two α chains and two β chains. Smoothed experimental Cα coordinates; other atoms omitted. wwPDB data: CC0.</figcaption></figure>
           <div class="aa-level-copy"><span>Level 4</span><h3>Quaternary</h3><p>Two or more folded polypeptide subunits assembled together. Hemoglobin, for example, contains four subunits.</p></div>
         </article>
       </div>
@@ -1525,18 +1519,18 @@
     <section class="aa-card" id="nutrition" data-lesson-section="Nutrition" style="--card-border:rgba(245,158,11,0.25);">
       <p class="aa-kicker" style="--kicker-color:#d97706;">Nutrition</p>
       <h2>The 9 essential amino acids</h2>
-      <p style="color:#4a3870;font-size:0.95rem;margin:0.2rem 0 0.8rem;">Your body cannot synthesize these — they must come from food. Complete protein sources (meat, fish, eggs, soy, quinoa) contain all nine.</p>
+      <p style="color:#4a3870;font-size:0.95rem;margin:0.2rem 0 0.8rem;">Your body cannot synthesize enough of these to meet its needs — food must supply them. Complete protein sources (meat, fish, eggs, soy, quinoa) contain all nine.</p>
       <p class="aa-note"><strong>Read these as examples, not one-to-one matches.</strong> Each food contains many amino acids. Digestion breaks its proteins into amino acids that your body can reuse. Plant foods also supply essential amino acids, in different proportions; a varied diet can provide them all. Click any photo to enlarge it.</p>
       <div class="aa-essential-grid">
         <div class="aa-ess-item"><strong>Histidine</strong><span>His · H</span><div class="aa-ess-desc">Makes histamine; important for immune response and stomach acid production.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/salmon.webp" alt="Salmon fillet" width="960" height="640" loading="lazy" decoding="async"><figcaption><b>Histidine · Salmon protein supplies histidine, along with the other essential amino acids. Other sources include chicken, dairy, and soy.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:SalmonFillet.jpg">NjoyHarmony</a> · <a href="http://creativecommons.org/publicdomain/zero/1.0/deed.en">CC0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
         <div class="aa-ess-item"><strong>Isoleucine</strong><span>Ile · I</span><div class="aa-ess-desc">BCAA; involved in muscle metabolism and energy regulation.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/chicken.webp" alt="Pan-cooked chicken breast" width="1050" height="1000" loading="lazy" decoding="async"><figcaption><b>Isoleucine · Chicken supplies isoleucine, one of the three branched-chain amino acids. Eggs, soy, and dairy also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Butterflied_chicken_breast.jpg">The Bushranger</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
         <div class="aa-ess-item"><strong>Leucine</strong><span>Leu · L</span><div class="aa-ess-desc">Most abundant BCAA; triggers muscle protein synthesis (mTOR pathway).</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/cottage-cheese.webp" alt="A tub of cottage cheese" width="639" height="594" loading="lazy" decoding="async"><figcaption><b>Leucine · Cottage cheese contains milk proteins that supply leucine. Other sources include soy, eggs, and meat.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Cottage_Cheese.jpg">Stu Spivack - flickr.com</a> · <a href="https://creativecommons.org/licenses/by-sa/2.0">CC BY-SA 2.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
         <div class="aa-ess-item"><strong>Lysine</strong><span>Lys · K</span><div class="aa-ess-desc">Required for collagen and carnitine synthesis; supports calcium absorption.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/lentils.webp" alt="Cooked lentils topped with caramelized onions" width="750" height="1000" loading="lazy" decoding="async"><figcaption><b>Lysine · Lentils supply lysine. Legumes complement many grains, whose proteins are relatively low in lysine; beans and tofu are other examples.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Liat_Portal_for_Foodie_Disorder_-_Cooked_Lentils_with_Caramelized_Onions.jpg">HaJunkiyada</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
-        <div class="aa-ess-item"><strong>Methionine</strong><span>Met · M</span><div class="aa-ess-desc">Start codon; methyl donor for epigenetics; precursor to cysteine.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/eggs.webp" alt="A hard-boiled egg" width="750" height="1000" loading="lazy" decoding="async"><figcaption><b>Methionine · Egg protein supplies methionine, a sulfur-containing amino acid. Fish, meat, and seeds also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Hard_boiled_egg_2.jpg">3steph14</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
+        <div class="aa-ess-item"><strong>Methionine</strong><span>Met · M</span><div class="aa-ess-desc">Encoded by AUG; converted to the methyl donor SAM; precursor to cysteine.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/eggs.webp" alt="A hard-boiled egg" width="750" height="1000" loading="lazy" decoding="async"><figcaption><b>Methionine · Egg protein supplies methionine, a sulfur-containing amino acid. Fish, meat, and seeds also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Hard_boiled_egg_2.jpg">3steph14</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
         <div class="aa-ess-item"><strong>Phenylalanine</strong><span>Phe · F</span><div class="aa-ess-desc">Precursor to tyrosine, dopamine, and norepinephrine.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/tofu.webp" alt="Tofu made from soybeans" width="753" height="1000" loading="lazy" decoding="async"><figcaption><b>Phenylalanine · Tofu supplies phenylalanine and all eight other essential amino acids. Your body can use phenylalanine to make tyrosine.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Tofu.jpg">3steph14</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
-        <div class="aa-ess-item"><strong>Threonine</strong><span>Thr · T</span><div class="aa-ess-desc">Supports gut mucus layer; precursor to glycine and serine.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/milk.webp" alt="A glass of milk" width="568" height="640" loading="lazy" decoding="async"><figcaption><b>Threonine · Milk proteins supply threonine. Eggs, fish, and soy are other food sources.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Milk_glass.jpg">Stefan Kühn</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
-        <div class="aa-ess-item"><strong>Tryptophan</strong><span>Trp · W</span><div class="aa-ess-desc">Sole precursor to serotonin and melatonin — mood and sleep.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/pumpkin-seeds.webp" alt="Roasted pumpkin seeds in their shells" width="1200" height="800" loading="lazy" decoding="async"><figcaption><b>Tryptophan · Pumpkin seed kernels supply tryptophan, used to build proteins and to make serotonin. Eggs, soy, and dairy also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Pumpkin_Seeds_macro_1.jpg">Daniel Schwen</a> · <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
-        <div class="aa-ess-item"><strong>Valine</strong><span>Val · V</span><div class="aa-ess-desc">BCAA; fuel source for muscles during exercise; cognitive function.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/peanuts.webp" alt="Peanuts shown in their shells and shelled" width="1200" height="800" loading="lazy" decoding="async"><figcaption><b>Valine · Peanuts supply valine, a branched-chain amino acid. Beans, dairy, and meat also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Peanuts_(Arachis_hypogaea)_-_in_shell,_shell_cracked_open,_shelled,_peeled.jpg">Ivar Leidus</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
+        <div class="aa-ess-item"><strong>Threonine</strong><span>Thr · T</span><div class="aa-ess-desc">Used in proteins, including mucins that help protect the gut lining.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/milk.webp" alt="A glass of milk" width="568" height="640" loading="lazy" decoding="async"><figcaption><b>Threonine · Milk proteins supply threonine. Eggs, fish, and soy are other food sources.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Milk_glass.jpg">Stefan Kühn</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
+        <div class="aa-ess-item"><strong>Tryptophan</strong><span>Trp · W</span><div class="aa-ess-desc">Precursor to serotonin, which can be converted to melatonin.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/pumpkin-seeds.webp" alt="Roasted pumpkin seeds in their shells" width="1200" height="800" loading="lazy" decoding="async"><figcaption><b>Tryptophan · Pumpkin seed kernels supply tryptophan, used to build proteins and to make serotonin. Eggs, soy, and dairy also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Pumpkin_Seeds_macro_1.jpg">Daniel Schwen</a> · <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
+        <div class="aa-ess-item"><strong>Valine</strong><span>Val · V</span><div class="aa-ess-desc">Branched-chain amino acid used in proteins and energy metabolism.</div><figure class="aa-food-photo" data-zoomable data-lightbox-group="essential-foods"><img src="../../assets/images/amino-acids-food/peanuts.webp" alt="Peanuts shown in their shells and shelled" width="1200" height="800" loading="lazy" decoding="async"><figcaption><b>Valine · Peanuts supply valine, a branched-chain amino acid. Beans, dairy, and meat also supply it.</b><small>Photo: <a href="https://commons.wikimedia.org/wiki/File:Peanuts_(Arachis_hypogaea)_-_in_shell,_shell_cracked_open,_shelled,_peeled.jpg">Ivar Leidus</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>. Resized / WebP; cropped preview.</small></figcaption></figure></div>
       </div>
       <p class="aa-structure-credit">Food-source background: <a href="https://medlineplus.gov/ency/article/002467.htm">MedlinePlus: protein in diet</a> and <a href="https://www.ncbi.nlm.nih.gov/books/NBK221371/">National Academies: dietary protein and amino acid patterns</a>. Photos show example sources, not ranked amounts or serving recommendations.</p>
     </section>
@@ -1642,11 +1636,11 @@
       <p class="aa-kicker">Reflect</p>
       <h2>Discussion questions</h2>
       <ul>
-        <li>All 21 amino acids share the same backbone. What does it tell us about evolution that such a universal structure was selected?</li>
+        <li>What stays the same and what changes when Phe is replaced by Lys? Use two observations from your investigation.</li>
         <li>Why would charged amino acids tend to end up on the <em>outside</em> of a folded protein rather than buried inside?</li>
-        <li>Phenylketonuria (PKU) is a disorder where the enzyme that converts phenylalanine to tyrosine is missing. Based on what you know, predict two consequences of untreated PKU.</li>
-        <li>Serotonin is made from tryptophan. What dietary or lifestyle changes might affect serotonin levels, and why?</li>
-        <li>Selenocysteine uses selenium, a trace element. What might go wrong if someone has a selenium-deficient diet?</li>
+        <li>The diagram puts hydrophobic residues near the center. What additional evidence would you need to establish a real protein’s shape or function?</li>
+        <li>Two chains have the same amino-acid counts in different orders. Why might their structures differ even though the builder reports identical counts?</li>
+        <li>At glycine’s pI, average net charge is zero. Why does that not mean every molecule lacks charged groups?</li>
       </ul>
     </section>
 
@@ -1738,7 +1732,7 @@
       // draw a tiny SVG skeleton
       const svgContent = makeMiniSVG(aa);
       panel.innerHTML =
-        '<div class="aa-detail-svg">' + svgContent + '</div>' +
+        '<figure class="aa-detail-svg aa-diagram" data-zoomable data-lightbox-group="amino-diagrams"><img src="data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent) + '" alt="' + aa.name + ' backbone schematic"><figcaption>' + aa.name + ': shared backbone with the variable side chain marked R. ' + (aa.code3 === 'Pro' ? 'The side chain closes a ring to nitrogen; the protonated nitrogen is NH₂⁺.' : 'R-group formula is listed beside the diagram; this is not a full molecular structure.') + ' Original classroom schematic.</figcaption></figure>' +
         '<div class="aa-detail-info">' +
           '<h3>' + aa.name + ' <span style="font-size:0.85rem;color:#9d80cc;font-weight:600;">(' + aa.code3 + ' / ' + aa.code1 + ')</span></h3>' +
           '<p><strong>R group:</strong> ' + aa.rgroup + '</p>' +
@@ -1753,19 +1747,19 @@
     function makeMiniSVG(aa) {
       // Build a small schematic of backbone + label for R group
       const rc = aa.color || "#7c3aed";
-      return '<svg role="img" aria-label="Simplified backbone and R group for ' + aa.name + '" viewBox="0 0 150 160" width="110" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      return '<svg role="img" aria-label="Simplified backbone and R group for ' + aa.name + '" viewBox="0 0 150 160" width="300" fill="none" xmlns="http://www.w3.org/2000/svg">' +
         '<text x="65" y="18" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#ef4444" font-weight="700">COO⁻</text>' +
         '<line x1="65" y1="22" x2="65" y2="44" stroke="#555" stroke-width="1.5"/>' +
         '<circle cx="65" cy="56" r="13" fill="rgba(0,0,0,0.04)" stroke="#555" stroke-width="1.5"/>' +
         '<text x="65" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#222" font-weight="800">Cα</text>' +
         '<line x1="52" y1="56" x2="30" y2="56" stroke="#555" stroke-width="1.5"/><text x="20" y="60" text-anchor="middle" font-size="10" fill="#222">H</text>' +
         '<line x1="78" y1="56" x2="100" y2="56" stroke="#555" stroke-width="1.5"/>' +
-        '<text x="115" y="60" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#2563eb" font-weight="700">NH₃⁺</text>' +
-        '<line x1="65" y1="69" x2="65" y2="100" stroke="#555" stroke-width="1.5" stroke-dasharray="4,3"/>' +
-        '<rect x="28" y="100" width="74" height="46" rx="10" fill="' + rc + '" fill-opacity="0.13" stroke="' + rc + '" stroke-width="1.5" stroke-dasharray="4,3"/>' +
+        '<text x="115" y="60" text-anchor="middle" font-family="Arial" font-size="12" fill="#1d4ed8" font-weight="700">' + (aa.code3 === 'Pro' ? 'NH₂⁺' : 'NH₃⁺') + '</text>' +
+        '<line x1="65" y1="69" x2="65" y2="100" stroke="#555" stroke-width="1.5"/>' +
+        '<rect x="28" y="100" width="74" height="46" rx="10" fill="' + rc + '" fill-opacity="0.13" stroke="' + rc + '" stroke-width="1.5"/>' +
         '<text x="65" y="122" text-anchor="middle" font-family="Manrope" font-size="11" fill="' + rc + '" font-weight="800">R</text>' +
         '<text x="65" y="136" text-anchor="middle" font-family="Manrope" font-size="7.5" fill="' + rc + '" font-weight="600">' + aa.code3 + '</text>' +
-      '</svg>';
+      (aa.code3 === 'Pro' ? '<path d="M102 124 L138 124 L138 74" stroke="#475569" stroke-width="1.5" fill="none"/>' : '') + '</svg>';
     }
 
     /* attach click/keyboard to all aa cards */
@@ -1781,18 +1775,25 @@
 
     /* ─── tabs ─── */
       document.querySelectorAll('.aa-tab').forEach(function(btn) {
+      btn.id = 'tab-' + btn.dataset.cat;
+      btn.setAttribute('aria-controls', 'cat-' + btn.dataset.cat);
+      btn.tabIndex = btn.classList.contains('is-active') ? 0 : -1;
+      const categoryPanel = document.getElementById('cat-' + btn.dataset.cat);
+      categoryPanel.setAttribute('role', 'tabpanel');
+      categoryPanel.setAttribute('aria-labelledby', btn.id);
       btn.addEventListener('click', function() {
-        document.querySelectorAll('.aa-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected','false'); });
+        document.querySelectorAll('.aa-tab').forEach(t => { t.classList.remove('is-active'); t.setAttribute('aria-selected','false'); t.tabIndex = -1; });
         document.querySelectorAll('.aa-cat-panel').forEach(p => p.classList.remove('is-active'));
         btn.classList.add('is-active');
         btn.setAttribute('aria-selected','true');
+        btn.tabIndex = 0;
         document.getElementById('cat-' + btn.dataset.cat).classList.add('is-active');
       });
       btn.addEventListener('keydown', function(e) {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        if (!['ArrowRight','ArrowLeft','Home','End'].includes(e.key)) return;
         e.preventDefault();
         const tabs = Array.from(document.querySelectorAll('.aa-tab'));
-        const next = (tabs.indexOf(btn) + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (tabs.indexOf(btn) + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
         tabs[next].focus();
         tabs[next].click();
       });
@@ -1893,72 +1894,49 @@
       let infoText = chain.length + ' residue' + (chain.length !== 1 ? 's' : '');
       if (bondCount > 0) infoText += ' · ' + bondCount + ' peptide bond' + (bondCount !== 1 ? 's' : '') + ' · ' + waterReleased + ' H₂O equivalents (net condensation)';
       if (chain.length >= 2) infoText += ' · ' + hydrophobic + ' hydrophobic · ' + charged + ' usually charged near pH 7 · ' + essential + ' essential';
-      if (chain.length >= 20) infoText += ' — polypeptide-scale chain for this model.';
-      else if (chain.length >= 2) infoText += ' — peptide.';
+      if (chain.length >= 2) infoText += ' — peptide (no universal length cutoff).';
       chainInfo.textContent = infoText;
       sequenceLine.textContent = 'N–' + chain.map(id => AA_DATA[id].code1).join('') + '–C';
       renderFold();
     }
 
     function renderFold() {
-      foldPreview.innerHTML = '<title id="fold-title">Simplified peptide folding preview</title><desc id="fold-desc">A conceptual view showing hydrophobic residues drawn toward the center and charged or polar residues toward the water-facing exterior.</desc>';
+      const previewImage = document.getElementById('fold-image');
+      const caption = document.getElementById('fold-caption');
       foldEmpty.hidden = chain.length >= 3;
-      if (chain.length < 3) return;
-
-      const canvasWidth = Math.max(300, Math.round(foldPreview.getBoundingClientRect().width));
-      foldPreview.setAttribute('viewBox', '0 0 ' + canvasWidth + ' 230');
-      const centerX = canvasWidth / 2;
-      const centerY = 115;
-      const horizontalScale = Math.min(2.45, canvasWidth / 360);
-      const points = chain.map(function(id, i) {
-        const aa = AA_DATA[id];
-        const angle = (i * 2.18) - Math.PI / 2;
-        const hydrophobicRadius = 25 + (i % 3) * 10;
-        const waterFacingRadius = 70 + (i % 4) * 11;
-        const radius = aa.cat === 'hydrophobic' ? hydrophobicRadius : waterFacingRadius;
-        return {
-          x: centerX + Math.cos(angle) * radius * horizontalScale,
-          y: centerY + Math.sin(angle) * radius,
-          id: id,
-          aa: aa
-        };
-      });
-
+      previewImage.hidden = caption.hidden = chain.length < 3;
+      if (chain.length < 3) { foldPreview.innerHTML = ''; return; }
+      const width = Math.max(600, Math.round(document.querySelector('.aa-fold-stage').clientWidth), chain.length * 68 + 48);
+      foldPreview.setAttribute('viewBox', '0 0 ' + width + ' 300');
+      foldPreview.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       const ns = 'http://www.w3.org/2000/svg';
-      const water = document.createElementNS(ns, 'ellipse');
-      water.setAttribute('cx', centerX); water.setAttribute('cy', centerY);
-      water.setAttribute('rx', Math.max(30, canvasWidth / 2 - 12)); water.setAttribute('ry', '103');
-      water.setAttribute('fill', 'rgba(59,130,246,0.035)');
-      water.setAttribute('stroke', 'rgba(59,130,246,0.12)');
-      water.setAttribute('stroke-dasharray', '5 7');
-      foldPreview.appendChild(water);
-
-      points.forEach(function(point, i) {
-        if (i > 0) {
-          const line = document.createElementNS(ns, 'line');
-          line.setAttribute('x1', points[i - 1].x); line.setAttribute('y1', points[i - 1].y);
-          line.setAttribute('x2', point.x); line.setAttribute('y2', point.y);
-          line.setAttribute('stroke', '#b9a8d5'); line.setAttribute('stroke-width', '3');
-          line.setAttribute('stroke-linecap', 'round');
-          foldPreview.appendChild(line);
-        }
-      });
-      points.forEach(function(point) {
-        const group = document.createElementNS(ns, 'g');
+      foldPreview.innerHTML = '<title>Conceptual side-chain placement, not a protein structure</title>' +
+        '<rect width="' + width + '" height="300" fill="#f8fafc"/>' +
+        '<rect x="12" y="108" width="' + (width - 24) + '" height="92" rx="16" fill="#dcfce7"/>';
+      function label(x, y, value, size, color) {
+        const t = document.createElementNS(ns, 'text');
+        t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-family', 'Arial, sans-serif'); t.setAttribute('font-size', size);
+        t.setAttribute('fill', color); t.textContent = value; foldPreview.appendChild(t);
+      }
+      label(width / 2, 28, 'Water-facing exterior', 19, '#1e40af');
+      label(width / 2, 129, 'Interior tendency · hydrophobic side chains', 17, '#166534');
+      chain.forEach(function(id, i) {
+        const aa = AA_DATA[id], x = 48 + i * (width - 96) / (chain.length - 1);
+        const y = aa.cat === 'hydrophobic' ? 163 : (i % 2 ? 240 : 65);
         const circle = document.createElementNS(ns, 'circle');
-        circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y); circle.setAttribute('r', '15');
-        circle.setAttribute('fill', CAT_COLORS[point.aa.cat].dot);
+        circle.setAttribute('cx', x); circle.setAttribute('cy', y); circle.setAttribute('r', 22);
+        circle.setAttribute('fill', CAT_COLORS[aa.cat].color);
         circle.setAttribute('stroke', '#fff'); circle.setAttribute('stroke-width', '3');
-        const label = document.createElementNS(ns, 'text');
-        label.setAttribute('x', point.x); label.setAttribute('y', point.y + 4);
-        label.setAttribute('text-anchor', 'middle'); label.setAttribute('fill', '#fff');
-        label.setAttribute('font-family', 'IBM Plex Mono'); label.setAttribute('font-size', '10'); label.setAttribute('font-weight', '700');
-        label.textContent = point.aa.code1;
-        const title = document.createElementNS(ns, 'title');
-        title.textContent = point.aa.name + ' — ' + point.aa.cat;
-        group.appendChild(title); group.appendChild(circle); group.appendChild(label);
-        foldPreview.appendChild(group);
+        foldPreview.appendChild(circle);
+        label(x, y + 6, aa.code1, 18, '#fff');
+        label(x, y + 39, String(i + 1) + ' · ' + aa.code3, 14, '#334155');
       });
+      label(width / 2, 294, 'Sequence positions left → right · no backbone geometry calculated', 16, '#475569');
+      const graphic = new XMLSerializer().serializeToString(foldPreview);
+      previewImage.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(graphic);
+      previewImage.style.width = width + 'px';
+      previewImage.alt = 'Side-chain placement of N-to-C sequence ' + chain.map(id => AA_DATA[id].code3).join(', ') + '. Green band marks the interior tendency; other categories are placed toward water.';
     }
 
     const PRESETS = {
@@ -1973,14 +1951,28 @@
       });
     });
 
+    document.getElementById('lab-explanation').addEventListener('input', function(e) {
+      document.getElementById('print-explanation').textContent = e.target.value || 'Write an explanation using the evidence above.';
+    });
+    function clearMutationEvidence() {
+      document.getElementById('evidence-sequence').textContent = 'Test to reveal';
+      ['bonds','property','placement'].forEach(function(key) {
+        document.getElementById('evidence-' + key).textContent = '—';
+      });
+    }
     document.getElementById('mutation-start').addEventListener('click', function() {
       chain = PRESETS.core.slice(); renderChain();
+      clearMutationEvidence();
       document.getElementById('mutation-feedback').textContent = 'Original: residue 4 is Phe, with a hydrophobic aromatic side chain. Predict, then test.';
     });
     document.getElementById('mutation-test').addEventListener('click', function() {
       const prediction = document.getElementById('mutation-prediction').value;
       if (!prediction) { document.getElementById('mutation-feedback').textContent = 'Choose a prediction before testing.'; document.getElementById('mutation-prediction').focus(); return; }
       chain = PRESETS.core.slice(); chain[3] = 'lys'; renderChain();
+      document.getElementById('evidence-sequence').textContent = 'LVIKAMWL';
+      document.getElementById('evidence-bonds').textContent = '8 / 7 — unchanged';
+      document.getElementById('evidence-property').textContent = 'Lys: usually positively charged';
+      document.getElementById('evidence-placement').textContent = 'Toward the water-facing exterior';
       document.getElementById('mutation-feedback').textContent = (prediction === 'out' ? 'Your prediction matches the model. ' : 'Compare your prediction with the model. ') + 'Lys has a positively charged side chain near pH 7 and moves outward in this diagram. Both chains still have 8 residues and 7 peptide bonds. This illustrates a chemical tendency; it cannot predict the real fold or protein activity.';
     });
     document.getElementById('mutation-reset').addEventListener('click', function() {
@@ -2017,7 +2009,6 @@
     const chargeCopy = document.getElementById('charge-copy');
     function updateIonization() {
       const ph = Number(phSlider.value);
-      phValue.textContent = 'pH ' + ph.toFixed(1);
       phValue.textContent = 'pH ' + ph.toFixed(2);
       const ratio1 = Math.pow(10, ph - 2.34);
       const ratio2 = Math.pow(10, ph - 9.60);
