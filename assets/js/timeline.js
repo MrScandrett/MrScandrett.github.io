@@ -205,16 +205,18 @@
     return String(Math.round(n * 100) / 100);
   }
 
-  function formatAgo(yearsAgo) {
-    if (yearsAgo >= 1e9) return trimNumber(yearsAgo / 1e9) + ' billion yrs ago';
-    if (yearsAgo >= 1e6) return trimNumber(yearsAgo / 1e6) + ' million yrs ago';
+  // short: the axis of a narrow track ("500M yrs ago", "20k yrs ago").
+  function formatAgo(yearsAgo, short) {
+    if (yearsAgo >= 1e9) return trimNumber(yearsAgo / 1e9) + (short ? 'B' : ' billion') + ' yrs ago';
+    if (yearsAgo >= 1e6) return trimNumber(yearsAgo / 1e6) + (short ? 'M' : ' million') + ' yrs ago';
+    if (short && yearsAgo >= 1e4) return trimNumber(yearsAgo / 1e3) + 'k yrs ago';
     var n = Math.round(yearsAgo);
     return n.toLocaleString('en-US') + (n === 1 ? ' yr ago' : ' yrs ago');
   }
 
-  // Tick label for year t. ctx: { deep, bc }
+  // Tick label for year t. ctx: { deep, bc, short }
   function formatTick(t, ctx) {
-    if (ctx.deep) return t >= NOW - 0.5 ? 'today' : formatAgo(NOW - t);
+    if (ctx.deep) return t >= NOW - 0.5 ? 'today' : formatAgo(NOW - t, ctx.short);
     var y = Math.round(t);
     if (y < 0) return (-y).toLocaleString('en-US') + ' BC';
     if (y === 0) return 'BC | AD';
@@ -324,7 +326,18 @@
     even: 'Events evenly spaced, in order'
   };
   var PALETTE = ['#2563eb', '#c2410c', '#15803d', '#9333ea', '#be123c', '#0e7490', '#a16207', '#4d7c0f'];
-  var LANE_H = 52;
+  // Track sizes in px at --tl-type 1 and a 16px root; timeline.css uses the same numbers via --tl-u.
+  // A mark is a card, date over label; a long label may wrap onto two lines (its lane grows).
+  var SIZE = {
+    lane: 52, laneTwo: 68, mark: 44, markTwo: 60,
+    bandRow: 24, axisBelow: 34, tickGap: 130, tickGapNarrow: 40
+  };
+  // How generously labels may spread, most first: [one-line max, two-line max] in px, capped
+  // at a share of the track on phones. The last tier cuts every long label short (168px).
+  var LABEL_TIERS = [[300, 250], [300, 210], [300, 0], [0, 0]];
+  var SHORT = 168;
+  var NARROW = 480; // px of track: a phone, with closer ticks and shorter tick labels
+  var FULL_TYPES = [1.8, 1.6, 1.4, 1.2]; // full screen: the largest that fits without hiding labels
   var MAX_LANES = 6;
   var PAD = 28;
   var MAX_CANVAS = 8e6; // px; browsers stop laying out far wider elements
@@ -418,6 +431,7 @@
     }
     var rest = li.textContent;
     if (source) rest = rest.replace(source.textContent, '');
+    var authored = li.getAttribute('data-label') || subLabel;
     return {
       li: li,
       index: index,
@@ -425,7 +439,9 @@
       when: when || '',
       display: (display || '').trim(),
       parsed: parseWhen(when),
-      label: li.getAttribute('data-label') || subLabel || shortText(titleEl ? titleEl.textContent : rest, 34),
+      label: authored || shortText(titleEl ? titleEl.textContent : rest, 34),
+      // What the track shows: up to a sentence, wrapped onto two lines when there's room.
+      text: authored || shortText(titleEl ? titleEl.textContent : rest, 90),
       group: li.getAttribute('data-group') || '',
       color: li.getAttribute('data-color') || '',
       era: li.hasAttribute('data-era'),
@@ -658,15 +674,15 @@
     this.canvas = canvas;
 
     this.events.forEach(function (it, i) {
-      var mark = el('button', 'tl-mark');
+      var mark = el('button', 'tl-mark' + (it.major ? ' tl-major' : ''));
       mark.type = 'button';
       mark.tabIndex = -1;
       if (it.tint) mark.style.setProperty('--tl-c', it.tint);
       if (it.display || it.when) mark.appendChild(el('span', 'tl-mark-date', it.display || it.when));
-      mark.appendChild(el('span', 'tl-mark-label', it.label));
+      it.labelEl = mark.appendChild(el('span', 'tl-mark-label', it.text));
       if (it.parsed && it.parsed.end > it.parsed.start) mark.appendChild(el('span', 'tl-range'));
-      mark.setAttribute('aria-label', (it.display ? it.display + ': ' : '') + it.label);
-      mark.title = (it.display ? it.display + ' · ' : '') + it.label;
+      mark.setAttribute('aria-label', (it.display ? it.display + ': ' : '') + it.text);
+      mark.title = (it.display ? it.display + ' · ' : '') + it.text;
       mark.addEventListener('click', function () {
         if (self.dragged) return;
         self.selectIndex(i, { focus: true });
@@ -674,7 +690,7 @@
       });
       it.mark = mark;
       self.markLayer.appendChild(mark);
-      it.stem = el('span', 'tl-stem');
+      it.stem = el('span', 'tl-stem' + (it.major ? ' tl-major' : ''));
       if (it.tint) it.stem.style.setProperty('--tl-c', it.tint);
       self.stemLayer.appendChild(it.stem);
     });
@@ -1306,6 +1322,8 @@
     if (!vw) return;
     var self = this;
     this.root.style.setProperty('--tl-paper', paperBehind(this.root));
+    this.narrow = vw < NARROW;
+    var full = this.root.classList.contains('tl-is-full');
     var pos = this.positions();
     if (this.scale === 'even') this.maxZoom = Math.max(4, this.events.length * 170 / vw);
     this.maxZoom = Math.min(Math.max(this.maxZoom, this.zoomFloor || 0), MAX_CANVAS / Math.max(vw, 320));
@@ -1314,16 +1332,135 @@
     var inner = W - PAD * 2;
     var x = function (p) { return PAD + p * inner; };
     this.canvas.style.width = W + 'px';
-
-    // Measure label widths once per size (one read pass, no thrash).
     var events = this.events.filter(function (it) { return pos.has(it); });
-    if (!this.widths) {
-      this.events.forEach(function (it) { it.mark.classList.remove('tl-compact'); it.mark.style.minWidth = ''; });
-      this.widths = new Map(events.map(function (it) { return [it, it.mark.offsetWidth]; }));
-      this.tickFont = null;
-    }
 
-    // Era bands: up to three label rows at the top; a label with no room hides (the band stays).
+    // Sizes change (a new width, full screen, filters): pick the type size and measure labels
+    // once for it. Zooming reuses both, so flights never re-measure.
+    if (!this.widths) {
+      this.measured = {};
+      this.tickFont = null;
+      var type = 1;
+      if (full) {
+        // The projector: the largest type that fits the screen without hiding more labels than 1×.
+        // A crowded timeline may label a few fewer events (keeping 75%) for type the back row can read.
+        var room = this.fullRoom();
+        var base = this.tryType(1, events, pos, x, W, room);
+        for (var k = 0; k < FULL_TYPES.length; k++) {
+          if (FULL_TYPES[k] > vw / 1000) continue;
+          var test = this.tryType(FULL_TYPES[k], events, pos, x, W, room);
+          if (events.length - test.compact >= 0.75 * (events.length - base.compact) && test.height <= room) { type = FULL_TYPES[k]; break; }
+        }
+      }
+      this.type = type;
+    }
+    this.setType(this.type || 1);
+    var u = this.unit;
+    var bandsH = this.layoutBands(pos, x, W);
+    var res = this.placeBest(events, pos, x, W, this.laneBudget(bandsH, full));
+
+    var axisY = bandsH + res.height + 14;
+    this.canvas.style.height = (axisY + SIZE.axisBelow * u) + 'px';
+    this.canvas.style.setProperty('--axis-y', axisY + 'px');
+    this.canvas.style.setProperty('--bands-h', bandsH + 'px');
+
+    this.events.forEach(function (it) { it.mark.hidden = it.stem.hidden = !pos.has(it); });
+    res.placed.forEach(function (p) {
+      var m = p.it.mark;
+      m.classList.toggle('tl-flip', p.flip);
+      m.classList.toggle('tl-compact', p.lane === -1);
+      m.classList.toggle('tl-two', !!p.two);
+      p.it.stem.hidden = p.lane === -1;
+      if (p.lane === -1) {
+        m.style.left = p.px + 'px';
+        m.style.top = axisY + 'px';
+        m.style.width = '';
+        return;
+      }
+      var markH = (p.two ? SIZE.markTwo : SIZE.mark) * u;
+      var top = axisY - 10 - res.base[p.lane] - 8 * u - markH;
+      m.style.left = (p.flip ? p.px - p.width : p.px) + 'px';
+      m.style.top = top + 'px';
+      m.style.width = p.width + 'px';
+      var stemTop = top + markH - 1;
+      p.it.stem.style.left = p.px + 'px';
+      p.it.stem.style.top = stemTop + 'px';
+      p.it.stem.style.height = (axisY - stemTop) + 'px';
+      var bar = m.querySelector('.tl-range');
+      if (bar) bar.style.width = Math.max(p.range, 4) + 'px';
+    });
+    this.renderTicks();
+  };
+
+  // Full screen: the height left for the track between the toolbar and the card (when the card
+  // sits below it; on a phone held sideways it sits beside).
+  Timeline.prototype.fullRoom = function () {
+    var cs = getComputedStyle(this.root);
+    var gap = parseFloat(cs.rowGap) || 0;
+    var bar = this.root.querySelector('.tl-bar');
+    var top = bar ? bar.offsetTop + bar.offsetHeight + gap : parseFloat(cs.paddingTop) || 0;
+    var below = this.detail.offsetTop > this.viewport.offsetTop + 10 ? this.detail.offsetHeight + gap : 0;
+    return this.root.clientHeight - (parseFloat(cs.paddingBottom) || 0) - top - below - 4; // 4: the track's border
+  };
+
+  // Set the type size and measure every label at it: one write, one reflow, then reads only.
+  // Zooming re-runs layout every frame with the same type: then this is a no-op (no style writes).
+  Timeline.prototype.setType = function (type) {
+    if (this.widths && this.widths.type === type) return;
+    this.root.style.setProperty('--tl-type', type);
+    this.unit = type * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
+    if (this.measured && this.measured[type]) { this.widths = this.measured[type]; return; }
+    var marks = this.events.map(function (it) { return it.mark; });
+    marks.forEach(function (m) {
+      m.classList.remove('tl-compact', 'tl-two', 'tl-flip');
+      m.classList.add('tl-measure');
+    });
+    // Exact widths, rounded up: offsetWidth rounds down, and text 0.4px wider than its box gets "…".
+    var widths = new Map();
+    var exact = function (node) { return Math.ceil(node.getBoundingClientRect().width + 0.5); };
+    this.events.forEach(function (it) {
+      widths.set(it, { full: exact(it.mark), label: exact(it.labelEl) });
+    });
+    this.eras.forEach(function (era) {
+      var label = era.band.firstChild;
+      label.hidden = false;
+      widths.set(era, { full: exact(label) });
+    });
+    marks.forEach(function (m) { m.classList.remove('tl-measure'); });
+    widths.type = type;
+    this.widths = widths;
+    if (this.measured) this.measured[type] = widths;
+  };
+
+  // A trial layout at a type size, for choosing one: how tall it is and how many labels it hides.
+  Timeline.prototype.tryType = function (type, events, pos, x, W, room) {
+    this.setType(type);
+    var bandsH = this.layoutBands(pos, x, W);
+    var budget = this.laneBudget(bandsH, true, room);
+    var res = this.placeBest(events, pos, x, W, budget);
+    return { compact: res.compact, height: bandsH + res.height + 14 + SIZE.axisBelow * this.unit };
+  };
+
+  // How many lanes, and how many px of them, the track may use.
+  Timeline.prototype.laneBudget = function (bandsH, full, room) {
+    var u = this.unit;
+    var lane = SIZE.lane * u;
+    var px;
+    if (full) px = (room == null ? this.fullRoom() : room) - bandsH - 14 - SIZE.axisBelow * u;
+    else if (global.innerHeight) {
+      // Inline: keep the track to about two-thirds of the screen so the card fits under it,
+      // and on a phone to half (labels are narrow there, so they stack; past half a phone
+      // screen the lesson around the track drops out of reach).
+      px = global.innerHeight * (this.narrow ? 0.5 : 0.68) - bandsH - 60;
+    } else px = Infinity;
+    var lanes = full ? Math.min(Math.max(Math.floor(px / lane), 1), 14) : Math.min(this.opts.lanes, Math.max(3, Math.floor(px / lane)));
+    return { lanes: lanes, px: Math.max(px, lanes * lane) };
+  };
+
+  // Era bands: up to three label rows at the top; a label with no room hides (the band stays).
+  // Returns the height the label rows take.
+  Timeline.prototype.layoutBands = function (pos, x, W) {
+    var self = this;
+    var rowH = SIZE.bandRow * this.unit;
     var bandRows = [];
     this.eras.forEach(function (era) {
       var r = pos.get(era);
@@ -1332,7 +1469,7 @@
       var x0 = x(r[0]), x1 = Math.max(x(r[1]), x0 + 4);
       var label = era.band.firstChild;
       label.hidden = false;
-      var labelW = era.labelW || (era.labelW = label.offsetWidth) || era.label.length * 7.5 + 12;
+      var labelW = (self.widths.get(era) || {}).full || era.label.length * 7.5 + 12;
       var start = Math.min(x0, W - 4 - labelW);
       var row = 0;
       while (row < 3 && bandRows[row] != null && bandRows[row] > start - 6) row++;
@@ -1343,71 +1480,82 @@
       era.band.style.width = (x1 - x0) + 'px';
       era.band.style.setProperty('--row', row === 3 ? 0 : row);
     });
-    var bandsH = bandRows.length ? bandRows.length * 24 + 6 : 0;
+    return bandRows.length ? bandRows.length * rowH + 6 : 0;
+  };
 
-    // Lanes: lane 0 sits nearest the axis. Each label goes in the lowest lane where it
-    // fits, to the right of its dot or else to the left; ranges always run right.
-    var lanes = [];
-    var placed = [];
+  // Whole labels cost room. Place every label cut short first (the most that fit), then try the
+  // tiers from most generous down; keep the first that hides no more labels and adds at most
+  // three lanes of height (the lane budget still caps the track).
+  Timeline.prototype.placeBest = function (events, pos, x, W, budget) {
+    var last = LABEL_TIERS.length - 1;
+    var cut = this.place(events, pos, x, W, budget, LABEL_TIERS[last]);
+    for (var i = 0; i < last; i++) {
+      var res = this.place(events, pos, x, W, budget, LABEL_TIERS[i]);
+      if (res.compact <= cut.compact && res.height <= cut.height + 3 * SIZE.lane * this.unit) return res;
+    }
+    return cut;
+  };
+
+  // Lanes: lane 0 sits nearest the axis. Each label goes in the lowest lane where it fits, to
+  // the right of its dot or else the left; ranges always run right. In each lane a label tries
+  // its whole self on one line, then wrapped onto two (that lane grows taller), then cut short;
+  // only when none fit does it move up a lane. With no lane left it becomes a dot on the axis.
+  // tier: [one-line max, two-line max] widths at type 1 (0 = not allowed).
+  Timeline.prototype.place = function (events, pos, x, W, budget, tier) {
+    var self = this;
+    var u = this.unit;
+    var vw = this.viewport.clientWidth;
+    var laneH = SIZE.lane * u, twoH = SIZE.laneTwo * u;
+    // A short label is at most half the canvas, so it always fits on one side of its dot. On a
+    // phone a whole label may take at most ~60% of the track.
+    var shortW = Math.min(SHORT * u, (W - 4) / 2);
+    var cap = this.narrow ? vw * 0.6 : Infinity;
+    var wideW = Math.min(tier[0] * u, cap), twoW = Math.max(Math.min(tier[1] * u, cap), tier[1] ? shortW : 0);
+    var lanes = [], heights = [], used = 0, placed = [];
     function fits(lane, a, b) {
       return a >= 2 && b <= W - 2 && lane.every(function (iv) { return b + 8 <= iv[0] || a >= iv[1] + 8; });
-    }
-    var maxLanes = this.opts.lanes;
-    if (this.root.classList.contains('tl-is-full')) {
-      // Full screen: as many lanes as the space left by the toolbar (and the card, when it sits below).
-      var bar = this.root.querySelector('.tl-bar');
-      var below = this.detail.offsetTop > this.viewport.offsetTop + 10 ? this.detail.offsetHeight + 8 : 0;
-      var room = this.root.clientHeight - (bar ? bar.offsetTop + bar.offsetHeight : 0) - below - 24;
-      maxLanes = Math.min(Math.max(Math.floor((room - bandsH - 54) / LANE_H), 1), 14);
-    } else if (global.innerHeight) {
-      // Inline: keep the track to about two-thirds of the screen so the card fits under it.
-      maxLanes = Math.min(maxLanes, Math.max(3, Math.floor((global.innerHeight * 0.68 - bandsH - 60) / LANE_H)));
     }
     // Headline events (data-major) claim label room first; the rest fill in around them.
     var order = events.filter(function (it) { return it.major; }).concat(events.filter(function (it) { return !it.major; }));
     order.forEach(function (it) {
       var px = x(pos.get(it));
-      var w = self.widths.get(it) || 120;
+      var m = self.widths.get(it) || { full: 120, label: 90 };
       var range = it.parsed && it.parsed.end > it.parsed.start && self.p ? x(self.p.norm(it.parsed.end)) - px : 0;
-      var width = Math.max(w, range);
-      var lane = -1, flip = false;
-      for (var l = 0; l < maxLanes && lane === -1; l++) {
-        lanes[l] = lanes[l] || [];
-        if (fits(lanes[l], px, px + width)) lane = l;
-        else if (!range && fits(lanes[l], px - width, px)) { lane = l; flip = true; }
+      var forms = [];
+      if (m.full <= Math.min(shortW * 1.1, (W - 4) / 2)) forms.push({ w: m.full }); // a few px over: show it whole
+      else {
+        if (m.full <= wideW) forms.push({ w: m.full });
+        if (twoW > shortW) forms.push({ w: Math.min(Math.max(shortW, Math.ceil(m.label * 0.56) + m.full - m.label), twoW), two: true });
+        forms.push({ w: shortW });
       }
-      if (lane !== -1) lanes[lane].push(flip ? [px - width, px] : [px, px + width]);
-      placed.push({ it: it, px: px, flip: flip, lane: lane, range: range, width: width });
-    });
-    lanes = lanes.filter(function (lane) { return lane.length; });
-    var axisY = bandsH + Math.max(lanes.length, 1) * LANE_H + 14;
-    this.canvas.style.height = (axisY + 34) + 'px';
-    this.canvas.style.setProperty('--axis-y', axisY + 'px');
-    this.canvas.style.setProperty('--bands-h', bandsH + 'px');
-
-    this.events.forEach(function (it) { it.mark.hidden = it.stem.hidden = !pos.has(it); });
-    placed.forEach(function (p) {
-      var m = p.it.mark;
-      m.classList.toggle('tl-flip', p.flip);
-      m.classList.toggle('tl-compact', p.lane === -1);
-      p.it.stem.hidden = p.lane === -1;
-      if (p.lane === -1) {
-        m.style.left = p.px + 'px';
-        m.style.top = axisY + 'px';
-        return;
+      var hit = null;
+      for (var l = 0; l < budget.lanes && !hit; l++) {
+        if (!lanes[l]) {
+          if (used + laneH > budget.px + 0.5) break;
+          lanes[l] = [];
+          heights[l] = laneH;
+          used += laneH;
+        }
+        for (var f = 0; f < forms.length && !hit; f++) {
+          var form = forms[f];
+          if (form.two && heights[l] < twoH && used + twoH - heights[l] > budget.px + 0.5) continue;
+          var width = Math.max(form.w, range);
+          if (fits(lanes[l], px, px + width)) hit = { lane: l, flip: false, width: width, two: form.two };
+          else if (!range && fits(lanes[l], px - width, px)) hit = { lane: l, flip: true, width: width, two: form.two };
+        }
       }
-      var top = axisY - 10 - (p.lane + 1) * LANE_H;
-      m.style.left = (p.flip ? p.px - p.width : p.px) + 'px';
-      m.style.top = top + 'px';
-      m.style.minWidth = p.width + 'px';
-      var stemTop = top + LANE_H - 9;
-      p.it.stem.style.left = p.px + 'px';
-      p.it.stem.style.top = stemTop + 'px';
-      p.it.stem.style.height = (axisY - stemTop) + 'px';
-      var bar = m.querySelector('.tl-range');
-      if (bar) bar.style.width = Math.max(p.range, 4) + 'px';
+      if (hit) {
+        lanes[hit.lane].push(hit.flip ? [px - hit.width, px] : [px, px + hit.width]);
+        if (hit.two && heights[hit.lane] < twoH) { used += twoH - heights[hit.lane]; heights[hit.lane] = twoH; }
+      }
+      placed.push({ it: it, px: px, range: range, lane: hit ? hit.lane : -1, flip: !!(hit && hit.flip), width: hit ? hit.width : 0, two: !!(hit && hit.two) });
     });
-    this.renderTicks();
+    // A lane opened for a label that fit nowhere stays empty: drop it.
+    while (lanes.length && !lanes[lanes.length - 1].length) { lanes.pop(); used -= heights.pop(); }
+    var base = [], acc = 0;
+    heights.forEach(function (h, i) { base[i] = acc; acc += h; });
+    var compact = placed.filter(function (p) { return p.lane === -1; }).length;
+    return { placed: placed, base: base, height: Math.max(used, laneH), compact: compact };
   };
 
   Timeline.prototype.renderTicks = function () {
@@ -1431,6 +1579,7 @@
     var font = this.tickFont;
     var view0 = this.viewport.scrollLeft - 160, view1 = this.viewport.scrollLeft + this.viewport.clientWidth + 160;
     var p = this.p;
+    var ctx = { deep: this.ctx.deep, bc: this.ctx.bc, short: !!this.narrow };
     var toX = function (t) { return PAD + p.norm(t) * inner; };
     var list = [];
     if (this.scale === 'log') {
@@ -1443,7 +1592,7 @@
           var ago = mult * Math.pow(10, k);
           if (ago > agoHi || ago < agoLo) return;
           var t = NOW - ago, px = toX(t);
-          var w = tickWidth(formatTick(t, self.ctx), font);
+          var w = tickWidth(formatTick(t, ctx), font);
           if (px - lastX < (lastW + w) / 2 + 14) return;
           lastX = px;
           lastW = w;
@@ -1455,7 +1604,9 @@
     } else {
       var tAt = function (px) { return p.lo + (px - PAD) / inner * (p.hi - p.lo); };
       var t0 = tAt(Math.max(view0, PAD)), t1 = tAt(Math.min(view1, W - PAD));
-      var per = (p.hi - p.lo) / inner * 130; // ~130px between ticks
+      // ~130px between ticks; closer on a phone, where steps round up a lot (25 years → 50) and
+      // any labels that would touch are dropped below anyway
+      var per = (p.hi - p.lo) / inner * (this.narrow ? SIZE.tickGapNarrow : SIZE.tickGap) * (this.unit || 1);
       list = linearTicks(t0, t1, Math.max((t1 - t0) / per, 1), this.ctx);
     }
     var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
@@ -1464,7 +1615,7 @@
       var px = toX(t);
       // Only ticks inside the view: the axis re-renders on every scroll frame anyway.
       if (px < vis0 || px > vis1 || px < PAD - 1 || px > W - PAD + 1) return;
-      var text = formatTick(t, self.ctx);
+      var text = formatTick(t, ctx);
       var tick = el('span', 'tl-tick' + (t >= NOW - 0.5 ? ' tl-now' : ''), text);
       tick.style.left = px + 'px';
       // Keep labels at the edges of the view readable instead of half cut off.
@@ -1769,6 +1920,14 @@
   new MutationObserver(function () {
     all.forEach(function (t) { t.layout(); });
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-lighting', 'class'] });
+
+  // Labels are sized to their text, so measure again once a web font arrives (a weight first
+  // used by the track starts loading only when the track is measured with the fallback font).
+  if (document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', function () {
+      all.forEach(function (t) { t.widths = null; t.layout(); });
+    });
+  }
 
   // The timeline that owns a list, its host or any node inside it.
   api.get = function (node) {

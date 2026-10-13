@@ -154,6 +154,11 @@ Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` 
 - Dates: `1906`, `500 BC`, `AD 70`, `c. 627 BC`, `1928–34`, `1770s–80s`, `5th century BC`,
   `March 1876`, `1947-09-09`, `66 Ma`, `4.5 Ga`, `12 ka`, `present`. If any date won't parse
   (or they're step numbers 1, 2, 3), events are spaced evenly in source order instead.
+- Track cards show an item's first sentence, whole or on two lines when there's room, and cut it
+  when it's longer; give long items a `data-label` headline (the full text stays in the card).
+  Engine CSS is scoped `.tl .tl-…` so lesson-wide `button`/`input` rules can't restyle the track.
+  `npm run audit:timeline` screenshots and measures reference timelines against
+  `docs/timeline-audit-baseline.json` (`--save-baseline` after a deliberate change).
 - Per item: `data-label` (short track label), `data-group` (colour + filter chips),
   `data-color`, `data-era` (a band, not an event). Per list: `data-timeline-scale="time|even|log"`,
   `data-timeline-view`, `data-timeline-gaps` ("12 years later").
