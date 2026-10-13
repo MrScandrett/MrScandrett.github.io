@@ -1418,6 +1418,116 @@
     paintLoop();
   }
 
+  /* ================================================================ print notation */
+  // Re-engraves the open score at paper width (zoom 1, four bars a line, whatever the screen is),
+  // then cuts it between systems into letter pages with a title block. Built-in tunes and imported
+  // scores (iReal, MusicXML, extra bass / tab staves) all print through the same path.
+  var PRINT_W = 1000;           // engraving width in SVG units
+  var PAPER_W = 694, PAPER_H = 915;   // letter minus lesson-print.css margins, in CSS px (a little slack)
+  var PRINT_HEAD = 100, PRINT_RUN = 30, PRINT_FOOT = 40;
+  var printRoot = null;
+
+  function systemBands(svg) {
+    var groups = svg.querySelectorAll('g.fb-system'), bands = [];
+    if (groups.length) {
+      Array.prototype.forEach.call(groups, function (g) { var b = g.getBBox(); bands.push({ top: b.y, bottom: b.y + b.height }); });
+      return bands;
+    }
+    // Drum chart: no groups, so find the rows by their staff lines.
+    var ys = Array.prototype.map.call(svg.querySelectorAll('.fb-drum-staffline'), function (l) { return +l.getAttribute('y1'); })
+      .filter(function (y, i, a) { return a.indexOf(y) === i; }).sort(function (a, b) { return a - b; });
+    var cur = null;
+    ys.forEach(function (y) {
+      if (cur && y - cur.last < 30) cur.last = y; else { cur = { first: y, last: y }; bands.push(cur); }
+    });
+    return bands.map(function (b) { return { top: b.first - 30, bottom: b.last + 40 }; });
+  }
+
+  function printPages(svg) {
+    var vb = svg.viewBox.baseVal, W = vb.width, H = vb.height, scale = PAPER_W / W;
+    var bands = systemBands(svg), n = bands.length, cuts = [0], pages = [];
+    if (!n) return [[0, H]];
+    for (var i = 1; i < n; i++) cuts.push((bands[i - 1].bottom + bands[i].top) / 2);
+    cuts.push(H);
+    var room = function (k) { return (PAPER_H - (k ? PRINT_RUN : PRINT_HEAD)) / scale; };
+    for (var a = 0; a < n;) {
+      var cap = room(pages.length), b = a + 1;
+      while (b < n && cuts[b + 1] - cuts[a] <= cap) b++;
+      pages.push({ a: a, b: b });
+      a = b;
+    }
+    // The source line sits under the last page's music: if it won't fit, the last system moves to a page of its own.
+    var last = pages[pages.length - 1];
+    if (last.b - last.a > 1 && cuts[last.b] - cuts[last.a] > room(pages.length - 1) - PRINT_FOOT / scale) {
+      last.b--; pages.push({ a: last.b, b: n });
+    }
+    pages = pages.map(function (pg) { return [cuts[pg.a], cuts[pg.b]]; });
+    return pages;
+  }
+
+  function endPrint() {
+    document.body.classList.remove('fb-printing');
+    if (printRoot) { printRoot.remove(); printRoot = null; }
+  }
+  window.addEventListener('afterprint', endPrint);
+
+  function printNotation() {
+    if (!view || !tune) return;
+    if (P) stop();
+    endPrint();
+    var prevZoom = opts.zoom, prevStyle = sheetEl.getAttribute('style'), svg, pages, W, clones = [];
+    opts.zoom = 1;
+    sheetEl.style.width = PRINT_W + 'px';
+    sheetEl.style.maxWidth = 'none';
+    try {
+      renderSheet();
+      svg = sheetEl.querySelector('svg');
+      if (!svg) return;
+      pages = printPages(svg);
+      W = svg.viewBox.baseVal.width;
+      pages.forEach(function (r) {
+        var c = svg.cloneNode(true);
+        c.removeAttribute('width'); c.removeAttribute('height');
+        c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
+        c.setAttribute('focusable', 'false');
+        // Click targets and playback highlights are screen-only.
+        Array.prototype.forEach.call(c.querySelectorAll('.fb-bar'), function (node) { node.remove(); });
+        Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
+        clones.push(c.outerHTML);
+      });
+    } finally {
+      opts.zoom = prevZoom;
+      if (prevStyle === null) sheetEl.removeAttribute('style'); else sheetEl.setAttribute('style', prevStyle);
+      renderSheet();
+    }
+    var esc = MN.escape;
+    var title = el('[data-fb-title]').textContent, by = el('[data-fb-meta]').textContent;
+    var keyline = el('[data-fb-keyline]').textContent, source = el('[data-fb-source]').textContent;
+    var what = opts.sheetView === 'drums' ? 'Drum notation' : 'Lead sheet · ' + (INSTR[opts.instr] ? INSTR[opts.instr].label : '');
+    var feel = STYLES[opts.style] ? STYLES[opts.style].label : '';
+    var tempo = opts.tempo ? 'Tempo ' + opts.tempo + ' BPM' + (feel ? ' · ' + feel : '') : '';
+    var count = clones.length;
+    var pg = function (i) { return count > 1 ? '<span class="fb-print-pg">Page ' + (i + 1) + ' of ' + count + '</span>' : ''; };
+    var html = clones.map(function (markup, i) {
+      var head = i === 0
+        ? '<header class="fb-print-title"><h1>' + esc(title) + '</h1>' + pg(i) +
+          '<p class="fb-print-by">' + esc(by) + '</p><p class="fb-print-what">' + esc(what) + '</p>' +
+          '<p class="fb-print-key">' + esc(keyline) + '</p><p class="fb-print-tempo">' + esc(tempo) + '</p></header>'
+        : '<header class="fb-print-run"><strong>' + esc(title) + '</strong>' + pg(i) + '</header>';
+      var foot = i === count - 1
+        ? '<footer class="fb-print-foot">' + (source ? 'Source: ' + esc(source) + ' · ' : '') + 'Printed from Mr. Scandrett’s ClassroomOS · Fake Book · ' + esc(new Date().toLocaleDateString()) + '</footer>'
+        : '';
+      return '<section class="fb-print-page">' + head + '<div class="fb-print-score">' + markup + '</div>' + foot + '</section>';
+    }).join('');
+    printRoot = document.createElement('div');
+    printRoot.className = 'fb-print-root';
+    printRoot.setAttribute('aria-hidden', 'true');
+    printRoot.innerHTML = html;
+    document.body.appendChild(printRoot);
+    document.body.classList.add('fb-printing');
+    window.print();
+  }
+
   /* ================================================================ audio */
   var ctx = null, master = null, bus = {}, kitBus = null;
   function ensureAudio() {
@@ -2036,6 +2146,7 @@
             '<strong>' + MN.escape(raw.title) + '</strong>' +
             '<small>' + MN.escape(raw.composer) + '</small>' +
             '<span class="fb-tune-tags"><em class="fb-tag-imported">' + (raw.score ? 'Full score playback' : raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + raw.bars + ' bars</em></span></button>' +
+            '<button type="button" class="fb-tune-print" data-print-tune="' + raw.id + '" aria-label="Print ' + MN.escape(raw.title) + '" title="Print this score">🖨</button>' +
             '<button type="button" class="fb-tune-remove" data-remove-tune="' + raw.id + '" aria-label="Remove ' + MN.escape(raw.title) + ' from your imports" title="Remove from this browser">✕</button>' +
             '</div>';
         }).join('');
@@ -3079,6 +3190,15 @@
         removeImported(rem.getAttribute('data-remove-tune'));
         return;
       }
+      var prt = t.closest('[data-print-tune]');
+      if (prt) {
+        ev.stopPropagation();
+        var pid = prt.getAttribute('data-print-tune');
+        if (pid !== opts.tune) selectTune(pid, true);
+        printNotation();
+        return;
+      }
+      if (t.closest('[data-fb-print]')) { printNotation(); return; }
       var vBtn = t.closest('[data-fb-view]');
       if (vBtn) {
         opts.sheetView = vBtn.getAttribute('data-fb-view');
@@ -3104,7 +3224,7 @@
         return;
       }
       var tn = t.closest('[data-tune]');
-      if (tn && !t.closest('[data-remove-tune]')) {
+      if (tn && !t.closest('[data-remove-tune], [data-print-tune]')) {
         selectTune(tn.getAttribute('data-tune'), true);
         return;
       }
