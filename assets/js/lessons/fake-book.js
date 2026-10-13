@@ -1720,6 +1720,7 @@
   function play() {
     if (!ensureAudio()) return;
     stop();
+    hideBarPop();
     followPaused = false;
     var M = tune.M, r = loopRange();
     // Playing from a clicked bar: the first pass starts there, later passes wrap back to the loop start.
@@ -2296,7 +2297,7 @@
       r.checked = r.value === (opts.engineMode || 'voicings');
     });
     root.querySelectorAll('input[name="fb-barclick"]').forEach(function (r) {
-      r.checked = r.value === (opts.barClick === 'loop' ? 'loop' : 'shapes');
+      r.checked = r.value === (opts.barClick === 'loop' || opts.barClick === 'off' ? opts.barClick : 'shapes');
     });
     root.querySelectorAll('input[name="fb-triad-inv"]').forEach(function (r) {
       r.checked = Number(r.value) === (Number(opts.triadInv) || 0);
@@ -3107,7 +3108,7 @@
       else if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
       else if (n === 'fb-voicing') { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); showChord(true); save(); respin(); }
-      else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value === 'loop') hideBarPop(); save(); }
+      else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value !== 'shapes') hideBarPop(); save(); }
       else if (n === 'fb-engine-mode') { opts.engineMode = t.value; showChord(false); save(); }
       else if (n === 'fb-triad-inv') { opts.triadInv = Number(t.value); showChord(false); save(); }
       else if (n === 'fb-scale-type') { opts.scaleType = t.value; showChord(false); save(); }
@@ -3218,18 +3219,25 @@
       var ch = t.closest('.fb-chord');
       if (ch) { chordSel = Number(ch.getAttribute('data-ci')); showChord(true); return; }
       if (t.closest('[data-fb-barpop-close]')) { hideBarPop(); return; }
+      if (t.closest('[data-fb-barpop-off]')) { opts.barClick = 'off'; hideBarPop(); syncControls(); save(); return; }
+      var navTog = t.closest('[data-fb-nav-toggle]');
+      if (navTog) {
+        var tr = navTog.closest('.fb-transport'), open = !tr.classList.contains('is-nav-open');
+        tr.classList.toggle('is-nav-open', open); navTog.setAttribute('aria-expanded', String(open)); return;
+      }
       var bar = t.closest('.fb-bar');
       if (bar && !ev.shiftKey) {
         var sbar = Number(bar.getAttribute('data-bar')) || 1;
         startBar = sbar; paintLoop(); if (P) respin();
       }
-      if (bar && !ev.shiftKey && opts.barClick !== 'loop') {
+      if (bar && !ev.shiftKey && opts.barClick !== 'loop' && opts.barClick !== 'off') {
         var pb = Number(bar.getAttribute('data-bar'));
         if (barPopBar === pb && !el('[data-fb-barpop]').hidden) hideBarPop();
         else showBarPop(pb, bar);
         return;
       }
       if (barPopBar !== null && !t.closest('[data-fb-barpop]')) hideBarPop();
+      if (bar && !ev.shiftKey && opts.barClick === 'off') return;
       if (bar) {
         var b = Number(bar.getAttribute('data-bar')) || 1;
         if (ev.shiftKey) opts.to = Math.max(b, loopRange().from);
