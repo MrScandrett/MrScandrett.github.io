@@ -748,38 +748,29 @@ body.fb-focused .fb-sheet-card { margin-top: .3rem; }
 .fb-svg .fb-nhead.ink-dark .fb-nhead-t { stroke: rgba(255, 253, 247, .55); }
 .fb-svg .fb-nhead.ink-dark .fb-nhead-acc path { stroke: rgba(255, 253, 247, .55); }
 
-/* Song map + zoom: one thin row in the sticky play bar for long scores. */
-.fb-nav { flex: 1 1 100%; display: flex; align-items: center; gap: .45rem; min-width: 0; padding-top: .15rem; border-top: 1px solid #3a3226; }
-.fb-nav[hidden] { display: none; }
-.fb-goto { display: inline-flex; align-items: center; gap: .3rem; color: #f3d9a4; font-size: .75rem; font-weight: 700; }
-.fb-goto input { width: 3.4rem; min-height: 30px; padding: 0 .3rem; border: 1px solid #5a4f40; border-radius: 8px; background: #2c251c; color: #fff; font: 600 .85rem "DM Sans", sans-serif; }
-.fb-nav .fb-mini { min-width: 28px; width: 28px; height: 30px; }
-.fb-map { position: relative; flex: 1 1 auto; min-width: 120px; height: 30px; display: grid; grid-template-columns: repeat(var(--fb-map-bars, 1), 1fr); align-items: stretch; background: #2c251c; border: 1px solid #5a4f40; border-radius: 8px; overflow: hidden; cursor: pointer; touch-action: none; user-select: none; }
-.fb-map > i { position: relative; display: block; border-left: 1px solid rgba(255,255,255,.07); font-style: normal; }
-.fb-map > i.has-sec { border-left: 1px solid #f3d9a4; }
-.fb-map > i.in-view { background: rgba(243, 217, 164, .22); }
-.fb-map > i.in-loop { box-shadow: inset 0 -4px 0 #4dd0c4; }
-.fb-map > i.is-start { background: rgba(77, 208, 196, .5); }
-.fb-map > i.is-cur { background: #fb923c; }
-.fb-map u, .fb-map b { position: absolute; left: 2px; text-decoration: none; font: 700 .62rem/1 "DM Sans", sans-serif; white-space: nowrap; pointer-events: none; }
-.fb-map u { bottom: 2px; color: #bfae91; }
-.fb-map b { top: 2px; color: #ffe9d6; }
-.fb-zoomctl { display: inline-flex; align-items: center; gap: .25rem; flex-shrink: 0; }
-.fb-zoomctl output { min-width: 2.6rem; text-align: center; font-size: .78rem; font-weight: 700; color: #f3d9a4; }
-.fb-nav .fb-btn { min-height: 30px; padding: .1rem .55rem; font-size: .78rem; }
-.fb-follow-btn { background: #fb923c !important; color: #1f1a14 !important; border-color: #fb923c !important; flex-shrink: 0; }
+/* Song map + zoom: the shared ScoreNavigation (score-navigation.js), as one thin row in the sticky play bar for long scores. */
+.fb-nav.score-nav { --sn-ink: #ffffff; --sn-muted: #bfae91; --sn-bg: #2c251c; --sn-line: #5a4f40; --sn-accent: #f3b54a;
+  --sn-start: rgba(77, 208, 196, .5); --sn-loop: #4dd0c4; --sn-now: #fb923c; --sn-view: rgba(243, 217, 164, .22); --sn-sec: #ffe9d6;
+  --sn-h: 30px; --sn-map-h: 30px;
+  flex: 1 1 100%; flex-wrap: nowrap; gap: .45rem; padding: .15rem 0 0; border-top: 1px solid #3a3226; font-family: "DM Sans", sans-serif; }
+.fb-nav .sn-mini { min-width: 28px; width: 28px; padding: 0; border-radius: 8px; font-size: 1rem; }
+.fb-nav .sn-btn { padding: .1rem .55rem; font-size: .78rem; border-radius: 10px; }
+.fb-nav .sn-goto { color: #f3d9a4; font-size: .75rem; }
+.fb-nav .sn-goto input { width: 3.4rem; border-radius: 8px; font-size: .85rem; }
+.fb-nav .sn-zoom output { color: #f3d9a4; }
+.fb-nav .sn-resume { color: #1f1a14; }
 @media (max-width: 760px) {
-  .fb-goto span, .fb-zoomctl output { display: none; }
-  .fb-nav { flex-wrap: wrap; }
-  .fb-map { order: 5; flex-basis: 100%; }
+  .fb-nav .sn-goto span, .fb-nav .sn-zoom output { display: none; }
+  .fb-nav.score-nav { flex-wrap: wrap; }
+  .fb-nav .sn-map { order: 5; flex-basis: 100%; }
 }
 .fb-sheet, .fb-svg { scroll-margin-top: 150px; }
 .fb-bar { scroll-margin-top: 150px; scroll-margin-bottom: 40px; }
 @media (max-width: 560px) {
-  body.fb-focused .fb-nav .fb-mini { display: inline-flex !important; align-items: center; justify-content: center; width: 36px; height: 36px; }
-  body.fb-focused .fb-nav .fb-btn, .fb-goto input { min-height: 36px; }
-  .fb-nav { gap: .35rem; }
-  .fb-zoomctl output { display: inline-block; }
+  body.fb-focused .fb-nav .sn-mini { display: inline-flex; align-items: center; justify-content: center; width: 36px; }
+  body.fb-focused .fb-nav.score-nav { --sn-h: 36px; }
+  .fb-nav.score-nav { gap: .35rem; }
+  .fb-nav .sn-zoom output { display: inline-block; }
 }
 .fb-voices > summary { cursor: pointer; font-weight: 700; padding: .3rem .1rem; min-height: 34px; display: flex; align-items: center; }
 .fb-voices > p { margin: .3rem 0 .5rem; font-size: .85rem; line-height: 1.4; }
@@ -795,10 +786,10 @@ body.fb-focused .fb-sheet-card { margin-top: .3rem; }
   body.fb-focused .fb-transport .fb-btn { min-height: 38px; padding: .2rem .55rem; font-size: .8rem; border-radius: 9px; }
   body.fb-focused .fb-tempo input[type="number"] { min-height: 28px; width: 3.2rem; font-size: 15px; padding: .1rem .25rem; }
   body.fb-focused .fb-tempo::after { font-size: .55rem; }
-  body.fb-focused .fb-nav { gap: .25rem; }
-  body.fb-focused .fb-nav .fb-mini { width: 32px; height: 32px; }
-  body.fb-focused .fb-nav .fb-btn, body.fb-focused .fb-goto input { min-height: 32px; font-size: .75rem; }
-  body.fb-focused .fb-map { height: 24px; border-radius: 6px; }
+  body.fb-focused .fb-nav.score-nav { gap: .25rem; --sn-h: 32px; --sn-map-h: 24px; }
+  body.fb-focused .fb-nav .sn-mini { width: 32px; }
+  body.fb-focused .fb-nav .sn-btn, body.fb-focused .fb-nav .sn-goto input { font-size: .75rem; }
+  body.fb-focused .fb-nav .sn-map { border-radius: 6px; }
   body.fb-focused .fb-transport .fb-next-task { gap: .4rem; }
   body.fb-focused .fb-transport .fb-next-task p { font-size: .72rem; line-height: 1.2; }
   body.fb-focused .fb-transport .fb-next-task button { min-height: 32px; padding: .1rem .5rem; font-size: .72rem; }

@@ -863,24 +863,17 @@
     var player = new Player(fig, model);
     players.push(player);
     var layout = null, lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
-    var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure',
-      label: function (i) { var n = i + (score.startMeasure || 1) - (model.pickup ? 1 : 0); return n === 0 ? 'Pickup' : 'Measure ' + n; },
-      prime: function (i) { player.pause(); player.seek(model.barStart[i]); }
+    function measureAt(beat) { return model.barStart.reduce(function (at, start, i) { return beat >= start - EPS ? i : at; }, -1); }
+    // The shared ScoreNavigation: song map, measure jump and steps, zoom (re-engraves more or fewer bars
+    // per line), follow playback inside the paper. Choosing a measure seeks there; playback carries on.
+    var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure', scroller: paper, keyScope: fig, ignore: '.se-ev',
+      ariaLabel: (score.title || 'Score') + ': measures and zoom',
+      number: function (i) { return i + (score.startMeasure || 1) - (model.pickup ? 1 : 0); },
+      onSelect: function (i, m, info) { if (!(info.preview && player.playing)) player.seek(model.barStart[i]); },
+      zoom: { steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return staffScale; },
+        set: function (z) { staffScale = z; layout = null; draw(); } },
+      fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
     });
-    if (fig.hasAttribute('data-score-zoom')) {
-      var sizeLabel = el('label', { class: 'se-inst' });
-      sizeLabel.appendChild(el('span', {}, 'Staff size'));
-      var sizeSelect = el('select', { 'aria-label': 'Staff size' });
-      [100, 125, 150, 200].forEach(function (size) {
-        sizeSelect.appendChild(el('option', { value: String(size) }, size + '%'));
-      });
-      sizeLabel.appendChild(sizeSelect); bar.appendChild(sizeLabel);
-      paper.style.overflowX = 'auto';
-      sizeSelect.addEventListener('change', function () {
-        staffScale = +sizeSelect.value / 100;
-        layout = null; draw();
-      });
-    }
     var noteList = el('ol', { class: 'se-note-list', hidden: '' });
     var noteListToggle = el('button', { type: 'button', class: 'se-note-list-toggle', 'aria-expanded': 'false', 'aria-controls': 'score-notes-' + (score.id || 'score') }, 'Show note list');
     noteList.id = 'score-notes-' + (score.id || 'score');
@@ -945,8 +938,8 @@
       },
       light: function (beat) {
         if (!layout) return;
-        var measure = model.barStart.reduce(function (at, start, i) { return beat >= start ? i : at; }, -1);
-        navigation.follow(measure);
+        var measure = measureAt(beat);
+        navigation.setCurrent(beat < 0 ? -1 : measure);
         var on = beat < 0 ? [] : layout.events.filter(function (ev) {
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
@@ -1008,6 +1001,7 @@
         root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
+      navigation.select(measureAt(ev.abs));
       status.textContent = eventLabel(ev, model) + ' — press Play to start here';
       updateNoteList(ev);
     });
@@ -1019,6 +1013,7 @@
         root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
+      navigation.select(measureAt(ev.abs));
       status.textContent = eventLabel(ev, model) + ' — press Play to start here';
       updateNoteList(ev);
     }
