@@ -775,7 +775,16 @@
         if (k1 && (modeTxt === '' || modeTxt === 'none') && mod(k1.tonic + (k1.minor ? 3 : 0), 12) === mod(tonicPc + (minor ? 3 : 0), 12)) {
           minor = k1.minor; key = k1.name;
         }
-        keyChanges = res.keys.slice(1).map(function (k) { return { bar: k.bar, key: k.name, minor: k.minor }; });
+        // Guesses that flip back within a few bars are chord colour, not modulations: keep only keys that last.
+        var segs = res.keys.slice(), MIN_KEY_BARS = 4, merged = true;
+        while (merged && segs.length > 1) {
+          merged = false;
+          for (var si = 1; si < segs.length; si++) {
+            var segEnd = si + 1 < segs.length ? segs[si + 1].bar : nBars + 1;
+            if (segEnd - segs[si].bar < MIN_KEY_BARS || (segs[si].name === segs[si - 1].name && segs[si].minor === segs[si - 1].minor)) { segs.splice(si, 1); merged = true; break; }
+          }
+        }
+        keyChanges = segs.slice(1).map(function (k) { return { bar: k.bar, key: k.name, minor: k.minor }; });
         warnings.push('The file has no chord symbols, so the chords' + (keyChanges.length ? ' and key changes' : '') +
           ' were worked out from the notes (every part, with the bass line counting most). Check them against the score.');
       }

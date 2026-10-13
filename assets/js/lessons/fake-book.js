@@ -47,6 +47,8 @@
     // Never introduce a double sharp or flat: students read G more easily than F𝄪.
     return Math.abs(q.a) > Math.max(1, Math.abs(p.a)) ? respell(q.midi, preferFlat) : q;
   }
+  // One colour per letter name (the classroom boomwhacker set), light enough for dark text.
+  var NAME_COLORS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa', '#f06595'];
   function noteName(p) { return LETTERS[p.l] + ACC[p.a]; }
 
   /* ================================================================ keys */
@@ -482,7 +484,7 @@
 
   /* ================================================================ state */
   var DEFAULTS = {
-    tune: 'twinkle', key: null, instr: 'concert', octave: 0, names: false,
+    tune: 'twinkle', key: null, instr: 'concert', octave: 0, names: false, nameStyle: 'notes',
     melody: 'original', rhythm: 'written', voicing: 'smooth',
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
@@ -942,6 +944,14 @@
     });
     if (cur.length) systems.push(cur);
     var half = S / 2, headW = 295 * S / 250, wholeW = 426 * S / 250;
+    // Note names: 'under' prints each letter beneath its staff; 'notes' (default) puts it in a coloured badge on the head, MuseScore-style.
+    var namesUnder = !!opts.names && opts.nameStyle === 'under', namesOn = !!opts.names && !namesUnder;
+    var nameBadge = function (p, cx, cy, hw) {
+      var r = Math.max(0.7 * S, hw * 0.72), fs = r * 1.3, acc = ACC[p.a] || '';
+      return '<g class="fb-nbadge" data-contrast-guard-skip><circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(2) + '" fill="' + NAME_COLORS[p.l] + '" stroke="#2b2118" stroke-width="' + (0.07 * S).toFixed(2) + '"/>' +
+        '<text class="fb-nbadge-t" x="' + (cx - (acc ? 0.12 * r : 0)).toFixed(1) + '" y="' + (cy + fs * 0.34).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle">' + LETTERS[p.l] + '</text>' +
+        (acc ? '<text class="fb-nbadge-t" x="' + (cx + r * 0.62).toFixed(1) + '" y="' + (cy - r * 0.3).toFixed(1) + '" font-size="' + (fs * 0.8).toFixed(1) + '" text-anchor="middle">' + acc + '</text>' : '') + '</g>';
+    };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
     // Measure: which notes need an accidental, and how much room each piece wants
@@ -994,19 +1004,20 @@
       var chordBase = staffTop - noteTop - 1.4 * S;
       var rowsBottom = staffBot + noteBot + 1.4 * S, bassTop = 0, bassBot = 0, tabTop = 0;
       if (showBass) {
-        var btop = 8, bbot = 0;
+        var btop = 8, bbot = 0, bchord = 0;
         sys.forEach(function (b) {
           b.bassBar.pieces.forEach(function (pc) {
             if (!pc.p) return;
             view.bass[pc.idx].ps.forEach(function (p) { var st = p.dia - CB.bottom; btop = Math.max(btop, st + 1); bbot = Math.min(bbot, st - 1); });
+            bchord = Math.max(bchord, view.bass[pc.idx].ps.length);
           });
         });
-        bassTop = staffBot + noteBot + (opts.names ? 3.6 : 2.2) * S + Math.max(0, btop - 8) * half;
+        bassTop = staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + Math.max(0, btop - 8) * half;
         bassBot = bassTop + 4 * S;
-        rowsBottom = bassBot - bbot * half + 1.2 * S;
+        rowsBottom = bassBot - bbot * half + 1.2 * S + (namesUnder ? (bchord + 0.4) * 1.25 * S : 0);
       }
       if (showTab) {
-        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (opts.names ? 3.8 : 2.4) * S);
+        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S);
         rowsBottom = tabTop + (tabLines - 1) * tabGap + 1.2 * S;
       }
       var x = header;
@@ -1016,8 +1027,11 @@
       sys.forEach(function (b, k) {
         var bw = weights[k] * unit;
         b.x = bx; b.w = bw; bx += bw;
-        if (t.scoreBars) { var sb = t.scoreBars.filter(function (sb) { return sb.bar === b.i; })[0];
-          if (sb) out.push(txt(b.x + S, chordBase - 2 * S, sb.meter.join('/'), 'fb-meter-label', ' font-size="' + S + '"'));
+        if (t.scoreBars) {
+          // Only where the meter actually changes (the opening meter is already the time signature).
+          var sbi = -1, sb = t.scoreBars.filter(function (x, xi) { if (x.bar === b.i) sbi = xi; return x.bar === b.i; })[0];
+          var prevSb = sbi > 0 ? t.scoreBars[sbi - 1] : null;
+          if (sb && prevSb && prevSb.meter.join('/') !== sb.meter.join('/')) out.push(txt(b.x + S, chordBase - 2 * S, sb.meter.join('/'), 'fb-meter-label', ' font-size="' + S + '"'));
         }
         out.push('<rect class="fb-bar" data-bar="' + b.i + '" x="' + b.x.toFixed(1) + '" y="' + (chordBase - 1.6 * S).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (rowsBottom - chordBase + 1.6 * S).toFixed(1) + '" rx="' + (0.6 * S) + '"><title>Bar ' + (b.i || 'pickup') + '</title></rect>');
       });
@@ -1141,7 +1155,8 @@
           var info = { pc: pc, x: nx, y: ny, step: stp, hw: hw, base: base[0], sys: si, g: g, bar: b };
           placedBar.push(info);
           (placed[pc.idx] = placed[pc.idx] || []).push(info);
-          if (opts.names) g.push(txt(nx, staffBot + noteBot + 2.3 * S, noteName(pc.p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
+          if (namesUnder) g.push(txt(nx, staffBot + noteBot + 2.3 * S, noteName(pc.p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
+          else if (namesOn) g.push(nameBadge(pc.p, nx, ny, hw / 2));
           ties.push(info);
         });
         // stems, flags and beams
@@ -1216,7 +1231,7 @@
       });
       out.push('</g>');
       sys.endX = bx; sys.startX = header;
-      y = showBass || showTab ? rowsBottom + 1.4 * S : staffBot + noteBot + (opts.names ? 3.4 : 1.8) * S + 1.4 * S;
+      y = showBass || showTab ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S;
 
       // One bar of the bass-clef staff: notes and chords at the melody's x for the same beat.
       function drawBassBar(b, xAt) {
@@ -1245,7 +1260,14 @@
             g.push(MN.glyph(base[0] >= 4 ? 'whole' : base[0] >= 2 ? 'half' : 'quarter', nx - hw / 2 + off, ny, S, 'fb-head'));
             if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S + Math.max(0, off)).toFixed(1) + '" cy="' + (ny - (mod(st, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
             ys.push(ny);
+            if (namesOn) g.push(nameBadge(p, nx + off, ny, hw / 2));
           });
+          if (namesUnder) {
+            var nameY = bassBot - bbot * half + 1.9 * S;
+            ps.slice().sort(function (a, c) { return c.midi - a.midi; }).forEach(function (p, i) {
+              g.push(txt(nx, nameY + i * 1.25 * S, noteName(p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
+            });
+          }
           if (base[0] < 4) {
             var sx = up ? nx + hw / 2 - 0.06 * S : nx - hw / 2 + 0.06 * S;
             var y0 = up ? Math.max.apply(null, ys) : Math.min.apply(null, ys), tip = up ? Math.min.apply(null, ys) - 3.5 * S : Math.max.apply(null, ys) + 3.5 * S;
@@ -2117,6 +2139,7 @@
     el('[data-fb-instr]').value = opts.instr;
     el('[data-fb-octave]').value = String(opts.octave);
     el('[data-fb-names]').checked = !!opts.names;
+    var nsel = el('[data-fb-name-style]'); nsel.value = opts.nameStyle === 'under' ? 'under' : 'notes'; nsel.disabled = !opts.names;
     // Bass clef / tab switches: only for a song whose score came with those staves.
     // Bass clef: only when the score had a bass line. Tab: always (worked out when the file had none).
     var stv = el('[data-fb-staff-toggles]'), hasB = !!tune.staves.bass;
@@ -2902,7 +2925,8 @@
       else if (t.matches('[data-fb-key]')) { opts.key = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
-      else if (t.matches('[data-fb-names]')) { opts.names = t.checked; renderSheet(); save(); }
+      else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
+      else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
