@@ -839,6 +839,7 @@
     if (ui.selClip && !findClip(ui.selClip)) ui.selClip = null;
     if (t.armed) releaseMic();
     commit();
+    status(`Deleted “${t.name}”. Undo brings it back.`);
   }
   function newMidiClip(track, start, length) {
     const clip = { id: uid(), type: 'midi', name: track.name, start, length: length || barBeats() * 2, notes: [] };
@@ -1428,7 +1429,8 @@
       <span class="daw-selbar-name"><i aria-hidden="true"></i>${esc(t.name)}</span>
       <button type="button" class="daw-btn daw-selbar-btn" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
       <button type="button" class="daw-btn daw-selbar-btn" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
-      <button type="button" class="daw-btn daw-selbar-btn daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>`;
+      <button type="button" class="daw-btn daw-selbar-btn daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>
+      <button type="button" class="daw-btn daw-selbar-btn daw-danger" data-tr="delete" aria-label="Delete ${esc(t.name)}">🗑</button>`;
     if (refocus) selBar.querySelector(`[data-tr="${refocus}"]`)?.focus({ preventScroll: true });
   }
 
@@ -1718,6 +1720,17 @@
     notation: { name: 'Sheet notation + note list', accepts: t => t.kind === 'instrument' && t.instrument !== 'drums', lesson: 'lessons/music/sheet-music-trainer.html' },
     rhythm: { name: 'Drum step sequencer', accepts: t => t.instrument === 'drums', lesson: 'lessons/music/drums.html' },
   };
+  const TOOL_LABEL = {
+    keyboard: ['Piano', 'Keys with octave shift'], guitar: ['Guitar', 'Fretboard, strum the strings'],
+    drumkit: ['Drum kit', 'Pads: kick, snare, hats'], synthlab: ['Synth', 'Shape the envelope, play'],
+    harmony: ['Chords', 'Chord shapes + circle of fifths'], theory: ['Scales', 'Scales + interval ear training'],
+    notation: ['Notation', 'Staff view + note list'], rhythm: ['Step sequencer', '16-step drum grid'],
+  };
+  function toolTile(id, track) {
+    const d = CHANNEL_TOOLS[id], [label, blurb] = TOOL_LABEL[id] || [d.name, ''];
+    const on = (track.tools || []).includes(id);
+    return `<button type="button" class="daw-tile${on ? ' is-on' : ''}" data-tool-add="${id}" aria-label="Add ${esc(d.name)}${on ? ' (installed)' : ''}" ${on ? 'disabled' : ''}><strong>${esc(label)}</strong><small>${on ? '✓ In use' : esc(blurb)}</small></button>`;
+  }
   function channelTarget() { return findTrack(ui.selTrack) || project.tracks[0]; }
   function channelClip(track) { const sel = selected(); return sel?.track === track ? sel.clip : track.clips.find(c => c.type === 'midi'); }
   function ensureChannelClip(track) {
@@ -1753,19 +1766,31 @@
     ui.selTrack = track.id;
     const clip = channelClip(track);
     const arrange = selected()?.track === track ? selected().clip : track.clips[0];
+    const accepted = Object.keys(CHANNEL_TOOLS).filter(id => CHANNEL_TOOLS[id].accepts(track));
+    const sounds = accepted.filter(id => CHANNEL_TOOLS[id].role === 'instrument'), learning = accepted.filter(id => CHANNEL_TOOLS[id].role !== 'instrument');
+    const clipCount = track.clips.length;
+    const sub = track.kind === 'audio' ? '🎙 Audio channel' : hasInstrumentExperience(track) ? `Instrument · ${INSTRUMENTS[track.instrument]}` : 'Instrument · no sound yet';
     host.innerHTML = `<h3 class="daw-rack-title">${esc(track.name)} · channel rack</h3>
-      <div class="daw-group"><label class="daw-field">Channel<select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t===track?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
-      <button type="button" class="daw-btn" data-channel-arm aria-pressed="${track.armed}">${track.armed?'Disarm':'Arm'} recording</button>
-      </div><details class="daw-channel-options"><summary>Channel options</summary><div class="daw-group"><button type="button" class="daw-btn" data-channel-open="mix">Mix channel</button><button type="button" class="daw-btn" data-channel-open="fx">Add audio effects</button><button type="button" class="daw-btn" data-channel-preset="save">Save channel preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load channel preset</button></div>
-      <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → inserts → volume / pan → master.':'Instrument → notes → inserts → volume / pan → master.'} Add a tool to this channel to use it. Tools and effects travel in saved .mlab.zip projects.</p>
-      </details>${track.kind==='instrument'?`<p class="daw-note">${hasInstrumentExperience(track)?`Installed sound: ${INSTRUMENTS[track.instrument]}`:'No instrument experience installed. Choose one below.'}</p>${hasInstrumentExperience(track)?'<button type="button" class="daw-btn" data-channel-open="play">Expanded play controller</button>':''}`:''}
+      <div class="daw-chead" style="--tc:${track.color}"><i class="daw-chead-swatch" aria-hidden="true"></i>
+        <div class="daw-chead-main"><input class="daw-chead-name" data-channel-name value="${esc(track.name)}" maxlength="40" aria-label="Channel name"><span class="daw-chead-sub">${sub} · ${clipCount} clip${clipCount === 1 ? '' : 's'}</span></div></div>
+      <div class="daw-chead-actions">
+        <label class="daw-field">Switch channel<select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t===track?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
+        <button type="button" class="daw-btn" data-channel-arm aria-pressed="${track.armed}">${track.armed ? '● Disarm' : '● Arm'} recording</button>
+        <button type="button" class="daw-btn daw-danger" data-channel-delete>🗑 Delete channel</button>
+        ${hasInstrumentExperience(track) ? '<button type="button" class="daw-btn daw-wide" data-channel-open="play">Open play controller</button>' : ''}
+      </div>
+      <details class="daw-channel-options"><summary>Mix · effects · presets</summary><div class="daw-opt-grid"><button type="button" class="daw-btn" data-channel-open="mix">Mix channel</button><button type="button" class="daw-btn" data-channel-open="fx">Add audio effects</button><button type="button" class="daw-btn" data-channel-preset="save">Save preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load preset</button></div>
+      <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → inserts → volume / pan → master.':'Instrument → notes → inserts → volume / pan → master.'} Tools and effects travel in saved .mlab.zip projects.</p>
+      </details>
       ${(track.tools||[]).filter(id => Object.hasOwn(CHANNEL_TOOLS,id) && CHANNEL_TOOLS[id].accepts(track)).map(id => `<section class="daw-module" data-installed-tool="${id}"><div class="daw-group"><h4>${CHANNEL_TOOLS[id].name}</h4><a href="${CHANNEL_TOOLS[id].lesson}">Lesson counterpart</a><button type="button" class="daw-btn" data-tool-remove="${id}">Remove experience</button></div>
       ${window.MusicChannelExperiences.registry[id]?`<div data-experience="${id}"></div>`:`<label class="daw-field">Note clip<select data-channel-clip aria-label="Channel note clip"><option value="">Choose / create clip</option>${track.clips.filter(c => c.type==='midi').map(c => `<option value="${c.id}" ${c===clip?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
       ${id==='rhythm'?rhythmHtml(clip):`${clip?notationSvg(clip):''}<button type="button" class="daw-btn" data-note-add>Add note</button>${noteListHtml(clip)}`}`}</section>`).join('')}
       <details class="daw-module daw-arrange"><summary>Arrange clips precisely</summary><label class="daw-field">Clip<select data-arrange-clip aria-label="Clip to arrange"><option value="">Select a clip</option>${track.clips.map(c=>`<option value="${c.id}" ${c===arrange?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
       ${arrange?`<label class="daw-field">Start (beat)<input type="number" data-arrange-start data-arrange-id="${arrange.id}" value="${arrange.start+1}" min="1" step="0.25" aria-label="Clip start beat"></label><button type="button" class="daw-btn" data-arrange-edit="${arrange.id}">Edit selected clip</button>`:'<p class="daw-note">Record a take, import a file, or add a note clip to arrange it here.</p>'}</details>
-      <details class="daw-experience-catalog" ${hasInstrumentExperience(track)?'':'open'}><summary>Add an experience to this channel</summary><div class="daw-tool-catalog">${Object.entries(CHANNEL_TOOLS).map(([id,d]) => `<button type="button" class="daw-btn" data-tool-add="${id}" ${!d.accepts(track)||(track.tools||[]).includes(id)?'disabled':''}>Add ${d.name}</button>`).join('')}</div>
-      <p class="daw-note">One instrument experience per channel. Adding another replaces its controller and sound while keeping your clips. Add more channels to layer instruments. Drum sequencing belongs on Drum Kit channels; pitched notation belongs on melodic channels. EQ and compression accept both instrument and audio channels.</p></details>
+      ${accepted.length ? `<details class="daw-experience-catalog" ${hasInstrumentExperience(track)?'':'open'}><summary>${hasInstrumentExperience(track) ? 'Change sound · add learning tools' : 'Choose a sound · add learning tools'}</summary>
+        ${sounds.length ? `<h4 class="daw-tile-title">Sound <span>one per channel; switching keeps your clips</span></h4><div class="daw-tool-catalog">${sounds.map(id => toolTile(id, track)).join('')}</div>` : ''}
+        ${learning.length ? `<h4 class="daw-tile-title">Learning tools <span>${track.instrument === 'drums' ? 'sequencing lives on drum channels' : 'notation and theory live on melodic channels'}</span></h4><div class="daw-tool-catalog">${learning.map(id => toolTile(id, track)).join('')}</div>` : ''}</details>`
+        : '<div class="daw-audio-note">Audio channels play and record sound as-is. Process them in <strong>FX</strong>, balance them in <strong>Mix</strong>, or add an Instrument channel for keys, drums and more.</div>'}
       <details class="daw-lesson-browser"><summary>Music + audio engineering lesson library</summary><p class="daw-note">Learn a technique, then apply it to this channel. Historical and listening lessons are references; sound processors appear in FX.</p><div class="daw-lesson-links">${lessonCatalog.map(l => `<a href="${esc(l.url)}">${esc(l.title)}</a>`).join('')}</div></details>`;
     host.querySelectorAll('[data-experience]').forEach(element => {
       const id=element.dataset.experience;
@@ -1793,6 +1818,7 @@
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
     if (b.dataset.arrangeEdit) { select(t.id,b.dataset.arrangeEdit); renderEditor();setTab('edit');return; }
     if (b.hasAttribute('data-channel-arm')) { await setArmed(t,!t.armed); return; }
+    if (b.hasAttribute('data-channel-delete')) { deleteTrack(t.id); return; }
     if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen); return; }
     if (transport.recording || finishingTake) { status('Finish the take before editing channel tools.'); return; }
     if (b.dataset.channelPreset === 'save') {
@@ -1819,6 +1845,7 @@
   });
   $('tools').addEventListener('change', e => {
     const el=e.target,t=channelTarget(); if(!t)return;
+    if(el.hasAttribute('data-channel-name')) { t.name=el.value.trim().slice(0,40)||t.name; commit(); return; }
     if(el.hasAttribute('data-channel')) { ui.selTrack=el.value; ui.selClip=null; renderDock(); $('tools').querySelector('[data-channel]').focus(); return; }
     if(el.hasAttribute('data-arrange-clip')) { select(t.id,el.value||null);renderChannel();$('tools').querySelector('[data-arrange-clip]').focus();return; }
     if(el.hasAttribute('data-channel-clip')) { select(t.id,el.value||null); renderChannel(); return; }
