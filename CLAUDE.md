@@ -156,7 +156,13 @@ Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` 
   (or they're step numbers 1, 2, 3), events are spaced evenly in source order instead.
 - Track cards show an item's first sentence, whole or on two lines when there's room, and cut it
   when it's longer; give long items a `data-label` headline (the full text stays in the card).
-  Engine CSS is scoped `.tl .tl-…` so lesson-wide `button`/`input` rules can't restyle the track.
+  Engine CSS is scoped `.tl .tl-…` so lesson-wide `button`/`input` rules can't restyle the track,
+  and nothing inside `.tl-canvas` transitions unless the engine asks (a page's reduced-motion
+  `transition-duration` reset otherwise makes the engine read stale sizes).
+- The track draws its own context: gridlines and minor ticks, Deep time's powers-of-ten stripes,
+  a dotted BC|AD line, ranges as spans on the axis, and a reading line with the selected date on
+  the axis. Eras without `data-color` get an ordered colour each (oldest to newest), and an era's
+  name stays on screen while you scroll through it.
   `npm run audit:timeline` screenshots and measures reference timelines against
   `docs/timeline-audit-baseline.json` (`--save-baseline` after a deliberate change).
 - Per item: `data-label` (short track label), `data-group` (colour + filter chips),

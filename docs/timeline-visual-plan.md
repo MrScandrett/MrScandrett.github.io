@@ -163,42 +163,72 @@ Targets missed, and why:
 Performance: one `layout()` on the Grand Timeline takes about 10ms, against 22ms before. A full
 zoom step, including ticks and scroll, is about the same as before (40–60ms median, noisy).
 
-## Phase 2: context on the axis
+## Phase 2: context on the axis (done)
 
-**2a. A better axis** (#7)
-- Add unlabelled minor ticks between major ticks: 5 per step on linear scales, and the 2/5 steps on
-  log scales.
-- Draw faint vertical gridlines at major ticks through the lane area, beneath bands and stems, at
-  about 6% ink. These connect high labels to the date scale.
-- In Deep time, shade every other power of ten very lightly and label the first one "each band = ×10
-  further back". This makes the compression itself something students can see.
-- On True scale, when the range crosses 0, mark the BC|AD boundary as a dotted line.
+The audit gained a metric for each item:
+- `minor`, `grid`, `stripes`, `spans`, `bars`, `hues`, `bandLost`, `cursor`, `tickHits`, `zero`
+- two new cases: **bible** ("The Bible and its scholars", the one True-scale timeline that crosses
+  year 0) and **ages-bronze** (Ages zoomed to the Bronze Age, where labels at the view's edges
+  matter)
 
-**2b. Ranges sit on the axis** (#6)
-- Draw each range event as a capsule on the axis itself, in the stem layer, from `start` to `end`.
-  The stem rises from the capsule's start.
-- Remove the floating `.tl-range` bar from inside the mark.
-- Overlapping ranges stack as thin capsules just above the axis, up to 3, and beyond that become
-  hatched.
+**A bug found first: "Zoom to" landed on empty track with reduced motion on.** The Ages page's
+reduced-motion reset (`.ages-page * { transition-duration: .01ms !important }`) turns every
+default `transition-property: all` into a live transition. So the canvas width the engine read
+back straight after setting it was still the old one. The bug predates this work.
+`.tl-canvas, .tl-canvas * { transition-property: none }` fixes it. Engine transitions opt back in.
 
-**2c. Era bands people can tell apart** (#5)
-- When eras have no `data-color`, colour them from an ordered strata ramp: one hue family, stepped in
-  lightness, with neighbouring bands alternating light and dark. Grand Timeline bands then read as
-  rock layers.
-- Add a 4px cap bar in the band's colour along the top edge of each band, with the label sitting on
-  it.
-- Make band labels sticky: if a band starts off screen left, pin its label to the viewport's left
-  edge until the band ends. Do the same at the right edge. This is computed in `renderTicks()`,
-  which already runs every scroll frame.
-- Keep a label in rows 2–3 next to its own band's left edge, joined by a short leader line, so it
-  never floats over a neighbouring band.
+**2a. Axis**
+- Unlabelled minor ticks: five per step on linear scales; on Deep time, every 1–9 × 10ᵏ (log
+  paper), and tenths of a decade when zoomed in.
+- Deep time labels get finer as you zoom. 1, 2 and 5 × 10ᵏ come first, then 3, 4, 6–9 × 10ᵏ, then
+  4,100, 4,200 and so on, wherever they fit. Zoomed to the Bronze Age the axis went from 1 label to 7.
+- Faint gridlines rise from every labelled tick.
+- Every other power of ten is shaded on Deep time.
+- A dotted BC|AD line, with "BC | AD" and "today" placed ahead of the round numbers.
+- Axis labels are placed by priority (the cursor's date, then today and BC|AD, then round numbers)
+  and never touch: `tickHits` is 0 in every case. That also fixed one overlap the Bible timeline
+  already had.
+- **Changed from the plan:** the "each stripe = ×10 further back" note sits in the hint line under
+  the track. Inside the track it would collide with cards.
 
-**2d. A reading cursor for the selected event** (#9)
-- Draw a full-height hairline through the canvas at the selected event's date.
-- Add an axis callout chip that shows the exact date where the line meets the axis.
-- Pulse the halo on the event's axis dot, as the `today` tick already does.
-- During ▶ Play, unselected marks fade to 55% opacity, so the stop is unmistakable on a projector.
-- Hovering any mark shows a light preview cursor in the same style.
+**2b. Ranges sit on the axis**
+- Each range is a span just above the axis, from start to end, even when its card is a dot.
+  Overlapping spans stack 3 deep, and past that the top one is hatched.
+- Cards no longer stretch over their range and may now flip left.
+- Spans drawn: Bach 3, Ages 29, Bible 2. Old bars (`bars`) are 0 everywhere.
+
+**2c. Era bands people can tell apart**
+- Eras without `data-color` get an ordered strata ramp, oldest to newest (amber, olive, green,
+  teal, blue, violet). The band, its label, its "Zoom to" chip and its list row all share the colour.
+- Each band gets a 3px cap along its top in that colour, and a stronger wash.
+- Labels are sticky. An era whose start is off screen keeps its name pinned at the left edge while
+  it runs on, or at the right edge as it arrives. A label with no room hides instead of being cut,
+  and pinned labels that would collide give way.
+- **Changed from the plan:** no leader lines. A label already starts at its own band's edge, and the
+  matching colour and cap make the link. At the right edge a pinned label can hang over the
+  previous era, as the plan allowed.
+
+**2d. Reading cursor**
+- A line rises through the selected event, with its date in a chip on the axis.
+- The selected dot pulses (off with reduced motion).
+- A fainter line follows the mouse over a card.
+- During ▶ Play the other cards fade to 55%.
+
+Results (Day; Night is identical; the before values come from the Phase 1 code):
+
+| Case | Distinct band colours | Band labels cut / lost | Axis labels | Minor ticks |
+|------|------------:|-------------------:|------------:|------------:|
+| Ages desktop | 1 → 6 | 3 / 0 → 3 / 0 | 9 → 9 | 0 → 91 |
+| Ages projector | 1 → 7 | 2 / 1 → 2 / 1 | 13 → 12 | 0 → 91 |
+| Ages phone | 1 → 3 | 7 / 0 → 5 / 0 | 2 → 3 | 0 → 0 |
+| Ages zoomed to Bronze (desktop) | 0 → 2 | 0 / 0 → 0 / 0 | 1 → 7 (before: empty track, see the bug above) | 0 → 23 |
+| Bible desktop | | | 6 → 4 (+ BC\|AD line, today, cursor's date) | 0 → 16 |
+| Hopper desktop | | | 5 → 5 | 0 → 24 |
+
+Label overlaps stay at 0, and cut labels, lanes and compact dots are unchanged from Phase 1.
+On Ages the 2–5 band labels still cut at fit zoom are the ones with no free row: three rows can't
+hold nine overlapping eras. Their names appear as you zoom in. Performance: a zoom step is about
+the same as Phase 1 (≈120ms median on a busy machine; Phase 1 measured ≈117ms in the same run).
 
 ## Phase 3: density and navigation
 

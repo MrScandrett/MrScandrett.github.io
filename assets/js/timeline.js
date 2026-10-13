@@ -205,11 +205,11 @@
     return String(Math.round(n * 100) / 100);
   }
 
-  // short: the axis of a narrow track ("500M yrs ago", "20k yrs ago").
+  // short: the axis of a narrow track ("500M yrs ago", "4.1k yrs ago").
   function formatAgo(yearsAgo, short) {
     if (yearsAgo >= 1e9) return trimNumber(yearsAgo / 1e9) + (short ? 'B' : ' billion') + ' yrs ago';
     if (yearsAgo >= 1e6) return trimNumber(yearsAgo / 1e6) + (short ? 'M' : ' million') + ' yrs ago';
-    if (short && yearsAgo >= 1e4) return trimNumber(yearsAgo / 1e3) + 'k yrs ago';
+    if (short && yearsAgo >= 1e3) return trimNumber(yearsAgo / 1e3) + 'k yrs ago';
     var n = Math.round(yearsAgo);
     return n.toLocaleString('en-US') + (n === 1 ? ' yr ago' : ' yrs ago');
   }
@@ -326,6 +326,15 @@
     even: 'Events evenly spaced, in order'
   };
   var PALETTE = ['#2563eb', '#c2410c', '#15803d', '#9333ea', '#be123c', '#0e7490', '#a16207', '#4d7c0f'];
+  // Era strata, oldest to newest: earth to sky. Mid-dark so each reads as a band edge on Day and
+  // Night paper (fills use them at a few percent).
+  var STRATA = [[180, 83, 9], [161, 98, 7], [77, 124, 15], [15, 118, 110], [29, 78, 216], [124, 58, 237]];
+  function strata(f) {
+    var at = Math.min(Math.max(f, 0), 1) * (STRATA.length - 1), i = Math.min(Math.floor(at), STRATA.length - 2), k = at - i;
+    return '#' + STRATA[i].map(function (c, j) {
+      return ('0' + Math.round(c + (STRATA[i + 1][j] - c) * k).toString(16)).slice(-2);
+    }).join('');
+  }
   // Track sizes in px at --tl-type 1 and a 16px root; timeline.css uses the same numbers via --tl-u.
   // A mark is a card, date over label; a long label may wrap onto two lines (its lane grows).
   var SIZE = {
@@ -508,6 +517,11 @@
     items.forEach(function (it) {
       it.tint = it.color || (it.group ? PALETTE[groups.indexOf(it.group) % PALETTE.length] : '');
     });
+    // Eras without a colour of their own take one from an ordered ramp, oldest first, so
+    // neighbouring ages read as distinct layers of rock rather than one tint.
+    var plain = this.eras.filter(function (it) { return !it.tint && it.parsed; })
+      .sort(function (a, b) { return a.parsed.start - b.parsed.start; });
+    if (plain.length > 1) plain.forEach(function (it, i) { it.tint = strata(i / (plain.length - 1)); });
 
     this.build();
     this.selectIndex(0, { quiet: true });
@@ -634,6 +648,7 @@
       this.eras.forEach(function (era) {
         var b = el('button', 'tl-chip tl-jump-btn', era.label);
         b.type = 'button';
+        if (era.tint) b.style.setProperty('--tl-c', era.tint);
         b.title = era.label + (era.display ? ' · ' + era.display : '');
         b.addEventListener('click', function () { self.zoomToEra(era); });
         jump.appendChild(b);
@@ -651,20 +666,34 @@
     this.axis = el('div', 'tl-axis');
     this.ticks = el('div', 'tl-ticks');
     this.ticks.setAttribute('aria-hidden', 'true');
+    // Gridlines, Deep time's powers-of-ten stripes and the BC|AD line sit under everything.
+    this.gridLayer = el('div', 'tl-grid');
+    this.gridLayer.setAttribute('aria-hidden', 'true');
+    canvas.appendChild(this.gridLayer);
     canvas.appendChild(this.bandLayer);
     canvas.appendChild(this.axis);
     canvas.appendChild(this.ticks);
+    // The selected event's date, where its reading line meets the axis.
+    this.cursorDate = el('span', 'tl-cursor-date');
+    this.cursorDate.setAttribute('aria-hidden', 'true');
+    canvas.appendChild(this.cursorDate);
     // Stems and axis dots get their own layer under every label, so no line ever crosses a label.
+    // Range spans and the reading lines (selected, hovered) live there too.
     this.stemLayer = el('div', 'tl-stems');
     this.stemLayer.setAttribute('aria-hidden', 'true');
+    this.cursor = this.stemLayer.appendChild(el('span', 'tl-cursor'));
+    this.hoverCursor = this.stemLayer.appendChild(el('span', 'tl-cursor tl-hover'));
+    this.hoverCursor.hidden = true;
     canvas.appendChild(this.stemLayer);
     canvas.appendChild(this.markLayer);
     viewport.appendChild(canvas);
     track.appendChild(viewport);
     var touch = global.matchMedia && global.matchMedia('(pointer: coarse)').matches;
-    track.appendChild(el('p', 'tl-hint', touch
+    var hint = track.appendChild(el('p', 'tl-hint', touch
       ? 'Swipe sideways to move · pinch to zoom · tap an event to read it · ⛶ Full screen fills the screen (try it sideways)'
       : 'Drag or scroll sideways to move · Ctrl + wheel or +/− to zoom · ← → step through events'));
+    this.legend = hint.appendChild(el('span', 'tl-legend'));
+    this.updateLegend();
     this.detail = el('div', 'tl-detail');
     this.detail.setAttribute('aria-live', 'polite');
     track.appendChild(this.detail);
@@ -680,7 +709,6 @@
       if (it.tint) mark.style.setProperty('--tl-c', it.tint);
       if (it.display || it.when) mark.appendChild(el('span', 'tl-mark-date', it.display || it.when));
       it.labelEl = mark.appendChild(el('span', 'tl-mark-label', it.text));
-      if (it.parsed && it.parsed.end > it.parsed.start) mark.appendChild(el('span', 'tl-range'));
       mark.setAttribute('aria-label', (it.display ? it.display + ': ' : '') + it.text);
       mark.title = (it.display ? it.display + ' · ' : '') + it.text;
       mark.addEventListener('click', function () {
@@ -688,11 +716,25 @@
         self.selectIndex(i, { focus: true });
         self.showDetail();
       });
+      // Pointing at a card previews its reading line.
+      mark.addEventListener('pointerenter', function (e) {
+        if (e.pointerType !== 'mouse' || it.px == null || mark.classList.contains('tl-compact')) return;
+        self.hoverCursor.hidden = false;
+        self.hoverCursor.style.left = it.px + 'px';
+        if (it.tint) self.hoverCursor.style.setProperty('--tl-c', it.tint); else self.hoverCursor.style.removeProperty('--tl-c');
+      });
+      mark.addEventListener('pointerleave', function () { self.hoverCursor.hidden = true; });
       it.mark = mark;
       self.markLayer.appendChild(mark);
       it.stem = el('span', 'tl-stem' + (it.major ? ' tl-major' : ''));
       if (it.tint) it.stem.style.setProperty('--tl-c', it.tint);
       self.stemLayer.appendChild(it.stem);
+      // A range (1717–23, 335–175 Ma) is drawn on the axis itself, from start to end.
+      if (it.parsed && it.parsed.end > it.parsed.start) {
+        it.span = self.stemLayer.appendChild(el('span', 'tl-span'));
+        if (it.tint) it.span.style.setProperty('--tl-c', it.tint);
+        it.span.hidden = true;
+      }
     });
     this.eras.forEach(function (it, k) {
       var band = el('div', 'tl-band' + (k % 2 ? ' tl-band-alt' : ''));
@@ -931,9 +973,15 @@
     this.zoom = 1;
     this.zoomFloor = 0;
     this.widths = null;
+    this.updateLegend();
     this.layout();
     this.viewport.scrollLeft = 0;
     this.reveal(false);
+  };
+
+  // Deep time compresses the past; the shaded stripes show by how much.
+  Timeline.prototype.updateLegend = function () {
+    this.legend.textContent = this.scale === 'log' ? ' · Each shaded stripe reaches 10× further back' : '';
   };
 
   // Fill the track with one era.
@@ -1363,9 +1411,14 @@
     this.canvas.style.setProperty('--axis-y', axisY + 'px');
     this.canvas.style.setProperty('--bands-h', bandsH + 'px');
 
-    this.events.forEach(function (it) { it.mark.hidden = it.stem.hidden = !pos.has(it); });
+    this.events.forEach(function (it) {
+      it.mark.hidden = it.stem.hidden = !pos.has(it);
+      it.px = null;
+      if (it.span) it.span.hidden = true;
+    });
     res.placed.forEach(function (p) {
       var m = p.it.mark;
+      p.it.px = p.px;
       m.classList.toggle('tl-flip', p.flip);
       m.classList.toggle('tl-compact', p.lane === -1);
       m.classList.toggle('tl-two', !!p.two);
@@ -1385,9 +1438,26 @@
       p.it.stem.style.left = p.px + 'px';
       p.it.stem.style.top = stemTop + 'px';
       p.it.stem.style.height = (axisY - stemTop) + 'px';
-      var bar = m.querySelector('.tl-range');
-      if (bar) bar.style.width = Math.max(p.range, 4) + 'px';
     });
+    // Ranges: a span just above the axis from start to end, labelled or not. Overlapping spans
+    // stack three deep; past that the top one turns hatched ("more here, zoom in").
+    var rowEnd = [];
+    res.placed.filter(function (p) { return p.range > 0 && p.it.span; })
+      .sort(function (a, b) { return a.px - b.px; })
+      .forEach(function (p) {
+        var row = 0;
+        while (row < 3 && rowEnd[row] != null && rowEnd[row] > p.px - 2) row++;
+        var more = row === 3;
+        if (more) row = 2;
+        var w = Math.max(p.range, 4);
+        rowEnd[row] = Math.max(rowEnd[row] || 0, p.px + w);
+        var span = p.it.span;
+        span.hidden = false;
+        span.classList.toggle('tl-span-more', more);
+        span.style.left = p.px + 'px';
+        span.style.width = w + 'px';
+        span.style.top = (axisY - 6 - row * 6) + 'px';
+      });
     this.renderTicks();
   };
 
@@ -1476,6 +1546,7 @@
       if (row === 3) label.hidden = true;
       else bandRows[row] = start + labelW;
       label.style.left = (start - x0 + 2) + 'px';
+      era.geo = { x0: x0, x1: x1, left: start - x0 + 2, w: labelW, row: row };
       era.band.style.left = x0 + 'px';
       era.band.style.width = (x1 - x0) + 'px';
       era.band.style.setProperty('--row', row === 3 ? 0 : row);
@@ -1497,7 +1568,7 @@
   };
 
   // Lanes: lane 0 sits nearest the axis. Each label goes in the lowest lane where it fits, to
-  // the right of its dot or else the left; ranges always run right. In each lane a label tries
+  // the right of its dot or else the left (a range's span is on the axis). In each lane a label tries
   // its whole self on one line, then wrapped onto two (that lane grows taller), then cut short;
   // only when none fit does it move up a lane. With no lane left it becomes a dot on the axis.
   // tier: [one-line max, two-line max] widths at type 1 (0 = not allowed).
@@ -1539,9 +1610,9 @@
         for (var f = 0; f < forms.length && !hit; f++) {
           var form = forms[f];
           if (form.two && heights[l] < twoH && used + twoH - heights[l] > budget.px + 0.5) continue;
-          var width = Math.max(form.w, range);
+          var width = form.w;
           if (fits(lanes[l], px, px + width)) hit = { lane: l, flip: false, width: width, two: form.two };
-          else if (!range && fits(lanes[l], px - width, px)) hit = { lane: l, flip: true, width: width, two: form.two };
+          else if (fits(lanes[l], px - width, px)) hit = { lane: l, flip: true, width: width, two: form.two };
         }
       }
       if (hit) {
@@ -1558,17 +1629,25 @@
     return { placed: placed, base: base, height: Math.max(used, laneH), compact: compact };
   };
 
+  // The axis, redrawn on every scroll frame for what's in view: tick labels, unlabelled minor
+  // ticks, gridlines up through the lanes, Deep time's powers-of-ten stripes, the BC|AD line,
+  // the selected event's date, and era labels held at the edges of the view.
   Timeline.prototype.renderTicks = function () {
     if (this.root.dataset.tlView !== 'track') return;
     var self = this;
-    var ticks = this.ticks;
+    var ticks = this.ticks, grid = this.gridLayer;
     ticks.textContent = '';
+    grid.textContent = '';
     var W = this.canvas.offsetWidth;
     var inner = W - PAD * 2;
-    if (!this.p) {
-      // Even spacing: no time axis, just a dot under each event.
-      return;
-    }
+    var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
+    this.stickBandLabels(vis0, vis1);
+    // Axis labels never touch: the selected event's date claims its place first, then "today"
+    // and BC|AD, then the round numbers in order.
+    var taken = [];
+    var chip = this.renderCursor(vis0, vis1);
+    if (chip) taken.push(chip);
+    if (!this.p) return; // even spacing: no time axis
     if (!this.tickFont) {
       var probe = el('span', 'tl-tick', '0');
       ticks.appendChild(probe);
@@ -1577,61 +1656,154 @@
       probe.remove();
     }
     var font = this.tickFont;
-    var view0 = this.viewport.scrollLeft - 160, view1 = this.viewport.scrollLeft + this.viewport.clientWidth + 160;
     var p = this.p;
     var ctx = { deep: this.ctx.deep, bc: this.ctx.bc, short: !!this.narrow };
     var toX = function (t) { return PAD + p.norm(t) * inner; };
-    var list = [];
+    var inView = function (px) { return px >= vis0 - 2 && px <= vis1 + 2 && px >= PAD - 1 && px <= W - PAD + 1; };
+    var list = [], minors = [], first = [];
     if (this.scale === 'log') {
-      // Round "years ago" values: 1, 2, 5, 10, 20, 50 …
+      // Round "years ago" values, coarsest first: 1, 2, 5 × 10^k; then 3, 4, 6–9 × 10^k where a
+      // decade is wide enough; then tenths of a decade (4,100 … 4,900) deep in a zoom. Labels
+      // that would touch are dropped below, so finer levels only fill gaps. Unlabelled minor
+      // ticks mark the next level down (log paper: they bunch up toward each power of ten).
       // No ticks out in the padding before the first event (nothing is 20 billion years old).
       var agoHi = Math.pow(10, -p.first), agoLo = Math.max(Math.pow(10, -p.hi), 1);
-      var lastX = -Infinity, lastW = 0;
+      var levels = [[], [], []], minorTimes = [];
       for (var k = Math.floor(Math.log10(agoHi)); k >= 0; k--) {
-        [5, 2, 1].forEach(function (mult) {
-          var ago = mult * Math.pow(10, k);
+        var pk = Math.pow(10, k);
+        var dA = toX(NOW - pk * 10), dB = toX(NOW - pk);
+        if (dB < vis0 - 40 || dA > vis1 + 40) continue;
+        var dw = dB - dA;
+        var add = function (into, ago) {
           if (ago > agoHi || ago < agoLo) return;
-          var t = NOW - ago, px = toX(t);
-          var w = tickWidth(formatTick(t, ctx), font);
-          if (px - lastX < (lastW + w) / 2 + 14) return;
-          lastX = px;
-          lastW = w;
-          list.push(t);
-        });
+          if (inView(toX(NOW - ago))) into.push(NOW - ago);
+        };
+        [5, 2, 1].forEach(function (m) { add(levels[0], m * pk); });
+        if (dw > 60) [9, 8, 7, 6, 4, 3].forEach(function (m) { add(levels[1], m * pk); });
+        if (k >= 1 && dw > 900) for (var q = 99; q >= 10; q--) if (q % 10) add(levels[2], q * pk / 10);
+        // Minor ticks one level finer than the finest labels this decade can hold.
+        if (k >= 1 && dw > 300) for (var r = 99; r >= 10; r--) add(minorTimes, r * pk / 10);
+        else if (dw > 30) for (var mm = 9; mm >= 1; mm--) add(minorTimes, mm * pk);
       }
-      // "today" closes the deep-time axis when there's room for it.
-      if (toX(NOW) - lastX > (lastW + 40) / 2 + 14) list.push(NOW);
+      list = levels[0].concat(levels[1], levels[2]);
+      minorTimes.forEach(function (t) { minors.push(toX(t)); });
+      if (toX(NOW) <= vis1 + 2) first.push(NOW); // "today" closes the deep-time axis
+      // Every other power of ten is shaded: each stripe reaches 10× further back than the last.
+      for (var d = Math.floor(Math.log10(agoLo)); d <= Math.ceil(Math.log10(agoHi)); d++) {
+        if (d % 2) continue;
+        var a = toX(NOW - Math.min(Math.pow(10, d + 1), agoHi)), b = toX(NOW - Math.max(Math.pow(10, d), agoLo));
+        if (b < vis0 || a > vis1 || b - a < 1) continue;
+        var stripe = grid.appendChild(el('span', 'tl-decade'));
+        stripe.style.left = a + 'px';
+        stripe.style.width = (b - a) + 'px';
+      }
     } else {
+      var view0 = vis0 - 160, view1 = vis1 + 160;
       var tAt = function (px) { return p.lo + (px - PAD) / inner * (p.hi - p.lo); };
       var t0 = tAt(Math.max(view0, PAD)), t1 = tAt(Math.min(view1, W - PAD));
       // ~130px between ticks; closer on a phone, where steps round up a lot (25 years → 50) and
       // any labels that would touch are dropped below anyway
       var per = (p.hi - p.lo) / inner * (this.narrow ? SIZE.tickGapNarrow : SIZE.tickGap) * (this.unit || 1);
       list = linearTicks(t0, t1, Math.max((t1 - t0) / per, 1), this.ctx);
+      // Minor ticks: five to a step, when they'd be at least 7px apart.
+      var step = list.length > 1 ? list[1] - list[0] : 0;
+      if (step && step / 5 / (p.hi - p.lo) * inner >= 7) {
+        for (var n = -5; n <= list.length * 5 + 5; n++) {
+          if (n % 5 === 0) continue;
+          var nx = toX(list[0] + n * step / 5);
+          if (inView(nx)) minors.push(nx);
+        }
+      }
+      if (!ctx.deep) {
+        // Today, when the line reaches it.
+        if (p.norm(NOW) >= 0 && p.norm(NOW) <= 1) {
+          list = list.filter(function (t) { return Math.abs(t - NOW) > 0.5; });
+          first.push(NOW);
+        }
+        // The turn from BC to AD, as a dotted line.
+        if (p.lo < 0 && p.hi > 0) {
+          var zx = toX(0);
+          if (inView(zx)) {
+            var zero = grid.appendChild(el('span', 'tl-gridline tl-zero'));
+            zero.style.left = zx + 'px';
+          }
+          list = list.filter(function (t) { return t !== 0; });
+          first.push(0);
+        }
+      }
     }
-    var vis0 = this.viewport.scrollLeft, vis1 = vis0 + this.viewport.clientWidth;
-    var lastRight = -Infinity;
-    list.forEach(function (t) {
+    minors.forEach(function (px) {
+      var minor = ticks.appendChild(el('span', 'tl-minor'));
+      minor.style.left = px + 'px';
+    });
+    first.concat(list).forEach(function (t) {
       var px = toX(t);
       // Only ticks inside the view: the axis re-renders on every scroll frame anyway.
       if (px < vis0 || px > vis1 || px < PAD - 1 || px > W - PAD + 1) return;
-      var text = formatTick(t, ctx);
-      var tick = el('span', 'tl-tick' + (t >= NOW - 0.5 ? ' tl-now' : ''), text);
+      var now = t >= NOW - 0.5;
+      var text = now && !ctx.deep ? 'today' : formatTick(t, ctx);
+      var tick = el('span', 'tl-tick' + (now ? ' tl-now' : ''), text);
       tick.style.left = px + 'px';
       // Keep labels at the edges of the view readable instead of half cut off.
       var w = tickWidth(text, font), a = px - w / 2;
       if (a < vis0 + 2) { tick.classList.add('tl-tick-start'); a = px - 4; }
       else if (px + w / 2 > vis1 - 2) { tick.classList.add('tl-tick-end'); a = px + 4 - w; }
-      // Labels pinned to an edge are wider on one side than spacing assumed: never let two touch.
-      if (a < lastRight + 10) return;
-      lastRight = a + w;
+      if (taken.some(function (r) { return a < r[1] + 10 && a + w > r[0] - 10; })) return;
+      taken.push([a, a + w]);
       ticks.appendChild(tick);
+      if (t !== 0) {
+        var line = grid.appendChild(el('span', 'tl-gridline'));
+        line.style.left = px + 'px';
+      }
     });
-    if (!this.ctx.deep && p.norm(NOW) <= 1 && p.norm(NOW) >= 0) {
-      var now = el('span', 'tl-tick tl-now', 'today');
-      now.style.left = toX(NOW) + 'px';
-      ticks.appendChild(now);
-    }
+  };
+
+  // The reading line through the selected event and its date on the axis. Returns the date's
+  // extent on the axis [left, right], or null.
+  Timeline.prototype.renderCursor = function (vis0, vis1) {
+    var it = this.sel !== -1 ? this.events[this.sel] : null;
+    var on = !!(it && !it.mark.hidden && it.px != null);
+    this.cursor.hidden = this.cursorDate.hidden = !on;
+    if (!on) return null;
+    [this.cursor, this.cursorDate].forEach(function (node) {
+      if (it.tint) node.style.setProperty('--tl-c', it.tint); else node.style.removeProperty('--tl-c');
+    });
+    this.cursor.style.left = it.px + 'px';
+    var text = it.display || it.when;
+    if (this.cursorDate.textContent !== text) this.cursorDate.textContent = text;
+    var w = this.cursorDate.offsetWidth;
+    var left = Math.min(Math.max(it.px - w / 2, vis0 + 2), vis1 - 2 - w);
+    this.cursorDate.style.left = left + 'px';
+    return it.px >= vis0 && it.px <= vis1 ? [left, left + w] : null;
+  };
+
+  // An era whose start is off screen keeps its name in view: pinned to the left edge while
+  // the era runs on, or to the right edge as it comes into view. Labels that would then
+  // collide in a row give way to the one already placed.
+  Timeline.prototype.stickBandLabels = function (vis0, vis1) {
+    var rows = [[], [], []];
+    this.eras.forEach(function (era) {
+      var label = era.band.firstChild, g = era.geo;
+      label.style.visibility = '';
+      if (!g || era.band.hidden || label.hidden) return;
+      var x = g.x0 + g.left;
+      if (g.x1 < vis0 || g.x0 > vis1) return;
+      if (x < vis0 + 4) {
+        x = Math.max(x, Math.min(vis0 + 4, g.x1 - g.w - 2));
+        // Too little of the era left on screen to hold its name: leave it for the next era.
+        if (x < vis0) { label.style.visibility = 'hidden'; return; }
+      } else if (x + g.w > vis1 - 4) x = Math.max(vis1 - 4 - g.w, vis0 + 4);
+      label.style.left = (x - g.x0) + 'px';
+      rows[g.row].push({ label: label, a: x, b: x + g.w });
+    });
+    rows.forEach(function (row) {
+      row.sort(function (p, q) { return p.a - q.a; });
+      var right = -Infinity;
+      row.forEach(function (r) {
+        if (r.a < right + 6) { r.label.style.visibility = 'hidden'; return; }
+        right = r.b;
+      });
+    });
   };
 
   // Tick label widths, measured in the axis's real font (fonts vary a lot across themes and phones).
@@ -1723,6 +1895,7 @@
     while (clone.firstChild) body.appendChild(clone.firstChild);
     detail.appendChild(body);
 
+    if (this.root.dataset.tlView === 'track') this.renderTicks(); // the reading line moves
     if (opts.focus && this.root.dataset.tlView === 'track') it.mark.focus({ preventScroll: true });
     this.emit('timeline:select', { li: it.li, label: it.label });
     // A crowded event shows as a bare dot: fly in until it gets its label, or over to it if it's off screen.

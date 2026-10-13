@@ -17,6 +17,12 @@
   color: inherit;
 }
 
+/* The track measures itself right after sizing (canvas width, label widths), so nothing in it
+   transitions unless a rule below asks. Without this, a page's reduced-motion reset
+   (* { transition-duration: .01ms !important }) turns every size change into a transition and
+   the engine reads the old size: "Zoom to" landed on an empty stretch of track. */
+.tl-canvas, .tl-canvas * { transition-property: none; }
+
 /* ---------- toolbar */
 .tl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; margin-bottom: .6rem; }
 .tl-title { flex-basis: 100%; margin: 0; font-size: 1.05rem; }
@@ -137,6 +143,13 @@
 .tl-canvas { position: relative; min-width: 100%; }
 
 .tl-axis { position: absolute; left: 0; right: 0; top: var(--axis-y); height: 2px; background: currentColor; opacity: .55; }
+/* Under everything: gridlines from each labelled tick up through the lanes, Deep time's
+   powers-of-ten stripes, and the dotted turn from BC to AD. */
+.tl-grid { position: absolute; inset: 0; pointer-events: none; }
+.tl-gridline { position: absolute; top: 0; height: var(--axis-y); width: 1px; margin-left: -.5px; background: currentColor; opacity: .08; }
+.tl-gridline.tl-zero { width: 0; margin-left: -1px; border-left: 2px dotted currentColor; background: none; opacity: .4; }
+.tl-decade { position: absolute; top: 0; height: calc(var(--axis-y) + 30 * var(--tl-u)); background: currentColor; opacity: .045; }
+.tl-minor { position: absolute; top: 0; width: 1px; height: 4px; background: currentColor; opacity: .4; }
 .tl-ticks { position: absolute; left: 0; right: 0; top: var(--axis-y); height: calc(30 * var(--tl-u)); pointer-events: none; }
 .tl-tick {
   position: absolute;
@@ -177,11 +190,14 @@
   position: absolute;
   top: calc(var(--row, 0) * 24 * var(--tl-u) + 4px);
   bottom: calc(30 * var(--tl-u));
+  /* each era's own colour (timeline.js gives uncoloured eras one from an ordered ramp): a cap
+     along the top, an edge where it begins, a wash below */
+  border-top: 3px solid color-mix(in srgb, var(--tl-c, var(--tl-accent)) 80%, transparent);
   border-left: 1px solid color-mix(in srgb, var(--tl-c, var(--tl-accent)) 60%, transparent);
   background: linear-gradient(to bottom, var(--tl-tint), transparent);
 }
-.tl-band::after { content: ''; position: absolute; inset: 0; background: var(--tl-c, var(--tl-accent)); opacity: .04; }
-.tl-band-alt::after { opacity: .1; } /* neighbouring ages read as strata */
+.tl-band::after { content: ''; position: absolute; inset: 0; background: var(--tl-c, var(--tl-accent)); opacity: .06; }
+.tl-band-alt::after { opacity: .11; } /* neighbouring ages read as strata */
 .tl .tl-band-label {
   position: absolute;
   left: 6px;
@@ -258,6 +274,47 @@
 }
 .tl-stem.is-current { background: var(--tl-c, var(--tl-accent)); }
 .tl-stem.tl-major::after { left: -6px; bottom: -7px; width: 14px; height: 14px; }
+/* The selected event's dot pulses, so the eye finds it on a projector. */
+.tl-stem.is-current::after, .tl .tl-mark.tl-compact[aria-current="true"] { animation: tl-dot-pulse 2.4s ease-out infinite; }
+@keyframes tl-dot-pulse {
+  0% { box-shadow: 0 0 0 2px var(--tl-paper), 0 0 0 2px color-mix(in srgb, var(--tl-c, var(--tl-accent)) 70%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 2px var(--tl-paper), 0 0 0 12px transparent; }
+}
+
+/* Ranges (1717–23, 335–175 Ma): a span on the axis from start to end; hatched where more than
+   three overlap. */
+.tl-span { position: absolute; height: 4px; border-radius: 2px; background: var(--tl-c, var(--tl-accent)); opacity: .9; }
+.tl-span.tl-span-more { background: repeating-linear-gradient(135deg, var(--tl-c, var(--tl-accent)) 0 3px, transparent 3px 6px); }
+
+/* The reading line: through the selected event to the axis, where its date sits; a fainter one
+   follows the pointer over a card. */
+.tl-cursor {
+  position: absolute;
+  top: 0;
+  height: var(--axis-y);
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--tl-c, var(--tl-accent)) 55%, transparent) 30%);
+}
+.tl-cursor.tl-hover { width: 1px; margin-left: -.5px; opacity: .55; }
+.tl-cursor-date {
+  position: absolute;
+  top: calc(var(--axis-y) + 5px);
+  z-index: 2;
+  padding: 0 .4em;
+  border: 2px solid var(--tl-c, var(--tl-accent));
+  border-radius: 999px;
+  background: var(--tl-paper);
+  font-size: calc(.7rem * var(--tl-type));
+  font-weight: 800;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ▶ Play the story: the stop stands out, the rest step back. */
+.tl.tl-touring .tl-mark:not([aria-current="true"]) { opacity: .55; }
 .tl .tl-mark.tl-flip { align-items: flex-end; text-align: right; border-left-width: 1px; border-right: 3px solid var(--tl-c, var(--tl-accent)); border-radius: 8px 4px 4px 8px; padding: 0 calc(8 * var(--tl-u)) 0 calc(8.8 * var(--tl-u)); }
 .tl-mark-date, .tl-mark-label { display: block; width: 100%; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; }
 .tl-mark-date { font-size: calc(.7rem * var(--tl-type)); font-weight: 800; opacity: .8; font-variant-numeric: tabular-nums; }
@@ -278,7 +335,6 @@
 /* timeline.js measures each label's natural width this way, then lays it out. */
 .tl .tl-mark.tl-measure { width: max-content !important; }
 .tl .tl-mark.tl-measure > span { width: max-content; }
-.tl-range { position: absolute; left: -3px; bottom: -6px; height: 4px; border-radius: 2px; background: var(--tl-c, var(--tl-accent)); opacity: .6; }
 .tl .tl-mark { transition: top .28s ease, opacity .2s ease; } /* labels glide between lanes as you zoom */
 .tl .tl-mark:hover { border-color: currentColor; border-left-color: var(--tl-c, var(--tl-accent)); z-index: 3; }
 .tl .tl-mark.tl-flip:hover { border-left-color: currentColor; border-right-color: var(--tl-c, var(--tl-accent)); }
@@ -303,6 +359,7 @@
 .tl .tl-mark.tl-compact > *, .tl .tl-mark.tl-compact::before, .tl-mark.tl-compact::after { display: none; }
 
 .tl-hint { margin: .3rem 0 0; font-size: .72rem; opacity: .7; }
+.tl-legend { font-weight: 700; }
 
 .tl-detail {
   margin-top: .6rem;
@@ -434,7 +491,7 @@ html.tl-scroll-lock, html.tl-scroll-lock body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .tl-viewport { scroll-behavior: auto; }
   .tl .tl-mark, .tl-stem, .tl-cosmic-pin { transition: none; }
-  .tl-tick.tl-now::after { animation: none; }
+  .tl-tick.tl-now::after, .tl-stem.is-current::after, .tl .tl-mark.tl-compact[aria-current="true"] { animation: none; }
 }
 
 /* ---------- print: always the list */

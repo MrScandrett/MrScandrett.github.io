@@ -14,6 +14,14 @@
 //   bandCut   — era band labels hidden for lack of room or cut off at the view's edge
 //   unusedPct — full screen only: share of the screen holding nothing
 //   searchBg  — the search field paints an opaque background (main.css overriding .tl-search)
+//   minor / grid — unlabelled minor ticks and vertical gridlines drawn in view
+//   stripes   — Deep time: shaded powers-of-ten stripes in view
+//   spans     — range events drawn as a span on the axis (bars    = old bars inside the label)
+//   hues      — distinct colours among the era band labels on screen
+//   bandLost  — era bands on screen (at least 60px of them) whose label is not
+//   cursor    — the date shown where the selected event's reading line meets the axis
+//   tickHits  — axis labels (ticks, the cursor's date) that overlap each other
+//   zero      — the BC|AD line is drawn (True scale across year 0)
 //
 // Usage: node scripts/audit-timeline-visual.mjs [--case=hopper,ages] [--size=desktop,phone]
 //        [--theme=day,night] [--out=tmp/dir] [--save-baseline]
@@ -36,13 +44,16 @@ const pick = (name, all) => {
 const OUT = path.resolve(ROOT, argValue("out") || "tmp/timeline-audit");
 const BASELINE = path.join(ROOT, "docs/timeline-audit-baseline.json");
 
-// title picks one timeline on pages that have several.
+// title picks one timeline on pages that have several; era zooms to the first era matching it
+// (labels stuck at the edges only show up zoomed in); sizes limits a case to some sizes.
 const CASES = pick("case", [
   { name: "hopper", path: "lessons/computer-science/pioneers/grace-hopper.html" },
   { name: "bach", path: "lessons/music/bach.html" },
   { name: "jeremiah", path: "lessons/bible-studies/jeremiah.html" },
   { name: "ages", path: "lessons/humanities/the-ages.html", title: "story so far" },
   { name: "python", path: "lessons/computer-science/foundations/python-foundations.html", title: "python" },
+  { name: "bible", path: "lessons/bible-studies/bible-foundations-pathway.html", title: "scholars" },
+  { name: "ages-bronze", path: "lessons/humanities/the-ages.html", title: "story so far", era: "bronze", sizes: ["desktop", "phone"] },
 ]);
 const SIZES = pick("size", [
   { name: "desktop", viewport: { width: 1280, height: 900 } },
@@ -50,13 +61,16 @@ const SIZES = pick("size", [
   { name: "phone", viewport: { width: 390, height: 844 }, mobile: true },
 ]);
 const THEMES = pick("theme", ["day", "night"]);
-const METRICS = ["events", "compact", "cut", "lanes", "dotHits", "overlaps", "ticks", "trackPct", "datePx", "labelPx", "bandCut", "unusedPct", "searchBg"];
+const METRICS = ["events", "compact", "cut", "lanes", "dotHits", "overlaps", "ticks", "trackPct", "datePx", "labelPx", "bandCut", "unusedPct", "searchBg",
+  "minor", "grid", "stripes", "spans", "bars", "hues", "bandLost", "cursor", "tickHits", "zero"];
 
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 
 const jobs = [];
-for (const c of CASES) for (const size of SIZES) for (const theme of THEMES) jobs.push({ c, size, theme });
+for (const c of CASES) for (const size of SIZES) for (const theme of THEMES) {
+  if (!c.sizes || c.sizes.includes(size.name)) jobs.push({ c, size, theme });
+}
 
 const server = await startServer();
 const browser = await chromium.launch({ headless: true, executablePath: findChromium() });
@@ -111,7 +125,7 @@ async function audit({ c, size, theme }, name) {
     await page.waitForFunction(() => window.ClassroomOSTimeline && ClassroomOSTimeline.instances.length, null, { timeout: 15000 });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(800);
-    const found = await page.evaluate(({ title, full }) => {
+    const found = await page.evaluate(({ title, full, era }) => {
       const re = title ? new RegExp(title, "i") : null;
       const t = ClassroomOSTimeline.instances.find((x) => !re || re.test(x.opts.title));
       if (!t) return false;
@@ -124,8 +138,9 @@ async function audit({ c, size, theme }, name) {
         t.root.style.scrollMarginTop = "";
       }
       t.fit();
+      if (era) t.zoomToEra(t.eras.find((e) => new RegExp(era, "i").test(e.label)));
       return true;
-    }, { title: c.title || "", full: !!size.full });
+    }, { title: c.title || "", full: !!size.full, era: c.era || "" });
     if (!found) throw new Error(`no timeline${c.title ? ` titled /${c.title}/` : ""}`);
     // A font weight the track uses first can start loading now; the engine re-measures when it lands.
     await page.waitForTimeout(400);
@@ -226,7 +241,47 @@ function measure() {
     bandCut,
     unusedPct,
     searchBg,
+    ...phase2(),
   };
+
+  // Axis context: gridlines, stripes, spans, band colours, the reading cursor.
+  function phase2() {
+    const inView = (node) => {
+      if (node.hidden || node.closest("[hidden]") || getComputedStyle(node).visibility === "hidden") return false;
+      const r = node.getBoundingClientRect();
+      return r.width + r.height > 0 && r.right > vpRect.left && r.left < vpRect.right;
+    };
+    const count = (selector) => [...root.querySelectorAll(selector)].filter(inView).length;
+    const hues = new Set(bandLabels.filter((l) => !l.hidden && inView(l)).map((l) => getComputedStyle(l).borderLeftColor));
+    const cursorDate = root.querySelector(".tl-cursor-date");
+    const cursor = cursorDate && inView(cursorDate) ? cursorDate.textContent.trim() : null;
+    const axisLabels = [...root.querySelectorAll(".tl-tick, .tl-cursor-date")].filter((n) => inView(n) && n.textContent.trim())
+      .map((n) => n.getBoundingClientRect());
+    let tickHits = 0;
+    for (let i = 0; i < axisLabels.length; i++) {
+      for (let j = i + 1; j < axisLabels.length; j++) {
+        const a = axisLabels[i], b = axisLabels[j];
+        if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) tickHits++;
+      }
+    }
+    return {
+      minor: count(".tl-minor"),
+      grid: count(".tl-gridline"),
+      stripes: count(".tl-decade"),
+      spans: count(".tl-span"),
+      bars: count(".tl-range"),
+      hues: hues.size,
+      bandLost: t.eras.filter((era) => {
+        if (!era.band || era.band.hidden) return false;
+        const r = era.band.getBoundingClientRect();
+        const shown = Math.min(r.right, vpRect.right) - Math.max(r.left, vpRect.left);
+        return shown >= 60 && !inView(era.band.firstChild);
+      }).length,
+      cursor,
+      tickHits,
+      zero: count(".tl-gridline.tl-zero") > 0,
+    };
+  }
 }
 
 function printTable(rows, before) {
