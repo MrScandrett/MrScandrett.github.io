@@ -695,3 +695,41 @@ html.daw-studio-open, html.daw-studio-open body { overflow: hidden; overscroll-b
  .pillar-daw.is-studio .daw-views { margin-left:0; }
  .daw-keys { height:150px; }
 }
+
+/* ── Phone portrait: lanes get the width, controls get the targets ─────────
+   Slim header column (tap to select) + one selected-track bar with full-size
+   M / S / ●, and one command row instead of two. */
+.daw-selbar[hidden] { display: none !important; }
+.daw-selbar { display: none; }
+.daw.is-compact .daw-selbar { display: flex; flex: 1 1 100%; align-items: center; gap: 4px; padding: 2px 0 0; }
+.daw-selbar-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: .5rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--daw-text); font-weight: 700; font-size: .9rem; }
+.daw-selbar-name i { flex: none; width: 6px; height: 28px; border-radius: 3px; background: var(--tc, var(--daw-accent)); }
+.daw .daw-selbar-btn { flex: none; width: 48px; min-width: 48px; min-height: 44px; padding: 0; font-weight: 800; }
+.daw .daw-selbar-btn[data-tr="mute"][aria-pressed="true"] { background: #b45309; border-color: #f59e0b; }
+.daw .daw-selbar-btn[data-tr="solo"][aria-pressed="true"] { background: #a16207; border-color: #facc15; color: #111; }
+.daw-selbar-btn.daw-arm { color: var(--daw-rec); }
+.daw .daw-selbar-btn.daw-arm[aria-pressed="true"] { background: var(--daw-rec); color: #fff; border-color: #fb7185; }
+
+.daw-th.is-compact { padding: 0; }
+.daw-th-pick { all: unset; box-sizing: border-box; display: grid; align-content: center; gap: 2px; width: 100%; height: 100%; padding: .25rem .4rem .25rem .7rem; position: relative; cursor: pointer; touch-action: manipulation; }
+.daw-th-pick:focus-visible { outline: 2px solid var(--daw-accent); outline-offset: -3px; }
+.daw-th-pick .daw-th-label { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.15; overflow-wrap: anywhere; }
+.daw-th-flags { position: absolute; top: 3px; right: 5px; font-size: .65rem; font-weight: 800; letter-spacing: .05em; color: #fbbf24; }
+.daw-th.is-armed .daw-th-flags { color: var(--daw-rec); }
+
+/* Phone: add-track buttons keep full-size targets (row grows past the track height),
+   and the hint stays on screen instead of running off the scrolling lane. */
+.daw.is-compact .daw-tracks { grid-auto-rows: minmax(var(--daw-track-h), auto); }
+.daw.is-compact .daw-th-add .daw-btn { min-height: 44px; }
+.daw.is-compact .daw-lane-add { display: block; padding: .6rem 0; }
+.daw.is-compact .daw-hint { position: sticky; left: calc(var(--daw-head) + .6rem); display: block; width: min(15rem, calc(100vw - var(--daw-head) - 3rem)); white-space: normal; line-height: 1.35; }
+
+@media (max-width: 720px) {
+  /* One row: ⚙ · Loop · Project · view switcher; the switcher wraps below only if it must. */
+  .daw-command-strip .daw-settings > summary { font-size: 0; }
+  .daw-command-strip .daw-settings > summary::after { content: '⚙'; content: '⚙' / 'Settings'; font-size: 1.05rem; }
+  .daw-command-strip .daw-region summary::after { content: 'Loop'; content: 'Loop' / 'Loop and seek'; }
+  .daw-views { width: auto; flex: 1 1 14rem; min-width: 14rem; margin: 0; }
+  .daw-views .daw-btn { flex: 1; min-width: 0; padding: 6px 2px; font-size: .72rem; letter-spacing: 0; }
+  .daw-command-strip > details summary { padding-inline: 8px; }
+}

@@ -1310,6 +1310,12 @@
   views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
   views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
   commandStrip.append(views);
+  // Phones: M / S / ● for the selected track in one row of full-size targets.
+  const selBar = document.createElement('div');
+  selBar.className = 'daw-selbar';
+  selBar.setAttribute('role', 'group');
+  selBar.setAttribute('aria-label', 'Selected track');
+  commandStrip.append(selBar);
   root.dataset.view = 'split';
   views.addEventListener('click', event => {
     const button = event.target.closest('[data-view]'); if (!button) return;
@@ -1356,8 +1362,8 @@
   function measureLayout() {
     const w = R.scroll.clientWidth || root.clientWidth || 800;
     compactHeads = w < 560;
-    HEAD_W = compactHeads ? (COARSE ? 150 : 118) : 210;
-    TRACK_H = compactHeads ? (COARSE ? 94 : 80) : (COARSE ? 122 : 96);
+    HEAD_W = compactHeads ? 92 : 210;
+    TRACK_H = compactHeads ? 64 : (COARSE ? 122 : 96);
     KEYS_W = compactHeads ? 52 : 80;
   }
 
@@ -1396,18 +1402,34 @@
         <button type="button" class="daw-btn" data-act="quick-instrument">＋ Instrument</button>
         <button type="button" class="daw-btn" data-act="add-audio">＋ Audio</button>
       </div>
-      <div class="daw-lane daw-lane-add" data-hint>${!project.tracks.length ? 'Add a track to begin, or import audio/MIDI files'
+      <div class="daw-lane daw-lane-add" data-hint><span class="daw-hint">${!project.tracks.length ? 'Add a track to begin, or import audio/MIDI files'
         : COARSE ? 'Double-tap an instrument lane to add a clip · pinch to zoom · tap a clip, then drag it'
-          : 'Double-click an instrument lane to draw a clip · drag files here to import'}</div>
+          : 'Double-click an instrument lane to draw a clip · drag files here to import'}</span></div>
       <div class="daw-loop" hidden></div>
       <div class="daw-playhead"></div>
     `;
+    renderSelBar();
     rulerCanvas = R.tracks.querySelector('.daw-ruler canvas');
     playheadEl = R.tracks.querySelector('.daw-playhead');
     loopEl = R.tracks.querySelector('.daw-loop');
     R.tracks.querySelectorAll('canvas[data-clip]').forEach(drawClipCanvas);
     drawRuler();
     drawPlayhead();
+  }
+
+  function renderSelBar() {
+    const t = findTrack(ui.selTrack) || project.tracks[0];
+    selBar.hidden = !compactHeads || !t;
+    if (selBar.hidden) { selBar.innerHTML = ''; return; }
+    const refocus = selBar.contains(document.activeElement) ? document.activeElement.dataset.tr : null;
+    selBar.dataset.track = t.id;
+    selBar.style.setProperty('--tc', t.color);
+    selBar.innerHTML = `
+      <span class="daw-selbar-name"><i aria-hidden="true"></i>${esc(t.name)}</span>
+      <button type="button" class="daw-btn daw-selbar-btn" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
+      <button type="button" class="daw-btn daw-selbar-btn" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
+      <button type="button" class="daw-btn daw-selbar-btn daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>`;
+    if (refocus) selBar.querySelector(`[data-tr="${refocus}"]`)?.focus({ preventScroll: true });
   }
 
   // ── DOM: dock (Edit / Play / Mix / FX tabs) ─────────────────────────────
@@ -1894,15 +1916,14 @@
     const clips = t.clips.map((c) => clipHtml(t, c)).join('');
     const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}</div>`;
     if (compactHeads) {
+      const flags = [t.mute && 'M', t.solo && 'S', t.armed && '●'].filter(Boolean).join(' ');
       return `
       <div class="daw-th is-compact${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
-        <span class="daw-th-label" title="${esc(t.name)}">${esc(t.name)}</span>
-        <span class="daw-th-sub">${t.kind === 'instrument' ? hasInstrumentExperience(t) ? INSTRUMENTS[t.instrument] : 'No instrument' : '🎙 Audio'}</span>
-        <div class="daw-th-row">
-          <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
-          <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
-          <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}">●</button>
-        </div>
+        <button type="button" class="daw-th-pick" data-tr="select" aria-pressed="${t.id === ui.selTrack}" aria-label="Select ${esc(t.name)}${t.mute ? ', muted' : ''}${t.solo ? ', solo' : ''}${t.armed ? ', armed' : ''}">
+          <span class="daw-th-label">${esc(t.name)}</span>
+          <span class="daw-th-sub">${t.kind === 'instrument' ? hasInstrumentExperience(t) ? INSTRUMENTS[t.instrument] : 'No sound' : '🎙 Audio'}</span>
+          ${flags ? `<span class="daw-th-flags" aria-hidden="true">${flags}</span>` : ''}
+        </button>
       </div>${lane}`;
     }
     return `
@@ -2720,6 +2741,15 @@
     R.tracks.querySelectorAll('.is-selected').forEach((el) => el.classList.remove('is-selected'));
     R.tracks.querySelectorAll(`[data-track="${id}"], [data-lane="${id}"]`).forEach((el) => el.classList.add('is-selected'));
     R.tracks.querySelectorAll(`[data-clip="${ui.selClip}"]`).forEach((el) => el.classList.add('is-selected'));
+    R.tracks.querySelectorAll('.daw-th-pick').forEach((el) => el.setAttribute('aria-pressed', String(el.closest('[data-track]').dataset.track === id)));
+    renderSelBar();
+  }
+
+  function trackAction(track, what) {
+    if (what === 'tools') { ui.selTrack = track.id; setTab('tools'); return; }
+    if (what === 'delete') { deleteTrack(track.id); return; }
+    if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); return; }
+    if (what === 'arm') { setArmed(track, !track.armed); }
   }
 
   // Track header controls
@@ -2731,11 +2761,12 @@
     if (!track) return;
     if (ui.selTrack !== track.id) markTrack(track.id);
     if (!btn || btn.tagName !== 'BUTTON') return;
-    const what = btn.dataset.tr;
-    if (what === 'tools') {ui.selTrack=track.id;setTab('tools');return;}
-    if (what === 'delete') { deleteTrack(track.id); return; }
-    if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); return; }
-    if (what === 'arm') { setArmed(track, !track.armed); }
+    trackAction(track, btn.dataset.tr);
+  });
+  selBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tr]');
+    const track = findTrack(selBar.dataset.track);
+    if (btn && track) trackAction(track, btn.dataset.tr);
   });
   R.tracks.addEventListener('input', (e) => {
     const el = e.target, head = el.closest('.daw-th[data-track]');
