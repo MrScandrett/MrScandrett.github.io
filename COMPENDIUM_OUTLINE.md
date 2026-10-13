@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 398 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 403 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -498,7 +498,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 95 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 100 lessons
 
 ## Visual Art & Design (DES)
 
@@ -540,7 +540,12 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-12** — Frédéric Chopin
 - **MUS-13** — Pyotr Ilyich Tchaikovsky
 - **MUS-14** — Scott Joplin
-- **MUS-15** — Modes: From Greece to Today
+- **MUS-15** — George Gershwin
+- **MUS-16** — Jelly Roll Morton
+- **MUS-17** — Duke Ellington
+- **MUS-18** — Charlie Parker
+- **MUS-19** — Louis Armstrong
+- **MUS-20** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 

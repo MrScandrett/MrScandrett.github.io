@@ -27,7 +27,12 @@
     { file: 'lessons/music/beethoven.html', label: 'Beethoven' },
     { file: 'lessons/music/chopin.html', label: 'Chopin' },
     { file: 'lessons/music/tchaikovsky.html', label: 'Tchaikovsky' },
-    { file: 'lessons/music/joplin.html', label: 'Joplin' }
+    { file: 'lessons/music/joplin.html', label: 'Joplin' },
+    { file: 'lessons/music/gershwin.html', label: 'Gershwin' },
+    { file: 'lessons/music/morton.html', label: 'Morton' },
+    { file: 'lessons/music/duke-ellington.html', label: 'Ellington' },
+    { file: 'lessons/music/charlie-parker.html', label: 'Parker' },
+    { file: 'lessons/music/louis-armstrong.html', label: 'Armstrong' }
   ];
   var SCIENCE = [
     { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },

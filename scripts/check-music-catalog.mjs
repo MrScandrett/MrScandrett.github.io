@@ -13,6 +13,8 @@ const lessons = [
   'lessons/music/fake-book.html',
   'lessons/music/guitar.html',
   'lessons/music/joplin.html',
+  'lessons/music/gershwin.html',
+  'lessons/music/morton.html',
   'lessons/music/mozart.html',
   'lessons/music/music-modes-evolution.html',
   'lessons/music/piano.html',
@@ -40,6 +42,8 @@ try {
         await page.locator('figure[data-score]').first().locator('.se-note-list-toggle').waitFor({ state: 'attached' });
         const firstDetails = page.locator('figure[data-score]').first().locator('xpath=ancestor::details[1]');
         if (await firstDetails.count() && await firstDetails.getAttribute('open') === null) await firstDetails.locator('summary').click();
+        const spotlight = page.locator('.composer-cover').first();
+        if (await spotlight.count()) await spotlight.click();
         const figure = page.locator('figure[data-score]').first();
         await figure.locator('.se-note-list-toggle').click();
         await page.evaluate(() => window.MusicNotation.setPreferences({ pitchNames: true, noteColors: true }));

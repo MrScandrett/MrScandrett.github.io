@@ -922,6 +922,31 @@
   }
 
   /* ---------------------------------------------------------------- hero, quiz, globals */
+  function initFirstTest() {
+    $$('[data-first-mode]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        Sound.stopAll();
+        var mode = button.dataset.firstMode;
+        var degrees = [0, 2, 4, 5, 6, 5, 4, 0];
+        var notes = modeMidis(mode, 62);
+        Sound.droneStart(etFreq(50));
+        status('firstNow', 'Playing D ' + mode + ': same phrase, same D drone.');
+        playSeq(degrees.map(function (d) { return { freq: etFreq(notes[d]) }; }), {
+          step: 0.45, onDone: function () { Sound.droneStop(); status('firstNow', 'Finished D ' + mode + '. Compare the other version or reveal the explanation.'); }
+        });
+        noAudioNote('firstNow');
+      });
+    });
+    $('#firstReveal').addEventListener('click', function () {
+      $('#firstExplanation').hidden = false;
+      var prediction = $('input[name="modePrediction"]:checked');
+      status('firstNow', prediction ? (prediction.value === '6' ? 'Your prediction matches: degree 6 changes.' : 'Revise your prediction: degree 6 changes; degrees 2 and 7 stay the same.') : 'Compare B with B♭: degree 6 is the changing note.');
+      this.setAttribute('aria-expanded', 'true');
+    });
+    $('#firstReveal').setAttribute('aria-expanded', 'false');
+    $('#firstReveal').setAttribute('aria-controls', 'firstExplanation');
+  }
+
   function initHero() {
     $$('[data-hero-play]').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -956,7 +981,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    initGlobal(); initHero(); initGenus(); initSpecies(); initEthos(); initChurch(); initModern(); initTuning(); initEar(); initPlay(); initCompose(); initQuiz();
+    initGlobal(); initFirstTest(); initHero(); initGenus(); initSpecies(); initEthos(); initChurch(); initModern(); initTuning(); initEar(); initPlay(); initCompose(); initQuiz();
   });
 
   window.MusicModes = { species: species, tetrachord: tetrachord, gps: gps, MODES: MODES, spell: spell };

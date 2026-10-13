@@ -17,3 +17,5 @@ Bravura outlines are pinned to the upstream revision named in `music-notation.js
 Reference: [Open Music Theory: notation, clefs, and ledger lines](https://viva.pressbooks.pub/openmusictheory/chapter/notation-of-notes-clefs-and-ledger-lines/), [Bravura](https://github.com/steinbergmedia/bravura).
 
 Run `node scripts/check-music-notation.cjs`, then exercise the affected lessons in a browser. Keep instrument-specific scheduling and input handlers in the lesson adapters.
+
+Score libraries and Fake Book load `score-navigation.js` before their player. `ScoreNavigation({ surface, selector, prime, label })` shares measure hit testing, a keyboard-accessible start selector, previous/next controls, fit width/screen, and playback following. Call `refresh()` after engraving and `follow(index)` during playback. Selection primes a measure without starting audio; the player retains its own arrangement, count-in, and scheduling. Original scanned pages remain source images: clickable playback applies to the engraved playable score. Run `npm run check:score-navigation` against the local server for desktop and phone interaction checks.

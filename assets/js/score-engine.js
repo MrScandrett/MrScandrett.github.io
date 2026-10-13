@@ -10,6 +10,8 @@
  *   C#5/8.   pitch / duration (1 2 4 8 16 32) + dots      r/4  rest      R  whole-bar rest
  *   (C4 E4 G4)/2   chord        ~ tie to the next note      ^ fermata
  *   !p !mf !f      dynamic for the next note (also sets playback loudness)
+ *   For overlapping voices, use staves[].voices = [{ notes, stem: "up"|"down", restStep? }].
+ *   Each voice must fill the same bars; ties and beams stay within that voice.
  *   A duration may be left off to repeat the previous one. Write pitches as they sound
  *   (F#4, Bb3); the engine decides which accidentals to print from the key signature.
  *   "n" forces a printed natural (Bn4) where a courtesy natural helps the reader.
@@ -95,20 +97,43 @@
     var staves = score.staves.map(function (st, si) {
       var where = id + ', staff ' + (si + 1);
       if (!M.clefs[st.clef || 'treble']) fail(where, 'unknown clef "' + st.clef + '"');
-      return { clef: st.clef || 'treble', label: st.label || '', instrument: st.instrument || null, bars: parseStaff(st.notes || '', where) };
+      var definitions = st.voices || [{ notes: st.notes || '' }];
+      if (!definitions.length) fail(where, 'needs at least one voice');
+      var voices = definitions.map(function (voice, vi) {
+        var bars = parseStaff(voice.notes || '', where + ', voice ' + (vi + 1));
+        bars.forEach(function (bar, bi) {
+          var want = bi === 0 && pickup ? pickup : ts.len;
+          var t = 0;
+          bar.events.forEach(function (ev) {
+            if (ev.whole) ev.dur = want;
+            ev.start = t; t += ev.dur;
+            ev.voice = vi; ev.stem = voice.stem || null;
+            ev.restStep = voice.restStep == null ? 4 : voice.restStep;
+          });
+          bar.length = t;
+          if (Math.abs(t - want) > EPS && !(bi === bars.length - 1 && t < want))
+            fail(where + ', voice ' + (vi + 1) + ', bar ' + (bi + 1), 'adds up to ' + t + ' beats, expected ' + want);
+        });
+        return bars;
+      });
+      var count = voices[0].length;
+      voices.forEach(function (bars, vi) {
+        if (bars.length !== count) fail(where, 'voices have different bar counts');
+        bars.forEach(function (bar, bi) {
+          if (Math.abs(bar.length - voices[0][bi].length) > EPS) fail(where, 'voices have different bar lengths');
+        });
+      });
+      var bars = voices[0].map(function (bar, bi) {
+        var events = [];
+        voices.forEach(function (voice) { events = events.concat(voice[bi].events); });
+        events.sort(function (a, b) { return a.start - b.start || a.voice - b.voice; });
+        return { events: events, length: bar.length };
+      });
+      return { clef: st.clef || 'treble', label: st.label || '', instrument: st.instrument || null, bars: bars, voices: voices };
     });
     var count = staves[0].bars.length;
     staves.forEach(function (st, si) {
       if (st.bars.length !== count) fail(id + ', staff ' + (si + 1), 'has ' + st.bars.length + ' bars but staff 1 has ' + count);
-      st.bars.forEach(function (bar, bi) {
-        var want = bi === 0 && pickup ? pickup : ts.len;
-        bar.events.forEach(function (ev) { if (ev.whole) ev.dur = want; });
-        bar.length = bar.events.reduce(function (s, ev) { return s + ev.dur; }, 0);
-        var lastBar = bi === count - 1;
-        if (Math.abs(bar.length - want) > EPS && !(lastBar && bar.length < want)) {
-          fail(id + ', staff ' + (si + 1) + ', bar ' + (bi + 1), 'adds up to ' + bar.length + ' beats, expected ' + want);
-        }
-      });
     });
     // Every staff's last bar must be the same length (a final bar may be short to balance a pickup).
     var ends = staves.map(function (st) { return st.bars[count - 1].length; });
@@ -132,12 +157,13 @@
   function analyse(model) {
     var keyAlt = keyAlters(model.key);
     model.staves.forEach(function (st, si) {
-      var prev = null;
+      var previous = {};
       st.bars.forEach(function (bar, bi) {
         var state = {};
         bar.events.forEach(function (ev) {
+          var prev = previous[ev.voice];
           ev.bar = bi; ev.staff = si; ev.abs = model.barStart[bi] + ev.start;
-          if (ev.kind !== 'note') { prev = ev; return; }
+          if (ev.kind !== 'note') { previous[ev.voice] = ev; return; }
           ev.pitches.forEach(function (p) {
             var cont = prev && prev.tie && prev.kind === 'note' && prev.pitches.some(function (q) { return q.midi === p.midi; });
             p.tiedFrom = !!cont;
@@ -147,7 +173,7 @@
             if (cont && prev.bar !== bi) p.showAcc = null;
             if (!cont || prev.bar === bi) state[k] = p.a;
           });
-          prev = ev;
+          previous[ev.voice] = ev;
         });
       });
       // Tie targets: link each tied pitch to the next event that holds it.
@@ -155,7 +181,7 @@
       st.bars.forEach(function (bar) { flat = flat.concat(bar.events); });
       flat.forEach(function (ev, i) {
         if (!ev.tie || ev.kind !== 'note') return;
-        var next = flat[i + 1];
+        var next = flat.slice(i + 1).find(function (candidate) { return candidate.voice === ev.voice; });
         ev.tieTo = next && next.kind === 'note' ? next : null;
       });
     });
@@ -222,17 +248,20 @@
           var lo = stepOf(ev.pitches[0], st.clef), hi = stepOf(ev.pitches[ev.pitches.length - 1], st.clef);
           ev.lo = lo; ev.hi = hi;
           // The note farthest from the middle line decides; a tie points the stem down.
-          ev.up = (4 - lo) > (hi - 4);
+          ev.up = ev.stem ? ev.stem === "up" : (4 - lo) > (hi - 4);
           ev.beam = null;
         });
-        bar.beams = beamGroups(bar, model.ts);
+        bar.beams = [];
+        st.voices.forEach(function (_, vi) {
+          bar.beams = bar.beams.concat(beamGroups({ events: bar.events.filter(function (ev) { return ev.voice === vi; }) }, model.ts));
+        });
         bar.beams.forEach(function (g) {
           var far = 0;
           g.events.forEach(function (ev) {
             if (Math.abs(ev.hi - 4) > Math.abs(far)) far = ev.hi - 4;
             if (Math.abs(ev.lo - 4) > Math.abs(far)) far = ev.lo - 4;
           });
-          var up = far < 0;
+          var up = g.events[0].stem ? g.events[0].stem === "up" : far < 0;
           g.events.forEach(function (ev) { ev.up = up; ev.beam = g; });
           g.up = up;
         });
@@ -312,7 +341,11 @@
       sys.bars.forEach(function (bi) {
         st.bars[bi].events.forEach(function (ev) {
           if (ev.dyn) dyn = true;
-          if (ev.kind !== 'note') return;
+          if (ev.kind !== 'note') {
+            hi = Math.max(hi, ev.restStep + 3);
+            lo = Math.min(lo, ev.restStep - 3);
+            return;
+          }
           hi = Math.max(hi, ev.hi + (ev.up ? 7 : 1) + (ev.fermata ? 4 : 0));
           lo = Math.min(lo, ev.lo - (ev.up ? 1 : 7));
         });
@@ -390,6 +423,7 @@
       var sysCols = [];
       sys.bars.forEach(function (bi, k) {
         var bar = bars[bi], bw = bar.width * stretch;
+        out.push('<rect class="se-measure" data-measure="' + bi + '" x="' + bx0 + '" y="' + (sysTop - S) + '" width="' + bw + '" height="' + (sysBottom - sysTop + 2 * S) + '"/>');
         var sx = function (u) { return bx0 + (bar.whole ? bw * 0.5 - 0.9 * S : u * S * stretch); };
         bar.cols.forEach(function (c) { c.px = sx(c.x); sysCols.push({ t: model.barStart[bi] + c.t, x: c.px, sys: sIndex }); });
         model.staves.forEach(function (st, si) {
@@ -532,7 +566,7 @@
     var out = '<g class="se-ev" data-i="' + ev.i + '">';
     var lw = 0.12 * S;
     if (ev.kind === 'rest') {
-      var mid = b - 4 * h;
+      var mid = b - ev.restStep * h;
       if (ev.whole || ev.base >= 4) out += M.glyph('restWhole', ev.x, b - 6 * h, S);
       else if (ev.base >= 2) out += M.glyph('restHalf', ev.x, mid, S);
       else out += M.glyph(ev.base >= 1 ? 'restQuarter' : ev.base >= 0.5 ? 'rest8' : 'rest16', ev.x, mid, S);
@@ -573,10 +607,17 @@
       }
       ps.forEach(function (p, k) {
         var px = ev.x + (shifted[k] || 0) * (w - lw), py = b - steps[k] * h;
-        var pitchClass = M.pitchClass(p);
-        var pitchCls = M.preferences.noteColors ? ' se-pitch-' + pitchClass : '';
-        out += M.glyph(name, px, py, S, 'se-head' + pitchCls);
-        if (M.preferences.pitchNames) out += '<text class="se-pitch-label se-pitch-' + pitchClass + '" x="' + px + '" y="' + py + '" text-anchor="middle" dominant-baseline="middle">' + M.escape(M.pitchName(p)) + '</text>';
+        // Use the shared written-pitch palette; accidentals retain their letter's color.
+        out += '<g class="se-notehead"' + (M.preferences.noteColors ? ' style="color:' + M.solfegeColor(p) + '"' : '') + '>' +
+          M.glyph(name, px, py, S, 'se-head') + '</g>';
+        if (M.preferences.pitchNames) {
+          var label = M.pitchName(p);
+          // Glyph origins are at the left edge. Size labels in staff units, including
+          // accidentals, so they stay inside heads at every staff/zoom size.
+          var labelSize = S * (p.a ? 0.46 : 0.72);
+          out += '<text class="se-pitch-label" data-contrast-guard-skip x="' + (px + w / 2) + '" y="' + py +
+            '" style="font-size:' + labelSize + 'px;stroke-width:' + (S * 0.07) + 'px" text-anchor="middle" dominant-baseline="central">' + M.escape(label) + '</text>';
+        }
       });
       // Dots.
       if (ev.dots) {
@@ -605,7 +646,7 @@
       ev.headX = ev.x; ev.headW = w; ev.steps = steps; ev.shifted = shifted;
     }
     if (ev.fermata) {
-      var fy = Math.min(b - 10 * h, ev.kind === 'note' ? Math.min(b - ev.hi * h - 1.6 * S, ev.up ? ev.tipY - 0.8 * S : Infinity) : Infinity);
+      var fy = Math.min(b - 10 * h, ev.kind === 'note' ? Math.min(b - ev.hi * h - 1.6 * S, ev.up && ev.tipY != null ? ev.tipY - 0.8 * S : Infinity) : Infinity);
       out += M.glyph('fermataAbove', ev.x + (ev.headW || 1.2 * S) / 2 - 1.2 * S, fy, S);
     }
     if (ev.dyn) {
@@ -621,7 +662,7 @@
       var k2 = next.pitches.findIndex(function (q) { return q.midi === p.midi; });
       if (k2 < 0) return;
       var y1 = ev.bottom - ev.steps[k] * h;
-      var below = ev.pitches.length > 1 ? k < ev.pitches.length / 2 : ev.up;
+      var below = ev.stem ? ev.stem === "down" : ev.pitches.length > 1 ? k < ev.pitches.length / 2 : ev.up;
       var dir = below ? 1 : -1;
       var xa = ev.headX + ev.headW + 0.15 * S;
       var segs = [];
@@ -822,6 +863,10 @@
     var player = new Player(fig, model);
     players.push(player);
     var layout = null, lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
+    var navigation = root.ScoreNavigation({ surface: paper, selector: '.se-measure',
+      label: function (i) { var n = i + (score.startMeasure || 1) - (model.pickup ? 1 : 0); return n === 0 ? 'Pickup' : 'Measure ' + n; },
+      prime: function (i) { player.pause(); player.seek(model.barStart[i]); }
+    });
     if (fig.hasAttribute('data-score-zoom')) {
       var sizeLabel = el('label', { class: 'se-inst' });
       sizeLabel.appendChild(el('span', {}, 'Staff size'));
@@ -889,6 +934,7 @@
       lit = [];
       if (!player.playing) player.ui.cursor(player.pos);
       renderNoteList();
+      navigation.refresh();
     }
 
     player.ui = {
@@ -899,6 +945,8 @@
       },
       light: function (beat) {
         if (!layout) return;
+        var measure = model.barStart.reduce(function (at, start, i) { return beat >= start ? i : at; }, -1);
+        navigation.follow(measure);
         var on = beat < 0 ? [] : layout.events.filter(function (ev) {
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
@@ -933,7 +981,7 @@
     };
 
     playBtn.addEventListener('click', function () { if (player.playing) player.pause(); else player.play(); });
-    stopBtn.addEventListener('click', function () { player.stop(); status.textContent = ''; });
+    stopBtn.addEventListener('click', function () { player.stop(); navigation.reset(); status.textContent = ''; });
     tempo.addEventListener('input', function () {
       var r = +tempo.value / 100;
       tempoOut.textContent = tempo.value + '%';

@@ -732,6 +732,18 @@
   }
 
   var sheetEl = root.querySelector('[data-fb-sheet]');
+  var scoreNavigation = window.ScoreNavigation({ surface: sheetEl, selector: '.fb-bar',
+    selectedIndex: function (bars) { return bars.findIndex(function (bar) { return Number(bar.dataset.bar) === opts.from; }); },
+    onFollow: function (on) { opts.follow = on; followPaused = !on; syncControls(); save(); },
+    label: function (i) { var bars = sheetEl.querySelectorAll('.fb-bar'); var n = bars[i] && Number(bars[i].dataset.bar); return n === 0 ? 'Pickup' : 'Measure ' + n; },
+    prime: function (i, bar) {
+      stop();
+      var b = Number(bar.dataset.bar) || 1;
+      opts.from = b; if (loopRange().to < b) opts.to = tune.bars;
+      syncControls(); paintLoop(); save();
+      if (opts.barClick === 'shapes') showBarPop(Number(bar.dataset.bar), bar);
+    }
+  });
   var nowEls = [], barEls = {};
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
@@ -911,6 +923,7 @@
     nowEls = []; barEls = {};
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     buildMap();
+    scoreNavigation.refresh();
     paintLoop();
   }
 
@@ -1416,6 +1429,7 @@
     nowEls = []; barEls = {};
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     buildMap();
+    scoreNavigation.refresh();
     paintLoop();
   }
 
@@ -1911,7 +1925,7 @@
   var followPaused = false;
   var musicScroller = root.closest('.ll-sim') || document.scrollingElement;
   function pauseFollow() {
-    if (P && opts.follow) { followPaused = true; paintMap(); }
+    if (P && opts.follow) { followPaused = true; scoreNavigation.setFollow(false); paintMap(); }
   }
   musicScroller.addEventListener('wheel', pauseFollow, { passive: true });
   musicScroller.addEventListener('touchmove', pauseFollow, { passive: true });
@@ -1949,22 +1963,8 @@
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       if (e.meter) { dotsEl.innerHTML = new Array(e.meter[0] + 1).join('<i></i>'); banner('Bar ' + e.bar + ' · ' + e.meter.join('/')); }
       paintChangesNow(e.bar);
-      if (barEls[e.bar] && sheetFollow() && !followPaused) {
-        // Settings live in a fixed drawer now, so the sheet can always follow;
-        // only hold still when the reader has scrolled past the sheet entirely.
-        var sheetCard = root.querySelector('.fb-sheet-card');
-        var sc = root.closest('.ll-sim') || document.scrollingElement;
-        var vh = (sc.getBoundingClientRect ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight });
-        var scRect = sheetCard ? sheetCard.getBoundingClientRect() : null;
-        var sheetCardAbove = scRect && (scRect.bottom < vh.top + 100);
-
-        if (!sheetCardAbove) {
-          var r = barEls[e.bar].getBoundingClientRect();
-          if (r.bottom > vh.bottom - 20 || (e.bar === 1 && r.top < vh.top + 80)) {
-            barEls[e.bar].scrollIntoView({ block: 'center', behavior: 'smooth' });
-          }
-        }
-      }
+      scoreNavigation.setFollow(sheetFollow() && !followPaused);
+      scoreNavigation.follow(Array.from(sheetEl.querySelectorAll('.fb-bar')).indexOf(barEls[e.bar]));
     } else if (e.ui === 'score-note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
       [['.fb-n', view.concert], ['.fb-bn', view.bass || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
