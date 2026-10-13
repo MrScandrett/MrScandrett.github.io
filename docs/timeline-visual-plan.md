@@ -263,38 +263,59 @@ the same as Phase 1 (≈120ms median on a busy machine; Phase 1 measured ≈117m
   Ages and the Bible timeline among the audit cases. `data-timeline-overview="on|off"` overrides
   that either way.
 
-## Phase 4: polish
+## Phase 4: polish (done)
 
 **4a. Motion that explains**
-- When a compact dot turns into a card as you zoom in, fade and scale the card up (about 160ms)
-  instead of popping it in. Cards turning back into dots fade out.
-- The first time a track scrolls into view, grow the dots along the axis from left to right with a
-  stagger, no more than 600ms total. This runs once, through an IntersectionObserver.
+- Zooming in, a dot opens into its card (fade and scale, 170ms). Zooming out, a card settles into
+  its dot.
+- The first time a track scrolls into view, stems grow up from the axis left to right and the
+  cards rise in after them, within 600ms. It runs once, via an IntersectionObserver.
+- Both use the Web Animations API, so no style flips force a reflow. Neither runs with reduced
+  motion, and neither shows in the audit's screenshots.
 
 **4b. Uncertainty you can see**
-- When `parsed.approx` is set, draw the event's dot as a ring and give its range capsule soft
-  gradient ends. Add a small "about" note on the axis callout.
-- This shows students the difference between "c. 3000 BC" and "July 20, 1969".
+- Approximate dates (`c. 627 BC`, `1452?`) are drawn as rings on the axis, and their range spans
+  fade at the ends. The selected ring pulses as a ring.
+- The cursor's date gets "≈" only when the written date doesn't already say so.
+- The hint line explains "○ ring = approximate date".
+- The audit's `rings` count: 16 on Ages desktop, 10 on the Bible timeline.
 
 **4c. A richer detail card**
-- If the item contains an `<img>`, show the first one as a thumbnail floated right in the card,
-  marked `data-zoomable` so it opens in the lightbox (lesson rule). The Grand Timeline has 34 of
-  these.
-- When the selection changes, cross-fade the card's content.
-- Inline, keep the card height stable so the page doesn't jump while stepping.
+- The card's first photo moves to the top right beside the text, and below it on narrow cards. It's
+  marked `data-zoomable`, so photo-lightbox.js opens it like every lesson photo.
+- Links, buttons, icons and tiny images stay where they are. The engine's photo rules are
+  zero-specificity, so a page's own styling wins (the Ages thumbnails keep their credit-only
+  caption).
+- New text cross-fades in.
+- Inline, the card never shrinks while you step through events (capped at 60% of the screen), so
+  the lesson below doesn't jump.
 
-**4d. List view with structure** (#12)
-- Put dates in a fixed-width gutter column so they line up.
-- Make era rows section headers: the rail turns the era's colour from that header to the next one.
-- Show `data-major` rows with a bigger dot and a bold title.
-- With `data-timeline-gaps`, a long gap gets a dashed break in the rail.
-- All of this is print-safe and goes under the existing `@media print` rules. Check with
-  `npm run audit:print-layout -- --lesson=grace-hopper`.
+**4d. List view with structure**
+- Dates float into one gutter, sized to fit 90% of the dates (up to 180px). Longer dates wrap
+  inside it, and their row grows to fit. Desktop `listCols` is 1 everywhere.
+- Phones, and lessons whose own CSS lays the list out sideways as cards (Jeremiah and the other
+  prophet lessons), keep their dates inline.
+- The rail takes each era's strata colour from its header to the next era.
+- `data-major` rows get a bigger dot and a filled date.
+- With `data-timeline-gaps`, a gap over 3× the median (and at least 10 years) breaks the rail with
+  dashes and gets a bold label.
+- Print (`npm run audit:print-layout`, before and after, on Hopper, Bach, Ages and the Bible
+  timeline): page counts are unchanged at 52, and the issues found are fixed.
+  - A gap label could be stranded at the foot of a page. It now prints inside its row.
+  - An era header could end a page. It now has `break-after: avoid`.
+  - Headline date chips printed with a tint. Print now drops it.
+  - One "split" flag remains on Ages page 4. It's a false positive: two whole rows with similar
+    dates either side of the page break.
 
 **4e. Toolbar tidy-up**
-- Group view, step and zoom into joined segmented controls.
-- Use one icon set: the ⛶ icon is smaller than the others today.
-- Make category chips use a colour swatch dot, plus a "Show all" reset once a chip is off.
+- One SVG icon set: previous/next, −/+, full screen/close, play/pause.
+- Joined segmented controls: List|Track, −|Fit|+, and the scale switch. ⛶ stands apart.
+- Category and era chips use a colour dot, hollow when the category is off.
+- A dashed "Show all" appears once a category is off.
+
+Two more bugs of the reduced-motion kind turned up and are fixed. The list rows and dates are now
+exempt from transitions like the canvas, since `layoutList()` measures them right after changing
+classes. Without that, the Ages page's reduced-motion reset made the gutter wrong.
 
 ## Order and effort
 

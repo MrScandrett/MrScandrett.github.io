@@ -357,6 +357,24 @@
   var enhanced = typeof WeakSet === 'function' ? new WeakSet() : null;
   var all = [];
 
+  // One icon set for the toolbar: 16px strokes in the text colour (play is filled).
+  var ICONS = {
+    prev: 'M10 3 5 8l5 5', next: 'M6 3l5 5-5 5', minus: 'M3 8h10', plus: 'M3 8h10M8 3v10',
+    full: 'M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4', close: 'M3.5 3.5l9 9M12.5 3.5l-9 9',
+    play: 'M4.5 2.8v10.4L13 8z', pause: 'M5 3v10M11 3v10'
+  };
+  function icon(name) {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('class', 'tl-icon tl-icon-' + name);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    var path = svg.appendChild(document.createElementNS(ns, 'path'));
+    path.setAttribute('d', ICONS[name]);
+    return svg;
+  }
+
   function el(tag, cls, text) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -531,12 +549,13 @@
     var store = readStore();
     var fallback = this.events.length >= 3 && (this.root.clientWidth || global.innerWidth) >= 640 ? 'track' : 'list';
     this.setView(store.view || this.opts.view || fallback, { save: false });
+    this.intro();
 
     if (typeof ResizeObserver === 'function') {
       var lastW = 0;
       new ResizeObserver(function () {
         var w = self.viewport.clientWidth;
-        if (w && w !== lastW) { lastW = w; self.widths = null; self.layout(); }
+        if (w && w !== lastW) { lastW = w; self.widths = null; self.cardMin = 0; self.layout(); }
       }).observe(this.viewport);
     }
   }
@@ -568,10 +587,10 @@
     bar.appendChild(views);
 
     var step = el('div', 'tl-step');
-    this.prevBtn = this.button('◀', 'Previous event (←)', function () { self.step(-1, true); });
+    this.prevBtn = this.button('prev', 'Previous event (←)', function () { self.step(-1, true); });
     this.counter = el('span', 'tl-count');
     this.counter.setAttribute('aria-live', 'polite');
-    this.nextBtn = this.button('▶', 'Next event (→)', function () { self.step(1, true); });
+    this.nextBtn = this.button('next', 'Next event (→)', function () { self.step(1, true); });
     step.appendChild(this.prevBtn);
     step.appendChild(this.counter);
     step.appendChild(this.nextBtn);
@@ -588,11 +607,11 @@
     }
 
     var zoom = el('div', 'tl-zoom tl-track-only');
-    zoom.appendChild(this.button('−', 'Zoom out (−)', function () { self.setZoom(self.zoom / 1.8); }));
+    zoom.appendChild(this.button('minus', 'Zoom out (−)', function () { self.setZoom(self.zoom / 1.8); }));
     zoom.appendChild(this.button('Fit', 'Show the whole timeline (0)', function () { self.fit(); }));
-    zoom.appendChild(this.button('+', 'Zoom in (+)', function () { self.setZoom(self.zoom * 1.8); }));
+    zoom.appendChild(this.button('plus', 'Zoom in (+)', function () { self.setZoom(self.zoom * 1.8); }));
     // Real fullscreen where the browser has it; iPhone Safari doesn't, so there it fills the window.
-    this.fullBtn = this.button('⛶', 'Full screen, for the projector or a phone on its side (F)', function () { self.toggleFullscreen(); });
+    this.fullBtn = this.button('full', 'Full screen, for the projector or a phone on its side (F)', function () { self.toggleFullscreen(); });
     this.fullBtn.classList.add('tl-full');
     this.fullBtn.setAttribute('aria-pressed', 'false');
     zoom.appendChild(this.fullBtn);
@@ -642,6 +661,10 @@
         chips.appendChild(chip);
         return chip;
       });
+      // Once a category is off, one press brings them all back.
+      this.showAll = chips.appendChild(this.button('Show all', 'Show every category', function () { self.showAllGroups(); }));
+      this.showAll.classList.add('tl-show-all');
+      this.showAll.hidden = true;
       bar.appendChild(chips);
     }
     if (this.eras.length > 1) {
@@ -715,7 +738,9 @@
     this.canvas = canvas;
 
     this.events.forEach(function (it, i) {
-      var mark = el('button', 'tl-mark' + (it.major ? ' tl-major' : ''));
+      // c. 627 BC, 1452?: drawn as a ring rather than a solid dot (and soft-ended spans).
+      var approx = !!(it.parsed && it.parsed.approx);
+      var mark = el('button', 'tl-mark' + (it.major ? ' tl-major' : '') + (approx ? ' tl-approx' : ''));
       mark.type = 'button';
       mark.tabIndex = -1;
       if (it.tint) mark.style.setProperty('--tl-c', it.tint);
@@ -738,12 +763,12 @@
       mark.addEventListener('pointerleave', function () { self.hoverCursor.hidden = true; });
       it.mark = mark;
       self.markLayer.appendChild(mark);
-      it.stem = el('span', 'tl-stem' + (it.major ? ' tl-major' : ''));
+      it.stem = el('span', 'tl-stem' + (it.major ? ' tl-major' : '') + (approx ? ' tl-approx' : ''));
       if (it.tint) it.stem.style.setProperty('--tl-c', it.tint);
       self.stemLayer.appendChild(it.stem);
       // A range (1717–23, 335–175 Ma) is drawn on the axis itself, from start to end.
       if (it.parsed && it.parsed.end > it.parsed.start) {
-        it.span = self.stemLayer.appendChild(el('span', 'tl-span'));
+        it.span = self.stemLayer.appendChild(el('span', 'tl-span' + (approx ? ' tl-approx' : '')));
         if (it.tint) it.span.style.setProperty('--tl-c', it.tint);
         it.span.hidden = true;
       }
@@ -765,10 +790,15 @@
     list.classList.add('tl-list');
     if (this.items.length > 40) list.classList.add('tl-long');
     root.appendChild(list);
+    var era = null;
     this.items.forEach(function (it) {
       var li = it.li;
       li.classList.add(it.era ? 'tl-era-row' : 'tl-item');
+      if (it.major) li.classList.add('tl-major');
       if (it.tint) li.style.setProperty('--tl-c', it.tint);
+      // The rail takes each era's colour from its header down to the next era.
+      if (it.era) era = it;
+      if (era && era.tint) { li.classList.add('tl-in-era'); li.style.setProperty('--tl-rail', era.tint); }
       if (it.source) it.source.classList.add('tl-src');
       if (it.display || it.when) li.insertBefore(el('span', 'tl-date', it.display || it.when), li.firstChild);
       if (!it.era) {
@@ -904,10 +934,11 @@
   };
 
   // "12 years later" between visible list items (data-timeline-gaps).
+  // A gap far longer than usual (3× the median) also breaks the rail, so the jump shows.
   Timeline.prototype.renderGaps = function () {
     if (!this.opts.gaps) return;
     var self = this;
-    var prev = null;
+    var prev = null, rows = [];
     this.events.forEach(function (it) {
       var old = it.li.querySelector(':scope > .tl-gap');
       if (old) old.remove();
@@ -915,15 +946,21 @@
       if (!self.visible(it)) return;
       var gap = prev && prev.parsed && it.parsed ? gapText(prev.parsed, it.parsed) : '';
       if (gap) {
-        it.li.insertBefore(el('span', 'tl-gap', gap), it.li.firstChild);
+        var tag = it.li.insertBefore(el('span', 'tl-gap', gap), it.li.firstChild);
         it.li.classList.add('tl-has-gap');
+        rows.push({ tag: tag, years: it.parsed.start - prev.parsed.start });
       }
       prev = it;
     });
+    var sorted = rows.map(function (r) { return r.years; }).sort(function (a, b) { return a - b; });
+    var median = sorted.length ? sorted[sorted.length >> 1] : 0;
+    rows.forEach(function (r) { r.tag.classList.toggle('tl-gap-long', sorted.length >= 4 && r.years >= 3 * median && r.years >= 10); });
   };
 
+  // text is a label, or the name of an icon.
   Timeline.prototype.button = function (text, label, onClick) {
-    var b = el('button', 'tl-btn', text);
+    var b = el('button', 'tl-btn' + (ICONS[text] ? ' tl-btn-icon' : ''), ICONS[text] ? null : text);
+    if (ICONS[text]) b.appendChild(icon(text));
     b.type = 'button';
     b.title = label;
     b.setAttribute('aria-label', label);
@@ -954,6 +991,14 @@
     this.chipButtons.forEach(function (chip, i) {
       chip.setAttribute('aria-pressed', String(on.indexOf(self.groups[i]) !== -1));
     });
+    this.showAll.hidden = !this.filter;
+    this.refresh();
+  };
+
+  Timeline.prototype.showAllGroups = function () {
+    this.filter = null;
+    this.chipButtons.forEach(function (chip) { chip.setAttribute('aria-pressed', 'true'); });
+    this.showAll.hidden = true;
     this.refresh();
   };
 
@@ -992,8 +1037,12 @@
   };
 
   // Deep time compresses the past; the shaded stripes show by how much.
+  // A ring marks an approximate date.
   Timeline.prototype.updateLegend = function () {
-    this.legend.textContent = this.scale === 'log' ? ' · Each shaded stripe reaches 10× further back' : '';
+    var notes = [];
+    if (this.scale === 'log') notes.push('Each shaded stripe reaches 10× further back');
+    if (this.events.some(function (it) { return it.parsed && it.parsed.approx; })) notes.push('○ ring = approximate date');
+    this.legend.textContent = notes.map(function (n) { return ' · ' + n; }).join('');
   };
 
   // Fill the track with one era.
@@ -1159,7 +1208,9 @@
 
   Timeline.prototype.setPlayLabel = function (on) {
     if (!this.playBtn) return;
-    this.playBtn.textContent = on ? '❚❚ Pause' : '▶ Play the story';
+    this.playBtn.textContent = '';
+    this.playBtn.appendChild(icon(on ? 'pause' : 'play'));
+    this.playBtn.appendChild(document.createTextNode(on ? 'Pause' : 'Play the story'));
     this.playBtn.setAttribute('aria-pressed', String(on));
   };
 
@@ -1288,8 +1339,11 @@
 
   Timeline.prototype.markFull = function (full) {
     this.root.classList.toggle('tl-is-full', full);
+    this.cardMin = 0;
+    this.detail.style.minHeight = '';
     this.fullBtn.setAttribute('aria-pressed', String(full));
-    this.fullBtn.textContent = full ? '✕' : '⛶';
+    this.fullBtn.textContent = '';
+    this.fullBtn.appendChild(icon(full ? 'close' : 'full'));
     this.fullBtn.title = full ? 'Leave full screen (F or Esc)' : 'Full screen, for the projector or a phone on its side (F)';
     this.fullBtn.setAttribute('aria-label', this.fullBtn.title);
     this.widths = null;
@@ -1325,7 +1379,7 @@
       this.widths = null;
       this.layout();
       this.reveal(false);
-    }
+    } else this.layoutList();
   };
 
   // Positions on a 0..1 line.
@@ -1430,11 +1484,20 @@
       it.px = null;
       if (it.span) it.span.hidden = true;
     });
+    var motion = this.motionOK();
     res.placed.forEach(function (p) {
       var m = p.it.mark;
       p.it.px = p.px;
+      var was = m.classList.contains('tl-compact');
       m.classList.toggle('tl-flip', p.flip);
       m.classList.toggle('tl-compact', p.lane === -1);
+      // Zooming in, a dot opens into its card; zooming out, a card settles into a dot.
+      if (motion && was !== (p.lane === -1) && m.animate) {
+        m.animate(p.lane === -1
+          ? [{ transform: 'translate(-50%, -50%) scale(2.2)', opacity: 0.3 }, { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 }]
+          : [{ transform: 'scale(.88)', opacity: 0 }, { transform: 'none', opacity: 1 }],
+        { duration: p.lane === -1 ? 200 : 170, easing: 'ease-out' });
+      }
       m.classList.toggle('tl-two', !!p.two);
       p.it.stem.hidden = p.lane === -1;
       if (p.lane === -1) {
@@ -1640,6 +1703,59 @@
     var end = function () { drag = null; strip.classList.remove('is-dragging'); };
     strip.addEventListener('pointerup', end);
     strip.addEventListener('pointercancel', end);
+  };
+
+  // Motion only once the track has been seen, never with reduced motion or while printing.
+  Timeline.prototype.motionOK = function () {
+    return !!this.introDone && !reducedMotion.matches && this.root.dataset.tlView === 'track';
+  };
+
+  // The first time the track comes into view, its stems grow up from the axis left to right
+  // and the cards rise in after them (under 600ms in all). Once per timeline.
+  Timeline.prototype.intro = function () {
+    var self = this;
+    if (typeof IntersectionObserver !== 'function' || !this.viewport.animate || reducedMotion.matches) { this.introDone = true; return; }
+    var io = new IntersectionObserver(function (entries) {
+      if (!entries.some(function (e) { return e.isIntersecting; }) || self.root.dataset.tlView !== 'track') return;
+      io.disconnect();
+      var vis0 = self.viewport.scrollLeft, vw = self.viewport.clientWidth;
+      var ease = 'cubic-bezier(.2, .8, .2, 1)';
+      self.events.forEach(function (it) {
+        if (it.mark.hidden || it.px == null || it.px < vis0 - 20 || it.px > vis0 + vw + 20) return;
+        var delay = Math.min(Math.max((it.px - vis0) / vw, 0), 1) * 300;
+        if (!it.stem.hidden) it.stem.animate([{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 240, delay: delay, easing: ease, fill: 'backwards' });
+        it.mark.animate(it.mark.classList.contains('tl-compact')
+          ? [{ opacity: 0 }, { opacity: 1 }]
+          : [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 240, delay: delay + 40, easing: ease, fill: 'backwards' });
+      });
+      (self.clusters || []).forEach(function (pill) {
+        if (!pill.hidden) pill.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200, fill: 'backwards' });
+      });
+      self.introDone = true;
+    }, { threshold: 0.35 });
+    io.observe(this.viewport);
+  };
+
+  // List view: every date sits in one gutter so the text lines up. The gutter fits 90% of the
+  // dates (up to 180px); the few longer ones wrap inside it. Lessons that lay the list out
+  // sideways as cards keep their dates inline. Measured when the list is shown (no size hidden).
+  Timeline.prototype.layoutList = function () {
+    var shown = this.items.filter(function (it) { return !it.li.classList.contains('tl-off') && it.li.offsetParent; });
+    var across = shown.length > 1 && Math.abs(shown[0].li.offsetTop - shown[1].li.offsetTop) < 4;
+    this.list.classList.toggle('tl-list-across', across);
+    // Measured at their natural width: the gutter itself would cap them otherwise.
+    this.list.classList.add('tl-list-measure');
+    var widths = shown.map(function (it) {
+      var chip = it.li.querySelector(':scope > .tl-date');
+      return chip ? chip.getBoundingClientRect().width : 0;
+    }).filter(Boolean).sort(function (x, y) { return x - y; });
+    this.list.classList.remove('tl-list-measure');
+    if (widths.length) {
+      var fit = widths[Math.min(widths.length - 1, Math.floor(widths.length * 0.9))];
+      this.list.style.setProperty('--tl-gutter', Math.min(Math.ceil(fit + 2), 180) + 'px');
+    }
+    this.root.style.setProperty('--tl-paper', paperBehind(this.root)); // the rail's gap dashes
   };
 
   // Full screen: the height left for the track between the toolbar and the card (when the card
@@ -1953,6 +2069,8 @@
     });
     this.cursor.style.left = it.px + 'px';
     var text = it.display || it.when;
+    // Approximate, and the date doesn't already say so ("c. 627 BC", "1452?"): say "about".
+    if (it.parsed && it.parsed.approx && !/^(?:c\.|ca\.|circa|about|around|approx|~|≈)/i.test(text) && !/\?$/.test(text)) text = '≈ ' + text;
     if (this.cursorDate.textContent !== text) this.cursorDate.textContent = text;
     var w = this.cursorDate.offsetWidth;
     var left = Math.min(Math.max(it.px - w / 2, vis0 + 2), vis1 - 2 - w);
@@ -2077,7 +2195,17 @@
     Array.prototype.forEach.call(clone.querySelectorAll('.tl-date, .tl-gap, .tl-src'), function (n) { n.remove(); });
     Array.prototype.forEach.call(clone.querySelectorAll('[id]'), function (n) { n.removeAttribute('id'); });
     while (clone.firstChild) body.appendChild(clone.firstChild);
+    this.liftMedia(body);
     detail.appendChild(body);
+    // Stepping through events: the new text fades in, and inline the card never shrinks, so
+    // the lesson below doesn't jump with every step.
+    if (this.shown && !reducedMotion.matches && body.animate) body.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+    this.shown = true;
+    if (!this.root.classList.contains('tl-is-full') && this.root.dataset.tlView === 'track') {
+      detail.style.minHeight = '';
+      this.cardMin = Math.min(Math.max(this.cardMin || 0, detail.offsetHeight), global.innerHeight * 0.6);
+      detail.style.minHeight = this.cardMin + 'px';
+    } else detail.style.minHeight = '';
 
     if (this.root.dataset.tlView === 'track') this.renderTicks(); // the reading line moves
     if (opts.focus && this.root.dataset.tlView === 'track') it.mark.focus({ preventScroll: true });
@@ -2087,6 +2215,21 @@
       var target = this.targetFor(i);
       if (!target.stay) this.flyTo(target.z, target.c);
     }
+  };
+
+  // The card's first photo moves to the top, beside the text, and opens in the lesson's
+  // lightbox (photo-lightbox.js) like every lesson photo. Small icons and linked images stay put.
+  Timeline.prototype.liftMedia = function (body) {
+    var img = Array.prototype.find.call(body.querySelectorAll('img'), function (node) {
+      var w = parseFloat(node.getAttribute('width'));
+      return !node.closest('a, button') && !(w && w < 64) && !/icon|logo|emoji/i.test(node.className);
+    });
+    if (!img) return;
+    var media = img.closest('figure') || img;
+    if (!body.contains(media)) return;
+    media.setAttribute('data-zoomable', '');
+    media.classList.add('tl-detail-media');
+    body.insertBefore(media, body.firstChild);
   };
 
   // Scroll the selected event into view (horizontally only; never jumps the page).
@@ -2265,7 +2408,7 @@
   global.addEventListener('beforeprint', function () {
     all.forEach(function (t) { if (t.pseudoFull) t.setPseudoFull(false); });
     printViews = all.map(function (t) { return t.root.dataset.tlView; });
-    all.forEach(function (t) { t.root.dataset.tlView = 'list'; });
+    all.forEach(function (t) { t.root.dataset.tlView = 'list'; t.layoutList(); });
   }, true);
   global.addEventListener('afterprint', function () {
     if (!printViews) return;

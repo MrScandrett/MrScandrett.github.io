@@ -166,6 +166,9 @@ Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` 
 - Crowded dots fold into count pills (press to zoom in). Long timelines (25+ events or Deep time)
   get an overview strip under the track (drag the window to move, its edges to zoom);
   `data-timeline-overview="on|off"` forces it either way.
+- Approximate dates (`c. 627 BC`, `1452?`) draw as rings. The detail card lifts an item's first
+  photo beside the text (and opens it in the lightbox). The List view puts dates in one gutter and
+  colours the rail by era; lessons whose own CSS lays the list out sideways keep dates inline.
   `npm run audit:timeline` screenshots and measures reference timelines against
   `docs/timeline-audit-baseline.json` (`--save-baseline` after a deliberate change).
 - Per item: `data-label` (short track label), `data-group` (colour + filter chips),

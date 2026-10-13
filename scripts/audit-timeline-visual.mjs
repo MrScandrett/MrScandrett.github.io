@@ -24,6 +24,8 @@
 //   zero      — the BC|AD line is drawn (True scale across year 0)
 //   clusters  — cluster pills on the axis (crowded events merged, with a count)
 //   overview  — the overview strip is shown; ovErr = px between its window and the real view
+//   rings     — approximate dates on screen drawn as rings (c. 627 BC) rather than solid dots
+//   listCols  — List view: distinct x positions where item text starts (1 = lined up)
 //
 // Usage: node scripts/audit-timeline-visual.mjs [--case=hopper,ages] [--size=desktop,phone]
 //        [--theme=day,night] [--out=tmp/dir] [--save-baseline]
@@ -64,7 +66,8 @@ const SIZES = pick("size", [
 ]);
 const THEMES = pick("theme", ["day", "night"]);
 const METRICS = ["events", "compact", "cut", "lanes", "dotHits", "overlaps", "ticks", "trackPct", "datePx", "labelPx", "bandCut", "unusedPct", "searchBg",
-  "minor", "grid", "stripes", "spans", "bars", "hues", "bandLost", "cursor", "tickHits", "zero", "clusters", "overview", "ovErr"];
+  "minor", "grid", "stripes", "spans", "bars", "hues", "bandLost", "cursor", "tickHits", "zero", "clusters", "overview", "ovErr",
+  "rings", "listCols"];
 
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
@@ -158,7 +161,8 @@ async function audit({ c, size, theme }, name) {
       return { x: 0, y: top, width: window.innerWidth, height: Math.min(r.bottom, window.innerHeight) - top };
     });
     await page.screenshot(clip && clip.height > 0 ? { path: shot, clip } : { path: shot });
-    return { ...metrics, shot: path.relative(ROOT, shot) };
+    const list = await page.evaluate(measureList);
+    return { ...metrics, ...list, shot: path.relative(ROOT, shot) };
   } finally {
     await context.close();
   }
@@ -285,6 +289,7 @@ function measure() {
       tickHits,
       zero: count(".tl-gridline.tl-zero") > 0,
       clusters: count(".tl-cluster"),
+      rings: count(".tl-stem.tl-approx:not([hidden]), .tl-mark.tl-compact.tl-approx"),
       ...overview(),
     };
   }
@@ -301,6 +306,28 @@ function measure() {
     const a = toStrip(t.viewport.scrollLeft), b = toStrip(t.viewport.scrollLeft + t.viewport.clientWidth);
     return { overview: true, ovErr: Math.round(Math.max(Math.abs(win.left - a), Math.abs(win.right - b)) * 10) / 10 };
   }
+}
+
+// List view: where does each visible item's text start? (Switches the timeline to List.)
+function measureList() {
+  const t = window.__auditTimeline;
+  if (t.root.classList.contains("tl-is-full")) return { listCols: null };
+  t.setView("list", { save: false });
+  const starts = new Set();
+  t.items.forEach((it) => {
+    if (it.li.classList.contains("tl-off") || !it.li.offsetParent) return;
+    const walker = document.createTreeWalker(it.li, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => n.textContent.trim() && !n.parentElement.closest(".tl-date, .tl-gap, .tl-src") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+    });
+    const node = walker.nextNode();
+    if (!node) return;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const rect = range.getClientRects()[0];
+    if (rect) starts.add(Math.round(rect.left / 3));
+  });
+  t.setView("track", { save: false });
+  return { listCols: starts.size };
 }
 
 function printTable(rows, before) {
