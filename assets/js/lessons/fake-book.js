@@ -954,7 +954,7 @@
     // ks = the key signature's accidental for this letter on this staff, so a natural that cancels it still shows a sign.
     var nameHead = function (p, cx, cy, base, ks) {
       var whole = base >= 4, hollow = base >= 2, acc = p.a ? ACC[p.a] : ks ? '♮' : '';
-      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.6 * S, fs = 1.12 * S, col = NAME_COLORS[p.l];
+      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.5 * S, fs = 0.96 * S, col = NAME_COLORS[p.l];
       var rot = whole ? '' : ' transform="rotate(-24 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"';
       var oval = '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx.toFixed(2) + '" ry="' + ry.toFixed(2) + '"' + rot +
         ' fill="' + (hollow ? '#fffdf7' : col) + '" stroke="' + col + '" stroke-width="' + ((hollow ? 0.17 : 0.06) * S).toFixed(2) + '"/>';
