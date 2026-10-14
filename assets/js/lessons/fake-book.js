@@ -3003,35 +3003,34 @@
   // How a bar lays out n chord diagrams. One chord keeps the roomy cell; more share a grid so a busy bar
   // stays as tall as a single chord instead of stacking down the page. rowH/cap are in staff spaces (S).
   var SHAPE_SIZES = {
-    large:  { cols: function () { return 1; }, rowH: 16, cap: 13 },
-    medium: { cols: function (n) { return n <= 3 ? n : n === 4 ? 2 : 3; }, rowH: 15, cap: 12.5 },
-    small:  { cols: function (n) { return Math.min(n, 4); }, rowH: 12, cap: 9.5 }
+    large:  { cols: function (n) { return Math.min(n, 2); }, rowH: 18, cap: 15 },
+    medium: { cols: function (n) { return n <= 4 ? n : Math.ceil(n / 2); }, rowH: 15, cap: 12 },
+    small:  { cols: function (n) { return n <= 5 ? n : Math.ceil(n / 2); }, rowH: 12, cap: 9 }
   };
   function shapeGrid(n) {
     var size = SHAPE_SIZES[opts.shapeSize] || SHAPE_SIZES.medium, cols = size.cols(n);
-    // A lone chord always gets the roomiest cell the setting allows.
-    return { cols: cols, rows: Math.ceil(n / cols), rowH: n === 1 ? Math.max(size.rowH, 15) : size.rowH, cap: n === 1 ? Math.max(size.cap, 12.5) : size.cap };
+    return { cols: cols, rows: Math.ceil(n / cols), rowH: size.rowH, cap: size.cap };
   }
   function sizeMeasureDiagrams(S) {
     var diagrams = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape svg'));
     if (!diagrams.length) return;
-    // Diagrams in the same kind of cell share one native-coordinate scale, so chords side by side
-    // always match; a crowded bar's cells are narrower, so they come out smaller than a lone chord's.
-    var scales = {};
-    function keyOf(svg) { var g = svg.closest('.fb-measure-grid'); return g.getAttribute('data-cols') + ':' + g.getAttribute('data-cap'); }
+    // One native-coordinate scale per system: every diagram on a line is the same size whatever its
+    // bar holds, limited by the narrowest cell (or the height cap) on that line. Lines may differ.
+    var scales = [], systems = [];
+    function sysOf(svg) { var g = svg.closest('.fb-system') || svg.ownerSVGElement; var i = systems.indexOf(g); if (i < 0) { systems.push(g); i = systems.length - 1; } return i; }
     function cellWidth(svg) {
       var g = svg.closest('.fb-measure-grid'), cols = Number(g.getAttribute('data-cols'));
       return (Number(svg.closest('.fb-measure-help').getAttribute('width')) - (cols - 1) * 0.4 * S) / cols;
     }
     diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal, k = keyOf(svg);
+      var box = svg.viewBox.baseVal, k = sysOf(svg);
       if (box.width > 0 && box.height > 0) {
         var cap = Number(svg.closest('.fb-measure-grid').getAttribute('data-cap'));
         scales[k] = Math.min(scales[k] === undefined ? Infinity : scales[k], cellWidth(svg) / box.width, cap * S / box.height);
       }
     });
     diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal, scale = scales[keyOf(svg)];
+      var box = svg.viewBox.baseVal, scale = scales[sysOf(svg)];
       if (!isFinite(scale) || scale <= 0) return;
       svg.style.setProperty('width', (box.width * scale).toFixed(3) + 'px', 'important');
       svg.style.setProperty('height', (box.height * scale).toFixed(3) + 'px', 'important');
