@@ -56,3 +56,10 @@ test('new chord qualities: sus2, 7sus4 and minor-major 7th spell and reduce to t
   assert.equal(triad('aug'), 'augmented'); assert.equal(triad('9'), 'major'); assert.equal(triad('m6'), 'minor');
   for (const q of Object.keys(ctx.Q)) assert.ok(ctx.TRIADS[triad(q)], q);
 });
+
+test('sheet chord symbols write minor as "-" (the Realbook font has no lowercase m), never as a capital M', () => {
+  const realbookChord = new Function(source.slice(source.indexOf('  function realbookChord'), source.indexOf('  function chordAt')) + 'return realbookChord;')();
+  const cases = { 'Gm7': 'G-7', 'Am': 'A-', 'B♭m7♭5': 'B♭-7♭5', 'F♯m6': 'F♯-6', 'Am(maj7)': 'A-(maj7)', 'Dmadd9': 'D-add9', 'Cmin7': 'C-7',
+    'Em7/D': 'E-7/D', 'Cmaj7': 'Cmaj7', 'C': 'C', 'Gsus4': 'Gsus4', 'Bø7': 'Bø7', 'F°7': 'F°7', 'Abmaj9': 'Abmaj9' };
+  for (const [name, shown] of Object.entries(cases)) assert.equal(realbookChord(name), shown, name);
+});

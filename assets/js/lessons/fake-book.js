@@ -142,6 +142,9 @@
     if (c.bass) name += '/' + LETTERS[c.bass.l] + ACC[c.bass.a];
     return name;
   }
+  // The sheet's Realbook chord font has no lowercase, so "Gm7" would print as "GM7", a major chord.
+  // On the sheet, minor is written Real Book style: G-7, A-(maj7). Everywhere else keeps a lowercase m.
+  function realbookChord(name) { return name.replace(/^([A-G][#b♯♭]?)(?:min|mi|m)(?!aj)/, '$1-'); }
   function chordAt(chords, t) {
     for (var i = chords.length - 1; i >= 0; i--) if (chords[i].start <= t + EPS) return chords[i];
     return chords[0] || null;
@@ -1328,7 +1331,7 @@
           }
           var textEstWidth = chordName(o.c).length * 1.05 * S;
           lastChordRight = cx + textEstWidth;
-          out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(chordName(o.c)) + '</text>');
+          out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(realbookChord(chordName(o.c))) + '</text>');
         });
         // accidental memory per bar
         var placedBar = [];
