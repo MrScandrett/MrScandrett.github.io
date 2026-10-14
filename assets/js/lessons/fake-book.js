@@ -3708,6 +3708,13 @@
         stop(); var selected = startBar || loopRange().from;
         showBarPop(selected, barEls[selected]); return;
       }
+      var qsToggle = t.closest('[data-fb-notation-toggle]');
+      if (qsToggle) {
+        var qsBody = el('[data-fb-notation-body]'), qsOpen = qsBody.hidden;
+        qsBody.hidden = !qsOpen;
+        qsToggle.setAttribute('aria-expanded', String(qsOpen));
+        return;
+      }
       if (t.closest('[data-fb-print]')) { printNotation(); return; }
       var vBtn = t.closest('[data-fb-view]');
       if (vBtn) {
