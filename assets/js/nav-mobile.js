@@ -1730,3 +1730,60 @@ function classroomOSWhenIdle(fn) {
     document.head.appendChild(s);
   });
 }());
+
+// Phones: tuck the sticky site header away while reading (scroll down) and bring it back on any
+// scroll up. Header audit: it was the one piece of chrome pinned on every page (45px of 844).
+// Always visible near the top, while the menu/settings is open, or while focus is inside it.
+// Opt out per page with <html data-header-autohide="off">.
+(function () {
+  if (!window.matchMedia) return;
+  var phone = window.matchMedia("(max-width: 720px)");
+  var root = document.documentElement;
+  var header = null, lastY = 0, ticking = false, MIN_Y = 120, STEP = 10;
+
+  function setHidden(hide) {
+    if (hide) root.setAttribute("data-header-hidden", "true");
+    else root.removeAttribute("data-header-hidden");
+  }
+  function pinned() {
+    return !header
+      || header.contains(document.activeElement)
+      || !!header.querySelector(".site-nav.is-open, .nav-settings.is-open, [aria-expanded='true']");
+  }
+  function update() {
+    ticking = false;
+    var y = window.pageYOffset || 0;
+    var max = Math.max(0, root.scrollHeight - window.innerHeight);
+    if (!phone.matches || root.getAttribute("data-header-autohide") === "off" || y < MIN_Y || pinned()) {
+      setHidden(false); lastY = y; return;
+    }
+    if (y < 0 || y >= max - 2) return;          // iOS rubber-band at either end: ignore
+    var delta = y - lastY;
+    if (Math.abs(delta) < STEP) return;
+    setHidden(delta > 0);
+    lastY = y;
+  }
+  function onScroll() {
+    if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+  }
+  function init() {
+    header = document.querySelector(".site-header");
+    if (!header) return;
+    var pos = window.getComputedStyle(header).position;
+    if (pos !== "sticky" && pos !== "fixed") return;
+    var style = document.createElement("style");
+    style.textContent =
+      "@media (max-width:720px){.site-header{transition:transform .22s ease}" +
+      "html[data-header-hidden='true'] .site-header{transform:translateY(-100%)}}" +
+      "@media (prefers-reduced-motion:reduce){.site-header{transition:none}}" +
+      "@media print{html[data-header-hidden='true'] .site-header{transform:none}}";
+    document.head.appendChild(style);
+    lastY = window.pageYOffset || 0;
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    header.addEventListener("focusin", function () { setHidden(false); });
+    header.addEventListener("click", function () { window.setTimeout(update, 0); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
+}());

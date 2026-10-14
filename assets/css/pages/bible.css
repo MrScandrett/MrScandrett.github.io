@@ -220,7 +220,7 @@
 [data-cat="Prophecy"] { --cat: var(--cat-prophecy); }
 
 * { box-sizing: border-box; }
-html { scroll-padding-top: 5.5rem; -webkit-text-size-adjust: 100%; }
+html { scroll-padding-top: calc(var(--bb-top, 45px) + 5.5rem); -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bb-bg);
@@ -252,9 +252,22 @@ h1, h2, h3 { line-height: 1.2; }
   -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--bb-line);
 }
-.site-header ~ .bb-bar {
-  top: auto;
+/* Phones: the reader bar pins under the site header instead of scrolling away (it used to be
+   `top:auto`, which silently disabled sticky). The site header tucks away while reading
+   (nav-mobile.js sets data-header-hidden), so the bar slides up to the top edge. Desktop keeps
+   the bar in flow: header + bar pinned would cost 126px of an 800px screen. */
+html { --bb-top: 45px; }
+@media (min-width: 721px) { html { --bb-top: 65px; } }
+html[data-header-hidden="true"] { --bb-top: 0px; }
+.site-header ~ .bb-bar { top: auto; }
+@media (max-width: 720px) {
+  .site-header ~ .bb-bar {
+    top: var(--bb-top);
+    transition: top 0.22s ease;
+  }
+  .bb-display { top: calc(var(--bb-top) + 3.8rem); }
 }
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) { .site-header ~ .bb-bar { transition: none; } }
 .bb-brand {
   display: inline-flex; align-items: center; gap: 0.45rem;
   color: var(--bb-text); text-decoration: none;
@@ -289,7 +302,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .bb-seg output { min-width: 3.5rem; text-align: center; font-variant-numeric: tabular-nums; }
 
 .bb-display {
-  position: sticky; top: 3.6rem; z-index: 19;
+  position: sticky; top: var(--bb-top, 0px); z-index: 19;
   display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; justify-content: center;
   padding: 0.85rem 1rem 1rem;
   background: var(--bb-bar);
