@@ -2709,7 +2709,7 @@
   function renderBarPop() {
     var pop = el('[data-fb-barpop]');
     if (!pop || barPopBar === null || !view) return;
-    var info = barChords(barPopBar), piano = (opts.engineInst || 'piano') === 'piano';
+    var info = barChords(barPopBar), piano = (opts.engineInst || 'piano') === 'piano', violin = opts.engineInst === 'violin' && !!window.FakeBookViolin;
     var written = !(opts.instr === 'concert' || opts.instr === 'bass');
     el('[data-fb-barpop-title]').textContent = (barPopBar < 1 ? 'Pickup' : 'Bar ' + barPopBar) + ' · ' +
       info.idx.map(function (ci) { return chordName(written ? view.writtenChords[ci] : view.concertChords[ci]); }).join('  ') || 'no chord';
@@ -2721,12 +2721,12 @@
       return '<button type="button" class="fb-barpop-card" data-chg-ci="' + ci + '" aria-label="Play ' + MN.escape(name) + '">' +
         '<strong>' + MN.escape(name) + '</strong>' +
         (written ? '<em>your chart: ' + MN.escape(chordName(view.writtenChords[ci])) + '</em>' : '') +
-        (piano ? miniPiano(notes, rootPC) : miniGuitar(rootPC, chordTypeOf(c))) +
-        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(respell(m)); }).join(' ') : Q[c.q].name + guitarFormLabel(rootPC, c)) + '</small></button>';
+        (piano ? miniPiano(notes, rootPC) : violin ? window.FakeBookViolin.mini(rootPC, window.FakeBookViolin.toneMap(violinTones(c, chordTypeOf(c), 'voicings').intervals)) : miniGuitar(rootPC, chordTypeOf(c))) +
+        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(respell(m)); }).join(' ') : violin ? Q[c.q].name + ' · first-position tones' : Q[c.q].name + guitarFormLabel(rootPC, c)) + '</small></button>';
     }).join('');
     el('[data-fb-barpop-note]').textContent = info.held ? 'No new chord here: the chord from bar ' + view.concertChords[info.idx[0]].bar + ' keeps ringing.' :
       (written ? 'Shapes are in concert pitch, as a piano or guitar plays them. ' : '') + 'Click a shape to hear it.' +
-      (piano ? '' : ' Pick a different guitar form in the Chords tab.');
+      (piano ? '' : violin ? ' Dots are every chord tone in first position; play them one at a time.' : ' Pick a different guitar form in the Chords tab.');
   }
   function showBarPop(b, barEl) {
     var pop = el('[data-fb-barpop]'), card = root.querySelector('.fb-sheet-card');
@@ -2839,7 +2839,7 @@
 
     var chordInfoText = (opts.instr === 'concert' || opts.instr === 'bass' ? '' : 'Sounds as ' + chordName(c) + ' (concert). ') +
       Q[c.q].name.charAt(0).toUpperCase() + Q[c.q].name.slice(1) + ' · bar ' + c.bar + ' · ' + d.bottom + ' on the bottom';
-    var chordNotesText = (opts.engineInst === 'piano' ? 'Piano plays: ' : 'Guitar plays: ') + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
+    var chordNotesText = (opts.engineInst === 'piano' ? 'Piano plays: ' : opts.engineInst === 'violin' ? 'Violin plays (one tone at a time): ' : 'Guitar plays: ') + d.spelled.join('  ') + (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' (concert)');
 
     var mainInfoEl = el('[data-fb-chordinfo]');
     if (mainInfoEl) mainInfoEl.textContent = chordInfoText;
@@ -2889,7 +2889,20 @@
 
     var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
 
-    if (mode === 'voicings') {
+    if (opts.engineInst === 'violin' && window.FakeBookViolin) {
+      ['[data-fb-guitar-forms]', '[data-fb-voicing]', '[data-fb-guitar-triad-sets]'].forEach(function (sel) { var w = el(sel); if (w) w.hidden = true; });
+      var vTones = violinTones(c, cType, mode);
+      var vMap = window.FakeBookViolin.toneMap(vTones.intervals, vTones.labels);
+      var vSvg = window.FakeBookViolin.draw(rootPC, vMap, vTones.aria);
+      root.querySelectorAll('[data-fb-fretboard]').forEach(function (vw) {
+        vw.innerHTML = vSvg;
+        vw.querySelectorAll('[data-vm]').forEach(function (dot) {
+          dot.addEventListener('click', function () { violinTone(Number(dot.getAttribute('data-vm')), 0, 1); });
+        });
+      });
+      if (mode === 'triads') { var vDesc = el('[data-fb-triad-desc]'); if (vDesc) vDesc.textContent = vTones.title; }
+      if (mode === 'scales') { populateScaleChips(rootPC, c.q); var vSum = el('[data-fb-scale-summary]'); if (vSum) vSum.textContent = vTones.title; }
+    } else if (mode === 'voicings') {
       if (isPiano) {
         var formsWrap = el('[data-fb-guitar-forms]');
         if (formsWrap) formsWrap.hidden = true;
@@ -3019,7 +3032,39 @@
     if (sound) playActiveChord();
   }
 
+  // What the violin shows for the selected chord: its tones (or the triad's, or the scale's), by mode.
+  function violinTones(c, cType, mode) {
+    var rootName = LETTERS[c.root.l] + ACC[c.root.a], ivs, labels = null, title;
+    if (mode === 'scales') {
+      var stDef = (GT && GT.SCALE_TYPES.find(function (x) { return x.key === (opts.scaleType || 'ionian'); })) || (PT && PT.SCALE_TYPES.find(function (x) { return x.key === (opts.scaleType || 'ionian'); })) || { intervals: [0, 2, 4, 5, 7, 9, 11], degrees: ['1', '2', '3', '4', '5', '6', '7'], desc: 'Major scale' };
+      ivs = stDef.intervals; labels = stDef.degrees;
+      title = (stDef.name || opts.scaleType || 'Scale') + ' on ' + rootName + ' · first position: ' + (stDef.desc || '');
+    } else if (mode === 'triads') {
+      var q = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+      ivs = q === 'minor' ? [0, 3, 7] : q === 'diminished' ? [0, 3, 6] : q === 'augmented' ? [0, 4, 8] : [0, 4, 7];
+      title = rootName + ' ' + q + ' triad · arpeggiate R-3-5 across the strings';
+    } else {
+      ivs = cType.intervals && cType.intervals.length ? cType.intervals : [0, 4, 7];
+      title = rootName + (c.q || '') + ' chord tones in first position';
+    }
+    return { intervals: ivs, labels: labels, title: title, aria: 'Violin fingerboard, first position: ' + title };
+  }
+  // A violin note, through the shared audio kit (the same voice as the Violin lesson).
+  function violinTone(midi, delay, dur) {
+    if (window.AudioKit && window.MusicSynth) window.AudioKit.note({ instrument: 'violin', midi: midi, velocity: 0.7, delay: delay || 0, duration: dur || 0.9 });
+  }
+  function playViolin(arp) {
+    if (!view || !view.concertChords.length || !window.FakeBookViolin) return false;
+    var c = view.concertChords[chordSel], rootPC = mod(NAT[c.root.l] + c.root.a, 12);
+    var mode = opts.engineMode || 'voicings', vt = violinTones(c, chordTypeOf(c), mode);
+    var up = window.FakeBookViolin.climb(rootPC, vt.intervals, mode === 'scales');
+    var run = arp || mode === 'scales' ? up.concat(up.slice(0, -1).reverse()) : up;
+    run.forEach(function (m, i) { violinTone(m, i * (arp || mode === 'scales' ? 0.2 : 0.09), arp || mode === 'scales' ? 0.35 : 1.4); });
+    return true;
+  }
+
   function playActiveChord() {
+    if (opts.engineInst === 'violin' && playViolin(false)) return;
     if (!view || !view.concertChords.length) return;
     var c = view.concertChords[chordSel];
     var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
@@ -3054,6 +3099,7 @@
   }
 
   function playActiveArpeggio() {
+    if (opts.engineInst === 'violin' && playViolin(true)) return;
     if (!view || !view.concertChords.length) return;
     var c = view.concertChords[chordSel];
     var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
