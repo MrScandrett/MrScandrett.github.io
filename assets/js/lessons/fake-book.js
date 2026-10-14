@@ -920,7 +920,7 @@
     var rowH = 135;
     var headerW = 75;
     var out = [];
-    var yTop = 28;
+    var yTop = 52; // room above the first staff for the tempo line, then bar numbers, then stems
 
     systems.forEach(function (sys, si) {
       var firstSys = si === 0;
@@ -940,7 +940,7 @@
         out.push('<text class="fb-drum-timesig" x="50" y="' + (staffTop + 18) + '" font-size="22" font-weight="700" font-family="Fraunces, serif" text-anchor="middle" fill="#1f1a14">' + M + '</text>');
         out.push('<text class="fb-drum-timesig" x="50" y="' + (staffTop + 38) + '" font-size="22" font-weight="700" font-family="Fraunces, serif" text-anchor="middle" fill="#1f1a14">4</text>');
         var grooveTitle = (STYLES[opts.style] ? STYLES[opts.style].label : 'Groove') + (opts.feel === 'swing' ? ' (Swing feel)' : ' (Straight)');
-        out.push('<text x="' + headerW + '" y="' + (staffTop - 11) + '" font-size="12" font-weight="700" font-family="DM Sans, sans-serif" fill="#7a4508">♩ = ' + opts.tempo + ' · ' + MN.escape(grooveTitle) + '</text>');
+        out.push('<text x="' + headerW + '" y="' + (staffTop - 42) + '" font-size="12" font-weight="700" font-family="DM Sans, sans-serif" fill="#7a4508">♩ = ' + opts.tempo + ' · ' + MN.escape(grooveTitle) + '</text>');
       }
 
       out.push('<line class="fb-drum-barline" x1="' + headerW + '" y1="' + staffTop + '" x2="' + headerW + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.4"/>');
@@ -950,13 +950,13 @@
         var ex = bx + barW;
         var isLast = barNum === totalBars;
 
-        out.push('<rect class="fb-bar" data-bar="' + barNum + '" x="' + bx + '" y="' + (staffTop - 14) + '" width="' + barW + '" height="' + (staffH + 28) + '" rx="4"/>');
-        out.push('<text class="fb-drum-barnum" x="' + (bx + 6) + '" y="' + (staffTop - 5) + '">' + barNum + '</text>');
+        out.push('<rect class="fb-bar" data-bar="' + barNum + '" x="' + bx + '" y="' + (staffTop - 34) + '" width="' + barW + '" height="' + (staffH + 34 + 26) + '" rx="4"/>');
+        out.push('<text class="fb-drum-barnum" x="' + (bx + 4) + '" y="' + (staffTop - 27) + '">' + barNum + '</text>');
 
         if (tune.sectionsByBar && tune.sectionsByBar[barNum]) {
           var sec = tune.sectionsByBar[barNum];
-          out.push('<rect class="fb-sec-bg" x="' + (bx + 24) + '" y="' + (staffTop - 20) + '" width="18" height="15" rx="3"/>');
-          out.push('<text class="fb-sec-txt" x="' + (bx + 33) + '" y="' + (staffTop - 8) + '" font-size="10" font-weight="800" text-anchor="middle">' + MN.escape(sec) + '</text>');
+          out.push('<rect class="fb-sec-bg" x="' + (bx + 22) + '" y="' + (staffTop - 38) + '" width="18" height="15" rx="3"/>');
+          out.push('<text class="fb-sec-txt" x="' + (bx + 31) + '" y="' + (staffTop - 26) + '" font-size="10" font-weight="800" text-anchor="middle">' + MN.escape(sec) + '</text>');
         }
 
         renderDrumBarNotes(out, bx, barW, staffTop, SP, drumSet, M, barNum);
