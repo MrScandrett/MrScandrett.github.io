@@ -63,3 +63,17 @@ test('sheet chord symbols write minor as "-" (the Realbook font has no lowercase
     'Em7/D': 'E-7/D', 'Cmaj7': 'Cmaj7', 'C': 'C', 'Gsus4': 'Gsus4', 'Bø7': 'Bø7', 'F°7': 'F°7', 'Abmaj9': 'Abmaj9' };
   for (const [name, shown] of Object.entries(cases)) assert.equal(realbookChord(name), shown, name);
 });
+
+test('lead-sheet layout: every note gets a drawable value, including tied triplet lengths', () => {
+  const layout = vm.createContext({});
+  vm.runInContext('var EPS = 1e-6; function mod(n, m) { return ((n % m) + m) % m; } function near(a, b) { return Math.abs(a - b) < EPS; }\n' +
+    source.slice(source.indexOf('  var NOTE_D ='), source.indexOf('  var sheetEl')), layout);
+  const p = { l: 0, a: 0 }, drawable = [4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25];
+  // How Insensitive bar 69: quarter, a half triplet tied to an eighth triplet (5/3 of a beat), eighth triplet, quarter.
+  const ev = [[0, 1], [1, 5 / 3], [8 / 3, 1 / 3], [3, 1]].map(([start, dur]) => ({ start, dur, p }));
+  const [bar] = layout.layoutBars(ev, { pickup: 0, bars: 1, M: 4 });
+  bar.pieces.forEach(pc => assert.ok(drawable.includes(pc.d), 'drawable value ' + pc.d));
+  const tied = bar.pieces.filter(pc => pc.trip && pc.idx === 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(tied.map(pc => [pc.d, pc.tie, pc.tieFrom]))), [[2, true, false], [0.5, false, true]]);
+  assert.ok(Math.abs(bar.pieces.reduce((s, pc) => s + (pc.real || pc.d), 0) - 4) < 1e-6, 'the bar still adds up to 4 beats');
+});

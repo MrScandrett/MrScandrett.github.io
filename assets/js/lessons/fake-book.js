@@ -853,7 +853,16 @@
       filled.forEach(function (it) {
         if (!it.p && it.rel < EPS && it.len > b.len - EPS && b.i > 0) { b.pieces.push({ rest: true, whole: true, rel: 0, d: b.len, idx: it.idx }); return; }
         if (isTriplet(it.len)) {                                         // drawn as the plain value it stands for, marked 3
-          b.pieces.push({ rest: !it.p, rel: it.rel, beat: it.rel + b.off, d: Math.round(it.len * 6) / 4, real: it.len, trip: true, idx: it.idx, p: it.p, tie: !!it.p && it.cont, tieFrom: !!it.p && it.from });
+          // A tied triplet length with no single note value (5/3 of a beat: a half triplet tied to an eighth
+          // triplet) is written as tied triplet notes, longest first.
+          var chunks = [], left = it.len, at = it.rel;
+          if (BASE[Math.round(it.len * 6) / 4]) chunks.push(it.len);
+          else while (left > EPS) { var c = [4 / 3, 2 / 3, 1 / 3].filter(function (x) { return x <= left + EPS; })[0]; chunks.push(c); left -= c; }
+          chunks.forEach(function (len, k) {
+            b.pieces.push({ rest: !it.p, rel: at, beat: at + b.off, d: Math.round(len * 6) / 4, real: len, trip: true, idx: it.idx, p: it.p,
+              tie: !!it.p && (k < chunks.length - 1 || it.cont), tieFrom: !!it.p && (k > 0 || it.from) });
+            at += len;
+          });
           return;
         }
         var parts = decompose(it.rel + b.off, it.len, !it.p, b.len);
