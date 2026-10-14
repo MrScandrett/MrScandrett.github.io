@@ -570,6 +570,8 @@
     guitarForm: 'open', guitarVoice: 'manual',
     triadInv: 0,
     triadSet: '123',
+    lowBass: true,
+    shapeSize: 'medium',
     scaleType: 'ionian',
     showShapes: true,
     follow: true,
@@ -1225,7 +1227,7 @@
       }
       if (opts.measureShapes || (showPos && opts.showAnalysis)) {
         helpTop = (showPos || showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + S;
-        helpH = Math.max.apply(null, sys.map(function (b) { return Math.max(1, barChords(b.i).idx.length); })) * (opts.measureShapes ? 16 : 0) * S + (showPos && opts.showAnalysis ? 13 * S : 0);
+        helpH = Math.max.apply(null, sys.map(function (b) { var g = shapeGrid(Math.max(1, barChords(b.i).idx.length)); return g.rows * g.rowH; })) * (opts.measureShapes ? 1 : 0) * S + (showPos && opts.showAnalysis ? 13 * S : 0);
         rowsBottom = helpTop + helpH;
       }
       var x = header;
@@ -2554,6 +2556,8 @@
       el('[data-fb-show-pos]').disabled = opts.posInst === 'piano';
       el('[data-fb-show-pos]').closest('label').title = opts.posInst === 'piano' ? 'Fingerboard positions are available for guitar and violin.' : '';
       root.querySelectorAll('[data-fb-show-shapes]').forEach(function (control) { control.checked = !!opts.measureShapes; });
+      el('[data-fb-shape-size]').value = SHAPE_SIZES[opts.shapeSize] ? opts.shapeSize : 'medium';
+      el('[data-fb-low-bass]').checked = opts.lowBass !== false;
       var pil = el('[data-fb-pos-inst]');
       pil.value = opts.posInst || 'guitar';
       pil.closest('label').hidden = false;
@@ -2886,25 +2890,64 @@
   function gripFor(ci) {
     return (opts.guitarVoice === 'tab' && view.tabGrips && view.tabGrips[ci]) || (view.guitarGrips && view.guitarGrips[ci]) || null;
   }
+  var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
+  function bassPCOf(c) { return c && c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null; }
+  // Grips on the upper strings float with no fundamental. Put the chord's bass (its root, or the slash
+  // bass) on the low E or A string when it sits inside the hand's reach. `always` also adds it under
+  // a grip whose bass is already right but starts on the D string or higher (triads).
+  function withLowBass(frets, rootPC, bassPC, always) {
+    if (opts.lowBass === false) return frets;
+    var low = -1, target = bassPC != null ? bassPC : rootPC;
+    for (var i = 0; i < 6 && low < 0; i++) if (typeof frets[i] === 'number') low = i;
+    if (low < 1) return frets;
+    if (mod(OPEN_MIDI[low] + frets[low], 12) === target && !(always && low >= 2)) return frets;
+    var fretted = frets.filter(function (f) { return typeof f === 'number' && f > 0; }), best = null;
+    [0, 1].forEach(function (s) {
+      if (s >= low) return;
+      var f0 = mod(target - OPEN_MIDI[s], 12);
+      [f0, f0 + 12].forEach(function (f) {
+        if (f > 17) return;
+        var all = f > 0 ? fretted.concat([f]) : fretted;
+        var span = all.length ? Math.max.apply(null, all) - Math.min.apply(null, all) : 0;
+        if (span <= 4 && (!best || span < best.span)) best = { s: s, f: f, span: span };
+      });
+    });
+    if (!best) return frets;
+    var out = frets.slice();
+    out[best.s] = best.f;
+    return out;
+  }
+  // A triad match plus its bass note, as {s, f, midi} notes low string first.
+  function triadNotes(match, rootPC, c) {
+    var frets = [null, null, null, null, null, null];
+    match.notes.forEach(function (n) { frets[n.s] = n.f; });
+    var withBass = withLowBass(frets, rootPC, bassPCOf(c), true), notes = match.notes.slice();
+    withBass.forEach(function (f, s) { if (f !== frets[s]) notes.unshift({ s: s, f: f, midi: OPEN_MIDI[s] + f }); });
+    return notes;
+  }
   function guitarShapeFor(rootPC, cType, ci) {
+    var c = view && view.concertChords ? view.concertChords[ci == null ? chordSel : ci] : null;
     if (opts.engineMode === 'triads') {
       var quality = triadQuality(cType.intervals);
       var match = getGuitarTriad(rootPC, quality, opts.triadSet || '123', Number(opts.triadInv) || 0);
       if (!match) return null;
       var frets = [null, null, null, null, null, null];
       match.notes.forEach(function (note) { frets[note.s] = note.f; });
-      return { frets: frets };
+      return { frets: withLowBass(frets, rootPC, bassPCOf(c), true) };
     }
 
     if (opts.guitarVoice && opts.guitarVoice !== 'manual' && view && view.guitarGrips) {
       var grip = gripFor(ci == null ? chordSel : ci);
-      return grip ? { frets: grip.frets, formName: opts.guitarVoice } : null;
+      if (!grip) return null;
+      // A grip lifted from the imported tab is what the tab plays; leave it alone.
+      return { frets: grip.source === 'tab' ? grip.frets : withLowBass(grip.frets, rootPC, bassPCOf(c), false), formName: opts.guitarVoice };
     }
     if (!GT) return null;
     var forms = GT.availableForms(rootPC, cType);
     var form = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : forms[0];
     var shape = GT.getChordShape(rootPC, cType, 0, form);
     shape.formName = form;
+    shape.frets = withLowBass(shape.frets, rootPC, bassPCOf(c), false);
     return shape;
   }
   function syncQuickChordControls() {
@@ -2957,22 +3000,39 @@
     view.concertChords.forEach(function (c, i) { if (c.bar < b) prev = i; });
     return { idx: prev >= 0 ? [prev] : [], held: prev >= 0 };
   }
+  // How a bar lays out n chord diagrams. One chord keeps the roomy cell; more share a grid so a busy bar
+  // stays as tall as a single chord instead of stacking down the page. rowH/cap are in staff spaces (S).
+  var SHAPE_SIZES = {
+    large:  { cols: function () { return 1; }, rowH: 16, cap: 13 },
+    medium: { cols: function (n) { return n <= 3 ? n : n === 4 ? 2 : 3; }, rowH: 15, cap: 12.5 },
+    small:  { cols: function (n) { return Math.min(n, 4); }, rowH: 12, cap: 9.5 }
+  };
+  function shapeGrid(n) {
+    var size = SHAPE_SIZES[opts.shapeSize] || SHAPE_SIZES.medium, cols = size.cols(n);
+    // A lone chord always gets the roomiest cell the setting allows.
+    return { cols: cols, rows: Math.ceil(n / cols), rowH: n === 1 ? Math.max(size.rowH, 15) : size.rowH, cap: n === 1 ? Math.max(size.cap, 12.5) : size.cap };
+  }
   function sizeMeasureDiagrams(S) {
     var diagrams = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape svg'));
     if (!diagrams.length) return;
-    // One native-coordinate scale for the whole score: narrow bars and wide
-    // voicings constrain every diagram equally rather than shrinking one chord.
-    var scale = Infinity;
+    // Diagrams in the same kind of cell share one native-coordinate scale, so chords side by side
+    // always match; a crowded bar's cells are narrower, so they come out smaller than a lone chord's.
+    var scales = {};
+    function keyOf(svg) { var g = svg.closest('.fb-measure-grid'); return g.getAttribute('data-cols') + ':' + g.getAttribute('data-cap'); }
+    function cellWidth(svg) {
+      var g = svg.closest('.fb-measure-grid'), cols = Number(g.getAttribute('data-cols'));
+      return (Number(svg.closest('.fb-measure-help').getAttribute('width')) - (cols - 1) * 0.4 * S) / cols;
+    }
     diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal;
-      var aid = svg.closest('.fb-measure-help');
+      var box = svg.viewBox.baseVal, k = keyOf(svg);
       if (box.width > 0 && box.height > 0) {
-        scale = Math.min(scale, Number(aid.getAttribute('width')) / box.width, 13 * S / box.height);
+        var cap = Number(svg.closest('.fb-measure-grid').getAttribute('data-cap'));
+        scales[k] = Math.min(scales[k] === undefined ? Infinity : scales[k], cellWidth(svg) / box.width, cap * S / box.height);
       }
     });
-    if (!isFinite(scale) || scale <= 0) return;
     diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal;
+      var box = svg.viewBox.baseVal, scale = scales[keyOf(svg)];
+      if (!isFinite(scale) || scale <= 0) return;
       svg.style.setProperty('width', (box.width * scale).toFixed(3) + 'px', 'important');
       svg.style.setProperty('height', (box.height * scale).toFixed(3) + 'px', 'important');
       svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -3004,9 +3064,13 @@
       if (opts.engineMode === 'triads' && Q[c.q].iv.length > 3) label = (label || chordName(c)) + ' · triad only';
       if (label && opts.instr !== 'concert' && opts.instr !== 'bass') label += ' (concert)';
       if (info.held && !label) label = 'Held from previous bar';
-      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '">' + (label ? '<strong>' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
+      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
     if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
+    else if (opts.measureShapes) {
+      var grid = shapeGrid(html.length);
+      html = ['<div class="fb-measure-grid" data-cols="' + grid.cols + '" data-cap="' + grid.cap + '" style="grid-template-columns:repeat(' + grid.cols + ',minmax(0,1fr));grid-auto-rows:' + grid.rowH + 'em">' + html.join('') + '</div>'];
+    }
     if (positions && opts.showAnalysis) {
       var midis = view.concert.filter(function (e) { return e.p && e.start >= b.start - EPS && e.start < b.start + b.len - EPS; }).map(function (e) { return e.p.midi; });
       var fits = window.FakeBookPosition.analyze(midis, chordPCs, preferred);
@@ -3284,7 +3348,7 @@
         var gFingers = [null, null, null, null, null, null];
         var gDegs = [null, null, null, null, null, null];
         if (tMatch) {
-          tMatch.notes.forEach(function (n) {
+          triadNotes(tMatch, rootPC, c).forEach(function (n) {
             gFrets[n.s] = n.f;
             var iv = mod(n.midi - rootPC, 12);
             gDegs[n.s] = { label: triadDegree(iv), isRoot: iv === 0 };
@@ -3391,7 +3455,7 @@
         var triadQ = triadQuality(Q[c.q].iv);
         var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
         if (tMatch && window.GuitarAudio) {
-          var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
+          var freqs = triadNotes(tMatch, rootPC, c).map(function (n) { return GT.noteFreq(n.s, n.f); });
           window.GuitarAudio.strum(freqs);
           return;
         }
@@ -3442,7 +3506,7 @@
         var triadQ = triadQuality(Q[c.q].iv);
         var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
         if (tMatch && window.GuitarAudio) {
-          var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
+          var freqs = triadNotes(tMatch, rootPC, c).map(function (n) { return GT.noteFreq(n.s, n.f); });
           window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
           return;
         }
@@ -3561,6 +3625,8 @@
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; if (t.checked) opts.showPos = false; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-shape-size]')) { opts.shapeSize = t.value; refresh(); save(); }
+      else if (t.matches('[data-fb-low-bass]')) { opts.lowBass = t.checked; showChord(false); refresh(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-show-shapes]')) { opts.measureShapes = t.checked; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-pos-inst]')) { opts.posInst = opts.engineInst = t.value; syncControls(); refresh(); renderBarPop(); save(); }
@@ -3707,6 +3773,51 @@
       if (ev.scoreNavigation) return;           // a bar: ScoreNavigation's onSelect has it
       if (barPopBar !== null && !t.closest('[data-fb-barpop]')) hideBarPop();
     });
+    // Hover a chord diagram on the sheet to see it large. The sheet's help layer ignores pointer events
+    // (so bar clicks still work), hence the hit test by rectangle.
+    var zoomCard = null, zoomTarget = null, zoomFrame = 0;
+    function hideShapeZoom() {
+      if (zoomTarget) zoomTarget.classList.remove('is-zoom-target');
+      zoomTarget = null;
+      if (zoomCard) zoomCard.hidden = true;
+    }
+    function showShapeZoom(shape, ev) {
+      var svg = shape.querySelector('svg');
+      if (!svg) return hideShapeZoom();
+      if (!zoomCard) { zoomCard = document.createElement('div'); zoomCard.className = 'fb-shape-zoom'; zoomCard.setAttribute('aria-hidden', 'true'); document.body.appendChild(zoomCard); }
+      if (zoomTarget !== shape) {
+        if (zoomTarget) zoomTarget.classList.remove('is-zoom-target');
+        zoomTarget = shape;
+        shape.classList.add('is-zoom-target');
+        var label = shape.querySelector('strong'), big = svg.cloneNode(true);
+        big.removeAttribute('style'); big.removeAttribute('width'); big.removeAttribute('height');
+        zoomCard.innerHTML = (label ? '<strong>' + MN.escape(label.textContent) + '</strong>' : '');
+        zoomCard.appendChild(big);
+        var box = svg.viewBox.baseVal;
+        zoomCard.style.width = Math.min(300, Math.max(190, innerWidth * .3), box.width * 3.2) + 'px';
+      }
+      zoomCard.hidden = false;
+      var r = shape.getBoundingClientRect(), w = zoomCard.offsetWidth, h = zoomCard.offsetHeight;
+      var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
+      var top = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.min(r.bottom + 8, innerHeight - h - 8);
+      zoomCard.style.left = left + 'px';
+      zoomCard.style.top = Math.max(8, top) + 'px';
+    }
+    sheetEl.addEventListener('pointermove', function (ev) {
+      if (ev.pointerType === 'touch' || zoomFrame) return;
+      var x = ev.clientX, y = ev.clientY;
+      zoomFrame = requestAnimationFrame(function () {
+        zoomFrame = 0;
+        var hit = null, shapes = sheetEl.querySelectorAll('.fb-measure-shape');
+        for (var i = 0; i < shapes.length && !hit; i++) {
+          var r = shapes[i].getBoundingClientRect();
+          if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && shapes[i].querySelector('svg')) hit = shapes[i];
+        }
+        if (hit) showShapeZoom(hit); else hideShapeZoom();
+      });
+    });
+    sheetEl.addEventListener('pointerleave', hideShapeZoom);
+    addEventListener('scroll', hideShapeZoom, true);
     var importInp = el('[data-fb-import-input]');
     if (importInp) {
       importInp.addEventListener('keydown', function (e) {
