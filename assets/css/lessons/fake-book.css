@@ -1319,3 +1319,168 @@ body.fb-focused.fb-standing .fb-transport { top: 0; z-index: 10001; }
 @media (max-width: 850px) { .fb-pdf-desk.is-focused .fb-pdf-workspace { overflow: auto; } .fb-pdf-desk.is-focused .fb-pdf-source, .fb-pdf-desk.is-focused .fb-pdf-editor { overflow: visible; } }
 body > .fb-pdf-desk.is-focused { position: fixed; inset: 0; z-index: 2147483647; margin: 0; background: #0005; }
 body > .fb-pdf-desk.is-focused > :not(.fb-pdf-workspace) { display: none; }
+
+/* Practice coach: measure boxing, staff lines, crop, and notation preview */
+.fb-coach-page {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  vertical-align: top;
+}
+.fb-coach-page canvas {
+  display: block;
+}
+[data-coach-overlay] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+[data-coach-overlay].is-drawing {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+[data-coach-overlay] g {
+  pointer-events: auto;
+  cursor: pointer;
+}
+[data-coach-overlay] rect {
+  fill: rgba(30, 144, 255, 0.12);
+  stroke: #1e90ff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+[data-coach-overlay] rect.is-selected {
+  fill: rgba(230, 81, 0, 0.18);
+  stroke: #e65100;
+  stroke-width: 2.5;
+}
+[data-coach-overlay] rect.is-reviewed {
+  fill: rgba(46, 125, 50, 0.15);
+  stroke: #2e7d32;
+  stroke-width: 2;
+}
+[data-coach-overlay] rect.is-selected.is-reviewed {
+  fill: rgba(46, 125, 50, 0.22);
+  stroke: #1b5e20;
+  stroke-width: 2.5;
+}
+[data-coach-overlay] text {
+  fill: #111;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: system-ui, -apple-system, sans-serif;
+  paint-order: stroke fill;
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.fb-coach-handle {
+  fill: #e65100 !important;
+  stroke: #fff !important;
+  stroke-width: 1.5 !important;
+  pointer-events: auto;
+}
+.fb-coach-handle[data-corner="tl"],
+.fb-coach-handle[data-corner="br"] {
+  cursor: nwse-resize;
+}
+.fb-coach-handle[data-corner="tr"],
+.fb-coach-handle[data-corner="bl"] {
+  cursor: nesw-resize;
+}
+
+.fb-coach {
+  background: var(--card-bg, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--border, #ccc);
+  border-radius: 6px;
+  padding: .6rem;
+  margin-block: .8rem;
+}
+.fb-coach summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: .4rem;
+}
+.fb-coach-bounds {
+  margin-block: .5rem;
+}
+.fb-coach-crop {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  background: #f8f8f8;
+  border: 1px dashed var(--border, #aaa);
+  border-radius: 4px;
+  padding: 6px;
+  margin-block: .6rem;
+  overflow: auto;
+}
+canvas[data-coach-crop] {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: crosshair;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+.fb-coach-preview {
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--border, #bbb);
+  border-radius: 4px;
+  padding: .5rem;
+  margin-block: .6rem;
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.fb-coach-preview svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.fb-coach-preview [data-coach-note] {
+  cursor: pointer;
+}
+.fb-coach-preview [data-coach-note]:hover line,
+.fb-coach-preview [data-coach-note]:hover path {
+  stroke: #e65100;
+}
+.fb-coach-preview [data-coach-note].is-selected line,
+.fb-coach-preview [data-coach-note].is-selected path {
+  stroke: #e65100;
+  fill: #e65100;
+}
+.fb-coach-pitch-label {
+  font-size: 10px;
+  fill: #087eaa;
+  font-weight: 600;
+}
+.fb-coach-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-block: .5rem;
+}
+.fb-coach-notes .fb-btn[aria-pressed="true"] {
+  background: var(--accent, #087eaa);
+  color: #fff;
+}
+.fb-coach-note {
+  font-size: .85rem;
+  color: var(--muted, #666);
+  margin-block: .3rem;
+}
+[data-coach-proposal]:not([hidden]) {
+  display: block;
+  background: rgba(8, 126, 170, 0.08);
+  border: 1px solid #087eaa;
+  border-radius: 6px;
+  padding: .6rem;
+  margin-block: .6rem;
+}
+

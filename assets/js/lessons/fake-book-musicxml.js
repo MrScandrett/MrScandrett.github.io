@@ -131,6 +131,7 @@
       if (kind === 'minor-seventh' && v === 5 && al === -1 && type === 'alter') { q = 'm7b5'; return; }
       var acc = al > 0 ? '#' : al < 0 ? 'b' : '';
       if (type === 'add' && v === 7 && /^sus/.test(q)) q = '7' + q;
+      else if (type === 'add' && !acc && (v === 9 || v === 13) && /^7sus/.test(q)) q = v + q.slice(1);   // 9sus4, 13sus4
       else if (type === 'add') q += (acc ? acc : 'add') + v;
       else if (type === 'alter') q += acc + v;
       else if (type === 'subtract') q += 'no' + v;

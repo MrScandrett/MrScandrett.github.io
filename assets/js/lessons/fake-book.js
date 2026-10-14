@@ -117,8 +117,21 @@
     'm6': { iv: [0, 3, 7, 9], lo: [0, 2, 4, 5], sym: 'm6', name: 'minor sixth' },
     'aug': { iv: [0, 4, 8], lo: [0, 2, 4], sym: '+', name: 'augmented triad' },
     'sus4': { iv: [0, 5, 7], lo: [0, 3, 4], sym: 'sus4', name: 'suspended fourth' },
+    'sus2': { iv: [0, 2, 7], lo: [0, 1, 4], sym: 'sus2', name: 'suspended second' },
+    '7sus4': { iv: [0, 5, 7, 10], lo: [0, 3, 4, 6], sym: '7sus4', name: 'dominant seventh suspended fourth' },
+    'mmaj7': { iv: [0, 3, 7, 11], lo: [0, 2, 4, 6], sym: 'm(maj7)', name: 'minor-major seventh' },
     '9': { iv: [0, 4, 7, 10, 14], lo: [0, 2, 4, 6, 8], sym: '9', name: 'dominant ninth' }
   };
+  // The triad a chord is built on, for the triad practice views. Sus chords have no 3rd: they keep their 2nd or 4th.
+  var TRIADS = { major: [0, 4, 7], minor: [0, 3, 7], diminished: [0, 3, 6], augmented: [0, 4, 8], sus2: [0, 2, 7], sus4: [0, 5, 7] };
+  function triadQuality(iv) {
+    var has = function (x) { return iv.indexOf(x) >= 0; };
+    if (has(3)) return has(6) ? 'diminished' : 'minor';
+    if (has(4)) return has(8) && !has(7) ? 'augmented' : 'major';
+    return has(2) ? 'sus2' : has(5) ? 'sus4' : 'major';
+  }
+  function triadDegree(iv) { return iv === 0 ? 'R' : iv === 2 ? '2' : iv === 5 ? '4' : (iv === 3 || iv === 4) ? '3' : '5'; }
+  function triadSteps(quality) { return quality === 'sus2' ? '1-2-5' : quality === 'sus4' ? '1-4-5' : '1-3-5'; }
   function chordTones(c) {
     var r = pitch(c.root.l, c.root.a), q = Q[c.q];
     return q.iv.map(function (iv, i) { var p = spellAt(r.dia + q.lo[i], r.midi + iv); return { l: p.l, a: p.a, pc: mod(p.midi, 12) }; });
@@ -141,8 +154,11 @@
     if (/^o7|^dim7/i.test(q)) return 'dim7';
     if (/^o|^dim/i.test(q)) return 'dim';
     if (/^\+|^aug/i.test(q)) return 'aug';
-    if (/sus/i.test(q)) return 'sus4';
+    if (/sus2/i.test(q)) return 'sus2';
+    if (/sus/i.test(q)) return /^(?:7|9|11|13)/.test(q) ? '7sus4' : 'sus4';     // 7sus, 9sus, 13sus, 7b9sus keep the ♭7
     if (/^-(?:6|69)|^m6/i.test(q)) return 'm6';
+    if (/^(?:-|m(?:in)?)\(?(?:\^|maj|M[79])/.test(q)) return 'mmaj7';           // m(maj7), mM7, iReal -^7
+    if (/^(?:-|m(?:in)?)\(?add/.test(q)) return 'm';                            // minor add9 has no ♭7
     // Before the minor test: "maj7" also starts with an m. Capital M7 is major, m7 is minor.
     if (/^\^|^maj/i.test(q) || /^M(?:7|9|13)/.test(q)) return 'maj7';
     if (/^-|^m/i.test(q)) return (q === '-' || q === 'm' || q === 'min') ? 'm' : 'm7';
@@ -520,11 +536,12 @@
       return recenter(rotate(rp, kk % rp.length), 61);
     });
   }
-  var BOTTOM_NAMES = ['root', '3rd', '5th', '7th', '9th'];
+  // Named by interval, not position: a sus chord's second tone is a 2nd or 4th, not a 3rd; dim7's 9 semitones is its 7th.
+  var BOTTOM_NAMES = { 0: 'root', 2: '2nd', 3: '3rd', 4: '3rd', 5: '4th', 6: '5th', 7: '5th', 8: '5th', 9: '6th', 10: '7th', 11: '7th', 14: '9th' };
   function describeVoicing(c, notes) {
     var tones = chordTones(c), low = mod(notes[0], 12);
-    var idx = tones.findIndex(function (t) { return t.pc === low; });
-    var name = Q[c.q].iv[idx] === 9 && c.q !== 'dim7' ? '6th' : BOTTOM_NAMES[idx] || '';
+    var idx = tones.findIndex(function (t) { return t.pc === low; }), iv = Q[c.q].iv[idx];
+    var name = iv === 9 && c.q === 'dim7' ? '7th' : BOTTOM_NAMES[iv] || '';
     if (c.bass) {
       var bName = LETTERS[c.bass.l] + ACC[c.bass.a];
       name = bName + ' in bass (' + name + ')';
@@ -559,18 +576,58 @@
   var defaultTunes = [], importedTunes = [];
   var tunes = [], tune = null, view = null, chordSel = 0;
 
-  function loadImports() {
-    try {
-      var raw = JSON.parse(localStorage.getItem(IMPORT_STORE) || '[]');
-      return Array.isArray(raw) ? raw : [];
-    } catch (e) {
-      return [];
-    }
+  // Imports live in IndexedDB: full scores carry their MusicXML, and localStorage's ~5 MB (shared by the
+  // whole site) filled after about 20 scores. The old localStorage list moves over on first load.
+  // localStorage stays as the fallback where IndexedDB can't open.
+  var importsInLocalStorage = false, importSaves = Promise.resolve(true);
+  function importStore(json) {             // json given: write it; otherwise read the saved JSON
+    return new Promise(function (ok, fail) {
+      if (!window.indexedDB) { fail(new Error('IndexedDB is unavailable')); return; }
+      var open = indexedDB.open('fakebook-imports', 1);
+      open.onupgradeneeded = function () { open.result.createObjectStore('imports'); };
+      open.onerror = function () { fail(open.error); };
+      open.onsuccess = function () {
+        var db = open.result, value;
+        try {
+          var tx = db.transaction('imports', json ? 'readwrite' : 'readonly');
+          var req = json ? tx.objectStore('imports').put(json, 'tunes') : tx.objectStore('imports').get('tunes');
+          req.onsuccess = function () { value = req.result; };
+          tx.oncomplete = function () { db.close(); ok(value); };
+          tx.onerror = tx.onabort = function () { db.close(); fail(tx.error || req.error); };
+        } catch (e) { db.close(); fail(e); }   // otherwise this save, and every one queued after it, never settles
+      };
+    });
   }
+  function parseImportList(json) {
+    try { var list = JSON.parse(json || '[]'); return Array.isArray(list) ? list : []; } catch (e) { return []; }
+  }
+  function loadImports() {
+    var legacy = [];
+    try { legacy = parseImportList(localStorage.getItem(IMPORT_STORE)); } catch (e) { /* storage unavailable */ }
+    return importStore().then(function (json) {
+      var list = parseImportList(json), have = {};
+      list.forEach(function (t) { have[t.id] = true; });
+      var moved = legacy.filter(function (t) { return t && !have[t.id]; });
+      var forget = function () { try { localStorage.removeItem(IMPORT_STORE); } catch (e) { /* ignore */ } return list; };
+      if (!moved.length) return forget();
+      list = list.concat(moved);
+      return importStore(JSON.stringify(list)).then(forget, function () { return list; });
+    }).catch(function () {
+      importsInLocalStorage = true;
+      return legacy;
+    });
+  }
+  // Resolves true once saved, false if the browser refused (storage full or blocked).
   function saveImports() {
-    try {
-      localStorage.setItem(IMPORT_STORE, JSON.stringify(importedTunes));
-    } catch (e) { /* storage unavailable */ }
+    var json = JSON.stringify(importedTunes);
+    importSaves = importSaves.then(function () {
+      if (importsInLocalStorage) { localStorage.setItem(IMPORT_STORE, json); return true; }
+      return importStore(json).then(function () { return true; });
+    }).catch(function (e) {
+      console.warn('[fake-book] could not save imports:', e);
+      return false;
+    });
+    return importSaves;
   }
 
   function load() {
@@ -2020,7 +2077,7 @@
       // A reduction is a practice suggestion. Do not add a chord over silent music.
       if (!score.notes.some(function (n) { return n.start < chord.start + chord.dur && n.start + n.dur > chord.start; })) return;
       var grip = gripFor(ci);
-      var notes = opts.posInst === 'guitar' ? (grip ? grip.notes : []) : view.voicings[ci];
+      var notes = opts.posInst === 'guitar' && grip && grip.notes && grip.notes.length ? grip.notes : view.voicings[ci];
       var start = Math.max(chord.start, lo), duration = Math.min(chord.start + chord.dur, hi) - start;
       if (notes && notes.length) add.push({ b: off + start - span.start, kind: 'pno', ms: notes, dur: Math.max(.05, duration * .95), vel: .65, ci: ci });
       add.push({ b: off + start - span.start, kind: 'ui', ui: 'chord', ci: ci });
@@ -2314,11 +2371,16 @@
 
   function addImports(newTunes, msg) {
     importedTunes = importedTunes.concat(newTunes);
-    saveImports();
+    var saved = saveImports();
     tunes = defaultTunes.concat(importedTunes);
     renderLibrary();
     selectTune(newTunes[0].id, true);
     importFeedback(msg, false);
+    saved.then(function (ok) {
+      var fb = el('[data-fb-import-feedback]');
+      if (ok || !fb || fb.textContent !== msg) return;     // a newer message has replaced this one
+      importFeedback(msg + ' But this browser could not save it (storage is full or blocked), so it will be gone when you reload. Remove imports you no longer need to make room.', true);
+    });
     var inputEl = el('[data-fb-import-input]');
     if (inputEl) inputEl.value = '';
   }
@@ -2416,7 +2478,7 @@
       else if (opts.guitarVoice === 'tab') opts.guitarVoice = raw.guitarPro ? 'smooth' : 'manual';
     }
     if (opts.sheetView === 'arrangement' && !(raw.score && raw.score.musicxml)) opts.sheetView = 'lead';
-    if (!raw.score && opts.mode === 'score') opts.mode = 'all';
+    if (!raw.score && (opts.mode === 'score' || opts.mode === 'changes')) opts.mode = 'all';
     opts.tune = raw.id;
     if (reset || !opts.key) {
       opts.key = raw.key; opts.from = 1; opts.to = tune.bars; opts.tempo = raw.tempo;
@@ -2498,11 +2560,12 @@
     el('[data-fb-click]').value = opts.click;
     root.querySelectorAll('[data-fb-click-pattern]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-fb-click-pattern') === opts.click)); });
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
-    el('[data-fb-lead]').value = opts.lead;
+    var hasChords = !!(tune.raw && typeof tune.raw.chords === 'string' ? tune.raw.chords.trim() : (Array.isArray(tune.chords) ? tune.chords.length : (typeof tune.chords === 'string' && tune.chords.trim())));
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
+    el('[data-fb-mode] option[value="changes"]').disabled = !tune.raw.score || !hasChords;
     var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
-    el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score') o.disabled = !!mixedMeter; });
-    if (mixedMeter) { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
+    el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score' && o.value !== 'changes') o.disabled = !!mixedMeter; });
+    if (mixedMeter && opts.mode !== 'score' && opts.mode !== 'changes') { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
     renderScoreParts();
     el('[data-fb-loop]').checked = !!opts.loop;
     var r = loopRange();
@@ -2519,7 +2582,7 @@
     el('[data-fb-notation-voicing]').value = opts.voicing;
     el('[data-fb-notation-voicing]').closest('label').hidden = opts.posInst !== 'piano';
     root.querySelectorAll('input[name="fb-melody"], input[name="fb-rhythm"]').forEach(function (i) {
-      i.disabled = !!tune.chordsOnly || opts.mode === 'score';
+      i.disabled = !!tune.chordsOnly || scoreTiming();
     });
     dotsEl.innerHTML = new Array(tune.meter[0] + 1).join('<i></i>');
 
@@ -2813,7 +2876,7 @@
   }
   function guitarShapeFor(rootPC, cType, ci) {
     if (opts.engineMode === 'triads') {
-      var quality = cType.intervals.indexOf(3) >= 0 ? (cType.intervals.indexOf(6) >= 0 ? 'diminished' : 'minor') : cType.intervals.indexOf(8) >= 0 ? 'augmented' : 'major';
+      var quality = triadQuality(cType.intervals);
       var match = getGuitarTriad(rootPC, quality, opts.triadSet || '123', Number(opts.triadInv) || 0);
       if (!match) return null;
       var frets = [null, null, null, null, null, null];
@@ -3177,16 +3240,17 @@
         drawGuitarVisualizer(frets, fingers, degrees, rootPC);
       }
     } else if (mode === 'triads') {
-      var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+      var triadQ = triadQuality(Q[c.q].iv);
       var inv = Number(opts.triadInv) || 0;
       var triadDesc = el('[data-fb-triad-desc]');
       if (triadDesc) {
-        triadDesc.textContent = LETTERS[c.root.l] + ACC[c.root.a] + ' ' + triadQ + ' triad · ' + (inv === 0 ? 'Root position (1-3-5)' : inv === 1 ? '1st inversion (3-5-1)' : '2nd inversion (5-1-3)');
+        var steps = triadSteps(triadQ).split('-'), order = steps.slice(inv).concat(steps.slice(0, inv)).join('-');   // 1-3-5, 3-5-1, 5-1-3
+        triadDesc.textContent = LETTERS[c.root.l] + ACC[c.root.a] + ' ' + triadQ + ' triad · ' + ['Root position', '1st inversion', '2nd inversion'][inv] + ' (' + order + ')';
       }
       var tSetsWrap = el('[data-fb-guitar-triad-sets]');
       if (tSetsWrap) tSetsWrap.hidden = isPiano;
 
-      var triadIvs = triadQ === 'minor' ? [0, 3, 7] : triadQ === 'diminished' ? [0, 3, 6] : triadQ === 'augmented' ? [0, 4, 8] : [0, 4, 7];
+      var triadIvs = TRIADS[triadQ];
       if (isPiano) {
         var triadMid = triadIvs.map(function (v) { return 60 + rootPC + v; });
         var rotated = rotate(triadMid, inv);
@@ -3195,8 +3259,8 @@
         rotated.forEach(function (m) {
           var iv = mod(m - rootPC, 12);
           tMeta[m] = {
-            label: iv === 0 ? 'R' : (iv === 3 || iv === 4 ? '3' : '5'),
-            role: iv === 0 ? 'root' : (iv === 3 || iv === 4 ? 'third' : 'fifth'),
+            label: triadDegree(iv),
+            role: roleOf(iv),
             finger: inv === 0 ? '1' : inv === 1 ? '2' : '3'
           };
         });
@@ -3211,7 +3275,7 @@
           tMatch.notes.forEach(function (n) {
             gFrets[n.s] = n.f;
             var iv = mod(n.midi - rootPC, 12);
-            gDegs[n.s] = { label: iv === 0 ? 'R' : (iv === 3 || iv === 4 ? '3' : '5'), isRoot: iv === 0 };
+            gDegs[n.s] = { label: triadDegree(iv), isRoot: iv === 0 };
           });
         }
         currentGuitarFrets = gFrets;
@@ -3279,9 +3343,9 @@
       ivs = stDef.intervals; labels = stDef.degrees;
       title = (stDef.name || opts.scaleType || 'Scale') + ' on ' + rootName + ' · first position: ' + (stDef.desc || '');
     } else if (mode === 'triads') {
-      var q = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
-      ivs = q === 'minor' ? [0, 3, 7] : q === 'diminished' ? [0, 3, 6] : q === 'augmented' ? [0, 4, 8] : [0, 4, 7];
-      title = rootName + ' ' + q + ' triad · arpeggiate R-3-5 across the strings';
+      var q = triadQuality(Q[c.q].iv);
+      ivs = TRIADS[q];
+      title = rootName + ' ' + q + ' triad · arpeggiate ' + triadSteps(q).replace('1', 'R') + ' across the strings';
     } else {
       ivs = cType.intervals && cType.intervals.length ? cType.intervals : [0, 4, 7];
       title = rootName + (c.q || '') + ' chord tones in first position';
@@ -3312,7 +3376,7 @@
 
     if (opts.engineInst === 'guitar' && GT) {
       if (opts.engineMode === 'triads') {
-        var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+        var triadQ = triadQuality(Q[c.q].iv);
         var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
         if (tMatch && window.GuitarAudio) {
           var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
@@ -3363,7 +3427,7 @@
 
     if (opts.engineInst === 'guitar' && GT) {
       if (opts.engineMode === 'triads') {
-        var triadQ = (c.q === 'm' || c.q === 'm7' || c.q === 'm6') ? 'minor' : (c.q === 'dim' || c.q === 'dim7' || c.q === 'm7b5') ? 'diminished' : (c.q === 'aug') ? 'augmented' : 'major';
+        var triadQ = triadQuality(Q[c.q].iv);
         var tMatch = getGuitarTriad(rootPC, triadQ, opts.triadSet || '123', Number(opts.triadInv) || 0);
         if (tMatch && window.GuitarAudio) {
           var freqs = tMatch.notes.map(function (n) { return GT.noteFreq(n.s, n.f); });
@@ -3495,7 +3559,7 @@
       else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
       else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
-      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (opts.mode === 'score') respin(); }
+      else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (scoreTiming()) respin(); }
       else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
         opts.follow = t.checked;
         root.querySelectorAll('[data-fb-follow], [data-fb-follow-sync]').forEach(function (cb) { cb.checked = opts.follow; });
@@ -3691,9 +3755,10 @@
   el('[data-fb-notation-voicing]').innerHTML = Object.keys(VOICING).map(function (key) { return '<option value="' + key + '">' + VOICING[key].label + '</option>'; }).join('');
   el('[data-fb-instr]').innerHTML = Object.keys(INSTR).map(function (k) { return '<option value="' + k + '">' + INSTR[k].label + '</option>'; }).join('');
 
-  fetch(DATA_URL).then(function (r) { return r.json(); }).then(function (data) {
+  Promise.all([fetch(DATA_URL).then(function (r) { return r.json(); }), loadImports()]).then(function (loaded) {
+    var data = loaded[0];
     defaultTunes = data.tunes;
-    importedTunes = loadImports();
+    importedTunes = loaded[1];
     tunes = defaultTunes.concat(importedTunes);
     renderLibrary();
     bind();
@@ -3721,6 +3786,13 @@
     parseTune: parseTune, melody: MELODY, rhythm: RHYTHM, voiceChords: voiceChords, chordTones: chordTones,
     shiftBetween: shiftBetween, shiftKey: shiftKey, keySig: keySig, parseKey: parseKey, decompose: decompose, layoutBars: layoutBars,
     songToTune: songToTune, musicxmlToTune: musicxmlToTune, importText: handleImportText, importFile: importFile, removeImport: removeImported,
-    state: function () { return { opts: opts, tune: tune, view: view, playing: !!P }; }
+    state: function () { return { opts: opts, tune: tune, view: view, playing: !!P }; },
+    // What is actually saved, after any pending writes.
+    savedImports: function () {
+      return importSaves.then(function () {
+        if (!importsInLocalStorage) return importStore().then(parseImportList);
+        try { return parseImportList(localStorage.getItem(IMPORT_STORE)); } catch (e) { return []; }
+      });
+    }
   };
 })();

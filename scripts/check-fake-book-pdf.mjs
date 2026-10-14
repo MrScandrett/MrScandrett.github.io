@@ -15,7 +15,7 @@ const xref=data.length; data+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \
 fs.writeFileSync('/tmp/fake-book-test.pdf',data);
 let server;
 if (process.env.FAKE_BOOK_TEST_START_SERVER) {
-  const url = new URL(process.env.FAKE_BOOK_TEST_URL || 'http://127.0.0.1:8091');
+  const url = new URL(process.env.FAKE_BOOK_TEST_URL || 'http://127.0.0.1:8080');
   server = spawn(process.execPath, [new URL('../serve-local.js', import.meta.url).pathname], { env: { ...process.env, PORT: url.port, HOST: url.hostname }, stdio: ['ignore', 'pipe', 'pipe'] });
   process.on('exit', () => server.kill());
   await new Promise((resolve, reject) => { server.stdout.on('data', b => { if (b.toString().includes('Local server running')) resolve(); }); server.on('error', reject); server.on('exit', code => reject(new Error('Test server exited: ' + code))); });
@@ -46,6 +46,36 @@ assert.match(await page.locator('[data-pdf-notes]').inputValue(),/C4h/);
 await page.locator('[data-pdf-notes]').fill('C4q D4q E4h'); await page.locator('[data-pdf-chords]').fill('Dm7:2 G7:2');
 await page.locator('[data-pdf-source-note]').fill('Practice fixture; check source corrections.');
 await page.locator('[data-pdf-bar-section]').fill('A');
+
+await page.locator('[data-coach-x]').fill('5');
+await page.locator('[data-coach-y]').fill('8');
+await page.locator('[data-coach-w]').fill('60');
+await page.locator('[data-coach-h]').fill('15');
+await page.locator('[data-coach-bounds]').click();
+assert.equal(await page.locator('[data-coach-overlay] [data-measure="0"]').count(), 1);
+assert.equal(await page.locator('[data-coach-overlay] [data-measure="0"] .fb-coach-handle').count(), 4);
+
+await page.locator('[data-coach-top]').fill('25');
+await page.locator('[data-coach-bottom]').fill('65');
+await page.locator('[data-coach-calibrate]').click();
+assert.match(await page.locator('[data-coach-status]').textContent(), /Staff calibration saved/);
+
+await page.locator('[data-pdf-duration]').selectOption('h');
+const cropBox = await page.locator('[data-coach-crop]').boundingBox();
+assert.ok(cropBox && cropBox.width > 10 && cropBox.height > 10);
+await page.mouse.click(cropBox.x + cropBox.width * 0.5, cropBox.y + cropBox.height * 0.65);
+assert.match(await page.locator('[data-coach-status]').textContent(), /Added/);
+
+await page.locator('[data-pdf-notes]').fill('C4q D4q E4h');
+assert.equal(await page.locator('[data-coach-notes] button').count(), 3);
+await page.locator('[data-coach-notes] button').first().click();
+assert.equal(await page.locator('[data-coach-token]').inputValue(), 'C4q');
+
+await page.locator('[data-coach-review]').click();
+assert.match(await page.locator('[data-coach-status]').textContent(), /Reviewed example saved/);
+assert.match(await page.locator('[data-coach-count]').textContent(), /1 reviewed examples/);
+assert.ok(await page.locator('[data-coach-overlay] rect.is-reviewed').count() >= 1);
+
 await page.locator('[data-pdf-load]').click();
 assert.deepEqual(await page.evaluate(()=>FakeBook.state().tune.raw.sectionsByBar),{'1':'A'});
 assert.match(await page.locator('[data-pdf-editor-status]').textContent(),/Saved to/);
@@ -54,9 +84,22 @@ await page.locator('[data-fb-play]').click();
 await page.waitForFunction(()=>FakeBook.state().playing);
 await page.locator('[data-fb-play]').click();
 assert.equal(await page.evaluate(()=>FakeBook.state().playing),false);
-await page.locator('[data-pdf-copy-bar]').click(); await page.locator('[data-pdf-load]').click();
+
+await page.locator('[data-pdf-copy-bar]').click();
+await page.locator('[data-coach-x]').fill('5');
+await page.locator('[data-coach-y]').fill('8');
+await page.locator('[data-coach-w]').fill('60');
+await page.locator('[data-coach-h]').fill('15');
+await page.locator('[data-coach-bounds]').click();
+await page.locator('[data-coach-match]').click();
+assert.match(await page.locator('[data-coach-proposal-label]').textContent(), /Reviewed example/);
+await page.locator('[data-coach-accept]').click();
+assert.match(await page.locator('[data-coach-status]').textContent(), /Suggestion applied/);
+assert.equal(await page.locator('[data-pdf-notes]').inputValue(), 'C4q D4q E4h');
+
+await page.locator('[data-pdf-load]').click();
 assert.equal(await page.evaluate(()=>FakeBook.state().tune.raw.bars),2);
-assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('fakebook:imports:v1')).filter(t=>t.title==='Test Song').length),1);
+assert.equal(await page.evaluate(async()=>(await FakeBook.savedImports()).filter(t=>t.title==='Test Song').length),1);
 await page.locator('[data-pdf-delete-bar]').click();
 await page.locator('[data-pdf-notes]').fill('C4q'); await page.locator('[data-pdf-load]').click();
 assert.match(await page.locator('[data-pdf-editor-status]').textContent(),/needs 4/);
@@ -84,7 +127,7 @@ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=inner
 await page.locator('[data-pdf-page]').scrollIntoViewIfNeeded();
 await page.waitForTimeout(300);
 await page.screenshot({path:'/tmp/fake-book-pdf-mobile.png'});
-const ink=await page.locator('[data-pdf-canvas]').evaluate(c=>{const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let dark=0;for(let i=0;i<a.length;i+=4)if(a[i]<100&&a[i+1]<100&&a[i+2]<100)dark++;return dark;}); assert.ok(ink>50,'PDF contains rendered ink');
+const ink=await page.locator('[data-pdf-canvas]').evaluate(c=>{const a=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,c.width,c.height).data;let dark=0;for(let i=0;i<a.length;i+=4)if(a[i]<100&&a[i+1]<100&&a[i+2]<100)dark++;return dark;}); assert.ok(ink>50,'PDF contains rendered ink');
 await page.setViewportSize({width:1440,height:1000});
 await page.locator('[data-pdf-page]').scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
 await page.screenshot({path:'/tmp/fake-book-pdf-desktop.png'});
@@ -106,7 +149,9 @@ if (process.argv[2]) {
   await page.locator('[data-pdf-section]').selectOption('main');
   await page.locator('[data-pdf-songs] button').filter({hasText:'A Fine Romance'}).click();
   assert.equal(await page.locator('[data-pdf-page]').inputValue(),'16');
-  await page.locator('[data-pdf-focus]').click(); assert.equal(await page.locator('[data-pdf-focus-close]').isVisible(),true); await page.waitForFunction(()=>document.querySelector('[data-pdf-canvas]').dataset.renderedPage==='16');
+  await page.locator('[data-pdf-focus]').click(); assert.equal(await page.locator('[data-pdf-focus-close]').isVisible(),true);
+  await page.waitForTimeout(250);
+  await page.waitForFunction(()=>document.querySelector('[data-pdf-canvas]').dataset.renderedPage==='16');
   await page.locator('.fb-pdf-editor details summary').last().click(); await page.locator('[data-pdf-restore]').focus(); await page.keyboard.press('Tab'); assert.equal(await page.locator('[data-pdf-focus-close]').evaluate(b=>b===document.activeElement),true);
   await page.locator('.fb-pdf-editor').evaluate(e=>e.scrollTop=350);
   assert.ok(await page.locator('[data-pdf-canvas]').evaluate(c=>{const a=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let ink=0;for(let i=0;i<a.length;i+=4)if(a[i]<100&&a[i+1]<100&&a[i+2]<100)ink++;return ink;})>500);

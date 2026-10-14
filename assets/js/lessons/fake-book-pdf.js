@@ -1,10 +1,21 @@
 /* Local-only PDF reference desk. No optical music recognition or upload. */
+import { createMeasureCoach } from './fake-book-pdf-coach.js';
 const desk = document.querySelector('[data-pdf-desk]');
 const M = window.FakeBookPDFModel;
 const $ = name => desk.querySelector('[data-pdf-' + name + ']');
 const STORE = 'fakebook:pdf-workspaces:v1';
 let pdf, pdfTask, opening = 0, bookKey, book, page = 1, bar = 0, draft, rendering, renderVersion = 0, library = {}, section = 'main', template, selectedSong;
 try { library = JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (_) { /* empty */ }
+const coach = desk ? createMeasureCoach({
+  desk,
+  canvas: $('canvas'),
+  get: () => ({ book, draft, bar, page, fingerprint: bookKey }),
+  select: i => { bar = i; fillBar(); },
+  jump: p => { page = p; draw(); },
+  persist,
+  field: name => $(name),
+  fill: fillBar
+}) : null;
 let focused = false, focusMarker, focusScroll = 0;
 function setFocus(on) {
   if (!pdf && on) { status('Open a PDF first.'); return; }
@@ -94,6 +105,7 @@ async function openFile(file, save = true) {
     pdfTask = nextTask; pdf = loaded;
     bookKey = (pdf.fingerprints && pdf.fingerprints[0]) || file.name + ':' + file.size;
     book = library[bookKey] || { name: file.name, anchors: [], songs: [], drafts: [], page: 1 };
+    book.examples = book.examples || [];
     book.sections = book.sections || [{ id: 'main', label: 'Main book' }];
     section = book.activeSection || 'main'; selectedSong = null; fillSections(); bookmarks();
     template = (window.FakeBookPDFTemplates || []).find(t => t.fingerprint === bookKey && t.pages === pdf.numPages);
@@ -126,14 +138,15 @@ async function draw() {
     const p = await pdf.getPage(page);
     if (version !== renderVersion) return;
     const initial = p.getViewport({ scale: 1 });
-    const width = Math.max(240, $('canvas').parentElement.clientWidth - 16) * Number($('zoom').value);
+    const viewportContainer = $('canvas').closest('.fb-pdf-viewport') || $('canvas').parentElement;
+    const width = Math.max(240, viewportContainer.clientWidth - 16) * Number($('zoom').value);
     const viewport = p.getViewport({ scale: width / initial.width });
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const canvas = $('canvas'); canvas.width = Math.ceil(viewport.width * dpr); canvas.height = Math.ceil(viewport.height * dpr);
     canvas.style.width = viewport.width + 'px'; canvas.style.height = viewport.height + 'px';
     rendering = p.render({ canvas, canvasContext: canvas.getContext('2d'), viewport, transform: [dpr, 0, 0, dpr, 0, 0] });
     await rendering.promise;
-    if (version === renderVersion) { rendering = null; canvas.dataset.renderedPage = String(page); }
+    if (version === renderVersion) { rendering = null; canvas.dataset.renderedPage = String(page); coach?.refresh(); }
   } catch (err) { if (version === renderVersion && err.name !== 'RenderingCancelledException') status('Page could not render: ' + err.message); }
 }
 function button(text, action) { const b = document.createElement('button'); b.type = 'button'; b.className = 'fb-btn'; b.textContent = text; b.onclick = action; return b; }
@@ -175,6 +188,7 @@ function fillBar() {
   $('bar-label').textContent = 'Bar ' + (bar + 1) + ' / ' + draft.bars.length;
   $('bar-prev').disabled = bar === 0; $('bar-next').disabled = bar === draft.bars.length - 1;
   $('delete-bar').disabled = draft.bars.length === 1; checkBar();
+  coach?.refresh();
 }
 function checkBar() {
   try {
@@ -183,8 +197,8 @@ function checkBar() {
     $('beats').textContent = actual.toFixed(2).replace(/\.00$/, '') + ' / ' + want + ' beats' + (Math.abs(actual - want) < 0.0001 ? ' · rhythm fits' : ' · adjust this bar');
   } catch (err) { $('beats').textContent = err.message; }
 }
-fields.forEach(f => $(f).addEventListener('input', () => { if (!draft) return; draft[f] = $(f).value; persist(); if (f === 'title') refreshDrafts(); checkBar(); }));
-['notes', 'chords'].forEach(f => $(f).addEventListener('input', () => { draft.bars[bar][f] = $(f).value; persist(); checkBar(); }));
+fields.forEach(f => $(f).addEventListener('input', () => { if (!draft) return; draft[f] = $(f).value; persist(); if (f === 'title') refreshDrafts(); checkBar(); coach?.refresh(); }));
+['notes', 'chords'].forEach(f => $(f).addEventListener('input', () => { draft.bars[bar][f] = $(f).value; persist(); checkBar(); coach?.invalidate(); coach?.refresh(); }));
 $('file').onchange = () => { if ($('file').files[0]) openFile($('file').files[0]); $('file').value = ''; };
 $('resume').onclick = async () => { try { const f = await storedFile(); if (f) await openFile(f, false); else status('No PDF saved yet. Open a PDF first.'); } catch (_) { status('Saved PDF storage is unavailable. Open the PDF again.'); } };
 $('prev').onclick = () => { page--; draw(); }; $('next').onclick = () => { page++; draw(); };
@@ -205,8 +219,20 @@ $('drafts').onchange = () => { draft = book.drafts.find(d => d.id === $('drafts'
 $('new').onclick = () => { selectedSong = null; showRange(); draft = newDraft(); bar = 0; refreshDrafts(); fillDraft(); $('title').focus(); };
 $('bar-prev').onclick = () => { bar--; fillBar(); }; $('bar-next').onclick = () => { bar++; fillBar(); };
 $('add-bar').onclick = () => { draft.bars.splice(bar + 1, 0, { notes: '', chords: '', section: '' }); bar++; persist(); fillBar(); };
-$('copy-bar').onclick = () => { draft.bars.splice(bar + 1, 0, { ...draft.bars[bar] }); bar++; persist(); fillBar(); };
-$('delete-bar').onclick = () => { if (draft.bars.length === 1) return; draft.bars.splice(bar, 1); bar = Math.min(bar, draft.bars.length - 1); persist(); fillBar(); };
+$('copy-bar').onclick = () => {
+  const cloned = { ...draft.bars[bar] };
+  if (cloned.source) cloned.source = { ...cloned.source, id: 'measure-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), reviewed: false };
+  delete cloned.proposal; delete cloned.coachUndo;
+  draft.bars.splice(bar + 1, 0, cloned);
+  bar++; persist(); fillBar();
+};
+$('delete-bar').onclick = () => {
+  if (draft.bars.length === 1) return;
+  coach?.invalidate();
+  draft.bars.splice(bar, 1);
+  bar = Math.min(bar, draft.bars.length - 1);
+  persist(); fillBar();
+};
 function addToken(rest) {
   const pitch = rest ? 'r' : $('pitch').value.trim();
   if (!rest && !/^[A-G](?:##|bb|#|b)?\d$/.test(pitch)) { $('editor-status').textContent = 'Use a pitch such as C4, F#4 or Bb4.'; return; }
@@ -239,7 +265,9 @@ $('restore').onchange = async () => {
     if (b.songs.some(s => s.end !== undefined && (!Number.isInteger(s.end) || s.end < s.printed))) throw new Error('Invalid song page range.');
     // Merge backup drafts by ID so restoring never discards newer unrelated drafts.
     b.drafts.forEach(d => { const i = book.drafts.findIndex(x => x.id === d.id); if (i < 0) book.drafts.push(d); else book.drafts[i] = d; });
-    book.anchors = b.anchors; book.songs = b.songs; book.sections = b.sections || [{id:'main', label:'Main book'}]; book.bookmarks = b.bookmarks || []; section = book.sections[0].id; fillSections(); bookmarks(); persist(); draft = book.drafts[0]; bar = 0; refreshDrafts(); fillDraft(); anchors(); songs(); $('toc').value = book.songs.filter(s => sectionFor(s) === section).map(formatContents).join('\n'); status('Workspace restored.');
+    book.anchors = b.anchors; book.songs = b.songs; book.sections = b.sections || [{id:'main', label:'Main book'}]; book.bookmarks = b.bookmarks || [];
+    book.examples = Array.isArray(b.examples) ? b.examples : (book.examples || []);
+    section = book.sections[0].id; fillSections(); bookmarks(); persist(); draft = book.drafts[0]; bar = 0; refreshDrafts(); fillDraft(); anchors(); songs(); $('toc').value = book.songs.filter(s => sectionFor(s) === section).map(formatContents).join('\n'); status('Workspace restored.');
   } catch (err) { status('Could not restore: ' + err.message); }
   $('restore').value = '';
 };
@@ -269,5 +297,6 @@ $('template-apply').onclick = () => {
 };
 ['C','G','D','A','E','B','F#','F','Bb','Eb','Ab','Db','Gb'].forEach(k => $('key').add(new Option(k, k)));
 let resizeTimer;
-new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (pdf && desk.open) draw(); }, 150); }).observe($('canvas').parentElement);
+const resizeTarget = $('canvas').closest('.fb-pdf-viewport') || $('canvas').parentElement;
+new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (pdf && desk.open) draw(); }, 150); }).observe(resizeTarget);
 desk.addEventListener('toggle', () => { if (desk.open && pdf) draw(); });

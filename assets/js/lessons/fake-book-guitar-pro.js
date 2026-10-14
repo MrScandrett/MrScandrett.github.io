@@ -16,20 +16,53 @@
     prefix = prefix || '';
     return '<' + prefix + 'step>' + steps[pc] + '</' + prefix + 'step><' + prefix + 'alter>' + ([1,3,6,8,10].indexOf(pc) >= 0 ? 1 : 0) + '</' + prefix + 'alter><' + prefix + 'octave>' + (Math.floor(midi / 12) - 1) + '</' + prefix + 'octave>';
   }
-  // Convert only chord spellings supported by our playback chord vocabulary.
-  // Unknown labels remain visible as text instead of silently becoming major.
-  function chordXML(name) {
-    name = String(name || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#').replace(/Δ/g, 'maj').replace(/ø/g, 'm7b5').replace(/°/g, 'dim');
-    var match = /^([A-G])([#b]?)([^/]*)(?:\/([A-G])([#b]?))?$/.exec(name);
+  // Chord qualities, longest spelling first so "m7b5" wins over "m7" and "maj7" over "m".
+  var CHORD_KINDS = [
+    ['mmaj7', 'major-minor'], ['maj13', 'major-13th'], ['maj11', 'major-11th'], ['maj9', 'major-ninth'], ['maj7', 'major-seventh'],
+    ['m7b5', 'half-diminished'], ['dim7', 'diminished-seventh'], ['aug7', 'augmented-seventh'], ['+7', 'augmented-seventh'],
+    ['m13', 'minor-13th'], ['m11', 'minor-11th'], ['m9', 'minor-ninth'], ['m7', 'minor-seventh'], ['m6', 'minor-sixth'],
+    ['dim', 'diminished'], ['aug', 'augmented'], ['13', 'dominant-13th'], ['11', 'dominant-11th'], ['9', 'dominant-ninth'],
+    ['7', 'dominant'], ['6', 'major-sixth'], ['5', 'power'], ['+', 'augmented'], ['m', 'minor'], ['', 'major']
+  ];
+  // Convert a Guitar Pro chord label to MusicXML <harmony> that reads back as the same chord:
+  // added tones and sus chords become <degree>s, so Cadd9 never gains a ♭7 and G7sus4 keeps it.
+  // Unknown labels (7alt, no3…) return null and stay visible as text instead of becoming major.
+  function chordXML(name, offset) {
+    var label = String(name || '').trim();
+    var match = /^([A-G])([#b]?)([^/]*)(?:\/([A-G])([#b]?))?$/.exec(label
+      .replace(/♭/g, 'b').replace(/♯/g, '#').replace(/6\/9/g, '69'));
     if (!match) return null;
-    var q = match[3].replace(/^min/, 'm').replace(/^M(?=\d)/, 'maj').replace(/^-/, 'm');
-    var kinds = { '': 'major', m: 'minor', '7': 'dominant', maj7: 'major-seventh', m7: 'minor-seventh', '6': 'major-sixth', m6: 'minor-sixth', dim: 'diminished', dim7: 'diminished-seventh', m7b5: 'half-diminished', aug: 'augmented', '+': 'augmented', '9': 'dominant-ninth', maj9: 'major-ninth', m9: 'minor-ninth', '11': 'dominant-11th', m11: 'minor-11th', '13': 'dominant-13th', m13: 'minor-13th', sus2: 'suspended-second', sus4: 'suspended-fourth', '5': 'power', 'm(maj7)': 'major-minor' };
-    var degrees = '', base = q;
-    var alteration = /^(7|maj7|m7|9|maj9|m9|13)(b5|#5|b9|#9|#11|b13)$/.exec(q);
-    if (alteration) { base = alteration[1]; degrees = '<degree><degree-value>' + alteration[2].slice(1) + '</degree-value><degree-alter>' + (alteration[2][0] === 'b' ? -1 : 1) + '</degree-alter><degree-type>alter</degree-type></degree>'; }
-    if (!Object.prototype.hasOwnProperty.call(kinds, base)) return null;
+    var q = match[3].replace(/[\s(),]/g, '')
+      .replace(/^(?:min?|-)/, 'm')
+      .replace(/^mM(?=7)/, 'mmaj')
+      .replace(/^(?:maj|MAJ|Maj|MA|Ma|M)(?=[0-9]|$)/, 'maj')
+      .replace(/[Δ△^](?![0-9])/, 'maj7').replace(/[Δ△^]/, 'maj')
+      .replace(/ø7?/, 'm7b5').replace(/°7|^o7/, 'dim7').replace(/°|^o$/, 'dim');
+    if (q === 'maj') q = '';
+    var base = CHORD_KINDS.filter(function (k) { return q.indexOf(k[0]) === 0; })[0];
+    var kind = base[1], rest = q.slice(base[0].length), degrees = [], token;
+    function degree(value, alter, type) {
+      degrees.push('<degree><degree-value>' + value + '</degree-value><degree-alter>' + alter + '</degree-alter><degree-type>' + type + '</degree-type></degree>');
+    }
+    while (rest) {
+      token = /^(?:sus([24]?)|add([b#]?)(2|4|9|11|13)|([b#])(5|9|11|13)|(2|9|11|13)|\+)/.exec(rest);
+      if (!token) return null;
+      rest = rest.slice(token[0].length);
+      if (token[1] !== undefined) {
+        // A sus chord in MusicXML is the sus kind plus the dominant's seventh and extensions as added degrees.
+        var ext = { major: [], dominant: [7], 'dominant-ninth': [7, 9], 'dominant-13th': [7, 13] }[kind];
+        if (!ext || degrees.length) return null;
+        kind = token[1] === '2' ? 'suspended-second' : 'suspended-fourth';
+        ext.forEach(function (v) { degree(v, 0, 'add'); });
+      } else if (token[3]) degree(token[3], token[2] === '#' ? 1 : token[2] === 'b' ? -1 : 0, 'add');
+      else if (token[5]) degree(token[5], token[4] === '#' ? 1 : -1, 'alter');
+      else if (token[6]) degree(token[6] === '2' ? 9 : token[6], 0, 'add');    // C2 = Cadd9, C69 = C6 add 9
+      else degree(5, 1, 'alter');                                              // C7+ = C7♯5
+    }
     function rootXML(step, acc, tag) { return '<' + tag + '><' + tag + '-step>' + step + '</' + tag + '-step><' + tag + '-alter>' + (acc === '#' ? 1 : acc === 'b' ? -1 : 0) + '</' + tag + '-alter></' + tag + '>'; }
-    return '<harmony>' + rootXML(match[1], match[2], 'root') + '<kind text="' + escape(name) + '">' + kinds[base] + '</kind>' + degrees + (match[4] ? rootXML(match[4], match[5], 'bass') : '') + '</harmony>';
+    var offsetXML = offset > 0 ? '<offset>' + offset + '</offset>' : '';
+    return '<harmony>' + rootXML(match[1], match[2], 'root') + '<kind text="' + escape(label) + '">' + kind + '</kind>' +
+      (match[4] ? rootXML(match[4], match[5], 'bass') : '') + degrees.join('') + offsetXML + '</harmony>';
   }
   function toMusicXML(score) {
     if (!score.masterBars.length || score.masterBars.length > 400) throw new Error('Guitar Pro imports must contain 1–400 written bars.');
@@ -41,6 +74,24 @@
     });
     if (!parts.length) throw new Error('No pitched tracks were found in this Guitar Pro file.');
     if (parts.length > 64) throw new Error('Guitar Pro imports support up to 64 pitched staves.');
+    var masterChords = score.masterBars.map(function (m, mi) {
+      var map = {};
+      score.tracks.forEach(function (tr) {
+        tr.staves.forEach(function (st) {
+          var bar = st.bars[mi];
+          if (!bar) return;
+          bar.voices.forEach(function (v) {
+            v.beats.forEach(function (b) {
+              if (b.isEmpty || b.graceType !== 0) return;
+              if (b.chord && b.chord.name && !map[b.displayStart]) {
+                map[b.displayStart] = b.chord.name;
+              }
+            });
+          });
+        });
+      });
+      return map;
+    });
     var lengths = score.masterBars.map(function (master, mi) {
       var length = master.calculateDuration();
       parts.forEach(function (p) {
@@ -83,8 +134,21 @@
           if (!attrs) throw new Error('This score uses double-coda or double-segno navigation. Export an expanded MusicXML score first.');
           xml += '<direction><sound ' + attrs + '/></direction>';
         });
-        var voices = bar.voices.filter(function (v) { return !v.isEmpty; });
         var chordOnsets = {};
+        if (i === 0) {
+          Object.keys(masterChords[mi]).map(Number).sort(function (a, b) { return a - b; }).forEach(function (start) {
+            var name = masterChords[mi][start];
+            var harmony = chordXML(name, start);
+            if (harmony) {
+              xml += harmony;
+              chordOnsets[start] = true;
+            } else {
+              xml += '<direction><direction-type><words>' + escape(name) + '</words></direction-type>' + (start > 0 ? '<offset>' + start + '</offset>' : '') + '</direction>';
+              chordOnsets[start] = true;
+            }
+          });
+        }
+        var voices = bar.voices.filter(function (v) { return !v.isEmpty; });
         if (!voices.length) voices = [null];
         voices.forEach(function (voice, vi) {
           if (vi) xml += '<backup><duration>' + length + '</duration></backup>';
@@ -97,7 +161,7 @@
             rest(start - cursor);
             var chord = beat.chord;
             if (chord && chord.name && !chordOnsets[start]) {
-              var harmony = chordXML(chord.name);
+              var harmony = chordXML(chord.name, 0);
               xml += harmony || '<direction><direction-type><words>' + escape(chord.name) + '</words></direction-type></direction>';
               chordOnsets[start] = true;
             }
@@ -150,14 +214,24 @@
       var names = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
       var key = names.indexOf(result.key), natural = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
       if (key < 0) key = (natural[result.key[0]] + (result.key[1] === 'b' ? -1 : result.key[1] === '#' ? 1 : 0) + 12) % 12;
+      var currentKey = { tonic: key, minor: result.minor };
+      var tonicName = (key >= 0 && key < names.length) ? names[key] : 'C';
+      var prevChord = tonicName + (result.minor ? 'm' : '');
       result.chords = result.score.bars.map(function (bar) {
         var notes = result.score.notes.filter(function (n) { return n.start < bar.start + bar.len && n.start + n.dur > bar.start; }).map(function (n) {
           var start = Math.max(n.start, bar.start), end = Math.min(n.start + n.dur, bar.start + bar.len);
           return { s: start - bar.start, d: end - start, midi: n.midi };
         });
+        if (!notes.length) return prevChord;
         // Eighth-note resolution preserves off-beat changes, including mixed meter.
         var unit = bar.len % .5 < 1e-6 ? .5 : .25;
-        return H.analyze(notes, { M: bar.len, bars: 1, unit: unit, startKey: { tonic: key, minor: result.minor } }).chordBars[0];
+        var analysis = H.analyze(notes, { M: bar.len, bars: 1, unit: unit, startKey: currentKey });
+        if (analysis.keys && analysis.keys[0]) {
+          currentKey = { tonic: analysis.keys[0].tonic, minor: analysis.keys[0].minor };
+        }
+        var chord = analysis.chordBars[0];
+        if (chord) prevChord = chord.split(' ').pop().split(':')[0] || chord;
+        return chord || prevChord;
       }).join(' | ');
       result.chordsWorkedOut = true;
     }

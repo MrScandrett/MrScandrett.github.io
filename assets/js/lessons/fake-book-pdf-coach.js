@@ -9,15 +9,17 @@ export function createMeasureCoach(ctx) {
   function invalidate() {
     const c=ctx.get(), b=current(); if(!b?.source) return;
     b.source.reviewed=false;
-    c.book.examples=(c.book.examples||[]).filter(e=>e.id!==b.source.id);
+    if (c.book) c.book.examples=(c.book.examples||[]).filter(e=>e.id!==b.source.id);
   }
   function saveBox(rect) {
     if(!C.boxValid(rect)) {say('Use a box inside the page, at least 0.5% wide and tall.');return;}
-    const c=ctx.get(),b=current(); invalidate();
+    const c=ctx.get(),b=current();
+    if(!b) {say('Choose or create a song draft first.');return;}
+    invalidate();
     b.source={id:b.source?.id||'measure-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),page:c.page,box:rect,clef:b.source?.clef||'treble',reviewed:false};
     ctx.persist();refresh();say('Measure box saved. Find or mark its five staff lines.');
   }
-  function point(event) { const r=$('overlay').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(event.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(event.clientY-r.top)/r.height))}; }
+  function point(event) { const r=$('overlay').getBoundingClientRect();if(!r.width||!r.height)return {x:0,y:0};return {x:Math.max(0,Math.min(1,(event.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(event.clientY-r.top)/r.height))}; }
   function setMode(on) {mode=on;$('draw').setAttribute('aria-pressed',String(on));$('draw').textContent=on?'Finish boxing':'Box this measure';$('overlay').classList.toggle('is-drawing',on);if(on)say('Drag around this measure, including its chord symbols. Existing boxes can be moved or resized.');}
   $('draw').onclick=()=>setMode(!mode);
   $('overlay').addEventListener('pointerdown',event=>{
@@ -42,7 +44,7 @@ export function createMeasureCoach(ctx) {
     c.draft.bars.forEach((b,i)=>{
       if(!b.source || b.source.page!==c.page)return;const r=i===c.bar&&temporary?temporary:b.source.box;if(!C.boxValid(r))return;
       const group=document.createElementNS('http://www.w3.org/2000/svg','g');group.dataset.measure=i;
-      const rect=document.createElementNS(group.namespaceURI,'rect');Object.entries({x:r.x*1000,y:r.y*1000,width:r.w*1000,height:r.h*1000}).forEach(([k,v])=>rect.setAttribute(k,v));rect.setAttribute('class',i===c.bar?'is-selected':b.source.reviewed?'is-reviewed':'');group.append(rect);
+      const rect=document.createElementNS(group.namespaceURI,'rect');Object.entries({x:r.x*1000,y:r.y*1000,width:r.w*1000,height:r.h*1000}).forEach(([k,v])=>rect.setAttribute(k,v));rect.setAttribute('class',[i===c.bar?'is-selected':'',b.source.reviewed?'is-reviewed':''].filter(Boolean).join(' '));group.append(rect);
       const label=document.createElementNS(group.namespaceURI,'text');label.setAttribute('x',r.x*1000+5);label.setAttribute('y',r.y*1000+18);label.textContent='Bar '+(i+1)+(b.source.reviewed?' ✓':'');group.append(label);
       if(i===c.bar)for(const corner of ['tl','tr','bl','br']){const h=document.createElementNS(group.namespaceURI,'rect');h.dataset.corner=corner;h.setAttribute('class','fb-coach-handle');h.setAttribute('x',(r.x+(corner.includes('r')?r.w:0))*1000-5);h.setAttribute('y',(r.y+(corner.includes('b')?r.h:0))*1000-5);h.setAttribute('width','10');h.setAttribute('height','10');group.append(h);}
       $('overlay').append(group);
@@ -54,7 +56,7 @@ export function createMeasureCoach(ctx) {
     if(!s || s.page!==c.page || ctx.canvas.dataset.renderedPage!==String(c.page)) { $('crop').width=1;$('crop').height=1;return; }
     const r=s.box;base=document.createElement('canvas');const width=Math.min(900,Math.round(ctx.canvas.width*r.w));
     base.width=Math.max(1,width);base.height=Math.max(1,Math.round(width*r.h*ctx.canvas.height/(r.w*ctx.canvas.width)));
-    base.getContext('2d').drawImage(ctx.canvas,r.x*ctx.canvas.width,r.y*ctx.canvas.height,r.w*ctx.canvas.width,r.h*ctx.canvas.height,0,0,base.width,base.height);
+    base.getContext('2d', { willReadFrequently: true }).drawImage(ctx.canvas,r.x*ctx.canvas.width,r.y*ctx.canvas.height,r.w*ctx.canvas.width,r.h*ctx.canvas.height,0,0,base.width,base.height);
     const out=$('crop');out.width=base.width;out.height=base.height;const g=out.getContext('2d');g.drawImage(base,0,0);
     if(C.staffValid(s.staff)){g.strokeStyle='#087eaa';g.lineWidth=1;for(let l=0;l<5;l++){const y=(s.staff.top+(s.staff.bottom-s.staff.top)*l/4)*out.height;g.beginPath();g.moveTo(0,y);g.lineTo(out.width,y);g.stroke();}}
   }
@@ -69,14 +71,16 @@ export function createMeasureCoach(ctx) {
   $('bounds').onclick=()=>saveBox(Object.fromEntries(['x','y','w','h'].map(k=>[k,Number($(k).value)/100])));
   $('jump').onclick=()=>{const s=current()?.source;if(s)ctx.jump(s.page);else say('Box a measure on its source page first.');};
   $('staff').onclick=()=>{
-    try{if(!base)throw new Error('Box the measure on the visible PDF page first.');const image=base.getContext('2d',{willReadFrequently:true}).getImageData(0,0,base.width,base.height);
-      const found=C.staff(image.data,base.width,base.height);if(!found)throw new Error('Could not find five consistent lines. Enter their top and bottom percentages manually.');invalidate();current().source.staff=found;ctx.persist();refresh();say('Staff lines suggested in blue. Check them before clicking noteheads.');
+    try{if(!base)throw new Error('Box the measure on the visible PDF page first.');
+      const b=current(); if(!b?.source) throw new Error('Box this measure first.');
+      const image=base.getContext('2d',{willReadFrequently:true}).getImageData(0,0,base.width,base.height);
+      const found=C.staff(image.data,base.width,base.height);if(!found)throw new Error('Could not find five consistent lines. Enter their top and bottom percentages manually.');invalidate();b.source.staff=found;ctx.persist();refresh();say('Staff lines suggested in blue. Check them before clicking noteheads.');
     }catch(e){say(e.message);}
   };
   $('calibrate').onclick=()=>{const s={top:Number($('top').value)/100,bottom:Number($('bottom').value)/100};if(!current()?.source||!C.staffValid(s)){say('Box a measure and enter valid top/bottom staff-line positions.');return;}invalidate();current().source.staff=s;ctx.persist();refresh();say('Staff calibration saved. Click noteheads to add pitches with your chosen duration.');};
   $('clef').onchange=()=>{if(current()?.source){invalidate();current().source.clef=$('clef').value;ctx.persist();refresh();}};
   $('crop').onclick=event=>{
-    try{const c=ctx.get(),b=current(),r=$('crop').getBoundingClientRect();if(!base)throw new Error('Show the boxed measure first.');
+    try{const c=ctx.get(),b=current(),r=$('crop').getBoundingClientRect();if(!base||!b?.source)throw new Error('Show the boxed measure first.');
       const name=C.pitch((event.clientY-r.top)/r.height,b.source.staff,b.source.clef,c.draft.key,c.draft.mode,$('accidental').value);
       const token=name+ctx.field('duration').value+(ctx.field('triplet').checked?'3':'')+(ctx.field('dot').checked?'.':'')+(ctx.field('tie').checked?'~':'');
       setNotes(tokens().concat(token).join(' '));say('Added '+token+'. Check accidental and rhythm; the vertical position supplies the pitch.');
@@ -85,6 +89,7 @@ export function createMeasureCoach(ctx) {
   function setNotes(text){ctx.field('notes').value=text;ctx.field('notes').dispatchEvent(new Event('input',{bubbles:true}));}
   function selectNote(i){selected=i;$('token').value=tokens()[i]||'';renderNotes();}
   $('edit').onclick=()=>{try{const t=$('token').value.trim();if(selected<0||selected>=tokens().length)throw new Error('Select a note first.');if(/\s/.test(t))throw new Error('Edit one note token at a time.');M.beats(t);const list=tokens();list[selected]=t;setNotes(list.join(' '));say('Note corrected. Review this measure again to update its example.');}catch(e){say(e.message);}};
+  $('token').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('edit').click();}};
   $('remove').onclick=()=>{if(selected<0)return;const list=tokens();list.splice(selected,1);selected=-1;setNotes(list.join(' '));};
   function preview(target,notes,chords) {
     try {
@@ -119,7 +124,7 @@ export function createMeasureCoach(ctx) {
     const example={id:b.source.id,fingerprint:c.fingerprint,draftId:c.draft.id,title:c.draft.title,bar:c.bar+1,page:b.source.page,box:{...b.source.box},staff:b.source.staff&&{...b.source.staff},clef:b.source.clef||'treble',key:c.draft.key,mode:c.draft.mode,meter:c.draft.meter,notes:b.notes,chords:b.chords,signature:signature(),image:base.toDataURL('image/png'),reviewedAt:new Date().toISOString()};
     c.book.examples=(c.book.examples||[]).filter(e=>e.id!==example.id).concat(example);b.source.reviewed=true;ctx.persist();refresh();say('Reviewed example saved. Similar measures can now suggest these notes and chord labels.');
   }catch(e){say(e.message);}};
-  $('match').onclick=()=>{try{const c=ctx.get(),b=current();const result=C.match(signature(),(c.book.examples||[]).filter(e=>e.id!==b.source.id),{...c.draft,clef:b.source.clef||'treble'});
+  $('match').onclick=()=>{try{const c=ctx.get(),b=current();if(!b)throw new Error('Choose a song bar first.');const result=C.match(signature(),(c.book?.examples||[]).filter(e=>e.id!==b.source?.id),{...c.draft,clef:b.source?.clef||'treble'});
     if(!result)throw new Error('No sufficiently similar reviewed example yet. Enter and check this measure to teach an example.');
     b.proposal={notes:result.example.notes,chords:result.example.chords,origin:'Reviewed example: '+result.example.title+' bar '+result.example.bar,similarity:result.score};ctx.persist();proposal();say('Suggestion ready. Visual similarity is not a confidence guarantee; compare it with the scan.');
   }catch(e){say(e.message);}};
@@ -139,8 +144,8 @@ export function createMeasureCoach(ctx) {
   }catch(e){say(e.message);} $('import').value='';};
   function refresh() {
     const c=ctx.get(),b=current();paintBoxes();crop();if(!b)return;
-    const s=b.source;['x','y','w','h'].forEach(k=>{$(k).value=s?(s.box[k]*100).toFixed(1):'';});$('top').value=s?.staff?(s.staff.top*100).toFixed(1):'';$('bottom').value=s?.staff?(s.staff.bottom*100).toFixed(1):'';$('clef').value=s?.clef||'treble';
-    $('count').textContent=(c.book.examples||[]).length+' reviewed examples in this PDF workspace.';renderNotes();proposal();if(s?.reviewed)say('This measure is human-reviewed. Editing its box, notes, chords or key requires reviewing it again.');
+    const s=b.source;['x','y','w','h'].forEach(k=>{if(document.activeElement!==$(k))$(k).value=s?(s.box[k]*100).toFixed(1):'';});if(document.activeElement!==$('top'))$('top').value=s?.staff?(s.staff.top*100).toFixed(1):'';if(document.activeElement!==$('bottom'))$('bottom').value=s?.staff?(s.staff.bottom*100).toFixed(1):'';$('clef').value=s?.clef||'treble';
+    $('count').textContent=(c.book?.examples||[]).length+' reviewed examples in this PDF workspace.';renderNotes();proposal();if(s?.reviewed)say('This measure is human-reviewed. Editing its box, notes, chords or key requires reviewing it again.');
   }
   return {refresh,invalidate,setMode};
 }

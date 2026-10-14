@@ -44,3 +44,15 @@ test('empty progressions are safe and common-tone mode penalizes octave displace
   assert.equal(ctx.voiceChords([], 'smooth').length,0);
   assert.ok(ctx.voiceMotion([60,64,67],[64,67,72],true)>ctx.voiceMotion([60,64,67],[64,67,72],false));
 });
+
+test('new chord qualities: sus2, 7sus4 and minor-major 7th spell and reduce to the right triad', () => {
+  assert.deepEqual(Array.from(ctx.Q.sus2.iv), [0, 2, 7]);
+  assert.deepEqual(Array.from(ctx.Q['7sus4'].iv), [0, 5, 7, 10]);
+  assert.deepEqual(Array.from(ctx.Q.mmaj7.iv), [0, 3, 7, 11]);
+  for (const q of Object.keys(ctx.Q)) assert.equal(ctx.Q[q].iv.length, ctx.Q[q].lo.length, q);
+  const triad = q => ctx.triadQuality(ctx.Q[q].iv);
+  assert.equal(triad('sus2'), 'sus2'); assert.equal(triad('sus4'), 'sus4'); assert.equal(triad('7sus4'), 'sus4');
+  assert.equal(triad('mmaj7'), 'minor'); assert.equal(triad('m7b5'), 'diminished'); assert.equal(triad('dim7'), 'diminished');
+  assert.equal(triad('aug'), 'augmented'); assert.equal(triad('9'), 'major'); assert.equal(triad('m6'), 'minor');
+  for (const q of Object.keys(ctx.Q)) assert.ok(ctx.TRIADS[triad(q)], q);
+});

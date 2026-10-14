@@ -3,15 +3,18 @@
 (function () {
   'use strict';
   var roots = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
-  var qualities = {major:[0,4,7],minor:[0,3,7],diminished:[0,3,6],augmented:[0,4,8]};
-  var roles = {major:['R','3','5'],minor:['R','♭3','5'],diminished:['R','♭3','♭5'],augmented:['R','3','♯5']};
-  var suffix = {major:'',minor:'m',diminished:'°',augmented:'+'};
+  // sus2/sus4 serve the Fake Book's sus chords; the planner's own Quality menu keeps the four classic triads.
+  var qualities = {major:[0,4,7],minor:[0,3,7],diminished:[0,3,6],augmented:[0,4,8],sus2:[0,2,7],sus4:[0,5,7]};
+  var roles = {major:['R','3','5'],minor:['R','♭3','5'],diminished:['R','♭3','♭5'],augmented:['R','3','♯5'],sus2:['R','2','5'],sus4:['R','4','5']};
+  var suffix = {major:'',minor:'m',diminished:'°',augmented:'+',sus2:'sus2',sus4:'sus4'};
+  var letterSteps = {sus2:[0,1,4],sus4:[0,3,4]};
+  var menu = ['major','minor','diminished','augmented'];
   var tunings = {violin:[55,62,69,76],guitar:[40,45,50,55,59,64]};
   function pc(n) { return (n % 12 + 12) % 12; }
   function name(chord) { return roots[chord.root] + suffix[chord.quality]; }
   function pitches(chord) { return qualities[chord.quality].map(function (v) { return pc(chord.root+v); }); }
   function spellings(chord) {
-    return window.MusicNotation.spellPattern(roots[chord.root]+'4',qualities[chord.quality],[0,2,4]).map(function(s){return s.replace(/-?\d+$/,'');});
+    return window.MusicNotation.spellPattern(roots[chord.root]+'4',qualities[chord.quality],letterSteps[chord.quality]||[0,2,4]).map(function(s){return s.replace(/-?\d+$/,'');});
   }
   function pitchName(chord, midi) {
     var role = pitches(chord).indexOf(pc(midi));
@@ -89,7 +92,7 @@
       host.appendChild(el('h2','Triad assistant'));
       host.appendChild(el('p','Build a route from any roots and qualities. Compare root position with nearby inversions; keep shared tones in view. Root, third, and fifth define the chord even when their order changes.','ta-lede'));
       var controls=el('div',null,'ta-controls');host.appendChild(controls);
-      var root=select(roots.map(function(r,i){return [i,r];})),quality=select(Object.keys(qualities).map(function(q){return[q,q];}));
+      var root=select(roots.map(function(r,i){return [i,r];})),quality=select(menu.map(function(q){return[q,q];}));
       var mode=select([['near','Smaller movements'],['root','Root positions only']]);
       var windowSelect=select(instrument==='guitar'?[[0,'Frets 0–4'],[3,'Frets 3–7'],[5,'Frets 5–9'],[8,'Frets 8–12']]:instrument==='violin'?[[7,'First position'],[24,'Two-octave span']]:[[24,'C4–C6']]);
       controls.append(label('Root',root),label('Quality',quality),label('Map strategy',mode),label('Playing range',windowSelect));

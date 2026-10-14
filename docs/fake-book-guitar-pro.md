@@ -22,8 +22,10 @@ It converts into MusicXML for the existing Fake Book score player, arrangement
 view, part mute/solo and practice controls. Playback uses synthesized piano.
 
 Guitar effects, grace/dead notes, dynamics, swing, percussion, tempo changes and
-embedded backing audio are not performed. Original chord names/diagrams are
-omitted; the existing chord inference provides suggestions. Harmonic notes retain
+embedded backing audio are not performed. Supported authored chord changes are
+preserved across tracks, while missing chords are inferred from sounding notes
+as practice suggestions. Switch Play to *Play practice chord voicings* to hear
+connected guitar grips or piano voicings in time with the score. Harmonic notes retain
 their sounding pitch and physical fret, without the technique annotation.
 Double-coda and double-segno navigation produces a clear error recommending an
 expanded MusicXML export. Ordinary D.C./D.S., Fine and Coda use the shared
