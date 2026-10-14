@@ -65,3 +65,16 @@ test('every built-in tune can be planned on both instruments', () => {
     }
   }
 });
+
+test('scale compatibility uses chord tones as well as melody and retains ambiguity', () => {
+  const melody = [60, 62, 64, 65, 67, 69];
+  const sparse = P.analyze(melody, [], 0);
+  assert.ok(sparse.some(f => f.tonic === 0 && f.mode === 'Mixolydian'));
+  const major = P.analyze(melody, [0, 4, 7, 11], 0);
+  assert.ok(major.some(f => f.tonic === 0 && f.mode === 'Ionian / major'));
+  assert.ok(!major.some(f => f.tonic === 0 && f.mode === 'Mixolydian'));
+  assert.ok(major.length > 1);
+  assert.deepEqual(P.analyze([], [0,4,7], 0), []);
+  assert.deepEqual(P.analyze(Array.from({length:12}, (_,i) => 60+i), [], 0), []);
+  assert.deepEqual(P.analyze([60,62,64,65,67,69,71], [], 0)[0].degrees, [1,2,3,4,5,6,7]);
+});

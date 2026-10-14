@@ -799,7 +799,7 @@
 
       if (scoreMode) warnings.push('Written pitched voices play on synthesized piano. Grace notes, unpitched percussion, dynamics, ornaments and tempo changes are not performed.');
       return {
-        score: scoreMode ? { parts: scoreParts, notes: scoreNotes, bars: scoreBars } : undefined,
+        score: scoreMode ? { parts: scoreParts, notes: scoreNotes, bars: scoreBars, musicxml: text } : undefined,
         title: title, composer: composer,
         key: key, minor: minor, meter: outMeter,
         pickup: scoreMode ? (pickup || 0) : pickupU / U,

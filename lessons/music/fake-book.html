@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/music-notation.css" />
-  <link rel="stylesheet" href="../../assets/css/lessons/fake-book.css?v=20261013g" />
+  <link rel="stylesheet" href="../../assets/css/lessons/fake-book.css?v=20261013h" />
   <script src="../../assets/js/music-notation.js"></script>
 </head>
 <body class="fb-focused theme-liquid-woodland theme-steam">
@@ -83,6 +83,19 @@
                 <button type="button" class="fb-btn fb-stand-toggle" data-fb-stand aria-pressed="false">Stand</button>
                 <button type="button" class="fb-btn" data-fb-tools aria-expanded="false" aria-controls="fbTools">Tools</button>
                 <button type="button" class="fb-btn fb-nav-toggle" data-fb-nav-toggle aria-expanded="false" title="Song map, bar jump and zoom">Map</button>
+                <details class="fb-practice-controls">
+                  <summary><span data-fb-ready>Ready at measure 1</span> · <span data-fb-loop-status>Whole tune</span></summary>
+                  <div class="fb-loop-actions" role="group" aria-label="Practice selected measures">
+                    <button type="button" class="fb-btn" data-fb-loop-action="start">Set start</button>
+                    <button type="button" class="fb-btn" data-fb-loop-action="end">Set end</button>
+                    <button type="button" class="fb-btn" data-fb-loop-action="2">2 bars</button>
+                    <button type="button" class="fb-btn" data-fb-loop-action="4">4 bars</button>
+                    <button type="button" class="fb-btn" data-fb-loop-action="8">8 bars</button>
+                    <button type="button" class="fb-btn" data-fb-loop-action="clear">Clear loop</button>
+                    <button type="button" class="fb-btn" data-fb-selected-shapes>Chord shapes</button>
+                  </div>
+                  <p data-fb-loop-feedback role="status"></p>
+                </details>
                 <div class="fb-nav" data-fb-nav hidden aria-label="Song map, bar jump and zoom"></div>
                 <p class="fb-banner" data-fb-banner role="status" hidden></p>
               </div>
@@ -98,13 +111,17 @@
                     <p class="fb-keyline" data-fb-keyline></p>
                     <div class="fb-view-switch" role="group" aria-label="Sheet display mode">
                       <button type="button" class="fb-view-tab is-active" data-fb-view="lead" aria-pressed="true">𝄞 Lead sheet</button>
+                      <button type="button" class="fb-view-tab" data-fb-view="arrangement" aria-pressed="false" hidden>Original arrangement</button>
                       <button type="button" class="fb-view-tab" data-fb-view="drums" aria-pressed="false">🥁 Drum notation</button>
                     </div>
                     <button type="button" class="fb-btn fb-btn-small fb-print-btn" data-fb-print title="Print this score on letter paper">🖨 Print notation</button>
                     <div class="fb-staff-toggles" data-fb-staff-toggles role="group" aria-label="Extra staves from the imported score" hidden>
                       <label class="fb-check" data-fb-has="bass"><input type="checkbox" data-fb-show-bass checked /> <span>𝄢 Bass clef</span></label>
                       <label class="fb-check" data-fb-has="tab"><input type="checkbox" data-fb-show-tab /> <span>Tab</span></label>
-                      <label class="fb-check"><input type="checkbox" data-fb-show-pos /> <span>Finger positions</span></label>
+                      <label class="fb-check"><input type="checkbox" data-fb-show-shapes /> <span>Chord shapes</span></label>
+                      <label class="fb-field"><span>Practice</span><select data-fb-practice aria-label="Measure practice hints"><option value="study">Show all hints</option><option value="names">Name chords / modes from shapes</option><option value="shapes">Recall shapes from chord names</option></select></label>
+                      <button type="button" class="fb-btn fb-btn-small" data-fb-reveal hidden>Reveal answers</button>
+                      <label class="fb-check"><input type="checkbox" data-fb-show-pos aria-describedby="fb-position-key" /> <span>Finger positions</span></label>
                       <label class="fb-field fb-tab-pos" hidden><span>On</span>
                         <select data-fb-pos-inst aria-label="Which instrument the finger positions are for">
                           <option value="guitar">🎸 Guitar</option>
@@ -124,6 +141,8 @@
                         </select>
                       </label>
                     </div>
+                    <p class="fb-pos-key" data-fb-analysis-note hidden>Chord shapes use the instrument selected in Instrument help. Scale/mode candidates combine melody pitches with chord tones in concert pitch; a short passage cannot prove its tonal center. Practice hides hints on the sheet; open Instrument help to check your answer.</p>
+                    <p id="fb-position-key" class="fb-pos-key" data-fb-position-key hidden></p>
                   </div>
                 </header>
                 <p class="fb-tab-note" data-fb-tab-note role="status" hidden></p>
@@ -178,22 +197,12 @@
                       <button type="button" class="fb-instr-tab" data-engine-inst="guitar" role="tab" aria-selected="false">🎸 Guitar</button>
                         <button type="button" class="fb-instr-tab" data-engine-inst="violin" role="tab" aria-selected="false">🎻 Violin</button>
                     </div>
-                    <button type="button" class="fb-instr-tab fb-barpop-off" data-fb-barpop-off title="Stop opening chord shapes when you tap a bar (turn back on under Tools or the hint below the sheet)">Turn off</button>
                     <button type="button" class="fb-drawer-close" data-fb-barpop-close aria-label="Close bar chords">✕</button>
                   </div>
                   <div class="fb-barpop-cards" data-fb-barpop-cards></div>
                   <p class="fb-barpop-note" data-fb-barpop-note></p>
                 </div>
-                <div class="fb-sheet-hint">
-                  <span>Click a chord symbol to see and hear it.</span>
-                  <span class="fb-barclick" role="radiogroup" aria-label="What clicking a bar does">
-                    <span>Click a bar to</span>
-                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="shapes" checked /><span>show its chord shapes</span></label>
-                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="loop" /><span>start a loop there</span></label>
-                    <label class="fb-chip"><input type="radio" name="fb-barclick" value="off" /><span>nothing (chords off)</span></label>
-                  </span>
-                  <span>Shift-click a bar to end the loop there.</span>
-                </div>
+                <div class="fb-sheet-hint">Tap a measure to stop and prepare playback there. Tap a chord symbol to see and hear it. Shift-click optionally sets the loop end.</div>
                 <details class="fb-disclosure"><summary>About this tune and its source</summary>
                 <p class="fb-meta" data-fb-meta></p>
                 <p class="fb-about" data-fb-about></p>
@@ -213,18 +222,20 @@
               </div>
 
               <details class="fb-import-card fb-disclosure">
-                <summary>Import a song (MusicXML or iReal Pro)</summary>
+                <summary>Import a song (MusicXML, Guitar Pro or iReal Pro)</summary>
                 <div class="fb-import-card-head">
                   <svg class="fb-ico-import" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <div>
                     <h3 class="fb-import-title">Import a song</h3>
-                    <p class="fb-import-desc"><strong>Written score playback:</strong> open a MusicXML file (<code>.musicxml</code>, <code>.mxl</code> or <code>.xml</code>) exported from MuseScore, Finale, Sibelius, Dorico or Noteflight. Repeats and endings are played out in order. New imports default to <em>Play the score</em>, preserving all pitched voices and meter changes. Mute or solo voices, slow the tempo, and loop bars for practice. Re-import older saved songs to enable score playback.</p>
+                    <p class="fb-import-desc"><strong>Written score playback:</strong> open a MusicXML file (<code>.musicxml</code>, <code>.mxl</code> or <code>.xml</code>) exported from MuseScore, Finale, Sibelius, Dorico or Noteflight. Repeats and endings are played out in order. New imports default to <em>Play the score</em>, preserving all pitched voices and meter changes. Mute or solo voices, slow the tempo, and loop bars for practice. The Original arrangement view keeps all instrument staves, chords, rests, repeats and endings at the source pitch. Use Lead sheet for interactive bar selection and playback highlighting. Re-import older saved songs to enable the arrangement view.</p>
+                    <p class="fb-import-desc"><strong>Guitar tablature:</strong> open an original Guitar Pro 1 or 2 file (<code>.gtp</code>). Pitched tracks, rhythms, ties, repeats and string/fret positions are imported. Guitar techniques and percussion are omitted; playback uses piano. For newer Guitar Pro formats, export MusicXML first.</p>
+                    <p class="fb-import-desc">Legacy reader adapted from TuxGuitar · <a href="../../assets/vendor/tuxguitar-gtp/LICENSE.txt">LGPL 2.1 license</a> · <a href="../../assets/js/lessons/fake-book-gtp.js">Reader source</a></p>
                     <p class="fb-import-desc"><strong>Chords only:</strong> paste an <code>irealb://</code> link or open an iReal Pro HTML chart or playlist.</p>
                   </div>
                 </div>
                 <p class="fb-import-legal">
                   <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-                  Imported songs may be copyrighted and are never uploaded to a server. They stay in this browser only for your private study.
+                  Import only scores you created or have permission or another lawful basis to use. Files are processed and stored in this browser and are not uploaded. Importing does not grant permission to share, publish, or perform the music publicly.
                 </p>
                 <div class="fb-import-form">
                   <div class="fb-import-row">
@@ -232,7 +243,7 @@
                     <button type="button" class="fb-btn fb-btn-primary" data-fb-import-btn>Import</button>
                     <label class="fb-btn fb-file-btn">
                       <span>Choose file</span>
-                      <input type="file" accept=".musicxml,.mxl,.xml,.html,.htm,.txt" data-fb-import-file class="fb-sr" aria-label="Open a MusicXML file or an iReal Pro HTML file" />
+                      <input type="file" accept=".musicxml,.mxl,.xml,.gtp,.html,.htm,.txt" data-fb-import-file class="fb-sr" aria-label="Open a MusicXML, legacy Guitar Pro or iReal Pro HTML file" />
                     </label>
                   </div>
                   <p class="fb-import-feedback" data-fb-import-feedback role="status" hidden></p>
@@ -300,6 +311,7 @@
                     <label class="fb-field"><span>Octave</span>
                       <select data-fb-octave><option value="-1">Down one</option><option value="0">Middle</option><option value="1">Up one</option></select>
                     </label>
+                    <label class="fb-check"><input type="checkbox" data-fb-analysis /> <span>Show scale/mode candidates and melody degrees (with Finger positions)</span></label>
                     <label class="fb-check"><input type="checkbox" data-fb-names /> <span>Show note names</span></label>
                     <label class="fb-field"><span>Name style</span>
                       <select data-fb-name-style><option value="notes">On the notes (colored)</option><option value="under">Under the staff</option></select>
@@ -614,9 +626,11 @@
   <script src="../../assets/js/lessons/fake-book-violin.js?v=20261014a"></script>
   <script src="../../assets/js/lessons/fake-book-harmony.js"></script>
   <script src="../../assets/js/lessons/fake-book-tab.js"></script>
-  <script src="../../assets/js/lessons/fake-book-musicxml.js?v=20261013f"></script>
+  <script src="../../assets/js/lessons/fake-book-arrangement.js"></script>
+  <script src="../../assets/js/lessons/fake-book-musicxml.js?v=20261013arrangement"></script>
+  <script src="../../assets/js/lessons/fake-book-gtp.js?v=20261013a"></script>
   <script src="../../assets/js/score-navigation.js?v=20261013f"></script>
-  <script src="../../assets/js/lessons/fake-book.js?v=20261014a"></script>
+  <script src="../../assets/js/lessons/fake-book.js?v=20261014b"></script>
   <script src="../../assets/js/site-glossary.js"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>

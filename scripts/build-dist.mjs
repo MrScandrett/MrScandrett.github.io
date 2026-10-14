@@ -193,6 +193,12 @@ async function minifyJsFiles() {
   for (const file of jsFiles) {
     const source = await readFile(file, "utf8");
     before += Buffer.byteLength(source);
+    // LGPL legacy reader: ship its preferred source and notices unchanged.
+    // Fake Book links this exact URL as the replaceable library source.
+    if (path.relative(DIST, file).split(path.sep).join('/') === 'assets/js/lessons/fake-book-gtp.js') {
+      after += Buffer.byteLength(source);
+      continue;
+    }
     try {
       const result = await esbuild.transform(source, { minify: true, target: "es2022", loader: "js" });
       await writeFile(file, result.code, "utf8");
