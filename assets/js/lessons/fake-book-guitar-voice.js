@@ -45,7 +45,37 @@
     found.sort(function (a, b) { return a.local - b.local; });
     return found.filter(function (c) { var key = c.position; buckets[key] = (buckets[key] || 0) + 1; return buckets[key] <= 4; });
   }
+  /* The grip an imported tab actually plays under each chord, so the diagram can't disagree with the
+     tab beside it. tab: [{ start, dur, f: [[string, fret]…] }] (string 1 = highest), tuning: sounding
+     MIDI per string, string 1 first. Frets are re-expressed in standard tuning on the same string
+     (identical for a standard-tuned tab) so the diagram's degrees stay right. Returns frets low→high
+     like plan(); a chord whose span holds no real grip (≥3 notes, ≥2 chord tones) gets null, and the
+     caller falls back to a suggested grip. */
+  function fromTab(chords, tab, tuning) {
+    if (!tab || !tab.length || !tuning || tuning.length !== 6) return [];
+    return chords.map(function (c) {
+      var end = c.start + c.dur, tones = c.type.intervals.map(function (iv) { return pc(c.rootPC + iv); });
+      if (c.bassPC != null) tones.push(c.bassPC);
+      var best = null;
+      tab.forEach(function (e) {
+        if (e.start < c.start - 1e-6 || e.start >= end - 1e-6 || !e.f || e.f.length < 3) return;
+        var frets = [null, null, null, null, null, null], ok = true;
+        e.f.forEach(function (sf) {
+          var idx = 6 - sf[0], fret = tuning[sf[0] - 1] + sf[1] - OPEN[idx];
+          if (idx < 0 || idx > 5 || fret < 0 || fret > 24 || frets[idx] !== null) ok = false; else frets[idx] = fret;
+        });
+        if (!ok) return;
+        var notes = pitches(frets), hit = {}, off = 0;
+        notes.forEach(function (n) { if (tones.indexOf(pc(n)) >= 0) hit[pc(n)] = true; else off++; });
+        if (Object.keys(hit).length < 2) return;
+        var score = off * 10 - Object.keys(hit).length - notes.length * .1;   // fewest foreign notes, then most chord tones; earlier wins ties
+        if (!best || score < best.score) best = { score: score, frets: frets, notes: notes, position: position(frets) };
+      });
+      return best && { frets: best.frets, notes: best.notes, position: best.position, source: 'tab' };
+    });
+  }
   function plan(chords, mode, GT) {
+    if (mode === 'tab') mode = 'smooth';   // 'tab' only changes which grips win; gaps use the smooth plan
     if (!GT || mode === 'manual') return [];
     var cache = {}, layers = chords.map(function (c) {
       var key = [c.rootPC, c.type.suffix, c.type.intervals.join(','), c.bassPC].join('|');
@@ -75,7 +105,7 @@
     }
     return result;
   }
-  var api = { plan: plan, candidates: candidates, motion: motion, pitches: pitches };
+  var api = { plan: plan, fromTab: fromTab, candidates: candidates, motion: motion, pitches: pitches };
   host.FakeBookGuitarVoice = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);

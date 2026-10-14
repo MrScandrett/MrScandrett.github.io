@@ -656,7 +656,14 @@
     }
     view.tabInfo = null;
     view.tabLines = 6;
-    if (t.staves.tab) { view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines; }
+    view.tabGrips = null;
+    if (t.staves.tab) {
+      view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines;
+      // The imported tab is the authority on how each chord is fingered: diagrams follow it.
+      if (window.FakeBookGuitarVoice) view.tabGrips = window.FakeBookGuitarVoice.fromTab(view.concertChords.map(function (c) {
+        return { start: c.start, dur: c.dur, rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
+      }), view.tab, t.staves.tab.tuning);
+    }
     else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat);
     view.pos = null;
     if (posOn() && window.FakeBookPosition) {
@@ -2012,7 +2019,7 @@
       if (chord.start + chord.dur <= lo + EPS || chord.start >= hi - EPS) return;
       // A reduction is a practice suggestion. Do not add a chord over silent music.
       if (!score.notes.some(function (n) { return n.start < chord.start + chord.dur && n.start + n.dur > chord.start; })) return;
-      var grip = view.guitarGrips && view.guitarGrips[ci];
+      var grip = gripFor(ci);
       var notes = opts.posInst === 'guitar' ? (grip ? grip.notes : []) : view.voicings[ci];
       var start = Math.max(chord.start, lo), duration = Math.min(chord.start + chord.dur, hi) - start;
       if (notes && notes.length) add.push({ b: off + start - span.start, kind: 'pno', ms: notes, dur: Math.max(.05, duration * .95), vel: .65, ci: ci });
@@ -2403,6 +2410,11 @@
     scorePractice = {};
     if (reset) { opts.mode = raw.score ? 'score' : 'all'; opts.sheetView = raw.score && raw.score.musicxml ? 'arrangement' : 'lead'; }
     if (reset && raw.guitarPro) { opts.guitarVoice = 'smooth'; opts.voicing = 'smooth'; }
+    // A score that brings its own tab: chord diagrams default to the frets that tab plays.
+    if (reset) {
+      if (raw.staves && raw.staves.tab) opts.guitarVoice = 'tab';
+      else if (opts.guitarVoice === 'tab') opts.guitarVoice = raw.guitarPro ? 'smooth' : 'manual';
+    }
     if (opts.sheetView === 'arrangement' && !(raw.score && raw.score.musicxml)) opts.sheetView = 'lead';
     if (!raw.score && opts.mode === 'score') opts.mode = 'all';
     opts.tune = raw.id;
@@ -2503,7 +2515,7 @@
     el('[data-fb-guitar-voice]').closest('label').hidden = opts.posInst !== 'guitar';
     var guitarNote = el('[data-fb-guitar-voice-note]');
     guitarNote.hidden = opts.posInst !== 'guitar' || !opts.guitarVoice || opts.guitarVoice === 'manual';
-    guitarNote.textContent = 'Suggested grips in standard tuning, with a maximum three-fret span. Smooth changes minimize movement on each string; Hold common tones favors keeping shared notes on the same string and fret. Shells omit the fifth of seventh and sixth chords; triads keep all three tones. Slash-chord bass is retained. These choices affect chord diagrams and Guitar previews; the band accompaniment stays on piano. Check each grip for comfort.';
+    guitarNote.textContent = (opts.guitarVoice === 'tab' ? 'Match the imported tab: each diagram shows the frets the tab plays under that chord; chords the tab never grips fall back to suggested smooth grips. ' : '') + 'Suggested grips in standard tuning, with a maximum three-fret span. Smooth changes minimize movement on each string; Hold common tones favors keeping shared notes on the same string and fret. Shells omit the fifth of seventh and sixth chords; triads keep all three tones. Slash-chord bass is retained. These choices affect chord diagrams and Guitar previews; the band accompaniment stays on piano. Check each grip for comfort.';
     el('[data-fb-notation-voicing]').value = opts.voicing;
     el('[data-fb-notation-voicing]').closest('label').hidden = opts.posInst !== 'piano';
     root.querySelectorAll('input[name="fb-melody"], input[name="fb-rhythm"]').forEach(function (i) {
@@ -2795,6 +2807,10 @@
     var ivs = violinTones(c, chordTypeOf(c), 'triads').intervals;
     return rotate(ivs.map(function (iv) { return 60 + pc + iv; }), Number(opts.triadInv) || 0);
   }
+  // The grip shown for chord ci: what the imported tab plays there when "Match the tab" is on, else the planned grip.
+  function gripFor(ci) {
+    return (opts.guitarVoice === 'tab' && view.tabGrips && view.tabGrips[ci]) || (view.guitarGrips && view.guitarGrips[ci]) || null;
+  }
   function guitarShapeFor(rootPC, cType, ci) {
     if (opts.engineMode === 'triads') {
       var quality = cType.intervals.indexOf(3) >= 0 ? (cType.intervals.indexOf(6) >= 0 ? 'diminished' : 'minor') : cType.intervals.indexOf(8) >= 0 ? 'augmented' : 'major';
@@ -2806,7 +2822,7 @@
     }
 
     if (opts.guitarVoice && opts.guitarVoice !== 'manual' && view && view.guitarGrips) {
-      var grip = view.guitarGrips[ci == null ? chordSel : ci];
+      var grip = gripFor(ci == null ? chordSel : ci);
       return grip ? { frets: grip.frets, formName: opts.guitarVoice } : null;
     }
     if (!GT) return null;

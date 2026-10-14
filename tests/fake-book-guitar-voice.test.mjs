@@ -45,3 +45,20 @@ test('smooth progression minimizes the full candidate path cost',()=>{
   const cost=grips.reduce((sum,c,i)=>sum+local(c)+(i?G.motion(grips[i-1].frets,c.frets,'smooth'):0),0);
   assert.ok(Math.abs(best-cost)<1e-9);
 });
+test('fromTab: the diagram is the grip the tab plays, not a suggestion',()=>{
+  const std=[64,59,55,50,45,40];
+  const c={start:0,dur:2,rootPC:0,type:type('',[0,4,7])};
+  // beat 0: an open-position C with a passing B on top; beat 1: the clean C shape
+  const tab=[{start:0,dur:1,f:[[1,2],[2,1],[4,2],[5,3]]},{start:1,dur:1,f:[[1,0],[2,1],[3,0],[4,2],[5,3]]}];
+  const [g]=G.fromTab([c],tab,std);
+  assert.deepEqual(g.frets,[null,3,2,0,1,0]);
+  assert.equal(g.source,'tab');
+});
+test('fromTab: re-expresses other tunings in standard, and leaves gaps for the fallback',()=>{
+  const halfDown=[63,58,54,49,44,39];            // every string a semitone flat
+  const c={start:0,dur:1,rootPC:0,type:type('',[0,4,7])};
+  const [g]=G.fromTab([c],[{start:0,dur:1,f:[[5,4],[4,3],[2,2]]}],halfDown);
+  assert.deepEqual(g.frets,[null,3,2,null,1,null]);   // same sounding pitches, standard-tuning frets
+  assert.deepEqual(G.fromTab([c,{...c,start:4}],[{start:0,dur:1,f:[[3,2]]}],halfDown),[null,null]);
+  assert.deepEqual(G.fromTab([c],[],halfDown),[]);
+});
