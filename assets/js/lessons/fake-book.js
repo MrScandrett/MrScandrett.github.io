@@ -1000,11 +1000,13 @@
   function renderSheet() {
     if (!view) return;
     hideBarPop();
+    root.classList.toggle('is-original-score', opts.sheetView === 'arrangement' && !!(tune.raw.score && tune.raw.score.musicxml));
     if (opts.sheetView === 'arrangement' && tune.raw.score && tune.raw.score.musicxml) {
       var arrangementLegend = el('[data-fb-drum-legend]');
       if (arrangementLegend) arrangementLegend.hidden = true;
-      nowEls = []; barEls = {}; scoreNav.refresh();
+      nowEls = []; barEls = {};
       window.FakeBookArrangement.render(sheetEl, tune.raw.score.musicxml, opts.zoom || 1);
+      scoreNav.refresh();
       return;
     }
     window.FakeBookArrangement.cancel(sheetEl);
@@ -1831,6 +1833,7 @@
       staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr) ? song.staves : undefined,
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       score: song.score,
+      guitarPro: song.guitarPro,
       imported: true,
       about: song.bars + ' bars from a ' + format + ' score' + (song.unrolled ? ', with its repeats played out in order' : '') + '. ' + song.warnings.join(' '),
       source: 'Imported ' + format + ' score (kept in this browser only).'
@@ -1913,7 +1916,8 @@
   /* ================================================================ transport */
   var P = null;
   var SWING = 2 / 3;
-  function swingOn() { return opts.mode !== 'score' && opts.feel === 'swing'; }
+  function scoreTiming() { return opts.mode === 'score' || opts.mode === 'changes'; }
+  function swingOn() { return !scoreTiming() && opts.feel === 'swing'; }
   function sw(b) { if (!swingOn()) return b; var i = Math.floor(b), f = b - i; return i + (f < 0.5 ? f * 2 * SWING : SWING + (f - 0.5) * 2 * (1 - SWING)); }
   function swInv(x) { if (!swingOn()) return x; var i = Math.floor(x), f = x - i; return i + (f < SWING ? f / (2 * SWING) : 0.5 + (f - SWING) / (2 * (1 - SWING))); }
   function timeAt(b) { return P.anchorTime + (sw(b) - sw(P.anchorBeat)) * P.spb; }
@@ -1968,7 +1972,7 @@
     setPlaying(true);
   }
   var startBar = 0;
-  function passLen(rg) { return opts.mode === 'score' ? scoreRange(rg).len : (rg.to - rg.from + 1) * tune.M; }
+  function passLen(rg) { return scoreTiming() ? scoreRange(rg).len : (rg.to - rg.from + 1) * tune.M; }
   // Where pass k begins on the beat clock, its range and its length (pass 0 may start mid-tune).
   function passInfo(k) {
     var rg = k === 0 ? P.first : P.range;
@@ -1999,10 +2003,20 @@
   function appendScore(k) {
     var score = tune.raw.score, pi = passInfo(k), r = pi.rg, span = scoreRange(r), off = pi.off;
     var lo = pi.pickup ? -tune.pickup : span.start, hi = span.start + span.len, add = [];
-    score.notes.forEach(function (n) {
+    if (opts.mode === 'score') score.notes.forEach(function (n) {
       if (n.start + n.dur <= lo + EPS || n.start >= hi - EPS) return;
       var start = Math.max(n.start, lo);
       add.push({ b: off + start - span.start, kind: 'score', part: n.part, m: n.midi, dur: Math.min(n.start + n.dur, hi) - start });
+    });
+    if (opts.mode === 'changes') view.concertChords.forEach(function (chord, ci) {
+      if (chord.start + chord.dur <= lo + EPS || chord.start >= hi - EPS) return;
+      // A reduction is a practice suggestion. Do not add a chord over silent music.
+      if (!score.notes.some(function (n) { return n.start < chord.start + chord.dur && n.start + n.dur > chord.start; })) return;
+      var grip = view.guitarGrips && view.guitarGrips[ci];
+      var notes = opts.posInst === 'guitar' ? (grip ? grip.notes : []) : view.voicings[ci];
+      var start = Math.max(chord.start, lo), duration = Math.min(chord.start + chord.dur, hi) - start;
+      if (notes && notes.length) add.push({ b: off + start - span.start, kind: 'pno', ms: notes, dur: Math.max(.05, duration * .95), vel: .65, ci: ci });
+      add.push({ b: off + start - span.start, kind: 'ui', ui: 'chord', ci: ci });
     });
     score.bars.forEach(function (b) {
       if (b.bar < r.from || b.bar > r.to) return;
@@ -2017,13 +2031,13 @@
       }
     });
     var times = {};
-    [view.concert, view.bass || [], view.tab || []].forEach(function (events) { events.forEach(function (e) { if (e.start >= lo - EPS && e.start < hi - EPS) times[e.start] = true; if (e.dur && e.start + e.dur >= lo && e.start + e.dur < hi) times[e.start + e.dur] = true; }); });
+    if (opts.mode === 'score') [view.concert, view.bass || [], view.tab || []].forEach(function (events) { events.forEach(function (e) { if (e.start >= lo - EPS && e.start < hi - EPS) times[e.start] = true; if (e.dur && e.start + e.dur >= lo && e.start + e.dur < hi) times[e.start + e.dur] = true; }); });
     Object.keys(times).forEach(function (t) { add.push({ b: off + Number(t) - span.start, kind: 'ui', ui: 'score-note', start: Number(t) }); });
     if (!opts.loop) add.push({ b: off + pi.len, kind: 'end' });
     P.queue = P.queue.slice(P.qi).concat(add).sort(function (a, b) { return a.b - b.b; }); P.qi = 0;
   }
   function appendChorus(k) {
-    if (opts.mode === 'score' && tune.raw.score) { appendScore(k); return; }
+    if (scoreTiming() && tune.raw.score) { appendScore(k); return; }
     var M = tune.M, pi = passInfo(k), r = pi.rg, off = pi.off, tuneOff = (r.from - 1) * M;
     var g = function (tt) { return off + tt - tuneOff; };
     var add = [];
@@ -2332,10 +2346,11 @@
     });
   }
   function importFile(file) {
-    if (/\.gtp$/i.test(file.name)) {
-      if (!window.FakeBookGTP || !MX) { importFeedback('The Guitar Pro reader is not available. Please refresh the page.', true); return; }
+    if (/\.(gtp|gp3|gp4|gp5|gpx|gp|gp7|gp8)$/i.test(file.name)) {
+      var gpReader = window.FakeBookGuitarPro || (/\.gtp$/i.test(file.name) ? window.FakeBookGTP : null);
+      if (!gpReader || !MX) { importFeedback('The Guitar Pro reader is not available. Please refresh the page.', true); return; }
       if (file.size > 8 * 1024 * 1024) { importFeedback('Guitar Pro files must be smaller than 8 MB.', true); return; }
-      importMusicXML(file.arrayBuffer().then(function (buf) { return window.FakeBookGTP.parseFile(new Uint8Array(buf), MX); }), file.name);
+      importMusicXML(file.arrayBuffer().then(function (buf) { return gpReader.parseFile(new Uint8Array(buf), MX); }), file.name);
       return;
     }
     file.arrayBuffer().then(function (buf) {
@@ -2387,6 +2402,7 @@
     tune = parseTune(raw); startBar = 0;
     scorePractice = {};
     if (reset) { opts.mode = raw.score ? 'score' : 'all'; opts.sheetView = raw.score && raw.score.musicxml ? 'arrangement' : 'lead'; }
+    if (reset && raw.guitarPro) { opts.guitarVoice = 'smooth'; opts.voicing = 'smooth'; }
     if (opts.sheetView === 'arrangement' && !(raw.score && raw.score.musicxml)) opts.sheetView = 'lead';
     if (!raw.score && opts.mode === 'score') opts.mode = 'all';
     opts.tune = raw.id;
@@ -3679,6 +3695,13 @@
 
   // Exposed for tests and for other lessons that want to reuse the tune engine.
   window.FakeBook = {
+    saveTranscription: function (raw) {
+      if (!root.classList.contains('is-ready')) throw new Error('The tune library is still loading. Try again in a moment.');
+      parseTune(raw);
+      importedTunes = importedTunes.filter(function (x) { return x.id !== raw.id; });
+      addImports([raw], 'Saved manual transcription “' + raw.title + '”.');
+      return raw.id;
+    },
     parseTune: parseTune, melody: MELODY, rhythm: RHYTHM, voiceChords: voiceChords, chordTones: chordTones,
     shiftBetween: shiftBetween, shiftKey: shiftKey, keySig: keySig, parseKey: parseKey, decompose: decompose, layoutBars: layoutBars,
     songToTune: songToTune, musicxmlToTune: musicxmlToTune, importText: handleImportText, importFile: importFile, removeImport: removeImported,

@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blender Materials, Lighting &amp; Render · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Unwrap UVs, build a Principled BSDF material, paint directly onto a texture, blend two textures with a painted vertex-group mask, light a scene, and render a final image in Blender — the finishing lesson of the Blender Fundamentals pathway." />
+  <title>Light and present your model · Material properties and directional lighting · ClassroomOS</title>
+  <meta name="description" content="Choose a surface and light direction that make your model easy to read. Open a workshop project to use your own model. Practice material properties and directional lighting in an editable browser scene, save your design and transfer the technique to your chosen app.">
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/lessons/blender-pathway.css" />
+<link rel="stylesheet" href="../../assets/css/components/design3d-workspace.css">
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
-  <div class="ll-viewport">
+  <div class="design3d-page">
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -36,19 +35,22 @@
 
     <header class="bl-topbar ll-topbar">
       <div class="bl-topbar-inner">
-        <a href="blender-pathway.html">← Blender Pathway</a>
-        <span>Materials, Lighting &amp; Render · Lesson 07</span>
-        <a href="../../class-downloads.html">Get Blender</a>
+        <a href="../3d-design.html">← 3D Design</a>
+        <span>Material properties and directional lighting</span>
+        <a href="../../class-downloads.html">Choose software</a>
       </div>
     </header>
 
-    <div class="ll-stage" data-glossary-root>
-      <div class="ll-sim">
+    <div class="design3d-stage" data-glossary-root>
+      <div class="design3d-content">
         <main id="main-content" class="bl-shell">
+<div data-design3d-route="look"></div>
+<section data-design3d-workshop="materials"></section>
+<details class="d3-original-reference"><summary>Blender walkthrough, examples and deeper reference</summary><p class="d3-original-note">Start with the editable technique workshop above. Reuse your model in the next lesson. The detailed walkthrough below uses Blender; choose another app using Tool Rosetta and the transfer checklist above.</p>
           <section class="bl-hero">
             <div class="hero-copy">
               <p class="eyebrow">Shading &amp; Lighting · 75–95 minutes · Grades 7–12</p>
-              <h1>Gray plastic,<br /><span>no more.</span></h1>
+              <h1>Light and present your model</h1>
               <p class="hero-lede">Every object you've built so far is still the default gray. This lesson unwraps a surface, builds a real material, lights it on purpose, and renders a finished image — the pathway's capstone skill.</p>
               <div class="hero-actions">
                 <a class="primary-action" href="#uv">Start the lesson</a>
@@ -226,23 +228,24 @@
               </div>
             </div>
           </section>
-        </main>
-      </div>
-
-      <aside class="ll-panel" aria-label="Lesson guide" aria-hidden="false">
-        <div class="ll-panel-head"><div class="ll-tabs"><button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button><button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button></div><button class="ll-panel-close" aria-label="Close guide panel">&#x2715;</button></div>
-        <div class="ll-panel-body">
-          <div class="ll-pane ll-active" id="pane-guide">
-            <p class="ll-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Mark seams and unwrap a mesh's UVs</li><li>Build a material from a Principled BSDF</li><li>Paint directly onto a texture in Texture Paint mode</li><li>Paint a Vertex Group and mix two textures with it in the shader</li><li>Light a scene with key, fill, and World strength</li><li>Choose between EEVEE and Cycles</li><li>Render and save a finished image</li></ul>
-            <p class="ll-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Any completed object from Lessons 02–06</li></ul>
-            <p class="ll-pane-title panel-gap">Save habit</p><p class="panel-copy">Save your .blend file separately from the rendered PNG — you'll want to keep tweaking the material long after the first render.</p>
+        <aside class="d3-reference-guide" aria-label="Lesson guide">
+        <h2>Walkthrough guide and vocabulary</h2><div class="d3-reference-body">
+          <div class="d3-reference-pane ll-active" id="pane-guide">
+            <p class="d3-reference-pane-title">Learning goals</p><ul class="ll-guide-list"><li>Mark seams and unwrap a mesh's UVs</li><li>Build a material from a Principled BSDF</li><li>Paint directly onto a texture in Texture Paint mode</li><li>Paint a Vertex Group and mix two textures with it in the shader</li><li>Light a scene with key, fill, and World strength</li><li>Choose between EEVEE and Cycles</li><li>Render and save a finished image</li></ul>
+            <p class="d3-reference-pane-title panel-gap">Requires</p><ul class="ll-guide-list"><li>Any completed object from Lessons 02–06</li></ul>
+            <p class="d3-reference-pane-title panel-gap">Save habit</p><p class="panel-copy">Save your .blend file separately from the rendered PNG — you'll want to keep tweaking the material long after the first render.</p>
           </div>
-          <div class="ll-pane" id="pane-vocab">
-            <p class="ll-pane-title">Key vocabulary</p><dl class="vocab-list"><dt><span data-glossary="UV map">UV map</span></dt><dd>A flat 2D layout of a mesh's surface, used to place textures.</dd><dt><span data-glossary="UV seam">Seam</span></dt><dd>A marked edge where the UV unwrap splits the mesh open.</dd><dt><span data-glossary="Principled BSDF">Principled BSDF</span></dt><dd>Blender's all-purpose physically based material node.</dd><dt><span data-glossary="Texture Paint">Texture Paint</span></dt><dd>A mode that paints pixels directly onto an image texture with a brush.</dd><dt><span data-glossary="vertex group">Vertex Group</span></dt><dd>A named, per-vertex weight (0 to 1) painted onto a mesh.</dd><dt><span data-glossary="Attribute node">Attribute node</span></dt><dd>Reads a named mesh attribute, like a vertex group, into the shader.</dd><dt><span data-glossary="Color Ramp">Color Ramp</span></dt><dd>Remaps a value through a gradient using draggable color stops.</dd><dt><span data-glossary="Lock Camera to View">Lock Camera to View</span></dt><dd>A toggle that drags the camera along with every viewport move.</dd><dt><span data-glossary="EEVEE">EEVEE</span></dt><dd>Blender's fast, real-time render engine.</dd><dt><span data-glossary="Cycles">Cycles</span></dt><dd>Blender's slower, physically accurate path-traced render engine.</dd></dl>
+          <div class="d3-reference-pane" id="pane-vocab">
+            <p class="d3-reference-pane-title">Key vocabulary</p><dl class="vocab-list"><dt><span data-glossary="UV map">UV map</span></dt><dd>A flat 2D layout of a mesh's surface, used to place textures.</dd><dt><span data-glossary="UV seam">Seam</span></dt><dd>A marked edge where the UV unwrap splits the mesh open.</dd><dt><span data-glossary="Principled BSDF">Principled BSDF</span></dt><dd>Blender's all-purpose physically based material node.</dd><dt><span data-glossary="Texture Paint">Texture Paint</span></dt><dd>A mode that paints pixels directly onto an image texture with a brush.</dd><dt><span data-glossary="vertex group">Vertex Group</span></dt><dd>A named, per-vertex weight (0 to 1) painted onto a mesh.</dd><dt><span data-glossary="Attribute node">Attribute node</span></dt><dd>Reads a named mesh attribute, like a vertex group, into the shader.</dd><dt><span data-glossary="Color Ramp">Color Ramp</span></dt><dd>Remaps a value through a gradient using draggable color stops.</dd><dt><span data-glossary="Lock Camera to View">Lock Camera to View</span></dt><dd>A toggle that drags the camera along with every viewport move.</dd><dt><span data-glossary="EEVEE">EEVEE</span></dt><dd>Blender's fast, real-time render engine.</dd><dt><span data-glossary="Cycles">Cycles</span></dt><dd>Blender's slower, physically accurate path-traced render engine.</dd></dl>
           </div>
         </div>
       </aside>
-      <button class="ll-open-btn" aria-label="Open lesson guide" aria-expanded="true">&#x22EE;</button>
+</details>
+</main>
+      </div>
+
+
+
     </div>
   </div>
 
@@ -251,8 +254,12 @@
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
   <script src="../../assets/js/lesson-print-button.js"></script>
-  <link rel="stylesheet" href="../../assets/css/lessons/blender-workspace-switcher.css" />  <script src="../../assets/js/lessons/blender-workspace-switcher.js"></script>
+
 <script src="../../assets/js/site-glossary.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/design3d-route.js"></script>
+<script src="../../assets/js/sim-kit.js"></script>
+<script src="../../assets/js/tool-rosetta.js"></script>
+<script type="module" src="../../assets/js/design3d/workspace.mjs"></script>
 </body>
 </html>

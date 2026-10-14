@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 403 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 404 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -248,7 +248,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 80 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 88 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -314,46 +314,25 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 ### Digital & Physical Fabrication
 
-- **FAB-02** — Camera Controls in 3D CAD
-- **FAB-03** — 3D Printing — Settings, Rules & Perfect Prints
-- **FAB-04** — Print-in-Place Fidgets — The Spiral Cone
-- **FAB-05** — Bandsaw Design Lab — Cuts, Curves & Creative Inventions
+- **FAB-02** — Bandsaw Design Lab — Cuts, Curves & Creative Inventions
 
 ### Materials, Fluids & Optics
 
-- **FAB-06** — Viscosimeter
-- **FAB-07** — Squishy Science Lab
-- **FAB-08** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
-- **FAB-09** — Newton's Dispersive Prism
+- **FAB-03** — Viscosimeter
+- **FAB-04** — Squishy Science Lab
+- **FAB-05** — Optics — Mirrors, Lenses & Light — _also indexed in Audio, Lighting & Production Technology_
+- **FAB-06** — Newton's Dispersive Prism
 
 ### Electronic Materials
 
-- **FAB-10** — Electronic Materials Lab
+- **FAB-07** — Electronic Materials Lab
 
 ### Immersive Systems & Materials Selection
 
-- **FAB-11** — Virtual Reality — How It Works & How to Build It
-- **FAB-12** — XR: Extended Reality — OpenXR & WebXR
-- **FAB-13** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
-- **FAB-14** — Materials Selection Lab
-
-### 3D Design Studio · Modeling with Blender
-
-- **FAB-15** — 3D Design Studio Pathway — _also indexed in Game Design & Development_
-- **FAB-16** — Blender Interface & Navigation — _also indexed in Game Design & Development_
-- **FAB-17** — Windows & Doors — _also indexed in Game Design & Development_
-- **FAB-18** — Furniture Design — _also indexed in Game Design & Development_
-- **FAB-19** — Environments & Modular Kits — _also indexed in Game Design & Development_
-- **FAB-20** — Character Modeling — _also indexed in Game Design & Development_
-- **FAB-21** — Props & Hand Tools — _also indexed in Game Design & Development_
-- **FAB-22** — Materials, Lighting & Render — _also indexed in Game Design & Development_
-
-### 3D Workflow Workspaces
-
-- **FAB-23** — 3D Workflow Workspaces — _also indexed in Game Design & Development_
-- **FAB-24** — Sculpting — _also indexed in Game Design & Development_
-- **FAB-25** — Geometry Nodes — _also indexed in Game Design & Development_
-- **FAB-26** — Compositing — _also indexed in Game Design & Development_
+- **FAB-08** — Virtual Reality — How It Works & How to Build It
+- **FAB-09** — XR: Extended Reality — OpenXR & WebXR
+- **FAB-10** — Steam & VR Launch Protocol — _also indexed in Computer Science & Artificial Intelligence_
+- **FAB-11** — Materials Selection Lab
 
 ## Audio, Lighting & Production Technology (TEC)
 
@@ -378,9 +357,49 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **TEC-14** — Walt Disney — _also indexed in Visual Art & Design_
 - **TEC-15** — Jim Henson
 
+## 3D Design (D3D)
+
+### Start Here · Shared Foundation
+
+- **D3D-01** — 3D Design: Foundation & Three Outcome Tracks — _also indexed in Design, Materials & Fabrication, Game Design & Development_
+- **D3D-02** — Navigate and inspect · Camera navigation
+- **D3D-03** — Arrange a display · Translate, rotate and scale
+- **D3D-04** — Cut an opening · Boolean difference
+
+### Make It Real · Design, Forge & Print
+
+- **D3D-05** — Design a moving fit · Clearance between concentric parts
+- **D3D-06** — Plan a printable orientation · Orientation and bed contact
+
+### Make It Look · Model, Sculpt & Render
+
+- **D3D-07** — Shape a character · Extrusion and symmetry
+- **D3D-08** — Sculpt a surface · Brush radius, displacement and smoothing
+- **D3D-09** — Finish a hard-surface prop · Beveled edges
+- **D3D-10** — Light and present your model · Material properties and directional lighting
+- **D3D-11** — Build a repeatable design · Parameter-driven repetition
+- **D3D-12** — Compose a finished image · Exposure and foreground/background decisions
+
+### Make It Play · Game Asset Studio
+
+- **D3D-13** — Game Asset Studio
+- **D3D-14** — Design a repeating surface · Texture repetition and scale
+- **D3D-15** — Build a reusable chair · Proportion and repeated parts
+- **D3D-16** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-17** — Map and export a surface · UV coordinates and texture density
+- **D3D-18** — Bind a bending mesh · Joint position and skin weights
+- **D3D-19** — Author a looping action · Keyframes and interpolation
+
+### Optional Blender Walkthroughs & Workspace Reference
+
+- **D3D-20** — 3D Modeling Field Guide
+- **D3D-21** — 3D Workflow & Techniques
+- **D3D-22** — Build a reusable chair · Proportion and repeated parts
+- **D3D-23** — Assemble a room kit · Grid snapping and modular repetition
+
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 77 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 70 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -485,16 +504,6 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-26** — Animation & Game Feel
 - **GAM-27** — Levels & Game State
 - **GAM-28** — Export, Test & Publish
-
-### Game Asset Studio Pathway
-
-- **GAM-29** — Game Asset Studio
-- **GAM-30** — Texture Workshop
-- **GAM-31** — Furniture Prop Lab
-- **GAM-32** — Modular Room Builder
-- **GAM-33** — UV, Materials & Export
-- **GAM-34** — Character Rigging
-- **GAM-35** — Character Animation
 
 # Volume VI — Visual Design, Communication & Human Systems
 

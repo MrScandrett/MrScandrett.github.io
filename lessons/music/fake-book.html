@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/music-notation.css" />
-  <link rel="stylesheet" href="../../assets/css/lessons/fake-book.css?v=20261014e" />
+  <link rel="stylesheet" href="../../assets/css/lessons/fake-book.css?v=20261014f" />
   <script src="../../assets/js/music-notation.js"></script>
 </head>
 <body class="fb-focused theme-liquid-woodland theme-steam">
@@ -230,6 +230,94 @@
                 </details>
               </article>
 
+              <details class="fb-disclosure fb-pdf-desk" data-pdf-desk>
+                <summary>PDF fake book · index &amp; transcribe</summary>
+                <p>Open your own PDF, match its printed page numbers, then copy a melody and chords into playable notation. Files and drafts stay in this browser. Use music you have permission to use.</p>
+                <label class="fb-btn">Open PDF <input type="file" accept="application/pdf,.pdf" data-pdf-file /></label>
+                <button type="button" class="fb-btn" data-pdf-resume>Reopen saved PDF</button>
+                <p role="status" data-pdf-status>PDF scans need manual note entry; text extraction only assists the song index.</p>
+                <div data-pdf-template hidden>
+                  <p data-pdf-template-note></p>
+                  <button type="button" class="fb-btn" data-pdf-template-apply>Use this scan’s page setup &amp; starter index</button>
+                </div>
+                <div class="fb-pdf-row" data-pdf-bookmarks></div>
+                <button type="button" class="fb-btn" data-pdf-focus aria-pressed="false">Focus transcription workspace</button>
+                <div class="fb-pdf-workspace" data-pdf-workspace hidden>
+                  <button type="button" class="fb-btn fb-pdf-focus-close" data-pdf-focus-close hidden>Exit workspace · Esc</button>
+                  <section aria-label="PDF source" class="fb-pdf-source">
+                    <div class="fb-pdf-row">
+                      <button type="button" class="fb-btn" data-pdf-prev aria-label="Previous PDF page">←</button>
+                      <label>PDF page <input type="number" min="1" value="1" data-pdf-page /></label>
+                      <button type="button" class="fb-btn" data-pdf-next aria-label="Next PDF page">→</button>
+                      <label>Zoom <select data-pdf-zoom><option value="1">Fit width</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+                    </div>
+                    <label>Page section <select data-pdf-section></select></label>
+                    <p data-pdf-page-info></p>
+                    <p data-pdf-song-range></p>
+                    <div class="fb-pdf-row"><button type="button" class="fb-btn" data-pdf-song-prev>Previous song page</button><button type="button" class="fb-btn" data-pdf-song-next>Next song page</button></div>
+                    <div class="fb-pdf-row"><button type="button" class="fb-btn" data-coach-draw aria-pressed="false">Box this measure</button><button type="button" class="fb-btn" data-coach-jump>Show this measure’s page</button></div>
+                    <div class="fb-pdf-viewport"><div class="fb-coach-page"><canvas data-pdf-canvas aria-label="Imported PDF page"></canvas><svg data-coach-overlay viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-label="Measure boxes on the PDF"></svg></div></div>
+                    <details><summary>Match printed pages &amp; song contents</summary>
+                      <p>On a numbered song page, enter the printed number below. Add another anchor after missing or inserted pages. The nearest preceding anchor sets the offset.</p>
+                      <label>Printed page on the scan <input type="number" min="1" value="1" data-pdf-printed /></label>
+                      <button type="button" class="fb-btn" data-pdf-anchor>Add / update anchor</button>
+                      <div data-pdf-anchors></div>
+                      <label>New numbered section <input data-pdf-section-name placeholder="Appendix, additions…" /></label><button type="button" class="fb-btn" data-pdf-section-add>Add section</button>
+                      <p>One song per line: <code>Song title … 25</code> or <code>Song title … 25-26</code>. Numbers belong to the selected page section. Applying replaces that section’s index. Review extracted text before applying it; image-only scans need typing.</p>
+                      <button type="button" class="fb-btn" data-pdf-extract>Append text from this page</button>
+                      <label>Contents text <textarea rows="6" data-pdf-toc placeholder="Song title … 25"></textarea></label>
+                      <button type="button" class="fb-btn" data-pdf-index>Apply song index</button>
+                    </details>
+                    <details><summary>Add an entry while reading the scanned contents</summary><div class="fb-pdf-fields"><label>Song title <input data-pdf-entry-title /></label><label>Printed start <input type="number" min="1" data-pdf-entry-start /></label><label>Printed end (optional) <input type="number" min="1" data-pdf-entry-end /></label></div><button type="button" class="fb-btn" data-pdf-entry-add>Add / update song</button></details>
+                    <label>Find a song <input type="search" data-pdf-search /></label>
+                    <div class="fb-pdf-index" data-pdf-songs></div>
+                  </section>
+                  <section aria-label="Manual transcription" class="fb-pdf-editor">
+                    <h3>Transcribe this song</h3>
+                    <p>1. Choose a song/page. 2. Enter one bar at a time. 3. Load notation and use Play above to check by ear. Drafts save as you type.</p>
+                    <label>Source notes / corrections <textarea rows="2" data-pdf-source-note placeholder="Check correction pages; record repeats, endings, coda and any unclear notes."></textarea></label>
+                    <label>Saved draft <select data-pdf-drafts></select></label>
+                    <button type="button" class="fb-btn" data-pdf-new>New song</button>
+                    <div class="fb-pdf-fields">
+                      <label>Title <input data-pdf-title /></label><label>Composer <input data-pdf-composer /></label>
+                      <label>Key <select data-pdf-key></select></label><label>Mode <select data-pdf-mode><option value="major">Major</option><option value="minor">Minor</option></select></label>
+                      <label>Meter <input data-pdf-meter value="4/4" /></label><label>Tempo <input type="number" min="40" max="240" value="96" data-pdf-tempo /></label>
+                      <label>Pickup beats (0 = none) <input type="number" min="0" step="0.25" value="0" data-pdf-pickup /></label>
+                    </div>
+                    <details><summary>Note-entry cheat sheet</summary><p><code>C4q D4q E4h</code> = two quarters and a half. Middle C is C4. <code>F#4e</code> / <code>Bb4e</code> = accidentals; enter sounding pitches even in a key signature. Durations: w whole, h half, q quarter, e eighth, s sixteenth. Add . for dotted, 3 for triplet, ~ for tie: <code>C4q~</code>. Rests: <code>rq</code>, <code>rh</code>. Chords split a bar evenly or use beats: <code>Dm7:2 G7:2</code>. Real Book marks also work: <code>CΔ</code> or <code>C^7</code> = Cmaj7, <code>D-7</code> = Dm7, <code>Bø</code> = Bm7b5, <code>C°7</code> = Cdim7. Leave chords blank for no harmony. Write repeats/endings out in playback order. This editor makes single-melody lead sheets; use MusicXML for multiple voices.</p></details>
+                    <div class="fb-pdf-row"><button type="button" class="fb-btn" data-pdf-bar-prev>Previous bar</button><strong data-pdf-bar-label></strong><button type="button" class="fb-btn" data-pdf-bar-next>Next bar</button></div>
+                    <label>Section label for this bar <input data-pdf-bar-section placeholder="A, B, intro…" /></label>
+                    <details class="fb-coach" data-coach-panel open>
+                      <summary>Teach &amp; correct this measure</summary>
+                      <p>Box the measure including its chord symbols. Drag a box to move it; drag a corner to resize it. Calibrate the five staff lines, then click noteheads in the crop to enter pitches. Choose rhythm with the duration control below.</p>
+                      <div class="fb-pdf-fields fb-coach-bounds"><label>Box left % <input type="number" step="0.1" min="0" max="100" data-coach-x /></label><label>Box top % <input type="number" step="0.1" min="0" max="100" data-coach-y /></label><label>Box width % <input type="number" step="0.1" min="0.5" max="100" data-coach-w /></label><label>Box height % <input type="number" step="0.1" min="0.5" max="100" data-coach-h /></label></div>
+                      <button type="button" class="fb-btn" data-coach-bounds>Apply box coordinates</button>
+                      <div class="fb-coach-crop"><canvas data-coach-crop aria-label="Selected measure crop; click a notehead to enter its pitch"></canvas></div>
+                      <div class="fb-pdf-row"><button type="button" class="fb-btn" data-coach-staff>Find staff lines</button><label>Clef <select data-coach-clef><option value="treble">Treble</option><option value="bass">Bass</option></select></label><label>Accidental for clicks <select data-coach-accidental><option value="key">Use key signature</option><option value="">Natural</option><option value="#">Sharp</option><option value="b">Flat</option></select></label></div>
+                      <div class="fb-pdf-fields"><label>Staff top line % of crop <input type="number" min="0" max="100" step="0.1" data-coach-top /></label><label>Staff bottom line % of crop <input type="number" min="0" max="100" step="0.1" data-coach-bottom /></label></div>
+                      <button type="button" class="fb-btn" data-coach-calibrate>Apply staff calibration</button>
+                      <p class="fb-coach-note">Pitch clicks use the selected key; check in-bar accidentals, clef changes and rhythm yourself. The crop keeps chord symbols visible. Label chord durations below, such as <code>Dm7:2 G7:2</code>.</p>
+                      <div class="fb-coach-preview" data-coach-preview data-contrast-guard-skip></div>
+                      <div class="fb-coach-notes" data-coach-notes role="group" aria-label="Select a note to correct"></div>
+                      <div class="fb-pdf-row"><label>Selected note token <input data-coach-token placeholder="C4q, F#4e, rh…" /></label><button type="button" class="fb-btn" data-coach-edit>Edit selected note</button><button type="button" class="fb-btn" data-coach-remove>Remove selected note</button></div>
+                      <div class="fb-pdf-row"><button type="button" class="fb-btn" data-coach-match>Suggest from reviewed examples</button><button type="button" class="fb-btn" data-coach-review>Mark checked &amp; teach this example</button></div>
+                      <p role="status" data-coach-status>No measure box yet. Use Box this measure or enter its page coordinates.</p>
+                      <div data-coach-proposal hidden><p data-coach-proposal-label></p><div data-coach-proposal-preview class="fb-coach-preview" data-contrast-guard-skip></div><p data-coach-proposal-text></p><button type="button" class="fb-btn" data-coach-accept>Use suggestion for this measure</button><button type="button" class="fb-btn" data-coach-reject>Dismiss suggestion</button><button type="button" class="fb-btn" data-coach-undo>Undo suggestion</button></div>
+                      <details><summary>Recognition &amp; training files</summary><p>Reviewed examples immediately support visual matching of similar measures. This is not a general handwriting recognizer. Export a crop packet for an assistant/OMR tool, import its proposed notes, and review corrections here. Export reviewed examples to build a training dataset; no files are uploaded.</p><button type="button" class="fb-btn" data-coach-packet>Export this measure packet</button><button type="button" class="fb-btn" data-coach-dataset>Export reviewed training examples</button><label>Import proposed measures JSON <input type="file" accept=".json,application/json" data-coach-import /></label><p data-coach-count></p></details>
+                    </details>
+                    <label>Notes / rests <textarea rows="3" data-pdf-notes placeholder="C4q D4q E4h"></textarea></label>
+                    <div class="fb-pdf-row"><label>Pitch <input data-pdf-pitch value="C4" size="4" /></label><label>Duration <select data-pdf-duration><option value="q">Quarter</option><option value="e">Eighth</option><option value="h">Half</option><option value="w">Whole</option><option value="s">Sixteenth</option></select></label><label><input type="checkbox" data-pdf-dot /> Dotted</label><label><input type="checkbox" data-pdf-triplet /> Triplet</label><label><input type="checkbox" data-pdf-tie /> Tie</label><button type="button" class="fb-btn" data-pdf-note>Add note</button><button type="button" class="fb-btn" data-pdf-rest>Add rest</button></div>
+                    <label>Chord symbols <input data-pdf-chords placeholder="Dm7:2 G7:2" /></label>
+                    <p role="status" data-pdf-beats></p>
+                    <div class="fb-pdf-row"><button type="button" class="fb-btn" data-pdf-add-bar>Add bar</button><button type="button" class="fb-btn" data-pdf-copy-bar>Duplicate bar</button><button type="button" class="fb-btn" data-pdf-delete-bar>Delete bar</button></div>
+                    <button type="button" class="fb-btn fb-btn-primary" data-pdf-load>Load playable notation</button>
+                    <p role="status" data-pdf-editor-status></p>
+                    <div class="fb-pdf-row"><button type="button" class="fb-btn" data-pdf-play>Play / stop loaded tune</button><button type="button" class="fb-btn" data-pdf-show-score>View loaded notation</button></div>
+                    <details><summary>Backup &amp; transfer</summary><p>Export includes the index, page anchors and all drafts; it does not include the PDF. Reopen the same PDF on another device and restore this backup.</p><button type="button" class="fb-btn" data-pdf-export>Export workspace JSON</button><label>Restore workspace JSON <input type="file" accept=".json,application/json" data-pdf-restore /></label></details>
+                  </section>
+                </div>
+              </details>
+
               <div class="fb-imports-wrap" data-fb-imports-wrap hidden>
                 <div class="fb-library-head">
                   <div class="fb-imports-title-row">
@@ -248,7 +336,8 @@
                   <div>
                     <h3 class="fb-import-title">Import a song</h3>
                     <p class="fb-import-desc"><strong>Written score playback:</strong> open a MusicXML file (<code>.musicxml</code>, <code>.mxl</code> or <code>.xml</code>) exported from MuseScore, Finale, Sibelius, Dorico or Noteflight. Repeats and endings are played out in order. New imports default to <em>Play the score</em>, preserving all pitched voices and meter changes. Mute or solo voices, slow the tempo, and loop bars for practice. The Original arrangement view keeps all instrument staves, chords, rests, repeats and endings at the source pitch. Use Lead sheet for interactive bar selection and playback highlighting. Re-import older saved songs to enable the arrangement view.</p>
-                    <p class="fb-import-desc"><strong>Guitar tablature:</strong> open an original Guitar Pro 1 or 2 file (<code>.gtp</code>). Pitched tracks, rhythms, ties, repeats and string/fret positions are imported. Guitar techniques and percussion are omitted; playback uses piano. For newer Guitar Pro formats, export MusicXML first.</p>
+                    <p class="fb-import-desc"><strong>Guitar Pro 1–8:</strong> open <code>.gtp</code>, <code>.gp3</code>, <code>.gp4</code>, <code>.gp5</code>, <code>.gpx</code> or <code>.gp</code> files. The <code>.gp7</code> and <code>.gp8</code> filename variants are also accepted for GP7/8 files. Pitched tracks and voices, rhythms, ties, repeats, tuning, capo and string/fret positions are imported. Playback uses piano; bends, slides, grace notes, dead notes, dynamics, swing, percussion, backing audio and tempo changes are omitted. Chord diagrams are omitted and chord suggestions are inferred. Files stay in your browser. If a file cannot be read, export MusicXML first.</p>
+                    <p class="fb-import-desc">GP3–8 decoder: <a href="https://alphatab.net/">alphaTab</a> · <a href="../../assets/vendor/alphatab/LICENSE.txt">MPL 2.0 license</a> · <a href="https://github.com/CoderLine/alphaTab/tree/v1.8.4">Decoder source</a> · <a href="../../assets/vendor/alphatab/NOTICE.md">Notices</a></p>
                     <p class="fb-import-desc">Legacy reader adapted from TuxGuitar · <a href="../../assets/vendor/tuxguitar-gtp/LICENSE.txt">LGPL 2.1 license</a> · <a href="../../assets/js/lessons/fake-book-gtp.js">Reader source</a></p>
                     <p class="fb-import-desc"><strong>Chords only:</strong> paste an <code>irealb://</code> link or open an iReal Pro HTML chart or playlist.</p>
                   </div>
@@ -263,9 +352,11 @@
                     <button type="button" class="fb-btn fb-btn-primary" data-fb-import-btn>Import</button>
                     <label class="fb-btn fb-file-btn">
                       <span>Choose file</span>
-                      <input type="file" accept=".musicxml,.mxl,.xml,.gtp,.html,.htm,.txt" data-fb-import-file class="fb-sr" aria-label="Open a MusicXML, legacy Guitar Pro or iReal Pro HTML file" />
+                      <input type="file" accept=".musicxml,.mxl,.xml,.gtp,.gp3,.gp4,.gp5,.gpx,.gp,.gp7,.gp8,.html,.htm,.txt" data-fb-import-file class="fb-sr" aria-label="Open a MusicXML, Guitar Pro 1–8 or iReal Pro HTML file" />
                     </label>
+                    <button type="button" class="fb-btn" data-fb-drive-btn aria-describedby="fb-drive-help">Open from Google Drive</button>
                   </div>
+                  <p class="fb-import-desc" id="fb-drive-help">Choose a score from your Google Drive without downloading it first. Sign in with the account that has the file. MusicXML, legacy Guitar Pro and iReal charts are supported.</p>
                   <p class="fb-import-feedback" data-fb-import-feedback role="status" hidden></p>
                 </div>
               </details>
@@ -460,6 +551,7 @@
                   <span>Play</span>
                   <select data-fb-mode>
                     <option value="score" disabled>Play the score</option>
+                    <option value="changes" disabled>Play practice chord voicings</option>
                     <option value="all">Melody + band</option>
                     <option value="band">Band only: you play the tune</option>
                     <option value="trade">Trade fours</option>
@@ -656,12 +748,19 @@
   <script src="../../assets/js/lessons/fake-book-violin.js?v=20261014a"></script>
   <script src="../../assets/js/lessons/fake-book-harmony.js"></script>
   <script src="../../assets/js/lessons/fake-book-tab.js"></script>
-  <script src="../../assets/js/lessons/fake-book-arrangement.js"></script>
+  <script src="../../assets/js/lessons/fake-book-arrangement.js?v=20261014original"></script>
   <script src="../../assets/js/lessons/fake-book-musicxml.js?v=20261013arrangement"></script>
   <script src="../../assets/js/lessons/fake-book-gtp.js?v=20261013a"></script>
+  <script src="../../assets/js/lessons/fake-book-guitar-pro.js?v=20261014a"></script>
   <script src="../../assets/js/score-navigation.js?v=20261013f"></script>
   <script src="../../assets/js/lessons/fake-book-guitar-voice.js?v=20261014a"></script>
-  <script src="../../assets/js/lessons/fake-book.js?v=20261014e"></script>
+  <script src="../../assets/js/lessons/fake-book.js?v=20261014f"></script>
+  <script src="../../assets/js/lessons/fake-book-pdf-model.js"></script>
+  <script src="../../assets/js/lessons/fake-book-pdf-template.js"></script>
+  <script src="../../assets/js/lessons/fake-book-pdf-coach-model.js"></script>
+  <script type="module" src="../../assets/js/lessons/fake-book-pdf.js"></script>
+  <script src="../../assets/js/lessons/fake-book-drive-config.js"></script>
+  <script src="../../assets/js/lessons/fake-book-drive.js"></script>
   <script src="../../assets/js/site-glossary.js"></script>
   <script src="../../assets/js/reveal.js"></script>
   <script src="../../assets/js/theme-registry.js"></script>
@@ -671,5 +770,6 @@
   <script src="../../assets/js/music-family.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
   <script src="../../assets/js/lessons/fake-book-layout.js?v=20261014b"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

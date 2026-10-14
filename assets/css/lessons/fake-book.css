@@ -906,10 +906,23 @@ body.fb-focused .fb-loop-actions .fb-btn { min-height: 44px; }
 }
 
 /* Original multi-instrument MusicXML score, on a neutral paper surface. */
-.fb-arrangement { background: #fff; color: #191919; overflow-x: auto; border-radius: 8px; }
-.fb-arrangement-note { color: #333 !important; padding: 12px 16px; font: 14px/1.5 sans-serif; }
-.fb-arrangement-pages { width: 100%; min-width: 280px; }
-.fb-arrangement-pages svg { max-width: 100%; height: auto; }
+.is-original-score .fb-nav, .is-original-score [data-fb-nav-toggle] { display: none !important; }
+.fb-arrangement { background: #fff; color: #191919; min-width: 0; max-width: 100%; border-radius: 8px; }
+.fb-arrangement-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; padding: .5rem .75rem; border-bottom: 1px solid #e3d7bf; }
+.fb-arrangement-toolbar .fb-btn { min-width: 44px; min-height: 44px; }
+.fb-arrangement-toolbar output { min-width: 4ch; text-align: center; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.fb-arrangement-info { padding: .5rem .75rem; border-bottom: 1px solid #e3d7bf; color: #40382e; font: .85rem/1.5 "DM Sans", sans-serif; }
+.fb-arrangement-info summary { cursor: pointer; min-height: 32px; display: list-item; align-content: center; font-weight: 700; }
+.fb-arrangement-info p { margin: .5rem 0; color: #40382e !important; max-width: 65ch; }
+.fb-arrangement-pages { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.fb-arrangement-pages:focus-visible { outline: 3px solid #0f5d63; outline-offset: -3px; }
+/* Keep the engraver's staff size: narrow screens get fewer measures per system. */
+.fb-arrangement-pages svg { display: block; max-width: none; }
+@media print {
+  .fb-arrangement-info, .fb-arrangement-toolbar { display: none; }
+  .fb-arrangement-pages { overflow: visible; }
+  .fb-arrangement-pages svg { max-width: 100%; height: auto; }
+}
 
 /* Measure aids stay with their bar, including printed notation. */
 .fb-measure-help { pointer-events: none; }
@@ -1279,3 +1292,30 @@ body.fb-focused.fb-standing .fb-sheet-head { margin-bottom: .25rem; }
    row on iOS. Stand mode owns the whole screen; Exit stand is in the play bar. */
 body.fb-standing .site-header { display: none !important; }
 body.fb-focused.fb-standing .fb-transport { top: 0; z-index: 10001; }
+
+/* Local PDF reference and manual lead-sheet desk. */
+.fb-pdf-desk { margin-block: 1rem; }
+.fb-pdf-desk label { display: flex; flex-direction: column; gap: .3rem; font-size: .9rem; }
+.fb-pdf-desk input:not([type=checkbox]), .fb-pdf-desk select, .fb-pdf-desk textarea { min-width: 0; max-width: 100%; padding: .5rem; color: var(--text); background: var(--bg); border: 1px solid var(--border, #888); border-radius: .35rem; font: inherit; }
+.fb-pdf-desk textarea { width: 100%; box-sizing: border-box; font-family: monospace; }
+.fb-pdf-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; margin-top: 1rem; }
+.fb-pdf-workspace[hidden] { display: none; }
+.fb-pdf-source, .fb-pdf-editor { min-width: 0; }
+.fb-pdf-row { display: flex; align-items: end; flex-wrap: wrap; gap: .5rem; margin-block: .6rem; }
+.fb-pdf-row input[type=number] { width: 5rem; }
+.fb-pdf-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.fb-pdf-viewport { overflow: auto; max-height: 65vh; background: #ddd; border: 1px solid #888; padding: 8px; }
+.fb-pdf-viewport canvas { display: block; background: white; }
+.fb-pdf-index { display: flex; flex-direction: column; align-items: stretch; gap: .4rem; max-height: 14rem; overflow: auto; margin-top: .5rem; }
+.fb-pdf-index .fb-btn { white-space: normal; text-align: left; }
+.fb-pdf-desk details { margin-block: .8rem; }
+.fb-pdf-desk [role=status] { overflow-wrap: anywhere; }
+@media (max-width: 850px) { .fb-pdf-workspace { grid-template-columns: minmax(0, 1fr); } .fb-pdf-viewport { max-height: 45vh; } }
+@media print { .fb-pdf-desk { display: none !important; } }
+.fb-pdf-desk.is-focused .fb-pdf-workspace { position: fixed; inset: 12px; z-index: 2100; padding: 3.5rem 1rem 1rem; background: #fffdf5; color: #282119; border: 1px solid #8b8071; border-radius: .6rem; box-shadow: 0 8px 60px #0008; box-sizing: border-box; }
+.fb-pdf-desk.is-focused .fb-pdf-source, .fb-pdf-desk.is-focused .fb-pdf-editor { overflow: auto; padding-inline: .3rem; }
+.fb-pdf-desk.is-focused .fb-pdf-focus-close { position: absolute; top: .7rem; right: 1rem; }
+.fb-pdf-focus-close[hidden] { display: none; }
+@media (max-width: 850px) { .fb-pdf-desk.is-focused .fb-pdf-workspace { overflow: auto; } .fb-pdf-desk.is-focused .fb-pdf-source, .fb-pdf-desk.is-focused .fb-pdf-editor { overflow: visible; } }
+body > .fb-pdf-desk.is-focused { position: fixed; inset: 0; z-index: 2147483647; margin: 0; background: #0005; }
+body > .fb-pdf-desk.is-focused > :not(.fb-pdf-workspace) { display: none; }

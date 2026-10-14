@@ -20,6 +20,7 @@ const sectionIds = MODULE_SECTION_IDS;
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
 const modulePresentations = {
+  "3d-design": { subtitle: "Shared spatial skills, then a printable object, a finished scene, or game-ready assets", level: "Grades 7–12 · Foundation → Three Outcome Tracks" },
   mathematics: {
     subtitle: "Number, proportion, geometry, measurement, probability, and patterns as languages for describing reality",
     level: "K–12 Progression · Mathematics Foundations",
