@@ -1145,6 +1145,7 @@
       b.natural = Math.max(b.i === 0 ? 4 * S : 9 * S, padL + total + padR);
     });
     var chordsByBar = {};
+    chordSymbolX = {};
     view.writtenChords.forEach(function (c, ci) { (chordsByBar[c.bar] = chordsByBar[c.bar] || []).push({ c: c, ci: ci }); });
     // Extra staves from an imported score, drawn under the melody and lined up with it in time.
     var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn()), showPos = !!view.pos;
@@ -1227,7 +1228,7 @@
       }
       if (opts.measureShapes || (showPos && opts.showAnalysis)) {
         helpTop = (showPos || showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + S;
-        helpH = Math.max.apply(null, sys.map(function (b) { var g = shapeGrid(Math.max(1, barChords(b.i).idx.length)); return g.rows * g.rowH; })) * (opts.measureShapes ? 1 : 0) * S + (showPos && opts.showAnalysis ? 13 * S : 0);
+        helpH = (opts.measureShapes ? shapeSize().rowH * S : 0) + (showPos && opts.showAnalysis ? 13 * S : 0);
         rowsBottom = helpTop + helpH;
       }
       var x = header;
@@ -1342,6 +1343,7 @@
           }
           var textEstWidth = chordName(o.c).length * 1.05 * S;
           lastChordRight = cx + textEstWidth;
+          chordSymbolX[o.ci] = cx;
           out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(realbookChord(chordName(o.c))) + '</text>');
         });
         // accidental memory per bar
@@ -3000,41 +3002,52 @@
     view.concertChords.forEach(function (c, i) { if (c.bar < b) prev = i; });
     return { idx: prev >= 0 ? [prev] : [], held: prev >= 0 };
   }
-  // How a bar lays out n chord diagrams. One chord keeps the roomy cell; more share a grid so a busy bar
-  // stays as tall as a single chord instead of stacking down the page. rowH/cap are in staff spaces (S).
-  var SHAPE_SIZES = {
-    large:  { cols: function (n) { return Math.min(n, 2); }, rowH: 18, cap: 15 },
-    medium: { cols: function (n) { return n <= 4 ? n : Math.ceil(n / 2); }, rowH: 15, cap: 12 },
-    small:  { cols: function (n) { return n <= 5 ? n : Math.ceil(n / 2); }, rowH: 12, cap: 9 }
-  };
-  function shapeGrid(n) {
-    var size = SHAPE_SIZES[opts.shapeSize] || SHAPE_SIZES.medium, cols = size.cols(n);
-    return { cols: cols, rows: Math.ceil(n / cols), rowH: size.rowH, cap: size.cap };
-  }
+  // One row of diagrams under each bar, every one the same size, each starting at the x of its chord
+  // symbol (so it sits on its beat). rowH/cap are in staff spaces (S); cap limits a diagram's height.
+  var SHAPE_SIZES = { small: { rowH: 12, cap: 9 }, medium: { rowH: 15, cap: 12 }, large: { rowH: 18, cap: 15 } };
+  var chordSymbolX = {};
+  function shapeSize() { return SHAPE_SIZES[opts.shapeSize] || SHAPE_SIZES.medium; }
   function sizeMeasureDiagrams(S) {
-    var diagrams = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape svg'));
-    if (!diagrams.length) return;
-    // One native-coordinate scale per system: every diagram on a line is the same size whatever its
-    // bar holds, limited by the narrowest cell (or the height cap) on that line. Lines may differ.
-    var scales = [], systems = [];
-    function sysOf(svg) { var g = svg.closest('.fb-system') || svg.ownerSVGElement; var i = systems.indexOf(g); if (i < 0) { systems.push(g); i = systems.length - 1; } return i; }
-    function cellWidth(svg) {
-      var g = svg.closest('.fb-measure-grid'), cols = Number(g.getAttribute('data-cols'));
-      return (Number(svg.closest('.fb-measure-help').getAttribute('width')) - (cols - 1) * 0.4 * S) / cols;
-    }
-    diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal, k = sysOf(svg);
-      if (box.width > 0 && box.height > 0) {
-        var cap = Number(svg.closest('.fb-measure-grid').getAttribute('data-cap'));
-        scales[k] = Math.min(scales[k] === undefined ? Infinity : scales[k], cellWidth(svg) / box.width, cap * S / box.height);
-      }
+    var rows = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-row'));
+    if (!rows.length) return;
+    var cap = shapeSize().cap * S, systems = [], info = [];
+    // Per system, the cell is the narrowest "bar width / chords in the bar", and one scale fits every
+    // diagram on the line into a cell and under the height cap, so they all match.
+    rows.forEach(function (row) {
+      var g = row.closest('.fb-system') || row.ownerSVGElement, i = systems.indexOf(g);
+      if (i < 0) { systems.push(g); info.push({ cell: Infinity, scale: Infinity }); i = systems.length - 1; }
+      row._sys = i;
+      var shapes = row.querySelectorAll('.fb-measure-shape'), W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      if (shapes.length) info[i].cell = Math.min(info[i].cell, W / shapes.length);
     });
-    diagrams.forEach(function (svg) {
-      var box = svg.viewBox.baseVal, scale = scales[sysOf(svg)];
-      if (!isFinite(scale) || scale <= 0) return;
-      svg.style.setProperty('width', (box.width * scale).toFixed(3) + 'px', 'important');
-      svg.style.setProperty('height', (box.height * scale).toFixed(3) + 'px', 'important');
-      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    rows.forEach(function (row) {
+      var o = info[row._sys];
+      row.querySelectorAll('svg').forEach(function (svg) {
+        var box = svg.viewBox.baseVal;
+        if (box.width > 0 && box.height > 0) o.scale = Math.min(o.scale, o.cell / box.width, cap / box.height);
+      });
+    });
+    // One scale for the whole score, so a chord looks the same size on every line.
+    var common = Math.min.apply(null, info.map(function (o) { return o.scale; }));
+    info.forEach(function (o) { o.scale = common; });
+    rows.forEach(function (row) {
+      var o = info[row._sys], d = o.cell, W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      var shapes = Array.prototype.slice.call(row.querySelectorAll('.fb-measure-shape')), left = [];
+      if (!isFinite(d)) return;
+      // Left to right, nudge a diagram right of its neighbour only when they would overlap; then pull
+      // any overflow back from the right edge. n * d <= W, so it always fits.
+      shapes.forEach(function (sh, i) { left[i] = Math.max(Number(sh.getAttribute('data-x')) || 0, i ? left[i - 1] + d : 0); });
+      for (var i = shapes.length - 1, bound = W; i >= 0; i--) { left[i] = Math.min(left[i], bound - d); bound = left[i]; }
+      shapes.forEach(function (sh, i) {
+        sh.style.left = left[i].toFixed(2) + 'px';
+        sh.style.width = d.toFixed(2) + 'px';
+        var svg = sh.querySelector('svg');
+        if (!svg || !isFinite(o.scale) || o.scale <= 0) return;
+        var box = svg.viewBox.baseVal;
+        svg.style.setProperty('width', (box.width * o.scale).toFixed(3) + 'px', 'important');
+        svg.style.setProperty('height', (box.height * o.scale).toFixed(3) + 'px', 'important');
+        svg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+      });
     });
   }
 
@@ -3063,13 +3076,12 @@
       if (opts.engineMode === 'triads' && Q[c.q].iv.length > 3) label = (label || chordName(c)) + ' · triad only';
       if (label && opts.instr !== 'concert' && opts.instr !== 'bass') label += ' (concert)';
       if (info.held && !label) label = 'Held from previous bar';
-      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
+      var sx = !info.held && chordSymbolX[ci] !== undefined ? chordSymbolX[ci] - (b.x + S / 2) : 0;
+      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
     if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
-    else if (opts.measureShapes) {
-      var grid = shapeGrid(html.length);
-      html = ['<div class="fb-measure-grid" data-cols="' + grid.cols + '" data-cap="' + grid.cap + '" style="grid-template-columns:repeat(' + grid.cols + ',minmax(0,1fr));grid-auto-rows:' + grid.rowH + 'em">' + html.join('') + '</div>'];
-    }
+    else if (opts.measureShapes) html = ['<div class="fb-measure-row" style="height:' + shapeSize().rowH + 'em">' + html.join('') + '</div>'];
+
     if (positions && opts.showAnalysis) {
       var midis = view.concert.filter(function (e) { return e.p && e.start >= b.start - EPS && e.start < b.start + b.len - EPS; }).map(function (e) { return e.p.midi; });
       var fits = window.FakeBookPosition.analyze(midis, chordPCs, preferred);
