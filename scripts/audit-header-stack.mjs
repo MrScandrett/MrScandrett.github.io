@@ -113,7 +113,9 @@ try {
         const rel = queue.shift();
         const rec = { page: rel, viewport: name };
         try {
-          await page.goto(`${BASE}/${rel}`, { waitUntil: "load", timeout: 20000 });
+          // Heavy 3D lessons can miss the first timeout when six pages load at once; retry once.
+          try { await page.goto(`${BASE}/${rel}`, { waitUntil: "load", timeout: 20000 }); }
+          catch { await page.goto(`${BASE}/${rel}`, { waitUntil: "domcontentloaded", timeout: 40000 }); }
           await page.waitForTimeout(800);
           rec.header = await page.evaluate(headerHeight);
           const scrollable = await page.evaluate(() => document.documentElement.scrollHeight > innerHeight * 2);
