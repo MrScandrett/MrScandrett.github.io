@@ -205,6 +205,8 @@
     setTab(null);
     placeDock();
     window.addEventListener('resize', placeDock);
+    window.addEventListener('orientationchange', function () { setTimeout(placeDock, 250); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', placeDock);
     window.addEventListener('scroll', placeDock, true);
     // The music-family nav is injected after load and the guide drawer resizes
     // the music area on phones; follow both.

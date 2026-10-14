@@ -691,7 +691,7 @@ body.fb-focused .fb-sheet-head h3 { font-size: clamp(1.5rem, 3vw, 2.1rem); }
 body.fb-focused .fb-instrument-help { margin-top: .7rem; }
 body.fb-focused .fb-instrument-help[open] { padding: 0 .5rem .5rem; }
 body.fb-focused .fb-sheet-hint { font-size: .8rem; }
-body.fb-focused .fb-dock { inset: auto .5rem .5rem auto; top: max(var(--fb-dock-top), 120px); width: min(500px, calc(100vw - 1rem)); display: flex; flex-direction: column; pointer-events: auto; background: #fffdf7; border: 2px solid #0f5d63; border-radius: 12px; box-shadow: 0 12px 35px #0004; overflow: hidden; }
+body.fb-focused .fb-dock { inset: auto .5rem max(.5rem, env(safe-area-inset-bottom)) auto; top: var(--fb-dock-top, 120px); width: min(500px, calc(100vw - 1rem)); z-index: 70; display: flex; flex-direction: column; pointer-events: auto; background: #fffdf7; border: 2px solid #0f5d63; border-radius: 12px; box-shadow: 0 12px 35px #0004; overflow: hidden; }
 body.fb-focused .fb-dock[hidden] { display: none; }
 body.fb-focused .fb-tools-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4rem .65rem; color: #1f1a14; }
 body.fb-focused .fb-dock-rail { flex-direction: row; flex-wrap: wrap; width: auto; overflow: visible; border: 0; padding: .3rem; gap: .25rem; flex-shrink: 0; }
@@ -719,14 +719,18 @@ body.fb-focused .fb-topbar-inner { min-height: 34px; }
   body.fb-focused .fb-sheet-head-actions { gap: .3rem; }
   body.fb-focused .fb-keyline { font-size: .8rem; }
   body.fb-focused .fb-view-tab { min-height: 44px; padding: .3rem .5rem; font-size: .8rem; }
-  body.fb-focused .fb-dock { top: max(var(--fb-dock-top), 105px); }
 }
 @media (max-height: 500px) {
   body.fb-focused .site-header { display: none; }
   body.fb-focused .fb-intro { display: none; }
   body.fb-focused .fb-topbar { display: none; }
   body.fb-focused .fb-tempo input[type="range"] { max-width: 90px; }
-  body.fb-focused .fb-dock { top: 75px; }
+  /* Landscape phone: a side panel under the play bar; one scrolling row of tabs keeps the pane tall. */
+  body.fb-focused .fb-dock { width: min(560px, 62vw); }
+  body.fb-focused .fb-dock-rail { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  body.fb-focused .fb-dock-tab { flex: 0 0 auto; min-width: 4.5rem; min-height: 40px; padding: .3rem .6rem; white-space: nowrap; }
+  body.fb-focused .fb-tools-head { padding: .2rem .65rem; }
+  body.fb-focused .fb-drawer-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   body.fb-focused .fb-next-task { display: none; }
 }
 @media print {
@@ -1206,8 +1210,9 @@ body.fb-focused .fb-practice-controls summary { padding-block: .1rem; }
 
 /* Six click patterns in one compact horizontal strip. */
 body.fb-focused .fb-metronome .fb-click-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr)); width: 174px; flex-basis: 174px;
+  grid-template-columns: repeat(6, auto); width: auto; flex: 0 0 auto;
 }
+body.fb-focused .fb-click-grid button { min-width: 1.9rem; padding: 0 .35rem; white-space: nowrap; }
 @media (max-width: 560px) {
   body.fb-focused .fb-transport > .fb-metronome {
     grid-column: 1 / -1; grid-row: 3; justify-self: end;
@@ -1218,6 +1223,13 @@ body.fb-focused .fb-metronome .fb-click-grid {
   body.fb-focused .fb-transport > .fb-stand-toggle { grid-column: 3; grid-row: 1; justify-self: end; }
   body.fb-focused .fb-transport > [data-fb-tools] { grid-column: 4; grid-row: 1; }
   body.fb-focused .fb-transport > .fb-metronome { grid-row: 2; }
+}
+/* iPhone portrait: the click pad gets its own full-width row so no label is squeezed. */
+@media (max-width: 560px) {
+  body.fb-focused .fb-transport > .fb-metronome { grid-column: 1 / -1; justify-self: stretch; width: auto; min-width: 0; }
+  body.fb-focused .fb-metronome .fb-click-grid { flex: 1 1 0; min-width: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  body.fb-focused .fb-metronome .fb-click-grid button { min-height: 32px; min-width: 0; padding: 0 .1rem; font-size: .72rem; }
+  body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { min-height: 32px; }
 }
 
 /* Music stand fills the display: only the player and the score remain. */
