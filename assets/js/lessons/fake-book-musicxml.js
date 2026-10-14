@@ -132,10 +132,11 @@
       var acc = al > 0 ? '#' : al < 0 ? 'b' : '';
       if (type === 'add' && v === 7 && /^sus/.test(q)) q = '7' + q;
       else if (type === 'add' && !acc && (v === 9 || v === 13) && /^7sus/.test(q)) q = v + q.slice(1);   // 9sus4, 13sus4
-      else if (type === 'add') q += (acc ? acc : 'add') + v;
+      else if (type === 'add') q += (acc && /\d/.test(q) ? acc : 'add' + acc) + v;   // C7 add ♭9 = C7b9; C add ♯4 = Cadd#4
       else if (type === 'alter') q += acc + v;
       else if (type === 'subtract') q += 'no' + v;
     });
+    if (/^[b#]/.test(q)) q = '(' + q + ')';               // E with ♯5 is E(#5): "E#5" would read as an E♯ chord
     var tok = rootName(txt(r, 'root-step'), num(r, 'root-alter', 0), tr) + q.replace(/[\s\/:|]/g, '');
     var b = kid(h, 'bass');
     if (b && txt(b, 'bass-step')) tok += '/' + rootName(txt(b, 'bass-step'), num(b, 'bass-alter', 0), tr);
@@ -203,7 +204,10 @@
   // Text an iReal Pro link or HTML export always carries.
   function looksLikeIReal(text) { return /irealb(?:ook)?:\/\//i.test(text || ''); }
 
-  function chooseMelodyPart(parts) {
+  // preferId: a part the caller already knows is the tune (the Guitar Pro reader picks the vocal or lead track).
+  function chooseMelodyPart(parts, preferId) {
+    var preferred = preferId && parts.filter(function (p) { return p.attrs.id === preferId; })[0];
+    if (preferred) return preferred;
     var stats = parts.map(function (p) {
       var pitched = 0, harm = 0;
       walk(p, function (e) { if (e.name === 'pitch') pitched++; else if (e.name === 'harmony') harm++; });
@@ -402,6 +406,41 @@
     return Math.abs(b - x) < Math.abs(a - x) - 1e-6 ? b : a;
   }
 
+  // Chord-melody (solo jazz guitar, fingerstyle, a one-voice piano part) puts its bass notes in the same voice as
+  // the tune. When chords make up a fifth of the onsets, a lone note is bass if the melody notes on both sides of
+  // it are more than an octave higher, skipping other low notes so a walking bass line goes too. A run that
+  // climbs from a low note keeps it: its neighbour in the run is close. Bass leaves the melody, and the melody
+  // note before it rings on through it.
+  function dropLoneBass(events) {
+    var pitched = events.filter(function (e) { return !e.rest; });
+    if (pitched.filter(function (e) { return e.count > 1; }).length < pitched.length * 0.2) return events;
+    var WINDOW = 4 * U;
+    // Low: a lone note more than an octave below the highest note within two beats.
+    var low = pitched.map(function (e, i) {
+      if (e.count > 1) return false;
+      var ref = -1, j;
+      for (j = i - 1; j >= 0 && e.s - pitched[j].s <= 2 * U; j--) ref = Math.max(ref, pitched[j].midi);
+      for (j = i + 1; j < pitched.length && pitched[j].s - e.s <= 2 * U; j++) ref = Math.max(ref, pitched[j].midi);
+      return ref - e.midi > 12;
+    });
+    var neighbour = function (i, step) {
+      for (var j = i + step; j >= 0 && j < pitched.length && Math.abs(pitched[j].s - pitched[i].s) <= WINDOW; j += step) if (!low[j]) return pitched[j];
+      return null;
+    };
+    var bass = pitched.filter(function (e, i) {
+      if (!low[i]) return false;
+      var before = neighbour(i, -1), after = neighbour(i, 1);
+      if (!before && !after) return false;
+      return (!before || before.midi - e.midi > 12) && (!after || after.midi - e.midi > 12);
+    });
+    if (!bass.length) return events;
+    var kept = [], last = null;
+    events.forEach(function (e) {
+      if (bass.indexOf(e) < 0) { kept.push(e); if (!e.rest) last = e; return; }
+      if (last && last.e >= e.s) last.e = Math.max(last.e, e.e);
+    });
+    return kept;
+  }
   function buildMelody(events, pickupU, barU) {
     // events: [{s, e, midi, step, alter, octave, tie}] in units, sorted; null pitch = rest
     var ev = [];
@@ -507,7 +546,7 @@
     walk(doc, function (e) { if (!score && e.name === 'score-partwise') score = e; });
     var parts = kids(score, 'part');
     if (!parts.length) throw new Error('That score has no parts.');
-    var part = chooseMelodyPart(parts);
+    var part = chooseMelodyPart(parts, options && options.melodyPart);
     var all = parts.map(readMeasures), R = all[parts.indexOf(part)];
     var partNames = {};
     walk(score, function (e) { if (e.name === 'score-part') partNames[e.attrs.id] = txt(e, 'part-name').replace(/\s+/g, ' '); });
@@ -613,11 +652,12 @@
             var key = String(s);
             if (byOnset[key]) {                          // chord or second note at once: keep the top note
               var o = byOnset[key];
+              if (n.pitched) o.count = (o.count || 0) + 1;
               if (n.pitched && (!o.midi || n.midi > o.midi)) { o.midi = n.midi; o.step = n.step; o.alter = n.alter; o.octave = n.octave; o.rest = false; o.tie = n.tieStart; }
               o.e = Math.max(o.e, e);
               return;
             }
-            var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart } : { s: s, e: e, rest: true };
+            var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart, count: 1 } : { s: s, e: e, rest: true };
             byOnset[key] = ev; events.push(ev);
           });
           m.harms.forEach(function (h) { harms.push({ u: snapped(h.t), tok: h.tok }); });
@@ -629,6 +669,7 @@
         }
       });
       events.sort(function (a, b) { return a.s - b.s; });
+      events = dropLoneBass(events);
       if (!events.some(function (e) { return !e.rest; })) return null;
       if (moved) warnings.push((scoreMode ? 'Playback keeps the original timing. Displayed rhythms' : 'Some rhythms') + ' finer than the fake book writes (32nd notes, quintuplets…) were rounded to the nearest sixteenth or triplet.');
       if (sec.joined.length) warnings.push('Bar' + (sec.joined.length > 1 ? 's ' : ' ') + sec.joined.join(', ') + ' in another meter ' + (sec.joined.length > 1 ? 'are' : 'is') + ' kept in this song, with rests added to finish the bar.');
@@ -891,7 +932,7 @@
     try { return Promise.resolve(parseAll(decodeText(bytes), options)); } catch (e) { return Promise.reject(e); }
   }
 
-  var exported = { parseScore: function (text) { return parseAll(text, { score: true })[0]; }, parse: parse, parseAll: parseAll, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, looksLikeIReal: looksLikeIReal, decodeText: decodeText, split: split };
+  var exported = { parseScore: function (text, melodyPart) { return parseAll(text, { score: true, melodyPart: melodyPart })[0]; }, parse: parse, parseAll: parseAll, parseFile: parseFile, parseXML: parseXML, unroll: unroll, isZip: isZip, looksLikeMusicXML: looksLikeMusicXML, looksLikeIReal: looksLikeIReal, decodeText: decodeText, split: split };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   else root.FakeBookMusicXML = exported;
 })(typeof window !== 'undefined' ? window : globalThis);

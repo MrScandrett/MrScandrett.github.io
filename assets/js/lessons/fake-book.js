@@ -158,10 +158,10 @@
     if (/sus/i.test(q)) return /^(?:7|9|11|13)/.test(q) ? '7sus4' : 'sus4';     // 7sus, 9sus, 13sus, 7b9sus keep the ♭7
     if (/^-(?:6|69)|^m6/i.test(q)) return 'm6';
     if (/^(?:-|m(?:in)?)\(?(?:\^|maj|M[79])/.test(q)) return 'mmaj7';           // m(maj7), mM7, iReal -^7
-    if (/^(?:-|m(?:in)?)\(?add/.test(q)) return 'm';                            // minor add9 has no ♭7
     // Before the minor test: "maj7" also starts with an m. Capital M7 is major, m7 is minor.
     if (/^\^|^maj/i.test(q) || /^M(?:7|9|13)/.test(q)) return 'maj7';
-    if (/^-|^m/i.test(q)) return (q === '-' || q === 'm' || q === 'min') ? 'm' : 'm7';
+    // Minor: only a 7th or an extension that implies one (9, 11, 13) adds the ♭7; madd9, m♭6, m(♯5) stay triads.
+    if (/^(?:-|m)/.test(q)) return /^(?:-|m(?:in)?)\(?(?:7|9|11|13)/.test(q) ? 'm7' : 'm';
     if (/^6/i.test(q)) return '6';
     if (/^9/i.test(q)) return '9';
     if (/^7|^11|^13|^alt/i.test(q)) return '7';

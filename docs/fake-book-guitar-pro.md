@@ -21,6 +21,12 @@ endings, time signatures, string tuning, capo and physical string/fret positions
 It converts into MusicXML for the existing Fake Book score player, arrangement
 view, part mute/solo and practice controls. Playback uses synthesized piano.
 
+The lead sheet's melody comes from the first track named for a voice or lead
+instrument (Vocals, Lead, Sax, Trumpet…), else the first with a voice, wind,
+brass, violin or lead-synth sound, else the first track. In chord-melody parts
+(solo guitar), lone bass notes more than an octave below the melody on both
+sides are left out of the melody; they still play in the score and bass staff.
+
 Guitar effects, grace/dead notes, dynamics, swing, percussion, tempo changes and
 embedded backing audio are not performed. Supported authored chord changes are
 preserved across tracks, while missing chords are inferred from sounding notes

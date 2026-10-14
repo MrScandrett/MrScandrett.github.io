@@ -168,6 +168,22 @@ test('chords: only the top note is kept, and minor keys are read from the file',
   assert.equal(s.chords, 'Am | E7b9 | Am');
 });
 
+test('chord-melody: lone bass notes between chords leave the melody, a climbing run keeps its low start', () => {
+  const ch = (...ps) => ps.map((p, i) => i ? note(p, Q).replace('<note>', '<note><chord/>') : note(p, Q)).join('');
+  // Solo-guitar texture: chord, bass, chord, bass. The melody note rings through each bass note.
+  const solo = MX.parse(score([
+    { body: ch('E5', 'C5', 'G4') + note('C3', Q) + ch('D5', 'B4', 'G4') + note('G2', Q) },
+    { body: ch('C5', 'E4', 'C4').replace(/<duration>6</g, '<duration>24<').replace(/quarter/g, 'whole') }
+  ]));
+  assert.equal(solo.melody, 'E5h D5h | C5w');
+  // A run that climbs out of the low register is melody, even right after a high chord.
+  const run = MX.parse(score([
+    { body: ch('G4', 'E4', 'C4').replace(/<duration>6</g, '<duration>12<').replace(/quarter/g, 'half') + note('E3', Q / 2) + note('G3', Q / 2) + note('B3', Q / 2) + note('D4', Q / 2) },
+    { body: ch('G4', 'D4', 'B3').replace(/<duration>6</g, '<duration>24<').replace(/quarter/g, 'whole') }
+  ]));
+  assert.equal(run.melody, 'G4h E3e G3e B3e D4e | G4w');
+});
+
 test('no mode in the file: a tune ending on the relative minor tonic over a minor chord reads as minor', () => {
   const xml = score([
     { body: harmony('E', 'minor') + note('E4', 4 * Q) },

@@ -27,25 +27,37 @@
   // Convert a Guitar Pro chord label to MusicXML <harmony> that reads back as the same chord:
   // added tones and sus chords become <degree>s, so Cadd9 never gains a ♭7 and G7sus4 keeps it.
   // Unknown labels (7alt, no3…) return null and stay visible as text instead of becoming major.
+  // A file written as UTF-8 but read as Latin-1 shows "Â°" for "°" and "Ã¸" for "ø".
+  function unmangle(s) {
+    if (!/[ÂÃ]/.test(s) || /[^\x00-\xff]/.test(s)) return s;
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(s, function (c) { return c.charCodeAt(0); })); }
+    catch (e) { return s; }                             // not UTF-8 after all: keep the original
+  }
   function chordXML(name, offset) {
-    var label = String(name || '').trim();
+    var label = unmangle(String(name || '').trim()).replace(/\s*\([A-G][^)]*\)$/, '');   // "F#7 (C7)": drop the alternate name
+    // A slash before a number is an extension (6/9, m7/11, Guitar Pro's 7/5-), not a bass note.
     var match = /^([A-G])([#b]?)([^/]*)(?:\/([A-G])([#b]?))?$/.exec(label
-      .replace(/♭/g, 'b').replace(/♯/g, '#').replace(/6\/9/g, '69'));
+      .replace(/♭/g, 'b').replace(/♯/g, '#').replace(/º/g, '°').replace(/\/(?=\d)/g, ''));
     if (!match) return null;
     var q = match[3].replace(/[\s(),]/g, '')
+      // Guitar Pro's own names: 7M = maj7 (7M9 = maj9), and a sign after a degree alters it: 5- = ♭5, 5+ = ♯5, 9- = ♭9.
+      .replace(/7M(9|11|13)?/, function (m, ext) { return 'maj' + (ext || '7'); })
+      .replace(/(5|6|9|11|13)([+-])/g, function (m, n, sign) { return (sign === '-' ? 'b' : '#') + n; })
       .replace(/^(?:min?|-)/, 'm')
       .replace(/^mM(?=7)/, 'mmaj')
-      .replace(/^(?:maj|MAJ|Maj|MA|Ma|M)(?=[0-9]|$)/, 'maj')
+      .replace(/^(?:maj|MAJ|Maj|MA|Ma|M)(?=[0-9]|$)/, 'maj').replace(/^maj(?=6)/, '')   // maj6 is a 6 chord
       .replace(/[Δ△^](?![0-9])/, 'maj7').replace(/[Δ△^]/, 'maj')
       .replace(/ø7?/, 'm7b5').replace(/°7|^o7/, 'dim7').replace(/°|^o$/, 'dim');
     if (q === 'maj') q = '';
+    if (/^[b#](9|11|13)/.test(q)) q = '7' + q;          // an altered extension with no chord type: A9- is A7♭9
+    if (q === '#5') q = 'aug';                          // E/5+ is an augmented triad
     var base = CHORD_KINDS.filter(function (k) { return q.indexOf(k[0]) === 0; })[0];
     var kind = base[1], rest = q.slice(base[0].length), degrees = [], token;
     function degree(value, alter, type) {
       degrees.push('<degree><degree-value>' + value + '</degree-value><degree-alter>' + alter + '</degree-alter><degree-type>' + type + '</degree-type></degree>');
     }
     while (rest) {
-      token = /^(?:sus([24]?)|add([b#]?)(2|4|9|11|13)|([b#])(5|9|11|13)|(2|9|11|13)|\+)/.exec(rest);
+      token = /^(?:sus([24]?)|add([b#]?)(2|4|6|9|11|13)|([b#])(5|6|9|11|13)|(2|4|9|11|13)|\+)/.exec(rest);
       if (!token) return null;
       rest = rest.slice(token[0].length);
       if (token[1] !== undefined) {
@@ -56,6 +68,9 @@
         ext.forEach(function (v) { degree(v, 0, 'add'); });
       } else if (token[3]) degree(token[3], token[2] === '#' ? 1 : token[2] === 'b' ? -1 : 0, 'add');
       else if (token[5]) degree(token[5], token[4] === '#' ? 1 : -1, 'alter');
+      else if (token[6] === '4') {                                             // C4 = Csus4; Gm4 = Gm add 4
+        if (kind === 'major' && !degrees.length) kind = 'suspended-fourth'; else degree(4, 0, 'add');
+      }
       else if (token[6]) degree(token[6] === '2' ? 9 : token[6], 0, 'add');    // C2 = Cadd9, C69 = C6 add 9
       else degree(5, 1, 'alter');                                              // C7+ = C7♯5
     }
@@ -64,16 +79,39 @@
     return '<harmony>' + rootXML(match[1], match[2], 'root') + '<kind text="' + escape(label) + '">' + kind + '</kind>' +
       (match[4] ? rootXML(match[4], match[5], 'bass') : '') + degrees.join('') + offsetXML + '</harmony>';
   }
-  function toMusicXML(score) {
-    if (!score.masterBars.length || score.masterBars.length > 400) throw new Error('Guitar Pro imports must contain 1–400 written bars.');
-    var parts = [], noteCount = 0;
+  // The tune is the first part named for a voice or lead instrument, else the first with a voice, wind, brass,
+  // violin or lead-synth sound, else the first track. Files often list piano or guitar ahead of the vocal line.
+  var MELODY_NAME = /vocal|voice|vox|melod|\blead\b|sing|soprano|\balto\b|tenor|sax|trumpet|cornet|flugel|flute|clarinet|oboe|violin|harmonica|whistle/i;
+  var MELODY_PROGRAMS = [40, 52, 53, 54, 56, 57, 59, 64, 65, 66, 68, 71, 72, 73, 74, 75, 78, 79, 80, 81];
+  function melodyPart(parts) {
+    function find(test) {
+      for (var i = 0; i < parts.length; i++) {
+        var name = parts[i].track.name || '';
+        var sounds = parts[i].staff.bars.some(function (bar) { return bar.voices.some(function (v) { return v.beats.some(function (b) { return b.notes.length > 0; }); }); });
+        if (sounds && !/bass|drum|perc|rhythm/i.test(name) && test(parts[i], name)) return i;
+      }
+      return -1;
+    }
+    var i = find(function (p, name) { return MELODY_NAME.test(name); });
+    if (i < 0) i = find(function (p) { return MELODY_PROGRAMS.indexOf(p.track.playbackInfo && p.track.playbackInfo.program) >= 0; });
+    return Math.max(0, i);
+  }
+  // Every pitched staff becomes one MusicXML part, P0, P1… in track order.
+  function scoreParts(score) {
+    var parts = [];
     score.tracks.forEach(function (track) {
       track.staves.forEach(function (staff) {
         if (!staff.isPercussion) parts.push({ track: track, staff: staff });
       });
     });
+    return parts;
+  }
+  function toMusicXML(score) {
+    if (!score.masterBars.length || score.masterBars.length > 400) throw new Error('Guitar Pro imports must contain 1–400 written bars.');
+    var parts = scoreParts(score), noteCount = 0;
     if (!parts.length) throw new Error('No pitched tracks were found in this Guitar Pro file.');
     if (parts.length > 64) throw new Error('Guitar Pro imports support up to 64 pitched staves.');
+    var melody = melodyPart(parts);
     var masterChords = score.masterBars.map(function (m, mi) {
       var map = {};
       score.tracks.forEach(function (tr) {
@@ -135,7 +173,7 @@
           xml += '<direction><sound ' + attrs + '/></direction>';
         });
         var chordOnsets = {};
-        if (i === 0) {
+        if (i === melody) {
           Object.keys(masterChords[mi]).map(Number).sort(function (a, b) { return a - b; }).forEach(function (start) {
             var name = masterChords[mi][start];
             var harmony = chordXML(name, start);
@@ -206,7 +244,7 @@
     var decoder = await reader, score;
     try { score = decoder.readScore(bytes); }
     catch (err) { throw new Error('This Guitar Pro file is invalid, truncated, or unsupported. Export it as MusicXML if it opens in Guitar Pro.'); }
-    var result = mx.parseScore(toMusicXML(score));
+    var result = mx.parseScore(toMusicXML(score), 'P' + melodyPart(scoreParts(score)));
     result.format = 'Guitar Pro';
     var H = root.FakeBookHarmony;
     if (!H && typeof module !== 'undefined' && module.exports) H = require('./fake-book-harmony.js');

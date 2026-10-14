@@ -95,6 +95,22 @@ c4 d4 e4 f4 | g4 a4 b4 c5
   assert.equal(song.guitarPro.sourceChords, 4);
 });
 
+test('the vocal or lead track is the melody, even when piano is the first track', async () => {
+  const source = importer.ScoreLoader.loadAlphaTex(`
+\\title "Band"
+.
+\\track "Piano" "guitar"
+c3 e3 g3 c4 | c3 e3 g3 c4
+\\track "Vocals" "guitar"
+e4 f4 g4 a4 | g4 f4 e4 d4
+\\track "Bass" "guitar"
+c2 c2 g2 g2 | c2 c2 g2 g2
+`);
+  const song = await GP.parseFile(new exporter.Gp7Exporter().export(source), MX);
+  assert.equal(song.melody, 'E4q F4q G4q A4q | G4q F4q E4q D4q');
+  assert.equal(song.score.parts.length, 3, 'every track still plays in the score');
+});
+
 test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and playback', () => {
   const wrap = harmony => `<score-partwise version="4.0"><part-list><score-part id="P0"><part-name>P</part-name></score-part></part-list><part id="P0"><measure number="1"><attributes><divisions>960</divisions><key><fifths>0</fifths></key><time><beats>4</beats><beat-type>4</beat-type></time><clef><sign>G</sign><line>2</line></clef></attributes>${harmony}<note><pitch><step>C</step><octave>4</octave></pitch><duration>3840</duration><voice>1</voice></note></measure></part></score-partwise>`;
   // [Guitar Pro label, chord the score reader gets back, quality the Fake Book plays]
@@ -130,7 +146,26 @@ test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and play
     ['Caug7', 'Caug7', 'aug'],
     ['C+7', 'Caug7', 'aug'],
     ['Fmaj13', 'Fmaj13', 'maj7'],
-    ['Dm11', 'Dm11', 'm7']
+    ['Dm11', 'Dm11', 'm7'],
+    // Guitar Pro's own naming: 7M = maj7, a sign after a degree alters it, a slash before a number is an extension.
+    ['A7M', 'Amaj7', 'maj7'],
+    ['D7M9', 'Dmaj9', 'maj7'],
+    ['Am7M', 'Am(maj7)', 'mmaj7'],
+    ['Gb7/5-', 'Gb7b5', '7'],
+    ['Ab7/5+', 'Ab7#5', '7'],
+    ['Am7/5-', 'Am7b5', 'm7b5'],
+    ['A9-', 'A7b9', '7'],
+    ['Am6-', 'Amb6', 'm'],
+    ['Gm4', 'Gmadd4', 'm'],
+    ['E/5+', 'Eaug', 'aug'],
+    ['Bm7/11', 'Bm7add11', 'm7'],
+    ['F7M9/5-', 'Fmaj9b5', 'maj7'],
+    ['Amadd13-', 'Amaddb13', 'm'],
+    ['Amaj6/9', 'A6add9', '6'],
+    ['Bb(add#4)/A', 'Bbadd#4/A', ''],
+    ['F#7 (C7)', 'F#7', '7'],                  // the alternate name in parentheses is dropped
+    ['C#\u00c2\u00b0', 'C#dim', 'dim'],        // "°" stored as UTF-8 and read as Latin-1
+    ['D4', 'Dsus4', 'sus4']
   ];
   for (const [name, expectedChord, plays] of cases) {
     const xml = GP.chordXML(name, 0);
@@ -146,7 +181,8 @@ test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and play
 test('chord qualities from iReal and typed charts map to the playable chord', () => {
   const cases = { 'sus': 'sus4', 'sus2': 'sus2', '7sus': '7sus4', '9sus': '7sus4', '13sus': '7sus4', '7b9sus': '7sus4',
     '-^7': 'mmaj7', '-^9': 'mmaj7', 'mM7': 'mmaj7', 'm(maj7)': 'mmaj7', 'mmaj7': 'mmaj7', '-add9': 'm', 'madd9': 'm',
-    'maj7': 'maj7', '^7': 'maj7', 'm7': 'm7', '-7': 'm7', 'm7b5': 'm7b5', '7': '7', '': '' };
+    'maj7': 'maj7', '^7': 'maj7', 'm7': 'm7', '-7': 'm7', 'm7b5': 'm7b5', '7': '7', '': '',
+    'm9': 'm7', '-11': 'm7', 'mb6': 'm', '-b6': 'm', 'm(#5)': 'm', 'M': '' };
   for (const [q, plays] of Object.entries(cases)) assert.equal(mapQuality(q), plays, q);
 });
 
