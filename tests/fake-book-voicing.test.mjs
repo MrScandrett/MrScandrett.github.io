@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+const source = readFileSync(new URL('../assets/js/lessons/fake-book.js', import.meta.url), 'utf8');
+const ctx = vm.createContext({});
+vm.runInContext('var NAT=[0,2,4,5,7,9,11]; function mod(n,m){return ((n%m)+m)%m;}\n' +
+  source.slice(source.indexOf('  var Q ='), source.indexOf('  function chordTones')) +
+  source.slice(source.indexOf('  var VOICING ='), source.indexOf('  var BOTTOM_NAMES')), ctx);
+const chord = (l, q = '', a = 0) => ({root: {l, a}, q});
+const modes = ['smooth', 'common', 'shellSmooth', 'open'];
+test('all voice-leading modes preserve chord tones, ascending voices and bounded register', () => {
+  for (const mode of modes) for (const q of Object.keys(ctx.Q)) {
+    const chords = Array.from({length: 12}, (_,pc) => chord(0, q, pc));
+    const notes = ctx.voiceChords(chords, mode);
+    notes.forEach((n,i) => {
+      assert.ok(n.every(x => x >= 48 && x <= 84));
+      assert.ok(n.every((x,j) => !j || x > n[j-1]));
+      const expected = ctx.Q[q].iv;
+      const tones = mode === 'shellSmooth' ? [expected[0], expected[1], expected.length >= 4 ? expected[3] : expected[2]] : expected;
+      assert.deepEqual(Array.from(n, x => ctx.mod(x-i,12)).sort((a,b)=>a-b), Array.from(tones,x=>x%12).sort((a,b)=>a-b));
+    });
+  }
+});
+test('smooth ii–V–I chooses the minimum-cost complete path', () => {
+  const chords = [chord(1,'m7'), chord(4,'7'), chord(0,'maj7')];
+  const layers = chords.map(c=>ctx.voiceCandidates(c,'smooth'));
+  let best = Infinity;
+  for(const a of layers[0]) for(const b of layers[1]) for(const c of layers[2]) {
+    best = Math.min(best,a.register+b.register+c.register+ctx.voiceMotion(a.notes,b.notes,false)+ctx.voiceMotion(b.notes,c.notes,false));
+  }
+  const chosen = ctx.voiceChords(chords,'smooth');
+  const cost = chosen.reduce((sum,n,i)=>sum+layers[i].find(c=>c.notes.join()===n.join()).register+(i?ctx.voiceMotion(chosen[i-1],n,false):0),0);
+  assert.ok(Math.abs(cost-best)<1e-9);
+});
+test('repeated chords keep every voice stationary in every connected mode', () => {
+  for(const mode of modes) {
+    const notes=ctx.voiceChords([chord(0,'maj7'),chord(0,'maj7'),chord(0,'maj7')],mode);
+    assert.equal(notes[0].join(),notes[1].join());
+    assert.equal(notes[1].join(),notes[2].join());
+  }
+});
+test('empty progressions are safe and common-tone mode penalizes octave displacement', () => {
+  assert.equal(ctx.voiceChords([], 'smooth').length,0);
+  assert.ok(ctx.voiceMotion([60,64,67],[64,67,72],true)>ctx.voiceMotion([60,64,67],[64,67,72],false));
+});

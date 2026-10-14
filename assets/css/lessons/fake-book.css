@@ -335,15 +335,15 @@ body .fb-sheet-head h3 { margin: 0; font-family: "Realbook", "Fraunces", serif !
 /* Keyboard visuals */
 .fb-wk { fill: #ffffff; stroke: #3d352b; stroke-width: 1; }
 .fb-bk { fill: #1f1a14; }
-.fb-wk.on { fill: #f3b54a; }
-.fb-bk.on { fill: #c2410c; }
-.fb-wk.on-root, .fb-bk.on-root { fill: #ea580c; }
-.fb-wk.on-third, .fb-bk.on-third { fill: #16a34a; }
-.fb-wk.on-fifth, .fb-bk.on-fifth { fill: #0f766e; }
-.fb-wk.on-seventh, .fb-bk.on-seventh { fill: #7c3aed; }
+/* Pitch fills and accidental stripes come from the score palette in fake-book.js. */
+.fb-wk.on, .fb-bk.on,
+.fb-wk.on-root, .fb-bk.on-root,
+.fb-wk.on-third, .fb-bk.on-third,
+.fb-wk.on-fifth, .fb-bk.on-fifth,
+.fb-wk.on-seventh, .fb-bk.on-seventh { fill: #f3b54a; }
 .fb-kc { fill: #8a7c66; font: 700 8.5px "DM Sans", sans-serif; text-anchor: middle; }
 .fb-key-lbl { fill: #ffffff; font: 800 9px "DM Sans", sans-serif; text-anchor: middle; font-weight: 800; }
-.fb-key-finger { fill: #1f1a14; font: 700 8px "JetBrains Mono", monospace; text-anchor: middle; }
+.fb-key-finger { fill: #ffffff; font: 700 8px "JetBrains Mono", monospace; text-anchor: middle; }
 
 /* Fretboard visuals */
 .fb-gtr-bg { fill: #2c1d11; rx: 8px; }
@@ -857,7 +857,7 @@ body.fb-focused .fb-sheet-card { margin-top: .3rem; }
   .fb-print-pg { grid-column: 2; grid-row: 1; font-size: 9pt; color: #444; text-align: right; }
   .fb-print-run { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 3px; margin-bottom: 8px; border-bottom: 1px solid #999; font-size: 9.5pt; color: #333; }
   /* lesson-print.css caps svg at 5.9in tall, which shrinks a full-page slice and centres it. */
-  .fb-print-score svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: none !important; overflow: hidden; }
+  .fb-print-score > svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: none !important; overflow: hidden; }
   .fb-print-foot { margin-top: 8px; padding-top: 4px; border-top: 1px solid #aaa; font-size: 8pt; line-height: 1.35; color: #444; }
 }
 
@@ -911,6 +911,330 @@ body.fb-focused .fb-loop-actions .fb-btn { min-height: 44px; }
 .fb-measure-help { pointer-events: none; }
 .fb-measure-help strong { display: block; font-size: 1.1em; }
 .fb-measure-help p { margin: .4em 0; line-height: 1.3; font-size: 1em; }
-.fb-measure-shape { height: 16em; overflow: hidden; }
-.fb-measure-shape svg { display: block; width: 100%; height: 13em; }
+.fb-measure-shape { position: relative; box-sizing: border-box; height: 16em; padding-top: 2em; overflow: hidden; }
+.fb-measure-shape > strong { position: absolute; top: 0; left: 0; right: 0; }
+.fb-measure-shape svg { display: block; margin-inline: auto; max-width: none; max-height: none; }
 .fb-measure-analysis { overflow-wrap: anywhere; }
+
+/* Keep Tools below the measured player height at every viewport. */
+body.fb-focused .fb-dock { top: var(--fb-dock-top, 120px); z-index: 70; }
+
+/* Tools share the workspace with the score and expose the current setup. */
+body.fb-focused .fb-tools-status { margin: 0; padding: .35rem .7rem; font-size: .8rem; line-height: 1.4; color: #1f1a14; background: #f4ecd9; overflow-wrap: anywhere; }
+body.fb-focused .fb-tools-reset { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; padding: .35rem .7rem; border-bottom: 1px solid #d4c6a8; color: #5d5345; font-size: .72rem; }
+body.fb-focused .fb-dock-tab { background: #1f1a14; color: #fff1d5; }
+body.fb-focused .fb-dock-tab[aria-selected="true"] { background: #0f5d63; color: #fff; }
+body.fb-focused .fb-dock-val { display: block; color: #fff1d5; font-size: .65rem; margin-top: .2rem; }
+body.fb-focused .fb-dock-tab[aria-selected="true"] .fb-dock-val { color: #fff; }
+body.fb-focused .fb-theory-options { margin: .5rem 0; border: 1px solid #d4c6a8; border-radius: 8px; }
+body.fb-focused .fb-theory-options[open] { padding-bottom: .5rem; }
+body.fb-focused .fb-theory-options .fb-chips, body.fb-focused .fb-theory-options .fb-engine-subcontrols { margin: .5rem; }
+body.fb-focused .fb-theory-options > summary { min-height: 44px; padding: .6rem; }
+@media (min-width: 1100px) and (min-height: 601px) {
+  body.fb-focused .fb-dock { width: 400px; }
+  body.fb-focused.fb-dock-open .ll-sim:has(.fb-dock) { padding-right: 420px; }
+  body.fb-focused .fb-tools-size { display: none; }
+}
+@media (max-width: 1099px), (max-height: 600px) {
+  body.fb-focused .fb-dock { top: auto; left: .5rem; right: .5rem; bottom: max(.5rem, env(safe-area-inset-bottom)); width: auto; max-height: min(55dvh, calc(100dvh - var(--fb-dock-top) - 8px)); }
+  body.fb-focused .fb-dock.is-expanded { max-height: calc(100dvh - var(--fb-dock-top) - 8px); }
+  body.fb-focused .fb-dock-rail { flex-wrap: nowrap; overflow-x: auto; }
+  body.fb-focused .fb-dock-tab { flex: 0 0 92px; }
+  body.fb-focused .fb-dock-val { max-width: 80px; }
+  body.fb-focused .fb-tools-reset span { display: none; }
+  body.fb-focused .fb-drawer { flex: 1 1 auto; overflow: hidden; }
+}
+
+/* Keep tune identity together; reveal notation aids only when needed. */
+body.fb-focused .fb-sheet-head { align-items: center; gap: .4rem .8rem; }
+.fb-sheet-heading { flex: 1 1 16rem; }
+.fb-sheet-heading .fb-keyline { margin-top: .2rem; line-height: 1.35; }
+body.fb-focused .fb-sheet-head-actions { flex: 0 1 auto; gap: .35rem; min-width: 0; }
+.fb-notation-settings { min-width: 0; }
+.fb-notation-settings > summary { cursor: pointer; padding: .45rem .6rem; min-height: 44px; box-sizing: border-box; color: #0f5d63; font: 700 .82rem/1.5 "DM Sans", sans-serif; border: 1px solid #d4c6a8; border-radius: 8px; }
+.fb-notation-settings > summary:focus-visible { outline: 3px solid #0f5d63; outline-offset: 2px; }
+.fb-notation-settings[open] { flex-basis: 100%; }
+.fb-notation-settings-body { padding: .6rem; margin-top: .35rem; border: 1px solid #e3d7bf; border-radius: 8px; background: #f7f1e5; }
+.fb-notation-settings-body .fb-staff-toggles { display: flex; gap: .5rem .8rem; }
+.fb-notation-settings-body .fb-staff-toggles[hidden] { display: none; }
+.fb-notation-settings-body .fb-field { flex: 1 1 12rem; }
+.fb-notation-settings-body select { max-width: 100%; }
+.fb-notation-settings-body .fb-pos-key { margin: .5rem 0 0; }
+body.fb-focused .fb-print-btn { min-height: 44px; white-space: nowrap; padding: .35rem .6rem; }
+@media (max-width: 760px) {
+  .fb-sheet-heading { flex-basis: 100%; }
+  body.fb-focused .fb-sheet-head-actions { flex: 1 1 100%; justify-content: flex-start; }
+  .fb-notation-settings { margin-left: auto; }
+  .fb-notation-settings[open] { margin-left: 0; }
+}
+@media (max-width: 360px) {
+  .fb-view-switch { gap: 0; padding: 2px; }
+  .fb-notation-settings > summary { font-size: .75rem; padding-inline: .4rem; }
+  body.fb-focused .fb-print-btn { font-size: .75rem; padding-inline: .4rem; }
+}
+@media print { .fb-notation-settings, .fb-print-btn, .fb-view-switch { display: none; } }
+body.fb-focused .fb-all-chords { margin: .2rem 0 .6rem; }
+body.fb-focused .fb-all-chords > summary { min-height: 44px; padding: .5rem .1rem; }
+@media (min-width: 1100px) and (min-height: 601px) {
+  body.fb-focused .fb-dock-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  body.fb-focused .fb-dock-tab { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 560px) { .fb-settings-prefix { display: none; } }
+
+@media print {
+  /* Nested chord diagrams use engraving units, not the page SVG's dimensions.
+     Override the shared print layer's automatic image height. */
+  .fb-print-score .fb-measure-shape svg {
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible;
+  }
+  .fb-print-score .fb-measure-help strong,
+  .fb-print-score .fb-measure-help p { color: #111 !important; }
+}
+
+/* Workspace layout: navigation participates in flow; panels have one scroller. */
+body.fb-focused .music-family {
+  height: auto; margin-bottom: 0; padding: .25rem .75rem;
+  background: #241a14; display: block; pointer-events: auto; z-index: 30;
+}
+body.fb-focused .music-family .mf-fold[open] > .mf-body {
+  position: static; transform: none; width: auto; max-width: none;
+  padding: .6rem 0; border: 0; box-shadow: none;
+}
+body.fb-focused .fb-topbar-inner > span { visibility: visible; }
+body.fb-focused .fb-tempo { flex: 0 0 auto; min-width: max-content; }
+body.fb-focused .fb-tempo input[type="range"] { flex: 0 0 80px; }
+body.fb-focused .fb-tempo input[type="number"] { flex-shrink: 0; }
+body.fb-focused .fb-transport .fb-next-task {
+  flex: 1 1 100%; order: 8; padding-top: .35rem;
+  border-top: 1px solid #514636;
+}
+body.fb-focused .fb-tools-head,
+body.fb-focused .fb-tools-status,
+body.fb-focused .fb-tools-reset { flex-shrink: 0; }
+body.fb-focused .fb-drawer { overflow: hidden; }
+body.fb-focused .fb-drawer-body { min-height: 0; overflow-y: auto; }
+body.fb-focused .fb-dock-tab { border-radius: 6px; }
+body.fb-focused .fb-dock-val {
+  white-space: normal; overflow: visible; text-overflow: clip;
+  font-family: "DM Sans", sans-serif; line-height: 1.35;
+}
+body.fb-focused .fb-tools-status { font-weight: 400; }
+body.fb-focused .fb-pos-key { font-weight: 400; letter-spacing: normal; }
+body.fb-focused .fb-notation-settings[open] { width: 100%; }
+body.fb-focused .fb-sheet-head-actions:has(.fb-notation-settings[open]) { flex-basis: 100%; }
+.fb-notation-help { margin-top: .6rem; }
+.fb-notation-help > summary { cursor: pointer; color: #0f5d63; font-size: .85rem; }
+@media (min-width: 1100px) and (min-height: 601px) {
+  body.fb-focused .fb-dock-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  body.fb-focused .fb-tempo { min-width: 0; }
+  body.fb-focused .fb-tempo input[type="range"] { display: none; }
+  body.fb-focused .fb-dock-val { display: none; }
+}
+@media (max-height: 600px) {
+  body.fb-focused .fb-dock,
+  body.fb-focused .fb-dock.is-expanded { top: var(--fb-workspace-top, 40px); max-height: calc(100dvh - var(--fb-workspace-top, 40px) - .5rem); }
+  body.fb-focused .fb-tools-status,
+  body.fb-focused .fb-tools-reset { display: none; }
+}
+
+/* Compact settings navigation leaves the instrument preview in view. */
+body.fb-focused .fb-dock-rail {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px; padding: 4px; overflow: visible;
+}
+body.fb-focused .fb-dock-tab {
+  width: 100%; min-width: 0; min-height: 36px; padding: .25rem .15rem;
+  font-size: .75rem; line-height: 1.2; letter-spacing: normal;
+}
+body.fb-focused .fb-dock-val { display: none; }
+body.fb-focused .fb-tools-head { padding: .3rem .6rem; }
+body.fb-focused .fb-tools-head .fb-btn { min-height: 36px; padding: .25rem .6rem; }
+body.fb-focused .fb-tools-status { padding: .25rem .6rem; font-size: .75rem; }
+body.fb-focused .fb-tools-reset { padding: .25rem .6rem; }
+body.fb-focused .fb-tools-reset span { display: none; }
+body.fb-focused .fb-tools-reset .fb-btn { min-height: 32px; padding: .2rem .5rem; font-size: .75rem; }
+@media (pointer: coarse) {
+  body.fb-focused .fb-dock-tab,
+  body.fb-focused .fb-tools-head .fb-btn,
+  body.fb-focused .fb-tools-reset .fb-btn { min-height: 44px; }
+}
+
+/* Quietly raised controls: retain the existing palette, shapes, and sizing. */
+body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn, .fb-floating-stop, .fb-drawer-close),
+body .fb-chip span {
+  background-image: linear-gradient(to bottom, rgba(255,255,255,.12), rgba(255,255,255,0) 58%, rgba(31,26,20,.045));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(31,26,20,.12), 0 2px 0 rgba(31,26,20,.16), 0 3px 6px rgba(31,26,20,.1);
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+body .fb-play.fb-play {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(105,65,12,.2), 0 3px 0 rgba(105,65,12,.35), 0 5px 9px rgba(0,0,0,.18);
+}
+@media (hover: hover) {
+  body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn, .fb-floating-stop, .fb-drawer-close):not(:disabled):hover,
+  body .fb-chip:hover span {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), inset 0 -1px 0 rgba(31,26,20,.14), 0 3px 0 rgba(31,26,20,.18), 0 5px 9px rgba(31,26,20,.14);
+  }
+}
+body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn, .fb-floating-stop, .fb-drawer-close):not(:disabled):active,
+body .fb-chip:active span {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 3px rgba(31,26,20,.16), inset 0 1px 0 rgba(255,255,255,.12), 0 1px 0 rgba(31,26,20,.14);
+}
+body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn):disabled {
+  background-image: none;
+  box-shadow: none;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn, .fb-floating-stop, .fb-drawer-close),
+  body .fb-chip span { transition: none; }
+}
+@media print {
+  body :is(.fb-btn, .fb-play, .fb-mini, .fb-step-btn, .fb-view-tab, .fb-instr-tab, .fb-nav .sn-btn, .fb-floating-stop, .fb-drawer-close),
+  body .fb-chip span { box-shadow: none; background-image: none; }
+}
+
+/* A small metronome with six directly reachable click patterns. */
+.fb-metronome { flex: 0 0 auto; width: 90px; display: grid; gap: 2px; }
+body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { width: 100%; min-height: 26px; padding: 1px 5px; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: .72rem; }
+.fb-click-toggle svg { width: 20px; height: 20px; flex: none; }
+.fb-click-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+body.fb-focused .fb-click-grid button { min-width: 0; min-height: 24px; padding: 0; border: 1px solid #796448; border-radius: 4px; background: #30271d; color: #fff2d8; font: inherit; font-size: .62rem; line-height: 1; cursor: pointer; }
+body.fb-focused .fb-click-grid button[aria-pressed="true"] { background: #f3d9a4; color: #241a14; border-color: #f3d9a4; }
+.fb-metronome button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Relaxed transport with the measure grid always available. */
+body.fb-focused .fb-transport {
+  gap: .25rem .4rem; padding: .3rem .4rem; border-radius: 7px;
+  box-shadow: 0 2px 6px #0002; align-items: center;
+}
+body.fb-focused .fb-play { min-height: 32px; min-width: 0; padding: .2rem .65rem; font-size: .85rem; }
+body.fb-focused .fb-play svg { width: 14px; height: 14px; }
+body.fb-focused .fb-transport .fb-btn { min-height: 30px; padding: .15rem .45rem; font-size: .75rem; border-radius: 6px; }
+body.fb-focused .fb-tempo { gap: .2rem; font-size: .72rem; }
+body.fb-focused .fb-tempo input[type="number"] { min-height: 28px; padding: .1rem .25rem; width: 3rem; font-size: 15px; }
+body.fb-focused .fb-tempo .fb-mini { min-height: 28px; min-width: 28px; padding: .1rem .3rem; }
+body.fb-focused .fb-transport .fb-nav:not([hidden]) { display: flex; }
+body.fb-focused .fb-practice-controls { flex: 0 1 auto; }
+body.fb-focused .fb-practice-controls summary { min-height: 0; padding: .2rem .3rem; font-size: .72rem; }
+body.fb-focused .fb-practice-controls[open] { flex: 1 1 100%; }
+body.fb-focused .fb-transport .fb-next-task {
+  flex: 1 1 14rem; order: 8; margin: 0; padding: 0; border: 0; gap: .35rem;
+}
+body.fb-focused .fb-transport .fb-next-task p { flex: 0 1 auto; font-size: .72rem; }
+body.fb-focused .fb-transport .fb-next-task button { min-height: 26px; padding: .1rem .4rem; font-size: .7rem; }
+.fb-metronome { width: 76px; gap: 1px; }
+body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { min-height: 20px; padding: 0 3px; gap: 3px; font-size: .64rem; }
+.fb-click-toggle svg { width: 15px; height: 15px; }
+.fb-click-grid { gap: 1px; }
+body.fb-focused .fb-click-grid button { min-height: 20px; border-radius: 3px; font-size: .56rem; }
+@media (max-width: 760px) {
+  body.fb-focused .fb-practice-controls { flex: 1 1 100%; }
+  body.fb-focused .fb-transport .fb-next-task { flex-basis: 100%; }
+}
+
+/* Keep the metronome at the end of the controls without a wide empty gap. */
+body.fb-focused .fb-metronome { margin-left: .2rem; width: 90px; }
+body.fb-focused .fb-metronome .fb-click-grid { width: 100%; justify-self: stretch; gap: 2px; }
+body.fb-focused .fb-click-grid button { min-height: 22px; font-size: .68rem; }
+body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { min-height: 22px; font-size: .72rem; }
+body.fb-focused .fb-tempo .fb-mini {
+  width: 26px; height: 24px; min-width: 26px; min-height: 24px;
+  flex: 0 0 26px; padding: 0; border-radius: 3px;
+  font-size: .9rem; line-height: 1; box-shadow: none;
+}
+body.fb-focused .fb-transport .fb-practice-controls { flex: 1 1 100%; }
+@media (max-width: 360px) {
+  body.fb-focused .fb-transport { column-gap: .25rem; }
+  body.fb-focused .fb-transport .fb-btn { padding-inline: .3rem; font-size: .68rem; }
+  body.fb-focused .fb-play { padding-inline: .5rem; font-size: .8rem; }
+}
+
+@media (max-width: 560px) {
+  body.fb-focused .fb-transport { column-gap: .3rem; }
+  body.fb-focused .fb-transport .fb-metronome { margin-left: auto; }
+  body.fb-focused .fb-transport .fb-btn:not(.fb-click-toggle) { padding-inline: .3rem; font-size: .7rem; }
+  body.fb-focused .fb-play { padding-inline: .45rem; font-size: .78rem; }
+  body.fb-focused .fb-tempo input[type="number"] { width: 2.5rem; }
+}
+@media (max-width: 360px) {
+  body.fb-focused .fb-transport { display: grid; grid-template-columns: max-content max-content 1fr; gap: .25rem .4rem; }
+  body.fb-focused .fb-transport > .fb-play { grid-column: 1; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-tempo { grid-column: 2; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-stand-toggle { grid-column: 1; grid-row: 2; }
+  body.fb-focused .fb-transport > [data-fb-tools] { grid-column: 2; grid-row: 2; }
+  body.fb-focused .fb-transport > .fb-metronome { grid-column: 3; grid-row: 1 / span 2; justify-self: end; }
+  body.fb-focused .fb-transport > .fb-dots:empty { display: none; }
+  body.fb-focused .fb-transport > :is(.fb-practice-controls, .fb-nav, .fb-banner, .fb-dots:not(:empty)) { grid-column: 1 / -1; }
+}
+
+.fb-key-finger { stroke: #1f1a14; stroke-width: 2px; paint-order: stroke fill; }
+.fb-mini-keys .fb-key-lbl { fill: #fff !important; stroke: #1f1a14; stroke-width: 2px; paint-order: stroke fill; }
+
+/* The click button sits beside its pattern pad, keeping the transport shallow. */
+body.fb-focused .fb-transport .fb-metronome {
+  display: flex; align-items: center; gap: 4px; width: auto; margin-left: .2rem;
+}
+body.fb-focused .fb-transport .fb-metronome .fb-click-toggle {
+  width: 52px; min-height: 30px; flex: 0 0 52px;
+}
+body.fb-focused .fb-metronome .fb-click-grid { width: 90px; flex: 0 0 90px; gap: 2px; }
+body.fb-focused .fb-click-grid button { min-height: 20px; font-size: .68rem; }
+body.fb-focused .fb-transport { padding: .25rem .4rem; row-gap: .15rem; }
+body.fb-focused .fb-practice-controls summary { padding-block: .1rem; }
+@media (max-width: 560px) {
+  body.fb-focused .fb-transport {
+    display: grid; grid-template-columns: max-content max-content 1fr;
+    gap: .2rem .4rem;
+  }
+  body.fb-focused .fb-transport > .fb-play { grid-column: 1; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-tempo { grid-column: 2; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-metronome {
+    grid-column: 3; grid-row: 1; justify-self: end; margin-left: 0;
+  }
+  body.fb-focused .fb-transport > .fb-stand-toggle { grid-column: 1; grid-row: 2; }
+  body.fb-focused .fb-transport > [data-fb-tools] { grid-column: 2; grid-row: 2; }
+  body.fb-focused .fb-transport > .fb-dots:empty { display: none; }
+  body.fb-focused .fb-transport > :is(.fb-practice-controls, .fb-nav, .fb-banner, .fb-dots:not(:empty)) { grid-column: 1 / -1; }
+}
+
+/* Six click patterns in one compact horizontal strip. */
+body.fb-focused .fb-metronome .fb-click-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)); width: 174px; flex-basis: 174px;
+}
+@media (max-width: 560px) {
+  body.fb-focused .fb-transport > .fb-metronome {
+    grid-column: 1 / -1; grid-row: 3; justify-self: end;
+  }
+}
+@media (max-width: 560px) {
+  body.fb-focused .fb-transport { grid-template-columns: max-content max-content 1fr max-content; }
+  body.fb-focused .fb-transport > .fb-stand-toggle { grid-column: 3; grid-row: 1; justify-self: end; }
+  body.fb-focused .fb-transport > [data-fb-tools] { grid-column: 4; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-metronome { grid-row: 2; }
+}
+
+/* Music stand fills the display: only the player and the score remain. */
+body.fb-standing { overflow: hidden; }
+body.fb-focused.fb-standing .ll-sim {
+  position: fixed; inset: 0; z-index: 10000; width: 100%; height: 100dvh;
+  max-height: none; margin: 0; padding: 0; overflow: auto; background: #fffdf7;
+}
+body.fb-focused.fb-standing .fb-shell { width: 100%; max-width: none; margin: 0; padding: 0; }
+body.fb-standing .fb-shell > :not(#book),
+body.fb-standing #book > :not(#fakebook),
+body.fb-standing #fakebook > :not(.fb-transport):not(.fb-sheet-card),
+body.fb-standing .fb-sheet-card > :not(.fb-sheet-head):not(.fb-sheet):not(.fb-arrangement),
+body.fb-standing .fb-sheet-head-actions,
+body.fb-standing [data-fb-tools] { display: none !important; }
+body.fb-focused.fb-standing #fakebook { display: block; }
+body.fb-focused.fb-standing #book { margin: 0; padding: 0; }
+body.fb-focused.fb-standing .fb-transport { margin: 0; border-radius: 0; max-height: none; overflow: visible; }
+body.fb-focused.fb-standing .fb-sheet-card { margin: 0; padding: .4rem; border: 0; border-radius: 0; box-shadow: none; }
+body.fb-focused.fb-standing .fb-sheet-head { margin-bottom: .25rem; }

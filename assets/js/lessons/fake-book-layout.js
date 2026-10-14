@@ -19,13 +19,33 @@
   });
   var previousScroll = 0;
   function setStand(on) {
-    if (on) previousScroll = scroller.scrollTop;
+    var wasOn = document.body.classList.contains('fb-standing');
+    if (on && !wasOn) previousScroll = scroller.scrollTop;
+    if (on && dock && !dock.hidden) closeTools();
     document.body.classList.toggle('fb-standing', on);
     button.setAttribute('aria-pressed', String(on));
     button.textContent = on ? 'Exit stand' : 'Stand';
-    if (on) scroller.scrollTop = 0;
-    else scroller.scrollTop = previousScroll;
+    if (on) {
+      scroller.scrollTop = 0;
+      button.focus({ preventScroll: true });
+      if (!document.fullscreenElement && scroller.requestFullscreen) {
+        // Keep the viewport-filling stand layout on browsers without fullscreen support.
+        scroller.requestFullscreen().catch(function () {});
+      }
+    } else {
+      if (document.fullscreenElement === scroller && document.exitFullscreen) {
+        document.exitFullscreen().catch(function () {});
+      }
+      scroller.scrollTop = previousScroll;
+    }
+    placeDock();
   }
+  document.addEventListener('fullscreenchange', function () {
+    if (!document.fullscreenElement && document.body.classList.contains('fb-standing')) {
+      setStand(false);
+      button.focus({ preventScroll: true });
+    }
+  });
   button.addEventListener('click', function () {
     setStand(button.getAttribute('aria-pressed') !== 'true');
   });
@@ -38,6 +58,11 @@
   var stage = document.querySelector('.ll-stage');
   var STORE = 'fakebook:dock:v1';
   var openTab = null;
+  var lastTab = 'key';
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORE) || '{}');
+    if (tabs.some(function (tab) { return tab.dataset.fbDockTab === saved.tab; })) lastTab = saved.tab;
+  } catch (e) { /* storage unavailable */ }
   var toolsButton = root.querySelector('[data-fb-tools]');
   function closeTools() {
     setTab(null);
@@ -48,21 +73,20 @@
   toolsButton.addEventListener('click', function () {
     if (!dock.hidden) { closeTools(); return; }
     dock.hidden = false;
+    placeDock();
     toolsButton.setAttribute('aria-expanded', 'true');
-    setTab('key');
-    tabs.find(function (tab) { return tab.dataset.fbDockTab === 'key'; }).focus();
+    setTab(lastTab);
+    tabs.find(function (tab) { return tab.dataset.fbDockTab === lastTab; }).focus();
   });
   root.querySelector('[data-fb-tools-close]').addEventListener('click', closeTools);
+  root.querySelector('[data-fb-tools-size]').addEventListener('click', function (event) {
+    var expanded = dock.classList.toggle('is-expanded');
+    event.currentTarget.setAttribute('aria-expanded', String(expanded));
+    event.currentTarget.textContent = expanded ? 'Compact' : 'Expand';
+  });
   document.querySelector('[data-fb-guide]').addEventListener('click', function () {
     if (window.LessonLayout) window.LessonLayout.openPanel(true);
     else document.querySelector('.ll-open-btn').click();
-  });
-  var task = 0;
-  var tasks = ['Listen once. Follow the highlighted notes.', 'Play or sing one phrase. Slow the tempo if you need to.', 'Predict how a new rhythm will sound. Open Tools, choose Rhythm, and compare.', 'What changed? Describe what you heard, then try another tune.'];
-  root.querySelector('[data-fb-task-next]').addEventListener('click', function (event) {
-    task = (task + 1) % tasks.length;
-    root.querySelector('[data-fb-task]').textContent = tasks[task];
-    event.currentTarget.textContent = task === tasks.length - 1 ? 'Start again' : 'Next task';
   });
   root.querySelector('.fb-library').addEventListener('click', function (event) {
     if (event.target.closest('[data-tune]')) root.querySelector('.fb-library-wrap').open = false;
@@ -70,14 +94,19 @@
 
 
   function remember() {
-    try { localStorage.setItem(STORE, JSON.stringify({ tab: openTab })); } catch (e) { /* storage blocked */ }
+    try { localStorage.setItem(STORE, JSON.stringify({ tab: lastTab })); } catch (e) { /* storage blocked */ }
   }
   function setTab(id, focusPane) {
     openTab = id || null;
+    if (openTab) lastTab = openTab;
     tabs.forEach(function (t) {
       var on = t.getAttribute('data-fb-dock-tab') === openTab;
       t.setAttribute('aria-selected', String(on));
       t.tabIndex = on || (!openTab && t === tabs[0]) ? 0 : -1;
+      if (on) {
+        var rail = t.parentElement;
+        rail.scrollLeft = t.offsetLeft - rail.offsetLeft - (rail.clientWidth - t.clientWidth) / 2;
+      }
     });
     dock.querySelectorAll('[data-fb-pane]').forEach(function (p) {
       p.hidden = p.getAttribute('data-fb-pane') !== openTab;
@@ -89,12 +118,15 @@
       if (first) first.focus({ preventScroll: true });
     }
     remember();
+    placeDock();
   }
   // Pin the dock to the scrolling music area: below the nav bars, and above the
   // lesson guide handle that docks under the music on phones.
   function placeDock() {
     var r = (scroller || stage).getBoundingClientRect();
-    dock.style.setProperty('--fb-dock-top', Math.max(0, r.top) + 'px');
+    var player = root.querySelector('.fb-transport').getBoundingClientRect();
+    dock.style.setProperty('--fb-workspace-top', Math.max(8, r.top + 8) + 'px');
+    dock.style.setProperty('--fb-dock-top', (window.matchMedia('(min-width: 1100px) and (min-height: 601px)').matches ? Math.max(0, r.top + 8) : Math.max(0, r.top, player.bottom + 8)) + 'px');
     dock.style.setProperty('--fb-dock-bottom', Math.max(0, window.innerHeight - r.bottom) + 'px');
   }
 
@@ -126,12 +158,15 @@
     setVal('melody', checkedLabel('[data-fb-melody]') || 'Original');
     setVal('rhythm', checkedLabel('[data-fb-rhythm]') || 'As written');
     var inst = root.querySelector('.fb-panel [data-engine-inst].is-active');
-    setVal('chords', (inst && inst.getAttribute('data-engine-inst') === 'guitar' ? 'Guitar' : 'Piano') + ' · ' + (checkedLabel('[data-fb-voicing]') || ''));
+    setVal('chords', (inst ? inst.textContent.trim().replace(/^[^A-Za-z]+/, '') : 'Piano') + ' · ' + (checkedLabel('[data-fb-voicing]') || ''));
     setVal('band', chosen('[data-fb-style]') + ' · ' + (root.querySelector('[data-fb-feel]') && root.querySelector('[data-fb-feel]').value === 'swing' ? 'swing' : 'straight'));
     var loop = root.querySelector('[data-fb-loop]');
     var from = root.querySelector('[data-fb-from]'), to = root.querySelector('[data-fb-to]');
     var whole = Number(from.value) <= 1 && Number(to.value) >= Number(to.max || to.value);
     setVal('mix', (loop && loop.checked ? '⟳ ' : '') + (whole ? 'Whole tune' : 'Bars ' + from.value + '–' + to.value));
+    var status = key + ' · Melody: ' + checkedLabel('[data-fb-melody]') + ' · Rhythm: ' + checkedLabel('[data-fb-rhythm]') + ' · ' + (loop.checked ? 'Loop ' + from.value + '–' + to.value : 'Loop off');
+    var statusNode = root.querySelector('[data-fb-tools-status]');
+    if (statusNode.textContent !== status) statusNode.textContent = status;
   }
   var pending = 0;
   function soon() { clearTimeout(pending); pending = setTimeout(summarize, 0); }
@@ -157,7 +192,9 @@
       var next = { ArrowDown: i + 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[ev.key];
       if (next === undefined) return;
       ev.preventDefault();
-      tabs[(next + tabs.length) % tabs.length].focus();
+      var target = tabs[(next + tabs.length) % tabs.length];
+      setTab(target.dataset.fbDockTab);
+      target.focus();
     });
     ['change', 'input', 'click'].forEach(function (type) { root.addEventListener(type, soon); });
     var watch = new MutationObserver(soon);
@@ -168,9 +205,14 @@
     setTab(null);
     placeDock();
     window.addEventListener('resize', placeDock);
+    window.addEventListener('scroll', placeDock, true);
     // The music-family nav is injected after load and the guide drawer resizes
     // the music area on phones; follow both.
-    if (window.ResizeObserver && scroller) new ResizeObserver(placeDock).observe(scroller);
+    if (window.ResizeObserver) {
+      var dockSize = new ResizeObserver(placeDock);
+      if (scroller) dockSize.observe(scroller);
+      dockSize.observe(root.querySelector('.fb-transport'));
+    }
     summarize();
   }
 

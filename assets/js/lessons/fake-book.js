@@ -424,7 +424,10 @@
     inv1: { label: '1st inversion', tip: 'The root moves up an octave, so the 3rd is on the bottom.', k: 1 },
     inv2: { label: '2nd inversion', tip: 'The 5th is on the bottom.', k: 2 },
     inv3: { label: '3rd inversion', tip: 'For seventh chords, the 7th is on the bottom. Triads only have two inversions, so they wrap back to root position.', k: 3 },
-    smooth: { label: 'Smooth', term: 'voice leading', tip: 'For each chord, picks the inversion closest to the chord before it, so your hand barely moves. This is good voice leading.' },
+    smooth: { label: 'Smooth progression', term: 'voice leading', tip: 'Chooses inversions across the whole progression to reduce movement between voices in a middle keyboard register.' },
+    common: { label: 'Hold common tones', term: 'voice leading', tip: 'Favors keeping shared notes in the same octave, then minimizes movement. Suggested piano voicings; slash-chord bass is played separately.' },
+    shellSmooth: { label: 'Smooth shells', term: 'shell voicing', tip: 'Connects root, 3rd and the upper color tone (usually the 7th) with small steps. Triads keep all three tones.' },
+    open: { label: 'Open / drop 2', tip: 'Lowers the second-highest tone an octave, then connects these wider piano voicings with small steps. Check the stretch before playing.' },
     shell: { label: 'Shell', term: 'shell voicing', tip: 'Just the root, 3rd and 7th: the three notes that say what kind of chord it is. Bebop pianists comped like this.' }
   };
   function rootPosition(c) {
@@ -443,33 +446,78 @@
     var k = Math.round((target - mean) / 12);
     return n.map(function (x) { return x + 12 * k; });
   }
-  function distance(a, b) {
-    var s = 0, len = Math.min(a.length, b.length);
-    for (var i = 0; i < len; i++) s += Math.abs(a[i] - b[i]);
-    return s + Math.abs(a.length - b.length) * 3;
+  // Compare voices from low to high; added/removed voices cost six semitones.
+  // Unlike index-only matching, this handles triads becoming seventh chords.
+  function voiceMotion(a, b, holdCommon) {
+    var costs = Array.from({ length: a.length + 1 }, function () { return []; });
+    for (var i = 0; i <= a.length; i++) costs[i][0] = i * 6;
+    for (var j = 0; j <= b.length; j++) costs[0][j] = j * 6;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
+      var step = Math.abs(a[i - 1] - b[j - 1]);
+      costs[i][j] = Math.min(costs[i - 1][j] + 6, costs[i][j - 1] + 6,
+        costs[i - 1][j - 1] + step + (step > 7 ? (step - 7) * .5 : 0));
+    }
+    var cost = costs[a.length][b.length];
+    if (holdCommon) {
+      a.forEach(function (note) {
+        if (b.some(function (next) { return mod(next, 12) === mod(note, 12); }) && b.indexOf(note) < 0) cost += 5;
+      });
+    }
+    return cost;
+  }
+  function voiceCandidates(c, mode) {
+    var rp = rootPosition(c), iv = Q[c.q].iv;
+    if (mode === 'shellSmooth') rp = [rp[0], rp[0] + iv[1], rp[0] + (iv.length >= 4 ? iv[3] : iv[2])];
+    var candidates = [], seen = {};
+    for (var k = 0; k < rp.length; k++) for (var o = -24; o <= 24; o += 12) {
+      var notes = rotate(rp, k).map(function (x) { return x + o; }).sort(function (a, b) { return a - b; });
+      if (mode === 'open' && notes.length >= 3) {
+        notes[notes.length - 2] -= 12;
+        notes.sort(function (a, b) { return a - b; });
+      }
+      if (notes[0] < 48 || notes[notes.length - 1] > 84) continue;
+      var key = notes.join(',');
+      if (seen[key]) continue;
+      seen[key] = true;
+      var mean = notes.reduce(function (a, b) { return a + b; }, 0) / notes.length;
+      candidates.push({ notes: notes, register: Math.abs(mean - 62) * .12 });
+    }
+    return candidates.length ? candidates : [{ notes: recenter(rp, 62), register: 0 }];
   }
   function voiceChords(chords, mode) {
-    var prev = null;
+    if (!chords.length) return [];
+    if (['smooth', 'common', 'shellSmooth', 'open'].indexOf(mode) >= 0) {
+      // Dynamic programming: choose a connected path through all chord candidates,
+      // rather than a locally good inversion that forces a large leap next time.
+      var layers = chords.map(function (c) { return voiceCandidates(c, mode); });
+      layers.forEach(function (layer, index) {
+        layer.forEach(function (candidate) {
+          candidate.cost = index ? Infinity : candidate.register;
+          candidate.previous = -1;
+          if (!index) return;
+          layers[index - 1].forEach(function (prev, pi) {
+            var cost = prev.cost + voiceMotion(prev.notes, candidate.notes, mode === 'common') + candidate.register;
+            if (cost < candidate.cost) { candidate.cost = cost; candidate.previous = pi; }
+          });
+        });
+      });
+      var last = layers[layers.length - 1], best = 0;
+      last.forEach(function (candidate, i) { if (candidate.cost < last[best].cost) best = i; });
+      var result = [];
+      for (var i = layers.length - 1; i >= 0; i--) {
+        result[i] = layers[i][best].notes;
+        best = layers[i][best].previous;
+      }
+      return result;
+    }
     return chords.map(function (c) {
-      var rp = rootPosition(c), n;
+      var rp = rootPosition(c);
       if (mode === 'shell') {
         var iv = Q[c.q].iv, top = iv.length >= 4 ? iv[3] : iv[2];
-        n = [rp[0], rp[0] + iv[1], rp[0] + top];
-      } else if (mode === 'smooth') {
-        var best = null;
-        for (var k = 0; k < rp.length; k++) for (var o = -12; o <= 12; o += 12) {
-          var cand = rotate(rp, k).map(function (x) { return x + o; });
-          var mean = cand.reduce(function (a, b) { return a + b; }, 0) / cand.length;
-          var score = (prev ? distance(cand, prev) : 0) + Math.abs(mean - 62) * 0.6 + (prev ? 0 : k * 4);
-          if (!best || score < best.s) best = { n: cand, s: score };
-        }
-        n = best.n;
-      } else {
-        var kk = (VOICING[mode] && VOICING[mode].k) || 0;
-        n = recenter(rotate(rp, kk % rp.length), 61);
+        return [rp[0], rp[0] + iv[1], rp[0] + top];
       }
-      prev = n;
-      return n;
+      var kk = (VOICING[mode] && VOICING[mode].k) || 0;
+      return recenter(rotate(rp, kk % rp.length), 61);
     });
   }
   var BOTTOM_NAMES = ['root', '3rd', '5th', '7th', '9th'];
@@ -496,10 +544,10 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead',
-    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, showAnalysis: false, practice: 'study', posInst: 'guitar',
+    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
-    guitarForm: 'open',
+    guitarForm: 'open', guitarVoice: 'manual',
     triadInv: 0,
     triadSet: '123',
     scaleType: 'ionian',
@@ -531,6 +579,7 @@
       var s = JSON.parse(localStorage.getItem(STORE) || 'null');
       if (s) { Object.keys(o).forEach(function (k) { if (s[k] !== undefined) o[k] = s[k]; }); o.vol = Object.assign({}, DEFAULTS.vol, s.vol || {}); }
     } catch (e) { /* storage unavailable */ }
+    o.engineInst = o.posInst;
     return o;
   }
   function save() { try { localStorage.setItem(STORE, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
@@ -577,6 +626,9 @@
       writtenChords: moveChords(ws, wFlat)
     };
     view.voicings = voiceChords(view.concertChords, opts.voicing);
+    view.guitarGrips = window.FakeBookGuitarVoice ? window.FakeBookGuitarVoice.plan(view.concertChords.map(function (c) {
+      return { rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
+    }), opts.guitarVoice || 'manual', GT) : [];
     // Imported bass-clef staff and tab: concert pitch (they're for piano, bass and guitar), moved with the key.
     view.bass = null; view.tab = null;
     if (t.staves.bass) {
@@ -622,8 +674,7 @@
     }
   }
   // Finger positions: one small fingerboard per measure under the staff, in place of tab.
-  var answersRevealed = false;
-  function posOn() { return !!opts.showPos && !tune.chordsOnly && opts.sheetView !== 'drums'; }
+  function posOn() { return !!opts.showPos && opts.posInst !== 'piano' && !tune.chordsOnly && opts.sheetView !== 'drums'; }
   // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
   function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
 
@@ -1211,7 +1262,6 @@
           }
           var textEstWidth = chordName(o.c).length * 1.05 * S;
           lastChordRight = cx + textEstWidth;
-          if (opts.practice === 'names' && !answersRevealed) { out.push(txt(cx, chordBase, '?', 'fb-chord-question', ' font-size="' + (1.75 * S) + '"')); return; }
           out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(chordName(o.c)) + '</text>');
         });
         // accidental memory per bar
@@ -1455,6 +1505,7 @@
     var H = Math.ceil(y + 0.4 * S);
     sheetEl.innerHTML = '<svg class="fb-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
       MN.escape(t.raw.title + ' lead sheet, written in ' + keyLabel(view.writtenKey) + ', ' + t.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
+    sizeMeasureDiagrams(S);
     nowEls = []; barEls = {};
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
@@ -1958,7 +2009,11 @@
       add.push({ b: off + b.start - span.start, kind: 'ui', ui: 'bar', bar: b.bar, meter: b.meter });
       for (var bt = 0; bt < b.len - EPS; bt += 4 / b.meter[1]) {
         add.push({ b: off + b.start + bt - span.start, kind: 'ui', ui: 'beat', n: Math.round(bt * b.meter[1] / 4) });
-        if (opts.click === 'all' || (opts.click === 'one' && bt === 0)) add.push({ b: off + b.start + bt - span.start, kind: 'click', level: bt === 0 ? 2 : 1 });
+        var beatIndex = Math.round(bt * b.meter[1] / 4);
+        var clickOn = opts.click === 'all' || (opts.click === 'one' && beatIndex === 0) ||
+          (opts.click === 'backbeat' && (b.meter[0] === 3 ? beatIndex > 0 : beatIndex % 2 === 1)) ||
+          (opts.click === 'gap' && Math.floor((b.bar - r.from) / 2) % 2 === 0);
+        if (clickOn) add.push({ b: off + b.start + bt - span.start, kind: 'click', level: bt === 0 && opts.click !== 'backbeat' ? 2 : 1 });
       }
     });
     var times = {};
@@ -2393,16 +2448,15 @@
       stv.querySelector('[data-fb-has="bass"]').hidden = !hasB;
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
       el('[data-fb-show-tab]').checked = tabOn();
-      el('[data-fb-show-pos]').checked = !!opts.showPos;
-      el('[data-fb-show-shapes]').checked = !!opts.measureShapes;
-      el('[data-fb-practice]').value = opts.practice || 'study';
-      el('[data-fb-reveal]').hidden = !opts.practice || opts.practice === 'study';
-      el('[data-fb-reveal]').textContent = answersRevealed ? 'Hide answers' : 'Reveal answers';
+      el('[data-fb-show-pos]').checked = posOn();
+      el('[data-fb-show-pos]').disabled = opts.posInst === 'piano';
+      el('[data-fb-show-pos]').closest('label').title = opts.posInst === 'piano' ? 'Fingerboard positions are available for guitar and violin.' : '';
+      root.querySelectorAll('[data-fb-show-shapes]').forEach(function (control) { control.checked = !!opts.measureShapes; });
       var pil = el('[data-fb-pos-inst]');
       pil.value = opts.posInst || 'guitar';
-      pil.closest('label').hidden = !opts.showPos;
+      pil.closest('label').hidden = false;
       var positionKey = el('[data-fb-position-key]');
-      positionKey.hidden = !opts.showPos;
+      positionKey.hidden = !posOn();
       positionKey.textContent = 'Numbers in dots = fingers; 0 = open string. The outlined dot starts the bar; the dashed ring is the previous bar’s last note. ' + (opts.posInst === 'violin' ? 'Bottom numbers count semitones above the open string. Dotted guides are pitch references, not frets or measured distances. ↓ = low finger; ↑ = high finger.' : 'Bottom numbers = frets. Low E is at the bottom; high e is at the top.');
       var tp = el('[data-fb-tab-pos]');
       tp.value = opts.tabPos || 'auto';
@@ -2414,6 +2468,7 @@
     el('[data-fb-feel]').value = opts.feel;
     el('[data-fb-mode]').value = opts.mode;
     el('[data-fb-click]').value = opts.click;
+    root.querySelectorAll('[data-fb-click-pattern]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-fb-click-pattern') === opts.click)); });
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     el('[data-fb-lead]').value = opts.lead;
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
@@ -2428,6 +2483,13 @@
     root.querySelectorAll('input[name="fb-melody"]').forEach(function (i) { i.checked = i.value === opts.melody; });
     root.querySelectorAll('input[name="fb-rhythm"]').forEach(function (i) { i.checked = i.value === opts.rhythm; });
     root.querySelectorAll('input[name="fb-voicing"]').forEach(function (i) { i.checked = i.value === opts.voicing; });
+    el('[data-fb-guitar-voice]').value = opts.guitarVoice || 'manual';
+    el('[data-fb-guitar-voice]').closest('label').hidden = opts.posInst !== 'guitar';
+    var guitarNote = el('[data-fb-guitar-voice-note]');
+    guitarNote.hidden = opts.posInst !== 'guitar' || !opts.guitarVoice || opts.guitarVoice === 'manual';
+    guitarNote.textContent = 'Suggested grips in standard tuning, with a maximum three-fret span. Smooth changes minimize movement on each string; Hold common tones favors keeping shared notes on the same string and fret. Shells omit the fifth of seventh and sixth chords; triads keep all three tones. Slash-chord bass is retained. These choices affect chord diagrams and Guitar previews; the band accompaniment stays on piano. Check each grip for comfort.';
+    el('[data-fb-notation-voicing]').value = opts.voicing;
+    el('[data-fb-notation-voicing]').closest('label').hidden = opts.posInst !== 'piano';
     root.querySelectorAll('input[name="fb-melody"], input[name="fb-rhythm"]').forEach(function (i) {
       i.disabled = !!tune.chordsOnly || opts.mode === 'score';
     });
@@ -2468,6 +2530,7 @@
       cb.checked = opts.follow !== false;
     });
     updateLiveShapesToggle();
+    syncQuickChordControls();
 
     tips();
   }
@@ -2524,10 +2587,23 @@
   var currentVoicingNotes = [];
   var currentGuitarFrets = [];
 
+  var pianoPatternId = 0;
+  function pianoPitchPalette() {
+    var prefix = 'fb-piano-pitch-' + (++pianoPatternId) + '-';
+    var defs = '<defs>' + NAME_COLORS.map(function (color, i) {
+      return '<pattern id="' + prefix + i + '" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="' + color + '"/><path d="M-2 2L2-2M0 8L8 0M6 10L10 6" stroke="#ffffff" stroke-opacity=".6" stroke-width="2"/></pattern>';
+    }).join('') + '</defs>';
+    return { prefix: prefix, defs: defs, style: function (m) {
+      var pitch = respell(m);
+      return ' style="fill:' + (pitch.a ? 'url(#' + prefix + pitch.l + ')' : NAME_COLORS[pitch.l]) + '"';
+    } };
+  }
+
   function drawPianoVisualizer(notes, meta) {
     var kbs = root.querySelectorAll('[data-fb-keys]');
     if (!kbs.length) return;
     meta = meta || {};
+    var palette = pianoPitchPalette();
     var lo = 48, hi = 84, whites = [], blacks = [], wW = 20, x = 0;
     for (var m = lo; m < hi; m++) {
       var pc = mod(m, 12);
@@ -2537,7 +2613,7 @@
       var roleCls = info ? (info.role === 'root' ? ' on-root' : info.role === 'third' ? ' on-third' : info.role === 'fifth' ? ' on-fifth' : info.role === 'seventh' ? ' on-seventh' : ' on') : '';
 
       if (!isB) {
-        var keyHtml = '<rect x="' + x + '" y="0" width="' + wW + '" height="100" rx="3" class="fb-wk' + roleCls + '" data-midi="' + m + '"/>';
+        var keyHtml = '<rect x="' + x + '" y="0" width="' + wW + '" height="100" rx="3" class="fb-wk' + roleCls + '"' + (info ? palette.style(m) : '') + ' data-midi="' + m + '"/>';
         if (info) {
           keyHtml += '<text x="' + (x + wW / 2) + '" y="76" class="fb-key-lbl" data-contrast-guard-skip>' + MN.escape(info.label) + '</text>';
           if (info.finger) keyHtml += '<text x="' + (x + wW / 2) + '" y="92" class="fb-key-finger">' + info.finger + '</text>';
@@ -2547,16 +2623,16 @@
         whites.push(keyHtml);
         x += wW;
       } else {
-        var bHtml = '<rect x="' + (x - 6.5) + '" y="0" width="13" height="62" rx="2" class="fb-bk' + roleCls + '" data-midi="' + m + '"/>';
+        var bHtml = '<rect x="' + (x - 6.5) + '" y="0" width="13" height="62" rx="2" class="fb-bk' + roleCls + '"' + (info ? palette.style(m) : '') + ' data-midi="' + m + '"/>';
         if (info) {
           bHtml += '<text x="' + x + '" y="52" class="fb-key-lbl" data-contrast-guard-skip font-size="7.5">' + MN.escape(info.label) + '</text>';
         }
         blacks.push(bHtml);
       }
     }
-    var svgContent = '<svg viewBox="0 0 ' + x + ' 102" role="img" aria-label="Piano keyboard display">' + whites.join('') + blacks.join('') + '</svg>';
-    kbs.forEach(function (kb) {
-      kb.innerHTML = svgContent;
+    var svgContent = '<svg viewBox="0 0 ' + x + ' 102" role="img" aria-label="Piano keyboard display; striped keys are accidentals">' + palette.defs + whites.join('') + blacks.join('') + '</svg>';
+    kbs.forEach(function (kb, index) {
+      kb.innerHTML = svgContent.split(palette.prefix).join(palette.prefix + index + '-');
       kb.querySelectorAll('[data-midi]').forEach(function (k) {
         k.addEventListener('click', function () {
           var mid = Number(k.getAttribute('data-midi'));
@@ -2676,12 +2752,13 @@
   // ---- bar pop-up: every chord in a clicked measure, as piano or guitar shapes
   var barPopBar = null;
   function chordTypeOf(c) {
-    return (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    return (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: Q[c.q] ? Q[c.q].iv : [0, 4, 7] };
   }
   function roleOf(iv) {
     return iv === 0 ? 'root' : (iv === 3 || iv === 4) ? 'third' : (iv === 6 || iv === 7 || iv === 8) ? 'fifth' : (iv === 9 || iv === 10 || iv === 11) ? 'seventh' : 'other';
   }
   function miniPiano(notes, rootPC) {
+    var palette = pianoPitchPalette();
     var lo = Math.floor(Math.min.apply(null, notes) / 12) * 12;
     var hi = Math.max(lo + 24, Math.ceil((Math.max.apply(null, notes) + 1) / 12) * 12);
     var wW = 14, x = 0, whites = [], blacks = [];
@@ -2690,13 +2767,32 @@
       var cls = on ? ' on-' + roleOf(mod(m - rootPC, 12)) : '';
       if (cls === ' on-other') cls = ' on';
       var lbl = on ? '<text x="' + (isB ? x : x + wW / 2) + '" y="' + (isB ? 40 : 60) + '" class="fb-key-lbl" font-size="' + (isB ? 6 : 7) + '" data-contrast-guard-skip>' + MN.escape(noteName(respell(m))) + '</text>' : '';
-      if (!isB) { whites.push('<rect x="' + x + '" y="0" width="' + wW + '" height="70" rx="2" class="fb-wk' + cls + '"/>' + lbl); x += wW; }
-      else blacks.push('<rect x="' + (x - 4.5) + '" y="0" width="9" height="44" rx="1.5" class="fb-bk' + cls + '"/>' + lbl);
+      if (!isB) { whites.push('<rect x="' + x + '" y="0" width="' + wW + '" height="70" rx="2" class="fb-wk' + cls + '"' + (on ? palette.style(m) : '') + '/>' + lbl); x += wW; }
+      else blacks.push('<rect x="' + (x - 4.5) + '" y="0" width="9" height="44" rx="1.5" class="fb-bk' + cls + '"' + (on ? palette.style(m) : '') + '/>' + lbl);
     }
     return '<svg class="fb-mini-keys" viewBox="0 0 ' + x + ' 72" role="img" aria-label="Piano keys: ' +
-      notes.map(function (m) { return noteName(respell(m)); }).join(' ') + '">' + whites.join('') + blacks.join('') + '</svg>';
+      notes.map(function (m) { return noteName(respell(m)); }).join(' ') + '; striped keys are accidentals">' + palette.defs + whites.join('') + blacks.join('') + '</svg>';
   }
-  function guitarShapeFor(rootPC, cType) {
+  function diagramPianoNotes(c, ci) {
+    if (opts.engineMode !== 'triads') return view.voicings[ci] || rootPosition(c);
+    var pc = mod(NAT[c.root.l] + c.root.a, 12);
+    var ivs = violinTones(c, chordTypeOf(c), 'triads').intervals;
+    return rotate(ivs.map(function (iv) { return 60 + pc + iv; }), Number(opts.triadInv) || 0);
+  }
+  function guitarShapeFor(rootPC, cType, ci) {
+    if (opts.engineMode === 'triads') {
+      var quality = cType.intervals.indexOf(3) >= 0 ? (cType.intervals.indexOf(6) >= 0 ? 'diminished' : 'minor') : cType.intervals.indexOf(8) >= 0 ? 'augmented' : 'major';
+      var match = getGuitarTriad(rootPC, quality, opts.triadSet || '123', Number(opts.triadInv) || 0);
+      if (!match) return null;
+      var frets = [null, null, null, null, null, null];
+      match.notes.forEach(function (note) { frets[note.s] = note.f; });
+      return { frets: frets };
+    }
+
+    if (opts.guitarVoice && opts.guitarVoice !== 'manual' && view && view.guitarGrips) {
+      var grip = view.guitarGrips[ci == null ? chordSel : ci];
+      return grip ? { frets: grip.frets, formName: opts.guitarVoice } : null;
+    }
     if (!GT) return null;
     var forms = GT.availableForms(rootPC, cType);
     var form = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : forms[0];
@@ -2704,13 +2800,26 @@
     shape.formName = form;
     return shape;
   }
-  function guitarFormLabel(rootPC, c) {
-    var shape = guitarShapeFor(rootPC, chordTypeOf(c));
-    return shape && shape.formName ? ' · ' + String(shape.formName).toUpperCase() + ' form' : '';
+  function syncQuickChordControls() {
+    var select = el('[data-fb-quick-guitar-form]');
+    if (!select || !view) return;
+    select.closest('label').hidden = opts.posInst !== 'guitar';
+    el('[data-fb-tools-guitar-voice]').value = opts.guitarVoice || 'manual';
+    var c = view.concertChords[chordSel];
+    var automatic = opts.guitarVoice && opts.guitarVoice !== 'manual';
+    var forms = c && GT ? GT.availableForms(mod(NAT[c.root.l] + c.root.a, 12), chordTypeOf(c)) : [];
+    select.innerHTML = forms.map(function (form) { return '<option value="' + form + '">' + MN.escape(form.toUpperCase() + ' form') + '</option>'; }).join('');
+    select.value = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : forms[0] || '';
+    select.disabled = !!automatic || !forms.length;
+    select.title = automatic ? 'Choose manual voice leading to select a grip.' : 'Preferred grip; unavailable forms use a supported grip for each chord.';
   }
-  function miniGuitar(rootPC, cType) {
-    var shape = guitarShapeFor(rootPC, cType);
-    if (!shape) return '';
+  function guitarFormLabel(rootPC, c, ci) {
+    var shape = guitarShapeFor(rootPC, chordTypeOf(c), ci);
+    return shape && shape.formName ? ' · ' + (opts.guitarVoice && opts.guitarVoice !== 'manual' ? el('[data-fb-guitar-voice] option:checked').textContent : String(shape.formName).toUpperCase() + ' form') : ' · no supported compact grip';
+  }
+  function miniGuitar(rootPC, cType, ci) {
+    var shape = guitarShapeFor(rootPC, cType, ci);
+    if (!shape) return '<span>No supported compact guitar grip.</span>';
     var frets = shape.frets, degs = GT.computeDegrees(rootPC, cType, frets);
     var played = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
     var maxF = played.length ? Math.max.apply(null, played) : 0, minF = played.length ? Math.min.apply(null, played) : 1;
@@ -2741,8 +2850,30 @@
     view.concertChords.forEach(function (c, i) { if (c.bar < b) prev = i; });
     return { idx: prev >= 0 ? [prev] : [], held: prev >= 0 };
   }
+  function sizeMeasureDiagrams(S) {
+    var diagrams = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape svg'));
+    if (!diagrams.length) return;
+    // One native-coordinate scale for the whole score: narrow bars and wide
+    // voicings constrain every diagram equally rather than shrinking one chord.
+    var scale = Infinity;
+    diagrams.forEach(function (svg) {
+      var box = svg.viewBox.baseVal;
+      var aid = svg.closest('.fb-measure-help');
+      if (box.width > 0 && box.height > 0) {
+        scale = Math.min(scale, Number(aid.getAttribute('width')) / box.width, 13 * S / box.height);
+      }
+    });
+    if (!isFinite(scale) || scale <= 0) return;
+    diagrams.forEach(function (svg) {
+      var box = svg.viewBox.baseVal;
+      svg.style.setProperty('width', (box.width * scale).toFixed(3) + 'px', 'important');
+      svg.style.setProperty('height', (box.height * scale).toFixed(3) + 'px', 'important');
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    });
+  }
+
   function drawMeasureHelp(b, y, h, S, positions) {
-    var info = barChords(b.i), hideNames = opts.practice === 'names' && !answersRevealed, hideShapes = opts.practice === 'shapes' && !answersRevealed;
+    var info = barChords(b.i);
     var html = [], chordPCs = [], preferred;
     info.idx.forEach(function (ci) {
       var c = view.concertChords[ci], pc = mod(NAT[c.root.l] + c.root.a, 12);
@@ -2750,15 +2881,30 @@
       chordPCs = chordPCs.concat(Q[c.q].iv.map(function (iv) { return mod(pc + iv, 12); }));
       if (c.bass) chordPCs.push(mod(NAT[c.bass.l] + c.bass.a, 12));
       if (!opts.measureShapes) return;
-      var diagram = opts.engineInst === 'guitar' ? miniGuitar(pc, chordTypeOf(c)) : opts.engineInst === 'violin' && window.FakeBookViolin ? window.FakeBookViolin.mini(pc, window.FakeBookViolin.toneMap(Q[c.q].iv)) : miniPiano(rootPosition(c), pc);
-      html.push('<div class="fb-measure-shape"><strong>' + (hideNames ? 'Name this chord' : MN.escape(chordName(c))) + (info.held ? ' · held' : '') + '</strong>' + (hideShapes ? '<p>Recall the shape, then reveal.</p>' : diagram || '<p>No supported shape for this chord.</p>') + '</div>');
+      var diagram = opts.posInst === 'piano' ? miniPiano(diagramPianoNotes(c, ci), pc) : opts.posInst === 'violin' ? (window.FakeBookViolin ? window.FakeBookViolin.mini(pc, window.FakeBookViolin.toneMap(Q[c.q].iv)) : null) : miniGuitar(pc, chordTypeOf(c), ci);
+      var notes = opts.posInst === 'piano' ? diagramPianoNotes(c, ci) : [];
+      if (opts.posInst === 'guitar') {
+        var grip = guitarShapeFor(pc, chordTypeOf(c), ci);
+        if (grip) notes = grip.frets.map(function (f, st) { return typeof f === 'number' ? [40,45,50,55,59,64][st] + f : null; }).filter(function (m) { return m !== null; }).sort(function (a,b) { return a-b; });
+      }
+      var expectedBass = c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : pc;
+      var label = '';
+      if (notes.length && mod(notes[0],12) !== expectedBass) {
+        var bassTone = chordTones(c).find(function (tone) { return tone.pc === mod(notes[0],12); });
+        var bassLabel = bassTone ? LETTERS[bassTone.l] + ACC[bassTone.a] : noteName(respell(notes[0]));
+        label = chordName(c).split('/')[0] + (mod(notes[0],12) === pc ? ' · root bass' : '/' + bassLabel);
+      }
+      if (opts.engineMode === 'triads' && Q[c.q].iv.length > 3) label = (label || chordName(c)) + ' · triad only';
+      if (label && opts.instr !== 'concert' && opts.instr !== 'bass') label += ' (concert)';
+      if (info.held && !label) label = 'Held from previous bar';
+      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '">' + (label ? '<strong>' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
     if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
     if (positions && opts.showAnalysis) {
       var midis = view.concert.filter(function (e) { return e.p && e.start >= b.start - EPS && e.start < b.start + b.len - EPS; }).map(function (e) { return e.p.midi; });
       var fits = window.FakeBookPosition.analyze(midis, chordPCs, preferred);
       var names = ['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
-      html.push('<p class="fb-measure-analysis">' + (hideNames ? 'Which scale or mode fits these notes and chords?' : !midis.length ? 'No melody pitches to analyze.' : !fits.length ? 'Chromatic passage: no single tested scale fits all melody and chord tones.' : 'Possible: ' + fits.slice(0,2).map(function (f) { return names[f.tonic] + ' ' + f.mode; }).join(' / ') + (fits.length > 2 ? ' · +' + (fits.length - 2) + ' alternatives' : '') + '. Degrees (' + names[fits[0].tonic] + '): ' + fits[0].degrees.join('–')) + '</p>');
+      html.push('<p class="fb-measure-analysis">' + (!midis.length ? 'No melody pitches to analyze.' : !fits.length ? 'Chromatic passage: no single tested scale fits all melody and chord tones.' : 'Possible: ' + fits.slice(0,2).map(function (f) { return names[f.tonic] + ' ' + f.mode; }).join(' / ') + (fits.length > 2 ? ' · +' + (fits.length - 2) + ' alternatives' : '') + '. Degrees (' + names[fits[0].tonic] + '): ' + fits[0].degrees.join('–')) + '</p>');
     }
     return '<foreignObject class="fb-measure-help" x="' + (b.x + S/2) + '" y="' + y + '" width="' + (b.w - S) + '" height="' + h + '"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:' + S + 'px">' + html.join('') + '</div></foreignObject>';
   }
@@ -2778,12 +2924,12 @@
       return '<button type="button" class="fb-barpop-card" data-chg-ci="' + ci + '" aria-label="Play ' + MN.escape(name) + '">' +
         '<strong>' + MN.escape(name) + '</strong>' +
         (written ? '<em>your chart: ' + MN.escape(chordName(view.writtenChords[ci])) + '</em>' : '') +
-        (piano ? miniPiano(notes, rootPC) : violin ? window.FakeBookViolin.mini(rootPC, window.FakeBookViolin.toneMap(violinTones(c, chordTypeOf(c), 'voicings').intervals)) : miniGuitar(rootPC, chordTypeOf(c))) +
-        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(respell(m)); }).join(' ') : violin ? Q[c.q].name + ' · first-position tones' : Q[c.q].name + guitarFormLabel(rootPC, c)) + '</small></button>';
+        (piano ? miniPiano(notes, rootPC) : violin ? window.FakeBookViolin.mini(rootPC, window.FakeBookViolin.toneMap(violinTones(c, chordTypeOf(c), 'voicings').intervals)) : miniGuitar(rootPC, chordTypeOf(c), ci)) +
+        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(respell(m)); }).join(' ') : violin ? Q[c.q].name + ' · first-position tones' : Q[c.q].name + guitarFormLabel(rootPC, c, ci)) + '</small></button>';
     }).join('');
     el('[data-fb-barpop-note]').textContent = info.held ? 'No new chord here: the chord from bar ' + view.concertChords[info.idx[0]].bar + ' keeps ringing.' :
       (written ? 'Shapes are in concert pitch, as a piano or guitar plays them. ' : '') + 'Click a shape to hear it.' +
-      (piano ? '' : violin ? ' Dots are every chord tone in first position; play them one at a time.' : ' Pick a different guitar form in the Chords tab.');
+      (piano ? '' : violin ? ' Dots are every chord tone in first position; play them one at a time.' : (opts.guitarVoice && opts.guitarVoice !== 'manual' ? ' Connected grips follow Guitar voice leading in Quick settings.' : ' Pick a different guitar form in the Chords tab.'));
   }
   function showBarPop(b, barEl) {
     var pop = el('[data-fb-barpop]'), card = root.querySelector('.fb-sheet-card');
@@ -2944,7 +3090,7 @@
       r.checked = r.value === mode;
     });
 
-    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: Q[c.q] ? Q[c.q].iv : [0, 4, 7] };
 
     if (opts.engineInst === 'violin' && window.FakeBookViolin) {
       ['[data-fb-guitar-forms]', '[data-fb-voicing]', '[data-fb-guitar-triad-sets]'].forEach(function (sel) { var w = el(sel); if (w) w.hidden = true; });
@@ -2977,18 +3123,21 @@
         var formsWrap = el('[data-fb-guitar-forms]');
         var formSelEl = el('[data-fb-guitar-form-sel]');
         if (formsWrap) formsWrap.hidden = false;
+        if (formSelEl) formSelEl.disabled = !!opts.guitarVoice && opts.guitarVoice !== 'manual';
         var vWrap = el('[data-fb-voicing]');
         if (vWrap) vWrap.hidden = true;
         var forms = GT ? GT.availableForms(rootPC, cType) : ['open'];
-        if (formSelEl) {
+        if (formSelEl && opts.guitarVoice && opts.guitarVoice !== 'manual') {
+          formSelEl.innerHTML = '<option>' + el('[data-fb-guitar-voice] option:checked').textContent + '</option>';
+        } else if (formSelEl) {
           formSelEl.innerHTML = forms.map(function (fm) {
             return '<option value="' + fm + '">' + fm.toUpperCase() + ' form</option>';
           }).join('');
           if (forms.indexOf(opts.guitarForm) >= 0) formSelEl.value = opts.guitarForm;
           else { formSelEl.value = forms[0]; opts.guitarForm = forms[0]; }
         }
-        var activeForm = formSelEl ? formSelEl.value : 'open';
-        var shape = GT ? GT.getChordShape(rootPC, cType, 0, activeForm) : { frets: ['x', 3, 2, 0, 1, 0] };
+        var shape = guitarShapeFor(rootPC, cType, chordSel);
+        if (!shape) shape = { frets: ['x', 'x', 'x', 'x', 'x', 'x'] };
         var frets = shape.frets;
         currentGuitarFrets = frets;
         var fingers = GT ? GT.computeFingering(frets) : null;
@@ -3082,6 +3231,7 @@
       }
     }
 
+    syncQuickChordControls();
     sheetEl.querySelectorAll('.fb-chord').forEach(function (t) {
       t.classList.toggle('is-sel', Number(t.getAttribute('data-ci')) === chordSel);
     });
@@ -3125,7 +3275,7 @@
     if (!view || !view.concertChords.length) return;
     var c = view.concertChords[chordSel];
     var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
-    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: Q[c.q] ? Q[c.q].iv : [0, 4, 7] };
     var notes = currentVoicingNotes.length ? currentVoicingNotes : (view.voicings[chordSel] || rootPosition(c));
 
     if (opts.engineInst === 'guitar' && GT) {
@@ -3139,7 +3289,8 @@
         }
       }
       var formSel = el('[data-fb-guitar-form-sel]') ? el('[data-fb-guitar-form-sel]').value : 'open';
-      var shape = GT.getChordShape(rootPC, cType, 0, formSel);
+      var shape = guitarShapeFor(rootPC, cType, chordSel);
+      if (!shape) return;
       if (shape && window.GuitarAudio) {
         var freqs = shape.frets.map(function (f, s) { return (typeof f === 'number') ? GT.noteFreq(s, f) : null; }).filter(Boolean);
         window.GuitarAudio.strum(freqs);
@@ -3160,7 +3311,7 @@
     if (!view || !view.concertChords.length) return;
     var c = view.concertChords[chordSel];
     var rootPC = mod(NAT[c.root.l] + c.root.a, 12);
-    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: [0, 4, 7] };
+    var cType = (GT && GT.CHORD_TYPES.find(function (ct) { return ct.suffix === (c.q || ''); })) || { suffix: c.q || '', name: 'Chord', intervals: Q[c.q] ? Q[c.q].iv : [0, 4, 7] };
     var notes = currentVoicingNotes.length ? currentVoicingNotes : (view.voicings[chordSel] || rootPosition(c));
 
     if (opts.engineMode === 'scales') {
@@ -3189,7 +3340,8 @@
         }
       }
       var formSel = el('[data-fb-guitar-form-sel]') ? el('[data-fb-guitar-form-sel]').value : 'open';
-      var shape = GT.getChordShape(rootPC, cType, 0, formSel);
+      var shape = guitarShapeFor(rootPC, cType, chordSel);
+      if (!shape) return;
       if (shape && window.GuitarAudio) {
         var freqs = shape.frets.map(function (f, s) { return (typeof f === 'number') ? GT.noteFreq(s, f) : null; }).filter(Boolean);
         window.GuitarAudio.sequence(freqs.concat(freqs.slice(0, -1).reverse()), { interval: 0.22 });
@@ -3284,14 +3436,15 @@
       }
       else if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
-      else if (n === 'fb-voicing') { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); showChord(true); save(); respin(); }
+      else if (n === 'fb-voicing' || t.matches('[data-fb-notation-voicing]')) { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); syncControls(); showChord(true); renderSheet(); renderBarPop(); save(); respin(); }
       else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value !== 'shapes') hideBarPop(); save(); }
-      else if (n === 'fb-engine-mode') { opts.engineMode = t.value; showChord(false); save(); }
-      else if (n === 'fb-triad-inv') { opts.triadInv = Number(t.value); showChord(false); save(); }
+      else if (n === 'fb-engine-mode') { opts.engineMode = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
+      else if (n === 'fb-triad-inv') { opts.triadInv = Number(t.value); showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (n === 'fb-scale-type') { opts.scaleType = t.value; showChord(false); save(); }
       else if (t.matches('[data-fb-chord-select]')) { chordSel = Number(t.value); showChord(true); }
-      else if (t.matches('[data-fb-guitar-form-sel]')) { opts.guitarForm = t.value; showChord(false); save(); }
-      else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); save(); }
+      else if (t.matches('[data-fb-guitar-voice], [data-fb-tools-guitar-voice]')) { opts.guitarVoice = t.value; refresh(); syncControls(); renderBarPop(); save(); }
+      else if (t.matches('[data-fb-guitar-form-sel], [data-fb-quick-guitar-form]')) { opts.guitarForm = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
+      else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-key]')) { opts.key = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
@@ -3301,9 +3454,8 @@
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; if (t.checked) opts.showPos = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-shapes]')) { opts.measureShapes = t.checked; syncControls(); refresh(); save(); }
-      else if (t.matches('[data-fb-practice]')) { opts.practice = t.value; answersRevealed = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
-      else if (t.matches('[data-fb-pos-inst]')) { opts.posInst = t.value; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-pos-inst]')) { opts.posInst = opts.engineInst = t.value; syncControls(); refresh(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
@@ -3336,7 +3488,6 @@
       } else if (t.matches('[data-fb-vol]')) { opts.vol[t.getAttribute('data-fb-vol')] = Number(t.value); applyVolumes(); save(); }
     });
     root.addEventListener('click', function (ev) {
-      if (ev.target.closest('[data-fb-reveal]')) { answersRevealed = !answersRevealed; syncControls(); renderSheet(); return; }
       var t = ev.target;
       var rem = t.closest('[data-remove-tune]');
       if (rem) {
@@ -3383,11 +3534,11 @@
       }
       var instBtn = t.closest('[data-engine-inst]');
       if (instBtn) {
-        opts.engineInst = instBtn.getAttribute('data-engine-inst');
+        opts.posInst = opts.engineInst = instBtn.getAttribute('data-engine-inst');
         syncControls();
         showChord(false);
         renderBarPop();
-        renderSheet();
+        refresh();
         save();
         return;
       }
@@ -3409,6 +3560,12 @@
         return;
       }
       if (t.closest('[data-fb-floating-stop]')) { stop(); return; }
+      var clickPattern = t.closest('[data-fb-click-pattern]');
+      if (clickPattern) {
+        opts.click = clickPattern.getAttribute('data-fb-click-pattern');
+        if (opts.click !== 'none') opts.clickPrev = opts.click;
+        syncControls(); save(); respin(); return;
+      }
       if (t.closest('[data-fb-click-toggle]')) {
         if (opts.click === 'none') opts.click = opts.clickPrev && opts.clickPrev !== 'none' ? opts.clickPrev : 'all';
         else { opts.clickPrev = opts.click; opts.click = 'none'; }
@@ -3499,6 +3656,7 @@
   radios(el('[data-fb-melody]'), 'fb-melody', MELODY, opts.melody);
   radios(el('[data-fb-rhythm]'), 'fb-rhythm', RHYTHM, opts.rhythm);
   radios(el('[data-fb-voicing]'), 'fb-voicing', VOICING, opts.voicing);
+  el('[data-fb-notation-voicing]').innerHTML = Object.keys(VOICING).map(function (key) { return '<option value="' + key + '">' + VOICING[key].label + '</option>'; }).join('');
   el('[data-fb-instr]').innerHTML = Object.keys(INSTR).map(function (k) { return '<option value="' + k + '">' + INSTR[k].label + '</option>'; }).join('');
 
   fetch(DATA_URL).then(function (r) { return r.json(); }).then(function (data) {
