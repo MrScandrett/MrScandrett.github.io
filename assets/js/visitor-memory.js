@@ -1097,15 +1097,36 @@
     root.classList.add('memory-continue');
     root.setAttribute('aria-label', 'Pick up where you left off');
     var hello = el('p', 'memory-continue__eyebrow');
-    if (snap.avatar) hello.appendChild(avatarFace(snap.avatar, 'memory-avatar--sm'));
-    hello.appendChild(document.createTextNode('Welcome back — pick up where you left off'));
+    if (snap.avatar) {
+      hello.appendChild(avatarFace(snap.avatar, 'memory-avatar--sm'));
+    } else {
+      var pulse = el('span', 'memory-continue__pulse');
+      pulse.setAttribute('aria-hidden', 'true');
+      hello.appendChild(pulse);
+    }
+    var eyebrowText = el('span', 'memory-continue__eyebrow-text');
+    eyebrowText.textContent = 'Welcome back — pick up where you left off';
+    hello.appendChild(eyebrowText);
     root.appendChild(hello);
     var list = el('ul', 'memory-continue__list');
+    var kindIcons = { Lesson: '🎓', Reading: '📖', Played: '🎮' };
     picks.forEach(function (p) {
       var li = el('li');
       var a = el('a', 'memory-continue__card');
       a.href = p.href;
-      a.append(el('span', 'memory-continue__kind', p.kind), el('strong', '', p.title), el('span', 'memory-continue__meta', p.meta));
+      a.dataset.kind = p.kind.toLowerCase();
+      var head = el('div', 'memory-continue__card-head');
+      var kindBadge = el('span', 'memory-continue__kind');
+      var icon = el('span', 'memory-continue__kind-icon');
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = kindIcons[p.kind] || '✦';
+      kindBadge.appendChild(icon);
+      kindBadge.appendChild(document.createTextNode(' ' + p.kind));
+      var arrow = el('span', 'memory-continue__card-arrow');
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '→';
+      head.append(kindBadge, arrow);
+      a.append(head, el('strong', '', p.title), el('span', 'memory-continue__meta', p.meta));
       if (p.progress != null) {
         var bar = el('span', 'memory-item__bar');
         bar.setAttribute('aria-hidden', 'true');

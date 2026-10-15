@@ -359,7 +359,7 @@
     'pauls-missionary-journeys': [['Acts',13,1,12],['Acts',16,6,15],['Acts',17,16,34],['Acts',20,17,24],['Romans',1,1,7]],
     'proverbs-wisdom-decision-lab': [['Proverbs',1,1,7],['Proverbs',10,1,12],['Proverbs',15,1,4],['Proverbs',26,4,5],['Proverbs',27,5,10]],
     'job': [['Job',1,1,22],['Job',2,1,13],['Job',3,1,26],['Job',38,1,18],['Job',42,1,17]],
-    'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',6,5,15],['Matthew',6,25,34],['Matthew',7,24,29]]
+    'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',5,21,26],['Matthew',5,38,48],['Matthew',6,1,18],['Matthew',6,19,34],['Matthew',7,1,12],['Matthew',7,13,23],['Matthew',7,24,29]]
     ,'genesis': [['Genesis',1,1,5],['Genesis',3,1,15],['Genesis',12,1,9],['Genesis',37,1,11],['Genesis',50,15,21]]
     ,'exodus': [['Exodus',1,8,14],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',19,1,8]]
     ,'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',2,1,12],['Mark',4,35,41],['Matthew',16,13,20]]
@@ -371,6 +371,7 @@
 
   var bibleLanguages = [
     { id: 'en', name: 'English', versions: [
+      { id: 'local-bsb', name: 'Berean Standard Bible', short: 'BSB', license: 'Public domain', local: 'bsb' },
       { id: 'en-webbe', name: 'World English Bible (British)', short: 'WEBBE', license: 'Public domain' },
       { id: 'en-kjv', name: 'King James Version', short: 'KJV', license: 'Public domain' },
       { id: 'en-asv', name: 'American Standard Version', short: 'ASV', license: 'Public domain' }
@@ -1095,7 +1096,7 @@
       '<label><span>Version</span><select class="bpl-version-select"></select></label></div>' +
       '<div class="bpl-reader-toolbar"><div><button class="bpl-passage-prev" type="button" aria-label="Previous passage">&larr; Previous</button><button class="bpl-passage-next" type="button">Next &rarr;</button></div><span class="bpl-reader-status" role="status" aria-live="polite">Loading Scripture…</span></div>' +
       '<article class="bpl-scripture-panel" aria-live="polite" aria-busy="true"><header><div><p class="bpl-reader-reference"></p><p class="bpl-reader-version"></p></div></header><div class="bpl-verses"></div></article>' +
-      '<p class="bpl-reader-credit">Text is loaded from the open <a href="https://github.com/wldeh/bible-api" target="_blank" rel="noopener noreferrer">Bible API dataset</a>. Availability and licensing vary by edition; the reader labels each selected source. For publication or close textual study, verify wording in an authorized edition.</p>' +
+      '<p class="bpl-reader-credit">The default Berean Standard Bible is stored locally and was dedicated to the public domain in 2023. Other editions load from the open <a href="https://github.com/wldeh/bible-api" target="_blank" rel="noopener noreferrer">Bible API dataset</a>; availability and licensing vary and are labeled above. For publication or close textual study, verify wording in an authorized edition.</p>' +
     '</section>' +
     '<section class="bpl-card bpl-map"><div class="bpl-map-head"><div><p class="bpl-label">Geographic context</p><h2>See the bigger picture</h2></div><p>Select the map to enlarge labels and terrain.</p></div><div class="bpl-map-grid"><figure class="bpl-map-figure" data-zoomable><a class="bpl-map-image" href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.map.src) + '" alt="' + esc(lesson.map.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption>' + esc(lesson.map.note) + '<small>Map: <a href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.map.credit) + '</a> · <a href="' + esc(lesson.map.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.map.license) + '</a> · Wikimedia Commons</small></figcaption></figure></div></section>' +
     gospelRoutesMarkup() +
@@ -1212,7 +1213,10 @@
     var folder = localizedBook(passage[0], language, version);
     var reference = passageLabel(passage);
     var cacheKey = version.id + '|' + folder + '|' + passage[1];
-    var endpoint = 'https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles/' + encodeURIComponent(version.id) + '/books/' + encodeURIComponent(folder) + '/chapters/' + passage[1] + '.json';
+    var localBook = passage[0].toLowerCase().replace(/\s+/g, '-');
+    var endpoint = version.local
+      ? '../../assets/data/bible/' + encodeURIComponent(version.local) + '/' + encodeURIComponent(localBook) + '.json'
+      : 'https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles/' + encodeURIComponent(version.id) + '/books/' + encodeURIComponent(folder) + '/chapters/' + passage[1] + '.json';
     readerReference.textContent = reference;
     readerVersion.textContent = language.name + ' · ' + version.name + ' · ' + version.license;
     scripturePanel.lang = language.id;
@@ -1227,8 +1231,11 @@
       if (!response.ok) throw new Error('This edition does not contain the selected book or chapter.');
       return response.json();
     }).then(function (data) {
-      bibleCache[cacheKey] = data;
-      return data;
+      var normalized = version.local
+        ? ((data[passage[1] - 1] || []).map(function (text, verseIndex) { return { verse: verseIndex + 1, text: text }; }))
+        : data;
+      bibleCache[cacheKey] = normalized;
+      return normalized;
     });
     result.then(function (data) {
       if (request !== readerRequest) return;

@@ -30,7 +30,8 @@
   shelf.appendChild(title);
   shelf.appendChild(element('p',null,'Choose a piece to listen, read its score, and explore what makes it distinctive.'));
   var grid = element('div','composer-pedestals'); shelf.appendChild(grid);
-  document.querySelector('.music-route').after(shelf);
+  // The shelf opens the hands-on part of the lesson, after the biography and the musical idea.
+  area.before(shelf);
   var choose = element('a',null,'Choose a piece from the display');choose.href='#composer-piece-shelf';area.querySelector('h2').after(choose);
   var panels = element('div','composer-reading'); area.appendChild(panels);
   var controls = [];

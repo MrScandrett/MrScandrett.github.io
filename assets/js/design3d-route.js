@@ -47,5 +47,7 @@
       }
       host.append(note);
     }
+    const history = host.closest('main')?.querySelector('.d3-original-reference .bl-history');
+    if (history) host.after(history);
   });
 }());

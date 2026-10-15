@@ -547,57 +547,242 @@
 
 .memory-continue[hidden] { display: none; }
 
-.memory-continue { margin-top: 1rem; }
+.memory-continue {
+  margin-top: 1.25rem;
+  position: relative;
+  z-index: 2;
+}
 
 .memory-continue__eyebrow {
-  margin: 0 0 0.5rem;
-  font-size: 0.74rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.8;
+  color: var(--text-secondary, var(--muted, rgba(0, 0, 0, 0.65)));
+}
+
+.memory-continue__pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  flex-shrink: 0;
+  display: inline-block;
+  animation: memoryPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes memoryPulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.35); opacity: 0.5; }
 }
 
 .memory-continue__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.55rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.65rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .memory-continue__card {
-  display: grid;
-  gap: 0.2rem;
+  --item-tint: var(--memory-accent, var(--theme-accent, #0071e3));
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
   height: 100%;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-elevated, #fff) 70%, transparent);
+  min-height: 96px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.12)) 80%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-elevated, #fff) 86%, transparent);
   color: inherit;
   text-decoration: none;
-  transition: transform 150ms ease, border-color 150ms ease;
+  box-shadow:
+    0 4px 14px -2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.85);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.2s ease,
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.2s ease;
 }
 
-.memory-continue__card:hover { border-color: var(--memory-accent); transform: translateY(-2px); }
+/* Category-specific accent tints */
+.memory-continue__card[data-kind="lesson"]  { --item-tint: #1d4ed8; }
+.memory-continue__card[data-kind="reading"] { --item-tint: #b45309; }
+.memory-continue__card[data-kind="played"]  { --item-tint: #7e22ce; }
+
+/* Card header row with kind badge and action arrow affordance */
+.memory-continue__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.memory-continue__card-arrow {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-muted, currentColor);
+  background: color-mix(in srgb, var(--surface-0, #fff) 65%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.12)) 60%, transparent);
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.memory-continue__card:hover,
+.memory-continue__card:focus-visible {
+  transform: translateY(-3px) scale(1.015);
+  border-color: color-mix(in srgb, var(--item-tint) 45%, var(--cos-card-border, rgba(0, 0, 0, 0.15)));
+  box-shadow:
+    0 12px 28px -4px color-mix(in srgb, var(--item-tint) 18%, rgba(15, 23, 42, 0.08)),
+    0 0 0 3px color-mix(in srgb, var(--item-tint) 12%, transparent),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  background: color-mix(in srgb, var(--surface-elevated, #fff) 94%, var(--item-tint) 3%);
+}
+
+.memory-continue__card:hover .memory-continue__card-arrow,
+.memory-continue__card:focus-visible .memory-continue__card-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+  color: var(--item-tint);
+  background: color-mix(in srgb, var(--item-tint) 14%, var(--surface-elevated, #fff));
+  border-color: color-mix(in srgb, var(--item-tint) 32%, transparent);
+}
 
 .memory-continue__card:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--memory-accent) 45%, transparent);
+  outline: 2px solid var(--item-tint);
   outline-offset: 2px;
 }
 
 .memory-continue__card strong {
   display: -webkit-box;
   overflow: hidden;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 750;
   line-height: 1.25;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  color: var(--text-strong, var(--text, currentColor));
+  transition: color 0.16s ease;
+  margin: 0;
 }
 
-.memory-continue__kind { color: var(--memory-accent); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
-.memory-continue__meta { font-size: 0.74rem; opacity: 0.75; }
+.memory-continue__card:hover strong {
+  color: var(--item-tint);
+}
+
+.memory-continue__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: 800 0.62rem/1.2 var(--font-sans, system-ui, sans-serif);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.44rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--item-tint) 12%, transparent);
+  color: var(--item-tint);
+  border: 1px solid color-mix(in srgb, var(--item-tint) 22%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  width: fit-content;
+}
+
+.memory-continue__kind-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.memory-continue__meta {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary, var(--muted, rgba(0, 0, 0, 0.65)));
+  opacity: 0.85;
+}
+
+.memory-continue__card .memory-item__bar {
+  height: 5px;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--item-tint) 16%, rgba(0, 0, 0, 0.06));
+}
+
+.memory-continue__card .memory-item__bar > span {
+  background: linear-gradient(90deg, var(--item-tint), color-mix(in srgb, var(--item-tint) 65%, white));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--item-tint) 45%, transparent);
+}
+
+/* Dark mode and lighting theme overrides */
+html[data-lighting="night"] .memory-continue__card {
+  background: color-mix(in srgb, var(--surface-0, #141416) 82%, transparent);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-lighting="night"] .memory-continue__card[data-kind="lesson"]  { --item-tint: #60a5fa; }
+html[data-lighting="night"] .memory-continue__card[data-kind="reading"] { --item-tint: #fbbf24; }
+html[data-lighting="night"] .memory-continue__card[data-kind="played"]  { --item-tint: #c084fc; }
+
+html[data-lighting="night"] .memory-continue__card-arrow {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+html[data-lighting="night"] .memory-continue__kind {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 580px) {
+  .memory-continue__list {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 0.65rem;
+    padding: 0.2rem 0.2rem 0.5rem 0.2rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .memory-continue__list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .memory-continue__list > li {
+    flex: 0 0 clamp(210px, 68vw, 260px);
+    scroll-snap-align: start;
+  }
+
+  .memory-continue__list > li:only-child {
+    flex: 1 1 100%;
+  }
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .memory-like,

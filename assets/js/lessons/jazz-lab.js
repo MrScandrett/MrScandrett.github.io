@@ -4,7 +4,10 @@
   if (!root) return;
   const version = document.getElementById('jazzVersion'), tempo = document.getElementById('jazzTempo');
   const status = document.getElementById('jazzStatus'), list = document.getElementById('jazzNotes');
-  let context, nodes = [], timer, generation = 0;
+  let voices = [], timer, generation = 0;
+  // Shared MusicSynth voices (via AudioKit) so these phrases sound like every other music lesson.
+  const INSTRUMENT = { 'louis-armstrong': 'synth', 'duke-ellington': 'piano', 'charlie-parker': 'sax' };
+  const instrumentFor = (voice) => voice === 'Low answer' ? 'bass' : (INSTRUMENT[root.dataset.jazz] || 'piano');
   const names = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','B♭','B'];
   function events() {
     const altered = version.value === '1';
@@ -21,20 +24,17 @@
     list.replaceChildren(...events().map(e=>{const li=document.createElement('li');li.textContent=`${e.voice}: ${names[e.pitch%12]}${Math.floor(e.pitch/12)-1} · beat ${(e.beat+1).toFixed(2)}`;return li;}));
     document.getElementById('jazzBpm').value=tempo.value;
   }
-  function stop(message='Stopped.') { generation++; clearTimeout(timer); nodes.forEach(n=>{try{n.stop();}catch{}});nodes=[];status.textContent=message; }
+  function stop(message='Stopped.') { generation++; clearTimeout(timer); const now=window.AudioKit ? AudioKit.now() : 0;voices.forEach(v=>{try{v.kill(now);}catch{}});voices=[];status.textContent=message; }
   document.getElementById('jazzPlay').addEventListener('click',async()=>{
     stop('Preparing audio…'); const run=generation;
     try {
-      const Audio = window.AudioContext || window.webkitAudioContext;
-      if (!Audio) throw new Error('Audio unavailable');
-      context ||= new Audio(); await context.resume(); if(run!==generation)return;
-      const beat=60/Number(tempo.value), start=context.currentTime+.06;
+      const ctx = window.AudioKit && window.MusicSynth ? AudioKit.context() : null;
+      if (!ctx) throw new Error('Audio unavailable');
+      await AudioKit.resume(); if(run!==generation)return;
+      const beat=60/Number(tempo.value), start=ctx.currentTime+.06;
       events().forEach(e=>{
-        const oscillator=context.createOscillator(),gain=context.createGain(), at=start+e.beat*beat;
-        oscillator.type=e.voice==='Lead'?'triangle':'sine';oscillator.frequency.value=440*2**((e.pitch-69)/12);
-        gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.12,at+.01);gain.gain.exponentialRampToValueAtTime(.001,at+e.duration*beat);
-        oscillator.connect(gain);gain.connect(context.destination);oscillator.start(at);oscillator.stop(at+e.duration*beat+.02);nodes.push(oscillator);
-        oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};
+        const voice=AudioKit.note({ instrument: instrumentFor(e.voice), midi: e.pitch, velocity: .7, at: start+e.beat*beat, duration: e.duration*beat });
+        if (voice) voices.push(voice);
       });
       status.textContent=`Playing: ${version.selectedOptions[0].textContent} at ${tempo.value} BPM.`;
       timer=setTimeout(()=>stop('Finished. Compare the other version.'),(4*beat+.2)*1000);

@@ -199,28 +199,73 @@
 
       function positionWeatherDrawer(panel, drawer) {
         const rect = panel.getBoundingClientRect();
-        const margin = 10;
+        const margin = 12;
+
+        // Sticky site header clearance
+        const header = document.querySelector('.site-header');
+        const headerBottom = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+        const minTop = headerBottom + margin;
+        const maxBottom = window.innerHeight - margin;
+        const availableHeight = Math.max(120, maxBottom - minTop);
+
+        // Ensure drawer fits on constrained projector viewports (e.g. 720p / 768p / 125%+ zoom)
+        drawer.style.maxHeight = `${availableHeight}px`;
+
         const drawerRect = drawer.getBoundingClientRect();
-        let left = Math.min(rect.left, window.innerWidth - drawerRect.width - margin);
-        left = Math.max(left, margin);
-        let top = rect.bottom + margin;
-        let placement = 'bottom';
-        if (top + drawerRect.height > window.innerHeight - margin) {
-          const above = rect.top - drawerRect.height - margin;
-          if (above >= margin) {
-            top = above;
-            placement = 'top';
+        const drawerHeight = drawerRect.height || 320;
+        const drawerWidth = drawerRect.width || 320;
+
+        // Smart horizontal alignment:
+        // For wide strip cards (Forecast, Solar, Clothing, Precip), align with the cue button
+        // so the drawer doesn't fly to the left edge and obstruct the primary weather telemetry.
+        let preferredLeft = rect.left;
+        const cue = panel.querySelector('.weather-learn-cue');
+        if (cue) {
+          const cueRect = cue.getBoundingClientRect();
+          if (cueRect.left > rect.left + rect.width * 0.45) {
+            preferredLeft = cueRect.right - drawerWidth;
           } else {
-            top = Math.max(window.innerHeight - drawerRect.height - margin, margin);
+            preferredLeft = cueRect.left;
           }
         }
-        // .home-widget--weather sets container-type: inline-size for its cqw-based
-        // type scale, which makes it the containing block for this fixed-position
-        // drawer instead of the viewport. All the math above is viewport-relative,
-        // so offset by the container's own position before assigning top/left.
-        const containerRect = panel.closest('.home-widget--weather').getBoundingClientRect();
-        drawer.style.left = `${left - containerRect.left}px`;
-        drawer.style.top = `${top - containerRect.top}px`;
+
+        let left = Math.min(preferredLeft, window.innerWidth - drawerWidth - margin);
+        left = Math.max(left, margin);
+
+        // Smart vertical placement (below vs above):
+        const spaceBelow = maxBottom - rect.bottom;
+        const spaceAbove = rect.top - minTop;
+        let top;
+        let placement = 'bottom';
+
+        if (spaceBelow >= drawerHeight + margin) {
+          top = rect.bottom + margin;
+          placement = 'bottom';
+        } else if (spaceAbove >= drawerHeight + margin) {
+          top = rect.top - drawerHeight - margin;
+          placement = 'top';
+        } else {
+          // Constrained space: pick the side with more available headroom/footroom
+          if (spaceBelow >= spaceAbove) {
+            top = Math.min(rect.bottom + margin, maxBottom - drawerHeight);
+            top = Math.max(top, minTop);
+            placement = 'bottom';
+          } else {
+            top = Math.max(minTop, rect.top - drawerHeight - margin);
+            placement = 'top';
+          }
+        }
+
+        // Containing block calculation:
+        // If an ancestor establishes the containing block for fixed positioning, offset by its rect.
+        // Otherwise, parentRect is { left: 0, top: 0 }.
+        const offsetParent = drawer.offsetParent;
+        const parentRect = (offsetParent && offsetParent !== document.body && offsetParent !== document.documentElement)
+          ? offsetParent.getBoundingClientRect()
+          : { left: 0, top: 0 };
+
+        drawer.style.left = `${Math.round(left - parentRect.left)}px`;
+        drawer.style.top = `${Math.round(top - parentRect.top)}px`;
         drawer.dataset.placement = placement;
       }
 
@@ -233,6 +278,7 @@
             if (openPanel !== panel) setWeatherDrawerVisible(openPanel, false, true);
           });
           panel.classList.add('is-open');
+          weatherEls.shell.classList.add('has-open-drawer');
           weatherOpenPanel = panel;
           if (drawer) {
             drawer.setAttribute('aria-hidden', 'false');
@@ -254,6 +300,9 @@
           if (weatherOpenPanel === panel) weatherOpenPanel = null;
           const doClose = () => {
             panel.classList.remove('is-open');
+            if (!weatherEls.shell.querySelector('.weather-learning-panel.is-open')) {
+              weatherEls.shell.classList.remove('has-open-drawer');
+            }
             if (drawer) {
               drawer.classList.remove('is-visible');
               drawer.setAttribute('aria-hidden', 'true');
@@ -317,11 +366,27 @@
       });
 
       window.addEventListener('scroll', () => {
-        if (weatherOpenPanel) setWeatherDrawerVisible(weatherOpenPanel, false, true);
+        if (!weatherOpenPanel) return;
+        const panelRect = weatherOpenPanel.getBoundingClientRect();
+        const header = document.querySelector('.site-header');
+        const headerBottom = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+        // If the calling panel has completely scrolled out of the visible viewport, close it
+        if (panelRect.bottom < headerBottom || panelRect.top > window.innerHeight) {
+          setWeatherDrawerVisible(weatherOpenPanel, false, true);
+        } else {
+          const drawer = weatherOpenPanel.querySelector('.weather-learning-drawer');
+          if (drawer && drawer.classList.contains('is-visible')) {
+            positionWeatherDrawer(weatherOpenPanel, drawer);
+          }
+        }
       }, { passive: true, capture: true });
 
       window.addEventListener('resize', () => {
-        if (weatherOpenPanel) setWeatherDrawerVisible(weatherOpenPanel, false, true);
+        if (!weatherOpenPanel) return;
+        const drawer = weatherOpenPanel.querySelector('.weather-learning-drawer');
+        if (drawer && drawer.classList.contains('is-visible')) {
+          positionWeatherDrawer(weatherOpenPanel, drawer);
+        }
       });
 
       hydrateWeatherLearningPanels();

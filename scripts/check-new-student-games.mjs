@@ -65,11 +65,15 @@ const checks = {
     ensure((await page.locator("#shapeCount").textContent()).startsWith("1 "), "shape was not created");
   },
   "retro-dungeon-quest": async (page) => {
+    await page.getByRole("button", { name: "Enter the dungeon" }).click();
     const before = await canvasHash(page);
     await page.keyboard.down("ArrowRight");
     await page.waitForTimeout(350);
     await page.keyboard.up("ArrowRight");
     ensure(before !== await canvasHash(page), "dungeon player did not move");
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ShiftLeft");
+    ensure(await page.locator("#depth").textContent() === "1", "dungeon HUD did not initialize");
   },
   "simple-paint-studio": async (page) => {
     const canvas = page.locator("canvas");

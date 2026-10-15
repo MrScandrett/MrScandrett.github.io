@@ -93,7 +93,12 @@
     /* Exile journey */
     .fs-route { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr); gap: 1rem; align-items: start; }
     @media (max-width: 820px) { .fs-route { grid-template-columns: 1fr; } }
-    .fs-route svg { width: 100%; height: auto; background: #ece7db; border: 1px solid var(--fs-line); display: block; }
+    .fs-route svg { width: 100%; height: auto; background: #dce8ec; border: 1px solid var(--fs-line); display: block; }
+    .fs-route-land { fill: #d7d0bf; stroke: #777269; stroke-width: 0.7; }
+    .fs-route-borders { fill: none; stroke: rgba(79, 79, 88, 0.38); stroke-width: 0.45; }
+    .fs-route-line-halo { fill: none; stroke: #fff; stroke-width: 6; opacity: 0.88; }
+    .fs-route-line { fill: none; stroke: var(--fs-red); stroke-width: 3; stroke-dasharray: 7 5; }
+    .fs-route-dot text { paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
     .fs-stop-card { background: #fff; border: 1px solid var(--fs-line); border-top: 6px solid var(--fs-red); padding: 0.9rem 1rem; min-height: 15rem; }
     .fs-stop-card .fs-year { font: 600 0.85rem "IBM Plex Mono", monospace; color: var(--fs-red-dark); }
     .fs-stop-card h3 { margin-top: 0.15rem; }
@@ -324,16 +329,17 @@
       <p class="fs-card-intro">Most of the Institute's members were Jewish or came from Jewish families, and nearly all were on the political left. Both made them targets in 1933. Step through their journey.</p>
       <div class="fs-route">
         <div>
-          <svg id="fs-route-svg" viewBox="0 0 640 300" role="img" aria-labelledby="fs-route-svg-title">
-            <title id="fs-route-svg-title">Schematic route of the Institute's exile, from Frankfurt to Geneva, New York, Los Angeles, and back to Frankfurt</title>
-            <rect x="0" y="0" width="640" height="300" fill="#ece7db" />
-            <text x="120" y="30" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#4f4f58" letter-spacing="2">NORTH AMERICA</text>
-            <text x="470" y="30" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#4f4f58" letter-spacing="2">EUROPE</text>
-            <text x="330" y="280" font-family="Inter, sans-serif" font-size="12" font-style="italic" fill="#4f4f58" text-anchor="middle">Atlantic Ocean</text>
-            <path id="fs-route-path" d="" fill="none" stroke="#b3261e" stroke-width="3" stroke-dasharray="7 5" />
+          <svg id="fs-route-svg" viewBox="0 0 640 300" role="img" aria-labelledby="fs-route-svg-title fs-route-svg-desc">
+            <title id="fs-route-svg-title">World map of the Institute's exile</title>
+            <desc id="fs-route-svg-desc">A Natural Earth map tracing the Institute from Frankfurt to Geneva, New York, Los Angeles, and back to Frankfurt.</desc>
+            <rect x="0" y="0" width="640" height="300" fill="#dce8ec" />
+            <path id="fs-route-land" class="fs-route-land" />
+            <path id="fs-route-borders" class="fs-route-borders" />
+            <path id="fs-route-path-halo" class="fs-route-line-halo" />
+            <path id="fs-route-path" class="fs-route-line" />
             <g id="fs-route-dots"></g>
           </svg>
-          <p class="fs-map-caption">Schematic only, not to scale.</p>
+          <p class="fs-map-caption">Stops are geographically located; connecting lines show the sequence, not exact travel routes. Map: Natural Earth 1:50m v5.1.2, public domain.</p>
         </div>
         <div>
           <div class="fs-stop-card" id="fs-stop-card" aria-live="polite"></div>
@@ -561,6 +567,9 @@
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/vendor/d3-geo-runtime.min.js"></script>
+  <script src="../../assets/geodata/world/world-data.js"></script>
+  <script src="../../assets/js/earth-engine.js"></script>
   <script>
     (function () {
       'use strict';
@@ -642,25 +651,31 @@
 
       /* ── Exile journey ───────────────────────────────────────── */
       var stops = [
-        { x: 520, y: 120, city: 'Frankfurt', year: '1923–1933', title: 'Café Marx', text: 'Students nicknamed the Institute "Café Marx." Its scholars mixed Karl Marx\'s economics with Sigmund Freud\'s psychology to ask a puzzling question: why didn\'t working people in Germany rise up for their own interests, and why were so many drawn instead toward nationalism and strongmen?' },
-        { x: 495, y: 175, city: 'Geneva', year: '1933', title: 'Shut down', text: 'Weeks after Hitler took power, police searched and closed the Institute and seized its library. Horkheimer had already moved the Institute\'s money and set up a small office in Geneva, Switzerland, which let the work continue.' },
-        { x: 170, y: 120, city: 'New York', year: '1934', title: 'A home at Columbia', text: 'Columbia University lent the refugees a building on 117th Street. They kept writing in German, published their journal, and studied American society from the inside. Adorno joined them in 1938 after four years at Oxford.' },
-        { x: 70, y: 190, city: 'Los Angeles', year: '1941–1949', title: 'Next door to Hollywood', text: 'Horkheimer and Adorno moved to Southern California, where many German exiles lived, including the novelist Thomas Mann. Surrounded by movie studios, radio jingles, and billboards, they wrote Dialectic of Enlightenment, including the culture industry chapter.' },
-        { x: 540, y: 135, city: 'Frankfurt', year: '1949–1951', title: 'The return', text: 'After the war Horkheimer and Adorno chose to go back and teach a new generation of Germans to think critically about the past. The Institute reopened in a new building in 1951. Marcuse and others stayed in America.' }
+        { coords: [8.6821, 50.1109], labelDx: 10, labelDy: -11, city: 'Frankfurt', year: '1923–1933', title: 'Café Marx', text: 'Students nicknamed the Institute "Café Marx." Its scholars mixed Karl Marx\'s economics with Sigmund Freud\'s psychology to ask a puzzling question: why didn\'t working people in Germany rise up for their own interests, and why were so many drawn instead toward nationalism and strongmen?' },
+        { coords: [6.1432, 46.2044], labelDx: 9, labelDy: 18, city: 'Geneva', year: '1933', title: 'Shut down', text: 'Weeks after Hitler took power, police searched and closed the Institute and seized its library. Horkheimer had already moved the Institute\'s money and set up a small office in Geneva, Switzerland, which let the work continue.' },
+        { coords: [-73.9626, 40.8075], labelDx: 10, labelDy: -11, city: 'New York', year: '1934', title: 'A home at Columbia', text: 'Columbia University lent the refugees a building on 117th Street. They kept writing in German, published their journal, and studied American society from the inside. Adorno joined them in 1938 after four years at Oxford.' },
+        { coords: [-118.2437, 34.0522], labelDx: 9, labelDy: 18, city: 'Los Angeles', year: '1941–1949', title: 'Next door to Hollywood', text: 'Horkheimer and Adorno moved to Southern California, where many German exiles lived, including the novelist Thomas Mann. Surrounded by movie studios, radio jingles, and billboards, they wrote Dialectic of Enlightenment, including the culture industry chapter.' },
+        { coords: [8.6821, 50.1109], labelDx: 10, labelDy: -11, city: 'Frankfurt', year: '1949–1951', title: 'The return', text: 'After the war Horkheimer and Adorno chose to go back and teach a new generation of Germans to think critically about the past. The Institute reopened in a new building in 1951. Marcuse and others stayed in America.' }
       ];
       var stopIndex = 0;
+      var routeProjection = EarthEngine.projection('natural-earth', { extent: [[12, 12], [628, 288]] });
+      document.getElementById('fs-route-land').setAttribute('d', EarthEngine.path(routeProjection, EarthEngine.data().land));
+      document.getElementById('fs-route-borders').setAttribute('d', EarthEngine.path(routeProjection, EarthEngine.data().countries));
       var routePath = document.getElementById('fs-route-path');
+      var routePathHalo = document.getElementById('fs-route-path-halo');
       var dotsG = document.getElementById('fs-route-dots');
       var SVGNS = 'http://www.w3.org/2000/svg';
       var dotEls = stops.map(function (s, i) {
+        var point = routeProjection(s.coords);
         var g = document.createElementNS(SVGNS, 'g');
+        g.setAttribute('class', 'fs-route-dot');
         var c = document.createElementNS(SVGNS, 'circle');
-        c.setAttribute('cx', s.x); c.setAttribute('cy', s.y); c.setAttribute('r', 8);
+        c.setAttribute('cx', point[0]); c.setAttribute('cy', point[1]); c.setAttribute('r', 7);
         var t = document.createElementNS(SVGNS, 'text');
-        t.setAttribute('x', s.x); t.setAttribute('y', s.y + (i === 4 ? 30 : -16));
-        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('x', point[0] + s.labelDx); t.setAttribute('y', point[1] + s.labelDy);
+        t.setAttribute('text-anchor', 'start');
         t.setAttribute('font-family', 'Inter, sans-serif');
-        t.setAttribute('font-size', '14'); t.setAttribute('font-weight', '700');
+        t.setAttribute('font-size', '12'); t.setAttribute('font-weight', '700');
         t.textContent = i === 4 ? 'Frankfurt (return)' : s.city;
         g.appendChild(c); g.appendChild(t);
         dotsG.appendChild(g);
@@ -668,18 +683,12 @@
       });
       function showStop() {
         var s = stops[stopIndex];
-        var d = '';
-        for (var i = 0; i <= stopIndex; i++) {
-          var p = stops[i];
-          if (i === 0) d += 'M' + p.x + ' ' + p.y;
-          else {
-            var prev = stops[i - 1];
-            var mx = (prev.x + p.x) / 2;
-            var my = Math.min(prev.y, p.y) - (Math.abs(prev.x - p.x) > 200 ? 70 : 20);
-            d += ' Q' + mx + ' ' + my + ' ' + p.x + ' ' + p.y;
-          }
-        }
+        var d = EarthEngine.path(routeProjection, {
+          type: 'LineString',
+          coordinates: stops.slice(0, stopIndex + 1).map(function (stop) { return stop.coords; })
+        }) || '';
         routePath.setAttribute('d', d);
+        routePathHalo.setAttribute('d', d);
         dotEls.forEach(function (dot, i) {
           var visited = i <= stopIndex;
           dot.c.setAttribute('fill', i === stopIndex ? '#b3261e' : (visited ? '#1b1b1f' : '#fff'));

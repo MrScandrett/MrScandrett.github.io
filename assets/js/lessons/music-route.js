@@ -79,10 +79,13 @@
       a.textContent = (n < index ? 'Previous: ' : 'Next: ') + sections[n].dataset.routeLabel;
       nav.appendChild(a);
     });
-    var library = document.createElement('a');
-    library.href = '#' + (main.dataset.musicReference || 'encyclopedia');
-    library.textContent = main.dataset.musicReferenceLabel || 'Chord reference';
-    nav.appendChild(library);
+    var referenceId = main.dataset.musicReference || 'encyclopedia';
+    if (referenceId !== section.id) {
+      var library = document.createElement('a');
+      library.href = '#' + referenceId;
+      library.textContent = main.dataset.musicReferenceLabel || 'Chord reference';
+      nav.appendChild(library);
+    }
     section.appendChild(nav);
   });
   function hash() {
