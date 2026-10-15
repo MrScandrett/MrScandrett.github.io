@@ -224,6 +224,65 @@
     ['Develop independent score reading across all major and minor keys. Learners analyze altered intervals, modes, seventh chords, and inversions, then justify spelling and interpretation from musical context.', ['Identify all major and minor key signatures.','Name augmented and diminished intervals as well as major, minor, and perfect.','Recognize modes, blues, pentatonic, and whole-tone scales.','Identify seventh-chord qualities and inversions.'], [['3 min','Key sprint','Name five key signatures and each relative minor.'],['4 min','Analyze','Complete mixed interval, scale, and seventh-chord identification.'],['4 min','Construct','Build one altered interval and one inverted seventh chord.'],['2 min','Transfer','Annotate clef, key, meter, route, and harmony in a real score.'],['2 min','Reflect','Defend one enharmonic spelling using its musical function.']], ['Last sharp + half step names the major key; second-to-last flat names it.','Spell intervals by letters before choosing accidentals.','An inversion is named from the chord member in the bass.'], 'mode · seventh chord · inversion · enharmonic · augmented · diminished · function'],
     ['Integrate fluent reading with analytical spelling in treble, bass, and alto clefs. Work includes compound intervals, double accidentals, chromatic and double-harmonic scales, extended chord vocabulary, and inversions.', ['Read and construct notation in treble, bass, and alto clefs.','Analyze compound intervals through a 13th.','Spell chromatic, double-harmonic, modal, and conventional scales accurately.','Identify and build advanced seventh and suspended chords in inversion.'], [['3 min','Clef rotation','Read a short pitch set once in each clef.'],['4 min','Analyze','Complete mixed key, compound-interval, scale, and chord questions.'],['4 min','Construct','Build one compound interval and one inverted advanced chord.'],['2 min','Aural check','Hear the result and distinguish spelling from sounding equivalence.'],['2 min','Synthesize','State the harmonic or voice-leading reason for one spelling.']], ['Reduce a compound interval by 7 to find its simple counterpart.','Double accidentals preserve diatonic spelling and harmonic function.','Sounding equivalence does not make spellings analytically interchangeable.'], 'alto clef · compound interval · double accidental · chromatic · suspended · voice leading']
   ];
+  var SCORE_CLEFS = [
+    { min: 0, name: 'Treble clef', lines: 'E4, G4, B4, D5, F5', spaces: 'F4, A4, C5, E5', how: 'Read from the bottom upward. The clef curls around the G4 line; middle C (C4) sits on one ledger line below.' },
+    { min: 2, name: 'Bass clef', lines: 'G2, B2, D3, F3, A3', spaces: 'A2, C3, E3, G3', how: 'Read from the bottom upward. The two dots surround the F3 line; middle C (C4) sits on one ledger line above.' },
+    { min: 5, name: 'Alto clef', lines: 'F3, A3, C4, E4, G4', spaces: 'G3, B3, D4, F4', how: 'Read from the bottom upward. The clef points to middle C on the center line.' }
+  ];
+  var SCORE_METERS = [
+    { min: 0, mark: '4/4', name: 'four-four (common time)', how: 'Four quarter-note beats fill a measure. Count 1–2–3–4.' },
+    { min: 1, mark: '2/4', name: 'two-four', how: 'Two quarter-note beats fill a measure. Count 1–2.' },
+    { min: 1, mark: '3/4', name: 'three-four', how: 'Three quarter-note beats fill a measure. Count 1–2–3.' },
+    { min: 2, mark: '6/8', name: 'six-eight', how: 'Six eighth notes usually group as two dotted-quarter beats. Count ONE-and-a TWO-and-a.' },
+    { min: 3, mark: '2/2 or ¢', name: 'cut time', how: 'Two half-note beats fill a measure. The half note receives the conducting beat.' },
+    { min: 3, mark: '3/8', name: 'three-eight', how: 'Three eighth-note pulses fill a measure; at a fast tempo they may form one dotted-quarter beat.' },
+    { min: 3, mark: '9/8', name: 'nine-eight', how: 'Nine eighth notes group as three dotted-quarter beats.' },
+    { min: 3, mark: '12/8', name: 'twelve-eight', how: 'Twelve eighth notes group as four dotted-quarter beats.' },
+    { min: 4, mark: '5/4', name: 'five-four', how: 'Five quarter-note pulses usually group 3+2 or 2+3.' },
+    { min: 4, mark: '5/8', name: 'five-eight', how: 'Five eighth-note pulses usually group 2+3 or 3+2.' },
+    { min: 4, mark: '7/8', name: 'seven-eight', how: 'Seven eighth-note pulses commonly group 2+2+3, 2+3+2, or 3+2+2.' },
+    { min: 5, mark: '7/4', name: 'seven-four', how: 'Seven quarter-note pulses use an indicated or inferred additive grouping.' },
+    { min: 5, mark: '8/8, 10/8, 11/8 and other additive meters', name: 'additive or asymmetrical meter', how: 'Group the written pulse count into accented units shown by beams, accents, or a grouping such as 3+3+2.' },
+    { min: 5, mark: 'Changing meter', name: 'mixed meter', how: 'The time signature changes between measures; preserve each new beat unit and pulse count.' }
+  ];
+  var SCORE_VALUES = [
+    { min: 0, note: 'Quarter note (♩)', rest: 'Quarter rest (𝄽)', how: 'One quarter of a whole note; one beat in 2/4, 3/4, or 4/4. The matching rest is one silent beat.' },
+    { min: 0, note: 'Half note (𝅗𝅥)', rest: 'Half rest (𝄼)', how: 'Two quarter-note beats. The half rest sits on the middle staff line.' },
+    { min: 0, note: 'Whole note (𝅝)', rest: 'Whole rest (𝄻)', how: 'Four quarter-note beats. The whole rest hangs from a staff line and often means a full silent measure.' },
+    { min: 1, note: 'Eighth note (♪)', rest: 'Eighth rest (𝄾)', how: 'Half of a quarter note. Two eighth notes equal one quarter; beams show their beat grouping.' },
+    { min: 2, note: 'Dotted half note', rest: 'Dotted half rest', how: 'Three quarter-note beats: the dot adds half of the original value.' },
+    { min: 2, note: 'Dotted quarter note', rest: 'Dotted quarter rest', how: 'Three eighth notes; commonly one beat in 6/8, 9/8, and 12/8.' },
+    { min: 2, note: 'Sixteenth note', rest: 'Sixteenth rest', how: 'One quarter of a quarter note. Four sixteenths equal one quarter.' },
+    { min: 3, note: 'Thirty-second note', rest: 'Thirty-second rest', how: 'Half of a sixteenth note. Eight thirty-seconds equal one quarter.' },
+    { min: 3, note: 'Triplet', rest: 'Triplet rest', how: 'Three equal notes or rests fit into the time normally occupied by two of the same value.' },
+    { min: 4, note: 'Tie across values', rest: 'Rests remain separate', how: 'A tie joins identical pitches into one duration; rests cannot be tied.' },
+    { min: 4, note: 'Tuplet (duplet, quintuplet, sextuplet, septuplet)', rest: 'Rests may occur inside a tuplet', how: 'The bracket or number tells how many equal divisions occupy a stated normal span.' },
+    { min: 5, note: 'Breve and longa', rest: 'Breve and longa rests', how: 'Historical values longer than a whole note; modern use is uncommon and context dependent.' },
+    { min: 5, note: 'Nested or irrational tuplet', rest: 'Matching tuplet rests', how: 'A proportional division inside another tuplet or a non-power-of-two beat unit; follow the written ratio and tempo relation.' }
+  ];
+  var SCORE_TERMS = [
+    { min: 0, term: 'staff / bar line / measure', meaning: 'Five lines for notation / a vertical divider / the music between two bar lines.' },
+    { min: 0, term: 'beat / steady beat / tempo', meaning: 'The pulse / an even pulse / how fast the pulse moves.' },
+    { min: 0, term: 'pitch / higher / lower / same', meaning: 'How high or low a sound is and how it moves from the previous sound.' },
+    { min: 1, term: 'clef / note head / stem / beam', meaning: 'The pitch map / oval part of a note / vertical line / bar joining short notes into beat groups.' },
+    { min: 1, term: 'rest / repeat sign / phrase', meaning: 'Measured silence / play a section again / one connected musical thought.' },
+    { min: 1, term: 'p, mp, mf, f', meaning: 'Soft, moderately soft, moderately loud, and loud dynamics.' },
+    { min: 2, term: 'sharp / flat / natural', meaning: 'Raise a pitch one half step / lower it one half step / cancel a sharp or flat.' },
+    { min: 2, term: 'key signature / time signature', meaning: 'Sharps or flats applying through the piece / the meter’s pulse count and written beat unit.' },
+    { min: 2, term: 'crescendo / decrescendo', meaning: 'Gradually grow louder / gradually grow softer.' },
+    { min: 2, term: 'legato / staccato / accent / fermata', meaning: 'Connected / short and separated / emphasized / hold longer than written.' },
+    { min: 2, term: 'ritardando / accelerando / a tempo', meaning: 'Gradually slow / gradually speed up / return to the earlier tempo.' },
+    { min: 3, term: 'simple / compound meter', meaning: 'Each beat divides naturally into two / each beat divides naturally into three.' },
+    { min: 3, term: 'syncopation / pickup / anacrusis', meaning: 'Stress away from the expected strong pulse / incomplete opening measure before the first downbeat.' },
+    { min: 3, term: 'slur / tie / articulation', meaning: 'Connect different pitches / sustain one pitch across notes / how a note begins, continues, and ends.' },
+    { min: 3, term: 'D.C. / D.S. / Fine / Coda', meaning: 'Return to the beginning / return to the sign / end here / jump to the closing section when directed.' },
+    { min: 4, term: 'rubato / subito / sfz (or sfp)', meaning: 'Flexible expressive time / suddenly / a forceful accent (or accent followed by softness).' },
+    { min: 4, term: 'voice / texture / harmonic rhythm', meaning: 'An independent musical line / how lines and layers combine / the rate at which harmony changes.' },
+    { min: 4, term: 'enharmonic / inversion / function', meaning: 'Same sound with another spelling / reordered chord with a non-root bass / a note or chord’s role in context.' },
+    { min: 5, term: 'transposition / concert pitch / written pitch', meaning: 'Move music by a fixed interval / sounding pitch / pitch shown in a transposing part.' },
+    { min: 5, term: 'hemiola / metric modulation / polymeter', meaning: 'Temporary 3-against-2 grouping / a note value establishes a new tempo / simultaneous contrasting meters.' },
+    { min: 5, term: 'ornament / grace note / trill / mordent / turn', meaning: 'Decorative figure / quick unmeasured or crushed note / rapid alternation / brief neighbor motion / four-note circling figure.' }
+  ];
   var YOUNG_TITLES = {
     'note-id': ['Name That Bell', 'Which bell is playing this note?'],
     'interval-id': ['Higher or Lower?', 'Does the second bell go up or down?'],
@@ -1367,11 +1426,28 @@
       var st = statFor(state.level, d.id);
       return '<tr><th scope="row">' + esc(drillTitle(d)[0]) + '</th><td>' + st.c + ' / ' + st.t + '</td><td aria-label="Practice notes">&nbsp;</td></tr>';
     }).join('');
+    var clefs = SCORE_CLEFS.filter(function (x) { return x.min <= state.level; }).map(function (x) {
+      return '<section><h5>' + esc(x.name) + '</h5><p><strong>Lines, bottom to top:</strong> ' + esc(x.lines) + '</p><p><strong>Spaces, bottom to top:</strong> ' + esc(x.spaces) + '</p><p>' + esc(x.how) + '</p></section>';
+    }).join('');
+    var meters = SCORE_METERS.filter(function (x) { return x.min <= state.level; }).map(function (x) {
+      return '<tr><th scope="row">' + esc(x.mark) + '</th><td>' + esc(x.name) + '</td><td>' + esc(x.how) + '</td></tr>';
+    }).join('');
+    var values = SCORE_VALUES.filter(function (x) { return x.min <= state.level; }).map(function (x) {
+      return '<tr><th scope="row">' + esc(x.note) + '</th><td>' + esc(x.rest) + '</td><td>' + esc(x.how) + '</td></tr>';
+    }).join('');
+    var terms = SCORE_TERMS.filter(function (x) { return x.min <= state.level; }).map(function (x) {
+      return '<div><dt>' + esc(x.term) + '</dt><dd>' + esc(x.meaning) + '</dd></div>';
+    }).join('');
     el.planSheet.innerHTML = '<header><p class="stb-plan-kicker">Sheet Music Trainer · Catered practice plan</p><h3 id="studyGuideHead">' + esc(L.name) + ' study guide</h3><p class="stb-plan-summary"><strong>Training summary:</strong> ' + esc(g[0]) + '</p></header>' +
       '<div class="stb-plan-identity"><span>Name: <b aria-hidden="true">________________________</b></span><span>Date: <b aria-hidden="true">____________</b></span></div>' +
       '<section aria-labelledby="planTargets"><h4 id="planTargets">I am learning to…</h4><ul>' + g[1].map(function (x) { return '<li><span class="stb-check" aria-hidden="true">□</span>' + esc(x) + '</li>'; }).join('') + '</ul></section>' +
       '<section aria-labelledby="planSession"><h4 id="planSession">15-minute practice plan</h4><ol class="stb-plan-steps">' + g[2].map(function (x) { return '<li><strong>' + esc(x[0]) + ' · ' + esc(x[1]) + '</strong><span>' + esc(x[2]) + '</span></li>'; }).join('') + '</ol></section>' +
       '<div class="stb-plan-columns"><section aria-labelledby="planRemember"><h4 id="planRemember">Remember</h4><ul>' + g[3].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section><section aria-labelledby="planWords"><h4 id="planWords">Words to know</h4><p>' + esc(g[4]) + '</p><h4>Exit reflection</h4><p class="stb-write-line">One thing I can read or build now:</p><p class="stb-write-line">My next practice goal:</p></section></div>' +
+      '<section class="stb-decode-guide" aria-labelledby="decodeGuideHead"><header><p class="stb-plan-kicker">Decode a Score</p><h4 id="decodeGuideHead">Every symbol in the ' + esc(L.name) + ' study set</h4><p>This is the complete cumulative symbol and term set used for this grade band in this lesson. Read every staff and rhythm from the bottom up and left to right.</p></header>' +
+      '<section aria-labelledby="decodeClefs"><h4 id="decodeClefs">Every line and space</h4><div class="stb-clef-reference">' + clefs + '</div><p><strong>Ledger lines continue the same alternating letter pattern.</strong> Move one letter for every line or space; accidentals change pitch without changing its letter or staff position.</p></section>' +
+      '<section aria-labelledby="decodeMeters"><h4 id="decodeMeters">Time signatures</h4><p>The top number tells how many written pulses fill a measure. The bottom number names the written unit: 2 = half note, 4 = quarter note, 8 = eighth note.</p><div class="stb-plan-table-wrap"><table><thead><tr><th scope="col">Signature</th><th scope="col">Name</th><th scope="col">How to count and group it</th></tr></thead><tbody>' + meters + '</tbody></table></div></section>' +
+      '<section aria-labelledby="decodeValues"><h4 id="decodeValues">Rhythm and rest values</h4><p>A note makes sound; its matching rest measures silence for the same duration. A dot adds half the original value.</p><div class="stb-plan-table-wrap"><table><thead><tr><th scope="col">Sound value</th><th scope="col">Matching silence</th><th scope="col">Duration and use</th></tr></thead><tbody>' + values + '</tbody></table></div></section>' +
+      '<section aria-labelledby="decodeTerms"><h4 id="decodeTerms">Musical terms and directions</h4><dl class="stb-term-reference">' + terms + '</dl></section></section>' +
       '<section class="stb-plan-progress" aria-labelledby="planProgress"><h4 id="planProgress">Practice record</h4><table><thead><tr><th scope="col">Drill</th><th scope="col">Correct / tried</th><th scope="col">Notes</th></tr></thead><tbody>' + rows + '</tbody></table><p>Scores shown are saved only in this browser. Update the record by hand after printing.</p></section>';
   }
 
