@@ -29,8 +29,43 @@
   var METAL = [205.3, 304.4, 369.6, 522.7, 540, 800];       // inharmonic square partials (808-style metal)
   var TOM_DEFAULT = { tomHi: 210, tomMid: 155, tomLo: 105 };
 
+  // The six-square "metal" bank behind hats, rides and crashes is the same waveform on every hit, but as live
+  // oscillators it costs 12 nodes per hit and a ride rings for a second, so a swing pattern stacks dozens.
+  // That alone used ~18% of real time and made iPad Safari tear. Render each bank once into a buffer (natively,
+  // off the main thread) and play it as a single buffer source; until it is ready, hits use live oscillators.
+  var metalBanks = typeof WeakMap === 'function' ? new WeakMap() : null;
+  // [highpass Hz, bandpass Hz, pitch multiple] for each voice that uses the bank. The two filters are linear and
+  // time-invariant, so they are baked into the buffer too: a hit is then one buffer source straight into its envelope.
+  var METAL_VOICES = [[7000, 10000, 1], [6500, 9500, 1], [5200, 7500, 1.35], [4200, 8000, 1.2]];
+  function metalKey(hp, bp, mult) { return hp + '|' + bp + '|' + (mult || 1); }
+  function metalBank(ctx) {
+    var bank = metalBanks && metalBanks.get(ctx);
+    if (bank) return bank;
+    bank = {};
+    if (metalBanks) metalBanks.set(ctx, bank);
+    var OAC = root.OfflineAudioContext || root.webkitOfflineAudioContext;
+    if (ctx.startRendering || !OAC) return bank;               // rendering offline already: oscillators are fine
+    METAL_VOICES.forEach(function (v) {
+      try {
+        var off = new OAC(1, Math.ceil(ctx.sampleRate * 1.6), ctx.sampleRate);
+        var bpf = off.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = v[1]; bpf.Q.value = 0.6;
+        var hpf = off.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = v[0];
+        bpf.connect(hpf); hpf.connect(off.destination);
+        METAL.forEach(function (hz) {
+          var o = off.createOscillator(), g = off.createGain();
+          o.type = 'square'; o.frequency.value = hz * v[2]; g.gain.value = 0.16;
+          o.connect(g); g.connect(bpf); o.start(0);
+        });
+        var p = off.startRendering();
+        if (p && p.then) p.then(function (buf) { bank[metalKey(v[0], v[1], v[2])] = buf; }, function () { /* keep oscillators */ });
+      } catch (_e) { /* keep oscillators */ }
+    });
+    return bank;
+  }
+
   function createSynth(ctx, out) {
     var nb = noiseBuffer(ctx);
+    var banks = metalBank(ctx);
     var openHatGain = null;
 
     function amp(t, peak, decay, attack) {
@@ -66,6 +101,15 @@
     }
 
     function metal(t, peak, decay, hp, bp, mult) {
+      var banked = banks[metalKey(hp, bp, mult)];
+      if (banked && decay + 0.06 <= banked.duration) {            // rendered once: filters already baked in
+        var bg = amp(t, peak, decay, 0.001);
+        var src = ctx.createBufferSource();
+        src.buffer = banked;
+        src.connect(bg);
+        src.start(t); src.stop(t + decay + 0.06);
+        return bg;
+      }
       var mix = ctx.createGain();
       var hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = hp;
       var bpf = ctx.createBiquadFilter(); bpf.type = 'bandpass'; bpf.frequency.value = bp; bpf.Q.value = 0.6;
