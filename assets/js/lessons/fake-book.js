@@ -1722,10 +1722,28 @@
   var ctx = null, master = null, bus = {}, kitBus = null;
   function ensureAudio() {
     var AC = window.AudioContext || window.webkitAudioContext;
+    var kit = window.AudioKit && window.AudioKit.available() ? window.AudioKit : null;
     if (!AC) return false;
-    if (!ctx) {
+    // iPad Safari: Web Audio runs at the hardware rate and a second AudioContext on the page is resampled
+    // against the first (wrong pitch/speed or crackle once the output route changes). Share AudioKit's one
+    // context (the violin and tap-a-note previews already use it) instead of owning a private one.
+    var next = kit ? kit.context({ latencyHint: 'playback' }) : ctx;
+    if (!next) {
       // 'playback' asks iOS for bigger hardware buffers: far fewer underruns/crackles than the low-latency default.
-      try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
+      try { next = new AC({ latencyHint: 'playback' }); } catch (e) { next = new AC(); }
+    }
+    // 'playback' session: the iPad's silent switch must not mute the band.
+    try { var session = navigator.audioSession; if (session && session.type !== 'playback') session.type = 'playback'; } catch (e) { /* read-only in some builds */ }
+    if (next !== ctx) {
+      ctx = next; master = null; bus = {};
+      var wasRunning = ctx.state === 'running';
+      ctx.addEventListener('statechange', function () {
+        if (ctx.state === 'running') { wasRunning = true; return; }
+        if (!wasRunning || ctx.state === 'closed') return;
+        wasRunning = false;
+        // A call, Siri or an app switch froze the clock; stop cleanly instead of leaving the playhead running over silence.
+        if (P) { stop(); banner('Audio was interrupted (call, Siri or another app). Press Play to carry on.'); }
+      });
       var comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -16; comp.knee.value = 20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
       master = ctx.createGain(); master.gain.value = 0.8;
@@ -2024,8 +2042,18 @@
     return opts.mode === 'trade' && Math.floor((bar - from) / 4) % 2 === 1;
   }
 
+  var startPending = false;
   function play(immediate) {
     if (!ensureAudio()) return;
+    // iOS resumes a suspended context asynchronously; anchoring to its frozen clock would make the first notes late (and dropped).
+    if (ctx.state !== 'running') {
+      if (startPending) return;
+      startPending = true;
+      var go = function () { startPending = false; if (ctx.state === 'running') play(immediate); };
+      var rp; try { rp = ctx.resume(); } catch (e) { rp = null; }
+      if (rp && rp.then) rp.then(go, function () { startPending = false; }); else startPending = false;
+      return;
+    }
     stop();
     hideBarPop();
     var M = tune.M, r = loopRange();

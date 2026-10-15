@@ -16,6 +16,17 @@
 
   function id() { return Math.random().toString(36).slice(2, 10); }
 
+  // The channel strip's analog-style front end: preamp trim (dB), polarity flip,
+  // 80 Hz low-cut, then a 3-band EQ (shelves ±15 dB, sweepable mid) before inserts.
+  const STRIP_LIMITS = { trim: [-20, 20], lo: [-15, 15], mid: [-15, 15], midF: [200, 5000], hi: [-15, 15] };
+  function makeStrip() { return { trim: 0, phase: false, hpf: false, eqOn: true, lo: 0, mid: 0, midF: 1000, hi: 0 }; }
+  function normalizeStrip(value) {
+    const v = object(value), base = makeStrip();
+    for (const key of Object.keys(STRIP_LIMITS)) base[key] = clamp(v[key], STRIP_LIMITS[key][0], STRIP_LIMITS[key][1], base[key]);
+    base.phase = !!v.phase; base.hpf = !!v.hpf; base.eqOn = v.eqOn !== false;
+    return base;
+  }
+
   function makeTrack(kind = 'instrument', name, instrument = 'piano', colorIndex = 0) {
     const audio = kind === 'audio';
     return {
@@ -23,7 +34,7 @@
       name: String(name || (audio ? 'Audio' : 'Keys')).slice(0, 40),
       instrument: audio ? null : instrument,
       color: COLORS[colorIndex % COLORS.length], volume: 0.8, pan: 0,
-      mute: false, solo: false, armed: false, clips: [], effects: [],
+      mute: false, solo: false, armed: false, clips: [], effects: [], strip: makeStrip(),
       tools: [], experienceState: {}, pluginChain: [], freezeState: null,
     };
   }
@@ -66,6 +77,7 @@
     next.volume = clamp(source.volume, 0, 1.2, 0.8);
     next.pan = clamp(source.pan, -1, 1, 0);
     next.mute = !!source.mute; next.solo = !!source.solo; next.armed = false;
+    next.strip = normalizeStrip(source.strip);
     next.clips = Array.isArray(source.clips) ? clone(source.clips) : [];
     next.effects = Array.isArray(source.effects) ? source.effects.map(normalizeEffect).filter(e => e.type) : [];
     next.tools = Array.isArray(source.tools) ? [...new Set(source.tools.map(String))] : [];
@@ -106,5 +118,5 @@
   function parse(json) { return migrate(JSON.parse(json)); }
   function stringify(project) { return JSON.stringify(migrate(project)); }
 
-  return { VERSION, COLORS, create, makeTrack, migrate, parse, stringify };
+  return { VERSION, COLORS, STRIP_LIMITS, create, makeTrack, makeStrip, normalizeStrip, migrate, parse, stringify };
 }));

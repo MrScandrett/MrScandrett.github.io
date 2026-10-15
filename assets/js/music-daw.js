@@ -176,20 +176,31 @@
       let s = strips.get(track.id);
       if (!s) {
         const gain = c.createGain(), pan = c.createStereoPanner();
-        const input = c.createGain();
+        // Console front end, in the order a real strip does it:
+        // trim → polarity → low-cut → EQ (low shelf, mid bell, high shelf) → inserts → fader → pan.
+        const input = c.createGain(), phase = c.createGain(), hpf = c.createBiquadFilter();
+        const lo = c.createBiquadFilter(), mid = c.createBiquadFilter(), hi = c.createBiquadFilter();
+        const inserts = c.createGain(), preMeter = c.createAnalyser();
+        hpf.type = 'highpass'; hpf.Q.value = 0.707;
+        lo.type = 'lowshelf'; lo.frequency.value = 100;
+        mid.type = 'peaking'; mid.Q.value = 1;
+        hi.type = 'highshelf'; hi.frequency.value = 8000;
+        input.connect(phase); phase.connect(hpf); hpf.connect(lo); lo.connect(mid); mid.connect(hi); hi.connect(inserts);
         gain.connect(pan); pan.connect(master);
-        s = { input, gain, pan, effects: [], signature: null, meter: null };
+        s = { input, gain, pan, phase, hpf, lo, mid, hi, inserts, preMeter, effects: [], signature: null, meter: null };
         if (!(c instanceof OfflineAudioContext)) {
+          preMeter.fftSize = 512; hi.connect(preMeter);
           s.meter = c.createAnalyser();
           s.meter.fftSize = 512;
           pan.connect(s.meter);
         }
         strips.set(track.id, s);
+        applyStrip(s, track, c.currentTime, true);
       }
       const signature = JSON.stringify(track.effects || []);
       if (signature !== s.signature) {
-        s.input.disconnect(); s.effects.forEach(e => e.dispose());
-        const chain = PluginHost.createChain(c, s.input, track.effects, window.AudioEffects.registry, window.AudioEffects.parameters);
+        s.inserts.disconnect(); s.effects.forEach(e => e.dispose());
+        const chain = PluginHost.createChain(c, s.inserts, track.effects, window.AudioEffects.registry, window.AudioEffects.parameters);
         s.effects = chain.instances;
         chain.output.connect(s.gain); s.signature = signature;
         chain.missing.forEach(type => diagnostics?.record('plugin-missing', 'warning', { type, trackId: track.id }));
@@ -200,6 +211,18 @@
     return { master, strip, strips };
   }
 
+  // Push a channel's strip settings (trim, ø, low-cut, EQ) onto its audio nodes.
+  // `instant` skips smoothing — used for offline renders and a strip's first build.
+  function applyStrip(s, t, now, instant) {
+    const v = ProjectModel.normalizeStrip(t.strip), set = (param, value) => { if (instant) param.value = value; else param.setTargetAtTime(value, now, 0.015); };
+    set(s.input.gain, Math.pow(10, v.trim / 20));
+    set(s.phase.gain, v.phase ? -1 : 1);
+    set(s.hpf.frequency, v.hpf ? 80 : 10);
+    const eq = v.eqOn;
+    set(s.lo.gain, eq ? v.lo : 0); set(s.mid.gain, eq ? v.mid : 0); set(s.hi.gain, eq ? v.hi : 0);
+    set(s.mid.frequency, v.midF);
+  }
+
   function applyMix() {
     if (!audio.mix) return;
     const now = audio.ctx.currentTime;
@@ -208,6 +231,7 @@
       const s = audio.mix.strip(t);
       s.gain.gain.setTargetAtTime(audible(t) ? t.volume : 0, now, 0.02);
       s.pan.pan.setTargetAtTime(t.pan, now, 0.02);
+      applyStrip(s, t, now, false);
     });
   }
 
@@ -1797,6 +1821,107 @@
     lessonCatalog = (data.lessons || []).filter(l => l.url?.startsWith('lessons/music/') || (l.url?.startsWith('lessons/technical-elements/') && /audio|acoustic|microphone|eq-|cymatic/.test(l.url)));
     if (ui.tab === 'tools') renderChannel();
   }).catch(() => {});
+
+  // ── Channel console: an analog-style strip (preamp → EQ → inserts → fader) ──
+  const MK = window.MusicDawControls;
+  const FLOW_LESSONS = { input: 'lessons/technical-elements/live-audio-signal-chain.html', eq: 'lessons/technical-elements/eq-problem-frequency.html', inserts: 'lessons/technical-elements/audio-compression.html', output: 'lessons/technical-elements/audio-mixer-signal-flow.html' };
+  const decimalsOf = step => (String(step).split('.')[1] || '').length;
+  function insertKnob(effectIndex, definition, control, params) {
+    const log = control.min > 0 && control.max / control.min >= 50;
+    return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
+      scale: log ? 'log' : 'lin', fmt: control.unit === 'Hz' ? 'hz' : '', unit: control.unit === 'value' ? '' : control.unit, digits: decimalsOf(control.step), size: 'sm', attrs: `data-scope="fx" data-fx-i="${effectIndex}"` });
+  }
+  function insertsHtml(track) {
+    const registry = window.AudioEffects.registry;
+    const list = (track.effects || []).map((e, i) => {
+      const d = registry[e.type];
+      if (!d) return `<li class="mc-insert is-missing"><div class="mc-insert-head"><strong>Missing plugin: ${esc(e.type)}</strong><span class="mc-chip">safely bypassed</span></div></li>`;
+      const params = window.AudioEffects.parameters(e.type, e.params);
+      return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-insert="${i}">
+        <div class="mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
+          ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
+        <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
+    }).join('');
+    return `${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Add a compressor to even out loud and soft notes, or an echo for space.</p>'}
+      <div class="mc-add">${Object.entries(registry).slice(0, 8).map(([type, d]) => `<button type="button" class="mk-btn" data-ch-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>+ ${esc(d.name)}</button>`).join('')}</div>
+      <p class="mc-hint">Inserts run top to bottom. Reorder, remove and open desktop plugins in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Insert knobs change the sound when you let go.</p>`;
+  }
+  function flowHtml(track, strip) {
+    const registry = window.AudioEffects.registry, live = (track.effects || []).filter(e => !e.bypass && registry[e.type]).length;
+    const eqOn = strip.eqOn && (strip.lo || strip.mid || strip.hi);
+    const sourceName = track.kind === 'audio' ? 'Mic / file' : 'Instrument', sourceNote = track.kind === 'audio' ? 'analog in' : (hasInstrumentExperience(track) ? INSTRUMENTS[track.instrument] : 'pick a sound');
+    const stages = [
+      { name: sourceName, note: sourceNote, on: track.kind === 'audio' || hasInstrumentExperience(track) },
+      { name: 'Preamp', note: `trim ${MK.fmtDb(Math.pow(10, strip.trim / 20))} dB${strip.phase ? ' · ø' : ''}${strip.hpf ? ' · low-cut' : ''}`, on: true, jump: 'input' },
+      { name: 'EQ', note: eqOn ? 'shaping tone' : strip.eqOn ? 'flat' : 'out', on: !!eqOn, jump: 'eq' },
+      { name: 'Inserts', note: live ? `${live} in circuit` : 'none', on: live > 0, jump: 'inserts' },
+      { name: 'Fader · Pan', note: track.mute ? 'muted' : `${MK.fmtDb(track.volume)} dB · ${MK.panText(track.pan)}`, on: audible(track), jump: 'output' },
+      { name: 'Master', note: 'to speakers', on: true },
+    ];
+    return `<ol class="mc-flow" aria-label="Signal path, in the order sound travels">${stages.map(st => {
+      const inner = `<span class="mc-flow-lamp" aria-hidden="true"></span><strong>${esc(st.name)}</strong><small>${esc(st.note)}</small><span class="sr-only">${st.on ? ', active' : ', inactive'}</span>`;
+      return `<li class="${st.on ? 'is-on' : ''}">${st.jump ? `<button type="button" data-flow-jump="${st.jump}">${inner}</button>` : `<div>${inner}</div>`}</li>`;
+    }).join('')}</ol>`;
+  }
+  function channelConsoleHtml(track, sub, clipCount) {
+    const strip = ProjectModel.normalizeStrip(track.strip), L = ProjectModel.STRIP_LIMITS, uid2 = track.id;
+    const sec = (id, num, title, caption, body, extra = '') => `<section class="mc-sec mc-s-${id}" data-mc-section="${id}" aria-labelledby="mc-${id}-${uid2}">
+      <header><span class="mc-num" aria-hidden="true">${num}</span><h4 id="mc-${id}-${uid2}" tabindex="-1">${title}</h4>${FLOW_LESSONS[id] ? `<a class="mc-learn" href="${FLOW_LESSONS[id]}" aria-label="Lesson: ${esc(title)}">Learn ↗</a>` : ''}</header>
+      <p class="mc-cap">${caption}</p>${body}${extra}</section>`;
+    const noSound = track.kind === 'instrument' && !hasInstrumentExperience(track);
+    const strips = [
+      sec('input', 1, 'Input · Preamp', 'Sets how hot the signal enters the strip, like the gain pot on a mic preamp. Watch the lamps: PEAK should only blink on your loudest notes.',
+        `<div class="mc-leds" role="group" aria-label="Input level lamps"><span class="mc-led" data-led="sig"><i></i>SIG</span><span class="mc-led mc-led-red" data-led="peak"><i></i>PEAK</span></div>
+         <div class="mc-knobs">${MK.knob({ key: 'trim', label: 'Input trim', short: 'Trim', min: L.trim[0], max: L.trim[1], step: .5, def: 0, value: strip.trim, fmt: 'db', bipolar: true, size: 'lg', attrs: 'data-scope="strip"' })}</div>
+         <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="phase"', on: strip.phase, tone: 'amber', text: 'ø <small>Polarity</small>', label: 'Polarity flip', title: 'Flip the waveform upside down. Fixes two mics cancelling each other.' })}${MK.sw({ attrs: 'data-ch-switch="hpf"', on: strip.hpf, tone: 'amber', text: 'Low-cut <small>80 Hz</small>', label: 'Low-cut filter 80 hertz', title: 'High-pass filter: removes rumble and thumps below 80 Hz' })}</div>`),
+      sec('eq', 2, 'Equalizer', 'Tone controls. Shelves lift or cut everything above or below their corner; the mid bell sweeps to any pitch you choose. Try cutting before you boost.',
+        `<div class="mc-knobs mc-knobs-eq">${MK.knob({ key: 'hi', label: 'High shelf gain, 8 kilohertz', short: 'High 8k', min: L.hi[0], max: L.hi[1], step: .5, def: 0, value: strip.hi, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}
+          ${MK.knob({ key: 'mid', label: 'Mid bell gain', short: 'Mid', min: L.mid[0], max: L.mid[1], step: .5, def: 0, value: strip.mid, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}
+          ${MK.knob({ key: 'midF', label: 'Mid frequency', short: 'Mid freq', min: L.midF[0], max: L.midF[1], step: 0, def: 1000, value: strip.midF, scale: 'log', fmt: 'hz', attrs: 'data-scope="strip"' })}
+          ${MK.knob({ key: 'lo', label: 'Low shelf gain, 100 hertz', short: 'Low 100', min: L.lo[0], max: L.lo[1], step: .5, def: 0, value: strip.lo, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}</div>
+         <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="eqOn"', on: strip.eqOn, tone: 'green', text: 'EQ <small>In</small>', label: 'EQ in circuit', title: 'Switch the whole EQ in or out to hear what it is doing' })}</div>`),
+      sec('inserts', 3, 'Inserts', 'Processors wired in series, top to bottom. Compressors even out loud and soft notes; echo adds space. The IN switch bypasses a unit, like on a hardware rack.', insertsHtml(track)),
+      sec('output', 4, 'Output · Fader', 'The fader sets the level sent to the master bus, the pan knob places it left to right. Mute silences it; Solo isolates it. Keep peaks out of the red.',
+        `<div class="mc-out-grid">
+          <div class="mc-knobs">${MK.knob({ key: 'pan', label: 'Pan', short: 'Pan', min: -1, max: 1, step: .05, def: 0, value: track.pan, fmt: 'pan', bipolar: true, attrs: 'data-scope="mix"' })}</div>
+          <div class="mc-switches mc-switches-col">${MK.sw({ attrs: 'data-ch-switch="mute"', on: track.mute, tone: 'amber', text: 'Mute', label: `Mute ${track.name}` })}${MK.sw({ attrs: 'data-ch-switch="solo"', on: track.solo, tone: 'yellow', text: 'Solo', label: `Solo ${track.name}` })}${MK.sw({ attrs: 'data-channel-arm', on: track.armed, tone: 'red', text: 'Rec <small>Arm</small>', label: track.armed ? 'Disarm recording' : 'Arm recording', title: noSound ? 'Choose a sound first' : 'Arm this channel, then press ⏺ to record' })}</div>
+          ${MK.fader({ key: 'volume', label: 'Channel fader', min: 0, max: 1.2, def: 1, value: track.volume, scale: 'fader', fmt: 'gain', meter: track.id, attrs: 'data-scope="mix"' })}</div>`)
+    ].join('');
+    return `<div class="mc" style="--tc:${track.color}">
+      <div class="mc-head"><i class="mc-swatch" aria-hidden="true"></i>
+        <div class="mc-id"><input class="mc-name" data-channel-name value="${esc(track.name)}" maxlength="40" aria-label="Channel name"><span class="mc-sub">${sub} · ${clipCount} clip${clipCount === 1 ? '' : 's'}</span></div>
+        <label class="mc-pick"><span>Channel</span><select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+        ${hasInstrumentExperience(track) ? '<button type="button" class="mk-btn" data-channel-open="play">🎹 Play</button>' : ''}</div>
+      ${noSound ? '<p class="mc-callout"><span>No sound on this channel yet.</span><button type="button" class="mk-btn mk-btn-primary" data-open-catalog>Choose a sound ↓</button></p>' : ''}
+      ${flowHtml(track, strip)}
+      <div class="mc-strip">${strips}</div>
+      <p class="mc-hint mc-keys"><b>Knobs &amp; faders:</b> drag up/down (hold Shift for fine) · arrow keys · PageUp/PageDown · double-click or Enter resets · Home/End for the ends.</p>
+    </div>`;
+  }
+  // Knob/fader events: audio and model update live; history, save and re-render settle after you let go.
+  let settleTimer = 0, settleKey = null;
+  function setConsoleValue(t, el, value) {
+    const key = el.dataset.key, scope = el.dataset.scope;
+    if (scope === 'strip') { t.strip = ProjectModel.normalizeStrip(t.strip); t.strip[key] = value; applyMix(); }
+    else if (scope === 'mix') { t[key] = value; applyMix(); }
+    else if (scope === 'fx') { const e = (t.effects || [])[Number(el.dataset.fxI)]; if (e) e.params = { ...e.params, [key]: value }; }
+    else if (scope === 'fxwet') { const e = (t.effects || [])[Number(el.dataset.fxI)]; if (e) e.wet = value; }
+  }
+  function settleConsole() {
+    clearTimeout(settleTimer); settleTimer = 0;
+    const host = $('tools'), keep = settleKey && host.contains(document.activeElement);
+    commit();
+    if (keep) host.querySelector(`[data-ctl][data-key="${settleKey.key}"][data-scope="${settleKey.scope}"]${settleKey.fx != null ? `[data-fx-i="${settleKey.fx}"]` : ''}`)?.focus({ preventScroll: true });
+  }
+  MK.mount($('tools'), {
+    onInput(key, value, el) { const t = channelTarget(); if (t) setConsoleValue(t, el, value); },
+    onCommit(key, value, el) {
+      const t = channelTarget(); if (!t) return;
+      setConsoleValue(t, el, value);
+      settleKey = { key, scope: el.dataset.scope, fx: el.dataset.fxI ?? null };
+      clearTimeout(settleTimer); settleTimer = setTimeout(settleConsole, 250);
+    },
+  });
   function renderChannel() {
     disposeExperiences();
     const host = $('tools'), track = channelTarget();
@@ -1809,16 +1934,9 @@
     const clipCount = track.clips.length;
     const sub = track.kind === 'audio' ? '🎙 Audio channel' : hasInstrumentExperience(track) ? `Instrument · ${INSTRUMENTS[track.instrument]}` : 'Instrument · no sound yet';
     host.innerHTML = `<h3 class="daw-rack-title">${esc(track.name)} · channel rack</h3>
-      <div class="daw-chead" style="--tc:${track.color}"><i class="daw-chead-swatch" aria-hidden="true"></i>
-        <div class="daw-chead-main"><input class="daw-chead-name" data-channel-name value="${esc(track.name)}" maxlength="40" aria-label="Channel name"><span class="daw-chead-sub">${sub} · ${clipCount} clip${clipCount === 1 ? '' : 's'}</span></div></div>
-      <div class="daw-chead-actions">
-        <label class="daw-field">Switch channel<select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t===track?'selected':''}>${esc(t.name)}</option>`).join('')}</select></label>
-        <button type="button" class="daw-btn" data-channel-arm aria-pressed="${track.armed}">${track.armed ? '● Disarm' : '● Arm'} recording</button>
-        <button type="button" class="daw-btn daw-danger" data-channel-delete>🗑 Delete channel</button>
-        ${hasInstrumentExperience(track) ? '<button type="button" class="daw-btn daw-wide" data-channel-open="play">Open play controller</button>' : ''}
-      </div>
-      <details class="daw-channel-options"><summary>Mix · effects · presets</summary><div class="daw-opt-grid"><button type="button" class="daw-btn" data-channel-open="mix">Mix channel</button><button type="button" class="daw-btn" data-channel-open="fx">Add audio effects</button><button type="button" class="daw-btn" data-channel-preset="save">Save preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load preset</button></div>
-      <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → inserts → volume / pan → master.':'Instrument → notes → inserts → volume / pan → master.'} Tools and effects travel in saved .mlab.zip projects.</p>
+      ${channelConsoleHtml(track, sub, clipCount)}
+      <details class="daw-channel-options"><summary>Mix · effects · presets · delete</summary><div class="daw-opt-grid"><button type="button" class="daw-btn" data-channel-open="mix">Open the mixer</button><button type="button" class="daw-btn" data-channel-open="fx">Open the FX rack</button><button type="button" class="daw-btn" data-channel-preset="save">Save preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load preset</button><button type="button" class="daw-btn daw-danger" data-channel-delete>🗑 Delete channel</button></div>
+      <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → trim → EQ → inserts → fader / pan → master.':'Instrument → trim → EQ → inserts → fader / pan → master.'} Strip settings, tools and effects travel in saved .mlab.zip projects.</p>
       </details>
       ${(track.tools||[]).filter(id => Object.hasOwn(CHANNEL_TOOLS,id) && CHANNEL_TOOLS[id].accepts(track)).map(id => `<section class="daw-module" data-installed-tool="${id}"><div class="daw-group"><h4>${CHANNEL_TOOLS[id].name}</h4><a href="${CHANNEL_TOOLS[id].lesson}">Lesson counterpart</a><button type="button" class="daw-btn" data-tool-remove="${id}">Remove experience</button></div>
       ${window.MusicChannelExperiences.registry[id]?`<div data-experience="${id}"></div>`:`<label class="daw-field">Note clip<select data-channel-clip aria-label="Channel note clip"><option value="">Choose / create clip</option>${track.clips.filter(c => c.type==='midi').map(c => `<option value="${c.id}" ${c===clip?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
@@ -1830,6 +1948,7 @@
         ${learning.length ? `<h4 class="daw-tile-title">Learning tools <span>${track.instrument === 'drums' ? 'sequencing lives on drum channels' : 'notation and theory live on melodic channels'}</span></h4><div class="daw-tool-catalog">${learning.map(id => toolTile(id, track)).join('')}</div>` : ''}</details>`
         : '<div class="daw-audio-note">Audio channels play and record sound as-is. Process them in <strong>FX</strong>, balance them in <strong>Mix</strong>, or add an Instrument channel for keys, drums and more.</div>'}
       <details class="daw-lesson-browser"><summary>Music + audio engineering lesson library</summary><p class="daw-note">Learn a technique, then apply it to this channel. Historical and listening lessons are references; sound processors appear in FX.</p><div class="daw-lesson-links">${lessonCatalog.map(l => `<a href="${esc(l.url)}">${esc(l.title)}</a>`).join('')}</div></details>`;
+    window.MusicDawControls.init(host);
     host.querySelectorAll('[data-experience]').forEach(element => {
       const id=element.dataset.experience;
       const module=window.MusicChannelExperiences.mount(element,track,id,{
@@ -1854,6 +1973,16 @@
   }
   $('tools').addEventListener('click', async e => {
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
+    if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
+    if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx'); return; }
+    if (b.hasAttribute('data-open-catalog')) { const d=$('tools').querySelector('.daw-experience-catalog');if(d){d.open=true;d.scrollIntoView({block:'start'});d.querySelector('[data-tool-add]:not(:disabled)')?.focus({preventScroll:true});}return; }
+    if (b.dataset.chSwitch) {
+      const key=b.dataset.chSwitch;
+      if (key==='mute'||key==='solo') t[key]=!t[key]; else { t.strip=ProjectModel.normalizeStrip(t.strip); t.strip[key]=!t.strip[key]; }
+      commit(); $('tools').querySelector(`[data-ch-switch="${key}"]`)?.focus({preventScroll:true}); return;
+    }
+    if (b.dataset.chFxBypass!==undefined) { const i=Number(b.dataset.chFxBypass), e=(t.effects||[])[i]; if(e){e.bypass=!e.bypass;commit();$('tools').querySelector(`[data-ch-fx-bypass="${i}"]`)?.focus({preventScroll:true});} return; }
+    if (b.dataset.chFxAdd) { t.effects ||= []; if(t.effects.length<8){t.effects.push({type:b.dataset.chFxAdd,params:window.AudioEffects.parameters(b.dataset.chFxAdd),bypass:false,wet:1});commit();$('tools').querySelector(`[data-ch-fx-add="${b.dataset.chFxAdd}"]`)?.focus({preventScroll:true});} return; }
     if (b.dataset.arrangeEdit) { select(t.id,b.dataset.arrangeEdit); renderEditor();setTab('edit');return; }
     if (b.hasAttribute('data-channel-arm')) { await setArmed(t,!t.armed); return; }
     if (b.hasAttribute('data-channel-delete')) { deleteTrack(t.id); return; }
@@ -3216,6 +3345,27 @@
 
   // ── Animation: playhead, meters ──────────────────────────────────────────
   const stripData = new Float32Array(512);
+
+  // Channel console meters: post-fader LED ladder, plus SIG / PEAK lamps on the preamp.
+  const LADDER_DB = [-48, -42, -36, -30, -24, -20, -16, -12, -9, -6, -4, -2, -1, 0];
+  const consoleMeter = { data: new Float32Array(512), level: 0, peakUntil: 0 };
+  const peakOf = (analyser) => { analyser.getFloatTimeDomainData(consoleMeter.data); let p = 0; for (let i = 0; i < consoleMeter.data.length; i++) p = Math.max(p, Math.abs(consoleMeter.data[i])); return p; };
+  function updateConsoleMeters() {
+    const host = $('tools'), ladder = host.querySelector('[data-ladder]');
+    if (!ladder) return;
+    const s = audio.mix.strips.get(ladder.dataset.ladder);
+    if (!s || !s.meter) return;
+    const peak = peakOf(s.meter);
+    consoleMeter.level = Math.max(peak, consoleMeter.level * 0.9);
+    const db = consoleMeter.level > 0.00001 ? 20 * Math.log10(consoleMeter.level) : -99;
+    ladder.querySelectorAll('i').forEach((seg, i) => seg.classList.toggle('is-lit', db > LADDER_DB[i]));
+    if (s.preMeter) {
+      const pre = peakOf(s.preMeter), now = performance.now();
+      if (pre > 0.89) consoleMeter.peakUntil = now + 700;
+      host.querySelector('[data-led="sig"]')?.classList.toggle('is-lit', pre > 0.01);
+      host.querySelector('[data-led="peak"]')?.classList.toggle('is-lit', now < consoleMeter.peakUntil);
+    }
+  }
   function frame() {
     if (transport.playing && audio.ctx) {
       const beat = beatAt(audio.ctx.currentTime - (audio.ctx.outputLatency || 0));
@@ -3253,6 +3403,7 @@
         });
       }
     }
+    if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
     if (mic.analyser) {
       const el = root.querySelector('[data-ref="mic"]');
       if (el) {
