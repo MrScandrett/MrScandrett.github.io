@@ -22,12 +22,37 @@ const midiHz = (n) => 440 * Math.pow(2, (n - 69) / 12);
 // fixed lowpass. A struck string rings from the hammer strike with no sustain
 // plateau, so the voice envelope (fast attack, long decay) carries the note.
 const PIANO_HARMONICS = [[1, 1], [2, .5], [3, .22], [4, .12], [6, .05]];
+// The harmonics are one PeriodicWave (same sine-phase partials, un-normalised, so the same
+// timbre and level) on a single oscillator: 3 nodes per note instead of 12. On iPad Safari
+// the five-oscillator version cost ~4x the CPU and glitched on fast two-hand passages.
+const pianoWaves = new WeakMap();
+function pianoWave(context) {
+  let wave = pianoWaves.get(context);
+  if (wave === undefined) {
+    try {
+      const imag = new Float32Array(Math.max(...PIANO_HARMONICS.map(([m]) => m)) + 1);
+      PIANO_HARMONICS.forEach(([multiple, level]) => { imag[multiple] = level; });
+      wave = context.createPeriodicWave(new Float32Array(imag.length), imag, { disableNormalization: true });
+    } catch (_e) { wave = null; }
+    pianoWaves.set(context, wave);
+  }
+  return wave;
+}
 function pianoSources(context, output, frequency, time) {
   const filter = context.createBiquadFilter();
   filter.type = 'lowpass';
   filter.frequency.value = Math.min(10000, frequency * 6 + 1800);
   filter.connect(output);
   const nodes = [filter];
+  const wave = pianoWave(context);
+  if (wave) {
+    const oscillator = context.createOscillator();
+    oscillator.setPeriodicWave(wave);
+    oscillator.frequency.value = frequency;
+    oscillator.connect(filter); oscillator.start(time);
+    nodes.push(oscillator);
+    return { sources: [oscillator], disconnect() { nodes.forEach(node => node.disconnect()); } };
+  }
   const sources = PIANO_HARMONICS.map(([multiple, level]) => {
     const oscillator = context.createOscillator(), gain = context.createGain();
     oscillator.type = 'sine';

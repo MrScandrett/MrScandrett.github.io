@@ -1053,7 +1053,8 @@
   function context() {
     var kit = root.AudioKit;
     if (!audio.ctx) {
-      if (kit) audio.ctx = kit.context();
+      // 'playback' = bigger hardware buffers: a score is not latency-critical, and iPad Safari glitches at the default.
+      if (kit) audio.ctx = kit.context({ latencyHint: 'playback' });
       else { var AC = root.AudioContext || root.webkitAudioContext; audio.ctx = new AC(); }
       var comp = audio.ctx.createDynamicsCompressor();
       comp.threshold.value = -14; comp.ratio.value = 3;
@@ -1104,7 +1105,8 @@
   Player.prototype.beatAt = function (time) { return this.b0 + (time - this.t0) * this.qpm() / 60; };
   Player.prototype.timeOf = function (beat) { return this.t0 + (beat - this.b0) * 60 / this.qpm(); };
   Player.prototype.schedule = function () {
-    var c = audio.ctx, horizon = c.currentTime + 0.2, self = this, span = this.span();
+    // Safari can stall timers for 100 ms+ while it repaints the score; a late note would bunch with the next, so keep a cushion.
+    var c = audio.ctx, horizon = c.currentTime + 0.45, self = this, span = this.span();
     while (this.next < this.notes.length && this.timeOf(this.notes[this.next].start) < horizon && this.notes[this.next].start < span.to - EPS) {
       var n = this.notes[this.next++];
       if (this.mutes[n.staff]) continue;
