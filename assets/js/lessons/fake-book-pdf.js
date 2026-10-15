@@ -26,6 +26,8 @@ function setFocus(on) {
   if (on) $('focus-close').focus(); else $('focus').focus();
   draw();
 }
+// The song importer hands PDFs here, so a PDF chosen in the wrong "Choose file" button still opens.
+window.FakeBookPDFDesk = { open: file => { desk.open = true; return openFile(file); }, ready: true };
 $('focus').onclick = () => setFocus(!focused); $('focus-close').onclick = () => setFocus(false);
 document.addEventListener('keydown', e => {
   if (e.key === 'Tab' && focused) {

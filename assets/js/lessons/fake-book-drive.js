@@ -95,8 +95,8 @@
     var timer = setTimeout(function () { controller.abort(); }, 30000);
     try {
       if (!doc || !doc.id) throw new Error('No file was selected. Try again.');
-      if (!/\.(musicxml|mxl|xml|gtp|gp3|gp4|gp5|gpx|gp|gp7|gp8|html?|txt|mscx|mscz)$/i.test(doc.name || '')) {
-        throw new Error('Choose a MusicXML, Guitar Pro 1–8 or iReal chart file. PDFs and Google Docs cannot be played as scores.');
+      if (!/\.(musicxml|mxl|xml|gtp|gp3|gp4|gp5|gpx|gp|gp7|gp8|html?|txt|mscx|mscz|pdf)$/i.test(doc.name || '')) {
+        throw new Error('Choose a MusicXML, Guitar Pro 1–8, iReal chart or PDF file. Google Docs cannot be read as scores.');
       }
       busy('Reading ' + doc.name + ' from Google Drive…');
       var response = await fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(doc.id) + '?alt=media', {

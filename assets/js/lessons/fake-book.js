@@ -2495,18 +2495,43 @@
       importFeedback('Could not import that score: ' + err.message, true);
     });
   }
+  // What a file really is, from its first bytes. iPad and cloud pickers hand over renamed or extension-less files
+  // ("song.gp5 (1)", "Document"), so the name alone can't be trusted.
+  function sniffKind(bytes) {
+    function ascii(from, to) { var s = ''; for (var i = from; i < Math.min(to, bytes.length); i++) s += String.fromCharCode(bytes[i]); return s; }
+    if (ascii(0, 5) === '%PDF-') return 'pdf';
+    if (/^FICHIER GUITARE? PRO/.test(ascii(1, 31)) || /^BCF[ZS]/.test(ascii(0, 4))) return 'gp';
+    return '';
+  }
+  function openPDF(file) {
+    var desk = window.FakeBookPDFDesk;
+    if (!desk || !desk.open) { importFeedback('That is a PDF. Open it with “Open PDF” in the PDF fake book section below (it is for indexing and transcribing, not instant playback).', true); return; }
+    importFeedback('That is a PDF, so it opened in the PDF fake book section below. Match its page numbers there, then copy a melody and chords into playable notation. PDFs are not played directly.', false);
+    desk.open(file);
+  }
   function importFile(file) {
-    if (/\.(gtp|gp3|gp4|gp5|gpx|gp|gp7|gp8)$/i.test(file.name)) {
-      var gpReader = window.FakeBookGuitarPro || (/\.gtp$/i.test(file.name) ? window.FakeBookGTP : null);
-      if (!gpReader || !MX) { importFeedback('The Guitar Pro reader is not available. Please refresh the page.', true); return; }
-      if (file.size > 8 * 1024 * 1024) { importFeedback('Guitar Pro files must be smaller than 8 MB.', true); return; }
-      importMusicXML(file.arrayBuffer().then(function (buf) { return gpReader.parseFile(new Uint8Array(buf), MX); }), file.name);
-      return;
-    }
+    var name = file.name || '';
+    // Read the header first: it decides the reader for PDFs, renamed Guitar Pro files and extension-less picks.
+    file.slice(0, 64).arrayBuffer().then(function (head) {
+      var kind = sniffKind(new Uint8Array(head));
+      if (kind === 'pdf' || /\.pdf$/i.test(name)) { openPDF(file); return; }
+      if (kind === 'gp' || /\.(gtp|gp3|gp4|gp5|gpx|gp|gp7|gp8)(\b|$)/i.test(name)) { importGuitarPro(file); return; }
+      importScoreOrChart(file);
+    }).catch(function () { importFeedback('Could not read “' + name + '”. If it is in iCloud Drive, tap it in Files first so it downloads, then choose it again.', true); });
+  }
+  function importGuitarPro(file) {
+    var gpReader = window.FakeBookGuitarPro || (/\.gtp$/i.test(file.name) ? window.FakeBookGTP : null);
+    if (!gpReader || !MX) { importFeedback('The Guitar Pro reader is not available. Please refresh the page.', true); return; }
+    if (file.size > 8 * 1024 * 1024) { importFeedback('Guitar Pro files must be smaller than 8 MB.', true); return; }
+    importMusicXML(file.arrayBuffer().then(function (buf) { return gpReader.parseFile(new Uint8Array(buf), MX); }), file.name);
+  }
+  function importScoreOrChart(file) {
     file.arrayBuffer().then(function (buf) {
       var bytes = new Uint8Array(buf);
       if (!MX) { handleImportText(new TextDecoder().decode(bytes)); return; }
       var text = MX.isZip(bytes) ? '' : MX.decodeText(bytes);
+      // Binary data decodes to text full of NULs/replacement characters: that is not a chart, so say so plainly.
+      if (text && /[\u0000\ufffd]/.test(text.slice(0, 2000)) && !MX.looksLikeIReal(text)) { importFeedback('“' + file.name + '” is not a MusicXML, Guitar Pro, iReal Pro or PDF file this page can read. Export it as MusicXML (.musicxml or .mxl) and try again.', true); return; }
       // iReal links and exports always contain irealb://; anything else that is XML or zipped goes to the score reader.
       if (text && MX.looksLikeIReal(text)) handleImportText(text);
       else if (!text || /\.(musicxml|mxl|xml|mscx|mscz)$/i.test(file.name) || /^\s*(\ufeff)?<\?xml|<score-|<museScore/i.test(text)) importMusicXML(MX.parseFile(bytes, { score: true }), file.name);
