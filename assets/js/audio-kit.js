@@ -49,8 +49,10 @@
     try { if (session.type === 'auto') session.type = 'playback'; } catch (_e) { /* read-only in some builds */ }
   }
 
-  function create() {
-    ctx = new AC();
+  function create(options) {
+    // 'playback' asks for bigger hardware buffers (fewer crackles on iPad) at the cost of latency.
+    try { ctx = options && options.latencyHint ? new AC({ latencyHint: options.latencyHint }) : new AC(); }
+    catch (_e) { ctx = new AC(); }
     master = ctx.createGain();
     master.gain.value = volume;
     limiter = ctx.createDynamicsCompressor();
@@ -92,10 +94,11 @@
     return (p && p.catch) ? p.catch(function () { /* waits for the next gesture */ }) : Promise.resolve();
   }
 
-  /** The page's AudioContext, created on first use and resumed on every call. */
-  function context() {
+  /** The page's AudioContext, created on first use and resumed on every call.
+   *  `options.latencyHint` is honoured only by whichever caller creates it first. */
+  function context(options) {
     if (!AC) return null;
-    if (!ctx) create();
+    if (!ctx) create(options);
     resume();
     return ctx;
   }
