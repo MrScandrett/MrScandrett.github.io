@@ -96,3 +96,20 @@ test('tab: notes a guitar can’t play are left out and counted', () => {
   assert.ok(r.dropped >= 3, `dropped ${r.dropped}`);
   assert.deepEqual(r.events[0].f.map(pitchOf), [72], 'the melody survives when its bass is below the low E');
 });
+
+test('harmony: a written C♯ in the bass stays C♯, and a late seventh still counts (Stardust bar 26)', () => {
+  // Em7 over E–D bass, then C♯ bass under E, B, A, G♯(written A♭), G.
+  const n = (s, d, p, alter = 0) => ({ s, d, midi: midi(p), alter });
+  const notes = [
+    n(0, 1, 'E2'), n(1, 1, 'D2'), n(0, 1, 'G4'), n(0, 1, 'B4'), n(1, 1, 'E4'), n(1, 1, 'B3'),
+    n(2, 2, 'C#2', 1), n(2, 2, 'E4'), n(2, 0.5, 'B3'), n(2.5, 0.5, 'A3'), n(3, 0.5, 'Ab3', -1), n(3.5, 0.5, 'G3')
+  ];
+  const r = H.analyze(notes, { M: 4, bars: 1, startKey: { tonic: 0, minor: false } });
+  assert.match(r.chordBars[0], /C#m/);
+  assert.doesNotMatch(r.chordBars[0], /Db/);
+});
+
+test('harmony: with no written accidental a diminished chord on C♯ is spelled C♯°7, not D♭°7', () => {
+  const r = H.analyze([{ s: 0, d: 4, midi: midi('C#3') }, { s: 0, d: 4, midi: midi('E4') }, { s: 0, d: 4, midi: midi('G4') }, { s: 0, d: 4, midi: midi('Bb4') }], { M: 4, bars: 1, startKey: { tonic: 0, minor: false } });
+  assert.match(r.chordBars[0], /^C#dim7/);
+});

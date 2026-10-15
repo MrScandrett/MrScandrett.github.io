@@ -815,7 +815,7 @@
             if (!m) return;
             m.notes.forEach(function (n) {
               if (!n.pitched || (Rp.staves[n.staff] && Rp.staves[n.staff].clef === 'TAB')) return;
-              allNotes.push({ s: starts[k] + n.t - pickupU / U, d: n.dur, midi: n.midi });
+              allNotes.push({ s: starts[k] + n.t - pickupU / U, d: n.dur, midi: n.midi, alter: n.alter });
             });
           });
         });

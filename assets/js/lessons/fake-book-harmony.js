@@ -73,7 +73,7 @@
     var perBar = Math.max(1, Math.round(M / unit)), nSeg = bars * perBar;
     var strong = opts.strong || function (pos) { return pos < 1e-6 ? 0 : (M === 4 && Math.abs(pos - 2) < 1e-6) ? 1 : 2; };
     var seg = [], i, j, k;
-    for (i = 0; i < nSeg; i++) seg.push({ w: new Array(12).fill(0), total: 0, low: null, lowW: 0 });
+    for (i = 0; i < nSeg; i++) seg.push({ w: new Array(12).fill(0), acc: new Array(12).fill(0), total: 0, low: null, lowAcc: 0 });
 
     // 1. what sounds in each slot
     notes.forEach(function (n) {
@@ -85,7 +85,8 @@
         var w = ov * (n.s >= s0 - 1e-6 ? 1 : 0.7);           // a note struck here counts more than one held over
         seg[x].w[mod(n.midi, 12)] += w;
         seg[x].total += w;
-        if (ov >= unit * 0.25 && (seg[x].low === null || n.midi < seg[x].low)) seg[x].low = n.midi;
+        if (n.alter) seg[x].acc[mod(n.midi, 12)] += w * (n.alter > 0 ? 1 : -1);      // how the arranger wrote it: C♯ or D♭
+        if (ov >= unit * 0.25 && (seg[x].low === null || n.midi < seg[x].low)) { seg[x].low = n.midi; seg[x].lowAcc = n.alter || 0; }
       }
     });
     seg.forEach(function (sg) {
@@ -156,6 +157,27 @@
       }
       return diaCache[id];
     };
+    // Spell a chord root or bass the way the score does: a written C♯ stays C♯ even in a flat-leaning key.
+    // With no written accidental to go on, a diminished chord on a chromatic root is a leading-tone chord (C♯°7 → Dm).
+    var spellAt = function (x, pc, key, q, isBass) {
+      var sg = seg[x];
+      if (pc === sg.bass && sg.lowAcc) return sg.lowAcc > 0 ? NAMES_SHARP[pc] : NAMES_FLAT[pc];
+      var a = 0;
+      for (var d = -1; d <= 1; d++) { var o = seg[x + d]; if (o && Math.floor((x + d) / perBar) === Math.floor(x / perBar)) a += o.acc[pc] * (d ? 0.5 : 1); }
+      if (a > 0) return NAMES_SHARP[pc];
+      if (a < 0) return NAMES_FLAT[pc];
+      if (!isBass && (q === 'dim' || q === 'dim7') && (pc === 1 || pc === 6 || pc === 8)) return NAMES_SHARP[pc];
+      return spell(pc, key);
+    };
+    // A chord tone heard on the next or previous beat of the bar still counts (a seventh that arrives late).
+    var heard = function (x, pc) {
+      var sg = seg[x], r = sg.w[pc] / sg.total, bar = Math.floor(x / perBar);
+      [-1, 1].forEach(function (d) {
+        var o = seg[x + d];
+        if (o && o.total && Math.floor((x + d) / perBar) === bar) r = Math.max(r, 0.7 * o.w[pc] / o.total);
+      });
+      return r;
+    };
     var emitChord = function (x, c) {
       var sg = seg[x], ch = CH[c];
       if (!sg.total) return 0;
@@ -164,7 +186,7 @@
       inS /= sg.total;
       var e = inS - 0.75 * (1 - inS);
       ch.pcs.forEach(function (pc, ti) {
-        if (sg.w[pc] / sg.total < 0.03) e -= ti === 1 ? 0.22 : ti === 2 ? 0.07 : ti === 3 ? 0.3 : 0.12;   // missing third hurts most; a seventh must be heard
+        if ((ti === 3 ? heard(x, pc) : sg.w[pc] / sg.total) < 0.03) e -= ti === 1 ? 0.22 : ti === 2 ? 0.07 : ti === 3 ? 0.3 : 0.12;   // missing third hurts most; a seventh must be heard
       });
       if (ch.pcs.length > 3) e -= 0.06;
       if (sg.bass !== null) {
@@ -193,11 +215,11 @@
         var x = bi * perBar + j, ch = CH[chordPath[x]], sg = seg[x], key = keyAt(x);
         var hasNotes = sg.total > 0;
         var bassPc = hasNotes && sg.bass !== null && sg.bass !== ch.root && ch.pcs.indexOf(sg.bass) >= 0 ? sg.bass : null;
-        var tok = spell(ch.root, key) + ch.q;
+        var tok = spellAt(x, ch.root, key, ch.q) + ch.q;
         var prev = list[list.length - 1];
         // Same chord: keep going. A new bass on a strong beat starts a new slash chord (I – I/E).
         if (prev && prev.base === tok && (bassPc === prev.bassPc || bassPc === null || strong(j * unit) === 2)) { prev.len += unit; continue; }
-        list.push({ base: tok, bassPc: bassPc, tok: tok + (bassPc !== null ? '/' + spell(bassPc, key) : ''), len: unit });
+        list.push({ base: tok, bassPc: bassPc, tok: tok + (bassPc !== null ? '/' + spellAt(x, bassPc, key, '', true) : ''), len: unit });
       }
       if (list.length === 1) chordBars.push(list[0].tok);
       else chordBars.push(list.map(function (c) { return c.tok + ':' + String(+c.len.toFixed(3)); }).join(' '));
