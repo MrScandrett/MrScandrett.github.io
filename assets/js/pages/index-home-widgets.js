@@ -269,11 +269,29 @@
         drawer.dataset.placement = placement;
       }
 
+      // Update the cue in place. Replacing its children (innerHTML) swaps the
+      // element under the pointer, which re-fires mouseover/mouseout and makes
+      // the button strobe while you try to click it.
+      function setWeatherCueState(cue, open) {
+        if (!cue) return;
+        cue.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const icon = cue.firstElementChild;
+        if (icon) icon.textContent = open ? '\u2212' : '+';
+        const label = cue.lastChild;
+        if (label && label.nodeType === 3) label.nodeValue = open ? ' Close' : ' Learn';
+      }
+
       function setWeatherDrawerVisible(panel, visible, immediate) {
         const drawer = panel.querySelector('.weather-learning-drawer');
         const cue = panel.querySelector('.weather-learn-cue');
         clearTimeout(weatherHideTimer);
         if (visible) {
+          // Hover/focus/mouseover fire for every child the pointer crosses;
+          // an already-open panel only needs its hide timer cancelled.
+          if (panel.classList.contains('is-open') && drawer && drawer.classList.contains('is-visible')) {
+            weatherOpenPanel = panel;
+            return;
+          }
           weatherEls.shell.querySelectorAll('.weather-learning-panel.is-open').forEach((openPanel) => {
             if (openPanel !== panel) setWeatherDrawerVisible(openPanel, false, true);
           });
@@ -288,15 +306,10 @@
               if (panel.classList.contains('is-open')) positionWeatherDrawer(panel, drawer);
             });
           }
-          if (cue) {
-            cue.setAttribute('aria-expanded', 'true');
-            cue.innerHTML = '<span aria-hidden="true">−</span> Close';
-          }
+          setWeatherCueState(cue, true);
         } else {
-          if (cue) {
-            cue.setAttribute('aria-expanded', 'false');
-            cue.innerHTML = '<span aria-hidden="true">+</span> Learn';
-          }
+          setWeatherCueState(cue, false);
+          delete panel.dataset.pinned;
           if (weatherOpenPanel === panel) weatherOpenPanel = null;
           const doClose = () => {
             panel.classList.remove('is-open');
@@ -313,15 +326,25 @@
         }
       }
 
+      // Hover, focus and iOS's synthetic mouseover all open the drawer *before*
+      // the click lands, so a click on an open panel can't simply mean "close"
+      // (that opened then shut it within one tap). First click pins it open;
+      // clicking a pinned panel closes it, and hover can't reopen it until
+      // the pointer has left the panel.
       function toggleWeatherDrawer(panel) {
-        if (panel.classList.contains('is-open')) setWeatherDrawerVisible(panel, false, true);
-        else setWeatherDrawerVisible(panel, true);
+        if (panel.classList.contains('is-open') && panel.dataset.pinned === '1') {
+          setWeatherDrawerVisible(panel, false, true);
+          panel.dataset.dismissed = '1';
+        } else {
+          setWeatherDrawerVisible(panel, true);
+          panel.dataset.pinned = '1';
+        }
       }
 
       weatherEls.shell.addEventListener('mouseover', (event) => {
         if (!canHoverWeather()) return;
         const panel = event.target.closest('.weather-learning-panel');
-        if (!panel) return;
+        if (!panel || panel.dataset.dismissed === '1') return;
         setWeatherDrawerVisible(panel, true);
       });
 
@@ -331,12 +354,14 @@
         if (!fromPanel) return;
         const toPanel = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('.weather-learning-panel') : null;
         if (toPanel === fromPanel) return;
+        delete fromPanel.dataset.dismissed;
+        if (fromPanel.dataset.pinned === '1') return;
         setWeatherDrawerVisible(fromPanel, false, false);
       });
 
       weatherEls.shell.addEventListener('focusin', (event) => {
         const panel = event.target.closest('.weather-learning-panel');
-        if (panel) setWeatherDrawerVisible(panel, true);
+        if (panel && panel.dataset.dismissed !== '1') setWeatherDrawerVisible(panel, true);
       });
 
       weatherEls.shell.addEventListener('focusout', (event) => {
@@ -344,12 +369,15 @@
         if (!panel) return;
         const toPanel = event.relatedTarget && event.relatedTarget.closest ? event.relatedTarget.closest('.weather-learning-panel') : null;
         if (toPanel === panel) return;
+        // A pinned drawer is dismissed by a second click, an outside click or
+        // Escape; tapping its (non-focusable) text just moves focus to <body>.
+        if (panel.dataset.pinned === '1') return;
         setWeatherDrawerVisible(panel, false, true);
       });
 
       weatherEls.shell.addEventListener('click', (event) => {
         const panel = event.target.closest('.weather-learning-panel');
-        if (!panel || event.target.closest('a')) return;
+        if (!panel || event.target.closest('a, .weather-learning-drawer')) return;
         toggleWeatherDrawer(panel);
       });
 
