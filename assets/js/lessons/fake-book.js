@@ -2988,10 +2988,22 @@
   function roleOf(iv) {
     return iv === 0 ? 'root' : (iv === 3 || iv === 4) ? 'third' : (iv === 6 || iv === 7 || iv === 8) ? 'fifth' : (iv === 9 || iv === 10 || iv === 11) ? 'seventh' : 'other';
   }
+  // The keys under a chord, cut to the notes it uses (plus a white key either side, and at least eight white keys)
+  // so the keyboard is as narrow as it can be and every key can be drawn large enough to read.
   function miniPiano(notes, rootPC) {
     var palette = pianoPitchPalette();
-    var lo = Math.floor(Math.min.apply(null, notes) / 12) * 12;
-    var hi = Math.max(lo + 24, Math.ceil((Math.max.apply(null, notes) + 1) / 12) * 12);
+    var isBlack = function (m) { return [1, 3, 6, 8, 10].indexOf(mod(m, 12)) >= 0; };
+    var lo = Math.min.apply(null, notes), hi = Math.max.apply(null, notes), nWhite = 0, grow = 0;
+    while (isBlack(lo)) lo--;
+    while (isBlack(hi)) hi++;
+    do { lo--; } while (isBlack(lo));
+    do { hi++; } while (isBlack(hi));
+    for (var c = lo; c <= hi; c++) if (!isBlack(c)) nWhite++;
+    while (nWhite < 8) {
+      if (grow++ % 2) { do { lo--; } while (isBlack(lo)); } else { do { hi++; } while (isBlack(hi)); }
+      nWhite++;
+    }
+    hi++;                                    // the loop below runs up to, not including, hi
     var wW = 14, x = 0, whites = [], blacks = [];
     for (var m = lo; m < hi; m++) {
       var pc = mod(m, 12), isB = [1, 3, 6, 8, 10].indexOf(pc) >= 0, on = notes.indexOf(m) >= 0;
@@ -3722,6 +3734,12 @@
       if (ev && ev.shiftKey) {
         opts.to = Math.max(b, loopRange().from); opts.loop = true;
         syncControls(); paintLoop(); save(); return false;
+      }
+      // Clicking the highlighted bar again (not while playing) clears the selection: back to the start of the tune or loop.
+      if (info.source === 'click' && !wasPlaying && startBar === b) {
+        startBar = 0;
+        paintLoop(); save();
+        return false;
       }
       startBar = b;
       // Keep the selected start inside the playable range.
