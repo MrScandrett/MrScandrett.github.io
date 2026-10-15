@@ -14,8 +14,10 @@ const pdfDir = out("pdfjs");
 await fs.rm(pdfDir, { recursive: true, force: true });
 await fs.mkdir(pdfDir, { recursive: true });
 
-await fs.copyFile(nm("pdfjs-dist", "build", "pdf.min.mjs"), path.join(pdfDir, "pdf.min.mjs"));
-await fs.copyFile(nm("pdfjs-dist", "build", "pdf.worker.min.mjs"), path.join(pdfDir, "pdf.worker.min.mjs"));
+// The legacy build, not build/: the modern one calls Map.prototype.getOrInsertComputed and other
+// brand-new JS, which iPad Safari lacks ("Could not open PDF: Cannot access uninitialized variable").
+await fs.copyFile(nm("pdfjs-dist", "legacy", "build", "pdf.min.mjs"), path.join(pdfDir, "pdf.min.mjs"));
+await fs.copyFile(nm("pdfjs-dist", "legacy", "build", "pdf.worker.min.mjs"), path.join(pdfDir, "pdf.worker.min.mjs"));
 await fs.copyFile(nm("pdfjs-dist", "LICENSE"), path.join(pdfDir, "LICENSE"));
 for (const dir of ["standard_fonts", "cmaps", "wasm"]) {
   await fs.cp(nm("pdfjs-dist", dir), path.join(pdfDir, dir), { recursive: true });
