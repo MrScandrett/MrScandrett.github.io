@@ -1720,6 +1720,12 @@
 
   /* ================================================================ audio */
   var ctx = null, master = null, bus = {}, kitBus = null;
+  // Older iPad Pro models are now tight on Web Audio headroom in Safari.
+  // Keep its audio thread clear of the most expensive niceties; notation and musical content
+  // stay identical. iPadOS 13+ identifies itself as a Mac, hence the touch-point check.
+  var iPadPlayback = /iPad/.test(navigator.userAgent || '') ||
+    ((navigator.platform || '') === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (iPadPlayback) root.classList.add('fb-ipad-playback');
   function ensureAudio() {
     var AC = window.AudioContext || window.webkitAudioContext;
     var kit = window.AudioKit && window.AudioKit.available() ? window.AudioKit : null;
@@ -1747,11 +1753,16 @@
       var comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -16; comp.knee.value = 20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
       master = ctx.createGain(); master.gain.value = 0.8;
-      var verb = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.2), imp = ctx.createBuffer(2, len, ctx.sampleRate);
-      for (var c = 0; c < 2; c++) { var d = imp.getChannelData(c); for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
-      verb.buffer = imp;
-      var wet = ctx.createGain(); wet.gain.value = 0.16;
-      master.connect(comp); master.connect(verb); verb.connect(wet); wet.connect(comp);
+      master.connect(comp);
+      // A stereo convolution runs for the whole performance. It is a disproportionate cost on
+      // older iPads and competes with Safari's audio renderer, so those devices use the dry mix.
+      if (!iPadPlayback) {
+        var verb = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.2), imp = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (var c = 0; c < 2; c++) { var d = imp.getChannelData(c); for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6); }
+        verb.buffer = imp;
+        var wet = ctx.createGain(); wet.gain.value = 0.16;
+        master.connect(verb); verb.connect(wet); wet.connect(comp);
+      }
       // The 4:1 compressor above is a leveller, not a ceiling: stacked voices could still pass 0 dBFS and clip.
       // A fast hard limiter last keeps peaks under it.
       var limiter = ctx.createDynamicsCompressor();
@@ -1795,8 +1806,20 @@
     [o1, o2, lfo].forEach(function (o) { o.start(t); o.stop(end + 0.4); });
   }
   function voicePiano(out, t, dur, m, vel) {
-    var end = t + Math.max(0.1, dur), g = ctx.createGain(), f = ctx.createBiquadFilter();
-    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
+    var end = t + Math.max(0.1, dur), g = ctx.createGain();
+    // One oscillator and no per-note filter cuts the live node count by roughly two thirds on
+    // iPad. Chords remain pitched and articulated, but leave enough DSP time for drums and bass.
+    if (iPadPlayback) {
+      var simple = ctx.createOscillator();
+      simple.type = 'triangle'; simple.frequency.value = hz(m);
+      simple.connect(g); g.connect(out);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.008);
+      g.gain.setTargetAtTime(vel * 0.22, t + 0.008, 0.38);
+      g.gain.setTargetAtTime(0.0001, end, 0.07);
+      simple.start(t); simple.stop(end + 0.45);
+      return;
+    }
+    var f = ctx.createBiquadFilter(), o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
     o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = hz(m); o2.frequency.value = hz(m) * 2; g2.gain.value = 0.25;
     f.type = 'lowpass'; f.frequency.setValueAtTime(4200, t); f.frequency.setTargetAtTime(1600, t, 0.4);
     o1.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(out);
@@ -2202,7 +2225,7 @@
     P.queue = rest; P.qi = 0;
   }
   // Seconds of music queued ahead. Safari can stall timers for 100ms+ while it repaints the score, so keep a cushion.
-  var LOOKAHEAD = 0.4, LATE_DROP = 0.12;
+  var LOOKAHEAD = iPadPlayback ? 0.65 : 0.4, LATE_DROP = iPadPlayback ? 0.2 : 0.12;
   function tick() {
     if (!P) return;
     var now = ctx.currentTime, horizon = beatAt(now + LOOKAHEAD);
@@ -2238,11 +2261,16 @@
     if (!P) return;
     var now = ctx.currentTime;
     while (P && P.ui.length && P.ui[0].t <= now) applyUi(P.ui.shift());
-    if (P) P.raf = requestAnimationFrame(uiLoop);
+    if (P) {
+      // Updating notation at 30 fps is visually smooth while halving Safari's style/paint work.
+      // Audio remains scheduled against the AudioContext clock and is not throttled here.
+      if (iPadPlayback) P.uiTimer = setTimeout(function () { P && (P.raf = requestAnimationFrame(uiLoop)); }, 16);
+      else P.raf = requestAnimationFrame(uiLoop);
+    }
   }
   function stop() {
     if (!P) return;
-    clearInterval(P.timer); cancelAnimationFrame(P.raf);
+    clearInterval(P.timer); cancelAnimationFrame(P.raf); clearTimeout(P.uiTimer);
     var t = ctx.currentTime;
     Object.keys(P.lanes).forEach(function (k) {
       var g = P.lanes[k];
