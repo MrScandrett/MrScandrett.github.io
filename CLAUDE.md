@@ -400,3 +400,12 @@ homepage, `updates.html`, and `data/updates-first-added.json` cache. New lessons
 use the first-added git date; student projects use manifest `date_added`.
 Generate locally with full git history after committing new lesson files.
 Routine maintenance and site-wide edits do not need curated entries.
+
+## Sheet music that exists only as a scan
+
+When a public-domain piece has no LilyPond/MusicXML source (early jazz and ragtime: Morton isn't on
+Mutopia), follow `scripts/scan-transcribe/README.md`: `fetch-imslp.mjs` downloads the IMSLP PDF,
+`omr.sh` runs Audiveris for a MusicXML draft (pitches mostly right; fix durations, 8va and key
+changes), and `zoom.py` checks each bar against the scan. Don't read noteheads by eye from scratch;
+it's far slower. Jazz standards go to `data/fake-book.json` as lead sheets.
+`scripts/scan-transcribe/morton-notes.md` tracks the unfinished Morton pieces.
