@@ -404,3 +404,21 @@ test('a key change starts the next part in its own key', () => {
   const songs = MX.parseAll(score(bars, { beats: 3 }));
   assert.deepEqual(songs.map((s) => s.key), ['C', 'D']);
 });
+
+test('piano: the tune above an accompaniment figure is the melody, even when the figure has more notes', () => {
+  // Moonlight Sonata shape: triplets are voice 1 for two bars, then run as voice 2 under a melody that takes voice 1.
+  const pn = (step, alt, oct, dur, voice, extra = '') => `<note><pitch><step>${step}</step>${alt ? `<alter>${alt}</alter>` : ''}<octave>${oct}</octave></pitch><duration>${dur}</duration><voice>${voice}</voice>${extra}<staff>1</staff></note>`;
+  const trip = (voice) => [['G', 1, 3], ['C', 1, 4], ['E', 0, 4]].map(([s, a, o]) => pn(s, a, o, 1, voice, '<time-modification><actual-notes>3</actual-notes><normal-notes>2</normal-notes></time-modification>')).join('').repeat(4);
+  const pair = '<note><rest/><duration>1</duration><voice>2</voice><staff>1</staff></note>' + pn('C', 1, 4, 1, 2) + pn('E', 0, 4, 1, 2);
+  const lh = '<backup><duration>12</duration></backup><note><pitch><step>C</step><alter>1</alter><octave>2</octave></pitch><duration>12</duration><voice>5</voice><staff>2</staff></note>';
+  let body = '';
+  for (let m = 1; m <= 22; m++) {
+    const rh = m <= 2 ? trip(1)
+      : pn('B', 0, 4, 6, 1) + pn('G', 1, 4, 6, 1) + '<backup><duration>12</duration></backup>' + pair.repeat(4);
+    body += `<measure number="${m}">${m === 1 ? '<attributes><divisions>3</divisions><key><fifths>4</fifths><mode>minor</mode></key><time><beats>4</beats><beat-type>4</beat-type></time><staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef></attributes>' : ''}${rh}${lh}</measure>`;
+  }
+  const xml = `<score-partwise version="3.1"><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1">${body}</part></score-partwise>`;
+  const bars = MX.parseAll(xml, { score: true })[0].melody.split(' | ');
+  assert.match(bars[0], /^G#3/, 'bar 1 shows the right-hand triplets');
+  assert.match(bars[4], /^B4/, 'from bar 3 on the melody is shown, not the triplet pairs');
+});

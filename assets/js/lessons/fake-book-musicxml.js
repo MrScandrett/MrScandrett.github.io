@@ -565,8 +565,15 @@
     var isTab = function (Rp, st) { return Rp.staves[st] && Rp.staves[st].clef === 'TAB'; };
     R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (!isTab(R, n.staff) && (minStaff === null || +n.staff < +minStaff)) minStaff = n.staff; }); });
     if (minStaff === null) R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (minStaff === null || +n.staff < +minStaff) minStaff = n.staff; }); });
-    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === minStaff && n.pitched) count[n.voice] = (count[n.voice] || 0) + 1; }); });
-    var voice = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); })[0] || '1';
+    var pitchSum = {};
+    R.measures.forEach(function (m) { m.notes.forEach(function (n) { if (n.staff === minStaff && n.pitched) { count[n.voice] = (count[n.voice] || 0) + 1; pitchSum[n.voice] = (pitchSum[n.voice] || 0) + n.midi; } }); });
+    var byCount = Object.keys(count).sort(function (a, b) { return count[b] - count[a] || (+a) - (+b); });
+    var voice = byCount[0] || '1';
+    // The tune is the top line, not just the busiest one. Keyboard music often runs an accompaniment figure (Moonlight
+    // Sonata's triplets) as a second voice under the melody, and that figure has the most notes. A voice that carries a
+    // real share of the staff and sits clearly higher takes over, so the treble staff shows the right hand's tune.
+    var avgOf = function (v) { return pitchSum[v] / count[v]; };
+    byCount.slice(1).forEach(function (v) { if (count[v] >= count[byCount[0]] * 0.25 && avgOf(v) > avgOf(voice) + 2) voice = v; });
 
     // Play the road map, then cut it into runs of one meter.
     var order = unroll(R.measures), runs = [];
