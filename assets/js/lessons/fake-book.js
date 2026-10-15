@@ -1724,7 +1724,8 @@
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     if (!ctx) {
-      ctx = new AC();
+      // 'playback' asks iOS for bigger hardware buffers: far fewer underruns/crackles than the low-latency default.
+      try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
       var comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -16; comp.knee.value = 20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
       master = ctx.createGain(); master.gain.value = 0.8;
@@ -1733,7 +1734,11 @@
       verb.buffer = imp;
       var wet = ctx.createGain(); wet.gain.value = 0.16;
       master.connect(comp); master.connect(verb); verb.connect(wet); wet.connect(comp);
-      comp.connect(ctx.destination);
+      // The 4:1 compressor above is a leveller, not a ceiling: stacked voices could still pass 0 dBFS and clip.
+      // A fast hard limiter last keeps peaks under it.
+      var limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -2; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.1;
+      comp.connect(limiter); limiter.connect(ctx.destination);
       ['melody', 'piano', 'bass', 'drums', 'click'].forEach(function (k) { bus[k] = ctx.createGain(); bus[k].connect(master); });
       applyVolumes();
     }
@@ -2168,15 +2173,19 @@
     rest.sort(function (a, b) { return a.b - b.b; });
     P.queue = rest; P.qi = 0;
   }
+  // Seconds of music queued ahead. Safari can stall timers for 100ms+ while it repaints the score, so keep a cushion.
+  var LOOKAHEAD = 0.4, LATE_DROP = 0.12;
   function tick() {
     if (!P) return;
-    var now = ctx.currentTime, horizon = beatAt(now + 0.18);
+    var now = ctx.currentTime, horizon = beatAt(now + LOOKAHEAD);
     var cur = passInfo(P.k), chorusEnd = cur.off + cur.len;
     if (opts.loop && horizon > chorusEnd - tune.M - (tune.pickup > 0 && P.range.from === 1 ? tune.pickup : 0)) appendChorus(++P.k);
     while (P.qi < P.queue.length && P.queue[P.qi].b < horizon) fire(P.queue[P.qi++]);
   }
   function fire(e) {
     var t = Math.max(ctx.currentTime, timeAt(e.b)), L = P.lanes;
+    // A note that missed its slot by more than LATE_DROP would land on top of the next ones; skip it instead of bunching.
+    if (ctx.currentTime - timeAt(e.b) > LATE_DROP && (e.kind === 'mel' || e.kind === 'pno' || e.kind === 'bass' || e.kind === 'drum' || e.kind === 'click' || e.kind === 'score')) return;
     switch (e.kind) {
       case 'score': {
         var shift = shiftBetween(tune.key, view.concertKey).semis;
