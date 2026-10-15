@@ -3995,8 +3995,11 @@
         card.open = true;
         var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
         card.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' });
-        var field = card.querySelector('[data-fb-import-input]');
-        if (field) field.focus({ preventScroll: true });
+        // Focusing the paste box pops the on-screen keyboard on iPad/iPhone, and most imports are
+        // file picks, not typing. Touch devices land on the card's summary; mice keep the paste box.
+        var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+        var target = touch ? card.querySelector('summary') : card.querySelector('[data-fb-import-input]');
+        if (target) target.focus({ preventScroll: true });
       });
     }
     var fileInp = el('[data-fb-import-file]');
