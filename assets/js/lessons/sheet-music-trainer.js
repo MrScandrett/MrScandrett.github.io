@@ -216,6 +216,14 @@
     { id: 'scale-build', group: 'build', drill: 'scale', title: 'Scale Construction', desc: 'Construct the requested scale.' },
     { id: 'chord-build', group: 'build', drill: 'chord', title: 'Chord Construction', desc: 'Construct the requested chord.' }
   ];
+  var STUDY_GUIDES = [
+    ['Connect sound, color, movement, and simple staff pictures. Learners listen for higher, lower, and same; follow a five-note bell path; and discover that notes can sound alone or together.', ['Match Do–Sol to bell colors and staff positions.','Tell whether a second sound moves higher, lower, or stays the same.','Follow an upward or downward bell pattern.','Count how many bells sound together and build Do–Mi–Sol.'], [['2 min','Listen & point','Ring two bells. Point up, down, or same.'],['4 min','Decode','Try five Name That Bell or Higher or Lower questions.'],['4 min','Build','Place a named bell, then build a bell stair or Do–Mi–Sol stack.'],['3 min','Perform','Sing Do–Re–Mi–Fa–Sol and play the final pattern.'],['2 min','Tell','Finish: “I knew the sound went ___ because ___.”']], ['Colors are a bridge to reading; say or sing the solfege name too.','A step moves to the next line or space.','Notes placed higher on the staff usually sound higher.'], 'high · low · same · staff · line · space · Do · Re · Mi · Fa · Sol'],
+    ['Move from colored bells to letter-name reading in treble clef. Learners identify A–G, count steps and skips through a fifth, compare C major with A minor, and recognize C, F, and G chords.', ['Name treble-clef notes with letter names and solfege.','Count 2nds through 5ths as steps and skips.','Recognize C major and A minor scales.','Identify and build C, F, and G chords.'], [['3 min','Warm up','Say A–G forward and backward; locate C, E, and G.'],['4 min','Decode','Answer five Note Names or Steps and Skips questions.'],['4 min','Build','Place three requested notes; then build one C, F, or G chord.'],['2 min','Hear','Sing or play the final answer before using Hear it.'],['2 min','Explain','Circle line/space and step/skip. Explain one choice.']], ['Treble spaces spell FACE.','Treble lines are E–G–B–D–F.','Count both the first and last letter when naming an interval.'], 'treble clef · letter name · step · skip · interval · major · minor · chord'],
+    ['Read both treble and bass clefs, begin ledger lines and accidentals, count key-signature symbols, name intervals through an octave, and build major/minor scales and triads.', ['Read notes in treble and bass clefs, including nearby ledger lines.','Count up to four sharps or flats in a key signature.','Name intervals from a 2nd through an octave.','Identify and construct major/minor scales and triads.'], [['3 min','Clef scan','Name five notes, switching between treble and bass.'],['4 min','Decode','Complete one identification question in each available topic.'],['4 min','Construct','Build a note, interval, and triad; say each accidental aloud.'],['2 min','Transfer','Find one interval or triad in a song you are studying.'],['2 min','Reflect','Write the rule that helped most today.']], ['Bass lines: G–B–D–F–A; spaces: A–C–E–G.','Sharps: F–C–G–D–A–E–B. Flats reverse the order.','Major triad = 4+3 half steps; minor triad = 3+4.'], 'bass clef · ledger line · accidental · key signature · octave · triad'],
+    ['Shift from counting to relationships: name major, minor, and perfect intervals; distinguish forms of minor; identify major keys; and read four basic triad qualities.', ['Name major, minor, and perfect intervals by number and quality.','Identify major, natural minor, harmonic minor, melodic minor, and pentatonic scales.','Name major keys with up to four sharps or flats.','Identify and build major, minor, diminished, and augmented triads.'], [['3 min','Pattern recall','Say the major and natural-minor whole/half-step patterns.'],['4 min','Decode','Complete five mixed interval, scale, key, and chord questions.'],['4 min','Construct','Build one interval and one triad; verify letter spelling first.'],['2 min','Hear','Compare two triad qualities by ear and describe the difference.'],['2 min','Explain','Show how number and half steps determine one interval.']], ['Find interval number with letters; find quality with half steps.','Harmonic minor raises scale degree 7.','Diminished triad = 3+3; augmented triad = 4+4 half steps.'], 'quality · perfect · harmonic minor · melodic minor · diminished · augmented'],
+    ['Develop independent score reading across all major and minor keys. Learners analyze altered intervals, modes, seventh chords, and inversions, then justify spelling and interpretation from musical context.', ['Identify all major and minor key signatures.','Name augmented and diminished intervals as well as major, minor, and perfect.','Recognize modes, blues, pentatonic, and whole-tone scales.','Identify seventh-chord qualities and inversions.'], [['3 min','Key sprint','Name five key signatures and each relative minor.'],['4 min','Analyze','Complete mixed interval, scale, and seventh-chord identification.'],['4 min','Construct','Build one altered interval and one inverted seventh chord.'],['2 min','Transfer','Annotate clef, key, meter, route, and harmony in a real score.'],['2 min','Reflect','Defend one enharmonic spelling using its musical function.']], ['Last sharp + half step names the major key; second-to-last flat names it.','Spell intervals by letters before choosing accidentals.','An inversion is named from the chord member in the bass.'], 'mode · seventh chord · inversion · enharmonic · augmented · diminished · function'],
+    ['Integrate fluent reading with analytical spelling in treble, bass, and alto clefs. Work includes compound intervals, double accidentals, chromatic and double-harmonic scales, extended chord vocabulary, and inversions.', ['Read and construct notation in treble, bass, and alto clefs.','Analyze compound intervals through a 13th.','Spell chromatic, double-harmonic, modal, and conventional scales accurately.','Identify and build advanced seventh and suspended chords in inversion.'], [['3 min','Clef rotation','Read a short pitch set once in each clef.'],['4 min','Analyze','Complete mixed key, compound-interval, scale, and chord questions.'],['4 min','Construct','Build one compound interval and one inverted advanced chord.'],['2 min','Aural check','Hear the result and distinguish spelling from sounding equivalence.'],['2 min','Synthesize','State the harmonic or voice-leading reason for one spelling.']], ['Reduce a compound interval by 7 to find its simple counterpart.','Double accidentals preserve diatonic spelling and harmonic function.','Sounding equivalence does not make spellings analytically interchangeable.'], 'alto clef · compound interval · double accidental · chromatic · suspended · voice leading']
+  ];
   var YOUNG_TITLES = {
     'note-id': ['Name That Bell', 'Which bell is playing this note?'],
     'interval-id': ['Higher or Lower?', 'Does the second bell go up or down?'],
@@ -267,29 +275,82 @@
   /* ================================================================
      4. Audio
      ================================================================ */
-  var AC = null;
+  var AC = null, audioBus = null, activeVoices = [], audioTimers = [], playbackId = 0;
   function audio() {
     if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+    if (AC && !audioBus) {
+      /* A shared limiter keeps stacked chords and quick taps from clipping the
+         small Web Audio buffers used by older iPads. */
+      var limiter = AC.createDynamicsCompressor();
+      var output = AC.createGain();
+      limiter.threshold.value = -12;
+      limiter.knee.value = 6;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.003;
+      limiter.release.value = 0.16;
+      output.gain.value = 0.72;
+      limiter.connect(output);
+      output.connect(AC.destination);
+      audioBus = limiter;
+    }
     if (AC && AC.state === 'suspended') AC.resume();
     return AC;
+  }
+  function stopPlayback() {
+    playbackId += 1;
+    audioTimers.forEach(function (timer) { clearTimeout(timer); });
+    audioTimers = [];
+    if (!AC) { activeVoices = []; return playbackId; }
+    var now = AC.currentTime;
+    activeVoices.slice().forEach(function (voice) {
+      try {
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setTargetAtTime(0, now, 0.008);
+      } catch (e) { /* voice may already have ended */ }
+      voice.oscillators.forEach(function (oscillator) {
+        try { oscillator.stop(now + 0.045); } catch (e) { /* already stopped */ }
+      });
+    });
+    return playbackId;
+  }
+  function laterPlayback(fn, delay, id) {
+    var timer = setTimeout(function () {
+      audioTimers = audioTimers.filter(function (item) { return item !== timer; });
+      if (id === playbackId) fn();
+    }, delay);
+    audioTimers.push(timer);
   }
   function tone(m, when, dur, vol, bell) {
     var c = audio();
     if (!c || !state.sound) return;
     var f = 440 * Math.pow(2, (m - 69) / 12), t0 = c.currentTime + when;
     var master = c.createGain();
-    master.gain.setValueAtTime(0.0001, t0);
-    master.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
-    master.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
-    master.connect(c.destination);
+    var releaseEnd = t0 + dur + 0.035;
+    master.gain.setValueAtTime(0, t0);
+    master.gain.linearRampToValueAtTime(vol, t0 + 0.018);
+    master.gain.setValueAtTime(vol, Math.max(t0 + 0.018, t0 + dur - 0.045));
+    master.gain.linearRampToValueAtTime(0, releaseEnd);
+    master.connect(audioBus);
     var parts = bell ? [[1, 1], [2.76, 0.42], [5.4, 0.2], [8.93, 0.08]] : [[1, 1], [2, 0.38], [3, 0.18], [4, 0.07]];
+    var voice = { gain: master, oscillators: [] };
+    activeVoices.push(voice);
+    var remaining = parts.length;
     parts.forEach(function (p) {
       var o = c.createOscillator(), g = c.createGain();
-      o.type = 'sine'; o.frequency.value = f * p[0]; g.gain.value = p[1] * 0.5;
-      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.05);
+      voice.oscillators.push(o);
+      o.type = 'sine'; o.frequency.setValueAtTime(f * p[0], t0); g.gain.value = p[1] * 0.42;
+      o.connect(g); g.connect(master); o.start(t0); o.stop(releaseEnd + 0.01);
+      o.onended = function () {
+        o.disconnect(); g.disconnect();
+        remaining -= 1;
+        if (!remaining) {
+          master.disconnect();
+          activeVoices = activeVoices.filter(function (item) { return item !== voice; });
+        }
+      };
     });
   }
-  function playNotes(notes, mode) {
+  function scheduleNotes(notes, mode) {
     if (!state.sound || !notes || !notes.length) return;
     var bell = state.level === 0;
     var vol = 0.3 / Math.sqrt(mode === 'stack' ? notes.length : 1.6);
@@ -300,14 +361,19 @@
       notes.forEach(function (n, i) { tone(midi(n), i * gap, bell ? 1.3 : 0.9, vol, bell); });
     }
   }
+  function playNotes(notes, mode) {
+    stopPlayback();
+    scheduleNotes(notes, mode);
+  }
   function playEx() {
     var ex = state.ex; if (!ex) return;
     var items = (ex.playItems || ex.items || []).map(function (it) { return it.n || it; });
     if (!items.length) return;
+    var id = stopPlayback();
     if (ex.playMode === 'both') {
-      playNotes(items, 'seq');
-      setTimeout(function () { playNotes(items, 'stack'); }, items.length * 380 + 250);
-    } else playNotes(items, ex.playMode || 'seq');
+      scheduleNotes(items, 'seq');
+      laterPlayback(function () { scheduleNotes(items, 'stack'); }, items.length * 380 + 250, id);
+    } else scheduleNotes(items, ex.playMode || 'seq');
   }
 
   /* ================================================================
@@ -323,6 +389,11 @@
     var steps = MN.clefs[clef][sig.t];
     return steps.slice(0, sig.n);
   }
+  function keyAccidentalForLetter(sig, letter) {
+    if (!sig || !sig.n) return 0;
+    var order = sig.t === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+    return order.slice(0, sig.n).indexOf(LET[letter]) >= 0 ? (sig.t === 'sharp' ? 1 : -1) : 0;
+  }
   function placeDesc(step) {
     if (step >= 0 && step <= 8) return step % 2 === 0 ? ordinal(step / 2 + 1) + ' line' : ordinal((step - 1) / 2 + 1) + ' space';
     if (step === -1) return 'space just below the bottom line';
@@ -332,7 +403,8 @@
   }
   function stepOf(n, clef) { return dia(n) - CLEFS[clef].bottom; }
 
-  /* o: {clef, key, items[{n,color,cls}], layout:'seq'|'stack', slots, ghost:{step,acc,slot}, crop} */
+  /* o: {clef, key, meter:[top,bottom], items[{n,color,cls,beats,dotted}],
+     layout:'seq'|'stack', slots, phrase, expression, direction, ghost, crop} */
   function staffSVG(o) {
     var crop = o.crop || cropFor(state.level);
     var Y0 = 10 + crop[1] * HS, H = 20 + (crop[1] - crop[0]) * HS;
@@ -340,6 +412,8 @@
     var ks = keySigNotes(o.key, o.clef);
     var kx0 = 80, kStep = 16;
     var keyEnd = ks.length ? kx0 + ks.length * kStep : 70;
+    var meterX = keyEnd + 8;
+    if (o.meter) keyEnd += 44;
     var startX = keyEnd + 38, endX = W - 28;
     var items = o.items || [];
     var slots = o.layout === 'stack' ? 1 : Math.max(o.slots || items.length || 1, 1);
@@ -354,6 +428,10 @@
     ks.forEach(function (st, k) {
       s += MN.accidental(sym, kx0 + k * kStep - 5, y(st), HS * 2);
     });
+    if (o.meter) {
+      s += MN.glyph('timeSig' + o.meter[0], meterX, y(6), HS * 2, 'stb-meter-glyph') +
+        MN.glyph('timeSig' + o.meter[1], meterX, y(2), HS * 2, 'stb-meter-glyph');
+    }
     if (o.slotMarks) {
       for (i = 0; i < slots; i++) s += '<line class="stb-slot" x1="' + colX(i) + '" x2="' + colX(i) + '" y1="' + y(9) + '" y2="' + y(-1) + '"/>';
     }
@@ -381,19 +459,25 @@
         var fill = it.color || '';
         var cls = 'stb-note ' + (it.cls || '');
         s += '<g class="' + cls + '" style="color:' + (fill || 'var(--stb-note-ink)') + '">' +
-          (o.layout === 'stack' ? MN.glyph('whole', nx - 12, ny, HS * 2) : MN.note(nx, ny, HS * 2, 1, false, st < 4)) + '</g>';
+          (o.layout === 'stack' ? MN.glyph('whole', nx - 12, ny, HS * 2) : MN.note(nx, ny, HS * 2, it.beats || 1, !!it.dotted, st < 4, '', st % 2 === 0)) + '</g>';
         it._x = cx; it._y = ny;
       });
       /* accidentals, staggered into columns so stacked ones never collide */
       col.slice().reverse().forEach(function (it) {
-        // Each exercise note is explicitly spelled; naturals cancel earlier altered letters.
-        if (!it.n.a && !items.some(function(other){ return other.n.l === it.n.l && other.n.o === it.n.o && other.n.a; })) return;
+        var keyAcc = keyAccidentalForLetter(o.key, it.n.l), drawAcc = null;
+        if (o.key && it.n.a !== keyAcc) drawAcc = it.n.a || '♮';
+        else if (!o.key && it.n.a) drawAcc = it.n.a;
+        else if (!o.key && items.some(function(other){ return other.n.l === it.n.l && other.n.o === it.n.o && other.n.a; })) drawAcc = '♮';
+        if (drawAcc === null) return;
         var st = stepOf(it.n, o.clef), k = 0;
         while (accCols[k] !== undefined && Math.abs(accCols[k] - st) < 6) k++;
         accCols[k] = st;
-        s += MN.accidental(it.n.a, cx - 28 - k * 17, y(st), HS * 2);
+        s += MN.accidental(drawAcc, cx - 28 - k * 17, y(st), HS * 2);
       });
     });
+    if (o.phrase) s += '<path class="stb-engine-phrase" d="M ' + startX + ' ' + y(10) + ' Q ' + ((startX + endX) / 2) + ' ' + y(14) + ' ' + endX + ' ' + y(10) + '"/>';
+    if (o.expression) s += '<text class="stb-engine-expression" x="' + startX + '" y="' + (H - 5) + '">' + esc(o.expression) + '</text>';
+    if (o.direction) s += '<text class="stb-engine-direction" x="' + endX + '" y="' + (H - 5) + '">' + esc(o.direction) + '</text>';
     s += '<g class="stb-ghost"></g>';
     s += '</svg>';
     return s;
@@ -1126,11 +1210,11 @@
           return '<button type="button" class="stb-chip stb-accbtn' + (state.acc === a ? ' is-on' : '') + '" data-acc="' + a + '" aria-pressed="' + (state.acc === a) + '" aria-label="' + ACC_NAME[a] + '">' + (a === 0 ? '♮' : ACC[a]) + '</button>';
         }).join('') + '</div>';
       }
-      h += '<div class="stb-letters stb-letters-' + (state.level <= 1 ? 'bells' : 'plain') + '">' + letters.map(function (l) {
+      h += '<div class="stb-letters stb-letters-' + (state.level <= 1 ? 'bells' : 'plain') + '" role="group" aria-label="Choose the note name">' + letters.map(function (l) {
         var col = (state.level <= 2 || state.colors) ? ' style="--bell:' + BELL[l] + '"' : '';
         var label = state.level === 0 ? SOL[l] : LET[l];
         var sub = state.level > 0 && state.solfege ? SOL[l] : '';
-        return '<button type="button" class="stb-answer stb-letter" data-letter="' + l + '"' + col + '><b>' + label + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</button>';
+        return '<button type="button" class="stb-answer stb-letter" data-letter="' + l + '"' + col + ' aria-label="' + esc(label + (sub ? ', ' + sub : '')) + '"><b>' + label + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</button>';
       }).join('') + '</div>';
     } else if (ex.input === 'choices') {
       h += '<div class="stb-choices stb-choices-' + ex.choiceStyle + '">' + ex.choices.map(function (c) {
@@ -1156,6 +1240,7 @@
   }
 
   function newQuestion() {
+    var audioId = stopPlayback();
     state.answered = false; state.placed = []; state.acc = 0; state.sel = { q: null, n: null }; state.hint = false; state.lastOk = null;
     state.keySel = { t: 'sharp', n: 0 }; state.cursorStep = null;
     state.ex = generate();
@@ -1165,13 +1250,14 @@
     el.next.hidden = true; el.hintBtn.disabled = false;
     el.hintText.textContent = ''; el.hintText.hidden = true;
     setPrompt(); drawStage(); renderControls(); renderAnswers();
-    if (audioReady) setTimeout(playEx, 200);
+    if (audioReady) laterPlayback(playEx, 200, audioId);
   }
   var audioReady = false;
 
   function submit(resp) {
     var ex = state.ex;
     if (state.answered) return;
+    stopPlayback();
     var r;
     if (ex.input === 'staff') r = ex.check(state.placed);
     else if (ex.input === 'keysig') r = ex.check(state.keySel);
@@ -1192,7 +1278,10 @@
     el.next.hidden = false; el.next.focus({ preventScroll: true });
     el.hintBtn.disabled = true;
     if (young() && r.ok) burst();
-    if (!(ex.input === 'staff' && ex.auto && false)) setTimeout(function () { if (ex.input === 'staff') playNotes(ex.expectNotes || ex.solve(), ex.layout === 'stack' ? 'stack' : 'seq'); else playEx(); }, 350);
+    if (!(ex.input === 'staff' && ex.auto && false)) {
+      var audioId = playbackId;
+      laterPlayback(function () { if (ex.input === 'staff') playNotes(ex.expectNotes || ex.solve(), ex.layout === 'stack' ? 'stack' : 'seq'); else playEx(); }, 350, audioId);
+    }
     nudge();
   }
   function markAnswers(resp, r) {
@@ -1267,6 +1356,23 @@
     el.progress.innerHTML = rows;
   }
 
+  function renderStudyGuide() {
+    if (!el.planSheet) return;
+    var L = lv(), g = STUDY_GUIDES[state.level];
+    if (el.planLevel) el.planLevel.value = String(state.level);
+    var rows = DRILLS.map(function (d) {
+      if (L.locked && L.locked[d.id]) return '';
+      var st = statFor(state.level, d.id);
+      return '<tr><th scope="row">' + esc(drillTitle(d)[0]) + '</th><td>' + st.c + ' / ' + st.t + '</td><td aria-label="Practice notes">&nbsp;</td></tr>';
+    }).join('');
+    el.planSheet.innerHTML = '<header><p class="stb-plan-kicker">Sheet Music Trainer · Catered practice plan</p><h3 id="studyGuideHead">' + esc(L.name) + ' study guide</h3><p class="stb-plan-summary"><strong>Training summary:</strong> ' + esc(g[0]) + '</p></header>' +
+      '<div class="stb-plan-identity"><span>Name: <b aria-hidden="true">________________________</b></span><span>Date: <b aria-hidden="true">____________</b></span></div>' +
+      '<section aria-labelledby="planTargets"><h4 id="planTargets">I am learning to…</h4><ul>' + g[1].map(function (x) { return '<li><span class="stb-check" aria-hidden="true">□</span>' + esc(x) + '</li>'; }).join('') + '</ul></section>' +
+      '<section aria-labelledby="planSession"><h4 id="planSession">15-minute practice plan</h4><ol class="stb-plan-steps">' + g[2].map(function (x) { return '<li><strong>' + esc(x[0]) + ' · ' + esc(x[1]) + '</strong><span>' + esc(x[2]) + '</span></li>'; }).join('') + '</ol></section>' +
+      '<div class="stb-plan-columns"><section aria-labelledby="planRemember"><h4 id="planRemember">Remember</h4><ul>' + g[3].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section><section aria-labelledby="planWords"><h4 id="planWords">Words to know</h4><p>' + esc(g[4]) + '</p><h4>Exit reflection</h4><p class="stb-write-line">One thing I can read or build now:</p><p class="stb-write-line">My next practice goal:</p></section></div>' +
+      '<section class="stb-plan-progress" aria-labelledby="planProgress"><h4 id="planProgress">Practice record</h4><table><thead><tr><th scope="col">Drill</th><th scope="col">Correct / tried</th><th scope="col">Notes</th></tr></thead><tbody>' + rows + '</tbody></table><p>Scores shown are saved only in this browser. Update the record by hand after printing.</p></section>';
+  }
+
   function selectLevel(i, silent) {
     state.level = i;
     var L = lv();
@@ -1276,7 +1382,7 @@
     el.stbRoot.setAttribute('data-level', String(i));
     document.documentElement.style.setProperty('--stb-level', String(i));
     if (L.locked && L.locked[state.drill]) state.drill = 'note-id';
-    renderLevels(); renderDrills(); renderToolbar(); renderProgress();
+    renderLevels(); renderDrills(); renderToolbar(); renderProgress(); renderStudyGuide();
     el.nudge.hidden = true;
     var lvLabel = $('stbLevelLabel'); if (lvLabel) lvLabel.textContent = L.name + ' · ' + L.tag;
     newQuestion();
@@ -1285,6 +1391,9 @@
 
   /* ---------- Events ---------- */
   function bind() {
+    if (el.planLevel) el.planLevel.addEventListener('change', function () { selectLevel(+el.planLevel.value); });
+    if (el.printPlan) el.printPlan.addEventListener('click', function () { document.body.classList.add('stb-print-plan'); window.print(); });
+    window.addEventListener('afterprint', function () { document.body.classList.remove('stb-print-plan'); });
     el.levels.addEventListener('click', function (e) {
       var b = e.target.closest('[data-level]'); if (!b) return;
       audioReady = true; audio();
@@ -1304,13 +1413,13 @@
       if (t) {
         var k = t.getAttribute('data-toggle'); state[k] = !state[k];
         renderToolbar();
-        if (k === 'sound') { if (state.sound) { audioReady = true; audio(); } return; }
+        if (k === 'sound') { if (state.sound) { audioReady = true; audio(); } else stopPlayback(); return; }
         if (!state.answered || true) { var keep = state.placed; drawStage(); renderAnswers(); renderControls(); setPrompt(); }
       }
     });
     el.controls.addEventListener('click', function (e) {
       var a = e.target.closest('[data-acc]'), act = e.target.closest('[data-act]'), kt = e.target.closest('[data-keytype]'), kn = e.target.closest('[data-keyn]'), ring = e.target.closest('[data-ring]');
-      if (ring) { audioReady = true; var l = +ring.getAttribute('data-ring'); tone(midi(N(l, 4, 0)), 0, 1.4, 0.2, state.level === 0); return; }
+      if (ring) { audioReady = true; var l = +ring.getAttribute('data-ring'); stopPlayback(); tone(midi(N(l, 4, 0)), 0, 1.4, 0.2, state.level === 0); return; }
       if (a) { state.acc = +a.getAttribute('data-acc'); renderControls(); setGhost(state.cursorStep); }
       if (kt) { state.keySel.t = kt.getAttribute('data-keytype'); drawStage(); renderControls(); }
       if (kn) { state.keySel.n = Math.max(0, Math.min(7, state.keySel.n + +kn.getAttribute('data-keyn'))); drawStage(); renderControls(); }
@@ -1330,7 +1439,7 @@
       if (ch) submit(ch.getAttribute('data-choice'));
       else if (lt) {
         var l = +lt.getAttribute('data-letter');
-        tone(midi(N(l, 4, state.acc)), 0, 1.2, 0.18, state.level === 0);
+        stopPlayback(); tone(midi(N(l, 4, state.acc)), 0, 1.2, 0.18, state.level === 0);
         submit({ l: l, a: state.acc });
       } else if (q) { state.sel.q = q.getAttribute('data-q'); renderAnswers(); }
       else if (n) { state.sel.n = +n.getAttribute('data-n'); renderAnswers(); }
@@ -1378,6 +1487,8 @@
       var k = e.key.toLowerCase(), i = 'cdefgab'.indexOf(k);
       if (i >= 0 && (state.level > 0 || i <= 4)) { audioReady = true; submit({ l: i, a: state.acc }); }
     });
+    window.addEventListener('pagehide', stopPlayback);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stopPlayback(); });
   }
 
   function init() {
@@ -1386,7 +1497,8 @@
       kicker: $('stbKicker'), title: $('stbTitle'), score: $('stbScore'), prompt: $('stbPrompt'), stage: $('stbStage'),
       controls: $('stbControls'), answers: $('stbAnswers'), feedback: $('stbFeedback'), answerStaff: $('stbAnswerStaff'),
       next: $('stbNext'), hear: $('stbHear'), hintBtn: $('stbHintBtn'), hintText: $('stbHint'),
-      nudge: $('stbNudge'), nudgeGo: $('stbNudgeGo'), nudgeNo: $('stbNudgeNo'), progress: $('stbProgress')
+      nudge: $('stbNudge'), nudgeGo: $('stbNudgeGo'), nudgeNo: $('stbNudgeNo'), progress: $('stbProgress'),
+      planLevel: $('stbPlanLevel'), printPlan: $('stbPrintPlan'), planSheet: $('stbPlanSheet')
     };
     if (!el.stbRoot) return;
     bind();
@@ -1396,6 +1508,62 @@
     if (q) saved = +q[1];
     selectLevel(Math.max(0, Math.min(LEVELS.length - 1, saved)));
     renderBellChart();
+    initScoreAtlas();
+  }
+
+  function initScoreAtlas() {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-decode-level]'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('[data-decode-panel]'));
+    if (!tabs.length || !panels.length) return;
+    renderScoreAtlasExamples();
+    function show(tab, moveFocus) {
+      var level = tab.getAttribute('data-decode-level');
+      tabs.forEach(function (item) {
+        var active = item === tab;
+        item.setAttribute('aria-selected', String(active));
+        item.tabIndex = active ? 0 : -1;
+      });
+      panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-decode-panel') !== level; });
+      if (moveFocus) tab.focus();
+    }
+    tabs.forEach(function (tab, index) {
+      tab.tabIndex = index ? -1 : 0;
+      tab.addEventListener('click', function () { show(tab, false); });
+      tab.addEventListener('keydown', function (event) {
+        var next = null;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = tabs[(index + 1) % tabs.length];
+        if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = tabs[(index + tabs.length - 1) % tabs.length];
+        if (event.key === 'Home') next = tabs[0];
+        if (event.key === 'End') next = tabs[tabs.length - 1];
+        if (next) { event.preventDefault(); show(next, true); }
+      });
+    });
+  }
+
+  function renderScoreAtlasExamples() {
+    function withBeats(notes, beats, colors) {
+      return notes.map(function (n, i) { return { n: n, beats: beats[i] || 1, color: colors ? BELL[n.l] : '' }; });
+    }
+    function chordSlots(notes, slot) { return notes.map(function (n) { return { n: n, slot: slot, beats: 2 }; }); }
+    var gMajor = scaleNotes(N(4, 4), 'major');
+    var dHarmonic = scaleNotes(N(1, 3), 'harm');
+    var bbMaj7 = buildChord(N(6, 3, -1), 'maj7', 0);
+    var gMin7 = buildChord(N(4, 3), 'min7', 0);
+    var gsAug = buildChord(N(4, 4, 1), 'aug', 0);
+    var examples = {
+      prek: { proof: 'Bell ladder · C4 D4 E4 G4', score: { clef: 'treble', meter: [4, 4], items: withBeats([N(0,4),N(1,4),N(2,4),N(4,4)],[1,1,1,1],true), layout: 'seq', slots: 4, crop: [-4,12], phrase: true, expression: 'quiet  <  louder', direction: 'climb →' } },
+      k2: { proof: 'Named pitches · quarter-note pulse', score: { clef: 'treble', meter: [4, 4], items: withBeats([N(0,4),N(1,4),N(2,4),N(4,4)],[1,1,1,1],true), layout: 'seq', slots: 4, crop: [-4,12], phrase: true, expression: 'mf', direction: 'one phrase →' } },
+      g35: { proof: 'scaleNotes(G4, major) · keySigOf(1)', score: { clef: 'treble', key: keySigOf(1), meter: [4, 4], items: withBeats(gMajor.slice(0,5),[.5,.5,.5,.5,2],false), layout: 'seq', slots: 5, crop: [-2,14], phrase: true, expression: 'p  <  f', direction: 'repeat :||' } },
+      g68: { proof: 'scaleNotes(D3, harmonic minor)', score: { clef: 'bass', meter: [6, 8], items: withBeats(dHarmonic.slice(0,6),[.5,.5,.5,.5,.5,.5],false), layout: 'seq', slots: 6, crop: [-4,14], phrase: true, expression: 'f  >  p', direction: '1st / 2nd ending' } },
+      g912: { proof: 'buildChord(B♭3, maj7) → buildChord(G3, min7)', score: { clef: 'treble', key: keySigOf(-2), meter: [4, 4], items: chordSlots(bbMaj7,0).concat(chordSlots(gMin7,1)), layout: 'seq', slots: 2, crop: [-6,16], phrase: true, expression: 'mp  <  f', direction: 'D.S. al Coda' } },
+      college: { proof: 'buildChord(G♯4, augmented) · exact spelling', score: { clef: 'alto', meter: [5, 8], items: gsAug.map(function (n) { return { n: n }; }), layout: 'stack', crop: [-6,18], phrase: false, expression: 'sfp', direction: 'G♯–B♯–D𝄪' } }
+    };
+    Object.keys(examples).forEach(function (key) {
+      var host = document.querySelector('[data-score-example="' + key + '"]');
+      if (!host) return;
+      host.innerHTML = '<div class="stb-engine-paper">' + staffSVG(examples[key].score) + '</div>' +
+        '<p class="stb-engine-proof"><span>Trainer engine</span>' + esc(examples[key].proof) + '</p>';
+    });
   }
 
   /* Desk-bell chart in the cheat sheet */
@@ -1407,7 +1575,7 @@
     }).join('');
     box.addEventListener('click', function (e) {
       var b = e.target.closest('[data-chart]'); if (!b) return;
-      audioReady = true; tone(midi(notes[+b.getAttribute('data-chart')]), 0, 1.4, 0.2, true);
+      audioReady = true; stopPlayback(); tone(midi(notes[+b.getAttribute('data-chart')]), 0, 1.4, 0.2, true);
     });
     var fig = $('stbChartStaff');
     if (fig) fig.innerHTML = staffSVG({ clef: 'treble', key: null, items: notes.map(function (n) { return { n: n, color: BELL[n.l] }; }), layout: 'seq', slots: 8, crop: [-4, 12] });
