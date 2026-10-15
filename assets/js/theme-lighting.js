@@ -86,7 +86,7 @@
   function cosTransition() {
     if (!document.documentElement) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (reducedMotionOverride()) return;
+    if (reducedMotionOverride() || document.documentElement.hasAttribute("data-classroom-presentation")) return;
     var html = document.documentElement;
     clearTimeout(html._cosThemeTimer);
     html.classList.add("theme-transitioning");
@@ -145,7 +145,7 @@
     };
 
     var shouldTransition = Boolean(currentTheme && currentTheme !== theme);
-    var prefersReduced = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || reducedMotionOverride();
+    var prefersReduced = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) || reducedMotionOverride() || document.documentElement.hasAttribute("data-classroom-presentation");
 
     if (shouldTransition && !prefersReduced) {
       if (typeof document.startViewTransition === "function") {

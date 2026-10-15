@@ -18,8 +18,14 @@
   'use strict';
 
   const IO = window.DawIO;
+  const ProjectModel = window.MusicDawProject;
+  const Core = window.MusicDawCore;
+  const AudioRuntime = window.MusicDawAudio;
+  const RenderEngine = window.MusicDawRender;
+  const PluginHost = window.MusicDawPlugins;
+  const diagnostics = window.MusicDawDiagnostics?.create();
   const root = document.getElementById('trackStudio');
-  if (!root || !IO) return;
+  if (!root || !IO || !ProjectModel || !Core || !AudioRuntime || !RenderEngine || !PluginHost) return;
 
   const SCRIPT_URL = document.currentScript ? document.currentScript.src : location.href;
   const WORKLET_URL = new URL('music-daw-recorder.worklet.js', SCRIPT_URL).href;
@@ -31,7 +37,7 @@
     bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead',
     violin: 'Violin', sax: 'Saxophone', flute: 'Flute', drums: 'Drum Kit',
   };
-  const COLORS = ['#f2994a', '#56ccf2', '#6fcf97', '#bb6bd9', '#f2c94c', '#ff7a8a', '#2dd4bf', '#a3e635'];
+  const COLORS = ProjectModel.COLORS;
   // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a
   // compact track header whose volume/pan/instrument controls live in the Mix tab.
   const COARSE = window.matchMedia('(pointer: coarse)').matches;
@@ -57,6 +63,7 @@
   };
   const history = { undo: [], redo: [], last: '' };
   const audio = { ctx: null, mix: null, meter: null, meterData: null };
+  const audioHealthState = { captureDroppedFrames: 0, deviceChanged: false };
   const transport = {
     playing: false, recording: false, segs: [], schedBeat: 0, timer: null,
     gates: new Map(), voices: new Set(), sources: new Set(), startBeat: 0,
@@ -67,29 +74,16 @@
   const mic = { stream: null, source: null, node: null, sink: null, analyser: null, chunks: [], capturing: false };
 
   function defaultProject() {
-    return {
-      version: 1, name: 'My Song', bpm: 100, sig: [4, 4], masterVolume: 0.85,
-      metronome: false, countIn: true,
-      loop: { on: false, start: 0, end: 16 },
-      tracks: [
-        makeTrack('instrument', 'Keys', 'piano', 0),
-        makeTrack('instrument', 'Drums', 'drums', 1),
-        makeTrack('audio', 'Vocals', null, 2),
-      ],
-    };
+    return ProjectModel.create();
   }
   function makeTrack(kind, name, instrument, colorIndex) {
-    return {
-      id: uid(), kind, name, instrument: kind === 'instrument' ? (instrument || 'piano') : null,
-      color: COLORS[(colorIndex || 0) % COLORS.length], volume: 0.8, pan: 0,
-      mute: false, solo: false, armed: false, clips: [], effects: [], tools: [], experienceState: {},
-    };
+    return ProjectModel.makeTrack(kind, name, instrument, colorIndex);
   }
   function uid() { return Math.random().toString(36).slice(2, 10); }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-  const spb = () => 60 / project.bpm;
-  const barBeats = () => project.sig[0] * 4 / project.sig[1];
+  const spb = () => Core.secondsPerBeat(project);
+  const barBeats = () => Core.barBeats(project);
   const clickStep = () => 4 / project.sig[1];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const snapTo = (beat, grid) => (grid > 0 ? Math.round(beat / grid) * grid : beat);
@@ -103,17 +97,10 @@
     for (const t of project.tracks) for (const c of t.clips) if (c.id === id) return { track: t, clip: c };
     return null;
   }
-  function clipBeats(clip) { return clip.type === 'audio' ? clip.duration / spb() : clip.length; }
-  function clipEnd(clip) { return clip.start + clipBeats(clip); }
-  function songEnd() {
-    let end = 0;
-    project.tracks.forEach((t) => t.clips.forEach((c) => { end = Math.max(end, clipEnd(c)); }));
-    return end;
-  }
-  function audible(track) {
-    const anySolo = project.tracks.some((t) => t.solo);
-    return !track.mute && (!anySolo || track.solo);
-  }
+  function clipBeats(clip) { return Core.clipBeats(project, clip); }
+  function clipEnd(clip) { return Core.clipEnd(project, clip); }
+  function songEnd() { return Core.songEnd(project); }
+  function audible(track) { return Core.audible(project, track); }
   function snapGrid() { return ui.snap === 'bar' ? barBeats() : ui.snap; }
 
   function formatPos(beat) {
@@ -133,15 +120,16 @@
   // ── Audio context + mixer ────────────────────────────────────────────────
   function ctx() {
     if (!audio.ctx) {
-      if (window.MusicLabAudio) audio.ctx = window.MusicLabAudio.context();
-      else audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const out = window.MusicLabAudio && window.MusicLabAudio.output ? window.MusicLabAudio.output() : audio.ctx.destination;
+      audio.ctx = AudioRuntime.createContext(window.MusicLabAudio);
+      const out = AudioRuntime.outputFor(audio.ctx, window.MusicLabAudio);
       audio.mix = createMixer(audio.ctx, out);
       audio.meter = audio.ctx.createAnalyser();
       audio.meter.fftSize = 1024;
       audio.meterData = new Float32Array(audio.meter.fftSize);
       audio.mix.master.connect(audio.meter);
       watchInterruptions(audio.ctx);
+      diagnostics?.record('audio-context-created', 'notice', AudioRuntime.facts(audio.ctx));
+      queueMicrotask(() => refreshAudioHealth());
       applyMix();
     }
     setAudioSession();
@@ -164,13 +152,14 @@
   function watchInterruptions(c) {
     let wasRunning = c.state === 'running';
     c.addEventListener('statechange', () => {
-      if (c.state === 'running') { wasRunning = true; return; }
+      if (c.state === 'running') { wasRunning = true; refreshAudioHealth(); return; }
       if (!wasRunning) return;
       wasRunning = false;
       if (transport.playing) {
         pause();
         status('Audio was interrupted (a call, Siri or another app). Press ▶ to carry on.');
       }
+      refreshAudioHealth();
     });
   }
 
@@ -199,14 +188,12 @@
       }
       const signature = JSON.stringify(track.effects || []);
       if (signature !== s.signature) {
-        s.input.disconnect(); s.effects.forEach(e => e.dispose()); s.effects = [];
-        let tail = s.input;
-        (track.effects || []).forEach(effect => {
-          if (effect.bypass || !window.AudioEffects.registry[effect.type]) return;
-          const e = window.AudioEffects.registry[effect.type].create(c, window.AudioEffects.parameters(effect.type, effect.params));
-          tail.connect(e.input); tail = e.output; s.effects.push(e);
-        });
-        tail.connect(s.gain); s.signature = signature;
+        s.input.disconnect(); s.effects.forEach(e => e.dispose());
+        const chain = PluginHost.createChain(c, s.input, track.effects, window.AudioEffects.registry, window.AudioEffects.parameters);
+        s.effects = chain.instances;
+        chain.output.connect(s.gain); s.signature = signature;
+        chain.missing.forEach(type => diagnostics?.record('plugin-missing', 'warning', { type, trackId: track.id }));
+        chain.failed.forEach(failure => diagnostics?.record('plugin-failed', 'warning', { ...failure, trackId: track.id }));
       }
       return s;
     }
@@ -538,6 +525,12 @@
     if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic();
     updateTransportUi();
     if (!chunks.length) { status('No audio came in from the microphone.'); return; }
+    let droppedFrames = 0;
+    for (let i = 1; i < chunks.length; i++) {
+      const expected = chunks[i - 1].frame + chunks[i - 1].channels[0].length;
+      droppedFrames += Math.max(0, chunks[i].frame - expected);
+    }
+    audioHealthState.captureDroppedFrames = droppedFrames;
     const c = audio.ctx, sr = c.sampleRate;
     const nCh = chunks[0].channels.length || 1;
     const total = chunks.reduce((sum, ch) => sum + ch.channels[0].length, 0);
@@ -551,16 +544,17 @@
     // round-trip latency the browser reports, is where the performance starts.
     const seg = firstSeg || { beat: recStart, time: chunks[0].frame / sr };
     const recStartTime = seg.time + (recStart - seg.beat) * spb();
-    const latency = (c.baseLatency || 0) + (c.outputLatency || 0);
+    const latency = AudioRuntime.latencySeconds(c);
     const offset = Math.max(0, recStartTime + latency - chunks[0].frame / sr);
     const duration = Math.min(buffer.duration - offset, Math.max(0, stopBeat - recStart) * spb() + 0.05);
     if (duration < 0.1) { status('That take was too short to keep.'); return; }
-    const id = addBuffer(buffer, `${track.name} take`);
+    const id = addBuffer(buffer, `${track.name} take`, null, { sourceSampleRate: sr, sourceKind: 'recording' });
     const clip = { id: uid(), type: 'audio', name: `${track.name} take`, bufferId: id, start: recStart, offset, duration, gain: 1 };
     track.clips.push(clip);
     select(track.id, clip.id);
     commit();
-    status(`Recorded ${duration.toFixed(1)} s of audio on “${track.name}”.`);
+    status(`Recorded ${duration.toFixed(1)} s of audio on “${track.name}”.${droppedFrames ? ' Check audio: some input frames were missed.' : ''}`);
+    refreshAudioHealth();
   }
 
   async function setArmed(track, on) {
@@ -608,6 +602,7 @@
       status(err && err.name === 'NotAllowedError'
         ? 'Microphone permission was blocked. Allow it in the address bar, then arm the track again.'
         : 'No microphone was found.');
+      refreshAudioHealth();
       return false;
     }
     mic.source = c.createMediaStreamSource(mic.stream);
@@ -624,6 +619,7 @@
     mic.source.connect(mic.analyser);
     mic.node.connect(mic.sink);
     mic.sink.connect(c.destination);
+    refreshAudioHealth();
     return true;
   }
 
@@ -632,6 +628,7 @@
     if (mic.stream) mic.stream.getTracks().forEach((t) => t.stop());
     [mic.source, mic.node, mic.sink, mic.analyser].forEach((n) => { if (n) n.disconnect(); });
     Object.assign(mic, { stream: null, source: null, node: null, sink: null, analyser: null });
+    refreshAudioHealth();
   }
 
   // Keyboard / MIDI input from music-lab.js. Returns true when the studio is
@@ -687,9 +684,9 @@
   }
 
   // ── Buffers ──────────────────────────────────────────────────────────────
-  function addBuffer(buffer, name, id) {
+  function addBuffer(buffer, name, id, metadata = {}) {
     id = id || uid();
-    buffers.set(id, { buffer, name, peaks: computePeaks(buffer) });
+    buffers.set(id, { buffer, name, peaks: computePeaks(buffer), sourceSampleRate: Number(metadata.sourceSampleRate) || buffer.sampleRate, sourceKind: metadata.sourceKind || 'unknown' });
     return id;
   }
   function computePeaks(buffer) {
@@ -707,7 +704,7 @@
   }
 
   // ── History + autosave ───────────────────────────────────────────────────
-  function snapshot() { return JSON.stringify(project); }
+  function snapshot() { return ProjectModel.stringify(project); }
   function commit() {
     const now = snapshot();
     if (now === history.last) { render(); return; }
@@ -720,8 +717,8 @@
     scheduleSave();
   }
   function restore(json) {
-    project = JSON.parse(json);
-    history.last = json;
+    project = ProjectModel.parse(json);
+    history.last = snapshot();
     if (!findClip(ui.selClip)) { ui.selClip = null; ui.selNotes.clear(); }
     if (!findTrack(ui.selTrack)) ui.selTrack = null;
     render();
@@ -781,7 +778,7 @@
         const b = e.buffer;
         const channels = [];
         for (let ch = 0; ch < b.numberOfChannels; ch++) channels.push(b.getChannelData(ch).slice());
-        store.put({ name: e.name, sampleRate: b.sampleRate, channels }, 'buffer:' + id);
+        store.put({ name: e.name, sampleRate: b.sampleRate, sourceSampleRate: e.sourceSampleRate, sourceKind: e.sourceKind, channels }, 'buffer:' + id);
         savedBuffers.add(id);
       });
       // Drop audio no longer used by the song or anything in undo history.
@@ -799,7 +796,7 @@
     if (!json) return false;
     let saved;
     try { saved = JSON.parse(json); } catch (_e) { return false; }
-    if (!saved || !Array.isArray(saved.tracks)) return false;
+    try { saved = ProjectModel.migrate(saved); } catch (_e) { return false; }
     const ids = new Set();
     saved.tracks.forEach((t) => t.clips.forEach((c) => { if (c.bufferId) ids.add(c.bufferId); }));
     const rows = await idb('readonly', (store) => {
@@ -812,7 +809,7 @@
       if (!row) return;
       const buffer = new AudioBuffer({ length: row.channels[0].length, numberOfChannels: row.channels.length, sampleRate: row.sampleRate });
       row.channels.forEach((d, ch) => buffer.copyToChannel(d, ch));
-      addBuffer(buffer, row.name, id);
+      addBuffer(buffer, row.name, id, row);
       savedBuffers.add(id);
     });
     saved.tracks.forEach((t) => { t.armed = false; t.clips = t.clips.filter((c) => c.type !== 'audio' || buffers.has(c.bufferId)); });
@@ -912,14 +909,14 @@
     const start = atBeat !== undefined ? atBeat : ui.playhead;
     const projectFile = files.find((f) => /\.(zip|mlab)$/i.test(f.name));
     if (projectFile) { await openProjectFile(projectFile); return; }
-    let added = 0;
+    let added = 0, rateConverted = false;
     const errors = [];
     for (const file of files) {
       try {
         if (/\.midi?$/i.test(file.name) || file.type === 'audio/midi' || file.type === 'audio/x-midi') {
           added += await importMidi(file, start);
         } else if (AUDIO_EXT.test(file.name) || file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-          await importAudio(file, start);
+          rateConverted = await importAudio(file, start) || rateConverted;
           added++;
         } else {
           errors.push(`${file.name} isn’t an audio, MIDI or project file`);
@@ -929,7 +926,7 @@
       }
     }
     if (added) commit();
-    status([added ? `Imported ${added} track${added === 1 ? '' : 's'}.` : '', errors.join(' · ')].filter(Boolean).join(' '));
+    status([added ? `Imported ${added} track${added === 1 ? '' : 's'}.` : '', rateConverted ? 'Audio setup found a sample-rate conversion.' : '', errors.join(' · ')].filter(Boolean).join(' '));
   }
 
   function baseName(name) { return name.replace(/\.[^.]+$/, '').slice(0, 40); }
@@ -937,14 +934,18 @@
   async function importAudio(file, start) {
     const c = ctx();
     const data = await file.arrayBuffer();
+    const wavInfo = IO.readWavInfo(data);
     let buffer;
     try { buffer = await c.decodeAudioData(data); } catch (_e) { throw new Error('this browser can’t decode that audio format'); }
-    const id = addBuffer(buffer, baseName(file.name));
+    const sourceSampleRate = wavInfo?.sampleRate || buffer.sampleRate;
+    const id = addBuffer(buffer, baseName(file.name), null, { sourceSampleRate, sourceKind: 'import' });
     const track = addTrack('audio');
     track.name = baseName(file.name);
     const clip = { id: uid(), type: 'audio', name: track.name, bufferId: id, start, offset: 0, duration: buffer.duration, gain: 1 };
     track.clips.push(clip);
     select(track.id, clip.id);
+    refreshAudioHealth();
+    return sourceSampleRate !== c.sampleRate;
   }
 
   async function importMidi(file, start) {
@@ -989,20 +990,20 @@
       const entry = zip.file('project.json');
       if (!entry) throw new Error('no project.json inside');
       const data = JSON.parse(await entry.async('string'));
-      if (!data || !Array.isArray(data.tracks)) throw new Error('project.json is not a Music Lab song');
+      const migrated = ProjectModel.migrate(data);
       const c = ctx();
       for (const meta of data.audio || []) {
         const f = zip.file(meta.file);
         if (!f) continue;
         const buffer = await c.decodeAudioData(await f.async('arraybuffer'));
-        addBuffer(buffer, meta.name || meta.id, meta.id);
+        addBuffer(buffer, meta.name || meta.id, meta.id, meta);
       }
-      delete data.audio;
-      data.tracks.forEach((t) => { t.armed = false; t.clips = t.clips.filter((cl) => cl.type !== 'audio' || buffers.has(cl.bufferId)); });
+      delete migrated.audio;
+      migrated.tracks.forEach((t) => { t.armed = false; t.clips = t.clips.filter((cl) => cl.type !== 'audio' || buffers.has(cl.bufferId)); });
       if (transport.recording || finishingTake) throw new Error('Finish the take before opening a project.');
       ++armRequest; releaseMic();
       if (transport.playing) pause();
-      project = Object.assign(defaultProject(), data);
+      project = migrated;
       ui.selClip = null; ui.selTrack = null; ui.playhead = 0;
       commit();
       status(`Opened “${project.name}”.`);
@@ -1061,7 +1062,7 @@
   async function renderOffline(fromBeat, toBeat, tracks, useMix) {
     const sr = audio.ctx ? audio.ctx.sampleRate : 44100;
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
-    const oc = new OfflineAudioContext(2, Math.ceil(seconds * sr), sr);
+    const oc = RenderEngine.createContext(2, seconds * sr, sr);
     const mix = createMixer(oc, oc.destination);
     tracks.forEach((t) => {
       const s = mix.strip(t);
@@ -1076,18 +1077,7 @@
     scheduleNotes(env, fromBeat, toBeat, tracks);
     scheduleAudio(env, fromBeat, toBeat, tracks);
     const rendered = await oc.startRendering();
-    return trimTail(rendered, (toBeat - fromBeat) * spb());
-  }
-  // Keep the release/ring-out after the last beat, but not seconds of silence.
-  function trimTail(buffer, musicSeconds) {
-    const sr = buffer.sampleRate, min = Math.ceil(musicSeconds * sr);
-    let end = min;
-    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-      const d = buffer.getChannelData(ch);
-      for (let i = d.length - 1; i > end; i--) if (Math.abs(d[i]) > 0.0005) { end = i; break; }
-    }
-    end = Math.min(buffer.length, end + Math.round(sr * 0.05));
-    return Array.from({ length: buffer.numberOfChannels }, (_, ch) => buffer.getChannelData(ch).slice(0, end));
+    return RenderEngine.trimTail(rendered, (toBeat - fromBeat) * spb());
   }
   function exportRange() {
     const end = songEnd();
@@ -1162,7 +1152,7 @@
         for (let ch = 0; ch < e.buffer.numberOfChannels; ch++) chans.push(e.buffer.getChannelData(ch));
         const file = `audio/${id}.wav`;
         zip.file(file, IO.encodeWav(chans, e.buffer.sampleRate, 16));
-        data.audio.push({ id, name: e.name, file });
+        data.audio.push({ id, name: e.name, file, sourceSampleRate: e.sourceSampleRate, sourceKind: e.sourceKind });
       });
       data.app = 'ClassroomOS Music Lab Track Studio';
       zip.file('project.json', JSON.stringify(data, null, 1));
@@ -1307,6 +1297,16 @@
   root.querySelector('.daw-transport').after(commandStrip);
   commandStrip.append(transportSettings, root.querySelector('.daw-region'), fileTools);
   fileTools.open = false;
+  const audioHealth = document.createElement('details');
+  audioHealth.className = 'daw-audio-health';
+  audioHealth.innerHTML = `<summary aria-label="Open audio setup"><span class="daw-health-light" aria-hidden="true"></span><span data-health-label role="status" aria-live="polite">Audio setup</span></summary>
+    <section class="daw-health-panel" aria-labelledby="daw-health-title">
+      <div class="daw-health-head"><div><h3 id="daw-health-title">Audio setup and health</h3><p data-health-summary>Checking this browser…</p></div><button type="button" class="daw-btn" data-health-refresh>Check again</button></div>
+      <div class="daw-health-issues" data-health-issues hidden></div>
+      <dl class="daw-health-facts" data-health-facts></dl>
+      <p class="daw-note">Music Lab checks capabilities on this device only. It does not upload recordings, device names, or diagnostics.</p>
+    </section>`;
+  commandStrip.append(audioHealth);
   const views = document.createElement('div'); views.className = 'daw-views';
   views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
   views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
@@ -1325,7 +1325,10 @@
     requestAnimationFrame(() => { renderTracks(); if(ui.tab==='edit') {sizeRoll();drawRoll();} });
   });
   commandStrip.querySelectorAll('details').forEach(details => details.addEventListener('toggle', () => {
-    if(details.open) commandStrip.querySelectorAll('details').forEach(other => {if(other!==details)other.open=false;});
+    if(details.open) {
+      commandStrip.querySelectorAll('details').forEach(other => {if(other!==details)other.open=false;});
+      if (details === audioHealth) refreshAudioHealth();
+    }
   }));
 
   const $ = (name) => root.querySelector(`[data-ref="${name}"]`);
@@ -1337,6 +1340,41 @@
   };
 
   function status(msg) { R.status.textContent = msg || ''; }
+
+  let healthRequest = 0;
+  async function refreshAudioHealth() {
+    const request = ++healthRequest;
+    const result = await window.MusicDawDiagnostics.preflight({
+      context: audio.ctx, inputStream: mic.stream, navigator,
+      secureContext: window.isSecureContext,
+      webAudio: !!(window.AudioContext || window.webkitAudioContext),
+      audioWorklet: !!window.AudioWorkletNode,
+      wam: typeof window.MusicDawPlugins?.loadWam === 'function',
+      nativeBridge: !!window.MusicLabNativeBridge,
+      sourceRates: [...usedBufferIds()].map(id => buffers.get(id)?.sourceSampleRate).filter(Boolean),
+      preferredRate: project.audioSettings?.preferredSampleRate,
+      exportRate: audio.ctx?.sampleRate,
+      captureDroppedFrames: audioHealthState.captureDroppedFrames,
+      deviceChanged: audioHealthState.deviceChanged,
+    });
+    if (request !== healthRequest) return;
+    audioHealth.dataset.health = result.level;
+    audioHealth.dataset.hasIssues = String(!!result.issues.length);
+    audioHealth.querySelector('[data-health-label]').textContent = result.label;
+    audioHealth.querySelector('summary').setAttribute('aria-label', `${result.label}: ${result.summary} Open audio setup`);
+    audioHealth.querySelector('[data-health-summary]').textContent = result.summary;
+    const issueHost = audioHealth.querySelector('[data-health-issues]');
+    issueHost.hidden = !result.issues.length;
+    issueHost.innerHTML = result.issues.map(issue => `<article data-issue-severity="${issue.severity}"><h4>${esc(issue.title)}</h4><p>${esc(issue.message)}</p><p><strong>What to do:</strong> ${esc(issue.action)}</p></article>`).join('');
+    audioHealth.querySelector('[data-health-facts]').innerHTML = result.items.map(item =>
+      `<div data-fact-state="${item.state}"><dt>${esc(item.label)}</dt><dd>${esc(item.value)}</dd></div>`).join('');
+  }
+  audioHealth.querySelector('[data-health-refresh]').addEventListener('click', () => { audioHealthState.deviceChanged = false; ctx(); refreshAudioHealth(); });
+  navigator.mediaDevices?.addEventListener?.('devicechange', () => {
+    audioHealthState.deviceChanged = true;
+    diagnostics?.record('audio-device-changed', 'notice', AudioRuntime.facts(audio.ctx));
+    refreshAudioHealth();
+  });
 
   // ── DOM: tracks + timeline ───────────────────────────────────────────────
   let rulerCanvas = null, playheadEl = null, loopEl = null;
@@ -1873,7 +1911,7 @@
       if(!Array.isArray(data.effects)||data.effects.length>8||data.effects.some(e=>!window.AudioEffects.registry[e.type]))throw new Error('Unsupported effects.');
       silenceLive();
       t.instrument=t.kind==='instrument'?data.instrument:null;
-      t.effects=data.effects.map(e=>({type:e.type,params:window.AudioEffects.parameters(e.type,e.params||{}),bypass:!!e.bypass}));
+      t.effects=data.effects.map(e=>({type:e.type,params:window.AudioEffects.parameters(e.type,e.params||{}),bypass:!!e.bypass,wet:clamp(e.wet??1,0,1)}));
       t.experienceState=data.experienceState&&typeof data.experienceState==='object'?data.experienceState:{};
       t.drumState=data.drumState&&typeof data.drumState==='object'?data.drumState:null;
       t.tools=Array.isArray(data.tools)?[...new Set(data.tools)].filter(id=>Object.hasOwn(CHANNEL_TOOLS,id)&&CHANNEL_TOOLS[id].accepts(t)):[];
@@ -1891,32 +1929,92 @@
   });
 
   let effectsTrack = null;
+  const vstBridge = window.MusicVstBridge?.createClient();
+  const vstState = { connected: false, busy: false, open: false, message: 'Companion not connected', plugins: [], readiness: null };
+  function vstPanel(track) {
+    const linked = (track.pluginChain || []).filter(plugin => plugin.format === 'native');
+    const rows = vstState.plugins.map(plugin => `<li><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${esc(plugin.format)} · ${esc(plugin.source)}</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-link="${esc(plugin.id)}">Link to channel</button><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.id)}">Open in Carla</button></span></li>`).join('');
+    const assignments = linked.map((plugin, index) => {
+      const available = vstState.plugins.some(item => item.id === plugin.pluginId), condition = !vstState.connected ? 'Not checked' : available ? 'Available' : 'Missing';
+      return `<li data-native-index="${index}"><span><strong>${esc(plugin.name)}</strong> <span class="daw-plugin-badge">${plugin.state?.bypass ? 'Bypassed' : condition} · routing pending</span></span><span class="daw-group"><button type="button" class="daw-btn" data-vst-assignment="bypass" aria-pressed="${!!plugin.state?.bypass}">Bypass</button><button type="button" class="daw-btn" data-vst-launch="${esc(plugin.pluginId)}" ${vstState.connected && !available ? 'disabled' : ''}>Open</button><button type="button" class="daw-btn" data-vst-assignment="remove">Remove</button></span></li>`;
+    }).join('');
+    return `<details class="daw-vst-companion" ${vstState.open ? 'open' : ''}><summary>Desktop VST companion <span class="daw-plugin-badge">${vstState.connected ? 'Connected' : 'Optional'}</span></summary>
+      <p class="daw-note">Runs installed VST3 plugins in Carla beside Music Lab. The browser cannot execute native plugin binaries, so this first bridge opens the real plugin safely; routing its audio into the browser rack is not yet supported.</p>
+      <div class="daw-group"><label class="daw-field"><span>Pairing code</span><input type="password" data-vst-token autocomplete="off" aria-label="VST companion pairing code"></label><button type="button" class="daw-btn" data-vst-connect ${vstState.busy ? 'disabled' : ''}>${vstState.busy ? 'Connecting…' : 'Connect and scan'}</button></div>
+      <p class="daw-note" role="status">${esc(vstState.message)}</p>
+      ${vstState.readiness ? `<p class="daw-note"><strong>Preflight:</strong> ${vstState.readiness.ready ? 'ready' : 'needs attention'} · Carla ${vstState.readiness.carlaAvailable ? 'found' : 'missing'} · ${vstState.readiness.scanRoots} scan folder${vstState.readiness.scanRoots === 1 ? '' : 's'} · ${vstState.readiness.safeMode ? 'safe mode on' : 'launching enabled'}</p>` : ''}
+      ${assignments ? `<h4>Linked to ${esc(track.name)}</h4><ul class="daw-vst-list">${assignments}</ul>` : '<p class="daw-note">No native plugins are linked to this channel.</p>'}
+      ${rows ? `<ul class="daw-vst-list">${rows}</ul>` : ''}
+      <p class="daw-note"><code>npm run music:vst-bridge</code> starts the loopback companion and prints a new pairing code.</p>
+    </details>`;
+  }
+  async function connectVst() {
+    if (!vstBridge || vstState.busy) return;
+    const token = $('effects').querySelector('[data-vst-token]')?.value || '';
+    vstBridge.setToken(token); vstState.busy = true; vstState.open = true; vstState.message = 'Checking the local companion…'; renderEffects();
+    try {
+      const [result, readiness] = await Promise.all([vstBridge.plugins(), vstBridge.readiness()]);
+      vstState.plugins = Array.isArray(result.plugins) ? result.plugins : [];
+      vstState.readiness = readiness;
+      vstState.connected = true; vstState.message = `Found ${vstState.plugins.length} approved VST3 plugin${vstState.plugins.length === 1 ? '' : 's'}.`;
+    } catch (error) {
+      vstState.connected = false; vstState.plugins = []; vstState.readiness = null; vstState.message = `Could not connect: ${error.message}`;
+    } finally { vstState.busy = false; renderEffects(); }
+  }
+  async function launchVst(id) {
+    try { const result = await vstBridge.launch(id); vstState.message = `Opened ${result.plugin?.name || 'the plugin'} in Carla.`; }
+    catch (error) { vstState.message = `Could not open plugin: ${error.message}`; }
+    renderEffects();
+  }
   function renderEffects() {
     const host = $('effects'), registry = window.AudioEffects.registry;
     const track = findTrack(effectsTrack) || findTrack(ui.selTrack) || project.tracks[0];
-    if (!track) { host.innerHTML = '<h3>Channel effects</h3><p>Add a track to begin.</p>'; return; }
+    if (!track) { host.innerHTML = '<h3>Plugins + effects</h3><p>Add a track to begin.</p>'; return; }
     effectsTrack = track.id;
-    host.innerHTML = `<h3>Channel effects</h3>
-      <p class="daw-note">Sound flows through inserts from top to bottom, then volume and pan. Try EQ before compression, swap the order, and compare with bypass. Inserts are included in WAV mixes and stems; MIDI stores notes only.</p>
+    host.innerHTML = `<h3>Plugins + effects</h3>
+      <p class="daw-note">Sound flows through this rack from top to bottom, then volume and pan. Browser plugins are lightweight and included in playback and exports. The optional desktop companion can discover and open installed VST3 plugins in Carla.</p>
       <div class="daw-group"><label class="daw-field"><span>Channel</span><select data-fx-channel aria-label="Effects channel">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
-      ${Object.entries(registry).map(([type, d]) => `<button type="button" class="daw-btn" data-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>Add ${esc(d.name)}</button>`).join('')}</div>
+      ${Object.entries(registry).map(([type, d]) => `<button type="button" class="daw-btn" data-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>Add ${esc(d.name)}${d.format === 'browser' ? ' plugin' : ''}</button>`).join('')}</div>
       <ol class="daw-fx-list">${(track.effects || []).map((e, i, all) => {
-        const d = registry[e.type]; if (!d) return '';
+        const d = registry[e.type];
+        if (!d) return `<li class="is-missing" data-fx-index="${i}"><div class="daw-group"><strong>Missing plugin: ${esc(e.type)}</strong><span class="daw-plugin-badge">Safely bypassed</span><button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove missing plugin ${esc(e.type)}">Remove</button></div><p class="daw-note">The song data is preserved. Reinstall the locally approved plugin to recover its settings.</p></li>`;
         const params = window.AudioEffects.parameters(e.type, e.params);
         return `<li data-fx-index="${i}"><div class="daw-group"><strong>${esc(d.name)}</strong>
+          ${d.format === 'browser' ? `<span class="daw-plugin-badge">Browser plugin · ${esc(d.cpu)} CPU · offline ready</span>` : '<span class="daw-plugin-badge">Built in</span>'}
           <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
           <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
           <button type="button" class="daw-btn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" ${i === all.length - 1 ? 'disabled' : ''}>Later</button>
           <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
-          <a href="lessons/technical-elements/${d.lesson}">Learn ${esc(d.name)}</a></div>
-          <div class="daw-fx-controls">${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
-      }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}`;
+          ${d.lesson ? `<a href="lessons/technical-elements/${d.lesson}">Learn ${esc(d.name)}</a>` : ''}</div>
+          ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
+          <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
+      }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
   }
   $('effects').addEventListener('click', e => {
-    const b = e.target.closest('button'), track = findTrack(effectsTrack); if (!b || b.disabled || !track) return;
+    const b = e.target.closest('button'), track = findTrack(effectsTrack); if (!b || b.disabled) return;
+    if (b.hasAttribute('data-vst-connect')) { connectVst(); return; }
+    if (b.dataset.vstLaunch) { launchVst(b.dataset.vstLaunch); return; }
+    if (!track) return;
+    if (b.dataset.vstLink) {
+      const plugin = vstState.plugins.find(item => item.id === b.dataset.vstLink);
+      if (plugin) {
+        track.pluginChain ||= [];
+        track.pluginChain.push({ id: uid(), format: 'native', pluginId: plugin.id, name: plugin.name, vendor: plugin.source, state: { bypass: false, wet: 1, parameters: {} }, latencySamples: 0, compatibility: 'launcher-only' });
+        vstState.message = `Linked ${plugin.name} to ${track.name}. It will stay silent until native audio routing is available.`;
+        commit();
+      }
+      return;
+    }
+    if (b.dataset.vstAssignment) {
+      const plugins = (track.pluginChain || []).filter(plugin => plugin.format === 'native'), plugin = plugins[Number(b.closest('[data-native-index]').dataset.nativeIndex)];
+      if (!plugin) return;
+      if (b.dataset.vstAssignment === 'remove') track.pluginChain.splice(track.pluginChain.indexOf(plugin), 1);
+      else { plugin.state ||= {}; plugin.state.bypass = !plugin.state.bypass; }
+      commit(); return;
+    }
     const focus = b.dataset.fxAdd ? '[data-fx-add="' + b.dataset.fxAdd + '"]' : '[data-fx-channel]';
     track.effects ||= [];
-    if (b.dataset.fxAdd && track.effects.length < 8) track.effects.push({ type: b.dataset.fxAdd, params: window.AudioEffects.parameters(b.dataset.fxAdd), bypass: false });
+    if (b.dataset.fxAdd && track.effects.length < 8) track.effects.push({ type: b.dataset.fxAdd, params: window.AudioEffects.parameters(b.dataset.fxAdd), bypass: false, wet: 1 });
     else if (b.dataset.fxAction) {
       const i = Number(b.closest('[data-fx-index]').dataset.fxIndex), action = b.dataset.fxAction;
       if (action === 'remove') track.effects.splice(i, 1);
@@ -1929,10 +2027,12 @@
   $('effects').addEventListener('change', e => {
     const el = e.target;
     if (el.matches('[data-fx-channel]')) { effectsTrack = el.value; renderEffects(); $('effects').querySelector('[data-fx-channel]').focus(); return; }
-    if (!el.dataset.fxParam) return;
+    if (!el.dataset.fxParam && !el.hasAttribute('data-fx-wet')) return;
     const track = findTrack(effectsTrack), i = Number(el.closest('[data-fx-index]').dataset.fxIndex), effect = track.effects[i];
-    effect.params = window.AudioEffects.parameters(effect.type, { ...effect.params, [el.dataset.fxParam]: el.value });
-    commit(); $('effects').querySelector(`[data-fx-index="${i}"] [data-fx-param="${el.dataset.fxParam}"]`)?.focus();
+    if (el.hasAttribute('data-fx-wet')) effect.wet = clamp(Number(el.value) / 100, 0, 1);
+    else effect.params = window.AudioEffects.parameters(effect.type, { ...effect.params, [el.dataset.fxParam]: el.value });
+    const selector = el.hasAttribute('data-fx-wet') ? '[data-fx-wet]' : `[data-fx-param="${el.dataset.fxParam}"]`;
+    commit(); $('effects').querySelector(`[data-fx-index="${i}"] ${selector}`)?.focus();
   });
 
   function trackRowHtml(t, i) {
@@ -2922,7 +3022,7 @@
         const src = e2.buffer;
         const rev = new AudioBuffer({ length: src.length, numberOfChannels: src.numberOfChannels, sampleRate: src.sampleRate });
         for (let ch = 0; ch < src.numberOfChannels; ch++) rev.copyToChannel(src.getChannelData(ch).slice().reverse(), ch);
-        sel.clip.bufferId = addBuffer(rev, e2.name + ' (reversed)');
+        sel.clip.bufferId = addBuffer(rev, e2.name + ' (reversed)', null, { sourceSampleRate: e2.sourceSampleRate, sourceKind: e2.sourceKind });
         sel.clip.offset = src.duration - sel.clip.offset - sel.clip.duration;
         commit();
         break;
@@ -3207,6 +3307,7 @@
     try { restored = await loadAutosave(); } catch (_e) { restored = false; }
     history.last = snapshot();
     render();
+    refreshAudioHealth();
     status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Track Studio: choose a channel, add an instrument experience, arm ●, then record ⏺. Audio channels use microphone or imported files.');
     requestAnimationFrame(frame);
   })();

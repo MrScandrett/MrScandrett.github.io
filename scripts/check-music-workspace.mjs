@@ -1,12 +1,28 @@
 import {chromium} from 'playwright';
 import {findChromium} from '../lib/find-chromium.mjs';
 import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+const DawIO=createRequire(import.meta.url)('../assets/js/music-daw-io.js');
+const rateFixture=rate=>Buffer.from(DawIO.encodeWav([new Float32Array(Math.round(rate/20))],rate,16));
 const browser=await chromium.launch({executablePath:findChromium()});
 try {
  for(const viewport of [{width:1440,height:900},{width:390,height:844},{width:844,height:390}]) {
   const page=await browser.newPage({viewport,hasTouch:viewport.width!==1440});const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log(e.message)});
   await page.route('https://**/*',route=>route.abort());
   await page.goto('http://localhost:8080/music-lab.html',{waitUntil:'domcontentloaded'});const root=page.locator('#trackStudio');await root.locator('[data-channel]').waitFor();
+  const health=root.locator('.daw-audio-health');await health.locator('summary').click();
+  await page.waitForFunction(()=>document.querySelector('.daw-audio-health')?.dataset.health==='ready');
+  assert.match(await health.locator('[data-health-summary]').textContent(),/Audio is ready/);
+  assert.match(await health.locator('.daw-health-facts').textContent(),/Output rate.*Hz.*Recorder.*Ready/s);
+  assert.match(await health.locator('.daw-note').textContent(),/does not upload/);
+  await page.screenshot({path:`/tmp/music-health-${viewport.width}.png`});
+  await health.locator('summary').click();
+  const outputText=await health.locator('.daw-health-facts').textContent();const outputRate=outputText.includes('48,000 Hz')?48000:44100;const sourceRate=outputRate===48000?44100:48000;
+  await root.locator('[data-ref=file]').setInputFiles({name:`rate-${sourceRate}.wav`,mimeType:'audio/wav',buffer:rateFixture(sourceRate)});
+  await page.waitForFunction(()=>document.querySelector('.daw-audio-health')?.dataset.health==='notice');
+  assert.equal((await health.locator('[data-health-label]').textContent()).trim(),'Rate notice');
+  await health.locator('summary').click();assert.match(await health.locator('[data-health-issues]').textContent(),/Imported audio is being converted.*No change is usually needed/s);await page.screenshot({path:`/tmp/music-rate-warning-${viewport.width}.png`});await health.locator('summary').click();
+  await root.locator('[data-channel]').selectOption({label:'Keys'});
   await root.locator('[data-tool-add=keyboard]').click();await root.locator('[data-act=studio]').click();
   await root.locator('[data-view=tracks]').click();assert.equal(await root.locator('.daw-dock').isVisible(),false);
   const timeline=await root.locator('.daw-scroll').boundingBox();assert(timeline.height>viewport.height*.5);

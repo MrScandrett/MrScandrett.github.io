@@ -1418,8 +1418,10 @@
     presetButtons.forEach(b => b.addEventListener('click', () => setPreset(b.dataset.preset)));
 
     /* ── Keyboard shortcuts ───────────────────────────────── */
+    const refDetails = document.querySelector('.d3-original-reference');
     window.addEventListener('keydown', event => {
-      if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+      if (refDetails && !refDetails.open) return;
+      if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
 
       const orbitAllowed = !focusLock || focusLock === 'orbit';
       const panAllowed   = !focusLock || focusLock === 'pan';
@@ -1457,6 +1459,13 @@
 
     /* ── Init ─────────────────────────────────────────────── */
     window.addEventListener('resize', resizeCanvas);
+    if (refDetails) {
+      refDetails.addEventListener('toggle', () => {
+        if (refDetails.open) {
+          requestAnimationFrame(resizeCanvas);
+        }
+      });
+    }
     applyScheme('tinkercad');
     setActiveTerm('orbit');
     resetMissions();

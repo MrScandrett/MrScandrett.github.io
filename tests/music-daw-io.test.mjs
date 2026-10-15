@@ -70,4 +70,9 @@ test('WAV encoder writes a valid 16-bit stereo header and clips samples', () => 
   assert.equal(v.getUint32(40, true), 4 * 2 * 2);
   assert.equal(v.getInt16(44 + 4, true), 32767);   // frame 1 left = 1
   assert.equal(v.getInt16(44 + 14, true), -32768); // frame 3 right = -2, clipped
+  assert.deepEqual(DawIO.readWavInfo(buf), { format: 1, channels: 2, sampleRate: 44100, bits: 16 });
+});
+
+test('WAV metadata reader rejects unrelated files', () => {
+  assert.equal(DawIO.readWavInfo(new TextEncoder().encode('not wave audio')), null);
 });

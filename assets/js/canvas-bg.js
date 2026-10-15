@@ -84,6 +84,7 @@
   /* Site-level "Reduce motion" toggle in the settings panel — independent
    * of (and checked in addition to) the OS prefers-reduced-motion query. */
   function reducedMotionOverride() {
+    if (document.documentElement.hasAttribute('data-classroom-presentation')) return true;
     try {
       return localStorage.getItem('classroomos-reduced-motion') === 'on';
     } catch (e) {
@@ -1802,6 +1803,11 @@
     window.addEventListener('classroomos:reducedmotionchange', function (e) {
       var on = e && e.detail ? !!e.detail.reducedMotion : reducedMotionOverride();
       if (on) stop();
+      else start(bgForTheme(currentTheme()));
+    });
+
+    window.addEventListener('classroomos:presentationchange', function () {
+      if (reducedMotionOverride()) stop();
       else start(bgForTheme(currentTheme()));
     });
 

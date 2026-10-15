@@ -26,6 +26,9 @@ Load the workspace stylesheet at the page's correct depth. Use the vendored Thre
 The furniture and modular-room reference pages share the same workshop state as their Game Asset Studio counterparts. Students should reuse the asset instead of rebuilding it.
 
 - Work is kept in this browser per technique, and can be downloaded as `.design3d.json`.
+- **Chapter 1 Foundation continuity**: The model transfers seamlessly across Foundation lessons (`navigate` → `transform` → `boolean`). Dimensions, proportion adjustments, and colors persist via cross-lesson project import and automatic local session carryover.
+- **Control Scheme presets**: The `navigate` workspace supports Tinkercad (LMB orbit, RMB pan), Blender (MMB orbit, Shift+MMB pan), and Fusion 360 (Shift+MMB orbit, MMB pan) mouse and modifier bindings, training students in transferable spatial navigation muscle memory.
+- **Asymmetrical starter geometry**: `navigate` uses a stepped bracket with an asymmetrical back-wall, front flange, and fiducial center pin so standard views (front, right, top, isometric) have unambiguous silhouettes during 360° orbit.
 - A saved workshop recipe can reopen in the same technique. Materials, compositing and UV workshops can reuse geometry from another workshop project.
 - OBJ contains a static triangle mesh and UVs where available. It does not package materials, CAD history, bones or animation. Surface color and editable settings remain in the workshop project.
 - Print and clearance workshops also export binary STL in millimeter coordinates, converting the Y-up scene to a Z-up print bed. Verify dimensions in the slicer.

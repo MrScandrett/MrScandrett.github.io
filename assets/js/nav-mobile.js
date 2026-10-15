@@ -607,7 +607,7 @@
     if (!document.documentElement) return;
     if (typeof document.startViewTransition === "function") return; // Handled smoothly by View Transitions in theme-lighting
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (reducedMotionOverride()) return;
+    if (reducedMotionOverride() || document.documentElement.hasAttribute("data-classroom-presentation")) return;
     var html = document.documentElement;
     clearTimeout(html._cosThemeTimer);
     html.classList.add("theme-transitioning");
@@ -796,7 +796,7 @@
             '<button type="button" class="nav-mode-pill" data-mode="auto" aria-pressed="false">Auto</button>' +
             '<button type="button" class="nav-mode-pill" data-mode="manual" aria-pressed="false">Manual</button>' +
           '</div>' +
-          '<p class="nav-auto-note" role="status" aria-live="polite">Following local time — select <strong>Manual</strong> above to choose a theme.</p>' +
+          '<p class="nav-auto-note" role="status" aria-live="polite">Following local time — choosing a theme switches to <strong>Manual</strong>.</p>' +
           '<div class="nav-tone-rail" role="group" aria-label="Quick tone">' +
             '<button type="button" class="nav-tone-pill" data-tone="day" aria-label="Use day theme">' +
               '<span class="nav-tone-icon" aria-hidden="true">&#9728;</span>' +
@@ -810,12 +810,14 @@
         '</div>' +
         '<div class="nav-settings-section">' +
           '<p class="nav-settings-eyebrow">Palette</p>' +
-          '<div class="nav-theme-filter-bar" role="group" aria-label="Filter themes by tone">' +
+          '<div class="nav-theme-filter-bar" role="group" aria-label="Filter themes">' +
             '<button type="button" class="nav-theme-filter-pill is-active" data-tone-filter="all" aria-pressed="true">All</button>' +
+            '<button type="button" class="nav-theme-filter-pill" data-tone-filter="quiet" aria-pressed="false">Quiet</button>' +
+            '<button type="button" class="nav-theme-filter-pill" data-tone-filter="expressive" aria-pressed="false">Expressive</button>' +
             '<button type="button" class="nav-theme-filter-pill" data-tone-filter="light" aria-pressed="false">&#9728; Light</button>' +
             '<button type="button" class="nav-theme-filter-pill" data-tone-filter="dark" aria-pressed="false">&#9789; Dark</button>' +
           '</div>' +
-          '<div class="nav-theme-grid" role="list"></div>' +
+          '<div class="nav-theme-grid" role="group" aria-label="Choose a theme"></div>' +
         '</div>' +
         '</div>' +
         '<div class="nav-settings-pane" role="tabpanel" data-pane="background" id="' + panelId + '-pane-background" aria-labelledby="' + panelId + '-tab-background" hidden>' +
@@ -827,6 +829,12 @@
         '</div>' +
         '<div class="nav-settings-pane" role="tabpanel" data-pane="access" id="' + panelId + '-pane-access" aria-labelledby="' + panelId + '-tab-access" hidden>' +
         '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Classroom presentation</p>' +
+          '<label class="nav-motion-toggle">' +
+            '<input type="checkbox" class="nav-presentation-checkbox" />' +
+            '<span class="nav-motion-copy"><strong>Present to the class</strong>' +
+              '<small>Larger text, solid reading panels, and quiet backgrounds. Turn off to return to your usual preferences.</small></span>' +
+          '</label>' +
           '<p class="nav-settings-eyebrow">Accessibility</p>' +
           '<label class="nav-motion-toggle">' +
             '<input type="checkbox" class="nav-transparency-checkbox" />' +
@@ -893,21 +901,21 @@
       optionBtn.className = "nav-theme-chip";
       optionBtn.setAttribute("data-theme", option.id);
       optionBtn.setAttribute("data-tone", option.tone || "light");
-      optionBtn.setAttribute("role", "listitem");
+      optionBtn.setAttribute("data-family", option.family || "quiet");
       optionBtn.setAttribute("aria-label", option.label + " theme \u2014 " + option.detail);
       optionBtn.setAttribute("aria-pressed", "false");
       optionBtn.setAttribute("data-hint", option.label + " \u2014 " + option.detail);
-      var toneSymbol = option.tone === "dark" ? "\u25d0" : "\u25cb"; // \u25d0 dark, \u25cb light
-      var accentRGB = option.accentRGB || [0, 113, 227];
+      var preview = option.preview || ["#f5f5f7", "#ffffff", "#1d1d1f", "#0066cc", "#ffffff"];
+      ["bg", "surface", "ink", "accent", "on-accent"].forEach(function (name, index) {
+        optionBtn.style.setProperty("--preview-" + name, preview[index]);
+      });
       optionBtn.innerHTML =
-        '<span class="nav-theme-swatch" aria-hidden="true">' +
-          '<span class="nav-theme-accent-pip" style="background-color: rgb(' + accentRGB.join(",") + ');" title="Accent color"></span>' +
+        '<span class="nav-theme-preview" aria-hidden="true">' +
+          '<span class="nav-theme-preview-card"><span>Read &amp; explore</span>' +
+          '<span class="nav-theme-preview-line"></span><span class="nav-theme-preview-action">Start</span></span>' +
         '</span>' +
-        '<span class="nav-theme-label">' +
-          "<strong>" + option.label + "</strong>" +
-          "<small>" + option.detail + "</small>" +
-        "</span>" +
-        '<span class="nav-theme-tone" aria-hidden="true" title="' + (option.tone === "dark" ? "Dark" : "Light") + ' theme">' + toneSymbol + "</span>";
+        '<span class="nav-theme-label"><strong>' + option.label + '</strong><small>' + option.detail + '</small></span>' +
+        '<span class="nav-theme-selected" aria-hidden="true">✓</span>';
       optionBtn.addEventListener("click", function () {
         cosTransition();
         if (typeof lighting.setTheme === "function") lighting.setTheme(option.id);
@@ -929,7 +937,7 @@
         var chips = themeGrid.querySelectorAll(".nav-theme-chip");
         chips.forEach(function (chip) {
           var chipTone = chip.getAttribute("data-tone") || "light";
-          chip.style.display = (targetTone === "all" || chipTone === targetTone) ? "" : "none";
+          chip.style.display = (targetTone === "all" || chipTone === targetTone || chip.getAttribute("data-family") === targetTone) ? "" : "none";
         });
       });
     });
@@ -1014,6 +1022,16 @@
       });
       canvasGrid.appendChild(btn);
     });
+
+    var presentationControl = settingsContainer.querySelector(".nav-presentation-checkbox");
+    function syncPresentationControl() {
+      presentationControl.checked = Boolean(themeRegistry.isPresentation && themeRegistry.isPresentation());
+    }
+    syncPresentationControl();
+    presentationControl.addEventListener("change", function () {
+      if (themeRegistry.setPresentation) themeRegistry.setPresentation(presentationControl.checked);
+    });
+    window.addEventListener("classroomos:presentationchange", syncPresentationControl);
 
     var transparencyControl = settingsContainer.querySelector(".nav-transparency-checkbox");
     transparencyControl.checked = document.documentElement.dataset.reduceTransparency === "true";
@@ -1196,8 +1214,8 @@
       var reason = getAutoReason();
       var isSystemBased = reason.indexOf("system") === 0;
       autoNote.innerHTML = isSystemBased
-        ? "Following your <strong>system appearance</strong> — select <strong>Manual</strong> above to choose a theme."
-        : "Following <strong>local time</strong> — select <strong>Manual</strong> above to choose a theme.";
+        ? "Following your <strong>system appearance</strong> — choosing a theme switches to <strong>Manual</strong>."
+        : "Following <strong>local time</strong> — choosing a theme switches to <strong>Manual</strong>.";
     }
 
     if (settingsStatus) {
@@ -1221,10 +1239,10 @@
       var isActive = tone === activeId;
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.classList.toggle("is-active", isActive);
-      button.classList.toggle("is-muted", isAuto && !isActive);
+      button.classList.remove("is-muted");
       if (isAuto) {
-        button.setAttribute("aria-disabled", "true");
-        button.setAttribute("title", "Switch to Manual mode to change the theme");
+        button.removeAttribute("aria-disabled");
+        button.setAttribute("title", "Choose this theme to use Manual mode");
       } else {
         button.removeAttribute("aria-disabled");
         button.removeAttribute("title");
@@ -1235,10 +1253,10 @@
       var isActive = button.getAttribute("data-theme") === activeId;
       button.setAttribute("aria-pressed", isActive ? "true" : "false");
       button.classList.toggle("is-active", isActive);
-      button.classList.toggle("is-muted", isAuto && !isActive);
+      button.classList.remove("is-muted");
       if (isAuto) {
-        button.setAttribute("aria-disabled", "true");
-        button.setAttribute("title", "Switch to Manual mode to change the theme");
+        button.removeAttribute("aria-disabled");
+        button.setAttribute("title", "Choose this theme to use Manual mode");
       } else {
         button.removeAttribute("aria-disabled");
         var hint = button.getAttribute("data-hint");

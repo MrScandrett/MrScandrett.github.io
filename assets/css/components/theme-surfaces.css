@@ -1,0 +1,197 @@
+/* Shared theme finish. Loaded by theme-lighting after page styles so legacy
+   palettes resolve through semantic tokens. Independent student apps opt out. */
+html[data-theme] {
+  --reading-surface: color-mix(in srgb, var(--white) 97%, var(--bg));
+  --reading-inset: color-mix(in srgb, var(--white) 91%, var(--bg));
+  --control-surface: var(--reading-surface);
+  --control-border: var(--border-strong, var(--line));
+  --text-secondary: var(--text-body, var(--text));
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--white));
+  --theme-surface-bg: var(--reading-surface);
+  --theme-surface-border: var(--border-subtle, var(--line));
+  --theme-surface-shadow: var(--shadow-1);
+  --theme-active-bg: var(--accent-soft);
+  --theme-active-border: var(--accent);
+  --theme-active-text: var(--text);
+  --theme-muted-text: var(--text-muted, var(--muted));
+}
+
+/* Texture belongs in the margins. The wash softens the existing local artwork. */
+html[data-theme="diamond"] { --quiet-pattern: url("../../images/theme-patterns/diamond-facets.png"); --quiet-pattern-size: 256px 448px; --pattern-cover: 96%; }
+html[data-theme="emerald"] { --quiet-pattern: url("../../images/theme-patterns/emerald-leaves.png"); --quiet-pattern-size: 420px 336px; --pattern-cover: 95%; }
+html[data-theme="topaz"] { --quiet-pattern: url("../../images/theme-patterns/honey-comb.png"); --quiet-pattern-size: 320px 343px; --pattern-cover: 95%; }
+html[data-theme="goldfish"] { --quiet-pattern: url("../../images/theme-patterns/goldfish-scales.png"); --quiet-pattern-size: 80px 80px; --pattern-cover: 88%; }
+html[data-theme="cobblestone"] { --quiet-pattern: url("../../images/theme-patterns/cobblestone.png"); --quiet-pattern-size: 280px 280px; --pattern-cover: 95%; }
+html[data-theme="bark"] { --quiet-pattern: url("../../images/theme-patterns/bark.png"); --quiet-pattern-size: 360px 491px; --pattern-cover: 82%; }
+html[data-theme]:is([data-theme="diamond"], [data-theme="emerald"], [data-theme="topaz"], [data-theme="goldfish"], [data-theme="cobblestone"], [data-theme="bark"]) body {
+  background-image: linear-gradient(color-mix(in srgb, var(--bg) var(--pattern-cover), transparent), color-mix(in srgb, var(--bg) var(--pattern-cover), transparent)), var(--quiet-pattern), var(--page-wash), linear-gradient(var(--bg), var(--bg));
+  background-size: auto, var(--quiet-pattern-size), auto, auto;
+  background-repeat: no-repeat, repeat, no-repeat, no-repeat;
+  background-attachment: scroll;
+}
+html[data-theme] body :is(#site-canvas-bg, #hero-canvas) { opacity: 0.28; }
+html[data-theme]:is([data-theme="vaporwave"], [data-theme="mandelbrot"], [data-theme="lavalamp"]) body :is(#site-canvas-bg, #hero-canvas) { opacity: 0.48; }
+
+/* Only content frames: images, score notation, scientific colors and canvases
+   retain their own rendering and meaning. */
+html[data-theme] body main :is(.lesson-section, .content-section, .lesson-card, .sim-panel, .simulation-controls, .ll-panel, .nl-card) {
+  background: var(--reading-surface);
+  color: var(--text-body, var(--text));
+  border-color: var(--border-subtle, var(--line));
+  box-shadow: var(--shadow-1);
+}
+html[data-theme] body main :is(.lesson-section, .content-section, .lesson-card, .sim-panel, .ll-panel) :is(p, label) {
+  color: var(--text-body, var(--text));
+}
+html[data-theme] body :is(.btn, .button, .lesson-btn, .sim-btn):not([disabled]):not([aria-disabled="true"]) {
+  background: var(--control-surface);
+  color: var(--text-body, var(--text));
+  border: 1px solid var(--control-border);
+  box-shadow: var(--shadow-0, none);
+}
+html[data-theme] body :is(.btn-primary, .button-primary, .btn.primary):not([disabled]) {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+html[data-theme] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring, var(--accent));
+  outline-offset: 3px;
+}
+html[data-theme] body :is(button, [role="tab"]):is([aria-pressed="true"], [aria-selected="true"]) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  font-weight: 700;
+}
+html[data-theme] body :is(button:disabled, input:disabled, select:disabled, textarea:disabled, button[aria-disabled="true"]) {
+  opacity: 1;
+  color: var(--text-muted, var(--muted));
+  background: var(--reading-inset);
+  border: 1px dashed var(--control-border);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+html[data-theme] body input[type="range"] { accent-color: var(--accent); }
+
+/* Preview cards show readable content and an action in the candidate palette. */
+html body .nav-settings-panel .nav-theme-filter-bar { flex-wrap: wrap; gap: 0.35rem; }
+html body .nav-settings-panel .nav-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+html body .nav-settings-panel .nav-theme-chip {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.4rem;
+  border-radius: 12px;
+  background: var(--glass-solid);
+  color: var(--glass-ink);
+  border: 1px solid var(--glass-border);
+  box-shadow: none;
+  transform: none;
+  opacity: 1;
+}
+html body .nav-settings-panel .nav-theme-chip:hover { transform: none; border-color: var(--glass-ink); }
+html body .nav-settings-panel .nav-theme-chip.is-active { background: var(--glass-solid); border-color: var(--glass-ink); box-shadow: inset 0 0 0 1px var(--glass-ink); }
+html body .nav-settings-panel .nav-theme-chip .nav-theme-label strong { color: var(--glass-ink); font-size: 0.78rem; line-height: 1.3; }
+html body .nav-settings-panel .nav-theme-chip .nav-theme-label small { color: var(--glass-muted); font-size: 0.75rem; line-height: 1.45; }
+html body .nav-settings-panel .nav-theme-preview {
+  display: block;
+  padding: 0.3rem;
+  border-radius: 5px;
+  background: var(--preview-bg);
+  color: var(--preview-ink);
+  border: 1px solid color-mix(in srgb, var(--preview-ink) 24%, var(--preview-bg));
+}
+html body .nav-settings-panel .nav-theme-preview-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  background: var(--preview-surface);
+  color: var(--preview-ink);
+  border-radius: 4px;
+  font-size: 0.6rem;
+  line-height: 1.4;
+  text-align: left;
+  font-weight: 500;
+}
+html body .nav-settings-panel .nav-theme-preview-line { display: block; width: 75%; height: 3px; background: currentColor; opacity: 0.25; }
+html body .nav-settings-panel .nav-theme-preview-action {
+  justify-self: start;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  color: var(--preview-on-accent);
+  background: var(--preview-accent);
+  font-size: 0.6rem;
+}
+html body .nav-settings-panel .nav-theme-selected { display: none; position: absolute; top: 0.25rem; right: 0.25rem; width: 1.05rem; height: 1.05rem; border-radius: 50%; background: var(--glass-ink); color: var(--glass-solid); font-size: 0.7rem; line-height: 1.05rem; text-align: center; }
+html body .nav-settings-panel .nav-theme-chip[aria-pressed="true"] .nav-theme-selected { display: block; }
+html body .nav-presentation-checkbox { flex: 0 0 auto; width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
+
+/* A reversible projection preset; individual saved preferences stay intact.
+   Pause only decorative backgrounds, never educational simulations. */
+html[data-classroom-presentation] { font-size: 112.5%; --reading-surface: var(--white); --reading-inset: var(--white); }
+html[data-classroom-presentation] body { background: var(--bg) !important; animation: none !important; }
+html[data-classroom-presentation] body::before,
+html[data-classroom-presentation] body::after { display: none !important; }
+html[data-classroom-presentation] body :is(#site-canvas-bg, #hero-canvas) { display: none !important; }
+html[data-classroom-presentation] body :is(.site-header, .nav-settings-panel) { background: var(--glass-solid) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+html[data-classroom-presentation] body main :is(.lesson-section, .content-section, .lesson-card, .sim-panel, .simulation-controls, .ll-panel, .nl-card) { background: var(--white); }
+@media (max-width: 380px) {
+  html body .nav-settings-panel .nav-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme] body { animation: none; }
+}
+@media (forced-colors: active) {
+  html body .nav-settings-panel .nav-theme-chip { border-color: ButtonText; }
+  html body .nav-settings-panel .nav-theme-chip.is-active { outline: 2px solid Highlight; }
+  html body .nav-settings-panel .nav-theme-selected { forced-color-adjust: none; background: Highlight; color: HighlightText; }
+}
+
+/* Shared tab controls always use the accessible action palette. */
+html body .nav-settings-panel :is(.nav-settings-tab[aria-selected="true"], .nav-editor-link) {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+html body .nav-settings-panel .nav-theme-grid .nav-theme-chip { grid-template-columns: 1fr; }
+html body .nav-settings-panel .nav-theme-grid .nav-theme-label small { display: none; }
+
+/* Study-specific paper/clay palettes keep their local teaching materials.
+   Controls consume local ink instead of inheriting dark chrome colors. */
+html[data-theme] body .as-page {
+  --reading-surface: var(--bg);
+  --reading-inset: var(--bg);
+  --control-border: var(--text-muted);
+}
+html[data-theme] body .fb-shell {
+  --reading-surface: var(--fb-paper);
+  --reading-inset: var(--fb-cream);
+  --text-muted: var(--fb-muted);
+  --control-border: var(--fb-muted);
+}
+html body .site-header .brand-os { color: var(--glass-ink) !important; }
+html body .nav-settings-panel :is(.nav-mode-pill, .nav-tone-pill, .nav-theme-filter-pill) {
+  color: var(--glass-ink);
+  background: var(--glass-solid);
+  border-color: var(--glass-border);
+}
+html body .nav-settings-panel :is(.nav-mode-pill, .nav-tone-pill, .nav-theme-filter-pill):is([aria-pressed="true"], .is-active) {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+html body .nav-settings-panel .nav-auto-note { color: var(--glass-muted); background: var(--glass-solid); }
+@media print {
+  html[data-classroom-presentation] { font-size: 100%; }
+}
+/* Keep the projection header in one row while content text grows. */
+@media (min-width: 981px) {
+  html[data-classroom-presentation] body .site-header .nav-wrap { width: min(1360px, calc(100% - 2rem)); gap: 0.65rem; }
+  html[data-classroom-presentation] body .site-header .brand { font-size: 0.8rem; }
+  html[data-classroom-presentation] body .site-header .site-nav > ul { gap: 0.25rem; }
+  html[data-classroom-presentation] body .site-header .site-nav a { font-size: 0.75rem; padding-inline: 0.45rem; }
+}
+
+html body .nav-settings-panel .nav-theme-preview-line { display: none; }

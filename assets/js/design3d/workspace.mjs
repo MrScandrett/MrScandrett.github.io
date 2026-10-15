@@ -12,13 +12,31 @@ async function mount(host){
  const mode=host.dataset.design3dWorkshop,def=WORKSHOPS[mode];if(!def)return;
  const id='d3w-'+(++sequence),store='classroomos:design3d:'+mode;
  let state=freshState(mode),undo=[],redo=[],playing=false,dirty=true,level='guided',brush='raise',group,texture,three,sceneKit,controls,loop,visible=true,pointerStroke=false,lastStroke=0,baseline;
- try{const saved=localStorage.getItem(store);if(saved){const candidate=validateState(JSON.parse(saved));if(candidate.mode===mode)state=candidate;}}catch{}
+ try{
+  const saved=localStorage.getItem(store);
+  if(saved){const candidate=validateState(JSON.parse(saved));if(candidate.mode===mode)state=candidate;}
+  else if(['transform','boolean'].includes(mode)){
+   try{
+    const prevKey=mode==='boolean'?'transform':'navigate';
+    const prev=localStorage.getItem('classroomos:design3d:'+prevKey);
+    if(prev){
+     const past=validateState(JSON.parse(prev));
+     if(Number.isFinite(past.params?.width))state.params.width=past.params.width;
+     if(Number.isFinite(past.params?.height))state.params.height=past.params.height;
+     if(mode==='transform'&&Number.isFinite(past.params?.depth))state.params.depth=past.params.depth;
+     if(past.color)state.color=past.color;
+    }
+   }catch{}
+  }
+ }catch{}
  host.classList.add('d3w');host.setAttribute('aria-labelledby',id+'-title');
  host.innerHTML=`<header class="d3w-head"><p>3D workshop · ${escape(def.technique)}</p><h1 id="${id}-title">${escape(def.title)}</h1><p>${escape(def.challenge)}</p></header>
- <div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>
+ <div class="d3w-options"><div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>
+ <div class="d3w-scheme"><label for="${id}-scheme">Control scheme</label><select id="${id}-scheme" data-scheme><option value="tinkercad"${state.scheme==='tinkercad'?' selected':''}>Tinkercad / Default</option><option value="blender"${state.scheme==='blender'?' selected':''}>Blender (MMB)</option><option value="fusion"${state.scheme==='fusion'?' selected':''}>Fusion 360 / CAD (Shift+MMB)</option></select><span class="d3w-scheme-hint" data-scheme-hint>Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom</span></div></div>
  <div class="d3w-layout"><div class="d3w-stage"><div class="d3w-view"><canvas tabindex="0" aria-label="Editable 3D scene. Drag to orbit; use view buttons or arrow keys. In sculpt mode, turn on Brush mode to edit the mesh." data-canvas></canvas><p class="d3w-unit">${['print','clearance'].includes(mode)?'Coordinates in millimeters':'Y up · starter-scene units · not a manufacturing specification'}</p></div>
  <div class="d3w-toolbar" role="group" aria-label="Camera views"><button type="button" data-view="perspective">Perspective</button><button type="button" data-view="front">Front</button><button type="button" data-view="side">Side</button><button type="button" data-view="top">Top</button><button type="button" data-zoom="in">Zoom in</button><button type="button" data-zoom="out">Zoom out</button><button type="button" data-fit>Fit model</button></div>
  <p class="d3w-help">X runs across · Y is up · Z is depth. Drag to orbit · right-drag to pan · pinch or use Zoom · keyboard arrows orbit, +/− zoom. Numeric controls work without dragging.</p><p data-description class="d3w-description"></p>
+ ${mode==='navigate'?`<div class="d3w-missions"><p><strong>Camera practice mission</strong></p><ul data-missions><li data-m="orbit">○ Orbit the view to inspect the stepped silhouette</li><li data-m="views">○ Inspect Front, Side and Top views</li><li data-m="zoom">○ Zoom in or out to examine detail</li><li data-m="fit">○ Use Fit model or view buttons</li><li data-m="proportions">○ Adjust dimensions to set your proportions</li></ul></div>`:''}
  <ol class="d3w-guide">${def.steps.map(s=>'<li>'+escape(s)+'</li>').join('')}</ol>
  <div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="capture">Capture image</button>${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>
  <p role="status" data-status>Loading the editable scene…</p></div>
@@ -36,14 +54,45 @@ async function mount(host){
  function persist(){try{localStorage.setItem(store,JSON.stringify(state));}catch{say('Browser storage is unavailable. Use Save project to keep your work.');}}
  function checkpoint(){undo.push(clone(state));if(undo.length>40)undo.shift();redo=[];}
  function edit(fn){checkpoint();playing=false;fn();state.saved=false;state.captured=false;state.exported=false;persist();refresh();}
- function updateFields(){for(const f of def.fields){$(`[data-param="${f.key}"]`).value=state.params[f.key];$(`[data-slider="${f.key}"]`).value=state.params[f.key];}for(const n of host.querySelectorAll('[data-color]'))n.value=state[n.dataset.color];$('[data-reflection]').value=state.reflection;$('[data-app]').value=state.app||'';}
+ function updateFields(){for(const f of def.fields){$(`[data-param="${f.key}"]`).value=state.params[f.key];$(`[data-slider="${f.key}"]`).value=state.params[f.key];}for(const n of host.querySelectorAll('[data-color]'))n.value=state[n.dataset.color];$('[data-reflection]').value=state.reflection;$('[data-app]').value=state.app||'';const sc=$('[data-scheme]');if(sc&&state.scheme)sc.value=state.scheme;}
  function guide(){const text=level==='guided'?'Follow the three steps, then test your design.':level==='independent'?'Choose your own dimensions or appearance. Use the test criteria to guide your design.':def.extension;$('[data-level-note]').textContent=text;$('.d3w-guide').hidden=level!=='guided';}
+ function updateMissions(){
+  if(mode!=='navigate')return;
+  const checks={
+   orbit:state.orbited,
+   views:['front','side','top'].every(v=>state.views.includes(v)),
+   zoom:state.zoomed,
+   fit:state.fitted,
+   proportions:['width','height','depth'].some(k=>state.edits.includes(k))
+  };
+  for(const [k,done] of Object.entries(checks)){
+   const item=host.querySelector(`[data-m="${k}"]`);
+   if(item){
+    item.classList.toggle('is-done',!!done);
+    item.textContent=(done?'✓ ':'○ ')+item.textContent.replace(/^[✓○]\s*/,'');
+   }
+  }
+ }
+ function applyScheme(s){
+  state.scheme=s;persist();const hint=$('[data-scheme-hint]');if(!controls||!three)return;
+  if(s==='blender'){
+   controls.mouseButtons={LEFT:three.THREE.MOUSE.ROTATE,MIDDLE:three.THREE.MOUSE.ROTATE,RIGHT:three.THREE.MOUSE.PAN};
+   if(hint)hint.textContent='Middle-drag: Orbit · Shift+Middle: Pan · Left-drag also orbits · Scroll: Zoom';
+  } else if(s==='fusion'){
+   controls.mouseButtons={LEFT:three.THREE.MOUSE.ROTATE,MIDDLE:three.THREE.MOUSE.PAN,RIGHT:three.THREE.MOUSE.ROTATE};
+   if(hint)hint.textContent='Shift+Middle: Orbit · Middle-drag: Pan · Left-drag also orbits · Scroll: Zoom';
+  } else {
+   controls.mouseButtons={LEFT:three.THREE.MOUSE.ROTATE,MIDDLE:three.THREE.MOUSE.DOLLY,RIGHT:three.THREE.MOUSE.PAN};
+   if(hint)hint.textContent='Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom';
+  }
+ }
  function refresh(){updateFields();if(three&&sceneKit)rebuild();dirty=true;host.dataset.revision=String(undo.length);host.dataset.mode=mode;
  const cut=$('[data-action="cut"]');if(cut){cut.textContent=state.cut?'Remove Difference':'Apply Difference';cut.setAttribute('aria-pressed',String(state.cut));}
  const play=$('[data-action="play"]');if(play){play.textContent=playing?'Pause my action':'Play my action';play.setAttribute('aria-pressed',String(playing));}
  const keys=$('[data-keys]');if(keys)keys.innerHTML=state.keys.map(k=>`<li>Time ${k.time.toFixed(2)} · ${k.angle}°</li>`).join('')||'<li>No keys yet. Choose a time and pose, then add a key.</li>';
  $('[data-action="undo"]').disabled=!undo.length;$('[data-action="redo"]').disabled=!redo.length;$('[data-checks]').replaceChildren();$('[data-completion]').textContent='';
  $('[data-description]').textContent=`${def.technique}. ${def.fields.map(f=>`${f.label}: ${state.params[f.key]}`).join('; ')}. ${mode==='sculpt'?state.strokes.length+' mesh strokes.':''}`;
+ updateMissions();
  }
  for(const input of host.querySelectorAll('[data-param],[data-slider]'))input.addEventListener(input.dataset.slider?'input':'change',()=>{
  const key=input.dataset.param||input.dataset.slider,f=def.fields.find(f=>f.key===key),v=Number(input.value);
@@ -52,6 +101,7 @@ async function mount(host){
  });
  for(const input of host.querySelectorAll('[data-color]'))input.addEventListener('change',()=>edit(()=>{state[input.dataset.color]=input.value;state.edits=[...new Set([...state.edits,input.dataset.color])];}));
  $('[data-level]').addEventListener('change',e=>{level=e.target.value;guide();});
+ $('[data-scheme]')?.addEventListener('change',e=>{applyScheme(e.target.value);say(`Control scheme: ${e.target.options[e.target.selectedIndex].text.split(' ')[0]}.`);});
  $('[data-reflection]').addEventListener('input',e=>{state.reflection=e.target.value;persist();});
  $("[data-app]").value=state.app||'';
  $('[data-app]').addEventListener('input',e=>{state.app=e.target.value.slice(0,100);persist();});
@@ -77,19 +127,32 @@ async function mount(host){
  check(){if(!group||host.dataset.ready!=='true'){say('The 3D scene is unavailable. Complete and test the technique in your chosen app.');return;}const checks=checkState(state);$('[data-checks]').innerHTML=checks.map(([text,pass])=>`<li>${pass?'✓':'○'} ${escape(text)}</li>`).join('');const pass=checks.every(c=>c[1]);$('[data-completion]').textContent=pass?'Workshop checkpoint met. Save the project and verify its use in your chosen app.':'Keep designing: complete the open checks, then test again.';host.dataset.check=pass?'pass':'revise';say(pass?'Practice criteria met. These checks do not certify a production asset or physical print.':'Design needs another revision. See the open checks.');}
  };
  for(const button of host.querySelectorAll('[data-action]'))button.addEventListener('click',()=>actions[button.dataset.action]?.());
- $('[data-file]').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>6000000)throw Error('Choose a project smaller than 6 MB.');const raw=JSON.parse(await file.text()),loaded=validateState(raw);if(loaded.mode===mode){edit(()=>{state=loaded;});say('Editable project reopened.');}else if(['materials','composite','uv'].includes(mode)){
+ $('[data-file]').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>6000000)throw Error('Choose a project smaller than 6 MB.');const raw=JSON.parse(await file.text()),loaded=validateState(raw);if(loaded.mode===mode){edit(()=>{state=loaded;});say('Editable project reopened.');}else if(['navigate','transform','boolean'].includes(mode)&&['navigate','transform','boolean'].includes(loaded.mode)){
+ edit(()=>{
+  for(const k of ['width','height','depth']){
+   if(Number.isFinite(loaded.params?.[k])){
+    const f=def.fields.find(field=>field.key===k);
+    if(f)state.params[k]=Math.max(f.min,Math.min(f.max,loaded.params[k]));
+    else if(mode==='boolean'&&k==='depth')state.params.depth=loaded.params.depth;
+   }
+  }
+  if(loaded.color)state.color=loaded.color;
+  if(loaded.secondary)state.secondary=loaded.secondary;
+  state.edits=[...new Set([...state.edits,'width','height',...(state.params.depth?['depth']:[])])];
+ });fit();say(`Imported model proportions from ${WORKSHOPS[loaded.mode].title}. Continue your design.`);
+ }else if(['materials','composite','uv'].includes(mode)){
  const source=buildDesign(three.THREE,loaded,texture);const model=snapshotDesign(three.THREE,source);disposeDesign(source);edit(()=>{state.imported=model;});fit();say('Your existing model is ready for this presentation or UV exercise. Original recipe remains in its saved file.');
- }else{throw Error('This project is for '+WORKSHOPS[loaded.mode].title+'. Open it in that workshop, or in a materials, compositing or UV workshop to reuse the model.');}}catch(error){say(error.message);}e.target.value='';});
+ }else{throw Error('This project is for '+WORKSHOPS[loaded.mode].title+'. Open it in that workshop, or in another Chapter 1 foundation workshop to reuse the model.');}}catch(error){say(error.message);}e.target.value='';});
  function checkerTexture(){const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');for(let y=0;y<8;y++)for(let x=0;x<8;x++){ctx.fillStyle=(x+y)%2?state.color:state.secondary;ctx.fillRect(x*32,y*32,32,32);}const t=new three.THREE.CanvasTexture(canvas);t.colorSpace=three.THREE.SRGBColorSpace;t.wrapS=t.wrapT=three.THREE.RepeatWrapping;t.repeat.set(state.params.repeat??1,state.params.repeat??1);return t;}
  function downloadTexture(){texture.image.toBlob(blob=>{if(blob){download(blob,'checker-texture.png');state.exported=true;persist();say('Base tile exported. Repeat count is a material setting in the destination app.');}},'image/png');}
  function rebuild(){if(group){sceneKit.scene.remove(group);disposeDesign(group);}texture?.dispose();texture=checkerTexture();group=buildDesign(three.THREE,state,texture);sceneKit.scene.add(group);sceneKit.renderer.setClearColor(state.background);sceneKit.renderer.toneMappingExposure=state.params.exposure??1;
  const angle=(state.params.light??45)*Math.PI/180;sceneKit.light.position.set(Math.cos(angle)*8,8,Math.sin(angle)*8);sceneKit.light.intensity=state.params.intensity??2;dirty=true;}
- function fit(){if(!group)return;sceneKit.syncSize();const bounds=new three.THREE.Box3().setFromObject(group),size=bounds.getSize(new three.THREE.Vector3()),center=bounds.getCenter(new three.THREE.Vector3()),radius=Math.max(size.length()/2,1)/Math.sin(sceneKit.camera.fov*Math.PI/360)/Math.min(1,sceneKit.camera.aspect)*1.25;controls.target.copy(center);sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(1,.7,1).normalize().multiplyScalar(radius));sceneKit.camera.far=Math.max(1000,radius*20);sceneKit.camera.updateProjectionMatrix();controls.update();dirty=true;baseline=radius;}
- function view(name){if(!controls)return;const center=controls.target,radius=baseline||8,vectors={front:[0,.001,1],side:[1,.001,0],top:[0,1,.001],perspective:[1,.7,1]};sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...vectors[name]).normalize().multiplyScalar(radius));controls.update();state.views=[...new Set([...state.views,name])];persist();dirty=true;say(name+' view. Object dimensions have not changed.');for(const b of host.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
+ function fit(){if(!group)return;sceneKit.syncSize();const bounds=new three.THREE.Box3().setFromObject(group),size=bounds.getSize(new three.THREE.Vector3()),center=bounds.getCenter(new three.THREE.Vector3()),radius=Math.max(size.length()/2,1)/Math.sin(sceneKit.camera.fov*Math.PI/360)/Math.min(1,sceneKit.camera.aspect)*1.25;controls.target.copy(center);sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(1,.7,1).normalize().multiplyScalar(radius));sceneKit.camera.far=Math.max(1000,radius*20);sceneKit.camera.updateProjectionMatrix();controls.update();dirty=true;baseline=radius;state.fitted=true;updateMissions();}
+ function view(name){if(!controls)return;const center=controls.target,radius=baseline||8,vectors={front:[0,.001,1],side:[1,.001,0],top:[0,1,.001],perspective:[1,.7,1]};sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...vectors[name]).normalize().multiplyScalar(radius));controls.update();state.views=[...new Set([...state.views,name])];persist();dirty=true;updateMissions();say(name+' view. Object dimensions have not changed.');for(const b of host.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
  for(const b of host.querySelectorAll('[data-view]'))b.addEventListener('click',()=>view(b.dataset.view));
- for(const b of host.querySelectorAll('[data-zoom]'))b.addEventListener('click',()=>{if(!controls)return;sceneKit.camera.position.sub(controls.target).multiplyScalar(b.dataset.zoom==='in'?.8:1.25).add(controls.target);controls.update();dirty=true;});
+ for(const b of host.querySelectorAll('[data-zoom]'))b.addEventListener('click',()=>{if(!controls)return;sceneKit.camera.position.sub(controls.target).multiplyScalar(b.dataset.zoom==='in'?.8:1.25).add(controls.target);controls.update();state.zoomed=true;updateMissions();dirty=true;});
  $('[data-fit]').addEventListener('click',fit);
- const canvas=$('[data-canvas]');canvas.addEventListener('keydown',e=>{if(!controls)return;const a=sceneKit.camera.position.clone().sub(controls.target),spherical=new three.THREE.Spherical().setFromVector3(a);const keys=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='];if(!keys.includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')spherical.theta-=.15;if(e.key==='ArrowRight')spherical.theta+=.15;if(e.key==='ArrowUp')spherical.phi=Math.max(.05,spherical.phi-.15);if(e.key==='ArrowDown')spherical.phi=Math.min(Math.PI-.05,spherical.phi+.15);if(['+','='].includes(e.key))spherical.radius*=.9;if(e.key==='-')spherical.radius*=1.1;sceneKit.camera.position.setFromSpherical(spherical).add(controls.target);controls.update();dirty=true;});
+ const canvas=$('[data-canvas]');canvas.addEventListener('keydown',e=>{if(!controls)return;const a=sceneKit.camera.position.clone().sub(controls.target),spherical=new three.THREE.Spherical().setFromVector3(a);const keys=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='];if(!keys.includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')spherical.theta-=.15;if(e.key==='ArrowRight')spherical.theta+=.15;if(e.key==='ArrowUp')spherical.phi=Math.max(.05,spherical.phi-.15);if(e.key==='ArrowDown')spherical.phi=Math.min(Math.PI-.05,spherical.phi+.15);if(['+','='].includes(e.key)){spherical.radius*=.9;state.zoomed=true;}if(e.key==='-'){spherical.radius*=1.1;state.zoomed=true;}sceneKit.camera.position.setFromSpherical(spherical).add(controls.target);controls.update();dirty=true;state.orbited=true;updateMissions();});
  function pointerSculpt(e){if(!pointerStroke||!group||mode!=='sculpt')return;const r=canvas.getBoundingClientRect(),ray=new three.THREE.Raycaster();ray.setFromCamera(new three.THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),sceneKit.camera);const hit=ray.intersectObject(group,true)[0];if(hit&&performance.now()-lastStroke>80){lastStroke=performance.now();stroke(hit.point.x,hit.point.z);}}
  let down=false;canvas.addEventListener('pointerdown',e=>{down=true;if(pointerStroke){canvas.setPointerCapture(e.pointerId);pointerSculpt(e);}});canvas.addEventListener('pointermove',e=>{if(down)pointerSculpt(e);});canvas.addEventListener('pointerup',()=>{down=false;});canvas.addEventListener('pointercancel',()=>{down=false;});
  function render(){if(!sceneKit)return;sceneKit.syncSize();sceneKit.renderer.render(sceneKit.scene,sceneKit.camera);dirty=false;}
@@ -99,7 +162,11 @@ async function mount(host){
  sceneKit=createScene(canvas,{THREE,fov:40,far:1000,clearColor:state.background});sceneKit.renderer.toneMapping=THREE.ACESFilmicToneMapping;sceneKit.renderer.outputColorSpace=THREE.SRGBColorSpace;
  sceneKit.scene.add(new THREE.HemisphereLight(0xffffff,0x30343d,2));sceneKit.light=new THREE.DirectionalLight(0xffffff,2);sceneKit.scene.add(sceneKit.light);
  const grid=new THREE.GridHelper(['print','clearance'].includes(mode)?120:20,20,0x71808e,0x4d5a66);sceneKit.scene.add(grid);
- controls=new OrbitControls(sceneKit.camera,canvas);controls.enableDamping=false;controls.addEventListener('change',()=>{dirty=true;});
+ controls=new OrbitControls(sceneKit.camera,canvas);controls.enableDamping=false;
+ controls.addEventListener('change',()=>{dirty=true;if(!state.orbited){state.orbited=true;persist();updateMissions();}});
+ canvas.addEventListener('wheel',()=>{state.zoomed=true;updateMissions();},{passive:true});
+ canvas.addEventListener('pointerdown',e=>{if(controls&&three){if(state.scheme==='blender')controls.mouseButtons.MIDDLE=e.shiftKey?three.THREE.MOUSE.PAN:three.THREE.MOUSE.ROTATE;else if(state.scheme==='fusion')controls.mouseButtons.MIDDLE=e.shiftKey?three.THREE.MOUSE.ROTATE:three.THREE.MOUSE.PAN;}});
+ applyScheme(state.scheme||'tinkercad');
  const axes=new THREE.AxesHelper(['print','clearance'].includes(mode)?12:2);sceneKit.scene.add(axes);
  rebuild();fit();refresh();
  const observer=new ResizeObserver(()=>{dirty=true;});observer.observe(canvas);

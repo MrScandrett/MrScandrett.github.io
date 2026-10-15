@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import vm from "node:vm";
 
 const css = fs.readFileSync("assets/css/main.css", "utf8");
 
@@ -145,6 +146,20 @@ for (const theme of themes) {
   }
 }
 
+// Preview metadata must follow the real CSS palette as themes evolve.
+const registryContext = { window: {} };
+vm.runInNewContext(fs.readFileSync("assets/js/theme-registry.js", "utf8"), registryContext);
+const registry = registryContext.window.ClassroomOSThemeRegistry;
+const previewTokens = ["--bg", "--white", "--text", "--accent", "--accent-contrast"];
+for (const theme of themes) {
+  const tokens = themeTokens(theme);
+  registry.get(theme.name).preview.forEach((color, index) => {
+    if (color !== resolveToken(previewTokens[index], tokens)) {
+      failures.push({ theme: theme.name, pair: "Picker preview " + previewTokens[index], ratio: "palette drift", threshold: "match CSS" });
+    }
+  });
+}
+
 // Test the actual shared material numbers, including each palette's tint.
 // Contrast and brightness operate on sRGB channels in the declared filter order.
 const glassCss = fs.readFileSync("assets/css/components/glass.css", "utf8");
@@ -187,3 +202,5 @@ if (failures.length) {
 console.log(`Theme contrast check passed for ${themes.length} themes and ${pairs.length} token pairs.`);
 
 console.log("Glass contrast check passed for " + glassChecks + " material/background/text combinations.");
+
+console.log("Theme picker palettes match all 12 CSS themes.");

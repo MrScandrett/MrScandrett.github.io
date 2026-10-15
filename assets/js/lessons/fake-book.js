@@ -2019,19 +2019,19 @@
     return opts.mode === 'trade' && Math.floor((bar - from) / 4) % 2 === 1;
   }
 
-  function play() {
+  function play(immediate) {
     if (!ensureAudio()) return;
     stop();
     hideBarPop();
     var M = tune.M, r = loopRange();
     // Playing from a clicked bar: the first pass starts there, later passes wrap back to the loop start.
     var sb = startBar >= r.from && startBar <= r.to ? startBar : r.from, first = { from: sb, to: r.to };
-    var withPickup = first.from === 1 && tune.pickup > 0, noClick = opts.click === 'none';
+    var withPickup = !immediate && first.from === 1 && tune.pickup > 0, noClick = immediate || opts.click === 'none';
     var lanes = {};
     Object.keys(bus).forEach(function (k) { lanes[k] = ctx.createGain(); lanes[k].connect(bus[k]); });
     P = {
       lanes: lanes, kit: window.DrumEngine ? window.DrumEngine.create(ctx, lanes.drums) : null,
-      spb: 60 / opts.tempo, anchorBeat: 0, anchorTime: ctx.currentTime + 0.12,
+      spb: 60 / opts.tempo, anchorBeat: 0, anchorTime: ctx.currentTime + (immediate ? 0.02 : 0.12),
       queue: [], qi: 0, ui: [], range: r, first: first, chorusLen: passLen(r), firstLen: passLen(first), k: 0,
       bodyStart: noClick ? (withPickup ? tune.pickup : 0) : (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
     };
@@ -3594,6 +3594,7 @@
     // A bar was chosen (clicked, map, Bar #, steps): it becomes the start bar, and playback jumps there.
     onSelect: function (i, bar, info) {
       var b = barOf(bar) || 1, ev = info.event;
+      var wasPlaying = !!P;
       stop();
       hideBarPop();
       if (ev && ev.shiftKey) {
@@ -3606,6 +3607,7 @@
         opts.from = 1; opts.to = tune.bars; opts.loop = false; syncControls();
       }
       paintLoop(); save();
+      if (wasPlaying) play(true);
     }
   });
 

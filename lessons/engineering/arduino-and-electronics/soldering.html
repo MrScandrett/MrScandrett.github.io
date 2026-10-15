@@ -512,9 +512,11 @@
     .sm-meter-mark { position:absolute; top:-2px; bottom:-2px; width:2px; background:#1d1d1f; }
     .sm-meter-zone { position:absolute; top:0; bottom:0; left:25%; width:25%; border-left:2px solid #248a3d; border-right:2px solid #248a3d; }
     .sm-result { display:grid; grid-template-columns:120px 1fr; gap:.7rem; align-items:center; padding:.6rem; border-radius:12px; border:2px solid; }
+    .sm-result figure { margin:0; }
+    .sm-result figcaption { display:none; }
     .sm-result.is-good { border-color:#34c759; background:rgba(52,199,89,.08); }
     .sm-result.is-bad { border-color:#ff3b30; background:rgba(255,59,48,.06); }
-    .sm-result img { width:100%; border-radius:8px; }
+    .sm-result img { width:100%; border-radius:8px; display:block; }
     .sm-result strong { display:block; font-size:.92rem; }
     .sm-result small { display:block; font-size:.8rem; color:#415266; line-height:1.45; margin-top:.2rem; }
     .sm-score { margin:0 !important; font-size:.82rem !important; font-weight:800; }
@@ -537,7 +539,9 @@
     .sm-drill h3 { margin-top:0; }
     .sm-drill-body { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:1rem; align-items:start; }
     @media (max-width: 720px) { .sm-drill-body { grid-template-columns:1fr; } }
-    .sm-drill-body img { width:100%; border-radius:10px; border:1px solid var(--line,#d2d2d7); }
+    .sm-drill-body figure { margin:0; }
+    .sm-drill-body figcaption { display:none; }
+    .sm-drill-body img { width:100%; border-radius:10px; border:1px solid var(--line,#d2d2d7); display:block; }
     .sm-drill .sm-btn { margin-top:.6rem; }
     .sm-drill .sm-score { display:inline-block; margin-left:.6rem !important; }
 
@@ -862,7 +866,10 @@
                   <div class="sm-meter"><span>Tip condition</span><div class="sm-meter-bar"><i id="sm-m-tip"></i></div><output id="sm-m-tip-out">Dull</output></div>
                 </div>
                 <div class="sm-result" id="sm-result" hidden>
-                  <img id="sm-result-img" alt="" />
+                  <figure data-zoomable class="sm-result-fig">
+                    <img id="sm-result-img" alt="" />
+                    <figcaption id="sm-result-caption"></figcaption>
+                  </figure>
                   <div><strong id="sm-result-title"></strong><small id="sm-result-text"></small></div>
                 </div>
                 <p class="sm-score" id="sm-score">Good joints: 0 / 0</p>
@@ -920,7 +927,10 @@
               <h3>Name that joint</h3>
               <p>Get a partner or the whole class to call out the answer before anyone clicks.</p>
               <div class="sm-drill-body">
-                <img id="sm-drill-img" alt="Mystery joint cross-section" />
+                <figure data-zoomable class="sm-drill-fig">
+                  <img id="sm-drill-img" alt="Mystery joint cross-section" />
+                  <figcaption id="sm-drill-caption">Mystery joint cross-section. Inspect the fillet, wetting, and copper pad to diagnose this joint before guessing.</figcaption>
+                </figure>
                 <div>
                   <div class="sm-options" id="sm-drill-options" role="group" aria-label="Diagnosis choices"></div>
                   <p class="sm-q-feedback" id="sm-drill-feedback" aria-live="polite"></p>
@@ -1191,6 +1201,8 @@
           do { k = keys[Math.floor(Math.random() * keys.length)]; } while (k === last);
           last = k;
           img.src = IMG_BASE + JOINTS[k].img;
+          var drillCap = document.getElementById('sm-drill-caption');
+          if (drillCap) drillCap.textContent = 'Mystery joint cross-section. Inspect the fillet, wetting, and copper pad to diagnose this joint before guessing.';
           fb.textContent = ''; fb.className = 'sm-q-feedback';
           var choices = shuffle([k].concat(shuffle(keys.filter(function (x) { return x !== k; })).slice(0, 3)));
           opts.innerHTML = '';
@@ -1206,6 +1218,7 @@
               if (!ok) b.classList.add('is-wrong');
               fb.textContent = (ok ? 'Yes. ' : 'That one is a ' + JOINTS[k].title.toLowerCase() + '. ') + JOINTS[k].text;
               fb.className = 'sm-q-feedback ' + (ok ? 'is-right' : 'is-miss');
+              if (drillCap) drillCap.textContent = JOINTS[k].title + ' cross-section. ' + JOINTS[k].text;
               scoreEl.textContent = right + ' / ' + total + ' correct';
             });
             opts.appendChild(b);
@@ -1291,6 +1304,8 @@
           $('sm-result-img').alt = j.title + ' cross-section';
           $('sm-result-title').textContent = j.title + ' · ' + s.heatTime.toFixed(1) + ' s of heat';
           $('sm-result-text').textContent = j.text;
+          var resCap = $('sm-result-caption');
+          if (resCap) resCap.textContent = j.title + ' (' + s.heatTime.toFixed(1) + ' s of heat): ' + j.text;
           $('sm-score').textContent = 'Good joints: ' + good + ' / ' + attempts;
           say(k === 'good' ? 'Nice joint! Press "New joint" to go again.' : 'Diagnosis below. Press "New joint" and try again.');
         }

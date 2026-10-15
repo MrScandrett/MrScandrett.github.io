@@ -7,16 +7,24 @@ export function buildDesign(THREE, state, texture) {
  const checker=()=>{const material=mat();material.map=texture;return material;};
  if(state.imported?.length&&['materials','composite','uv'].includes(mode)){
   for(const item of state.imported){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(item.positions,3));if(item.uv.length)geo.setAttribute('uv',new THREE.Float32BufferAttribute(item.uv,2));geo.computeVertexNormals();const m=mesh(geo);if(mode==='uv')m.material=checker();}
- } else if(['navigate','transform'].includes(mode)) {
+ } else if(mode==='navigate') {
+  // Asymmetrical fabrication bracket with distinct front/back/top silhouettes.
+  box(p.width, p.height*.7, p.depth, 0, p.height*.35, 0);
+  box(p.width, p.height*.3, p.depth*.45, 0, p.height*.7 + p.height*.15, -p.depth*.275);
+  box(p.width*.6, p.height*.2, p.depth*.25, 0, p.height*.1, p.depth*.5 + p.depth*.125, state.secondary);
+  box(p.width*.15, p.height*.35, p.depth*.1, 0, p.height*.175, p.depth*.5 + p.depth*.25 + p.depth*.05, state.secondary);
+ } else if(mode==='transform') {
+  box(8, .06, 8, 0, -.03, 0, state.secondary);
   const m=box(p.width,p.height,p.depth,p.x||0,p.height/2,p.z||0);m.rotation.y=(p.angle||0)*Math.PI/180;
  } else if(mode==='boolean') {
+  const d=p.depth||.4;
   // Exact axis-aligned through-cut: partition the solid by cutter boundaries.
-  if(!state.cut)box(p.width,p.height,.4);
+  if(!state.cut)box(p.width,p.height,d);
   else {
    const clip=(v,min,max)=>Math.max(min,Math.min(max,v));
    const xs=[-p.width/2,clip(p.cutX-p.opening/2,-p.width/2,p.width/2),clip(p.cutX+p.opening/2,-p.width/2,p.width/2),p.width/2];
    const ys=[0,clip(p.height/2-p.openingHeight/2,0,p.height),clip(p.height/2+p.openingHeight/2,0,p.height),p.height];
-   for(let x=0;x<3;x++)for(let y=0;y<3;y++){if(x===1&&y===1)continue;const w=xs[x+1]-xs[x],h=ys[y+1]-ys[y];if(w>1e-6&&h>1e-6)box(w,h,.4,(xs[x]+xs[x+1])/2,(ys[y]+ys[y+1])/2);}
+   for(let x=0;x<3;x++)for(let y=0;y<3;y++){if(x===1&&y===1)continue;const w=xs[x+1]-xs[x],h=ys[y+1]-ys[y];if(w>1e-6&&h>1e-6)box(w,h,d,(xs[x]+xs[x+1])/2,(ys[y]+ys[y+1])/2);}
   }
  } else if(mode==='furniture'){
   box(p.width,.2,p.depth,0,p.height);box(p.width,p.back,.18,0,p.height+p.back/2,-p.depth/2+.09);

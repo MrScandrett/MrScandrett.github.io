@@ -145,12 +145,12 @@ function rewriteHtmlPaths(html, options = {}) {
   const { hasStyle = false, hasScript = false } = options;
   let out = html;
 
-  // Rewrite explicit minified targets.
+  // Rewrite explicit minified targets (including optional query parameters).
   if (hasStyle) {
-    out = out.replace(/\bhref\s*=\s*(["'])(?:\.\/)?style\.css\1/gi, "href=$1style.min.css$1");
+    out = out.replace(/\bhref\s*=\s*(["'])(?:\.\/)?style\.css(?:\?[^"']*)?\1/gi, "href=$1style.min.css$1");
   }
   if (hasScript) {
-    out = out.replace(/\bsrc\s*=\s*(["'])(?:\.\/)?script\.js\1/gi, "src=$1app.min.js$1");
+    out = out.replace(/\bsrc\s*=\s*(["'])(?:\.\/)?script\.js(?:\?[^"']*)?\1/gi, "src=$1app.min.js$1");
   }
 
   // Rewrite absolute paths to relative paths.
@@ -657,8 +657,8 @@ async function processProject(source, slug) {
   const sourceScriptName = findFileNameCaseInsensitive(projectDir, "script.js");
   const sourceStylePath = sourceStyleName ? path.join(projectDir, sourceStyleName) : null;
   const sourceScriptPath = sourceScriptName ? path.join(projectDir, sourceScriptName) : null;
-  const hasStyle = Boolean(sourceStylePath);
-  const hasScript = Boolean(sourceScriptPath);
+  const hasStyle = Boolean(sourceStylePath && fssync.statSync(sourceStylePath).size > 0);
+  const hasScript = Boolean(sourceScriptPath && fssync.statSync(sourceScriptPath).size > 0);
 
   await fs.rm(outputDir, { recursive: true, force: true });
   await ensureDir(outputDir);

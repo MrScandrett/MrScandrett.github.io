@@ -247,6 +247,22 @@
   }
 
   // ── WAV ──────────────────────────────────────────────────────────────────
+  function readWavInfo(buffer) {
+    var bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    if (bytes.length < 12) return null;
+    function text(offset, length) { return String.fromCharCode.apply(null, bytes.slice(offset, offset + length)); }
+    if (text(0, 4) !== 'RIFF' || text(8, 4) !== 'WAVE') return null;
+    var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), offset = 12;
+    while (offset + 8 <= bytes.length) {
+      var name = text(offset, 4), size = view.getUint32(offset + 4, true), body = offset + 8;
+      if (name === 'fmt ' && size >= 16 && body + 16 <= bytes.length) {
+        return { format: view.getUint16(body, true), channels: view.getUint16(body + 2, true), sampleRate: view.getUint32(body + 4, true), bits: view.getUint16(body + 14, true) };
+      }
+      offset = body + size + (size % 2);
+    }
+    return null;
+  }
+
   function encodeWav(channels, sampleRate, bits) {
     bits = bits === 32 ? 32 : 16;
     var n = channels.length, frames = channels[0] ? channels[0].length : 0;
@@ -273,6 +289,7 @@
   return {
     parseMidi: parseMidi,
     writeMidi: writeMidi,
+    readWavInfo: readWavInfo,
     encodeWav: encodeWav,
     instrumentForProgram: instrumentForProgram,
     drumVoiceForKey: drumVoiceForKey,
