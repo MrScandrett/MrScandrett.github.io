@@ -3937,6 +3937,18 @@
         }
       });
     }
+    var gotoImport = el('[data-fb-goto-import]');
+    if (gotoImport) {
+      gotoImport.addEventListener('click', function () {
+        var card = el('[data-fb-import-card]');
+        if (!card) return;
+        card.open = true;
+        var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        card.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' });
+        var field = card.querySelector('[data-fb-import-input]');
+        if (field) field.focus({ preventScroll: true });
+      });
+    }
     var fileInp = el('[data-fb-import-file]');
     if (fileInp) {
       fileInp.addEventListener('change', function () {
