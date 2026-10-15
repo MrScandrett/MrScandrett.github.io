@@ -4,13 +4,13 @@
   var definitions = {
     gershwin: [["fascinating", "Fascinating Rhythm", ["gershwin-fascinating"]], ["someone", "Someone to Watch Over Me", ["gershwin-someone"]], ["rhythm", "I Got Rhythm", ["gershwin-rhythm"]]],
     morton: [["jelly", "Original Jelly Roll Blues", ["morton-jelly"]], ["new-orleans", "New Orleans Blues", ["morton-new-orleans"]], ["king", "King Porter Stomp", ["morton-king"]], ["black-bottom", "Black Bottom Stomp", ["morton-black-bottom"]]],
-    bach: [['invention','Invention No. 8',['bach-invention-8']],['prelude','Prelude in C major',['bach-prelude-c-major','bach-prelude-complete-1']],['cello','Cello Suite No. 1',['bach-cello-prelude']]],
-    beethoven: [['elise','Für Elise',['beethoven-fur-elise','beethoven-expanded-1']],['joy','Ode to Joy',['beethoven-ode-to-joy']],['seventh','Symphony No. 7',['beethoven-symphony-7-allegretto']]],
-    chopin: [['prelude','Prelude in A major',['chopin-prelude-7']],['eminor','Prelude in E minor',['chopin-prelude-4-opening']],['cminor','Prelude in C minor',['chopin-prelude-20-melody']]],
-    joplin: [['entertainer','The Entertainer',['joplin-entertainer','joplin-expanded-1']]],
-    mozart: [['nachtmusik','Eine kleine Nachtmusik',['mozart-eine-kleine-opening']],['turkish','Turkish March',['mozart-rondo-alla-turca','mozart-turkish-march-a','mozart-turkish-march-b','mozart-turkish-march-c','mozart-turkish-march-d','mozart-turkish-march-e','mozart-turkish-march-f']],['sonata','Sonata facile',['mozart-sonata-facile']],['maman','Ah, vous dirai-je, Maman',['mozart-ah-vous-theme']]],
-    tchaikovsky: [['song','Old French Song',['tchaikovsky-old-french-song','tchaikovsky-old-french-complete-1']]],
-    vivaldi: [['spring','Spring',['vivaldi-expanded-1','vivaldi-expanded-2']]]
+    bach: [['invention','Invention No. 8',['bach-invention-8']],['prelude','Prelude in C major',['bach-prelude-c-major']],['cello','Cello Suite No. 1 · Prélude',['bach-cello-prelude']]],
+    beethoven: [['elise','Für Elise',['beethoven-fur-elise']],['joy','Ode to Joy',['beethoven-ode-to-joy']],['seventh','Symphony No. 7 · Allegretto',['beethoven-symphony-7-allegretto']]],
+    chopin: [['prelude','Prelude in A major',['chopin-prelude-7']],['eminor','Prelude in E minor',['chopin-prelude-4']],['cminor','Prelude in C minor',['chopin-prelude-20']]],
+    joplin: [['entertainer','The Entertainer',['joplin-entertainer']]],
+    mozart: [['nachtmusik','Eine kleine Nachtmusik',['mozart-eine-kleine-1']],['turkish','Turkish March',['mozart-turkish-march']],['sonata','Sonata facile',['mozart-sonata-facile']],['maman','Ah, vous dirai-je, Maman',['mozart-ah-vous-theme']]],
+    tchaikovsky: [['song','Old French Song',['tchaikovsky-old-french-song']]],
+    vivaldi: [['spring','Spring',['vivaldi-spring-1']]]
   };
   var name = location.pathname.split('/').pop().replace('.html','');
   var works = definitions[name];
@@ -91,31 +91,31 @@
     var composer = element('span','composer-cover-author',document.querySelector('h1').textContent);
     var coverTitle = element('span','composer-cover-title',workTitle);
     var preview = element('span','composer-score-preview'); preview.setAttribute('aria-hidden','true');
-    var previewLabel = element('span','composer-preview-label','Opening notation');
+    var previewLabel = element('span','composer-preview-label','Opening bars');
     button.append(composer,coverTitle,preview,previewLabel);
     card.appendChild(button);
     card.appendChild(element('div','composer-pedestal')); 
     var hooks = {
-      eminor: 'Hear the left-hand chords change beneath a melody that barely moves.',
-      cminor: 'Follow the top voice of the opening chords, then compare it with the complete score.',
-      invention: 'Hear the left hand copy the right hand one bar later and an octave lower.',
-      prelude: name === 'chopin' ? 'Follow a complete 16-bar prelude and explore its singing melody.' : 'Predict which bars share a harmony, then listen for the opening pattern to return.',
-      cello: 'Track the repeated low G. How do the notes above it change the harmony?',
-      elise: 'Listen for E and D♯ rocking a half step apart before the broken chords enter.',
-      seventh: 'Tap the Allegretto’s long–short–short rhythm, then follow its repeated notes.',
+      eminor: 'The whole prelude: chords that sink a half step at a time under a two-note melody.',
+      cminor: 'All thirteen bars of chords: loud, then soft over a falling bass, then an echo.',
+      invention: 'All 34 bars: hear the left hand copy the right hand one bar later, then trade roles.',
+      prelude: name === 'chopin' ? 'Follow a complete 16-bar prelude and explore its singing melody.' : 'All 35 bars, one chord per bar: the guide names every chord as it plays.',
+      cello: 'The whole Prélude on one cello, from the open-G pedal to the chromatic climb.',
+      elise: 'The complete bagatelle: the famous refrain and both contrasting episodes.',
+      seventh: 'The complete movement for full orchestra: one rhythm, passed from section to section.',
       joy: 'Follow the familiar theme one note at a time, then read ahead of the player.',
-      entertainer: 'Tap the steady beat while the melody lands between beats.',
-      nachtmusik: 'Follow the opening melody on the staff and listen for its repeated ideas.',
-      turkish: 'Explore the circling theme, contrasting sections, and the big finish.',
-      sonata: 'Read the opening melody slowly, then follow it as the player moves ahead.',
-      maman: 'Recognize the familiar tune, then follow Mozart’s theme on the staff.',
-      song: 'Listen for the rising line and the long D that keeps returning.',
-      spring: 'Follow the opening phrase, its soft echo, and the return to forte.'
+      entertainer: 'The whole rag: introduction, four strains and every repeat.',
+      nachtmusik: 'The complete first movement for strings, a model sonata form.',
+      turkish: 'The complete Rondo alla turca, every section and repeat, to the drumming coda.',
+      sonata: 'The complete first movement with both hands: exposition, development, recapitulation.',
+      maman: 'The complete 24-bar theme Mozart varied twelve times.',
+      song: 'The complete piece with both hands, from the pickup to the final G-minor chord.',
+      spring: 'The complete first movement in full score: ritornello, birds, streams and storm.'
     };
     var hook = element('p','composer-piece-hook',hooks[id] || firstFigure.querySelector('figcaption').textContent.trim()); card.appendChild(hook);
     var actions = element('div','composer-piece-actions');
     var read = element('button',null,'Read & play');read.type='button';read.setAttribute('aria-label','Read and play '+workTitle);
-    var listen = element('button',null,'Listen to opening');listen.type='button';listen.disabled=true;listen.setAttribute('aria-label','Listen to the opening of '+workTitle);
+    var listen = element('button',null,'Listen');listen.type='button';listen.disabled=true;listen.setAttribute('aria-label','Listen to '+workTitle);
     actions.append(read,listen);card.appendChild(actions);grid.appendChild(card);
     var work = {panel:panel,button:button,heading:heading,preview:preview,figure:firstFigure}; controls.push(work);
     button.addEventListener('click',function () {show(work,true,false);});
@@ -126,25 +126,17 @@
       shelf.scrollIntoView({block:'start',behavior:'instant'});button.focus({preventScroll:true});
       history.pushState(null,'','#composer-piece-shelf');
     });
-    // Clone existing engraving, not a fabricated historical score cover.
+    // The cover engraves the piece's own opening bars (not a fabricated historical cover).
     function refreshPreview() {
-      var svg=firstFigure.querySelector('.se-score');
       if (firstFigure.querySelector('.se-play')) listen.disabled=false;
-      if (!svg || preview.firstChild) return;
-      var copy=svg.cloneNode(true);copy.removeAttribute('width');copy.removeAttribute('height');
-      copy.removeAttribute('role');copy.removeAttribute('aria-label');copy.setAttribute('aria-hidden','true');
-      copy.querySelectorAll('[id]').forEach(function (node) {node.removeAttribute('id');});
-      copy.querySelectorAll('[tabindex]').forEach(function (node) {node.removeAttribute('tabindex');});
-      var box=svg.viewBox.baseVal;copy.setAttribute('viewBox','0 0 '+Math.min(box.width,640)+' '+Math.min(box.height,220));
-      preview.appendChild(copy);
+      if (preview.firstChild || !firstFigure.scoreData || !window.ScoreEngine) return;
+      try { preview.innerHTML=window.ScoreEngine.previewSvg(firstFigure.scoreData,2,520); } catch (err) { /* the full score still works */ }
     }
     var observer=new MutationObserver(refreshPreview);observer.observe(firstFigure,{childList:true,subtree:true});refreshPreview();
   });
   var picker=document.getElementById('musicSection');
   picker.addEventListener('change',function(){if(picker.value==='fl-sec-score' && !active)show(controls[0],false,false);},true);
   var option=element('option',null,'Discover the music');option.value=shelf.id;picker.insertBefore(option,picker.children[1]);
-  var turkish=document.getElementById('fl-sec-turkish');
-  if(turkish) {var link=element('a',null,'Open the Turkish March scores');link.href='#piece-turkish';turkish.querySelector('h2').after(link);}
   function hash() {
     var target=document.getElementById(location.hash.slice(1));
     if(target === area && !active)show(controls[0],false,false);

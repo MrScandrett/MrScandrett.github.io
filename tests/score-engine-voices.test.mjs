@@ -19,16 +19,17 @@ test('Bach opening sustains independent left-hand voices beneath right-hand arpe
 });
 
 test('closing bars keep held left-hand notes while the right hand descends', () => {
-  const model = engine.prepare(library['bach-prelude-complete-5']);
+  const model = engine.prepare(library['bach-prelude-c-major']);
   engine.analyse(model);
   const notes = engine.playList(model);
-  for (const [start, midi] of [[16, 36], [16.25, 48], [20, 36], [20.25, 47]]) {
-    const note = notes.find(note => note.staff === 1 && note.start === start && note.midi === midi);
+  const bar33 = 128;   // bars 33 and 34 of the complete Prelude
+  for (const [start, midi] of [[0, 36], [0.25, 48], [4, 36], [4.25, 47]]) {
+    const note = notes.find(note => note.staff === 1 && note.start === bar33 + start && note.midi === midi);
     assert.equal(note?.dur, Number.isInteger(start) ? 4 : 3.75);
   }
-  assert.deepEqual(notes.filter(note => note.staff === 0 && note.start >= 16 && note.start < 20).map(note => note.midi),
+  assert.deepEqual(notes.filter(note => note.staff === 0 && note.start >= bar33 && note.start < bar33 + 4).map(note => note.midi),
     [53, 57, 60, 65, 60, 57, 60, 57, 53, 57, 53, 50, 53, 50]);
-  assert.deepEqual(notes.filter(note => note.staff === 0 && note.start >= 20 && note.start < 24).map(note => note.midi),
+  assert.deepEqual(notes.filter(note => note.staff === 0 && note.start >= bar33 + 4 && note.start < bar33 + 8).map(note => note.midi),
     [67, 71, 74, 77, 74, 71, 74, 71, 67, 71, 62, 65, 64, 62]);
   for (const width of [320, 700, 1100]) assert.doesNotMatch(engine.engrave(model, width).svg, /NaN|undefined/);
 });

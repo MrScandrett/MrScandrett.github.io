@@ -33,8 +33,8 @@
 
     const mainTouches = [
       ['L1', 500, 698, 24],
-      ['L2', 508, 750, 24],
-      ['bis', 517, 798, 16],
+      ['bis', 506, 748, 16],
+      ['L2', 512, 798, 24],
       ['L3', 518, 848, 23],
       ['R1', 450, 1450, 23],
       ['R2', 464, 1555, 24],
@@ -279,8 +279,8 @@
 
     <!-- Mother-of-Pearl Touches in Raised Brass Bezels -->
     <path d="M408 707 L492 707" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="500" cy="698" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="500" cy="698" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="495" cy="693" r="9.6" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 759 L500 759" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="508" cy="750" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="508" cy="750" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="503" cy="745" r="9.6" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 807 L509 807" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="517" cy="798" r="23" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="517" cy="798" r="16" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="512" cy="793" r="6.4" fill="#ffffff" opacity="0.6"/>
+    <path d="M408 757 L498 757" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="506" cy="748" r="23" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="506" cy="748" r="16" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="501" cy="743" r="6.4" fill="#ffffff" opacity="0.6"/>
+    <path d="M408 807 L504 807" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="512" cy="798" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="512" cy="798" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="507" cy="793" r="9.6" fill="#ffffff" opacity="0.6"/>
     <path d="M408 857 L510 857" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="518" cy="848" r="30" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="518" cy="848" r="23" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="513" cy="843" r="9.2" fill="#ffffff" opacity="0.6"/>
     <path d="M408 1459 L442 1459" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="450" cy="1450" r="30" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="450" cy="1450" r="23" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="445" cy="1445" r="9.2" fill="#ffffff" opacity="0.6"/>
     <path d="M408 1564 L456 1564" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="464" cy="1555" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="464" cy="1555" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="459" cy="1550" r="9.6" fill="#ffffff" opacity="0.6"/>
@@ -378,6 +378,8 @@
     <line x1="473" y1="427" x2="473" y2="479" stroke="#fff4cf" stroke-width="1.2"/>
 
     ${touch('sideBflat', 402, 455, 8.5)}
+    ${touch('sideC', 442, 455, 8.5)}
+    ${touch('highE', 482, 455, 8.5)}
     <text x="402" y="498" text-anchor="middle" font-weight="700" font-size="11.5">B♭</text>
     <text x="444" y="498" text-anchor="middle" font-weight="700" font-size="11.5">C</text>
     <text x="482" y="498" text-anchor="middle" font-weight="700" font-size="11.5">E</text>

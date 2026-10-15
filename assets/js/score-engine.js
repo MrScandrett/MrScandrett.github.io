@@ -760,7 +760,23 @@
     tupletDraws.forEach(function (tp) { out.push(drawTuplet(tp, S, h)); });
 
     var height = Math.ceil(y + S);
-    return { svg: out.join(''), height: height, width: width, systems: hl, events: allEvents, S: S };
+    return { svg: shareGlyphs(out.join(''), model.id), height: height, width: width, systems: hl, events: allEvents, S: S };
+  }
+
+  // Each glyph outline is defined once and reused (<use>): a whole symphony movement would otherwise
+  // repeat the same notehead path thousands of times.
+  function shareGlyphs(svg, id) {
+    var ids = {}, defs = [], n = 0, prefix = 'sg-' + String(id || 'score').replace(/[^a-z0-9-]/gi, '') + '-';
+    var body = svg.replace(/<path d="([^"]{40,})" fill="currentColor" stroke="none"\/>/g, function (all, d) {
+      if (!ids[d]) { ids[d] = prefix + (n++); defs.push('<path id="' + ids[d] + '" d="' + d + '" fill="currentColor" stroke="none"/>'); }
+      return '<use href="#' + ids[d] + '"/>';
+    });
+    // Coordinates to a tenth of a unit (glyph scale factors keep three significant figures).
+    body = body.replace(/-?\d+\.\d{3,}/g, function (num) {
+      var v = parseFloat(num), a = Math.abs(v);
+      return a >= 10 ? String(Math.round(v * 10) / 10) : a >= 1 ? String(Math.round(v * 100) / 100) : String(+v.toPrecision(3));
+    });
+    return (defs.length ? '<defs>' + defs.join('') + '</defs>' : '') + body;
   }
 
   // Tuplet number centred over (or under) its notes.
@@ -1167,7 +1183,7 @@
     var time = ' · about ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') + ' at the marked tempo';
     var repeats = model.order.length > model.count ? ' with repeats' : '';
     if (sc.complete) return 'Complete piece · ' + lastNo + ' bars' + repeats + time;
-    if (sc.excerpt) return 'Excerpt · bars ' + (sc.excerpt.bars || (firstNo + '–' + lastNo)) + (sc.excerpt.of ? ' of ' + sc.excerpt.of : '');
+    if (sc.excerpt) return 'Excerpt · ' + (sc.excerpt.label || ('bars ' + (sc.excerpt.bars || (firstNo + '–' + lastNo)))) + (sc.excerpt.of ? ' of ' + sc.excerpt.of : '') + (repeats ? ' (with repeats)' : '');
     return '';
   }
 
@@ -1207,6 +1223,7 @@
       return null;
     }
     fig.classList.add('se-figure');
+    fig.scoreData = score;
     var head = el('div', { class: 'se-head' });
     var titles = el('div', { class: 'se-titles' });
     titles.appendChild(el('strong', {}, score.title || 'Score'));
@@ -1560,7 +1577,21 @@
     });
   }
 
-  root.ScoreEngine = { prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, parseStaff: parseStaff,
+  // A small engraving of a score's first bars (shelf covers, previews): cheap even for a whole symphony.
+  function previewSvg(score, bars, width) {
+    var cut = function (text) { return String(text || '').split('|').slice(0, bars).join('|').replace(/:\s*$/, ''); };
+    var copy = JSON.parse(JSON.stringify(score));
+    copy.id = (score.id || 'score') + '-preview';
+    copy.ending = 'open'; delete copy.sections;
+    copy.staves.forEach(function (st) {
+      if (st.voices) st.voices.forEach(function (v) { v.notes = cut(v.notes); }); else st.notes = cut(st.notes);
+    });
+    var model = prepare(copy); analyse(model);
+    var out = engrave(model, width || 640);
+    return '<svg class="se-score" aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
+  }
+
+  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

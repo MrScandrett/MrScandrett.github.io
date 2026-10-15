@@ -12,6 +12,6 @@ These WebP images reproduce the musical pages of early printed editions. They ar
 | morton-new-orleans-1 | Same collection | 8 (printed 7) |
 | morton-black-bottom-1 through 2 | Same collection | 9–10 (printed 8–9) |
 
-The playable entries in `data/score-library.json` are separately transcribed upper-line/melody excerpts. Their metadata and visible captions disclose omitted accompaniment, chord interiors, articulations, repeats, practice tempos, and the written-pitch octave study in New Orleans Blues. The complete original pages remain available beside each excerpt. Engraved player notation is not presented as a complete arrangement or as an archival recording.
+The playable Gershwin entries in `data/score-library.json` are complete refrain melodies transcribed from these pages (the last page of *Fascinating Rhythm* is page 6 of the Ohio State PDF); the Morton entries are upper-line excerpts. Their metadata and visible captions disclose omitted accompaniment, chord interiors, articulations, repeats, practice tempos, and the written-pitch octave study in New Orleans Blues. The complete original pages remain available beside each excerpt. Engraved player notation is not presented as a complete arrangement or as an archival recording.
 
 Source editions and pages inspected on 2026-10-13. Validate score syntax, durations, and engraving with `npm run check:scores`; this structural check does not independently establish transcription accuracy.

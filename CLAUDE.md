@@ -300,6 +300,17 @@ lesson text ("Daniel 2:31–45", "1 Kings 18") to a passage peek with a link on 
 Link to a passage from lesson JS with `<a data-bible-ref href="../../bible.html#/go/John 3:16">`
 rather than to an outside Bible site. `data-bible-ref-skip` opts an element out.
 
+## Composer scores are complete and guided
+
+Scores on the music lessons (`<figure data-score>`, `assets/js/score-engine.js`, data in
+`data/score-library.json`) are whole pieces students can dissect bar by bar, at the same level as the Fake
+Book: song map with named `sections`, Shift-click loop ranges, a measure-by-measure `guide` that follows
+playback, and a `source.full` link to the complete printed score. Don't add chunked excerpts. Import new
+pieces from LilyPond sources with `scripts/score-import/` (LilyPond reads the source; the result is checked
+note by note against its MIDI). A genuine excerpt must say so: `excerpt: { label, of }`.
+`npm run check:scores` enforces all of this for `lessons/music/`; engine tests:
+`node --test tests/score-engine-whole-pieces.test.mjs`.
+
 ## Shared sim helpers
 
 New lesson sims should reach for these instead of hand-rolling canvas/Three/Matter
