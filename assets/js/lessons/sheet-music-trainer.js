@@ -302,7 +302,9 @@
     audioTimers = [];
     if (!AC) { activeVoices = []; return playbackId; }
     var now = AC.currentTime;
-    activeVoices.slice().forEach(function (voice) {
+    var voices = activeVoices;
+    activeVoices = [];
+    voices.forEach(function (voice) {
       try {
         voice.gain.gain.cancelScheduledValues(now);
         voice.gain.gain.setTargetAtTime(0, now, 0.008);
