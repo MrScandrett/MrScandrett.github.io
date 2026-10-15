@@ -778,7 +778,14 @@
         var octUp = mInfo.octave === -1 || (R.transpose && R.transpose.octave === -1);
         extra.gtr = { written: octUp ? 12 : 0, events: staffEvents(R, minStaff, order, starts, pickupU, false, { allVoices: true }) };
       }
-      ['bass', 'tab', 'gtr'].forEach(function (k) { if (extra[k] && !extra[k].events.length) delete extra[k]; });
+      // A piano staff often carries two voices: the tune above and an accompaniment figure below (Moonlight Sonata's
+      // triplets). The tune is the melody line; the other voice is kept so the lead sheet can draw both, stems up and down.
+      if (bassPick && bassPick.rank >= 2 && !guitarish) {
+        var second = Object.keys(count).filter(function (v) { return v !== voice && count[v] >= Math.max(4, nBars / 4); })
+          .sort(function (a, b) { return count[b] - count[a]; })[0];
+        if (second) extra.voice2 = { events: staffEvents(R, minStaff, order, starts, pickupU, false, { voice: second }) };
+      }
+      ['bass', 'tab', 'gtr', 'voice2'].forEach(function (k) { if (extra[k] && !extra[k].events.length) delete extra[k]; });
 
       // Key: the one in force where this song starts, at concert pitch; the mode if MusicXML says so,
       // else a guess from how the tune ends.

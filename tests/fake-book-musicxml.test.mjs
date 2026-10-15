@@ -418,7 +418,11 @@ test('piano: the tune above an accompaniment figure is the melody, even when the
     body += `<measure number="${m}">${m === 1 ? '<attributes><divisions>3</divisions><key><fifths>4</fifths><mode>minor</mode></key><time><beats>4</beats><beat-type>4</beat-type></time><staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef></attributes>' : ''}${rh}${lh}</measure>`;
   }
   const xml = `<score-partwise version="3.1"><part-list><score-part id="P1"><part-name>Piano</part-name></score-part></part-list><part id="P1">${body}</part></score-partwise>`;
-  const bars = MX.parseAll(xml, { score: true })[0].melody.split(' | ');
+  const song = MX.parseAll(xml, { score: true })[0];
+  const bars = song.melody.split(' | ');
+  // The triplet figure is kept as a second right-hand voice so the lead sheet can draw it under the tune.
+  assert.ok(song.staves.voice2 && song.staves.voice2.events.length >= 20 * 8, 'second voice carries the triplet pairs');
+  assert.match(song.staves.voice2.events[0].n, /^C#4$/);
   assert.match(bars[0], /^G#3/, 'bar 1 shows the right-hand triplets');
   assert.match(bars[4], /^B4/, 'from bar 3 on the melody is shown, not the triplet pairs');
 });

@@ -278,6 +278,9 @@
     if (st.bass && st.bass.events && st.bass.events.length) {
       t.staves.bass = { label: st.bass.label || '', events: st.bass.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), ps: notesOf(e.n) }; }) };
     }
+    if (st.voice2 && st.voice2.events && st.voice2.events.length) {
+      t.staves.voice2 = { events: st.voice2.events.map(function (e) { return { start: snap(e.s), dur: snap(e.d), ps: notesOf(e.n) }; }) };
+    }
     if (st.tab && st.tab.events && st.tab.events.length) {
       t.staves.tab = {
         label: st.tab.label || '', lines: st.tab.lines || 6, tuning: st.tab.tuning, capo: st.tab.capo || 0,
@@ -706,6 +709,12 @@
       bl.forEach(function (e) { if (bk) e.ps = e.ps.map(function (p) { return pitch(p.dia + 7 * bk, p.a); }); e.p = e.ps[0]; });
       view.bass = bl;
     }
+    // A second right-hand voice (the figure under a piano melody): written pitch, same key and instrument as the melody.
+    view.voice2 = null;
+    if (t.staves.voice2) view.voice2 = t.staves.voice2.events.map(function (e) {
+      var ps = e.ps.map(function (p) { return shiftPitch(p, ws.letters, ws.semis, wFlat); });
+      return { start: e.start, dur: e.dur, ps: ps, p: ps[0] };
+    });
     // Key-change tags, spelled in the key the sheet is written in.
     if (t.keyChanges.length) {
       var secs = Object.assign({}, t.baseSections);
@@ -1151,13 +1160,15 @@
     var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn()), showPos = !!view.pos;
     var CB = MN.clefs.bass, sigB = keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
     renderTabNote();
+    var showV2 = !!view.voice2, v2Placed = {};
     if (showBass) layoutBars(view.bass, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
+    if (showV2) layoutBars(view.voice2, t).forEach(function (vb, i) { bars[i].v2Bar = vb; bars[i].hasV2 = vb.pieces.some(function (pc) { return !pc.rest; }); });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
     // With a bass staff, space each bar by the notes of BOTH staves, so a busy left hand gets the room it needs
     // even where the melody is a single rest (heads of one beat line up in one column).
-    if (showBass) bars.forEach(function (b) {
-      var slots = [], bm = {};
+    if (showBass || showV2) bars.forEach(function (b) {
+      var slots = [], bm = {}, vm = {};
       var add = function (rel, nw, acc) {
         for (var i = 0; i < slots.length; i++) if (near(slots[i].rel, rel)) { slots[i].nw = Math.max(slots[i].nw, nw); slots[i].acc = slots[i].acc || acc; return; }
         slots.push({ rel: rel, nw: nw, acc: acc });
@@ -1170,6 +1181,17 @@
           var mk = p.l + ':' + p.o, cur = bm[mk] !== undefined ? bm[mk] : keyAcc(sigB, p.l);
           if (!pc.tieFrom && cur !== p.a) acc = true;
           bm[mk] = p.a;
+        });
+        add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc);
+      });
+      // The second right-hand voice shares the treble staff, so its notes take room in the same columns.
+      if (b.v2Bar) b.v2Bar.pieces.forEach(function (pc) {
+        if (pc.rest) return;
+        var acc = false;
+        view.voice2[pc.idx].ps.forEach(function (p) {
+          var mk = p.l + ':' + p.o, cur = vm[mk] !== undefined ? vm[mk] : keyAcc(sig, p.l);
+          if (!pc.tieFrom && cur !== p.a) acc = true;
+          vm[mk] = p.a;
         });
         add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (acc ? 1.3 * S : 0), acc);
       });
@@ -1193,9 +1215,16 @@
       sys.forEach(function (b) {
         b.pieces.forEach(function (pc) {
           if (!pc.p) return;
-          var st = stepOf(pc.p), up = st < 4;
+          var st = stepOf(pc.p), up = b.hasV2 || st < 4;
           top = Math.max(top, (up && BASE[pc.d][0] < 4 ? st + 7 : st) + (pc.trip && up ? 3 : 0));
           bottom = Math.min(bottom, (!up && BASE[pc.d][0] < 4 ? st - 7 : st) - (pc.trip && !up ? 3 : 0));
+        });
+      });
+      sys.forEach(function (b) {
+        if (!b.v2Bar) return;
+        b.v2Bar.pieces.forEach(function (pc) {
+          if (!pc.p) return;
+          view.voice2[pc.idx].ps.forEach(function (p) { var st = stepOf(p); top = Math.max(top, st + 1); bottom = Math.min(bottom, (BASE[pc.d][0] < 4 ? st - 7 : st) - 1); });
         });
       });
       var noteTop = (top - 8) * half, noteBot = -bottom * half;
@@ -1392,7 +1421,7 @@
         if (grp.length) groups.push(grp);
         groups.forEach(function (gr) {
           if (gr[0].base >= 4) return;
-          var avg = gr.reduce(function (s, n) { return s + n.step; }, 0) / gr.length, up = avg < 4;
+          var avg = gr.reduce(function (s, n) { return s + n.step; }, 0) / gr.length, up = gr[0].bar.hasV2 || avg < 4;
           var sx = function (n) { return up ? n.x + n.hw / 2 - 0.06 * S : n.x - n.hw / 2 + 0.06 * S; };
           if (gr.length === 1) {
             var n = gr[0], tip = n.y + (up ? -3.5 : 3.5) * S;
@@ -1437,7 +1466,8 @@
           out.push(txt(xm, ty + 0.45 * S, '3', 'fb-tuplet', ' font-size="' + (1.3 * S) + '" text-anchor="middle"'));
           trip = []; tripLen = 0;
         });
-        if (showBass) drawBassBar(b, xAt);
+        if (showBass) drawStaffLine(b, xAt, { pieces: b.bassBar.pieces, events: view.bass, bot: bassBot, top: bassTop, clef: CB, sig: sigB, cls: 'fb-bn', placed: bassPlaced, names: true, bbot: bbot });
+        if (showV2 && b.v2Bar) drawStaffLine(b, xAt, { pieces: b.v2Bar.pieces, events: view.voice2, bot: staffBot, top: staffTop, clef: C, sig: sig, cls: 'fb-v2n', placed: v2Placed, up: false, skipRests: true });
         if (showTab) drawTabBar(b, xAt);
         if (showPos && view.pos.bars[b.i]) out.push(window.FakeBookPosition.draw(view.pos.inst, view.pos.bars[b.i], b.x, posTop, b.w, POSH, S));
         if (opts.measureShapes || (showPos && opts.showAnalysis)) out.push(drawMeasureHelp(b, helpTop, helpH, S, showPos));
@@ -1457,22 +1487,24 @@
       sys.endX = bx; sys.startX = header;
       y = showBass || showTab || showPos || opts.measureShapes ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S;
 
-      // One bar of the bass-clef staff: notes and chords at the melody's x for the same beat.
-      function drawBassBar(b, xAt) {
-        var mem = {}, infos = [], bp = b.bassBar.pieces;
+      // One bar of a staff line that sits on the melody's time grid: the bass-clef staff, or the second right-hand voice
+      // on the treble staff (cfg.up false: stems down). Notes and chords at the melody's x for the same beat.
+      function drawStaffLine(b, xAt, cfg) {
+        var mem = {}, infos = [], bp = cfg.pieces, bassTop = cfg.top, bassBot = cfg.bot, CB = cfg.clef, sigB = cfg.sig, bbot = cfg.bbot;
         bp.forEach(function (pc) {
           var base = BASE[pc.d] || [pc.d, 0], hx0 = xAt(pc.rel);
           if (pc.rest) {
+            if (cfg.skipRests) return;
             var mid = bassTop + 2 * S, rx;
             if (pc.whole || base[0] === 4) { rx = pc.whole ? b.x + b.w / 2 : hx0 + 0.6 * S; out.push('<rect class="fb-rest" x="' + (rx - 0.6 * S).toFixed(1) + '" y="' + (bassTop + S).toFixed(1) + '" width="' + (1.2 * S).toFixed(1) + '" height="' + (0.5 * S).toFixed(1) + '"/>'); }
             else if (base[0] === 2) { rx = hx0 + 0.6 * S; out.push('<rect class="fb-rest" x="' + (rx - 0.6 * S).toFixed(1) + '" y="' + (mid - 0.5 * S).toFixed(1) + '" width="' + (1.2 * S).toFixed(1) + '" height="' + (0.5 * S).toFixed(1) + '"/>'); }
             else out.push(MN.glyph(base[0] === 1 ? 'restQuarter' : base[0] === 0.5 ? 'rest8' : 'rest16', hx0 + 0.2 * S, mid, S, 'fb-restg'));
             return;
           }
-          var ps = view.bass[pc.idx].ps, hw = headWidth(base[0]), nx = hx0 + headW / 2;
+          var ps = cfg.events[pc.idx].ps, hw = headWidth(base[0]), nx = hx0 + headW / 2;
           var steps = ps.map(function (p) { return p.dia - CB.bottom; });
-          var lo = Math.min.apply(null, steps), hi = Math.max.apply(null, steps), up = (lo + hi) / 2 < 4;
-          var g = ['<g class="fb-bn" data-idx="' + pc.idx + '">'], heads = [], ys = [], prev = null, shifted = false, accN = 0;
+          var lo = Math.min.apply(null, steps), hi = Math.max.apply(null, steps), up = cfg.up !== undefined ? cfg.up : (lo + hi) / 2 < 4;
+          var g = ['<g class="' + cfg.cls + '" data-idx="' + pc.idx + '">'], heads = [], ys = [], prev = null, shifted = false, accN = 0;
           ps.forEach(function (p, i) {
             var st = steps[i], ny = bassBot - st * half;
             MN.ledgerSteps(st).forEach(function (ls) { var ly = bassBot - ls * half; g.push(line(nx - hw / 2 - 0.45 * S, ly, nx + hw / 2 + 0.45 * S, ly, Math.max(1, S * 0.12))); });
@@ -1486,7 +1518,7 @@
             if (base[1]) g.push('<circle cx="' + (nx + hw / 2 + 0.5 * S + Math.max(0, off)).toFixed(1) + '" cy="' + (ny - (mod(st, 2) === 0 ? half : 0)).toFixed(1) + '" r="' + (0.17 * S).toFixed(2) + '" fill="currentColor"/>');
             ys.push(ny);
           });
-          if (namesUnder) {
+          if (namesUnder && cfg.names) {
             var nameY = bassBot - bbot * half + 1.9 * S;
             ps.slice().sort(function (a, c) { return c.midi - a.midi; }).forEach(function (p, i) {
               g.push(txt(nx, nameY + i * 1.25 * S, noteName(p), 'fb-name', ' font-size="' + (1.15 * S) + '" text-anchor="middle"'));
@@ -1494,7 +1526,7 @@
           }
           var info = { pc: pc, g: g, heads: heads, x: nx, ys: ys, hw: hw, base: base[0], up: up, cen: (lo + hi) / 2, sys: si };
           infos.push(info);
-          (bassPlaced[pc.idx] = bassPlaced[pc.idx] || []).push(info);
+          (cfg.placed[pc.idx] = cfg.placed[pc.idx] || []).push(info);
         });
         // stems, flags and beams: eighths and sixteenths inside one beat are beamed together, as on the melody staff
         var groups = [], grp = [];
@@ -1516,7 +1548,7 @@
             if (n.pc.trip) n.g.push(txt(n.x, up ? tip - 0.5 * S : tip + 1.4 * S, '3', 'fb-tuplet', ' font-size="' + (1.1 * S) + '" text-anchor="middle"'));
             return;
           }
-          var gUp = gr.reduce(function (a, n) { return a + n.cen; }, 0) / gr.length < 4;
+          var gUp = cfg.up !== undefined ? cfg.up : gr.reduce(function (a, n) { return a + n.cen; }, 0) / gr.length < 4;
           var allY = [].concat.apply([], gr.map(function (n) { return n.ys; }));
           var beamY = gUp ? Math.min.apply(null, allY) - 3.3 * S : Math.max.apply(null, allY) + 3.3 * S, th = 0.48 * S, dir = gUp ? 1 : -1;
           var gsx = function (n) { return gUp ? n.x + n.hw / 2 - 0.06 * S : n.x - n.hw / 2 + 0.06 * S; };
@@ -1555,9 +1587,9 @@
       }
     });
 
-    // bass-staff ties
-    Object.keys(bassPlaced).forEach(function (idx) {
-      var list = bassPlaced[idx];
+    // bass-staff and second-voice ties
+    [bassPlaced, v2Placed].forEach(function (placedMap) { Object.keys(placedMap).forEach(function (idx) {
+      var list = placedMap[idx];
       for (var i = 0; i < list.length - 1; i++) {
         var a = list[i], c = list[i + 1];
         if (!a.pc.tie) continue;
@@ -1569,7 +1601,7 @@
           else { out.push(arc(a.x + a.hw / 2, systems[a.sys].endX - 0.2 * S, yy)); out.push(arc(systems[c.sys].startX - 1.2 * S, c.x - c.hw / 2, cy)); }
         });
       }
-    });
+    }); });
 
     // ties
     Object.keys(placed).forEach(function (idx) {
@@ -1956,7 +1988,7 @@
       melody: song.melody,
       chords: song.chords,
       bars: song.bars,
-      staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr) ? song.staves : undefined,
+      staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr || song.staves.voice2) ? song.staves : undefined,
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       score: song.score,
       guitarPro: song.guitarPro,
@@ -2317,7 +2349,7 @@
       scoreNav.setCurrent(barEls[e.bar] ? scoreNav.indexOf(barEls[e.bar]) : -1);
     } else if (e.ui === 'score-note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
-      [['.fb-n', view.concert], ['.fb-bn', view.bass || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
+      [['.fb-n', view.concert], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
         lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
           nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
           if (lane[0] === '.fb-n' && melodyView) melodyView.setCursor(i);
