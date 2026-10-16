@@ -539,17 +539,25 @@
 
     // 7-day daily forecast
     if (els.dailyGrid && data.daily) {
-      els.dailyGrid.innerHTML = data.daily.map((d) => `
-        <div class="ww-daily-card">
+      // One compact row per day; each bar spans that day's low-high on a shared week scale.
+      const weekLo = Math.min(...data.daily.map((d) => d.min));
+      const weekHi = Math.max(...data.daily.map((d) => d.max));
+      const span = Math.max(1, weekHi - weekLo);
+      els.dailyGrid.innerHTML = data.daily.map((d) => {
+        const left = ((d.min - weekLo) / span) * 100;
+        const width = Math.max(6, ((d.max - d.min) / span) * 100);
+        const pos = width >= 100 ? 0 : (left / (100 - width)) * 100;
+        const rain = d.rainChance > 0 ? `${d.rainChance}%` : '';
+        return `
+        <div class="ww-daily-card" role="listitem">
           <span class="ww-daily-day">${d.dayName}</span>
           <span class="ww-daily-icon" aria-hidden="true">${d.icon}</span>
-          <div class="ww-daily-temps">
-            <span class="ww-daily-hi">${d.max}°</span>
-            <span class="ww-daily-lo">${d.min}°</span>
-          </div>
-          <span class="ww-daily-rain">${d.rainChance > 0 ? `💧 ${d.rainChance}%` : '☀️ Clear'}</span>
-        </div>
-      `).join('');
+          <span class="ww-daily-rain">${rain}</span>
+          <span class="ww-daily-lo">${d.min}°</span>
+          <span class="ww-daily-bar" aria-hidden="true"><span class="ww-daily-fill" style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%;background-size:${(10000 / width).toFixed(0)}% 100%;background-position:${pos.toFixed(1)}% 0"></span></span>
+          <span class="ww-daily-hi">${d.max}°</span>
+        </div>`;
+      }).join('');
     }
 
     // Ephemeris (Sun & Moon)
