@@ -1248,6 +1248,7 @@
     if (showV2) layoutBars(view.voice2, t).forEach(function (vb, i) { bars[i].v2Bar = vb; bars[i].hasV2 = vb.pieces.some(function (pc) { return !pc.rest; }); });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
+    bassPlacedAll = bassPlaced; lastS = S;
     // With a bass staff, space each bar by the notes of BOTH staves, so a busy left hand gets the room it needs
     // even where the melody is a single rest (heads of one beat line up in one column).
     if (showBass || showV2) bars.forEach(function (b) {
@@ -1553,7 +1554,7 @@
         if (showV2 && b.v2Bar) drawStaffLine(b, xAt, { pieces: b.v2Bar.pieces, events: view.voice2, bot: staffBot, top: staffTop, clef: C, sig: sig, cls: 'fb-v2n', placed: v2Placed, up: false, skipRests: true });
         if (showTab) drawTabBar(b, xAt);
         if (showPos && view.pos.bars[b.i]) out.push(window.FakeBookPosition.draw(view.pos.inst, view.pos.bars[b.i], b.x, posTop, b.w, POSH, S));
-        if (shapesRowOn() || (showPos && opts.showAnalysis)) out.push(drawMeasureHelp(b, helpTop, helpH, S, showPos, placedBar));
+        if (shapesRowOn() || (showPos && opts.showAnalysis)) out.push(drawMeasureHelp(b, helpTop, helpH, S, showPos, saxCellsFor(b, placedBar)));
         if (opts.beatCounts !== 'off') beatCountLabels(out, function (rel) { return xAt(rel); }, rowsBottom + 1.25 * S, Math.floor(b.len + EPS), 'fb-lead-count', opts.beatCounts === 'written' ? b.pieces.map(function (pc) { return pc.rel; }) : beatGridPositions(opts.beatCounts, Math.floor(b.len + EPS)), b.pieces, { left: b.x + 2, right: b.x + b.w - 2 });
         // bar line (through each staff of the system)
         var last = si === systems.length - 1 && k === sys.length - 1;
@@ -2452,7 +2453,7 @@
       scoreNav.setCurrent(barEls[e.bar] ? scoreNav.indexOf(barEls[e.bar]) : -1);
     } else if (e.ui === 'score-note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
-      [['.fb-n', view.concert], ['.fb-sx', view.concert], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
+      [['.fb-n', view.concert], ['.fb-sx:not(.fb-sxb)', view.concert], ['.fb-sxb', view.bass || []], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
         lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
           nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
           if (lane[0] === '.fb-n' && melodyView) melodyView.setCursor(i);
@@ -2461,7 +2462,7 @@
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
     } else if (e.ui === 'note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
-      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx[data-idx="' + e.idx + '"]'));
+      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx:not(.fb-sxb)[data-idx="' + e.idx + '"]'));
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
       if (melodyView) melodyView.setCursor(e.idx);
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
@@ -3252,6 +3253,7 @@
   // symbol (so it sits on its beat). rowH/cap are in staff spaces (S); cap limits a diagram's height.
   var SHAPE_SIZES = { small: { rowH: 12, cap: 9 }, medium: { rowH: 15, cap: 12 }, large: { rowH: 18, cap: 15 } };
   var chordSymbolX = {};
+  var bassPlacedAll = {}, lastS = 10;       // the bass staff's placed notes and the staff size, for the sax fingering row
   function shapeSize() { return SHAPE_SIZES[opts.shapeSize] || SHAPE_SIZES.medium; }
   function sizeMeasureDiagrams(S) {
     var rows = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-row'));
@@ -3307,11 +3309,25 @@
 
   // Sax fingering row: one fingering under each melody note that starts in the bar (not the tied
   // continuations), centred on its notehead. Fingered from the note as written on the page.
+  // The notes to finger in a bar: the melody's, plus the bass part when it's written on the horn's staff
+  // (kept out of the way of a melody note that falls in the same place).
+  function saxCellsFor(b, melodyInfos) {
+    if (!(opts.saxFingers && b.bassBar && view.bassHorn && opts.bassFor === 'horn' && opts.showBass !== false)) return melodyInfos;
+    var extra = [];
+    b.bassBar.pieces.forEach(function (pc) {
+      (bassPlacedAll[pc.idx] || []).forEach(function (info) {
+        if (info.pc !== pc) return;
+        var clash = melodyInfos.some(function (m) { return m.pc.p && Math.abs(m.x - info.x) < 2.2 * lastS; });
+        if (!clash) extra.push({ pc: pc, x: info.x, bass: true });
+      });
+    });
+    return melodyInfos.concat(extra).sort(function (a, c) { return a.x - c.x; });
+  }
   function saxRow(b, S, notes) {
     var cells = notes.filter(function (n) { return n.pc.p && !n.pc.tieFrom; }).map(function (n) {
       var f = window.FakeBookSax.fingering(n.pc.p.midi), name = noteName(n.pc.p);
       var label = name + (f.shift > 0 ? ' 8va' : f.shift < 0 ? ' 8vb' : '');
-      return '<div class="fb-measure-shape fb-sx" data-idx="' + n.pc.idx + '" data-x="' + (n.x - (b.x + S / 2)).toFixed(1) + '"><strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' + window.FakeBookSax.draw(n.pc.p.midi, name) + '</div>';
+      return '<div class="fb-measure-shape ' + (n.bass ? 'fb-sx fb-sxb' : 'fb-sx') + '" data-idx="' + n.pc.idx + '" data-x="' + (n.x - (b.x + S / 2)).toFixed(1) + '"><strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' + window.FakeBookSax.draw(n.pc.p.midi, name) + '</div>';
     });
     if (!cells.length) return '<p>' + (tune.chordsOnly ? 'This tune has chords only, no melody to finger.' : 'No new melody notes in this measure.') + '</p>';
     return '<div class="fb-measure-row is-sax" style="height:' + shapeSize().rowH + 'em">' + cells.join('') + '</div>';
