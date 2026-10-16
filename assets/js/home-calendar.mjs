@@ -263,6 +263,7 @@ function mount(root, data) {
         if (c === 0 || c === 6) btn.classList.add('is-weekend');
         if (cls && !closed) { btn.classList.add('is-class', `is-${cls.key}`); }
         if (closed) btn.classList.add('is-closed');
+        if (week && !cls && !items.length) btn.classList.add('is-empty');
         const isToday = date.getTime() === today.getTime();
         const isSel = date.getTime() === state.sel.getTime();
         if (isToday) { btn.classList.add('is-today'); btn.setAttribute('aria-current', 'date'); }
