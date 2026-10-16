@@ -97,8 +97,9 @@
 
   var INSTR = {
     concert: { label: 'Concert pitch, treble clef', who: 'piano, flute, oboe, violin, voice, bells', letters: 0, semis: 0, clef: 'treble', center: 71, sound: 71 },
-    bb: { label: 'B♭ instruments', who: 'trumpet, clarinet, tenor & soprano sax', letters: 1, semis: 2, clef: 'treble', center: 71, sound: 67 },
-    eb: { label: 'E♭ instruments', who: 'alto & baritone sax', letters: 5, semis: 9, clef: 'treble', center: 71, sound: 67 },
+    // range = written MIDI limits the melody is kept inside whatever the key (sax: B♭3 to F6, as in fake-book-sax.js).
+    bb: { label: 'B♭ instruments', who: 'trumpet, clarinet, tenor & soprano sax', letters: 1, semis: 2, clef: 'treble', center: 71, sound: 67, range: [58, 89] },
+    eb: { label: 'E♭ instruments', who: 'alto & baritone sax', letters: 5, semis: 9, clef: 'treble', center: 71, sound: 67, range: [58, 89] },
     f: { label: 'F instruments', who: 'French horn', letters: 4, semis: 7, clef: 'treble', center: 71, sound: 64 },
     bass: { label: 'Concert pitch, bass clef', who: 'trombone, cello, bass, bassoon, tuba', letters: 0, semis: 0, clef: 'bass', center: 50, sound: 57 }
   };
@@ -659,14 +660,39 @@
     var writtenKey = shiftKey(concertKey, ins.letters, ins.semis);
     var cs = shiftBetween(t.key, concertKey), ws = shiftBetween(t.key, writtenKey);
     var cFlat = keySig(concertKey) < 0, wFlat = keySig(writtenKey) < 0;
-    function move(list, sh, flat, center) {
-      var out = list.map(function (e) { return { start: e.start, dur: e.dur, src: e.src, p: e.p ? shiftPitch(e.p, sh.letters, sh.semis, flat) : null }; });
-      var notes = out.filter(function (e) { return e.p; }), w = 0, sum = 0;
-      notes.forEach(function (e) { sum += e.p.midi * e.dur; w += e.dur; });
-      var k = opts.mode === 'score' ? 0 : (w ? Math.round((center - sum / w) / 12) + opts.octave : opts.octave);
+    function shifted(list, sh, flat) {
+      return list.map(function (e) { return { start: e.start, dur: e.dur, src: e.src, p: e.p ? shiftPitch(e.p, sh.letters, sh.semis, flat) : null }; });
+    }
+    // Octaves to move the melody before the octave setting: centered on `center`, or left where it is in the score.
+    function baseOctave(out, center) {
+      if (opts.mode === 'score') return 0;
+      var w = 0, sum = 0;
+      out.forEach(function (e) { if (e.p) { sum += e.p.midi * e.dur; w += e.dur; } });
+      return w ? Math.round((center - sum / w) / 12) : 0;
+    }
+    // Keep the lowest and highest note inside the instrument's range: clamp `want` to the octaves that fit.
+    function fitOctave(out, want, range) {
+      if (!range) return want;
+      var lo = Infinity, hi = -Infinity;
+      out.forEach(function (e) { if (e.p) { lo = Math.min(lo, e.p.midi); hi = Math.max(hi, e.p.midi); } });
+      if (lo > hi) return want;
+      var kLo = Math.ceil((range[0] - lo) / 12), kHi = Math.floor((range[1] - hi) / 12);
+      if (kLo > kHi) return Math.round(((range[0] + range[1]) / 2 - (lo + hi) / 2) / 12);   // wider than the horn: best effort
+      return Math.max(kLo, Math.min(kHi, want));
+    }
+    function octaves(out, k) {
       if (k) out.forEach(function (e) { if (e.p) e.p = pitch(e.p.dia + 7 * k, e.p.a); });
       return out;
     }
+    var cOut = shifted(ev, cs, cFlat), wOut = shifted(ev, ws, wFlat);
+    var cBase = baseOctave(cOut, ins.sound), wBase = baseOctave(wOut, ins.center);
+    var wWant = wBase + opts.octave, wK = fitOctave(wOut, wWant, ins.range);
+    // The sounding line follows the written one, so what you hear is what the sheet shows.
+    var cK = ins.range ? cBase + (wK - wBase) : cBase + opts.octave;
+    octaves(cOut, cK); octaves(wOut, wK);
+    var octaveShift = wK - wBase;                 // octaves from the original, for the second voice
+    var octaveLimited = !!ins.range && wK !== wWant, octaveOut = 0;
+    if (ins.range) wOut.forEach(function (e) { if (e.p && (e.p.midi < ins.range[0] || e.p.midi > ins.range[1])) octaveOut++; });
     function moveChords(sh, flat) {
       return t.chords.map(function (c) {
         var r = shiftPitch(pitch(c.root.l + 28, c.root.a), sh.letters, sh.semis, flat);
@@ -687,8 +713,9 @@
     }
     view = {
       concertKey: concertKey, writtenKey: writtenKey,
-      concert: move(ev, cs, cFlat, ins.sound),
-      written: move(ev, ws, wFlat, ins.center),
+      concert: cOut,
+      written: wOut,
+      octaveLimited: octaveLimited, octaveOut: octaveOut,
       concertChords: moveChords(cs, cFlat),
       writtenChords: moveChords(ws, wFlat)
     };
@@ -714,7 +741,7 @@
     // A second right-hand voice (the figure under a piano melody): written pitch, same key and instrument as the melody.
     view.voice2 = null;
     if (t.staves.voice2) view.voice2 = t.staves.voice2.events.map(function (e) {
-      var ps = e.ps.map(function (p) { return shiftPitch(p, ws.letters, ws.semis, wFlat); });
+      var ps = e.ps.map(function (p) { var q = shiftPitch(p, ws.letters, ws.semis, wFlat); return octaveShift ? pitch(q.dia + 7 * octaveShift, q.a) : q; });
       return { start: e.start, dur: e.dur, ps: ps, p: ps[0] };
     });
     // Key-change tags, spelled in the key the sheet is written in.
@@ -2847,7 +2874,9 @@
     el('[data-fb-style-tip]').textContent = STYLES[opts.style].tip;
     var ins = INSTR[opts.instr], ks = keyLabel(view ? view.writtenKey : tune.key);
     el('[data-fb-instr-tip]').textContent = ins.who.charAt(0).toUpperCase() + ins.who.slice(1) + '.' +
-      (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' Concert ' + keyLabel(parseKey(opts.key, tune.key.minor)) + ' is written in ' + ks + ' for you.');
+      (opts.instr === 'concert' || opts.instr === 'bass' ? '' : ' Concert ' + keyLabel(parseKey(opts.key, tune.key.minor)) + ' is written in ' + ks + ' for you.') +
+      (view && view.octaveOut ? ' In this key the tune is a little wider than the instrument’s range, so ' + view.octaveOut + ' note' + (view.octaveOut === 1 ? '' : 's') + ' sit just outside it (the octave is set to keep that to a minimum). Try another key for a perfect fit.'
+        : view && view.octaveLimited ? ' The octave is held where every note stays in this instrument’s range.' : '');
   }
   function refresh() {
     computeView();
