@@ -1,59 +1,54 @@
-/* groove-sheet.css — the homework sheet builder page.
- * Screen: a toolbar over a stack of paper-coloured pages, each card with an edit panel under it.
- * Print: only the pages. The card is laid out for paper (letter, 0.5in margins): staff + count line,
- * QR, tempo ladder and a Mon–Sun log, 3 (or 2) per page and never split across a page break.
+/* groove-sheet.css — the homework sheet inside the Drum Lab Build chapter (#drSheet).
+ * Screen: a toolbar, then the sheet as white paper pages (data-night-keep, so dark themes leave them
+ * alone), each card with an edit panel under it.
+ * Print: the same cards, built fresh into #drSheetPrint and laid out for paper (the lesson's @page
+ * margins leave about 7.2 x 9.8in): staff + count line, QR, tempo ladder and a Mon–Sun log,
+ * 3 (or 2) per page, never split across a page break. The lesson itself is hidden while printing.
  */
-:root {
+.dr-sheet-wrap { margin-top: 2.2rem; padding-top: 1.4rem; border-top: 1px solid var(--dr-paper-line, #e6dccb); }
+.dr-sheet-wrap h3 { margin: 0 0 .3rem; font-size: 1.35rem; }
+.dr-sheet-wrap > p { max-width: 70ch; }
+
+#drSheetPrint { display: none; }
+
+.dr-sheet {
   --gs-ink: #1b1a17;
   --gs-soft: #5a554c;
   --gs-rule: #b9b1a3;
-  --gs-accent: #b4410a;
-  --gs-bg: #e9e4da;
-  --gs-paper: #fff;
-  --gs-card-h: 2.85in;
-  color-scheme: light;
+  --gs-card-h: 2.75in;
+  display: grid; gap: .8rem;
 }
-
-* { box-sizing: border-box; }
-html { background: var(--gs-bg); }
-body { margin: 0; color: var(--gs-ink); background: var(--gs-bg); font: 15px/1.45 "IBM Plex Sans", system-ui, "Segoe UI", sans-serif; }
-.gs-skip { position: absolute; left: .5rem; top: -4rem; padding: .5rem .8rem; background: #fff; border: 2px solid var(--gs-accent); z-index: 9; }
-.gs-skip:focus { top: .5rem; }
 
 /* ---------------------------------------------------------------- toolbar */
-.gs-bar { max-width: 8.5in; margin: 0 auto; padding: 1rem 16px .6rem; display: grid; gap: .65rem; }
-.gs-bar h1 { margin: .1rem 0 0; font-size: 1.6rem; line-height: 1.15; }
-.gs-lede { margin: .25rem 0 0; color: var(--gs-soft); max-width: 62ch; }
-.gs-back { color: var(--gs-accent); font-weight: 600; text-decoration: none; }
-.gs-back:hover, .gs-back:focus-visible { text-decoration: underline; }
-.gs-fields { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; }
-.gs-fields label { display: grid; gap: .2rem; font-size: .78rem; font-weight: 600; color: var(--gs-soft); }
-.gs-bar input, .gs-bar select, .gs-bar button, .gs-edit input, .gs-edit select, .gs-edit textarea {
-  min-height: 40px; padding: .35rem .6rem; border: 1px solid #9c9486; border-radius: 8px; background: #fff; color: var(--gs-ink); font: inherit; font-size: .9rem;
+.gs-row { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; }
+.gs-row label { display: grid; gap: .2rem; font-size: .78rem; font-weight: 700; color: var(--text-secondary, #465768); }
+.dr-sheet input, .dr-sheet select, .dr-sheet textarea {
+  min-height: 40px; padding: .35rem .6rem; border: 1px solid var(--line, #c8c8d2); border-radius: 9px;
+  background: var(--white, #fff); color: var(--text, #241a14); font: 600 .85rem "DM Sans", system-ui, sans-serif;
 }
-.gs-bar button, .gs-edit button, .gs-btnlink {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 40px; min-width: 40px; padding: .35rem .8rem;
-  border: 1px solid #9c9486; border-radius: 8px; background: #fff; color: var(--gs-ink); font: 600 .85rem "IBM Plex Sans", system-ui, sans-serif; cursor: pointer; text-decoration: none;
-}
-.gs-bar button:hover, .gs-edit button:hover, .gs-btnlink:hover { background: #f4efe6; }
-button:disabled { opacity: .45; cursor: not-allowed; }
-.gs-primary { background: var(--gs-ink) !important; border-color: var(--gs-ink) !important; color: #fff !important; }
-.gs-primary:disabled { background: #6b665c !important; }
+.dr-sheet textarea { resize: vertical; width: 100%; font-weight: 500; }
+.dr-sheet button:disabled { opacity: .45; cursor: not-allowed; }
 .gs-danger { color: #8f1d12 !important; }
-:is(a, button, input, select, textarea, summary):focus-visible { outline: 3px solid #1f5f99; outline-offset: 2px; }
-.gs-site { align-self: end; }
-.gs-site summary { cursor: pointer; font-size: .85rem; font-weight: 600; padding: .5rem 0; }
+.gs-site summary { cursor: pointer; font-size: .85rem; font-weight: 700; padding: .5rem 0; }
 .gs-site label { min-width: min(34ch, 80vw); }
-.gs-site p { margin: .3rem 0 0; font-size: .75rem; color: var(--gs-soft); max-width: 46ch; }
-.gs-status { min-height: 1.4em; margin: 0; font-size: .85rem; color: var(--gs-accent); font-weight: 600; }
+.gs-site p { margin: .3rem 0 0; font-size: .75rem; color: var(--text-secondary, #465768); max-width: 46ch; }
+.gs-status { min-height: 1.4em; margin: 0; font-size: .85rem; color: var(--dr-accent-deep, #b4410a); font-weight: 700; }
 .gs-link { margin-left: .4rem; background: none; border: 0; color: #1f5f99; text-decoration: underline; cursor: pointer; font: inherit; }
-
-.gs-empty { max-width: 8.5in; margin: 1rem auto; padding: 1.5rem 16px; background: #fff; border: 1px dashed var(--gs-rule); border-radius: 12px; }
-.gs-empty h2 { margin: 0 0 .4rem; font-size: 1.15rem; }
+.gs-count { margin: 0; font-size: .8rem; color: var(--text-secondary, #465768); }
+.gs-empty { padding: 1.2rem; border: 1px dashed var(--line, #c8c8d2); border-radius: 12px; }
+.gs-empty p { margin: 0; }
+.gs-list { display: grid; gap: 1rem; }
 
 /* ------------------------------------------------------------------ pages */
-.gs-pages { display: grid; gap: 1.25rem; padding: 0 16px 4rem; justify-items: center; }
-.gs-page { width: 100%; max-width: 8.5in; padding: .5in clamp(14px, 4vw, .5in); background: var(--gs-paper); border: 1px solid #d3cbbb; box-shadow: 0 6px 24px rgba(40,30,10,.12); }
+.gs-page {
+  padding: clamp(12px, 3vw, .45in); background: #fff; color: var(--gs-ink); border: 1px solid #d3cbbb; border-radius: 6px;
+  box-shadow: 0 6px 24px rgba(40,30,10,.12); font-family: "IBM Plex Sans", system-ui, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.4;
+  color-scheme: light;
+}
+.gs-page *, .gs-page *::before, .gs-page *::after { box-sizing: border-box; }
+/* The lesson theme sets its own display font on headings, spans and buttons; the handout is plain sans. */
+#drSheet .gs-page, #drSheet .gs-page *, #drSheetPrint .gs-page, #drSheetPrint .gs-page * { font-family: "IBM Plex Sans", system-ui, "Segoe UI", Arial, sans-serif !important; letter-spacing: normal; }
+#drSheet .gs-edit, #drSheet .gs-edit * { font-family: "DM Sans", system-ui, sans-serif !important; }
 
 .gs-page-head { display: grid; gap: .3rem; padding-bottom: .35rem; border-bottom: 2px solid var(--gs-ink); }
 .gs-page-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .8rem; }
@@ -73,14 +68,13 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .gs-num { display: inline-grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; background: var(--gs-ink); color: #fff; font-size: .78rem; font-weight: 700; flex: none; }
 .gs-title { margin: 0; font-size: 1.05rem; line-height: 1.2; flex: 1 1 9rem; min-width: 0; overflow-wrap: anywhere; }
 .gs-target { font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.gs-countcap { font-size: .74rem; color: var(--gs-soft); white-space: nowrap; }
+.gs-countcap strong { color: var(--gs-ink); letter-spacing: .04em; }
 
 .gs-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: start; }
 .gs-staff { max-width: 5in; }
 .gs-per-2 .gs-staff { max-width: 6.1in; }
-.gs-staff svg { display: block; width: 100%; height: auto; }
-.gs-staff svg text { font-family: "IBM Plex Sans", system-ui, sans-serif; }
-.gs-countcap { font-size: .74rem; color: var(--gs-soft); white-space: nowrap; }
-.gs-countcap strong { color: var(--gs-ink); letter-spacing: .04em; }
+.gs-staff svg, .gs-staff .dr-staff { display: block; width: 100%; min-width: 0; height: auto; }   /* drums.css gives .dr-staff a 640px floor */
 .gs-note { margin: .2rem 0 0; font-size: .85rem; font-weight: 600; }
 .gs-qr { margin: 0; width: 1.3in; text-align: center; }
 .gs-qr-img svg { display: block; width: 100%; height: auto; }
@@ -93,42 +87,41 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .gs-box { display: inline-block; width: .9rem; height: .9rem; border: 1.5px solid var(--gs-ink); border-radius: 3px; }
 .gs-arrow { color: var(--gs-soft); font-weight: 400; }
 .gs-log { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.gs-log th { padding: 0 0 .1rem; font-size: .62rem; font-weight: 700; color: var(--gs-soft); text-align: center; }
-.gs-log td { height: 1.2rem; border: 1px solid var(--gs-ink); }
+.gs-log th { padding: 0 0 .1rem; font-size: .62rem; font-weight: 700; color: var(--gs-soft); text-align: center; background: none; border: 0; }
+.gs-log td { height: 1.2rem; border: 1px solid var(--gs-ink); padding: 0; background: #fff; }
 .gs-roomy .gs-log td { height: 1.9rem; }
 .gs-comments { margin-top: .45rem; }
 .gs-comments span { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--gs-soft); font-weight: 700; }
-.gs-comments::after { content: ""; display: block; height: .9in; background: repeating-linear-gradient(to bottom, transparent 0 .3in, var(--gs-rule) .3in calc(.3in + 1px)); }
+.gs-comments::after { content: ""; display: block; height: .6in; background: repeating-linear-gradient(to bottom, transparent 0 .3in, var(--gs-rule) .3in calc(.3in + 1px)); }
 
 /* -------------------------------------------------------------- edit panel */
-.gs-edit { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; padding: .7rem .8rem; background: #f6f1e7; border-top: 1px dashed #9c9486; }
+.gs-edit { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; padding: .7rem .8rem; background: #f6f1e7; border-top: 1px dashed #9c9486; color: var(--gs-ink); }
 .gs-edit label { display: grid; gap: .2rem; font-size: .74rem; font-weight: 700; color: var(--gs-soft); }
 .gs-edit .gs-wide { flex: 1 1 100%; }
 .gs-edit input[type="number"] { width: 6rem; }
-.gs-edit textarea { resize: vertical; width: 100%; }
 .gs-edit .gs-wide input { width: 100%; }
 .gs-edit-actions { display: flex; flex-wrap: wrap; gap: .4rem; flex: 1 1 100%; }
+.gs-edit button { min-width: 40px; }
 
 @media (max-width: 560px) {
   .gs-body { grid-template-columns: 1fr; }
-  .gs-qr { width: 1.3in; }
   .gs-foot { grid-template-columns: 1fr; }
   .gs-who div, .gs-who div:first-child { min-width: 100%; }
 }
 
 /* ------------------------------------------------------------------- print */
-@page { size: letter; margin: .5in; }
 @media print {
-  html, body { background: #fff !important; color: #000; font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .no-print { display: none !important; }
-  .gs-pages { display: block; padding: 0; }
-  .gs-page { width: auto; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; break-after: page; }
-  .gs-page:last-child { break-after: auto; }
-  .gs-card { break-inside: avoid; margin-top: .08in; height: var(--gs-card-h); border-radius: 4px; }
-  .gs-per-2 { --gs-card-h: 4.35in; }
-  .gs-per-2 .gs-qr { width: 1.4in; }
-  .gs-body { grid-template-columns: minmax(0, 1fr) auto; }
-  .gs-foot { grid-template-columns: auto minmax(0, 1fr); }
-  .gs-who { flex-wrap: nowrap; }
-  .gs-howto, .gs-countcap, .gs-page-title p { color: #333; }
+  body.dr-printing-sheet .ll-viewport,
+  body.dr-printing-sheet #drPracticeSheetPrint { display: none !important; }
+  body.dr-printing-sheet #drSheetPrint { display: block; }
+  #drSheetPrint .gs-page {
+    --gs-ink: #000; --gs-soft: #333; --gs-card-h: 2.8in;
+    padding: 0; border: 0; border-radius: 0; box-shadow: none; font-size: 11pt; break-after: page;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  #drSheetPrint .gs-page:last-child { break-after: auto; }
+  #drSheetPrint .gs-per-2 { --gs-card-h: 4.2in; }
+  #drSheetPrint .gs-card { break-inside: avoid; margin-top: .08in; height: var(--gs-card-h); border-radius: 4px; }
+  #drSheetPrint .gs-per-2 .gs-qr { width: 1.4in; }
+  #drSheetPrint .gs-who { flex-wrap: nowrap; }
 }

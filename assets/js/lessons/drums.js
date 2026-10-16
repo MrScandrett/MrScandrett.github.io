@@ -648,7 +648,7 @@
       countSel.value = P.count || 'auto';
       tools.appendChild(countSel);
       var sheetBtn = htmlEl('button', 'dr-mini dr-mini-primary', '+ Add to homework sheet', tools); sheetBtn.type = 'button';
-      var sheetLink = htmlEl('a', 'dr-sheet-link', 'Open the sheet →', tools); sheetLink.href = 'groove-sheet.html'; sheetLink.hidden = true;
+      var sheetLink = htmlEl('a', 'dr-sheet-link', 'Go to the sheet ↓', tools); sheetLink.href = '#drSheet'; sheetLink.hidden = true;
       htmlEl('span', 'dr-grid-hint', 'Click a square to cycle: off → normal → accent (>) → ghost (quiet) → off.', tools);
       var table = htmlEl('div', 'dr-grid-table', null, grid);
       table.setAttribute('role', 'group'); table.setAttribute('aria-label', 'Sixteen-step drum grid');
@@ -714,6 +714,16 @@
         var sh = store.sheet();
         flashButton(sheetBtn, store.persistent ? '✓ Added (' + sh.patterns.length + ' on ' + (sh.student ? sh.student + '’s' : 'the') + ' sheet)' : 'Could not save: this browser blocks storage');
         sheetLink.hidden = false;
+        window.dispatchEvent(new Event('groove-sheet-changed'));
+      });
+      // "Load in builder" on a sheet card sends the groove back up here to edit.
+      window.addEventListener('groove-sheet-load', function (e) {
+        var d = e.detail || {};
+        LANES.forEach(function (inst) { var str = (d.tracks && d.tracks[inst]) || ''; for (var s6 = 0; s6 < 16; s6++) gridState[inst][s6] = str[s6] || '-'; });
+        tempo = Math.min(+tempoIn.max, Math.max(+tempoIn.min, d.tempo || tempo)); tempoIn.value = tempo; tempoText();
+        countSel.value = d.count || 'auto'; loadedName = d.title || '';
+        paintAll(); commit();
+        root.scrollIntoView({ block: 'start', behavior: 'smooth' });
       });
       clearBtn.addEventListener('click', function () {
         LANES.forEach(function (inst) { for (var s4 = 0; s4 < 16; s4++) gridState[inst][s4] = '-'; });
