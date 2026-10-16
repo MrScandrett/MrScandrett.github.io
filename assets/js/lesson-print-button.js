@@ -537,6 +537,8 @@
     });
     html.setAttribute('data-site-theme', 'day');
     html.style.colorScheme = 'light';
+    // Undo the dark-theme surface/text recoloring now: the guard only re-runs on its own schedule, and print layout happens right after.
+    if (window.ClassroomOSContrastGuard) window.ClassroomOSContrastGuard.runNow();
     printThemeRestore = function () {
       keys.forEach(function (key) {
         if (saved.html[key] != null) html.dataset[key] = saved.html[key];
@@ -544,6 +546,7 @@
       });
       if (saved.site != null) html.setAttribute('data-site-theme', saved.site);
       html.style.colorScheme = saved.scheme;
+      if (window.ClassroomOSContrastGuard) window.ClassroomOSContrastGuard.run();
     };
   }
 
