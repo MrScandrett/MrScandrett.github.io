@@ -920,7 +920,7 @@
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
   function beatCountLabels(out, xAt, y, beats, extraClass, positions, pieces, edges) {
-    var syllables = ['', 'e', '&', 'a'];
+    var syllables = GrooveSheetCore.SYLLABLES;                 // shared with the groove builder and the homework sheet
     var qs = positions ? positions.map(function (p) { return Math.round(p * 4); }) : Array.from({ length: beats * 4 }, function (_, i) { return i; });
     // A tied continuation is still counted. Include both ends even when the selected count
     // resolution would normally omit that subdivision, then join their count syllables below.
@@ -948,11 +948,7 @@
       out.push('<path class="fb-count-tie is-continuation" d="M' + xs.toFixed(1) + ' ' + (y + 3).toFixed(1) + ' Q' + ((xs + x2) / 2).toFixed(1) + ' ' + (y + 7).toFixed(1) + ' ' + (x2 - 3).toFixed(1) + ' ' + (y + 3).toFixed(1) + '"/>');
     });
   }
-  function beatGridPositions(mode, beats) {
-    if (mode === 'quarter') return Array.from({ length: beats }, function (_, i) { return i; });
-    if (mode === 'eighth') return Array.from({ length: beats * 2 }, function (_, i) { return i / 2; });
-    return null;
-  }
+  function beatGridPositions(mode, beats) { return GrooveSheetCore.gridPositions(mode, beats); }
 
   function renderDrumBarNotes(out, bx, bw, staffTop, SP, drumSet, M, barNum) {
     var pad = 14;

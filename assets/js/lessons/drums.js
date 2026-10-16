@@ -130,7 +130,8 @@
   /* ----------------------------------------------------------- staff render */
   var SP = 12, STEP = 30, ROWH = 224;
 
-  function renderStaff(p) {
+  function renderStaff(p, opts) {
+    opts = opts || {};
     var N = norm(p);
     var barsPerRow = 1;                       // one bar per line keeps the notation large and readable
     var rows = Math.ceil(N.bars / barsPerRow);
@@ -287,24 +288,15 @@
       });
     }
 
-    // counting row ("1 e & a")
-    var res = 4, hasOff = false;
-    for (var ck = 0; ck < N.total; ck++) {
-      var used = false;
-      ORDER.forEach(function (inst) { if (N.tracks[inst][ck] !== '-') used = true; });
-      if (used && ck % 4 === 2) hasOff = true;
-      if (used && ck % 2 === 1) res = 1;
-    }
-    if (res !== 1) res = hasOff ? 2 : 4;
-    var LAB16 = ['', 'e', '&', 'a'], countEls = [];
+    // counting row ("1 e & a"): one shared decision (GrooveSheetCore.countLabels), drawn from the same
+    // step data as the notes above, so the count line cannot drift from the staff.
+    var counts = window.GrooveSheetCore.countLabels(p.count, N.tracks, { steps: N.total, beats: N.beats }), countEls = [];
     for (var cs = 0; cs < N.total; cs++) {
       countEls.push(null);
-      var rem = cs % 4;
-      if (res === 4 && rem !== 0) continue;
-      if (res === 2 && rem % 2 !== 0) continue;
-      var lab = rem === 0 ? '' + ((Math.floor(cs / 4) % N.beats) + 1) : LAB16[rem];
-      var cp = pos(cs);
-      countEls[cs] = svgEl('text', { x: cp.x, y: yb(cp.row) + (p.sticking ? 82 : 66), 'font-size': rem === 0 ? 17 : 14, 'font-weight': rem === 0 ? 700 : 500,
+      var lab = counts.labels[cs];
+      if (lab === null) continue;
+      var strong = counts.isBeat[cs], cp = pos(cs);
+      countEls[cs] = svgEl('text', { x: cp.x, y: yb(cp.row) + (p.sticking ? 82 : 66), 'font-size': strong ? 17 : 14, 'font-weight': strong ? 700 : 500,
         'text-anchor': 'middle', 'class': 'dr-count-lab', fill: '#5b4b3d' }, g);
       countEls[cs].textContent = lab;
     }
@@ -323,7 +315,12 @@
       head.setAttribute('y', pp.row * ROWH + 26);
       head.setAttribute('opacity', 0.85);
     }
-    return { svg: svg, N: N, countEls: countEls, setPlayhead: setPlayhead, off: off };
+    if (opts.crop) {                                   // print cards: trim the empty margins above and below the staff
+      var top0 = 38, bot0 = (rows - 1) * ROWH + (p.sticking ? 222 : 204);   // count labels sit at yb + 66 (+16 under sticking)
+      svg.setAttribute('viewBox', '0 ' + top0 + ' ' + width + ' ' + (bot0 - top0));
+      head.remove();
+    }
+    return { svg: svg, N: N, countEls: countEls, setPlayhead: setPlayhead, off: off, countMode: counts.mode };
   }
 
   /* ------------------------------------------------------------ pattern sets */
@@ -642,14 +639,32 @@
       var presets = SETS.beats.filter(function (b) { return !b.beats && !b.swing; });
       tools.appendChild(presetSel);
       var clearBtn = htmlEl('button', 'dr-mini', 'Clear all', tools); clearBtn.type = 'button';
+      var GC = window.GrooveSheetCore;
+      var countSel = document.createElement('select');
+      countSel.setAttribute('aria-label', 'Count line under the notation');
+      GC.COUNT_MODES.forEach(function (m) {
+        var o = document.createElement('option'); o.value = m; o.textContent = m === 'auto' ? 'Count: Auto' : 'Count: ' + GC.MODE_NAMES[m] + ' (' + GC.MODE_SAMPLE[m] + ')'; countSel.appendChild(o);
+      });
+      countSel.value = P.count || 'auto';
+      tools.appendChild(countSel);
+      var sheetBtn = htmlEl('button', 'dr-mini dr-mini-primary', '+ Add to homework sheet', tools); sheetBtn.type = 'button';
+      var sheetLink = htmlEl('a', 'dr-sheet-link', 'Open the sheet →', tools); sheetLink.href = 'groove-sheet.html'; sheetLink.hidden = true;
       htmlEl('span', 'dr-grid-hint', 'Click a square to cycle: off → normal → accent (>) → ghost (quiet) → off.', tools);
       var table = htmlEl('div', 'dr-grid-table', null, grid);
       table.setAttribute('role', 'group'); table.setAttribute('aria-label', 'Sixteen-step drum grid');
       var cellEls = {};
+      var loadedName = '';
+      var sheetTitle = function (store) { return loadedName ? loadedName : 'Groove ' + (store.sheet().patterns.length + 1); };
       var hdr = htmlEl('div', 'dr-grid-row dr-grid-head', null, table);
       htmlEl('span', 'dr-lane-name', '', hdr);
-      var CNT = ['1', 'e', '&', 'a'];
-      for (var s = 0; s < 16; s++) htmlEl('span', 'dr-grid-cnt' + (s % 4 === 0 ? ' is-beat' : ''), s % 4 === 0 ? '' + (s / 4 + 1) : CNT[s % 4], hdr);
+      var cntEls = [];
+      for (var s = 0; s < 16; s++) cntEls.push(htmlEl('span', 'dr-grid-cnt' + (s % 4 === 0 ? ' is-beat' : ''), '', hdr));
+      // The header over the grid uses the same labels as the staff, so what you click is what you count.
+      var paintCounts = function () {
+        var c = GC.countLabels(P.count, P.tracks);
+        cntEls.forEach(function (el, k) { el.textContent = c.labels[k] === null ? '·' : c.labels[k]; el.classList.toggle('is-skipped', c.labels[k] === null); });
+        countSel.options[0].textContent = 'Count: Auto (' + GC.MODE_NAMES[c.mode].toLowerCase() + ')';
+      };
       LANES.forEach(function (inst) {
         var row = htmlEl('div', 'dr-grid-row', null, table);
         htmlEl('span', 'dr-lane-name', INST[inst].short, row);
@@ -676,11 +691,13 @@
         c.textContent = ch === 'X' ? '>' : ch === 'g' ? '·' : '';
         c.setAttribute('aria-label', INST[inst].short + ', step ' + (step + 1) + ', ' + (ch === '-' ? 'off' : ch === 'x' ? 'on' : ch === 'X' ? 'accent' : 'ghost'));
       };
-      var paintAll = function () { LANES.forEach(function (inst) { for (var s3 = 0; s3 < 16; s3++) paintCell(inst, s3); }); };
+      var paintAll = function () { LANES.forEach(function (inst) { for (var s3 = 0; s3 < 16; s3++) paintCell(inst, s3); }); paintCounts(); };
       var commit = function () {
         var tr = {};
         LANES.forEach(function (inst) { var str = gridState[inst].join(''); if (/[^-]/.test(str)) tr[inst] = str; });
         P.tracks = tr;
+        P.count = countSel.value;
+        paintCounts();
         wrap.innerHTML = '';
         view = renderStaff(P);
         view.lastStep = undefined;
@@ -689,6 +706,15 @@
         if (!Object.keys(tr).length) { view.svg.setAttribute('aria-label', 'Empty bar of drum notation'); }
         tip.textContent = Object.keys(tr).length ? 'Watch the notation change as you add hits. Kick sits in the bottom space, snare in the middle space, hi-hat above the staff.' : 'The bar is empty, so every beat shows a rest. Add some hits!';
       };
+      countSel.addEventListener('change', commit);
+      sheetBtn.addEventListener('click', function () {
+        var store = GC.createStore(window.localStorage);
+        if (!Object.keys(P.tracks).length) { flashButton(sheetBtn, 'Add some hits first'); return; }
+        store.addPattern({ tracks: P.tracks, tempo: +tempoIn.value, count: countSel.value, title: sheetTitle(store) });
+        var sh = store.sheet();
+        flashButton(sheetBtn, store.persistent ? '✓ Added (' + sh.patterns.length + ' on ' + (sh.student ? sh.student + '’s' : 'the') + ' sheet)' : 'Could not save: this browser blocks storage');
+        sheetLink.hidden = false;
+      });
       clearBtn.addEventListener('click', function () {
         LANES.forEach(function (inst) { for (var s4 = 0; s4 < 16; s4++) gridState[inst][s4] = '-'; });
         paintAll(); commit();
@@ -701,6 +727,7 @@
           for (var s5 = 0; s5 < 16; s5++) gridState[inst][s5] = str[s5] || '-';
         });
         tempo = pr.tempo; tempoIn.value = tempo; tempoText();
+        loadedName = pr.name;
         paintAll(); commit();
         presetSel.value = '';
       });
@@ -1535,22 +1562,33 @@
     });
   }
 
+  /* A QR code on a homework sheet opens drums.html#g1=…: unfold the Build chapter and scroll to the groove. */
+  function openLinkedGroove() {
+    var host = document.querySelector('.dr-player[data-from-link]');
+    if (!host) return;
+    var toggle = document.querySelector('#build .dr-chapter-toggle');
+    if (toggle && toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
+    setTimeout(function () { host.scrollIntoView({ block: 'start' }); }, 60);
+  }
+
   /* ------------------------------------------------------------------ init */
   function init() {
     document.querySelectorAll('.dr-player').forEach(function (root) {
       var name = root.getAttribute('data-set');
       if (name === 'builder') {
-        var start = SETS.beats[0];
+        var start = SETS.beats[0], linked = window.GrooveSheetCore.parseHash(window.location.hash);
         createPlayer(root, { editable: true, patterns: [{
-          name: 'Your groove', desc: 'Build a one-bar groove in 16 steps. Hear it, and watch the notation write itself.',
-          tempo: 100,
-          tracks: { hat: start.tracks.hat, snare: start.tracks.snare, kick: start.tracks.kick }
+          name: linked ? 'Groove from your homework sheet' : 'Your groove',
+          desc: linked ? 'Press Play, slow the tempo down, and practice along. Change a square if you want to experiment.' : 'Build a one-bar groove in 16 steps. Hear it, and watch the notation write itself.',
+          tempo: linked ? linked.tempo : 100,
+          tracks: linked ? linked.tracks : { hat: start.tracks.hat, snare: start.tracks.snare, kick: start.tracks.kick }
         }] });
+        if (linked) root.setAttribute('data-from-link', '1');
       } else if (SETS[name]) {
         createPlayer(root, { patterns: SETS[name], setKey: name !== 'values' ? name : null });
       }
     });
-    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice(); initPerformance(); initLearningPath(); initFunkLadder(); initChapters();
+    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice(); initPerformance(); initLearningPath(); initFunkLadder(); initChapters(); openLinkedGroove();
   }
 
   window.DrumLab = { renderStaff: renderStaff, SETS: SETS };

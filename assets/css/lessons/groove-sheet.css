@@ -1,0 +1,134 @@
+/* groove-sheet.css — the homework sheet builder page.
+ * Screen: a toolbar over a stack of paper-coloured pages, each card with an edit panel under it.
+ * Print: only the pages. The card is laid out for paper (letter, 0.5in margins): staff + count line,
+ * QR, tempo ladder and a Mon–Sun log, 3 (or 2) per page and never split across a page break.
+ */
+:root {
+  --gs-ink: #1b1a17;
+  --gs-soft: #5a554c;
+  --gs-rule: #b9b1a3;
+  --gs-accent: #b4410a;
+  --gs-bg: #e9e4da;
+  --gs-paper: #fff;
+  --gs-card-h: 2.85in;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--gs-bg); }
+body { margin: 0; color: var(--gs-ink); background: var(--gs-bg); font: 15px/1.45 "IBM Plex Sans", system-ui, "Segoe UI", sans-serif; }
+.gs-skip { position: absolute; left: .5rem; top: -4rem; padding: .5rem .8rem; background: #fff; border: 2px solid var(--gs-accent); z-index: 9; }
+.gs-skip:focus { top: .5rem; }
+
+/* ---------------------------------------------------------------- toolbar */
+.gs-bar { max-width: 8.5in; margin: 0 auto; padding: 1rem 16px .6rem; display: grid; gap: .65rem; }
+.gs-bar h1 { margin: .1rem 0 0; font-size: 1.6rem; line-height: 1.15; }
+.gs-lede { margin: .25rem 0 0; color: var(--gs-soft); max-width: 62ch; }
+.gs-back { color: var(--gs-accent); font-weight: 600; text-decoration: none; }
+.gs-back:hover, .gs-back:focus-visible { text-decoration: underline; }
+.gs-fields { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; }
+.gs-fields label { display: grid; gap: .2rem; font-size: .78rem; font-weight: 600; color: var(--gs-soft); }
+.gs-bar input, .gs-bar select, .gs-bar button, .gs-edit input, .gs-edit select, .gs-edit textarea {
+  min-height: 40px; padding: .35rem .6rem; border: 1px solid #9c9486; border-radius: 8px; background: #fff; color: var(--gs-ink); font: inherit; font-size: .9rem;
+}
+.gs-bar button, .gs-edit button, .gs-btnlink {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 40px; min-width: 40px; padding: .35rem .8rem;
+  border: 1px solid #9c9486; border-radius: 8px; background: #fff; color: var(--gs-ink); font: 600 .85rem "IBM Plex Sans", system-ui, sans-serif; cursor: pointer; text-decoration: none;
+}
+.gs-bar button:hover, .gs-edit button:hover, .gs-btnlink:hover { background: #f4efe6; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.gs-primary { background: var(--gs-ink) !important; border-color: var(--gs-ink) !important; color: #fff !important; }
+.gs-primary:disabled { background: #6b665c !important; }
+.gs-danger { color: #8f1d12 !important; }
+:is(a, button, input, select, textarea, summary):focus-visible { outline: 3px solid #1f5f99; outline-offset: 2px; }
+.gs-site { align-self: end; }
+.gs-site summary { cursor: pointer; font-size: .85rem; font-weight: 600; padding: .5rem 0; }
+.gs-site label { min-width: min(34ch, 80vw); }
+.gs-site p { margin: .3rem 0 0; font-size: .75rem; color: var(--gs-soft); max-width: 46ch; }
+.gs-status { min-height: 1.4em; margin: 0; font-size: .85rem; color: var(--gs-accent); font-weight: 600; }
+.gs-link { margin-left: .4rem; background: none; border: 0; color: #1f5f99; text-decoration: underline; cursor: pointer; font: inherit; }
+
+.gs-empty { max-width: 8.5in; margin: 1rem auto; padding: 1.5rem 16px; background: #fff; border: 1px dashed var(--gs-rule); border-radius: 12px; }
+.gs-empty h2 { margin: 0 0 .4rem; font-size: 1.15rem; }
+
+/* ------------------------------------------------------------------ pages */
+.gs-pages { display: grid; gap: 1.25rem; padding: 0 16px 4rem; justify-items: center; }
+.gs-page { width: 100%; max-width: 8.5in; padding: .5in clamp(14px, 4vw, .5in); background: var(--gs-paper); border: 1px solid #d3cbbb; box-shadow: 0 6px 24px rgba(40,30,10,.12); }
+
+.gs-page-head { display: grid; gap: .3rem; padding-bottom: .35rem; border-bottom: 2px solid var(--gs-ink); }
+.gs-page-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .8rem; }
+.gs-page-title h2 { margin: 0; font-size: 1.3rem; line-height: 1.15; letter-spacing: -.01em; }
+.gs-page-title p { margin: 0; font-size: .75rem; color: var(--gs-soft); }
+.gs-who { display: flex; flex-wrap: wrap; gap: .3rem 1.1rem; margin: 0; font-size: .85rem; }
+.gs-who div { flex: 1 1 1.6in; display: flex; align-items: baseline; gap: .35rem; min-width: 1.5in; border-bottom: 1px solid var(--gs-ink); min-height: 1.5rem; }
+.gs-who div:first-child { flex-basis: 2.8in; min-width: 2.4in; }
+.gs-who dt { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gs-soft); }
+.gs-who dd { margin: 0; font-weight: 600; white-space: nowrap; }
+.gs-howto { margin: .45rem 0 .2rem; font-size: .78rem; color: var(--gs-soft); }
+
+/* ------------------------------------------------------------------- cards */
+.gs-card { margin-top: .6rem; border: 1.5px solid var(--gs-ink); border-radius: 6px; background: #fff; overflow: hidden; }
+.gs-print { padding: .35rem .6rem .5rem; }
+.gs-card-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .55rem; padding-bottom: .15rem; }
+.gs-num { display: inline-grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; background: var(--gs-ink); color: #fff; font-size: .78rem; font-weight: 700; flex: none; }
+.gs-title { margin: 0; font-size: 1.05rem; line-height: 1.2; flex: 1 1 9rem; min-width: 0; overflow-wrap: anywhere; }
+.gs-target { font-size: .78rem; font-weight: 700; white-space: nowrap; }
+
+.gs-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: start; }
+.gs-staff { max-width: 5in; }
+.gs-per-2 .gs-staff { max-width: 6.1in; }
+.gs-staff svg { display: block; width: 100%; height: auto; }
+.gs-staff svg text { font-family: "IBM Plex Sans", system-ui, sans-serif; }
+.gs-countcap { font-size: .74rem; color: var(--gs-soft); white-space: nowrap; }
+.gs-countcap strong { color: var(--gs-ink); letter-spacing: .04em; }
+.gs-note { margin: .2rem 0 0; font-size: .85rem; font-weight: 600; }
+.gs-qr { margin: 0; width: 1.3in; text-align: center; }
+.gs-qr-img svg { display: block; width: 100%; height: auto; }
+.gs-qr figcaption { font-size: .62rem; font-weight: 600; color: var(--gs-soft); }
+
+.gs-foot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .4rem 1.2rem; align-items: end; margin-top: .35rem; padding-top: .4rem; border-top: 1px dashed var(--gs-rule); }
+.gs-foot b { display: block; font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--gs-soft); margin-bottom: .15rem; }
+.gs-ladder-steps { display: flex; align-items: center; gap: .3rem; font-weight: 700; font-size: .95rem; }
+.gs-step { display: inline-flex; align-items: center; gap: .25rem; }
+.gs-box { display: inline-block; width: .9rem; height: .9rem; border: 1.5px solid var(--gs-ink); border-radius: 3px; }
+.gs-arrow { color: var(--gs-soft); font-weight: 400; }
+.gs-log { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.gs-log th { padding: 0 0 .1rem; font-size: .62rem; font-weight: 700; color: var(--gs-soft); text-align: center; }
+.gs-log td { height: 1.2rem; border: 1px solid var(--gs-ink); }
+.gs-roomy .gs-log td { height: 1.9rem; }
+.gs-comments { margin-top: .45rem; }
+.gs-comments span { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--gs-soft); font-weight: 700; }
+.gs-comments::after { content: ""; display: block; height: .9in; background: repeating-linear-gradient(to bottom, transparent 0 .3in, var(--gs-rule) .3in calc(.3in + 1px)); }
+
+/* -------------------------------------------------------------- edit panel */
+.gs-edit { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; padding: .7rem .8rem; background: #f6f1e7; border-top: 1px dashed #9c9486; }
+.gs-edit label { display: grid; gap: .2rem; font-size: .74rem; font-weight: 700; color: var(--gs-soft); }
+.gs-edit .gs-wide { flex: 1 1 100%; }
+.gs-edit input[type="number"] { width: 6rem; }
+.gs-edit textarea { resize: vertical; width: 100%; }
+.gs-edit .gs-wide input { width: 100%; }
+.gs-edit-actions { display: flex; flex-wrap: wrap; gap: .4rem; flex: 1 1 100%; }
+
+@media (max-width: 560px) {
+  .gs-body { grid-template-columns: 1fr; }
+  .gs-qr { width: 1.3in; }
+  .gs-foot { grid-template-columns: 1fr; }
+  .gs-who div, .gs-who div:first-child { min-width: 100%; }
+}
+
+/* ------------------------------------------------------------------- print */
+@page { size: letter; margin: .5in; }
+@media print {
+  html, body { background: #fff !important; color: #000; font-size: 11pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  .gs-pages { display: block; padding: 0; }
+  .gs-page { width: auto; max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; break-after: page; }
+  .gs-page:last-child { break-after: auto; }
+  .gs-card { break-inside: avoid; margin-top: .08in; height: var(--gs-card-h); border-radius: 4px; }
+  .gs-per-2 { --gs-card-h: 4.35in; }
+  .gs-per-2 .gs-qr { width: 1.4in; }
+  .gs-body { grid-template-columns: minmax(0, 1fr) auto; }
+  .gs-foot { grid-template-columns: auto minmax(0, 1fr); }
+  .gs-who { flex-wrap: nowrap; }
+  .gs-howto, .gs-countcap, .gs-page-title p { color: #333; }
+}
