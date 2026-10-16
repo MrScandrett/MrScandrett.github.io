@@ -1823,7 +1823,7 @@
       });
       var comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -16; comp.knee.value = 20; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
-      master = ctx.createGain(); master.gain.value = 0.8;
+      master = ctx.createGain(); master.gain.value = iPadPlayback ? 0.6 : 0.8;
       master.connect(comp);
       // A stereo convolution runs for the whole performance. It is a disproportionate cost on
       // older iPads and competes with Safari's audio renderer, so those devices use the dry mix.
@@ -1838,7 +1838,13 @@
       // A fast hard limiter last keeps peaks under it.
       var limiter = ctx.createDynamicsCompressor();
       limiter.threshold.value = -2; limiter.knee.value = 0; limiter.ratio.value = 20; limiter.attack.value = 0.001; limiter.release.value = 0.1;
-      comp.connect(limiter); limiter.connect(ctx.destination);
+      // The compressor-as-limiter has attack time and automatic makeup gain, so a loud chord + drum hit can still
+      // overshoot full scale and clip the iPad's DAC. A tanh soft clipper last makes the output mathematically
+      // incapable of exceeding +/-1: any overshoot is rounded off instead of hard-clipped.
+      var clip = ctx.createWaveShaper(), curve = new Float32Array(2049);
+      for (var ci = 0; ci < curve.length; ci++) curve[ci] = Math.tanh((ci / 1024 - 1) * 1.2) / Math.tanh(1.2) * 0.98;
+      clip.curve = curve;
+      comp.connect(limiter); limiter.connect(clip); clip.connect(ctx.destination);
       ['melody', 'piano', 'bass', 'drums', 'click'].forEach(function (k) { bus[k] = ctx.createGain(); bus[k].connect(master); });
       applyVolumes();
     }
@@ -1857,7 +1863,17 @@
     g.gain.setTargetAtTime(peak * 0.7, t + a, 0.25);
     g.gain.setTargetAtTime(0.0001, end, rel);
   }
+  // Live synth voices. Stacked chord, bass and lead notes on a 2017 iPad Pro overload the mix (and the audio thread),
+  // so past the cap a new note is skipped rather than clipping everything already sounding.
+  var liveVoices = 0, MAX_LIVE = iPadPlayback ? 18 : 40;
+  function claimVoice(osc) {
+    if (liveVoices >= MAX_LIVE) return false;
+    liveVoices++;
+    osc.onended = function () { liveVoices = Math.max(0, liveVoices - 1); };
+    return true;
+  }
   function voiceLead(out, t, dur, m, vel) {
+    if (liveVoices >= MAX_LIVE) return;
     var end = t + Math.max(0.06, dur * 0.94), g = ctx.createGain();
     if (opts.lead === 'piano') return voicePiano(out, t, dur, m, vel * 1.4);
     var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), f = ctx.createBiquadFilter();
@@ -1874,9 +1890,11 @@
     var mix = ctx.createGain(); mix.gain.value = opts.lead === 'flute' ? 0.7 : 0.35;
     o1.connect(mix); o2.connect(mix); mix.connect(f); f.connect(g); g.connect(out);
     env(g, t, vel, 0.025, end, 0.05);
+    claimVoice(o1);
     [o1, o2, lfo].forEach(function (o) { o.start(t); o.stop(end + 0.4); });
   }
   function voicePiano(out, t, dur, m, vel) {
+    if (liveVoices >= MAX_LIVE) return;
     var end = t + Math.max(0.1, dur), g = ctx.createGain();
     // One oscillator and no per-note filter cuts the live node count by roughly two thirds on
     // iPad. Chords remain pitched and articulated, but leave enough DSP time for drums and bass.
@@ -1887,7 +1905,7 @@
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.008);
       g.gain.setTargetAtTime(vel * 0.22, t + 0.008, 0.38);
       g.gain.setTargetAtTime(0.0001, end, 0.07);
-      simple.start(t); simple.stop(end + 0.45);
+      claimVoice(simple); simple.start(t); simple.stop(end + 0.45);
       return;
     }
     var f = ctx.createBiquadFilter(), o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
@@ -1897,9 +1915,10 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.006);
     g.gain.setTargetAtTime(vel * 0.25, t + 0.006, 0.45);
     g.gain.setTargetAtTime(0.0001, end, 0.09);
-    o1.start(t); o2.start(t); o1.stop(end + 0.6); o2.stop(end + 0.6);
+    claimVoice(o1); o1.start(t); o2.start(t); o1.stop(end + 0.6); o2.stop(end + 0.6);
   }
   function voiceBass(out, t, dur, m, vel) {
+    if (liveVoices >= MAX_LIVE) return;
     var end = t + Math.max(0.08, dur * 0.92), g = ctx.createGain(), f = ctx.createBiquadFilter();
     var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g2 = ctx.createGain();
     o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = hz(m); o2.frequency.value = hz(m); g2.gain.value = 0.5;
@@ -1908,7 +1927,7 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vel, t + 0.008);
     g.gain.setTargetAtTime(vel * 0.45, t + 0.008, 0.2);
     g.gain.setTargetAtTime(0.0001, end, 0.04);
-    o1.start(t); o2.start(t); o1.stop(end + 0.3); o2.stop(end + 0.3);
+    claimVoice(o1); o1.start(t); o2.start(t); o1.stop(end + 0.3); o2.stop(end + 0.3);
   }
   function voiceClick(out, t, level) {
     var o = ctx.createOscillator(), g = ctx.createGain();
