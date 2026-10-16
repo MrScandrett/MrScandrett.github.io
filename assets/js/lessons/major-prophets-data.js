@@ -194,11 +194,11 @@ window.MajorProphets = {
     "lab": "The dry bones: read the explanation",
     "prompt": "Ezekiel 37 shows scattered bones becoming a living people. Predict the identification the passage itself gives.",
     "choices": [
-      "The whole house of Israel in despair",
       "Instructions for medical resuscitation",
-      "A named modern army"
+      "A named modern army",
+      "The whole house of Israel in despair"
     ],
-    "answer": 0,
+    "answer": 2,
     "feedback": "Ezekiel 37:11 identifies the bones as the whole house of Israel, whose hope is lost. Verses 12–14 promise restoration and God’s spirit. The vision moves from lifelessness to renewed communal life.",
     "steps": [
       [
@@ -251,22 +251,52 @@ window.MajorProphets = {
       [
         "In Ezekiel 37:11, the bones represent…",
         [
-          "The whole house of Israel",
           "A dinosaur dig",
+          "The whole house of Israel",
           "A modern invention"
         ],
-        0,
+        1,
         "Use the vision’s own explanation."
       ],
       [
         "What is criticized in Ezekiel 34?",
         [
-          "Leaders feeding themselves while neglecting the flock",
           "Sheep needing care",
-          "All leadership equally"
+          "All leadership equally",
+          "Leaders feeding themselves while neglecting the flock"
+        ],
+        2,
+        "The shepherd image makes neglected care visible (34:1–16)."
+      ],
+      [
+        "Where does Ezekiel’s opening vision of God’s glory take place?",
+        [
+          "Beside the Chebar canal in Babylonia",
+          "Inside the Jerusalem temple",
+          "On the road to Egypt"
         ],
         0,
-        "The shepherd image makes neglected care visible."
+        "1:1–3 places the vision among the exiles, which is part of its point."
+      ],
+      [
+        "Ezekiel 18:20–32 says that…",
+        [
+          "Children are doomed by their parents’ wrongdoing",
+          "Each person answers for their own choices and may turn and live",
+          "Choices make no difference to the outcome"
+        ],
+        1,
+        "The chapter answers a proverb of blame by placing responsibility, and the offer of return, with each hearer."
+      ],
+      [
+        "When the glory returns in Ezekiel 43, it comes from the…",
+        [
+          "West, from the sea",
+          "South, from Egypt",
+          "East, the direction it left"
+        ],
+        2,
+        "43:1–5 reverses the departure of 10–11 and answers the fear of abandonment."
       ]
     ],
     "slug": "ezekiel"
