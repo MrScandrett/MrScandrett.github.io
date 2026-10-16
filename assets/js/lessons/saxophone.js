@@ -275,5 +275,10 @@
     const show=row=>{rows.forEach(r=>r.classList.toggle('is-on',r===row));img.src='data:image/svg+xml,'+encodeURIComponent(KM.svg(row?row.dataset.kmPressed.split(' '):['L1','L2','L3'],row?row.dataset.kmKey:null));};
     rows.forEach(r=>{['mouseenter','focus','click'].forEach(e=>r.addEventListener(e,()=>show(r)));r.addEventListener('mouseleave',()=>{if(document.activeElement!==r)show(null);});r.addEventListener('blur',()=>show(null));});
   })();
+  // Phone layout: the finger legend and note chart fold away (desktop CSS ignores data-folded).
+  document.querySelectorAll('#sxFingeringStudio [data-fold-toggle]').forEach(btn=>btn.addEventListener('click',()=>{
+    const host=btn.closest('[data-folded]'),folded=host.dataset.folded!=='true';
+    host.dataset.folded=String(folded);btn.setAttribute('aria-expanded',String(!folded));
+  }));
   showFingering();renderPiece();renderRoute();buildComposer();
 })();
