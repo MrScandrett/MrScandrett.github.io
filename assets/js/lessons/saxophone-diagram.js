@@ -8,7 +8,8 @@
   let serial = 0;
   const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
 
-  window.SaxDiagram = function(keys, label) {
+  window.SaxDiagram = function(keys, label, changes) {
+    const chg = changes || {press: [], lift: []};
     const id = 'sax' + (++serial);
     const fingerLabels = {octave:'T',L1:'1',L2:'2',L3:'3',R1:'1',R2:'2',R3:'3'};
 
@@ -19,16 +20,18 @@
       const stroke = pressed ? '#080c10' : '#151c24';
       const sw = r > 16 ? 4.5 : 2.5;
 
+      const isP = chg.press.includes(key), isL = chg.lift.includes(key);
+      const halo = (isP || isL) ? (ellipse ? `<ellipse cx="${x}" cy="${y}" rx="${rx + 9}" ry="${ry + 9}" fill="none" stroke="#ea580c" stroke-width="5"${isL ? ' stroke-dasharray="7 5"' : ''}/>` : `<circle cx="${x}" cy="${y}" r="${r + 9}" fill="none" stroke="#ea580c" stroke-width="5"${isL ? ' stroke-dasharray="7 5"' : ''}/>`) : '';
       const number = fingerLabels[key];
       const numberMark = number ? `<text x="${x}" y="${y + r * 0.28}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${Math.max(8,r * 0.78)}" font-weight="800" fill="${pressed?'#fff':'#151c24'}" pointer-events="none">${number}</text>` : '';
       if (ellipse) {
-        return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` +
+        return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` + halo +
           `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>` +
           `${pressed ? `<ellipse cx="${x}" cy="${y}" rx="${rx * 0.45}" ry="${ry * 0.45}" fill="#3b4856" opacity="0.45"/>` : ''}` +
           numberMark + `</g>`;
       }
 
-      return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` +
+      return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` + halo +
         `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>` +
         `${pressed ? `<circle cx="${x}" cy="${y}" r="${r * 0.38}" fill="#3b4856" opacity="0.45"/>` : `<circle cx="${x - r * 0.28}" cy="${y - r * 0.28}" r="${r * 0.35}" fill="#ffffff" opacity="0.95"/>`}` + numberMark +
         `</g>`;
