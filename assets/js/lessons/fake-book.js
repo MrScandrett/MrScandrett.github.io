@@ -568,7 +568,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead', beatCounts: 'off',
-    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
+    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open', guitarVoice: 'manual',
@@ -724,7 +724,7 @@
       return { rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
     }), opts.guitarVoice || 'manual', GT) : [];
     // Imported bass-clef staff and tab: concert pitch (they're for piano, bass and guitar), moved with the key.
-    view.bass = null; view.tab = null;
+    view.bass = null; view.bassHorn = null; view.tab = null;
     if (t.staves.bass) {
       var bl = t.staves.bass.events.map(function (e) {
         return { start: e.start, dur: e.dur, ps: e.ps.map(function (p) { return shiftPitch(p, cs.letters, cs.semis, cFlat); }) };
@@ -737,6 +737,22 @@
       while (bmean + 12 * bk > 64) bk--;
       bl.forEach(function (e) { if (bk) e.ps = e.ps.map(function (p) { return pitch(p.dia + 7 * bk, p.a); }); e.p = e.ps[0]; });
       view.bass = bl;
+      // The same line written for a treble-clef player (sax, trumpet, flute...): the instrument's transposition and key,
+      // then the lowest octave that sits inside its range (and the Octave setting on top, kept inside the range).
+      // Drawing only: what you hear still comes from view.bass.
+      if (ins.clef === 'treble') {
+        var hl = t.staves.bass.events.map(function (e) {
+          return { start: e.start, dur: e.dur, ps: e.ps.map(function (p) { return shiftPitch(p, ws.letters, ws.semis, wFlat); }) };
+        });
+        var hlo = Infinity, hhi = -Infinity;
+        hl.forEach(function (e) { e.ps.forEach(function (p) { hlo = Math.min(hlo, p.midi); hhi = Math.max(hhi, p.midi); }); });
+        if (hlo <= hhi) {
+          var floor = ins.range ? ins.range[0] : 60, hk = Math.ceil((floor - hlo) / 12);
+          if (ins.range) hk = Math.max(hk, Math.min(hk + opts.octave, Math.floor((ins.range[1] - hhi) / 12)));
+          hl.forEach(function (e) { if (hk) e.ps = e.ps.map(function (p) { return pitch(p.dia + 7 * hk, p.a); }); e.p = e.ps[0]; });
+          view.bassHorn = hl;
+        }
+      }
     }
     // A second right-hand voice (the figure under a piano melody): written pitch, same key and instrument as the melody.
     view.voice2 = null;
@@ -1223,10 +1239,12 @@
     view.writtenChords.forEach(function (c, ci) { (chordsByBar[c.bar] = chordsByBar[c.bar] || []).push({ c: c, ci: ci }); });
     // Extra staves from an imported score, drawn under the melody and lined up with it in time.
     var showBass = !!(view.bass && opts.showBass !== false), showTab = !!(view.tab && tabOn()), showPos = !!view.pos;
-    var CB = MN.clefs.bass, sigB = keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
+    // "Bass part on my horn's staff": the same line in the instrument's clef, key and transposition (drawing only).
+    var bassHorn = !!(showBass && view.bassHorn && opts.bassFor === 'horn'), bassEvents = bassHorn ? view.bassHorn : view.bass;
+    var CB = bassHorn ? C : MN.clefs.bass, sigB = bassHorn ? sig : keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
     renderTabNote();
     var showV2 = !!view.voice2, v2Placed = {};
-    if (showBass) layoutBars(view.bass, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
+    if (showBass) layoutBars(bassEvents, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
     if (showV2) layoutBars(view.voice2, t).forEach(function (vb, i) { bars[i].v2Bar = vb; bars[i].hasV2 = vb.pieces.some(function (pc) { return !pc.rest; }); });
     var ksw = Math.max(Math.abs(sig), showBass ? Math.abs(sigB) : 0);
     var bassPlaced = {};
@@ -1242,7 +1260,7 @@
       if (b.bassBar) b.bassBar.pieces.forEach(function (pc) {
         if (pc.rest) { if (!pc.whole) add(pc.rel, S * (1.5 + 2.1 * Math.sqrt(pc.d)), false); return; }
         var acc = false;
-        view.bass[pc.idx].ps.forEach(function (p) {
+        bassEvents[pc.idx].ps.forEach(function (p) {
           var mk = p.l + ':' + p.o, cur = bm[mk] !== undefined ? bm[mk] : keyAcc(sigB, p.l);
           if (!pc.tieFrom && cur !== p.a) acc = true;
           bm[mk] = p.a;
@@ -1302,8 +1320,8 @@
         sys.forEach(function (b) {
           b.bassBar.pieces.forEach(function (pc) {
             if (!pc.p) return;
-            view.bass[pc.idx].ps.forEach(function (p) { var st = p.dia - CB.bottom; btop = Math.max(btop, st + 1); bbot = Math.min(bbot, st - 1); });
-            bchord = Math.max(bchord, view.bass[pc.idx].ps.length);
+            bassEvents[pc.idx].ps.forEach(function (p) { var st = p.dia - CB.bottom; btop = Math.max(btop, st + 1); bbot = Math.min(bbot, st - 1); });
+            bchord = Math.max(bchord, bassEvents[pc.idx].ps.length);
           });
         });
         bassTop = staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + Math.max(0, btop - 8) * half;
@@ -1355,7 +1373,7 @@
       }
       if (showBass) {
         for (var bl = 0; bl < 5; bl++) out.push(line(hx, bassTop + bl * S, bx, bassTop + bl * S, Math.max(1, S * 0.11), 'fb-staffline'));
-        out.push(MN.clef('bass', hx + 0.7 * S, bassBot, half, 'fb-clef'));
+        out.push(MN.clef(bassHorn ? ins.clef : 'bass', hx + 0.7 * S, bassBot, half, 'fb-clef'));
         for (var bki = 0; bki < Math.abs(sigB); bki++) {
           out.push(MN.accidental(sigB > 0 ? 1 : -1, kx + bki * 1.05 * S, bassBot - (sigB > 0 ? CB.sharp[bki] : CB.flat[bki]) * half, S, 'fb-keysig'));
         }
@@ -1531,7 +1549,7 @@
           out.push(txt(xm, ty + 0.45 * S, '3', 'fb-tuplet', ' font-size="' + (1.3 * S) + '" text-anchor="middle"'));
           trip = []; tripLen = 0;
         });
-        if (showBass) drawStaffLine(b, xAt, { pieces: b.bassBar.pieces, events: view.bass, bot: bassBot, top: bassTop, clef: CB, sig: sigB, cls: 'fb-bn', placed: bassPlaced, names: true, bbot: bbot });
+        if (showBass) drawStaffLine(b, xAt, { pieces: b.bassBar.pieces, events: bassEvents, bot: bassBot, top: bassTop, clef: CB, sig: sigB, cls: 'fb-bn', placed: bassPlaced, names: true, bbot: bbot });
         if (showV2 && b.v2Bar) drawStaffLine(b, xAt, { pieces: b.v2Bar.pieces, events: view.voice2, bot: staffBot, top: staffTop, clef: C, sig: sig, cls: 'fb-v2n', placed: v2Placed, up: false, skipRests: true });
         if (showTab) drawTabBar(b, xAt);
         if (showPos && view.pos.bars[b.i]) out.push(window.FakeBookPosition.draw(view.pos.inst, view.pos.bars[b.i], b.x, posTop, b.w, POSH, S));
@@ -2761,6 +2779,8 @@
       stv.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
       stv.querySelector('[data-fb-has="bass"]').hidden = !hasB;
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
+      var bh = el('[data-fb-bass-horn]');
+      if (bh) { bh.closest('label').hidden = !(hasB && INSTR[opts.instr].clef === 'treble'); bh.checked = opts.bassFor === 'horn'; }
       el('[data-fb-show-tab]').checked = tabOn();
       el('[data-fb-show-pos]').checked = posOn();
       el('[data-fb-show-pos]').disabled = opts.posInst === 'piano' || !!opts.saxFingers;
@@ -3898,6 +3918,7 @@
       else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
+      else if (t.matches('[data-fb-bass-horn]')) { opts.bassFor = t.checked ? 'horn' : 'concert'; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; if (t.checked) opts.showPos = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-shape-size]')) { opts.shapeSize = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-low-bass]')) { opts.lowBass = t.checked; showChord(false); refresh(); renderBarPop(); save(); }
