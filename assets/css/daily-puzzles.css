@@ -91,25 +91,48 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 .dp-body { display: grid; gap: 1.25rem 1.75rem; align-items: start; }
 .dp-body--cross { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
 
+.dp-xwrap { display: flex; flex-direction: column; min-width: 0; }
+.dp-xtop { order: 0; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
+.dp-xtop-gap { flex: 1; }
+.dp-xonly-small, .dp-keys { display: none; }
+.dp-cluebar { order: 1; }
+.dp-xframe { order: 2; }
+.dp-xwrap .dp-tools { order: 3; }
+.dp-status { order: 4; }
+
 .dp-cluebar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   margin: 0 0 0.6rem;
-  padding: 0.55rem 0.8rem;
   min-height: 2.6rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--dp-accent) 16%, transparent);
-  font-size: 0.95rem;
 }
+.dp-cluetext { flex: 1; margin: 0; padding: 0.45rem 0.3rem; font-size: 0.95rem; line-height: 1.3; text-align: left; }
+.dp-cluenav {
+  align-self: stretch;
+  min-width: 2.6rem;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.dp-cluenav:hover { background: color-mix(in srgb, var(--dp-accent) 22%, transparent); }
 
 .dp-xframe { position: relative; container-type: inline-size; min-width: 0; }
 
 .dp-xgrid {
   /* Cells shrink to fit the card (container width), up to a comfortable max. */
-  --cell: min(2.7rem, calc((100vw - 4rem - (var(--n) - 1) * 2px) / var(--n)));
-  --cell: min(2.7rem, calc((100cqw - (var(--n) - 1) * 2px) / var(--n)));
+  --gap: 2px;
+  --cell: min(2.7rem, calc((100vw - 4rem - (var(--n) - 1) * var(--gap)) / var(--n)));
+  --cell: min(2.7rem, calc((100cqw - (var(--n) - 1) * var(--gap)) / var(--n)));
   display: grid;
   grid-template-columns: repeat(var(--n), var(--cell));
   grid-template-rows: repeat(var(--m), var(--cell));
-  gap: 2px;
+  gap: var(--gap);
   justify-content: center;
 }
 
@@ -283,10 +306,54 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
   .dp-nav { width: 100%; justify-content: space-between; }
   .dp-date { min-width: 0; flex: 1; font-size: 0.85rem; }
   .dp-streak { padding: 0; }
-  .dp-cluebar { font-size: 0.88rem; padding: 0.45rem 0.65rem; min-height: 0; }
   .dp-tools { gap: 0.3rem; }
   .dp-tools .dp-btn { flex: 1 1 auto; }
   .dp-padbtn { min-height: 2.6rem; font-size: 1.05rem; }
+}
+
+/* ── phone / tablet crossword: top bar, big grid, clue bar, on-screen keys ── */
+@media (max-width: 860px), (pointer: coarse) {
+  .dp-body--cross { grid-template-columns: minmax(0, 1fr); }
+  .dp-xonly-small { display: inline-flex; }
+  .dp-keys { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.35rem; order: 5; margin-top: 0.6rem; }
+
+  .dp-xwrap .dp-tools { order: 1; display: none; margin: 0 0 0.5rem; }
+  .dp-xwrap .dp-tools.is-open { display: flex; }
+  .dp-xframe { order: 2; }
+  .dp-cluebar { order: 3; margin: 0.6rem 0 0; }
+  .dp-status { order: 4; margin-top: 0.4rem; min-height: 0; }
+  .dp-status:empty { display: none; }
+
+  /* the clue list is its own screen on small displays */
+  .dp-body--cross:not(.show-clues) .dp-cluecols { display: none; }
+  .dp-body--cross.show-clues .dp-xwrap > :not(.dp-xtop) { display: none; }
+  .dp-body--cross.show-clues .dp-clues { max-height: none; }
+  .dp-clue { padding: 0.55rem 0.5rem; font-size: 0.95rem; }
+}
+
+.dp-keyrow { display: flex; justify-content: center; gap: 0.3rem; }
+.dp-keyrow:nth-child(2) { padding-inline: 4.5%; }
+.dp-key {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.85rem;
+  border: 1px solid var(--dp-line);
+  border-radius: 8px;
+  background: var(--dp-tile);
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dp-key--wide { flex: 1.6 1 0; }
+.dp-key:active { background: color-mix(in srgb, var(--dp-accent) 35%, transparent); }
+
+@media (max-width: 520px) {
+  #home-puzzles.home-widget { padding: 0.8rem 0.4rem; }
+  #home-puzzles .home-widget-schedule-header { margin-bottom: 0.2rem; padding-bottom: 0.3rem; }
+  #home-puzzles .home-widget-schedule-header, .dp-bar, .dp-xtop, .dp-tools, .dp-cluebar, .dp-status { padding-inline: 0.3rem; }
+  .dp-cluebar { padding-inline: 0; }
+  .dp-xgrid { --gap: 1px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
