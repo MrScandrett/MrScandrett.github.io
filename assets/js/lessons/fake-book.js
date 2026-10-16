@@ -1764,6 +1764,49 @@
   }
   window.addEventListener('afterprint', endPrint);
 
+  // The per-bar diagram rows (sax fingerings, chord shapes) are HTML in a <foreignObject>. Safari lays that
+  // out in its own coordinate space, so in a scaled, viewBox-sliced print page the diagrams drift off their
+  // notes and onto the next system. In the print clone, redraw each row as native SVG at the same spot.
+  function nativizeMeasureRows(c) {
+    var NS = 'http://www.w3.org/2000/svg';
+    Array.prototype.forEach.call(c.querySelectorAll('foreignObject.fb-measure-help'), function (fo) {
+      var div = fo.firstElementChild, row = div && div.querySelector('.fb-measure-row');
+      if (!row) return;
+      var S = parseFloat(div.style.fontSize) || 10, x0 = Number(fo.getAttribute('x')) || 0, y0 = Number(fo.getAttribute('y')) || 0;
+      var rowPx = (parseFloat(row.style.height) || 0) * S, g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'fb-print-shapes');
+      Array.prototype.forEach.call(row.querySelectorAll('.fb-measure-shape'), function (sh) {
+        var left = parseFloat(sh.style.left) || 0, w = parseFloat(sh.style.width) || 0, sax = sh.classList.contains('fb-sx');
+        var lab = sh.querySelector('strong'), sv = sh.querySelector('svg');
+        if (lab && lab.textContent) {
+          var t = document.createElementNS(NS, 'text');
+          t.setAttribute('x', (x0 + left + (sax ? w / 2 : 0)).toFixed(2));
+          t.setAttribute('y', (y0 + S).toFixed(2));
+          t.setAttribute('text-anchor', sax ? 'middle' : 'start');
+          t.setAttribute('font-size', (1.1 * S).toFixed(2));
+          t.setAttribute('font-weight', '700');
+          t.setAttribute('font-family', 'DM Sans, sans-serif');
+          t.setAttribute('fill', '#111');
+          t.textContent = lab.textContent;
+          g.appendChild(t);
+        }
+        var vw = sv && parseFloat(sv.style.width), vh = sv && parseFloat(sv.style.height);
+        if (!vw || !vh) return;
+        var n = sv.cloneNode(true);
+        n.removeAttribute('style');
+        n.setAttribute('x', (x0 + left + (sax ? (w - vw) / 2 : 0)).toFixed(2));
+        n.setAttribute('y', (y0 + 1.7 * S).toFixed(2));
+        n.setAttribute('width', vw.toFixed(2));
+        n.setAttribute('height', vh.toFixed(2));
+        g.appendChild(n);
+      });
+      fo.parentNode.insertBefore(g, fo);
+      row.remove();
+      if (div.children.length) { fo.setAttribute('y', (y0 + rowPx).toFixed(2)); fo.setAttribute('height', Math.max(0, Number(fo.getAttribute('height')) - rowPx).toFixed(2)); }
+      else fo.remove();
+    });
+  }
+
   function printNotation() {
     if (!view || !tune) return;
     if (P) stop();
@@ -1800,6 +1843,7 @@
         // Click targets and playback highlights are screen-only.
         Array.prototype.forEach.call(c.querySelectorAll('.fb-bar'), function (node) { node.remove(); });
         Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
+        nativizeMeasureRows(c);
         clones.push(c.outerHTML);
       });
     } finally {
