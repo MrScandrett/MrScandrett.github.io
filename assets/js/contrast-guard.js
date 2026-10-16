@@ -20,10 +20,41 @@
     document.head.appendChild(link);
   }
 
+  // color-mix(), oklch(), lab() and friends compute to `color(srgb …)` or non-rgb syntax. Treating those
+  // as unknown made themed surfaces look transparent, so the guard assumed a black canvas and painted
+  // black text onto dark cards. A 1x1 canvas converts any CSS color to sRGB.
+  var colorProbe = null;
+  var modernColorCache = {};
+  function parseModernColor(value) {
+    if (Object.prototype.hasOwnProperty.call(modernColorCache, value)) return modernColorCache[value];
+    var parsed = null;
+    var srgb = value.match(/^color\(\s*srgb\s+([\d.e-]+)\s+([\d.e-]+)\s+([\d.e-]+)(?:\s*\/\s*([\d.]+%?))?\s*\)$/i);
+    if (srgb) {
+      var a = srgb[4] === undefined ? 1 : (srgb[4].endsWith("%") ? parseFloat(srgb[4]) / 100 : parseFloat(srgb[4]));
+      parsed = [parseFloat(srgb[1]) * 255, parseFloat(srgb[2]) * 255, parseFloat(srgb[3]) * 255, a];
+    } else {
+      try {
+        if (!colorProbe) {
+          var canvas = document.createElement("canvas");
+          canvas.width = canvas.height = 1;
+          colorProbe = canvas.getContext("2d", { willReadFrequently: true });
+        }
+        colorProbe.clearRect(0, 0, 1, 1);
+        colorProbe.fillStyle = "#000";
+        colorProbe.fillStyle = value;
+        colorProbe.fillRect(0, 0, 1, 1);
+        var px = colorProbe.getImageData(0, 0, 1, 1).data;
+        if (px[3]) parsed = [px[0] * 255 / px[3], px[1] * 255 / px[3], px[2] * 255 / px[3], px[3] / 255];
+      } catch (error) {}
+    }
+    modernColorCache[value] = parsed;
+    return parsed;
+  }
+
   function parseColor(value) {
     if (!value || value === "transparent") return [0, 0, 0, 0];
     var match = value.match(/^rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/i);
-    if (!match) return null;
+    if (!match) return parseModernColor(value);
     var alpha = match[4] === undefined ? 1 : (match[4].endsWith("%") ? parseFloat(match[4]) / 100 : parseFloat(match[4]));
     return [parseFloat(match[1]), parseFloat(match[2]), parseFloat(match[3]), alpha];
   }
@@ -67,7 +98,7 @@
     // layers over it. Estimate each gradient separately so transparent stops
     // reveal the layer beneath instead of being averaged with unrelated ones.
     for (var layerIndex = layers.length - 1; layerIndex >= 0; layerIndex -= 1) {
-      var matches = layers[layerIndex].match(/rgba?\([^)]*\)/gi);
+      var matches = layers[layerIndex].match(/(?:rgba?|color)\([^)]*\)/gi);
       if (!matches || !matches.length) continue;
 
       var samples = matches.map(function (value) {
