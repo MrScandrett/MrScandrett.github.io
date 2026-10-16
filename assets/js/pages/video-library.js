@@ -229,42 +229,50 @@ function getAudioContext() {
   return audioCtx;
 }
 
+const REDUCED_MOTION = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+let staticAudioBuffer = null;
+
 function playStaticNoise(durationMs = 380) {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
-    const sampleRate = ctx.sampleRate;
-    const bufferSize = Math.floor(sampleRate * (durationMs / 1000));
-    const noiseBuffer = ctx.createBuffer(1, bufferSize, sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    let b0 = 0, b1 = 0, b2 = 0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      b0 = 0.99886 * b0 + white * 0.0555179;
-      b1 = 0.99332 * b1 + white * 0.0750759;
-      b2 = 0.96900 * b2 + white * 0.1538520;
-      output[i] = (b0 + b1 + b2 + white * 0.5362) * 0.09;
+    // One pink-ish noise buffer, built once and replayed for every channel change.
+    if (!staticAudioBuffer) {
+      const sampleRate = ctx.sampleRate;
+      const bufferSize = Math.floor(sampleRate * 0.6);
+      staticAudioBuffer = ctx.createBuffer(1, bufferSize, sampleRate);
+      const output = staticAudioBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        output[i] = (b0 + b1 + b2 + white * 0.5362) * 0.09;
+      }
     }
+    const dur = Math.min(durationMs, 590) / 1000;
+    const now = ctx.currentTime;
 
     const whiteNoise = ctx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.buffer = staticAudioBuffer;
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(2200, ctx.currentTime);
-    filter.Q.setValueAtTime(0.85, ctx.currentTime);
+    filter.frequency.setValueAtTime(2200, now);
+    filter.Q.setValueAtTime(0.85, now);
 
     const hum = ctx.createOscillator();
-    hum.frequency.setValueAtTime(60, ctx.currentTime);
+    hum.frequency.setValueAtTime(60, now);
     const humGain = ctx.createGain();
-    humGain.gain.setValueAtTime(0.02, ctx.currentTime);
+    humGain.gain.setValueAtTime(0.02, now);
     hum.connect(humGain);
 
     const gainNode = ctx.createGain();
-    gainNode.gain.setValueAtTime(0.001, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-    gainNode.gain.setValueAtTime(0.25, ctx.currentTime + (durationMs / 1000) * 0.7);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (durationMs / 1000));
+    gainNode.gain.setValueAtTime(0.001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+    gainNode.gain.setValueAtTime(0.25, now + dur * 0.7);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + dur);
 
     whiteNoise.connect(filter);
     filter.connect(gainNode);
@@ -273,58 +281,79 @@ function playStaticNoise(durationMs = 380) {
 
     whiteNoise.start();
     hum.start();
-    whiteNoise.stop(ctx.currentTime + durationMs / 1000);
-    hum.stop(ctx.currentTime + durationMs / 1000);
+    whiteNoise.stop(now + dur);
+    hum.stop(now + dur);
   } catch {
     // Audio optional / blocked
   }
 }
 
+// Static is drawn on a small canvas (CSS scales it up, pixelated). A 192x108
+// frame is ~21k pixels instead of ~97k, and the noise comes from a
+// precomputed table rather than Math.random() per pixel per frame.
+const STATIC_W = 192;
+const STATIC_H = 108;
+let staticNoise = null;
 let staticRaf = null;
 let staticActive = false;
+let staticDone = null;
+
 function triggerStatic(durationMs = 380, onComplete = null) {
   const canvas = $('os-tv-static-canvas');
   if (!canvas) {
     if (onComplete) onComplete();
     return;
   }
+  // A new burst replaces the running one; its pending callback is dropped on purpose.
+  cancelAnimationFrame(staticRaf);
+  // A bare STATIC press must not eat a tune that is still waiting on its burst.
+  staticDone = onComplete || staticDone;
+
+  if (REDUCED_MOTION) {
+    // No flicker: a brief dim, then straight to the picture.
+    durationMs = Math.min(durationMs, 120);
+  }
+
+  if (canvas.width !== STATIC_W) {
+    canvas.width = STATIC_W;
+    canvas.height = STATIC_H;
+  }
+  if (!staticNoise) {
+    staticNoise = new Uint8Array(STATIC_W * STATIC_H * 2);
+    for (let i = 0; i < staticNoise.length; i++) staticNoise[i] = (Math.random() * 255) | 0;
+  }
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
-  const imgData = ctx.createImageData(w, h);
-  const data = imgData.data;
+  const imgData = ctx.createImageData(STATIC_W, STATIC_H);
+  const px = new Uint32Array(imgData.data.buffer);
+  const total = STATIC_W * STATIC_H;
 
   playStaticNoise(durationMs);
   canvas.style.opacity = '1';
   staticActive = true;
-  cancelAnimationFrame(staticRaf);
 
   const startTime = performance.now();
   let syncBar = 0;
 
   function renderStatic(now) {
     if (!staticActive) return;
-    const elapsed = now - startTime;
-    syncBar = (syncBar + 14) % h;
-
-    for (let i = 0; i < data.length; i += 4) {
-      const y = Math.floor((i / 4) / w);
-      const inSyncBar = Math.abs(y - syncBar) < 22;
-      const noise = (Math.random() * 255) | 0;
-      const val = inSyncBar ? Math.min(255, noise + 75) : noise;
-      data[i] = val;
-      data[i + 1] = val;
-      data[i + 2] = val;
-      data[i + 3] = 255;
+    syncBar = (syncBar + 6) % STATIC_H;
+    const offset = (Math.random() * total) | 0;
+    for (let i = 0; i < total; i++) {
+      const y = (i / STATIC_W) | 0;
+      let v = staticNoise[(i + offset) % staticNoise.length];
+      if (Math.abs(y - syncBar) < 9) v = Math.min(255, v + 75);
+      px[i] = 0xff000000 | (v << 16) | (v << 8) | v;
     }
     ctx.putImageData(imgData, 0, 0);
 
-    if (elapsed < durationMs) {
+    if (now - startTime < durationMs) {
       staticRaf = requestAnimationFrame(renderStatic);
     } else {
       staticActive = false;
       canvas.style.opacity = '0';
-      if (onComplete) onComplete();
+      const done = staticDone;
+      staticDone = null;
+      if (done) done();
     }
   }
   staticRaf = requestAnimationFrame(renderStatic);
@@ -471,7 +500,13 @@ function showOsd(ch, video) {
   }, 4500);
 }
 
-function playCurrentChannelVideo(withStatic = true) {
+let tuneToken = 0;
+let errorTimer = null;
+const watchHistory = []; // [{ channel, index }], most recent last, for ◀◀ / ←
+const HISTORY_MAX = 30;
+const isPhoneLayout = () => window.matchMedia?.('(max-width: 960px)').matches;
+
+function playCurrentChannelVideo(withStatic = true, { record = true } = {}) {
   const ch = CHANNELS[activeChannelIndex];
   if (!ch.playlist.length) {
     const list = VIDEOS.filter(ch.filter);
@@ -484,7 +519,26 @@ function playCurrentChannelVideo(withStatic = true) {
   const video = ch.playlist[ch.index];
   if (!video) return;
 
+  // Latest tune wins: anything queued or listening for an older tune goes stale.
+  const token = ++tuneToken;
+  clearTimeout(errorTimer);
+
+  if (record) {
+    const last = watchHistory[watchHistory.length - 1];
+    if (!last || last.channel !== activeChannelIndex || last.index !== ch.index) {
+      watchHistory.push({ channel: activeChannelIndex, index: ch.index });
+      if (watchHistory.length > HISTORY_MAX) watchHistory.shift();
+    }
+  }
+
+  const advance = () => {
+    if (token !== tuneToken) return;
+    ch.index = (ch.index + 1) % ch.playlist.length;
+    playCurrentChannelVideo(true);
+  };
+
   const doMount = () => {
+    if (token !== tuneToken) return;
     tvPlayer?.destroy();
     const host = $('os-tv-player-wrap');
     if (!host) return;
@@ -492,33 +546,28 @@ function playCurrentChannelVideo(withStatic = true) {
 
     markWatched(video.slug);
     showOsd(ch, video);
+    updateActiveChannelCard();
 
     tvPlayer = mountPlayer(host, video.entry, { captions: true, chapters: false, resume: false });
     tvPlayer.start({ resumeAt: null });
 
-    tvPlayer.addEventListener('ended', () => {
-      ch.index = (ch.index + 1) % ch.playlist.length;
-      playCurrentChannelVideo(true);
-    });
-
+    tvPlayer.addEventListener('ended', advance);
     tvPlayer.addEventListener('error', () => {
+      if (token !== tuneToken) return;
       const osd = $('os-tv-osd');
       if (osd) {
         $('os-tv-osd-name').textContent = 'TRACKING ERROR';
         $('os-tv-osd-title').textContent = 'SEARCHING FOR SIGNAL...';
         osd.classList.remove('dimmed', 'hidden');
       }
-      setTimeout(() => {
-        ch.index = (ch.index + 1) % ch.playlist.length;
-        playCurrentChannelVideo(true);
-      }, 2500);
+      errorTimer = setTimeout(advance, 2500);
     });
-
-    updateActiveChannelCard();
   };
 
+  // Show the new channel in the guide and OSD right away, even while static plays.
+  updateActiveChannelCard();
   if (withStatic) {
-    triggerStatic(380, doMount);
+    triggerStatic(REDUCED_MOTION ? 120 : 380, doMount);
   } else {
     doMount();
   }
@@ -537,19 +586,37 @@ function nextVideoInChannel() {
   ch.index = (ch.index + 1) % ch.playlist.length;
   playCurrentChannelVideo(true);
 }
+function previousVideo() {
+  // The current video is the last history entry; step back to the one before it.
+  if (watchHistory.length < 2) return;
+  watchHistory.pop();
+  const prev = watchHistory[watchHistory.length - 1];
+  activeChannelIndex = prev.channel;
+  CHANNELS[activeChannelIndex].index = prev.index;
+  playCurrentChannelVideo(true, { record: false });
+}
 function setChannel(index) {
   if (activeChannelIndex === index) {
     nextVideoInChannel();
-    return;
+  } else {
+    activeChannelIndex = index;
+    playCurrentChannelVideo(true);
   }
-  activeChannelIndex = index;
-  playCurrentChannelVideo(true);
+  // On a phone the guide is a sheet over the picture: get out of the way.
+  if (isPhoneLayout()) setGuideOpen(false);
 }
 function randomChannelAndFilm() {
-  activeChannelIndex = Math.floor(Math.random() * CHANNELS.length);
-  const ch = CHANNELS[activeChannelIndex];
-  ch.index = Math.floor(Math.random() * ch.playlist.length);
+  const current = tvPlayer && watchHistory[watchHistory.length - 1];
+  // Never "surf" to the exact video that is already on, and favour ones not yet seen.
+  for (let attempt = 0; attempt < 8; attempt++) {
+    activeChannelIndex = Math.floor(Math.random() * CHANNELS.length);
+    const ch = CHANNELS[activeChannelIndex];
+    ch.index = Math.floor(Math.random() * ch.playlist.length);
+    const same = current && current.channel === activeChannelIndex && current.index === ch.index;
+    if (!same && (!watched()[ch.playlist[ch.index]?.slug] || attempt > 4)) break;
+  }
   playCurrentChannelVideo(true);
+  if (isPhoneLayout()) setGuideOpen(false);
 }
 
 let isGuideOpen = true;
@@ -581,7 +648,9 @@ function openTvMode(channelIndex = 0) {
   tvBackdrop.hidden = false;
   tvBackdrop.classList.add('open');
   renderChannelGrid();
-  setGuideOpen(true);
+  setGuideOpen(!isPhoneLayout());
+  watchHistory.length = 0;
+  document.documentElement.classList.add('os-tv-open');
 
   clearInterval(timecodeInterval);
   timecodeInterval = setInterval(() => {
@@ -607,8 +676,12 @@ function closeTvMode() {
 
   clearInterval(timecodeInterval);
   clearTimeout(osdTimeout);
+  clearTimeout(errorTimer);
+  tuneToken++;
   cancelAnimationFrame(staticRaf);
   staticActive = false;
+  staticDone = null;
+  document.documentElement.classList.remove('os-tv-open');
 
   tvPlayer?.destroy();
   tvPlayer = null;
@@ -664,6 +737,11 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'ArrowRight') {
     event.preventDefault();
     nextVideoInChannel();
+    return;
+  }
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    previousVideo();
     return;
   }
   if (event.key === ' ' || event.key === 'k') {
