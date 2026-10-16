@@ -49,9 +49,18 @@
     try { if (session.type === 'auto') session.type = 'playback'; } catch (_e) { /* read-only in some builds */ }
   }
 
+  // iPadOS 13+ identifies itself as a Mac, hence the touch-point check.
+  var nav = root.navigator || {};
+  var isIOS = /iPad|iPhone|iPod/.test(nav.userAgent || '') || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+  // Older iPads (2017 iPad Pro and earlier) underrun at Safari's low-latency default and crackle.
+  var MAX_VOICES = isIOS ? 20 : 48;
+
   function create(options) {
     // 'playback' asks for bigger hardware buffers (fewer crackles on iPad) at the cost of latency.
-    try { ctx = options && options.latencyHint ? new AC({ latencyHint: options.latencyHint }) : new AC(); }
+    // Whichever caller creates the page's one context decides, so iOS defaults to 'playback' even
+    // when the first caller (a tap-a-note preview, say) asked for nothing.
+    var hint = options && options.latencyHint ? options.latencyHint : (isIOS ? 'playback' : null);
+    try { ctx = hint ? new AC({ latencyHint: hint }) : new AC(); }
     catch (_e) { ctx = new AC(); }
     master = ctx.createGain();
     master.gain.value = volume;
@@ -160,6 +169,12 @@
       if (opts.onEnded) opts.onEnded(v);
     }, opts.settings || {});
     voices.add(voice);
+    // Past the cap, steal the oldest voice: a dozen stacked oscillators per chord can starve older iPads.
+    if (voices.size > MAX_VOICES) {
+      var oldest = voices.values().next().value;
+      voices.delete(oldest);
+      try { oldest.kill(c.currentTime); } catch (_e) { /* already gone */ }
+    }
     var duration = opts.duration === undefined ? 1 : opts.duration;
     if (duration != null) voice.release(t + Math.max(0.01, duration));
     return voice;
@@ -224,6 +239,7 @@
 
   root.AudioKit = {
     available: available,
+    isIOS: isIOS,
     context: context,
     peek: function () { return ctx; },
     output: output,

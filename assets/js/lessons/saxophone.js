@@ -8,7 +8,7 @@
   let held=new Set(), studioView="note";
   const scale={phase:"idle",index:0,nextAt:0};
   const instrumentSVG = window.SaxDiagram;
-  let ctx, nodes = [], timers = [], generation = 0;
+  let ctx, out, nodes = [], timers = [], generation = 0;
   function stop() {
     generation++;
     timers.forEach(clearTimeout); timers=[];
@@ -20,7 +20,13 @@
   async function ready() {
     const Audio = window.AudioContext || window.webkitAudioContext;
     if (!Audio) throw new Error('Audio is unavailable in this browser. You can still read and compose.');
-    ctx ||= new Audio();
+    if (!ctx) {
+      // 'playback' = bigger hardware buffers; older iPads crackle at Safari's low-latency default.
+      try { ctx = new Audio({ latencyHint: 'playback' }); } catch (_) { ctx = new Audio(); }
+      out = ctx.createDynamicsCompressor();
+      out.threshold.value = -10; out.knee.value = 6; out.ratio.value = 12; out.attack.value = .003; out.release.value = .15;
+      out.connect(ctx.destination);
+    }
     await ctx.resume();
   }
   function tone(pitch, at, duration, click=false) {
@@ -31,7 +37,7 @@
     const amplitude=click?.07:Number($('sxDynamic').value);
     gain.gain.setValueAtTime(0,at); gain.gain.linearRampToValueAtTime(amplitude,at+.018);
     gain.gain.setValueAtTime(amplitude,at+Math.max(.02,duration-.05));gain.gain.linearRampToValueAtTime(0,at+duration);
-    osc.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+    osc.connect(filter);filter.connect(gain);gain.connect(out);
     osc.start(at);osc.stop(at+duration+.02);nodes.push(osc);
     osc.onended=()=>{osc.disconnect();filter.disconnect();gain.disconnect();nodes=nodes.filter(n=>n!==osc);};
   }

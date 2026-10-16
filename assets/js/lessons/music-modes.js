@@ -19,7 +19,7 @@
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       if (!ctx) {
-        ctx = new AC();
+        try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
         out = ctx.createGain();
         out.gain.value = volume;
         var comp = ctx.createDynamicsCompressor();

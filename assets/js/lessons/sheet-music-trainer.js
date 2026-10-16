@@ -343,8 +343,18 @@
      4. Audio
      ================================================================ */
   var AC = null, audioBus = null, activeVoices = [], audioTimers = [], playbackId = 0;
+  var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var audioPrimed = false;
   function audio() {
-    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+    if (!AC) {
+      var Ctor = window.AudioContext || window.webkitAudioContext;
+      if (Ctor) {
+        /* 'playback' = bigger hardware buffers. A drill note is not latency-critical, and iPad Safari
+           crackles on older iPads at its low-latency default. */
+        try { AC = new Ctor({ latencyHint: 'playback' }); } catch (e) { try { AC = new Ctor(); } catch (e2) { AC = null; } }
+        try { var session = navigator.audioSession; if (session && session.type !== 'playback') session.type = 'playback'; } catch (e) { /* read-only in some builds */ }
+      }
+    }
     if (AC && !audioBus) {
       /* A shared limiter keeps stacked chords and quick taps from clipping the
          small Web Audio buffers used by older iPads. */
@@ -360,7 +370,12 @@
       output.connect(AC.destination);
       audioBus = limiter;
     }
-    if (AC && AC.state === 'suspended') AC.resume();
+    if (AC && AC.state !== 'running' && AC.state !== 'closed') { try { var rp = AC.resume(); if (rp && rp.catch) rp.catch(function () { /* next tap retries */ }); } catch (e) { /* retry on next tap */ } }
+    /* Older iOS only truly unlocks after a buffer plays inside a user gesture. */
+    if (AC && !audioPrimed) {
+      audioPrimed = true;
+      try { var p = AC.createBufferSource(); p.buffer = AC.createBuffer(1, 1, AC.sampleRate); p.connect(AC.destination); p.start(0); } catch (e) { /* best effort */ }
+    }
     return AC;
   }
   function stopPlayback() {
@@ -373,7 +388,9 @@
     activeVoices = [];
     voices.forEach(function (voice) {
       try {
+        var level = voice.gain.gain.value; /* pin the current level first so cutting mid-ramp doesn't click */
         voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setValueAtTime(level, now);
         voice.gain.gain.setTargetAtTime(0, now, 0.008);
       } catch (e) { /* voice may already have ended */ }
       voice.oscillators.forEach(function (oscillator) {
@@ -392,7 +409,8 @@
   function tone(m, when, dur, vol, bell) {
     var c = audio();
     if (!c || !state.sound) return;
-    var f = 440 * Math.pow(2, (m - 69) / 12), t0 = c.currentTime + when;
+    /* A short lead keeps the first note from starting while the hardware is still waking up (a pop on iPad). */
+    var f = 440 * Math.pow(2, (m - 69) / 12), t0 = c.currentTime + (c.state === 'running' ? 0.02 : 0.12) + when;
     var master = c.createGain();
     var releaseEnd = t0 + dur + 0.035;
     master.gain.setValueAtTime(0, t0);
