@@ -9,7 +9,12 @@
   let activeLocation = window.WeatherEngine.DEFAULT_LOCATION;
   let drivingSpeed = 55;
   const RADAR_MAX_ZOOM = 7; // RainViewer public tiles currently support zoom 7 maximum.
+  const RADAR_MIN_ZOOM = 3;
   let radarZoom = 6;
+  let mapCenter = null;           // {latitude, longitude}; null = follow the selected location
+  let lastAlertFeatures = [];
+  let lightningListenStart = 0;
+  let lightningStatus = 'idle';   // idle | connecting | live | unavailable
   let radarRequestId = 0;
   let radarFrames = [];
   let radarFrameIndex = 0;
@@ -114,6 +119,9 @@
 
     // Live Storm Watch
     radarMap: document.getElementById('ww-radar-map'),
+    mapPane: document.getElementById('ww-map-pane'),
+    mapCrosshair: document.getElementById('ww-map-crosshair'),
+    recenter: document.getElementById('ww-map-recenter'),
     mapLoading: document.getElementById('ww-map-loading'),
     mapLocation: document.getElementById('ww-map-location'),
     radarUpdated: document.getElementById('ww-radar-updated'),
@@ -141,10 +149,13 @@
   // ── CORE DATA LOADER ────────────────────────────────────────────────────────
   async function loadWeather(location) {
     activeLocation = location;
+    mapCenter = null;
+    window.dispatchEvent(new CustomEvent('ww:location', { detail: { location } }));
     try {
       if (els.dialCondition) els.dialCondition.textContent = 'Updating atmospheric readings...';
       const data = await window.WeatherEngine.fetchWeather(location);
       currentWeather = data;
+      window.dispatchEvent(new CustomEvent('ww:weather', { detail: { weather: data, location } }));
       renderCockpit(data);
       renderDriving(data);
       renderWardrobe(data);
@@ -181,12 +192,29 @@
     return String(value || '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
   }
 
-  function renderRadarTiles(location, frame) {
-    if (!els.radarMap) return;
-    els.radarMap.querySelectorAll('.ww-radar-tile, .ww-base-tile').forEach(tile => tile.remove());
+  // One projection shared by tiles, overlays and the Storm Desk layers (Web Mercator, 256px tiles).
+  function mapView() { const c = mapCenter || activeLocation; return { latitude: Number(c.latitude), longitude: Number(c.longitude) }; }
+  function project(lon, lat) {
+    const rect = els.radarMap.getBoundingClientRect(), c = mapView();
+    return {
+      x: (lonToTileX(lon, radarZoom) - lonToTileX(c.longitude, radarZoom)) * 256 + rect.width / 2,
+      y: (latToTileY(lat, radarZoom) - latToTileY(c.latitude, radarZoom)) * 256 + rect.height / 2
+    };
+  }
+  function unproject(x, y) {
+    const rect = els.radarMap.getBoundingClientRect(), c = mapView(), n = 2 ** radarZoom;
+    const tx = (x - rect.width / 2) / 256 + lonToTileX(c.longitude, radarZoom);
+    const ty = (y - rect.height / 2) / 256 + latToTileY(c.latitude, radarZoom);
+    return { lon: (tx / n) * 360 - 180, lat: Math.atan(Math.sinh(Math.PI * (1 - (2 * ty) / n))) * 180 / Math.PI };
+  }
+
+  function renderRadarTiles(frame) {
+    if (!els.radarMap || !els.mapPane) return;
+    els.mapPane.querySelectorAll('.ww-radar-tile, .ww-base-tile').forEach(tile => tile.remove());
     const mapRect = els.radarMap.getBoundingClientRect();
-    const centerX = lonToTileX(location.longitude, radarZoom) * 256;
-    const centerY = latToTileY(location.latitude, radarZoom) * 256;
+    const c = mapView();
+    const centerX = lonToTileX(c.longitude, radarZoom) * 256;
+    const centerY = latToTileY(c.latitude, radarZoom) * 256;
     const tileX = Math.floor(centerX / 256);
     const tileY = Math.floor(centerY / 256);
     const tileCount = 2 ** radarZoom;
@@ -209,26 +237,42 @@
         base.style.left = left;
         base.style.top = top;
         fragment.appendChild(base);
-        const radar = document.createElement('img');
-        radar.className = 'ww-radar-tile';
-        radar.alt = '';
-        radar.draggable = false;
-        radar.src = `${frame.host}${frame.path}/256/${radarZoom}/${x}/${y}/2/1_1.png`;
-        radar.style.left = left;
-        radar.style.top = top;
-        fragment.appendChild(radar);
+        if (frame) {
+          const radar = document.createElement('img');
+          radar.className = 'ww-radar-tile';
+          radar.alt = '';
+          radar.draggable = false;
+          radar.src = `${frame.host}${frame.path}/256/${radarZoom}/${x}/${y}/2/1_1.png`;
+          radar.style.left = left;
+          radar.style.top = top;
+          fragment.appendChild(radar);
+        }
       }
     }
-    els.radarMap.insertBefore(fragment, els.radarMap.firstChild);
-    els.mapLocation.title = `${location.label || 'Selected location'} · radar center`;
+    els.mapPane.insertBefore(fragment, els.mapPane.firstChild);
   }
 
-  function renderAlertPolygons(features, location) {
+  function placeHomeMarker() {
+    if (!activeLocation || !els.mapLocation) return;
+    const p = project(activeLocation.longitude, activeLocation.latitude);
+    [els.mapLocation, els.mapCrosshair].forEach(el => { if (el) { el.style.left = `${p.x}px`; el.style.top = `${p.y}px`; } });
+    els.mapLocation.title = `${activeLocation.label || 'Selected location'} · home marker`;
+  }
+
+  /** Everything that depends on where the map is looking. Layers listen for `ww:maprender`. */
+  function redrawMap() {
+    if (!els.radarMap || !activeLocation) return;
+    if (els.mapPane) els.mapPane.style.transform = '';
+    renderRadarTiles(radarFrames[radarFrameIndex] || null);
+    renderAlertPolygons(lastAlertFeatures);
+    placeHomeMarker();
+    window.dispatchEvent(new CustomEvent('ww:maprender', { detail: { zoom: radarZoom } }));
+  }
+
+  function renderAlertPolygons(features) {
     if (!els.alertPolygons || !els.radarMap) return;
     const rect = els.radarMap.getBoundingClientRect();
-    const centerX = lonToTileX(location.longitude, radarZoom) * 256;
-    const centerY = latToTileY(location.latitude, radarZoom) * 256;
-    const toPoint = ([lon, lat]) => `${lonToTileX(lon, radarZoom) * 256 - centerX + rect.width / 2},${latToTileY(lat, radarZoom) * 256 - centerY + rect.height / 2}`;
+    const toPoint = ([lon, lat]) => { const p = project(lon, lat); return `${p.x},${p.y}`; };
     els.alertPolygons.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
     els.alertPolygons.innerHTML = '';
     features.forEach(feature => {
@@ -259,12 +303,13 @@
       radarFrames = frames.map(frame => ({ ...frame, host: manifest.host }));
       radarFrameIndex = radarFrames.length - 1;
       if (els.radarSlider) { els.radarSlider.max = String(Math.max(0, radarFrames.length - 1)); els.radarSlider.value = String(radarFrameIndex); }
-      renderRadarTiles(location, radarFrames[radarFrameIndex]);
+      redrawMap();
       updateRadarFrameLabel();
       if (els.mapLoading) els.mapLoading.hidden = true;
     } catch (err) {
       console.warn('Radar load error:', err);
-      if (els.mapLoading) { els.mapLoading.hidden = false; els.mapLoading.textContent = 'Radar temporarily unavailable'; }
+      redrawMap();
+      if (els.mapLoading) { els.mapLoading.hidden = false; els.mapLoading.textContent = 'Radar temporarily unavailable (map and storm layers still work)'; }
       if (els.radarUpdated) els.radarUpdated.textContent = 'Radar unavailable';
     }
   }
@@ -280,7 +325,7 @@
   function setRadarFrame(index) {
     if (!radarFrames.length || !activeLocation) return;
     radarFrameIndex = Math.max(0, Math.min(radarFrames.length - 1, Number(index)));
-    renderRadarTiles(activeLocation, radarFrames[radarFrameIndex]);
+    renderRadarTiles(radarFrames[radarFrameIndex]);
     updateRadarFrameLabel();
   }
 
@@ -303,7 +348,8 @@
     if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < 17.5 || lat > 72 || lon < -180 || lon > -60) {
       els.alertCount.textContent = 'NWS / US';
       els.alertList.innerHTML = '<p class="ww-alert-empty">Official NWS alerts are available for locations in the United States. Radar remains available worldwide where RainViewer has coverage.</p>';
-      if (els.alertPolygons) els.alertPolygons.innerHTML = '';
+      lastAlertFeatures = [];
+      renderAlertPolygons([]);
       return;
     }
     try {
@@ -315,7 +361,9 @@
       const data = await response.json();
       const features = Array.isArray(data.features) ? data.features : [];
       els.alertCount.textContent = `${features.length} active`;
-      renderAlertPolygons(features, location);
+      lastAlertFeatures = features;
+      renderAlertPolygons(features);
+      window.dispatchEvent(new CustomEvent('ww:alerts', { detail: { features, location } }));
       els.alertList.innerHTML = features.length ? features.slice(0, 5).map(feature => {
         const p = feature.properties || {};
         const severity = (p.severity || 'Unknown').toLowerCase();
@@ -325,7 +373,8 @@
       console.warn('Alert load error:', err);
       els.alertCount.textContent = 'Unavailable';
       els.alertList.innerHTML = '<p class="ww-alert-empty">The official alert feed could not be reached. Try refresh.</p>';
-      if (els.alertPolygons) els.alertPolygons.innerHTML = '';
+      lastAlertFeatures = [];
+      renderAlertPolygons([]);
     }
   }
 
@@ -338,58 +387,50 @@
     return r * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
   }
 
-  function renderLightning() {
-    if (!els.lightningDistance || !lightningLocation) return;
-    const now = Date.now();
-    lightningStrikes = lightningStrikes.filter(strike => now - strike.time < 10 * 60 * 1000);
-    const nearby = lightningStrikes.map(strike => ({ ...strike, miles: haversineMiles(lightningLocation.latitude, lightningLocation.longitude, strike.lat, strike.lon) })).sort((a, b) => a.miles - b.miles);
-    const closest = nearby[0];
-    if (!closest) {
-      els.lightningDistance.textContent = 'No nearby strikes';
-      els.lightningDetail.textContent = 'Live feed connected · past 10 minutes';
-      els.lightningSafetyText.textContent = 'No strike detected nearby';
-      els.lightningSafety.classList.remove('is-danger');
-      return;
-    }
-    els.lightningDistance.textContent = `${closest.miles < 10 ? closest.miles.toFixed(1) : Math.round(closest.miles)} mi`;
-    els.lightningDetail.textContent = `Closest detected strike · ${Math.max(0, Math.round((now - closest.time) / 1000))}s ago`;
-    const danger = closest.miles <= 6;
-    els.lightningSafetyText.textContent = danger ? 'Shelter now — lightning within 6 miles' : 'Keep monitoring; thunder means shelter';
-    els.lightningSafety.classList.toggle('is-danger', danger);
+  // This module owns the websocket; Storm Desk (storm-desk.js) turns the strikes into readouts,
+  // trends and the 30/30 clock so live and practice data share one code path.
+  function emitLightning() {
+    window.dispatchEvent(new CustomEvent('ww:lightning', { detail: { strikes: lightningStrikes.slice(), location: lightningLocation, status: lightningStatus, listenStart: lightningListenStart } }));
   }
 
   function connectLightning(location) {
     lightningLocation = location;
     lightningStrikes = [];
+    lightningListenStart = 0;
     if (lightningSocket) { lightningSocket.close(); lightningSocket = null; }
-    if (!els.lightningDistance || !location) return;
-    els.lightningDistance.textContent = 'Connecting…';
+    lightningStatus = 'connecting';
+    emitLightning();
+    if (!location) return;
     try {
       const socket = new WebSocket('wss://live2.lightningmaps.org/');
       lightningSocket = socket;
       const lat = Number(location.latitude);
       const lon = Number(location.longitude);
       const span = 4;
-      socket.addEventListener('open', () => socket.send(JSON.stringify({ v: 24, p: [lat + span, lon + span, lat - span, lon - span], z: radarZoom, a: 4, t: 1, l: 1, r: 'A' })));
+      socket.addEventListener('open', () => {
+        lightningStatus = 'live';
+        lightningListenStart = Date.now();
+        socket.send(JSON.stringify({ v: 24, p: [lat + span, lon + span, lat - span, lon - span], z: radarZoom, a: 4, t: 1, l: 1, r: 'A' }));
+        emitLightning();
+      });
       socket.addEventListener('message', event => {
         try {
           const payload = JSON.parse(event.data);
+          const now = Date.now();
           (payload.strokes || []).forEach(stroke => {
-            if (Number.isFinite(stroke.lat) && Number.isFinite(stroke.lon)) lightningStrikes.push({ lat: stroke.lat, lon: stroke.lon, time: Number(stroke.time) || Date.now() });
+            if (Number.isFinite(stroke.lat) && Number.isFinite(stroke.lon)) lightningStrikes.push({ lat: stroke.lat, lon: stroke.lon, time: Number(stroke.time) || now });
           });
-          renderLightning();
+          lightningStrikes = lightningStrikes.filter(strike => now - strike.time < 35 * 60 * 1000);
+          emitLightning();
         } catch (err) { /* Ignore non-JSON keepalive frames. */ }
       });
       socket.addEventListener('close', () => {
-        if (lightningSocket === socket && els.lightningDistance) {
-          els.lightningDistance.textContent = 'Live feed unavailable';
-          els.lightningDetail.textContent = 'No stable public lightning API is available';
-        }
+        if (lightningSocket === socket) { lightningStatus = 'unavailable'; emitLightning(); }
       });
       socket.addEventListener('error', () => socket.close());
     } catch (err) {
-      els.lightningDistance.textContent = 'Live feed unavailable';
-      els.lightningDetail.textContent = 'No stable public lightning API is available';
+      lightningStatus = 'unavailable';
+      emitLightning();
     }
   }
 
@@ -445,6 +486,8 @@
     if (!location || !els.radarMap) return;
     stopRadarAnimation();
     els.radarMap.setAttribute('aria-label', `Live precipitation radar map centered on ${location.label || 'the selected location'}`);
+    lastAlertFeatures = [];
+    redrawMap();
     loadRadar(location);
     loadAlerts(location);
     connectLightning(location);
@@ -1003,6 +1046,95 @@
     });
   }
 
+  // ── MAP GESTURES + PUBLIC BRIDGE ────────────────────────────────────────────
+  function setZoom(z) {
+    radarZoom = Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, Math.round(z)));
+    redrawMap();
+  }
+
+  function setMapCenter(lat, lon, zoom) {
+    mapCenter = { latitude: lat, longitude: lon };
+    if (zoom != null) radarZoom = Math.max(RADAR_MIN_ZOOM, Math.min(RADAR_MAX_ZOOM, Math.round(zoom)));
+    redrawMap();
+  }
+
+  /** Centre on the middle of a set of points and use the largest zoom at which they all fit. */
+  function fitPoints(points) {
+    const pts = points.filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lon));
+    if (!pts.length || !els.radarMap) return;
+    const lats = pts.map(p => p.lat), lons = pts.map(p => p.lon);
+    const mid = { latitude: (Math.min(...lats) + Math.max(...lats)) / 2, longitude: (Math.min(...lons) + Math.max(...lons)) / 2 };
+    const rect = els.radarMap.getBoundingClientRect();
+    let zoom = RADAR_MIN_ZOOM;
+    for (let z = RADAR_MAX_ZOOM; z >= RADAR_MIN_ZOOM; z -= 1) {
+      const xs = pts.map(p => lonToTileX(p.lon, z) * 256), ys = pts.map(p => latToTileY(p.lat, z) * 256);
+      if (Math.max(...xs) - Math.min(...xs) <= rect.width * 0.8 && Math.max(...ys) - Math.min(...ys) <= rect.height * 0.8) { zoom = z; break; }
+    }
+    setMapCenter(mid.latitude, mid.longitude, zoom);
+  }
+
+  function setupMapGestures() {
+    const map = els.radarMap;
+    if (!map || !els.mapPane) return;
+    let drag = null;
+    map.addEventListener('pointerdown', event => {
+      if (event.button !== 0 || event.target.closest('.ww-map-zoom, .ww-map-credit')) return;
+      drag = { x: event.clientX, y: event.clientY, moved: false, id: event.pointerId };
+      map.setPointerCapture(event.pointerId);
+    });
+    map.addEventListener('pointermove', event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 5) return;
+      drag.moved = true;
+      map.classList.add('is-dragging');
+      els.mapPane.style.transform = `translate(${dx}px, ${dy}px)`;
+    });
+    const finish = event => {
+      if (!drag || event.pointerId !== drag.id) return;
+      const rect = map.getBoundingClientRect();
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      const wasDrag = drag.moved;
+      drag = null;
+      map.classList.remove('is-dragging');
+      if (wasDrag && event.type === 'pointerup') {
+        const c = unproject(rect.width / 2 - dx, rect.height / 2 - dy);
+        mapCenter = { latitude: c.lat, longitude: c.lon };
+        redrawMap();
+      } else if (!wasDrag && event.type === 'pointerup') {
+        const p = unproject(event.clientX - rect.left, event.clientY - rect.top);
+        window.dispatchEvent(new CustomEvent('ww:probe', { detail: { lat: p.lat, lon: p.lon } }));
+      } else {
+        els.mapPane.style.transform = '';
+      }
+    };
+    map.addEventListener('pointerup', finish);
+    map.addEventListener('pointercancel', finish);
+    map.addEventListener('keydown', event => {
+      const step = 80, rect = map.getBoundingClientRect();
+      const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+      if (moves[event.key]) {
+        event.preventDefault();
+        const c = unproject(rect.width / 2 + moves[event.key][0], rect.height / 2 + moves[event.key][1]);
+        mapCenter = { latitude: c.lat, longitude: c.lon };
+        redrawMap();
+      } else if (event.key === '+' || event.key === '=') { event.preventDefault(); setZoom(radarZoom + 1); }
+      else if (event.key === '-') { event.preventDefault(); setZoom(radarZoom - 1); }
+      else if (event.key === '0' || event.key === 'Home') { event.preventDefault(); mapCenter = null; redrawMap(); }
+    });
+    window.addEventListener('resize', () => redrawMap());
+  }
+
+  window.WWMap = {
+    project, unproject, setZoom, setCenter: setMapCenter, fitPoints, redraw: redrawMap,
+    get zoom() { return radarZoom; },
+    get rect() { return els.radarMap.getBoundingClientRect(); },
+    get location() { return activeLocation; },
+    get weather() { return currentWeather; },
+    get layersHost() { return document.getElementById('ww-layers'); },
+    refreshLightning: emitLightning
+  };
+
   // ── EVENT LISTENERS ─────────────────────────────────────────────────────────
   function setupEventListeners() {
     // Preset buttons
@@ -1101,8 +1233,10 @@
     if (els.lclDew) els.lclDew.addEventListener('input', updateLclCalc);
 
     if (els.stormRefresh) els.stormRefresh.addEventListener('click', () => loadStormWatch(activeLocation));
-    if (els.zoomIn) els.zoomIn.addEventListener('click', () => { radarZoom = Math.min(RADAR_MAX_ZOOM, radarZoom + 1); loadStormWatch(activeLocation); });
-    if (els.zoomOut) els.zoomOut.addEventListener('click', () => { radarZoom = Math.max(4, radarZoom - 1); loadStormWatch(activeLocation); });
+    if (els.zoomIn) els.zoomIn.addEventListener('click', () => setZoom(radarZoom + 1));
+    if (els.zoomOut) els.zoomOut.addEventListener('click', () => setZoom(radarZoom - 1));
+    if (els.recenter) els.recenter.addEventListener('click', () => { mapCenter = null; redrawMap(); });
+    setupMapGestures();
     if (els.radarPlay) els.radarPlay.addEventListener('click', toggleRadarAnimation);
     if (els.radarSlider) els.radarSlider.addEventListener('input', event => { stopRadarAnimation(); setRadarFrame(event.target.value); });
   }

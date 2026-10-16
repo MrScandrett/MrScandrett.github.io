@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Central Weather Engine & Interactive STEAM Lab — localized live forecasting, safe driving physics, wardrobe layering guide, and atmospheric science." />
+  <meta name="description" content="Central Weather Engine & Interactive STEAM Lab: live forecasting, nowcasts, storm-cell ETAs, lightning tracking, severe-storm ingredients, hurricane tracking, road physics and wardrobe layering." />
   <title>Weather Watch · Central Weather Engine · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/lessons/weather-watch.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/storm-desk.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
 </head>
 <body>
@@ -102,8 +103,13 @@
             <a href="#fronts">4 · Air Masses &amp; Fronts</a>
             <a href="#clouds">5 · Moisture &amp; Cloud Lab</a>
             <a href="#precipitation-lab">6 · Winter Precipitation</a>
-            <a href="#severe">7 · Satellites &amp; Severe Storms</a>
-            <a href="#quiz">8 · Meteorologist Quiz</a>
+            <a href="#severe">7 · Live Storm Map</a>
+            <a href="#nowcast">8 · Nowcasting</a>
+            <a href="#storm-cells">9 · Cells &amp; Lightning</a>
+            <a href="#outlook">10 · Storm Outlook</a>
+            <a href="#tropics">11 · Tropical Desk</a>
+            <a href="#briefing">12 · Briefing</a>
+            <a href="#quiz">13 · Meteorologist Quiz</a>
           </nav>
 
           <!-- ═════════ 1 · LIVE ATMOSPHERIC COCKPIT ═════════ -->
@@ -641,7 +647,7 @@
           <section id="severe" class="ww-card" aria-labelledby="severe-title">
             <div class="ww-card-header">
               <span class="ww-card-tag">GOES-16 Satellite Telemetry</span>
-              <h2 id="severe-title">7 · Severe Weather, Satellites &amp; Space Observation</h2>
+              <h2 id="severe-title">7 · The Live Storm Map: Severe Weather, Satellites &amp; Space Observation</h2>
               <p>Tracking high-energy atmospheric disturbances from 22,236 miles above the equator.</p>
             </div>
 
@@ -659,29 +665,55 @@
                 <button type="button" class="ww-map-refresh" id="ww-storm-refresh">↻ Refresh radar</button>
               </div>
               <p class="ww-storm-watch-intro">
-                This map combines recent weather-radar precipitation with official active alerts. A colored radar return means precipitation is detected there; it does not by itself prove lightning, hail, a tornado, or dangerous wind.
+                This map layers recent weather-radar precipitation, official alerts, lightning, projected storm motion, NOAA's storm outlook and any tropical cyclones. A colored radar return means precipitation is detected there; it does not by itself prove lightning, hail, a tornado, or dangerous wind.
               </p>
               <div class="ww-map-layout">
-                <div class="ww-radar-map" id="ww-radar-map" role="img" aria-label="Live precipitation radar map centered on the selected location">
+                <div class="ww-radar-map" id="ww-radar-map" role="group" aria-roledescription="map" aria-label="Live precipitation radar map centered on the selected location" aria-describedby="ww-map-help" tabindex="0">
+                  <div class="ww-map-pane" id="ww-map-pane">
+                    <svg class="ww-alert-polygons" id="ww-alert-polygons" aria-hidden="true" focusable="false"></svg>
+                    <svg class="ww-layers" id="ww-layers" aria-hidden="true" focusable="false"></svg>
+                    <div class="ww-map-crosshair" id="ww-map-crosshair" aria-hidden="true"></div>
+                    <div class="ww-map-location" id="ww-map-location" aria-hidden="true"></div>
+                  </div>
                   <div class="ww-map-loading" id="ww-map-loading">Loading radar…</div>
-                  <svg class="ww-alert-polygons" id="ww-alert-polygons" aria-hidden="true" focusable="false"></svg>
-                  <div class="ww-map-crosshair" aria-hidden="true"></div>
-                  <div class="ww-map-location" id="ww-map-location" aria-hidden="true"></div>
-                  <div class="ww-map-zoom" aria-label="Radar map controls">
+                  <div class="ww-map-zoom" aria-label="Map controls">
                     <button type="button" id="ww-map-zoom-in" aria-label="Zoom in">+</button>
                     <button type="button" id="ww-map-zoom-out" aria-label="Zoom out">−</button>
+                    <button type="button" id="ww-map-recenter" aria-label="Recenter on home marker" title="Recenter">⌖</button>
+                    <button type="button" id="ww-map-fit" aria-label="Fit selected storm and home on the map" title="Fit storm and home">⤢</button>
                   </div>
-                  <div class="ww-map-credit">Radar: RainViewer · basemap: OpenStreetMap</div>
+                  <div class="ww-map-scale" id="ww-map-scale" aria-hidden="true"></div>
+                  <div class="ww-map-credit">Radar: RainViewer · basemap: OpenStreetMap · layers: NOAA</div>
                 </div>
+                <p class="sd-sr" id="ww-map-help">Drag or use arrow keys to pan. Plus and minus zoom. Zero recenters. Click the map to drop an analysis pin.</p>
                 <aside class="ww-alert-panel" aria-live="polite">
                   <div class="ww-alert-panel-head">
                     <span class="ww-map-kicker">Official alerts</span>
                     <span class="ww-alert-count" id="ww-alert-count">—</span>
                   </div>
+                  <div id="ww-practice-alert"></div>
                   <div id="ww-alert-list" class="ww-alert-list">
                     <p class="ww-alert-empty">Checking active alerts for this location…</p>
                   </div>
                 </aside>
+              </div>
+              <div class="sd-controls">
+                <div class="sd-layers" id="ww-layer-toggles" role="group" aria-label="Map layers">
+                  <label><input type="checkbox" data-layer="radar" checked /> Radar</label>
+                  <label><input type="checkbox" data-layer="alerts" checked /> Alert areas</label>
+                  <label><input type="checkbox" data-layer="cells" checked /> Storm motion</label>
+                  <label><input type="checkbox" data-layer="lightning" checked /> Lightning &amp; range rings</label>
+                  <label><input type="checkbox" data-layer="outlook" /> SPC outlook</label>
+                  <label><input type="checkbox" data-layer="tropics" checked /> Tropics</label>
+                </div>
+                <div class="sd-scenario" id="sd-scenario" role="group" aria-label="Data source">
+                  <button type="button" class="sd-btn is-active" data-scenario="live" aria-pressed="true">● Live data</button>
+                  <button type="button" class="sd-btn" data-scenario="practice" aria-pressed="false">Practice storm</button>
+                  <label class="sd-speed" id="sd-speed-wrap" hidden>Speed <select id="sd-speed"><option value="1">×1</option><option value="10">×10</option><option value="30" selected>×30</option><option value="60">×60</option></select></label>
+                  <button type="button" class="sd-btn" id="sd-restart" hidden>↺ Restart</button>
+                </div>
+                <p class="sd-pin" id="sd-pin" aria-live="polite">Analysis point: the selected location. <em>Click the map to analyze anywhere else.</em> <button type="button" class="sd-linkbtn" id="sd-pin-reset" hidden>Reset to location</button></p>
+                <p class="sd-practice-note" id="sd-practice-note" hidden><strong>SIMULATED.</strong> A made-up severe storm is approaching from the west, driving the map, warning, lightning and nowcast below with the same code that handles live data. Real alerts still apply to the real world.</p>
               </div>
               <div class="ww-radar-timeline" aria-label="Radar timeline controls">
                 <button type="button" class="ww-timeline-play" id="ww-radar-play" aria-pressed="false">▶ Play</button>
@@ -724,11 +756,246 @@
             </div>
           </section>
 
-          <!-- ═════════ 8 · METEOROLOGIST IN TRAINING QUIZ ═════════ -->
+          <!-- ═════════ 8 · NOWCASTING ═════════ -->
+          <section id="nowcast" class="ww-card" aria-labelledby="nowcast-title">
+            <div class="ww-card-header">
+              <span class="ww-card-tag">Next 2 hours · 15-minute resolution</span>
+              <h2 id="nowcast-title">8 · Nowcasting: Will It Rain on Me in the Next Two Hours?</h2>
+              <p>A forecast asks what the atmosphere will do tomorrow. A nowcast asks where the rain that already exists is heading, and when it gets here.</p>
+            </div>
+            <p class="sd-point">Analyzing: <strong data-sd-point>Longwood, FL</strong> <span class="sd-badge" data-sd-badge>LIVE</span></p>
+
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Live nowcast</span>
+                <p class="sd-headline" id="nc-headline" aria-live="polite">Loading the next two hours…</p>
+                <div class="sd-bars" id="nc-bars" role="img" aria-label="Rain intensity for the next two hours in 15-minute steps"></div>
+                <div class="sd-bars-axis" aria-hidden="true"><span>now</span><span>+30</span><span>+60</span><span>+90</span><span>+120 min</span></div>
+                <p class="sd-meta" id="nc-meta"></p>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">Make the call first</span>
+                <p class="sd-small">Meteorologists commit to a forecast, then check it. Hide the answer, predict, then see how close you were.</p>
+                <label class="sd-check"><input type="checkbox" id="nc-challenge" /> Hide the answer until I guess</label>
+                <div class="sd-row">
+                  <label for="nc-guess">Rain reaches this spot…</label>
+                  <select id="nc-guess">
+                    <option value="dry">not at all in 2 hours</option>
+                    <option value="now">it is raining now</option>
+                    <option value="30">within 30 minutes</option>
+                    <option value="60">in 30 to 60 minutes</option>
+                    <option value="120">in 60 to 120 minutes</option>
+                  </select>
+                  <button type="button" class="sd-btn" id="nc-check">Check my call</button>
+                </div>
+                <p class="sd-result" id="nc-result" aria-live="polite"></p>
+                <p class="sd-meta" id="nc-score"></p>
+              </div>
+            </div>
+
+            <div class="ww-checklist-grid">
+              <div class="ww-check-item">
+                <strong>Forecast vs nowcast</strong>
+                <p>A forecast model simulates the physics of the whole atmosphere hours ahead. A nowcast mostly slides today's radar picture forward along its motion. It is excellent for the first hour and fades fast, because storms also grow, split and die.</p>
+              </div>
+              <div class="ww-check-item">
+                <strong>Why one number is not enough</strong>
+                <p>The bars show <em>intensity</em>, not just yes or no. Light rain is under 2.5 mm/h, moderate is 2.5 to 7.6, heavy is over 7.6 (about 0.3 in/h). Ten heavy minutes can matter more than two light hours.</p>
+              </div>
+              <div class="ww-check-item">
+                <strong>Click the map, change the answer</strong>
+                <p>Drop a pin in Section 7 and every number here is recomputed for that spot. Rain 10 miles away can be dry where you stand.</p>
+              </div>
+            </div>
+
+            <h3 class="sd-h3">How radar turns echoes into rain rate</h3>
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Reflectivity → rain rate</span>
+                <p class="sd-small">Radar measures how much energy bounces back (dBZ). Drops are bigger in heavier rain, so <code>Z = 200 · R<sup>1.6</sup></code> converts echo to rain rate R (the Marshall–Palmer relation).</p>
+                <label for="dbz-range" class="sd-row"><span>Echo strength</span><output id="dbz-val">35 dBZ</output></label>
+                <input type="range" id="dbz-range" min="10" max="70" step="1" value="35" class="ww-slider" />
+                <p class="sd-headline sd-headline--sm" id="dbz-out" aria-live="polite"></p>
+                <p class="sd-meta">Above ~55 dBZ the radar is usually seeing hail, which reflects far more than rain does, so the formula overestimates.</p>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">What your radar cannot see</span>
+                <p class="sd-small" id="beam-intro">Finding the NEXRAD radar closest to this point…</p>
+                <label for="beam-elev" class="sd-row"><span>Lowest tilt</span>
+                  <select id="beam-elev"><option value="0.5">0.5°</option><option value="1.5">1.5°</option><option value="2.4">2.4°</option></select></label>
+                <svg class="sd-beam" id="beam-svg" viewBox="0 0 320 150" role="img" aria-label="Diagram of the radar beam climbing above the curved earth"></svg>
+                <p class="sd-meta" id="beam-out"></p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═════════ 9 · STORM CELLS & LIGHTNING ═════════ -->
+          <section id="storm-cells" class="ww-card" aria-labelledby="cells-title">
+            <div class="ww-card-header">
+              <span class="ww-card-tag">Warnings · motion · lightning</span>
+              <h2 id="cells-title">9 · Storm Cells and Lightning: Distance ÷ Speed = Time</h2>
+              <p>The same arithmetic a forecaster uses when a warning goes out: where is it, how fast is it moving, and will it reach me?</p>
+            </div>
+            <p class="sd-point">Analyzing: <strong data-sd-point>Longwood, FL</strong> <span class="sd-badge" data-sd-badge>LIVE</span></p>
+
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Warned storm cells nearby</span>
+                <div id="sc-list" class="sd-cells" aria-live="polite"><p class="sd-empty">Checking for tornado and severe thunderstorm warnings…</p></div>
+                <p class="sd-meta">A warning polygon is drawn by a forecaster around a storm and carries its motion (direction it comes <em>from</em>, and speed). The page projects that motion forward to your spot.</p>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">Lightning tracker</span>
+                <div class="sd-stats">
+                  <div><small>Closest (10 min)</small><strong id="lt-closest">—</strong></div>
+                  <div><small>Strikes ≤ 10 / 25 / 50 mi</small><strong id="lt-counts">—</strong></div>
+                  <div><small>Trend</small><strong id="lt-trend">—</strong></div>
+                  <div><small>Reaches 6 mi in</small><strong id="lt-eta">—</strong></div>
+                </div>
+                <div class="sd-clock" id="lt-clock" aria-live="polite"><strong>30/30 clock</strong><span id="lt-clock-text">Listening for strikes…</span></div>
+                <p class="sd-meta" id="lt-status"></p>
+              </div>
+            </div>
+
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Steering flow</span>
+                <p class="sd-headline sd-headline--sm" id="sc-steer" aria-live="polite">Loading upper-air winds…</p>
+                <p class="sd-meta">Storms move with the average wind in the cloud layer, not the wind at your feet. The 700 hPa wind (about 10,000 ft) is a good first guess; compare it with the motion in the warning.</p>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">Try it by hand</span>
+                <div class="sd-row"><label for="eta-dist">Storm is</label><input type="number" id="eta-dist" min="1" max="300" value="24" /> <span>mi away, moving</span><input type="number" id="eta-speed" min="1" max="90" value="30" /> <span>mph straight at you</span></div>
+                <p class="sd-headline sd-headline--sm" id="eta-out" aria-live="polite"></p>
+                <div class="sd-row"><label for="f2b-sec">Flash-to-bang</label><input type="number" id="f2b-sec" min="0" max="90" value="15" /> <span>seconds</span></div>
+                <p class="sd-headline sd-headline--sm" id="f2b-out" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="ww-checklist-grid">
+              <div class="ww-check-item">
+                <strong>Where the 30/30 rule comes from</strong>
+                <p>Thunder is audible about 10 miles out, and strikes can land up to 10 miles from the storm. So "if you can hear it, you can be struck." The clock restarts at every strike within 10 miles, and you wait 30 minutes after the last one.</p>
+              </div>
+              <div class="ww-check-item">
+                <strong>Why sound speed is a lab, too</strong>
+                <p>Light arrives instantly; sound takes about 5 seconds per mile at 68°F, a bit faster in hot air. The calculator uses today's temperature, not a rounded rule.</p>
+              </div>
+              <div class="ww-check-item">
+                <strong>Honest limits</strong>
+                <p>The strike feed is a community network and can have gaps, so this page never says "all clear" until it has listened for a full 30 minutes. Your ears and the NWS always outrank this page.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ═════════ 10 · SEVERE OUTLOOK ═════════ -->
+          <section id="outlook" class="ww-card" aria-labelledby="outlook-title">
+            <div class="ww-card-header">
+              <span class="ww-card-tag">Ingredients-based forecasting</span>
+              <h2 id="outlook-title">10 · The Storm Outlook: Four Ingredients, One Risk</h2>
+              <p>Forecasters do not guess at storms. They check whether the ingredients are on the table, then ask whether anything will light the stove.</p>
+            </div>
+            <p class="sd-point">Analyzing: <strong data-sd-point>Longwood, FL</strong> <span class="sd-badge" data-sd-badge>LIVE</span></p>
+
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Official outlook for this point (NOAA Storm Prediction Center)</span>
+                <div class="sd-days" id="ol-days"><p class="sd-empty">Loading the SPC convective outlooks…</p></div>
+                <div class="sd-legend" aria-label="Outlook categories">
+                  <span style="--c:#c1e9c1">TSTM · thunder</span><span style="--c:#7dc580">MRGL · marginal</span><span style="--c:#f6f67b">SLGT · slight</span><span style="--c:#e6c27e">ENH · enhanced</span><span style="--c:#e67e7e">MDT · moderate</span><span style="--c:#ff7eff">HIGH</span>
+                </div>
+                <p class="sd-meta">Categories describe how widespread and how intense severe storms are expected to be, not how likely rain is. A marginal day can still have a dangerous storm; a high-risk day is rare.</p>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">Model ingredients · <output id="ol-hour-label">now</output></span>
+                <div class="sd-meters" id="ol-meters"></div>
+                <label for="ol-hour" class="sd-row"><span>Hour</span></label>
+                <input type="range" id="ol-hour" min="0" max="47" value="0" class="ww-slider" aria-describedby="ol-notes" />
+                <div class="sd-strip" id="ol-strip" role="img" aria-label="Model severe-weather ingredient score for the next 48 hours"></div>
+                <p class="sd-meta" id="ol-notes" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <div class="ww-checklist-grid">
+              <div class="ww-check-item"><strong>💧 Moisture</strong><p>Dew point of 60°F or more gives storms fuel. Under 55°F, there is not enough water vapor to condense and release heat.</p></div>
+              <div class="ww-check-item"><strong>🎈 Instability (CAPE)</strong><p>Convective Available Potential Energy, in J/kg: how hard a warm bubble keeps accelerating upward. Under 250 is weak; over 2,500 is explosive.</p></div>
+              <div class="ww-check-item"><strong>🔒 Lift and the cap (CIN)</strong><p>A warm layer aloft can act as a lid. Storms need a trigger (a front, a sea breeze, a hill) strong enough to punch through. Big CAPE with a strong cap often means a quiet, hot, dangerous-looking day.</p></div>
+              <div class="ww-check-item"><strong>🌀 Wind shear</strong><p>Wind that changes speed or direction with height tilts and organizes storms. This page uses the wind difference between the surface and 500 hPa (about 18,000 ft) as a stand-in for 0 to 6 km shear.</p></div>
+            </div>
+            <p class="sd-meta" id="ol-compare"></p>
+            <p class="sd-meta">The score here is a teaching model built from Open-Meteo model fields. It is <strong>not</strong> an official forecast. Where it disagrees with the SPC, ask why: the human forecaster sees things the grid cannot.</p>
+          </section>
+
+          <!-- ═════════ 11 · TROPICAL DESK ═════════ -->
+          <section id="tropics" class="ww-card" aria-labelledby="tropics-title">
+            <div class="ww-card-header">
+              <span class="ww-card-tag">National Hurricane Center · live and replay</span>
+              <h2 id="tropics-title">11 · Tropical Desk: Reading a Hurricane Forecast</h2>
+              <p>Where is it, how strong is it, and what does the famous cone actually promise?</p>
+            </div>
+            <p class="sd-point">Distances measured from: <strong data-sd-point>Longwood, FL</strong> <span class="sd-badge" data-sd-badge>LIVE</span></p>
+
+            <div class="sd-grid sd-grid--2">
+              <div class="sd-panel">
+                <span class="sd-kicker">Active tropical cyclones</span>
+                <div id="tr-list" class="sd-storms" aria-live="polite"><p class="sd-empty">Checking the Atlantic, East Pacific and Central Pacific…</p></div>
+                <div id="tr-gtwo" class="sd-meta"></div>
+              </div>
+              <div class="sd-panel">
+                <span class="sd-kicker">Your exposure</span>
+                <div id="tr-detail" class="sd-detail" aria-live="polite"><p class="sd-empty">Select a storm to compare its forecast with your location.</p></div>
+              </div>
+            </div>
+
+            <h3 class="sd-h3">Replay a real Florida hurricane</h3>
+            <p class="sd-small">Official NHC best-track data. The shaded circle is the radius of tropical-storm-force wind, drawn to scale on the Section 7 map. If your location is inside it, you got those winds whether or not the center came near.</p>
+            <div class="sd-panel">
+              <div class="sd-row">
+                <label for="tr-replay">Storm</label>
+                <select id="tr-replay"><option value="">Choose a replay…</option></select>
+                <button type="button" class="sd-btn" id="tr-replay-play" aria-pressed="false">▶ Play</button>
+              </div>
+              <input type="range" id="tr-replay-slider" min="0" max="0" value="0" class="ww-slider" aria-label="Replay time" disabled />
+              <p class="sd-headline sd-headline--sm" id="tr-replay-out" aria-live="polite"></p>
+              <p class="sd-meta" id="tr-replay-blurb"></p>
+            </div>
+
+            <div class="ww-checklist-grid">
+              <div class="ww-check-item"><strong>The cone is not the storm</strong><p>The cone shows where the <em>center</em> may travel, drawn so it holds the center about two-thirds of the time. Wind, rain and surge reach far outside it. Charley (2004) is the classic lesson.</p></div>
+              <div class="ww-check-item"><strong>Category = wind only</strong><p>The Saffir–Simpson scale ranks maximum sustained wind (Cat 1 starts at 64 kt, 74 mph). It says nothing about rain or storm surge, which cause most hurricane deaths.</p></div>
+              <div class="ww-check-item"><strong>Watch vs warning</strong><p>A watch means hurricane conditions are <em>possible</em> within 48 hours; a warning means they are <em>expected</em> within 36. The warning arrives early on purpose: you need the time to prepare before winds reach tropical-storm force.</p></div>
+            </div>
+          </section>
+
+          <!-- ═════════ 12 · DAILY BRIEFING ═════════ -->
+          <section id="briefing" class="ww-card" aria-labelledby="briefing-title">
+            <div class="ww-card-header">
+              <span class="ww-card-tag">Data → language</span>
+              <h2 id="briefing-title">12 · Tomorrow's Briefing, With Attitude</h2>
+              <p>A forecast app is a program that turns numbers into sentences. Change the voice and the thresholds, and watch what stays true and what is a choice.</p>
+            </div>
+            <div class="sd-panel">
+              <div class="sd-voices" id="bf-voices" role="group" aria-label="Voice"></div>
+              <p class="sd-brief" id="bf-text" aria-live="polite">Loading tomorrow's forecast…</p>
+              <p class="sd-safety" id="bf-safety" hidden></p>
+              <div class="sd-grid sd-grid--3">
+                <label class="sd-slider" for="bf-hot"><span>"Hot" starts at <output id="bf-hot-out">90°</output></span><input type="range" id="bf-hot" min="70" max="105" value="90" class="ww-slider" /></label>
+                <label class="sd-slider" for="bf-cold"><span>"Cold" is below <output id="bf-cold-out">55°</output></span><input type="range" id="bf-cold" min="20" max="70" value="55" class="ww-slider" /></label>
+                <label class="sd-slider" for="bf-rain"><span>Mention rain at <output id="bf-rain-out">30%</output></span><input type="range" id="bf-rain" min="10" max="80" step="5" value="30" class="ww-slider" /></label>
+              </div>
+              <details class="sd-facts"><summary>Show the data behind the sentence</summary><pre id="bf-facts"></pre></details>
+            </div>
+            <div class="ww-checklist-grid">
+              <div class="ww-check-item"><strong>What the voice may change</strong><p>Word choice, rhythm, jokes. The numbers always appear exactly as measured, and a safety warning is identical in every voice.</p></div>
+              <div class="ww-check-item"><strong>What the thresholds change</strong><p>Is 82°F "warm" or "hot"? That depends on who you ask: a Floridian in October or an Alaskan in July. Your sliders are a personal definition, and every app hides one.</p></div>
+            </div>
+          </section>
+
+          <!-- ═════════ 13 · METEOROLOGIST IN TRAINING QUIZ ═════════ -->
           <section id="quiz" class="ww-card" aria-labelledby="quiz-title">
             <div class="ww-card-header">
               <span class="ww-card-tag">Formative Assessment</span>
-              <h2 id="quiz-title">8 · Meteorologist-in-Training Challenge</h2>
+              <h2 id="quiz-title">13 · Meteorologist-in-Training Challenge</h2>
               <p>Apply atmospheric physics and decision science to real-world weather scenarios.</p>
             </div>
 
@@ -792,6 +1059,66 @@
                 </div>
                 <div class="ww-quiz-feedback"></div>
               </div>
+
+              <!-- Q6 -->
+              <div class="ww-quiz-card" data-correct="2" data-explanation="A nowcast mostly slides the current radar picture forward. That works while the storm keeps its size and speed, but over a couple of hours storms grow, split and die, and the assumption breaks down.">
+                <p class="ww-quiz-q">6. A radar nowcast is very reliable for the next 30 minutes and much less so at 2 hours. Why?</p>
+                <div class="ww-quiz-options">
+                  <button type="button" class="ww-quiz-opt">A) Radar only scans for 30 minutes at a time</button>
+                  <button type="button" class="ww-quiz-opt">B) Rain is invisible to radar after 30 minutes</button>
+                  <button type="button" class="ww-quiz-opt">C) It assumes storms keep moving and keep their strength, and real storms grow, split and die</button>
+                  <button type="button" class="ww-quiz-opt">D) The Moon's phase changes the rain rate</button>
+                </div>
+                <div class="ww-quiz-feedback"></div>
+              </div>
+
+              <!-- Q7 -->
+              <div class="ww-quiz-card" data-correct="1" data-explanation="Time = distance ÷ speed = 24 mi ÷ 30 mph = 0.8 hours = 48 minutes. It only works because the storm is heading straight at you; an offset track would add a cross-track miss distance.">
+                <p class="ww-quiz-q">7. A warned storm is 24 miles west of you and moving east at 30 mph, straight toward you. About when does it arrive?</p>
+                <div class="ww-quiz-options">
+                  <button type="button" class="ww-quiz-opt">A) In 24 minutes</button>
+                  <button type="button" class="ww-quiz-opt">B) In 48 minutes</button>
+                  <button type="button" class="ww-quiz-opt">C) In 72 minutes</button>
+                  <button type="button" class="ww-quiz-opt">D) It is impossible to estimate</button>
+                </div>
+                <div class="ww-quiz-feedback"></div>
+              </div>
+
+              <!-- Q8 -->
+              <div class="ww-quiz-card" data-correct="1" data-explanation="Sound covers about a mile in 5 seconds, so 10 seconds is roughly 2 miles. Lightning can strike many miles from the storm, so anything inside 6 to 10 miles means go indoors now.">
+                <p class="ww-quiz-q">8. You count 10 seconds between a flash and its thunder. What should you do?</p>
+                <div class="ww-quiz-options">
+                  <button type="button" class="ww-quiz-opt">A) Nothing: it is 10 miles away, so it is safe</button>
+                  <button type="button" class="ww-quiz-opt">B) Go inside: it is only about 2 miles away, well within strike range</button>
+                  <button type="button" class="ww-quiz-opt">C) Keep playing until the gap is under 5 seconds</button>
+                  <button type="button" class="ww-quiz-opt">D) Stand under the tallest tree</button>
+                </div>
+                <div class="ww-quiz-feedback"></div>
+              </div>
+
+              <!-- Q9 -->
+              <div class="ww-quiz-card" data-correct="0" data-explanation="The cone is built from past forecast errors so it holds the center of the storm roughly two-thirds of the time. The storm itself, with its wind, rain and surge, is much wider than the cone.">
+                <p class="ww-quiz-q">9. What does the "cone of uncertainty" in a hurricane forecast show?</p>
+                <div class="ww-quiz-options">
+                  <button type="button" class="ww-quiz-opt">A) Where the center of the storm may travel; impacts reach well outside it</button>
+                  <button type="button" class="ww-quiz-opt">B) The area that will receive hurricane-force winds</button>
+                  <button type="button" class="ww-quiz-opt">C) The size of the storm as it grows</button>
+                  <button type="button" class="ww-quiz-opt">D) The area where storm surge is certain</button>
+                </div>
+                <div class="ww-quiz-feedback"></div>
+              </div>
+
+              <!-- Q10 -->
+              <div class="ww-quiz-card" data-correct="3" data-explanation="CIN is the lid. With lots of CAPE underneath, nothing may happen all afternoon, but if a front or sea breeze breaks the cap, the stored energy is released all at once.">
+                <p class="ww-quiz-q">10. A forecast shows huge CAPE, plenty of moisture, strong shear, but also a very strong cap (large CIN) and nothing to lift the air. What is the best description?</p>
+                <div class="ww-quiz-options">
+                  <button type="button" class="ww-quiz-opt">A) Storms are guaranteed by 2 PM</button>
+                  <button type="button" class="ww-quiz-opt">B) No storm risk at all, because CIN is negative</button>
+                  <button type="button" class="ww-quiz-opt">C) Only light drizzle is possible</button>
+                  <button type="button" class="ww-quiz-opt">D) Storms may never form, but if something breaks the cap they can explode quickly</button>
+                </div>
+                <div class="ww-quiz-feedback"></div>
+              </div>
             </div>
           </section>
 
@@ -824,8 +1151,13 @@
               <a href="#fronts" class="ww-sidebar-link">4 · Air Masses &amp; Fronts</a>
               <a href="#clouds" class="ww-sidebar-link">5 · Moisture &amp; Cloud Lab</a>
               <a href="#precipitation-lab" class="ww-sidebar-link">6 · Winter Precipitation</a>
-              <a href="#severe" class="ww-sidebar-link">7 · Satellites &amp; Storms</a>
-              <a href="#quiz" class="ww-sidebar-link">8 · Meteorologist Quiz</a>
+              <a href="#severe" class="ww-sidebar-link">7 · Live Storm Map</a>
+              <a href="#nowcast" class="ww-sidebar-link">8 · Nowcasting</a>
+              <a href="#storm-cells" class="ww-sidebar-link">9 · Cells &amp; Lightning</a>
+              <a href="#outlook" class="ww-sidebar-link">10 · Storm Outlook</a>
+              <a href="#tropics" class="ww-sidebar-link">11 · Tropical Desk</a>
+              <a href="#briefing" class="ww-sidebar-link">12 · Briefing</a>
+              <a href="#quiz" class="ww-sidebar-link">13 · Meteorologist Quiz</a>
             </nav>
           </div>
 
@@ -840,6 +1172,15 @@
             <div class="ll-info"><strong>Warm Front</strong>The leading edge of a warm air mass riding gently up and over a retreating cold air mass.</div>
             <div class="ll-info"><strong>Freezing Rain</strong>Liquid raindrops that fall through a shallow sub-freezing layer near the ground and freeze instantly on contact with cold surfaces.</div>
             <div class="ll-info"><strong>Sleet</strong>Small, translucent ice pellets formed when rain freezes solid before hitting the ground.</div>
+            <div class="ll-info"><strong>Nowcast</strong>A very short-range forecast (0 to 2 hours) made mostly by extrapolating the motion of radar echoes already observed.</div>
+            <div class="ll-info"><strong>Reflectivity (dBZ)</strong>How strongly a radar echo returns. Higher values mean bigger or more numerous drops; Z = 200·R^1.6 turns it into rain rate.</div>
+            <div class="ll-info"><strong>CAPE</strong>Convective Available Potential Energy (J/kg): the fuel for rising storm updrafts.</div>
+            <div class="ll-info"><strong>CIN</strong>Convective Inhibition: the energy needed to break through a warm "cap" so storms can start.</div>
+            <div class="ll-info"><strong>Wind shear</strong>Change of wind speed or direction with height. It organizes storms into long-lived, sometimes rotating, systems.</div>
+            <div class="ll-info"><strong>Steering flow</strong>The mean wind through a storm's depth, which carries the storm along.</div>
+            <div class="ll-info"><strong>Warning polygon</strong>The area a forecaster outlines as threatened by a tornado or severe thunderstorm, with the storm's motion attached.</div>
+            <div class="ll-info"><strong>Cone of uncertainty</strong>The area that contains the storm's center about two-thirds of the time. It is not the size of the storm.</div>
+            <div class="ll-info"><strong>Saffir–Simpson scale</strong>Category 1 to 5 ranking of a hurricane's maximum sustained wind.</div>
             <div class="ll-info"><strong>Coriolis Effect</strong>The apparent deflection of moving air caused by Earth's rotation, turning winds to the right in the Northern Hemisphere.</div>
           </div>
         </div>
@@ -859,7 +1200,9 @@
   <script src="../../assets/js/sim-kit.js"></script>
   <script src="../../assets/js/weather-engine.js"></script>
   <script src="../../assets/js/cloud-engine.js"></script>
+  <script src="../../assets/js/storm-engine.js"></script>
   <script src="../../assets/js/lessons/weather-watch.js"></script>
+  <script src="../../assets/js/lessons/storm-desk.js"></script>
   <script src="../../assets/js/lesson-layout.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/video-embed.js"></script>

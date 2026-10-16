@@ -650,7 +650,9 @@
         max: baseTemp + 6,
         rainChance: code >= 50 ? 60 : 15,
         precipSum: code >= 50 ? 0.25 : 0,
-        uvMax: uv
+        uvMax: uv,
+        windMax: wind,
+        gustMax: wind + 7
       });
     }
 
@@ -807,7 +809,9 @@
         max: Math.round(daily.temperature_2m_max[d]),
         rainChance: Math.round(daily.precipitation_probability_max ? daily.precipitation_probability_max[d] : 0),
         precipSum: daily.precipitation_sum ? Math.round(daily.precipitation_sum[d] * 100) / 100 : 0,
-        uvMax: Math.round((daily.uv_index_max ? daily.uv_index_max[d] : 0) * 10) / 10
+        uvMax: Math.round((daily.uv_index_max ? daily.uv_index_max[d] : 0) * 10) / 10,
+        windMax: Math.round(daily.wind_speed_10m_max ? daily.wind_speed_10m_max[d] : 0),
+        gustMax: Math.round(daily.wind_gusts_10m_max ? daily.wind_gusts_10m_max[d] : 0)
       });
     }
 

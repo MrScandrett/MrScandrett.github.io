@@ -138,6 +138,41 @@
           summary: 'Synthesizes temperature, moisture, and wind into practical 3-layer wardrobe choices.',
           takeaway: 'Layer for morning vs. afternoon shifts; protect extremities in wind.'
         },
+        nowcast: {
+          title: 'Two-Hour Rain Nowcast',
+          label: 'Nowcast lesson',
+          anchor: 'nowcast',
+          summary: 'Short-range rain timing in 15-minute steps, built mostly from where today\u2019s radar echoes are heading.',
+          takeaway: 'Trust it hardest for the next hour; storms grow and die, so the two-hour end is softer.'
+        },
+        storms: {
+          title: 'Storm Cells & Alerts',
+          label: 'Storm cells lesson',
+          anchor: 'storm-cells',
+          summary: 'Forecasters outline threatened areas and attach the storm\u2019s motion. Distance \u00f7 speed gives your arrival time.',
+          takeaway: 'Warned means it is happening or imminent: act now. Watch means conditions are favorable: get ready.'
+        },
+        outlook: {
+          title: 'Storm Outlook',
+          label: 'Storm outlook lesson',
+          anchor: 'outlook',
+          summary: 'Severe storms need moisture, instability, lift and wind shear. The outlook rates how widespread and intense they may be.',
+          takeaway: 'A marginal day can still hold one dangerous storm; check again as the day goes on.'
+        },
+        tropics: {
+          title: 'Tropical Cyclones',
+          label: 'Tropics lesson',
+          anchor: 'tropics',
+          summary: 'The National Hurricane Center tracks every active storm and forecasts the path of its center.',
+          takeaway: 'The cone shows where the center may go, not how far wind, rain and surge reach.'
+        },
+        briefing: {
+          title: 'Tomorrow\u2019s Briefing',
+          label: 'Briefing lesson',
+          anchor: 'briefing',
+          summary: 'Forecast apps turn numbers into sentences. The voice is a style choice; the numbers stay the same.',
+          takeaway: 'Thresholds like \u201chot\u201d are choices someone made for you. The lesson lets you change them.'
+        },
         precipitation: {
           title: 'Precipitation Probability',
           label: 'Rain chance lesson',
@@ -809,6 +844,9 @@
         try {
           let weather = null;
           const location = await getBrowserLocation().catch(() => DEFAULT_WEATHER);
+          // Live Sky (index-live-sky.js) follows whichever location the card is showing.
+          window.__homeWeatherLocation = location;
+          document.dispatchEvent(new CustomEvent('home-weather:location', { detail: location }));
           try {
             weather = await fetchWeatherForLocation(location);
           } catch (error) {
