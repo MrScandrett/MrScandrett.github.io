@@ -1,4 +1,4 @@
-/* groove-sheet.js — the homework sheet page (lessons/music/groove-sheet.html).
+/* groove-sheet.js — the homework sheet panel inside the Drum Lab Build chapter (#drSheet).
  *
  * The printed card is its own layout, built here from the saved step data: notation as vector SVG
  * (DrumLab.renderStaff, with its count line from GrooveSheetCore), a tempo ladder, a Mon–Sun log and a
@@ -7,6 +7,8 @@
 (function () {
   'use strict';
   var G = window.GrooveSheetCore, QR = window.QR;
+  var host = document.getElementById('drSheet'), printRoot = document.getElementById('drSheetPrint');
+  if (!host || !printRoot || !window.DrumLab) return;
   var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   var LAB_PATH = 'lessons/music/drums.html';
   var DEFAULT_SITE = 'https://mrscandrett.github.io';
@@ -15,9 +17,7 @@
     try { var t = '__gs_probe'; window.localStorage.setItem(t, '1'); window.localStorage.removeItem(t); return window.localStorage; } catch (e) { return null; }
   }
   var store = G.createStore(safeStorage());
-  var $ = function (id) { return document.getElementById(id); };
-  var pagesEl = $('gsPages'), statusEl = $('gsStatus');
-  var lastDeleted = null;
+  var lastDeleted = null, statusEl, pagesEl, ui = {};
 
   function el(tag, cls, text, parent) {
     var n = document.createElement(tag);
@@ -145,7 +145,9 @@
     var down = act('▼', 'Move ' + p.title + ' down', function () { store.movePattern(p.id, 1); render(p.id, 'down'); });
     up.disabled = i === 0; down.disabled = i === total - 1;
     act('Duplicate', 'Duplicate ' + p.title, function () { var c = store.duplicatePattern(p.id); render(c && c.id); say('Duplicated “' + p.title + '”.'); });
-    var open = el('a', 'gs-btnlink', 'Open in Drum Lab ↗', bar); open.href = 'drums.html' + G.hashFor(p); open.target = '_blank'; open.rel = 'noopener';
+    act('Load in builder ↑', 'Load ' + p.title + ' into the groove builder', function () {
+      window.dispatchEvent(new CustomEvent('groove-sheet-load', { detail: { tracks: p.tracks, tempo: p.tempo, count: p.count, title: p.title } }));
+    });
     act('Remove', 'Remove ' + p.title + ' from the sheet', function () {
       var pats = store.sheet().patterns, at = pats.map(function (x) { return x.id; }).indexOf(p.id), copy = JSON.parse(JSON.stringify(pats[at]));
       store.deletePattern(p.id);
@@ -159,24 +161,68 @@
     return panel;
   }
 
-  /* ------------------------------------------------------------------ render */
+  /* --------------------------------------------------------------- panel UI */
+  function build() {
+    host.textContent = '';
+    function row(cls) { return el('div', 'gs-row' + (cls ? ' ' + cls : ''), null, host); }
+    function labelled(parent, text, node) { var l = el('label', null, null, parent); l.appendChild(document.createTextNode(text + ' ')); l.appendChild(node); return node; }
+    function btn(parent, text, id, cls) { var b = el('button', 'dr-mini' + (cls ? ' ' + cls : ''), text, parent); b.type = 'button'; ui[id] = b; return b; }
+
+    var r1 = row();
+    ui.select = labelled(r1, 'Sheet for', el('select'));
+    btn(r1, 'New sheet', 'newSheet'); btn(r1, 'Copy to new student', 'dupSheet'); btn(r1, 'Delete sheet', 'delSheet', 'gs-danger');
+
+    var r2 = row();
+    ui.student = labelled(r2, 'Student name', el('input')); ui.student.type = 'text'; ui.student.maxLength = 60; ui.student.autocomplete = 'off'; ui.student.placeholder = 'Blank = write by hand';
+    ui.assigned = labelled(r2, 'Date', el('input')); ui.assigned.type = 'date';
+    ui.due = labelled(r2, 'Due', el('input')); ui.due.type = 'date';
+    ui.perPage = labelled(r2, 'Grooves per page', el('select'));
+    [['3', '3'], ['2', '2 (roomier)']].forEach(function (o) { var op = el('option', null, o[1], ui.perPage); op.value = o[0]; });
+
+    var r3 = row();
+    btn(r3, 'Print this sheet', 'print', 'dr-mini-primary');
+    btn(r3, 'Export this sheet', 'exportOne'); btn(r3, 'Export all sheets', 'exportAll'); btn(r3, 'Import…', 'importBtn');
+    ui.importFile = el('input', null, null, r3); ui.importFile.type = 'file'; ui.importFile.accept = 'application/json,.json'; ui.importFile.hidden = true;
+    var det = el('details', 'gs-site', null, r3);
+    el('summary', null, 'QR address', det);
+    ui.site = labelled(det, 'Site address the QR codes point to', el('input')); ui.site.type = 'url'; ui.site.inputMode = 'url'; ui.site.autocomplete = 'off';
+    ui.siteHint = el('p', null, '', det);
+
+    statusEl = el('p', 'gs-status', '', host); statusEl.setAttribute('role', 'status'); statusEl.setAttribute('aria-live', 'polite');
+    pagesEl = el('div', 'gs-list', null, host);
+    bind();
+  }
+
   function renderToolbar(sheet) {
-    var sel = $('gsSheetSelect');
-    sel.textContent = '';
+    ui.select.textContent = '';
     store.state.sheets.forEach(function (s, i) {
-      var o = el('option', null, (s.student || 'Unnamed sheet ' + (i + 1)) + ' (' + s.patterns.length + ')', sel); o.value = s.id;
+      var o = el('option', null, (s.student || 'Unnamed sheet ' + (i + 1)) + ' (' + s.patterns.length + ')', ui.select); o.value = s.id;
     });
-    sel.value = sheet.id;
-    if (document.activeElement !== $('gsStudent')) $('gsStudent').value = sheet.student;
-    $('gsAssigned').value = sheet.assigned; $('gsDue').value = sheet.due; $('gsPerPage').value = String(sheet.perPage);
-    $('gsSite').value = store.state.siteUrl || '';
-    $('gsSite').placeholder = siteBase().replace(/\/$/, '');
+    ui.select.value = sheet.id;
+    if (document.activeElement !== ui.student) ui.student.value = sheet.student;
+    ui.assigned.value = sheet.assigned; ui.due.value = sheet.due; ui.perPage.value = String(sheet.perPage);
+    ui.site.value = store.state.siteUrl || '';
     var base = siteBase();
-    $('gsSiteHint').textContent = 'QR codes open ' + base + LAB_PATH + ' with the groove in the address. Right now: ' + base.replace(/\/$/, '') + (store.state.siteUrl ? '' : ' (guessed; change it if your site lives elsewhere)') + '.';
-    $('gsDelSheet').disabled = false;
-    $('gsPrint').disabled = !sheet.patterns.length;
-    $('gsExport').disabled = !sheet.patterns.length;
+    ui.site.placeholder = base.replace(/\/$/, '');
+    ui.siteHint.textContent = 'Each QR code opens ' + base + LAB_PATH + ' with the groove in the address. Right now: ' + base.replace(/\/$/, '') + (store.state.siteUrl ? '' : ' (a guess; change it if your site lives elsewhere)') + '.';
+    ui.print.disabled = ui.exportOne.disabled = !sheet.patterns.length;
     if (!store.persistent && !renderToolbar.warned) { renderToolbar.warned = true; say('This browser is blocking storage, so the sheet will be lost when you close the tab. Use Export to keep it.'); }
+  }
+
+  /* One printed page: header, optional how-to line, then its cards. forPrint drops the edit panels. */
+  function buildPage(sheet, pg, pageCount, forPrint) {
+    var per = sheet.perPage, pats = sheet.patterns;
+    var page = el('section', 'gs-page gs-per-' + per);
+    page.setAttribute('data-night-keep', '');
+    page.appendChild(pageHead(sheet, pg + 1, pageCount));
+    if (pg === 0) el('p', 'gs-howto', 'Count out loud while you play. Start at the first tempo and check its box when you can play the groove four times in a row without stopping. Then move up.', page);
+    pats.slice(pg * per, pg * per + per).forEach(function (pat, k) {
+      var i = pg * per + k, card = el('article', 'gs-card' + (per === 2 ? ' gs-roomy' : ''), null, page);
+      card.setAttribute('data-id', pat.id);
+      paintCard(card, pat, i + 1);
+      if (!forPrint) card.appendChild(editPanel(card, pat, i, pats.length));
+    });
+    return page;
   }
 
   function pageHead(sheet, pageNo, pageCount) {
@@ -198,28 +244,13 @@
     pagesEl.textContent = '';
     var pats = sheet.patterns;
     if (!pats.length) {
-      var empty = el('section', 'gs-empty no-print', null, pagesEl);
-      el('h2', null, 'This sheet has no grooves yet.', empty);
-      var p = el('p', null, 'Build one in the ', empty);
-      var a = el('a', null, 'Drum Lab groove builder', p); a.href = 'drums.html#build';
-      p.appendChild(document.createTextNode(' and press '));
-      el('strong', null, 'Add to homework sheet', p);
-      p.appendChild(document.createTextNode('. Come back here and it will be waiting.'));
+      var empty = el('div', 'gs-empty', null, pagesEl);
+      el('p', null, 'This sheet has no grooves yet. Build one above and press “Add to homework sheet”; it will appear here.', empty);
       return;
     }
-    var per = sheet.perPage, pageCount = Math.ceil(pats.length / per);
-    for (var pg = 0; pg < pageCount; pg++) {
-      var page = el('section', 'gs-page gs-per-' + per, null, pagesEl);
-      page.setAttribute('aria-label', 'Printed page ' + (pg + 1) + ' of ' + pageCount);
-      page.appendChild(pageHead(sheet, pg + 1, pageCount));
-      if (pg === 0) el('p', 'gs-howto', 'Count out loud while you play. Start at the first tempo and check its box when you can play the groove four times in a row without stopping. Then move up.', page);
-      pats.slice(pg * per, pg * per + per).forEach(function (pat, k) {
-        var i = pg * per + k, card = el('article', 'gs-card' + (per === 2 ? ' gs-roomy' : ''), null, page);
-        card.setAttribute('data-id', pat.id);
-        paintCard(card, pat, i + 1);
-        card.appendChild(editPanel(card, pat, i, pats.length));
-      });
-    }
+    var pageCount = Math.ceil(pats.length / sheet.perPage);
+    el('p', 'gs-count', pats.length + (pats.length === 1 ? ' groove' : ' grooves') + ' · prints on ' + pageCount + (pageCount === 1 ? ' page' : ' pages') + ' (US Letter)', pagesEl);
+    for (var pg = 0; pg < pageCount; pg++) pagesEl.appendChild(buildPage(sheet, pg, pageCount, false));
     if (focusId) {
       var c = pagesEl.querySelector('[data-id="' + focusId + '"]');
       if (c) {
@@ -231,45 +262,56 @@
     }
   }
 
+  /* Print the way the practice sheet does: fill the print-only root, hide the lesson, print, clean up. */
+  function printSheet() {
+    var sheet = store.sheet();
+    if (!sheet.patterns.length) return;
+    printRoot.textContent = '';
+    var pageCount = Math.ceil(sheet.patterns.length / sheet.perPage);
+    for (var pg = 0; pg < pageCount; pg++) printRoot.appendChild(buildPage(sheet, pg, pageCount, true));
+    document.body.classList.add('dr-printing-sheet');
+    window.print();
+  }
+  window.addEventListener('afterprint', function () { document.body.classList.remove('dr-printing-sheet'); printRoot.textContent = ''; });
+
   /* ---------------------------------------------------------------- toolbar */
   function bind() {
-    $('gsSheetSelect').addEventListener('change', function (e) { store.select(e.target.value); render(); });
-    $('gsNewSheet').addEventListener('click', function () { store.newSheet(''); render(); $('gsStudent').focus(); say('New blank sheet. Type the student’s name.'); });
-    $('gsDupSheet').addEventListener('click', function () { store.duplicateSheet(store.state.current); render(); $('gsStudent').focus(); say('Copied. Type the new student’s name.'); });
-    $('gsDelSheet').addEventListener('click', function () {
+    ui.select.addEventListener('change', function (e) { store.select(e.target.value); render(); });
+    ui.newSheet.addEventListener('click', function () { store.newSheet(''); render(); ui.student.focus(); say('New blank sheet. Type the student’s name.'); });
+    ui.dupSheet.addEventListener('click', function () { store.duplicateSheet(store.state.current); render(); ui.student.focus(); say('Copied. Type the new student’s name.'); });
+    ui.delSheet.addEventListener('click', function () {
       var s = store.sheet(), label = s.student || 'this unnamed sheet';
       if (s.patterns.length && !window.confirm('Delete ' + label + ' and its ' + s.patterns.length + ' groove' + (s.patterns.length === 1 ? '' : 's') + '? Export it first if you might want it back.')) return;
       store.deleteSheet(s.id); render(); say('Deleted.');
     });
-    $('gsStudent').addEventListener('input', function (e) {
+    ui.student.addEventListener('input', function (e) {
       store.updateSheet({ student: e.target.value });
-      var o = $('gsSheetSelect').selectedOptions[0], s = store.sheet(); if (o) o.textContent = (s.student || 'Unnamed sheet') + ' (' + s.patterns.length + ')';
-      var dd = pagesEl.querySelectorAll('.gs-who div:first-child');
-      Array.prototype.forEach.call(dd, function (d) { d.classList.toggle('is-filled', !!s.student); d.querySelector('dd').textContent = s.student; });
+      var o = ui.select.selectedOptions[0], s = store.sheet(); if (o) o.textContent = (s.student || 'Unnamed sheet') + ' (' + s.patterns.length + ')';
+      Array.prototype.forEach.call(pagesEl.querySelectorAll('.gs-who div:first-child'), function (d) { d.classList.toggle('is-filled', !!s.student); d.querySelector('dd').textContent = s.student; });
     });
-    ['gsAssigned', 'gsDue'].forEach(function (id) {
-      $(id).addEventListener('change', function () { store.updateSheet({ assigned: $('gsAssigned').value, due: $('gsDue').value }); render(); });
+    [ui.assigned, ui.due].forEach(function (inp) {
+      inp.addEventListener('change', function () { store.updateSheet({ assigned: ui.assigned.value, due: ui.due.value }); render(); });
     });
-    $('gsPerPage').addEventListener('change', function (e) { store.updateSheet({ perPage: +e.target.value }); render(); });
-    $('gsSite').addEventListener('change', function (e) {
+    ui.perPage.addEventListener('change', function (e) { store.updateSheet({ perPage: +e.target.value }); render(); });
+    ui.site.addEventListener('change', function (e) {
       var v = e.target.value.trim();
       if (v && !/^https?:\/\//i.test(v)) { say('The address should start with https://'); e.target.value = store.state.siteUrl || ''; return; }
       store.setSiteUrl(v); render(); say('QR codes updated.');
     });
-    $('gsPrint').addEventListener('click', function () { window.print(); });
+    ui.print.addEventListener('click', printSheet);
 
     function download(name, text) {
       var url = URL.createObjectURL(new Blob([text], { type: 'application/json' })), a = document.createElement('a');
       a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     }
     var stamp = function () { return new Date().toISOString().slice(0, 10); };
-    $('gsExport').addEventListener('click', function () {
+    ui.exportOne.addEventListener('click', function () {
       var s = store.sheet(), who = (s.student || 'sheet').replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '') || 'sheet';
       download('groove-' + who + '-' + stamp() + '.json', store.exportJSON(false)); say('Exported.');
     });
-    $('gsExportAll').addEventListener('click', function () { download('groove-sheets-all-' + stamp() + '.json', store.exportJSON(true)); say('Exported ' + store.state.sheets.length + ' sheet(s).'); });
-    $('gsImportBtn').addEventListener('click', function () { $('gsImport').click(); });
-    $('gsImport').addEventListener('change', function (e) {
+    ui.exportAll.addEventListener('click', function () { download('groove-sheets-all-' + stamp() + '.json', store.exportJSON(true)); say('Exported ' + store.state.sheets.length + ' sheet(s).'); });
+    ui.importBtn.addEventListener('click', function () { ui.importFile.click(); });
+    ui.importFile.addEventListener('change', function (e) {
       var f = e.target.files && e.target.files[0]; e.target.value = '';
       if (!f) return;
       if (f.size > 2e6) { say('That file is too large to be a groove-sheet export.'); return; }
@@ -281,16 +323,15 @@
       r.readAsText(f);
     });
 
-    // The builder lives on another page: pick up grooves it adds when we come back, without clobbering typing.
+    // The builder above adds grooves to the same store; other tabs may too. Don't clobber typing.
     function refresh() {
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')) return;
+      if (host.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
       store.reload(); render();
     }
+    window.addEventListener('groove-sheet-changed', function () { store.reload(); render(); });
     window.addEventListener('storage', function (e) { if (e.key === G.STORE_KEY) refresh(); });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
-    window.addEventListener('pageshow', function (e) { if (e.persisted) refresh(); });
   }
 
-  bind();
+  build();
   render();
 })();
