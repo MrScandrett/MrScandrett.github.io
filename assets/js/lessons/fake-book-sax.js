@@ -88,7 +88,7 @@
     return '<svg class="fb-sx-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">' + o.join('') + '</svg>';
   }
 
-  var exported = { fingering: fingering, draw: draw, describe: describe, LOW: LOW, HIGH: HIGH, KEYS: KEYS.map(function (k) { return k[0]; }) };
+  var exported = { fingering: fingering, draw: draw, describe: describe, LOW: LOW, HIGH: HIGH, W: W, H: H, geometry: KEYS, labels: LABELS, KEYS: KEYS.map(function (k) { return k[0]; }) };
   if (typeof module !== 'undefined' && module.exports) module.exports = exported;
   else root.FakeBookSax = exported;
 })(typeof window !== 'undefined' ? window : globalThis);

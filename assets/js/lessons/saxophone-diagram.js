@@ -34,15 +34,24 @@
         `</g>`;
     };
 
-    const mainTouches = [
-      ['L1', 500, 698, 24],
-      ['bis', 506, 748, 16],
-      ['L2', 512, 798, 24],
-      ['L3', 518, 848, 23],
-      ['R1', 450, 1450, 23],
-      ['R2', 464, 1555, 24],
-      ['R3', 435, 1644, 23]
-    ].map(([k, x, y, r]) => touch(k, x, y, r)).join('');
+    // Every main-stack touch is anchored on the centre of the tone-hole cup it opens
+    // (cups are drawn below at the same coordinates): id, cup cx, cup cy, pearl radius.
+    // Art, press markers and the Left/Right-hand leaders are all generated from this table.
+    const PEARLS = {
+      L1: [489, 948, 24], bis: [552, 1000, 12], L2: [489, 1049, 24], L3: [481, 1169, 24],
+      R1: [463, 1394, 24], R2: [455, 1520, 24], R3: [441, 1660, 24]
+    };
+    const pearlArt = Object.entries(PEARLS).map(([k, [x, y, r]]) => {
+      const bz = r + 6.5, hl = r * 0.4;
+      return `<path d="M408 ${y + 9} L${x - bz + 2} ${y + 9}" stroke="url(#${id}rod)" stroke-width="9"/>` +
+        `<circle cx="${x}" cy="${y}" r="${bz}" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/>` +
+        `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/>` +
+        `<circle cx="${x - r * 0.2}" cy="${y - r * 0.2}" r="${hl}" fill="#ffffff" opacity="0.6"/>`;
+    }).join('');
+    const mainTouches = Object.entries(PEARLS).map(([k, [x, y, r]]) => touch(k, x, y, r)).join('');
+    // group art is drawn at translate(8,20) scale(.38)
+    const sx = x => +(8 + 0.38 * x).toFixed(1), sy = y => +(20 + 0.38 * y).toFixed(1);
+    const handLead = k => { const [x, y, r] = PEARLS[k]; return `M84 ${sy(y)} H${sx(x - r - 6.5) - 2}`; };
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 850" role="img" aria-label="${escape(label)}">
   <defs>
@@ -280,14 +289,8 @@
     <circle cx="441" cy="1660" r="56.5" fill="url(#${id}pad)" stroke="#3a1e05" stroke-width="1.5"/><circle cx="441" cy="1660" r="54" fill="url(#${id}cup)" stroke="#452705" stroke-width="2.5"/><ellipse cx="438" cy="1657" rx="46" ry="44" fill="none" stroke="#fff4cf" stroke-width="2" opacity="0.7"/><circle cx="441" cy="1660" r="19" fill="url(#${id}rod)" stroke="#452705" stroke-width="1.2"/><path d="M378 1657 Q411 1664 454 1656" fill="none" stroke="url(#${id}rod)" stroke-width="8"/><path d="M378 1654 L452 1653" stroke="#fff9e0" stroke-width="2.5" opacity="0.9"/>
     <circle cx="451" cy="1924" r="59.5" fill="url(#${id}pad)" stroke="#3a1e05" stroke-width="1.5"/><circle cx="451" cy="1924" r="57" fill="url(#${id}cup)" stroke="#452705" stroke-width="2.5"/><ellipse cx="448" cy="1921" rx="49" ry="47" fill="none" stroke="#fff4cf" stroke-width="2" opacity="0.7"/><circle cx="451" cy="1924" r="20" fill="url(#${id}rod)" stroke="#452705" stroke-width="1.2"/><path d="M378 1921 Q411 1928 464 1920" fill="none" stroke="url(#${id}rod)" stroke-width="8"/><path d="M378 1918 L462 1917" stroke="#fff9e0" stroke-width="2.5" opacity="0.9"/>
 
-    <!-- Mother-of-Pearl Touches in Raised Brass Bezels -->
-    <path d="M408 707 L492 707" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="500" cy="698" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="500" cy="698" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="495" cy="693" r="9.6" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 757 L498 757" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="506" cy="748" r="23" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="506" cy="748" r="16" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="501" cy="743" r="6.4" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 807 L504 807" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="512" cy="798" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="512" cy="798" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="507" cy="793" r="9.6" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 857 L510 857" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="518" cy="848" r="30" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="518" cy="848" r="23" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="513" cy="843" r="9.2" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 1459 L442 1459" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="450" cy="1450" r="30" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="450" cy="1450" r="23" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="445" cy="1445" r="9.2" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 1564 L456 1564" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="464" cy="1555" r="31" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="464" cy="1555" r="24" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="459" cy="1550" r="9.6" fill="#ffffff" opacity="0.6"/>
-    <path d="M408 1653 L427 1653" stroke="url(#${id}rod)" stroke-width="9"/><circle cx="435" cy="1644" r="30" fill="url(#${id}bezel)" stroke="#4a2c07" stroke-width="2.5"/><circle cx="435" cy="1644" r="23" fill="url(#${id}pearl)" stroke="#523208" stroke-width="1.5"/><circle cx="430" cy="1639" r="9.2" fill="#ffffff" opacity="0.6"/>
+    <!-- Mother-of-Pearl Touches in Raised Brass Bezels (from PEARLS) -->
+    ${pearlArt}
 
     <!-- Palm Keys, Side Levers, Spatulas -->
     <path d="M511 457 Q533 496 529 562 L543 627 M515 536 Q548 577 548 624 L565 665 M530 591 Q569 630 578 698 L585 747" fill="none" stroke="url(#${id}rod)" stroke-width="10"/>
@@ -313,13 +316,17 @@
     <ellipse cx="591" cy="1745" rx="21" ry="33" transform="rotate(20 591 1745)" fill="url(#${id}cup)" stroke="#452705" stroke-width="2"/>
     <ellipse cx="591" cy="1745" rx="10" ry="15" transform="rotate(20 591 1745)" fill="url(#${id}rod)" stroke="#452705" stroke-width="1"/>
 
-    <!-- Sculpted Brass Low B / Bb Key Guard Cage -->
-    <path d="M540 1405 Q620 1375 645 1453 L625 1665 Q634 1810 623 1929 L576 1985 Q555 1840 556 1704 Z" fill="#0d1417" opacity="0.35" transform="translate(4, 5)"/>
-    <path d="M540 1405 Q620 1375 645 1453 L625 1665 Q634 1810 623 1929 L576 1985 Q555 1840 556 1704 Z" fill="url(#${id}brass)" stroke="#422909" stroke-width="3"/>
-    <path d="M542 1405 Q620 1375 643 1453" stroke="#fff4cf" stroke-width="2.5" opacity="0.8"/>
-    <path d="M563 1490 L617 1510 L601 1580 L568 1589 Z M568 1692 L608 1705 L610 1807 L579 1832 Z" fill="#201103" opacity="0.85" stroke="#4a2e09" stroke-width="2"/>
-    <circle cx="620" cy="1515" r="4.5" fill="#1b5e20" stroke="#3a2205" stroke-width="1"/>
-    <circle cx="612" cy="1710" r="4.5" fill="#1b5e20" stroke="#3a2205" stroke-width="1"/>
+    <!-- Low B / Bb Key Guard: open wire frame (two rails + cross-bars) so the cups show through -->
+    <g id="${id}keyGuard" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M551 1472 Q546 1620 556 1790 Q566 1812 596 1808 Q630 1800 636 1770 Q640 1620 632 1472 M551 1626 H634" stroke="#2a1703" stroke-width="12" opacity="0.7" transform="translate(3 4)"/>
+      <path d="M551 1472 Q546 1620 556 1790 Q566 1812 596 1808 Q630 1800 636 1770 Q640 1620 632 1472 M551 1626 H634" stroke="#3a2205" stroke-width="11"/>
+      <path d="M551 1472 Q546 1620 556 1790 Q566 1812 596 1808 Q630 1800 636 1770 Q640 1620 632 1472 M551 1626 H634" stroke="url(#${id}rod)" stroke-width="7"/>
+      <path d="M553 1480 Q549 1620 558 1786" stroke="#fff4cf" stroke-width="1.8" opacity="0.8"/>
+      <path d="M646 1380 L640 1472" stroke="#3a2205" stroke-width="11"/>
+      <path d="M646 1380 L640 1472" stroke="url(#${id}rod)" stroke-width="7"/>
+    </g>
+    <circle cx="641" cy="1472" r="7" fill="url(#${id}cup)" stroke="#3a2205" stroke-width="1.5"/>
+    <circle cx="552" cy="1626" r="6" fill="url(#${id}cup)" stroke="#3a2205" stroke-width="1.5"/>
 
     <!-- Bottom Bow Guard -->
     <path d="M370 1945 Q405 1984 448 1997 L489 1961 L481 2020 L420 2039 Z" fill="url(#${id}brass)" stroke="#452705" stroke-width="2.5"/>
@@ -332,20 +339,23 @@
   <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fill="#202930" font-size="12.5">
     <text x="18" y="19" font-weight="700" font-size="12" fill="#505a63" letter-spacing="0.04em">ALTO · YAS-280 REFERENCE PROPORTIONS</text>
     
-    <!-- Hand alignment guides -->
-    <path d="M200 282 H355 M186 570 H355" fill="none" stroke="#7a8b98" stroke-width="1.2" stroke-dasharray="3,3"/>
-    <text x="355" y="276" text-anchor="end" font-weight="600" fill="#4d5d6a" font-size="11.5">Left hand</text>
-    <text x="355" y="564" text-anchor="end" font-weight="600" fill="#4d5d6a" font-size="11.5">Right hand</text>
+    <!-- Hand alignment guides: labels sit in the empty left margin, leaders end at the first key of each hand -->
+    <path d="${handLead('L1')} M84 ${sy(PEARLS.R1[1])} H${sx(PEARLS.R1[0] - PEARLS.R1[2] - 6.5) - 2}" fill="none" stroke="#7a8b98" stroke-width="1.2" stroke-dasharray="3,3"/>
+    <text x="18" y="${sy(PEARLS.L1[1]) - 6}" font-weight="700" fill="#4d5d6a" font-size="11.5">Left hand</text>
+    <text x="18" y="${sy(PEARLS.R1[1]) - 6}" font-weight="700" fill="#4d5d6a" font-size="11.5">Right hand</text>
+    <text x="18" y="${sy(PEARLS.L1[1]) + 12}" fill="#6a7885" font-size="10.5">B · A · G</text>
+    <text x="18" y="${sy(PEARLS.R1[1]) + 12}" fill="#6a7885" font-size="10.5">F · E · D</text>
 
     <!-- Panel 1: Rear Thumb Rest & Octave Key -->
     <rect x="365" y="40" width="177" height="117" rx="9" fill="#f8f7f2" stroke="#d5cebe" stroke-width="1.2"/>
     <text x="376" y="62" font-weight="700" font-size="12" fill="#2e3840">Rear · left thumb</text>
-    <circle cx="404" cy="118" r="16" fill="#181c20" stroke="#0e1114" stroke-width="2"/>
-    <circle cx="402" cy="116" r="13" fill="#2d353c"/>
+    <circle cx="404" cy="108" r="16" fill="#181c20" stroke="#0e1114" stroke-width="2"/>
+    <circle cx="402" cy="106" r="13" fill="#2d353c"/>
+    <text x="404" y="140" text-anchor="middle" font-weight="600" font-size="11.5">Thumb rest</text>
     <path d="M430 127 V94 Q430 76 441 76 Q452 76 452 94 V127 Z" fill="url(#${id}brass)" stroke="#452705" stroke-width="1.5"/>
     <path d="M433 94 V124" stroke="#fff4cf" stroke-width="1.5"/>
     ${touch('octave', 441, 92, 8)}
-    <text x="467" y="95" font-weight="600" font-size="11.5">Octave</text>
+    <text x="464" y="95" font-weight="600" font-size="11.5">Octave</text>
 
     <!-- Panel 2: Left Little Finger Articulated Spatula Table -->
     <rect x="365" y="180" width="177" height="160" rx="9" fill="#f8f7f2" stroke="#d5cebe" stroke-width="1.2"/>
@@ -373,19 +383,19 @@
 
     <!-- Panel 3: Right Side Index Chromatic Levers -->
     <rect x="365" y="373" width="177" height="135" rx="9" fill="#f8f7f2" stroke="#d5cebe" stroke-width="1.2"/>
-    <text x="376" y="395" font-weight="700" font-size="12" fill="#2e3840">Right side · index</text>
+    <text x="376" y="395" font-weight="700" font-size="12" fill="#2e3840">Side keys · top → bottom</text>
     
     <path d="M390 481 V425 H414 V481 Z M430 481 V425 H454 V481 Z M470 481 V425 H494 V481 Z" fill="url(#${id}brass)" stroke="#452705" stroke-width="1.5"/>
     <line x1="393" y1="427" x2="393" y2="479" stroke="#fff4cf" stroke-width="1.2"/>
     <line x1="433" y1="427" x2="433" y2="479" stroke="#fff4cf" stroke-width="1.2"/>
     <line x1="473" y1="427" x2="473" y2="479" stroke="#fff4cf" stroke-width="1.2"/>
 
-    ${touch('sideBflat', 402, 455, 8.5)}
+    ${touch('highE', 402, 455, 8.5)}
     ${touch('sideC', 442, 455, 8.5)}
-    ${touch('highE', 482, 455, 8.5)}
-    <text x="402" y="498" text-anchor="middle" font-weight="700" font-size="11.5">B♭</text>
+    ${touch('sideBflat', 482, 455, 8.5)}
+    <text x="402" y="498" text-anchor="middle" font-weight="700" font-size="11.5">E</text>
     <text x="444" y="498" text-anchor="middle" font-weight="700" font-size="11.5">C</text>
-    <text x="482" y="498" text-anchor="middle" font-weight="700" font-size="11.5">E</text>
+    <text x="482" y="498" text-anchor="middle" font-weight="700" font-size="11.5">B♭</text>
 
     <!-- Panel 4: Right Little Finger Spatulas -->
     <rect x="365" y="600" width="177" height="142" rx="9" fill="#f8f7f2" stroke="#d5cebe" stroke-width="1.2"/>
