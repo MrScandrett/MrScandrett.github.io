@@ -5,18 +5,18 @@
 (function(root){
   'use strict';
   const keys = [
-    {id:'octave',label:'Octave',hand:'Left thumb'},
-    {id:'L1',label:'L1 · index',hand:'Left main keys'},
+    {id:'octave',label:'T · left-thumb octave',hand:'Left thumb'},
+    {id:'L1',label:'LH 1 · index',hand:'Left main keys'},
     {id:'bis',label:'Bis B♭ · index',hand:'Left main keys'},
-    {id:'L2',label:'L2 · middle',hand:'Left main keys'},
-    {id:'L3',label:'L3 · ring',hand:'Left main keys'},
+    {id:'L2',label:'LH 2 · middle',hand:'Left main keys'},
+    {id:'L3',label:'LH 3 · ring',hand:'Left main keys'},
     {id:'Gsharp',label:'G♯',hand:'Left little finger'},
     {id:'lowCsharp',label:'Low C♯',hand:'Left little finger'},
     {id:'lowB',label:'Low B',hand:'Left little finger'},
     {id:'lowBflat',label:'Low B♭',hand:'Left little finger'},
-    {id:'R1',label:'R1 · index',hand:'Right main keys'},
-    {id:'R2',label:'R2 · middle',hand:'Right main keys'},
-    {id:'R3',label:'R3 · ring',hand:'Right main keys'},
+    {id:'R1',label:'RH 1 · index',hand:'Right main keys'},
+    {id:'R2',label:'RH 2 · middle',hand:'Right main keys'},
+    {id:'R3',label:'RH 3 · ring',hand:'Right main keys'},
     {id:'sideBflat',label:'Side B♭ · index',hand:'Right side key'},
     {id:'lowC',label:'Low C',hand:'Right little finger'},
     {id:'Eflat',label:'E♭',hand:'Right little finger'}
@@ -33,13 +33,13 @@
     const thumb=octave===5?['octave']:[], base=12*(octave+1);
     for(const [semi,letter] of [[2,'D'],[4,'E'],[5,'F'],[7,'G'],[9,'A'],[11,'B']])add(base+semi,letter+octave,null,[...thumb,...natural[letter]],octave===5?'Press the left-thumb octave key. The mechanism chooses the appropriate octave vent.':undefined);
     add(base+3,'D♯'+octave,'E♭'+octave,[...thumb,...all,'Eflat'],'Use the right little finger E♭ key, not the low-C key.');
-    add(base+6,'F♯'+octave,'G♭'+octave,[...thumb,'L1','L2','L3','R2'],'Right middle finger only: R1 and R3 are released. This uses the main R2 key, not a side key.');
+    add(base+6,'F♯'+octave,'G♭'+octave,[...thumb,'L1','L2','L3','R2'],'Press LH 1–2–3 and RH 2. RH 1 and RH 3 stay released; this is the main RH 2 key, not a side key.');
     add(base+8,'G♯'+octave,'A♭'+octave,[...thumb,'L1','L2','L3','Gsharp'],'Keep all three left main keys down; add the left little finger G♯ key.');
     add(base+10,'A♯'+octave,'B♭'+octave,[...thumb,'L1','bis'],'Roll the left index finger to cover L1 and the small bis key together.',[
       {name:'Side B♭',keys:[...thumb,'L1','L2','sideBflat'],tip:'Finger A with L1 and L2, then add the right side-B♭ key. Useful for A–B♭ movement.'},
       {name:'1 + 1 B♭',keys:[...thumb,'L1','R1'],tip:'Left index plus right index. A common alternate; tone and response can vary with the instrument.'}
     ]);
-    add(base+12,'C'+(octave+1),null,[...thumb,'L2'],'Use the left middle finger alone'+(octave===5?', with the octave key.':'; leave the octave key released.'));
+    add(base+12,'C'+(octave+1),null,[...thumb,'L2'],'Use LH 2 (left middle finger) alone'+(octave===5?', with T, the octave key.':'; leave T released.'));
     if(octave===4)add(base+13,'C♯5','D♭5',[],'Release all keys in this diagram. Your thumbs still support the instrument; keep fingertips close.');
   }
   notes.sort((a,b)=>a.midi-b.midi);

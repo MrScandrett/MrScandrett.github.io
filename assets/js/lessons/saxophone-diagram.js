@@ -10,6 +10,7 @@
 
   window.SaxDiagram = function(keys, label) {
     const id = 'sax' + (++serial);
+    const fingerLabels = {octave:'T',L1:'1',L2:'2',L3:'3',R1:'1',R2:'2',R3:'3'};
 
     // Touch helper: produces accessible, high-contrast touch targets
     const touch = (key, x, y, r, ellipse = false, rx = r * 1.35, ry = r) => {
@@ -18,16 +19,18 @@
       const stroke = pressed ? '#080c10' : '#151c24';
       const sw = r > 16 ? 4.5 : 2.5;
 
+      const number = fingerLabels[key];
+      const numberMark = number ? `<text x="${x}" y="${y + r * 0.28}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${Math.max(8,r * 0.78)}" font-weight="800" fill="${pressed?'#fff':'#151c24'}" pointer-events="none">${number}</text>` : '';
       if (ellipse) {
         return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` +
           `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>` +
           `${pressed ? `<ellipse cx="${x}" cy="${y}" rx="${rx * 0.45}" ry="${ry * 0.45}" fill="#3b4856" opacity="0.45"/>` : ''}` +
-          `</g>`;
+          numberMark + `</g>`;
       }
 
       return `<g data-touch="${key}"><title>${escape(key)}: ${pressed ? 'press' : 'release'}</title>` +
         `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>` +
-        `${pressed ? `<circle cx="${x}" cy="${y}" r="${r * 0.38}" fill="#3b4856" opacity="0.45"/>` : `<circle cx="${x - r * 0.28}" cy="${y - r * 0.28}" r="${r * 0.35}" fill="#ffffff" opacity="0.95"/>`}` +
+        `${pressed ? `<circle cx="${x}" cy="${y}" r="${r * 0.38}" fill="#3b4856" opacity="0.45"/>` : `<circle cx="${x - r * 0.28}" cy="${y - r * 0.28}" r="${r * 0.35}" fill="#ffffff" opacity="0.95"/>`}` + numberMark +
         `</g>`;
     };
 

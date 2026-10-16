@@ -694,7 +694,11 @@
           var m = R.measures[mi], len = (k + 1 < starts.length ? starts[k + 1] : t0) - starts[k];
           var startU = snap(starts[k]), lenU = snap(len);
           var es = events.filter(function (e) { return e.s >= startU && e.s < startU + lenU; }).map(function (e) { return Object.assign({}, e, { s: e.s - startU, e: Math.min(e.e - startU, lenU) }); });
-          melodyBars.push(buildMelody(es, 0, lenU)[0] || split(lenU).map(function (d) { return 'r' + d; }).join(' '));
+          var barStr = buildMelody(es, 0, lenU)[0] || split(lenU).map(function (d) { return 'r' + d; }).join(' ');
+          // Built one bar at a time, so a note tied into the next bar can't see its partner: add the ~ here.
+          var tail = es[es.length - 1], nextEv = events.filter(function (e) { return e.s >= startU + lenU; })[0];
+          if (tail && !tail.rest && tail.tie && tail.e >= lenU && nextEv && !nextEv.rest && nextEv.s === startU + lenU && nextEv.midi === tail.midi && !/~$/.test(barStr)) barStr += '~';
+          melodyBars.push(barStr);
           if (!(k === 0 && pickupU)) scoreChords.push(buildChords(harms.filter(function (h) { return h.u >= startU && h.u < startU + lenU; }).map(function (h) { return { u: h.u - startU, tok: h.tok }; }), 0, lenU, 1, carryIn)[0]);
           scoreBars.push({ number: m.number, start: scoreTime, len: len, meter: m.meter, bar: k + 1 - (pickupU ? 1 : 0) });
           scoreTime += len;

@@ -87,6 +87,13 @@
   function selected(){return F.byMidi.get(Number($('sxNote').value));}
   function variant(){return selected().variants[Number($('sxVariant').value)||0];}
   function refreshVariants(){const n=selected();$('sxVariant').replaceChildren(...n.variants.map((v,i)=>new Option(v.name,i)));}
+  const keyCode={octave:'T',L1:'LH 1',L2:'LH 2',L3:'LH 3',R1:'RH 1',R2:'RH 2',R3:'RH 3',bis:'Bis',Gsharp:'G♯',lowCsharp:'Low C♯',lowB:'Low B',lowBflat:'Low B♭',sideBflat:'Side B♭',lowC:'Low C',Eflat:'E♭'};
+  function fingeringCode(keys){return keys.length?keys.map(key=>keyCode[key]||key).join(' · '):'Open · no finger keys';}
+  function miniFingering(keys){
+    const dot=(key,label)=>`<span class="sx-mini-key ${keys.includes(key)?'is-pressed':''}">${label}</span>`;
+    const auxiliaries=[['octave','T'],['bis','Bis'],['Gsharp','G♯'],['sideBflat','Side'],['Eflat','E♭'],['lowC','C'],['lowCsharp','C♯'],['lowB','B'],['lowBflat','B♭']].filter(([key])=>keys.includes(key));
+    return `<span class="sx-mini-fingering" aria-hidden="true"><span class="sx-mini-hand"><i>LH</i>${dot('L1','1')}${dot('L2','2')}${dot('L3','3')}</span><span class="sx-mini-divider"></span><span class="sx-mini-hand"><i>RH</i>${dot('R1','1')}${dot('R2','2')}${dot('R3','3')}</span><span class="sx-mini-aux">${auxiliaries.length?auxiliaries.map(([,label])=>`<b>${label}</b>`).join(''):`<b>${keys.length?'NO AUX':'OPEN'}</b>`}</span></span>`;
+  }
   function makeStaffExplorer() {
     const host=$('sxNoteStaff'), svg=host.querySelector('svg');
     if(!svg)return;
@@ -126,13 +133,13 @@
     const keys=[...held], concertMidi=n.midi+offsets[$('sxInstrument').value];
     const flatNames=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
     $('sxPitch').textContent=`Written ${name} → sounds ${flatNames[concertMidi%12]}${Math.floor(concertMidi/12)-1} · ${$('sxInstrument').selectedOptions[0].text}`;
-    $('sxFingerDiagram').innerHTML=`<figure data-zoomable data-lightbox-group="sax-studio"><img alt="${name} fingering: ${keys.length?keys.join(', ')+' pressed':'all keys released'}" src="data:image/svg+xml,${encodeURIComponent(instrumentSVG(keys,name))}"><figcaption class="sx-diagram-caption">Written ${name}. Filled circles mark pressed touches; open circles mark released touches. Original ClassroomOS illustration based on YAS-280 references, with enlarged views of hidden keys.</figcaption></figure>`;
+    $('sxFingerDiagram').innerHTML=`<figure data-zoomable data-lightbox-group="sax-studio"><img alt="${name} fingering: ${fingeringCode(keys)}" src="data:image/svg+xml,${encodeURIComponent(instrumentSVG(keys,name))}"><figcaption class="sx-diagram-caption">Written ${name}. Numbered filled circles mark pressed finger touches; open circles mark released touches. Original ClassroomOS illustration based on YAS-280 references, with enlarged views of hidden keys.</figcaption></figure>`;
     $('sxKeyControls').innerHTML=F.keys.map(k=>`<button type="button" data-key="${k.id}" aria-pressed="${held.has(k.id)}" ${$('sxFingerMode').value==='explore'?'disabled':''}><span class="sax-dot ${held.has(k.id)?'closed':''}" aria-hidden="true"></span>${k.label}</button>`).join('');
     $('sxKeyControls').querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{const key=b.dataset.key;held.has(key)?held.delete(key):held.add(key);showFingering(false);$('sxKeyControls').querySelector(`[data-key="${key}"]`).focus();});
-    const touchNames={L1:'index',L2:'middle',L3:'ring',R1:'index',R2:'middle',R3:'ring',bis:'bis B♭',Gsharp:'G♯',lowCsharp:'low C♯',lowB:'low B',lowBflat:'low B♭',sideBflat:'side B♭',lowC:'low C',Eflat:'E♭'};
+    const touchNames={L1:'LH 1 index',L2:'LH 2 middle',L3:'LH 3 ring',R1:'RH 1 index',R2:'RH 2 middle',R3:'RH 3 ring',bis:'bis B♭',Gsharp:'G♯',lowCsharp:'low C♯',lowB:'low B',lowBflat:'low B♭',sideBflat:'side B♭',lowC:'low C',Eflat:'E♭'};
     const left=keys.filter(k=>['L1','L2','L3','bis','Gsharp','lowCsharp','lowB','lowBflat'].includes(k)).map(k=>touchNames[k]);
     const right=keys.filter(k=>['R1','R2','R3','sideBflat','lowC','Eflat'].includes(k)).map(k=>touchNames[k]);
-    $('sxFingerText').textContent=keys.length?`Press — Left: ${left.join(', ')||'none'}. Right: ${right.join(', ')||'none'}.${held.has('octave')?' Add left-thumb octave key.':''}`:'Release all keys. Keep both hands close to the instrument.';
+    $('sxFingerText').textContent=keys.length?`Press — Left hand: ${left.join(', ')||'none'}. Right hand: ${right.join(', ')||'none'}.${held.has('octave')?' Add T, the left-thumb octave key.':''}`:'Open fingering: release all finger keys. Your thumbs still support the instrument; keep every fingertip close.';
     $('sxFingerTip').textContent=v.tip;
     const building=studioView==='note'&&$('sxFingerMode').value!=='explore';
     $('sxBuildTools').hidden=!building;
@@ -141,6 +148,7 @@
     $('sxFingerResult').textContent='';
     staff($('sxNoteStaff'),[{pitch:name,beats:1}]);
     makeStaffExplorer();
+    $('sxChart')?.querySelectorAll('[data-midi]').forEach(button=>button.setAttribute('aria-current',String(Number(button.dataset.midi)===n.midi)));
 
     return name;
   }
@@ -148,7 +156,7 @@
   function academicChart(notes) {
     const cols=10, cellW=132, cellH=300, top=92, rows=Math.ceil(notes.length/cols);
     const width=cols*cellW+40, height=top+rows*cellH+76;
-    const circle=(x,y,key,keys,r=8)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${keys.includes(key)?'#111':'#fff'}" stroke="#111" stroke-width="2"/>`;
+    const circle=(x,y,key,keys,r=8)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${keys.includes(key)?'#111':'#fff'}" stroke="#111" stroke-width="2"/>${['L1','L2','L3','R1','R2','R3'].includes(key)?`<text x="${x}" y="${y+3}" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="${keys.includes(key)?'#fff':'#111'}">${key.slice(1)}</text>`:''}`;
     const oval=(x,y,key,keys,rx=8,ry=4)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${keys.includes(key)?'#111':'#fff'}" stroke="#111" stroke-width="1.6"/>`;
     let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="sxAcademicTitle sxAcademicDesc"><title id="sxAcademicTitle">Saxophone primary fingering chart</title><desc id="sxAcademicDesc">Written notes with treble staff positions and open or filled key-touch symbols. Filled shapes are pressed keys.</desc><rect width="100%" height="100%" fill="#fff"/><text x="${width/2}" y="30" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" letter-spacing="2">SAXOPHONE PRIMARY FINGERINGS</text><text x="${width/2}" y="54" text-anchor="middle" font-family="Arial,sans-serif" font-size="13">WRITTEN PITCH · SOLID = PRESS · OPEN = RELEASE</text>`;
     notes.forEach((note,i)=>{
@@ -170,14 +178,14 @@
       svg+=`<text x="${cx}" y="${y+264}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9">OCT ${keys.includes('octave')?'ON':'OFF'}</text></g>`;
     });
     svg+=`<g transform="translate(34 ${height-38})" font-family="Arial,sans-serif" font-size="11"><circle cx="6" cy="0" r="6" fill="#111"/><text x="18" y="4">pressed</text><circle cx="92" cy="0" r="6" fill="#fff" stroke="#111" stroke-width="1.5"/><text x="104" y="4">released</text><text x="190" y="4">L = left-hand stack · R = right-hand stack · surrounding ovals = auxiliary keys</text></g></svg>`;
-    $('sxAcademicChart').innerHTML=`<figure data-zoomable data-lightbox-group="sax-academic"><img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="Academic saxophone fingering chart for ${notes.length} written notes. Each entry shows a treble staff note, three left-hand main keys above three right-hand main keys, and open or filled auxiliary key symbols."><figcaption><strong>Academic overview.</strong> Primary common fingering for each selected note. The vertical stack matches the conventional chart: L1–L3 above the divider, R1–R3 below it. The left thumb octave touch sits at upper left; smaller surrounding ovals represent bis, side, and little-finger touches. Solid means press; open means release. Use the realistic chart below to identify each auxiliary key before practicing. ClassroomOS original SVG, checked against the Yamaha fingering reference cited below.</figcaption></figure>`;
+    $('sxAcademicChart').innerHTML=`<figure data-zoomable data-lightbox-group="sax-academic"><img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="Academic saxophone fingering chart for ${notes.length} written notes. Each entry shows a treble staff note, numbered left-hand and right-hand main keys, and open or filled auxiliary key symbols."><figcaption><strong>Academic overview.</strong> Primary common fingering for each selected note. The vertical stack matches the studio: LH 1–3 above the divider and RH 1–3 below it. The left-thumb octave touch sits at upper left; smaller surrounding ovals represent bis, side, and little-finger touches. Solid means press; open means release. ClassroomOS original SVG, checked against the Yamaha fingering reference cited below.</figcaption></figure>`;
   }
   function chart(){
     const range=$('sxRange').value;
     const notes=F.notes.filter(n=>range==='first'?[64,65,67,69,71].includes(n.midi):range==='natural'?n.midi>=60&&n.flat===n.sharp:true);
     academicChart(notes);
-    $('sxChart').innerHTML=notes.map(n=>`<figure data-zoomable data-lightbox-group="sax-fingerings"><div id="sxStaff${n.midi}"></div><img alt="${n[$('sxSpelling').value]} saxophone fingering" src="data:image/svg+xml,${encodeURIComponent(instrumentSVG(n.variants[0].keys,n.flat).replaceAll('var(--bg, white)','white'))}"><figcaption><strong>${n[$('sxSpelling').value]}</strong> · ${n.variants[0].tip} Diagram: ClassroomOS, original illustration based on YAS-280 reference photographs; enlarged detail views.</figcaption></figure>`).join('');
-    notes.forEach(n=>staff($('sxStaff'+n.midi),[{pitch:n[$('sxSpelling').value],beats:1}]));
+    $('sxChart').innerHTML=notes.map(n=>{const name=n[$('sxSpelling').value],keys=n.variants[0].keys,current=n.midi===selected().midi;return `<button type="button" class="sx-chart-note" data-midi="${n.midi}" aria-current="${current}" aria-label="Choose written ${name}: ${fingeringCode(keys)}"><strong>${name}</strong>${miniFingering(keys)}<span class="sx-chart-code">${fingeringCode(keys)}</span></button>`;}).join('');
+    $('sxChart').querySelectorAll('[data-midi]').forEach(button=>button.onclick=()=>{switchView('note');selectNote(F.byMidi.get(Number(button.dataset.midi)).flat);$('sxFingeringStudio').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
   }
   refreshVariants();
   function switchView(view){
