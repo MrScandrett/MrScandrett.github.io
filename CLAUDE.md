@@ -243,6 +243,24 @@ else is a marker with a category (holiday, birthday, history, science & sky):
 - **Closures:** add `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD", "label": "…" }` to `noClass`
   and Mon/Wed/Fri inside the range render as "No class". It ships empty; nothing is invented.
 
+## Daily puzzles (mini crossword + sudoku)
+
+`#home-puzzles` on `index.html` (Today tab, under the verse of the day) is a new crossword and sudoku
+every day, generated in the browser from the date: no server, no stored puzzles, and every student sees
+the same ones. It reuses the `.home-widget--schedule` surface like the class calendar, so all themes style it.
+
+- `assets/js/daily-puzzles-core.mjs`: pure, seeded generators. `makeSudoku(key)` digs a solved grid down in
+  180° symmetric pairs, keeping a removal only while the answer stays unique (givens by weekday: Monday
+  easy, Friday/Saturday hard). `makeCrossword(key, bank)` tries ~24 random free-form layouts (words cross,
+  never touch side by side) and keeps the densest, squarest one (12 words, at most 11×11).
+- `assets/js/daily-puzzles.mjs` (UI) + `assets/css/daily-puzzles.css` (`dp-*`): tabs, ‹ › day nav (30 days
+  back), pencil notes, hints, Check, Reveal, streak. Progress is one localStorage key
+  (`classroomos:puzzles:v1`, 60 days kept); "Reveal all" doesn't count toward the streak.
+- **Word bank: `data/crossword-bank.json`** (`w` = A-Z answer, 4-9 letters, `c` = clue). Add words freely, but
+  note the date seeds the pick from the bank, so editing it changes what past dates generate.
+- Tests: `node --test tests/daily-puzzles.test.mjs` (unique sudoku solutions, every crossword run is a listed
+  entry, connected grid, deterministic, bank hygiene).
+
 ## Visitor memory (My Stuff)
 
 `assets/js/visitor-memory.js` gives returning visitors a profile with no account and
