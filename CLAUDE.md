@@ -225,6 +225,31 @@ show only this lesson's evidence. `npm test` fails if the page is stale, a date 
 matches nothing, or a lesson link or image is missing. When a new lesson teaches a true turning
 point, add one milestone for it.
 
+## Dark themes: lessons match the theme automatically
+
+Night, Lava Lamp, Mandelbrot, Vaporwave and Bark all set `html[data-lighting="night"]`. Lessons that hard-code light
+panels (`#fff` cards, pastel callouts, a cream page) used to glare in them. `assets/js/contrast-guard.js` (loaded by
+nav-mobile.js and lesson-print-button.js on every page) now does two passes, in this order, on every theme change and
+DOM change:
+
+1. **Surface pass (`softenSurfaces`)**: re-tones large light panels, controls and light page backgrounds to the theme's
+   `--surface-elevated` / `--bg` (neutrals) or a deep version of their own hue (tinted callouts), with matching borders.
+   It never touches `img`, `svg`, `canvas`, `video`, small tiles/keys/swatches (square or tall, no words), or anything
+   inside `[data-night-keep]`, `[data-score]`, `.fb-shell`, `.as-page`. Media sitting on a panel it darkened gets the
+   light backing it was drawn for, so transparent diagrams with dark linework stay readable. Everything is inline and
+   undone by `restore()`, so printing (Day theme) is unaffected.
+2. **Text pass (`inspect`)**: flips any text that no longer meets 4.5:1 to black or white.
+
+So for a new lesson: use theme tokens where you can (`var(--surface-elevated)`, `var(--text)`), and the guard covers the
+rest. To keep something light on purpose (a paper, a colour swatch board, a white-background chart), put
+`data-night-keep` on it. A page that must not be themed at all sets `data-theme-scope="independent"` (Color Theory Lab).
+Don't paint light panels with `!important` inline styles from lesson JS; the guard's inline colors would lose.
+
+`npm run audit:night` (needs `node serve-local.js`) loads every lesson in a dark theme (`--theme=lavalamp|night|...`)
+and counts low-contrast text and bright panels, excluding the shared header. Use `--match=<path fragment>`,
+`--save-baseline` / `--check` (data/night-audit-baseline.json), and `--out=report.json` for per-element detail.
+Measure after settling: the guard throttles itself on heavy pages, so the default wait is 2.8s.
+
 ## Home-page class calendar
 
 `#home-calendar` on `index.html` is a month calendar driven by `assets/js/home-calendar.mjs`

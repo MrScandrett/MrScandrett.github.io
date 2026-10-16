@@ -142,7 +142,8 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   const total = cw.grid.join('').replace(/\./g, '').length;
 
   const st = saved.cross && Array.isArray(saved.cross.l) && saved.cross.l.length === width * height
-    ? saved.cross : (saved.cross = { l: new Array(width * height).fill(''), done: false, gaveUp: false });
+    ? saved.cross : (saved.cross = { l: new Array(width * height).fill(''), done: false, gaveUp: false, secs: 0 });
+  st.secs |= 0;
   const wrong = new Set();
   const view = { r: 0, c: 0, dir: 'across' };
 
@@ -154,7 +155,9 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   view.r = first.row; view.c = first.col; view.dir = first.dir;
 
   const gridEl = el('div', { class: 'dp-xgrid', role: 'grid', 'aria-label': 'Crossword grid. Type letters; arrow keys move; space switches across and down.', style: `--n:${width};--m:${height}` });
-  const input = el('input', { class: 'dp-xinput', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Type your answer' });
+  // inputmode=none: hardware keyboards still work, but phones don't raise the system keyboard over the grid
+  // (the on-screen keys below take over there).
+  const input = el('input', { class: 'dp-xinput', type: 'text', inputmode: 'none', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': 'Type your answer' });
   const cells = new Map();
   for (let r = 0; r < height; r++) {
     for (let c = 0; c < width; c++) {
@@ -167,7 +170,10 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
     }
   }
 
-  const clueBar = el('p', { class: 'dp-cluebar', 'aria-live': 'polite' });
+  const clueText = el('p', { class: 'dp-cluetext', 'aria-live': 'polite' });
+  const prevClue = el('button', { type: 'button', class: 'dp-cluenav', 'aria-label': 'Previous clue', text: '‹' });
+  const nextClue = el('button', { type: 'button', class: 'dp-cluenav', 'aria-label': 'Next clue', text: '›' });
+  const clueBar = el('div', { class: 'dp-cluebar' }, prevClue, clueText, nextClue);
   const status = el('p', { class: 'dp-status', role: 'status' });
   const lists = { across: el('ol', { class: 'dp-clues' }), down: el('ol', { class: 'dp-clues' }) };
   const clueBtn = new Map();
@@ -177,7 +183,9 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
       view.dir = e.dir;
       const empty = entryCells(e).find(([r, c]) => !st.l[cellKey(r, c)]);
       const [r, c] = empty || [e.row, e.col];
-      view.r = r; view.c = c; paint(); input.focus({ preventScroll: true });
+      view.r = r; view.c = c;
+      body.classList.remove('show-clues'); cluesBtn.textContent = '☰ Clues';
+      paint(); input.focus({ preventScroll: true });
     });
     clueBtn.set(e, b);
     lists[e.dir].append(el('li', { 'data-num': e.num }, b));
@@ -187,16 +195,44 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   const tools = el('div', { class: 'dp-tools' },
     btn('Check', check), btn('Reveal word', revealWord), btn('Reveal all', revealAll), btn('Clear', clearAll));
 
+  // Phone layout: slim top bar (timer, clue list, tools), grid, clue bar, on-screen keys.
+  const timerEl = el('span', { class: 'dp-timer', 'aria-label': 'Time' });
+  const cluesBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text dp-xonly-small', text: '☰ Clues', 'aria-expanded': 'false' });
+  const menuBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text dp-xonly-small', text: '⋯ Tools', 'aria-expanded': 'false' });
+  const xtop = el('div', { class: 'dp-xtop' }, timerEl, el('span', { class: 'dp-xtop-gap' }), cluesBtn, menuBtn);
+  const keys = el('div', { class: 'dp-keys', role: 'group', 'aria-label': 'On-screen keyboard' });
+  for (const row of ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM⌫']) {
+    keys.append(el('div', { class: 'dp-keyrow' }, ...[...row].map((ch) => {
+      const k = el('button', { type: 'button', class: `dp-key${ch === '⌫' ? ' dp-key--wide' : ''}`, 'aria-label': ch === '⌫' ? 'Backspace' : ch, text: ch });
+      k.addEventListener('pointerdown', (ev) => ev.preventDefault()); // keep focus where it is
+      k.addEventListener('click', () => (ch === '⌫' ? backspace() : typeLetter(ch)));
+      return k;
+    })));
+  }
+
   const body = el('div', { class: 'dp-body dp-body--cross' },
-    el('div', { class: 'dp-xwrap' }, clueBar, el('div', { class: 'dp-xframe' }, gridEl, input), tools, status),
+    el('div', { class: 'dp-xwrap' }, xtop, tools, clueBar, el('div', { class: 'dp-xframe' }, gridEl, input), status, keys),
     el('div', { class: 'dp-cluecols' },
       el('section', {}, el('h4', { text: 'Across' }), lists.across),
       el('section', {}, el('h4', { text: 'Down' }), lists.down)));
   panel.replaceChildren(body);
 
+  cluesBtn.addEventListener('click', () => {
+    const on = body.classList.toggle('show-clues');
+    cluesBtn.textContent = on ? '▦ Grid' : '☰ Clues';
+    cluesBtn.setAttribute('aria-expanded', String(on));
+  });
+  menuBtn.addEventListener('click', () => {
+    const on = tools.classList.toggle('is-open');
+    menuBtn.setAttribute('aria-expanded', String(on));
+  });
+  prevClue.addEventListener('click', () => { jumpEntry(-1); paint(); });
+  nextClue.addEventListener('click', () => { jumpEntry(1); paint(); });
+
   function say(msg) { status.textContent = msg; }
 
   function paint() {
+    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
     const entry = current();
     const inEntry = new Set(entry ? entryCells(entry).map(([r, c]) => cellKey(r, c)) : []);
     for (const [k, node] of cells) {
@@ -213,9 +249,9 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
       b.classList.toggle('is-active', e === entry);
       b.classList.toggle('is-filled', entryCells(e).every(([r, c]) => st.l[cellKey(r, c)]));
     }
-    clueBar.replaceChildren(entry
-      ? el('strong', { text: `${entry.num} ${entry.dir === 'across' ? 'Across' : 'Down'}` })
-      : '', entry ? ` · ${entry.clue} (${entry.len})` : '');
+    clueText.replaceChildren(entry
+      ? el('strong', { text: `${entry.num}${entry.dir === 'across' ? 'A' : 'D'}` })
+      : '', entry ? ` ${entry.clue} (${entry.len})` : '');
     const li = clueBtn.get(entry) && clueBtn.get(entry).parentElement;
     if (li && li.parentElement.scrollHeight > li.parentElement.clientHeight) {
       li.parentElement.scrollTop = li.offsetTop - li.parentElement.clientHeight / 3; // keep the active clue in view without scrolling the page
@@ -255,13 +291,18 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
     const order = cw.entries.slice().sort((a, b) => (a.dir === b.dir ? a.num - b.num : a.dir === 'across' ? -1 : 1));
     const i = order.indexOf(current());
     const next = order[(i + delta + order.length) % order.length];
-    view.dir = next.dir; view.r = next.row; view.c = next.col;
+    const [r, c] = entryCells(next).find(([er, ec]) => !st.l[cellKey(er, ec)]) || [next.row, next.col];
+    view.dir = next.dir; view.r = r; view.c = c;
   }
 
   function typeLetter(ch) {
     if (st.done) return;
     setLetter(view.r, view.c, ch);
-    stepInWord(1);
+    const e = current(), last = e && entryCells(e)[e.len - 1];
+    if (last && last[0] === view.r && last[1] === view.c) {
+      // End of the word: if it's complete, hop to the next clue; otherwise stay and fill the gaps.
+      if (entryCells(e).every(([r, c]) => st.l[cellKey(r, c)])) jumpEntry(1);
+    } else stepInWord(1);
     say(''); paint(); finishIfSolved();
   }
 
@@ -349,7 +390,15 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
 
   paint();
   if (st.done) say(st.gaveUp ? 'Every answer is filled in. Try tomorrow’s on your own!' : '🎉 Solved! Every answer is right.');
-  return () => {};
+
+  let lastSave = 0;
+  const tick = setInterval(() => {
+    if (st.done || document.hidden || !gridEl.isConnected) return;
+    st.secs++;
+    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    if (st.secs - lastSave >= 5) { lastSave = st.secs; persist(); }
+  }, 1000);
+  return () => { clearInterval(tick); persist(); };
 }
 
 // ── sudoku ───────────────────────────────────────────────────────────────
