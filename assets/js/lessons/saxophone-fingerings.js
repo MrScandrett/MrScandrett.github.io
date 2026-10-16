@@ -43,8 +43,24 @@
     if(octave===4)add(base+13,'C♯5','D♭5',[],'Release all keys in this diagram. Your thumbs still support the instrument; keep fingertips close.');
   }
   notes.sort((a,b)=>a.midi-b.midi);
-  const byMidi=new Map(notes.map(n=>[n.midi,n]));
+  /* The palm-key register, C♯6–F6 (same Yamaha guide). Kept out of `notes` and `keys` because the
+   * Saxophone lesson's note picker, key buttons and diagrams don't draw palm keys yet; the Fake Book
+   * sheet uses them. Move them into `notes`/`keys` once the lesson can show palm keys. */
+  const palmKeys=[
+    {id:'palmD',label:'Palm D · left index',hand:'Left palm keys'},
+    {id:'palmEflat',label:'Palm E♭ · left middle',hand:'Left palm keys'},
+    {id:'palmF',label:'Palm F · left ring',hand:'Left palm keys'},
+    {id:'highE',label:'High E · right index side',hand:'Right side key'}
+  ];
+  const palmNotes=[];
+  const high=(midi,sharp,flat,pressed,tip)=>palmNotes.push({midi,sharp,flat:flat||sharp,variants:[{name:'Standard',keys:pressed,tip}]});
+  high(85,'C♯6','D♭6',['octave'],'Octave key only: the C♯5 fingering an octave up.');
+  high(86,'D6',null,['octave','palmD'],'Octave key plus the palm D key under the left index finger.');
+  high(87,'D♯6','E♭6',['octave','palmD','palmEflat'],'Keep palm D down and add palm E♭ with the left middle finger.');
+  high(88,'E6',null,['octave','palmD','palmEflat','highE'],'Palm D and E♭, plus the high E side key under the right index finger.');
+  high(89,'F6',null,['octave','palmD','palmEflat','palmF','highE'],'All three palm keys plus the high E side key.');
+  const byMidi=new Map(notes.concat(palmNotes).map(n=>[n.midi,n]));
   const first=[71,69,67,69,71];
   const patterns={first, C:[60,62,64,65,67,69,71,72],G:[67,69,71,72,74,76,78,79],F:[65,67,69,70,72,74,76,77],chromatic:Array.from({length:13},(_,i)=>60+i)};
-  root.SaxFingerings={keys,notes,byMidi,patterns};
+  root.SaxFingerings={keys,notes,palmKeys,palmNotes,byMidi,patterns};
 })(typeof window==='undefined'?globalThis:window);

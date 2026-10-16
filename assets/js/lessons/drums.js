@@ -1137,25 +1137,43 @@
     var host = document.getElementById('drKey');
     if (!host) return;
     var order = ['crash', 'ride', 'hat', 'ohat', 'tomHi', 'tomMid', 'snare', 'tomLo', 'kick'];
-    var colW = 104, width = 60 + order.length * colW, top = 96, yb = top + 48;
-    var svg = svgEl('svg', { viewBox: '0 0 ' + width + ' 236', 'class': 'dr-staff dr-key', role: 'group', 'aria-label': 'Where each drum is written on the staff. Click one to hear it.' }, host);
+    var pitchNames = { crash: 'ledger line A', ride: 'top line F', hat: 'above the staff', ohat: 'above the staff', tomHi: 'top space', tomMid: 'fourth line', snare: 'third space', tomLo: 'second space', kick: 'first space' };
+    var guide = htmlEl('div', 'dr-key-guide', null, host);
+    var legend = htmlEl('div', 'dr-key-legend', null, guide);
+    legend.innerHTML = '<span><b class="dr-head-x">×</b> Cymbals use X heads</span><span><b class="dr-head-o">●</b> Drums use round heads</span>';
+    var readout = htmlEl('p', 'dr-key-readout', 'Select a symbol to hear it and reveal its staff position.', guide);
+    readout.setAttribute('aria-live', 'polite');
+    var colW = 104, width = 60 + order.length * colW, top = 118, yb = top + 48;
+    var svg = svgEl('svg', { viewBox: '0 0 ' + width + ' 278', 'class': 'dr-staff dr-key', role: 'group', 'aria-label': 'Drum notation placement key. Activate any symbol to hear its instrument.' }, host);
+    svgEl('rect', { x: 18, y: 8, width: 422, height: 258, rx: 12, fill: '#fff3e8' }, svg);
+    svgEl('rect', { x: 446, y: 8, width: width - 464, height: 258, rx: 12, fill: '#f5efe5' }, svg);
+    var cymbalFamily = svgEl('text', { x: 229, y: 28, 'font-size': 11, 'font-weight': 800, 'letter-spacing': 1.5, 'text-anchor': 'middle', fill: '#9c3b0b' }, svg);
+    cymbalFamily.textContent = 'CYMBALS · X HEADS';
+    var drumFamily = svgEl('text', { x: (446 + width - 18) / 2, y: 28, 'font-size': 11, 'font-weight': 800, 'letter-spacing': 1.5, 'text-anchor': 'middle', fill: '#4b3c32' }, svg);
+    drumFamily.textContent = 'DRUMS · ROUND HEADS';
     drawMiniStaff(svg, width, top);
     order.forEach(function (inst, i) {
       var x = 76 + i * colW, y = yb - INST[inst].step * (SP / 2);
-      var g = svgEl('g', { 'class': 'dr-key-item', tabindex: 0, role: 'button', 'aria-label': INST[inst].label + ', click to hear' }, svg);
-      svgEl('rect', { x: x - 42, y: 4, width: 84, height: 228, fill: 'transparent' }, g);
+      var g = svgEl('g', { 'class': 'dr-key-item', tabindex: 0, role: 'button', 'aria-label': INST[inst].label + ', ' + pitchNames[inst] + '. Activate to hear it.' }, svg);
+      g.setAttribute('data-inst', inst);
+      svgEl('rect', { 'class': 'dr-key-target', x: x - 42, y: 36, width: 84, height: 222, rx: 9, fill: 'transparent' }, g);
       if (INST[inst].step >= 10) svgEl('line', { x1: x - 10, x2: x + 10, y1: y, y2: y, stroke: INK, 'stroke-width': 1.3 }, g);
-      drawHead(g, x, y, inst, 1);
+      drawHead(g, x, y, inst, 1.15);
       var kickDown = INST[inst].voice === 2;
-      svgEl('line', { x1: kickDown ? x - 5.9 : x + 5.9, x2: kickDown ? x - 5.9 : x + 5.9, y1: y, y2: kickDown ? y + 32 : y - 32, stroke: INK, 'stroke-width': 1.6 }, g);
+      svgEl('line', { x1: kickDown ? x - 6.8 : x + 6.8, x2: kickDown ? x - 6.8 : x + 6.8, y1: y, y2: kickDown ? y + 34 : y - 34, stroke: INK, 'stroke-width': 1.8 }, g);
       var lines = INST[inst].label.replace(' (', '|(').split('|');
-      var name = svgEl('text', { x: x, y: 24, 'font-size': 12.5, 'font-weight': 700, 'text-anchor': 'middle', fill: INK }, g);
+      var name = svgEl('text', { x: x, y: 54, 'font-size': 12.5, 'font-weight': 700, 'text-anchor': 'middle', fill: INK }, g);
       name.textContent = lines[0];
-      if (lines[1]) { var n2 = svgEl('text', { x: x, y: 40, 'font-size': 12, 'text-anchor': 'middle', fill: '#5b4b3d' }, g); n2.textContent = lines[1]; }
-      var pitchNames = { crash: 'ledger line A', ride: 'top line F', hat: 'above staff', ohat: 'above staff', tomHi: 'top space', tomMid: '4th line', snare: '3rd space', tomLo: '2nd space', kick: '1st space' };
-      var t2 = svgEl('text', { x: x, y: 222, 'font-size': 11.5, 'text-anchor': 'middle', fill: '#5b4b3d' }, g);
+      if (lines[1]) { var n2 = svgEl('text', { x: x, y: 70, 'font-size': 11.5, 'text-anchor': 'middle', fill: '#5b4b3d' }, g); n2.textContent = lines[1]; }
+      var t2 = svgEl('text', { x: x, y: 248, 'font-size': 11.5, 'font-weight': 600, 'text-anchor': 'middle', fill: '#5b4b3d' }, g);
       t2.textContent = pitchNames[inst];
-      function go() { hitNow(inst, 0.85); g.classList.add('is-hit'); setTimeout(function () { g.classList.remove('is-hit'); }, 200); }
+      function go() {
+        hitNow(inst, 0.85);
+        Array.prototype.forEach.call(svg.querySelectorAll('.dr-key-item'), function (item) { item.classList.remove('is-selected'); });
+        g.classList.add('is-selected', 'is-hit');
+        readout.innerHTML = '<strong>' + INST[inst].label + '</strong><span>' + (INST[inst].head === 'x' ? 'X cymbal head' : 'Round drum head') + ' · ' + pitchNames[inst] + '</span>';
+        setTimeout(function () { g.classList.remove('is-hit'); }, 200);
+      }
       g.addEventListener('click', go);
       g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
     });

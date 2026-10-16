@@ -146,6 +146,9 @@ body .fb-sheet-head h3 { margin: 0; font-family: "Realbook", "Fraunces", serif !
 .fb-svg .fb-chord.is-sel { fill: #0f5d63; }
 .fb-svg .fb-timesig, .fb-drum-svg .fb-drum-timesig { font-family: "Fraunces", serif; font-weight: 700; fill: currentColor; text-anchor: middle; }
 .fb-svg .fb-barnum, .fb-drum-svg .fb-drum-barnum { fill: #8a7c66; font-family: "Realbook", "JetBrains Mono", monospace; font-size: 12px; }
+.fb-svg .fb-beat-count, .fb-drum-svg .fb-beat-count { fill: #6b5a43; font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700; }
+.fb-svg .fb-lead-count { font-size: 9px; }
+.fb-svg .fb-count-tie { fill: none; stroke: #6b5a43; stroke-width: 1.25px; stroke-linecap: round; }
 .fb-svg .fb-name { fill: #0f5d63; font-family: "Realbook", "DM Sans", sans-serif; font-weight: 400; }
 .fb-svg .fb-nhead-t { fill: #fff; stroke: rgba(20, 12, 4, .45); stroke-width: .9px; paint-order: stroke; font-family: "DM Sans", sans-serif; font-weight: 800; pointer-events: none; }
 .fb-svg .fb-nhead.is-hollow .fb-nhead-t { stroke: none; }
@@ -352,14 +355,14 @@ body .fb-sheet-head h3 { margin: 0; font-family: "Realbook", "Fraunces", serif !
 .fb-gtr-nut { stroke: #f4ead5; stroke-width: 5; }
 .fb-gtr-string { stroke: #d4a757; }
 .fb-gtr-dot-inlay { fill: #f1e0c6; opacity: .8; }
-.fb-gtr-note-dot { fill: #0f5d63; stroke: #ffffff; stroke-width: 1.5; cursor: pointer; transition: transform .1s; }
+.fb-gtr-note-dot { fill: #99f6e4; stroke: #173f42; stroke-width: 1.5; cursor: pointer; transition: transform .1s; }
 .fb-gtr-note-dot:hover { transform: scale(1.12); }
-.fb-gtr-note-dot.is-root { fill: #ea580c; }
-.fb-gtr-note-dot.is-third { fill: #16a34a; }
-.fb-gtr-note-dot.is-fifth { fill: #0f766e; }
-.fb-gtr-note-dot.is-seventh { fill: #7c3aed; }
-.fb-gtr-lbl { fill: #ffffff; font: 800 8.5px "DM Sans", sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-.fb-gtr-finger { fill: #fde68a; font: 700 7.5px "JetBrains Mono", monospace; text-anchor: middle; }
+.fb-gtr-note-dot.is-root { fill: #fdba74; }
+.fb-gtr-note-dot.is-third { fill: #86efac; }
+.fb-gtr-note-dot.is-fifth { fill: #99f6e4; }
+.fb-gtr-note-dot.is-seventh { fill: #c4b5fd; }
+.fb-gtr-lbl { fill: #1f1a14; font: 800 8.5px "DM Sans", sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.fb-gtr-finger { fill: #1f1a14; stroke: #fffdf7; stroke-width: 2.5px; paint-order: stroke; font: 800 8px "JetBrains Mono", monospace; text-anchor: middle; }
 .fb-gtr-str-tag { fill: #a8947f; font: 700 8px "JetBrains Mono", monospace; text-anchor: middle; dominant-baseline: central; }
 .fb-gtr-open-marker { fill: none; stroke: #38bdf8; stroke-width: 2; }
 .fb-gtr-mute-marker { stroke: #ef4444; stroke-width: 2.2; stroke-linecap: round; }
@@ -942,6 +945,10 @@ body.fb-focused .fb-loop-actions .fb-btn { min-height: 44px; }
 .fb-measure-shape > strong { position: absolute; top: 0; left: 0; right: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; font-size: .85em; }
 .fb-measure-shape svg { margin-inline: 0 !important; }
 .fb-measure-shape.is-zoom-target svg { filter: drop-shadow(0 0 .25em #0f5d63); }
+/* Sax fingerings: centred under their notehead, label centred above; the playing note lights up. */
+.fb-measure-shape.fb-sx svg { margin-inline: auto !important; }
+.fb-measure-shape.fb-sx > strong { text-align: center; text-overflow: clip; }
+.fb-measure-shape.fb-sx.is-now { color: #c2410c; }
 /* Hover/focus enlargement of one chord diagram (the sheet itself ignores pointer events). */
 .fb-shape-zoom { position: fixed; z-index: 90; pointer-events: none; padding: .6rem .8rem .7rem; background: #fffaf0; color: #1f1a14; border: 2px solid #0f5d63; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.35); text-align: center; }
 .fb-shape-zoom[hidden] { display: none; }
@@ -991,17 +998,6 @@ body.fb-focused .fb-sheet-head-actions { flex: 0 1 auto; gap: .35rem; min-width:
 /* The toggle never moves: the panel is a full-width block after the header, not part of it. */
 .fb-notation-settings-body { min-width: 0; padding: .6rem; margin: .35rem 0 .6rem; border: 1px solid #e3d7bf; border-radius: 8px; background: #f7f1e5; }
 .fb-notation-settings-body[hidden] { display: none; }
-/* Compact two-zone grid: checkboxes pack into columns, selects sit label-beside-control. */
-.fb-notation-settings-body { padding: .4rem .6rem; }
-.fb-notation-settings-body .fb-staff-toggles:not([hidden]) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: .1rem 1rem; align-items: center; }
-.fb-notation-settings-body .fb-staff-toggles[hidden] { display: none; }
-.fb-notation-settings-body .fb-check { min-height: 28px; font-size: .85rem; }
-.fb-notation-settings-body .fb-field:not([hidden]) { display: grid; grid-template-columns: minmax(5rem, auto) minmax(0, 1fr); align-items: center; gap: .5rem; margin: 0; font-size: .8rem; }
-.fb-notation-settings-body .fb-field select { padding: .25rem .45rem; font-size: .88rem; }
-.fb-notation-settings-body .fb-notation-help { grid-column: 1 / -1; margin: 0; }
-.fb-notation-settings-body .fb-notation-help > summary { font-size: .8rem; }
-.fb-notation-settings-body select { max-width: 100%; }
-.fb-notation-settings-body .fb-pos-key { margin: .5rem 0 0; }
 body.fb-focused .fb-print-btn { min-height: 44px; white-space: nowrap; padding: .35rem .6rem; }
 @media (max-width: 760px) {
   .fb-sheet-heading { flex-basis: 100%; }
@@ -1277,18 +1273,41 @@ body.fb-focused .fb-click-grid button { min-width: 1.9rem; padding: 0 .35rem; wh
   body.fb-focused .fb-notation-toggle { margin-left: 0; min-width: 0; text-align: center; white-space: nowrap; }
 }
 
-/* Quick settings: compact. Two-column checkboxes, one-line label + select rows, small help text. */
+/* Quick settings: minimal. Show-chips and one beat-count row up front; the rest folds into "More options". */
+.fb-notation-settings-body { padding: .5rem .65rem; margin: .3rem 0 .5rem; background: transparent; border-color: #e8dcc4; }
+.fb-notation-settings-inner { display: flex; flex-direction: column; gap: .45rem; }
+.fb-notation-settings-body .fb-staff-toggles:not([hidden]) { display: flex; flex-direction: column; gap: .45rem; }
+.fb-notation-settings-body .fb-chips { display: flex; flex-wrap: wrap; gap: .3rem; }
+.fb-notation-settings-body .fb-chips .fb-check { position: relative; min-height: 30px; padding: .15rem .65rem; gap: 0; font-size: .8rem; border: 1px solid #d9ccb0; border-radius: 999px; background: #fffdf7; cursor: pointer; }
+.fb-notation-settings-body .fb-chips .fb-check:not([hidden]) { display: inline-flex; align-items: center; }
+.fb-notation-settings-body .fb-chips .fb-check input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.fb-notation-settings-body .fb-chips .fb-check:has(input:checked) { background: #0f5d63; border-color: #0f5d63; color: #fff; }
+.fb-notation-settings-body .fb-chips .fb-check:has(input:disabled) { opacity: .45; cursor: default; }
+.fb-notation-settings-body .fb-chips .fb-check:has(input:focus-visible) { outline: 3px solid #0f5d63; outline-offset: 2px; }
+.fb-notation-settings-body .fb-field:not([hidden]) { display: grid; grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr); align-items: center; gap: .5rem; margin: 0; font-size: .78rem; color: #6b5f4a; }
+.fb-notation-settings-body .fb-field > span { margin: 0; line-height: 1.2; }
+.fb-notation-settings-body select { width: 100%; max-width: 100%; min-height: 32px; padding: .15rem .4rem; font-size: 16px; }
+.fb-notation-settings-body .fb-more > summary { font-size: .78rem; min-height: 28px; display: flex; align-items: center; color: #6b5f4a; }
+.fb-notation-settings-body .fb-more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: .4rem .9rem; padding-top: .3rem; }
+.fb-notation-settings-body .fb-more-wide, .fb-notation-settings-body .fb-more-grid > .fb-notation-help { grid-column: 1 / -1; }
+.fb-notation-settings-body .fb-notation-help { margin: 0; }
+.fb-notation-settings-body .fb-notation-help > summary { font-size: .76rem; min-height: 26px; }
+.fb-notation-settings-body .fb-pos-key { margin: .2rem 0 0; font-size: .72rem; line-height: 1.35; }
 body.fb-focused .fb-notation-toggle { min-height: 36px; padding: .25rem .6rem; display: flex; align-items: center; justify-content: center; }
-body.fb-focused .fb-notation-settings-body { padding: .4rem .5rem; margin-top: .25rem; }
-body.fb-focused .fb-notation-settings-body .fb-staff-toggles:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .15rem .6rem; align-items: center; }
-body.fb-focused .fb-notation-settings-body .fb-check { font-size: .8rem; gap: .3rem; min-height: 28px; }
-body.fb-focused .fb-notation-settings-body .fb-check input { width: 1rem; height: 1rem; flex: 0 0 auto; }
-body.fb-focused .fb-notation-settings-body .fb-field:not([hidden]) { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr); align-items: center; gap: .4rem; flex: none; font-size: .78rem; }
-body.fb-focused .fb-notation-settings-body .fb-field > span { margin: 0; line-height: 1.2; }
-body.fb-focused .fb-notation-settings-body select { min-height: 34px; padding-block: .15rem; font-size: 16px; width: 100%; }
-body.fb-focused .fb-notation-settings-body .fb-notation-help { grid-column: 1 / -1; margin: .1rem 0 0; }
-body.fb-focused .fb-notation-settings-body .fb-notation-help > summary { font-size: .78rem; min-height: 28px; display: flex; align-items: center; }
-body.fb-focused .fb-notation-settings-body .fb-pos-key { grid-column: 1 / -1; margin: .2rem 0 0; font-size: .72rem; line-height: 1.35; }
+.fb-notation-settings-body .fb-staff-toggles:not([hidden]), .fb-notation-settings-body .fb-chips { align-items: flex-start; justify-content: flex-start; }
+.fb-notation-settings-body .fb-beat-count-setting:not([hidden]) { grid-template-columns: auto minmax(0, 15rem); justify-content: start; }
+.fb-notation-settings-body .fb-staff-toggles:not([hidden]) { display: contents; }
+.fb-notation-settings-body .fb-instrument-row:not([hidden]) { grid-template-columns: auto minmax(0, 15rem); justify-content: start; font-size: .85rem; font-weight: 700; color: #0f5d63; }
+.fb-notation-settings-inner:has(> .fb-instrument-row) { gap: .35rem; }
+.fb-notation-settings-body .fb-notation-settings-inner:has([data-fb-staff-toggles][hidden]) .fb-instrument-row { display: none; }
+.fb-notation-settings-body .fb-staff-toggles > .fb-notation-help, .fb-notation-settings-body .fb-more-grid > .fb-more-wide, .fb-notation-settings-body .fb-staff-toggles > .fb-more-wide { grid-column: 1 / -1; }
+.fb-notation-settings-body .fb-more > summary { justify-content: flex-start; text-align: left; }
+.fb-notation-settings-body .fb-more > summary::before { content: "▸"; margin-right: .35rem; }
+.fb-notation-settings-body .fb-more[open] > summary::before { content: "▾"; }
+@media (max-width: 560px) {
+  .fb-notation-settings-body .fb-more-grid .fb-field:not([hidden]) { grid-template-columns: minmax(0, 1fr); gap: .15rem; }
+  .fb-notation-settings-body .fb-beat-count-setting:not([hidden]) { grid-template-columns: auto minmax(0, 1fr); }
+}
 
 /* Music stand fills the display: only the player and the score remain. */
 body.fb-standing { overflow: hidden; }
@@ -1573,4 +1592,41 @@ canvas[data-coach-crop] {
   body.fb-focused .fb-transport > .fb-practice-controls { grid-column: 1 / 4; grid-row: 3; align-self: center; }
   body.fb-focused .fb-transport > [data-fb-goto-import] { grid-column: 4; grid-row: 3; min-height: 30px; padding-inline: .5rem; }
   body.fb-focused .fb-print-btn, body.fb-focused .fb-notation-toggle { min-height: 32px; }
+}
+
+/* Phone transport: score-first by default; secondary rehearsal controls stay one tap away. */
+.fb-mobile-more { display: none; }
+@media screen and (max-width: 560px) {
+  body.fb-focused .fb-transport {
+    grid-template-columns: max-content minmax(4.8rem, max-content) 1fr max-content;
+  }
+  body.fb-focused .fb-transport > .fb-play { grid-column: 1; grid-row: 1; }
+  body.fb-focused .fb-transport > .fb-tempo {
+    grid-column: 2; grid-row: 1; display: flex; flex-wrap: nowrap; align-items: center;
+    min-width: 4.8rem; gap: .12rem;
+  }
+  body.fb-focused .fb-tempo input[type="number"] { width: 2.65rem; }
+  body.fb-focused .fb-tempo::after { align-self: center; }
+  body.fb-focused .fb-mobile-more {
+    display: inline-flex; grid-column: 4; grid-row: 1; align-items: center; justify-content: center;
+    min-width: 3.8rem; color: #fff; border-color: #d9cdb4; background: transparent;
+  }
+  body.fb-focused .fb-transport > :is(.fb-stand-toggle, [data-fb-tools], [data-fb-goto-import], .fb-metronome) { display: none; }
+  body.fb-focused .fb-transport.is-mobile-more-open > .fb-stand-toggle {
+    display: inline-flex; grid-column: 1; grid-row: 2;
+  }
+  body.fb-focused .fb-transport.is-mobile-more-open > [data-fb-tools] {
+    display: inline-flex; grid-column: 2; grid-row: 2;
+  }
+  body.fb-focused .fb-transport.is-mobile-more-open > [data-fb-goto-import] {
+    display: inline-flex; grid-column: 3 / 5; grid-row: 2; justify-self: end;
+  }
+  body.fb-focused .fb-transport.is-mobile-more-open > .fb-metronome {
+    display: flex; grid-column: 1 / -1; grid-row: 3; justify-self: stretch;
+  }
+  body.fb-focused .fb-transport > .fb-practice-controls {
+    grid-column: 1 / -1; grid-row: 2;
+  }
+  body.fb-focused .fb-transport.is-mobile-more-open > .fb-practice-controls { grid-row: 4; }
+  body.fb-focused .fb-transport > :is(.fb-nav, .fb-banner, .fb-dots:not(:empty)) { grid-column: 1 / -1; }
 }

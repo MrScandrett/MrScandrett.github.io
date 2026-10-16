@@ -81,6 +81,39 @@
   function selected(){return F.byMidi.get(Number($('sxNote').value));}
   function variant(){return selected().variants[Number($('sxVariant').value)||0];}
   function refreshVariants(){const n=selected();$('sxVariant').replaceChildren(...n.variants.map((v,i)=>new Option(v.name,i)));}
+  function makeStaffExplorer() {
+    const host=$('sxNoteStaff'), svg=host.querySelector('svg');
+    if(!svg)return;
+    const naturalNotes=[
+      {midi:64,name:'E4',place:'bottom line'}, {midi:65,name:'F4',place:'first space'},
+      {midi:67,name:'G4',place:'second line'}, {midi:69,name:'A4',place:'second space'},
+      {midi:71,name:'B4',place:'middle line'}, {midi:72,name:'C5',place:'third space'},
+      {midi:74,name:'D5',place:'fourth line'}, {midi:76,name:'E5',place:'top space'},
+      {midi:77,name:'F5',place:'top line'}
+    ];
+    const selectedDiatonic=MN.parsePitch(selected()[$('sxSpelling').value]).diatonic, ns='http://www.w3.org/2000/svg';
+    let index=Math.max(0,naturalNotes.findIndex(note=>MN.parsePitch(note.name).diatonic===selectedDiatonic));
+    svg.setAttribute('aria-label','Interactive treble staff. Choose a line or space to learn its note and saxophone fingering.');
+    const highlight=document.createElementNS(ns,'rect');
+    highlight.setAttribute('x','72');highlight.setAttribute('y',String(108.5-index*7));
+    highlight.setAttribute('width','260');highlight.setAttribute('height','7');highlight.setAttribute('rx','3');
+    highlight.setAttribute('class','sx-staff-highlight');svg.append(highlight);
+    const surface=document.createElementNS(ns,'rect');
+    surface.setAttribute('x','72');surface.setAttribute('y','52.5');surface.setAttribute('width','260');surface.setAttribute('height','63');
+    surface.setAttribute('class','sx-staff-surface');surface.setAttribute('role','button');surface.setAttribute('tabindex','0');
+    const describe=()=>surface.setAttribute('aria-label',`${naturalNotes[index].name}, ${naturalNotes[index].place}, selected. Use up and down arrows or click another staff position.`);
+    const choose=(next,focus=false)=>{index=Math.max(0,Math.min(naturalNotes.length-1,next));stop();selectNote(naturalNotes[index].name);if(focus)requestAnimationFrame(()=>$('sxNoteStaff').querySelector('.sx-staff-surface')?.focus());};
+    surface.addEventListener('click',event=>{
+      const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+      const local=point.matrixTransform(svg.getScreenCTM().inverse());
+      choose(Math.round((112-local.y)/7),true);
+    });
+    surface.addEventListener('keydown',event=>{
+      if(event.key==='ArrowUp'||event.key==='ArrowDown'){event.preventDefault();choose(index+(event.key==='ArrowUp'?1:-1),true);}
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();choose(index,true);}
+    });
+    describe();svg.append(surface);
+  }
   function showFingering(reset=true) {
     const n=selected(), v=variant(), name=n[$('sxSpelling').value];
     if(reset)held=new Set(v.keys);
@@ -101,13 +134,42 @@
     $('sxFingerText').classList.toggle('sx-visible-reading',!building);
     $('sxFingerResult').textContent='';
     staff($('sxNoteStaff'),[{pitch:name,beats:1}]);
+    makeStaffExplorer();
 
     return name;
   }
   function selectNote(name){const n=F.notes.find(n=>n.flat===name||n.sharp===name);if(!n)return;$('sxNote').value=n.midi;refreshVariants();showFingering();}
+  function academicChart(notes) {
+    const cols=10, cellW=132, cellH=300, top=92, rows=Math.ceil(notes.length/cols);
+    const width=cols*cellW+40, height=top+rows*cellH+76;
+    const circle=(x,y,key,keys,r=8)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${keys.includes(key)?'#111':'#fff'}" stroke="#111" stroke-width="2"/>`;
+    const oval=(x,y,key,keys,rx=8,ry=4)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${keys.includes(key)?'#111':'#fff'}" stroke="#111" stroke-width="1.6"/>`;
+    let svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="sxAcademicTitle sxAcademicDesc"><title id="sxAcademicTitle">Saxophone primary fingering chart</title><desc id="sxAcademicDesc">Written notes with treble staff positions and open or filled key-touch symbols. Filled shapes are pressed keys.</desc><rect width="100%" height="100%" fill="#fff"/><text x="${width/2}" y="30" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" letter-spacing="2">SAXOPHONE PRIMARY FINGERINGS</text><text x="${width/2}" y="54" text-anchor="middle" font-family="Arial,sans-serif" font-size="13">WRITTEN PITCH · SOLID = PRESS · OPEN = RELEASE</text>`;
+    notes.forEach((note,i)=>{
+      const col=i%cols,row=Math.floor(i/cols),x=20+col*cellW,y=top+row*cellH,cx=x+cellW/2;
+      const name=note[$('sxSpelling').value], keys=note.variants[0].keys, parsed=MN.parsePitch(name);
+      const staffBottom=y+62, step=parsed.diatonic-MN.clefs.treble.bottom, noteY=staffBottom-step*3.5;
+      svg+=`<g><text x="${cx}" y="${y-12}" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700">${name}</text>`;
+      for(let line=0;line<5;line++)svg+=`<line x1="${cx-31}" x2="${cx+31}" y1="${staffBottom-line*7}" y2="${staffBottom-line*7}" stroke="#111" stroke-width="1"/>`;
+      MN.ledgerSteps(step).forEach(s=>{svg+=`<line x1="${cx-10}" x2="${cx+10}" y1="${staffBottom-s*3.5}" y2="${staffBottom-s*3.5}" stroke="#111" stroke-width="1"/>`;});
+      if(parsed.a)svg+=`<text x="${cx-14}" y="${noteY+5}" text-anchor="middle" font-family="serif" font-size="17">${{'-2':'𝄫','-1':'♭','1':'♯','2':'𝄪'}[parsed.a]}</text>`;
+      svg+=`<ellipse cx="${cx}" cy="${noteY}" rx="7" ry="4.5" fill="#111" transform="rotate(-18 ${cx} ${noteY})"/>`;
+      svg+=`<text x="${cx-18}" y="${y+92}" text-anchor="end" font-family="Arial,sans-serif" font-size="8">L</text>`;
+      svg+=circle(cx,y+101,'L1',keys)+circle(cx,y+123,'L2',keys)+circle(cx,y+145,'L3',keys);
+      svg+=circle(cx-34,y+101,'octave',keys,7)+oval(cx-17,y+106,'bis',keys,4,8)+oval(cx-26,y+145,'Gsharp',keys,4,9);
+      svg+=oval(cx-25,y+161,'lowCsharp',keys,7,4)+oval(cx,y+161,'lowB',keys,7,4)+oval(cx+25,y+161,'lowBflat',keys,7,4);
+      svg+=`<line x1="${cx-29}" x2="${cx+29}" y1="${y+174}" y2="${y+174}" stroke="#999" stroke-width="1"/><text x="${cx-18}" y="${y+188}" text-anchor="end" font-family="Arial,sans-serif" font-size="8">R</text>`;
+      svg+=circle(cx,y+194,'R1',keys)+circle(cx,y+216,'R2',keys)+circle(cx,y+238,'R3',keys);
+      svg+=oval(cx+26,y+194,'sideBflat',keys,4,9)+oval(cx+26,y+218,'Eflat',keys,4,9)+oval(cx+26,y+238,'lowC',keys,4,9);
+      svg+=`<text x="${cx}" y="${y+264}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9">OCT ${keys.includes('octave')?'ON':'OFF'}</text></g>`;
+    });
+    svg+=`<g transform="translate(34 ${height-38})" font-family="Arial,sans-serif" font-size="11"><circle cx="6" cy="0" r="6" fill="#111"/><text x="18" y="4">pressed</text><circle cx="92" cy="0" r="6" fill="#fff" stroke="#111" stroke-width="1.5"/><text x="104" y="4">released</text><text x="190" y="4">L = left-hand stack · R = right-hand stack · surrounding ovals = auxiliary keys</text></g></svg>`;
+    $('sxAcademicChart').innerHTML=`<figure data-zoomable data-lightbox-group="sax-academic"><img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="Academic saxophone fingering chart for ${notes.length} written notes. Each entry shows a treble staff note, three left-hand main keys above three right-hand main keys, and open or filled auxiliary key symbols."><figcaption><strong>Academic overview.</strong> Primary common fingering for each selected note. The vertical stack matches the conventional chart: L1–L3 above the divider, R1–R3 below it. The left thumb octave touch sits at upper left; smaller surrounding ovals represent bis, side, and little-finger touches. Solid means press; open means release. Use the realistic chart below to identify each auxiliary key before practicing. ClassroomOS original SVG, checked against the Yamaha fingering reference cited below.</figcaption></figure>`;
+  }
   function chart(){
     const range=$('sxRange').value;
     const notes=F.notes.filter(n=>range==='first'?[64,65,67,69,71].includes(n.midi):range==='natural'?n.midi>=60&&n.flat===n.sharp:true);
+    academicChart(notes);
     $('sxChart').innerHTML=notes.map(n=>`<figure data-zoomable data-lightbox-group="sax-fingerings"><div id="sxStaff${n.midi}"></div><img alt="${n[$('sxSpelling').value]} saxophone fingering" src="data:image/svg+xml,${encodeURIComponent(instrumentSVG(n.variants[0].keys,n.flat).replaceAll('var(--bg, white)','white'))}"><figcaption><strong>${n[$('sxSpelling').value]}</strong> · ${n.variants[0].tip} Diagram: ClassroomOS, original illustration based on YAS-280 reference photographs; enlarged detail views.</figcaption></figure>`).join('');
     notes.forEach(n=>staff($('sxStaff'+n.midi),[{pitch:n[$('sxSpelling').value],beats:1}]));
   }

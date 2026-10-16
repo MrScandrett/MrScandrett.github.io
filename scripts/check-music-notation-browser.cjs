@@ -25,6 +25,13 @@ const paths = [
       await page.goto(base+path,{waitUntil:'domcontentloaded'});
       assert.equal(await page.evaluate(() => typeof MusicNotation.note),'function',path);
       if(path.includes('sheet-music-trainer')) {
+        assert.equal(await page.locator('.stb-theory-grid h5').count(),6,'Theory 101 must cover all six concept families');
+        assert.match(await page.locator('.stb-theory101').innerText(),/Notes and pitch[\s\S]*Key signatures[\s\S]*Intervals[\s\S]*Scales[\s\S]*Chords[\s\S]*Reading a complete score/);
+        await page.locator('#stbGuidedStart').click();
+        assert.match(await page.locator('#stbSessionMeter').innerText(),/0\/5 questions complete/);
+        await page.locator('[data-reveal-lens="pitch"]').click();
+        assert.equal(await page.locator('[data-reveal-lens="pitch"]').getAttribute('aria-pressed'),'true');
+        assert.ok(await page.locator('.stb-score-panel:not([hidden]) [data-lens="pitch"]').evaluate(n=>n.classList.contains('is-revealed')));
         for(let level=0;level<6;level++) {
           await page.locator('.stb-level').nth(level).click();
           for(const mode of ['id','build']) {

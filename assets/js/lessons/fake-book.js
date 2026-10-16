@@ -566,8 +566,8 @@
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
-    sheetView: 'lead',
-    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, showAnalysis: false, posInst: 'guitar',
+    sheetView: 'lead', beatCounts: 'off',
+    showBass: true, showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open', guitarVoice: 'manual',
@@ -581,6 +581,8 @@
     barClick: 'shapes'
   };
   var opts = load();
+  if (opts.beatCounts === true) opts.beatCounts = 'all';
+  else if (!/^(quarter|eighth|all|written)$/.test(opts.beatCounts)) opts.beatCounts = 'off';
   var defaultTunes = [], importedTunes = [];
   var tunes = [], tune = null, view = null, chordSel = 0;
 
@@ -890,6 +892,40 @@
   var nowEls = [], barEls = {};
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
+  function beatCountLabels(out, xAt, y, beats, extraClass, positions, pieces, edges) {
+    var syllables = ['', 'e', '&', 'a'];
+    var qs = positions ? positions.map(function (p) { return Math.round(p * 4); }) : Array.from({ length: beats * 4 }, function (_, i) { return i; });
+    // A tied continuation is still counted. Include both ends even when the selected count
+    // resolution would normally omit that subdivision, then join their count syllables below.
+    (pieces || []).forEach(function (pc) { if (pc.p && (pc.tie || pc.tieFrom)) qs.push(Math.round(pc.rel * 4)); });
+    qs = qs.filter(function (q, i) { return q >= 0 && q < beats * 4 && qs.indexOf(q) === i; }).sort(function (a, b) { return a - b; });
+    qs.forEach(function (q) {
+      var beat = Math.floor(q / 4) + 1;
+      out.push(txt(xAt(q / 4), y, q % 4 ? syllables[q % 4] : String(beat), 'fb-beat-count' + (extraClass ? ' ' + extraClass : ''), ' text-anchor="middle"'));
+    });
+    (pieces || []).forEach(function (pc, i) {
+      if (!pc.p || !pc.tie) return;
+      var next = pieces.slice(i + 1).filter(function (candidate) { return candidate.p && candidate.idx === pc.idx && candidate.tieFrom; })[0];
+      // With no later piece in this bar the note is tied over the barline: run the arc to the bar's right edge
+      // so it meets the continuation arc that starts the next bar.
+      var x1 = xAt(pc.rel), x2 = next ? xAt(next.rel) : edges ? edges.right : xAt(Math.min(beats, pc.rel + Math.max(0.35, (beats - pc.rel) * 0.75)));
+      if (x2 <= x1 + 2) return;
+      out.push('<path class="fb-count-tie" d="M' + (x1 + 3).toFixed(1) + ' ' + (y + 3).toFixed(1) + ' Q' + ((x1 + x2) / 2).toFixed(1) + ' ' + (y + 7).toFixed(1) + ' ' + (x2 - 3).toFixed(1) + ' ' + (y + 3).toFixed(1) + '"/>');
+    });
+    (pieces || []).forEach(function (pc, i) {
+      if (!pc.p || !pc.tieFrom) return;
+      var previous = pieces.slice(0, i).some(function (candidate) { return candidate.p && candidate.idx === pc.idx && candidate.tie; });
+      if (previous) return;
+      var x2 = xAt(pc.rel), gap = Math.max(8, Math.abs(xAt(pc.rel + 0.35) - x2));
+      var xs = edges ? Math.min(edges.left, x2 - 8) : x2 - gap;
+      out.push('<path class="fb-count-tie is-continuation" d="M' + xs.toFixed(1) + ' ' + (y + 3).toFixed(1) + ' Q' + ((xs + x2) / 2).toFixed(1) + ' ' + (y + 7).toFixed(1) + ' ' + (x2 - 3).toFixed(1) + ' ' + (y + 3).toFixed(1) + '"/>');
+    });
+  }
+  function beatGridPositions(mode, beats) {
+    if (mode === 'quarter') return Array.from({ length: beats }, function (_, i) { return i; });
+    if (mode === 'eighth') return Array.from({ length: beats * 2 }, function (_, i) { return i / 2; });
+    return null;
+  }
 
   function renderDrumBarNotes(out, bx, bw, staffTop, SP, drumSet, M, barNum) {
     var pad = 14;
@@ -981,6 +1017,7 @@
       });
       out.push('<line class="fb-drum-stem" x1="' + (fx - 4).toFixed(1) + '" y1="' + minY.toFixed(1) + '" x2="' + (fx - 4).toFixed(1) + '" y2="' + stemBotY.toFixed(1) + '" stroke="#1b1410" stroke-width="1.4"/>');
     });
+    return hands.concat(feet).map(function (n) { return n.bt; });
   }
 
   function renderDrumSheet() {
@@ -1004,7 +1041,7 @@
 
     var SP = 11;
     var staffH = 4 * SP;
-    var rowH = 135;
+    var rowH = opts.beatCounts !== 'off' ? 168 : 135;
     var headerW = 75;
     var out = [];
     var yTop = 52; // room above the first staff for the tempo line, then bar numbers, then stems
@@ -1046,7 +1083,8 @@
           out.push('<text class="fb-sec-txt" x="' + (bx + 31) + '" y="' + (staffTop - 26) + '" font-size="10" font-weight="800" text-anchor="middle">' + MN.escape(sec) + '</text>');
         }
 
-        renderDrumBarNotes(out, bx, barW, staffTop, SP, drumSet, M, barNum);
+        var drumOnsets = renderDrumBarNotes(out, bx, barW, staffTop, SP, drumSet, M, barNum);
+        if (opts.beatCounts !== 'off') beatCountLabels(out, function (bt) { return bx + 14 + (bt / M) * (barW - 28); }, staffBot + 34, M, 'fb-drum-count', opts.beatCounts === 'written' ? drumOnsets : beatGridPositions(opts.beatCounts, M));
 
         if (isLast) {
           out.push('<line class="fb-drum-barline" x1="' + (ex - 8) + '" y1="' + staffTop + '" x2="' + (ex - 8) + '" y2="' + staffBot + '" stroke="#1b1410" stroke-width="1.3"/>');
@@ -1255,9 +1293,9 @@
         posTop = (showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + 0.4 * S;
         rowsBottom = posTop + POSH + 0.6 * S;
       }
-      if (opts.measureShapes || (showPos && opts.showAnalysis)) {
+      if (shapesRowOn() || (showPos && opts.showAnalysis)) {
         helpTop = (showPos || showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + S;
-        helpH = (opts.measureShapes ? shapeSize().rowH * S : 0) + (showPos && opts.showAnalysis ? 13 * S : 0);
+        helpH = (shapesRowOn() ? shapeSize().rowH * S : 0) + (showPos && opts.showAnalysis ? 13 * S : 0);
         rowsBottom = helpTop + helpH;
       }
       var x = header;
@@ -1470,7 +1508,8 @@
         if (showV2 && b.v2Bar) drawStaffLine(b, xAt, { pieces: b.v2Bar.pieces, events: view.voice2, bot: staffBot, top: staffTop, clef: C, sig: sig, cls: 'fb-v2n', placed: v2Placed, up: false, skipRests: true });
         if (showTab) drawTabBar(b, xAt);
         if (showPos && view.pos.bars[b.i]) out.push(window.FakeBookPosition.draw(view.pos.inst, view.pos.bars[b.i], b.x, posTop, b.w, POSH, S));
-        if (opts.measureShapes || (showPos && opts.showAnalysis)) out.push(drawMeasureHelp(b, helpTop, helpH, S, showPos));
+        if (shapesRowOn() || (showPos && opts.showAnalysis)) out.push(drawMeasureHelp(b, helpTop, helpH, S, showPos, placedBar));
+        if (opts.beatCounts !== 'off') beatCountLabels(out, function (rel) { return xAt(rel); }, rowsBottom + 1.25 * S, Math.floor(b.len + EPS), 'fb-lead-count', opts.beatCounts === 'written' ? b.pieces.map(function (pc) { return pc.rel; }) : beatGridPositions(opts.beatCounts, Math.floor(b.len + EPS)), b.pieces, { left: b.x + 2, right: b.x + b.w - 2 });
         // bar line (through each staff of the system)
         var last = si === systems.length - 1 && k === sys.length - 1;
         var ex = b.x + b.w;
@@ -1485,7 +1524,7 @@
       });
       out.push('</g>');
       sys.endX = bx; sys.startX = header;
-      y = showBass || showTab || showPos || opts.measureShapes ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S;
+      y = opts.beatCounts !== 'off' ? rowsBottom + 3 * S : (showBass || showTab || showPos || shapesRowOn() ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S);
 
       // One bar of a staff line that sits on the melody's time grid: the bass-clef staff, or the second right-hand voice
       // on the treble staff (cfg.up false: stems down). Notes and chords at the melody's x for the same beat.
@@ -2349,7 +2388,7 @@
       scoreNav.setCurrent(barEls[e.bar] ? scoreNav.indexOf(barEls[e.bar]) : -1);
     } else if (e.ui === 'score-note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
-      [['.fb-n', view.concert], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
+      [['.fb-n', view.concert], ['.fb-sx', view.concert], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
         lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
           nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
           if (lane[0] === '.fb-n' && melodyView) melodyView.setCursor(i);
@@ -2358,7 +2397,7 @@
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
     } else if (e.ui === 'note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
-      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"]'));
+      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx[data-idx="' + e.idx + '"]'));
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
       if (melodyView) melodyView.setCursor(e.idx);
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
@@ -2665,6 +2704,7 @@
     el('[data-fb-instr]').value = opts.instr;
     el('[data-fb-octave]').value = String(opts.octave);
     el('[data-fb-names]').checked = !!opts.names;
+    el('[data-fb-beat-counts]').value = /^(quarter|eighth|all|written)$/.test(opts.beatCounts) ? opts.beatCounts : 'off';
     el('[data-fb-analysis]').checked = !!opts.showAnalysis;
     el('[data-fb-analysis-note]').hidden = !opts.showAnalysis;
     var nsel = el('[data-fb-name-style]'); nsel.value = opts.nameStyle === 'under' ? 'under' : 'notes'; nsel.disabled = !opts.names;
@@ -2677,13 +2717,15 @@
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
       el('[data-fb-show-tab]').checked = tabOn();
       el('[data-fb-show-pos]').checked = posOn();
-      el('[data-fb-show-pos]').disabled = opts.posInst === 'piano';
+      el('[data-fb-show-pos]').disabled = opts.posInst === 'piano' || !!opts.saxFingers;
       el('[data-fb-show-pos]').closest('label').title = opts.posInst === 'piano' ? 'Fingerboard positions are available for guitar and violin.' : '';
-      root.querySelectorAll('[data-fb-show-shapes]').forEach(function (control) { control.checked = !!opts.measureShapes; });
+      root.querySelectorAll('[data-fb-show-shapes]').forEach(function (control) { control.checked = !!opts.measureShapes && !opts.saxFingers; });
+      el('[data-fb-show-sax]').checked = !!opts.saxFingers;
+      syncSaxKey();
       el('[data-fb-shape-size]').value = SHAPE_SIZES[opts.shapeSize] ? opts.shapeSize : 'medium';
       el('[data-fb-low-bass]').checked = opts.lowBass !== false;
       var pil = el('[data-fb-pos-inst]');
-      pil.value = opts.posInst || 'guitar';
+      pil.value = opts.saxFingers ? 'sax' : (opts.posInst || 'guitar');
       pil.closest('label').hidden = false;
       var positionKey = el('[data-fb-position-key]');
       positionKey.hidden = !posOn();
@@ -2949,7 +2991,9 @@
       });
     }
 
-    var svgContent = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard display">' + out.join('') + '</svg>';
+    // The fretboard owns an explicit high-contrast palette; keep the global theme guard from
+    // replacing its dark labels with theme text colors that clash with the marker fills.
+    var svgContent = '<svg viewBox="0 0 ' + totalW + ' ' + totalH + '" role="img" aria-label="Guitar fretboard display" data-contrast-guard-skip>' + out.join('') + '</svg>';
     gtrs.forEach(function (gtr) {
       gtr.innerHTML = svgContent;
       gtr.querySelectorAll('[data-s]').forEach(function (dot) {
@@ -3152,10 +3196,17 @@
       if (i < 0) { systems.push(g); info.push({ cell: Infinity, scale: Infinity }); i = systems.length - 1; }
       row._sys = i;
       var shapes = row.querySelectorAll('.fb-measure-shape'), W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      if (row.classList.contains('is-sax')) {
+        // Sax fingerings: each bar sizes its own (a bar of sixteenths gets W / 16 each), so busy
+        // bars don't shrink the quarter notes beside them. Notes can sit closer than that (phone
+        // engraving packs sixteenths tight); the nudge below keeps every one in the bar anyway.
+        row._own = { cell: shapes.length ? W / shapes.length : Infinity, scale: Infinity };
+        return;
+      }
       if (shapes.length) info[i].cell = Math.min(info[i].cell, W / shapes.length);
     });
     rows.forEach(function (row) {
-      var o = info[row._sys];
+      var o = row._own || info[row._sys];
       row.querySelectorAll('svg').forEach(function (svg) {
         var box = svg.viewBox.baseVal;
         if (box.width > 0 && box.height > 0) o.scale = Math.min(o.scale, o.cell / box.width, cap / box.height);
@@ -3165,12 +3216,13 @@
     var common = Math.min.apply(null, info.map(function (o) { return o.scale; }));
     info.forEach(function (o) { o.scale = common; });
     rows.forEach(function (row) {
-      var o = info[row._sys], d = o.cell, W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      var o = row._own || info[row._sys], d = o.cell, W = Number(row.closest('.fb-measure-help').getAttribute('width'));
       var shapes = Array.prototype.slice.call(row.querySelectorAll('.fb-measure-shape')), left = [];
+      var centre = row.classList.contains('is-sax') ? d / 2 : 0;
       if (!isFinite(d)) return;
       // Left to right, nudge a diagram right of its neighbour only when they would overlap; then pull
       // any overflow back from the right edge. n * d <= W, so it always fits.
-      shapes.forEach(function (sh, i) { left[i] = Math.max(Number(sh.getAttribute('data-x')) || 0, i ? left[i - 1] + d : 0); });
+      shapes.forEach(function (sh, i) { left[i] = Math.max((Number(sh.getAttribute('data-x')) || 0) - centre, i ? left[i - 1] + d : 0); });
       for (var i = shapes.length - 1, bound = W; i >= 0; i--) { left[i] = Math.min(left[i], bound - d); bound = left[i]; }
       shapes.forEach(function (sh, i) {
         sh.style.left = left[i].toFixed(2) + 'px';
@@ -3185,7 +3237,26 @@
     });
   }
 
-  function drawMeasureHelp(b, y, h, S, positions) {
+  // Sax fingering row: one fingering under each melody note that starts in the bar (not the tied
+  // continuations), centred on its notehead. Fingered from the note as written on the page.
+  function saxRow(b, S, notes) {
+    var cells = notes.filter(function (n) { return n.pc.p && !n.pc.tieFrom; }).map(function (n) {
+      var f = window.FakeBookSax.fingering(n.pc.p.midi), name = noteName(n.pc.p);
+      var label = name + (f.shift > 0 ? ' 8va' : f.shift < 0 ? ' 8vb' : '');
+      return '<div class="fb-measure-shape fb-sx" data-idx="' + n.pc.idx + '" data-x="' + (n.x - (b.x + S / 2)).toFixed(1) + '"><strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' + window.FakeBookSax.draw(n.pc.p.midi, name) + '</div>';
+    });
+    if (!cells.length) return '<p>' + (tune.chordsOnly ? 'This tune has chords only, no melody to finger.' : 'No new melody notes in this measure.') + '</p>';
+    return '<div class="fb-measure-row is-sax" style="height:' + shapeSize().rowH + 'em">' + cells.join('') + '</div>';
+  }
+  function syncSaxKey() {
+    var saxKey = el('[data-fb-sax-key]');
+    saxKey.hidden = !opts.saxFingers;
+    saxKey.textContent = '🎷 One fingering per melody note, for the note as written (every saxophone fingers a written note the same way). Filled = pressed. Top half, left hand: octave key (thumb) at the left, then 1 · bis · 2 · 3, palm keys at the right and the pinky table below. Bottom half, right hand: side keys at the left, then 1 · 2 · 3 and the pinky keys below. 8va / 8vb: the note is out of the sax’s range, so it’s fingered an octave higher / lower. Hover a fingering to enlarge it.' +
+      (opts.instr === 'eb' || opts.instr === 'bb' ? '' : ' The sheet isn’t written for a saxophone yet: under Write it for, choose E♭ instruments (alto, bari) or B♭ instruments (tenor, soprano) so the notes and fingerings match your horn.');
+  }
+  function shapesRowOn() { return !!(opts.measureShapes || (opts.saxFingers && window.FakeBookSax)); }
+
+  function drawMeasureHelp(b, y, h, S, positions, notes) {
     var info = barChords(b.i);
     var html = [], chordPCs = [], preferred;
     info.idx.forEach(function (ci) {
@@ -3193,7 +3264,7 @@
       if (preferred === undefined) preferred = pc;
       chordPCs = chordPCs.concat(Q[c.q].iv.map(function (iv) { return mod(pc + iv, 12); }));
       if (c.bass) chordPCs.push(mod(NAT[c.bass.l] + c.bass.a, 12));
-      if (!opts.measureShapes) return;
+      if (!opts.measureShapes || opts.saxFingers) return;
       var diagram = opts.posInst === 'piano' ? miniPiano(diagramPianoNotes(c, ci), pc) : opts.posInst === 'violin' ? (window.FakeBookViolin ? window.FakeBookViolin.mini(pc, window.FakeBookViolin.toneMap(Q[c.q].iv)) : null) : miniGuitar(pc, chordTypeOf(c), ci);
       var notes = opts.posInst === 'piano' ? diagramPianoNotes(c, ci) : [];
       if (opts.posInst === 'guitar') {
@@ -3213,7 +3284,8 @@
       var sx = !info.held && chordSymbolX[ci] !== undefined ? chordSymbolX[ci] - (b.x + S / 2) : 0;
       html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
-    if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
+    if (opts.saxFingers && window.FakeBookSax) html = [saxRow(b, S, notes || [])];
+    else if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
     else if (opts.measureShapes) html = ['<div class="fb-measure-row" style="height:' + shapeSize().rowH + 'em">' + html.join('') + '</div>'];
 
     if (positions && opts.showAnalysis) {
@@ -3771,18 +3843,20 @@
       else if (t.matches('[data-fb-guitar-form-sel], [data-fb-quick-guitar-form]')) { opts.guitarForm = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-key]')) { opts.key = t.value; refresh(); respin(); }
-      else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); }
+      else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); syncSaxKey(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
       else if (t.matches('[data-fb-analysis]')) { opts.showAnalysis = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
+      else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-tab]')) { opts.showTab = t.checked; if (t.checked) opts.showPos = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-shape-size]')) { opts.shapeSize = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-low-bass]')) { opts.lowBass = t.checked; showChord(false); refresh(); renderBarPop(); save(); }
-      else if (t.matches('[data-fb-show-shapes]')) { opts.measureShapes = t.checked; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-show-shapes]')) { opts.measureShapes = t.checked; if (t.checked) opts.saxFingers = false; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-show-sax]')) { opts.saxFingers = t.checked; if (t.checked) opts.measureShapes = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
-      else if (t.matches('[data-fb-pos-inst]')) { opts.posInst = opts.engineInst = t.value; syncControls(); refresh(); renderBarPop(); save(); }
+      else if (t.matches('[data-fb-pos-inst]')) { if (t.value === 'sax') { opts.saxFingers = true; opts.measureShapes = false; } else { opts.saxFingers = false; opts.posInst = opts.engineInst = t.value; } syncControls(); refresh(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
@@ -3816,6 +3890,15 @@
     });
     root.addEventListener('click', function (ev) {
       var t = ev.target;
+      var mobileMore = t.closest('[data-fb-mobile-more]');
+      if (mobileMore) {
+        var mobileTransport = mobileMore.closest('.fb-transport');
+        var mobileOpen = !mobileTransport.classList.contains('is-mobile-more-open');
+        mobileTransport.classList.toggle('is-mobile-more-open', mobileOpen);
+        mobileMore.setAttribute('aria-expanded', String(mobileOpen));
+        mobileMore.textContent = mobileOpen ? 'Less' : 'More';
+        return;
+      }
       var rem = t.closest('[data-remove-tune]');
       if (rem) {
         ev.stopPropagation();

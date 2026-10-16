@@ -317,7 +317,8 @@
     level: 0, drill: 'note-id', ex: null, answered: false,
     placed: [], acc: 0, sel: { q: null, n: null }, keySel: { t: 'sharp', n: 0 },
     clef: 'mix', colors: true, solfege: true, sound: true,
-    session: { c: 0, t: 0, streak: 0 }, hint: false, ghostStep: null, cursorStep: null, nudged: {}
+    session: { c: 0, t: 0, streak: 0 }, hint: false, ghostStep: null, cursorStep: null, nudged: {},
+    guided: false, guidedStep: 0, guidedTopic: 'note', mistakes: [], retryEx: null
   };
   var STORE_KEY = 'stb-stats-v1';
   var stats = {};
@@ -327,6 +328,13 @@
     var k = LEVELS[level].id + ':' + drill;
     if (!stats[k]) stats[k] = { c: 0, t: 0, best: 0, recent: [] };
     return stats[k];
+  }
+  function masteryFor(st) {
+    var recent = st.recent || [], tries = recent.length;
+    var pct = tries ? Math.round(100 * recent.reduce(function (a, b) { return a + b; }, 0) / tries) : 0;
+    if (tries >= 8 && pct >= 80) return { label: 'Ready', cls: 'is-ready', pct: pct };
+    if (tries >= 4 && pct >= 60) return { label: 'Developing', cls: 'is-developing', pct: pct };
+    return { label: 'Needs practice', cls: 'is-practice', pct: pct };
   }
   function lv() { return LEVELS[state.level]; }
   function young() { return state.level <= 1; }
@@ -1105,6 +1113,55 @@
       '<button type="button" data-drill="' + topic + '-build" aria-pressed="' + (active === 'build') + '">Write &amp; build</button></div>' +
       group(active, active === 'id' ? 'What do you see?' : 'Make it on the staff');
   }
+  function recommendedTopic() {
+    var available = ['note', 'key', 'interval', 'scale', 'chord'].filter(function (topic) {
+      return !(lv().locked && lv().locked[topic + '-id']);
+    });
+    available.sort(function (a, b) {
+      var as = statFor(state.level, a + '-id'), bs = statFor(state.level, b + '-id');
+      var am = masteryFor(as), bm = masteryFor(bs);
+      if ((as.recent || []).length !== (bs.recent || []).length) return (as.recent || []).length - (bs.recent || []).length;
+      return am.pct - bm.pct;
+    });
+    return available[0] || 'note';
+  }
+  function topicName(topic) {
+    return { note: 'notes', key: 'key signatures', interval: 'intervals', scale: 'scales', chord: 'chords' }[topic] || topic;
+  }
+  function renderGuided() {
+    if (!el.recommendation) return;
+    var topic = state.guided ? state.guidedTopic : recommendedTopic();
+    var idStat = statFor(state.level, topic + '-id'), buildStat = statFor(state.level, topic + '-build');
+    var idMastery = masteryFor(idStat), buildMastery = masteryFor(buildStat);
+    el.recommendation.innerHTML = 'Practice <strong>' + topicName(topic) + '</strong>: three reading questions, then two construction questions. Recent mastery: identify <strong>' + idMastery.label + '</strong>; build <strong>' + buildMastery.label + '</strong>.';
+    if (el.guidedStart) el.guidedStart.textContent = state.guided ? 'Restart this five-question set' : 'Start recommended set';
+    if (el.reviewMistakes) el.reviewMistakes.hidden = !state.mistakes.length;
+    if (el.sessionMeter) {
+      var step = state.guided ? Math.min(5, state.guidedStep + (state.answered ? 1 : 0)) : 0;
+      el.sessionMeter.innerHTML = '<span><strong>' + (state.guided ? step : 0) + '/5</strong> questions complete</span><span><strong>' + state.session.c + '/' + state.session.t + '</strong> correct this visit</span><span><strong>' + state.mistakes.length + '</strong> to review</span>';
+    }
+  }
+  function startGuided() {
+    state.guided = true; state.guidedStep = 0; state.guidedTopic = recommendedTopic(); state.mistakes = [];
+    state.session = { c: 0, t: 0, streak: 0 };
+    state.drill = state.guidedTopic + '-id';
+    renderDrills(); renderGuided(); newQuestion();
+    el.card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function advanceGuided() {
+    if (!state.guided) { newQuestion(); return; }
+    state.guidedStep++;
+    if (state.guidedStep >= 5) {
+      state.guided = false;
+      var summary = state.session.c + ' of ' + state.session.t + ' correct. ' + (state.mistakes.length ? 'Review the highlighted topic, then try another set.' : 'You are ready to continue or try the construction partner.');
+      renderGuided();
+      say('Set complete: ' + summary, state.mistakes.length ? 'warn' : 'good');
+      el.next.hidden = true; el.retry.hidden = true; el.hearAnswer.hidden = false;
+      return;
+    }
+    state.drill = state.guidedTopic + (state.guidedStep < 3 ? '-id' : '-build');
+    renderDrills(); renderGuided(); newQuestion();
+  }
   // Topic diagrams share a silhouette across look/build pairs; the badge shows the action.
   function drillIcon(d) {
     var art = {
@@ -1300,17 +1357,18 @@
     el.score.innerHTML = scoreHTML();
   }
 
-  function newQuestion() {
+  function newQuestion(reuse) {
     var audioId = stopPlayback();
     state.answered = false; state.placed = []; state.acc = 0; state.sel = { q: null, n: null }; state.hint = false; state.lastOk = null;
     state.keySel = { t: 'sharp', n: 0 }; state.cursorStep = null;
-    state.ex = generate();
+    state.ex = reuse && state.retryEx ? state.retryEx : generate();
     var d = DRILLS.filter(function (x) { return x.id === state.drill; })[0];
     el.card.setAttribute('data-kind', d.group);
     el.feedback.innerHTML = ''; el.feedback.className = 'stb-feedback';
-    el.next.hidden = true; el.hintBtn.disabled = false;
+    el.next.hidden = true; el.retry.hidden = true; el.hearAnswer.hidden = true; el.hintBtn.disabled = false;
+    el.hear.textContent = '🔊 Hear it';
     el.hintText.textContent = ''; el.hintText.hidden = true;
-    setPrompt(); drawStage(); renderControls(); renderAnswers();
+    setPrompt(); drawStage(); renderControls(); renderAnswers(); renderGuided();
     if (audioReady) laterPlayback(playEx, 200, audioId);
   }
   var audioReady = false;
@@ -1324,26 +1382,39 @@
     else if (ex.input === 'keysig') r = ex.check(state.keySel);
     else r = ex.check(resp);
     if (r.retry) { say(r.msg, 'warn'); return; }
-    state.answered = true; state.lastOk = r.ok;
+    state.answered = true; state.lastOk = r.ok; state.retryEx = ex;
     var st = statFor(state.level, state.drill);
     st.t++; state.session.t++;
-    if (r.ok) { st.c++; state.session.c++; state.session.streak++; st.best = Math.max(st.best, state.session.streak); } else state.session.streak = 0;
+    if (r.ok) { st.c++; state.session.c++; state.session.streak++; st.best = Math.max(st.best, state.session.streak); } else {
+      state.session.streak = 0;
+      if (state.mistakes.indexOf(state.drill) < 0) state.mistakes.push(state.drill);
+    }
     st.recent.push(r.ok ? 1 : 0); if (st.recent.length > 10) st.recent.shift();
     saveStats(); renderProgress();
     markAnswers(resp, r);
     el.score.innerHTML = scoreHTML();
-    say(r.msg, r.ok ? 'good' : 'bad');
+    say(r.msg + ' ' + teachingStep(ex), r.ok ? 'good' : 'bad');
     if (!r.ok && ex.input === 'staff') showSolution();
     drawStage(); renderControls();
     if (ex.input === 'staff' && !r.ok) { /* staff already shows red notes */ }
-    el.next.hidden = false; el.next.focus({ preventScroll: true });
+    el.next.hidden = false; el.next.textContent = state.guided ? (state.guidedStep >= 4 ? 'Finish set →' : 'Next in set →') : 'Next question →';
+    el.retry.hidden = r.ok; el.hearAnswer.hidden = false;
+    if (ex.input === 'staff' && state.placed.length) el.hear.textContent = '♫ Hear mine';
+    (r.ok ? el.next : el.retry).focus({ preventScroll: true });
     el.hintBtn.disabled = true;
     if (young() && r.ok) burst();
     if (!(ex.input === 'staff' && ex.auto && false)) {
       var audioId = playbackId;
       laterPlayback(function () { if (ex.input === 'staff') playNotes(ex.expectNotes || ex.solve(), ex.layout === 'stack' ? 'stack' : 'seq'); else playEx(); }, 350, audioId);
     }
-    nudge();
+    renderGuided(); nudge();
+  }
+  function teachingStep(ex) {
+    if (ex.drill === 'note') return 'Method: name the clef, locate an anchor note, then count each line or space.';
+    if (ex.drill === 'key') return 'Method: count the symbols, check whether they are sharps or flats, then apply their fixed order.';
+    if (ex.drill === 'interval') return 'Method: count letter names for the number, then half steps for the quality.';
+    if (ex.drill === 'scale') return 'Method: identify the tonic and compare the whole-step and half-step pattern.';
+    return 'Method: find the root, read the stacked thirds, name the quality, then check the bass note for inversion.';
   }
   function markAnswers(resp, r) {
     var ex = state.ex;
@@ -1411,8 +1482,8 @@
     var rows = DRILLS.map(function (d) {
       var st = statFor(state.level, d.id), lock = lv().locked && lv().locked[d.id];
       if (lock) return '';
-      var pct = st.t ? Math.round(100 * st.c / st.t) : 0;
-      return '<li><span>' + esc(drillTitle(d)[0]) + '</span><span class="stb-bar-wrap" role="img" aria-label="' + pct + ' percent correct"><span class="stb-bar-fill" style="width:' + pct + '%"></span></span><span class="stb-prog-n">' + st.c + '/' + st.t + '</span></li>';
+      var recent = masteryFor(st), lifetime = st.t ? Math.round(100 * st.c / st.t) : 0;
+      return '<li><span>' + esc(drillTitle(d)[0]) + '</span><span class="stb-mastery ' + recent.cls + '">' + recent.label + '</span><span class="stb-bar-wrap" role="img" aria-label="' + recent.pct + ' percent across the last ' + (st.recent || []).length + ' attempts"><span class="stb-bar-fill" style="width:' + recent.pct + '%"></span></span><span class="stb-prog-n">recent ' + recent.pct + '% · lifetime ' + lifetime + '%</span></li>';
     }).join('');
     el.progress.innerHTML = rows;
   }
@@ -1438,11 +1509,23 @@
     var terms = SCORE_TERMS.filter(function (x) { return x.min <= state.level; }).map(function (x) {
       return '<div><dt>' + esc(x.term) + '</dt><dd>' + esc(x.meaning) + '</dd></div>';
     }).join('');
-    el.planSheet.innerHTML = '<header><p class="stb-plan-kicker">Sheet Music Trainer · Catered practice plan</p><h3 id="studyGuideHead">' + esc(L.name) + ' study guide</h3><p class="stb-plan-summary"><strong>Training summary:</strong> ' + esc(g[0]) + '</p></header>' +
+    var scaleNames = (L.scaleSet || []).map(function (key) { return SCALES[key].name + ': ' + stepPattern(key); }).join('; ');
+    var chordNames = L.chordTypes ? L.chordTypes.map(function (key) { return CHORDS[key].name + ' (' + CHORDS[key].semi.slice(1).map(function (n, i, a) { return n - (i ? CHORDS[key].semi[i] : 0); }).join('+') + ')' ; }).join('; ') : (L.chordMode === 'count' ? 'One note is a single sound; two or more notes may sound together. Do–Mi–Sol makes a three-note stack.' : 'C, F, and G major triads are built by stacking every other letter.');
+    var intervalText = L.ivMode === 'dir' ? 'Compare the second pitch with the first: higher, lower, or the same.' : L.ivMode === 'num' ? 'Count both endpoint letters. The available numbers are ' + L.ivNums.map(function (n) { return NUM_NAME[n]; }).join(', ') + '.' : 'Count letters for number; count half steps for quality. Perfect-class intervals are unison, 4th, 5th, and octave. Major-class intervals are 2nd, 3rd, 6th, and 7th; minor is one half step smaller.';
+    var keyText = L.keyMode ? (L.keyMode === 'count' ? 'Count up to ' + L.keyMax + ' symbols. Sharps: F C G D A E B. Flats: B E A D G C F.' : 'Sharps: F C G D A E B; last sharp plus a half step names the major key. Flats: B E A D G C F; the second-to-last flat names the major key. Relative minor begins a minor third below.') : 'Key signatures are introduced in Grades 3–5; first learn that a sharp raises and a flat lowers a pitch.';
+    el.planSheet.innerHTML = '<header><p class="stb-plan-kicker">Sheet Music Trainer · Printable Theory 101</p><h3 id="studyGuideHead">' + esc(L.name) + ' Theory 101 study guide</h3><p class="stb-plan-summary"><strong>Training summary:</strong> ' + esc(g[0]) + '</p></header>' +
       '<div class="stb-plan-identity"><span>Name: <b aria-hidden="true">________________________</b></span><span>Date: <b aria-hidden="true">____________</b></span></div>' +
       '<section aria-labelledby="planTargets"><h4 id="planTargets">I am learning to…</h4><ul>' + g[1].map(function (x) { return '<li><span class="stb-check" aria-hidden="true">□</span>' + esc(x) + '</li>'; }).join('') + '</ul></section>' +
       '<section aria-labelledby="planSession"><h4 id="planSession">15-minute practice plan</h4><ol class="stb-plan-steps">' + g[2].map(function (x) { return '<li><strong>' + esc(x[0]) + ' · ' + esc(x[1]) + '</strong><span>' + esc(x[2]) + '</span></li>'; }).join('') + '</ol></section>' +
       '<div class="stb-plan-columns"><section aria-labelledby="planRemember"><h4 id="planRemember">Remember</h4><ul>' + g[3].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section><section aria-labelledby="planWords"><h4 id="planWords">Words to know</h4><p>' + esc(g[4]) + '</p><h4>Exit reflection</h4><p class="stb-write-line">One thing I can read or build now:</p><p class="stb-write-line">My next practice goal:</p></section></div>' +
+      '<section class="stb-theory101" aria-labelledby="theory101Head"><header><p class="stb-plan-kicker">The ideas behind every quiz</p><h4 id="theory101Head">Theory 101: pitch, keys, intervals, scales, and chords</h4><p>Use this section away from the screen. Read the rule, point to an example in music, say it aloud, then write or play one of your own.</p></header><div class="stb-theory-grid">' +
+      '<section><h5>1 · Notes and pitch</h5><p>A clef gives every staff line and space a pitch name. Moving to the next line or space moves one letter. An accidental changes the sound but not the letter or staff position.</p><p><strong>This level:</strong> ' + esc(L.clefs.map(function (c) { return CLEFS[c].name; }).join(', ')) + '; ' + (L.dbl ? 'single and double accidentals' : L.acc ? 'naturals, sharps, and flats' : 'natural notes') + '.</p></section>' +
+      '<section><h5>2 · Key signatures</h5><p>' + esc(keyText) + '</p></section>' +
+      '<section><h5>3 · Intervals</h5><p>' + esc(intervalText) + '</p></section>' +
+      '<section><h5>4 · Scales</h5><p>A scale organizes pitches around a tonic. W means a whole step; H means a half step.</p><p><strong>This level:</strong> ' + esc(scaleNames) + '</p></section>' +
+      '<section><h5>5 · Chords</h5><p>Chords organize notes vertically. Read from the bass upward; identify the root and stacked intervals before naming quality or inversion.</p><p><strong>This level:</strong> ' + esc(chordNames) + '</p></section>' +
+      '<section><h5>6 · Reading a complete score</h5><ol><li>Locate the clef and key signature.</li><li>Find the meter and beat unit.</li><li>Preview rhythm, rests, leaps, and repeated patterns.</li><li>Notice dynamics, articulation, tempo, and route signs.</li><li>Read pitch and harmony in musical phrases, not isolated symbols.</li></ol></section>' +
+      '</div></section>' +
       '<section class="stb-decode-guide" aria-labelledby="decodeGuideHead"><header><p class="stb-plan-kicker">Decode a Score</p><h4 id="decodeGuideHead">Every symbol in the ' + esc(L.name) + ' study set</h4><p>This is the complete cumulative symbol and term set used for this grade band in this lesson. Read every staff and rhythm from the bottom up and left to right.</p></header>' +
       '<section aria-labelledby="decodeClefs"><h4 id="decodeClefs">Every line and space</h4><div class="stb-clef-reference">' + clefs + '</div><p><strong>Ledger lines continue the same alternating letter pattern.</strong> Move one letter for every line or space; accidentals change pitch without changing its letter or staff position.</p></section>' +
       '<section aria-labelledby="decodeMeters"><h4 id="decodeMeters">Time signatures</h4><p>The top number tells how many written pulses fill a measure. The bottom number names the written unit: 2 = half note, 4 = quarter note, 8 = eighth note.</p><div class="stb-plan-table-wrap"><table><thead><tr><th scope="col">Signature</th><th scope="col">Name</th><th scope="col">How to count and group it</th></tr></thead><tbody>' + meters + '</tbody></table></div></section>' +
@@ -1460,7 +1543,8 @@
     el.stbRoot.setAttribute('data-level', String(i));
     document.documentElement.style.setProperty('--stb-level', String(i));
     if (L.locked && L.locked[state.drill]) state.drill = 'note-id';
-    renderLevels(); renderDrills(); renderToolbar(); renderProgress(); renderStudyGuide();
+    state.guided = false; state.mistakes = [];
+    renderLevels(); renderDrills(); renderToolbar(); renderProgress(); renderStudyGuide(); renderGuided();
     el.nudge.hidden = true;
     var lvLabel = $('stbLevelLabel'); if (lvLabel) lvLabel.textContent = L.name + ' · ' + L.tag;
     newQuestion();
@@ -1469,6 +1553,18 @@
 
   /* ---------- Events ---------- */
   function bind() {
+    if (el.guidedStart) el.guidedStart.addEventListener('click', startGuided);
+    if (el.reviewMistakes) el.reviewMistakes.addEventListener('click', function () {
+      if (!state.mistakes.length) return;
+      state.guided = false; state.drill = state.mistakes.shift();
+      renderDrills(); renderGuided(); newQuestion();
+      el.card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    if (el.chooseDrill) el.chooseDrill.addEventListener('click', function () {
+      var hidden = el.drills.classList.toggle('is-collapsed');
+      el.chooseDrill.setAttribute('aria-expanded', String(!hidden));
+      el.chooseDrill.textContent = hidden ? 'Choose any activity' : 'Hide activity list';
+    });
     if (el.planLevel) el.planLevel.addEventListener('change', function () { selectLevel(+el.planLevel.value); });
     if (el.printPlan) el.printPlan.addEventListener('click', function () { document.body.classList.add('stb-print-plan'); window.print(); });
     window.addEventListener('afterprint', function () { document.body.classList.remove('stb-print-plan'); });
@@ -1482,7 +1578,7 @@
       var id = b.getAttribute('data-drill');
       if (lv().locked && lv().locked[id]) { say(lv().locked[id], 'warn'); return; }
       audioReady = true; audio();
-      state.drill = id; renderDrills(); newQuestion();
+      state.guided = false; state.drill = id; renderDrills(); renderGuided(); newQuestion();
       if (window.innerWidth < 900) el.card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     el.tools.addEventListener('click', function (e) {
@@ -1492,7 +1588,9 @@
         var k = t.getAttribute('data-toggle'); state[k] = !state[k];
         renderToolbar();
         if (k === 'sound') { if (state.sound) { audioReady = true; audio(); } else stopPlayback(); return; }
-        if (!state.answered || true) { var keep = state.placed; drawStage(); renderAnswers(); renderControls(); setPrompt(); }
+        drawStage();
+        if (!state.answered) { renderAnswers(); renderControls(); }
+        setPrompt();
       }
     });
     el.controls.addEventListener('click', function (e) {
@@ -1544,8 +1642,19 @@
       else if (e.key === '#' || e.key === '+') { state.acc = Math.min(lv().dblUi ? 2 : 1, state.acc + 1); renderControls(); setGhost(state.cursorStep); }
       else if (e.key === '-') { state.acc = Math.max(lv().dblUi ? -2 : -1, state.acc - 1); renderControls(); setGhost(state.cursorStep); }
     });
-    el.next.addEventListener('click', function () { newQuestion(); });
-    el.hear.addEventListener('click', function () { audioReady = true; playEx(); });
+    el.next.addEventListener('click', advanceGuided);
+    el.retry.addEventListener('click', function () { newQuestion(true); });
+    el.hear.addEventListener('click', function () {
+      audioReady = true;
+      if (state.answered && state.ex.input === 'staff' && state.placed.length) playNotes(state.placed, state.ex.layout === 'stack' ? 'stack' : 'seq');
+      else playEx();
+    });
+    el.hearAnswer.addEventListener('click', function () {
+      audioReady = true;
+      var solution = state.ex.solve();
+      var notes = Array.isArray(solution) ? solution : (state.ex.playItems || state.ex.items || []).map(function (item) { return item.n || item; });
+      playNotes(notes, state.ex.layout === 'stack' ? 'stack' : 'seq');
+    });
     el.hintBtn.addEventListener('click', function () {
       var ex = state.ex; if (!ex || state.answered) return;
       el.hintText.hidden = false; el.hintText.textContent = ex.hint || '';
@@ -1557,6 +1666,16 @@
     });
     el.nudgeGo.addEventListener('click', function () { selectLevel(state.level + 1); });
     el.nudgeNo.addEventListener('click', function () { el.nudge.hidden = true; });
+    if (el.resetProgress) el.resetProgress.addEventListener('click', function () {
+      if (el.resetProgress.getAttribute('data-confirm') !== 'true') {
+        el.resetProgress.setAttribute('data-confirm', 'true');
+        el.resetProgress.textContent = 'Confirm reset for ' + lv().name;
+        return;
+      }
+      DRILLS.forEach(function (d) { delete stats[lv().id + ':' + d.id]; });
+      saveStats(); renderProgress(); renderStudyGuide(); renderGuided();
+      el.resetProgress.removeAttribute('data-confirm'); el.resetProgress.textContent = 'Reset this level’s progress';
+    });
     document.addEventListener('keydown', function (e) {
       if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
       var ex = state.ex; if (!ex) return;
@@ -1574,9 +1693,10 @@
       stbRoot: $('stb'), levels: $('stbLevels'), drills: $('stbDrills'), card: $('stbCard'), tools: $('stbTools'),
       kicker: $('stbKicker'), title: $('stbTitle'), score: $('stbScore'), prompt: $('stbPrompt'), stage: $('stbStage'),
       controls: $('stbControls'), answers: $('stbAnswers'), feedback: $('stbFeedback'), answerStaff: $('stbAnswerStaff'),
-      next: $('stbNext'), hear: $('stbHear'), hintBtn: $('stbHintBtn'), hintText: $('stbHint'),
+      next: $('stbNext'), retry: $('stbRetry'), hear: $('stbHear'), hearAnswer: $('stbHearAnswer'), hintBtn: $('stbHintBtn'), hintText: $('stbHint'),
       nudge: $('stbNudge'), nudgeGo: $('stbNudgeGo'), nudgeNo: $('stbNudgeNo'), progress: $('stbProgress'),
-      planLevel: $('stbPlanLevel'), printPlan: $('stbPrintPlan'), planSheet: $('stbPlanSheet')
+      planLevel: $('stbPlanLevel'), printPlan: $('stbPrintPlan'), planSheet: $('stbPlanSheet'),
+      guidedStart: $('stbGuidedStart'), reviewMistakes: $('stbReviewMistakes'), chooseDrill: $('stbChooseDrill'), recommendation: $('stbRecommendation'), sessionMeter: $('stbSessionMeter'), resetProgress: $('stbResetProgress')
     };
     if (!el.stbRoot) return;
     bind();
@@ -1594,6 +1714,24 @@
     var panels = Array.prototype.slice.call(document.querySelectorAll('[data-decode-panel]'));
     if (!tabs.length || !panels.length) return;
     renderScoreAtlasExamples();
+    var revealButtons = Array.prototype.slice.call(document.querySelectorAll('[data-reveal-lens]'));
+    var revealAll = $('stbRevealAll'), decoderStatus = $('stbDecoderStatus');
+    function resetLenses() {
+      document.querySelectorAll('.stb-score-panel').forEach(function (panel) { panel.classList.add('is-guided'); });
+      revealButtons.forEach(function (button) { button.setAttribute('aria-pressed', 'false'); });
+      if (decoderStatus) decoderStatus.textContent = 'No clues revealed yet. Start with the clef and pitch.';
+    }
+    function revealLens(name) {
+      var panel = document.querySelector('.stb-score-panel:not([hidden])');
+      var lens = panel && panel.querySelector('[data-lens="' + name + '"]');
+      if (lens) lens.classList.add('is-revealed');
+      var button = document.querySelector('[data-reveal-lens="' + name + '"]');
+      if (button) button.setAttribute('aria-pressed', 'true');
+      var count = document.querySelectorAll('[data-reveal-lens][aria-pressed="true"]').length;
+      if (decoderStatus) decoderStatus.textContent = count + ' of 4 score clues revealed.';
+    }
+    revealButtons.forEach(function (button) { button.addEventListener('click', function () { revealLens(button.getAttribute('data-reveal-lens')); }); });
+    if (revealAll) revealAll.addEventListener('click', function () { revealButtons.forEach(function (button) { revealLens(button.getAttribute('data-reveal-lens')); }); });
     function show(tab, moveFocus) {
       var level = tab.getAttribute('data-decode-level');
       tabs.forEach(function (item) {
@@ -1602,6 +1740,8 @@
         item.tabIndex = active ? 0 : -1;
       });
       panels.forEach(function (panel) { panel.hidden = panel.getAttribute('data-decode-panel') !== level; });
+      panels.forEach(function (panel) { panel.querySelectorAll('[data-lens]').forEach(function (lens) { lens.classList.remove('is-revealed'); }); });
+      resetLenses();
       if (moveFocus) tab.focus();
     }
     tabs.forEach(function (tab, index) {
@@ -1616,6 +1756,7 @@
         if (next) { event.preventDefault(); show(next, true); }
       });
     });
+    resetLenses();
   }
 
   function renderScoreAtlasExamples() {

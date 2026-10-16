@@ -77,6 +77,7 @@
                   <input type="number" min="40" max="240" data-fb-tempo-num aria-label="Tempo in beats per minute" />
                   <span class="fb-unit">BPM</span>
                 </div>
+                <button type="button" class="fb-btn fb-mobile-more" data-fb-mobile-more aria-expanded="false" aria-controls="fbTransport">More</button>
                 <div class="fb-dots" data-fb-dots aria-hidden="true"></div>
                 <button type="button" class="fb-btn fb-stand-toggle" data-fb-stand aria-pressed="false">Stand</button>
                 <button type="button" class="fb-btn" data-fb-tools aria-expanded="false" aria-controls="fbTools">Tools</button>
@@ -127,15 +128,40 @@
                       <button type="button" class="fb-view-tab" data-fb-view="drums" aria-pressed="false">🥁 Drums</button>
                     </div>
                     <button type="button" class="fb-btn fb-btn-small fb-print-btn" data-fb-print title="Print this score on letter paper">🖨 Print</button>
-                    <button type="button" class="fb-notation-toggle" data-fb-notation-toggle aria-expanded="false" aria-controls="fbNotationBody"><span class="fb-settings-prefix">Quick </span>settings</button>
+                    <button type="button" class="fb-notation-toggle" data-fb-notation-toggle aria-expanded="false" aria-controls="fbNotationBody">Quick settings</button>
                   </div>
                 </header>
                 <div class="fb-notation-settings-body" id="fbNotationBody" data-fb-notation-body hidden>
         <div class="fb-notation-settings-inner">
+      <label class="fb-field fb-instrument-row"><span>Focus instrument</span>
+        <select data-fb-pos-inst aria-label="Instrument for notation chord shapes and finger positions">
+          <option value="piano">🎹 Piano</option>
+          <option value="guitar">🎸 Guitar</option>
+          <option value="violin">🎻 Violin</option>
+          <option value="sax">🎷 Saxophone</option>
+        </select>
+      </label>
+      <details class="fb-notation-help fb-more">
+        <summary>More options</summary>
+        <div class="fb-more-grid">
+      <label class="fb-field fb-beat-count-setting"><span>Count beats</span>
+        <select data-fb-beat-counts aria-label="Beat counting shown beneath the notation">
+          <option value="off">Off</option>
+          <option value="quarter">Quarter notes (1 2 3 4)</option>
+          <option value="eighth">Eighth notes (1 &amp; 2 &amp;)</option>
+          <option value="all">Sixteenth notes (1 e &amp; a)</option>
+          <option value="written">Written rhythm only</option>
+        </select>
+      </label>
       <div class="fb-staff-toggles" data-fb-staff-toggles role="group" aria-label="Extra staves from the imported score" hidden>
-        <label class="fb-check" data-fb-has="bass"><input type="checkbox" data-fb-show-bass checked /> <span>𝄢 Bass clef</span></label>
-        <label class="fb-check" data-fb-has="tab"><input type="checkbox" data-fb-show-tab /> <span>Tab</span></label>
-        <label class="fb-check"><input type="checkbox" data-fb-show-shapes /> <span>Chord shapes</span></label>
+        <div class="fb-chips fb-more-wide">
+          <label class="fb-check" data-fb-has="bass"><input type="checkbox" data-fb-show-bass checked /> <span>𝄢 Bass clef</span></label>
+          <label class="fb-check" data-fb-has="tab"><input type="checkbox" data-fb-show-tab /> <span>Tab</span></label>
+          <label class="fb-check"><input type="checkbox" data-fb-show-shapes /> <span>Chord shapes</span></label>
+          <label class="fb-check" hidden title="Instead of chord shapes, a saxophone fingering under every melody note"><input type="checkbox" data-fb-show-sax aria-describedby="fb-sax-key" /> <span>🎷 Sax fingering</span></label>
+          <label class="fb-check"><input type="checkbox" data-fb-show-pos aria-describedby="fb-position-key" /> <span>Finger positions</span></label>
+          <label class="fb-check"><input type="checkbox" data-fb-low-bass checked /> <span>Bass note on E/A string</span></label>
+        </div>
         <label class="fb-field"><span>Shape size</span>
           <select data-fb-shape-size aria-label="Size of chord diagrams on the sheet; hover one to enlarge it">
             <option value="small">Small grid</option>
@@ -143,20 +169,6 @@
             <option value="large">Large</option>
           </select>
         </label>
-        <label class="fb-check"><input type="checkbox" data-fb-low-bass checked /> <span>Bass note on E/A string</span></label>
-        <label class="fb-check"><input type="checkbox" data-fb-show-pos aria-describedby="fb-position-key" /> <span>Finger positions</span></label>
-        <label class="fb-field fb-tab-pos" hidden><span>Instrument</span>
-          <select data-fb-pos-inst aria-label="Instrument for notation chord shapes and finger positions">
-            <option value="piano">🎹 Piano</option>
-            <option value="guitar">🎸 Guitar</option>
-            <option value="violin">🎻 Violin</option>
-          </select>
-        </label>
-        <label class="fb-field" hidden><span>Guitar voice leading</span><select data-fb-guitar-voice aria-label="Guitar chord voice leading"><option value="tab">Match the imported tab</option><option value="manual">Choose a form manually</option><option value="smooth">Smooth grip changes</option><option value="common">Hold common tones</option><option value="shell">Connected shells</option><option value="low">Stay low on the neck</option></select></label>
-        <details class="fb-notation-help"><summary>How guitar voice leading works</summary><p class="fb-pos-key" data-fb-guitar-voice-note hidden></p></details>
-        <label class="fb-field" hidden><span>Guitar grip · selected chord</span><select data-fb-quick-guitar-form aria-label="Guitar grip for the selected chord"></select></label>
-        <details class="fb-notation-help"><summary>About these settings</summary><p class="fb-pos-key">Instrument and chord voicings are shared with Tools → Chords. Shapes beneath the staff also appear in print. Guitar grips guide the diagrams and chord preview; band accompaniment uses piano voicing.</p></details>
-        <label class="fb-field" hidden><span>Piano voicing</span><select data-fb-notation-voicing aria-label="Piano chord voice leading"></select></label>
         <label class="fb-field fb-tab-pos"><span>Fingering</span>
           <select data-fb-tab-pos aria-label="Where on the neck the tab is fingered">
             <option value="auto">Auto: fewest shifts</option>
@@ -169,9 +181,17 @@
             <option value="12">12th position</option>
           </select>
         </label>
+        <label class="fb-field" hidden><span>Guitar voice leading</span><select data-fb-guitar-voice aria-label="Guitar chord voice leading"><option value="tab">Match the imported tab</option><option value="manual">Choose a form manually</option><option value="smooth">Smooth grip changes</option><option value="common">Hold common tones</option><option value="shell">Connected shells</option><option value="low">Stay low on the neck</option></select></label>
+        <label class="fb-field" hidden><span>Guitar grip · selected chord</span><select data-fb-quick-guitar-form aria-label="Guitar grip for the selected chord"></select></label>
+        <label class="fb-field" hidden><span>Piano voicing</span><select data-fb-notation-voicing aria-label="Piano chord voice leading"></select></label>
+        <details class="fb-notation-help"><summary>How guitar voice leading works</summary><p class="fb-pos-key" data-fb-guitar-voice-note hidden></p></details>
+        <details class="fb-notation-help"><summary>About these settings</summary><p class="fb-pos-key">Instrument and chord voicings are shared with Tools → Chords. Shapes beneath the staff also appear in print. Guitar grips guide the diagrams and chord preview; band accompaniment uses piano voicing.</p></details>
       </div>
+        </div>
+      </details>
       <p class="fb-pos-key" data-fb-analysis-note hidden>Notation chord shapes and finger positions use the Instrument selected in Quick settings. Scale/mode candidates combine melody pitches with chord tones in concert pitch; a short passage cannot prove its tonal center.</p>
       <p id="fb-position-key" class="fb-pos-key" data-fb-position-key hidden></p>
+      <p id="fb-sax-key" class="fb-pos-key" data-fb-sax-key hidden></p>
         </div>
       </div>
                 <p class="fb-tab-note" data-fb-tab-note role="status" hidden></p>
@@ -700,6 +720,7 @@
               <li><strong>Play the melody.</strong> Under the chord shapes, the melody panel shows each note of the tune on piano (finger numbers, smooth fingering or five-finger positions, either hand) guitar (string, fret and finger in open position, a fixed position, or an automatic route) or violin (string, finger with low/high placement, and position, on a fretless board). It follows the band, or step through it with ◀ ▶.</li>
               <li><strong>Violin chords.</strong> Wherever you see Piano | Guitar (the live chord view, the Chords tab and the bar pop-up), pick 🎻 Violin. A violin doesn’t grip chord shapes, so you see every tone of the chord, triad or scale on the first-position fingerboard, labelled R, 3, 5, 7 with the finger to use (↓ low, ↑ high). Click a dot to hear it; Play this chord arpeggiates it.</li>
               <li><strong>Finger positions.</strong> Under the sheet, tick <em>Finger positions</em> (instead of Tab) to see a small guitar or violin fingerboard under every measure, with the fingers for that bar’s notes. The route is planned for the whole tune, so each bar starts where the last one ended; the dashed ring marks that last note, and “→” in the label means the hand shifts inside the bar.</li>
+              <li><strong>Sax fingering.</strong> In Quick settings, tick <em>🎷 Sax fingering</em> (instead of Chord shapes) to see a saxophone fingering under every melody note, up to a whole bar of sixteenths. It fingers the note as written, so set <em>Write it for</em> to E♭ (alto, bari) or B♭ (tenor, soprano). Filled keys are pressed; hover one to enlarge it.</li>
               <li><strong>Theory on demand.</strong> Click any chord symbol to show its notes on the keyboard. Switch voicings to compare root position, inversions and smooth voice leading.</li>
               <li><strong>Composition prompt.</strong> Students pick one tune and one transformation, then write their own 4-bar variation in the <a href="sheet-music-trainer.html">Sheet Music Trainer</a> or play it on the <a href="piano.html">piano</a>.</li>
               <li><strong>Adding tunes.</strong> Tunes live in <code>data/fake-book.json</code>. The <code>format</code> block at the top explains the notation. Add only public-domain or original melodies, and say where each one came from. Harmony-only practice charts must be labeled Chords only, with section markers and a clear arrangement note.</li>
@@ -756,6 +777,8 @@
   <script src="../../assets/js/lessons/fake-book-melody.js?v=20261013w"></script>
   <script src="../../assets/js/lessons/fake-book-position.js?v=20261013w"></script>
   <script src="../../assets/js/lessons/fake-book-violin.js?v=20261014a"></script>
+  <script src="../../assets/js/lessons/saxophone-fingerings.js?v=20261015palm"></script>
+  <script src="../../assets/js/lessons/fake-book-sax.js?v=20261015shared"></script>
   <script src="../../assets/js/lessons/fake-book-harmony.js"></script>
   <script src="../../assets/js/lessons/fake-book-tab.js"></script>
   <script src="../../assets/js/lessons/fake-book-arrangement.js?v=20261014original"></script>
@@ -764,7 +787,7 @@
   <script src="../../assets/js/lessons/fake-book-guitar-pro.js?v=20261014gpnames"></script>
   <script src="../../assets/js/score-navigation.js?v=20261013f"></script>
   <script src="../../assets/js/lessons/fake-book-guitar-voice.js?v=20261014b"></script>
-  <script src="../../assets/js/lessons/fake-book.js?v=20261015ipad"></script>
+  <script src="../../assets/js/lessons/fake-book.js?v=20261015count-levels"></script>
   <script src="../../assets/js/lessons/fake-book-pdf-model.js"></script>
   <script src="../../assets/js/lessons/fake-book-pdf-template.js"></script>
   <script src="../../assets/vendor/jszip.min.js"></script>
