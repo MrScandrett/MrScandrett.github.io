@@ -690,7 +690,7 @@
           },
           {
             title: 'Wrapping tefillin before prayer', kind: 'Photograph · Samarkand · c. 1865–72 · Deuteronomy 6:8',
-            src: 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png/960px-Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png',
             page: 'https://commons.wikimedia.org/wiki/File:Zeravshan_Okrug._Samarkand._A_Jewish_Man,_Wearing_a_Prayer_Shawl,_Wrapping_His_Arm_in_Phylactery,_in_Preparation_for_Prayer_WDL11152.png',
             alt: 'Nineteenth-century photograph of a man in a prayer shawl winding the strap of a small box around his arm',
             caption: 'Tefillin are small boxes holding Torah verses, including Deuteronomy 6:4–9, bound on the arm and head: one Jewish reading of “bind them as a sign on your hand.” This is a later, living practice, not temple-era Israel, and not every tradition reads verse 8 literally.',
@@ -1743,6 +1743,49 @@
   lesson.investigation = lessonInvestigations[lesson.id] || [lesson.scripture, 'What should a careful reader do first?', ['Observe the passage and its context', 'Skip directly to a conclusion'], 0, 'Begin with the passage, its setting, and its repeated details before making a claim.', 'Record two observations and one question before explaining the text.'];
   main.setAttribute('data-stage-theme', lesson.code.charAt(0));
 
+  // Extended-lesson data. A lesson is "deep" when its lenses carry the optional trailing fields
+  // [passageIndex, connectForward, hardQuestion]; the fields below then replace the single check,
+  // the single notes box, and add a hard-questions panel.
+  var lessonChecks = {
+    'deuteronomy': [
+      ['Deuteronomy 5:3 says the Lord made this covenant “not with our fathers… but with us, who are all of us here alive today.” What is Moses doing?', ['Claiming Sinai never happened', 'Making the old covenant present and binding on a new generation', 'Replacing the covenant with one that has no connection to Sinai'], 1, 'Retelling makes the Sinai covenant the responsibility of the generation now standing at the Jordan. It neither denies Sinai nor replaces it.'],
+      ['The Sabbath command in 5:12–15 gives a different reason than Exodus 20:8–11. What does that show?', ['One book copied the other wrongly', 'Moses retells and applies the law, here tying rest to rescue from slavery', 'The Sabbath is dropped in Deuteronomy'], 1, 'Exodus 20:11 grounds the Sabbath in creation; Deuteronomy 5:15 grounds it in the exodus. Same command, new emphasis for a new audience.'],
+      ['Why does Moses tie care for the sojourner to Israel’s own history (10:19)?', ['Foreigners were banned from the land', 'It was a purely ceremonial rule', 'Remembering slavery is meant to shape how the strong treat the vulnerable'], 2, '“You were sojourners in the land of Egypt” turns memory into a reason for justice. The laws on debt and harvest in chapters 15 and 24 use the same reason.'],
+      ['What is the main danger of prosperity in chapter 8?', ['Forgetting God and crediting “my power and the might of my hand”', 'The land will have no water', 'Only the priests will forget the law'], 0, 'Deuteronomy 8:11–18 warns that comfort tempts a people to forget where it came from and to claim its success as its own doing.'],
+      ['How does Deuteronomy 17:14–20 treat a king?', ['It commands Israel to appoint a king immediately', 'It allows a king but limits his wealth, army, and wives and puts him under the written law', 'It forbids any form of leadership'], 1, 'The king must be one the Lord chooses, may not multiply horses, wives, or gold, and must copy and read the law “all the days of his life” (17:15–19).'],
+      ['What is the purpose of remembering in Deuteronomy?', ['To replace action with nostalgia', 'To claim the wilderness had no failures', 'To shape present love, gratitude, teaching, and faithfulness'], 2, 'Moses retells the past so a new generation can live faithfully in the future.'],
+      ['How does the book of Deuteronomy end?', ['With Israel crossing the Jordan', 'With Moses on Mount Nebo, shown the land, and his death', 'With the fall of Jericho'], 1, 'Chapter 34 ends with Moses viewing the land from Nebo and dying. The crossing begins the book of Joshua.']
+    ]
+  };
+  var lessonReflectFields = {
+    'deuteronomy': [
+      ['What happened', 'Name one event Moses retells (for example the spies, the manna, or the golden calf) and cite the chapter.'],
+      ['What it reveals about God', 'What does the event show about who God is and how God acts? Use a verse as evidence.'],
+      ['The danger of forgetting', 'What does Moses say could go wrong if this is forgotten? Look at chapter 8 or 6:10–12.'],
+      ['One faithful practice for today', 'Name one concrete habit that keeps this memory alive, like the Shema’s morning-and-evening rhythm or the firstfruits creed.']
+    ]
+  };
+  var lessonHardQuestions = {
+    'deuteronomy': [
+      ['The command to destroy the nations (7:1–6; 20:10–18)',
+       'Moses tells Israel to “devote to destruction” the peoples of Canaan and to make no treaties or marriages with them, because their worship would draw Israel away (7:1–6; 20:16–18). The same book offers peace to distant cities (20:10–15) and says God drives the nations out “because of the wickedness of these nations,” not because of Israel’s righteousness (9:4–6).',
+       'Readers disagree. Some take the commands as literal history and ask about God’s justice and Canaan’s guilt. Others point out that Joshua and Judges say the peoples were not fully driven out (Joshua 15:63; Judges 1:27–36), and some scholars argue that ancient war language was often sweeping and stylized. Others read it mainly as a warning about Israel’s own risk of idolatry. Mainstream Jewish and Christian traditions do not read it as permission for violence today.',
+       'Keep three things apart: what the text commands, what the text says happened, and what any later reader may do. Do not skip the discomfort, and do not use the passage as a weapon.'],
+      ['Blessings and curses (chapter 28)',
+       'Obedience brings rain, harvest, and safety; disobedience brings drought, defeat, and finally exile (28:1–68). Chapter 30:1–10 then imagines return after exile.',
+       'Many readers hear a simple formula in which good behavior is rewarded and bad behavior punished. Job, Psalm 73, and Jesus’ words in Luke 13:1–5 and John 9:1–3 all press against applying that pattern to any one person’s suffering. Deuteronomy itself frames chapter 28 as covenant consequences for a whole people.',
+       'Ask: is this a promise to individuals, a warning to a nation, or both? What do Job, Psalm 73, and Luke 13:1–5 add?'],
+      ['Why Moses cannot enter the land (32:48–52)',
+       'The Lord tells Moses he will see the land but not enter it, “because you broke faith with me… at the waters of Meribah-kadesh… you did not treat me as holy” (32:51). Elsewhere Moses says the Lord was angry with him “on your account” (1:37; 3:26).',
+       'Numbers 20:1–13 tells the story of the water from the rock. Readers debate exactly what the offense was and whether the penalty seems proportionate. Moses’ own speech places part of the burden on the people.',
+       'Notice that the book does not hide its hero’s limits. What does that say about where the book locates its authority, and about leadership that outlasts the leader?'],
+      ['Who wrote Deuteronomy, and when?',
+       'The book presents itself as words Moses spoke and wrote (1:1; 31:9, 24), and its last chapter narrates Moses’ death (34:5–12).',
+       'Many traditional readers hold that Moses wrote nearly all of it, with the last chapter added later. Many critical scholars date the book’s final form centuries after Moses and often connect it to Josiah’s reform (2 Kings 22–23). Scholars also compare the book’s structure to ancient Near Eastern treaties and debate which treaties fit and when. The evidence is contested on every side.',
+       'Name the claim, the evidence, and who holds it. Students can learn the book well without settling a question scholars have not settled.']
+    ]
+  };
+
   function esc(value) {
     return String(value).replace(/[&<>\"]/g, function (char) { return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[char]; });
   }
@@ -1877,16 +1920,74 @@
       '<ol class="bpl-scene-print" aria-hidden="true">' + ministryScenes.map(function (scene) { return '<li><strong>' + esc(scene[0]) + '</strong> (' + esc(scene[1]) + '). <em>Need:</em> ' + esc(scene[2]) + ' <em>Jesus:</em> ' + esc(scene[3]) + ' <em>Response:</em> ' + esc(scene[4]) + ' <em>Reveals:</em> ' + esc(scene[5]) + '</li>'; }).join('') + '</ol></section>';
   }
 
-  main.className = 'bpl-page';
+  var deep = !!(lesson.lenses[0] && lesson.lenses[0].length > 4);
+  var checkItems = lessonChecks[lesson.id];
+  var reflectFields = lessonReflectFields[lesson.id];
+  var hardItems = lessonHardQuestions[lesson.id];
+  var levels = [
+    ['guided', 'Guided', 'Teacher-led: read the lens, open the passage, and retell the main idea together.'],
+    ['build', 'Build', 'Add the close-reading task and trace each lens forward into later Scripture.'],
+    ['investigate', 'Investigate', 'Add the hard question: weigh passages, interpretations, and evidence.']
+  ];
+  var level = 'build';
+  try { level = localStorage.getItem('bible-pathway-level') || 'build'; } catch (ignore) {}
+  if (!levels.some(function (item) { return item[0] === level; })) level = 'build';
+  var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function levelMarkup() {
+    return '<section class="bpl-level" aria-label="Choose your depth"><span class="bpl-level-label">Depth</span><div class="bpl-level-buttons" role="group" aria-label="Lesson depth">' +
+      levels.map(function (item) { return '<button type="button" data-level="' + item[0] + '" aria-pressed="' + (item[0] === level) + '">' + esc(item[1]) + '</button>'; }).join('') +
+      '</div><p class="bpl-level-note" aria-live="polite"></p></section>';
+  }
+  function lensPrintMarkup() {
+    if (!deep) return '';
+    return '<ol class="bpl-lens-print" aria-hidden="true">' + lesson.lenses.map(function (lens) {
+      var passage = typeof lens[4] === 'number' && lesson.passages[lens[4]];
+      return '<li><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '.</strong> ' + esc(lens[2]) + ' <em>Look closely:</em> ' + esc(lens[3]) +
+        (passage ? ' <em>Read:</em> ' + esc(passageLabel(passage)) + '.' : '') +
+        (lens[5] ? ' <em>Connect forward:</em> ' + esc(lens[5]) : '') +
+        (lens[6] ? ' <em>Hard question:</em> ' + esc(lens[6]) : '') + '</li>';
+    }).join('') + '</ol>';
+  }
+  function exploreMarkup() {
+    return '<section class="bpl-card bpl-explore" id="bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through ' + ['zero','one','two','three','four','five','six','seven','eight'][lesson.lenses.length] + ' lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
+      lesson.lenses.map(function (lens, i) { return '<button class="bpl-lens" type="button" data-lens="' + i + '" aria-pressed="' + (i === 0) + '"><span>Lens ' + (i + 1) + '</span><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '</strong></button>'; }).join('') +
+      '</div><article class="bpl-workspace" aria-live="polite"><h3></h3><p></p><p class="bpl-notice' + (deep ? ' bpl-lv-build' : '') + '"></p>' + (deep ? '<div class="bpl-lens-extras"></div>' : '') + '</article>' + lensPrintMarkup() + '</section>';
+  }
+  function hardMarkup() {
+    if (!deep || !hardItems) return '';
+    return '<section class="bpl-card bpl-hard" id="bpl-hard"><p class="bpl-label">Hard questions</p><h2>Texts that deserve a slower look</h2><p class="bpl-hard-intro">Some passages raise questions a class should meet on purpose, not by accident. Open one when you are ready to discuss it. Each separates what the text says, how readers have taken it, and how to hold the question carefully.</p>' +
+      hardItems.map(function (item) { return '<details class="bpl-hard-item"><summary>' + esc(item[0]) + '</summary><div><p><strong>What the text says.</strong> ' + esc(item[1]) + '</p><p><strong>How readers have taken it.</strong> ' + esc(item[2]) + '</p><p><strong>Holding it carefully.</strong> ' + esc(item[3]) + '</p></div></details>'; }).join('') + '</section>';
+  }
+  function checkMarkup() {
+    if (deep && checkItems) {
+      return '<section class="bpl-card bpl-checks" id="bpl-explain"><p class="bpl-label">Check and explain</p><h2>Test your reading</h2><p class="bpl-checks-score" aria-live="polite">Answer each one, then read why.</p>' +
+        checkItems.map(function (item, qi) {
+          return '<fieldset class="bpl-check-item" data-check="' + qi + '"><legend>' + (qi + 1) + '. ' + esc(item[0]) + '</legend><div class="bpl-choices">' +
+            item[1].map(function (choice, ci) { return '<button class="bpl-choice bpl-multi-choice" type="button" data-choice="' + ci + '">' + esc(choice) + '</button>'; }).join('') +
+            '</div><p class="bpl-feedback" aria-live="polite"></p></fieldset>';
+        }).join('') + '</section>';
+    }
+    return '<section class="bpl-card" id="bpl-explain"><p class="bpl-label">Check and explain</p><h2>' + esc(lesson.check[0]) + '</h2><div class="bpl-choices">' + lesson.check[1].map(function (choice) { return '<button class="bpl-choice" type="button">' + esc(choice) + '</button>'; }).join('') + '</div><p class="bpl-feedback" aria-live="polite">Choose the strongest answer, then explain why.</p></section>';
+  }
+  function reflectMarkup() {
+    var fields = (deep && reflectFields) ? reflectFields.map(function (field, fi) {
+      return '<div class="bpl-reflect-field"><label class="bpl-label" for="bpl-field-' + fi + '">' + (fi + 1) + '. ' + esc(field[0]) + '</label><textarea id="bpl-field-' + fi + '" data-reflect-field="' + fi + '" placeholder="' + esc(field[1]) + '"></textarea></div>';
+    }).join('') : '';
+    return '<section class="bpl-card bpl-reflection" id="bpl-reflect"><p class="bpl-label">Reflect and respond</p><h2>Make the connection</h2><p>' + esc(lesson.reflect) + '</p>' + fields + '<label class="bpl-label" for="bpl-notes">' + (fields ? 'Other notes and questions' : 'Your notes') + '</label><textarea id="bpl-notes" placeholder="Write observations, evidence, questions, and a faithful response…"></textarea><p class="bpl-save" aria-live="polite">Notes save in this browser.</p></section>';
+  }
+
+  main.className = 'bpl-page' + (deep ? ' bpl-page--deep' : '');
+  if (deep) main.setAttribute('data-level', level);
   main.innerHTML =
     '<a class="bpl-back" href="bible-foundations-pathway.html">&larr; Bible Foundations &amp; Pathway</a>' +
     '<section class="bpl-hero" data-code="' + esc(lesson.code) + '">' +
       '<p class="bpl-eyebrow">' + esc(lesson.stage) + ' · Lesson ' + esc(lesson.code) + '</p>' +
       '<h1>' + esc(lesson.title) + '</h1><p class="bpl-lede">' + esc(lesson.lede) + '</p>' +
-      '<div class="bpl-meta"><span>' + esc(lesson.grades) + '</span><span>' + esc(lesson.time) + '</span><span>Guided exploration</span><span>Print-ready</span></div>' +
+      '<div class="bpl-meta"><span>' + esc(lesson.grades) + '</span><span>' + esc(lesson.time) + '</span><span>Guided exploration</span><span>Print-ready</span></div>' + (deep ? '<a class="bpl-start" href="#bpl-question">Start with the big question ↓</a>' : '') +
     '</section>' +
     '<nav class="bpl-learning-flow" aria-label="Lesson learning flow"><span>Start here:</span><a href="#bpl-question">1 · Big question</a><a href="#bpl-read">2 · Read</a><a href="#bpl-explore">3 · Explore</a><a href="#bpl-explain">4 · Explain</a><a href="#bpl-reflect">5 · Reflect</a></nav>' +
-    '<details class="bpl-level-guide"><summary>Choose the right depth for your learner</summary><div><p><strong>Grades K–5 · guided together:</strong> Ask the big question, read one passage aloud, use the picture or map, and retell the main idea.</p><p><strong>Grades 6–8 · build the story:</strong> Read the selected passages, complete the investigation, and support one claim with evidence.</p><p><strong>Grades 9–12 · investigate deeply:</strong> Compare context and interpretations, evaluate sources, and write a passage-based explanation.</p></div></details>' +
+    (deep ? levelMarkup() : '<details class="bpl-level-guide"><summary>Choose the right depth for your learner</summary><div><p><strong>Grades K–5 · guided together:</strong> Ask the big question, read one passage aloud, use the picture or map, and retell the main idea.</p><p><strong>Grades 6–8 · build the story:</strong> Read the selected passages, complete the investigation, and support one claim with evidence.</p><p><strong>Grades 9–12 · investigate deeply:</strong> Compare context and interpretations, evaluate sources, and write a passage-based explanation.</p></div></details>') +
     storyThreadMarkup(lesson.story) +
     '<figure class="bpl-figure" data-zoomable><a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.image.src) + '" alt="' + esc(lesson.image.alt) + '" loading="eager" referrerpolicy="no-referrer"></a><figcaption><p>' + esc(lesson.image.caption) + '</p><small>Image: <a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.image.credit) + '</a> · <a href="' + esc(lesson.image.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.image.license) + '</a> · Wikimedia Commons</small></figcaption></figure>' +
     '<div class="bpl-grid"><section class="bpl-card" id="bpl-question"><p class="bpl-label">Essential question</p><p class="bpl-question">' + esc(lesson.question) + '</p><p class="bpl-scripture"><strong>Read:</strong> ' + esc(lesson.scripture) + '</p></section>' +
@@ -1900,16 +2001,15 @@
       '<article class="bpl-scripture-panel" aria-live="polite" aria-busy="true"><header><div><p class="bpl-reader-reference"></p><p class="bpl-reader-version"></p></div></header><div class="bpl-verses"></div></article>' +
       '<p class="bpl-reader-credit">The default Berean Standard Bible is stored locally and was dedicated to the public domain in 2023. Other editions load from the open <a href="https://github.com/wldeh/bible-api" target="_blank" rel="noopener noreferrer">Bible API dataset</a>; availability and licensing vary and are labeled above. For publication or close textual study, verify wording in an authorized edition.</p>' +
     '</section>' +
+    (deep ? exploreMarkup() : '') +
     '<section class="bpl-card bpl-map"><div class="bpl-map-head"><div><p class="bpl-label">Geographic context</p><h2>See the bigger picture</h2></div><p>Select the map to enlarge labels and terrain.</p></div><div class="bpl-map-grid"><figure class="bpl-map-figure" data-zoomable><a class="bpl-map-image" href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.map.src) + '" alt="' + esc(lesson.map.alt) + '" loading="lazy" referrerpolicy="no-referrer"></a><figcaption>' + esc(lesson.map.note) + '<small>Map: <a href="' + esc(lesson.map.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.map.credit) + '</a> · <a href="' + esc(lesson.map.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.map.license) + '</a> · Wikimedia Commons</small></figcaption></figure></div></section>' +
     gospelRoutesMarkup() +
     sceneBoardMarkup() +
     investigationMarkup(lesson.investigation) +
     '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><figure class="bpl-entity-figure" data-zoomable><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"><figcaption>Reference image for ' + esc(entity.label || entity.title) + '. Read the source article for its origin and image license.</figcaption></figure></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
-    '<section class="bpl-card bpl-explore" id="bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through ' + ['zero','one','two','three','four','five','six','seven','eight'][lesson.lenses.length] + ' lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
-      lesson.lenses.map(function (lens, i) { return '<button class="bpl-lens" type="button" data-lens="' + i + '" aria-pressed="' + (i === 0) + '"><span>Lens ' + (i + 1) + '</span><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '</strong></button>'; }).join('') +
-      '</div><article class="bpl-workspace" aria-live="polite"><h3></h3><p></p><p class="bpl-notice"></p></article></section>' +
-    '<div class="bpl-practice"><section class="bpl-card" id="bpl-explain"><p class="bpl-label">Check and explain</p><h2>' + esc(lesson.check[0]) + '</h2><div class="bpl-choices">' + lesson.check[1].map(function (choice) { return '<button class="bpl-choice" type="button">' + esc(choice) + '</button>'; }).join('') + '</div><p class="bpl-feedback" aria-live="polite">Choose the strongest answer, then explain why.</p></section>' +
-    '<section class="bpl-card bpl-reflection" id="bpl-reflect"><p class="bpl-label">Reflect and respond</p><h2>Make the connection</h2><p>' + esc(lesson.reflect) + '</p><label class="bpl-label" for="bpl-notes">Your notes</label><textarea id="bpl-notes" placeholder="Write observations, evidence, questions, and a faithful response…"></textarea><p class="bpl-save" aria-live="polite">Notes save in this browser.</p></section></div>' +
+    (deep ? '' : exploreMarkup()) +
+    hardMarkup() +
+    '<div class="bpl-practice">' + checkMarkup() + reflectMarkup() + '</div>' +
     '<nav class="bpl-nav" aria-label="Bible pathway lesson navigation">' + link(lessons[index - 1], 'prev') + '<a class="bpl-hub" href="bible-foundations-pathway.html">Pathway hub</a>' + link(lessons[index + 1], 'next') + '</nav>';
 
   var lensButtons = Array.prototype.slice.call(main.querySelectorAll('.bpl-lens'));
@@ -1919,9 +2019,30 @@
     lensButtons.forEach(function (button, buttonIndex) { button.setAttribute('aria-pressed', String(buttonIndex === i)); });
     workspace.querySelector('h3').textContent = lens[0] + ' · ' + lens[1];
     workspace.querySelector('p').textContent = lens[2];
-    workspace.querySelector('.bpl-notice').textContent = lens[3];
+    workspace.querySelector('.bpl-notice').textContent = (deep ? 'Look closely: ' : '') + lens[3];
+    var extras = workspace.querySelector('.bpl-lens-extras');
+    if (extras) {
+      var html = '';
+      if (typeof lens[4] === 'number' && lesson.passages[lens[4]]) html += '<button type="button" class="bpl-open-passage" data-passage="' + lens[4] + '">Read it: ' + esc(passageLabel(lesson.passages[lens[4]])) + ' ↑</button>';
+      if (lens[5]) html += '<div class="bpl-lens-bridge bpl-lv-build"><strong>Connect forward</strong><span>' + esc(lens[5]) + '</span></div>';
+      if (lens[6]) html += '<div class="bpl-lens-hard bpl-lv-investigate"><strong>Hard question</strong><span>' + esc(lens[6]) + '</span></div>';
+      extras.innerHTML = html;
+    }
   }
-  lensButtons.forEach(function (button) { button.addEventListener('click', function () { selectLens(Number(button.dataset.lens)); }); });
+  lensButtons.forEach(function (button) {
+    button.addEventListener('click', function () {
+      selectLens(Number(button.dataset.lens));
+      if (deep && workspace.getBoundingClientRect().top > window.innerHeight * 0.7) workspace.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+    });
+  });
+  workspace.addEventListener('click', function (event) {
+    var open = event.target.closest && event.target.closest('.bpl-open-passage');
+    if (!open) return;
+    var picker = main.querySelector('.bpl-passage-select');
+    picker.value = open.getAttribute('data-passage');
+    picker.dispatchEvent(new Event('change'));
+    main.querySelector('#bpl-read').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+  });
   selectLens(0);
 
   if (id === 'world-of-jesus') {
@@ -2130,7 +2251,7 @@
   }
   loadEntityReferences();
 
-  var choices = Array.prototype.slice.call(main.querySelectorAll('.bpl-choice'));
+  var choices = Array.prototype.slice.call(main.querySelectorAll('.bpl-choice:not(.bpl-multi-choice)'));
   var feedback = main.querySelector('.bpl-feedback');
   choices.forEach(function (button) {
     button.addEventListener('click', function () {
@@ -2149,4 +2270,80 @@
     try { localStorage.setItem(key, notes.value); } catch (ignore) {}
     main.querySelector('.bpl-save').textContent = 'Notes saved in this browser.';
   });
+
+  Array.prototype.forEach.call(main.querySelectorAll('[data-reflect-field]'), function (area) {
+    var fieldKey = key + ':field' + area.getAttribute('data-reflect-field');
+    try { area.value = localStorage.getItem(fieldKey) || ''; } catch (ignore) {}
+    area.addEventListener('input', function () {
+      try { localStorage.setItem(fieldKey, area.value); } catch (ignore) {}
+      main.querySelector('.bpl-save').textContent = 'Notes saved in this browser.';
+    });
+  });
+
+  var checkBlocks = Array.prototype.slice.call(main.querySelectorAll('.bpl-check-item'));
+  var checkScore = main.querySelector('.bpl-checks-score');
+  checkBlocks.forEach(function (block) {
+    var item = checkItems[Number(block.getAttribute('data-check'))];
+    var buttons = Array.prototype.slice.call(block.querySelectorAll('.bpl-multi-choice'));
+    var note = block.querySelector('.bpl-feedback');
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var pick = Number(button.getAttribute('data-choice'));
+        var right = pick === item[2];
+        buttons.forEach(function (candidate) { candidate.classList.remove('is-right', 'is-wrong'); });
+        button.classList.add(right ? 'is-right' : 'is-wrong');
+        if (!right) buttons[item[2]].classList.add('is-right');
+        note.textContent = (right ? 'Yes. ' : 'Not quite. ') + item[3];
+        if (!block.hasAttribute('data-done')) {
+          block.setAttribute('data-done', '');
+          if (right) block.setAttribute('data-first-try', '');
+        }
+        checkScore.textContent = main.querySelectorAll('.bpl-check-item[data-done]').length + ' of ' + checkBlocks.length + ' answered · ' + main.querySelectorAll('.bpl-check-item[data-first-try]').length + ' right on the first try';
+      });
+    });
+  });
+
+  var levelButtons = Array.prototype.slice.call(main.querySelectorAll('.bpl-level-buttons button'));
+  var levelNote = main.querySelector('.bpl-level-note');
+  function applyLevel(next, remember) {
+    main.setAttribute('data-level', next);
+    levelButtons.forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-level') === next)); });
+    levels.forEach(function (item) { if (item[0] === next && levelNote) levelNote.textContent = item[2]; });
+    if (remember) { try { localStorage.setItem('bible-pathway-level', next); } catch (ignore) {} }
+  }
+  levelButtons.forEach(function (button) { button.addEventListener('click', function () { applyLevel(button.getAttribute('data-level'), true); }); });
+  if (levelButtons.length) applyLevel(level, false);
+
+  var rail = main.querySelector('.bpl-learning-flow');
+  if (deep && rail) {
+    var railLinks = Array.prototype.slice.call(rail.querySelectorAll('a'));
+    var seenKey = 'bible-pathway-seen:' + lesson.id;
+    var seen = [];
+    try { seen = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch (ignore) {}
+    var paintRail = function (activeId) {
+      railLinks.forEach(function (anchor) {
+        var sectionId = anchor.getAttribute('href').slice(1);
+        anchor.classList.toggle('is-seen', seen.indexOf(sectionId) > -1);
+        if (sectionId === activeId) {
+          anchor.setAttribute('aria-current', 'location');
+          rail.scrollTo({ left: Math.max(0, anchor.offsetLeft - rail.clientWidth / 2 + anchor.offsetWidth / 2), behavior: 'auto' });
+        } else anchor.removeAttribute('aria-current');
+      });
+    };
+    paintRail(null);
+    if ('IntersectionObserver' in window) {
+      var railTargets = railLinks.map(function (anchor) { return main.querySelector(anchor.getAttribute('href')); }).filter(Boolean);
+      var visibleRatio = {};
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) { visibleRatio[entry.target.id] = entry.isIntersecting ? entry.intersectionRatio : 0; });
+        var best = null; var bestRatio = 0;
+        railTargets.forEach(function (target) { if ((visibleRatio[target.id] || 0) > bestRatio) { best = target.id; bestRatio = visibleRatio[target.id]; } });
+        if (!best) return;
+        if (seen.indexOf(best) < 0) { seen.push(best); try { localStorage.setItem(seenKey, JSON.stringify(seen)); } catch (ignore) {} }
+        paintRail(best);
+      }, { threshold: [0.15, 0.4, 0.7] });
+      railTargets.forEach(function (target) { observer.observe(target); });
+    }
+  }
+
 }());
