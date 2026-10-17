@@ -1,0 +1,75 @@
+/* Photo gallery: a grid of lightbox photos (figure[data-zoomable], see photo-lightbox.js),
+   each with a short caption and a credit line. Use for real equipment, archival photos
+   and primary sources in any lesson.
+
+     <div class="pg-grid">
+       <figure class="pg-card" data-zoomable data-lightbox-group="lesson">
+         <img src="…" alt="…" loading="lazy" />
+         <figcaption><strong>Title</strong><span>Teaching point.</span>
+           <span class="pg-credit">Author · License · <a href="…">source</a></span></figcaption>
+       </figure>
+     </div>
+
+   Colours come from the theme tokens; a page with its own palette sets the --pg-* properties
+   on the grid or any ancestor. Add .pg-contain to a card whose picture must not be cropped
+   (plans, diagrams, book pages). */
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.pg-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--pg-line, var(--line, #d2d2d7));
+  border-radius: 12px;
+  background: var(--pg-card-bg, var(--surface-elevated, #fff));
+}
+.pg-card img {
+  display: block;
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.pg-card.pg-contain img { object-fit: contain; background: var(--pg-paper, #f4f1e8); }
+.pg-card figcaption {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  gap: 0.3rem;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--pg-text, var(--text-secondary, #3f4f65));
+}
+.pg-card figcaption strong { font-size: 0.9rem; color: var(--pg-heading, var(--text, #1d1d1f)); }
+.pg-credit {
+  margin-top: auto;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--pg-line, var(--line, #d2d2d7));
+  font-size: 0.72rem;
+  color: var(--pg-muted, var(--text-muted, #64748b));
+}
+.pg-credit a { color: inherit; }
+
+@media print {
+  /* Wrapping flex rows, not grid: Chrome breaks between flex lines across pages reliably,
+     while a grid here could move to the next page whole and leave a gap behind it. */
+  .pg-grid { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .pg-card { width: calc((100% - 1.2rem) / 3); }
+  .pg-card { background: #fff; border-color: #c7c7cc; }
+  /* !important: lesson-print.css gives every img height:auto !important; gallery thumbs stay short. */
+  .pg-card img { height: 1.25in !important; object-fit: cover !important; }
+  .pg-card.pg-contain img { object-fit: contain !important; }
+  /* lesson-print.css keeps every figcaption with what follows; here the caption ends the card,
+     and that rule would stop a page break between gallery rows. */
+  .pg-card figcaption { color: #374151; font-size: 9pt; break-after: auto; page-break-after: auto; }
+  .pg-card figcaption strong { color: #111827; }
+  .pg-credit { color: #4b5563; }
+}
