@@ -83,6 +83,26 @@
       font-size: 0.65rem; color: rgba(120,200,255,0.7); pointer-events: none;
       display: none;
     }
+    .heatmap-legend {
+      position: absolute; top: 14px; right: 16px;
+      background: rgba(0,8,30,0.78); backdrop-filter: blur(8px);
+      border: 1px solid rgba(100,160,255,0.28);
+      border-radius: 10px; padding: 7px 11px;
+      font-size: 0.64rem; color: #c8dcff; pointer-events: none;
+      display: none; flex-direction: column; gap: 4px; min-width: 156px;
+    }
+    .heatmap-legend.visible { display: flex; }
+    .heatmap-legend-title { font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #a8c8ff; font-size: 0.6rem; }
+    .heatmap-bar {
+      height: 7px; border-radius: 999px;
+      background: linear-gradient(90deg, #2b83ba 0%, #80cdc1 20%, #f7f7f7 33%, #fee08b 50%, #f46d43 72%, #b2182b 90%, #67001f 100%);
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .heatmap-ticks {
+      display: flex; justify-content: space-between;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 0.58rem; color: rgba(190,215,255,0.75);
+    }
 
     /* ── Control Panel ── */
     .ctrl-panel {
@@ -114,6 +134,19 @@
       color: rgba(160,190,255,0.7); transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
     .preset-btn:hover { background: rgba(80,120,255,0.15); color: #c8e0ff; border-color: rgba(100,160,255,0.4); }
+    .preset-btn.active { background: rgba(60,120,255,0.24); color: #ffffff; border-color: rgba(110,175,255,0.65); box-shadow: 0 0 10px rgba(60,120,255,0.22); }
+    .feedback-toggle {
+      margin-top: 7px; width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1px solid rgba(60,100,220,0.25); border-radius: 9px; padding: 6px 10px;
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em;
+      background: rgba(0,12,34,0.55); color: rgba(175,205,255,0.78);
+      cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .feedback-toggle:hover { background: rgba(60,110,235,0.15); color: #d4e6ff; }
+    .feedback-toggle[aria-pressed="true"] {
+      background: rgba(255,120,40,0.16); border-color: rgba(255,140,60,0.5); color: #ffc899;
+    }
     @media (max-width: 520px) { .preset-row { grid-template-columns: repeat(2, 1fr); } }
 
     /* Params */
@@ -240,12 +273,19 @@
     .p-storm-arm { fill: none; stroke-linecap: round; }
     .p-heat { fill: none; }
 
-    @keyframes floatUp   { 0%{opacity:.85;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,-70px)) scale(.4)} }
-    @keyframes rainDrop  { 0%{opacity:.7;transform:translateY(0)} 100%{opacity:0;transform:translateY(55px)} }
-    @keyframes stormSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    @keyframes heatRing  { 0%,100%{opacity:.08;r:8} 50%{opacity:.45;r:22} }
-    @keyframes leafSway  { 0%,100%{transform:rotate(-8deg) scale(1)} 50%{transform:rotate(8deg) scale(1.05)} }
-    @keyframes wavePulse { 0%{opacity:.6;transform:scaleX(1)} 50%{opacity:.2;transform:scaleX(1.3)} 100%{opacity:.6;transform:scaleX(1)} }
+    @keyframes floatUp      { 0%{opacity:.85;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--dx,0px),var(--dy,-70px)) scale(.4)} }
+    @keyframes rainDrop     { 0%{opacity:.7;transform:translateY(0)} 100%{opacity:0;transform:translateY(55px)} }
+    @keyframes stormSpin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes stormSpinCCW { from{transform:rotate(0deg)} to{transform:rotate(-360deg)} }
+    @keyframes heatRing     { 0%,100%{opacity:.08;r:8} 50%{opacity:.45;r:22} }
+    @keyframes leafSway     { 0%,100%{transform:rotate(-8deg) scale(1)} 50%{transform:rotate(8deg) scale(1.05)} }
+    @keyframes wavePulse    { 0%{opacity:.6;transform:scaleX(1)} 50%{opacity:.2;transform:scaleX(1.3)} 100%{opacity:.6;transform:scaleX(1)} }
+    @keyframes streamFlow   { from{stroke-dashoffset:24} to{stroke-dashoffset:0} }
+
+    .cs-note {
+      max-width: 1400px; margin: 0.75rem auto 1.5rem; padding: 0 1.2rem;
+      font-size: 0.72rem; line-height: 1.5; color: rgba(165, 195, 240, 0.55);
+    }
 
     /* ── Geoscape-lite HUD accents (subtle — layered on the existing rounded
        dark-blue shell, not a replacement of it) ── */
@@ -361,6 +401,11 @@
         <g id="particle-root"></g>
       </svg>
       <div class="mode-badge" id="mode-badge">🌪️ Weather Patterns</div>
+      <div class="heatmap-legend" id="heatmap-legend" aria-hidden="true">
+        <span class="heatmap-legend-title">Local Anomaly (GISTEMP Scale)</span>
+        <div class="heatmap-bar"></div>
+        <div class="heatmap-ticks"><span>-2°C</span><span>0°C</span><span>+2°C</span><span>+4°C</span><span>+6°C</span></div>
+      </div>
       <div class="drag-hint">Drag to rotate · Scroll to zoom</div>
       <div class="data-badge" id="rb-badge">Rayleigh-Bénard · The Well (NeurIPS 2024)</div>
     </div>
@@ -396,10 +441,14 @@
               <h3 style="margin-bottom:0.5rem;">Scenarios</h3>
               <div class="preset-row" id="preset-row">
                 <button class="preset-btn" data-preset="preindustrial" title="1850: CO₂ 280 ppm, full ice cover, no deforestation">Pre-industrial</button>
-                <button class="preset-btn" data-preset="today" title="2026: CO₂ 429 ppm, current observed conditions">Today</button>
+                <button class="preset-btn active" data-preset="today" title="2026: CO₂ 429 ppm, current observed conditions">Today</button>
                 <button class="preset-btn" data-preset="paris" title="A ~1.5°C-aligned stabilization path">Paris path</button>
                 <button class="preset-btn" data-preset="bau" title="High-emissions, business-as-usual 2100 case">Business as usual</button>
               </div>
+              <button type="button" class="feedback-toggle" id="feedback-toggle" aria-pressed="false" title="When active, high deforestation and warming slowly drive CO₂, permafrost CH₄, and ice retreat over time">
+                <span>🔁 Coupled Feedback Drift</span>
+                <strong id="feedback-state">Hold Steady</strong>
+              </button>
             </div>
 
             <div class="mode-tabs" id="mode-tabs">
@@ -414,12 +463,12 @@
 
               <div class="param-row">
                 <div class="param-label">CO₂ Concentration <strong id="v-co2">429 ppm</strong></div>
-                <input type="range" id="s-co2" min="280" max="700" value="429" step="5" />
+                <input type="range" id="s-co2" min="280" max="700" value="429" step="1" />
                 <div class="range-ends"><span>280 pre-industrial</span><span>700 crisis</span></div>
               </div>
 
               <div class="param-row">
-                <div class="param-label">Solar Irradiance <strong id="v-solar">100%</strong></div>
+                <div class="param-label">Solar Irradiance <strong id="v-solar">100.0%</strong></div>
                 <input type="range" id="s-solar" min="95" max="105" value="100" step="0.1" />
                 <div class="range-ends"><span>95% dim</span><span>105% bright</span></div>
               </div>
@@ -437,9 +486,9 @@
               </div>
 
               <div class="param-row">
-                <div class="param-label">Methane CH₄ <strong id="v-ch4">1 930 ppb</strong></div>
-                <input type="range" id="s-ch4" min="700" max="4000" value="1930" step="50" />
-                <div class="range-ends"><span>700 ppb natural</span><span>4 000 ppb extreme</span></div>
+                <div class="param-label">Methane CH₄ <strong id="v-ch4">1,930 ppb</strong></div>
+                <input type="range" id="s-ch4" min="700" max="4000" value="1930" step="1" />
+                <div class="range-ends"><span>700 ppb natural</span><span>4,000 ppb extreme</span></div>
               </div>
 
               <div class="param-row">
@@ -455,15 +504,15 @@
               <div class="readout-grid">
                 <div class="readout-card">
                   <span class="readout-lbl">Temp Anomaly</span>
-                  <span class="readout-val neutral" id="out-temp">+1.2°C</span>
+                  <span class="readout-val neutral" id="out-temp">+1.3°C</span>
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Sea Level</span>
-                  <span class="readout-val blue" id="out-sea">+0.28 m</span>
+                  <span class="readout-val blue" id="out-sea">+0.25 m</span>
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Ocean pH</span>
-                  <span class="readout-val neutral" id="out-ph">8.07</span>
+                  <span class="readout-val neutral" id="out-ph">8.06</span>
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Storm Index</span>
@@ -471,11 +520,11 @@
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Radiative Forcing</span>
-                  <span class="readout-val warm" id="out-forcing">+2.1 W/m²</span>
+                  <span class="readout-val warm" id="out-forcing">+2.7 W/m²</span>
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Polar Ice Left</span>
-                  <span class="readout-val blue" id="out-icecover">58%</span>
+                  <span class="readout-val blue" id="out-icecover">56%</span>
                 </div>
               </div>
               <div class="alert-bar safe" id="alert-bar" style="margin-top:10px"></div>
@@ -495,22 +544,22 @@
             <h3>About This Model</h3>
             <div class="info-grid" style="margin-top:0.7rem">
               <div class="info-card">
-                <h4>🌿 Carbon Cycle</h4>
-                <p>CO₂ and CH₄ trap outgoing infrared radiation. The model uses the classic Myhre et al. (1998) radiative forcing formula: <em>ΔF = 5.35 × ln(C/C₀)</em> for CO₂, scaled by the methane forcing contribution. IPCC AR6 now uses a refined version of this relationship (Etminan et al. 2016, via Meinshausen et al. 2020) — the logarithmic form here is a close, teachable approximation of it. Forests remove ~2.6 Gt CO₂/yr — deforestation reduces this sink.</p>
+                <h4>🌿 Carbon &amp; Methane Forcing</h4>
+                <p>CO₂ and CH₄ trap outgoing longwave radiation. The model combines logarithmic CO₂ forcing (<em>ΔF = 5.35 × ln(C/280)</em>, Myhre et al. 1998) with square-root CH₄ absorption band scaling (<em>0.036 × (√M − √722)</em>) and land-use carbon sink loss. At high warming, thawing Arctic permafrost releases additional CH₄.</p>
               </div>
               <div class="info-card">
-                <h4>☀️ Energy Balance</h4>
-                <p>Earth's temperature is set by the balance of incoming solar energy and outgoing thermal radiation. Ice and snow reflect sunlight (high albedo). As ice melts, the darker ocean absorbs more heat — a positive feedback loop that amplifies warming.</p>
+                <h4>☀️ Albedo &amp; Polar Amplification</h4>
+                <p>Earth's temperature balances absorbed sunlight against outgoing infrared radiation. Sea ice and continental glaciers reflect sunlight (high albedo). As ice retreats, dark ocean absorbs more solar energy — driving <strong>Arctic amplification</strong> (poles warming 2–3× faster than the global average) and faster warming over land than ocean.</p>
               </div>
               <div class="info-card">
-                <h4>🌊 Ocean Systems</h4>
-                <p>Oceans absorb ~90% of excess heat and ~30% of CO₂ emissions, slowing surface warming but causing acidification. As pH drops below 8.0, coral reefs and shellfish are threatened. Warmer seas fuel more intense hurricanes and alter global currents.</p>
+                <h4>🌊 Ocean Inertia &amp; Chemistry</h4>
+                <p>Oceans absorb ~90% of excess heat (delaying surface equilibrium via thermal inertia) and ~30% of CO₂ emissions. Dissolved CO₂ forms carbonic acid, lowering surface pH logarithmically (<em>8.18 − 0.37 log₁₀(C/280)</em>). Warmer sea surface temperatures and latent heat fuel stronger Coriolis-spun tropical cyclones.</p>
               </div>
             </div>
           </div>
           <div class="ctrl-card">
             <h3>Go Deeper</h3>
-            <p style="font-size:0.82rem;line-height:1.6;color:inherit;">This simulator's weather and convection patterns are a simplified, hand-tuned model. Real climate scientists train machine learning models on physical simulations like the <strong>Rayleigh-Bénard convection</strong> runs in <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer" style="color:#7ab8ff;">The Well</a> — a free 15TB collection of fluid dynamics, turbulence, and other physics simulation datasets released by Polymathic AI for training and testing ML models on physical systems.</p>
+            <p style="font-size:0.82rem;line-height:1.6;color:inherit;">This simulator blends energy-balance physics with GPU surface shaders and a <strong>Rayleigh-Bénard thermal convection</strong> field in the ocean layer. Real climate scientists train machine learning models on fluid dynamics runs from <a href="https://polymathic-ai.org/the_well/" target="_blank" rel="noopener noreferrer" style="color:#7ab8ff;">The Well</a> — a 15TB collection of turbulence, convection, and geophysical fluid simulations released by Polymathic AI (NeurIPS 2024).</p>
           </div>
         </div><!-- #cs-pane-guide -->
 

@@ -425,9 +425,27 @@
     }));
   }
 
+  function loadPathwayNavigation() {
+    if (location.pathname.indexOf('/lessons/bible-studies/') === -1 || document.getElementById('bible-pathway-data-script')) return;
+    function loadNav() {
+      if (document.getElementById('bible-pathway-nav-script')) return;
+      var nav = document.createElement('script');
+      nav.id = 'bible-pathway-nav-script';
+      nav.src = new URL('assets/js/bible-pathway-nav.js', base).href;
+      document.body.appendChild(nav);
+    }
+    if (window.BiblePathway) { loadNav(); return; }
+    var dataScript = document.createElement('script');
+    dataScript.id = 'bible-pathway-data-script';
+    dataScript.src = new URL('assets/js/bible-pathway-data.js', base).href;
+    dataScript.addEventListener('load', loadNav, { once: true });
+    document.body.appendChild(dataScript);
+  }
+
   function init() {
     addStyles();
     placePill();
+    loadPathwayNavigation();
     loadMeta().then(linkReferences).catch(function () { /* no data: links still open the reader */ });
   }
 

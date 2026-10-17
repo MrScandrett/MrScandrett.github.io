@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Area &amp; Perimeter Playground · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Mathematics lesson on area and perimeter with a clickable grid builder, worked examples, guided practice, and an interactive answer checker." />
+  <meta name="description" content="Mathematics lesson on area and perimeter with an accessible polyomino grid builder, outer-edge perimeter visualizer, parallelogram shear and triangle unfold lab, worked examples, and interactive checks." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -48,6 +48,9 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.8rem;
       margin-top: 0.85rem;
+    }
+    .arp-rule-four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .arp-rule-box {
       border: 1px solid var(--line, #d2d2d7);
@@ -105,29 +108,110 @@
     [data-lighting="night"] .arp-workspace,
     [data-theme="vaporwave"] .arp-workspace,
     [data-theme="bark"] .arp-workspace { background: rgba(255,255,255,0.04); }
+
+    .arp-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.9rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary, #3f4f65);
+    }
+    [data-lighting="night"] .arp-legend,
+    [data-theme="vaporwave"] .arp-legend,
+    [data-theme="bark"] .arp-legend { color: rgba(245,245,247,0.78); }
+    .arp-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .arp-swatch-area {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: rgba(234,88,12,0.78);
+      border: 1px solid rgba(255,255,255,0.45);
+      display: inline-block;
+    }
+    .arp-swatch-perim {
+      width: 16px;
+      height: 4px;
+      border-radius: 2px;
+      background: #0f172a;
+      display: inline-block;
+    }
+    [data-lighting="night"] .arp-swatch-perim,
+    [data-theme="vaporwave"] .arp-swatch-perim,
+    [data-theme="bark"] .arp-swatch-perim { background: #fde047; }
+
     .arp-grid {
       display: grid;
       grid-template-columns: repeat(10, minmax(0, 1fr));
-      gap: 2px;
+      gap: 0;
       max-width: 380px;
       margin: 0 auto 0.9rem;
       aspect-ratio: 1;
       user-select: none;
       touch-action: none;
+      border: 1.5px solid var(--line, #cbd5e1);
+      border-radius: 6px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.03);
     }
     .arp-cell {
-      background: rgba(0,0,0,0.045);
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 2px;
+      position: relative;
+      background: rgba(0,0,0,0.035);
+      border: 1px dashed rgba(100,116,139,0.28);
       cursor: pointer;
+      box-sizing: border-box;
+      transition: background-color 0.08s ease;
     }
     [data-lighting="night"] .arp-cell,
     [data-theme="vaporwave"] .arp-cell,
-    [data-theme="bark"] .arp-cell { background: rgba(255,255,255,0.035); border-color: rgba(255,255,255,0.14); }
-    .arp-cell.on { background: #ea580c; border-color: #ea580c; }
+    [data-theme="bark"] .arp-cell {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.14);
+    }
+    .arp-cell:hover {
+      background: rgba(234,88,12,0.18);
+    }
+    .arp-cell:focus-visible {
+      outline: 2.5px solid #0ea5e9;
+      outline-offset: -2px;
+      z-index: 3;
+    }
+    .arp-cell.on {
+      background: rgba(234,88,12,0.82);
+      border: 1px solid rgba(255,255,255,0.38);
+    }
+    [data-lighting="night"] .arp-cell.on,
+    [data-theme="vaporwave"] .arp-cell.on,
+    [data-theme="bark"] .arp-cell.on {
+      background: rgba(234,88,12,0.84);
+      border-color: rgba(255,255,255,0.26);
+    }
+    /* Highlighted outer perimeter edges */
+    .arp-cell.on.edge-t { border-top: 3.5px solid #0f172a; }
+    .arp-cell.on.edge-r { border-right: 3.5px solid #0f172a; }
+    .arp-cell.on.edge-b { border-bottom: 3.5px solid #0f172a; }
+    .arp-cell.on.edge-l { border-left: 3.5px solid #0f172a; }
+    [data-lighting="night"] .arp-cell.on.edge-t,
+    [data-theme="vaporwave"] .arp-cell.on.edge-t,
+    [data-theme="bark"] .arp-cell.on.edge-t { border-top: 3.5px solid #fde047; }
+    [data-lighting="night"] .arp-cell.on.edge-r,
+    [data-theme="vaporwave"] .arp-cell.on.edge-r,
+    [data-theme="bark"] .arp-cell.on.edge-r { border-right: 3.5px solid #fde047; }
+    [data-lighting="night"] .arp-cell.on.edge-b,
+    [data-theme="vaporwave"] .arp-cell.on.edge-b,
+    [data-theme="bark"] .arp-cell.on.edge-b { border-bottom: 3.5px solid #fde047; }
+    [data-lighting="night"] .arp-cell.on.edge-l,
+    [data-theme="vaporwave"] .arp-cell.on.edge-l,
+    [data-theme="bark"] .arp-cell.on.edge-l { border-left: 3.5px solid #fde047; }
+
     .arp-readout {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.55rem;
     }
     .arp-readout-item {
@@ -141,33 +225,132 @@
     [data-theme="vaporwave"] .arp-readout-item,
     [data-theme="bark"] .arp-readout-item { background: rgba(255,255,255,0.045); }
     .arp-readout-item span { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-bottom: 0.15rem; }
-    .arp-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.15rem; }
-    .arp-tools { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
+    .arp-readout-item strong { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 1.08rem; }
+
+    .arp-tools { display: flex; gap: 0.45rem; justify-content: center; margin-top: 0.8rem; flex-wrap: wrap; }
     .arp-tool-btn {
       border: 1.5px solid var(--line, #d2d2d7);
       border-radius: 8px;
-      padding: 0.45rem 0.75rem;
+      padding: 0.42rem 0.68rem;
       background: var(--white, #fff);
       color: var(--text, #1d1d1f);
-      font: 700 0.8rem var(--font-sans);
+      font: 700 0.78rem var(--font-sans);
       cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.1s ease;
     }
     [data-lighting="night"] .arp-tool-btn,
     [data-theme="vaporwave"] .arp-tool-btn,
     [data-theme="bark"] .arp-tool-btn { background: rgba(255,255,255,0.04); }
     .arp-tool-btn:hover { border-color: #ea580c; }
+    .arp-tool-btn.active { border-color: #ea580c; background: rgba(234,88,12,0.12); }
+
     .arp-challenge {
       margin-top: 0.85rem;
       border: 1px solid rgba(234,88,12,0.25);
       border-radius: 10px;
-      padding: 0.8rem;
+      padding: 0.85rem;
       background: rgba(234,88,12,0.05);
-      font-size: 0.86rem;
+      font-size: 0.85rem;
     }
     [data-lighting="night"] .arp-challenge,
     [data-theme="vaporwave"] .arp-challenge,
     [data-theme="bark"] .arp-challenge { background: rgba(255,255,255,0.04); }
     .arp-challenge strong { display: block; margin-bottom: 0.3rem; }
+    .arp-challenge-goals {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-top: 0.6rem;
+    }
+    .arp-goal-badge {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      background: var(--white, #fff);
+      font-size: 0.79rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    [data-lighting="night"] .arp-goal-badge,
+    [data-theme="vaporwave"] .arp-goal-badge,
+    [data-theme="bark"] .arp-goal-badge { background: rgba(255,255,255,0.04); }
+    .arp-goal-badge.done {
+      border-color: #16a34a;
+      background: rgba(22,163,74,0.12);
+      font-weight: 700;
+    }
+    .arp-challenge-win {
+      margin-top: 0.6rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 8px;
+      background: rgba(22,163,74,0.14);
+      border: 1px solid rgba(22,163,74,0.4);
+      color: var(--text, #1d1d1f);
+      font-size: 0.81rem;
+      font-weight: 600;
+      display: none;
+    }
+    .arp-challenge-win.visible { display: block; }
+
+    /* Lab 2: Shear & Unfold SVG Lab */
+    .arp-shear-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+    }
+    .arp-mode-group {
+      display: inline-flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .arp-sliders {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 0.85rem;
+    }
+    .arp-slider-box {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.55rem 0.7rem;
+      background: var(--white, #fff);
+    }
+    [data-lighting="night"] .arp-slider-box,
+    [data-theme="vaporwave"] .arp-slider-box,
+    [data-theme="bark"] .arp-slider-box { background: rgba(255,255,255,0.04); }
+    .arp-slider-box label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .arp-slider-box input[type="range"] {
+      width: 100%;
+      accent-color: #0d9488;
+      cursor: pointer;
+    }
+    .arp-svg-stage {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto 0.85rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      background: var(--white, #fff);
+      overflow: hidden;
+    }
+    [data-lighting="night"] .arp-svg-stage,
+    [data-theme="vaporwave"] .arp-svg-stage,
+    [data-theme="bark"] .arp-svg-stage { background: rgba(15,23,42,0.55); }
+    .arp-svg-stage svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
 
     .arp-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
     .arp-choice {
@@ -220,7 +403,7 @@
     .arp-practice { display: grid; gap: 0.72rem; margin-top: 0.85rem; }
     .arp-practice-item {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
       gap: 0.55rem;
       align-items: center;
       border: 1px solid var(--line, #d2d2d7);
@@ -263,9 +446,10 @@
 
     @media (max-width: 900px) {
       .arp-activity { grid-template-columns: 1fr; }
+      .arp-rule-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 640px) {
-      .arp-rule, .arp-options, .arp-readout { grid-template-columns: 1fr; }
+      .arp-rule, .arp-rule-four, .arp-options, .arp-readout, .arp-sliders, .arp-challenge-goals { grid-template-columns: 1fr; }
       .arp-example-row, .arp-practice-item { grid-template-columns: 1fr; }
       .arp-practice-item input { width: 100%; }
     }
@@ -296,60 +480,124 @@
     <div class="ll-sim">
       <main id="main-content" class="arp-page">
         <section class="hero arp-hero">
-          <p class="eyebrow">Mathematics · Lesson 10</p>
+          <p class="eyebrow">Mathematics · Geometry &amp; Measurement · Area &amp; Perimeter</p>
           <h1>Area &amp; Perimeter Playground</h1>
           <div class="arp-hero-meta">
-            <span>Area = space inside a shape</span><span class="dot"></span>
-            <span>Perimeter = distance around a shape</span><span class="dot"></span>
-            <span>Same perimeter, different area</span>
+            <span>Area = 2D surface inside</span><span class="dot"></span>
+            <span>Perimeter = 1D boundary around</span><span class="dot"></span>
+            <span>Polyominoes, Parallelograms &amp; Triangles</span>
           </div>
-          <p class="arp-lede">Area and perimeter measure two different things about the same shape. In this lesson, students click cells on a grid to build shapes and watch area and perimeter update instantly, then take on a challenge to build shapes with equal perimeter but different area.</p>
+          <p class="arp-lede">Area and perimeter measure two fundamentally different things about a shape: how many square units cover its interior versus how many linear units wrap around its outer boundary. Build shapes on a polyomino grid to see which edges count toward perimeter, then shear parallelograms and unfold twin triangles to see why their area formulas work.</p>
         </section>
 
         <section class="arp-card" style="--card-accent:#ea580c;">
           <h2>Learning Target</h2>
-          <p><strong>I can find the area and perimeter of a shape built from grid squares and explain what each measures.</strong></p>
-          <p>By the end of the lesson, students should be able to count filled squares to find area, count outer edges to find perimeter, and explain why two shapes can share a perimeter but have very different areas.</p>
+          <p><strong>I can find the area and perimeter of grid shapes, rectangles, parallelograms, and triangles, and explain why shapes with the same perimeter can enclose different areas.</strong></p>
+          <p>By the end of the lesson, students will distinguish interior unit squares from exterior boundary segments, prove why shared interior edges reduce perimeter, and use geometric rearrangement to derive <em>A = b &times; h</em> for parallelograms and <em>A = &frac12; &times; b &times; h</em> for triangles.</p>
         </section>
 
         <section class="arp-card" style="--card-accent:#c2410c;">
-          <h2>Area vs. Perimeter</h2>
-          <p>Area measures how much surface a shape covers. Perimeter measures the distance around its outside edge.</p>
-          <div class="arp-rule">
-            <div class="arp-rule-box"><strong>Area</strong><span>Count the unit squares that make up the shape. For a rectangle, area = length &times; width.</span></div>
-            <div class="arp-rule-box"><strong>Perimeter</strong><span>Count every outer edge of the shape. For a rectangle, perimeter = 2 &times; (length + width).</span></div>
+          <h2>Area vs. Perimeter &amp; Core Formulas</h2>
+          <p>Area measures 2D surface coverage in <strong>square units</strong> (units<sup>2</sup>). Perimeter measures 1D boundary distance in <strong>linear units</strong>.</p>
+          <div class="arp-rule arp-rule-four">
+            <div class="arp-rule-box"><strong>Rectangle Area</strong><span><em>A = &ell; &times; w</em><br/>Count the unit squares arranged in <em>&ell;</em> columns and <em>w</em> rows.</span></div>
+            <div class="arp-rule-box"><strong>Outer Perimeter</strong><span><em>P = 2(&ell; + w)</em><br/>Sum all outer boundary edges. Shared inner edges do not count!</span></div>
+            <div class="arp-rule-box"><strong>Parallelogram</strong><span><em>A = b &times; h</em><br/>Use perpendicular height <em>h</em> (not the slanted side <em>c</em>) times base <em>b</em>.</span></div>
+            <div class="arp-rule-box"><strong>Triangle</strong><span><em>A = &frac12; &times; b &times; h</em><br/>Every triangle is exactly half of a <em>b &times; h</em> parallelogram.</span></div>
           </div>
         </section>
 
         <section class="arp-card" style="--card-accent:#7c3aed;">
           <h2>Worked Example</h2>
-          <p>Find the area and perimeter of a rectangle that is 4 units long and 3 units wide.</p>
+          <p>Compare a 4 &times; 3 rectangle with a parallelogram of base <em>b</em> = 6, perpendicular height <em>h</em> = 4, and slanted side <em>c</em> = 5.</p>
           <div class="arp-example">
-            <div class="arp-example-row"><div class="arp-math">Area = 4 &times; 3</div><div class="arp-note">Multiply length by width to count the squares inside.</div></div>
-            <div class="arp-example-row"><div class="arp-math">Area = 12 square units</div><div class="arp-note">Twelve unit squares fit inside the rectangle.</div></div>
-            <div class="arp-example-row"><div class="arp-math">Perimeter = 2 &times; (4 + 3)</div><div class="arp-note">Add length and width, then double it for all four sides.</div></div>
-            <div class="arp-example-row"><div class="arp-math">Perimeter = 14 units</div><div class="arp-note">Walking all the way around the rectangle covers 14 units.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Rectangle Area = 4 &times; 3 = 12 sq units</div><div class="arp-note">4 columns of 3 unit squares fit inside the rectangle.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Rectangle Perimeter = 2 &times; (4 + 3) = 14 units</div><div class="arp-note">Walking around the outside boundary covers 4 + 3 + 4 + 3 = 14 linear units.</div></div>
+            <div class="arp-example-row"><div class="arp-math">Parallelogram Area = 6 &times; 4 = 24 sq units</div><div class="arp-note">Multiply base (6) by perpendicular height (4). Ignore the slanted side (5) when finding area!</div></div>
+            <div class="arp-example-row"><div class="arp-math">Parallelogram Perimeter = 2 &times; (6 + 5) = 22 units</div><div class="arp-note">Perimeter follows the actual outside fence: two bases of 6 plus two slanted sides of 5.</div></div>
           </div>
         </section>
 
         <section class="arp-card" style="--card-accent:#0ea5e9;">
-          <h2>Build a Shape</h2>
-          <p>Click cells to toggle them on or off. Area and perimeter update live below the grid.</p>
+          <h2>Lab 1 · Polyomino Grid Builder &amp; Boundary Highlighter</h2>
+          <p>Click or drag across cells (or use <kbd>Tab</kbd> and <kbd>Enter</kbd>/<kbd>Space</kbd>) to paint unit squares. Notice how <strong>bold outer edges</strong> mark the exterior perimeter fence, while pale interior edges shared between touching squares are hidden inside the shape.</p>
           <div class="arp-workspace">
-            <div class="arp-grid" id="arp-grid"></div>
+            <div class="arp-legend" aria-hidden="true">
+              <span class="arp-legend-item"><span class="arp-swatch-area"></span> Filled Square = 1 sq unit of Area</span>
+              <span class="arp-legend-item"><span class="arp-swatch-perim"></span> Bold Outer Edge = 1 unit of Perimeter (shared inner edges don't count!)</span>
+            </div>
+            <div class="arp-grid" id="arp-grid" role="group" aria-label="10 by 10 polyomino grid builder"></div>
             <div class="arp-readout">
               <div class="arp-readout-item"><span>Cells On</span><strong id="arp-cells">0</strong></div>
               <div class="arp-readout-item"><span>Area</span><strong id="arp-area">0 sq units</strong></div>
-              <div class="arp-readout-item"><span>Perimeter</span><strong id="arp-perimeter">0 units</strong></div>
+              <div class="arp-readout-item"><span>Outer Perimeter</span><strong id="arp-perimeter">0 units</strong></div>
+              <div class="arp-readout-item"><span>Shared Inner Edges</span><strong id="arp-shared">0 pairs</strong></div>
             </div>
             <div class="arp-tools">
               <button class="arp-tool-btn" type="button" id="arp-clear">Clear Grid</button>
-              <button class="arp-tool-btn" type="button" id="arp-rect-3x4">Fill 3&times;4 Rectangle</button>
+              <button class="arp-tool-btn" type="button" id="arp-rect-3x4">3&times;4 Rectangle (A=12, P=14)</button>
+              <button class="arp-tool-btn" type="button" id="arp-preset-1x7">1&times;7 Strip (A=7, P=16)</button>
+              <button class="arp-tool-btn" type="button" id="arp-preset-4x4">4&times;4 Square (A=16, P=16)</button>
+              <button class="arp-tool-btn" type="button" id="arp-preset-l">L-Shape (A=7, P=16)</button>
+              <button class="arp-tool-btn" type="button" id="arp-preset-plus">Plus Sign (A=5, P=12)</button>
             </div>
             <div class="arp-challenge">
-              <strong>Challenge</strong>
-              Build a shape with a perimeter of exactly 16 units. Then clear it and build a second, differently-shaped one that also has a perimeter of 16 units. Compare the two areas &mdash; are they the same?
+              <strong>Same Perimeter (P = 16) Challenge</strong>
+              Can two shapes use the exact same 16 units of fence yet cover wildly different amounts of ground? Build both targets on the grid (or test the presets) to unlock the comparison!
+              <div class="arp-challenge-goals">
+                <div class="arp-goal-badge" id="arp-goal-compact"><span>&#9744;</span> <span><strong>Compact Shape:</strong> Build <em>P = 16</em> with Area &ge; 12 (e.g., 4&times;4 Square, <em>A = 16</em>)</span></div>
+                <div class="arp-goal-badge" id="arp-goal-stretched"><span>&#9744;</span> <span><strong>Stretched Shape:</strong> Build <em>P = 16</em> with Area &le; 9 (e.g., 1&times;7 Strip, <em>A = 7</em>)</span></div>
+              </div>
+              <div class="arp-challenge-win" id="arp-challenge-win" role="status" aria-live="polite">
+                <strong>Challenge Complete!</strong> You proved that a compact 4&times;4 square (<em>A = 16</em>) holds more than twice the area of a 1&times;7 strip (<em>A = 7</em>) with the exact same perimeter (<em>P = 16</em>), because compact squares share 24 internal edges while the thin strip only shares 6 pairs!
+              </div>
             </div>
+          </div>
+        </section>
+
+        <section class="arp-card" style="--card-accent:#0d9488;">
+          <h2>Lab 2 · Why Parallelograms &amp; Triangles Work (Shear &amp; Unfold Lab)</h2>
+          <p>Why does a parallelogram have area <em>A = b &times; h</em> instead of base times slanted side? And why is every triangle exactly <em>A = &frac12; b &times; h</em>? Adjust <strong>Base (<em>b</em>)</strong>, <strong>Height (<em>h</em>)</strong>, and <strong>Shear (<em>s</em>)</strong> below to see the geometric proof in action.</p>
+          <div class="arp-workspace">
+            <div class="arp-shear-controls">
+              <div class="arp-mode-group" role="group" aria-label="Shape mode">
+                <button class="arp-tool-btn active" type="button" id="arp-mode-para">Parallelogram Mode (A = b &times; h)</button>
+                <button class="arp-tool-btn" type="button" id="arp-mode-tri">Triangle Mode (A = &frac12; b &times; h)</button>
+              </div>
+              <div class="arp-mode-group">
+                <button class="arp-tool-btn" type="button" id="arp-action-cut">Cut &amp; Slide Overhang Triangle</button>
+                <button class="arp-tool-btn" type="button" id="arp-action-twin" style="display:none;">Show Twin Triangle (Rotate 180&deg;)</button>
+              </div>
+            </div>
+
+            <div class="arp-sliders">
+              <div class="arp-slider-box">
+                <label for="arp-slider-b"><span>Base (<em>b</em>)</span><span id="arp-val-b">6 units</span></label>
+                <input type="range" id="arp-slider-b" min="2" max="9" step="1" value="6" />
+              </div>
+              <div class="arp-slider-box">
+                <label for="arp-slider-h"><span>Perpendicular Height (<em>h</em>)</span><span id="arp-val-h">4 units</span></label>
+                <input type="range" id="arp-slider-h" min="2" max="6" step="1" value="4" />
+              </div>
+              <div class="arp-slider-box">
+                <label for="arp-slider-s"><span>Shear Offset (<em>s</em>)</span><span id="arp-val-s">2 units</span></label>
+                <input type="range" id="arp-slider-s" min="0" max="4" step="1" value="2" />
+              </div>
+            </div>
+
+            <div class="arp-svg-stage">
+              <svg id="arp-shear-svg" viewBox="0 0 600 270" role="img" aria-label="Interactive geometric diagram showing base, perpendicular height, and shear transformation"></svg>
+            </div>
+
+            <div class="arp-readout">
+              <div class="arp-readout-item"><span>Base &amp; Height</span><strong id="arp-sh-bh">b=6, h=4</strong></div>
+              <div class="arp-readout-item"><span>Slanted Side (c)</span><strong id="arp-sh-slant">4.47 units</strong></div>
+              <div class="arp-readout-item"><span>Area</span><strong id="arp-sh-area">24 sq units</strong></div>
+              <div class="arp-readout-item"><span>Perimeter</span><strong id="arp-sh-perim">20.9 units</strong></div>
+            </div>
+            <p id="arp-sh-insight" style="margin-top:0.75rem; font-size:0.84rem;">
+              <strong>Key Insight:</strong> Dragging <em>Shear (s)</em> slides the horizontal layers sideways without changing their thickness. The slanted side <em>c</em> stretches (so Perimeter grows), but cutting the right-hand overhang triangle and sliding it to the left restores a 6 &times; 4 rectangle of Area = 24 sq units!
+            </p>
           </div>
         </section>
 
@@ -371,12 +619,14 @@
 
         <section class="arp-card" style="--card-accent:#f59e0b;">
           <h2>Guided Practice</h2>
-          <p>Find the requested value for each rectangle. Type the numeric value only.</p>
+          <p>Find the requested value for each shape. Type the numeric value only.</p>
           <div class="arp-practice">
             <div class="arp-practice-item" data-answer="24"><span class="arp-math">Area of a 6 &times; 4 rectangle</span><input type="number" aria-label="Area of a 6 by 4 rectangle" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
             <div class="arp-practice-item" data-answer="20"><span class="arp-math">Perimeter of a 6 &times; 4 rectangle</span><input type="number" aria-label="Perimeter of a 6 by 4 rectangle" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
             <div class="arp-practice-item" data-answer="9"><span class="arp-math">Side length of a square with perimeter 36</span><input type="number" aria-label="Side length of a square with perimeter 36" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
             <div class="arp-practice-item" data-answer="7"><span class="arp-math">Width of a rectangle with area 21 and length 3</span><input type="number" aria-label="Width of a rectangle with area 21 and length 3" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+            <div class="arp-practice-item" data-answer="35"><span class="arp-math">Area of a parallelogram with base 7, height 5, and slanted side 6</span><input type="number" aria-label="Area of a parallelogram with base 7, height 5, and slanted side 6" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
+            <div class="arp-practice-item" data-answer="15"><span class="arp-math">Area of a triangle with base 10 and perpendicular height 3</span><input type="number" aria-label="Area of a triangle with base 10 and perpendicular height 3" /><button class="arp-check" type="button">Check</button><span class="arp-mini-feedback"></span></div>
           </div>
         </section>
 
@@ -384,9 +634,9 @@
           <h2>Exit Ticket</h2>
           <p>Students answer these in complete sentences or with shown work.</p>
           <ul>
-            <li>Build two shapes with the same perimeter but different areas. Sketch both and label the area of each.</li>
-            <li>A garden is 8 feet by 3 feet. How much fencing is needed to go around it, and how much ground does it cover?</li>
-            <li>Explain, in your own words, the difference between area and perimeter.</li>
+            <li>Sketch two shapes with a perimeter of 16 units that have different areas. Explain why the more compact shape encloses more square units.</li>
+            <li>A parallelogram has a base of 8 cm, a slanted side of 6 cm, and a perpendicular height of 5 cm. Find both its area and its perimeter, and explain which measurement uses the 6 cm side.</li>
+            <li>Explain how rotating a twin copy of a triangle proves the formula <em>A = &frac12; b &times; h</em>.</li>
           </ul>
         </section>
       </main>
@@ -400,17 +650,19 @@
         </div>
         <div class="ll-pane active" data-ll-panel="guide">
           <span class="ll-label">Formulas</span>
-          <div class="ll-info"><strong>Area</strong> length &times; width, measured in square units.</div>
-          <div class="ll-info"><strong>Perimeter</strong> 2 &times; (length + width), measured in units.</div>
-          <span class="ll-label">Common Trap</span>
-          <div class="ll-info"><strong>Same perimeter</strong> does not guarantee the same area &mdash; a long thin rectangle can have far less area than a square with the same perimeter.</div>
+          <div class="ll-info"><strong>Rectangle</strong> <em>A = &ell; &times; w</em> (sq units) &middot; <em>P = 2(&ell; + w)</em> (linear units).</div>
+          <div class="ll-info"><strong>Parallelogram</strong> <em>A = b &times; h</em> using perpendicular height <em>h</em>.</div>
+          <div class="ll-info"><strong>Triangle</strong> <em>A = &frac12; b &times; h</em> (half of its twin parallelogram).</div>
+          <span class="ll-label">Common Traps</span>
+          <div class="ll-info"><strong>Same perimeter &ne; same area</strong> Compact shapes hide shared edges inside; thin strips expose edges outside.</div>
+          <div class="ll-info"><strong>Slant height trap</strong> Use perpendicular height <em>h</em> for area, and slanted side <em>c</em> only for perimeter.</div>
         </div>
         <div class="ll-pane" data-ll-panel="controls">
           <span class="ll-label">Lesson Flow</span>
-          <div class="ll-info"><strong>Warm-up</strong> Ask students which takes longer: walking around a room or covering its floor with tiles.</div>
-          <div class="ll-info"><strong>Mini lesson</strong> Model counting squares for area and edges for perimeter on the grid.</div>
-          <div class="ll-info"><strong>Practice</strong> Have students race to build a shape matching a target perimeter.</div>
-          <div class="ll-info"><strong>Check</strong> Use the exit ticket to confirm students separate the two ideas.</div>
+          <div class="ll-info"><strong>Warm-up</strong> Ask students which takes more material: fencing a 4&times;4 garden or a 1&times;7 garden.</div>
+          <div class="ll-info"><strong>Lab 1</strong> Have students compare the highlighted outer boundary edges vs. shared inner edges.</div>
+          <div class="ll-info"><strong>Lab 2</strong> Shear the parallelogram to show why perimeter grows while area stays constant.</div>
+          <div class="ll-info"><strong>Check</strong> Use the interactive check and exit ticket to verify students separate area from perimeter.</div>
         </div>
       </div>
     </aside>
@@ -429,7 +681,7 @@
   <script src="../../../assets/js/nav-mobile.js"></script>
   <script>
     (function () {
-      // ---- Grid builder ----
+      // ---- Lab 1: Polyomino Grid Builder ----
       var SIZE = 10;
       var grid = document.getElementById('arp-grid');
       var state = [];
@@ -437,6 +689,9 @@
         state.push(new Array(SIZE).fill(false));
       }
       var cellEls = [];
+      var isDragging = false;
+      var paintMode = true;
+
       for (var row = 0; row < SIZE; row++) {
         var rowEls = [];
         for (var col = 0; col < SIZE; col++) {
@@ -444,55 +699,325 @@
           cell.className = 'arp-cell';
           cell.dataset.row = row;
           cell.dataset.col = col;
-          cell.addEventListener('click', (function (r, c) {
-            return function () {
-              state[r][c] = !state[r][c];
+          cell.setAttribute('tabindex', '0');
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('aria-pressed', 'false');
+          cell.setAttribute('aria-label', 'Row ' + (row + 1) + ', Column ' + (col + 1));
+
+          (function (rIdx, cIdx, el) {
+            el.addEventListener('pointerdown', function (e) {
+              e.preventDefault();
+              isDragging = true;
+              paintMode = !state[rIdx][cIdx];
+              state[rIdx][cIdx] = paintMode;
               updateGrid();
-            };
-          })(row, col));
+            });
+            el.addEventListener('pointerenter', function () {
+              if (!isDragging) return;
+              if (state[rIdx][cIdx] !== paintMode) {
+                state[rIdx][cIdx] = paintMode;
+                updateGrid();
+              }
+            });
+            el.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                state[rIdx][cIdx] = !state[rIdx][cIdx];
+                updateGrid();
+              }
+            });
+          })(row, col, cell);
+
           grid.appendChild(cell);
           rowEls.push(cell);
         }
         cellEls.push(rowEls);
       }
 
+      window.addEventListener('pointerup', function () {
+        isDragging = false;
+      });
+      window.addEventListener('pointercancel', function () {
+        isDragging = false;
+      });
+
       var cellsEl = document.getElementById('arp-cells');
       var areaEl = document.getElementById('arp-area');
       var perimeterEl = document.getElementById('arp-perimeter');
+      var sharedEl = document.getElementById('arp-shared');
+      var goalCompactEl = document.getElementById('arp-goal-compact');
+      var goalStretchedEl = document.getElementById('arp-goal-stretched');
+      var challengeWinEl = document.getElementById('arp-challenge-win');
+      var foundCompact16 = false;
+      var foundStretched16 = false;
+
+      function isFilled(r, c) {
+        return r >= 0 && r < SIZE && c >= 0 && c < SIZE && state[r][c];
+      }
 
       function updateGrid() {
         var count = 0;
         var perimeter = 0;
+        var internalHalfEdges = 0;
+
         for (var r = 0; r < SIZE; r++) {
           for (var c = 0; c < SIZE; c++) {
-            cellEls[r][c].classList.toggle('on', state[r][c]);
-            if (!state[r][c]) continue;
+            var on = state[r][c];
+            var el = cellEls[r][c];
+            el.classList.toggle('on', on);
+            el.setAttribute('aria-pressed', on ? 'true' : 'false');
+
+            var topOpen = on && !isFilled(r - 1, c);
+            var rightOpen = on && !isFilled(r, c + 1);
+            var bottomOpen = on && !isFilled(r + 1, c);
+            var leftOpen = on && !isFilled(r, c - 1);
+
+            el.classList.toggle('edge-t', topOpen);
+            el.classList.toggle('edge-r', rightOpen);
+            el.classList.toggle('edge-b', bottomOpen);
+            el.classList.toggle('edge-l', leftOpen);
+
+            if (!on) continue;
             count += 1;
-            var neighbors = [
-              [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
-            ];
-            neighbors.forEach(function (n) {
-              var nr = n[0], nc = n[1];
-              var filled = nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && state[nr][nc];
-              if (!filled) perimeter += 1;
-            });
+            var openEdges = (topOpen ? 1 : 0) + (rightOpen ? 1 : 0) + (bottomOpen ? 1 : 0) + (leftOpen ? 1 : 0);
+            perimeter += openEdges;
+            internalHalfEdges += (4 - openEdges);
           }
         }
+
+        var sharedPairs = internalHalfEdges / 2;
         cellsEl.textContent = count;
         areaEl.textContent = count + ' sq units';
         perimeterEl.textContent = perimeter + ' units';
+        if (sharedEl) sharedEl.textContent = sharedPairs + (sharedPairs === 1 ? ' pair' : ' pairs');
+
+        if (perimeter === 16 && count >= 12) {
+          foundCompact16 = true;
+          if (goalCompactEl) {
+            goalCompactEl.classList.add('done');
+            goalCompactEl.firstElementChild.innerHTML = '&#9745;';
+          }
+        }
+        if (perimeter === 16 && count > 0 && count <= 9) {
+          foundStretched16 = true;
+          if (goalStretchedEl) {
+            goalStretchedEl.classList.add('done');
+            goalStretchedEl.firstElementChild.innerHTML = '&#9745;';
+          }
+        }
+        if (foundCompact16 && foundStretched16 && challengeWinEl) {
+          challengeWinEl.classList.add('visible');
+        }
+      }
+
+      function clearGrid() {
+        for (var r = 0; r < SIZE; r++) {
+          for (var c = 0; c < SIZE; c++) state[r][c] = false;
+        }
       }
 
       document.getElementById('arp-clear').addEventListener('click', function () {
-        for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) state[r][c] = false;
+        clearGrid();
         updateGrid();
       });
+
       document.getElementById('arp-rect-3x4').addEventListener('click', function () {
-        for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) state[r][c] = false;
-        for (var r2 = 2; r2 < 5; r2++) for (var c2 = 2; c2 < 6; c2++) state[r2][c2] = true;
+        clearGrid();
+        for (var r = 3; r < 6; r++) for (var c = 3; c < 7; c++) state[r][c] = true;
         updateGrid();
       });
+
+      document.getElementById('arp-preset-1x7').addEventListener('click', function () {
+        clearGrid();
+        for (var c = 1; c < 8; c++) state[4][c] = true;
+        updateGrid();
+      });
+
+      document.getElementById('arp-preset-4x4').addEventListener('click', function () {
+        clearGrid();
+        for (var r = 3; r < 7; r++) for (var c = 3; c < 7; c++) state[r][c] = true;
+        updateGrid();
+      });
+
+      document.getElementById('arp-preset-l').addEventListener('click', function () {
+        clearGrid();
+        // 7-cell L-polyomino -> Area = 7, Perimeter = 16
+        for (var r = 2; r < 6; r++) state[r][3] = true;
+        for (var c = 4; c < 7; c++) state[5][c] = true;
+        updateGrid();
+      });
+
+      document.getElementById('arp-preset-plus').addEventListener('click', function () {
+        clearGrid();
+        state[4][4] = true;
+        state[3][4] = true;
+        state[5][4] = true;
+        state[4][3] = true;
+        state[4][5] = true;
+        updateGrid();
+      });
+
+      // Start with 3x4 rectangle loaded so students immediately see outer edges
+      for (var r0 = 3; r0 < 6; r0++) for (var c0 = 3; c0 < 7; c0++) state[r0][c0] = true;
       updateGrid();
+
+      // ---- Lab 2: Shear & Unfold Geometric Lab ----
+      var svgEl = document.getElementById('arp-shear-svg');
+      var modeParaBtn = document.getElementById('arp-mode-para');
+      var modeTriBtn = document.getElementById('arp-mode-tri');
+      var actionCutBtn = document.getElementById('arp-action-cut');
+      var actionTwinBtn = document.getElementById('arp-action-twin');
+      var sliderB = document.getElementById('arp-slider-b');
+      var sliderH = document.getElementById('arp-slider-h');
+      var sliderS = document.getElementById('arp-slider-s');
+      var valB = document.getElementById('arp-val-b');
+      var valH = document.getElementById('arp-val-h');
+      var valS = document.getElementById('arp-val-s');
+      var shBh = document.getElementById('arp-sh-bh');
+      var shSlant = document.getElementById('arp-sh-slant');
+      var shArea = document.getElementById('arp-sh-area');
+      var shPerim = document.getElementById('arp-sh-perim');
+      var shInsight = document.getElementById('arp-sh-insight');
+
+      var labMode = 'parallelogram'; // 'parallelogram' | 'triangle'
+      var cutSlideActive = false;
+      var showTwinActive = false;
+
+      function renderShearLab() {
+        var b = Number(sliderB.value);
+        var h = Number(sliderH.value);
+        var s = Number(sliderS.value);
+
+        valB.textContent = b + ' units';
+        valH.textContent = h + ' units';
+        valS.textContent = s + ' units';
+
+        var scale = 32;
+        var originX = 76;
+        var baseY = 226;
+        var topY = baseY - h * scale;
+
+        // Grid background lines
+        var gridMarkup = '';
+        for (var gx = 0; gx <= 600; gx += scale) {
+          gridMarkup += '<line x1="' + gx + '" y1="0" x2="' + gx + '" y2="270" stroke="rgba(148,163,184,0.2)" stroke-width="1" />';
+        }
+        for (var gy = baseY; gy >= 0; gy -= scale) {
+          gridMarkup += '<line x1="0" y1="' + gy + '" x2="600" y2="' + gy + '" stroke="rgba(148,163,184,0.2)" stroke-width="1" />';
+        }
+
+        // Parallelogram vertices: bottom-left (x0, baseY), bottom-right (x1, baseY), top-right (x2, topY), top-left (x3, topY)
+        var x0 = originX;
+        var x1 = originX + b * scale;
+        var x3 = originX + s * scale;
+        var x2 = x3 + b * scale;
+
+        var slantC = Math.sqrt(h * h + s * s);
+        var shapeMarkup = '';
+
+        if (labMode === 'parallelogram') {
+          var paraArea = b * h;
+          var paraPerim = 2 * (b + slantC);
+          shBh.textContent = 'b=' + b + ', h=' + h;
+          shSlant.textContent = slantC.toFixed(2) + ' units';
+          shArea.textContent = paraArea + ' sq units';
+          shPerim.textContent = paraPerim.toFixed(1) + ' units';
+
+          if (cutSlideActive && s > 0) {
+            // Main body + slid triangle forming rectangle [x0, x1] x [topY, baseY]
+            shapeMarkup += '<polygon points="' + x0 + ',' + baseY + ' ' + x1 + ',' + baseY + ' ' + x1 + ',' + topY + ' ' + x3 + ',' + topY + '" fill="rgba(13,148,136,0.34)" stroke="#0d9488" stroke-width="2.5" />';
+            // Ghost original overhang on right
+            shapeMarkup += '<polygon points="' + x1 + ',' + baseY + ' ' + x2 + ',' + topY + ' ' + x1 + ',' + topY + '" fill="none" stroke="rgba(148,163,184,0.65)" stroke-dasharray="5,4" stroke-width="2" />';
+            // Slid triangle filling the left wedge [x0, baseY] -> [x3, topY] -> [x0, topY]
+            shapeMarkup += '<polygon points="' + x0 + ',' + baseY + ' ' + x3 + ',' + topY + ' ' + x0 + ',' + topY + '" fill="rgba(234,88,12,0.42)" stroke="#ea580c" stroke-width="2.5" />';
+            shapeMarkup += '<text x="' + (x0 + (x1 - x0) / 2) + '" y="' + (topY - 12) + '" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">Rearranged into a ' + b + ' \u00d7 ' + h + ' Rectangle (Area = ' + paraArea + ' sq units)</text>';
+          } else {
+            shapeMarkup += '<polygon points="' + x0 + ',' + baseY + ' ' + x1 + ',' + baseY + ' ' + x2 + ',' + topY + ' ' + x3 + ',' + topY + '" fill="rgba(13,148,136,0.34)" stroke="#0d9488" stroke-width="2.5" />';
+            if (s > 0) {
+              // Dashed cut line at x1
+              shapeMarkup += '<line x1="' + x1 + '" y1="' + baseY + '" x2="' + x1 + '" y2="' + topY + '" stroke="#ea580c" stroke-dasharray="4,4" stroke-width="2" />';
+            }
+          }
+
+          // Perpendicular height line at x3
+          var hLineX = x3;
+          shapeMarkup += '<line x1="' + hLineX + '" y1="' + baseY + '" x2="' + hLineX + '" y2="' + topY + '" stroke="#dc2626" stroke-dasharray="5,4" stroke-width="2.2" />';
+          shapeMarkup += '<rect x="' + hLineX + '" y="' + (baseY - 10) + '" width="10" height="10" fill="none" stroke="#dc2626" stroke-width="1.8" />';
+          shapeMarkup += '<text x="' + (hLineX + 8) + '" y="' + (baseY - (h * scale) / 2 + 4) + '" fill="#dc2626" font-size="13" font-weight="700">h = ' + h + '</text>';
+          shapeMarkup += '<text x="' + (x0 + (x1 - x0) / 2) + '" y="' + (baseY + 22) + '" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">Base b = ' + b + ' units</text>';
+          shapeMarkup += '<text x="' + ((x1 + x2) / 2 + 12) + '" y="' + ((baseY + topY) / 2) + '" fill="#64748b" font-size="12" font-weight="700">c = ' + slantC.toFixed(2) + '</text>';
+
+          shInsight.innerHTML = '<strong>Key Insight (Parallelogram):</strong> Even when Shear (<em>s = ' + s + '</em>) tilts the sides to length <em>c = ' + slantC.toFixed(2) + '</em> (making Perimeter = ' + paraPerim.toFixed(1) + '), cutting the right overhang triangle and sliding it left proves the interior still equals a ' + b + ' &times; ' + h + ' rectangle of Area = ' + paraArea + ' sq units!';
+        } else {
+          // Triangle Mode: vertices (x0, baseY), (x1, baseY), apex (x3, topY)
+          var sideLeft = Math.sqrt(h * h + s * s);
+          var sideRight = Math.sqrt(h * h + (b - s) * (b - s));
+          var triArea = 0.5 * b * h;
+          var triPerim = b + sideLeft + sideRight;
+
+          shBh.textContent = 'b=' + b + ', h=' + h;
+          shSlant.textContent = sideLeft.toFixed(2) + ' & ' + sideRight.toFixed(2);
+          shArea.textContent = triArea + ' sq units';
+          shPerim.textContent = triPerim.toFixed(1) + ' units';
+
+          // Primary triangle
+          shapeMarkup += '<polygon points="' + x0 + ',' + baseY + ' ' + x1 + ',' + baseY + ' ' + x3 + ',' + topY + '" fill="rgba(14,165,233,0.36)" stroke="#0284c7" stroke-width="2.5" />';
+
+          if (showTwinActive) {
+            // Twin triangle rotated 180 deg completes parallelogram: (x1, baseY), (x2, topY), (x3, topY)
+            shapeMarkup += '<polygon points="' + x1 + ',' + baseY + ' ' + x2 + ',' + topY + ' ' + x3 + ',' + topY + '" fill="rgba(234,88,12,0.34)" stroke="#ea580c" stroke-dasharray="6,4" stroke-width="2.5" />';
+            shapeMarkup += '<text x="' + ((x1 + x2 + x3) / 3) + '" y="' + (topY + (baseY - topY) * 0.42) + '" text-anchor="middle" fill="#c2410c" font-size="12" font-weight="700">Twin Triangle (' + triArea + ')</text>';
+            shapeMarkup += '<text x="' + (x0 + (x2 - x0) / 2) + '" y="' + (topY - 12) + '" text-anchor="middle" fill="#0369a1" font-size="13" font-weight="700">2 Twins = Parallelogram (' + b + ' \u00d7 ' + h + ' = ' + (b * h) + ') \u2192 1 Triangle = ' + triArea + ' sq units</text>';
+          }
+
+          // Perpendicular height line from apex x3 down to baseY
+          shapeMarkup += '<line x1="' + x3 + '" y1="' + baseY + '" x2="' + x3 + '" y2="' + topY + '" stroke="#dc2626" stroke-dasharray="5,4" stroke-width="2.2" />';
+          shapeMarkup += '<rect x="' + x3 + '" y="' + (baseY - 10) + '" width="10" height="10" fill="none" stroke="#dc2626" stroke-width="1.8" />';
+          shapeMarkup += '<text x="' + (x3 + 8) + '" y="' + (baseY - (h * scale) / 2 + 4) + '" fill="#dc2626" font-size="13" font-weight="700">h = ' + h + '</text>';
+          shapeMarkup += '<text x="' + (x0 + (x1 - x0) / 2) + '" y="' + (baseY + 22) + '" text-anchor="middle" fill="#0369a1" font-size="13" font-weight="700">Base b = ' + b + ' units</text>';
+
+          shInsight.innerHTML = '<strong>Key Insight (Triangle):</strong> Rotating an identical twin triangle 180&deg; and fitting it against the diagonal creates a parallelogram of base ' + b + ' and height ' + h + ' (Area = ' + (b * h) + '). Therefore, a single triangle always has half that area: &frac12; &times; ' + b + ' &times; ' + h + ' = ' + triArea + ' sq units!';
+        }
+
+        svgEl.innerHTML = gridMarkup + shapeMarkup;
+      }
+
+      modeParaBtn.addEventListener('click', function () {
+        labMode = 'parallelogram';
+        modeParaBtn.classList.add('active');
+        modeTriBtn.classList.remove('active');
+        actionCutBtn.style.display = '';
+        actionTwinBtn.style.display = 'none';
+        renderShearLab();
+      });
+
+      modeTriBtn.addEventListener('click', function () {
+        labMode = 'triangle';
+        modeTriBtn.classList.add('active');
+        modeParaBtn.classList.remove('active');
+        actionCutBtn.style.display = 'none';
+        actionTwinBtn.style.display = '';
+        renderShearLab();
+      });
+
+      actionCutBtn.addEventListener('click', function () {
+        cutSlideActive = !cutSlideActive;
+        actionCutBtn.classList.toggle('active', cutSlideActive);
+        actionCutBtn.textContent = cutSlideActive ? 'Restore Parallelogram' : 'Cut & Slide Overhang Triangle';
+        renderShearLab();
+      });
+
+      actionTwinBtn.addEventListener('click', function () {
+        showTwinActive = !showTwinActive;
+        actionTwinBtn.classList.toggle('active', showTwinActive);
+        actionTwinBtn.textContent = showTwinActive ? 'Hide Twin Triangle' : 'Show Twin Triangle (Rotate 180\u00b0)';
+        renderShearLab();
+      });
+
+      [sliderB, sliderH, sliderS].forEach(function (input) {
+        input.addEventListener('input', renderShearLab);
+      });
+      renderShearLab();
 
       // ---- Interactive Check ----
       var questions = [
@@ -500,7 +1025,9 @@
         { q: 'A rectangle is 5 units by 2 units. What is its perimeter?', answer: 14, choices: [10, 14, 7, 20], feedback: 'Perimeter = 2 x (5 + 2) = 2 x 7 = 14 units.' },
         { q: 'A square has a side length of 6. What is its area?', answer: 36, choices: [24, 12, 36, 18], feedback: 'A square\'s area is side x side = 6 x 6 = 36.' },
         { q: 'A square has a side length of 6. What is its perimeter?', answer: 24, choices: [36, 24, 12, 30], feedback: 'A square\'s perimeter is 4 x side = 4 x 6 = 24.' },
-        { q: 'Two rectangles both have a perimeter of 20. Rectangle A is 8 x 2 and Rectangle B is 5 x 5. Which has more area?', answer: 'Rectangle B', choices: ['Rectangle A', 'Rectangle B', 'They are equal', 'Cannot tell'], feedback: 'Rectangle A has area 16; Rectangle B (a square) has area 25. Equal perimeter does not mean equal area.' }
+        { q: 'Two rectangles both have a perimeter of 20. Rectangle A is 8 x 2 and Rectangle B is 5 x 5. Which has more area?', answer: 'Rectangle B', choices: ['Rectangle A', 'Rectangle B', 'They are equal', 'Cannot tell'], feedback: 'Rectangle A has area 16; Rectangle B (a square) has area 25. Equal perimeter does not mean equal area.' },
+        { q: 'A parallelogram has base 8, perpendicular height 4, and slanted side 5. What is its area?', answer: 32, choices: [32, 40, 26, 20], feedback: 'Parallelogram area = base x perpendicular height = 8 x 4 = 32 sq units. (The slanted side 5 is used for perimeter, not area!)' },
+        { q: 'A triangle has base 6 and perpendicular height 5. What is its area?', answer: 15, choices: [30, 15, 11, 22], feedback: 'Triangle area = 1/2 x base x height = 1/2 x 6 x 5 = 15 sq units.' }
       ];
 
       var questionEl = document.getElementById('arp-question');
@@ -560,7 +1087,7 @@
           var expected = Number(item.getAttribute('data-answer'));
           var actual = Number(input.value);
           feedbackNode.className = 'arp-mini-feedback';
-          if (actual === expected) {
+          if (input.value.trim() !== '' && actual === expected) {
             feedbackNode.textContent = 'Correct';
             feedbackNode.classList.add('ok');
           } else {

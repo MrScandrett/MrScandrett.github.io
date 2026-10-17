@@ -53,7 +53,7 @@
       reflect: 'Select one prophet and identify the kingdom, ruler or empire, crisis, warning, and hope that frame the prophet’s message.'
     },
     {
-      id: 'feasts-of-israel', code: '3B', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '45–60 minutes',
+      id: 'feasts-of-israel', code: '2D', stage: 'Stage 2 · Covenant & Presence', grades: 'Grades 5–10', time: '45–60 minutes',
       title: 'The Feasts of Israel', lede: 'Explore sacred time, harvest rhythms, remembrance, worship, and communal identity in Israel’s calendar.',
       question: 'How did Israel’s appointed feasts teach the community to remember God’s works?',
       scripture: 'Exodus 12 · Leviticus 23 · Deuteronomy 16',
@@ -173,7 +173,37 @@
       reflect: 'Create a route-and-covenant map. Mark one place, one rescue event, and one way Sinai changes Israel’s shared life.'
     },
     {
-      id: 'jesus-ministry', code: '4C', stage: 'Stage 4 · Jesus & the Kingdom', grades: 'Grades 4–10', time: '60–80 minutes',
+      id: 'leviticus', code: '2E', stage: 'Stage 2 · Covenant & Presence', grades: 'Grades 5–12', time: '50–70 minutes',
+      title: 'Leviticus: Holiness, Worship & Neighbor-Love', lede: 'Discover why Leviticus places worship, justice, bodies, food, land, and neighbor-love inside one vision of holy life.',
+      question: 'How can a holy God live among an ordinary people, and what kind of community does that create?',
+      scripture: 'Leviticus 1 · 16 · 19 · 23 · 25',
+      goals: ['Locate sacrifice, priesthood, purity, the Day of Atonement, holy living, festivals, and Jubilee within the book.', 'Distinguish ritual categories from moral blame and avoid treating impurity as the same thing as sin.', 'Explain how love of neighbor, care for the vulnerable, honest work, and worship belong together.'],
+      lenses: [['Approach','Worship and gift','Leviticus opens with offerings that express dedication, gratitude, fellowship, and atonement. The instructions make approach ordered rather than casual.','Name what each selected passage actually says before importing later assumptions.'],['Clean and unclean','Boundaries, not rankings','Purity language organizes Israel’s worship and embodied life. Ritual impurity is often temporary and is not automatically a moral failure.','Ask whether a passage concerns ritual status, moral wrongdoing, or both.'],['Atonement','Cleansing the sanctuary and people','Leviticus 16 gathers the book’s concerns in the Day of Atonement: confession, cleansing, sacrifice, and removal of sin.','Follow the movements and purposes described in the chapter.'],['Holy life','Love made public','Leviticus 19 joins reverence for God with honest scales, gleaning for the poor, justice, truth, and love of neighbor.','Holiness is not merely separation; the chapter gives it social shape.']],
+      check: ['Which statement best fits Leviticus 19?',['Worship and neighbor-love belong to separate parts of life','Holiness includes worship, justice, truth, generosity, and love of neighbor','Only priests are called to holy living'],'Holiness includes worship, justice, truth, generosity, and love of neighbor','Leviticus 19 repeatedly connects “I am the Lord” with concrete treatment of neighbors, workers, immigrants, the poor, and the vulnerable.'],
+      reflect: 'Choose one command from Leviticus 19. Explain what it protects, whom it helps, and how it connects love of God with love of neighbor.'
+    },
+    {
+      id: 'numbers', code: '2F', stage: 'Stage 2 · Covenant & Presence', grades: 'Grades 5–10', time: '50–70 minutes',
+      title: 'Numbers: Wilderness, Trust & a New Generation', lede: 'Follow a rescued people through testing, failure, mercy, and preparation as a new generation reaches the edge of the land.',
+      question: 'What does the wilderness reveal about trust, leadership, consequences, and God’s faithfulness?',
+      scripture: 'Numbers 1–2 · 11–14 · 20–21 · 27',
+      goals: ['Trace the journey from Sinai to the plains of Moab and explain why two censuses frame the book.', 'Compare complaint, fear, rebellion, intercession, judgment, and mercy in their narrative contexts.', 'Explain how the book ends with both loss and renewed preparation.'],
+      lenses: [['Ordered camp','A people around the sanctuary','The opening census and camp arrangement place the Tabernacle at the center as Israel prepares to travel.','Numbers is not only a list of counts; the counts mark generations and readiness.'],['Complaint','Pressure exposes trust','Food, fear, rivalry, and uncertainty repeatedly reveal how the community and its leaders respond under pressure.','Compare each complaint rather than treating every conflict as identical.'],['The spies','Fear and evidence','Numbers 13–14 gives the same land report to the community, but the spies interpret its meaning differently. Fear becomes refusal, with consequences for a generation.','Separate what the scouts observe from the conclusions they draw.'],['New generation','Judgment is not the last scene','A second census, new leadership, and instructions about inheritance prepare children of the wilderness generation to continue the journey.','Notice what changes and what promises remain.']],
+      check: ['Why are there two major censuses in Numbers?',['They help frame the wilderness story around an older and a new generation','They prove nothing happened between Sinai and Moab','They count only Israel’s kings'],'They help frame the wilderness story around an older and a new generation','The first generation is counted near Sinai; after wilderness judgment, a new generation is counted near the land.'],
+      reflect: 'Make a two-column evidence chart for Numbers 13–14: what all the spies saw and how they interpreted it. What turned observation into fear or trust?'
+    },
+    {
+      id: 'deuteronomy', code: '2G', stage: 'Stage 2 · Covenant & Presence', grades: 'Grades 6–12', time: '50–70 minutes',
+      title: 'Deuteronomy: Remember, Love & Choose Life', lede: 'Listen to Moses retell Israel’s story and law to a new generation preparing to cross the Jordan.',
+      question: 'Why does Moses ask a new generation to remember before it moves forward?',
+      scripture: 'Deuteronomy 1 · 6 · 8 · 10 · 30–34',
+      goals: ['Recognize Deuteronomy as covenant instruction shaped as Moses’ farewell speeches.', 'Trace the repeated pattern of remembering, loving, teaching, obeying, and choosing life.', 'Connect the Shema and neighbor-centered commands with later biblical teaching.'],
+      lenses: [['Retell','Memory forms identity','Moses retells the wilderness story to hearers who must own a history they did not all personally experience.','Notice where the speech reviews, interprets, and applies earlier events.'],['Hear and love','The Shema','Deuteronomy 6 joins the confession that the Lord is one with wholehearted love and daily teaching across home, road, bedtime, and morning.','Observe how belief becomes a repeated communal practice.'],['Remember','Prosperity can forget','Chapter 8 warns that abundance may produce self-congratulation. Remembering wilderness dependence protects gratitude and covenant loyalty.','Ask what success tempts the people to claim about themselves.'],['Choose life','A decision before crossing','Deuteronomy 30 sets life and good against death and evil, then calls heaven and earth as witnesses. Moses dies outside the land, and Joshua leads next.','Read the ending as both completion and handoff.']],
+      check: ['What is the purpose of remembering in Deuteronomy?',['To shape present love, gratitude, teaching, and faithfulness','To replace action with nostalgia','To claim the wilderness had no failures'],'To shape present love, gratitude, teaching, and faithfulness','Moses retells the past so a new generation can live faithfully in the future.'],
+      reflect: 'Write a four-part “remember” statement: what happened, what it reveals about God, what danger forgetting creates, and one faithful practice for today.'
+    },
+    {
+      id: 'jesus-ministry', code: '4D', stage: 'Stage 4 · Jesus & the Kingdom', grades: 'Grades 4–10', time: '60–80 minutes',
       title: 'Jesus’ Ministry: The Kingdom Arrives', lede: 'Trace Jesus’ baptism, temptation, calling, signs, conflicts, and announcement of God’s kingdom before Holy Week.',
       question: 'What does Jesus announce and embody when He says that God’s kingdom has drawn near?',
       scripture: 'Mark 1–4 · Luke 4:14–30 · Matthew 16:13–20',
@@ -193,7 +223,7 @@
       reflect: 'Annotate Psalm 13 with four colors: complaint, request, memory, and trust. Which movement is strongest, and which is hardest to write.'
     },
     {
-      id: 'joshua-to-david', code: '3D', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '55–75 minutes',
+      id: 'joshua-to-david', code: '3J', stage: 'Stage 3 · Israel, Covenant & Prophets', grades: 'Grades 5–10', time: '55–75 minutes',
       title: 'Joshua to David: Land, Judges & Kings', lede: 'Bridge the story from Joshua’s settlement through Judges, Samuel, Saul, David, and the covenant hope of a king.',
       question: 'Why does Israel’s movement from land to monarchy create both hope and danger?',
       scripture: 'Joshua 1 · Judges 2 · 1 Samuel 8 · 2 Samuel 7',
@@ -370,6 +400,27 @@
       now: 'Jesus is baptized, tested in the wilderness, announces the kingdom, calls disciples, heals and teaches, meets opposition, and is confessed as the Christ.',
       next: 'The road turns toward Jerusalem and the cross: Holy Week, the resurrection, and the mission of the Church to the nations.'
     },
+    'leviticus': {
+      focus: ['creation', 'exodus', 'covenant', 'kingdom'],
+      bigIdea: 'Leviticus answers the question raised by Exodus: how can the holy God who fills the Tabernacle remain among a vulnerable, imperfect people?',
+      before: 'God rescues Israel from slavery, makes covenant at Sinai, and fills the completed Tabernacle with His presence.',
+      now: 'Offerings, priests, purity practices, atonement, festivals, justice, and neighbor-love give worship and community life an ordered shape.',
+      next: 'Numbers takes the sanctuary-centered camp into the wilderness, where trust and covenant loyalty are tested.'
+    },
+    'numbers': {
+      focus: ['exodus', 'covenant', 'kingdom'],
+      bigIdea: 'Numbers follows a sanctuary-centered people whose fear and rebellion bring real consequences without canceling God’s purpose for a new generation.',
+      before: 'Exodus and Leviticus form Israel around rescue, covenant, worship, holiness, and God’s presence at the center of the camp.',
+      now: 'Israel journeys from Sinai toward the land, but complaint, rivalry, and fear expose mistrust; the book closes by preparing a new generation.',
+      next: 'On the plains of Moab, Deuteronomy asks that new generation to remember, love, teach, and choose life before Joshua leads them onward.'
+    },
+    'deuteronomy': {
+      focus: ['exodus', 'covenant', 'kingdom'],
+      bigIdea: 'Deuteronomy turns remembered rescue and wilderness failure into a call for wholehearted love, faithful teaching, justice, and life.',
+      before: 'The Exodus generation receives covenant instruction but fails repeatedly in the wilderness; their children now stand east of the Jordan.',
+      now: 'Moses retells the journey and law in farewell speeches, placing memory and love at the heart of the generation’s future.',
+      next: 'Moses dies, Joshua receives leadership, and the story moves across the Jordan into land, judges, kings, and prophets.'
+    },
     'sermon-on-the-mount': {
       focus: ['kingdom', 'jesus', 'church'],
       bigIdea: 'Jesus describes kingdom life that reaches beneath visible behavior to motives, trust, relationships, and practiced obedience.',
@@ -397,6 +448,9 @@
     'sermon-on-the-mount': [['Matthew',5,1,12],['Matthew',5,13,20],['Matthew',5,21,26],['Matthew',5,38,48],['Matthew',6,1,18],['Matthew',6,19,34],['Matthew',7,1,12],['Matthew',7,13,23],['Matthew',7,24,29]]
     ,'genesis': [['Genesis',1,1,5],['Genesis',1,26,31],['Genesis',3,1,15],['Genesis',9,8,17],['Genesis',11,1,9],['Genesis',12,1,9],['Genesis',15,1,6],['Genesis',37,1,11],['Genesis',50,15,21]]
     ,'exodus': [['Exodus',1,8,14],['Exodus',2,23,25],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',15,1,13],['Exodus',19,1,8],['Exodus',20,1,17],['Exodus',25,8,9]]
+    ,'leviticus': [['Leviticus',1,1,9],['Leviticus',16,1,10],['Leviticus',19,1,18],['Leviticus',19,32,37],['Leviticus',23,1,8],['Leviticus',25,1,17]]
+    ,'numbers': [['Numbers',1,1,4],['Numbers',2,1,9],['Numbers',11,1,15],['Numbers',13,25,33],['Numbers',14,1,24],['Numbers',21,4,9],['Numbers',27,12,23]]
+    ,'deuteronomy': [['Deuteronomy',1,1,8],['Deuteronomy',6,1,9],['Deuteronomy',8,1,18],['Deuteronomy',10,12,22],['Deuteronomy',30,11,20],['Deuteronomy',34,1,12]]
     ,'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',1,16,20],['Mark',1,21,34],['Mark',2,1,12],['Mark',2,13,17],['Mark',4,35,41],['Matthew',16,13,20],['Mark',8,27,38]]
     ,'psalms': [['Psalms',1,1,6],['Psalms',13,1,6],['Psalms',23,1,6],['Psalms',51,1,12],['Psalms',150,1,6]]
     ,'joshua-to-david': [['Joshua',1,1,9],['Joshua',24,14,28],['Judges',2,6,23],['Judges',21,25,25],['Ruth',1,16,17],['1 Samuel',8,4,22],['1 Samuel',16,1,13],['1 Samuel',17,45,47],['2 Samuel',7,8,17]]
@@ -576,6 +630,16 @@
       credit: 'israeltourism', license: 'CC BY-SA 2.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/'
     }
   };
+
+  lessonImages.leviticus = Object.assign({}, lessonImages['the-tabernacle'], {
+    caption: 'A museum model helps us picture the sanctuary at the center of Leviticus. It is a modern interpretation to compare carefully with Exodus and Leviticus.'
+  });
+  lessonImages.numbers = Object.assign({}, lessonImages.exodus, {
+    caption: 'An artistic depiction of the Exodus tradition introduces the wilderness setting of Numbers. It is later art, not a documentary image of the event.'
+  });
+  lessonImages.deuteronomy = Object.assign({}, lessonImages.exodus, {
+    caption: 'Later art imagines Moses and Israel’s journey. Deuteronomy itself presents Moses speaking to a new generation east of the Jordan.'
+  });
 
   var lessonVisualJourneys = {
     'feasts-of-israel': [
@@ -1402,6 +1466,9 @@
     'job': ['Job 2:11–13; 4:7–8; 42:7', 'Job’s friends begin by sitting with him, then offer explanations. What should a careful reader test?', ['Whether their confident explanation is actually supported by the book', 'Whether suffering always proves a person committed a hidden sin'], 0, 'The friends speak at length, but God later says they have not spoken what is right about Him as Job has. Their opening silence models presence; their later certainty becomes part of the book’s critique.', 'Compare one speech from a friend with Job 42:7. Name one claim, its evidence, and the judgment the book gives it.'],
     'joshua-to-david': ['Judges 17:6; 21:25', 'The book ends “In those days there was no king in Israel; everyone did what was right in his own eyes.” How should a reader take this refrain?', ['As the narrator’s diagnosis of moral chaos, shown by the stories just told', 'As praise for individual freedom and independence'], 0, 'The chapters before it describe theft, idolatry, assault, and civil war. The refrain interprets those stories: Israel lacks faithful leadership and has drifted from covenant loyalty.', 'List two episodes from Judges 17–21. For each, say what “right in his own eyes” led to.'],
     'exodus': ['Exodus 20:1–3', 'The Ten Commandments begin with a statement before any command. What does it do?', ['It grounds the law in rescue: “I am the Lord your God, who brought you out of Egypt”', 'It makes the law a payment Israel must make before being freed'], 0, 'Verse 2 recalls what God has already done. Israel is rescued first, then given the covenant. The commands describe how a freed people live, not how a slave earns freedom.', 'Find one earlier verse in Exodus 1–19 where God acts to rescue before any command is given. Explain how 20:2 relies on it.'],
+    'leviticus': ['Leviticus 19:9–18', 'Which summary best matches the movement of this passage?', ['Holiness shapes harvesting, justice, speech, relationships, and love of neighbor', 'Holiness is only about ceremonies inside the sanctuary'], 0, 'The passage moves repeatedly between reverence for God and concrete treatment of other people, including the poor, workers, disabled neighbors, and enemies.', 'Choose three commands and name the person or relationship each one protects.'],
+    'numbers': ['Numbers 13:27–33', 'The scouts largely agree about what they see. Where do they differ?', ['In how they interpret the land, its people, and Israel’s ability to continue', 'In whether they traveled to Canaan at all'], 0, 'The report includes shared observations, then competing conclusions. Caleb urges action; other scouts magnify danger and describe themselves as grasshoppers.', 'Make separate lists for observation, interpretation, and proposed response.'],
+    'deuteronomy': ['Deuteronomy 6:4–9', 'How is love for God meant to be learned?', ['Through repeated words and practices woven into ordinary family life', 'Only through a once-a-year private test'], 0, 'The Shema joins hearing, wholehearted love, repeated teaching, conversation, and visible reminders throughout the day.', 'Design a simple morning, travel, and evening rhythm based only on actions named in the passage.'],
     'genesis': ['Genesis 12:1–3', 'God calls Abram. Whom is the promised blessing ultimately for?', ['Abram’s family, so that all the families of the earth are blessed through him', 'Abram’s family alone, with no concern for other nations'], 0, 'The promise runs from Abram to “all the families of the earth” (12:3). After Babel scattered the nations, God begins with one family to reach all of them.', 'Underline every “bless” and “blessing” in 12:1–3. Count how many are for Abram and how many reach beyond him.'],
     'revelation': ['Revelation 5:1–10', 'John weeps because no one can open the scroll, hears that “the Lion of the tribe of Judah has conquered,” then sees a Lamb standing as though slain. How should a reader take this?', ['The announced image (Lion) is reinterpreted by the seen image (Lamb): victory comes through sacrifice', 'The Lion and the Lamb are two rival figures who compete for the scroll'], 0, 'John hears “Lion” but turns and sees a Lamb. The text pairs the two so that kingly conquest is understood through the slain Lamb, whose blood ransoms people from every tribe and language. Hearing and seeing work together.', 'List what John hears and what he sees in 5:5–6. Then name one earlier biblical image (Genesis 49:9–10, Isaiah 53:7, or Exodus 12) that each echoes.'],
     'jesus-ministry': ['Mark 2:1–12', 'Before healing the paralyzed man, Jesus says, “Son, your sins are forgiven.” What question does the scene press on the reader?', ['Who has authority to forgive sins, and does Jesus’ healing show that He has it?', 'Whether the man’s paralysis proves he committed a particular sin'], 0, 'The scribes ask, “Who can forgive sins but God alone?” and Jesus heals “that you may know that the Son of Man has authority on earth to forgive sins” (2:7, 10). The passage never says the man’s condition was a punishment; it joins forgiveness and restoration under Jesus’ authority.', 'List the four groups in the scene (the friends, the man, the scribes, the crowd). Find one verse that shows how each group responds.'],
@@ -1531,6 +1598,27 @@
       { title: 'Mount Sinai', kind: 'Place' },
       { title: 'Ten Commandments', kind: 'Covenant law' },
       { title: 'Pharaoh', kind: 'Egyptian office' }
+    ],
+    'leviticus': [
+      { title: 'Book of Leviticus', kind: 'Biblical book' },
+      { title: 'Aaron', kind: 'Biblical priest' },
+      { title: 'Day of Atonement', kind: 'Holy day' },
+      { title: 'Tabernacle', kind: 'Sacred space' },
+      { title: 'Jubilee (biblical)', label: 'Jubilee', kind: 'Covenant practice' }
+    ],
+    'numbers': [
+      { title: 'Book of Numbers', kind: 'Biblical book' },
+      { title: 'Moses', kind: 'Biblical leader' },
+      { title: 'Miriam', kind: 'Biblical leader' },
+      { title: 'Caleb', kind: 'Biblical scout' },
+      { title: 'Joshua', kind: 'Biblical leader' }
+    ],
+    'deuteronomy': [
+      { title: 'Book of Deuteronomy', kind: 'Biblical book' },
+      { title: 'Moses', kind: 'Biblical leader' },
+      { title: 'Shema Yisrael', label: 'The Shema', kind: 'Biblical confession' },
+      { title: 'Mount Nebo', kind: 'Place' },
+      { title: 'Joshua', kind: 'Successor to Moses' }
     ],
     'genesis': [
       { title: 'Book of Genesis', kind: 'Biblical book' },
@@ -1730,12 +1818,14 @@
       '<h1>' + esc(lesson.title) + '</h1><p class="bpl-lede">' + esc(lesson.lede) + '</p>' +
       '<div class="bpl-meta"><span>' + esc(lesson.grades) + '</span><span>' + esc(lesson.time) + '</span><span>Guided exploration</span><span>Print-ready</span></div>' +
     '</section>' +
+    '<nav class="bpl-learning-flow" aria-label="Lesson learning flow"><span>Start here:</span><a href="#bpl-question">1 · Big question</a><a href="#bpl-read">2 · Read</a><a href="#bpl-explore">3 · Explore</a><a href="#bpl-explain">4 · Explain</a><a href="#bpl-reflect">5 · Reflect</a></nav>' +
+    '<details class="bpl-level-guide"><summary>Choose the right depth for your learner</summary><div><p><strong>Grades K–5 · guided together:</strong> Ask the big question, read one passage aloud, use the picture or map, and retell the main idea.</p><p><strong>Grades 6–8 · build the story:</strong> Read the selected passages, complete the investigation, and support one claim with evidence.</p><p><strong>Grades 9–12 · investigate deeply:</strong> Compare context and interpretations, evaluate sources, and write a passage-based explanation.</p></div></details>' +
     storyThreadMarkup(lesson.story) +
     '<figure class="bpl-figure" data-zoomable><a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer"><img src="' + esc(lesson.image.src) + '" alt="' + esc(lesson.image.alt) + '" loading="eager" referrerpolicy="no-referrer"></a><figcaption><p>' + esc(lesson.image.caption) + '</p><small>Image: <a href="' + esc(lesson.image.page) + '" target="_blank" rel="noopener noreferrer">' + esc(lesson.image.credit) + '</a> · <a href="' + esc(lesson.image.licenseUrl) + '" target="_blank" rel="license noopener noreferrer">' + esc(lesson.image.license) + '</a> · Wikimedia Commons</small></figcaption></figure>' +
-    '<div class="bpl-grid"><section class="bpl-card"><p class="bpl-label">Essential question</p><p class="bpl-question">' + esc(lesson.question) + '</p><p class="bpl-scripture"><strong>Read:</strong> ' + esc(lesson.scripture) + '</p></section>' +
+    '<div class="bpl-grid"><section class="bpl-card" id="bpl-question"><p class="bpl-label">Essential question</p><p class="bpl-question">' + esc(lesson.question) + '</p><p class="bpl-scripture"><strong>Read:</strong> ' + esc(lesson.scripture) + '</p></section>' +
     '<section class="bpl-card"><p class="bpl-label">Learning goals</p><h2>By the end, you can…</h2><ul class="bpl-goals">' + lesson.goals.map(function (goal) { return '<li>' + esc(goal) + '</li>'; }).join('') + '</ul></section></div>' +
     visualJourneyMarkup(lesson.visualJourney, lesson) +
-    '<section class="bpl-card bpl-reader"><div class="bpl-reader-head"><div><p class="bpl-label">Open Scripture reader</p><h2>Read in context</h2></div><p>Switch passages, translations, and languages while keeping the same verse reference in view.</p></div>' +
+    '<section class="bpl-card bpl-reader" id="bpl-read"><div class="bpl-reader-head"><div><p class="bpl-label">Open Scripture reader</p><h2>Read in context</h2></div><p>Switch passages, translations, and languages while keeping the same verse reference in view.</p></div>' +
       '<div class="bpl-reader-controls"><label><span>Passage</span><select class="bpl-passage-select">' + lesson.passages.map(function (passage, passageIndex) { return '<option value="' + passageIndex + '">' + esc(passageLabel(passage)) + '</option>'; }).join('') + '</select></label>' +
       '<label><span>Language</span><select class="bpl-language-select">' + bibleLanguages.map(function (language) { return '<option value="' + esc(language.id) + '">' + esc(language.name) + '</option>'; }).join('') + '</select></label>' +
       '<label><span>Version</span><select class="bpl-version-select"></select></label></div>' +
@@ -1748,11 +1838,11 @@
     sceneBoardMarkup() +
     investigationMarkup(lesson.investigation) +
     '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><figure class="bpl-entity-figure" data-zoomable><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"><figcaption>Reference image for ' + esc(entity.label || entity.title) + '. Read the source article for its origin and image license.</figcaption></figure></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
-    '<section class="bpl-card bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through four lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
+    '<section class="bpl-card bpl-explore" id="bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through four lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
       lesson.lenses.map(function (lens, i) { return '<button class="bpl-lens" type="button" data-lens="' + i + '" aria-pressed="' + (i === 0) + '"><span>Lens ' + (i + 1) + '</span><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '</strong></button>'; }).join('') +
       '</div><article class="bpl-workspace" aria-live="polite"><h3></h3><p></p><p class="bpl-notice"></p></article></section>' +
-    '<div class="bpl-practice"><section class="bpl-card"><p class="bpl-label">Check your reading</p><h2>' + esc(lesson.check[0]) + '</h2><div class="bpl-choices">' + lesson.check[1].map(function (choice) { return '<button class="bpl-choice" type="button">' + esc(choice) + '</button>'; }).join('') + '</div><p class="bpl-feedback" aria-live="polite">Choose the strongest answer, then explain why.</p></section>' +
-    '<section class="bpl-card bpl-reflection"><p class="bpl-label">Reflect and respond</p><h2>Make the connection</h2><p>' + esc(lesson.reflect) + '</p><label class="bpl-label" for="bpl-notes">Your notes</label><textarea id="bpl-notes" placeholder="Write observations, evidence, questions, and a faithful response…"></textarea><p class="bpl-save" aria-live="polite">Notes save in this browser.</p></section></div>' +
+    '<div class="bpl-practice"><section class="bpl-card" id="bpl-explain"><p class="bpl-label">Check and explain</p><h2>' + esc(lesson.check[0]) + '</h2><div class="bpl-choices">' + lesson.check[1].map(function (choice) { return '<button class="bpl-choice" type="button">' + esc(choice) + '</button>'; }).join('') + '</div><p class="bpl-feedback" aria-live="polite">Choose the strongest answer, then explain why.</p></section>' +
+    '<section class="bpl-card bpl-reflection" id="bpl-reflect"><p class="bpl-label">Reflect and respond</p><h2>Make the connection</h2><p>' + esc(lesson.reflect) + '</p><label class="bpl-label" for="bpl-notes">Your notes</label><textarea id="bpl-notes" placeholder="Write observations, evidence, questions, and a faithful response…"></textarea><p class="bpl-save" aria-live="polite">Notes save in this browser.</p></section></div>' +
     '<nav class="bpl-nav" aria-label="Bible pathway lesson navigation">' + link(lessons[index - 1], 'prev') + '<a class="bpl-hub" href="bible-foundations-pathway.html">Pathway hub</a>' + link(lessons[index + 1], 'next') + '</nav>';
 
   var lensButtons = Array.prototype.slice.call(main.querySelectorAll('.bpl-lens'));

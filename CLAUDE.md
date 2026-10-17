@@ -94,6 +94,10 @@ and discuss it. This applies to every new lesson and to any lesson you touch.
   that carry the teaching point, since the lightbox shows the caption at large size.
 - Optional: `data-full="URL"` for a higher-resolution image, and `data-lightbox-group="name"`
   so the arrow keys (and the on-screen buttons) step through a set. Figures added by JS work too.
+- For a set of photos (real equipment, archival pictures), use the shared gallery:
+  `assets/css/components/photo-gallery.css` (`.pg-grid` of `figure.pg-card`, credit in `.pg-credit`
+  with `data-no-glossary`; `.pg-contain` for plans and book pages). Pages with their own palette set
+  the `--pg-*` properties. Self-host images under `assets/images/lessons/<lesson>/`.
 - Always show credit and license for outside images. See `lessons/chemistry/periodic-table.html`
   (element gallery) for a worked example.
 

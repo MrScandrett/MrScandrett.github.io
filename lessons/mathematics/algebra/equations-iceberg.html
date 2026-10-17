@@ -211,9 +211,33 @@
       .iceq-options { grid-template-columns: 1fr; }
       .iceq-depthnav { position: static; }
     }
+    .iceq-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .7rem; padding-top: .6rem; border-top: 1px dashed rgba(13,27,42,.16); }
+    .iceq-tier[data-tier="4"] .iceq-card-actions, .iceq-tier[data-tier="5"] .iceq-card-actions, .iceq-tier[data-tier="6"] .iceq-card-actions { border-top-color: rgba(255,255,255,.22); }
+    .iceq-lab-link { display: inline-flex; align-items: center; gap: .3rem; padding: .34rem .68rem; border-radius: 6px; background: #0e5a78; color: #fff !important; font: 700 .72rem/1.2 "IBM Plex Mono", monospace; text-decoration: none; letter-spacing: .02em; transition: transform .15s ease, background .15s ease; }
+    .iceq-lab-link:hover { background: #093e54; transform: translateY(-1px); }
+    .iceq-tier[data-tier="4"] .iceq-lab-link, .iceq-tier[data-tier="5"] .iceq-lab-link, .iceq-tier[data-tier="6"] .iceq-lab-link { background: #e0f5fc; color: #092c3e !important; }
+    .iceq-tier[data-tier="4"] .iceq-lab-link:hover, .iceq-tier[data-tier="5"] .iceq-lab-link:hover, .iceq-tier[data-tier="6"] .iceq-lab-link:hover { background: #ffd166; color: #092c3e !important; }
+    .iceq-try-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .32rem .62rem; border-radius: 6px; border: 1px solid #0e5a78; background: rgba(255,255,255,.85); color: #0d1b2a; font: 700 .71rem/1.2 "IBM Plex Mono", monospace; }
+    .iceq-try-btn:hover { background: #ffd166; border-color: #b47208; color: #0d1b2a; }
+    .iceq-workbench { max-width: 1120px; margin: 0 auto 1.4rem; padding: clamp(1rem, 2.6vw, 1.5rem); border: 1px solid var(--iceq-line); border-top: 5px solid #0e5a78; border-radius: 9px; background: #f8fcff; color: #0d1b2a; box-shadow: 0 8px 24px rgba(13,27,42,.07); scroll-margin-top: 90px; }
+    .iceq-workbench-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .6rem; margin-bottom: .75rem; }
+    .iceq-workbench-head h2 { margin: 0; font: 800 clamp(1.4rem, 3.2vw, 1.9rem)/.95 "Barlow Condensed", sans-serif; text-transform: uppercase; color: #0d1b2a; }
+    .iceq-workbench-tabs { display: flex; flex-wrap: wrap; gap: .38rem; margin-bottom: .9rem; }
+    .iceq-wb-tab { padding: .38rem .68rem; border: 1px solid rgba(13,27,42,.2); border-radius: 999px; background: #fff; color: #0d1b2a; font: 700 .72rem "IBM Plex Mono", monospace; }
+    .iceq-wb-tab.is-active { border-color: #0e5a78; background: #0e5a78; color: #fff; }
+    .iceq-wb-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1rem; align-items: stretch; }
+    .iceq-wb-controls { display: grid; gap: .65rem; padding: .9rem; border: 1px solid #cfe2ec; border-radius: 8px; background: #fff; }
+    .iceq-wb-slider-row { display: grid; gap: .22rem; }
+    .iceq-wb-slider-row label { display: flex; justify-content: space-between; font-size: .82rem; font-weight: 700; }
+    .iceq-wb-slider-row input[type="range"] { width: 100%; accent-color: #0e5a78; }
+    .iceq-wb-output { display: flex; flex-direction: column; justify-content: space-between; gap: .6rem; padding: 1rem; border: 1px solid #b8d4e3; border-radius: 8px; background: #eaf6fb; }
+    .iceq-wb-formula { font: italic 700 1.25rem/1.4 Cambria, Georgia, serif; color: #0d1b2a; }
+    .iceq-wb-result { font: 800 1.55rem/1.2 "IBM Plex Mono", monospace; color: #0e5a78; }
+    .iceq-wb-note { margin: 0; font-size: .82rem; line-height: 1.5; color: #183447; }
+    @media (max-width: 760px) { .iceq-wb-grid { grid-template-columns: 1fr; } }
     @media print {
       .iceq-page { background: none; }
-      .ll-panel, .ll-open-btn, .iceq-depthnav, .iceq-dive { display: none !important; }
+      .ll-panel, .ll-open-btn, .iceq-depthnav, .iceq-dive, .iceq-workbench, .iceq-card-actions { display: none !important; }
       .iceq-tier[hidden] { display: block !important; }
       .iceq-tier { clip-path: none; max-width: 100% !important; }
     }
@@ -319,6 +343,31 @@
             <p><strong>Try it:</strong> A cyclist travels 150 metres in 30 seconds. Find the average speed, then predict the distance in 60 seconds if that speed stays constant.</p>
             <details><summary>Check the calculation and assumption</summary><p>Speed = distance ÷ time = 150 m ÷ 30 s = <strong>5 m/s</strong>. At a constant 5 m/s, distance = speed × time = 5 × 60 = <strong>300 m</strong>. The first answer is an average; it does not prove that the cyclist kept the same speed throughout.</p></details>
             <p><strong>Explain your dive:</strong> “My equation relates ___ to ___. Its diagram shows ___. One condition or limitation is ___.” Use the deeper cards to interpret an idea; you do not need to solve every equation.</p>
+          </section>
+
+          <section class="iceq-workbench" id="iceq-workbench" aria-labelledby="iceq-wb-title">
+            <div class="iceq-workbench-head">
+              <div>
+                <h2 id="iceq-wb-title">Interactive Equation Workbench</h2>
+                <p style="margin:.2rem 0 0;font-size:.86rem;color:#385267;">Select an equation from across the iceberg (or click <strong>Try in Workbench</strong> on a card below) and scrub its variables in real time.</p>
+              </div>
+              <a class="iceq-lab-link" id="iceq-wb-lablink" href="../foundations/proportional-reasoning.html">Explore Full Lesson Lab →</a>
+            </div>
+            <div class="iceq-workbench-tabs" id="iceq-wb-tabs" role="tablist" aria-label="Select equation to test"></div>
+            <div class="iceq-wb-grid">
+              <div class="iceq-wb-controls" id="iceq-wb-controls"></div>
+              <div class="iceq-wb-output">
+                <div>
+                  <div style="font:700 .68rem 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:#496477;margin-bottom:.25rem;">Live Substitution</div>
+                  <div class="iceq-wb-formula" id="iceq-wb-formula"></div>
+                </div>
+                <div>
+                  <div style="font:700 .68rem 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:#496477;margin-bottom:.2rem;">Computed Output</div>
+                  <div class="iceq-wb-result" id="iceq-wb-result"></div>
+                </div>
+                <p class="iceq-wb-note" id="iceq-wb-note"></p>
+              </div>
+            </div>
           </section>
 
           <!-- ══ TIER 1 · SEA LEVEL ══ -->
@@ -1050,6 +1099,316 @@
         this.textContent = 'All six tiers are visible';
       });
       followHash();
+
+      var cardLabs = {
+        'equation-percent': { href: '../foundations/proportional-reasoning.html', label: 'Proportional Reasoning & Percent Lab', wb: 'percent' },
+        'equation-area-of-a-rectangle': { href: '../foundations/area-perimeter-playground.html', label: 'Area & Perimeter Playground', wb: 'area' },
+        'equation-speed': { href: '../foundations/proportional-reasoning.html', label: 'Unit Rates & Speed Lab', wb: 'speed' },
+        'equation-simple-interest': { href: '../foundations/proportional-reasoning.html', label: 'Proportional Rates Lab', wb: 'interest' },
+        'equation-unit-rate-proportion': { href: '../foundations/proportional-reasoning.html', label: 'Proportional Reasoning Lab' },
+        'equation-slope-intercept-form': { href: 'linear-equations-slope.html', label: 'Linear Equations & Slope Lab', wb: 'slope' },
+        'equation-pythagorean-theorem': { href: '../geometry-and-trigonometry/pythagoras.html', label: 'Pythagoras & Right Triangles Lab', wb: 'pythagoras' },
+        'equation-quadratic-formula': { href: 'completing-the-square.html', label: 'Completing the Square & Quadratic Formula', wb: 'quadratic' },
+        'equation-distance-formula': { href: '../geometry-and-trigonometry/pythagoras.html', label: 'Pythagorean Coordinate Distance' },
+        'equation-compound-interest': { href: '../foundations/math-foundations-lab.html#functions', label: 'Compound Growth in Foundations Lab', wb: 'compound' },
+        'equation-newton-s-second-law': { href: 'linear-equations-slope.html', label: 'Direct Proportionality & Rates Lab' },
+        'equation-ohm-s-law': { href: '../foundations/proportional-reasoning.html', label: 'Proportional Relationships Lab', wb: 'ohm' },
+        'equation-density': { href: '../foundations/proportional-reasoning.html', label: 'Ratios & Unit Rates Lab' },
+        'equation-exponential-growth-and-decay': { href: '../advanced-and-calculus/graphing-calculator.html', label: 'Graphing Calculator Explorer' },
+        'equation-kinetic-energy': { href: '../advanced-and-calculus/graphing-calculator.html', label: 'Quadratic Growth in Graphing Calculator', wb: 'kinetic' },
+        'equation-the-derivative': { href: '../advanced-and-calculus/calculus-slope-area-machines.html', label: 'Calculus Slope & Area Machines Lab' },
+        'equation-the-integral': { href: '../advanced-and-calculus/calculus-slope-area-machines.html', label: 'Calculus Slope & Area Machines Lab' },
+        'equation-normal-distribution': { href: '../statistics-and-probability/probability-pachinko.html', label: 'Galton Board & Bell Curve Lab' },
+        'equation-bayes-theorem': { href: '../statistics-and-probability/monty-hall-conditional-probability.html', label: 'Conditional Probability & Monty Hall Lab', wb: 'bayes' },
+        'equation-ideal-gas-law': { href: 'where-lines-meet.html', label: 'Multi-Variable Relationships Lab' },
+        'equation-maxwell-s-equations': { href: '../geometry-and-trigonometry/unit-circle-waves.html', label: 'Unit Circle & Periodic Waves Lab' },
+        'equation-navier-stokes-equations': { href: '../advanced-and-calculus/minecraft-calculus-terrain.html', label: 'Vector Fields & Terrain Gradients Lab' },
+        'equation-schr-dinger-equation': { href: '../geometry-and-trigonometry/unit-circle-waves.html', label: 'Wave Amplitudes & Phase Lab' },
+        'equation-fourier-transform': { href: '../advanced-and-calculus/fourier-series.html', label: 'Fourier Series & Wave Synthesis Lab' },
+        'equation-heat-equation': { href: '../advanced-and-calculus/fourier-series.html', label: 'Fourier Heat & Harmonic Lab' },
+        'equation-einstein-field-equations': { href: '../geometry-and-trigonometry/hyperbolic-geometry.html', label: 'Curved Space & Non-Euclidean Geometry Lab' },
+        'equation-standard-model-lagrangian': { href: '../advanced-and-calculus/rubiks-cube-math.html', label: 'Symmetry & Group Theory Lab' },
+        'equation-navier-stokes-smoothness': { href: '../advanced-and-calculus/calculus-slope-area-machines.html', label: 'Smoothness & Derivatives Lab' },
+        'equation-riemann-hypothesis': { href: '../advanced-and-calculus/riemann-hypothesis.html', label: 'The Riemann Hypothesis Capstone Lab' }
+      };
+
+      var wbModels = {
+        percent: {
+          title: 'Percent (Tier 1)',
+          lab: '../foundations/proportional-reasoning.html',
+          labName: 'Proportional Reasoning & Percent Lab',
+          sliders: [
+            { key: 'part', label: 'Part (shaded)', min: 0, max: 200, step: 1, val: 30 },
+            { key: 'whole', label: 'Whole (total)', min: 10, max: 200, step: 5, val: 100 }
+          ],
+          calc: function (v) {
+            var p = (v.part / v.whole) * 100;
+            return {
+              formula: 'p = (' + v.part + ' ÷ ' + v.whole + ') × 100',
+              result: 'p = ' + p.toFixed(1) + '%',
+              note: 'Scaling the ratio ' + v.part + '/' + v.whole + ' to a denominator of 100 gives ' + p.toFixed(1) + ' parts per hundred.'
+            };
+          }
+        },
+        area: {
+          title: 'Rectangle Area (Tier 1)',
+          lab: '../foundations/area-perimeter-playground.html',
+          labName: 'Area & Perimeter Playground',
+          sliders: [
+            { key: 'l', label: 'Length l (units)', min: 1, max: 20, step: 1, val: 5 },
+            { key: 'w', label: 'Width w (units)', min: 1, max: 20, step: 1, val: 3 }
+          ],
+          calc: function (v) {
+            return {
+              formula: 'A = ' + v.l + ' × ' + v.w + '   (Perimeter P = ' + (2 * (v.l + v.w)) + ')',
+              result: 'A = ' + (v.l * v.w) + ' square units',
+              note: v.w + ' rows of ' + v.l + ' unit squares cover ' + (v.l * v.w) + ' square units enclosed by a boundary of ' + (2 * (v.l + v.w)) + ' linear units.'
+            };
+          }
+        },
+        speed: {
+          title: 'Average Speed (Tier 1)',
+          lab: '../foundations/proportional-reasoning.html',
+          labName: 'Unit Rates & Speed Lab',
+          sliders: [
+            { key: 'd', label: 'Distance d (m)', min: 10, max: 500, step: 10, val: 150 },
+            { key: 't', label: 'Time t (s)', min: 5, max: 100, step: 5, val: 30 }
+          ],
+          calc: function (v) {
+            var s = v.d / v.t;
+            return {
+              formula: 'v = ' + v.d + ' m ÷ ' + v.t + ' s',
+              result: 'v = ' + s.toFixed(2) + ' m/s',
+              note: 'At this constant rate, every 1 second covers ' + s.toFixed(2) + ' metres (slope of the distance–time line).'
+            };
+          }
+        },
+        slope: {
+          title: 'Slope-Intercept (Tier 2)',
+          lab: 'linear-equations-slope.html',
+          labName: 'Linear Equations & Slope Lab',
+          sliders: [
+            { key: 'm', label: 'Slope m (rate)', min: -5, max: 5, step: 0.5, val: 2 },
+            { key: 'x', label: 'Input x', min: -10, max: 10, step: 1, val: 4 },
+            { key: 'b', label: 'Y-intercept b (start)', min: -10, max: 10, step: 1, val: 1 }
+          ],
+          calc: function (v) {
+            var y = v.m * v.x + v.b;
+            return {
+              formula: 'y = (' + v.m + ')(' + v.x + ') + (' + v.b + ')',
+              result: 'y = ' + y,
+              note: 'Starts at (0, ' + v.b + ') on the vertical axis and changes by ' + v.m + ' for every +1 step in x.'
+            };
+          }
+        },
+        pythagoras: {
+          title: 'Pythagoras (Tier 2)',
+          lab: '../geometry-and-trigonometry/pythagoras.html',
+          labName: 'Pythagoras & Right Triangles Lab',
+          sliders: [
+            { key: 'a', label: 'Leg a', min: 1, max: 15, step: 1, val: 3 },
+            { key: 'b', label: 'Leg b', min: 1, max: 15, step: 1, val: 4 }
+          ],
+          calc: function (v) {
+            var c2 = v.a * v.a + v.b * v.b;
+            var c = Math.sqrt(c2);
+            return {
+              formula: 'c = √(' + v.a + '² + ' + v.b + '²) = √(' + (v.a * v.a) + ' + ' + (v.b * v.b) + ')',
+              result: 'c = √' + c2 + ' ≈ ' + c.toFixed(2),
+              note: Number.isInteger(c) ? 'Pythagorean triple! All three side lengths (' + v.a + ', ' + v.b + ', ' + c + ') are whole integers.' : 'The square on the hypotenuse has exact area ' + c2 + ' square units.'
+            };
+          }
+        },
+        quadratic: {
+          title: 'Quadratic Formula (Tier 2)',
+          lab: 'completing-the-square.html',
+          labName: 'Completing the Square & Quadratic Formula',
+          sliders: [
+            { key: 'a', label: 'a (x² coeff)', min: 1, max: 4, step: 1, val: 1 },
+            { key: 'b', label: 'b (x coeff)', min: -10, max: 10, step: 1, val: -5 },
+            { key: 'c', label: 'c (constant)', min: -10, max: 10, step: 1, val: 6 }
+          ],
+          calc: function (v) {
+            var disc = v.b * v.b - 4 * v.a * v.c;
+            var res = disc < 0 ? 'No real roots (Δ = ' + disc + ' < 0)' : disc === 0 ? 'One double root: x = ' + (-v.b / (2 * v.a)).toFixed(2) : 'x₁ = ' + ((-v.b - Math.sqrt(disc)) / (2 * v.a)).toFixed(2) + ',  x₂ = ' + ((-v.b + Math.sqrt(disc)) / (2 * v.a)).toFixed(2);
+            return {
+              formula: v.a + 'x² + (' + v.b + ')x + (' + v.c + ') = 0   (Δ = b²−4ac = ' + disc + ')',
+              result: res,
+              note: 'Derived by completing the square on ax² + bx + c = 0. Discriminant Δ = ' + disc + ' tells how many times the parabola crosses y = 0.'
+            };
+          }
+        },
+        compound: {
+          title: 'Compound Interest (Tier 2)',
+          lab: '../foundations/math-foundations-lab.html#functions',
+          labName: 'Compound Growth in Foundations Lab',
+          sliders: [
+            { key: 'P', label: 'Principal P ($)', min: 100, max: 5000, step: 100, val: 1000 },
+            { key: 'r', label: 'Annual Rate r (%)', min: 1, max: 15, step: 1, val: 7 },
+            { key: 't', label: 'Years t', min: 1, max: 40, step: 1, val: 20 }
+          ],
+          calc: function (v) {
+            var rate = v.r / 100;
+            var A = v.P * Math.pow(1 + rate, v.t);
+            var simple = v.P * (1 + rate * v.t);
+            return {
+              formula: 'A = $' + v.P + ' × (1 + ' + rate.toFixed(2) + ')^' + v.t,
+              result: 'A = $' + A.toFixed(2),
+              note: 'Simple interest would only reach $' + simple.toFixed(2) + '. Compounding earned an extra $' + (A - simple).toFixed(2) + ' from interest-on-interest!'
+            };
+          }
+        },
+        bayes: {
+          title: "Bayes' Theorem (Tier 4)",
+          lab: '../statistics-and-probability/monty-hall-conditional-probability.html',
+          labName: 'Conditional Probability & Monty Hall Lab',
+          sliders: [
+            { key: 'prev', label: 'Base rate P(A) (%)', min: 1, max: 50, step: 1, val: 2 },
+            { key: 'sens', label: 'True positive P(B|A) (%)', min: 50, max: 99, step: 1, val: 95 },
+            { key: 'fp', label: 'False positive P(B|¬A) (%)', min: 1, max: 30, step: 1, val: 5 }
+          ],
+          calc: function (v) {
+            var pA = v.prev / 100, pBA = v.sens / 100, pBnotA = v.fp / 100;
+            var pB = pBA * pA + pBnotA * (1 - pA);
+            var post = (pBA * pA) / pB;
+            return {
+              formula: 'P(A|B) = (' + pBA.toFixed(2) + ' × ' + pA.toFixed(2) + ') ÷ ' + pB.toFixed(4),
+              result: 'P(A|B) = ' + (post * 100).toFixed(1) + '%',
+              note: 'Even with a ' + v.sens + '% accurate test, a rare ' + v.prev + '% base rate means a single positive test is only ' + (post * 100).toFixed(1) + '% likely to be a true positive.'
+            };
+          }
+        },
+        interest: {
+          title: 'Simple Interest (Tier 1)',
+          lab: '../foundations/proportional-reasoning.html',
+          labName: 'Proportional Rates Lab',
+          sliders: [
+            { key: 'P', label: 'Principal P ($)', min: 100, max: 5000, step: 100, val: 1000 },
+            { key: 'r', label: 'Rate r (%/yr)', min: 1, max: 15, step: 1, val: 5 },
+            { key: 't', label: 'Time t (years)', min: 1, max: 20, step: 1, val: 4 }
+          ],
+          calc: function (v) {
+            var I = v.P * (v.r / 100) * v.t;
+            return {
+              formula: 'I = $' + v.P + ' × ' + (v.r / 100).toFixed(2) + ' × ' + v.t,
+              result: 'I = $' + I.toFixed(2) + ' (Total = $' + (v.P + I).toFixed(2) + ')',
+              note: 'Adds the exact same $' + (v.P * v.r / 100).toFixed(2) + ' every year — a linear growth line.'
+            };
+          }
+        },
+        ohm: {
+          title: "Ohm's Law (Tier 3)",
+          lab: '../foundations/proportional-reasoning.html',
+          labName: 'Proportional Relationships Lab',
+          sliders: [
+            { key: 'I', label: 'Current I (amps)', min: 0.5, max: 15, step: 0.5, val: 2 },
+            { key: 'R', label: 'Resistance R (ohms Ω)', min: 1, max: 50, step: 1, val: 6 }
+          ],
+          calc: function (v) {
+            var V = v.I * v.R;
+            return {
+              formula: 'V = ' + v.I + ' A × ' + v.R + ' Ω',
+              result: 'V = ' + V.toFixed(1) + ' volts',
+              note: 'Doubling current or resistance doubles the required voltage push (Power P = I²R = ' + (v.I * v.I * v.R).toFixed(1) + ' W).'
+            };
+          }
+        },
+        kinetic: {
+          title: 'Kinetic Energy (Tier 3)',
+          lab: '../advanced-and-calculus/graphing-calculator.html',
+          labName: 'Quadratic Growth in Graphing Calculator',
+          sliders: [
+            { key: 'm', label: 'Mass m (kg)', min: 1, max: 100, step: 1, val: 10 },
+            { key: 'v', label: 'Velocity v (m/s)', min: 1, max: 30, step: 1, val: 6 }
+          ],
+          calc: function (v) {
+            var ek = 0.5 * v.m * v.v * v.v;
+            return {
+              formula: 'Ek = ½ × ' + v.m + ' kg × (' + v.v + ' m/s)²',
+              result: 'Ek = ' + ek.toFixed(0) + ' joules',
+              note: 'Because velocity v is squared, doubling speed multiplies kinetic energy (and braking distance!) by 4.'
+            };
+          }
+        }
+      };
+
+      var activeWbKey = 'percent';
+      var wbTabsEl = document.getElementById('iceq-wb-tabs');
+      var wbControlsEl = document.getElementById('iceq-wb-controls');
+      var wbFormulaEl = document.getElementById('iceq-wb-formula');
+      var wbResultEl = document.getElementById('iceq-wb-result');
+      var wbNoteEl = document.getElementById('iceq-wb-note');
+      var wbLabLinkEl = document.getElementById('iceq-wb-lablink');
+
+      function selectWorkbench(key, scrollToWb) {
+        if (!wbModels[key]) return;
+        activeWbKey = key;
+        var m = wbModels[key];
+        wbLabLinkEl.href = m.lab;
+        wbLabLinkEl.textContent = 'Explore ' + m.labName + ' →';
+        Array.from(wbTabsEl.children).forEach(function (btn) {
+          btn.classList.toggle('is-active', btn.dataset.wbKey === key);
+        });
+        wbControlsEl.innerHTML = '';
+        var vals = {};
+        m.sliders.forEach(function (s) {
+          vals[s.key] = s.val;
+          var row = document.createElement('div');
+          row.className = 'iceq-wb-slider-row';
+          row.innerHTML = '<label><span>' + s.label + '</span><strong data-val="' + s.key + '">' + s.val + '</strong></label><input type="range" min="' + s.min + '" max="' + s.max + '" step="' + s.step + '" value="' + s.val + '" data-slider="' + s.key + '" aria-label="' + s.label + '">';
+          wbControlsEl.appendChild(row);
+        });
+        function refresh() {
+          var out = m.calc(vals);
+          wbFormulaEl.textContent = out.formula;
+          wbResultEl.textContent = out.result;
+          wbNoteEl.textContent = out.note;
+        }
+        wbControlsEl.querySelectorAll('input[type="range"]').forEach(function (inp) {
+          inp.addEventListener('input', function () {
+            var k = inp.dataset.slider;
+            vals[k] = Number(inp.value);
+            wbControlsEl.querySelector('[data-val="' + k + '"]').textContent = inp.value;
+            refresh();
+          });
+        });
+        refresh();
+        if (scrollToWb) {
+          document.getElementById('iceq-workbench').scrollIntoView({ behavior: reduceMotion.matches ? 'instant' : 'smooth', block: 'start' });
+        }
+      }
+
+      Object.keys(wbModels).forEach(function (k) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'iceq-wb-tab';
+        btn.dataset.wbKey = k;
+        btn.textContent = wbModels[k].title;
+        btn.addEventListener('click', function () { selectWorkbench(k, false); });
+        wbTabsEl.appendChild(btn);
+      });
+      selectWorkbench('percent', false);
+
+      cards.forEach(function (card) {
+        var cfg = cardLabs[card.id];
+        if (!cfg) return;
+        var bar = document.createElement('div');
+        bar.className = 'iceq-card-actions';
+        var link = document.createElement('a');
+        link.className = 'iceq-lab-link';
+        link.href = cfg.href;
+        link.textContent = 'Explore Lab: ' + cfg.label + ' →';
+        bar.appendChild(link);
+        if (cfg.wb) {
+          var tryBtn = document.createElement('button');
+          tryBtn.type = 'button';
+          tryBtn.className = 'iceq-try-btn';
+          tryBtn.textContent = '⚡ Try in Workbench';
+          tryBtn.addEventListener('click', function () { selectWorkbench(cfg.wb, true); });
+          bar.appendChild(tryBtn);
+        }
+        card.appendChild(bar);
+      });
 
       var questions = Array.from(document.querySelectorAll('.iceq-question'));
       var reviewIds = ['ohm-s-law', 'fourier-transform', 'bayes-theorem', 'einstein-field-equations', 'navier-stokes-equations', 'compound-interest'];

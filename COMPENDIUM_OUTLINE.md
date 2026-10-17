@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 404 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 408 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -21,44 +21,44 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 51 lesson
 
 ### Number, Measurement & Everyday Mathematics
 
-- **MAT-01** — The Story of Numbers
-- **MAT-02** — Measuring Length & Every Unit
-- **MAT-03** — The Unit Factory
-- **MAT-04** — Clocks & Telling Time
-- **MAT-05** — Multiplication: See the Structure
-- **MAT-06** — Division: Think in Groups
-- **MAT-07** — PEMDAS & Order of Operations
-- **MAT-08** — Proportional Reasoning
-- **MAT-09** — Touch it. See it. Solve it.
+- **MAT-01** — Touch it. See it. Solve it.
+- **MAT-02** — The Story of Numbers
+- **MAT-03** — Clocks & Telling Time
+- **MAT-04** — Measuring Length & Every Unit
+- **MAT-05** — The Unit Factory
+- **MAT-06** — Multiplication: See the Structure
+- **MAT-07** — Division: Think in Groups
+- **MAT-08** — PEMDAS & Order of Operations
+- **MAT-09** — Proportional Reasoning
 
 ### Geometry, Graphs & Spatial Reasoning
 
-- **MAT-10** — Where Lines Meet
-- **MAT-11** — Graphing Calculator
-- **MAT-12** — Pythagoras & Triangles
+- **MAT-10** — Area & Perimeter Playground
+- **MAT-11** — Pythagoras & Triangles
+- **MAT-12** — Pi & Circles
 - **MAT-13** — SOH-CAH-TOA
-- **MAT-14** — Pi & Circles
-- **MAT-15** — The Math of the Rubik's Cube
-- **MAT-16** — Exponent Explorer
-- **MAT-17** — Linear Equations & Slope
-- **MAT-18** — Area & Perimeter Playground
-- **MAT-19** — Slope of a Curve
-- **MAT-20** — Snap, Crackle, Pop: The Ladder of Time Derivatives
-- **MAT-21** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-14** — Linear Equations & Slope
+- **MAT-15** — Where Lines Meet
+- **MAT-16** — Graphing Calculator
+- **MAT-17** — Slope of a Curve
+- **MAT-18** — Snap, Crackle, Pop: The Ladder of Time Derivatives
+- **MAT-19** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-20** — The Math of the Rubik's Cube
 
 ### Chance, Patterns & Sequences
 
+- **MAT-21** — Mean, Median & Mode
 - **MAT-22** — How Spread Out?
 - **MAT-23** — Probability Simulator
 - **MAT-24** — Galton Board & Pachinko Lab
 - **MAT-25** — Fibonacci Sequence
-- **MAT-26** — Mean, Median & Mode
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-27** — The Unit Circle & Waves
-- **MAT-28** — Algebra Tiles: Factoring
-- **MAT-29** — Completing the Square
+- **MAT-26** — Exponent Explorer
+- **MAT-27** — Algebra Tiles: Factoring
+- **MAT-28** — Completing the Square
+- **MAT-29** — The Unit Circle & Waves
 - **MAT-30** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
 - **MAT-31** — How 𝑒 Was Discovered
 - **MAT-32** — Riemann Hypothesis
@@ -248,7 +248,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 88 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 89 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -284,27 +284,28 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **ENG-23** — Mechanisms and Gear Systems
 - **ENG-24** — PID Control & Feedback Loops
-- **ENG-25** — Pilot the ELEGOO Robot Car
-- **ENG-26** — Sensor Fusion: Gyro + Accelerometer
-- **ENG-27** — Where Am I? Robot Mapping & Localization
-- **ENG-28** — Beyond A*: Motion Planning Lab
-- **ENG-29** — Reach, Grab, Place: Robot Arms
-- **ENG-30** — Robot Reinforcement Learning: Q-Learning Lab
-- **ENG-31** — Maglev Train Engineering
-- **ENG-32** — Bug Bots: Genghis & the Insect Robots
-- **ENG-33** — Engineering Design Process Studio
+- **ENG-25** — Robot Build Studio
+- **ENG-26** — Pilot the ELEGOO Robot Car
+- **ENG-27** — Sensor Fusion: Gyro + Accelerometer
+- **ENG-28** — Where Am I? Robot Mapping & Localization
+- **ENG-29** — Beyond A*: Motion Planning Lab
+- **ENG-30** — Reach, Grab, Place: Robot Arms
+- **ENG-31** — Robot Reinforcement Learning: Q-Learning Lab
+- **ENG-32** — Maglev Train Engineering
+- **ENG-33** — Bug Bots: Genghis & the Insect Robots
+- **ENG-34** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-34** — Bridge Over Troubled Water
-- **ENG-35** — Biomimicry: Engineering Nature's Genius
+- **ENG-35** — Bridge Over Troubled Water
+- **ENG-36** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-36** — Emily Roebling
-- **ENG-37** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-38** — Rube Goldberg Machine Lab
-- **ENG-39** — Hedy Lamarr
+- **ENG-37** — Emily Roebling
+- **ENG-38** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-39** — Rube Goldberg Machine Lab
+- **ENG-40** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -507,7 +508,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 100 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 103 lessons
 
 ## Visual Art & Design (DES)
 
@@ -623,28 +624,31 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-05** — Genesis 10: The Table of Nations
 - **BIB-06** — Exodus: Rescue, Covenant & Presence
 - **BIB-07** — The Tabernacle
-- **BIB-08** — The Temple & God's Presence
-- **BIB-09** — Kingdoms, Prophets & Exile
-- **BIB-10** — Joshua to David: Land, Judges & Kings
-- **BIB-11** — The Feasts of Israel
-- **BIB-12** — Elijah: Prophet of the Living God
-- **BIB-13** — Isaiah: Holiness, Justice & Hope
-- **BIB-14** — Jeremiah: Courage, Covenant & Exile
-- **BIB-15** — Ezekiel: God’s Presence & a People Renewed
-- **BIB-16** — Lamentations: Grief, Prayer & Persistent Hope
-- **BIB-17** — Daniel: Faithfulness in Exile
-- **BIB-18** — The World of Jesus
-- **BIB-19** — Jesus’ Ministry: The Kingdom Arrives
-- **BIB-20** — Jesus' Parables Lab
-- **BIB-21** — Holy Week: The Final Days of Jesus
-- **BIB-22** — Acts: Jerusalem to the Nations
-- **BIB-23** — Paul's Missionary Journeys
-- **BIB-24** — The Epistles: Gospel Communities in Practice
-- **BIB-25** — Job: Suffering, Wisdom & Faithful Speech
-- **BIB-26** — Proverbs: Wisdom Decision Lab
-- **BIB-27** — Psalms: Learning to Pray the Whole Life
-- **BIB-28** — Revelation: Witness, Worship & New Creation
-- **BIB-29** — The Sermon on the Mount
+- **BIB-08** — Leviticus: Holiness, Worship & Neighbor-Love
+- **BIB-09** — Numbers: Wilderness, Trust & a New Generation
+- **BIB-10** — Deuteronomy: Remember, Love & Choose Life
+- **BIB-11** — The Temple & God's Presence
+- **BIB-12** — Kingdoms, Prophets & Exile
+- **BIB-13** — Joshua to David: Land, Judges & Kings
+- **BIB-14** — The Feasts of Israel
+- **BIB-15** — Elijah: Prophet of the Living God
+- **BIB-16** — Isaiah: Holiness, Justice & Hope
+- **BIB-17** — Jeremiah: Courage, Covenant & Exile
+- **BIB-18** — Ezekiel: God’s Presence & a People Renewed
+- **BIB-19** — Lamentations: Grief, Prayer & Persistent Hope
+- **BIB-20** — Daniel: Faithfulness in Exile
+- **BIB-21** — The World of Jesus
+- **BIB-22** — Jesus’ Ministry: The Kingdom Arrives
+- **BIB-23** — Jesus' Parables Lab
+- **BIB-24** — Holy Week: The Final Days of Jesus
+- **BIB-25** — Acts: Jerusalem to the Nations
+- **BIB-26** — Paul's Missionary Journeys
+- **BIB-27** — The Epistles: Gospel Communities in Practice
+- **BIB-28** — Job: Suffering, Wisdom & Faithful Speech
+- **BIB-29** — Proverbs: Depth, Beauty & Context
+- **BIB-30** — Psalms: Learning to Pray the Whole Life
+- **BIB-31** — Revelation: Witness, Worship & New Creation
+- **BIB-32** — The Sermon on the Mount
 
 # Supporting Pages
 
