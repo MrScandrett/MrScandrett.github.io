@@ -196,9 +196,16 @@
       id: 'deuteronomy', code: '2G', stage: 'Stage 2 · Covenant & Presence', grades: 'Grades 6–12', time: '50–70 minutes',
       title: 'Deuteronomy: Remember, Love & Choose Life', lede: 'Listen to Moses retell Israel’s story and law to a new generation preparing to cross the Jordan.',
       question: 'Why does Moses ask a new generation to remember before it moves forward?',
-      scripture: 'Deuteronomy 1 · 6 · 8 · 10 · 30–34',
-      goals: ['Recognize Deuteronomy as covenant instruction shaped as Moses’ farewell speeches.', 'Trace the repeated pattern of remembering, loving, teaching, obeying, and choosing life.', 'Connect the Shema and neighbor-centered commands with later biblical teaching.'],
-      lenses: [['Retell','Memory forms identity','Moses retells the wilderness story to hearers who must own a history they did not all personally experience.','Notice where the speech reviews, interprets, and applies earlier events.'],['Hear and love','The Shema','Deuteronomy 6 joins the confession that the Lord is one with wholehearted love and daily teaching across home, road, bedtime, and morning.','Observe how belief becomes a repeated communal practice.'],['Remember','Prosperity can forget','Chapter 8 warns that abundance may produce self-congratulation. Remembering wilderness dependence protects gratitude and covenant loyalty.','Ask what success tempts the people to claim about themselves.'],['Choose life','A decision before crossing','Deuteronomy 30 sets life and good against death and evil, then calls heaven and earth as witnesses. Moses dies outside the land, and Joshua leads next.','Read the ending as both completion and handoff.']],
+      scripture: 'Deuteronomy 1 · 5–6 · 8 · 10 · 15 · 17–18 · 26 · 30–34',
+      goals: ['Recognize Deuteronomy as a covenant renewal shaped like an ancient treaty: history, stipulations, blessings and curses, witnesses, and a handoff to a new leader.', 'Trace the pattern of remembering, loving, teaching, obeying, and choosing life across chapters 1, 5–6, 8, 26, and 30.', 'Explain how memory becomes justice: show how “you were slaves” shapes laws about debt, harvest, foreigners, and rulers.', 'Compare a retold passage with its earlier version (Deuteronomy 5 and Exodus 20; Deuteronomy 1:22 and Numbers 13) and say what the retelling adds.', 'Connect Deuteronomy to later Scripture: Jesus’ wilderness answers, the greatest commandment, 1 Samuel 8, Romans 10, and Joshua 1.'],
+      lenses: [
+        ['Retell','Memory forms identity','Deuteronomy opens “These are the words that Moses spoke” (its Hebrew title, Devarim, means “words”; the English name comes from a Greek rendering of 17:18 meaning “second law”). Moses speaks east of the Jordan to people who were children, or not yet born, at Sinai, yet he says the Lord made this covenant “not with our fathers… but with us, who are all of us here alive today” (5:3). Retelling makes an old covenant a present one. He also retells with emphasis: chapter 5 gives a different reason for the Sabbath than Exodus 20 does.','Read Deuteronomy 5:12–15 beside Exodus 20:8–11. What reason does each give for the Sabbath, and what does the difference show about how Moses retells?',1,'Retelling as ritual: the Passover Haggadah teaches that in every generation a person should see themselves as if they had come out of Egypt (Mishnah, Pesachim 10:5).','Compare Deuteronomy 1:22–23 with Numbers 13:1–3. Which side of the same event does each emphasize, and is retelling the same as changing the story?'],
+        ['Hear and love','The Shema','Deuteronomy 6:4–5 is the Shema, named for its first word, “Hear.” It joins a confession (the Lord is one) with the command to love him with all heart, soul, and might. Many scholars note that “love” in this treaty-shaped book includes loyalty, not only feeling. Verses 6–9 then say how it is learned: words on the heart, repeated to children, spoken while sitting, walking, lying down, and rising, bound as a sign, and written on doorposts. Observant Jews still recite the Shema morning and evening and read verses 8–9 literally in tefillin and mezuzot.','List every action verb in 6:4–9 and sort them: which are private, which are shared with a household, and which a visitor could see?',2,'Jesus names this the greatest commandment (Mark 12:28–34) and answers each wilderness temptation from Deuteronomy (Matthew 4:1–11, quoting 8:3, 6:16, and 6:13).','How can love be commanded? Look at 10:12–13 and 11:1, where love sits beside walking, serving, and keeping. What does the text count as love?'],
+        ['Justice and neighbor','Memory becomes law','Moses grounds justice in who God is: he “executes justice for the fatherless and the widow, and loves the sojourner,” so Israel must love the sojourner, “for you were sojourners in the land of Egypt” (10:17–19). The laws make it concrete: debts released every seventh year (15:1–11), judges who pursue “justice, and only justice” (16:18–20), and part of the harvest left for the foreigner, orphan, and widow (24:19–22). The memory of slavery becomes a rule for how the strong treat the weak.','Find each place in chapters 10, 15, and 24 where the reason for a law is “you were slaves” or “you were sojourners.” What does remembering do to the way a law is applied?',5,'Compare Leviticus 19:9–18 (the Leviticus lesson). Acts 4:34 echoes 15:4: “there was not a needy person among them.”','Deuteronomy 15:4 says there will be “no poor among you” if Israel obeys, yet 15:11 says the poor “will never cease from the land.” How does the passage hold the ideal and the realism together?'],
+        ['Limits on power','Authority under the word','Deuteronomy allows a king but limits him (17:14–20): not many horses, wives, or silver and gold, and he must copy the law and read it “all the days of his life, that his heart may not be lifted up above his brothers.” Judges, priests, and prophets share the work of authority (16:18–18:22). The prophet like Moses (18:15–22) is tested by whether his word comes true and in whose name he speaks. Power is spread out and placed under a written word.','Make a three-column chart: what the king may not gather, what he must do, and why (the last phrase of 17:20). What kind of ruler is this law trying to prevent?',6,'Test it against 1 Samuel 8, where Israel asks for a king “like all the nations,” and against Solomon, who gathers horses from Egypt, many wives, and great gold (1 Kings 10–11). The prophet like Moses is echoed in Acts 3:22–23 and 7:37.','Is 17:14–20 permission for monarchy or a brake on it? 1 Samuel 8 treats the request as a problem. How might both be true?'],
+        ['Remember','Prosperity can forget','Chapter 8 says the forty years were a school: God humbled and tested Israel and fed them with manna so they would learn that “man does not live by bread alone,” then warns that prosperity is the danger: “My power and the might of my hand have gotten me this wealth” (8:17). Chapter 26 gives memory a script. A worshiper brings first fruits, recites a short history (“A wandering Aramean was my father”), and shares the joy with the Levite and the sojourner (26:5–11). Remembering is meant to end in gratitude and generosity.','Mark every “remember” and “forget” in chapter 8, then read 26:1–11 aloud. At what point does the recited history turn into action?',8,'The same pattern runs through the festival calendar (Deuteronomy 16; see the Feasts of Israel lesson) and through Jesus’ answer to the first temptation, which quotes 8:3.','Moses asks Israel to remember a wilderness full of failure. Why must honest memory include what went wrong, and what would a one-sided memory do to a people?'],
+        ['Choose life','A decision before crossing','Chapters 29–30 renew the covenant on the plains of Moab. Moses says the commandment is “not too hard for you… the word is very near you, in your mouth and in your heart” (30:11–14), sets “life and death, blessing and curse” before them, calls heaven and earth as witnesses, and urges “choose life” (30:19). The book is not naively optimistic: 30:1–10 already imagines exile and return. Moses then commissions Joshua (31:1–8), the book is placed beside the ark (31:24–26), and chapter 34 ends with Moses on Mount Nebo, shown the land he will not enter.','Read 30:15–20 as a decision speech. What are the two paths, what does each cost, and which words make the choice feel immediate?',9,'Paul quotes 30:12–14 in Romans 10:6–8, and Joshua 1:6–9 repeats “be strong and courageous” from the handoff in 31:6–8.','Moses is told he will not enter (32:48–52; Numbers 20:12). Read what the text actually says about why, then ask what the ending says about leadership: the work outlasts the leader.']
+      ],
       check: ['What is the purpose of remembering in Deuteronomy?',['To shape present love, gratitude, teaching, and faithfulness','To replace action with nostalgia','To claim the wilderness had no failures'],'To shape present love, gratitude, teaching, and faithfulness','Moses retells the past so a new generation can live faithfully in the future.'],
       reflect: 'Write a four-part “remember” statement: what happened, what it reveals about God, what danger forgetting creates, and one faithful practice for today.'
     },
@@ -416,7 +423,7 @@
     },
     'deuteronomy': {
       focus: ['exodus', 'covenant', 'kingdom'],
-      bigIdea: 'Deuteronomy turns remembered rescue and wilderness failure into a call for wholehearted love, faithful teaching, justice, and life.',
+      bigIdea: 'Deuteronomy is a covenant-renewal ceremony: Moses retells rescue and wilderness failure so a new generation will love, teach, practice justice, limit power, and choose life.',
       before: 'The Exodus generation receives covenant instruction but fails repeatedly in the wilderness; their children now stand east of the Jordan.',
       now: 'Moses retells the journey and law in farewell speeches, placing memory and love at the heart of the generation’s future.',
       next: 'Moses dies, Joshua receives leadership, and the story moves across the Jordan into land, judges, kings, and prophets.'
@@ -450,7 +457,7 @@
     ,'exodus': [['Exodus',1,8,14],['Exodus',2,23,25],['Exodus',3,1,15],['Exodus',12,1,14],['Exodus',14,21,31],['Exodus',15,1,13],['Exodus',19,1,8],['Exodus',20,1,17],['Exodus',25,8,9]]
     ,'leviticus': [['Leviticus',1,1,9],['Leviticus',16,1,10],['Leviticus',19,1,18],['Leviticus',19,32,37],['Leviticus',23,1,8],['Leviticus',25,1,17]]
     ,'numbers': [['Numbers',1,1,4],['Numbers',2,1,9],['Numbers',11,1,15],['Numbers',13,25,33],['Numbers',14,1,24],['Numbers',21,4,9],['Numbers',27,12,23]]
-    ,'deuteronomy': [['Deuteronomy',1,1,8],['Deuteronomy',6,1,9],['Deuteronomy',8,1,18],['Deuteronomy',10,12,22],['Deuteronomy',30,11,20],['Deuteronomy',34,1,12]]
+    ,'deuteronomy': [['Deuteronomy',1,1,8],['Deuteronomy',5,1,21],['Deuteronomy',6,1,9],['Deuteronomy',8,1,18],['Deuteronomy',10,12,22],['Deuteronomy',15,1,11],['Deuteronomy',17,14,20],['Deuteronomy',18,15,22],['Deuteronomy',26,1,11],['Deuteronomy',30,11,20],['Deuteronomy',31,1,8],['Deuteronomy',34,1,12]]
     ,'jesus-ministry': [['Mark',1,9,15],['Luke',4,16,30],['Mark',1,16,20],['Mark',1,21,34],['Mark',2,1,12],['Mark',2,13,17],['Mark',4,35,41],['Matthew',16,13,20],['Mark',8,27,38]]
     ,'psalms': [['Psalms',1,1,6],['Psalms',13,1,6],['Psalms',23,1,6],['Psalms',51,1,12],['Psalms',150,1,6]]
     ,'joshua-to-david': [['Joshua',1,1,9],['Joshua',24,14,28],['Judges',2,6,23],['Judges',21,25,25],['Ruth',1,16,17],['1 Samuel',8,4,22],['1 Samuel',16,1,13],['1 Samuel',17,45,47],['2 Samuel',7,8,17]]
@@ -637,11 +644,61 @@
   lessonImages.numbers = Object.assign({}, lessonImages.exodus, {
     caption: 'An artistic depiction of the Exodus tradition introduces the wilderness setting of Numbers. It is later art, not a documentary image of the event.'
   });
-  lessonImages.deuteronomy = Object.assign({}, lessonImages.exodus, {
-    caption: 'Later art imagines Moses and Israel’s journey. Deuteronomy itself presents Moses speaking to a new generation east of the Jordan.'
-  });
+  lessonImages.deuteronomy = {
+    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/View_from_Mount_Nebo_%282007-05-830%29_%281330159327%29.jpg/1280px-View_from_Mount_Nebo_%282007-05-830%29_%281330159327%29.jpg',
+    page: 'https://commons.wikimedia.org/wiki/File:View_from_Mount_Nebo_(2007-05-830)_(1330159327).jpg',
+    alt: 'Hazy view from the ridge of Mount Nebo in Jordan across the Jordan Valley toward the land west of the river',
+    caption: 'The view from Mount Nebo toward the land west of the Jordan. Deuteronomy 34 says Moses was shown the land from here and did not enter it. This modern photograph orients the setting; it does not prove which viewpoint the text means.',
+    credit: 'Vyacheslav Argenberg', license: 'CC BY 2.0', licenseUrl: 'https://creativecommons.org/licenses/by/2.0/'
+  };
 
   var lessonVisualJourneys = {
+    'deuteronomy': [
+      {
+        title: 'East of the Jordan',
+        note: 'Moses speaks on the plains of Moab and the book ends on Mount Nebo. Compare the landscape with the text, then compare an artist’s ending with Deuteronomy 34.',
+        items: [
+          {
+            title: 'The Jordan Valley from Mount Nebo', kind: 'Photograph · Jordan · Deuteronomy 34:1–4',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg/1280px-Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Overhead_view_from_Mount_Nebo_of_the_Dead_Sea_and_Jordan_Valley_area.jpg',
+            alt: 'Wide panorama from Mount Nebo showing the Dead Sea at left and the Jordan Valley stretching toward Jericho',
+            caption: 'From Nebo the Dead Sea, the Jordan Valley, and the Jericho area lie in one frame. Deuteronomy 34:1–3 lists the regions the Lord showed Moses; trace how many you can place in this view.',
+            credit: 'Mohammad hajeer', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/'
+          },
+          {
+            title: 'The Testament and Death of Moses', kind: 'Fresco · Luca Signorelli · Deuteronomy 31–34',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Signorelli%2C_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg/1280px-Signorelli%2C_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:Signorelli,_Luca_-_Moses%27s_Testament_and_Death_-_1481-82.jpg',
+            alt: 'Renaissance fresco in which Moses addresses the people, hands over a staff, and is shown dying, in one crowded landscape',
+            caption: 'Signorelli, painting in the Sistine Chapel in 1481–82, puts several moments from the book’s ending into one scene, including the handoff and Moses’ death. Deuteronomy 34:6 adds that no one knows his burial place. Which moment can you find, and what did the artist choose to leave out?',
+            credit: 'Luca Signorelli, 1482', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      },
+      {
+        title: 'Words that were kept and practiced',
+        note: 'The Shema was copied, recited, and bound on the body long before it reached us. Weigh a manuscript against a later practice.',
+        items: [
+          {
+            title: 'The Nash Papyrus', kind: 'Manuscript · 2nd–1st century BC · Deuteronomy 5–6',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/2nd_century_Hebrew_decalogue.jpg',
+            page: 'https://commons.wikimedia.org/wiki/File:2nd_century_Hebrew_decalogue.jpg',
+            alt: 'Torn fragment of papyrus with lines of ancient Hebrew writing',
+            caption: 'This Hebrew fragment combines a form of the Ten Commandments, blending Exodus 20 and Deuteronomy 5, with the Shema (6:4–5). It shows these texts were being copied and used together over two thousand years ago.',
+            credit: 'Unknown author; Nash Papyrus', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          },
+          {
+            title: 'Wrapping tefillin before prayer', kind: 'Photograph · Samarkand · c. 1865–72 · Deuteronomy 6:8',
+            src: 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Zeravshan_Okrug._Samarkand._A_Jewish_Man%2C_Wearing_a_Prayer_Shawl%2C_Wrapping_His_Arm_in_Phylactery%2C_in_Preparation_for_Prayer_WDL11152.png',
+            page: 'https://commons.wikimedia.org/wiki/File:Zeravshan_Okrug._Samarkand._A_Jewish_Man,_Wearing_a_Prayer_Shawl,_Wrapping_His_Arm_in_Phylactery,_in_Preparation_for_Prayer_WDL11152.png',
+            alt: 'Nineteenth-century photograph of a man in a prayer shawl winding the strap of a small box around his arm',
+            caption: 'Tefillin are small boxes holding Torah verses, including Deuteronomy 6:4–9, bound on the arm and head: one Jewish reading of “bind them as a sign on your hand.” This is a later, living practice, not temple-era Israel, and not every tradition reads verse 8 literally.',
+            credit: 'Aleksandr L. Kun, Turkestan Album', license: 'Public domain', licenseUrl: 'https://creativecommons.org/publicdomain/mark/1.0/'
+          }
+        ]
+      }
+    ],
     'feasts-of-israel': [
       {
         title: 'The text and the spring',
@@ -1421,10 +1478,12 @@
     'revelation': 'sevenChurches',
     'genesis': 'nearEast',
     'exodus': 'sinai',
-    'joshua-to-david': 'tribes'
+    'joshua-to-david': 'tribes',
+    'deuteronomy': 'tribes'
   };
 
   var lessonMapNotes = {
+    'deuteronomy': 'Look east of the Jordan: Moses speaks on the plains of Moab opposite Jericho, and Mount Nebo overlooks the land. This map shows the tribal allotments described in Joshua 13–19, so use it for location, not for the situation in Moses’ day.',
     'world-of-the-bible': 'Zoom out: Egypt anchors the southwest, Mesopotamia the east, and the narrow Levantine land bridge lies between them. Locate seas, rivers, deserts, and imperial routes before focusing on Canaan.',
     'how-the-bible-reached-us': 'The biblical writings emerged across connected lands and languages. Use the map to locate Israel between Egypt, Mesopotamia, Anatolia, and the Mediterranean world—then remember that manuscripts later traveled far beyond this frame.',
     'the-tabernacle': 'This modern relief map supplies physical orientation only; it does not settle the debated route of the exodus or the location of Mount Sinai. Find Egypt, the gulfs, desert interiors, and the route north toward the southern Levant.',
@@ -1617,7 +1676,10 @@
       { title: 'Book of Deuteronomy', kind: 'Biblical book' },
       { title: 'Moses', kind: 'Biblical leader' },
       { title: 'Shema Yisrael', label: 'The Shema', kind: 'Biblical confession' },
+      { title: 'Plains of Moab', kind: 'Place' },
       { title: 'Mount Nebo', kind: 'Place' },
+      { title: 'Song of Moses', kind: 'Biblical poem' },
+      { title: 'Nash Papyrus', kind: 'Ancient manuscript' },
       { title: 'Joshua', kind: 'Successor to Moses' }
     ],
     'genesis': [
@@ -1707,6 +1769,11 @@
   }
 
   var visualJourneyMeta = {
+    'deuteronomy': {
+      title: 'From the Plains of Moab to the Scroll and the Doorpost',
+      subtitle: 'See the landscape Moses speaks from, an artist’s ending, an ancient manuscript, and a living practice.',
+      note: 'Photographs of Mount Nebo document the landscape east of the Jordan. Signorelli’s fresco is a 15th-century artistic interpretation. The Nash Papyrus is an ancient manuscript witness, and the Samarkand photograph shows later Jewish practice of tefillin.'
+    },
     'feasts-of-israel': {
       title: 'From Leviticus 23 to the Table',
       subtitle: 'See the written calendar, then the practices that carried it forward in Jewish life.',
@@ -1838,7 +1905,7 @@
     sceneBoardMarkup() +
     investigationMarkup(lesson.investigation) +
     '<section class="bpl-card bpl-entities"><div class="bpl-entities-head"><div><p class="bpl-label">People, places &amp; primary sources</p><h2>Picture the names in context</h2></div><p>Reference summaries and lead images come from Wikipedia.</p></div><aside class="bpl-source-note"><strong>Image accuracy:</strong> No verified contemporary portrait survives for the ancient biblical figures shown here. Person images are later artistic depictions, not documentary likenesses. Places, artifacts, manuscripts, maps, and modern observances are identified separately.</aside><div class="bpl-entity-grid">' + lesson.entities.map(function (entity, entityIndex) { var fallback = entity.fallback || lesson.image.src; return '<article class="bpl-entity" data-entity-index="' + entityIndex + '"><a class="bpl-entity-image" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer"><figure class="bpl-entity-figure" data-zoomable><img src="' + esc(fallback) + '" alt="Reference image for ' + esc(entity.label || entity.title) + '" loading="lazy" referrerpolicy="no-referrer"><figcaption>Reference image for ' + esc(entity.label || entity.title) + '. Read the source article for its origin and image license.</figcaption></figure></a><div class="bpl-entity-copy"><span>' + esc(entity.kind) + '</span><h3>' + esc(entity.label || entity.title) + '</h3><p>Loading a sourced reference summary…</p><a class="bpl-entity-source" href="https://en.wikipedia.org/wiki/' + encodeURIComponent(entity.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener noreferrer">Wikipedia reference ↗</a></div></article>'; }).join('') + '</div><p class="bpl-wikipedia-credit">Text excerpts and lead images: <a href="https://en.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia contributors</a> · Text available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="license noopener noreferrer">CC BY-SA 4.0</a>; image licenses may vary and are listed on each linked article/file page.</p></section>' +
-    '<section class="bpl-card bpl-explore" id="bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through four lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
+    '<section class="bpl-card bpl-explore" id="bpl-explore"><p class="bpl-label">Guided exploration</p><h2>Study through ' + ['zero','one','two','three','four','five','six','seven','eight'][lesson.lenses.length] + ' lenses</h2><div class="bpl-lenses" role="group" aria-label="Exploration lenses">' +
       lesson.lenses.map(function (lens, i) { return '<button class="bpl-lens" type="button" data-lens="' + i + '" aria-pressed="' + (i === 0) + '"><span>Lens ' + (i + 1) + '</span><strong>' + esc(lens[0]) + ': ' + esc(lens[1]) + '</strong></button>'; }).join('') +
       '</div><article class="bpl-workspace" aria-live="polite"><h3></h3><p></p><p class="bpl-notice"></p></article></section>' +
     '<div class="bpl-practice"><section class="bpl-card" id="bpl-explain"><p class="bpl-label">Check and explain</p><h2>' + esc(lesson.check[0]) + '</h2><div class="bpl-choices">' + lesson.check[1].map(function (choice) { return '<button class="bpl-choice" type="button">' + esc(choice) + '</button>'; }).join('') + '</div><p class="bpl-feedback" aria-live="polite">Choose the strongest answer, then explain why.</p></section>' +
