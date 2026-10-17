@@ -553,41 +553,51 @@
   background: var(--lv);
   box-shadow: 0 0 10px var(--lv);
 }
-.ww-viz { margin-top: auto; padding-top: 0.6rem; min-height: 4.4rem; }
+.ww-viz { margin-top: auto; padding-top: 0.6rem; min-height: 4.4rem; contain: layout paint; }
 .ww-viz svg { display: block; width: 100%; height: auto; overflow: visible; }
 .ww-viz:empty { min-height: 0; padding: 0; }
 .ww-vt { font: 700 7px var(--ww-font-mono); fill: #94a3b8; letter-spacing: 0.04em; }
 .ww-vt.hi { fill: #e2e8f0; }
 
-.ww-needle { transform-origin: 80px 62px; transform: rotate(var(--a)); animation: ww-sweep 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-.ww-spin { transform-origin: 42px 38px; animation: ww-spin 40s linear infinite; }
-.ww-pulse { animation: ww-pulse 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.ww-streak { animation: ww-flow var(--d, 2s) linear infinite; }
+.ww-needle { transform-origin: 80px 64px; transform: rotate(var(--a)); animation: ww-sweep 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.ww-spin { transform-origin: 42px 36px; animation: ww-spin 50s linear infinite; }
+.ww-pulse { animation: ww-pulse 4s ease-in-out infinite; }
 .ww-wave { animation: ww-wave 2.6s linear infinite; }
+.ww-bubble { animation: ww-bubble 3.4s ease-in infinite; }
 .ww-bob { animation: ww-bob 2.8s ease-in-out infinite; }
 .ww-drift { animation: ww-drift 16s ease-in-out infinite alternate; }
 .ww-rise { animation: ww-rise 2.1s linear infinite; }
-.ww-float { animation: ww-float 4s ease-in-out infinite; }
+.ww-float { animation: ww-float 5s ease-in-out infinite; }
+.ww-float.b { animation-duration: 7s; animation-direction: reverse; }
 .ww-fogveil { animation: ww-breathe 7s ease-in-out infinite; }
 .ww-twinkle { animation: ww-twinkle 3s ease-in-out infinite; }
-.ww-rain { animation: ww-fall 0.9s linear infinite; }
-.ww-snow { animation: ww-snow 7s linear infinite; }
+.ww-rain { animation: ww-fall 0.8s linear infinite; }
+.ww-rain.slow { animation-duration: 1.3s; }
+.ww-snow { animation: ww-snow 9s linear infinite; }
 .ww-bolt { animation: ww-flash 4.5s steps(1) infinite; opacity: 0; }
+.ww-flutter { transform-origin: 0 0; animation: ww-flutter 0.9s ease-in-out infinite alternate; }
+.ww-sway { transform-origin: 136px 50px; animation: ww-sway 2.4s ease-in-out infinite alternate; }
 
 @keyframes ww-sweep { from { transform: rotate(-90deg); } }
 @keyframes ww-spin { to { transform: rotate(360deg); } }
 @keyframes ww-pulse { 50% { opacity: 0.55; } }
-@keyframes ww-flow { to { stroke-dashoffset: -54; } }
 @keyframes ww-wave { to { transform: translateX(-20px); } }
+@keyframes ww-bubble { from { transform: translateY(6px); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(-12px); opacity: 0; } }
 @keyframes ww-bob { 50% { transform: translateY(-2px); } }
 @keyframes ww-drift { to { transform: translateX(var(--dx, 8px)); } }
 @keyframes ww-rise { from { transform: translateY(5px); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(-3px); opacity: 0; } }
-@keyframes ww-float { 50% { transform: translate(4px, -5px); } }
+@keyframes ww-float { 50% { transform: translate(5px, -4px); } }
 @keyframes ww-breathe { 50% { opacity: 0.2; } }
-@keyframes ww-twinkle { 50% { opacity: 0.2; } }
-@keyframes ww-fall { from { transform: translate(0, -20px); } to { transform: translate(-14px, 150px); } }
-@keyframes ww-snow { from { transform: translate(0, -10px); } 50% { transform: translate(8px, 70px); } to { transform: translate(-4px, 150px); } }
-@keyframes ww-flash { 0%, 100% { opacity: 0; } 92% { opacity: 0.95; } 94% { opacity: 0; } 96% { opacity: 0.8; } }
+@keyframes ww-twinkle { 50% { opacity: 0.35; } }
+@keyframes ww-fall { to { transform: translate(var(--fx), 130px); } }
+@keyframes ww-snow { to { transform: translateY(130px); } }
+@keyframes ww-flash { 0%, 100% { opacity: 0; } 92% { opacity: 0.9; } 94% { opacity: 0; } 96% { opacity: 0.7; } }
+@keyframes ww-flutter { from { transform: rotate(calc(var(--fl) * -1)); } to { transform: rotate(var(--fl)); } }
+@keyframes ww-sway { from { transform: rotate(calc(var(--sw) * -1)); } to { transform: rotate(var(--sw)); } }
+
+/* Pause all graphics while the cockpit is scrolled out of view */
+.ww-cockpit-grid.ww-offscreen .ww-viz *,
+.ww-cockpit-grid.ww-offscreen .ww-dial-sky * { animation-play-state: paused !important; }
 
 /* Main dial: live sky behind the readout */
 .ww-main-dial > *:not(.ww-dial-sky) { position: relative; z-index: 1; }
