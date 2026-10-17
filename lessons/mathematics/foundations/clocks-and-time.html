@@ -13,6 +13,49 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #3b82f6; --ll-tab-active: #3b82f6; --ll-tab-active-bg: rgba(59,130,246,0.12); }
+    .ct-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .ct-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .ct-panel-preset:hover {
+      background: rgba(59,130,246,0.08);
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+    }
+    .ct-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .ct-panel-preset,
+    [data-theme="vaporwave"] .ct-panel-preset,
+    [data-theme="bark"] .ct-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .ct-panel-preset:hover,
+    [data-theme="vaporwave"] .ct-panel-preset:hover,
+    [data-theme="bark"] .ct-panel-preset:hover {
+      background: rgba(59,130,246,0.22);
+      border-color: #60a5fa;
+    }
 
     /* ── Page ─────────────────────────────────────────── */
     .ct-page { padding-bottom: 3.5rem; }
@@ -1834,7 +1877,102 @@
           </section>
 
         </main>
-      </div>
+      </div><!-- /.ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ct-controls">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ct-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ct-controls">
+            <span class="ll-label">Dilation Presets (v/c)</span>
+            <div class="ct-panel-grid" role="group" aria-label="Relativistic Presets">
+              <button type="button" class="ct-panel-preset" data-speed="10" data-years="1">
+                Sub-Light
+                <small>0.10 c · γ = 1.005</small>
+              </button>
+              <button type="button" class="ct-panel-preset" data-speed="50" data-years="5">
+                Half Light
+                <small>0.50 c · γ = 1.155</small>
+              </button>
+              <button type="button" class="ct-panel-preset" data-speed="87" data-years="10">
+                Half Time
+                <small>0.866 c · γ = 2.000</small>
+              </button>
+              <button type="button" class="ct-panel-preset" data-speed="99" data-years="1">
+                Extreme
+                <small>0.99 c · γ = 7.089</small>
+              </button>
+            </div>
+
+            <span class="ll-label">Jump to Section</span>
+            <div class="ct-panel-grid" role="group" aria-label="Quick Nav">
+              <a href="#clock-lab" class="ct-panel-preset" style="text-decoration:none;">
+                Clock Lab
+                <small>Analog &amp; Digital</small>
+              </a>
+              <a href="#ancient-time" class="ct-panel-preset" style="text-decoration:none;">
+                Ancient Clocks
+                <small>Sundials &amp; Water</small>
+              </a>
+              <a href="#world-time" class="ct-panel-preset" style="text-decoration:none;">
+                Time Zones
+                <small>World Lat &amp; Lon</small>
+              </a>
+              <a href="#relativity" class="ct-panel-preset" style="text-decoration:none;">
+                Time Dilation
+                <small>Relativity &amp; γ</small>
+              </a>
+            </div>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Live Telemetry</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Local Time</span>
+                <span class="ll-readout-val" id="ct-p-time">--:--:--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Speed v/c</span>
+                <span class="ll-readout-val" id="ct-p-speed">10%</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Lorentz Factor γ</span>
+                <span class="ll-readout-val" id="ct-p-gamma">1.005</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Earth Equivalent</span>
+                <span class="ll-readout-val" id="ct-p-earth">1.01 yrs</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ct-guide" aria-hidden="true">
+            <span class="ll-label">Foundations of Time</span>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Definition of the Second:</strong> Since 1967, the SI second is defined by exactly 9,192,631,770 oscillations of radiation from the caesium-133 atom.
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Grace Hopper's Nanosecond:</strong> Light in vacuum travels ~30 cm (11.8 inches) in 1 nanosecond (\(10^{-9}\text{ s}\)). Computer architects must keep microchip traces short because electricity cannot travel faster than light!
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Time Dilation Formula:</strong>
+            </p>
+            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+              \(\gamma = \frac{1}{\sqrt{1 - v^2/c^2}}\)
+            </div>
+            <p style="font-size:0.8rem; line-height:1.55;">
+              <strong>GPS Relativistic Corrections:</strong> Satellite atomic clocks tick faster due to weaker gravity (+45 µs/day) and slower due to orbital motion (-7 µs/day), netting +38 µs/day. Without relativity math, GPS navigation would fail within minutes!
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
     </div>
   </div>
 
@@ -1972,7 +2110,10 @@
         update(state) {
           const now = state.simulatedNow;
           const { h, m, s } = getClockReadings(now);
-          digitalEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          digitalEl.textContent = timeStr;
+          const pTime = document.getElementById('ct-p-time');
+          if (pTime) pTime.textContent = timeStr;
           dateEl.textContent = `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
         }
       },
@@ -2389,6 +2530,13 @@
         resGamma.textContent = '∞';
         resEarth.textContent = '∞ years';
         warning.style.display = 'block';
+
+        const pSpeed = document.getElementById('ct-p-speed');
+        const pGamma = document.getElementById('ct-p-gamma');
+        const pEarth = document.getElementById('ct-p-earth');
+        if (pSpeed) pSpeed.textContent = `${pct}% c`;
+        if (pGamma) pGamma.textContent = '∞';
+        if (pEarth) pEarth.textContent = '∞ years';
         return;
       }
 
@@ -2400,10 +2548,26 @@
       resEarth.textContent = earthTime >= 1000
         ? `${(earthTime / 1000).toFixed(2)}k years`
         : `${earthTime.toFixed(2)} year${earthTime !== 1 ? 's' : ''}`;
+
+      const pSpeed = document.getElementById('ct-p-speed');
+      const pGamma = document.getElementById('ct-p-gamma');
+      const pEarth = document.getElementById('ct-p-earth');
+      if (pSpeed) pSpeed.textContent = `${pct}% c`;
+      if (pGamma) pGamma.textContent = gamma.toFixed(3);
+      if (pEarth) pEarth.textContent = resEarth.textContent;
     }
 
     speedSlider.addEventListener('input', update);
     shipTimeSlider.addEventListener('input', update);
+
+    document.querySelectorAll('.ct-panel-preset[data-speed]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        speedSlider.value = btn.dataset.speed;
+        shipTimeSlider.value = btn.dataset.years;
+        update();
+      });
+    });
+
     update();
   })();
   </script>

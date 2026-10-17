@@ -13,6 +13,54 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #f59e0b; --ll-tab-active: #f59e0b; --ll-tab-active-bg: rgba(245,158,11,0.12); }
+    .ps-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .ps-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .ps-panel-preset:hover {
+      background: rgba(245,158,11,0.08);
+      border-color: #f59e0b;
+      transform: translateY(-1px);
+    }
+    .ps-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .ps-panel-preset,
+    [data-theme="vaporwave"] .ps-panel-preset,
+    [data-theme="bark"] .ps-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .ps-panel-preset:hover,
+    [data-theme="vaporwave"] .ps-panel-preset:hover,
+    [data-theme="bark"] .ps-panel-preset:hover {
+      background: rgba(245,158,11,0.22);
+      border-color: #fbbf24;
+    }
+    .ps-panel-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+    }
     .ps-page { padding-bottom: 3.5rem; }
 
     .ps-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
@@ -1240,7 +1288,95 @@
             </div>
           </section>
         </main>
-      </div>
+      </div><!-- /.ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ps-controls">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ps-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ps-controls">
+            <span class="ll-label">Experiment Presets</span>
+            <div class="ps-panel-grid" role="group" aria-label="Experiment Presets">
+              <button type="button" class="ps-panel-preset" data-exp="coin" data-trials="1000">
+                Fair Coin
+                <small>p = 0.50 · 1,000 flips</small>
+              </button>
+              <button type="button" class="ps-panel-preset" data-exp="die" data-trials="1200">
+                6-Sided Die
+                <small>p = 1/6 · 1,200 rolls</small>
+              </button>
+              <button type="button" class="ps-panel-preset" data-exp="card-suit" data-trials="1000">
+                Card Suits
+                <small>p = 0.25 · 1,000 draws</small>
+              </button>
+              <button type="button" class="ps-panel-preset" data-exp="two-dice-sum" data-trials="1800">
+                Dice Sum 7
+                <small>p = 6/36 · 1,800 pairs</small>
+              </button>
+            </div>
+
+            <div class="ps-panel-actions">
+              <button type="button" class="ps-btn ps-btn-primary" id="ps-p-run" style="flex:1;">Run Batch</button>
+              <button type="button" class="ps-btn" id="ps-p-watch" style="flex:1;">Watch 1</button>
+              <button type="button" class="ps-btn" id="ps-p-reset" style="flex:1;">Reset</button>
+            </div>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Live Telemetry</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Trials</span>
+                <span class="ll-readout-val" id="ps-p-trials">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Target Event</span>
+                <span class="ll-readout-val" id="ps-p-event">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Expected</span>
+                <span class="ll-readout-val" id="ps-p-expected">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Observed</span>
+                <span class="ll-readout-val" id="ps-p-observed">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Difference</span>
+                <span class="ll-readout-val" id="ps-p-diff">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="ps-guide" aria-hidden="true">
+            <span class="ll-label">Theoretical Foundations</span>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Law of Large Numbers:</strong> Discovered by Jacob Bernoulli (1713), this theorem states that as the number of trials increases, the empirical relative frequency \(\bar{X}_n\) converges to theoretical probability \(p\):
+            </p>
+            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+              \(\lim_{n \to \infty} P(|\bar{X}_n - p| &lt; \epsilon) = 1\)
+            </div>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>The Gambler's Fallacy:</strong> The mistaken belief that after a streak of heads, tails is "due". Coins and dice have no memory; each flip remains strictly independent with \(p = 0.5\).
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Error Convergence (\(1/\sqrt{N}\)):</strong> Standard error decreases inversely with the square root of trial count:
+            </p>
+            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+              \(\mathrm{SE} = \sqrt{\frac{p(1-p)}{N}}\)
+            </div>
+            <p style="font-size:0.8rem; line-height:1.55;">
+              To halve your margin of error, you must collect 4 times as many observations!
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
     </div>
   </div>
 
@@ -1922,6 +2058,17 @@
         }
 
         trendNode.textContent = trend + ' Final observed rate for ' + config.outcomes[config.trackedIndex].label.toLowerCase() + ' was ' + formatPercent(summary.observed) + ' compared with an expected rate of ' + formatPercent(config.expectedProbability) + '.';
+
+        var pTrials = document.getElementById('ps-p-trials');
+        var pEvent = document.getElementById('ps-p-event');
+        var pExpected = document.getElementById('ps-p-expected');
+        var pObserved = document.getElementById('ps-p-observed');
+        var pDiff = document.getElementById('ps-p-diff');
+        if (pTrials) pTrials.textContent = summary.trials.toLocaleString();
+        if (pEvent) pEvent.textContent = config.outcomes[config.trackedIndex].label;
+        if (pExpected) pExpected.textContent = formatPercent(config.expectedProbability);
+        if (pObserved) pObserved.textContent = formatPercent(summary.observed);
+        if (pDiff) pDiff.textContent = formatGap(summary.observed - config.expectedProbability);
       }
 
       function renderEmptyState() {
@@ -1939,6 +2086,17 @@
         stageNoteNode.textContent = 'The engine decides the result first. The animation only reveals that already-chosen outcome.';
         renderGraph([], config.expectedProbability);
         graphCaptionNode.textContent = 'Short runs wobble more. Larger samples usually settle closer to the expected line.';
+
+        var pTrials = document.getElementById('ps-p-trials');
+        var pEvent = document.getElementById('ps-p-event');
+        var pExpected = document.getElementById('ps-p-expected');
+        var pObserved = document.getElementById('ps-p-observed');
+        var pDiff = document.getElementById('ps-p-diff');
+        if (pTrials) pTrials.textContent = '--';
+        if (pEvent) pEvent.textContent = config.outcomes[config.trackedIndex].label;
+        if (pExpected) pExpected.textContent = formatPercent(config.expectedProbability);
+        if (pObserved) pObserved.textContent = '--';
+        if (pDiff) pDiff.textContent = '--';
       }
 
       function runSimulation(modeOverride) {
@@ -2021,6 +2179,23 @@
         setSource('preset');
         updateReadout();
         renderEmptyState();
+      });
+
+      var pRun = document.getElementById('ps-p-run');
+      var pWatch = document.getElementById('ps-p-watch');
+      var pReset = document.getElementById('ps-p-reset');
+      if (pRun) pRun.addEventListener('click', function () { runBtn.click(); });
+      if (pWatch) pWatch.addEventListener('click', function () { watchBtn.click(); });
+      if (pReset) pReset.addEventListener('click', function () { resetBtn.click(); });
+
+      document.querySelectorAll('.ps-panel-preset').forEach(function (button) {
+        button.addEventListener('click', function () {
+          setSource('preset');
+          experimentSelect.value = button.getAttribute('data-exp');
+          trialsInput.value = button.getAttribute('data-trials');
+          updateReadout();
+          runSimulation(currentMode);
+        });
       });
 
       createCustomRow('Heads', 1);

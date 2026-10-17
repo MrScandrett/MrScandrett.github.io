@@ -12,6 +12,56 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/rubiks-cube-math.css" />
+  <style>
+    .rc-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .rc-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .rc-panel-preset:hover {
+      background: rgba(139,92,246,0.08);
+      border-color: #8b5cf6;
+      transform: translateY(-1px);
+    }
+    .rc-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .rc-panel-preset,
+    [data-theme="vaporwave"] .rc-panel-preset,
+    [data-theme="bark"] .rc-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .rc-panel-preset:hover,
+    [data-theme="vaporwave"] .rc-panel-preset:hover,
+    [data-theme="bark"] .rc-panel-preset:hover {
+      background: rgba(139,92,246,0.22);
+      border-color: #a78bfa;
+    }
+    .rc-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+  </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -671,11 +721,92 @@
 
             </div>
           </section>
-
         </main>
-      </div>
-    </div>
-  </div>
+      </div><!-- /.ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="rc-controls">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="rc-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="rc-controls">
+            <span class="ll-label">Move Sequences &amp; Commutators</span>
+            <div class="rc-panel-grid" role="group" aria-label="Permutation Presets">
+              <button type="button" class="rc-panel-preset" data-seq="R U R' U'">
+                Sexy Move
+                <small>R U R' U' · Order 6 cycle</small>
+              </button>
+              <button type="button" class="rc-panel-preset" data-seq="R U">
+                R U Generator
+                <small>R U · Order 105 orbit</small>
+              </button>
+              <button type="button" class="rc-panel-preset" data-seq="U2">
+                Half Turn
+                <small>U2 · Order 2 involution</small>
+              </button>
+              <button type="button" class="rc-panel-preset" data-seq="R U2 D' B D'">
+                Deep Cycle
+                <small>Order 1,260 subgroup</small>
+              </button>
+            </div>
+
+            <div class="rc-panel-actions">
+              <button type="button" class="rcg-mini" id="rc-panel-undo" style="flex:1;">Undo</button>
+              <button type="button" class="rcg-mini" id="rc-panel-reset" style="flex:1;">Reset Solved</button>
+            </div>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Group Metrics</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">God's Number</span>
+                <span class="ll-readout-val">20 moves</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">State Space</span>
+                <span class="ll-readout-val">4.33 × 10¹⁹</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Solvable Ratio</span>
+                <span class="ll-readout-val">1 in 12</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="rc-guide">
+            <div class="ll-info">
+              <strong>The Four Group Axioms</strong>
+              The Rubik's Cube operations form a mathematical group \((G, \circ)\):
+              <ul style="margin:0.25rem 0 0 1rem; padding:0; font-size:0.75rem;">
+                <li><strong>Closure:</strong> Combining any moves yields a reachable cube state.</li>
+                <li><strong>Associativity:</strong> \((A \circ B) \circ C = A \circ (B \circ C)\).</li>
+                <li><strong>Identity:</strong> The solved rest state \(I\) (doing nothing).</li>
+                <li><strong>Inverses:</strong> Every rotation \(R\) has an exact opposite \(R'\).</li>
+              </ul>
+            </div>
+            <div class="ll-info">
+              <strong>Why 43 Quintillion?</strong>
+              \(8! \times 3^7 \times 12! \times 2^{11} / 2 = 43,252,003,274,489,856,000\). Corner positions, corner orientations, edge positions, and edge orientations, constrained by parity.
+            </div>
+            <div class="ll-info">
+              <strong>Commutators: \(A B A^{-1} B^{-1}\)</strong>
+              If two moves affect different parts of the cube, they cancel out almost entirely — isolating changes to just 2 or 3 pieces. This is how speedcubers solve corners without scrambling edges.
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+        <span class="ll-open-dot"></span>
+      </button>
+    </div><!-- /.ll-stage -->
+  </div><!-- /.ll-viewport -->
 
   <!-- Three.js (shared pinned vendor bundle, exposed as window.THREE for the classic scripts below) -->
   <script type="module">
@@ -730,6 +861,30 @@
         if (e.key === 'Enter') input.closest('.rc-problem').querySelector('.rc-check-btn').click();
       });
     });
+    // Panel controls
+    const pUndo = document.getElementById('rc-panel-undo');
+    if (pUndo) pUndo.addEventListener('click', () => {
+      const uBtn = document.getElementById('rcg-undo');
+      if (uBtn) uBtn.click();
+    });
+    const pReset = document.getElementById('rc-panel-reset');
+    if (pReset) pReset.addEventListener('click', () => {
+      const rBtn = document.getElementById('rcg-reset');
+      if (rBtn) rBtn.click();
+    });
+
+    document.querySelectorAll('.rc-panel-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const seq = btn.getAttribute('data-seq');
+        const seqInput = document.getElementById('rcg-seq');
+        const runBtn = document.getElementById('rcg-run');
+        const cycleTab = document.querySelector('[data-rcg-mode="cycle"]');
+        if (cycleTab) cycleTab.click();
+        if (seqInput) seqInput.value = seq;
+        if (runBtn) runBtn.click();
+      });
+    });
+
     updateScore();
   })();
   </script>

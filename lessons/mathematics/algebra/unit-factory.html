@@ -13,7 +13,55 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/unit-factory.css" />
   <style>
-    .ll-viewport { --ll-panel-w: 300px; }
+    .ll-viewport { --ll-panel-w: 300px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
+    .uf-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .uf-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .uf-panel-preset:hover {
+      background: rgba(14,165,233,0.08);
+      border-color: #0ea5e9;
+      transform: translateY(-1px);
+    }
+    .uf-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .uf-panel-preset,
+    [data-theme="vaporwave"] .uf-panel-preset,
+    [data-theme="bark"] .uf-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .uf-panel-preset:hover,
+    [data-theme="vaporwave"] .uf-panel-preset:hover,
+    [data-theme="bark"] .uf-panel-preset:hover {
+      background: rgba(14,165,233,0.22);
+      border-color: #38bdf8;
+    }
+    .uf-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
   </style>
 </head>
 <body class="uf-page theme-liquid-woodland theme-steam">
@@ -104,6 +152,87 @@
 
   </main>
   </div><!-- /ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="uf-controls">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="uf-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="uf-controls">
+        <span class="ll-label">Measurement Families</span>
+        <div class="uf-panel-grid" role="group" aria-label="Unit Families">
+          <button type="button" class="uf-panel-preset" data-unit="g">
+            Mass &amp; Weight
+            <small>kg · g · mg · lb · oz</small>
+          </button>
+          <button type="button" class="uf-panel-preset" data-unit="m">
+            Length &amp; Distance
+            <small>m · cm · mm · km · in · ft</small>
+          </button>
+          <button type="button" class="uf-panel-preset" data-unit="L">
+            Volume &amp; Capacity
+            <small>L · mL · gal · qt · pt</small>
+          </button>
+          <button type="button" class="uf-panel-preset" data-unit="V">
+            Energy &amp; Power
+            <small>V · A · W · J · N</small>
+          </button>
+        </div>
+
+        <div class="uf-panel-actions">
+          <button type="button" class="uf-btn-panel" id="uf-panel-lever" style="flex:1; padding:0.5rem 0.6rem; border-radius:8px; background:#0ea5e9; color:#fff; font-size:0.8rem; font-weight:700; border:none; cursor:pointer;">Pull Lever</button>
+          <button type="button" class="uf-btn-panel" id="uf-panel-transform" style="flex:1; padding:0.5rem 0.6rem; border-radius:8px; background:#334155; color:#fff; font-size:0.8rem; font-weight:700; border:none; cursor:pointer;">Transform</button>
+        </div>
+
+        <hr class="ll-hr">
+        <span class="ll-label">Factory Metrics</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Discovered</span>
+            <span class="ll-readout-val" id="uf-p-count">0 / 28</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Mode</span>
+            <span class="ll-readout-val" id="uf-p-mode">Fantasy</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Active Unit</span>
+            <span class="ll-readout-val" id="uf-p-unit">kg</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ll-pane" id="uf-guide">
+        <div class="ll-info">
+          <strong>Why Numbers Need Units</strong>
+          "10" has no physical reality until a unit gives it dimension. 10 kg is mass; 10 litres is volume; 10 inches is spatial length.
+        </div>
+        <div class="ll-info">
+          <strong>The Seven SI Base Units</strong>
+          All physical measurements derive from 7 fundamentals:
+          metre (length), kilogram (mass), second (time), ampere (electric current), kelvin (temperature), mole (amount), candela (luminous intensity).
+        </div>
+        <div class="ll-info">
+          <strong>Dimensional Analysis Rule</strong>
+          You can multiply and divide quantities with different units (e.g. \(\text{mass} / \text{volume} = \text{density}\)), but you can NEVER add or subtract them (\(10\text{ kg} + 10\text{ m}\) is undefined).
+        </div>
+        <div class="ll-info">
+          <strong>Material Equivalence</strong>
+          10 kg of water occupies exactly ~10 L near 4°C, but 10 kg of gold occupies only 0.52 L because gold is 19.3× denser than water.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
   </div><!-- /ll-stage -->
 </div><!-- /ll-viewport -->
 
@@ -114,5 +243,42 @@
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/math-pathway-nav.js"></script>
+<script>
+(function() {
+  const pLever = document.getElementById('uf-panel-lever');
+  if (pLever) pLever.addEventListener('click', () => {
+    const l = document.getElementById('lever');
+    if (l) l.click();
+  });
+  const pTransform = document.getElementById('uf-panel-transform');
+  if (pTransform) pTransform.addEventListener('click', () => {
+    const t = document.getElementById('transform');
+    if (t && !t.disabled) t.click();
+  });
+  document.querySelectorAll('.uf-panel-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const u = btn.getAttribute('data-unit');
+      const sel = document.getElementById('unit');
+      if (sel) {
+        sel.value = u;
+        sel.dispatchEvent(new Event('change'));
+      }
+    });
+  });
+  const counterEl = document.getElementById('counter');
+  const pCount = document.getElementById('uf-p-count');
+  const pUnit = document.getElementById('uf-p-unit');
+  const selUnit = document.getElementById('unit');
+  if (counterEl && pCount) {
+    const obs = new MutationObserver(() => {
+      pCount.textContent = counterEl.textContent.replace(' units discovered', '');
+    });
+    obs.observe(counterEl, { childList: true, characterData: true, subtree: true });
+  }
+  if (selUnit && pUnit) {
+    selUnit.addEventListener('change', () => { pUnit.textContent = selUnit.value; });
+  }
+})();
+</script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 </body></html>

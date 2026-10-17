@@ -13,6 +13,54 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <style>
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #0ea5e9; --ll-tab-active: #0ea5e9; --ll-tab-active-bg: rgba(14,165,233,0.12); }
+    .pk-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .pk-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .pk-panel-preset:hover {
+      background: rgba(14,165,233,0.08);
+      border-color: #0ea5e9;
+      transform: translateY(-1px);
+    }
+    .pk-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .pk-panel-preset,
+    [data-theme="vaporwave"] .pk-panel-preset,
+    [data-theme="bark"] .pk-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .pk-panel-preset:hover,
+    [data-theme="vaporwave"] .pk-panel-preset:hover,
+    [data-theme="bark"] .pk-panel-preset:hover {
+      background: rgba(14,165,233,0.22);
+      border-color: #38bdf8;
+    }
+    .pk-panel-actions {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.85rem;
+    }
     .pk-page { padding-bottom: 3.5rem; }
 
     .pk-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
@@ -863,7 +911,88 @@
             </div>
           </section>
         </main>
-      </div>
+      </div><!-- /.ll-sim -->
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="pk-controls">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="pk-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="pk-controls">
+            <span class="ll-label">Board Presets</span>
+            <div class="pk-panel-grid" role="group" aria-label="Board Presets">
+              <button type="button" class="pk-panel-preset" data-preset="fair">
+                Fair Board
+                <small>p = 0.50 · 10 rows</small>
+              </button>
+              <button type="button" class="pk-panel-preset" data-preset="left">
+                Left Bias
+                <small>p = 0.35 · 10 rows</small>
+              </button>
+              <button type="button" class="pk-panel-preset" data-preset="right">
+                Right Bias
+                <small>p = 0.65 · 10 rows</small>
+              </button>
+              <button type="button" class="pk-panel-preset" data-preset="deep">
+                Deep Funnel
+                <small>p = 0.50 · 12 rows</small>
+              </button>
+            </div>
+
+            <div class="pk-panel-actions">
+              <button type="button" class="pk-btn pk-btn-primary" id="pk-p-run" style="flex:1;">Run 1,000</button>
+              <button type="button" class="pk-btn" id="pk-p-one" style="flex:1;">Drop 1</button>
+              <button type="button" class="pk-btn" id="pk-p-reset" style="flex:1;">Reset</button>
+            </div>
+
+            <hr class="ll-hr">
+            <span class="ll-label">Live Telemetry</span>
+            <div class="ll-readouts">
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Trials</span>
+                <span class="ll-readout-val" id="pk-p-trials">0</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Mode Bin</span>
+                <span class="ll-readout-val" id="pk-p-mode">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Mean Bin</span>
+                <span class="ll-readout-val" id="pk-p-mean">--</span>
+              </div>
+              <div class="ll-readout">
+                <span class="ll-readout-lbl">Center %</span>
+                <span class="ll-readout-val" id="pk-p-center">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="pk-guide" aria-hidden="true">
+            <span class="ll-label">Key Principles</span>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Galton's Quincunx (1873):</strong> Sir Francis Galton engineered the quincunx to prove that order emerges from sheer chaos. Each peg represents an independent binary choice: bounce left (\(q = 1-p\)) or bounce right (\(p\)).
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Pascal's Triangle &amp; Combinatorics:</strong> The number of distinct routes to bin \(k\) on row \(n\) is given by the binomial coefficient:
+            </p>
+            <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
+              \(\binom{n}{k} = \frac{n!}{k!(n-k)!}\)
+            </div>
+            <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
+              <strong>Central Limit Theorem:</strong> As row count \(n\) grows, the discrete binomial distribution converges to a continuous Gaussian bell curve with \(\mu = np\) and \(\sigma = \sqrt{np(1-p)}\).
+            </p>
+            <p style="font-size:0.8rem; line-height:1.55;">
+              <strong>Law of Large Numbers:</strong> Individual ball bounces are unpredictable, but over hundreds or thousands of drops, experimental frequencies converge tightly to expected theoretical probabilities.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">&#x2630; Controls &amp; Guide</button>
     </div>
   </div>
 
@@ -1207,6 +1336,15 @@
         statMode.textContent = total ? 'Bin ' + modeIndex : '--';
         statMean.textContent = total ? (weighted / total).toFixed(2) : '--';
         statCenter.textContent = total ? formatPercent(centerCount / total) : '--';
+
+        var pTrials = document.getElementById('pk-p-trials');
+        var pMode = document.getElementById('pk-p-mode');
+        var pMean = document.getElementById('pk-p-mean');
+        var pCenter = document.getElementById('pk-p-center');
+        if (pTrials) pTrials.textContent = String(total);
+        if (pMode) pMode.textContent = total ? 'Bin ' + modeIndex : '--';
+        if (pMean) pMean.textContent = total ? (weighted / total).toFixed(2) : '--';
+        if (pCenter) pCenter.textContent = total ? formatPercent(centerCount / total) : '--';
       }
 
       function renderInsight() {
@@ -1274,6 +1412,39 @@
           runSample(Number(ballsInput.value));
         });
       });
+
+      var pRun = document.getElementById('pk-p-run');
+      var pOne = document.getElementById('pk-p-one');
+      var pReset = document.getElementById('pk-p-reset');
+      if (pRun) pRun.addEventListener('click', function () { runBtn.click(); });
+      if (pOne) pOne.addEventListener('click', function () { oneBtn.click(); });
+      if (pReset) pReset.addEventListener('click', function () { resetBtn.click(); });
+
+      document.querySelectorAll('.pk-panel-preset').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var preset = btn.dataset.preset;
+          if (preset === 'fair') {
+            scenarioSelect.value = 'fair';
+            rowsInput.value = 10;
+            ballsInput.value = 1000;
+          } else if (preset === 'left') {
+            scenarioSelect.value = 'left';
+            rowsInput.value = 10;
+            ballsInput.value = 1000;
+          } else if (preset === 'right') {
+            scenarioSelect.value = 'right';
+            rowsInput.value = 10;
+            ballsInput.value = 1000;
+          } else if (preset === 'deep') {
+            scenarioSelect.value = 'fair';
+            rowsInput.value = 12;
+            ballsInput.value = 1000;
+          }
+          reset();
+          runSample(Number(ballsInput.value));
+        });
+      });
+
       SimKit.canvas2d(canvas, { onResize: function (rCtx, w, h) {
         ctx = rCtx; boardWidth = w; boardHeight = h;
         drawBoard();
