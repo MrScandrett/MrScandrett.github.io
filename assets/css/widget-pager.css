@@ -1,0 +1,81 @@
+/* Swipeable pages for tall widgets on phones (assets/js/widget-pager.js). Only styles the
+   wrapper the script builds; colors come from the widget it sits in (currentColor). */
+
+.wp-nav {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0.6rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 2;
+}
+.wp-nav::-webkit-scrollbar { display: none; }
+
+.wp-pill {
+  flex: 1 1 0;
+  min-width: max-content;
+  padding: 0.38rem 0.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: background 160ms ease, opacity 160ms ease, border-color 160ms ease;
+}
+
+.wp-pill[aria-current="true"] {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.wp-pill:focus-visible {
+  outline: 2px solid var(--theme-accent, var(--accent, #0071e3));
+  outline-offset: 2px;
+}
+
+.wp-track {
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  outline: none;
+  position: relative;
+  z-index: 1;
+}
+.wp-track::-webkit-scrollbar { display: none; }
+
+.wp-page {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp-gap, 0.85rem);
+}
+
+/* The widgets' own gap/margin rules were written for siblings in one column; pages keep the same rhythm. */
+.wp-page > * { min-width: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-pill { transition: none; }
+}
+
+@media print {
+  .wp-nav { display: none; }
+}
