@@ -1172,9 +1172,15 @@
   Player.prototype.frame = function () {
     var self = this;
     if (!this.playing) return;
-    var beat = writtenBeat(this.model, this.beatAt(audio.ctx.currentTime));
-    this.ui.light(beat);
-    this.ui.cursor(beat);
+    var now = audio.ctx.currentTime;
+    // Visual updates at 30 fps remain fluid while leaving slower tablets enough
+    // main-thread time for controls, scrolling and the audio scheduler.
+    if (!this.lastUiTime || now - this.lastUiTime >= 1 / 30) {
+      var beat = writtenBeat(this.model, this.beatAt(now));
+      this.ui.light(beat);
+      this.ui.cursor(beat);
+      this.lastUiTime = now;
+    }
     this.raf = requestAnimationFrame(function () { self.frame(); });
   };
 
@@ -1298,10 +1304,19 @@
 
     var player = new Player(fig, model);
     players.push(player);
-    var layout = null, lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
+    var layout = null, eventsByBar = [], lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
+    function drawWidth() {
+      return Math.max(280, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
+    }
+    function applyScale() {
+      var svg = svgWrap.querySelector('.se-score');
+      if (!svg || !layout) return;
+      svg.setAttribute('width', layout.width * staffScale);
+      svg.setAttribute('height', layout.height * staffScale);
+    }
     function measureAt(beat) { return model.barStart.reduce(function (at, start, i) { return beat >= start - EPS ? i : at; }, -1); }
-    // The shared ScoreNavigation: song map, measure jump and steps, zoom (re-engraves more or fewer bars
-    // per line), follow playback inside the paper. Choosing a measure seeks there; playback carries on.
+    // The shared ScoreNavigation: song map, measure jump and steps, fast visual zoom,
+    // and follow playback inside the paper. Choosing a measure seeks there; playback carries on.
     var sectionStart = {};
     (score.sections || []).forEach(function (sec) { var bi = barIndexOf(model, sec.bar); if (bi >= 0) sectionStart[bi] = sec; });
     var guide = buildGuide(model);
@@ -1338,7 +1353,8 @@
         if (!(info.preview && player.playing)) player.seek(model.barStart[i]);
       },
       zoom: { steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return staffScale; },
-        set: function (z) { staffScale = z; layout = null; draw(); } },
+        measure: function (z) { return layout ? layout.height * z : 0; },
+        set: function (z) { staffScale = z; applyScale(); } },
       fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
     });
     if (guide.length) {
@@ -1414,7 +1430,7 @@
     }
 
     function draw() {
-      var w = Math.max(280, Math.round((svgWrap.clientWidth || paper.clientWidth || 640) / staffScale));
+      var w = drawWidth();
       if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) return;
       lastDrawWidth = w;
       layout = engrave(model, w);
@@ -1426,6 +1442,8 @@
       // is replaced after every reflow/zoom, so consumers should listen for the
       // event instead of retaining references to an older SVG.
       fig.scoreLayout = layout;
+      eventsByBar = [];
+      layout.events.forEach(function (ev) { (eventsByBar[ev.bar] = eventsByBar[ev.bar] || []).push(ev); });
       fig.dispatchEvent(new CustomEvent('score:draw', { detail: { layout: layout } }));
       lit = [];
       if (!player.playing) player.ui.cursor(player.pos);
@@ -1444,7 +1462,8 @@
         var measure = measureAt(beat);
         navigation.setCurrent(beat < 0 ? -1 : measure);
         if (beat >= 0) showGuide(measure);
-        var on = beat < 0 ? [] : layout.events.filter(function (ev) {
+        var candidates = beat < 0 ? [] : (eventsByBar[measure] || []);
+        var on = candidates.filter(function (ev) {
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
         var ids = on.map(function (e) { return e.i; });
@@ -1460,15 +1479,17 @@
       cursor: function (beat) {
         if (!layout || !cursorEl) return;
         var best = null;
-        layout.systems.forEach(function (sys) {
+        for (var si = 0; si < layout.systems.length && !best; si++) {
+          var sys = layout.systems[si];
           for (var i = 0; i < sys.cols.length - 1; i++) {
             var a = sys.cols[i], b = sys.cols[i + 1];
-            if (beat >= a.t - EPS && beat < b.t + EPS && !best) {
+            if (beat >= a.t - EPS && beat < b.t + EPS) {
               var f = b.t > a.t ? (beat - a.t) / (b.t - a.t) : 0;
               best = { x: a.x + (b.x - a.x) * Math.min(1, f), sys: sys };
+              break;
             }
           }
-        });
+        }
         if (!best || (!player.playing && beat <= EPS)) { cursorEl.setAttribute('opacity', '0'); return; }
         cursorEl.setAttribute('x', best.x - layout.S * 0.5);
         cursorEl.setAttribute('y', best.sys.top);
@@ -1578,7 +1599,27 @@
         var score = lib.scores && lib.scores[id];
         if (!score) { fig.insertBefore(el('p', { class: 'se-error' }, 'Unknown score "' + id + '".'), fig.firstChild); return; }
         score.id = id;
-        render(fig, score);
+        fig.scoreData = score;
+        function renderOnce() {
+          if (fig.__scoreRendered) return;
+          fig.__scoreRendered = true;
+          var loading = fig.querySelector('.se-loading');
+          if (loading) loading.remove();
+          render(fig, score);
+        }
+        fig.addEventListener('score:reveal', function () {
+          if (fig.__scoreRendered || fig.__scoreRenderPending) return;
+          fig.__scoreRenderPending = true;
+          fig.insertBefore(el('p', { class: 'se-loading', role: 'status' }, 'Engraving the complete score…'), fig.firstChild);
+          // Let the cover open and the loading state paint before a large work is
+          // engraved. This keeps the initiating tap responsive on slower devices.
+          setTimeout(renderOnce, 50);
+        });
+        fig.dispatchEvent(new CustomEvent('score:data', { detail: { score: score } }));
+        // Composer shelves hide full works behind their covers. Their lightweight
+        // opening previews can use scoreData, while the expensive full engraving
+        // waits until a learner actually opens that work.
+        if (!fig.closest('[hidden]')) renderOnce();
       });
     }).catch(function (err) {
       figs.forEach(function (fig) { fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild); });

@@ -1779,8 +1779,8 @@
   }
   const CHANNEL_TOOLS = {
     ...window.MusicChannelExperiences.registry,
-    notation: { name: 'Sheet notation + note list', accepts: t => t.kind === 'instrument' && t.instrument !== 'drums', lesson: 'lessons/music/sheet-music-trainer.html' },
-    rhythm: { name: 'Drum step sequencer', accepts: t => t.instrument === 'drums', lesson: 'lessons/music/drums.html' },
+    notation: { name: 'Sheet notation + note list', accepts: t => t.kind === 'instrument' && t.instrument !== 'drums', lesson: 'lessons/music/theory/sheet-music-trainer.html' },
+    rhythm: { name: 'Drum step sequencer', accepts: t => t.instrument === 'drums', lesson: 'lessons/music/instruments/drums.html' },
   };
   const TOOL_LABEL = {
     keyboard: ['Piano', 'Keys with octave shift'], guitar: ['Guitar', 'Fretboard, strum the strings'],
@@ -1824,7 +1824,7 @@
 
   // ── Channel console: an analog-style strip (preamp → EQ → inserts → fader) ──
   const MK = window.MusicDawControls;
-  const FLOW_LESSONS = { input: 'lessons/technical-elements/live-audio-signal-chain.html', eq: 'lessons/technical-elements/eq-problem-frequency.html', inserts: 'lessons/technical-elements/audio-compression.html', output: 'lessons/technical-elements/audio-mixer-signal-flow.html' };
+  const FLOW_LESSONS = { input: 'lessons/technical-elements/audio-engineering/live-audio-signal-chain.html', eq: 'lessons/technical-elements/audio-engineering/eq-problem-frequency.html', inserts: 'lessons/technical-elements/audio-engineering/audio-compression.html', output: 'lessons/technical-elements/audio-engineering/audio-mixer-signal-flow.html' };
   const decimalsOf = step => (String(step).split('.')[1] || '').length;
   function insertKnob(effectIndex, definition, control, params) {
     const log = control.min > 0 && control.max / control.min >= 50;
@@ -2114,7 +2114,7 @@
           <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
           <button type="button" class="daw-btn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" ${i === all.length - 1 ? 'disabled' : ''}>Later</button>
           <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
-          ${d.lesson ? `<a href="lessons/technical-elements/${d.lesson}">Learn ${esc(d.name)}</a>` : ''}</div>
+          ${d.lesson ? `<a href="lessons/technical-elements/audio-engineering/${d.lesson}">Learn ${esc(d.name)}</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
           <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;

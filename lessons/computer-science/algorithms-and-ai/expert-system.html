@@ -358,6 +358,76 @@
             </div>
           </section>
 
+          <!-- ── Worked Example Card ───────────────────────────── -->
+          <section class="section" id="expert-system-worked-example">
+            <div class="section-head">
+              <h2>Worked Example: Forward Chaining &amp; Evidence Combination</h2>
+              <p>Trace how an inference engine fires production rules from observed sensor facts and calculates cumulative diagnostic certainty.</p>
+            </div>
+            <article class="card">
+              <h3>Sample Problem: Diagnosing a Mobile Robot Arm Fault</h3>
+              <p>Suppose our mobile robot fails to grasp a sample. Diagnostic telemetry loads the following initial facts into working memory: <code>battery_voltage = normal</code>, <code>gripper_current = 0.0A</code>, and <code>bus_timeout = true</code>. The knowledge base contains two diagnostic rules pointing to a severed harness:</p>
+              <ul>
+                <li><strong>Rule 101:</strong> <code>IF battery_voltage IS normal AND gripper_current IS 0.0A THEN actuator_bus_severed [CF = 0.70]</code></li>
+                <li><strong>Rule 204:</strong> <code>IF bus_timeout IS true THEN actuator_bus_severed [CF = 0.60]</code></li>
+              </ul>
+
+              <ol class="rhythm" style="margin: 0.8rem 0 1rem; list-style: decimal; padding-left: 1.2rem;">
+                <li>
+                  <strong>Step 1: Match Premises against Working Memory.</strong><br/>
+                  The inference engine scans all rules. Rule 101 checks if <code>battery_voltage</code> is normal and <code>gripper_current</code> is 0.0A. Because both conditions exist in working memory, Rule 101 fires.
+                </li>
+                <li>
+                  <strong>Step 2: Assert Intermediate Conclusion with Certainty Factor \(CF_1\).</strong><br/>
+                  Rule 101 adds the hypothesis <code>actuator_bus_severed</code> with certainty factor \(CF_1 = 0.70\).
+                </li>
+                <li>
+                  <strong>Step 3: Evaluate Rule 204 (Forward Chaining Pass 2).</strong><br/>
+                  Rule 204 examines working memory for <code>bus_timeout = true</code>. This condition is also satisfied, which means Rule 204 fires independently and concludes <code>actuator_bus_severed</code> with certainty factor \(CF_2 = 0.60\).
+                </li>
+                <li>
+                  <strong>Step 4: Combine Evidence Using the MYCIN Formula.</strong><br/>
+                  When two independent rules support the exact same conclusion, the engine combines their certainty factors according to Shortliffe's classic formula:<br/>
+                  \(CF_{\text{combined}} = CF_1 + CF_2(1 - CF_1) = 0.70 + 0.60(1 - 0.70) = 0.70 + 0.18 = 0.88\).<br/>
+                  <strong>Mechanism:</strong> Because multiple independent diagnostic symptoms corroborate the same fault, the system's certainty increases from 70% to 88%. This explainable chain of evidence allows engineers to verify exactly why the diagnosis was made.
+                </li>
+              </ol>
+
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+                <h4 style="margin: 0 0 0.4rem; font-size: 0.95rem; color: #047857;">Self-Check Question</h4>
+                <p style="margin: 0 0 0.6rem; font-size: 0.88rem; color: #1d1d1f;">If a third rule later confirms <code>actuator_bus_severed</code> with \(CF_3 = 0.50\), what is the new combined certainty factor?</p>
+                <details style="font-size: 0.86rem; color: #2d4363;">
+                  <summary style="cursor: pointer; font-weight: 700; color: #047857;">Show Answer &amp; Derivation</summary>
+                  <p style="margin: 0.4rem 0 0; line-height: 1.6;"><strong>Answer:</strong> \(CF_{\text{new}} = CF_{\text{prev}} + CF_3(1 - CF_{\text{prev}}) = 0.88 + 0.50(1 - 0.88) = 0.88 + 0.06 = 0.94\) (<strong>94% certainty</strong>). Each corroborating piece of evidence reduces the remaining uncertainty by half, bringing the total confidence asymptotically toward 1.0.</p>
+                </details>
+              </div>
+            </article>
+          </section>
+
+          <!-- ── Sources & Historical References ───────────────── -->
+          <section class="section" id="expert-system-sources">
+            <div class="section-head">
+              <h2>Sources &amp; Further Reading</h2>
+              <p>Primary literature on knowledge engineering, rule-based inference, and certainty factor mathematics.</p>
+            </div>
+            <article class="card">
+              <ul class="rhythm">
+                <li>
+                  <span>1976 MYCIN Landmark</span>
+                  <strong>Shortliffe, Edward H. <em>Computer-Based Medical Consultations: MYCIN</em>. Elsevier/North-Holland, New York (1976). Established the mathematical foundation for managing uncertainty in rule-based diagnostic systems.</strong>
+                </li>
+                <li>
+                  <span>1984 Knowledge Engineering</span>
+                  <strong>Buchanan, Bruce G., &amp; Shortliffe, Edward H. <em>Rule-Based Expert Systems: The MYCIN Experiments of the Stanford Heuristic Programming Project</em>. Addison-Wesley (1984). Comprehensive retrospective on production rules, conflict resolution, and explanation generation.</strong>
+                </li>
+                <li>
+                  <span>1977 Foundational Survey</span>
+                  <strong>Feigenbaum, Edward A. &ldquo;The art of artificial intelligence: Themes and case studies of knowledge engineering.&rdquo; <em>Proceedings of the 5th International Joint Conference on Artificial Intelligence (IJCAI-77)</em>, 1014–1029 (1977). Introduced the principle that real-world AI power derives from domain-specific knowledge rather than generic inference mechanisms.</strong>
+                </li>
+              </ul>
+            </article>
+          </section>
+
           <section class="section">
             <div class="section-head">
               <h2>Lesson Outputs</h2>
@@ -504,5 +574,6 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

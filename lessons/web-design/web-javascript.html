@@ -107,7 +107,7 @@ console.log(describe(project));      // "Maze game — game, keyboard"</code></p
 
 <section class="web-section">
 <h2>The DOM: your page, as objects</h2>
-<p>When the browser loads your HTML it builds a live model of it called the DOM. JavaScript can read and change that model, and the screen updates immediately. Four operations cover nearly everything you will do this year.</p>
+<p>When the browser loads your HTML, it parses the markup into a live hierarchy of in-memory C++ objects called the Document Object Model (DOM). The DOM exists because re-parsing raw HTML text on every user click would be prohibitively slow and computationally expensive. By keeping a live object graph in memory, JavaScript can query and update nodes directly (such as modifying <code>el.textContent</code> or setting <code>el.hidden = true</code>). This means the browser's rendering engine only repaints the specific altered nodes rather than reloading the page, which produces instant visual feedback.</p>
 <div class="web-table">
 <table>
 <caption class="web-muted">The four DOM moves worth memorising</caption>
@@ -126,7 +126,7 @@ console.log(describe(project));      // "Maze game — game, keyboard"</code></p
 
 <section class="web-section">
 <h2>Events: waiting for the visitor</h2>
-<p>Your code should not run in one straight line and stop. It should wait. <code>addEventListener</code> attaches a function that runs later, every time something happens.</p>
+<p>Your code should not run in one straight line and stop; it should wait. Because the browser runs JavaScript on a single thread alongside layout and rendering, executing code in a blocking loop would freeze the interface and prevent user interactions. Therefore, browsers use an event-driven architecture: <code>addEventListener</code> registers a callback function in the browser's event table. When a user clicks or types, the browser places that event into an event queue. This means your function executes only when the event loop reaches it, keeping the page completely responsive to touch, scroll, and keystrokes while waiting.</p>
 <pre><code>const button = document.querySelector("#say-hi");
 
 button.addEventListener("click", function () {
@@ -198,7 +198,7 @@ console.log("cards found:", cards.length);   // expect your real number, not 0</
   const term = searchBox.value.trim().toLowerCase();
   console.log("term:", term);
 }</code></pre>
-<p><code>.trim()</code> removes spaces from the start and end, so the space a phone keyboard adds does not stop <code>"maze "</code> matching <code>"maze"</code>. <code>.toLowerCase()</code> makes the comparison ignore capitals — you lowercase <em>both</em> sides. Neither changes what the visitor sees in the box; both return a new string used only for comparing.</p>
+<p><code>.trim()</code> removes whitespace from both ends, which means an accidental space added by a mobile virtual keyboard will not prevent <code>"maze "</code> from matching <code>"maze"</code>. <code>.toLowerCase()</code> converts every character to lowercase. This is essential because JavaScript string comparison is strictly case-sensitive: <code>"Maze" === "maze"</code> evaluates to <code>false</code>. Therefore, converting both the search term and the card text to lowercase normalizes them to a single canonical format, which ensures searches work reliably regardless of capitalization.</p>
 
 <p><strong>Stage 3 — loop over every card.</strong></p>
 <pre><code>  cards.forEach(function (card) {

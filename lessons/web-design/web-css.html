@@ -77,7 +77,7 @@
 </table>
 </div>
 <h3>When two rules disagree</h3>
-<p>Sometimes the browser ignores a rule you wrote. It is rarely broken; usually another rule won. The browser scores selectors — an id beats a class, a class beats an element name — and when two rules score the same, the later one wins.</p>
+<p>Sometimes the browser ignores a rule you wrote. It is rarely broken; usually another rule won because the browser scores selectors using a strict specificity algorithm: an id beats a class, because an id identifies a single unique entity on the page, whereas a class targets a reusable category, which in turn outweighs a generic element tag. When two rules score identically, the browser applies the later one in cascade order. Therefore, adding an id or an <code>!important</code> flag creates an artificial arms race; this means you should style with classes so that rules remain predictable and maintainable.</p>
 <pre><code>p        { color: gray; }   /* score: element */
 .intro   { color: navy; }   /* score: class — this one wins */</code></pre>
 <p class="web-callout"><strong>The rule to live by:</strong> style with classes. Reach for ids and long selector chains only when a class genuinely cannot do the job. Never use <code>!important</code> to win an argument you can win by deleting the rule that conflicts.</p>
@@ -110,10 +110,10 @@
   border: 1px solid #c6d0df;     /* the line itself */
   margin-bottom: 16px;           /* space pushing other things away */
 }</code></pre>
-<p>The difference matters: padding grows the coloured area of a box, margin does not. If a background color stops too close to your text, you want more padding. If two boxes are crowding each other, you want more margin.</p>
+<p>The reason this difference matters is the box model calculation: under the historical default <code>box-sizing: content-box</code>, the browser calculates total rendered width as <code>width + padding-left + padding-right + border-left + border-right</code>. Therefore, setting a box to <code>width: 100%</code> while adding 16px padding causes the element to expand to <code>100% + 32px</code>, which pushes the container beyond the viewport and triggers horizontal scrolling. Adding <code>box-sizing: border-box</code> changes the calculation so that padding and borders are absorbed inside the declared width, which means a 300px box remains strictly 300px on screen.</p>
 <p>Add this one rule at the top of every stylesheet you ever write:</p>
 <pre><code>*, *::before, *::after { box-sizing: border-box; }</code></pre>
-<p>Without it, a box set to <code>width: 300px</code> with 16px of padding really occupies 332 pixels and your layouts overflow. With it, the width you asked for is the width you get.</p>
+<p>Because this rule overrides the legacy calculation across all elements and pseudo-elements, the exact width you specify in your layout is the exact footprint the browser draws on the page.</p>
 
 <div class="web-lab wb-box-lab" id="box-model-lab">
 <h3>Investigation: feel the four layers</h3>
@@ -192,7 +192,7 @@ p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
 
 <section class="web-section">
 <h2>Flexbox: a row of things</h2>
-<p>Flexbox lays items out along one line and shares out the leftover space. It is the right tool for a navigation bar, a row of buttons, or a header with a title on the left and links on the right.</p>
+<p>Flexbox lays items out along a single flexible dimension (the main axis) and distributes remaining space among them. This means items adjust based on their intrinsic content sizes, and wrapping creates independent, uncoordinated lines. Therefore, Flexbox is the ideal tool for a navigation bar, a row of buttons, or a header with a title on the left and links on the right.</p>
 <pre><code>.site-nav {
   display: flex;             /* children become a row */
   gap: var(--space);         /* space between them */
@@ -204,13 +204,13 @@ p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
 
 <section class="web-section">
 <h2>Grid: a layout of cards</h2>
-<p>Flexbox arranges one line. Grid arranges rows <em>and</em> columns at the same time, which is what a page of project cards needs. Three properties do it:</p>
+<p>Flexbox arranges one line. Grid arranges rows <em>and</em> columns at the same time into a cohesive two-dimensional coordinate system. Because Grid tracks intersect across the entire container, cards in row two strictly align with cards in row one, even when their internal text heights vary. Three properties do it:</p>
 <pre><code>.cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space);
 }</code></pre>
-<p><code>1fr</code> means "one share of the free space", so three of them make three equal columns. <code>minmax(0, 1fr)</code> is the safe version: it allows a column to shrink below the size of its content instead of forcing the page to scroll sideways.</p>
+<p><code>1fr</code> means "one share of the free space", so three of them make three equal columns. <code>minmax(0, 1fr)</code> is the safe version: because grid items by default have a minimum size of <code>auto</code>, a long unbroken word or preformatted string can force a bare <code>1fr</code> column to expand wider than intended, which causes horizontal page overflow. Setting the minimum to <code>0</code> allows the column to shrink and wrap text cleanly instead of breaking your layout.</p>
 <p class="web-callout"><strong>Draw a grid instead of typing one.</strong> <a href="web-studio.html#draw">Web Studio’s Draw mode</a> lays every page on 12 columns. Drag a box across columns 1–8 and its rule says <code>grid-column: 1 / span 8;</code>. Move it and the numbers change. Switch to Phone view to watch the media query stack everything into one column. Then read the CSS it wrote: every line is something this lesson covers.</p>
 
 <div class="web-lab">

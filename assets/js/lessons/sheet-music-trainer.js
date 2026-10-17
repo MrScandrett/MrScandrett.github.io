@@ -1731,7 +1731,7 @@
     var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-decode-level]'));
     var panels = Array.prototype.slice.call(document.querySelectorAll('[data-decode-panel]'));
     if (!tabs.length || !panels.length) return;
-    renderScoreAtlasExamples();
+    renderScoreAtlasExample(tabs[0].getAttribute('data-decode-level'));
     var revealButtons = Array.prototype.slice.call(document.querySelectorAll('[data-reveal-lens]'));
     var revealAll = $('stbRevealAll'), decoderStatus = $('stbDecoderStatus');
     function resetLenses() {
@@ -1752,6 +1752,7 @@
     if (revealAll) revealAll.addEventListener('click', function () { revealButtons.forEach(function (button) { revealLens(button.getAttribute('data-reveal-lens')); }); });
     function show(tab, moveFocus) {
       var level = tab.getAttribute('data-decode-level');
+      renderScoreAtlasExample(level);
       tabs.forEach(function (item) {
         var active = item === tab;
         item.setAttribute('aria-selected', String(active));
@@ -1777,7 +1778,7 @@
     resetLenses();
   }
 
-  function renderScoreAtlasExamples() {
+  function renderScoreAtlasExample(key) {
     function withBeats(notes, beats, colors) {
       return notes.map(function (n, i) { return { n: n, beats: beats[i] || 1, color: colors ? BELL[n.l] : '' }; });
     }
@@ -1795,12 +1796,10 @@
       g912: { proof: 'buildChord(B♭3, maj7) → buildChord(G3, min7)', score: { clef: 'treble', key: keySigOf(-2), meter: [4, 4], items: chordSlots(bbMaj7,0).concat(chordSlots(gMin7,1)), layout: 'seq', slots: 2, crop: [-6,16], phrase: true, expression: 'mp  <  f', direction: 'D.S. al Coda' } },
       college: { proof: 'buildChord(G♯4, augmented) · exact spelling', score: { clef: 'alto', meter: [5, 8], items: gsAug.map(function (n) { return { n: n }; }), layout: 'stack', crop: [-6,18], phrase: false, expression: 'sfp', direction: 'G♯–B♯–D𝄪' } }
     };
-    Object.keys(examples).forEach(function (key) {
-      var host = document.querySelector('[data-score-example="' + key + '"]');
-      if (!host) return;
-      host.innerHTML = '<div class="stb-engine-paper">' + staffSVG(examples[key].score) + '</div>' +
-        '<p class="stb-engine-proof"><span>Trainer engine</span>' + esc(examples[key].proof) + '</p>';
-    });
+    var host = document.querySelector('[data-score-example="' + key + '"]');
+    if (!host || host.firstChild || !examples[key]) return;
+    host.innerHTML = '<div class="stb-engine-paper">' + staffSVG(examples[key].score) + '</div>' +
+      '<p class="stb-engine-proof"><span>Trainer engine</span>' + esc(examples[key].proof) + '</p>';
   }
 
   /* Desk-bell chart in the cheat sheet */

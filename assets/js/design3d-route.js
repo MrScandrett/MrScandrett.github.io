@@ -2,8 +2,9 @@
 (function () {
   'use strict';
   const root = new URL('../../', document.currentScript.src);
-  const home = 'lessons/3d-design.html';
+  const home = 'lessons/3d-design/3d-design.html';
   const stages = [
+    ['plan', 'Plan in 2D', 'Blueprint drafting', 'lessons/3d-design/cad-and-printing/blueprint-drafting.html'],
     ['foundation', 'Start here', 'Shared foundation', '#foundation'],
     ['real', 'Make it real', 'CAD → Forge → print', '#make-real'],
     ['look', 'Make it look', 'Model → sculpt → render', '#make-look'],
@@ -44,7 +45,7 @@
       const note = document.createElement('p');
       note.textContent = ref ? 'Reuse your existing model. This Blender walkthrough supports the shared project; you do not need to build it again. ' : 'Optional Blender reference: choose your required projects from the curriculum home. You do not need to complete both older pathways. ';
       if (ref) {
-        const link = document.createElement('a'); link.href = new URL('lessons/game-asset-studio/' + ref[0], root).href;
+        const link = document.createElement('a'); link.href = new URL('lessons/3d-design/game-asset-studio/' + ref[0], root).href;
         link.textContent = 'Shared project: ' + ref[1]; note.append(link);
       }
       host.append(note);

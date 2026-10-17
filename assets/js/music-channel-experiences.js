@@ -6,12 +6,12 @@
   const melodic = track => track.kind === 'instrument' && track.instrument !== 'drums';
   const instrument = track => track.kind === 'instrument';
   const registry = {
-    keyboard: { name: 'Piano / keyboard experience', role: 'instrument', instrument: 'piano', accepts: instrument, lesson: 'lessons/music/piano.html' },
-    guitar: { name: 'Guitar fretboard experience', role: 'instrument', instrument: 'pluck', accepts: instrument, lesson: 'lessons/music/guitar.html' },
-    drumkit: { name: 'Drum Kit experience', role: 'instrument', instrument: 'drums', accepts: instrument, lesson: 'lessons/music/drums.html' },
+    keyboard: { name: 'Piano / keyboard experience', role: 'instrument', instrument: 'piano', accepts: instrument, lesson: 'lessons/music/instruments/piano.html' },
+    guitar: { name: 'Guitar fretboard experience', role: 'instrument', instrument: 'pluck', accepts: instrument, lesson: 'lessons/music/instruments/guitar.html' },
+    drumkit: { name: 'Drum Kit experience', role: 'instrument', instrument: 'drums', accepts: instrument, lesson: 'lessons/music/instruments/drums.html' },
     synthlab: { name: 'Synth + envelope experience', role: 'instrument', instrument: 'synth', accepts: instrument, lesson: 'lessons/physics/waves-and-sound/sound-and-vibration.html' },
-    harmony: { name: 'Chords + circle of fifths', accepts: melodic, lesson: 'lessons/music/piano.html' },
-    theory: { name: 'Scales + interval listening', accepts: melodic, lesson: 'lessons/music/sheet-music-trainer.html' }
+    harmony: { name: 'Chords + circle of fifths', accepts: melodic, lesson: 'lessons/music/instruments/piano.html' },
+    theory: { name: 'Scales + interval listening', accepts: melodic, lesson: 'lessons/music/theory/sheet-music-trainer.html' }
   };
   const names = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   const noteName = pitch => names[pitch % 12] + (Math.floor(pitch / 12) - 1);

@@ -266,7 +266,7 @@
           <div id="sa-single-view">
             <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Select an algorithm and click Start. Bars being compared are shown in orange; sorted bars turn green. Use the panel controls to change algorithm, speed, and array size.</p>
             <div class="cl-canvas-wrap">
-              <canvas id="sa-canvas" aria-label="Animated sorting algorithm visualiser"></canvas>
+              <canvas id="sa-canvas" aria-label="Animated sorting algorithm visualiser. Press Space or Enter to play or pause, S to step, R to reset." tabindex="0" role="region"></canvas>
             </div>
           </div>
 
@@ -397,6 +397,61 @@
             </div>
 
           </div>
+        </section>
+
+        <!-- ── Worked Example Card ───────────────────────────── -->
+        <section class="cl-card" id="sorting-worked-example" style="--card-accent:#5856d6;">
+          <h2>Worked Example: Quicksort Partitioning vs. Bubble Sort Swapping</h2>
+          <p>Trace the internal mechanics of a divide-and-conquer partition against quadratic adjacent comparisons on the same unsorted sequence.</p>
+
+          <div style="background: rgba(88, 86, 214, 0.06); border: 1px solid rgba(88, 86, 214, 0.22); border-radius: 12px; padding: 1.1rem; margin: 0.8rem 0;">
+            <h3 style="margin-top:0;">Problem: Sort Array \([38, 27, 43, 3, 9, 82, 10]\) of Length \(N = 7\)</h3>
+            <p>Why does Quicksort run hundreds of times faster than Bubble Sort as \(N\) grows into thousands? Let's compare their first execution passes step by step.</p>
+
+            <ol style="padding-left: 1.2rem; line-height: 1.7; margin-bottom: 0.8rem;">
+              <li>
+                <strong>Bubble Sort Pass 1: Local Pairwise Swaps.</strong><br/>
+                Bubble sort compares adjacent pairs: (38, 27) &rarr; swap &rarr; [27, 38, 43...]; (38, 43) &rarr; ok; (43, 3) &rarr; swap &rarr; [27, 38, 3, 43...]; (43, 9) &rarr; swap; (43, 82) &rarr; ok; (82, 10) &rarr; swap &rarr; [27, 38, 3, 9, 43, 10, 82].<br/>
+                <strong>Analysis:</strong> It performed 6 comparisons and 4 swaps, but only the single largest element (82) reached its final position. Because elements only move one index per comparison, sorting all elements requires repeating this \(N - 1\) times. Therefore, total comparisons scale as \(\frac{N(N-1)}{2} = O(N^2)\).
+              </li>
+              <li>
+                <strong>Quicksort Pass 1: Global Pivot Partitioning.</strong><br/>
+                We select the rightmost element as pivot: \(p = 10\). In a single linear scan \(O(N)\), elements smaller than 10 are placed in the left partition, while elements greater are placed in the right partition:<br/>
+                Left: \([3, 9]\) | Pivot: \([10]\) | Right: \([38, 27, 43, 82]\).<br/>
+                <strong>Analysis:</strong> In just 6 comparisons, the pivot 10 is locked into its permanent global position, and all elements are segregated into two smaller subproblems.
+              </li>
+              <li>
+                <strong>Divide and Conquer Recursion Tree:</strong><br/>
+                Because each partition step halves the unsorted subarrays, the total depth of the recursion tree is \(\log_2(N)\). At each depth level, the combined partitions perform at most \(N\) comparisons. As a result, the total operations scale as \(O(N \log_2 N)\).
+              </li>
+              <li>
+                <strong>Real-World Impact:</strong> For \(N = 10,000\) records:<br/>
+                &bull; Bubble Sort: \(\approx 10,000^2 / 2 = 50,000,000\) operations.<br/>
+                &bull; Quicksort: \(\approx 10,000 \times \log_2(10,000) \approx 133,000\) operations.<br/>
+                This represents an astronomical <strong>375&times; speedup</strong>, which explains why choosing an \(O(N \log N)\) algorithm is foundational to computer science.
+              </li>
+            </ol>
+
+            <div style="background: rgba(88, 86, 214, 0.08); border-left: 3px solid #5856d6; border-radius: 8px; padding: 0.8rem; margin-top: 0.8rem;">
+              <h4 style="margin: 0 0 0.35rem; color: #5856d6;">Self-Check Question</h4>
+              <p style="margin: 0 0 0.5rem; font-size: 0.88rem;">Why does Quicksort degrade to \(O(N^2)\) performance if the array is already sorted and the algorithm naively picks the first element as pivot?</p>
+              <details style="font-size: 0.85rem;">
+                <summary style="cursor: pointer; font-weight: 700; color: #5856d6;">Show Answer &amp; Derivation</summary>
+                <p style="margin: 0.35rem 0 0; line-height: 1.6;"><strong>Answer:</strong> Because picking the smallest element as pivot splits the array into an empty left subarray and an \((N - 1)\) right subarray. Therefore, instead of halving the problem space into \(\log_2(N)\) levels, the tree degenerates into a linear chain of \(N\) levels. Consequently, \(N + (N-1) + \dots + 1 = O(N^2)\). Modern engines resolve this by selecting the pivot using a random index or &ldquo;median-of-three&rdquo; rule in order to guarantee balanced partitioning.</p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Sources & Historical References ───────────────── -->
+        <section class="cl-card" id="sorting-sources" style="--card-accent:#5856d6;">
+          <h2>Sources &amp; Further Reading</h2>
+          <p>Key academic foundations in algorithmic complexity, divide-and-conquer strategy, and sorting theory.</p>
+          <ul class="cl-steps" style="margin: 0.6rem 0 0;">
+            <li><strong>Hoare, C. A. R.</strong> &ldquo;Quicksort.&rdquo; <em>The Computer Journal</em>, 5(1), 10–16 (1962). doi:10.1093/comjnl/5.1.10. Tony Hoare's original description of the partition exchange algorithm.</li>
+            <li><strong>Knuth, Donald E.</strong> <em>The Art of Computer Programming, Volume 3: Sorting and Searching</em> (2nd ed.). Addison-Wesley (1998). The definitive mathematical treatise on comparison-based sorting bounds.</li>
+            <li><strong>von Neumann, John.</strong> &ldquo;First Draft of a Report on the EDVAC&rdquo; (1945). Developed the original divide-and-conquer merge sort algorithm for early electronic computers.</li>
+          </ul>
         </section>
 
         <footer class="site-footer">
@@ -880,6 +935,20 @@
       draw({ arr: arr.slice(), comparing: [], sorted: new Set() });
     }
   }
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      window.saToggle();
+    } else if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      window.saStep();
+    } else if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      window.saReset();
+    }
+  });
+
   window.addEventListener('resize', redrawCurrent);
   new MutationObserver(redrawCurrent).observe(document.documentElement, {
     attributes: true, attributeFilter: ['data-theme', 'data-lighting']
@@ -923,5 +992,6 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

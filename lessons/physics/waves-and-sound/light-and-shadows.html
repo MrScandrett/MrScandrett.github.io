@@ -6,52 +6,743 @@
   <meta name="robots" content="noindex" />
   <title>Light &amp; Shadows · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson — explore Light & Shadows." />
+  <meta name="description" content="Physics Lesson — explore Light &amp; Shadows: ray optics, point sources, extended light sources, umbra, penumbra, antumbra, and eclipse geometry." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-<script src="../../../assets/js/vr-mode.js" defer></script>
+  <script src="../../../assets/js/vr-mode.js" defer></script>
+  <style>
+    .ls-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 290px; }
+    .ls-hero { padding: 0.4rem 0 1.3rem; }
+    .ls-hero h1 { max-width: 32ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .ls-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .ls-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .ls-lede { margin: 0.65rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .ls-lede,
+    [data-theme="vaporwave"] .ls-lede,
+    [data-theme="bark"] .ls-lede { color: rgba(245, 245, 247, 0.72); }
+
+    .ls-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #eab308);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .ls-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; }
+    .ls-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .ls-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .ls-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .ls-card,
+    [data-theme="vaporwave"] .ls-card,
+    [data-theme="bark"] .ls-card { background: #2c2c2e; }
+    [data-lighting="night"] .ls-card p,
+    [data-theme="vaporwave"] .ls-card p,
+    [data-theme="bark"] .ls-card p { color: rgba(245, 245, 247, 0.72); }
+
+    .ls-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .ls-callout.amber { background: rgba(234, 179, 8, 0.1); border-left: 3px solid #eab308; }
+    .ls-callout.sky { background: rgba(2, 132, 199, 0.1); border-left: 3px solid #0284c7; }
+
+    .ls-canvas-wrap {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #090a12;
+      margin: 0.8rem 0;
+      position: relative;
+      cursor: crosshair;
+    }
+    .ls-canvas-wrap:focus-visible { outline: 2px solid #eab308; outline-offset: -2px; }
+    #ls-canvas { width: 100%; height: 320px; display: block; touch-action: none; }
+
+    .ls-sim-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.6rem 0;
+    }
+    .ls-sim-btn {
+      background: rgba(234, 179, 8, 0.12);
+      color: #a16207;
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .ls-sim-btn:hover { background: rgba(234, 179, 8, 0.22); }
+    .ls-sim-btn.is-active { background: #eab308; color: #000; border-color: #eab308; }
+    [data-lighting="night"] .ls-sim-btn,
+    [data-theme="vaporwave"] .ls-sim-btn,
+    [data-theme="bark"] .ls-sim-btn { color: #fde047; }
+    [data-lighting="night"] .ls-sim-btn.is-active,
+    [data-theme="vaporwave"] .ls-sim-btn.is-active,
+    [data-theme="bark"] .ls-sim-btn.is-active { color: #000; }
+
+    .ls-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 0.8rem 0 0.4rem;
+    }
+    .ls-readout {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.55rem 0.6rem;
+      text-align: center;
+    }
+    [data-lighting="night"] .ls-readout,
+    [data-theme="vaporwave"] .ls-readout,
+    [data-theme="bark"] .ls-readout { background: rgba(255, 255, 255, 0.06); }
+    .ls-readout-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .ls-readout-val { font-size: 0.95rem; font-weight: 700; color: #ca8a04; font-family: ui-monospace, monospace; }
+
+    .ls-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .ls-app { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .ls-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .ls-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .ls-app small { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    .ls-practice .ls-problem { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .ls-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    [data-lighting="night"] .ls-problem p,
+    [data-theme="vaporwave"] .ls-problem p,
+    [data-theme="bark"] .ls-problem p { color: rgba(245, 245, 247, 0.72); }
+    .ls-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .ls-ans-input { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 140px; background: var(--white, #fff); color: var(--text, #1d1d1f); }
+    .ls-check-btn { background: #ca8a04; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .ls-check-btn:hover { background: #a16207; }
+    .ls-feedback { font-size: 0.82rem; font-weight: 600; }
+    .ls-feedback.ok { color: #16a34a; }
+    .ls-feedback.err { color: #dc2626; }
+    .ls-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(22, 163, 74, 0.15); color: #16a34a; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(245, 158, 11, 0.15); color: #d97706; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(220, 38, 38, 0.12); color: #dc2626; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 680px) {
+      .ls-apps { grid-template-columns: 1fr; }
+      .ls-readouts { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
-<body>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="ll-viewport">
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Light &amp; Shadows</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Light &amp; Shadows.</p>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ls-page">
+          <section class="hero ls-hero">
+            <p class="eyebrow">Physics · Waves &amp; Sound · Foundational</p>
+            <h1>Light &amp; Shadows</h1>
+            <div class="ls-meta">
+              <span>Ray Optics</span><span class="dot"></span>
+              <span>Rectilinear Propagation</span><span class="dot"></span>
+              <span>Umbra &amp; Penumbra</span><span class="dot"></span>
+              <span>Solar &amp; Lunar Eclipses</span>
+            </div>
+            <p class="ls-lede">In a uniform transparent medium, light travels in straight lines known as rays. When an opaque obstacle obstructs an extended light source (like the Sun or an incandescent filament), it casts three distinct geometric shadow zones: a completely occluded <strong>umbra</strong>, a soft graduated <strong>penumbra</strong>, and an exterior <strong>antumbra</strong>.</p>
+          </section>
+
+          <!-- ── Section 1: Overview ───────────────────── -->
+          <section class="ls-card" id="overview">
+            <h2>1. Ray Optics &amp; Shadow Formation</h2>
+            <p>Because photons travel along straight geometric trajectories, shadows map the physical shape of obstacles. The character of the shadow depends directly on whether the light source is a point or an extended body:</p>
+            <ul>
+              <li><strong>Point light source:</strong> Emits rays from an infinitesimally small location. Every ray that strikes the obstacle is stopped, producing a single, razor-sharp shadow boundary with an umbra only.</li>
+              <li><strong>Extended light source (the real world):</strong> Different points on the light source cast overlapping rays at slightly different angles, creating two distinct zones:
+                <ul>
+                  <li><strong>Umbra:</strong> The central core where <em>all</em> direct rays from every part of the light source are completely blocked. An observer inside experiences total eclipse (100% darkness).</li>
+                  <li><strong>Penumbra:</strong> The surrounding outer fringe where <em>some</em> rays are blocked while others pass unobstructed. The light dims gradually from full illumination to total darkness.</li>
+                  <li><strong>Antumbra:</strong> The region directly beyond the apex of the umbra cone where the obstacle appears completely enclosed within the luminous disk, forming an annular "ring of fire".</li>
+                </ul>
+              </li>
+            </ul>
+
+            <figure data-zoomable data-lightbox-group="light-shadows">
+              <img src="../../../assets/images/lessons/light-and-shadows/shadow-formation-optics.svg" width="960" height="540" alt="Optics ray diagram illustrating how an extended light source creates an umbra and penumbra behind an opaque spherical obstacle onto a projection screen." loading="lazy" decoding="async" />
+              <figcaption><strong>Ray optics of shadow formation: Umbra and Penumbra.</strong> Observers inside the umbra experience total eclipse where the entire light source is blocked. Observers in the penumbra see a partial eclipse where only a fraction of the source is obscured.</figcaption>
+            </figure>
+          </section>
+
+          <!-- ── Section 2: Simulator ─────────────────── -->
+          <section class="ls-card" id="simulator" style="--card-accent:#eab308;">
+            <h2>2. Interactive Shadow Optics Simulator</h2>
+            <p style="font-size:0.84rem;color:var(--text-muted,#64748b);">Drag the circular obstacle or the white projection screen to see how the umbra cone and penumbra expand or contract. Four tangent rays mark the exact boundary lines.</p>
+
+            <div class="ls-canvas-wrap" id="ls-canvas-wrap" tabindex="0" role="region" aria-label="Interactive ray optics shadow simulation. Drag the obstacle or use arrow keys to move it. Watch the umbra and penumbra update.">
+              <canvas id="ls-canvas"></canvas>
+            </div>
+
+            <div class="ls-sim-toolbar">
+              <button type="button" class="ls-sim-btn" id="ls-reset-btn">↺ Reset Positions</button>
+              <button type="button" class="ls-sim-btn" id="ls-preset-sun">☀️ Solar Eclipse Preset</button>
+              <button type="button" class="ls-sim-btn" id="ls-preset-point">💡 Point Source Preset</button>
+              <span style="font-size:0.78rem;color:var(--text-muted,#64748b);margin-left:auto;">Drag obstacle or screen</span>
+            </div>
+
+            <div class="ls-readouts">
+              <div class="ls-readout"><span class="ls-readout-label">Umbra Length</span><span class="ls-readout-val" id="ls-r-ul">280 px</span></div>
+              <div class="ls-readout"><span class="ls-readout-label">Umbra on Screen</span><span class="ls-readout-val" id="ls-r-uh">42 px</span></div>
+              <div class="ls-readout"><span class="ls-readout-label">Penumbra on Screen</span><span class="ls-readout-val" id="ls-r-ph">118 px</span></div>
+              <div class="ls-readout"><span class="ls-readout-label">On-Axis View</span><span class="ls-readout-val" id="ls-r-view" style="color:#eab308;">Total Eclipse</span></div>
+            </div>
+          </section>
+
+          <!-- ── Section 3: Astronomy & Applications ─── -->
+          <section class="ls-card" id="astronomy" style="--card-accent:#0284c7;">
+            <h2>3. Astronomical Shadows &amp; Crater Topography</h2>
+            <p>Astronomers use straight-line shadow geometry to measure the elevations of alien mountains and the depths of lunar craters. Near the Moon's <em>terminator line</em> (the division between lunar day and night), sunlight strikes at a grazing low angle, casting dramatic elongated shadows that reveal rugged topography:</p>
+
+            <figure data-video="moon-phases-libration">
+              <figcaption>Lunar Reconnaissance Orbiter: crater shadows along the lunar terminator line demonstrate straight-line ray optics on an astronomical scale. NASA Goddard Space Flight Center.</figcaption>
+            </figure>
+
+            <div class="ls-apps">
+              <div class="ls-app"><div class="ls-app-icon">🌑</div><strong>Total Solar Eclipse</strong><small>The Moon's umbra touches Earth's surface along a narrow path (~150 km wide). Observers inside experience daytime darkness and see the solar corona.</small></div>
+              <div class="ls-app"><div class="ls-app-icon">💍</div><strong>Annular Solar Eclipse</strong><small>When the Moon is at apogee (furthest from Earth), its umbra falls short. Observers inside the antumbra see a brilliant "ring of fire" around the Moon.</small></div>
+              <div class="ls-app"><div class="ls-app-icon">🔴</div><strong>Total Lunar Eclipse</strong><small>The full Moon passes through Earth's vast umbral shadow cone. Rayleigh scattering through Earth's atmosphere filters blue light, painting the Moon blood red.</small></div>
+              <div class="ls-app"><div class="ls-app-icon">📷</div><strong>Pinhole Camera (Camera Obscura)</strong><small>Light passing through a microscopic pinhole travels in straight lines to project an inverted, real image on an opposite wall without a glass lens.</small></div>
+            </div>
+          </section>
+
+          <!-- ── Section 4: Worked Example ───────────── -->
+          <section class="ls-card" id="worked-example" style="--card-accent:#8b5cf6;">
+            <h2>Worked Example: Calculating the Moon's Umbra Cone Length</h2>
+            <p>Because light travels in straight rays, we can model shadow geometry using similar triangles. When an opaque sphere of radius \(R_m\) blocks light from a distant spherical source of radius \(R_s\) separated by distance \(D\), the length of the umbral shadow cone \(L_u\) satisfies:</p>
+            <div class="ls-callout amber" style="font-family:ui-monospace,monospace;font-size:0.92rem;text-align:center;">
+              \(\frac{R_s - R_m}{D} = \frac{R_m}{L_u} \quad \implies \quad L_u = \frac{R_m \cdot D}{R_s - R_m}\)
+            </div>
+            <p><strong>Sample Problem:</strong> The Sun has radius \(R_s = 696,340\text{ km}\). The Moon has radius \(R_m = 1,737\text{ km}\). The average Sun-Moon distance is \(D = 149,600,000\text{ km}\).
+            <ol style="margin:0.4rem 0 0.8rem 1.4rem;line-height:1.6;font-size:0.88rem;color:var(--text-secondary,#3f4f65);">
+              <li>Calculate the length of the Moon's umbral cone \(L_u\).</li>
+              <li>Given that Earth-Moon distance varies between \(363,300\text{ km}\) (perigee) and \(405,500\text{ km}\) (apogee), determine what type of solar eclipse occurs at each orbital position.</li>
+            </ol>
+            <div style="background:rgba(234,179,8,0.06);border-left:3px solid #eab308;border-radius:10px;padding:0.9rem;margin:0.8rem 0;font-size:0.86rem;line-height:1.65;">
+              <p style="margin:0 0 0.5rem;"><strong>Step 1: Calculate the effective radius difference.</strong></p>
+              <p style="margin:0 0 0.5rem;">Subtract the Moon's radius from the Sun's radius:<br/>
+              \(R_s - R_m = 696,340\text{ km} - 1,737\text{ km} = 694,603\text{ km}\).</p>
+              <p style="margin:0 0 0.5rem;"><strong>Step 2: Substitute values to find umbra length \(L_u\).</strong></p>
+              <p style="margin:0 0 0.5rem;">\(L_u = \frac{1,737\text{ km} \times 149,600,000\text{ km}}{694,603\text{ km}} = \frac{2.59855 \times 10^{11}}{694,603} \approx 374,106\text{ km}\).</p>
+              <p style="margin:0 0 0.5rem;"><strong>Step 3: Compare with Moon-to-Earth distances.</strong></p>
+              <p style="margin:0;">&bull; <strong>At Perigee (\(d = 363,300\text{ km}\)):</strong> Distance from Moon to Earth is strictly less than the umbra cone length (\(363,300\text{ km} < 374,106\text{ km}\)). The umbra reaches Earth's surface, creating a <strong>Total Solar Eclipse</strong>.<br/>
+              &bull; <strong>At Apogee (\(d = 405,500\text{ km}\)):</strong> Distance from Moon to Earth exceeds the umbra cone length (\(405,500\text{ km} > 374,106\text{ km}\)). The umbra tapers to a point in empty space before reaching Earth. Observers on Earth stand in the <strong>antumbra</strong>, witnessing an <strong>Annular Solar Eclipse</strong> ("ring of fire")!</p>
+            </div>
+            <details class="ls-callout" style="background:rgba(2,132,199,0.08);border-left:3px solid #0284c7;cursor:pointer;">
+              <summary><strong>Check your understanding:</strong> If the Moon were 20% larger, could annular solar eclipses ever happen?</summary>
+              <p style="margin:0.5rem 0 0;font-size:0.84rem;color:var(--text-secondary,#3f4f65);">No! A 20% larger Moon would increase its umbra cone to \(\sim 450,000\text{ km}\). Because \(450,000\text{ km}\) is greater than the Moon's maximum apogee distance (\(405,500\text{ km}\)), the umbra would always reach Earth's surface during central eclipses, making all central solar eclipses total!</p>
+            </details>
+          </section>
+
+          <!-- ── Section 5: Practice Problems ────────── -->
+          <section class="ls-card" id="practice" style="--card-accent:#10b981;">
+            <h2>5. Practice Problems</h2>
+            <div class="ls-practice">
+              <div class="ls-problem">
+                <p><span class="diff-easy">Easy</span>1. What is the defining characteristic of an umbra?</p>
+                <div class="ls-problem-row">
+                  <select class="ls-ans-input" id="lsans-1" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="total">100% of light from the source is blocked</option>
+                    <option value="partial">Only half of the light source is blocked</option>
+                    <option value="annular">A glowing ring of light remains visible</option>
+                  </select>
+                  <button class="ls-check-btn" onclick="lsCheckText(1,'total')">Check</button>
+                  <span class="ls-feedback" id="lsfb-1"></span>
+                </div>
+                <div class="ls-hint" id="lshint-1">Hint: Umbra means complete shadow where no direct rays reach the observer.</div>
+              </div>
+
+              <div class="ls-problem">
+                <p><span class="diff-easy">Easy</span>2. If a point light source (like a microscopic LED) casts a shadow of a ball onto a wall, what kind of shadow forms?</p>
+                <div class="ls-problem-row">
+                  <select class="ls-ans-input" id="lsans-2" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="sharp">A sharp-edged shadow with umbra only</option>
+                    <option value="soft">A fuzzy shadow with a broad penumbra</option>
+                    <option value="colored">A multi-colored diffraction rainbow</option>
+                  </select>
+                  <button class="ls-check-btn" onclick="lsCheckText(2,'sharp')">Check</button>
+                  <span class="ls-feedback" id="lsfb-2"></span>
+                </div>
+                <div class="ls-hint" id="lshint-2">Hint: A point source emits from only one location, so no rays can partially bypass the edge.</div>
+              </div>
+
+              <div class="ls-problem">
+                <p><span class="diff-mid">Medium</span>3. An obstacle is moved closer to an extended light source (further from the screen). What happens to the penumbra on the screen?</p>
+                <div class="ls-problem-row">
+                  <select class="ls-ans-input" id="lsans-3" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="wider">The penumbra becomes wider and softer</option>
+                    <option value="narrower">The penumbra becomes narrower and sharper</option>
+                    <option value="unchanged">The penumbra disappears completely</option>
+                  </select>
+                  <button class="ls-check-btn" onclick="lsCheckText(3,'wider')">Check</button>
+                  <span class="ls-feedback" id="lsfb-3"></span>
+                </div>
+                <div class="ls-hint" id="lshint-3">Hint: As the obstacle nears the source, the divergence angle between rays from opposite edges of the source increases, widening the penumbra.</div>
+              </div>
+
+              <div class="ls-problem">
+                <p><span class="diff-hard">Challenge</span>4. A 10 cm diameter opaque disk is held 50 cm from a point light source. A projection screen is located 150 cm from the source. What is the diameter of the shadow on the screen?</p>
+                <div class="ls-problem-row">
+                  <input type="number" class="ls-ans-input" id="lsans-4" step="1" placeholder="cm" style="width:110px;" />
+                  <button class="ls-check-btn" onclick="lsCheck(4,30,1)">Check</button>
+                  <span class="ls-feedback" id="lsfb-4"></span>
+                </div>
+                <div class="ls-hint" id="lshint-4">Hint: Use similar triangles: Shadow diameter / Screen distance = Disk diameter / Disk distance -> S / 150 = 10 / 50 -> S = 30 cm.</div>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
       </div>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>Light travels in straight rays through a uniform medium. When an opaque obstacle blocks an extended light source (like the Sun or a light bulb), it casts two distinct shadow zones: a completely dark central <strong>umbra</strong> and a soft, partially shaded <strong>penumbra</strong>.</p>
-        <figure data-zoomable>
-          <img src="../../../assets/images/lessons/light-and-shadows/shadow-formation-optics.svg" width="960" height="540" alt="Optics ray diagram illustrating how an extended light source creates an umbra and penumbra behind an opaque spherical obstacle onto a projection screen." loading="lazy" decoding="async" />
-          <figcaption><strong>Ray optics of shadow formation: Umbra and Penumbra.</strong> Observers inside the umbra experience total eclipse where the entire light source is blocked. Observers in the penumbra see a partial eclipse where only a fraction of the source is obscured.</figcaption>
-        </figure>
-      </div>
+      <!-- ── Sidebar Controls ─────────────────────── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="ls-pane-sim">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="ls-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ls-pane-sim">
+            <span class="ll-label">Source Diameter</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">R_source <span id="ls-side-sr-val">40 px</span></label>
+              <input type="range" class="nl-slider" id="ls-sr-slider" min="2" max="60" step="2" value="40" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Obstacle Diameter</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">R_obstacle <span id="ls-side-or-val">28 px</span></label>
+              <input type="range" class="nl-slider" id="ls-or-slider" min="6" max="50" step="2" value="28" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Obstacle Position (X)</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Distance <span id="ls-side-ox-val">230 px</span></label>
+              <input type="range" class="nl-slider" id="ls-ox-slider" min="120" max="420" step="5" value="230" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Screen Position (X)</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Screen X <span id="ls-side-sx-val">480 px</span></label>
+              <input type="range" class="nl-slider" id="ls-sx-slider" min="260" max="560" step="5" value="480" style="width:100%;" />
+            </div>
+          </div>
+          <div class="ll-pane" id="ls-pane-guide">
+            <div class="ll-info"><strong>Rectilinear propagation</strong>Light moves in straight geometric rays through uniform media.</div>
+            <div class="ll-info"><strong>Umbra cone</strong>The volume where zero direct light penetrates. If the screen is closer than the cone vertex, a dark umbra circle forms.</div>
+            <div class="ll-info"><strong>Antumbra</strong>Beyond the cone vertex, the obstacle appears smaller than the source, causing an annular "ring of fire" eclipse.</div>
+            <div class="ll-info"><strong>Penumbra</strong>The transition zone where only a portion of the source is blocked, creating a gradient from light to dark.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
     </div>
   </div>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const canvas = document.getElementById('ls-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const srSlider = document.getElementById('ls-sr-slider');
+    const orSlider = document.getElementById('ls-or-slider');
+    const oxSlider = document.getElementById('ls-ox-slider');
+    const sxSlider = document.getElementById('ls-sx-slider');
+
+    let sourceR = 40;
+    let obstacleR = 28;
+    let obstacleX = 230;
+    let screenX = 480;
+
+    let dragging = null; // 'obstacle' or 'screen'
+
+    function updateReadouts() {
+      document.getElementById('ls-side-sr-val').textContent = sourceR + ' px';
+      document.getElementById('ls-side-or-val').textContent = obstacleR + ' px';
+      document.getElementById('ls-side-ox-val').textContent = obstacleX + ' px';
+      document.getElementById('ls-side-sx-val').textContent = screenX + ' px';
+
+      const sourceX = 60;
+      const D = obstacleX - sourceX;
+
+      // Umbra cone length Lu from obstacle
+      let Lu = Infinity;
+      if (sourceR > obstacleR) {
+        Lu = (obstacleR * D) / (sourceR - obstacleR);
+        document.getElementById('ls-r-ul').textContent = Math.round(Lu) + ' px';
+      } else if (sourceR === obstacleR) {
+        document.getElementById('ls-r-ul').textContent = 'Parallel (∞)';
+      } else {
+        document.getElementById('ls-r-ul').textContent = 'Diverging';
+      }
+
+      // Height on screen
+      const distFromObs = screenX - obstacleX;
+      let umbraH = 0;
+      let penumbraH = 0;
+      let viewType = 'Full Light';
+
+      if (sourceR >= obstacleR) {
+        if (distFromObs < Lu) {
+          umbraH = (obstacleR * (Lu - distFromObs)) / Lu;
+          viewType = 'Total Eclipse';
+        } else if (Math.abs(distFromObs - Lu) < 3) {
+          umbraH = 0;
+          viewType = 'Apex of Umbra';
+        } else {
+          umbraH = 0;
+          viewType = 'Annular Eclipse (Antumbra)';
+        }
+      } else {
+        umbraH = obstacleR + (obstacleR - sourceR) * (distFromObs / D);
+        viewType = 'Total Eclipse';
+      }
+
+      // Penumbra height: upper penumbra ray slope
+      const mPen = (obstacleR + sourceR) / D;
+      penumbraH = obstacleR + mPen * distFromObs;
+
+      document.getElementById('ls-r-uh').textContent = Math.max(0, Math.round(umbraH * 2)) + ' px';
+      document.getElementById('ls-r-ph').textContent = Math.max(0, Math.round(penumbraH * 2)) + ' px';
+      const viewEl = document.getElementById('ls-r-view');
+      viewEl.textContent = viewType;
+      viewEl.style.color = viewType.includes('Total') ? '#dc2626' : viewType.includes('Annular') ? '#f59e0b' : '#38bdf8';
+    }
+
+    function draw() {
+      const W = canvas.offsetWidth || 600;
+      canvas.width = W; canvas.height = 320;
+      const H = 320;
+      const cy = H / 2;
+      const sourceX = 60;
+
+      // Clamp sliders to canvas
+      oxSlider.max = Math.round(W * 0.75);
+      sxSlider.max = Math.round(W * 0.95);
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#090a12';
+      ctx.fillRect(0, 0, W, H);
+
+      const D = obstacleX - sourceX;
+      const distToScreen = screenX - obstacleX;
+
+      // Source top and bottom
+      const sTop = { x: sourceX, y: cy - sourceR };
+      const sBot = { x: sourceX, y: cy + sourceR };
+
+      // Obstacle top and bottom
+      const oTop = { x: obstacleX, y: cy - obstacleR };
+      const oBot = { x: obstacleX, y: cy + obstacleR };
+
+      // 4 tangent ray intersection points on the screen plane x = screenX
+      // Ray 1: sTop -> oTop (upper penumbra ray)
+      const r1Y = sTop.y + ((oTop.y - sTop.y) / D) * (screenX - sourceX);
+      // Ray 2: sTop -> oBot (lower umbra ray)
+      const r2Y = sTop.y + ((oBot.y - sTop.y) / D) * (screenX - sourceX);
+      // Ray 3: sBot -> oTop (upper umbra ray)
+      const r3Y = sBot.y + ((oTop.y - sBot.y) / D) * (screenX - sourceX);
+      // Ray 4: sBot -> oBot (lower penumbra ray)
+      const r4Y = sBot.y + ((oBot.y - sBot.y) / D) * (screenX - sourceX);
+
+      // Umbra vertex
+      const mUmbra = (sourceR - obstacleR) / D;
+      const Lu = mUmbra > 0 ? obstacleR / mUmbra : Infinity;
+      const vertexX = obstacleX + Lu;
+
+      // Draw Penumbra fill region
+      ctx.fillStyle = 'rgba(234, 179, 8, 0.08)';
+      ctx.beginPath();
+      ctx.moveTo(sTop.x, sTop.y);
+      ctx.lineTo(screenX, r1Y);
+      ctx.lineTo(screenX, r4Y);
+      ctx.lineTo(sBot.x, sBot.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw Umbra cone / Antumbra
+      if (vertexX >= screenX || Lu === Infinity) {
+        // Umbra reaches screen
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        ctx.beginPath();
+        ctx.moveTo(obstacleX, oTop.y);
+        ctx.lineTo(screenX, r3Y);
+        ctx.lineTo(screenX, r2Y);
+        ctx.lineTo(obstacleX, oBot.y);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Umbra terminates before screen -> Antumbra beyond vertex
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.78)';
+        ctx.beginPath();
+        ctx.moveTo(obstacleX, oTop.y);
+        ctx.lineTo(vertexX, cy);
+        ctx.lineTo(obstacleX, oBot.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Antumbra zone
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.18)';
+        ctx.beginPath();
+        ctx.moveTo(vertexX, cy);
+        ctx.lineTo(screenX, r2Y);
+        ctx.lineTo(screenX, r3Y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Draw the 4 boundary ray lines
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(253, 224, 71, 0.45)';
+      // Ray 1
+      ctx.beginPath(); ctx.moveTo(sTop.x, sTop.y); ctx.lineTo(screenX, r1Y); ctx.stroke();
+      // Ray 4
+      ctx.beginPath(); ctx.moveTo(sBot.x, sBot.y); ctx.lineTo(screenX, r4Y); ctx.stroke();
+
+      // Umbra rays (dashed)
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
+      ctx.setLineDash([4, 4]);
+      // Ray 2
+      ctx.beginPath(); ctx.moveTo(sTop.x, sTop.y); ctx.lineTo(screenX, r2Y); ctx.stroke();
+      // Ray 3
+      ctx.beginPath(); ctx.moveTo(sBot.x, sBot.y); ctx.lineTo(screenX, r3Y); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Light Source (glowing amber sun disk)
+      const grad = ctx.createRadialGradient(sourceX, cy, 2, sourceX, cy, sourceR);
+      grad.addColorStop(0, '#fffbeb');
+      grad.addColorStop(0.4, '#fde047');
+      grad.addColorStop(1, '#eab308');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sourceX, cy, sourceR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fde047';
+      ctx.font = '700 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Light Source', sourceX, cy + sourceR + 18);
+
+      // Draw Obstacle (dark circular body)
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(obstacleX, cy, obstacleR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillText('Obstacle', obstacleX, cy + obstacleR + 18);
+
+      // Draw Projection Screen
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(screenX, 20);
+      ctx.lineTo(screenX, H - 20);
+      ctx.stroke();
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText('Screen', screenX, H - 6);
+
+      // Draw vertical shadow intensity profile on screen
+      const profW = 12;
+      ctx.fillStyle = '#0284c7';
+      // Penumbra top
+      ctx.fillRect(screenX + 4, Math.min(r1Y, r3Y), profW, Math.abs(r3Y - r1Y));
+      // Umbra core (black)
+      if (vertexX >= screenX || Lu === Infinity) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(screenX + 4, Math.min(r2Y, r3Y), profW, Math.abs(r3Y - r2Y));
+      }
+      // Penumbra bottom
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(screenX + 4, Math.min(r2Y, r4Y), profW, Math.abs(r4Y - r2Y));
+    }
+
+    // Sliders
+    srSlider.addEventListener('input', (e) => {
+      sourceR = parseInt(e.target.value);
+      updateReadouts();
+      draw();
+    });
+    orSlider.addEventListener('input', (e) => {
+      obstacleR = parseInt(e.target.value);
+      updateReadouts();
+      draw();
+    });
+    oxSlider.addEventListener('input', (e) => {
+      obstacleX = Math.min(screenX - 40, parseInt(e.target.value));
+      updateReadouts();
+      draw();
+    });
+    sxSlider.addEventListener('input', (e) => {
+      screenX = Math.max(obstacleX + 40, parseInt(e.target.value));
+      updateReadouts();
+      draw();
+    });
+
+    // Presets
+    document.getElementById('ls-reset-btn').addEventListener('click', () => {
+      sourceR = 40; obstacleR = 28; obstacleX = 230; screenX = 480;
+      srSlider.value = sourceR; orSlider.value = obstacleR;
+      oxSlider.value = obstacleX; sxSlider.value = screenX;
+      updateReadouts(); draw();
+    });
+    document.getElementById('ls-preset-sun').addEventListener('click', () => {
+      sourceR = 56; obstacleR = 20; obstacleX = 210; screenX = 420;
+      srSlider.value = sourceR; orSlider.value = obstacleR;
+      oxSlider.value = obstacleX; sxSlider.value = screenX;
+      updateReadouts(); draw();
+    });
+    document.getElementById('ls-preset-point').addEventListener('click', () => {
+      sourceR = 3; obstacleR = 26; obstacleX = 220; screenX = 460;
+      srSlider.value = sourceR; orSlider.value = obstacleR;
+      oxSlider.value = obstacleX; sxSlider.value = screenX;
+      updateReadouts(); draw();
+    });
+
+    // Pointer Dragging on canvas
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const pos = getCanvasPos(e);
+      const cy = canvas.height / 2;
+      const distObs = Math.hypot(pos.x - obstacleX, pos.y - cy);
+      const distScreen = Math.abs(pos.x - screenX);
+
+      if (distObs <= obstacleR + 10) {
+        dragging = 'obstacle';
+        canvas.setPointerCapture(e.pointerId);
+      } else if (distScreen <= 16) {
+        dragging = 'screen';
+        canvas.setPointerCapture(e.pointerId);
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const pos = getCanvasPos(e);
+      if (dragging === 'obstacle') {
+        obstacleX = Math.max(100, Math.min(screenX - 35, pos.x));
+        oxSlider.value = Math.round(obstacleX);
+      } else if (dragging === 'screen') {
+        screenX = Math.max(obstacleX + 35, Math.min(canvas.width - 20, pos.x));
+        sxSlider.value = Math.round(screenX);
+      }
+      updateReadouts();
+      draw();
+    });
+
+    canvas.addEventListener('pointerup', () => { dragging = null; });
+    canvas.addEventListener('pointercancel', () => { dragging = null; });
+
+    // Keyboard support on canvas
+    canvas.parentElement.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        obstacleX = Math.min(screenX - 35, obstacleX + 10);
+        oxSlider.value = obstacleX;
+        updateReadouts(); draw();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        obstacleX = Math.max(100, obstacleX - 10);
+        oxSlider.value = obstacleX;
+        updateReadouts(); draw();
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        obstacleR = Math.min(50, obstacleR + 2);
+        orSlider.value = obstacleR;
+        updateReadouts(); draw();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        obstacleR = Math.max(6, obstacleR - 2);
+        orSlider.value = obstacleR;
+        updateReadouts(); draw();
+      }
+    });
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.addEventListener('resize', draw);
+    updateReadouts();
+    SimKit.loop(draw);
+
+    window.lsCheck = function(n, ans, tol) {
+      const val = parseFloat(document.getElementById('lsans-' + n).value);
+      const fb = document.getElementById('lsfb-' + n);
+      const hint = document.getElementById('lshint-' + n);
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'ls-feedback err'; return; }
+      if (Math.abs(val - ans) <= tol) { fb.textContent = '✓ Correct!'; fb.className = 'ls-feedback ok'; }
+      else { fb.textContent = '✗ Try again.'; fb.className = 'ls-feedback err'; hint.style.display = 'block'; }
+    };
+
+    window.lsCheckText = function(n, ans) {
+      const el = document.getElementById('lsans-' + n);
+      const fb = document.getElementById('lsfb-' + n);
+      const hint = document.getElementById('lshint-' + n);
+      if (el.value === ans) { fb.textContent = '✓ Correct!'; fb.className = 'ls-feedback ok'; }
+      else { fb.textContent = '✗ Try again.'; fb.className = 'ls-feedback err'; hint.style.display = 'block'; }
+    };
+  })();
+  </script>
+  <script src="../../../assets/js/video-embed.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

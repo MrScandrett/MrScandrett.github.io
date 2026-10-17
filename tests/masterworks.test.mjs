@@ -66,7 +66,7 @@ test('every language page that exists mounts the reader', () => {
   for (const code of D.order) {
     const page = D.langs[code].page;
     if (!page) continue;
-    const path = new URL(`../lessons/language-literature/${page}`, import.meta.url);
+    const path = new URL(`../lessons/language-literature/languages/${page}`, import.meta.url);
     assert.ok(existsSync(path), `${page} exists`);
     const html = readFileSync(path, 'utf8');
     assert.ok(html.includes(`data-masterworks="${code}"`), `${page} mounts data-masterworks="${code}"`);
@@ -75,7 +75,7 @@ test('every language page that exists mounts the reader', () => {
 });
 
 test('the hub mounts the picker and links every language page', () => {
-  const html = readFileSync(new URL('../lessons/language-literature/language-foundations-lab.html', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../lessons/language-literature/languages/language-foundations-lab.html', import.meta.url), 'utf8');
   assert.ok(html.includes('data-masterworks="all"'));
   for (const code of D.order) { const p = D.langs[code].page; if (p) assert.ok(html.includes(`href="${p}"`), `hub links ${p}`); }
 });

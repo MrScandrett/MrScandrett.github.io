@@ -981,7 +981,42 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    initGlobal(); initFirstTest(); initHero(); initGenus(); initSpecies(); initEthos(); initChurch(); initModern(); initTuning(); initEar(); initPlay(); initCompose(); initQuiz();
+    initGlobal(); initFirstTest(); initHero(); initQuiz();
+
+    // Build the long lesson progressively. Each lab remains ready before it
+    // enters the viewport, while startup is no longer one monolithic task.
+    var labs = [
+      ['genera', initGenus], ['species', initSpecies], ['ethos', initEthos],
+      ['boethius', initChurch], ['modern', initModern], ['temperament', initTuning],
+      ['listen', initEar], ['play', initPlay], ['compose', initCompose]
+    ].map(function (item) { return { id: item[0], init: item[1], done: false }; });
+    function run(lab) {
+      if (!lab || lab.done) return;
+      lab.done = true;
+      lab.init();
+    }
+    if ('IntersectionObserver' in window) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          var lab = labs.find(function (item) { return item.id === entry.target.id; });
+          run(lab); observer.unobserve(entry.target);
+        });
+      }, { rootMargin: '500px 0px' });
+      labs.forEach(function (lab) { var section = document.getElementById(lab.id); if (section) observer.observe(section); });
+    }
+    var next = 0;
+    function fillIdle() {
+      while (next < labs.length && labs[next].done) next++;
+      if (next >= labs.length) return;
+      run(labs[next++]);
+      scheduleIdle(fillIdle);
+    }
+    function scheduleIdle(fn) {
+      if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 1800 });
+      else setTimeout(fn, 120);
+    }
+    scheduleIdle(fillIdle);
   });
 
   window.MusicModes = { species: species, tetrachord: tetrachord, gps: gps, MODES: MODES, spell: spell };

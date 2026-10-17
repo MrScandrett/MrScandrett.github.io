@@ -287,6 +287,78 @@
         </div>
       </section>
 
+      <!-- ── Worked Example Card ───────────────────────────── -->
+      <section class="section" id="perceptron-worked-example">
+        <div class="section-head">
+          <h2>Worked Example: Hand-Calculating a Perceptron Update</h2>
+          <p>Trace the mathematics of Frank Rosenblatt's 1958 learning rule step by step on a single misclassified coordinate.</p>
+        </div>
+        <article class="card">
+          <h3>Sample Problem: Training on Coordinate (1, 1) for Logical AND</h3>
+          <p>Suppose our perceptron is learning the logical <code>AND</code> function. Current weights are \(w_1 = 0.4\), \(w_2 = 0.4\), with bias \(b = -1.0\), and the learning rate is \(\eta = 0.2\). We present training sample \(\mathbf{x} = (1, 1)\), whose true target is \(y = 1\). How does the unit calculate its output, and how does the line move?</p>
+
+          <ol class="rhythm" style="margin: 0.8rem 0 1rem; list-style: decimal; padding-left: 1.2rem;">
+            <li>
+              <strong>Step 1: Compute the weighted linear sum (\(z\)).</strong><br/>
+              \(z = w_1 x_1 + w_2 x_2 + b = (0.4)(1) + (0.4)(1) + (-1.0) = 0.8 - 1.0 = -0.2\).
+            </li>
+            <li>
+              <strong>Step 2: Apply the step activation function.</strong><br/>
+              Because \(z = -0.2 < 0\), the threshold function outputs \(\hat{y} = 0\). This means the perceptron predicted class 0, but the ground truth was class 1.
+            </li>
+            <li>
+              <strong>Step 3: Calculate the classification error.</strong><br/>
+              \(\text{error} = y - \hat{y} = 1 - 0 = +1\). Because the error is non-zero, the weights must be adjusted in order to correct the decision boundary.
+            </li>
+            <li>
+              <strong>Step 4: Update weights and bias using the learning rule.</strong><br/>
+              \(\Delta w_i = \eta \cdot \text{error} \cdot x_i\)<br/>
+              \(w_{1,\text{new}} = 0.4 + (0.2)(+1)(1) = 0.6\)<br/>
+              \(w_{2,\text{new}} = 0.4 + (0.2)(+1)(1) = 0.6\)<br/>
+              \(b_{\text{new}} = -1.0 + (0.2)(+1) = -0.8\)<br/>
+              <strong>Mechanism:</strong> Because the weights and bias increased, the decision boundary line shifted closer to \((1, 1)\). On the next epoch, testing \((1, 1)\) gives \(z = (0.6)(1) + (0.6)(1) - 0.8 = +0.4 > 0\), which results in \(\hat{y} = 1\) (correctly classified).
+            </li>
+          </ol>
+
+          <div style="background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+            <h4 style="margin: 0 0 0.4rem; font-size: 0.95rem; color: #6d28d9;">Self-Check Question</h4>
+            <p style="margin: 0 0 0.6rem; font-size: 0.88rem; color: #1d1d1f;">If a perceptron predicts \(\hat{y} = 1\) for input \((1, 0)\) when the true label is \(y = 0\), what is the error \(e = y - \hat{y}\), and will the weights increase or decrease?</p>
+            <details style="font-size: 0.86rem; color: #2d4363;">
+              <summary style="cursor: pointer; font-weight: 700; color: #6d28d9;">Show Answer &amp; Explanation</summary>
+              <p style="margin: 0.4rem 0 0; line-height: 1.6;"><strong>Answer:</strong> The error is \(0 - 1 = -1\). Because the error is negative, \(\Delta w_1 = \eta(-1)(1) = -\eta\), which means the weight \(w_1\) will <strong>decrease</strong>. This happens because the neuron overfired, therefore reducing the weights pushes the activation below the threshold in order to prevent false positives.</p>
+            </details>
+          </div>
+        </article>
+      </section>
+
+      <!-- ── Sources & Historical References ───────────────── -->
+      <section class="section" id="perceptron-sources">
+        <div class="section-head">
+          <h2>Sources &amp; Further Reading</h2>
+          <p>Foundational primary research in neural networks and computational learning theory.</p>
+        </div>
+        <article class="card">
+          <ul class="rhythm">
+            <li>
+              <span>1958 Primary Paper</span>
+              <strong>Rosenblatt, Frank. &ldquo;The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain.&rdquo; <em>Psychological Review</em>, 65(6), 386–408 (1958). doi:10.1037/h0042519. Introduced the mathematical model and learning theorem.</strong>
+            </li>
+            <li>
+              <span>1969 Geometric Limit</span>
+              <strong>Minsky, Marvin, &amp; Papert, Seymour. <em>Perceptrons: An Introduction to Computational Geometry</em>. MIT Press (1969). Proved that single-layer perceptrons cannot compute non-linear predicates like parity or XOR.</strong>
+            </li>
+            <li>
+              <span>1986 Multi-Layer Revival</span>
+              <strong>Rumelhart, David E., Hinton, Geoffrey E., &amp; Williams, Ronald J. &ldquo;Learning representations by back-propagating errors.&rdquo; <em>Nature</em>, 323, 533–536 (1986). doi:10.1038/323533a0. Generalized the learning rule across hidden layers.</strong>
+            </li>
+            <li>
+              <span>Historical Hardware</span>
+              <strong>U.S. Office of Naval Research archives. &ldquo;Mark I Perceptron&rdquo; documentation, Cornell Aeronautical Laboratory (1958–1960).</strong>
+            </li>
+          </ul>
+        </article>
+      </section>
+
       <section class="section" id="perceptron-robots">
         <div class="section-head">
           <h2>From One Neuron to Robot Brains</h2>
@@ -526,5 +598,6 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

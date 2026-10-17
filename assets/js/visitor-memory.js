@@ -96,7 +96,7 @@
 
   /* ── Paths and labels ────────────────────────────────────────────── */
 
-  // Site-relative path ("lessons/music/piano.html"), so entries survive the site moving hosts.
+  // Site-relative path ("lessons/music/instruments/piano.html"), so entries survive the site moving hosts.
   function sitePath(url) {
     var u;
     try { u = new URL(url, location.href); } catch (e) { return null; }
@@ -136,8 +136,49 @@
     }).join(' ');
   }
 
+  /* ── Moved lessons ───────────────────────────────────────────────── */
+
+  // When lessons move folders (assets/js/lesson-moves.js), re-key this browser's history,
+  // favorites and saved answers to the new paths, once per version of that map.
+  var MOVES_VERSION = 1; // keep equal to ClassroomOSLessonMoves.version
+
+  function migrateMoves() {
+    var data = load();
+    if (data.mv === MOVES_VERSION) return;
+    if (!['lessons', 'favs', 'sheets'].some(function (k) { return Object.keys(data[k]).length; })) return;
+    var s = document.createElement('script');
+    s.src = siteHref('assets/js/lesson-moves.js');
+    s.onload = function () {
+      var moves = window.ClassroomOSLessonMoves;
+      if (!moves || moves.version !== MOVES_VERSION) return;
+      update(function (d) {
+        ['lessons', 'favs', 'sheets'].forEach(function (k) {
+          var map = d[k];
+          Object.keys(map).forEach(function (from) {
+            var to = moves.resolve(from);
+            if (!to) return;
+            var rec = map[from], kept = map[to];
+            delete map[from];
+            if (k === 'favs') rec.url = to;
+            if (!kept) { map[to] = rec; return; }
+            if (k === 'lessons') {
+              // visited at both addresses: one history entry
+              kept.n = (kept.n || 0) + (rec.n || 0);
+              var first = Math.min(kept.first || Infinity, rec.first || Infinity);
+              if (isFinite(first)) kept.first = first;
+              kept.deep = Math.max(kept.deep || 0, rec.deep || 0);
+            } else if ((rec.at || 0) > (kept.at || 0)) map[to] = rec;
+          });
+        });
+        d.mv = MOVES_VERSION;
+      });
+    };
+    document.head.appendChild(s);
+  }
+
   var here = sitePath(location.href);
   var isLesson = Boolean(here && /^lessons\/.+\.html$/.test(here));
+  migrateMoves();
 
   /* ── Public reads ────────────────────────────────────────────────── */
 

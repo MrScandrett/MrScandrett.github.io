@@ -93,7 +93,7 @@ copy):
   `three` devDependency used by `scripts/build-breadboard-model.mjs`), plus
   `OrbitControls`/`OBJLoader`/`GLTFLoader`/`DRACOLoader`. Pair with
   `assets/js/sim-kit-three.mjs`'s `createScene(canvas, { THREE, ... })` for
-  renderer/camera/resize setup. See `lessons/cad-camera-controls.html` for a worked
+  renderer/camera/resize setup. See `lessons/3d-design/cad-and-printing/cad-camera-controls.html` for a worked
   example.
 
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to

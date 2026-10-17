@@ -2,10 +2,10 @@
    every Blender lesson page so students can jump Layout <-> Sculpting <->
    UV Editing (etc.) without walking back through the pathway hub. */
 (function () {
-  // Paths are relative to lessons/; resolved against this script's own URL so the
-  // menu works from lessons/blender/ and lessons/game-asset-studio/ alike.
+  // Paths are relative to lessons/3d-design/; resolved against this script's own URL so the
+  // menu works from lessons/3d-design/blender/ and lessons/3d-design/game-asset-studio/ alike.
   var SCRIPT_URL = (document.currentScript && document.currentScript.src) || location.href;
-  var LESSONS_ROOT = new URL("../../../lessons/", SCRIPT_URL);
+  var LESSONS_ROOT = new URL("../../../lessons/3d-design/", SCRIPT_URL);
   var TABS = [
     { label: "Layout", color: "#e8792a", href: "blender/blender-interface-basics.html" },
     { label: "Modeling", color: "#b5793f", href: "blender/blender-furniture-design.html" },

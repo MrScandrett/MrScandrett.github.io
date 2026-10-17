@@ -9,7 +9,7 @@ The output goes into one of two formats:
 
 - **Fake Book lead sheet** (`data/fake-book.json`): a melody string and chord symbols, plus
   `sectionsByBar` / `keyChanges` for multi-strain forms. It plays with the band and opens from a
-  link with `lessons/music/fake-book.html#tune=<id>`. The notation rules are in the file's `format`
+  link with `lessons/music/theory/fake-book.html#tune=<id>`. The notation rules are in the file's `format`
   block. This is the right target for jazz standards.
 - **Composer score** (`data/score-library.json`): complete and guided, enforced by
   `npm run check:scores`. Needs both hands, so it is far more work from a scan.

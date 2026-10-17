@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const base = process.env.MUSIC_TEST_URL || 'http://127.0.0.1:8080/';
 const paths = [
-  'lessons/music/sheet-music-trainer.html',
-  'lessons/music/piano.html',
-  'lessons/music/violin-fingerboard.html',
-  'lessons/music/drums.html',
+  'lessons/music/theory/sheet-music-trainer.html',
+  'lessons/music/instruments/piano.html',
+  'lessons/music/instruments/violin-fingerboard.html',
+  'lessons/music/instruments/drums.html',
   'music-lab.html',
-  'lessons/music/guitar.html',
-  'lessons/music/music-modes-evolution.html',
-  'lessons/music/beethoven.html',
-  'lessons/technical-elements/cymatics.html',
+  'lessons/music/instruments/guitar.html',
+  'lessons/music/theory/music-modes-evolution.html',
+  'lessons/music/pioneers/beethoven.html',
+  'lessons/technical-elements/audio-engineering/cymatics.html',
   'lessons/physics/waves-and-sound/physics-of-music.html',
   'lessons/physics/waves-and-sound/do-atoms-make-music.html'
 ];
@@ -66,7 +66,7 @@ const paths = [
         assert.ok(await lightbox.isVisible(), 'Clef-map lightbox is not visible');
         await page.keyboard.press('Escape');
       }
-      if(path.includes('music/piano.html')) {
+      if(path.includes('instruments/piano.html')) {
         const count = await page.evaluate(() => {
           const M=MusicNotation, P=PianoTheory; let count=0;
           const host=document.createElement('div');document.body.appendChild(host);

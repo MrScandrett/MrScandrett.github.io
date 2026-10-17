@@ -6,22 +6,22 @@ import { findChromium } from '../lib/find-chromium.mjs';
 
 const base = process.env.MUSIC_TEST_URL || 'http://localhost:8080/';
 const lessons = [
-  'lessons/music/bach.html',
-  'lessons/music/beethoven.html',
-  'lessons/music/chopin.html',
-  'lessons/music/drums.html',
-  'lessons/music/fake-book.html',
-  'lessons/music/guitar.html',
-  'lessons/music/joplin.html',
-  'lessons/music/gershwin.html',
-  'lessons/music/morton.html',
-  'lessons/music/mozart.html',
-  'lessons/music/music-modes-evolution.html',
-  'lessons/music/piano.html',
-  'lessons/music/sheet-music-trainer.html',
-  'lessons/music/tchaikovsky.html',
-  'lessons/music/violin-fingerboard.html',
-  'lessons/music/vivaldi.html',
+  'lessons/music/pioneers/bach.html',
+  'lessons/music/pioneers/beethoven.html',
+  'lessons/music/pioneers/chopin.html',
+  'lessons/music/instruments/drums.html',
+  'lessons/music/theory/fake-book.html',
+  'lessons/music/instruments/guitar.html',
+  'lessons/music/pioneers/joplin.html',
+  'lessons/music/pioneers/gershwin.html',
+  'lessons/music/pioneers/morton.html',
+  'lessons/music/pioneers/mozart.html',
+  'lessons/music/theory/music-modes-evolution.html',
+  'lessons/music/instruments/piano.html',
+  'lessons/music/theory/sheet-music-trainer.html',
+  'lessons/music/pioneers/tchaikovsky.html',
+  'lessons/music/instruments/violin-fingerboard.html',
+  'lessons/music/pioneers/vivaldi.html',
 ];
 const sizes = [{ width: 1440, height: 1000 }, { width: 390, height: 844 }, { width: 844, height: 390 }];
 const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
@@ -39,12 +39,12 @@ try {
       await page.goto(base + lesson, { waitUntil: 'domcontentloaded' });
       const scoreCount = await page.locator('figure[data-score]').count();
       if (scoreCount) {
-        await page.locator('figure[data-score]').first().locator('.se-note-list-toggle').waitFor({ state: 'attached' });
         const firstDetails = page.locator('figure[data-score]').first().locator('xpath=ancestor::details[1]');
         if (await firstDetails.count() && await firstDetails.getAttribute('open') === null) await firstDetails.locator('summary').click();
         const spotlight = page.locator('.composer-cover').first();
         if (await spotlight.count()) await spotlight.click();
         const figure = page.locator('figure[data-score]').first();
+        await figure.locator('.se-note-list-toggle').waitFor({ state: 'attached' });
         await figure.locator('.se-note-list-toggle').click();
         await page.evaluate(() => window.MusicNotation.setPreferences({ pitchNames: true, noteColors: true }));
         await page.waitForTimeout(100);

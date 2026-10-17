@@ -52,7 +52,7 @@ const BASELINE = path.join(ROOT, "docs/timeline-audit-baseline.json");
 // (labels stuck at the edges only show up zoomed in); sizes limits a case to some sizes.
 const CASES = pick("case", [
   { name: "hopper", path: "lessons/computer-science/pioneers/grace-hopper.html" },
-  { name: "bach", path: "lessons/music/bach.html" },
+  { name: "bach", path: "lessons/music/pioneers/bach.html" },
   { name: "jeremiah", path: "lessons/bible-studies/jeremiah.html" },
   { name: "ages", path: "lessons/humanities/the-ages.html", title: "story so far" },
   { name: "python", path: "lessons/computer-science/foundations/python-foundations.html", title: "python" },

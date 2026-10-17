@@ -162,7 +162,7 @@
           <h2>State Machine Simulator</h2>
           <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Choose a demo from the panel. Predict the next state, then fire an event and compare your prediction with the transition log. In Robot Vacuum, try an obstacle before and after the battery runs low.</p>
           <div class="cl-canvas-wrap">
-            <canvas id="sm-canvas" aria-label="State machine simulator canvas"></canvas>
+            <canvas id="sm-canvas" aria-label="State machine simulator canvas. Press number keys 1, 2, or 3 to trigger events." tabindex="0" role="region"></canvas>
           </div>
           <div class="cl-readouts">
             <div class="cl-readout"><span class="cl-readout-label">Current State</span><span class="cl-readout-val" id="sm-r-state">RED</span></div>
@@ -244,6 +244,9 @@
               <small>The 2002 iRobot Roomba made autonomous floor cleaning a practical home product. Our simplified classroom model uses Clean → Avoid → Clean, with Low Battery → Dock → Charge as another route. Actual models vary; a robot also needs sensors and motion control. Compare <a href="../../engineering/mechanical-and-civil-design/bug-bots.html#genghis">Roomba's robotics lineage</a> and <a href="../../engineering/arduino-and-electronics/arduino-programming-foundations.html#apf-robot-build">build your own state machine</a>.</small>
             </div>
           </div>
+          <figure data-video="leave-it-to-roll-oh-1940" style="margin-top:1.2rem;">
+            <figcaption>Leave It to Roll-Oh (1940): An imaginative domestic robot introduces how real relays, microswitches, and automated finite state logic revolutionized factory and automotive control.</figcaption>
+          </figure>
         </section>
 
         <section class="cl-card" style="--card-accent:#ff9500;">
@@ -672,7 +675,18 @@
   resize();
   draw();
   startAuto();
-  window.addEventListener('resize', draw);
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  canvas.addEventListener('keydown', (e) => {
+    const num = parseInt(e.key, 10);
+    const m = MACHINES[demo];
+    if (!isNaN(num) && num >= 1 && num <= m.events.length) {
+      e.preventDefault();
+      fireEvent(m.events[num - 1]);
+    } else if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      window.smReset();
+    }
+  });
 
   /* ── Practice checkers ────────────────────────────── */
   window.smCheck = function(n, correct, tol) {
@@ -712,5 +726,7 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/video-embed.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

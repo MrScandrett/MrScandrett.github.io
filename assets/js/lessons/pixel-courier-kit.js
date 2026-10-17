@@ -61,25 +61,97 @@
   function courierFrame(torso, legs) { return rows(torso.concat(legs)); }
 
   var PARCEL = [
-    '................', '................', '................', '................',
-    '...1111111111...', '..188887788881..', '..188887788881..', '..199997799991..',
-    '..177777777771..', '..199997799991..', '..188887788881..', '..188887788881..',
-    '..188887788881..', '...1111111111...', '................', '................'
+    '................',
+    '.....17771......',
+    '....1727721.....',
+    '....1117111.....',
+    '...1111111111...',
+    '..188887788881..',
+    '..188887788881..',
+    '..199997799991..',
+    '..177777777771..',
+    '..199997799991..',
+    '..188887788881..',
+    '..188887788881..',
+    '..188887788881..',
+    '...1111111111...',
+    '................',
+    '................'
   ];
-  var PARCEL_UP = PARCEL.slice(1).concat(['................']);
+  var PARCEL_UP = [
+    '................',
+    '................',
+    '.....17771......',
+    '....1727721.....',
+    '....1117111.....',
+    '...1111111111...',
+    '..188887788881..',
+    '..188887788881..',
+    '..199997799991..',
+    '..177777777771..',
+    '..199997799991..',
+    '..188887788881..',
+    '..188887788881..',
+    '..188887788881..',
+    '...1111111111...',
+    '................'
+  ];
   var MAILBOX = [
-    '................', '....11111111....', '...1dddddddd1...', '..1dddddddddd1..',
-    '..1d2222222dd1..', '..1dddddddddd1..', '..1dddddddddd15.', '..1dddddddddd15.',
-    '..111111111111..', '.......99.......', '.......99.......', '.......99.......',
-    '.......99.......', '.......99.......', '......9999......', '.....999999.....'
+    '................',
+    '....11111111....',
+    '...122dddddd1...',
+    '..122dddddddd1..',
+    '..1d11111111d1..',
+    '..1d2222222dd1..',
+    '..1dddddddddd1..',
+    '..1dddddddddd15.',
+    '..1111111111115.',
+    '.......99.......',
+    '.......99.......',
+    '.......99.......',
+    '.......99.......',
+    '.......99.......',
+    '......9999......',
+    '.....999999.....'
   ];
   var FLAG = [
-    '................', '...1............', '...1555.........', '...155555.......',
-    '...1555555......', '...155555.......', '...1555.........', '...1............',
-    '...1............', '...1............', '...1............', '...1............',
-    '...1............', '...1............', '..111...........', '.11111..........'
+    '................',
+    '..177...........',
+    '..177...........',
+    '...1............',
+    '...155555.......',
+    '...15577555.....',
+    '...157777555....',
+    '...15577555.....',
+    '...155555.......',
+    '...1............',
+    '...1............',
+    '...1............',
+    '...1............',
+    '...1............',
+    '..111...........',
+    '.11111..........'
   ];
-  var FLAG_ON = FLAG.map(function (r) { return r.replace(/5/g, 'a'); });
+  var FLAG_2 = [
+    '................',
+    '..177...........',
+    '..177...........',
+    '...1............',
+    '...1555555......',
+    '...15557755.....',
+    '...155777755....',
+    '...15557755.....',
+    '...155555.......',
+    '...1............',
+    '...1............',
+    '...1............',
+    '...1............',
+    '...1............',
+    '..111...........',
+    '.11111..........'
+  ];
+  var FLAG_ON = FLAG.map(function (r) { return r.replace(/5/g, 'a').replace(/7/g, '2'); });
+  var FLAG_ON2 = FLAG_2.map(function (r) { return r.replace(/5/g, 'a').replace(/7/g, '2'); });
 
   // Seeded RNG so default tiles look hand-made but are identical on every machine.
   function rng(seed) { return function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
@@ -90,36 +162,58 @@
   }
   var DEFAULT_TILES = {
     G: { name: 'Grass ground', solid: true, px: tileFrom(function (x, y, r) {
-      if (y < 2) return 'a';
-      if (y < 4) return (y === 3 && r() < 0.45) ? '8' : (r() < 0.25 ? 'b' : 'a');
-      return r() < 0.12 ? '9' : (r() < 0.06 ? '4' : '8');
+      if (y === 0) return (x * 7 + 3) % 4 === 0 ? '7' : ((x % 3 === 0) ? 'b' : 'a');
+      if (y === 1) return (x % 5 === 2) ? '7' : 'a';
+      if (y === 2) return (x % 2 === 0) ? 'a' : ((x % 4 === 1) ? '8' : 'b');
+      if (y === 3) return (x % 3 === 0) ? '9' : '8';
+      if ((x === 4 && y === 7) || (x === 11 && y === 12)) return 'e';
+      if (x === 9 && y === 6) return '4';
+      return r() < 0.14 ? '9' : (r() < 0.08 ? '4' : '8');
     }, 7) },
-    D: { name: 'Dirt', solid: true, px: tileFrom(function (x, y, r) { return r() < 0.12 ? '9' : (r() < 0.06 ? '4' : '8'); }, 11) },
+    D: { name: 'Dirt', solid: true, px: tileFrom(function (x, y, r) {
+      if ((x === 3 && y === 4) || (x === 12 && y === 10)) return 'e';
+      if (x === 7 && y === 13) return 'c';
+      if (y % 4 === 1 && r() < 0.28) return '9';
+      return r() < 0.14 ? '9' : (r() < 0.07 ? '4' : '8');
+    }, 11) },
     B: { name: 'Brick', solid: true, px: tileFrom(function (x, y) {
-      var row = Math.floor(y / 4); var off = row % 2 ? 4 : 0;
-      if (y % 4 === 3) return 'f';
-      if ((x + off) % 8 === 7) return 'f';
-      return (y % 4 === 0) ? '2' : 'e';
+      var row = Math.floor(y / 4); var off = (row % 2) ? 4 : 0;
+      if (y % 4 === 3) return '1';
+      if ((x + off) % 8 === 7) return '1';
+      if (y % 4 === 0) return '2';
+      if ((x + off) % 8 === 0) return 'e';
+      return (row % 2 ? 'e' : 'f');
     }, 3) },
     C: { name: 'Crate', solid: true, px: tileFrom(function (x, y) {
       if (x === 0 || y === 0 || x === 15 || y === 15) return '1';
-      if (x === 1 || y === 1 || x === 14 || y === 14) return '9';
+      if ((x <= 2 || x >= 13) && (y <= 2 || y >= 13)) {
+        if ((x === 2 || x === 13) && (y === 2 || y === 13)) return '7';
+        return 'f';
+      }
       if (x === y || x === 15 - y || x === y + 1 || x + 1 === 15 - y) return '9';
-      return '8';
+      return (x === 1 || y === 1) ? '7' : '8';
     }, 5) },
     '=': { name: 'One-way plank', oneWay: true, px: tileFrom(function (x, y) {
-      if (y === 0) return '1';
-      if (y < 4) return (x % 5 === 4) ? '9' : '8';
+      if (y === 0) return (x === 0 || x === 15) ? '1' : ((x % 4 === 0) ? '2' : '7');
+      if (y === 1) return (x === 0 || x === 15) ? '1' : '8';
+      if (y === 2) return (x === 0 || x === 15) ? '1' : ((x % 3 === 0) ? '9' : '8');
+      if (y === 3) return (x === 0 || x === 15) ? '1' : '9';
       if (y === 4) return '1';
-      if (y < 9 && (x === 2 || x === 13)) return '9';
+      if (y >= 5 && y <= 8 && (x === 2 || x === 3 || x === 12 || x === 13)) return (x === 2 || x === 12 ? 'e' : '1');
       return '0';
     }, 9) },
     '^': { name: 'Spikes', hazard: true, px: tileFrom(function (x, y) {
       if (y < 8) return '0';
       var local = x % 4; var h = y - 8;
       var half = Math.floor(h / 2);
-      if (local >= 2 - half - 1 && local <= 1 + half) return (local === 2 - half - 1 || local === 1 + half) ? '1' : (h < 3 ? '2' : 'e');
-      return y === 15 ? '1' : '0';
+      if (h === 0 && (local === 1 || local === 2)) return '2';
+      if (local >= 2 - half - 1 && local <= 1 + half) {
+        if (local === 2 - half - 1 || local === 1 + half) return '1';
+        return local < 2 ? '2' : 'e';
+      }
+      if (y === 14) return 'f';
+      if (y === 15) return '1';
+      return '0';
     }, 13) }
   };
   var TILE_KEYS = ['G', 'D', 'B', 'C', '=', '^'];
@@ -157,7 +251,7 @@
         } },
         parcel: { w: 16, h: 16, anims: { idle: { fps: 3, frames: [rows(PARCEL), rows(PARCEL_UP)] } } },
         mailbox: { w: 16, h: 16, anims: { idle: { fps: 1, frames: [rows(MAILBOX)] } } },
-        flag: { w: 16, h: 16, anims: { idle: { fps: 1, frames: [rows(FLAG)] }, on: { fps: 1, frames: [rows(FLAG_ON)] } } }
+        flag: { w: 16, h: 16, anims: { idle: { fps: 2, frames: [rows(FLAG), rows(FLAG_2)] }, on: { fps: 3, frames: [rows(FLAG_ON), rows(FLAG_ON2)] } } }
       },
       tiles: JSON.parse(JSON.stringify(DEFAULT_TILES)),
       level: defaultLevel()
@@ -275,18 +369,97 @@
     var c = document.createElement('canvas'); c.width = 640; c.height = VIEW_H;
     var ctx = c.getContext('2d'); var r = rng(kind === 'far' ? 21 : 42);
     if (kind === 'far') {
-      ctx.fillStyle = '#9fd8e6';
+      // 1. Distant mountain range with snowcaps and faceted slopes
+      var peaks = [
+        { x: 35, w: 90, h: 72 }, { x: 115, w: 105, h: 88 }, { x: 195, w: 80, h: 68 },
+        { x: 275, w: 115, h: 94 }, { x: 375, w: 95, h: 78 }, { x: 465, w: 110, h: 90 },
+        { x: 555, w: 90, h: 74 }, { x: 635, w: 95, h: 82 }
+      ];
+      peaks.forEach(function (m) {
+        var peakY = VIEW_H - m.h - 18;
+        // Sunlit slope (left)
+        ctx.fillStyle = '#8ec3d4';
+        ctx.beginPath(); ctx.moveTo(m.x, peakY); ctx.lineTo(m.x - m.w * 0.45, VIEW_H); ctx.lineTo(m.x, VIEW_H); ctx.fill();
+        // Shaded slope (right)
+        ctx.fillStyle = '#6fa4b8';
+        ctx.beginPath(); ctx.moveTo(m.x, peakY); ctx.lineTo(m.x + m.w * 0.55, VIEW_H); ctx.lineTo(m.x, VIEW_H); ctx.fill();
+        // Snowcap
+        ctx.fillStyle = '#f4faff';
+        ctx.beginPath();
+        ctx.moveTo(m.x, peakY);
+        ctx.lineTo(m.x - m.w * 0.14, peakY + m.h * 0.28);
+        ctx.lineTo(m.x, peakY + m.h * 0.21);
+        ctx.lineTo(m.x + m.w * 0.16, peakY + m.h * 0.29);
+        ctx.fill();
+      });
+
+      // Mid-distance foothill ridge
+      ctx.fillStyle = '#4c8496';
       ctx.beginPath(); ctx.moveTo(0, VIEW_H);
-      for (var x = 0; x <= 640; x += 32) ctx.lineTo(x, 70 + Math.round(Math.sin(x / 70) * 18 + r() * 14));
+      for (var x = 0; x <= 640; x += 20) {
+        ctx.lineTo(x, 106 + Math.round(Math.sin(x / 45) * 12 + Math.cos(x / 80) * 8));
+      }
       ctx.lineTo(640, VIEW_H); ctx.fill();
+
+      // Pine silhouettes along foothills
+      ctx.fillStyle = '#26545d';
+      for (var px = 6; px < 640; px += 14 + Math.round(r() * 8)) {
+        var ty = 114 + Math.round(Math.sin(px / 45) * 10);
+        var th = 13 + Math.round(r() * 7);
+        ctx.beginPath(); ctx.moveTo(px, ty - th); ctx.lineTo(px - 5, ty); ctx.lineTo(px + 5, ty); ctx.fill();
+        ctx.fillRect(px - 1, ty, 2, 4);
+      }
     } else {
-      ctx.fillStyle = '#4fae8e';
-      for (var i = 0; i < 9; i++) {
-        var bx = i * 72 + Math.round(r() * 20); var bw = 34 + Math.round(r() * 22); var bh = 40 + Math.round(r() * 50);
-        ctx.fillRect(bx, VIEW_H - bh, bw, bh);
-        ctx.fillStyle = '#3d8f75';
-        for (var wy = VIEW_H - bh + 6; wy < VIEW_H - 8; wy += 10) for (var wx = bx + 5; wx < bx + bw - 6; wx += 9) ctx.fillRect(wx, wy, 3, 4);
-        ctx.fillStyle = '#4fae8e';
+      // 2. Near town skyline: Victorian / retro town with gables, warm windows, chimneys
+      ctx.fillStyle = '#3a8775';
+      ctx.fillRect(0, 132, 640, VIEW_H - 132);
+
+      for (var i = 0; i < 18; i++) {
+        var bx = i * 36 + Math.round(r() * 6);
+        var bw = 24 + Math.round(r() * 12);
+        var bh = 36 + Math.round(r() * 32);
+        var by = VIEW_H - bh - 8;
+
+        // Building facade
+        ctx.fillStyle = i % 2 === 0 ? '#439985' : '#3c8c79';
+        ctx.fillRect(bx, by, bw, bh + 8);
+
+        // Pitched roof
+        ctx.fillStyle = i % 3 === 0 ? '#b85038' : (i % 3 === 1 ? '#2c4357' : '#335c52');
+        ctx.beginPath();
+        ctx.moveTo(bx - 3, by);
+        ctx.lineTo(bx + bw / 2, by - 12);
+        ctx.lineTo(bx + bw + 3, by);
+        ctx.fill();
+
+        // Chimney
+        if (i % 2 === 0) {
+          ctx.fillStyle = '#7a3c30';
+          ctx.fillRect(bx + bw - 7, by - 18, 5, 10);
+          // Tiny smoke puff
+          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.fillRect(bx + bw - 8, by - 24, 4, 3);
+          ctx.fillRect(bx + bw - 6, by - 29, 5, 4);
+        }
+
+        // Glowing warm windows
+        ctx.fillStyle = '#ffcf52';
+        for (var wy = by + 6; wy < VIEW_H - 16; wy += 11) {
+          for (var wx = bx + 4; wx < bx + bw - 6; wx += 8) {
+            ctx.fillRect(wx, wy, 4, 5);
+            ctx.fillStyle = '#1a1c2c';
+            ctx.fillRect(wx + 1, wy + 2, 2, 1); // window divider
+            ctx.fillStyle = '#ffcf52';
+          }
+        }
+      }
+
+      // Front fence / greenery line
+      ctx.fillStyle = '#2d6d5e';
+      ctx.fillRect(0, VIEW_H - 12, 640, 12);
+      ctx.fillStyle = '#22594d';
+      for (var fx = 0; fx < 640; fx += 8) {
+        ctx.fillRect(fx, VIEW_H - 16, 2, 5);
       }
     }
     return c;
@@ -342,7 +515,7 @@
 
     var art, palette, map, W, H, objects, layers;
     var keys = {}; var pressed = {};
-    var p, cam, particles, shake, hitstop, time, mode, best, trail, collected, totalParcels, checkpoint, deaths;
+    var p, cam, particles, shake, hitstop, time, mode, best, trail, collected, totalParcels, checkpoint, deaths, floatingTexts;
 
     function loadArt(a) {
       art = a; palette = art.palette;
@@ -375,7 +548,7 @@
       p = { x: checkpoint.x, y: checkpoint.y, w: 10, h: 14, vx: 0, vy: 0, grounded: false, coyote: 0, buffer: 0, facing: 1,
         state: 'idle', stateTime: 0, animTime: 0, sx: 1, sy: 1, cut: false, landTimer: 0, prevVy: 0 };
       cam = { x: Math.max(0, p.x - VIEW_W / 2), y: Math.max(0, H * TILE - VIEW_H), look: 0 };
-      particles = []; shake = 0; hitstop = 0; time = 0; collected = 0; deaths = 0; trail = [];
+      particles = []; floatingTexts = []; shake = 0; hitstop = 0; time = 0; collected = 0; deaths = 0; trail = [];
       mode = opts.menus ? 'title' : 'play';
       emit('reset', {});
     }
@@ -537,11 +710,39 @@
           if (opts.juice.hitstop) hitstop = 0.07;
           if (opts.juice.sound) { blip(660, 0.08, 0); setTimeout(function () { blip(990, 0.12, 0); }, 70); }
           puff(o.x + 8, o.y + 8, 12, palette[7], 120);
+          if (opts.juice.particles) {
+            for (var sp = 0; sp < 8; sp++) {
+              particles.push({
+                x: o.x + 8, y: o.y + 8,
+                vx: (Math.random() - 0.5) * 80,
+                vy: (Math.random() - 0.5) * 80 - 20,
+                life: 0.5 + Math.random() * 0.3,
+                color: Math.random() < 0.5 ? palette[7] : palette[2],
+                size: 2,
+                sparkle: true
+              });
+            }
+          }
+          floatingTexts.push({ text: '+1', x: o.x + 4, y: o.y - 2, vy: -34, life: 0.85, color: '#ffc93c' });
           emit('parcel', { collected: collected, total: totalParcels });
         }
         if (o.type === 'flag' && !o.on && overlaps(p.x, p.y, p.w, p.h, o.x, o.y, 16, 16)) {
           o.on = true; checkpoint = { x: o.x + 3, y: o.y + 2 };
           if (opts.juice.sound) blip(440, 0.15, 220, 'triangle');
+          if (opts.juice.particles) {
+            for (var fp = 0; fp < 8; fp++) {
+              particles.push({
+                x: o.x + 8, y: o.y + 4,
+                vx: (Math.random() - 0.5) * 60,
+                vy: -Math.random() * 50 - 20,
+                life: 0.6 + Math.random() * 0.4,
+                color: palette[10],
+                size: 2,
+                sparkle: true
+              });
+            }
+          }
+          floatingTexts.push({ text: 'CHECKPOINT!', x: o.x - 8, y: o.y - 4, vy: -28, life: 0.9, color: '#38b764' });
           emit('checkpoint', {});
         }
         if (o.type === 'mailbox' && overlaps(p.x, p.y, p.w, p.h, o.x, o.y, 16, 16) && collected === totalParcels && mode === 'play') {
@@ -575,6 +776,8 @@
       cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
       particles.forEach(function (q) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 200 * dt; q.life -= dt; });
       particles = particles.filter(function (q) { return q.life > 0; });
+      floatingTexts.forEach(function (ft) { ft.y += ft.vy * dt; ft.life -= dt; });
+      floatingTexts = floatingTexts.filter(function (ft) { return ft.life > 0; });
       if (shake > 0) shake = Math.max(0, shake - dt);
     }
 
@@ -606,8 +809,38 @@
       var level = W * TILE;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       if (layer === 'sky') {
-        var g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, '#d8f3f9'); g.addColorStop(1, '#fff4d8');
-        ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H); return;
+        var g = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+        g.addColorStop(0, '#8ed2e6');
+        g.addColorStop(0.55, '#d3eff7');
+        g.addColorStop(1, '#ffeed4');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+        // Sun with soft atmospheric halo
+        var sunX = 265, sunY = 32;
+        ctx.fillStyle = 'rgba(255, 245, 200, 0.2)';
+        ctx.beginPath(); ctx.arc(sunX, sunY, 24, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 248, 220, 0.45)';
+        ctx.beginPath(); ctx.arc(sunX, sunY, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fffdf7';
+        ctx.beginPath(); ctx.arc(sunX, sunY, 7, 0, Math.PI * 2); ctx.fill();
+
+        // Drifting procedural pixel clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        var cloudOffset = (time * 8) % (VIEW_W + 120);
+        var c1x = Math.round(VIEW_W - cloudOffset + 40);
+        if (c1x < -80) c1x += VIEW_W + 120;
+        ctx.fillRect(c1x, 22, 38, 8);
+        ctx.fillRect(c1x + 6, 17, 24, 6);
+        ctx.fillRect(c1x + 12, 13, 14, 5);
+
+        var c2x = Math.round(VIEW_W - (cloudOffset * 1.3) % (VIEW_W + 120) + 160);
+        if (c2x < -80) c2x += VIEW_W + 120;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fillRect(c2x, 46, 48, 9);
+        ctx.fillRect(c2x + 8, 41, 30, 6);
+        ctx.fillRect(c2x + 16, 36, 16, 6);
+        return;
       }
       if (layer === 'far' || layer === 'near') {
         if (!opts.parallax.enabled) return;
@@ -646,7 +879,7 @@
           var anim = o.type === 'flag' && o.on ? 'on' : 'idle';
           ctx.drawImage(bake(frameFor(o.type, anim, time), palette), o.x, o.y);
           if (o.type === 'mailbox' && collected < totalParcels) {
-            ctx.fillStyle = '#1a1c2c'; ctx.font = '7px monospace'; ctx.fillText(collected + '/' + totalParcels, o.x + 1, o.y - 2);
+            ctx.fillStyle = '#1a1c2c'; ctx.font = 'bold 7px monospace'; ctx.fillText(collected + '/' + totalParcels, o.x + 1, o.y - 2);
           }
         });
       } else if (layer === 'player') {
@@ -664,29 +897,120 @@
           ctx.fillStyle = '#1a1c2c'; ctx.font = '7px monospace'; ctx.fillText(p.state.toUpperCase(), Math.round(p.x) - 4, Math.round(p.y) - 6);
         }
       } else if (layer === 'particles') {
-        particles.forEach(function (q) { ctx.fillStyle = q.color; ctx.globalAlpha = Math.min(1, q.life * 4); ctx.fillRect(Math.round(q.x), Math.round(q.y), q.size, q.size); });
+        particles.forEach(function (q) {
+          ctx.fillStyle = q.color; ctx.globalAlpha = Math.min(1, q.life * 4);
+          if (q.sparkle) {
+            var sz = q.size || 2;
+            var qx = Math.round(q.x), qy = Math.round(q.y);
+            ctx.fillRect(qx - sz, qy, sz * 2 + 1, 1);
+            ctx.fillRect(qx, qy - sz, 1, sz * 2 + 1);
+          } else {
+            ctx.fillRect(Math.round(q.x), Math.round(q.y), q.size, q.size);
+          }
+        });
         ctx.globalAlpha = 1;
+        floatingTexts.forEach(function (ft) {
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, ft.life * 2.2);
+          ctx.fillStyle = '#1a1c2c';
+          ctx.font = 'bold 8px monospace';
+          ctx.fillText(ft.text, Math.round(ft.x) + 1, Math.round(ft.y) + 1);
+          ctx.fillStyle = ft.color || '#ffc93c';
+          ctx.fillText(ft.text, Math.round(ft.x), Math.round(ft.y));
+          ctx.restore();
+        });
       } else if (layer === 'hud' && opts.hud) {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.fillStyle = 'rgba(26,28,44,.78)'; ctx.fillRect(4, 4, 92, 14);
-        ctx.drawImage(bake(art.sprites.parcel.anims.idle.frames[0], palette), 3, 1, 16, 16);
-        ctx.fillStyle = '#ffc93c'; ctx.font = '8px monospace';
-        ctx.fillText(collected + '/' + totalParcels + '  ' + time.toFixed(1) + 's', 22, 14);
+        var hudW = deaths > 0 ? 128 : 108;
+        ctx.fillStyle = 'rgba(20, 23, 38, 0.88)';
+        ctx.fillRect(4, 4, hudW, 18);
+        ctx.strokeStyle = '#ffc93c'; ctx.lineWidth = 1;
+        ctx.strokeRect(4.5, 4.5, hudW - 1, 17);
+        ctx.drawImage(bake(art.sprites.parcel.anims.idle.frames[0], palette), 4, 3, 16, 16);
+        ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 8px monospace';
+        ctx.fillText(collected + '/' + totalParcels, 23, 16);
+        ctx.fillStyle = '#f4f4f4';
+        ctx.fillText('⏱ ' + time.toFixed(1) + 's', 52, 16);
+        if (deaths > 0) {
+          ctx.fillStyle = '#ff8a5c';
+          ctx.fillText('💀 ' + deaths, 98, 16);
+        }
       }
     }
     function drawOverlay() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = 'rgba(26,28,44,.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-      ctx.textAlign = 'center'; ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 16px monospace';
-      var title = mode === 'title' ? 'PIXEL COURIER' : mode === 'paused' ? 'PAUSED' : 'DELIVERED!';
-      ctx.fillText(title, VIEW_W / 2, 70);
-      ctx.fillStyle = '#f4f4f4'; ctx.font = '8px monospace';
-      if (mode === 'title') { ctx.fillText('Collect every parcel, then reach the mailbox.', VIEW_W / 2, 92); ctx.fillText('Arrows/WASD move · Space jumps · P pauses', VIEW_W / 2, 106); }
-      if (mode === 'win') {
-        ctx.fillText('Time ' + time.toFixed(2) + 's · Falls ' + deaths, VIEW_W / 2, 92);
-        if (best) ctx.fillText('Best ' + best.toFixed(2) + 's', VIEW_W / 2, 104);
+      ctx.fillStyle = 'rgba(16, 18, 28, 0.82)';
+      ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+      // Subtle CRT scanlines
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      for (var sy = 0; sy < VIEW_H; sy += 3) {
+        ctx.fillRect(0, sy, VIEW_W, 1);
       }
-      ctx.fillStyle = '#73eff7'; ctx.fillText(mode === 'win' ? 'Press Space to play again' : 'Press Space to ' + (mode === 'paused' ? 'resume' : 'start'), VIEW_W / 2, 130);
+
+      ctx.textAlign = 'center';
+      if (mode === 'title') {
+        ctx.fillStyle = 'rgba(26, 28, 44, 0.95)';
+        ctx.fillRect(36, 18, VIEW_W - 72, 144);
+        ctx.strokeStyle = '#ffc93c'; ctx.lineWidth = 2;
+        ctx.strokeRect(36.5, 18.5, VIEW_W - 73, 143);
+        ctx.strokeStyle = '#e4572e'; ctx.lineWidth = 1;
+        ctx.strokeRect(39.5, 21.5, VIEW_W - 79, 137);
+
+        ctx.fillStyle = '#a53030'; ctx.font = 'bold 18px monospace';
+        ctx.fillText('PIXEL COURIER', VIEW_W / 2 + 1, 48);
+        ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 18px monospace';
+        ctx.fillText('PIXEL COURIER', VIEW_W / 2, 47);
+
+        ctx.fillStyle = '#73eff7'; ctx.font = '8px monospace';
+        ctx.fillText('CLASSROOMOS · 2D PLATFORMER', VIEW_W / 2, 64);
+
+        ctx.fillStyle = '#f4f4f4'; ctx.font = '8px monospace';
+        ctx.fillText('📦 Deliver every parcel to the mailbox', VIEW_W / 2, 86);
+        ctx.fillStyle = '#c5c0b3'; ctx.font = '7.5px monospace';
+        ctx.fillText('ARROWS / WASD: Run  •  SPACE: Jump  •  P: Pause', VIEW_W / 2, 104);
+
+        var pulse = Math.sin(Date.now() / 200) > 0;
+        ctx.fillStyle = pulse ? '#ffc93c' : '#ffffff';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('▶ PRESS SPACE OR ENTER TO START ◀', VIEW_W / 2, 136);
+      } else if (mode === 'paused') {
+        ctx.fillStyle = 'rgba(26, 28, 44, 0.95)';
+        ctx.fillRect(60, 42, VIEW_W - 120, 96);
+        ctx.strokeStyle = '#73eff7'; ctx.lineWidth = 2;
+        ctx.strokeRect(60.5, 42.5, VIEW_W - 121, 95);
+
+        ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 16px monospace';
+        ctx.fillText('PAUSED', VIEW_W / 2, 72);
+        ctx.fillStyle = '#f4f4f4'; ctx.font = '8px monospace';
+        ctx.fillText('Physics & world time frozen.', VIEW_W / 2, 92);
+        ctx.fillStyle = '#73eff7'; ctx.font = '8px monospace';
+        ctx.fillText('Press P or SPACE to resume', VIEW_W / 2, 114);
+      } else if (mode === 'win') {
+        ctx.fillStyle = 'rgba(26, 28, 44, 0.95)';
+        ctx.fillRect(40, 18, VIEW_W - 80, 144);
+        ctx.strokeStyle = '#38b764'; ctx.lineWidth = 2;
+        ctx.strokeRect(40.5, 18.5, VIEW_W - 81, 143);
+        ctx.strokeStyle = '#ffc93c'; ctx.lineWidth = 1;
+        ctx.strokeRect(43.5, 21.5, VIEW_W - 87, 137);
+
+        ctx.fillStyle = '#ffc93c'; ctx.font = 'bold 16px monospace';
+        ctx.fillText('★ DELIVERED! ★', VIEW_W / 2, 46);
+
+        var rank = (time < 22 && deaths === 0) ? '★★★ RANK S · PERFECT! ★★★' : (time < 35 && deaths <= 1) ? '★★☆ RANK A · EXCELLENT!' : '★☆☆ RANK B · DELIVERED!';
+        ctx.fillStyle = '#73eff7'; ctx.font = 'bold 8.5px monospace';
+        ctx.fillText(rank, VIEW_W / 2, 63);
+
+        ctx.fillStyle = '#f4f4f4'; ctx.font = '8px monospace';
+        ctx.fillText('Time: ' + time.toFixed(2) + 's  •  Falls: ' + deaths, VIEW_W / 2, 84);
+        if (best) {
+          ctx.fillStyle = '#ffcd75'; ctx.font = '8px monospace';
+          ctx.fillText('Best Time: ' + best.toFixed(2) + 's', VIEW_W / 2, 98);
+        }
+
+        ctx.fillStyle = '#38b764'; ctx.font = 'bold 8.5px monospace';
+        ctx.fillText('▶ Press SPACE to Deliver Again ◀', VIEW_W / 2, 132);
+      }
       ctx.textAlign = 'left';
     }
 

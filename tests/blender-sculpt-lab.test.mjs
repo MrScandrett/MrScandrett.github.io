@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { findChromium } from '../lib/find-chromium.mjs';
 
-const url = 'http://127.0.0.1:8080/lessons/blender/blender-sculpting.html';
+const url = 'http://127.0.0.1:8080/lessons/3d-design/blender/blender-sculpting.html';
 
 test('sculpt trainer coaches a large-form-first workflow without mobile overflow', async () => {
   const browser = await chromium.launch({ executablePath: findChromium(), headless: true });

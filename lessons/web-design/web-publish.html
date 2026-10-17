@@ -151,7 +151,7 @@ git push</code></pre>
 
 <section class="web-section">
 <h2>The four faults that only appear on a real host</h2>
-<p>Your laptop is a forgiving reader of your files. A web server is not. These four differences cause almost every "but it worked at home" report, and all four are quick to fix once you know the symptom.</p>
+<p>Your laptop is a forgiving reader of your files because its desktop operating system masks differences that web servers strictly enforce. These four differences cause almost every "but it worked at home" report, and all four are quick to fix once you understand the underlying mechanism.</p>
 <div class="web-table">
 <table>
 <caption>Local behaviour versus server behaviour, and the repair for each</caption>
@@ -161,13 +161,13 @@ git push</code></pre>
 <tbody>
 <tr>
 <th scope="row">Filename case</th>
-<td>Most Windows and macOS drives treat <code>Photo.PNG</code> and <code>photo.png</code> as the same file. The server treats them as two different files, and only one of them exists.</td>
+<td>Most Windows and macOS filesystems (NTFS and default APFS) are case-insensitive; therefore, requesting <code>Photo.PNG</code> successfully loads <code>photo.png</code> on your laptop because the operating system driver ignores capitalization differences. However, Linux web servers in production datacenters use case-sensitive filesystems (such as ext4); this means the server treats them as two completely distinct files, and because only one exists on disk, the server returns an HTTP 404.</td>
 <td>Missing images, an unstyled page, a script that never runs. The browser console shows 404 for a file you can plainly see in your folder.</td>
 <td>Rename every file to lowercase with hyphens and no spaces, then make each <code>href</code> and <code>src</code> match character for character. Commit the rename and push.</td>
 </tr>
 <tr>
 <th scope="row">Absolute paths</th>
-<td>A local server such as Live Server starts at your project folder, so <code>/style.css</code> finds your stylesheet, and a <code>C:\Users\You\Desktop\site\style.css</code> path points at a real folder on your own drive. On GitHub Pages, <code>/style.css</code> means the root of the whole domain — which is not your project folder — and a <code>C:\</code> path means nothing at all.</td>
+<td>A local development server starts serving directly from your project folder, so <code>/style.css</code> reaches your stylesheet. On GitHub Pages, however, your project lives inside a repository sub-path (<code>your-name.github.io/my-site/</code>); therefore, a leading slash <code>/style.css</code> instructs the browser to request the root of the entire domain (<code>your-name.github.io/style.css</code>), which climbs outside your repository and fails. As a result, only relative paths work universally across local drives, subfolders, and production servers.</td>
 <td>The page arrives with no design and no behaviour, even though the files are in the repository.</td>
 <td>Use relative paths only: <code>style.css</code>, <code>images/logo.png</code>, <code>../index.html</code>. Search your HTML for <code>href="/</code>, <code>src="/</code>, <code>file://</code> and <code>C:\</code> and replace each one.</td>
 </tr>

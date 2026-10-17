@@ -10,34 +10,34 @@
   var base = script ? script.src.replace(/assets\/js\/music-family\.js.*$/, '') : '';
 
   var THEORY = [
-    { file: 'lessons/music/sheet-music-trainer.html', label: 'Sheet Music' },
-    { file: 'lessons/music/piano.html', label: 'Piano' },
-    { file: 'lessons/music/music-modes-evolution.html', label: 'Modes' },
-    { file: 'lessons/music/guitar.html', label: 'Guitar' },
-    { file: 'lessons/music/violin-fingerboard.html', label: 'Violin' },
-    { file: 'lessons/music/drums.html', label: 'Drums' },
-    { file: 'lessons/music/saxophone.html', label: 'Saxophone' },
-    { file: 'lessons/music/fake-book.html', label: 'Fake Book' },
+    { file: 'lessons/music/theory/sheet-music-trainer.html', label: 'Sheet Music' },
+    { file: 'lessons/music/instruments/piano.html', label: 'Piano' },
+    { file: 'lessons/music/theory/music-modes-evolution.html', label: 'Modes' },
+    { file: 'lessons/music/instruments/guitar.html', label: 'Guitar' },
+    { file: 'lessons/music/instruments/violin-fingerboard.html', label: 'Violin' },
+    { file: 'lessons/music/instruments/drums.html', label: 'Drums' },
+    { file: 'lessons/music/instruments/saxophone.html', label: 'Saxophone' },
+    { file: 'lessons/music/theory/fake-book.html', label: 'Fake Book' },
     { file: 'music-lab.html', label: 'Music Lab' }
   ];
   var COMPOSERS = [
-    { file: 'lessons/music/vivaldi.html', label: 'Vivaldi' },
-    { file: 'lessons/music/bach.html', label: 'Bach' },
-    { file: 'lessons/music/mozart.html', label: 'Mozart' },
-    { file: 'lessons/music/beethoven.html', label: 'Beethoven' },
-    { file: 'lessons/music/chopin.html', label: 'Chopin' },
-    { file: 'lessons/music/tchaikovsky.html', label: 'Tchaikovsky' },
-    { file: 'lessons/music/joplin.html', label: 'Joplin' },
-    { file: 'lessons/music/gershwin.html', label: 'Gershwin' },
-    { file: 'lessons/music/morton.html', label: 'Morton' },
-    { file: 'lessons/music/duke-ellington.html', label: 'Ellington' },
-    { file: 'lessons/music/charlie-parker.html', label: 'Parker' },
-    { file: 'lessons/music/louis-armstrong.html', label: 'Armstrong' }
+    { file: 'lessons/music/pioneers/vivaldi.html', label: 'Vivaldi' },
+    { file: 'lessons/music/pioneers/bach.html', label: 'Bach' },
+    { file: 'lessons/music/pioneers/mozart.html', label: 'Mozart' },
+    { file: 'lessons/music/pioneers/beethoven.html', label: 'Beethoven' },
+    { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin' },
+    { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky' },
+    { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin' },
+    { file: 'lessons/music/pioneers/gershwin.html', label: 'Gershwin' },
+    { file: 'lessons/music/pioneers/morton.html', label: 'Morton' },
+    { file: 'lessons/music/pioneers/duke-ellington.html', label: 'Ellington' },
+    { file: 'lessons/music/pioneers/charlie-parker.html', label: 'Parker' },
+    { file: 'lessons/music/pioneers/louis-armstrong.html', label: 'Armstrong' }
   ];
   var SCIENCE = [
     { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },
     { file: 'lessons/physics/waves-and-sound/do-atoms-make-music.html', label: 'Do Atoms Make Music?' },
-    { file: 'lessons/technical-elements/cymatics.html', label: 'Cymatics' }
+    { file: 'lessons/technical-elements/audio-engineering/cymatics.html', label: 'Cymatics' }
   ];
 
   function here(file) {

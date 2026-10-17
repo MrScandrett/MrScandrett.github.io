@@ -49,6 +49,9 @@
     active = work;
     var parent = area.parentElement;
     while (parent) { if (parent.tagName === 'DETAILS') parent.open = true; parent = parent.parentElement; }
+    work.panel.querySelectorAll('figure[data-score]').forEach(function (figure) {
+      figure.dispatchEvent(new CustomEvent('score:reveal'));
+    });
     window.dispatchEvent(new Event('resize'));
     if (focus) {
       work.panel.scrollIntoView({block:'start',behavior:'instant'});
@@ -128,11 +131,12 @@
     });
     // The cover engraves the piece's own opening bars (not a fabricated historical cover).
     function refreshPreview() {
-      if (firstFigure.querySelector('.se-play')) listen.disabled=false;
+      if (firstFigure.scoreData) listen.disabled=false;
       if (preview.firstChild || !firstFigure.scoreData || !window.ScoreEngine) return;
       try { preview.innerHTML=window.ScoreEngine.previewSvg(firstFigure.scoreData,2,520); } catch (err) { /* the full score still works */ }
     }
     var observer=new MutationObserver(refreshPreview);observer.observe(firstFigure,{childList:true,subtree:true});refreshPreview();
+    firstFigure.addEventListener('score:data', refreshPreview);
   });
   var picker=document.getElementById('musicSection');
   picker.addEventListener('change',function(){if(picker.value==='fl-sec-score' && !active)show(controls[0],false,false);},true);

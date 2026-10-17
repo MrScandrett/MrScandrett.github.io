@@ -8,6 +8,8 @@
    Needs sim-kit.js. */
 (function () {
   'use strict';
+  // Art is found from this script, not the page, so the lesson can live in any folder.
+  var ART_URL = new URL('../../images/lessons/walt-disney/', document.currentScript.src).href;
   if (!window.SimKit) return;
 
   var colors = SimKit.theme.colors();
@@ -55,7 +57,7 @@
 
     var view = null;
     view = SimKit.canvas2d(canvas, { height: 280, onResize: function () { if (view) render(); } });
-    var ballArt = loadImage('../../assets/images/lessons/walt-disney/bouncing-ball-character.png', render);
+    var ballArt = loadImage(ART_URL + 'bouncing-ball-character.png', render);
     var t = 0;
     var playing = !prefersReducedMotion();
 
@@ -238,10 +240,10 @@
     side = sideCanvas ? SimKit.canvas2d(sideCanvas, { height: 300, onResize: function () { if (side) renderSide(); } }) : null;
     var tween = null;
     var layerImages = {
-      sky: loadImage('../../assets/images/lessons/walt-disney/multiplane-sky.png', render),
-      hills: loadImage('../../assets/images/lessons/walt-disney/multiplane-mountains.png', render),
-      castle: loadImage('../../assets/images/lessons/walt-disney/multiplane-village.png', render),
-      branches: loadImage('../../assets/images/lessons/walt-disney/multiplane-foreground.png', render)
+      sky: loadImage(ART_URL + 'multiplane-sky.png', render),
+      hills: loadImage(ART_URL + 'multiplane-mountains.png', render),
+      castle: loadImage(ART_URL + 'multiplane-village.png', render),
+      branches: loadImage(ART_URL + 'multiplane-foreground.png', render)
     };
 
     function flat() {

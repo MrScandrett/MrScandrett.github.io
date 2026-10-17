@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141624"/>
+      <stop offset="100%" stop-color="#1e2238"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#0a0c16" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <rect width="880" height="480" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <g transform="translate(30, 22)">
+    <rect width="820" height="46" rx="4" fill="#10121d" stroke="#313752" stroke-width="2" filter="url(#shadow)"/>
+    <text x="18" y="28" font-family="'Pixelify Sans', 'DM Sans', sans-serif" font-size="19" font-weight="700" fill="#ffc93c" letter-spacing="1">LESSON 03 · 4-BIT AUTOTILE BITMASK &amp; TILEMAP ARCHITECTURE</text>
+    <text x="660" y="27" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#73eff7">16 VARIANTS</text>
+  </g>
+
+  <!-- Left: 4-Bit Directional Weighting -->
+  <g transform="translate(30, 84)" filter="url(#shadow)">
+    <rect width="380" height="366" rx="4" fill="#1b1e30" stroke="#3b4266" stroke-width="2"/>
+    <text x="18" y="26" font-family="'DM Sans', sans-serif" font-size="13" font-weight="700" fill="#73eff7">4-BIT DIRECTIONAL NEIGHBOUR SUM</text>
+
+    <!-- Compass Grid -->
+    <g transform="translate(90, 50)">
+      <!-- Center Tile -->
+      <rect x="64" y="64" width="72" height="72" rx="4" fill="#b86f50" stroke="#e4572e" stroke-width="3"/>
+      <text x="100" y="98" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">TARGET</text>
+      <text x="100" y="118" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="700" fill="#ffc93c" text-anchor="middle">#14</text>
+
+      <!-- Up / North = 1 -->
+      <g transform="translate(64, 0)">
+        <rect width="72" height="54" rx="3" fill="#252a42" stroke="#38b764" stroke-width="2"/>
+        <text x="36" y="24" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="700" fill="#38b764" text-anchor="middle">UP</text>
+        <text x="36" y="44" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">+1</text>
+      </g>
+      <line x1="100" y1="56" x2="100" y2="62" stroke="#38b764" stroke-width="2"/>
+
+      <!-- Right / East = 2 -->
+      <g transform="translate(146, 64)">
+        <rect width="54" height="72" rx="3" fill="#252a42" stroke="#38b764" stroke-width="2"/>
+        <text x="27" y="32" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#38b764" text-anchor="middle">RIGHT</text>
+        <text x="27" y="54" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">+2</text>
+      </g>
+      <line x1="138" y1="100" x2="144" y2="100" stroke="#38b764" stroke-width="2"/>
+
+      <!-- Down / South = 4 -->
+      <g transform="translate(64, 146)">
+        <rect width="72" height="54" rx="3" fill="#252a42" stroke="#38b764" stroke-width="2"/>
+        <text x="36" y="24" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#38b764" text-anchor="middle">DOWN</text>
+        <text x="36" y="44" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">+4</text>
+      </g>
+      <line x1="100" y1="138" x2="100" y2="144" stroke="#38b764" stroke-width="2"/>
+
+      <!-- Left / West = 8 -->
+      <g transform="translate(0, 64)">
+        <rect width="54" height="72" rx="3" fill="#252a42" stroke="#38b764" stroke-width="2"/>
+        <text x="27" y="32" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#38b764" text-anchor="middle">LEFT</text>
+        <text x="27" y="54" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">+8</text>
+      </g>
+      <line x1="56" y1="100" x2="62" y2="100" stroke="#38b764" stroke-width="2"/>
+    </g>
+
+    <!-- Formula Code Snippet -->
+    <g transform="translate(20, 264)">
+      <rect width="340" height="84" rx="3" fill="#10121d" stroke="#257179" stroke-width="1.5"/>
+      <text x="12" y="22" font-family="'JetBrains Mono', monospace" font-size="11" fill="#73eff7">mask = (up?1:0) + (right?2:0)</text>
+      <text x="64" y="40" font-family="'JetBrains Mono', monospace" font-size="11" fill="#73eff7">+ (down?4:0) + (left?8:0);</text>
+      <text x="12" y="64" font-family="'DM Sans', sans-serif" font-size="11" fill="#c5c0b3">Example: Right(2) + Down(4) + Left(8) = 14</text>
+      <text x="12" y="78" font-family="'DM Sans', sans-serif" font-size="11" font-weight="700" fill="#ffc93c">→ Surface tile (grass on top, dirt below)</text>
+    </g>
+  </g>
+
+  <!-- Right: 16-State Autotile Catalog & Art/Data Separation -->
+  <!-- Top Box: Key Bitmask States -->
+  <g transform="translate(430, 84)" filter="url(#shadow)">
+    <rect width="420" height="210" rx="4" fill="#1b1e30" stroke="#3b4266" stroke-width="2"/>
+    <text x="18" y="24" font-family="'DM Sans', sans-serif" font-size="13" font-weight="700" fill="#ffcd75">COMMON BITMASK CONFIGURATIONS</text>
+
+    <!-- Grid of 6 common tiles -->
+    <!-- Island #0 -->
+    <g transform="translate(24, 40)">
+      <rect width="52" height="52" rx="3" fill="#b86f50" stroke="#38b764" stroke-width="3"/>
+      <text x="26" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#0</text>
+      <text x="26" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">Island</text>
+    </g>
+
+    <!-- Top Surface #14 -->
+    <g transform="translate(92, 40)">
+      <rect width="52" height="52" rx="3" fill="#b86f50"/>
+      <line x1="0" y1="3" x2="52" y2="3" stroke="#38b764" stroke-width="6"/>
+      <text x="26" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#14</text>
+      <text x="26" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">Surface</text>
+    </g>
+
+    <!-- Left Wall #7 -->
+    <g transform="translate(160, 40)">
+      <rect width="52" height="52" rx="3" fill="#b86f50"/>
+      <line x1="3" y1="0" x2="3" y2="52" stroke="#5d3a29" stroke-width="6"/>
+      <text x="26" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#7</text>
+      <text x="26" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">Left wall</text>
+    </g>
+
+    <!-- Right Wall #11 -->
+    <g transform="translate(228, 40)">
+      <rect width="52" height="52" rx="3" fill="#b86f50"/>
+      <line x1="49" y1="0" x2="49" y2="52" stroke="#5d3a29" stroke-width="6"/>
+      <text x="26" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#11</text>
+      <text x="26" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">Right wall</text>
+    </g>
+
+    <!-- Corner Top-Left #6 -->
+    <g transform="translate(296, 40)">
+      <rect width="52" height="52" rx="3" fill="#b86f50"/>
+      <line x1="0" y1="3" x2="52" y2="3" stroke="#38b764" stroke-width="6"/>
+      <line x1="3" y1="0" x2="3" y2="52" stroke="#5d3a29" stroke-width="6"/>
+      <text x="26" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#6</text>
+      <text x="26" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">TL Corner</text>
+    </g>
+
+    <!-- Deep Underground #15 -->
+    <g transform="translate(364, 40)">
+      <rect width="40" height="52" rx="3" fill="#5d3a29"/>
+      <text x="20" y="32" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">#15</text>
+      <text x="20" y="70" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3" text-anchor="middle">Deep</text>
+    </g>
+
+    <line x1="20" y1="124" x2="400" y2="124" stroke="#3b4266" stroke-width="1"/>
+
+    <text x="20" y="146" font-family="'DM Sans', sans-serif" font-size="11.5" font-weight="700" fill="#fff">Seamless Tiling (Seam Testing Rule):</text>
+    <text x="20" y="164" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3">Repeated 4×3 grid test ensures left column matches right column,</text>
+    <text x="20" y="180" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3">and top row matches bottom row so repeating seams disappear.</text>
+  </g>
+
+  <!-- Bottom Box: Separate Art from Collision Rules -->
+  <g transform="translate(430, 308)" filter="url(#shadow)">
+    <rect width="420" height="142" rx="4" fill="#1b1e30" stroke="#3b4266" stroke-width="2"/>
+    <text x="18" y="24" font-family="'DM Sans', sans-serif" font-size="13" font-weight="700" fill="#38b764">DATA VS ART SEPARATION</text>
+
+    <g transform="translate(20, 38)">
+      <rect width="380" height="88" rx="3" fill="#10121d" stroke="#2f8f57" stroke-width="1.5"/>
+      <text x="14" y="22" font-family="'JetBrains Mono', monospace" font-size="11" fill="#ff9e7a">tiles["G"] = { solid: true, oneWay: false };</text>
+      <text x="14" y="42" font-family="'JetBrains Mono', monospace" font-size="11" fill="#ffcd75">tiles["="] = { solid: false, oneWay: true };</text>
+      <text x="14" y="62" font-family="'JetBrains Mono', monospace" font-size="11" fill="#73eff7">tiles["^"] = { solid: false, hazard: true };</text>
+      <text x="14" y="80" font-family="'DM Sans', sans-serif" font-size="10" fill="#c5c0b3">Physics checks tile ID rules in O(1) time — never inspects pixel colors!</text>
+    </g>
+  </g>
+</svg>

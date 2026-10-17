@@ -526,6 +526,75 @@
         </article>
       </section>
 
+      <!-- ── Worked Example Card ───────────────────────────── -->
+      <section class="section" id="chess-worked-example">
+        <div class="section-head">
+          <h2>Worked Example: Evaluating Positions &amp; Alpha-Beta Pruning</h2>
+          <p>Trace how historical chess engines compute board values and prune redundant game tree branches.</p>
+        </div>
+        <article class="card">
+          <h3>Sample Problem: Alan Turing's Turochamp Static Evaluation</h3>
+          <p>Suppose White has a Queen (10), a Rook (5), and 3 Pawns (3). Black has a Queen (10), a Bishop (3.5), a Knight (3), and 2 Pawns (2). White's king is castled and safe (+1.0), whereas Black's king is exposed in the center (-1.5). How does the evaluation function score this position?</p>
+
+          <ol class="rhythm" style="margin: 0.8rem 0 1rem; list-style: decimal; padding-left: 1.2rem;">
+            <li>
+              <strong>Step 1: Compute White's Material.</strong><br/>
+              \(M_{\text{White}} = 10 (\text{Q}) + 5 (\text{R}) + 3(1) (\text{Pawns}) = 18.0\).
+            </li>
+            <li>
+              <strong>Step 2: Compute Black's Material.</strong><br/>
+              \(M_{\text{Black}} = 10 (\text{Q}) + 3.5 (\text{B}) + 3.0 (\text{N}) + 2(1) (\text{Pawns}) = 18.5\).
+            </li>
+            <li>
+              <strong>Step 3: Factor in King Safety and Positional Mobility.</strong><br/>
+              White's positional bonus: \(+1.0\). Black's king exposure penalty: \(-1.5\). Net positional delta: \(+1.0 - (-1.5) = +2.5\) points in White's favor.
+            </li>
+            <li>
+              <strong>Step 4: Total Evaluation &amp; Alpha-Beta Pruning Decision.</strong><br/>
+              \(\text{Score} = (M_{\text{White}} - M_{\text{Black}}) + \text{Positional} = (18.0 - 18.5) + 2.5 = +2.0\).<br/>
+              <strong>Pruning Mechanism:</strong> When Black (minimizer) explores a branch and finds White can force a score of \(+2.0\), but Black already has an alternative branch guaranteeing \(\beta = +0.5\), Black immediately stops searching deeper (\(\beta \le \alpha\)). Because Black will never intentionally choose the worse \(+2.0\) outcome, evaluating White's remaining tactical replies is computationally unnecessary.
+            </li>
+          </ol>
+
+          <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+            <h4 style="margin: 0 0 0.4rem; font-size: 0.95rem; color: #93c5fd;">Self-Check Question</h4>
+            <p style="margin: 0 0 0.6rem; font-size: 0.88rem; color: #e2e8f0;">Why did Deep Blue require custom VLSI hardware chips in 1997 rather than running standard software on a single CPU?</p>
+            <details style="font-size: 0.86rem; color: #cbd5e1;">
+              <summary style="cursor: pointer; font-weight: 700; color: #60a5fa;">Show Answer &amp; Explanation</summary>
+              <p style="margin: 0.4rem 0 0; line-height: 1.6;"><strong>Answer:</strong> Because the branching factor of chess averages ~35 moves per turn, searching 12 to 14 plies deep requires evaluating hundreds of millions of positions per second. Deep Blue used 480 dedicated chess coprocessors running move generation and static evaluation in parallel hardware in order to achieve the necessary speed (200 million positions/sec) that general-purpose 1997 CPUs could not reach.</p>
+            </details>
+          </div>
+        </article>
+      </section>
+
+      <!-- ── Sources & Historical References ───────────────── -->
+      <section class="section" id="chess-sources">
+        <div class="section-head">
+          <h2>Sources &amp; Further Reading</h2>
+          <p>Key academic literature tracing the evolution of computer chess algorithms.</p>
+        </div>
+        <article class="card">
+          <ul class="rhythm">
+            <li>
+              <span>1950 Foundations</span>
+              <strong>Shannon, Claude E. &ldquo;Programming a Computer for Playing Chess.&rdquo; <em>Philosophical Magazine</em>, 41(314), 256–275 (1950). Established Type-A (brute force) vs. Type-B (selective) search paradigms.</strong>
+            </li>
+            <li>
+              <span>1953 Paper Machine</span>
+              <strong>Turing, Alan M. &ldquo;Digital Computers Applied to Games: Chess.&rdquo; In Bowden, B. V. (Ed.), <em>Faster Than Thought: A Symposium on Digital Computing Machines</em>, Pitman, London (1953). The original Turochamp heuristic formulation.</strong>
+            </li>
+            <li>
+              <span>2002 Deep Blue Architecture</span>
+              <strong>Campbell, Murray, Hoane, A. Joseph, &amp; Hsu, Feng-hsiung. &ldquo;Deep Blue.&rdquo; <em>Artificial Intelligence</em>, 134(1–2), 57–83 (2002). doi:10.1016/S0004-3702(01)00129-1. Detailed technical breakdown of hardware search and evaluation.</strong>
+            </li>
+            <li>
+              <span>2018 AlphaZero Breakthrough</span>
+              <strong>Silver, David, et al. &ldquo;A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play.&rdquo; <em>Science</em>, 362(6419), 1140–1144 (2018). doi:10.1126/science.aar6404. Demonstration of deep neural networks and Monte Carlo Tree Search replacing hand-crafted heuristics.</strong>
+            </li>
+          </ul>
+        </article>
+      </section>
+
       <section class="section">
         <div class="section-head">
           <h2>Turn In (End of Class)</h2>
@@ -701,5 +770,6 @@
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

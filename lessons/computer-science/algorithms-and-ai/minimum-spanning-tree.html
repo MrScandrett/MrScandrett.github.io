@@ -239,7 +239,7 @@
           </div>
           <p style="font-size:0.84rem;color: var(--text-muted, #64748b);" id="mst-sim-instructions">Click <strong>Step</strong> to add one edge at a time, or <strong>Run All</strong> to complete instantly. Green edges are in the MST; red edges were rejected (would create a cycle); grey edges have not yet been considered.</p>
           <div class="cl-canvas-wrap">
-            <canvas id="mst-canvas" aria-label="Minimum spanning tree algorithm visualiser"></canvas>
+            <canvas id="mst-canvas" aria-label="Minimum spanning tree algorithm visualiser. Press Space or Enter to step, R to reset." tabindex="0" role="region"></canvas>
           </div>
           <div class="cl-readouts">
             <div class="cl-readout"><span class="cl-readout-label">Total Cost</span><span class="cl-readout-val" id="mst-r-cost">—</span></div>
@@ -370,6 +370,67 @@
             </div>
 
           </div>
+        </section>
+
+        <!-- ── Worked Example Card ───────────────────────────── -->
+        <section class="cl-card" id="mst-worked-example" style="--card-accent:#ff9f0a;">
+          <h2>Worked Example: Kruskal's Greedy Edge Selection &amp; Cycle Rejection</h2>
+          <p>Trace Kruskal's algorithm on a 5-node network to understand how greedy edge selection and Disjoint-Set union-find produce a globally optimal spanning tree.</p>
+
+          <div style="background: rgba(255, 159, 10, 0.06); border: 1px solid rgba(255, 159, 10, 0.22); border-radius: 12px; padding: 1.1rem; margin: 0.8rem 0;">
+            <h3 style="margin-top:0;">Problem: Connect 5 Cities {A, B, C, D, E} with Minimum Fiber Optic Cable</h3>
+            <p>We are given an undirected graph with 5 vertices (\(V = 5\)) and 7 candidate cable links. A valid spanning tree requires exactly \(V - 1 = 4\) edges with no cycles. The candidate links with their installation costs are:</p>
+            <p style="font-family: monospace; font-size: 0.88rem; background: rgba(0,0,0,0.04); padding: 0.5rem; border-radius: 6px;">
+              (A-B: 2), (B-C: 3), (A-C: 4), (C-D: 5), (B-D: 6), (D-E: 7), (C-E: 8)
+            </p>
+
+            <ol style="padding-left: 1.2rem; line-height: 1.7; margin-bottom: 0.8rem;">
+              <li>
+                <strong>Step 1: Sort All Edges in Ascending Order of Cost.</strong><br/>
+                Kruskal's algorithm begins with every node in its own disjoint set: {A}, {B}, {C}, {D}, {E}. Sorted list: (A-B: 2), (B-C: 3), (A-C: 4), (C-D: 5), (B-D: 6), (D-E: 7), (C-E: 8).
+              </li>
+              <li>
+                <strong>Step 2: Inspect (A-B: 2) and (B-C: 3).</strong><br/>
+                Edge (A-B: 2) connects set {A} with set {B}. Because they belong to different components, we accept (A-B). Component: {A, B}.<br/>
+                Edge (B-C: 3) connects set {A, B} with set {C}. Because C is in a different set, we accept (B-C). Component: {A, B, C}. Total edges added = 2.
+              </li>
+              <li>
+                <strong>Step 3: Inspect (A-C: 4) — Cycle Detection in Action!</strong><br/>
+                Edge (A-C: 4) connects node A and node C. When the algorithm runs <code>find(A)</code> and <code>find(C)</code>, both return the same representative root {A, B, C}. Because A and C are already connected through B, adding (A-C) would form a closed cycle (A-B-C-A). Therefore, the algorithm <strong>rejects edge (A-C)</strong>, which means no redundant cable is installed.
+              </li>
+              <li>
+                <strong>Step 4: Inspect (C-D: 5) and (D-E: 7).</strong><br/>
+                Edge (C-D: 5) merges {A, B, C} with {D}. Accepted! Edges added = 3.<br/>
+                Edge (B-D: 6) connects nodes already in the same component {A, B, C, D}. Cycle detected; rejected!<br/>
+                Edge (D-E: 7) merges {A, B, C, D} with {E}. Accepted! Edges added = 4.
+              </li>
+              <li>
+                <strong>Termination:</strong> Because exactly \(V - 1 = 4\) edges have been added, the algorithm halts immediately without inspecting (C-E: 8).<br/>
+                <strong>Total MST Weight:</strong> \(2 + 3 + 5 + 7 = 17\). The Cut Property of minimum spanning trees guarantees this greedy result is mathematically optimal.
+              </li>
+            </ol>
+
+            <div style="background: rgba(255, 159, 10, 0.09); border-left: 3px solid #ff9f0a; border-radius: 8px; padding: 0.8rem; margin-top: 0.8rem;">
+              <h4 style="margin: 0 0 0.35rem; color: #ff9f0a;">Self-Check Question</h4>
+              <p style="margin: 0 0 0.5rem; font-size: 0.88rem;">If a connected graph has 10 routers and 25 possible links, how many links will its Minimum Spanning Tree contain, and what happens if you add one more link to the completed MST?</p>
+              <details style="font-size: 0.85rem;">
+                <summary style="cursor: pointer; font-weight: 700; color: #ff9f0a;">Show Answer &amp; Proof</summary>
+                <p style="margin: 0.35rem 0 0; line-height: 1.6;"><strong>Answer:</strong> The MST will always contain exactly \(V - 1 = 10 - 1 = 9\) links. If any additional link is added to an existing spanning tree, it will inevitably create exactly one cycle, because a tree provides a unique simple path between every pair of vertices. Therefore, introducing a second path between any two vertices closes a loop.</p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Sources & Historical References ───────────────── -->
+        <section class="cl-card" id="mst-sources" style="--card-accent:#ff9f0a;">
+          <h2>Sources &amp; Further Reading</h2>
+          <p>Seminal papers in greedy optimization, graph algorithms, and network design.</p>
+          <ul class="cl-steps" style="margin: 0.6rem 0 0;">
+            <li><strong>Kruskal, Joseph B.</strong> &ldquo;On the shortest spanning subtree of a graph and the traveling salesman problem.&rdquo; <em>Proceedings of the American Mathematical Society</em>, 7(1), 48–50 (1956). doi:10.1090/S0002-9939-1956-0078686-7.</li>
+            <li><strong>Prim, Robert C.</strong> &ldquo;Shortest connection networks and some generalizations.&rdquo; <em>Bell System Technical Journal</em>, 36(6), 1389–1401 (1957). doi:10.1002/j.1538-7305.1957.tb01515.x.</li>
+            <li><strong>Borůvka, Otakar.</strong> &ldquo;O jistém problému minimálním&rdquo; (On a certain minimal problem). <em>Práce Moravské Přírodovědecké Společnosti</em>, 3, 37–58 (1926). The earliest known MST algorithm, designed for rural electrification networks in Moravia.</li>
+            <li><strong>Cormen, T. H., Leiserson, C. E., Rivest, R. L., &amp; Stein, C.</strong> <em>Introduction to Algorithms</em> (4th ed.). MIT Press (2022). Chapter 21: Minimum Spanning Trees.</li>
+          </ul>
         </section>
 
         <footer class="site-footer">
@@ -745,6 +806,17 @@
 
   nodeSlider.addEventListener('input', () => {
     document.getElementById('mst-node-val').textContent = nodeSlider.value;
+  });
+
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      window.mstStep();
+    } else if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      window.mstReset();
+    }
   });
 
   // Init — draw placeholder

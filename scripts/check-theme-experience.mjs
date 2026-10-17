@@ -7,7 +7,7 @@ const base = process.env.THEME_QA_URL || 'http://127.0.0.1:8080';
 const out = process.env.THEME_QA_OUTPUT || '/tmp/classroomos-theme-qa';
 await fs.mkdir(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: findChromium(), headless: true, args: ['--no-sandbox'] });
-const pages = ['index.html', 'lessons/language-literature/cuneiform.html', 'lessons/physics/mechanics/newtons-laws.html', 'lessons/music/fake-book.html'];
+const pages = ['index.html', 'lessons/language-literature/cuneiform.html', 'lessons/physics/mechanics/newtons-laws.html', 'lessons/music/theory/fake-book.html'];
 let checks = 0;
 try {
   if (!process.argv.includes("--presentation-only")) for (const width of [1440, 390]) {
@@ -113,7 +113,7 @@ try {
   await other.evaluate(() => window.ClassroomOSThemeRegistry.setPresentation(false));
   await p.waitForFunction(() => !document.documentElement.hasAttribute('data-classroom-presentation'));
   assert.notEqual(await p.locator('#site-canvas-bg').evaluate(el => getComputedStyle(el).display), 'none');
-  await other.goto(`${base}/lessons/music/fake-book.html`, { waitUntil: 'domcontentloaded' });
+  await other.goto(`${base}/lessons/music/theory/fake-book.html`, { waitUntil: 'domcontentloaded' });
   await other.waitForSelector('[data-fb-play]');
   await other.evaluate(() => window.ClassroomOSThemeRegistry.setPresentation(true));
   await other.locator('[data-fb-play]').click();

@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#141624"/>
+      <stop offset="100%" stop-color="#1e2238"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="3" dy="4" stdDeviation="0" flood-color="#0a0c16" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <rect width="880" height="480" fill="url(#bgGrad)"/>
+
+  <!-- Title -->
+  <g transform="translate(30, 22)">
+    <rect width="820" height="46" rx="4" fill="#10121d" stroke="#313752" stroke-width="2" filter="url(#shadow)"/>
+    <text x="18" y="28" font-family="'Pixelify Sans', 'DM Sans', sans-serif" font-size="19" font-weight="700" fill="#ffc93c" letter-spacing="1">LESSON 04 · FIXED TIMESTEP &amp; 8-LAYER DRAW ORDER</text>
+    <text x="640" y="27" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="700" fill="#73eff7">DECOUPLED LOOP</text>
+  </g>
+
+  <!-- Left: Fixed Timestep vs Refresh Rate Loop -->
+  <g transform="translate(30, 84)" filter="url(#shadow)">
+    <rect width="450" height="366" rx="4" fill="#1b1e30" stroke="#3b4266" stroke-width="2"/>
+    <text x="20" y="26" font-family="'DM Sans', sans-serif" font-size="13" font-weight="700" fill="#ffcd75">DECOUPLED ENGINE CYCLE: ACCUMULATOR PATTERN</text>
+
+    <!-- Cycle Diagram -->
+    <g transform="translate(30, 48)">
+      <!-- Box 1: Input -->
+      <g transform="translate(0, 0)">
+        <rect width="170" height="52" rx="3" fill="#252a42" stroke="#e4572e" stroke-width="2"/>
+        <text x="14" y="22" font-family="'DM Sans', sans-serif" font-size="12" font-weight="700" fill="#fff">1. Input Events</text>
+        <text x="14" y="38" font-family="'DM Sans', sans-serif" font-size="10" fill="#c5c0b3">Arrow keys, Space jump</text>
+      </g>
+
+      <path d="M 175 26 L 215 26" fill="none" stroke="#e4572e" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+      <!-- Box 2: Time Delta -->
+      <g transform="translate(220, 0)">
+        <rect width="170" height="52" rx="3" fill="#252a42" stroke="#af8d22" stroke-width="2"/>
+        <text x="14" y="22" font-family="'DM Sans', sans-serif" font-size="12" font-weight="700" fill="#fff">2. Measure dt</text>
+        <text x="14" y="38" font-family="'DM Sans', sans-serif" font-size="10" fill="#c5c0b3">acc += (now - last) / 1000</text>
+      </g>
+
+      <path d="M 305 55 L 305 85" fill="none" stroke="#af8d22" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+      <!-- Box 3: Fixed Step Physics Loop -->
+      <g transform="translate(100, 90)">
+        <rect width="290" height="84" rx="4" fill="#15241b" stroke="#2f8f57" stroke-width="2.5"/>
+        <text x="16" y="24" font-family="'JetBrains Mono', monospace" font-size="11.5" font-weight="700" fill="#38b764">while (acc >= 1/60s) {</text>
+        <text x="32" y="44" font-family="'JetBrains Mono', monospace" font-size="11" fill="#73eff7">updatePhysics(1/60);</text>
+        <text x="32" y="62" font-family="'JetBrains Mono', monospace" font-size="11" fill="#73eff7">acc -= 1/60;</text>
+        <text x="16" y="76" font-family="'JetBrains Mono', monospace" font-size="11.5" font-weight="700" fill="#38b764">}</text>
+      </g>
+
+      <path d="M 245 178 L 245 208" fill="none" stroke="#2f8f57" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+      <!-- Box 4: Render Frame -->
+      <g transform="translate(100, 212)">
+        <rect width="290" height="58" rx="3" fill="#252a42" stroke="#3b5dc9" stroke-width="2"/>
+        <text x="16" y="24" font-family="'DM Sans', sans-serif" font-size="12" font-weight="700" fill="#fff">4. Render Interpolated Frame</text>
+        <text x="16" y="42" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#73eff7">requestAnimationFrame(frame); // VSync</text>
+      </g>
+
+      <!-- Return Arc back to 1 -->
+      <path d="M 95 240 C 20 240, 20 60, 80 60" fill="none" stroke="#3b5dc9" stroke-width="2" stroke-dasharray="4,4"/>
+    </g>
+
+    <text x="20" y="344" font-family="'DM Sans', sans-serif" font-size="11" fill="#c5c0b3">Result: A jump parabola remains byte-identical whether running on a 60Hz laptop or 144Hz gaming screen.</text>
+  </g>
+
+  <!-- Right: 8-Layer Draw Order Stack -->
+  <g transform="translate(500, 84)" filter="url(#shadow)">
+    <rect width="350" height="366" rx="4" fill="#1b1e30" stroke="#3b4266" stroke-width="2"/>
+    <text x="18" y="26" font-family="'DM Sans', sans-serif" font-size="13" font-weight="700" fill="#73eff7">8-LAYER DRAW ORDER STACK</text>
+    <text x="18" y="44" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#c5c0b3">Painted back-to-front (Painter's Algorithm):</text>
+
+    <!-- Layers Stack -->
+    <g transform="translate(18, 56)">
+      <!-- Layer 1: Sky -->
+      <g transform="translate(0, 0)">
+        <rect width="314" height="28" rx="3" fill="#22304a" stroke="#d8f3f9" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#d8f3f9">1. SKY</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Gradient background</text>
+      </g>
+
+      <!-- Layer 2: Far Hills -->
+      <g transform="translate(0, 32)">
+        <rect width="314" height="28" rx="3" fill="#1b2e3b" stroke="#9fd8e6" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#9fd8e6">2. FAR PARALLAX</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Speed × 0.20</text>
+      </g>
+
+      <!-- Layer 3: Near Town -->
+      <g transform="translate(0, 64)">
+        <rect width="314" height="28" rx="3" fill="#18362b" stroke="#4fae8e" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#4fae8e">3. NEAR PARALLAX</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Speed × 0.50</text>
+      </g>
+
+      <!-- Layer 4: Tiles -->
+      <g transform="translate(0, 96)">
+        <rect width="314" height="28" rx="3" fill="#2a2e1d" stroke="#cd7b28" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#ffcd75">4. TILES</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Terrain &amp; platforms</text>
+      </g>
+
+      <!-- Layer 5: Objects -->
+      <g transform="translate(0, 128)">
+        <rect width="314" height="28" rx="3" fill="#2e221d" stroke="#e4572e" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#ff9e7a">5. OBJECTS</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Parcels, mailbox, flag</text>
+      </g>
+
+      <!-- Layer 6: Player -->
+      <g transform="translate(0, 160)">
+        <rect width="314" height="28" rx="3" fill="#36181e" stroke="#e4572e" stroke-width="2"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#ffc93c">6. PLAYER (COURIER)</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#fff" text-anchor="end">Walks in front of tiles</text>
+      </g>
+
+      <!-- Layer 7: Particles -->
+      <g transform="translate(0, 192)">
+        <rect width="314" height="28" rx="3" fill="#252438" stroke="#73eff7" stroke-width="1"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#73eff7">7. PARTICLES</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#c5c0b3" text-anchor="end">Dust, sparks, confetti</text>
+      </g>
+
+      <!-- Layer 8: HUD -->
+      <g transform="translate(0, 224)">
+        <rect width="314" height="28" rx="3" fill="#141624" stroke="#ffc93c" stroke-width="2"/>
+        <text x="12" y="19" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="700" fill="#ffc93c">8. HUD (UI OVERLAY)</text>
+        <text x="290" y="19" font-family="'DM Sans', sans-serif" font-size="9.5" fill="#ffc93c" text-anchor="end">Always on top</text>
+      </g>
+
+      <!-- Arrow down showing drawing sequence -->
+      <line x1="-8" y1="14" x2="-8" y2="238" stroke="#ffc93c" stroke-width="2"/>
+      <polygon points="-11,238 -8,246 -5,238" fill="#ffc93c"/>
+      <text x="-12" y="126" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#ffc93c" transform="rotate(-90, -12, 126)" text-anchor="middle">DRAW ORDER</text>
+    </g>
+
+    <text x="18" y="340" font-family="'DM Sans', sans-serif" font-size="10.5" fill="#ff9e7a">⚠ Drawing order mistake: if tiles are drawn after player, the courier disappears behind the floor!</text>
+  </g>
+
+  <defs>
+    <marker id="loopArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#ffc93c"/>
+    </marker>
+  </defs>
+</svg>

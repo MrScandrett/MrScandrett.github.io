@@ -31,8 +31,8 @@ const VIEWPORTS = [
 const DEFAULT_PAGES = [
   // High-priority recently modified / new pages
   "lessons/godot/godot-basics.html",
-  "lessons/blender/blender-pathway.html",
-  "lessons/blender/blender-workspaces-pathway.html",
+  "lessons/3d-design/blender/blender-pathway.html",
+  "lessons/3d-design/blender/blender-workspaces-pathway.html",
   "lessons/web-design/web-css.html",
   "lessons/humanities/quadrivium.html",
   "lessons/bible-studies/job.html",

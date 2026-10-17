@@ -932,7 +932,7 @@
   }
 
   var sheetEl = root.querySelector('[data-fb-sheet]');
-  var nowEls = [], barEls = {};
+  var nowEls = [], barEls = {}, shapeEls = [];
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
   function beatCountLabels(out, xAt, y, beats, extraClass, positions, pieces, edges) {
@@ -1144,7 +1144,7 @@
     sheetEl.innerHTML = '<svg class="fb-drum-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
       MN.escape(tune.raw.title + ' drum notation chart, ' + STYLES[opts.style].label + ' groove, ' + tune.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
 
-    nowEls = []; barEls = {};
+    nowEls = []; barEls = {}; shapeEls = [];
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
     paintLoop();
@@ -1705,7 +1705,7 @@
     sheetEl.innerHTML = '<svg class="fb-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
       MN.escape(t.raw.title + ' lead sheet, written in ' + keyLabel(view.writtenKey) + ', ' + t.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
     sizeMeasureDiagrams(S);
-    nowEls = []; barEls = {};
+    nowEls = []; barEls = {}; shapeEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape'));
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
     paintLoop();
@@ -4180,10 +4180,10 @@
       var x = ev.clientX, y = ev.clientY;
       zoomFrame = requestAnimationFrame(function () {
         zoomFrame = 0;
-        var hit = null, shapes = sheetEl.querySelectorAll('.fb-measure-shape');
-        for (var i = 0; i < shapes.length && !hit; i++) {
-          var r = shapes[i].getBoundingClientRect();
-          if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && shapes[i].querySelector('svg')) hit = shapes[i];
+        var hit = null;
+        for (var i = 0; i < shapeEls.length && !hit; i++) {
+          var r = shapeEls[i].getBoundingClientRect();
+          if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && shapeEls[i].querySelector('svg')) hit = shapeEls[i];
         }
         if (hit) showShapeZoom(hit); else hideShapeZoom();
       });

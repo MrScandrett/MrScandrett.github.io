@@ -93,7 +93,7 @@ try {
  // Verify lesson counterparts call the same audio building blocks.
  for (const instrument of ['piano', 'guitar']) {
   const page = await browser.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(`http://localhost:8080/lessons/music/${instrument}.html`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`http://localhost:8080/lessons/music/instruments/${instrument}.html`, { waitUntil: 'domcontentloaded' });
   const sharedCalls = await page.evaluate(name => {
     let calls=0; const key=name==='piano'?'pianoSources':'pluckBuffer',original=window.MusicSynth[key];
     window.MusicSynth[key]=(...args)=>{calls++;return original(...args);};

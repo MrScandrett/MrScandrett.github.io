@@ -119,8 +119,8 @@ function frame() {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);</code></pre>
-<p>A frame is not a fixed amount of time. On an ordinary 60 Hz display this moves 120 pixels per second. On a 120 Hz gaming laptop or a recent phone, the same code moves 240 pixels per second — the game is literally twice as fast. On an old machine struggling at 30 frames per second it crawls. Your jump height, your enemy speed, and your timers all change depending on whose computer is running them. You cannot balance a game like that.</p>
-<p>The fix is <strong>delta time</strong>: measure how many seconds actually passed since the last frame, and multiply every movement by it. Then you write speeds in pixels <em>per second</em>, which is a real unit that means the same thing everywhere.</p>
+<p>A frame is not a fixed unit of time because different displays refresh at different rates. On an ordinary 60 Hz display, this function executes 60 times a second; therefore, it moves 120 pixels per second. On a 120 Hz gaming laptop or modern phone screen, the browser requests 120 frames per second, which causes the exact same object to move at 240 pixels per second — twice as fast. Conversely, on a machine struggling at 30 frames per second, movement slows to a crawl. As a result, jump heights, collision timings, and game difficulty fluctuate wildly depending on whose computer runs the code. You cannot balance or debug a simulation under those conditions.</p>
+<p>The mechanism that solves this is <strong>delta time</strong>: measure how many seconds actually elapsed since the previous frame, and multiply every movement by that duration. This means you specify speeds in pixels <em>per second</em>, which is an invariant physical unit that behaves identically everywhere.</p>
 <pre><code>// CORRECT: moves 120 pixels per SECOND on any machine.
 let x = 0;
 const SPEED = 120;        // pixels per second
@@ -142,7 +142,7 @@ requestAnimationFrame(frame);
 function update(dt) {
   x = x + SPEED * dt;             // distance = speed × time
 }</code></pre>
-<p>On a 60 Hz screen <code>dt</code> is about <code>0.0167</code>, so each frame adds <code>120 × 0.0167 = 2</code> pixels. At 120 Hz it is about <code>0.0083</code>, so each frame adds 1 pixel — but there are twice as many frames. Same distance per second. That is the entire idea.</p>
+<p>On a 60 Hz screen <code>dt</code> is approximately <code>0.0167</code> seconds, so each frame adds <code>120 × 0.0167 = 2</code> pixels. At 120 Hz <code>dt</code> is approximately <code>0.0083</code> seconds, so each frame adds only 1 pixel — but because there are twice as many frames per second, the total distance traveled over one second is identical. Therefore, high-refresh screens gain visual smoothness without altering game physics. That is the entire idea.</p>
 <p><strong>Why clamp <code>dt</code>:</strong> if someone switches tabs for thirty seconds, the next frame arrives with a <code>dt</code> of 30. Without a clamp your ball teleports 3,600 pixels through a wall in a single step. Capping <code>dt</code> at something like 0.05 seconds means a long pause makes the simulation briefly run slow instead of exploding. The lab below uses exactly this clamp.</p>
 <p class="web-callout"><strong>The rule to memorize:</strong> anything that should happen "per second" gets multiplied by <code>dt</code>. Movement, rotation, fuel drain, spawn timers. Anything that is a one-off event — a click, a collision, a level change — does not.</p>
 <div class="web-figure-pair">

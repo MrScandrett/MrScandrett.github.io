@@ -24,7 +24,7 @@ const browser=await chromium.launch({executablePath:findChromium(),headless:true
 const page=await browser.newPage({viewport:{width:1440,height:1000}}), errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{ if (m.type()==='warning' || m.type()==='error') console.log(m.type(), m.text()); });
-await page.goto((process.env.FAKE_BOOK_TEST_URL || 'http://127.0.0.1:8080') + '/lessons/music/fake-book.html');
+await page.goto((process.env.FAKE_BOOK_TEST_URL || 'http://127.0.0.1:8080') + '/lessons/music/theory/fake-book.html');
 await page.waitForSelector('#fakebook.is-ready');
 await page.locator('[data-pdf-desk] summary').first().click();
 await page.locator('[data-pdf-file]').setInputFiles('/tmp/fake-book-test.pdf');

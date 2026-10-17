@@ -9,6 +9,8 @@
    Units are centimetres. Needs sim-kit.js. */
 (function () {
   'use strict';
+  // Art is found from this script, not the page, so the lesson can live in any folder.
+  var ART_URL = new URL('../../images/lessons/jim-henson/', document.currentScript.src).href;
   if (!window.SimKit) return;
 
   var colors = SimKit.theme.colors();
@@ -97,10 +99,10 @@
     var mon = null, side = null;
     mon = SimKit.canvas2d(monitorCanvas, { height: 300, onResize: function () { if (mon) render(); } });
     if (sideCanvas) side = SimKit.canvas2d(sideCanvas, { height: 300, onResize: function () { if (side) render(); } });
-    var setArt = loadImage('../../assets/images/lessons/jim-henson/camera-set-garden.png', render);
-    var puppetArt = loadImage('../../assets/images/lessons/jim-henson/camera-puppet.png', render);
-    var boardArt = loadImage('../../assets/images/lessons/jim-henson/camera-playboard.png', render);
-    var handArt = loadCleanImage('../../assets/images/lessons/jim-henson/camera-operator-hand.png', render);
+    var setArt = loadImage(ART_URL + 'camera-set-garden.png', render);
+    var puppetArt = loadImage(ART_URL + 'camera-puppet.png', render);
+    var boardArt = loadImage(ART_URL + 'camera-playboard.png', render);
+    var handArt = loadCleanImage(ART_URL + 'camera-operator-hand.png', render);
 
     function params() {
       var board = +el.board.value;
@@ -428,10 +430,10 @@
     var best = {};
     var view = null;
     view = SimKit.canvas2d(canvas, { height: 260, onResize: function () { if (view) render(); } });
-    var setArt = loadImage('../../assets/images/lessons/jim-henson/camera-set-garden.png', render);
-    var puppetArt = loadImage('../../assets/images/lessons/jim-henson/camera-puppet.png', render);
-    var boardArt = loadImage('../../assets/images/lessons/jim-henson/camera-playboard.png', render);
-    var handArt = loadCleanImage('../../assets/images/lessons/jim-henson/camera-operator-hand.png', render);
+    var setArt = loadImage(ART_URL + 'camera-set-garden.png', render);
+    var puppetArt = loadImage(ART_URL + 'camera-puppet.png', render);
+    var boardArt = loadImage(ART_URL + 'camera-playboard.png', render);
+    var handArt = loadCleanImage(ART_URL + 'camera-operator-hand.png', render);
 
     function mode() {
       for (var i = 0; i < modeInputs.length; i++) if (modeInputs[i].checked) return modeInputs[i].value;

@@ -65,6 +65,24 @@ the class site. Studio code lives in `assets/js/web-studio/` (`draw-model.mjs` i
 pure grid model and code generator); tests: `node --test tests/web-studio.test.mjs`
 and `node tests/web-studio-browser.mjs` against a running `serve-local.js`.
 
+## Lesson folders and moving a lesson
+
+`lessons/<module>/` holds each module; big modules split into topic subfolders, and
+person-centred lessons (biographies, "Dalton and the Atomic Theory") go in that module's
+`pioneers/`. 3D design is one tree: `lessons/3d-design/3d-design.html` (curriculum home),
+`cad-and-printing/`, `blender/`, `game-asset-studio/`. Technical Elements splits into
+`audio-engineering/`, `stagecraft/`, `camera/`, `pioneers/`; Music into `pioneers/`,
+`instruments/`, `theory/`.
+
+Saved links, bookmarks and students' saved work point at old URLs, so moving a lesson means:
+- `git mv` it, then fix every reference: relative links in pages (they change with depth),
+  `lessons/...` strings in `data/*.json`, `assets/js`, `scripts/`, `tests/`, and maps keyed
+  by path under `lessons/` (e.g. `assets/js/lesson-related.js`). `npm run check:integrity`
+  catches broken page links, not JS strings, so grep the old path too.
+- Add old → new to `assets/js/lesson-moves.js` and bump its `version` together with
+  `MOVES_VERSION` in `visitor-memory.js`. `404.html` forwards old links with that map, and
+  visitor-memory re-keys history, favorites and saved answers once per version.
+
 ## Performance notes
 
 - Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML
@@ -378,12 +396,12 @@ copy):
   `three` devDependency used by `scripts/build-breadboard-model.mjs`), plus
   `OrbitControls`/`OBJLoader`/`GLTFLoader`/`DRACOLoader`. Pair with
   `assets/js/sim-kit-three.mjs`'s `createScene(canvas, { THREE, ... })` for
-  renderer/camera/resize setup. See `lessons/cad-camera-controls.html` for a worked
+  renderer/camera/resize setup. See `lessons/3d-design/cad-and-printing/cad-camera-controls.html` for a worked
   example.
 - `assets/vendor/matter-bundle.min.js` (rebuild with `npm run build:matter`, source
   in `scripts/matter-bundle-entry.js`) — a pinned Matter.js build (`Engine`,
   `Bodies`, `Body`, `Composite`, `World`) for sims that need real 2D rigid-body
-  collision instead of independently-moving points. See `lessons/cymatics.html`'s
+  collision instead of independently-moving points. See `lessons/technical-elements/audio-engineering/cymatics.html`'s
   sand-grain physics for a worked example.
 - `<script src="../assets/js/liquid-engine.js"></script>` — `LiquidEngine` for liquids:
   `Surface` (1-D waves), `Particles`/`FlowParticles`, `DepthField` (2-D depth-averaged grid

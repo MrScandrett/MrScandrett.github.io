@@ -135,9 +135,10 @@
           <h2>Simulator — Wavefront Construction</h2>
           <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Watch secondary wavelets emanate from the wavefront and combine into the next wavefront. Click the canvas to add a slit barrier. Use panel controls to adjust wavelength and speed.</p>
           <div class="hp-canvas-wrap">
-            <canvas id="hp-canvas" aria-label="Huygens principle wavefront simulation"></canvas>
+            <canvas id="hp-canvas" tabindex="0" role="region" aria-label="Huygens principle wavefront simulation: press Space to pause, keys 1, 2, 3 to switch modes, arrow keys to change speed and wavelength"></canvas>
           </div>
           <div class="hp-btn-row">
+            <button class="hp-btn" id="hp-pause-btn" aria-pressed="false" onclick="hpTogglePause()">⏸ Pause</button>
             <button class="hp-btn" onclick="hpSetMode('plane')">Plane Wave</button>
             <button class="hp-btn" onclick="hpSetMode('slit')">Single Slit</button>
             <button class="hp-btn" onclick="hpSetMode('double')">Double Slit</button>
@@ -152,7 +153,28 @@
             <div class="hp-app"><div class="hp-app-icon">🔬</div><strong>Electron Microscopes</strong><small>Electrons behave as waves. Understanding diffraction through Huygens' Principle is essential to interpreting electron diffraction patterns in crystallography.</small></div>
             <div class="hp-app"><div class="hp-app-icon">🌊</div><strong>Harbor Design</strong><small>Engineers use wave diffraction models (based on Huygens) to design harbor entrances that calm waves inside while allowing ships to pass.</small></div>
             <div class="hp-app"><div class="hp-app-icon">🎵</div><strong>Sound in Rooms</strong><small>Sound diffracts through doorways. Huygens' construction explains why you hear a conversation around a corner even when you cannot see the speaker.</small></div>
+        <section class="hp-card" id="worked-example" style="--card-accent:#8b5cf6;">
+          <h2>Worked Example: Wave Diffraction &amp; Slit Spreading Angle</h2>
+          <p>Huygens' Principle allows us to calculate how far waves spread when passing through an aperture. For a single slit of width \(a\), secondary wavelets from different parts of the slit interfere with each other, producing a central diffraction maximum flanked by dark fringes. The angle \(\theta\) to the first diffraction minimum is given by:</p>
+          <div class="hp-callout blue" style="font-family:ui-monospace,monospace;font-size:0.92rem;text-align:center;">
+            \(\sin\theta = \frac{\lambda}{a} \quad \implies \quad \theta \approx \frac{\lambda}{a}\text{ radians (for small angles)}\)
           </div>
+          <p><strong>Sample Problem:</strong> A red laser pointer with wavelength \(\lambda = 650\text{ nm}\) (\(6.5 \times 10^{-7}\text{ m}\)) shines through a narrow single slit of width \(a = 0.05\text{ mm}\) (\(5.0 \times 10^{-5}\text{ m}\)) onto a classroom screen \(L = 2.0\text{ m}\) away. Calculate the diffraction angle \(\theta\) and the total width \(2y_1\) of the central bright band.</p>
+          <div style="background:rgba(0,122,255,0.06);border-left:3px solid #007aff;border-radius:10px;padding:0.9rem;margin:0.8rem 0;font-size:0.86rem;line-height:1.65;">
+            <p style="margin:0 0 0.5rem;"><strong>Step 1: Calculate the diffraction spreading angle \(\theta\).</strong></p>
+            <p style="margin:0 0 0.5rem;">Substitute the wavelength \(\lambda\) and aperture width \(a\) into the diffraction formula:<br/>
+            \(\sin\theta = \frac{\lambda}{a} = \frac{6.5 \times 10^{-7}\text{ m}}{5.0 \times 10^{-5}\text{ m}} = 0.0130\).<br/>
+            Because \(\sin\theta \ll 1\), \(\theta \approx 0.0130\text{ radians} \approx 0.745^\circ\).</p>
+            <p style="margin:0 0 0.5rem;"><strong>Step 2: Calculate the distance from the center to the first dark fringe.</strong></p>
+            <p style="margin:0 0 0.5rem;">Using screen distance \(L = 2.0\text{ m}\):<br/>
+            \(y_1 = L \cdot \tan\theta \approx L \cdot \theta = 2.0\text{ m} \times 0.0130 = 0.0260\text{ m} = 2.6\text{ cm}\).</p>
+            <p style="margin:0 0 0.5rem;"><strong>Step 3: Determine the central bright maximum width \(2y_1\).</strong></p>
+            <p style="margin:0;">The central bright band spans from \(-y_1\) to \(+y_1\), so its full physical width is \(2 \times 2.6\text{ cm} = 5.2\text{ cm}\). Huygens wavelets fan out from every point in the narrow slit, spreading a microscopic laser beam across more than 5 centimeters!</p>
+          </div>
+          <details class="hp-callout" style="background:rgba(52,199,89,0.08);border-left:3px solid #34c759;cursor:pointer;">
+            <summary><strong>Check your understanding:</strong> Why can you hear a person speaking through an open 0.85 m doorway around a corner, but cannot see them?</summary>
+            <p style="margin:0.5rem 0 0;font-size:0.84rem;color:var(--text-secondary,#3f4f65);">Sound waves in human speech have wavelengths of roughly \(\lambda \approx 1\text{ m}\). Because \(\lambda \approx a\), the ratio \(\lambda / a \approx 1.18 \ge 1\), meaning Huygens wavelets diffract strongly across the entire \(180^\circ\) forward semicircle around the doorway corner. Visible light has microscopic wavelengths near \(500\text{ nm}\), giving \(\lambda / a \approx 6 \times 10^{-7}\)—virtually zero observable diffraction at doorway scale, so light rays cast sharp geometric shadows.</p>
+          </details>
         </section>
 
         <section class="hp-card" style="--card-accent:#ff9500;">
@@ -268,11 +290,12 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 (function () {
   const canvas = document.getElementById('hp-canvas');
   const ctx    = canvas.getContext('2d');
-  let mode = 'plane', t = 0, raf = null;
+  let mode = 'plane', t = 0, paused = false;
 
   function getSpd() { return parseInt(document.getElementById('hp-spd').value); }
   function getWL()  { return parseInt(document.getElementById('hp-wl').value); }
@@ -373,23 +396,61 @@
     ctx.textAlign = 'left';
     ctx.fillText('→ propagation', 8, 16);
 
-    t++;
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && !paused) {
+      t++;
+    }
   }
 
-  function loop() { draw(); raf = requestAnimationFrame(loop); }
+  window.hpSetMode = function(m) { mode = m; t = 0; if (paused) draw(); };
+  window.hpReset   = function()  { mode = 'plane'; t = 0; if (paused) draw(); };
+  window.hpTogglePause = function() {
+    paused = !paused;
+    const btn = document.getElementById('hp-pause-btn');
+    if (btn) {
+      btn.textContent = paused ? '▶ Play' : '⏸ Pause';
+      btn.setAttribute('aria-pressed', String(paused));
+    }
+    if (!paused) draw();
+  };
 
-  window.hpSetMode = function(m) { mode = m; t = 0; };
-  window.hpReset   = function()  { mode = 'plane'; t = 0; };
+  canvas.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      window.hpTogglePause();
+    } else if (e.key === '1') {
+      window.hpSetMode('plane');
+    } else if (e.key === '2') {
+      window.hpSetMode('slit');
+    } else if (e.key === '3') {
+      window.hpSetMode('double');
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const spdInput = document.getElementById('hp-spd');
+      const cur = parseInt(spdInput.value);
+      spdInput.value = Math.max(1, Math.min(5, cur + (e.key === 'ArrowRight' ? 1 : -1)));
+      document.getElementById('hp-spd-val').textContent = spdInput.value;
+      if (paused) draw();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const wlInput = document.getElementById('hp-wl');
+      const cur = parseInt(wlInput.value);
+      wlInput.value = Math.max(20, Math.min(70, cur + (e.key === 'ArrowUp' ? 5 : -5)));
+      document.getElementById('hp-wl-val').textContent = wlInput.value + ' px';
+      if (paused) draw();
+    }
+  });
 
   document.getElementById('hp-spd').addEventListener('input', e => {
     document.getElementById('hp-spd-val').textContent = e.target.value;
+    if (paused) draw();
   });
   document.getElementById('hp-wl').addEventListener('input', e => {
     document.getElementById('hp-wl-val').textContent = e.target.value + ' px';
+    if (paused) draw();
   });
 
   window.addEventListener('resize', draw);
-  loop();
+  SimKit.loop(draw);
 
   window.hpCheck = function(n,ans,tol) {
     const val = parseFloat(document.getElementById('hpans-'+n).value);

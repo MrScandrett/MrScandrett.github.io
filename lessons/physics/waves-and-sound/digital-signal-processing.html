@@ -672,6 +672,36 @@
     </div>
   </section>
 
+  <section class="dsp-card" id="worked-example" style="border-left:4px solid #06b6d4;">
+    <h2>Worked Example: Nyquist Sampling Rate &amp; Foldover Aliasing</h2>
+    <p>The Nyquist-Shannon Sampling Theorem guarantees that a continuous analog signal can be perfectly converted to digital and rebuilt without error, provided the sampling rate \(f_s\) exceeds twice the highest frequency \(f_{\text{max}}\) in the signal: \(f_s > 2 f_{\text{max}}\). If higher frequencies enter the converter, they reflect back across the Nyquist frequency (\(f_N = f_s / 2\)) as audible, distorted <em>alias frequencies</em>.</p>
+
+    <div style="background:rgba(6,182,212,0.08);border-left:3px solid #06b6d4;border-radius:12px;padding:1rem;margin:0.8rem 0;font-size:0.88rem;line-height:1.65;">
+      <p style="margin:0 0 0.5rem;"><strong>Sample Problem:</strong> An audio recording system operates at the standard CD rate of \(f_s = 44,100\text{ Hz}\) (\(44.1\text{ kHz}\)). An electric guitar pickup produces an intentional musical harmonic at \(f_{\text{music}} = 12\text{ kHz}\), but simultaneously picks up electromagnetic interference from a nearby switching power supply at \(f_{\text{noise}} = 27\text{ kHz}\).</p>
+      <ol style="margin:0 0 0.6rem 1.4rem;padding:0;color:#14202e;">
+        <li>Calculate the Nyquist frequency \(f_N\) for this system.</li>
+        <li>Determine whether the \(12\text{ kHz}\) guitar harmonic is sampled correctly.</li>
+        <li>Calculate the foldover alias frequency \(f_{\text{alias}}\) that will appear in the recorded digital file if no anti-aliasing filter is used.</li>
+        <li>Explain why digital equalization (EQ) applied inside the computer after recording cannot remove the noise without damaging the music.</li>
+      </ol>
+      <p style="margin:0 0 0.4rem;"><strong>Step 1: Calculate the Nyquist limit.</strong></p>
+      <p style="margin:0 0 0.6rem;color:#34596a;">The Nyquist frequency is half the sampling frequency:<br/>
+      \(f_N = \frac{f_s}{2} = \frac{44,100\text{ Hz}}{2} = 22,050\text{ Hz} = 22.05\text{ kHz}\).</p>
+      <p style="margin:0 0 0.4rem;"><strong>Step 2: Check the music harmonic.</strong></p>
+      <p style="margin:0 0 0.6rem;color:#34596a;">Because \(f_{\text{music}} = 12\text{ kHz} < 22.05\text{ kHz}\), it is strictly below the Nyquist limit. The ADC collects \(\frac{44.1}{12} \approx 3.675\) samples per cycle, capturing the wave cleanly.</p>
+      <p style="margin:0 0 0.4rem;"><strong>Step 3: Calculate the alias frequency for the noise.</strong></p>
+      <p style="margin:0 0 0.6rem;color:#34596a;">Because \(f_{\text{noise}} = 27\text{ kHz} > 22.05\text{ kHz}\), it exceeds the Nyquist limit. When sampled, it reflects across \(f_s\):<br/>
+      \(f_{\text{alias}} = |f_{\text{noise}} - f_s| = |27,000\text{ Hz} - 44,100\text{ Hz}| = 17,100\text{ Hz} = 17.1\text{ kHz}\).<br/>
+      Although the original 27 kHz noise was ultrasonic and inaudible to human ears, the digital converter folds it down to <strong>17.1 kHz</strong>—an audible, harsh high-frequency squeal!</p>
+      <p style="margin:0 0 0.4rem;"><strong>Step 4: Why anti-aliasing must be analog before sampling.</strong></p>
+      <p style="margin:0;color:#34596a;">Once sampled, the stored numbers for a 17.1 kHz alias and a genuine 17.1 kHz sound are 100% identical; no software algorithm can distinguish them. Therefore, audio hardware must place an <em>analog low-pass filter</em> before the ADC to eliminate all frequencies above 22.05 kHz prior to digital conversion.</p>
+    </div>
+    <details class="dsp-predict" style="cursor:pointer;margin-top:0.8rem;">
+      <summary><span class="tag">Check</span>What sampling frequency would be required to record the 27 kHz noise as a true signal without aliasing?</summary>
+      <p>The sampling frequency must exceed twice the signal frequency: \(f_s > 2 \times 27\text{ kHz} = 54\text{ kHz}\). Studio professional recording formats commonly use \(f_s = 96\text{ kHz}\) or \(192\text{ kHz}\) specifically to provide plenty of headroom above audible bandwidth.</p>
+    </details>
+  </section>
+
 <!-- ════════════════════════════════════════════════════════════
      STEP 3 — Bit depth & quantization
      ════════════════════════════════════════════════════════════ -->
@@ -1903,8 +1933,10 @@
   drawEq();
   updateButtons();
   SimKit.loop(() => {
-    drawLive();
-    drawWheel(performance.now() / 1000);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      drawLive();
+      drawWheel(performance.now() / 1000);
+    }
   });
 }());
 </script>

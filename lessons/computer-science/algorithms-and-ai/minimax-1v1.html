@@ -1209,11 +1209,79 @@ function minimax(board, isMaximizingPlayer) {
   }
 }</pre>
             <div style="margin-top:1.2rem; display:grid; gap:0.75rem;">
-              <p><strong>Base Case (Terminal State)</strong>: Before making a move, the function checks if the game is over. If the board has reached a terminal state (win, loss, or draw), it immediately returns a fixed score (+1, -1, or 0) instead of digging deeper into the game tree.</p>
-              <p><strong>The Recursive Call</strong>: If the game isn't over, the function simulates a move in its imagination (<code>board.makeMove()</code>), and asks itself, "What would the opponent do now?" by calling <code>minimax()</code> again with the turn flipped.</p>
-              <p><strong>Backtracking</strong>: Crucially, after evaluating a simulated move, the AI must <code>undoMove()</code> to return the board to its original state so it can safely try the next node without leaving phantom pieces on the board.</p>
-              <p><strong>Minimizing and Maximizing</strong>: The maximizer starts with a baseline of <code>-Infinity</code> and looks for any score that is higher. The minimizer starts at <code>Infinity</code> and seeks anything lower. This exhaustive search explores every possible branch up to the specified depth.</p>
+              <p><strong>Base Case (Terminal State)</strong>: Before making a move, the function checks if the game is over. If the board has reached a terminal state (win, loss, or draw), it immediately returns a fixed score (+1, -1, or 0) because continuing to search deeper is redundant once the game is decided.</p>
+              <p><strong>The Recursive Call</strong>: When the game is not over, the function simulates a move in its imagination (<code>board.makeMove()</code>), and asks itself, "What will the opponent do next?" Therefore, it calls <code>minimax()</code> recursively with the turn flipped, which means the search descends ply by ply until it hits all terminal leaves.</p>
+              <p><strong>Backtracking</strong>: Crucially, after evaluating a simulated move, the AI must execute <code>undoMove()</code> in order to return the board to its original state so that it can safely explore the next alternative branch without leaving phantom pieces on the board.</p>
+              <p><strong>Minimizing and Maximizing</strong>: The maximizer starts with a baseline of <code>-Infinity</code> and seeks any score that is higher. The minimizer starts at <code>Infinity</code> and seeks anything lower. Consequently, this minimax alternation propagates the optimal worst-case guarantees back to the root, which explains why perfect minimax play never loses in finite zero-sum games.</p>
             </div>
+          </article>
+        </section>
+
+        <!-- ── Worked Example Card ───────────────────────────── -->
+        <section class="section" id="minimax-worked-example">
+          <div class="section-head">
+            <h2>Worked Example: Step-by-Step Minimax Evaluation</h2>
+            <p>Walk through an adversarial game tree to see exactly how minimax backs up terminal values to make an optimal choice.</p>
+          </div>
+          <article class="card minimax-explain">
+            <h3>Sample Problem: X's Turn on Move 7 (3 Empty Squares)</h3>
+            <p>Suppose the game has progressed to move 7. Player X (the Maximizer) is choosing between three open cells: square 2, square 6, and square 8. O (the Minimizer) will move next if the game does not immediately end. How does Minimax evaluate X's choices?</p>
+
+            <ol class="minimax-steps" style="margin: 0.8rem 0 1rem;">
+              <li>
+                <strong>Step 1: Expand Sub-Tree for Move A (Square 2).</strong>
+                Because square 2 immediately completes the top row with three X's in a row, the board reaches a terminal state. The static evaluation returns <code>score = +1</code> directly without requiring any further recursion.
+              </li>
+              <li>
+                <strong>Step 2: Expand Sub-Tree for Move B (Square 6).</strong>
+                Move B does not win immediately. Therefore, the algorithm flips turns to O (the Minimizer) with 2 remaining empty cells. If O plays square 2, O wins (terminal <code>score = -1</code>). If O plays square 8, the game draws (terminal <code>score = 0</code>). Because O is a rational minimizer, O picks \(\min(-1, 0) = -1\). This means backing up Move B assigns a minimax value of <code>-1</code> to square 6.
+              </li>
+              <li>
+                <strong>Step 3: Expand Sub-Tree for Move C (Square 8).</strong>
+                Similar to Move B, playing square 8 allows O to immediately win on the next turn with square 2, which results in a terminal score of <code>-1</code>.
+              </li>
+              <li>
+                <strong>Step 4: Maximizer's Optimal Decision.</strong>
+                Player X evaluates the backed-up values of all candidate moves: \(\max(\text{Move A}, \text{Move B}, \text{Move C}) = \max(+1, -1, -1) = +1\). Consequently, X selects square 2. This guarantees a forced win regardless of what O tries to do, which explains why a depth-complete minimax player can never be defeated.
+              </li>
+            </ol>
+
+            <div style="background: rgba(19, 76, 151, 0.06); border: 1px solid rgba(19, 76, 151, 0.2); border-radius: 12px; padding: 1rem; margin-top: 1rem;">
+              <h4 style="margin: 0 0 0.4rem; font-size: 0.95rem; color: #134c97;">Self-Check Question</h4>
+              <p style="margin: 0 0 0.6rem; font-size: 0.88rem; color: #1f3048;">If X faces a position where Move 1 leads to backed-up score <code>0</code>, Move 2 leads to <code>-1</code>, and Move 3 leads to <code>0</code>, which move(s) will X consider optimal, and what outcome does this guarantee?</p>
+              <details style="font-size: 0.86rem; color: #2d4363;">
+                <summary style="cursor: pointer; font-weight: 700; color: #134c97;">Show Answer &amp; Derivation</summary>
+                <p style="margin: 0.4rem 0 0; line-height: 1.6;"><strong>Answer:</strong> X will select either Move 1 or Move 3, guaranteeing at least a <strong>draw (score 0)</strong>. Because X is the maximizer, X chooses \(\max(0, -1, 0) = 0\). Rejecting Move 2 is essential because choosing Move 2 would lead to an outcome where O can force a win (score -1).</p>
+              </details>
+            </div>
+          </article>
+        </section>
+
+        <!-- ── Sources & Historical References ───────────────── -->
+        <section class="section" id="minimax-sources">
+          <div class="section-head">
+            <h2>Sources &amp; Further Reading</h2>
+            <p>Foundational primary literature on game theory, adversarial search, and computational complexity.</p>
+          </div>
+          <article class="card">
+            <ul class="rhythm">
+              <li>
+                <span>1928 Primary Paper</span>
+                <strong>von Neumann, John. &ldquo;Zur Theorie der Gesellschaftsspiele&rdquo; (On the Theory of Games of Strategy). <em>Mathematische Annalen</em>, 100, 295–320 (1928). The mathematical proof of the Minimax Theorem for two-player zero-sum games.</strong>
+              </li>
+              <li>
+                <span>1950 Chess Search</span>
+                <strong>Shannon, Claude E. &ldquo;Programming a Computer for Playing Chess.&rdquo; <em>Philosophical Magazine</em>, 41(314), 256–275 (1950). Introduced the minimax game tree search and heuristic evaluation functions to computing.</strong>
+              </li>
+              <li>
+                <span>1975 Alpha-Beta Pruning</span>
+                <strong>Knuth, Donald E., &amp; Moore, Ronald W. &ldquo;An analysis of alpha-beta pruning.&rdquo; <em>Artificial Intelligence</em>, 6(4), 293–326 (1975). Mathematical derivation showing alpha-beta search cuts effective branching factor from \(b\) to \(\sqrt{b}\).</strong>
+              </li>
+              <li>
+                <span>Textbook Reference</span>
+                <strong>Russell, Stuart, &amp; Norvig, Peter. <em>Artificial Intelligence: A Modern Approach</em>. Chapter 5: Adversarial Search and Games. Pearson.</strong>
+              </li>
+            </ul>
           </article>
         </section>
 

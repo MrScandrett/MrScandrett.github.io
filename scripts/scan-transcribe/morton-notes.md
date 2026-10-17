@@ -1,7 +1,7 @@
 # Morton Fake Book transcription: status
 
 Goal: add Morton's four pieces to `data/fake-book.json` as full-form lead sheets (melody and chords,
-every strain), and link each from `lessons/music/morton.html` with
+every strain), and link each from `lessons/music/pioneers/morton.html` with
 `fake-book.html#tune=<id>`. The lesson's player currently has only 2–4 bar excerpts
 (`morton-*` in `data/score-library.json`).
 

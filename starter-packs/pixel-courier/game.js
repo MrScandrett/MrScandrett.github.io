@@ -285,18 +285,74 @@ function draw() {
 
   // HUD in screen space
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "rgba(26,28,44,.78)"; ctx.fillRect(4, 4, 92, 14);
-  ctx.fillStyle = "#ffc93c"; ctx.font = "8px monospace";
-  ctx.fillText(`${collected}/${totalParcels}  ${time.toFixed(1)}s`, 10, 14);
+  const hudW = falls > 0 ? 128 : 108;
+  ctx.fillStyle = "rgba(20, 23, 38, 0.88)";
+  ctx.fillRect(4, 4, hudW, 18);
+  ctx.strokeStyle = "#ffc93c"; ctx.lineWidth = 1;
+  ctx.strokeRect(4.5, 4.5, hudW - 1, 17);
+  ctx.drawImage(bake(ART.sprites.parcel.anims.idle.frames[0]), 4, 3, 16, 16);
+  ctx.fillStyle = "#ffc93c"; ctx.font = "bold 8px monospace";
+  ctx.fillText(`${collected}/${totalParcels}`, 23, 16);
+  ctx.fillStyle = "#f4f4f4";
+  ctx.fillText(`⏱ ${time.toFixed(1)}s`, 52, 16);
+  if (falls > 0) {
+    ctx.fillStyle = "#ff8a5c";
+    ctx.fillText(`💀 ${falls}`, 98, 16);
+  }
 
   if (mode !== "play") {
-    ctx.fillStyle = "rgba(26,28,44,.72)"; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    ctx.textAlign = "center"; ctx.fillStyle = "#ffc93c"; ctx.font = "bold 16px monospace";
-    ctx.fillText({ title: "PIXEL COURIER", paused: "PAUSED", win: "DELIVERED!" }[mode], VIEW_W / 2, 70);
-    ctx.fillStyle = "#f4f4f4"; ctx.font = "8px monospace";
-    if (mode === "win") ctx.fillText(`Time ${time.toFixed(2)}s · Falls ${falls} · Best ${best.toFixed(2)}s`, VIEW_W / 2, 92);
-    else ctx.fillText("Collect every parcel, then reach the mailbox.", VIEW_W / 2, 92);
-    ctx.fillStyle = "#73eff7"; ctx.fillText("Press Space", VIEW_W / 2, 130);
+    ctx.fillStyle = "rgba(16, 18, 28, 0.82)";
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    for (let sy = 0; sy < VIEW_H; sy += 3) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, sy, VIEW_W, 1);
+    }
+    ctx.textAlign = "center";
+    if (mode === "title") {
+      ctx.fillStyle = "rgba(26, 28, 44, 0.95)";
+      ctx.fillRect(36, 18, VIEW_W - 72, 144);
+      ctx.strokeStyle = "#ffc93c"; ctx.lineWidth = 2;
+      ctx.strokeRect(36.5, 18.5, VIEW_W - 73, 143);
+      ctx.fillStyle = "#ffc93c"; ctx.font = "bold 18px monospace";
+      ctx.fillText("PIXEL COURIER", VIEW_W / 2, 48);
+      ctx.fillStyle = "#73eff7"; ctx.font = "8px monospace";
+      ctx.fillText("CLASSROOMOS · 2D PLATFORMER", VIEW_W / 2, 64);
+      ctx.fillStyle = "#f4f4f4"; ctx.font = "8px monospace";
+      ctx.fillText("📦 Deliver every parcel to the mailbox", VIEW_W / 2, 86);
+      ctx.fillStyle = "#c5c0b3"; ctx.font = "7.5px monospace";
+      ctx.fillText("ARROWS / WASD: Run  •  SPACE: Jump  •  P: Pause", VIEW_W / 2, 104);
+      ctx.fillStyle = "#ffc93c"; ctx.font = "bold 9px monospace";
+      ctx.fillText("▶ PRESS SPACE OR ENTER TO START ◀", VIEW_W / 2, 136);
+    } else if (mode === "paused") {
+      ctx.fillStyle = "rgba(26, 28, 44, 0.95)";
+      ctx.fillRect(60, 42, VIEW_W - 120, 96);
+      ctx.strokeStyle = "#73eff7"; ctx.lineWidth = 2;
+      ctx.strokeRect(60.5, 42.5, VIEW_W - 121, 95);
+      ctx.fillStyle = "#ffc93c"; ctx.font = "bold 16px monospace";
+      ctx.fillText("PAUSED", VIEW_W / 2, 72);
+      ctx.fillStyle = "#f4f4f4"; ctx.font = "8px monospace";
+      ctx.fillText("Physics & world time frozen.", VIEW_W / 2, 92);
+      ctx.fillStyle = "#73eff7"; ctx.font = "8px monospace";
+      ctx.fillText("Press P or SPACE to resume", VIEW_W / 2, 114);
+    } else if (mode === "win") {
+      ctx.fillStyle = "rgba(26, 28, 44, 0.95)";
+      ctx.fillRect(40, 18, VIEW_W - 80, 144);
+      ctx.strokeStyle = "#38b764"; ctx.lineWidth = 2;
+      ctx.strokeRect(40.5, 18.5, VIEW_W - 81, 143);
+      ctx.fillStyle = "#ffc93c"; ctx.font = "bold 16px monospace";
+      ctx.fillText("★ DELIVERED! ★", VIEW_W / 2, 46);
+      const rank = (time < 22 && falls === 0) ? "★★★ RANK S · PERFECT! ★★★" : (time < 35 && falls <= 1) ? "★★☆ RANK A · EXCELLENT!" : "★☆☆ RANK B · DELIVERED!";
+      ctx.fillStyle = "#73eff7"; ctx.font = "bold 8.5px monospace";
+      ctx.fillText(rank, VIEW_W / 2, 63);
+      ctx.fillStyle = "#f4f4f4"; ctx.font = "8px monospace";
+      ctx.fillText(`Time: ${time.toFixed(2)}s  •  Falls: ${falls}`, VIEW_W / 2, 84);
+      if (best) {
+        ctx.fillStyle = "#ffcd75"; ctx.font = "8px monospace";
+        ctx.fillText(`Best Time: ${best.toFixed(2)}s`, VIEW_W / 2, 98);
+      }
+      ctx.fillStyle = "#38b764"; ctx.font = "bold 8.5px monospace";
+      ctx.fillText("▶ Press SPACE to Deliver Again ◀", VIEW_W / 2, 132);
+    }
     ctx.textAlign = "left";
   }
 }

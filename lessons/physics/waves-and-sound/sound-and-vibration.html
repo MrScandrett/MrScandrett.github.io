@@ -6,52 +6,638 @@
   <meta name="robots" content="noindex" />
   <title>Sound &amp; Vibration · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson — explore Sound & Vibration." />
+  <meta name="description" content="Physics Lesson — explore Sound &amp; Vibration: longitudinal waves, compressions, rarefactions, frequency, amplitude, and wave speed across media." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-<script src="../../../assets/js/vr-mode.js" defer></script>
+  <script src="../../../assets/js/vr-mode.js" defer></script>
+  <style>
+    .sv-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 290px; }
+    .sv-hero { padding: 0.4rem 0 1.3rem; }
+    .sv-hero h1 { max-width: 32ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .sv-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .sv-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .sv-lede { margin: 0.65rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .sv-lede,
+    [data-theme="vaporwave"] .sv-lede,
+    [data-theme="bark"] .sv-lede { color: rgba(245, 245, 247, 0.72); }
+
+    .sv-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #0284c7);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .sv-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; }
+    .sv-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .sv-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .sv-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .sv-card,
+    [data-theme="vaporwave"] .sv-card,
+    [data-theme="bark"] .sv-card { background: #2c2c2e; }
+    [data-lighting="night"] .sv-card p,
+    [data-theme="vaporwave"] .sv-card p,
+    [data-theme="bark"] .sv-card p { color: rgba(245, 245, 247, 0.72); }
+
+    .sv-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .sv-callout.sky { background: rgba(2, 132, 199, 0.1); border-left: 3px solid #0284c7; }
+    .sv-callout.green { background: rgba(22, 163, 74, 0.1); border-left: 3px solid #16a34a; }
+
+    .sv-canvas-wrap {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px 14px 0 0;
+      overflow: hidden;
+      background: #070e17;
+      margin: 0.8rem 0 0;
+      position: relative;
+    }
+    .sv-canvas-wrap:focus-visible { outline: 2px solid #0284c7; outline-offset: -2px; }
+    #sv-canvas { width: 100%; height: 260px; display: block; }
+
+    .sv-graph-wrap {
+      border: 1px solid var(--line, #d2d2d7);
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      overflow: hidden;
+      background: #040910;
+      margin: 0 0 0.8rem;
+    }
+    #sv-graph { width: 100%; height: 80px; display: block; }
+
+    .sv-sim-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.6rem 0;
+    }
+    .sv-sim-btn {
+      background: rgba(2, 132, 199, 0.12);
+      color: #0369a1;
+      border: 1px solid rgba(2, 132, 199, 0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .sv-sim-btn:hover { background: rgba(2, 132, 199, 0.22); }
+    .sv-sim-btn.is-active { background: #0284c7; color: #fff; border-color: #0284c7; }
+    [data-lighting="night"] .sv-sim-btn,
+    [data-theme="vaporwave"] .sv-sim-btn,
+    [data-theme="bark"] .sv-sim-btn { color: #38bdf8; }
+    [data-lighting="night"] .sv-sim-btn.is-active,
+    [data-theme="vaporwave"] .sv-sim-btn.is-active,
+    [data-theme="bark"] .sv-sim-btn.is-active { color: #fff; }
+
+    .sv-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 0.8rem 0 0.4rem;
+    }
+    .sv-readout {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.55rem 0.6rem;
+      text-align: center;
+    }
+    [data-lighting="night"] .sv-readout,
+    [data-theme="vaporwave"] .sv-readout,
+    [data-theme="bark"] .sv-readout { background: rgba(255, 255, 255, 0.06); }
+    .sv-readout-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .sv-readout-val { font-size: 0.95rem; font-weight: 700; color: #0284c7; font-family: ui-monospace, monospace; }
+
+    .sv-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .sv-app { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .sv-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .sv-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .sv-app small { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    .sv-practice .sv-problem { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .sv-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    [data-lighting="night"] .sv-problem p,
+    [data-theme="vaporwave"] .sv-problem p,
+    [data-theme="bark"] .sv-problem p { color: rgba(245, 245, 247, 0.72); }
+    .sv-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .sv-ans-input { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 140px; background: var(--white, #fff); color: var(--text, #1d1d1f); }
+    .sv-check-btn { background: #0284c7; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .sv-check-btn:hover { background: #0369a1; }
+    .sv-feedback { font-size: 0.82rem; font-weight: 600; }
+    .sv-feedback.ok { color: #16a34a; }
+    .sv-feedback.err { color: #dc2626; }
+    .sv-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(22, 163, 74, 0.15); color: #16a34a; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(245, 158, 11, 0.15); color: #d97706; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(220, 38, 38, 0.12); color: #dc2626; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 680px) {
+      .sv-apps { grid-template-columns: 1fr; }
+      .sv-readouts { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
-<body>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="ll-viewport">
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Sound &amp; Vibration</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Sound &amp; Vibration.</p>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="sv-page">
+          <section class="hero sv-hero">
+            <p class="eyebrow">Physics · Waves &amp; Sound · Foundational</p>
+            <h1>Sound &amp; Vibration</h1>
+            <div class="sv-meta">
+              <span>Acoustic Mechanics</span><span class="dot"></span>
+              <span>Longitudinal Waves</span><span class="dot"></span>
+              <span>Compressions &amp; Rarefactions</span><span class="dot"></span>
+              <span>Wave Speed Across Media</span>
+            </div>
+            <p class="sv-lede">Sound is mechanical energy in motion. When an object vibrates, it transfers momentum to adjacent molecules, propagating high-pressure compressions and low-pressure rarefactions through the surrounding medium. The molecules themselves never travel across the room—they oscillate in place while the wave disturbance carries energy forward.</p>
+          </section>
+
+          <!-- ── Section 1: Anatomy ───────────────────── -->
+          <section class="sv-card" id="overview">
+            <h2>1. Anatomy of a Longitudinal Wave</h2>
+            <p>Unlike transverse waves on a rope or ocean surface (where disturbance moves perpendicular to propagation), sound in air is strictly a <strong>longitudinal wave</strong>. Molecule displacement is parallel to the direction of wave travel:</p>
+            <ul>
+              <li><strong>Compressions (\(+P\)):</strong> Zones where vibrating particles are pushed closely together, creating higher-than-ambient density and localized positive pressure.</li>
+              <li><strong>Rarefactions (\(-P\)):</strong> Zones where receding particles leave expanded gaps, creating lower-than-ambient density and localized negative gauge pressure.</li>
+            </ul>
+            <figure data-zoomable data-lightbox-group="sound-vibration">
+              <img src="../../../assets/images/lessons/sound-and-vibration/sound-wave-mechanics.svg" width="960" height="540" alt="Diagram showing a vibrating tuning fork creating air molecule compressions and rarefactions, aligned with a continuous sinusoidal pressure wave." loading="lazy" decoding="async" />
+              <figcaption><strong>Longitudinal sound wave mechanics.</strong> Air molecules oscillate parallel to the wave's path rather than traveling across the room. Compressions correspond to high-pressure peaks (\(+P\)), while rarefactions correspond to low-pressure troughs (\(-P\)).</figcaption>
+            </figure>
+            <div class="sv-callout sky">
+              <strong>The Common Misconception:</strong> When you speak to a friend across a room, air does not blow from your mouth into their ears. Instead, each air molecule shoves its neighbor and bounces back. Energy travels at 343 m/s, but individual molecules remain centered around their original positions.
+            </div>
+          </section>
+
+          <!-- ── Section 2: Simulator ─────────────────── -->
+          <section class="sv-card" id="simulator" style="--card-accent:#0ea5e9;">
+            <h2>2. Interactive Sound Wave &amp; Molecule Simulator</h2>
+            <p style="font-size:0.84rem;color:var(--text-muted,#64748b);">Observe individual air molecules oscillating in place. Notice how the bright amber molecule bounces back and forth around its dotted home position while the pressure wave (below) sweeps smoothly to the right.</p>
+
+            <div class="sv-canvas-wrap" id="sv-canvas-wrap" tabindex="0" role="region" aria-label="Interactive longitudinal sound wave simulation. Press Space to pause or play, and use arrow keys to adjust frequency.">
+              <canvas id="sv-canvas"></canvas>
+            </div>
+            <div class="sv-graph-wrap">
+              <canvas id="sv-graph" role="img" aria-label="Graph of acoustic gauge pressure showing compressions as peaks and rarefactions as troughs aligned with the particle field"></canvas>
+            </div>
+
+            <div class="sv-sim-toolbar">
+              <button type="button" class="sv-sim-btn" id="sv-pause-btn" aria-pressed="false">⏸ Pause</button>
+              <button type="button" class="sv-sim-btn" id="sv-audio-btn" aria-pressed="false">🔊 Hear Tone</button>
+              <label style="font-size:0.8rem;display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;margin-left:auto;">
+                <input type="checkbox" id="sv-track-box" checked style="width:16px;height:16px;" />
+                Track single molecule
+              </label>
+            </div>
+
+            <div class="sv-sim-toolbar">
+              <span style="font-size:0.8rem;font-weight:700;color:var(--text-muted,#64748b);">Medium:</span>
+              <button type="button" class="sv-sim-btn is-active" data-medium="air">Air (343 m/s)</button>
+              <button type="button" class="sv-sim-btn" data-medium="water">Freshwater (1,482 m/s)</button>
+              <button type="button" class="sv-sim-btn" data-medium="steel">Steel (5,960 m/s)</button>
+            </div>
+
+            <div class="sv-readouts">
+              <div class="sv-readout"><span class="sv-readout-label">Frequency (f)</span><span class="sv-readout-val" id="sv-r-f">440 Hz</span></div>
+              <div class="sv-readout"><span class="sv-readout-label">Wave Speed (v)</span><span class="sv-readout-val" id="sv-r-v">343 m/s</span></div>
+              <div class="sv-readout"><span class="sv-readout-label">Wavelength (λ)</span><span class="sv-readout-val" id="sv-r-wl">0.78 m</span></div>
+              <div class="sv-readout"><span class="sv-readout-label">Period (T)</span><span class="sv-readout-val" id="sv-r-t">2.27 ms</span></div>
+            </div>
+          </section>
+
+          <!-- ── Section 3: History & Applications ───── -->
+          <section class="sv-card" id="history" style="--card-accent:#10b981;">
+            <h2>3. Tactile Vibration &amp; Real-World Acoustics</h2>
+            <p>Because sound is physical mechanical vibration, it can be sensed directly through touch, bone conduction, and solid materials, as well as by the eardrum. In this historic newsreel, teacher Anne Sullivan demonstrates how Helen Keller learned spoken language by feeling the physical vibrations of the throat, lips, and nose:</p>
+
+            <figure data-video="helen-keller-speech-1930">
+              <figcaption>Historic talking newsreel of teacher Anne Sullivan demonstrating the tactile method used to teach Helen Keller how to speak, feeling the physical vibrations of the throat, lips, and nose. Public domain, via Wikimedia Commons.</figcaption>
+            </figure>
+
+            <div class="sv-apps">
+              <div class="sv-app"><div class="sv-app-icon">🗣️</div><strong>Human Vocal Cords</strong><small>Air exhaled from the lungs forces elastic vocal folds to vibrate hundreds of times per second, generating acoustic pressure pulses shaped by the mouth.</small></div>
+              <div class="sv-app"><div class="sv-app-icon">🩺</div><strong>Acoustic Stethoscopes</strong><small>A flexible diaphragm captures mechanical chest vibrations and transmits pressure pulses through sealed air tubes straight to the physician's ears.</small></div>
+              <div class="sv-app"><div class="sv-app-icon">🐬</div><strong>Underwater Sonar &amp; Echolocation</strong><small>Because water is nearly incompressible, sound travels over 4 times faster than in air and carries for hundreds of miles, enabling marine navigation.</small></div>
+              <div class="sv-app"><div class="sv-app-icon">🌍</div><strong>Seismic P-Waves</strong><small>Earthquake Primary (P) waves are compressional longitudinal sound waves traveling through solid rock and liquid mantle at 5,000 to 8,000 m/s.</small></div>
+            </div>
+          </section>
+
+          <!-- ── Section 4: Worked Example ───────────── -->
+          <section class="sv-card" id="worked-example" style="--card-accent:#8b5cf6;">
+            <h2>Worked Example: Sound Speed &amp; Wavelength Across Media</h2>
+            <p>The universal wave equation connects wave speed \(v\), frequency \(f\), and wavelength \(\lambda\):</p>
+            <div class="sv-callout sky" style="font-family:ui-monospace,monospace;font-size:0.92rem;text-align:center;">
+              \(v = f \cdot \lambda \quad \implies \quad \lambda = \frac{v}{f}\)
+            </div>
+            <p><strong>Sample Problem:</strong> A concert tuning fork produces the standard pitch \(A_4 = 440\text{ Hz}\). Calculate the wavelength \(\lambda\) of this sound wave in air at \(20^\circ\text{C}\) (\(v_{\text{air}} = 343\text{ m/s}\)), in freshwater (\(v_{\text{water}} = 1,482\text{ m/s}\)), and along a structural steel girder (\(v_{\text{steel}} = 5,960\text{ m/s}\)).</p>
+            <div style="background:rgba(2,132,199,0.06);border-left:3px solid #0284c7;border-radius:10px;padding:0.9rem;margin:0.8rem 0;font-size:0.86rem;line-height:1.65;">
+              <p style="margin:0 0 0.5rem;"><strong>Step 1: Calculate wavelength in air.</strong></p>
+              <p style="margin:0 0 0.5rem;">Substitute frequency \(f = 440\text{ Hz}\) and speed \(v_{\text{air}} = 343\text{ m/s}\):<br/>
+              \(\lambda_{\text{air}} = \frac{343\text{ m/s}}{440\text{ s}^{-1}} \approx 0.780\text{ m} = 78.0\text{ cm}\).</p>
+              <p style="margin:0 0 0.5rem;"><strong>Step 2: Calculate wavelength in freshwater.</strong></p>
+              <p style="margin:0 0 0.5rem;">Substitute speed in water \(v_{\text{water}} = 1,482\text{ m/s}\):<br/>
+              \(\lambda_{\text{water}} = \frac{1,482\text{ m/s}}{440\text{ s}^{-1}} \approx 3.368\text{ m} \approx 3.37\text{ m}\).</p>
+              <p style="margin:0 0 0.5rem;"><strong>Step 3: Calculate wavelength in solid steel.</strong></p>
+              <p style="margin:0 0 0.5rem;">Substitute speed in steel \(v_{\text{steel}} = 5,960\text{ m/s}\):<br/>
+              \(\lambda_{\text{steel}} = \frac{5,960\text{ m/s}}{440\text{ s}^{-1}} \approx 13.55\text{ m}\).</p>
+              <p style="margin:0 0 0.5rem;"><strong>Step 4: Understand the physical mechanism.</strong></p>
+              <p style="margin:0;">Why does sound travel fastest in steel and water when steel is so dense? The speed of sound depends on the balance between elastic stiffness (bulk modulus \(B\)) and density (\(\rho\)): \(v = \sqrt{B/\rho}\). Even though steel is much denser than air, its metallic bonds are millions of times stiffer, snapping back with immense force and transmitting pressure disturbances over 17 times faster than air!</p>
+            </div>
+            <details class="sv-callout" style="background:rgba(22,163,74,0.08);border-left:3px solid #16a34a;cursor:pointer;">
+              <summary><strong>Check your understanding:</strong> When sound crosses from air into water, does its frequency change?</summary>
+              <p style="margin:0.5rem 0 0;font-size:0.84rem;color:var(--text-secondary,#3f4f65);">No! Frequency is determined entirely by the vibrating source (e.g. 440 cycles/sec). Because speed increases dramatically in water, the wavelength stretches proportionally (\(\lambda = v/f\)) from 0.78 m to 3.37 m, while the frequency remains exactly 440 Hz.</p>
+            </details>
+          </section>
+
+          <!-- ── Section 5: Practice Problems ────────── -->
+          <section class="sv-card" id="practice" style="--card-accent:#f59e0b;">
+            <h2>5. Practice Problems</h2>
+            <div class="sv-practice">
+              <div class="sv-problem">
+                <p><span class="diff-easy">Easy</span>1. In a longitudinal sound wave, which direction do the air molecules oscillate relative to wave travel?</p>
+                <div class="sv-problem-row">
+                  <select class="sv-ans-input" id="svans-1" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="parallel">Parallel (back and forth along the path)</option>
+                    <option value="perpendicular">Perpendicular (up and down across path)</option>
+                    <option value="circular">In circular orbits</option>
+                  </select>
+                  <button class="sv-check-btn" onclick="svCheckText(1,'parallel')">Check</button>
+                  <span class="sv-feedback" id="svfb-1"></span>
+                </div>
+                <div class="sv-hint" id="svhint-1">Hint: Longitudinal waves oscillate parallel to propagation; transverse waves oscillate perpendicularly.</div>
+              </div>
+
+              <div class="sv-problem">
+                <p><span class="diff-easy">Easy</span>2. What is a compression in a sound wave?</p>
+                <div class="sv-problem-row">
+                  <select class="sv-ans-input" id="svans-2" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="high">A region of high particle density &amp; pressure</option>
+                    <option value="low">A region of low particle density &amp; pressure</option>
+                    <option value="empty">A total vacuum</option>
+                  </select>
+                  <button class="sv-check-btn" onclick="svCheckText(2,'high')">Check</button>
+                  <span class="sv-feedback" id="svfb-2"></span>
+                </div>
+                <div class="sv-hint" id="svhint-2">Hint: Compressions compress molecules together (+P); rarefactions spread them out (-P).</div>
+              </div>
+
+              <div class="sv-problem">
+                <p><span class="diff-mid">Medium</span>3. A thunderclap sound wave has a wavelength of 1.715 m in air (\(v = 343\text{ m/s}\)). What is its frequency in Hz?</p>
+                <div class="sv-problem-row">
+                  <input type="number" class="sv-ans-input" id="svans-3" step="1" placeholder="Hz" style="width:110px;" />
+                  <button class="sv-check-btn" onclick="svCheck(3,200,5)">Check</button>
+                  <span class="sv-feedback" id="svfb-3"></span>
+                </div>
+                <div class="sv-hint" id="svhint-3">Hint: f = v / λ = 343 / 1.715 = 200 Hz.</div>
+              </div>
+
+              <div class="sv-problem">
+                <p><span class="diff-hard">Challenge</span>4. A naval sonar pulse with frequency 25,000 Hz travels through seawater at 1,500 m/s. What is its wavelength in centimeters?</p>
+                <div class="sv-problem-row">
+                  <input type="number" class="sv-ans-input" id="svans-4" step="0.1" placeholder="cm" style="width:110px;" />
+                  <button class="sv-check-btn" onclick="svCheck(4,6,0.2)">Check</button>
+                  <span class="sv-feedback" id="svfb-4"></span>
+                </div>
+                <div class="sv-hint" id="svhint-4">Hint: λ = 1,500 / 25,000 = 0.06 m = 6.0 cm.</div>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
       </div>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>Sound is a mechanical longitudinal wave created by physical vibrations. As an acoustic source vibrates, it pushes nearby air molecules into tight clusters (<strong>compressions</strong>) and pulls back creating spread-out spaces (<strong>rarefactions</strong>), transmitting energy through the medium.</p>
-        <figure data-zoomable>
-          <img src="../../../assets/images/lessons/sound-and-vibration/sound-wave-mechanics.svg" width="960" height="540" alt="Diagram showing a vibrating tuning fork creating air molecule compressions and rarefactions, aligned with a continuous sinusoidal pressure wave." loading="lazy" decoding="async" />
-          <figcaption><strong>Longitudinal sound wave mechanics.</strong> Air molecules oscillate parallel to the wave's path rather than traveling across the room. Compressions correspond to high-pressure peaks (\(+P\)), while rarefactions correspond to low-pressure troughs (\(-P\)).</figcaption>
-        </figure>
-      </div>
+      <!-- ── Sidebar Controls ─────────────────────── -->
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="sv-pane-sim">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="sv-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="sv-pane-sim">
+            <span class="ll-label">Frequency</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">f <span id="sv-side-f-val">440 Hz</span></label>
+              <input type="range" class="nl-slider" id="sv-f-slider" min="100" max="1000" step="10" value="440" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Amplitude (Displacement)</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">A <span id="sv-side-a-val">60%</span></label>
+              <input type="range" class="nl-slider" id="sv-a-slider" min="10" max="100" step="5" value="60" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Summary</span>
+            <div class="ll-info" style="font-size:0.8rem;line-height:1.5;">
+              <strong>Speed of Sound</strong><br/>
+              Air: 343 m/s<br/>
+              Water: 1,482 m/s<br/>
+              Steel: 5,960 m/s
+            </div>
+          </div>
+          <div class="ll-pane" id="sv-pane-guide">
+            <div class="ll-info"><strong>Longitudinal wave</strong>Particles oscillate parallel to wave travel. Compressions push molecules together; rarefactions pull them apart.</div>
+            <div class="ll-info"><strong>Wave speed formula</strong>\(v = f \cdot \lambda\). Wavelength is speed divided by frequency.</div>
+            <div class="ll-info"><strong>Medium elasticity</strong>Stiffer materials transmit pressure disturbances faster. Sound travels roughly 4× faster in water and 17× faster in steel than in air.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
     </div>
   </div>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const canvas = document.getElementById('sv-canvas');
+    const graphCanvas = document.getElementById('sv-graph');
+    if (!canvas || !graphCanvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const gctx = graphCanvas.getContext('2d');
+
+    const fSlider = document.getElementById('sv-f-slider');
+    const aSlider = document.getElementById('sv-a-slider');
+    const pauseBtn = document.getElementById('sv-pause-btn');
+    const audioBtn = document.getElementById('sv-audio-btn');
+    const trackBox = document.getElementById('sv-track-box');
+
+    let freq = 440;
+    let ampScale = 0.6;
+    let waveSpeed = 343; // m/s
+    let paused = false;
+    let t = 0;
+    let audioCtx = null;
+    let oscNode = null;
+    let gainNode = null;
+    let isPlayingAudio = false;
+
+    // Build particle grid: 28 columns x 14 rows = 392 particles
+    const COLS = 28;
+    const ROWS = 14;
+    const particles = [];
+    for (let c = 0; c < COLS; c++) {
+      for (let r = 0; r < ROWS; r++) {
+        particles.push({
+          col: c,
+          row: r,
+          x0Frac: (c + 0.5) / COLS,
+          y0Frac: (r + 0.5) / ROWS,
+          jitterY: (Math.random() - 0.5) * 0.03
+        });
+      }
+    }
+    const trackedParticle = particles[Math.floor(particles.length / 2) + 1];
+
+    function updateReadouts() {
+      const wl = waveSpeed / freq;
+      const periodMs = (1000 / freq).toFixed(2);
+      document.getElementById('sv-r-f').textContent = freq + ' Hz';
+      document.getElementById('sv-r-v').textContent = waveSpeed + ' m/s';
+      document.getElementById('sv-r-wl').textContent = wl.toFixed(2) + ' m';
+      document.getElementById('sv-r-t').textContent = periodMs + ' ms';
+      document.getElementById('sv-side-f-val').textContent = freq + ' Hz';
+      document.getElementById('sv-side-a-val').textContent = Math.round(ampScale * 100) + '%';
+
+      if (oscNode && audioCtx && isPlayingAudio) {
+        oscNode.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.02);
+      }
+    }
+
+    function draw() {
+      const W = canvas.offsetWidth || 600;
+      canvas.width = W; canvas.height = 260;
+      const H = 260;
+
+      const GW = graphCanvas.offsetWidth || 600;
+      graphCanvas.width = GW; graphCanvas.height = 80;
+      const GH = 80;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#070e17';
+      ctx.fillRect(0, 0, W, H);
+
+      const k = 2 * Math.PI * 3.5; // spatial cycles across screen width
+      const omega = 0.06; // animation angular speed
+
+      // Draw particle lattice
+      const maxDisp = (W / COLS) * 0.85 * ampScale;
+
+      particles.forEach((p) => {
+        const eqX = p.x0Frac * W;
+        const eqY = (p.y0Frac + p.jitterY) * H;
+        const disp = maxDisp * Math.cos(k * p.x0Frac - t * omega);
+        const curX = eqX + disp;
+
+        const isTracked = trackBox.checked && p === trackedParticle;
+        ctx.beginPath();
+        ctx.arc(curX, eqY, isTracked ? 5.5 : 2.6, 0, Math.PI * 2);
+
+        if (isTracked) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Draw equilibrium home marker
+          ctx.strokeStyle = 'rgba(245,158,11,0.5)';
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(eqX, eqY - 14);
+          ctx.lineTo(eqX, eqY + 14);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else {
+          ctx.fillStyle = 'rgba(125,211,252,0.72)';
+          ctx.fill();
+        }
+      });
+
+      // Pressure wave graph below
+      gctx.clearRect(0, 0, GW, GH);
+      gctx.fillStyle = '#040910';
+      gctx.fillRect(0, 0, GW, GH);
+
+      // Zero-pressure axis
+      gctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      gctx.beginPath();
+      gctx.moveTo(0, GH / 2);
+      gctx.lineTo(GW, GH / 2);
+      gctx.stroke();
+
+      // Plot gauge pressure wave (90 deg out of phase with displacement: d(disp)/dx)
+      gctx.beginPath();
+      gctx.strokeStyle = '#38bdf8';
+      gctx.lineWidth = 2;
+      for (let px = 0; px <= GW; px += 2) {
+        const xFrac = px / GW;
+        const pressure = Math.sin(k * xFrac - t * omega) * ampScale;
+        const py = GH / 2 - pressure * (GH / 2 - 8);
+        if (px === 0) gctx.moveTo(px, py); else gctx.lineTo(px, py);
+      }
+      gctx.stroke();
+
+      // Graph labels
+      gctx.font = '10px Inter, sans-serif';
+      gctx.fillStyle = 'rgba(255,255,255,0.5)';
+      gctx.fillText('+P (compression)', 8, 14);
+      gctx.fillText('-P (rarefaction)', 8, GH - 6);
+
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && !paused) {
+        t++;
+      }
+    }
+
+    // Controls
+    fSlider.addEventListener('input', (e) => {
+      freq = parseInt(e.target.value);
+      updateReadouts();
+      if (paused) draw();
+    });
+
+    aSlider.addEventListener('input', (e) => {
+      ampScale = parseInt(e.target.value) / 100;
+      updateReadouts();
+      if (paused) draw();
+    });
+
+    document.querySelectorAll('[data-medium]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-medium]').forEach((b) => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        const med = btn.dataset.medium;
+        waveSpeed = med === 'steel' ? 5960 : med === 'water' ? 1482 : 343;
+        updateReadouts();
+        if (paused) draw();
+      });
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶ Play' : '⏸ Pause';
+      pauseBtn.setAttribute('aria-pressed', String(paused));
+      if (!paused) draw();
+    });
+
+    trackBox.addEventListener('change', () => { if (paused) draw(); });
+
+    // Keyboard support on canvas
+    canvas.parentElement.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        pauseBtn.click();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        freq = Math.min(1000, freq + 20);
+        fSlider.value = freq;
+        updateReadouts();
+        if (paused) draw();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        freq = Math.max(100, freq - 20);
+        fSlider.value = freq;
+        updateReadouts();
+        if (paused) draw();
+      }
+    });
+
+    // Web Audio synthesizer
+    audioBtn.addEventListener('click', async () => {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioCtx();
+        oscNode = audioCtx.createOscillator();
+        gainNode = audioCtx.createGain();
+        oscNode.type = 'sine';
+        oscNode.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        oscNode.connect(gainNode).connect(audioCtx.destination);
+        oscNode.start();
+      }
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+      isPlayingAudio = !isPlayingAudio;
+      audioBtn.setAttribute('aria-pressed', String(isPlayingAudio));
+      if (isPlayingAudio) {
+        audioBtn.textContent = '🔇 Stop Tone';
+        audioBtn.classList.add('is-active');
+        gainNode.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.03);
+      } else {
+        audioBtn.textContent = '🔊 Hear Tone';
+        audioBtn.classList.remove('is-active');
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+      }
+    });
+
+    window.addEventListener('resize', draw);
+    updateReadouts();
+    SimKit.loop(draw);
+
+    window.svCheck = function(n, ans, tol) {
+      const val = parseFloat(document.getElementById('svans-' + n).value);
+      const fb = document.getElementById('svfb-' + n);
+      const hint = document.getElementById('svhint-' + n);
+      if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'sv-feedback err'; return; }
+      if (Math.abs(val - ans) <= tol) { fb.textContent = '✓ Correct!'; fb.className = 'sv-feedback ok'; }
+      else { fb.textContent = '✗ Try again.'; fb.className = 'sv-feedback err'; hint.style.display = 'block'; }
+    };
+
+    window.svCheckText = function(n, ans) {
+      const el = document.getElementById('svans-' + n);
+      const fb = document.getElementById('svfb-' + n);
+      const hint = document.getElementById('svhint-' + n);
+      if (el.value === ans) { fb.textContent = '✓ Correct!'; fb.className = 'sv-feedback ok'; }
+      else { fb.textContent = '✗ Try again.'; fb.className = 'sv-feedback err'; hint.style.display = 'block'; }
+    };
+  })();
+  </script>
+  <script src="../../../assets/js/video-embed.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

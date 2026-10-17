@@ -5,7 +5,7 @@ import fs from 'node:fs';import assert from 'node:assert/strict';
 const browser=await chromium.launch({executablePath:findChromium(),headless:true,args:['--no-sandbox']});try {
 const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.addInitScript(()=>{window.audioNotes=[];const orig=OscillatorNode.prototype.start;OscillatorNode.prototype.start=function(t){window.audioNotes.push({f:this.frequency.value,t});return orig.call(this,t);};});
-await page.goto((process.env.FAKE_BOOK_BASE_URL || 'http://127.0.0.1:8080') + '/lessons/music/fake-book.html');await page.waitForFunction(()=>window.FakeBook?.state().tune);
+await page.goto((process.env.FAKE_BOOK_BASE_URL || 'http://127.0.0.1:8080') + '/lessons/music/theory/fake-book.html');await page.waitForFunction(()=>window.FakeBook?.state().tune);
 const xml=fs.readFileSync('tests/fixtures/scores/meter-voices.musicxml','utf8');
 await page.evaluate(xml=>FakeBook.importText(xml),xml);await page.waitForFunction(()=>FakeBook.state().tune.raw.score);
 await page.evaluate(()=>{let t=document.querySelector('[data-fb-tempo]');t.value='240';t.dispatchEvent(new Event('input',{bubbles:true}));});

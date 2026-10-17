@@ -195,15 +195,29 @@
       var st = steps().filter(function (z) { return z <= 1 + 1e-6; }), pick = st[0];
       var room = options.fitRoom ? options.fitRoom() : (function (v) { return v.bottom - v.top - 40; })(viewport());
       var height = options.contentHeight || function () { var svg = surface.querySelector('svg'); return (svg || surface).getBoundingClientRect().height; };
-      for (var i = st.length - 1; i >= 0; i--) {
-        zoom.set(st[i]);
-        if (height() <= room) { pick = st[i]; break; }
+      if (zoom.measure) {
+        // Start near the answer using the live layout. Whole movements may be
+        // hundreds of bars long, so probing every zoom would needlessly engrave
+        // several enormous candidate SVGs.
+        var current = zoom.get(), liveHeight = height();
+        var estimate = liveHeight > 0 ? current * room / liveHeight : current;
+        var at = 0;
+        for (var j = 0; j < st.length; j++) if (st[j] <= estimate) at = j;
+        while (at > 0 && zoom.measure(st[at]) > room) at--;
+        while (at < st.length - 1 && zoom.measure(st[at + 1]) <= room) at++;
+        pick = st[at];
+      } else {
+        for (var i = st.length - 1; i >= 0; i--) {
+          zoom.set(st[i]);
+          if (height() <= room) { pick = st[i]; break; }
+        }
       }
       zoom.set(pick); cache = null;
       var v = viewport(), r = surface.getBoundingClientRect();
       if (isPage(scroller) || scroller !== surface) scrollBy(r.top - v.top - 8, 0, true); else scroller.scrollTop = 0;
       paint(); queueView();
-      announce('Zoom ' + Math.round(pick * 100) + '%: ' + (pick === st[0] && height() > room ? 'as small as it goes.' : 'the whole score fits.'));
+      var finalHeight = zoom.measure ? zoom.measure(pick) : height();
+      announce('Zoom ' + Math.round(pick * 100) + '%: ' + (pick === st[0] && finalHeight > room ? 'as small as it goes.' : 'the whole score fits.'));
     }
 
     // ---- follow playback

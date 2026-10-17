@@ -7,10 +7,10 @@ import assert from 'node:assert/strict';
 
 const BASE = 'http://localhost:8080/lessons/music/';
 const PAGES = [
-  { name: 'bach', measure: '.se-measure', play: '.se-play' },
-  { name: 'gershwin', measure: '.se-measure', play: '.se-play' },
-  { name: 'mozart', measure: '.se-measure', play: '.se-play' },
-  { name: 'fake-book', hash: '#tune=ode-to-joy', measure: '.fb-bar', play: '[data-fb-play]', fake: true }
+  { name: 'pioneers/bach', measure: '.se-measure', play: '.se-play' },
+  { name: 'pioneers/gershwin', measure: '.se-measure', play: '.se-play' },
+  { name: 'pioneers/mozart', measure: '.se-measure', play: '.se-play' },
+  { name: 'theory/fake-book', hash: '#tune=ode-to-joy', measure: '.fb-bar', play: '[data-fb-play]', fake: true }
 ];
 
 const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
@@ -21,11 +21,16 @@ try {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     for (const p of PAGES) {
+      // Mozart's complete 137-bar movement creates a much larger SVG than the
+      // shorter regression fixtures, especially at phone width.
+      page.setDefaultTimeout(p.name.includes('mozart') ? 20000 : 8000);
       await page.goto(BASE + p.name + '.html' + (p.hash || ''), { waitUntil: 'domcontentloaded' });
       let scope = page.locator('#fakebook');
       if (!p.fake) {         // the first score long enough to step around in, with its work panel open
         await page.evaluate(() => document.querySelectorAll('details:has(figure[data-score])').forEach((d) => { d.open = true; }));
-        await page.waitForFunction(() => [...document.querySelectorAll('figure[data-score]')].every((f) => f.querySelector('.se-score, .se-error')));
+        const firstCover = page.locator('.composer-cover').first();
+        if (await firstCover.count()) await firstCover.click();
+        await page.waitForFunction(() => [...document.querySelectorAll('figure[data-score]')].some((f) => f.querySelectorAll('.se-measure').length >= 7));
         const pick = await page.$$eval('figure[data-score]', (fs) => {
           const i = fs.findIndex((f) => f.querySelectorAll('.se-measure').length >= 7);
           const panel = i >= 0 && fs[i].closest('.composer-work-panel');
@@ -69,7 +74,7 @@ try {
       await page.keyboard.press('0');
       assert.equal(await out.textContent(), '100%', p.name + ': 0 resets zoom');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth <= 1), p.name + ': no sideways scroll');
-      await page.screenshot({ path: '/tmp/score-nav-' + p.name + '-' + size.width + '.png' });
+      await page.screenshot({ path: '/tmp/score-nav-' + p.name.split('/').pop() + '-' + size.width + '.png' });
 
       // Play from measure 1: the map shows the measure playing.
       await nav.locator('.sn-map').focus(); await page.keyboard.press('Home');

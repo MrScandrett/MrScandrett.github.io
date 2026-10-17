@@ -139,14 +139,14 @@
     var previews = el('div', 'px-previews');
     right.appendChild(el('h3', null, 'Check it at real size'));
     var p1 = preview(previews, 1, '1× (in game)'), p2 = preview(previews, 2, '2×'), p4 = preview(previews, 4, '4×');
-    var sil = preview(previews, 4, 'silhouette'), dark = preview(previews, 4, 'dark level', '#1a1c2c');
+    var sil = preview(previews, 4, 'silhouette'), sky = preview(previews, 4, 'sky level', '#d8f3f9'), dark = preview(previews, 4, 'dark level', '#1a1c2c');
     right.appendChild(previews);
     right.appendChild(el('p', 'px-note', 'Readability test: the silhouette alone should still say “courier with a cap, facing right.” The 1× view is what players actually see.'));
     var prop = PP.toggle(right, 'Copy my top 12 rows into every animation frame (legs stay animated)', true, function (v) { propagate = v; });
     prop.checked = propagate;
     var row = el('div', 'px-btn-row'); right.appendChild(row);
     var savedNote = el('p', 'px-note'); savedNote.setAttribute('aria-live', 'polite'); right.appendChild(savedNote);
-    function update(frame) { p1(frame); p2(frame); p4(frame); sil(PC.silhouette(frame)); dark(frame); }
+    function update(frame) { p1(frame); p2(frame); p4(frame); sil(PC.silhouette(frame)); sky(frame); dark(frame); }
     var editor = PixelEditor(left, {
       value: art.sprites.courier.anims.idle.frames[0], label: 'Courier base pose editor',
       onChange: function (frame, final) {
@@ -414,6 +414,14 @@
         ctx.fillStyle = '#fff'; ctx.font = 'bold 11px monospace'; ctx.fillText(String(m), px + 10, py + 21);
       }
       ctx.strokeStyle = '#e4572e'; ctx.lineWidth = 3; ctx.strokeRect(focus.x * 32 + 1.5, focus.y * 32 + 1.5, 29, 29);
+      if (filled(focus.x, focus.y)) {
+        var fx = focus.x * 32, fy = focus.y * 32;
+        ctx.strokeStyle = '#e4572e'; ctx.lineWidth = 2;
+        if (filled(focus.x, focus.y - 1)) { ctx.beginPath(); ctx.moveTo(fx + 16, fy); ctx.lineTo(fx + 16, fy - 6); ctx.stroke(); }
+        if (filled(focus.x + 1, focus.y)) { ctx.beginPath(); ctx.moveTo(fx + 32, fy + 16); ctx.lineTo(fx + 38, fy + 16); ctx.stroke(); }
+        if (filled(focus.x, focus.y + 1)) { ctx.beginPath(); ctx.moveTo(fx + 16, fy + 32); ctx.lineTo(fx + 16, fy + 38); ctx.stroke(); }
+        if (filled(focus.x - 1, focus.y)) { ctx.beginPath(); ctx.moveTo(fx, fy + 16); ctx.lineTo(fx - 6, fy + 16); ctx.stroke(); }
+      }
       var m = mask(focus.x, focus.y);
       out.textContent = filled(focus.x, focus.y)
         ? 'Selected tile: up ' + (m & 1 ? 1 : 0) + '×1 + right ' + (m & 2 ? 1 : 0) + '×2 + down ' + (m & 4 ? 1 : 0) + '×4 + left ' + (m & 8 ? 1 : 0) + '×8 = ' + m + '\n→ draw variant #' + m + ' of 16 (grass on top only when “up” is empty)'
@@ -462,13 +470,21 @@
     function frame(now) {
       raf = null; var elapsed = Math.min(DURATION, (now - start) / 1000);
       var ctx = c.getContext('2d'); ctx.clearRect(0, 0, 480, 200); ctx.fillStyle = '#fffdf7'; ctx.fillRect(0, 0, 480, 200);
+      ctx.strokeStyle = 'rgba(26,28,44,.08)'; ctx.lineWidth = 1;
+      for (var hy = 30; hy < 180; hy += 30) {
+        ctx.beginPath(); ctx.moveTo(0, hy + 0.5); ctx.lineTo(480, hy + 0.5); ctx.stroke();
+        var hVal = Math.round((176 - hy) / 0.5);
+        ctx.fillStyle = 'rgba(76,84,112,.5)'; ctx.font = '7.5px monospace'; ctx.fillText(hVal + 'px', 3, hy - 2);
+      }
       ctx.fillStyle = '#38b764'; ctx.fillRect(0, 180, 480, 20);
+      ctx.fillStyle = '#2f8f57'; ctx.fillRect(0, 180, 480, 2);
       lanes.forEach(function (l, i) {
         var x0 = 30 + i * 155; ctx.fillStyle = l.color; ctx.font = 'bold 10px monospace'; ctx.fillText(l.name, x0 - 20, 14);
         var shown = results[i].pts.filter(function (p) { return p.t <= elapsed; });
         shown.forEach(function (p) { ctx.fillRect(x0 + p.t * 120, 176 + p.y * 0.5, 3, 3); });
         var last = shown[shown.length - 1]; if (last) { ctx.fillRect(x0 + last.t * 120 - 4, 170 + last.y * 0.5, 10, 10); }
         ctx.strokeStyle = l.color; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(x0 - 20, 176 - results[i].apex * 0.5); ctx.lineTo(x0 + 120, 176 - results[i].apex * 0.5); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = l.color; ctx.font = 'bold 8px monospace'; ctx.fillText('▲ ' + results[i].apex.toFixed(0) + 'px', x0 + 72, 172 - results[i].apex * 0.5);
       });
       c.setAttribute('aria-label', 'Three jump arcs simulated at ' + fps + ' frames per second. ' + out.textContent.replace(/\n/g, '. '));
       if (elapsed < DURATION) raf = requestAnimationFrame(frame);

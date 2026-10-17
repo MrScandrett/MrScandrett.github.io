@@ -1,6 +1,6 @@
 # 3D Design workshops
 
-The curriculum home is `lessons/3d-design.html`. Existing lesson URLs are retained so saved links keep working. Lessons lead with a software-neutral workshop; the older app walkthrough and production workflow sit in an expandable reference section.
+The curriculum home is `lessons/3d-design/3d-design.html`. Every 3D lesson lives under `lessons/3d-design/`: `cad-and-printing/` (CAD → Forge → print), `blender/` and `game-asset-studio/`. Links from before the move are forwarded by `404.html` (see `assets/js/lesson-moves.js`). Lessons lead with a software-neutral workshop; the older app walkthrough and production workflow sit in an expandable reference section.
 
 ## Shared components
 

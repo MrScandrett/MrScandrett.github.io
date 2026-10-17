@@ -180,7 +180,7 @@ test('store: survives unavailable storage', () => {
 });
 
 test('QR: version, structure and capacity for a real groove link', () => {
-  const url = 'https://mrscandrett.github.io/lessons/music/drums.html' + G.hashFor({ tracks: funk, tempo: 92 });
+  const url = 'https://mrscandrett.github.io/lessons/music/instruments/drums.html' + G.hashFor({ tracks: funk, tempo: 92 });
   const qr = QR.encode(url, 'M');
   assert.ok(qr.version <= 8, 'a groove link stays a small, scannable code (got v' + qr.version + ')');
   assert.equal(qr.size, qr.version * 4 + 17);

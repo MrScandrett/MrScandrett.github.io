@@ -232,7 +232,7 @@ const spiral = {
   name: 'Spiral cone fidget',
   group: 'Fidgets',
   blurb: 'Two prints: a twisted-star cone and the sleeve it screws through. Push the tip and it spins down and drops out the bottom.',
-  lesson: { href: 'lessons/applied-physics-materials/print-fidgets.html', label: 'Print-in-place fidgets' },
+  lesson: { href: 'lessons/3d-design/cad-and-printing/print-fidgets.html', label: 'Print-in-place fidgets' },
   params: [
     { id: 'radius', label: 'Base radius', type: 'range', min: 25, max: 50, step: 0.5, default: 41, unit: 'mm' },
     { id: 'height', label: 'Sleeve height', type: 'range', min: 40, max: 100, step: 1, default: 82, unit: 'mm' },
@@ -538,7 +538,7 @@ const comb = {
   name: 'Clearance comb',
   group: 'Calibration',
   blurb: 'Six slots from tight to loose. Print it once per printer to find your class clearance — every lid and peg here uses it.',
-  lesson: { href: 'lessons/applied-physics-materials/print-fidgets.html', label: 'Print-in-place fidgets' },
+  lesson: { href: 'lessons/3d-design/cad-and-printing/print-fidgets.html', label: 'Print-in-place fidgets' },
   params: [
     { id: 'set', label: 'Slot widths', type: 'select', default: 'lesson', options: [
       { value: 'lesson', label: '0.15 – 0.5 mm (lesson)' }, { value: 'fine', label: '0.10 – 0.35 mm (tuned printer)' }, { value: 'wide', label: '0.3 – 0.8 mm (worn nozzle)' },

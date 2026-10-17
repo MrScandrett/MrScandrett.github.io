@@ -10,7 +10,7 @@
   var host = document.getElementById('drSheet'), printRoot = document.getElementById('drSheetPrint');
   if (!host || !printRoot || !window.DrumLab) return;
   var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  var LAB_PATH = 'lessons/music/drums.html';
+  var LAB_PATH = 'lessons/music/instruments/drums.html';
   var DEFAULT_SITE = 'https://mrscandrett.github.io';
 
   function safeStorage() {
