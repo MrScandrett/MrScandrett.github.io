@@ -826,6 +826,81 @@ html[data-lighting="night"] .hcal-chip {
   }
 }
 
+/* iPhone portrait (320-430pt wide): the site's wide display font made the header, key and
+   agenda rows wrap into ~2 screens. Tighten type, put the key on one swipeable line, and let
+   the controls share a single row so the week is visible without scrolling past chrome. */
+@media (max-width: 560px) and (min-height: 501px) {
+  #home-calendar.home-widget {
+    padding: 0.8rem max(0.65rem, env(safe-area-inset-left)) 0.8rem max(0.65rem, env(safe-area-inset-right));
+  }
+  #home-calendar .home-widget-eyebrow { font-size: 0.6rem; letter-spacing: 0.08em; margin-bottom: 0.15rem; }
+  #home-calendar .home-widget-title { font-size: 1.3rem; line-height: 1.1; margin: 0; }
+  .hcal-head { gap: 0.4rem; }
+  .hcal-month { font-size: 0.82rem; margin-bottom: 0.1rem; }
+
+  /* controls: [Week|Month]  ‹  ›  Today  on one line, hit areas stay 44pt via ::after */
+  .hcal-nav { flex-wrap: wrap; gap: 0.25rem; }
+  .hcal-month { flex: 1 0 100%; }
+  .hcal-seg { margin-right: auto; flex: none; min-width: 0; }
+  .hcal-seg-btn { font-size: 0.6rem; padding: 0.26rem 0.5rem; letter-spacing: 0.02em; }
+  .hcal-btn { min-width: 1.9rem; height: 1.9rem; }
+  .hcal-btn--text { font-size: 0.6rem; padding: 0 0.45rem; letter-spacing: 0.02em; margin-left: 0; }
+
+  /* key: one swipeable line instead of four wrapped rows */
+  .hcal-legend {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.4rem 0.6rem;
+    padding: 0.1rem 1.25rem 0.3rem 0;
+    margin-right: calc(-1 * max(0.65rem, env(safe-area-inset-right)));
+    font-size: 0.64rem;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 1.5rem), transparent);
+  }
+  .hcal-legend::-webkit-scrollbar { display: none; }
+  .hcal-key, .hcal-filter { flex: none; white-space: nowrap; gap: 0.3rem; }
+  .hcal-key i { width: 0.6rem; height: 0.6rem; }
+  .hcal-filter { font-size: 0.62rem; padding: 0.18rem 0.55rem 0.18rem 0.45rem; }
+
+  /* agenda rows */
+  [data-mode="week"] .hcal-row { gap: 5px; }
+  [data-mode="week"] .hcal-day {
+    grid-template-columns: 2.6rem minmax(0, 1fr);
+    column-gap: 0.6rem;
+    min-height: 3rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: 11px;
+  }
+  [data-mode="week"] .hcal-dow { font-size: 0.58rem; letter-spacing: 0.06em; }
+  [data-mode="week"] .hcal-num { font-size: 1.05rem; }
+  [data-mode="week"] .hcal-class { font-size: 0.58rem; padding: 0.12rem 0.38rem; letter-spacing: 0.04em; }
+  [data-mode="week"] .hcal-chip { font-size: 0.7rem; padding: 0.15rem 0.38rem; line-height: 1.25; }
+  [data-mode="week"] .hcal-day.is-empty { min-height: 2.25rem; padding-block: 0.15rem; }
+  [data-mode="week"] .hcal-day.is-today:not(.is-empty) { box-shadow: 0 0 0 1.5px var(--hcal-ink); }
+  [data-mode="week"] .hcal-day.is-today .hcal-num { min-width: 0; height: auto; padding: 0; background: none; color: inherit; box-shadow: none; }
+
+  /* month grid: whole month fits the width with no clipped labels */
+  .hcal-weekdays, .hcal-row, .hcal-grid { gap: 3px; }
+  .hcal-weekdays span { font-size: 0.56rem; letter-spacing: 0.03em; }
+  [data-mode="month"] .hcal-day { min-height: 3.1rem; padding: 0.22rem 0.2rem; border-radius: 8px; }
+  [data-mode="month"] .hcal-class { font-size: 0; padding: 0; height: 0.3rem; border-radius: 3px; margin-top: 0; }
+  [data-mode="month"] .hcal-dots { gap: 3px; }
+  [data-mode="month"] .hcal-dot { width: 0.4rem; height: 0.4rem; }
+  .hcal-side > section { padding: 0.8rem 0.85rem; border-radius: 14px; }
+}
+
+/* Smallest iPhones (SE / mini, <=375pt) */
+@media (max-width: 375px) and (min-height: 501px) {
+  #home-calendar .home-widget-title { font-size: 1.15rem; }
+  .hcal-seg-btn { padding: 0.26rem 0.4rem; }
+  .hcal-btn { min-width: 1.7rem; height: 1.8rem; padding: 0 0.3rem; }
+  .hcal-btn--text { padding: 0 0.35rem; }
+  [data-mode="week"] .hcal-day { grid-template-columns: 2.3rem minmax(0, 1fr); column-gap: 0.5rem; }
+}
+
 /* Phones held sideways */
 @media (orientation: landscape) and (max-height: 500px) {
   #home-calendar.home-widget { padding: 0.6rem max(0.75rem, env(safe-area-inset-right)) 0.6rem max(0.75rem, env(safe-area-inset-left)); }
