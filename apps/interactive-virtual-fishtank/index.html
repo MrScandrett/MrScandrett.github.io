@@ -122,6 +122,18 @@
             if (event.target === tank) fishArray.forEach((fish) => fish.scare());
         });
 
+        // Shrink the whole tank to fit small screens (the fish still swim in 800x450 inside)
+        const tankWrapper = document.querySelector('.tank-wrapper');
+        function fitTank() {
+            tankWrapper.style.zoom = '';
+            const scale = Math.min(1,
+                (window.innerWidth - 16) / tankWrapper.offsetWidth,
+                (window.innerHeight - 16) / tankWrapper.offsetHeight);
+            if (scale < 1) tankWrapper.style.zoom = scale;
+        }
+        window.addEventListener('resize', fitTank);
+        fitTank();
+
         for (let index = 0; index < 7; index += 1) addFish();
         window.setInterval(createBubble, 550);
 

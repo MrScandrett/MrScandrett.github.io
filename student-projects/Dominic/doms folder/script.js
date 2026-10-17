@@ -44,6 +44,96 @@ const mechaImg = new Image();
 mechaImg.src = "assets/sprites/mecha.png";
 
 // =========================
+// STAND-IN SPRITES
+// If a sprite file is missing, draw a stand-in so the kaiju you unlocked
+// isn't invisible. Add the real PNG to assets/sprites/ and it's used instead.
+// =========================
+const standInSprites = new Map(); // image -> canvas
+
+function spriteFor(img) {
+    if (img.complete && img.naturalWidth > 0) return img;
+    return standInSprites.get(img) || img;
+}
+
+function makeStandIn(img, paint) {
+    img.addEventListener("error", () => {
+        const c = document.createElement("canvas");
+        c.width = c.height = 128;
+        paint(c.getContext("2d"));
+        standInSprites.set(img, c);
+    });
+}
+
+// All stand-ins face left, like godzilla.png
+makeStandIn(kongImg, (g) => {
+    g.fillStyle = "#5a3b22";
+    g.beginPath(); g.ellipse(70, 70, 34, 38, 0, 0, Math.PI * 2); g.fill();      // body
+    g.fillRect(30, 50, 16, 62); g.fillRect(92, 50, 16, 62);                      // arms
+    g.fillRect(50, 98, 16, 26); g.fillRect(76, 98, 16, 26);                      // legs
+    g.beginPath(); g.arc(46, 34, 22, 0, Math.PI * 2); g.fill();                  // head
+    g.fillStyle = "#b08a64";
+    g.beginPath(); g.ellipse(40, 42, 13, 10, 0, 0, Math.PI * 2); g.fill();       // face
+    g.beginPath(); g.ellipse(70, 74, 18, 22, 0, 0, Math.PI * 2); g.fill();       // chest
+    g.fillStyle = "#111";
+    g.fillRect(33, 30, 5, 4); g.fillRect(44, 30, 5, 4);                          // eyes
+});
+
+makeStandIn(mothraImg, (g) => {
+    const wing = (sx) => {
+        g.save(); g.translate(64, 60); g.scale(sx, 1);
+        g.fillStyle = "#f0a020";
+        g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(70, -60, 60, 10); g.quadraticCurveTo(40, 30, 0, 10); g.fill();
+        g.fillStyle = "#c0501a";
+        g.beginPath(); g.moveTo(0, 10); g.quadraticCurveTo(50, 30, 34, 56); g.quadraticCurveTo(14, 50, 0, 20); g.fill();
+        g.fillStyle = "#2a6fd0";
+        g.beginPath(); g.arc(36, -10, 9, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "#fff3c4";
+        g.beginPath(); g.arc(36, -10, 4, 0, Math.PI * 2); g.fill();
+        g.restore();
+    };
+    wing(1); wing(-1);
+    g.fillStyle = "#6b4a2a";
+    g.beginPath(); g.ellipse(64, 70, 8, 30, 0, 0, Math.PI * 2); g.fill();       // body
+    g.beginPath(); g.arc(64, 38, 9, 0, Math.PI * 2); g.fill();                   // head
+    g.strokeStyle = "#6b4a2a"; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(60, 32); g.lineTo(50, 14); g.moveTo(68, 32); g.lineTo(78, 14); g.stroke();
+});
+
+makeStandIn(rodanImg, (g) => {
+    g.fillStyle = "#8a2f1c";
+    g.beginPath(); g.moveTo(64, 60); g.lineTo(4, 30); g.lineTo(24, 78); g.closePath(); g.fill();   // near wing
+    g.beginPath(); g.moveTo(64, 60); g.lineTo(124, 30); g.lineTo(104, 78); g.closePath(); g.fill(); // far wing
+    g.fillStyle = "#b5462a";
+    g.beginPath(); g.ellipse(66, 70, 14, 26, 0, 0, Math.PI * 2); g.fill();      // body
+    g.beginPath(); g.moveTo(44, 40); g.lineTo(14, 50); g.lineTo(46, 54); g.closePath(); g.fill();   // beak
+    g.beginPath(); g.arc(52, 46, 11, 0, Math.PI * 2); g.fill();                  // head
+    g.beginPath(); g.moveTo(56, 38); g.lineTo(80, 22); g.lineTo(62, 44); g.closePath(); g.fill();   // crest
+    g.fillStyle = "#ffd23a";
+    g.fillRect(46, 42, 4, 4);                                                     // eye
+    g.fillStyle = "#e8c07a";
+    g.fillRect(58, 94, 5, 16); g.fillRect(70, 94, 5, 16);                        // claws
+});
+
+// Mecha Godzilla: the godzilla.png art painted chrome blue
+makeStandIn(mechaImg, (g) => {
+    const paint = () => {
+        g.clearRect(0, 0, 128, 128);
+        g.drawImage(godzillaImg, 0, 0, 128, 128);
+        g.globalCompositeOperation = "source-atop";
+        const steel = g.createLinearGradient(0, 0, 128, 128);
+        steel.addColorStop(0, "rgba(190, 215, 240, 0.75)");
+        steel.addColorStop(1, "rgba(60, 90, 140, 0.75)");
+        g.fillStyle = steel;
+        g.fillRect(0, 0, 128, 128);
+        g.globalCompositeOperation = "source-over";
+        g.fillStyle = "#ff3030";
+        g.fillRect(8, 10, 5, 3);                                                  // glowing eye
+    };
+    if (godzillaImg.complete && godzillaImg.naturalWidth) paint();
+    else godzillaImg.addEventListener("load", paint);
+});
+
+// =========================
 // ENTITY
 // =========================
 class Entity {
@@ -88,7 +178,7 @@ class Entity {
         }
 
         ctx.scale(this.facing, 1);
-        ctx.drawImage(this.img, -this.size / 2, 0, this.size, this.size);
+        ctx.drawImage(spriteFor(this.img), -this.size / 2, 0, this.size, this.size);
         ctx.restore();
 
         // Improved Health Bar

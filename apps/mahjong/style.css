@@ -63,6 +63,8 @@ h1 {
     ".    you    .";
   gap: 10px;
   padding: 14px;
+  /* leave room for the HUD bar that floats over the top of the table */
+  padding-top: 62px;
   min-height: 620px;
   background:
     radial-gradient(ellipse at 50% 40%, rgba(45, 110, 90, 0.22), transparent 65%),
@@ -557,6 +559,14 @@ button.tile {
   z-index: 10;
 }
 
+/* display:flex above would otherwise override the hidden attribute */
+.hud[hidden],
+.boot-overlay[hidden],
+.tutorial-overlay[hidden],
+.win-overlay[hidden] {
+  display: none;
+}
+
 .boot-card,
 .win-card {
   max-width: 460px;
@@ -750,19 +760,21 @@ button:disabled {
 
   .table {
     grid-template-columns: 0.7fr 2fr 0.7fr;
+    /* across-seat and your hand get the full width on a phone */
+    grid-template-areas:
+      "top  top    top"
+      "left center right"
+      "you  you    you";
     min-height: 560px;
     padding: 8px;
+    padding-top: 100px;
     gap: 6px;
   }
 
-  .hud-top {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .hud-buttons {
-    margin-left: 0;
-    justify-content: center;
+  /* turn + buttons on one line, the hint on its own line underneath */
+  .hint {
+    order: 3;
+    flex: 1 1 100%;
   }
 
   .seat-discards, .you-discards {

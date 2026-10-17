@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Dino Jump - High Score Edition</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a1a;font-family:'Courier New',Courier,monospace;overflow:hidden}canvas{background:#fff;border:4px solid #333;box-shadow:0 10px 30px rgba(0,0,0,.5);border-radius:8px}#ui{position:absolute;top:30px;color:#fff;text-align:center;pointer-events:none;width:100%}.score-box{display:inline-block;margin:0 20px}.label{font-size:14px;opacity:.8;text-transform:uppercase}.value{font-size:32px;font-weight:700;display:block}</style></head><body><div id="ui"><div class="score-box"><span class="label">Score</span> <span id="score" class="value">0</span></div><div class="score-box"><span class="label">Best</span> <span id="best" class="value">0</span></div></div><canvas id="gameCanvas"></canvas><script>const canvas = document.getElementById('gameCanvas');
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dino Jump - High Score Edition</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#1a1a1a;font-family:'Courier New',Courier,monospace;overflow:hidden}canvas{background:#fff;border:4px solid #333;box-shadow:0 10px 30px rgba(0,0,0,.5);border-radius:8px;width:min(800px,calc(100vw - 24px));height:auto;touch-action:manipulation;cursor:pointer}#ui{position:absolute;top:30px;color:#fff;text-align:center;pointer-events:none;width:100%}.score-box{display:inline-block;margin:0 20px}.label{font-size:14px;opacity:.8;text-transform:uppercase}.value{font-size:32px;font-weight:700;display:block}</style></head><body><div id="ui"><div class="score-box"><span class="label">Score</span> <span id="score" class="value">0</span></div><div class="score-box"><span class="label">Best</span> <span id="best" class="value">0</span></div></div><canvas id="gameCanvas"></canvas><script>const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const scoreVal = document.getElementById('score');
     const bestVal = document.getElementById('best');
@@ -8,10 +8,13 @@
     
     let score = 0;
     // Load high score from localStorage, or set to 0 if it doesn't exist yet
-    let highScore = localStorage.getItem('dinoHighScore') || 0;
+    let highScore = Number(localStorage.getItem('dinoHighScore')) || 0;
     bestVal.innerText = highScore;
 
-    let gameActive = true;
+    // "ready" = title screen, "playing", or "crashed"
+    let gameState = "ready";
+    let gameActive = false;
+    let groundOffset = 0;
 
     const player = {
         x: 50, y: 180, w: 40, h: 40, dy: 0,
@@ -49,15 +52,18 @@
             spawnTimer = 0;
         }
 
-        obstacles.forEach((obs, index) => {
+        // Loop backwards so removing an obstacle doesn't skip the next one
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
             obs.x -= obs.speed;
             if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
                 player.y < obs.y + obs.h && player.y + player.h > obs.y) {
                 gameOver();
             }
-            if (obs.x + obs.w < 0) obstacles.splice(index, 1);
-        });
+            if (obs.x + obs.w < 0) obstacles.splice(i, 1);
+        }
 
+        groundOffset = (groundOffset + 6 + score / 1000) % 40;
         score++;
         scoreVal.innerText = Math.floor(score / 10);
     }
@@ -73,33 +79,72 @@
         ctx.lineTo(canvas.width, canvas.height - 30);
         ctx.stroke();
 
-        // Player (Blue)
-        ctx.fillStyle = "#00a8ff";
-        ctx.fillRect(player.x, player.y, player.w, player.h);
+        // Ground dashes scroll by so you can feel the speed
+        ctx.fillStyle = "#999";
+        for (let x = -groundOffset; x < canvas.width; x += 40) {
+            ctx.fillRect(x, canvas.height - 22, 14, 2);
+        }
+
+        drawDino();
 
         // Obstacles (Red)
         ctx.fillStyle = "#ff4757";
         obstacles.forEach(obs => ctx.fillRect(obs.x, obs.y, obs.w, obs.h));
 
-        if (!gameActive) {
-            ctx.fillStyle = "rgba(0,0,0,0.7)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "white";
-            ctx.font = "bold 24px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("CRASHED!", canvas.width/2, canvas.height/2 - 10);
-            ctx.font = "18px Arial";
-            ctx.fillText("Press SPACE to try again", canvas.width/2, canvas.height/2 + 30);
+        if (gameState === "ready") {
+            drawMessage("DINO JUMP", "Press SPACE or tap to start");
+        } else if (gameState === "crashed") {
+            drawMessage("CRASHED!", "Press SPACE or tap to try again");
         }
+    }
 
-        requestAnimationFrame(() => {
+    // Player (Blue): a little dino that fits inside the same 40x40 hit box
+    function drawDino() {
+        const { x, y } = player;
+        ctx.fillStyle = "#00a8ff";
+        ctx.fillRect(x + 4, y + 12, 26, 18);         // body
+        ctx.fillRect(x + 20, y, 20, 14);             // head
+        ctx.fillRect(x - 4, y + 14, 10, 6);          // tail
+        const step = player.grounded && gameState === "playing" ? Math.floor(score / 6) % 2 : 0;
+        ctx.fillRect(x + 8, y + 30, 7, step ? 6 : 10);   // back leg
+        ctx.fillRect(x + 20, y + 30, 7, step ? 10 : 6);  // front leg
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(x + 31, y + 3, 5, 5);           // eye
+        ctx.fillStyle = "#1a1a1a";
+        ctx.fillRect(x + 33, y + 4, 3, 3);
+    }
+
+    function drawMessage(title, hint) {
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 24px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(title, canvas.width/2, canvas.height/2 - 10);
+        ctx.font = "18px Arial";
+        ctx.fillText(hint, canvas.width/2, canvas.height/2 + 30);
+    }
+
+    // Run the game at a steady 60 steps per second, so it plays the same
+    // speed on every screen (some monitors refresh 120 or 144 times a second).
+    const STEP = 1000 / 60;
+    let lastTime = performance.now();
+    let leftover = 0;
+
+    function frame(now) {
+        leftover += Math.min(now - lastTime, 250);
+        lastTime = now;
+        while (leftover >= STEP) {
             update();
-            draw();
-        });
+            leftover -= STEP;
+        }
+        draw();
+        requestAnimationFrame(frame);
     }
 
     function gameOver() {
         gameActive = false;
+        gameState = "crashed";
         let finalScore = Math.floor(score / 10);
         
         // Check if we beat the high score
@@ -115,18 +160,30 @@
         score = 0;
         obstacles.length = 0;
         gameActive = true;
+        gameState = "playing";
         player.y = 180;
+        player.dy = 0;
         spawnTimer = 0;
     }
 
+    // One button does everything: start, jump, or try again
+    function press() {
+        if (!gameActive) reset();
+        else if (player.grounded) {
+            player.dy = -player.jumpForce;
+            player.grounded = false;
+        }
+    }
+
     window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            if (!gameActive) reset();
-            else if (player.grounded) {
-                player.dy = -player.jumpForce;
-                player.grounded = false;
-            }
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+            e.preventDefault();
+            if (!e.repeat) press();
         }
     });
+    document.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        press();
+    });
 
-    draw();</script></body></html>
+    requestAnimationFrame(frame);</script></body></html>

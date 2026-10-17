@@ -3,19 +3,583 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex" />
-  <title>Falling &amp; Gravity · Mr. Scandrett's ClassroomOS</title>
+  <title>Falling &amp; Gravity: Free Fall, Vacuum &amp; Terminal Velocity · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson — explore Falling & Gravity." />
+  <meta name="description" content="Physics Lesson — Falling & Gravity: explore Galileo's thought experiment, the equivalence principle, 1D free-fall kinematics, and fluid drag with an interactive dual-drop simulator and Apollo 15 lunar video." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-<script src="../../../assets/js/vr-mode.js" defer></script>
+  <script src="../../../assets/js/vr-mode.js" defer></script>
+  <style>
+    /* ── Page Layout & Typography ───────────────────────── */
+    .fg-page { padding-bottom: 3.5rem; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .fg-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .fg-hero h1 { max-width: 32ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .fg-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .fg-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .fg-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .fg-lede,
+    [data-theme="vaporwave"] .fg-lede,
+    [data-theme="bark"] .fg-lede { color: rgba(245,245,247,0.72); }
+
+    /* ── Section card ─────────────────────────────────── */
+    .fg-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #0071e3);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    :where(html[data-lighting="night"]) .fg-card {
+      background: var(--white, #1c1c1e);
+      border-color: rgba(255,255,255,0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :where(html:not([data-lighting])) .fg-card {
+        background: var(--white, #1c1c1e);
+        border-color: rgba(255,255,255,0.12);
+      }
+    }
+    .fg-card h2 { margin: 0 0 0.55rem; font-size: 1.25rem; letter-spacing: -0.02em; }
+    .fg-card h3 { margin: 0.9rem 0 0.35rem; font-size: 1.05rem; letter-spacing: -0.01em; }
+    .fg-card p  { margin: 0 0 0.65rem; color: var(--text-secondary, #3f4f65); font-size: 0.9rem; line-height: 1.65; }
+    [data-lighting="night"] .fg-card p,
+    [data-theme="vaporwave"] .fg-card p,
+    [data-theme="bark"] .fg-card p { color: rgba(245,245,247,0.74); }
+    .fg-card p:last-child { margin-bottom: 0; }
+
+    /* ── Big Idea Callout ─────────────────────────────── */
+    .fg-big-idea {
+      background: linear-gradient(135deg, rgba(0,113,227,0.08), rgba(88,86,214,0.06));
+      border: 1px solid rgba(0,113,227,0.22);
+      border-radius: 14px;
+      padding: 1rem 1.2rem;
+      margin: 0.9rem 0;
+      font-size: 0.94rem;
+      line-height: 1.6;
+      color: var(--text-primary, #1d1d1f);
+    }
+    [data-lighting="night"] .fg-big-idea,
+    [data-theme="vaporwave"] .fg-big-idea,
+    [data-theme="bark"] .fg-big-idea { color: #f5f5f7; }
+
+    /* ── Formula Box ──────────────────────────────────── */
+    .fg-formula-box {
+      background: linear-gradient(135deg, rgba(0,113,227,0.06), rgba(0,113,227,0.02));
+      border: 1px solid rgba(0,113,227,0.25);
+      border-radius: 14px;
+      padding: 1.1rem 1.3rem;
+      margin: 0.9rem 0;
+      text-align: center;
+    }
+    .fg-formula-sym {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1.2rem, 3.2vw, 1.8rem);
+      font-weight: 800;
+      color: var(--card-accent, #0071e3);
+      display: block;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .fg-formula-vars {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1.2rem;
+      justify-content: center;
+      font-size: 0.82rem;
+      color: var(--text-secondary, #3f4f65);
+    }
+    [data-lighting="night"] .fg-formula-vars,
+    [data-theme="vaporwave"] .fg-formula-vars,
+    [data-theme="bark"] .fg-formula-vars { color: rgba(245,245,247,0.72); }
+
+    /* ── Callout badges ───────────────────────────────── */
+    .fg-callout {
+      border-radius: 12px;
+      padding: 0.85rem 1.05rem;
+      margin: 0.85rem 0;
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .fg-callout.blue   { background: rgba(0,113,227,0.09); border-left: 3.5px solid #0071e3; }
+    .fg-callout.purple { background: rgba(88,86,214,0.09); border-left: 3.5px solid #5856d6; }
+    .fg-callout.orange { background: rgba(255,149,0,0.10); border-left: 3.5px solid #ff9500; }
+    .fg-callout.green  { background: rgba(52,199,89,0.10); border-left: 3.5px solid #34c759; }
+
+    /* ── Laboratory Simulator Shell ───────────────────── */
+    .fg-lab-shell {
+      border: 1px solid rgba(148,163,184,0.24);
+      border-radius: 20px;
+      overflow: hidden;
+      margin: 1.1rem 0;
+      background: radial-gradient(circle at top, #0f172a 0%, #020617 55%, #01030a 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 16px 36px rgba(2,6,23,0.3);
+      color: #e2e8f0;
+    }
+    .fg-lab-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.1rem;
+      background: rgba(15,23,42,0.92);
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+    }
+    .fg-chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+    .fg-env-btn {
+      appearance: none;
+      border: 1px solid rgba(148,163,184,0.25);
+      background: rgba(30,41,59,0.7);
+      color: #94a3b8;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fg-env-btn:hover {
+      background: rgba(51,65,85,0.85);
+      color: #f8fafc;
+      border-color: rgba(148,163,184,0.4);
+    }
+    .fg-env-btn.active {
+      background: #0071e3;
+      color: #ffffff;
+      border-color: #38bdf8;
+      box-shadow: 0 0 12px rgba(0,113,227,0.45);
+    }
+    .fg-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 480px;
+      background: #060913;
+    }
+    #fg-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .fg-lab-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.1rem;
+      background: rgba(15,23,42,0.95);
+      border-top: 1px solid rgba(148,163,184,0.15);
+    }
+    .fg-action-group {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .fg-btn {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .fg-btn.primary {
+      background: #0071e3;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0,113,227,0.35);
+    }
+    .fg-btn.primary:hover {
+      background: #0077ed;
+      transform: translateY(-1px);
+    }
+    .fg-btn.secondary {
+      background: rgba(30,41,59,0.85);
+      color: #e2e8f0;
+      border: 1px solid rgba(148,163,184,0.25);
+    }
+    .fg-btn.secondary:hover {
+      background: rgba(51,65,85,0.95);
+      color: #ffffff;
+    }
+    .fg-btn.active-toggle {
+      background: #059669;
+      color: #ffffff;
+      border-color: #10b981;
+    }
+    .fg-toggles {
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+    .fg-toggles label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+    }
+    .fg-toggles input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: #0071e3;
+    }
+    .fg-telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      padding: 1rem 1.1rem;
+      background: rgba(2,6,23,0.98);
+      border-top: 1px solid rgba(148,163,184,0.12);
+    }
+    @media (max-width: 640px) {
+      .fg-telemetry-grid { grid-template-columns: 1fr; }
+    }
+    .fg-telemetry-lane {
+      border-radius: 12px;
+      padding: 0.8rem 0.95rem;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(148,163,184,0.15);
+    }
+    .fg-lane-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+    }
+    .fg-lane-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .fg-lane-badge {
+      font-size: 0.68rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(0,113,227,0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56,189,248,0.3);
+      font-weight: 600;
+    }
+    .fg-stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    @media (max-width: 480px) {
+      .fg-stat-row { grid-template-columns: 1fr 1fr; }
+    }
+    .fg-stat-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .fg-stat-lbl {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .fg-stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .fg-stat-unit {
+      font-size: 0.65rem;
+      color: #64748b;
+      margin-left: 0.15rem;
+    }
+
+    /* ── Calculator card ──────────────────────────────── */
+    .fg-calc-card {
+      background: rgba(0,113,227,0.04);
+      border: 1px solid rgba(0,113,227,0.2);
+      border-radius: 14px;
+      padding: 1.1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .fg-calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+    }
+    @media (max-width: 580px) {
+      .fg-calc-grid { grid-template-columns: 1fr; }
+    }
+    .fg-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .fg-input-group label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary, #3f4f65);
+    }
+    [data-lighting="night"] .fg-input-group label,
+    [data-theme="vaporwave"] .fg-input-group label,
+    [data-theme="bark"] .fg-input-group label { color: #cbd5e1; }
+    .fg-input-group input, .fg-input-group select {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      background: var(--white, #fff);
+      color: var(--text-primary, #1d1d1f);
+    }
+    [data-lighting="night"] .fg-input-group input,
+    [data-lighting="night"] .fg-input-group select {
+      background: #1e293b;
+      border-color: rgba(255,255,255,0.18);
+      color: #f8fafc;
+    }
+    .fg-calc-results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      padding: 0.8rem 1rem;
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+    }
+    [data-lighting="night"] .fg-calc-results {
+      background: #0f172a;
+      border-color: rgba(255,255,255,0.12);
+    }
+    .fg-calc-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .fg-calc-lbl {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+    }
+    .fg-calc-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--card-accent, #0071e3);
+    }
+
+    /* ── Terminal Velocities Gallery ──────────────────── */
+    .fg-vt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+    }
+    .fg-vt-item {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    [data-lighting="night"] .fg-vt-item {
+      background: #1e293b;
+      border-color: rgba(255,255,255,0.12);
+    }
+    .fg-vt-item:hover {
+      transform: translateY(-2px);
+      border-color: #0071e3;
+    }
+    .fg-vt-icon { font-size: 1.6rem; margin-bottom: 0.15rem; }
+    .fg-vt-title { font-weight: 700; font-size: 0.88rem; color: var(--text-primary, #1d1d1f); }
+    [data-lighting="night"] .fg-vt-title { color: #f8fafc; }
+    .fg-vt-speed {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0071e3;
+    }
+    .fg-vt-desc { font-size: 0.76rem; color: var(--text-muted, #64748b); line-height: 1.45; }
+
+    /* ── Practice problems ────────────────────────────── */
+    .fg-practice { display: flex; flex-direction: column; gap: 1rem; }
+    .fg-problem {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 12px;
+      padding: 1rem 1.15rem;
+      background: var(--white, #fff);
+    }
+    [data-lighting="night"] .fg-problem {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.12);
+    }
+    .fg-problem p { margin: 0 0 0.65rem; font-size: 0.9rem; line-height: 1.6; }
+    .fg-problem-diff {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+    }
+    .diff-easy { background: rgba(52,199,89,0.15); color: #248a3d; }
+    .diff-mid  { background: rgba(0,113,227,0.15); color: #0071e3; }
+    .diff-hard { background: rgba(255,149,0,0.15); color: #b36b00; }
+    [data-lighting="night"] .diff-easy { color: #34c759; }
+    [data-lighting="night"] .diff-mid  { color: #38bdf8; }
+    [data-lighting="night"] .diff-hard { color: #ff9500; }
+
+    .fg-problem-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 0.4rem;
+    }
+    .fg-ans-input {
+      width: 140px;
+      padding: 0.42rem 0.65rem;
+      border: 1.5px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      background: var(--white, #fff);
+      color: var(--text-primary, #1d1d1f);
+    }
+    [data-lighting="night"] .fg-ans-input {
+      background: #2c2c2e;
+      border-color: rgba(255,255,255,0.2);
+      color: #f5f5f7;
+    }
+    .fg-check-btn {
+      padding: 0.42rem 0.95rem;
+      border: none;
+      border-radius: 8px;
+      background: #0071e3;
+      color: #ffffff;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .fg-check-btn:hover { background: #0077ed; }
+    .fg-feedback {
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin-left: 0.2rem;
+    }
+    .fg-feedback.correct { color: #34c759; }
+    .fg-feedback.wrong   { color: #ff3b30; }
+    .fg-hint {
+      display: none;
+      margin: 0.55rem 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted, #64748b);
+      line-height: 1.5;
+      padding-top: 0.45rem;
+      border-top: 1px dashed var(--line, #d2d2d7);
+    }
+    .fg-hint.visible { display: block; }
+
+    /* ── Side panel styles ────────────────────────────── */
+    .ll-viewport {
+      --ll-tab-active: #0071e3;
+      --ll-tab-active-bg: rgba(0,113,227,0.12);
+      --ll-panel-w: 310px;
+    }
+    .fg-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .fg-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .fg-panel-preset:hover {
+      background: rgba(0,113,227,0.08);
+      border-color: #0071e3;
+      transform: translateY(-1px);
+    }
+    .fg-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .fg-panel-preset,
+    [data-theme="vaporwave"] .fg-panel-preset,
+    [data-theme="bark"] .fg-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .fg-panel-preset:hover,
+    [data-theme="vaporwave"] .fg-panel-preset:hover,
+    [data-theme="bark"] .fg-panel-preset:hover {
+      background: rgba(0,113,227,0.22);
+      border-color: #38bdf8;
+    }
+    .fg-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+    .fg-panel-actions .fg-btn {
+      flex: 1;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    /* Links on dark surfaces */
+    :where(html[data-lighting="night"]) p a:not([class]), :where(html[data-lighting="night"]) li a:not([class]) { color: #38bdf8; }
+    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) p a:not([class]), :where(html:not([data-lighting])) li a:not([class]) { color: #38bdf8; } }
+  </style>
 </head>
-<body>
-  <div class="ll-viewport">
+<body class="theme-liquid-woodland theme-steam">
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -33,34 +597,1358 @@
     </div>
   </header>
 
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Falling &amp; Gravity</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Falling &amp; Gravity.</p>
+  <div class="ll-stage">
+  <div class="ll-sim">
+  <main id="main-content" class="fg-page">
+
+    <!-- ── Hero ── -->
+    <section class="hero fg-hero">
+      <p class="eyebrow">Physics · Mechanics · Lesson 08</p>
+      <h1>Falling &amp; Gravity: Free Fall, Vacuum &amp; Terminal Velocity</h1>
+      <div class="fg-hero-meta">
+        <span>Free Fall</span>
+        <span class="dot"></span>
+        <span>Equivalence Principle</span>
+        <span class="dot"></span>
+        <span>Aerodynamic Drag</span>
+        <span class="dot"></span>
+        <span>Terminal Velocity</span>
+        <span class="dot"></span>
+        <span>Apollo 15 Lunar Drop</span>
+      </div>
+      <p class="fg-lede">Why do a 1.3-kilogram steel hammer and a delicate bird feather drop in perfect synchronization inside a vacuum chamber? Explore how Galileo overturned two millennia of scientific assumption, dive into the calculus of air resistance, and test gravitational free-fall across planets in our interactive laboratory.</p>
+    </section>
+
+    <!-- ── Big Idea ── -->
+    <div class="fg-big-idea">
+      <strong>The Core Discovery:</strong> In a gravitational field with zero fluid resistance, all objects accelerate downward at the <em>exact same rate</em> regardless of mass, density, or shape. Mass cancels completely because a heavier object experiences proportionally more downward gravitational attraction, but possesses proportionally more inertia resisting that acceleration (\(m a = m g \implies a = g\)).
+    </div>
+
+    <!-- ── Section 1: Galileo's Revolution & The Thought Experiment ── -->
+    <section class="fg-card" style="--card-accent:#0071e3;">
+      <h2>1. The 2,000-Year-Old Mistake: Aristotle vs. Galileo</h2>
+      <p>For nearly two thousand years following the ancient Greek philosopher Aristotle, common sense dictated that heavier bodies fall faster than lighter ones in direct proportion to their weight. If you drop a heavy cobblestone and a feather from the roof of a house on Earth, the cobblestone crashes to the earth while the feather floats lazily through the breeze.</p>
+      <p>In the late 16th century, the Italian physicist and astronomer <strong>Galileo Galilei</strong> exposed the fatal logical contradiction at the heart of Aristotle's claim with an ingenious thought experiment:</p>
+
+      <div class="fg-callout blue">
+        <strong>Galileo's Rope Paradox:</strong> Imagine tying a heavy 10-pound stone to a light 1-pound stone with a piece of string, then dropping the combo from a tower:
+        <ul style="margin: 0.4rem 0 0.2rem 1.2rem; padding:0;">
+          <li><strong>Prediction A:</strong> The lighter 1-pound stone falls slower, so it acts like a parachute or brake, slowing the 10-pound stone down so the pair falls <em>slower</em> than 10 pounds alone.</li>
+          <li><strong>Prediction B:</strong> Tying them together forms a single 11-pound object. Since 11 pounds is heavier than 10 pounds, the system must fall <em>faster</em> than 10 pounds alone!</li>
+        </ul>
+        Both predictions follow directly from Aristotle's premise, yet they contradict each other completely. The only logical resolution is that <strong>both masses fall at the exact same rate</strong>.
       </div>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>In a vacuum with no air resistance, all objects accelerate at the exact same rate regardless of their mass. Mass cancels out because heavier objects experience proportionally more gravitational force but require proportionally more force to accelerate.</p>
-        <figure data-zoomable>
-          <img src="../../../assets/images/lessons/falling-and-gravity/free-fall-acceleration.svg" width="960" height="540" alt="Physics diagram comparing free fall in a vacuum chamber, where a heavy hammer and light feather land simultaneously, versus in air where aerodynamic drag slows the feather." loading="lazy" decoding="async" />
-          <figcaption><strong>Free-fall acceleration in a vacuum vs. air.</strong> When air resistance is eliminated, gravitational acceleration depends only on the planet's gravitational field (\(g = 9.8\text{ m/s}^2\) on Earth, \(1.62\text{ m/s}^2\) on the Moon), causing all objects to fall in unison.</figcaption>
-        </figure>
+      <figure data-zoomable>
+        <img src="../../../assets/images/lessons/falling-and-gravity/free-fall-acceleration.svg" width="960" height="540" alt="Physics diagram comparing free fall in a vacuum chamber, where a heavy hammer and light feather land simultaneously, versus in air where aerodynamic drag slows the feather." loading="lazy" decoding="async" />
+        <figcaption><strong>Free-fall acceleration in a vacuum vs. air.</strong> When air resistance is eliminated, gravitational acceleration depends only on the planet's gravitational field (\(g = 9.8\text{ m/s}^2\) on Earth, \(1.62\text{ m/s}^2\) on the Moon), causing all objects to fall in unison.</figcaption>
+      </figure>
+
+      <h3>The Equivalence of Inertial and Gravitational Mass</h3>
+      <p>Why does mass vanish from the acceleration equation? Newton's Second Law tells us that the net force required to accelerate an object is proportional to its <strong>inertial mass</strong> (\(m_i\)):</p>
+      <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-weight:700; margin:0.5rem 0; font-size:1.05rem; color:#0071e3;">
+        F<sub>net</sub> = m<sub>i</sub> · a
+      </div>
+      <p>Meanwhile, the gravitational pull Earth exerts on that body is governed by its <strong>gravitational mass</strong> (\(m_g\)):</p>
+      <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-weight:700; margin:0.5rem 0; font-size:1.05rem; color:#0071e3;">
+        F<sub>g</sub> = m<sub>g</sub> · g
+      </div>
+      <p>Because inertial mass and gravitational mass are identically equal (\(m_i \equiv m_g\)) — a profound physical principle known as the <em>Weak Equivalence Principle</em> that Albert Einstein later transformed into General Relativity — the mass terms cancel out completely:</p>
+      <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-weight:700; margin:0.5rem 0; font-size:1.15rem; color:#5856d6;">
+        m · a = m · g &nbsp;&implies;&nbsp; a = g
+      </div>
+    </section>
+
+    <!-- ── Section 2: Interactive Laboratory ── -->
+    <section class="fg-card" style="--card-accent:#5856d6;" id="fg-simulator-section">
+      <h2>2. Interactive Free Fall &amp; Air Resistance Laboratory</h2>
+      <p>Test Galileo's discovery for yourself. Select two test objects, configure the planetary atmosphere or pull a total vacuum, adjust the drop height, and observe the live motion, force vectors, and velocity accumulation in real time.</p>
+
+      <div class="fg-lab-shell">
+        <div class="fg-lab-toolbar">
+          <div class="fg-chip-group">
+            <span style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-right:0.25rem;">Environment:</span>
+            <button type="button" class="fg-env-btn active" data-env="earth-air">Earth (Air 1 atm)</button>
+            <button type="button" class="fg-env-btn" data-env="earth-vac">Earth (Vacuum)</button>
+            <button type="button" class="fg-env-btn" data-env="moon">Moon (Vacuum)</button>
+            <button type="button" class="fg-env-btn" data-env="mars">Mars (Thin Air)</button>
+            <button type="button" class="fg-env-btn" data-env="jupiter">Jupiter (Dense)</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.6rem;">
+            <span style="font-size:0.75rem; font-weight:700; color:#94a3b8;">Drop Height:</span>
+            <span id="fg-height-val" style="font-family:'JetBrains Mono',monospace; font-weight:700; color:#38bdf8; min-width:42px;">50 m</span>
+            <input type="range" id="fg-height-slider" min="10" max="100" step="5" value="50" style="width:110px;" aria-label="Drop height in meters" />
+          </div>
+        </div>
+
+        <div class="fg-canvas-wrap">
+          <canvas id="fg-canvas" aria-label="Free fall simulation canvas showing falling objects with altitude scale"></canvas>
+        </div>
+
+        <div class="fg-lab-controls">
+          <div class="fg-action-group">
+            <button type="button" class="fg-btn primary" id="fg-drop-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v14m0 0l-5-5m5 5l5-5M4 20h16"/></svg>
+              Drop Objects
+            </button>
+            <button type="button" class="fg-btn secondary" id="fg-pause-btn">Pause</button>
+            <button type="button" class="fg-btn secondary" id="fg-reset-btn">Reset</button>
+            <button type="button" class="fg-btn secondary" id="fg-slow-btn">Slow Mo (0.25×)</button>
+          </div>
+
+          <div class="fg-toggles">
+            <label>
+              <input type="checkbox" id="fg-vectors-toggle" checked />
+              <span>Show Force Vectors</span>
+            </label>
+            <label>
+              <input type="checkbox" id="fg-strobe-toggle" checked />
+              <span>Strobe Ghost Trail</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="fg-telemetry-grid">
+          <!-- Lane A Telemetry -->
+          <div class="fg-telemetry-lane">
+            <div class="fg-lane-head">
+              <span class="fg-lane-title">
+                <span>Lane A:</span>
+                <select id="fg-lane-a-sel" style="background:#1e293b; color:#f8fafc; border:1px solid #475569; border-radius:6px; font-size:0.78rem; padding:0.2rem 0.4rem;" aria-label="Select Object for Lane A">
+                  <option value="hammer" selected>Geological Hammer (1.32 kg)</option>
+                  <option value="bowling">Bowling Ball (6.0 kg)</option>
+                  <option value="basketball">Basketball (0.62 kg)</option>
+                  <option value="feather">Falcon Feather (0.003 kg)</option>
+                  <option value="skydiver">Skydiver Belly-Down (75 kg)</option>
+                  <option value="parachute">Parachutist Open (80 kg)</option>
+                </select>
+              </span>
+              <span class="fg-lane-badge" id="fg-badge-a">Ready</span>
+            </div>
+            <div class="fg-stat-row">
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Altitude (y)</span>
+                <span class="fg-stat-val" id="fg-stat-y-a">50.0<span class="fg-stat-unit">m</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Velocity (v)</span>
+                <span class="fg-stat-val" id="fg-stat-v-a">0.0<span class="fg-stat-unit">m/s</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Net Accel (a)</span>
+                <span class="fg-stat-val" id="fg-stat-a-a">9.81<span class="fg-stat-unit">m/s²</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Drag Force</span>
+                <span class="fg-stat-val" id="fg-stat-drag-a">0.0<span class="fg-stat-unit">N</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lane B Telemetry -->
+          <div class="fg-telemetry-lane">
+            <div class="fg-lane-head">
+              <span class="fg-lane-title">
+                <span>Lane B:</span>
+                <select id="fg-lane-b-sel" style="background:#1e293b; color:#f8fafc; border:1px solid #475569; border-radius:6px; font-size:0.78rem; padding:0.2rem 0.4rem;" aria-label="Select Object for Lane B">
+                  <option value="feather" selected>Falcon Feather (0.003 kg)</option>
+                  <option value="hammer">Geological Hammer (1.32 kg)</option>
+                  <option value="bowling">Bowling Ball (6.0 kg)</option>
+                  <option value="basketball">Basketball (0.62 kg)</option>
+                  <option value="skydiver">Skydiver Belly-Down (75 kg)</option>
+                  <option value="parachute">Parachutist Open (80 kg)</option>
+                </select>
+              </span>
+              <span class="fg-lane-badge" id="fg-badge-b">Ready</span>
+            </div>
+            <div class="fg-stat-row">
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Altitude (y)</span>
+                <span class="fg-stat-val" id="fg-stat-y-b">50.0<span class="fg-stat-unit">m</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Velocity (v)</span>
+                <span class="fg-stat-val" id="fg-stat-v-b">0.0<span class="fg-stat-unit">m/s</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Net Accel (a)</span>
+                <span class="fg-stat-val" id="fg-stat-a-b">9.81<span class="fg-stat-unit">m/s²</span></span>
+              </div>
+              <div class="fg-stat-cell">
+                <span class="fg-stat-lbl">Drag Force</span>
+                <span class="fg-stat-val" id="fg-stat-drag-b">0.0<span class="fg-stat-unit">N</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="cl-card">
-        <h2>The Hammer and the Feather</h2>
-        <p>Does a heavy hammer fall faster than a light feather? On Earth, air gets in the way. On the Moon there is no air, so in 1971 an astronaut tried it. Make your prediction before the video stops and asks.</p>
-        <figure data-video="apollo-15-hammer-feather">
-          <figcaption>Apollo 15 hammer and feather drop, August 2, 1971. Public domain (NASA, U.S. government work), via Wikimedia Commons.</figcaption>
-        </figure>
+      <div class="fg-callout purple">
+        <strong>Look at the Strobe Trail:</strong> In a vacuum, notice how the distance between consecutive ghost markers (recorded every 0.2 s) grows as \(1, 3, 5, 7, 9 \dots\). This is <strong>Galileo's Odd Number Rule</strong>, a direct geometric consequence of displacement growing with the square of time (\(\Delta y \propto t^2\)). In contrast, when the feather falls through air, notice how the spacing rapidly becomes equal: once drag balances gravity, speed is constant!
+      </div>
+    </section>
+
+    <!-- ── Section 3: The Apollo 15 Lunar Demonstration ── -->
+    <section class="fg-card" style="--card-accent:#ff9500;">
+      <h2>3. The Apollo 15 Demonstration: Galileo Proven on the Moon</h2>
+      <p>On Earth, the atmosphere always gets in the way. Even if you drop a flat sheet of paper and a crumpled ball of identical paper, the crumpled ball reaches the floor first simply because its cross-sectional area catches less air.</p>
+      <p>On August 2, 1971, at the conclusion of the Apollo 15 moonwalk at Hadley Rille, NASA Commander <strong>David Scott</strong> stood in the airless vacuum of space before a live television camera. In one hand he held a 1.32 kg aluminum geological hammer; in the other, a 0.03 kg white falcon feather. Watch what happened when he released them simultaneously:</p>
+
+      <figure data-video="apollo-15-hammer-feather">
+        <figcaption>Apollo 15 hammer and feather drop on the lunar surface, August 2, 1971. In the vacuum of space, both objects hit the lunar dust at the exact same instant, validating Galileo's 380-year-old prediction. Public domain (NASA, U.S. government work), via Wikimedia Commons.</figcaption>
+      </figure>
+
+      <div class="fg-callout orange">
+        <strong>David Scott's Words on the Moon:</strong> <em>"In my left hand, I have a feather; in my right hand, a hammer. I guess one of the reasons we got here today was because of a gentleman named Galileo a long time ago, who made a rather significant discovery about falling objects in gravity fields... and I thought, where would be a better place to confirm his findings than on the Moon? ... And how about that, Mr. Galileo was correct in his findings!"</em>
+      </div>
+    </section>
+
+    <!-- ── Section 4: Kinematics of Free Fall ── -->
+    <section class="fg-card" style="--card-accent:#34c759;">
+      <h2>4. Kinematics of Free Fall (The Math)</h2>
+      <p>When an object falls under constant gravitational acceleration \(g\) with negligible air resistance, its motion is governed by the three foundational 1D kinematic equations (taking downward as the positive direction with initial release from rest \(v_0 = 0\)):</p>
+
+      <div class="fg-formula-box">
+        <span class="fg-formula-sym">v = g · t &emsp;|&emsp; y = &frac12; · g · t² &emsp;|&emsp; v² = 2 · g · y</span>
+        <div class="fg-formula-vars">
+          <span><strong>v</strong>: Instantaneous velocity (m/s)</span>
+          <span><strong>g</strong>: Gravitational field strength (9.81 m/s² on Earth)</span>
+          <span><strong>t</strong>: Time elapsed (s)</span>
+          <span><strong>y</strong>: Vertical distance fallen (m)</span>
+        </div>
+      </div>
+
+      <h3>Worked Example: Dropping a Rock from a 45-Meter Cliff</h3>
+      <p>Suppose you release a smooth stone from rest (\(v_0 = 0\)) off a cliff of height \(h = 44.1\text{ m}\) on Earth. Neglecting air resistance, how long does it take to strike the ground, and what is its impact speed?</p>
+
+      <div class="fg-callout green">
+        <p><strong>Step 1: Solve for fall time \(t\) using \(y = \frac{1}{2} g t^2\)</strong></p>
+        <div style="font-family:'JetBrains Mono',monospace; margin:0.3rem 0;">
+          44.1 = &frac12; · (9.8) · t² = 4.9 · t²<br />
+          t² = 44.1 / 4.9 = 9.0<br />
+          t = &radic;9.0 = <strong>3.00 seconds</strong>
+        </div>
+
+        <p style="margin-top:0.6rem;"><strong>Step 2: Solve for final velocity \(v\) using \(v = g \cdot t\)</strong></p>
+        <div style="font-family:'JetBrains Mono',monospace; margin:0.3rem 0;">
+          v = (9.8 m/s²) · (3.00 s) = <strong>29.4 m/s</strong> (approx. 106 km/h or 66 mph!)
+        </div>
+
+        <p style="margin-top:0.6rem;"><strong>Step 3: Verification via Conservation of Energy</strong></p>
+        <div style="font-family:'JetBrains Mono',monospace; margin:0.3rem 0;">
+          E<sub>pot</sub> = E<sub>kin</sub> &implies; m·g·h = &frac12;·m·v² &implies; v = &radic;(2·g·h) = &radic;(2 · 9.8 · 44.1) = &radic;864.36 = <strong>29.4 m/s</strong>.
+        </div>
+      </div>
+
+      <h3>Interactive Free Fall Calculator</h3>
+      <p>Enter any drop height and choose a celestial body to calculate the theoretical free-fall time and impact speed in a vacuum:</p>
+
+      <div class="fg-calc-card">
+        <div class="fg-calc-grid">
+          <div class="fg-input-group">
+            <label for="fg-calc-h">Drop Height (meters)</label>
+            <input type="number" id="fg-calc-h" value="44.1" min="1" max="1000" step="0.5" />
+          </div>
+          <div class="fg-input-group">
+            <label for="fg-calc-g-preset">Gravity Location</label>
+            <select id="fg-calc-g-preset">
+              <option value="9.807" selected>Earth (9.81 m/s²)</option>
+              <option value="1.62">Moon (1.62 m/s²)</option>
+              <option value="3.72">Mars (3.72 m/s²)</option>
+              <option value="24.79">Jupiter (24.79 m/s²)</option>
+              <option value="8.87">Venus (8.87 m/s²)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fg-calc-results">
+          <div class="fg-calc-cell">
+            <span class="fg-calc-lbl">Fall Duration</span>
+            <span class="fg-calc-val" id="fg-calc-res-t">3.00 s</span>
+          </div>
+          <div class="fg-calc-cell">
+            <span class="fg-calc-lbl">Impact Speed</span>
+            <span class="fg-calc-val" id="fg-calc-res-v">29.4 m/s</span>
+          </div>
+          <div class="fg-calc-cell">
+            <span class="fg-calc-lbl">Impact Speed (km/h)</span>
+            <span class="fg-calc-val" id="fg-calc-res-kmh">105.9 km/h</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Section 5: Aerodynamic Drag & Terminal Velocity ── -->
+    <section class="fg-card" style="--card-accent:#ff2d55;">
+      <h2>5. Aerodynamic Drag &amp; Terminal Velocity</h2>
+      <p>In our everyday world surrounded by air, objects do <em>not</em> accelerate indefinitely. As a falling body speeds up, it must collide with and push aside millions of air molecules every second. This fluid friction creates an upward aerodynamic drag force \(F_d\):</p>
+
+      <div class="fg-formula-box">
+        <span class="fg-formula-sym">F<sub>d</sub> = &frac12; · &rho; · v² · C<sub>d</sub> · A</span>
+        <div class="fg-formula-vars">
+          <span><strong>&rho;</strong>: Fluid density (1.225 kg/m³ for sea-level air)</span>
+          <span><strong>v</strong>: Instantaneous velocity</span>
+          <span><strong>C<sub>d</sub></strong>: Drag coefficient (shape-dependent)</span>
+          <span><strong>A</strong>: Cross-sectional frontal area (m²)</span>
+        </div>
+      </div>
+
+      <p>Notice the \(v^2\) term! If you double your falling speed, drag increases by a factor of <strong>four</strong>. If you triple your speed, drag shoots up by <strong>nine</strong>. Eventually, the upward drag force grows so large that it equals the downward gravitational force:</p>
+      <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-weight:700; margin:0.6rem 0; font-size:1.1rem; color:#ff2d55;">
+        F<sub>d</sub> = F<sub>g</sub> &nbsp;&implies;&nbsp; &frac12; &rho; v<sub>t</sub>² C<sub>d</sub> A = m · g
+      </div>
+      <p>At this equilibrium point, net force is zero (\(F_{\text{net}} = 0\)), acceleration drops to zero (\(a = 0\)), and the body cruises downward at a constant maximum speed called <strong>terminal velocity</strong> (\(v_t\)):</p>
+
+      <div class="fg-formula-box">
+        <span class="fg-formula-sym">v<sub>t</sub> = &radic;( 2 · m · g / ( &rho; · C<sub>d</sub> · A ) )</span>
+      </div>
+
+      <h3>Real-World Terminal Velocities</h3>
+      <p>Because terminal speed depends directly on mass, frontal area, and aerodynamic shape, different objects reach vastly different terminal speeds in Earth's atmosphere:</p>
+
+      <div class="fg-vt-grid">
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🪶</div>
+          <div class="fg-vt-title">Bird Feather</div>
+          <div class="fg-vt-speed">~2 m/s</div>
+          <div class="fg-vt-desc">Tiny mass (~3g) with large surface area. Reaches terminal speed in under 0.1 seconds.</div>
+        </div>
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🌧️</div>
+          <div class="fg-vt-title">Raindrop</div>
+          <div class="fg-vt-speed">~9 m/s</div>
+          <div class="fg-vt-desc">Surface tension limits droplet diameter to ~5mm before aerodynamic shear tears it apart.</div>
+        </div>
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🪂</div>
+          <div class="fg-vt-title">Open Parachute</div>
+          <div class="fg-vt-speed">~5 to 6 m/s</div>
+          <div class="fg-vt-desc">Massive 25–40 m² nylon canopy creates immense drag, ensuring a gentle human landing.</div>
+        </div>
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🧍</div>
+          <div class="fg-vt-title">Skydiver (Belly-Down)</div>
+          <div class="fg-vt-speed">~54 m/s (195 km/h)</div>
+          <div class="fg-vt-desc">Spreading arms and legs creates ~0.7 m² of frontal area in a stable horizontal box position.</div>
+        </div>
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🚀</div>
+          <div class="fg-vt-title">Skydiver (Head-Down)</div>
+          <div class="fg-vt-speed">~90 m/s (324 km/h)</div>
+          <div class="fg-vt-desc">Diving head-first slashes frontal area and drag coefficient, dramatically accelerating terminal speed.</div>
+        </div>
+        <div class="fg-vt-item">
+          <div class="fg-vt-icon">🦅</div>
+          <div class="fg-vt-title">Peregrine Falcon Dive</div>
+          <div class="fg-vt-speed">~108 m/s (390 km/h)</div>
+          <div class="fg-vt-desc">Tucking wings into a bullet-shaped teardrop enables the fastest animal dive on Earth.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Section 6: Practice Problems ── -->
+    <section class="fg-card" style="--card-accent:#34c759;">
+      <h2>6. Check Your Understanding</h2>
+      <div class="fg-practice">
+
+        <!-- Question 1 -->
+        <div class="fg-problem">
+          <p><span class="fg-problem-diff diff-easy">Easy</span><strong>1. Apollo 15 Drop:</strong> An astronaut on the Moon drops a 1.32 kg hammer and a 0.03 kg feather from a height of 1.5 meters in the lunar vacuum. Which object strikes the lunar regolith first?</p>
+          <div class="fg-problem-row">
+            <select id="fgans-1" class="fg-ans-input" style="width:230px;" aria-label="Select answer for question 1">
+              <option value="" selected disabled>Select an answer...</option>
+              <option value="hammer">The hammer strikes first</option>
+              <option value="feather">The feather strikes first</option>
+              <option value="both">Both strike at the exact same instant</option>
+            </select>
+            <button type="button" class="fg-check-btn" onclick="fgCheckText(1, 'both')">Check Answer</button>
+            <span class="fg-feedback" id="fgfb-1"></span>
+          </div>
+          <p class="fg-hint" id="fghint-1">Hint: The Moon has no atmosphere (\(\rho = 0\)). Without air resistance, gravitational acceleration \(a = g\) is identical for all masses!</p>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="fg-problem">
+          <p><span class="fg-problem-diff diff-easy">Easy</span><strong>2. Free Fall Speed:</strong> A steel ball is dropped from rest into a vacuum drop tube on Earth (\(g = 9.8\text{ m/s}^2\)). What is its velocity after falling freely for exactly \(3.5\text{ seconds}\)? Enter the speed in m/s (e.g. 34.3).</p>
+          <div class="fg-problem-row">
+            <input class="fg-ans-input" type="number" id="fgans-2" placeholder="m/s" step="0.1" aria-label="Speed in m/s" />
+            <button type="button" class="fg-check-btn" onclick="fgCheckNum(2, 34.3, 0.2)">Check Answer</button>
+            <span class="fg-feedback" id="fgfb-2"></span>
+          </div>
+          <p class="fg-hint" id="fghint-2">Hint: Use \(v = g \cdot t = 9.8\text{ m/s}^2 \times 3.5\text{ s} = 34.3\text{ m/s}\).</p>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="fg-problem">
+          <p><span class="fg-problem-diff diff-mid">Medium</span><strong>3. Well Depth:</strong> You drop a coin into an old vertical wishing well. Exactly \(2.4\text{ seconds}\) later, you hear the splash of the coin striking the water below. Assuming air resistance is negligible, calculate the depth of the well in meters (to 1 decimal place).</p>
+          <div class="fg-problem-row">
+            <input class="fg-ans-input" type="number" id="fgans-3" placeholder="meters" step="0.1" aria-label="Depth in meters" />
+            <button type="button" class="fg-check-btn" onclick="fgCheckNum(3, 28.2, 0.4)">Check Answer</button>
+            <span class="fg-feedback" id="fgfb-3"></span>
+          </div>
+          <p class="fg-hint" id="fghint-3">Hint: Use \(y = \frac{1}{2} g t^2 = 0.5 \times 9.8 \times (2.4)^2 = 0.5 \times 9.8 \times 5.76 \approx 28.22\text{ m}\).</p>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="fg-problem">
+          <p><span class="fg-problem-diff diff-mid">Medium</span><strong>4. Acceleration at Terminal Velocity:</strong> A skydiver in Earth's atmosphere reaches their terminal velocity of \(54\text{ m/s}\). What is their net acceleration in m/s² while falling at terminal velocity?</p>
+          <div class="fg-problem-row">
+            <input class="fg-ans-input" type="number" id="fgans-4" placeholder="m/s²" step="0.1" aria-label="Net acceleration in m/s²" />
+            <button type="button" class="fg-check-btn" onclick="fgCheckNum(4, 0.0, 0.05)">Check Answer</button>
+            <span class="fg-feedback" id="fgfb-4"></span>
+          </div>
+          <p class="fg-hint" id="fghint-4">Hint: At terminal velocity, upward drag equals downward gravity (\(F_d = F_g\)). Because net force is zero, net acceleration \(a = F_{\text{net}}/m = 0\text{ m/s}^2\)!</p>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="fg-problem">
+          <p><span class="fg-problem-diff diff-hard">Hard</span><strong>5. Martian Drop Time:</strong> On the surface of Mars, gravity is \(g = 3.72\text{ m/s}^2\). A robotic probe drops a seismic sensor from a stationary hover at an altitude of \(18.6\text{ meters}\). How many seconds does it take to strike the ground in the thin Martian vacuum? (Enter to 2 decimal places, e.g. 3.16).</p>
+          <div class="fg-problem-row">
+            <input class="fg-ans-input" type="number" id="fgans-5" placeholder="seconds" step="0.01" aria-label="Time in seconds" />
+            <button type="button" class="fg-check-btn" onclick="fgCheckNum(5, 3.16, 0.1)">Check Answer</button>
+            <span class="fg-feedback" id="fgfb-5"></span>
+          </div>
+          <p class="fg-hint" id="fghint-5">Hint: Rearrange \(y = \frac{1}{2} g t^2 \implies t = \sqrt{2y / g} = \sqrt{2 \times 18.6 / 3.72} = \sqrt{37.2 / 3.72} = \sqrt{10} \approx 3.16\text{ s}\).</p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+  </div><!-- /.ll-sim -->
+
+  <!-- ── Side Panel ── -->
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="fg-params">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="fg-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <!-- Tab 1: Controls -->
+      <div class="ll-pane ll-active" id="fg-params">
+        <span class="ll-label">Laboratory Presets</span>
+        <div class="fg-panel-grid" role="group" aria-label="Drop Presets">
+          <button type="button" class="fg-panel-preset" data-preset="apollo15">
+            Apollo 15 Moon
+            <small>Moon vacuum · Hammer vs Feather</small>
+          </button>
+          <button type="button" class="fg-panel-preset" data-preset="earthvac">
+            Earth Vacuum Tower
+            <small>9.81 m/s² · Hammer vs Feather</small>
+          </button>
+          <button type="button" class="fg-panel-preset" data-preset="earthair">
+            Earth Air (1 atm)
+            <small>Hammer vs Feather in air</small>
+          </button>
+          <button type="button" class="fg-panel-preset" data-preset="skydive">
+            Skydive vs Parachute
+            <small>Terminal drag demonstration</small>
+          </button>
+          <button type="button" class="fg-panel-preset" data-preset="mars">
+            Mars Surface
+            <small>3.72 m/s² · Thin atmosphere</small>
+          </button>
+          <button type="button" class="fg-panel-preset" data-preset="jupiter">
+            Jupiter Extreme
+            <small>24.79 m/s² · Crushing gravity</small>
+          </button>
+        </div>
+
+        <div class="fg-panel-actions">
+          <button type="button" class="fg-btn primary" id="fg-panel-drop-btn">Drop</button>
+          <button type="button" class="fg-btn secondary" id="fg-panel-reset-btn">Reset</button>
+        </div>
+
+        <hr class="ll-hr">
+        <span class="ll-label">Quick Environment</span>
+        <div class="ll-param">
+          <div class="ll-param-label">
+            <span>Height</span>
+            <span class="ll-val" id="fg-panel-h-val">50 m</span>
+          </div>
+          <input type="range" id="fg-panel-h-slider" min="10" max="100" step="5" value="50" aria-label="Drop height" />
+          <div class="ll-param-ends"><span>10 m</span><span>100 m</span></div>
+        </div>
+
+        <hr class="ll-hr">
+        <span class="ll-label">Live Telemetry</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Gravity (g)</span>
+            <span class="ll-readout-val" id="fg-p-g">9.81 m/s²</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Air Density</span>
+            <span class="ll-readout-val" id="fg-p-rho">1.225 kg/m³</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Sim Time</span>
+            <span class="ll-readout-val" id="fg-p-time">0.00 s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Guide -->
+      <div class="ll-pane" id="fg-guide">
+        <div class="ll-info">
+          <strong>The Equivalence Principle</strong>
+          All bodies accelerate at the exact same rate in a vacuum: \(m_i a = m_g g \implies a = g\). Gravitational mass equals inertial mass.
+        </div>
+        <div class="ll-info">
+          <strong>Galileo's Odd Number Rule</strong>
+          Under constant acceleration starting from rest, the distance traveled during equal successive time intervals follows odd integers: \(1, 3, 5, 7, 9 \dots\).
+        </div>
+        <div class="ll-info">
+          <strong>Terminal Velocity Formula</strong>
+          \(v_t = \sqrt{2 m g / (\rho C_d A)}\). Once drag equals weight, net acceleration ceases and speed remains constant.
+        </div>
+        <div class="ll-info">
+          <strong>Solar System Gravity Reference</strong>
+          <ul style="margin:0.3rem 0 0 1rem; padding:0; font-size:0.78rem;">
+            <li><strong>Moon:</strong> 1.62 m/s² (16.5% Earth)</li>
+            <li><strong>Mars:</strong> 3.72 m/s² (38% Earth)</li>
+            <li><strong>Earth:</strong> 9.81 m/s² (100%)</li>
+            <li><strong>Jupiter:</strong> 24.79 m/s² (253% Earth)</li>
+          </ul>
+        </div>
+        <div class="ll-info">
+          <strong>Teacher Discussion Prompt</strong>
+          Ask students: If you dropped an elephant and a mouse inside an evacuated vacuum tube 100 meters tall, which would hit the bottom first? Why?
+        </div>
       </div>
     </div>
-  </div>
-  <script src="../../../assets/js/photo-lightbox.js"></script>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
+  </div><!-- /.ll-stage -->
+
+</div><!-- /.ll-viewport -->
+
+  <!-- ── Scripts ── -->
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script>
+  (() => {
+    /* ════════════════════════════════════════════════════════
+       Physical Objects Database
+    ════════════════════════════════════════════════════════ */
+    const OBJECT_PROFILES = {
+      hammer: {
+        name: 'Geological Hammer',
+        mass: 1.32,       // kg
+        cd: 1.10,         // drag coefficient
+        area: 0.015,      // cross sectional area (m^2)
+        color: '#94a3b8',
+        accentColor: '#38bdf8',
+        label: 'Hammer (1.32 kg)'
+      },
+      feather: {
+        name: 'Falcon Feather',
+        mass: 0.003,      // 3 grams
+        cd: 1.30,
+        area: 0.008,
+        color: '#f8fafc',
+        accentColor: '#fb7185',
+        label: 'Feather (3 g)'
+      },
+      bowling: {
+        name: 'Bowling Ball',
+        mass: 6.0,
+        cd: 0.47,
+        area: 0.038,
+        color: '#38bdf8',
+        accentColor: '#0284c7',
+        label: 'Bowling Ball (6 kg)'
+      },
+      basketball: {
+        name: 'Basketball',
+        mass: 0.62,
+        cd: 0.50,
+        area: 0.045,
+        color: '#fb923c',
+        accentColor: '#ea580c',
+        label: 'Basketball (0.62 kg)'
+      },
+      skydiver: {
+        name: 'Skydiver (Belly)',
+        mass: 75.0,
+        cd: 1.00,
+        area: 0.65,
+        color: '#e11d48',
+        accentColor: '#fda4af',
+        label: 'Skydiver (75 kg)'
+      },
+      parachute: {
+        name: 'Parachutist (Open)',
+        mass: 80.0,
+        cd: 1.40,
+        area: 22.0,
+        color: '#a855f7',
+        accentColor: '#c084fc',
+        label: 'Parachute (80 kg)'
+      }
+    };
+
+    const ENVIRONMENTS = {
+      'earth-air': { name: 'Earth (Air)',    g: 9.81,  rho: 1.225, label: 'Earth (1 atm)' },
+      'earth-vac': { name: 'Earth (Vacuum)', g: 9.81,  rho: 0.000, label: 'Earth (Vacuum)' },
+      'moon':      { name: 'Moon (Vacuum)',  g: 1.62,  rho: 0.000, label: 'Moon (Vacuum)' },
+      'mars':      { name: 'Mars (Thin Air)',g: 3.72,  rho: 0.020, label: 'Mars (0.02 kg/m³)' },
+      'jupiter':   { name: 'Jupiter (Dense)',g: 24.79, rho: 1.330, label: 'Jupiter (Cloud tops)' }
+    };
+
+    /* ════════════════════════════════════════════════════════
+       Simulation State
+    ════════════════════════════════════════════════════════ */
+    let currentEnvKey = 'earth-air';
+    let dropHeight = 50.0; // meters
+
+    let objA = createDropObject('hammer');
+    let objB = createDropObject('feather');
+
+    let isRunning = false;
+    let isSlowMo = false;
+    let simTime = 0.0;
+    let lastTimestamp = 0;
+    let animFrame = null;
+
+    let strobeTrailA = [];
+    let strobeTrailB = [];
+    let lastStrobeTime = -1;
+
+    function createDropObject(typeKey) {
+      const proto = OBJECT_PROFILES[typeKey] || OBJECT_PROFILES.hammer;
+      return {
+        type: typeKey,
+        ...proto,
+        y: dropHeight,     // current height above ground in meters
+        v: 0.0,            // downward speed in m/s
+        a: 0.0,            // downward net acceleration in m/s^2
+        drag: 0.0,         // upward drag force in N
+        landed: false,
+        impactTime: 0.0,
+        impactV: 0.0
+      };
+    }
+
+    /* ════════════════════════════════════════════════════════
+       Canvas Setup
+    ════════════════════════════════════════════════════════ */
+    const canvas = document.getElementById('fg-canvas');
+    let ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const wrap = canvas.parentElement;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawScene();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    /* ════════════════════════════════════════════════════════
+       Drawing Functions
+    ════════════════════════════════════════════════════════ */
+    function meterToPx(yMeters, viewH) {
+      // Map 0 to dropHeight => bottom to top margins
+      const topPad = 55;
+      const botPad = 45;
+      const usableH = viewH - topPad - botPad;
+      const frac = Math.max(0, Math.min(1, yMeters / dropHeight));
+      return (viewH - botPad) - (frac * usableH);
+    }
+
+    function drawScene() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. High-tech laboratory backdrop
+      const env = ENVIRONMENTS[currentEnvKey];
+      let bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      if (currentEnvKey === 'moon') {
+        bgGrad.addColorStop(0, '#040711');
+        bgGrad.addColorStop(1, '#0b1120');
+      } else if (currentEnvKey === 'mars') {
+        bgGrad.addColorStop(0, '#1c0f0f');
+        bgGrad.addColorStop(1, '#0a0606');
+      } else {
+        bgGrad.addColorStop(0, '#070b14');
+        bgGrad.addColorStop(1, '#0e1726');
+      }
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle background grid
+      ctx.strokeStyle = 'rgba(148,163,184,0.06)';
+      ctx.lineWidth = 1;
+      for (let x = 30; x < w; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+
+      // 2. Drop Tower Lanes
+      const laneAX = w * 0.30;
+      const laneBX = w * 0.70;
+
+      // Vertical guide wires / lane markers
+      ctx.strokeStyle = 'rgba(148,163,184,0.18)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(laneAX, 45);
+      ctx.lineTo(laneAX, h - 45);
+      ctx.moveTo(laneBX, 45);
+      ctx.lineTo(laneBX, h - 45);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 3. Central Altitude Ruler
+      const rulerX = w * 0.50;
+      ctx.strokeStyle = 'rgba(148,163,184,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(rulerX, 45);
+      ctx.lineTo(rulerX, h - 45);
+      ctx.stroke();
+
+      const numTicks = 10;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(148,163,184,0.7)';
+
+      for (let i = 0; i <= numTicks; i++) {
+        const valMeters = (dropHeight / numTicks) * i;
+        const yPx = meterToPx(valMeters, h);
+        const isMajor = (i % 2 === 0);
+        const tickW = isMajor ? 12 : 6;
+
+        ctx.beginPath();
+        ctx.moveTo(rulerX - tickW, yPx);
+        ctx.lineTo(rulerX + tickW, yPx);
+        ctx.strokeStyle = isMajor ? 'rgba(56,189,248,0.6)' : 'rgba(148,163,184,0.3)';
+        ctx.stroke();
+
+        if (isMajor) {
+          ctx.fillText(`${valMeters.toFixed(0)}m`, rulerX, yPx - 9);
+        }
+      }
+
+      // Ground landing platform
+      const groundY = meterToPx(0, h);
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(15, groundY, w - 30, 8);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(15, groundY, w - 30, 8);
+
+      // Hazard stripes on landing pad
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(15, groundY, w - 30, 8);
+      ctx.clip();
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 4;
+      for (let x = 10; x < w; x += 16) {
+        ctx.beginPath();
+        ctx.moveTo(x, groundY);
+        ctx.lineTo(x + 10, groundY + 8);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 4. Strobe Ghost Trails
+      const showStrobe = document.getElementById('fg-strobe-toggle').checked;
+      if (showStrobe) {
+        ctx.textAlign = 'center';
+        ctx.font = '500 9px "JetBrains Mono", monospace';
+
+        strobeTrailA.forEach((pt) => {
+          const yPx = meterToPx(pt.y, h);
+          ctx.beginPath();
+          ctx.arc(laneAX, yPx, 4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56,189,248,0.35)';
+          ctx.fill();
+          ctx.fillStyle = 'rgba(148,163,184,0.55)';
+          ctx.fillText(`${pt.t.toFixed(1)}s`, laneAX - 18, yPx);
+        });
+
+        strobeTrailB.forEach((pt) => {
+          const yPx = meterToPx(pt.y, h);
+          ctx.beginPath();
+          ctx.arc(laneBX, yPx, 4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(251,113,133,0.35)';
+          ctx.fill();
+          ctx.fillStyle = 'rgba(148,163,184,0.55)';
+          ctx.fillText(`${pt.t.toFixed(1)}s`, laneBX + 18, yPx);
+        });
+      }
+
+      // 5. Draw Objects
+      drawPhysicalObject(ctx, objA, laneAX, meterToPx(objA.y, h));
+      drawPhysicalObject(ctx, objB, laneBX, meterToPx(objB.y, h));
+
+      // 6. Force Vectors
+      const showVectors = document.getElementById('fg-vectors-toggle').checked;
+      if (showVectors) {
+        drawVectors(ctx, objA, laneAX, meterToPx(objA.y, h));
+        drawVectors(ctx, objB, laneBX, meterToPx(objB.y, h));
+      }
+
+      // 7. Lane Header Banners
+      ctx.font = '700 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(`Lane A: ${objA.name}`, laneAX, 25);
+      ctx.fillStyle = '#fb7185';
+      ctx.fillText(`Lane B: ${objB.name}`, laneBX, 25);
+
+      // Environmental Badge in top-center
+      ctx.font = '600 11px Inter, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(`Environment: ${env.name} | g = ${env.g.toFixed(2)} m/s² | ρ = ${env.rho.toFixed(3)} kg/m³`, w * 0.5, 25);
+
+      // Landing Badges if completed
+      if (objA.landed) {
+        drawImpactBadge(ctx, laneAX, groundY - 14, objA.impactTime, objA.impactV, '#38bdf8');
+      }
+      if (objB.landed) {
+        drawImpactBadge(ctx, laneBX, groundY - 14, objB.impactTime, objB.impactV, '#fb7185');
+      }
+    }
+
+    function drawPhysicalObject(c, obj, cx, cy) {
+      c.save();
+      c.translate(cx, cy);
+
+      switch (obj.type) {
+        case 'hammer': {
+          // Hammer head
+          c.fillStyle = '#94a3b8';
+          c.fillRect(-12, -18, 24, 9);
+          // Hammer claw / bevel
+          c.fillStyle = '#cbd5e1';
+          c.beginPath();
+          c.moveTo(-12, -18);
+          c.lineTo(-17, -13);
+          c.lineTo(-12, -9);
+          c.closePath();
+          c.fill();
+          // Wooden handle
+          c.fillStyle = '#b45309';
+          c.fillRect(-3, -9, 6, 26);
+          // Rubber grip
+          c.fillStyle = '#1e293b';
+          c.fillRect(-3.5, 8, 7, 10);
+          break;
+        }
+        case 'feather': {
+          // Feather quill spine
+          c.strokeStyle = '#cbd5e1';
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.moveTo(0, -20);
+          c.quadraticCurveTo(3, 0, 0, 20);
+          c.stroke();
+          // Feather vanes
+          c.fillStyle = 'rgba(248,250,252,0.85)';
+          c.beginPath();
+          c.moveTo(0, -18);
+          c.quadraticCurveTo(-14, -8, -10, 8);
+          c.lineTo(0, 14);
+          c.closePath();
+          c.fill();
+          c.beginPath();
+          c.moveTo(0, -18);
+          c.quadraticCurveTo(14, -8, 10, 8);
+          c.lineTo(0, 14);
+          c.closePath();
+          c.fill();
+          break;
+        }
+        case 'bowling': {
+          // Shiny dark bowling ball
+          c.beginPath();
+          c.arc(0, 0, 16, 0, Math.PI * 2);
+          const bg = c.createRadialGradient(-5, -5, 2, 0, 0, 16);
+          bg.addColorStop(0, '#38bdf8');
+          bg.addColorStop(0.5, '#0284c7');
+          bg.addColorStop(1, '#082f49');
+          c.fillStyle = bg;
+          c.fill();
+          // 3 finger holes
+          c.fillStyle = '#020617';
+          c.beginPath();
+          c.arc(-4, -4, 2, 0, Math.PI * 2);
+          c.arc(4, -4, 2, 0, Math.PI * 2);
+          c.arc(0, 4, 2.5, 0, Math.PI * 2);
+          c.fill();
+          break;
+        }
+        case 'basketball': {
+          // Orange sphere with black seams
+          c.beginPath();
+          c.arc(0, 0, 15, 0, Math.PI * 2);
+          const bg = c.createRadialGradient(-4, -4, 2, 0, 0, 15);
+          bg.addColorStop(0, '#fb923c');
+          bg.addColorStop(1, '#c2410c');
+          c.fillStyle = bg;
+          c.fill();
+          // Black seams
+          c.strokeStyle = '#18181b';
+          c.lineWidth = 1.2;
+          c.beginPath();
+          c.moveTo(-15, 0); c.lineTo(15, 0);
+          c.moveTo(0, -15); c.lineTo(0, 15);
+          c.stroke();
+          c.beginPath();
+          c.arc(-7, 0, 10, -Math.PI / 2, Math.PI / 2);
+          c.stroke();
+          c.beginPath();
+          c.arc(7, 0, 10, Math.PI / 2, -Math.PI / 2);
+          c.stroke();
+          break;
+        }
+        case 'skydiver': {
+          // Jumpsuit body in spread-eagle position
+          c.fillStyle = '#e11d48';
+          c.beginPath();
+          c.ellipse(0, 0, 12, 6, 0, 0, Math.PI * 2);
+          c.fill();
+          // Helmet
+          c.fillStyle = '#ffffff';
+          c.beginPath();
+          c.arc(0, -9, 4.5, 0, Math.PI * 2);
+          c.fill();
+          // Limbs
+          c.strokeStyle = '#be123c';
+          c.lineWidth = 3;
+          c.beginPath();
+          c.moveTo(-10, -3); c.lineTo(-18, -8);
+          c.moveTo(10, -3); c.lineTo(18, -8);
+          c.moveTo(-6, 3); c.lineTo(-14, 12);
+          c.moveTo(6, 3); c.lineTo(14, 12);
+          c.stroke();
+          break;
+        }
+        case 'parachute': {
+          // Open parachute canopy
+          c.fillStyle = '#a855f7';
+          c.beginPath();
+          c.arc(0, -22, 22, Math.PI, 0, false);
+          c.closePath();
+          c.fill();
+          // Shroud lines
+          c.strokeStyle = 'rgba(255,255,255,0.4)';
+          c.lineWidth = 1;
+          c.beginPath();
+          c.moveTo(-20, -22); c.lineTo(0, 2);
+          c.moveTo(-7, -22); c.lineTo(0, 2);
+          c.moveTo(7, -22); c.lineTo(0, 2);
+          c.moveTo(20, -22); c.lineTo(0, 2);
+          c.stroke();
+          // Jumper figure
+          c.fillStyle = '#f8fafc';
+          c.beginPath();
+          c.arc(0, 4, 3, 0, Math.PI * 2);
+          c.fill();
+          c.fillRect(-2, 7, 4, 6);
+          break;
+        }
+      }
+
+      c.restore();
+    }
+
+    function drawVectors(c, obj, cx, cy) {
+      if (obj.landed) return;
+      const env = ENVIRONMENTS[currentEnvKey];
+      const Fg = obj.mass * env.g;
+      const Fd = obj.drag;
+
+      // Downward gravity vector (Green)
+      const maxVecLen = 42;
+      const gLen = Math.min(maxVecLen, Math.max(12, Fg * 1.5));
+      drawArrow(c, cx, cy, cx, cy + gLen, '#34c759', 'Fg');
+
+      // Upward drag vector (Orange/Red)
+      if (Fd > 0.05) {
+        const dLen = Math.min(maxVecLen, Math.max(8, (Fd / Fg) * gLen));
+        drawArrow(c, cx, cy, cx, cy - dLen, '#f97316', 'Fd');
+      }
+    }
+
+    function drawArrow(c, x1, y1, x2, y2, color, label) {
+      const headLen = 6;
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      c.save();
+      c.strokeStyle = color;
+      c.fillStyle = color;
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(x1, y1);
+      c.lineTo(x2, y2);
+      c.stroke();
+
+      c.beginPath();
+      c.moveTo(x2, y2);
+      c.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+      c.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+      c.closePath();
+      c.fill();
+
+      if (label) {
+        c.font = '700 9px "JetBrains Mono", monospace';
+        c.fillText(label, x2 + (angle > 0 ? 8 : 8), y2);
+      }
+      c.restore();
+    }
+
+    function drawImpactBadge(c, cx, cy, t, v, color) {
+      c.save();
+      c.font = '700 10px "JetBrains Mono", monospace';
+      const text = `${t.toFixed(2)}s | ${v.toFixed(1)} m/s`;
+      const m = c.measureText(text);
+      const pad = 6;
+      const bw = m.width + pad * 2;
+      const bh = 18;
+
+      c.fillStyle = 'rgba(15,23,42,0.92)';
+      c.strokeStyle = color;
+      c.lineWidth = 1.5;
+      c.beginPath();
+      c.roundRect(cx - bw / 2, cy - bh / 2, bw, bh, 6);
+      c.fill();
+      c.stroke();
+
+      c.fillStyle = '#f8fafc';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillText(text, cx, cy);
+      c.restore();
+    }
+
+    /* ════════════════════════════════════════════════════════
+       Physics Simulation Loop
+    ════════════════════════════════════════════════════════ */
+    function updatePhysics(dt) {
+      const env = ENVIRONMENTS[currentEnvKey];
+      const g = env.g;
+      const rho = env.rho;
+
+      // Update Object A
+      if (!objA.landed) {
+        const Fg = objA.mass * g;
+        const Fd = 0.5 * rho * objA.v * objA.v * objA.cd * objA.area;
+        const Fnet = Math.max(0, Fg - Fd);
+        objA.a = Fnet / objA.mass;
+        objA.drag = Fd;
+
+        objA.v += objA.a * dt;
+        objA.y -= objA.v * dt;
+
+        if (objA.y <= 0) {
+          objA.y = 0;
+          objA.landed = true;
+          objA.impactTime = simTime;
+          objA.impactV = objA.v;
+          document.getElementById('fg-badge-a').textContent = `Landed (${objA.impactTime.toFixed(2)}s)`;
+          document.getElementById('fg-badge-a').style.background = 'rgba(52,199,89,0.2)';
+          document.getElementById('fg-badge-a').style.color = '#34c759';
+        }
+      }
+
+      // Update Object B
+      if (!objB.landed) {
+        const Fg = objB.mass * g;
+        const Fd = 0.5 * rho * objB.v * objB.v * objB.cd * objB.area;
+        const Fnet = Math.max(0, Fg - Fd);
+        objB.a = Fnet / objB.mass;
+        objB.drag = Fd;
+
+        objB.v += objB.a * dt;
+        objB.y -= objB.v * dt;
+
+        if (objB.y <= 0) {
+          objB.y = 0;
+          objB.landed = true;
+          objB.impactTime = simTime;
+          objB.impactV = objB.v;
+          document.getElementById('fg-badge-b').textContent = `Landed (${objB.impactTime.toFixed(2)}s)`;
+          document.getElementById('fg-badge-b').style.background = 'rgba(52,199,89,0.2)';
+          document.getElementById('fg-badge-b').style.color = '#34c759';
+        }
+      }
+
+      // Record Strobe
+      if (simTime - lastStrobeTime >= 0.20) {
+        lastStrobeTime = simTime;
+        if (!objA.landed) strobeTrailA.push({ y: objA.y, t: simTime });
+        if (!objB.landed) strobeTrailB.push({ y: objB.y, t: simTime });
+      }
+
+      // Stop if both landed
+      if (objA.landed && objB.landed) {
+        isRunning = false;
+        document.getElementById('fg-pause-btn').textContent = 'Completed';
+      }
+    }
+
+    function loop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const rawDt = Math.min(0.04, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+
+      if (isRunning) {
+        const timeScale = isSlowMo ? 0.25 : 1.0;
+        const dt = rawDt * timeScale;
+        simTime += dt;
+        updatePhysics(dt);
+        syncReadouts();
+      }
+
+      drawScene();
+      animFrame = requestAnimationFrame(loop);
+    }
+
+    function syncReadouts() {
+      document.getElementById('fg-stat-y-a').innerHTML = `${objA.y.toFixed(1)}<span class="fg-stat-unit">m</span>`;
+      document.getElementById('fg-stat-v-a').innerHTML = `${objA.v.toFixed(1)}<span class="fg-stat-unit">m/s</span>`;
+      document.getElementById('fg-stat-a-a').innerHTML = `${objA.a.toFixed(2)}<span class="fg-stat-unit">m/s²</span>`;
+      document.getElementById('fg-stat-drag-a').innerHTML = `${objA.drag.toFixed(1)}<span class="fg-stat-unit">N</span>`;
+
+      document.getElementById('fg-stat-y-b').innerHTML = `${objB.y.toFixed(1)}<span class="fg-stat-unit">m</span>`;
+      document.getElementById('fg-stat-v-b').innerHTML = `${objB.v.toFixed(1)}<span class="fg-stat-unit">m/s</span>`;
+      document.getElementById('fg-stat-a-b').innerHTML = `${objB.a.toFixed(2)}<span class="fg-stat-unit">m/s²</span>`;
+      document.getElementById('fg-stat-drag-b').innerHTML = `${objB.drag.toFixed(1)}<span class="fg-stat-unit">N</span>`;
+
+      const pTime = document.getElementById('fg-p-time');
+      if (pTime) pTime.textContent = `${simTime.toFixed(2)} s`;
+    }
+
+    function resetSimulation() {
+      isRunning = false;
+      simTime = 0.0;
+      lastTimestamp = 0;
+      lastStrobeTime = -1;
+      strobeTrailA = [];
+      strobeTrailB = [];
+
+      const typeA = document.getElementById('fg-lane-a-sel').value;
+      const typeB = document.getElementById('fg-lane-b-sel').value;
+      objA = createDropObject(typeA);
+      objB = createDropObject(typeB);
+
+      const bA = document.getElementById('fg-badge-a');
+      const bB = document.getElementById('fg-badge-b');
+      bA.textContent = 'Ready';
+      bA.style.background = 'rgba(0,113,227,0.2)';
+      bA.style.color = '#38bdf8';
+      bB.textContent = 'Ready';
+      bB.style.background = 'rgba(0,113,227,0.2)';
+      bB.style.color = '#38bdf8';
+
+      document.getElementById('fg-pause-btn').textContent = 'Pause';
+      syncReadouts();
+      drawScene();
+    }
+
+    function dropObjects() {
+      resetSimulation();
+      isRunning = true;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       UI Event Bindings
+    ════════════════════════════════════════════════════════ */
+    document.getElementById('fg-drop-btn').addEventListener('click', dropObjects);
+    const pDrop = document.getElementById('fg-panel-drop-btn');
+    if (pDrop) pDrop.addEventListener('click', dropObjects);
+
+    document.getElementById('fg-pause-btn').addEventListener('click', function () {
+      if (objA.landed && objB.landed) return;
+      isRunning = !isRunning;
+      this.textContent = isRunning ? 'Pause' : 'Resume';
+    });
+
+    document.getElementById('fg-reset-btn').addEventListener('click', resetSimulation);
+    const pReset = document.getElementById('fg-panel-reset-btn');
+    if (pReset) pReset.addEventListener('click', resetSimulation);
+
+    document.getElementById('fg-slow-btn').addEventListener('click', function () {
+      isSlowMo = !isSlowMo;
+      this.classList.toggle('active-toggle', isSlowMo);
+    });
+
+    document.getElementById('fg-lane-a-sel').addEventListener('change', resetSimulation);
+    document.getElementById('fg-lane-b-sel').addEventListener('change', resetSimulation);
+
+    // Height Sliders
+    const hSlider = document.getElementById('fg-height-slider');
+    const hVal = document.getElementById('fg-height-val');
+    const pHSlider = document.getElementById('fg-panel-h-slider');
+    const pHVal = document.getElementById('fg-panel-h-val');
+
+    function updateHeight(newH) {
+      dropHeight = parseFloat(newH);
+      hSlider.value = dropHeight;
+      hVal.textContent = `${dropHeight.toFixed(0)} m`;
+      if (pHSlider) pHSlider.value = dropHeight;
+      if (pHVal) pHVal.textContent = `${dropHeight.toFixed(0)} m`;
+      resetSimulation();
+    }
+
+    hSlider.addEventListener('input', (e) => updateHeight(e.target.value));
+    if (pHSlider) pHSlider.addEventListener('input', (e) => updateHeight(e.target.value));
+
+    // Environment Buttons
+    function setEnvironment(key) {
+      if (!ENVIRONMENTS[key]) return;
+      currentEnvKey = key;
+      document.querySelectorAll('.fg-env-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-env') === key);
+      });
+      const env = ENVIRONMENTS[key];
+      const pG = document.getElementById('fg-p-g');
+      if (pG) pG.textContent = `${env.g.toFixed(2)} m/s²`;
+      const pRho = document.getElementById('fg-p-rho');
+      if (pRho) pRho.textContent = `${env.rho.toFixed(3)} kg/m³`;
+      resetSimulation();
+    }
+
+    document.querySelectorAll('.fg-env-btn').forEach(btn => {
+      btn.addEventListener('click', () => setEnvironment(btn.getAttribute('data-env')));
+    });
+
+    // Checkboxes
+    document.getElementById('fg-vectors-toggle').addEventListener('change', drawScene);
+    document.getElementById('fg-strobe-toggle').addEventListener('change', drawScene);
+
+    // Side panel presets
+    const PRESETS = {
+      apollo15: { env: 'moon',      h: 30,  laneA: 'hammer',   laneB: 'feather' },
+      earthvac: { env: 'earth-vac',  h: 50,  laneA: 'hammer',   laneB: 'feather' },
+      earthair: { env: 'earth-air',  h: 50,  laneA: 'hammer',   laneB: 'feather' },
+      skydive:  { env: 'earth-air',  h: 100, laneA: 'skydiver', laneB: 'parachute' },
+      mars:     { env: 'mars',       h: 40,  laneA: 'bowling',  laneB: 'basketball' },
+      jupiter:  { env: 'jupiter',    h: 60,  laneA: 'bowling',  laneB: 'feather' }
+    };
+
+    document.querySelectorAll('.fg-panel-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pKey = btn.getAttribute('data-preset');
+        const p = PRESETS[pKey];
+        if (!p) return;
+        setEnvironment(p.env);
+        updateHeight(p.h);
+        document.getElementById('fg-lane-a-sel').value = p.laneA;
+        document.getElementById('fg-lane-b-sel').value = p.laneB;
+        dropObjects();
+      });
+    });
+
+    /* ════════════════════════════════════════════════════════
+       Kinematics Calculator
+    ════════════════════════════════════════════════════════ */
+    function calcKinematics() {
+      const h = parseFloat(document.getElementById('fg-calc-h').value);
+      const g = parseFloat(document.getElementById('fg-calc-g-preset').value);
+      if (isNaN(h) || isNaN(g) || h <= 0 || g <= 0) return;
+
+      const t = Math.sqrt((2 * h) / g);
+      const v = g * t;
+      const kmh = v * 3.6;
+
+      document.getElementById('fg-calc-res-t').textContent = `${t.toFixed(2)} s`;
+      document.getElementById('fg-calc-res-v').textContent = `${v.toFixed(1)} m/s`;
+      document.getElementById('fg-calc-res-kmh').textContent = `${kmh.toFixed(1)} km/h`;
+    }
+
+    document.getElementById('fg-calc-h').addEventListener('input', calcKinematics);
+    document.getElementById('fg-calc-g-preset').addEventListener('change', calcKinematics);
+
+    /* ════════════════════════════════════════════════════════
+       Practice Checkers
+    ════════════════════════════════════════════════════════ */
+    window.fgCheckNum = function (num, correct, tol) {
+      const input = document.getElementById('fgans-' + num);
+      const fb    = document.getElementById('fgfb-' + num);
+      const hint  = document.getElementById('fghint-' + num);
+      const val   = parseFloat(input.value);
+
+      fb.className = 'fg-feedback';
+      if (isNaN(val)) {
+        fb.textContent = 'Enter a valid number.';
+        fb.classList.add('wrong');
+        return;
+      }
+
+      if (Math.abs(val - correct) <= tol) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        input.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        input.style.borderColor = '#ff3b30';
+      }
+    };
+
+    window.fgCheckText = function (num, correct) {
+      const select = document.getElementById('fgans-' + num);
+      const fb     = document.getElementById('fgfb-' + num);
+      const hint   = document.getElementById('fghint-' + num);
+      const val    = select.value;
+
+      fb.className = 'fg-feedback';
+      if (!val) {
+        fb.textContent = 'Please make a selection.';
+        fb.classList.add('wrong');
+        return;
+      }
+
+      if (val === correct) {
+        fb.textContent = '✓ Correct!';
+        fb.classList.add('correct');
+        hint.classList.remove('visible');
+        select.style.borderColor = '#34c759';
+      } else {
+        fb.textContent = '✗ Try again';
+        fb.classList.add('wrong');
+        hint.classList.add('visible');
+        select.style.borderColor = '#ff3b30';
+      }
+    };
+
+    /* ════════════════════════════════════════════════════════
+       Init
+    ════════════════════════════════════════════════════════ */
+    resizeCanvas();
+    resetSimulation();
+    calcKinematics();
+    animFrame = requestAnimationFrame(loop);
+  })();
+  </script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/video-embed.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

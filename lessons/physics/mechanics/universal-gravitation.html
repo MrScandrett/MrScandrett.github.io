@@ -277,10 +277,64 @@
       .ug-readout  { grid-template-columns: repeat(3,1fr); }
     }
 
-    /* ── Layout overrides ─────────────────────────────── */
+    /* ── Layout overrides & Side Panel ─────────────────── */
     .ll-viewport {
       --ll-tab-active: #5856d6;
       --ll-tab-active-bg: rgba(88,86,214,0.12);
+      --ll-panel-w: 300px;
+    }
+    .ug-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
+    }
+    .ug-panel-preset {
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 8px;
+      background: var(--white, #fff);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-primary, #1d1d1f);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .ug-panel-preset:hover {
+      background: rgba(88,86,214,0.08);
+      border-color: #5856d6;
+      transform: translateY(-1px);
+    }
+    .ug-panel-preset small {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 400;
+      color: var(--text-muted, #64748b);
+      margin-top: 0.15rem;
+    }
+    [data-lighting="night"] .ug-panel-preset,
+    [data-theme="vaporwave"] .ug-panel-preset,
+    [data-theme="bark"] .ug-panel-preset {
+      background: #1c1c1e;
+      border-color: rgba(255,255,255,0.15);
+      color: #f5f5f7;
+    }
+    [data-lighting="night"] .ug-panel-preset:hover,
+    [data-theme="vaporwave"] .ug-panel-preset:hover,
+    [data-theme="bark"] .ug-panel-preset:hover {
+      background: rgba(88,86,214,0.22);
+      border-color: #7b79ff;
+    }
+    .ug-panel-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+    .ug-panel-actions .ug-btn {
+      flex: 1;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.8rem;
     }
       /* Night: plain links in paragraphs on dark cards. */
     :where(html[data-lighting="night"]) p a:not([class]), :where(html[data-lighting="night"]) li a:not([class]) { color: #8ec0ff; }
@@ -661,6 +715,99 @@
 
   </main>
   </div><!-- /.ll-sim -->
+
+  <aside class="ll-panel" aria-hidden="false">
+    <div class="ll-panel-head">
+      <div class="ll-tabs">
+        <button class="ll-tab" aria-selected="true" data-pane="ug-controls">Controls</button>
+        <button class="ll-tab" aria-selected="false" data-pane="ug-guide">Guide</button>
+      </div>
+      <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+    </div>
+    <div class="ll-panel-body">
+      <div class="ll-pane ll-active" id="ug-controls">
+        <span class="ll-label">Preset Trajectories</span>
+        <div class="ug-panel-grid" role="group" aria-label="Orbital Presets">
+          <button type="button" class="ug-panel-preset" data-dist="75" data-speed="100">
+            Circular
+            <small>v = 1.00× (stable orbit)</small>
+          </button>
+          <button type="button" class="ug-panel-preset" data-dist="75" data-speed="120">
+            Elliptical
+            <small>v = 1.20× (Keplerian oval)</small>
+          </button>
+          <button type="button" class="ug-panel-preset" data-dist="45" data-speed="100">
+            Close Orbit
+            <small>r = 0.60× (fast period)</small>
+          </button>
+          <button type="button" class="ug-panel-preset" data-dist="105" data-speed="100">
+            Distant Orbit
+            <small>r = 1.40× (slow period)</small>
+          </button>
+          <button type="button" class="ug-panel-preset" data-dist="75" data-speed="150">
+            Escape Velocity
+            <small>v = 1.50× (unbound path)</small>
+          </button>
+          <button type="button" class="ug-panel-preset" data-dist="75" data-speed="50">
+            Crash Plunge
+            <small>v = 0.50× (spiral inwards)</small>
+          </button>
+        </div>
+
+        <div class="ug-panel-actions">
+          <button type="button" class="ug-btn" id="ug-panel-launch-btn">Launch Orbit</button>
+          <button type="button" class="ug-btn secondary" id="ug-panel-reset-btn">Reset</button>
+        </div>
+
+        <hr class="ll-hr">
+        <span class="ll-label">Live Telemetry</span>
+        <div class="ll-readouts">
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Trajectory</span>
+            <span class="ll-readout-val" id="ug-p-type">Circular</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Grav. Pull</span>
+            <span class="ll-readout-val" id="ug-p-force">1.00</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Period</span>
+            <span class="ll-readout-val" id="ug-p-period">1.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ll-pane" id="ug-guide">
+        <div class="ll-info">
+          <strong>Newton's Law of Universal Gravitation</strong>
+          Every particle of matter attracts every other with a force proportional to the product of their masses and inversely proportional to the square of the distance between them:
+          <div style="font-weight:700; color:var(--card-accent, #5856d6); margin-top:0.3rem; font-size:0.95rem;">F = G · (m₁ · m₂) / r²</div>
+        </div>
+        <div class="ll-info">
+          <strong>The Inverse-Square Rule</strong>
+          Double the orbital radius \(r \to 2r\), and the gravitational pull weakens by a factor of \(2^2 = 4\). Triple distance \(\to 1/9\) the force.
+        </div>
+        <div class="ll-info">
+          <strong>Circular Orbit Velocity</strong>
+          For circular motion, gravity provides the centripetal force: \(G M m / r^2 = m v^2 / r \implies v = \sqrt{G M / r}\). Speed decreases as distance increases.
+        </div>
+        <div class="ll-info">
+          <strong>Kepler's Third Law</strong>
+          The square of the orbital period is proportional to the cube of the orbital radius: \(T^2 \propto r^3\). Outer planets take exponentially longer to orbit!
+        </div>
+        <div class="ll-info">
+          <strong>Classroom Discussion</strong>
+          Why do astronauts on the ISS float if gravity there is still ~88% of Earth surface gravity? (They are in continuous free-fall along with the station!)
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="ll-open-btn" aria-label="Open panel">
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+    <span class="ll-open-dot"></span>
+  </button>
   </div><!-- /.ll-stage -->
 
 </div><!-- /.ll-viewport -->
@@ -740,6 +887,13 @@
       document.getElementById('ug-r-type').textContent   = orbitType;
       document.getElementById('ug-r-force').textContent  = forceRel;
       document.getElementById('ug-r-period').textContent = periodRel;
+
+      const pType = document.getElementById('ug-p-type');
+      if (pType) pType.textContent = orbitType;
+      const pForce = document.getElementById('ug-p-force');
+      if (pForce) pForce.textContent = forceRel;
+      const pPeriod = document.getElementById('ug-p-period');
+      if (pPeriod) pPeriod.textContent = periodRel;
     }
 
     function drawStatic() {
@@ -917,6 +1071,32 @@
       speedVal.textContent = '1.0×';
       updateReadout();
       drawStatic();
+    });
+
+    // Panel controls & presets
+    const pLaunch = document.getElementById('ug-panel-launch-btn');
+    if (pLaunch) {
+      pLaunch.addEventListener('click', () => {
+        document.getElementById('ug-launch-btn').click();
+      });
+    }
+    const pReset = document.getElementById('ug-panel-reset-btn');
+    if (pReset) {
+      pReset.addEventListener('click', () => {
+        document.getElementById('ug-reset-btn').click();
+      });
+    }
+
+    document.querySelectorAll('.ug-panel-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = parseFloat(btn.getAttribute('data-dist'));
+        const s = parseFloat(btn.getAttribute('data-speed'));
+        if (!isNaN(d)) distSlider.value = d;
+        if (!isNaN(s)) speedSlider.value = s;
+        distSlider.dispatchEvent(new Event('input'));
+        speedSlider.dispatchEvent(new Event('input'));
+        document.getElementById('ug-launch-btn').click();
+      });
     });
 
     // Init

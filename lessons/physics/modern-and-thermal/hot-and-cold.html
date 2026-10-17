@@ -6,52 +6,773 @@
   <meta name="robots" content="noindex" />
   <title>Hot &amp; Cold · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson — explore Hot & Cold." />
+  <meta name="description" content="Physics Lesson — explore Hot &amp; Cold: atomic kinetic energy, absolute zero, temperature scales, thermal equilibrium, and conduction." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
-<script src="../../../assets/js/vr-mode.js" defer></script>
+  <script src="../../../assets/js/vr-mode.js" defer></script>
+  <style>
+    .hc-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 290px; }
+    .hc-hero { padding: 0.4rem 0 1.3rem; }
+    .hc-hero h1 { max-width: 32ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .hc-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .hc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
+    .hc-lede { margin: 0.65rem 0 0; max-width: 70ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+    [data-lighting="night"] .hc-lede,
+    [data-theme="vaporwave"] .hc-lede,
+    [data-theme="bark"] .hc-lede { color: rgba(245, 245, 247, 0.72); }
+
+    .hc-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 3.5px solid var(--card-accent, #f97316);
+      border-radius: var(--radius, 18px);
+      box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.08));
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .hc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; }
+    .hc-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
+    .hc-card p { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .hc-card p:last-child { margin-bottom: 0; }
+    [data-lighting="night"] .hc-card,
+    [data-theme="vaporwave"] .hc-card,
+    [data-theme="bark"] .hc-card { background: #2c2c2e; }
+    [data-lighting="night"] .hc-card p,
+    [data-theme="vaporwave"] .hc-card p,
+    [data-theme="bark"] .hc-card p { color: rgba(245, 245, 247, 0.72); }
+
+    .hc-callout { border-radius: 12px; padding: 0.85rem 1rem; margin: 0.8rem 0; font-size: 0.84rem; line-height: 1.6; }
+    .hc-callout.amber { background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; }
+    .hc-callout.cyan  { background: rgba(6, 182, 212, 0.1); border-left: 3px solid #06b6d4; }
+    .hc-callout.rose  { background: rgba(244, 63, 94, 0.1); border-left: 3px solid #f43f5e; }
+
+    .hc-canvas-wrap {
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #080e1a;
+      margin: 0.8rem 0;
+      position: relative;
+    }
+    .hc-canvas-wrap:focus-visible { outline: 2px solid #f97316; outline-offset: -2px; }
+    #hc-canvas { width: 100%; height: 340px; display: block; touch-action: none; }
+
+    .hc-sim-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.6rem 0;
+    }
+    .hc-sim-btn {
+      background: rgba(249, 115, 22, 0.12);
+      color: #ea580c;
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      border-radius: 8px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+    .hc-sim-btn:hover { background: rgba(249, 115, 22, 0.22); }
+    .hc-sim-btn.is-active { background: #ea580c; color: #fff; border-color: #ea580c; }
+    [data-lighting="night"] .hc-sim-btn,
+    [data-theme="vaporwave"] .hc-sim-btn,
+    [data-theme="bark"] .hc-sim-btn { color: #fdba74; }
+    [data-lighting="night"] .hc-sim-btn.is-active,
+    [data-theme="vaporwave"] .hc-sim-btn.is-active,
+    [data-theme="bark"] .hc-sim-btn.is-active { color: #fff; }
+
+    .hc-readouts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 0.8rem 0 0.4rem;
+    }
+    .hc-readout {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--line, #d2d2d7);
+      border-radius: 10px;
+      padding: 0.55rem 0.6rem;
+      text-align: center;
+    }
+    [data-lighting="night"] .hc-readout,
+    [data-theme="vaporwave"] .hc-readout,
+    [data-theme="bark"] .hc-readout { background: rgba(255, 255, 255, 0.06); }
+    .hc-readout-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .hc-readout-val { font-size: 0.95rem; font-weight: 700; color: #ea580c; font-family: ui-monospace, monospace; }
+
+    .hc-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .hc-app { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .hc-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .hc-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .hc-app small { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
+
+    .hc-practice .hc-problem { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .hc-problem p { margin-bottom: 0.5rem; font-size: 0.88rem; color: var(--text-secondary, #3f4f65); line-height: 1.6; }
+    [data-lighting="night"] .hc-problem p,
+    [data-theme="vaporwave"] .hc-problem p,
+    [data-theme="bark"] .hc-problem p { color: rgba(245, 245, 247, 0.72); }
+    .hc-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .hc-ans-input { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 140px; background: var(--white, #fff); color: var(--text, #1d1d1f); }
+    .hc-check-btn { background: #ea580c; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .hc-check-btn:hover { background: #c2410c; }
+    .hc-feedback { font-size: 0.82rem; font-weight: 600; }
+    .hc-feedback.ok { color: #16a34a; }
+    .hc-feedback.err { color: #dc2626; }
+    .hc-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
+    .diff-easy { background: rgba(22, 163, 74, 0.15); color: #16a34a; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(245, 158, 11, 0.15); color: #d97706; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(220, 38, 38, 0.12); color: #dc2626; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+
+    @media (max-width: 680px) {
+      .hc-apps { grid-template-columns: 1fr; }
+      .hc-readouts { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
 </head>
-<body>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="ll-viewport">
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
-    <div class="cl-page">
-      <div class="cl-hero">
-        <h1>Hot &amp; Cold</h1>
-        <p class="cl-lede">Foundational STEAM lesson for Hot &amp; Cold.</p>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="hc-page">
+          <section class="hero hc-hero">
+            <p class="eyebrow">Physics · Modern &amp; Thermal · Foundational</p>
+            <h1>Hot &amp; Cold</h1>
+            <div class="hc-meta">
+              <span>Kinetic Theory</span><span class="dot"></span>
+              <span>Absolute Zero</span><span class="dot"></span>
+              <span>Kelvin &amp; Celsius</span><span class="dot"></span>
+              <span>Thermal Equilibrium</span><span class="dot"></span>
+              <span>Conduction</span>
+            </div>
+            <p class="hc-lede">At the microscopic scale, temperature is not an invisible fluid or a separate substance—it is the average translational kinetic energy of jiggling atoms and molecules. Heat is the spontaneous transfer of that disordered kinetic energy from hotter objects to colder ones until they reach thermal equilibrium.</p>
+          </section>
+
+          <!-- ── Section 1: Overview ───────────────────── -->
+          <section class="hc-card" id="overview">
+            <h2>1. What Is Temperature? Atomic Motion &amp; Kinetic Theory</h2>
+            <p>For centuries, philosophers and early naturalists believed heat was a weightless, invisible fluid called <em>caloric</em> that flowed into substances when warmed. In 1798, Benjamin Thompson (Count Rumford) observed that boring brass cannons generated limitless heat through friction alone, demonstrating that heat is not conserved like a fluid, but is mechanical energy in microscopic motion.</p>
+            <p>Today, kinetic theory defines <strong>temperature (\(T\))</strong> directly in terms of microscopic motion. For an ideal gas of particles of mass \(m\), the average translational kinetic energy \(\langle E_k \rangle\) per particle is directly proportional to absolute temperature:</p>
+            <div class="hc-callout amber" style="font-family:'JetBrains Mono',monospace;font-size:0.95rem;text-align:center;">
+              \(\langle E_k \rangle = \frac{1}{2} m \langle v^2 \rangle = \frac{3}{2} k_B T\)
+            </div>
+            <p style="font-size:0.84rem;color:var(--text-muted,#64748b);text-align:center;">where \(k_B \approx 1.3806 \times 10^{-23}\text{ J/K}\) is the Boltzmann constant.</p>
+
+            <figure data-zoomable data-lightbox-group="hot-cold">
+              <img src="../../../assets/images/lessons/hot-and-cold/thermal-kinetic-motion.svg" width="960" height="540" alt="Diagram showing microscopic atomic motion across Absolute Zero, Ice, Water, and Steam, alongside calibrated temperature scales for Kelvin, Celsius, and Fahrenheit." loading="lazy" decoding="async" />
+              <figcaption><strong>Temperature as microscopic kinetic energy.</strong> Higher temperature represents faster molecular speeds. The absolute Kelvin scale begins at \(0\text{ K}\) (\(-273.15^\circ\text{C}\)), where classical thermal kinetic motion ceases entirely.</figcaption>
+            </figure>
+          </section>
+
+          <!-- ── Section 2: Simulator ─────────────────── -->
+          <section class="hc-card" id="simulator" style="--card-accent:#ea580c;">
+            <h2>2. Interactive Thermal Kinetic Simulator</h2>
+            <p style="font-size:0.84rem;color:var(--text-muted,#64748b);">Watch particles collide and transfer momentum. Use the slider or presets to adjust temperature from Absolute Zero (\(0\text{ K}\)) to over \(1,400\text{ K}\), or switch to the <em>Dual Chamber Conduction</em> mode to observe thermal equilibrium across a boundary.</p>
+
+            <div class="hc-canvas-wrap" id="hc-canvas-wrap" tabindex="0" role="region" aria-label="Interactive molecular kinetic simulator. Adjust temperature to see particle velocities change.">
+              <canvas id="hc-canvas"></canvas>
+            </div>
+
+            <div class="hc-sim-toolbar">
+              <button type="button" class="hc-sim-btn is-active" id="hc-preset-300">🏠 Room Temp (293 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-preset-0">❄️ Absolute Zero (0 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-preset-77">🧪 Liquid N₂ (77 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-preset-273">🧊 Freezing (273 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-preset-373">♨️ Boiling (373 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-preset-flame">🔥 Flame (1,400 K)</button>
+              <button type="button" class="hc-sim-btn" id="hc-mode-toggle" style="margin-left:auto;">🔄 Mode: Single Chamber</button>
+            </div>
+
+            <div class="hc-readouts">
+              <div class="hc-readout"><span class="hc-readout-label">Temperature (K)</span><span class="hc-readout-val" id="hc-r-kelvin">293.15 K</span></div>
+              <div class="hc-readout"><span class="hc-readout-label">Celsius / Fahrenheit</span><span class="hc-readout-val" id="hc-r-celsius">20.0°C / 68.0°F</span></div>
+              <div class="hc-readout"><span class="hc-readout-label">Avg Kinetic Energy</span><span class="hc-readout-val" id="hc-r-ke">6.07 × 10⁻²¹ J</span></div>
+              <div class="hc-readout"><span class="hc-readout-label">RMS Velocity (He gas)</span><span class="hc-readout-val" id="hc-r-vrms">1,351 m/s</span></div>
+            </div>
+          </section>
+
+          <!-- ── Section 3: Scales & Zeroth Law ───────── -->
+          <section class="hc-card" id="scales" style="--card-accent:#06b6d4;">
+            <h2>3. Temperature Scales &amp; The Zeroth Law</h2>
+            <p>Three common temperature scales exist today, each founded on distinct historical reference points:</p>
+            <ul>
+              <li><strong>Fahrenheit (°F):</strong> Established in 1724 by Daniel Gabriel Fahrenheit using an ice-water-ammonium chloride brine as \(0^\circ\text{F}\) and human body temperature calibrated near \(96^\circ\text{F}\) (later adjusted so water freezes at \(32^\circ\text{F}\) and boils at \(212^\circ\text{F}\)).</li>
+              <li><strong>Celsius (°C):</strong> Devised in 1742 by Anders Celsius based on pure water at standard atmospheric pressure: freezing at \(0^\circ\text{C}\) and boiling at \(100^\circ\text{C}\).</li>
+              <li><strong>Kelvin (K):</strong> The SI base unit of thermodynamic temperature proposed by Lord Kelvin in 1848. Unlike Celsius or Fahrenheit, Kelvin has no negative values—it is an <em>absolute scale</em> whose zero point is the complete absence of classical kinetic energy.</li>
+            </ul>
+
+            <div class="hc-callout cyan" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;">
+              <strong>Conversion Formulas:</strong><br />
+              \(T_{\text{K}} = T_{\text{C}} + 273.15\) &emsp;&emsp; \(T_{\text{F}} = \frac{9}{5} T_{\text{C}} + 32\) &emsp;&emsp; \(T_{\text{C}} = \frac{5}{9}(T_{\text{F}} - 32)\)
+            </div>
+
+            <h3>The Zeroth Law of Thermodynamics</h3>
+            <p>Formulated formally by Ralph H. Fowler in 1935, the <strong>Zeroth Law</strong> establishes the transitive property of thermal equilibrium:</p>
+            <blockquote><em>"If two thermodynamic systems A and B are each in thermal equilibrium with a third system C, then system A and system B are in thermal equilibrium with each other."</em></blockquote>
+            <p>This fundamental law is why thermometers work: if a thermometer bulb reaches equilibrium with object A and reads \(22^\circ\text{C}\), and later reaches equilibrium with object B and reads \(22^\circ\text{C}\), we know without placing A and B into contact that no net heat would flow between them.</p>
+          </section>
+
+          <!-- ── Section 4: Extreme Temperatures in STEAM ─ -->
+          <section class="hc-card" id="extremes" style="--card-accent:#8b5cf6;">
+            <h2>4. From Absolute Zero to Stellar Cores</h2>
+            <p>The universe spans an astounding dynamic range of temperatures, from nanokelvin laboratory extremes to multimillion-degree stellar plasmas:</p>
+
+            <div class="hc-apps">
+              <div class="hc-app">
+                <div class="hc-app-icon">🧊</div>
+                <strong>Bose-Einstein Condensate (~100 nK)</strong>
+                <small>Using laser cooling and magnetic trapping, physicists cool rubidium atoms to billionths of a degree above absolute zero, causing wavepackets to merge into a single macroscopic quantum wave.</small>
+              </div>
+              <div class="hc-app">
+                <div class="hc-app-icon">🌌</div>
+                <strong>Cosmic Microwave Background (2.725 K)</strong>
+                <small>The thermal remnant glow of the Big Bang permeates all of deep space, chilling intergalactic matter to \(-270.4^\circ\text{C}\), just 2.7 degrees above absolute zero.</small>
+              </div>
+              <div class="hc-app">
+                <div class="hc-app-icon">🧲</div>
+                <strong>Superconducting Magnets (4.2 K)</strong>
+                <small>Liquid helium cools niobium-titanium coils in MRI scanners and CERN's Large Hadron Collider, dropping electrical resistance to zero and enabling massive electric currents without heat loss.</small>
+              </div>
+              <div class="hc-app">
+                <div class="hc-app-icon">☀️</div>
+                <strong>Solar Core &amp; Fusion Tokamaks (15M – 150M K)</strong>
+                <small>At 15 million Kelvin inside the Sun, protons possess sufficient kinetic energy to overcome Coulomb repulsion and fuse into helium. Experimental fusion reactors (ITER) heat plasma to 150 million Kelvin.</small>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Section 5: Worked Example ───────────── -->
+          <section class="hc-card" id="worked-example" style="--card-accent:#ec4899;">
+            <h2>5. Worked Example: Thermal Equilibrium Calculation</h2>
+            <p>When two substances at different temperatures are placed in an insulated container (a calorimeter), energy conservation dictates that heat lost by the hotter substance equals heat gained by the colder substance: \(Q_{\text{lost}} = Q_{\text{gained}}\).</p>
+            <div class="hc-callout rose" style="font-family:'JetBrains Mono',monospace;font-size:0.92rem;text-align:center;">
+              \(m_1 c_1 (T_1 - T_f) = m_2 c_2 (T_f - T_2)\)
+            </div>
+            <p><strong>Sample Problem:</strong> A student pours \(200\text{ g}\) of hot water at \(80^\circ\text{C}\) into an insulated cup containing \(300\text{ g}\) of cold water at \(20^\circ\text{C}\). Both have specific heat capacity \(c = 4.184\text{ J/(g}\cdot^\circ\text{C)}\). Find the final equilibrium temperature \(T_f\).</p>
+
+            <div style="background:rgba(236,72,153,0.06);border-left:3px solid #ec4899;border-radius:10px;padding:0.9rem;margin:0.8rem 0;font-size:0.86rem;line-height:1.65;">
+              <p style="margin:0 0 0.5rem;"><strong>Step 1: Set up the heat transfer equation.</strong><br />
+              Since both fluids are water, the specific heat capacity \(c\) cancels from both sides:<br />
+              \(m_1 (T_1 - T_f) = m_2 (T_f - T_2)\)</p>
+
+              <p style="margin:0 0 0.5rem;"><strong>Step 2: Expand and solve for \(T_f\).</strong><br />
+              \(m_1 T_1 - m_1 T_f = m_2 T_f - m_2 T_2\)<br />
+              \(m_1 T_1 + m_2 T_2 = (m_1 + m_2) T_f\)<br />
+              \(T_f = \frac{m_1 T_1 + m_2 T_2}{m_1 + m_2}\)</p>
+
+              <p style="margin:0 0 0.5rem;"><strong>Step 3: Substitute numerical values.</strong><br />
+              \(T_f = \frac{(200\text{ g})(80^\circ\text{C}) + (300\text{ g})(20^\circ\text{C})}{200\text{ g} + 300\text{ g}} = \frac{16,000 + 6,000}{500} = \frac{22,000}{500} = 44.0^\circ\text{C}\).</p>
+
+              <p style="margin:0;"><strong>Check Intuition:</strong> Because there is more cold water (\(300\text{ g}\)) than hot water (\(200\text{ g}\)), the final equilibrium temperature of \(44^\circ\text{C}\) lies closer to \(20^\circ\text{C}\) than to \(80^\circ\text{C}\), exactly matching physical conservation of energy.</p>
+            </div>
+          </section>
+
+          <!-- ── Section 6: Practice Problems ────────── -->
+          <section class="hc-card" id="practice" style="--card-accent:#10b981;">
+            <h2>6. Practice Problems</h2>
+            <div class="hc-practice">
+              <div class="hc-problem">
+                <p><span class="diff-easy">Easy</span>1. What is the value of Absolute Zero on the Celsius scale?</p>
+                <div class="hc-problem-row">
+                  <select class="hc-ans-input" id="hcans-1" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="-273.15">-273.15°C</option>
+                    <option value="0">0°C</option>
+                    <option value="-459.67">-459.67°C</option>
+                    <option value="-100">-100°C</option>
+                  </select>
+                  <button class="hc-check-btn" onclick="hcCheckText(1,'-273.15')">Check</button>
+                  <span class="hc-feedback" id="hcfb-1"></span>
+                </div>
+                <div class="hc-hint" id="hchint-1">Hint: \(0\text{ K} = T_{\text{C}} + 273.15 \implies T_{\text{C}} = -273.15^\circ\text{C}\).</div>
+              </div>
+
+              <div class="hc-problem">
+                <p><span class="diff-mid">Medium</span>2. If the absolute temperature (\(T\)) of an ideal gas is quadrupled (\(4\times\)), what happens to the root-mean-square speed (\(v_{\text{rms}}\)) of its molecules?</p>
+                <div class="hc-problem-row">
+                  <select class="hc-ans-input" id="hcans-2" style="width:200px;">
+                    <option value="">Choose…</option>
+                    <option value="doubles">It doubles (increases 2×)</option>
+                    <option value="quadruples">It quadruples (increases 4×)</option>
+                    <option value="halves">It is cut in half</option>
+                    <option value="unchanged">It remains unchanged</option>
+                  </select>
+                  <button class="hc-check-btn" onclick="hcCheckText(2,'doubles')">Check</button>
+                  <span class="hc-feedback" id="hcfb-2"></span>
+                </div>
+                <div class="hc-hint" id="hchint-2">Hint: \(v_{\text{rms}} = \sqrt{\frac{3 k_B T}{m}}\). Taking the square root of 4 gives 2.</div>
+              </div>
+
+              <div class="hc-problem">
+                <p><span class="diff-mid">Medium</span>3. Room temperature is commonly taken as \(25^\circ\text{C}\). Convert this to Kelvin (to the nearest tenth).</p>
+                <div class="hc-problem-row">
+                  <input type="number" step="0.1" class="hc-ans-input" id="hcans-3" placeholder="Kelvin" style="width:140px;" />
+                  <button class="hc-check-btn" onclick="hcCheckNumber(3, 298.15, 0.5)">Check</button>
+                  <span class="hc-feedback" id="hcfb-3"></span>
+                </div>
+                <div class="hc-hint" id="hchint-3">Hint: Add 273.15 to 25.</div>
+              </div>
+
+              <div class="hc-problem">
+                <p><span class="diff-hard">Hard</span>4. Two identical blocks of aluminum (\(m_1 = m_2\)) at \(100^\circ\text{C}\) and \(20^\circ\text{C}\) are placed in thermal contact inside an insulated chamber. What is the final equilibrium temperature in °C?</p>
+                <div class="hc-problem-row">
+                  <input type="number" class="hc-ans-input" id="hcans-4" placeholder="°C" style="width:140px;" />
+                  <button class="hc-check-btn" onclick="hcCheckNumber(4, 60, 0.5)">Check</button>
+                  <span class="hc-feedback" id="hcfb-4"></span>
+                </div>
+                <div class="hc-hint" id="hchint-4">Hint: Since mass and material are identical, the final temperature is the simple arithmetic mean: \((100 + 20) / 2 = 60^\circ\text{C}\).</div>
+              </div>
+            </div>
+          </section>
+
+          <p style="margin-top:1.5rem;"><a href="../../../steam-lessons.html#module-physics">← Back to Physics Lessons</a></p>
+        </main>
       </div>
 
-      <div class="cl-card">
-        <h2>Overview</h2>
-        <p>At the microscopic scale, temperature is not a fluid or a separate substance—it is the average kinetic energy of jiggling atoms. At absolute zero (\(0\text{ K}\)), particles possess minimal quantum motion; as thermal energy is added, particles vibrate faster and collide with higher momentum.</p>
-        <figure data-zoomable>
-          <img src="../../../assets/images/lessons/hot-and-cold/thermal-kinetic-motion.svg" width="960" height="540" alt="Diagram showing microscopic atomic motion across Absolute Zero, Ice, Water, and Steam, alongside Kelvin, Celsius, and Fahrenheit scales." loading="lazy" decoding="async" />
-          <figcaption><strong>Temperature as microscopic kinetic energy.</strong> Higher temperature represents faster molecular speeds. The absolute Kelvin scale begins at \(0\text{ K}\) (\(-273.15^\circ\text{C}\)), where thermal kinetic energy reaches its physical zero limit.</figcaption>
-        </figure>
-      </div>
+      <!-- ── Side Drawer Panel ─────────────────────── -->
+      <aside class="ll-panel" aria-hidden="true">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" aria-selected="true" data-pane="hc-pane-controls">Controls</button>
+            <button class="ll-tab" aria-selected="false" data-pane="hc-pane-guide">Guide</button>
+          </div>
+          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="hc-pane-controls">
+            <span class="ll-label">Temperature (Kelvin)</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">T <span id="hc-side-temp-val">293 K</span></label>
+              <input type="range" class="nl-slider" id="hc-temp-slider" min="0" max="800" step="5" value="293" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Particle Count</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;justify-content:space-between;">N atoms <span id="hc-side-count-val">90</span></label>
+              <input type="range" class="nl-slider" id="hc-count-slider" min="20" max="160" step="10" value="90" style="width:100%;" />
+            </div>
+
+            <span class="ll-label">Simulation Chamber</span>
+            <div style="margin-bottom:0.9rem;">
+              <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                <input type="checkbox" id="hc-split-chamber" /> Enable Dual Chamber (Hot &amp; Cold)
+              </label>
+              <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;margin-top:0.4rem;cursor:pointer;">
+                <input type="checkbox" id="hc-conduction-barrier" checked /> Insulating Barrier in Place
+              </label>
+            </div>
+
+            <div style="margin-top:1.2rem;">
+              <button type="button" class="hc-sim-btn" id="hc-side-reset" style="width:100%;justify-content:center;">↺ Reset Particles</button>
+            </div>
+          </div>
+
+          <div class="ll-pane" id="hc-pane-guide">
+            <div class="ll-info"><strong>Microscopic Jiggle</strong>Heat is disorganized microscopic kinetic energy. As temperature rises, particle speeds follow the Maxwell-Boltzmann distribution.</div>
+            <div class="ll-info"><strong>Absolute Zero</strong>\(0\text{ K} = -273.15^\circ\text{C}\). The temperature where classical kinetic energy halts and quantum ground-state zero-point motion remains.</div>
+            <div class="ll-info"><strong>Zeroth Law</strong>Thermal equilibrium is transitive. Systems at the same temperature experience no net heat flow.</div>
+            <div class="ll-info"><strong>Key Constant</strong>Boltzmann Constant: \(k_B = 1.3806 \times 10^{-23}\text{ J/K}\). Relates thermal energy to macroscopic temperature.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
     </div>
   </div>
-  <script src="../../../assets/js/photo-lightbox.js"></script>
+
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const canvas = document.getElementById('hc-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const tempSlider = document.getElementById('hc-temp-slider');
+    const countSlider = document.getElementById('hc-count-slider');
+    const splitCheckbox = document.getElementById('hc-split-chamber');
+    const barrierCheckbox = document.getElementById('hc-conduction-barrier');
+    const modeToggleBtn = document.getElementById('hc-mode-toggle');
+    const resetBtn = document.getElementById('hc-side-reset');
+
+    const rKelvin = document.getElementById('hc-r-kelvin');
+    const rCelsius = document.getElementById('hc-r-celsius');
+    const rKe = document.getElementById('hc-r-ke');
+    const rVrms = document.getElementById('hc-r-vrms');
+    const sideTemp = document.getElementById('hc-side-temp-val');
+    const sideCount = document.getElementById('hc-side-count-val');
+
+    let T = 293.15;
+    let particleCount = 90;
+    let isDualChamber = false;
+    let hasBarrier = true;
+    let particles = [];
+    let dpr = 1;
+    let animId = null;
+
+    const KB = 1.380649e-23; // J/K
+    const M_HE = 6.646e-27;  // Mass of Helium atom in kg
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.round(rect.width || 640);
+      const h = Math.round(rect.height || 340);
+      if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function initParticles() {
+      resize();
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || 640;
+      const h = rect.height || 340;
+      particles = [];
+
+      const count = isDualChamber ? particleCount : particleCount;
+      const half = Math.floor(count / 2);
+
+      for (let i = 0; i < count; i++) {
+        let x, y, vx, vy, tempSide, color;
+        const speedScale = Math.sqrt(Math.max(0.001, T / 300)) * 2.2;
+
+        if (isDualChamber) {
+          tempSide = i < half ? 'left' : 'right';
+          const leftT = Math.min(800, T * 1.6);
+          const rightT = Math.max(10, T * 0.4);
+          const currentT = tempSide === 'left' ? leftT : rightT;
+          const sideSpeed = Math.sqrt(Math.max(0.001, currentT / 300)) * 2.4;
+
+          x = tempSide === 'left' 
+            ? 20 + Math.random() * (w * 0.5 - 40)
+            : w * 0.5 + 20 + Math.random() * (w * 0.5 - 40);
+          y = 20 + Math.random() * (h - 40);
+
+          const angle = Math.random() * Math.PI * 2;
+          vx = Math.cos(angle) * sideSpeed;
+          vy = Math.sin(angle) * sideSpeed;
+          color = tempSide === 'left' ? '#f43f5e' : '#38bdf8';
+        } else {
+          tempSide = 'single';
+          x = 20 + Math.random() * (w - 40);
+          y = 20 + Math.random() * (h - 40);
+          const angle = Math.random() * Math.PI * 2;
+          vx = Math.cos(angle) * speedScale;
+          vy = Math.sin(angle) * speedScale;
+          color = T < 100 ? '#67e8f9' : T < 350 ? '#38bdf8' : T < 600 ? '#f59e0b' : '#ef4444';
+        }
+
+        particles.push({
+          x, y, vx, vy, r: 5, color, side: tempSide,
+          baseX: x, baseY: y // For absolute zero crystal lattice vibration
+        });
+      }
+      updateReadouts();
+    }
+
+    function updateReadouts() {
+      const c = T - 273.15;
+      const f = (c * 9 / 5) + 32;
+      const ke = 1.5 * KB * T;
+      const vrms = Math.sqrt((3 * KB * Math.max(0.1, T)) / M_HE);
+
+      rKelvin.textContent = T.toFixed(1) + ' K';
+      rCelsius.textContent = c.toFixed(1) + '°C / ' + f.toFixed(1) + '°F';
+      rKe.textContent = (ke * 1e21).toFixed(2) + ' × 10⁻²¹ J';
+      rVrms.textContent = Math.round(vrms).toLocaleString() + ' m/s';
+
+      sideTemp.textContent = Math.round(T) + ' K';
+      sideCount.textContent = particleCount;
+    }
+
+    function step() {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || 640;
+      const h = rect.height || 340;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Background grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Chamber divider if dual chamber
+      if (isDualChamber) {
+        const midX = w * 0.5;
+        if (hasBarrier) {
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+          ctx.fillRect(midX - 3, 0, 6, h);
+          ctx.strokeStyle = '#94a3b8';
+          ctx.strokeRect(midX - 3, 0, 6, h);
+
+          // Labels
+          ctx.fillStyle = '#f43f5e';
+          ctx.font = '700 12px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('HOT CHAMBER', midX * 0.5, 24);
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillText('COLD CHAMBER', midX * 1.5, 24);
+        } else {
+          ctx.strokeStyle = 'rgba(234, 179, 8, 0.4)';
+          ctx.setLineDash([6, 6]);
+          ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, h); ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = 'rgba(234, 179, 8, 0.85)';
+          ctx.font = '700 11px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('THERMAL EQUILIBRIUM ZONE', midX, 22);
+        }
+      }
+
+      // Absolute Zero lattice simulation vs normal kinetic flight
+      if (T <= 2) {
+        // Crystalline lattice ground state
+        ctx.fillStyle = '#60a5fa';
+        particles.forEach((p, idx) => {
+          const jitter = (Math.random() - 0.5) * (T * 0.4);
+          ctx.beginPath();
+          ctx.arc(p.baseX + jitter, p.baseY + jitter, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        ctx.fillStyle = 'rgba(147, 197, 253, 0.9)';
+        ctx.font = '700 13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('0 K · Minimal Quantum Zero-Point Jiggle', w * 0.5, h - 20);
+      } else {
+        // Particle update & collision
+        const speedMult = Math.sqrt(T / 300);
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+
+          p.x += p.vx;
+          p.y += p.vy;
+
+          // Wall bounces
+          if (p.x - p.r < 0) { p.x = p.r; p.vx = Math.abs(p.vx); }
+          if (p.x + p.r > w) { p.x = w - p.r; p.vx = -Math.abs(p.vx); }
+          if (p.y - p.r < 0) { p.y = p.r; p.vy = Math.abs(p.vy); }
+          if (p.y + p.r > h) { p.y = h - p.r; p.vy = -Math.abs(p.vy); }
+
+          // Barrier bounce in dual chamber
+          if (isDualChamber && hasBarrier) {
+            const midX = w * 0.5;
+            if (p.side === 'left' && p.x + p.r >= midX - 3) {
+              p.x = midX - 3 - p.r;
+              p.vx = -Math.abs(p.vx);
+            } else if (p.side === 'right' && p.x - p.r <= midX + 3) {
+              p.x = midX + 3 + p.r;
+              p.vx = Math.abs(p.vx);
+            }
+          }
+
+          // Inter-particle elastic collisions (simple spatial approximation)
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p2.x - p.x;
+            const dy = p2.y - p.y;
+            const distSq = dx * dx + dy * dy;
+            const minDist = p.r + p2.r;
+
+            if (distSq < minDist * minDist && distSq > 0.001) {
+              const dist = Math.sqrt(distSq);
+              const nx = dx / dist;
+              const ny = dy / dist;
+
+              // Separate
+              const overlap = minDist - dist;
+              p.x -= nx * overlap * 0.5;
+              p.y -= ny * overlap * 0.5;
+              p2.x += nx * overlap * 0.5;
+              p2.y += ny * overlap * 0.5;
+
+              // Elastic velocity exchange
+              const kx = p.vx - p2.vx;
+              const ky = p.vy - p2.vy;
+              const p_val = 2 * (nx * kx + ny * ky) / 2;
+
+              p.vx -= p_val * nx;
+              p.vy -= p_val * ny;
+              p2.vx += p_val * nx;
+              p2.vy += p_val * ny;
+
+              // Energy color blending when open
+              if (isDualChamber && !hasBarrier) {
+                const avgSpeed = (Math.hypot(p.vx, p.vy) + Math.hypot(p2.vx, p2.vy)) / 2;
+                p.color = avgSpeed > 3.0 ? '#f43f5e' : avgSpeed > 1.8 ? '#f59e0b' : '#38bdf8';
+                p2.color = p.color;
+              }
+            }
+          }
+
+          // Draw particle
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Subtle velocity vector
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x + p.vx * 3, p.y + p.vy * 3);
+          ctx.stroke();
+        }
+      }
+
+      animId = requestAnimationFrame(step);
+    }
+
+    // Controls listeners
+    tempSlider.addEventListener('input', function () {
+      T = parseFloat(this.value);
+      initParticles();
+    });
+
+    countSlider.addEventListener('input', function () {
+      particleCount = parseInt(this.value, 10);
+      initParticles();
+    });
+
+    splitCheckbox.addEventListener('change', function () {
+      isDualChamber = this.checked;
+      modeToggleBtn.textContent = isDualChamber ? '🔄 Mode: Dual Chamber' : '🔄 Mode: Single Chamber';
+      initParticles();
+    });
+
+    barrierCheckbox.addEventListener('change', function () {
+      hasBarrier = this.checked;
+    });
+
+    modeToggleBtn.addEventListener('click', function () {
+      isDualChamber = !isDualChamber;
+      splitCheckbox.checked = isDualChamber;
+      modeToggleBtn.textContent = isDualChamber ? '🔄 Mode: Dual Chamber' : '🔄 Mode: Single Chamber';
+      initParticles();
+    });
+
+    resetBtn.addEventListener('click', initParticles);
+
+    // Presets
+    const presets = [
+      { id: 'hc-preset-0', temp: 0 },
+      { id: 'hc-preset-77', temp: 77.36 },
+      { id: 'hc-preset-273', temp: 273.15 },
+      { id: 'hc-preset-300', temp: 293.15 },
+      { id: 'hc-preset-373', temp: 373.15 },
+      { id: 'hc-preset-flame', temp: 800 }
+    ];
+
+    presets.forEach(p => {
+      const btn = document.getElementById(p.id);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        presets.forEach(other => {
+          const ob = document.getElementById(other.id);
+          if (ob) ob.classList.remove('is-active');
+        });
+        btn.classList.add('is-active');
+        T = p.temp;
+        tempSlider.value = Math.min(800, T);
+        initParticles();
+      });
+    });
+
+    window.addEventListener('resize', resize);
+
+    initParticles();
+    step();
+
+    // Practice problem checkers
+    window.hcCheckText = function (num, correct) {
+      const sel = document.getElementById('hcans-' + num);
+      const fb = document.getElementById('hcfb-' + num);
+      const hint = document.getElementById('hchint-' + num);
+      if (!sel || !fb) return;
+
+      if (sel.value === correct) {
+        fb.textContent = '✓ Correct!';
+        fb.className = 'hc-feedback ok';
+        if (hint) hint.style.display = 'none';
+      } else {
+        fb.textContent = '✗ Try again.';
+        fb.className = 'hc-feedback err';
+        if (hint) hint.style.display = 'block';
+      }
+    };
+
+    window.hcCheckNumber = function (num, correct, tolerance) {
+      const input = document.getElementById('hcans-' + num);
+      const fb = document.getElementById('hcfb-' + num);
+      const hint = document.getElementById('hchint-' + num);
+      if (!input || !fb) return;
+
+      const val = parseFloat(input.value);
+      if (isNaN(val)) {
+        fb.textContent = 'Enter a number.';
+        fb.className = 'hc-feedback err';
+        return;
+      }
+
+      if (Math.abs(val - correct) <= tolerance) {
+        fb.textContent = '✓ Correct!';
+        fb.className = 'hc-feedback ok';
+        if (hint) hint.style.display = 'none';
+      } else {
+        fb.textContent = '✗ Try again.';
+        fb.className = 'hc-feedback err';
+        if (hint) hint.style.display = 'block';
+      }
+    };
+  })();
+  </script>
 </body>
 </html>

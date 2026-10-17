@@ -145,7 +145,10 @@
             <div style="position: absolute; top: 10px; left: 10px; color: rgba(255,255,255,0.7); font-size: 0.8rem; pointer-events: none;">Drag mouse to interact</div>
           </div>
           <div class="hp-btn-row">
-            <button class="hp-btn secondary" onclick="nsClear()">Clear Fluid</button>
+            <button class="hp-btn secondary" onclick="nsClear()">↺ Clear Fluid</button>
+            <button class="hp-btn" onclick="nsPreset('water')">💧 Water (Low Viscosity)</button>
+            <button class="hp-btn" onclick="nsPreset('honey')">🍯 Honey (High Viscosity)</button>
+            <button class="hp-btn" onclick="nsPreset('vortex')">🌀 Vortex Jet</button>
           </div>
         </section>
 
@@ -157,6 +160,33 @@
             <div class="hp-app"><div class="hp-app-icon">🎬</div><strong>CGI & VFX</strong><small>Movies and video games use simplified Navier-Stokes solvers (like the one above) to create realistic water, fire, and smoke animations.</small></div>
             <div class="hp-app"><div class="hp-app-icon">🩺</div><strong>Medicine</strong><small>Doctors and researchers use fluid dynamic models to understand blood flow through arteries and design better artificial heart valves.</small></div>
           </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#ec4899;">
+          <h2>Worked Example: Calculating the Reynolds Number &amp; Flow Regime</h2>
+          <p>The <strong>Reynolds Number (\(Re\))</strong> is a dimensionless quantity that measures the ratio of inertial forces (momentum driving the fluid forward) to viscous forces (internal friction damping the motion):</p>
+          <div style="background:rgba(236,72,153,0.08);border-left:3px solid #ec4899;border-radius:12px;padding:0.9rem;margin:0.8rem 0;font-family:'JetBrains Mono',monospace;text-align:center;font-size:0.95rem;">
+            \(Re = \frac{\rho \cdot v \cdot L}{\mu}\)
+          </div>
+          <p style="font-size:0.84rem;color:var(--text-muted,#64748b);text-align:center;">where \(\rho\) is fluid density (\(\text{kg/m}^3\)), \(v\) is velocity (\(\text{m/s}\)), \(L\) is characteristic length or pipe diameter (\(\text{m}\)), and \(\mu\) is dynamic viscosity (\(\text{Pa}\cdot\text{s}\)).</p>
+          <p><strong>Sample Problem:</strong> Water (\(\rho = 1,000\text{ kg/m}^3\), \(\mu = 0.001\text{ Pa}\cdot\text{s}\)) flows through a domestic pipe with inner diameter \(L = 0.05\text{ m}\) at a speed of \(v = 0.2\text{ m/s}\).</p>
+          <ol style="margin:0.4rem 0 0.8rem 1.4rem;line-height:1.6;font-size:0.88rem;color:var(--text-secondary,#3f4f65);">
+            <li>Calculate the Reynolds number \(Re\).</li>
+            <li>Determine whether the flow regime is <em>laminar</em> (\(Re < 2,300\)), <em>transitional</em> (\(2,300 \le Re \le 4,000\)), or <em>turbulent</em> (\(Re > 4,000\)).</li>
+          </ol>
+          <div style="background:rgba(236,72,153,0.06);border-left:3px solid #ec4899;border-radius:10px;padding:0.9rem;margin:0.8rem 0;font-size:0.86rem;line-height:1.65;">
+            <p style="margin:0 0 0.5rem;"><strong>Step 1: Substitute values into the formula.</strong><br/>
+            \(Re = \frac{(1,000\text{ kg/m}^3)(0.2\text{ m/s})(0.05\text{ m})}{0.001\text{ Pa}\cdot\text{s}} = \frac{10}{0.001} = 10,000\).</p>
+            <p style="margin:0 0 0.5rem;"><strong>Step 2: Classify the flow regime.</strong><br/>
+            Because \(Re = 10,000 > 4,000\), inertial forces dominate over viscous damping. The flow is firmly in the <strong>turbulent regime</strong>, characterized by eddies, chaotic vortices, and rapid mixing!</p>
+            <p style="margin:0;"><strong>Contrast with Honey:</strong> If honey (\(\mu \approx 10\text{ Pa}\cdot\text{s}\), \(10,000\times\) more viscous than water) moved through the same pipe, \(Re \approx 1\). Viscous forces completely dominate, locking the fluid in smooth, silent <strong>laminar flow</strong>.</p>
+          </div>
+        </section>
+
+        <section class="hp-card" style="--card-accent:#8b5cf6;">
+          <h2>The $1,000,000 Millennium Prize: Navier-Stokes Existence &amp; Smoothness</h2>
+          <p>In May 2000, the Clay Mathematics Institute designated the Navier-Stokes existence and smoothness problem as one of seven <strong>Millennium Prize Problems</strong>, offering a \(\$1,000,000\) reward for its mathematical resolution.</p>
+          <p>Although supercomputers numerically solve these equations every second for aircraft simulation and weather prediction, mathematicians still cannot prove whether smooth, physically reasonable solutions in 3D are mathematically guaranteed to exist for all time, or whether infinite velocities (singularities / "blow-ups") can spontaneously develop from smooth initial conditions.</p>
         </section>
 
         <section class="hp-card" style="--card-accent:#ff9500;">
@@ -191,6 +221,21 @@
                 <span class="hp-feedback" id="nsfb-2"></span>
               </div>
               <div class="hp-hint" id="nshint-2">Hint: μ (mu) is the dynamic viscosity coefficient. It diffuses velocity, making honey act differently than water.</div>
+            </div>
+
+            <div class="hp-problem">
+              <p><span class="diff-hard">Hard</span>3. If a flow has a Reynolds number Re = 15,000, which regime describes it?</p>
+              <div class="hp-problem-row">
+                <select class="hp-ans-input" id="nsans-3">
+                  <option value="">Choose…</option>
+                  <option value="laminar">Laminar (smooth streamlines)</option>
+                  <option value="turbulent">Turbulent (vortices and chaotic mixing)</option>
+                  <option value="static">Static (no motion)</option>
+                </select>
+                <button class="hp-check-btn" onclick="nsCheckText(3,'turbulent')">Check</button>
+                <span class="hp-feedback" id="nsfb-3"></span>
+              </div>
+              <div class="hp-hint" id="nshint-3">Hint: Re &gt; 4,000 indicates turbulent flow where inertia overwhelms viscosity.</div>
             </div>
 
           </div>
@@ -358,37 +403,28 @@
   let raf = null;
   let px = 0, py = 0, isDown = false;
 
-  canvas.addEventListener('mousedown', e => { 
+  canvas.addEventListener('pointerdown', e => { 
     isDown = true; 
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     const rect = canvas.getBoundingClientRect();
     px = e.clientX - rect.left;
     py = e.clientY - rect.top;
-    updatePos(e); 
+    updatePos(e.clientX, e.clientY); 
   });
-  canvas.addEventListener('mousemove', e => { if (isDown) updatePos(e); });
-  canvas.addEventListener('mouseup', () => { isDown = false; });
-  canvas.addEventListener('mouseleave', () => { isDown = false; });
-  
-  // Touch support
-  canvas.addEventListener('touchstart', e => { 
-    isDown = true; 
-    const rect = canvas.getBoundingClientRect();
-    px = e.touches[0].clientX - rect.left;
-    py = e.touches[0].clientY - rect.top;
-    updatePos(e.touches[0]); 
-    e.preventDefault(); 
+  canvas.addEventListener('pointermove', e => { if (isDown) updatePos(e.clientX, e.clientY); });
+  canvas.addEventListener('pointerup', e => { 
+    isDown = false; 
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
   });
-  canvas.addEventListener('touchmove', e => { if (isDown) updatePos(e.touches[0]); e.preventDefault(); });
-  canvas.addEventListener('touchend', () => { isDown = false; });
+  canvas.addEventListener('pointercancel', () => { isDown = false; });
 
-  function updatePos(e) {
+  function updatePos(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     
-    // Ensure canvas has width/height before using it
-    const cw = canvas.width || 1;
-    const ch = canvas.height || 1;
+    const cw = rect.width || 1;
+    const ch = rect.height || 1;
     
     let gridX = Math.floor((x / cw) * N) + 1;
     let gridY = Math.floor((y / ch) * N) + 1;
@@ -415,6 +451,17 @@
     }
   }
 
+  function resizeCanvas() {
+    const w = canvas.offsetWidth || 300;
+    const h = canvas.offsetHeight || 320;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
   function getVisc() { return (document.getElementById('ns-visc').value / 100) * 0.0005; }
   function getDiff() { return (document.getElementById('ns-diff').value / 100) * 0.0005; }
 
@@ -424,13 +471,6 @@
   }
 
   function loop() {
-    const w = canvas.offsetWidth || 300;
-    const h = canvas.offsetHeight || 320;
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    
     vel_step(Vx, Vy, Vx0, Vy0, getVisc(), 0.1);
     dens_step(density, s, Vx, Vy, getDiff(), 0.1);
     
@@ -472,6 +512,45 @@
   window.nsClear = function() {
     for (let i = 0; i < SIZE; i++) {
       density[i] = 0; Vx[i] = 0; Vy[i] = 0;
+    }
+  };
+
+  window.nsPreset = function(type) {
+    const viscEl = document.getElementById('ns-visc');
+    const viscVal = document.getElementById('ns-visc-val');
+    const colorEl = document.getElementById('ns-color');
+    if (type === 'water') {
+      viscEl.value = 5;
+      viscVal.textContent = 'Low';
+      colorEl.value = '#00aaff';
+      for (let j = Math.floor(N / 4); j < Math.floor((3 * N) / 4); j++) {
+        Vx0[IX(2, j)] = 80.0;
+        s[IX(2, j)] = 3000.0;
+      }
+    } else if (type === 'honey') {
+      viscEl.value = 95;
+      viscVal.textContent = 'High';
+      colorEl.value = '#f59e0b';
+      for (let j = Math.floor(N / 3); j < Math.floor((2 * N) / 3); j++) {
+        Vx0[IX(4, j)] = 25.0;
+        s[IX(4, j)] = 5000.0;
+      }
+    } else if (type === 'vortex') {
+      viscEl.value = 10;
+      viscVal.textContent = 'Low';
+      colorEl.value = '#ec4899';
+      const cx = Math.floor(N / 2);
+      const cy = Math.floor(N / 2);
+      for (let r = 2; r < 14; r++) {
+        const theta = r * 0.45;
+        const x = Math.floor(cx + Math.cos(theta) * r);
+        const y = Math.floor(cy + Math.sin(theta) * r);
+        if (x >= 1 && x <= N && y >= 1 && y <= N) {
+          Vx0[IX(x, y)] = -Math.sin(theta) * 90.0;
+          Vy0[IX(x, y)] = Math.cos(theta) * 90.0;
+          s[IX(x, y)] = 4500.0;
+        }
+      }
     }
   };
 

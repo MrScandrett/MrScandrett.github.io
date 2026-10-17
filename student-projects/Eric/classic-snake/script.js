@@ -37,6 +37,10 @@ let isPaused = false;
 // Velocity (x, y)
 let dx = 0;
 let dy = 0;
+// The direction the snake actually moved last step. Turning is checked
+// against this, so two quick key presses can't reverse the snake into itself.
+let lastDx = 0;
+let lastDy = 0;
 
 // Snake body (array of coordinates)
 let snake = [];
@@ -55,6 +59,8 @@ function resetGame() {
     score = 0;
     dx = 1; // Start moving right
     dy = 0;
+    lastDx = dx;
+    lastDy = dy;
     scoreElement.innerText = score;
     currentSpeed = GAME_SPEED;
     placeFood();
@@ -113,6 +119,8 @@ function update() {
 
     // Add new head to the snake array
     snake.unshift(head);
+    lastDx = dx;
+    lastDy = dy;
 
     // 3. Check Food Collision
     if (head.x === food.x && head.y === food.y) {
@@ -189,9 +197,14 @@ function togglePause() {
     }
 }
 
+// WASD works as well as the arrow keys
+const KEY_ALIASES = { KeyW: 'ArrowUp', KeyA: 'ArrowLeft', KeyS: 'ArrowDown', KeyD: 'ArrowRight' };
+
 function changeDirection(event) {
+    const code = KEY_ALIASES[event.code] || event.code;
+
     // Prevent scrolling with arrow keys
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", "Space"].indexOf(event.code) > -1) {
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", "Space"].indexOf(code) > -1) {
         event.preventDefault();
     }
 
@@ -200,7 +213,7 @@ function changeDirection(event) {
         return;
     }
 
-    if (event.code === 'Space') {
+    if (code === 'Space') {
         togglePause();
         return;
     }
@@ -212,13 +225,13 @@ function changeDirection(event) {
     const UP_KEY = 'ArrowUp';
     const DOWN_KEY = 'ArrowDown';
 
-    const keyPressed = event.code;
+    const keyPressed = code;
     
     // Prevent reversing directly (e.g., going Left while moving Right)
-    const goingUp = dy === -1;
-    const goingDown = dy === 1;
-    const goingRight = dx === 1;
-    const goingLeft = dx === -1;
+    const goingUp = lastDy === -1;
+    const goingDown = lastDy === 1;
+    const goingRight = lastDx === 1;
+    const goingLeft = lastDx === -1;
 
     if (keyPressed === LEFT_KEY && !goingRight) {
         dx = -1; dy = 0;
@@ -243,6 +256,26 @@ function loadInitialState() {
     resetGame();
     draw();
 }
+
+// --- Touch: swipe on the board to steer, tap to start ---
+let swipeStart = null;
+canvas.addEventListener('pointerdown', (event) => {
+    swipeStart = { x: event.clientX, y: event.clientY };
+    if (!isGameRunning) startGame();
+});
+canvas.addEventListener('pointermove', (event) => {
+    if (!swipeStart) return;
+    const moveX = event.clientX - swipeStart.x;
+    const moveY = event.clientY - swipeStart.y;
+    if (Math.max(Math.abs(moveX), Math.abs(moveY)) < 24) return;
+    const code = Math.abs(moveX) > Math.abs(moveY)
+        ? (moveX > 0 ? 'ArrowRight' : 'ArrowLeft')
+        : (moveY > 0 ? 'ArrowDown' : 'ArrowUp');
+    changeDirection({ code, preventDefault() {} });
+    swipeStart = { x: event.clientX, y: event.clientY }; // keep swiping to turn again
+});
+canvas.addEventListener('pointerup', () => { swipeStart = null; });
+canvas.addEventListener('pointercancel', () => { swipeStart = null; });
 
 // Initial draw to show the snake before starting
 loadInitialState();

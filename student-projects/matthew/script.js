@@ -1121,6 +1121,10 @@ function tick() {
 }
 
 function togglePause() {
+  if (!state.dayOpen && !state.paused) {
+    setStatus("The shop is closed. Press Open Shop (or O) to begin.");
+    return;
+  }
   state.paused = !state.paused;
   ui.pauseBtn.textContent = state.paused ? "Resume" : "Pause";
   setStatus(state.paused ? "Paused." : "Resumed.");
