@@ -452,6 +452,25 @@
     }
   }
 
+  // Photo finish: one small noise tile, generated once, shared by every overlay via CSS.
+  (function filmGrain() {
+    const host = document.querySelector('.ww-cockpit-grid');
+    if (!host) return;
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 96;
+      const g = c.getContext('2d');
+      const img = g.createImageData(96, 96);
+      for (let i = 0; i < img.data.length; i += 4) {
+        const v = 128 + (Math.random() + Math.random() - 1) * 55;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+        img.data[i + 3] = 255;
+      }
+      g.putImageData(img, 0, 0);
+      host.style.setProperty('--ww-grain', `url(${c.toDataURL('image/png')})`);
+    } catch (e) { /* no canvas: the vignette and grade still apply */ }
+  })();
+
   // Pause every animation while the cockpit is offscreen.
   const grid = document.querySelector('.ww-cockpit-grid');
   if (grid && 'IntersectionObserver' in window) {

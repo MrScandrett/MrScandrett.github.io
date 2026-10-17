@@ -595,6 +595,28 @@
 @keyframes ww-flutter { from { transform: rotate(calc(var(--fl) * -1)); } to { transform: rotate(var(--fl)); } }
 @keyframes ww-sway { from { transform: rotate(calc(var(--sw) * -1)); } to { transform: rotate(var(--sw)); } }
 
+/* Photo finish: grain + vignette + colour grade so the scenes read as photographs, not vector art */
+.ww-viz { position: relative; isolation: isolate; }
+.ww-viz svg { border-radius: 6px; background: radial-gradient(120% 100% at 50% 40%, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25)); }
+.ww-viz:not(:empty)::before,
+.ww-viz:not(:empty)::after,
+.ww-dial-sky::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 6px;
+}
+.ww-viz:not(:empty)::before,
+.ww-viz:not(:empty)::after { inset: 0.6rem 0 0 0; }
+.ww-viz:not(:empty)::before { background: var(--ww-grain) 0 0 / 96px 96px; mix-blend-mode: soft-light; opacity: 0.32; z-index: 2; }
+.ww-viz:not(:empty)::after {
+  background:
+    radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.3) 100%),
+    linear-gradient(180deg, rgba(255, 200, 150, 0.07), rgba(60, 100, 170, 0.1));
+  z-index: 3;
+}
+.ww-dial-sky::before { inset: 0; z-index: 2; background: var(--ww-grain) 0 0 / 96px 96px; mix-blend-mode: soft-light; opacity: 0.4; }
+
 /* Pause all graphics while the cockpit is scrolled out of view */
 .ww-cockpit-grid.ww-offscreen .ww-viz *,
 .ww-cockpit-grid.ww-offscreen .ww-dial-sky * { animation-play-state: paused !important; }
