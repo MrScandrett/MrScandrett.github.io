@@ -55,7 +55,9 @@
   outline: none;
   position: relative;
   z-index: 1;
+  transition: height 220ms ease;
 }
+.wp-track.is-moving { transition: none; }
 .wp-track::-webkit-scrollbar { display: none; }
 
 .wp-page {
@@ -69,11 +71,18 @@
   gap: var(--wp-gap, 0.85rem);
 }
 
+/* Blur-behind and hover transforms are re-rasterised on every frame of a sideways scroll on iOS and are
+   the main source of dropped frames; inside a swiping page the surfaces are already near-opaque. */
+.wp-page, .wp-page * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 /* The widgets' own gap/margin rules were written for siblings in one column; pages keep the same rhythm. */
 .wp-page > * { min-width: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .wp-pill { transition: none; }
+  .wp-pill, .wp-track { transition: none; }
 }
 
 @media print {

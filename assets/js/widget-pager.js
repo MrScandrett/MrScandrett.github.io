@@ -85,7 +85,7 @@
       if (!self.raf) self.raf = requestAnimationFrame(function () { self.raf = 0; self.update(); });
     };
     this.track.addEventListener('scroll', this.onScroll, { passive: true });
-    this.ro = window.ResizeObserver ? new ResizeObserver(this.onScroll) : null;
+    this.ro = window.ResizeObserver ? new ResizeObserver(function () { if (!self.moving) self.fit(); }) : null;
     if (this.ro) { this.pages.forEach(function (p) { self.ro.observe(p); }); this.ro.observe(this.track); }
     // A focused control on another page (keyboard, screen reader) brings its page into view.
     this.onFocus = function (e) {
@@ -94,12 +94,15 @@
     };
     this.track.addEventListener('focusin', this.onFocus);
     this.built = true;
+    this.shown = -1;
+    this.moving = false;
     this.update();
   };
 
   Pager.prototype.teardown = function () {
     if (!this.built) return;
     if (this.ro) this.ro.disconnect();
+    clearTimeout(this.timer);
     this.track.removeEventListener('scroll', this.onScroll);
     var marker = this.marker, host = this.host;
     this.moved.forEach(function (n) { host.insertBefore(n, marker); });
@@ -121,18 +124,40 @@
     else this.track.scrollTo({ left: left, behavior: 'smooth' });
   };
 
-  // Track height follows the page(s) on screen, interpolated while swiping between two.
+  // Height never changes while a finger or a snap is moving the track (resizing every frame forces a
+  // page-wide layout and is what made swiping stutter). It is set to the tallest page when motion starts,
+  // then eases to the settled page's height once scrolling stops.
+  var SETTLE_MS = 110;
+
+  Pager.prototype.fit = function () {
+    this.track.style.height = this.pages[this.index()].offsetHeight + 'px';
+  };
+
   Pager.prototype.update = function () {
-    var w = this.width();
-    var pos = Math.max(0, Math.min(this.pages.length - 1, this.track.scrollLeft / w));
-    var a = Math.floor(pos), b = Math.min(this.pages.length - 1, a + 1), t = pos - a;
-    var ha = this.pages[a].offsetHeight, hb = this.pages[b].offsetHeight;
-    this.track.style.height = Math.round(ha + (hb - ha) * t) + 'px';
     var cur = this.index();
-    this.pills.forEach(function (p, i) {
-      if (i === cur) p.setAttribute('aria-current', 'true'); else p.removeAttribute('aria-current');
-    });
-    this.pages.forEach(function (p, i) { p.classList.toggle('is-current', i === cur); });
+    if (!this.moving) {
+      this.moving = true;
+      var tallest = 0;
+      this.pages.forEach(function (p) { tallest = Math.max(tallest, p.offsetHeight); });
+      this.track.classList.add('is-moving');
+      this.track.style.height = tallest + 'px';
+    }
+    if (cur !== this.shown) {
+      this.shown = cur;
+      this.pills.forEach(function (p, i) {
+        if (i === cur) p.setAttribute('aria-current', 'true'); else p.removeAttribute('aria-current');
+      });
+      this.pages.forEach(function (p, i) { p.classList.toggle('is-current', i === cur); });
+    }
+    clearTimeout(this.timer);
+    var self = this;
+    this.timer = setTimeout(function () { self.settle(); }, SETTLE_MS);
+  };
+
+  Pager.prototype.settle = function () {
+    this.moving = false;
+    this.track.classList.remove('is-moving');
+    this.fit();
   };
 
   function init() {
