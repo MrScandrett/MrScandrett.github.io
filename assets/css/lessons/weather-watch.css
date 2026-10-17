@@ -595,27 +595,50 @@
 @keyframes ww-flutter { from { transform: rotate(calc(var(--fl) * -1)); } to { transform: rotate(var(--fl)); } }
 @keyframes ww-sway { from { transform: rotate(calc(var(--sw) * -1)); } to { transform: rotate(var(--sw)); } }
 
-/* Photo finish: grain + vignette + colour grade so the scenes read as photographs, not vector art */
+/* Liquid-glass finish: each scene sits behind a curved glass lens (specular rim, top gloss,
+   inner glow, corner caustic). Pure CSS, nothing animated, so it costs almost nothing. */
 .ww-viz { position: relative; isolation: isolate; }
-.ww-viz svg { border-radius: 6px; background: radial-gradient(120% 100% at 50% 40%, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25)); }
+.ww-viz svg { border-radius: 14px; background: radial-gradient(120% 100% at 50% 30%, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.2)); }
 .ww-viz:not(:empty)::before,
 .ww-viz:not(:empty)::after,
 .ww-dial-sky::before {
   content: "";
   position: absolute;
   pointer-events: none;
-  border-radius: 6px;
+  border-radius: 14px;
 }
 .ww-viz:not(:empty)::before,
 .ww-viz:not(:empty)::after { inset: 0.6rem 0 0 0; }
-.ww-viz:not(:empty)::before { background: var(--ww-grain) 0 0 / 96px 96px; mix-blend-mode: soft-light; opacity: 0.32; z-index: 2; }
-.ww-viz:not(:empty)::after {
-  background:
-    radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(0, 0, 0, 0.3) 100%),
-    linear-gradient(180deg, rgba(255, 200, 150, 0.07), rgba(60, 100, 170, 0.1));
+/* inner lens: bright rim lit from the top-left, soft refraction glow along the edges */
+.ww-viz:not(:empty)::before {
   z-index: 3;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.65),
+    inset 2px 0 2px -1px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 3px -1px rgba(255, 255, 255, 0.2),
+    inset -2px 0 2px -1px rgba(255, 255, 255, 0.12),
+    inset 0 0 16px rgba(255, 255, 255, 0.12);
 }
-.ww-dial-sky::before { inset: 0; z-index: 2; background: var(--ww-grain) 0 0 / 96px 96px; mix-blend-mode: soft-light; opacity: 0.4; }
+/* specular sweep + top gloss + corner caustic + bottom bounce light */
+.ww-viz:not(:empty)::after {
+  z-index: 2;
+  background:
+    radial-gradient(circle at 10% 16%, rgba(255, 255, 255, 0.5), transparent 16%),
+    radial-gradient(130% 55% at 50% -8%, rgba(255, 255, 255, 0.26), transparent 62%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 70%, rgba(255, 255, 255, 0.1) 100%),
+    linear-gradient(0deg, rgba(160, 210, 255, 0.14), transparent 32%);
+}
+.ww-dial-sky::before {
+  inset: 0;
+  z-index: 2;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 8% 6%, rgba(255, 255, 255, 0.35), transparent 14%),
+    radial-gradient(140% 40% at 50% -6%, rgba(255, 255, 255, 0.22), transparent 62%),
+    linear-gradient(125deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 28%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), inset 0 1.5px 1px rgba(255, 255, 255, 0.5), inset 0 0 28px rgba(255, 255, 255, 0.1);
+}
 
 /* Pause all graphics while the cockpit is scrolled out of view */
 .ww-cockpit-grid.ww-offscreen .ww-viz *,
