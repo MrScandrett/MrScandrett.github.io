@@ -19,3 +19,4 @@ export { OBJExporter } from "three/examples/jsm/exporters/OBJExporter.js";
 export { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
 export * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 export * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
+export { TransformControls } from "three/examples/jsm/controls/TransformControls.js";

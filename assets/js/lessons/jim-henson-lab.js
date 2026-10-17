@@ -24,6 +24,59 @@
 
   function deg(d) { return d * Math.PI / 180; }
 
+  function loadImage(src, onload) {
+    var img = new Image();
+    img.decoding = 'async';
+    img.addEventListener('load', onload);
+    img.src = src;
+    return img;
+  }
+
+  function loadCleanImage(src, onload) {
+    var img = new Image();
+    img.decoding = 'async';
+    img.addEventListener('load', function () {
+      var clean = document.createElement('canvas');
+      clean.width = img.naturalWidth; clean.height = img.naturalHeight;
+      var cleanCtx = clean.getContext('2d');
+      cleanCtx.drawImage(img, 0, 0);
+      var pixels = cleanCtx.getImageData(0, 0, clean.width, clean.height);
+      for (var i = 3; i < pixels.data.length; i += 4) {
+        var a = pixels.data[i];
+        pixels.data[i] = a < 96 ? 0 : Math.min(255, Math.round((a - 96) * 255 / 159));
+      }
+      cleanCtx.clearRect(0, 0, clean.width, clean.height);
+      cleanCtx.putImageData(pixels, 0, 0);
+      img.cleaned = clean;
+      onload();
+    });
+    img.src = src;
+    return img;
+  }
+
+  function normalizedRect(x, y, w, h) {
+    return { x: w < 0 ? x + w : x, y: h < 0 ? y + h : y, w: Math.abs(w), h: Math.abs(h) };
+  }
+
+  function drawImageCover(ctx, img, x, y, w, h) {
+    var box = normalizedRect(x, y, w, h);
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    var scale = Math.max(box.w / iw, box.h / ih);
+    var dw = iw * scale, dh = ih * scale;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(box.x, box.y, box.w, box.h); ctx.clip();
+    ctx.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
+    ctx.restore();
+  }
+
+  function drawImageContain(ctx, img, x, y, w, h, alignBottom) {
+    var box = normalizedRect(x, y, w, h);
+    var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    var scale = Math.min(box.w / iw, box.h / ih);
+    var dw = iw * scale, dh = ih * scale;
+    ctx.drawImage(img, box.x + (box.w - dw) / 2, alignBottom ? box.y + box.h - dh : box.y + (box.h - dh) / 2, dw, dh);
+  }
+
   /* ── 1. Hide the puppeteer ──────────────────────────────────────── */
   var monitor = document.getElementById('jh-monitor');
   if (monitor) initFrameLab(monitor, document.getElementById('jh-side'));
@@ -44,6 +97,10 @@
     var mon = null, side = null;
     mon = SimKit.canvas2d(monitorCanvas, { height: 300, onResize: function () { if (mon) render(); } });
     if (sideCanvas) side = SimKit.canvas2d(sideCanvas, { height: 300, onResize: function () { if (side) render(); } });
+    var setArt = loadImage('../../assets/images/lessons/jim-henson/camera-set-garden.png', render);
+    var puppetArt = loadImage('../../assets/images/lessons/jim-henson/camera-puppet.png', render);
+    var boardArt = loadImage('../../assets/images/lessons/jim-henson/camera-playboard.png', render);
+    var handArt = loadCleanImage('../../assets/images/lessons/jim-henson/camera-operator-hand.png', render);
 
     function params() {
       var board = +el.board.value;
@@ -121,6 +178,14 @@
 
     function drawPuppet(ctx, p, W, H, x, X, base) {
       var pt = function (yy, XX) { return project(p, x, yy, X + (XX || 0), W, H); };
+      if (puppetArt.complete && puppetArt.naturalWidth) {
+        var top = pt(base + PUPPET_H + 6);
+        var bottom = pt(base - 3);
+        var left = pt(base + 30, -36);
+        var right = pt(base + 30, 36);
+        drawImageContain(ctx, puppetArt, left.x, top.y, right.x - left.x, bottom.y - top.y, true);
+        return;
+      }
       // body
       ctx.fillStyle = '#e9772e';
       quad(ctx, p, x, x, base, base + 30, X - 15, X + 15, W, H); ctx.fill();
@@ -157,17 +222,23 @@
       }
       // painted backdrop
       var bt = project(p, X_BACK, BACK_TOP, 0, W, H), bb = project(p, X_BACK, 0, 0, W, H);
-      var grad = ctx.createLinearGradient(0, bt.y, 0, bb.y);
-      grad.addColorStop(0, '#7ec3f0'); grad.addColorStop(1, '#d7efff');
-      ctx.fillStyle = grad;
-      quad(ctx, p, X_BACK, 0, 0, BACK_TOP, -900, 900, W, H); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      [[-160, 290], [120, 315], [300, 270]].forEach(function (cl) {
-        var c = project(p, X_BACK, cl[1], cl[0], W, H), r = Math.abs(project(p, X_BACK, cl[1] + 18, cl[0], W, H).y - c.y);
-        ctx.beginPath(); ctx.ellipse(c.x, c.y, r * 2.4, r, 0, 0, Math.PI * 2); ctx.fill();
-      });
-      ctx.fillStyle = '#6cae5a';
-      quad(ctx, p, X_BACK, 0, 0, 120, -900, 900, W, H); ctx.fill();
+      if (setArt.complete && setArt.naturalWidth) {
+        var bl = project(p, X_BACK, 0, -900, W, H);
+        var tr = project(p, X_BACK, BACK_TOP, 900, W, H);
+        drawImageCover(ctx, setArt, bl.x, tr.y, tr.x - bl.x, bl.y - tr.y);
+      } else {
+        var grad = ctx.createLinearGradient(0, bt.y, 0, bb.y);
+        grad.addColorStop(0, '#7ec3f0'); grad.addColorStop(1, '#d7efff');
+        ctx.fillStyle = grad;
+        quad(ctx, p, X_BACK, 0, 0, BACK_TOP, -900, 900, W, H); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        [[-160, 290], [120, 315], [300, 270]].forEach(function (cl) {
+          var c = project(p, X_BACK, cl[1], cl[0], W, H), r = Math.abs(project(p, X_BACK, cl[1] + 18, cl[0], W, H).y - c.y);
+          ctx.beginPath(); ctx.ellipse(c.x, c.y, r * 2.4, r, 0, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.fillStyle = '#6cae5a';
+        quad(ctx, p, X_BACK, 0, 0, 120, -900, 900, W, H); ctx.fill();
+      }
       // studio floor
       ctx.fillStyle = '#3a3a40';
       quad(ctx, p, 150, X_BACK, 0, 0, -900, 900, W, H); ctx.fill();
@@ -185,18 +256,33 @@
       ctx.beginPath(); ctx.arc(hc.x, hc.y, Math.max(2, hr), 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#3b2a20';
       ctx.beginPath(); ctx.arc(hc.x, hc.y - hr * 0.35, Math.max(2, hr * 0.8), Math.PI, 0); ctx.fill();
+      // The operating hand rises behind the character. The character and then
+      // the playboard mask it, just as they would in the finished camera shot.
+      if (handArt.complete && handArt.naturalWidth) {
+        var handTop = project(p, X_PUPPET + 2, p.board + 58, 0, W, H);
+        var handBottom = project(p, X_PUPPET + 2, p.board - 70, 0, W, H);
+        var handLeft = project(p, X_PUPPET + 2, p.board, -18, W, H);
+        var handRight = project(p, X_PUPPET + 2, p.board, 18, W, H);
+        drawImageContain(ctx, handArt.cleaned || handArt, handLeft.x, handTop.y, handRight.x - handLeft.x, handBottom.y - handTop.y, true);
+      }
       // puppet
       drawPuppet(ctx, p, W, H, X_PUPPET, 0, p.board);
       // set front: a brick wall with a cap
-      ctx.fillStyle = '#a4472f';
-      quad(ctx, p, D_SET, 0, 0, p.board, -700, 700, W, H); ctx.fill();
-      ctx.strokeStyle = 'rgba(255,230,210,0.35)'; ctx.lineWidth = 1;
-      for (var by = 10; by < p.board - 6; by += 12) {
-        var l0 = project(p, D_SET, by, -700, W, H), l1 = project(p, D_SET, by, 700, W, H);
-        ctx.beginPath(); ctx.moveTo(l0.x, l0.y); ctx.lineTo(l1.x, l1.y); ctx.stroke();
+      if (boardArt.complete && boardArt.naturalWidth) {
+        var wallBL = project(p, D_SET, 0, -700, W, H);
+        var wallTR = project(p, D_SET, p.board, 700, W, H);
+        drawImageCover(ctx, boardArt, wallBL.x, wallTR.y, wallTR.x - wallBL.x, wallBL.y - wallTR.y);
+      } else {
+        ctx.fillStyle = '#a4472f';
+        quad(ctx, p, D_SET, 0, 0, p.board, -700, 700, W, H); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,230,210,0.35)'; ctx.lineWidth = 1;
+        for (var by = 10; by < p.board - 6; by += 12) {
+          var l0 = project(p, D_SET, by, -700, W, H), l1 = project(p, D_SET, by, 700, W, H);
+          ctx.beginPath(); ctx.moveTo(l0.x, l0.y); ctx.lineTo(l1.x, l1.y); ctx.stroke();
+        }
+        ctx.fillStyle = '#d8c7a8';
+        quad(ctx, p, D_SET, 0, p.board - 6, p.board, -700, 700, W, H); ctx.fill();
       }
-      ctx.fillStyle = '#d8c7a8';
-      quad(ctx, p, D_SET, 0, p.board - 6, p.board, -700, 700, W, H); ctx.fill();
       // overlays
       ctx.font = '600 12px system-ui, sans-serif';
       ctx.textBaseline = 'top';
@@ -342,6 +428,10 @@
     var best = {};
     var view = null;
     view = SimKit.canvas2d(canvas, { height: 260, onResize: function () { if (view) render(); } });
+    var setArt = loadImage('../../assets/images/lessons/jim-henson/camera-set-garden.png', render);
+    var puppetArt = loadImage('../../assets/images/lessons/jim-henson/camera-puppet.png', render);
+    var boardArt = loadImage('../../assets/images/lessons/jim-henson/camera-playboard.png', render);
+    var handArt = loadCleanImage('../../assets/images/lessons/jim-henson/camera-operator-hand.png', render);
 
     function mode() {
       for (var i = 0; i < modeInputs.length; i++) if (modeInputs[i].checked) return modeInputs[i].value;
@@ -353,8 +443,8 @@
 
     function render() {
       var ctx = view.ctx, W = view.width, H = view.height;
-      ctx.fillStyle = '#9fd3f5'; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#a4472f'; ctx.fillRect(0, H * 0.86, W, H * 0.14);
+      if (setArt.complete && setArt.naturalWidth) drawImageCover(ctx, setArt, 0, 0, W, H);
+      else { ctx.fillStyle = '#9fd3f5'; ctx.fillRect(0, 0, W, H); }
       if (round && round.i < TARGETS.length) {
         var t = TARGETS[round.i];
         ctx.fillStyle = '#ffd400';
@@ -363,14 +453,26 @@
         star(ctx, t[0] * W, t[1] * H, 16, 7);
       }
       var s = screenPos(), px = s.x * W, py = s.y * H, r = Math.min(W, H) * 0.07;
-      ctx.fillStyle = '#e9772e';
-      ctx.beginPath(); ctx.ellipse(px, py, r * 1.35, r, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5a1020';
-      ctx.beginPath(); ctx.ellipse(px, py + r * 0.35, r * 0.9, r * 0.3, 0, 0, Math.PI); ctx.fill();
-      [-0.55, 0.55].forEach(function (k) {
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(px + k * r, py - r * 0.95, r * 0.42, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(px + k * r, py - r * 0.9, r * 0.15, 0, Math.PI * 2); ctx.fill();
-      });
+      if (handArt.complete && handArt.naturalWidth) {
+        var handSource = handArt.cleaned || handArt;
+        var hh = r * 3.2, hw = hh * handSource.width / handSource.height;
+        ctx.drawImage(handSource, px - hw / 2, py - hh * 0.25, hw, hh);
+      }
+      if (puppetArt.complete && puppetArt.naturalWidth) {
+        var ph = r * 3.2, pw = ph * puppetArt.naturalWidth / puppetArt.naturalHeight;
+        ctx.drawImage(puppetArt, px - pw / 2, py - ph * 0.43, pw, ph);
+      } else {
+        ctx.fillStyle = '#e9772e';
+        ctx.beginPath(); ctx.ellipse(px, py, r * 1.35, r, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5a1020';
+        ctx.beginPath(); ctx.ellipse(px, py + r * 0.35, r * 0.9, r * 0.3, 0, 0, Math.PI); ctx.fill();
+        [-0.55, 0.55].forEach(function (k) {
+          ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(px + k * r, py - r * 0.95, r * 0.42, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(px + k * r, py - r * 0.9, r * 0.15, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+      if (boardArt.complete && boardArt.naturalWidth) drawImageCover(ctx, boardArt, 0, H * 0.84, W, H * 0.16);
+      else { ctx.fillStyle = '#a4472f'; ctx.fillRect(0, H * 0.86, W, H * 0.14); }
       ctx.font = '600 12px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(8, 8, 150, 22);

@@ -404,6 +404,29 @@ copy):
 Existing lessons on other Three.js versions or hand-rolled canvas loops don't need to
 be migrated proactively — migrate opportunistically when touching that lesson anyway.
 
+## 3D design tools: Workbench and Forge
+
+Both run on the Manifold kernel through `assets/js/forge/engine.mjs` (`engine.run(part)` builds and
+print-checks; `engine.scoped(fn)` builds anything and frees the WebAssembly objects; build code that
+uses `new Manifold(...)` must pass it to `ctx.track`).
+
+- **Forge** (`forge.html`, `assets/js/forge/`) is parametric: pick one of the parts, set numbers, print.
+- **Workbench** (`workbench.html`, `assets/js/workbench/`) is the free-form builder: shapes + holes
+  (Tinkercad-style; a hole cuts the solids in its own group, top-level holes cut everything), groups
+  with pivots, patterns, a keyframe timeline, print check, STL / animated GLB / OBJ / PNG.
+  - `shapes.mjs`: the shape library (plain data + `build(ctx, p)`). `len` params are written as
+    tabletop millimetres and scaled per project preset and shape `kind` (a wall drops into an
+    Architecture project at 6 m, into a print project at 60 mm). Mark radially built shapes
+    `axial: true` so they keep their axis as the centre.
+  - `model.mjs`: project format (`.workbench.json`, validated), transforms (`T·R·S·T(−pivot)`, Z-up),
+    evaluation, print bodies, animation keys. `templates.mjs`: the starter gallery; `workbench.html?
+    template=<id>` (or `?new=<preset>`) opens one from a lesson link.
+  - `export.mjs` converts Z-up mm/m to glTF's Y-up metres node by node, so pivots and the animation
+    survive. The page uses `TransformControls` from `three-extras.min.js`.
+  - Tests: `npm run test:workbench` (every shape at its range ends must be closed, every template
+    must build, round-trip and fit the printer at its print scale). When you add a shape or template,
+    the test covers it automatically.
+
 ## Engine-neutral game lessons: Tool Rosetta + Rosetta 2D
 
 Game and 3D lessons teach ideas, not brands. Don't write engine-specific comparison

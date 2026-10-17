@@ -9,6 +9,8 @@
     ['look', 'Make it look', 'Model → sculpt → render', '#make-look'],
     ['play', 'Make it play', 'Game Asset Studio', '#make-play']
   ];
+  // the open studio sits beside the tracks: any of them can be built in it
+  const studio = ['workbench', 'Build anything', 'Workbench studio', 'workbench.html'];
   const references = {
     'blender-furniture-design.html': ['game-asset-furniture.html', 'Furniture'],
     'blender-environments.html': ['game-asset-modular-rooms.html', 'Modular rooms'],
@@ -23,9 +25,9 @@
     const homeLink = document.createElement('a'); homeLink.href = new URL(home, root).href;
     homeLink.textContent = '3D Design · Curriculum home'; nav.append(homeLink);
     const list = document.createElement('ul');
-    stages.forEach(([id, title, sub, hash]) => {
+    [...stages, studio].forEach(([id, title, sub, hash]) => {
       const li = document.createElement('li'), link = document.createElement('a');
-      link.href = new URL(home + hash, root).href;
+      link.href = new URL(hash.startsWith('#') ? home + hash : hash, root).href;
       if (host.dataset.design3dRoute === id) link.setAttribute('aria-current', 'step');
       const strong = document.createElement('strong'), small = document.createElement('small');
       strong.textContent = title; small.textContent = sub; link.append(strong, small); li.append(link); list.append(li);

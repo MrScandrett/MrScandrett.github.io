@@ -18,6 +18,14 @@
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
+  function loadImage(src, onload) {
+    var img = new Image();
+    img.decoding = 'async';
+    img.addEventListener('load', onload);
+    img.src = src;
+    return img;
+  }
+
   /* ── 1. Frame rate & timing ─────────────────────────────────────── */
   var animCanvas = document.getElementById('wd-anim');
   if (animCanvas) initTiming(animCanvas);
@@ -47,6 +55,7 @@
 
     var view = null;
     view = SimKit.canvas2d(canvas, { height: 280, onResize: function () { if (view) render(); } });
+    var ballArt = loadImage('../../assets/images/lessons/walt-disney/bouncing-ball-character.png', render);
     var t = 0;
     var playing = !prefersReducedMotion();
 
@@ -92,13 +101,17 @@
       var cy = b.h < 0.03 && squash.checked ? b.floorY - r * sy : b.y - r;
       ctx.translate(b.x, cy);
       ctx.scale(sx, sy);
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.lineWidth = 2 / Math.max(sx, sy);
-      ctx.strokeStyle = colors.text;
-      ctx.stroke();
+      if (ballArt.complete && ballArt.naturalWidth) {
+        ctx.drawImage(ballArt, -r * 1.36, -r * 1.15, r * 2.72, r * 2.3);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.lineWidth = 2 / Math.max(sx, sy);
+        ctx.strokeStyle = colors.text;
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
@@ -124,7 +137,12 @@
           drawBall(ctx, ballAt(k / n, W, H), r, 0.16, colors.accent);
         }
       }
-      drawBall(ctx, ballAt(tq, W, H), r, 1, '#e0442f');
+      // Keep the posed height and squash on the selected drawing, but let the
+      // character travel smoothly across the stage. This preserves the timing
+      // lesson without making the detailed face appear to jitter sideways.
+      var currentBall = ballAt(tq, W, H);
+      currentBall.x = ballAt(t, W, H).x;
+      drawBall(ctx, currentBall, r, 1, '#e0442f');
 
       // Projector strip: one second of 24 fps film frames, coloured by which drawing fills each.
       var stripY = H - 44, cellW = Math.min(24, (W - 40) / 24), x0 = (W - cellW * 24) / 2;
@@ -205,7 +223,7 @@
     var LAYERS = [
       { key: 'sky', name: 'Sky', d: 60, color: '#6d8fd8' },
       { key: 'hills', name: 'Mountains', d: 36, color: '#8a6cc4' },
-      { key: 'castle', name: 'Castle hill', d: 20, color: '#2f7d5b' },
+      { key: 'castle', name: 'Village hill', d: 20, color: '#2f7d5b' },
       { key: 'branches', name: 'Foreground trees', d: 9, color: '#a0522d' }
     ];
     var FLAT_D = 20;
@@ -219,6 +237,12 @@
     view = SimKit.canvas2d(canvas, { height: 300, onResize: function () { if (view) render(); } });
     side = sideCanvas ? SimKit.canvas2d(sideCanvas, { height: 300, onResize: function () { if (side) renderSide(); } }) : null;
     var tween = null;
+    var layerImages = {
+      sky: loadImage('../../assets/images/lessons/walt-disney/multiplane-sky.png', render),
+      hills: loadImage('../../assets/images/lessons/walt-disney/multiplane-mountains.png', render),
+      castle: loadImage('../../assets/images/lessons/walt-disney/multiplane-village.png', render),
+      branches: loadImage('../../assets/images/lessons/walt-disney/multiplane-foreground.png', render)
+    };
 
     function flat() {
       for (var i = 0; i < modeInputs.length; i++) if (modeInputs[i].checked) return modeInputs[i].value === 'flat';
@@ -234,8 +258,35 @@
     /* Layer art, authored in pixels as the starting camera sees it. */
     function wave(x, a, b, c) { return Math.sin(x * a) * 0.5 + Math.sin(x * b + 1.3) * 0.3 + Math.sin(x * c + 2.1) * 0.2; }
 
+    function drawPanorama(ctx, img, W, H) {
+      // Generated paintings are 3:1 panoramas. Size from height so their
+      // painted circles, cottages, trees and mountains retain their proportions,
+      // then repeat beyond both edges to provide scenery for a camera truck.
+      var ratio = img.naturalWidth / img.naturalHeight;
+      var drawH = H;
+      var drawW = drawH * ratio;
+      var origin = (W - drawW) / 2;
+      for (var tile = -3; tile <= 3; tile++) {
+        var x = origin + tile * drawW;
+        if (Math.abs(tile) % 2) {
+          // Reflect alternate copies so adjoining pixels meet at the same edge.
+          ctx.save();
+          ctx.translate(x + drawW, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(img, 0, 0, drawW, drawH);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, x, 0, drawW, drawH);
+        }
+      }
+    }
+
     var ART = {
       sky: function (ctx, W, H) {
+        if (layerImages.sky.complete && layerImages.sky.naturalWidth) {
+          drawPanorama(ctx, layerImages.sky, W, H);
+          return;
+        }
         var g = ctx.createLinearGradient(0, 0, 0, H);
         g.addColorStop(0, '#1b2350'); g.addColorStop(0.6, '#5b4b8a'); g.addColorStop(1, '#e79a6b');
         ctx.fillStyle = g;
@@ -249,6 +300,10 @@
         }
       },
       hills: function (ctx, W, H) {
+        if (layerImages.hills.complete && layerImages.hills.naturalWidth) {
+          drawPanorama(ctx, layerImages.hills, W, H);
+          return;
+        }
         ctx.fillStyle = '#4a3f78';
         ctx.beginPath();
         ctx.moveTo(-W, H);
@@ -256,6 +311,10 @@
         ctx.lineTo(2 * W, H); ctx.closePath(); ctx.fill();
       },
       castle: function (ctx, W, H) {
+        if (layerImages.castle.complete && layerImages.castle.naturalWidth) {
+          drawPanorama(ctx, layerImages.castle, W, H);
+          return;
+        }
         ctx.fillStyle = '#23463a';
         ctx.beginPath();
         ctx.moveTo(-W, H);
@@ -283,6 +342,10 @@
         }
       },
       branches: function (ctx, W, H) {
+        if (layerImages.branches.complete && layerImages.branches.naturalWidth) {
+          drawPanorama(ctx, layerImages.branches, W, H);
+          return;
+        }
         ctx.fillStyle = '#120d0a';
         // trunks framing the shot, plus a few beyond each edge for trucking
         [-0.55, -0.12, 0.06, 0.93, 1.12, 1.5].forEach(function (p, i) {
@@ -388,9 +451,9 @@
           parts.push(L.name.toLowerCase() + ' ' + Math.round(moves[LAYERS.length - 1 - i]) + ' px');
         });
         readout.textContent = 'Sideways move: ' + parts.join(', ') + '. The nearest layer travels ' +
-          (moves[3] / moves[0]).toFixed(1) + '× as far as the sky (60 ÷ 9 ≈ 6.7).';
+          (moves[3] / moves[0]).toFixed(1) + '× as far as the sky at this camera depth.';
       } else {
-        readout.textContent = 'Dolly in: foreground trees grow ' + scale(LAYERS[3]).toFixed(2) + '×, the castle ' +
+        readout.textContent = 'Dolly in: foreground trees grow ' + scale(LAYERS[3]).toFixed(2) + '×, the village ' +
           scale(LAYERS[2]).toFixed(2) + '×, the sky only ' + scale(LAYERS[0]).toFixed(2) + '×. Near things rush past; far things barely change.';
       }
     }

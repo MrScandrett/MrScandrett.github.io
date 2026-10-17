@@ -996,9 +996,12 @@
           M.glyph(name, px, py, S, 'se-head') + '</g>';
         if (M.preferences.pitchNames) {
           var label = M.pitchName(p);
+          // Dense learning scores can keep accidentals in standard notation and
+          // reserve the notehead itself for a larger, clearer letter name.
+          if (model.score.pitchLettersOnly) label = label.charAt(0);
           // Glyph origins are at the left edge. Size labels in staff units, including
           // accidentals, so they stay inside heads at every staff/zoom size.
-          var labelSize = S * (p.a ? 0.46 : 0.72);
+          var labelSize = S * (model.score.pitchLettersOnly ? 0.96 : (p.a ? 0.54 : 0.82));
           out += '<text class="se-pitch-label" data-contrast-guard-skip x="' + (px + w / 2) + '" y="' + py +
             '" style="font-size:' + labelSize + 'px;stroke-width:' + (S * 0.07) + 'px" text-anchor="middle" dominant-baseline="central">' + M.escape(label) + '</text>';
         }
@@ -1419,6 +1422,11 @@
       svgWrap.innerHTML = '<svg class="se-score" role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
       cursorEl = svgWrap.querySelector('.se-cursor');
+      // Expose the current engraving to page-specific teaching overlays. The layout
+      // is replaced after every reflow/zoom, so consumers should listen for the
+      // event instead of retaining references to an older SVG.
+      fig.scoreLayout = layout;
+      fig.dispatchEvent(new CustomEvent('score:draw', { detail: { layout: layout } }));
       lit = [];
       if (!player.playing) player.ui.cursor(player.pos);
       renderNoteList();

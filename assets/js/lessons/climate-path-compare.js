@@ -27,8 +27,24 @@
     return h - pad - ((degC - minT) / (maxT - minT)) * (h - pad * 2);
   }
 
+  function updateDimensions() {
+    const rect = canvas.getBoundingClientRect();
+    const cssW = Math.max(300, Math.floor(rect.width || 800));
+    const cssH = 250;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const targetW = Math.round(cssW * dpr);
+    const targetH = Math.round(cssH * dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: cssW, h: cssH };
+  }
+
   function draw() {
-    const w = canvas.width, h = canvas.height, p = paths[selected], pad = 42;
+    const { w, h } = updateDimensions();
+    const p = paths[selected], pad = 42;
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#040b18';
     ctx.fillRect(0, 0, w, h);
@@ -158,6 +174,11 @@
     }
     draw();
   });
+
+  window.addEventListener('resize', draw);
+  if (window.ResizeObserver && canvas.parentElement) {
+    new ResizeObserver(() => draw()).observe(canvas.parentElement);
+  }
 
   draw();
 }());

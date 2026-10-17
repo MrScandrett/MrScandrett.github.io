@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Workbench · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <meta name="description" content="Workbench: build anything in 3D from shapes and holes — buildings, fidgets, game assets, animations and product prototypes. Print it as STL, or export an animated GLB for game engines." />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/workbench.css" />
+  <script src="assets/js/theme-registry.js"></script>
+  <script src="assets/js/theme-lighting.js"></script>
+</head>
+<body class="theme-forge">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">Lessons</a></li>
+          <li><a href="paths.html">Paths</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Apps</a></li>
+          <li><a href="library.html">Library</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="wb">
+    <div data-design3d-route="workbench"></div>
+    <section class="wb-intro" aria-labelledby="wb-title">
+      <div>
+        <p class="wb-kicker">3D design studio</p>
+        <h1 id="wb-title">Workbench</h1>
+        <p class="wb-lede">Build anything from shapes. Drop them in, make some of them <strong>holes</strong> to cut with, group and repeat them, then animate them. Print the result on the MakerBot, or take it into a game engine as an animated GLB.</p>
+      </div>
+      <div class="wb-project">
+        <label class="wb-name">
+          <span>Project name</span>
+          <input type="text" id="wb-name" maxlength="60" autocomplete="off" spellcheck="false" placeholder="my-design" />
+        </label>
+        <p class="wb-preset" id="wb-preset" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <div class="wb-layout">
+      <nav class="wb-library" aria-label="Shapes and starter projects">
+        <div class="wb-tabs" role="tablist" aria-label="Library">
+          <button type="button" role="tab" id="wb-tab-shapes" aria-controls="wb-lib-shapes" aria-selected="true" data-lib-tab="shapes">Shapes</button>
+          <button type="button" role="tab" id="wb-tab-start" aria-controls="wb-lib-start" aria-selected="false" tabindex="-1" data-lib-tab="start">Start from</button>
+        </div>
+        <div id="wb-lib-shapes" role="tabpanel" aria-labelledby="wb-tab-shapes">
+          <label class="wb-search"><span class="visually-hidden">Find a shape</span><input type="search" id="wb-search" placeholder="Find a shape…" autocomplete="off" /></label>
+          <p class="wb-help">Click to add, or drag onto the workplane.</p>
+          <div id="wb-shapes"></div>
+        </div>
+        <div id="wb-lib-start" role="tabpanel" aria-labelledby="wb-tab-start" hidden>
+          <p class="wb-help">Each one is a real, working model. Open it, click its parts, and change them. Undo brings back your own project.</p>
+          <div id="wb-templates"></div>
+        </div>
+      </nav>
+
+      <section class="wb-stage" aria-label="3D workspace">
+        <div class="wb-toolbar" role="toolbar" aria-label="Edit tools">
+          <div class="wb-tool-group" role="group" aria-label="Gizmo">
+            <button type="button" data-gizmo="translate" aria-pressed="true" title="Move (W)">Move</button>
+            <button type="button" data-gizmo="rotate" aria-pressed="false" title="Turn (E)">Turn</button>
+            <button type="button" data-gizmo="scale" aria-pressed="false" title="Scale (R)">Scale</button>
+          </div>
+          <label class="wb-snap" title="Snap moves to the grid and turns to 15°"><span>Snap</span><select id="wb-snap"></select></label>
+          <div class="wb-tool-group" role="group" aria-label="Edit">
+            <button type="button" data-tool="undo" id="wb-undo" title="Undo (Ctrl+Z)">Undo</button>
+            <button type="button" data-tool="redo" id="wb-redo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+            <button type="button" data-tool="duplicate" title="Duplicate (Ctrl+D)">Duplicate</button>
+            <button type="button" data-tool="hole" title="Solid ↔ hole (H)">Hole</button>
+            <button type="button" data-tool="group" title="Group (Ctrl+G)">Group</button>
+            <button type="button" data-tool="ungroup" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
+            <button type="button" data-tool="delete" title="Delete (Del)">Delete</button>
+          </div>
+          <div class="wb-tool-group" role="group" aria-label="Camera">
+            <button type="button" data-view="home" title="3D view">3D</button>
+            <button type="button" data-view="front" title="From the front">Front</button>
+            <button type="button" data-view="side" title="From the right side">Side</button>
+            <button type="button" data-view="top" title="From above">Top</button>
+            <button type="button" data-tool="frame" title="Fit to the selection (F)">Fit</button>
+          </div>
+        </div>
+        <div class="wb-canvas-wrap">
+          <canvas id="wb-canvas" tabindex="0" aria-label="3D workspace"></canvas>
+          <p class="wb-status" id="wb-status" role="status">Loading…</p>
+          <p class="wb-legend" id="wb-legend" hidden><span class="sw sw-part"></span> part <span class="sw sw-bridge"></span> bridge (fine) <span class="sw sw-overhang"></span> overhang (needs support)</p>
+          <p class="wb-hint">Drag: orbit · Right-drag: pan · Scroll: zoom · Click: select (again to go inside a group) · Shift-click: add to selection</p>
+          <p class="wb-nogl" id="wb-nogl" hidden>This browser cannot start WebGL, so the 3D view is off. Try another browser or computer.</p>
+        </div>
+        <div class="wb-timeline" id="wb-timeline" hidden>
+          <div class="wb-timeline-bar">
+            <button type="button" id="wb-play" class="wb-primary-soft" aria-pressed="false">Play</button>
+            <label class="visually-hidden" for="wb-scrub">Time</label>
+            <input type="range" id="wb-scrub" min="0" max="2" step="0.01" value="0" />
+            <output id="wb-time" for="wb-scrub">0.00 s</output>
+          </div>
+          <div id="wb-lanes" class="wb-lanes" aria-label="Keys on the timeline"></div>
+        </div>
+      </section>
+
+      <aside class="wb-side" aria-label="Properties">
+        <div class="wb-tabs wb-modes" role="tablist" aria-label="Mode">
+          <button type="button" role="tab" id="wb-mode-build" aria-controls="wb-panel-build" aria-selected="true" data-mode="build">Build</button>
+          <button type="button" role="tab" id="wb-mode-animate" aria-controls="wb-panel-animate" aria-selected="false" tabindex="-1" data-mode="animate">Animate</button>
+          <button type="button" role="tab" id="wb-mode-export" aria-controls="wb-panel-export" aria-selected="false" tabindex="-1" data-mode="export">Print &amp; export</button>
+        </div>
+
+        <section id="wb-panel-build" role="tabpanel" aria-labelledby="wb-mode-build">
+          <div id="wb-inspector" class="wb-inspector"></div>
+          <details class="wb-outline" open>
+            <summary>Everything in the scene <span id="wb-count" class="wb-count"></span></summary>
+            <div id="wb-tree" class="wb-tree"></div>
+          </details>
+        </section>
+
+        <section id="wb-panel-animate" role="tabpanel" aria-labelledby="wb-mode-animate" hidden>
+          <div class="wb-loop-settings">
+            <label class="wb-inline"><span>Loop length</span><input type="number" id="wb-duration" min="0.25" max="60" step="0.25" value="2" /><span>seconds</span></label>
+            <label class="wb-check"><input type="checkbox" id="wb-loop" checked /><span>Loop</span></label>
+          </div>
+          <div id="wb-animate" class="wb-inspector"></div>
+        </section>
+
+        <section id="wb-panel-export" role="tabpanel" aria-labelledby="wb-mode-export" hidden>
+          <h3 class="wb-panel-title">3D print</h3>
+          <div class="wb-field" id="wb-print-scale-row">
+            <label class="wb-label" for="wb-print-scale">Print as a scale model, 1 :</label>
+            <input type="number" id="wb-print-scale" min="1" max="1000" step="1" value="100" />
+            <p class="wb-help">At 1 : 100, a 10 m wall prints 100 mm long, and a 25 cm wall prints 2.5 mm thick.</p>
+          </div>
+          <div class="wb-field">
+            <label class="wb-label" for="wb-arrange">On the print bed</label>
+            <select id="wb-arrange">
+              <option value="asBuilt">As built (one piece where it touches)</option>
+              <option value="apart">Each top-level part side by side</option>
+            </select>
+          </div>
+          <label class="wb-check"><input type="checkbox" id="wb-print-view" /><span>Show the print check on the model</span></label>
+          <ul class="wb-verdicts" id="wb-verdicts" aria-live="polite"></ul>
+          <ul class="wb-stats" id="wb-stats"></ul>
+          <button type="button" class="wb-primary" id="wb-dl-stl">Download STL for the MakerBot</button>
+          <button type="button" id="wb-dl-parts" hidden>One STL per part</button>
+
+          <h3 class="wb-panel-title">Games, animation &amp; other apps</h3>
+          <div class="wb-btn-row">
+            <button type="button" id="wb-dl-glb">GLB for games</button>
+            <button type="button" id="wb-dl-obj">OBJ</button>
+            <button type="button" id="wb-dl-png">PNG picture</button>
+          </div>
+          <p class="wb-help">GLB is Y-up and in metres, with holes already cut, one object per shape, and your animation. It opens in Godot, Unity, Blender and the <a href="lessons/game-asset-studio/game-asset-uv-export.html">Asset Bench</a>.</p>
+
+          <h3 class="wb-panel-title">Project file</h3>
+          <div class="wb-btn-row">
+            <button type="button" id="wb-save">Save project</button>
+            <button type="button" id="wb-open">Open project</button>
+            <input type="file" id="wb-open-file" accept=".json,application/json" aria-label="Open project file" hidden />
+          </div>
+          <p class="wb-help">Workbench also keeps your latest project in this browser.</p>
+        </section>
+        <p class="wb-note" id="wb-note" aria-live="polite"></p>
+      </aside>
+    </div>
+
+    <dialog id="wb-sketch" class="wb-sketch" aria-labelledby="wb-sketch-title">
+      <h2 id="wb-sketch-title" data-sketch-title>Sketch</h2>
+      <p class="wb-help">Click to add a point. Drag points to move them. Select one and press Delete to remove it. Scroll to zoom.</p>
+      <canvas tabindex="0" aria-label="Sketch canvas"></canvas>
+      <div class="wb-sketch-bar">
+        <span data-sketch-info></span>
+        <label class="wb-check"><input type="checkbox" data-sketch-snap checked /><span>Snap to grid</span></label>
+        <button type="button" data-sketch-remove>Remove point</button>
+        <button type="button" data-sketch-fit>Fit</button>
+        <button type="button" data-sketch-cancel>Cancel</button>
+        <button type="button" class="wb-primary" data-sketch-done>Use this shape</button>
+      </div>
+    </dialog>
+  </main>
+  <footer class="site-footer">
+    <p>Geometry by <a href="https://github.com/elalish/manifold">Manifold</a> (Apache 2.0). Lettering in Droid Sans (Apache 2.0). Need a part made from exact numbers? Try <a href="forge.html">Forge</a>. <a href="index.html">Back to Home</a></p>
+  </footer>
+  <script src="assets/js/sim-kit.js"></script>
+  <script type="module" src="assets/js/workbench/workbench.mjs"></script>
+  <script src="assets/js/nav-mobile.js"></script>
+  <script src="assets/js/design3d-route.js"></script>
+</body>
+</html>

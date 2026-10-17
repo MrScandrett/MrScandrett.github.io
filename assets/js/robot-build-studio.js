@@ -31,6 +31,19 @@
     ctx.closePath();
   }
 
+  function prepareCanvas(canvas, logicalW, logicalH) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const targetW = Math.round(logicalW * dpr);
+    const targetH = Math.round(logicalH * dpr);
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
+  }
+
   /* ── MISSION 01: CHASSIS ───────────────────────────────────────── */
   function chassis() {
     const l = +$('[data-rb="length"]').value;
@@ -77,9 +90,9 @@
   function drawChassisCanvas() {
     const canvas = $('#rb-chassis-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 330;
+    const ctx = prepareCanvas(canvas, W, H);
     const { l, w, clear, battPos, ok } = state.chassis;
 
     ctx.clearRect(0, 0, W, H);
@@ -326,9 +339,9 @@
   function drawSlicerCanvas() {
     const canvas = $('#rb-slicer-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 310;
+    const ctx = prepareCanvas(canvas, W, H);
     const { layer, walls, infill, orient, slicePct, minutes, grams } = state.printing;
 
     ctx.clearRect(0, 0, W, H);
@@ -478,6 +491,11 @@
 
     const spans = { butt: 28, lap: 62, gusset: 88 };
     $('#rb-joint-bar').style.width = spans[type] + '%';
+    const jointVal = $('#rb-joint-val');
+    if (jointVal) {
+      const labels = { butt: 'Butt seam (Weak)', lap: 'Lap joint (Moderate)', gusset: 'Gusset (Strongest)' };
+      jointVal.textContent = labels[type] || type;
+    }
 
     const flexFactor = { butt: 6.2, lap: 2.3, gusset: 0.7 }[type];
     const deflectionDeg = +(force * flexFactor).toFixed(1);
@@ -503,9 +521,9 @@
   function drawPenCanvas() {
     const canvas = $('#rb-pen-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 290;
+    const ctx = prepareCanvas(canvas, W, H);
     const { joint, force, deflectionDeg, pass } = state.pen;
 
     ctx.clearRect(0, 0, W, H);
@@ -648,6 +666,10 @@
       }</strong>`;
 
     $('#rb-torque-bar').style.width = Math.min(100, (r / 4) * 100) + '%';
+    const torqueVal = $('#rb-torque-val');
+    if (torqueVal) {
+      torqueVal.textContent = `${r.toFixed(2)}× ratio (${climbs ? 'Climbs' : 'Stalls'})`;
+    }
 
     drawGearCanvas();
     updateSpecTable();
@@ -700,9 +722,9 @@
   function drawGearCanvas() {
     const canvas = $('#rb-gear-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 300;
+    const ctx = prepareCanvas(canvas, W, H);
     const { driver, driven, ratio, task, climbs } = state.gears;
 
     ctx.clearRect(0, 0, W, H);
@@ -814,9 +836,9 @@
   function drawServoCanvas() {
     const canvas = $('#rb-servo-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 300;
+    const ctx = prepareCanvas(canvas, W, H);
     const { angle, arm, load, momentNm, safe } = state.servo;
 
     ctx.clearRect(0, 0, W, H);
@@ -935,6 +957,10 @@
     state.integration = { done, total: checks.length, fault };
 
     $('#rb-integration-bar').style.width = (done / checks.length) * 100 + '%';
+    const intVal = $('#rb-integration-val');
+    if (intVal) {
+      intVal.textContent = `${done} of ${checks.length} gates passed`;
+    }
 
     const faultNotes = {
       nominal: 'All connected rails nominal. Advance one gate at a time and log each pass.',
@@ -959,9 +985,9 @@
   function drawIntegrationCanvas() {
     const canvas = $('#rb-integration-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 270;
+    const ctx = prepareCanvas(canvas, W, H);
     const { done, total, fault } = state.integration;
 
     ctx.clearRect(0, 0, W, H);
@@ -1088,9 +1114,9 @@
   function drawEffectorCanvas() {
     const canvas = $('#rb-effector-canvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = 620;
+    const H = 290;
+    const ctx = prepareCanvas(canvas, W, H);
     const { type, reach, jaw, offset, passes, results = [] } = state.effector;
 
     ctx.clearRect(0, 0, W, H);

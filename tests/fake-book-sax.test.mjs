@@ -46,5 +46,5 @@ test('draw fills exactly the pressed keys', () => {
   const filled = [...svg.matchAll(/data-key="(\w+)"[^>]*fill="currentColor"/g)].map((m) => m[1]).sort();
   assert.deepEqual(filled, ['L1', 'L2', 'L3', 'R1'].sort());
   assert.equal((svg.match(/class="fb-sx-key"/g) || []).length, X.KEYS.length);
-  assert.match(svg, /aria-label="Saxophone fingering for F: L1 · index, L2 · middle, L3 · ring, R1 · index"/);
+  assert.match(svg, /aria-label="Saxophone fingering for F: LH 1 · index, LH 2 · middle, LH 3 · ring, RH 1 · index"/);
 });

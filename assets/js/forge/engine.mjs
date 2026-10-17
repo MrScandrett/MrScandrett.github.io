@@ -9,6 +9,11 @@
  * collected, so every object created while a part builds is recorded and
  * freed once its triangles have been copied out (the same idea as
  * manifold-3d's own lib/garbage-collector.js).
+ *
+ * Workbench shares the same kernel: engine.scoped(fn) runs fn(ctx) and frees
+ * everything it built, and ctx.track(obj) records objects made with `new`
+ * (constructors are not wrapped). A part may return layout: 'keep' to leave
+ * its bodies exactly where it built them.
  */
 
 import { DEFAULT_PRINTER, bounds, edgeReport, printerFit } from '../fab-io.mjs';
@@ -47,7 +52,7 @@ function wrapForTracking(wasm, registry) {
 }
 
 /* Z-up triangle soup in mm from a manifold. */
-function soup(manifold) {
+export function soup(manifold) {
   const mesh = manifold.getMesh();
   const { numProp, vertProperties: v, triVerts: t } = mesh;
   const out = new Float32Array(t.length * 3);
@@ -128,6 +133,10 @@ export function overhangs(positions, limitDeg = OVERHANG_LIMIT) {
    part (print-in-place pieces built inside each other) keeps its pieces where
    the part put them and only centres the group on the bed. */
 export function layoutBodies(bodies, printer = DEFAULT_PRINTER, arrange = 'apart') {
+  if (arrange === 'keep') {
+    const { size } = bounds(concat(bodies.map((b) => b.positions)));
+    return { bodies, size, fit: printerFit(size, printer), nested: true };
+  }
   if (arrange === 'nested') {
     const { min, max } = bounds(concat(bodies.map((b) => b.positions)));
     const d = [-(min[0] + max[0]) / 2, -(min[1] + max[1]) / 2, -min[2]];
@@ -224,12 +233,14 @@ export async function createEngine(ManifoldModule, { font } = {}) {
   wasm.setup();
   const registry = [];
   wrapForTracking(wasm, registry);
-  const { Manifold, CrossSection } = wasm;
+  const { Manifold, CrossSection, Mesh } = wasm;
+  const track = (obj) => { registry.push(obj); return obj; };
+  const free = () => { for (const obj of registry.splice(0)) { try { obj.delete(); } catch { /* already freed */ } } };
 
   function run(part, givenParams, givenSettings = {}) {
     const params = resolveParams(part, givenParams);
     const settings = { ...DEFAULT_SETTINGS, ...givenSettings };
-    const ctx = { Manifold, CrossSection, font, settings, printer: DEFAULT_PRINTER };
+    const ctx = { Manifold, CrossSection, Mesh, font, settings, printer: DEFAULT_PRINTER, track };
     try {
       const built = part.build(ctx, params);
       const bodies = built.bodies.map(({ name, manifold, color }) => {
@@ -242,11 +253,20 @@ export async function createEngine(ManifoldModule, { font } = {}) {
     } catch (error) {
       return { params, settings, error: error.message || String(error), bodies: [], verdicts: [{ tone: 'bad', tag: 'CAN\'T BUILD', text: error.message || String(error) }], stats: [] };
     } finally {
-      for (const obj of registry.splice(0)) { try { obj.delete(); } catch { /* already freed */ } }
+      free();
     }
   }
 
-  return { run, wasm };
+  /* fn(ctx) may build anything; copy plain data out before it returns. */
+  function scoped(fn) {
+    try {
+      return fn({ Manifold, CrossSection, Mesh, font, track });
+    } finally {
+      free();
+    }
+  }
+
+  return { run, scoped, wasm };
 }
 
 function finish(part, params, settings, rawBodies, built) {

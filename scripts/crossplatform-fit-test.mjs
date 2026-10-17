@@ -45,6 +45,7 @@ const DEFAULT_PAGES = [
   "library.html",
   "bible.html",
   "forge.html",
+  "workbench.html",
   "music-lab.html",
   "paths.html",
   "vr.html",
