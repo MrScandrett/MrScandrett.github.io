@@ -454,12 +454,14 @@
       const pollen = pollenSummary(data.hourly);
       els.statPollen.textContent = pollen.value;
       els.statPollenSub.textContent = pollen.sub;
+      if (window.WWCockpitViz) window.WWCockpitViz.renderAir({ aqi }, pollen);
     } catch (err) {
       console.warn('Air quality load error:', err);
       els.statAqi.textContent = 'Unavailable';
       els.statAqiSub.textContent = 'Air-quality feed unavailable';
       els.statPollen.textContent = 'Unavailable';
       els.statPollenSub.textContent = 'No regional pollen forecast';
+      if (window.WWCockpitViz) window.WWCockpitViz.renderAir(null, null);
     }
   }
 
@@ -479,7 +481,7 @@
     if (!peaks.length || Math.max(...peaks) === 0) return { value: 'Unavailable', sub: 'Pollen model has no local coverage' };
     const peak = Math.max(...peaks);
     const category = peak < 10 ? 'Low' : peak < 100 ? 'Moderate' : peak < 1000 ? 'High' : 'Very high';
-    return { value: category, sub: `Peak forecast ${Math.round(peak)} grains/m³` };
+    return { value: category, category, peak, sub: `Peak forecast ${Math.round(peak)} grains/m³` };
   }
 
   function loadStormWatch(location) {
@@ -524,6 +526,8 @@
 
     els.statHumidity.textContent = `${data.humidity}%`;
     els.statVisibility.textContent = `${data.visibilityMiles} MI`;
+
+    if (window.WWCockpitViz) window.WWCockpitViz.render(data);
 
     // Hourly 24-hr strip
     if (els.hourlyStrip && data.hourly) {
