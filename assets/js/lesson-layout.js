@@ -439,42 +439,29 @@
       closeBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
-    // Animate panel slide if ClassroomAnimations is available
-    if (window.ClassroomAnimations) {
-      var isMobile = window.innerWidth <= 680;
-      if (isMobile) {
-        // Mobile: slide up from bottom
-        panel.style.transition = 'none';
-        window.ClassroomAnimations.animate(
-          'll-panel-toggle',
-          function (eased) {
-            var from = open ? 100 : 0;
-            var to   = open ? 0   : 100;
-            panel.style.transform = 'translateY(' + (from + (to - from) * eased) + '%)';
-          },
-          260,
-          'easeOutQuad',
-          function () { if (!open) panel.style.transform = ''; }
-        );
-      } else {
-        // Desktop: slide in from right
-        panel.style.transition = 'none';
-        window.ClassroomAnimations.animate(
-          'll-panel-toggle',
-          function (eased) {
-            var from = open ? 100 : 0;
-            var to   = open ? 0   : 100;
-            panel.style.transform = 'translateX(' + (from + (to - from) * eased) + '%)';
-            panel.style.opacity   = open ? eased : 1 - eased;
-          },
-          240,
-          'easeOutQuad',
-          function () {
-            panel.style.transform = '';
-            panel.style.opacity   = '';
-          }
-        );
-      }
+    // Phones: the drawer animates its own height in CSS (the handle must stay on screen).
+    // Desktop: slide in from the right if ClassroomAnimations is available.
+    panel.style.transform = '';
+    panel.style.opacity = '';
+    panel.style.transition = '';
+    if (window.ClassroomAnimations && window.innerWidth > 680) {
+      panel.style.transition = 'none';
+      window.ClassroomAnimations.animate(
+        'll-panel-toggle',
+        function (eased) {
+          var from = open ? 100 : 0;
+          var to   = open ? 0   : 100;
+          panel.style.transform = 'translateX(' + (from + (to - from) * eased) + '%)';
+          panel.style.opacity   = open ? eased : 1 - eased;
+        },
+        240,
+        'easeOutQuad',
+        function () {
+          panel.style.transform = '';
+          panel.style.opacity   = '';
+          panel.style.transition = '';
+        }
+      );
     }
 
     panel.dispatchEvent(new CustomEvent('ll:panel', {
@@ -532,6 +519,16 @@
         if (!stage) return;
         var panel = stage.querySelector('.ll-panel');
         if (panel) setPanel(panel, true);
+      });
+    });
+
+    /* Mobile: tapping a tab on the collapsed handle opens the drawer on that tab,
+       otherwise the pane switches out of sight and the tap looks like it did nothing */
+    document.querySelectorAll('.ll-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        if (window.innerWidth > 680) return;
+        var panel = tab.closest('.ll-panel');
+        if (panel && panel.dataset.llCollapsed === 'true') setPanel(panel, true);
       });
     });
 

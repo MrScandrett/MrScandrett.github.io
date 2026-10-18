@@ -201,14 +201,4 @@
     tab.setAttribute('aria-selected','true');
     document.getElementById(tab.dataset.pane)?.classList.add('ll-active');
   }));
-  const panel = document.querySelector('.ll-panel');
-  const openButton = document.querySelector('.ll-open-btn');
-  const closeButton = document.querySelector('.ll-panel-close');
-  const setPanelOpen = open => {
-    panel?.setAttribute('aria-hidden', String(!open));
-    openButton?.setAttribute('aria-expanded', String(open));
-  };
-  if (window.matchMedia('(max-width:680px)').matches) setPanelOpen(false);
-  openButton?.addEventListener('click', () => setPanelOpen(true));
-  closeButton?.addEventListener('click', () => setPanelOpen(false));
 })();

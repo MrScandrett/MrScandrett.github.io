@@ -381,9 +381,6 @@
     document.getElementById('ae-synthesis').value = ''; document.getElementById('ae-synthesis-feedback').textContent = '';
   });
 
-  var panel = document.getElementById('ae-side-panel');
-  var openPanelButton = document.querySelector('.ll-open-btn');
-  var closePanelButton = document.querySelector('.ll-panel-close');
   var tabs = Array.from(document.querySelectorAll('.ll-tab[role="tab"]'));
   function activateTab(tab, focus) {
     tabs.forEach(function (item) {
@@ -402,14 +399,6 @@
       activateTab(tabs[next], true);
     });
   });
-  function setPanelOpen(open, moveFocus) {
-    panel.setAttribute('aria-hidden', String(!open)); panel.inert = !open;
-    openPanelButton.setAttribute('aria-expanded', String(open));
-    if (moveFocus) (open ? tabs.find(function (tab) { return tab.getAttribute('aria-selected') === 'true'; }) : openPanelButton).focus();
-  }
-  closePanelButton.addEventListener('click', function () { setPanelOpen(false, true); });
-  openPanelButton.addEventListener('click', function () { setPanelOpen(true, true); });
-  if (window.matchMedia('(max-width: 960px)').matches) setPanelOpen(false, false);
 
   SimKit.loop(function (dt) {
     if (relState.running) {
