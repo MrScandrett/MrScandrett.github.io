@@ -1051,7 +1051,9 @@
     }
     .vol-workspace.hud-hidden .vol-telemetry-hud,
     .vol-workspace.hud-hidden .cam-director-hud,
-    .vol-workspace.hud-hidden .panel-toggle-tab {
+    .vol-workspace.hud-hidden .panel-toggle-tab,
+    .vol-workspace.hud-hidden .conduit-hud,
+    .vol-workspace.hud-hidden .conduit-cam-bar {
       opacity: 0 !important;
       pointer-events: none !important;
     }
@@ -1151,7 +1153,49 @@
       width: 100%;
       height: 100%;
       display: block;
-      cursor: crosshair;
+      cursor: grab;
+    }
+    #conduit-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* 3D Conduit Camera Director Toolbar */
+    .conduit-cam-bar {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 25;
+      background: rgba(10, 14, 20, 0.94);
+      border: 1px solid rgba(255, 140, 60, 0.45);
+      border-radius: 999px;
+      padding: 5px 12px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.75);
+    }
+    .c-cam-btn {
+      background: rgba(30, 20, 15, 0.7);
+      border: 1px solid rgba(255, 120, 40, 0.3);
+      color: #ffd8a8;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .c-cam-btn:hover {
+      background: rgba(255, 100, 30, 0.3);
+      color: #fff;
+    }
+    .c-cam-btn.active {
+      background: linear-gradient(135deg, #ff6020, #e04010);
+      border-color: #ff8030;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 100, 20, 0.6);
     }
 
     /* Conduit Painting Toolbar (Exploration Mode) */
@@ -1160,17 +1204,17 @@
       top: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(12, 5, 2, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 120, 40, 0.35);
+      background: rgba(12, 5, 2, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 120, 40, 0.4);
       border-radius: 12px;
       padding: 6px 14px;
       display: flex;
       gap: 14px;
       align-items: center;
-      z-index: 20;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      z-index: 26;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.85);
       max-width: 90vw;
       overflow-x: auto;
     }
@@ -1214,28 +1258,84 @@
     /* Conduit HUD Diagnostics */
     .conduit-hud {
       position: absolute;
-      bottom: 4.8rem;
+      bottom: 9.6rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       gap: 6px;
-      z-index: 15;
-      pointer-events: none;
+      z-index: 25;
+      pointer-events: auto;
       flex-wrap: wrap;
       justify-content: center;
       max-width: min(92vw, 1100px);
     }
     .hud-pill {
-      background: rgba(14, 8, 6, 0.92);
-      border: 1px solid rgba(255, 140, 60, 0.32);
+      background: rgba(12, 16, 24, 0.92);
+      border: 1px solid rgba(255, 150, 70, 0.42);
       border-radius: 999px;
-      padding: 3px 10px;
-      font-size: 0.72rem;
+      padding: 4px 12px;
+      font-size: 0.73rem;
       font-family: monospace;
-      color: #ffd8a8;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      color: #ffe0b8;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+    }
+
+    /* 3D Conduit Interactive Annotation Callout Card */
+    .conduit-annotation-card {
+      position: absolute;
+      top: 4.8rem;
+      left: 1.5rem;
+      max-width: 320px;
+      background: rgba(14, 8, 4, 0.94);
+      border: 1px solid rgba(255, 140, 50, 0.45);
+      border-left: 4px solid #ff7020;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #eedcd0;
+      z-index: 25;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      animation: fadeIn 0.2s ease;
+    }
+    .ann-close-btn {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: transparent;
+      border: none;
+      color: #ffaa60;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .ann-close-btn:hover { color: #fff; }
+    .ann-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #ffcc90;
+      margin-bottom: 4px;
+      padding-right: 18px;
+    }
+    .ann-body {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #eed0b8;
+      margin-bottom: 6px;
+    }
+    .ann-depth {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #ff9850;
+      border-top: 1px solid rgba(255, 120, 40, 0.2);
+      padding-top: 4px;
+    }
+
+    .vol-workspace.view-cross-section .cam-director-hud,
+    .vol-workspace.view-cross-section .vol-telemetry-hud {
+      display: none !important;
     }
 
     /* Split View Layout */
@@ -1279,11 +1379,16 @@
       gap: 6px;
     }
     .vol-workspace.view-split .conduit-hud {
-      left: 0.75rem;
-      transform: none;
-      bottom: 5.5rem;
-      max-width: calc(100% - 305px);
-      justify-content: flex-start;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 7.2rem;
+      max-width: 96%;
+      gap: 4px;
+      justify-content: center;
+    }
+    .vol-workspace.view-split .conduit-hud .hud-pill {
+      padding: 2px 7px;
+      font-size: 0.65rem;
     }
 
     .visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
@@ -1535,12 +1640,14 @@
       .petrology-table td { color:black; }
     }
     .cutaway-plot { position:absolute; inset:0; }
+    .cam-director-hud { left:50%; bottom:9rem; transform:translateX(-50%); }
+    .vol-workspace.view-split .vol-telemetry-hud { pointer-events:none; }
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
     #cutaway-notes { font-size:.75rem; line-height:1.5; }
     #cutaway-notes details { margin:.4rem 0; }
     #cutaway-notes summary { cursor:pointer; }
     #cutaway-notes a { color:#ffd1a5; }
-    .conduit-hud { bottom:4.8rem; flex-wrap:wrap; max-width:calc(100% - 24px); }
+    .conduit-hud { bottom:10rem; flex-wrap:wrap; max-width:calc(100% - 24px); }
     #cutaway-true-scale { pointer-events:auto; cursor:pointer; background:#34231c; color:#fff; }
     @media(max-width:959px) {
       .conduit-outer { height:auto; min-height:420px; overflow:visible; }
@@ -1641,6 +1748,7 @@
       <button type="button" class="cam-btn" data-cam="vent" title="Crater &amp; Vent Close-up (2)">🌋 Vent</button>
       <button type="button" class="cam-btn" data-cam="flank" title="Flank Profile Inundation (3)">📐 Flank</button>
       <button type="button" class="cam-btn" data-cam="plume" title="Stratospheric Umbrella View (4)">☁️ Plume</button>
+      <button type="button" class="cam-btn" data-cam="flow" title="Ground-Hugging PDC Valley Flow View (5)">🌪️ PDC Flow</button>
       <button type="button" class="cam-btn" id="btn-cam-spin" data-cam="spin" title="Auto-Rotate Camera (O)">🔄 Auto-Spin</button>
     </div>
 
@@ -1658,6 +1766,25 @@
     <!-- Subsurface Magma Conduit Cross-Section Outer -->
     <div class="conduit-outer" id="conduit-outer" style="display: none;">
       <div class="cutaway-plot"><canvas id="conduit-canvas" tabindex="0" role="img" aria-label="Volcano geological cutaway" aria-describedby="cutaway-description"></canvas></div><p id="cutaway-description" class="sr-only"></p>
+
+      <!-- 3D Camera View Director -->
+      <div class="conduit-cam-bar" id="conduit-cam-bar">
+        <button type="button" class="c-cam-btn active" data-ccam="iso" title="Isometric 3D Geological Block Diagram">🧊 3D Block</button>
+        <button type="button" class="c-cam-btn" data-ccam="profile" title="Orthogonal Stratigraphic Cross-Section Profile">📐 Profile</button>
+        <button type="button" class="c-cam-btn" data-ccam="chamber" title="Magma Chamber Close-Up">🔥 Chamber</button>
+        <button type="button" class="c-cam-btn" data-ccam="vent" title="Crater Vent & Conduit Throat">🌋 Vent</button>
+        <button type="button" class="c-cam-btn" data-ccam="orbit" title="Orbit Reset">🔄 Reset</button>
+      </div>
+
+      <!-- Interactive 3D Annotation Feature Card -->
+      <div class="conduit-annotation-card" id="conduit-annotation-card" style="display: none;">
+        <button type="button" class="ann-close-btn" id="btn-close-ann" aria-label="Close annotation card">&times;</button>
+        <div class="ann-title" id="ann-card-title"></div>
+        <div class="ann-body" id="ann-card-text"></div>
+        <div class="ann-depth" id="ann-card-depth"></div>
+      </div>
+
+      <div class="drag-hint" style="bottom: 5.2rem;">Drag to orbit 3D cutaway · Scroll to zoom · Right-drag to pan</div>
 
       <!-- Painting Toolbar for Exploration Mode -->
       <div class="conduit-toolbar" id="conduit-toolbar" style="display: none;">
@@ -1681,13 +1808,15 @@
 
       <!-- Live Geological Diagnostics Overlay -->
       <div class="conduit-hud" id="conduit-hud">
-        <button type="button" class="hud-pill" id="cutaway-true-scale" aria-pressed="false">1:1 True Scale (VE 1.0)</button>
+        <button type="button" class="hud-pill" id="cutaway-true-scale" aria-pressed="false" style="cursor: pointer; pointer-events: auto;">1:1 True Scale (VE 1.0)</button>
         <span class="hud-pill" id="hud-chamber-depth">Depth: —</span>
         <span class="hud-pill" id="hud-magma-vol">Reservoir: —</span>
         <span class="hud-pill" id="hud-melt-vol">Melt: —</span>
         <span class="hud-pill" id="hud-overpressure">Stress: —</span>
         <span class="hud-pill" id="hud-buoyancy">Buoyancy: —</span>
         <span class="hud-pill" id="hud-vents">Paths: —</span>
+        <span class="hud-pill" id="hud-conduit-flux">Ascent Flux: —</span>
+        <span class="hud-pill" id="hud-conduit-vel">Exit Vel: —</span>
       </div>
     </div>
 
@@ -1884,6 +2013,18 @@
             <div class="stat-card"><div class="stat-lbl">VEI Index</div><div class="stat-val extreme" id="out-vei">5</div></div>
           </div>
           <p id="readout-note"></p>
+
+          <h4 style="margin: 0.85rem 0 0.4rem; font-size: 0.74rem; color: #ff8030; text-transform: uppercase; letter-spacing: 0.05em;">Pyroclastic Density Current (PDC) Laboratory</h4>
+          <div class="stat-grid" style="margin-bottom: 0.5rem;">
+            <div class="stat-card"><div class="stat-lbl">Front Velocity</div><div class="stat-val lava" id="out-pdc-spd">0 m/s</div></div>
+            <div class="stat-card"><div class="stat-lbl">Dynamic Pressure</div><div class="stat-val extreme" id="out-pdc-dyn">0.0 kPa</div></div>
+            <div class="stat-card"><div class="stat-lbl">Current Temp</div><div class="stat-val lava" id="out-pdc-temp">Ambient</div></div>
+            <div class="stat-card"><div class="stat-lbl">Max Runout</div><div class="stat-val medium" id="out-pdc-runout">0.0 km</div></div>
+          </div>
+          <div style="font-size: 0.68rem; line-height: 1.35; color: rgba(240, 190, 160, 0.85); background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255,120,40,0.18); margin-bottom: 0.75rem;" id="out-pdc-regime">
+            Regime: <strong>Buoyant Plume</strong> — Entrainment buoyancy sustains vertical ascent; column remains gravitationally stable.
+          </div>
+
           <details open><summary>Mass Conservation &amp; Computational Diagnostics</summary>
             <p id="lava-diagnostics"></p>
             <p>Model computational units. Stored volume includes solidified crust. Grid boundaries retain fluid; no regional erosion or outside outflow is simulated. Balance error = supplied mass − stored mass. Reversing timeline position or altering event presets reinitializes deposits.</p>
@@ -2012,6 +2153,18 @@
     </div>
 
     <p>If the mass eruption discharge rate (M&#775;) is too elevated relative to vent radius, or if the initial volatile gas mass fraction is insufficient to sustain air entrainment, convective buoyancy fails to develop. The dense column becomes gravitationally unstable and collapses back toward the edifice, generating high-velocity (&gt;30–150 m/s), high-temperature (300–800°C) ground-hugging <span data-glossary="pyroclastic density current">pyroclastic density currents (PDCs)</span> that incinerate and destroy topography down radial valleys.</p>
+
+    <div class="equation-box">
+      <div class="eq-title">Column Collapse Criterion &amp; PDC Dynamic Overpressure (Sparks 1986; Woods 1988; Valentine 1998)</div>
+      <div class="eq-formula">H<sub>c</sub> &approx; u<sub>0</sub><sup>2</sup> / (2g) &emsp;&middot;&emsp; P<sub>dyn</sub> = &frac12; &rho; v<sup>2</sup></div>
+      <p class="eq-vars"><strong>H<sub>c</sub>:</strong> Fountain collapse height above crater vent &middot; <strong>u<sub>0</sub>:</strong> Vent exit velocity &middot; <strong>P<sub>dyn</sub>:</strong> Dynamic ram pressure (kPa) exerted on structures in the flow path &middot; <strong>&rho;:</strong> Current bulk density (kg/m³) &middot; <strong>v:</strong> Front velocity. Structural devastation thresholds: 1–3 kPa shatters reinforced fenestration; 5–10 kPa snaps mature forest timber; &gt;30 kPa demolishes reinforced multi-story masonry.</p>
+    </div>
+
+    <p>Modern volcanology (Dufek 2016; Roche et al. 2016; Lube et al. 2019) classifies a PDC as a <strong>two-layer stratified gravity current</strong>:</p>
+    <ul>
+      <li><strong>Dense Basal Granular Flow (Underflow):</strong> A highly concentrated fluidized mixture of coarse juvenile pumice, lithics, and hot gas (&rho; &approx; 800–1,200 kg/m³). Gas pore pressure sustains fluidization, reducing effective basal friction (&mu;<sub>eff</sub> &approx; 0.15) and strictly steering the flow down topographic ravines and canyons.</li>
+      <li><strong>Dilute Co-Ignimbrite Ash Surge (Elutriation Cloud):</strong> As the hot basal current shears across ambient air, intense thermal heating causes rapid air expansion and convective updrafts. Fine ash lifts off into towering billowing cauliflower clouds (phoenix clouds) that surmount topographic ridges and spread over adjacent highlands.</li>
+    </ul>
 
     <h2>4. The Volcanic Explosivity Index (VEI) &amp; Quantitative Deposit Metrics</h2>
     <p>The <span data-glossary="VEI">Volcanic Explosivity Index (VEI)</span>, formulated by Newhall and Self (1982), establishes an open-ended logarithmic scale to quantify the magnitude and intensity of explosive volcanic eruptions based on physical deposit parameters:</p>
@@ -2258,8 +2411,10 @@
   <script src="../../assets/js/volcano-history.js"></script>
   <script src="../../assets/js/volcano-conduit.js"></script>
   <script type="module">
-  import { THREE } from '../../assets/vendor/three-bundle.min.js';
+  import { THREE, OrbitControls } from '../../assets/vendor/three-bundle.min.js';
   import { createDepthFieldMesh } from '../../assets/js/liquid-engine-three.mjs';
+  window.THREE = THREE;
+  window.OrbitControls = OrbitControls;
   (function () {
 
     const lavaMaterial = window.LiquidEngine?.material('lava') || { viscosity: 0.72, flow: 0.08 };
@@ -2470,7 +2625,8 @@
       orbit: { theta: 0.5, phi: 1.12, distOffset: 0, yOffset: 0 },
       vent:  { theta: 0.0, phi: 0.55, distOffset: -16, yOffset: 5.0 },
       flank: { theta: 1.57, phi: 1.32, distOffset: -4, yOffset: 1.2 },
-      plume: { theta: 0.35, phi: 1.38, distOffset: 12, yOffset: 15.0 }
+      plume: { theta: 0.35, phi: 1.38, distOffset: 12, yOffset: 15.0 },
+      flow:  { theta: -1.42, phi: 1.42, distOffset: -10, yOffset: -1.8 }
     };
 
     function setCameraPreset(mode) {
@@ -2551,8 +2707,9 @@
     function resizeConduitCanvas() {
       const conduitOuter = document.getElementById('conduit-outer');
       const conduitCanvas = document.getElementById('conduit-canvas');
-      if (!conduitOuter || !conduitCanvas) return;
-      conduitEngine?.surface.resize();
+      if (!conduitOuter || !conduitCanvas || !conduitEngine) return;
+      if (typeof conduitEngine.onResize === 'function') conduitEngine.onResize();
+      else if (conduitEngine.surface?.resize) conduitEngine.surface.resize();
     }
 
     function onResize() {
@@ -3442,6 +3599,12 @@
       syncLavaField();
     }
 
+    function resetPdcField() {
+      pyroPool?.clear();
+      pyroSurgePool?.clear();
+      resetEnvironments();
+    }
+
     function rebuildLavaStreams() {
       lavaField.setGround(terrainHeightAt);
       lavaDeposit.setGround(terrainHeightAt);
@@ -3509,7 +3672,8 @@
         uIntensity: { value: state.intensity },
         uCraterPos: { value: craterPos.clone() },
         uWind: { value: new THREE.Vector2(wind.x, wind.z) },
-        uMaxH: { value: currentMaxH }
+        uMaxH: { value: currentMaxH },
+        uPyroActivity: { value: state.pyro }
       };
 
       mat.onBeforeCompile = (shader) => {
@@ -3545,6 +3709,7 @@
            uniform vec3 uCraterPos;
            uniform vec2 uWind;
            uniform float uMaxH;
+           uniform float uPyroActivity;
 
            varying vec3 vTerrainWorldPos;
            varying vec3 vTerrainWorldNormal;
@@ -3605,6 +3770,25 @@
              float ashCoverage = ashAccum * upward * (0.65 + downwind * 0.35);
              vec3 ashColor = vec3(0.44, 0.41, 0.38);
              diffuseColor.rgb = mix(diffuseColor.rgb, ashColor, ashCoverage * 0.82);
+           }
+
+           // Dynamic Pyroclastic Density Current Ignimbrite Deposit & Thermal Scorch
+           // PDCs leave thick pumice/ash valley fills and thermal burn scars along drainage paths
+           if (uPyroActivity > 3.0 && uTimeline > 0.12) {
+             float valleyBed = 1.0 - smoothstep(0.10, 0.55, vTerrainSlope);
+             float dCrater = length(vTerrainWorldPos.xz - uCraterPos.xz);
+             float runoutLimit = 4.0 + (uPyroActivity / 100.0) * 15.5;
+             if (dCrater < runoutLimit) {
+               float distFactor = clamp((runoutLimit - dCrater) / runoutLimit, 0.0, 1.0);
+               float depositCoverage = distFactor * clamp((uTimeline - 0.12) * 2.2, 0.0, 1.0) * (uPyroActivity / 100.0);
+               depositCoverage = clamp(depositCoverage, 0.0, 0.88);
+
+               // Scorch / ignimbrite pumice veneer: charcoal burn scar margins with bleached buff pumice deposit
+               vec3 ignimbritePumice = vec3(0.40, 0.36, 0.30);
+               vec3 scorchCharcoal = vec3(0.10, 0.08, 0.07);
+               vec3 depositColor = mix(scorchCharcoal, ignimbritePumice, smoothstep(0.20, 0.75, distFactor));
+               diffuseColor.rgb = mix(diffuseColor.rgb, depositColor, depositCoverage * (0.55 + valleyBed * 0.45));
+             }
            }
 
            // Summit crater / breach geothermal incandescence
@@ -3714,6 +3898,8 @@
         u.uTimeline.value = stage;
         u.uIntensity.value = state.intensity;
         u.uHasColormap.value = hasColormap ? 1.0 : 0.0;
+        if (u.uPyroActivity) u.uPyroActivity.value = state.pyro;
+        if (u.uWind) u.uWind.value.set(wind.x, wind.z);
       }
 
       rebuildLavaStreams(lavaIntensity);
@@ -3834,7 +4020,7 @@
                 dummy.updateMatrix();
                 treeTrunkMesh.setMatrixAt(tCount, dummy.matrix);
                 treeCanopyMesh.setMatrixAt(tCount, dummy.matrix);
-                envData.push({ type: 'tree', id: tCount, x, y: h, z, s: scale, r: rot });
+                envData.push({ type: 'tree', id: tCount, x, y: h, z, s: scale, r: rot, fallen: false, fallDirX: 0, fallDirZ: 0, charFrac: 0 });
                 tCount++;
              }
           }
@@ -3853,7 +4039,7 @@
              dummy.updateMatrix();
              houseBodyMesh.setMatrixAt(hCount, dummy.matrix);
              houseRoofMesh.setMatrixAt(hCount, dummy.matrix);
-             envData.push({ type: 'house', id: hCount, x, y: h, z, s: scale, r: rot });
+             envData.push({ type: 'house', id: hCount, x, y: h, z, s: scale, r: rot, roofDestroyed: false, charFrac: 0 });
              hCount++;
           }
        }
@@ -3867,6 +4053,74 @@
            m.receiveShadow = true;
            scene.add(m);
        });
+
+       buildSpatialGrid();
+    }
+
+    // Spatial partitioning for fast PDC environmental blast checks
+    const GRID_SIZE = 8;
+    const GRID_CELL = TERRAIN_SIZE / GRID_SIZE;
+    let envSpatialGrid = [];
+    let envDirty = false;
+
+    function buildSpatialGrid() {
+      envSpatialGrid = Array.from({ length: GRID_SIZE * GRID_SIZE }, () => []);
+      for (const env of envData) {
+        const cx = clamp(Math.floor((env.x + TERRAIN_SIZE / 2) / GRID_CELL), 0, GRID_SIZE - 1);
+        const cz = clamp(Math.floor((env.z + TERRAIN_SIZE / 2) / GRID_CELL), 0, GRID_SIZE - 1);
+        envSpatialGrid[cz * GRID_SIZE + cx].push(env);
+      }
+    }
+
+    function checkPdcEnvironmentalImpact(px, pz, speed) {
+      if (speed < 2.5) return;
+      const dynPressureKPa = (0.5 * 1.8 * speed * speed) * 0.12;
+      if (dynPressureKPa < 2.5) return;
+
+      const cx = clamp(Math.floor((px + TERRAIN_SIZE / 2) / GRID_CELL), 0, GRID_SIZE - 1);
+      const cz = clamp(Math.floor((pz + TERRAIN_SIZE / 2) / GRID_CELL), 0, GRID_SIZE - 1);
+
+      const impactRadius = 1.6;
+      for (let dz = -1; dz <= 1; dz++) {
+        const gz = cz + dz;
+        if (gz < 0 || gz >= GRID_SIZE) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          const gx = cx + dx;
+          if (gx < 0 || gx >= GRID_SIZE) continue;
+
+          const cell = envSpatialGrid[gz * GRID_SIZE + gx];
+          if (!cell) continue;
+
+          for (let k = 0; k < cell.length; k++) {
+            const env = cell[k];
+            if (env.fallen && env.roofDestroyed) continue;
+
+            const distSq = (env.x - px) * (env.x - px) + (env.z - pz) * (env.z - pz);
+            if (distSq < impactRadius * impactRadius) {
+              if (env.type === 'tree' && !env.fallen) {
+                env.fallen = true;
+                const d = Math.hypot(env.x - craterPos.x, env.z - craterPos.z) || 1;
+                env.fallDirX = (env.x - craterPos.x) / d;
+                env.fallDirZ = (env.z - craterPos.z) / d;
+                envDirty = true;
+              } else if (env.type === 'house' && dynPressureKPa > 8.0 && !env.roofDestroyed) {
+                env.roofDestroyed = true;
+                envDirty = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function resetEnvironments() {
+      for (const env of envData) {
+        env.fallen = false;
+        env.roofDestroyed = false;
+        env.charFrac = 0;
+      }
+      envDirty = true;
+      updateEnvironments(state.timeline);
     }
 
     function updateEnvironments(stage) {
@@ -3879,36 +4133,51 @@
           const h = volcanoH(env.x, env.z, state.vtype, stage);
           let scale = env.s;
           let rotX = 0;
+          let rotZ = 0;
+          let canopyScale = scale;
 
-          // Devastation logic based on timeline stage
-          if (stage > 0.3) {
+          // Devastation: dynamic PDC blast blowdown takes precedence
+          if (env.fallen) {
+             rotX = env.fallDirZ * (Math.PI / 2.15);
+             rotZ = -env.fallDirX * (Math.PI / 2.15);
+             canopyScale = scale * 0.05; // Canopy stripped by blast
+          } else if (stage > 0.3) {
              const destroyFrac = Math.min(1, (stage - 0.3) * 2.5);
              if (activeEruption === 'sthelenr1980' && env.z < 0) {
-                 // Blast zone flattens trees
+                 // North flank lateral blast blowdown
                  rotX = destroyFrac * Math.PI / 2.2;
+                 canopyScale = scale * Math.max(0.05, 1 - destroyFrac);
              } else {
-                 // General ash burial and burning
                  scale = env.s * Math.max(0.1, 1 - destroyFrac * 0.8);
+                 canopyScale = scale;
              }
           }
 
           dummy.position.set(env.x, h, env.z);
-          dummy.rotation.set(rotX, env.r, 0);
+          dummy.rotation.set(rotX, env.r, rotZ);
           dummy.scale.setScalar(scale);
           dummy.updateMatrix();
 
           if (env.type === 'tree') {
              treeTrunkMesh.setMatrixAt(env.id, dummy.matrix);
+             dummy.scale.setScalar(canopyScale);
+             dummy.updateMatrix();
              treeCanopyMesh.setMatrixAt(env.id, dummy.matrix);
              tDirty = true;
           } else {
-             // Bury houses
-             if (stage > 0.4) {
+             // Bury houses or blast roofs off
+             if (env.roofDestroyed || stage > 0.4) {
                  dummy.position.y -= Math.min(0.5, (stage - 0.4) * 2);
                  dummy.updateMatrix();
              }
              houseBodyMesh.setMatrixAt(env.id, dummy.matrix);
-             houseRoofMesh.setMatrixAt(env.id, dummy.matrix);
+             if (!env.roofDestroyed) {
+                houseRoofMesh.setMatrixAt(env.id, dummy.matrix);
+             } else {
+                dummy.scale.set(0.01, 0.01, 0.01);
+                dummy.updateMatrix();
+                houseRoofMesh.setMatrixAt(env.id, dummy.matrix);
+             }
              hDirty = true;
           }
        }
@@ -3984,6 +4253,7 @@
         this.alive = new Uint8Array(maxN);
         this.col = new Float32Array(maxN * 3);
         this.sz  = new Float32Array(maxN);
+        this.cursor = 0;
 
         this.geo = new THREE.BufferGeometry();
         this.posAttr = new THREE.BufferAttribute(this.pos, 3); this.posAttr.setUsage(THREE.DynamicDrawUsage);
@@ -3999,17 +4269,33 @@
       }
 
       findDead() {
-        for (let i = 0; i < this.max; i++) if (!this.alive[i]) return i;
+        for (let k = 0; k < this.max; k++) {
+          const idx = (this.cursor + k) % this.max;
+          if (!this.alive[idx]) {
+            this.cursor = (idx + 1) % this.max;
+            return idx;
+          }
+        }
         return -1;
       }
 
       emit(px, py, pz, vx, vy, vz, life, r, g, b, size) {
-        const i = this.findDead(); if (i < 0) return;
+        const i = this.findDead(); if (i < 0) return -1;
         this.alive[i] = 1; this.age[i] = 0; this.life[i] = life;
         this.pos[i*3]=px; this.pos[i*3+1]=py; this.pos[i*3+2]=pz;
         this.vel[i*3]=vx; this.vel[i*3+1]=vy; this.vel[i*3+2]=vz;
         this.col[i*3]=r;  this.col[i*3+1]=g;  this.col[i*3+2]=b;
         this.sz[i] = size;
+        return i;
+      }
+
+      clear() {
+        for (let i = 0; i < this.max; i++) {
+          this.alive[i] = 0;
+          this.pos[i*3+1] = -9999;
+        }
+        this.cursor = 0;
+        this.posAttr.needsUpdate = true;
       }
 
       update(dt, onTick) {
@@ -4031,6 +4317,7 @@
       const isEmissive = !!options.isEmissive;
       const isSteam = !!options.isSteam;
       const isAdditive = !!options.additive;
+      const isPyroclastic = !!options.isPyroclastic;
       const alphaCutoff = options.alphaTest || 0.02;
 
       return new THREE.ShaderMaterial({
@@ -4115,6 +4402,22 @@
               vec3 finalColor = diffuse + lavaUplight * 0.5;
               float alpha = texCol.a * opacity * (1.0 - smoothstep(0.72, 1.0, r2));
               gl_FragColor = vec4(finalColor, alpha);
+            ` : isPyroclastic ? `
+              // Churning Pyroclastic Density Current: turbulent ash mantle with hot incandescent core
+              float coreDist = r2;
+              float heat = clamp(vColor.r, 0.0, 1.0);
+              vec3 hotWhite = vec3(1.2, 1.1, 0.9);
+              vec3 moltenOrange = vec3(1.4, 0.45, 0.06);
+              vec3 cherryRed = vec3(0.75, 0.14, 0.03);
+              vec3 incandescentCore = mix(cherryRed, mix(moltenOrange, hotWhite, smoothstep(0.65, 1.0, heat)), heat);
+
+              vec3 ashAlbedo = vec3(0.24, 0.20, 0.18) * (texCol.rgb * 1.5 + 0.12);
+              vec3 litAsh = ashAlbedo * (ambientColor * 2.4 + sunColor * (0.32 + wrapLight * 1.4));
+
+              float coreReveal = (1.0 - smoothstep(0.0, 0.72, coreDist)) * heat;
+              vec3 finalColor = mix(litAsh, incandescentCore * 2.2, coreReveal * 0.92) + lavaUplight * 0.85;
+              float alpha = min(1.0, texCol.a * 1.6) * opacity * (1.0 - smoothstep(0.80, 1.0, r2));
+              gl_FragColor = vec4(finalColor, alpha);
             ` : `
               // Dense tephra / ash cloud with self-shadowing and crater rim glow
               vec3 ashAlbedo = vColor * (texCol.rgb * 1.5 + 0.04);
@@ -4147,11 +4450,21 @@
       alphaTest: 0.04
     }));
 
-    // ── PYROCLASTIC FLOW ──
-    const pyroPool = new ParticlePool(scene, 1600, createVolumetricPointsMaterial({
+    // ── PYROCLASTIC DENSITY CURRENT (PDC) DUAL-PHASE ENGINE ──
+    // Phase A: Dense basal granular avalanche (ground-hugging, channelized, high dynamic pressure, incandescent clasts)
+    const pyroPool = new ParticlePool(scene, 2400, createVolumetricPointsMaterial({
       map: pyroTex,
-      opacity: 0.86,
+      isPyroclastic: true,
+      opacity: 0.92,
       alphaTest: 0.03
+    }));
+
+    // Phase B: Dilute co-ignimbrite ash surge (elutriation plume: buoyant, towering, billowing phoenix clouds)
+    const pyroSurgePool = new ParticlePool(scene, 2800, createVolumetricPointsMaterial({
+      map: pyroTex,
+      isPyroclastic: true,
+      opacity: 0.76,
+      alphaTest: 0.02
     }));
 
     // ── STEAM / GAS ──
@@ -4284,37 +4597,79 @@
 
       if (isStHelensBlast) {
         // High-velocity directed lateral blast roaring northward out of the collapsed breach
-        const count = Math.round(5 + intensity * 7);
+        const count = Math.round(6 + intensity * 9);
         for (let k = 0; k < count; k++) {
-          const spread = (-Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
-          const spd = 16 + intensity * 18 + Math.random() * 10;
-          const blastY = craterPos.y - 0.2 + Math.random() * 1.2;
+          const spread = (-Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.60);
+          const spd = 20 + intensity * 22 + Math.random() * 12;
+          const blastY = craterPos.y - 0.2 + Math.random() * 1.4;
+          const px = (Math.random() - 0.5) * 1.8;
+          const pz = -0.5 - Math.random() * 1.0;
+          const vx = Math.cos(spread) * spd;
+          const vz = Math.sin(spread) * spd;
+          const vy = (Math.random() - 0.25) * 3.5;
+
+          // Emit dense basal blast clasts
           pyroPool.emit(
-            (Math.random() - 0.5) * 1.6, blastY, -0.6 - Math.random() * 0.8,
-            Math.cos(spread) * spd, 0.8 + Math.random() * 2.5, Math.sin(spread) * spd,
-            4.8 + Math.random() * 3.0,
-            0.32 + Math.random() * 0.1, 0.22, 0.15,
-            2.2 + Math.random() * 1.5
+            px, blastY, pz,
+            vx, vy, vz,
+            5.2 + Math.random() * 3.0,
+            1.0, 0.45, 0.15,
+            2.4 + Math.random() * 1.6
           );
+
+          // Emit dilute trailing blast ash surge
+          if (Math.random() < 0.65) {
+            pyroSurgePool.emit(
+              px + (Math.random() - 0.5) * 1.2, blastY + 0.5, pz,
+              vx * 0.85, 3.5 + Math.random() * 4.5, vz * 0.85,
+              6.5 + Math.random() * 3.5,
+              0.55, 0.35, 0.25,
+              4.5 + Math.random() * 3.0
+            );
+          }
         }
         return;
       }
 
-      if (pyro < 0.10 || Math.random() > pyro * 0.85) return;
-      const count = Math.round(2 + pyro * 5);
+      if (pyro < 0.08 || Math.random() > pyro * 0.90 + 0.10) return;
+
+      // ── ANNULAR COLUMN COLLAPSE REGIME (Woods 1988, Sparks 1986) ──
+      // When mass discharge rate overwhelms convective entrainment, fountain collapse occurs at height Hc
+      const collapseHeight = craterPos.y + (1.2 + 2.8 * (intensity / 100)) * (pyro / 100);
+      const ringRadius = 0.45 + (pyro / 100) * 1.4;
+      const count = Math.round(4 + pyro * 8 + intensity * 4);
+
       for (let k = 0; k < count; k++) {
         const ang = Math.random() * Math.PI * 2;
-        // High initial velocity for column collapse
-        const spd = 2.5 + pyro * 6 + intensity * 3.5;
-        // Start around crater rim / collapsing column base
-        const collapseHeight = craterPos.y + Math.random() * 3.2;
+        // Radial outward momentum as collapsing curtain spills over crater rim
+        const radialSpd = 3.5 + pyro * 7.5 + intensity * 4.2;
+        const vx = Math.cos(ang) * radialSpd + (Math.random() - 0.5) * 1.5;
+        const vz = Math.sin(ang) * radialSpd + (Math.random() - 0.5) * 1.5;
+        const vy = -(2.0 + pyro * 4.0 + Math.random() * 2.5);
+
+        const px = craterPos.x + Math.cos(ang) * ringRadius + (Math.random() - 0.5) * 0.6;
+        const pz = craterPos.z + Math.sin(ang) * ringRadius + (Math.random() - 0.5) * 0.6;
+        const py = collapseHeight + (Math.random() - 0.5) * 0.8;
+
+        // Emit dense basal granular avalanche particle
         pyroPool.emit(
-          (Math.random() - 0.5) * 1.2, collapseHeight, (Math.random() - 0.5) * 1.2,
-          Math.cos(ang) * spd, -1.8 - Math.random() * 2.2, Math.sin(ang) * spd,
-          4.5 + Math.random() * 3.2,
-          0.30 + pyro * 0.25, 0.16, 0.08,
-          1.8 + Math.random() * 1.2
+          px, py, pz,
+          vx, vy, vz,
+          5.5 + Math.random() * 4.0,
+          1.0, 0.55, 0.15,
+          2.2 + Math.random() * 1.4
         );
+
+        // Emit initial collapsing co-ignimbrite turbulent cloud
+        if (Math.random() < 0.45) {
+          pyroSurgePool.emit(
+            px, py + 0.8, pz,
+            vx * 0.65, 1.8 + Math.random() * 3.5, vz * 0.65,
+            6.0 + Math.random() * 4.0,
+            0.65, 0.40, 0.28,
+            3.8 + Math.random() * 2.5
+          );
+        }
       }
     }
 
@@ -4546,9 +4901,13 @@
       // 6. Dynamic Physical Hazard Matrix
       const hazardEl = document.getElementById('hud-telem-hazard');
       if (hazardEl) {
-        if (state.intensity > 40 && state.pyro > 45) {
+        const isStHelensBlast = activeEruption === 'sthelenr1980' && state.timeline >= 0.15 && state.timeline <= 0.32;
+        if (isStHelensBlast || (state.intensity > 15 && state.pyro > 20)) {
           hazardEl.className = 'telem-hazard-status status-danger';
-          hazardEl.textContent = 'DANGER: Pyroclastic Density Current';
+          const pFront = Math.round(35 + (state.pyro / 100) * 85 + (state.intensity / 100) * 25);
+          const pDyn = (2.5 + Math.pow(state.pyro / 100, 2) * 32.0).toFixed(1);
+          const pTemp = Math.round(450 + (state.pyro / 100) * 380);
+          hazardEl.textContent = `DANGER: Pyroclastic Density Current (${pFront} m/s · ${pDyn} kPa · ${pTemp} °C)`;
         } else if (state.intensity > 40 && state.column > 25) {
           hazardEl.className = 'telem-hazard-status status-plume';
           hazardEl.textContent = 'EXTREME: Umbrella Cloud & Stratospheric Plume';
@@ -4586,6 +4945,53 @@
       document.getElementById('readout-note').textContent = historical
         ? 'Historical readouts cite published geological literature and satellite observations. Unmodeled metrics are marked unavailable.'
         : 'Hypothetical exploration model. No calibrated ejecta, temperature, SO₂ or ash-dispersal solver is available for user-adjusted parameters. Plume height is a scene input, not an observed measurement.';
+
+      // Dynamic PDC Laboratory Metrics
+      const outPdcSpd = document.getElementById('out-pdc-spd');
+      const outPdcDyn = document.getElementById('out-pdc-dyn');
+      const outPdcTemp = document.getElementById('out-pdc-temp');
+      const outPdcRunout = document.getElementById('out-pdc-runout');
+      const outPdcRegime = document.getElementById('out-pdc-regime');
+
+      if (outPdcSpd) {
+        const isStHelensBlast = activeEruption === 'sthelenr1980' && state.timeline >= 0.15 && state.timeline <= 0.32;
+        if (isStHelensBlast) {
+          const spd = Math.round(110 + (state.intensity / 100) * 45);
+          outPdcSpd.textContent = `${spd} m/s (${Math.round(spd * 3.6)} km/h)`;
+          if (outPdcDyn) outPdcDyn.textContent = `${(18.0 + (state.intensity / 100) * 24.0).toFixed(1)} kPa`;
+          if (outPdcTemp) outPdcTemp.textContent = '780 °C';
+          if (outPdcRunout) outPdcRunout.textContent = '28.5 km';
+          if (outPdcRegime) {
+            outPdcRegime.innerHTML = 'Regime: <strong>Directed Lateral Blast</strong> — Supersonic northward decompression blast unroofing cryptodome; extreme dynamic pressure (>30 kPa) felling timber and obliterating topography across 600 km².';
+          }
+        } else if (state.pyro >= 12 && state.intensity > 5) {
+          const pdcSpeed = Math.round(35 + (state.pyro / 100) * 80 + (state.intensity / 100) * 35);
+          const pdcDyn = (2.5 + Math.pow(state.pyro / 100, 2) * 34.0).toFixed(1);
+          const pdcTemp = Math.round(420 + (state.pyro / 100) * 420);
+          const pdcRunout = (3.2 + (state.pyro / 100) * 16.5).toFixed(1);
+
+          outPdcSpd.textContent = `${pdcSpeed} m/s (${Math.round(pdcSpeed * 3.6)} km/h)`;
+          if (outPdcDyn) outPdcDyn.textContent = `${pdcDyn} kPa`;
+          if (outPdcTemp) outPdcTemp.textContent = `${pdcTemp} °C`;
+          if (outPdcRunout) outPdcRunout.textContent = `${pdcRunout} km`;
+          if (outPdcRegime) {
+            if (state.pyro > 65) {
+              outPdcRegime.innerHTML = 'Regime: <strong>Total Column Collapse</strong> — Mass eruption rate overwhelms convective air entrainment; dense fountain collapse cascades radially down all flanks in continuous ground-hugging density currents.';
+            } else {
+              outPdcRegime.innerHTML = 'Regime: <strong>Partial Column Collapse & Valley Inundation</strong> — Pulsing annular collapse sheets channelizing into radial ravines with co-ignimbrite ash surge lofting.';
+            }
+          }
+        } else {
+          outPdcSpd.textContent = '0 m/s';
+          if (outPdcDyn) outPdcDyn.textContent = '0.0 kPa';
+          if (outPdcTemp) outPdcTemp.textContent = 'Ambient';
+          if (outPdcRunout) outPdcRunout.textContent = '0.0 km';
+          if (outPdcRegime) {
+            outPdcRegime.innerHTML = 'Regime: <strong>Buoyant Plume</strong> — Convective air entrainment sustains upward thermal ascent; column remains gravitationally stable.';
+          }
+        }
+      }
+
       updateTelemetryHUD();
     }
 
@@ -4724,7 +5130,7 @@
         sTl.value = state.timeline;
         syncSliderProgress(sTl);
       }
-      if (state.timeline < prevStage || state.timeline === 0) resetLavaField();
+      if (state.timeline < prevStage || state.timeline === 0) { resetLavaField(); resetPdcField(); }
       applyPhase();
       updateSky(state.intensity);
       const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
@@ -4796,10 +5202,11 @@
 
     function loadEruption(id) {
       const ev = ERUPTIONS.find(e => e.id === id);
-      if (!ev) return;
       if (id === 'yellowstone') state.mode = 'exploration';
+      else state.mode = 'historical';
       activeEruption = id;
       resetLavaField();
+      resetPdcField();
 
       isPlaying = false;
       updatePlayBtnState();
@@ -5104,6 +5511,8 @@
         setCameraPreset('flank');
       } else if (e.code === 'Digit4') {
         setCameraPreset('plume');
+      } else if (e.code === 'Digit5') {
+        setCameraPreset('flow');
       }
     });
 
@@ -5135,6 +5544,7 @@
       document.getElementById('vol-name-badge').textContent = 'Parametric ' + vtypeName(state.vtype);
       document.getElementById('vei-badge').textContent = 'Parametric model';
       resetLavaField();
+      resetPdcField();
       rebuildTerrain();
       updateReadouts();
     });
@@ -5184,7 +5594,7 @@
 
       // Particle shader lighting synchronization
       const glowVal = lavaBase * (1.0 + (1.0 - sunBrightness) * 2.5);
-      [ashPool, bombPool, pyroPool, steamPool].forEach(pool => {
+      [ashPool, bombPool, pyroPool, pyroSurgePool, steamPool].forEach(pool => {
         if (pool && pool.mat && pool.mat.uniforms) {
           if (pool.mat.uniforms.sunDir) pool.mat.uniforms.sunDir.value.copy(sunLight.position).normalize();
           if (pool.mat.uniforms.sunColor) pool.mat.uniforms.sunColor.value.copy(sunLight.color);
@@ -5332,49 +5742,120 @@
       pool.sz[i] = lerp(0.85, 0.35, t);
     }
 
-    function tickPyro(i, t, pool, dt) {
+    function tickPyroBasal(i, t, pool, dt) {
       const gx = pool.pos[i*3];
       const gz = pool.pos[i*3+2];
-      const ground = terrainHeightAt(gx, gz) + 0.14;
+      const ground = terrainHeightAt(gx, gz) + 0.12;
+      const distToGround = pool.pos[i*3+1] - ground;
 
-      // Density current dynamics: ground-hugging gravity current
-      if (pool.pos[i*3+1] <= ground + 0.25) {
+      if (distToGround <= 0.28) {
+        // ── DENSE BASAL GRANULAR FLOW (UNDERFLOW) ──
         pool.pos[i*3+1] = ground;
-        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.1;
+        pool.vel[i*3+1] *= 0.08; // Normal velocity damped against bed
 
-        // Valley-following slope acceleration (flows channelize into ravines)
+        // Valley-following slope acceleration (flows accelerate along steepest descent)
         const slope = slopeDir(gx, gz);
-        pool.vel[i*3]   += slope.x * GRAVITY * 3.8 * dt;
-        pool.vel[i*3+2] += slope.z * GRAVITY * 3.8 * dt;
+        const slopeMag = terrainSlope(gx, gz);
+        const gravAcc = GRAVITY * (2.8 + slopeMag * 2.2);
+        pool.vel[i*3]   += slope.x * gravAcc * dt;
+        pool.vel[i*3+2] += slope.z * gravAcc * dt;
 
-        // Ground friction
-        pool.vel[i*3]   *= (1.0 - 0.35 * dt);
-        pool.vel[i*3+2] *= (1.0 - 0.35 * dt);
-      } else {
-        // Co-ignimbrite ash surge (elutriation): fine ash lifts off the current due to thermal buoyancy
-        if (t > 0.3) {
-          pool.vel[i*3+1] += (2.5 * (t - 0.3)) * dt;
-        } else {
-          pool.vel[i*3+1] -= GRAVITY * 1.1 * dt;
+        // Ravine steering: lateral pressure gradient pulls flow toward valley bottom
+        const eps = 0.35;
+        const vx = pool.vel[i*3];
+        const vz = pool.vel[i*3+2];
+        const vLen = Math.hypot(vx, vz) || 1e-4;
+        const normX = -vz / vLen;
+        const normZ =  vx / vLen;
+        const hL = terrainHeightAt(gx + normX * eps, gz + normZ * eps);
+        const hR = terrainHeightAt(gx - normX * eps, gz - normZ * eps);
+        const valleyCrossSlope = (hR - hL) / (eps * 2.0);
+        pool.vel[i*3]   += normX * valleyCrossSlope * GRAVITY * 1.4 * dt;
+        pool.vel[i*3+2] += normZ * valleyCrossSlope * GRAVITY * 1.4 * dt;
+
+        // Fluidized bed friction: high pore-gas pressure lowers effective friction
+        const fluidFriction = Math.max(0.12, 0.32 - (state.pyro / 100) * 0.14);
+        const drag = Math.max(0.0, 1.0 - fluidFriction * dt);
+        pool.vel[i*3]   *= drag;
+        pool.vel[i*3+2] *= drag;
+
+        // Continuous Elutriation: hot ground-hugging avalanche heats air and lofts fine ash into co-ignimbrite surge
+        if (Math.random() < 0.20 && t > 0.05 && t < 0.80) {
+          const surgeVx = pool.vel[i*3] * 0.45 + (Math.random() - 0.5) * 1.5;
+          const surgeVz = pool.vel[i*3+2] * 0.45 + (Math.random() - 0.5) * 1.5;
+          const surgeVy = 3.2 + Math.random() * 4.0;
+          pyroSurgePool.emit(
+            gx, ground + 0.25, gz,
+            surgeVx, surgeVy, surgeVz,
+            5.2 + Math.random() * 3.5,
+            pool.col[i*3] * 0.7, 0.32, 0.22,
+            3.2 + Math.random() * 2.0
+          );
         }
-        // Lateral billowing
-        pool.vel[i*3]   += (Math.random() - 0.5) * 3.5 * dt;
-        pool.vel[i*3+2] += (Math.random() - 0.5) * 3.5 * dt;
+
+        // Dynamic environmental impact: blast damage to trees and structures
+        checkPdcEnvironmentalImpact(gx, gz, vLen);
+      } else {
+        // Free-falling collapsing fountain / airborne clast
+        pool.vel[i*3+1] -= GRAVITY * 1.8 * dt;
+        pool.vel[i*3]   *= (1.0 - 0.12 * dt);
+        pool.vel[i*3+2] *= (1.0 - 0.12 * dt);
       }
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
       pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
 
-      // Color: hot glowing base transitioning to dense turbulent ash cloud
-      const hot = Math.max(0, 1.0 - t * 2.2);
-      pool.col[i*3]   = lerp(0.24, 0.95, hot);
-      pool.col[i*3+1] = lerp(0.18, 0.45, hot);
-      pool.col[i*3+2] = lerp(0.15, 0.08, hot);
+      // Thermal Incandescence: hot juvenile clasts (850°C) cool to dark crusted tephra (400°C)
+      const heat = Math.max(0.0, 1.0 - Math.pow(t, 0.65) * 1.25);
+      pool.col[i*3]   = heat; // Red component carries normalized heat (1.0 = incandescent, 0.0 = cold ash)
+      pool.col[i*3+1] = lerp(0.20, 0.45, 1.0 - heat);
+      pool.col[i*3+2] = lerp(0.12, 0.38, 1.0 - heat);
 
-      // Billow expansion: pyroclastic density surge expands into boiling ground-hugging front
-      pool.sz[i] += (3.5 + state.pyro / 25) * dt;
-      if (pool.sz[i] > 22.0) pool.sz[i] = 22.0;
+      // Basal billow expansion
+      pool.sz[i] += (3.2 + state.pyro / 22) * dt;
+      if (pool.sz[i] > 20.0) pool.sz[i] = 20.0;
+    }
+
+    function tickPyroSurge(i, t, pool, dt) {
+      const gx = pool.pos[i*3];
+      const gz = pool.pos[i*3+2];
+      const ground = terrainHeightAt(gx, gz) + 0.2;
+
+      // ── DILUTE CO-IGNIMBRITE ASH SURGE (PHOENIX CLOUD) ──
+      // Strong thermal convective buoyancy (heated entrained air ascends rapidly)
+      const buoyancy = (4.8 * Math.max(0.0, 1.0 - t * 0.85)) + (t < 0.25 ? 2.5 : 0.0);
+      pool.vel[i*3+1] += buoyancy * dt;
+
+      // Atmospheric shear, lateral turbulent billowing & wind drift
+      pool.vel[i*3]   += ((Math.random() - 0.5) * 3.8 + wind.x * 2.0) * dt;
+      pool.vel[i*3+2] += ((Math.random() - 0.5) * 3.8 + wind.z * 2.0) * dt;
+
+      // Aerodynamic drag
+      const drag = Math.max(0.0, 1.0 - 0.28 * dt);
+      pool.vel[i*3]   *= drag;
+      pool.vel[i*3+1] *= Math.max(0.0, 1.0 - 0.16 * dt);
+      pool.vel[i*3+2] *= drag;
+
+      pool.pos[i*3]   += pool.vel[i*3] * dt;
+      pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
+      pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
+
+      // Ensure surge stays above terrain
+      if (pool.pos[i*3+1] < ground) {
+        pool.pos[i*3+1] = ground;
+        pool.vel[i*3+1] = Math.max(0.0, pool.vel[i*3+1]) + 1.2;
+      }
+
+      // Volumetric cauliflower expansion (air entrainment swells plume volume)
+      pool.sz[i] += (4.5 + (1.0 - t) * 6.0) * dt;
+      if (pool.sz[i] > 38.0) pool.sz[i] = 38.0;
+
+      // Rapid cooling of fine suspended ash
+      const surgeHeat = Math.max(0.0, (1.0 - t * 2.4) * 0.6);
+      pool.col[i*3]   = surgeHeat;
+      pool.col[i*3+1] = lerp(0.24, 0.42, t);
+      pool.col[i*3+2] = lerp(0.20, 0.38, t);
     }
 
     function tickSteam(i, t, pool, dt) {
@@ -5435,7 +5916,7 @@
           sTl.value = state.timeline;
           syncSliderProgress(sTl);
         }
-        if (state.timeline < prevTimeline || state.timeline === 0) resetLavaField();
+        if (state.timeline < prevTimeline || state.timeline === 0) { resetLavaField(); resetPdcField(); }
         applyPhase();
         updateSky(state.intensity);
         const lavaI = (1 - state.viscosity / 100) * (state.intensity / 100);
@@ -5482,8 +5963,10 @@
 
       ashPool.update(dt,  tickAsh);
       bombPool.update(dt, tickBomb);
-      pyroPool.update(dt, tickPyro);
+      pyroPool.update(dt, tickPyroBasal);
+      pyroSurgePool.update(dt, tickPyroSurge);
       steamPool.update(dt, tickSteam);
+      if (envDirty) { envDirty = false; updateEnvironments(state.timeline); }
       lavaFlow?.update(dt);
       syncLavaParticles();
       updateLavaField(dt);
@@ -5556,6 +6039,10 @@
       if (meltEl) meltEl.textContent = `Melt: ${diag.meltVolumeKm3} km³`;
       const buoyEl = document.getElementById('hud-buoyancy');
       if (buoyEl) buoyEl.textContent = `Buoyancy: ${diag.buoyancyMPa} MPa`;
+      const fluxEl = document.getElementById('hud-conduit-flux');
+      if (fluxEl) fluxEl.textContent = diag.massFluxTps ? `Ascent: ${diag.massFluxTps} t/s` : 'Ascent: 0 t/s';
+      const velEl = document.getElementById('hud-conduit-vel');
+      if (velEl) velEl.textContent = diag.exitVel ? `Exit: ${diag.exitVel} m/s` : 'Exit: 0 m/s';
       const dreEl = document.getElementById('hud-erupted-dre');
       if (dreEl) dreEl.textContent = `Erupted DRE: ${diag.eruptedDRE ? diag.eruptedDRE.join('–') + ' km³' : 'unavailable'}`;
       const cardDepth = document.getElementById('card-ch-depth');
@@ -5577,23 +6064,36 @@
         b.classList.toggle('active', b.dataset.view === view);
       });
 
+      const telemHud = document.getElementById('vol-telemetry-hud');
+      const camHud = document.getElementById('cam-director-hud');
       if (view === 'surface') {
-        stage?.classList.remove('view-split');
+        stage?.classList.remove('view-split', 'view-cross-section');
+        stage?.classList.add('view-surface');
         if (volOuter) volOuter.style.display = 'block';
         if (conduitOuter) conduitOuter.style.display = 'none';
         if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 Inspect Subsurface Magma Conduit Cutaway';
+        if (telemHud) telemHud.style.display = 'flex';
+        if (camHud) camHud.style.display = 'flex';
       } else if (view === 'cross-section') {
-        stage?.classList.remove('view-split');
+        stage?.classList.remove('view-split', 'view-surface');
+        stage?.classList.add('view-cross-section');
         if (volOuter) volOuter.style.display = 'none';
         if (conduitOuter) conduitOuter.style.display = 'flex';
         if (btnToggleCutaway) btnToggleCutaway.textContent = '🌋 Return to 3D Surface Dynamics View';
+        togglePanel('left', false);
+        togglePanel('right', false);
+        if (telemHud) telemHud.style.display = 'none';
+        if (camHud) camHud.style.display = 'none';
       } else if (view === 'split') {
+        stage?.classList.remove('view-surface', 'view-cross-section');
         stage?.classList.add('view-split');
         if (volOuter) volOuter.style.display = 'block';
         if (conduitOuter) conduitOuter.style.display = 'flex';
         if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Magma Conduit Cutaway Only';
         togglePanel('left', false);
         togglePanel('right', false);
+        if (telemHud) telemHud.style.display = 'flex';
+        if (camHud) camHud.style.display = 'flex';
       }
 
       requestAnimationFrame(() => {
@@ -5601,6 +6101,12 @@
         conduitEngine?.render(0);
       });
     }
+
+    // Annotation card close button
+    document.getElementById('btn-close-ann')?.addEventListener('click', () => {
+      const card = document.getElementById('conduit-annotation-card');
+      if (card) card.style.display = 'none';
+    });
 
     // View toggle listeners
     document.querySelectorAll('.view-btn').forEach(btn => {
@@ -5645,10 +6151,12 @@
       conduitEngine?.resetCustom();
     });
 
-    // Initialize Conduit Engine
+    // Initialize 3D Conduit Engine
     const conduitCanvas = document.getElementById('conduit-canvas');
     if (conduitCanvas && window.VolcanoConduitEngine) {
       conduitEngine = new window.VolcanoConduitEngine(conduitCanvas, {
+        THREE: THREE,
+        OrbitControls: OrbitControls,
         mode: state.mode,
         eruptionId: activeEruption,
         onVentChange: (vents) => {
@@ -5658,7 +6166,17 @@
           updateConduitHUD(diag);
         }
       });
+      window.conduitEngine = conduitEngine;
     }
+
+    // 3D Conduit Camera Director Listeners
+    document.querySelectorAll('.c-cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.c-cam-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        conduitEngine?.setCameraPreset(btn.dataset.ccam);
+      });
+    });
 
     document.getElementById('cutaway-true-scale').addEventListener('click', function() {
       conduitEngine.trueScale = !conduitEngine.trueScale;
@@ -5666,10 +6184,7 @@
       conduitEngine.render(0);
     });
 
-    /* ══════════════════════════════════════════
-       INIT
-    ══════════════════════════════════════════ */
-
+    window.loadEruption = loadEruption;
     loadEruption('vesuvius79');
     document.getElementById('btn-cam-spin')?.classList.add('active');
     window.addEventListener('beforeprint', () => {

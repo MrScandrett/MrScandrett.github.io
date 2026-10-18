@@ -194,6 +194,7 @@
       'body.theme-liquid-woodland #site-canvas-bg,body.theme-liquid-woodland #hero-canvas{' +
         'position:fixed;z-index:0;' +
       '}' +
+      '.site-header,main,.site-footer,' +
       'body.theme-liquid-woodland .site-header,body.theme-liquid-woodland main,body.theme-liquid-woodland .site-footer{' +
         'position:relative;z-index:1;' +
       '}' +

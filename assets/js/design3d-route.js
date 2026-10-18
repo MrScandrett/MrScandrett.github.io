@@ -4,6 +4,7 @@
   const root = new URL('../../', document.currentScript.src);
   const home = 'lessons/3d-design/3d-design.html';
   const stages = [
+    ['home', 'First project', 'K–12 desk helper', '#first-project'],
     ['plan', 'Plan in 2D', 'Blueprint drafting', 'lessons/3d-design/cad-and-printing/blueprint-drafting.html'],
     ['foundation', 'Start here', 'Shared foundation', '#foundation'],
     ['real', 'Make it real', 'CAD → Forge → print', '#make-real'],
