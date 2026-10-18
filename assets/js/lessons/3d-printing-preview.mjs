@@ -1,6 +1,5 @@
-// Forge's shared scene, lighting, print-bed and OrbitControls adapted for a slicer teaching model.
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
-import { modelFor, sections, isSkin } from './3d-printing-models.mjs';
+import { modelFor, modelHeight, sections, isSkin } from './3d-printing-models.mjs';
 import { createScene } from '../sim-kit-three.mjs';
 const canvas = document.getElementById('p3d-webgl');
 const cross = document.getElementById('p3d-canvas');
@@ -40,7 +39,8 @@ function update(s) {
   const cutaway=document.getElementById('print-cutaway').checked;
   const key=[s.model,s.lh,s.inf,s.walls,s.sup,s.layer,s.layers,cutaway].join('|');
   if(key===signature)return;signature=key;disposeModel();
-  const height=Math.min(60,s.layer*s.lh),wall=s.walls*0.4,stride=Math.max(1,Math.ceil(s.layer/120));
+  const maxH = modelHeight(s.model);
+  const height=Math.min(maxH,s.layer*s.lh),wall=s.walls*0.4,stride=Math.max(1,Math.ceil(s.layer/120));
   const shells=[],skins=[],infill=[],bands=[];
   function add(list,x,y,z,px,py,pz){if(x>0&&y>0&&z>0)list.push([x,y,z,px,py,pz]);}
   // Instanced bands keep draw calls bounded as layer count changes.
@@ -94,7 +94,8 @@ function update(s) {
 }
 function read() {
   const val=id=>Number(document.getElementById(id).value);
-  return {model:document.getElementById('print-model').value,lh:val('lh-slider'),inf:val('inf-slider'),walls:val('walls-slider'),sup:document.getElementById('sup-select').value,layer:val('layer-slider'),layers:Math.round(60/val('lh-slider'))};
+  const m=document.getElementById('print-model').value;
+  return {model:m,lh:val('lh-slider'),inf:val('inf-slider'),walls:val('walls-slider'),sup:document.getElementById('sup-select').value,layer:val('layer-slider'),layers:Math.round(modelHeight(m)/val('lh-slider'))};
 }
 try {
   view=createScene(canvas,{THREE,fov:35,near:0.1,far:1000,clearColor:0x1d2228});

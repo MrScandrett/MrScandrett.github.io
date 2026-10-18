@@ -7,6 +7,7 @@
 
   let currentWeather = null;
   let activeLocation = window.WeatherEngine.DEFAULT_LOCATION;
+  let weatherRequestId = 0;
   let drivingSpeed = 55;
   const RADAR_MAX_ZOOM = 7; // RainViewer public tiles currently support zoom 7 maximum.
   const RADAR_MIN_ZOOM = 3;
@@ -34,6 +35,9 @@
 
     // Cockpit
     dialCity: document.getElementById('ww-dial-city'),
+    heroCity: document.getElementById('ww-hero-city'),
+    heroTemp: document.getElementById('ww-hero-temp'),
+    heroCondition: document.getElementById('ww-hero-condition'),
     dialStation: document.getElementById('ww-dial-station'),
     dialTemp: document.getElementById('ww-dial-temp'),
     dialIcon: document.getElementById('ww-dial-icon'),
@@ -148,12 +152,17 @@
 
   // ── CORE DATA LOADER ────────────────────────────────────────────────────────
   async function loadWeather(location) {
+    const requestId = ++weatherRequestId;
     activeLocation = location;
     mapCenter = null;
     window.dispatchEvent(new CustomEvent('ww:location', { detail: { location } }));
     try {
       if (els.dialCondition) els.dialCondition.textContent = 'Updating atmospheric readings...';
+      if (els.heroCity) els.heroCity.textContent = location.label;
+      if (els.heroTemp) els.heroTemp.textContent = '--°';
+      if (els.heroCondition) els.heroCondition.textContent = 'Updating local conditions…';
       const data = await window.WeatherEngine.fetchWeather(location);
+      if (requestId !== weatherRequestId) return;
       currentWeather = data;
       window.dispatchEvent(new CustomEvent('ww:weather', { detail: { weather: data, location } }));
       renderCockpit(data);
@@ -163,8 +172,10 @@
       loadStormWatch(location);
       loadAirQuality(location);
     } catch (err) {
+      if (requestId !== weatherRequestId) return;
       console.error('Weather load error:', err);
       if (els.dialCondition) els.dialCondition.textContent = 'Weather feed temporarily unavailable';
+      if (els.heroCondition) els.heroCondition.textContent = 'Weather feed temporarily unavailable';
     }
   }
 
@@ -504,6 +515,9 @@
     els.dialTemp.textContent = `${data.temperature}°`;
     els.dialIcon.textContent = data.icon;
     els.dialCondition.textContent = data.condition;
+    if (els.heroCity) els.heroCity.textContent = data.location.label;
+    if (els.heroTemp) els.heroTemp.textContent = `${data.temperature}°`;
+    if (els.heroCondition) els.heroCondition.textContent = data.condition;
     els.dialFeels.textContent = `FEELS LIKE ${data.feelsLike}° · ${data.dewComfort.category.toUpperCase()}`;
     els.dialLo.textContent = `${data.min}°`;
     els.dialHi.textContent = `${data.max}°`;
@@ -759,10 +773,30 @@
     const coldBtn = document.getElementById('ww-front-cold');
     const warmBtn = document.getElementById('ww-front-warm');
     const noteEl = document.getElementById('ww-front-note');
+    const frontPhoto = document.getElementById('ww-front-reference-img');
+    const frontTitle = document.getElementById('ww-front-reference-title');
+    const frontDescription = document.getElementById('ww-front-reference-description');
+    const frontImages = {
+      cold: { src: '../../assets/images/lessons/weather-watch/cumulonimbus-noaa.webp', alt: 'Towering cumulonimbus clouds rising above the horizon', title: 'Cold front sky', description: 'Deep uplift can build a cumulonimbus tower like this one; the model shows the air motion underneath.' },
+      warm: { src: '../../assets/images/lessons/weather-watch/cirrus-noaa.webp', alt: 'Thin cirrus clouds stretched across a blue sky', title: 'Ahead of a warm front', description: 'High cirrus may appear before the thicker, lower clouds and widespread rain of a warm front.' }
+    };
+    const skyTextures = {};
+    Object.entries(frontImages).forEach(([key, photo]) => {
+      const image = new Image();
+      image.src = photo.src;
+      skyTextures[key] = image;
+    });
+    function updateFrontReference() {
+      const photo = frontImages[frontType];
+      if (frontPhoto) { frontPhoto.src = photo.src; frontPhoto.alt = photo.alt; }
+      if (frontTitle) frontTitle.textContent = photo.title;
+      if (frontDescription) frontDescription.textContent = photo.description;
+    }
 
     if (coldBtn && warmBtn) {
       coldBtn.addEventListener('click', () => {
         frontType = 'cold';
+        updateFrontReference();
         coldBtn.classList.add('is-active');
         warmBtn.classList.remove('is-active');
         if (noteEl) {
@@ -776,6 +810,7 @@
 
       warmBtn.addEventListener('click', () => {
         frontType = 'warm';
+        updateFrontReference();
         warmBtn.classList.add('is-active');
         coldBtn.classList.remove('is-active');
         if (noteEl) {
@@ -792,6 +827,8 @@
     function draw() {
       const w = canvas.getBoundingClientRect().width;
       const h = canvas.getBoundingClientRect().height;
+      const compact = w < 400;
+      const modelScale = Math.max(0.52, Math.min(1, w / 600));
       t += 0.02;
 
       ctx.clearRect(0, 0, w, h);
@@ -802,6 +839,18 @@
       skyGrad.addColorStop(1, '#1e293b');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, w, h);
+      // A faint NOAA sky photograph textures the schematic; the colored air
+      // masses and cloud sprites remain the simulated teaching model.
+      const texture = skyTextures[frontType];
+      if (texture && texture.complete && texture.naturalWidth) {
+        const scale = Math.max(w / texture.naturalWidth, h / texture.naturalHeight);
+        const tw = texture.naturalWidth * scale;
+        const th = texture.naturalHeight * scale;
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.drawImage(texture, (w - tw) / 2, (h - th) / 2, tw, th);
+        ctx.restore();
+      }
 
       // Ground
       ctx.fillStyle = '#1e3a1e';
@@ -836,9 +885,9 @@
         // Towering Volumetric 3D Cumulonimbus
         if (window.CloudEngine && window.CloudEngine.renderCloudCluster) {
           // Convective storm body
-          window.CloudEngine.renderCloudCluster(ctx, w * 0.47, h - 160, 160, 140, { storm: true, darkBase: true, time: t });
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.47, h - 160 * modelScale, 160 * modelScale, 140 * modelScale, { storm: true, darkBase: true, time: t });
           // Glaciated anvil top blown downwind
-          window.CloudEngine.renderCloudCluster(ctx, w * 0.53, h - 225, 220, 70, { storm: false, darkBase: false, time: t * 0.7 });
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.53, h - 225 * modelScale, 220 * modelScale, 70 * modelScale, { storm: false, darkBase: false, time: t * 0.7 });
         } else {
           ctx.fillStyle = 'rgba(203, 213, 225, 0.85)';
           ctx.beginPath();
@@ -852,7 +901,7 @@
         ctx.strokeStyle = 'rgba(96, 165, 250, 0.6)';
         ctx.lineWidth = 1.5;
         for (let i = 0; i < 20; i++) {
-          const rx = w * 0.40 + (i * 7);
+          const rx = w * 0.40 + (i * 7 * modelScale);
           const ry = (h - 110) + ((t * 200 + i * 15) % 85);
           ctx.beginPath();
           ctx.moveTo(rx, ry);
@@ -861,13 +910,13 @@
         }
 
         // Labels
-        ctx.font = 'bold 12px ui-monospace, monospace';
+        ctx.font = `bold ${compact ? 10 : 12}px ui-monospace, monospace`;
         ctx.fillStyle = '#60a5fa';
-        ctx.fillText('COLD AIR MASS (Dense)', 20, h - 60);
+        ctx.fillText(compact ? 'COLD / DENSE' : 'COLD AIR MASS (Dense)', compact ? 10 : 20, h - 60);
         ctx.fillStyle = '#f59e0b';
-        ctx.fillText('WARM AIR MASS (Moist)', w - 180, h - 60);
+        ctx.fillText(compact ? 'WARM / MOIST' : 'WARM AIR MASS (Moist)', compact ? w - 98 : w - 180, compact ? h - 42 : h - 60);
         ctx.fillStyle = '#fff';
-        ctx.fillText('↑ Rapid Convection (Squall)', w * 0.36, h - 90);
+        ctx.fillText(compact ? '↑ RAPID UPLIFT' : '↑ Rapid Convection (Squall)', w * 0.36, h - 90, w * 0.6);
 
       } else {
         // Warm Front (gentle slope)
@@ -890,11 +939,11 @@
         // Realistic Volumetric Cloud Progression: Cirrus -> Altostratus -> Nimbostratus
         if (window.CloudEngine && window.CloudEngine.renderCloudCluster) {
           // Cirrus (high ice crystals)
-          window.CloudEngine.renderCloudCluster(ctx, w * 0.80, 52, 130, 34, { storm: false, darkBase: false, time: t * 0.5 });
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.80, 52, 130 * modelScale, 34 * modelScale, { storm: false, darkBase: false, time: t * 0.5 });
           // Altostratus (middle layer)
-          window.CloudEngine.renderCloudCluster(ctx, w * 0.48, h - 175, 175, 48, { storm: false, darkBase: true, time: t * 0.4 });
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.48, h - 175 * modelScale, 175 * modelScale, 48 * modelScale, { storm: false, darkBase: true, time: t * 0.4 });
           // Nimbostratus (low steady rain layer)
-          window.CloudEngine.renderCloudCluster(ctx, w * 0.18, h - 125, 190, 65, { storm: true, darkBase: true, time: t * 0.3 });
+          window.CloudEngine.renderCloudCluster(ctx, w * 0.18, h - 125 * modelScale, 190 * modelScale, 65 * modelScale, { storm: true, darkBase: true, time: t * 0.3 });
         } else {
           // Altostratus fallback
           ctx.fillStyle = 'rgba(203, 213, 225, 0.6)';
@@ -919,11 +968,11 @@
           ctx.stroke();
         }
 
-        ctx.font = 'bold 12px ui-monospace, monospace';
+        ctx.font = `bold ${compact ? 10 : 12}px ui-monospace, monospace`;
         ctx.fillStyle = '#60a5fa';
-        ctx.fillText('RETREATING COLD AIR', w - 180, h - 40);
+        ctx.fillText(compact ? 'COLD AIR' : 'RETREATING COLD AIR', compact ? w - 75 : w - 180, h - 40);
         ctx.fillStyle = '#f59e0b';
-        ctx.fillText('WARM AIR OVERRIDING', 20, 60);
+        ctx.fillText(compact ? 'WARM AIR RISES' : 'WARM AIR OVERRIDING', compact ? 10 : 20, 60);
       }
 
       animFrame = requestAnimationFrame(draw);
@@ -945,6 +994,8 @@
       tempF: initialTemp,
       dewPointF: initialDew,
       interactive: true,
+      maxParticles: 180,
+      particleRenderScale: Math.max(0.45, Math.min(0.8, canvas.clientWidth / 800)),
       showLCL: true,
       showAltitudeGuide: true,
       onLCLChange: (feet) => {
@@ -952,9 +1003,32 @@
         if (noteLcl) noteLcl.textContent = `${feet.toLocaleString()} FT`;
       }
     });
+    window.addEventListener('resize', () => {
+      if (cloudSim) cloudSim.options.particleRenderScale = Math.max(0.45, Math.min(0.8, canvas.clientWidth / 800));
+    });
 
     const chips = document.querySelectorAll('.ww-cloud-chip');
     const noteEl = document.getElementById('ww-cloud-lab-note');
+    const cloudReference = document.getElementById('ww-cloud-reference');
+    const cloudReferenceGrid = cloudReference?.closest('.ww-sim-broadcast-grid');
+    const cloudReferenceImg = document.getElementById('ww-cloud-reference-img');
+    const cloudReferenceTitle = document.getElementById('ww-cloud-reference-title');
+    const cloudReferenceDescription = document.getElementById('ww-cloud-reference-description');
+    const cloudPhotos = {
+      cumulus: { file: 'cumulus', alt: 'Puffy cumulus clouds with flat bases in a blue sky', title: 'Cumulus in the sky', description: 'Compare the photo\'s flat bases and sunlit tops with the rising, condensing parcels in the model.' },
+      cumulonimbus: { file: 'cumulonimbus', alt: 'A tall cumulonimbus thunderstorm cloud with a spreading upper edge', title: 'Storm cloud in the sky', description: 'The real tower and spreading top show what strong updrafts can build above the model\'s rising air.' },
+      stratus_fog: { file: 'stratus', alt: 'A low gray stratus sheet covering the landscape', title: 'Stratus in the sky', description: 'A nearly continuous low layer contrasts with the isolated towers made by strong convection.' },
+      cirrus: { file: 'cirrus', alt: 'Thin, feathery cirrus clouds high in a blue sky', title: 'Cirrus in the sky', description: 'These high ice-crystal wisps are stretched by upper-level winds.' }
+    };
+    function updateCloudReference(presetId) {
+      const photo = cloudPhotos[presetId];
+      if (cloudReference) cloudReference.hidden = !photo;
+      if (cloudReferenceGrid) cloudReferenceGrid.classList.toggle('is-reference-hidden', !photo);
+      if (!photo) return;
+      if (cloudReferenceImg) { cloudReferenceImg.src = `../../assets/images/lessons/weather-watch/${photo.file}-noaa.webp`; cloudReferenceImg.alt = photo.alt; }
+      if (cloudReferenceTitle) cloudReferenceTitle.textContent = photo.title;
+      if (cloudReferenceDescription) cloudReferenceDescription.textContent = photo.description;
+    }
     const descriptions = {
       cumulus: '<strong>Cumulus Convection Dynamics:</strong> Sun-warmed ground heats parcels of surface air. Because warm air is buoyant, parcels accelerate upward. As they ascend into lower atmospheric pressure, they expand adiabatically and cool at 5.4°F per 1,000 ft until reaching the <em>Lifting Condensation Level</em> (<span id="ww-cloud-note-lcl">' + (cloudSim ? cloudSim.lclFeet.toLocaleString() : '4,545') + ' FT</span>). There, water vapor condenses into visible droplets, releasing latent heat and building towering cauliflower billows!',
       cumulonimbus: '<strong>Cumulonimbus Violent Updrafts &amp; Rain:</strong> Intense solar heating or steep frontal uplift forces air up at 40–100 mph. The cloud pushes straight through the troposphere to the tropopause (40,000+ ft), where jet winds shear the top into a giant anvil. Massive precipitation shafts plunge to ground.',
@@ -972,6 +1046,7 @@
         chip.classList.add('is-active');
         const presetId = chip.dataset.preset;
         if (cloudSim) cloudSim.setPreset(presetId);
+        updateCloudReference(presetId);
         if (noteEl && descriptions[presetId]) {
           noteEl.innerHTML = descriptions[presetId];
         }
@@ -1003,6 +1078,7 @@
       syncBtn.addEventListener('click', () => {
         if (currentWeather && cloudSim) {
           cloudSim.syncWithWeatherEngine(currentWeather);
+          updateCloudReference(cloudSim.preset.id);
           if (els.lclTemp) els.lclTemp.value = currentWeather.temperature;
           if (els.lclDew) els.lclDew.value = currentWeather.dewPoint;
           updateLclCalc();

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Central Weather Engine & Interactive STEAM Lab: live forecasting, nowcasts, storm-cell ETAs, lightning tracking, severe-storm ingredients, hurricane tracking, road physics and wardrobe layering." />
-  <title>Weather Watch · Central Weather Engine · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Weather Watch, the ClassroomOS weather service: read local conditions, explore radar and nowcasts, and test the science behind storms, forecasts, and daily decisions." />
+  <title>Weather Watch · ClassroomOS Weather Service</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../assets/css/lessons/weather-watch.css" />
   <link rel="stylesheet" href="../../assets/css/lessons/storm-desk.css" />
+  <link rel="stylesheet" href="../../assets/css/weatherwave.css" />
+  <link rel="stylesheet" href="../../assets/css/lessons/weatherwave-sims.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
 </head>
 <body>
@@ -59,14 +61,34 @@
 
           <!-- HERO BANNER & LOCATION CONTROLLER -->
           <header class="ww-hero">
-            <div class="ww-hero-top">
-              <span class="ww-badge"><span class="ww-pulse" aria-hidden="true"></span> Live Atmospheric Engine</span>
-              <span class="ww-badge" style="border-color:rgba(255,255,255,0.15); color:#94a3b8;">Open-Meteo Physics Model</span>
+            <div class="ww-broadcast-label" aria-hidden="true"><strong>CLASSROOMOS WEATHER SERVICE</strong><span>LOCAL FORECAST / CHANNEL 08</span></div>
+            <div class="ww-hero-main">
+              <div class="ww-hero-copy">
+                <div class="ww-hero-top">
+                  <span class="ww-badge"><span class="ww-pulse" aria-hidden="true"></span> Live atmospheric engine</span>
+                  <span class="ww-badge ww-badge--source">Open-Meteo forecast model</span>
+                </div>
+                <h1>Weather Watch<span>The living atmosphere</span></h1>
+                <p class="ww-hero-lede">Read your local sky, follow a storm, and test the science behind the forecast. Start with a city, then investigate what the atmosphere is doing and why.</p>
+                <div class="ww-hero-shortcuts">
+                  <a href="#cockpit">Read conditions</a>
+                  <a href="#severe">Open storm map</a>
+                </div>
+              </div>
+              <div class="ww-broadcast-screen" aria-label="Local conditions from the selected weather station">
+                <div class="ww-screen-head"><span>LOCAL CONDITIONS</span><span class="ww-screen-signal"><i aria-hidden="true"></i> ON AIR</span></div>
+                <div class="ww-screen-radar" aria-hidden="true">
+                  <span class="ww-radar-ring ww-radar-ring--one"></span><span class="ww-radar-ring ww-radar-ring--two"></span><span class="ww-radar-ring ww-radar-ring--three"></span>
+                  <span class="ww-radar-return ww-radar-return--one"></span><span class="ww-radar-return ww-radar-return--two"></span><span class="ww-radar-cross"></span>
+                  <span class="ww-radar-caption">ILLUSTRATIVE ATMOSPHERE</span>
+                </div>
+                <div class="ww-screen-readout">
+                  <div><span class="ww-screen-kicker">CURRENT STATION</span><strong id="ww-hero-city">Longwood, FL</strong><span id="ww-hero-condition">Loading local conditions…</span></div>
+                  <strong class="ww-screen-temp" id="ww-hero-temp">--°</strong>
+                </div>
+                <div class="ww-screen-footer"><span>SELECT A STATION BELOW</span><span>MODEL CONDITIONS</span></div>
+              </div>
             </div>
-            <h1>Weather Watch: The Living Atmosphere</h1>
-            <p class="ww-hero-lede">
-              The atmosphere is a dynamic, planetary heat engine. Explore live localized meteorology, investigate whether it is safe to drive, determine exactly what to wear, and simulate air masses, fronts, dew points, and storm dynamics in real time.
-            </p>
 
             <!-- Search & Geolocation Bar -->
             <div class="ww-location-bar">
@@ -115,9 +137,9 @@
           <!-- ═════════ 1 · LIVE ATMOSPHERIC COCKPIT ═════════ -->
           <section id="cockpit" class="ww-card" aria-labelledby="cockpit-title">
             <div class="ww-card-header">
-              <span class="ww-card-tag">Real-Time Telemetry</span>
+              <span class="ww-card-tag">Live model conditions</span>
               <h2 id="cockpit-title">1 · Central Weather Cockpit</h2>
-              <p>Continuous readings from ground sensors, satellite sounding, and barometric networks.</p>
+              <p>Current conditions from Open-Meteo and classroom calculations derived from them.</p>
             </div>
 
             <div class="ww-cockpit-grid">
@@ -465,8 +487,16 @@
                 <button type="button" class="ww-tab-btn" id="ww-front-warm">☀️ Warm Front (Gentle Inversion)</button>
               </div>
 
-              <div class="ww-front-canvas-wrap">
-                <canvas id="ww-front-canvas" class="ww-front-canvas" aria-label="Atmospheric front simulation cross-section"></canvas>
+              <div class="ww-sim-broadcast-grid">
+                <div class="ww-front-canvas-wrap ww-sim-monitor">
+                  <span class="ww-sim-channel" aria-hidden="true">WX 08 / AIR-MASS MODEL</span>
+                  <canvas id="ww-front-canvas" class="ww-front-canvas" aria-label="Atmospheric front simulation cross-section"></canvas>
+                  <span class="ww-sim-monitor-foot" aria-hidden="true">SCHEMATIC CROSS-SECTION <span>SIMULATED</span></span>
+                </div>
+                <figure class="ww-sim-reference" id="ww-front-reference" data-zoomable>
+                  <div class="ww-reference-photo"><img id="ww-front-reference-img" src="../../assets/images/lessons/weather-watch/cumulonimbus-noaa.webp" alt="Towering cumulonimbus clouds rising above the horizon" loading="lazy" /></div>
+                  <figcaption><span class="ww-reference-kicker">FIELD REFERENCE / NOAA</span><strong id="ww-front-reference-title">Cold front sky</strong><span id="ww-front-reference-description">Deep uplift can build a cumulonimbus tower like this one; the model shows the air motion underneath.</span><small class="ww-reference-credit">Photo: <a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption>
+                </figure>
               </div>
 
               <div class="ww-front-notes" id="ww-front-note">
@@ -565,9 +595,17 @@
               </div>
 
               <!-- Canvas Stage -->
-              <div class="ww-cloud-canvas-wrap">
-                <canvas id="ww-cloud-canvas" class="ww-cloud-canvas" aria-label="Atmospheric cloud, smoke, and gas particle simulation"></canvas>
-                <div class="ww-cloud-canvas-hint" aria-hidden="true">👆 Click or drag across the sky to generate convective updrafts and wind currents</div>
+              <div class="ww-sim-broadcast-grid ww-sim-broadcast-grid--cloud">
+                <div class="ww-cloud-canvas-wrap ww-sim-monitor">
+                  <span class="ww-sim-channel" aria-hidden="true">WX 08 / CLOUD CHAMBER</span>
+                  <canvas id="ww-cloud-canvas" class="ww-cloud-canvas" aria-label="Atmospheric cloud, smoke, and gas particle simulation"></canvas>
+                  <div class="ww-cloud-canvas-hint" aria-hidden="true">👆 Click or drag across the sky to generate convective updrafts and wind currents</div>
+                  <span class="ww-sim-monitor-foot" aria-hidden="true">PHYSICS MODEL <span>SIMULATED</span></span>
+                </div>
+                <figure class="ww-sim-reference" id="ww-cloud-reference" data-zoomable>
+                  <div class="ww-reference-photo"><img id="ww-cloud-reference-img" src="../../assets/images/lessons/weather-watch/cumulus-noaa.webp" alt="Puffy cumulus clouds with flat bases in a blue sky" loading="lazy" /></div>
+                  <figcaption><span class="ww-reference-kicker">FIELD REFERENCE / NOAA</span><strong id="ww-cloud-reference-title">Cumulus in the sky</strong><span id="ww-cloud-reference-description">Compare the photo's flat cloud bases and sunlit tops with the rising, condensing parcels in the model.</span><small class="ww-reference-credit">Photo: <a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption>
+                </figure>
               </div>
 
               <!-- Atmospheric Parameter Controls -->
@@ -599,24 +637,28 @@
               <div class="ww-cloud-card">
                 <span class="ww-cloud-alt">High Altitudes (>20,000 ft)</span>
                 <h4>Cirrus</h4>
+                <figure class="ww-atlas-photo" data-zoomable data-lightbox-group="weather-cloud-atlas"><img src="../../assets/images/lessons/weather-watch/cirrus-noaa.webp" alt="Thin, feathery cirrus clouds high in a blue sky" loading="lazy" /><figcaption>Cirrus: wispy ice crystals stretched by winds high in the atmosphere. <small class="ww-reference-credit"><a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption></figure>
                 <p>Wispy strands of pure ice crystals. Often the first advance signal of an approaching warm front or jet stream shift.</p>
               </div>
 
               <div class="ww-cloud-card">
                 <span class="ww-cloud-alt">Middle Altitudes (6,500–20,000 ft)</span>
                 <h4>Altocumulus</h4>
+                <figure class="ww-atlas-photo" data-zoomable data-lightbox-group="weather-cloud-atlas"><img src="../../assets/images/lessons/weather-watch/altocumulus-noaa.webp" alt="Bands of small altocumulus cloud patches across the sky" loading="lazy" /><figcaption>Altocumulus: patches and rolls reveal moisture and movement in the middle atmosphere. <small class="ww-reference-credit"><a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption></figure>
                 <p>Rolls or patches of water droplets. A "mackerel sky" indicating instability and mid-level atmospheric moisture.</p>
               </div>
 
               <div class="ww-cloud-card">
                 <span class="ww-cloud-alt">Low Altitudes (0–6,500 ft)</span>
                 <h4>Stratus</h4>
+                <figure class="ww-atlas-photo" data-zoomable data-lightbox-group="weather-cloud-atlas"><img src="../../assets/images/lessons/weather-watch/stratus-noaa.webp" alt="A low gray stratus sheet covering the landscape" loading="lazy" /><figcaption>Stratus: a broad, low layer that dulls the sky and can bring mist or drizzle. <small class="ww-reference-credit"><a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption></figure>
                 <p>Featureless gray horizontal blanket covering the sky. Produces persistent drizzle, mist, and reduced visibility.</p>
               </div>
 
               <div class="ww-cloud-card">
                 <span class="ww-cloud-alt">Vertical Giant (1,000–50,000 ft)</span>
                 <h4>Cumulonimbus</h4>
+                <figure class="ww-atlas-photo" data-zoomable data-lightbox-group="weather-cloud-atlas"><img src="../../assets/images/lessons/weather-watch/cumulonimbus-noaa.webp" alt="A tall cumulonimbus thunderstorm cloud with a spreading upper edge" loading="lazy" /><figcaption>Cumulonimbus: strong updrafts build a deep tower and spreading top. <small class="ww-reference-credit"><a href="https://www.nesdis.noaa.gov/about/k-12-education/atmosphere/types-of-clouds" target="_blank" rel="noopener">NOAA/NESDIS</a> · public domain</small></figcaption></figure>
                 <p>Towering storm cloud with an anvil-shaped glaciated top. Hosts violent updrafts, hail, heavy rain, downbursts, and lightning.</p>
               </div>
             </div>

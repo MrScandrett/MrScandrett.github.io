@@ -263,8 +263,23 @@
           </h1>
           <div class="stl-tip" id="stl-tip" role="status" aria-live="polite"></div>
         </div>
-        <p class="lessons-library-count" id="lessons-library-count">409 available lessons &amp; resources</p>
+        <p class="lessons-library-count" id="lessons-library-count">Lessons across every subject</p>
       </div>
+      <p class="lessons-library-lede">Pick a level. Find a question worth exploring. Build something you can explain.</p>
+      <div class="grade-band-picker" role="group" aria-label="Choose a grade band">
+        <div class="grade-band-intro">
+          <strong>Find your starting point</strong>
+          <span>Choose your grade band, then explore a subject.</span>
+        </div>
+        <div class="grade-band-options">
+          <button type="button" class="grade-band-option is-active" data-grade-choice="all" aria-pressed="true"><strong>All grades</strong><span>Explore everything</span></button>
+          <button type="button" class="grade-band-option" data-grade-choice="k2" aria-pressed="false"><strong>K–2</strong><span>Discover</span></button>
+          <button type="button" class="grade-band-option" data-grade-choice="35" aria-pressed="false"><strong>3–5</strong><span>Investigate</span></button>
+          <button type="button" class="grade-band-option" data-grade-choice="68" aria-pressed="false"><strong>6–8</strong><span>Experiment</span></button>
+          <button type="button" class="grade-band-option" data-grade-choice="912" aria-pressed="false"><strong>9–12</strong><span>Go deeper</span></button>
+        </div>
+      </div>
+      <button class="lesson-tools-toggle" id="lesson-tools-toggle" type="button" aria-expanded="false" aria-controls="lesson-search lesson-filter-panel">Search lessons &amp; options <span aria-hidden="true">⌄</span></button>
       <div class="search-container">
         <label class="search-label" for="lesson-search">Find a lesson</label>
         <input
@@ -289,8 +304,8 @@
         </div>
       </div>
       <p id="search-status" class="search-status" aria-live="polite" aria-atomic="true"></p>
-      <div class="lesson-filter-panel" aria-label="Filter the lesson library">
-        <label class="lesson-filter-field" for="lesson-grade-filter">
+      <div class="lesson-filter-panel" id="lesson-filter-panel" aria-label="Filter the lesson library">
+        <label class="lesson-filter-field grade-band-fallback" for="lesson-grade-filter">
           <span>Learning level</span>
           <select id="lesson-grade-filter">
             <option value="all">All grades</option>
@@ -313,7 +328,7 @@
     <section class="catalog-browser" id="catalog-browser" aria-labelledby="catalog-browser-title">
       <div class="catalog-browser-heading">
         <div class="catalog-browser-copy">
-          <p class="catalog-browser-kicker">Choose a shelf</p>
+          <p class="catalog-browser-kicker">Explore a subject</p>
           <h2 id="catalog-browser-title">What do you want to explore?</h2>
           <p>Subjects are grouped into six connected volumes. Choose one shelf and its lesson sequence opens in place.</p>
         </div>
@@ -1354,7 +1369,12 @@
               });
 
               var count = document.getElementById("lessons-library-count");
-              if (count) count.textContent = liveLessons.length + " available lessons & resources";
+              if (count) {
+                var listedUrls = new Set(lessonCache.map(function (lesson) { return lesson.href; }).filter(function (href) {
+                  return /^lessons\//.test(href);
+                }));
+                count.textContent = listedUrls.size + " lessons in this library";
+              }
               if (typeof window.updateLessonBrowseFilters === "function") {
                 window.updateLessonBrowseFilters();
               }
@@ -5181,6 +5201,8 @@
 
   </main>
 
+  <link rel="stylesheet" href="assets/css/pages/steam-lessons-glass.css" />
+
   <button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
 
   <footer class="site-footer">
@@ -5591,6 +5613,15 @@
 
     // ── 2. Compact subject and grade filters ──────────────────────────
     var gradeFilter = document.getElementById('lesson-grade-filter');
+    var gradeChoices = Array.from(document.querySelectorAll('[data-grade-choice]'));
+    var toolsToggle = document.getElementById('lesson-tools-toggle');
+    if (toolsToggle) {
+      toolsToggle.addEventListener('click', function () {
+        var expanded = document.body.classList.toggle('lesson-tools-open');
+        toolsToggle.setAttribute('aria-expanded', String(expanded));
+        if (expanded) document.getElementById('lesson-search').focus();
+      });
+    }
     var subjectFilter = document.getElementById('lesson-subject-filter');
     var filterReset = document.getElementById('lesson-filter-reset');
     var filterStatus = document.getElementById('lesson-filter-status');
@@ -5610,8 +5641,9 @@
       if (gradeRanges[value]) return value === selected;
 
       var normalized = String(value).toLowerCase().replace(/[–—]/g, '-').replace(/kindergarten/g, 'k');
+      if (normalized === 'prek-college') return true;
       var match = normalized.match(/(k|\d{1,2})\s*-\s*(\d{1,2})/);
-      if (!match) return true;
+      if (!match) return false;
       var lessonStart = match[1] === 'k' ? 0 : parseInt(match[1], 10);
       var lessonEnd = parseInt(match[2], 10);
       var selectedRange = gradeRanges[selected];
@@ -5676,6 +5708,10 @@
         if (gradeFilter && activeGrade !== 'all') qualifiers.push('grades ' + gradeFilter.options[gradeFilter.selectedIndex].text);
         filterStatus.textContent = 'Showing ' + visibleLessonUrls.size + ' lesson' + (visibleLessonUrls.size === 1 ? '' : 's') + (qualifiers.length ? ' for ' + qualifiers.join(', ') + '.' : '.');
       }
+      var gradeHint = document.querySelector('.grade-band-intro span');
+      if (gradeHint) gradeHint.textContent = activeGrade === 'all' ?
+        'Choose your grade band, then explore a subject.' :
+        visibleLessonUrls.size + ' matching lessons. Choose a subject below.';
       if (filterReset) filterReset.hidden = activeGrade === 'all' && activeTheme === 'all';
       if (typeof updateActiveFromScroll === 'function' && Array.isArray(subjectLinks)) updateActiveFromScroll();
       if (typeof window.refreshCatalogModuleView === 'function') window.refreshCatalogModuleView();
@@ -5688,9 +5724,27 @@
       }
     }
 
+    function syncGradeChoices() {
+      document.body.classList.toggle('grade-band-k2', activeGrade === 'k2');
+      gradeChoices.forEach(function (button) {
+        var active = button.dataset.gradeChoice === activeGrade;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    }
+
+    gradeChoices.forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!gradeFilter) return;
+        gradeFilter.value = button.dataset.gradeChoice;
+        gradeFilter.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+
     if (gradeFilter) {
       gradeFilter.addEventListener('change', function () {
         activeGrade = gradeFilter.value;
+        syncGradeChoices();
         if (typeof window.setCompendiumVolume === 'function') window.setCompendiumVolume('all');
         applyFilters();
         refreshActiveSearch();
@@ -5711,15 +5765,17 @@
         activeGrade = 'all';
         activeTheme = 'all';
         if (gradeFilter) gradeFilter.value = 'all';
+        syncGradeChoices();
         if (subjectFilter) subjectFilter.value = 'all';
         if (typeof window.setCompendiumVolume === 'function') window.setCompendiumVolume('all');
         applyFilters();
         refreshActiveSearch();
-        if (subjectFilter) subjectFilter.focus();
+        if (gradeChoices[0]) gradeChoices[0].focus();
       });
     }
 
     window.updateLessonBrowseFilters = applyFilters;
+    syncGradeChoices();
     applyFilters();
 
     // ── 3. "/" shortcut to focus search ───────────────────────────────

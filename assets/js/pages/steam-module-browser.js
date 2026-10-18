@@ -23,6 +23,23 @@
     math: "#818cf8", science: "#2588b5", engineering: "#c56d0a",
     technical: "#8750b5", technology: "#5269d4", art: "#c84782", bridge: "#2b827b"
   };
+  var k2Summaries = {
+    "module-math": "Play with numbers, shapes, patterns, and measuring.",
+    "module-space": "Explore the Moon, planets, stars, and sky.",
+    "module-physics": "Try motion, light, sound, and simple forces.",
+    "module-lifesci": "Discover living things and how they grow.",
+    "module-earth": "Explore weather, water, rocks, and our planet.",
+    "module-engineering": "Build, test, and improve useful things.",
+    "module-fabrication": "Make designs with materials and tools.",
+    "module-technical-elements": "Explore sound, light, and stage technology.",
+    "module-design3d": "Make and explore shapes in three dimensions.",
+    "module-cs": "Give computers instructions and solve puzzles.",
+    "module-gamedev": "Make games with stories, art, and code.",
+    "module-music": "Explore rhythm, melody, instruments, and sound.",
+    "module-language": "Tell stories and think about what messages mean.",
+    "module-systems": "Explore how people live, work, and share.",
+    "module-bible": "Read Bible stories and ask big questions."
+  };
   var activeId = "";
   var selectedVolume = "all";
 
@@ -42,7 +59,9 @@
 
     var label = document.createElement("div");
     label.className = "catalog-volume-label";
-    label.innerHTML = "<strong>" + volumeNames[volume][0] + "</strong><small>" + volumeNames[volume][1] + "</small>";
+    label.innerHTML = '<span class="catalog-volume-number" aria-hidden="true">' + ["I", "II", "III", "IV", "V", "VI"][Number(volume) - 1] + '</span>' +
+      '<span class="catalog-volume-copy"><strong>' + volumeNames[volume][0].split(" · ")[1] + '</strong><small>' + volumeNames[volume][1] + '</small></span>' +
+      '<span class="catalog-volume-summary"></span>';
 
     var modules = document.createElement("div");
     modules.className = "catalog-volume-modules";
@@ -52,16 +71,20 @@
       var button = document.createElement("button");
       var title = text(section, ".module-banner-title");
       var count = text(section, ".module-banner-count");
+      var subtitle = text(section, ".module-banner-sub");
       var icon = text(section, ".module-banner-icon");
       var theme = section.dataset.themeArea || "science";
       button.type = "button";
       button.className = "catalog-module-button";
       button.dataset.moduleTarget = section.id;
       button.dataset.themeArea = theme;
+      button.dataset.originalCount = count;
+      button.dataset.originalSubtitle = subtitle;
       button.style.setProperty("--module-color", moduleColors[theme] || "var(--accent)");
       button.innerHTML = '<span class="catalog-module-icon" aria-hidden="true">' + icon + '</span>' +
-        '<span class="catalog-module-copy"><strong>' + title + '</strong><small>' + count + '</small></span>' +
-        '<span class="catalog-module-arrow" aria-hidden="true">›</span>';
+        '<span class="catalog-module-copy"><strong>' + title + '</strong><span class="catalog-module-sub">' + subtitle + '</span>' +
+        '<small class="catalog-module-count">' + count + '</small></span>' +
+        '<span class="catalog-module-action">Open lessons <span aria-hidden="true">↗</span></span>';
       button.addEventListener("click", function () { showModule(section.id, true); });
       modules.appendChild(button);
     });
@@ -78,6 +101,17 @@
     banner.setAttribute("aria-expanded", open ? "true" : "false");
     banner.classList.toggle("open", open);
     drawer.style.maxHeight = open ? "none" : "0";
+  }
+
+  function scrollToShelf(section, behavior) {
+    var browserStyle = window.getComputedStyle(browser);
+    var top = parseFloat(browserStyle.top) || 0;
+    var gap = parseFloat(browserStyle.marginBottom) || 0;
+    var sectionTop = section.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({
+      top: Math.max(0, sectionTop - browser.getBoundingClientRect().height - gap - top - 8),
+      behavior: behavior
+    });
   }
 
   function showDirectory(shouldFocus) {
@@ -131,9 +165,14 @@
     var volume = section.dataset.compendiumVolume;
     var volumeTitle = volumeNames[volume] ? volumeNames[volume][0] : "Lesson library";
     status.textContent = volumeTitle + " → " + text(section, ".module-banner-title") + " · " + text(section, ".module-banner-count") + ".";
-    var activeIndex = sections.indexOf(section);
-    var previous = sections[(activeIndex - 1 + sections.length) % sections.length];
-    var next = sections[(activeIndex + 1) % sections.length];
+    var availableSections = sections.filter(function (candidate) {
+      var button = directory.querySelector('[data-module-target="' + candidate.id + '"]');
+      return button && !button.hidden;
+    });
+    if (!availableSections.length) availableSections = [section];
+    var activeIndex = availableSections.indexOf(section);
+    var previous = availableSections[(activeIndex - 1 + availableSections.length) % availableSections.length];
+    var next = availableSections[(activeIndex + 1) % availableSections.length];
     previousButton.dataset.moduleTarget = previous.id;
     nextButton.dataset.moduleTarget = next.id;
     previousButton.setAttribute("aria-label", "Previous subject: " + text(previous, ".module-banner-title"));
@@ -147,10 +186,11 @@
       history.replaceState({ catalogModule: id }, "", "#" + id);
     }
     if (shouldScroll) {
-      browser.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(function () { scrollToShelf(section, "instant"); }, 80);
       window.setTimeout(function () {
         var banner = section.querySelector(".module-banner");
         if (banner) banner.focus({ preventScroll: true });
+        scrollToShelf(section, "instant");
       }, 260);
     }
   }
@@ -158,17 +198,39 @@
   function refreshView() {
     var subject = document.getElementById("lesson-subject-filter");
     var selectedTheme = subject ? subject.value : "all";
+    var grade = document.getElementById("lesson-grade-filter");
+    var selectedGrade = grade ? grade.value : "all";
+    var directoryTitle = document.getElementById("catalog-browser-title");
+    var directoryDescription = browser.querySelector(".catalog-browser-copy > p:not(.catalog-browser-kicker)");
+    if (directoryTitle) directoryTitle.textContent = selectedGrade === "k2" ? "Choose a subject" : "What do you want to explore?";
+    if (directoryDescription) directoryDescription.textContent = selectedGrade === "k2" ?
+      "Choose a subject to open its K–2 lessons." :
+      "Subjects are grouped into six connected volumes. Choose one shelf and its lesson sequence opens in place.";
     var visibleButtons = 0;
     directory.querySelectorAll(".catalog-module-button").forEach(function (button) {
       var row = button.closest(".catalog-volume-row");
+      var section = document.getElementById(button.dataset.moduleTarget);
+      var matches = section ? Array.prototype.filter.call(section.querySelectorAll(".tile"), function (tile) {
+        return !tile.classList.contains("grade-hidden") && !tile.classList.contains("lesson-hidden");
+      }).length : 0;
       var volumeMatches = selectedVolume === "all" || (row && row.dataset.catalogVolume === selectedVolume);
-      var visible = volumeMatches && (selectedTheme === "all" || button.dataset.themeArea === selectedTheme);
+      var visible = matches > 0 && volumeMatches && (selectedTheme === "all" || button.dataset.themeArea === selectedTheme);
       button.hidden = !visible;
+      var count = button.querySelector(".catalog-module-count");
+      if (count) count.textContent = selectedGrade === "all" ? button.dataset.originalCount :
+        matches + (matches === 1 ? " lesson" : " lessons") + " for " + grade.options[grade.selectedIndex].text;
+      var subtitle = button.querySelector(".catalog-module-sub");
+      if (subtitle) subtitle.textContent = selectedGrade === "k2" ?
+        (k2Summaries[button.dataset.moduleTarget] || button.dataset.originalSubtitle) : button.dataset.originalSubtitle;
       if (visible) visibleButtons += 1;
     });
     directory.querySelectorAll(".catalog-volume-row").forEach(function (row) {
       var volumeMatches = selectedVolume === "all" || row.dataset.catalogVolume === selectedVolume;
-      row.hidden = !volumeMatches || !row.querySelector(".catalog-module-button:not([hidden])");
+      var visibleCount = row.querySelectorAll(".catalog-module-button:not([hidden])").length;
+      row.hidden = !volumeMatches || !visibleCount;
+      row.classList.toggle("catalog-volume-single", visibleCount === 1);
+      var summary = row.querySelector(".catalog-volume-summary");
+      if (summary) summary.textContent = visibleCount + (visibleCount === 1 ? " subject" : " subjects");
     });
     if (activeId) {
       var activeButton = directory.querySelector('[data-module-target="' + activeId + '"]');
@@ -220,6 +282,20 @@
   if (initialId && document.getElementById(initialId)) showModule(initialId, false);
   else showDirectory(false);
   refreshView();
+
+  // A direct subject URL normally scrolls the browser to the section itself.
+  // Land at the subject controls instead, with the whole banner below them.
+  if (initialId && document.getElementById(initialId)) {
+    window.addEventListener("load", function () {
+      var entry = performance.getEntriesByType("navigation")[0];
+      if (entry && entry.type === "back_forward") return;
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          scrollToShelf(document.getElementById(initialId), "instant");
+        });
+      });
+    }, { once: true });
+  }
 
   // Remember where the reader was on this page so Back from a lesson lands
   // on the same spot (the shelf is rebuilt on load, so the browser's own

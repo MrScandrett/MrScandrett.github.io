@@ -308,3 +308,81 @@ export function entryCells(entry) {
   return Array.from({ length: entry.len }, (_, k) =>
     [entry.row + (entry.dir === 'down' ? k : 0), entry.col + (entry.dir === 'across' ? k : 0)]);
 }
+
+// ── Daily Double (Jeopardy / Millionaire STEAM board) ────────────────────
+export const STEAM_CATEGORIES = ['Science', 'Technology', 'Engineering', 'Art', 'Math'];
+export const DOUBLE_JEOPARDY_VALUES = [400, 800, 1200, 1600, 2000];
+
+/**
+ * Generate a 5x5 STEAM Jeopardy board for the given date key.
+ * Each column is a STEAM category (Science, Technology, Engineering, Art, Math).
+ * Each row is a Double Jeopardy dollar value ($400, $800, $1200, $1600, $2000).
+ * Exactly 2 panels are secretly designated as "TRIPLE DOUBLE to the power of π" tiles.
+ */
+export function makeDailyDouble(key, bank, { rnd: customRnd } = {}) {
+  const rnd = customRnd || rngFor(`daily-double:${key}`);
+  const list = (bank && bank.questions) ? bank.questions : (Array.isArray(bank) ? bank : []);
+  const grid = []; // 5 columns x 5 rows: grid[col][row]
+
+  // Pick 2 distinct tile coordinates among the 25 tiles (col 0..4, row 0..4) to be Triple Double tiles
+  const allCoords = [];
+  for (let c = 0; c < 5; c++) {
+    for (let r = 0; r < 5; r++) {
+      allCoords.push({ col: c, row: r });
+    }
+  }
+  const tdRnd = rngFor(`daily-double-td:${key}`);
+  const shuffledCoords = shuffled(allCoords, tdRnd);
+  const tripleDoubleSet = new Set([
+    `${shuffledCoords[0].col},${shuffledCoords[0].row}`,
+    `${shuffledCoords[1].col},${shuffledCoords[1].row}`
+  ]);
+
+  for (let c = 0; c < 5; c++) {
+    const category = STEAM_CATEGORIES[c];
+    const colTiles = [];
+    for (let r = 0; r < 5; r++) {
+      const difficulty = r + 1; // 1 to 5
+      const value = DOUBLE_JEOPARDY_VALUES[r]; // 400, 800, 1200, 1600, 2000
+      const candidates = list.filter((q) => q.category === category && q.difficulty === difficulty);
+      const pool = candidates.length ? candidates : list.filter((q) => q.category === category);
+      if (!pool.length) {
+        throw new Error(`Daily Double bank missing questions for category ${category}, difficulty ${difficulty}`);
+      }
+      const pickRnd = rngFor(`daily-double-pick:${key}:${c}:${r}`);
+      const rawQuestion = pool[Math.floor(pickRnd() * pool.length)];
+
+      const choiceRnd = rngFor(`daily-double-choices:${key}:${c}:${r}`);
+      const choices = shuffled(rawQuestion.choices, choiceRnd);
+      const isTripleDouble = tripleDoubleSet.has(`${c},${r}`);
+
+      colTiles.push({
+        col: c,
+        row: r,
+        category,
+        difficulty,
+        value,
+        id: rawQuestion.id,
+        clue: rawQuestion.clue,
+        answer: rawQuestion.answer,
+        choices,
+        correctIndex: choices.indexOf(rawQuestion.answer),
+        lesson: rawQuestion.lesson,
+        lessonTitle: rawQuestion.lessonTitle,
+        explanation: rawQuestion.explanation,
+        isTripleDouble,
+        tripleDoubleFormula: '(3 × 2)^π ≈ 279'
+      });
+    }
+    grid.push(colTiles);
+  }
+
+  return {
+    key,
+    categories: STEAM_CATEGORIES,
+    values: DOUBLE_JEOPARDY_VALUES,
+    grid, // grid[col][row]
+    tripleDoubles: [shuffledCoords[0], shuffledCoords[1]]
+  };
+}
+

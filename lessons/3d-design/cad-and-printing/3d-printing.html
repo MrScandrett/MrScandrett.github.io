@@ -532,6 +532,15 @@
   <main id="main-content" tabindex="-1" class="p3d-shell">
 <div data-design3d-route="real"></div>
 <section data-design3d-workshop="print"></section>
+
+<div class="p3d-jump-banner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;padding:1.1rem 1.4rem;background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(255,196,0,0.08));border:1px solid rgba(255,107,53,0.25);border-radius:18px;margin:.5rem 0 1.2rem;">
+  <div>
+    <strong style="color:#1c0a00;display:block;font-size:1rem;margin-bottom:0.25rem;">Next: Slicer Simulator, First Layer Diagnostics &amp; Production Guide</strong>
+    <span style="color:#5a3a1a;font-size:0.86rem;line-height:1.5;display:block;">Explore interactive slicer controls, first-layer squish calibration, FDM design tolerances, infill physics, and troubleshooting.</span>
+  </div>
+  <button type="button" id="open-reference-btn" style="min-height:44px;padding:0.6rem 1.3rem;border-radius:10px;background:#d83a00;color:#fff;border:none;font-weight:800;font-size:0.86rem;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:0.4rem;box-shadow:0 3px 10px rgba(216,58,0,0.25);">Open Slicer Lab &amp; Guide ↓</button>
+</div>
+
 <details class="d3-original-reference"><summary>Production workflow, examples and deeper reference</summary><p class="d3-original-note">Start with the editable technique workshop above. Reuse your model in the next lesson. The production workflow below extends the browser exercise and helps you test work made in your chosen app.</p>
 
     <!-- ══ HERO ══ -->
@@ -667,7 +676,14 @@
 
           <div class="p3d-control-row">
             <label for="print-model">Teaching model</label>
-            <select id="print-model" aria-describedby="print-model-note"><option value="box">Straight box</option><option value="ledge">Cantilever ledge</option><option value="bridge">Bridge / doorway</option><option value="ramp">Gradual overhang</option></select>
+            <select id="print-model" aria-describedby="print-model-note">
+              <option value="box">Straight box (Upright)</option>
+              <option value="ledge">Cantilever ledge (Upright · Needs supports)</option>
+              <option value="ledge_flat">Cantilever ledge (Rotated 90° flat · No supports!)</option>
+              <option value="bridge">Bridge / doorway (Upright · Span gap)</option>
+              <option value="bridge_flat">Bridge / doorway (Rotated flat · No supports!)</option>
+              <option value="ramp">Gradual overhang (27° slope)</option>
+            </select>
             <p id="print-model-note" style="color:#ffe3cb;font-size:.8rem;line-height:1.5"></p>
             <button type="button" id="show-full-model">Show complete model</button>
           </div>
@@ -690,6 +706,15 @@
             <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
               <span>190°C</span>
               <span>260°C</span>
+            </div>
+          </div>
+
+          <div class="p3d-control-row">
+            <label for="fan-slider">Part Cooling Fan <span id="fan-val">100%</span></label>
+            <input type="range" id="fan-slider" min="0" max="100" step="10" value="100" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>0% (Off/ABS)</span>
+              <span>100% (PLA)</span>
             </div>
           </div>
 
@@ -724,6 +749,28 @@
           </div>
 
           <div class="p3d-control-row">
+            <label for="pattern-select">Infill Pattern</label>
+            <div style="position: relative;">
+              <select id="pattern-select">
+                <option value="grid">Grid (Standard · Fast)</option>
+                <option value="gyroid">Gyroid (Isotropic 3D strength · No crossover)</option>
+                <option value="lightning">Lightning (Minimal internal tree · Fast display)</option>
+                <option value="cubic">Cubic (3D balanced stiffness)</option>
+              </select>
+              <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
+            </div>
+          </div>
+
+          <div class="p3d-control-row">
+            <label for="topbot-slider">Top / Bottom Layers <span id="topbot-val">4 layers</span></label>
+            <input type="range" id="topbot-slider" min="2" max="8" step="1" value="4" />
+            <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: rgba(255,200,160,0.5); margin-top: 2px;">
+              <span>2 (Draft)</span>
+              <span>8 (Watertight/Heavy)</span>
+            </div>
+          </div>
+
+          <div class="p3d-control-row">
             <label for="sup-select">Supports</label>
             <div style="position: relative;">
               <select id="sup-select">
@@ -731,6 +778,18 @@
                 <option value="normal">Normal (touching buildplate)</option>
                 <option value="everywhere">Everywhere</option>
                 <option value="tree">Tree supports</option>
+              </select>
+              <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
+            </div>
+          </div>
+
+          <div class="p3d-control-row">
+            <label for="adhesion-select">Bed Adhesion</label>
+            <div style="position: relative;">
+              <select id="adhesion-select">
+                <option value="none">None / Skirt</option>
+                <option value="brim">Brim (5 mm · Anchors corners)</option>
+                <option value="raft">Raft (Thick base · High-warp protection)</option>
               </select>
               <span aria-hidden="true" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,200,160,0.7); font-size: 0.7rem;">▼</span>
             </div>
@@ -911,9 +970,193 @@
       </div>
     </div>
 
+    <!-- ══ FIRST LAYER TRAMMING & Z-OFFSET ══ -->
+    <div class="p3d-card" id="first-layer-guide">
+      <p class="p3d-label">04 — First Layer Tramming, Z-Offset &amp; Bed Prep</p>
+      <h2>The Critical First 0.2 Millimeters</h2>
+      <p>Over 80% of all FDM print failures trace directly back to the first layer. If the first layer does not adhere securely to the build plate, the part will warp, slide, or knock loose into spaghetti. If the nozzle is too close, it scrapes the bed, clogs the orifice, or ruins the finish. Mastering the first layer requires three things: physical bed tramming (leveling), precise Z-offset squish, and proper chemical bed hygiene.</p>
+
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-first-layer" src="../../../assets/images/3d-printing/first-layer-gap.png" alt="Calibration diagram of 3D printing build plate first layer gap showing nozzle too high, optimal squish, and nozzle too low" loading="lazy" />
+            <figcaption>First layer nozzle height calibration: <strong>Too High</strong> produces rounded, uncompressed strands with gaps that easily detach; <strong>Optimal Squish</strong> presses molten filament into a smooth, continuous ribbon where adjacent lines bond seamlessly; <strong>Too Low</strong> forces plastic outward into raised ridges, causing nozzle dragging, surface tearing, or extruder clicks. <span class="p3d-rule-credit">Diagram: Stemfie3D · <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_build_plate_first_layer_gap.png" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🔍</span>
+          <h3>Dialing the Z-Offset (Baby-Stepping)</h3>
+          <p>The <strong>Z-offset</strong> is the digital distance offset between the machine's homing sensor (probe or endstop) and the actual nozzle tip. While the print is putting down its perimeter skirt or brim, watch the bead under direct raking light. Use the printer's screen to tune "Live Z" or "Baby-step Z" in increments of 0.02 mm until the individual extrusions flatten together without bulging into rough furrows.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-first-layer" src="../../../assets/images/3d-printing/first-layer-macro.jpg" alt="Macro photograph of 3D printer depositing the first layer on the heated bed" loading="lazy" />
+            <figcaption>Real first layer extrusion on a heated textured spring-steel sheet. The extruded plastic fills the microscopic valleys of the PEI texture, creating a mechanical interlock while maintaining a uniform, flat top surface for the next layer to fuse onto. <span class="p3d-rule-credit">Photo: Luke Jones · <a href="https://commons.wikimedia.org/wiki/File:3D_Printer_-_the_first_layer(16661915478).jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🛏️</span>
+          <h3>Bed Tramming: The 0.1 mm Paper Test</h3>
+          <p>Before relying on Automatic Bed Leveling (ABL), the bed must be mechanically parallel to the X/Y gantry—a process called <strong>tramming</strong>. Heat the bed and nozzle to operating temperature (thermal expansion shifts dimensions by up to 0.1 mm). Slide a standard sheet of 80 gsm copy paper (about 0.10 mm thick) between nozzle and bed at all four corners, adjusting the corner thumbscrews until you feel a firm, slight frictional drag without paper buckling.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-first-layer" src="../../../assets/images/3d-printing/bed-leveling.png" alt="Diagram of 4-point build plate tramming and leveling with adjustment knobs" loading="lazy" />
+            <figcaption>Four-point manual bed tramming schematic: adjusting bed thumbscrews at each corner brings the physical plane into alignment with the printer gantry before software mesh compensation records residual bed curvature. <span class="p3d-rule-credit">Diagram: Stemfie3D · <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_build_plate_levelling.png" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🧼</span>
+          <h3>Bed Chemistry: Soap vs. Alcohol</h3>
+          <p>Fingerprints contain sebum oils that ruin polymer adhesion. While 99% <strong>Isopropyl Alcohol (IPA)</strong> is great for wiping dust between prints, alcohol only dissolves finger grease and smears a microscopically thin film across the plate. Once every 1–2 weeks, remove the spring-steel PEI sheet and scrub thoroughly in the sink with warm water and basic dish soap (surfactant), then dry with a clean paper towel. When printing PETG or TPU on smooth PEI, use a thin glue stick layer as a <em>release barrier</em>—these materials adhere so strongly they can otherwise tear PEI or glass apart!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DESIGN FOR FDM: ELEPHANT'S FOOT, HOLES & SEAMS ══ -->
+    <div class="p3d-card" id="fdm-design-rules">
+      <p class="p3d-label">05 — Design for the Process: Elephant's Foot, Holes &amp; Seams</p>
+      <h2>Bridging CAD Models with Physical Physics</h2>
+      <p>CAD software assumes infinite rigidity, zero gravity, and mathematically perfect geometry. FDM 3D printing deposits hot, semi-liquid plastic under gravity that shrinks as it solidifies. Understanding these three mechanical realities allows you to design parts that fit together on the very first print.</p>
+
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-design" src="../../../assets/images/3d-printing/elephant-foot.png" alt="Diagram showing the cause and remedies of elephant foot defect in 3D printing" loading="lazy" />
+            <figcaption>Elephant's foot defect: downward nozzle squish and bed temperature keep bottom plastic pliable while successive layers press down, creating an outward flare (0.2–0.5 mm) at the base. Remedies include designing a 45° bottom chamfer or configuring slicer Initial Layer Horizontal Expansion. <span class="p3d-rule-credit">Diagram: Paulo Kiefe / STEMFIE.org · <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_elephant_foot.png" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🐘</span>
+          <h3>The Elephant's Foot Remedy</h3>
+          <p>When the first layer is squished for adhesion and kept warm by the heated bed, the bottom 1–2 mm bulges outward. This ruins mating tolerances and snap-fits. To eliminate it in CAD, add a <strong>0.5 mm to 1.0 mm × 45° chamfer</strong> around all bottom edges touching the bed. In your slicer, tune <strong>Elephant Foot Compensation</strong> (or <em>Initial Layer Horizontal Expansion = -0.15 mm</em>) to contract the first layer's outer perimeter inwards.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-design" src="../../../assets/images/3d-printing/calibration-cube-measurement.jpg" alt="Measuring a 20mm XYZ calibration cube with digital vernier calipers" loading="lazy" />
+            <figcaption>Measuring a 20 mm XYZ calibration cube with digital vernier calipers. Physical measurement reveals directional shrinkage and hole contraction that nominal CAD numbers cannot predict. <span class="p3d-rule-credit">Photo: syvwlch · <a href="https://commons.wikimedia.org/wiki/File:First_Print_20mm_Calibration_Cube_(5829951780).jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🎯</span>
+          <h3>Why Vertical Holes Shrink</h3>
+          <p>If you design a 5.0 mm hole in CAD for an M5 bolt, it will print at roughly 4.7 mm and the bolt won't fit! Three physical factors cause internal hole shrinkage: (1) STL export tessellates circles into straight polygon chords, cutting off the circumference, (2) nozzle radius rounds inside sharp corners, and (3) surface tension and extrusion dragging pull molten plastic toward the center of the arc. <strong>Rule of thumb:</strong> add +0.2 mm to +0.4 mm to holes in CAD, or use the slicer setting <em>X-Y Hole Compensation = +0.15 mm</em>.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">📍</span>
+          <h3>The Z-Seam: Hiding the Start Point</h3>
+          <p>Every closed perimeter path must start and stop somewhere. At that brief transition, pressure in the hotend drops or momentarily pauses, leaving a tiny visible bump or gap known as the <strong>Z-seam</strong>. Slicers offer four ways to manage it:</p>
+          <ul class="p3d-rules" style="margin-top:0.5rem;">
+            <li data-icon="📐"><strong>Sharpest Corner:</strong> (Recommended) Hides the seam inside concave or convex geometric corners where the eye doesn't notice it.</li>
+            <li data-icon="🧭"><strong>Aligned / Rear:</strong> Stacks the seams in a neat vertical line on the back of the part.</li>
+            <li data-icon="🎲"><strong>Random:</strong> Scatters start points across the perimeter. This avoids a visible vertical ridge but creates a speckled or "orange-peel" surface texture.</li>
+            <li data-icon="🖌️"><strong>Paint-on Seam:</strong> Modern slicers allow you to manually paint where seams may or may not be placed on complex curves.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INFILL ARCHITECTURE & MECHANICAL FASTENERS ══ -->
+    <div class="p3d-card" id="infill-fasteners">
+      <p class="p3d-label">06 — Infill Architecture &amp; Mechanical Assembly</p>
+      <h2>Interior Structure &amp; Threaded Inserts</h2>
+      <p>A 3D print is an engineered composite: solid perimeter walls form an exterior skin, while internal infill stabilizes top layers and distributes mechanical stress. When building functional assemblies, combining smart infill geometry with brass heat-set inserts yields parts that match injection-molded durability.</p>
+
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-infill" src="../../../assets/images/3d-printing/gyroid-infill.jpg" alt="Macro photograph of 3D printed gyroid infill structure" loading="lazy" />
+            <figcaption>Macro view of 3D printed Gyroid infill. The smooth triply periodic minimal surface (TPMS) distributes tension and compression equally across X, Y, and Z axes without cross-over collisions on the same layer. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Gyroid.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🌊</span>
+          <h3>Gyroid vs. Grid Infill</h3>
+          <p><strong>Grid infill</strong> prints fast straight lines, but lines intersect on the same layer. At high travel speeds, the nozzle tip knocks over existing plastic lines, creating clicking noises and potential knock-off failures. <strong>Gyroid infill</strong> is a continuous 3D wave. It never self-intersects on a single layer, provides <em>isotropic</em> (equal in all directions) mechanical strength, and leaves open channels for fluid flow or foam filling.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-infill" src="../../../assets/images/3d-printing/infill-patterns.png" alt="Physical comparison of four 3D print infill patterns: grid, triangular, honeycomb, concentric" loading="lazy" />
+            <figcaption>Physical comparison of infill patterns: rectilinear grid, triangle (stiff under shear), honeycomb (crush resistance), and concentric. Choosing the right infill aligns internal plastic with your part's expected mechanical stresses. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Riempimenti_differenti.png" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">⚡</span>
+          <h3>Lightning Infill for Display Models</h3>
+          <p>For figurines, visual mockups, and architectural shells, 90% of internal infill is wasted. <strong>Lightning infill</strong> generates branching tree-like internal scaffolding that only grows directly beneath roof surfaces where solid top layers need support. It leaves the lower body virtually hollow, slashing print time by up to 60% and cutting filament usage in half.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-infill" src="../../../assets/images/3d-printing/tree-supports.jpg" alt="Organic tree supports branching up to support an overhanging printed bust" loading="lazy" />
+            <figcaption>Tree supports branching upward around a detailed print. Notice how the supports taper to fine contact needles, keeping surface scarring to a minimum while using up to 60% less filament than full grid blocks. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Stampa_3d_supporti_albero.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🌳</span>
+          <h3>Tree Supports vs. Linear Blocks</h3>
+          <p>Traditional <strong>linear/normal supports</strong> build dense vertical pillars from the bed directly upward. <strong>Tree / organic supports</strong> grow like branches around the model, reaching inward to touch overhangs only where needed. Tree supports use dramatically less filament, break away cleanly by hand without pliers, and leave negligible surface scarring.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-infill" src="../../../assets/images/3d-printing/raft-adhesion.jpg" alt="3D printed part resting on a thick multi-layer sacrificial raft" loading="lazy" />
+            <figcaption>A 3D print anchoring firmly onto a multi-layer sacrificial raft. Rafts provide a reliable thermal barrier and uniform grip when printing warpy materials or parts with tiny, uneven contact footprints. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Stampa_3d_raft.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🔩</span>
+          <h3>Fastening: Heat-Set Threaded Inserts</h3>
+          <p>Tapping screw threads directly into 3D printed plastic is fragile: repeated tightening strips the soft plastic, and tensile forces pry layer lines apart. The industry standard solution is <strong>brass heat-set threaded inserts (M3/M4)</strong>:</p>
+          <ol class="p3d-rules" style="margin-top:0.5rem;">
+            <li data-icon="1.">Design a cylindrical hole in CAD with a slight 1°–2° draft angle, sized according to the insert datasheet (e.g. 4.0 mm diameter for an M3 insert).</li>
+            <li data-icon="2.">Place the brass insert on top of the hole. Press a clean soldering iron tip set to <strong>210–230 °C</strong> gently into the insert.</li>
+            <li data-icon="3.">The brass heats, melting the surrounding polymer. The insert sinks flush into the hole as molten plastic flows into the diagonal knurls.</li>
+            <li data-icon="4.">Once cooled, the brass insert is permanently locked in place, capable of holding steel machine screws under tens of kilograms of pull-out force!</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MACHINE KINEMATICS, NOZZLES & LAB SAFETY ══ -->
+    <div class="p3d-card" id="kinematics-safety">
+      <p class="p3d-label">07 — Machine Kinematics, Nozzle Engineering &amp; Lab Safety</p>
+      <h2>Motion Systems, Extrusion Physics &amp; Lab Protocols</h2>
+      <p>A 3D printer is a computer-controlled CNC robot operating at temperatures that can melt aluminum and emit ultrafine particles. Understanding your machine's motion architecture, nozzle thermodynamics, and safety systems ensures reliable production and a safe shop environment.</p>
+
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-kinematics" src="../../../assets/images/3d-printing/hotend-assembly.jpg" alt="Disassembled FDM hotend showing heatsink, heatbreak, heater block, and brass nozzle" loading="lazy" />
+            <figcaption>The thermal zones of an FDM hotend: the cold heatsink dissipates stray heat via fan airflow; the narrow neck heatbreak creates a sharp thermal barrier; and the aluminum heater block contains the heater cartridge, thermistor, and nozzle. <span class="p3d-rule-credit">Photo: A7N8X · <a href="https://commons.wikimedia.org/wiki/File:Hotend.jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 Public Domain</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🔥</span>
+          <h3>Hotend Thermal Zones &amp; Heat Creep</h3>
+          <p>A hotend must maintain a razor-sharp boundary between its <em>cold zone</em> (where filament remains solid and rigid) and its <em>hot zone</em> (where filament melts into a liquid). If heat conducts upwards past the heatbreak—known as <strong>heat creep</strong>—filament softens inside the cold heatsink, expands, and forms an immovable plug. Always ensure the dedicated hotend heatsink fan runs continuously whenever temperature exceeds 50 °C.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-kinematics" src="../../../assets/images/3d-printing/nozzle-extruding.jpg" alt="Macro photograph of molten plastic extruding from a 0.4mm nozzle onto the bed" loading="lazy" />
+            <figcaption>Close-up of molten filament extruding from a brass nozzle. The silicone insulation sock insulates the aluminum heater block against cooling drafts and prevents catastrophic molten plastic encasement during a detached print failure. <span class="p3d-rule-credit">Photo: David Elliott · <a href="https://commons.wikimedia.org/wiki/File:3D_printer_nozzle_extruding_plastic_(15425519178).jpg" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🧪</span>
+          <h3>Nozzle Sizes &amp; Abrasive Filaments</h3>
+          <p><strong>0.4 mm</strong> is the universal baseline nozzle. A <strong>0.2 mm nozzle</strong> creates stunning micro-detail and legible 2 mm text, but increases print time by 300%. A <strong>0.6 mm or 0.8 mm nozzle</strong> doubles wall thickness in a single pass, slashing print time and creating nearly indestructible layer bonds.<br><strong>Warning:</strong> Standard brass nozzles are soft. Composite filaments like <em>carbon-fiber</em>, <em>glow-in-the-dark</em> (strontium aluminate), and <em>wood/metal fill</em> act like liquid sandpaper, enlarging a 0.4 mm brass hole to 0.7 mm in just one spool! Abrasive filaments require <strong>hardened steel</strong> or <strong>tungsten carbide</strong> nozzles.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-kinematics" src="../../../assets/images/3d-printing/cooling-fan-airflow.png" alt="Airflow diagram of 3D printer part-cooling fan and ducting" loading="lazy" />
+            <figcaption>Part cooling fan airflow schematic: ambient air is drawn in and focused through a symmetrical duct directly onto the freshly extruded layer, instantly freezing overhangs and bridge strands into rigid plastic before gravity pulls them down. <span class="p3d-rule-credit">Diagram: Paulo Kiefe · <a href="https://commons.wikimedia.org/wiki/File:3D_printing_calibration_part-cooling_fan_airflow.png" target="_blank" rel="noopener">Source</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">⚙️</span>
+          <h3>Kinematics: Bed-Slinger vs. CoreXY</h3>
+          <p><strong>Cartesian Bed-Slingers</strong> (e.g. Ender 3, Prusa MK3/4) move the printhead on X and Z while slinging the heavy heated bed back and forth along Y. As tall parts grow, the rapid Y-acceleration shakes the part like an inverted pendulum, causing ringing ripple lines and bed detachment. <strong>CoreXY machines</strong> (e.g. Bambu Lab, Voron) move the bed only downward in Z, moving a lightweight toolhead on stationary crossed belts. This enables speeds of 300–600 mm/s with zero tall-part wobble.</p>
+        </div>
+
+        <div class="p3d-block">
+          <div class="p3d-block-img-wrap"><figure data-zoomable>
+            <img data-lightbox-group="3d-printing-kinematics" src="../../../assets/images/3d-printing/additive-manufacturing-lab.jpg" alt="Classroom and aerospace additive manufacturing laboratory with 3D printers and technician" loading="lazy" />
+            <figcaption>Classroom and aerospace additive manufacturing laboratory in operation. Clear separation of machines, verified enclosure filtration, thermal management, and personal protective equipment are standard operating procedure. <span class="p3d-rule-credit">Photo: Collin Wesson / U.S. Space Force · <a href="https://commons.wikimedia.org/wiki/File:Create,_innovate,_accelerate,_repeat-_The_formula_for_shaping_the_future_(8343465).jpg" target="_blank" rel="noopener">Source</a> · Public Domain.</span></figcaption>
+          </figure></div>
+          <span class="p3d-icon">🛡️</span>
+          <h3>Air Quality &amp; Thermal Runaway Failsafes</h3>
+          <p><strong>Emissions:</strong> Molten polymers emit <em>Ultrafine Particles (UFPs &lt; 100 nm)</em> and <em>Volatile Organic Compounds (VOCs)</em>. PLA emits lactide vapors and moderate UFPs. ABS and ASA emit significant <strong>styrene</strong>—a known respiratory irritant and neurotoxin. Enclosures do not clean air on their own: printers must use HEPA filtration (for particles) + activated carbon (for VOCs) or ducted outdoor exhausts.<br><strong>Thermal Runaway:</strong> If a thermistor wire breaks or falls out of the heater block, the sensor reads room temperature (~20 °C) while the heater cartridge continues pumping maximum power. Modern firmware includes <strong>Thermal Runaway Protection</strong>: if power is applied and temperature does not rise predictably within 20 seconds, the printer halts immediately to prevent a fire.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ THE RULES ══ -->
     <div class="p3d-card" id="rules-card">
-      <p class="p3d-label">04 — The Rules for a Perfect Print</p>
+      <p class="p3d-label">08 — The Rules for a Perfect Print</p>
       <div class="p3d-rules-header">
         <h2>12 Golden Rules Every Maker Follows</h2>
         <button class="p3d-cheat-btn" id="cheat-sheet-btn" title="Download printable cheat sheet">
@@ -1035,7 +1278,7 @@
 
     <!-- ══ SCENARIO CHOOSER ══ -->
     <div class="p3d-card">
-      <p class="p3d-label">05 — Print Scenario Guide</p>
+      <p class="p3d-label">09 — Print Scenario Guide</p>
       <h2>What Settings Fit Your Situation?</h2>
       <p>Select a scenario — the settings table updates instantly, showing recommended values and the reasoning behind each choice.</p>
 
@@ -1143,7 +1386,7 @@
 
     <!-- ══ MATERIALS ══ -->
     <div class="p3d-card">
-      <p class="p3d-label">06 — Materials Reference</p>
+      <p class="p3d-label">10 — Materials Reference</p>
       <h2>Choosing the Right Filament</h2>
       <p>The material is the most important decision — it determines strength, flexibility, heat resistance, ease of printing, and whether you need an enclosure. Start with PLA; graduate to PETG for functional parts.</p>
 
@@ -1229,7 +1472,7 @@
 
     <!-- ══ TROUBLESHOOTING ══ -->
     <div class="p3d-card">
-      <p class="p3d-label">07 — Troubleshooting Common Failures</p>
+      <p class="p3d-label">11 — Troubleshooting Common Failures</p>
       <h2>What Went Wrong &amp; How to Fix It</h2>
       <p style="margin:0 0 0.2rem">Each card shows the visual signature of the failure, its root cause, and the slicer or hardware fix. When you encounter a bad print, match it to a card.</p>
 
@@ -1434,7 +1677,7 @@
 
     <!-- ══ QUIZ ══ -->
     <div class="p3d-card">
-      <p class="p3d-label">08 — Check Your Understanding</p>
+      <p class="p3d-label">12 — Check Your Understanding</p>
       <h2>Quick Quiz</h2>
 
       <div class="p3d-quiz-block" id="pq1">
@@ -1486,16 +1729,47 @@
         </div>
         <p class="p3d-quiz-feedback" role="status"></p>
       </div>
+
+      <div class="p3d-quiz-block" id="pq6">
+        <p class="p3d-quiz-q">6. Why is washing a PEI sheet with warm water and dish soap more effective than only wiping with Isopropyl Alcohol (IPA)?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq6" value="a"> IPA permanently damages the textured PEI coating</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq6" value="b"> Dish soap surfactants lift and rinse away finger oils, while IPA dissolves and can smear grease across the sheet</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq6" value="c"> Soap alters the bed temperature sensor calibration</label>
+        </div>
+        <p class="p3d-quiz-feedback" role="status"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq7">
+        <p class="p3d-quiz-q">7. Why do vertical cylindrical holes print smaller than nominal CAD dimensions in FDM?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq7" value="a"> Slicers automatically scale down internal holes for strength</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq7" value="b"> Polygon chord segmentation in STLs and molten filament surface tension pulling inward along circular toolpaths</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq7" value="c"> Bed heating expands the nozzle outwards</label>
+        </div>
+        <p class="p3d-quiz-feedback" role="status"></p>
+      </div>
+
+      <div class="p3d-quiz-block" id="pq8">
+        <p class="p3d-quiz-q">8. What happens when printing abrasive filament (carbon fiber or glow-in-the-dark) with a standard brass nozzle?</p>
+        <div class="p3d-quiz-options">
+          <label class="p3d-quiz-opt"><input type="radio" name="pq8" value="a"> The filament fails to melt completely</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq8" value="b"> Hard ceramic or carbon particles rapidly bore out the soft brass orifice, destroying print accuracy</label>
+          <label class="p3d-quiz-opt"><input type="radio" name="pq8" value="c"> The heated bed loses its magnetic adhesion</label>
+        </div>
+        <p class="p3d-quiz-feedback" role="status"></p>
+      </div>
     </div>
 
     <section class="p3d-card" id="print-evidence" aria-labelledby="evidence-title">
-      <h2 id="evidence-title">Exit ticket: evidence before a full print</h2>
+      <h2 id="evidence-title">13 — Exit ticket: evidence before a full print</h2>
       <p>Report your baseline, one changed setting, and the measured model difference. Which feature of your prototype could suffer? Describe a small test print, the load or fit you would test, and what result would convince you to keep the change.</p>
-      <details><summary>Sources and model limits</summary><p><a href="https://help.prusa3d.com/article/layers-and-perimeters_1748">Prusa: layers and perimeters</a> explains layer-height limits and the role of walls. Its roughly 80% ceiling differs from the conservative 75% guideline used here. Actual extrusion width can differ from nozzle diameter.</p><p><a href="https://www.makerbot.com/3d-printers/sketch-large/">MakerBot: SKETCH Large specifications</a> supports the build volume, nozzle, and classroom materials listed here. Generic scenario temperatures are starting examples, not SKETCH profiles.</p><p><a href="https://www.cdc.gov/niosh/docs/2024-103/default.html">NIOSH: safe 3D printing for schools and makerspaces</a> covers emission controls and operating practices.</p><p>The 3D preview samples at most 120 layer bands for clarity and uses schematic alternating infill paths. Supports are hypothetical examples beside the box, not generated toolpaths. The straight box and gradual-overhang examples have no generated external supports. The ledge and bridge examples place schematic support paths beneath their elevated surfaces; this is not an automatic support solver. Support estimates assume 20% volume for linear styles and 8% for tree styles. All support footprints reach the bed, so “everywhere” matches “normal” in these examples. Four top/bottom layers mean skin thickness changes with layer height. The surface indicator describes layer fineness only; it cannot predict strength, accuracy, or successful printing.</p></details>
+      <details><summary>Sources, textbook figures, and model limits</summary><p><a href="https://help.prusa3d.com/article/layers-and-perimeters_1748">Prusa: layers and perimeters</a> explains layer-height limits and the role of walls. Its roughly 80% ceiling differs from the conservative 75% guideline used here. Actual extrusion width can differ from nozzle diameter.</p><p><a href="https://www.makerbot.com/3d-printers/sketch-large/">MakerBot: SKETCH Large specifications</a> supports the build volume, nozzle, and classroom materials listed here. Generic scenario temperatures are starting examples, not SKETCH profiles.</p><p><a href="https://www.cdc.gov/niosh/docs/2024-103/default.html">NIOSH: safe 3D printing for schools and makerspaces</a> covers emission controls and operating practices.</p><p>Textbook photographic and diagrammatic sources: STEMFIE.org (first-layer gap, leveling, elephant's foot, cooling fan airflow, CC BY-SA 4.0), A7N8X (hotend assembly, CC0; gyroid infill, infill patterns, tree supports, raft adhesion, delamination, underextrusion, CC BY-SA 4.0), Luke Jones (first-layer macro, CC BY 2.0), David Elliott (nozzle extrusion, CC BY 2.0), syvwlch (20mm calibration cube caliper measurement, CC BY 2.0), Collin Wesson / U.S. Space Force (additive manufacturing lab, Public Domain). Complete metadata and download hashes are tracked in <a href="../../../assets/images/3d-printing/textbook-sources.json">textbook-sources.json</a>.</p></details>
     </section>
+
     <!-- ══ FORGE CALLOUT ══ -->
     <div class="p3d-card" style="border-left: 5px solid #e8792a;">
-      <p class="p3d-label">09 — Design &amp; Print in the Classroom</p>
+      <p class="p3d-label">14 — Design &amp; Print in the Classroom</p>
       <h2>Ready to Build? Design Parametric Parts in Forge</h2>
       <p>Put the golden rules to work with <a href="../../../forge.html" style="color:#c43d00;font-weight:700;">Forge</a> — ClassroomOS’s parametric 3D CAD tool. Design electronics cases, spiral fidgets, gear pairs, and custom clips with real-time design-rule checks for nozzle walls, bridges, overhang angles, and bed fit, then download clean STLs ready for MakerBot Print.</p>
     </div>
@@ -1512,7 +1786,7 @@
   ══════════════════════════════════════════════════ -->
   <script src="../../../assets/js/sim-kit.js"></script>
   <script type="module">
-  import { modelFor, sections, isSkin, estimate } from "../../../assets/js/lessons/3d-printing-models.mjs";
+  import { modelFor, modelHeight, sections, isSkin, estimate } from "../../../assets/js/lessons/3d-printing-models.mjs";
   (function () {
     var canvas  = document.getElementById('p3d-canvas');
     var ctx     = canvas.getContext('2d');
@@ -1523,6 +1797,10 @@
     var wallsSlider = document.getElementById('walls-slider');
     var spdSlider   = document.getElementById('spd-slider');
     var tmpSlider   = document.getElementById('tmp-slider');
+    var fanSlider   = document.getElementById('fan-slider');
+    var topbotSlider= document.getElementById('topbot-slider');
+    var patternSelect = document.getElementById('pattern-select');
+    var adhesionSelect= document.getElementById('adhesion-select');
     var supSelect   = document.getElementById('sup-select');
     var matSelect   = document.getElementById('mat-select');
 
@@ -1539,14 +1817,18 @@
 
     function getS() {
       return {
-        lh:    parseFloat(lhSlider.value),
-        inf:   parseInt(infSlider.value),
-        walls: parseInt(wallsSlider.value),
-        spd:   parseInt(spdSlider.value),
-        tmp:   parseInt(tmpSlider.value),
-        sup:   supSelect.value,
-        mat:   matSelect.value,
-        model: document.getElementById('print-model').value,
+        lh:       parseFloat(lhSlider.value),
+        inf:      parseInt(infSlider.value, 10),
+        walls:    parseInt(wallsSlider.value, 10),
+        spd:      parseInt(spdSlider.value, 10),
+        tmp:      parseInt(tmpSlider.value, 10),
+        fan:      fanSlider ? parseInt(fanSlider.value, 10) : 100,
+        topBot:   topbotSlider ? parseInt(topbotSlider.value, 10) : 4,
+        pattern:  patternSelect ? patternSelect.value : 'grid',
+        adhesion: adhesionSelect ? adhesionSelect.value : 'none',
+        sup:      supSelect.value,
+        mat:      matSelect.value,
+        model:    document.getElementById('print-model').value,
       };
     }
 
@@ -1556,6 +1838,12 @@
       document.getElementById('walls-val').textContent = s.walls;
       document.getElementById('spd-val').textContent   = s.spd + ' mm/s';
       document.getElementById('tmp-val').textContent   = s.tmp + ' °C';
+      if (document.getElementById('fan-val')) {
+        document.getElementById('fan-val').textContent = s.fan + '%';
+      }
+      if (document.getElementById('topbot-val')) {
+        document.getElementById('topbot-val').textContent = s.topBot + ' layers';
+      }
     }
 
     function calcStats(s) { return estimate(s); }
@@ -1573,9 +1861,39 @@
       if (s.lh > 0.30) warns.push({ text:'⚠ Layer height >0.30 mm — fine features may show gaps', cls:'' });
       if (s.lh > 0.30) warns.push({ text:'⚠ Layer height >75% of nozzle — poor inter-layer adhesion risk', cls:'danger' });
       if (s.inf === 0) warns.push({ text:'⚠ No infill: the closed top must bridge the interior; extra walls do not guarantee success', cls:'danger' });
+
+      // Infill & solid skin checks
+      if (s.topBot < 4 && s.inf < 25) {
+        warns.push({ text:'⚠ Pillowing risk: ' + s.topBot + ' solid top layers with ' + s.inf + '% infill may sag into infill voids', cls:'danger' });
+      }
+      if (s.pattern === 'gyroid') {
+        warns.push({ text:'✓ Gyroid infill: isotropic 3D strength with zero toolpath crossing collisions', cls:'ok' });
+      } else if (s.pattern === 'lightning') {
+        warns.push({ text:'⚠ Lightning infill: hollow interior; designed for rapid display pieces, low structural load capacity', cls:'' });
+      }
+
+      // Cooling fan checks
+      if (s.fan < 50) {
+        warns.push({ text:'⚠ Low part cooling fan (' + s.fan + '%): PLA needs active airflow to freeze overhangs and bridges', cls:'danger' });
+      }
+
+      // Adhesion checks
+      if (s.adhesion === 'brim') {
+        warns.push({ text:'✓ Brim anchors sharp corners and expands surface area against thermal warping', cls:'ok' });
+      } else if (s.adhesion === 'raft') {
+        warns.push({ text:'✓ Raft isolates model from uneven bed plate, but consumes extra filament and time', cls:'' });
+      }
+
+      // Model & support checks
       var model = modelFor(s.model);
-      if (model.risk && s.sup==='none') warns.push({text:model.risk==='bridge'?'⚠ Unsupported 24 mm bridge: test bridging before a full print':'⚠ Unsupported cantilever: the ledge begins with no material below',cls:model.risk==='bridge'?'':'danger'});
-      if (s.sup!=='none') warns.push({text:model.supports.length?'Supports placed beneath the elevated surface; inspect contact and removal in your slicer':'This model has no external support region; no supports generated',cls:'ok'});
+      if (s.model === 'ledge_flat' || s.model === 'bridge_flat') {
+        warns.push({ text:'✓ Flat orientation eliminates overhangs: zero supports needed, saving hours and plastic!', cls:'ok' });
+      } else if (model.risk && s.sup==='none') {
+        warns.push({ text:model.risk==='bridge'?'⚠ Unsupported 24 mm bridge: test bridging before a full print':'⚠ Unsupported cantilever: the ledge begins with no material below', cls:model.risk==='bridge'?'':'danger'});
+      }
+      if (s.sup!=='none' && s.model !== 'ledge_flat' && s.model !== 'bridge_flat') {
+        warns.push({ text:model.supports.length?'Supports placed beneath the elevated surface; inspect contact and removal in your slicer':'This model has no external support region; no supports generated', cls:'ok' });
+      }
       if (!warns.length) warns.push({ text:'✓ No model flags; validate the real profile for ' + m.name, cls:'ok' });
       return warns;
     }
@@ -1629,16 +1947,18 @@
     /* ── Canvas cross-section renderer ── */
     function drawSim(s) {
       ctx.clearRect(0,0,W,H);ctx.fillStyle='#0e0700';ctx.fillRect(0,0,W,H);
-      var scale=Math.min((W-64)/50,(H-64)/60),cx=W/2,base=H-30,wall=s.walls*0.4;
-      var step=Math.max(1,Math.ceil(60/s.lh/180));
+      var hMax = modelHeight(s.model);
+      var scale=Math.min((W-64)/50,(H-64)/hMax),cx=W/2,base=H-30,wall=s.walls*0.4;
+      var totalLayers = Math.round(hMax / s.lh);
+      var step=Math.max(1,Math.ceil(totalLayers/180));
       for(var l=1;l<=currentLayer;l+=step){
-        var y=l*s.lh,ph=Math.min(step*s.lh,60-y+s.lh)*scale;
+        var y=l*s.lh,ph=Math.min(step*s.lh,hMax-y+s.lh)*scale;
         sections(s.model,y).forEach(function(r){
           var left=cx+r[0]*scale,width=(r[1]-r[0])*scale,py=base-y*scale;
           ctx.fillStyle='#e8792a';ctx.fillRect(left,py,width,Math.max(.5,ph));
           var inner=Math.max(0,width-2*wall*scale);
-          ctx.fillStyle=isSkin(s.model,y,s.lh)?'#ffdbb5':'#21150a';ctx.fillRect(left+wall*scale,py,inner,Math.max(.5,ph-.3));
-          if(!isSkin(s.model,y,s.lh)&&s.inf>0){ctx.fillStyle='#ffb12b';var spacing=Math.max(2,0.4/(s.inf/100)*scale);for(var x=left+wall*scale;x<left+width-wall*scale;x+=spacing)ctx.fillRect(x,py,Math.min(1.5,spacing),Math.max(.5,ph-.3));}
+          ctx.fillStyle=isSkin(s.model,y,s.lh,s.topBot)?'#ffdbb5':'#21150a';ctx.fillRect(left+wall*scale,py,inner,Math.max(.5,ph-.3));
+          if(!isSkin(s.model,y,s.lh,s.topBot)&&s.inf>0){ctx.fillStyle='#ffb12b';var spacing=Math.max(2,0.4/(s.inf/100)*scale);for(var x=left+wall*scale;x<left+width-wall*scale;x+=spacing)ctx.fillRect(x,py,Math.min(1.5,spacing),Math.max(.5,ph-.3));}
         });
       }
       if(s.sup!=='none') modelFor(s.model).supports.forEach(function(r){
@@ -1646,12 +1966,22 @@
         if(s.sup==='tree'){var mid=cx+(r[0]+r[1])/2*scale;ctx.beginPath();ctx.moveTo(mid,base);ctx.lineTo(mid,base-h*.65*scale);ctx.lineTo(cx+(r[0]+2)*scale,base-h*scale);ctx.moveTo(mid,base-h*.65*scale);ctx.lineTo(cx+(r[1]-2)*scale,base-h*scale);ctx.stroke();}
         else for(var x=r[0]+1;x<r[1];x+=2.5){ctx.beginPath();ctx.moveTo(cx+x*scale,base);ctx.lineTo(cx+x*scale,base-h*scale);ctx.stroke();}
       });
+      if(s.adhesion === 'brim') {
+        ctx.strokeStyle = '#ff9500'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(cx - 28 * scale, base + 2); ctx.lineTo(cx + 28 * scale, base + 2); ctx.stroke();
+      } else if(s.adhesion === 'raft') {
+        ctx.fillStyle = '#b36b00';
+        ctx.fillRect(cx - 26 * scale, base - 3, 52 * scale, 3);
+      }
       ctx.fillStyle='#ffe3cb';ctx.font='600 12px system-ui';ctx.textAlign='left';ctx.fillText(modelFor(s.model).name+' · front section',12,20);
     }
 
     function refresh() {
       var s = getS();
-      if (layerSlider) currentLayer = parseInt(layerSlider.value, 10);
+      var maxL = Math.round(modelHeight(s.model) / s.lh);
+      if (layerSlider) {
+        currentLayer = Math.min(parseInt(layerSlider.value, 10), maxL);
+      }
       document.getElementById("print-model-note").textContent=modelFor(s.model).note;
       updateLabels(s);
       updateStats(s);
@@ -1659,23 +1989,35 @@
       updateWarnings(s);
       drawSim(s);
       compare(s);
-      document.dispatchEvent(new CustomEvent("print-preview-change", {detail:{...s,layer:currentLayer,layers:Math.round(60/s.lh)}}));
+      document.dispatchEvent(new CustomEvent("print-preview-change", {detail:{...s,layer:currentLayer,layers:maxL}}));
     }
 
-    [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider, layerSlider].forEach(function(el) {
+    [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider, fanSlider, topbotSlider, layerSlider].forEach(function(el) {
       if (el) el.addEventListener('input', refresh);
     });
-    [supSelect, matSelect].forEach(function(el) {
-      el.addEventListener('change', refresh);
+    [supSelect, matSelect, patternSelect, adhesionSelect].forEach(function(el) {
+      if (el) el.addEventListener('change', refresh);
     });
 
-    document.getElementById('print-model').addEventListener('change',function(){layerSlider.value=Math.round(60/getS().lh);refresh();});
+    document.getElementById('print-model').addEventListener('change',function(){
+      var s = getS();
+      var tot = Math.round(modelHeight(s.model)/s.lh);
+      layerSlider.max = tot;
+      layerSlider.value = tot;
+      currentLayer = tot;
+      refresh();
+    });
     document.getElementById('show-full-model').addEventListener('click',function(){layerSlider.value=layerSlider.max;refresh();});
     var baseline = null;
     document.getElementById('save-baseline').addEventListener('click', function () { baseline = {settings:getS(), stats:calcStats(getS())}; refresh(); });
     document.getElementById('reset-lab').addEventListener('click', function () {
-      [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider].forEach(function(el){el.value=el.defaultValue;});
-      supSelect.value='none'; matSelect.value='pla'; document.getElementById('print-model').value='box'; layerSlider.value=150; currentLayer=150;
+      [lhSlider, infSlider, wallsSlider, spdSlider, tmpSlider, fanSlider, topbotSlider].forEach(function(el){if(el) el.value=el.defaultValue;});
+      supSelect.value='none'; matSelect.value='pla';
+      if (patternSelect) patternSelect.value='grid';
+      if (adhesionSelect) adhesionSelect.value='none';
+      document.getElementById('print-model').value='box';
+      var defL = Math.round(60 / parseFloat(lhSlider.defaultValue));
+      layerSlider.max = defL; layerSlider.value=defL; currentLayer=defL;
       baseline=null; document.dispatchEvent(new Event("print-preview-reset")); document.getElementById('lab-prediction').value=''; refresh();
     });
     function compare(s) {
@@ -1685,6 +2027,42 @@
     }
     SimKit.canvas2d(canvas,{height:320,onResize:function(c,w,h){W=w;H=h;refresh();}});
     refresh();
+  })();
+  </script>
+
+  <!-- ══════════════════════════════════════════════════
+       JUMP BANNER & HASH ANCHORS
+  ══════════════════════════════════════════════════ -->
+  <script>
+  (function () {
+    var refBtn = document.getElementById('open-reference-btn');
+    var refDetails = document.querySelector('details.d3-original-reference');
+    if (refBtn && refDetails) {
+      refBtn.addEventListener('click', function() {
+        refDetails.open = true;
+        var target = document.getElementById('slicer-lab');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+
+    function checkHash() {
+      if (window.location.hash && refDetails) {
+        var id = window.location.hash.slice(1);
+        var target = document.getElementById(id);
+        if (target && refDetails.contains(target)) {
+          refDetails.open = true;
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    }
+    window.addEventListener('hashchange', checkHash);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkHash);
+    } else {
+      checkHash();
+    }
   })();
   </script>
 
@@ -1737,7 +2115,7 @@
   ══════════════════════════════════════════════════ -->
   <script>
   (function () {
-    var ANS = { pq1:'b', pq2:'b', pq3:'b', pq4:'b', pq5:'c' };
+    var ANS = { pq1:'b', pq2:'b', pq3:'b', pq4:'b', pq5:'c', pq6:'b', pq7:'b', pq8:'b' };
     var EXP = {
       pq1: { ok:'The 75% rule: max layer height = 0.75 × nozzle diameter. For a 0.4 mm nozzle that\'s 0.30 mm — this is a conservative guideline, not a universal machine limit.',
              bad:'Not quite — the rule is 75% of nozzle diameter. For 0.4 mm that\'s 0.30 mm, not 0.10 or 0.60 mm.' },
@@ -1749,6 +2127,12 @@
              bad:'Not quite — stringing is molten plastic oozing during travel moves. Fix: increase retraction distance/speed and reduce nozzle temperature.' },
       pq5: { ok:'Correct — ASA is UV-stabilised and weatherproof. Outdoor life depends on the formulation and exposure; verify the material datasheet.',
              bad:'Not quite — ASA is the correct choice. Check UV and heat ratings for each specific filament. ASA is engineered for outdoor use.' },
+      pq6: { ok:'Correct — warm water and plain dish soap act as surfactants that emulsify and physically flush away skin sebum and finger oils. IPA dissolves grease but often spreads a micro-thin greasy film unless wiped with multiple clean lint-free towels.',
+             bad:'Not quite — dish soap contains surfactants that bind to skin oils and rinse them away completely. IPA dissolves oils but can redeposit a thin film across the PEI sheet if not fully lifted.' },
+      pq7: { ok:'Correct — STLs approximate circles as faceted polygons whose straight chords cut inside the true radius. Concurrently, viscous molten filament extruded along a curved arc experiences surface tension hoop stress pulling inward toward the center.',
+             bad:'Not quite — vertical holes print undersized due to chord segmentation in STL meshes (cutting corners) combined with molten polymer hoop-stress tension dragging the extruded bead inward along curves.' },
+      pq8: { ok:'Correct — carbon fibers and glow-in-the-dark strontium aluminate crystals are significantly harder than brass. They act like miniature grinding stones, eroding a 0.4 mm brass orifice to 0.6+ mm in just a single spool. Always use hardened steel or ruby nozzles!',
+             bad:'Not quite — abrasive filaments rapidly erode the soft brass orifice, destroying dimensional accuracy and ruining layer quality. Hardened tool steel or ruby-tipped nozzles are required.' },
     };
 
     document.querySelectorAll('.p3d-quiz-block').forEach(function (block) {

@@ -1317,8 +1317,9 @@
           ctx.translate(p.x, p.y);
           if (p.rotation) ctx.rotate(p.rotation);
 
-          const half = p.size / 2;
-          ctx.drawImage(spr, -half, -half, p.size, p.size);
+          const displaySize = p.size * (this.options.particleRenderScale || 1);
+          const half = displaySize / 2;
+          ctx.drawImage(spr, -half, -half, displaySize, displaySize);
           ctx.restore();
         }
       }
