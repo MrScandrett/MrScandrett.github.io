@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Volcano Simulator · Mr. Scandrett's ClassroomOS</title>
+  <title>Physical Volcanology: Magmatic Systems & Conduit Dynamics · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Simulate famous volcanic eruptions in 3D — lava flows, ash columns, pyroclastic surges and more." />
+  <meta name="description" content="Quantitative volcanology laboratory and 3D simulation: examine silicate rheology, conduit fluid dynamics, Plinian eruption columns, pyroclastic density currents, and peer-reviewed historical eruption case studies." />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
@@ -642,22 +642,23 @@
     /* Conduit HUD Diagnostics */
     .conduit-hud {
       position: absolute;
-      bottom: 5.5rem;
+      bottom: 4.8rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 8px;
+      gap: 6px;
       z-index: 15;
       pointer-events: none;
       flex-wrap: wrap;
       justify-content: center;
+      max-width: min(92vw, 1100px);
     }
     .hud-pill {
-      background: rgba(10, 4, 2, 0.88);
-      border: 1px solid rgba(255, 120, 40, 0.35);
+      background: rgba(14, 8, 6, 0.92);
+      border: 1px solid rgba(255, 140, 60, 0.32);
       border-radius: 999px;
-      padding: 4px 12px;
-      font-size: 0.68rem;
+      padding: 3px 10px;
+      font-size: 0.72rem;
       font-family: monospace;
       color: #ffd8a8;
       box-shadow: 0 4px 12px rgba(0,0,0,0.6);
@@ -719,9 +720,214 @@
     .blender-panel { box-sizing:border-box; }
     .vol-overlay { top:1rem; left:calc(340px + 2rem); max-width:calc(100% - 740px); }
     .vol-badge, .vei-badge { white-space:normal; overflow-wrap:anywhere; }
-    .vol-lesson { max-width:900px; margin:auto; padding:2rem; line-height:1.65; background:#160e0b; color:#f4e7db; }
-    .vol-lesson h2 { color:#ffd1a1; margin-top:1.5rem; }
-    .vol-lesson a { color:#ffd1a1; }
+    .vol-lesson { max-width:960px; margin:auto; padding:2.5rem 1.8rem 4rem; line-height:1.7; background:#140c08; color:#eddcd0; border-top: 1px solid rgba(255,120,40,0.25); }
+    .vol-lesson h2 { color:#ffd1a1; margin-top:2.4rem; margin-bottom:0.75rem; font-size:1.45rem; border-bottom:1px solid rgba(255,120,40,0.25); padding-bottom:0.4rem; letter-spacing:-0.01em; }
+    .vol-lesson h3 { color:#f5bc88; margin-top:1.8rem; margin-bottom:0.6rem; font-size:1.18rem; }
+    .vol-lesson h4 { color:#e5c4a5; margin-top:1.2rem; margin-bottom:0.4rem; font-size:0.98rem; font-weight:700; }
+    .vol-lesson p { margin: 0.85rem 0; font-size: 0.92rem; line-height: 1.7; }
+    .vol-lesson ul, .vol-lesson ol { margin: 0.85rem 0; padding-left: 1.4rem; font-size: 0.9rem; }
+    .vol-lesson li { margin-bottom: 0.45rem; line-height: 1.6; }
+    .vol-lesson a { color:#ffd1a1; text-decoration: underline; text-underline-offset: 3px; }
+    .vol-lesson a:hover { color:#fff; }
+
+    /* Academic Lesson Header & Standard Alignments */
+    .academic-header { margin-bottom: 2.2rem; border-bottom: 1px solid rgba(255,120,40,0.25); padding-bottom: 1.6rem; }
+    .academic-badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0.9rem; }
+    .academic-chip { background: rgba(255,120,40,0.14); border: 1px solid rgba(255,120,40,0.32); border-radius: 999px; padding: 3px 12px; font-size: 0.72rem; font-weight: 700; color: #ffb880; letter-spacing: 0.03em; }
+    .academic-lead { font-size: 1.05rem; line-height: 1.68; color: #ffd8b5; font-weight: 500; margin: 0.8rem 0; }
+
+    /* Physical Volcanology Equation Box */
+    .equation-box {
+      background: rgba(24, 11, 6, 0.92);
+      border: 1px solid rgba(255, 120, 40, 0.35);
+      border-left: 4px solid #ff7a20;
+      border-radius: 8px;
+      padding: 1rem 1.3rem;
+      margin: 1.4rem 0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .equation-box .eq-title {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ffa460;
+      margin-bottom: 0.35rem;
+      font-weight: 800;
+    }
+    .equation-box .eq-formula {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0.3rem 0 0.5rem;
+      letter-spacing: 0.02em;
+    }
+    .equation-box .eq-vars {
+      font-size: 0.78rem;
+      color: #dfc4b0;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* Petrology and VEI Tables */
+    .petrology-table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid rgba(255, 120, 40, 0.28);
+      border-radius: 10px;
+      background: rgba(18, 8, 4, 0.75);
+    }
+    .petrology-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    .petrology-table th {
+      background: rgba(45, 16, 8, 0.92);
+      color: #ffd29a;
+      padding: 10px 14px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 120, 40, 0.3);
+      white-space: nowrap;
+    }
+    .petrology-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(255, 120, 40, 0.12);
+      color: #eedccc;
+      vertical-align: top;
+    }
+    .petrology-table tr:hover {
+      background: rgba(255, 120, 40, 0.08);
+    }
+
+    /* Academic Callout Alert */
+    .academic-alert {
+      background: rgba(30, 14, 8, 0.65);
+      border: 1px solid rgba(255, 120, 40, 0.3);
+      border-left: 4px solid #ff9030;
+      border-radius: 8px;
+      padding: 0.95rem 1.15rem;
+      margin: 1.3rem 0;
+      font-size: 0.86rem;
+      color: #e8d5c4;
+      line-height: 1.62;
+    }
+    .academic-alert strong { color: #ffd699; }
+
+    /* Claim-Evidence-Reasoning (CER) Investigation Cards */
+    .cer-card {
+      background: rgba(24, 11, 5, 0.85);
+      border: 1px solid rgba(255, 120, 40, 0.32);
+      border-radius: 12px;
+      padding: 1.3rem;
+      margin: 1.6rem 0;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    .cer-card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+      color: #ffd6a5;
+    }
+    .cer-card .investigation-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 0.8rem;
+    }
+    .cer-tag {
+      background: rgba(255, 100, 30, 0.15);
+      border: 1px solid rgba(255, 120, 40, 0.3);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: #ffbc85;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .cer-card label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ffd2a0;
+      margin-top: 0.75rem;
+      margin-bottom: 0.3rem;
+    }
+    .cer-card textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0d0604;
+      border: 1px solid rgba(255, 120, 40, 0.35);
+      border-radius: 6px;
+      color: #f7ebe0;
+      padding: 0.65rem;
+      font-family: inherit;
+      font-size: 0.83rem;
+      line-height: 1.55;
+      resize: vertical;
+    }
+    .cer-card textarea:focus {
+      outline: 2px solid #ff7a20;
+      border-color: #ff9040;
+    }
+    .cer-rubric {
+      font-size: 0.74rem;
+      color: rgba(220, 190, 160, 0.72);
+      margin-top: 0.45rem;
+      font-style: italic;
+    }
+
+    /* Reference & Bibliography List */
+    .ref-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 1.2rem 0;
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+    .ref-list li {
+      padding-left: 1.8rem;
+      text-indent: -1.8rem;
+      margin-bottom: 0.85rem;
+      color: #d8c2b0;
+    }
+    .ref-list a {
+      color: #ffaa60;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .ref-list a:hover {
+      color: #fff;
+    }
+
+    /* Analytical Physics Reference Accordion */
+    .analytical-ref {
+      margin-top: 0.75rem;
+      background: rgba(10, 4, 2, 0.75);
+      border: 1px solid rgba(255, 120, 40, 0.25);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+    .analytical-ref summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #ffaa60;
+      outline: none;
+    }
+    .analytical-ref summary:hover { color: #fff; }
+    .analytical-ref-content { margin-top: 0.5rem; color: #dfc8b4; }
+    .analytical-ref-eq {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.82rem;
+      color: #ffe0c0;
+      background: rgba(0,0,0,0.5);
+      padding: 3px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      margin: 2px 0;
+    }
+
     .investigation { margin:1rem 0; }
     .investigation textarea { display:block; box-sizing:border-box; width:100%; margin-top:.5rem; background:#fff; color:#222; padding:.6rem; }
     @media(max-width:959px) {
@@ -730,7 +936,7 @@
       .conduit-outer { position:relative; height:350px; flex:none; }
       .vol-workspace.view-split .volcano-outer, .vol-workspace.view-split .conduit-outer { position:relative; inset:auto; width:100% !important; height:350px !important; flex:none; }
       .vol-workspace.view-split .blender-panel { width:100%; left:auto; right:auto; }
-      .vol-lesson { padding:1rem; }
+      .vol-lesson { padding:1.2rem; }
       .vs-topbar-inner { flex-wrap:wrap; }
     }
     #vol-print-still { display:none; }
@@ -746,9 +952,15 @@
       #event-photo { max-height:35mm !important; width:auto !important; }
       .vol-lesson { padding:0; font-size:10pt; line-height:1.3; background:white; color:black; }
       .vol-lesson h2 { margin:.7rem 0 .3rem; font-size:13pt !important; color:black; }
+      .vol-lesson h3 { margin:.5rem 0 .2rem; font-size:11pt !important; color:black; }
       .vol-lesson p { margin:.4rem 0; }
-      .investigation { break-inside:avoid; margin:.5rem 0; }
-      .investigation textarea { height:12mm; min-height:0; }
+      .cer-card, .investigation { break-inside:avoid; margin:.5rem 0; background:white; border:1px solid #ccc; color:black; }
+      .cer-card textarea, .investigation textarea { height:12mm; min-height:0; background:white; color:black; border:1px solid #999; }
+      .equation-box { background:white; border-left:3px solid black; color:black; }
+      .equation-box .eq-formula { color:black; }
+      .petrology-table-wrap { border:1px solid #ccc; }
+      .petrology-table th { background:#eee; color:black; }
+      .petrology-table td { color:black; }
     }
     .cutaway-plot { position:absolute; inset:0; }
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
@@ -756,7 +968,7 @@
     #cutaway-notes details { margin:.4rem 0; }
     #cutaway-notes summary { cursor:pointer; }
     #cutaway-notes a { color:#ffd1a5; }
-    .conduit-hud { bottom:6.5rem; flex-wrap:wrap; max-width:calc(100% - 24px); }
+    .conduit-hud { bottom:4.8rem; flex-wrap:wrap; max-width:calc(100% - 24px); }
     #cutaway-true-scale { pointer-events:auto; cursor:pointer; background:#34231c; color:#fff; }
     @media(max-width:959px) {
       .conduit-outer { height:auto; min-height:420px; overflow:visible; }
@@ -793,17 +1005,17 @@
   <nav class="vs-topbar ll-topbar">
     <div class="vs-topbar-inner">
       <a href="../../steam-lessons.html">← Earth Science</a>
-      <span class="vs-topbar-title">🌋 Volcano Simulator</span>
+      <span class="vs-topbar-title">Physical Volcanology &amp; Magmatic Systems</span>
       <div class="view-mode-toggle" id="view-mode-toggle" role="group" aria-label="Simulation View">
-        <button type="button" class="view-btn active" data-view="surface">🌋 3D Surface</button>
-        <button type="button" class="view-btn" data-view="cross-section">🔬 Magma Cutaway</button>
-        <button type="button" class="view-btn" data-view="split">◫ Split View</button>
+        <button type="button" class="view-btn active" data-view="surface">Surface Dynamics</button>
+        <button type="button" class="view-btn" data-view="cross-section">Conduit Cutaway</button>
+        <button type="button" class="view-btn" data-view="split">Dual Coupled View</button>
       </div>
       <a href="../../index.html">ClassroomOS</a>
     </div>
   </nav>
 
-      <main class="ll-stage" id="main-content"><div class="ll-sim"><h1 class="visually-hidden">Volcano Simulator: predict, test, explain</h1><section class="vol-workspace" aria-label="Volcano workspace" data-memory-ignore>
+      <main class="ll-stage" id="main-content"><div class="ll-sim"><h1 class="visually-hidden">Physical Volcanology: Magmatic Dynamics and Quantitative Eruption Simulation</h1><section class="vol-workspace" aria-label="Volcano workspace" data-memory-ignore>
 
     <!-- 3D Canvas (Full Screen) -->
     <div class="volcano-outer" id="vol-outer">
@@ -823,38 +1035,41 @@
       <!-- Painting Toolbar for Exploration Mode -->
       <div class="conduit-toolbar" id="conduit-toolbar" style="display: none;">
         <div class="tool-group">
-          <span class="tool-group-label">Plumbing Tools:</span>
-          <button type="button" class="c-tool-btn active" data-tool="chamber" title="Paint Magma Chamber">🔴 Chamber</button>
-          <button type="button" class="c-tool-btn" data-tool="conduit" title="Draw Feeder Conduit">⚡ Conduit</button>
-          <button type="button" class="c-tool-btn" data-tool="sill" title="Draw Horizontal Sill Intrusion">🟡 Sill</button>
-          <button type="button" class="c-tool-btn" data-tool="aquifer" title="Add Hydrothermal Aquifer">💧 Aquifer</button>
-          <button type="button" class="c-tool-btn" data-tool="bedrock" title="Eraser / Rock">🪨 Rock</button>
+          <span class="tool-group-label">Plumbing Architecture:</span>
+          <button type="button" class="c-tool-btn active" data-tool="chamber" title="Add or enlarge Magma Reservoir">Magma Chamber</button>
+          <button type="button" class="c-tool-btn" data-tool="conduit" title="Draw Vertical Feeder Dike / Conduit">Feeder Dike</button>
+          <button type="button" class="c-tool-btn" data-tool="sill" title="Draw Horizontal Sill Intrusion">Sill Intrusion</button>
+          <button type="button" class="c-tool-btn" data-tool="aquifer" title="Add Hydrothermal Aquifer System">Hydrothermal Aquifer</button>
+          <button type="button" class="c-tool-btn" data-tool="bedrock" title="Country Rock / Excavate">Country Rock (Erase)</button>
         </div>
         <div class="tool-group">
-          <span class="tool-group-label">Brush:</span>
-          <button type="button" class="c-brush-btn" data-size="0.3">Small</button>
-          <button type="button" class="c-brush-btn active" data-size="0.6">Medium</button>
-          <button type="button" class="c-brush-btn" data-size="1.2">Large</button>
-          <button type="button" class="c-action-btn" id="btn-conduit-undo" title="Undo Last Stroke">↶ Undo</button>
-          <button type="button" class="c-action-btn" id="btn-conduit-reset" title="Reset to Baseline">↺ Reset</button>
+          <span class="tool-group-label">Aperture:</span>
+          <button type="button" class="c-brush-btn" data-size="0.3">0.3 km</button>
+          <button type="button" class="c-brush-btn active" data-size="0.6">0.6 km</button>
+          <button type="button" class="c-brush-btn" data-size="1.2">1.2 km</button>
+          <button type="button" class="c-action-btn" id="btn-conduit-undo" title="Undo Last Geometric Stroke">↶ Undo</button>
+          <button type="button" class="c-action-btn" id="btn-conduit-reset" title="Reset to Geological Baseline">↺ Baseline</button>
         </div>
       </div>
 
       <!-- Live Geological Diagnostics Overlay -->
       <div class="conduit-hud" id="conduit-hud">
-        <button type="button" class="hud-pill" id="cutaway-true-scale" aria-pressed="false">True scale</button><span class="hud-pill" id="hud-chamber-depth">Depth: —</span>
-        <span class="hud-pill" id="hud-magma-vol">Reservoir model: —</span>
-        <span class="hud-pill" id="hud-overpressure">Rock pressure model: —</span>
-        <span class="hud-pill" id="hud-vents">Paths: —</span><span class="hud-pill" id="hud-melt-vol">Melt model: —</span><span class="hud-pill" id="hud-erupted-dre">Erupted DRE: —</span><span class="hud-pill" id="hud-buoyancy">Column buoyancy model: —</span><span class="hud-pill">Rupture threshold: 10–20 MPa excess (illustrative)</span>
+        <button type="button" class="hud-pill" id="cutaway-true-scale" aria-pressed="false">1:1 True Scale (VE 1.0)</button>
+        <span class="hud-pill" id="hud-chamber-depth">Depth: —</span>
+        <span class="hud-pill" id="hud-magma-vol">Reservoir: —</span>
+        <span class="hud-pill" id="hud-melt-vol">Melt: —</span>
+        <span class="hud-pill" id="hud-overpressure">Stress: —</span>
+        <span class="hud-pill" id="hud-buoyancy">Buoyancy: —</span>
+        <span class="hud-pill" id="hud-vents">Paths: —</span>
       </div>
     </div>
 
     <!-- Timeline Overlay (Bottom Center) -->
     <div class="timeline-overlay" id="timeline-overlay">
       <div class="tl-labels">
-        <span>Event sequence</span>
-        <span>Unequal time intervals</span>
-        <span>Aftermath</span>
+        <span>Pre-Eruptive State</span>
+        <span>Eruptive Sequence Progress</span>
+        <span>Post-Eruptive Aftermath</span>
       </div>
       <input type="range" id="s-timeline" data-range-skin="native" aria-label="Event sequence position" min="0" max="1" step="0.01" value="0" />
     </div>
@@ -862,92 +1077,113 @@
     <!-- Blender Left Panel -->
     <aside class="blender-panel panel-left">
       <div class="vs-card">
-        <h3>Playback mode</h3>
-        <label for="eruption-mode">Choose an investigation</label>
-        <select id="eruption-mode"><option value="historical">Historical playback</option><option value="exploration">Exploration — hypothetical</option></select>
+        <h3>Investigation Protocol</h3>
+        <label for="eruption-mode">Experimental Protocol</label>
+        <select id="eruption-mode">
+          <option value="historical">Empirical Historical Replay (Geologically Constrained)</option>
+          <option value="exploration">Parametric Exploration (Hypothetical Experimentation)</option>
+        </select>
         <p id="mode-note"></p>
-        <h3>Event presets</h3>
+        <h3>Calibrated Historical Presets</h3>
         <div class="eruption-scroll" id="eruption-scroll"></div>
       </div>
       <div class="vs-card" style="margin-top: auto; padding-top: 1rem; border-top: 1px solid rgba(255,120,40,0.2);">
         <!-- Event description -->
-      <p id="phase-label" role="status"></p>
-      <details open><summary>What really happened</summary><div id="historical-evidence"></div></details>
-      <div class="event-desc" id="event-desc">
-      </div>
-      <figure id="event-photo-container" data-zoomable data-lightbox-group="volcano-evidence" style="margin-top: 1rem; margin-bottom: 0; display: none;">
-        <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
-        <figcaption id="event-photo-caption" ></figcaption>
-      </figure>
-      <div id="event-video" style="margin-top: 1rem;"></div>
+        <p id="phase-label" role="status"></p>
+        <details open><summary>Empirical Chronology &amp; Stratigraphic Evidence</summary><div id="historical-evidence"></div></details>
+        <div class="event-desc" id="event-desc"></div>
+        <figure id="event-photo-container" data-zoomable data-lightbox-group="volcano-evidence" style="margin-top: 1rem; margin-bottom: 0; display: none;">
+          <img id="event-photo" src="" alt="Event visualization" style="width: 100%; border-radius: 4px; object-fit: cover; max-height: 200px;">
+          <figcaption id="event-photo-caption"></figcaption>
+        </figure>
+        <div id="event-video" style="margin-top: 1rem;"></div>
+
+        <!-- Analytical Equations Drawer -->
+        <details class="analytical-ref">
+          <summary>Analytical Volcanology Scaling Laws</summary>
+          <div class="analytical-ref-content">
+            <p><strong>Plume Height (Sparks 1986):</strong><br>
+            <span class="analytical-ref-eq">H_t ≈ 1.67 · Ṁ^0.259</span><br>
+            <em>H_t</em> in km, <em>Ṁ</em> is mass discharge in kg/s.</p>
+            <p><strong>Lithostatic Overburden:</strong><br>
+            <span class="analytical-ref-eq">P_lith = ρ_crust · g · z</span><br>
+            Mean crust density ρ ≈ 2,700 kg/m³, g = 9.81 m/s².</p>
+            <p><strong>Magma Buoyancy Overpressure:</strong><br>
+            <span class="analytical-ref-eq">ΔP_buoy = (ρ_crust - ρ_magma) · g · z</span><br>
+            Drives upward ascent when overpressure exceeds wall-rock tensile yield stress.</p>
+            <p><strong>Dense Rock Equivalent (DRE):</strong><br>
+            <span class="analytical-ref-eq">V_DRE = V_bulk · (ρ_deposit / ρ_dense)</span><br>
+            Normalizes expanded porous tephra to bubble-free magma volume.</p>
+          </div>
+        </details>
       </div>
     </aside>
 
     <!-- Blender Right Panel -->
     <aside class="blender-panel panel-right">
       <div class="vs-card">
-        <h3>Volcano Type</h3>
+        <h3>Edifice Geomorphology</h3>
         <div class="type-tabs" id="type-tabs">
-          <button class="type-tab" data-vtype="shield">🛡️<br>Shield</button>
-          <button class="type-tab active" data-vtype="strato">🗻<br>Strato</button>
-          <button class="type-tab" data-vtype="caldera">🕳️<br>Caldera</button>
-          <button class="type-tab" data-vtype="super">💥<br>Super</button>
+          <button class="type-tab" data-vtype="shield">Shield<br><span style="font-size:0.58rem;opacity:0.8">Edifice</span></button>
+          <button class="type-tab active" data-vtype="strato">Strato<br><span style="font-size:0.58rem;opacity:0.8">Cone</span></button>
+          <button class="type-tab" data-vtype="caldera">Caldera<br><span style="font-size:0.58rem;opacity:0.8">Complex</span></button>
+          <button class="type-tab" data-vtype="super">Resurgent<br><span style="font-size:0.58rem;opacity:0.8">Caldera</span></button>
         </div>
       </div>
       <div class="vs-card">
-        <h3>Eruption Controls</h3>
-        <p style="font-size:0.75rem;line-height:1.5;color:#dfc4aa">Lava advances while you watch. Lower viscosity lets it spread faster; hollows collect pools. Stop the supply to watch it cool. Moving the timeline backward clears the deposits.</p>
+        <h3>Dynamic Eruption Parameters</h3>
+        <p style="font-size:0.75rem;line-height:1.5;color:#dfc4aa">Numerical boundary conditions for shallow-layer mass conservation and cooling. Adjust parameters to test non-linear interactions between discharge rate, melt viscosity, and convective plume stability.</p>
         <p id="lava-flow-status" style="font-size:0.72rem;color:#f0c080">No lava deposited yet.</p>
-        <p style="font-size:0.68rem;line-height:1.5;color:#dfc4aa">Illustrative terrain-and-cooling model, with accelerated time. Flow routes and cell counts are not historical measurements or hazard predictions.</p>
+        <p style="font-size:0.68rem;line-height:1.5;color:#dfc4aa">Illustrative shallow-layer terrain-and-cooling solver with accelerated time. Inundation pathways and grid cells represent numerical model states, not empirical field boundaries.</p>
         <div class="param-row">
-          <div class="param-label">Eruption Intensity <strong id="v-intensity">0%</strong></div>
+          <div class="param-label">Mass Discharge Intensity (Ṁ) <strong id="v-intensity">0%</strong></div>
           <input type="range" id="s-intensity" data-range-skin="native" aria-label="Illustrative eruption intensity" min="0" max="100" value="0" />
-          <div class="range-ends"><span>Dormant</span><span>Maximum</span></div>
+          <div class="range-ends"><span>Quiescent (0%)</span><span>Climactic (100%)</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Column Height <strong id="v-column">27 km</strong></div>
+          <div class="param-label">Plinian Column Height (Ht) <strong id="v-column">27 km</strong></div>
           <input type="range" id="s-column" data-range-skin="native" aria-label="Illustrative plume height" min="1" max="45" value="27" />
-          <div class="range-ends"><span>1 km</span><span>45 km</span></div>
+          <div class="range-ends"><span>1 km (Tropospheric)</span><span>45 km (Stratospheric)</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Lava Viscosity <strong id="v-viscosity">Dacite</strong></div>
+          <div class="param-label">Magma Rheology &amp; Viscosity (η) <strong id="v-viscosity">Dacite</strong></div>
           <input type="range" id="s-viscosity" data-range-skin="native" aria-label="Illustrative viscosity" min="0" max="100" value="70" step="1" />
-          <div class="range-ends"><span>Basalt (fluid)</span><span>Rhyolite (thick)</span></div>
+          <div class="range-ends"><span>Basalt (48–52% SiO₂)</span><span>Rhyolite (69–77% SiO₂)</span></div>
         </div>
         <div class="param-row">
-          <div class="param-label">Pyroclastic Flow <strong id="v-pyro">0%</strong></div>
+          <div class="param-label">Pyroclastic Current Activity <strong id="v-pyro">0%</strong></div>
           <input type="range" id="s-pyro" data-range-skin="native" aria-label="Illustrative pyroclastic activity" min="0" max="100" value="0" />
-          <div class="range-ends"><span>None</span><span>Full surge</span></div>
+          <div class="range-ends"><span>Buoyant Plume (0%)</span><span>Column Collapse (100%)</span></div>
         </div>
       </div>
       <div class="vs-card">
-        <h3>Subsurface Magma Plumbing</h3>
-        <p id="conduit-card-desc">Compare reconstructed edifices, crystal-rich reservoirs and schematic sheets. Pressure is a density model, not chamber overpressure.</p>
+        <h3>Subsurface Magmatic Plumbing &amp; Petrology</h3>
+        <p id="conduit-card-desc">Petrological model of crustal storage, transcrustal mush reservoirs, and feeder sheet geometries. Pressure represents lithostatic overburden (ρgz); buoyancy reflects crustal density contrast.</p>
         <div class="stat-grid" style="margin-bottom: 0.75rem;">
           <div class="stat-card"><div class="stat-lbl">Chamber Depth</div><div class="stat-val lava" id="card-ch-depth">7.5 km</div></div>
-          <div class="stat-card"><div class="stat-lbl">Rock pressure model</div><div class="stat-val high" id="card-ch-pressure">—</div></div>
-          <div class="stat-card"><div class="stat-lbl">Reservoir model</div><div class="stat-val medium" id="card-ch-vol">—</div></div>
-          <div class="stat-card"><div class="stat-lbl">Host Crust</div><div class="stat-val low" id="card-ch-host">Carbonate</div></div>
+          <div class="stat-card"><div class="stat-lbl">Lithostatic Stress</div><div class="stat-val high" id="card-ch-pressure">—</div></div>
+          <div class="stat-card"><div class="stat-lbl">Reservoir Volume</div><div class="stat-val medium" id="card-ch-vol">—</div></div>
+          <div class="stat-card"><div class="stat-lbl">Host Country Rock</div><div class="stat-val low" id="card-ch-host">Carbonate</div></div>
         </div>
-        <p>Exploration keyboard: focus the cutaway, use arrow keys to move the brush, then Space to apply the selected tool. Undo reverses a stroke.</p><div id="cutaway-notes" aria-label="Cutaway notes and evidence"></div>
-        <button type="button" class="btn-toggle-cutaway" id="btn-toggle-cutaway" style="width: 100%; padding: 0.6rem; background: linear-gradient(135deg, #e05010, #ff8030); color: #fff; border: 1px solid rgba(255,160,80,0.5); border-radius: 8px; font-weight: 700; font-size: 0.76rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.15s;">🔬 View Subsurface Magma Cutaway</button>
+        <p>Exploration keyboard: focus the cutaway, use arrow keys to navigate the brush, then Space to apply the selected plumbing tool. Undo reverses the stroke.</p><div id="cutaway-notes" aria-label="Cutaway notes and evidence"></div>
+        <button type="button" class="btn-toggle-cutaway" id="btn-toggle-cutaway" style="width: 100%; padding: 0.6rem; background: linear-gradient(135deg, #e05010, #ff8030); color: #fff; border: 1px solid rgba(255,160,80,0.5); border-radius: 8px; font-weight: 700; font-size: 0.76rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.15s;">🔬 Inspect Subsurface Magma Conduit Cutaway</button>
       </div>
       <div class="vs-card">
-        <h3>Evidence and model outputs</h3>
-        <p>Historical estimates describe the whole event, not the current animation frame. Unavailable means this lesson has no supported value.</p>
+        <h3>Observable Metrics &amp; Physical Outputs</h3>
+        <p>Historical values cite published volcanological field literature and satellite observations. Metrics not constrained by peer-reviewed literature are marked unavailable.</p>
         <div class="stat-grid">
-          <div class="stat-card"><div class="stat-lbl">Ejecta Vol.</div><div class="stat-val high" id="out-ejecta">1.2 km³</div></div>
-          <div class="stat-card"><div class="stat-lbl">Temp (°C)</div><div class="stat-val lava" id="out-temp">1 050°C</div></div>
-          <div class="stat-card"><div class="stat-lbl">Column</div><div class="stat-val medium" id="out-col">18 km</div></div>
-          <div class="stat-card"><div class="stat-lbl">SO₂ Output</div><div class="stat-val high" id="out-so2">2.4 Mt</div></div>
-          <div class="stat-card"><div class="stat-lbl">Ash Radius</div><div class="stat-val medium" id="out-ash">320 km</div></div>
-          <div class="stat-card"><div class="stat-lbl">VEI</div><div class="stat-val extreme" id="out-vei">5</div></div>
+          <div class="stat-card"><div class="stat-lbl">Ejecta Volume</div><div class="stat-val high" id="out-ejecta">1.2 km³</div></div>
+          <div class="stat-card"><div class="stat-lbl">Magma Temp (°C)</div><div class="stat-val lava" id="out-temp">1 050°C</div></div>
+          <div class="stat-card"><div class="stat-lbl">Plume Height</div><div class="stat-val medium" id="out-col">18 km</div></div>
+          <div class="stat-card"><div class="stat-lbl">Stratospheric SO₂</div><div class="stat-val high" id="out-so2">2.4 Mt</div></div>
+          <div class="stat-card"><div class="stat-lbl">Tephra Radius</div><div class="stat-val medium" id="out-ash">320 km</div></div>
+          <div class="stat-card"><div class="stat-lbl">VEI Index</div><div class="stat-val extreme" id="out-vei">5</div></div>
         </div>
         <p id="readout-note"></p>
-        <details open><summary>Lava conservation evidence</summary>
+        <details open><summary>Mass Conservation &amp; Computational Diagnostics</summary>
           <p id="lava-diagnostics"></p>
-          <p>Model units only. Stored volume includes cold crust. Boundaries retain lava; no outflow or erosion is modeled. Balance error = supplied − stored. Scrubbing backward or changing mode/event resets deposits; scrubbing forward does not reconstruct earlier deposits.</p>
-          <p>Predict: will a thinner flow cool sooner? Test in exploration mode, stop the supply, then compare hot cells with covered cells.</p>
+          <p>Model computational units. Stored volume includes solidified crust. Grid boundaries retain fluid; no regional erosion or outside outflow is simulated. Balance error = supplied mass − stored mass. Reversing timeline position or altering event presets reinitializes deposits.</p>
+          <p>Inquiry prompt: Does higher surface-area-to-volume ratio accelerate conductive heat loss? Test in exploration mode by matching discharge and comparing active hot cells versus insulated crust.</p>
         </details>
 
         <!-- VEI bar -->
@@ -959,26 +1195,355 @@
     </aside>
 
   </section><figure id="vol-print-still" data-zoomable hidden><img alt="Selected volcano model at the current sequence position"><figcaption></figcaption></figure><article class="vol-lesson" data-glossary-root>
-<h2>What makes an eruption explosive?</h2>
-<p>Predict how magma will behave, test one change at a time, then explain your evidence. You will compare eruption styles, interpret VEI, and separate historical evidence from model outputs.</p>
-<p><span data-glossary="viscosity">Viscosity</span> means resistance to flow. More silica generally makes molten magma more viscous; cooler magma and more crystals also resist flow. Gas can escape more readily from fluid magma. In viscous magma, trapped gas can expand and fragment the melt during ascent. Chemistry alone does not determine an eruption.</p>
-<p>Choose Exploration to unlock the viscosity slider. The slider changes illustrative flow resistance; it does not calculate silica chemistry or gas pressure. A <span data-glossary="shield volcano">shield volcano</span> grows mostly from fluid lava; a <span data-glossary="stratovolcano">stratovolcano</span> builds layers of lava and fragmented material. A <span data-glossary="caldera">caldera</span> is a large depression formed when the ground collapses after magma withdrawal.</p>
-<h2>The VEI scale</h2>
-<p>The <span data-glossary="VEI">Volcanic Explosivity Index (VEI)</span> describes explosive eruptions using ejecta volume and other evidence. From VEI 2 upward, successive volume bands increase by about ten times. VEI 0–1 have different thresholds. VEI is not a death toll, a lava-flow speed, or a forecast. Compare the colored VEI bar with the historical ejecta estimate; bulk <span data-glossary="tephra">tephra</span> (fragmented erupted rock) and dense-rock-equivalent volumes are different measures.</p>
-<h2>Volcanic hazards reach beyond lava</h2>
-<p>Ashfall can damage lungs, machinery and roofs. A <span data-glossary="pyroclastic density current">pyroclastic density current</span> is a fast, ground-hugging mixture of hot gas and particles. A <span data-glossary="lahar">lahar</span> mixes water with volcanic sediment and can travel down valleys long after an eruption. Krakatoa’s 1883 tsunamis caused widespread deaths; a lava animation cannot represent that hazard.</p>
-<p>Tambora’s 1815 eruption sent sulfur gases into the stratosphere. Sulfate aerosols reduced incoming sunlight and contributed to the cold conditions of 1816, the “Year Without a Summer,” including crop failures in parts of Europe and North America. Climate effects depend on gas release and atmospheric processes, not just VEI.</p>
-<h2>Investigations: predict → test → explain</h2>
-<div class="investigation"><label for="vol-answer-1"><strong>1. Compare historical events</strong> — Run Mount St. Helens and Mauna Loa through their event sequences. Which hazards differ? Cite one historical estimate and one visual observation; identify which is measured evidence.</label><textarea id="vol-answer-1" name="vol-answer-1" rows="3"></textarea></div>
-<div class="investigation"><label for="vol-answer-2"><strong>2. Change one variable</strong> — In Exploration, predict how viscosity 10 versus 90 will affect spreading. Keep intensity, terrain and observation time the same; reset between trials. Record your prediction, observations and explanation.</label><textarea id="vol-answer-2" name="vol-answer-2" rows="3"></textarea></div>
-<div class="investigation"><label for="vol-answer-3"><strong>3. Cooling evidence</strong> — Predict whether a thin spread-out flow will cool sooner. Stop the supply after each matched trial. Compare hot cells and covered cells, and explain a limitation of this test.</label><textarea id="vol-answer-3" name="vol-answer-3" rows="3"></textarea></div>
-<div class="investigation"><label for="vol-answer-4"><strong>4. Pressure in the cutaway</strong> — Inspect a magma chamber in the cutaway. Predict what reducing rock above it might change. Compare the model diagnostics after editing, then explain why shallower depth alone does not prove higher overpressure: magma pressure, confinement and connections also matter.</label><textarea id="vol-answer-4" name="vol-answer-4" rows="3"></textarea></div>
-<div class="investigation"><label for="vol-answer-5"><strong>5. Transfer and reflection</strong> — Why could a lower-VEI eruption still be dangerous? Use a lahar, tsunami or lava-flow example. What information would you need beyond this model?</label><textarea id="vol-answer-5" name="vol-answer-5" rows="3"></textarea></div>
-<h2>Safety and model limits</h2>
-          <p>This is a classroom model, not an eruption forecast. Real volcanic behavior depends on changing seismic activity, local topography, magma chemistry, groundwater interaction, and meteorological conditions that are simplified here.</p>
-          <p>Phase order follows published geological sources. Radial valley incisions steer ground-hugging pyroclastic flows down ravines; Mount St. Helens illustrates the catastrophic directed lateral blast; Tambora and Krakatoa illustrate summit caldera subsidence; Eyjafjallajökull includes ice cap retreat with phreatomagmatic steam generation; and atmospheric wind advection drives ash drift.</p>
-          <p>Fine-scale blast dynamics, true debris avalanche mass-wasting, tsunami propagation, lava tube systems, and atmospheric chemical conversion are not numerically simulated. Smoke, ash, and ground particles are educational visualizations, not certified hazard zone boundaries.</p>
-        <p>A <span data-glossary="magma chamber">magma chamber</span> is a subsurface region containing melt, crystals and gas, rather than an empty tank. A <span data-glossary="crystal mush">crystal mush</span> contains crystals and interconnected melt; brighter <span data-glossary="melt lens">melt lenses</span> are schematic. A <span data-glossary="dike">dike</span> cuts across rock layers; a <span data-glossary="sill">sill</span> runs along them. <span data-glossary="exsolution">Exsolution</span> releases dissolved gas; the <span data-glossary="fragmentation level">fragmentation level</span> marks where ascending magma breaks into particles. A <span data-glossary="cryptodome">cryptodome</span> is an intrusion inside a volcanic edifice. <span data-glossary="dense rock equivalent">DRE</span> removes pore space from erupted volume estimates. The <span data-glossary="vertical exaggeration">vertical exaggeration</span> label gives the ratio of vertical to horizontal scale. Rock pressure uses ρgz with crust density 2,700 kg/m³; column buoyancy uses a 250 kg/m³ density contrast. Neither is chamber overpressure. All geometry, colours, zone depths and stage interpolation are teaching assumptions. Melt fractions are source estimates only where marked inferred; elsewhere they are illustrative. Reservoir and melt volumes use a 3D spheroid model, except the dated Yellowstone seismic volumes. Erupted DRE is independently estimated from deposits; unavailable values remain unavailable. Use official observatory information for real hazards.</p><p>Sources: <a href="https://www.usgs.gov/programs/VHP/volcanic-hazards">USGS volcanic hazards</a>; <a href="https://www.usgs.gov/faqs/do-volcanoes-affect-weather">USGS volcanoes and climate</a>. Event-specific sources appear above.</p></article></div></main><!-- .ll-stage -->
+    <header class="academic-header">
+      <div class="academic-badge-row">
+        <span class="academic-chip">Earth &amp; Planetary Sciences</span>
+        <span class="academic-chip">Physical Volcanology</span>
+        <span class="academic-chip">Igneous Petrology</span>
+        <span class="academic-chip">NGSS HS-ESS2-1 / HS-ESS2-2</span>
+        <span class="academic-chip">Fluid Mechanics</span>
+      </div>
+      <h2>Physical Volcanology: Magmatic Dynamics, Conduit Hydraulics, &amp; Eruption Physics</h2>
+      <p class="academic-lead">Volcanic eruptions represent the surface expression of fundamental planetary heat-transfer and crustal differentiation mechanisms. This laboratory investigates the non-linear coupling between silicate melt petrology, volatile thermodynamics, transcrustal storage geomechanics, and buoyant atmospheric plume dispersion.</p>
+    </header>
+
+    <h2>1. Magma Petrology, Silicate Polymerization, &amp; Rheology</h2>
+    <p>The eruptive behavior of molten silicate systems is primarily governed by <span data-glossary="viscosity">viscosity</span> (&eta;), which quantifies a fluid's internal resistance to shear strain. At the molecular scale, silicate melts are composed of silicon-oxygen tetrahedra ([SiO<sub>4</sub>]<sup>4&minus;</sup>) linked via bridging oxygens into complex three-dimensional polymeric networks.</p>
+    <p>Network-forming cations (principally Si<sup>4+</sup> and Al<sup>3+</sup>) heighten the degree of polymerization, sharply increasing shear viscosity. Conversely, network-modifying cations (such as Fe<sup>2+</sup>, Mg<sup>2+</sup>, Ca<sup>2+</sup>, Na<sup>+</sup>, and K<sup>+</sup>) disrupt bridging bonds, creating non-bridging oxygens (NBO/T ratio) and lowering viscosity by multiple orders of magnitude.</p>
+
+    <div class="petrology-table-wrap">
+      <table class="petrology-table">
+        <thead>
+          <tr>
+            <th scope="col">Magma Type</th>
+            <th scope="col">SiO₂ (wt%)</th>
+            <th scope="col">Temperature (°C)</th>
+            <th scope="col">Viscosity (Pa·s)</th>
+            <th scope="col">Dissolved H₂O (wt%)</th>
+            <th scope="col">Eruptive Style</th>
+            <th scope="col">Typical Edifice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Basaltic</th>
+            <td>45–52%</td>
+            <td>1,100–1,250°C</td>
+            <td>10¹–10²</td>
+            <td>0.5–2.0%</td>
+            <td>Effusive; fire fountaining; Hawaiian flows</td>
+            <td><span data-glossary="shield volcano">Shield volcano</span>, fissure systems</td>
+          </tr>
+          <tr>
+            <th scope="row">Andesitic</th>
+            <td>52–63%</td>
+            <td>950–1,100°C</td>
+            <td>10³–10⁵</td>
+            <td>2.0–4.5%</td>
+            <td>Strombolian to Vulcanian; blocky lavas</td>
+            <td><span data-glossary="stratovolcano">Stratovolcano</span> (Composite cone)</td>
+          </tr>
+          <tr>
+            <th scope="row">Dacitic</th>
+            <td>63–69%</td>
+            <td>800–1,000°C</td>
+            <td>10⁵–10⁷</td>
+            <td>3.5–6.0%</td>
+            <td>Sub-Plinian to Plinian; domes &amp; PDCs</td>
+            <td>Composite cone, lava dome complex</td>
+          </tr>
+          <tr>
+            <th scope="row">Rhyolitic</th>
+            <td>69–77%</td>
+            <td>700–850°C</td>
+            <td>10⁷–10¹¹</td>
+            <td>4.0–7.5%</td>
+            <td>Ultra-Plinian cataclysms; caldera collapse</td>
+            <td><span data-glossary="caldera">Caldera</span> complex, resurgent dome</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Temperature exerts an exponential control on liquid viscosity through Arrhenius and Vogel-Fulcher-Tammann (VFT) thermodynamic relationships. As melt cools during ascent, silica polymerization intensifies while crystal nucleation accelerates. The rheological influence of suspended crystals is described by the <strong>Einstein-Roscoe equation</strong>:</p>
+
+    <div class="equation-box">
+      <div class="eq-title">Constitutive Suspension Rheology (Einstein-Roscoe Equation)</div>
+      <div class="eq-formula">&eta;(&phi;) = &eta;₀ &middot; (1 &minus; &phi; / &phi;<sub>max</sub>)<sup>&minus;2.5</sup></div>
+      <p class="eq-vars"><strong>&eta;(&phi;):</strong> Effective suspension viscosity (Pa&middot;s) &middot; <strong>&eta;₀:</strong> Pure liquid melt viscosity &middot; <strong>&phi;:</strong> Solid crystal volume fraction &middot; <strong>&phi;<sub>max</sub>:</strong> Maximum random packing fraction (~0.55–0.65).</p>
+    </div>
+
+    <p>When the crystal volume fraction &phi; approaches the rheological lock-up threshold (&phi;<sub>max</sub>), crystal-crystal frictional contact transforms the magma into a non-Newtonian Bingham fluid exhibiting a finite yield stress (&tau;₀), effectively immobilizing bulk effusive flow and promoting localized stress accumulation.</p>
+
+    <h2>2. Volatile Thermodynamics, Exsolution, &amp; Magma Fragmentation</h2>
+    <p>Magmas in deep crustal storage reservoirs are volatile-bearing silicate liquids dissolved under extreme lithostatic confinement. The primary dissolved volatile species are water (H₂O), carbon dioxide (CO₂), sulfur dioxide (SO₂), hydrogen sulfide (H₂S), and halogens (HCl, HF). The solubility of water in silicate melts follows <strong>Henry's Law</strong>, scaling with the square root of partial confining pressure:</p>
+
+    <div class="equation-box">
+      <div class="eq-title">Volatile Equilibrium Solubility (Henry's Law for H₂O)</div>
+      <div class="eq-formula">C<sub>H₂O</sub> = K<sub>H</sub> &middot; &radic;P<sub>H₂O</sub></div>
+      <p class="eq-vars"><strong>C<sub>H₂O</sub>:</strong> Dissolved water concentration (wt%) &middot; <strong>K<sub>H</sub>:</strong> Temperature- and composition-dependent solubility constant &middot; <strong>P<sub>H₂O</sub>:</strong> Water vapor partial pressure (MPa).</p>
+    </div>
+
+    <p>During magma ascent through crustal conduits, decreasing lithostatic pressure induces <strong>first boiling</strong> (decompression-driven <span data-glossary="exsolution">exsolution</span>). As volatile solubility drops below the dissolved concentration, volatile molecules diffuse into supercritical fluid bubbles. In contrast, <strong>second boiling</strong> occurs isobarically during crystallization, where anhydrous mineral precipitation enriches the remaining melt in incompatible volatile components until saturation is breached.</p>
+
+    <div class="academic-alert">
+      <strong>The Brittle Fragmentation Criterion (Dingwell, 1996):</strong> An ascending magma fragments explosively when the structural deformation strain rate (&gamma;&#775;) exceeds the viscoelastic structural relaxation rate of the melt. The relaxation time is given by the Maxwell relationship &tau;<sub>r</sub> = &eta; / G<sub>&infin;</sub>, where G<sub>&infin;</sub> &approx; 10<sup>10</sup> Pa is the high-frequency shear modulus. When the <em>Deborah number</em> (De = &gamma;&#775; &middot; &tau;<sub>r</sub>) exceeds the critical threshold (~0.01–0.04), the melt crosses from ductile viscous flow into the brittle elastic failure regime, catastrophically shattering the vesicular foam into airborne pyroclasts at the <span data-glossary="fragmentation level">fragmentation level</span>.
+    </div>
+
+    <h2>3. Conduit Hydraulics, Plinian Plume Dynamics, &amp; Column Collapse</h2>
+    <p>Past the fragmentation level, the flow regime transitions from a bubbly liquid suspension into a highly compressible, supersonic, multiphase gas-particle dispersion. The mixture accelerates rapidly through the volcanic vent, driven by the expansion of exsolved gas into atmospheric pressure (decompression velocities of 150–600 m/s).</p>
+    
+    <p>An explosive volcanic eruption column exhibits three distinct vertical hydrodynamic zones:</p>
+    <ul>
+      <li><strong>Gas-Thrust Jet Region:</strong> Extends from the vent up to 1–3 km. Momentum-dominated; kinetic energy supplied by expanding gases carries the dense gas-particle jet upward while decelerating under gravity and aerodynamic drag.</li>
+      <li><strong>Convective Thrust Region:</strong> Entrainment of cold ambient atmospheric air into the turbulent plume margins. The incandescent tephra transfers thermal energy to the entrained air, causing thermal expansion. The resulting decrease in bulk mixture density below ambient air density generates powerful thermal buoyancy, lifting the convective column into the stratosphere.</li>
+      <li><strong>Umbrella Cloud / Neutral Buoyancy Level (NBL):</strong> At the stratospheric ceiling where plume density matches the ambient stratified atmosphere, vertical ascent ceases. Excess momentum causes slight overshoot, followed by massive lateral gravitational spreading as a radially expanding umbrella cloud.</li>
+    </ul>
+
+    <div class="equation-box">
+      <div class="eq-title">Plinian Column Height Scaling (Sparks, 1986; Morton et al., 1956)</div>
+      <div class="eq-formula">H<sub>t</sub> = 1.67 &middot; M&#775;<sup>0.259</sup> &approx; 8.2 &middot; Q<sup>0.25</sup></div>
+      <p class="eq-vars"><strong>H<sub>t</sub>:</strong> Maximum plume column height above vent (km) &middot; <strong>M&#775;:</strong> Total mass eruption discharge rate (kg/s) &middot; <strong>Q:</strong> Thermal energy release rate (GW). Scaling demonstrates that plume ascent into the stratosphere requires sustained mass discharge rates exceeding 10⁷–10⁸ kg/s.</p>
+    </div>
+
+    <p>If the mass eruption discharge rate (M&#775;) is too elevated relative to vent radius, or if the initial volatile gas mass fraction is insufficient to sustain air entrainment, convective buoyancy fails to develop. The dense column becomes gravitationally unstable and collapses back toward the edifice, generating high-velocity (&gt;30–150 m/s), high-temperature (300–800°C) ground-hugging <span data-glossary="pyroclastic density current">pyroclastic density currents (PDCs)</span> that incinerate and destroy topography down radial valleys.</p>
+
+    <h2>4. The Volcanic Explosivity Index (VEI) &amp; Quantitative Deposit Metrics</h2>
+    <p>The <span data-glossary="VEI">Volcanic Explosivity Index (VEI)</span>, formulated by Newhall and Self (1982), establishes an open-ended logarithmic scale to quantify the magnitude and intensity of explosive volcanic eruptions based on physical deposit parameters:</p>
+
+    <div class="petrology-table-wrap">
+      <table class="petrology-table">
+        <thead>
+          <tr>
+            <th scope="col">VEI</th>
+            <th scope="col">Ejecta Volume (Tephra)</th>
+            <th scope="col">Plume Height (H<sub>t</sub>)</th>
+            <th scope="col">Eruptive Classification</th>
+            <th scope="col">Eruption Duration</th>
+            <th scope="col">Atmospheric Injection</th>
+            <th scope="col">Benchmark Event</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">0</th>
+            <td>&lt; 10,000 m³</td>
+            <td>&lt; 100 m</td>
+            <td>Hawaiian (non-explosive)</td>
+            <td>Continuous / Days</td>
+            <td>Boundary layer only</td>
+            <td>Kīlauea (routine)</td>
+          </tr>
+          <tr>
+            <th scope="row">1</th>
+            <td>10,000 – 100,000 m³</td>
+            <td>100 m – 1 km</td>
+            <td>Hawaiian / Strombolian</td>
+            <td>&lt; 1 hour</td>
+            <td>Lower troposphere</td>
+            <td>Mauna Loa (2022)</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td>0.001 – 0.01 km³</td>
+            <td>1 – 5 km</td>
+            <td>Strombolian / Vulcanian</td>
+            <td>1 – 6 hours</td>
+            <td>Mid troposphere</td>
+            <td>Galeras (1993)</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td>0.01 – 0.1 km³</td>
+            <td>3 – 15 km</td>
+            <td>Vulcanian / Sub-Plinian</td>
+            <td>1 – 12 hours</td>
+            <td>Upper troposphere</td>
+            <td>Nevado del Ruiz (1985)</td>
+          </tr>
+          <tr>
+            <th scope="row">4</th>
+            <td>0.1 – 1.0 km³</td>
+            <td>10 – 25 km</td>
+            <td>Sub-Plinian / Plinian</td>
+            <td>1 – 24 hours</td>
+            <td>Tropopause breach</td>
+            <td>Eyjafjallajökull (2010)</td>
+          </tr>
+          <tr>
+            <th scope="row">5</th>
+            <td>1 – 10 km³</td>
+            <td>20 – 35 km</td>
+            <td>Plinian (Catastrophic)</td>
+            <td>6 – 24 hours</td>
+            <td>Stratospheric injection</td>
+            <td>Mt. St. Helens (1980), Vesuvius (79 AD)</td>
+          </tr>
+          <tr>
+            <th scope="row">6</th>
+            <td>10 – 100 km³</td>
+            <td>&gt; 30 km</td>
+            <td>Plinian / Ultra-Plinian</td>
+            <td>12 – 48 hours</td>
+            <td>Substantial stratospheric</td>
+            <td>Krakatoa (1883), Pinatubo (1991)</td>
+          </tr>
+          <tr>
+            <th scope="row">7</th>
+            <td>100 – 1,000 km³</td>
+            <td>&gt; 40 km</td>
+            <td>Ultra-Plinian (Super-colossal)</td>
+            <td>Days</td>
+            <td>Global stratospheric</td>
+            <td>Tambora (1815)</td>
+          </tr>
+          <tr>
+            <th scope="row">8</th>
+            <td>&gt; 1,000 km³</td>
+            <td>&gt; 45 km</td>
+            <td>Mega-colossal Super-eruption</td>
+            <td>Weeks</td>
+            <td>Hemispheric / Global forcing</td>
+            <td>Yellowstone (631 ka Lava Creek)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A fundamental distinction exists between bulk tephra deposit volume (which incorporates vesicular pore space, lithic fragments, and interstitial voids) and <strong>Dense Rock Equivalent (DRE)</strong> volume:</p>
+
+    <div class="equation-box">
+      <div class="eq-title">Dense Rock Equivalent Normalization (DRE)</div>
+      <div class="eq-formula">V<sub>DRE</sub> = V<sub>bulk</sub> &middot; (&rho;<sub>deposit</sub> / &rho;<sub>dense</sub>)</div>
+      <p class="eq-vars"><strong>V<sub>DRE</sub>:</strong> Equivalent degassed, bubble-free magma volume (km³) &middot; <strong>V<sub>bulk</sub>:</strong> Measured field deposit volume of tephra &middot; <strong>&rho;<sub>deposit</sub>:</strong> Bulk deposit density (~800–1,200 kg/m³) &middot; <strong>&rho;<sub>dense</sub>:</strong> Equivalent dense silicate rock density (~2,400–2,700 kg/m³).</p>
+    </div>
+
+    <h2>5. Transcrustal Magmatic Systems (TCMS) &amp; Chamber Geomechanics</h2>
+    <p>Modern petrological and seismic imaging has retired the simplistic view of a <span data-glossary="magma chamber">magma chamber</span> as an isolated, liquid-filled subterranean cavern. Current research (Cashman, Sparks &amp; Blundy, 2017) conceptualizes volcanoes as underlain by vertically extensive <strong>Transcrustal Magmatic Systems (TCMS)</strong>.</p>
+    <p>These systems are dominated by rigid, immobile <span data-glossary="crystal mush">crystal mush</span> bodies containing 50–85% crystalline framework and interconnected melt. Eruptible magma accumulates in ephemeral, high-melt-fraction <span data-glossary="melt lens">melt lenses</span> (&gt;50% melt) through crystal settling, compaction filter-pressing, or basaltic recharge from the lower crust and mantle.</p>
+
+    <div class="equation-box">
+      <div class="eq-title">Crustal Lithostatic Overburden &amp; Chamber Rupture Mechanics</div>
+      <div class="eq-formula">P<sub>lith</sub>(z) = &rho;<sub>crust</sub> &middot; g &middot; z</div>
+      <div class="eq-formula">&Delta;P<sub>chamber</sub> = P<sub>magma</sub> &minus; P<sub>lith</sub> &ge; &sigma;₃ + T₀</div>
+      <p class="eq-vars"><strong>P<sub>lith</sub>:</strong> Lithostatic confining stress (MPa) &middot; <strong>&rho;<sub>crust</sub>:</strong> Host rock density (~2,700 kg/m³) &middot; <strong>z:</strong> Depth below datum (km) &middot; <strong>&Delta;P<sub>chamber</sub>:</strong> Magmatic chamber overpressure &middot; <strong>&sigma;₃:</strong> Minimum horizontal tectonic compressive stress &middot; <strong>T₀:</strong> Host rock tensile strength (typically 1–10 MPa for fractured upper crust).</p>
+    </div>
+
+    <p>When magma replenishment, bubble exsolution, or crustal extension causes chamber overpressure &Delta;P<sub>chamber</sub> to exceed the Griffith tensile failure criterion, elastic wall rock ruptures. Tensile fractures propagate upward as vertical tabular sheets called <span data-glossary="dike">dikes</span> or intrude horizontally along bedding planes as <span data-glossary="sill">sills</span>. At Mount St. Helens in spring 1980, ascending dacite intruded the volcanic edifice itself, forming an overpressured shallow <span data-glossary="cryptodome">cryptodome</span> whose displacement destabilized the north flank.</p>
+
+    <h2>6. Volcanic Geohazards, Stratospheric Aerosols, &amp; Climate Forcing</h2>
+    <p>The destructive footprint of volcanic eruptions encompasses primary proximal hazards, secondary regional processes, and global atmospheric perturbations:</p>
+    <ul>
+      <li><strong>Pyroclastic Density Currents (PDCs):</strong> Gravity-driven fluidized mixtures of gas, pumice, ash, and lithics. PDCs maintain dynamic pressures (&frac12;&rho;v²) capable of demolishing concrete structures, while internal temperatures of 300–800°C cause instantaneous thermal asphyxiation and charring.</li>
+      <li><strong>Volcanic Debris Avalanches &amp; Lateral Blasts:</strong> Catastrophic structural edifice failure. On May 18, 1980, a M 5.1 earthquake triggered the collapse of Mount St. Helens' north flank (2.5 km³ of debris rock), depressurizing the cryptodome and releasing a supersonic directed lateral blast across 600 km².</li>
+      <li><strong>Lahars (Volcanic Mudflows):</strong> Hyperconcentrated flows of volcanic debris mobilized by rainfall, crater lake breach, or melting snowpack. A <span data-glossary="lahar">lahar</span> behaves as non-Newtonian slurry with densities up to 2,000 kg/m³, traveling dozens of kilometers down river drainages decades after an eruption.</li>
+      <li><strong>Volcanogenic Tsunamis:</strong> Triggered by submarine caldera collapse, pyroclastic current impact into the sea, or coastal edifice landslides. During the August 27, 1883 eruption of Krakatoa, caldera collapse into the Sunda Strait generated tsunamis exceeding 40 meters in height, accounting for over 36,000 fatalities.</li>
+    </ul>
+
+    <h3>Atmospheric Chemistry &amp; Stratospheric Aerosol Radiative Forcing</h3>
+    <p>While coarse tephra and soluble acidic gases (HCl, HF) are scrubbed from the lower troposphere within days to weeks by precipitation, explosive Plinian columns that breach the tropopause inject millions of tons of sulfur dioxide (SO₂) directly into the dry stratosphere.</p>
+    <p>In the stratosphere, SO₂ undergoes gas-phase photochemical oxidation via hydroxyl radicals (&bull;OH):</p>
+    <p style="text-align: center; font-family: monospace; font-size: 0.95rem; color: #ffc48c;">SO₂ + &bull;OH + M &rarr; HSO₃ + M &nbsp;&bull;&nbsp; HSO₃ + O₂ &rarr; SO₃ + HO₂ &nbsp;&bull;&nbsp; SO₃ + H₂O &rarr; H₂SO₄</p>
+    <p>The resulting submicron sulfuric acid-water aerosol droplets (H₂SO₄–H₂O) have an e-folding atmospheric residence time of 1 to 3 years. These stratospheric aerosols increase planetary albedo by scattering incoming shortwave solar radiation back to space, producing negative global radiative forcing (&Delta;F). Following the 1815 eruption of Mount Tambora (&approx;60 Mt SO₂), global surface temperatures dropped by &approx;1.0–1.5°C, resulting in the infamous 1816 &ldquo;Year Without a Summer&rdquo; marked by agricultural collapse and famine across Eurasia and North America. Similarly, Mount Pinatubo's 1991 eruption injected &approx;20 Mt SO₂, cooling global climate by &approx;0.5°C for over two years.</p>
+
+    <h2>7. Structured Scientific Investigations (CER Inquiry Protocol)</h2>
+    <p>Execute the following controlled experimental investigations in the simulation workspace. Formulate a testable hypothesis, collect quantitative data, and structure your scientific arguments using the <strong>Claim &ndash; Evidence &ndash; Reasoning (CER)</strong> framework.</p>
+
+    <!-- Investigation 1 -->
+    <div class="cer-card">
+      <h3>Investigation 1: Petrological &amp; Rheological Controls on Eruptive Dynamism</h3>
+      <div class="investigation-meta">
+        <span class="cer-tag">Independent Variable: Magma Composition &amp; Silica Content</span>
+        <span class="cer-tag">Dependent Variable: Eruption Column Height &amp; Explosivity</span>
+        <span class="cer-tag">Controlled: Planetary Gravity, Atmospheric Density</span>
+      </div>
+      <p>Compare the eruptive sequences of <strong>Mauna Loa (2022)</strong> and <strong>Mount St. Helens (1980)</strong>. Analyze why their eruptive styles diverge so dramatically despite similar total thermal budgets. Collect quantitative values for maximum column height (H<sub>t</sub>), ejecta volume, and magma temperature.</p>
+      <label for="vol-answer-1">Synthesize your Claim, Evidence, and Reasoning (CER):</label>
+      <textarea id="vol-answer-1" name="vol-answer-1" rows="4" placeholder="Claim: State how magma chemistry controls eruptive dynamism...&#10;Evidence: Cite specific quantitative metrics (column height, ejecta volume, VEI) from the simulation readouts...&#10;Reasoning: Apply silicate polymerization, viscosity (Einstein-Roscoe), and volatile exsolution mechanics to explain the observations..."></textarea>
+      <div class="cer-rubric">Evaluation Rubric: Claim explicitly connects SiO₂ content to eruptive style; Evidence cites measured field values vs. model inputs; Reasoning links molecular silicate network bridging to brittle fragmentation.</div>
+    </div>
+
+    <!-- Investigation 2 -->
+    <div class="cer-card">
+      <h3>Investigation 2: Parametric Rheology &amp; Non-Linear Lateral Flow Spreading</h3>
+      <div class="investigation-meta">
+        <span class="cer-tag">Investigation Mode: Exploration</span>
+        <span class="cer-tag">Independent Variable: Viscosity Index (10 vs. 90)</span>
+        <span class="cer-tag">Dependent Variable: Lateral Advance Velocity &amp; Cell Coverage</span>
+        <span class="cer-tag">Controlled: Discharge Rate (50%), Observation Duration (60 s), Edifice Topography</span>
+      </div>
+      <p>Switch to <em>Parametric Exploration</em> mode. Keep Mass Discharge Intensity constant at 50% and Edifice at Stratovolcano. Run Trial A with Viscosity = 10 (basaltic equivalent) for 60 seconds; record covered cells and maximum flow thickness. Reset the simulation and run Trial B with Viscosity = 90 (rhyolitic equivalent) for 60 seconds.</p>
+      <label for="vol-answer-2">Synthesize your Claim, Evidence, and Reasoning (CER):</label>
+      <textarea id="vol-answer-2" name="vol-answer-2" rows="4" placeholder="Hypothesis &amp; Prediction: State your anticipated advance velocity differential...&#10;Observation Data: Record quantitative covered cell counts, hot cell counts, and thickness for both trials...&#10;Physical Explanation: Explain why shear stress distribution in laminar flow limits the lateral advance of high-viscosity silicic melts..."></textarea>
+      <div class="cer-rubric">Evaluation Rubric: Accurately records cell diagnostics; identifies non-linear spreading behavior; applies Navier-Stokes gravity-current fluid dynamics to explain deposit ponding.</div>
+    </div>
+
+    <!-- Investigation 3 -->
+    <div class="cer-card">
+      <h3>Investigation 3: Thermal Diffusion &amp; Crust Consolidation (Stefan Problem)</h3>
+      <div class="investigation-meta">
+        <span class="cer-tag">Independent Variable: Deposit Geometry / Flow Thickness</span>
+        <span class="cer-tag">Dependent Variable: Crust Solidification &amp; Hot Cell Decay Rate</span>
+        <span class="cer-tag">Physics: Conductive Thermal Diffusion (Stefan's Problem)</span>
+      </div>
+      <p>Predict whether a thin, broadly spread sheet flow or a thick, ponded caldera lava pool will retain molten core temperatures longer once eruptive supply ceases. In Exploration mode, generate deposits, terminate supply (Intensity = 0%), and track the ratio of active hot cells to insulated covered cells over time in the conservation diagnostics drawer.</p>
+      <label for="vol-answer-3">Synthesize your Claim, Evidence, and Reasoning (CER):</label>
+      <textarea id="vol-answer-3" name="vol-answer-3" rows="4" placeholder="Claim: Formulate a conclusion regarding cooling rate as a function of surface-area-to-volume ratio...&#10;Evidence: Cite the rate of hot cell decay vs. total covered cell count...&#10;Limitation Analysis: Identify key assumptions of the computational model (e.g. 2D grid resolution, radiation vs. conduction, lack of rainfall or vesicular crust modeling)..."></textarea>
+      <div class="cer-rubric">Evaluation Rubric: References surface-area-to-volume scaling; correctly identifies conductive heat loss physics; articulates numerical modeling limitations.</div>
+    </div>
+
+    <!-- Investigation 4 -->
+    <div class="cer-card">
+      <h3>Investigation 4: Crustal Geomechanics &amp; Conduit Hydraulics in the Cutaway</h3>
+      <div class="investigation-meta">
+        <span class="cer-tag">View: Subsurface Magma Conduit Cutaway</span>
+        <span class="cer-tag">Concepts: Lithostatic Overburden (&rho;gz), Buoyancy Overpressure (&Delta;P)</span>
+        <span class="cer-tag">Petrology: Transcrustal Mush &amp; Country Rock Confinement</span>
+      </div>
+      <p>Open the <em>Subsurface Magma Conduit Cutaway</em>. Inspect the storage reservoir depth, lithostatic confining stress, and buoyancy pressure for Mount Vesuvius (7.5 km depth in carbonate host rock) versus Eyjafjallajökull (4.8 km depth in oceanic basalt). In Exploration mode, use the bedrock eraser to reduce the crustal overburden thickness above a reservoir.</p>
+      <label for="vol-answer-4">Synthesize your Claim, Evidence, and Reasoning (CER):</label>
+      <textarea id="vol-answer-4" name="vol-answer-4" rows="4" placeholder="Claim: Address whether decreasing overburden depth alone guarantees higher eruptive overpressure...&#10;Evidence: Record diagnostic readouts for lithostatic confining stress (MPa) and buoyancy before and after modifying crustal geometry...&#10;Reasoning: Explain the mechanical distinction between lithostatic confining stress, magma buoyancy, volatile exsolution pressure, and tectonic confinement..."></textarea>
+      <div class="cer-rubric">Evaluation Rubric: Distinguishes lithostatic overburden stress from chamber overpressure; explains how decompression triggers volatile exsolution; cites the Griffith rupture criterion.</div>
+    </div>
+
+    <!-- Investigation 5 -->
+    <div class="cer-card">
+      <h3>Investigation 5: Multi-Hazard Synthesis &amp; Climate Forcing Analysis</h3>
+      <div class="investigation-meta">
+        <span class="cer-tag">Synthesis Task: Geohazards, Atmospheric Chemistry, &amp; Risk</span>
+        <span class="cer-tag">Case Studies: Eyjafjallajökull (2010, VEI 4) vs. Tambora (1815, VEI 7)</span>
+      </div>
+      <p>Evaluate why an eruption with a moderate Volcanic Explosivity Index (such as Eyjafjallajökull 2010, VEI 4) can trigger international economic disruption paralyzing airspace across Europe, whereas a high-VEI basaltic eruption might cause localized devastation. Compare the atmospheric dispersal of silicate glass shards versus stratospheric sulfur injection and global climate forcing.</p>
+      <label for="vol-answer-5">Synthesize your Claim, Evidence, and Reasoning (CER):</label>
+      <textarea id="vol-answer-5" name="vol-answer-5" rows="4" placeholder="Claim: Synthesize why VEI magnitude alone is insufficient to evaluate total systemic volcanic risk...&#10;Evidence: Compare ejecta volume, SO₂ mass, and grain-size fragmentation characteristics from 2010 Eyjafjallajökull and 1815 Tambora...&#10;Reasoning: Analyze subglacial phreatomagmatic shattering, aviation vulnerability, and stratospheric aerosol optical depth (AOD) mechanics..."></textarea>
+      <div class="cer-rubric">Evaluation Rubric: Differentiates tephra grain size (fine glass shards from fuel-coolant interaction) from total erupted mass; accurately analyzes stratospheric sulfate aerosol radiative forcing.</div>
+    </div>
+
+    <h2>8. Computational Model Architecture &amp; Scientific Limitations</h2>
+    <p>This interactive simulation is designed for university-preparatory physical volcanology education. It balances rigorous fluid dynamics concepts with real-time WebGL rendering performance. Users and researchers must consider the following computational boundary conditions:</p>
+    <ul>
+      <li><strong>Surface Fluid Mechanics:</strong> The terrain lava flow solver implements a shallow-layer, depth-integrated mass conservation model with non-linear temperature-dependent viscosity and radiative-conductive cooling approximations. It does not calculate 3D thermal convection within lava tubes or turbulent Bingham shear yield across non-Newtonian flow lobes.</li>
+      <li><strong>Plume Kinematics:</strong> Particle rendering simulates convective upward thrust, stratospheric shear wind advection, and umbrella cloud spreading. It does not solve the full compressible Navier-Stokes equations with multiphase atmospheric moisture condensation or acoustic shock fronts.</li>
+      <li><strong>Subsurface Cross-Sections:</strong> Geometry, lithological boundaries, and transcrustal storage zones reflect published petrological and seismic inversion literature (e.g. Scaillet et al., Self et al., Huang et al.). However, 2D cross-sections represent schematic structural slices; depths are referenced to local surface datum or sea level without regional geoid corrections.</li>
+      <li><strong>Real-Time Hazard Safety Notice:</strong> Simulation outputs are educational models, not certified real-time hazard forecasts. During active volcanic crises, consult authoritative monitoring agencies: the <strong>USGS Volcano Hazards Program</strong>, the <strong>Smithsonian Global Volcanism Program</strong>, the <strong>Istituto Nazionale di Geofisica e Vulcanologia (INGV)</strong>, and the <strong>Icelandic Meteorological Office (IMO)</strong>.</li>
+    </ul>
+
+    <h2>9. Peer-Reviewed Volcanological Bibliography</h2>
+    <ul class="ref-list">
+      <li>Cashman, K. V., Sparks, R. S. J., &amp; Blundy, J. D. (2017). Vertically extensive and unstable magmatic systems. <em>Science</em>, 355(6331), eaag3055. <a href="https://doi.org/10.1126/science.aag3055" target="_blank" rel="noopener">doi:10.1126/science.aag3055</a></li>
+      <li>Dingwell, D. B. (1996). Volcanic dilemma: Flow or blow? <em>Science</em>, 273(5278), 1054–1055. <a href="https://doi.org/10.1126/science.273.5278.1054" target="_blank" rel="noopener">doi:10.1126/science.273.5278.1054</a></li>
+      <li>Gudmundsson, M. T., Thordarson, T., Hoskuldsson, A., et al. (2012). Ash generation and distribution from the April-May 2010 eruption of Eyjafjallajökull, Iceland. <em>Scientific Reports</em>, 2, 572. <a href="https://doi.org/10.1038/srep00572" target="_blank" rel="noopener">doi:10.1038/srep00572</a></li>
+      <li>Huang, H. H., Lin, F. C., Schmandt, B., Farrell, J., Smith, R. B., &amp; Tsai, V. C. (2015). The Yellowstone magmatic system from the mantle plume to the upper crust. <em>Science</em>, 348(6236), 773–776. <a href="https://doi.org/10.1126/science.aaa5648" target="_blank" rel="noopener">doi:10.1126/science.aaa5648</a></li>
+      <li>Mandeville, C. W., Carey, S., &amp; Sigurdsson, H. (1996). Sedimentological constraints on eruptive mechanisms for the 1883 Krakatau eruption. <em>Journal of Volcanology and Geothermal Research</em>, 74(3–4), 243–270. <a href="https://doi.org/10.1016/S0377-0273(96)00062-8" target="_blank" rel="noopener">doi:10.1016/S0377-0273(96)00062-8</a></li>
+      <li>Morton, B. R., Taylor, G. I., &amp; Turner, J. S. (1956). Turbulent gravitational convection from maintained and instantaneous sources. <em>Proceedings of the Royal Society of London A</em>, 234(1196), 1–23. <a href="https://doi.org/10.1098/rspa.1956.0011" target="_blank" rel="noopener">doi:10.1098/rspa.1956.0011</a></li>
+      <li>Newhall, C. G., &amp; Self, S. (1982). The Volcanic Explosivity Index (VEI): An estimate of explosive magnitude for historical eruptions. <em>Journal of Geophysical Research: Oceans</em>, 87(C2), 1231–1238. <a href="https://doi.org/10.1029/JC087iC02p01231" target="_blank" rel="noopener">doi:10.1029/JC087iC02p01231</a></li>
+      <li>Oppenheimer, C. (2003). Climatic, environmental and human consequences of the largest known historic eruption: Tambora volcano (Indonesia) 1815. <em>Progress in Physical Geography</em>, 27(2), 230–259. <a href="https://doi.org/10.1191/0309133303pp379ra" target="_blank" rel="noopener">doi:10.1191/0309133303pp379ra</a></li>
+      <li>Scaillet, B., Pichavant, M., &amp; Cioni, R. (2008). Upward migration of Vesuvius magma chamber over the past 20,000 years. <em>Nature</em>, 455(7210), 216–219. <a href="https://doi.org/10.1038/nature07232" target="_blank" rel="noopener">doi:10.1038/nature07232</a></li>
+      <li>Self, S., Gertisser, R., Thordarson, T., Rampino, M. R., &amp; Wolff, J. A. (2004). Magma volume, volatile emissions, and stratospheric aerosols from the 1815 eruption of Tambora. <em>Geophysical Research Letters</em>, 31(20), L20608. <a href="https://doi.org/10.1029/2004GL020925" target="_blank" rel="noopener">doi:10.1029/2004GL020925</a></li>
+      <li>Sparks, R. S. J. (1986). The dimensions and dynamics of volcanic eruption columns. <em>Bulletin of Volcanology</em>, 48(1), 3–15. <a href="https://doi.org/10.1007/BF01073509" target="_blank" rel="noopener">doi:10.1007/BF01073509</a></li>
+      <li>Wilson, L., Sparks, R. S. J., Huang, T. C., &amp; Watkins, N. D. (1978). The control of volcanic column heights by eruption energetics and dynamics. <em>Journal of Geophysical Research: Solid Earth</em>, 83(B4), 1829–1836. <a href="https://doi.org/10.1029/JB083iB04p01829" target="_blank" rel="noopener">doi:10.1029/JB083iB04p01829</a></li>
+    </ul>
+  </article></div></main><!-- .ll-stage -->
 
 </div><!-- .ll-viewport -->
 
@@ -1058,16 +1623,35 @@
     const scene  = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x180805, 0.018);
 
-    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 500);
-    let camDist = 30, camTheta = 0.5, camPhi = 1.1;
+    const state = { mode:'historical', intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato', timeline:0.0 };
+    let currentMaxH = 10;
+
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 800);
+    let camDist = 32, camTheta = 0.5, camPhi = 1.12;
+    let targetLookAt = new THREE.Vector3(0, 3, 0);
+    let currentLookAt = new THREE.Vector3(0, 3, 0);
+    let userDistOffset = 0;
 
     function updateCam() {
+      // Dynamic camera elevation and distance based on eruptive column height
+      const colNorm = clamp(state.column / 45, 0, 1);
+      const intensityNorm = clamp(state.intensity / 100, 0, 1);
+
+      // In quiescent state: focus on volcano edifice (y = 2.8, dist = 30)
+      // In climactic state: smoothly elevate target and pull back so the towering plume and umbrella cloud are framed!
+      const targetY = lerp(2.8, currentMaxH * 0.45 + colNorm * 7.5, intensityNorm);
+      const baseDist = lerp(30, 40 + colNorm * 14, intensityNorm);
+      const effDist = clamp(baseDist + userDistOffset, 8, 85);
+
+      targetLookAt.set(0, targetY, 0);
+      currentLookAt.lerp(targetLookAt, 0.08);
+
       camera.position.set(
-        camDist * Math.sin(camPhi) * Math.sin(camTheta),
-        camDist * Math.cos(camPhi),
-        camDist * Math.sin(camPhi) * Math.cos(camTheta)
+        currentLookAt.x + effDist * Math.sin(camPhi) * Math.sin(camTheta),
+        currentLookAt.y + effDist * Math.cos(camPhi),
+        currentLookAt.z + effDist * Math.sin(camPhi) * Math.cos(camTheta)
       );
-      camera.lookAt(0, 2, 0);
+      camera.lookAt(currentLookAt);
     }
     updateCam();
 
@@ -1083,7 +1667,7 @@
     });
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
-      camDist = clamp(camDist + e.deltaY * 0.04, 5, 50);
+      userDistOffset = clamp(userDistOffset + e.deltaY * 0.04, -22, 45);
       updateCam();
     }, { passive: false });
     let lTD = 0, lTX = 0, lTY = 0;
@@ -1100,7 +1684,7 @@
       }
       if (e.touches.length === 2) {
         const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        camDist = clamp(camDist - (d - lTD) * 0.04, 5, 50);
+        userDistOffset = clamp(userDistOffset - (d - lTD) * 0.04, -22, 45);
         lTD = d; updateCam();
       }
     }, { passive: true });
@@ -1128,43 +1712,114 @@
     /* ══════════════════════════════════════════
        LIGHTING
     ══════════════════════════════════════════ */
-    const sunLight = new THREE.DirectionalLight(0xffd090, 1.2);
-    sunLight.position.set(8, 14, 6);
+    const sunLight = new THREE.DirectionalLight(0xffecd0, 1.35);
+    sunLight.position.set(8, 16, 6);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.set(2048, 2048);
     sunLight.shadow.camera.near = 1;
-    sunLight.shadow.camera.far = 60;
-    sunLight.shadow.camera.left = -18;
-    sunLight.shadow.camera.right = 18;
-    sunLight.shadow.camera.top = 18;
-    sunLight.shadow.camera.bottom = -18;
+    sunLight.shadow.camera.far = 70;
+    sunLight.shadow.camera.left = -22;
+    sunLight.shadow.camera.right = 22;
+    sunLight.shadow.camera.top = 22;
+    sunLight.shadow.camera.bottom = -22;
     sunLight.shadow.bias = -0.0004;
     scene.add(sunLight);
-    const ambientLight = new THREE.AmbientLight(0x2a150a, 0.85);
+    const ambientLight = new THREE.AmbientLight(0x2d1c14, 0.9);
     scene.add(ambientLight);
-    const fillLight = new THREE.DirectionalLight(0x7288c8, 0.2);
-    fillLight.position.set(-5, 10, -4);
+    const fillLight = new THREE.DirectionalLight(0x758bc6, 0.25);
+    fillLight.position.set(-6, 12, -5);
     scene.add(fillLight);
 
     // Lava crater glow — PointLight
-    const lavaLight = new THREE.PointLight(0xff5a10, 0, 18, 2);
+    const lavaLight = new THREE.PointLight(0xff5205, 0, 24, 2);
     lavaLight.position.set(0, 6, 0);
     scene.add(lavaLight);
 
     // Rim-light for dramatic backlight
-    const rimLight = new THREE.DirectionalLight(0xff3010, 0);
+    const rimLight = new THREE.DirectionalLight(0xff3a10, 0);
     rimLight.position.set(0, -2, -8);
     scene.add(rimLight);
 
+    // ── VOLCANIC LIGHTNING SYSTEM ──
+    // Triboelectric charging in dense tephra plume produces branching electrical discharges
+    const MAX_LIGHTNING_SEGS = 64;
+    const lightningGeo = new THREE.BufferGeometry();
+    const lightningPos = new Float32Array(MAX_LIGHTNING_SEGS * 2 * 3);
+    lightningGeo.setAttribute('position', new THREE.BufferAttribute(lightningPos, 3));
+    const lightningMat = new THREE.LineBasicMaterial({
+      color: 0x9be8ff,
+      linewidth: 2.0,
+      transparent: true,
+      opacity: 0.0,
+      blending: THREE.AdditiveBlending
+    });
+    const lightningMesh = new THREE.LineSegments(lightningGeo, lightningMat);
+    lightningMesh.frustumCulled = false;
+    scene.add(lightningMesh);
+
+    const lightningLight = new THREE.PointLight(0x8ae0ff, 0, 35, 2);
+    scene.add(lightningLight);
+
+    let lightningTimer = 0;
+    let lightningDuration = 0;
+
+    function triggerVolcanicLightning() {
+      if (state.intensity < 40 || state.column < 8) return;
+      const count = 12 + Math.floor(Math.random() * 16);
+      let idx = 0;
+      let curX = (Math.random() - 0.5) * 1.5;
+      let curY = craterPos.y + 2.5 + Math.random() * 2.0;
+      let curZ = (Math.random() - 0.5) * 1.5;
+      const colTop = craterPos.y + (state.column / 45) * 22;
+
+      for (let s = 0; s < count && idx < MAX_LIGHTNING_SEGS * 2; s++) {
+        const nextX = curX + (Math.random() - 0.5) * 2.2;
+        const nextY = Math.min(colTop, curY + 0.8 + Math.random() * 2.2);
+        const nextZ = curZ + (Math.random() - 0.5) * 2.2;
+
+        lightningPos[idx * 3]     = curX;
+        lightningPos[idx * 3 + 1] = curY;
+        lightningPos[idx * 3 + 2] = curZ;
+        lightningPos[(idx + 1) * 3]     = nextX;
+        lightningPos[(idx + 1) * 3 + 1] = nextY;
+        lightningPos[(idx + 1) * 3 + 2] = nextZ;
+        idx += 2;
+
+        // Sub-branch
+        if (Math.random() > 0.55 && idx < MAX_LIGHTNING_SEGS * 2) {
+          lightningPos[idx * 3]     = nextX;
+          lightningPos[idx * 3 + 1] = nextY;
+          lightningPos[idx * 3 + 2] = nextZ;
+          lightningPos[(idx + 1) * 3]     = nextX + (Math.random() - 0.5) * 1.8;
+          lightningPos[(idx + 1) * 3 + 1] = nextY + (Math.random() - 0.2) * 1.5;
+          lightningPos[(idx + 1) * 3 + 2] = nextZ + (Math.random() - 0.5) * 1.8;
+          idx += 2;
+        }
+
+        curX = nextX; curY = nextY; curZ = nextZ;
+      }
+
+      // Zero out remaining vertices
+      for (let j = idx * 3; j < MAX_LIGHTNING_SEGS * 2 * 3; j++) lightningPos[j] = 0;
+      lightningGeo.attributes.position.needsUpdate = true;
+
+      lightningDuration = 0.08 + Math.random() * 0.12;
+      lightningMat.opacity = 1.0;
+      lightningLight.position.set(curX, (craterPos.y + curY) * 0.5, curZ);
+      lightningLight.intensity = 8.5 + (state.intensity / 100) * 10.0;
+    }
+
     /* ══════════════════════════════════════════
-       SKY
+       ATMOSPHERIC SKY & HORIZON SHADER
     ══════════════════════════════════════════ */
-    const skyGeo = new THREE.SphereGeometry(200, 32, 16);
+    const skyGeo = new THREE.SphereGeometry(220, 32, 20);
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide,
       uniforms: {
         ashAmount: { value: 0.0 },
-        sunBrightness: { value: 1.0 }
+        sunBrightness: { value: 1.0 },
+        sunDir: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
+        time: { value: 0.0 }
       },
       vertexShader: `
         varying vec3 vWorldDirection;
@@ -1177,28 +1832,71 @@
       fragmentShader: `
         uniform float ashAmount;
         uniform float sunBrightness;
+        uniform vec3 sunDir;
+        uniform float time;
         varying vec3 vWorldDirection;
+
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float noise(vec2 p) {
+          vec2 i = floor(p); vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                     mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
 
         void main() {
           vec3 dir = normalize(vWorldDirection);
           float elevation = clamp(dir.y, 0.0, 1.0);
 
-          // Procedural Clear Sky (Day)
-          vec3 zenithDay = vec3(0.08, 0.18, 0.45);
-          vec3 horizonDay = vec3(0.50, 0.60, 0.72);
-          vec3 skyDay = mix(horizonDay, zenithDay, pow(elevation, 0.5));
+          // 1. Daytime Atmospheric Rayleigh Gradient
+          vec3 zenithDay = vec3(0.09, 0.22, 0.52);
+          vec3 horizonDay = vec3(0.65, 0.72, 0.82);
+          vec3 skyDay = mix(horizonDay, zenithDay, pow(elevation, 0.45));
 
-          // Night cycle — moonlit, not pitch black
-          vec3 nightTint = vec3(0.05, 0.08, 0.14);
-          vec3 skyTime = mix(nightTint, skyDay, sunBrightness);
+          // 2. Solar Disc & Atmospheric Corona
+          float cosSun = dot(dir, normalize(sunDir));
+          float sunDisc = smoothstep(0.9993, 0.9998, cosSun) * sunBrightness * (1.0 - ashAmount * 0.95);
+          float sunHalo = pow(max(0.0, cosSun), 16.0) * 0.65 * sunBrightness * (1.0 - ashAmount * 0.8);
+          vec3 sunColor = vec3(1.0, 0.92, 0.78) * (sunDisc * 8.0 + sunHalo * 1.5);
 
-          // Eruption Ash gradient
-          vec3 zenithAsh = vec3(0.02, 0.015, 0.01);
-          vec3 horizonAsh = vec3(0.35, 0.14, 0.08); // Glow from lava
-          vec3 ashColor = mix(horizonAsh, zenithAsh, pow(elevation, 0.6));
+          // 3. Twilight & Golden Hour Scattering (when sun is low)
+          float sunElev = normalize(sunDir).y;
+          float sunsetFactor = clamp(1.0 - abs(sunElev) * 2.5, 0.0, 1.0);
+          vec3 sunsetHorizon = vec3(0.85, 0.42, 0.15);
+          skyDay = mix(skyDay, sunsetHorizon, sunsetFactor * (1.0 - elevation));
 
-          // Blend clear sky into volcanic ash
-          vec3 finalColor = mix(skyTime, ashColor, clamp(ashAmount * 1.6, 0.0, 1.0));
+          // 4. Night Sky & Scintillating Star Field
+          vec3 nightSky = vec3(0.015, 0.022, 0.035);
+          if (elevation > 0.04 && sunBrightness < 0.3) {
+            float starN = hash(floor(dir.xz * 180.0));
+            if (starN > 0.985) {
+              float twinkle = 0.5 + 0.5 * sin(time * 6.0 + starN * 62.0);
+              nightSky += vec3(0.75, 0.85, 1.0) * twinkle * (1.0 - sunBrightness * 3.3) * (elevation * 1.5);
+            }
+          }
+
+          // Blend Day into Night
+          vec3 ambientSky = mix(nightSky, skyDay + sunColor, clamp(sunBrightness * 1.2, 0.0, 1.0));
+
+          // 5. Volcanic Ash Umbrella Overcast & Atmospheric Occlusion
+          // Eerie copper-sulfur twilight at horizon, deep ash darkness overhead
+          vec3 zenithAsh = vec3(0.018, 0.014, 0.012);
+          vec3 horizonAsh = vec3(0.42, 0.18, 0.07);
+          float ashNoise = noise(dir.xz * 4.5 + vec2(time * 0.02, 0.0)) * 0.18;
+          vec3 ashSkyColor = mix(horizonAsh, zenithAsh, clamp(pow(elevation, 0.55) + ashNoise, 0.0, 1.0));
+
+          vec3 finalColor = mix(ambientSky, ashSkyColor, clamp(ashAmount * 1.45, 0.0, 1.0));
+
+          // 6. Distant Horizon Mountain Silhouette Skirt (eliminates empty void boundary)
+          if (dir.y >= 0.0 && dir.y < 0.075) {
+            float mH = sin(dir.x * 22.0) * 0.012 + sin(dir.x * 9.0 + 1.2) * 0.018 + 0.022;
+            if (dir.y < mH) {
+              float mDist = (dir.y / mH);
+              vec3 ridgeColor = mix(vec3(0.12, 0.15, 0.20), horizonDay * 0.6, 0.45);
+              if (ashAmount > 0.2) ridgeColor = mix(ridgeColor, horizonAsh * 0.4, ashAmount);
+              finalColor = mix(ridgeColor, finalColor, mDist * 0.65);
+            }
+          }
 
           gl_FragColor = vec4(finalColor, 1.0);
         }
@@ -1215,21 +1913,21 @@
       // Update fog to match the horizon color of the shader so terrain blends seamlessly
       let r, g, b;
       if (t < 0.22) {
-        // Match the clear sky photo horizon
+        // Clear daytime atmosphere
         const f = t / 0.22;
-        r = lerp(0.5, 0.45, f); g = lerp(0.6, 0.4, f); b = lerp(0.7, 0.3, f);
+        r = lerp(0.65, 0.55, f); g = lerp(0.72, 0.50, f); b = lerp(0.82, 0.40, f);
       } else if (t < 0.6) {
-        // Transition into ash horizon
+        // Transition into volcanic ash horizon
         const f = (t - 0.22) / 0.38;
-        r = lerp(0.45, 0.35, f); g = lerp(0.4, 0.14, f); b = lerp(0.3, 0.08, f);
+        r = lerp(0.55, 0.42, f); g = lerp(0.50, 0.22, f); b = lerp(0.40, 0.12, f);
       } else {
-        // Deep ash darkening
+        // Deep ash stratospheric darkening
         const f = (t - 0.6) / 0.4;
-        r = lerp(0.35, 0.15, f); g = lerp(0.14, 0.05, f); b = lerp(0.08, 0.02, f);
+        r = lerp(0.42, 0.18, f); g = lerp(0.22, 0.08, f); b = lerp(0.12, 0.04, f);
       }
 
       scene.fog.color.setRGB(r, g, b);
-      scene.fog.density = lerp(0.010, 0.034, t);
+      scene.fog.density = lerp(0.008, 0.030, t);
     }
 
     /* ══════════════════════════════════════════
@@ -1426,7 +2124,7 @@
     }
 
     // Ocean plane for island volcanoes
-    const oceanGeo = new THREE.PlaneGeometry(TERRAIN_SIZE * 3, TERRAIN_SIZE * 3, 1, 1);
+    const oceanGeo = new THREE.PlaneGeometry(TERRAIN_SIZE * 3.2, TERRAIN_SIZE * 3.2, 1, 1);
     oceanGeo.rotateX(-Math.PI / 2);
     const oceanMat = new THREE.MeshStandardMaterial({
       color: 0x0a2a48, roughness: 0.1, metalness: 0.8,
@@ -1435,6 +2133,26 @@
     const ocean = new THREE.Mesh(oceanGeo, oceanMat);
     ocean.visible = false;
     scene.add(ocean);
+
+    // Regional landscape skirt (eliminates floating cut-off edge in empty space)
+    const skirtGeo = new THREE.PlaneGeometry(TERRAIN_SIZE * 3.5, TERRAIN_SIZE * 3.5, 24, 24);
+    skirtGeo.rotateX(-Math.PI / 2);
+    const skirtPos = skirtGeo.attributes.position;
+    for (let k = 0; k < skirtPos.count; k++) {
+      const sx = skirtPos.getX(k), sz = skirtPos.getZ(k);
+      const sDist = Math.max(Math.abs(sx), Math.abs(sz));
+      const sEdge = Math.max(0, (sDist - TERRAIN_SIZE * 0.48) / (TERRAIN_SIZE * 0.7));
+      skirtPos.setY(k, -0.06 - sEdge * 1.5);
+    }
+    skirtGeo.computeVertexNormals();
+    const skirtMat = new THREE.MeshStandardMaterial({
+      color: 0x22241f,
+      roughness: 0.95,
+      metalness: 0.01
+    });
+    const skirtMesh = new THREE.Mesh(skirtGeo, skirtMat);
+    skirtMesh.receiveShadow = true;
+    scene.add(skirtMesh);
 
     // Detail texture for PBR material
     const texLoader = new THREE.TextureLoader();
@@ -1462,9 +2180,12 @@
       return tex;
     }
     const gritTex = createGritTexture();
+    skirtMat.map = rockTex;
+    skirtMat.bumpMap = gritTex;
+    skirtMat.bumpScale = 0.04;
+    skirtMat.roughnessMap = gritTex;
 
     let terrainMesh = null;
-    let currentMaxH = 10;
     let craterPos = new THREE.Vector3(0, 10, 0);
     const lavaStreamGroup = new THREE.Group();
     scene.add(lavaStreamGroup);
@@ -1476,9 +2197,269 @@
     // lava-inundation model. Units and time are illustrative.
     const LAVA_N = 101, LAVA_STEP = 0.4;
     const lavaField = new LiquidEngine.DepthField({ material: 'lava', cols: LAVA_N, cellSize: LAVA_STEP });
-    // Twice the simulation resolution, matching the terrain tessellation so the deposit cannot cut through ridges.
-    const lavaDeposit = createDepthFieldMesh(THREE, lavaField, { subdivisions: 2 });
+
+    // Custom HDR incandescent blackbody shader material for lava deposit
+    const lavaDepositMat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      uniforms: {
+        time: { value: 0 },
+        fluidity: { value: 0.5 },
+        threshold: { value: 0.018 }
+      },
+      vertexShader: `
+        varying vec2 flowUV;
+        varying vec2 lavaState;
+        attribute vec2 deposit;
+        void main() {
+          flowUV = uv;
+          lavaState = deposit;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        uniform float fluidity;
+        uniform float threshold;
+        varying vec2 flowUV;
+        varying vec2 lavaState;
+        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        float noise(vec2 p) {
+          vec2 i = floor(p); vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1,0)), f.x),
+                     mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), f.x), f.y);
+        }
+        void main() {
+          if (lavaState.x < threshold) discard;
+          float heatLevel = clamp(lavaState.y, 0.0, 1.0);
+          vec2 p = flowUV * 2.4;
+          p.y -= time * 0.16 * heatLevel * fluidity;
+
+          // Multi-octave convective crust fissures
+          float n1 = noise(p + noise(p * 0.5) * 2.2);
+          float n2 = noise(p * 2.8 + vec2(time * 0.08, -time * 0.12));
+          float n = mix(n1, n2, 0.35);
+
+          // Glowing fracture cracks opening between cooling crust plates
+          float crackDist = abs(n - 0.5);
+          float cracks = 1.0 - smoothstep(0.012, 0.10, crackDist);
+          float coreCrack = 1.0 - smoothstep(0.004, 0.035, crackDist);
+
+          // Blackbody temperature curve (1200°C core down to 500°C basalt crust)
+          vec3 chilledCrust = mix(vec3(0.012, 0.011, 0.014), vec3(0.040, 0.034, 0.032), n);
+          vec3 deepRedMolten = vec3(1.1, 0.10, 0.01);
+          vec3 vividOrange = vec3(2.5, 0.72, 0.05);
+          vec3 whiteHotCore = vec3(3.5, 2.4, 0.95);
+
+          float heat = heatLevel * (0.22 + cracks * 0.78);
+          vec3 moltenColor = mix(deepRedMolten, vividOrange, smoothstep(0.2, 0.7, heat));
+          moltenColor = mix(moltenColor, whiteHotCore, coreCrack * heatLevel);
+
+          vec3 finalColor = mix(chilledCrust, moltenColor, smoothstep(0.12, 0.75, heat));
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `
+    });
+
+    const lavaDeposit = createDepthFieldMesh(THREE, lavaField, { subdivisions: 2, material: lavaDepositMat });
     lavaStreamGroup.add(lavaDeposit.mesh);
+
+    // ══════════════════════════════════════════
+    // VOLUMETRIC PLUME COLUMN & UMBRELLA CANOPY
+    // ══════════════════════════════════════════
+    // Empirical fluid dynamics (Morton, Taylor & Turner 1956; Sparks 1986; Mastin et al. 2009 USGS)
+    const PLUME_RADIAL_SEGS = 64;
+    const PLUME_HEIGHT_SEGS = 72;
+    const plumeCoreGeo = new THREE.CylinderGeometry(1, 1, 1, PLUME_RADIAL_SEGS, PLUME_HEIGHT_SEGS, true);
+    plumeCoreGeo.translate(0, 0.5, 0);
+
+    const plumeCoreMat = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
+      transparent: true,
+      depthWrite: true,
+      uniforms: {
+        craterPos: { value: new THREE.Vector3(0, 10, 0) },
+        plumeHeight: { value: 20.0 },
+        ventRadius: { value: 0.8 },
+        umbrellaRadius: { value: 12.0 },
+        intensity: { value: 0.7 },
+        time: { value: 0.0 },
+        wind: { value: new THREE.Vector2(0, 0) },
+        sunDir: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
+        sunColor: { value: new THREE.Color(0xffecd0) },
+        ambientColor: { value: new THREE.Color(0x352824) },
+        lavaGlow: { value: 0.0 }
+      },
+      vertexShader: `
+        uniform vec3 craterPos;
+        uniform float plumeHeight;
+        uniform float ventRadius;
+        uniform float umbrellaRadius;
+        uniform float intensity;
+        uniform float time;
+        uniform vec2 wind;
+
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        varying float vNormY;
+        varying float vCraterGlow;
+        varying float vBillow;
+
+        // Dave Hoskins 3D hash with decorrelating offset (never evaluates to 0)
+        float hash(vec3 p) {
+          p = fract((p + vec3(71.17, 31.41, 19.83)) * 0.1031);
+          p += dot(p, p.yzx + 33.33);
+          return fract((p.x + p.y) * p.z);
+        }
+
+        float noise(vec3 x) {
+          vec3 i = floor(x);
+          vec3 f = fract(x);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+            mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+        }
+
+        float fbm(vec3 p) {
+          float v = 0.0;
+          float a = 0.55;
+          for (int i = 0; i < 4; i++) {
+            v += a * noise(p);
+            p = p * 2.05 + vec3(0.15, -0.25, 0.35);
+            a *= 0.48;
+          }
+          return v;
+        }
+
+        void main() {
+          float yNorm = clamp(position.y, 0.0, 1.0);
+          vNormY = yNorm;
+
+          // Empirical Volcanological Plume Profile (Morton, Taylor, Turner + Mastin 2009):
+          // 0.0 to 0.65: Convective trunk (linear air entrainment b(z) ~ alpha * z)
+          // 0.65 to 0.88: Stratospheric umbrella expansion (gravity current spreading at NBL)
+          // 0.88 to 1.00: Momentum overshoot dome closing inward to peak
+          float R = ventRadius;
+          float trunkTopR = ventRadius + umbrellaRadius * 0.22;
+          float ny = 0.0;
+
+          if (yNorm < 0.65) {
+            float tTrunk = yNorm / 0.65;
+            R = mix(ventRadius, trunkTopR, pow(tTrunk, 0.85));
+            ny = -0.15;
+          } else if (yNorm < 0.88) {
+            float tUmb = (yNorm - 0.65) / 0.23;
+            float expansion = sin(tUmb * 1.5707963);
+            R = mix(trunkTopR, umbrellaRadius, expansion);
+            ny = -0.55 * (1.0 - tUmb);
+          } else {
+            float tDome = (yNorm - 0.88) / 0.12;
+            float contraction = cos(tDome * 1.5707963);
+            R = umbrellaRadius * contraction;
+            ny = 0.85 * tDome;
+          }
+
+          vec2 radialDir = normalize(position.xz);
+          if (length(position.xz) < 0.0001) radialDir = vec2(1.0, 0.0);
+
+          float worldY = craterPos.y + yNorm * plumeHeight;
+          vec3 unperturbedPos = vec3(craterPos.x + radialDir.x * R, worldY, craterPos.z + radialDir.y * R);
+
+          // Multi-frequency turbulent billow displacement in 3D space across column & umbrella
+          float flowSpeed = time * (1.6 + intensity * 2.4);
+          vec3 turbCoord1 = vec3(unperturbedPos.x * 0.22, worldY * 0.28 - flowSpeed, unperturbedPos.z * 0.22);
+          vec3 turbCoord2 = turbCoord1 * 2.2 + vec3(5.2, 1.8, 8.4);
+          float billow1 = fbm(turbCoord1);
+          float billow2 = fbm(turbCoord2);
+          float billow = billow1 * 0.68 + billow2 * 0.32;
+          vBillow = billow;
+
+          float billowAmp = 0.45 + R * 0.28;
+          float rDisplace = (billow - 0.44) * billowAmp;
+          float effectiveR = max(0.2, R + rDisplace);
+
+          vec3 basePos = vec3(craterPos.x + radialDir.x * effectiveR, worldY, craterPos.z + radialDir.y * effectiveR);
+
+          // Vertical billow churning (lumpy umbrella dome & convective boiling)
+          basePos.y += (billow - 0.45) * (0.6 + R * 0.25);
+
+          // Stratospheric wind shear advection
+          float windShear = pow(clamp((yNorm - 0.18) / 0.82, 0.0, 1.0), 1.4);
+          basePos.x += wind.x * windShear * (3.8 + plumeHeight * 0.28);
+          basePos.z += wind.y * windShear * (3.8 + plumeHeight * 0.28);
+
+          vWorldPos = basePos;
+          vec3 nPerturb = vec3(
+            radialDir.x * 0.85 + (billow1 - 0.5) * 0.55,
+            ny + (billow2 - 0.5) * 0.65,
+            radialDir.y * 0.85 + (billow1 - 0.5) * 0.55
+          );
+          vNormal = normalize(nPerturb);
+          vCraterGlow = clamp((1.0 - yNorm / 0.18), 0.0, 1.0) * intensity;
+
+          gl_Position = projectionMatrix * viewMatrix * vec4(basePos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 sunDir;
+        uniform vec3 sunColor;
+        uniform vec3 ambientColor;
+        uniform vec3 craterPos;
+        uniform float lavaGlow;
+        uniform float intensity;
+
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        varying float vNormY;
+        varying float vCraterGlow;
+        varying float vBillow;
+
+        void main() {
+          if (intensity <= 0.01) discard;
+
+          vec3 norm = normalize(vNormal);
+          vec3 sunD = normalize(sunDir);
+
+          float NdotL = dot(norm, sunD);
+          float wrapLight = max(0.0, (NdotL + 0.32) / 1.32);
+          float creviceShadow = smoothstep(-0.25, 0.45, NdotL);
+
+          // Volcanic tephra albedo:
+          // Juvenile basaltic scoria at vent -> weathered dacitic/pumice ash aloft
+          vec3 juvenileBasalt = vec3(0.18, 0.17, 0.16);
+          vec3 weatheredTephra = vec3(0.32, 0.30, 0.28);
+          vec3 pumiceAloft = vec3(0.55, 0.52, 0.49);
+
+          vec3 ashAlbedo;
+          if (vNormY < 0.35) {
+            ashAlbedo = mix(juvenileBasalt, weatheredTephra, vNormY / 0.35);
+          } else {
+            ashAlbedo = mix(weatheredTephra, pumiceAloft, (vNormY - 0.35) / 0.65);
+          }
+
+          // Ambient + Sun illumination with crevice self-shadowing
+          vec3 litAsh = ashAlbedo * (ambientColor * 2.2 + sunColor * (0.24 + wrapLight * 1.15 * creviceShadow));
+
+          vec3 toCrater = craterPos - vWorldPos;
+          float cDist2 = dot(toCrater, toCrater);
+          float cLight = clamp((lavaGlow + 1.2) * (18.0 / (cDist2 + 2.5)), 0.0, 1.2);
+          vec3 throatIncandescence = vec3(2.6, 0.80, 0.08) * vCraterGlow * 1.5;
+          vec3 undersideGlow = vec3(1.4, 0.42, 0.05) * cLight * max(0.0, -norm.y);
+
+          vec3 finalColor = litAsh + throatIncandescence + undersideGlow;
+          float alpha = clamp(intensity * 1.5, 0.0, 0.98);
+          gl_FragColor = vec4(finalColor, alpha);
+        }
+      `
+    });
+
+    const plumeCoreMesh = new THREE.Mesh(plumeCoreGeo, plumeCoreMat);
+    plumeCoreMesh.frustumCulled = false;
+    plumeCoreMesh.visible = false;
+    scene.add(plumeCoreMesh);
 
     function resetLavaField() {
       lavaField.reset();
@@ -1489,8 +2470,6 @@
     function rebuildLavaStreams() {
       lavaField.setGround(terrainHeightAt);
       lavaDeposit.setGround(terrainHeightAt);
-      // Find local high points on the crater rim; fountains supply the rim,
-      // then gravity and the evolving deposit determine every downstream path.
       lavaField.clearSources();
       const rimRadius = state.vtype === 'super' ? 9 : state.vtype === 'caldera' ? 2.7 : 1.5;
       for (let sector = 0; sector < 5; sector++) {
@@ -1515,7 +2494,6 @@
       if (status) status.textContent = covered === 0 ? 'No lava deposited yet.'
         : `${covered} model cells covered · ${hot} still hot · crust remains as lava cools.`;
       document.getElementById('lava-diagnostics').textContent = `${covered} covered cells · ${hot} hot cells · max depth ${maxDepth.toFixed(2)} model units · supplied ${supplied.toFixed(3)} · stored ${volume.toFixed(3)} model volume units · balance error ${balanceError.toExponential(2)}`;
-      // Read-only diagnostics make conservation and reset behavior inspectable.
       lavaDeposit.mesh.userData.diagnostics = { covered, hot, maxDepth, volume };
     }
 
@@ -1537,14 +2515,11 @@
         vertexColors: true,
         map: mapTex,
         bumpMap: gritTex,
-        bumpScale: 0.08,
+        bumpScale: 0.07,
         roughnessMap: gritTex,
-        roughness: 0.9,
-        metalness: 0.02
+        roughness: 0.88,
+        metalness: 0.03
       });
-
-      // We don't want vertexColors mixing with the satellite imagery unless there's lava/snow
-      // Actually, we can keep vertexColors:true, but we should make baseColor white if we have a colormap!
 
       terrainMesh = new THREE.Mesh(geo, mat);
       terrainMesh.receiveShadow = true;
@@ -1553,8 +2528,10 @@
 
       updateTerrain(vtype, lavaIntensity, state.timeline);
 
-      ocean.visible = (vtype === 'shield' || activeEruption === 'krakatoa1883');
+      const isIsland = (vtype === 'shield' || activeEruption === 'krakatoa1883');
+      ocean.visible = isIsland;
       ocean.position.y = -0.2;
+      skirtMesh.visible = !isIsland;
 
       buildEnvironments();
     }
@@ -1574,16 +2551,33 @@
       }
       currentMaxH = maxH;
 
+      const hasColormap = !!colormaps[activeEruption];
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
         let [r, g, b] = terrainColor(x, z, y, maxH, vtype, lavaIntensity, stage);
 
-        // Post-eruption ash blanket
-        if (stage > 0.4) {
-           const ashF = Math.min(1, (stage - 0.4) * 2);
-           r = lerp(r, 0.4, ashF * 0.8);
-           g = lerp(g, 0.38, ashF * 0.8);
-           b = lerp(b, 0.35, ashF * 0.8);
+        if (hasColormap) {
+          // Neutral white base for satellite imagery so colors remain vivid and photographic
+          r = 1.0; g = 1.0; b = 1.0;
+        }
+
+        // 1. Dynamic tephra fallout / pumice blanket accumulating downwind
+        if (stage > 0.25) {
+          const ashF = Math.min(1.0, (stage - 0.25) * 1.6);
+          const windDot = (x * wind.x + z * wind.z) * 0.05;
+          const ashDepth = clamp(ashF * (0.68 + windDot * 0.32), 0.0, 1.0);
+          r = lerp(r, 0.46, ashDepth * 0.78);
+          g = lerp(g, 0.43, ashDepth * 0.78);
+          b = lerp(b, 0.40, ashDepth * 0.78);
+        }
+
+        // 2. Summit caldera and breach incandescent thermal heat glow
+        const dCrater = Math.hypot(x - craterPos.x, z - craterPos.z);
+        if (dCrater < 2.8 && state.intensity > 4) {
+          const thermal = clamp((1.0 - dCrater / 2.8), 0.0, 1.0) * (state.intensity / 100);
+          r = lerp(r, 1.65, thermal * 0.85);
+          g = lerp(g, 0.48, thermal * 0.65);
+          b = lerp(b, 0.08, thermal * 0.45);
         }
 
         colors.setXYZ(i, r, g, b);
@@ -1879,59 +2873,146 @@
       }
     }
 
+    // ── VOLUMETRIC POINT SPRITE MATERIAL GENERATOR ──
+    function createVolumetricPointsMaterial(options = {}) {
+      const isEmissive = !!options.isEmissive;
+      const isSteam = !!options.isSteam;
+      const isAdditive = !!options.additive;
+      const alphaCutoff = options.alphaTest || 0.02;
+
+      return new THREE.ShaderMaterial({
+        uniforms: {
+          map: { value: options.map || smokeTex },
+          sunDir: { value: new THREE.Vector3(0.5, 0.8, 0.3) },
+          sunColor: { value: new THREE.Color(0xffecd0) },
+          ambientColor: { value: new THREE.Color(0x352824) },
+          craterPos: { value: new THREE.Vector3(0, 10, 0) },
+          lavaGlow: { value: 0.0 },
+          time: { value: 0.0 },
+          opacity: { value: options.opacity || 0.88 }
+        },
+        vertexShader: `
+          uniform vec3 sunDir;
+          attribute float size;
+          attribute vec3 color;
+          varying vec3 vColor;
+          varying vec3 vWorldPos;
+          varying vec3 vSunDirView;
+          varying vec3 vUpView;
+
+          void main() {
+            vColor = color;
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vWorldPos = worldPos.xyz;
+            vec4 mvPosition = viewMatrix * worldPos;
+
+            // Varying lighting directions transformed to view space
+            vSunDirView = normalize((viewMatrix * vec4(sunDir, 0.0)).xyz);
+            vUpView = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+
+            // True size attenuation honoring per-particle size attribute
+            float pSize = size * (340.0 / max(0.1, -mvPosition.z));
+            gl_PointSize = clamp(pSize, 1.0, 480.0);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D map;
+          uniform vec3 sunColor;
+          uniform vec3 ambientColor;
+          uniform vec3 craterPos;
+          uniform float lavaGlow;
+          uniform float opacity;
+          varying vec3 vColor;
+          varying vec3 vWorldPos;
+          varying vec3 vSunDirView;
+          varying vec3 vUpView;
+
+          void main() {
+            vec2 uv = gl_PointCoord;
+            vec4 texCol = texture2D(map, uv);
+            if (texCol.a < ${alphaCutoff.toFixed(3)}) discard;
+
+            // Spherical billow surface normal in view space
+            vec2 p = uv * 2.0 - 1.0;
+            float r2 = dot(p, p);
+            if (r2 > 1.0) discard;
+            float z = sqrt(max(0.0, 1.0 - r2));
+            vec3 normalView = vec3(p.x, -p.y, z);
+
+            // Wrap lighting: allows light to permeate cloud edges realistically
+            float wrapLight = max(0.0, (dot(normalView, vSunDirView) + 0.38) / 1.38);
+
+            // Crater upward volcanic incandescence (lights underside of plume)
+            vec3 toCrater = craterPos - vWorldPos;
+            float craterDist2 = dot(toCrater, toCrater);
+            float craterLight = clamp(lavaGlow * (6.0 / (craterDist2 + 4.0)), 0.0, 0.75);
+            float underside = max(0.0, -dot(normalView, vUpView));
+            vec3 lavaUplight = vec3(1.15, 0.35, 0.04) * craterLight * (0.2 + underside * 0.8);
+
+            ${isEmissive ? `
+              // Incandescent projectile / glowing molten ejecta
+              vec3 finalColor = vColor * (1.6 + texCol.rgb * 1.4);
+              float alpha = texCol.a * opacity * (1.0 - r2 * 0.25);
+              gl_FragColor = vec4(finalColor, alpha);
+            ` : isSteam ? `
+              // Condensing steam / volcanic gas plume with forward scattering
+              float forwardScatter = pow(max(0.0, dot(normalView, vSunDirView)), 2.5) * 0.55;
+              vec3 diffuse = vColor * (ambientColor * 1.8 + sunColor * (0.35 + wrapLight * 0.95 + forwardScatter));
+              vec3 finalColor = diffuse + lavaUplight * 0.5;
+              float alpha = texCol.a * opacity * (1.0 - smoothstep(0.72, 1.0, r2));
+              gl_FragColor = vec4(finalColor, alpha);
+            ` : `
+              // Dense tephra / ash cloud with self-shadowing and crater rim glow
+              vec3 ashAlbedo = vColor * (texCol.rgb * 1.5 + 0.04);
+              vec3 litAsh = ashAlbedo * (ambientColor * 2.2 + sunColor * (0.35 + wrapLight * 1.35));
+              vec3 finalColor = litAsh + lavaUplight;
+              float alpha = min(1.0, texCol.a * 1.4) * opacity * (1.0 - smoothstep(0.82, 1.0, r2));
+              gl_FragColor = vec4(finalColor, alpha);
+            `}
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: isAdditive ? THREE.AdditiveBlending : THREE.NormalBlending
+      });
+    }
+
     // ── ASH COLUMN ──
-    const ashPool = new ParticlePool(scene, 3200, new THREE.PointsMaterial({
-      size: 0.72,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.88,
-      depthWrite: false,
-      sizeAttenuation: true,
+    const ashPool = new ParticlePool(scene, 4800, createVolumetricPointsMaterial({
       map: ashTex,
-      alphaTest: 0.04
+      opacity: 0.88,
+      alphaTest: 0.03
     }));
 
     // ── LAVA BOMBS ──
-    const bombPool = new ParticlePool(scene, 400, new THREE.PointsMaterial({
-      size: 0.4,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.95,
-      depthWrite: false,
-      sizeAttenuation: true,
-      blending: THREE.AdditiveBlending,
+    const bombPool = new ParticlePool(scene, 600, createVolumetricPointsMaterial({
       map: emberTex,
-      alphaTest: 0.05
-    }));
-
-    // ── PYROCLASTIC FLOW ──
-    const pyroPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
-      size: 0.82,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false,
-      sizeAttenuation: true,
-      map: pyroTex,
+      isEmissive: true,
+      additive: true,
+      opacity: 0.95,
       alphaTest: 0.04
     }));
 
-    // ── STEAM / GAS ──
-    const steamPool = new ParticlePool(scene, 800, new THREE.PointsMaterial({
-      size: 0.75,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.6,
-      depthWrite: false,
-      sizeAttenuation: true,
-      map: steamTex,
+    // ── PYROCLASTIC FLOW ──
+    const pyroPool = new ParticlePool(scene, 1600, createVolumetricPointsMaterial({
+      map: pyroTex,
+      opacity: 0.86,
       alphaTest: 0.03
+    }));
+
+    // ── STEAM / GAS ──
+    const steamPool = new ParticlePool(scene, 1200, createVolumetricPointsMaterial({
+      map: steamTex,
+      isSteam: true,
+      opacity: 0.65,
+      alphaTest: 0.02
     }));
 
     // A separate hot-material field makes the lava itself continuous and
     // readable: ash and bombs can fly through the air, while these particles
     // follow the terrain and cool as they spread downslope.
-    const lavaRenderMax = 720;
+    const lavaRenderMax = 900;
     const lavaRenderPos = new Float32Array(lavaRenderMax * 3);
     const lavaRenderCol = new Float32Array(lavaRenderMax * 3);
     const lavaRenderSize = new Float32Array(lavaRenderMax);
@@ -1939,49 +3020,110 @@
     lavaRenderGeo.setAttribute('position', new THREE.BufferAttribute(lavaRenderPos, 3));
     lavaRenderGeo.setAttribute('color', new THREE.BufferAttribute(lavaRenderCol, 3));
     lavaRenderGeo.setAttribute('size', new THREE.BufferAttribute(lavaRenderSize, 1));
-    const lavaRenderMat = new THREE.PointsMaterial({
-      size: 0.18, vertexColors: true, transparent: true, opacity: 0.8,
-      depthWrite: false, sizeAttenuation: true, blending: THREE.AdditiveBlending,
-      map: emberTex, alphaTest: 0.03
+    const lavaRenderMat = createVolumetricPointsMaterial({
+      map: emberTex,
+      isEmissive: true,
+      additive: true,
+      opacity: 0.95,
+      alphaTest: 0.03
     });
     const lavaRenderPoints = new THREE.Points(lavaRenderGeo, lavaRenderMat);
     lavaRenderPoints.frustumCulled = false;
     scene.add(lavaRenderPoints);
 
     function spawnAsh(intensity, column) {
-      const n = Math.round(65 * intensity);
+      const colNorm = column / 45;
+      const n = Math.round((22 + colNorm * 28) * intensity);
+      const targetH = Math.max(2.0, colNorm * 22.0);
+      const ventRadius = 0.35 + intensity * 0.45;
+      const umbrellaRadius = Math.max(1.2, colNorm * 14.5 * Math.pow(intensity, 0.45));
+
       for (let i = 0; i < n; i++) {
-        const ang = Math.random() * Math.PI * 2;
-        const columnBoost = column / 12;
-        // Thrust velocity (higher for larger columns)
-        const sp  = (4.0 + columnBoost * 4.0) * (0.7 + Math.random() * 0.6);
-        const spread = 0.2 + intensity * 0.4;
-        ashPool.emit(
-          (Math.random() - 0.5) * 0.8,
-          craterPos.y,
-          (Math.random() - 0.5) * 0.8,
-          Math.cos(ang) * spread, sp, Math.sin(ang) * spread,
-          column * 0.15 + 3.0,
-          0.18 + Math.random() * 0.1, 0.16, 0.14 + Math.random() * 0.08,
-          0.4 + Math.random() * 0.45
-        );
+        const pRegime = Math.random();
+
+        if (pRegime < 0.45) {
+          // ── 1. CONVECTIVE JET VENT REGIME ──
+          const ang = Math.random() * Math.PI * 2;
+          const r = Math.sqrt(Math.random()) * ventRadius;
+          const vx = Math.cos(ang) * (0.3 + intensity * 0.6);
+          const vz = Math.sin(ang) * (0.3 + intensity * 0.6);
+          const vy = (7.5 + colNorm * 11.0) * (0.85 + Math.random() * 0.4);
+          const lifetime = 3.8 + colNorm * 3.5 + Math.random() * 2.0;
+
+          ashPool.emit(
+            craterPos.x + Math.cos(ang) * r,
+            craterPos.y + 0.1,
+            craterPos.z + Math.sin(ang) * r,
+            vx, vy, vz,
+            lifetime,
+            0.88, 0.85, 0.82,
+            2.8 + intensity * 1.6
+          );
+        } else if (pRegime < 0.75 && colNorm > 0.1) {
+          // ── 2. CONVECTIVE COLUMN SHEAR BILLOW REGIME ──
+          // Detaching Kelvin-Helmholtz vortices along rising buoyant trunk
+          const colFrac = 0.15 + Math.random() * 0.52;
+          const trunkY = targetH * colFrac;
+          const trunkR = (ventRadius + (ventRadius + umbrellaRadius * 0.22) * Math.pow(colFrac, 0.85)) * (0.8 + Math.random() * 0.45);
+          const ang = Math.random() * Math.PI * 2;
+          const billowSpd = (3.5 + colNorm * 6.0) * (0.8 + Math.random() * 0.4);
+          const vx = Math.cos(ang) * (billowSpd * 0.35) + (Math.random() - 0.5) * 1.5;
+          const vz = Math.sin(ang) * (billowSpd * 0.35) + (Math.random() - 0.5) * 1.5;
+          const vy = billowSpd * 0.75;
+          const lifetime = 4.2 + colNorm * 3.8 + Math.random() * 2.2;
+
+          ashPool.emit(
+            craterPos.x + Math.cos(ang) * trunkR,
+            craterPos.y + trunkY,
+            craterPos.z + Math.sin(ang) * trunkR,
+            vx, vy, vz,
+            lifetime,
+            1.05, 1.02, 0.98,
+            4.5 + colNorm * 5.0 + Math.random() * 2.5
+          );
+        } else if (colNorm > 0.12) {
+          // ── 3. STRATOSPHERIC UMBRELLA GRAVITY CURRENT REGIME ──
+          // Spreading radially outward at Neutral Buoyancy Level
+          const uAlt = targetH * (0.72 + Math.random() * 0.20);
+          const uAng = Math.random() * Math.PI * 2;
+          const uDist = Math.pow(Math.random(), 0.55) * (umbrellaRadius * 0.85);
+          const spreadSpeed = (3.2 + colNorm * 5.5) * (0.75 + Math.random() * 0.5);
+          const vx = Math.cos(uAng) * spreadSpeed;
+          const vz = Math.sin(uAng) * spreadSpeed;
+          const vy = (Math.random() - 0.45) * 0.8;
+          const lifetime = 4.8 + colNorm * 4.2 + Math.random() * 2.5;
+
+          ashPool.emit(
+            craterPos.x + Math.cos(uAng) * uDist,
+            craterPos.y + uAlt,
+            craterPos.z + Math.sin(uAng) * uDist,
+            vx, vy, vz,
+            lifetime,
+            1.22, 1.18, 1.14,
+            9.5 + colNorm * 10.5 + Math.random() * 5.0
+          );
+        }
       }
     }
 
     function spawnBomb(intensity) {
-      if (Math.random() > intensity * 0.7 + 0.05) return;
-      const ang = Math.random() * Math.PI * 2;
-      const spd = 6 + intensity * 6 + Math.random() * 4;
-      const elev = 0.6 + Math.random() * 0.6; // Steeper angle for bombs
-      bombPool.emit(
-        0, craterPos.y, 0,
-        Math.cos(ang) * spd * Math.cos(elev),
-        spd * Math.sin(elev),
-        Math.sin(ang) * spd * Math.cos(elev),
-        1.8 + Math.random() * 1.5,
-        1.0, 0.7 + Math.random() * 0.3, 0.1,
-        0.4 + Math.random() * 0.3
-      );
+      if (Math.random() > intensity * 0.8 + 0.08) return;
+      const count = 1 + Math.floor(Math.random() * (1 + intensity * 3));
+      for (let k = 0; k < count; k++) {
+        const ang = Math.random() * Math.PI * 2;
+        // Proximal ballistic trajectory confined to volcanic edifice
+        const spd = 4.5 + intensity * 6.5 + Math.random() * 3.5;
+        const elev = 0.70 + Math.random() * 0.50; // High arc
+        bombPool.emit(
+          (Math.random() - 0.5) * 0.35, craterPos.y + 0.1, (Math.random() - 0.5) * 0.35,
+          Math.cos(ang) * spd * Math.cos(elev),
+          spd * Math.sin(elev),
+          Math.sin(ang) * spd * Math.cos(elev),
+          2.0 + Math.random() * 1.5,
+          1.0, 0.75 + Math.random() * 0.25, 0.12,
+          0.75 + Math.random() * 0.45
+        );
+      }
     }
 
     function spawnPyroclastic(pyro, intensity) {
@@ -1989,75 +3131,78 @@
 
       if (isStHelensBlast) {
         // High-velocity directed lateral blast roaring northward out of the collapsed breach
-        const count = Math.round(3 + intensity * 5);
+        const count = Math.round(5 + intensity * 7);
         for (let k = 0; k < count; k++) {
           const spread = (-Math.PI / 2) + (Math.random() - 0.5) * (Math.PI * 0.55);
-          const spd = 14 + intensity * 16 + Math.random() * 8;
+          const spd = 16 + intensity * 18 + Math.random() * 10;
           const blastY = craterPos.y - 0.2 + Math.random() * 1.2;
           pyroPool.emit(
-            (Math.random() - 0.5) * 1.5, blastY, -0.6 - Math.random() * 0.8,
-            Math.cos(spread) * spd, 0.8 + Math.random() * 2.2, Math.sin(spread) * spd,
-            4.2 + Math.random() * 2.8,
+            (Math.random() - 0.5) * 1.6, blastY, -0.6 - Math.random() * 0.8,
+            Math.cos(spread) * spd, 0.8 + Math.random() * 2.5, Math.sin(spread) * spd,
+            4.8 + Math.random() * 3.0,
             0.32 + Math.random() * 0.1, 0.22, 0.15,
-            0.85 + Math.random() * 0.65
+            2.2 + Math.random() * 1.5
           );
         }
         return;
       }
 
-      if (pyro < 0.12 || Math.random() > pyro * 0.8) return;
-      const ang = Math.random() * Math.PI * 2;
-      // High initial velocity for column collapse
-      const spd = 2 + pyro * 5 + intensity * 3;
-      // Start slightly above crater, mimicking column collapse
-      const collapseHeight = craterPos.y + Math.random() * 3.0;
-      pyroPool.emit(
-        (Math.random() - 0.5), collapseHeight, (Math.random() - 0.5),
-        Math.cos(ang) * spd, -1.5 - Math.random() * 2.0, Math.sin(ang) * spd,
-        4.0 + Math.random() * 3.0,
-        0.28 + pyro * 0.25, 0.15, 0.08,
-        0.65 + Math.random() * 0.45
-      );
+      if (pyro < 0.10 || Math.random() > pyro * 0.85) return;
+      const count = Math.round(2 + pyro * 5);
+      for (let k = 0; k < count; k++) {
+        const ang = Math.random() * Math.PI * 2;
+        // High initial velocity for column collapse
+        const spd = 2.5 + pyro * 6 + intensity * 3.5;
+        // Start around crater rim / collapsing column base
+        const collapseHeight = craterPos.y + Math.random() * 3.2;
+        pyroPool.emit(
+          (Math.random() - 0.5) * 1.2, collapseHeight, (Math.random() - 0.5) * 1.2,
+          Math.cos(ang) * spd, -1.8 - Math.random() * 2.2, Math.sin(ang) * spd,
+          4.5 + Math.random() * 3.2,
+          0.30 + pyro * 0.25, 0.16, 0.08,
+          1.8 + Math.random() * 1.2
+        );
+      }
     }
 
     function spawnSteam(intensity) {
       const isEyjaIceMelt = activeEruption === 'eyja2010' && state.timeline >= 0.14 && state.timeline <= 0.35;
-      const chance = isEyjaIceMelt ? 0.92 : (intensity * 0.45 + 0.12);
+      const chance = isEyjaIceMelt ? 0.95 : (intensity * 0.55 + 0.15);
       if (Math.random() > chance) return;
-      const count = isEyjaIceMelt ? 3 : 1;
+      const count = isEyjaIceMelt ? 4 : 2;
       for (let k = 0; k < count; k++) {
         const ang = Math.random() * Math.PI * 2;
-        const rad = isEyjaIceMelt ? (0.4 + Math.random() * 1.6) : 0.75;
+        const rad = isEyjaIceMelt ? (0.4 + Math.random() * 1.8) : 0.85;
         steamPool.emit(
-          Math.cos(ang) * rad, craterPos.y - 0.3, Math.sin(ang) * rad,
-          Math.cos(ang) * 0.5, 2.5 + Math.random() * 2.5, Math.sin(ang) * 0.5,
-          4.5 + Math.random() * 2.5,
-          0.86, 0.88, 0.92,
-          isEyjaIceMelt ? (0.8 + Math.random() * 0.5) : (0.65 + Math.random() * 0.35)
+          Math.cos(ang) * rad, craterPos.y - 0.25, Math.sin(ang) * rad,
+          Math.cos(ang) * 0.6, 3.0 + Math.random() * 2.8, Math.sin(ang) * 0.6,
+          4.8 + Math.random() * 2.8,
+          0.88, 0.90, 0.94,
+          isEyjaIceMelt ? (2.4 + Math.random() * 1.5) : (1.8 + Math.random() * 1.2)
         );
       }
     }
 
     function spawnSecondaryVentPuff(vent, intensity) {
-      if (Math.random() > intensity * 0.45 + 0.1) return;
+      if (Math.random() > intensity * 0.5 + 0.12) return;
       const vx = vent.normalizedX * 8.5;
       const vz = Math.sin(vent.normalizedX * 9.7) * 1.5;
       const vy = terrainHeightAt(vx, vz) + 0.15;
-      const spd = 2.5 + intensity * 3.5;
+      const spd = 3.0 + intensity * 4.0;
 
       ashPool.emit(
-        vx + (Math.random() - 0.5) * 0.3, vy, vz + (Math.random() - 0.5) * 0.3,
-        (Math.random() - 0.5) * 0.6, spd, (Math.random() - 0.5) * 0.6,
-        2.8 + Math.random() * 2.0,
-        0.28, 0.22, 0.18, 0.5
+        vx + (Math.random() - 0.5) * 0.35, vy, vz + (Math.random() - 0.5) * 0.35,
+        (Math.random() - 0.5) * 0.7, spd, (Math.random() - 0.5) * 0.7,
+        3.2 + Math.random() * 2.2,
+        0.90, 0.88, 0.85, 2.0 + Math.random() * 1.0
       );
 
-      if (Math.random() < 0.35) {
+      if (Math.random() < 0.45) {
         steamPool.emit(
           vx, vy, vz,
-          (Math.random() - 0.5) * 0.4, 3.5 + Math.random() * 2.0, (Math.random() - 0.5) * 0.4,
-          3.2 + Math.random() * 2.2,
-          0.9, 0.92, 0.95, 0.75
+          (Math.random() - 0.5) * 0.5, 4.0 + Math.random() * 2.2, (Math.random() - 0.5) * 0.5,
+          3.6 + Math.random() * 2.4,
+          0.90, 0.92, 0.96, 2.2 + Math.random() * 1.0
         );
       }
     }
@@ -2090,7 +3235,6 @@
     /* ══════════════════════════════════════════
        STATE
     ══════════════════════════════════════════ */
-    const state = { mode:'historical', intensity:72, column:18, viscosity:50, pyro:40, vtype:'strato', timeline:0.0 };
     let rebuildTimer = 0;
     let activeEruption = 'vesuvius79';
     let simTime = 0;
@@ -2347,10 +3491,10 @@
     }
 
     function viscosityLabel(v) {
-      if (v < 25) return 'Basalt (fluid)';
-      if (v < 50) return 'Andesite';
-      if (v < 75) return 'Dacite';
-      return 'Rhyolite (thick)';
+      if (v < 25) return 'Basaltic (~50% SiO₂)';
+      if (v < 50) return 'Andesitic (~58% SiO₂)';
+      if (v < 75) return 'Dacitic (~65% SiO₂)';
+      return 'Rhyolitic (~73% SiO₂)';
     }
 
     let terrainRequest = 0;
@@ -2466,16 +3610,63 @@
       sunLight.intensity = lerp(1.1, 0.1, t * 0.7) * sunBrightness;
       fillLight.intensity = lerp(0.2, 0.05, t) * sunBrightness + (1.0 - sunBrightness) * 1.4; // Moonlight — brighter, cool-toned fill at night
 
-      scene.fog.color.setHSL(0.6, 0.4, lerp(0.05, 0.08, ambientBrightness)); // Slightly blue, brighter fog at night
-      if (skyMat.uniforms.sunBrightness) {
-         skyMat.uniforms.sunBrightness.value = sunBrightness;
+      // Match scene fog color to atmospheric sky and volcanic horizon
+      const skyDayFog = new THREE.Color(0xa2b2c4);
+      const skyAshFog = new THREE.Color(0x281810);
+      const skyNightFog = new THREE.Color(0x02040a);
+      const baseFog = skyNightFog.clone().lerp(skyDayFog, sunBrightness);
+      const ashFogFactor = Math.min(1.0, (state.intensity / 100) * (state.column / 16));
+      baseFog.lerp(skyAshFog, ashFogFactor * 0.75);
+      scene.fog.color.copy(baseFog);
+
+      // Sky shader synchronization
+      if (skyMat && skyMat.uniforms) {
+        if (skyMat.uniforms.sunBrightness) skyMat.uniforms.sunBrightness.value = sunBrightness;
+        if (skyMat.uniforms.sunDir) skyMat.uniforms.sunDir.value.copy(sunLight.position).normalize();
+        if (skyMat.uniforms.ashAmount) skyMat.uniforms.ashAmount.value = Math.min(1.0, (state.intensity / 100) * (state.column / 15));
+        if (skyMat.uniforms.time) skyMat.uniforms.time.value = simTime;
       }
 
-      // Update fog to darken at night
-      if (t < 0.22) {
-         const currentFog = scene.fog.color.getHexString();
-         // Just darken the fog directly when it's clear sky
-         scene.fog.color.lerp(new THREE.Color(0x02040a), 1.0 - sunBrightness);
+      // Particle shader lighting synchronization
+      const glowVal = lavaBase * (1.0 + (1.0 - sunBrightness) * 2.5);
+      [ashPool, bombPool, pyroPool, steamPool].forEach(pool => {
+        if (pool && pool.mat && pool.mat.uniforms) {
+          if (pool.mat.uniforms.sunDir) pool.mat.uniforms.sunDir.value.copy(sunLight.position).normalize();
+          if (pool.mat.uniforms.sunColor) pool.mat.uniforms.sunColor.value.copy(sunLight.color);
+          if (pool.mat.uniforms.ambientColor) pool.mat.uniforms.ambientColor.value.copy(ambientLight.color);
+          if (pool.mat.uniforms.lavaGlow) pool.mat.uniforms.lavaGlow.value = glowVal;
+          if (pool.mat.uniforms.craterPos) pool.mat.uniforms.craterPos.value.copy(craterPos);
+          if (pool.mat.uniforms.time) pool.mat.uniforms.time.value = simTime;
+        }
+      });
+      if (lavaRenderMat && lavaRenderMat.uniforms) {
+        if (lavaRenderMat.uniforms.sunDir) lavaRenderMat.uniforms.sunDir.value.copy(sunLight.position).normalize();
+        if (lavaRenderMat.uniforms.lavaGlow) lavaRenderMat.uniforms.lavaGlow.value = glowVal;
+        if (lavaRenderMat.uniforms.craterPos) lavaRenderMat.uniforms.craterPos.value.copy(craterPos);
+      }
+
+      // Volumetric plume column core shader synchronization
+      if (plumeCoreMat && plumeCoreMat.uniforms) {
+        const colNorm = state.column / 45;
+        const intNorm = state.intensity / 100;
+        const plumeH = Math.max(1.0, colNorm * 22.0);
+        const ventR = 0.35 + intNorm * 0.55;
+        const umbrellaR = Math.max(1.2, colNorm * 14.5 * Math.pow(intNorm, 0.45));
+
+        plumeCoreMat.uniforms.craterPos.value.copy(craterPos);
+        plumeCoreMat.uniforms.plumeHeight.value = plumeH;
+        plumeCoreMat.uniforms.ventRadius.value = ventR;
+        plumeCoreMat.uniforms.umbrellaRadius.value = umbrellaR;
+        plumeCoreMat.uniforms.intensity.value = intNorm;
+        plumeCoreMat.uniforms.time.value = simTime;
+        plumeCoreMat.uniforms.wind.value.set(wind.x, wind.z);
+        plumeCoreMat.uniforms.sunDir.value.copy(sunLight.position).normalize();
+        plumeCoreMat.uniforms.sunColor.value.copy(sunLight.color);
+        plumeCoreMat.uniforms.ambientColor.value.copy(ambientLight.color);
+        plumeCoreMat.uniforms.lavaGlow.value = glowVal;
+      }
+      if (plumeCoreMesh) {
+        plumeCoreMesh.visible = (state.intensity > 1 && state.column > 0.5);
       }
     }
 
@@ -2489,55 +3680,79 @@
       const py = pool.pos[i*3+1];
       const pz = pool.pos[i*3+2];
 
-      // Convective thrust & thermal buoyancy
-      // Rises strongly initially, then buoyancy decreases as it cools and entrains air
-      let buoyancy = t < 0.6 ? 8.0 * (0.6 - t) : -0.2;
+      const altitude = Math.max(0, py - craterPos.y);
+      const colNorm = state.column / 45;
+      const targetColumnH = Math.max(2.0, colNorm * 22.0);
+      const nblH = targetColumnH * 0.74; // Neutral Buoyancy Level
+
+      // 1. Morton, Taylor & Turner (1956) Buoyant Jet Dynamics
+      let buoyancy;
+      if (altitude < nblH) {
+        // Convective buoyancy acceleration of hot entrained mixture
+        const buoyantFrac = 1.0 - (altitude / nblH);
+        buoyancy = 8.5 * Math.pow(buoyantFrac, 0.75) - GRAVITY * 0.15;
+      } else {
+        // Stratospheric deceleration above NBL / momentum overshoot
+        const overshoot = (altitude - nblH) / (targetColumnH * 0.28 + 0.1);
+        buoyancy = -GRAVITY * (0.8 + overshoot * 1.5);
+      }
+      // Falling virga / tephra precipitation from older cloud base
+      if (t > 0.55 && altitude > targetColumnH * 0.4) {
+        buoyancy -= GRAVITY * 0.45 * (t - 0.55);
+      }
       pool.vel[i*3+1] += buoyancy * dt;
 
-      // Turbulence using fbm noise
-      const turbScale = 0.3;
-      const nx = fbm(py * turbScale - simTime, pz * turbScale, 2) - 0.5;
-      const ny = fbm(pz * turbScale - simTime, px * turbScale, 2) - 0.5;
-      const nz = fbm(px * turbScale - simTime, py * turbScale, 2) - 0.5;
-      pool.vel[i*3]   += nx * 6.0 * dt;
-      pool.vel[i*3+1] += ny * 3.0 * dt;
-      pool.vel[i*3+2] += nz * 6.0 * dt;
+      // 2. Multi-frequency turbulence (turbulent Kelvin-Helmholtz billow eddies)
+      const turbScale = 0.18;
+      const nx = (fbm(py * turbScale - simTime * 0.65, pz * turbScale, 2) - 0.5);
+      const ny = (fbm(pz * turbScale - simTime * 0.65, px * turbScale, 2) - 0.5);
+      const nz = (fbm(px * turbScale - simTime * 0.65, py * turbScale, 2) - 0.5);
+      const turbAmp = 4.2 + (t * 5.5);
+      pool.vel[i*3]   += nx * turbAmp * dt;
+      pool.vel[i*3+1] += ny * (turbAmp * 0.4) * dt;
+      pool.vel[i*3+2] += nz * turbAmp * dt;
 
-      // Umbrella spreading region
-      if (t > 0.5) {
-        const spreadFactor = (t - 0.5) * 4.0 * dt;
-        const dist = Math.hypot(px, pz) + 0.001;
-        pool.vel[i*3]   += (px / dist) * spreadFactor;
-        pool.vel[i*3+2] += (pz / dist) * spreadFactor;
+      // 3. Stratospheric Umbrella Gravity Current (Sparks 1986; Mastin et al. 2009)
+      // Horizontal intrusive gravity current spreading at NBL: u_r ~ 1 / sqrt(r)
+      if (altitude > targetColumnH * 0.60) {
+        const dx = px - craterPos.x;
+        const dz = pz - craterPos.z;
+        const dist = Math.hypot(dx, dz) + 0.01;
+        const radialSpeed = (4.8 + colNorm * 6.5) / Math.max(1.0, Math.sqrt(dist));
+        pool.vel[i*3]   += (dx / dist) * radialSpeed * dt;
+        pool.vel[i*3+2] += (dz / dist) * radialSpeed * dt;
       }
 
-      // Air resistance
-      const drag = 1.0 - 0.6 * dt;
+      // 4. Aerodynamic drag
+      const drag = 1.0 - 0.38 * dt;
       pool.vel[i*3]   *= drag;
       pool.vel[i*3+1] *= drag;
       pool.vel[i*3+2] *= drag;
 
-      // Wind advection increases with altitude (stratospheric shear)
-      const windFactor = Math.min(1.5, Math.max(0.1, (py - 3.5) / 6.0));
-      pool.vel[i*3]   += wind.x * windFactor * 2.2 * dt;
-      pool.vel[i*3+2] += wind.z * windFactor * 2.2 * dt;
+      // 5. Stratospheric wind shear advection increasing with altitude
+      const windFactor = Math.min(2.8, Math.max(0.1, altitude / 4.8));
+      pool.vel[i*3]   += wind.x * windFactor * 3.2 * dt;
+      pool.vel[i*3+2] += wind.z * windFactor * 3.2 * dt;
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
       pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
 
-      pool.col[i*3] = lerp(0.18, 0.48, t);
-      pool.col[i*3+1] = lerp(0.16, 0.44, t);
-      pool.col[i*3+2] = lerp(0.15, 0.42, t);
-      // Volume expansion due to pressure drop at altitude
-      pool.sz[i] = 0.4 + t * 4.5;
+      // 6. Ash color gradation (darker juvenile tephra at base, pale pumice aloft)
+      const ashTint = lerp(0.85, 1.25, Math.min(1.0, altitude / (targetColumnH * 0.8 + 0.1)));
+      pool.col[i*3]   = ashTint * 1.02;
+      pool.col[i*3+1] = ashTint * 0.98;
+      pool.col[i*3+2] = ashTint * 0.94;
+
+      // 7. Volumetric cauliflower expansion (air entrainment expands billow volume)
+      pool.sz[i] += (2.5 + colNorm * 3.8) * dt;
+      if (pool.sz[i] > 26.0) pool.sz[i] = 26.0;
     }
 
     function tickBomb(i, t, pool, dt) {
-      pool.vel[i*3+1] -= GRAVITY * dt;
-      // Air drag on heavy projectiles
-      pool.vel[i*3]   *= (1.0 - 0.2 * dt);
-      pool.vel[i*3+2] *= (1.0 - 0.2 * dt);
+      pool.vel[i*3+1] -= GRAVITY * 2.2 * dt;
+      pool.vel[i*3]   *= (1.0 - 0.15 * dt);
+      pool.vel[i*3+2] *= (1.0 - 0.15 * dt);
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
@@ -2545,82 +3760,90 @@
 
       const gx = pool.pos[i*3];
       const gz = pool.pos[i*3+2];
-      const ground = terrainHeightAt(gx, gz);
-      if (pool.pos[i*3+1] < ground) {
-        // Impact cratering or bouncing
+      const ground = terrainHeightAt(gx, gz) + 0.08;
+      if (pool.pos[i*3+1] <= ground) {
         pool.pos[i*3+1] = ground;
-        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.3;
+        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.25;
         const slope = slopeDir(gx, gz);
-        pool.vel[i*3]   += slope.x * GRAVITY * 0.5 * dt;
-        pool.vel[i*3+2] += slope.z * GRAVITY * 0.5 * dt;
+        pool.vel[i*3]   += slope.x * GRAVITY * 0.8 * dt;
+        pool.vel[i*3+2] += slope.z * GRAVITY * 0.8 * dt;
       }
 
-      const heat = Math.max(0, 1 - t * 1.5); // cools rapidly
+      // Radiative cooling: incandescent white-yellow -> glowing red-orange -> dark crust
+      const heat = Math.max(0, 1.0 - t * 1.35);
       pool.col[i*3]   = 1.0;
-      pool.col[i*3+1] = lerp(0.9, 0.2, t) * heat;
-      pool.col[i*3+2] = heat * heat * 0.18;
-      pool.sz[i] = lerp(0.45, 0.15, t);
+      pool.col[i*3+1] = heat * 0.85;
+      pool.col[i*3+2] = heat * heat * 0.25;
+      pool.sz[i] = lerp(0.85, 0.35, t);
     }
 
     function tickPyro(i, t, pool, dt) {
-      // Density current dynamics (heavier than surrounding air, hugs ground)
-      pool.vel[i*3+1] -= GRAVITY * 0.9 * dt;
-
-      // Ground interaction and valley-following slope acceleration
       const gx = pool.pos[i*3];
       const gz = pool.pos[i*3+2];
-      const ground = terrainHeightAt(gx, gz) + 0.12;
+      const ground = terrainHeightAt(gx, gz) + 0.14;
 
-      if (pool.pos[i*3+1] <= ground) {
+      // Density current dynamics: ground-hugging gravity current
+      if (pool.pos[i*3+1] <= ground + 0.25) {
         pool.pos[i*3+1] = ground;
-        // Loses vertical momentum to friction/suspension
-        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.15;
+        pool.vel[i*3+1] = Math.abs(pool.vel[i*3+1]) * 0.1;
 
+        // Valley-following slope acceleration (flows channelize into ravines)
         const slope = slopeDir(gx, gz);
-        // Accelerates strongly down slopes into valley troughs
-        pool.vel[i*3]   += slope.x * GRAVITY * 3.2 * dt;
-        pool.vel[i*3+2] += slope.z * GRAVITY * 3.2 * dt;
-      } else {
-        // Internal turbulence keeping airborne particles billowy
-        pool.vel[i*3]   += (Math.random() - 0.5) * 3.0 * dt;
-        pool.vel[i*3+2] += (Math.random() - 0.5) * 3.0 * dt;
-      }
+        pool.vel[i*3]   += slope.x * GRAVITY * 3.8 * dt;
+        pool.vel[i*3+2] += slope.z * GRAVITY * 3.8 * dt;
 
-      // Drag against ground and air
-      pool.vel[i*3]   *= Math.exp(-0.45 * dt);
-      pool.vel[i*3+2] *= Math.exp(-0.45 * dt);
+        // Ground friction
+        pool.vel[i*3]   *= (1.0 - 0.35 * dt);
+        pool.vel[i*3+2] *= (1.0 - 0.35 * dt);
+      } else {
+        // Co-ignimbrite ash surge (elutriation): fine ash lifts off the current due to thermal buoyancy
+        if (t > 0.3) {
+          pool.vel[i*3+1] += (2.5 * (t - 0.3)) * dt;
+        } else {
+          pool.vel[i*3+1] -= GRAVITY * 1.1 * dt;
+        }
+        // Lateral billowing
+        pool.vel[i*3]   += (Math.random() - 0.5) * 3.5 * dt;
+        pool.vel[i*3+2] += (Math.random() - 0.5) * 3.5 * dt;
+      }
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
       pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
 
-      pool.col[i*3]   = lerp(0.7, 0.15, t);
-      pool.col[i*3+1] = lerp(0.25, 0.05, t);
-      pool.col[i*3+2] = lerp(0.06, 0.03, t);
+      // Color: hot glowing base transitioning to dense turbulent ash cloud
+      const hot = Math.max(0, 1.0 - t * 2.2);
+      pool.col[i*3]   = lerp(0.24, 0.95, hot);
+      pool.col[i*3+1] = lerp(0.18, 0.45, hot);
+      pool.col[i*3+2] = lerp(0.15, 0.08, hot);
 
-      // Expands as it entrains air
-      pool.sz[i] = 0.6 + t * 2.2;
+      // Billow expansion: pyroclastic density surge expands into boiling ground-hugging front
+      pool.sz[i] += (3.5 + state.pyro / 25) * dt;
+      if (pool.sz[i] > 22.0) pool.sz[i] = 22.0;
     }
 
     function tickSteam(i, t, pool, dt) {
-      // Strong thermal buoyancy for pure steam/gas
-      pool.vel[i*3+1] += 12.0 * dt;
+      // Strong thermal buoyancy
+      pool.vel[i*3+1] += (9.5 - t * 4.0) * dt;
 
-      pool.vel[i*3]   += (Math.random() - 0.5) * 1.5 * dt;
-      pool.vel[i*3+2] += (Math.random() - 0.5) * 1.5 * dt;
+      pool.vel[i*3]   += (Math.random() - 0.5) * 1.8 * dt + wind.x * 2.5 * dt;
+      pool.vel[i*3+2] += (Math.random() - 0.5) * 1.8 * dt + wind.z * 2.5 * dt;
 
-      pool.vel[i*3]   += wind.x * 3.0 * dt;
-      pool.vel[i*3+2] += wind.z * 3.0 * dt;
+      const drag = 1.0 - 0.4 * dt;
+      pool.vel[i*3]   *= drag;
+      pool.vel[i*3+1] *= drag;
+      pool.vel[i*3+2] *= drag;
 
       pool.pos[i*3]   += pool.vel[i*3] * dt;
       pool.pos[i*3+1] += pool.vel[i*3+1] * dt;
       pool.pos[i*3+2] += pool.vel[i*3+2] * dt;
 
-      // Rapid expansion
-      pool.sz[i] = 0.5 + t * 3.5;
+      // Rapid expansion and dispersion
+      pool.sz[i] += 2.2 * dt;
+      if (pool.sz[i] > 18.0) pool.sz[i] = 18.0;
 
-      const fade = Math.min(1, t * 3) * Math.max(0, 1 - t * 1.4);
-      const c = 0.9 * fade + 0.65 * (1 - fade);
+      const fade = Math.min(1.0, t * 4.0) * Math.max(0.0, 1.0 - t * 1.2);
+      const c = 0.88 * fade + 0.6 * (1.0 - fade);
       pool.col[i*3] = pool.col[i*3+1] = pool.col[i*3+2] = c;
     }
 
@@ -2674,6 +3897,27 @@
       updateLavaField(dt);
       lavaDeposit.uniforms.time.value = simTime;
 
+      // Volcanic lightning timing during vigorous Plinian & sub-Plinian phases
+      if (lightningDuration > 0) {
+        lightningDuration -= dt;
+        lightningMat.opacity = Math.max(0.0, lightningDuration / 0.12);
+        lightningLight.intensity = (lightningDuration / 0.12) * (10.0 + (state.intensity / 100) * 12.0);
+      } else {
+        lightningMat.opacity = 0.0;
+        lightningLight.intensity = 0.0;
+        lightningTimer += dt;
+        const lightningInterval = Math.max(0.35, 3.2 - (state.intensity / 100) * 1.8 - (state.column / 45) * 1.2);
+        if (lightningTimer >= lightningInterval) {
+          lightningTimer = 0;
+          if (state.intensity >= 45 && state.column >= 10 && Math.random() < 0.75) {
+            triggerVolcanicLightning();
+          }
+        }
+      }
+
+      // Keep lighting and shader uniforms synchronized each frame
+      updateLighting(i);
+
       // Organic multi-frequency lava pulse
       const pulse = 0.76 + Math.sin(ts * 0.0031) * 0.13 + Math.sin(ts * 0.0079 + 1.4) * 0.07 + Math.sin(ts * 0.0017 + 2.9) * 0.04;
 
@@ -2705,13 +3949,16 @@
       const ventsEl = document.getElementById('hud-vents');
 
       if (depthEl) depthEl.textContent = `Depth: ${diag.primaryDepthKm} km`;
-      if (volEl) volEl.textContent = `Reservoir model: ${diag.totalVolumeKm3} km³`;
-      if (pressEl) pressEl.textContent = `Rock pressure model: ${diag.rockPressureMPa} MPa`;
-      if (ventsEl) ventsEl.textContent = `Surface paths: ${diag.ventCount} (schematic)`;
+      if (volEl) volEl.textContent = `Reservoir: ${diag.totalVolumeKm3} km³`;
+      if (pressEl) pressEl.textContent = `Lithostatic: ${diag.rockPressureMPa} MPa`;
+      if (ventsEl) ventsEl.textContent = `Paths: ${diag.ventCount}`;
 
-      document.getElementById('hud-melt-vol').textContent = `Melt remaining model: ${diag.meltVolumeKm3} km³`;
-      document.getElementById('hud-buoyancy').textContent = `Column buoyancy model: ${diag.buoyancyMPa} MPa`;
-      document.getElementById('hud-erupted-dre').textContent = `Erupted DRE${diag.mode === 'exploration' ? ' (baseline; model scenario)' : ' (source estimate)'}: ${diag.eruptedDRE ? diag.eruptedDRE.join('–') + ' km³' : 'unavailable'}`;
+      const meltEl = document.getElementById('hud-melt-vol');
+      if (meltEl) meltEl.textContent = `Melt: ${diag.meltVolumeKm3} km³`;
+      const buoyEl = document.getElementById('hud-buoyancy');
+      if (buoyEl) buoyEl.textContent = `Buoyancy: ${diag.buoyancyMPa} MPa`;
+      const dreEl = document.getElementById('hud-erupted-dre');
+      if (dreEl) dreEl.textContent = `Erupted DRE: ${diag.eruptedDRE ? diag.eruptedDRE.join('–') + ' km³' : 'unavailable'}`;
       const cardDepth = document.getElementById('card-ch-depth');
       const cardPress = document.getElementById('card-ch-pressure');
       const cardVol = document.getElementById('card-ch-vol');
@@ -2735,17 +3982,17 @@
         stage?.classList.remove('view-split');
         if (volOuter) volOuter.style.display = 'block';
         if (conduitOuter) conduitOuter.style.display = 'none';
-        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Subsurface Magma Cutaway';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 Inspect Subsurface Magma Conduit Cutaway';
       } else if (view === 'cross-section') {
         stage?.classList.remove('view-split');
         if (volOuter) volOuter.style.display = 'none';
         if (conduitOuter) conduitOuter.style.display = 'flex';
-        if (btnToggleCutaway) btnToggleCutaway.textContent = '🌋 Return to 3D Surface View';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🌋 Return to 3D Surface Dynamics View';
       } else if (view === 'split') {
         stage?.classList.add('view-split');
         if (volOuter) volOuter.style.display = 'block';
         if (conduitOuter) conduitOuter.style.display = 'flex';
-        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Magma Cutaway Only';
+        if (btnToggleCutaway) btnToggleCutaway.textContent = '🔬 View Magma Conduit Cutaway Only';
       }
 
       requestAnimationFrame(() => {

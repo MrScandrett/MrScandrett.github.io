@@ -210,6 +210,8 @@
     .readout-val.critical{ color: #ff2020; }
     .readout-val.blue    { color: #60b8ff; }
     .readout-val.acid    { color: #ff9040; }
+    .weather-note { font-size: 0.72rem; line-height: 1.45; color: rgba(195,220,255,0.8); margin: 0.55rem 0 0; }
+    .weather-note a { color: #9dceff; }
 
     /* Alert bar — restyled as a "Threat Level" HUD headline */
     .alert-bar {
@@ -372,7 +374,7 @@
         <!-- Hero -->
         <header class="cs-hero">
           <h1>🌍 Climate Modeling Simulator</h1>
-          <p>Adjust CO₂, solar irradiance, ice coverage, deforestation, and methane to model Earth's climate system. Watch particle-animated weather patterns, carbon cycles, and temperature shifts respond in real-time on a 3D globe.</p>
+          <p>Adjust CO₂, solar irradiance, ice coverage, deforestation, and methane to explore a simplified climate system. The globe illustrates seasonal cloud and storm environments, not observed weather or a forecast.</p>
         </header>
 
         <!-- App -->
@@ -395,7 +397,7 @@
         </defs>
         <g id="particle-root"></g>
       </svg>
-      <div class="mode-badge" id="mode-badge">🌪️ Weather Patterns</div>
+      <div class="mode-badge" id="mode-badge">🌪️ Seasonal storm regions</div>
       <div class="heatmap-legend" id="heatmap-legend" aria-hidden="true">
         <span class="heatmap-legend-title">Local Anomaly (GISTEMP Scale)</span>
         <div class="heatmap-bar"></div>
@@ -414,7 +416,7 @@
             <figcaption>NASA Scientific Visualization Studio / NASA GISS, <cite>Global Temperature Anomalies from 1880 to 2025</cite> (GISTEMP v4). No sound. Public domain (NASA, U.S. government work).</figcaption>
           </figure>
         </section>
-      <p class="cs-note">Surface imagery: NASA Blue Marble / Black Marble historical composites (public domain), not live observations. Offline land fallback: Natural Earth v5.1.2, 50m (public domain). Animated clouds and ice changes are classroom model overlays; they are not observed geography or a forecast shoreline.</p>
+      <p class="cs-note">Surface imagery: NASA Blue Marble / Black Marble historical composites (public domain), not live observations. Offline land fallback: Natural Earth v5.1.2, 50m (public domain). Animated clouds, storm regions, and ice changes are classroom model overlays; they are not observed weather, a storm forecast, or a forecast shoreline. <a href="https://www.noaa.gov/jetstream/tropical/tropical-cyclone-introduction">NOAA cyclone formation guide</a> · <a href="https://www.ipcc.ch/report/ar6/wg1/chapter/chapter-8/">IPCC water cycle assessment</a>.</p>
 </main>
     </div><!-- .ll-sim -->
 
@@ -450,6 +452,15 @@
               <button class="mode-tab active" data-mode="weather">🌪️ Weather</button>
               <button class="mode-tab" data-mode="carbon">♻️ Carbon</button>
               <button class="mode-tab" data-mode="temperature">🌡️ Heat Map</button>
+            </div>
+
+            <div class="ctrl-card" id="weather-season-card">
+              <h3>Weather season</h3>
+              <label class="param-label" for="s-month">Illustrated month <strong id="v-month">September</strong></label>
+              <input type="range" id="s-month" min="1" max="12" value="9" step="1" />
+              <div class="range-ends"><span>January</span><span>December</span></div>
+              <p class="weather-note" id="weather-explainer">Seasonal storm regions are illustrative. No actual cyclones are shown.</p>
+              <p class="weather-note">Compare with <a href="weather-watch.html">live Weather Watch</a>.</p>
             </div>
 
             <!-- Parameters -->
@@ -510,8 +521,8 @@
                   <span class="readout-val neutral" id="out-ph">8.06</span>
                 </div>
                 <div class="readout-card">
-                  <span class="readout-lbl">Storm Index</span>
-                  <span class="readout-val neutral" id="out-storm">1.2×</span>
+                  <span class="readout-lbl">Moisture capacity</span>
+                  <span class="readout-val neutral" id="out-storm">1.1×</span>
                 </div>
                 <div class="readout-card">
                   <span class="readout-lbl">Radiative Forcing</span>
@@ -571,6 +582,8 @@
 
   <!-- Three.js (shared vendored bundle — see assets/vendor/three-bundle.min.js) -->
   <script src="../../assets/js/sim-kit.js"></script>
+  <script src="../../assets/js/cloud-engine.js"></script>
+  <script src="../../assets/js/lessons/climate-weather.js"></script>
   <script src="../../assets/vendor/d3-geo-runtime.min.js"></script>
   <script src="../../assets/geodata/world/world-data.js"></script>
   <script src="../../assets/js/earth-engine.js"></script>
@@ -624,7 +637,7 @@
       return tex;
     }
 
-    function buildCloudTexture() {
+    function buildCloudTexture(month = 9) {
       const W = 1024, H = 512;
       const cnv = document.createElement('canvas');
       cnv.width = W; cnv.height = H;
@@ -636,7 +649,9 @@
         const lat = (0.5 - ny) * 180;
         const absLat = Math.abs(lat);
         // Atmospheric circulation bands: ITCZ, mid-latitude baroclinic storm tracks, polar fronts, subtropical dry highs
-        const itcz       = Math.exp(-Math.pow((lat - 3) / 7.5, 2)) * 0.42;
+        // The tropical rain belt follows the warmer hemisphere through the year.
+        const itczCenter = 7 * Math.sin((month - 3) * Math.PI / 6);
+        const itcz       = Math.exp(-Math.pow((lat - itczCenter) / 7.5, 2)) * 0.42;
         const stormTrack = Math.exp(-Math.pow((absLat - 50) / 11, 2)) * 0.34;
         const polarFront = Math.exp(-Math.pow((absLat - 67) /  7, 2)) * 0.22;
         const dryBelt    = Math.exp(-Math.pow((absLat - 26) /  7, 2)) * 0.32;
@@ -922,6 +937,74 @@
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
     scene.add(cloudMesh);
 
+    // CloudEngine billows painted into a transparent satellite-style storm atlas.
+    // This is a fixed teaching illustration for each favored basin, not live imagery.
+    const stormCanvas = document.createElement('canvas');
+    stormCanvas.width = 2048;
+    stormCanvas.height = 1024;
+    const stormTexture = new THREE.CanvasTexture(stormCanvas);
+    stormTexture.wrapS = THREE.RepeatWrapping;
+    stormTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    const stormMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(2.041, 96, 64),
+      new THREE.MeshPhongMaterial({ map: stormTexture, transparent: true, opacity: 0.94, depthWrite: false })
+    );
+    scene.add(stormMesh);
+
+    function paintStormAtlas() {
+      const ctx = stormCanvas.getContext('2d');
+      const W = stormCanvas.width, H = stormCanvas.height;
+      ctx.clearRect(0, 0, W, H);
+      const body = CloudEngine.getSprite('cumulus_body');
+      const highlight = CloudEngine.getSprite('cumulus_highlight');
+      const shadow = CloudEngine.getSprite('cumulus_shadow');
+      const drawPuff = (sprite, x, y, size, alpha) => {
+        ctx.globalAlpha = alpha;
+        for (const offset of [-W, 0, W]) {
+          if (x + offset > -size && x + offset < W + size) {
+            ctx.drawImage(sprite, x + offset - size / 2, y - size / 2, size, size);
+          }
+        }
+      };
+      weather.basins.forEach((basin, index) => {
+        const uv = EarthEngine.lonLatToUV(basin.lon, basin.lat);
+        const cx = uv.u * W, cy = uv.v * H;
+        const radius = 56 + basin.season * 12;
+        const spin = basin.hemisphere === 'north' ? -1 : 1;
+        const phase = index * 1.73 + 0.4;
+        // Broad, fragmented rainbands around a dense eyewall. Uneven billows
+        // keep the result closer to a satellite cloud field than a line icon.
+        for (let arm = 0; arm < 3; arm++) {
+          for (let step = 0; step < 63; step++) {
+            const t = step / 62;
+            const theta = phase + arm * Math.PI * 2 / 3 + spin * t * Math.PI * 2.0;
+            const r = 9 + t * radius;
+            const wobble = 2.7 * Math.sin(step * 1.37 + arm * 2.9 + index);
+            const x = cx + (r + wobble) * Math.cos(theta);
+            const y = cy + (r + wobble) * Math.sin(theta);
+            const width = 14 + 10 * t + 3 * Math.sin(step * 0.71 + arm);
+            const opacity = (0.50 + 0.28 * Math.sin(Math.PI * t)) * basin.season;
+            drawPuff(shadow, x + 2, y + 3, width * 1.48, opacity * 0.52);
+            drawPuff(body, x, y, width, opacity);
+            if (step % 3 === 0) drawPuff(highlight, x - 2, y - 2, width * 0.75, opacity * 0.42);
+          }
+        }
+        // Bright, nearly continuous eyewall and a small cloud-free eye.
+        for (let i = 0; i < 34; i++) {
+          const a = i * Math.PI * 2 / 34;
+          drawPuff(body, cx + Math.cos(a) * 9, cy + Math.sin(a) * 9, 16, 0.87 * basin.season);
+          if (i % 2 === 0) drawPuff(highlight, cx + Math.cos(a) * 9, cy + Math.sin(a) * 9, 11, 0.42 * basin.season);
+        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = 0.94 * basin.season;
+        ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+      stormTexture.needsUpdate = true;
+    }
+
     // Atmosphere — Rayleigh limb-glow + solar forward-scattering phase function
     const atmGeo = new THREE.SphereGeometry(2.155, 64, 32);
     atmUniforms = {
@@ -1147,13 +1230,10 @@
       // 8.18 in 1850 (280 ppm) -> 8.06 today (429 ppm) -> 7.91 at 700 ppm
       const oceanPH = 8.18 - 0.66 * Math.log10(Math.max(180, co2) / C0);
 
-      // Tropical cyclone intensity index: scales with SST warming and ocean latent heat capacity
-      const stormIdx = 1 + Math.max(0, tempAnomaly * 0.13) + (ocean / 100) * 0.05 * Math.max(0, tempAnomaly);
-
       // Remaining polar sea/land ice percentage after thermal retreat
       const iceLeft = clamp(ice - Math.max(0, tempAnomaly) * 3.2 - Math.min(0, tempAnomaly) * 2.0, 0, 100);
 
-      return { totalForcing, tempAnomaly, seaLevel, oceanPH, stormIdx, iceLeft };
+      return { totalForcing, tempAnomaly, seaLevel, oceanPH, iceLeft };
     }
 
     /* ══════════════════════════════════════════
@@ -1196,17 +1276,6 @@
         { lat:  8, lon: -135, dLat: 0, dLon: -26, name: 'Pacific Trade Drift' },
         { lat: -12, lon:  75, dLat: -2, dLon: -24, name: 'Indian South Equatorial' },
         { lat: -54, lon: -45, dLat:  0, dLon: 28, name: 'Antarctic Circumpolar' },
-      ],
-      storms: [
-        { lat: 19, lon: -72 },  // Caribbean (NH -> CCW)
-        { lat: 15, lon:  89 },  // Bay of Bengal (NH -> CCW)
-        { lat: 18, lon: 136 },  // W Pacific Typhoon Alley (NH -> CCW)
-        { lat: -16, lon:  78 }, // S Indian Ocean (SH -> CW)
-        { lat: 26, lon: -48 },  // Main Development Region Atlantic (NH -> CCW)
-        { lat: 24, lon: -92 },  // Gulf of Mexico (NH -> CCW)
-        { lat: -17, lon: 162 }, // Coral Sea (SH -> CW)
-        { lat: 14, lon: -112 }, // E Pacific (NH -> CCW)
-        { lat: 21, lon: 124 },  // Philippine Sea (NH -> CCW)
       ],
       heat: [
         { lat: 74, lon:  40, polar: true },  // Barents-Kara Arctic Amplification
@@ -1262,14 +1331,6 @@
       return { el: g, maxAge: dur };
     }
 
-    function makeRainParticle(x, y) {
-      const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
-      g.innerHTML = `<ellipse rx="1.4" ry="4.2" fill="rgba(145,205,255,0.78)" transform="rotate(-12)"/>`;
-      const dur = 0.75 + Math.random() * 0.45;
-      g.style.cssText = `animation: rainDrop ${dur.toFixed(2)}s linear forwards;`;
-      return { el: g, maxAge: dur };
-    }
-
     function reticleMarkup(r, color, withCircle = true) {
       const t = Math.max(2, r * 0.22);
       const circle = withCircle
@@ -1282,37 +1343,6 @@
         <line x1="${(-r-t).toFixed(1)}" y1="0" x2="${(-r+t).toFixed(1)}" y2="0" stroke="${color}" stroke-width="1"/>
         <line x1="${(r-t).toFixed(1)}" y1="0" x2="${(r+t).toFixed(1)}" y2="0" stroke="${color}" stroke-width="1"/>
       `;
-    }
-
-    // Coriolis-accurate tropical cyclone:
-    // Northern Hemisphere (lat >= 0) spins counter-clockwise (stormSpinCCW);
-    // Southern Hemisphere (lat < 0) spins clockwise (stormSpin).
-    function makeStormParticle(x, y, scale, intensity = 0, isNorth = true) {
-      const g = svgEl('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})`, filter: 'url(#softglow)' });
-      const r = (12 + intensity * 9) * scale;
-      const bands = 3 + Math.round(intensity * 1);
-      const spinDur = Math.max(0.9, (2.5 - intensity * 1.25) + Math.random() * 0.4);
-      const spinAnim = isNorth ? 'stormSpinCCW' : 'stormSpin';
-      const armFlip = isNorth ? 1 : -1;
-      const color = `hsla(${208 - intensity * 172}, 88%, ${72 - intensity * 13}%, 0.86)`;
-      let bandPaths = '';
-      for (let i = 0; i < bands; i++) {
-        const br = r * (0.52 + i * 0.20);
-        const rot = i * (360 / bands);
-        const op = (0.86 - i * 0.16).toFixed(2);
-        bandPaths += `<path d="M0,-${br.toFixed(1)} C${(armFlip*br*0.65).toFixed(1)},-${(br*0.55).toFixed(1)} ${(armFlip*br).toFixed(1)},0 ${(armFlip*br*0.48).toFixed(1)},${(br*0.52).toFixed(1)} C${(armFlip*br*0.08).toFixed(1)},${br.toFixed(1)} ${(-armFlip*br*0.42).toFixed(1)},${(br*0.78).toFixed(1)} ${(-armFlip*br).toFixed(1)},${(br*0.18).toFixed(1)}"
-          fill="none" stroke="${color}" stroke-width="${(2.1 - i * 0.3).toFixed(1)}" stroke-linecap="round" opacity="${op}"
-          transform="rotate(${rot.toFixed(1)})"/>`;
-      }
-      const eyeR = (2.1 + intensity * 1.4).toFixed(1);
-      g.innerHTML = `
-        <g style="animation:${spinAnim} ${spinDur.toFixed(2)}s linear infinite; transform-origin:0 0">
-          ${bandPaths}
-          <circle r="${eyeR}" fill="rgba(10,20,45,0.85)" stroke="rgba(255,255,255,0.9)" stroke-width="1.2"/>
-        </g>
-        ${reticleMarkup(r * 0.65, 'rgba(160,205,255,0.42)')}
-      `;
-      return g;
     }
 
     function makeHeatRing(x, y, scale, isPolar = false) {
@@ -1377,18 +1407,6 @@
       clearParticles();
 
       if (mode === 'weather') {
-        const stormIntensity = clamp((climate.stormIdx - 1) / 1.1, 0, 1);
-        const stormCount = Math.min(geoPoints.storms.length, Math.max(2, Math.round(climate.stormIdx * 3.2)));
-        geoPoints.storms.slice(0, stormCount).forEach((pt, idx) => {
-          // Deterministic slight offset so preset switches are reproducible
-          const jLat = pt.lat + Math.sin(idx * 2.3) * 1.8;
-          const jLon = pt.lon + Math.cos(idx * 1.7) * 1.8;
-          const pos = geoToSVG(jLat, jLon);
-          const el = makeStormParticle(pos ? pos.x : 0, pos ? pos.y : 0, pos ? (0.62 + pos.depth * 0.55) : 0.8, stormIntensity, jLat >= 0);
-          if (!pos) el.style.opacity = '0';
-          pRoot.appendChild(el);
-          persistentParticles.push({ el, lat: jLat, lon: jLon, type: 'storm' });
-        });
         const vigor = clamp(state.ocean / 100, 0.2, 1);
         geoPoints.currents.forEach(pt => {
           const pos = geoToSVG(pt.lat, pt.lon);
@@ -1461,19 +1479,7 @@
       if (spawnTimer < 0.20) return;
       spawnTimer = 0;
 
-      if (mode === 'weather') {
-        if (climate.stormIdx > 1.08) {
-          const activeStorms = Math.min(geoPoints.storms.length, Math.max(2, Math.round(climate.stormIdx * 3.2)));
-          const pt = geoPoints.storms[Math.floor(Math.random() * activeStorms)];
-          const pos = geoToSVG(pt.lat + (Math.random() - 0.5) * 7, pt.lon + (Math.random() - 0.5) * 7);
-          if (pos) {
-            const { el, maxAge } = makeRainParticle(pos.x, pos.y);
-            pRoot.appendChild(el);
-            transientParticles.push({ el, age: 0, maxAge });
-          }
-        }
-
-      } else if (mode === 'carbon') {
+      if (mode === 'carbon') {
         const co2Rate = clamp((state.co2 - 280) / 300, 0, 1);
         if (Math.random() < co2Rate * 0.85 + 0.12) {
           const src = geoPoints.industry[Math.floor(Math.random() * geoPoints.industry.length)];
@@ -1519,6 +1525,9 @@
     ══════════════════════════════════════════ */
     const state = { co2: 429, solar: 100, ice: 60, deforest: 30, ch4: 1930, ocean: 70 };
     let climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+    let month = 9;
+    let weather = ClimateWeather.conditions(month, climate.tempAnomaly);
+    paintStormAtlas();
     let feedbackDriftEnabled = false;
     let activePreset = 'today';
 
@@ -1562,10 +1571,8 @@
       else if (c.iceLeft > 15) lines.push(statusLine('Ice', 'hot', 'Major cryosphere loss — summer Arctic sea ice near collapse.'));
       else lines.push(statusLine('Ice', 'critical', 'Greenland and West Antarctic ice sheets in critical decline.'));
 
-      const stormCount = Math.min(geoPoints.storms.length, Math.max(2, Math.round(c.stormIdx * 3.2)));
-      if (c.stormIdx < 1.18) lines.push(statusLine('Storms', 'neutral', 'Tropical cyclone intensity within historical baseline.'));
-      else if (c.stormIdx < 1.50) lines.push(statusLine('Storms', 'warm', `Elevated cyclone intensity — ${stormCount} Coriolis systems active.`));
-      else lines.push(statusLine('Storms', 'hot', `Severe rapid intensification — ${stormCount} high-energy cyclones.`));
+      lines.push(statusLine('Weather', 'blue', `${weather.basins.length} seasonally favored basin examples; cloud symbols are not active storms.`));
+      lines.push(statusLine('Moisture', weather.moistureFactor < 1.15 ? 'neutral' : 'warm', `Warmer air can hold about ${Math.round((weather.moistureFactor - 1) * 100)}% more water vapor in this approximation; actual rainfall also depends on circulation.`));
 
       if (c.oceanPH > 8.08) lines.push(statusLine('Ocean', 'neutral', 'Carbonate chemistry near pre-industrial equilibrium; reefs healthy.'));
       else if (c.oceanPH > 7.95) lines.push(statusLine('Ocean', 'warm', 'Aragonite saturation dropping — coral calcification slowing.'));
@@ -1593,14 +1600,14 @@
       outs.temp.textContent = fmtSign(t) + '°C';
       outs.sea.textContent  = fmtSign(c.seaLevel, 2) + ' m';
       outs.ph.textContent   = fmt(c.oceanPH, 2);
-      outs.storm.textContent = fmt(c.stormIdx, 1) + '×';
+      outs.storm.textContent = fmt(weather.moistureFactor, 2) + '×';
       outs.forcing.textContent = fmtSign(c.totalForcing, 1) + ' W/m²';
       outs.icecover.textContent = fmt(c.iceLeft, 0) + '%';
 
       const tempClass = t < 1.5 ? 'neutral' : t < 2.5 ? 'warm' : t < 4 ? 'hot' : 'critical';
       outs.temp.className = 'readout-val ' + tempClass;
       outs.ph.className   = 'readout-val ' + (c.oceanPH > 8.05 ? 'neutral' : c.oceanPH > 7.93 ? 'warm' : 'acid');
-      outs.storm.className = 'readout-val ' + (c.stormIdx < 1.25 ? 'neutral' : c.stormIdx < 1.55 ? 'warm' : 'hot');
+      outs.storm.className = 'readout-val ' + (weather.moistureFactor < 1.15 ? 'neutral' : weather.moistureFactor < 1.3 ? 'warm' : 'hot');
       outs.icecover.className = 'readout-val ' + (c.iceLeft > 50 ? 'blue' : c.iceLeft > 25 ? 'warm' : 'hot');
       outs.forcing.className  = 'readout-val ' + (c.totalForcing < 2.2 ? 'neutral' : c.totalForcing < 4.2 ? 'warm' : 'hot');
 
@@ -1638,14 +1645,16 @@
 
     function onParamChange(rebuildParticles = true) {
       climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+      weather = ClimateWeather.conditions(month, climate.tempAnomaly);
+      document.getElementById('weather-explainer').textContent = `${weather.basins.map(b => b.name).join(', ') || 'No featured tropical basin'}: seasonally favored examples. Warm water alone cannot produce a cyclone; wind shear and a disturbance matter. These are not active storms.`;
       updateReadouts();
       syncVisualUniforms();
       if (rebuildParticles) spawnPersistent(climate);
     }
 
     function cloudOpacityFor(climate, ocean) {
-      const instability = clamp((climate.stormIdx - 1) / 1.5, 0, 1) * 0.45 + (ocean / 100) * 0.15;
-      return clamp(0.34 + instability * 0.38, 0.26, 0.74);
+      const moisture = clamp((weather.moistureFactor - 1) / 0.5, 0, 1);
+      return clamp(0.38 + moisture * 0.13 + (ocean / 100) * 0.07, 0.3, 0.62);
     }
 
     function setActivePresetButton(presetName) {
@@ -1684,6 +1693,19 @@
     bindSlider('deforest','deforest');
     bindSlider('ch4',     'ch4');
     bindSlider('ocean',   'ocean');
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('s-month').addEventListener('input', e => {
+      month = Number(e.target.value);
+      cloudTex.image = buildCloudTexture(month);
+      cloudTex.needsUpdate = true;
+      document.getElementById('v-month').textContent = monthNames[month - 1];
+      weather = ClimateWeather.conditions(month, climate.tempAnomaly);
+      paintStormAtlas();
+      document.getElementById('weather-explainer').textContent = `${weather.basins.map(b => b.name).join(', ') || 'No featured tropical basin'}: seasonally favored examples. Warm water alone cannot produce a cyclone; wind shear and a disturbance matter. These are not active storms.`;
+      updateReadouts();
+      spawnPersistent(climate);
+    });
 
     // Scenario presets
     const PRESETS = {
@@ -1748,8 +1770,10 @@
       document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
+      stormMesh.visible = mode === 'weather';
+      document.getElementById('weather-season-card').hidden = mode !== 'weather';
 
-      const modeLabels = { weather: '🌪️ Weather Patterns', carbon: '♻️ Carbon Cycle', temperature: '🌡️ Heat Map' };
+      const modeLabels = { weather: '🌪️ Seasonal storm regions', carbon: '♻️ Carbon Cycle', temperature: '🌡️ Heat Map' };
       modeBadge.textContent = modeLabels[mode];
       if (heatmapLegend) heatmapLegend.classList.toggle('visible', mode === 'temperature');
 
@@ -1766,9 +1790,10 @@
       const sec = ts * 0.001;
       controls.update();
 
-      // Globe & cloud differential rotation
+      // Weather cloud layers share Earth's rotation, keeping basin examples aligned.
       earthMesh.rotation.y += dt * 0.015;
-      cloudMesh.rotation.y += dt * 0.021;
+      cloudMesh.rotation.y = earthMesh.rotation.y;
+      stormMesh.rotation.y = earthMesh.rotation.y;
       earthUniforms.uTime.value = sec;
       auroraUniforms.uTime.value = sec;
 
@@ -1820,6 +1845,7 @@
           setActivePresetButton(null);
           feedbackSyncAccum += dt;
           climate = computeClimate(state.co2, state.solar, state.ice, state.deforest, state.ch4, state.ocean);
+          weather = ClimateWeather.conditions(month, climate.tempAnomaly);
           syncVisualUniforms();
           if (feedbackSyncAccum > 0.25) {
             feedbackSyncAccum = 0;

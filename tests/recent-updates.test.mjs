@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { collectEntries, renderHomepageEntries, renderFilters, replaceRegion, archivePage, validDate } from '../scripts/build-recent-updates.mjs';
+import { collectEntries, renderHomepageEntries, renderFilters, renderSpotlight, replaceRegion, archivePage, validDate } from '../scripts/build-recent-updates.mjs';
 
 test('generated homepage and archive match current sources and cached first-added dates', async () => {
   const entries = await collectEntries({ check: true }); // also validates every date, target, and thumbnail
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(replaceRegion(index, 'list', renderHomepageEntries(entries)), index, 'Homepage list is stale; run npm run build:updates');
   assert.equal(replaceRegion(index, 'filters', renderFilters()), index, 'Filter markup is stale');
+  const projects = Object.entries(JSON.parse(fs.readFileSync(new URL('../data/manifest-overrides.json', import.meta.url), 'utf8'))).map(([slug, project]) => ({ slug, ...project }));
+  assert.equal(replaceRegion(index, 'spotlight', renderSpotlight(projects)), index, 'Student spotlight is stale');
   assert.equal(fs.readFileSync(new URL('../updates.html', import.meta.url), 'utf8'), archivePage(entries), 'Archive is stale');
   assert.equal((renderHomepageEntries(entries).match(/<li[^>]+(?<!hidden)>/g) || []).length, 6);
 });

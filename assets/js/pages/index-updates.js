@@ -4,7 +4,8 @@
   document.querySelectorAll('[data-updates-panel]').forEach(panel => {
     const entries = [...panel.querySelectorAll('[data-update-type]')];
     const buttons = [...panel.querySelectorAll('[data-updates-filter]')];
-    const limit = Number(panel.dataset.updatesLimit) || Infinity;
+    const desktopLimit = Number(panel.dataset.updatesLimit) || Infinity;
+    const compact = panel.dataset.updatesLimit ? matchMedia('(max-width: 560px)') : null;
     const today = new Date();
     const dayNumber = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000;
     entries.forEach(entry => {
@@ -17,6 +18,7 @@
     });
     function apply(filter) {
       let count = 0;
+      const limit = compact?.matches ? 3 : desktopLimit;
       entries.forEach(entry => {
         const matches = filter === 'all' || entry.dataset.updateType === filter;
         entry.hidden = !matches || ++count > limit;
@@ -26,7 +28,12 @@
     }
     let saved = 'all';
     try { saved = localStorage.getItem(key) || 'all'; } catch {}
+    panel.dataset.updatesReady = '';
     apply(allowed.includes(saved) ? saved : 'all');
+    compact?.addEventListener('change', () => {
+      const active = buttons.find(button => button.getAttribute('aria-pressed') === 'true');
+      apply(active?.dataset.updatesFilter || 'all');
+    });
     panel.querySelector('.updates-filters').hidden = false;
     buttons.forEach(button => button.addEventListener('click', () => {
       apply(button.dataset.updatesFilter);

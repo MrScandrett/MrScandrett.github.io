@@ -1222,6 +1222,81 @@
     return e;
   }
 
+  function printScorePages(score) {
+    var model = prepare(score);
+    analyse(model);
+    // Leave accidentals in standard notation so the larger letter fits inside
+    // each printed notehead, including a dense chord.
+    var originalPitchLettersOnly = score.pitchLettersOnly;
+    if (root.MusicNotation.preferences.pitchNames) score.pitchLettersOnly = true;
+    // Engrave at a fixed width so the paper edition does not depend on the
+    // learner's screen size or score zoom setting.
+    var layout;
+    try { layout = engrave(model, 1085); }
+    finally { score.pitchLettersOnly = originalPitchLettersOnly; }
+    if (!layout.systems.length) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true' });
+    var definitions = document.createElementNS(ns, 'svg');
+    definitions.setAttribute('class', 'se-print-defs');
+    var defs = document.createElementNS(ns, 'defs');
+    var source = document.createElementNS(ns, 'g');
+    source.id = 'sePrintScoreSource';
+    source.innerHTML = layout.svg;
+    defs.appendChild(source);
+    definitions.appendChild(defs);
+    portal.appendChild(definitions);
+    var groups = [];
+    var maxHeight = layout.width * (6.7 / 10.24);
+    layout.systems.forEach(function (system) {
+      var group = groups[groups.length - 1];
+      if (!group || group.length === 2 || system.bottom - group[0].top + layout.S * 3.6 > maxHeight) {
+        group = [];
+        groups.push(group);
+      }
+      group.push(system);
+    });
+    groups.forEach(function (systems, index) {
+      var first = systems[0], last = systems[systems.length - 1];
+      var pad = layout.S * 1.8;
+      var top = Math.max(0, first.top - pad);
+      // The system bound already includes space below the staff. Extending it
+      // reaches the next system's bar number, which belongs on the next sheet.
+      var bottom = Math.min(layout.height, last.bottom);
+      var page = el('section', { class: 'se-print-score-page' });
+      var header = el('header', { class: 'se-print-score-header' });
+      header.appendChild(el('strong', {}, score.title || 'Score'));
+      header.appendChild(el('span', {}, 'Score page ' + (index + 1) + ' of ' + groups.length));
+      var svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('class', 'se-score');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', (score.title || 'Score') + ', page ' + (index + 1));
+      svg.setAttribute('viewBox', '0 ' + top + ' ' + layout.width + ' ' + (bottom - top));
+      var use = document.createElementNS(ns, 'use');
+      use.setAttribute('href', '#sePrintScoreSource');
+      svg.appendChild(use);
+      page.append(header, svg);
+      if (index === 0) {
+        var aids = [];
+        if (root.MusicNotation.preferences.pitchNames) aids.push('pitch letters (accidentals in notation)');
+        if (root.MusicNotation.preferences.noteColors) aids.push('note colors');
+        page.appendChild(el('p', { class: 'se-print-score-note' },
+          'Notation aids: ' + (aids.length ? aids.join(' and ') : 'off') + '. ' +
+          (score.source && score.source.label ? 'Source: ' + score.source.label + '.' : '')));
+      }
+      portal.appendChild(page);
+    });
+    document.body.appendChild(portal);
+    document.body.classList.add('se-print-score-active');
+    function cleanup() {
+      document.body.classList.remove('se-print-score-active');
+      portal.remove();
+      root.removeEventListener('afterprint', cleanup);
+    }
+    root.addEventListener('afterprint', cleanup);
+    root.print();
+  }
+
   function render(fig, score) {
     var model;
     try {
@@ -1393,6 +1468,12 @@
     noteList.id = 'score-notes-' + (score.id || 'score');
     var pitchToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.pitchNames ? 'true' : 'false' }, 'Pitch names');
     var colorToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.noteColors ? 'true' : 'false' }, 'Note colors');
+    var printButton = el('button', { type: 'button', class: 'se-toggle se-print-score-button' }, 'Print score');
+    printButton.setAttribute('aria-label', 'Print a paginated score of ' + (score.title || 'this piece'));
+    // Mozart's Rondo has its own print edition with an optional fingering overlay.
+    if (score.id !== 'mozart-turkish-march') {
+      printButton.addEventListener('click', function () { printScorePages(score); });
+    }
 
     function updatePreferenceButtons() {
       var prefs = root.MusicNotation.preferences;
@@ -1558,6 +1639,7 @@
 
     draw();
     bar.appendChild(pitchToggle); bar.appendChild(colorToggle); bar.appendChild(noteListToggle);
+    if (score.id !== 'mozart-turkish-march') bar.appendChild(printButton);
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
@@ -1640,7 +1722,7 @@
     return '<svg class="se-score" aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
   }
 
-  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, parseStaff: parseStaff,
+  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

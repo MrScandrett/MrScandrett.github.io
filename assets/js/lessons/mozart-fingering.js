@@ -186,6 +186,7 @@
       });
     });
   }
+  window.MozartRondoPrintScore = printScore;
 
   function install() {
     var controls = figure.querySelector('.se-controls');

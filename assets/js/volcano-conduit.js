@@ -163,7 +163,7 @@
       const sy = Math.max(1,h-top-55-(window.innerWidth<960?30:235))/(this.profile.maxDepthKm+peak);
       const scaleX = this.trueScale ? Math.min(sx,sy) : sx;
       const scaleY = this.trueScale ? Math.min(sx,sy) : sy;
-      return { left:left+55, right:right-17, top, sx:scaleX, sy:scaleY, cx:(left+right+38)/2, ground:top+55+peak*scaleY, ve:scaleY/scaleX };
+      return { left:left+68, right:right-17, top, sx:scaleX, sy:scaleY, cx:(left+right+51)/2, ground:top+55+peak*scaleY, ve:scaleY/scaleX };
     }
 
     worldToScreen(x, depth) {
@@ -432,46 +432,201 @@
       const moving = this.active() && !document.hidden && !matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (moving) this.clock += Math.min(dt,0.05);
       ctx.clearRect(0,0,w,h);
-      ctx.fillStyle='#111a24'; ctx.fillRect(0,0,w,h);
+
+      // Deep technical slate plate background
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#0c131b');
+      bgGrad.addColorStop(1, '#080d14');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, w, h);
+
       this.drawingLayout=null;
       const l=this.layout();
       this.drawingLayout=l;
-      ctx.save(); ctx.beginPath(); ctx.rect(l.left,l.top,Math.max(1,l.right-l.left),Math.max(1,h-l.top-(window.innerWidth<960?15:85))); ctx.clip();
-      this.drawCrustLayers(ctx); this.drawEdifice(ctx); this.drawAquifers(ctx);
-      this.drawChambers(ctx); this.drawConduits(ctx); this.drawZones(ctx);
+
+      // Geological Section Clipping Frame
+      const clipH = Math.max(1, h - l.top - (window.innerWidth < 960 ? 15 : 85));
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(l.left, l.top, Math.max(1, l.right - l.left), clipH);
+      ctx.clip();
+
+      // 1. Crustal host rock stratigraphy
+      this.drawCrustLayers(ctx);
+
+      // 2. Geothermal field & contact metamorphic aureole around magma bodies
+      this.drawThermalHalos(ctx);
+
+      // 3. Volcanic edifice topography
+      this.drawEdifice(ctx);
+
+      // 4. Groundwater hydrothermal aquifer systems & convective streamlines
+      this.drawAquifers(ctx);
+
+      // 5. Transcrustal Magmatic System (TCMS) reservoirs, crystal mush, & melt lenses
+      this.drawChambers(ctx);
+
+      // 6. Feeder conduits, dikes, sills, & decompression volatile exsolution
+      this.drawConduits(ctx);
+
+      // 7. Volcanological process horizons (exsolution, bubble growth, fragmentation)
+      this.drawZones(ctx);
+
+      // 8. Event-specific geological features (cryptodomes, ring faults, lateral blast scars)
       this.drawSpecialFeatures(ctx);
-      ctx.restore(); this.drawDepthAxes(ctx); this.drawAnnotations(ctx);
-      if(this.mode==='exploration'){const p=this.worldToScreen(this.keyboardPos.x,this.keyboardPos.depth);ctx.strokeStyle='#f4d4ad';ctx.beginPath();ctx.moveTo(p.x-6,p.y);ctx.lineTo(p.x+6,p.y);ctx.moveTo(p.x,p.y-6);ctx.lineTo(p.x,p.y+6);ctx.stroke();}
+
+      ctx.restore();
+
+      // Technical plate frame border
+      ctx.strokeStyle = 'rgba(230, 210, 185, 0.28)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(l.left, l.top, Math.max(1, l.right - l.left), clipH);
+
+      // 9. Precision scientific axes, lithostatic pressure scales, & distance datum
+      this.drawDepthAxes(ctx);
+
+      // 10. Stratigraphic & empirical literature annotations
+      this.drawAnnotations(ctx);
+
+      // 11. Interactive exploration crosshair cursor
+      if(this.mode==='exploration'){
+        const p=this.worldToScreen(this.keyboardPos.x,this.keyboardPos.depth);
+        ctx.strokeStyle='#ff8830';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(4, this.brushSizeKm * l.sx), 0, Math.PI * 2);
+        ctx.moveTo(p.x-8,p.y);ctx.lineTo(p.x+8,p.y);
+        ctx.moveTo(p.x,p.y-8);ctx.lineTo(p.x,p.y+8);
+        ctx.stroke();
+      }
       this.drawingLayout=null;
     }
+
     temperatureColor(temp) {
       const t=Math.max(0,Math.min(1,((parseFloat(temp)||950)-780)/380));
-      return `rgb(${Math.round(150+100*t)},${Math.round(38+139*t)},${Math.round(22+23*t)})`;
+      return `rgb(${Math.round(150+105*t)},${Math.round(38+145*t)},${Math.round(22+25*t)})`;
     }
+
     drawCrustLayers(ctx) {
       const l=this.layout();
       for (const layer of this.profile.layers) {
-        const a=this.worldToScreen(-this.profile.widthKm/2,layer.topKm), b=this.worldToScreen(this.profile.widthKm/2,layer.bottomKm);
-        ctx.fillStyle=layer.color; ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
+        const a=this.worldToScreen(-this.profile.widthKm/2,layer.topKm);
+        const b=this.worldToScreen(this.profile.widthKm/2,layer.bottomKm);
+        const w = b.x - a.x, h = b.y - a.y;
+
+        // Base lithologic wash
+        ctx.fillStyle=layer.color;
+        ctx.fillRect(a.x,a.y,w,h);
+
+        // USGS Standard Lithologic Hatch Patterns
         const key=`${layer.pattern}:${Math.round(l.sx)}:${Math.round(l.sy)}`;
         if (!this.textureCache.has(key)) {
           const tile=document.createElement('canvas'); tile.width=64; tile.height=64; const c=tile.getContext('2d');
-          c.strokeStyle='rgba(230,220,205,.16)'; c.fillStyle='rgba(230,220,205,.16)'; c.lineWidth=1;
-          for(let i=0;i<64;i+=16) {
-            c.beginPath();
-            if(layer.pattern==='slanted') {c.moveTo(i-64,64);c.lineTo(i+64,0);}
-            else if(layer.pattern==='ice') {c.moveTo(i,0);c.lineTo(i+8,32);c.lineTo(i,64);}
-            else if(layer.pattern==='blocks') {c.moveTo(0,i);c.lineTo(64,i);c.moveTo(i, i);c.lineTo(i,i+16);}
-            else {c.arc((i*7)%64,i,1.5,0,Math.PI*2);c.fill();}
-            c.stroke();
+          c.strokeStyle='rgba(235,225,210,.18)'; c.fillStyle='rgba(235,225,210,.18)'; c.lineWidth=1;
+
+          if (layer.pattern==='blocks') {
+            // USGS Carbonate / Limestone brick masonry pattern with staggered joints
+            for(let y=0; y<=64; y+=16) {
+              c.beginPath(); c.moveTo(0, y); c.lineTo(64, y); c.stroke();
+              const offset = (y % 32 === 0) ? 0 : 16;
+              for(let x=offset; x<=64; x+=32) {
+                c.beginPath(); c.moveTo(x, y); c.lineTo(x, y+16); c.stroke();
+              }
+            }
+          } else if (layer.pattern==='slanted') {
+            // Metamorphic Schist / Foliated Gneiss diagonal banding with quartz lens hints
+            for(let i=-64; i<=128; i+=16) {
+              c.beginPath(); c.moveTo(i, 64); c.lineTo(i+64, 0); c.stroke();
+            }
+            c.fillStyle = 'rgba(255,255,255,0.08)';
+            c.beginPath(); c.ellipse(32, 32, 10, 3, -Math.PI/4, 0, Math.PI*2); c.fill();
+          } else if (layer.pattern==='ice') {
+            // Glacial firn & columnar ice cleavage cracks
+            for(let i=0; i<=64; i+=16) {
+              c.beginPath(); c.moveTo(i, 0); c.lineTo(i+5, 24); c.lineTo(i-3, 44); c.lineTo(i, 64); c.stroke();
+            }
+          } else {
+            // Crystalline Plutonic / Granitic plus signs (+) & Basaltic micro-prisms
+            for(let y=8; y<=64; y+=20) {
+              for(let x=8; x<=64; x+=20) {
+                c.beginPath();
+                c.moveTo(x-4, y); c.lineTo(x+4, y);
+                c.moveTo(x, y-4); c.lineTo(x, y+4);
+                c.stroke();
+              }
+            }
           }
-          for(let i=0;i<90;i++) {c.fillStyle=`rgba(255,255,255,${(i%5)/150})`;c.fillRect((i*23)%64,(i*37)%64,1,1);}
+          // Fine lithic speckling
+          for(let i=0;i<60;i++) {
+            c.fillStyle=`rgba(255,255,255,${((i%4)+1)/180})`;
+            c.fillRect((i*29)%64,(i*41)%64,1,1);
+          }
           this.textureCache.set(key,ctx.createPattern(tile,'repeat'));
           if(this.textureCache.size>32) this.textureCache.delete(this.textureCache.keys().next().value);
         }
-        ctx.fillStyle=this.textureCache.get(key);ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);
+        ctx.fillStyle=this.textureCache.get(key);
+        ctx.fillRect(a.x,a.y,w,h);
+
+        // Contact interface boundary lines
+        ctx.strokeStyle = 'rgba(240, 225, 205, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(a.x, b.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+
+        // Subtle stratigraphic unit label watermark
+        ctx.fillStyle = 'rgba(235, 220, 200, 0.30)';
+        ctx.font = '600 10px system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(layer.name.toUpperCase(), b.x - 12, b.y - 6);
+        ctx.textAlign = 'left';
       }
     }
+
+    drawThermalHalos(ctx) {
+      const l = this.layout();
+
+      for (const r of this.reservoirs()) {
+        const a = this.worldToScreen(r.x, r.depthKm);
+        const rx = r.rxKm * l.sx;
+        const ry = r.ryKm * l.sy;
+
+        // Radiative conductive thermal halo into host crust
+        const haloGrad = ctx.createRadialGradient(a.x, a.y, rx * 0.3, a.x, a.y, rx * 2.2);
+        haloGrad.addColorStop(0, 'rgba(255, 95, 25, 0.38)');
+        haloGrad.addColorStop(0.35, 'rgba(220, 60, 15, 0.22)');
+        haloGrad.addColorStop(0.68, 'rgba(180, 40, 10, 0.10)');
+        haloGrad.addColorStop(1, 'rgba(150, 30, 10, 0.0)');
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(a.x, a.y, rx * 2.2, ry * 2.1, 0, 0, Math.PI * 2);
+        ctx.fillStyle = haloGrad;
+        ctx.fill();
+
+        // Isotherm contour lines: 600°C and 800°C metamorphic isograds
+        ctx.strokeStyle = 'rgba(255, 140, 50, 0.35)';
+        ctx.setLineDash([4, 6]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(a.x, a.y, rx * 1.5, ry * 1.45, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(255, 80, 20, 0.25)';
+        ctx.beginPath();
+        ctx.ellipse(a.x, a.y, rx * 1.95, ry * 1.85, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Isotherm label
+        ctx.fillStyle = 'rgba(255, 170, 90, 0.65)';
+        ctx.font = '9px system-ui, sans-serif';
+        ctx.fillText('600°C Isotherm', a.x + rx * 1.5 + 4, a.y);
+        ctx.restore();
+      }
+    }
+
     surfaceDepth(x) {
       const e=this.profile.edifice, stage=this.stage();
       const slope=Math.max(0,1-Math.abs(x)/e.halfWidthKm);
@@ -481,76 +636,422 @@
       if(this.eruptionId==='sthelenr1980' && x<0) depth=raw+Math.min(1,Math.max(0,(this.timeline-.15)/.04))*Math.max(0,1-Math.abs(x)/e.halfWidthKm)*1.6;
       return depth;
     }
+
     drawEdifice(ctx) {
       const p=this.profile, e=p.edifice;
       const a=this.worldToScreen(-p.widthKm/2,0),b=this.worldToScreen(p.widthKm/2,0);
       ctx.beginPath();ctx.moveTo(a.x,a.y);
       for(let x=-p.widthKm/2;x<=p.widthKm/2;x+=p.widthKm/160){const v=this.worldToScreen(x,this.surfaceDepth(x));ctx.lineTo(v.x,v.y);}
-      ctx.lineTo(b.x,b.y);ctx.closePath();ctx.fillStyle='#55483d';ctx.fill();
-      ctx.save();ctx.clip();ctx.strokeStyle='#82705c';ctx.lineWidth=1;
-      for(let d=-e.summitHeightKm;d<0;d+=.25){const v=this.worldToScreen(0,d);ctx.beginPath();ctx.moveTo(a.x,v.y);ctx.lineTo(b.x,v.y);ctx.stroke();}ctx.restore();
-      if(p.waterLevelKm){ctx.fillStyle='rgba(55,140,195,.7)';ctx.fillRect(a.x,a.y,b.x-a.x,p.waterLevelKm*this.layout().sy);}
-      if(p.glacierThicknessKm){ctx.strokeStyle='#b4e3ec';ctx.lineWidth=Math.max(1,p.glacierThicknessKm*this.layout().sy);ctx.beginPath();for(let x=-1.2;x<1.2;x+=.05){const v=this.worldToScreen(x,this.surfaceDepth(x));if(x===-1.2)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);}ctx.stroke();}
-      if(e.rim){ctx.strokeStyle='#cbbda0';ctx.lineWidth=2;ctx.beginPath();for(const x of [-1.6,-1,0,1,1.6]){const v=this.worldToScreen(x,this.surfaceDepth(x)+(Math.abs(x)<1?.25:0));ctx.lineTo(v.x,v.y);}ctx.stroke();}
+      ctx.lineTo(b.x,b.y);ctx.closePath();
+
+      // Edifice cross-stratified tephra and lava flows
+      const edificeGrad = ctx.createLinearGradient(0, this.worldToScreen(0, -e.summitHeightKm).y, 0, a.y);
+      edificeGrad.addColorStop(0, '#5f4f42');
+      edificeGrad.addColorStop(0.5, '#4e3f34');
+      edificeGrad.addColorStop(1, '#3e3128');
+      ctx.fillStyle = edificeGrad;
+      ctx.fill();
+
+      // Internal strata lines showing progressive cone accumulation
+      ctx.save();ctx.clip();ctx.strokeStyle='rgba(165,145,125,0.32)';ctx.lineWidth=1;
+      for(let d=-e.summitHeightKm;d<0;d+=.28){
+        const v=this.worldToScreen(0,d);
+        ctx.beginPath();ctx.moveTo(a.x,v.y);ctx.lineTo(b.x,v.y);ctx.stroke();
+      }
+      ctx.restore();
+
+      // Topographic surface outline
+      ctx.strokeStyle = '#dfc2a2';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for(let x=-p.widthKm/2;x<=p.widthKm/2;x+=p.widthKm/160){
+        const v=this.worldToScreen(x,this.surfaceDepth(x));
+        if (x===-p.widthKm/2) ctx.moveTo(v.x, v.y); else ctx.lineTo(v.x, v.y);
+      }
+      ctx.stroke();
+
+      if(p.waterLevelKm){
+        ctx.fillStyle='rgba(45,130,185,.65)';
+        ctx.fillRect(a.x,a.y,b.x-a.x,p.waterLevelKm*this.layout().sy);
+        // Sea level surface ripple line
+        ctx.strokeStyle = 'rgba(140, 215, 255, 0.7)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, a.y); ctx.stroke();
+      }
+      if(p.glacierThicknessKm){
+        ctx.strokeStyle='#c2edf5';ctx.lineWidth=Math.max(2,p.glacierThicknessKm*this.layout().sy);ctx.beginPath();
+        for(let x=-1.2;x<1.2;x+=.05){const v=this.worldToScreen(x,this.surfaceDepth(x));if(x===-1.2)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);}ctx.stroke();
+      }
+      if(e.rim){
+        ctx.strokeStyle='#ebd8b8';ctx.lineWidth=2;ctx.beginPath();
+        for(const x of [-1.6,-1,0,1,1.6]){const v=this.worldToScreen(x,this.surfaceDepth(x)+(Math.abs(x)<1?.25:0));ctx.lineTo(v.x,v.y);}ctx.stroke();
+      }
     }
+
     drawAquifers(ctx) {
-      for(const aq of this.mode==='exploration'?this.customAquifers:this.profile.aquifers){const a=this.worldToScreen(aq.x,aq.depthKm),l=this.layout();ctx.fillStyle='rgba(60,170,205,.23)';ctx.beginPath();ctx.ellipse(a.x,a.y,aq.rxKm*l.sx,aq.ryKm*l.sy,0,0,Math.PI*2);ctx.fill();}
+      const l = this.layout();
+      const moving = this.active();
+
+      for(const aq of this.mode==='exploration'?this.customAquifers:this.profile.aquifers){
+        const a=this.worldToScreen(aq.x,aq.depthKm);
+        const rx = aq.rxKm*l.sx, ry = aq.ryKm*l.sy;
+
+        // Porous fractured saturated aquifer body
+        const aqGrad = ctx.createRadialGradient(a.x, a.y, rx * 0.2, a.x, a.y, rx);
+        aqGrad.addColorStop(0, 'rgba(80, 200, 235, 0.42)');
+        aqGrad.addColorStop(0.7, 'rgba(45, 150, 195, 0.28)');
+        aqGrad.addColorStop(1, 'rgba(25, 95, 140, 0.08)');
+
+        ctx.fillStyle=aqGrad;
+        ctx.beginPath();
+        ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle='rgba(120, 220, 255, 0.55)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Hydrothermal convective streamlines
+        if (moving) {
+          ctx.strokeStyle = 'rgba(200, 240, 255, 0.6)';
+          ctx.lineWidth = 1.2;
+          const phase = (this.clock * 0.8) % (Math.PI * 2);
+          for (let dir = -1; dir <= 1; dir += 2) {
+            const cx = a.x + dir * rx * 0.45;
+            ctx.beginPath();
+            ctx.ellipse(cx, a.y, rx * 0.25, ry * 0.45, 0, phase, phase + Math.PI * 1.2);
+            ctx.stroke();
+          }
+        }
+
+        ctx.fillStyle = 'rgba(180, 235, 255, 0.85)';
+        ctx.font = '9px system-ui, sans-serif';
+        ctx.fillText('Hydrothermal Aquifer', a.x - rx * 0.7, a.y - ry - 4);
+      }
     }
+
     drawChambers(ctx) {
       const l=this.layout();
       for(const r of this.reservoirs()) {
         const a=this.worldToScreen(r.x,r.depthKm),rx=r.rxKm*l.sx,ry=r.ryKm*l.sy;
-        ctx.fillStyle='#766153';ctx.beginPath();ctx.ellipse(a.x,a.y,rx+4,ry+4,0,0,Math.PI*2);ctx.fill();
-        ctx.save();ctx.beginPath();ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);ctx.clip();ctx.fillStyle='#593c37';ctx.fillRect(a.x-rx,a.y-ry,rx*2,ry*2);
-        // Distributed melt lenses occupy a fraction of the section, not an empty tank.
+
+        // Chilled crystalline border / contact metamorphic selvage
+        ctx.fillStyle='rgba(65, 45, 38, 0.9)';
+        ctx.beginPath();
+        ctx.ellipse(a.x,a.y,rx+5,ry+5,0,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);
+        ctx.clip();
+
+        // 1. Crystal mush matrix (mush reservoir background)
+        const mushGrad = ctx.createLinearGradient(a.x, a.y - ry, a.x, a.y + ry);
+        mushGrad.addColorStop(0, '#5a3528');
+        mushGrad.addColorStop(1, '#3b201a');
+        ctx.fillStyle=mushGrad;
+        ctx.fillRect(a.x-rx,a.y-ry,rx*2,ry*2);
+
+        // Calculate eruptible melt lens fraction vs. crystalline cumulate floor
         const volume=r.reservoirVolumeKm3 || 4/3*Math.PI*r.rxKm*r.rxKm*r.ryKm;
         const initialMelt=volume*(r.meltFraction??.35);
         const dre=this.profile.eruptedDRE.value;
         const withdrawn=dre && r===this.reservoirs()[0] ? (dre[0]+dre[1])/2*this.stage().withdrawal : 0;
         const fraction=Math.max(0,initialMelt-withdrawn)/volume;
-        for(let i=0;i<12;i++) {const x=a.x+Math.sin(i*2.4)*rx*.68,y=a.y+Math.cos(i*1.7)*ry*.62;ctx.fillStyle=this.temperatureColor(r.compositionLayers?.length>1 && y>a.y ? 950 : r.temperatureC||r.temp);ctx.beginPath();ctx.ellipse(x,y,rx*Math.sqrt(fraction)/4,ry*Math.sqrt(fraction)/2.5,0,0,Math.PI*2);ctx.fill();}
-        for(let i=0;i<65;i++){const x=a.x-rx+((i*37)%100)/50*rx,y=a.y-ry+((i*61)%100)/50*ry;ctx.fillStyle=i%2?'#b3a397':'#7f746c';ctx.beginPath();ctx.moveTo(x,y-3);ctx.lineTo(x+4,y+1);ctx.lineTo(x,y+4);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();}
-        if(r.compositionLayers?.length>1){ctx.strokeStyle='#dbb69e';ctx.beginPath();ctx.moveTo(a.x-rx,a.y);ctx.lineTo(a.x+rx,a.y);ctx.stroke();}
-        ctx.restore();ctx.strokeStyle='#b7957e';ctx.beginPath();ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);ctx.stroke();
+
+        // 2. High-melt eruptible lens (concentrated in upper reservoir)
+        const lensRy = ry * Math.sqrt(fraction) * 0.75;
+        const lensRx = rx * 0.82;
+        const lensY = a.y - ry * 0.25;
+
+        const meltGrad = ctx.createRadialGradient(a.x, lensY, lensRx * 0.15, a.x, lensY, lensRx);
+        const col = this.temperatureColor(r.compositionLayers?.length>1 ? 960 : r.temperatureC||r.temp);
+        meltGrad.addColorStop(0, '#fff0a0');
+        meltGrad.addColorStop(0.3, col);
+        meltGrad.addColorStop(0.85, 'rgba(180, 50, 15, 0.85)');
+        meltGrad.addColorStop(1, 'rgba(120, 30, 10, 0.4)');
+
+        ctx.fillStyle = meltGrad;
+        ctx.beginPath();
+        ctx.ellipse(a.x, lensY, lensRx, Math.max(2, lensRy), 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Fluid convection flow eddies inside melt lens
+        if (this.active() && lensRy > 4) {
+          ctx.strokeStyle = 'rgba(255, 235, 180, 0.45)';
+          ctx.lineWidth = 1;
+          const pulse = (this.clock * 0.5) % (Math.PI * 2);
+          for(let i=0; i<3; i++) {
+            const ex = a.x + (i - 1) * lensRx * 0.4;
+            ctx.beginPath();
+            ctx.ellipse(ex, lensY, lensRx * 0.2, lensRy * 0.4, 0, pulse, pulse + Math.PI);
+            ctx.stroke();
+          }
+        }
+
+        // 4. Crystalline mush phenocryst framework (feldspar/pyroxene laths)
+        for(let i=0;i<75;i++){
+          const x=a.x-rx+((i*37)%100)/50*rx;
+          const y=a.y-ry+((i*61)%100)/50*ry;
+          if (y < lensY && Math.hypot(x - a.x, y - lensY) < lensRx * 0.6) continue;
+          ctx.fillStyle=i%2?'rgba(215, 195, 180, 0.75)':'rgba(145, 130, 120, 0.65)';
+          ctx.beginPath();
+          ctx.moveTo(x,y-3);ctx.lineTo(x+4,y+1);ctx.lineTo(x,y+4);ctx.lineTo(x-3,y);ctx.closePath();
+          ctx.fill();
+        }
+
+        // 5. Compositional density interface (e.g. mafic recharge underplating felsic melt)
+        if(r.compositionLayers?.length>1){
+          ctx.strokeStyle='rgba(255, 205, 150, 0.8)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();ctx.moveTo(a.x-rx,a.y);ctx.lineTo(a.x+rx,a.y);ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(255, 225, 180, 0.9)';
+          ctx.font = '8px system-ui, sans-serif';
+          ctx.fillText('Magma Mixing / Density Stratification', a.x - rx * 0.8, a.y - 3);
+        }
+
+        ctx.restore();
+
+        // Reservoir structural bounding ring
+        ctx.strokeStyle='#d6a88b';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();ctx.ellipse(a.x,a.y,rx,ry,0,0,Math.PI*2);ctx.stroke();
+
+        // Reservoir petrological label
+        ctx.fillStyle = '#ffdfbf';
+        ctx.font = '600 10px system-ui, sans-serif';
+        ctx.fillText(`${r.comp || 'Silicic Mush Reservoir'} (${Math.round((r.meltFraction || 0.35) * 100)}% melt)`, a.x - rx * 0.75, a.y + ry + 12);
       }
     }
+
     drawConduits(ctx) {
       const l=this.layout(), active=this.active();
+      const fragDepth = this.profile.fragmentationDepthKm ?? 1.5;
+      const exsolDepth = this.profile.exsolutionDepthKm ?? 4.0;
+
       this.sheets().forEach((c,index)=>{
         if(c.flank && (this.timeline<.08 || this.timeline>=.14)) return;
         if(this.eruptionId==='eyja2010' && !c.flank && !c.sill && this.timeline<.14) return;
-        const a=this.worldToScreen(c.x1,c.y1),b=this.worldToScreen(c.x2,c.surface?this.surfaceDepth(c.x2):c.y2);
-        ctx.strokeStyle=active?this.temperatureColor(this.reservoirs()[0]?.temperatureC):'#79645a';ctx.lineWidth=this.trueScale?Math.max(.4,(c.widthM||50)/1000*l.sx):3;ctx.lineCap='butt';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        const a=this.worldToScreen(c.x1,c.y1);
+        const b=this.worldToScreen(c.x2,c.surface?this.surfaceDepth(c.x2):c.y2);
+
+        // Feeder conduit thermal glow
+        if (active && !c.sill) {
+          ctx.strokeStyle = 'rgba(255, 100, 20, 0.45)';
+          ctx.lineWidth = (this.trueScale ? Math.max(1, (c.widthM||50)/1000*l.sx) : 4) + 6;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+
+        ctx.strokeStyle=active?this.temperatureColor(this.reservoirs()[0]?.temperatureC):'#79645a';
+        ctx.lineWidth=this.trueScale?Math.max(.6,(c.widthM||50)/1000*l.sx):3.5;
+        ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+
         if(!active || c.sill || (this.eruptionId==='pinatubo1991' && c.y1>8 && this.timeline>=.18)) return;
-        for(let i=0;i<5;i++){const t=(this.clock*.2+i/5+index*.1)%1,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;ctx.fillStyle=c.y1+(c.y2-c.y1)*t<(this.profile.fragmentationDepthKm??-99)?'#c8bca9':'#e8bc7a';ctx.beginPath();ctx.arc(x,y,1.4+t*1.5,0,Math.PI*2);ctx.fill();}
+
+        // Animated decompression exsolution & bubbly magma ascent
+        const numBubbles = 10;
+        for(let i=0;i<numBubbles;i++){
+          const t=(this.clock*.25 + i/numBubbles + index*.08)%1;
+          const x=a.x+(b.x-a.x)*t;
+          const y=a.y+(b.y-a.y)*t;
+          const currentDepthKm = c.y1 + (c.y2 - c.y1) * t;
+
+          if (currentDepthKm <= fragDepth) {
+            // Above fragmentation: supersonic gas + pyroclast dispersion
+            ctx.fillStyle = '#f0ebe0';
+            ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+          } else if (currentDepthKm <= exsolDepth) {
+            // Decompression bubble growth region: expanding H2O/CO2 vesicles
+            const bubbleExpansion = 1.0 + (exsolDepth - currentDepthKm) * 0.8;
+            ctx.fillStyle = '#ffdc8a';
+            ctx.beginPath();
+            ctx.ellipse(x, y, 1.6 * bubbleExpansion, 2.4 * bubbleExpansion, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            // Deep ascending silicate liquid
+            ctx.fillStyle = '#ff9030';
+            ctx.beginPath();
+            ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       });
-      if(!active){const v=this.worldToScreen(0,this.surfaceDepth(0));ctx.fillStyle='#b6a18b';ctx.fillRect(v.x-5,v.y,10,6);}
+
+      if(!active){
+        const v=this.worldToScreen(0,this.surfaceDepth(0));
+        ctx.fillStyle='#b6a18b';
+        ctx.fillRect(v.x-5,v.y,10,6);
+      }
     }
+
     drawZones(ctx) {
       if(!this.active()) return;
-      const zones=[[this.profile.gasOnsetDepthKm,'CO₂ exsolution (illustrative)','#cbaa81'],[this.profile.exsolutionDepthKm,'Bubble growth (illustrative)','#dca756'],[this.profile.fragmentationDepthKm,'Fragmentation / ash + gas (illustrative)','#bebbb3']];
-      for(const [depth,label,color] of zones){if(depth===null)continue;const a=this.worldToScreen(-this.profile.widthKm/2,depth),b=this.worldToScreen(this.profile.widthKm/2,depth);ctx.strokeStyle=color;ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=color;ctx.font='10px system-ui';ctx.fillText(label,a.x+5,a.y-4);}
+      const zones=[
+        [this.profile.gasOnsetDepthKm,'CO₂ Exsolution (Deep Volatile Saturation)','#e5bf88'],
+        [this.profile.exsolutionDepthKm,'H₂O Bubble Exsolution & Rapid Foam Expansion','#f5c065'],
+        [this.profile.fragmentationDepthKm,'Brittle Fragmentation Level (Dingwell Criterion: Wi ≥ 0.04)','#f0eee8']
+      ];
+      for(const [depth,label,color] of zones){
+        if(depth===null)continue;
+        const a=this.worldToScreen(-this.profile.widthKm/2,depth);
+        const b=this.worldToScreen(this.profile.widthKm/2,depth);
+        ctx.strokeStyle=color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Horizon badge
+        ctx.fillStyle='rgba(15, 22, 30, 0.82)';
+        ctx.fillRect(a.x + 6, a.y - 12, ctx.measureText(label).width + 8, 14);
+        ctx.strokeStyle = color;
+        ctx.strokeRect(a.x + 6, a.y - 12, ctx.measureText(label).width + 8, 14);
+
+        ctx.fillStyle=color;
+        ctx.font='600 9px system-ui, sans-serif';
+        ctx.fillText(label,a.x+10,a.y-2);
+      }
     }
+
     drawSpecialFeatures(ctx) {
       const p=this.profile;
-      if(this.eruptionId==='pinatubo1991' && this.timeline<.18){const a=this.worldToScreen(0,8.5);ctx.fillStyle='#e2aa71';ctx.font='10px system-ui';ctx.fillText('Basalt recharge: heat + gas (inferred)',a.x+8,a.y);}
-      if(p.marineIngress && this.active()){const a=this.worldToScreen(p.marineIngress.x,p.marineIngress.depthKm);ctx.strokeStyle='#6fbdde';ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(a.x-25,a.y-20);ctx.lineTo(a.x,a.y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#a5d1e3';ctx.font='10px system-ui';ctx.fillText('Water–magma interaction: debated',a.x+8,a.y-10);}
-      if(p.cryptodome && this.timeline<.19){const c=p.cryptodome,a=this.worldToScreen(c.x,c.depthKm),l=this.layout();ctx.fillStyle='#b95434';ctx.beginPath();ctx.ellipse(a.x,a.y,c.rxKm*l.sx,c.ryKm*l.sy,0,0,Math.PI*2);ctx.fill();}
-      if(this.eruptionId==='sthelenr1980' && this.timeline>=.19 && this.timeline<.34){const a=this.worldToScreen(-1.6,-1.3);ctx.fillStyle='#cbb8a0';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.x-55,a.y-15);ctx.lineTo(a.x-55,a.y+15);ctx.closePath();ctx.fill();}
-      if(p.ringFaults && this.stage().collapse>0){ctx.strokeStyle='#b99576';ctx.setLineDash([5,3]);for(const f of p.ringFaults){const a=this.worldToScreen(f.x,f.y1),b=this.worldToScreen(f.x,f.y2);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.setLineDash([]);}
-      if(this.timeline===0){ctx.fillStyle='#e2b978';for(let i=0;i<12;i++){const a=this.worldToScreen(Math.sin(i*4)*2,2+(i%5));ctx.fillRect(a.x,a.y,2,2);}}
+      if(this.eruptionId==='pinatubo1991' && this.timeline<.18){
+        const a=this.worldToScreen(0,8.5);
+        ctx.fillStyle='#f0ba7e';ctx.font='600 10px system-ui';ctx.fillText('Basalt Underplating & Volatile Recharge',a.x+8,a.y);
+      }
+      if(p.marineIngress && this.active()){
+        const a=this.worldToScreen(p.marineIngress.x,p.marineIngress.depthKm);
+        ctx.strokeStyle='#6fbdde';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(a.x-30,a.y-22);ctx.lineTo(a.x,a.y);ctx.stroke();ctx.setLineDash([]);
+        ctx.fillStyle='#a5d1e3';ctx.font='600 10px system-ui';ctx.fillText('Hydrovolcanic Ingress (Phreatomagmatic)',a.x+8,a.y-10);
+      }
+      if(p.cryptodome && this.timeline<.19){
+        const c=p.cryptodome,a=this.worldToScreen(c.x,c.depthKm),l=this.layout();
+        ctx.fillStyle='#cf5a36';ctx.beginPath();ctx.ellipse(a.x,a.y,c.rxKm*l.sx,c.ryKm*l.sy,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#ffc0a0';ctx.font='600 9px system-ui';ctx.fillText('Cryptodome Intrusion Bulge',a.x-25,a.y-c.ryKm*l.sy-4);
+      }
+      if(this.eruptionId==='sthelenr1980' && this.timeline>=.19 && this.timeline<.34){
+        const a=this.worldToScreen(-1.6,-1.3);
+        ctx.fillStyle='rgba(215, 195, 175, 0.85)';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.x-65,a.y-18);ctx.lineTo(a.x-65,a.y+18);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#ffe0c0';ctx.font='600 9px system-ui';ctx.fillText('North Flank Lateral Blast Vector', a.x-65, a.y-22);
+      }
+      if(p.ringFaults && this.stage().collapse>0){
+        ctx.strokeStyle='#d9a586';ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+        for(const f of p.ringFaults){
+          const a=this.worldToScreen(f.x,f.y1),b=this.worldToScreen(f.x,f.y2);
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
     }
+
     drawDepthAxes(ctx) {
-      const l=this.layout();ctx.font='10px system-ui';ctx.fillStyle='#eee0cf';ctx.textAlign='right';
-      const step=this.profile.maxDepthKm>20?10:2;
-      for(let d=0;d<=this.profile.maxDepthKm;d+=step){const a=this.worldToScreen(-this.profile.widthKm/2,d);ctx.fillText(`${d} km`,l.left-8,a.y+3);}
-      ctx.textAlign='left';ctx.fillText(`Depth below ${this.profile.section.reference}`,l.left,l.top-12);
-      const y=l.top+10, length=this.profile.widthKm/5;ctx.strokeStyle='#eee0cf';ctx.beginPath();ctx.moveTo(l.left,y);ctx.lineTo(l.left+length*l.sx,y);ctx.stroke();
-      ctx.fillText(`${length} km · V.E. ${l.ve.toFixed(2)}× · sheets ${this.trueScale?'at scale':'enlarged'}`,l.left,y+15);
-      ctx.fillText(this.profile.section.orientation,l.left,y+30);
+      const l=this.layout();
+      const h=this.surface.height;
+      const clipH = Math.max(1, h - l.top - (window.innerWidth < 960 ? 15 : 85));
+
+      // Sea Level Datum Line (z = 0)
+      const seaLevelY = this.worldToScreen(0, 0).y;
+      ctx.strokeStyle = 'rgba(80, 180, 240, 0.45)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(l.left, seaLevelY);
+      ctx.lineTo(l.right, seaLevelY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.font = '9px "SF Pro Text", -apple-system, system-ui, sans-serif';
+      ctx.fillStyle = '#65c5f0';
+      ctx.textAlign = 'left';
+      ctx.fillText('0 km · Sea Level Datum', l.left + 8, seaLevelY - 4);
+
+      // Section Orientation & Technical Legend
+      ctx.textAlign='left';
+      ctx.fillStyle='#f5e8d8';
+      ctx.font = '600 11px system-ui, sans-serif';
+      ctx.fillText(`GEOLOGICAL CRUSTAL PROFILE: ${this.profile.name.toUpperCase()}`, l.left, l.top - 18);
+
+      ctx.font = '9px system-ui, sans-serif';
+      ctx.fillStyle = '#c7b29e';
+      ctx.fillText(`${this.profile.section.orientation} · Reference Datum: ${this.profile.section.reference}`, l.left, l.top - 6);
+
+      // Axis Column Headers
+      ctx.textAlign = 'right';
+      ctx.font = '600 8px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(230, 200, 170, 0.9)';
+      ctx.fillText('MPa', l.left - 38, seaLevelY - 14);
+      ctx.fillStyle = '#f0e2d2';
+      ctx.fillText('Depth', l.left - 8, seaLevelY - 14);
+
+      // Left Depth Scale & Lithostatic Pressure Bar
+      const step = this.profile.maxDepthKm > 20 ? 10 : 2;
+      for(let d=0; d<=this.profile.maxDepthKm; d+=step){
+        const a = this.worldToScreen(-this.profile.widthKm/2, d);
+        // Overburden pressure P = rho * g * z
+        const pressMPa = Math.round((RHO_CRUST * GRAVITY * d * 1000) / 1e6);
+
+        // Tick mark
+        ctx.strokeStyle = 'rgba(235, 220, 205, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(l.left - 6, a.y);
+        ctx.lineTo(l.left, a.y);
+        ctx.stroke();
+
+        // Depth readout
+        ctx.font = '9px "SF Pro Text", -apple-system, system-ui, sans-serif';
+        ctx.fillStyle = '#f0e2d2';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${d} km`, l.left - 8, a.y + 3);
+
+        // Pressure readout (MPa)
+        ctx.fillStyle = 'rgba(230, 200, 170, 0.72)';
+        ctx.fillText(`${pressMPa}`, l.left - 38, a.y + 3);
+      }
+
+      // Horizontal Distance Scale Bar (km) — positioned in upper right publication header
+      const barLenKm = Math.round(this.profile.widthKm / 4);
+      const barLenPx = barLenKm * l.sx;
+      const scaleBarX = l.right - barLenPx;
+      const scaleBarY = l.top - 12;
+
+      ctx.strokeStyle = '#f0e2d2';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(scaleBarX, scaleBarY);
+      ctx.lineTo(scaleBarX + barLenPx, scaleBarY);
+      ctx.moveTo(scaleBarX, scaleBarY - 4);
+      ctx.lineTo(scaleBarX, scaleBarY + 4);
+      ctx.moveTo(scaleBarX + barLenPx, scaleBarY - 4);
+      ctx.lineTo(scaleBarX + barLenPx, scaleBarY + 4);
+      ctx.stroke();
+
+      ctx.fillStyle = '#f0e2d2';
+      ctx.font = '9px "SF Pro Text", -apple-system, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`0`, scaleBarX, scaleBarY - 5);
+      ctx.fillText(`${barLenKm} km`, scaleBarX + barLenPx, scaleBarY - 5);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#c7b29e';
+      ctx.fillText(`Scale (V.E. ${l.ve.toFixed(2)}× · ${this.trueScale ? '1:1 True Scale' : 'Schematic'})`, scaleBarX - 10, scaleBarY + 3);
     }
+
     drawAnnotations(ctx) {
-      this.profile.annotations.forEach((note,i)=>{const a=this.worldToScreen(note.x,note.depthKm);ctx.fillStyle='#ffd4a2';ctx.beginPath();ctx.arc(a.x,a.y,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#271b17';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText(String(i+1),a.x,a.y+3);});ctx.textAlign='left';
+      this.profile.annotations.forEach((note,i)=>{
+        const a=this.worldToScreen(note.x,note.depthKm);
+        ctx.fillStyle='#ff7820';
+        ctx.beginPath();ctx.arc(a.x,a.y,8,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#16100c';
+        ctx.font='bold 10px system-ui, sans-serif';
+        ctx.textAlign='center';
+        ctx.fillText(String(i+1),a.x,a.y+3.5);
+      });
+      ctx.textAlign='left';
     }
   }
   window.VolcanoConduitEngine = VolcanoConduitEngine;

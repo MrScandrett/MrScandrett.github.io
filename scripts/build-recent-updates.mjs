@@ -84,6 +84,19 @@ export function renderHomepageEntries(entries) {
 export function renderFilters() {
   return `<div class="updates-filters" role="group" aria-label="Filter updates" hidden>${[['all','All'],['lesson','New lessons'],['updated','Updated'],['game','Student games']].map(([type,label]) => `<button type="button" class="updates-filter" data-updates-filter="${type}" aria-pressed="${type === 'all'}">${label}</button>`).join('')}</div>`;
 }
+export function renderSpotlight(projects) {
+  return projects
+    .filter(project => project.thumbnail && project.student && !/^(?:mr\.? scandrett|unassigned)$/i.test(project.student)
+      && fs.existsSync(path.join(root, project.thumbnail.replace(/^\.\//, '')))
+      && fs.existsSync(path.join(root, 'apps', project.slug, 'index.html')))
+    .sort((a, b) => String(b.date_added || '').localeCompare(String(a.date_added || '')))
+    .slice(0, 3)
+    .map(project => `          <a class="spotlight-project" href="apps/${escape(project.slug)}/" aria-label="${escape(project.name)} by ${escape(project.student)}">
+            <img src="${escape(project.thumbnail.replace(/^\.\//, ''))}" alt="" width="160" height="104" loading="lazy" />
+            <span class="spotlight-project-name">${escape(project.name)}</span>
+            <span class="spotlight-project-maker">by ${escape(project.student)}</span>
+          </a>`).join('\n');
+}
 export function replaceRegion(html, name, content) {
   const expression = new RegExp(`(<!-- updates:${name} -->)[\\s\\S]*?(<!-- updates:${name}:end -->)`);
   if (!expression.test(html)) throw new Error(`Missing updates:${name} region`);
@@ -111,6 +124,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   // Bake the newest six of each type so filters work without a fetch.
   html = replaceRegion(html, 'list', renderHomepageEntries(entries));
   html = replaceRegion(html, 'filters', renderFilters());
+  html = replaceRegion(html, 'spotlight', renderSpotlight(Object.entries(read('data/manifest-overrides.json')).map(([slug, project]) => ({ slug, ...project }))));
   fs.writeFileSync(indexPath, html);
   fs.writeFileSync(path.join(root, 'updates.html'), archivePage(entries));
   console.log(`Generated ${entries.length} updates; homepage shows the newest six.`);

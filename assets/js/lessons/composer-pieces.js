@@ -119,7 +119,17 @@
     var actions = element('div','composer-piece-actions');
     var read = element('button',null,'Read & play');read.type='button';read.setAttribute('aria-label','Read and play '+workTitle);
     var listen = element('button',null,'Listen');listen.type='button';listen.disabled=true;listen.setAttribute('aria-label','Listen to '+workTitle);
-    actions.append(read,listen);card.appendChild(actions);grid.appendChild(card);
+    var print = element('button',null,'Print score');print.type='button';print.disabled=true;
+    print.setAttribute('aria-label','Print a paginated score of '+workTitle);
+    function printReady() { print.disabled = !firstFigure.scoreData; }
+    firstFigure.addEventListener('score:data',printReady);
+    printReady();
+    print.addEventListener('click',function () {
+      if (!firstFigure.scoreData) return;
+      if (firstFigure.dataset.score === 'mozart-turkish-march' && window.MozartRondoPrintScore) window.MozartRondoPrintScore();
+      else if (window.ScoreEngine) window.ScoreEngine.printScore(firstFigure.scoreData);
+    });
+    actions.append(read,listen,print);card.appendChild(actions);grid.appendChild(card);
     var work = {panel:panel,button:button,heading:heading,preview:preview,figure:firstFigure}; controls.push(work);
     button.addEventListener('click',function () {show(work,true,false);});
     read.addEventListener('click',function () {show(work,true,false);});

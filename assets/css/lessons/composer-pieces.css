@@ -20,6 +20,19 @@
 .composer-passage > h4 { font-size: 1.1rem; margin: 1rem 0; }
 .composer-cover:focus-visible, .composer-piece-actions button:focus-visible, .composer-back:focus-visible { outline: 3px solid var(--accent,#0071e3); outline-offset: 4px; }
 @media (prefers-reduced-motion:reduce) { .composer-cover { transition: none; } }
-@media print { .composer-display,.composer-back { display:none; } .composer-work-panel[hidden] { display:block; } }
+@media print {
+  .composer-display,.composer-back { display:none; }
+  .composer-work-panel[hidden] { display:block !important; }
+  #fl-sec-score { break-inside:auto !important; page-break-inside:auto !important; }
+  /* A complete piece squeezed into one portrait-page box is unreadable.
+     The score player's Print score control supplies full-size pages instead. */
+  body:not(.se-print-score-active):not(.mz-print-rondo) .composer-reading .se-paper { display:none; }
+  body:not(.se-print-score-active):not(.mz-print-rondo) .composer-reading figure[data-score]::after {
+    content:"To print legible notation, open this piece on screen and choose Print score.";
+    display:block;
+    margin-top:0.35rem;
+    font:700 9pt/1.35 system-ui,sans-serif;
+  }
+}
 .composer-score-preview { --se-ink: #16130f; --se-accent: #c2410c; --se-muted: #5b5348; }
 .composer-display .music-section-navigation { margin-top: 1rem; }
