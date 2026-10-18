@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 408 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 417 public lessons and classifies 12 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 408 public lessons and classifies 12 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 51 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 59 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -77,21 +77,29 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 51 lesson
 ### Orbits, Planetary Systems & Exploration
 
 - **COS-06** — Planetary Systems
-- **COS-07** — The Asteroid Belt
-- **COS-08** — How America Got to the Moon
-- **COS-09** — Mars Rover Landing
-- **COS-10** — The Kuiper Belt
+- **COS-07** — Mercury
+- **COS-08** — Venus
+- **COS-09** — Earth
+- **COS-10** — Mars
+- **COS-11** — The Asteroid Belt
+- **COS-12** — Jupiter
+- **COS-13** — Saturn
+- **COS-14** — Uranus
+- **COS-15** — Neptune
+- **COS-16** — How America Got to the Moon
+- **COS-17** — Mars Rover Landing
+- **COS-18** — The Kuiper Belt
 
 ### Cosmology & Humanity's Place in Space
 
-- **COS-11** — Event Horizon Telescope
-- **COS-12** — In the Beginning: Origins of the Universe
-- **COS-13** — Universe Expansion
-- **COS-14** — Cosmic Voids
-- **COS-15** — Nancy Grace Roman Space Telescope
-- **COS-16** — Searching for Extraterrestrial Intelligence
-- **COS-17** — Arecibo Message
-- **COS-18** — Pale Blue Dot — Scale of the Universe
+- **COS-19** — Event Horizon Telescope
+- **COS-20** — In the Beginning: Origins of the Universe
+- **COS-21** — Universe Expansion
+- **COS-22** — Cosmic Voids
+- **COS-23** — Nancy Grace Roman Space Telescope
+- **COS-24** — Searching for Extraterrestrial Intelligence
+- **COS-25** — Arecibo Message
+- **COS-26** — Pale Blue Dot — Scale of the Universe
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
@@ -248,7 +256,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 89 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 90 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -363,40 +371,41 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Start Here · Shared Foundation
 
 - **D3D-01** — 3D Design: Foundation & Three Outcome Tracks — _also indexed in Design, Materials & Fabrication, Game Design & Development_
-- **D3D-02** — Navigate and inspect · Camera navigation
-- **D3D-03** — Arrange a display · Translate, rotate and scale
-- **D3D-04** — Cut an opening · Boolean difference
+- **D3D-02** — Blueprint Drafting Studio
+- **D3D-03** — Navigate and inspect · Camera navigation
+- **D3D-04** — Arrange a display · Translate, rotate and scale
+- **D3D-05** — Cut an opening · Boolean difference
 
 ### Make It Real · Design, Forge & Print
 
-- **D3D-05** — Design a moving fit · Clearance between concentric parts
-- **D3D-06** — Plan a printable orientation · Orientation and bed contact
+- **D3D-06** — Design a moving fit · Clearance between concentric parts
+- **D3D-07** — Plan a printable orientation · Orientation and bed contact
 
 ### Make It Look · Model, Sculpt & Render
 
-- **D3D-07** — Shape a character · Extrusion and symmetry
-- **D3D-08** — Sculpt a surface · Brush radius, displacement and smoothing
-- **D3D-09** — Finish a hard-surface prop · Beveled edges
-- **D3D-10** — Light and present your model · Material properties and directional lighting
-- **D3D-11** — Build a repeatable design · Parameter-driven repetition
-- **D3D-12** — Compose a finished image · Exposure and foreground/background decisions
+- **D3D-08** — Shape a character · Extrusion and symmetry
+- **D3D-09** — Sculpt a surface · Brush radius, displacement and smoothing
+- **D3D-10** — Finish a hard-surface prop · Beveled edges
+- **D3D-11** — Light and present your model · Material properties and directional lighting
+- **D3D-12** — Build a repeatable design · Parameter-driven repetition
+- **D3D-13** — Compose a finished image · Exposure and foreground/background decisions
 
 ### Make It Play · Game Asset Studio
 
-- **D3D-13** — Game Asset Studio
-- **D3D-14** — Design a repeating surface · Texture repetition and scale
-- **D3D-15** — Build a reusable chair · Proportion and repeated parts
-- **D3D-16** — Assemble a room kit · Grid snapping and modular repetition
-- **D3D-17** — Map and export a surface · UV coordinates and texture density
-- **D3D-18** — Bind a bending mesh · Joint position and skin weights
-- **D3D-19** — Author a looping action · Keyframes and interpolation
+- **D3D-14** — Game Asset Studio
+- **D3D-15** — Design a repeating surface · Texture repetition and scale
+- **D3D-16** — Build a reusable chair · Proportion and repeated parts
+- **D3D-17** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-18** — Map and export a surface · UV coordinates and texture density
+- **D3D-19** — Bind a bending mesh · Joint position and skin weights
+- **D3D-20** — Author a looping action · Keyframes and interpolation
 
 ### Optional Blender Walkthroughs & Workspace Reference
 
-- **D3D-20** — 3D Modeling Field Guide
-- **D3D-21** — 3D Workflow & Techniques
-- **D3D-22** — Build a reusable chair · Proportion and repeated parts
-- **D3D-23** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-21** — 3D Modeling Field Guide
+- **D3D-22** — 3D Workflow & Techniques
+- **D3D-23** — Build a reusable chair · Proportion and repeated parts
+- **D3D-24** — Assemble a room kit · Grid snapping and modular repetition
 
 # Volume V — Computer Science, AI & Interactive Media
 

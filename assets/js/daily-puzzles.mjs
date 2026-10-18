@@ -86,9 +86,21 @@ function mount(root, bank, doubleBank) {
   const nextBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--icon', 'aria-label': 'Next day', text: '›' });
   const todayBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text', text: 'Today' });
   const streakEl = el('span', { class: 'dp-streak', hidden: true });
-  const tabCross = el('button', { type: 'button', role: 'tab', id: 'dp-tab-crossword', class: 'dp-tab', 'aria-controls': 'dp-panel' }, el('span', { text: '🧩 Mini Crossword' }), el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
-  const tabSudoku = el('button', { type: 'button', role: 'tab', id: 'dp-tab-sudoku', class: 'dp-tab', 'aria-controls': 'dp-panel' }, el('span', { text: '🔢 Sudoku' }), el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
-  const tabDouble = el('button', { type: 'button', role: 'tab', id: 'dp-tab-daily-double', class: 'dp-tab', 'aria-controls': 'dp-panel' }, el('span', { text: '⚡ Daily Double' }), el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
+  const tabCross = el('button', { type: 'button', role: 'tab', id: 'dp-tab-crossword', class: 'dp-tab', 'aria-controls': 'dp-panel' },
+    el('span', { class: 'dp-tab-text' },
+      el('span', { class: 'dp-tab-full', text: '🧩 Mini Crossword' }),
+      el('span', { class: 'dp-tab-short', text: '🧩 Mini' })),
+    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
+  const tabSudoku = el('button', { type: 'button', role: 'tab', id: 'dp-tab-sudoku', class: 'dp-tab', 'aria-controls': 'dp-panel' },
+    el('span', { class: 'dp-tab-text' },
+      el('span', { class: 'dp-tab-full', text: '🔢 Sudoku' }),
+      el('span', { class: 'dp-tab-short', text: '🔢 Sudoku' })),
+    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
+  const tabDouble = el('button', { type: 'button', role: 'tab', id: 'dp-tab-daily-double', class: 'dp-tab', 'aria-controls': 'dp-panel' },
+    el('span', { class: 'dp-tab-text' },
+      el('span', { class: 'dp-tab-full', text: '⚡ Daily Double' }),
+      el('span', { class: 'dp-tab-short', text: '⚡ Double' })),
+    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
   const bar = el('div', { class: 'dp-bar' },
     el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' }, prevBtn, dateLabel, nextBtn, todayBtn, streakEl));
@@ -742,35 +754,56 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
     st.gaveUp = false;
     view.pendingWager = null;
     view.lockingIn = false;
+    closeClue();
     persist();
     paint();
     onChange();
   });
 
+  const openClueBtn = el('button', {
+    type: 'button',
+    class: 'dp-btn dp-btn--primary dp-dopen-clue dp-donly-small',
+    text: '⚡ Play Clue ($400) →'
+  });
+  openClueBtn.addEventListener('click', () => {
+    openClue();
+  });
+
   const status = el('p', { class: 'dp-status', role: 'status' });
   const tools = el('div', { class: 'dp-tools' }, soundBtn, restartBtn);
 
-  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, gridEl, tools, status);
+  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, gridEl, openClueBtn, tools, status);
   const sideConsole = el('div', { class: 'dp-dside' });
   const body = el('div', { class: 'dp-body dp-body--double' }, leftWrap, sideConsole);
   panel.replaceChildren(body);
 
   function say(msg) { status.textContent = msg; }
 
-  function selectCell(c, r) {
+  function openClue() {
+    body.classList.add('show-clue');
+  }
+
+  function closeClue() {
+    body.classList.remove('show-clue');
+  }
+
+  function selectCell(c, r, opts = {}) {
     view.col = c;
     view.row = r;
     view.pendingWager = null;
     view.lockingIn = false;
     paint();
     playSound('select');
+    if (opts.openClue !== false) {
+      openClue();
+    }
   }
 
   function nextUnanswered() {
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
         if (!st.answers[`${c},${r}`]) {
-          selectCell(c, r);
+          selectCell(c, r, { openClue: true });
           return;
         }
       }
@@ -810,6 +843,17 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
         }
       }
     }
+
+    const activeTile = dd.grid[view.col][view.row];
+    const activeKey = `${view.col},${view.row}`;
+    const activeAns = st.answers[activeKey];
+    if (activeTile.isTripleDouble && !st.wagers[activeKey] && !activeAns) {
+      openClueBtn.textContent = `⚡ Play Triple Double (${activeTile.category}) →`;
+    } else if (activeAns) {
+      openClueBtn.textContent = `⚡ View Clue (${activeTile.category} $${activeTile.value}) →`;
+    } else {
+      openClueBtn.textContent = `⚡ Play Clue: ${activeTile.category} $${activeTile.value} →`;
+    }
   }
 
   function paintConsole() {
@@ -818,11 +862,19 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
     if (answeredCount === 25 && st.done) {
       let correctN = 0;
       for (const a of Object.values(st.answers)) if (a.correct) correctN++;
+      const viewBoardBtn = el('button', {
+        type: 'button',
+        class: 'dp-btn dp-btn--text dp-donly-small',
+        text: '▦ View Completed Board'
+      });
+      viewBoardBtn.addEventListener('click', () => { closeClue(); });
+
       const grandCard = el('div', { class: 'dp-dcleared' },
         el('div', { class: 'dp-dcleared-title', text: '🏆 BOARD CLEARED! 🏆' }),
         el('p', { text: `Final Bank: $${st.score.toLocaleString()} · Time: ${fmtTime(st.secs)}` }),
         el('p', { text: `Accuracy: ${correctN} of 25 answered correctly.` }),
-        el('p', { class: 'dp-hint-text', text: 'Come back tomorrow for a brand new set of STEAM lesson questions!' })
+        el('p', { class: 'dp-hint-text', text: 'Come back tomorrow for a brand new set of STEAM lesson questions!' }),
+        viewBoardBtn
       );
       sideConsole.append(grandCard);
     }
@@ -878,7 +930,20 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
         paint();
       });
 
+      const tdBackBtn = el('button', {
+        type: 'button',
+        class: 'dp-btn dp-btn--text dp-dback-btn dp-donly-small',
+        'aria-label': 'Back to board',
+        text: '← Board'
+      });
+      tdBackBtn.addEventListener('click', () => { closeClue(); });
+
+      const tdTopBar = el('div', { class: 'dp-td-top' },
+        tdBackBtn,
+        el('span', { class: 'dp-td-tag', text: tile.category }));
+
       const tdCard = el('div', { class: 'dp-td-stage' },
+        tdTopBar,
         el('div', { class: 'dp-td-banner', text: '⚡ TRIPLE DOUBLE to the power of π! ⚡' }),
         el('div', { class: 'dp-td-formula', text: '(3 × 2)^π ≈ 279× Multiplier Bonus!' }),
         el('p', { text: 'You discovered a secret Triple Double tile! Place your wager before opening this STEAM clue:' }),
@@ -892,7 +957,16 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
     // Active Clue Card in Millionaire style
     const activeVal = st.wagers[k] || tile.value;
     const catLabel = tile.isTripleDouble ? `⚡ TRIPLE DOUBLE · ${tile.category}` : `${tile.category}`;
+    const backBtn = el('button', {
+      type: 'button',
+      class: 'dp-btn dp-btn--text dp-dback-btn dp-donly-small',
+      'aria-label': 'Back to board',
+      text: '← Board'
+    });
+    backBtn.addEventListener('click', () => { closeClue(); });
+
     const headBar = el('div', { class: 'dp-dcard-top' },
+      backBtn,
       el('span', { class: 'dp-dcard-cat', text: catLabel }),
       el('span', { class: 'dp-dcard-val', text: `$${activeVal.toLocaleString()}` })
     );
@@ -933,8 +1007,19 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
         ? (tile.isTripleDouble ? `⚡ TRIPLE DOUBLE WON! +$${ans.points.toLocaleString()}!` : `🎉 Correct! +$${ans.points.toLocaleString()}`)
         : `✗ Incorrect. (Correct answer: ${tile.answer})`;
 
-      const nextBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text', text: 'Next Clue →' });
-      nextBtn.addEventListener('click', () => { nextUnanswered(); });
+      const fbActions = el('div', { class: 'dp-m-actions' });
+      if (answeredCount < 25) {
+        const nextBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--primary', text: 'Next Clue →' });
+        nextBtn.addEventListener('click', () => { nextUnanswered(); });
+        fbActions.append(nextBtn);
+      }
+      const toBoardBtn = el('button', {
+        type: 'button',
+        class: 'dp-btn dp-btn--text dp-donly-small',
+        text: '← Back to Board'
+      });
+      toBoardBtn.addEventListener('click', () => { closeClue(); });
+      fbActions.append(toBoardBtn);
 
       const fb = el('div', { class: fbClass },
         el('strong', { text: heading }),
@@ -945,7 +1030,7 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
           target: '_blank',
           rel: 'noopener noreferrer'
         }, el('span', { text: `📖 Open Lesson: ${tile.lessonTitle} →` })),
-        answeredCount < 25 ? nextBtn : null
+        fbActions
       );
       card.append(fb);
     }
@@ -999,7 +1084,7 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
 
     if (moves) {
       ev.preventDefault();
-      selectCell(moves[1], moves[0]);
+      selectCell(moves[1], moves[0], { openClue: false });
       const node = cellNodes.get(`${moves[1]},${moves[0]}`);
       if (node) node.focus({ preventScroll: true });
       return;
