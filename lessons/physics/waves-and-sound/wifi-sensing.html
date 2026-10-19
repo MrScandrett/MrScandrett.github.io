@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seeing Breath in Wi-Fi · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="How a Wi-Fi signal can read your breathing: path length, phase and Channel State Information, a room simulator with blind spots, a signal-processing lab, and an ESP32 recipe so you can try it yourself.">
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css">
+  <link rel="stylesheet" href="../../../assets/css/lessons/wifi-sensing.css">
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="ws-page">
+
+          <section class="hero ws-hero">
+            <p class="eyebrow">Physics · Waves &amp; Signals</p>
+            <h1>Seeing Breath in Wi-Fi</h1>
+            <div class="ws-meta">
+              <span>Grades 8–12</span><span class="dot"></span><span>Interference</span><span class="dot"></span><span>Phase</span><span class="dot"></span><span>Signal processing</span><span class="dot"></span><span>ESP32 recipe</span>
+            </div>
+            <p class="ws-lede">Your router already measures how its signal bounced around the room, because it needs to. A chest that moves five millimetres changes that measurement in a tiny, regular way. In this lesson you will work out why, watch it happen in a simulated room, pull a breathing rate out of noisy data, and then try it for real with an $8 board.</p>
+          </section>
+
+          <section class="ws-card" style="--card-accent:#f59e0b;">
+            <h2>A viral claim, read like a scientist</h2>
+            <p>A post going around says: <em>"Each breath slightly changes how Wi-Fi waves reflect off your chest. With the right receiver and processing, those tiny changes can reveal your breathing rhythm."</em> A reply adds that a friend now maps whole campuses with it "like Batman." Before you build anything, sort the claims.</p>
+            <table class="ws-claims">
+              <thead><tr><th scope="col">Claim</th><th scope="col">Verdict</th><th scope="col">Why</th></tr></thead>
+              <tbody>
+                <tr><td>A breath changes how Wi-Fi reflects off the chest.</td><td><span class="ws-tag real">Real</span></td><td>Chest travel of a few millimetres changes a reflected path by about a centimetre. A Wi-Fi wavelength is 12 cm. You will calculate it below.</td></tr>
+                <tr><td>With the right receiver and processing you can recover the breathing rhythm.</td><td><span class="ws-tag real">Real, with conditions</span></td><td>It works best for one person sitting still, a few metres from the link, over tens of seconds. You will see where it breaks.</td></tr>
+                <tr><td>Heartbeat works the same way.</td><td><span class="ws-tag stretch">Much harder</span></td><td>A heartbeat moves the chest more than ten times less than a breath. It sits near the noise floor.</td></tr>
+                <tr><td>Map a whole campus in real time, accurately.</td><td><span class="ws-tag hype">Ask for evidence</span></td><td>Nothing in this lesson's physics scales up to that by itself. Many people moving, walls, and furniture all add paths. A claim like this needs measured accuracy, a test setting, and a method.</td></tr>
+              </tbody>
+            </table>
+            <div class="ws-callout"><strong>Your job:</strong> by the end, write one sentence for each row that says what evidence would change your mind.</div>
+          </section>
+
+          <section class="ws-card" style="--card-accent:#0ea5e9;">
+            <h2>What a Wi-Fi chip actually measures</h2>
+            <p>A Wi-Fi channel is not one wave. A 20 MHz channel carries <strong>52 data subcarriers</strong>, tiny separate channels 312.5 kHz apart. To decode your video call, the receiver measures how each subcarrier arrived, both how strong (amplitude) and how delayed (phase). That list of 52 measurements is the <strong>Channel State Information</strong>, or <strong>CSI</strong>. Normally it is thrown away after use. Sensing keeps it.</p>
+            <p>Radio does not take one path. It goes straight from router to receiver, and it also bounces off walls, desks, and people. The receiver sees the <strong>sum</strong> of all those paths. Paths that arrive in step reinforce each other. Paths that arrive out of step cancel. That is interference, the same idea as the Huygens lesson, happening inside your room.</p>
+            <figure class="ws-fig" data-zoomable data-lightbox-group="wifi">
+              <img src="../../../assets/images/lessons/wifi-sensing/breath-path.svg" alt="Router and receiver with a straight direct path and a second path bouncing off a chest. When the chest moves out about five millimetres the bounced path becomes about one centimetre longer." loading="lazy">
+              <figcaption><strong>Only the chest path changes.</strong> The direct path and the wall bounces stay put. A chest 5 mm closer shortens the out-and-back path by about 10 mm. A wavelength at 2.4 GHz is 123 mm, so that is about a twelfth of a wavelength: a small but readable rotation of the reflected wave.</figcaption>
+            </figure>
+            <h3>Worked example: how big is the signal?</h3>
+            <div class="ws-callout">
+              <p><strong>Step 1. Wavelength.</strong> At 2.437 GHz (channel 6): λ = c / f = 299,792,458 / 2,437,000,000 ≈ 0.123 m = <strong>12.3 cm</strong>.</p>
+              <p><strong>Step 2. Path change.</strong> The chest moves 5 mm. The radio goes to the chest and back, so the path changes by about 2 × 5 mm = <strong>10 mm</strong>.</p>
+              <p><strong>Step 3. Phase.</strong> phase change = 2π × (path change ÷ λ) = 2π × (0.010 ÷ 0.123) ≈ <strong>0.51 rad</strong>, about 29°.</p>
+              <p><strong>Step 4. Try 5 GHz.</strong> λ ≈ 5.8 cm, so the same breath gives 2π × (0.010 ÷ 0.058) ≈ <strong>1.09 rad</strong>. Shorter waves feel the same motion twice as strongly. (The ESP32 in the recipe is 2.4 GHz only, so this is a simulator-only comparison.)</p>
+              <p><strong>Step 5. Heartbeat.</strong> About 0.3 mm of chest travel gives 2π × (0.0006 ÷ 0.123) ≈ 0.03 rad, roughly fifteen times smaller than the breath.</p>
+            </div>
+            <div class="ws-q" data-answer="b" data-explain="Doubling the frequency halves the wavelength, so the same path change is twice as many wavelengths.">
+              <p><strong>Check yourself.</strong> You move from 2.4 GHz to 5 GHz. Chest motion stays at 5 mm. The phase swing is…</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">about half as big</button><button class="ws-btn ghost" data-v="b">about twice as big</button><button class="ws-btn ghost" data-v="c">exactly the same</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+          </section>
+
+          <section class="ws-card" id="room-lab" style="--card-accent:#38bdf8;">
+            <h2>Room lab: watch a breath move the signal</h2>
+            <p>This is a simulated 4 × 2.4 m corner of a room. The router sends packets 20 times a second, and the receiver reports the amplitude of each subcarrier. The blue line is what the radio would report. The dashed gold line is where the chest really was. <strong>Drag the person</strong> (or click the room and use the arrow keys). The controls are just below the graphs.</p>
+            <div class="ws-stage"><canvas id="ws-room" class="ws-room" tabindex="0" role="application" aria-label="Simulated room with a router, a receiver and a seated person. Drag the person or use the arrow keys to move them."></canvas></div>
+            <div class="ws-stage"><canvas id="ws-trace" role="img" aria-label="Live graph of the received signal amplitude following the breathing chest"></canvas></div>
+            <div class="ws-controls" role="group" aria-label="Room lab controls">
+            <h3 class="ws-group">Radio</h3>
+            <div class="ws-ctl"><label for="ws-band">Band</label>
+              <select id="ws-band"><option value="2.4">2.4 GHz (ESP32 can do this)</option><option value="5">5 GHz (simulator only)</option></select></div>
+            <div class="ws-ctl"><label for="ws-sub">Subcarrier <span id="ws-sub-v"></span></label><input type="range" id="ws-sub" min="0" max="51" value="26"></div>
+            <h3 class="ws-group">Person</h3>
+            <div class="ws-ctl"><label for="ws-bpm">Breathing rate <span id="ws-bpm-v"></span></label><input type="range" id="ws-bpm" min="6" max="30" value="16"></div>
+            <div class="ws-ctl"><label for="ws-mm">Chest movement <span id="ws-mm-v"></span></label><input type="range" id="ws-mm" min="1" max="12" value="5"></div>
+            <div class="ws-ctl"><span class="ws-note">Position: <strong id="ws-pos"></strong></span>
+              <div class="ws-row"><button class="ws-btn ghost" id="ws-sit" type="button">Reset position</button><button class="ws-btn" id="ws-walk" type="button">Someone walks by</button></div></div>
+            <h3 class="ws-group">Signal</h3>
+            <div class="ws-ctl"><label for="ws-noise">Noise <span id="ws-noise-v"></span></label><input type="range" id="ws-noise" min="0" max="1" step="0.01" value="0.25"></div>
+            <div class="ws-ctl"><label for="ws-map">Sensitivity map</label>
+              <select id="ws-map"><option value="off">Off</option><option value="one">This subcarrier</option><option value="best">Best of the 52</option></select></div>
+            <div class="ws-toggles"><label><input type="checkbox" id="ws-true" checked> Show true chest position</label><label><input type="checkbox" id="ws-quant"> Whole-number readings, like a real ESP32</label><label><input type="checkbox" id="ws-drift"> Add slow drift (gain wander)</label></div>
+            <div class="ws-row"><button class="ws-btn ghost" id="ws-pause" type="button" aria-pressed="false">⏸ Pause</button></div>
+            </div>
+            <div class="ws-twin">
+              <div>
+                <h3>Try this, in order</h3>
+                <ol>
+                  <li><strong>Match.</strong> Watch the blue line follow the gold dashes. The radio really is tracking the chest. Raise <em>Noise</em> until you can't tell.</li>
+                  <li><strong>Move.</strong> Drag the person a few centimetres at a time. The wave gets bigger, smaller, even flips upside down. Nothing about the breathing changed.</li>
+                  <li><strong>Map it.</strong> Set <em>Sensitivity map</em> to "This subcarrier". Bright stripes are places where a breath is easy to see; dark stripes are <strong>blind spots</strong>. Compare the stripe spacing to the wavelength bar.</li>
+                  <li><strong>Fix it.</strong> Switch the map to "Best of the 52". Most dark gaps fill in. Different subcarriers have different wavelengths, so their blind spots are in different places.</li>
+                  <li><strong>Band.</strong> Switch to 5 GHz. The stripes get closer together and the signal gets bigger.</li>
+                  <li><strong>Interrupt.</strong> Press <em>Someone walks by</em>. What happens to the trace?</li>
+                </ol>
+              </div>
+              <div class="ws-stage"><canvas id="ws-phasor" role="img" aria-label="Phasor diagram: a fixed grey arrow for the static paths, a blue arrow for the chest reflection with its tip wobbling, and the total"></canvas></div>
+            </div>
+            <figure class="ws-fig" data-zoomable data-lightbox-group="wifi">
+              <img src="../../../assets/images/lessons/wifi-sensing/phasor.svg" alt="Two phasor diagrams. On the left the chest arrow wobbles sideways of the fixed arrow, so the total length barely changes and the signal is flat. On the right it wobbles along the fixed arrow, so the total length swings and the breath is clear." loading="lazy">
+              <figcaption><strong>Why blind spots exist.</strong> Each path is an arrow whose angle is its phase. The radio reports the length of the <em>total</em> arrow. If the chest arrow wobbles sideways, the total length barely changes (blind spot). If it wobbles along the total, the length swings (sweet spot). Moving the person turns the arrows.</figcaption>
+            </figure>
+          </section>
+
+          <section class="ws-card" id="decode-lab" style="--card-accent:#34d399;">
+            <h2>Decode lab: from 52 wiggling numbers to "16 breaths per minute"</h2>
+            <p>Raw CSI looks like noise. Five steps turn it into an answer. Pick a data source, then switch steps off to see what each one buys you.</p>
+            <figure class="ws-fig" data-zoomable data-lightbox-group="wifi">
+              <img src="../../../assets/images/lessons/wifi-sensing/pipeline.svg" alt="Six stages from left to right: packets, even clock, band-pass, best six subcarriers, spectrum, peak." loading="lazy">
+              <figcaption><strong>The signal chain.</strong> Every stage answers a problem. Packets arrive unevenly, so resample. Drift and jitter hide the breath, so band-pass. Each subcarrier is noisy, so combine the best. Then ask: which rhythm is strongest?</figcaption>
+            </figure>
+            <div class="ws-row" role="group" aria-label="Data source">
+              <button class="ws-btn ghost" data-ws-source="room" aria-pressed="true">Room lab (live)</button>
+              <button class="ws-btn ghost" data-ws-source="practice" aria-pressed="false">Practice recording</button>
+              <button class="ws-btn ghost" data-ws-source="file" aria-pressed="false">My CSV file…</button>
+              <button class="ws-btn ghost" id="ws-serial-btn">Connect ESP32</button>
+              <button class="ws-btn ghost" id="ws-save">Save recording</button>
+              <input type="file" id="ws-file" accept=".csv,.txt" hidden aria-label="Choose a CSI recording file">
+            </div>
+            <p class="ws-status" id="ws-src-status" role="status"></p>
+            <p class="ws-callout warn" id="ws-serial-note" hidden>This browser can't talk to USB devices from a page (Web Serial). Use Chrome or Edge on a laptop for the live ESP32 link. Everything else on this page works anywhere.</p>
+            <div class="ws-row" id="ws-playbar" hidden>
+              <button class="ws-btn" id="ws-play">▶ Play</button>
+              <label class="ws-note" for="ws-ph">Playhead</label><input type="range" id="ws-ph" min="0" max="60" value="60" style="flex:1;min-width:140px">
+            </div>
+            <div class="ws-toggles">
+              <label><input type="checkbox" id="ws-filter" checked> Band-pass filter (0.1–0.6 Hz)</label>
+              <label><input type="checkbox" id="ws-best" checked> Combine the best 6 subcarriers</label>
+              <label>Window <select id="ws-window" class="ws-input"><option value="15">15 s</option><option value="30" selected>30 s</option><option value="45">45 s</option></select></label>
+            </div>
+            <div class="ws-row" id="ws-pick-row" hidden><label for="ws-pick" class="ws-note">Use only subcarrier</label><input type="range" id="ws-pick" min="0" max="51" value="26"><strong id="ws-pick-v" class="ws-note">k = +1</strong></div>
+            <div class="ws-stage"><canvas id="ws-wf" role="img" aria-label="Heat map of all 52 subcarriers over time"></canvas></div>
+            <div class="ws-stage"><canvas id="ws-raw" role="img" aria-label="Raw amplitude of the strongest subcarrier"></canvas></div>
+            <div class="ws-stage"><canvas id="ws-band-sig" role="img" aria-label="Filtered breathing signal with detected breaths marked"></canvas></div>
+            <div class="ws-stage"><canvas id="ws-spec" role="img" aria-label="Spectrum with the strongest rhythm marked"></canvas></div>
+            <div class="ws-readout" aria-live="polite">
+              <strong id="ws-readout">–</strong>
+              <span id="ws-conf"></span>
+            </div>
+            <p class="ws-status" id="ws-count"></p>
+            <h3>Experiments</h3>
+            <div class="ws-exp">
+              <div><strong>1. Turn off the filter</strong><p>Use <em>Practice recording</em>, then uncheck the band-pass. The tallest bump is now slow drift, not breathing. That is why the filter exists.</p></div>
+              <div><strong>2. Use one subcarrier</strong><p>Uncheck "best 6" and slide through subcarriers. Some are clean, some are blind. Averaging the best ones is what makes the method dependable.</p></div>
+              <div><strong>3. Scrub through the walker</strong><p>In the practice recording someone walks through the beam at 40 s. Drag the playhead from 35 s to 90 s. Does the confidence line warn you? Why does recovery take so long? (Hint: how long is the window?)</p></div>
+              <div><strong>4. Window length</strong><p>Try 15 s, 30 s, 45 s. Shorter is faster but each peak in the spectrum gets wider. What is the trade?</p></div>
+            </div>
+            <h3>Challenge: the mystery breather</h3>
+            <p>The computer hides its answer. Read the spectrum (x is breaths per minute) or count the gold dots on the filtered signal, then type your estimate.</p>
+            <div class="ws-row"><button class="ws-btn" id="ws-mystery">New mystery breather</button></div>
+            <div class="ws-row" id="ws-guess-row" hidden>
+              <label for="ws-guess" class="ws-note">Your estimate</label><input class="ws-input" id="ws-guess" type="number" step="0.5" min="4" max="45" style="width:6rem">
+              <button class="ws-btn" id="ws-guess-check">Check</button><button class="ws-btn ghost" id="ws-reveal">Give up, show me</button>
+              <span class="ws-fb" id="ws-guess-fb" role="status"></span>
+            </div>
+          </section>
+
+          <section class="ws-card" id="recipe" style="--card-accent:#8b5cf6;">
+            <h2>Recipe: do it for real with an ESP32</h2>
+            <p>Everything above also runs on live radio. An ESP32 board can hand you its CSI, and the Decode lab can read it straight from the USB cable. <strong>About an hour, about $8.</strong> No camera, no wearable.</p>
+            <div class="ws-callout warn"><strong>Consent and network rules.</strong> Only sense people who know and agree. Use your own network or a phone hotspot, or ask your teacher which classroom network is allowed. The sketch only sends small ping packets to your router, about 50 a second.</div>
+            <h3>You need</h3>
+            <div class="ws-parts">
+              <div class="ws-part"><strong>ESP32 board</strong><span>Classic ESP32, ESP32-S3 or ESP32-C3. 2.4 GHz. Boards with USB-C are easiest.</span></div>
+              <div class="ws-part"><strong>USB data cable</strong><span>Some cables only charge. If no port appears, try another cable.</span></div>
+              <div class="ws-part"><strong>Laptop with Chrome or Edge</strong><span>They allow a page to read USB serial. Safari and Firefox don't.</span></div>
+              <div class="ws-part"><strong>A 2.4 GHz Wi-Fi network</strong><span>Router or phone hotspot. Not the 5 GHz-only band.</span></div>
+              <div class="ws-part"><strong>A chair and a tape measure</strong><span>Geometry matters. You'll change it on purpose.</span></div>
+            </div>
+            <ol class="ws-steps">
+              <li><strong>Set up the Arduino IDE.</strong> Install Arduino IDE 2. In <em>Boards Manager</em> install <em>esp32 by Espressif Systems</em>. In <em>Library Manager</em> install <em>ESP32Ping</em>. Pick your board under <em>Tools &gt; Board</em>. On S3/C3 boards with a native USB port, set <em>USB CDC On Boot</em> to Enabled. (New to this? Do <a href="../../engineering/arduino-and-electronics/sensor-to-webpage.html">Sensor to Webpage</a> first; it uses the same Web Serial link.)</li>
+              <li><strong>Load the sketch.</strong> Copy the code below into a new sketch, or <a href="../../../assets/downloads/wifi-sensing/esp32_csi_stream.ino" download>download esp32_csi_stream.ino</a>. Put your Wi-Fi name and password at the top. Don't share or publish a sketch that has your password in it.</li>
+              <li><strong>Upload and look.</strong> Press Upload. Open the Serial Monitor at <strong>921600 baud</strong>. You should see a wall of lines starting with <code>C,</code>. If you do, the radio is working. <strong>Close the Serial Monitor now</strong>; it holds the port and the page can't open it.</li>
+              <li><strong>Connect the page.</strong> In the Decode lab press <em>Connect ESP32</em> and choose your board. The status line should say about 40–50 packets per second. The 52-row heat map fills in from the right.</li>
+              <li><strong>Set the stage.</strong> Put the ESP32 on a table. The router stays where it is, 1–3 m away. Sit the person between them, about half a metre off the straight line, facing it. Sit still, breathe normally, don't touch the table. Wait 30 seconds for the window to fill.</li>
+              <li><strong>Check against reality.</strong> Count your own breaths for 30 seconds on a stopwatch, twice. Compare with the page. A good result is within 1–2 breaths per minute.</li>
+            </ol>
+            <h3>The sketch</h3>
+            <div class="ws-row"><button class="ws-btn ghost" id="ws-copy-fw">Copy code</button><a class="ws-btn" href="../../../assets/downloads/wifi-sensing/esp32_csi_stream.ino" download>Download .ino</a><a class="ws-btn ghost" href="../../../assets/downloads/wifi-sensing/analyze_breathing.py" download>Download analyze_breathing.py</a></div>
+            <pre class="ws-code" id="ws-firmware" tabindex="0" aria-label="ESP32 sketch that streams Wi-Fi CSI over USB"><code>// esp32_csi_stream.ino: stream Wi-Fi Channel State Information (CSI) over USB.
+// Board: ESP32, ESP32-S3 or ESP32-C3 (2.4 GHz). Arduino IDE: Boards Manager "esp32 by Espressif" 3.x,
+// Library Manager "ESP32Ping". Tools &gt; USB CDC On Boot: Enabled (S3/C3 with native USB).
+//
+// How it works: CSI is only measured when a packet arrives. So this sketch pings your router about
+// 50 times a second; every reply is a packet the radio measures. Each measurement becomes one line:
+//     C,&lt;seq&gt;,&lt;ms&gt;,&lt;rssi&gt;,&lt;a1&gt;,&lt;a2&gt;, ... &lt;a52&gt;
+// where a1..a52 are the strengths of the 52 subcarriers (lower frequency first).
+// The lesson page, or analyze_breathing.py, turns that stream into breaths per minute.
+#include &lt;WiFi.h&gt;
+#include &lt;ESP32Ping.h&gt;
+#include "esp_wifi.h"
+
+const char* WIFI_SSID = "YOUR_WIFI_NAME";   // your own network, or a phone hotspot you control
+const char* WIFI_PASS = "YOUR_PASSWORD";
+const int   PING_GAP_MS = 20;               // ~50 packets per second; 10 ms = faster, 40 ms = slower
+
+struct Sample { uint32_t ms; int8_t rssi; uint8_t amp[52]; };
+static QueueHandle_t queue;
+static uint8_t routerMac[6];
+static uint32_t seq = 0;
+
+// Runs in the Wi-Fi task for every received packet. Keep it short: copy numbers, no printing.
+static void onCsi(void* ctx, wifi_csi_info_t* info) {
+  if (!info || !info-&gt;buf || info-&gt;len &lt; 128) return;
+  if (memcmp(info-&gt;mac, routerMac, 6) != 0) return;       // only packets from our router
+  Sample s;
+  s.ms = millis();
+  s.rssi = info-&gt;rx_ctrl.rssi;
+  // Legacy long training field: 64 complex values, bytes are [imaginary, real].
+  // Order in the buffer is k = 0..31, then -32..-1. We keep k = -26..-1 and 1..26.
+  int n = 0;
+  for (int k = -26; k &lt;= 26; k++) {
+    if (k == 0) continue;
+    int idx = (k &lt; 0) ? 64 + k : k;
+    float im = info-&gt;buf[2 * idx];
+    float re = info-&gt;buf[2 * idx + 1];
+    s.amp[n++] = (uint8_t)min(255.0f, sqrtf(re * re + im * im));
+  }
+  xQueueSend(queue, &amp;s, 0);                               // drop the sample if the queue is full
+}
+
+void setup() {
+  Serial.begin(921600);                                   // fast: ~50 lines/s x ~220 characters
+  queue = xQueueCreate(32, sizeof(Sample));
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);                                   // a sleeping radio skips packets
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  while (WiFi.status() != WL_CONNECTED) delay(250);
+  memcpy(routerMac, WiFi.BSSID(), 6);
+
+  wifi_csi_config_t cfg = {};
+  cfg.lltf_en = true;            // use the legacy training field (always 64 values)
+  cfg.htltf_en = false;
+  cfg.stbc_htltf2_en = false;
+  cfg.ltf_merge_en = false;
+  cfg.channel_filter_en = false; // false = no smoothing between neighbouring subcarriers
+  cfg.manu_scale = false;
+  cfg.shift = 0;
+  esp_wifi_set_csi_config(&amp;cfg);
+  esp_wifi_set_csi_rx_cb(&amp;onCsi, NULL);
+  esp_wifi_set_csi(true);
+  Serial.println("# CSI streaming. Sit still, breathe normally, keep 1-3 m from the router.");
+}
+
+void loop() {
+  Ping.ping(WiFi.gatewayIP(), 1);                         // make the router send us a packet
+  Sample s;
+  while (xQueueReceive(queue, &amp;s, 0) == pdTRUE) {
+    Serial.printf("C,%lu,%lu,%d", (unsigned long)seq++, (unsigned long)s.ms, s.rssi);
+    for (int i = 0; i &lt; 52; i++) Serial.printf(",%u", s.amp[i]);
+    Serial.println();
+  }
+  delay(PING_GAP_MS);
+}</code></pre>
+            <h3>How the sketch works</h3>
+            <ul>
+              <li>CSI is only measured when a packet <em>arrives</em>. So <code>loop()</code> pings the router about 50 times a second. Each reply is a free measurement.</li>
+              <li><code>onCsi()</code> runs inside the Wi-Fi task. It copies the 52 usable subcarriers (turning each real and imaginary pair into an amplitude) and gets out fast. Printing happens later, in <code>loop()</code>, from a queue.</li>
+              <li>It ignores packets that didn't come from your router, and turns off the chip's smoothing so neighbouring subcarriers stay independent.</li>
+              <li>Each packet becomes one text line: <code>C,seq,ms,rssi,a1…a52</code>. Plain text is easy to read, save, and debug. At 921600 baud it fits.</li>
+            </ul>
+            <h3>Experiments to run</h3>
+            <div class="ws-exp">
+              <div><strong>Find your blind spot</strong><p>Slide the chair 5 cm at a time. Watch the confidence line. Does it dip and come back?</p></div>
+              <div><strong>Hold your breath</strong><p>Hold for 15 s. The peak should collapse. Then breathe fast. Does it follow you?</p></div>
+              <div><strong>Distance and walls</strong><p>Increase the distance. Put a laptop or a book between you and the line. What loses signal first?</p></div>
+              <div><strong>Fidget test</strong><p>Tap a foot, then type. Which motions are slow enough to hide in the breathing band?</p></div>
+              <div><strong>Keep the data</strong><p>Press <em>Save recording</em>, then run <code>python analyze_breathing.py wifi-sensing-serial.csv</code> (needs numpy, scipy, matplotlib). Does the Python answer match the page?</p></div>
+              <div><strong>No board? Same lab.</strong><p>Save the <em>Practice recording</em> and run the Python script on it. You get the whole analysis path without hardware.</p></div>
+            </div>
+            <h3>If it doesn't work</h3>
+            <ul>
+              <li><strong>No <code>C,</code> lines:</strong> wrong Wi-Fi name or password, a 5 GHz-only network, or the board isn't running (press its reset button). Lines starting with <code>#</code> are only notes.</li>
+              <li><strong>Garbled characters:</strong> the Serial Monitor must be set to 921600 baud.</li>
+              <li><strong>"Could not open the port":</strong> something else has it. Close the Arduino Serial Monitor and other serial apps.</li>
+              <li><strong>Packets per second far below 40:</strong> try <code>PING_GAP_MS = 10</code>. A busy network or a hotspot that sleeps will also slow it.</li>
+              <li><strong>Peak jumps around:</strong> something is moving. Check for a fan, a person walking, or you shifting in the chair. Compare with the walker experiment in the Decode lab.</li>
+              <li><strong>Code won't compile:</strong> the CSI settings have changed between ESP32 chip families. This sketch is written for the classic ESP32, S3, and C3. Newer chips (C5, C6) use a different settings structure.</li>
+            </ul>
+            <div class="ws-callout"><strong>Be honest in your lab report.</strong> Report the distance, the chair position, how many seconds of data, how many repeats, and how far off you were from your stopwatch. One good run proves little. Five runs in five places says something.</div>
+          </section>
+
+          <section class="ws-card" style="--card-accent:#ef4444;">
+            <h2>Reality check and responsibility</h2>
+            <h3>What you now know about the limits</h3>
+            <ul>
+              <li><strong>Geometry decides.</strong> Blind spots are physics, not a bug. Good systems use many subcarriers, more than one receiver, or both.</li>
+              <li><strong>Motion is the enemy.</strong> Anything moving in the band 6–36 breaths per minute looks like breathing to the maths. A fan can fool it.</li>
+              <li><strong>Averaging buys certainty.</strong> A 30-second window is a design choice: longer is steadier, shorter is faster.</li>
+              <li><strong>Going from "one person in a quiet room" to "everyone on a campus"</strong> is a different problem, not a bigger version of this one. Count how many things the Room lab had to hold still.</li>
+            </ul>
+            <h3>Discuss</h3>
+            <ol>
+              <li>This works through a wall and uses no camera. Does that make it more private than a camera, or less?</li>
+              <li>Useful: a sleep monitor with nothing to wear, or a way to notice that someone in a care home has stopped moving. Harmful: knowing who is in a room, or when. What rules would let the first and prevent the second?</li>
+              <li>Who should be told, and who should agree, before a building's Wi-Fi is used this way?</li>
+              <li>Back to the table at the top: write what evidence you would want for each row.</li>
+            </ol>
+            <p class="ws-note">Related: <a href="digital-signal-processing.html">Digital Signal Processing</a> (filters and the Fourier idea), <a href="../../mathematics/advanced-and-calculus/fourier-series.html">Fourier Series</a>, <a href="huygens-principle.html">Huygens' Principle</a> (interference), <a href="../../technical-elements/audio-engineering/room-acoustics.html">Room Acoustics</a> (the same multipath idea with sound).</p>
+          </section>
+
+          <section class="ws-card" style="--card-accent:#f59e0b;">
+            <h2>Practice</h2>
+            <div class="ws-q" data-answer="c" data-explain="Only the chest path changes length, and only by about a centimetre. That tiny change shows up because it is a fraction of a 12 cm wavelength.">
+              <p>1. Which path changes when you breathe?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The direct path from router to receiver</button><button class="ws-btn ghost" data-v="b">The wall bounces</button><button class="ws-btn ghost" data-v="c">The path that bounces off the chest</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+            <div class="ws-q" data-answer="a" data-explain="The phasor length is the amplitude. Wobbling sideways to the total barely changes its length, so nothing shows.">
+              <p>2. Why can the same person show a clear breath in one seat and a flat line one chair-width away?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The reflected wave's angle relative to the other paths changed, so the total length responds differently</button><button class="ws-btn ghost" data-v="b">The router turned itself off</button><button class="ws-btn ghost" data-v="c">The person breathed differently</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+            <div class="ws-q" data-answer="b" data-explain="The peak of the spectrum is at 0.25 Hz. 0.25 cycles per second × 60 = 15 per minute.">
+              <p>3. The spectrum's tallest peak is at 0.25 Hz. How many breaths per minute?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">4</button><button class="ws-btn ghost" data-v="b">15</button><button class="ws-btn ghost" data-v="c">25</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+            <div class="ws-q" data-answer="c" data-explain="Using the 6 to 36 breaths per minute band keeps the breath and drops the slow drift and the fast jitter.">
+              <p>4. Why band-pass between 0.1 and 0.6 Hz?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Wi-Fi only works there</button><button class="ws-btn ghost" data-v="b">It makes the graph prettier</button><button class="ws-btn ghost" data-v="c">Human breathing is in that range; slower is drift and faster is noise or other motion</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+            <div class="ws-q" data-answer="a" data-explain="Several subcarriers have different wavelengths, so their blind spots differ. The best few usually include a good one.">
+              <p>5. Why does the page average the best six subcarriers instead of trusting one?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Each subcarrier has different blind spots and noise, so a few good ones beat one random one</button><button class="ws-btn ghost" data-v="b">Wi-Fi requires six</button><button class="ws-btn ghost" data-v="c">It saves battery</button></div>
+              <span class="ws-fb" role="status"></span>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a></p>
+          </footer>
+        </main>
+      </div>
+
+      <aside class="ll-panel" aria-hidden="false">
+        <div class="ll-panel-head">
+          <div class="ll-tabs">
+            <button class="ll-tab" type="button" aria-selected="true" data-pane="ws-pane-guide">Summary</button>
+          </div>
+          <button class="ll-panel-close" type="button" aria-label="Close panel">×</button>
+        </div>
+        <div class="ll-panel-body">
+          <div class="ll-pane ll-active" id="ws-pane-guide">
+            <div class="ll-info"><strong>The idea</strong>A breath moves the chest about 5 mm. That lengthens the reflected radio path by about 1 cm, an eighth of a Wi-Fi wavelength.</div>
+            <div class="ll-info"><strong>CSI</strong>Channel State Information: the strength and delay of each of 52 subcarriers, measured on every packet.</div>
+            <div class="ll-info"><strong>Blind spots</strong>Where the chest arrow wobbles sideways to the total, the amplitude barely changes. Different subcarriers have different blind spots.</div>
+            <div class="ll-info"><strong>The chain</strong>Even clock → band-pass 0.1–0.6 Hz → best six subcarriers → spectrum → peak × 60.</div>
+            <div class="ll-info"><strong>Teacher notes</strong>Whole lesson, simulator only: 45 minutes. With hardware: add a 45–60 minute build, one board per pair. First flash is the slow part; have the Arduino IDE and boards package installed ahead of class. The sketch was written against the ESP32 CSI API but needs a test on your board and network before class.</div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel"><span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span></button>
+    </div>
+  </div>
+
+  <script type="module" src="../../../assets/js/lessons/wifi-sensing.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+</body>
+</html>
