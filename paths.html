@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Learning Paths · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
-  <meta name="description" content="Ten cross-disciplinary learning paths through the ClassroomOS lesson library — from waves and signals to AI and civilization." />
+  <meta name="description" content="Fourteen learning paths through the ClassroomOS lesson library — from waves and signals to 3D design, AI, and civilization." />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css" />
@@ -73,6 +73,12 @@
     .path-rail::-webkit-scrollbar-thumb {
       background: var(--path-color-border, rgba(88,86,214,0.25));
       border-radius: 2px;
+    }
+    .path-outcomes-label {
+      margin: 1rem 0 0.65rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--path-color, #5856d6);
     }
     .path-connector {
       display: flex;
@@ -219,7 +225,7 @@
     <section class="paths-hero">
       <p class="eyebrow">Cross-Disciplinary</p>
       <h1>Learning Paths</h1>
-      <p><span id="paths-count">Thirteen</span> curated arcs through the lesson library. Each path connects lessons across subjects into a coherent sequence — from opening questions to capstone understanding.</p>
+      <p><span id="paths-count">Fourteen</span> curated arcs through the lesson library. Each path connects lessons across subjects into a coherent sequence — from opening questions to capstone understanding.</p>
     </section>
 
     <div id="paths-container">
@@ -456,6 +462,27 @@
         ],
       },
       {
+        id: '3d-design',
+        title: '3D Design',
+        icon: '🧊',
+        color: '#a34f1f',
+        colorBg: 'rgba(194,105,48,0.1)',
+        colorBorder: 'rgba(194,105,48,0.22)',
+        description: 'Design one useful object, test and improve it, then choose a route into printing, rendered models, or game assets. Younger makers can start with physical materials before digital modeling.',
+        badges: ['Design · Engineering · Art', 'Grades K–12'],
+        sequence: [
+          '3d-design',
+          'cad-camera-controls',
+          'blender-interface-basics',
+          'blender-windows-doors',
+        ],
+        outcomes: [
+          { title: 'Make it real', summary: 'Plan a measured object, check its export, and prepare a print.', url: 'lessons/3d-design/3d-design.html#make-real', preview: { src: 'assets/images/lessons/design3d-visuals/print-clearance.svg', alt: 'Three examples of clearance between printed parts' } },
+          { title: 'Make it look', summary: 'Refine a model, choose materials and lighting, and present an image.', url: 'lessons/3d-design/3d-design.html#make-look', preview: { src: 'assets/images/lessons/design3d-visuals/material-roughness.svg', alt: 'A sphere shown with three different material finishes' } },
+          { title: 'Make it play', summary: 'Build reusable game objects and test the export in a game engine.', url: 'lessons/3d-design/3d-design.html#make-play', preview: { src: 'assets/images/lessons/design3d-visuals/modular-room.svg', alt: 'Modular floor, wall, doorway, and corner game pieces' } },
+        ],
+      },
+      {
         id: 'design-perception-media',
         title: 'Design, Perception & Media',
         icon: '🎨',
@@ -532,7 +559,7 @@
       return map;
     }
 
-    function buildStepCard(step, lesson, pathColor) {
+    function buildStepCard(step, lesson, pathColor, label) {
       const a = document.createElement('a');
       a.className = 'path-step';
       a.href = lesson ? lesson.url : '#';
@@ -551,7 +578,7 @@
 
       const num = document.createElement('span');
       num.className = 'path-step-num';
-      num.textContent = `Step ${step}`;
+      num.textContent = label || `Step ${step}`;
 
       const title = document.createElement('strong');
       title.className = 'path-step-title';
@@ -640,13 +667,12 @@
       // Rail
       const rail = document.createElement('div');
       rail.className = 'path-rail';
-      rail.setAttribute('role', 'list');
+      rail.setAttribute('role', 'group');
       rail.setAttribute('aria-label', `${path.title} lesson sequence`);
 
       path.sequence.forEach((id, i) => {
         const lesson = lessonMap[id] || null;
         const card = buildStepCard(i + 1, lesson, path.color);
-        card.setAttribute('role', 'listitem');
         rail.appendChild(card);
         if (i < path.sequence.length - 1) {
           rail.appendChild(buildConnector());
@@ -655,6 +681,23 @@
 
       section.appendChild(header);
       section.appendChild(rail);
+
+      if (path.outcomes) {
+        const label = document.createElement('h3');
+        label.className = 'path-outcomes-label';
+        label.textContent = 'Then choose one route';
+        section.appendChild(label);
+
+        const outcomes = document.createElement('div');
+        outcomes.className = 'path-rail';
+        outcomes.setAttribute('role', 'group');
+        outcomes.setAttribute('aria-label', `${path.title} outcome routes`);
+        path.outcomes.forEach((outcome) => {
+          const card = buildStepCard(null, { ...outcome, primaryModule: '3D Design' }, path.color, 'Route');
+          outcomes.appendChild(card);
+        });
+        section.appendChild(outcomes);
+      }
 
       if (!isLast) {
         const divider = document.createElement('div');
