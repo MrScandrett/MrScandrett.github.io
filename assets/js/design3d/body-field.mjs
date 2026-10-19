@@ -1,11 +1,18 @@
 // Smooth-blended implicit surfaces, meshed with Surface Nets. THREE-free so it can be tested headless.
 // A body is a list of primitives (capsules, ellipsoids, tori) that melt into each other with a per-primitive
 // blend radius `k`; the result is ONE closed, manifold surface with smooth normals and per-vertex colour.
-// Primitive: { type:'cap'|'ell'|'tor', k, color:[r,g,b], clip?:{n:[x,y,z],o:[x,y,z]},
+// Primitive: { type:'cap'|'ell'|'tor', k, color:[r,g,b], clip?:{n:[x,y,z],o:[x,y,z],soft?}, sub?:[{c,r,soft}], carve?:true,
 //   cap: a,b,ra,rb,sc? · ell: c,r · tor: c,R,r,sc? }
+// `sub` removes ellipsoid windows from one primitive (a hairline); `carve` removes the primitive from everything built so far (eye sockets).
 const clamp=(v,lo,hi)=>v<lo?lo:v>hi?hi:v;
 
 function distanceFn(p){
+ const base=rawDistanceFn(p);
+ if(!p.sub?.length)return base;
+ const windows=p.sub.map(w=>({fn:rawDistanceFn({type:'ell',c:w.c,r:w.r}),soft:w.soft||0}));
+ return (x,y,z)=>{let d=base(x,y,z);for(const w of windows){const q=-w.fn(x,y,z);if(!w.soft)d=Math.max(d,q);else{const h=clamp(.5+.5*(d-q)/w.soft,0,1);d=q*(1-h)+d*h+w.soft*h*(1-h);}}return d;};
+}
+function rawDistanceFn(p){
  const clip=p.clip;
  const kc=clip?.soft||0,clipped=clip?(d,x,y,z)=>{const q=-((x-clip.o[0])*clip.n[0]+(y-clip.o[1])*clip.n[1]+(z-clip.o[2])*clip.n[2]);if(!kc)return Math.max(d,q);const h=clamp(.5+.5*(d-q)/kc,0,1);return q*(1-h)+d*h+kc*h*(1-h);}:d=>d;
  if(p.type==='ell'){
@@ -20,15 +27,17 @@ function distanceFn(p){
  const [cx,cy,cz]=p.c,R=p.R,r=p.r,[sx,sz]=p.sc||[1,1],sm=Math.min(sx,sz);
  return (x,y,z)=>{const qx=(x-cx)/sx,qz=(z-cz)/sz;return clipped(Math.hypot(Math.hypot(qx,qz)-R,(y-cy)/sm)*sm-r,x,y,z);};
 }
+// A capsule with `sc` scales its distance field, which stretches the shape by max(sc)/min(sc); the box has to allow for that.
 function bounds(p){
  const pad=(p.k||.1)+(p.r!==undefined&&p.type==='tor'?p.r:0);let lo,hi;
  if(p.type==='ell'){lo=p.c.map((v,i)=>v-p.r[i]);hi=p.c.map((v,i)=>v+p.r[i]);}
- else if(p.type==='cap'){const m=Math.max(p.ra,p.rb)*Math.max(...(p.sc||[1,1,1]));lo=p.a.map((v,i)=>Math.min(v,p.b[i])-m);hi=p.a.map((v,i)=>Math.max(v,p.b[i])+m);}
+ else if(p.type==='cap'){const sc=p.sc||[1,1,1],m=Math.max(p.ra,p.rb)*Math.max(...sc)/Math.min(...sc);lo=p.a.map((v,i)=>Math.min(v,p.b[i])-m);hi=p.a.map((v,i)=>Math.max(v,p.b[i])+m);}
  else {const [sx,sz]=p.sc||[1,1],e=[(p.R)*sx+p.r,p.r,(p.R)*sz+p.r];lo=p.c.map((v,i)=>v-e[i]);hi=p.c.map((v,i)=>v+e[i]);}
  return {lo:lo.map(v=>v-pad),hi:hi.map(v=>v+pad)};
 }
 
-export function buildField(prims,{cell=.04,floor=0}={}){
+export function buildField(allPrims,{cell=.04,floor=0,ceil=Infinity,tau=.014}={}){
+ const prims=allPrims.filter(p=>!p.carve),carves=allPrims.filter(p=>p.carve);
  const bb=prims.map(bounds),lo=[0,1,2].map(a=>Math.min(...bb.map(b=>b.lo[a]))-cell*3),hi=[0,1,2].map(a=>Math.max(...bb.map(b=>b.hi[a]))+cell*3);
  let h=cell;while(Math.ceil((hi[0]-lo[0])/h)*Math.ceil((hi[1]-lo[1])/h)*Math.ceil((hi[2]-lo[2])/h)>900000)h*=1.1;
  const nx=Math.ceil((hi[0]-lo[0])/h)+1,ny=Math.ceil((hi[1]-lo[1])/h)+1,nz=Math.ceil((hi[2]-lo[2])/h)+1,N=nx*ny*nz;
@@ -47,9 +56,19 @@ export function buildField(prims,{cell=.04,floor=0}={}){
    f[idx]=old*(1-w)+d*w-k*w*(1-w);
   }
  });
+ // Carves (eye sockets, nostrils) bite into the finished union with a soft edge.
+ for(const c of carves){
+  const dist=distanceFn(c),{lo:blo,hi:bhi}=bounds(c),k=c.k||.03;
+  for(let kk=Math.max(0,Math.floor((blo[2]-lo[2])/h));kk<=Math.min(nz-1,Math.ceil((bhi[2]-lo[2])/h));kk++)for(let jj=Math.max(0,Math.floor((blo[1]-lo[1])/h));jj<=Math.min(ny-1,Math.ceil((bhi[1]-lo[1])/h));jj++)for(let ii=Math.max(0,Math.floor((blo[0]-lo[0])/h));ii<=Math.min(nx-1,Math.ceil((bhi[0]-lo[0])/h));ii++){
+   const idx=ii+nx*(jj+ny*kk),q=-dist(lo[0]+ii*h,lo[1]+jj*h,lo[2]+kk*h),old=f[idx],w=clamp(.5+.5*(old-q)/k,0,1);
+   f[idx]=q*(1-w)+old*w+k*w*(1-w);
+  }
+ }
+ // A flat ceiling, so a separately built head can sit on a neck that ends in a flat cut.
+ if(ceil<Infinity)for(let kk=0;kk<nz;kk++)for(let jj=0;jj<ny;jj++){const y=lo[1]+jj*h;if(y<=ceil)continue;for(let ii=0;ii<nx;ii++){const idx=ii+nx*(jj+ny*kk);f[idx]=Math.max(f[idx],y-ceil);}}
  // A flat sole: everything below the floor plane is cut away, so the figure stands on its own base.
  for(let kk=0;kk<nz;kk++)for(let jj=0;jj<ny;jj++){const y=lo[1]+jj*h;if(y>=floor)continue;for(let ii=0;ii<nx;ii++){const idx=ii+nx*(jj+ny*kk);f[idx]=Math.max(f[idx],floor-y);}}
- const field={lo,h,nx,ny,nz,f,col,paint:{dists,bb,colors:prims.map(p=>p.color)}};
+ const field={lo,h,nx,ny,nz,f,col,tau,paint:{dists,bb,colors:prims.map(p=>p.color)}};
  field.sample=(x,y,z)=>sample(field,x,y,z);
  field.surfaceZ=(x,y,from,to)=>{const dir=to<from?-1:1,step=h*.5;let z=from,prev=sample(field,x,y,z);for(let i=0;i<400&&(dir<0?z>to:z<to);i++){const zn=z+dir*step,v=sample(field,x,y,zn);if(prev>0&&v<=0){let a=z,b=zn;for(let t=0;t<14;t++){const m=(a+b)/2;if(sample(field,x,y,m)>0)a=m;else b=m;}return (a+b)/2;}z=zn;prev=v;}return null;};
  return field;
@@ -62,12 +81,12 @@ function sample(F,x,y,z){
 }
 // Colour a surface point from the exact distance to every primitive near it: a tight softmax picks the owner, so the
 // boundary between (say) shirt and trousers follows the smooth shapes instead of the voxel grid.
-const TAU=.014;
 function colorAt(F,x,y,z,out,o){
- const {dists,bb,colors}=F.paint;let dmin=1e9;const d=F._d||(F._d=new Float32Array(dists.length));
+ const {dists,bb,colors}=F.paint,TAU=F.tau;let dmin=1e9;const d=F._d||(F._d=new Float32Array(dists.length));
  for(let i=0;i<dists.length;i++){const b=bb[i];if(x<b.lo[0]||x>b.hi[0]||y<b.lo[1]||y>b.hi[1]||z<b.lo[2]||z>b.hi[2]){d[i]=1e9;continue;}d[i]=dists[i](x,y,z);if(d[i]<dmin)dmin=d[i];}
  let r=0,g=0,bl=0,sum=0;
  for(let i=0;i<dists.length;i++){if(d[i]>=1e9)continue;const w=Math.exp(-(d[i]-dmin)/TAU);if(w<1e-3)continue;const c=colors[i];r+=c[0]*w;g+=c[1]*w;bl+=c[2]*w;sum+=w;}
+ if(sum<=0){let bi=0,bd=1e9;for(let i=0;i<dists.length;i++){const v=dists[i](x,y,z);if(v<bd){bd=v;bi=i;}}const c=colors[bi];out[o]=c[0];out[o+1]=c[1];out[o+2]=c[2];return;}
  out[o]=r/sum;out[o+1]=g/sum;out[o+2]=bl/sum;
 }
 
