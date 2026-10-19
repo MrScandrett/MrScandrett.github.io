@@ -1807,8 +1807,9 @@
     });
   }
 
-  function printNotation() {
-    if (!view || !tune) return;
+  // Builds the print pages. Returns false when there is nothing to print.
+  function buildPrintRoot() {
+    if (!view || !tune) return false;
     if (P) stop();
     endPrint();
     var prevZoom = opts.zoom, prevStyle = sheetEl.getAttribute('style'), svg, pages, W, clones = [];
@@ -1827,7 +1828,7 @@
     };
     try {
       engrave(tries[tries.length - 1]);
-      if (!svg) return;
+      if (!svg) return false;
       var fewest = pages.length;
       for (var k = 0; k < tries.length - 1; k++) {
         engrave(tries[k]);
@@ -1876,8 +1877,17 @@
     printRoot.innerHTML = html;
     document.body.appendChild(printRoot);
     document.body.classList.add('fb-printing');
-    window.print();
+    return true;
   }
+
+  function printNotation() { if (buildPrintRoot()) window.print(); }
+
+  // Browser print (Ctrl/Cmd+P, Safari's Share → Print) bypasses the Print button; without this it prints the
+  // live sheet, whose per-bar diagrams drift and whose page chrome comes along. Build the same pages for it.
+  window.addEventListener('beforeprint', function () {
+    if (document.body.classList.contains('fb-printing')) return;
+    try { buildPrintRoot(); } catch (e) { endPrint(); }
+  });
 
   /* ================================================================ audio */
   var ctx = null, master = null, bus = {}, kitBus = null;
