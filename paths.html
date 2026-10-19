@@ -129,6 +129,17 @@
       border-radius: 9px;
       margin-bottom: 0.3rem;
     }
+    .path-outcome .path-step-image {
+      object-fit: cover;
+      background: #dce5e8;
+    }
+    .path-image-sources {
+      margin: 0.25rem 0 0;
+      font-size: 0.72rem;
+      line-height: 1.5;
+      color: var(--text-muted, #555b66);
+    }
+    .path-image-sources a { color: inherit; text-underline-offset: 0.16em; }
     .path-step-title {
       font-size: 0.92rem;
       font-weight: 700;
@@ -477,9 +488,9 @@
           'blender-windows-doors',
         ],
         outcomes: [
-          { title: 'Make it real', summary: 'Plan a measured object, check its export, and prepare a print.', url: 'lessons/3d-design/3d-design.html#make-real', preview: { src: 'assets/images/lessons/design3d-visuals/print-clearance.svg', alt: 'Three examples of clearance between printed parts' } },
-          { title: 'Make it look', summary: 'Refine a model, choose materials and lighting, and present an image.', url: 'lessons/3d-design/3d-design.html#make-look', preview: { src: 'assets/images/lessons/design3d-visuals/material-roughness.svg', alt: 'A sphere shown with three different material finishes' } },
-          { title: 'Make it play', summary: 'Build reusable game objects and test the export in a game engine.', url: 'lessons/3d-design/3d-design.html#make-play', preview: { src: 'assets/images/lessons/design3d-visuals/modular-room.svg', alt: 'Modular floor, wall, doorway, and corner game pieces' } },
+          { title: 'Make it real', summary: 'Plan a measured object, check its export, and prepare a print.', url: 'lessons/3d-design/3d-design.html#make-real', preview: { src: 'assets/images/lessons/design3d-visuals/printed-dual-use-holder.jpg', alt: 'Two white 3D printed holders, one holding a pencil and one a toothbrush', source: 'Rollis Igel · CC BY-SA 4.0', sourceUrl: 'https://commons.wikimedia.org/wiki/File:3D_dual_use.jpg' } },
+          { title: 'Make it look', summary: 'Refine a model, choose materials and lighting, and present an image.', url: 'lessons/3d-design/3d-design.html#make-look', preview: { src: 'assets/images/lessons/design3d-visuals/polyhaven-camera-model.png', alt: 'Rendered camera model showing leather, metal, and glass materials', source: 'Rajil Jose Macatangay / Poly Haven · CC0', sourceUrl: 'https://polyhaven.com/a/Camera_01' } },
+          { title: 'Make it play', summary: 'Build reusable game objects and test the export in a game engine.', url: 'lessons/3d-design/3d-design.html#make-play', preview: { src: 'assets/images/lessons/design3d-visuals/kenney-modular-dungeon-scene.png', alt: 'Repeating modular walls, floors, and doorways assembled into a dungeon game scene', source: 'Kenney · CC0', sourceUrl: 'https://kenney.nl/assets/modular-dungeon-kit' } },
         ],
       },
       {
@@ -694,9 +705,21 @@
         outcomes.setAttribute('aria-label', `${path.title} outcome routes`);
         path.outcomes.forEach((outcome) => {
           const card = buildStepCard(null, { ...outcome, primaryModule: '3D Design' }, path.color, 'Route');
+          card.classList.add('path-outcome');
           outcomes.appendChild(card);
         });
         section.appendChild(outcomes);
+        const sources = document.createElement('p');
+        sources.className = 'path-image-sources';
+        sources.append('Images: ');
+        path.outcomes.forEach((outcome, index) => {
+          if (index) sources.append(' · ');
+          const link = document.createElement('a');
+          link.href = outcome.preview.sourceUrl;
+          link.textContent = `${outcome.title}: ${outcome.preview.source}`;
+          sources.append(link);
+        });
+        section.appendChild(sources);
       }
 
       if (!isLast) {

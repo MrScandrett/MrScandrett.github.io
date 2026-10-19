@@ -18,6 +18,29 @@
     'blender-environments.html': ['game-asset-modular-rooms.html', 'Modular rooms'],
     'blender-materials-render.html': ['game-asset-uv-export.html', 'UV, materials & export']
   };
+  const handoffs = {
+    navigate: {
+      label: 'Step 2 · See the object',
+      question: 'Where does the item enter your holder?',
+      actions: ['Check the opening in Top view and the height in Front view.', 'Use Side view to see whether the base extends under the item.'],
+      evidence: 'Keep two views and name one proportion to change.',
+      next: 'blender/blender-interface-basics.html', nextLabel: 'Next: move and resize a shape'
+    },
+    transform: {
+      label: 'Step 3 · Change the object',
+      question: 'Which size change would make your helper easier to use?',
+      actions: ['Change one dimension and inspect the same view again.', 'Check the base against your first sketch or prototype.'],
+      evidence: 'Save the project and explain the old and new size.',
+      next: 'blender/blender-windows-doors.html', nextLabel: 'Next: cut an opening'
+    },
+    boolean: {
+      label: 'Step 4 · Remove material',
+      question: 'Would a slot or pocket help hold your item?',
+      actions: ['In the wall exercise, identify the solid and the cutter.', 'Transfer the cut to a copy of your helper; inspect it from Front and Side.'],
+      evidence: 'Save the editable cut. Test fit and stability with the real item.',
+      next: '3d-design.html#make-real', nextLabel: 'Choose a route for the finished model'
+    }
+  };
   const style = document.createElement('link');
   style.rel = 'stylesheet'; style.href = new URL('assets/css/components/design3d-route.css', root).href;
   document.head.append(style);
@@ -41,6 +64,16 @@
       details.append(summary,list);nav.append(details);
     } else nav.append(list);
     host.append(nav);
+    const workshop = document.querySelector('[data-design3d-workshop]');
+    const handoff = workshop && handoffs[workshop.dataset.design3dWorkshop];
+    if (handoff && host.nextElementSibling === workshop) {
+      const section = document.createElement('section');
+      section.className = 'd3-project-bridge';
+      section.setAttribute('aria-label', 'Desk helper project connection');
+      const listItems = handoff.actions.map(action => `<li>${action}</li>`).join('');
+      section.innerHTML = `<div class="d3-project-bridge-head"><p>${handoff.label}</p><h2>Use this skill on your desk helper</h2></div><div class="d3-project-bridge-body"><div><h3>Design question</h3><p>${handoff.question}</p><ol>${listItems}</ol></div><div class="d3-project-evidence"><h3>Keep as evidence</h3><p>${handoff.evidence}</p><p>Revise your helper in <a href="${new URL('workbench.html?new=product', root)}">Workbench</a>, physical materials, or your modeling app.</p></div></div><nav aria-label="Project steps"><a href="${new URL(home + '#first-project', root)}">First project</a><a href="${new URL('lessons/3d-design/' + handoff.next, root)}">${handoff.nextLabel}</a></nav>`;
+      workshop.before(section);
+    }
     const ref = references[location.pathname.split('/').pop()];
     if (ref || host.dataset.design3dRoute === 'reference') {
       const note = document.createElement('p');

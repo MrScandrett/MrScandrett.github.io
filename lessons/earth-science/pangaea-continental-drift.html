@@ -161,7 +161,7 @@
 
     .pd-map-card {
       position: relative;
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 5 / 3;
       overflow: hidden;
       background:
         radial-gradient(circle at 50% 6%, rgba(72, 138, 188, 0.18), transparent 38%),
@@ -239,16 +239,20 @@
     .pd-map-hint {
       position: absolute;
       left: 50%;
-      bottom: 16px;
+      bottom: 14px;
       transform: translateX(-50%);
-      color: rgba(200, 220, 236, 0.42);
+      color: rgba(220, 238, 252, 0.72);
+      background: rgba(3, 15, 26, 0.72);
+      border: 1px solid rgba(140, 190, 240, 0.16);
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
       font-size: 0.72rem;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
       pointer-events: none;
       text-align: center;
       white-space: nowrap;
+      backdrop-filter: blur(6px);
     }
 
     .pd-timeline {
@@ -514,6 +518,62 @@
       pointer-events: none;
     }
 
+    #timeSlider:focus-visible {
+      outline: 2px solid #7fc7ff;
+      outline-offset: 4px;
+    }
+
+    .pd-toolbar button:focus-visible,
+    .pd-topbar a:focus-visible {
+      outline: 2px solid #7fc7ff;
+      outline-offset: 2px;
+    }
+
+    .pd-overview-figure-wrap {
+      margin-top: 1rem;
+    }
+
+    .pd-overview-fig,
+    .pd-evidence-fig {
+      margin: 0 0 0.85rem;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(140, 190, 240, 0.2);
+      background: rgba(3, 14, 24, 0.6);
+      position: relative;
+    }
+
+    .pd-overview-fig img,
+    .pd-evidence-fig img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.22s ease;
+      cursor: zoom-in;
+    }
+
+    .pd-overview-fig:hover img,
+    .pd-evidence-fig:hover img {
+      transform: scale(1.02);
+    }
+
+    .pd-overview-fig figcaption,
+    .pd-evidence-fig figcaption {
+      padding: 0.6rem 0.8rem;
+      font-size: 0.76rem;
+      color: rgba(200, 225, 245, 0.82);
+      line-height: 1.45;
+      background: rgba(4, 16, 28, 0.88);
+      border-top: 1px solid rgba(140, 190, 240, 0.12);
+    }
+
+    .pd-credit {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.68rem;
+      color: rgba(140, 185, 220, 0.55);
+    }
+
     .ll-viewport .pd-wrap {
       grid-template-columns: 1fr;
     }
@@ -521,7 +581,7 @@
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <div class="ll-viewport">
+  <div class="ll-viewport ll-dark">
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -558,17 +618,17 @@
     <section class="pd-stage-shell" aria-labelledby="timelapse-title">
       <div class="pd-toolbar">
         <div class="pd-toolbar-group">
-          <button type="button" class="pd-play-button" id="playButton">Play timelapse</button>
-          <button type="button" id="resetButton">Reset to Pangaea</button>
+          <button type="button" class="pd-play-button" id="playButton" aria-label="Play timelapse simulation" aria-pressed="false">Play timelapse</button>
+          <button type="button" id="resetButton" aria-label="Reset timelapse to Pangaea">Reset to Pangaea</button>
         </div>
-        <div class="pd-toolbar-group" aria-label="Key times">
-          <button type="button" class="pd-keyframe-button is-active" data-time="240">240 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="200">200 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="160">160 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="120">120 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="80">80 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="40">40 Ma</button>
-          <button type="button" class="pd-keyframe-button" data-time="0">Today</button>
+        <div class="pd-toolbar-group" aria-label="Key times" role="group">
+          <button type="button" class="pd-keyframe-button is-active" data-time="240" aria-pressed="true">240 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="200" aria-pressed="false">200 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="160" aria-pressed="false">160 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="120" aria-pressed="false">120 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="80" aria-pressed="false">80 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="40" aria-pressed="false">40 Ma</button>
+          <button type="button" class="pd-keyframe-button" data-time="0" aria-pressed="false">Today</button>
         </div>
       </div>
 
@@ -588,7 +648,7 @@
         </div>
         <span class="pd-attribution" aria-hidden="true">EarthByte · MULLER2019 · 10 Ma snapshots</span>
 
-        <div class="pd-map-hint">Use the slider or play button to follow the breakup of Pangaea from 240 million years ago to today.</div>
+        <div class="pd-map-hint">Space to play/pause · Arrow keys to step · Drag slider to scrub</div>
       </div>
 
       <div class="pd-timeline">
@@ -596,7 +656,7 @@
           <strong id="timelapse-title">Guided Timelapse</strong>
           <span id="timeLabel">240 Ma</span>
         </div>
-        <input id="timeSlider" type="range" min="0" max="240" value="0" step="1" />
+        <input id="timeSlider" type="range" min="0" max="240" value="0" step="1" aria-label="Geologic time slider from 240 million years ago to today" aria-valuemin="0" aria-valuemax="240" aria-valuenow="0" aria-valuetext="240 million years ago" />
         <div class="pd-range-ends">
           <span>240 Ma</span>
           <span>Today</span>
@@ -677,21 +737,42 @@
       </article>
     </div>
 
+    <div class="pd-overview-figure-wrap">
+      <figure data-zoomable data-lightbox-group="continental-drift" class="pd-overview-fig">
+        <img src="../../assets/thumbs/pangaea.png" alt="Reconstruction of the supercontinent Pangaea 240 million years ago" loading="lazy" />
+        <figcaption><strong>Pangaea assembled (~240 Ma):</strong> At the start of the Triassic period, almost all of Earth's continental crust was united into a single supercontinent surrounded by the global ocean Panthalassa. Restoring continents to this assembly connects ancient mountain chains, rock belts, and fossil zones across modern oceans. <small class="pd-credit">EarthByte / GPlates MULLER2019 model · CC BY 4.0</small></figcaption>
+      </figure>
+    </div>
+
     <div class="pd-evidence-grid">
-      <article class="pd-info-card">
-        <p class="pd-card-kicker">Evidence</p>
+      <article class="pd-info-card pd-evidence-card">
+        <figure data-zoomable data-lightbox-group="continental-drift" class="pd-evidence-fig">
+          <img src="../../assets/images/lessons/pangaea-continental-drift/continental-fit-geology.svg" alt="Continental shelf jigsaw fit between South America and Africa with matching cratons and mountain belts" loading="lazy" />
+          <figcaption><strong>Matching continental shelves &amp; rock belts:</strong> When fitted along the 1,000 m ocean depth (the true continental shelf edge modeled by Sir Edward Bullard in 1965), South America and Africa match with less than 1° average mismatch. Ancient Pre-Cambrian cratons (&gt;2 Ga) and folded mountain belts align continuously across the Atlantic. <small class="pd-credit">Bullard, Everett, and Smith (1965) / Royal Society of London</small></figcaption>
+        </figure>
+        <p class="pd-card-kicker">Evidence 01</p>
         <h4>Matching coastlines and rock layers</h4>
-        <p>The fit between eastern South America and western Africa is not the only clue. Rock belts and mountain structures also line up across oceans when the continents are reassembled.</p>
+        <p>The fit between eastern South America and western Africa is not the only clue. Rock belts, ancient cratons, and Appalachian–Caledonian mountain structures also line up across oceans when the continents are reassembled.</p>
       </article>
-      <article class="pd-info-card">
-        <p class="pd-card-kicker">Evidence</p>
+
+      <article class="pd-info-card pd-evidence-card">
+        <figure data-zoomable data-lightbox-group="continental-drift" class="pd-evidence-fig">
+          <img src="../../assets/images/lessons/pangaea-continental-drift/fossil-evidence.svg" alt="Continuous fossil bands of Mesosaurus, Glossopteris, Cynognathus, and Lystrosaurus across southern continents" loading="lazy" />
+          <figcaption><strong>Fossil correlation across oceans:</strong> Identical fossil species—such as the freshwater lake reptile <em>Mesosaurus</em> and land-dwelling <em>Cynognathus</em>, <em>Lystrosaurus</em>, and <em>Glossopteris</em> seed ferns—are found across South America, Africa, India, Antarctica, and Australia. None of these organisms could cross thousands of miles of open saltwater. <small class="pd-credit">Alfred Wegener (1912) / Paleontological evidence for continental drift</small></figcaption>
+        </figure>
+        <p class="pd-card-kicker">Evidence 02</p>
         <h4>Fossils on separate continents</h4>
-        <p>Identical fossils of plants and animals appear on continents now far apart. That makes sense if those continents used to be connected and later drifted away from each other.</p>
+        <p>Identical fossils of plants and animals appear on continents now far apart. That makes sense if those continents used to be connected in Gondwana and later drifted away from each other.</p>
       </article>
-      <article class="pd-info-card">
-        <p class="pd-card-kicker">Evidence</p>
+
+      <article class="pd-info-card pd-evidence-card">
+        <figure data-zoomable data-lightbox-group="continental-drift" class="pd-evidence-fig">
+          <img src="../../assets/images/lessons/pangaea-continental-drift/seafloor-spreading.svg" alt="Mid-ocean ridge seafloor spreading with symmetrical alternating magnetic polarity reversal stripes" loading="lazy" />
+          <figcaption><strong>Seafloor spreading &amp; paleomagnetic stripes:</strong> Magma upwells at mid-ocean ridge rift valleys, cooling into new basaltic crust that records Earth's magnetic field reversals. Symmetrical bands of normal and reversed polarity mirror each other across the ridge axis, proving the ocean floor continuously widens. <small class="pd-credit">Vine, Matthews, and Morley (1963) / Lamont-Doherty Earth Observatory</small></figcaption>
+        </figure>
+        <p class="pd-card-kicker">Evidence 03</p>
         <h4>Magnetic stripes on the seafloor</h4>
-        <p>Ocean crust records Earth's magnetic field as it forms. Symmetrical magnetic stripes on either side of mid-ocean ridges helped confirm seafloor spreading and plate tectonics.</p>
+        <p>Ocean crust records Earth's magnetic field as it forms. Symmetrical magnetic stripes on either side of mid-ocean ridges helped confirm seafloor spreading and provide the plate tectonic mechanism for drift.</p>
       </article>
     </div>
   </section>
@@ -702,7 +783,6 @@
   <script src="../../assets/vendor/d3-geo-runtime.min.js"></script>
   <script src="../../assets/js/earth-engine.js"></script>
   <script src="../../assets/js/classroom-animations.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
   <script>
     // Shared Earth engine: model-generated snapshots, no cross-fade.
     const KEYFRAME_TIMES = EarthEngine.reconstruction.agesMa.slice().reverse();
@@ -752,6 +832,18 @@
     const ctx          = canvas.getContext('2d');
     const mapLoadingEl = document.getElementById('mapLoading');
 
+    function syncCanvasDpr() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetW = Math.round(1000 * dpr);
+      const targetH = Math.round(600 * dpr);
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    syncCanvasDpr();
+
     const projection = EarthEngine.projection('natural-earth', { extent: [[15, 35], [985, 570]] });
     const pathGen = d3.geoPath(projection).context(ctx);
     const SPHERE = { type: 'Sphere' };
@@ -759,6 +851,7 @@
     // Ring winding was normalized during the geography build. Keep all islands
     // and polygons, including Antarctica; never discard land on an area guess.
     function drawableGeoJSON(geojson) { return geojson; }
+
     // ─── Local GPlates keyframe loading ───────────────────────────────────────
     function normalizeReconstructionTime(time) {
       return Math.max(0, Math.min(240, Math.round(time)));
@@ -766,6 +859,7 @@
 
     async function fetchLocalKeyframe(time) {
       const age = EarthEngine.reconstruction.nearestAge(time);
+      if (geoCache[age]) return geoCache[age];
       const geo = await EarthEngine.reconstruction.load(age);
       geoCache[age] = geo;
       return geo;
@@ -774,14 +868,23 @@
       return fetchLocalKeyframe(time);
     }
 
+    const KEYFRAME_STOPS = [240, 200, 160, 120, 80, 40, 0];
+
     async function preloadFrames() {
       mapLoadingEl.style.display = 'flex';
       try {
         await fetchLocalKeyframe(state.time);
-        // Warm the next frame without blocking the first display.
-        fetchLocalKeyframe(230).catch(() => {});
         mapLoadingEl.style.display = 'none';
         renderMap(state.time);
+
+        // Preload narrative keyframe stops in background without blocking
+        for (const stopTime of KEYFRAME_STOPS) {
+          if (stopTime !== state.time) {
+            fetchLocalKeyframe(stopTime).catch(() => {});
+          }
+        }
+        // Also warm immediate next frame for initial playback
+        fetchLocalKeyframe(230).catch(() => {});
       } catch (err) {
         mapLoadingEl.innerHTML =
           '<span class="pd-load-error">Could not load local reconstruction frames. Check the geodata files and reload the page.</span>';
@@ -837,6 +940,15 @@
       ctx.restore();
     }
 
+    function drawMapFrame(age) {
+      ctx.clearRect(0, 0, 1000, 600);
+      drawBackground();
+      drawGraticule();
+      if (geoCache[age]) {
+        drawCoastlines(geoCache[age]);
+      }
+    }
+
     // ─── Map render: one scientifically reconstructed age at a time ───────
     let activeMapRequest = 0;
     let lastMapAge = null;
@@ -844,20 +956,21 @@
       const age = EarthEngine.reconstruction.nearestAge(time);
       if (lastMapAge === age && geoCache[age]) return;
       const requestId = ++activeMapRequest;
-      ctx.clearRect(0, 0, 1000, 600);
-      drawBackground(); drawGraticule();
+
       if (geoCache[age]) {
-        drawCoastlines(geoCache[age]);
+        drawMapFrame(age);
         lastMapAge = age;
         mapLoadingEl.style.display = 'none';
         return;
       }
-      lastMapAge = null;
+
+      // Keep previous frame visible while fetching next frame to avoid flashing blank ocean
       mapLoadingEl.style.display = 'flex';
       fetchLocalKeyframe(age).then(geo => {
         if (requestId !== activeMapRequest) return;
         if (EarthEngine.reconstruction.nearestAge(state.time) !== age) return;
-        drawCoastlines(geo); lastMapAge = age;
+        drawMapFrame(age);
+        lastMapAge = age;
         mapLoadingEl.style.display = 'none';
       }).catch(err => {
         if (requestId !== activeMapRequest) return;
@@ -904,6 +1017,8 @@
         timeBadge.textContent   = timeText;
         timeLabel.textContent   = rounded === 0 ? 'Today' : `${rounded} Ma`;
         readoutTime.textContent = timeText;
+        slider.setAttribute('aria-valuetext', timeText);
+        slider.setAttribute('aria-valuenow', String(Math.round(240 - rounded)));
         lastNarrativeRounded = rounded;
       }
 
@@ -921,8 +1036,11 @@
           return li;
         }));
 
-        keyframeButtons.forEach(btn =>
-          btn.classList.toggle('is-active', Math.abs(Number(btn.dataset.time) - frame.time) < 0.5));
+        keyframeButtons.forEach(btn => {
+          const isActive = Math.abs(Number(btn.dataset.time) - frame.time) < 0.5;
+          btn.classList.toggle('is-active', isActive);
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         lastNarrativeFrameTime = frame.time;
       }
     }
@@ -942,16 +1060,25 @@
       state.playing = false;
       state.lastFrameTime = 0;
       playButton.textContent = 'Play timelapse';
+      playButton.setAttribute('aria-label', 'Play timelapse simulation');
+      playButton.setAttribute('aria-pressed', 'false');
       if (state.rafId) { cancelAnimationFrame(state.rafId); state.rafId = null; }
     }
 
     function tick(ts) {
       if (!state.playing) return;
       if (!state.lastFrameTime) state.lastFrameTime = ts;
-      const delta = (ts - state.lastFrameTime) / 1000;
+      const delta = Math.min((ts - state.lastFrameTime) / 1000, 0.1);
       state.lastFrameTime = ts;
       state.time = clamp(state.time - delta * 28, 0, 240);
       render(state.time);
+
+      // Opportunistically prefetch upcoming frame ahead in playback
+      const nextStepAge = EarthEngine.reconstruction.nearestAge(Math.max(0, state.time - 12));
+      if (!geoCache[nextStepAge]) {
+        fetchLocalKeyframe(nextStepAge).catch(() => {});
+      }
+
       if (state.time <= 0) { stopPlayback(); return; }
       state.rafId = requestAnimationFrame(tick);
     }
@@ -961,10 +1088,25 @@
       state.playing = true;
       state.lastFrameTime = 0;
       playButton.textContent = 'Pause timelapse';
+      playButton.setAttribute('aria-label', 'Pause timelapse simulation');
+      playButton.setAttribute('aria-pressed', 'true');
       state.rafId = requestAnimationFrame(tick);
     }
 
     // ─── Events ───────────────────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+      syncCanvasDpr();
+      if (lastMapAge !== null && geoCache[lastMapAge]) {
+        drawMapFrame(lastMapAge);
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state.playing) {
+        stopPlayback();
+      }
+    });
+
     playButton.addEventListener('click',  () => state.playing ? stopPlayback() : startPlayback());
     resetButton.addEventListener('click', () => { stopPlayback(); state.time = 240; render(state.time); });
     slider.addEventListener('input', () => { stopPlayback(); state.time = 240 - Number(slider.value); render(state.time); });
@@ -972,12 +1114,50 @@
       stopPlayback(); state.time = Number(btn.dataset.time); render(state.time);
     }));
 
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) && document.activeElement !== slider) {
+        return;
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        state.playing ? stopPlayback() : startPlayback();
+      } else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        stopPlayback();
+        const currentAge = EarthEngine.reconstruction.nearestAge(state.time);
+        state.time = clamp(currentAge + 10, 0, 240);
+        render(state.time);
+      } else if (e.code === 'ArrowRight' || e.code === 'ArrowDown') {
+        e.preventDefault();
+        stopPlayback();
+        const currentAge = EarthEngine.reconstruction.nearestAge(state.time);
+        state.time = clamp(currentAge - 10, 0, 240);
+        render(state.time);
+      } else if (e.code === 'Home') {
+        e.preventDefault();
+        stopPlayback();
+        state.time = 240;
+        render(state.time);
+      } else if (e.code === 'End') {
+        e.preventDefault();
+        stopPlayback();
+        state.time = 0;
+        render(state.time);
+      } else if (e.key === 'r' || e.key === 'R') {
+        stopPlayback();
+        state.time = 240;
+        render(state.time);
+      }
+    });
+
     // ─── Init ─────────────────────────────────────────────────────────────────
     renderNarrative(state.time);
     preloadFrames();
   </script>
-<script src="../../assets/js/lesson-print-button.js"></script>
-<script src="../../assets/js/theme-registry.js"></script>
-<script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/lesson-layout.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
 </body>
 </html>
