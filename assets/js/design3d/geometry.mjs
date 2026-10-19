@@ -60,44 +60,79 @@ export function buildDesign(THREE, state, texture) {
   const ellipsoid=(sx,sy,sz,x,y,z,color=skin)=>{const m=matMesh(new THREE.SphereGeometry(.5,20,14),color);m.scale.set(sx,sy,sz);m.position.set(x,y,z);return m;};
   const point=(x,y,z=0)=>new THREE.Vector3(x,y,z);
   const segment=(a,b,r1,r2,color=skin,sides=12)=>{const delta=new THREE.Vector3().subVectors(b,a),length=delta.length(),m=matMesh(new THREE.CylinderGeometry(r2,r1,length,sides,1,false),color);m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return m;};
+  const swept=(anchors,radii,color,depth=1)=>{
+   const curve=new THREE.CatmullRomCurve3(anchors),steps=16,sides=16,vertices=[],indices=[];
+   for(let i=0;i<=steps;i++){
+    const t=i/steps,center=curve.getPoint(t),tangent=curve.getTangent(t).normalize();
+    const across=new THREE.Vector3().crossVectors(tangent,new THREE.Vector3(0,0,1)).normalize();
+    const forward=new THREE.Vector3().crossVectors(tangent,across).normalize();
+    const r=t<.5?THREE.MathUtils.lerp(radii[0],radii[1],t*2):THREE.MathUtils.lerp(radii[1],radii[2],(t-.5)*2);
+    for(let j=0;j<=sides;j++){const a=j/sides*Math.PI*2,pos=center.clone().addScaledVector(across,Math.cos(a)*r).addScaledVector(forward,Math.sin(a)*r*depth);vertices.push(pos.x,pos.y,pos.z);}
+   }
+   for(let i=0;i<steps;i++)for(let j=0;j<sides;j++){const a=i*(sides+1)+j,b=a+sides+1;indices.push(a,a+1,b,a+1,b+1,b);}
+   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex(indices);geo.computeVertexNormals();return matMesh(geo,color);
+  };
   const outfit=Math.round(p.outfit),footY=.18,ankleY=.32,hipY=footY+p.leg,kneeY=ankleY+(hipY-ankleY)*.52,shoulderY=hipY+p.torso*.82,neckY=hipY+p.torso,headY=neckY+p.head*.47;
   const hipHalf=p.waist*.3,shoulderHalf=p.shoulders*.48,bodyDepth=.42+p.waist*.08;
   // A continuous anatomical scaffold: each segment shares a landmark with the next.
-  ellipsoid(p.waist*.95,.42,bodyDepth,0,hipY+.08,0,trousers);
-  const torso=matMesh(new THREE.CylinderGeometry(shoulderHalf,hipHalf,p.torso,20,2,false),cloth);torso.position.y=hipY+p.torso/2;
-  ellipsoid(p.shoulders*1.03,.24,bodyDepth*1.04,0,shoulderY,0,cloth);
+  ellipsoid(p.waist*.57,.3,bodyDepth*.7,0,hipY-.05,0,trousers);
+  // One shaped torso surface gives the costume a continuous chest, waist and shoulder line.
+  const rings=[
+   [hipY-.12,hipHalf*.9,bodyDepth*.87],
+   [hipY+.14,hipHalf,bodyDepth],
+   [hipY+p.torso*.43,hipHalf*.91,bodyDepth*.88],
+   [hipY+p.torso*.7,shoulderHalf*.93,bodyDepth*1.1],
+   [shoulderY,shoulderHalf,bodyDepth*1.04],
+   [neckY+.025,p.head*.2,bodyDepth*.48]
+  ];
+  const sides=32,verts=[],faces=[];
+  for(const [y,rx,rz] of rings)for(let i=0;i<=sides;i++){const a=i/sides*Math.PI*2;verts.push(Math.cos(a)*rx,y,Math.sin(a)*rz);}
+  for(let row=0;row<rings.length-1;row++)for(let i=0;i<sides;i++){const a=row*(sides+1)+i,b=a+sides+1;faces.push(a,b,a+1,b,b+1,a+1);}
+  const bottomCenter=verts.length/3;verts.push(0,rings[0][0],0);
+  for(let i=0;i<sides;i++)faces.push(bottomCenter,i,i+1);
+  const bodyGeo=new THREE.BufferGeometry();bodyGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));bodyGeo.setIndex(faces);bodyGeo.computeVertexNormals();matMesh(bodyGeo,cloth);
+  const collar=matMesh(new THREE.TorusGeometry(p.head*.21,.045,8,24),leather);collar.rotation.x=Math.PI/2;collar.position.y=neckY+.02;
   segment(point(0,neckY-.08,0),point(0,neckY+.25*p.head,0),p.head*.19,p.head*.17,skin,16);
   for(const side of [-1,1]){
    const hip=point(side*hipHalf*.68,hipY,0),knee=point(side*(hipHalf*.72+.035),kneeY,.025),ankle=point(side*(hipHalf*.72+.025),ankleY,0);
-   segment(hip,knee,.19,.155,trousers);ellipsoid(.3,.24,.32,knee.x,knee.y,knee.z,trousers);segment(knee,ankle,.15,.115,trousers);
+   swept([hip,knee,ankle],[.215,.168,.116],trousers,1.12);
    // Boots overlap the ankle, plant on the floor and project forward naturally.
    segment(point(ankle.x,ankleY+.09,.01),point(ankle.x,footY+.12,.05),.145,.17,leather,12);
    ellipsoid(.34,.2,.7,ankle.x,footY,.16,leather);
+   const sole=ellipsoid(.35,.055,.72,ankle.x,footY-.14,.17,'#241e1c');sole.material.roughness=.9;
    const shoulder=point(side*shoulderHalf,shoulderY-.02,0),elbow=point(side*(shoulderHalf+p.arm*.16),shoulderY-p.arm*.47,.035),wrist=point(side*(shoulderHalf+p.arm*.12),shoulderY-p.arm*.9,.06);
-   ellipsoid(.31,.3,.34,shoulder.x,shoulder.y,0,cloth);
-   segment(shoulder,elbow,.17,.135,cloth);ellipsoid(.25,.23,.25,elbow.x,elbow.y,elbow.z,skin);segment(elbow,wrist,.13,.1,skin);
-   ellipsoid(.22,.34,.16,wrist.x,wrist.y-.13,wrist.z+.015,skin);
+   const sleeveTop=point(side*shoulderHalf*.82,shoulderY+.05,0);
+   swept([sleeveTop,shoulder,point(elbow.x,elbow.y+.06,elbow.z)],[.205,.19,.135],cloth,1.08);
+   swept([point(elbow.x,elbow.y-.025,elbow.z),point((elbow.x+wrist.x)/2,(elbow.y+wrist.y)/2,(elbow.z+wrist.z)/2),wrist],[.125,.112,.085],skin,.92);
+   segment(point(elbow.x,elbow.y+.045,elbow.z),point(elbow.x,elbow.y-.06,elbow.z),.148,.142,leather);
+   ellipsoid(.19,.28,.155,wrist.x,wrist.y-.12,wrist.z+.015,skin);
   }
   // Clothing layers follow the body instead of floating away from it.
-  if(outfit===0){const hem=matMesh(new THREE.CylinderGeometry(hipHalf*.94,hipHalf*1.08,.3,20),cloth);hem.position.y=hipY+.18;}
+  // Outfit 0 uses the continuous shirt shell and its closed lower face.
   if(outfit===1){segment(point(-shoulderHalf*.75,shoulderY+.08,.43),point(shoulderHalf*.75,shoulderY+.08,.43),.035,.035,white,10);const belt=matMesh(new THREE.CylinderGeometry(hipHalf*1.05,hipHalf*1.05,.11,20),leather);belt.position.y=hipY+.28;}
   if(outfit===2){ellipsoid(p.shoulders*.62,.38,bodyDepth*1.18,0,shoulderY-.02,0,leather);const belt=matMesh(new THREE.CylinderGeometry(hipHalf*1.1,hipHalf*1.1,.15,20),leather);belt.position.y=hipY+.25;}
   if(outfit===3){const robe=matMesh(new THREE.CylinderGeometry(hipHalf*.94,p.waist*.63,p.torso*.92,20),cloth);robe.position.y=hipY+p.torso*.38;const belt=matMesh(new THREE.CylinderGeometry(hipHalf*1.06,hipHalf*1.06,.1,20),leather);belt.position.y=hipY+.3;}
   if(outfit===4){const belt=matMesh(new THREE.CylinderGeometry(hipHalf*1.08,hipHalf*1.08,.13,20),leather);belt.position.y=hipY+.3;segment(point(-shoulderHalf*.62,shoulderY-.12,bodyDepth+.025),point(hipHalf*.55,hipY+.34,bodyDepth+.025),.035,.045,leather,8);}
-  // Stylized human head: jaw narrows below the cheek plane; features sit on the face, not beyond it.
-  ellipsoid(p.head*(.58+.16*p.jaw),p.head*.94,p.head*.76,0,headY,0,skin);
+  // A single smooth head shell carries the cheek-to-jaw transition.
+  const h=p.head;
+  const profile=[[-.46,.07],[-.39,.23*p.jaw],[-.26,.31*p.jaw],[-.04,.37],[.19,.355],[.37,.30],[.47,.13],[.49,.015]];
+  const headGeo=new THREE.LatheGeometry(profile.map(([y,r])=>new THREE.Vector2(r*h,y*h)),32);
+  const head=matMesh(headGeo,skin);head.position.y=headY;head.scale.z=1.04;
   for(const side of [-1,1]){
    ellipsoid(.1*p.head,.2*p.head,.075*p.head,side*p.head*.37,headY-.01,0,skin);
-   ellipsoid(.19*p.head*p.eyes,.105*p.head*p.eyes,.04,side*p.head*.19,headY+p.head*.06,p.head*.37,white);
-   ellipsoid(.065*p.head*p.eyes,.075*p.head*p.eyes,.025,side*p.head*.19,headY+p.head*.055,p.head*.405,eyeColor);
-   const brow=segment(point(side*p.head*.31,headY+p.head*.22,p.head*.4),point(side*p.head*.08,headY+p.head*(.22+side*p.brows/150),p.head*.4),.025,.032,hairColor,8);brow.renderOrder=2;
+   ellipsoid(.13*p.head*p.eyes,.065*p.head*p.eyes,.022,side*p.head*.19,headY+p.head*.055,p.head*.385,white);
+   ellipsoid(.035*p.head*p.eyes,.05*p.head*p.eyes,.015,side*p.head*.19,headY+p.head*.052,p.head*.4,eyeColor);
+   ellipsoid(.01*p.head,.014*p.head,.006,side*p.head*.177,headY+p.head*.07,p.head*.411,white);
+   const brow=segment(point(side*p.head*.29,headY+p.head*.2,p.head*.36),point(side*p.head*.1,headY+p.head*(.2+side*p.brows/150),p.head*.37),.018,.018,hairColor,8);brow.renderOrder=2;
   }
-  ellipsoid(.13*p.head*p.nose,.19*p.head*p.nose,.14*p.head*p.nose,0,headY-p.head*.04,p.head*.39,skin);
-  ellipsoid(.32*p.head*p.mouth,.055*p.head,.035,0,headY-p.head*.25,p.head*.37,'#854f4d');
+  ellipsoid(.085*p.head*p.nose,.22*p.head*p.nose,.12*p.head*p.nose,0,headY-p.head*.025,p.head*.42,skin);
+  ellipsoid(.12*p.head*p.nose,.065*p.head,.07*p.head,0,headY-p.head*.13,p.head*.48,skin);
+  ellipsoid(.23*p.head*p.mouth,.027*p.head,.021,0,headY-p.head*.265,p.head*.405,'#814d4b');
   const hs=Math.round(p.hairStyle),hv=p.hair;
   if(hv>0){
-   ellipsoid(p.head*.78*(1+.08*hv),p.head*.58*(1+.08*hv),p.head*.8,0,headY+p.head*.31,-.02,hairColor);
-   if(hs===1)for(const side of [-1,1])ellipsoid(.19*p.head,.42*p.head*hv,.16*p.head,side*p.head*.39,headY+p.head*.04,.02,hairColor);
+   const cap=matMesh(new THREE.SphereGeometry(.5,32,16,0,Math.PI*2,0,Math.PI*.59),hairColor);
+   cap.scale.set(p.head*.78*(1+.08*hv),p.head*.8*(1+.08*hv),p.head*.8);cap.position.set(0,headY+p.head*.13,-.015);
+   if(hs===1)for(const side of [-1,1])swept([point(side*p.head*.3,headY+p.head*.34,-.05),point(side*p.head*.38,headY+.02,.015),point(side*p.head*.36,headY-p.head*.18,.03)],[.08*p.head,.07*p.head,.008*p.head],hairColor);
    if(hs===2){for(const side of [-1,1])ellipsoid(.2*p.head,.68*p.head*hv,.18*p.head,side*p.head*.42,headY-p.head*.12,-.03,hairColor);ellipsoid(.62*p.head,.42*p.head*hv,.22*p.head,0,headY-p.head*.27,-p.head*.25,hairColor);}
    if(hs===3){for(let i=-2;i<=2;i++)ellipsoid(.2*p.head,.34*p.head*(1+.2*hv),.2*p.head,i*p.head*.18,headY+p.head*(.55-Math.abs(i)*.035),0,hairColor);}
    if(hs===4)for(let i=0;i<10;i++){const a=i/10*Math.PI*2;ellipsoid(.21*p.head*hv,.23*p.head*hv,.21*p.head*hv,Math.cos(a)*p.head*.39,headY+p.head*(.32+Math.sin(a)*.28),Math.sin(a)*p.head*.3,hairColor);}

@@ -105,12 +105,16 @@
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       if (THREE.sRGBEncoding) this.renderer.outputEncoding = THREE.sRGBEncoding;
+      if (THREE.ACESFilmicToneMapping) {
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.18;
+      }
 
       this.scene = new THREE.Scene();
 
       // Camera: 34° FOV for balanced isometric geological block framing
       this.camera = new THREE.PerspectiveCamera(34, width / height, 0.4, 600);
-      this.defaultCamPos = new THREE.Vector3(21, 5.5, 23);
+      this.defaultCamPos = new THREE.Vector3(12, 5.5, 26);
       this.defaultCamTarget = new THREE.Vector3(0, -4.8, 0);
       this.camera.position.copy(this.defaultCamPos);
 
@@ -126,10 +130,10 @@
       }
 
       // Lighting configuration for dramatic geological cutaway
-      this.ambientLight = new THREE.AmbientLight(0x444d5c, 1.7);
+      this.ambientLight = new THREE.AmbientLight(0x677381, 1.15);
       this.scene.add(this.ambientLight);
 
-      this.dirLight = new THREE.DirectionalLight(0xfff6ec, 2.5);
+      this.dirLight = new THREE.DirectionalLight(0xffe6c8, 2.1);
       this.dirLight.position.set(-22, 30, 24);
       this.dirLight.castShadow = true;
       this.dirLight.shadow.mapSize.width = 1024;
@@ -137,12 +141,12 @@
       this.scene.add(this.dirLight);
 
       // Secondary fill light for subterranean strata face
-      this.fillLight = new THREE.DirectionalLight(0x90a0b8, 1.2);
+      this.fillLight = new THREE.DirectionalLight(0x9aafbd, 0.9);
       this.fillLight.position.set(22, -8, 18);
       this.scene.add(this.fillLight);
 
       // Front fill light specifically aimed at subterranean cut face (Z = 0)
-      this.frontLight = new THREE.DirectionalLight(0xfff6ec, 1.8);
+      this.frontLight = new THREE.DirectionalLight(0xfff1dd, 1.45);
       this.frontLight.position.set(-6, -6, 28);
       this.scene.add(this.frontLight);
 
@@ -210,6 +214,8 @@
     setMode(mode) {
       if (this.mode === mode) return;
       this.mode = mode;
+      this.isPainting = false;
+      if (this.controls) this.controls.enabled = true;
       if (mode === 'exploration') {
         this.customChambers = structuredClone(this.profile.reservoirs || []);
         this.customConduits = structuredClone([
@@ -304,8 +310,8 @@
       const depthKm = this.profile.maxDepthKm || 12;
 
       if (preset === 'iso') {
-        targetPos = new THREE.Vector3(widthKm * 1.22, depthKm * 0.52, depthKm * 1.82);
-        targetLook = new THREE.Vector3(-widthKm * 0.12, -depthKm * 0.38, 0);
+        targetPos = new THREE.Vector3(widthKm * 0.72, depthKm * 0.52, depthKm * 2.05);
+        targetLook = new THREE.Vector3(-widthKm * 0.13, -depthKm * 0.38, 0);
       } else if (preset === 'profile') {
         // Orthogonal 2D cross-section view (perpendicular to Z=0 cut plane, centered on front face)
         targetPos = new THREE.Vector3(-widthKm / 4, -depthKm / 2, depthKm * 1.45);
@@ -624,6 +630,125 @@
       return tex;
     }
 
+    // The uncut walls need the same depth rhythm as the exposed face, without
+    // repeating its teaching labels and fault annotations on every side.
+    generateExteriorTexture(w = 512, h = 1024) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const depth = this.profile.maxDepthKm || 12;
+      const layers = this.profile.layers || [];
+      const color = (hex, factor) => {
+        const c = new this.THREE.Color(hex || '#39353a');
+        c.multiplyScalar(factor);
+        return `#${c.getHexString()}`;
+      };
+      ctx.fillStyle = '#25242a';
+      ctx.fillRect(0, 0, w, h);
+      for (const layer of layers) {
+        const y0 = Math.max(0, layer.topKm / depth * h);
+        const y1 = Math.min(h, layer.bottomKm / depth * h);
+        if (y1 <= y0) continue;
+        const fill = ctx.createLinearGradient(0, y0, w, y1);
+        fill.addColorStop(0, color(layer.color, 0.56));
+        fill.addColorStop(0.55, color(layer.color, 0.72));
+        fill.addColorStop(1, color(layer.color, 0.48));
+        ctx.fillStyle = fill;
+        ctx.fillRect(0, y0, w, y1 - y0);
+        ctx.save();
+        ctx.beginPath(); ctx.rect(0, y0, w, y1 - y0); ctx.clip();
+        for (let y = y0 + 9; y < y1; y += 13) {
+          ctx.strokeStyle = y % 3 < 1 ? 'rgba(255,227,190,.11)' : 'rgba(0,0,0,.16)';
+          ctx.lineWidth = y % 3 < 1 ? 2 : 1;
+          ctx.beginPath();
+          for (let x = 0; x <= w; x += 16) {
+            const yy = y + Math.sin(x * 0.028 + y * 0.11) * 2.2;
+            if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+          }
+          ctx.stroke();
+        }
+        // Broken joints read as rock fabric, not as another eruption feature.
+        ctx.strokeStyle = 'rgba(10,12,17,.23)';
+        for (let x = 20; x < w; x += 71) {
+          const shift = Math.sin(x * 7.13 + y0) * 13;
+          ctx.beginPath();
+          ctx.moveTo(x + shift, y0 + 8);
+          ctx.lineTo(x + shift + 7, Math.min(y1, y0 + 50));
+          ctx.stroke();
+        }
+        ctx.restore();
+        ctx.fillStyle = 'rgba(5,8,12,.5)';
+        ctx.fillRect(0, y1 - 3, w, 3);
+      }
+      const texture = new this.THREE.CanvasTexture(canvas);
+      if (this.THREE.sRGBEncoding) texture.encoding = this.THREE.sRGBEncoding;
+      return texture;
+    }
+
+    generateEdificeTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const ice = this.eruptionId === 'eyja2010';
+      const basalt = this.eruptionId === 'maunaloa2022';
+      const base = ctx.createLinearGradient(0, 0, 0, h);
+      base.addColorStop(0, ice ? '#5c6667' : basalt ? '#363235' : '#615347');
+      base.addColorStop(.48, ice ? '#45505a' : basalt ? '#383233' : '#564a40');
+      base.addColorStop(1, basalt ? '#28272a' : '#393837');
+      ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+      // Alternating ash and lava beds follow the cone instead of reading as
+      // horizontal wallpaper across the whole geological block.
+      for (let y = 24; y < h; y += 28) {
+        ctx.strokeStyle = y % 4 < 2 ? 'rgba(220,188,150,.28)' : 'rgba(17,20,24,.36)';
+        ctx.lineWidth = y % 4 < 2 ? 3 : 5;
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 10) {
+          const yy = y + 5 * Math.sin(x * .014 + y * .11) + 2 * Math.sin(x * .051);
+          if (!x) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+        }
+        ctx.stroke();
+      }
+      // Fine, branching erosion channels emphasize relief from rim to flank.
+      for (let i = 0; i < 34; i++) {
+        const x0 = i * w / 34 + 9 * Math.sin(i * 8.7);
+        ctx.strokeStyle = i % 3 ? 'rgba(13,18,22,.27)' : 'rgba(220,202,176,.15)';
+        ctx.lineWidth = i % 4 === 0 ? 5 : 2;
+        ctx.beginPath();
+        for (let y = 0; y <= h; y += 12) {
+          const x = x0 + 13 * Math.sin(y * .014 + i * 2.3) + y * .035 * Math.sin(i * 4.1);
+          if (!y) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      const texture = new this.THREE.CanvasTexture(canvas);
+      if (this.THREE.sRGBEncoding) texture.encoding = this.THREE.sRGBEncoding;
+      return texture;
+    }
+
+    sculptCone(mesh, texture) {
+      const geometry = mesh.geometry;
+      const params = geometry.parameters;
+      if (!params || params.height <= 0.8) return;
+      const position = geometry.attributes.position;
+      const height = params.height;
+      for (let i = 0; i < position.count; i++) {
+        const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+        const angle = Math.atan2(z, x);
+        const slope = Math.max(0, 1 - (y + height / 2) / height);
+        const ribs = Math.sin(angle * 11 + y * 1.8) * .018 + Math.sin(angle * 23 - y * 3.1) * .009;
+        const relief = 1 + slope * ribs + .014 * Math.sin(angle * 5 + y * 2.2);
+        position.setXYZ(i, x * relief, y + .014 * Math.sin(angle * 13 + slope * 9), z * relief);
+      }
+      geometry.computeVertexNormals();
+      mesh.material = mesh.material.clone();
+      mesh.material.map = texture;
+      mesh.material.color.setHex(0xffffff);
+      mesh.material.roughness = .94;
+      mesh.material.needsUpdate = true;
+      mesh.castShadow = true;
+    }
+
     /**
      * Rebuild All 3D Volcanological Cutaway Meshes
      */
@@ -631,16 +756,27 @@
       const THREE = this.THREE;
       if (!THREE || !this.scene) return;
 
-      // Clear existing 3D groups
-      while (this.crustGroup.children.length) this.crustGroup.remove(this.crustGroup.children[0]);
-      while (this.waterGroup.children.length) this.waterGroup.remove(this.waterGroup.children[0]);
-      while (this.edificeGroup.children.length) this.edificeGroup.remove(this.edificeGroup.children[0]);
-      while (this.chamberGroup.children.length) this.chamberGroup.remove(this.chamberGroup.children[0]);
-      while (this.conduitGroup.children.length) this.conduitGroup.remove(this.conduitGroup.children[0]);
-      while (this.particleGroup.children.length) this.particleGroup.remove(this.particleGroup.children[0]);
-      while (this.aquiferGroup.children.length) this.aquiferGroup.remove(this.aquiferGroup.children[0]);
-      while (this.scaleGroup.children.length) this.scaleGroup.remove(this.scaleGroup.children[0]);
-      while (this.annotationGroup.children.length) this.annotationGroup.remove(this.annotationGroup.children[0]);
+      // Preset and brush changes regenerate textures. Release the old GPU
+      // resources so repeated classroom comparisons do not accumulate them.
+      const geometries = new Set(), materials = new Set(), textures = new Set();
+      for (const group of [this.crustGroup, this.waterGroup, this.edificeGroup,
+        this.chamberGroup, this.conduitGroup, this.particleGroup,
+        this.aquiferGroup, this.scaleGroup, this.annotationGroup]) {
+        group.traverse(object => {
+          if (object.geometry) geometries.add(object.geometry);
+          for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+            if (!material) continue;
+            materials.add(material);
+            if (material.map) textures.add(material.map);
+            if (material.normalMap) textures.add(material.normalMap);
+          }
+        });
+        group.clear();
+        group.userData = {};
+      }
+      geometries.forEach(item => item.dispose());
+      materials.forEach(item => item.dispose());
+      textures.forEach(item => item.dispose());
 
       const widthKm = this.profile.widthKm || 16;
       const depthKm = this.profile.maxDepthKm || 12;
@@ -652,6 +788,7 @@
 
       const cutMat = new THREE.MeshStandardMaterial({
         map: strataTex,
+        color: 0xbeb6ae,
         normalMap: normalTex,
         normalScale: new THREE.Vector2(0.7, 0.7),
         roughness: 0.82,
@@ -660,7 +797,8 @@
       });
 
       const outerMat = new THREE.MeshStandardMaterial({
-        color: 0x121620,
+        map: this.generateExteriorTexture(),
+        color: 0xc6c9ce,
         roughness: 0.94,
         metalness: 0.05
       });
@@ -980,6 +1118,17 @@
         const craterY = (id === 'krakatoa1883') ? 0.38 : coneH - 0.4;
         craterMesh.position.set(0, craterY, 0);
         this.edificeGroup.add(craterMesh);
+      }
+
+      if (id !== 'yellowstone') {
+        const rockTexture = this.generateEdificeTexture();
+        for (const mesh of this.edificeGroup.children) {
+          if (mesh.isMesh && mesh.geometry.type === 'CylinderGeometry' &&
+              mesh !== this.edificeGroup.userData.pistonMesh &&
+              mesh !== this.edificeGroup.userData.iceMesh) {
+            this.sculptCone(mesh, rockTexture);
+          }
+        }
       }
     }
 
@@ -1612,6 +1761,8 @@
         if (this.raycaster.ray.intersectPlane(this.cutPlane, target)) {
           const wPos = { x: target.x, depth: -target.y };
           if (wPos.depth >= -0.5 && wPos.depth <= this.profile.maxDepthKm + 1) {
+            if (this.controls) this.controls.enabled = false;
+            if (e.cancelable && e.preventDefault) e.preventDefault();
             this.pushUndo();
             this.isPainting = true;
             this.paintAt(wPos);
@@ -1621,6 +1772,7 @@
 
       const onPointerMove = (e) => {
         if (!this.isPainting || this.mode !== 'exploration') return;
+        if (e.cancelable && e.preventDefault) e.preventDefault();
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1637,6 +1789,7 @@
       };
 
       const onPointerUp = () => {
+        if (this.controls) this.controls.enabled = true;
         if (this.isPainting) {
           this.isPainting = false;
           this.recalculateDiagnostics();
@@ -1650,6 +1803,8 @@
       canvas.addEventListener('touchstart', onPointerDown, { passive: false });
       canvas.addEventListener('touchmove', onPointerMove, { passive: false });
       window.addEventListener('touchend', onPointerUp);
+      window.addEventListener('touchcancel', onPointerUp);
+      window.addEventListener('pointerup', onPointerUp);
     }
 
     handleAnnotationClick(ann) {

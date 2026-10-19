@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/blender-pathway.css" />
 <link rel="stylesheet" href="../../../assets/css/components/design3d-workspace.css">
+<link rel="stylesheet" href="../../../assets/css/lessons/geometry-nodes-lab.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -46,6 +47,30 @@
         <main id="main-content" class="bl-shell">
 <div data-design3d-route="look"></div>
 <section data-design3d-workshop="procedural"></section>
+<section class="gn-lab" aria-labelledby="gn-lab-title">
+  <div class="gn-lab-intro"><div><p class="gn-lab-kicker">From sliders to sockets</p><h2 id="gn-lab-title">Wire the recipe that makes a row of posts</h2><p>The workshop above changes a finished recipe. Here, connect its three geometry paths. A missing wire should make the result disappear; changing an input should change every copy.</p></div><p class="gn-lab-goal"><strong>Make and explain</strong><span>Connect points, a source shape, and the final output. Then predict how far the row extends.</span></p></div>
+  <div class="gn-lab-board">
+    <div class="gn-node gn-node-input"><strong>Group Input</strong><span>Count → Mesh Line Count</span><span>Spacing → Mesh Line Offset X</span></div>
+    <div class="gn-node"><strong>Mesh Line</strong><span>Creates points in a row</span><small>Mesh → Points</small></div>
+    <div class="gn-node"><strong>Cube</strong><span>One source shape</span><small>Mesh → Instance</small></div>
+    <div class="gn-node gn-node-result"><strong>Instance on Points</strong><span>Copies Cube onto each point</span></div>
+    <div class="gn-node gn-node-output"><strong>Group Output</strong><span>Shows the instances</span></div>
+  </div>
+  <div class="gn-lab-body">
+    <div class="gn-lab-wires"><h3>Repair the three missing wires</h3><p>Choose the output that belongs in each input socket. Read the data from left to right.</p>
+      <label>Instance on Points · Points<select data-gn-wire="points"><option value="">Choose an output</option><option value="line">Mesh Line · Mesh</option><option value="cube">Cube · Mesh</option><option value="result">Instance on Points · Instances</option></select></label>
+      <label>Instance on Points · Instance<select data-gn-wire="instance"><option value="">Choose an output</option><option value="line">Mesh Line · Mesh</option><option value="cube">Cube · Mesh</option><option value="result">Instance on Points · Instances</option></select></label>
+      <label>Group Output · Geometry<select data-gn-wire="output"><option value="">Choose an output</option><option value="line">Mesh Line · Mesh</option><option value="cube">Cube · Mesh</option><option value="result">Instance on Points · Instances</option></select></label>
+      <button type="button" data-gn-check>Run the graph</button><p class="gn-lab-feedback" data-gn-feedback role="status" aria-live="polite">Connect the three sockets to see the generated row.</p>
+    </div>
+    <div class="gn-lab-output"><h3>Inspect the output</h3><div class="gn-lab-preview" data-gn-preview role="img" aria-label="No geometry yet; connect the graph"><span>Graph has no complete path to output.</span></div>
+      <div class="gn-lab-controls"><label>Count <output data-gn-count-value>5</output><input type="range" min="2" max="10" value="5" data-gn-count /></label><label>Spacing <output data-gn-spacing-value>0.7</output><input type="range" min="0.4" max="1.2" step="0.1" value="0.7" data-gn-spacing /></label></div>
+      <label class="gn-lab-predict">Predict the distance from first post to last, in scene units <input type="number" min="0" max="12" step="0.1" inputmode="decimal" data-gn-prediction /></label>
+      <button type="button" data-gn-predict-check>Check prediction</button><p class="gn-lab-feedback" data-gn-prediction-result role="status" aria-live="polite">Hint: there is one fewer gap than posts.</p>
+    </div>
+  </div>
+  <details class="gn-lab-transfer"><summary>Build this exact recipe in Blender</summary><ol><li>Add a Geometry Nodes modifier to a plane and press New. Keep the plane as a carrier; the graph will generate the visible posts.</li><li>Add Mesh Line, Cube, and Instance on Points. Connect Mesh Line <b>Mesh</b> to <b>Points</b>, Cube <b>Mesh</b> to <b>Instance</b>, and Instance on Points <b>Instances</b> to Group Output <b>Geometry</b>.</li><li>Set Mesh Line to Offset mode. Set Count to your tested count and Offset X to your tested spacing; leave Y and Z at zero.</li><li>Expose Count and spacing as named Group Input sockets. Change each in the modifier panel and check that the number and span change as predicted. Save both the editable file and a screenshot of the graph.</li></ol><p>If nothing appears, trace the final connection first. If the copies overlap, inspect Mesh Line Offset. This browser diagram models node flow; the Blender file is your proof of a working graph. <a href="https://docs.blender.org/manual/en/latest/modeling/geometry_nodes/mesh/primitives/mesh_line.html">Mesh Line reference</a> · <a href="https://docs.blender.org/manual/en/latest/modeling/geometry_nodes/instances/instance_on_points.html">Instance on Points reference</a>.</p></details>
+</section>
 <details class="d3-original-reference"><summary>Blender walkthrough, examples and deeper reference</summary><p class="d3-original-note">Start with the editable technique workshop above. Reuse your model in the next lesson. The detailed walkthrough below uses Blender; choose another app using Tool Rosetta and the transfer checklist above.</p>
           <section class="bl-hero">
             <div class="hero-copy">
@@ -104,8 +129,8 @@
             <div class="section-label"><span>02</span><p>Reading a graph</p></div>
             <div class="section-content">
               <p class="section-kicker">Follow the geometry socket</p>
-              <h2>Every graph starts and ends with Geometry.</h2>
-              <p><strong>Group Input</strong> on the left is the object's original mesh entering the graph; <strong>Group Output</strong> on the right is what actually gets drawn. Every node between them takes geometry in one side and passes a modified version out the other. Sockets are color-coded by data type — green for Geometry, and other colors for Vector, Float, Boolean, and Integer values.</p>
+              <h2>Trace the geometry path to Group Output.</h2>
+              <p><strong>Group Input</strong> can supply the object's original mesh and any controls you expose. A graph may instead generate new geometry, as the Mesh Line does in the lab above; in that case the original mesh can simply carry the modifier. <strong>Group Output</strong> receives the final geometry that appears in the viewport. Follow each socket connection to see which values control the result and which geometry reaches the output. Socket colors help distinguish geometry from vectors, numbers, and other data types.</p>
               <figure data-zoomable data-lightbox-group="blender-geometry-nodes" class="bl-figure">
                 <img src="../../../assets/images/lessons/blender-geometry-nodes/geometry-nodes-modifier.webp" alt="Blender's Modifier Properties panel showing a Geometry Nodes modifier named GeometryNodes with exposed inputs (Rotations, Divergence, Viewport Resolution) above the node graph in the editor below." width="1400" height="727" loading="lazy" />
                 <figcaption><b>Modifier panel + node graph</b>Every value exposed in the graph's Group Input shows up here in the Modifier panel — this is how a graph becomes something a teammate can tweak without opening the node editor at all.</figcaption>
@@ -217,5 +242,6 @@
 <script src="../../../assets/js/sim-kit.js"></script>
 <script src="../../../assets/js/tool-rosetta.js"></script>
 <script type="module" src="../../../assets/js/design3d/workspace.mjs"></script>
+<script src="../../../assets/js/lessons/geometry-nodes-lab.js"></script>
 </body>
 </html>

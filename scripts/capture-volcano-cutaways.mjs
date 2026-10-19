@@ -11,7 +11,8 @@ try {
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8080/lessons/earth-science/volcano-simulator.html',{waitUntil:'domcontentloaded'});
  await page.locator('[data-id="vesuvius79"]').waitFor();
- await page.locator('#btn-toggle-cutaway').click();
+ await page.locator('[data-view="cross-section"]').click();
+ await page.locator('#btn-open-left').click();
  const profiles=await page.evaluate(()=>Object.entries(VolcanoHistory).map(([id,r])=>({id,climax:r.timeline.reduce((a,b)=>a.intensity>b.intensity?a:b).at})));
  const selected=profiles.filter(p=>process.env.VOLCANO_PRESETS ? process.env.VOLCANO_PRESETS.split(',').includes(p.id) : !process.env.VOLCANO_QUICK || ['vesuvius79','yellowstone'].includes(p.id));
  for(const {id,climax} of selected){
@@ -20,7 +21,8 @@ try {
   for(const [stage,at] of [['before',0],['climax',climax],['aftermath',1]]){
    await page.locator('#s-timeline').evaluate((el,at)=>{el.value=at;el.dispatchEvent(new Event('input',{bubbles:true}));},at);
    await page.waitForTimeout(120);
-   assert.ok((await page.locator('#cutaway-description').textContent()).includes('Reservoirs:'));
+   const name=await page.evaluate(id=>VolcanoHistory[id].conduit.name,id);
+   assert.ok((await page.locator('#cutaway-description').textContent()).includes(name));
    await page.locator('.vol-workspace').screenshot({path:`${output}/${id}-${stage}.png`,animations:"disabled"});
   }
  }

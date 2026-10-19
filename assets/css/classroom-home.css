@@ -1646,12 +1646,13 @@ html[data-site-theme="kiwi"] body {
   z-index: 10040;
 }
 
-.nav-settings-toggle {
+.nav-settings-toggle,
+.nav-search-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.32rem;
   min-height: 1.75rem;
-  padding: 0.18rem 0.3rem 0.18rem 0.5rem;
+  padding: 0.18rem 0.45rem 0.18rem 0.5rem;
   border: 1px solid color-mix(in srgb, var(--line) 70%, rgba(255, 255, 255, 0.88));
   border-radius: 999px;
   background:
@@ -1670,11 +1671,24 @@ html[data-site-theme="kiwi"] body {
 }
 
 .nav-settings-toggle:hover,
-.nav-settings.is-open .nav-settings-toggle {
+.nav-settings.is-open .nav-settings-toggle,
+.nav-search-btn:hover {
   border-color: color-mix(in srgb, var(--theme-accent) 42%, rgba(255, 255, 255, 0.76));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.28)),
     var(--surface-2);
+}
+
+.nav-search-btn .nav-search-kbd {
+  font-family: inherit;
+  font-size: 0.62rem;
+  padding: 0.05rem 0.28rem;
+  border-radius: 4px;
+  background: rgba(125, 136, 154, 0.16);
+  border: 1px solid rgba(125, 136, 154, 0.24);
+  color: inherit;
+  opacity: 0.75;
+  line-height: 1;
 }
 
 .nav-toggle svg {
@@ -3232,6 +3246,7 @@ body :where(code, pre, samp, kbd, code *, pre *, samp *, kbd *, .mono, .font-mon
 }
 
 .nav-dd-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.18rem;
@@ -3248,6 +3263,19 @@ body :where(code, pre, samp, kbd, code *, pre *, samp *, kbd *, .mono, .font-mon
   white-space: nowrap;
   cursor: pointer;
   transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.nav-dd-trigger::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
 }
 
 .nav-dd-trigger .nav-dd-caret {
@@ -3483,16 +3511,21 @@ summary:focus-visible,
   outline-offset: 2px;
 }
 
-/* Header row at collapsed-nav widths: brand on the left, Settings + hamburger grouped on the right. */
+/* Header row at collapsed-nav widths: brand on the left, Search + Settings + hamburger grouped on the right. */
 @media (max-width: 1120px) {
-  .nav-wrap > .nav-settings {
+  .nav-wrap > .nav-search {
     order: 1;
     margin-left: auto;
   }
 
-  .nav-wrap > .nav-toggle {
+  .nav-wrap > .nav-settings {
     order: 2;
-    margin-left: 0.5rem;
+    margin-left: 0.35rem !important;
+  }
+
+  .nav-wrap > .nav-toggle {
+    order: 3;
+    margin-left: 0.35rem;
   }
 }
 
@@ -3543,9 +3576,19 @@ summary:focus-visible,
     height: 1.7rem;
   }
 
-  html body .site-header .nav-wrap .nav-settings-toggle {
+  html body .site-header .nav-wrap .nav-settings-toggle,
+  html body .site-header .nav-wrap .nav-search-btn {
     min-width: 2.25rem !important;
     min-height: 2.25rem !important;
+  }
+
+  html body .site-header .nav-wrap .nav-search-btn .nav-search-text,
+  html body .site-header .nav-wrap .nav-search-btn .nav-search-kbd {
+    display: none !important;
+  }
+
+  html body .site-header .nav-wrap > .nav-search {
+    margin-left: 0 !important;
   }
 
   html body .site-header .nav-wrap > .nav-toggle {

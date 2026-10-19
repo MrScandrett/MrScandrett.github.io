@@ -207,9 +207,14 @@
     var style = document.createElement("style");
     style.id = "classroomos-nav-a11y";
     style.textContent =
-      '.nav-settings-toggle:focus-visible, .nav-settings-close:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
+      '.nav-search { position: relative; display: inline-flex; align-items: center; }' +
+      '.nav-search-btn { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 1.75rem; padding: 0.18rem 0.55rem 0.18rem 0.5rem; border: 1px solid var(--control-border, color-mix(in srgb, var(--line, rgba(125,136,154,0.3)) 70%, rgba(255, 255, 255, 0.88))); border-radius: 999px; background: var(--surface-1, rgba(255, 255, 255, 0.65)); color: var(--nav-ink-strong, var(--text, #1d1d1f)); font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 160ms ease; }' +
+      '.nav-search-btn:hover { border-color: color-mix(in srgb, var(--theme-accent, #007aff) 42%, rgba(255, 255, 255, 0.76)); background: var(--surface-2, rgba(255, 255, 255, 0.85)); transform: translateY(-1px); }' +
+      '.nav-search-btn:focus-visible, .nav-settings-toggle:focus-visible, .nav-settings-close:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
         'outline: 2px solid var(--theme-accent, #007aff); outline-offset: 2px;' +
       '}' +
+      '.nav-search-btn .nav-search-kbd { font-family: inherit; font-size: 0.62rem; padding: 0.05rem 0.28rem; border-radius: 4px; background: rgba(125, 136, 154, 0.16); border: 1px solid rgba(125, 136, 154, 0.24); color: inherit; opacity: 0.75; line-height: 1; }' +
+      '@media (max-width: 720px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } }' +
       /* Responsive grid for theme/canvas chips */
       '.nav-theme-grid, .nav-canvas-grid {' +
         'display: grid;' +
@@ -561,6 +566,30 @@
   btn.setAttribute("aria-label", "Open navigation");
   btn.innerHTML = ICON_MENU;
   nav.parentNode.insertBefore(btn, nav);
+
+  var searchContainer = document.createElement("div");
+  searchContainer.className = "nav-search";
+  searchContainer.innerHTML =
+    '<button type="button" class="nav-search-btn" aria-label="Search lessons, tools, and pages (Cmd+K)" title="Search (⌘K)">' +
+      '<svg class="nav-search-icon" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
+        '<circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+        '<path d="M13.5 13.5L18 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>' +
+      '</svg>' +
+      '<span class="nav-search-text">Search</span>' +
+      '<kbd class="nav-search-kbd" aria-hidden="true">⌘K</kbd>' +
+    '</button>';
+  var searchBtn = searchContainer.querySelector(".nav-search-btn");
+  searchBtn.addEventListener("click", function () {
+    if (window.CommandPalette && typeof window.CommandPalette.toggle === "function") {
+      window.CommandPalette.toggle();
+    } else if (window.ClassroomOSCommandPalette && typeof window.ClassroomOSCommandPalette.open === "function") {
+      window.ClassroomOSCommandPalette.open();
+    } else {
+      var ev = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+      document.dispatchEvent(ev);
+    }
+  });
+  nav.parentNode.appendChild(searchContainer);
 
   function readStorage(key) {
     try {
@@ -1410,16 +1439,17 @@
     },
     "Apps": {
       items: [
-        { label: "🧩 Scratch",       href: "https://scratch.mit.edu/", external: true },
-        { label: "📝 VS Code",       href: "https://vscode.dev/",     external: true },
-        { label: "🏫 Code.org",      href: "https://studio.code.org/", external: true },
-        { label: "🎵 Music Lab",     href: "https://musiclab.chromeexperiments.com/", external: true },
-        { label: "🚶 Pivot",         href: "https://pivotanimator.net/", external: true },
+        { label: "🎛️ Music Lab (DAW)", href: "/music-lab.html" },
+        { label: "🧱 3D Workbench",    href: "/workbench.html" },
+        { label: "⚙️ Forge Fab Studio", href: "/forge.html" },
         { divider: true },
+        { label: "🧩 Scratch",         href: "https://scratch.mit.edu/", external: true },
+        { label: "📝 VS Code",         href: "https://vscode.dev/",     external: true },
+        { label: "🏫 Code.org",        href: "https://studio.code.org/", external: true },
         { label: "📐 Tinkercad class…", action: "tinkercad-picker" },
         { divider: true },
-        { label: "⬇️ Downloads",      href: "/class-downloads.html" },
-        { label: "View all apps →",  href: "/applications.html" }
+        { label: "⬇️ Downloads",        href: "/class-downloads.html" },
+        { label: "View all apps →",    href: "/applications.html" }
       ]
     },
     "Library": {
