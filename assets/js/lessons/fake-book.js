@@ -568,7 +568,7 @@
     showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
-    guitarForm: 'open', guitarVoice: 'manual',
+    guitarForm: 'open', guitarVoice: 'manual', chordShapes: {},
     triadInv: 0,
     triadSet: '123',
     lowBass: true,
@@ -3177,6 +3177,8 @@
   }
   // The grip shown for chord ci: what the imported tab plays there when "Match the tab" is on, else the planned grip.
   function gripFor(ci) {
+    var c = view && view.concertChords[ci], picked = c && opts.engineMode !== 'triads' ? pickedFrets(c) : null;
+    if (picked) return { frets: picked, notes: window.FakeBookGuitarVoice ? window.FakeBookGuitarVoice.pitches(picked) : [], source: 'pick' };
     return (opts.guitarVoice === 'tab' && view.tabGrips && view.tabGrips[ci]) || (view.guitarGrips && view.guitarGrips[ci]) || null;
   }
   var OPEN_MIDI = [40, 45, 50, 55, 59, 64];
@@ -3214,7 +3216,7 @@
     withBass.forEach(function (f, s) { if (f !== frets[s]) notes.unshift({ s: s, f: f, midi: OPEN_MIDI[s] + f }); });
     return notes;
   }
-  function guitarShapeFor(rootPC, cType, ci) {
+  function guitarShapeFor(rootPC, cType, ci, ignorePick) {
     var c = view && view.concertChords ? view.concertChords[ci == null ? chordSel : ci] : null;
     if (opts.engineMode === 'triads') {
       var quality = triadQuality(cType.intervals);
@@ -3225,6 +3227,9 @@
       return { frets: withLowBass(frets, rootPC, bassPCOf(c), true) };
     }
 
+    // A shape picked in "Pick your shapes" beats every automatic choice.
+    var picked = c && !ignorePick ? pickedFrets(c) : null;
+    if (picked) return { frets: picked, formName: 'your pick', picked: true };
     if (opts.guitarVoice && opts.guitarVoice !== 'manual' && view && view.guitarGrips) {
       var grip = gripFor(ci == null ? chordSel : ci);
       if (!grip) return null;
@@ -3252,8 +3257,136 @@
     select.disabled = !!automatic || !forms.length;
     select.title = automatic ? 'Choose manual voice leading to select a grip.' : 'Preferred grip; unavailable forms use a supported grip for each chord.';
   }
+  // ---- Pick your shapes (Chords tab, guitar): scroll through every shape of each chord in the tune and
+  // keep the one that suits your version. Picks are saved per tune, by chord name, and win over the
+  // automatic grips on the sheet, in the bar pop-up, in the big fretboard and when the chord is played.
+  var SO = window.FakeBookShapeOptions;
+  var shapeOptCache = {};
+  function pickedFrets(c) {
+    var all = opts.chordShapes, mine = all && tune && all[tune.id];
+    return mine && SO ? SO.fromId(mine[chordName(c)]) : null;
+  }
+  function setPick(c, id) {
+    if (!opts.chordShapes || typeof opts.chordShapes !== 'object') opts.chordShapes = {};
+    var mine = opts.chordShapes[tune.id] || (opts.chordShapes[tune.id] = {});
+    if (id) mine[chordName(c)] = id; else delete mine[chordName(c)];
+    if (!Object.keys(mine).length) delete opts.chordShapes[tune.id];
+  }
+  function shapeListFor(c, ci) {
+    var rootPC = mod(NAT[c.root.l] + c.root.a, 12), cType = chordTypeOf(c), bassPC = bassPCOf(c);
+    var ck = [rootPC, cType.suffix, bassPC].join('|');
+    var base = shapeOptCache[ck] || (shapeOptCache[ck] = SO.options(GT, { rootPC: rootPC, type: cType, bassPC: bassPC }));
+    var list = base.slice();
+    // What the sheet would show with no pick, and what is picked now, always belong in the list.
+    var auto = guitarShapeFor(rootPC, cType, ci, true), pick = pickedFrets(c);
+    function ensure(frets, tag) {
+      if (!frets) return;
+      var id = SO.toId(frets);
+      if (!list.some(function (x) { return x.id === id; })) list.unshift({ frets: frets, id: id, tag: tag, where: '', position: 0 });
+    }
+    if (auto && auto.frets) ensure(auto.frets, 'Suggested');
+    if (pick) ensure(pick, 'Your pick');
+    return { list: list, rootPC: rootPC, cType: cType, autoId: auto && auto.frets ? SO.toId(auto.frets) : null, pickId: pick ? SO.toId(pick) : null };
+  }
+  function uniqueChords() {
+    var seen = {}, out = [];
+    (view.concertChords || []).forEach(function (c, ci) {
+      var key = chordName(c);
+      if (seen[key]) { seen[key].count++; return; }
+      out.push(seen[key] = { key: key, c: c, ci: ci, count: 1 });
+    });
+    return out;
+  }
+  function shapeCardHTML(u) {
+    var info = shapeListFor(u.c, u.ci), n = info.list.length;
+    var at = Math.max(0, info.list.findIndex(function (x) { return x.id === (info.pickId || info.autoId); }));
+    var cur = info.list[at], chord = { rootPC: info.rootPC, type: info.cType };
+    var label = u.key + ', shape ' + (at + 1) + ' of ' + n + ': frets low to high ' + SO.describe(cur.frets);
+    var tag = [cur.tag, cur.where].filter(Boolean).join(' · ');
+    var picked = !!info.pickId;
+    return '<div class="fb-sp-card' + (picked ? ' is-picked' : '') + (u.ci === chordSel ? ' is-sel' : '') + '" data-sp-card="' + MN.escape(u.key) + '" data-sp-ci="' + u.ci + '" data-night-keep>' +
+      '<button type="button" class="fb-sp-name" data-sp-select title="Show ' + MN.escape(u.key) + ' above and on the sheet">' + MN.escape(u.key) + '<small>' + u.count + '×</small></button>' +
+      '<button type="button" class="fb-sp-dia" data-sp-hear aria-label="Hear ' + MN.escape(label) + '">' + SO.diagram(GT, cur.frets, chord, label) + '</button>' +
+      '<div class="fb-sp-nav"><button type="button" data-sp-step="-1" aria-label="Previous shape for ' + MN.escape(u.key) + '"' + (n < 2 ? ' disabled' : '') + '>‹</button>' +
+      '<span class="fb-sp-count" aria-live="polite">' + (at + 1) + ' of ' + n + '</span>' +
+      '<button type="button" data-sp-step="1" aria-label="Next shape for ' + MN.escape(u.key) + '"' + (n < 2 ? ' disabled' : '') + '>›</button></div>' +
+      '<div class="fb-sp-tag">' + MN.escape(tag || ' ') + '</div>' +
+      '<div class="fb-sp-state">' + (picked ? '<span class="fb-sp-pill">✓ your pick</span><button type="button" class="fb-sp-reset" data-sp-reset aria-label="Go back to the suggested shape for ' + MN.escape(u.key) + '">reset</button>' : '<span class="fb-sp-auto">suggested</span>') + '</div></div>';
+  }
+  var pickerSig = '';
+  function syncShapePicker(force) {
+    var box = el('[data-fb-shape-picker]');
+    if (!box) return;
+    var show = !!(SO && GT && view && view.concertChords.length && opts.engineInst === 'guitar' && (opts.engineMode || 'voicings') === 'voicings');
+    box.hidden = !show;
+    if (!show || !box.open) return;
+    var grid = el('[data-fb-shape-grid]');
+    var chords = uniqueChords();
+    var picks = (opts.chordShapes && tune && opts.chordShapes[tune.id]) || {};
+    var sig = [tune.id, opts.key, opts.instr, opts.guitarVoice, opts.guitarForm, opts.lowBass, chords.map(function (u) { return u.key + '*' + u.count; }).join(','), JSON.stringify(picks)].join('|');
+    if (force || sig !== pickerSig) {
+      pickerSig = sig;
+      grid.innerHTML = chords.map(shapeCardHTML).join('');
+      var reset = el('[data-fb-shapes-reset]');
+      if (reset) reset.hidden = !Object.keys(picks).length;
+      var count = el('[data-fb-shape-count]');
+      if (count) count.textContent = chords.length + ' chord' + (chords.length === 1 ? '' : 's') + ' · ' + Object.keys(picks).length + ' picked';
+    }
+    var selKey = view.concertChords[chordSel] ? chordName(view.concertChords[chordSel]) : '';
+    grid.querySelectorAll('[data-sp-card]').forEach(function (card) { card.classList.toggle('is-sel', card.getAttribute('data-sp-card') === selKey); });
+  }
+  function strumShape(frets) {
+    if (!window.GuitarAudio || !GT) return;
+    var freqs = frets.map(function (f, st) { return typeof f === 'number' ? GT.noteFreq(st, f) : null; }).filter(Boolean);
+    if (freqs.length) window.GuitarAudio.strum(freqs);
+  }
+  // After a pick, bring every view of the chord in line with it.
+  function shapesChanged(keepFocus) {
+    save();
+    showChord(false);
+    renderSheet();
+    renderBarPop();
+    if (keepFocus) {
+      var again = el('[data-sp-card="' + keepFocus.key.replace(/["\\]/g, '\\$&') + '"] ' + keepFocus.sel);
+      if (again) again.focus({ preventScroll: true });
+    }
+  }
+  function onShapePickerClick(t) {
+    var card = t.closest('[data-sp-card]');
+    if (!card) return false;
+    var key = card.getAttribute('data-sp-card'), u = uniqueChords().filter(function (x) { return x.key === key; })[0];
+    if (!u) return true;
+    var stepBtn = t.closest('[data-sp-step]');
+    if (stepBtn) {
+      var dir = Number(stepBtn.getAttribute('data-sp-step')), info = shapeListFor(u.c, u.ci), n = info.list.length;
+      var at = Math.max(0, info.list.findIndex(function (x) { return x.id === (info.pickId || info.autoId); }));
+      var next = info.list[(at + dir + n) % n];
+      setPick(u.c, next.id);
+      chordSel = u.ci;
+      strumShape(next.frets);
+      shapesChanged({ key: key, sel: '[data-sp-step="' + dir + '"]' });
+    } else if (t.closest('[data-sp-reset]')) {
+      setPick(u.c, null);
+      chordSel = u.ci;
+      shapesChanged({ key: key, sel: '[data-sp-hear]' });
+    } else if (t.closest('[data-sp-hear]')) {
+      chordSel = u.ci;
+      var shown = guitarShapeFor(mod(NAT[u.c.root.l] + u.c.root.a, 12), chordTypeOf(u.c), u.ci);
+      if (shown) strumShape(shown.frets);
+      showChord(false);
+    } else if (t.closest('[data-sp-select]')) {
+      chordSel = u.ci;
+      showChord(true);
+    }
+    return true;
+  }
+  function resetShapePicks() {
+    if (opts.chordShapes && tune) delete opts.chordShapes[tune.id];
+    shapesChanged();
+  }
   function guitarFormLabel(rootPC, c, ci) {
     var shape = guitarShapeFor(rootPC, chordTypeOf(c), ci);
+    if (shape && shape.picked) return ' · your pick';
     return shape && shape.formName ? ' · ' + (opts.guitarVoice && opts.guitarVoice !== 'manual' ? el('[data-fb-guitar-voice] option:checked').textContent : String(shape.formName).toUpperCase() + ' form') : ' · no supported compact grip';
   }
   function miniGuitar(rootPC, cType, ci) {
@@ -3745,6 +3878,7 @@
     }
 
     syncQuickChordControls();
+    syncShapePicker();
     sheetEl.querySelectorAll('.fb-chord').forEach(function (t) {
       t.classList.toggle('is-sel', Number(t.getAttribute('data-ci')) === chordSel);
     });
@@ -3948,6 +4082,8 @@
   });
 
   function bind() {
+    var shapeBox = el('[data-fb-shape-picker]');
+    if (shapeBox) shapeBox.addEventListener('toggle', function () { syncShapePicker(true); });
     root.addEventListener('change', function (ev) {
       var t = ev.target, n = t.name;
       if (t.matches('[data-score-mute], [data-score-solo]')) {
@@ -4066,6 +4202,8 @@
         return;
       }
       if (t.closest('[data-fb-print]')) { printNotation(); return; }
+      if (onShapePickerClick(t)) return;
+      if (t.closest('[data-fb-shapes-reset]')) { resetShapePicks(); return; }
       var vBtn = t.closest('[data-fb-view]');
       if (vBtn) {
         opts.sheetView = vBtn.getAttribute('data-fb-view');
@@ -4234,6 +4372,14 @@
           var focusChip = el('[data-strip-ci="' + chordSel + '"]');
           if (focusChip) focusChip.focus({ preventScroll: true });
         }
+        return;
+      }
+      // In a shape card the arrow keys flip through that chord's shapes.
+      var spDia = ev.target.closest && ev.target.closest('[data-sp-hear]');
+      if (spDia && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight')) {
+        ev.preventDefault();
+        var spBtn = spDia.closest('[data-sp-card]').querySelector('[data-sp-step="' + (ev.key === 'ArrowLeft' ? -1 : 1) + '"]');
+        if (spBtn && !spBtn.disabled) spBtn.click();
         return;
       }
       var ch = ev.target.closest && ev.target.closest('.fb-chord');
