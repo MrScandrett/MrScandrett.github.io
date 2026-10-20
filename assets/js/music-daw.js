@@ -59,7 +59,7 @@
   const ui = {
     pxPerBeat: 28, snap: 1, playhead: 0, selTrack: null, selClip: null,
     selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
-    tab: 'tools', rollTool: 'draw', playOct: 4, playTrack: null,
+    tab: 'tools', rollTool: 'draw', playOct: 4, playTrack: null, timeSelection: null,
   };
   const history = { undo: [], redo: [], last: '' };
   const audio = { ctx: null, mix: null, meter: null, meterData: null };
@@ -71,7 +71,8 @@
   };
   const monitorVoices = new Set();
   const live = new Map();             // pitch → live monitoring voice
-  const mic = { stream: null, source: null, node: null, sink: null, analyser: null, chunks: [], capturing: false };
+  const mic = { stream: null, source: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false, chunks: [], capturing: false };
+  const liveTake = { peaks: [], lastDraw: 0 };
 
   function defaultProject() {
     return ProjectModel.create();
@@ -115,6 +116,9 @@
     sec = Math.max(0, sec);
     const m = Math.floor(sec / 60);
     return `${m}:${(sec - m * 60).toFixed(1).padStart(4, '0')}`;
+  }
+  function cursorBeat(beat) {
+    return Math.abs(beat * 4 - Math.round(beat * 4)) < 1e-5 ? formatPos(beat) : `beat ${(beat + 1).toFixed(2)}`;
   }
 
   // ── Audio context + mixer ────────────────────────────────────────────────
@@ -438,6 +442,7 @@
     if (wasRecording) finishRecording(pos);
     silenceLive();
     transport.recording = false;
+    clearLiveTake();
     ui.playhead = Math.max(0, pos);
     transport.segs = [];
     updateTransportUi();
@@ -498,6 +503,7 @@
     transport.recording = true;
     transport.recStart = ui.playhead;
     transport.take = { track: track.id, notes: [], open: new Map() };
+    liveTake.peaks = [];
     const pre = project.countIn ? barBeats() : 0;
     if (track.kind === 'audio') {
       mic.chunks = [];
@@ -505,6 +511,7 @@
       mic.node.port.postMessage('start');
     }
     play(transport.recStart - pre);
+    renderTracks();
     if (project.loop.on) status('Loop playback is suspended during this linear take.');
     status(track.kind === 'audio'
       ? `Recording audio on “${track.name}”${pre ? ' after a one-bar count-in' : ''}… press Stop or Space to finish.`
@@ -545,6 +552,7 @@
     mic.capturing = false;
     const chunks = mic.chunks;
     mic.chunks = [];
+    clearLiveTake();
     finishingTake = false;
     if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic();
     updateTransportUi();
@@ -594,9 +602,11 @@
     }
     track.armed = on;
     if (!project.tracks.some((t) => t.armed && t.kind === 'audio')) releaseMic();
+    else connectMicMonitor();
     setAudioSession();
     renderTracks();
     renderDock();
+    updateInputUi();
     if (on) {
       status(track.kind === 'audio'
         ? `“${track.name}” is armed. Press ⏺ to record from the microphone (headphones stop the speakers bleeding in).`
@@ -633,7 +643,7 @@
     mic.node = new AudioWorkletNode(c, 'daw-recorder', { numberOfOutputs: 1, outputChannelCount: [1] });
     mic.node.port.onmessage = (e) => {
       if (e.data.stopped) { mic.stopped?.(); mic.stopped = null; }
-      else if (mic.capturing) mic.chunks.push(e.data);
+      else if (mic.capturing) { mic.chunks.push(e.data); captureLivePeak(e.data); }
     };
     mic.sink = c.createGain();
     mic.sink.gain.value = 0;
@@ -641,6 +651,7 @@
     mic.analyser.fftSize = 1024;
     mic.source.connect(mic.node);
     mic.source.connect(mic.analyser);
+    connectMicMonitor();
     mic.node.connect(mic.sink);
     mic.sink.connect(c.destination);
     refreshAudioHealth();
@@ -650,9 +661,44 @@
   function releaseMic() {
     if (mic.capturing) return;
     if (mic.stream) mic.stream.getTracks().forEach((t) => t.stop());
-    [mic.source, mic.node, mic.sink, mic.analyser].forEach((n) => { if (n) n.disconnect(); });
-    Object.assign(mic, { stream: null, source: null, node: null, sink: null, analyser: null });
+    [mic.source, mic.node, mic.sink, mic.analyser, mic.monitor].forEach((n) => { if (n) n.disconnect(); });
+    Object.assign(mic, { stream: null, source: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false });
+    const level = root.querySelector('[data-ref="input-level"]'), meter = root.querySelector('[data-ref="input-meter"]');
+    if (level) level.setAttribute('aria-valuenow', '0');
+    if (meter) meter.style.transform = 'scaleX(0)';
+    updateInputUi();
     refreshAudioHealth();
+  }
+
+  function connectMicMonitor() {
+    if (mic.source && mic.monitor) mic.source.disconnect(mic.monitor);
+    mic.monitor?.disconnect();
+    mic.monitor = null;
+    const track = armedTrack();
+    if (!mic.source || !track || track.kind !== 'audio' || !mic.monitorOn) { updateInputUi(); return; }
+    mic.monitor = audio.ctx.createGain();
+    mic.monitor.gain.value = 1;
+    mic.source.connect(mic.monitor);
+    mic.monitor.connect(audio.mix.strip(track).input);
+    updateInputUi();
+  }
+
+  function captureLivePeak(block) {
+    const channels = block.channels;
+    if (!channels?.length) return;
+    const seg = transport.segs[0];
+    if (!seg) return;
+    const startTime = seg.time + (transport.recStart - seg.beat) * spb();
+    if (block.frame / audio.ctx.sampleRate < startTime) return;
+    let peak = 0;
+    for (const channel of channels) for (let i = 0; i < channel.length; i += 4) peak = Math.max(peak, Math.abs(channel[i]));
+    const bucket = Math.floor((block.frame / audio.ctx.sampleRate - startTime) / 0.025);
+    liveTake.peaks[bucket] = Math.max(liveTake.peaks[bucket] || 0, peak);
+  }
+
+  function clearLiveTake() {
+    liveTake.peaks = [];
+    root.querySelector('.daw-live-take')?.remove();
   }
 
   // Keyboard / MIDI input from music-lab.js. Returns true when the studio is
@@ -742,6 +788,7 @@
   }
   function restore(json) {
     project = ProjectModel.parse(json);
+    ui.timeSelection = null;
     history.last = snapshot();
     if (!findClip(ui.selClip)) { ui.selClip = null; ui.selNotes.clear(); }
     if (!findTrack(ui.selTrack)) ui.selTrack = null;
@@ -1191,7 +1238,7 @@
     if (project.tracks.some((t) => t.clips.length) && !confirm('Start a new song? The current one stays in Undo until you leave the page.')) return;
     if (transport.playing) pause();
     project = defaultProject();
-    ui.selClip = null; ui.selTrack = null; ui.playhead = 0;
+    ui.selClip = null; ui.selTrack = null; ui.playhead = 0; ui.timeSelection = null;
     commit();
   }
 
@@ -1237,6 +1284,12 @@
         </label>
         <label class="daw-field daw-master"><span>Master</span><input type="range" data-ref="master" min="0" max="1.2" step="0.01" aria-label="Master volume"><span class="daw-meter" aria-hidden="true"><i data-ref="meter"></i></span></label>
       </div>
+    </div>
+    <div class="daw-input" data-ref="input" aria-label="Live input">
+      <div class="daw-input-title"><strong data-ref="input-name">Input</strong><span data-ref="input-state">Arm a track to play or record</span></div>
+      <div class="daw-input-level" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-ref="input-level"><i data-ref="input-meter"></i></div>
+      <button type="button" class="daw-btn daw-toggle" data-act="monitor" aria-pressed="false" disabled>Hear mic</button>
+      <span class="daw-input-help">Use headphones when hearing your mic.</span>
     </div>
     <details class="daw-region"><summary>Loop region + seek</summary><div class="daw-bar" aria-label="Loop and navigation">
       <label class="daw-field">Position (beat)<input type="number" data-position min="1" step="0.25" value="1"></label>
@@ -1365,6 +1418,22 @@
 
   function status(msg) { R.status.textContent = msg || ''; }
 
+  function updateInputUi() {
+    const track = armedTrack();
+    const name = $('input-name'), state = $('input-state'), button = root.querySelector('[data-act="monitor"]');
+    if (!name || !state || !button) return;
+    name.textContent = track ? track.name : 'Input';
+    state.textContent = track?.kind === 'audio' ? (mic.node ? 'Microphone ready · level is live' : 'Opening microphone…')
+      : track?.kind === 'instrument' ? 'Instrument ready · play before recording' : 'Arm a track to play or record';
+    $('input-level').hidden = track?.kind !== 'audio';
+    button.disabled = !mic.node || track?.kind !== 'audio';
+    button.hidden = track?.kind !== 'audio';
+    root.querySelector('.daw-input-help').hidden = track?.kind !== 'audio';
+    button.setAttribute('aria-pressed', String(!!mic.monitor && mic.monitorOn));
+    button.textContent = mic.monitorOn && mic.monitor ? 'Mic on' : 'Hear mic';
+    root.querySelector('[data-ref="input"]').classList.toggle('is-ready', !!track && (track.kind === 'instrument' || !!mic.node));
+  }
+
   let healthRequest = 0;
   async function refreshAudioHealth() {
     const request = ++healthRequest;
@@ -1450,6 +1519,7 @@
     });
     drawRuler();
     drawPlayhead();
+    drawTimeSelection();
   }
 
   function renderTracks() {
@@ -1458,7 +1528,7 @@
     root.classList.toggle('is-compact', compactHeads);
     const rows = project.tracks.map((t, i) => trackRowHtml(t, i)).join('');
     R.tracks.innerHTML = `
-      <div class="daw-corner"><span>${project.tracks.length} track${project.tracks.length === 1 ? '' : 's'}</span></div>
+      <div class="daw-corner"><span>${project.tracks.length} track${project.tracks.length === 1 ? '' : 's'}</span><output data-time-cursor aria-label="Timeline cursor"></output></div>
       <div class="daw-ruler" data-ruler><canvas></canvas></div>
       ${rows}
       <div class="daw-th daw-th-add">
@@ -1467,8 +1537,9 @@
       </div>
       <div class="daw-lane daw-lane-add" data-hint><span class="daw-hint">${!project.tracks.length ? 'Add a track to begin, or import audio/MIDI files'
         : COARSE ? 'Double-tap an instrument lane to add a clip · pinch to zoom · tap a clip, then drag it'
-          : 'Double-click an instrument lane to draw a clip · drag files here to import'}</span></div>
+          : 'Double-click a lane for a clip · drag the ruler or Shift-drag a lane to select time · Ctrl/⌘ for fine timing'}</span></div>
       <div class="daw-loop" hidden></div>
+      <div class="daw-time-selection" hidden></div>
       <div class="daw-playhead"></div>
     `;
     renderSelBar();
@@ -1478,6 +1549,61 @@
     R.tracks.querySelectorAll('canvas[data-clip]').forEach(drawClipCanvas);
     drawRuler();
     drawPlayhead();
+    drawTimeSelection();
+    drawLiveTake();
+  }
+
+  function drawTimeSelection() {
+    const el = R.tracks.querySelector('.daw-time-selection');
+    if (!el) return;
+    const range = ui.timeSelection;
+    el.hidden = !range || range.end <= range.start;
+    if (el.hidden) return;
+    el.style.left = `${HEAD_W + range.start * ui.pxPerBeat}px`;
+    el.style.width = `${(range.end - range.start) * ui.pxPerBeat}px`;
+  }
+
+  function drawLiveTake() {
+    const take = transport.take;
+    const track = take && findTrack(take.track);
+    const lane = track && R.tracks.querySelector(`.daw-lane[data-lane="${track.id}"]`);
+    if (!lane || !transport.recording) return;
+    let el = lane.querySelector('.daw-live-take');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'daw-live-take';
+      el.innerHTML = `<span class="daw-clip-name"></span><canvas aria-hidden="true"></canvas>`;
+      lane.append(el);
+    }
+    const beats = Math.max(0, ui.playhead - transport.recStart);
+    el.querySelector('.daw-clip-name').textContent = ui.playhead < transport.recStart ? 'Count-in' : `● Recording ${track.kind === 'audio' ? 'audio' : 'notes'}`;
+    el.style.left = `${transport.recStart * ui.pxPerBeat}px`;
+    el.style.width = `${Math.max(6, beats * ui.pxPerBeat)}px`;
+    const canvas = el.querySelector('canvas');
+    const width = Math.min(4000, Math.max(6, beats * ui.pxPerBeat));
+    const height = Math.max(24, TRACK_H - 22);
+    if (!canvas || width < 7) return;
+    const g = fitCanvas(canvas, width, height);
+    const mid = height / 2;
+    g.fillStyle = 'rgba(255,255,255,.9)';
+    if (track.kind === 'audio') {
+      const duration = Math.max(0.025, beats * spb());
+      for (let x = 0; x < width; x++) {
+        const a = Math.floor(x / width * duration / 0.025);
+        const b = Math.max(a + 1, Math.floor((x + 1) / width * duration / 0.025));
+        let peak = 0;
+        for (let i = a; i < b; i++) peak = Math.max(peak, liveTake.peaks[i] || 0);
+        const amp = Math.max(0.5, Math.min(1, peak) * (mid - 2));
+        g.fillRect(x, mid - amp, 1, amp * 2);
+      }
+    } else {
+      const notes = take.notes.concat([...take.open.values()].map(n => ({ pitch: n.key, start: n.beat, duration: ui.playhead - n.beat })));
+      for (const note of notes) {
+        const x = (note.start - transport.recStart) * ui.pxPerBeat;
+        const y = 5 + ((108 - note.pitch) % 18 + 18) % 18 / 18 * (height - 12);
+        g.fillRect(x, y, Math.max(3, note.duration * ui.pxPerBeat), 5);
+      }
+    }
   }
 
   function renderSelBar() {
@@ -1900,12 +2026,19 @@
   }
   // Knob/fader events: audio and model update live; history, save and re-render settle after you let go.
   let settleTimer = 0, settleKey = null;
+  function updateLiveInsert(track, index) {
+    const insert = track.effects?.[index];
+    const instance = audio.mix?.strips.get(track.id)?.effects.find(effect => effect.insertIndex === index);
+    if (!insert || !instance) return;
+    instance.update?.(window.AudioEffects.parameters(insert.type, insert.params));
+    instance.setWet?.(insert.wet ?? 1);
+  }
   function setConsoleValue(t, el, value) {
     const key = el.dataset.key, scope = el.dataset.scope;
     if (scope === 'strip') { t.strip = ProjectModel.normalizeStrip(t.strip); t.strip[key] = value; applyMix(); }
     else if (scope === 'mix') { t[key] = value; applyMix(); }
-    else if (scope === 'fx') { const e = (t.effects || [])[Number(el.dataset.fxI)]; if (e) e.params = { ...e.params, [key]: value }; }
-    else if (scope === 'fxwet') { const e = (t.effects || [])[Number(el.dataset.fxI)]; if (e) e.wet = value; }
+    else if (scope === 'fx') { const i = Number(el.dataset.fxI), e = (t.effects || [])[i]; if (e) { e.params = { ...e.params, [key]: value }; updateLiveInsert(t, i); } }
+    else if (scope === 'fxwet') { const i = Number(el.dataset.fxI), e = (t.effects || [])[i]; if (e) { e.wet = value; updateLiveInsert(t, i); } }
   }
   function settleConsole() {
     clearTimeout(settleTimer); settleTimer = 0;
@@ -2276,6 +2409,11 @@
       g.fillStyle = project.loop.on ? 'rgba(250, 204, 21, 0.85)' : 'rgba(148, 163, 184, 0.35)';
       g.fillRect(project.loop.start * ppb - sl, 0, (project.loop.end - project.loop.start) * ppb, 7);
     }
+    if (ui.timeSelection) {
+      const { start, end } = ui.timeSelection;
+      g.fillStyle = 'rgba(125, 211, 252, .7)';
+      g.fillRect(start * ppb - sl, 23, Math.max(1, (end - start) * ppb), 5);
+    }
     const first = Math.floor(sl / ppb), last = Math.ceil((sl + view) / ppb);
     const barEvery = ppb * bar < 40 ? (ppb * bar < 20 ? 4 : 2) : 1;
     g.font = '600 11px "IBM Plex Mono", ui-monospace, monospace';
@@ -2324,6 +2462,7 @@
     R.bpm.disabled=transport.recording||finishingTake;R.sig.disabled=transport.recording||finishingTake;
     const position=root.querySelector('[data-position]');if(document.activeElement!==position)position.value=Number((Math.max(0,ui.playhead)+1).toFixed(2));
     root.classList.toggle('is-recording', transport.recording);
+    updateInputUi();
     updateLcd();
   }
 
@@ -2392,6 +2531,7 @@
       </div></div>
       <div class="daw-bar daw-ed-bar"><div class="daw-group">
         <label class="daw-field"><span>Grid</span><select data-ed="grid" aria-label="Piano roll grid">${gridSel}</select></label>
+        <output class="daw-cursor-readout" data-roll-cursor aria-label="Piano roll cursor">Move the mouse over the grid</output>
         <button type="button" class="daw-btn" data-act="quantize" title="Snap the selected notes (or all notes) to the grid">Quantize</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="-12" title="Down an octave">−8va</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="-1" title="Down a semitone">−1</button>
@@ -2403,7 +2543,7 @@
       </div></div>
       <p class="daw-note">${track.instrument === 'drums' ? 'Each row is one drum. ' : ''}${COARSE
         ? 'Draw: tap to add a note, drag to make it longer · drag a note to move it, its right end to resize · double-tap a note to delete it · two fingers scroll, pinch to zoom.'
-        : 'Click to add a note (drag to make it longer) · drag a note to move it, its right edge to resize · right-click or double-click to delete · Shift-click or the Select tool picks several · arrow keys nudge.'}</p>
+        : 'Hover to see the note and beat · click to add, drag to lengthen · Ctrl/⌘ while dragging for fine timing · drag a note to move it, its right edge to resize · right-click to delete · Shift-click or Select picks several.'}</p>
       <div class="daw-roll" tabindex="0" aria-label="Piano roll for ${esc(clip.name || track.name)}: ${clip.notes.length} notes">
         <div class="daw-roll-spacer"><canvas></canvas></div>
       </div>`;
@@ -2476,6 +2616,21 @@
       g.fillStyle = 'rgba(0,0,0,0.5)';
       g.fillRect(x + nw - 3, y + 3, 2, ROW_H - 6);
     });
+    if (roll.hover && !roll.marquee) {
+      const hover = roll.hover;
+      const x = KEYS_W + hover.beat * px - sx;
+      const y = hover.row * ROW_H - sy;
+      if (x >= KEYS_W && x <= w) {
+        g.fillStyle = 'rgba(125, 211, 252, .85)';
+        g.fillRect(Math.round(x), 0, 1, h);
+        if (ui.rollTool === 'draw' && hover.hit < 0) {
+          g.fillStyle = 'rgba(125, 211, 252, .35)';
+          g.fillRect(x, y + 1, Math.max(4, ui.noteLen * px - 1), ROW_H - 2);
+          g.strokeStyle = '#7dd3fc';
+          g.strokeRect(x + .5, y + 1.5, Math.max(4, ui.noteLen * px - 1), ROW_H - 3);
+        }
+      }
+    }
     // Selection box (Select tool)
     if (roll.marquee) {
       const m = roll.marquee;
@@ -2553,6 +2708,26 @@
     const pts = new Map();
     scroll.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    function showRollCursor(e) {
+      if (!roll || e.pointerType !== 'mouse') return;
+      const h = rollHit(e);
+      const beat = e.ctrlKey || e.metaKey ? Math.max(0, h.beat) : floorTo(Math.max(0, h.beat), ui.rollGrid);
+      roll.hover = h.onKeys ? null : { beat, row: h.row, hit: h.hit };
+      const readout = R.editor.querySelector('[data-roll-cursor]');
+      if (readout) readout.textContent = h.onKeys ? `${noteLabel(h.pitch)} · preview` : `${noteLabel(h.pitch)} · beat ${(beat + 1).toFixed(2)}${e.ctrlKey || e.metaKey ? ' · fine' : ''}`;
+      scroll.classList.toggle('is-note-resize', h.hit >= 0 && h.edge);
+      scroll.classList.toggle('is-note-move', h.hit >= 0 && !h.edge && ui.rollTool !== 'erase');
+      drawRoll();
+    }
+    scroll.addEventListener('pointerleave', e => {
+      if (e.pointerType !== 'mouse' || !roll || drag) return;
+      roll.hover = null;
+      scroll.classList.remove('is-note-resize', 'is-note-move');
+      const readout = R.editor.querySelector('[data-roll-cursor]');
+      if (readout) readout.textContent = 'Move the mouse over the grid';
+      drawRoll();
+    });
+
     function cancelDrag() {
       if (!drag || !roll) { drag = null; return; }
       roll.clip.notes = drag.orig;
@@ -2593,6 +2768,7 @@
       if (pts.size === 2) { cancelDrag(); startPinch(); drawRoll(); return; }
       if (pts.size > 2) return;
       const h = rollHit(e);
+      showRollCursor(e);
       const { clip, track } = roll;
       const touch = e.pointerType !== 'mouse';
       scroll.focus({ preventScroll: true });
@@ -2631,18 +2807,20 @@
         roll.marquee = { b0: h.beat, b1: h.beat, r0: h.row, r1: h.row };
       } else {
         lastTap = null;
-        const start = floorTo(Math.max(0, h.beat), ui.rollGrid);
+        const start = e.ctrlKey || e.metaKey ? Math.max(0, h.beat) : floorTo(Math.max(0, h.beat), ui.rollGrid);
         clip.notes.push({ pitch: h.pitch, start, duration: ui.noteLen, velocity: 0.8 });
         ui.selNotes.clear();
         ui.selNotes.add(clip.notes.length - 1);
         drag = { ...base, mode: 'draw', beat: start, note: clip.notes.length - 1, moved: true };
         previewNote(track, h.pitch, 0.8);
       }
+      roll.hover = null;
       drawRoll();
     });
 
     scroll.addEventListener('pointermove', (e) => {
       if (!roll) return;
+      if (!drag && !pinch) showRollCursor(e);
       const p = pts.get(e.pointerId);
       if (p) { p.x = e.clientX; p.y = e.clientY; }
       if (pinch) { if (pts.size >= 2) movePinch(); return; }
@@ -2653,15 +2831,16 @@
       if (drag.mode === 'draw') {
         if (Math.abs(e.clientX - drag.x0) < 5) return;
         const n = clip.notes[drag.note];
-        n.duration = Math.max(grid, snapTo(h.beat - n.start, grid) || grid);
+        n.duration = e.ctrlKey || e.metaKey ? Math.max(0.05, h.beat - n.start) : Math.max(grid, snapTo(h.beat - n.start, grid) || grid);
         ui.noteLen = n.duration;
       } else if (drag.mode === 'resize') {
-        const dBeat = snapTo(h.beat - drag.beat, grid);
-        ui.selNotes.forEach((i) => { clip.notes[i].duration = Math.max(grid, drag.orig[i].duration + dBeat); });
+        const fine = e.ctrlKey || e.metaKey;
+        const dBeat = fine ? h.beat - drag.beat : snapTo(h.beat - drag.beat, grid);
+        ui.selNotes.forEach((i) => { clip.notes[i].duration = Math.max(fine ? 0.05 : grid, drag.orig[i].duration + dBeat); });
         ui.noteLen = clip.notes[drag.note].duration;
         drag.moved = true;
       } else {
-        const dBeat = snapTo(h.beat - drag.beat, grid);
+        const dBeat = e.ctrlKey || e.metaKey ? h.beat - drag.beat : snapTo(h.beat - drag.beat, grid);
         const dRow = roll.rows.indexOf(h.pitch) - roll.rows.indexOf(drag.pitch);
         if (dBeat || dRow) drag.moved = true;
         let pitchChanged = false;
@@ -2791,10 +2970,25 @@
       return;
     }
     if (lane && e.button === 0) {
+      if (!touch && e.shiftKey) { startRulerDrag(e); return; }
       if (touch) { laneTap = { id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp, lane: lane.dataset.lane }; return; }
       laneClick(lane, e.clientX);
     }
   });
+
+  function timelineCursor(beat, range = ui.timeSelection) {
+    const output = R.tracks.querySelector('[data-time-cursor]');
+    if (!output) return;
+    output.textContent = range && range.end > range.start
+      ? `${cursorBeat(range.start)}–${cursorBeat(range.end)}`
+      : Number.isFinite(beat) ? cursorBeat(Math.max(0, beat)) : '';
+  }
+
+  R.tracks.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse' || clipDrag || e.buttons) return;
+    if (e.target.closest('[data-ruler], .daw-lane[data-lane]')) timelineCursor(beatFromClientX(e.clientX), null);
+  });
+  R.tracks.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') timelineCursor(NaN); });
 
   function laneClick(lane, clientX) {
     ui.selClip = null;
@@ -2960,28 +3154,35 @@
 
   function startRulerDrag(e) {
     if (transport.recording) { status('Finish the take before seeking or changing the loop.'); return; }
-    const priorLoop = { ...project.loop };
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const priorSelection = ui.timeSelection;
     const x0 = e.clientX, b0 = Math.max(0, beatFromClientX(e.clientX));
     let dragging = false;
-    const grid = snapGrid() || 0.25;
+    const snapped = (beat, ev) => ev.ctrlKey || ev.metaKey ? Math.max(0, beat) : snapTo(Math.max(0, beat), snapGrid());
     const move = (ev) => {
       if (!dragging && Math.abs(ev.clientX - x0) < 5) return;
       dragging = true;
       const b1 = Math.max(0, beatFromClientX(ev.clientX));
-      project.loop = { on: true, start: snapTo(Math.min(b0, b1), grid), end: snapTo(Math.max(b0, b1), grid) };
-      drawRuler(); drawPlayhead(); updateTransportUi();
+      ui.timeSelection = { start: snapped(Math.min(b0, b1), ev), end: snapped(Math.max(b0, b1), ev) };
+      timelineCursor(NaN);
+      drawTimeSelection(); drawRuler();
     };
     const up = (event) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
-      if (event?.type === 'pointercancel') { project.loop = priorLoop; renderTracks(); return; }
-      if (dragging) {
-        if (project.loop.end - project.loop.start < grid) project.loop.on = false;
+      if (event?.type === 'pointercancel') { ui.timeSelection = priorSelection; drawTimeSelection(); drawRuler(); return; }
+      if (dragging && ui.timeSelection.end > ui.timeSelection.start) {
+        project.loop = { on: true, ...ui.timeSelection };
         commit();
         restartIfPlaying();
+        timelineCursor(NaN);
+        status(`Selected ${cursorBeat(ui.timeSelection.start)} to ${cursorBeat(ui.timeSelection.end)}. Loop playback uses this range.`);
       } else {
-        setPlayhead(snapTo(b0, snapGrid()));
+        ui.timeSelection = priorSelection;
+        setPlayhead(snapped(b0, event || e));
+        drawTimeSelection(); drawRuler(); timelineCursor(ui.playhead);
       }
     };
     window.addEventListener('pointermove', move);
@@ -3070,10 +3271,14 @@
       case 'play': togglePlay(); break;
       case 'stop': stop(); break;
       case 'record': record(); break;
+      case 'monitor':
+        if (mic.node) { mic.monitorOn = !mic.monitorOn; connectMicMonitor(); }
+        break;
       case 'studio': toggleStudio(); break;
       case 'roll-tool':
         ui.rollTool = btn.dataset.tool;
         root.querySelectorAll('[data-act="roll-tool"]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === ui.rollTool)));
+        drawRoll();
         break;
       case 'select-all':
         if (roll) { ui.selNotes = new Set(roll.clip.notes.map((_, i) => i)); syncVelocity(roll.clip); drawRoll(); }
@@ -3373,6 +3578,7 @@
       updateLcd();
       if (playheadEl) {
         drawPlayhead();
+        if (transport.recording && performance.now() - liveTake.lastDraw > 80) { drawLiveTake(); liveTake.lastDraw = performance.now(); }
         if (ui.follow && beat >= 0) {
           const x = beat * ui.pxPerBeat, view = R.scroll.clientWidth - HEAD_W;
           if (x > R.scroll.scrollLeft + view - 40 || x < R.scroll.scrollLeft) R.scroll.scrollLeft = Math.max(0, x - 40);
@@ -3406,12 +3612,16 @@
     if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
     if (mic.analyser) {
       const el = root.querySelector('[data-ref="mic"]');
-      if (el) {
+      const inputMeter = $('input-meter');
+      if (el || inputMeter) {
         const d = new Float32Array(mic.analyser.fftSize);
         mic.analyser.getFloatTimeDomainData(d);
         let peak = 0;
         for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
-        el.style.transform = `scaleX(${Math.min(1, peak * 1.5)})`;
+        const level = Math.min(1, peak * 1.5);
+        if (el) el.style.transform = `scaleX(${level})`;
+        if (inputMeter) inputMeter.style.transform = `scaleX(${level})`;
+        $('input-level')?.setAttribute('aria-valuenow', String(Math.round(level * 100)));
       }
     }
     requestAnimationFrame(frame);
