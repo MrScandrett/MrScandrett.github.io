@@ -1247,7 +1247,9 @@
     // Engrave at a fixed width so the paper edition does not depend on the
     // learner's screen size or score zoom setting.
     var layout;
-    try { layout = engrave(model, 1085); }
+    // Same large-print engraving the fake book uses: bigger staff, noteheads and
+    // letters, fewer bars per line, so a handout reads from a desk or a music stand.
+    try { layout = engrave(model, 1085, true); }
     finally { score.pitchLettersOnly = originalPitchLettersOnly; }
     if (!layout.systems.length) return;
     var ns = 'http://www.w3.org/2000/svg';
