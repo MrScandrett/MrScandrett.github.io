@@ -105,6 +105,7 @@
     base.loop = { ...base.loop, ...object(source.loop), on: !!source.loop?.on };
     base.audioSettings = { ...base.audioSettings, ...object(source.audioSettings) };
     base.audioSettings.recordingTrimMs = clamp(base.audioSettings.recordingTrimMs, -250, 250, 0);
+    if (!['balanced', 'low'].includes(base.audioSettings.latencyMode)) base.audioSettings.latencyMode = 'balanced';
     if (!['mono1', 'mono2', 'stereo'].includes(base.audioSettings.inputChannel)) base.audioSettings.inputChannel = 'mono1';
     base.pluginInstances = Array.isArray(source.pluginInstances) ? clone(source.pluginInstances) : [];
     base.diagnosticsVersion = Math.max(1, finite(source.diagnosticsVersion, 1));

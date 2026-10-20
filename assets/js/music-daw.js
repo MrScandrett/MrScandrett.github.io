@@ -173,8 +173,22 @@
     const glue = c.createDynamicsCompressor();
     glue.threshold.value = -8; glue.knee.value = 8; glue.ratio.value = 4;
     glue.attack.value = 0.004; glue.release.value = 0.2;
-    master.connect(glue);
-    glue.connect(dest);
+    // Low-latency mode swaps the glue compressor (6 ms of fixed look-ahead) for a soft clipper
+    // with no delay, so a keyboard feels tighter. Peaks are still caught, just more bluntly.
+    const clip = c.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(((i / (curve.length - 1)) * 2 - 1) * 1.4) / Math.tanh(1.4);
+    clip.curve = curve;
+    let low = null;
+    function setLowLatency(on) {
+      on = !!on;
+      if (on === low) return;
+      low = on;
+      master.disconnect(); glue.disconnect(); clip.disconnect();
+      if (on) { master.connect(clip); clip.connect(dest); }
+      else { master.connect(glue); glue.connect(dest); }
+    }
+    setLowLatency(false);
     const strips = new Map();
     function strip(track) {
       let s = strips.get(track.id);
@@ -212,7 +226,7 @@
       }
       return s;
     }
-    return { master, strip, strips };
+    return { master, strip, strips, setLowLatency };
   }
 
   // Push a channel's strip settings (trim, ø, low-cut, EQ) onto its audio nodes.
@@ -231,6 +245,7 @@
     if (!audio.mix) return;
     const now = audio.ctx.currentTime;
     audio.mix.master.gain.setTargetAtTime(project.masterVolume, now, 0.02);
+    audio.mix.setLowLatency(project.audioSettings?.latencyMode === 'low');
     project.tracks.forEach((t) => {
       const s = audio.mix.strip(t);
       s.gain.gain.setTargetAtTime(audible(t) ? t.volume : 0, now, 0.02);
@@ -753,7 +768,7 @@
     }
     const take = transport.take;
     if (transport.recording && take && take.track === track.id) {
-      let beat = beatAt(AudioRuntime.eventContextTime(c, eventTimeMs, performance.now()));
+      let beat = heardBeat(c, eventTimeMs);
       // A note a touch early for the downbeat still belongs to the take.
       if (beat < transport.recStart && beat > transport.recStart - 0.5) beat = transport.recStart;
       if (beat >= transport.recStart) {
@@ -762,6 +777,14 @@
       }
     }
     return true;
+  }
+
+  // The song position the player was hearing when the key went down. Audio reaches the speakers
+  // base + output latency after the context clock, so a key hit "on the beat" is that much
+  // behind the clock; without this correction recorded MIDI lands late.
+  function heardBeat(c, eventTimeMs) {
+    const trim = (Number(project.audioSettings?.recordingTrimMs) || 0) / 1000;
+    return beatAt(AudioRuntime.eventContextTime(c, eventTimeMs, performance.now()) - AudioRuntime.latencySeconds(c) - trim);
   }
 
   function closeTakeNote(pitch, beat) {
@@ -774,7 +797,7 @@
     const voice = live.get(pitch);
     if (voice && audio.ctx) { voice.release(audio.ctx.currentTime); live.delete(pitch); }
     const take = transport.take;
-    if (transport.recording && take && take.open.has(pitch)) closeTakeNote(pitch, beatAt(AudioRuntime.eventContextTime(audio.ctx, eventTimeMs, performance.now())));
+    if (transport.recording && take && take.open.has(pitch)) closeTakeNote(pitch, heardBeat(audio.ctx, eventTimeMs));
   }
 
   function drumPad(name) {
@@ -1460,6 +1483,8 @@
       <dl class="daw-health-facts" data-health-facts></dl>
       <div class="daw-record-timing"><label class="daw-field">Take timing <input type="number" data-recording-trim min="-250" max="250" step="1" value="0" aria-label="Recording timing adjustment in milliseconds"> ms</label>
         <p class="daw-note">If each new microphone take lands late, enter a positive value to move future takes earlier. Use a negative value to move them later. Start with a short click or clap test; this does not move existing clips.</p></div>
+      <div class="daw-record-timing"><label class="daw-field">Keyboard response <select data-latency-mode aria-label="Keyboard response mode"><option value="balanced">Balanced (smoother master)</option><option value="low">Low latency (tighter keyboard)</option></select></label>
+        <p class="daw-note">Low latency removes the master compressor's built-in 6 ms delay and uses a gentle clipper instead. Recorded MIDI notes are always shifted by the device's reported output delay so they land where you heard the beat.</p></div>
       <p class="daw-note">Music Lab checks capabilities on this device only. It does not upload recordings, device names, or diagnostics.</p>
     </section>`;
   commandStrip.append(audioHealth);
@@ -1560,6 +1585,12 @@
     commit();
     status(trim ? `Future microphone takes will move ${Math.abs(trim)} ms ${trim > 0 ? 'earlier' : 'later'}.` : 'Future microphone takes will use automatic timing.');
   });
+  audioHealth.querySelector('[data-latency-mode]').addEventListener('change', event => {
+    project.audioSettings ||= {};
+    project.audioSettings.latencyMode = event.target.value === 'low' ? 'low' : 'balanced';
+    commit();
+    status(project.audioSettings.latencyMode === 'low' ? 'Low-latency keyboard response is on.' : 'Balanced keyboard response is on.');
+  });
   navigator.mediaDevices?.addEventListener?.('devicechange', () => {
     audioHealthState.deviceChanged = true;
     diagnostics?.record('audio-device-changed', 'notice', AudioRuntime.facts(audio.ctx));
@@ -1583,6 +1614,7 @@
     R.master.value = project.masterVolume;
     if (document.activeElement !== R.name) R.name.value = project.name;
     R.snap.value = String(ui.snap);
+    audioHealth.querySelector('[data-latency-mode]').value = project.audioSettings?.latencyMode === 'low' ? 'low' : 'balanced';
     if (document.activeElement !== audioHealth.querySelector('[data-recording-trim]')) audioHealth.querySelector('[data-recording-trim]').value = project.audioSettings?.recordingTrimMs || 0;
     renderTracks();
     renderEditor();
