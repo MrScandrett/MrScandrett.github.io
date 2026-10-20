@@ -19,6 +19,8 @@
 
   const IO = window.DawIO;
   const ProjectModel = window.MusicDawProject;
+  const Stretch = window.MusicDawStretch;
+  const Loudness = window.MusicDawLoudness;
   const Core = window.MusicDawCore;
   const AudioRuntime = window.MusicDawAudio;
   const RenderEngine = window.MusicDawRender;
@@ -58,7 +60,7 @@
   const buffers = new Map();          // id → { buffer: AudioBuffer, name, peaks }
   const ui = {
     pxPerBeat: 28, snap: 1, playhead: 0, selTrack: null, selClip: null,
-    selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
+    auto: new Map(), chord: 'single', arp: 'up', qStrength: 100, swing: 0, selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
     tab: 'tools', rollTool: 'draw', playOct: 4, playTrack: null, timeSelection: null,
   };
   const history = { undo: [], redo: [], last: '' };
@@ -88,6 +90,30 @@
   const clickStep = () => 4 / project.sig[1];
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const snapTo = (beat, grid) => (grid > 0 ? Math.round(beat / grid) * grid : beat);
+
+  // ── Key, scale and chord helpers (piano roll) ──
+  const SCALES = { chromatic: [0,1,2,3,4,5,6,7,8,9,10,11], major: [0,2,4,5,7,9,11], minor: [0,2,3,5,7,8,10], dorian: [0,2,3,5,7,9,10], mixolydian: [0,2,4,5,7,9,10], 'major pentatonic': [0,2,4,7,9], 'minor pentatonic': [0,3,5,7,10], blues: [0,3,5,6,7,10], 'harmonic minor': [0,2,3,5,7,8,11] };
+  const CHORDS = { single: 'Single note', triad: 'Triad (in key)', seventh: 'Seventh (in key)', power: 'Power (1–5–8)', octave: 'Octave' };
+  function scaleSet() { const k = project.key || {}; return new Set((SCALES[k.scale] || SCALES.chromatic).map((x) => (x + (k.root || 0)) % 12)); }
+  function inScale(pitch) { return scaleSet().has(((pitch % 12) + 12) % 12); }
+  // Nearest in-scale pitch (ties go down), only while "snap to scale" is on.
+  function fitPitch(pitch, force) {
+    if (!force && !project.key?.snap) return pitch;
+    for (let d = 0; d < 12; d++) { if (inScale(pitch - d)) return pitch - d; if (inScale(pitch + d)) return pitch + d; }
+    return pitch;
+  }
+  // Stacks scale steps above the root (diatonic thirds in the current key).
+  function chordPitches(root, kind) {
+    if (kind === 'power') return [root, root + 7, root + 12];
+    if (kind === 'octave') return [root, root + 12];
+    if (kind !== 'triad' && kind !== 'seventh') return [root];
+    const set = scaleSet(), useScale = (project.key?.scale || 'chromatic') !== 'chromatic';
+    if (!useScale) return kind === 'triad' ? [root, root + 4, root + 7] : [root, root + 4, root + 7, root + 10];
+    const out = [root];
+    let p = root;
+    for (let n = 1; n < (kind === 'triad' ? 3 : 4); n++) { let skipped = 0; while (skipped < 2) { p++; if (set.has(((p % 12) + 12) % 12)) skipped++; } out.push(p); }
+    return out;
+  }
   const floorTo = (beat, grid) => (grid > 0 ? Math.floor(beat / grid + 1e-9) * grid : beat);
   const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   const noteLabel = (p) => NOTE_NAMES[p % 12] + (Math.floor(p / 12) - 1);
@@ -131,6 +157,12 @@
       audio.meter.fftSize = 1024;
       audio.meterData = new Float32Array(audio.meter.fftSize);
       audio.mix.master.connect(audio.meter);
+      // Analysis taps for the Mix tab: spectrum (mono sum) and left/right for stereo correlation.
+      audio.spec = audio.ctx.createAnalyser(); audio.spec.fftSize = 4096; audio.spec.smoothingTimeConstant = 0.8;
+      audio.mix.master.connect(audio.spec);
+      const split = audio.ctx.createChannelSplitter(2);
+      audio.anL = audio.ctx.createAnalyser(); audio.anR = audio.ctx.createAnalyser(); audio.anL.fftSize = audio.anR.fftSize = 2048;
+      audio.mix.master.connect(split); split.connect(audio.anL, 0); split.connect(audio.anR, 1);
       watchInterruptions(audio.ctx);
       diagnostics?.record('audio-context-created', 'notice', AudioRuntime.facts(audio.ctx));
       queueMicrotask(() => refreshAudioHealth());
@@ -189,6 +221,24 @@
       else { master.connect(glue); glue.connect(dest); }
     }
     setLowLatency(false);
+    // Return buses: input → one effect (fully wet) → return fader → master.
+    const returns = [0, 1].map(() => ({ input: c.createGain(), out: c.createGain(), fx: null, type: null }));
+    returns.forEach(r => r.out.connect(master));
+    // A return's effect is only built once some track sends to it (a reverb costs CPU even when silent).
+    function syncReturns(list, tracks) {
+      list.forEach((ret, i) => {
+        const r = returns[i], def = window.AudioEffects.registry[ret.type];
+        const used = (tracks || []).some((t) => (t.sends?.[i] || 0) > 0);
+        const sig = used ? ret.type + JSON.stringify(ret.params || {}) : null;
+        if (!used && r.fx) { r.input.disconnect(); r.fx.dispose(); r.fx = null; r.type = null; }
+        if (def && sig && sig !== r.type) {
+          r.input.disconnect(); r.fx?.dispose();
+          r.fx = def.create(c, { ...window.AudioEffects.parameters(ret.type, ret.params), wet: 1 });
+          r.input.connect(r.fx.input); r.fx.output.connect(r.out); r.type = sig;
+        }
+        r.out.gain.value = ret.volume;
+      });
+    }
     const strips = new Map();
     function strip(track) {
       let s = strips.get(track.id);
@@ -204,8 +254,11 @@
         mid.type = 'peaking'; mid.Q.value = 1;
         hi.type = 'highshelf'; hi.frequency.value = 8000;
         input.connect(phase); phase.connect(hpf); hpf.connect(lo); lo.connect(mid); mid.connect(hi); hi.connect(inserts);
-        gain.connect(pan); pan.connect(master);
-        s = { input, gain, pan, phase, hpf, lo, mid, hi, inserts, preMeter, effects: [], signature: null, meter: null };
+        const muteGain = c.createGain();
+        gain.connect(muteGain); muteGain.connect(pan); pan.connect(master);
+        // Post-fader, post-pan sends to the two return buses.
+        const sends = returns.map(r => { const g = c.createGain(); g.gain.value = 0; pan.connect(g); g.connect(r.input); return g; });
+        s = { input, gain, muteGain, pan, phase, hpf, lo, mid, hi, inserts, preMeter, sends, effects: [], signature: null, meter: null };
         if (!(c instanceof OfflineAudioContext)) {
           preMeter.fftSize = 512; hi.connect(preMeter);
           s.meter = c.createAnalyser();
@@ -226,7 +279,7 @@
       }
       return s;
     }
-    return { master, strip, strips, setLowLatency };
+    return { master, strip, strips, setLowLatency, returns, syncReturns };
   }
 
   // Push a channel's strip settings (trim, ø, low-cut, EQ) onto its audio nodes.
@@ -246,10 +299,15 @@
     const now = audio.ctx.currentTime;
     audio.mix.master.gain.setTargetAtTime(project.masterVolume, now, 0.02);
     audio.mix.setLowLatency(project.audioSettings?.latencyMode === 'low');
+    audio.mix.syncReturns(project.returns || [], project.tracks);
     project.tracks.forEach((t) => {
       const s = audio.mix.strip(t);
-      s.gain.gain.setTargetAtTime(audible(t) ? t.volume : 0, now, 0.02);
-      s.pan.pan.setTargetAtTime(t.pan, now, 0.02);
+      s.sends.forEach((g, i) => g.gain.setTargetAtTime(t.sends?.[i] || 0, now, 0.02));
+      s.muteGain.gain.setTargetAtTime(audible(t) ? 1 : 0, now, 0.02);
+      // An automated parameter follows its lane: leave it alone while the transport plays it.
+      const auto = t.automation || {};
+      if (!(transport.playing && auto.volume?.length)) s.gain.gain.setTargetAtTime(ProjectModel.automationAt(auto.volume, ui.playhead, t.volume), now, 0.02);
+      if (!(transport.playing && auto.pan?.length)) s.pan.pan.setTargetAtTime(ProjectModel.automationAt(auto.pan, ui.playhead, t.pan), now, 0.02);
       applyStrip(s, t, now, false);
     });
   }
@@ -285,7 +343,7 @@
     tracks.forEach((track) => {
       if (track.kind !== 'instrument' || !hasInstrumentExperience(track)) return;
       track.clips.forEach((clip) => {
-        if (clip.start >= b || clip.start + clip.length <= a) return;
+        if (clip.muted || clip.start >= b || clip.start + clip.length <= a) return;
         clip.notes.forEach((n) => {
           if (n.start < 0 || n.start >= clip.length) return;
           const nb = clip.start + n.start;
@@ -302,12 +360,30 @@
     });
   }
 
+  // Writes a segment's automation onto the strip's AudioParams as linear ramps.
+  function scheduleAutomation(env, a, b, tracks) {
+    if (!env.stripFor) return;
+    tracks.forEach((track) => {
+      const s = env.stripFor(track);
+      [['volume', s.gain.gain], ['pan', s.pan.pan]].forEach(([key, param]) => {
+        const pts = track.automation?.[key];
+        if (!pts?.length) return;
+        const t0 = Math.max(env.c.currentTime, env.timeOf(a));
+        if (!env.offline) param.cancelScheduledValues(t0);
+        param.setValueAtTime(ProjectModel.automationAt(pts, a, 0), t0);
+        pts.forEach((p) => { if (p.b > a && p.b < b) param.linearRampToValueAtTime(p.v, env.timeOf(p.b)); });
+        if (Number.isFinite(b)) param.linearRampToValueAtTime(ProjectModel.automationAt(pts, b, 0), env.timeOf(b));
+      });
+    });
+  }
+
   function scheduleAudio(env, segBeat, segEnd, tracks) {
+    scheduleAutomation(env, segBeat, segEnd, tracks);
     tracks.forEach((track) => {
       if (track.kind !== 'audio') return;
       track.clips.forEach((clip) => {
         const entry = buffers.get(clip.bufferId);
-        if (!entry) return;
+        if (!entry || clip.muted) return;
         const end = Math.min(clipEnd(clip), segEnd);
         const from = Math.max(clip.start, segBeat);
         if (end <= from) return;
@@ -320,10 +396,14 @@
         const src = env.c.createBufferSource(), g = env.c.createGain();
         src.buffer = entry.buffer;
         const level = clip.gain === undefined ? 1 : clip.gain;
-        const fade = Math.min(0.006, dur / 4);
+        // Clip envelope in clip time: fade in, hold, fade out (a 6 ms minimum stops clicks at cuts).
+        const len = clip.duration, pos0 = into - clip.offset, pos1 = pos0 + dur, click = Math.min(0.006, dur / 4);
+        const fi = Math.max(click, Math.min(len / 2, Number(clip.fadeIn) || 0)), fo = Math.max(click, Math.min(len / 2, Number(clip.fadeOut) || 0));
+        const env = (x) => level * Math.max(0, Math.min(1, x / fi, (len - x) / fo));
         g.gain.setValueAtTime(0, when);
-        g.gain.linearRampToValueAtTime(level, when + fade);
-        g.gain.setValueAtTime(level, when + dur - fade);
+        g.gain.linearRampToValueAtTime(env(pos0 + click), when + click);
+        [fi, len - fo].forEach((x) => { if (x > pos0 + click && x < pos1 - click) g.gain.linearRampToValueAtTime(env(x), when + (x - pos0)); });
+        g.gain.linearRampToValueAtTime(env(pos1 - click), when + dur - click);
         g.gain.linearRampToValueAtTime(0, when + dur);
         src.connect(g); g.connect(env.destFor(track));
         src.start(when, into, dur);
@@ -363,6 +443,7 @@
       c: audio.ctx,
       timeOf: (beat) => seg.time + (beat - seg.beat) * spb(),
       destFor: (track) => gate(track ? track.id : 'click'),
+      stripFor: (track) => audio.mix.strip(track),
       segEnd: seg.end,
       onVoice: (v) => transport.voices.add(v),
       onSource: (s) => transport.sources.add(s),
@@ -442,6 +523,7 @@
       }
       break;
     }
+    if (transport.recording && beatAt(c.currentTime) >= transport.punchEnd) { pause(transport.punchEnd); status('Punched out at the loop end. Undo removes the take; the clip editor switches takes.'); return; }
     // Stop at the end of the song (unless playing past it on purpose, e.g. with the click).
     const end = songEnd();
     if (!transport.recording && !Number.isFinite(transport.segs[transport.segs.length - 1].end)
@@ -452,6 +534,8 @@
     const c = audio.ctx;
     if (!c) return;
     const now = c.currentTime;
+    // Drop pending automation ramps; applyMix() then parks each param at the playhead's value.
+    if (audio.mix) audio.mix.strips.forEach((s) => { [s.gain.gain, s.pan.pan].forEach((p) => { const v = p.value; p.cancelScheduledValues(now); p.setValueAtTime(v, now); }); });
     stopTicker();
     transport.voices.forEach((v) => v.kill(now));
     transport.voices.clear();
@@ -479,6 +563,7 @@
     clearLiveTake();
     ui.playhead = Math.max(0, pos);
     transport.segs = [];
+    applyMix();
     updateTransportUi();
     drawPlayhead();
   }
@@ -513,7 +598,7 @@
   let armRequest = 0, recordPending = false, finishingTake = false;
   function silenceLive() {
     if (audio.ctx) monitorVoices.forEach(v => v.kill(audio.ctx.currentTime));
-    monitorVoices.clear(); live.clear();
+    monitorVoices.clear(); live.clear(); sustained.clear(); controller.sustain = false;
     fingers.forEach((_, id) => fingerOff(id));
   }
   async function record() {
@@ -535,10 +620,13 @@
     stopExperiences();
     silenceLive();
     transport.recording = true;
-    transport.recStart = ui.playhead;
+    // Punch: record only between the loop markers, with the count-in bar as pre-roll.
+    const L = project.loop, punching = project.punch && L.end > L.start;
+    transport.recStart = punching ? L.start : ui.playhead;
+    transport.punchEnd = punching ? L.end : Infinity;
     transport.take = { track: track.id, notes: [], open: new Map() };
     liveTake.peaks = [];
-    const pre = project.countIn ? barBeats() : 0;
+    const pre = project.countIn || punching ? barBeats() : 0;
     if (track.kind === 'audio') {
       mic.chunks = [];
       mic.capturing = true;
@@ -546,7 +634,7 @@
     }
     play(transport.recStart - pre);
     renderTracks();
-    if (project.loop.on) status('Loop playback is suspended during this linear take.');
+    if (project.loop.on && !punching) status('Loop playback is suspended during this linear take.');
     status(track.kind === 'audio'
       ? `Recording audio on “${track.name}”${pre ? ' after a one-bar count-in' : ''}… press Stop or Space to finish.`
       : `Recording on “${track.name}”${pre ? ' after a one-bar count-in' : ''}. Play the keyboard, QWERTY keys or a MIDI device.`);
@@ -570,10 +658,27 @@
       length: Math.max(barBeats(), Math.ceil((last - start) / barBeats() - 1e-9) * barBeats()),
       notes: take.notes.map((n) => ({ ...n, start: Math.max(0, n.start - start) })),
     };
-    track.clips.push(clip);
+    newTake(track, clip);
     select(track.id, clip.id);
     commit();
     status(`Recorded ${clip.notes.length} note${clip.notes.length === 1 ? '' : 's'}. Tidy the timing with Quantize in the editor below.`);
+  }
+
+  // Takes (comping): a new take plays over the region and older overlapping takes go quiet
+  // but stay, so the clip editor can switch between them.
+  const overlaps = (a, b) => a.type === b.type && a.start < clipEnd(b) - 1e-6 && b.start < clipEnd(a) - 1e-6;
+  function newTake(track, clip) {
+    const older = track.clips.filter((c) => overlaps(c, clip) && !c.muted);
+    older.forEach((c) => { c.muted = true; });
+    const n = track.clips.filter((c) => overlaps(c, clip)).length + 1;
+    if (n > 1) clip.name = `${track.name} take ${n}`;
+    track.clips.push(clip);
+  }
+  function takeGroup(track, clip) {
+    return track.clips.filter((c) => c === clip || overlaps(c, clip)).sort((a, b) => track.clips.indexOf(a) - track.clips.indexOf(b));
+  }
+  function activateTake(track, clip) {
+    takeGroup(track, clip).forEach((c) => { c.muted = c !== clip; });
   }
 
   async function finishAudioTake(track, stopBeat) {
@@ -611,7 +716,7 @@
     if (duration < 0.1) { status('That take was too short to keep.'); return; }
     const id = addBuffer(buffer, `${track.name} take`, null, { sourceSampleRate: sr, sourceKind: 'recording' });
     const clip = { id: uid(), type: 'audio', name: `${track.name} take`, bufferId: id, start, offset, duration, gain: 1 };
-    track.clips.push(clip);
+    newTake(track, clip);
     select(track.id, clip.id);
     commit();
     status(`Recorded ${duration.toFixed(1)} s of audio on “${track.name}”.${droppedFrames ? ' Check audio: some input frames were missed.' : ''}`);
@@ -763,8 +868,11 @@
       drumHit(c, audio.mix.strip(track).input, key, vel, c.currentTime, track);
     } else {
       if (live.has(pitch)) live.get(pitch).release(c.currentTime);
+      sustained.delete(pitch);
       const voice=startVoice(c, audio.mix.strip(track).input, track.instrument, pitch, vel, c.currentTime, track);
       monitorVoices.add(voice);live.set(pitch,voice);
+      if (controller.bend) voice.glide(pitch + controller.bend * BEND_RANGE, c.currentTime, 0.001);
+      attachModulation(c, voice);
     }
     const take = transport.take;
     if (transport.recording && take && take.track === track.id) {
@@ -793,7 +901,42 @@
     take.notes.push({ pitch: on.key, start: on.beat, duration: Math.max(0.05, beat - on.beat), velocity: on.vel });
   }
 
+  // ── MIDI controllers: sustain pedal (CC64), pitch bend, mod wheel (CC1) ──
+  const BEND_RANGE = 2;   // semitones, the General MIDI default
+  const controller = { sustain: false, bend: 0, mod: 0, lfo: null, depth: null };
+  const sustained = new Map();   // pitch → eventTimeMs of the key release held by the pedal
+  function modLfo(c) {
+    if (!controller.lfo || controller.lfo.context !== c) {
+      controller.lfo = c.createOscillator(); controller.lfo.frequency.value = 5.5;
+      controller.depth = c.createGain(); controller.depth.gain.value = controller.mod * 50;
+      controller.lfo.connect(controller.depth); controller.lfo.start();
+    }
+    return controller.depth;
+  }
+  function attachModulation(c, voice) {
+    const depth = modLfo(c);
+    (voice.sources || []).forEach((s) => { if (s.detune && !s.fixed) depth.connect(s.detune); });
+  }
+  function controlChange(cc, value, eventTimeMs) {
+    if (cc === 64) {
+      const down = value >= 0.5;
+      if (down === controller.sustain) return;
+      controller.sustain = down;
+      if (!down) { const held = [...sustained]; sustained.clear(); held.forEach(([pitch]) => noteOff(pitch, eventTimeMs)); }
+    } else if (cc === 1) {
+      controller.mod = value;
+      if (controller.depth && audio.ctx) controller.depth.gain.setTargetAtTime(value * 50, audio.ctx.currentTime, 0.02);
+    }
+  }
+  function pitchBend(amount, _eventTimeMs) {
+    controller.bend = Math.max(-1, Math.min(1, amount));
+    if (!audio.ctx) return;
+    const t = audio.ctx.currentTime;
+    live.forEach((voice, pitch) => voice.glide(pitch + controller.bend * BEND_RANGE, t, 0.004));
+  }
+
   function noteOff(pitch, eventTimeMs) {
+    if (controller.sustain && live.has(pitch)) { sustained.set(pitch, eventTimeMs); return; }
     const voice = live.get(pitch);
     if (voice && audio.ctx) { voice.release(audio.ctx.currentTime); live.delete(pitch); }
     const take = transport.take;
@@ -1034,6 +1177,7 @@
       right.offset = clip.offset + cut * spb();
       right.duration = clip.duration - cut * spb();
       clip.duration = cut * spb();
+      right.fadeIn = 0; clip.fadeOut = 0;   // a cut keeps the outer fades only
     } else {
       right.length = clip.length - cut;
       right.notes = clip.notes.filter((n) => n.start >= cut).map((n) => ({ ...n, start: n.start - cut }));
@@ -1234,15 +1378,19 @@
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
     const mix = createMixer(oc, oc.destination);
+    mix.syncReturns(project.returns || [], tracks);
     tracks.forEach((t) => {
       const s = mix.strip(t);
-      s.gain.gain.value = useMix && !audible(t) ? 0 : t.volume;
+      s.sends.forEach((g, i) => { g.gain.value = t.sends?.[i] || 0; });
+      s.muteGain.gain.value = useMix && !audible(t) ? 0 : 1;
+      s.gain.gain.value = t.volume;
       s.pan.pan.value = t.pan;
     });
     const env = {
       c: oc, offline: true, segEnd: toBeat,
       timeOf: (beat) => (beat - fromBeat) * spb(),
       destFor: (track) => mix.strip(track).input,
+      stripFor: (track) => mix.strip(track),
     };
     scheduleNotes(env, fromBeat, toBeat, tracks);
     scheduleAudio(env, fromBeat, toBeat, tracks);
@@ -1266,8 +1414,17 @@
     return busy('Rendering the mix…', async () => {
       const range = loopOnly ? { from: project.loop.start, to: project.loop.end } : exportRange();
       const channels = await renderOffline(range.from, range.to, project.tracks, true);
+      const before = Loudness.measure(channels, ctxRate());
+      let after = before, note = '';
+      if (project.exportNormalize) {
+        const g = Loudness.normalizeGain(before, -14, -1);
+        channels.forEach((c) => { for (let i = 0; i < c.length; i++) c[i] *= g; });
+        after = Loudness.measure(channels, ctxRate());
+        note = ` Normalized ${g >= 1 ? 'up' : 'down'} ${Math.abs(20 * Math.log10(g)).toFixed(1)} dB${after.lufs < -14.5 ? ' (stopped at a −1 dB peak ceiling)' : ''}.`;
+      }
       download(IO.encodeWav(channels, ctxRate(), 16), `${fileSafe(project.name)}${loopOnly ? '-loop' : ''}.wav`, 'audio/wav');
-      status(`Exported the ${loopOnly ? 'loop' : 'song'} mix as a WAV file.`);
+      const fmt = (v) => Number.isFinite(v) ? v.toFixed(1) : '−∞';
+      status(`Exported the ${loopOnly ? 'loop' : 'song'} mix as a WAV file: ${fmt(after.lufs)} LUFS, peak ${fmt(after.peakDb)} dBFS.${note}${after.peakDb > -0.1 ? ' ⚠ It touches 0 dBFS: pull the master down or normalize.' : ''}`);
     });
   }
   function ctxRate() { return audio.ctx ? audio.ctx.sampleRate : 44100; }
@@ -1341,6 +1498,88 @@
     commit();
   }
 
+  // ── Templates and the loop library ───────────────────────────────────────
+  const instrumentTool = (instrument) => instrument === 'drums' ? 'drumkit' : instrument === 'pluck' ? 'guitar' : instrument === 'synth' ? 'synthlab' : 'keyboard';
+  function templateTrack(kind, name, instrument, i, extra = {}) {
+    const t = makeTrack(kind, name, instrument, i);
+    if (kind === 'instrument') t.tools = [instrumentTool(instrument)];
+    return Object.assign(t, extra);
+  }
+  const TEMPLATES = {
+    band: { name: 'Band', bpm: 110, tracks: (T) => [T('instrument', 'Drums', 'drums', 0), T('instrument', 'Bass', 'bass', 1, { pan: 0 }), T('instrument', 'Keys', 'piano', 2, { pan: -0.3, sends: [0.15, 0] }), T('instrument', 'Guitar', 'pluck', 3, { pan: 0.3, sends: [0.2, 0] }), T('audio', 'Vocals', null, 4, { sends: [0.3, 0.1] })] },
+    beat: { name: 'Beat', bpm: 90, tracks: (T) => [T('instrument', 'Drums', 'drums', 0), T('instrument', '808 Bass', 'bass', 1), T('instrument', 'Lead', 'synth', 2, { sends: [0.1, 0.25] }), T('instrument', 'Pad', 'pad', 3, { volume: 0.6, sends: [0.35, 0] })] },
+    songwriter: { name: 'Singer-songwriter', bpm: 84, tracks: (T) => [T('instrument', 'Guitar', 'pluck', 0, { sends: [0.2, 0] }), T('instrument', 'Piano', 'piano', 1, { sends: [0.2, 0] }), T('audio', 'Lead vocal', null, 2, { sends: [0.3, 0.1] }), T('audio', 'Harmony', null, 3, { pan: 0.25, sends: [0.35, 0] })] },
+    podcast: { name: 'Podcast', bpm: 100, tracks: (T) => [T('audio', 'Host', null, 0, { strip: { ...ProjectModel.makeStrip(), hpf: true }, effects: [{ type: 'compressor', params: {}, bypass: false, wet: 1 }] }), T('audio', 'Guest', null, 1, { strip: { ...ProjectModel.makeStrip(), hpf: true }, effects: [{ type: 'compressor', params: {}, bypass: false, wet: 1 }] }), T('audio', 'Music bed', null, 2, { volume: 0.4 })] },
+  };
+  function newFromTemplate(id) {
+    const tpl = TEMPLATES[id];
+    if (!tpl) return;
+    if (transport.recording || finishingTake) { status('Finish the take before starting a new song.'); return; }
+    if (project.tracks.some((t) => t.clips.length) && !confirm(`Start a new ${tpl.name} song? The current one stays in Undo until you leave the page.`)) return;
+    ++armRequest; releaseMic();
+    if (transport.playing) pause();
+    project = defaultProject();
+    project.name = `My ${tpl.name} song`; project.bpm = tpl.bpm;
+    project.tracks = tpl.tracks(templateTrack);
+    ui.selClip = null; ui.selTrack = project.tracks[0].id; ui.playhead = 0; ui.timeSelection = null;
+    commit();
+    status(`New ${tpl.name} song: ${project.tracks.map((t) => t.name).join(', ')}. Sends to the reverb and echo returns are already set.`);
+  }
+  // One-bar or multi-bar MIDI patterns, written in the song's key.
+  const LOOPS = {
+    'rock-beat': { name: 'Rock beat', drums: true, bars: 1, notes: (D) => [0, 1, 2, 3].flatMap((b) => [[D.hat, b], [D.hat, b + .5], ...(b % 2 ? [[D.snare, b]] : [[D.kick, b]]), ...(b === 2 ? [[D.kick, 2.5]] : [])]) },
+    'hiphop-beat': { name: 'Hip-hop beat', drums: true, bars: 1, notes: (D) => [[D.kick, 0], [D.kick, 1.75], [D.kick, 2.5], [D.snare, 1], [D.snare, 3], ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => [D.hat, i * .5])] },
+    'four-floor': { name: 'Four on the floor', drums: true, bars: 1, notes: (D) => [0, 1, 2, 3].flatMap((b) => [[D.kick, b], [D.ohat, b + .5], ...(b % 2 ? [[D.clap, b]] : [])]) },
+    'bass-roots': { name: 'Bass: I–V–vi–IV roots', bars: 4, notes: (_, k) => [0, 7, 9, 5].flatMap((deg, bar) => [0, 1, 2, 3, 4, 5, 6, 7].map((i) => [36 + k + deg - (deg > 6 ? 12 : 0), bar * 4 + i * .5, .45])) },
+    'pop-chords': { name: 'Chords: I–V–vi–IV', bars: 4, notes: (_, k) => [[0, 4, 7], [7, 11, 14], [9, 12, 16], [5, 9, 12]].flatMap((ch, bar) => ch.map((d) => [60 + k + d, bar * 4, 3.9])) },
+    'arp': { name: 'Arpeggio: i–VI–III–VII', bars: 4, notes: (_, k) => [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]].flatMap((ch, bar) => [0, 1, 2, 3, 4, 5, 6, 7].map((i) => [72 + k + ch[i % 3] + (i >= 3 && i < 6 ? 12 : 0), bar * 4 + i * .5, .45])) },
+  };
+  function insertLoop(id) {
+    const loop = LOOPS[id];
+    if (!loop || transport.recording || finishingTake) return;
+    let track = findTrack(ui.selTrack);
+    const wantDrums = !!loop.drums;
+    if (!track || track.kind !== 'instrument' || (track.instrument === 'drums') !== wantDrums) {
+      track = project.tracks.find((t) => t.kind === 'instrument' && (t.instrument === 'drums') === wantDrums && hasInstrumentExperience(t));
+      if (!track) { track = addTrack('instrument', wantDrums ? 'drums' : id.startsWith('bass') ? 'bass' : 'piano'); track.tools = [instrumentTool(track.instrument)]; }
+    }
+    if (!hasInstrumentExperience(track)) track.tools = [...(track.tools || []), instrumentTool(track.instrument)];
+    const bar = barBeats(), start = Math.max(0, Math.floor(ui.playhead / bar) * bar);
+    const notes = loop.notes(IO.DRUM_KEYS, project.key?.root || 0).map(([pitch, b, d]) => ({ pitch, start: b, duration: d || 0.25, velocity: 0.8 }));
+    const clip = newMidiClip(track, start, loop.bars * 4);
+    clip.name = loop.name; clip.notes = notes.sort((a, z) => a.start - z.start);
+    select(track.id, clip.id); commit();
+    status(`Added “${loop.name}” to “${track.name}” at bar ${Math.round(start / bar) + 1}${loop.drums ? '' : ` in ${NOTE_NAMES[project.key?.root || 0]}`}. Duplicate it (Ctrl/⌘+D) to repeat.`);
+  }
+
+  // ── Share links: the song (minus recorded audio) gzip-packed into the URL hash ──
+  const b64url = (bytes) => { let bin = ''; bytes.forEach((b) => { bin += String.fromCharCode(b); }); return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+  const unb64url = (str) => Uint8Array.from(atob(str.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+  async function pipe(bytes, stream) { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
+  async function shareLink() {
+    if (!window.CompressionStream) { status('This browser cannot make share links. Use Save project instead.'); return; }
+    const song = JSON.parse(snapshot());
+    let dropped = 0;
+    song.tracks.forEach((t) => { const n = t.clips.length; t.clips = t.clips.filter((c) => c.type !== 'audio'); dropped += n - t.clips.length; t.armed = false; });
+    const packed = b64url(await pipe(new TextEncoder().encode(JSON.stringify(song)), new CompressionStream('gzip')));
+    const url = `${location.origin}${location.pathname}#song=${packed}`;
+    if (url.length > 60000) { status('This song is too big for a link. Use Save project and send the file.'); return; }
+    try { await navigator.clipboard.writeText(url); status(`Share link copied (${Math.round(url.length / 1024)} KB).${dropped ? ` ${dropped} audio clip${dropped === 1 ? ' is' : 's are'} left out: send the project file for those.` : ''} Anyone who opens it gets their own copy.`); }
+    catch (_e) { prompt('Copy this share link:', url); }
+  }
+  async function openShareLink() {
+    const m = /^#song=([A-Za-z0-9_-]+)$/.exec(location.hash);
+    if (!m || !window.DecompressionStream) return false;
+    try {
+      const json = new TextDecoder().decode(await pipe(unb64url(m[1]), new DecompressionStream('gzip')));
+      const shared = ProjectModel.parse(json);
+      if (project.tracks.some((t) => t.clips.length) && !confirm(`Open the shared song “${shared.name}”? Your current song stays in Undo until you leave the page.`)) return false;
+      project = shared;
+      window.history.replaceState(null, '', location.pathname + location.search);
+      return true;
+    } catch (_e) { status('That share link is damaged or from a newer Music Lab.'); return false; }
+  }
+
   // ── DOM: shell ───────────────────────────────────────────────────────────
   const snapOptions = [['bar', 'Bar'], [1, 'Beat'], [0.5, '1/8'], [0.25, '1/16'], [0, 'Off']];
   const gridOptions = [[1, '1/4'], [0.5, '1/8'], [0.25, '1/16'], [0.125, '1/32'], [1 / 3, '1/8 triplet'], [1 / 6, '1/16 triplet']];
@@ -1375,6 +1614,7 @@
         <button type="button" class="daw-btn daw-toggle" data-act="loop" aria-pressed="false" title="Loop the region on the ruler (drag across the ruler to set it)">🔁 Loop</button>
         <button type="button" class="daw-btn daw-toggle" data-act="metronome" aria-pressed="false" title="Metronome click">𝅘𝅥 Click</button>
         <button type="button" class="daw-btn daw-toggle" data-act="countin" aria-pressed="true" title="One bar of clicks before recording starts">Count-in</button>
+        <button type="button" class="daw-btn daw-toggle" data-act="punch" aria-pressed="false" title="Record only between the loop markers (set the loop region first)">Punch</button>
       </div>
       <div class="daw-group">
         <label class="daw-field"><span>Tempo</span><input type="number" data-ref="bpm" min="40" max="240" step="1" aria-label="Tempo in beats per minute"></label>
@@ -1396,6 +1636,10 @@
       <label class="daw-field">Loop from (beat)<input type="number" data-loop-bound="start" min="1" step="0.25" value="1"></label>
       <label class="daw-field">Loop to (beat)<input type="number" data-loop-bound="end" min="1.25" step="0.25" value="17"></label>
       <span class="daw-note">End beat is exclusive. Recording makes one continuous take.</span>
+    </div>
+    <div class="daw-bar daw-markers" aria-label="Song sections">
+      <button type="button" class="daw-btn" data-act="add-marker" title="Mark a section (verse, chorus…) at the playhead">＋ Marker at playhead</button>
+      <div class="daw-marker-list" data-marker-list></div>
     </div></details>
     <details class="daw-file-tools" open>
     <summary>Track &amp; project tools</summary>
@@ -1408,6 +1652,8 @@
             ${Object.keys(INSTRUMENTS).map((k) => `<button type="button" data-act="add-instrument" data-instrument="${k}">${INSTRUMENTS[k]}</button>`).join('')}
             <p class="daw-menu-label">Audio track</p>
             <button type="button" data-act="add-audio">🎙 Audio (mic or files)</button>
+            <p class="daw-menu-label">Loop library (adds a clip at the playhead, in the song's key)</p>
+            ${Object.entries(LOOPS).map(([id, l]) => `<button type="button" data-act="loop-insert" data-loop="${id}">${esc(l.name)}</button>`).join('')}
           </div>
         </div>
         <button type="button" class="daw-btn" data-act="new-clip">Add note clip</button>
@@ -1419,14 +1665,18 @@
             <button type="button" data-act="export-loop">Loop region mix (.wav)</button>
             <button type="button" data-act="export-stems">Stems — one WAV per track (.zip)</button>
             <button type="button" data-act="export-midi">MIDI notes (.mid)</button>
+            <button type="button" data-act="bounce">Bounce selected track to audio</button>
+            <button type="button" data-act="export-normalize" aria-pressed="false">Normalize mixes to −14 LUFS: off</button>
           </div>
         </div>
         <div class="daw-menu-wrap">
           <button type="button" class="daw-btn" data-menu="project" aria-haspopup="true" aria-expanded="false">Project</button>
           <div class="daw-menu" data-menu-panel="project" hidden>
             <button type="button" data-act="new">New song</button>
+            ${Object.entries(TEMPLATES).map(([id, t]) => `<button type="button" data-act="template" data-template="${id}">New ${esc(t.name)} song (template)</button>`).join('')}
             <button type="button" data-act="open">Open project (.mlab.zip)…</button>
             <button type="button" data-act="save">Save project (.mlab.zip)</button>
+            <button type="button" data-act="share-link">Copy share link (notes &amp; mix, no audio)</button>
           </div>
         </div>
         <label class="daw-field daw-name"><span>Song</span><input type="text" data-ref="name" maxlength="60" aria-label="Song name"></label>
@@ -1608,7 +1858,24 @@
     return Math.max(bar * 32, Math.ceil((songEnd() + bar * 8) / bar) * bar, Math.ceil((reach + bar * 4) / bar) * bar);
   }
 
+  function renderMarkers() {
+    const host = root.querySelector('[data-marker-list]');
+    if (!host) return;
+    host.innerHTML = (project.markers || []).map((m, i) => `<span class="daw-marker">
+      <button type="button" class="daw-btn" data-act="marker-go" data-i="${i}" title="Jump to ${esc(m.name)}">▸ ${formatPos(m.b)}</button>
+      <input type="text" data-marker-name="${i}" value="${esc(m.name)}" maxlength="24" aria-label="Marker ${i + 1} name">
+      <button type="button" class="daw-mini" data-act="marker-loop" data-i="${i}" title="Loop this section">🔁</button>
+      <button type="button" class="daw-mini daw-del" data-act="marker-del" data-i="${i}" aria-label="Delete marker ${esc(m.name)}">✕</button></span>`).join('') || '<span class="daw-note">No markers yet.</span>';
+  }
+  root.addEventListener('change', (e) => {
+    const i = e.target.dataset?.markerName;
+    if (i === undefined || !project.markers?.[i]) return;
+    project.markers[i].name = e.target.value.trim().slice(0, 24) || project.markers[i].name;
+    commit();
+  });
+
   function render() {
+    renderMarkers();
     R.bpm.value = project.bpm;
     R.sig.value = project.sig.join('/');
     R.master.value = project.masterVolume;
@@ -1978,7 +2245,14 @@
           </div>
           <label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>
           <label class="daw-strip-fader"><span>Pan</span><input type="range" data-mx="pan" data-focus="${t.id}-pan" min="-1" max="1" step="0.05" value="${t.pan}" aria-label="${esc(t.name)} pan"><output>${panLabel(t.pan)}</output></label>
+          ${(project.returns || []).map((r, i) => `<label class="daw-strip-fader"><span>${esc(r.id)}</span><input type="range" data-mx="send" data-send="${i}" data-focus="${t.id}-send${i}" min="0" max="1" step="0.01" value="${t.sends?.[i] || 0}" aria-label="${esc(t.name)} send to ${esc(r.name)}"><output>${Math.round((t.sends?.[i] || 0) * 100)}%</output></label>`).join('')}
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="${t.id}"></i></span>
+        </div>`).join('')}
+        ${(project.returns || []).map((r, i) => `<div class="daw-strip daw-strip-return" data-return="${i}">
+          <div class="daw-strip-head"><input class="daw-th-name" data-rt="name" data-focus="ret${i}-name" value="${esc(r.name)}" maxlength="24" aria-label="Return ${esc(r.id)} name">
+            <select data-rt="type" data-focus="ret${i}-type" aria-label="Return ${esc(r.id)} effect">${ProjectModel.RETURN_TYPES.map(type => `<option value="${type}"${type === r.type ? ' selected' : ''}>${esc(window.AudioEffects.registry[type]?.name || type)}</option>`).join('')}</select></div>
+          <span class="daw-tag">Return ${esc(r.id)} · tracks feed it with their ${esc(r.id)} send</span>
+          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-rt="volume" data-focus="ret${i}-vol" min="0" max="1.2" step="0.01" value="${r.volume}" aria-label="Return ${esc(r.id)} volume"><output>${toDb(r.volume)} dB</output></label>
         </div>`).join('')}
         <div class="daw-strip daw-strip-master">
           <div class="daw-strip-head"><strong>Master</strong><span class="daw-tag">Everything you hear and export</span></div>
@@ -1986,7 +2260,16 @@
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="master"></i></span>
         </div>
       </div>
-      <p class="daw-note">Solo (S) plays only the soloed tracks; mute (M) silences one. Meters turn red when a track is too loud — pull its fader down.</p>`;
+      <div class="daw-bar daw-snapshots" aria-label="Mix snapshots">
+        <button type="button" class="daw-btn" data-act="snap-save" title="Remember every fader, pan, send, mute, solo, EQ and effect setting">📸 Save mix snapshot</button>
+        ${(project.mixSnapshots || []).map((m, i) => `<span class="daw-marker"><button type="button" class="daw-btn" data-act="snap-recall" data-i="${i}" title="Recall ${esc(m.name)}">${esc(m.name)}</button><button type="button" class="daw-mini daw-del" data-act="snap-del" data-i="${i}" aria-label="Delete ${esc(m.name)}">✕</button></span>`).join('')}
+        <span class="daw-note">Compare two mixes: save A, change things, save B, then flip between them.</span>
+      </div>
+      <div class="daw-analysis">
+        <figure><canvas data-spectrum width="600" height="140" aria-label="Spectrum of the master output"></canvas><figcaption>Spectrum (20 Hz – 20 kHz): where the mix's energy sits. A big bump down low is mud; a spike is a ringing note.</figcaption></figure>
+        <figure><canvas data-stereo width="140" height="140" aria-label="Stereo image of the master output"></canvas><figcaption>Stereo: correlation <output data-correlation>—</output>. Near +1 is mono-safe; below 0 parts cancel on a phone speaker.</figcaption></figure>
+      </div>
+      <p class="daw-note">Sends (A, B) feed the shared return buses at the right: one reverb for the whole song. Solo (S) plays only the soloed tracks; mute (M) silences one. Meters turn red when a track is too loud — pull its fader down.</p>`;
     });
   }
 
@@ -2010,7 +2293,21 @@
       applyMix();
       return;
     }
+    const ret = el.closest('[data-return]');
+    if (ret && el.dataset.rt === 'volume') {
+      project.returns[Number(ret.dataset.return)].volume = Number(el.value);
+      if (out) out.textContent = toDb(Number(el.value)) + ' dB';
+      applyMix();
+      return;
+    }
     const track = findTrack(el.closest('[data-strip]') && el.closest('[data-strip]').dataset.strip);
+    if (track && what === 'send') {
+      track.sends ||= [0, 0];
+      track.sends[Number(el.dataset.send)] = Number(el.value);
+      if (out) out.textContent = Math.round(Number(el.value) * 100) + '%';
+      applyMix();
+      return;
+    }
     if (!track || (what !== 'volume' && what !== 'pan')) return;
     track[what] = Number(el.value);
     if (out) out.textContent = what === 'volume' ? toDb(track.volume) + ' dB' : panLabel(track.pan);
@@ -2019,6 +2316,14 @@
   R.mixer.addEventListener('change', (e) => {
     const el = e.target, what = el.dataset.mx;
     if (what === 'master') { commit(); return; }
+    const ret = el.closest('[data-return]');
+    if (ret) {
+      const r = project.returns[Number(ret.dataset.return)];
+      if (el.dataset.rt === 'name') r.name = el.value.trim().slice(0, 24) || r.name;
+      if (el.dataset.rt === 'type' && ProjectModel.RETURN_TYPES.includes(el.value)) { r.type = el.value; r.params = {}; }
+      commit();
+      return;
+    }
     const track = findTrack(el.closest('[data-strip]') && el.closest('[data-strip]').dataset.strip);
     if (!track) return;
     if (what === 'name') track.name = el.value.trim().slice(0, 40) || track.name;
@@ -2102,7 +2407,7 @@
         <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
     }).join('');
     return `${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Add a compressor to even out loud and soft notes, or an echo for space.</p>'}
-      <div class="mc-add">${Object.entries(registry).slice(0, 8).map(([type, d]) => `<button type="button" class="mk-btn" data-ch-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>+ ${esc(d.name)}</button>`).join('')}</div>
+      <div class="mc-add">${Object.entries(registry).slice(0, 12).map(([type, d]) => `<button type="button" class="mk-btn" data-ch-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>+ ${esc(d.name)}</button>`).join('')}</div>
       <p class="mc-hint">Inserts run top to bottom. Reorder, remove and open desktop plugins in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Insert knobs change the sound when you let go.</p>`;
   }
   function flowHtml(track, strip) {
@@ -2436,7 +2741,7 @@
       ? hasInstrumentExperience(t) ? `<select data-tr="instrument" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-mini" data-tr="tools" aria-label="Add instrument experience">＋</button>'
       : '<span class="daw-tag">Audio</span>';
     const clips = t.clips.map((c) => clipHtml(t, c)).join('');
-    const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}</div>`;
+    const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}${automationHtml(t)}</div>`;
     if (compactHeads) {
       const flags = [t.mute && 'M', t.solo && 'S', t.armed && '●'].filter(Boolean).join(' ');
       return `
@@ -2458,6 +2763,7 @@
           <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}" title="Mute">M</button>
           <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}" title="Solo">S</button>
           <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}" title="${t.kind === 'audio' ? 'Arm for microphone recording' : 'Arm: play and record this instrument from the keyboard'}">●</button>
+          <button type="button" class="daw-mini${ui.auto.get(t.id) ? ' is-on' : ''}" data-tr="auto" aria-label="Automation lane for ${esc(t.name)}: ${ui.auto.get(t.id) || 'hidden'}" title="Automation: off → volume → pan">${ui.auto.get(t.id) === 'pan' ? 'A·P' : ui.auto.get(t.id) === 'volume' ? 'A·V' : 'A'}</button>
           ${instrument}
         </div>
         <div class="daw-th-row daw-th-mix">
@@ -2473,7 +2779,7 @@
   function clipHtml(t, c) {
     const left = c.start * ui.pxPerBeat, width = Math.max(6, clipBeats(c) * ui.pxPerBeat);
     const sel = c.id === ui.selClip ? ' is-selected' : '';
-    return `<div class="daw-clip daw-clip-${c.type}${sel}" data-clip="${c.id}" style="left:${left}px;width:${width}px" title="${esc(c.name || t.name)}">
+    return `<div class="daw-clip daw-clip-${c.type}${sel}${c.muted ? ' is-muted' : ''}" data-clip="${c.id}" style="left:${left}px;width:${width}px" title="${esc(c.name || t.name)}">
       <span class="daw-clip-name">${esc(c.name || t.name)}</span>
       <canvas data-clip="${c.id}" aria-hidden="true"></canvas>
       <span class="daw-clip-h daw-clip-l" data-handle="l"></span><span class="daw-clip-h daw-clip-r" data-handle="r"></span>
@@ -2547,6 +2853,12 @@
       g.fillStyle = 'rgba(125, 211, 252, .7)';
       g.fillRect(start * ppb - sl, 23, Math.max(1, (end - start) * ppb), 5);
     }
+    (project.markers || []).forEach((m) => {
+      const x = m.b * ppb - sl;
+      if (x < -200 || x > view) return;
+      g.fillStyle = '#f472b6'; g.fillRect(x, 0, 2, h);
+      g.font = '700 10px system-ui, sans-serif'; g.textBaseline = 'top'; g.fillText(m.name, x + 4, 1);
+    });
     const first = Math.floor(sl / ppb), last = Math.ceil((sl + view) / ppb);
     const barEvery = ppb * bar < 40 ? (ppb * bar < 20 ? 4 : 2) : 1;
     g.font = '600 11px "IBM Plex Mono", ui-monospace, monospace';
@@ -2589,6 +2901,9 @@
     set('loop', project.loop.on);
     set('metronome', project.metronome);
     set('countin', project.countIn);
+    set('punch', !!project.punch);
+    const norm = root.querySelector('[data-act="export-normalize"]');
+    if (norm) { norm.setAttribute('aria-pressed', String(!!project.exportNormalize)); norm.textContent = `Normalize mixes to −14 LUFS: ${project.exportNormalize ? 'on' : 'off'}`; }
     root.querySelector('[data-act="undo"]').disabled = !history.undo.length;
     root.querySelector('[data-act="redo"]').disabled = !history.redo.length;
     $('tools').querySelectorAll('[data-experience] input, [data-experience] select, [data-experience-config]').forEach(node=>{node.disabled=transport.recording||finishingTake;});
@@ -2636,7 +2951,9 @@
       <button type="button" class="daw-btn" data-act="split" title="Split at the playhead (Ctrl/⌘+E)">✂ Split</button>
       <button type="button" class="daw-btn" data-act="duplicate" title="Duplicate after this clip (Ctrl/⌘+D)">⧉ Duplicate</button>
       <button type="button" class="daw-btn" data-act="loop-clip" title="Loop playback over this clip">🔁 Loop clip</button>
-      <button type="button" class="daw-btn" data-act="delete-clip" title="Delete clip (Delete)">🗑 Delete</button>`;
+      <button type="button" class="daw-btn" data-act="delete-clip" title="Delete clip (Delete)">🗑 Delete</button>
+      <button type="button" class="daw-btn daw-toggle" data-act="clip-mute" aria-pressed="${!!clip.muted}" title="Silence this clip without deleting it">${clip.muted ? 'Unmute clip' : 'Mute clip'}</button>
+      ${takeGroup(track, clip).length > 1 ? `<span class="daw-field">Take ${takeGroup(track, clip).indexOf(clip) + 1}/${takeGroup(track, clip).length}</span><button type="button" class="daw-btn" data-act="take" data-by="-1" aria-label="Previous take">◀ Take</button><button type="button" class="daw-btn" data-act="take" data-by="1" aria-label="Next take">Take ▶</button>` : ''}`;
     if (clip.type === 'audio') {
       const e = buffers.get(clip.bufferId);
       R.editor.innerHTML = `
@@ -2644,7 +2961,15 @@
         <div class="daw-bar daw-ed-bar"><div class="daw-group">
           <label class="daw-field"><span>Clip gain</span><input type="range" data-ed="gain" min="0" max="2" step="0.01" value="${clip.gain || 1}" aria-label="Clip gain"></label>
           <button type="button" class="daw-btn" data-act="normalize" title="Turn the clip up until its loudest peak just fits">Normalize</button>
+          <label class="daw-field"><span>Fade in</span><input type="number" data-ed="fadeIn" min="0" max="${(clip.duration / 2).toFixed(2)}" step="0.05" value="${clip.fadeIn || 0}" aria-label="Fade in seconds"> s</label>
+          <label class="daw-field"><span>Fade out</span><input type="number" data-ed="fadeOut" min="0" max="${(clip.duration / 2).toFixed(2)}" step="0.05" value="${clip.fadeOut || 0}" aria-label="Fade out seconds"> s</label>
           <button type="button" class="daw-btn" data-act="reverse">⇆ Reverse</button>
+        </div></div>
+        <div class="daw-bar daw-ed-bar"><div class="daw-group">
+          <label class="daw-field"><span>Speed</span><input type="number" data-ed="speed" min="25" max="400" step="1" value="100" aria-label="Speed percent"> %</label>
+          <button type="button" class="daw-btn" data-act="stretch" title="Change the length without changing the pitch">Stretch</button>
+          <label class="daw-field"><span>Pitch</span><input type="number" data-ed="semis" min="-24" max="24" step="1" value="0" aria-label="Pitch change in semitones"> st</label>
+          <button type="button" class="daw-btn" data-act="pitch" title="Change the pitch without changing the length">Shift pitch</button>
           <span class="daw-note">${esc(e ? e.name : '')} · ${clip.duration.toFixed(2)} s · ${e ? (e.buffer.numberOfChannels === 1 ? 'mono' : 'stereo') + ' · ' + e.buffer.sampleRate / 1000 + ' kHz' : ''}</span>
         </div></div>
         <canvas class="daw-wave" aria-label="Waveform of ${esc(clip.name || 'clip')}"></canvas>`;
@@ -2666,6 +2991,18 @@
         <label class="daw-field"><span>Grid</span><select data-ed="grid" aria-label="Piano roll grid">${gridSel}</select></label>
         <output class="daw-cursor-readout" data-roll-cursor aria-label="Piano roll cursor">Move the mouse over the grid</output>
         <button type="button" class="daw-btn" data-act="quantize" title="Snap the selected notes (or all notes) to the grid">Quantize</button>
+        <label class="daw-field"><span>Strength</span><input type="number" data-ed="qstrength" min="0" max="100" step="5" value="${ui.qStrength}" aria-label="Quantize strength percent"> %</label>
+        <label class="daw-field"><span>Swing</span><input type="number" data-ed="swing" min="0" max="100" step="5" value="${ui.swing}" aria-label="Swing percent (100 = triplet feel)"> %</label>
+        <button type="button" class="daw-btn" data-act="humanize" title="Nudge timing and velocity slightly so it sounds played">Humanize</button>
+      </div></div>
+      <div class="daw-bar daw-ed-bar"><div class="daw-group">
+        <label class="daw-field"><span>Key</span><select data-ed="keyroot" aria-label="Key root">${NOTE_NAMES.map((n, i) => `<option value="${i}"${(project.key?.root || 0) === i ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="daw-field"><span>Scale</span><select data-ed="scale" aria-label="Scale">${Object.keys(SCALES).map((k) => `<option value="${k}"${(project.key?.scale || 'chromatic') === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
+        <button type="button" class="daw-btn daw-toggle" data-act="scale-snap" aria-pressed="${!!project.key?.snap}" title="New notes land only on notes of the scale">Snap to scale</button>
+        <button type="button" class="daw-btn" data-act="fit-scale" title="Move the selected notes (or all notes) to the nearest note in the scale">Fit to scale</button>
+        <label class="daw-field"><span>Draw</span><select data-ed="chord" aria-label="Chord to draw">${Object.entries(CHORDS).map(([k, l]) => `<option value="${k}"${ui.chord === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+        <label class="daw-field"><span>Arp</span><select data-ed="arp" aria-label="Arpeggio pattern">${['up', 'down', 'up-down', 'random'].map((k) => `<option${ui.arp === k ? ' selected' : ''}>${k}</option>`).join('')}</select></label>
+        <button type="button" class="daw-btn" data-act="arpeggiate" title="Turn chords into arpeggios at the grid rate">Arpeggiate</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="-12" title="Down an octave">−8va</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="-1" title="Down a semitone">−1</button>
         <button type="button" class="daw-btn" data-act="transpose" data-by="1" title="Up a semitone">+1</button>
@@ -2941,10 +3278,12 @@
       } else {
         lastTap = null;
         const start = e.ctrlKey || e.metaKey ? Math.max(0, h.beat) : floorTo(Math.max(0, h.beat), ui.rollGrid);
-        clip.notes.push({ pitch: h.pitch, start, duration: ui.noteLen, velocity: 0.8 });
+        const drums = track.instrument === 'drums';
+        const root = drums ? h.pitch : fitPitch(h.pitch);
+        const pitches = drums ? [root] : chordPitches(root, ui.chord);
         ui.selNotes.clear();
-        ui.selNotes.add(clip.notes.length - 1);
-        drag = { ...base, mode: 'draw', beat: start, note: clip.notes.length - 1, moved: true };
+        const chordIdx = pitches.map((pitch) => { clip.notes.push({ pitch, start, duration: ui.noteLen, velocity: 0.8 }); ui.selNotes.add(clip.notes.length - 1); return clip.notes.length - 1; });
+        drag = { ...base, mode: 'draw', beat: start, note: chordIdx[0], chord: chordIdx, moved: true };
         previewNote(track, h.pitch, 0.8);
       }
       roll.hover = null;
@@ -2965,6 +3304,7 @@
         if (Math.abs(e.clientX - drag.x0) < 5) return;
         const n = clip.notes[drag.note];
         n.duration = e.ctrlKey || e.metaKey ? Math.max(0.05, h.beat - n.start) : Math.max(grid, snapTo(h.beat - n.start, grid) || grid);
+        (drag.chord || []).forEach((i) => { if (clip.notes[i]) clip.notes[i].duration = n.duration; });
         ui.noteLen = n.duration;
       } else if (drag.mode === 'resize') {
         const fine = e.ctrlKey || e.metaKey;
@@ -3340,7 +3680,65 @@
     if (what === 'delete') { deleteTrack(track.id); return; }
     if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); return; }
     if (what === 'arm') { setArmed(track, !track.armed); }
+    if (what === 'auto') {
+      const next = { undefined: 'volume', volume: 'pan', pan: undefined }[ui.auto.get(track.id)];
+      if (next) ui.auto.set(track.id, next); else ui.auto.delete(track.id);
+      renderTracks();
+      if (next) status(`Automation: ${next} for “${track.name}”. Click the lane to add a point, drag to move, double-click a point to delete it.`);
+    }
   }
+
+  // ── Automation lane editor ───────────────────────────────────────────────
+  function automationHtml(t) {
+    const key = ui.auto.get(t.id);
+    if (!key) return '';
+    const [min, max] = ProjectModel.AUTOMATION[key], h = TRACK_H, w = timelineBeats() * ui.pxPerBeat;
+    const pts = t.automation?.[key] || [], fallback = key === 'volume' ? t.volume : t.pan;
+    const y = (v) => (1 - (v - min) / (max - min)) * (h - 8) + 4;
+    const line = pts.length
+      ? [`0,${y(pts[0].v)}`, ...pts.map(p => `${p.b * ui.pxPerBeat},${y(p.v)}`), `${w},${y(pts[pts.length - 1].v)}`].join(' ')
+      : `0,${y(fallback)} ${w},${y(fallback)}`;
+    return `<svg class="daw-auto" data-auto="${t.id}" data-param="${key}" width="${w}" height="${h}" aria-label="${esc(t.name)} ${key} automation">
+      <polyline points="${line}" fill="none" stroke="#fde047" stroke-width="2"${pts.length ? '' : ' stroke-dasharray="4 4"'}/>
+      ${pts.map((p, i) => `<circle data-pt="${i}" cx="${p.b * ui.pxPerBeat}" cy="${y(p.v)}" r="5" fill="#fde047" stroke="#111" stroke-width="1.5"><title>Beat ${(p.b + 1).toFixed(2)} · ${key === 'volume' ? toDb(p.v) + ' dB' : panLabel(p.v)}</title></circle>`).join('')}
+    </svg>`;
+  }
+  function autoPointFromEvent(lane, key, e) {
+    const [min, max] = ProjectModel.AUTOMATION[key], rect = lane.getBoundingClientRect();
+    let beat = Math.max(0, (e.clientX - rect.left) / ui.pxPerBeat);
+    if (!e.ctrlKey && !e.metaKey) { const g = snapGrid() / 4; beat = Math.round(beat / g) * g; }
+    const v = min + (1 - Math.max(0, Math.min(1, (e.clientY - rect.top - 4) / (rect.height - 8)))) * (max - min);
+    return { b: beat, v: Math.round(v * 100) / 100 };
+  }
+  R.tracks.addEventListener('pointerdown', (e) => {
+    const svg = e.target.closest('svg.daw-auto');
+    if (!svg) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    const track = findTrack(svg.dataset.auto), key = svg.dataset.param;
+    if (!track) return;
+    track.automation ||= { volume: [], pan: [] };
+    const pts = track.automation[key];
+    let point;
+    const hit = e.target.closest('circle[data-pt]');
+    if (hit) point = pts[Number(hit.dataset.pt)];
+    const lane = svg.parentElement;
+    if (!hit) { point = autoPointFromEvent(lane, key, e); pts.push(point); pts.sort((a, b) => a.b - b.b); }
+    if (e.altKey && hit) { pts.splice(pts.indexOf(point), 1); commit(); return; }
+    const move = (ev) => {
+      const p = autoPointFromEvent(lane, key, ev); point.b = p.b; point.v = p.v; pts.sort((a, b) => a.b - b.b);
+      lane.querySelector('svg.daw-auto')?.remove(); lane.insertAdjacentHTML('beforeend', automationHtml(track));
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); commit(); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  }, true);
+  R.tracks.addEventListener('dblclick', (e) => {
+    const hit = e.target.closest('svg.daw-auto circle[data-pt]');
+    if (!hit) return;
+    e.stopImmediatePropagation();
+    const svg = hit.closest('svg'), track = findTrack(svg.dataset.auto);
+    track.automation[svg.dataset.param].splice(Number(hit.dataset.pt), 1);
+    commit();
+  }, true);
 
   // Track header controls
   R.tracks.addEventListener('click', (e) => {
@@ -3429,6 +3827,78 @@
         commit(); restartIfPlaying(); break;
       case 'metronome': project.metronome = !project.metronome; commit(); break;
       case 'countin': project.countIn = !project.countIn; commit(); break;
+      case 'export-normalize': project.exportNormalize = !project.exportNormalize; commit(); status(project.exportNormalize ? 'Song and loop exports will be normalized to −14 LUFS (streaming loudness), peaks kept under −1 dBFS.' : 'Exports keep the mix level.'); break;
+      case 'bounce': {
+        const t = findTrack(ui.selTrack);
+        if (!t || !t.clips.length) { status('Select a track with clips to bounce.'); break; }
+        busy(`Bouncing “${t.name}” to audio…`, async () => {
+          const range = exportRange();
+          const plain = { ...t, sends: [0, 0] };   // the return buses stay live on the new track
+          const channels = await renderOffline(range.from, range.to, [plain], false);
+          const sr = ctxRate(), buffer = new AudioBuffer({ length: channels[0].length, numberOfChannels: channels.length, sampleRate: sr });
+          channels.forEach((d, ch) => buffer.copyToChannel(d, ch));
+          const nt = addTrack('audio');
+          nt.name = `${t.name} (bounce)`.slice(0, 40); nt.sends = [...(t.sends || [0, 0])];
+          // The bounce already has the source's fader, pan, EQ and inserts printed in.
+          nt.volume = 1; nt.pan = 0;
+          const id = addBuffer(buffer, nt.name, null, { sourceSampleRate: sr, sourceKind: 'recording' });
+          nt.clips.push({ id: uid(), type: 'audio', name: nt.name, bufferId: id, start: range.from, offset: 0, duration: buffer.duration, gain: 1 });
+          t.mute = true;
+          commit();
+          status(`Bounced “${t.name}” to a new audio track and muted the original (unmute it to compare). This frees the CPU its instrument and effects used.`);
+        });
+        break;
+      }
+      case 'snap-save': {
+        project.mixSnapshots ||= [];
+        if (project.mixSnapshots.length >= 6) { status('Six snapshots is the limit: delete one first.'); break; }
+        const tracks = {};
+        project.tracks.forEach((t) => { tracks[t.id] = JSON.parse(JSON.stringify({ volume: t.volume, pan: t.pan, mute: t.mute, solo: t.solo, sends: t.sends, strip: t.strip, effects: t.effects })); });
+        const name = `Mix ${'ABCDEF'[project.mixSnapshots.length]}`;
+        project.mixSnapshots.push({ name, masterVolume: project.masterVolume, returns: JSON.parse(JSON.stringify(project.returns || [])), tracks });
+        commit(); renderMixer(); status(`Saved ${name}. Recall it any time from the Mix tab; Undo works across recalls.`);
+        break;
+      }
+      case 'snap-recall': {
+        const m = project.mixSnapshots?.[Number(btn.dataset.i)];
+        if (!m) break;
+        project.masterVolume = m.masterVolume; project.returns = JSON.parse(JSON.stringify(m.returns));
+        project.tracks.forEach((t) => { const v = m.tracks[t.id]; if (v) Object.assign(t, JSON.parse(JSON.stringify(v))); });
+        commit(); status(`Recalled ${m.name}.${project.tracks.some((t) => !m.tracks[t.id]) ? ' Tracks added after it kept their settings.' : ''}`);
+        break;
+      }
+      case 'snap-del': { project.mixSnapshots?.splice(Number(btn.dataset.i), 1); commit(); renderMixer(); break; }
+      case 'add-marker': {
+        project.markers ||= [];
+        const b = Math.max(0, Math.round(ui.playhead * 4) / 4);
+        if (project.markers.some((m) => Math.abs(m.b - b) < 1e-6)) { status('There is already a marker here.'); break; }
+        const names = ['Intro', 'Verse', 'Chorus', 'Verse 2', 'Chorus 2', 'Bridge', 'Chorus 3', 'Outro'];
+        project.markers.push({ b, name: names[project.markers.length] || `Section ${project.markers.length + 1}` });
+        project.markers.sort((x, y) => x.b - y.b);
+        commit(); renderMarkers(); status('Marker added. Rename it in Loop region + seek; click its name to jump there.');
+        break;
+      }
+      case 'marker-go': { const m = project.markers?.[Number(btn.dataset.i)]; if (m) setPlayhead(m.b); break; }
+      case 'marker-loop': {
+        const list = project.markers || [], i = Number(btn.dataset.i), m = list[i];
+        if (!m) break;
+        const end = list[i + 1]?.b ?? Math.max(m.b + barBeats() * 4, Math.ceil(songEnd() / barBeats()) * barBeats());
+        project.loop = { ...project.loop, start: m.b, end, on: true };
+        commit(); status(`Looping “${m.name}”.`);
+        break;
+      }
+      case 'marker-del': { project.markers?.splice(Number(btn.dataset.i), 1); commit(); renderMarkers(); break; }
+      case 'punch': project.punch = !project.punch; commit(); status(project.punch ? 'Punch is on: recording runs only between the loop markers, after a one-bar pre-roll.' : 'Punch is off.'); break;
+      case 'take': {
+        const sel = selected();
+        if (!sel) break;
+        const group = takeGroup(sel.track, sel.clip), i = group.indexOf(sel.clip);
+        const next = group[(i + Number(btn.dataset.by) + group.length) % group.length];
+        activateTake(sel.track, next); select(sel.track.id, next.id); commit();
+        status(`Playing “${next.name}” (take ${group.indexOf(next) + 1} of ${group.length}).`);
+        break;
+      }
+      case 'clip-mute': { const sel = selected(); if (sel) { sel.clip.muted = !sel.clip.muted; commit(); } break; }
       case 'add-instrument': addTrack('instrument', btn.dataset.instrument); commit(); break;
       case 'quick-instrument': addTrack('instrument', 'piano'); commit(); break;
       case 'add-audio': addTrack('audio'); commit(); break;
@@ -3451,6 +3921,9 @@
       case 'export-midi': exportMidi(); break;
       case 'save': saveProject(); break;
       case 'new': newProject(); break;
+      case 'share-link': shareLink(); break;
+      case 'template': newFromTemplate(btn.dataset.template); break;
+      case 'loop-insert': insertLoop(btn.dataset.loop); break;
       case 'undo': undo(); break;
       case 'redo': redo(); break;
       case 'zoom-in': zoom(1.4); break;
@@ -3459,7 +3932,48 @@
       case 'duplicate': duplicateClip(); break;
       case 'delete-clip': deleteClip(); break;
       case 'loop-clip': loopClip(); break;
-      case 'quantize': editNotes((n) => { n.start = snapTo(n.start, ui.rollGrid); n.duration = Math.max(ui.rollGrid, snapTo(n.duration, ui.rollGrid)); }); break;
+      case 'quantize': {
+        // Strength pulls part way to the grid; swing delays every other grid step (100% = triplet feel).
+        const g = ui.rollGrid, k = ui.qStrength / 100;
+        editNotes((n) => {
+          const step = Math.round(n.start / g);
+          const target = step * g + (step % 2 ? (ui.swing / 100) * g / 3 : 0);
+          n.start = Math.max(0, n.start + (target - n.start) * k);
+          if (k >= 1) n.duration = Math.max(g, snapTo(n.duration, g));
+        });
+        break;
+      }
+      case 'scale-snap': project.key = { root: 0, scale: 'major', ...(project.key || {}), snap: !project.key?.snap }; if (project.key.snap && project.key.scale === 'chromatic') project.key.scale = 'major'; commitKeepRoll(); renderEditor(); break;
+      case 'fit-scale': if (roll?.track.instrument === 'drums') break; editNotes((n) => { n.pitch = fitPitch(n.pitch, true); }); break;
+      case 'arpeggiate': {
+        const sel = selected();
+        if (!sel || sel.clip.type !== 'midi') break;
+        const clip = sel.clip, g = ui.rollGrid;
+        const idx = ui.selNotes.size ? Array.from(ui.selNotes) : clip.notes.map((_, i) => i);
+        const chosen = idx.map((i) => clip.notes[i]).filter(Boolean), groups = new Map();
+        chosen.forEach((n) => { const k = Math.round(n.start / 1e-3); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(n); });
+        const made = [], used = new Set();
+        groups.forEach((chord) => {
+          if (chord.length < 2) return;
+          chord.sort((a, b) => a.pitch - b.pitch);
+          const order = ui.arp === 'down' ? [...chord].reverse() : ui.arp === 'up-down' ? chord.concat(chord.slice(1, -1).reverse()) : chord;
+          const span = Math.max(...chord.map((n) => n.duration)), steps = Math.max(1, Math.round(span / g));
+          for (let i = 0; i < steps; i++) {
+            const n = ui.arp === 'random' ? chord[Math.floor(Math.random() * chord.length)] : order[i % order.length];
+            made.push({ pitch: n.pitch, start: chord[0].start + i * g, duration: g, velocity: n.velocity ?? 0.8 });
+          }
+          chord.forEach((n) => used.add(n));
+        });
+        if (!made.length) { status('Arpeggiate needs chords: notes that start together.'); break; }
+        clip.notes = clip.notes.filter((n) => !used.has(n)).concat(made);
+        sortNotes(clip); ui.selNotes.clear(); commitKeepRoll();
+        status(`Arpeggiated ${groups.size} chord${groups.size === 1 ? '' : 's'} (${ui.arp}).`);
+        break;
+      }
+      case 'humanize': editNotes((n) => {
+        n.start = Math.max(0, n.start + (Math.random() - 0.5) * 0.04);
+        n.velocity = clamp((n.velocity ?? 0.8) * (0.92 + Math.random() * 0.16), 0.05, 1);
+      }); break;
       case 'transpose': {
         const by = Number(btn.dataset.by);
         const drums = roll && roll.track.instrument === 'drums';
@@ -3481,6 +3995,30 @@
         const a = Math.floor(sel.clip.offset * rate / step), b = Math.ceil((sel.clip.offset + sel.clip.duration) * rate / step);
         for (let i = a; i < b && i < data.length; i++) peak = Math.max(peak, data[i]);
         if (peak > 0) { sel.clip.gain = Math.min(8, 0.95 / peak); commit(); }
+        break;
+      }
+      case 'stretch': case 'pitch': {
+        const sel = selected(), e2 = sel && buffers.get(sel.clip.bufferId);
+        if (!e2 || transport.recording) break;
+        const host = btn.closest('.daw-group');
+        const speed = clamp(Number(host.querySelector('[data-ed="speed"]')?.value) || 100, 25, 400);
+        const semis = clamp(Number(host.querySelector('[data-ed="semis"]')?.value) || 0, -24, 24);
+        const act = btn.dataset.act;
+        if ((act === 'stretch' && speed === 100) || (act === 'pitch' && !semis)) { status(act === 'stretch' ? 'Set a speed other than 100% first.' : 'Set a pitch change in semitones first.'); break; }
+        const clip = sel.clip, src = e2.buffer, sr = src.sampleRate;
+        busy(act === 'stretch' ? 'Stretching the clip…' : 'Shifting the pitch…', async () => {
+          await new Promise(r => setTimeout(r, 20));   // let the status paint first
+          const a = Math.floor(clip.offset * sr), z = Math.min(src.length, Math.ceil((clip.offset + clip.duration) * sr));
+          const parts = Array.from({ length: src.numberOfChannels }, (_, ch) => src.getChannelData(ch).subarray(a, z));
+          const out = act === 'stretch' ? Stretch.stretchChannels(parts, 100 / speed, sr) : Stretch.pitchShiftChannels(parts, semis, sr);
+          const buffer = new AudioBuffer({ length: out[0].length, numberOfChannels: out.length, sampleRate: sr });
+          out.forEach((d, ch) => buffer.copyToChannel(d, ch));
+          const label = act === 'stretch' ? `${speed}%` : `${semis > 0 ? '+' : ''}${semis} st`;
+          clip.bufferId = addBuffer(buffer, `${e2.name} (${label})`, null, { sourceSampleRate: e2.sourceSampleRate, sourceKind: e2.sourceKind });
+          clip.offset = 0; clip.duration = buffer.duration;
+          commit();
+          status(act === 'stretch' ? `Clip played at ${speed}% speed with the same pitch. Undo restores it.` : `Clip shifted ${label} with the same length. Undo restores it.`);
+        });
         break;
       }
       case 'reverse': {
@@ -3533,6 +4071,16 @@
     if (el.dataset.ed === 'name') { sel.clip.name = el.value.trim().slice(0, 40); commit(); }
     if (el.dataset.ed === 'grid') { ui.rollGrid = Number(el.value); ui.noteLen = Math.max(ui.rollGrid, snapTo(ui.noteLen, ui.rollGrid)); drawRoll(); }
     if (el.dataset.ed === 'gain') commit();
+    if (el.dataset.ed === 'fadeIn' || el.dataset.ed === 'fadeOut') { sel.clip[el.dataset.ed] = clamp(Number(el.value) || 0, 0, sel.clip.duration / 2); commit(); }
+    if (el.dataset.ed === 'keyroot' || el.dataset.ed === 'scale') {
+      project.key = { root: 0, scale: 'chromatic', snap: false, ...(project.key || {}) };
+      if (el.dataset.ed === 'keyroot') project.key.root = clamp(Number(el.value) || 0, 0, 11); else if (SCALES[el.value]) project.key.scale = el.value;
+      commitKeepRoll();
+    }
+    if (el.dataset.ed === 'chord' && CHORDS[el.value]) ui.chord = el.value;
+    if (el.dataset.ed === 'arp') ui.arp = el.value;
+    if (el.dataset.ed === 'qstrength') ui.qStrength = clamp(Number(el.value) || 0, 0, 100);
+    if (el.dataset.ed === 'swing') ui.swing = clamp(Number(el.value) || 0, 0, 100);
     if (el.dataset.ed === 'velocity') commitKeepRoll();
   });
   R.editor.addEventListener('input', (e) => {
@@ -3704,6 +4252,43 @@
       host.querySelector('[data-led="peak"]')?.classList.toggle('is-lit', now < consoleMeter.peakUntil);
     }
   }
+  const analysisBufs = {};
+  function drawAnalysis() {
+    const spec = R.mixer.querySelector('[data-spectrum]'), st = R.mixer.querySelector('[data-stereo]');
+    if (!spec || !audio.spec) return;
+    const g = spec.getContext('2d'), W = spec.width, H = spec.height, sr = audio.ctx.sampleRate;
+    const bins = analysisBufs.spec ||= new Float32Array(audio.spec.frequencyBinCount);
+    audio.spec.getFloatFrequencyData(bins);
+    g.fillStyle = '#0f1420'; g.fillRect(0, 0, W, H);
+    g.strokeStyle = '#2a3348'; g.fillStyle = '#64748b'; g.font = '10px system-ui, sans-serif';
+    const xOf = (f) => Math.log10(f / 20) / 3 * W;
+    [50, 100, 200, 500, 1000, 2000, 5000, 10000].forEach((f) => { const x = xOf(f); g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.fillText(f >= 1000 ? f / 1000 + 'k' : String(f), x + 2, H - 3); });
+    g.beginPath(); g.strokeStyle = '#7dd3fc'; g.lineWidth = 1.5;
+    for (let x = 0; x < W; x++) {
+      const f = 20 * Math.pow(10, 3 * x / W), i = Math.min(bins.length - 1, Math.round(f / (sr / 2) * bins.length));
+      const y = H - Math.max(0, Math.min(H, (bins[i] + 100) / 90 * H));
+      if (x) g.lineTo(x, y); else g.moveTo(x, y);
+    }
+    g.stroke(); g.lineWidth = 1;
+    if (!st || !audio.anL) return;
+    const L = analysisBufs.L ||= new Float32Array(audio.anL.fftSize), Rr = analysisBufs.R ||= new Float32Array(audio.anR.fftSize);
+    audio.anL.getFloatTimeDomainData(L); audio.anR.getFloatTimeDomainData(Rr);
+    const s2 = st.getContext('2d'), S = st.width;
+    s2.fillStyle = 'rgba(15,20,32,.35)'; s2.fillRect(0, 0, S, S);
+    s2.strokeStyle = '#2a3348'; s2.beginPath(); s2.moveTo(S / 2, 0); s2.lineTo(S / 2, S); s2.moveTo(0, S / 2); s2.lineTo(S, S / 2); s2.stroke();
+    s2.fillStyle = '#a7f3d0';
+    let lr = 0, ll = 0, rr = 0;
+    for (let i = 0; i < L.length; i++) {
+      lr += L[i] * Rr[i]; ll += L[i] * L[i]; rr += Rr[i] * Rr[i];
+      if (i % 2) continue;
+      // Goniometer: mid up, side across.
+      const m = (L[i] + Rr[i]) * 0.7071, sd = (Rr[i] - L[i]) * 0.7071;
+      s2.fillRect(S / 2 + sd * S * 0.45, S / 2 - m * S * 0.45, 1.2, 1.2);
+    }
+    const out = R.mixer.querySelector('[data-correlation]');
+    if (out) out.textContent = ll > 1e-9 && rr > 1e-9 ? (lr / Math.sqrt(ll * rr)).toFixed(2) : '—';
+  }
+
   function frame() {
     if (transport.playing && audio.ctx) {
       const beat = beatAt(audio.ctx.currentTime - (audio.ctx.outputLatency || 0));
@@ -3729,6 +4314,7 @@
       for (let i = 0; i < audio.meterData.length; i++) peak = Math.max(peak, Math.abs(audio.meterData[i]));
       R.meter.style.transform = `scaleX(${Math.min(1, peak)})`;
       R.meter.classList.toggle('is-hot', peak > 0.98);
+      if (ui.tab === 'mix') drawAnalysis();
       if (ui.tab === 'mix') {
         R.mixer.querySelectorAll('[data-strip-meter]').forEach((el) => {
           const id = el.dataset.stripMeter;
@@ -3802,7 +4388,7 @@
   });
   window.addEventListener('pagehide', () => { runSave(); });
 
-  window.MusicDaw = { noteOn, noteOff, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
+  window.MusicDaw = { noteOn, noteOff, controlChange, pitchBend, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
 
   // iOS only lets audio start inside a touch, so wake (or create) the shared
   // context on the first touch in the studio, before any button handler runs.
@@ -3814,9 +4400,12 @@
   (async () => {
     let restored = false;
     try { restored = await loadAutosave(); } catch (_e) { restored = false; }
+    const prev = snapshot(), shared = await openShareLink();
+    if (shared) history.undo.push(prev);
     history.last = snapshot();
     render();
     refreshAudioHealth();
+    if (shared) { status(`Opened the shared song “${project.name}”. It is now saved in this browser; Undo returns to your previous song.`); scheduleSave(); requestAnimationFrame(frame); return; }
     status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Track Studio: choose a channel, add an instrument experience, arm ●, then record ⏺. Audio channels use microphone or imported files.');
     requestAnimationFrame(frame);
   })();

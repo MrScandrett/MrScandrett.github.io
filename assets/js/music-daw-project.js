@@ -35,7 +35,7 @@
       instrument: audio ? null : instrument,
       color: COLORS[colorIndex % COLORS.length], volume: 0.8, pan: 0,
       mute: false, solo: false, armed: false, clips: [], effects: [], strip: makeStrip(),
-      tools: [], experienceState: {}, pluginChain: [], freezeState: null,
+      tools: [], experienceState: {}, pluginChain: [], freezeState: null, sends: [0, 0], automation: { volume: [], pan: [] },
     };
   }
 
@@ -44,9 +44,44 @@
       version: VERSION, name: 'My Song', bpm: 100, sig: [4, 4], masterVolume: 0.85,
       metronome: false, countIn: true, loop: { on: false, start: 0, end: 16 },
       audioSettings: { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null, recordingTrimMs: 0, inputChannel: 'mono1' },
-      pluginInstances: [], diagnosticsVersion: 1,
+      pluginInstances: [], diagnosticsVersion: 1, returns: defaultReturns(),
       tracks: [makeTrack('instrument', 'Keys', 'piano', 0), makeTrack('instrument', 'Drums', 'drums', 1), makeTrack('audio', 'Vocals', null, 2)],
     };
+  }
+
+  // Two shared return buses (aux sends): every track can feed them, so one reverb serves the whole song.
+  const RETURN_TYPES = ['reverb', 'delay', 'chorus'];
+  function defaultReturns() {
+    return [{ id: 'A', name: 'Reverb', type: 'reverb', volume: 0.8 }, { id: 'B', name: 'Echo', type: 'delay', volume: 0.8 }];
+  }
+  function normalizeReturns(list) {
+    const base = defaultReturns();
+    return base.map((ret, i) => {
+      const src = object(Array.isArray(list) ? list[i] : null);
+      return { id: ret.id, name: String(src.name || ret.name).slice(0, 24), type: RETURN_TYPES.includes(src.type) ? src.type : ret.type, volume: clamp(src.volume, 0, 1.2, ret.volume), params: object(src.params) };
+    });
+  }
+
+  // Automation lanes: breakpoints { b: beat, v: value } with straight lines between them.
+  const AUTOMATION = { volume: [0, 1.2], pan: [-1, 1] };
+  function normalizeAutomation(value) {
+    const src = object(value), out = {};
+    for (const [key, [min, max]] of Object.entries(AUTOMATION)) {
+      out[key] = (Array.isArray(src[key]) ? src[key] : [])
+        .map(p => ({ b: Math.max(0, finite(p?.b, NaN)), v: clamp(p?.v, min, max, NaN) }))
+        .filter(p => Number.isFinite(p.b) && Number.isFinite(p.v))
+        .sort((x, y) => x.b - y.b).slice(0, 2000);
+    }
+    return out;
+  }
+  function automationAt(points, beat, fallback) {
+    if (!points || !points.length) return fallback;
+    if (beat <= points[0].b) return points[0].v;
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], z = points[i];
+      if (beat <= z.b) return z.b === a.b ? z.v : a.v + (z.v - a.v) * (beat - a.b) / (z.b - a.b);
+    }
+    return points[points.length - 1].v;
   }
 
   function normalizeEffect(effect) {
@@ -78,6 +113,8 @@
     next.pan = clamp(source.pan, -1, 1, 0);
     next.mute = !!source.mute; next.solo = !!source.solo; next.armed = false;
     next.strip = normalizeStrip(source.strip);
+    next.automation = normalizeAutomation(source.automation);
+    next.sends = [0, 1].map(i => clamp(Array.isArray(source.sends) ? source.sends[i] : 0, 0, 1, 0));
     next.clips = Array.isArray(source.clips) ? clone(source.clips) : [];
     next.effects = Array.isArray(source.effects) ? source.effects.map(normalizeEffect).filter(e => e.type) : [];
     next.tools = Array.isArray(source.tools) ? [...new Set(source.tools.map(String))] : [];
@@ -101,6 +138,16 @@
     base.bpm = clamp(source.bpm, 40, 240, base.bpm);
     base.sig = Array.isArray(source.sig) && source.sig.length === 2 ? [finite(source.sig[0], 4), finite(source.sig[1], 4)] : base.sig;
     base.masterVolume = clamp(source.masterVolume, 0, 1.2, base.masterVolume);
+    base.punch = !!source.punch;
+    base.exportNormalize = !!source.exportNormalize;
+    base.mixSnapshots = (Array.isArray(source.mixSnapshots) ? source.mixSnapshots : []).slice(0, 6).map(m => ({
+      name: String(m?.name || 'Mix').slice(0, 24), masterVolume: clamp(m?.masterVolume, 0, 1.2, base.masterVolume),
+      returns: normalizeReturns(m?.returns), tracks: clone(object(m?.tracks)),
+    }));
+    base.markers = (Array.isArray(source.markers) ? source.markers : []).map(m => ({ b: Math.max(0, finite(m?.b, NaN)), name: String(m?.name || 'Section').slice(0, 24) }))
+      .filter(m => Number.isFinite(m.b)).sort((a, z) => a.b - z.b).slice(0, 64);
+    const key = object(source.key);
+    base.key = { root: Math.round(clamp(key.root, 0, 11, 0)), scale: typeof key.scale === 'string' ? key.scale.slice(0, 24) : 'chromatic', snap: !!key.snap };
     base.metronome = !!source.metronome; base.countIn = source.countIn !== false;
     base.loop = { ...base.loop, ...object(source.loop), on: !!source.loop?.on };
     base.audioSettings = { ...base.audioSettings, ...object(source.audioSettings) };
@@ -110,6 +157,7 @@
     base.pluginInstances = Array.isArray(source.pluginInstances) ? clone(source.pluginInstances) : [];
     base.diagnosticsVersion = Math.max(1, finite(source.diagnosticsVersion, 1));
     base.tracks = source.tracks.map(normalizeTrack);
+    base.returns = normalizeReturns(source.returns);
     const known = new Set(base.pluginInstances.map(instance => instance?.id).filter(Boolean));
     base.tracks.flatMap(track => track.pluginChain).filter(plugin => plugin.format === 'native').forEach(plugin => {
       if (!known.has(plugin.id)) { base.pluginInstances.push(clone(plugin)); known.add(plugin.id); }
@@ -121,5 +169,5 @@
   function parse(json) { return migrate(JSON.parse(json)); }
   function stringify(project) { return JSON.stringify(migrate(project)); }
 
-  return { VERSION, COLORS, STRIP_LIMITS, create, makeTrack, makeStrip, normalizeStrip, migrate, parse, stringify };
+  return { VERSION, COLORS, AUTOMATION, automationAt, normalizeAutomation, RETURN_TYPES, normalizeReturns, STRIP_LIMITS, create, makeTrack, makeStrip, normalizeStrip, migrate, parse, stringify };
 }));
