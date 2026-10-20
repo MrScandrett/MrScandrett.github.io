@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fossil Fuels: How Coal, Oil &amp; Natural Gas Form · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="An interactive STEAM lesson on how coal, oil, and natural gas form: coalification from peat to anthracite, the kerogen-to-petroleum process, the oil and gas windows, and why these fuels are non-renewable on human timescales." />
+  <meta name="description" content="An interactive STEAM lesson and simulation on how coal, oil, and natural gas form: burial maturation, coalification from peat to anthracite, kerogen cracking, and the oil and gas windows." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
@@ -21,18 +21,18 @@
     }
     * { box-sizing:border-box; }
     html { scroll-behavior:smooth; }
-    body { margin:0; color:var(--text); font-family:var(--font-sans); background:
+    body { margin:0; color:var(--text); font-family:var(--font-sans, Inter, sans-serif); background:
       radial-gradient(circle at 8% 6%,rgba(200,154,74,.1),transparent 30%),
       radial-gradient(circle at 90% 32%,rgba(56,189,248,.08),transparent 28%),
       linear-gradient(rgba(148,163,184,.02) 1px,transparent 1px),
       linear-gradient(90deg,rgba(148,163,184,.015) 1px,transparent 1px),#0c0e10;
       background-size:auto,auto,40px 40px,40px 40px; min-height:100vh; }
-    button,select { font:inherit; }
+    button,select,input { font:inherit; }
     .topbar { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:rgba(12,14,16,.9); backdrop-filter:blur(16px); }
     .topbar-inner { width:min(1180px,calc(100% - 2rem)); min-height:56px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
     .topbar a { color:#e2c98a; text-decoration:none; font-size:.82rem; font-weight:700; }
     .nav { display:flex; gap:.2rem; overflow:auto; }
-    .nav a { padding:.4rem .55rem; color:var(--dim); white-space:nowrap; }
+    .nav a { padding:.4rem .55rem; color:var(--dim); white-space:nowrap; text-decoration:none; }
     .nav a:hover,.nav a:focus-visible { color:var(--text); }
     .badge { padding:.34rem .62rem; border:1px solid var(--line2); border-radius:999px; color:#e2c98a; background:rgba(200,154,74,.09); font-size:.68rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
     .shell { width:min(1180px,calc(100% - 2rem)); margin:auto; padding:1rem 0 4rem; display:grid; gap:1rem; }
@@ -51,9 +51,9 @@
     .hero-stat { display:flex; align-items:baseline; gap:.6rem; padding:.75rem .9rem; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.2); }
     .hero-stat b { font:800 1.35rem "JetBrains Mono",monospace; color:var(--coal); min-width:7ch; }
     .hero-stat span { color:var(--muted); font-size:.82rem; line-height:1.5; }
-    .card { padding:clamp(1.15rem,2.7vw,1.8rem); scroll-margin-top:70px; }
+    .card,.lab { padding:clamp(1.15rem,2.7vw,1.8rem); scroll-margin-top:70px; }
     .card h2,.lab h2 { margin:0 0 .75rem; font-size:clamp(1.25rem,3vw,1.8rem); letter-spacing:-.035em; }
-    .card h3 { margin:.3rem 0 .35rem; color:#e2c98a; font-size:1rem; }
+    .card h3,.lab h3 { margin:.3rem 0 .35rem; color:#e2c98a; font-size:1rem; }
     .card p,.card li,.lab p { color:var(--muted); font-size:.9rem; line-height:1.7; }
     .three { display:grid; gap:1rem; grid-template-columns:repeat(3,1fr); }
     .fact { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:rgba(200,154,74,.04); }
@@ -64,10 +64,27 @@
     .debate { margin-top:1rem; padding:.9rem 1rem; border-left:4px solid var(--gas); border-radius:0 var(--radius) var(--radius) 0; background:rgba(56,189,248,.08); }
     .debate strong { color:#7dd3fc; }
 
-    /* Textbook figures */
-    .fig { margin:1.3rem 0 0; }
-    .fig-frame { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:#0a0c0e; overflow-x:auto; }
-    .fig-frame svg { display:block; width:100%; min-width:560px; height:auto; }
+    /* Interactive Lab Simulator */
+    .sim-grid { display:grid; grid-template-columns:1fr 340px; gap:1.2rem; align-items:start; margin-top:1rem; }
+    .sim-stage { border:1px solid var(--line); border-radius:var(--radius); background:#06080a; padding:.8rem; overflow:hidden; }
+    .sim-stage svg { width:100%; height:auto; display:block; border-radius:6px; }
+    .sim-controls { display:flex; flex-direction:column; gap:.9rem; }
+    .sim-box { padding:1rem; border:1px solid var(--line); border-radius:var(--radius); background:rgba(0,0,0,.25); }
+    .sim-label { display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem; font-size:.8rem; font-weight:700; color:#e2c98a; }
+    .sim-label span { color:var(--text); font-family:"JetBrains Mono",monospace; }
+    .sim-slider { width:100%; accent-color:var(--coal); cursor:pointer; }
+    .sim-presets { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.4rem; }
+    .preset-btn { border:1px solid var(--line2); border-radius:6px; background:rgba(255,255,255,.05); color:var(--text); font-size:.74rem; font-weight:700; padding:.4rem .65rem; cursor:pointer; transition:background .15s; }
+    .preset-btn:hover { background:rgba(200,154,74,.2); border-color:var(--coal); }
+    .sim-readout { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.8rem; }
+    .readout-item { padding:.5rem .7rem; border-radius:6px; background:rgba(255,255,255,.03); border:1px solid var(--line); }
+    .readout-item small { display:block; font-size:.68rem; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; }
+    .readout-item b { font-family:"JetBrains Mono",monospace; font-size:.95rem; color:var(--coal); }
+
+    /* Zoomable figures */
+    .fig { margin:1.3rem 0; }
+    .fig-frame { padding:.6rem; border:1px solid var(--line); border-radius:var(--radius); background:#0a0c0e; }
+    .fig-frame img { display:block; width:100%; height:auto; border-radius:6px; }
     .fig figcaption { margin-top:.55rem; color:var(--dim); font-size:.78rem; line-height:1.6; }
     .fig figcaption strong { color:var(--coal); }
 
@@ -126,7 +143,7 @@
 
     @media (max-width:900px) {
       .nav { display:none; }
-      .hero { grid-template-columns:1fr; }
+      .hero,.sim-grid { grid-template-columns:1fr; }
       .three,.stage-strip { grid-template-columns:1fr 1fr; }
       .steam-grid,.source-shelf { grid-template-columns:1fr 1fr; }
     }
@@ -138,6 +155,7 @@
   </style>
 </head>
 <body>
+<div class="ll-viewport">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="nav-wrap">
@@ -156,15 +174,15 @@
     </div>
   </header>
 
-  <header class="topbar">
+  <nav class="ll-topbar topbar" aria-label="Lesson navigation">
     <div class="topbar-inner">
       <a href="../../steam-lessons.html">← Lessons</a>
       <nav class="nav" aria-label="Lesson sections">
-        <a href="#coal">Coal</a><a href="#petroleum">Oil &amp; Gas</a><a href="#compare">Compare</a><a href="#quiz">Check Yourself</a><a href="#sources">Sources</a>
+        <a href="#lab">Interactive Lab</a><a href="#coal">Coal</a><a href="#petroleum">Oil &amp; Gas</a><a href="#compare">Compare</a><a href="#quiz">Check Yourself</a><a href="#sources">Sources</a>
       </nav>
       <span class="badge">Earth Science · Grades 6–10</span>
     </div>
-  </header>
+  </nav>
 
   <main class="shell" id="main-content">
     <section class="hero">
@@ -172,7 +190,7 @@
         <p class="eyebrow">Earth Science · Geologic Time · Energy</p>
         <h1>How coal, oil &amp; <em>natural gas</em> form</h1>
         <p class="lede">All three fossil fuels start the same way: dead organic matter buried faster than it can fully decay. From there, heat, pressure, and time — and which organisms did the burying — split the story into three very different fuels, formed hundreds of millions of years apart.</p>
-        <div class="meta"><span class="badge">30–45 minutes</span><span class="badge">Interactive diagrams</span><span class="badge">Companion to Evolution of Wood</span></div>
+        <div class="meta"><span class="badge">30–45 minutes</span><span class="badge">Interactive lab simulator</span><span class="badge">Companion to Evolution of Wood</span></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="hero-stat"><b>~359–299 Mya</b><span>Most coal forms from land plants buried in Carboniferous swamps.</span></div>
@@ -194,11 +212,112 @@
       </div>
     </section>
 
+    <!-- ═════════ Interactive Lab Simulator ═════════ -->
+    <section class="lab" id="lab" aria-labelledby="lab-heading">
+      <p class="kicker">Interactive simulation</p>
+      <h2 id="lab-heading">Burial Maturation &amp; Hydrocarbon Window Simulator</h2>
+      <p>Test how burial depth, overburden pressure, and geothermal heat cook organic matter over millions of years. Select a starting organic material, adjust the depth and geothermal gradient, and observe the resulting phase transformation in real time.</p>
+
+      <div class="sim-grid">
+        <div class="sim-stage">
+          <svg id="basinSvg" viewBox="0 0 700 440" role="img" aria-label="Cross-section diagram of sedimentary basin burial and thermal maturation">
+            <!-- Background strata -->
+            <rect width="700" height="440" fill="#080c10"/>
+            <!-- Stratigraphic layers -->
+            <rect x="0" y="0" width="700" height="70" fill="#1e293b"/>
+            <rect x="0" y="70" width="700" height="90" fill="#283548"/>
+            <rect x="0" y="160" width="700" height="110" fill="#1c232f"/>
+            <rect x="0" y="270" width="700" height="100" fill="#141820"/>
+            <rect x="0" y="370" width="700" height="70" fill="#0c0e12"/>
+
+            <!-- Depth scale on left -->
+            <line x1="60" y1="0" x2="60" y2="440" stroke="#475569" stroke-width="1.5"/>
+            <text x="50" y="25" fill="#94a3b8" font-size="10" text-anchor="end" font-family="monospace">0 km</text>
+            <text x="50" y="100" fill="#94a3b8" font-size="10" text-anchor="end" font-family="monospace">1 km</text>
+            <text x="50" y="180" fill="#94a3b8" font-size="10" text-anchor="end" font-family="monospace">2.5 km</text>
+            <text x="50" y="290" fill="#94a3b8" font-size="10" text-anchor="end" font-family="monospace">4 km</text>
+            <text x="50" y="420" fill="#94a3b8" font-size="10" text-anchor="end" font-family="monospace">6 km</text>
+
+            <!-- Organic parcel tracking line and marker -->
+            <line id="simDepthLine" x1="60" y1="50" x2="680" y2="50" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3"/>
+            <g id="simParcel" transform="translate(370, 50)">
+              <rect x="-140" y="-30" width="280" height="60" rx="8" fill="#1e1810" stroke="#e2c98a" stroke-width="2"/>
+              <text id="parcelTitle" x="0" y="-8" text-anchor="middle" fill="#fde68a" font-weight="800" font-size="14" font-family="sans-serif">Peat Layer</text>
+              <text id="parcelSubtitle" x="0" y="14" text-anchor="middle" fill="#cbd5e1" font-size="11" font-family="sans-serif">Dewatering &amp; microbial breakdown</text>
+            </g>
+
+            <!-- Expulsion indicators -->
+            <g id="expulsionGroup" opacity="0"></g>
+
+            <!-- Current thermal status bar at bottom -->
+            <rect x="80" y="395" width="600" height="32" rx="6" fill="rgba(0,0,0,0.7)" stroke="#334155"/>
+            <text id="simStatusText" x="380" y="416" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="700" font-family="sans-serif">Diagenesis: Shallow, low temperature</text>
+          </svg>
+        </div>
+
+        <div class="sim-controls">
+          <div class="sim-box">
+            <label class="sim-label" for="simMaterial">Organic Material Source</label>
+            <select id="simMaterial" style="width:100%; padding:.5rem; border-radius:6px; background:#14181c; color:#fff; border:1px solid var(--line2);">
+              <option value="coal">Land Plants (Carboniferous Swamp Coal Series)</option>
+              <option value="petroleum">Marine Algae &amp; Plankton (Petroleum Kerogen Series)</option>
+            </select>
+          </div>
+
+          <div class="sim-box">
+            <div class="sim-label">
+              <label for="simDepth">Burial Depth</label>
+              <span id="depthVal">1,200 m</span>
+            </div>
+            <input type="range" id="simDepth" class="sim-slider" min="0" max="6000" step="100" value="1200">
+
+            <div class="sim-label" style="margin-top:.8rem;">
+              <label for="simGrad">Geothermal Gradient</label>
+              <span id="gradVal">30 °C/km</span>
+            </div>
+            <input type="range" id="simGrad" class="sim-slider" min="15" max="45" step="1" value="30">
+
+            <div class="sim-readout">
+              <div class="readout-item">
+                <small>Calculated Temp</small>
+                <b id="readoutTemp">51 °C</b>
+              </div>
+              <div class="readout-item">
+                <small>Lithostatic Pressure</small>
+                <b id="readoutPres">31 MPa</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="sim-box">
+            <div class="sim-label">Geological Scenarios</div>
+            <div class="sim-presets">
+              <button type="button" class="preset-btn" data-m="coal" data-d="300" data-g="25">Shallow Peat Bog</button>
+              <button type="button" class="preset-btn" data-m="coal" data-d="2800" data-g="30">Bituminous Coal Basin</button>
+              <button type="button" class="preset-btn" data-m="coal" data-d="5200" data-g="35">Anthracite Fold Belt</button>
+              <button type="button" class="preset-btn" data-m="petroleum" data-d="2600" data-g="30">Peak Oil Window</button>
+              <button type="button" class="preset-btn" data-m="petroleum" data-d="4500" data-g="32">Deep Gas Window</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════ Coalification Section ═════════ -->
     <section class="card" id="coal">
       <p class="kicker">From land plants</p>
       <h2>Coal: a four-stage squeeze</h2>
       <p>Coal forms from land plants — mosses, ferns, and trees — buried in swampy, low-oxygen wetlands. As layers of sediment pile on top, rising heat and pressure drive off water and volatile compounds in a process called coalification, concentrating the carbon that's left behind.</p>
-      <div class="fig">
+
+      <!-- Zoomable Coal Continuum Diagram -->
+      <figure data-zoomable data-lightbox-group="fossil-fuels" class="fig">
+        <div class="fig-frame">
+          <img src="../../assets/images/lessons/fossil-fuel-formation/coal-ranks-evolution.svg" width="960" height="480" loading="lazy" alt="Geological stages of coalification from peat to anthracite, showing moisture loss, carbon concentration, and energy content" />
+        </div>
+        <figcaption><strong>Figure 1 · The Coalification Continuum</strong> — Progressive devolatilization driven by geothermal heat and burial pressure over millions of years. As water and volatile gases (CO₂ and methane) are expelled, carbon density rises from ~50% in peat to over 90% in anthracite.</figcaption>
+      </figure>
+
+      <figure class="fig">
         <div class="fig-frame">
           <div class="stage-strip">
             <div class="stage peat"><div class="stage-swatch"></div><b>Peat</b><small>Partly decayed plant matter, &gt;50% water, ~50–60% carbon</small></div>
@@ -207,16 +326,27 @@
             <div class="stage anthracite"><div class="stage-swatch"></div><b>Anthracite</b><small>Hardest, shiniest, ~90%+ carbon, burns hottest and cleanest</small></div>
           </div>
         </div>
-        <figcaption><strong>Figure 2.1</strong> — Coalification: as burial depth, heat, and pressure increase from left to right, water and volatile gases are driven out and the remaining material becomes more carbon-rich, harder, and more energy-dense.</figcaption>
-      </div>
+        <figcaption><strong>Figure 1.1</strong> — Coalification summary: as burial depth, heat, and pressure increase from left to right, water and volatile gases are driven out and the remaining material becomes harder, darker, and more energy-dense.</figcaption>
+      </figure>
+
       <div class="callout"><strong>Why Carboniferous coal is so abundant:</strong> Vast tropical swamp forests, wet and low in oxygen, buried enormous volumes of woody plant debris. Whether that debris also resisted decay because lignin-eating fungi hadn't evolved yet is a genuinely contested question among scientists — see <a href="../life-sciences/evolution-of-wood.html#gap" style="color:#fde68a;">The Evolution of Wood</a> for both sides of that debate.</div>
     </section>
 
+    <!-- ═════════ Petroleum Section ═════════ -->
     <section class="card" id="petroleum">
       <p class="kicker">From marine microorganisms</p>
       <h2>Oil &amp; natural gas: cooked kerogen</h2>
       <p>Oil and natural gas mostly come from a very different source: marine algae and plankton, not land plants. When they die, their remains settle into oxygen-poor mud on lake or ocean floors and mix with fine sediment. Buried deeper over millions of years, that organic-rich mud turns into a waxy solid called kerogen — the raw material for petroleum. As kerogen is buried deeper and gets hotter, it "cracks" into different products depending on temperature.</p>
-      <div class="fig">
+
+      <!-- Zoomable Petroleum System Diagram -->
+      <figure data-zoomable data-lightbox-group="fossil-fuels" class="fig">
+        <div class="fig-frame">
+          <img src="../../assets/images/lessons/fossil-fuel-formation/petroleum-system-trap.svg" width="960" height="520" loading="lazy" alt="Anatomy of a Petroleum System showing deep source rock, migration pathway, porous reservoir sandstone, impermeable shale seal, and anticlinal trap" />
+        </div>
+        <figcaption><strong>Figure 2 · Anatomy of a Complete Petroleum System</strong> — Hydrocarbons generated inside deep, hot source rock crack into liquid oil and natural gas. Because oil and gas are lighter than subterranean brine, buoyancy drives them upward through permeable carrier beds until they hit an impermeable caprock seal (such as dense shale or evaporite salt), creating an extractable reservoir trap.</figcaption>
+      </figure>
+
+      <figure class="fig">
         <div class="fig-frame">
           <div class="window-bar" role="img" aria-label="As kerogen is buried deeper and gets hotter, it produces first oil, then natural gas, then becomes overcooked and unproductive">
             <div class="window-seg immature">Immature kerogen</div>
@@ -226,15 +356,16 @@
           </div>
           <div class="window-labels"><span>Shallow, cool</span><span>Produces liquid oil</span><span>Produces natural gas</span><span>Deep, hot — carbon left as graphite</span></div>
         </div>
-        <figcaption><strong>Figure 2.2</strong> — The "oil window" and "gas window" describe the temperature ranges (driven by burial depth) where kerogen breaks down into liquid petroleum versus natural gas. Too shallow and the kerogen hasn't cooked enough; too deep and it overcooks past usable hydrocarbons.</figcaption>
-      </div>
+        <figcaption><strong>Figure 2.1</strong> — The "oil window" and "gas window" describe the temperature ranges (driven by burial depth) where kerogen breaks down into liquid petroleum versus natural gas. Too shallow and the kerogen hasn't cooked enough; too deep and it overcooks past usable hydrocarbons.</figcaption>
+      </figure>
       <p>Once formed, oil and gas are less dense than the surrounding rock and can migrate upward through porous rock until they hit an impermeable layer, where they pool into a reservoir — the deposits companies drill into.</p>
     </section>
 
+    <!-- ═════════ Comparison Section ═════════ -->
     <section class="card" id="compare">
       <p class="kicker">Side by side</p>
       <h2>Three fuels, three origins</h2>
-      <div class="fig">
+      <figure class="fig">
         <div class="fig-frame" style="overflow-x:auto;">
           <table class="fuel-table" aria-label="Comparison of coal, oil, and natural gas formation">
             <thead>
@@ -247,11 +378,12 @@
             </tbody>
           </table>
         </div>
-        <figcaption><strong>Table 2.1</strong> — Natural gas can form directly from marine kerogen, or as a byproduct when coal or oil is buried even deeper and heated further.</figcaption>
-      </div>
+        <figcaption><strong>Table 1</strong> — Natural gas can form directly from marine kerogen, or as a byproduct when coal or oil is buried even deeper and heated further.</figcaption>
+      </figure>
       <div class="debate"><strong>Common myth, corrected:</strong> Oil does not come from dinosaurs. Dinosaurs were far too rare, and too recent relative to most oil-forming rock, to be a meaningful source. The overwhelming majority of petroleum's original carbon came from microscopic marine life.</div>
     </section>
 
+    <!-- ═════════ Quiz Section ═════════ -->
     <section class="card" id="quiz">
       <p class="kicker">Check yourself</p>
       <h2>Quick knowledge check</h2>
@@ -283,6 +415,15 @@
             <option value="anthracite">Anthracite</option>
           </select>
         </div>
+        <div class="q">
+          <label for="fq4">4. In a sedimentary petroleum system, why do oil and gas migrate upward toward the caprock seal?</label>
+          <select id="fq4">
+            <option value="">Choose an answer</option>
+            <option value="buoyancy">They are less dense than the surrounding rock and brine, so buoyancy drives them upward</option>
+            <option value="magnetism">Earth's magnetic field pulls them toward the surface</option>
+            <option value="gravity">Gravity pulls hydrocarbons upward while pulling rock downward</option>
+          </select>
+        </div>
         <button class="check-btn" id="checkAnswers" type="button">Check answers</button>
         <div class="feedback" id="quizFeedback" aria-live="polite"></div>
       </div>
@@ -311,23 +452,139 @@
     </section>
   </main>
   <footer class="footer"><a href="../../steam-lessons.html">← Return to STEAM Lessons</a> · Millions of years to form, decades to burn.</footer>
+</div>
 
   <script>
     (function () {
+      // Interactive Burial Maturation Simulation
+      var depthSlider = document.getElementById("simDepth");
+      var gradSlider = document.getElementById("simGrad");
+      var materialSelect = document.getElementById("simMaterial");
+      var depthVal = document.getElementById("depthVal");
+      var gradVal = document.getElementById("gradVal");
+      var readoutTemp = document.getElementById("readoutTemp");
+      var readoutPres = document.getElementById("readoutPres");
+      var parcelGroup = document.getElementById("simParcel");
+      var parcelTitle = document.getElementById("parcelTitle");
+      var parcelSubtitle = document.getElementById("parcelSubtitle");
+      var simDepthLine = document.getElementById("simDepthLine");
+      var simStatusText = document.getElementById("simStatusText");
+
+      function updateSim() {
+        var depthMeters = Number(depthSlider.value);
+        var gradient = Number(gradSlider.value);
+        var material = materialSelect.value;
+
+        depthVal.textContent = depthMeters.toLocaleString() + " m";
+        gradVal.textContent = gradient + " °C/km";
+
+        var tempC = Math.round(15 + (depthMeters / 1000) * gradient);
+        var presMpa = Math.round((depthMeters / 1000) * 26);
+
+        readoutTemp.textContent = tempC + " °C";
+        readoutPres.textContent = presMpa + " MPa";
+
+        // Vertical position on 0-6000m scale -> 20px to 380px in SVG
+        var svgY = 20 + (depthMeters / 6000) * 360;
+        simDepthLine.setAttribute("y1", svgY);
+        simDepthLine.setAttribute("y2", svgY);
+        parcelGroup.setAttribute("transform", "translate(370, " + svgY + ")");
+
+        if (material === "coal") {
+          if (tempC < 50) {
+            parcelTitle.textContent = "Peat";
+            parcelTitle.setAttribute("fill", "#fef08a");
+            parcelSubtitle.textContent = "High moisture (>70%), uncompacted woody debris";
+            simStatusText.textContent = "Diagenesis: Biological decay halted by anoxia; early compaction";
+            simStatusText.setAttribute("fill", "#94a3b8");
+          } else if (tempC < 100) {
+            parcelTitle.textContent = "Lignite (Brown Coal)";
+            parcelTitle.setAttribute("fill", "#fde68a");
+            parcelSubtitle.textContent = "Soft, ~60–70% carbon, moisture driven down to ~35%";
+            simStatusText.textContent = "Early Catagenesis: Dehydration and gentle thermal cooking";
+            simStatusText.setAttribute("fill", "#fbbf24");
+          } else if (tempC < 170) {
+            parcelTitle.textContent = "Bituminous Coal";
+            parcelTitle.setAttribute("fill", "#f8fafc");
+            parcelSubtitle.textContent = "Dense, 75–86% carbon, releases coal-bed methane (CH₄)";
+            simStatusText.textContent = "Peak Catagenesis: Volatiles expelled; major energy density gain";
+            simStatusText.setAttribute("fill", "#4ade80");
+          } else if (tempC < 250) {
+            parcelTitle.textContent = "Anthracite (Hard Coal)";
+            parcelTitle.setAttribute("fill", "#ffffff");
+            parcelSubtitle.textContent = "Metamorphic, 90–95% carbon, glassy luster";
+            simStatusText.textContent = "Metagenesis: Low volatile content, burns clean and hot";
+            simStatusText.setAttribute("fill", "#38bdf8");
+          } else {
+            parcelTitle.textContent = "Graphite / Overcooked";
+            parcelTitle.setAttribute("fill", "#94a3b8");
+            parcelSubtitle.textContent = "Pure carbon lattice; volatile hydrocarbons completely lost";
+            simStatusText.textContent = "Thermal Metamorphism: Non-combustible mineral graphite";
+            simStatusText.setAttribute("fill", "#ef4444");
+          }
+        } else {
+          // Petroleum Series
+          if (tempC < 60) {
+            parcelTitle.textContent = "Immature Kerogen";
+            parcelTitle.setAttribute("fill", "#94a3b8");
+            parcelSubtitle.textContent = "Organic-rich black mud, microbial biogenic gas only";
+            simStatusText.textContent = "Diagenesis: Kerogen polymers assembled, but temperatures too cool to crack";
+            simStatusText.setAttribute("fill", "#94a3b8");
+          } else if (tempC < 150) {
+            parcelTitle.textContent = "Oil Generation Window";
+            parcelTitle.setAttribute("fill", "#4ade80");
+            parcelSubtitle.textContent = "Kerogen cracks into liquid crude oil (~60–150°C)";
+            simStatusText.textContent = "Catagenesis: Primary hydrocarbon generation; oil migrates by buoyancy";
+            simStatusText.setAttribute("fill", "#4ade80");
+          } else if (tempC < 225) {
+            parcelTitle.textContent = "Natural Gas Window";
+            parcelTitle.setAttribute("fill", "#38bdf8");
+            parcelSubtitle.textContent = "Thermal cracking of oil into methane (CH₄) & condensates";
+            simStatusText.textContent = "Late Catagenesis / Metagenesis: Gas window active; liquid oils break down";
+            simStatusText.setAttribute("fill", "#38bdf8");
+          } else {
+            parcelTitle.textContent = "Overcooked Source Rock";
+            parcelTitle.setAttribute("fill", "#64748b");
+            parcelSubtitle.textContent = "Hydrocarbons destroyed; residual carbon remains as graphite";
+            simStatusText.textContent = "Metamorphic Degradation: Past the economic gas floor";
+            simStatusText.setAttribute("fill", "#ef4444");
+          }
+        }
+      }
+
+      depthSlider.addEventListener("input", updateSim);
+      gradSlider.addEventListener("input", updateSim);
+      materialSelect.addEventListener("change", updateSim);
+
+      document.querySelectorAll(".preset-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          materialSelect.value = btn.dataset.m;
+          depthSlider.value = btn.dataset.d;
+          gradSlider.value = btn.dataset.g;
+          updateSim();
+        });
+      });
+
+      updateSim();
+
+      // Knowledge Check Logic
       document.getElementById("checkAnswers").addEventListener("click", function () {
         var score = 0;
         if (document.getElementById("fq1").value === "burial") score += 1;
         if (document.getElementById("fq2").value === "plankton") score += 1;
         if (document.getElementById("fq3").value === "anthracite") score += 1;
+        if (document.getElementById("fq4").value === "buoyancy") score += 1;
         var feedback = document.getElementById("quizFeedback");
-        feedback.className = "feedback " + (score === 3 ? "correct" : "try");
-        feedback.textContent = score === 3
-          ? "Correct! Burial beats decay, petroleum comes from marine microorganisms, and anthracite is the most heavily transformed coal."
-          : score + "/3 correct. Revisit the coalification and oil/gas window diagrams, then try again.";
+        feedback.className = "feedback " + (score === 4 ? "correct" : "try");
+        feedback.textContent = score === 4
+          ? "Outstanding! 4/4 correct. Burial beats decay, petroleum stems from marine plankton, anthracite represents metamorphic high-rank coal, and buoyancy drives subterranean fluid migration."
+          : score + "/4 correct. Review the interactive maturation simulator and trap diagram above, then try again.";
       });
     }());
   </script>
 
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>

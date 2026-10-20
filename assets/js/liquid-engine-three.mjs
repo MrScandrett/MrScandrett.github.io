@@ -18,6 +18,7 @@ const VERTEX_SHADER = `
   uniform float uDetail;
   uniform float uFlow;
   uniform float uChoppiness;
+  uniform float uVisualScale;
   varying vec3 vWorldPosition;
   varying vec3 vNormalWorld;
   varying float vWave;
@@ -30,7 +31,7 @@ const VERTEX_SHADER = `
     float c = sin((p.x + p.y) * 0.77 + t * 1.65) * 0.16 * uDetail;
     float d = sin((p.x * 1.7 - p.y * 1.15) + t * 2.2) * 0.08 * uDetail;
     float chop = sin(p.x * 1.35 + p.y * .55 + t * 2.8) * 0.045 * uDetail;
-    return (a + b + c + d + chop) * uWaveHeight;
+    return (a + b + c + d + chop) * uWaveHeight * uVisualScale;
   }
 
   void main() {
@@ -60,27 +61,65 @@ const FRAGMENT_SHADER = `
   uniform float uRoughness;
   uniform float uOpacity;
   uniform float uDepth;
+  uniform float uMaterialType;
   varying vec3 vWorldPosition;
   varying vec3 vNormalWorld;
   varying float vWave;
   varying float vCrest;
 
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
   void main() {
-    vec3 n = normalize(vNormalWorld);
+    vec2 p = vWorldPosition.xz;
+    float small = noise(p * 5.0 + vec2(uTime * .23, -uTime * .17));
+    float fine = noise(p * 17.0 - vec2(uTime * .35, uTime * .24));
+    float micro = (small - .5) * .075 + (fine - .5) * .025;
+    vec3 n = normalize(vNormalWorld + vec3(micro, 0.0, micro * .7));
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-    vec3 lightDir = normalize(vec3(-0.35, 0.86, 0.42));
-    float facing = max(dot(n, viewDir), 0.0);
-    float fresnel = pow(1.0 - facing, 3.0);
-    float light = max(dot(n, lightDir), 0.0);
-    float crest = smoothstep(0.18, 0.42, abs(vWave)) * vCrest;
-    float depthMix = clamp(0.55 + light * 0.24, 0.0, 1.0);
-    vec3 body = mix(uDeepColor, uSurfaceColor, depthMix);
-    body = mix(body, uFoamColor, crest * 0.2);
-    float streaks = smoothstep(0.7, 0.98, sin(vWorldPosition.x * 2.8 + uTime * 1.15) * 0.5 + 0.5);
-    float caustic = smoothstep(0.5, 0.94, sin(vWorldPosition.x * 2.6 + uTime * 1.7) * sin(vWorldPosition.z * 2.1 - uTime * 1.25) * 0.5 + 0.5);
-    vec3 color = body + uLightColor * (light * 0.2 + fresnel * 0.58 + streaks * 0.08 + caustic * 0.1);
-    float alpha = clamp(uOpacity + fresnel * 0.12, 0.08, 1.0);
-    gl_FragColor = vec4(color, alpha);
+    vec3 lightDir = normalize(vec3(-.61, .57, -.55));
+    float facing = clamp(dot(n, viewDir), 0.0, 1.0);
+    float fresnel = .035 + .965 * pow(1.0 - facing, 5.0);
+    float diffuse = max(dot(n, lightDir), 0.0);
+    vec3 reflected = reflect(-viewDir, n);
+    vec3 sky = mix(vec3(.23, .39, .52), vec3(.78, .88, .91), smoothstep(-.1, .75, reflected.y));
+    float softbox = exp(-pow((dot(reflected, lightDir) - .88) * 8.0, 2.0));
+    sky += vec3(.56, .62, .64) * softbox;
+    float sun = pow(max(dot(reflected, lightDir), 0.0), mix(28.0, 220.0, 1.0 - uRoughness));
+    vec3 color;
+    if (uMaterialType < .5) {
+      // Water: dark transmitted body, sky reflection at grazing angles, sharp sun glints.
+      vec3 body = mix(uDeepColor, uSurfaceColor, .22 + .34 * diffuse + .12 * small);
+      color = mix(body, sky, fresnel * .88);
+      color += vec3(1.0, .94, .79) * sun * .9;
+      float foam = smoothstep(.16, .32, vWave) * smoothstep(.54, .86, small) * .25;
+      color = mix(color, uFoamColor, foam);
+    } else if (uMaterialType < 1.5) {
+      // Lava: a dark cooling skin with irregular, luminous molten seams.
+      float crust = noise(p * .95 + vec2(uTime * .055, 0.0) + noise(p * .3) * .8);
+      float cracks = 1.0 - smoothstep(.025, .085, abs(crust - .48));
+      float heat = max(cracks * (.6 + .4 * small), smoothstep(.18, .33, vWave) * .32);
+      color = mix(uDeepColor * (1.25 + .35 * small), uSurfaceColor * 1.7 + uFoamColor * .35, heat);
+      color += vec3(.12, .025, .005) * diffuse;
+    } else if (uMaterialType < 2.5) {
+      // Honey: amber absorption in troughs and broad viscous highlights.
+      vec3 amber = mix(uDeepColor, uSurfaceColor, .48 + .22 * vWave + .20 * small + .12 * diffuse);
+      color = mix(amber, vec3(1.0, .77, .31), fresnel * .46);
+      color += vec3(1.0, .83, .50) * (sun * .68 + softbox * .24);
+    } else {
+      // Oil: almost black body with low-angle sky reflection and thin-film color.
+      vec3 body = mix(uDeepColor, uSurfaceColor, .12 + .12 * diffuse);
+      color = mix(body, sky * .72, fresnel * .94);
+      float film = dot(reflected, lightDir) * 10.0 + small * 2.0;
+      color += (vec3(.06, .13, .19) + vec3(.11, .035, .12) * sin(film)) * fresnel;
+      color += vec3(.9, .94, 1.0) * sun * .75;
+    }
+    gl_FragColor = vec4(color, clamp(uOpacity + fresnel * .12, .08, 1.0));
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }
 `;
 
@@ -154,13 +193,15 @@ export function createLiquidSurface(THREE, options = {}) {
     uDetail: { value: options.detail ?? 1 },
     uFlow: { value: options.flow ?? (materialName === 'honey' ? 0.35 : 1) },
     uChoppiness: { value: options.choppiness ?? (materialName === 'water' ? 1 : 0.35) },
+    uVisualScale: { value: options.visualScale ?? 1 },
     uSurfaceColor: { value: new THREE.Color(presetData.surface) },
     uDeepColor: { value: new THREE.Color(presetData.deep) },
     uFoamColor: { value: new THREE.Color(presetData.foam) },
     uLightColor: { value: new THREE.Color(options.lightColor || 0xffffff) },
     uRoughness: { value: presetData.roughness },
     uOpacity: { value: presetData.opacity },
-    uDepth: { value: options.depthTint ?? 1 }
+    uDepth: { value: options.depthTint ?? 1 },
+    uMaterialType: { value: { water: 0, lava: 1, honey: 2, oil: 3 }[materialName] ?? 0 }
   };
   const shader = new THREE.ShaderMaterial({
     uniforms,
@@ -185,6 +226,7 @@ export function createLiquidSurface(THREE, options = {}) {
     uniforms.uFoamColor.value.set(next.foam);
     uniforms.uRoughness.value = next.roughness;
     uniforms.uOpacity.value = next.opacity;
+    uniforms.uMaterialType.value = { water: 0, lava: 1, honey: 2, oil: 3 }[name] ?? 0;
     shader.transparent = next.opacity < 1;
     shader.depthWrite = next.opacity >= 1;
     return api;

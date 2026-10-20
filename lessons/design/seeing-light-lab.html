@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seeing Light Lab · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Explore how light enters our eyes, why brightness changes what we notice, and how simple shapes become recognizable objects in this interactive K–2 visual design lab." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+  <style>
+    :root {
+      --fl-accent: #f59e0b;
+      --fl-accent-2: #3b82f6;
+      --fl-card-bg: var(--white, #ffffff);
+      --fl-line: var(--line, #e2e8f0);
+    }
+
+    .sl-container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+
+    .sl-hero {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, transparent 100%);
+      border-radius: 24px;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .sl-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #d97706;
+      margin-bottom: 0.5rem;
+    }
+    :where(html[data-lighting="night"]) .sl-eyebrow { color: #fbbf24; }
+
+    .sl-hero h1 {
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+      color: var(--text-main, #0f172a);
+      line-height: 1.15;
+    }
+
+    .sl-lede {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: var(--text-secondary, #334155);
+      max-width: 62ch;
+      margin: 0 auto 1.25rem;
+    }
+    :where(html[data-lighting="night"]) .sl-lede { color: #cbd5e1; }
+
+    .sl-card {
+      background: var(--fl-card-bg);
+      border: 1px solid var(--fl-line);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    :where(html[data-lighting="night"]) .sl-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .sl-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .sl-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      background: #fef3c7;
+      color: #b45309;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+    :where(html[data-lighting="night"]) .sl-badge {
+      background: #78350f;
+      color: #fef3c7;
+    }
+
+    .sl-card h2 {
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      font-size: 1.5rem;
+      margin: 0;
+      color: var(--text-main, #0f172a);
+    }
+    :where(html[data-lighting="night"]) .sl-card h2 { color: #f8fafc; }
+
+    .sl-card p {
+      line-height: 1.65;
+      color: var(--text-secondary, #475569);
+      margin: 0 0 1.25rem;
+    }
+    :where(html[data-lighting="night"]) .sl-card p { color: #94a3b8; }
+
+    /* Interactive Eye Simulator */
+    .eye-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #0f172a;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      color: #f8fafc;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .eye-svg {
+      width: 240px;
+      height: 160px;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+    }
+
+    .pupil {
+      transition: r 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .eye-status {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.25rem;
+      margin-top: 1rem;
+      text-align: center;
+      color: #fef08a;
+    }
+
+    .eye-controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1.25rem;
+    }
+
+    .btn-light {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #1e293b;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-light:hover, .btn-light.active {
+      background: #f59e0b;
+      border-color: #d97706;
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    /* Contrast Canvas */
+    .contrast-stage {
+      border-radius: 16px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      transition: background-color 0.4s ease, color 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+      border: 2px solid var(--fl-line);
+      margin-bottom: 1.25rem;
+    }
+
+    .contrast-object {
+      font-size: 4rem;
+      margin-bottom: 0.5rem;
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    }
+
+    .contrast-label {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      height: 10px;
+      accent-color: #f59e0b;
+      cursor: pointer;
+    }
+
+    /* Shape Builder */
+    .shape-builder {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    @media (max-width: 640px) {
+      .shape-builder { grid-template-columns: 1fr; }
+    }
+
+    .shape-canvas-wrap {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    :where(html[data-lighting="night"]) .shape-canvas-wrap {
+      background: #0f172a;
+      border-color: #334155;
+    }
+
+    .shape-display-svg {
+      width: 100%;
+      max-width: 220px;
+      height: 200px;
+    }
+
+    .shape-selector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .shape-btn {
+      background: var(--fl-card-bg);
+      border: 2px solid var(--fl-line);
+      border-radius: 14px;
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main, #1e293b);
+      transition: all 0.2s;
+    }
+    :where(html[data-lighting="night"]) .shape-btn {
+      background: #334155;
+      border-color: #475569;
+      color: #f8fafc;
+    }
+    .shape-btn:hover, .shape-btn.active {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.08);
+      transform: translateY(-2px);
+    }
+    .shape-btn span.icon {
+      font-size: 1.8rem;
+    }
+
+    .takeaway-box {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(245, 158, 11, 0.08));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 18px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    .takeaway-box h3 {
+      font-family: 'Fredoka', sans-serif;
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+      color: #2563eb;
+    }
+    :where(html[data-lighting="night"]) .takeaway-box h3 { color: #60a5fa; }
+    .takeaway-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      color: var(--text-secondary, #334155);
+      line-height: 1.65;
+    }
+    :where(html[data-lighting="night"]) .takeaway-box ul { color: #cbd5e1; }
+  </style>
+</head>
+<body class="theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="sl-container">
+    <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="../../steam-lessons.html#module-art">Visual Art &amp; Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <span class="ll-crumb-current" aria-current="page">Seeing Light Lab</span>
+    </nav>
+
+    <header class="sl-hero">
+      <p class="sl-eyebrow">Chapter 1 · Seeing &amp; Light (Grades K–2)</p>
+      <h1>Seeing Light Lab</h1>
+      <p class="sl-lede">
+        Vision starts with light. Discover how your eyes catch light rays, how brightness helps us see edges, and how simple shapes combine into the world around us.
+      </p>
+      <button class="btn-print-lesson" type="button" aria-label="Print or save this lesson as a PDF">
+        <span aria-hidden="true">🖨️</span> Print / Save PDF
+      </button>
+    </header>
+
+    <!-- Activity 1: Pupil & Light -->
+    <section class="sl-card" id="pupil-lab">
+      <div class="sl-card-header">
+        <span class="sl-badge">1</span>
+        <h2>How Your Eye Catches Light</h2>
+      </div>
+      <p>
+        The black dot in the center of your eye is called the <strong>pupil</strong>. It is a tiny doorway that opens wide in the dark to let in every bit of light, and squeezes small in bright sunlight so too much light doesn't hurt your eye!
+      </p>
+
+      <div class="eye-stage">
+        <svg class="eye-svg" viewBox="0 0 240 160" aria-label="Interactive human eye model">
+          <!-- Sclera (White) -->
+          <ellipse cx="120" cy="80" rx="90" ry="55" fill="#f8fafc" stroke="#94a3b8" stroke-width="3" />
+          <!-- Iris (Blue) -->
+          <circle cx="120" cy="80" r="42" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3" />
+          <!-- Iris fibers -->
+          <circle cx="120" cy="80" r="32" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="4 2" />
+          <!-- Pupil (Black doorway) -->
+          <circle id="eye-pupil" class="pupil" cx="120" cy="80" r="28" fill="#020617" />
+          <!-- Light reflection shine -->
+          <circle cx="132" cy="68" r="6" fill="#ffffff" opacity="0.85" />
+          <circle cx="138" cy="74" r="2.5" fill="#ffffff" opacity="0.6" />
+        </svg>
+        <div id="eye-desc" class="eye-status">🌙 Moonlight: The pupil grows BIG to catch dim light!</div>
+      </div>
+
+      <div class="eye-controls" role="group" aria-label="Light conditions">
+        <button class="btn-light active" id="btn-night" onclick="setLighting('night')">🌙 Dark Room</button>
+        <button class="btn-light" id="btn-room" onclick="setLighting('room')">💡 Classroom Lamp</button>
+        <button class="btn-light" id="btn-sun" onclick="setLighting('sun')">☀️ Bright Sunshine</button>
+      </div>
+    </section>
+
+    <!-- Activity 2: Brightness & Contrast -->
+    <section class="sl-card" id="contrast-lab">
+      <div class="sl-card-header">
+        <span class="sl-badge">2</span>
+        <h2>Light Makes Shapes Appear</h2>
+      </div>
+      <p>
+        In pitch darkness, your eyes cannot see objects because there is no light bouncing off them. Move the brightness slider to see how light reveals edges and colors!
+      </p>
+
+      <div class="contrast-stage" id="contrast-box" style="background-color: #050505; color: #1e293b;">
+        <div class="contrast-object" id="contrast-icon">🦉</div>
+        <div class="contrast-label" id="contrast-text">Can you spot the friendly owl in the dark?</div>
+      </div>
+
+      <div class="slider-row">
+        <span aria-hidden="true">🌑</span>
+        <label for="light-slider" class="sr-only">Room Light Level</label>
+        <input type="range" id="light-slider" min="0" max="100" value="5" oninput="updateBrightness(this.value)" />
+        <span aria-hidden="true">☀️</span>
+      </div>
+    </section>
+
+    <!-- Activity 3: Shape Recognition -->
+    <section class="sl-card" id="shape-lab">
+      <div class="sl-card-header">
+        <span class="sl-badge">3</span>
+        <h2>Simple Shapes Make Big Pictures</h2>
+      </div>
+      <p>
+        Designers and artists don't draw complicated things all at once. Our brains recognize objects by spotting simple geometric shapes: circles, triangles, and rectangles!
+      </p>
+
+      <div class="shape-builder">
+        <div class="shape-canvas-wrap">
+          <svg class="shape-display-svg" id="shape-svg" viewBox="0 0 200 200" aria-label="Shape combination drawing">
+            <!-- Default Cat -->
+            <circle cx="100" cy="115" r="45" fill="#f59e0b" />
+            <polygon points="70,80 85,50 100,75" fill="#d97706" />
+            <polygon points="100,75 115,50 130,80" fill="#d97706" />
+            <circle cx="85" cy="110" r="5" fill="#0f172a" />
+            <circle cx="115" cy="110" r="5" fill="#0f172a" />
+            <polygon points="100,118 94,124 106,124" fill="#ef4444" />
+          </svg>
+        </div>
+
+        <div class="shape-selector-grid">
+          <button class="shape-btn active" id="btn-cat" onclick="showObject('cat')">
+            <span class="icon">🐱</span>
+            <span>Friendly Cat</span>
+          </button>
+          <button class="shape-btn" id="btn-house" onclick="showObject('house')">
+            <span class="icon">🏠</span>
+            <span>Cozy House</span>
+          </button>
+          <button class="shape-btn" id="btn-boat" onclick="showObject('boat')">
+            <span class="icon">⛵</span>
+            <span>Sailboat</span>
+          </button>
+          <button class="shape-btn" id="btn-tree" onclick="showObject('tree')">
+            <span class="icon">🌲</span>
+            <span>Pine Tree</span>
+          </button>
+        </div>
+      </div>
+      <p id="shape-breakdown" style="margin-top: 1rem; font-weight: 500; text-align: center; color: var(--fl-accent);">
+        Shapes used: 1 Circle (head) + 2 Triangles (ears) + Dots (eyes).
+      </p>
+    </section>
+
+    <!-- Big Takeaways -->
+    <div class="takeaway-box">
+      <h3>🌟 What We Learned Today</h3>
+      <ul>
+        <li><strong>Pupils adapt:</strong> Big in the dark to collect light; small in bright sun to protect your eye.</li>
+        <li><strong>Light reveals contrast:</strong> We see things when light bounces off an object and into our eyes.</li>
+        <li><strong>Shapes tell stories:</strong> Triangles, circles, and squares are the building blocks that artists use to make pictures everyone recognizes!</li>
+      </ul>
+    </div>
+  </main>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script>
+    function setLighting(mode) {
+      const pupil = document.getElementById('eye-pupil');
+      const desc = document.getElementById('eye-desc');
+      const btns = document.querySelectorAll('.btn-light');
+      btns.forEach(b => b.classList.remove('active'));
+
+      if (mode === 'night') {
+        pupil.setAttribute('r', '34');
+        desc.textContent = '🌙 Dark Room: The pupil grows BIG (wide) to let in more light!';
+        document.getElementById('btn-night').classList.add('active');
+      } else if (mode === 'room') {
+        pupil.setAttribute('r', '22');
+        desc.textContent = '💡 Classroom Light: The pupil stays medium-sized for comfortable reading.';
+        document.getElementById('btn-room').classList.add('active');
+      } else if (mode === 'sun') {
+        pupil.setAttribute('r', '11');
+        desc.textContent = '☀️ Bright Sunshine: The pupil shrinks TINY to protect your eyes!';
+        document.getElementById('btn-sun').classList.add('active');
+      }
+    }
+
+    function updateBrightness(val) {
+      const box = document.getElementById('contrast-box');
+      const icon = document.getElementById('contrast-icon');
+      const text = document.getElementById('contrast-text');
+      
+      const v = Number(val);
+      const bgHex = Math.round((v / 100) * 240);
+      box.style.backgroundColor = `rgb(${bgHex}, ${bgHex}, ${bgHex})`;
+
+      if (v < 20) {
+        icon.style.opacity = '0.15';
+        icon.style.filter = 'grayscale(100%) brightness(0.2)';
+        text.style.color = '#334155';
+        text.textContent = 'Can you spot the friendly owl in the dark? (Too dim!)';
+      } else if (v < 60) {
+        icon.style.opacity = '0.7';
+        icon.style.filter = 'none';
+        text.style.color = '#1e293b';
+        text.textContent = 'Twilight: The owl is becoming clear!';
+      } else {
+        icon.style.opacity = '1';
+        icon.style.filter = 'none';
+        text.style.color = '#0f172a';
+        text.textContent = 'Bright Daylight: High contrast! The owl and its edges are easy to see!';
+      }
+    }
+
+    function showObject(type) {
+      const svg = document.getElementById('shape-svg');
+      const breakdown = document.getElementById('shape-breakdown');
+      document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-' + type).classList.add('active');
+
+      if (type === 'cat') {
+        svg.innerHTML = `
+          <circle cx="100" cy="115" r="45" fill="#f59e0b" />
+          <polygon points="70,80 85,50 100,75" fill="#d97706" />
+          <polygon points="100,75 115,50 130,80" fill="#d97706" />
+          <circle cx="85" cy="110" r="5" fill="#0f172a" />
+          <circle cx="115" cy="110" r="5" fill="#0f172a" />
+          <polygon points="100,118 94,124 106,124" fill="#ef4444" />
+        `;
+        breakdown.textContent = 'Shapes used: 1 Circle (head) + 2 Triangles (ears) + Dots (eyes).';
+      } else if (type === 'house') {
+        svg.innerHTML = `
+          <rect x="55" y="90" width="90" height="75" fill="#3b82f6" rx="4" />
+          <polygon points="45,90 100,45 155,90" fill="#dc2626" />
+          <rect x="85" y="120" width="30" height="45" fill="#fbbf24" rx="2" />
+          <rect x="65" y="105" width="18" height="18" fill="#ffffff" />
+        `;
+        breakdown.textContent = 'Shapes used: 1 Square (walls) + 1 Triangle (roof) + 2 Rectangles (door & window).';
+      } else if (type === 'boat') {
+        svg.innerHTML = `
+          <path d="M 40 130 L 160 130 L 140 160 L 60 160 Z" fill="#b45309" />
+          <line x1="100" y1="130" x2="100" y2="40" stroke="#78350f" stroke-width="4" />
+          <polygon points="100,45 150,115 100,115" fill="#38bdf8" />
+          <polygon points="96,55 60,115 96,115" fill="#bae6fd" />
+        `;
+        breakdown.textContent = 'Shapes used: 1 Trapezoid (hull) + 2 Triangles (sails) + 1 Line (mast).';
+      } else if (type === 'tree') {
+        svg.innerHTML = `
+          <rect x="90" y="135" width="20" height="40" fill="#78350f" rx="3" />
+          <polygon points="100,40 60,85 140,85" fill="#15803d" />
+          <polygon points="100,70 50,115 150,115" fill="#16a34a" />
+          <polygon points="100,100 40,145 160,145" fill="#22c55e" />
+        `;
+        breakdown.textContent = 'Shapes used: 3 Stacked Triangles (needles) + 1 Rectangle (trunk).';
+      }
+    }
+  </script>
+</body>
+</html>
+

@@ -95,6 +95,7 @@
       { label: 'Output rate', value: outputRate ? rateLabel(outputRate) : 'Known after audio starts', state: 'neutral' },
       { label: 'WAV export rate', value: outputRate ? rateLabel(options.exportRate || outputRate) : 'Known after audio starts', state: 'neutral' },
       { label: 'Output latency', value: latencyLabel(latency), state: 'neutral' },
+      { label: 'Input latency', value: inputTrack ? latencyLabel(inputSettings.latency) : 'Known after microphone permission', state: 'neutral' },
       { label: 'Microphone', value: microphonePermission === 'granted' ? 'Allowed' : microphonePermission === 'denied' ? 'Blocked in browser settings' : microphoneApi && secure ? 'Ask when you arm an audio track' : 'Unavailable', state: microphonePermission === 'denied' ? 'bad' : 'neutral' },
       { label: 'Input format', value: inputTrack ? `${inputSettings.sampleRate ? `${inputSettings.sampleRate.toLocaleString('en-US')} Hz, ` : ''}${inputSettings.channelCount || 1} channel${inputSettings.channelCount === 1 ? '' : 's'}` : 'Known after microphone permission', state: 'neutral' },
       { label: 'Recorder', value: audioWorklet && secure ? 'Ready' : 'Not supported here', state: audioWorklet && secure ? 'ok' : 'bad' },

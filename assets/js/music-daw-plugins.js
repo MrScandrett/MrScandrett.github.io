@@ -32,17 +32,22 @@
   }
 
   function createWetDry(context, source, instance, amount) {
-    if (amount >= 1 || !context.createGain) return { output: instance.output, nodes: [] };
+    if (!context.createGain) return { output: instance.output, nodes: [], setWet() {} };
     const output = context.createGain(), dry = context.createGain(), wet = context.createGain();
     dry.gain.value = 1 - amount; wet.gain.value = amount;
     source.connect(dry); dry.connect(output); instance.output.connect(wet); wet.connect(output);
-    return { output, nodes: [output, dry, wet] };
+    return { output, nodes: [output, dry, wet], setWet(value) {
+      const next = clamp01(value), now = context.currentTime || 0;
+      dry.gain.setTargetAtTime?.(1 - next, now, 0.01);
+      wet.gain.setTargetAtTime?.(next, now, 0.01);
+      if (!dry.gain.setTargetAtTime) { dry.gain.value = 1 - next; wet.gain.value = next; }
+    } };
   }
 
   function createChain(context, input, inserts, registry, parameterReader) {
     const active = [], missing = [], failed = [];
     let tail = input;
-    (inserts || []).forEach(insert => {
+    (inserts || []).forEach((insert, index) => {
       const definition = registry?.[insert.type];
       if (insert.bypass) return;
       if (!definition) { missing.push(insert.type); return; }
@@ -52,6 +57,8 @@
         const source = tail, amount = clamp01(insert.wet);
         source.connect(instance.input);
         const mixed = createWetDry(context, source, instance, amount);
+        instance.insertIndex = index;
+        instance.setWet = mixed.setWet;
         const dispose = instance.dispose;
         instance.dispose = () => { mixed.nodes.forEach(node => node.disconnect?.()); dispose?.call(instance); };
         tail = mixed.output; active.push(instance);

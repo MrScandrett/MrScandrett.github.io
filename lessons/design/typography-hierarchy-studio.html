@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Typography Hierarchy Studio · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
+  <meta name="description" content="Master visual hierarchy, modular type scales, weight contrast, and spatial rhythm in an interactive typography design studio." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+  <style>
+    :root {
+      --th-accent: #6366f1;
+      --th-accent-dark: #4f46e5;
+      --th-card-bg: var(--white, #ffffff);
+      --th-line: var(--line, #e2e8f0);
+    }
+
+    .th-container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 4rem;
+    }
+
+    .th-hero {
+      text-align: center;
+      padding: 2rem 1.25rem 2.25rem;
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, transparent 100%);
+      border-radius: 24px;
+      margin-bottom: 2.25rem;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+
+    .th-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--th-accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .th-hero h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      margin: 0 0 0.85rem;
+      color: var(--text-main, #0f172a);
+      line-height: 1.15;
+    }
+
+    .th-lede {
+      font-size: 1.1rem;
+      line-height: 1.65;
+      color: var(--text-secondary, #334155);
+      max-width: 65ch;
+      margin: 0 auto 1.5rem;
+    }
+    :where(html[data-lighting="night"]) .th-lede { color: #cbd5e1; }
+
+    .th-card {
+      background: var(--th-card-bg);
+      border: 1px solid var(--th-line);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 2.25rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    :where(html[data-lighting="night"]) .th-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .th-card h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--text-main, #0f172a);
+    }
+    :where(html[data-lighting="night"]) .th-card h2 { color: #f8fafc; }
+
+    .th-card p {
+      line-height: 1.65;
+      color: var(--text-secondary, #475569);
+      margin: 0 0 1.25rem;
+    }
+    :where(html[data-lighting="night"]) .th-card p { color: #94a3b8; }
+
+    /* Studio Workbench Layout */
+    .studio-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 820px) {
+      .studio-layout { grid-template-columns: 1fr; }
+    }
+
+    .studio-controls {
+      background: #f8fafc;
+      border: 1px solid var(--th-line);
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+    :where(html[data-lighting="night"]) .studio-controls {
+      background: #0f172a;
+      border-color: #334155;
+    }
+
+    .control-group {
+      margin-bottom: 1.25rem;
+    }
+    .control-group:last-child { margin-bottom: 0; }
+
+    .control-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+      margin-bottom: 0.45rem;
+    }
+
+    .select-input, .range-input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: #0f172a;
+    }
+    :where(html[data-lighting="night"]) .select-input {
+      background: #1e293b;
+      border-color: #475569;
+      color: #f8fafc;
+    }
+
+    /* Live Preview Paper */
+    .preview-canvas {
+      background: #ffffff;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 2.25rem;
+      min-height: 480px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    /* Eye Tracking Badges */
+    .eye-anchor {
+      position: relative;
+      display: inline-block;
+    }
+    .eye-rank {
+      position: absolute;
+      top: -10px;
+      left: -24px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 0.65rem;
+      font-weight: 900;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .show-heat .eye-rank { opacity: 1; }
+
+    /* Comparison Grid */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 680px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+
+    .compare-card {
+      border: 1px solid var(--th-line);
+      border-radius: 14px;
+      padding: 1.25rem;
+      background: #f8fafc;
+    }
+    :where(html[data-lighting="night"]) .compare-card {
+      background: #0f172a;
+      border-color: #334155;
+    }
+
+    .compare-card.bad {
+      border-left: 4px solid #ef4444;
+    }
+    .compare-card.good {
+      border-left: 4px solid #10b981;
+    }
+
+    .scale-ruler {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 1.25rem;
+      border-radius: 14px;
+      margin-top: 1rem;
+    }
+    .scale-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.35rem;
+    }
+    .scale-row:last-child { border-bottom: none; }
+  </style>
+</head>
+<body class="theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="th-container">
+    <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <a href="../../steam-lessons.html#module-art">Visual Art &amp; Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+      <span class="ll-crumb-current" aria-current="page">Typography Hierarchy Studio</span>
+    </nav>
+
+    <header class="th-hero">
+      <p class="th-eyebrow">Chapter 3 · Composition &amp; Layout (Grades 6–8)</p>
+      <h1>Typography Hierarchy Studio</h1>
+      <p class="th-lede">
+        When everything shouts, nothing is heard. Learn how graphic designers use scale, weight, and spatial rhythm to guide a reader’s eye subconsciously through complex information.
+      </p>
+      <button class="btn-print-lesson" type="button" aria-label="Print or save this lesson as a PDF">
+        <span aria-hidden="true">🖨️</span> Print / Save PDF
+      </button>
+    </header>
+
+    <!-- Section 1: The Principle of Contrast -->
+    <section class="th-card">
+      <h2>1. The Problem: The Visual Wall of Noise</h2>
+      <p>
+        Imagine opening a book or newspaper where every word had the exact same size, bold thickness, and line spacing. Your eyes wouldn't know where to begin, what was important, or when one thought ended and another began.
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <strong style="color: #ef4444; display: block; margin-bottom: 0.5rem;">❌ Flat / No Hierarchy</strong>
+          <div style="font-size: 0.85rem; line-height: 1.4; color: #475569;">
+            ANNUAL SCIENCE FAIR 2026 JOIN US IN THE MAIN AUDITORIUM FRIDAY AT 4PM ALL STUDENTS MUST REGISTER BEFORE THURSDAY CASH PRIZES AWARDED FOR BEST EXPERIMENT PROJECTS BRING YOUR POSTER BOARDS AND SCIENTIFIC NOTEBOOKS.
+          </div>
+        </div>
+        <div class="compare-card good">
+          <strong style="color: #10b981; display: block; margin-bottom: 0.5rem;">✓ Structured Hierarchy</strong>
+          <div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; line-height: 1.1; margin-bottom: 0.25rem;">Annual Science Fair</div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #6366f1; text-transform: uppercase; margin-bottom: 0.5rem;">Friday · 4:00 PM · Main Auditorium</div>
+            <div style="font-size: 0.82rem; color: #475569; line-height: 1.5;">Join us for student research presentations and awards. Register your poster board before Thursday.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Interactive Studio -->
+    <section class="th-card" id="studio-section">
+      <h2>2. Interactive Layout Workbench</h2>
+      <p>
+        Adjust the typographic scale, font weights, and vertical leading below. Toggle <strong>Show Eye-Scanning Path</strong> to see how changes redirect the viewer’s visual attention!
+      </p>
+
+      <div class="studio-layout">
+        <!-- Controls Column -->
+        <div class="studio-controls">
+          <div class="control-group">
+            <label class="control-label" for="scale-select">Modular Type Scale</label>
+            <select id="scale-select" class="select-input" onchange="renderStudio()">
+              <option value="1.125">1.125 · Major Second (Subtle)</option>
+              <option value="1.200">1.200 · Minor Third (Compact)</option>
+              <option value="1.250" selected>1.250 · Major Third (Standard)</option>
+              <option value="1.333">1.333 · Perfect Fourth (Editorial)</option>
+              <option value="1.414">1.414 · Augmented Fourth (Bold)</option>
+              <option value="1.618">1.618 · Golden Ratio (Dramatic)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="title-weight">Title Weight</label>
+            <select id="title-weight" class="select-input" onchange="renderStudio()">
+              <option value="400">Regular (400)</option>
+              <option value="600">SemiBold (600)</option>
+              <option value="800" selected>ExtraBold (800)</option>
+              <option value="900">Black (900)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="leading-slider">Line Height (Leading): <span id="leading-val">1.5</span></label>
+            <input type="range" id="leading-slider" class="range-input" min="1.0" max="2.2" step="0.05" value="1.5" oninput="renderStudio()" />
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="tracking-slider">Letter Spacing: <span id="tracking-val">0px</span></label>
+            <input type="range" id="tracking-slider" class="range-input" min="-1" max="4" step="0.5" value="0" oninput="renderStudio()" />
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Visual Aids</label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; cursor: pointer;">
+              <input type="checkbox" id="check-eyetrack" onchange="toggleHeatmap()" />
+              <span>Show Eye-Scanning Path</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Live Preview Stage -->
+        <div class="preview-canvas" id="preview-stage">
+          <div class="eye-anchor">
+            <span class="eye-rank" id="rank-1">1</span>
+            <div id="pv-kicker" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #6366f1; margin-bottom: 0.5rem;">
+              Editorial Dispatch · Issue 42
+            </div>
+          </div>
+
+          <div class="eye-anchor" style="display: block;">
+            <span class="eye-rank" id="rank-2">2</span>
+            <h1 id="pv-title" style="margin: 0 0 1rem; line-height: 1.15; color: #0f172a;">
+              The Architecture of Reading
+            </h1>
+          </div>
+
+          <div class="eye-anchor" style="display: block;">
+            <span class="eye-rank" id="rank-3">3</span>
+            <p id="pv-deck" style="font-weight: 500; color: #475569; margin: 0 0 1.25rem;">
+              Before someone reads a single sentence, their brain has already mapped the page. Good typography gives readers effortless mental milestones.
+            </p>
+          </div>
+
+          <div class="eye-anchor" style="display: block;">
+            <span class="eye-rank" id="rank-4">4</span>
+            <p id="pv-body" style="color: #334155; margin: 0;">
+              Typography is not merely choosing pleasing typefaces; it is the discipline of creating spatial relationships. By establishing a clear hierarchy through proportion, weight, and rhythmic leading, designers direct attention with surgical precision, reducing cognitive load and inviting deep immersion.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: The Math Behind the Scale -->
+    <section class="th-card">
+      <h2>3. The Mathematics of Modular Scales</h2>
+      <p>
+        Just like musical scales are built on mathematical frequency ratios (octaves $2:1$, fifths $3:2$), graphic designers build typographic scales by multiplying a base size (usually $16\text{px}$) by a chosen ratio:
+      </p>
+
+      <div class="scale-ruler" id="scale-display">
+        <div class="scale-row"><span>H1 (Display)</span><strong id="scale-h1">31.25 px</strong></div>
+        <div class="scale-row"><span>H2 (Subhead)</span><strong id="scale-h2">25.00 px</strong></div>
+        <div class="scale-row"><span>H3 (Section)</span><strong id="scale-h3">20.00 px</strong></div>
+        <div class="scale-row"><span>Body (Base)</span><strong>16.00 px</strong></div>
+        <div class="scale-row"><span>Caption / Footnote</span><strong id="scale-caption">12.80 px</strong></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../../assets/js/theme-registry.js"></script>
+  <script src="../../assets/js/nav-mobile.js"></script>
+  <script src="../../assets/js/lesson-print-button.js"></script>
+  <script src="../../assets/js/photo-lightbox.js"></script>
+  <script>
+    function renderStudio() {
+      const ratio = parseFloat(document.getElementById('scale-select').value);
+      const titleWeight = document.getElementById('title-weight').value;
+      const leading = document.getElementById('leading-slider').value;
+      const tracking = document.getElementById('tracking-slider').value;
+
+      document.getElementById('leading-val').textContent = leading;
+      document.getElementById('tracking-val').textContent = tracking + 'px';
+
+      const base = 16;
+      const h3 = base * ratio;
+      const h2 = h3 * ratio;
+      const h1 = h2 * ratio;
+      const caption = base / ratio;
+
+      // Update Preview Elements
+      const pvTitle = document.getElementById('pv-title');
+      pvTitle.style.fontSize = h1.toFixed(1) + 'px';
+      pvTitle.style.fontWeight = titleWeight;
+      pvTitle.style.letterSpacing = (tracking * -0.5) + 'px';
+
+      const pvDeck = document.getElementById('pv-deck');
+      pvDeck.style.fontSize = h3.toFixed(1) + 'px';
+      pvDeck.style.lineHeight = (leading * 0.95);
+
+      const pvBody = document.getElementById('pv-body');
+      pvBody.style.fontSize = base + 'px';
+      pvBody.style.lineHeight = leading;
+      pvBody.style.letterSpacing = tracking + 'px';
+
+      // Update Math Readout
+      document.getElementById('scale-h1').textContent = h1.toFixed(2) + ' px';
+      document.getElementById('scale-h2').textContent = h2.toFixed(2) + ' px';
+      document.getElementById('scale-h3').textContent = h3.toFixed(2) + ' px';
+      document.getElementById('scale-caption').textContent = caption.toFixed(2) + ' px';
+    }
+
+    function toggleHeatmap() {
+      const isChecked = document.getElementById('check-eyetrack').checked;
+      const stage = document.getElementById('preview-stage');
+      if (isChecked) {
+        stage.classList.add('show-heat');
+      } else {
+        stage.classList.remove('show-heat');
+      }
+    }
+
+    // Initial render
+    renderStudio();
+  </script>
+</body>
+</html>
+
