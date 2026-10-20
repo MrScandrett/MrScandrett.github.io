@@ -71,7 +71,7 @@
   };
   const monitorVoices = new Set();
   const live = new Map();             // pitch → live monitoring voice
-  const mic = { stream: null, source: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false, chunks: [], capturing: false };
+  const mic = { stream: null, source: null, splitter: null, input: null, route: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false, chunks: [], capturing: false };
   const liveTake = { peaks: [], lastDraw: 0 };
 
   function defaultProject() {
@@ -644,20 +644,40 @@
     mic.sink.gain.value = 0;
     mic.analyser = c.createAnalyser();
     mic.analyser.fftSize = 1024;
-    mic.source.connect(mic.node);
-    mic.source.connect(mic.analyser);
-    connectMicMonitor();
     mic.node.connect(mic.sink);
     mic.sink.connect(c.destination);
+    configureMicInput();
     refreshAudioHealth();
     return true;
+  }
+
+  function configureMicInput() {
+    if (!mic.source || !mic.node) return;
+    mic.source.disconnect();
+    mic.splitter?.disconnect();
+    mic.input?.disconnect();
+    mic.monitor?.disconnect();
+    mic.monitor = null;
+    const mode = project.audioSettings?.inputChannel || 'mono1';
+    if (mode === 'stereo') {
+      mic.route = mic.source;
+    } else {
+      mic.splitter ||= audio.ctx.createChannelSplitter(2);
+      mic.input ||= audio.ctx.createGain();
+      mic.source.connect(mic.splitter);
+      mic.splitter.connect(mic.input, mode === 'mono2' ? 1 : 0);
+      mic.route = mic.input;
+    }
+    mic.route.connect(mic.node);
+    mic.route.connect(mic.analyser);
+    connectMicMonitor();
   }
 
   function releaseMic() {
     if (mic.capturing) return;
     if (mic.stream) mic.stream.getTracks().forEach((t) => t.stop());
-    [mic.source, mic.node, mic.sink, mic.analyser, mic.monitor].forEach((n) => { if (n) n.disconnect(); });
-    Object.assign(mic, { stream: null, source: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false });
+    [mic.source, mic.splitter, mic.input, mic.node, mic.sink, mic.analyser, mic.monitor].forEach((n) => { if (n) n.disconnect(); });
+    Object.assign(mic, { stream: null, source: null, splitter: null, input: null, route: null, node: null, sink: null, analyser: null, monitor: null, monitorOn: false });
     const level = root.querySelector('[data-ref="input-level"]'), meter = root.querySelector('[data-ref="input-meter"]');
     if (level) level.setAttribute('aria-valuenow', '0');
     if (meter) meter.style.transform = 'scaleX(0)';
@@ -666,14 +686,14 @@
   }
 
   function connectMicMonitor() {
-    if (mic.source && mic.monitor) mic.source.disconnect(mic.monitor);
+    if (mic.route && mic.monitor) mic.route.disconnect(mic.monitor);
     mic.monitor?.disconnect();
     mic.monitor = null;
     const track = armedTrack();
-    if (!mic.source || !track || track.kind !== 'audio' || !mic.monitorOn) { updateInputUi(); return; }
+    if (!mic.route || !track || track.kind !== 'audio' || !mic.monitorOn) { updateInputUi(); return; }
     mic.monitor = audio.ctx.createGain();
     mic.monitor.gain.value = 1;
-    mic.source.connect(mic.monitor);
+    mic.route.connect(mic.monitor);
     mic.monitor.connect(audio.mix.strip(track).input);
     updateInputUi();
   }
@@ -1283,8 +1303,9 @@
     <div class="daw-input" data-ref="input" aria-label="Live input">
       <div class="daw-input-title"><strong data-ref="input-name">Input</strong><span data-ref="input-state">Arm a track to play or record</span></div>
       <div class="daw-input-level" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-ref="input-level"><i data-ref="input-meter"></i></div>
+      <label class="daw-field daw-input-channel">Mic input <select data-ref="input-channel" aria-label="Microphone input channel"><option value="mono1">Mono 1</option><option value="mono2">Mono 2</option><option value="stereo">Stereo 1/2</option></select></label>
       <button type="button" class="daw-btn daw-toggle" data-act="monitor" aria-pressed="false" disabled>Hear mic</button>
-      <span class="daw-input-help">Use headphones when hearing your mic.</span>
+      <span class="daw-input-help">For one microphone, choose its input number. Stereo preserves two distinct inputs. Use headphones when hearing your mic.</span>
     </div>
     <details class="daw-region"><summary>Loop region + seek</summary><div class="daw-bar" aria-label="Loop and navigation">
       <label class="daw-field">Position (beat)<input type="number" data-position min="1" step="0.25" value="1"></label>
@@ -1417,12 +1438,15 @@
 
   function updateInputUi() {
     const track = armedTrack();
-    const name = $('input-name'), state = $('input-state'), button = root.querySelector('[data-act="monitor"]');
+    const name = $('input-name'), state = $('input-state'), button = root.querySelector('[data-act="monitor"]'), channel = $('input-channel');
     if (!name || !state || !button) return;
     name.textContent = track ? track.name : 'Input';
     state.textContent = track?.kind === 'audio' ? (mic.node ? 'Microphone ready · level is live' : 'Opening microphone…')
       : track?.kind === 'instrument' ? 'Instrument ready · play before recording' : 'Arm a track to play or record';
     $('input-level').hidden = track?.kind !== 'audio';
+    channel.parentElement.hidden = track?.kind !== 'audio';
+    channel.disabled = transport.recording || finishingTake;
+    channel.value = project.audioSettings?.inputChannel || 'mono1';
     button.disabled = !mic.node || track?.kind !== 'audio';
     button.hidden = track?.kind !== 'audio';
     root.querySelector('.daw-input-help').hidden = track?.kind !== 'audio';
@@ -1430,6 +1454,13 @@
     button.textContent = mic.monitorOn && mic.monitor ? 'Mic on' : 'Hear mic';
     root.querySelector('[data-ref="input"]').classList.toggle('is-ready', !!track && (track.kind === 'instrument' || !!mic.node));
   }
+  $('input-channel').addEventListener('change', event => {
+    if (transport.recording || finishingTake) { updateInputUi(); return; }
+    project.audioSettings.inputChannel = event.target.value;
+    configureMicInput();
+    commit();
+    status(`Microphone input set to ${event.target.selectedOptions[0].text}. New takes will use this channel.`);
+  });
 
   let healthRequest = 0;
   async function refreshAudioHealth() {

@@ -25,7 +25,7 @@ test('legacy projects migrate to the current schema without losing musical data'
   assert.equal(project.tracks[0].clips[0].notes[0].pitch, 60);
   assert.equal(project.tracks[0].armed, false, 'restored projects never arm hardware automatically');
   assert.equal(project.tracks[0].pluginChain[0].pluginId, 'eq');
-  assert.deepEqual(project.audioSettings, { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null, recordingTrimMs: 0 });
+  assert.deepEqual(project.audioSettings, { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null, recordingTrimMs: 0, inputChannel: 'mono1' });
   assert.deepEqual(project.pluginInstances, []);
 });
 
