@@ -25,7 +25,7 @@ test('legacy projects migrate to the current schema without losing musical data'
   assert.equal(project.tracks[0].clips[0].notes[0].pitch, 60);
   assert.equal(project.tracks[0].armed, false, 'restored projects never arm hardware automatically');
   assert.equal(project.tracks[0].pluginChain[0].pluginId, 'eq');
-  assert.deepEqual(project.audioSettings, { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null });
+  assert.deepEqual(project.audioSettings, { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null, recordingTrimMs: 0 });
   assert.deepEqual(project.pluginInstances, []);
 });
 
@@ -147,6 +147,30 @@ test('audio facts and diagnostics expose bounded, copy-safe data', () => {
   assert.deepEqual(events.map(event => event.code), ['two', 'three']);
   events[0].details.rate = 1;
   assert.equal(log.list()[0].details.rate, 48000);
+});
+
+test('recorded frames keep their clock gaps and microphone takes align to heard playback', () => {
+  const chunks = [
+    { frame: 100, channels: [Float32Array.from([1, 2])] },
+    { frame: 104, channels: [Float32Array.from([3, 4])] },
+  ];
+  const capture = Audio.captureFrames(chunks);
+  assert.equal(capture.droppedFrames, 2);
+  const output = [new Float32Array(capture.length)];
+  Audio.captureFrames(chunks, output);
+  assert.deepEqual([...output[0]], [1, 2, 0, 0, 3, 4]);
+  const stream = { getAudioTracks: () => [{ getSettings: () => ({ latency: .025 }) }] };
+  assert.equal(Audio.inputLatencySeconds(stream, null), .025);
+  assert.equal(Audio.inputLatencySeconds(stream, 40), .04);
+  assert.equal(Audio.eventContextTime({ currentTime: 10 }, 980, 1000), 9.98);
+  assert.equal(Audio.eventContextTime({ currentTime: 10 }, 500, 1000), 10);
+  const base = { firstFrame: 0, sampleRate: 1000, recordTime: .1, recordBeat: 0,
+    stopBeat: 2, secondsPerBeat: 1, outputLatency: .03, inputLatency: .025, bufferDuration: 3 };
+  assert.deepEqual(Audio.recordingPlacement(base), { start: 0, offset: .155, duration: 2.05 });
+  assert.equal(Audio.recordingPlacement({ ...base, trimMs: 20 }).offset, .175);
+  const lateStart = Audio.recordingPlacement({ ...base, firstFrame: 200 });
+  assert.ok(Math.abs(lateStart.start - .045) < 1e-9);
+  assert.equal(lateStart.offset, 0);
 });
 
 test('audio preflight separates readiness from optional capabilities', async () => {

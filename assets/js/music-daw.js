@@ -548,6 +548,7 @@
     const firstSeg = transport.segs[0];
     const recStart = transport.recStart;
     const recorder = mic.node;
+    const inputLatency = AudioRuntime.inputLatencySeconds(mic.stream, project.audioSettings?.inputLatencyMs);
     await new Promise(resolve => { mic.stopped = resolve; recorder.port.postMessage('stop'); });
     mic.capturing = false;
     const chunks = mic.chunks;
@@ -557,31 +558,25 @@
     if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic();
     updateTransportUi();
     if (!chunks.length) { status('No audio came in from the microphone.'); return; }
-    let droppedFrames = 0;
-    for (let i = 1; i < chunks.length; i++) {
-      const expected = chunks[i - 1].frame + chunks[i - 1].channels[0].length;
-      droppedFrames += Math.max(0, chunks[i].frame - expected);
-    }
+    const capture = AudioRuntime.captureFrames(chunks);
+    const droppedFrames = capture.droppedFrames;
     audioHealthState.captureDroppedFrames = droppedFrames;
     const c = audio.ctx, sr = c.sampleRate;
-    const nCh = chunks[0].channels.length || 1;
-    const total = chunks.reduce((sum, ch) => sum + ch.channels[0].length, 0);
-    const buffer = new AudioBuffer({ length: total, numberOfChannels: nCh, sampleRate: sr });
-    for (let ch = 0; ch < nCh; ch++) {
-      const data = buffer.getChannelData(ch);
-      let o = 0;
-      chunks.forEach((k) => { data.set(k.channels[ch] || k.channels[0], o); o += k.channels[0].length; });
-    }
-    // Line the take up with the song: the frame the beat was heard on, plus the
-    // round-trip latency the browser reports, is where the performance starts.
+    const buffer = new AudioBuffer({ length: capture.length, numberOfChannels: capture.channelCount, sampleRate: sr });
+    AudioRuntime.captureFrames(chunks, Array.from({ length: capture.channelCount }, (_, channel) => buffer.getChannelData(channel)));
+    // Place the captured frame against the same AudioContext clock as playback.
+    // Reported device latency is an estimate; the user can trim the remainder.
     const seg = firstSeg || { beat: recStart, time: chunks[0].frame / sr };
     const recStartTime = seg.time + (recStart - seg.beat) * spb();
-    const latency = AudioRuntime.latencySeconds(c);
-    const offset = Math.max(0, recStartTime + latency - chunks[0].frame / sr);
-    const duration = Math.min(buffer.duration - offset, Math.max(0, stopBeat - recStart) * spb() + 0.05);
+    const { start, offset, duration } = AudioRuntime.recordingPlacement({
+      firstFrame: chunks[0].frame, sampleRate: sr, recordTime: recStartTime,
+      recordBeat: recStart, stopBeat, secondsPerBeat: spb(), bufferDuration: buffer.duration,
+      outputLatency: AudioRuntime.latencySeconds(c), inputLatency,
+      trimMs: project.audioSettings?.recordingTrimMs,
+    });
     if (duration < 0.1) { status('That take was too short to keep.'); return; }
     const id = addBuffer(buffer, `${track.name} take`, null, { sourceSampleRate: sr, sourceKind: 'recording' });
-    const clip = { id: uid(), type: 'audio', name: `${track.name} take`, bufferId: id, start: recStart, offset, duration, gain: 1 };
+    const clip = { id: uid(), type: 'audio', name: `${track.name} take`, bufferId: id, start, offset, duration, gain: 1 };
     track.clips.push(clip);
     select(track.id, clip.id);
     commit();
@@ -629,7 +624,7 @@
     }
     const c = ctx();
     try {
-      mic.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      mic.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, latency: { ideal: 0.01 } } });
       await c.audioWorklet.addModule(WORKLET_URL);
     } catch (err) {
       releaseMic();
@@ -703,7 +698,7 @@
 
   // Keyboard / MIDI input from music-lab.js. Returns true when the studio is
   // playing the note (so Music Lab stays silent and the sounds don't double up).
-  function noteOn(pitch, velocity, gmDrum) {
+  function noteOn(pitch, velocity, gmDrum, eventTimeMs) {
     const track = armedTrack();
     if (!track || track.kind !== 'instrument' || !hasInstrumentExperience(track)) return false;
     const c = ctx();
@@ -719,7 +714,7 @@
     }
     const take = transport.take;
     if (transport.recording && take && take.track === track.id) {
-      let beat = beatAt(c.currentTime);
+      let beat = beatAt(AudioRuntime.eventContextTime(c, eventTimeMs, performance.now()));
       // A note a touch early for the downbeat still belongs to the take.
       if (beat < transport.recStart && beat > transport.recStart - 0.5) beat = transport.recStart;
       if (beat >= transport.recStart) {
@@ -736,11 +731,11 @@
     take.notes.push({ pitch: on.key, start: on.beat, duration: Math.max(0.05, beat - on.beat), velocity: on.vel });
   }
 
-  function noteOff(pitch) {
+  function noteOff(pitch, eventTimeMs) {
     const voice = live.get(pitch);
     if (voice && audio.ctx) { voice.release(audio.ctx.currentTime); live.delete(pitch); }
     const take = transport.take;
-    if (transport.recording && take && take.open.has(pitch)) closeTakeNote(pitch, beatAt(audio.ctx.currentTime));
+    if (transport.recording && take && take.open.has(pitch)) closeTakeNote(pitch, beatAt(AudioRuntime.eventContextTime(audio.ctx, eventTimeMs, performance.now())));
   }
 
   function drumPad(name) {
@@ -1381,6 +1376,8 @@
       <div class="daw-health-head"><div><h3 id="daw-health-title">Audio setup and health</h3><p data-health-summary>Checking this browser…</p></div><button type="button" class="daw-btn" data-health-refresh>Check again</button></div>
       <div class="daw-health-issues" data-health-issues hidden></div>
       <dl class="daw-health-facts" data-health-facts></dl>
+      <div class="daw-record-timing"><label class="daw-field">Take timing <input type="number" data-recording-trim min="-250" max="250" step="1" value="0" aria-label="Recording timing adjustment in milliseconds"> ms</label>
+        <p class="daw-note">If each new microphone take lands late, enter a positive value to move future takes earlier. Use a negative value to move them later. Start with a short click or clap test; this does not move existing clips.</p></div>
       <p class="daw-note">Music Lab checks capabilities on this device only. It does not upload recordings, device names, or diagnostics.</p>
     </section>`;
   commandStrip.append(audioHealth);
@@ -1463,6 +1460,14 @@
       `<div data-fact-state="${item.state}"><dt>${esc(item.label)}</dt><dd>${esc(item.value)}</dd></div>`).join('');
   }
   audioHealth.querySelector('[data-health-refresh]').addEventListener('click', () => { audioHealthState.deviceChanged = false; ctx(); refreshAudioHealth(); });
+  audioHealth.querySelector('[data-recording-trim]').addEventListener('change', event => {
+    const trim = clamp(Math.round(Number(event.target.value) || 0), -250, 250);
+    project.audioSettings ||= {};
+    project.audioSettings.recordingTrimMs = trim;
+    event.target.value = trim;
+    commit();
+    status(trim ? `Future microphone takes will move ${Math.abs(trim)} ms ${trim > 0 ? 'earlier' : 'later'}.` : 'Future microphone takes will use automatic timing.');
+  });
   navigator.mediaDevices?.addEventListener?.('devicechange', () => {
     audioHealthState.deviceChanged = true;
     diagnostics?.record('audio-device-changed', 'notice', AudioRuntime.facts(audio.ctx));
@@ -1483,6 +1488,7 @@
     R.master.value = project.masterVolume;
     if (document.activeElement !== R.name) R.name.value = project.name;
     R.snap.value = String(ui.snap);
+    if (document.activeElement !== audioHealth.querySelector('[data-recording-trim]')) audioHealth.querySelector('[data-recording-trim]').value = project.audioSettings?.recordingTrimMs || 0;
     renderTracks();
     renderEditor();
     renderDock();

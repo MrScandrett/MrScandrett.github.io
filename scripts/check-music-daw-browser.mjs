@@ -9,6 +9,7 @@ for (const size of (process.env.DAW_QUICK ? [{width:1440,height:900}] : [{width:
  await page.goto('http://localhost:8080/music-lab.html');await page.locator('[data-channel]').waitFor();
  const root=page.locator('#trackStudio');
  const reveal=async sel=>{const d=root.locator(sel).first();if(await d.getAttribute('open')===null)await d.locator(':scope > summary').click();};const conceal=async sel=>{const d=root.locator(sel).first();if(await d.getAttribute('open')!==null)await d.locator(':scope > summary').click();};
+ await reveal('.daw-audio-health');await root.locator('[data-recording-trim]').fill('35');await root.locator('[data-recording-trim]').press('Tab');assert.match(await root.locator('[data-ref="status"]').textContent(),/35 ms earlier/);await conceal('.daw-audio-health');
  const addTool=async id=>{const catalog=root.locator('.daw-experience-catalog');if(await catalog.getAttribute('open')===null)await catalog.locator('summary').click();await root.locator(`[data-tool-add="${id}"]`).click();};
   await addTool('keyboard');await addTool('notation');await root.locator('[data-note-add]').click();
  await root.locator('[data-note-param="pitch"]').fill('64');await root.locator('[data-note-param="pitch"]').press('Tab');

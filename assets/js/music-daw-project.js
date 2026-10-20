@@ -43,7 +43,7 @@
     return {
       version: VERSION, name: 'My Song', bpm: 100, sig: [4, 4], masterVolume: 0.85,
       metronome: false, countIn: true, loop: { on: false, start: 0, end: 16 },
-      audioSettings: { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null },
+      audioSettings: { preferredSampleRate: 'device', latencyMode: 'balanced', inputLatencyMs: null, recordingTrimMs: 0 },
       pluginInstances: [], diagnosticsVersion: 1,
       tracks: [makeTrack('instrument', 'Keys', 'piano', 0), makeTrack('instrument', 'Drums', 'drums', 1), makeTrack('audio', 'Vocals', null, 2)],
     };
@@ -104,6 +104,7 @@
     base.metronome = !!source.metronome; base.countIn = source.countIn !== false;
     base.loop = { ...base.loop, ...object(source.loop), on: !!source.loop?.on };
     base.audioSettings = { ...base.audioSettings, ...object(source.audioSettings) };
+    base.audioSettings.recordingTrimMs = clamp(base.audioSettings.recordingTrimMs, -250, 250, 0);
     base.pluginInstances = Array.isArray(source.pluginInstances) ? clone(source.pluginInstances) : [];
     base.diagnosticsVersion = Math.max(1, finite(source.diagnosticsVersion, 1));
     base.tracks = source.tracks.map(normalizeTrack);

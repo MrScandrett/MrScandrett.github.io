@@ -28,8 +28,8 @@
       const attach = () => {
         for (const input of midi.inputs.values()) input.onmidimessage = event => {
           const [command, pitch, velocity] = event.data, kind = command & 0xf0;
-          if (kind === 0x90 && velocity) window.MusicDaw?.noteOn(pitch, velocity / 127, (command & 15) === 9);
-          else if (kind === 0x80 || kind === 0x90) window.MusicDaw?.noteOff(pitch);
+          if (kind === 0x90 && velocity) window.MusicDaw?.noteOn(pitch, velocity / 127, (command & 15) === 9, event.timeStamp);
+          else if (kind === 0x80 || kind === 0x90) window.MusicDaw?.noteOff(pitch, event.timeStamp);
           else if (kind === 0xb0 && (pitch === 120 || pitch === 123)) window.MusicDaw?.allNotesOff();
         };
       };
