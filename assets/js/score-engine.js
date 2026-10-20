@@ -1262,10 +1262,14 @@
     definitions.appendChild(defs);
     portal.appendChild(definitions);
     var groups = [];
-    var maxHeight = layout.width * (6.7 / 10.24);
+    // Portrait US Letter, 7.5in x 9.2in of staves per sheet (0.6in less on the first,
+    // which carries the notation note). Pack by height, not by a fixed system count.
+    // iOS ignores named @page sizes, so portrait is the one layout every device prints.
+    var unitsPerInch = layout.width / 7.5;
     layout.systems.forEach(function (system) {
       var group = groups[groups.length - 1];
-      if (!group || group.length === 2 || system.bottom - group[0].top + layout.S * 3.6 > maxHeight) {
+      var maxHeight = unitsPerInch * (groups.length === 1 ? 8.6 : 9.2);
+      if (!group || system.bottom - group[0].top + layout.S * 1.8 > maxHeight) {
         group = [];
         groups.push(group);
       }
