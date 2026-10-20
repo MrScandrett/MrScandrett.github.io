@@ -377,10 +377,30 @@
     transport.playing = true;
     transport.startBeat = start;
     scheduleAudio(liveEnv(seg), seg.beat, seg.end, project.tracks);
-    clearInterval(transport.timer);
-    transport.timer = setInterval(tick, 25);
+    startTicker(tick, 25);
     tick();
     updateTransportUi();
+  }
+
+  // The scheduler runs off a Worker clock: browsers throttle page timers in background
+  // tabs (to 1 s, then 1 min), which would starve the lookahead and drop notes.
+  let ticker = null;
+  function startTicker(fn, ms) {
+    stopTicker();
+    try {
+      const url = URL.createObjectURL(new Blob([`setInterval(function(){postMessage(0)},${ms})`], { type: 'text/javascript' }));
+      const worker = new Worker(url);
+      URL.revokeObjectURL(url);
+      worker.onmessage = fn;
+      ticker = { worker };
+    } catch (_e) {
+      ticker = { id: setInterval(fn, ms) };
+    }
+  }
+  function stopTicker() {
+    if (!ticker) return;
+    if (ticker.worker) ticker.worker.terminate(); else clearInterval(ticker.id);
+    ticker = null;
   }
 
   function tick() {
@@ -417,8 +437,7 @@
     const c = audio.ctx;
     if (!c) return;
     const now = c.currentTime;
-    clearInterval(transport.timer);
-    transport.timer = null;
+    stopTicker();
     transport.voices.forEach((v) => v.kill(now));
     transport.voices.clear();
     transport.sources.forEach((s) => { try { s.stop(now + 0.03); } catch (_e) { /* not started */ } });
@@ -829,8 +848,26 @@
   const savedBuffers = new Set();
   function scheduleSave() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => { autosave().catch(() => { /* storage full or blocked: keep working */ }); }, 900);
+    saveDirty = true;
+    saveTimer = setTimeout(runSave, 900);
   }
+  let saveDirty = false, saveFailing = false;
+  function runSave() {
+    clearTimeout(saveTimer);
+    if (!saveDirty) return Promise.resolve();
+    saveDirty = false;
+    return autosave().then(() => {
+      if (saveFailing) { saveFailing = false; status('Saving works again: your song is stored in this browser.'); }
+      root.removeAttribute('data-save-failed');
+    }).catch(() => {
+      saveDirty = true;
+      root.setAttribute('data-save-failed', '');
+      if (!saveFailing) status('⚠ This song could not be saved in the browser (storage is full or blocked). Export it (Save/Export) so you do not lose your work.');
+      saveFailing = true;
+    });
+  }
+  // Ask the browser not to evict the saved song when disk space runs low.
+  try { navigator.storage?.persist?.(); } catch (_e) { /* optional */ }
   function openDb() {
     return new Promise((resolve, reject) => {
       if (!window.indexedDB) { reject(new Error('no indexedDB')); return; }
@@ -853,6 +890,13 @@
     project.tracks.forEach((t) => t.clips.forEach((c) => { if (c.bufferId) ids.add(c.bufferId); }));
     return ids;
   }
+  // Buffer ids per undo snapshot, scanned once instead of on every autosave.
+  const snapIds = new Map();
+  function idsInSnapshot(s) {
+    let ids = snapIds.get(s);
+    if (!ids) { ids = (s.match(/"bufferId":"[a-z0-9]+"/g) || []).map((m) => m.slice(12, -1)); snapIds.set(s, ids); }
+    return ids;
+  }
   async function autosave() {
     const ids = usedBufferIds();
     await idb('readwrite', (store) => {
@@ -862,14 +906,25 @@
         const e = buffers.get(id);
         if (!e) return;
         const b = e.buffer;
+        // put() clones synchronously, so the live channel data needs no extra copy.
+        // Mic takes are stored as 16-bit (half the size); imports keep full float.
+        const pack = e.sourceKind === 'recording';
         const channels = [];
-        for (let ch = 0; ch < b.numberOfChannels; ch++) channels.push(b.getChannelData(ch).slice());
-        store.put({ name: e.name, sampleRate: b.sampleRate, sourceSampleRate: e.sourceSampleRate, sourceKind: e.sourceKind, channels }, 'buffer:' + id);
+        for (let ch = 0; ch < b.numberOfChannels; ch++) {
+          const f = b.getChannelData(ch);
+          if (!pack) { channels.push(f); continue; }
+          const q = new Int16Array(f.length);
+          for (let i = 0; i < f.length; i++) q[i] = Math.max(-32768, Math.min(32767, Math.round(f[i] * 32768)));
+          channels.push(q);
+        }
+        store.put({ name: e.name, sampleRate: b.sampleRate, sourceSampleRate: e.sourceSampleRate, sourceKind: e.sourceKind, format: pack ? 'int16' : 'float32', channels }, 'buffer:' + id);
         savedBuffers.add(id);
       });
       // Drop audio no longer used by the song or anything in undo history.
       const keep = new Set(ids);
-      history.undo.concat(history.redo).forEach((s) => { (s.match(/"bufferId":"[a-z0-9]+"/g) || []).forEach((m) => keep.add(m.slice(12, -1))); });
+      const snaps = history.undo.concat(history.redo);
+      snaps.forEach((s) => idsInSnapshot(s).forEach((id) => keep.add(id)));
+      if (snapIds.size > snaps.length + 4) { const live = new Set(snaps); snapIds.forEach((_v, k) => { if (!live.has(k)) snapIds.delete(k); }); }
       const keys = store.getAllKeys();
       keys.onsuccess = () => keys.result.forEach((k) => {
         if (String(k).startsWith('buffer:') && !keep.has(k.slice(7))) { store.delete(k); savedBuffers.delete(k.slice(7)); }
@@ -894,7 +949,13 @@
       const row = rows[id];
       if (!row) return;
       const buffer = new AudioBuffer({ length: row.channels[0].length, numberOfChannels: row.channels.length, sampleRate: row.sampleRate });
-      row.channels.forEach((d, ch) => buffer.copyToChannel(d, ch));
+      row.channels.forEach((d, ch) => {
+        if (row.format === 'int16') {
+          const f = new Float32Array(d.length);
+          for (let i = 0; i < d.length; i++) f[i] = d[i] / 32768;
+          buffer.copyToChannel(f, ch);
+        } else buffer.copyToChannel(d, ch);
+      });
       addBuffer(buffer, row.name, id, row);
       savedBuffers.add(id);
     });
@@ -3624,7 +3685,11 @@
           if (x > R.scroll.scrollLeft + view - 40 || x < R.scroll.scrollLeft) R.scroll.scrollLeft = Math.max(0, x - 40);
         }
       }
-      if (beat + Math.max(0, R.scroll.clientWidth - HEAD_W) / ui.pxPerBeat > timelineBeats() - barBeats() * 2) renderTracks();
+      if (beat + Math.max(0, R.scroll.clientWidth - HEAD_W) / ui.pxPerBeat > timelineBeats() - barBeats() * 2) {
+        // Only the width changes: don't rebuild every row and redraw every waveform mid-take.
+        setTimelineVars();
+        drawRuler();
+      }
     }
     if (audio.meter) {
       audio.meter.getFloatTimeDomainData(audio.meterData);
@@ -3691,8 +3756,19 @@
     root.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  window.addEventListener('blur', () => { silenceLive(); if (transport.recording) pause(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { silenceLive(); if (transport.playing) pause(); } });
+  // A take keeps running when the window loses focus or the tab is hidden: the scheduler
+  // is on a Worker clock and the recorder is an AudioWorklet, so neither is throttled.
+  // Without a Worker (fallback timer) a hidden tab would starve the scheduler, so stop then.
+  const clockIsThrottled = () => !ticker?.worker;
+  window.addEventListener('blur', () => { silenceLive(); if (transport.recording && clockIsThrottled()) pause(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      silenceLive();
+      if (transport.playing && (!transport.recording || clockIsThrottled())) pause();
+      runSave();   // the tab may never come back: write pending edits now
+    }
+  });
+  window.addEventListener('pagehide', () => { runSave(); });
 
   window.MusicDaw = { noteOn, noteOff, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
 
