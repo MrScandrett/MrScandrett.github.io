@@ -61,6 +61,26 @@ function pitchClass(pitch) {
 }
 function solfegeName(pitch) { return SOLFEGE_NAMES[pitchClass(pitch)]; }
 function solfegeColor(pitch) { return SOLFEGE_COLORS[pitchClass(pitch)]; }
+// The Fake Book's readable named head is shared by lesson scores. Keep its
+// letter colors, ink contrast, hollow durations, and in-head accidentals together.
+var NAME_COLORS=['#e0244f','#f5951c','#f2b81c','#7fbf2e','#14a396','#4b45a8','#8e3fa8'];
+var NAME_INK=['#ffffff','#1b140d','#1b140d','#1b140d','#1b140d','#ffffff','#ffffff'];
+var NAME_INK_HOLLOW=['#d2214a','#9c5f11','#89680f','#50781c','#0f7b72','#4b45a8','#8e3fa8'];
+function namedHead(pitch,cx,cy,base,keyAcc,space,cls,useColor) {
+  var p=typeof pitch==='string'?parsePitch(pitch):pitch;
+  cls=cls||'mn-nhead';
+  var whole=base>=4,hollow=base>=2,acc=p.a?{'-2':'𝄫','-1':'♭','1':'♯','2':'𝄪'}[p.a]:keyAcc?'♮':'';
+  var colored=useColor!==false;
+  var wide=acc?1.14:1,rx=(whole?0.9:0.78)*space*wide,ry=0.5*space,fs=1.08*space,col=colored?NAME_COLORS[p.l]:'#16130f';
+  var rot=whole?'':' transform="rotate(-24 '+cx.toFixed(1)+' '+cy.toFixed(1)+')"';
+  var oval='<ellipse cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" rx="'+rx.toFixed(2)+'" ry="'+ry.toFixed(2)+'"'+rot+
+    ' fill="'+(hollow?'#fffdf7':col)+'" stroke="'+col+'" stroke-width="'+((hollow?0.17:0.06)*space).toFixed(2)+'"/>';
+  var ink=colored?(hollow?NAME_INK_HOLLOW[p.l]:NAME_INK[p.l]):(hollow?'#16130f':'#ffffff');
+  var dark=!hollow&&ink!=='#ffffff',ax=acc?fs*0.33:0;
+  return '<g class="'+escape(cls)+(hollow?' is-hollow':'')+(dark?' ink-dark':'')+'" data-contrast-guard-skip>'+oval+
+    '<text class="'+escape(cls)+'-t'+(cls==='se-nhead'?' se-pitch-label':'')+'" x="'+(cx-ax).toFixed(1)+'" y="'+(cy+fs*0.36).toFixed(1)+'" font-size="'+fs.toFixed(1)+'" text-anchor="middle" style="fill:'+ink+'">'+LETTERS[p.l]+'</text>'+
+    (acc?'<g class="'+escape(cls)+'-acc" style="color:'+ink+'">'+accidental(p.a||0,cx+0.04*space,cy,0.44*space)+'</g>':'')+'</g>';
+}
 var preferenceKey = 'classroomos:music-notation:v1';
 var notationPreferences = { pitchNames: false, noteColors: false };
 try {
@@ -107,7 +127,7 @@ function note(x,y,space,beats,dotted,up,cls,onLine) {
   if(dotted)out+='<circle cx="'+(x+headWidth/2+.45*space)+'" cy="'+(y-(onLine ? .5 : 0)*space)+'" r="'+(.16*space)+'" fill="currentColor"/>';
   return out;
 }
-root.MusicNotation={clefs:CLEFS,glyph:glyph,clef:clef,accidental:accidental,ledgerSteps:ledgerSteps,parsePitch:parsePitch,fromMidi:fromMidi,writtenOctave:writtenOctave,pitchName:pitchName,pitchNameWithOctave:pitchNameWithOctave,pitchClass:pitchClass,solfegeName:solfegeName,solfegeColor:solfegeColor,solfegeColors:SOLFEGE_COLORS.slice(),preferences:notationPreferences,setPreferences:setNotationPreferences,onPreferencesChange:onNotationPreferences,spellPattern:spellPattern,duration:duration,note:note,escape:escape};
+root.MusicNotation={clefs:CLEFS,glyph:glyph,clef:clef,accidental:accidental,ledgerSteps:ledgerSteps,parsePitch:parsePitch,fromMidi:fromMidi,writtenOctave:writtenOctave,pitchName:pitchName,pitchNameWithOctave:pitchNameWithOctave,pitchClass:pitchClass,solfegeName:solfegeName,solfegeColor:solfegeColor,solfegeColors:SOLFEGE_COLORS.slice(),namedHead:namedHead,namedHeadColors:NAME_COLORS.slice(),preferences:notationPreferences,setPreferences:setNotationPreferences,onPreferencesChange:onNotationPreferences,spellPattern:spellPattern,duration:duration,note:note,escape:escape};
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', function(){
   document.querySelectorAll('[data-mn-clef]').forEach(function(el){
     el.innerHTML=clef(el.dataset.mnClef,Number(el.dataset.mnX||0),Number(el.dataset.mnBottom),Number(el.dataset.mnSpace));

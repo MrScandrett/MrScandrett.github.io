@@ -47,11 +47,8 @@
     // Never introduce a double sharp or flat: students read G more easily than F𝄪.
     return Math.abs(q.a) > Math.max(1, Math.abs(p.a)) ? respell(q.midi, preferFlat) : q;
   }
-  // One colour per letter name (the classroom boomwhacker set), light enough for dark text.
-  var NAME_COLORS = ['#e0244f', '#f5951c', '#f2b81c', '#7fbf2e', '#14a396', '#4b45a8', '#8e3fa8'];
-  // Letter ink per head: whichever of white/near-black reads best on the fill (WCAG >= 4.5 where possible), and a darker
-  // shade of the colour for the hollow half/whole heads that sit on cream paper.
-  var NAME_INK = ['#ffffff', '#1b140d', '#1b140d', '#1b140d', '#1b140d', '#ffffff', '#ffffff'], NAME_INK_HOLLOW = ['#d2214a', '#9c5f11', '#89680f', '#50781c', '#0f7b72', '#4b45a8', '#8e3fa8'];
+  // Shared with the named heads in pioneer lesson scores.
+  var NAME_COLORS = MN.namedHeadColors;
   function noteName(p) { return LETTERS[p.l] + ACC[p.a]; }
 
   /* ================================================================ keys */
@@ -1201,21 +1198,10 @@
     var half = S / 2, headW = 295 * S / 250, wholeW = 426 * S / 250;
     // Note names: 'under' prints each letter beneath its staff; 'notes' (default) puts it in a coloured badge on the head, MuseScore-style.
     var namesUnder = !!opts.names && opts.nameStyle === 'under', namesOn = !!opts.names && !namesUnder;
-    // A coloured notehead with its letter inside: a tilted oval like an engraved head (hollow for half and whole notes).
+    // The same named heads are used in the pioneer lesson scores.
     var headWidth = function (base) { return namesOn ? (base >= 4 ? 1.6 : 1.34) * S : base === 4 ? wholeW : headW; };
-    // ks = the key signature's accidental for this letter on this staff, so a natural that cancels it still shows a sign.
-    var nameHead = function (p, cx, cy, base, ks) {
-      var whole = base >= 4, hollow = base >= 2, acc = p.a ? ACC[p.a] : ks ? '♮' : '';
-      var wide = acc ? 1.14 : 1, rx = (whole ? 0.9 : 0.78) * S * wide, ry = 0.5 * S, fs = 1.08 * S, col = NAME_COLORS[p.l];
-      var rot = whole ? '' : ' transform="rotate(-24 ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')"';
-      var oval = '<ellipse cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" rx="' + rx.toFixed(2) + '" ry="' + ry.toFixed(2) + '"' + rot +
-        ' fill="' + (hollow ? '#fffdf7' : col) + '" stroke="' + col + '" stroke-width="' + ((hollow ? 0.17 : 0.06) * S).toFixed(2) + '"/>';
-      var ax = acc ? fs * 0.33 : 0;                        // the letter shifts left to make room for its sign
-      var ink = hollow ? NAME_INK_HOLLOW[p.l] : NAME_INK[p.l], dk = !hollow && ink !== '#ffffff';
-      return '<g class="fb-nhead' + (hollow ? ' is-hollow' : '') + (dk ? ' ink-dark' : '') + '" data-contrast-guard-skip>' + oval +
-        '<text class="fb-nhead-t" x="' + (cx - ax).toFixed(1) + '" y="' + (cy + fs * 0.36).toFixed(1) + '" font-size="' + fs.toFixed(1) + '" text-anchor="middle"' + ' style="fill:' + ink + '">' + LETTERS[p.l] + '</text>' +
-        (acc ? '<g class="fb-nhead-acc" style="color:' + ink + '">' + MN.accidental(p.a || 0, cx + 0.04 * S, cy, 0.44 * S) + '</g>' : '') + '</g>';
-    };
+    // ks = the key signature's accidental for this letter on this staff.
+    var nameHead = function (p, cx, cy, base, ks) { return MN.namedHead(p, cx, cy, base, ks, S, 'fb-nhead'); };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
     // Measure: which notes need an accidental, and how much room each piece wants

@@ -811,7 +811,10 @@
   }
 
   function headName(ev) { return ev.base >= 4 ? 'whole' : ev.base >= 2 ? 'half' : 'quarter'; }
-  function headW(ev, S) { return (ev.base >= 4 ? 426 : 295) / 250 * S; }
+  function headW(ev, S) {
+    if (root.MusicNotation.preferences.pitchNames) return (ev.base >= 4 ? 1.6 : 1.34) * S;
+    return (ev.base >= 4 ? 426 : 295) / 250 * S;
+  }
   function durationLabel(ev) {
     if (ev.whole || ev.base >= 4) return 'whole note';
     var name = ev.base >= 2 ? 'half' : ev.base >= 1 ? 'quarter' : ev.base >= 0.5 ? 'eighth' : ev.base >= 0.25 ? 'sixteenth' : 'thirty-second';
@@ -963,7 +966,8 @@
       if (ev.dots) out += '<circle cx="' + (ev.x + 1.6 * S) + '" cy="' + (mid - h) + '" r="' + 0.18 * S + '" fill="currentColor"/>';
       ev.headX = ev.x; ev.headY = mid;
     } else {
-      var w = headW(ev, S), name = headName(ev);
+      var w = headW(ev, S), name = headName(ev), namedHeads = '';
+      var keyAlt = M.preferences.pitchNames ? keyAlters(model.barMeta[ev.bar].key) : null;
       // Heads: seconds in a chord sit on the far side of the stem.
       var ps = ev.pitches.slice(), shifted = {};
       if (ev.up) {
@@ -1003,23 +1007,12 @@
       out += accBacks.join('') + accGlyphs.join('');
       ps.forEach(function (p, k) {
         var px = ev.x + (shifted[k] || 0) * (w - lw), py = b - steps[k] * h;
-        // Use the shared written-pitch palette; accidentals retain their letter's color.
-        out += '<g class="se-notehead"' + (M.preferences.noteColors ? ' style="color:' + M.solfegeColor(p) + '"' : '') + '>' +
-          M.glyph(name, px, py, S, 'se-head') + '</g>';
         if (M.preferences.pitchNames) {
-          var label = M.pitchName(p);
-          var hollow = name === 'half' || name === 'whole';
-          // Dense learning scores can keep accidentals in standard notation and
-          // reserve the notehead itself for a larger, clearer letter name.
-          if (model.score.pitchLettersOnly || hollow || readableSize) label = label.charAt(0);
-          // Glyph origins are at the left edge. Size labels in staff units, including
-          // accidentals, so they stay inside heads at every staff/zoom size.
-          var labelSize = S * (hollow ? 0.7 : model.score.pitchLettersOnly || readableSize ? 0.96 : (p.a ? 0.54 : 0.82));
-          if (hollow) out += '<ellipse class="se-hollow-label-back" cx="' + (px + w / 2) + '" cy="' + py +
-            '" rx="' + (S * 0.4) + '" ry="' + (S * 0.29) + '"/>';
-          out += '<text class="se-pitch-label' + (hollow ? ' se-pitch-label-hollow' : '') + '" data-contrast-guard-skip x="' + (px + w / 2) + '" y="' + py +
-            '" style="font-size:' + labelSize + 'px;stroke-width:' + (S * (hollow ? 0.025 : 0.07)) + 'px" text-anchor="middle" dominant-baseline="central">' + M.escape(label) + '</text>';
-        }
+          // Draw heads after stems and beams, as in the Fake Book, so the
+          // colored oval and its letter remain unobscured.
+          namedHeads += M.namedHead(p, px + w / 2, py, ev.base, keyAlt[p.l], S, 'se-nhead', M.preferences.noteColors);
+        } else out += '<g class="se-notehead"' + (M.preferences.noteColors ? ' style="color:' + M.solfegeColor(p) + '"' : '') + '>' +
+          M.glyph(name, px, py, S, 'se-head') + '</g>';
       });
       // Dots.
       if (ev.dots) {
@@ -1045,6 +1038,7 @@
         }
         ev.tipY = tip;
       }
+      out += namedHeads;
       ev.headX = ev.x; ev.headW = w; ev.steps = steps; ev.shifted = shifted;
     }
     if (ev.fermata) {
@@ -1240,17 +1234,11 @@
   function printScorePages(score) {
     var model = prepare(score);
     analyse(model);
-    // Leave accidentals in standard notation so the larger letter fits inside
-    // each printed notehead, including a dense chord.
-    var originalPitchLettersOnly = score.pitchLettersOnly;
-    if (root.MusicNotation.preferences.pitchNames) score.pitchLettersOnly = true;
     // Engrave at a fixed width so the paper edition does not depend on the
     // learner's screen size or score zoom setting.
-    var layout;
     // Same large-print engraving the fake book uses: bigger staff, noteheads and
     // letters, fewer bars per line, so a handout reads from a desk or a music stand.
-    try { layout = engrave(model, 1085, true); }
-    finally { score.pitchLettersOnly = originalPitchLettersOnly; }
+    var layout = engrave(model, 1085, true);
     if (!layout.systems.length) return;
     var ns = 'http://www.w3.org/2000/svg';
     var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true' });
