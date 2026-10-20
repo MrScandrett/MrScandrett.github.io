@@ -1510,7 +1510,10 @@
 
   function timelineBeats() {
     const bar = barBeats();
-    return Math.max(bar * 32, Math.ceil((songEnd() + bar * 8) / bar) * bar, Math.ceil((ui.playhead + bar * 4) / bar) * bar);
+    // Always leave a full screen of grid ahead of the playhead, or the timeline looks like it ends mid-take.
+    const screen = Math.max(0, R.scroll.clientWidth - HEAD_W) / ui.pxPerBeat;
+    const reach = Math.max(ui.playhead, R.scroll.scrollLeft / ui.pxPerBeat) + screen;
+    return Math.max(bar * 32, Math.ceil((songEnd() + bar * 8) / bar) * bar, Math.ceil((reach + bar * 4) / bar) * bar);
   }
 
   function render() {
@@ -3621,7 +3624,7 @@
           if (x > R.scroll.scrollLeft + view - 40 || x < R.scroll.scrollLeft) R.scroll.scrollLeft = Math.max(0, x - 40);
         }
       }
-      if (beat > timelineBeats() - barBeats() * 2) renderTracks();
+      if (beat + Math.max(0, R.scroll.clientWidth - HEAD_W) / ui.pxPerBeat > timelineBeats() - barBeats() * 2) renderTracks();
     }
     if (audio.meter) {
       audio.meter.getFloatTimeDomainData(audio.meterData);
