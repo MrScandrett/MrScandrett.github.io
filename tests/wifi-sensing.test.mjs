@@ -3,9 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as W from '../assets/js/lessons/wifi-sensing-core.mjs';
 
-test('a 5 mm chest move is about half a radian of phase at 2.4 GHz, twice that at 5 GHz', () => {
+test('the 2x path change is an upper bound and gives about half a radian at 2.4 GHz', () => {
   assert.ok(Math.abs(W.phaseSwing(5) - 0.511) < 0.005);
   assert.ok(W.phaseSwing(5, W.BANDS['5'].f0) > 2 * W.phaseSwing(5) * 0.98);
+  const room = W.makeRoom();
+  const pos = [1.9, 0.55];
+  const change = Math.abs(W.bodyPath(room, pos, 0.005).len - W.bodyPath(room, pos, 0).len);
+  assert.ok(change > 0 && change < 0.01, `bistatic path change was ${change} m`);
+  const nearLine = [1.9, 1.199];
+  const nearChange = Math.abs(W.bodyPath(room, nearLine, 0.0005).len - W.bodyPath(room, nearLine, 0).len);
+  assert.ok(nearChange < change / 100, `near-line change was ${nearChange} m`);
 });
 
 test('52 subcarriers, 312.5 kHz apart, DC skipped', () => {

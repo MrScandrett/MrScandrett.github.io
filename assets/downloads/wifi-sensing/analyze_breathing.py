@@ -40,9 +40,9 @@ signal = sum(np.sign(bands[i] @ ref) * bands[i] for i in best) / TOP
 freqs = np.arange(0.05, 0.8, 0.005)
 win = np.hanning(len(signal))
 power = np.array([abs(np.sum(signal * win * np.exp(-2j * np.pi * f * grid[: len(signal)]))) ** 2 for f in freqs])
-inband = (freqs >= LO) & (freqs <= 0.7)
+inband = (freqs >= LO) & (freqs <= HI)
 peak = freqs[inband][np.argmax(power[inband])]
-print(f"Breathing rate: {peak * 60:.1f} breaths per minute  (peak {power[inband].max() / np.median(power):.0f}x the noise floor)")
+print(f"Strongest rhythm in selected band: {peak * 60:.1f} per minute  (peak/median spectrum: {power[inband].max() / np.median(power):.0f}x; not a validated confidence score)")
 
 fig, ax = plt.subplots(3, 1, figsize=(8, 8))
 ax[0].plot(grid, cols[best[0]]); ax[0].set_title("Raw amplitude, best subcarrier")

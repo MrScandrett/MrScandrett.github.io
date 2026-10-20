@@ -2,8 +2,9 @@
 // Board: ESP32, ESP32-S3 or ESP32-C3 (2.4 GHz). Arduino IDE: Boards Manager "esp32 by Espressif" 3.x,
 // Library Manager "ESP32Ping". Tools > USB CDC On Boot: Enabled (S3/C3 with native USB).
 //
-// How it works: CSI is only measured when a packet arrives. So this sketch pings your router about
-// 50 times a second; every reply is a packet the radio measures. Each measurement becomes one line:
+// How it works: CSI is estimated from received packets. This sketch requests router replies with
+// pings; the rate is variable and below 50/s when ping and serial work add to the 20 ms gap.
+// Each accepted measurement becomes one line:
 //     C,<seq>,<ms>,<rssi>,<a1>,<a2>, ... <a52>
 // where a1..a52 are the strengths of the 52 subcarriers (lower frequency first).
 // The lesson page, or analyze_breathing.py, turns that stream into breaths per minute.
@@ -13,7 +14,7 @@
 
 const char* WIFI_SSID = "YOUR_WIFI_NAME";   // your own network, or a phone hotspot you control
 const char* WIFI_PASS = "YOUR_PASSWORD";
-const int   PING_GAP_MS = 20;               // ~50 packets per second; 10 ms = faster, 40 ms = slower
+const int   PING_GAP_MS = 20;               // minimum gap after each ping and serial flush
 
 struct Sample { uint32_t ms; int8_t rssi; uint8_t amp[52]; };
 static QueueHandle_t queue;
@@ -41,7 +42,7 @@ static void onCsi(void* ctx, wifi_csi_info_t* info) {
 }
 
 void setup() {
-  Serial.begin(921600);                                   // fast: ~50 lines/s x ~220 characters
+  Serial.begin(921600);                                   // enough bandwidth for short CSV lines
   queue = xQueueCreate(32, sizeof(Sample));
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);                                   // a sleeping radio skips packets

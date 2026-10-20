@@ -15,7 +15,7 @@
 export const TAU = Math.PI * 2;
 export const C0 = 299792458;
 
-/** The 52 data subcarriers of a 20 MHz Wi-Fi channel, 312.5 kHz apart (index -26..26 without 0). */
+/** The 52 occupied legacy subcarriers (48 data + 4 pilots), 312.5 kHz apart. */
 export const SUB_K = (() => { const a = []; for (let k = -26; k <= 26; k++) if (k !== 0) a.push(k); return a; })();
 export const N_SUB = SUB_K.length;
 export const SUB_SPACING_HZ = 312500;
@@ -30,7 +30,7 @@ export const AMP_SCALE = 45;
 
 export const wavelengthM = (f) => C0 / f;
 
-/** Phase swing (radians) of a reflection whose path lengthens by 2 x the chest travel. */
+/** Upper-bound phase swing for a nearly co-located transmitter and receiver, with motion toward both. */
 export function phaseSwing(chestMm, f0 = BANDS['2.4'].f0) {
   return (TAU * 2 * (chestMm / 1000)) / wavelengthM(f0);
 }
@@ -106,8 +106,9 @@ export const subFreq = (f0, k) => f0 + k * SUB_SPACING_HZ;
 
 /**
  * How much the CSI amplitude swings for a chest travelling +-(mm/2) at each point of the room.
- * `k` is a subcarrier index, or 'best' for the best of 13 spread across the channel
- * (what picking good subcarriers buys you). Returns {nx, ny, values (0..1 normalised), max}.
+ * `k` is a subcarrier index, or 'best' for the best of 13 spread across the channel.
+ * Nearby subcarriers can help with frequency-selective multipath, but are not independent
+ * wavelengths or a guarantee against geometric nulls. Returns {nx, ny, values, max}.
  */
 export function sensitivityMap(room, { band = '2.4', k = 0, chestMm = 5, nx = 200, ny = 120 } = {}) {
   const f0 = BANDS[band].f0;
@@ -369,7 +370,7 @@ export function spectrum(x, fs, { fmin = 0.05, fmax = 0.8, df = 0.005 } = {}) {
 }
 
 /** Strongest peak inside the breathing band -> breaths per minute, and how far it stands above the floor. */
-export function estimateRate(spec, { fmin = 0.1, fmax = 0.7 } = {}) {
+export function estimateRate(spec, { fmin = 0.1, fmax = 0.6 } = {}) {
   let best = -1, bi = -1;
   for (let i = 0; i < spec.f.length; i++) {
     if (spec.f[i] < fmin || spec.f[i] > fmax) continue;
@@ -389,7 +390,7 @@ export function estimateRate(spec, { fmin = 0.1, fmax = 0.7 } = {}) {
 
 /**
  * Rank every subcarrier by how much breathing-band energy it holds, flip the ones that move the opposite way
- * (a blind spot for one subcarrier is a peak for its neighbour), and average the best few.
+ * and average the best few. High energy can also be interference, so this is only a heuristic.
  */
 export function combineSubcarriers(columns, fs, { top = 6, lo = 0.1, hi = 0.6, filter = true } = {}) {
   const bands = columns.map((c) => (filter ? bandpass(c, fs, lo, hi) : linearDetrend(c)));

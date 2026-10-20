@@ -248,7 +248,7 @@ function drawPhasor() {
   ctx.fillStyle = PAL.warm; ctx.fillText(`gold: its wobble, magnified ×${MAG}`, 10, h - 10);
   ctx.fillStyle = PAL.ok; ctx.textAlign = 'right';
   const tot = Math.hypot(S[0] + B[0], S[1] + B[1]);
-  ctx.fillText(`green = what the radio reports: ${(tot * W.AMP_SCALE).toFixed(1)}`, w - 10, 15);
+  ctx.fillText(`green = ideal CSI magnitude: ${(tot * W.AMP_SCALE).toFixed(1)}`, w - 10, 15);
 }
 
 /* ------------------------------------------------------------------ pointer and keyboard */
@@ -436,7 +436,7 @@ function drawDecode(a, frames) {
   const level = outOfRange || !dec.filter ? 'weak' : a.est.snr >= 60 ? 'strong' : a.est.snr >= 15 ? 'fair' : 'weak';
   if (out) out.textContent = dec.hidden ? '?' : `${a.est.bpm.toFixed(1)} breaths/min`;
   if (conf) {
-    conf.textContent = dec.hidden ? 'Read the spectrum or count the gold dots, then enter your answer below.' : (outOfRange ? `The tallest bump is ${a.est.bpm.toFixed(1)} per minute, outside the human breathing range of 6–36. That is drift or motion, not a breath.` : !dec.filter ? 'A tall peak is not proof. With the filter off, this can be slow drift, not breathing.' : `Peak is ${a.est.snr >= 100 ? '100+' : a.est.snr.toFixed(0)}× the noise floor: ${level} evidence${level === 'weak' ? ', do not trust this number' : ''}.`);
+    conf.textContent = dec.hidden ? 'Read the spectrum or count the gold dots, then enter your answer below.' : (outOfRange ? `The strongest detected rhythm is ${a.est.bpm.toFixed(1)} per minute, outside this lab's selected 6–36 range. Check the signal and reference count.` : !dec.filter ? 'A tall peak is not proof. With the filter off, slow drift can win.' : `Peak-to-median spectrum ratio: ${a.est.snr >= 100 ? '100+' : a.est.snr.toFixed(0)}× (${level}). This is a signal-strength clue, not a validated confidence score or proof of breathing.`);
     conf.dataset.level = level;
   }
   if (count) {
