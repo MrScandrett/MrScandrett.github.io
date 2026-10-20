@@ -18,7 +18,7 @@
     .le-grid { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(280px,.65fr); gap:1rem; }
     .le-stage,.le-panel { background:linear-gradient(145deg,#071c2d,#030b14); border:1px solid var(--line); border-radius:16px; box-shadow:0 18px 55px rgba(0,0,0,.3); }
     .le-stage { overflow:hidden; }
-    #le-canvas, #le-2d-canvas { display:block; width:100%; height:480px; }
+    #le-canvas, #le-2d-canvas { display:block; width:100%; height:540px; }
     #le-canvas { cursor:grab; }
     #le-canvas:active { cursor:grabbing; }
     #le-2d-canvas { background:#b7e6f3; }
@@ -36,7 +36,7 @@
     .le-readout small { display:block; color:var(--muted); font-size:.68rem; }
     .le-readout strong { display:block; margin-top:.18rem; color:#fff; }
     .le-note { color:var(--muted); font-size:.78rem; line-height:1.55; }
-    @media(max-width:800px) { .le-grid { grid-template-columns:1fr; } #le-canvas { height:360px; } }
+    @media(max-width:800px) { .le-grid { grid-template-columns:1fr; } #le-canvas, #le-2d-canvas { height:360px; } }
     @media(prefers-reduced-motion:reduce) { #le-canvas { cursor:default; } }
   </style>
 </head>
@@ -96,25 +96,41 @@
     const canvas = document.getElementById('le-canvas');
     const sideCanvas = document.getElementById('le-2d-canvas');
     const sideCtx = sideCanvas.getContext('2d');
-    const { renderer, scene, camera, syncSize } = createScene(canvas, { THREE, fov: 45, near: .1, far: 100, clearColor: 0x020913, maxDpr: 1.75 });
+    const { renderer, scene, camera, syncSize } = createScene(canvas, { THREE, fov: 45, near: .1, far: 120, clearColor: 0x172b38, maxDpr: 1.75 });
+    scene.background = new THREE.Color(0x172b38);
+    scene.fog = new THREE.Fog(0x172b38, 38, 90);
     const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true; controls.target.set(0, 0, 0); controls.minDistance = 5; controls.maxDistance = 28; controls.maxPolarAngle = Math.PI * .92;
-    camera.position.set(8, 5.8, 9);
-    scene.add(new THREE.AmbientLight(0x7bc9e8, .32));
-    const key = new THREE.DirectionalLight(0xffffff, 2.5); key.position.set(-4, 8, 5); scene.add(key);
+    controls.enableDamping = true; controls.target.set(0, -.3, 0); controls.minDistance = 8; controls.maxDistance = 48; controls.maxPolarAngle = Math.PI * .92;
+    camera.position.set(18, 13, 19);
+    scene.add(new THREE.HemisphereLight(0xd9edff, 0x152633, 1.25));
+    const key = new THREE.DirectionalLight(0xfff1da, 2.5); key.position.set(-9, 9, -9); scene.add(key);
     const underwater = createUnderwaterLighting(THREE, { intensity: 1.05 }); scene.add(underwater.light);
-    const surface = createLiquidSurface(THREE, { material:'water', width:20, depth:20, segments:112 }); scene.add(surface.mesh);
+    const surface = createLiquidSurface(THREE, { material:'water', width:20, depth:20, segments:160, visualScale:1.8 }); scene.add(surface.mesh);
     const sideSurface = LiquidEngine.createSurface({ material:'water', width:1, restY:220, columns:96, maxColumns:128 });
     let sidePhase = 0; let nextSideImpulse = 0.4;
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshBasicMaterial({ color:0x03121d, transparent:true, opacity:.5 }));
-    floor.rotation.x = -Math.PI / 2; floor.position.y = -1.2; scene.add(floor);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(20.8, .45, 20.8), new THREE.MeshStandardMaterial({ color:0x1b303b, metalness:.42, roughness:.38 }));
+    base.position.y = -1.43; scene.add(base);
+    const wallMaterial = new THREE.MeshStandardMaterial({ color:0x314a55, metalness:.52, roughness:.3 });
+    const rimMaterial = new THREE.MeshStandardMaterial({ color:0x829ba4, metalness:.75, roughness:.24 });
+    for (const sign of [-1, 1]) {
+      const longWall = new THREE.Mesh(new THREE.BoxGeometry(20.8, 1.05, .34), wallMaterial);
+      longWall.position.set(0, -.75, sign * 10.23); scene.add(longWall);
+      const longRim = new THREE.Mesh(new THREE.BoxGeometry(20.8, .09, .39), rimMaterial);
+      longRim.position.set(0, -.19, sign * 10.23); scene.add(longRim);
+      const shortWall = new THREE.Mesh(new THREE.BoxGeometry(.34, 1.05, 20.8), wallMaterial);
+      shortWall.position.set(sign * 10.23, -.75, 0); scene.add(shortWall);
+      const shortRim = new THREE.Mesh(new THREE.BoxGeometry(.39, .09, 20.8), rimMaterial);
+      shortRim.position.set(sign * 10.23, -.19, 0); scene.add(shortRim);
+    }
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(180, 180), new THREE.MeshStandardMaterial({ color:0x11232e, roughness:1 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -1.75; scene.add(ground);
     let running = true; let submerged = false;
     const wave = document.getElementById('le-wave'), detail = document.getElementById('le-detail'), flow = document.getElementById('le-flow');
     const updateLabels = () => { document.getElementById('le-wave-value').textContent = (+wave.value).toFixed(2); document.getElementById('le-detail-value').textContent = (+detail.value).toFixed(1); document.getElementById('le-flow-value').textContent = (+flow.value).toFixed(2); };
     [wave,detail,flow].forEach(input => input.addEventListener('input', () => { surface.uniforms.uWaveHeight.value=+wave.value; surface.uniforms.uDetail.value=+detail.value; surface.uniforms.uFlow.value=+flow.value; updateLabels(); }));
-    document.querySelectorAll('[data-material]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-material]').forEach(b => b.classList.remove('active')); button.classList.add('active'); surface.setMaterial(button.dataset.material); sideSurface.setMaterial(button.dataset.material); document.getElementById('le-wave').value = button.dataset.material === 'lava' ? .18 : button.dataset.material === 'honey' ? .12 : .34; updateLabels(); }));
+    document.querySelectorAll('[data-material]').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('[data-material]').forEach(b => b.classList.remove('active')); button.classList.add('active'); surface.setMaterial(button.dataset.material); sideSurface.setMaterial(button.dataset.material); wave.value = button.dataset.material === 'lava' ? .18 : button.dataset.material === 'honey' ? .12 : .34; surface.uniforms.uWaveHeight.value = +wave.value; updateLabels(); }));
     document.getElementById('le-motion').addEventListener('click', event => { running = !running; event.currentTarget.textContent = running ? 'Pause motion' : 'Resume motion'; event.currentTarget.setAttribute('aria-pressed', String(running)); });
-    document.getElementById('le-view').addEventListener('click', event => { submerged = !submerged; event.currentTarget.textContent = submerged ? 'Horizon view' : 'Underwater view'; camera.position.set(8, submerged ? -2.2 : 5.8, 9); controls.target.set(0, submerged ? -.2 : 0, 0); });
+    document.getElementById('le-view').addEventListener('click', event => { submerged = !submerged; event.currentTarget.textContent = submerged ? 'Surface view' : 'Underwater view'; camera.position.set(submerged ? 8 : 18, submerged ? -1.05 : 13, submerged ? 8 : 19); controls.target.set(0, submerged ? -.05 : -.3, 0); });
     let sideMode = false;
     document.getElementById('le-renderer').addEventListener('click', event => { sideMode = !sideMode; canvas.hidden = sideMode; sideCanvas.hidden = !sideMode; event.currentTarget.textContent = sideMode ? '3D surface' : '2D side view'; event.currentTarget.setAttribute('aria-pressed', String(sideMode)); if (sideMode) { sideSurface.configure(sideCanvas.clientWidth || 800, (sideCanvas.clientHeight || 480) * .42, 96); sideSurface.impulse((sideCanvas.clientWidth || 800) * .34, -(12 + Number(wave.value) * 22), 42); nextSideImpulse = sidePhase + .8; } });
     function drawSideView() {
@@ -125,13 +141,32 @@
       if (sideCanvas.width !== width || sideCanvas.height !== height) { sideCanvas.width = width; sideCanvas.height = height; }
       sideSurface.configure(width, height * .42, 96);
       const sky = sideCtx.createLinearGradient(0, 0, 0, height * .48);
-      sky.addColorStop(0, '#86c9e3'); sky.addColorStop(1, '#d9f5f5');
+      sky.addColorStop(0, '#547c9b'); sky.addColorStop(.7, '#a9c5d0'); sky.addColorStop(1, '#e3d8bd');
       sideCtx.fillStyle = sky; sideCtx.fillRect(0, 0, width, height);
-      sideCtx.fillStyle = 'rgba(255,244,191,.9)'; sideCtx.beginPath(); sideCtx.arc(width * .82, height * .18, height * .08, 0, Math.PI * 2); sideCtx.fill();
-      sideCtx.fillStyle = '#38566a'; sideCtx.beginPath(); sideCtx.moveTo(0, height * .41); sideCtx.lineTo(width * .22, height * .32); sideCtx.lineTo(width * .4, height * .4); sideCtx.lineTo(width * .58, height * .3); sideCtx.lineTo(width, height * .39); sideCtx.lineTo(width, height * .47); sideCtx.lineTo(0, height * .47); sideCtx.fill();
-      sideCtx.fillStyle = '#9a7954'; sideCtx.fillRect(0, height * .78, width, height * .22);
-      sideCtx.globalAlpha = .22; sideCtx.fillStyle = '#e5c38f'; for (let x = -40; x < width; x += 70) sideCtx.fillRect(x, height * .8, 34, height * .012); sideCtx.globalAlpha = 1;
-      LiquidEngine.drawSurface(sideCtx, sideSurface, { width, bottom: height, phase: sidePhase, caustics: true, reflection: true, reflectionAbove: true, foam: true });
+      const glow = sideCtx.createRadialGradient(width * .77, height * .2, 0, width * .77, height * .2, height * .36);
+      glow.addColorStop(0, 'rgba(255,246,219,.72)'); glow.addColorStop(.23, 'rgba(255,225,177,.24)'); glow.addColorStop(1, 'rgba(255,225,177,0)');
+      sideCtx.fillStyle = glow; sideCtx.fillRect(0, 0, width, height * .48);
+      sideCtx.fillStyle = '#fff1d0'; sideCtx.beginPath(); sideCtx.arc(width * .77, height * .2, height * .032, 0, Math.PI * 2); sideCtx.fill();
+      function ridge(base, amplitude, color, phase) {
+        sideCtx.fillStyle = color; sideCtx.beginPath(); sideCtx.moveTo(0, height);
+        for (let x = 0; x <= width + 8; x += 8) {
+          const u = x / width;
+          const elevation = Math.sin(u * 8.6 + phase) * .48 + Math.sin(u * 17.3 + phase * 2) * .18 + Math.sin(u * 31.5 + phase) * .08;
+          sideCtx.lineTo(x, height * (base - elevation * amplitude));
+        }
+        sideCtx.lineTo(width, height); sideCtx.closePath(); sideCtx.fill();
+      }
+      ridge(.42, .05, '#718d99', .5);
+      ridge(.455, .07, '#3c5a69', 1.8);
+      LiquidEngine.drawSurface(sideCtx, sideSurface, { width, bottom: height, phase: sidePhase, caustics: true, reflection: true, reflectionAbove: true, foam: true, causticsOpacity:.08 });
+      sideCtx.save();
+      sideCtx.beginPath(); sideCtx.moveTo(0, height);
+      for (let x = 0; x <= width; x += 4) sideCtx.lineTo(x, sideSurface.sample(x));
+      sideCtx.lineTo(width, height); sideCtx.clip();
+      const shafts = sideCtx.createLinearGradient(width * .72, height * .4, width * .38, height);
+      shafts.addColorStop(0, 'rgba(255,240,198,.22)'); shafts.addColorStop(1, 'rgba(255,240,198,0)');
+      sideCtx.fillStyle = shafts; sideCtx.beginPath(); sideCtx.moveTo(width * .67, height * .4); sideCtx.lineTo(width * .9, height * .4); sideCtx.lineTo(width * .62, height); sideCtx.lineTo(width * .25, height); sideCtx.closePath(); sideCtx.fill();
+      sideCtx.restore();
       sideCtx.fillStyle = 'rgba(12,43,57,.65)'; sideCtx.font = `${Math.max(12, height * .025)}px system-ui`; sideCtx.fillText('2D shallow-water view', 18, 28);
     }
     updateLabels();
@@ -141,5 +176,6 @@
   </script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>
