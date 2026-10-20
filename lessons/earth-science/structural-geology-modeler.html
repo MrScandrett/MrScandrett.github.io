@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Structural Geology: 3D Subsurface Modeler · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Build 3D geologic models from sparse field data — layer-cake stratigraphy, folds, faults, and unconformities, interpolated the way real structural geology software works." />
+  <meta name="description" content="Build and analyze 3D geologic models from sparse field data — layer-cake stratigraphy, anticlines, synclines, normal/reverse faults, and angular unconformities, interpolated the way real structural geology software works." />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
@@ -22,13 +22,13 @@
       margin: 0 auto; min-height: 48px;
       display: flex; align-items: center; justify-content: space-between; gap: 1rem;
     }
-    .sg-topbar a { color: #d9a441; text-decoration: none; font-size: 0.82rem; }
+    .sg-topbar a { color: #d9a441; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
     .sg-topbar a:hover { color: #fff; }
     .sg-topbar-title { font-size: 0.9rem; font-weight: 700; color: #ecdcb8; }
 
-    .sg-hero { text-align: center; padding: 2rem 1.5rem 0.8rem; max-width: 760px; margin: 0 auto; }
+    .sg-hero { text-align: center; padding: 2rem 1.5rem 0.8rem; max-width: 820px; margin: 0 auto; }
     .sg-hero h1 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
-    .sg-hero p { font-size: 0.88rem; color: rgba(220,205,180,0.72); margin: 0; line-height: 1.55; }
+    .sg-hero p { font-size: 0.92rem; color: rgba(220,205,180,0.85); margin: 0; line-height: 1.6; }
 
     .sg-wrap {
       display: grid; grid-template-columns: 1fr 360px; gap: 1rem;
@@ -86,30 +86,42 @@
 
     .sg-explain { font-size: 0.72rem; line-height: 1.55; color: rgba(220,205,180,0.68); }
     .sg-explain strong { color: #ecc470; }
+
+    /* Concept & Pedagogy Section */
     .sg-learning {
-      max-width: 1180px; margin: 0 auto 3rem; padding: 0 1.1rem;
-      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem;
+      max-width: 1440px; margin: 0 auto 3rem; padding: 0 1.1rem;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem;
     }
-    .sg-learning .sg-card { padding: 1.1rem 1.2rem; }
-    .sg-learning h2 { margin: 0 0 0.65rem; color: #f2dfb4; font-size: 1rem; }
-    .sg-learning p, .sg-learning li { color: rgba(230,216,190,.76); font-size: .83rem; line-height: 1.6; }
+    .sg-learning .sg-card { padding: 1.25rem 1.4rem; }
+    .sg-learning h2 { margin: 0 0 0.65rem; color: #f2dfb4; font-size: 1.15rem; }
+    .sg-learning p, .sg-learning li { color: rgba(230,216,190,.85); font-size: .88rem; line-height: 1.65; }
     .sg-learning ol, .sg-learning ul { margin: .4rem 0 0; padding-left: 1.2rem; }
-    .sg-question { border-left: 3px solid #d9a441; }
+    .sg-full { grid-column: 1 / -1; }
+
+    /* Zoomable figure frames */
+    .sg-fig { margin: 1rem 0 0; }
+    .sg-fig .fig-frame { border: 1px solid rgba(217,164,65,0.25); border-radius: 12px; background: #080a06; padding: .6rem; }
+    .sg-fig img { width: 100%; height: auto; display: block; border-radius: 8px; }
+    .sg-fig figcaption { margin-top: .55rem; color: rgba(220,205,180,0.72); font-size: .8rem; line-height: 1.55; }
+    .sg-fig figcaption strong { color: #ecc470; }
+
     .sg-action { width: 100%; min-height: 42px; border: 1px solid rgba(236,196,112,.55); border-radius: 7px; background: #2f260f; color: #ffe5a5; font: 700 .78rem/1 inherit; cursor: pointer; }
     .sg-action:hover, .sg-action:focus-visible, .sg-action[aria-pressed="true"] { border-color: #ffe09a; background: #5b4314; outline: 2px solid transparent; }
     .sg-borehole-log { min-height: 3.2rem; margin: .55rem 0 0; padding: .55rem; border-left: 3px solid #d9a441; background: rgba(0,0,0,.22); color: #e7d6ae; font-size: .72rem; line-height: 1.45; }
-    .sg-evidence { grid-column: 1 / -1; }
     .sg-evidence-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; }
     .sg-evidence label { display: grid; gap: .35rem; color: #f2dfb4; font-size: .8rem; font-weight: 700; }
     .sg-evidence select, .sg-evidence textarea { width: 100%; border: 1px solid rgba(236,196,112,.35); border-radius: 6px; background: #141207; color: #f8edcf; padding: .55rem; font: inherit; }
     .sg-evidence textarea { min-height: 80px; resize: vertical; }
     .sg-evidence-feedback { min-height: 1.5em; color: #ffd987 !important; }
-    @media (max-width: 700px) { .sg-learning { grid-template-columns: 1fr; } }
-    @media (max-width: 700px) { .sg-evidence-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) {
+      .sg-learning { grid-template-columns: 1fr; }
+      .sg-evidence-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="nav-wrap">
       <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
@@ -127,18 +139,18 @@
     </div>
   </header>
 
-  <div class="sg-topbar">
+  <nav class="ll-topbar sg-topbar" aria-label="Lesson navigation">
     <div class="sg-topbar-inner">
       <a href="../../steam-lessons.html#module-earth">← Earth Science</a>
       <span class="sg-topbar-title">Structural Geology · 3D Subsurface Modeler</span>
-      <span></span>
+      <a href="#structural-concepts">Field Principles</a>
     </div>
-  </div>
+  </nav>
 
   <main id="main-content">
   <header class="sg-hero">
     <h1>Structural Geology: 3D Subsurface Modeler</h1>
-    <p>Geologists never see the whole subsurface — only outcrops, boreholes, and scattered field readings. This lab shows how those sparse points get turned into a full 3D geologic model using <strong>implicit interpolation</strong>, the same core idea behind professional tools like GemPy.</p>
+    <p>Geologists rarely see an entire underground formation directly. Instead, they gather scattered borehole core intercepts, seismic reflections, and surface outcrop dip measurements, and use <strong>implicit potential-field interpolation</strong> (the foundation of modern structural modeling platforms like GemPy and Leapfrog) to reconstruct full 3D stratigraphy.</p>
   </header>
 
   <div class="sg-wrap">
@@ -148,88 +160,128 @@
         <span class="sg-badge" id="sg-title-badge">Layer-Cake Stratigraphy</span>
         <span class="sg-badge-sub" id="sg-points-badge">— control points</span>
       </div>
-      <div class="drag-hint">drag to orbit · scroll to zoom</div>
+      <div class="drag-hint">Orbit: Drag / Arrow keys · Zoom: Wheel / + / - · Pan: Right drag</div>
     </div>
 
     <div class="sg-panel">
       <div class="sg-card">
-        <h3>Structural Scenarios</h3>
+        <h3>Structural Scenario</h3>
         <div class="scenario-scroll" id="scenario-list"></div>
       </div>
 
       <div class="sg-card">
-        <h3>Evidence tool</h3>
-        <button class="sg-action" id="place-borehole" type="button" aria-pressed="false">Place a borehole</button>
-        <p class="sg-borehole-log" id="borehole-log" aria-live="polite">Choose a fold or fault, select this tool, then click the model to add one proposed borehole.</p>
-      </div>
-
-      <div class="sg-card">
-        <h3>View Controls</h3>
+        <h3>Model Controls</h3>
         <div class="sg-toggle-row">
-          <span>Show field data points</span>
+          <span>Show field control points</span>
           <input type="checkbox" id="toggle-points" checked />
         </div>
         <div class="sg-toggle-row">
-          <span>Wireframe surfaces</span>
+          <span>Show wireframe mesh</span>
           <input type="checkbox" id="toggle-wire" />
         </div>
         <div class="sg-slice-row">
-          <span class="sg-slice-label"><span>Cross-section slice (X)</span><span id="slice-val">off</span></span>
+          <div class="sg-slice-label">
+            <span>X-Axis Cross Section</span>
+            <span id="slice-val">off</span>
+          </div>
           <input type="range" id="slice-slider" min="0" max="100" value="100" />
         </div>
       </div>
 
       <div class="sg-card">
-        <h3>Rock Units</h3>
-        <div id="legend-list"></div>
+        <h3>Stratigraphic Column</h3>
+        <div id="sg-legend"></div>
+        <div class="sg-explain" id="scenario-blurb" style="margin-top:0.6rem;"></div>
       </div>
 
       <div class="sg-card">
-        <h3>How This Model Is Built</h3>
-        <p class="sg-explain" id="scenario-blurb"></p>
-        <p class="sg-explain">Each glowing dot is a real data point — an interface contact or borehole hit. The colored surfaces in between are <strong>not</strong> measured directly: they are interpolated by fitting a smooth implicit function through the known points, the same "sparse data in, continuous 3D surface out" workflow that drives real subsurface modeling software (GemPy, Leapfrog, GeoModeller). Drag the cross-section slider to slice through the block and see the layers the way a geologist draws a cross-section.</p>
+        <h3>Field Testing</h3>
+        <p class="sg-explain" style="margin:0 0 0.5rem;">Drill an exploratory borehole to test subsurface continuity.</p>
+        <button class="sg-action" id="btn-borehole" type="button" aria-pressed="false">Place a borehole</button>
+        <div class="sg-borehole-log" id="borehole-log">Choose "Place a borehole", then click the top surface of the model.</div>
       </div>
     </div>
   </div>
 
-  <section class="sg-learning" aria-label="Structural geology learning guide">
-    <article class="sg-card sg-question">
-      <h2>Essential Question</h2>
-      <p>How can geologists build a defensible picture of rocks underground when they can measure only a small number of points at the surface and in boreholes?</p>
+  <!-- ═════════ Structural Principles & Pedagogical Content ═════════ -->
+  <section class="sg-learning" id="structural-concepts">
+    <article class="sg-card sg-full">
+      <h2>How Crustal Deformation Works: Steno's Laws to 3D Tectonics</h2>
+      <p>Sedimentary rocks originate as flat, continuous sheets on ocean and lake basins according to Nicolas Steno's foundational geological principles: <em>Original Horizontality</em> (gravity settles sediments horizontally), <em>Superposition</em> (younger strata accumulate over older strata), and <em>Lateral Continuity</em> (layers extend laterally until they pinch out or hit a basin barrier). When we encounter folded, broken, or tilted beds in modern mountain belts, we know tectonic stress transformed them after lithification.</p>
     </article>
+
+    <!-- Folds & Faults Zoomable Figure -->
     <article class="sg-card">
-      <h2>Model-Reading Routine</h2>
+      <h2>1. Folds &amp; Faults: Ductile vs. Brittle Deformation</h2>
+      <p>Whether rock fractures or bends depends on temperature, confining pressure, and deformation rate. Deep in Earth's crust, high confining pressures and temperatures allow rocks to deform plastically into <strong>ductile folds</strong> (upward-arching <em>anticlines</em> with older rocks at their core, and downward-troughing <em>synclines</em> with youngest rocks at their core). Near the cooler surface, rocks undergo <strong>brittle deformation</strong>, breaking along slip planes into <strong>faults</strong>.</p>
+
+      <figure data-zoomable data-lightbox-group="structural-geology" class="sg-fig">
+        <div class="fig-frame">
+          <img src="../../assets/images/lessons/structural-geology/folds-and-faults.svg" width="960" height="480" loading="lazy" alt="Geological diagrams comparing ductile folds (anticline arch and syncline trough) and brittle fault mechanics (normal extensional fault vs reverse compressional thrust fault)" />
+        </div>
+        <figcaption><strong>Figure 1 · Folds and Faults</strong> — Compressional tectonic stress bows sedimentary layers into anticlines and synclines. When crust is pulled apart by extensional stress, normal faults drop the hanging wall downward relative to the footwall; during crustal compression, reverse/thrust faults push the hanging wall upward.</figcaption>
+      </figure>
+    </article>
+
+    <!-- Unconformities & Strike/Dip Zoomable Figure -->
+    <article class="sg-card">
+      <h2>2. Unconformities &amp; Field Strike and Dip</h2>
+      <p>When crust is uplifted above sea level, erosion carves away millions of years of rock record before subsequent subsidence allows new horizontal layers to deposit over the tilted, truncated surface. This boundary is called an <strong>angular unconformity</strong>. In the field, geologists measure the 3D orientation of planar contacts using two numbers: <strong>strike</strong> (the compass heading of a level horizontal line along the plane) and <strong>dip</strong> (the maximum angle the plane slopes downward into the earth).</p>
+
+      <figure data-zoomable data-lightbox-group="structural-geology" class="sg-fig">
+        <div class="fig-frame">
+          <img src="../../assets/images/lessons/structural-geology/unconformity-strike-dip.svg" width="960" height="480" loading="lazy" alt="Diagram showing an angular unconformity where horizontal beds overlie tilted strata, and 3D strike and dip orientation measurements on a dipping rock contact" />
+        </div>
+        <figcaption><strong>Figure 2 · Angular Unconformities and Strike &amp; Dip</strong> — An angular unconformity represents an enormous gap in geologic time where older deformed rocks were eroded flat prior to renewed deposition. Geologists document these formations using standard strike-and-dip map symbols that show direction and steepness of layer tilt.</figcaption>
+      </figure>
+    </article>
+
+    <article class="sg-card">
+      <h2>Model-Reading Field Routine</h2>
       <ol>
-        <li>Identify the measured control points before trusting the colored surfaces.</li>
-        <li>Compare at least two structural scenarios using the same camera angle.</li>
-        <li>Move the cross-section and describe where the model is constrained—and where it is inferred.</li>
+        <li><strong>Verify the Control Points:</strong> Identify the measured control points (yellow spheres) before accepting the interpolated colored surfaces.</li>
+        <li><strong>Analyze Cross Sections:</strong> Slide the cross-section plane to reveal the interior geometry and evaluate where layer thicknesses stay uniform versus where they pinch or offset.</li>
+        <li><strong>Locate Interpolation Uncertainty:</strong> Notice how uncertainty grows in regions where no boreholes or surface contact measurements exist.</li>
       </ol>
     </article>
+
     <article class="sg-card">
-      <h2>Field Challenge</h2>
-      <p>Choose the fold or fault scenario. Sketch one additional borehole location that would reduce uncertainty. Name the layer contacts you would expect it to cross and explain why that location is more useful than a random point.</p>
-    </article>
-    <article class="sg-card">
-      <h2>Exit Ticket</h2>
+      <h2>Exploratory Drilling Strategy</h2>
+      <p>In structural geology and mineral exploration, every borehole is expensive. To test a structural hypothesis (such as proving whether an anticlinal crest exists or pinpointing fault throw), geologists do not drill randomly; they place boreholes where model variance is highest or where layer contacts are predicted to shift abruptly.</p>
       <ul>
-        <li>What evidence in the model is directly measured?</li>
-        <li>What is produced by interpolation?</li>
-        <li>Give one reason two geologists could build different models from the same sparse observations.</li>
+        <li><strong>Fold Crest Test:</strong> Drilling through an anticlinal hinge tests whether the fold is symmetric or overturned.</li>
+        <li><strong>Fault Boundary Test:</strong> Drilling across a predicted fault plane proves whether a repeating stratigraphic sequence (reverse fault) or missing section (normal fault) exists.</li>
       </ul>
     </article>
-    <article class="sg-card sg-evidence">
-      <h2>Defend a model</h2>
-      <p>Select a claim, add an observation from the model, and explain why that evidence supports the claim. A complete answer must distinguish measured points from interpolated surfaces.</p>
+
+    <article class="sg-card sg-evidence sg-full">
+      <h2>Defend a Geological Model (Claim, Evidence, Reasoning)</h2>
+      <p>Select a structural claim, cite specific observable features from the 3D model, and explain how the geometric evidence supports your interpretation. Make sure to distinguish directly measured control points from mathematical interpolation.</p>
       <div class="sg-evidence-grid">
-        <label>Claim<select id="sg-claim"><option value="">Choose a claim</option><option value="fold">The layers were folded after deposition</option><option value="fault">A fault displaced previously continuous layers</option><option value="unconformity">Erosion removed older rock before younger deposition</option></select></label>
-        <label>Observed evidence<textarea id="sg-observation" placeholder="Describe a visible contact, offset, curve, or control point…"></textarea></label>
-        <label>Reasoning<textarea id="sg-reasoning" placeholder="Explain what is measured, what is inferred, and why the claim fits…"></textarea></label>
+        <label>Claim
+          <select id="sg-claim">
+            <option value="">Choose a claim</option>
+            <option value="layercake">Layer-Cake: Strata remain horizontal and undeformed</option>
+            <option value="fold">Fold: Tectonic compression arched the strata into a fold</option>
+            <option value="fault">Fault: Brittle shearing offset previously continuous layers</option>
+            <option value="unconformity">Unconformity: Erosion truncated older beds before younger beds formed</option>
+          </select>
+        </label>
+        <label>Observed Evidence
+          <textarea id="sg-observation" placeholder="Cite specific visible contacts, dip angles, offsets, or borehole control points…"></textarea>
+        </label>
+        <label>Scientific Reasoning
+          <textarea id="sg-reasoning" placeholder="Explain how the observed geometry connects to Steno's laws, tectonic stress, or interpolation constraints…"></textarea>
+        </label>
       </div>
-      <button class="sg-action" id="sg-check-evidence" type="button">Check evidence chain</button><p class="sg-evidence-feedback" id="sg-evidence-feedback" role="status"></p>
+      <button class="sg-action" id="sg-check-evidence" type="button" style="margin-top:0.8rem;">Evaluate Evidence Chain</button>
+      <p class="sg-evidence-feedback" id="sg-evidence-feedback" role="status"></p>
     </article>
   </section>
   </main>
+</div>
 
+  <script src="../../assets/js/sim-kit.js"></script>
   <script type="module">
     import { THREE } from '../../assets/vendor/three-bundle.min.js';
     import { createScene } from '../../assets/js/sim-kit-three.mjs';
@@ -348,52 +400,54 @@
       });
 
       const ptGeo = new THREE.SphereGeometry(0.09, 8, 8);
+      const ptMat = new THREE.MeshBasicMaterial({ color: 0xffe070 });
       sc.controlPoints.forEach(p => {
-        const mat = new THREE.MeshBasicMaterial({ color: 0xecc470 });
-        const s = new THREE.Mesh(ptGeo, mat);
-        s.position.set(p.x, p.y, p.z);
-        pointsGroup.add(s);
+        const m = new THREE.Mesh(ptGeo, ptMat);
+        m.position.set(p.x, p.y, p.z);
+        pointsGroup.add(m);
       });
-      pointsGroup.visible = document.getElementById('toggle-points').checked;
 
-      document.querySelectorAll('.sc-card').forEach(el => el.classList.toggle('active', el.dataset.key === key));
-
-      const legend = document.getElementById('legend-list');
-      legend.innerHTML = '';
-      const seen = new Set();
+      const leg = document.getElementById('sg-legend');
+      leg.innerHTML = '';
       sc.horizons.forEach(h => {
-        const name = h.blocks ? h.name : h.name;
-        const color = h.blocks ? h.blocks[0].color : h.color;
-        if (seen.has(name)) return;
-        seen.add(name);
         const row = document.createElement('div');
         row.className = 'legend-row';
-        row.innerHTML = '<span class="legend-swatch" style="background:' + color + '"></span><span>' + name + '</span>';
-        legend.appendChild(row);
+        const hex = '#' + h.color.toString(16).padStart(6, '0');
+        row.innerHTML = '<span class="legend-swatch" style="background:' + hex + '"></span><span>' + h.name + '</span>';
+        leg.appendChild(row);
+      });
+
+      document.querySelectorAll('.sc-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.key === key);
       });
     }
 
     function buildScenarioList() {
       const list = document.getElementById('scenario-list');
       list.innerHTML = '';
-      order.forEach(key => {
-        const sc = data[key];
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'sc-card';
-        card.dataset.key = key;
-        card.innerHTML = '<div class="sc-name">' + sc.title + '</div><div class="sc-desc">' + sc.blurb + '</div>';
-        card.addEventListener('click', () => loadScenario(key));
-        list.appendChild(card);
+      order.forEach(k => {
+        const sc = data[k];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sc-card' + (k === 'layercake' ? ' active' : '');
+        btn.dataset.key = k;
+        btn.innerHTML = '<div class="sc-name">' + sc.title + '</div><div class="sc-desc">' + sc.tagline + '</div>';
+        btn.addEventListener('click', () => loadScenario(k));
+        list.appendChild(btn);
       });
     }
 
-    document.getElementById('toggle-points').addEventListener('change', e => { pointsGroup.visible = e.target.checked; });
+    document.getElementById('toggle-points').addEventListener('change', e => {
+      pointsGroup.visible = e.target.checked;
+    });
     document.getElementById('toggle-wire').addEventListener('change', e => {
-      modelGroup.children.forEach(m => { m.material.wireframe = e.target.checked; });
+      const w = e.target.checked;
+      modelGroup.traverse(child => {
+        if (child.isMesh) child.material.wireframe = w;
+      });
     });
 
-    const boreholeButton = document.getElementById('place-borehole');
+    const boreholeButton = document.getElementById('btn-borehole');
     boreholeButton.addEventListener('click', () => {
       placingBorehole = !placingBorehole;
       boreholeButton.setAttribute('aria-pressed', String(placingBorehole));
@@ -424,9 +478,9 @@
     document.getElementById('sg-check-evidence').addEventListener('click',()=>{
       const claim=document.getElementById('sg-claim').value, obs=document.getElementById('sg-observation').value.trim(), reasoning=document.getElementById('sg-reasoning').value.trim();
       const feedback=document.getElementById('sg-evidence-feedback');
-      if(!claim||obs.length<25||reasoning.length<35){feedback.textContent='Strengthen the chain: choose a claim, name a specific visible observation, and explain measured points versus interpolation.';return;}
+      if(!claim||obs.length<20||reasoning.length<25){feedback.textContent='Strengthen the chain: choose a claim, name a specific visible observation, and explain measured points versus interpolation.';return;}
       const aligned=claim===currentKey;
-      feedback.textContent=(aligned?'Evidence chain complete. ':'Your written claim is complete, but compare it with the scenario currently displayed. ')+'A defensible model links the claim to visible geometry while admitting where the surface is inferred.';
+      feedback.textContent=(aligned?'Strong evidence chain aligned with active scenario! ':'Your written claim is complete, but verify whether it matches the scenario currently loaded. ')+'A defensible geological model links the claim to visible geometric features while explicitly recognizing where surfaces are inferred between boreholes.';
     });
     document.getElementById('slice-slider').addEventListener('input', e => {
       const v = Number(e.target.value);
@@ -447,7 +501,7 @@
       data = json;
       buildScenarioList();
       loadScenario('layercake');
-      animate();
+      startLoop();
     }).catch(error => { document.getElementById('scenario-list').textContent=error.message+'. Reload the page or use the written field challenge below.'; });
 
     function resize() {
@@ -456,11 +510,23 @@
     window.addEventListener('resize', resize);
     resize();
 
-    function animate() {
-      requestAnimationFrame(animate);
-      syncSize(); renderer.render(scene, camera);
+    // Use SimKit.loop to ensure the render loop pauses when tab is hidden and eliminates per-frame syncSize reflow
+    function startLoop() {
+      if (window.SimKit && window.SimKit.loop) {
+        window.SimKit.loop(() => {
+          renderer.render(scene, camera);
+        });
+      } else {
+        function fallbackAnimate() {
+          requestAnimationFrame(fallbackAnimate);
+          renderer.render(scene, camera);
+        }
+        fallbackAnimate();
+      }
     }
   </script>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
