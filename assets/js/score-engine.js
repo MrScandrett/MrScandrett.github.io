@@ -457,22 +457,22 @@
   function gapFor(d) { return 2.1 + 2.7 * Math.pow(Math.max(d, 0.125), 0.6); }
 
   // Width, in staff spaces, of a key signature change (cancelling naturals plus the new accidentals).
-  function keyChangeUnits(from, to) {
+  function keyChangeUnits(from, to, readableSize) {
     var cancel = (from > 0 && to <= 0) || (from < 0 && to >= 0) ? Math.abs(from) : Math.max(0, Math.abs(from) - Math.abs(to));
-    return (cancel * 0.9 + Math.abs(to) * 1.05) + 0.8;
+    return (cancel * (readableSize ? 1.25 : 0.9) + Math.abs(to) * (readableSize ? 1.3 : 1.05)) + 0.8;
   }
   function graceUnits(ev) {
     return (ev.graces || []).reduce(function (w, g) { return w + 1.15 + (g.pitches.some(function (p) { return p.showAcc !== null; }) ? 0.85 : 0); }, 0);
   }
 
-  function layoutBars(model, S) {
+  function layoutBars(model, S, readableSize) {
     return model.barStart.map(function (b0, bi) {
       var times = {}, meta = model.barMeta[bi];
       var len = model.staves[0].bars[bi].length;
       // Things printed at the start of a bar, before its first note.
       var lead = 0;
       if (meta.repStart) lead += 1.6;
-      if (meta.keyChange) lead += keyChangeUnits(meta.prevKey, meta.key);
+      if (meta.keyChange) lead += keyChangeUnits(meta.prevKey, meta.key, readableSize);
       if (meta.timeChange) lead += 2.8;
       if (bi > 0 && model.staves.some(function (st) { return st.bars[bi].clefStart && st.bars[bi].clefStart !== st.clefAt[bi - 1]; })) lead += 2.6;
       model.staves.forEach(function (st) {
@@ -496,7 +496,7 @@
       cols.forEach(function (c, i) {
         if (c.clef) x += 2.2;
         x += c.grace;
-        c.accW = c.acc ? 1.15 * c.acc + 0.2 : 0;
+        c.accW = c.acc ? (readableSize ? 1.5 : 1.15) * c.acc + 0.2 : 0;
         x += c.accW;
         c.x = x;
         var next = i + 1 < cols.length ? cols[i + 1].t : len;
@@ -511,13 +511,13 @@
     });
   }
 
-  function engrave(model, width) {
+  function engrave(model, width, readableSize) {
     var M = root.MusicNotation;
-    var S = width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5;
+    var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1);
     var h = S / 2;
     decideStems(model);
-    var bars = layoutBars(model, S);
-    function keyW(k) { return Math.abs(k) * (k > 0 ? 1.05 : 0.95) * S; }
+    var bars = layoutBars(model, S, readableSize);
+    function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
     var grand = model.staves.length === 2 && model.score.grand !== false;
     var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
     var tsDigits = String(model.ts.num).length > String(model.ts.den).length ? String(model.ts.num) : String(model.ts.den);
@@ -574,10 +574,16 @@
     var lineW = Math.max(1, 0.11 * S);
     var allEvents = [];
     var tupletDraws = [];
+    function signatureAccidental(acc, x, y) {
+      if (!readableSize) return M.accidental(acc, x, y, S);
+      return '<rect class="se-accidental-back" x="' + (x - 0.08 * S) + '" y="' + (y - 1.7 * S) +
+        '" width="' + (1.28 * S) + '" height="' + (3.4 * S) + '" rx="' + (0.08 * S) + '"/>' +
+        M.accidental(acc, x, y, 1.18 * S);
+    }
 
     function keySig(k, x, b, clef) {
       var s = '', pos = M.clefs[clef][k > 0 ? 'sharp' : 'flat'];
-      for (var i = 0; i < Math.abs(k); i++) { s += M.accidental(k > 0 ? 1 : -1, x, b - pos[i] * h, S); x += (k > 0 ? 1.05 : 0.95) * S; }
+      for (var i = 0; i < Math.abs(k); i++) { s += signatureAccidental(k > 0 ? 1 : -1, x, b - pos[i] * h); x += (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
       return s;
     }
     function keyChange(from, to, x, b, clef) {
@@ -586,7 +592,7 @@
       else cancel = Math.max(0, Math.abs(from) - Math.abs(to));
       var pos = M.clefs[clef][kind], startAt = Math.abs(from) - cancel;
       if ((from > 0 && to <= 0) || (from < 0 && to >= 0)) startAt = 0;
-      for (var i = startAt; i < startAt + cancel; i++) { s += M.accidental(0, x, b - pos[i] * h, S); x += 0.9 * S; }
+      for (var i = startAt; i < startAt + cancel; i++) { s += signatureAccidental(0, x, b - pos[i] * h); x += (readableSize ? 1.25 : 0.9) * S; }
       return s + keySig(to, x + 0.2 * S, b, clef);
     }
     function timeSigAt(ts, x, b) {
@@ -688,7 +694,7 @@
         }
         if (meta.keyChange) {
           if (k > 0) model.staves.forEach(function (st, si) { out.push(keyChange(meta.prevKey, meta.key, lx, bottoms[si], st.clefAt[bi])); });
-          lx += keyChangeUnits(meta.prevKey, meta.key) * S;
+          lx += keyChangeUnits(meta.prevKey, meta.key, readableSize) * S;
         }
         if (meta.timeChange) { model.staves.forEach(function (st, si) { out.push(timeSigAt(meta.ts, lx + 0.3 * S, bottoms[si])); }); lx += 2.8 * S; }
         if (bi > 0 && k > 0) model.staves.forEach(function (st, si) {
@@ -729,7 +735,7 @@
           });
           // Beams first, so stems know where to stop.
           barModel.beams.forEach(function (g) { placeBeam(g, st.clef, b, S, h); });
-          barModel.events.forEach(function (ev) { out.push(drawEvent(ev, ev.clef || st.clef, b, S, h, model)); });
+          barModel.events.forEach(function (ev) { out.push(drawEvent(ev, ev.clef || st.clef, b, S, h, model, readableSize)); });
           barModel.beams.forEach(function (g) { out.push(drawBeam(g, S)); });
           barModel.events.forEach(function (ev) { if (ev.tupletStart) tupletDraws.push(ev.tupletStart); });
         });
@@ -939,7 +945,7 @@
     return out;
   }
 
-  function drawEvent(ev, clef, b, S, h, model) {
+  function drawEvent(ev, clef, b, S, h, model, readableSize) {
     var M = root.MusicNotation;
     var out = '<g class="se-ev" data-i="' + ev.i + '">';
     var lw = 0.12 * S;
@@ -979,7 +985,7 @@
         out += '<line x1="' + (ledg[ls][0] - 0.4 * S) + '" x2="' + (ledg[ls][1] + w + 0.4 * S) + '" y1="' + yy + '" y2="' + yy + '" stroke="currentColor" stroke-width="' + 0.16 * S + '"/>';
       });
       // Accidentals, stacked into columns so they never collide.
-      var accCols = [];
+      var accCols = [], accBacks = [], accGlyphs = [];
       var accLeft = ev.x - 0.3 * S - (Object.keys(shifted).some(function (k) { return shifted[k] < 0; }) ? w : 0);
       for (var a = ps.length - 1; a >= 0; a--) {
         if (ps[a].showAcc === null) continue;
@@ -987,8 +993,14 @@
         while (accCols[col] && accCols[col].some(function (s) { return Math.abs(s - steps[a]) < 6; })) col++;
         (accCols[col] = accCols[col] || []).push(steps[a]);
         var aw = ps[a].showAcc === 0 ? 0.68 : ps[a].showAcc < 0 ? 0.9 : 1.0;
-        out += M.accidental(ps[a].showAcc, accLeft - aw * S - col * 1.15 * S, b - steps[a] * h, S);
+        var accScale = readableSize ? 1.3 : 1;
+        var ax = accLeft - aw * accScale * S - col * (readableSize ? 1.5 : 1.15) * S;
+        var ay = b - steps[a] * h;
+        if (readableSize) accBacks.push('<rect class="se-accidental-back" x="' + (ax - 0.1 * S) + '" y="' + (ay - 1.8 * S) +
+          '" width="' + ((aw * accScale + 0.2) * S) + '" height="' + (3.6 * S) + '" rx="' + (0.1 * S) + '"/>');
+        accGlyphs.push(M.accidental(ps[a].showAcc, ax, ay, accScale * S));
       }
+      out += accBacks.join('') + accGlyphs.join('');
       ps.forEach(function (p, k) {
         var px = ev.x + (shifted[k] || 0) * (w - lw), py = b - steps[k] * h;
         // Use the shared written-pitch palette; accidentals retain their letter's color.
@@ -996,14 +1008,17 @@
           M.glyph(name, px, py, S, 'se-head') + '</g>';
         if (M.preferences.pitchNames) {
           var label = M.pitchName(p);
+          var hollow = name === 'half' || name === 'whole';
           // Dense learning scores can keep accidentals in standard notation and
           // reserve the notehead itself for a larger, clearer letter name.
-          if (model.score.pitchLettersOnly) label = label.charAt(0);
+          if (model.score.pitchLettersOnly || hollow || readableSize) label = label.charAt(0);
           // Glyph origins are at the left edge. Size labels in staff units, including
           // accidentals, so they stay inside heads at every staff/zoom size.
-          var labelSize = S * (model.score.pitchLettersOnly ? 0.96 : (p.a ? 0.54 : 0.82));
-          out += '<text class="se-pitch-label" data-contrast-guard-skip x="' + (px + w / 2) + '" y="' + py +
-            '" style="font-size:' + labelSize + 'px;stroke-width:' + (S * 0.07) + 'px" text-anchor="middle" dominant-baseline="central">' + M.escape(label) + '</text>';
+          var labelSize = S * (hollow ? 0.7 : model.score.pitchLettersOnly || readableSize ? 0.96 : (p.a ? 0.54 : 0.82));
+          if (hollow) out += '<ellipse class="se-hollow-label-back" cx="' + (px + w / 2) + '" cy="' + py +
+            '" rx="' + (S * 0.4) + '" ry="' + (S * 0.29) + '"/>';
+          out += '<text class="se-pitch-label' + (hollow ? ' se-pitch-label-hollow' : '') + '" data-contrast-guard-skip x="' + (px + w / 2) + '" y="' + py +
+            '" style="font-size:' + labelSize + 'px;stroke-width:' + (S * (hollow ? 0.025 : 0.07)) + 'px" text-anchor="middle" dominant-baseline="central">' + M.escape(label) + '</text>';
         }
       });
       // Dots.
@@ -1514,7 +1529,7 @@
       var w = drawWidth();
       if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) return;
       lastDrawWidth = w;
-      layout = engrave(model, w);
+      layout = engrave(model, w, fig.hasAttribute('data-score-readable'));
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
       svgWrap.innerHTML = '<svg class="se-score" role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';

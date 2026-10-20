@@ -10,12 +10,20 @@
     joplin: [['entertainer','The Entertainer',['joplin-entertainer']]],
     mozart: [['nachtmusik','Eine kleine Nachtmusik',['mozart-eine-kleine-1']],['turkish','Turkish March',['mozart-turkish-march']],['sonata','Sonata facile',['mozart-sonata-facile']],['maman','Ah, vous dirai-je, Maman',['mozart-ah-vous-theme']]],
     tchaikovsky: [['song','Old French Song',['tchaikovsky-old-french-song']]],
+    debussy: [['clair','Clair de Lune',['debussy-clair-de-lune']],['arabesque','Première Arabesque',['debussy-arabesque-1']]],
+    satie: [['gymnopedie1','Gymnopédie No. 1',['satie-gymnopedie-1']],['gnossienne1','Gnossienne No. 1',['satie-gnossienne-1']]],
     vivaldi: [['spring','Spring',['vivaldi-spring-1']]]
   };
   var name = location.pathname.split('/').pop().replace('.html','');
   var works = definitions[name];
   var area = document.getElementById('fl-sec-score');
   if (!works || !area) return;
+  // Larger staff spacing lets a class read the notation at the default zoom.
+  // ScoreEngine still reflows systems to the available width, and its zoom
+  // controls remain available for closer study.
+  area.querySelectorAll('figure[data-score]').forEach(function (figure) {
+    figure.setAttribute('data-score-readable', '');
+  });
   function element(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -113,6 +121,8 @@
       sonata: 'The complete first movement with both hands: exposition, development, recapitulation.',
       maman: 'The complete 24-bar theme Mozart varied twelve times.',
       song: 'The complete piece with both hands, from the pickup to the final G-minor chord.',
+      clair: 'The iconic 14-bar opening Nocturne: descending thirds and floating 9/8 moonlight.',
+      arabesque: 'The complete 16-bar opening section: cascading triplets, Art Nouveau curves, and two-against-three polyrhythm.',
       spring: 'The complete first movement in full score: ritornello, birds, streams and storm.'
     };
     var hook = element('p','composer-piece-hook',hooks[id] || firstFigure.querySelector('figcaption').textContent.trim()); card.appendChild(hook);

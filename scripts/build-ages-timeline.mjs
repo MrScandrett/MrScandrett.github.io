@@ -152,6 +152,7 @@ function li(ev) {
     ? ` <a class="ages-gt-link" href="${esc(rel(ev.lesson))}">${esc(lessonTitle(ev.lesson))} →</a>`
     : ev.artifact ? ` <button type="button" class="ages-gt-3d" data-ages-artifact="${esc(ev.artifact)}">View the 3D model</button>`
     : ev.anchor ? ` <a class="ages-gt-link" href="${ev.anchor}" data-ages-open>${esc(ev.anchorText)} ↓</a>` : '';
+  const source = ev.source ? ` <a class="ages-gt-source" href="${esc(ev.source)}" target="_blank" rel="noopener">Historical source ↗</a>` : '';
   const text = ev.text ? ` — ${esc(trimText(ev.text, ev.era ? 320 : 260))}` : '';
   let more = '';
   if (ev.facets.length) {
@@ -160,7 +161,7 @@ function li(ev) {
     const links = ev.facets.map((c) => `<a href="#${c.id}" data-ages-open>${esc(c.facet)}</a>`).join(' ');
     more = `<span class="ages-gt-in-lesson">${thumb}<span class="ages-gt-facets"><span>In this lesson:</span> ${links}</span></span>`;
   }
-  return `<li ${attrs.join(' ')}><strong>${esc(ev.label)}</strong>${text}${link}${more}</li>`;
+  return `<li ${attrs.join(' ')}><strong>${esc(ev.label)}</strong>${text}${link}${source}${more}</li>`;
 }
 
 // ------------------------------------------------------------- page regions

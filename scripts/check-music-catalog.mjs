@@ -20,6 +20,8 @@ const lessons = [
   'lessons/music/instruments/piano.html',
   'lessons/music/theory/sheet-music-trainer.html',
   'lessons/music/pioneers/tchaikovsky.html',
+  'lessons/music/pioneers/debussy.html',
+  'lessons/music/pioneers/satie.html',
   'lessons/music/instruments/violin-fingerboard.html',
   'lessons/music/pioneers/vivaldi.html',
 ];

@@ -27,6 +27,8 @@
     { file: 'lessons/music/pioneers/beethoven.html', label: 'Beethoven' },
     { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin' },
     { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky' },
+    { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy' },
+    { file: 'lessons/music/pioneers/satie.html', label: 'Satie' },
     { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin' },
     { file: 'lessons/music/pioneers/gershwin.html', label: 'Gershwin' },
     { file: 'lessons/music/pioneers/morton.html', label: 'Morton' },
