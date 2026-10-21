@@ -4,7 +4,8 @@
 // work and a link click doesn't end the VR session). page-raster.mjs draws that page to an
 // image, the image is cut into 1280×720 "screens" (sphere-layout.mjs) and each screen is
 // a patch on the inside of a sphere. A laser click is mapped back to a page coordinate and
-// replayed in the iframe; the screens redraw a moment later.
+// replayed in the iframe. Navigation redraws the new page; while immersed, other changes
+// wait for the explicit Redraw control so a costly DOM capture never freezes a click.
 import { THREE } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
 import { createRig, createPointer, mountVRButton, createPanel } from '../xr-kit.mjs';
@@ -94,6 +95,17 @@ function boot({ renderer, scene, camera, syncSize }) {
 
   /* Screens: one canvas, texture and patch each. */
   const tiles = []; // { plan, canvas, ctx, texture, mesh }
+  let hotspotsByTile = [];
+  let activeHotspot = null;
+  const hoverGeometry = new THREE.BufferGeometry();
+  const hoverOutline = new THREE.Line(
+    hoverGeometry,
+    new THREE.LineBasicMaterial({ color: 0x38e8ff, depthTest: false, transparent: true, opacity: 0.98 })
+  );
+  hoverOutline.visible = false;
+  hoverOutline.renderOrder = 20;
+  hoverOutline.frustumCulled = false;
+  sphere.add(hoverOutline);
   function ensureTiles(count) {
     const plan = planTiles(count);
     while (tiles.length > plan.length) {
@@ -120,6 +132,69 @@ function boot({ renderer, scene, camera, syncSize }) {
       sphere.add(mesh);
       tiles.push({ plan: p, canvas: c, ctx: c.getContext('2d'), texture, mesh });
     }
+  }
+
+  function pointOnTile(plan, u, topDownV, radius = RADIUS - 0.025) {
+    const yaw = plan.yawCenter + (u - 0.5) * plan.yawSpan;
+    const pitch = plan.pitchCenter + (0.5 - topDownV) * plan.pitchSpan;
+    return new THREE.Vector3(...spherePoint(yaw, pitch, radius));
+  }
+
+  function showHotspot(tileIndex, hotspot) {
+    const key = hotspot ? `${tileIndex}:${hotspot.key}` : '';
+    if (key === activeHotspot) return;
+    activeHotspot = key;
+    if (!hotspot) { hoverOutline.visible = false; return; }
+    const plan = tiles[tileIndex] && tiles[tileIndex].plan;
+    if (!plan) { hoverOutline.visible = false; return; }
+    const x0 = Math.max(0, hotspot.x) / TILE_W;
+    const x1 = Math.min(TILE_W, hotspot.x + hotspot.width) / TILE_W;
+    const y0 = Math.max(0, hotspot.localY) / TILE_H;
+    const y1 = Math.min(TILE_H, hotspot.localY + hotspot.height) / TILE_H;
+    const points = [];
+    const edge = (ax, ay, bx, by) => {
+      for (let i = 0; i < 6; i++) {
+        const t = i / 5;
+        points.push(pointOnTile(plan, ax + (bx - ax) * t, ay + (by - ay) * t));
+      }
+    };
+    edge(x0, y0, x1, y0); edge(x1, y0, x1, y1); edge(x1, y1, x0, y1); edge(x0, y1, x0, y0);
+    hoverGeometry.setFromPoints(points);
+    hoverOutline.visible = true;
+  }
+
+  function aimHotspot(tileIndex, x, y) {
+    const hotspot = (hotspotsByTile[tileIndex] || []).find(h =>
+      x >= h.x && x <= h.x + h.width && y >= h.localY && y <= h.localY + h.height
+    );
+    showHotspot(tileIndex, hotspot || null);
+    return !!hotspot;
+  }
+
+  function cacheHotspots(doc) {
+    const win = doc.defaultView;
+    const scroller = findMainScroller(doc);
+    hotspotsByTile = tiles.map(() => []);
+    let key = 0;
+    for (const el of doc.querySelectorAll(CLICKABLE)) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2 || el.disabled || win.getComputedStyle(el).visibility === 'hidden') continue;
+      const pageY = rect.top + (scroller ? scroller.scrollTop : win.scrollY);
+      for (let tileIndex = 0; tileIndex < tiles.length; tileIndex++) {
+        const sliceTop = tileIndex * SLICE_STEP;
+        const sliceBottom = sliceTop + PAGE_SLICE_H;
+        if (pageY + rect.height < sliceTop || pageY > sliceBottom) continue;
+        hotspotsByTile[tileIndex].push({
+          key: key++,
+          el,
+          x: rect.left,
+          localY: pageY - sliceTop + TILE_GUTTER,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    }
+    showHotspot(-1, null);
   }
 
   /* Motion: a world that moves all around you is the classic cause of VR sickness. */
@@ -213,6 +288,7 @@ function boot({ renderer, scene, camera, syncSize }) {
         t.ctx.fillRect(0, (TILE_GUTTER + PAGE_SLICE_H) * scale, t.canvas.width, 2 * scale);
         t.texture.needsUpdate = true;
       }
+      cacheHotspots(doc);
       truncatedNote = truncated ? `Showing the first ${shown} of ${needed} screens.` : '';
       say(`${doc.title || 'Page'} · ${shown} screen${shown === 1 ? '' : 's'} around you. ${truncatedNote}`.trim());
       if (announce) notify(truncatedNote || 'Redrawn.', 2500);
@@ -224,10 +300,11 @@ function boot({ renderer, scene, camera, syncSize }) {
       if (again) { again = false; setTimeout(redraw, 250); }
     }
   }
-  // After a click the page may animate or fetch; redraw as it settles.
+  // Flat preview clicks can redraw as a page settles. In immersive VR a full DOM capture
+  // stalls both eyes, so ordinary controls wait for the explicit Redraw button instead.
   function redrawSoon() {
-    const waits = renderer.xr.isPresenting ? [700] : [350, 1200, 2600];
-    for (const ms of waits) setTimeout(() => redraw(), ms);
+    if (renderer.xr.isPresenting) return;
+    for (const ms of [350, 1200, 2600]) setTimeout(() => redraw(), ms);
   }
 
   function frameDoc() {
@@ -300,7 +377,8 @@ function boot({ renderer, scene, camera, syncSize }) {
       target.value = String(Math.round((min + ratio * (max - min)) / step) * step);
       target.dispatchEvent(new win.Event('input', { bubbles: true }));
       target.dispatchEvent(new win.Event('change', { bubbles: true }));
-      redrawSoon();
+      if (renderer.xr.isPresenting) notify('Changed. Press Redraw to refresh the panels.', 2200);
+      else redrawSoon();
       return;
     }
     const base = { bubbles: true, cancelable: true, clientX: x, clientY: vy, view: win, button: 0 };
@@ -310,7 +388,11 @@ function boot({ renderer, scene, camera, syncSize }) {
     el.dispatchEvent(pointer('pointerup'));
     el.dispatchEvent(new win.MouseEvent('mouseup', base));
     el.dispatchEvent(new win.MouseEvent('click', base));
-    redrawSoon();
+    if (renderer.xr.isPresenting && !target.matches('a[href]')) {
+      notify('Selected. Press Redraw if the page changed.', 2200);
+    } else {
+      redrawSoon();
+    }
   }
 
   async function exitSphere() {
@@ -325,6 +407,13 @@ function boot({ renderer, scene, camera, syncSize }) {
     camera,
     canvas,
     targets: () => [...buttons, ...tiles.map(t => t.mesh)],
+    onAim: hit => {
+      if (!hit || !hit.uv || hit.object.userData.tile === undefined) { showHotspot(-1, null); return; }
+      const tileIndex = hit.object.userData.tile;
+      const x = hit.uv.x * TILE_W;
+      const y = (1 - hit.uv.y) * TILE_H;
+      aimHotspot(tileIndex, x, y);
+    },
     onSelect: hit => {
       if (hit.object.userData.action) { hit.object.userData.action(); return; }
       if (hit.uv && hit.object.userData.tile !== undefined) {
@@ -338,7 +427,11 @@ function boot({ renderer, scene, camera, syncSize }) {
   applyTheme();
   // A theme change (made on this page, or by clicking Settings inside the sphere) re-colours
   // the world at once; the hidden page re-themes itself, so redraw the screens once it has.
-  new MutationObserver(() => { applyTheme(); setTimeout(() => redraw(), 700); setTimeout(() => redraw(), 1800); })
+  new MutationObserver(() => {
+    applyTheme();
+    if (renderer.xr.isPresenting) notify('Theme changed. Press Redraw to refresh the page panels.', 2600);
+    else { setTimeout(() => redraw(), 700); setTimeout(() => redraw(), 1800); }
+  })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.addEventListener('classroomos:lightingchange', () => { applyTheme(); });
 
@@ -347,7 +440,10 @@ function boot({ renderer, scene, camera, syncSize }) {
   window.ClassroomOSPageSphere = {
     tileCount: () => tiles.length,
     tileImage: index => tiles[index] && tiles[index].canvas.toDataURL('image/png'),
-    clickPage: (x, y) => replayClick(x, y) // what a laser hit does, given a page coordinate
+    clickPage: (x, y) => replayClick(x, y), // what a laser hit does, given a page coordinate
+    hotspotCount: () => hotspotsByTile.reduce((sum, list) => sum + list.length, 0),
+    hoverPage: (tileIndex, x, y) => aimHotspot(tileIndex, x, y),
+    hoverVisible: () => hoverOutline.visible
   };
 
   /* Centre the sphere on your head and turn screen 0 to face where you are looking. */

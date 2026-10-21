@@ -41,6 +41,19 @@ try {
     .catch(() => assert.fail('the home page needs more than one screen'));
   assert.ok(await colours(0) > 40, 'screen 0 holds a drawn page, not a blank');
   assert.match(await page.textContent('#vr-status'), /ClassroomOS/);
+  const hover = await page.evaluate(() => {
+    const api = window.ClassroomOSPageSphere;
+    const doc = document.querySelector('iframe').contentDocument;
+    const el = doc.querySelector('a[href], button');
+    const r = el.getBoundingClientRect();
+    return {
+      hotspots: api.hotspotCount(),
+      hit: api.hoverPage(0, r.left + r.width / 2, r.top + r.height / 2 + 24),
+      visible: api.hoverVisible()
+    };
+  });
+  assert.ok(hover.hotspots > 0, 'clickable page controls are cached without re-rasterizing on hover');
+  assert.deepEqual([hover.hit, hover.visible], [true, true], 'aiming at a page control shows the VR outline');
 
   // 2. A click on a same-site link navigates inside the sphere and redraws it.
   const link = await page.evaluate(() => {

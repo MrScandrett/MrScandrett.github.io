@@ -124,7 +124,7 @@ export function mountVRButton(renderer, { button, status, rig, onStart, onEnd, e
  *
  * Returns { update(), teleportTo(point), turn(radians), face(point) }. Call update() every frame.
  */
-export function createPointer(THREE, renderer, { rig, camera, canvas, targets, onSelect, onHover, maxDistance = 40 }) {
+export function createPointer(THREE, renderer, { rig, camera, canvas, targets, onSelect, onHover, onAim, maxDistance = 40 }) {
   const raycaster = new THREE.Raycaster();
   raycaster.far = maxDistance;
   const tmpMatrix = new THREE.Matrix4();
@@ -260,6 +260,7 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     const hit = castFromScreen(e);
     const target = hit ? selectableAncestor(hit.object) : null;
     setHover(target);
+    onAim?.(hit);
     canvas.style.cursor = target ? 'pointer' : 'grab';
   });
   canvas.addEventListener('pointerup', e => {
@@ -269,7 +270,7 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     if (click && !renderer.xr.isPresenting) activate(castFromScreen(e));
   });
   canvas.addEventListener('pointercancel', () => { drag = null; });
-  canvas.addEventListener('pointerleave', () => { if (!drag) setHover(null); });
+  canvas.addEventListener('pointerleave', () => { if (!drag) { setHover(null); onAim?.(null); } });
   if (!canvas.hasAttribute('tabindex')) canvas.tabIndex = 0;
   canvas.addEventListener('keydown', e => {
     const step = new THREE.Vector3();
@@ -305,6 +306,7 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
   function update() {
     if (!renderer.xr.isPresenting) return;
     let anyHover = null;
+    let aimHit = null;
     for (const controller of controllers) {
       const data = controller.userData;
       if (!data.connected) continue;
@@ -317,9 +319,11 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
       if (hit) {
         data.dot.position.copy(hit.point);
         anyHover = anyHover || selectableAncestor(hit.object);
+        aimHit = aimHit || hit;
       }
     }
     setHover(anyHover);
+    onAim?.(aimHit);
   }
 
   /** Point the flat-preview camera at a world position (e.g. after a "Go to" button). */
