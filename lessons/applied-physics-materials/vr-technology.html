@@ -8,7 +8,7 @@
   <meta name="description" content="Fabrication Lesson 02 — explore stereoscopic vision, binaural audio, and how VR headsets trick your brain, then implement VR in your own games." />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js" integrity="sha384-h9i4C9g01JCtnRS4pVvpve1lQqYK3CPS3SYkzku8rBcWq3Ql72pf2B4kAtj9pYbe" crossorigin="anonymous"></script>
+  <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
   <style>
     /* ── page chrome ── */
     body {
@@ -39,6 +39,12 @@
     .vr-topbar-title { font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-align: center; color: #1a0533; }
 
     .vr-shell { padding: 2rem 0 3rem; display: grid; gap: 1.2rem; }
+    /* Grid items default to min-width:auto, so the wide code samples can make
+       the entire lesson wider than a phone even though the samples scroll. */
+    .vr-shell > *,
+    .vr-card > *,
+    .vr-sim-card > *,
+    .vr-code-card > * { min-width: 0; }
 
     /* ── shared card ── */
     .vr-card {
@@ -538,6 +544,75 @@
         letter-spacing: 0.04em;
       }
     }
+
+    /* ── compact / 360px wrap mode ── */
+    @media (max-width: 480px) {
+      .vr-topbar-inner {
+        min-height: 0;
+        padding-block: 0.65rem;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.3rem 0.75rem;
+      }
+      .vr-topbar-title {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        text-align: left;
+        font-size: 0.78rem;
+      }
+
+      .vr-shell {
+        width: min(100% - 1rem, 1140px);
+        padding-block: 0.75rem 2rem;
+        gap: 0.75rem;
+      }
+      .vr-card,
+      .vr-sim-card { padding: 1.15rem 1rem; border-radius: 18px; }
+      .vr-hero-card {
+        padding: 1.35rem 1rem;
+        border-radius: 18px;
+        gap: 1rem;
+      }
+      .vr-hero-badge {
+        align-items: flex-start;
+        flex-flow: row wrap;
+      }
+      .vr-section-label { align-items: flex-start; line-height: 1.35; }
+      .vr-section-label::after { margin-top: 0.45em; }
+
+      .vr-concept-grid,
+      .vr-flip-grid { grid-template-columns: minmax(0, 1fr); }
+      .vr-flip-grid { --vr-flip-card-height: 210px; }
+      .vr-flip-front,
+      .vr-flip-back { padding: 1rem; }
+
+      .vr-angle-row,
+      #vr-iod-row { display: grid; grid-template-columns: 1fr auto; gap: 0.45rem 0.7rem; }
+      .vr-angle-row input,
+      #vr-iod-slider { grid-column: 1 / -1; grid-row: 2; width: 100%; }
+      .vr-stereo-wrap { gap: 0.35rem; }
+      .vr-stereo-eye-label,
+      .vr-stereo-merged-label { font-size: 0.56rem; letter-spacing: 0.06em; white-space: nowrap; }
+
+      .vr-code-tab-bar {
+        padding-right: 4.6rem;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+      }
+      .vr-code-tab { flex: 0 0 auto; padding-inline: 0.75rem; }
+      .vr-code-panel { padding: 1rem; }
+      .vr-copy-btn { right: 0.45rem; }
+
+      .vr-breakout-head { padding-top: 1.15rem; }
+      .vr-breakout-stage { margin-block: 1rem; padding-inline: 0.5rem; }
+      .vr-breakout-foot { padding-inline: 0.75rem; }
+      .vr-breakout-container { border-radius: 12px; aspect-ratio: 4 / 3; }
+      .vr-breakout-overlay { left: 1rem; right: 1rem; }
+      .vr-breakout-actions { gap: 0.55rem; }
+      .vr-breakout-actions .vr-sim-btn { min-width: 0 !important; flex-basis: calc(50% - 0.3rem) !important; }
+      .vr-breakout-actions .vr-sim-btn:last-child { flex-basis: 100% !important; }
+    }
   </style>
 </head>
 <body>
@@ -966,7 +1041,8 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
           <a-scene
             id="breakout-scene"
             embedded
-            vr-mode-ui="enabled: true"
+            xr-mode-ui="enabled: true; XRMode: vr"
+            webxr="referenceSpaceType: local-floor"
             renderer="colorManagement: true; antialias: true"
             style="width: 100%; height: 100%;">
 
@@ -1167,11 +1243,11 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
         <div class="vr-breakout-actions">
           <button id="vr-game-start" class="vr-sim-btn" style="flex: 1; min-width: 140px;">▶ Start Game</button>
           <button id="vr-game-reset" class="vr-sim-btn" style="flex: 1; min-width: 140px;">↻ Reset</button>
-          <button id="vr-game-fullscreen" class="vr-sim-btn" style="flex: 1; min-width: 140px;">⛶ Enter VR</button>
+          <button id="vr-game-fullscreen" class="vr-sim-btn" style="flex: 1; min-width: 140px;">◉ Enter Full VR</button>
         </div>
         <p class="vr-breakout-note">
           <strong>Desktop:</strong> Move with ← →, A/D, or by sliding your mouse across the game window.
-          <strong> VR:</strong> Press <strong>Enter VR</strong>, then move the paddle with the right thumbstick. The ball launches from the center and speeds up slightly as rallies get longer.
+          <strong> Meta Quest:</strong> Open this page over HTTPS in Quest Browser and press <strong>Enter Full VR</strong> inside the game. Quest's browser-level “360 View” only enlarges the browser panel; it does not start an immersive WebXR session. In VR, move the paddle with the right thumbstick.
         </p>
       </div>
     </div>
@@ -1831,6 +1907,33 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       if (vrStatusText) vrStatusText.setAttribute('value', text);
     }
 
+    function setImmersiveButtonState(isSupported) {
+      buttons.fullscreen.dataset.immersiveSupported = isSupported ? 'true' : 'false';
+      buttons.fullscreen.textContent = isSupported ? '◉ Enter Full VR' : 'VR unavailable';
+      buttons.fullscreen.title = isSupported
+        ? 'Start an immersive WebXR session in the headset'
+        : 'Immersive WebXR requires HTTPS and a supported headset browser';
+    }
+
+    function detectImmersiveVr() {
+      if (!window.isSecureContext) {
+        setImmersiveButtonState(false);
+        setStatus('HTTPS Required');
+        return;
+      }
+
+      if (!navigator.xr || typeof navigator.xr.isSessionSupported !== 'function') {
+        setImmersiveButtonState(false);
+        return;
+      }
+
+      navigator.xr.isSessionSupported('immersive-vr').then(function(isSupported) {
+        setImmersiveButtonState(isSupported);
+      }).catch(function() {
+        setImmersiveButtonState(false);
+      });
+    }
+
     function setState(nextState) {
       state = nextState;
       if (state === 'running') {
@@ -2200,7 +2303,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       setVrPanelVisible(false);
       setVrControlsVisible(true);
       setStatus(state === 'running' ? 'In Play' : 'Ready');
-      buttons.fullscreen.textContent = '⛶ Enter VR';
+      buttons.fullscreen.textContent = '◉ Enter Full VR';
     });
 
     buttons.start.addEventListener('click', startGame);
@@ -2218,8 +2321,10 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
       }
 
       if (typeof scene.enterVR === 'function') {
-        scene.enterVR().catch(function() {
-          setStatus('VR Unavailable');
+        scene.enterVR().catch(function(error) {
+          var reason = error && error.name === 'SecurityError' ? 'HTTPS Required' : 'VR Permission Denied';
+          setStatus(reason);
+          buttons.fullscreen.textContent = 'Try Full VR Again';
         });
       } else {
         setStatus('VR Unsupported');
@@ -2237,6 +2342,7 @@ renderer.<span class="c-fn">setAnimationLoop</span>(<span class="c-k">function</
     setVrPanelVisible(false);
     setVrControlsVisible(true);
     resetRound();
+    detectImmersiveVr();
   })();
   </script>
 <script src="../../assets/js/lesson-print-button.js"></script>
