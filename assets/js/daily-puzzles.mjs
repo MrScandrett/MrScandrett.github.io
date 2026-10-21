@@ -1,13 +1,15 @@
-// Home-page daily puzzles (#home-puzzles): a mini crossword, a sudoku, and Daily Double,
+// Home-page daily puzzles (#home-puzzles): crossword, sudoku, Daily Double, and chess,
 // new every day, generated in the browser from the date (see daily-puzzles-core.mjs).
 // Progress lives in one localStorage key; nothing leaves the browser.
 
 import {
   dayKey, parseDayKey, shiftDayKey, makeSudoku, makeCrossword, sudokuConflicts, entryCells, PEERS,
-  makeDailyDouble, STEAM_CATEGORIES, DOUBLE_JEOPARDY_VALUES
+  makeDailyDouble, makeDailyChess, STEAM_CATEGORIES, DOUBLE_JEOPARDY_VALUES
 } from './daily-puzzles-core.mjs';
+import { Chess } from '../vendor/chess.min.mjs';
 
 const STORE_KEY = 'classroomos:puzzles:v1';
+const CONTENT_VERSION = 2;
 const KEEP_DAYS = 60;
 const BACK_DAYS = 30;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -16,9 +18,20 @@ const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 function loadStore() {
   try {
     const raw = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (raw && typeof raw === 'object' && raw.days) return raw;
+    if (raw && typeof raw === 'object' && raw.days) {
+      if (raw.contentVersion !== CONTENT_VERSION) {
+        // The question rotation changed. Keep Sudoku, whose grid did not.
+        for (const day of Object.values(raw.days)) {
+          delete day.cross;
+          delete day.double;
+        }
+        raw.contentVersion = CONTENT_VERSION;
+        saveStore(raw);
+      }
+      return raw;
+    }
   } catch { /* private mode or corrupt: start fresh */ }
-  return { days: {}, tab: 'crossword' };
+  return { days: {}, tab: 'crossword', contentVersion: CONTENT_VERSION };
 }
 
 function saveStore(store) {
@@ -48,11 +61,11 @@ function longDate(key) {
 }
 
 // ── the widget ───────────────────────────────────────────────────────────
-function mount(root, bank, doubleBank) {
+function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
   const store = loadStore();
   const today = dayKey(new Date());
-  const validTabs = ['crossword', 'sudoku', 'daily-double'];
+  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess'];
   const state = { key: today, tab: validTabs.includes(store.tab) ? store.tab : 'crossword' };
   const cache = new Map();
 
@@ -64,7 +77,8 @@ function mount(root, bank, doubleBank) {
       cache.set(key, {
         cw: makeCrossword(key, bank),
         su: makeSudoku(key),
-        dd: makeDailyDouble(key, doubleBank)
+        dd: makeDailyDouble(key, doubleBank),
+        ch: makeDailyChess(key, chessBank)
       });
     }
     return cache.get(key);
@@ -73,7 +87,7 @@ function mount(root, bank, doubleBank) {
   const isDone = (key, which) => !!(store.days[key] && store.days[key][which] && store.days[key][which].done);
   // A day counts toward the streak when a puzzle was solved without "Reveal all".
   const counts = (key, which) => isDone(key, which) && !store.days[key][which].gaveUp;
-  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double');
+  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess');
   function streak() {
     let n = 0, k = played(today) ? today : shiftDayKey(today, -1);
     while (played(k)) { n++; k = shiftDayKey(k, -1); }
@@ -101,8 +115,13 @@ function mount(root, bank, doubleBank) {
       el('span', { class: 'dp-tab-full', text: '⚡ Daily Double' }),
       el('span', { class: 'dp-tab-short', text: '⚡ Double' })),
     el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
+  const tabChess = el('button', { type: 'button', role: 'tab', id: 'dp-tab-chess', class: 'dp-tab', 'aria-controls': 'dp-panel' },
+    el('span', { class: 'dp-tab-text' },
+      el('span', { class: 'dp-tab-full', text: '♟ Chess Quest' }),
+      el('span', { class: 'dp-tab-short', text: '♟ Chess Quest' })),
+    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
   const bar = el('div', { class: 'dp-bar' },
-    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble),
+    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' }, prevBtn, dateLabel, nextBtn, todayBtn, streakEl));
   const panel = el('div', { class: 'dp-panel', id: 'dp-panel', role: 'tabpanel' });
   app.replaceChildren(bar, panel);
@@ -120,12 +139,15 @@ function mount(root, bank, doubleBank) {
     tabCross.setAttribute('aria-selected', String(state.tab === 'crossword'));
     tabSudoku.setAttribute('aria-selected', String(state.tab === 'sudoku'));
     tabDouble.setAttribute('aria-selected', String(state.tab === 'daily-double'));
+    tabChess.setAttribute('aria-selected', String(state.tab === 'chess'));
     tabCross.tabIndex = state.tab === 'crossword' ? 0 : -1;
     tabSudoku.tabIndex = state.tab === 'sudoku' ? 0 : -1;
     tabDouble.tabIndex = state.tab === 'daily-double' ? 0 : -1;
+    tabChess.tabIndex = state.tab === 'chess' ? 0 : -1;
     tabCross.classList.toggle('is-done', isDone(state.key, 'cross'));
     tabSudoku.classList.toggle('is-done', isDone(state.key, 'sudoku'));
     tabDouble.classList.toggle('is-done', isDone(state.key, 'double'));
+    tabChess.classList.toggle('is-done', isDone(state.key, 'chess'));
     panel.setAttribute('aria-labelledby', `dp-tab-${state.tab}`);
   }
 
@@ -137,7 +159,9 @@ function mount(root, bank, doubleBank) {
       ? buildCrossword(panel, p.cw, dayState(state.key), persist, refreshChrome)
       : state.tab === 'sudoku'
         ? buildSudoku(panel, p.su, dayState(state.key), persist, refreshChrome)
-        : buildDailyDouble(panel, p.dd, dayState(state.key), persist, refreshChrome);
+        : state.tab === 'daily-double'
+          ? buildDailyDouble(panel, p.dd, dayState(state.key), persist, refreshChrome)
+          : buildChess(panel, p.ch, dayState(state.key), persist, refreshChrome);
   }
 
   const goDay = (key) => { state.key = key; show(); };
@@ -145,7 +169,7 @@ function mount(root, bank, doubleBank) {
   nextBtn.addEventListener('click', () => goDay(shiftDayKey(state.key, 1)));
   todayBtn.addEventListener('click', () => goDay(today));
 
-  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble };
+  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess };
   const setTab = (tab, focus) => {
     state.tab = tab; store.tab = tab; persist(); show();
     if (focus && tabButtons[tab]) tabButtons[tab].focus();
@@ -153,6 +177,7 @@ function mount(root, bank, doubleBank) {
   tabCross.addEventListener('click', () => setTab('crossword'));
   tabSudoku.addEventListener('click', () => setTab('sudoku'));
   tabDouble.addEventListener('click', () => setTab('daily-double'));
+  tabChess.addEventListener('click', () => setTab('chess'));
 
   bar.querySelector('[role="tablist"]').addEventListener('keydown', (ev) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
@@ -1116,16 +1141,157 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
   return () => { clearInterval(tick); persist(); };
 }
 
+// ── chess ────────────────────────────────────────────────────────────────
+const CHESS_NAMES = { k: 'king', q: 'queen', r: 'rook', b: 'bishop', n: 'knight', p: 'pawn' };
+const CHESS_FILE_NAMES = { k: 'K', q: 'Q', r: 'R', b: 'B', n: 'N', p: 'P' };
+
+function chessPiece(piece) {
+  if (!piece) return null;
+  return el('img', {
+    class: 'dp-chess-piece',
+    src: `assets/images/chess/chessnut/${piece.color}${CHESS_FILE_NAMES[piece.type]}.svg`,
+    alt: '',
+    'aria-hidden': 'true',
+    draggable: 'false'
+  });
+}
+
+function buildChess(panel, puzzle, saved, persist, onChange) {
+  const st = saved.chess && saved.chess.id === puzzle.id
+    ? saved.chess : (saved.chess = { id: puzzle.id, moves: [], done: false, gaveUp: false });
+  const game = new Chess(puzzle.fen);
+  for (const move of st.moves) {
+    try { game.move(move); } catch { st.moves = []; st.done = false; st.gaveUp = false; game.load(puzzle.fen); break; }
+  }
+  let selected = null;
+  let hintSquare = null;
+  const title = el('h4', { class: 'dp-chess-title', text: `White to move · Mate in ${puzzle.mate}` });
+  const instruction = el('p', { class: 'dp-chess-instruction', text: 'Select a white piece, then its destination. Find the checkmate.' });
+  const board = el('div', { class: 'dp-chess-board', role: 'grid', 'aria-label': `Chess board, white at the bottom. Mate in ${puzzle.mate}.` });
+  const status = el('p', { class: 'dp-status dp-chess-status', role: 'status', 'aria-live': 'polite' });
+  const movesPlayed = el('p', { class: 'dp-chess-moves', 'aria-label': 'Moves played' });
+  const hint = el('button', { type: 'button', class: 'dp-btn', text: 'Hint' });
+  const reveal = el('button', { type: 'button', class: 'dp-btn', text: 'Show solution' });
+  const restart = el('button', { type: 'button', class: 'dp-btn', text: 'Try again' });
+  const tools = el('div', { class: 'dp-tools' }, hint, reveal, restart);
+  const body = el('div', { class: 'dp-body dp-body--chess' },
+    el('div', { class: 'dp-chess-main' }, title, instruction, board),
+    el('div', { class: 'dp-chess-side' }, status, movesPlayed, tools,
+      el('p', { class: 'dp-chess-note', text: 'Only legal moves are accepted. In a two-move puzzle, Black replies automatically after your first move.' })));
+  panel.replaceChildren(body);
+
+  function paint() {
+    board.replaceChildren();
+    const history = game.history();
+    movesPlayed.textContent = history.length
+      ? history.map((san, i) => `${i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ''}${san}`).join(' ')
+      : '';
+    const legal = selected ? game.moves({ square: selected, verbose: true }).map((move) => move.to) : [];
+    for (let rank = 8; rank >= 1; rank--) {
+      for (const file of 'abcdefgh') {
+        const square = `${file}${rank}`;
+        const piece = game.get(square);
+        const button = el('button', {
+          type: 'button', role: 'gridcell',
+          class: `dp-chess-square ${((file.charCodeAt(0) - 97 + rank) % 2) ? 'is-light' : 'is-dark'}${piece ? ' has-piece' : ''}${square === selected ? ' is-selected' : ''}${legal.includes(square) ? ' is-target' : ''}${square === hintSquare ? ' is-hint' : ''}`,
+          'aria-label': `${square}, ${piece ? `${piece.color === 'w' ? 'white' : 'black'} ${CHESS_NAMES[piece.type]}` : 'empty'}${legal.includes(square) ? ', legal destination' : ''}`,
+          'aria-pressed': square === selected ? 'true' : 'false',
+          'data-square': square
+        }, chessPiece(piece),
+        file === 'a' ? el('span', { 'aria-hidden': 'true', class: 'dp-chess-rank', text: String(rank) }) : null,
+        rank === 1 ? el('span', { 'aria-hidden': 'true', class: 'dp-chess-file', text: file }) : null);
+        button.addEventListener('click', () => choose(square));
+        board.append(button);
+      }
+    }
+    hint.disabled = st.done;
+    reveal.disabled = st.done;
+    restart.hidden = !st.done && st.moves.length === 0;
+    if (st.done) status.textContent = st.gaveUp ? 'Solution shown. Try another day for a fresh position.' : 'Checkmate! Puzzle solved.';
+    else if (st.moves.length === 2) status.textContent = 'Black has replied. Find the final checkmating move.';
+    else if (!status.textContent) status.textContent = 'White to move. Find the winning move.';
+  }
+
+  function play(move) {
+    const played = game.move(move);
+    st.moves.push(played.lan);
+    selected = null;
+    hintSquare = null;
+    if (game.isCheckmate()) st.done = true;
+    else if (puzzle.mate === 2 && st.moves.length === 1) {
+      const [defense] = Object.entries(puzzle.lines).sort((a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0]))[0];
+      game.move(defense);
+      st.moves.push(defense);
+      status.textContent = 'Black replies. Your next move must be checkmate.';
+    }
+    persist();
+    onChange();
+    paint();
+  }
+
+  function choose(square) {
+    if (st.done || game.turn() !== 'w') return;
+    const piece = game.get(square);
+    if (piece?.color === 'w') {
+      selected = square;
+      hintSquare = null;
+      status.textContent = `${CHESS_NAMES[piece.type]} selected on ${square}. Choose a highlighted destination.`;
+      paint();
+      return;
+    }
+    if (!selected) return;
+    const move = game.moves({ square: selected, verbose: true }).find((candidate) => candidate.to === square && (!candidate.promotion || candidate.promotion === 'q'));
+    if (!move) { status.textContent = 'That is not a legal move from the selected square.'; return; }
+    if ((st.moves.length === 0 && move.lan !== puzzle.first) || (st.moves.length === 2 && !puzzle.lines[st.moves[1]].includes(move.lan))) {
+      status.textContent = 'Legal move, but it does not force the required checkmate. Try again.';
+      return;
+    }
+    play(move);
+  }
+
+  hint.addEventListener('click', () => {
+    hintSquare = st.moves.length === 2 ? puzzle.lines[st.moves[1]][0].slice(0, 2) : puzzle.first.slice(0, 2);
+    status.textContent = `Look at the piece on ${hintSquare}.`;
+    paint();
+  });
+  reveal.addEventListener('click', () => {
+    if (st.done) return;
+    game.load(puzzle.fen);
+    st.moves = [];
+    st.gaveUp = true;
+    play(puzzle.first);
+    if (!st.done) play(puzzle.lines[st.moves[1]][0]);
+    persist();
+    onChange();
+    paint();
+  });
+  restart.addEventListener('click', () => {
+    game.load(puzzle.fen);
+    st.moves = [];
+    st.done = false;
+    st.gaveUp = false;
+    selected = null;
+    hintSquare = null;
+    status.textContent = 'White to move. Find the winning move.';
+    persist();
+    onChange();
+    paint();
+  });
+  paint();
+  return () => persist();
+}
+
 // ── boot ─────────────────────────────────────────────────────────────────
 if (typeof document !== 'undefined') {
   const root = document.getElementById('home-puzzles');
   if (root) {
     Promise.all([
       fetch('data/crossword-bank.json').then((r) => (r.ok ? r.json() : { words: [] })).catch(() => ({ words: [] })),
-      fetch('data/daily-double-bank.json').then((r) => (r.ok ? r.json() : { questions: [] })).catch(() => ({ questions: [] }))
-    ]).then(([crossData, doubleData]) => {
-      if (!crossData.words || crossData.words.length < 40 || !doubleData.questions || doubleData.questions.length < 25) return;
-      const start = () => mount(root, crossData.words, doubleData);
+      fetch('data/daily-double-bank.json').then((r) => (r.ok ? r.json() : { questions: [] })).catch(() => ({ questions: [] })),
+      fetch('data/daily-chess-bank.json').then((r) => (r.ok ? r.json() : { puzzles: [] })).catch(() => ({ puzzles: [] }))
+    ]).then(([crossData, doubleData, chessData]) => {
+      if (!crossData.words || crossData.words.length < 40 || !doubleData.questions || doubleData.questions.length < 25 || !chessData.puzzles?.length) return;
+      const start = () => mount(root, crossData.words, doubleData, chessData.puzzles);
       // Generation takes up to a couple hundred ms; let the first paint finish first.
       if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 1500 });
       else setTimeout(start, 50);

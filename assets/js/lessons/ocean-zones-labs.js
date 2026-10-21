@@ -29,18 +29,23 @@
   const ZONE_CARDS = [
     { id: 'sunlight', name: 'Sunlight Zone', term: 'epipelagic', latin: 'Epipelagic', range: '0–200 m', dive: 40, img: 'sunlight.webp', accent: '#74ddff',
       light: 'Enough for photosynthesis', food: 'Phytoplankton make it here',
+      wildlife: 'Bluefin tuna, leatherback sea turtles, great white sharks, dolphins, manta rays, flying fish, moon jellies, and micro-algae.',
       caption: 'Sunbeams still reach this water, so phytoplankton can photosynthesize. Almost every food web in the ocean starts in this thin top layer.' },
     { id: 'twilight', name: 'Twilight Zone', term: 'mesopelagic', latin: 'Mesopelagic', range: '200–1,000 m', dive: 500, img: 'twilight.webp', accent: '#6aa8ff',
       light: 'Dim blue, too faint for plants', food: 'Sinking food and nightly trips up',
+      wildlife: 'Lanternfish (world’s greatest vertebrate biomass), marine hatchetfish, vampire squid, barreleye fish, bristlemouths, comb jellies, and giant siphonophores.',
       caption: 'Only a faint blue glow is left — enough to see by, too little for plants. Every night, huge numbers of animals swim up to feed and return before dawn.' },
     { id: 'midnight', name: 'Midnight Zone', term: 'bathypelagic', latin: 'Bathypelagic', range: '1,000–4,000 m', dive: 2000, img: 'midnight.webp', accent: '#a88cff',
       light: 'No sunlight at all', food: 'Marine snow and each other',
+      wildlife: 'Deep-sea anglerfish, giant squid, pelican gulper eels, fangtooths, stoplight loosejaws, dumbo octopuses, and black swallowers.',
       caption: 'No sunlight reaches here. The only light is made by animals themselves — bioluminescence used to hunt, hide, and find mates.' },
     { id: 'abyss', name: 'The Abyss', term: 'abyssopelagic', latin: 'Abyssopelagic', range: '4,000–6,000 m', dive: 5000, img: 'abyss.webp', accent: '#73dfc0',
       light: 'Total darkness', food: 'Scraps settling on the seafloor',
+      wildlife: 'Tripod fish (perching on 1-m fin stilts), sea pigs, abyssal grenadiers, giant isopods, glass sponges, brittle stars, and sea spiders.',
       caption: 'Near-freezing water over vast, flat plains of soft mud. Food is so scarce that seafloor animals live slowly and eat the sediment itself.' },
     { id: 'trench', name: 'The Trenches', term: 'hadal zone', latin: 'Hadal', range: '6,000–10,935 m', dive: 10935, img: 'hadal.webp', accent: '#ffcf67',
       light: 'Total darkness', food: 'Food funneled down steep walls',
+      wildlife: 'Mariana snailfish (deepest living fish), supergiant hadal amphipods (Hirondellea gigas), hadal sea cucumbers, and piezophile microbes.',
       caption: 'Deep cracks where one tectonic plate dives under another. Pressure here reaches about 1,100 atmospheres, yet amphipods, worms, and microbes still thrive.' },
   ];
   const gallery = $('oz-zone-gallery');
@@ -55,7 +60,11 @@
         '<div class="oz-zone-body">' +
           '<h3>' + z.name + '</h3>' +
           '<p class="oz-zone-latin"><span data-glossary="' + z.term + '">' + z.latin + '</span> · ' + z.range + '</p>' +
-          '<dl><dt>Light</dt><dd>' + z.light + '</dd><dt>Food</dt><dd>' + z.food + '</dd></dl>' +
+          '<dl>' +
+            '<dt>Light</dt><dd>' + z.light + '</dd>' +
+            '<dt>Food</dt><dd>' + z.food + '</dd>' +
+            '<dt>Life</dt><dd class="oz-zone-life">' + z.wildlife + '</dd>' +
+          '</dl>' +
           diveButton(z.dive) +
         '</div>' +
       '</article>').join('');
@@ -64,13 +73,21 @@
   /* ══════════ 3 · To-scale column ══════════ */
   const LANDMARKS = [
     { d: 40, name: 'Recreational scuba limit', text: 'Sport divers usually stay above 40 m. Even there, the pressure is about 5 atmospheres.' },
+    { d: 120, name: 'Coral reef threshold & manta ray feeding', text: 'The deepest limit where sunlight supports symbiotic reef corals. Giant oceanic manta rays filter-feed on surface plankton slicks above.' },
     { d: 214, name: 'Deepest breath-hold dive', text: 'Herbert Nitsch rode a weighted sled to 214 m on a single breath in 2007 — just past the bottom of the sunlight zone.' },
+    { d: 564, name: 'Emperor penguin dive record', text: 'An Emperor penguin dived to 564 m in Antarctica on a single breath, hunting lanternfish and deep squid in the twilight zone.' },
     { d: 828, name: 'Burj Khalifa, upside down', text: 'The world’s tallest building (828 m) would fit entirely inside the twilight zone.' },
+    { d: 1200, name: 'Leatherback turtle deep dive', text: 'Leatherback sea turtles dive past 1,200 m into the midnight zone chasing siphonophores and deep jellies, insulated by oily skin and blubber.' },
+    { d: 1928, name: 'Whale shark deepest dive', text: 'The world’s largest fish (Rhincodon typus) plunged to 1,928 m into the bathypelagic zone, experiencing near-freezing temperatures.' },
+    { d: 2250, name: 'Sperm whale hunting depth', text: 'Sperm whales dive into the pitch-black midnight zone to hunt giant and colossal squid, using ultrasonic sonar clicks to navigate.' },
     { d: 2992, name: 'Deepest mammal dive', text: 'A Cuvier’s beaked whale tracked off California dived to 2,992 m — on one breath. Another of its dives lasted over two hours.' },
     { d: 3682, name: 'Average ocean depth', text: 'The average depth of the whole ocean is about 3,700 m. Most of the deep seafloor is flat abyssal plain.' },
     { d: 3800, name: 'Wreck of the Titanic', text: 'The Titanic rests about 3,800 m down in the North Atlantic, near the bottom of the midnight zone.' },
-    { d: 8336, name: 'Deepest fish ever filmed', text: 'In 2022 a robotic camera filmed a young snailfish at 8,336 m in the Izu–Ogasawara Trench near Japan.' },
+    { d: 4700, name: 'Tripod fish stilt-perch', text: 'Tripod fish (Bathypterois) rest on the abyssal sediment using three 1-metre fin rays as stilts, facing into bottom currents to intercept food.' },
+    { d: 7000, name: 'Deepest octopus recorded', text: 'In 2020 a Dumbo octopus (Grimpoteuthis) was filmed at 6,957 m in the Java Trench, the deepest verified cephalopod observation in history.' },
+    { d: 8336, name: 'Deepest fish ever filmed', text: 'In 2022 a robotic camera filmed a young snailfish at 8,336 m in the Izu–Ogasawara Trench near Japan — right near the predicted biochemical limit for bony fishes.' },
     { d: 8849, name: 'Mount Everest, upside down', text: 'Flip Everest (8,849 m) into Challenger Deep and its peak would still be about 2 km underwater.' },
+    { d: 10900, name: 'Supergiant amphipods at Challenger Deep', text: 'Hirondellea gigas amphipods thrive in dense swarms at the bottom of the Mariana Trench, using pressure-adapted cellulase enzymes to digest woody plant detritus.' },
     { d: 10935, name: 'Challenger Deep', text: 'The deepest known point in the ocean, in the Mariana Trench. Surveys differ by a few tens of metres; about 10,935 m is a widely used figure.' },
   ];
   const scaleSvg = $('oz-scale-svg');
@@ -298,6 +315,45 @@
       ctx.strokeStyle = 'rgba(115,223,192,.85)'; ctx.setLineDash([6, 4]); ctx.beginPath(); ctx.moveTo(40, lineY); ctx.lineTo(CW, lineY); ctx.stroke(); ctx.setLineDash([]);
       // Visual speed is exaggerated: 100 m/day ≈ 800 m per second on screen.
       const step = reducedMotion ? 0 : Number(snSpeed.value) * 8 * dt;
+
+      // Draw pelagic filter-feeders intercepting marine snow
+      // 1. Salp chain drifting near 450 m
+      const salpY = yOf(450);
+      const salpX = ((now * 0.02) % (CW + 80)) - 40;
+      ctx.fillStyle = 'rgba(160,225,255,0.45)';
+      ctx.strokeStyle = 'rgba(210,245,255,0.7)';
+      ctx.lineWidth = 1;
+      for (let sb = 0; sb < 4; sb++) {
+        ctx.beginPath(); ctx.ellipse(salpX + sb * 11, salpY + Math.sin(now * 0.003 + sb) * 2, 6, 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+
+      // 2. Giant larvacean with glowing mucus filter house near 1,200 m
+      const larvY = yOf(1200);
+      const larvX = CW * 0.72 + Math.sin(now * 0.0015) * 15;
+      ctx.fillStyle = 'rgba(120,240,220,0.18)';
+      ctx.strokeStyle = 'rgba(140,250,230,0.6)';
+      ctx.beginPath(); ctx.ellipse(larvX, larvY, 14, 10, 0.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      // Tadpole occupant
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.ellipse(larvX, larvY, 2.5, 1.8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.moveTo(larvX, larvY); ctx.quadraticCurveTo(larvX - 6, larvY + 4, larvX - 10, larvY + Math.sin(now * 0.01) * 3); ctx.stroke();
+
+      // 3. Pteropod (sea butterfly) flapping near 2,500 m
+      const pterY = yOf(2500) + Math.sin(now * 0.002) * 5;
+      const pterX = CW * 0.28 + Math.cos(now * 0.0018) * 12;
+      const wingFlap = Math.sin(now * 0.012) * 4;
+      ctx.fillStyle = 'rgba(240,210,255,0.65)';
+      ctx.beginPath(); ctx.ellipse(pterX, pterY, 3, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(200,180,255,0.5)';
+      ctx.beginPath(); ctx.ellipse(pterX - 4, pterY + wingFlap * 0.5, 4, 2, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(pterX + 4, pterY - wingFlap * 0.5, 4, 2, 0.4, 0, Math.PI * 2); ctx.fill();
+
+      // 4. Abyssal deposit feeder sweeping bottom sediment near 5,800 m
+      const pigY = yOf(5800);
+      const pigX = ((now * 0.008) % (CW - 60)) + 30;
+      ctx.fillStyle = 'rgba(255,190,215,0.7)';
+      ctx.beginPath(); ctx.ellipse(pigX, pigY, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+
       parts.forEach((p, i) => {
         if (p.flash > 0) {
           p.flash -= dt;
@@ -316,27 +372,197 @@
     requestAnimationFrame(frame);
   }
 
-  /* ══════════ 8 · Adaptation matching ══════════ */
-  const ADAPT = [
-    { animal: 'Marine hatchetfish', zone: 'Twilight zone', trait: 'Rows of lights on its belly match the faint glow from above, erasing its shadow.',
-      why: '<strong>Counterillumination.</strong> Predators below look up for dark silhouettes. By glowing as brightly as the light filtering down, the hatchetfish blends into it.' },
-    { animal: 'Deep-sea anglerfish', zone: 'Midnight zone', trait: 'A glowing lure, lit by bacteria, draws prey right up to its mouth.',
-      why: '<strong>Bioluminescent bait.</strong> In a place with no sunlight, any light is interesting. The female’s lure holds glowing bacteria; she waits instead of wasting energy hunting.' },
-    { animal: 'Stoplight loosejaw', zone: 'Midnight zone', trait: 'Makes and sees red light — a private searchlight most prey can’t detect.',
-      why: '<strong>Red bioluminescence.</strong> Most deep animals can’t see red because no red sunlight reaches them. This dragonfish lights up prey without being noticed.' },
-    { animal: 'Pelican eel', zone: 'Midnight zone', trait: 'An enormous, stretchy mouth lets it catch whatever rare meal drifts past.',
-      why: '<strong>Big mouth, rare meals.</strong> Food is scarce in the dark, so it pays to be able to grab almost anything — including whole mouthfuls of shrimp.' },
-    { animal: 'Giant squid', zone: 'Midnight zone', trait: 'Eyes up to about 27 cm across, among the largest of any animal.',
-      why: '<strong>Giant eyes.</strong> Huge eyes collect the faint glows that big animals stir up as they move — likely an early warning for approaching sperm whales.' },
-    { animal: 'Mariana snailfish', zone: 'Hadal trench', trait: 'Soft body, no swim bladder, and TMAO that keeps its proteins working at 800 atm.',
-      why: '<strong>Pressure-proof chemistry.</strong> With no air space to crush and protein-protecting TMAO, it lives near 8,000 m — close to the deepest any fish can go.' },
+  /* ══════════ Whale Fall Succession Explorer ══════════ */
+  const WHALE_FALL_STAGES = [
+    {
+      title: 'Phase 1 · Mobile Scavengers',
+      time: 'Months 0–24 after sinking',
+      actors: 'Sleeper sharks, hagfish, rattails, giant isopods, lysianassoid amphipods',
+      depth: 4000,
+      text: 'Within hours of a 40-tonne whale touching the abyssal plain, scent plumes attract hundreds of mobile scavengers. Sleeper sharks and jawless hagfish rasp soft tissue, while giant isopods tear at blubber. Up to 60 kg of flesh is stripped per day, removing 90% of the carcass in under two years.',
+    },
+    {
+      title: 'Phase 2 · Opportunist Colonization',
+      time: 'Years 2–5 after sinking',
+      actors: 'Polychaete bristle worms, cumaceans, snails, juvenile squat lobsters',
+      depth: 4000,
+      text: 'Once the big meat is gone, millions of small invertebrates colonize the stripped skeleton and surrounding mud. Invertebrate densities can reach 40,000 animals per square metre — among the highest biomass densities anywhere on Earth — feeding on leftover organic films and bacteria.',
+    },
+    {
+      title: 'Phase 3 · Sulfophilic "Zombie Worm" Phase',
+      time: 'Years 5–50+ after sinking',
+      actors: 'Osedax bone-eating worms, chemosynthetic bacteria, limpets, galatheid crabs',
+      depth: 4000,
+      text: 'Whale bones are up to 60% lipid by weight. Female Osedax ("bone-eating") worms drill green root-like networks into the bones, using bacterial symbionts to digest marrow collagen. Anaerobic microbes produce hydrogen sulfide (H₂S), feeding thick chemosynthetic bacterial mats.',
+    },
+    {
+      title: 'Phase 4 · Abyssal Reef Phase',
+      time: 'Years 50–100+ after sinking',
+      actors: 'Glass sponges, deep-sea anemones, stalked crinoids, brachiopods',
+      depth: 4000,
+      text: 'After all bone lipids are consumed, the bare mineralized calcium-phosphate bones remain as hard substrate on an otherwise muddy seafloor. Filter-feeding glass sponges, deep-sea anemones, and crinoids anchor into the skeleton, maintaining a biodiversity oasis for generations.',
+    }
   ];
+
+  const wfBody = $('oz-wf-body');
+  const wfTabs = document.querySelectorAll('.oz-wf-tab');
+  function renderWhaleFall(idx) {
+    if (!wfBody) return;
+    const stage = WHALE_FALL_STAGES[idx];
+    wfTabs.forEach((tab, i) => {
+      tab.classList.toggle('active', i === idx);
+      tab.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+    });
+    wfBody.innerHTML = '<div class="oz-wf-card">' +
+      '<div class="oz-wf-card-head">' +
+        '<h4>' + stage.title + '</h4>' +
+        '<span class="oz-wf-time">' + stage.time + '</span>' +
+      '</div>' +
+      '<p class="oz-wf-actors"><strong>Key ocean life:</strong> ' + stage.actors + '</p>' +
+      '<p class="oz-wf-text">' + stage.text + '</p>' +
+      diveButton(stage.depth, 'Dive to ' + fmt(stage.depth) + ' m (Abyssal Plain)') +
+    '</div>';
+  }
+  if (wfTabs.length) {
+    wfTabs.forEach((tab, i) => tab.addEventListener('click', () => renderWhaleFall(i)));
+    renderWhaleFall(0);
+  }
+
+  /* ══════════ 8 · Ocean Life Field Guide ══════════ */
+  const creatureGrid = $('oz-creature-grid');
+  if (creatureGrid && dive && dive.creatures) {
+    const ZONE_INFO = {
+      sunlight: { name: 'Sunlight Zone', icon: '☀️', jump: 40 },
+      twilight: { name: 'Twilight Zone', icon: '🌘', jump: 500 },
+      midnight: { name: 'Midnight Zone', icon: '🌑', jump: 2000 },
+      abyss: { name: 'The Abyss', icon: '⚫', jump: 5000 },
+      trench: { name: 'The Trenches', icon: '🔻', jump: 10935 }
+    };
+    function imageFile(c) {
+      return c.image || (c.kind + (c.model ? '.jpg' : '.png'));
+    }
+    function cardHtml(zoneId, c) {
+      const z = ZONE_INFO[zoneId];
+      const credit = c.model
+        ? '3D model render by ' + c.author + ' on Sketchfab · ' + c.license
+        : 'Field-guide illustration for ClassroomOS · Verified hadal specimen';
+      return '<article class="oz-creature-card" data-zone="' + zoneId + '">' +
+        '<figure data-zoomable data-lightbox-group="ocean-life">' +
+          '<img src="../../assets/images/ocean-lifeforms/' + imageFile(c) + '" alt="' + c.name + ' (' + c.latin + ')" width="256" height="144" loading="lazy" decoding="async">' +
+          '<figcaption>' +
+            '<span class="oz-cap-kind">' + z.icon + ' ' + z.name + ' · ' + c.length + ' · ' + c.latin + '</span>' +
+            '<strong>' + c.name + '</strong> ' + c.fact +
+            '<span class="oz-cap-credit">' + credit + '</span>' +
+          '</figcaption>' +
+        '</figure>' +
+        '<div class="oz-creature-card-body">' +
+          '<div class="oz-creature-card-head">' +
+            '<span class="oz-creature-badge">' + z.icon + ' ' + z.name + '</span>' +
+            '<span class="oz-creature-size">' + c.length + '</span>' +
+          '</div>' +
+          '<h4>' + c.name + '</h4>' +
+          '<p class="oz-creature-latin"><em>' + c.latin + '</em></p>' +
+          '<p class="oz-creature-desc">' + c.fact + '</p>' +
+          '<div class="oz-creature-foot">' +
+            diveButton(z.jump, 'Dive to ' + z.name) +
+          '</div>' +
+        '</div>' +
+      '</article>';
+    }
+
+    let allHtml = '';
+    Object.keys(dive.creatures).forEach(zid => {
+      dive.creatures[zid].forEach(c => {
+        allHtml += cardHtml(zid, c);
+      });
+    });
+    creatureGrid.innerHTML = allHtml;
+
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('[data-filter]').forEach(b => {
+          b.classList.toggle('active', b === btn);
+          b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+        });
+        creatureGrid.querySelectorAll('.oz-creature-card').forEach(card => {
+          const match = filter === 'all' || card.dataset.zone === filter;
+          card.hidden = !match;
+        });
+      });
+    });
+  }
+
+  /* ══════════ 9 · Adaptation matching ══════════ */
+  const ADAPT_SETS = [
+    {
+      title: 'Set 1 · Masters of Darkness',
+      items: [
+        { animal: 'Marine hatchetfish', zone: 'Twilight zone', trait: 'Rows of lights on its belly match the faint glow from above, erasing its shadow.',
+          why: '<strong>Counterillumination.</strong> Predators below look up for dark silhouettes. By glowing as brightly as the light filtering down, the hatchetfish blends into it.' },
+        { animal: 'Deep-sea anglerfish', zone: 'Midnight zone', trait: 'A glowing lure, lit by bacteria, draws prey right up to its mouth.',
+          why: '<strong>Bioluminescent bait.</strong> In a place with no sunlight, any light is interesting. The female’s lure holds glowing bacteria; she waits instead of wasting energy hunting.' },
+        { animal: 'Stoplight loosejaw', zone: 'Midnight zone', trait: 'Makes and sees red light — a private searchlight most prey can’t detect.',
+          why: '<strong>Red bioluminescence.</strong> Most deep animals can’t see red because no red sunlight reaches them. This dragonfish lights up prey without being noticed.' },
+        { animal: 'Pelican eel', zone: 'Midnight zone', trait: 'An enormous, stretchy mouth lets it catch whatever rare meal drifts past.',
+          why: '<strong>Big mouth, rare meals.</strong> Food is scarce in the dark, so it pays to be able to grab almost anything — including whole mouthfuls of shrimp.' },
+        { animal: 'Giant squid', zone: 'Midnight zone', trait: 'Eyes up to about 27 cm across, among the largest of any animal.',
+          why: '<strong>Giant eyes.</strong> Huge eyes collect the faint glows that big animals stir up as they move — likely an early warning for approaching sperm whales.' },
+        { animal: 'Mariana snailfish', zone: 'Hadal trench', trait: 'Soft body, no swim bladder, and TMAO that keeps its proteins working at 800 atm.',
+          why: '<strong>Pressure-proof chemistry.</strong> With no air space to crush and protein-protecting TMAO, it lives near 8,000 m — close to the deepest any fish can go.' },
+      ]
+    },
+    {
+      title: 'Set 2 · Extreme Specialists',
+      items: [
+        { animal: 'Barreleye fish', zone: 'Twilight zone', trait: 'Rotating tubular green eyes inside a transparent fluid-filled dome shield.',
+          why: '<strong>Overhead silhouette hunting.</strong> Green pigments filter out downwelling light so it can spot the faint bioluminescence of siphonophores directly above.' },
+        { animal: 'Tripod fish', zone: 'The Abyss', trait: 'Three 1-metre stiff fin rays act as stilts, holding it perched above the muddy seafloor.',
+          why: '<strong>Elevated current perching.</strong> By standing above the slow benthic friction boundary, it faces upstream and waits for drifting copepods.' },
+        { animal: 'Atolla jellyfish', zone: 'Midnight zone', trait: 'Flashes intense blue circular pinwheels when attacked by a predator.',
+          why: '<strong>Burglar alarm display.</strong> The bright flashing pinwheel illuminates its attacker, summoning a larger apex predator to attack whatever is eating the jelly.' },
+        { animal: 'Vampire squid', zone: 'Twilight & Midnight', trait: 'Retractable velar filaments coated in sticky mucus that reel in sinking marine snow.',
+          why: '<strong>Snow harvest without hunting.</strong> Instead of wasting oxygen pursuing active prey, it lets drifting organic snow stick to its sensory filaments.' },
+        { animal: 'Black swallower', zone: 'Midnight zone', trait: 'An elastic stomach and hinged jaw able to swallow fish twice its length and ten times its mass.',
+          why: '<strong>Maximum opportunity eating.</strong> In a food desert where meals are months apart, it can devour any animal it encounters regardless of size.' },
+        { animal: 'Giant isopod', zone: 'The Abyss', trait: '4,000-facet compound eyes and an ultra-slow metabolic rate that can fast for over 5 years.',
+          why: '<strong>Patience and feast scavenging.</strong> Carcasses are rare and unpredictable; it can survive years between whale falls, then gorge until its body expands.' },
+      ]
+    }
+  ];
+
+  let currentAdaptSet = 0;
   const animalsEl = $('ad-animals'), traitsEl = $('ad-traits');
-  if (animalsEl) {
-    const order = ADAPT.map((_, i) => i);
-    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
-    animalsEl.innerHTML = '<p class="oz-match-head">Animal</p>' + ADAPT.map((a, i) => '<button type="button" class="oz-match-btn" data-animal="' + i + '" aria-pressed="false"><strong>' + a.animal + '</strong><small>' + a.zone + '</small></button>').join('');
-    traitsEl.innerHTML = '<p class="oz-match-head">Adaptation</p>' + order.map(i => '<button type="button" class="oz-match-btn" data-trait="' + i + '" aria-pressed="false">' + ADAPT[i].trait + '</button>').join('');
+  const matchTabs = document.querySelectorAll('.oz-match-tab');
+
+  function renderAdaptSet(setIndex) {
+    if (!animalsEl || !traitsEl) return;
+    currentAdaptSet = setIndex;
+    const currentSet = ADAPT_SETS[setIndex];
+    const items = currentSet.items;
+
+    matchTabs.forEach((tab, i) => {
+      tab.classList.toggle('active', i === setIndex);
+      tab.setAttribute('aria-selected', i === setIndex ? 'true' : 'false');
+    });
+
+    const order = items.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+
+    animalsEl.innerHTML = '<p class="oz-match-head">Animal</p>' + items.map((a, i) =>
+      '<button type="button" class="oz-match-btn" data-animal="' + i + '" aria-pressed="false"><strong>' + a.animal + '</strong><small>' + a.zone + '</small></button>'
+    ).join('');
+
+    traitsEl.innerHTML = '<p class="oz-match-head">Adaptation</p>' + order.map(i =>
+      '<button type="button" class="oz-match-btn" data-trait="' + i + '" aria-pressed="false">' + items[i].trait + '</button>'
+    ).join('');
+
+    $('ad-log').innerHTML = '';
+    $('ad-readout').textContent = '0 of ' + items.length + ' matched.';
+
     let pickA = null, pickT = null, matched = 0;
     function check() {
       if (pickA == null || pickT == null) return;
@@ -345,28 +571,43 @@
         [a, t].forEach(b => { b.classList.add('done'); b.disabled = true; b.setAttribute('aria-pressed', 'false'); });
         matched++;
         const log = document.createElement('p');
-        log.innerHTML = '✓ <em>' + ADAPT[pickA].animal + '</em> — ' + ADAPT[pickA].why;
+        log.innerHTML = '✓ <em>' + items[pickA].animal + '</em> — ' + items[pickA].why;
         $('ad-log').prepend(log);
-        $('ad-readout').textContent = matched === ADAPT.length ? 'All 6 matched! Every one of these is a solution to darkness, scarce food, or pressure.' : matched + ' of 6 matched.';
+        if (matched === items.length) {
+          const nextSetBtn = (setIndex === 0)
+            ? ' <button type="button" class="oz-next-set-btn" id="oz-next-adapt-set">Advance to Set 2: Extreme Specialists →</button>'
+            : '';
+          $('ad-readout').innerHTML = 'All ' + items.length + ' matched! Every one of these is a solution to darkness, scarce food, or pressure.' + nextSetBtn;
+          const nextBtn = $('oz-next-adapt-set');
+          if (nextBtn) nextBtn.addEventListener('click', () => renderAdaptSet(1));
+        } else {
+          $('ad-readout').textContent = matched + ' of ' + items.length + ' matched.';
+        }
       } else {
         [a, t].forEach(b => { b.classList.add('miss'); b.setAttribute('aria-pressed', 'false'); setTimeout(() => b.classList.remove('miss'), 600); });
-        $('ad-readout').textContent = 'Not that one — think about which problem (darkness, food, pressure) the trait solves. ' + matched + ' of 6 matched.';
+        $('ad-readout').textContent = 'Not that one — think about which problem (darkness, food, pressure) the trait solves. ' + matched + ' of ' + items.length + ' matched.';
       }
       pickA = pickT = null;
     }
-    animalsEl.addEventListener('click', ev => {
+
+    animalsEl.onclick = ev => {
       const b = ev.target.closest('[data-animal]'); if (!b || b.disabled) return;
       animalsEl.querySelectorAll('[data-animal]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
       pickA = Number(b.dataset.animal); check();
-    });
-    traitsEl.addEventListener('click', ev => {
+    };
+    traitsEl.onclick = ev => {
       const b = ev.target.closest('[data-trait]'); if (!b || b.disabled) return;
       traitsEl.querySelectorAll('[data-trait]').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
       pickT = Number(b.dataset.trait); check();
-    });
+    };
   }
 
-  /* ══════════ 9 · Explorers timeline ══════════ */
+  if (animalsEl && traitsEl) {
+    matchTabs.forEach((tab, idx) => tab.addEventListener('click', () => renderAdaptSet(idx)));
+    renderAdaptSet(0);
+  }
+
+  /* ══════════ 10 · Explorers timeline ══════════ */
   const DIVES = [
     { year: 1934, depth: 923, who: 'William Beebe & Otis Barton', craft: 'Bathysphere',
       text: 'A hollow steel ball lowered on a cable off Bermuda. Through a quartz window, Beebe became the first scientist to watch living bioluminescence in the deep.' },
@@ -400,6 +641,10 @@
       why: 'This is counterillumination: glowing to match the downwelling light erases its shadow.' },
     { q: 'Why have no fish been found below about 8,400 m?', options: ['The pressure would crush them flat', 'There is no water that deep', 'It is too cold for blood to flow', 'Their proteins would need so much protective TMAO that their bodies couldn’t balance water'], a: 3,
       why: 'Without air spaces, fish aren’t “crushed.” The limit is chemistry: the TMAO needed to protect proteins keeps rising with depth until it becomes unworkable.' },
+    { q: 'Why does the Stoplight loosejaw produce red bioluminescent light?', options: ['To attract mates near the surface', 'To light up red prey without the prey seeing the light', 'To warm the cold water around its mouth', 'To warn predators that its skin is toxic'], a: 1,
+      why: 'Most deep creatures cannot see red light because no red sunlight reaches them. The loosejaw produces its own red searchlight and has specialized visual pigments to see it, illuminating prey without alerting them.' },
+    { q: 'What sustains the rich communities of Osedax worms and chemosynthetic bacteria on a sunken whale fall for decades?', options: ['Sunlight filtered from the surface', 'Volcanic magma from seafloor vents', 'Dense lipids and marrow stored inside the whale bones', 'Cold air bubbles trapped in the blubber'], a: 2,
+      why: 'Whale bones contain vast stores of lipids. Female Osedax ("bone-eating") worms drill root-like networks into the bones, using bacterial symbionts to digest bone marrow fats for up to 50 years.' },
   ];
   const quizEl = $('oz-quiz-list');
   if (quizEl) {

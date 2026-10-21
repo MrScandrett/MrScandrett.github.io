@@ -6,14 +6,8 @@
     <title>Pledge of Allegiance · ClassroomOS</title>
     <link rel="stylesheet" href="../assets/css/style.css" />
     <link rel="stylesheet" href="../assets/css/classroom-home.css" />
+    <link rel="stylesheet" href="../assets/css/pages/pledge.css" />
     <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
-  <style>
-    .flag-stage {
-      background: linear-gradient(to bottom, #2e6ea6 0%, #4d94d4 25%, #80bce8 65%, #b8d8f0 100%);
-      overflow: hidden;
-      position: relative;
-    }
-  </style>
   </head>
   <body class="theme-eliza1966">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -33,13 +27,20 @@
 
     <main id="main" class="eliza-page">
       <header class="lesson-hero">
-        <p class="lesson-kicker">USA Civics / Ritual</p>
-        <h1>American Flag Waving Simulator</h1>
-        <p class="lesson-subtitle">Stand, read, and recite together with a 50-star flag drawn to federal-style proportions and an optional classroom backing track.</p>
+        <p class="lesson-kicker">Classroom civics</p>
+        <h1>Pledge of Allegiance</h1>
+        <p class="lesson-subtitle">Bring the flag and the words together for a class presentation. Start the rising text, or read at your own pace below.</p>
       </header>
 
-      <section class="terminal eliza-app">
-        <div class="flag-stage" aria-label="Animated American flag">
+      <section class="terminal eliza-app" aria-label="Pledge presentation">
+        <div class="lesson-actions pledge-actions" role="group" aria-label="Presentation controls">
+          <button class="btn primary" id="btnPlay" type="button">Start presentation</button>
+          <button class="btn" id="btnPause" type="button" disabled>Pause</button>
+          <button class="btn" id="btnRestart" type="button">Restart</button>
+          <button class="btn" id="btnMute" type="button" aria-pressed="false">Mute</button>
+          <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
+        </div>
+        <div class="flag-stage" id="pledgeStage" aria-label="Animated American flag with rising pledge text">
           <model-viewer loading="lazy"
             id="flagModel"
             class="flag-model-viewer"
@@ -47,7 +48,7 @@
             alt="Animated 3D model of an American flag waving on a flagpole."
             autoplay
             animation-name="Flag Moving"
-            scale="1.7 1.7 1.7"
+            scale="2.2 2.2 2.2"
             camera-controls
             touch-action="pan-y"
             interaction-prompt="auto"
@@ -66,30 +67,19 @@
               <a href="../assets/models/moving_american_flag.glb">Download the GLB file instead</a>.
             </div>
           </model-viewer>
+          <div class="stage-shade" aria-hidden="true"></div>
+          <div class="stage-heading" aria-hidden="true">Pledge of Allegiance</div>
+          <div class="pledge-ready" aria-hidden="true">
+            <span class="pledge-ready-symbol">✦</span>
+            <span>Ready when your class is</span>
+          </div>
+          <div class="pledge-crawl-viewport" aria-hidden="true">
+            <p class="pledge-crawl" id="pledgeCrawl">I pledge allegiance to the Flag of the United States of America,<br>and to the Republic for which it stands,<br>one Nation under God, indivisible,<br>with liberty and justice for all.</p>
+          </div>
         </div>
-        <p class="flag-spec-note">This simulator now uses an animated 3D flag model. Use drag, scroll, or pinch to inspect the waving flag up close.</p>
 
         <div class="pledge-panel">
-          <h2 class="pledge-title">Pledge of Allegiance</h2>
-          <p class="pledge-text">
-            I pledge allegiance to the Flag of the United States of America, and to the Republic for which it stands,
-            one Nation under God, indivisible, with liberty and justice for all.
-          </p>
-
-          <p class="respect-note">
-            Respect Mode: stand if able, face the flag, and place your right hand over your heart.
-            Veterans and active-duty service members may salute.
-          </p>
-
-          <div class="lesson-actions">
-            <button class="btn primary" id="btnPlay" type="button">Play Music</button>
-            <button class="btn" id="btnPause" type="button">Pause</button>
-            <button class="btn" id="btnRestart" type="button">Restart</button>
-            <button class="btn" id="btnMute" type="button" aria-pressed="false">Mute</button>
-            <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
-          </div>
-
-          <div class="lesson-actions">
+          <div class="lesson-actions pledge-settings">
             <label class="control-inline" for="windMode">
               Wind
               <select id="windMode" aria-label="Wind strength">
@@ -105,6 +95,18 @@
             </label>
           </div>
 
+          <p class="audio-status" id="audioStatus" aria-live="polite">Optional music loading.</p>
+
+          <div class="pledge-transcript">
+            <h2 class="pledge-title">Read the pledge</h2>
+            <p class="pledge-text">
+              I pledge allegiance to the Flag of the United States of America, and to the Republic for which it stands,
+              one Nation under God, indivisible, with liberty and justice for all.
+            </p>
+          </div>
+
+          <p class="respect-note">Stand if able, face the flag, and place your right hand over your heart. Veterans and active-duty service members may salute.</p>
+
           <details class="etiquette">
             <summary>Show etiquette</summary>
             <ul class="checklist">
@@ -116,12 +118,6 @@
             </ul>
           </details>
 
-          <p class="small-note">
-            Note: this page now ships with a small built-in backing track so playback works on GitHub Pages.
-            Swap the audio file if you want a different recording for class.
-          </p>
-          <p class="audio-status" id="audioStatus" aria-live="polite">Backing track ready.</p>
-
           <audio id="patrioticAudio" preload="auto" loop>
             <source src="../assets/audio/patriotic.wav" type="audio/wav" />
           </audio>
@@ -129,17 +125,15 @@
       </section>
 
       <section class="lesson-section">
-        <h2>How to Use</h2>
+        <h2>Using this presentation</h2>
         <ul class="checklist">
-          <li>Press Play, stand, and read together.</li>
-          <li>Use Fullscreen for whole-class recitation.</li>
-          <li>Set Wind to calm, medium, or strong based on classroom tone.</li>
-          <li>Optional: students take turns leading the pledge.</li>
-          <li>Engineering extension: compare how animation speed changes the feeling of wind and fabric motion.</li>
+          <li>Start the presentation to move the words upward over the flag. Pause or restart whenever the class needs more time.</li>
+          <li>Use Fullscreen to show the flag and words on a classroom display.</li>
+          <li>Drag the flag to inspect the model, or change Wind to adjust its animation.</li>
         </ul>
       </section>
 
-      <a href="../showcase.html">Back to Showcase</a>
+      <a href="../index.html">Back to ClassroomOS</a>
     </main>
 
     <script>
@@ -151,7 +145,10 @@
       let wind = WIND.calm;
 
       /* ── UI controls ─────────────────────────────────────────── */
-      const stage = document.querySelector('.flag-stage');
+      const stage = document.getElementById('pledgeStage');
+      const presentation = document.querySelector('.eliza-app');
+      const crawl = document.getElementById('pledgeCrawl');
+      const readyText = document.querySelector('.pledge-ready span:last-child');
       const flagModel     = document.getElementById('flagModel');
       const audio         = document.getElementById('patrioticAudio');
       const btnPlay       = document.getElementById('btnPlay');
@@ -162,23 +159,43 @@
       const audioStatus   = document.getElementById('audioStatus');
       const volumeControl = document.getElementById('volumeControl');
       const volumeValue   = document.getElementById('volumeValue');
-      const musicButtons  = [btnPlay, btnPause, btnRestart, btnMute];
-
       function applyWindPreset() {
         if (!flagModel) return;
+        const scale = window.matchMedia('(max-width: 650px)').matches ? 1.25 : 2.2;
+        flagModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
         flagModel.timeScale = wind.timeScale;
         flagModel.setAttribute('camera-orbit', wind.orbit);
         if (typeof flagModel.play === 'function') flagModel.play();
       }
 
       flagModel?.addEventListener('load', applyWindPreset);
+      window.addEventListener('resize', applyWindPreset);
 
       function setAudioAvailability(available, message) {
-        musicButtons.forEach((button) => {
-          if (button) button.disabled = !available;
-        });
+        if (btnMute) btnMute.disabled = !available;
         if (volumeControl) volumeControl.disabled = !available;
         if (audioStatus) audioStatus.textContent = message;
+      }
+
+      function playMusic() {
+        if (audio?.error || audio?.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) return;
+        audio?.play?.().catch(() => {
+          if (audioStatus) audioStatus.textContent = 'Music could not start. The pledge presentation still works.';
+        });
+      }
+
+      function startPresentation(restart = false) {
+        if (!stage || !crawl) return;
+        if (readyText) readyText.textContent = 'Ready when your class is';
+        if (restart || stage.dataset.crawl === 'finished') {
+          stage.dataset.crawl = 'idle';
+          void crawl.offsetWidth;
+          if (audio) audio.currentTime = 0;
+        }
+        stage.dataset.crawl = 'playing';
+        btnPause.disabled = false;
+        btnPause.textContent = 'Pause';
+        playMusic();
       }
 
       if (audio) {
@@ -194,17 +211,26 @@
         setAudioAvailability(false, 'Backing track unavailable. Add a new file to assets/audio if you want music here.');
       });
 
-      btnPlay?.addEventListener('click', () => {
-        if (!audio) return;
-        audio.play?.();
+      btnPlay?.addEventListener('click', () => startPresentation());
+
+      btnPause?.addEventListener('click', () => {
+        if (!stage) return;
+        if (stage.dataset.crawl === 'playing') {
+          stage.dataset.crawl = 'paused';
+          btnPause.textContent = 'Resume';
+          audio?.pause?.();
+        } else if (stage.dataset.crawl === 'paused') {
+          startPresentation();
+        }
       });
 
-      btnPause?.addEventListener('click', () => audio?.pause?.());
+      btnRestart?.addEventListener('click', () => startPresentation(true));
 
-      btnRestart?.addEventListener('click', () => {
-        if (!audio) return;
-        audio.currentTime = 0;
-        audio.play?.();
+      crawl?.addEventListener('animationend', () => {
+        stage.dataset.crawl = 'finished';
+        btnPause.disabled = true;
+        audio?.pause?.();
+        if (readyText) readyText.textContent = 'Presentation complete. Restart to replay.';
       });
 
       btnMute?.addEventListener('click', () => {
@@ -216,9 +242,13 @@
 
       btnFullscreen?.addEventListener('click', async () => {
         try {
-          if (!document.fullscreenElement) await stage.requestFullscreen?.();
+          if (!document.fullscreenElement) await presentation.requestFullscreen?.();
           else await document.exitFullscreen?.();
         } catch { /* ignore */ }
+      });
+
+      document.addEventListener('fullscreenchange', () => {
+        btnFullscreen.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
       });
 
       document.getElementById('windMode')?.addEventListener('change', (e) => {

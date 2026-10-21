@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tinkercad Codeblocks · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Parametric 3D design with Tinkercad Codeblocks: variables, loops and extrusion. Build a ring stack where one number reshapes the whole form, see the block program update live, and download it as an STL." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
+  <style>
+    :root { --fl-accent: #0e7490; --fl-accent-2: #c2410c; --fl-ink: #082f38; }
+    .cb-program { font: 600 0.84rem/1.3 system-ui, sans-serif; display: grid; gap: 0.3rem; margin: 0; padding: 0.7rem; border-radius: 10px; border: 1px solid var(--line, #d2d2d7); min-width: 0; }
+    .cb-block { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; width: fit-content; max-width: 100%; padding: 0.35rem 0.6rem; border-radius: 6px; color: #fff; }
+    .cb-block .cb-slot { background: rgba(255,255,255,0.9); color: #111; border-radius: 999px; padding: 0.05rem 0.5rem; font-weight: 700; }
+    .cb-data { background: #b45309; }
+    .cb-control { background: #a16207; }
+    .cb-shape { background: #0e7490; }
+    .cb-mod { background: #6d28d9; }
+    .cb-indent { margin-left: 1.4rem; display: grid; gap: 0.3rem; border-left: 4px solid #a16207; padding-left: 0.5rem; }
+    .cb-lab-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.7rem; align-items: start; }
+    .cb-steps { padding-left: 1.3rem; }
+    .cb-steps li { margin-bottom: 0.45rem; }
+    .cb-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .cb-table th, .cb-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .cb-diagram { display: block; width: 100%; max-width: 640px; height: auto; margin: 0.4rem auto 0; }
+    @media (max-width: 720px) { .cb-lab-grid { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fl-page">
+
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../3d-design.html">3D Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">Tinkercad Codeblocks</span>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero fl-hero">
+          <p class="eyebrow">3D Design · Parametric CAD · Coding</p>
+          <h1>Tinkercad Codeblocks: Shapes from Code</h1>
+          <div class="fl-hero-meta">
+            <span>Variables</span><span class="dot"></span>
+            <span>Loops</span><span class="dot"></span>
+            <span>Extrude</span><span class="dot"></span>
+            <span>Parametric Ring Stack</span>
+          </div>
+          <p class="fl-lede">In ordinary Tinkercad you drag every shape by hand. In <strong>Codeblocks</strong>, which Autodesk added to Tinkercad in 2019, you snap together blocks of code and the code builds the shapes. That changes what a design <em>is</em>: not a pile of shapes but a recipe. Change one number in the recipe and the whole form rebuilds itself. That's <strong><span data-glossary="parametric design">parametric design</span></strong>, and today you'll use it to build a stack of rings.</p>
+        </section>
+
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#cb-why">Why Code?</a>
+          <a href="#cb-ideas">Three Ideas</a>
+          <a href="#cb-lab">Ring Stack Lab</a>
+          <a href="#cb-build">Build It</a>
+          <a href="#cb-pi">The Pi Inside</a>
+          <a href="#fl-sec-practice">Practice</a>
+        </nav>
+
+        <!-- Why code -->
+        <section class="fl-card" id="cb-why" style="--card-accent:#0e7490;">
+          <h2>Why Design with Code?</h2>
+          <p>Picture a stack of ten rings, each a little smaller than the one below. By hand that's ten shapes to place, size and line up. Now your teacher says, "Make it twelve rings, and a bit taller." By hand you start over. With code you change two numbers.</p>
+          <p>Architects and engineers worked this way long before computers. <a href="../../design/pioneers/antoni-gaudi.html">Antoni Gaudí</a> found the shapes of his arches with hanging chains: move one weight and the whole model rebalanced itself. <a href="../../engineering/pioneers/gustave-eiffel.html">Gustave Eiffel</a> controlled 18,038 iron parts from one set of wind calculations. Parametric CAD does the same thing on a screen: you write the <em>rules</em>, and the computer draws the result.</p>
+          <div class="fl-callout a1"><strong>Key idea:</strong> a <em>parameter</em> is a number your design depends on. A parametric design is one where you can change the parameters and get a correct new design, without redrawing anything.</div>
+        </section>
+
+        <!-- Three ideas -->
+        <section class="fl-card" id="cb-ideas" style="--card-accent:#c2410c;">
+          <h2>Three Ideas: Variables, Loops, Extrude</h2>
+          <h3>1 · Variables: names for numbers</h3>
+          <p>A variable is a labelled box holding a number. In Codeblocks you use <strong>Create variable</strong> to make one (say, <code>radius</code>) and <strong>Set</strong> or <strong>Change by</strong> to update it. Any shape block can use the variable instead of a typed number, so when the variable changes, every shape that uses it changes too.</p>
+          <h3>2 · Loops: do it again, a little differently</h3>
+          <p>A loop repeats the blocks inside it. <strong>Repeat 10 times</strong> does the same thing ten times. <strong>Count with i from 1 to 10</strong> also hands you a counter, <code>i</code>, that goes up each time, so each repeat can be different: move up by <code>i</code> &times; height, or shrink by <code>i</code> &times; 2 mm. One loop and a counter can place a hundred shapes.</p>
+          <h3>3 · Extrude: from a flat outline to a solid</h3>
+          <p>Most 3D shapes start as a flat 2D outline that is pushed straight up to a height. That push is called an <strong><span data-glossary="extrusion">extrusion</span></strong>. A circle extruded becomes a cylinder. A ring (a circle with a smaller circle cut out of it) extruded becomes a tube. In Codeblocks you don't press an Extrude button; a shape's <em>height</em> setting is its extrusion. Change the height and the same outline grows taller or flatter.</p>
+          <svg class="cb-diagram" viewBox="0 0 640 170" role="img" aria-label="A flat ring outline, an arrow labelled extrude height, and the resulting tube">
+            <g fill="none" stroke="#0e7490" stroke-width="3">
+              <ellipse cx="110" cy="110" rx="80" ry="28" />
+              <ellipse cx="110" cy="110" rx="52" ry="18" stroke-dasharray="6 5" />
+              <path d="M450 130 a80 28 0 0 0 160 0 v-70 M450 130 v-70" />
+              <ellipse cx="530" cy="60" rx="80" ry="28" fill="rgba(14,116,144,0.15)" />
+              <ellipse cx="530" cy="60" rx="52" ry="18" />
+            </g>
+            <g fill="none" stroke="#c2410c" stroke-width="3">
+              <path d="M240 95 h140" /><path d="M368 85 l14 10 -14 10" fill="#c2410c" />
+            </g>
+            <text x="110" y="160" text-anchor="middle" font-size="15" fill="currentColor">Ring outline (2D)</text>
+            <text x="310" y="82" text-anchor="middle" font-size="15" fill="#c2410c">extrude by height h</text>
+            <text x="530" y="160" text-anchor="middle" font-size="15" fill="currentColor">Tube (3D)</text>
+          </svg>
+        </section>
+
+        <!-- Ring Stack Lab -->
+        <section class="fl-card" id="cb-lab" style="--card-accent:#0e7490;">
+          <h2>Ring Stack Lab</h2>
+          <p>This is the program you'll build in Tinkercad. Move a slider and watch two things change at once: the code on the right and the model on the left. When you like your design, download it as an STL to print or to import into Tinkercad.</p>
+
+          <div class="fl-lab" data-memory-ignore>
+            <div class="cb-lab-grid">
+              <div class="fl-lab-stage"><canvas id="cb-canvas" role="img" aria-label="Three-quarter view of the ring stack built by the program"></canvas></div>
+              <div class="cb-program" id="cb-program" aria-live="polite" aria-label="The Codeblocks program for this design"></div>
+            </div>
+            <div class="fl-lab-controls">
+              <fieldset>
+                <legend>Layout</legend>
+                <label class="fl-lab-check"><input type="radio" name="cb-mode" value="stack" checked /> Stack (rings go up)</label>
+                <label class="fl-lab-check"><input type="radio" name="cb-mode" value="concentric" /> Concentric (rings go out)</label>
+              </fieldset>
+              <label>rings: <output id="cb-n-out" for="cb-n">8</output>
+                <input type="range" id="cb-n" min="1" max="20" step="1" value="8" /></label>
+              <label>start radius (mm): <output id="cb-r-out" for="cb-r">30</output>
+                <input type="range" id="cb-r" min="5" max="50" step="1" value="30" /></label>
+              <label>change radius by (mm): <output id="cb-dr-out" for="cb-dr">-3</output>
+                <input type="range" id="cb-dr" min="-6" max="10" step="0.5" value="-3" /></label>
+              <label>height, the extrusion (mm): <output id="cb-h-out" for="cb-h">5</output>
+                <input type="range" id="cb-h" min="1" max="20" step="0.5" value="5" /></label>
+              <label>wall (mm): <output id="cb-w-out" for="cb-w">3</output>
+                <input type="range" id="cb-w" min="1" max="10" step="0.5" value="3" /></label>
+              <div class="fl-lab-buttons">
+                <button type="button" id="cb-stl">Download STL</button>
+                <button type="button" id="cb-reset">Reset</button>
+              </div>
+            </div>
+            <p class="fl-lab-readout" id="cb-readout" aria-live="polite"></p>
+          </div>
+          <div class="fl-callout a1"><strong>Challenges:</strong> (1) Make a tower that gets <em>wider</em> as it goes up. (2) Switch to Concentric and make a target: rings that touch but don't overlap. What must <em>change radius by</em> equal? (3) Make one design and change only <em>rings</em> from 4 to 16. How many numbers did you edit? How many shapes changed?</div>
+        </section>
+
+        <!-- Build in Tinkercad -->
+        <section class="fl-card" id="cb-build" style="--card-accent:#c2410c;">
+          <h2>Build It in Tinkercad Codeblocks</h2>
+          <p>Sign in to Tinkercad and choose <strong>Create &rarr; Codeblocks</strong>, then start a blank design. Blocks live in drawers on the left (Shapes, Modifiers, Control, Math, Data); drag them into the workspace in the middle and press <strong>&#9654; Run</strong> to watch them build. Block names can differ slightly between versions; look for the closest match.</p>
+          <ol class="cb-steps">
+            <li><strong>Make the variables.</strong> From <em>Data</em>, use <em>Create variable</em> three times: <code>rings</code>, <code>radius</code>, <code>height</code>. Add <em>Set</em> blocks to give them values (try 8, 30, 5).</li>
+            <li><strong>Add the loop.</strong> From <em>Control</em>, drag <em>Count with i from 1 to &hellip; by 1</em>, and put the <code>rings</code> variable in the "to" slot.</li>
+            <li><strong>Add a tube inside the loop.</strong> From <em>Shapes</em>, drag a <em>Tube</em> into the loop. Put <code>radius</code> in its radius slot and <code>height</code> in its height slot; set the wall to 3. (No Tube? Use a Cylinder, then a smaller Cylinder set to <em>hole</em>, and group them.)</li>
+            <li><strong>Move it up.</strong> From <em>Modifiers</em>, add <em>Move</em> after the tube and set its z to <code>(i &minus; 1) &times; height</code>, built from the <em>Math</em> blocks.</li>
+            <li><strong>Shrink for next time.</strong> From <em>Data</em>, add <em>Change radius by &minus;3</em> as the last block in the loop.</li>
+            <li><strong>Run it.</strong> Press &#9654;. Then change <em>only</em> the Set blocks and run again. That's parametric design.</li>
+            <li><strong>Export.</strong> Use Tinkercad's export to download an STL, or send it to a regular Tinkercad design to add a base or a name. Check it in a slicer before printing (see <a href="3d-printing.html">3D Printing</a>).</li>
+          </ol>
+          <div class="fl-callout"><strong>Debugging tip:</strong> if every ring lands in the same place, your Move is outside the loop or isn't using <code>i</code>. If the rings get bigger instead of smaller, check the sign on <em>Change radius by</em>. If they merge into a solid lump, the radius has shrunk smaller than the wall.</div>
+        </section>
+
+        <!-- The Pi inside -->
+        <section class="fl-card" id="cb-pi" style="--card-accent:#0e7490;">
+          <h2>The Pi Inside Every Ring</h2>
+          <p>Every ring is circle math. The distance around the outside of a ring is its circumference, <em>C</em> = 2&pi;<em>r</em>. The flat ring outline has area &pi;<em>R</em>&sup2; &minus; &pi;<em>r</em>&sup2;, the big circle minus the hole. Extrude it by height <em>h</em> and the volume is that area times <em>h</em>. The lab above uses exactly these formulas to tell you how much plastic your design needs (PLA weighs about 1.24 g per cm&sup3;). For more on &pi;, visit the <a href="../../mathematics/geometry-and-trigonometry/pi.html">Pi lesson</a>.</p>
+          <div class="fl-formula-box" role="img" aria-label="Volume of a tube equals pi times the outer radius squared minus the inner radius squared, times height">
+            <span class="fl-formula-sym">V = &pi;(R&sup2; &minus; r&sup2;)&middot;h</span>
+            <div class="fl-formula-vars">
+              <div>R = outer radius &middot; r = R &minus; wall = inner radius</div>
+              <div>h = extrusion height</div>
+            </div>
+            <p class="fl-formula-note">A ring with R = 30 mm, wall 3 mm and h = 5 mm: &pi;(900 &minus; 729)&middot;5 &asymp; 2,686 mm&sup3; &asymp; 2.7 cm&sup3;.</p>
+          </div>
+          <table class="cb-table">
+            <thead><tr><th>Codeblocks word</th><th>What it means</th></tr></thead>
+            <tbody>
+              <tr><td>Variable</td><td>A named number the program can read and change</td></tr>
+              <tr><td>Loop / Count with</td><td>Repeat blocks, with a counter <code>i</code> that changes each time</td></tr>
+              <tr><td>Parameter</td><td>A number the whole design depends on</td></tr>
+              <tr><td>Extrude</td><td>Push a flat outline up to a height to make a solid</td></tr>
+              <tr><td>Hole</td><td>A shape that cuts away whatever it's grouped with</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Practice Problems -->
+        <section class="fl-card" id="fl-sec-practice" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <label class="ll-toggle" style="margin-bottom:0.8rem;">
+            <input type="checkbox" id="fl-hints-toggle">
+            <span class="ll-toggle-track" aria-hidden="true"></span>
+            <span>Show hints automatically</span>
+          </label>
+          <div class="fl-practice">
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>1. A loop runs <em>Count with i from 1 to 6</em>. How many rings does it make?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-1" step="1" placeholder="rings" />
+                <button class="fl-check-btn" onclick="flCheck(1, 6, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-1"></span>
+              </div>
+              <div class="fl-hint" id="flhint-1">Hint: i takes the values 1, 2, 3, &hellip;</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>2. Pushing a flat outline straight up to a height to make a solid is called&hellip;</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-2" style="width:180px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="extrude">Extruding</option>
+                  <option value="rotate">Rotating</option>
+                  <option value="mirror">Mirroring</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(2,'extrude')">Check</button>
+                <span class="fl-feedback" id="flfb-2"></span>
+              </div>
+              <div class="fl-hint" id="flhint-2">Hint: Toothpaste squeezed from a tube keeps its outline as it gets longer.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>3. Each ring is 5 mm tall and Move sets z to (i &minus; 1) &times; 5. At what height (mm) does ring 4 start?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-3" step="1" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(3, 15, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-3"></span>
+              </div>
+              <div class="fl-hint" id="flhint-3">Hint: (4 &minus; 1) &times; 5.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>4. Radius starts at 30 mm and changes by &minus;3 each loop. What is the radius of ring 5?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-4" step="1" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(4, 18, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-4"></span>
+              </div>
+              <div class="fl-hint" id="flhint-4">Hint: Ring 1 is 30. The change happens after each ring, so ring 5 has had 4 changes.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>5. What is the circumference of a 20 mm radius ring, to the nearest mm?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-5" step="1" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(5, 126, 1)">Check</button>
+                <span class="fl-feedback" id="flfb-5"></span>
+              </div>
+              <div class="fl-hint" id="flhint-5">Hint: C = 2 &times; &pi; &times; 20.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>6. In Concentric mode with a 3 mm wall, what should <em>change radius by</em> be so the rings just touch with no gap and no overlap?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-6" step="0.5" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(6, 3, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-6"></span>
+              </div>
+              <div class="fl-hint" id="flhint-6">Hint: The next ring's inside edge should sit exactly on this ring's outside edge.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>7. What makes a design <em>parametric</em>?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-7" style="width:380px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="a">It uses lots of different colours</option>
+                  <option value="b">Changing a few numbers correctly rebuilds the whole design</option>
+                  <option value="c">It was drawn by hand very carefully</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(7,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-7"></span>
+              </div>
+              <div class="fl-hint" id="flhint-7">Hint: Think about what happened when you moved the <em>rings</em> slider.</div>
+            </div>
+
+          </div>
+          <p style="margin-top:1rem;">Next: build a moving part in <a href="print-fidgets.html">Print Fidgets</a>, or try parametric parts in <a href="../../../forge.html">Forge</a> and free-form building in <a href="../../../workbench.html">Workbench</a>.</p>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a> · Tinkercad and Codeblocks are products of Autodesk; this lesson is not affiliated with Autodesk.</p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+  </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-content.js"></script>
+<script src="../../../assets/js/figure-lesson.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/lessons/tinkercad-codeblocks-lab.js"></script>
+</body>
+</html>

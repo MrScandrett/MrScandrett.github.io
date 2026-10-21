@@ -785,155 +785,348 @@
       const gw = groundCanvas.width / (window.devicePixelRatio || 1);
       const gh = groundCanvas.height / (window.devicePixelRatio || 1);
 
-      // --- SPACE VIEW (Top-Down on North Pole) ---
+      // --- SPACE VIEW (Top-Down on North Pole with Photorealistic Earth) ---
       sCtx.clearRect(0, 0, sw, sh);
-      sCtx.fillStyle = '#030712';
+
+      // Deep space backdrop with subtle stars
+      const spaceGrad = sCtx.createRadialGradient(sw * 0.5, sh * 0.5, 10, sw * 0.5, sh * 0.5, sw * 0.6);
+      spaceGrad.addColorStop(0, '#040714');
+      spaceGrad.addColorStop(1, '#020409');
+      sCtx.fillStyle = spaceGrad;
       sCtx.fillRect(0, 0, sw, sh);
 
-      // Sun rays incoming from left
-      sCtx.strokeStyle = 'rgba(251, 191, 36, 0.25)';
+      // Distant stars
+      sCtx.fillStyle = '#ffffff';
+      for (let i = 0; i < 28; i++) {
+        const sx = (i * 37) % sw;
+        const sy = (i * 29) % sh;
+        sCtx.globalAlpha = 0.3 + (i % 5) * 0.15;
+        sCtx.fillRect(sx, sy, 1.2, 1.2);
+      }
+      sCtx.globalAlpha = 1.0;
+
+      // Radiant Sun on Left with Solar Corona & Collimated Light Rays
+      const sunCenterY = sh * 0.5;
+      const sunRad = 26;
+      // Solar corona glow
+      const coronaGrad = sCtx.createRadialGradient(0, sunCenterY, 5, 0, sunCenterY, 80);
+      coronaGrad.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
+      coronaGrad.addColorStop(0.35, 'rgba(251, 191, 36, 0.45)');
+      coronaGrad.addColorStop(0.7, 'rgba(245, 158, 11, 0.18)');
+      coronaGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sCtx.fillStyle = coronaGrad;
+      sCtx.beginPath();
+      sCtx.arc(0, sunCenterY, 80, -Math.PI * 0.5, Math.PI * 0.5);
+      sCtx.fill();
+
+      // Parallel Golden Sunlight Beam Streaks
       sCtx.lineWidth = 1.5;
-      for (let y = 30; y < sh; y += 30) {
+      for (let y = 20; y < sh; y += 22) {
+        const beamGrad = sCtx.createLinearGradient(0, y, sw * 0.48, y);
+        beamGrad.addColorStop(0, 'rgba(253, 224, 71, 0.45)');
+        beamGrad.addColorStop(0.7, 'rgba(251, 191, 36, 0.25)');
+        beamGrad.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+        sCtx.strokeStyle = beamGrad;
         sCtx.beginPath();
-        sCtx.moveTo(0, y);
-        sCtx.lineTo(sw * 0.4, y);
+        sCtx.moveTo(12, y);
+        sCtx.lineTo(sw * 0.48, y);
         sCtx.stroke();
       }
 
-      // Sun label
-      sCtx.fillStyle = '#fbbf24';
+      sCtx.fillStyle = '#fde047';
       sCtx.font = 'bold 11px Inter, sans-serif';
       sCtx.fillText('☀️ Parallel Sunlight', 14, sh - 14);
 
-      // Earth circle
-      const ecx = sw * 0.55;
+      // Polar Earth Globe (Centered at ecx, ecy)
+      const ecx = sw * 0.56;
       const ecy = sh * 0.5;
-      const er = 65;
+      const er = 68;
 
-      // Daylight half (left)
+      // Atmospheric Rayleigh scattering halo around Earth
+      const atmoGrad = sCtx.createRadialGradient(ecx, ecy, er * 0.96, ecx, ecy, er * 1.16);
+      atmoGrad.addColorStop(0, 'rgba(56, 189, 248, 0.7)');
+      atmoGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.35)');
+      atmoGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sCtx.fillStyle = atmoGrad;
       sCtx.beginPath();
-      sCtx.arc(ecx, ecy, er, Math.PI * 0.5, Math.PI * 1.5);
-      sCtx.fillStyle = '#0284c7';
+      sCtx.arc(ecx, ecy, er * 1.16, 0, Math.PI * 2);
       sCtx.fill();
 
-      // Night half (right)
+      // Base Oceans (Daylit deep blue)
+      sCtx.save();
       sCtx.beginPath();
-      sCtx.arc(ecx, ecy, er, Math.PI * 1.5, Math.PI * 0.5);
-      sCtx.fillStyle = '#0f172a';
+      sCtx.arc(ecx, ecy, er, 0, Math.PI * 2);
+      sCtx.clip();
+
+      const oceanGrad = sCtx.createLinearGradient(ecx - er, ecy, ecx + er, ecy);
+      oceanGrad.addColorStop(0, '#0284c7'); // Sunlit cyan/blue ocean
+      oceanGrad.addColorStop(0.48, '#0369a1');
+      oceanGrad.addColorStop(0.52, '#0c1a2e'); // Night ocean
+      oceanGrad.addColorStop(1, '#070d18');
+      sCtx.fillStyle = oceanGrad;
+      sCtx.fillRect(ecx - er, ecy - er, er * 2, er * 2);
+
+      // Polar Landmasses (Greenland, Eurasia, North America around Arctic Basin)
+      // North Pole Top-down continental silhouettes
+      function drawPolarContinent(pts, colDay, colNight) {
+        sCtx.beginPath();
+        pts.forEach((p, idx) => {
+          const px = ecx + p[0] * er;
+          const py = ecy + p[1] * er;
+          if (idx === 0) sCtx.moveTo(px, py);
+          else sCtx.lineTo(px, py);
+        });
+        sCtx.closePath();
+        // Fill based on day/night position
+        const avgX = pts.reduce((acc, p) => acc + p[0], 0) / pts.length;
+        sCtx.fillStyle = avgX < 0 ? colDay : colNight;
+        sCtx.fill();
+      }
+
+      // Greenland / Arctic Archipelago
+      drawPolarContinent([[-0.12, -0.15], [-0.18, -0.35], [-0.08, -0.48], [0.02, -0.38], [-0.02, -0.18]], '#e0f2fe', '#334155');
+      // North American Craton (Alaska / Canada)
+      drawPolarContinent([[-0.22, -0.22], [-0.55, -0.38], [-0.75, -0.15], [-0.62, 0.25], [-0.35, 0.12], [-0.25, -0.05]], '#15803d', '#1e293b');
+      // Eurasian Landmass (Scandinavia / Siberia)
+      drawPolarContinent([[0.15, -0.32], [0.45, -0.52], [0.72, -0.22], [0.65, 0.35], [0.28, 0.42], [0.12, 0.08]], '#166534', '#1e293b');
+      // Arctic Sea Ice cap (central white ice)
+      sCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      sCtx.beginPath();
+      sCtx.arc(ecx, ecy, er * 0.22, 0, Math.PI * 2);
       sCtx.fill();
 
-      // Terminator line
-      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      sCtx.lineWidth = 2;
+      // Atmospheric Clouds (White swirls)
+      sCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      sCtx.lineWidth = 3.5;
+      sCtx.beginPath();
+      sCtx.arc(ecx, ecy, er * 0.65, 0.8, 2.4);
+      sCtx.stroke();
+      sCtx.beginPath();
+      sCtx.arc(ecx, ecy, er * 0.42, 3.2, 5.0);
+      sCtx.stroke();
+
+      // Night Hemisphere Shadow & City Lights Overlay
+      const nightGrad = sCtx.createLinearGradient(ecx - 8, ecy, ecx + 12, ecy);
+      nightGrad.addColorStop(0, 'rgba(3, 7, 18, 0)');
+      nightGrad.addColorStop(0.3, 'rgba(3, 7, 18, 0.82)');
+      nightGrad.addColorStop(1, 'rgba(3, 7, 18, 0.94)');
+      sCtx.fillStyle = nightGrad;
+      sCtx.fillRect(ecx - 8, ecy - er, er + 12, er * 2);
+
+      // City Night Lights on the Dark Hemisphere
+      sCtx.fillStyle = '#fde047';
+      const cityLights = [
+        [0.35, -0.25], [0.42, -0.18], [0.55, -0.12], [0.48, 0.15],
+        [0.38, 0.28], [0.62, 0.08], [0.25, 0.32], [0.52, -0.32]
+      ];
+      cityLights.forEach(pt => {
+        const lx = ecx + pt[0] * er;
+        const ly = ecy + pt[1] * er;
+        sCtx.beginPath();
+        sCtx.arc(lx, ly, 1.2, 0, Math.PI * 2);
+        sCtx.fill();
+      });
+
+      // Day/Night Terminator Line (Warm Golden Sunrise/Sunset Rim Diffusion)
+      const termGrad = sCtx.createLinearGradient(ecx - 4, 0, ecx + 4, 0);
+      termGrad.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
+      termGrad.addColorStop(0.5, 'rgba(234, 88, 12, 0.8)');
+      termGrad.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
+      sCtx.strokeStyle = termGrad;
+      sCtx.lineWidth = 3;
       sCtx.beginPath();
       sCtx.moveTo(ecx, ecy - er);
       sCtx.lineTo(ecx, ecy + er);
       sCtx.stroke();
+      sCtx.restore();
 
       // Observer dot on rotating Earth
-      // Local solar noon (12:00) points directly at Sun (Left, angle = PI)
-      // 06:00 (Dawn) points Up (angle = 3*PI/2)
-      // 18:00 (Dusk) points Down (angle = PI/2)
-      // 00:00 (Midnight) points Right (angle = 0)
       const rotAngle = ((currentHour - 12) / 24) * Math.PI * 2 + Math.PI;
       const ox = ecx + Math.cos(rotAngle) * er;
       const oy = ecy + Math.sin(rotAngle) * er;
 
+      // Local Horizon Tangent Line
+      sCtx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+      sCtx.lineWidth = 1.5;
+      sCtx.setLineDash([3, 3]);
       sCtx.beginPath();
-      sCtx.arc(ox, oy, 6, 0, Math.PI * 2);
+      sCtx.moveTo(ox - Math.sin(rotAngle) * 20, oy + Math.cos(rotAngle) * 20);
+      sCtx.lineTo(ox + Math.sin(rotAngle) * 20, oy - Math.cos(rotAngle) * 20);
+      sCtx.stroke();
+      sCtx.setLineDash([]);
+
+      // Observer marker pin
+      sCtx.beginPath();
+      sCtx.arc(ox, oy, 6.5, 0, Math.PI * 2);
       sCtx.fillStyle = '#ef4444';
       sCtx.fill();
       sCtx.strokeStyle = '#ffffff';
-      sCtx.lineWidth = 2;
+      sCtx.lineWidth = 2.5;
       sCtx.stroke();
 
       sCtx.fillStyle = '#f8fafc';
       sCtx.font = 'bold 10px Inter, sans-serif';
-      sCtx.fillText('Observer', ox + 8, oy - 4);
+      sCtx.fillText('Observer (Local Horizon)', ox + 9, oy - 5);
 
-      // --- GROUND VIEW (Gnomon stick & shadow) ---
+      // --- GROUND VIEW (Realistic Sky Dome, Gnomon & Soft Penumbra Shadow) ---
       gCtx.clearRect(0, 0, gw, gh);
 
-      // Sky color based on solar elevation
       const lat = parseFloat(latSelect.value);
-      // Approximate solar elevation:
-      // Noon max alt = 90 - lat + 23.5*sin(season), let's use equinox: 90 - lat
       const maxAlt = 90 - lat;
       const hourAngle = (currentHour - 12) * 15; // deg
       const sinAlt = Math.cos(lat * Math.PI / 180) * Math.cos(hourAngle * Math.PI / 180);
       const altDeg = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * 180 / Math.PI;
 
-      let skyFill = '#030712';
-      if (altDeg > 10) skyFill = '#38bdf8'; // Full daylight
-      else if (altDeg > 0) skyFill = '#ea580c'; // Sunset/sunrise twilight
-      else if (altDeg > -6) skyFill = '#475569'; // Civil twilight
-      gCtx.fillStyle = skyFill;
-      gCtx.fillRect(0, 0, gw, gh * 0.7);
+      // Physically-Inspired Sky Dome Atmospheric Gradient
+      const groundH = gh * 0.72;
+      const skyGrad = gCtx.createLinearGradient(0, 0, 0, groundH);
+      if (altDeg > 18) {
+        // High Sun: Vibrant Rayleigh deep azure to horizon haze
+        skyGrad.addColorStop(0, '#0284c7');
+        skyGrad.addColorStop(0.65, '#38bdf8');
+        skyGrad.addColorStop(1, '#bae6fd');
+      } else if (altDeg > 5) {
+        // Late Afternoon / Golden Hour
+        skyGrad.addColorStop(0, '#1e3a8a');
+        skyGrad.addColorStop(0.45, '#3b82f6');
+        skyGrad.addColorStop(0.8, '#f59e0b');
+        skyGrad.addColorStop(1, '#fed7aa');
+      } else if (altDeg > -4) {
+        // Sunset / Sunrise: Fiery twilight
+        skyGrad.addColorStop(0, '#0f172a');
+        skyGrad.addColorStop(0.4, '#4338ca');
+        skyGrad.addColorStop(0.7, '#c026d3');
+        skyGrad.addColorStop(0.9, '#ea580c');
+        skyGrad.addColorStop(1, '#fde047');
+      } else if (altDeg > -12) {
+        // Civil / Nautical Twilight: Deep indigo
+        skyGrad.addColorStop(0, '#020617');
+        skyGrad.addColorStop(0.6, '#0f172a');
+        skyGrad.addColorStop(1, '#1e1b4b');
+      } else {
+        // Night: Star-filled obsidian sky
+        skyGrad.addColorStop(0, '#020409');
+        skyGrad.addColorStop(1, '#070d18');
+      }
+      gCtx.fillStyle = skyGrad;
+      gCtx.fillRect(0, 0, gw, groundH);
 
-      // Ground (green/brown meadow)
-      gCtx.fillStyle = '#334155';
-      gCtx.fillRect(0, gh * 0.7, gw, gh * 0.3);
-      gCtx.strokeStyle = '#475569';
-      gCtx.lineWidth = 2;
-      gCtx.beginPath();
-      gCtx.moveTo(0, gh * 0.7);
-      gCtx.lineTo(gw, gh * 0.7);
-      gCtx.stroke();
+      // Night Stars in Ground Sky if Sun is below horizon
+      if (altDeg <= 0) {
+        gCtx.fillStyle = '#ffffff';
+        const nightAlpha = Math.min(1, Math.max(0, -altDeg / 10));
+        gCtx.globalAlpha = nightAlpha;
+        const groundStars = [[0.15, 0.2], [0.28, 0.35], [0.45, 0.15], [0.65, 0.28], [0.82, 0.18], [0.75, 0.42], [0.35, 0.5]];
+        groundStars.forEach(st => {
+          gCtx.fillRect(st[0] * gw, st[1] * groundH, 1.5, 1.5);
+        });
+        gCtx.globalAlpha = 1.0;
+      }
 
-      // Gnomon stick
+      // Ground Landscape (Textured Grass Meadow with Sundial markings)
+      const landGrad = gCtx.createLinearGradient(0, groundH, 0, gh);
+      landGrad.addColorStop(0, '#14532d'); // Rich meadow green
+      landGrad.addColorStop(0.3, '#166534');
+      landGrad.addColorStop(1, '#0f291e');
+      gCtx.fillStyle = landGrad;
+      gCtx.fillRect(0, groundH, gw, gh - groundH);
+
+      // Compass Cardinal Directions & Dial Ring on Ground
       const gcx = gw * 0.5;
-      const gcy = gh * 0.7;
-      const stickH = 50;
+      const gcy = groundH + 20;
 
-      // Draw stick
-      gCtx.strokeStyle = '#f8fafc';
-      gCtx.lineWidth = 4;
+      gCtx.save();
+      gCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      gCtx.lineWidth = 1;
       gCtx.beginPath();
-      gCtx.moveTo(gcx, gcy);
-      gCtx.lineTo(gcx, gcy - stickH);
+      gCtx.ellipse(gcx, gcy, gw * 0.38, 28, 0, 0, Math.PI * 2);
       gCtx.stroke();
 
-      // Sun position in ground view
-      if (altDeg > 0) {
-        // Map hour (6 to 18) to x position (left/East to right/West)
-        const sunX = gcx - Math.sin(hourAngle * Math.PI / 180) * (gw * 0.38);
-        const sunY = gcy - Math.sin(altDeg * Math.PI / 180) * (gh * 0.55);
+      gCtx.font = 'bold 10px Inter, sans-serif';
+      gCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      gCtx.textAlign = 'center';
+      gCtx.fillText('WEST (Evening)', gcx - gw * 0.38 + 14, gcy + 4);
+      gCtx.fillText('EAST (Morning)', gcx + gw * 0.38 - 14, gcy + 4);
+      gCtx.fillText('SOUTH (Solar Noon)', gcx, gcy + 22);
+      gCtx.restore();
 
+      const stickH = 58;
+
+      // Realistic Sun & Soft Penumbra Shadow
+      if (altDeg > 0) {
+        const sunX = gcx - Math.sin(hourAngle * Math.PI / 180) * (gw * 0.40);
+        const sunY = groundH - Math.sin(altDeg * Math.PI / 180) * (groundH * 0.85);
+
+        // Sun Corona Flare
+        const sunGlow = gCtx.createRadialGradient(sunX, sunY, 3, sunX, sunY, 45);
+        sunGlow.addColorStop(0, '#ffffff');
+        sunGlow.addColorStop(0.25, 'rgba(254, 240, 138, 0.9)');
+        sunGlow.addColorStop(0.6, 'rgba(251, 191, 36, 0.35)');
+        sunGlow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+        gCtx.fillStyle = sunGlow;
         gCtx.beginPath();
-        gCtx.arc(sunX, sunY, 14, 0, Math.PI * 2);
-        gCtx.fillStyle = '#fbbf24';
+        gCtx.arc(sunX, sunY, 45, 0, Math.PI * 2);
         gCtx.fill();
-        gCtx.strokeStyle = '#ffffff';
-        gCtx.lineWidth = 3;
+
+        // Sun Core Disk
+        gCtx.beginPath();
+        gCtx.arc(sunX, sunY, 13, 0, Math.PI * 2);
+        gCtx.fillStyle = '#ffffff';
+        gCtx.fill();
+        gCtx.strokeStyle = '#fde047';
+        gCtx.lineWidth = 2.5;
         gCtx.stroke();
 
-        // Shadow on ground
-        // Shadow length = stickH / tan(alt)
-        const shadowL = stickH / Math.tan(Math.max(5, altDeg) * Math.PI / 180);
-        // Shadow direction: points opposite of sun
+        // Realistic Gnomon Shadow with Soft Penumbra
+        const shadowL = stickH / Math.tan(Math.max(4, altDeg) * Math.PI / 180);
         const shadowDirX = Math.sin(hourAngle * Math.PI / 180);
-        const shadowEndX = gcx + shadowDirX * Math.min(160, shadowL);
+        const shadowEndX = gcx + shadowDirX * Math.min(180, shadowL);
 
-        gCtx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-        gCtx.lineWidth = 6;
+        // Outer soft penumbra
+        gCtx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        gCtx.lineWidth = 8;
         gCtx.lineCap = 'round';
         gCtx.beginPath();
         gCtx.moveTo(gcx, gcy);
         gCtx.lineTo(shadowEndX, gcy);
         gCtx.stroke();
 
-        // Telemetry
+        // Inner dense umbra
+        gCtx.strokeStyle = 'rgba(0, 0, 0, 0.65)';
+        gCtx.lineWidth = 4;
+        gCtx.beginPath();
+        gCtx.moveTo(gcx, gcy);
+        gCtx.lineTo(shadowEndX * 0.85 + gcx * 0.15, gcy);
+        gCtx.stroke();
+
         document.getElementById('sunAlt').textContent = altDeg.toFixed(1) + '°';
         document.getElementById('sunAz').textContent = hourAngle < 0 ? 'East' : hourAngle > 0 ? 'West' : 'South (Noon)';
-        document.getElementById('shadowLen').textContent = (shadowL / 50).toFixed(2) + ' m';
+        document.getElementById('shadowLen').textContent = (shadowL / 58).toFixed(2) + ' m';
         document.getElementById('shadowDir').textContent = shadowDirX < 0 ? 'West' : shadowDirX > 0 ? 'East' : 'True North';
       } else {
-        // Night
         document.getElementById('sunAlt').textContent = 'Below Horizon';
         document.getElementById('sunAz').textContent = 'Night Sky';
         document.getElementById('shadowLen').textContent = 'None (Darkness)';
         document.getElementById('shadowDir').textContent = 'Stars Overhead';
       }
+
+      // Wooden Gnomon Post with Brass Finial
+      // Post
+      gCtx.strokeStyle = '#854d0e';
+      gCtx.lineWidth = 6;
+      gCtx.lineCap = 'square';
+      gCtx.beginPath();
+      gCtx.moveTo(gcx, gcy);
+      gCtx.lineTo(gcx, gcy - stickH);
+      gCtx.stroke();
+      // Brass tip finial
+      gCtx.fillStyle = '#fde047';
+      gCtx.beginPath();
+      gCtx.arc(gcx, gcy - stickH, 4, 0, Math.PI * 2);
+      gCtx.fill();
+      gCtx.strokeStyle = '#b45309';
+      gCtx.lineWidth = 1;
+      gCtx.stroke();
     }
 
     function tickDayNight() {
@@ -1072,67 +1265,190 @@
       moCtx.lineWidth = 2;
       moCtx.stroke();
 
-      // --- EARTH TELESCOPIC VIEW ---
+      // --- EARTH TELESCOPIC VIEW (Photorealistic Moon Cartography & 3D Relief) ---
       const mw = moonCanvasView.width;
       const mh = moonCanvasView.height;
       mvCtx.clearRect(0, 0, mw, mh);
 
       const cx = mw * 0.5;
       const cy = mh * 0.5;
-      const r = 60;
+      const r = 62;
 
-      // Base unlit moon disc
-      mvCtx.beginPath();
-      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
-      mvCtx.fillStyle = '#1e293b';
-      mvCtx.fill();
+      // Telescope circular eyepiece vignette / outer darkness
+      const scopeGrad = mvCtx.createRadialGradient(cx, cy, r * 0.8, cx, cy, mw * 0.52);
+      scopeGrad.addColorStop(0, '#030712');
+      scopeGrad.addColorStop(0.85, '#050a18');
+      scopeGrad.addColorStop(1, '#000000');
+      mvCtx.fillStyle = scopeGrad;
+      mvCtx.fillRect(0, 0, mw, mh);
 
-      // Illuminated crescent/gibbous rendering:
-      // Angle: 0 (new) -> 180 (full) -> 360 (new)
       const normAngle = ((currentMoonAngle % 360) + 360) % 360;
       const phaseFrac = (1 - Math.cos(normAngle * Math.PI / 180)) / 2; // 0 to 1
 
+      // 1. Ghostly Earthshine on Unlit Lunar Disc (faint reflection from Earth)
+      const earthshineAlpha = (1 - phaseFrac) * 0.18 + 0.04;
+      mvCtx.save();
+      mvCtx.beginPath();
+      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      mvCtx.fillStyle = `rgba(148, 163, 184, ${earthshineAlpha})`;
+      mvCtx.fill();
+      mvCtx.restore();
+
+      // 2. Base Highlands Texture Function (draws authentic lunar features onto context)
+      function drawLunarSurfaceFeatures(targetCtx) {
+        // Lunar Maria (Dark volcanic basalt plains)
+        targetCtx.fillStyle = 'rgba(71, 85, 105, 0.72)'; // Basalt maria tone
+
+        // Oceanus Procellarum (Ocean of Storms - broad NW region)
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx - 24, cy - 8, 20, 32, -0.2, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Imbrium (Sea of Rains - circular NW basin)
+        targetCtx.beginPath();
+        targetCtx.arc(cx - 16, cy - 24, 16, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Serenitatis (Sea of Serenity - central-NE)
+        targetCtx.beginPath();
+        targetCtx.arc(cx + 12, cy - 18, 12, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Tranquillitatis (Sea of Tranquility - Apollo 11 landing site!)
+        targetCtx.beginPath();
+        targetCtx.arc(cx + 22, cy - 4, 13, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Crisium (Sea of Crises - isolated eastern sea)
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx + 42, cy - 12, 9, 7, 0.3, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Fecunditatis & Mare Nectaris (SE)
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx + 28, cy + 18, 14, 11, 0.4, 0, Math.PI * 2);
+        targetCtx.ellipse(cx + 14, cy + 22, 9, 8, -0.2, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Mare Nubium & Mare Humorum (SW)
+        targetCtx.beginPath();
+        targetCtx.ellipse(cx - 15, cy + 22, 14, 11, 0.1, 0, Math.PI * 2);
+        targetCtx.ellipse(cx - 32, cy + 18, 9, 8, -0.4, 0, Math.PI * 2);
+        targetCtx.fill();
+
+        // Impact Craters with Bright Radial Ejecta Rays (Tycho, Copernicus, Kepler)
+        // Tycho Crater Ejecta Rays (Southern crater with spectacular rays across whole disc)
+        const tychoX = cx - 8, tychoY = cy + 40;
+        targetCtx.save();
+        targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        targetCtx.lineWidth = 1.0;
+        const rayAngles = [-2.2, -1.8, -1.4, -1.1, -0.8, -0.4, 0.1, 0.6, 2.5, 2.8];
+        rayAngles.forEach(ang => {
+          targetCtx.beginPath();
+          targetCtx.moveTo(tychoX, tychoY);
+          targetCtx.lineTo(tychoX + Math.cos(ang) * 75, tychoY + Math.sin(ang) * 75);
+          targetCtx.stroke();
+        });
+
+        // Tycho Crater Central Peak & Rim
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.arc(tychoX, tychoY, 3.5, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
+        targetCtx.lineWidth = 1;
+        targetCtx.stroke();
+
+        // Copernicus Crater (Terraced Rim in Oceanus Procellarum)
+        const copX = cx - 18, copY = cy - 4;
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.arc(copX, copY, 4.2, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
+        targetCtx.lineWidth = 1;
+        targetCtx.stroke();
+        // Copernicus bright halo
+        targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        targetCtx.beginPath();
+        targetCtx.arc(copX, copY, 8, 0, Math.PI * 2);
+        targetCtx.stroke();
+
+        // Kepler & Aristarchus (Brightest spot on the Moon)
+        targetCtx.fillStyle = '#ffffff';
+        targetCtx.beginPath();
+        targetCtx.arc(cx - 34, cy - 2, 2.5, 0, Math.PI * 2);
+        targetCtx.arc(cx - 28, cy - 18, 2.5, 0, Math.PI * 2);
+        targetCtx.fill();
+        targetCtx.restore();
+      }
+
+      // Draw faint features on unlit face under Earthshine
+      mvCtx.save();
+      mvCtx.beginPath();
+      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      mvCtx.clip();
+      drawLunarSurfaceFeatures(mvCtx);
+      mvCtx.restore();
+
+      // 3. Sunlit Moon Disc with Clip Geometry & High-Contrast Features
       mvCtx.save();
       mvCtx.beginPath();
       mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
       mvCtx.clip();
 
+      // Build clipping path for the illuminated lunar portion
+      mvCtx.beginPath();
       if (normAngle <= 180) {
         // Waxing (Right side lit)
-        mvCtx.fillStyle = '#f8fafc';
-        mvCtx.beginPath();
         mvCtx.arc(cx, cy, r, -Math.PI * 0.5, Math.PI * 0.5);
-        mvCtx.fill();
-
-        // Terminator ellipse
         const xOffset = Math.cos(normAngle * Math.PI / 180) * r;
-        mvCtx.beginPath();
-        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, 0, Math.PI * 2);
-        mvCtx.fillStyle = normAngle < 90 ? '#1e293b' : '#f8fafc';
-        mvCtx.fill();
+        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, Math.PI * 0.5, -Math.PI * 0.5, normAngle < 90);
       } else {
         // Waning (Left side lit)
-        mvCtx.fillStyle = '#f8fafc';
-        mvCtx.beginPath();
         mvCtx.arc(cx, cy, r, Math.PI * 0.5, Math.PI * 1.5);
-        mvCtx.fill();
-
-        // Terminator ellipse
         const xOffset = Math.cos(normAngle * Math.PI / 180) * r;
+        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, -Math.PI * 0.5, Math.PI * 0.5, normAngle > 270);
+      }
+      mvCtx.closePath();
+      mvCtx.clip();
+
+      // Base bright anorthositic highlands
+      const moonAlbedo = mvCtx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+      moonAlbedo.addColorStop(0, '#f8fafc');
+      moonAlbedo.addColorStop(0.7, '#e2e8f0');
+      moonAlbedo.addColorStop(0.95, '#cbd5e1');
+      moonAlbedo.addColorStop(1, '#94a3b8'); // Limb darkening
+      mvCtx.fillStyle = moonAlbedo;
+      mvCtx.fillRect(cx - r, cy - r, r * 2, r * 2);
+
+      // Paint Maria, Craters, and Ejecta onto the sunlit hemisphere
+      drawLunarSurfaceFeatures(mvCtx);
+
+      // 4. 3D Relief & Elongated Shadows Along the Grazing Terminator
+      const cosTerm = Math.cos(normAngle * Math.PI / 180);
+      mvCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      for (let yStep = -r + 8; yStep <= r - 8; yStep += 10) {
+        const halfChord = Math.sqrt(Math.max(0, r * r - yStep * yStep));
+        const termX = cx + cosTerm * halfChord;
+        const termY = cy + yStep;
+        // Crater rim shadow along terminator
         mvCtx.beginPath();
-        mvCtx.ellipse(cx, cy, Math.abs(xOffset), r, 0, 0, Math.PI * 2);
-        mvCtx.fillStyle = normAngle < 270 ? '#f8fafc' : '#1e293b';
+        mvCtx.ellipse(termX, termY, 3.5, 2.5, 0.2, 0, Math.PI * 2);
         mvCtx.fill();
+        // Bright rim crest facing sun
+        mvCtx.fillStyle = '#ffffff';
+        mvCtx.fillRect(normAngle < 180 ? termX + 2 : termX - 2, termY - 1, 1.5, 1.5);
+        mvCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
       }
       mvCtx.restore();
 
-      // Crater textures for realism
-      mvCtx.fillStyle = 'rgba(100, 116, 139, 0.25)';
+      // Delicate outer limb ring
+      mvCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      mvCtx.lineWidth = 1;
       mvCtx.beginPath();
-      mvCtx.arc(cx - 15, cy - 10, 12, 0, Math.PI * 2);
-      mvCtx.arc(cx + 20, cy + 15, 18, 0, Math.PI * 2);
-      mvCtx.arc(cx - 25, cy + 25, 10, 0, Math.PI * 2);
-      mvCtx.fill();
+      mvCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      mvCtx.stroke();
 
       // Find closest named phase
       let closest = moonPhasesData[0];
@@ -1235,6 +1551,20 @@
       if (!showTrails) {
         stCtx.fillStyle = '#020617';
         stCtx.fillRect(0, 0, w, h);
+
+        // Soft Milky Way Galaxy dust wash
+        stCtx.save();
+        const mwGrad = stCtx.createLinearGradient(0, 0, w, h);
+        mwGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+        mwGrad.addColorStop(0.35, 'rgba(147, 197, 253, 0.05)');
+        mwGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.07)');
+        mwGrad.addColorStop(0.65, 'rgba(147, 197, 253, 0.05)');
+        mwGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        stCtx.fillStyle = mwGrad;
+        stCtx.beginPath();
+        stCtx.ellipse(cx, cy, w * 0.45, h * 0.85, 0.65, 0, Math.PI * 2);
+        stCtx.fill();
+        stCtx.restore();
       } else {
         stCtx.fillStyle = 'rgba(2, 6, 23, 0.08)';
         stCtx.fillRect(0, 0, w, h);
@@ -1256,17 +1586,33 @@
       let dubhePos = null;
       let merakPos = null;
       let polarisPos = null;
+      const starPositions = {};
 
       baseStars.forEach(s => {
         const angle = s.theta + skyAngle;
         const sx = cx + Math.cos(angle) * s.r;
         const sy = cy + Math.sin(angle) * s.r;
+        starPositions[s.id] = { x: sx, y: sy };
 
         if (s.id === 'dubhe') dubhePos = { x: sx, y: sy };
         if (s.id === 'merak') merakPos = { x: sx, y: sy };
         if (s.id === 'polaris') polarisPos = { x: sx, y: sy };
 
         const radius = Math.max(1, 4.5 - s.mag * 0.6);
+
+        // Diffraction spikes for bright first/second-magnitude stars
+        if (s.mag < 2.3 && !showTrails) {
+          stCtx.save();
+          stCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          stCtx.lineWidth = 0.8;
+          const spikeLen = (4.5 - s.mag) * 6;
+          stCtx.beginPath();
+          stCtx.moveTo(sx - spikeLen, sy); stCtx.lineTo(sx + spikeLen, sy);
+          stCtx.moveTo(sx, sy - spikeLen); stCtx.lineTo(sx, sy + spikeLen);
+          stCtx.stroke();
+          stCtx.restore();
+        }
+
         stCtx.beginPath();
         stCtx.arc(sx, sy, radius, 0, Math.PI * 2);
         stCtx.fillStyle = s.color;
@@ -1278,6 +1624,39 @@
           stCtx.fillText(s.name, sx + 5, sy + 3);
         }
       });
+
+      // Constellation Stick Figures (when not in trail accumulation mode)
+      if (!showTrails) {
+        stCtx.save();
+        stCtx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+        stCtx.lineWidth = 1;
+        stCtx.setLineDash([2, 3]);
+
+        // Big Dipper bowl & handle
+        const dipperOrder = ['alkaid', 'mizar', 'alioth', 'megrez', 'phecda', 'merak', 'dubhe', 'megrez'];
+        stCtx.beginPath();
+        for (let i = 0; i < dipperOrder.length; i++) {
+          const pt = starPositions[dipperOrder[i]];
+          if (pt) {
+            if (i === 0) stCtx.moveTo(pt.x, pt.y);
+            else stCtx.lineTo(pt.x, pt.y);
+          }
+        }
+        stCtx.stroke();
+
+        // Cassiopeia "W"
+        const casOrder = ['caph', 'schedar', 'gamma_cas', 'ruchbah', 'segin'];
+        stCtx.beginPath();
+        for (let i = 0; i < casOrder.length; i++) {
+          const pt = starPositions[casOrder[i]];
+          if (pt) {
+            if (i === 0) stCtx.moveTo(pt.x, pt.y);
+            else stCtx.lineTo(pt.x, pt.y);
+          }
+        }
+        stCtx.stroke();
+        stCtx.restore();
+      }
 
       // Pointer Line from Merak through Dubhe directly to Polaris!
       if (showPointers && dubhePos && merakPos && polarisPos) {

@@ -9,6 +9,8 @@
     "lessons/game-asset-studio/": "lessons/3d-design/game-asset-studio/"
   };
   var pages = {
+    "lessons/pi": "lessons/mathematics/geometry-and-trigonometry/pi",
+    "lessons/cambrian-explosion": "lessons/life-sciences/cambrian-explosion",
     "lessons/3d-design": "lessons/3d-design/3d-design",
     "lessons/applied-physics-materials/3d-printing": "lessons/3d-design/cad-and-printing/3d-printing",
     "lessons/applied-physics-materials/cad-camera-controls": "lessons/3d-design/cad-and-printing/cad-camera-controls",
@@ -102,5 +104,5 @@
     }
     return moved ? p : null;
   }
-  root.ClassroomOSLessonMoves = { version: 1, resolve: resolve };
+  root.ClassroomOSLessonMoves = { version: 2, resolve: resolve };
 }(typeof window !== 'undefined' ? window : globalThis));

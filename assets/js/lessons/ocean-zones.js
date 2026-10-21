@@ -32,7 +32,22 @@
   const ZONE_DETAILS = {
     sunlight: {
       energy:'Photosynthesis and surface food webs', challenge:'Rapidly changing light, waves, and temperature',
-      biodiversity:['Phytoplankton','Copepods','Jellyfish','Tuna','Flying fish','Sea turtles','Sharks','Dolphins','Seabirds','Sargassum'],
+      biodiversity:[
+        { name:'Phytoplankton', latin:'Diatoms & Dinoflagellates', role:'Primary producer', depth:'0–100 m', dive:30, fact:'Microscopic single-celled algae that perform over 40% of all solar photosynthesis on Earth, producing much of our oxygen.' },
+        { name:'Antarctic Krill', latin:'Euphausia superba', role:'Keystone herbivore', depth:'0–200 m', dive:60, fact:'Small bioluminescent crustaceans forming swarms of trillions, transferring solar energy from micro-algae to whales and penguins.' },
+        { name:'Copepods', latin:'Calanoida', role:'Primary consumer', depth:'0–200 m', dive:50, fact:'The most numerous multicellular animals on Earth by individual count, grazing on phytoplankton and feeding thousands of fish species.' },
+        { name:'Moon Jelly', latin:'Aurelia aurita', role:'Drifting predator', depth:'0–150 m', dive:40, fact:'Translucent bell pulses to create gentle water vortices that draw plankton and copepods into mucus-covered oral arms.' },
+        { name:'Flying Fish', latin:'Cheilopogon heterurus', role:'Epipelagic forager', depth:'0–20 m', dive:10, fact:'Accelerates underwater with 70 tail beats per second, bursts through the surface, and glides over 100 metres on enlarged pectoral fins.' },
+        { name:'Pacific Bluefin Tuna', latin:'Thunnus orientalis', role:'Apex pelagic predator', depth:'0–200 m', dive:70, fact:'Streamlined torpedo body with counter-current vascular heat exchangers keeping swimming muscles significantly warmer than surrounding seawater.' },
+        { name:'Leatherback Turtle', latin:'Dermochelys coriacea', role:'Pelagic gelatinivore', depth:'0–1,000+ m', dive:100, fact:'Feeds on large jellyfish and dives deeper than any other reptile, protected by thick insulating oily skin and collapsible lungs.' },
+        { name:'Great White Shark', latin:'Carcharodon carcharias', role:'Apex predator', depth:'0–1,200 m', dive:80, fact:'Navigates thousands of kilometres across open ocean, detecting minute microvolt electrical fields from prey heartbeats using ampullae of Lorenzini.' },
+        { name:'Bottlenose Dolphin', latin:'Tursiops truncatus', role:'Social odontocete', depth:'0–200 m', dive:20, fact:'Uses high-frequency echolocation clicks to construct detailed acoustic maps of fish schools in three-dimensional open water.' },
+        { name:'Manta Ray', latin:'Mobula birostris', role:'Pelagic filter feeder', depth:'0–120 m', dive:45, fact:'With a wingspan up to 7 metres, it funnels plankton-rich surface currents into its gill-raker filters using paddle-like cephalic lobes.' },
+        { name:'Ocean Sunfish', latin:'Mola mola', role:'Basking gelatinivore', depth:'0–200 m', dive:90, fact:'The heaviest bony fish on Earth (up to 2 tonnes); basks flat on the surface to warm its body after deep jellyfish-hunting dives.' },
+        { name:'Portuguese Man o’ War', latin:'Physalia physalis', role:'Colonial siphonophore', depth:'Surface 0 m', dive:5, fact:'Not a single jellyfish, but a colony of four specialized zooid types propelled by an asymmetric gas sail and trailing venomous fishing tentacles.' },
+        { name:'Sargassum Community', latin:'Sargassum fluitans', role:'Floating habitat provider', depth:'Surface 0 m', dive:5, fact:'Floating rafts of golden macroalgae kept buoyant by gas vesicles, sheltering hundreds of specialized endemic crabs, shrimp, and juvenile fishes.' },
+        { name:'Humpback Whale', latin:'Megaptera novaeangliae', role:'Migratory baleen whale', depth:'0–200 m', dive:35, fact:'Engulfs entire schools of krill and capelin by lunging with expandable pleated throat grooves, often after blowing spiraling bubble nets.' }
+      ],
       facts:[
         'The lower edge of the euphotic layer is not fixed. Clear tropical water may support photosynthesis near 200 m, while turbid coastal water can become too dim much sooner.',
         'Microscopic phytoplankton are primary producers: they turn light and dissolved carbon dioxide into food used throughout marine food webs.',
@@ -44,7 +59,20 @@
     },
     twilight: {
       energy:'Food descending from above and nightly feeding', challenge:'Dim light and often low dissolved oxygen',
-      biodiversity:['Lanternfish','Bristlemouths','Hatchetfish','Viperfish','Krill','Siphonophores','Vampire squid','Jellies','Shrimp','Salps'],
+      biodiversity:[
+        { name:'Lanternfish', latin:'Myctophidae', role:'Diel vertical migrator', depth:'200–1,000 m', dive:500, fact:'Dominates the world’s vertebrate biomass; rises into the sunlit surface every night by the billions to feast on copepods, returning before dawn.' },
+        { name:'Bristlemouth', latin:'Cyclothone signata', role:'Mesopelagic predator', depth:'300–1,000 m', dive:650, fact:'Widely believed to be the most abundant vertebrate on Earth, with hundreds of trillions patrolling twilight depths worldwide.' },
+        { name:'Marine Hatchetfish', latin:'Argyropelecus', role:'Counterillumination master', depth:'200–800 m', dive:450, fact:'Ultra-narrow silver body with belly photophores matching the exact intensity and color of filtered blue downwelling sunlight.' },
+        { name:'Pacific Viperfish', latin:'Chauliodus macouni', role:'Fanged ambush hunter', depth:'250–1,000 m', dive:700, fact:'Carries needle fangs so long they do not fit inside its mouth; hinges its skull backward to spear passing squid and lanternfish.' },
+        { name:'Vampire Squid', latin:'Vampyroteuthis infernalis', role:'Detritivore', depth:'600–900 m', dive:800, fact:'Unrolls long sticky sensory filaments to harvest sinking marine snow in oxygen-depleted layers without wasting energy hunting.' },
+        { name:'Stoplight Loosejaw', latin:'Malacosteus niger', role:'Red-light hunter', depth:'500–1,000 m', dive:750, fact:'Produces invisible far-red bioluminescence and possesses special retinal pigments to detect crimson shrimp in total darkness.' },
+        { name:'Barreleye Fish', latin:'Macropinna microstoma', role:'Tubular-eyed hunter', depth:'400–800 m', dive:600, fact:'A transparent fluid-filled dome over its head encases glowing green tubular eyes that rotate upward to spot the silhouettes of siphonophores.' },
+        { name:'Giant Siphonophore', latin:'Praya dubia', role:'Colonial predator', depth:'300–1,000 m', dive:550, fact:'Reaches over 40 metres in length, trailing thousands of stinging tentacles that form a deadly curtain in the twilight drift.' },
+        { name:'Comb Jelly (Ctenophore)', latin:'Beroe / Mertensia', role:'Iridescent predator', depth:'200–1,000 m', dive:400, fact:'Eight longitudinal rows of microscopic cilia beat in sequence, diffracting light into shimmering rainbow bands and flashing bioluminescent blue.' },
+        { name:'Glass Octopus', latin:'Vitreledonella alberti', role:'Transparent cephalopod', depth:'300–1,000 m', dive:650, fact:'Almost entirely transparent; only its narrow digestive gland and rectangular optic eyes cast shadows in the dim blue downwelling light.' },
+        { name:'Snipe Eel', latin:'Nemichthys scolopaceus', role:'Slender forager', depth:'400–1,000 m', dive:750, fact:'Bird-like curving jaws covered in tiny backward recurved teeth that snare the long, delicate antennae of passing deep-sea shrimp.' },
+        { name:'Pelagic Salp Chain', latin:'Salpa fusiformis', role:'Rapid filter feeder', depth:'200–800 m', dive:350, fact:'Barrel-shaped gelatinous tunicates linked into colonies metres long, pumping water through internal mucous nets to vacuum down marine snow.' }
+      ],
       facts:[
         'Every evening, immense numbers of fishes, crustaceans, and gelatinous animals rise toward surface food; before sunrise they descend again.',
         'This diel vertical migration moves carbon into deeper water when migrants feed near the surface and respire or release waste below.',
@@ -56,7 +84,20 @@
     },
     midnight: {
       energy:'Marine snow, migrating prey, and rare food falls', challenge:'Permanent darkness, cold, and high pressure',
-      biodiversity:['Anglerfish','Dragonfish','Viperfish','Pelican eels','Giant squid','Glass squid','Deep jellies','Siphonophores','Shrimp','Bristlemouths'],
+      biodiversity:[
+        { name:'Deep-sea Anglerfish', latin:'Ceratiidae', role:'Bioluminescent lure hunter', depth:'1,000–3,500 m', dive:2000, fact:'Females carry an illicium fishing rod with an esca lure packed with glowing symbiotic bacteria to entice prey in the pitch dark.' },
+        { name:'Giant Squid', latin:'Architeuthis dux', role:'Apex bathypelagic predator', depth:'1,000–2,500 m', dive:1800, fact:'Features 27-centimetre dinner-plate eyes and toothed tentacle suckers; hunts deep-sea fishes and battles diving sperm whales.' },
+        { name:'Colossal Squid', latin:'Mesonychoteuthis hamiltoni', role:'Heavyweight cephalopod', depth:'1,200–3,000 m', dive:2200, fact:'Heavier than the giant squid, armed with sharp swiveling hooks along its tentacle clubs for impaling Antarctic toothfish.' },
+        { name:'Pelican Eel', latin:'Eurypharynx pelecanoides', role:'Expandable gulper', depth:'1,000–3,000 m', dive:2400, fact:'Enormous loose-hinged pouch jaw allows it to engulf whole swarms of crustaceans; tail tip glows with a pink bioluminescent beacon.' },
+        { name:'Black Swallower', latin:'Chiasmodon niger', role:'Opportunistic carnivore', depth:'1,000–2,700 m', dive:1900, fact:'A highly distensible stomach expands like a rubber balloon to swallow bony fishes more than double its length and ten times its mass.' },
+        { name:'Dumbo Octopus', latin:'Grimpoteuthis', role:'Benthic/pelagic cirrate', depth:'1,000–4,000 m', dive:2800, fact:'Ear-like fins flap gracefully like elephant ears, hovering effortlessly over the sediment without wasting precious metabolic energy.' },
+        { name:'Fangtooth', latin:'Anoplogaster cornuta', role:'Armored predator', depth:'1,000–3,000 m', dive:1600, fact:'Possesses the largest teeth proportional to body size of any marine fish, with pockets in its braincase to house bottom fangs when jaws close.' },
+        { name:'Deep-sea Dragonfish', latin:'Stomiidae', role:'Bioluminescent predator', depth:'1,000–2,000 m', dive:1500, fact:'Equipped with chin barbels tipped with glowing lures, large fangs, and photophore light organs running along its lateral flanks.' },
+        { name:'Marrus Siphonophore', latin:'Marrus claudanielis', role:'Coordinated colony', depth:'1,000–2,500 m', dive:2100, fact:'A colonial super-organism with specialized nectophores for propulsion and stomach zooids sharing nutrients via a central stem canal.' },
+        { name:'Coffinfish', latin:'Chaunax', role:'Inflatable ambush hunter', depth:'1,000–2,500 m', dive:2300, fact:'Walks along deep slopes on modified pectoral fins and can inflate its body with water like a pufferfish to store oxygen.' },
+        { name:'Crimson Opossum Shrimp', latin:'Gnathophausia ingens', role:'Deep crustacean', depth:'1,000–3,000 m', dive:1700, fact:'Vibrant ruby-red carapace absorbs deep blue wavelengths, rendering it completely invisible to most midnight predators.' },
+        { name:'Bigred Jelly', latin:'Tiburonia granrojo', role:'Armless giant medusa', depth:'1,500–3,500 m', dive:2600, fact:'Reaches 1 metre across; lacks stinging tentacles and instead uses fleshy, velvety dark red feeding arms to capture prey.' }
+      ],
       facts:[
         'At 2,000 m, absolute pressure is roughly 200 atmospheres—about 20 megapascals in this representative seawater model.',
         'Sunlight is absent, but living light is common. Animals use bioluminescence to lure prey, signal, camouflage, startle, or illuminate targets.',
@@ -68,7 +109,20 @@
     },
     abyss: {
       energy:'Settling detritus, carcasses, and local chemosynthesis', challenge:'Extreme food scarcity across a vast seafloor',
-      biodiversity:['Sea cucumbers','Brittle stars','Polychaete worms','Amphipods','Isopods','Grenadiers','Sponges','Sea spiders','Xenophyophores','Microbes'],
+      biodiversity:[
+        { name:'Sea Pig', latin:'Scotoplanes globosa', role:'Abyssal deposit feeder', depth:'4,000–6,000 m', dive:5000, fact:'Translucent pink sea cucumbers marching in herds on hydraulic tube feet across soft sediment, extracting organic detritus.' },
+        { name:'Tripod Fish', latin:'Bathypterois grallator', role:'Stilt ambush predator', depth:'4,000–5,800 m', dive:4700, fact:'Three stiffened fin rays extend over 1 metre to elevate the fish above benthic boundary friction, facing upstream to snare copepods.' },
+        { name:'Abyssal Grenadier (Rattail)', latin:'Coryphaenoides armatus', role:'Apex abyssal scavenger', depth:'4,000–5,500 m', dive:4500, fact:'Large sensory head detects chemical plumes from distant carcasses; cruises vast distances over barren abyssal plains.' },
+        { name:'Giant Isopod', latin:'Bathynomus giganteus', role:'Deep-sea scavenger', depth:'4,000–5,500 m', dive:4200, fact:'Deep-sea gigantism enables this 40-centimetre crustacean to withstand crushing pressure and fast for over 5 years between meal falls.' },
+        { name:'Glass Sponge', latin:'Hexactinellida / Euplectella', role:'Structural filter feeder', depth:'4,000–6,000 m', dive:5200, fact:'Weaves an intricate hexagonal skeleton of pure biogenic silica (fiber-optic glass) that anchors into soft ooze and shelters shrimp.' },
+        { name:'Deep-sea Brittle Star', latin:'Ophiuroidea', role:'Benthic scavenger', depth:'4,000–6,000 m', dive:4800, fact:'Flexible jointed arms crawl across muddy plains, trapping fallen marine snow particles or scavenging carcass remnants.' },
+        { name:'Faceless Cusk Eel', latin:'Typhlonus nasus', role:'Blind benthic forager', depth:'4,000–5,100 m', dive:4600, fact:'Features no visible external eyes and a mouth positioned underneath its gelatinous bulbous snout, vacuuming mud for worms.' },
+        { name:'Deep-sea Anemone', latin:'Actiniaria', role:'Sessile ambush predator', depth:'4,000–6,000 m', dive:5100, fact:'Anchored to dropstones and manganese nodules, waving nematocyst-laden tentacles to sting passing amphipods and small crustaceans.' },
+        { name:'Benthic Foraminiferan', latin:'Bathyallogromia', role:'Single-celled giant', depth:'4,000–6,000 m', dive:5400, fact:'Gigantic single-celled protozoans extending branching pseudopodia networks to trap marine snow particles settling on seafloor ooze.' },
+        { name:'Sea Spider', latin:'Pycnogonida / Colossendeis', role:'Slow-motion predator', depth:'4,000–6,000 m', dive:4900, fact:'Leg span exceeding 60 centimetres; internal organs extend directly into its legs, feeding on cnidarians with a tubular proboscis.' },
+        { name:'Crown Jelly', latin:'Periphylla periphylla', role:'Helmet medusa', depth:'4,000–5,500 m', dive:4400, fact:'Deep mahogany bell with a coronal groove; flashes intense blue bioluminescent waves along its margin when touched.' },
+        { name:'Bone-eating Worm', latin:'Osedax mucofloris', role:'Whale-fall specialist', depth:'4,000–5,500 m', dive:4300, fact:'Females lack mouths and guts; drill green root-like vascular structures into sunken whale bones, using bacterial symbionts to digest collagen.' }
+      ],
       facts:[
         'Abyssal plains are among Earth’s largest habitats. Their soft sediment is built from mineral dust, clay, shells, and organic particles settling over long periods.',
         'Sea cucumbers and other deposit feeders ingest sediment, digest its organic material, and leave trails that continually rework the seafloor.',
@@ -80,7 +134,18 @@
     },
     trench: {
       energy:'Organic matter funneled down trench slopes', challenge:'Enormous pressure and geographic isolation',
-      biodiversity:['Hadal snailfish','Amphipods','Sea cucumbers','Polychaete worms','Bivalves','Isopods','Foraminiferans','Anemones','Crustaceans','Pressure-loving microbes'],
+      biodiversity:[
+        { name:'Mariana Snailfish', latin:'Pseudoliparis swirei', role:'Hadal apex predator', depth:'6,000–8,336 m', dive:8000, fact:'The deepest living fish on Earth; soft translucent scaleless body packed with TMAO osmolytes that prevent protein denaturation under 800 atm.' },
+        { name:'Supergiant Hadal Amphipod', latin:'Hirondellea gigas', role:'Dominant hadal scavenger', depth:'6,000–10,935 m', dive:10000, fact:'Thrives in thousands at Challenger Deep; possesses unique cellulase enzymes to digest woody plant debris funneled down trench walls.' },
+        { name:'Hadal Sea Cucumber', latin:'Elasipodida', role:'Trench deposit feeder', depth:'6,000–10,935 m', dive:9500, fact:'Feeds on organic matter funneled into trench troughs, with gelatinous pressure-tolerant tissues containing over 95% water.' },
+        { name:'Hadal Polychaete Worm', latin:'Macellicephala', role:'Burrower & scavenger', depth:'6,000–10,935 m', dive:10500, fact:'Segmented scale worms and bristle worms burrowing through hadal mud, grazing on chemosynthetic biofilms and carcass residue.' },
+        { name:'Xenophyophore', latin:'Syringammina fragilissima', role:'Single-celled architect', depth:'6,000–10,600 m', dive:9000, fact:'One of the largest single cells known (up to 20 cm); cements sediment grains into delicate sponge-like tests that create habitat for smaller organisms.' },
+        { name:'Piezophile Microbes', latin:'Colwellia marinimembrana', role:'Hadal decomposer', depth:'6,000–10,935 m', dive:10900, fact:'Obligate pressure-loving bacteria and archaea with polyunsaturated fatty acid membranes that remain fluid under 1,100 atm of pressure.' },
+        { name:'Hadal Acorn Worm', latin:'Enteropneusta', role:'Deposit consumer', depth:'6,000–9,000 m', dive:8500, fact:'Fragile hemichordates leaving spiral grazing trails on hadal sediment slopes as they ingest organic-rich trench sediments.' },
+        { name:'Hadal Bivalves', latin:'Vesicomyidae / Thyasiridae', role:'Chemosynthetic mollusk', depth:'6,000–8,500 m', dive:7500, fact:'Small thick-shelled clams hosting symbiotic sulfide-oxidizing bacteria in their gills at active trench fault seeps.' },
+        { name:'Hadal Sea Anemone', latin:'Galatheanthemum', role:'Abyssal/hadal cnidarian', depth:'6,000–10,500 m', dive:10200, fact:'Anchored in rigid chitinous tubes deep in trench sediment, extending stinging tentacles to catch falling amphipods.' },
+        { name:'Trench Mysid Shrimp', latin:'Mysida', role:'Free-swimming crustacean', depth:'6,000–8,800 m', dive:8200, fact:'Hovers gracefully in hadal bottom water, sweeping detrital particles funneled downward by underwater landslides.' }
+      ],
       facts:[
         'The hadal zone is discontinuous: it exists inside separate trenches created mainly where one tectonic plate bends beneath another.',
         'Steep trench slopes can funnel organic matter downward, so some hadal basins contain more food than the open abyss immediately above them.',
@@ -248,6 +313,586 @@ outer.tabIndex = 0;
   subImage.decoding = 'async';
   subImage.src = '../../assets/images/ocean-zones/research-sub.webp';
 
+  /* ══════════════════════════════════════════
+     AMBIENT OCEAN FAUNA
+  ══════════════════════════════════════════ */
+  class AmbientFaunaManager {
+    constructor() {
+      this.fauna = [
+        // SUNLIGHT TIER (0 - 200 m)
+        { id:'school_sun', type:'school', isLantern:false, x: 260, y: 140, vx: -38, depthMin: 0, depthMax: 190, count: 14,
+          members: Array.from({length: 14}, (_, i) => ({ ox: (i % 5) * 16 - 32 + (i * 3) % 7, oy: Math.floor(i / 5) * 11 - 11, phase: i * 0.7, size: 7 + (i % 3) * 2 })) },
+        { id:'tuna_sun', type:'tuna', x: 120, y: 210, vx: 58, vy: -1.5, depthMin: 15, depthMax: 200, size: 38, phase: 0 },
+        { id:'turtle_sun', type:'turtle', x: 520, y: 110, vx: -22, vy: 1, depthMin: 0, depthMax: 160, size: 38, phase: 1.2 },
+        { id:'manta_sun', type:'manta', x: 70, y: 130, vx: 26, vy: 1.2, depthMin: 0, depthMax: 140, size: 48, phase: 2.1 },
+        { id:'jelly_sun1', type:'jelly', isCrown:false, x: 300, y: 160, vx: 7, vy: -7, depthMin: 0, depthMax: 220, size: 19, phase: 0.4 },
+        { id:'jelly_sun2', type:'jelly', isCrown:false, x: 440, y: 250, vx: -6, vy: -6, depthMin: 20, depthMax: 210, size: 15, phase: 1.8 },
+
+        // TWILIGHT TIER (200 - 1000 m)
+        { id:'lantern_school', type:'school', isLantern:true, x: 480, y: 180, vx: -32, depthMin: 200, depthMax: 1000, count: 10,
+          members: Array.from({length: 10}, (_, i) => ({ ox: (i % 4) * 18 - 27, oy: Math.floor(i / 4) * 13 - 13, phase: i * 0.6, size: 9 + (i % 3) * 2 })) },
+        { id:'hatchet_tw1', type:'hatchet', x: 260, y: 210, vx: 18, vy: -1, depthMin: 220, depthMax: 880, size: 18, phase: 0.9 },
+        { id:'hatchet_tw2', type:'hatchet', x: 400, y: 140, vx: -16, vy: 1, depthMin: 260, depthMax: 920, size: 16, phase: 2.4 },
+        { id:'comb_jelly', type:'combjelly', x: 340, y: 200, vx: 11, vy: -5, depthMin: 200, depthMax: 1200, size: 22, phase: 3.1 },
+        { id:'siphonophore_col', type:'siphonophore', x: 180, y: 160, vx: 13, vy: 3, depthMin: 250, depthMax: 1600, size: 75, phase: 1.5 },
+        { id:'viper_tw', type:'viperfish', x: 520, y: 260, vx: -25, vy: 0, depthMin: 320, depthMax: 1100, size: 30, phase: 4.2 },
+
+        // MIDNIGHT TIER (1000 - 4000 m)
+        { id:'squid_mid', type:'squid', x: 560, y: 180, vx: -28, vy: -2, depthMin: 1000, depthMax: 3500, size: 66, phase: 0.8 },
+        { id:'angler_mid', type:'angler', x: 300, y: 240, vx: 15, vy: 1, depthMin: 1100, depthMax: 3800, size: 32, phase: 2.7 },
+        { id:'gulper_mid', type:'gulpereel', x: 150, y: 210, vx: 20, vy: -2, depthMin: 1200, depthMax: 3600, size: 75, phase: 1.1 },
+        { id:'prawn_mid', type:'prawn', x: 410, y: 280, vx: -13, vy: -3, depthMin: 1000, depthMax: 3300, size: 19, phase: 3.8 },
+        { id:'dumbo_mid', type:'dumbo', x: 470, y: 220, vx: 14, vy: 2, depthMin: 1400, depthMax: 4100, size: 25, phase: 5.0 },
+
+        // ABYSS TIER (4000 - 6000 m)
+        { id:'tripod_aby', type:'tripod', x: 380, y: 310, vx: 0, vy: 0, depthMin: 3900, depthMax: 6000, size: 40, phase: 0 },
+        { id:'seapig_aby1', type:'seapig', x: 240, y: 322, vx: 7, vy: 0, depthMin: 4000, depthMax: 6000, size: 26, phase: 1.4 },
+        { id:'seapig_aby2', type:'seapig', x: 530, y: 325, vx: -6, vy: 0, depthMin: 4100, depthMax: 6000, size: 23, phase: 3.2 },
+        { id:'grenadier_aby', type:'grenadier', x: 180, y: 260, vx: 22, vy: -1.5, depthMin: 3800, depthMax: 5900, size: 44, phase: 2.1 },
+        { id:'crown_jelly_aby', type:'jelly', isCrown:true, x: 450, y: 190, vx: -10, vy: -4, depthMin: 3600, depthMax: 5800, size: 25, phase: 4.5 },
+
+        // TRENCH TIER (6000 - 11000 m)
+        { id:'snailfish_tr1', type:'snailfish', x: 320, y: 230, vx: 18, vy: 1.5, depthMin: 6000, depthMax: 8400, size: 32, phase: 0.5 },
+        { id:'snailfish_tr2', type:'snailfish', x: 510, y: 190, vx: -17, vy: -1.5, depthMin: 6300, depthMax: 8400, size: 27, phase: 2.8 },
+        { id:'amphipod_swarm_tr', type:'amphipods', x: 420, y: 270, vx: -12, vy: 2, depthMin: 6000, depthMax: 11000, size: 9,
+          members: Array.from({length: 12}, (_, i) => ({ ox: (i % 4) * 9 - 13, oy: Math.floor(i / 4) * 7 - 7, phase: i * 0.9 })) },
+        { id:'hadal_worm_tr', type:'polychaete', x: 230, y: 290, vx: 15, vy: -1, depthMin: 6400, depthMax: 11000, size: 36, phase: 1.9 },
+        { id:'hadal_cuc_tr', type:'hadalcucumber', x: 490, y: 326, vx: 5, vy: 0, depthMin: 6800, depthMax: 11000, size: 28, phase: 3.5 }
+      ];
+    }
+
+    update(dt, now, depth) {
+      if (!W || !H) return;
+      this.fauna.forEach(c => {
+        c.x += c.vx * dt;
+        c.y += (c.vy || 0) * dt;
+
+        // Keep seafloor-dwellers anchored on the seafloor boundary
+        if (c.type === 'tripod') {
+          c.y = H * 0.81;
+        } else if (c.type === 'seapig' || c.type === 'hadalcucumber') {
+          c.y = H * 0.835;
+        }
+
+        // Horizontal screen wrap
+        if (c.vx > 0 && c.x > W + 90) c.x = -80;
+        if (c.vx < 0 && c.x < -90) c.x = W + 80;
+      });
+    }
+
+    draw(ctx, depth, light, now) {
+      if (!W || !H) return;
+      const subX = W * 0.17, subY = H * 0.66;
+      const lightRatio = lightPct(depth) / 100;
+
+      this.fauna.forEach(c => {
+        // Depth-tier visibility window with smooth fade
+        if (depth < c.depthMin - 150 || depth > c.depthMax + 150) return;
+        const depthAlpha = clamp(Math.min((depth - (c.depthMin - 150)) / 150, ((c.depthMax + 150) - depth) / 150), 0, 1);
+        if (depthAlpha <= 0.01) return;
+
+        // Headlight beam illumination calculation
+        const dx = c.x - subX, dy = c.y - subY;
+        const dist = Math.hypot(dx, dy);
+        const angle = Math.atan2(dy, dx);
+        const inBeam = lightRatio < 0.55 && dx > -20 && dist < W * 0.44 && Math.abs(angle) < 0.62;
+        const beamIntensity = inBeam ? clamp(1 - dist / (W * 0.44), 0, 1) * clamp((0.55 - lightRatio) * 2.2, 0, 1) : 0;
+
+        ctx.save();
+        const waveY = (c.type === 'tripod' || c.type === 'seapig' || c.type === 'hadalcucumber') ? 0 : Math.sin(now * 0.0018 + c.phase) * 5;
+        ctx.translate(c.x, c.y + waveY);
+        if (c.vx < 0) ctx.scale(-1, 1);
+
+        this.renderCreature(ctx, c, depthAlpha, lightRatio, beamIntensity, now);
+        ctx.restore();
+      });
+    }
+
+    renderCreature(ctx, c, alpha, light, beam, now) {
+      const lit = beam > 0.08 || light > 0.35;
+      const beamGleam = clamp(beam * 1.4, 0, 1);
+
+      switch (c.type) {
+        case 'school': {
+          c.members.forEach(m => {
+            const mx = m.ox, my = m.oy + Math.sin(now * 0.0032 + m.phase) * 4;
+            const mTail = Math.sin(now * 0.012 + m.phase) * 3;
+            ctx.save();
+            ctx.translate(mx, my);
+
+            if (c.isLantern) {
+              // Lanternfish silhouette + bioluminescent belly photophores
+              const bodyCol = lit ? 'rgba(160,205,230,' + (0.85 * alpha) + ')' : 'rgba(12,24,42,' + (0.75 * alpha) + ')';
+              ctx.fillStyle = bodyCol;
+              ctx.beginPath(); ctx.ellipse(0, 0, m.size, m.size * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+              // Tail fin
+              ctx.beginPath(); ctx.moveTo(-m.size * 0.8, 0); ctx.lineTo(-m.size * 1.35, -m.size * 0.4 + mTail); ctx.lineTo(-m.size * 1.1, mTail); ctx.lineTo(-m.size * 1.35, m.size * 0.4 + mTail); ctx.closePath(); ctx.fill();
+
+              // Ventral photophore line
+              ctx.fillStyle = 'rgba(95,242,255,' + (0.95 * alpha) + ')';
+              ctx.shadowColor = '#5ff2ff'; ctx.shadowBlur = 4;
+              for (let p = 0; p < 4; p++) {
+                ctx.beginPath(); ctx.arc(-m.size * 0.4 + p * (m.size * 0.3), m.size * 0.28, 1, 0, Math.PI * 2); ctx.fill();
+              }
+            } else {
+              // Surface schooling fish (silvery mackerel/sardines)
+              const bodyAlpha = (0.35 + light * 0.45 + beamGleam * 0.3) * alpha;
+              ctx.fillStyle = 'rgba(215,245,255,' + bodyAlpha + ')';
+              ctx.beginPath(); ctx.ellipse(0, 0, m.size, m.size * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+              ctx.beginPath(); ctx.moveTo(-m.size * 0.8, 0); ctx.lineTo(-m.size * 1.3, -m.size * 0.35 + mTail); ctx.lineTo(-m.size * 1.1, mTail); ctx.lineTo(-m.size * 1.3, m.size * 0.35 + mTail); ctx.closePath(); ctx.fill();
+              // Specular glint along spine
+              ctx.strokeStyle = 'rgba(255,255,255,' + (0.55 * alpha) + ')';
+              ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(-m.size * 0.5, -m.size * 0.12); ctx.lineTo(m.size * 0.5, -m.size * 0.08); ctx.stroke();
+            }
+            ctx.restore();
+          });
+          break;
+        }
+
+        case 'tuna': {
+          const tailWag = Math.sin(now * 0.009 + c.phase) * 6;
+          // Body
+          ctx.fillStyle = lit ? 'rgba(70,140,195,' + (0.85 * alpha) + ')' : 'rgba(10,35,65,' + (0.75 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size, c.size * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+          // Silvery belly countershading
+          ctx.fillStyle = lit ? 'rgba(220,245,255,' + (0.9 * alpha) + ')' : 'rgba(80,125,160,' + (0.6 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, c.size * 0.08, c.size * 0.9, c.size * 0.22, 0, 0, Math.PI); ctx.fill();
+          // Crescent tail fin
+          ctx.fillStyle = lit ? 'rgba(50,110,165,' + (0.85 * alpha) + ')' : 'rgba(8,28,52,' + (0.75 * alpha) + ')';
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.85, 0);
+          ctx.lineTo(-c.size * 1.45, -c.size * 0.65 + tailWag);
+          ctx.lineTo(-c.size * 1.15, tailWag);
+          ctx.lineTo(-c.size * 1.45, c.size * 0.65 + tailWag);
+          ctx.closePath(); ctx.fill();
+          // Yellow finlet hints
+          if (lit) {
+            ctx.fillStyle = 'rgba(255,215,80,' + (0.8 * alpha) + ')';
+            for (let f = 0; f < 3; f++) {
+              ctx.beginPath(); ctx.arc(-c.size * 0.5 - f * 6, -c.size * 0.28, 1.5, 0, Math.PI * 2); ctx.fill();
+              ctx.beginPath(); ctx.arc(-c.size * 0.5 - f * 6, c.size * 0.28, 1.5, 0, Math.PI * 2); ctx.fill();
+            }
+          }
+          break;
+        }
+
+        case 'turtle': {
+          const flap = Math.sin(now * 0.0028 + c.phase) * 11;
+          // Carapace shell
+          ctx.fillStyle = lit ? 'rgba(65,115,95,' + (0.85 * alpha) + ')' : 'rgba(15,40,32,' + (0.7 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.55, c.size * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+          // Head
+          ctx.fillStyle = lit ? 'rgba(80,135,110,' + (0.85 * alpha) + ')' : 'rgba(18,48,38,' + (0.7 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(c.size * 0.65, 0, c.size * 0.16, c.size * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+          // Large front flippers
+          ctx.beginPath(); ctx.moveTo(c.size * 0.2, -c.size * 0.25);
+          ctx.quadraticCurveTo(c.size * 0.1, -c.size * 0.85 + flap, -c.size * 0.2, -c.size * 0.75 + flap);
+          ctx.lineTo(-c.size * 0.05, -c.size * 0.2);
+          ctx.fill();
+          ctx.beginPath(); ctx.moveTo(c.size * 0.2, c.size * 0.25);
+          ctx.quadraticCurveTo(c.size * 0.1, c.size * 0.85 - flap, -c.size * 0.2, c.size * 0.75 - flap);
+          ctx.lineTo(-c.size * 0.05, c.size * 0.2);
+          ctx.fill();
+          break;
+        }
+
+        case 'manta': {
+          const wingFlap = Math.sin(now * 0.0022 + c.phase) * 14;
+          ctx.fillStyle = lit ? 'rgba(40,75,100,' + (0.8 * alpha) + ')' : 'rgba(8,24,38,' + (0.65 * alpha) + ')';
+          // Diamond body & wings
+          ctx.beginPath();
+          ctx.moveTo(c.size * 0.45, 0);
+          ctx.quadraticCurveTo(c.size * 0.15, -c.size * 0.75 + wingFlap, -c.size * 0.25, -c.size * 0.65 + wingFlap);
+          ctx.lineTo(-c.size * 0.35, 0);
+          ctx.lineTo(-c.size * 0.25, c.size * 0.65 - wingFlap);
+          ctx.quadraticCurveTo(c.size * 0.15, c.size * 0.75 - wingFlap, c.size * 0.45, 0);
+          ctx.fill();
+          // Cephalic lobes (horns)
+          ctx.beginPath(); ctx.moveTo(c.size * 0.45, -c.size * 0.12); ctx.lineTo(c.size * 0.62, -c.size * 0.08); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(c.size * 0.45, c.size * 0.12); ctx.lineTo(c.size * 0.62, c.size * 0.08); ctx.stroke();
+          // Long whip tail
+          ctx.strokeStyle = lit ? 'rgba(30,60,85,' + (0.75 * alpha) + ')' : 'rgba(6,18,30,' + (0.6 * alpha) + ')';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.35, 0);
+          ctx.quadraticCurveTo(-c.size * 0.8, Math.sin(now * 0.002 + c.phase) * 5, -c.size * 1.5, Math.sin(now * 0.003 + c.phase) * 8);
+          ctx.stroke();
+          break;
+        }
+
+        case 'jelly': {
+          const pulse = Math.sin(now * 0.0024 + c.phase);
+          const bellW = c.size * (1 + pulse * 0.14), bellH = c.size * (0.8 - pulse * 0.1);
+          ctx.save();
+          if (c.isCrown) {
+            // Deep-sea Crown Jelly (Periphylla): ruby-crimson in headlight beam, pitch black in dark water!
+            const crownCol = lit
+              ? 'rgba(215,35,52,' + (0.9 * alpha) + ')'
+              : 'rgba(18,12,18,' + (0.55 * alpha) + ')';
+            ctx.fillStyle = crownCol;
+            ctx.beginPath(); ctx.ellipse(0, 0, bellW, bellH, 0, Math.PI, 0); ctx.fill();
+            // Coronal ring groove
+            ctx.strokeStyle = lit ? 'rgba(140,15,28,' + (0.85 * alpha) + ')' : 'rgba(8,4,8,' + (0.45 * alpha) + ')';
+            ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, bellW * 0.65, Math.PI, 0); ctx.stroke();
+          } else {
+            // Moon jelly: translucent white-cyan
+            const jellyGrad = ctx.createRadialGradient(0, -bellH * 0.2, 0, 0, 0, bellW);
+            jellyGrad.addColorStop(0, 'rgba(235,250,255,' + (0.55 * alpha) + ')');
+            jellyGrad.addColorStop(0.7, 'rgba(140,225,255,' + (0.28 * alpha) + ')');
+            jellyGrad.addColorStop(1, 'rgba(100,200,245,' + (0.05 * alpha) + ')');
+            ctx.fillStyle = jellyGrad;
+            ctx.beginPath(); ctx.ellipse(0, 0, bellW, bellH, 0, Math.PI, 0); ctx.fill();
+          }
+
+          // Trailing tentacles
+          ctx.strokeStyle = c.isCrown
+            ? (lit ? 'rgba(220,50,65,' + (0.75 * alpha) + ')' : 'rgba(22,14,20,' + (0.45 * alpha) + ')')
+            : 'rgba(180,235,255,' + (0.35 * alpha) + ')';
+          ctx.lineWidth = 0.9;
+          for (let t = -3; t <= 3; t++) {
+            const tx = t * (bellW * 0.22);
+            ctx.beginPath(); ctx.moveTo(tx, 0);
+            const w1 = Math.sin(now * 0.003 + t * 0.8) * 8;
+            const w2 = Math.sin(now * 0.002 + t * 0.9) * 12;
+            ctx.bezierCurveTo(tx + w1, bellH * 0.8, tx + w2, bellH * 1.6, tx + w1 * 1.5, bellH * 2.4);
+            ctx.stroke();
+          }
+          ctx.restore();
+          break;
+        }
+
+        case 'hatchet': {
+          ctx.save();
+          // Hatchet body: high deep chest, abrupt slender tail
+          ctx.fillStyle = lit ? 'rgba(195,225,245,' + (0.85 * alpha) + ')' : 'rgba(18,34,52,' + (0.75 * alpha) + ')';
+          ctx.beginPath();
+          ctx.moveTo(c.size * 0.5, -c.size * 0.1);
+          ctx.lineTo(c.size * 0.3, c.size * 0.75);
+          ctx.lineTo(-c.size * 0.1, c.size * 0.7);
+          ctx.lineTo(-c.size * 0.25, c.size * 0.15);
+          ctx.lineTo(-c.size * 0.7, c.size * 0.1);
+          ctx.lineTo(-c.size * 0.85, 0);
+          ctx.lineTo(-c.size * 0.7, -c.size * 0.1);
+          ctx.lineTo(c.size * 0.1, -c.size * 0.25);
+          ctx.closePath();
+          ctx.fill();
+
+          // Upward-pointing tubular eye
+          ctx.fillStyle = lit ? '#061824' : '#030c14';
+          ctx.beginPath(); ctx.arc(c.size * 0.32, -c.size * 0.18, 2.2, 0, Math.PI * 2); ctx.fill();
+
+          // Downward counterillumination photophores
+          ctx.fillStyle = 'rgba(95,235,255,' + (0.95 * alpha) + ')';
+          ctx.shadowColor = '#62e8ff'; ctx.shadowBlur = 5;
+          for (let p = 0; p < 5; p++) {
+            ctx.fillRect(c.size * 0.22 - p * (c.size * 0.1), c.size * 0.65, 1.8, 3.5);
+          }
+          ctx.restore();
+          break;
+        }
+
+        case 'combjelly': {
+          ctx.save();
+          // Glowing translucent oval
+          const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, c.size);
+          cg.addColorStop(0, 'rgba(215,245,255,' + (0.65 * alpha) + ')');
+          cg.addColorStop(0.8, 'rgba(120,220,255,' + (0.35 * alpha) + ')');
+          cg.addColorStop(1, 'rgba(80,180,240,0)');
+          ctx.fillStyle = cg;
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 1.35, c.size * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+
+          // Eight animated rainbow cilia comb rows (diffraction iridescence)
+          ctx.lineWidth = 1.3;
+          for (let r = 0; r < 4; r++) {
+            const hue = (now * 0.14 + r * 65) % 360;
+            ctx.strokeStyle = 'hsla(' + hue + ', 85%, 68%, ' + (0.85 * alpha) + ')';
+            ctx.beginPath();
+            const yOffset = (r - 1.5) * (c.size * 0.32);
+            ctx.ellipse(0, yOffset, c.size * 1.1, c.size * 0.25, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+          break;
+        }
+
+        case 'siphonophore': {
+          ctx.save();
+          // Chain of colonial nectophores
+          ctx.lineWidth = 1;
+          for (let b = 0; b < 14; b++) {
+            const bx = -c.size * 0.5 + b * (c.size / 13);
+            const by = Math.sin(now * 0.0022 + b * 0.5) * 8 + b * 1.8;
+            ctx.fillStyle = 'rgba(165,240,255,' + (0.75 * alpha) + ')';
+            ctx.shadowColor = '#7ef5ff'; ctx.shadowBlur = 3;
+            ctx.beginPath(); ctx.arc(bx, by, 2.4, 0, Math.PI * 2); ctx.fill();
+
+            // Dangling stinging filament
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(140,225,255,' + (0.3 * alpha) + ')';
+            ctx.beginPath(); ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.sin(now * 0.003 + b) * 5, by + 16 + (b % 3) * 6);
+            ctx.stroke();
+          }
+          ctx.restore();
+          break;
+        }
+
+        case 'viperfish': {
+          ctx.save();
+          const vTail = Math.sin(now * 0.008 + c.phase) * 4;
+          ctx.fillStyle = lit ? 'rgba(75,95,115,' + (0.8 * alpha) + ')' : 'rgba(12,22,34,' + (0.75 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.6, c.size * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+          // Gaping fanged head
+          ctx.fillStyle = lit ? 'rgba(95,115,135,' + (0.85 * alpha) + ')' : 'rgba(16,28,42,' + (0.8 * alpha) + ')';
+          ctx.beginPath(); ctx.arc(c.size * 0.55, 0, c.size * 0.22, -0.6, 0.6); ctx.lineTo(c.size * 0.35, 0); ctx.closePath(); ctx.fill();
+          // Huge needle fangs
+          ctx.strokeStyle = 'rgba(235,250,255,' + (0.9 * alpha) + ')'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.65, -c.size * 0.12); ctx.lineTo(c.size * 0.72, c.size * 0.14); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(c.size * 0.62, c.size * 0.15); ctx.lineTo(c.size * 0.7, -c.size * 0.12); ctx.stroke();
+          // Tail
+          ctx.fillStyle = lit ? 'rgba(75,95,115,' + (0.8 * alpha) + ')' : 'rgba(12,22,34,' + (0.75 * alpha) + ')';
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.5, 0); ctx.lineTo(-c.size * 0.85, -c.size * 0.25 + vTail); ctx.lineTo(-c.size * 0.85, c.size * 0.25 + vTail); ctx.closePath(); ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'squid': {
+          ctx.save();
+          const finWag = Math.sin(now * 0.0035 + c.phase) * 5;
+          // Mantle
+          ctx.fillStyle = lit ? 'rgba(175,90,95,' + (0.85 * alpha) + ')' : 'rgba(22,16,25,' + (0.75 * alpha) + ')';
+          ctx.beginPath();
+          ctx.moveTo(c.size * 0.25, -c.size * 0.18);
+          ctx.lineTo(c.size * 0.25, c.size * 0.18);
+          ctx.lineTo(-c.size * 0.7, 0);
+          ctx.closePath(); ctx.fill();
+          // Mantle fins
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.45, 0); ctx.lineTo(-c.size * 0.75, -c.size * 0.35 + finWag); ctx.lineTo(-c.size * 0.65, 0); ctx.lineTo(-c.size * 0.75, c.size * 0.35 + finWag); ctx.closePath(); ctx.fill();
+          // Giant Eye
+          ctx.fillStyle = '#060c14'; ctx.beginPath(); ctx.arc(c.size * 0.32, -c.size * 0.04, 3.8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(255,245,200,' + (0.9 * alpha) + ')'; ctx.beginPath(); ctx.arc(c.size * 0.32, -c.size * 0.04, 1.4, 0, Math.PI * 2); ctx.fill();
+          // Arms & Tentacles trailing forward
+          ctx.strokeStyle = lit ? 'rgba(165,80,85,' + (0.85 * alpha) + ')' : 'rgba(25,18,30,' + (0.75 * alpha) + ')';
+          ctx.lineWidth = 1.6;
+          for (let a = -2; a <= 2; a++) {
+            ctx.beginPath(); ctx.moveTo(c.size * 0.35, a * 3);
+            const sWag = Math.sin(now * 0.003 + a * 0.6) * 6;
+            ctx.lineTo(c.size * 0.85 + Math.abs(a) * 4, a * 5 + sWag);
+            ctx.stroke();
+          }
+          // Two extra-long feeding tentacles
+          ctx.lineWidth = 1.1;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.35, -2);
+          ctx.quadraticCurveTo(c.size * 0.9, Math.sin(now * 0.0028) * 8, c.size * 1.5, Math.sin(now * 0.0035) * 12);
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
+
+        case 'angler': {
+          ctx.save();
+          // Heavy rounded body
+          ctx.fillStyle = lit ? 'rgba(45,35,40,' + (0.9 * alpha) + ')' : 'rgba(10,8,12,' + (0.85 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.55, c.size * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+          // Gaping jaw with fangs
+          ctx.beginPath(); ctx.moveTo(c.size * 0.45, -c.size * 0.2); ctx.lineTo(c.size * 0.15, 0); ctx.lineTo(c.size * 0.5, c.size * 0.35); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * alpha) + ')'; ctx.lineWidth = 1;
+          for (let f = 0; f < 3; f++) {
+            ctx.beginPath(); ctx.moveTo(c.size * 0.45 - f * 5, c.size * 0.3); ctx.lineTo(c.size * 0.42 - f * 5, c.size * 0.12); ctx.stroke();
+          }
+          // Illicium stalk arching forward over head
+          ctx.strokeStyle = 'rgba(120,180,180,' + (0.75 * alpha) + ')'; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.15, -c.size * 0.4); ctx.quadraticCurveTo(c.size * 0.45, -c.size * 0.9, c.size * 0.8, -c.size * 0.5); ctx.stroke();
+          // Glowing Esca lure
+          const lureX = c.size * 0.8, lureY = -c.size * 0.5;
+          const lureGrad = ctx.createRadialGradient(lureX, lureY, 0, lureX, lureY, 14);
+          lureGrad.addColorStop(0, 'rgba(130,255,225,' + (0.95 * alpha) + ')');
+          lureGrad.addColorStop(0.3, 'rgba(80,240,200,' + (0.6 * alpha) + ')');
+          lureGrad.addColorStop(1, 'rgba(50,210,180,0)');
+          ctx.fillStyle = lureGrad;
+          ctx.beginPath(); ctx.arc(lureX, lureY, 14, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(lureX, lureY, 2.2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'gulpereel': {
+          ctx.save();
+          // Enormous pouch mouth
+          ctx.fillStyle = lit ? 'rgba(38,32,45,' + (0.85 * alpha) + ')' : 'rgba(8,6,12,' + (0.8 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(c.size * 0.35, 0, c.size * 0.28, c.size * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+          // Long undulating ribbon tail
+          ctx.strokeStyle = lit ? 'rgba(38,32,45,' + (0.85 * alpha) + ')' : 'rgba(8,6,12,' + (0.8 * alpha) + ')';
+          ctx.lineWidth = 3.2;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.15, 0);
+          for (let seg = 1; seg <= 6; seg++) {
+            const sx = c.size * 0.15 - seg * (c.size * 0.18);
+            const sy = Math.sin(now * 0.003 + seg * 0.75 + c.phase) * (4 + seg * 1.6);
+            ctx.lineTo(sx, sy);
+          }
+          ctx.stroke();
+          // Bioluminescent tail organ
+          const lastX = c.size * 0.15 - 6 * (c.size * 0.18);
+          const lastY = Math.sin(now * 0.003 + 6 * 0.75 + c.phase) * 13.6;
+          ctx.fillStyle = 'rgba(255,115,160,' + (0.95 * alpha) + ')';
+          ctx.shadowColor = '#ff6590'; ctx.shadowBlur = 6;
+          ctx.beginPath(); ctx.arc(lastX, lastY, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'prawn': {
+          ctx.save();
+          // Deep crimson in beam, pitch black in dark!
+          const prawnCol = lit ? 'rgba(225,32,48,' + (0.92 * alpha) + ')' : 'rgba(16,10,18,' + (0.45 * alpha) + ')';
+          ctx.fillStyle = prawnCol;
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.6, c.size * 0.3, -0.2, 0, Math.PI * 2); ctx.fill();
+          // Long waving antennae
+          ctx.strokeStyle = lit ? 'rgba(240,65,80,' + (0.8 * alpha) + ')' : 'rgba(25,12,22,' + (0.35 * alpha) + ')';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.5, -c.size * 0.1);
+          ctx.quadraticCurveTo(c.size * 1.2, -c.size * 0.8 + Math.sin(now * 0.003) * 6, c.size * 1.8, -c.size * 0.4);
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
+
+        case 'dumbo': {
+          ctx.save();
+          const earFlap = Math.sin(now * 0.0035 + c.phase) * 7;
+          ctx.fillStyle = lit ? 'rgba(220,185,210,' + (0.85 * alpha) + ')' : 'rgba(45,35,48,' + (0.7 * alpha) + ')';
+          // Mantle bell
+          ctx.beginPath(); ctx.ellipse(0, -c.size * 0.1, c.size * 0.45, c.size * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+          // Ear fins
+          ctx.beginPath(); ctx.ellipse(-c.size * 0.42, -c.size * 0.25 + earFlap * 0.3, c.size * 0.3, c.size * 0.16, -0.4, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(c.size * 0.42, -c.size * 0.25 - earFlap * 0.3, c.size * 0.3, c.size * 0.16, 0.4, 0, Math.PI * 2); ctx.fill();
+          // Short webbed arms
+          ctx.beginPath();
+          for (let a = -3; a <= 3; a++) {
+            ctx.lineTo(a * 4, c.size * 0.32 + Math.abs(a) * 2);
+          }
+          ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'tripod': {
+          ctx.save();
+          // Tripod fish resting above bottom
+          ctx.fillStyle = lit ? 'rgba(165,185,200,' + (0.85 * alpha) + ')' : 'rgba(28,38,50,' + (0.75 * alpha) + ')';
+          // Slender body
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.6, c.size * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+          // Elongated Stilt Fin Rays (two pelvic, one caudal)
+          ctx.strokeStyle = lit ? 'rgba(210,230,245,' + (0.9 * alpha) + ')' : 'rgba(60,80,105,' + (0.75 * alpha) + ')';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.15, c.size * 0.12); ctx.lineTo(c.size * 0.22, c.size * 1.0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.05, c.size * 0.12); ctx.lineTo(-c.size * 0.12, c.size * 1.0); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.55, c.size * 0.05); ctx.lineTo(-c.size * 0.75, c.size * 0.95); ctx.stroke();
+          // Pectoral sensory fins spread forward
+          ctx.beginPath(); ctx.moveTo(c.size * 0.25, -c.size * 0.15); ctx.lineTo(c.size * 0.65, -c.size * 0.55); ctx.stroke();
+          ctx.restore();
+          break;
+        }
+
+        case 'seapig': {
+          ctx.save();
+          // Translucent pink walking sea cucumber
+          const pigCol = lit ? 'rgba(250,195,215,' + (0.88 * alpha) + ')' : 'rgba(65,45,55,' + (0.65 * alpha) + ')';
+          ctx.fillStyle = pigCol;
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.6, c.size * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+          // Dorsal sensory papillae
+          ctx.lineWidth = 1.2; ctx.strokeStyle = pigCol;
+          ctx.beginPath(); ctx.moveTo(-c.size * 0.15, -c.size * 0.3); ctx.lineTo(-c.size * 0.2, -c.size * 0.65); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(c.size * 0.15, -c.size * 0.3); ctx.lineTo(c.size * 0.2, -c.size * 0.65); ctx.stroke();
+          // Hydraulic tube feet walking along sediment
+          for (let f = -2; f <= 2; f++) {
+            const stepY = Math.sin(now * 0.005 + f * 1.2) * 2;
+            ctx.beginPath(); ctx.moveTo(f * 7, c.size * 0.28); ctx.lineTo(f * 7, c.size * 0.55 + stepY); ctx.stroke();
+          }
+          ctx.restore();
+          break;
+        }
+
+        case 'grenadier': {
+          ctx.save();
+          const gTail = Math.sin(now * 0.004 + c.phase) * 5;
+          ctx.fillStyle = lit ? 'rgba(145,135,125,' + (0.85 * alpha) + ')' : 'rgba(25,22,20,' + (0.75 * alpha) + ')';
+          // Blunt big head
+          ctx.beginPath(); ctx.ellipse(c.size * 0.35, 0, c.size * 0.28, c.size * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+          // Long tapering tail
+          ctx.beginPath();
+          ctx.moveTo(c.size * 0.25, -c.size * 0.2);
+          ctx.quadraticCurveTo(-c.size * 0.3, -c.size * 0.05, -c.size * 0.85, gTail);
+          ctx.quadraticCurveTo(-c.size * 0.3, c.size * 0.05, c.size * 0.25, c.size * 0.2);
+          ctx.closePath(); ctx.fill();
+          // Big dark eye
+          ctx.fillStyle = '#060a10'; ctx.beginPath(); ctx.arc(c.size * 0.42, -c.size * 0.06, 3.5, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'snailfish': {
+          ctx.save();
+          const sTail = Math.sin(now * 0.005 + c.phase) * 5;
+          // Translucent hadal snailfish
+          const sfGrad = ctx.createRadialGradient(c.size * 0.2, 0, 0, 0, 0, c.size * 0.7);
+          sfGrad.addColorStop(0, lit ? 'rgba(255,235,242,' + (0.85 * alpha) + ')' : 'rgba(65,55,65,' + (0.7 * alpha) + ')');
+          sfGrad.addColorStop(1, lit ? 'rgba(235,190,210,' + (0.45 * alpha) + ')' : 'rgba(40,32,45,' + (0.35 * alpha) + ')');
+          ctx.fillStyle = sfGrad;
+          // Tadpole body with undulating ribbon
+          ctx.beginPath();
+          ctx.moveTo(c.size * 0.5, 0);
+          ctx.quadraticCurveTo(c.size * 0.35, -c.size * 0.32, 0, -c.size * 0.2);
+          ctx.quadraticCurveTo(-c.size * 0.4, -c.size * 0.12, -c.size * 0.8, sTail);
+          ctx.quadraticCurveTo(-c.size * 0.4, c.size * 0.12, 0, c.size * 0.2);
+          ctx.quadraticCurveTo(c.size * 0.35, c.size * 0.32, c.size * 0.5, 0);
+          ctx.fill();
+          // Small black eye
+          ctx.fillStyle = '#0a0d14'; ctx.beginPath(); ctx.arc(c.size * 0.36, -c.size * 0.08, 1.8, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          break;
+        }
+
+        case 'amphipods': {
+          ctx.save();
+          c.members.forEach(m => {
+            const ax = m.ox + Math.sin(now * 0.004 + m.phase) * 12;
+            const ay = m.oy + Math.cos(now * 0.0035 + m.phase) * 8;
+            ctx.fillStyle = lit ? 'rgba(255,245,235,' + (0.9 * alpha) + ')' : 'rgba(75,85,95,' + (0.7 * alpha) + ')';
+            ctx.beginPath();
+            ctx.ellipse(ax, ay, 3.5, 2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+          break;
+        }
+
+        case 'polychaete': {
+          ctx.save();
+          ctx.strokeStyle = lit ? 'rgba(220,185,160,' + (0.85 * alpha) + ')' : 'rgba(45,35,32,' + (0.7 * alpha) + ')';
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(c.size * 0.5, 0);
+          for (let seg = 1; seg <= 7; seg++) {
+            const px = c.size * 0.5 - seg * (c.size * 0.14);
+            const py = Math.sin(now * 0.004 + seg * 0.8 + c.phase) * 5;
+            ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+          ctx.restore();
+          break;
+        }
+
+        case 'hadalcucumber': {
+          ctx.save();
+          ctx.fillStyle = lit ? 'rgba(230,205,225,' + (0.8 * alpha) + ')' : 'rgba(50,42,55,' + (0.65 * alpha) + ')';
+          ctx.beginPath(); ctx.ellipse(0, 0, c.size * 0.55, c.size * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          break;
+        }
+      }
+    }
+  }
+
+  const ambientFauna = new AmbientFaunaManager();
+
   function drawCover(image, alpha) {
     if (!image.complete || !image.naturalWidth) return;
     const imageRatio=image.naturalWidth/image.naturalHeight, canvasRatio=W/H;
@@ -405,6 +1050,10 @@ outer.tabIndex = 0;
     }
 
     drawSeafloor(depth, now);
+
+    // Ambient Ocean Fauna
+    ambientFauna.update(dt, now, depth);
+    ambientFauna.draw(ctx, depth, light, now);
 
     // Submersible + headlight cone (fixed at vertical center)
     const subX = W * 0.17, subY = H * 0.66;
@@ -652,18 +1301,59 @@ outer.tabIndex = 0;
   }
 
   const noteIndexes={sunlight:0,twilight:0,midnight:0,abyss:0,trench:0};
+  let selectedBioIndex = -1;
+
+  function renderBioDetail(zone) {
+    const detailEl = document.getElementById('bio-detail');
+    if (!detailEl) return;
+    const details = ZONE_DETAILS[zone.id];
+    if (selectedBioIndex < 0 || !details.biodiversity[selectedBioIndex]) {
+      detailEl.innerHTML = '<p class="bio-detail-hint">💡 Tap any organism chip above to inspect its ecological niche and depth adaptation.</p>';
+      return;
+    }
+    const sp = details.biodiversity[selectedBioIndex];
+    detailEl.innerHTML = '<div class="bio-detail-card">' +
+      '<div class="bio-detail-head"><strong>' + sp.name + '</strong><span class="bio-detail-latin">' + sp.latin + '</span></div>' +
+      '<div class="bio-detail-tags"><span class="bio-tag role">' + sp.role + '</span><span class="bio-tag depth">' + sp.depth + '</span></div>' +
+      '<p class="bio-detail-fact">' + sp.fact + '</p>' +
+      '<button type="button" class="bio-detail-dive" data-dive="' + sp.dive + '">Dive to ' + sp.name + ' (' + sp.dive.toLocaleString() + ' m) ↑</button>' +
+      '</div>';
+    const diveBtn = detailEl.querySelector('.bio-detail-dive');
+    if (diveBtn) {
+      diveBtn.addEventListener('click', () => { stopDive(); setDepth(sp.dive); });
+    }
+  }
+
   function renderZoneNote(zone) {
     const details=ZONE_DETAILS[zone.id], index=noteIndexes[zone.id]%details.facts.length;
     document.getElementById('zone-note-count').textContent='Field note '+(index+1)+' of '+details.facts.length;
     document.getElementById('zone-note-text').textContent=details.facts[index];
   }
+
   function renderEcology(zone) {
     const details=ZONE_DETAILS[zone.id];
     document.getElementById('eco-energy').textContent=details.energy;
     document.getElementById('eco-challenge').textContent=details.challenge;
-    document.getElementById('bio-chips').innerHTML=details.biodiversity.map(name=>'<span class="bio-chip">'+name+'</span>').join('');
+    const chipsEl = document.getElementById('bio-chips');
+    chipsEl.innerHTML = details.biodiversity.map((sp, idx) =>
+      '<button type="button" class="bio-chip' + (selectedBioIndex === idx ? ' active' : '') + '" data-bio-idx="' + idx + '" aria-pressed="' + (selectedBioIndex === idx ? 'true' : 'false') + '">' + sp.name + '</button>'
+    ).join('');
+    renderBioDetail(zone);
     renderZoneNote(zone);
   }
+
+  const bioChipsContainer = document.getElementById('bio-chips');
+  if (bioChipsContainer) {
+    bioChipsContainer.addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-bio-idx]');
+      if (!btn) return;
+      const idx = Number(btn.getAttribute('data-bio-idx'));
+      selectedBioIndex = (selectedBioIndex === idx) ? -1 : idx;
+      const zone = zoneAt(state.depth);
+      renderEcology(zone);
+    });
+  }
+
   document.getElementById('next-zone-note').addEventListener('click',()=>{
     const zone=zoneAt(state.depth);noteIndexes[zone.id]=(noteIndexes[zone.id]+1)%ZONE_DETAILS[zone.id].facts.length;renderZoneNote(zone);
   });
@@ -717,6 +1407,7 @@ outer.tabIndex = 0;
 
     if (zone.id !== currentZoneId) {
       currentZoneId = zone.id;
+      selectedBioIndex = -1;
       enteredZoneAt=performance.now();
       lifeformFieldFor(zone);
       renderEcology(zone);
@@ -735,6 +1426,8 @@ outer.tabIndex = 0;
   // Lesson sections below the sim ("Dive here" buttons, synced readouts) talk to it through this.
   window.OceanDive = {
     zones: ZONES,
+    zoneDetails: ZONE_DETAILS,
+    creatures: CREATURES,
     pressureAtm, tempC, lightPct,
     get depth() { return state.depth; },
     setDepth(d) { stopDive(); setDepth(d); },

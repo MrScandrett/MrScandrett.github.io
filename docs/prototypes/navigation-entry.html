@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClassroomOS navigation entry prototype</title>
+  <link rel="stylesheet" href="../../assets/css/classroom-fonts.css">
+  <style>
+    :root { font-family: "IBM Plex Sans", system-ui, sans-serif; color: #1d1d1f; background: #f5f5f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid #006edb; outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    .prototype-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .65rem max(1rem, calc((100vw - 1160px)/2)); background: #e9eff7; border-bottom: 1px solid #c7d8ed; font-size: .84rem; }
+    .prototype-bar strong { color: #294b72; }
+    .prototype-switch { display: flex; gap: .35rem; }
+    .prototype-switch a { padding: .35rem .7rem; border-radius: .55rem; text-decoration: none; }
+    .prototype-switch a[aria-current="page"] { color: white; background: #315d79; }
+    .site-header { background: rgba(255,255,255,.92); border-bottom: 1px solid #d2d2d7; }
+    .header-inner { max-width: 1160px; margin: auto; min-height: 66px; padding: .75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand { font-weight: 800; text-decoration: none; letter-spacing: -.025em; }
+    .site-nav { display: flex; flex-wrap: wrap; gap: .15rem; }
+    .site-nav a { text-decoration: none; padding: .45rem .65rem; border-radius: .6rem; font-size: .92rem; }
+    .site-nav a:hover, .site-nav a[aria-current="page"] { background: #eaf2ff; color: #0058ad; }
+    main { max-width: 1160px; margin: auto; padding: 1.2rem 1.25rem 4rem; }
+    .hero { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(280px,.95fr); gap: 1.35rem; align-items: stretch; }
+    .hero-copy { padding: clamp(1.2rem,3vw,2.5rem); border-radius: 26px; background: linear-gradient(145deg,#fafdff,#e8f1fa); border: 1px solid #ceddeb; }
+    .hero h1, .lessons-intro h1 { font-size: clamp(2.2rem,5vw,4.1rem); line-height: 1.04; letter-spacing: -.055em; margin: .25rem 0 .7rem; }
+    .hero p, .lessons-intro p { max-width: 46ch; margin: 0 0 1.25rem; color: #464b54; line-height: 1.5; }
+    .start-class { display: inline-flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 70px; width: min(100%,390px); padding: .9rem 1.1rem; color: white; background: #0066cc; border-radius: 16px; text-decoration: none; box-shadow: 0 8px 22px rgba(0,102,204,.18); }
+    .start-class strong { display: block; font-size: 1.13rem; }
+    .start-class small { display: block; margin-top: .1rem; color: #e4f1ff; }
+    .entry-panel { min-width: 0; padding: clamp(1rem,2.3vw,1.65rem); background: #fff; border: 1px solid #d9e0e8; border-radius: 26px; box-shadow: 0 12px 34px rgba(27,58,91,.06); }
+    .entry-panel h2 { font-size: 1.35rem; letter-spacing: -.035em; margin: 0 0 .75rem; }
+    .entry-panel > p { margin: 0 0 1rem; color: #525963; font-size: .92rem; }
+    .search-wrap { position: relative; }
+    .find-field { display: flex; align-items: center; gap: .5rem; padding: .35rem .45rem .35rem .85rem; border: 2px solid #7ca7d5; border-radius: 13px; background: white; }
+    .find-field span { color: #315d79; font-size: 1.3rem; }
+    .find-field input { min-width: 0; flex: 1; border: 0; outline: 0; height: 38px; color: #172536; }
+    .find-field input::placeholder { color: #5d6773; }
+    .find-field button { border: 0; background: #edf4fc; color: #0058ad; border-radius: 8px; min-width: 34px; min-height: 34px; cursor: pointer; }
+    .results { position: absolute; z-index: 10; inset: calc(100% + .35rem) 0 auto; max-height: min(380px,60vh); overflow: auto; background: white; border: 1px solid #aac7e7; border-radius: 14px; box-shadow: 0 18px 40px rgba(29,55,87,.2); padding: .4rem; }
+    .results a { display: block; border-radius: 8px; padding: .6rem .7rem; text-decoration: none; }
+    .results a:hover, .results a:focus-visible { background: #eaf2ff; }
+    .results strong, .results small { display: block; }
+    .results small { color: #59616b; margin-top: .12rem; }
+    .results p { margin: .5rem .6rem; color: #59616b; }
+    .shortcut-title { font-size: .82rem; font-weight: 700; color: #4d5965; margin: 1.15rem 0 .45rem; }
+    .shortcuts { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .shortcuts a, .subject-links a { display: inline-flex; align-items: center; min-height: 42px; border: 1px solid #bdd5ec; border-radius: 11px; padding: .45rem .75rem; background: #f5faff; color: #174c7b; font-size: .9rem; font-weight: 650; text-decoration: none; }
+    .shortcuts a:hover, .subject-links a:hover { background: #e4f2ff; }
+    .supporting { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; padding: 1.5rem 0; }
+    .supporting section { border-top: 1px solid #d2d2d7; padding-top: 1rem; }
+    .supporting h2 { font-size: 1.08rem; margin: 0 .0 .35rem; }
+    .supporting p { color: #59616b; font-size: .92rem; margin: 0; line-height: 1.5; }
+    .lessons-intro { display: flex; justify-content: space-between; gap: 1.5rem; align-items: end; padding: .4rem 0 1.3rem; }
+    .lessons-intro p { margin-bottom: 0; }
+    .back-home { color: #0058ad; white-space: nowrap; font-weight: 650; }
+    .lesson-entry { display: grid; grid-template-columns: minmax(0,1.12fr) minmax(275px,.88fr); gap: 1.1rem; }
+    .grade-note { margin: .85rem 0 0; color: #59616b; font-size: .9rem; }
+    .grade-note a { color: #0058ad; font-weight: 700; }
+    .lesson-example-list { margin: .4rem 0 0; padding: 0; list-style: none; }
+    .lesson-example-list li + li { border-top: 1px solid #e5ebf1; }
+    .lesson-example-list a { display: block; padding: .64rem 0; color: #174c7b; font-weight: 700; text-decoration: none; }
+    .lesson-example-list a:hover { text-decoration: underline; }
+    .lesson-example-list small { display: block; color: #626b76; font-weight: 400; margin-top: .12rem; }
+    .subject-quick { margin-top: 1.35rem; padding-top: 1rem; border-top: 1px solid #d8e1eb; }
+    .subject-quick h2 { margin: 0 0 .3rem; font-size: 1.12rem; }
+    .subject-quick p { margin: 0 0 .85rem; font-size: .91rem; color: #59616b; }
+    .subject-links { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .all-subjects { display: inline-block; margin-top: .9rem; color: #0058ad; font-weight: 700; }
+    @media (max-width: 760px) {
+      .prototype-bar { align-items: flex-start; }
+      .header-inner { min-height: 58px; }
+      .site-nav a:not(.nav-lessons) { display: none; }
+      .hero, .lesson-entry, .supporting { grid-template-columns: minmax(0,1fr); }
+      .hero { gap: .8rem; }
+      .hero-copy { padding: 1.25rem; }
+      .hero h1, .lessons-intro h1 { font-size: 2.55rem; }
+      .hero-copy p { margin-bottom: .85rem; }
+      .entry-panel { border-radius: 20px; }
+      .lessons-intro { display: block; }
+      .back-home { display: inline-block; margin-top: .6rem; }
+    }
+    @media (max-width: 420px) {
+      main { padding: .8rem .85rem 2rem; }
+      .header-inner { padding: .65rem .85rem; }
+      .brand { font-size: .93rem; }
+      .prototype-bar { padding: .55rem .85rem; font-size: .75rem; }
+      .prototype-switch a { padding: .32rem .45rem; }
+      .hero h1, .lessons-intro h1 { font-size: 2.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-bar"><strong>Navigation prototype · example shortcuts</strong><nav class="prototype-switch" aria-label="Prototype views"><a href="?view=home" data-view-link="home">Home</a><a href="?view=lessons" data-view-link="lessons">Lessons</a></nav></div>
+  <header class="site-header"><div class="header-inner"><a class="brand" href="?view=home">Mr. Scandrett's ClassroomOS</a><nav class="site-nav" aria-label="Primary"><a href="?view=home" data-view-link="home">Home</a><a class="nav-lessons" href="?view=lessons" data-view-link="lessons">Lessons</a><a href="../../paths.html">Paths</a><a href="../../showcase.html">Showcase</a><a href="../../applications.html">Apps</a><a href="../../library.html">Library</a></nav></div></header>
+  <main>
+    <div id="home-view" hidden>
+      <div class="hero">
+        <section class="hero-copy" aria-labelledby="home-title"><h1 id="home-title">ClassroomOS</h1><p>Build something real today.</p><a class="start-class" href="?view=lessons"><span><strong>Start class</strong><small>Open the lesson library</small></span><span aria-hidden="true">→</span></a></section>
+        <section class="entry-panel" aria-labelledby="home-find-title"><h2 id="home-find-title">Where do you need to go?</h2><p>Find a lesson, tool, or page by name.</p><div class="search-wrap"><label class="find-field"><span aria-hidden="true">⌕</span><input data-find type="search" autocomplete="off" placeholder="Try volcanoes or Blender" aria-label="Find a page"><button type="button" data-clear aria-label="Clear search">×</button></label><div class="results" data-results hidden></div></div><p class="shortcut-title">Try these direct links</p><div class="shortcuts"><a href="../../lessons/3d-design/3d-design.html">3D Design</a><a href="../../lessons/earth-science/weather-watch.html">Weather Watch</a><a href="../../music-lab.html">Music Lab</a><a href="../../showcase.html">Student Showcase</a></div></section>
+      </div>
+      <div class="supporting"><section><h2>Today</h2><p>The current homepage's updates and daily widgets would follow this entry area.</p></section><section><h2>Explore</h2><p>The wider set of destinations remains available below the first screen.</p></section></div>
+    </div>
+    <div id="lessons-view" hidden>
+      <div class="lessons-intro"><div><h1>STEAM Lessons</h1><p>Choose a level, look up a lesson, or browse a subject.</p></div><a class="back-home" href="?view=home">Home</a></div>
+      <div class="lesson-entry"><section class="entry-panel" aria-labelledby="lesson-find-title"><h2 id="lesson-find-title">Find a lesson</h2><div class="search-wrap"><label class="find-field"><span aria-hidden="true">⌕</span><input data-find type="search" autocomplete="off" placeholder="Try volcanoes or Blender" aria-label="Find a lesson"><button type="button" data-clear aria-label="Clear search">×</button></label><div class="results" data-results hidden></div></div><p class="grade-note">Need a level first? <a href="../../steam-lessons.html">Use the grade filters in the full catalog</a>.</p>      <div class="subject-quick" aria-labelledby="browse-title"><h2 id="browse-title">Browse subjects</h2><p>Open the existing catalog at the subject you want.</p><div class="subject-links"><a href="../../steam-lessons.html#module-math">Math</a><a href="../../steam-lessons.html#module-earth">Earth &amp; weather</a><a href="../../steam-lessons.html#module-design3d">3D Design</a><a href="../../steam-lessons.html#module-music">Music</a><a href="../../steam-lessons.html#module-bible">Bible studies</a></div><a class="all-subjects" href="../../steam-lessons.html">See all subjects</a></div></section><section class="entry-panel" aria-labelledby="lesson-start-title"><h2 id="lesson-start-title">A few starting points</h2><p>Example links to test before choosing permanent shortcuts.</p><ul class="lesson-example-list"><li><a href="../../lessons/earth-science/volcano-simulator.html">Volcano Simulator<small>Explore Earth science</small></a></li><li><a href="../../lessons/3d-design/3d-design.html">3D Design<small>Start a design project</small></a></li><li><a href="../../lessons/mathematics/foundations/math-foundations-lab.html#fractions">Fractions<small>Use a math lab</small></a></li></ul></section></div>
+
+    </div>
+  </main>
+  <script>
+    (function () {
+      var root = '../../';
+      var view = new URLSearchParams(location.search).get('view') === 'lessons' ? 'lessons' : 'home';
+      document.getElementById(view + '-view').hidden = false;
+      document.querySelectorAll('[data-view-link]').forEach(function (link) { if (link.dataset.viewLink === view) link.setAttribute('aria-current', 'page'); });
+      var indexPromise = fetch(root + 'assets/data/search-index.json').then(function (response) { if (!response.ok) throw new Error('index'); return response.json(); });
+      document.querySelectorAll('.search-wrap').forEach(function (wrap) {
+        var input = wrap.querySelector('[data-find]');
+        var results = wrap.querySelector('[data-results]');
+        var clear = wrap.querySelector('[data-clear]');
+        function close() { results.hidden = true; results.replaceChildren(); }
+        input.addEventListener('input', function () {
+          var query = input.value.trim().toLowerCase();
+          if (query.length < 2) { close(); return; }
+          results.hidden = false;
+          results.innerHTML = '<p>Searching…</p>';
+          indexPromise.then(function (items) {
+            if (input.value.trim().toLowerCase() !== query) return;
+            var terms = query.split(/\s+/);
+            var matches = items.map(function (item) {
+              var haystack = [item.title, item.description].concat(item.keywords || []).join(' ').toLowerCase();
+              var score = terms.every(function (term) { return haystack.includes(term); }) ? (item.title.toLowerCase().includes(query) ? 3 : 1) : 0;
+              return { item: item, score: score };
+            }).filter(function (entry) { return entry.score; }).sort(function (a, b) { return b.score - a.score; }).slice(0, 7);
+            results.replaceChildren();
+            if (!matches.length) { var message = document.createElement('p'); message.textContent = 'No matches. Try another name or subject.'; results.appendChild(message); return; }
+            matches.forEach(function (entry) {
+              var a = document.createElement('a'); a.href = root + entry.item.url;
+              var strong = document.createElement('strong'); strong.textContent = entry.item.title;
+              var small = document.createElement('small'); small.textContent = entry.item.category || 'ClassroomOS';
+              a.append(strong, small); results.appendChild(a);
+            });
+          }).catch(function () { results.innerHTML = '<p>Search is unavailable. Browse all subjects below.</p>'; });
+        });
+        clear.addEventListener('click', function () { input.value = ''; close(); input.focus(); });
+        input.addEventListener('keydown', function (event) { if (event.key === 'Escape') close(); });
+        document.addEventListener('click', function (event) { if (!wrap.contains(event.target)) close(); });
+      });
+    }());
+  </script>
+</body>
+</html>

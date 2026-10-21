@@ -17,6 +17,12 @@ export function shiftDayKey(key, delta) {
   return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta));
 }
 
+// UTC day number keeps content rotation independent of a visitor's time zone.
+function dayNumber(key) {
+  const [year, month, date] = key.split('-').map(Number);
+  return Math.floor(Date.UTC(year, month - 1, date) / 86400000);
+}
+
 // ── Seeded randomness ────────────────────────────────────────────────────
 function xmur3(str) {
   let h = 1779033703 ^ str.length;
@@ -260,7 +266,12 @@ function finishCrossword(layout) {
  * so the result is the same for everyone.
  */
 export function makeCrossword(key, bank, { attempts = 24, maxSpan = MAX_SPAN } = {}) {
-  const pool = bank.filter((e) => /^[A-Z]{4,9}$/.test(e.w));
+  const valid = bank.filter((e) => /^[A-Z]{4,9}$/.test(e.w));
+  // Four interleaved answer sets give consecutive days different vocabularies.
+  // Keep the partition fixed so revisiting a date produces the same clues.
+  const ordered = shuffled(valid, rngFor('crossword-answer-rotation:v2'));
+  const cohort = ((dayNumber(key) % 4) + 4) % 4;
+  const pool = ordered.filter((_, i) => i % 4 === cohort);
   const rnd = rngFor(`crossword:${key}`);
   let best = null, bestScore = -Infinity;
   for (let i = 0; i < attempts; i++) {
@@ -272,10 +283,7 @@ export function makeCrossword(key, bank, { attempts = 24, maxSpan = MAX_SPAN } =
     if (score > bestScore) { best = layout; bestScore = score; }
     if (words >= MAX_WORDS && w <= 10 && h <= 10) break; // good enough; keep page load quick
   }
-  if (!best) {
-    // Extremely unlikely with a real bank; fall back to the best of any size.
-    best = layoutOnce(pool, rnd, maxSpan);
-  }
+  if (!best) best = layoutOnce(pool.length >= MIN_WORDS ? pool : valid, rnd, maxSpan);
   return { key, ...finishCrossword(best) };
 }
 
@@ -349,8 +357,12 @@ export function makeDailyDouble(key, bank, { rnd: customRnd } = {}) {
       if (!pool.length) {
         throw new Error(`Daily Double bank missing questions for category ${category}, difficulty ${difficulty}`);
       }
-      const pickRnd = rngFor(`daily-double-pick:${key}:${c}:${r}`);
-      const rawQuestion = pool[Math.floor(pickRnd() * pool.length)];
+      // A stable order per board position uses every question before repeating.
+      // With four questions per position, reshuffling at cycle boundaries
+      // would allow an immediate repeat; keep the order through each cycle.
+      const index = ((dayNumber(key) % pool.length) + pool.length) % pool.length;
+      const order = shuffled(pool, rngFor(`daily-double-rotation:${c}:${r}`));
+      const rawQuestion = order[index];
 
       const choiceRnd = rngFor(`daily-double-choices:${key}:${c}:${r}`);
       const choices = shuffled(rawQuestion.choices, choiceRnd);
@@ -384,5 +396,13 @@ export function makeDailyDouble(key, bank, { rnd: customRnd } = {}) {
     grid, // grid[col][row]
     tripleDoubles: [shuffledCoords[0], shuffledCoords[1]]
   };
+}
+
+// ── Daily chess ──────────────────────────────────────────────────────────
+/** Rotate through the curated mate-in-one/two positions before repeating. */
+export function makeDailyChess(key, bank) {
+  if (!bank.length) throw new Error('Daily chess needs at least one position');
+  const order = shuffled(bank, rngFor('daily-chess-rotation:v1'));
+  return { key, ...order[((dayNumber(key) % order.length) + order.length) % order.length] };
 }
 

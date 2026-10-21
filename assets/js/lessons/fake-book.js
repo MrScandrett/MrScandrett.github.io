@@ -2797,6 +2797,8 @@
       return '<option value="' + k + '">' + lab + '</option>';
     }).join('');
     sel.value = opts.key;
+    var quick = el('[data-fb-quick-key]');
+    if (quick) { quick.innerHTML = sel.innerHTML; quick.value = opts.key; }
   }
   function styleOptions() {
     var sel = el('[data-fb-style]');
@@ -2807,8 +2809,10 @@
   function syncControls() {
     keyOptions(); styleOptions();
     el('[data-fb-instr]').value = opts.instr;
+    var quickInstr = el('[data-fb-quick-instr]');
+    if (quickInstr) { quickInstr.innerHTML = el('[data-fb-instr]').innerHTML; quickInstr.value = opts.instr; }
     el('[data-fb-octave]').value = String(opts.octave);
-    el('[data-fb-names]').checked = !!opts.names;
+    root.querySelectorAll('[data-fb-names]').forEach(function (control) { control.checked = !!opts.names; });
     el('[data-fb-beat-counts]').value = /^(quarter|eighth|all|written)$/.test(opts.beatCounts) ? opts.beatCounts : 'off';
     el('[data-fb-analysis]').checked = !!opts.showAnalysis;
     el('[data-fb-analysis-note]').hidden = !opts.showAnalysis;
@@ -2855,6 +2859,8 @@
     var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
     el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score' && o.value !== 'changes') o.disabled = !!mixedMeter; });
     if (mixedMeter && opts.mode !== 'score' && opts.mode !== 'changes') { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
+    var quickMode = el('[data-fb-quick-mode]');
+    if (quickMode) { quickMode.innerHTML = el('[data-fb-mode]').innerHTML; quickMode.value = opts.mode; }
     renderScoreParts();
     el('[data-fb-loop]').checked = !!opts.loop;
     var r = loopRange();
@@ -4102,8 +4108,8 @@
       else if (t.matches('[data-fb-guitar-voice], [data-fb-tools-guitar-voice]')) { opts.guitarVoice = t.value; refresh(); syncControls(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-guitar-form-sel], [data-fb-quick-guitar-form]')) { opts.guitarForm = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
-      else if (t.matches('[data-fb-key]')) { opts.key = t.value; refresh(); respin(); }
-      else if (t.matches('[data-fb-instr]')) { opts.instr = t.value; refresh(); respin(); syncSaxKey(); }
+      else if (t.matches('[data-fb-key], [data-fb-quick-key]')) { opts.key = t.value; syncControls(); refresh(); respin(); }
+      else if (t.matches('[data-fb-instr], [data-fb-quick-instr]')) { opts.instr = t.value; syncControls(); refresh(); respin(); syncSaxKey(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
       else if (t.matches('[data-fb-analysis]')) { opts.showAnalysis = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
@@ -4122,7 +4128,7 @@
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
-      else if (t.matches('[data-fb-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
+      else if (t.matches('[data-fb-mode], [data-fb-quick-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
       else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
       else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (scoreTiming()) respin(); }
@@ -4199,6 +4205,10 @@
         var qsBody = el('[data-fb-notation-body]'), qsOpen = qsBody.hidden;
         qsBody.hidden = !qsOpen;
         qsToggle.setAttribute('aria-expanded', String(qsOpen));
+        return;
+      }
+      if (t.closest('[data-fb-quick-tools]')) {
+        el('[data-fb-tools]').click();
         return;
       }
       if (t.closest('[data-fb-print]')) { printNotation(); return; }

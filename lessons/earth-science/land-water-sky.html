@@ -719,6 +719,9 @@
     /* =========================================================================
        1. LAYERED SPHERE EXPLORER
        ========================================================================= */
+    /* =========================================================================
+       1. REALISTIC DYNAMIC EARTH SPHERE CROSS-SECTION SIMULATION
+       ========================================================================= */
     const cutawayCanvas = document.getElementById('cutawayCanvas');
     const cCtx = cutawayCanvas.getContext('2d');
 
@@ -762,101 +765,481 @@
     };
 
     let activeSphere = 'geo';
+    let mouseHover = null;
+    let animTime = 0;
+    let cutawayAnimId = null;
+
+    // Background starfield generator
+    const stars = Array.from({ length: 65 }, () => ({
+      x: Math.random(),
+      y: Math.random() * 0.7,
+      size: Math.random() * 1.5 + 0.4,
+      alpha: Math.random() * 0.7 + 0.3,
+      speed: Math.random() * 2 + 1,
+      color: Math.random() > 0.4 ? '#ffffff' : Math.random() > 0.5 ? '#93c5fd' : '#fde047'
+    }));
+
+    // Molten outer core dynamic convective swirl particles
+    const coreTurbulence = Array.from({ length: 48 }, () => ({
+      rFrac: 0.25 + Math.random() * 0.27,
+      theta: Math.random() * Math.PI,
+      speed: (Math.random() - 0.5) * 0.008,
+      size: Math.random() * 2.8 + 1.2,
+      intensity: Math.random() * 0.5 + 0.5
+    }));
 
     function resizeCutaway() {
       const rect = cutawayCanvas.getBoundingClientRect();
-      cutawayCanvas.width = rect.width * (window.devicePixelRatio || 1);
-      cutawayCanvas.height = rect.height * (window.devicePixelRatio || 1);
-      cCtx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-      drawCutaway();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cutawayCanvas.width = rect.width * dpr;
+      cutawayCanvas.height = (rect.height || 340) * dpr;
+      cCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     window.addEventListener('resize', resizeCutaway);
+    resizeCutaway();
+
+    cutawayCanvas.addEventListener('mousemove', e => {
+      const rect = cutawayCanvas.getBoundingClientRect();
+      mouseHover = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    });
+    cutawayCanvas.addEventListener('mouseleave', () => { mouseHover = null; });
 
     function drawCutaway() {
-      const w = cutawayCanvas.width / (window.devicePixelRatio || 1);
-      const h = cutawayCanvas.height / (window.devicePixelRatio || 1);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = cutawayCanvas.width / dpr;
+      const h = cutawayCanvas.height / dpr;
+      if (!w || !h) return;
       cCtx.clearRect(0, 0, w, h);
 
+      animTime += 0.016;
+
+      // 1. Deep Space backdrop with nebula wash & stars
+      const bgGrad = cCtx.createLinearGradient(0, 0, 0, h);
+      bgGrad.addColorStop(0, '#02040a');
+      bgGrad.addColorStop(0.65, '#070c18');
+      bgGrad.addColorStop(1, '#0b1120');
+      cCtx.fillStyle = bgGrad;
+      cCtx.fillRect(0, 0, w, h);
+
+      // Stars with twinkle
+      stars.forEach(s => {
+        const tw = Math.sin(animTime * s.speed + s.x * 20) * 0.3 + 0.7;
+        cCtx.fillStyle = s.color;
+        cCtx.globalAlpha = s.alpha * tw;
+        cCtx.beginPath();
+        cCtx.arc(s.x * w, s.y * h, s.size, 0, Math.PI * 2);
+        cCtx.fill();
+      });
+      cCtx.globalAlpha = 1.0;
+
       const cx = w * 0.5;
-      const cy = h * 0.9;
-      const r = Math.min(w * 0.45, h * 0.75);
+      const cy = h * 0.92;
+      const r = Math.min(w * 0.44, h * 0.76);
 
-      // Earth concentric arcs
-      // Inner Core (solid Fe-Ni)
+      // 2. Solar Illumination Angle & Outer Glow
+      const sunAngle = -Math.PI * 0.35; // Sun light from upper-left
+      const sunDirX = Math.cos(sunAngle);
+      const sunDirY = Math.sin(sunAngle);
+
+      // Atmosphere Space Glow (Exosphere)
+      const exoGrad = cCtx.createRadialGradient(cx, cy, r * 0.98, cx, cy, r * 1.32);
+      exoGrad.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+      exoGrad.addColorStop(0.3, 'rgba(14, 165, 233, 0.22)');
+      exoGrad.addColorStop(0.7, 'rgba(99, 102, 241, 0.08)');
+      exoGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      cCtx.fillStyle = exoGrad;
       cCtx.beginPath();
-      cCtx.arc(cx, cy, r * 0.22, Math.PI, 0);
-      cCtx.fillStyle = '#fef08a';
+      cCtx.arc(cx, cy, r * 1.32, Math.PI, 0);
       cCtx.fill();
 
-      // Outer Core (liquid Fe-Ni)
-      cCtx.beginPath();
-      cCtx.arc(cx, cy, r * 0.55, Math.PI, 0);
-      cCtx.arc(cx, cy, r * 0.22, 0, Math.PI, true);
-      cCtx.fillStyle = '#ea580c';
-      cCtx.fill();
-
-      // Mantle (Silicate Rock)
-      cCtx.beginPath();
-      cCtx.arc(cx, cy, r * 0.95, Math.PI, 0);
-      cCtx.arc(cx, cy, r * 0.55, 0, Math.PI, true);
-      cCtx.fillStyle = '#78350f';
-      cCtx.fill();
-
-      // Crust (Surface shell)
-      cCtx.beginPath();
-      cCtx.arc(cx, cy, r, Math.PI, 0);
-      cCtx.arc(cx, cy, r * 0.95, 0, Math.PI, true);
-      cCtx.fillStyle = '#22c55e';
-      cCtx.fill();
-
-      // Atmosphere ring
-      cCtx.beginPath();
-      cCtx.arc(cx, cy, r * 1.15, Math.PI, 0);
-      cCtx.arc(cx, cy, r, 0, Math.PI, true);
-      cCtx.fillStyle = 'rgba(56, 189, 248, 0.25)';
-      cCtx.fill();
-      cCtx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
-      cCtx.lineWidth = 1.5;
-      cCtx.stroke();
-
-      // Highlight active sphere
+      // Geomagnetic Field Lines (Dipole flux arching through space from core)
       cCtx.save();
-      if (activeSphere === 'geo') {
-        cCtx.strokeStyle = '#f59e0b';
-        cCtx.lineWidth = 4;
+      cCtx.lineWidth = 1.2;
+      for (let f = 1; f <= 4; f++) {
+        const fR = r * (1.15 + f * 0.14);
+        const pulse = Math.sin(animTime * 1.5 + f) * 0.15 + 0.25;
+        cCtx.strokeStyle = `rgba(168, 85, 247, ${pulse * (activeSphere === 'geo' ? 1.6 : 0.85)})`;
+        cCtx.setLineDash([4, 6]);
         cCtx.beginPath();
-        cCtx.arc(cx, cy, r * 0.95, Math.PI, 0);
+        cCtx.ellipse(cx, cy, fR * 1.05, fR * 0.82, 0, Math.PI, 0);
         cCtx.stroke();
-      } else if (activeSphere === 'hydro') {
-        cCtx.strokeStyle = '#0284c7';
-        cCtx.lineWidth = 6;
+      }
+      cCtx.setLineDash([]);
+      cCtx.restore();
+
+      // 3. Multi-Layer Atmosphere Shell (r to r * 1.22)
+      // Thermosphere & Aurora Borealis Curtains
+      cCtx.save();
+      const aurPulse = Math.sin(animTime * 1.2) * 0.12 + 0.88;
+      const auroraGrad = cCtx.createRadialGradient(cx, cy, r * 1.08, cx, cy, r * 1.22);
+      auroraGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+      auroraGrad.addColorStop(0.5, `rgba(52, 211, 153, ${0.35 * aurPulse})`);
+      auroraGrad.addColorStop(0.85, `rgba(192, 132, 252, ${0.28 * aurPulse})`);
+      auroraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      cCtx.fillStyle = auroraGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 1.22, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 1.08, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Aurora vertical shimmer rays
+      cCtx.strokeStyle = 'rgba(110, 231, 183, 0.22)';
+      cCtx.lineWidth = 2;
+      for (let a = 0.2; a < 0.8; a += 0.04) {
+        const ang = Math.PI * a;
+        const wave = Math.sin(animTime * 3 + a * 25) * 5;
+        const r1 = r * 1.09 + wave;
+        const r2 = r * 1.20 - wave;
         cCtx.beginPath();
-        cCtx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 0.4);
-        cCtx.stroke();
-      } else if (activeSphere === 'atmo') {
-        cCtx.strokeStyle = '#6366f1';
-        cCtx.lineWidth = 4;
-        cCtx.beginPath();
-        cCtx.arc(cx, cy, r * 1.15, Math.PI, 0);
-        cCtx.stroke();
-      } else if (activeSphere === 'bio') {
-        cCtx.strokeStyle = '#22c55e';
-        cCtx.lineWidth = 5;
-        cCtx.beginPath();
-        cCtx.arc(cx, cy, r, Math.PI, 0);
+        cCtx.moveTo(cx + Math.cos(ang) * r1, cy - Math.sin(ang) * r1);
+        cCtx.lineTo(cx + Math.cos(ang) * r2, cy - Math.sin(ang) * r2);
         cCtx.stroke();
       }
       cCtx.restore();
 
-      // Labels
-      cCtx.fillStyle = '#f8fafc';
-      cCtx.font = 'bold 11px Inter, sans-serif';
+      // Stratosphere & Ozone Layer (UV Shield: r * 1.03 to 1.08)
+      const stratoGrad = cCtx.createRadialGradient(cx, cy, r * 1.02, cx, cy, r * 1.08);
+      stratoGrad.addColorStop(0, 'rgba(37, 99, 235, 0.45)');
+      stratoGrad.addColorStop(0.6, 'rgba(79, 70, 229, 0.35)');
+      stratoGrad.addColorStop(1, 'rgba(99, 102, 241, 0.05)');
+      cCtx.fillStyle = stratoGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 1.08, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 1.02, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Dense Troposphere (0-12 km: r to r * 1.025)
+      const tropoGrad = cCtx.createRadialGradient(cx, cy, r * 0.99, cx, cy, r * 1.025);
+      tropoGrad.addColorStop(0, 'rgba(186, 230, 253, 0.7)');
+      tropoGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.45)');
+      tropoGrad.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
+      cCtx.fillStyle = tropoGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 1.025, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.99, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Drifting clouds in troposphere
+      cCtx.save();
+      cCtx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      for (let c = 0; c < 8; c++) {
+        const cAng = (Math.PI * 0.12 + c * 0.11 + animTime * 0.015) % Math.PI;
+        const cRad = r * 1.012;
+        const cX = cx - Math.cos(cAng) * cRad;
+        const cY = cy - Math.sin(cAng) * cRad;
+        cCtx.beginPath();
+        cCtx.ellipse(cX, cY, 14, 4, -cAng, 0, Math.PI * 2);
+        cCtx.fill();
+      }
+      cCtx.restore();
+
+      // 4. Solid Earth Concentric Slices with Realistic Geophysical Textures
+
+      // A) CRUST & LITHOSPHERE (r * 0.94 to r * 1.0)
+      // Realistic Continental Granite & Oceanic Basalt Stratification
+      const crustGrad = cCtx.createRadialGradient(cx, cy, r * 0.93, cx, cy, r);
+      crustGrad.addColorStop(0, '#572808');
+      crustGrad.addColorStop(0.4, '#7c2d12');
+      crustGrad.addColorStop(0.85, '#a16207');
+      crustGrad.addColorStop(1, '#15803d');
+      cCtx.fillStyle = crustGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.94, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Surface Topography: Continents, mountain peaks, and deep ocean trenches
+      cCtx.save();
+      // Ocean sectors (Hydrosphere: deep blue water)
+      cCtx.fillStyle = '#0284c7';
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r, Math.PI * 0.92, Math.PI * 0.68, true);
+      cCtx.arc(cx, cy, r * 0.985, Math.PI * 0.68, Math.PI * 0.92);
+      cCtx.fill();
+
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r, Math.PI * 0.42, Math.PI * 0.12, true);
+      cCtx.arc(cx, cy, r * 0.982, Math.PI * 0.12, Math.PI * 0.42);
+      cCtx.fill();
+
+      // Continental mountain roots (Isostasy: granitic crust plunging deeper into the mantle)
+      cCtx.fillStyle = '#92400e';
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.965, Math.PI * 0.65, Math.PI * 0.45, true);
+      cCtx.arc(cx, cy, r * 0.92, Math.PI * 0.45, Math.PI * 0.65);
+      cCtx.fill();
+
+      // Continental surface green canopy & snow caps
+      cCtx.strokeStyle = '#22c55e';
+      cCtx.lineWidth = 2.5;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r, Math.PI * 0.67, Math.PI * 0.43, true);
+      cCtx.stroke();
+      // Mountain snow summits
+      cCtx.strokeStyle = '#ffffff';
+      cCtx.lineWidth = 2;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 1.006, Math.PI * 0.58, Math.PI * 0.52, true);
+      cCtx.stroke();
+      cCtx.restore();
+
+      // B) MANTLE & ASTHENOSPHERE (r * 0.55 to r * 0.94)
+      // Viscous Silicate Rock with Convective Thermal Plumes
+      const mantleGrad = cCtx.createRadialGradient(cx, cy, r * 0.54, cx, cy, r * 0.94);
+      mantleGrad.addColorStop(0, '#781504'); // D'' Core-Mantle Boundary (hot, 3,800°C)
+      mantleGrad.addColorStop(0.3, '#9a3412');
+      mantleGrad.addColorStop(0.65, '#b45309');
+      mantleGrad.addColorStop(0.9, '#854d0e');
+      mantleGrad.addColorStop(1, '#572808'); // Cold upper lithospheric mantle
+      cCtx.fillStyle = mantleGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.94, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.55, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Mantle Convection Plumes (Thermal upwelling from core-mantle boundary)
+      cCtx.save();
+      const plumePulse = Math.sin(animTime * 1.4) * 0.15 + 0.85;
+      cCtx.strokeStyle = `rgba(251, 146, 60, ${0.45 * plumePulse})`;
+      cCtx.lineWidth = 4;
+      cCtx.setLineDash([6, 8]);
+      // Plume 1 (rising towards mid-ocean ridge)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.75, Math.PI * 0.82, Math.PI * 0.74, true);
+      cCtx.stroke();
+      // Plume 2 (Hotspot rising under continental craton)
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.78, Math.PI * 0.38, Math.PI * 0.30, true);
+      cCtx.stroke();
+
+      // Cold subducting oceanic slab (Lithosphere descending into deep mantle)
+      cCtx.strokeStyle = 'rgba(71, 85, 105, 0.65)';
+      cCtx.lineWidth = 3.5;
+      cCtx.setLineDash([]);
+      cCtx.beginPath();
+      cCtx.moveTo(cx + Math.cos(Math.PI * 0.69) * r * 0.94, cy - Math.sin(Math.PI * 0.69) * r * 0.94);
+      cCtx.lineTo(cx + Math.cos(Math.PI * 0.72) * r * 0.66, cy - Math.sin(Math.PI * 0.72) * r * 0.66);
+      cCtx.stroke();
+      cCtx.restore();
+
+      // C) OUTER CORE (r * 0.22 to r * 0.55)
+      // Molten Liquid Iron-Nickel Geodynamo with Swirling Thermal Eddies
+      const outerCoreGrad = cCtx.createRadialGradient(cx, cy, r * 0.22, cx, cy, r * 0.55);
+      outerCoreGrad.addColorStop(0, '#f97316'); // 4,800°C boundary
+      outerCoreGrad.addColorStop(0.5, '#ea580c');
+      outerCoreGrad.addColorStop(0.85, '#c2410c');
+      outerCoreGrad.addColorStop(1, '#9a3412'); // 3,800°C CMB
+      cCtx.fillStyle = outerCoreGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.55, Math.PI, 0);
+      cCtx.arc(cx, cy, r * 0.22, 0, Math.PI, true);
+      cCtx.fill();
+
+      // Molten churning dynamo eddies
+      cCtx.save();
+      coreTurbulence.forEach(pt => {
+        pt.theta = (pt.theta + pt.speed + Math.PI) % Math.PI;
+        const curR = r * pt.rFrac;
+        const px = cx - Math.cos(pt.theta) * curR;
+        const py = cy - Math.sin(pt.theta) * curR;
+        const glow = Math.sin(animTime * 2 + pt.theta * 5) * 0.3 + 0.7;
+        cCtx.fillStyle = `rgba(254, 240, 138, ${0.45 * pt.intensity * glow})`;
+        cCtx.beginPath();
+        cCtx.arc(px, py, pt.size, 0, Math.PI * 2);
+        cCtx.fill();
+      });
+      cCtx.restore();
+
+      // D) INNER CORE (0 to r * 0.22)
+      // Solid Crystalline Iron-Nickel Sphere radiating 5,400°C thermal energy
+      const innerCoreGrad = cCtx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.22);
+      innerCoreGrad.addColorStop(0, '#ffffff'); // Incandescent white hot center
+      innerCoreGrad.addColorStop(0.35, '#fef08a');
+      innerCoreGrad.addColorStop(0.7, '#fde047');
+      innerCoreGrad.addColorStop(0.92, '#f59e0b');
+      innerCoreGrad.addColorStop(1, '#ea580c');
+      cCtx.fillStyle = innerCoreGrad;
+      cCtx.beginPath();
+      cCtx.arc(cx, cy, r * 0.22, Math.PI, 0);
+      cCtx.fill();
+
+      // Crystalline diffraction rays from inner core
+      cCtx.save();
+      cCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      cCtx.lineWidth = 1.2;
+      for (let cr = 0.1; cr < 0.95; cr += 0.12) {
+        const cAng = Math.PI * cr;
+        const rayLen = r * (0.20 + Math.sin(animTime * 2.5 + cr * 10) * 0.02);
+        cCtx.beginPath();
+        cCtx.moveTo(cx, cy);
+        cCtx.lineTo(cx - Math.cos(cAng) * rayLen, cy - Math.sin(cAng) * rayLen);
+        cCtx.stroke();
+      }
+      cCtx.restore();
+
+      // 5. Active Sphere Volumetric Highlight & Callout Halos
+      cCtx.save();
+      const pulseGlow = Math.sin(animTime * 3) * 0.2 + 0.8;
+      if (activeSphere === 'geo') {
+        cCtx.strokeStyle = `rgba(245, 158, 11, ${0.9 * pulseGlow})`;
+        cCtx.lineWidth = 3.5;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 0.55, Math.PI, 0);
+        cCtx.stroke();
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 0.94, Math.PI, 0);
+        cCtx.stroke();
+      } else if (activeSphere === 'hydro') {
+        cCtx.strokeStyle = `rgba(2, 132, 199, ${0.95 * pulseGlow})`;
+        cCtx.lineWidth = 5;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.002, Math.PI * 0.92, Math.PI * 0.68, true);
+        cCtx.stroke();
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.002, Math.PI * 0.42, Math.PI * 0.12, true);
+        cCtx.stroke();
+      } else if (activeSphere === 'atmo') {
+        cCtx.strokeStyle = `rgba(99, 102, 241, ${0.95 * pulseGlow})`;
+        cCtx.lineWidth = 4;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.08, Math.PI, 0);
+        cCtx.stroke();
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.22, Math.PI, 0);
+        cCtx.stroke();
+      } else if (activeSphere === 'bio') {
+        cCtx.strokeStyle = `rgba(34, 197, 94, ${0.95 * pulseGlow})`;
+        cCtx.lineWidth = 4.5;
+        cCtx.beginPath();
+        cCtx.arc(cx, cy, r * 1.005, Math.PI * 0.67, Math.PI * 0.43, true);
+        cCtx.stroke();
+      }
+      cCtx.restore();
+
+      // 6. High-Contrast Scientific Annotations & Depth Brackets
+      cCtx.save();
+      cCtx.font = '600 11px Inter, sans-serif';
       cCtx.textAlign = 'center';
-      cCtx.fillText('Atmosphere (+100 km)', cx, cy - r * 1.18);
-      cCtx.fillText('Crust & Oceans', cx + r * 0.85, cy - r * 0.55);
-      cCtx.fillText('Mantle', cx, cy - r * 0.7);
-      cCtx.fillText('Core', cx, cy - r * 0.35);
+
+      // Layer text with crisp drop shadow
+      function drawLabel(text, lx, ly, col = '#f8fafc', sub = '') {
+        cCtx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        cCtx.fillText(text, lx + 1, ly + 1);
+        cCtx.fillStyle = col;
+        cCtx.fillText(text, lx, ly);
+        if (sub) {
+          cCtx.font = '500 9px Inter, sans-serif';
+          cCtx.fillStyle = 'rgba(226, 232, 240, 0.8)';
+          cCtx.fillText(sub, lx, ly + 13);
+          cCtx.font = '600 11px Inter, sans-serif';
+        }
+      }
+
+      drawLabel('Atmosphere · +100 to 600 km', cx, cy - r * 1.24, '#38bdf8', 'Exosphere, Aurora & Ozone');
+      drawLabel('Crust & Oceans', cx + r * 0.82, cy - r * 0.58, '#4ade80', '0 to 70 km · Biosphere Realm');
+      drawLabel('Mantle · Peridotite Convection', cx - r * 0.65, cy - r * 0.66, '#fb923c', '70 to 2,890 km · 3,800°C');
+      drawLabel('Outer Core · Liquid Dynamo', cx + r * 0.40, cy - r * 0.32, '#fbbf24', 'Molten Fe-Ni · Generates B-Field');
+      drawLabel('Inner Core', cx, cy - r * 0.08, '#ffffff', '5,400°C · Solid Fe-Ni');
+      cCtx.restore();
+
+      // 7. Interactive Hover Cursor & Real-time Geological Depth HUD
+      if (mouseHover) {
+        const dx = mouseHover.x - cx;
+        const dy = cy - mouseHover.y; // positive up
+        const dist = Math.hypot(dx, dy);
+
+        if (dy >= -10 && dist <= r * 1.35) {
+          const frac = dist / r;
+          let layerName = '', layerDepth = '', layerTemp = '', layerPress = '', layerColor = '#f59e0b';
+
+          if (frac <= 0.22) {
+            layerName = 'Solid Inner Core';
+            layerDepth = `${Math.round(6371 - frac * 6371)} km to 6,371 km depth`;
+            layerTemp = '5,400°C (Hotter than Sun Surface)';
+            layerPress = '360 GPa (3.6 million atm)';
+            layerColor = '#ffffff';
+          } else if (frac <= 0.55) {
+            layerName = 'Liquid Outer Core (Geodynamo)';
+            layerDepth = '2,890 to 5,150 km depth';
+            layerTemp = '4,000°C to 5,000°C';
+            layerPress = '135 to 330 GPa';
+            layerColor = '#fb923c';
+          } else if (frac <= 0.94) {
+            layerName = 'Silicate Mantle (Asthenosphere & Mesosphere)';
+            layerDepth = '70 to 2,890 km depth';
+            layerTemp = '1,000°C to 3,700°C';
+            layerPress = '2 to 135 GPa';
+            layerColor = '#d97706';
+          } else if (frac <= 1.01) {
+            layerName = 'Crust, Hydrosphere & Biosphere';
+            layerDepth = '0 to 70 km depth';
+            layerTemp = '-50°C to 400°C (Hydrothermal)';
+            layerPress = '1 atm to 1,100 atm (Trench)';
+            layerColor = '#22c55e';
+          } else {
+            layerName = 'Atmosphere (Troposphere to Thermosphere)';
+            layerDepth = '0 to 600+ km altitude';
+            layerTemp = '-90°C (Mesopause) to 1,500°C (Solar thermosphere)';
+            layerPress = '0 to 1 atm';
+            layerColor = '#38bdf8';
+          }
+
+          // Crosshair ring
+          cCtx.save();
+          cCtx.strokeStyle = layerColor;
+          cCtx.lineWidth = 1.5;
+          cCtx.setLineDash([3, 3]);
+          cCtx.beginPath();
+          cCtx.arc(cx, cy, dist, Math.PI, 0);
+          cCtx.stroke();
+
+          // Target point
+          cCtx.fillStyle = layerColor;
+          cCtx.beginPath();
+          cCtx.arc(mouseHover.x, mouseHover.y, 4, 0, Math.PI * 2);
+          cCtx.fill();
+
+          // Tooltip card
+          const tipW = 220, tipH = 68;
+          let tipX = mouseHover.x + 12;
+          let tipY = mouseHover.y - tipH - 8;
+          if (tipX + tipW > w - 10) tipX = mouseHover.x - tipW - 12;
+          if (tipY < 10) tipY = mouseHover.y + 12;
+
+          cCtx.fillStyle = 'rgba(10, 15, 29, 0.92)';
+          cCtx.strokeStyle = layerColor;
+          cCtx.lineWidth = 1;
+          cCtx.setLineDash([]);
+          cCtx.beginPath();
+          cCtx.roundRect(tipX, tipY, tipW, tipH, 6);
+          cCtx.fill();
+          cCtx.stroke();
+
+          cCtx.font = 'bold 11px Inter, sans-serif';
+          cCtx.fillStyle = layerColor;
+          cCtx.textAlign = 'left';
+          cCtx.fillText(layerName, tipX + 8, tipY + 16);
+
+          cCtx.font = '10px Inter, sans-serif';
+          cCtx.fillStyle = '#cbd5e1';
+          cCtx.fillText(`Depth: ${layerDepth}`, tipX + 8, tipY + 32);
+          cCtx.fillText(`Temp: ${layerTemp}`, tipX + 8, tipY + 46);
+          cCtx.fillText(`Pressure: ${layerPress}`, tipX + 8, tipY + 60);
+          cCtx.restore();
+        }
+      }
     }
+
+    // Dynamic animation loop for planetary dynamo, convection plumes, and auroral shimmer
+    function startCutawayLoop() {
+      function frame() {
+        drawCutaway();
+        cutawayAnimId = requestAnimationFrame(frame);
+      }
+      if (cutawayAnimId) cancelAnimationFrame(cutawayAnimId);
+      cutawayAnimId = requestAnimationFrame(frame);
+    }
+    startCutawayLoop();
 
     document.querySelectorAll('.sphere-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -871,7 +1254,6 @@
         document.getElementById('metaElem').textContent = d.elem;
         document.getElementById('metaDepth').textContent = d.depth;
         document.getElementById('metaProcess').textContent = d.process;
-        drawCutaway();
       });
     });
 

@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import { Chess, validateFen } from 'chess.js';
 import {
   dayKey, shiftDayKey, rngFor, countSolutions, solveSudoku, makeSudoku, sudokuConflicts,
   makeCrossword, crosswordProblems, entryCells,
-  makeDailyDouble, STEAM_CATEGORIES, DOUBLE_JEOPARDY_VALUES
+  makeDailyDouble, makeDailyChess, STEAM_CATEGORIES, DOUBLE_JEOPARDY_VALUES
 } from '../assets/js/daily-puzzles-core.mjs';
 
 const bank = JSON.parse(readFileSync(new URL('../data/crossword-bank.json', import.meta.url), 'utf8')).words;
 const doubleBank = JSON.parse(readFileSync(new URL('../data/daily-double-bank.json', import.meta.url), 'utf8'));
+const chessBank = JSON.parse(readFileSync(new URL('../data/daily-chess-bank.json', import.meta.url), 'utf8')).puzzles;
 
 // A spread of dates covering every weekday and a month/year boundary.
 const DATES = ['2026-01-01', '2026-02-28', '2026-03-02', '2026-10-16', '2026-12-31', '2027-07-04', '2028-02-29'];
@@ -104,6 +106,20 @@ test('different days give different crosswords', () => {
   assert.notEqual(a, b);
 });
 
+test('crossword answers rest for three days before reuse', () => {
+  let key = '2026-10-16';
+  const recent = [];
+  for (let day = 0; day < 12; day++) {
+    const answers = new Set(makeCrossword(key, bank).entries.map((e) => e.answer));
+    for (const earlier of recent) {
+      assert.deepEqual([...answers].filter((answer) => earlier.has(answer)), [], `${key} repeats a recent answer`);
+    }
+    recent.push(answers);
+    if (recent.length > 3) recent.shift();
+    key = shiftDayKey(key, 1);
+  }
+});
+
 test('generation is fast enough to run on page load', () => {
   const t0 = performance.now();
   makeSudoku('2026-10-17');
@@ -170,5 +186,82 @@ test('different days give different daily double boards', () => {
   const aIds = a.grid.flat().map((t) => t.id).join(',');
   const bIds = b.grid.flat().map((t) => t.id).join(',');
   assert.notEqual(aIds, bIds);
+});
+
+test('daily double does not repeat a tile question on nearby days', () => {
+  let key = '2026-10-16';
+  const recent = [];
+  for (let day = 0; day < 12; day++) {
+    const ids = makeDailyDouble(key, doubleBank).grid.flat().map((tile) => tile.id);
+    for (const earlier of recent) {
+      ids.forEach((id, position) => assert.notEqual(id, earlier[position], `${key} repeats tile ${position}`));
+    }
+    recent.push(ids);
+    if (recent.length > 3) recent.shift();
+    key = shiftDayKey(key, 1);
+  }
+});
+
+test('chess bank contains short legal puzzles with one forced first move', () => {
+  assert.ok(chessBank.length >= 12);
+  const ids = new Set();
+  for (const puzzle of chessBank) {
+    assert.ok(!ids.has(puzzle.id), puzzle.id);
+    ids.add(puzzle.id);
+    assert.ok(validateFen(puzzle.fen).ok, puzzle.id);
+    assert.ok(puzzle.mate === 1 || puzzle.mate === 2, puzzle.id);
+    const game = new Chess(puzzle.fen);
+    assert.equal(game.turn(), 'w', puzzle.id);
+    assert.equal(game.isCheck(), false, puzzle.id);
+    assert.equal(game.isAttacked(game.findPiece({ type: 'k', color: 'b' })[0], 'w'), false, puzzle.id);
+    const mates = [];
+    const forced = [];
+    for (const move of game.moves({ verbose: true })) {
+      game.move(move);
+      if (game.isCheckmate()) mates.push(move.lan);
+      else if (puzzle.mate === 2) {
+        const replies = game.moves({ verbose: true });
+        if (replies.length && replies.every((reply) => {
+          game.move(reply);
+          const hasMate = game.moves({ verbose: true }).some((finish) => {
+            game.move(finish);
+            const mate = game.isCheckmate();
+            game.undo();
+            return mate;
+          });
+          game.undo();
+          return hasMate;
+        })) forced.push(move.lan);
+      }
+      game.undo();
+    }
+    assert.deepEqual(mates, puzzle.mate === 1 ? [puzzle.first] : [], puzzle.id);
+    if (puzzle.mate === 2) {
+      assert.deepEqual(forced, [puzzle.first], puzzle.id);
+      game.move(puzzle.first);
+      assert.deepEqual(Object.keys(puzzle.lines).sort(), game.moves({ verbose: true }).map((move) => move.lan).sort(), puzzle.id);
+      for (const [reply, finishes] of Object.entries(puzzle.lines)) {
+        game.move(reply);
+        for (const finish of finishes) {
+          game.move(finish);
+          assert.ok(game.isCheckmate(), `${puzzle.id}: ${reply} ${finish}`);
+          game.undo();
+        }
+        game.undo();
+      }
+    }
+  }
+});
+
+test('daily chess is deterministic and rotates through the bank', () => {
+  let key = '2026-10-16';
+  const seen = new Set();
+  for (let day = 0; day < chessBank.length; day++) {
+    const puzzle = makeDailyChess(key, chessBank);
+    assert.deepEqual(puzzle, makeDailyChess(key, chessBank));
+    assert.ok(!seen.has(puzzle.id), `${key} repeats before the bank is exhausted`);
+    seen.add(puzzle.id);
+    key = shiftDayKey(key, 1);
+  }
 });
 
