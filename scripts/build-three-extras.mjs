@@ -8,9 +8,12 @@ import * as THREE from 'three';
 
 const names = Object.keys(THREE).filter((name) => /^[A-Za-z_$][\w$]*$/.test(name) && name !== 'default');
 
-await build({
-  entryPoints: ['scripts/three-extras-entry.js'],
-  outfile: 'assets/vendor/three-extras.min.js',
+for (const [entry, outfile] of [
+  ['scripts/three-extras-entry.js', 'assets/vendor/three-extras.min.js'],
+  ['scripts/three-fx-entry.js', 'assets/vendor/three-fx.min.js']
+]) await build({
+  entryPoints: [entry],
+  outfile,
   bundle: true,
   format: 'esm',
   minify: true,
@@ -28,7 +31,7 @@ await build({
     }
   }]
 });
-console.log(`three-extras.min.js built against shared THREE (${names.length} names).`);
+console.log(`three-extras.min.js and three-fx.min.js built against shared THREE (${names.length} names).`);
 
 // Draco decoder (glTF-only build, wasm) for compressed .glb files; the Bench loads it on demand.
 fs.mkdirSync('assets/vendor/draco', { recursive: true });
