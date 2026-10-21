@@ -43,11 +43,11 @@ Generated 2026-10-20 by a triage script, then hand-checked. Phase 3 works throug
 | [ ] | A | lessons/humanities/pioneers/leonardo-da-vinci.html | div.dv-timeline 4/4 dates parse |
 | [ ] | A | lessons/humanities/quadrivium.html | ol.fl-timeline 7/7 dates parse |
 | [ ] | A | lessons/humanities/school-of-athens.html | div.athens-timeline 8/8 dates parse |
-| [ ] | A | lessons/language-literature/dante-inferno.html | ol.x-timeline 7/7 dates parse |
-| [ ] | A | lessons/language-literature/dylan-thomas-poetry.html | ol.x-timeline 7/7 dates parse |
-| [ ] | A | lessons/language-literature/milton-paradise-lost.html | ol.x-timeline 8/8 dates parse |
-| [ ] | A | lessons/language-literature/pilgrims-progress.html | ol.x-timeline 8/8 dates parse |
-| [ ] | A | lessons/language-literature/tolkien-worldbuilding.html | ol.x-timeline 9/9 dates parse |
+| [x] | A | lessons/language-literature/dante-inferno.html | ol.x-timeline 7/7 dates parse |
+| [x] | A | lessons/language-literature/dylan-thomas-poetry.html | ol.x-timeline 7/7 dates parse |
+| [x] | A | lessons/language-literature/milton-paradise-lost.html | ol.x-timeline 8/8 dates parse |
+| [x] | A | lessons/language-literature/pilgrims-progress.html | ol.x-timeline 8/8 dates parse |
+| [x] | A | lessons/language-literature/tolkien-worldbuilding.html | ol.x-timeline 9/9 dates parse |
 | [ ] | A | lessons/language-literature/tower-babel-library-internet.html | ul.atlas-timeline 8/8 dates parse |
 | [ ] | A | lessons/language-literature/william-blake-songs.html | ol.bk-timeline 11/11 dates parse |
 | [ ] | A | lessons/life-sciences/amino-acids.html | div.aa-timeline 8/8 dates parse |
