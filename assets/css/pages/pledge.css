@@ -21,7 +21,7 @@
 }
 
 .terminal.eliza-app {
-  padding: clamp(0.6rem, 1.3vw, 1rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
 }
 
 .flag-stage {
@@ -35,7 +35,8 @@
   border: 0;
   border-radius: 15px;
   overflow: hidden;
-  background: linear-gradient(180deg, #142e51 0%, #356fa1 68%, #8bb4d1 100%);
+  background: linear-gradient(180deg, #0a1d45 0%, #1b4b86 45%, #5d8fc4 78%, #f2b483 100%);
+  box-shadow: 0 0 0 3px #ffd27a, 0 0 0 7px #002868, 0 0 0 10px #fff, 0 0 0 13px #bf0a30, 0 14px 40px rgba(0, 20, 60, 0.45);
 }
 
 .flag-model-viewer {
@@ -48,18 +49,60 @@
   transform: translateX(-7%);
 }
 
+.sky-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.sky-glow {
+  position: absolute; inset: auto -10% -35% -10%; height: 85%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 196, 120, 0.85), rgba(255, 140, 90, 0.35) 40%, transparent 70%);
+}
+.sky-rays {
+  position: absolute; left: 50%; bottom: -60%; width: 220%; aspect-ratio: 1; translate: -50% 0;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 224, 160, 0.12) 0 5deg, transparent 5deg 12deg);
+  mask-image: radial-gradient(circle, #000 0%, transparent 62%);
+  animation: sky-spin 240s linear infinite;
+}
+.sky-stars {
+  position: absolute; inset: 0 0 45% 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 20%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 22% 55%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 35% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 47% 40%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 61% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 73% 60%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 86% 28%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 95% 8%, #fff 50%, transparent 51%);
+  animation: sky-twinkle 4s ease-in-out infinite alternate;
+}
+.sky-clouds i {
+  position: absolute; height: 5.5%; width: 26%; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22); filter: blur(10px);
+  animation: sky-drift 70s linear infinite;
+}
+.sky-clouds i:nth-child(1) { top: 62%; left: -30%; }
+.sky-clouds i:nth-child(2) { top: 48%; left: -30%; width: 34%; animation-duration: 95s; animation-delay: -40s; }
+.sky-clouds i:nth-child(3) { top: 72%; left: -30%; width: 20%; animation-duration: 55s; animation-delay: -20s; }
+@keyframes sky-drift { to { transform: translateX(470%); } }
+@keyframes sky-twinkle { from { opacity: 0.45; } to { opacity: 1; } }
+@keyframes sky-spin { to { rotate: 360deg; } }
+
+.fireworks { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; mix-blend-mode: screen; }
+
+.stage-bunting {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 10px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, #bf0a30 0 40px, #fff 40px 80px, #002868 80px 120px);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.stage-star { color: #ffd27a; text-shadow: 0 0 14px rgba(255, 210, 122, 0.8); }
+
 .stage-shade {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(5, 17, 39, 0.65), rgba(5, 17, 39, 0.15) 38%, rgba(5, 17, 39, 0.65));
+  background: linear-gradient(180deg, rgba(5, 17, 39, 0.35), rgba(5, 17, 39, 0) 40%, rgba(5, 17, 39, 0.3));
   transition: background 0.4s ease;
 }
 
 .flag-stage[data-crawl="playing"] .stage-shade,
 .flag-stage[data-crawl="paused"] .stage-shade {
-  background: linear-gradient(180deg, rgba(5, 17, 39, 0.82), rgba(5, 17, 39, 0.48) 45%, rgba(5, 17, 39, 0.82));
+  background: linear-gradient(180deg, rgba(5, 17, 39, 0.7), rgba(5, 17, 39, 0.4) 45%, rgba(5, 17, 39, 0.65));
 }
 
 .stage-heading {
@@ -124,7 +167,7 @@
   letter-spacing: 0.012em;
   text-align: center;
   text-wrap: balance;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9), 0 0 35px rgba(5, 17, 39, 0.75);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9), 0 0 35px rgba(5, 17, 39, 0.75), 0 0 22px rgba(255, 210, 122, 0.35);
   opacity: 0;
 }
 
@@ -231,6 +274,7 @@
 }
 
 @media (max-width: 650px) {
+  .stage-bunting { height: 7px; }
   .flag-stage { height: min(68svh, 570px); min-height: 380px; }
   .pledge-crawl { font-size: clamp(1.35rem, 5.5vw, 2rem); line-height: 1.5; width: 91%; }
   .pledge-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -239,6 +283,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sky-rays, .sky-stars, .sky-clouds i { animation: none; }
+  .fireworks { display: none; }
   .flag-stage[data-crawl="playing"] .pledge-crawl,
   .flag-stage[data-crawl="paused"] .pledge-crawl {
     top: 50%;

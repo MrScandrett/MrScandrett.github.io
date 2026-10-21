@@ -178,6 +178,37 @@ function ensureViewportMeta(html) {
   return `${meta}\n${html}`;
 }
 
+const A11Y_DEFAULTS_CSS =
+  ":where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid #1d4ed8!important;outline-offset:2px!important}" +
+  "@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;" +
+  "animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}";
+
+// Student pages are written without anyone running an accessibility check, so
+// guarantee the floor at build time (same idea as ensureViewportMeta): a page
+// language, a name for each game canvas, a visible keyboard focus ring and
+// reduced-motion CSS. Canvas JS animation and key handling can't be fixed
+// here; tests/apps-a11y-browser.mjs covers those.
+function ensureAccessibilityDefaults(html, title) {
+  let out = html;
+  if (!/<html[^>]*\blang\s*=/i.test(out)) {
+    out = /<html\b/i.test(out)
+      ? out.replace(/<html\b/i, '<html lang="en"')
+      : out;
+  }
+
+  const safeTitle = String(title || "Student project").replace(/[<>"&]/g, "").trim();
+  out = out.replace(/<canvas\b([^>]*)>/gi, (match, attrs) => {
+    if (/\b(aria-label|aria-labelledby|aria-hidden|role)\s*=/i.test(attrs)) return match;
+    const w = /\bwidth\s*=\s*["']?(\d+)/i.exec(attrs);
+    if (w && Number(w[1]) <= 120) return `<canvas${attrs} aria-hidden="true">`;
+    return `<canvas${attrs} role="img" aria-label="${safeTitle} canvas">`;
+  });
+
+  const style = `<style data-a11y-defaults>${A11Y_DEFAULTS_CSS}</style>`;
+  if (/<\/head>/i.test(out)) return out.replace(/<\/head>/i, `${style}</head>`);
+  return `${style}\n${out}`;
+}
+
 let touchControlsSourcePromise = null;
 function touchControlsSource() {
   if (!touchControlsSourcePromise) {
@@ -710,6 +741,7 @@ async function processProject(source, slug) {
 
   let rewrittenHtml = rewriteHtmlPaths(sourceHtml, { hasStyle, hasScript });
   rewrittenHtml = ensureViewportMeta(rewrittenHtml);
+  rewrittenHtml = ensureAccessibilityDefaults(rewrittenHtml, projectTitle);
   rewrittenHtml = await injectTouchControls(rewrittenHtml, slug);
   const minifiedHtml = await minify(rewrittenHtml, {
     collapseWhitespace: true,
