@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tinkercad Codeblocks · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Parametric 3D design with Tinkercad Codeblocks: variables, loops and extrusion. Build a ring stack where one number reshapes the whole form, see the block program update live, and download it as an STL." />
+  <meta name="description" content="Parametric 3D design with Tinkercad Codeblocks: variables, loops and extrusion. Build a ring stack where one number reshapes the whole form, then lock the rings into a star fidget that cannot fall apart when you lift it. See the block program update live and download the STL." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
@@ -25,6 +25,20 @@
     .cb-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     .cb-table th, .cb-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); }
     .cb-diagram { display: block; width: 100%; max-width: 640px; height: auto; margin: 0.4rem auto 0; }
+    .cb-def { background: #1d4ed8; }
+    .cb-prog-gap { height: 0.35rem; }
+    .cb-ctl { display: contents; }
+    .cb-ctl[hidden] { display: none; }
+    .cb-status { margin: 0.5rem 0 0; font-weight: 700; }
+    .cb-status[data-locked="true"] { color: #1c8257; }
+    .cb-status[data-locked="false"] { color: #c23b3b; }
+    .cb-lift { flex: 1 1 100%; }
+    .cb-lift input[type="range"] { width: min(520px, 100%); }
+    .cb-fig { margin: 0.6rem 0 0; }
+    .cb-fig svg { display: block; width: 100%; max-width: 680px; height: auto; margin: 0 auto; }
+    .cb-fig figcaption { font-size: 0.84rem; margin-top: 0.3rem; }
+    .cb-go { border: 1px solid var(--line, #d2d2d7); background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); border-radius: 8px; padding: 0.4rem 0.8rem; font-weight: 700; cursor: pointer; }
+    .cb-go:hover { border-color: var(--fl-accent, #0e7490); }
     @media (max-width: 720px) { .cb-lab-grid { grid-template-columns: minmax(0, 1fr); } }
   </style>
 </head>
@@ -67,16 +81,19 @@
             <span>Variables</span><span class="dot"></span>
             <span>Loops</span><span class="dot"></span>
             <span>Extrude</span><span class="dot"></span>
-            <span>Parametric Ring Stack</span>
+            <span>Ring Stack</span><span class="dot"></span>
+            <span>Locked Star Fidget</span>
           </div>
-          <p class="fl-lede">In ordinary Tinkercad you drag every shape by hand. In <strong>Codeblocks</strong>, which Autodesk added to Tinkercad in 2019, you snap together blocks of code and the code builds the shapes. That changes what a design <em>is</em>: not a pile of shapes but a recipe. Change one number in the recipe and the whole form rebuilds itself. That's <strong><span data-glossary="parametric design">parametric design</span></strong>, and today you'll use it to build a stack of rings.</p>
+          <p class="fl-lede">In ordinary Tinkercad you drag every shape by hand. In <strong>Codeblocks</strong>, which Autodesk added to Tinkercad in 2019, you snap together blocks of code and the code builds the shapes. That changes what a design <em>is</em>: not a pile of shapes but a recipe. Change one number in the recipe and the whole form rebuilds itself. That's <strong><span data-glossary="parametric design">parametric design</span></strong>, and today you'll use it to build a stack of rings, then lock the rings together so the stack becomes a fidget that stays in one piece when you pick it up.</p>
         </section>
 
         <nav class="ll-lesson-steps" aria-label="Lesson sections">
           <a href="#cb-why">Why Code?</a>
           <a href="#cb-ideas">Three Ideas</a>
           <a href="#cb-lab">Ring Stack Lab</a>
+          <a href="#cb-lock">Lock It</a>
           <a href="#cb-build">Build It</a>
+          <a href="#cb-fidget">Star Fidget</a>
           <a href="#cb-pi">The Pi Inside</a>
           <a href="#fl-sec-practice">Practice</a>
         </nav>
@@ -118,7 +135,7 @@
         <!-- Ring Stack Lab -->
         <section class="fl-card" id="cb-lab" style="--card-accent:#0e7490;">
           <h2>Ring Stack Lab</h2>
-          <p>This is the program you'll build in Tinkercad. Move a slider and watch two things change at once: the code on the right and the model on the left. When you like your design, download it as an STL to print or to import into Tinkercad.</p>
+          <p>This is the program you'll build in Tinkercad. Move a slider and watch two things change at once: the code on the right and the model on the left. When you like your design, download it as an STL to print or to import into Tinkercad. The first two layouts are loose rings. Pick <strong>Locked fidget</strong> to see rings that really are linked.</p>
 
           <div class="fl-lab" data-memory-ignore>
             <div class="cb-lab-grid">
@@ -130,25 +147,98 @@
                 <legend>Layout</legend>
                 <label class="fl-lab-check"><input type="radio" name="cb-mode" value="stack" checked /> Stack (rings go up)</label>
                 <label class="fl-lab-check"><input type="radio" name="cb-mode" value="concentric" /> Concentric (rings go out)</label>
+                <label class="fl-lab-check"><input type="radio" name="cb-mode" value="fidget" /> Locked fidget (rings can't come apart)</label>
               </fieldset>
-              <label>rings: <output id="cb-n-out" for="cb-n">8</output>
-                <input type="range" id="cb-n" min="1" max="20" step="1" value="8" /></label>
-              <label>start radius (mm): <output id="cb-r-out" for="cb-r">30</output>
-                <input type="range" id="cb-r" min="5" max="50" step="1" value="30" /></label>
-              <label>change radius by (mm): <output id="cb-dr-out" for="cb-dr">-3</output>
-                <input type="range" id="cb-dr" min="-6" max="10" step="0.5" value="-3" /></label>
-              <label>height, the extrusion (mm): <output id="cb-h-out" for="cb-h">5</output>
-                <input type="range" id="cb-h" min="1" max="20" step="0.5" value="5" /></label>
-              <label>wall (mm): <output id="cb-w-out" for="cb-w">3</output>
-                <input type="range" id="cb-w" min="1" max="10" step="0.5" value="3" /></label>
+              <div class="cb-ctl" data-cb-for="classic">
+                <label>rings: <output id="cb-n-out" for="cb-n">8</output>
+                  <input type="range" id="cb-n" min="1" max="20" step="1" value="8" /></label>
+                <label>start radius (mm): <output id="cb-r-out" for="cb-r">30</output>
+                  <input type="range" id="cb-r" min="5" max="50" step="1" value="30" /></label>
+                <label>change radius by (mm): <output id="cb-dr-out" for="cb-dr">-3</output>
+                  <input type="range" id="cb-dr" min="-6" max="10" step="0.5" value="-3" /></label>
+                <label>height, the extrusion (mm): <output id="cb-h-out" for="cb-h">5</output>
+                  <input type="range" id="cb-h" min="1" max="20" step="0.5" value="5" /></label>
+                <label>wall (mm): <output id="cb-w-out" for="cb-w">3</output>
+                  <input type="range" id="cb-w" min="1" max="10" step="0.5" value="3" /></label>
+              </div>
+              <div class="cb-ctl" data-cb-for="fidget" hidden>
+                <fieldset>
+                  <legend>Outline</legend>
+                  <label class="fl-lab-check"><input type="radio" name="cb-shape" value="star" checked /> Star (rings slide)</label>
+                  <label class="fl-lab-check"><input type="radio" name="cb-shape" value="round" /> Round (rings spin)</label>
+                </fieldset>
+                <label>rings: <output id="cb-f-n-out" for="cb-f-n">6</output>
+                  <input type="range" id="cb-f-n" min="2" max="12" step="1" value="6" /></label>
+                <label>start radius (mm): <output id="cb-f-r-out" for="cb-f-r">14</output>
+                  <input type="range" id="cb-f-r" min="6" max="30" step="1" value="14" /></label>
+                <label>wall (mm): <output id="cb-f-w-out" for="cb-f-w">3</output>
+                  <input type="range" id="cb-f-w" min="1.5" max="5" step="0.5" value="3" /></label>
+                <label>gap between rings (mm): <output id="cb-f-g-out" for="cb-f-g">1.5</output>
+                  <input type="range" id="cb-f-g" min="0.5" max="3" step="0.1" value="1.5" /></label>
+                <label>lock steps (0 = no lock): <output id="cb-f-k-out" for="cb-f-k">4</output>
+                  <input type="range" id="cb-f-k" min="0" max="6" step="1" value="4" /></label>
+                <label>ring 1 straight section (mm): <output id="cb-f-flat-out" for="cb-f-flat">2</output>
+                  <input type="range" id="cb-f-flat" min="1" max="8" step="0.5" value="2" /></label>
+                <label>each ring out is taller by (mm): <output id="cb-f-step-out" for="cb-f-step">1</output>
+                  <input type="range" id="cb-f-step" min="0" max="2" step="0.5" value="1" /></label>
+                <label class="cb-lift">Lift test, raise the outer ring (mm): <output id="cb-f-lift-out" for="cb-f-lift">0</output>
+                  <input type="range" id="cb-f-lift" min="0" max="12" step="0.1" value="0" /></label>
+              </div>
               <div class="fl-lab-buttons">
                 <button type="button" id="cb-stl">Download STL</button>
                 <button type="button" id="cb-reset">Reset</button>
               </div>
             </div>
+            <p class="cb-status" id="cb-status" aria-live="polite" hidden></p>
             <p class="fl-lab-readout" id="cb-readout" aria-live="polite"></p>
           </div>
           <div class="fl-callout a1"><strong>Challenges:</strong> (1) Make a tower that gets <em>wider</em> as it goes up. (2) Switch to Concentric and make a target: rings that touch but don't overlap. What must <em>change radius by</em> equal? (3) Make one design and change only <em>rings</em> from 4 to 16. How many numbers did you edit? How many shapes changed?</div>
+        </section>
+
+        <!-- Lock it -->
+        <section class="fl-card" id="cb-lock" style="--card-accent:#c2410c;">
+          <h2>Lock It: Why Ring Stacks Fall Apart</h2>
+          <p>Try the ring stack in your hands, in your head. Lift the outer ring and the rest stay on the table. Nothing joins them. A star fidget built that way, eight star rings nested with a gap between each, is just a pile of loose rings. Worse, the thin inner stars can pop out of the print altogether.</p>
+          <p>A fidget needs the opposite: parts that can move <em>and</em> can't leave. Engineers call that <strong>capture</strong>. A part is captured when, to get out, it would have to squeeze through an opening narrower than itself. The fix is a ridge on each ring that sits inside a groove in the next ring out.</p>
+          <figure class="cb-fig">
+            <svg viewBox="0 0 680 270" role="img" aria-label="Side cutaway of two ring walls. On the left, straight walls: the outer ring lifts away and the inner ring stays behind. On the right, each wall bulges outward in the middle; the inner ring's ridge sits in the outer ring's groove and cannot pass the narrow mouth, so lifting one ring lifts both.">
+              <g fill="none" stroke-width="2">
+                <path d="M30 240 h280 M370 240 h280" stroke="currentColor" opacity="0.5" />
+              </g>
+              <g stroke="currentColor" stroke-width="2">
+                <rect x="100" y="80" width="40" height="160" fill="#0e7490" fill-opacity="0.35" />
+                <rect x="156" y="20" width="40" height="160" fill="#c2410c" fill-opacity="0.35" />
+                <path d="M250 175 v-60" fill="none" stroke="#c2410c" stroke-width="3" /><path d="M240 125 l10 -14 10 14" fill="#c2410c" stroke="#c2410c" />
+                <polygon points="440,240 440,222 480,182 480,142 440,102 440,80 396,80 396,102 436,142 436,182 396,222 396,240" fill="#0e7490" fill-opacity="0.35" />
+                <polygon points="450,240 450,222 490,182 490,142 450,102 450,80 494,80 494,102 534,142 534,182 494,222 494,240" fill="#c2410c" fill-opacity="0.35" transform="translate(0 0)" />
+              </g>
+              <g stroke="#c23b3b" stroke-width="3" fill="none">
+                <path d="M418 72 v-40" stroke-dasharray="6 5" /><path d="M410 40 l8 -12 8 12" fill="#c23b3b" />
+                <path d="M439 62 l12 -12 M451 62 l-12 -12" />
+              </g>
+              <g font-size="14" fill="currentColor" stroke="none">
+                <text x="170" y="262" text-anchor="middle">Loose: straight walls</text>
+                <text x="520" y="262" text-anchor="middle">Locked: ridge in groove</text>
+                <text x="120" y="70" text-anchor="middle">ring 1</text>
+                <text x="176" y="12" text-anchor="middle">ring 2</text>
+                <text x="276" y="150">ring 2 leaves,</text><text x="276" y="168">ring 1 stays</text>
+                <text x="544" y="168">ridge of ring 1</text>
+                <text x="544" y="186">in ring 2's groove</text>
+                <text x="462" y="30" fill="#c23b3b">mouth narrower</text>
+                <text x="462" y="48" fill="#c23b3b">than the ridge</text>
+              </g>
+            </svg>
+            <figcaption>Cutaway through the middle of the rings. The gap is drawn much wider than the real 0.5 mm so you can see it.</figcaption>
+          </figure>
+          <h3>Four rules that make it work</h3>
+          <ol class="cb-steps">
+            <li><strong>The ridge is deeper than the gap.</strong> If the ridge sticks out 2 mm and the gap is 1 mm, the ridge can't squeeze through the 1 mm mouth. Make the ridge shallower than the gap and the rings slide apart; the lab will tell you.</li>
+            <li><strong>Slopes, never shelves.</strong> A printer can't build a flat ledge in mid-air. A wall that leans at 45&deg; or less prints with no support. So the ridge climbs and falls in small steps of 0.5 mm out for 0.5 mm up. Write that as a loop.</li>
+            <li><strong>Everything sits on the bed.</strong> Every ring starts at height 0, so the whole fidget prints in place in one go. Each ring out is a bit taller than the last, and that extra height is how far the rings can slide.</li>
+            <li><strong>Leave a real air gap.</strong> About 0.5 mm of clear space between neighbours. Smaller and the printer fuses them into one lump; much bigger and the fidget rattles.</li>
+          </ol>
+          <p><button type="button" class="cb-go" data-cb-mode="fidget">Open the lab in Locked fidget mode</button> Then drag <em>lock steps</em> down to 0, watch the red <strong>falls apart</strong> message, and use the <em>lift test</em> slider on a locked design to see the whole stack come up with the outer ring.</p>
+          <div class="fl-callout a1"><strong>Why a star?</strong> Round rings can spin; star rings can't, because the points catch. A star fidget slides up and down in clicks instead. A star's flat sides sit about 0.7 of the way out to its points, so the lab reports the air gap measured <em>across a side</em>, which is the one that counts.</div>
         </section>
 
         <!-- Build in Tinkercad -->
@@ -165,6 +255,24 @@
             <li><strong>Export.</strong> Use Tinkercad's export to download an STL, or send it to a regular Tinkercad design to add a base or a name. Check it in a slicer before printing (see <a href="3d-printing.html">3D Printing</a>).</li>
           </ol>
           <div class="fl-callout"><strong>Debugging tip:</strong> if every ring lands in the same place, your Move is outside the loop or isn't using <code>i</code>. If the rings get bigger instead of smaller, check the sign on <em>Change radius by</em>. If they merge into a solid lump, the radius has shrunk smaller than the wall.</div>
+          <div class="fl-callout a1"><strong>Print it and you'll find out:</strong> these rings are not joined. Lift one and the rest stay behind. To make a fidget that stays in one piece, go on to <a href="#cb-lock">Lock It</a> and <a href="#cb-fidget">Build the Star Fidget</a>.</div>
+        </section>
+
+        <!-- Star fidget in Codeblocks -->
+        <section class="fl-card" id="cb-fidget" style="--card-accent:#0e7490;">
+          <h2>Build the Star Fidget in Codeblocks</h2>
+          <p>The ring stack used one loop. The fidget uses three small programs that call each other: a <strong>slab</strong> (one star tube, a thin slice), a <strong>ring</strong> (a stack of slabs that climbs, runs straight, then steps back in) and the main loop that makes ring after ring. Use <em>Define Template</em> for the first two, then <em>Create from Template</em> to call them. Templates share your variables, so set a variable before you call one. The lab above, in Locked fidget mode, shows this exact program with your numbers filled in.</p>
+          <ol class="cb-steps">
+            <li><strong>Make the variables.</strong> <code>rings</code> 6, <code>radius</code> 14, <code>wall</code> 3, <code>flat</code> 2, <code>run</code> 0.7, <code>lock</code> 4, plus three the templates use to keep their place: <code>r</code>, <code>z</code>, <code>thick</code>. For round rings use <code>run</code> 0.5. <code>run</code> is how much the radius grows per 0.5 mm slab; for a star it is 0.7 so the sloping side still leans at 45&deg;.</li>
+            <li><strong>Define Template <em>slab</em>.</strong> <em>Add</em> a Star (Sides 8, Radius <code>r</code>, Inner Radius(%) 0.76, H <code>thick</code>) then <em>Move Z-axis min to</em> <code>z</code>. Add a second Star the same way but set to <strong>hole</strong>, Radius <code>r &minus; wall</code>, and move it to the same <code>z</code>. <em>Group Selection</em>. Finish with <em>Change z by</em> <code>thick</code>, so the next slab lands on top. That is the star-and-hole trick from your first star, now one slice thick.</li>
+            <li><strong>Define Template <em>ring</em>.</strong> <em>Set r to radius</em>, <em>Set z to 0</em>, <em>Set thick to 0.5</em>. Then <em>Repeat</em> <code>lock</code> <em>Times</em>: <em>Create from Template slab</em>, <em>Change r by run</em>. This climbs the slope outward. Next <em>Set thick to flat</em>, <em>Create from Template slab</em>: the straight middle. Then <em>Set thick to 0.5</em> and <em>Repeat</em> <code>lock</code> <em>Times</em>: <em>Change r by &minus;run</em>, <em>Create from Template slab</em>. This steps back in. End with <em>Group Selection</em> to join the slabs into one ring.</li>
+            <li><strong>The main loop.</strong> <em>Set</em> the variables, then <em>Count with i from 1 to rings</em>: <em>Create from Template ring</em>, then <em>Change radius by</em> <code>wall + gap</code> (4.5 for the star) and <em>Change flat by 1</em>. Each ring out is wider by one wall plus one gap, and taller by 1 mm. Don't group the rings together: they must stay separate parts.</li>
+            <li><strong>Test small first.</strong> This builds about a hundred shapes, so set <code>rings</code> to 3 and press &#9654; Run. Tinkercad will think for a few seconds. Raise it to 6 once you like what you see.</li>
+            <li><strong>Check the design.</strong> In the lab, the same numbers must say <em>locked</em> and show an air gap of about 0.5 mm. In Tinkercad, orbit to a side view: each ring's middle bulges outward and the next ring bulges around it.</li>
+            <li><strong>Export and slice.</strong> Download the STL (or export from Tinkercad), put it flat on the bed exactly as modelled, and slice with 0.2 mm layers, no supports, and no brim. In the layer preview every ring should be its own outline with a clear line between neighbours.</li>
+          </ol>
+          <div class="fl-callout"><strong>When it prints stuck:</strong> if the rings are fused all the way up, raise <em>gap</em> by 0.2 and print again. If they are stuck only at the very bottom, that's the first layer squashing out; turn on elephant-foot compensation in the slicer or snap them loose with a gentle twist and push. If the fidget rattles loudly, lower <em>gap</em> by 0.1. See <a href="print-fidgets.html">Print Fidgets</a> for how to test a clearance with a comb before you commit.</div>
+          <div class="fl-callout a1"><strong>Fix-it list for a "non-final" star fidget:</strong> (1) Rings that only nest are loose; give each one a ridge and groove. (2) A 2 mm gap rattles; aim for 0.5 mm of air. (3) Thin walls on small inner stars can come out of a print; keep <code>wall</code> the same on every ring, and the lab warns you when the innermost ring gets too small. (4) Mirroring two halves leaves rings floating in mid-air at print time; build upward from the bed instead.</div>
         </section>
 
         <!-- The Pi inside -->
@@ -281,8 +389,53 @@
               <div class="fl-hint" id="flhint-7">Hint: Think about what happened when you moved the <em>rings</em> slider.</div>
             </div>
 
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>8. A ridge sticks out 2 mm and the gap between rings is 1 mm. Will the inner ring lift out?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-8" style="width:300px;">
+                  <option value="">Choose&hellip;</option>
+                  <option value="a">Yes, the ridge slips through</option>
+                  <option value="b">No, the ridge is wider than the opening</option>
+                  <option value="c">It depends on the colour</option>
+                </select>
+                <button class="fl-check-btn" onclick="flCheckText(8,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-8"></span>
+              </div>
+              <div class="fl-hint" id="flhint-8">Hint: Compare 2 mm with 1 mm. Capture means the opening is narrower than the part.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>9. Each slab is 0.5 mm tall. A ring climbs for 4 slabs, runs straight for 2 mm, then steps back in for 4 slabs. How tall is the ring (mm)?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-9" step="0.5" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(9, 6, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-9"></span>
+              </div>
+              <div class="fl-hint" id="flhint-9">Hint: 4 &times; 0.5 up, plus 2 straight, plus 4 &times; 0.5 down.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>10. The main loop does <em>Change flat by 1</em> each time round. Ring 1 is 6 mm tall. How tall is ring 6 (mm)?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-10" step="0.5" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(10, 11, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-10"></span>
+              </div>
+              <div class="fl-hint" id="flhint-10">Hint: Ring 6 has had 5 changes of +1.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>11. In the star fidget code, <code>wall</code> is 3 and the gap is 1.5, both typed as numbers out to the star's points. The main loop says <em>Change radius by wall + gap</em>. What is that change (mm)? (Across a flat side the true sizes are only about 0.7 times as big, but the code uses the point numbers.)</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-11" step="0.5" placeholder="mm" />
+                <button class="fl-check-btn" onclick="flCheck(11, 4.5, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-11"></span>
+              </div>
+              <div class="fl-hint" id="flhint-11">Hint: Add the wall and the gap. The 0.7 only changes what you measure across a side, not what you type.</div>
+            </div>
+
           </div>
-          <p style="margin-top:1rem;">Next: build a moving part in <a href="print-fidgets.html">Print Fidgets</a>, or try parametric parts in <a href="../../../forge.html">Forge</a> and free-form building in <a href="../../../workbench.html">Workbench</a>.</p>
+          <p style="margin-top:1rem;">Next: test a clearance before you print a moving part in <a href="print-fidgets.html">Print Fidgets</a>, or try parametric parts in <a href="../../../forge.html">Forge</a> and free-form building in <a href="../../../workbench.html">Workbench</a>.</p>
         </section>
 
         <footer class="site-footer">
@@ -299,6 +452,7 @@
 <script src="../../../assets/js/figure-lesson.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/lessons/fidget-rings.js"></script>
 <script src="../../../assets/js/lessons/tinkercad-codeblocks-lab.js"></script>
 </body>
 </html>
