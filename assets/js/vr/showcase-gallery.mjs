@@ -102,7 +102,7 @@ async function boot({ renderer, scene, camera, syncSize }) {
   );
   wall.position.y = 1.7;
   scene.add(wall);
-  const inlay = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.18, 64), new THREE.MeshBasicMaterial({ color: 0x7cc4ff }));
+  const inlay = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.18, 64), new THREE.MeshBasicMaterial({ color: 0x7cc4ff, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   inlay.rotation.x = -Math.PI / 2;
   inlay.position.y = 0.003;
   scene.add(inlay);

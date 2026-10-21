@@ -19,6 +19,9 @@ const PLANETS = [
 ];
 
 const LIGHT_SECONDS_PER_AU = 499;
+// Flat marks laid a few mm above the floor z-fight with it at distance (the depth
+// buffer can't separate them past ~20 m), which flickers badly in stereo. Pull them toward the camera.
+const decal = color => new THREE.MeshBasicMaterial({ color, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 const radiusOf = p => 0.22 * Math.pow(p.km / EARTH_KM, 0.55);
 const distanceOf = p => 3.5 + 7 * Math.pow(p.au, 0.62);
 const fmtKm = km => `${km.toLocaleString('en-US')} km`;
@@ -45,7 +48,11 @@ function bandTexture(colors, earth) {
   c.height = 128;
   const g = c.getContext('2d');
   const rand = (() => { let s = colors.length * 97; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
-  if (earth) return window.EarthEngine.createThreeTexture(THREE);
+  if (earth) {
+    // The geodata scripts are heavy; if they didn't load, fall back to plain bands
+    // rather than losing the whole scene.
+    try { return window.EarthEngine.createThreeTexture(THREE); } catch { /* banded Earth below */ }
+  }
   {
     let y = 0;
     while (y < 128) {
@@ -86,7 +93,7 @@ if (view) {
   floor.userData.teleport = true;
   scene.add(floor);
   const walkLength = distanceOf(PLANETS[7]) + 6;
-  const walkway = new THREE.Mesh(new THREE.PlaneGeometry(1.2, walkLength), new THREE.MeshBasicMaterial({ color: 0x1b2c4d }));
+  const walkway = new THREE.Mesh(new THREE.PlaneGeometry(1.2, walkLength), decal(0x1b2c4d));
   walkway.rotation.x = -Math.PI / 2;
   walkway.position.set(0, 0.002, -walkLength / 2 + 4);
   walkway.userData.teleport = true;
@@ -141,7 +148,7 @@ if (view) {
       group.add(ring);
     }
     // A pad on the walkway beside each planet: the obvious place to teleport to.
-    const pad = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.36, 40), new THREE.MeshBasicMaterial({ color: 0x7cc4ff }));
+    const pad = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.36, 40), decal(0x7cc4ff));
     pad.rotation.x = -Math.PI / 2;
     pad.position.set(0, 0.004, group.position.z + 0.2);
     pad.userData.teleport = true;

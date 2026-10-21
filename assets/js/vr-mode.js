@@ -179,13 +179,23 @@
     target.dispatchEvent(event);
   }
   var held = {};
-  function release(code) {
-    if (!held[code]) return;
-    held[code].button.classList.remove('is-down');
-    sendKey('keyup', held[code].d);
+  // A laser trigger click can be down and up inside one frame, and a game that polls its
+  // key state per frame would never see it. Keep each key down for a few frames.
+  var MIN_HOLD_MS = 90;
+  function release(code, now) {
+    var h = held[code];
+    if (!h) return;
+    var wait = now ? 0 : MIN_HOLD_MS - (Date.now() - h.at);
+    if (wait > 0) {
+      if (!h.timer) h.timer = setTimeout(function () { release(code); }, wait);
+      return;
+    }
+    clearTimeout(h.timer);
+    h.button.classList.remove('is-down');
+    sendKey('keyup', h.d);
     delete held[code];
   }
-  function releaseAll() { Object.keys(held).forEach(release); }
+  function releaseAll() { Object.keys(held).forEach(function (code) { release(code, true); }); }
 
   function keyCodes() {
     var custom = document.body && document.body.getAttribute('data-vr-keys');
@@ -215,7 +225,7 @@
         e.preventDefault(); // keep focus on the game
         if (held[code]) return;
         try { b.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
-        held[code] = { d: d, button: b };
+        held[code] = { d: d, button: b, at: Date.now(), timer: 0 };
         b.classList.add('is-down');
         sendKey('keydown', d);
       });

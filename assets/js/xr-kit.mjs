@@ -148,7 +148,11 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
 
   function cast() {
     const hits = raycaster.intersectObjects(targets(), true);
-    return hits.find(h => h.object.visible !== false) || null;
+    // A hidden parent hides its children too, but Raycaster doesn't check ancestors.
+    return hits.find(h => {
+      for (let o = h.object; o; o = o.parent) if (o.visible === false) return false;
+      return true;
+    }) || null;
   }
 
   function viewerWorldPosition(out) {
@@ -287,6 +291,15 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     // The headset pose was written into the camera; put the preview camera back.
     camera.position.set(0, rig.userData.eyeHeight || 1.6, 0);
     applyLook();
+    // update() stops running outside VR, so clear what the lasers left behind:
+    // the hit dots and the hover highlight would otherwise stay on in the preview.
+    for (const controller of controllers) {
+      const data = controller.userData;
+      data.hit = null;
+      data.turnArmed = true;
+      data.dot.visible = false;
+    }
+    setHover(null);
   });
 
   function update() {
