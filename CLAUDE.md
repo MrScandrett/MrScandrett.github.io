@@ -346,6 +346,21 @@ pages without those load it with a plain `<script … vr-mode.js defer>`.
 `lib/touch-controls.js` also shows the student-game pads in headsets (rebuild the slugs
 in `data/touch-controls.json` after changing it).
 
+**360° page sphere** (`vr/page-sphere.html?src=<page>`, 🥽 VR menu → "360° page"): wraps any same-origin
+page around the viewer. WebXR can't take a live DOM as a texture, so the page runs in a hidden same-origin
+iframe (`name="classroomos-vr-sphere"`; `vr-mode.js` keeps itself off in it), `assets/js/page-raster.mjs` draws
+it to an image (clone the doc, wrap in SVG `<foreignObject>`, inline CSS/fonts/images as data: URLs), and
+`assets/js/vr/sphere-layout.mjs` (pure, tested) cuts it into 1280×720 screens: a horizon ring of 8, then a ring
+below (max 15; longer pages are cut and say so). A laser hit becomes a page coordinate and the click is replayed
+in the iframe, so a link navigates the iframe and the immersive session survives (a real navigation ends it).
+Things that will bite: draw from a **data:** URL, never blob: (Chrome taints the canvas, texImage2D then throws);
+a nested `<html>` paints no background, so a wrapper div carries it; `:root` rules are rewritten to
+`html[data-vr-snap]`; `vh` is pinned to 720 px; app-shell lessons (document one screen tall, an inner panel
+scrolls) are found by `findMainScroller()` and expanded in the copy; copy *every* attribute when swapping a
+`<canvas>` for an `<img>` (rules key off `id`). Not supported: typing, `<select>`, dragging, live video/WebGL,
+cross-origin images without CORS. Tests: `node --test tests/page-sphere.test.mjs`, and
+`SPHERE_URL=http://localhost:8080 node tests/page-sphere-browser.mjs` against `serve-local.js`.
+
 Immersive pages live in `vr/` and are listed in `vr.html` from `data/xr-experiences.json`.
 Build new ones on `assets/js/xr-kit.mjs` (Enter VR button with honest status, controller/
 hand lasers, teleport floors via `userData.teleport`, 30° snap turn, canvas text panels,

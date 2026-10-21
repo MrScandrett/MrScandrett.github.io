@@ -30,6 +30,12 @@
 (function () {
   'use strict';
   if (window.ClassroomOSVR) return;
+  // The 360° page sphere (vr/page-sphere.html) runs the page in a hidden frame to draw it.
+  // Here VR mode must stay off: no zoom, no menu, and ?vr= must not rewrite the preference.
+  if (window.name === 'classroomos-vr-sphere') {
+    window.ClassroomOSVR = { enabled: function () { return false; }, headset: false, preference: function () { return 'off'; }, set: function () {} };
+    return;
+  }
 
   var STORAGE_KEY = 'classroomos-vr-mode';
   var ZOOM_KEY = 'classroomos-vr-zoom';
@@ -304,6 +310,13 @@
     row.appendChild(smaller);
     row.appendChild(bigger);
 
+    var sphereLink = null;
+    var here = location.href.indexOf(siteRoot) === 0 ? location.href.slice(siteRoot.length) || 'index.html' : null;
+    if (here && !/^vr\/page-sphere/.test(here)) {
+      sphereLink = document.createElement('a');
+      sphereLink.href = siteRoot + 'vr/page-sphere.html?src=' + encodeURIComponent(here);
+      sphereLink.textContent = '◎ 360° page — wrap this page around you';
+    }
     var lab = document.createElement('a');
     lab.href = siteRoot + 'vr.html';
     lab.textContent = '✦ VR Lab — immersive experiences';
@@ -314,7 +327,7 @@
     note.setAttribute('role', 'status');
     note.hidden = true;
 
-    [fullBtn, keysBtn, row, lab, off, note].forEach(function (n) { panel.appendChild(n); });
+    [fullBtn, keysBtn, row, sphereLink, lab, off, note].forEach(function (n) { if (n) panel.appendChild(n); });
     menu.appendChild(toggle);
     menu.appendChild(panel);
     document.body.appendChild(menu);
