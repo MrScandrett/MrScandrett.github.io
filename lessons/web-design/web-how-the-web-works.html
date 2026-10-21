@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How the Web Works · ClassroomOS</title>
+<meta name="description" content="Follow one page request from the address bar to the screen: read a URL, look up a name with DNS, open a secure HTTPS connection, read the server's reply, and watch packets cross the physical internet.">
+<link rel="icon" href="../../assets/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/css/main.css">
+<link rel="stylesheet" href="../../assets/css/classroom-home.css">
+<link rel="stylesheet" href="../../assets/css/lessons/web-design-pathway.css">
+<link rel="stylesheet" href="../../assets/css/lessons/web-how-the-web-works.css">
+<script src="../../assets/js/theme-registry.js" defer></script>
+<script src="../../assets/js/lessons/web-design-pathway.js" defer></script>
+<script src="../../assets/js/lessons/web-how-the-web-works.js" defer></script>
+  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+</head>
+<body class="web-course">
+<a class="skip-link" href="#main">Skip to lesson</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<header class="web-topbar">
+<a href="web-design-pathway.html"><strong>Build Your Own Web</strong></a>
+<nav aria-label="Site"><a href="../../steam-lessons.html">STEAM lessons</a><a href="../../paths.html">All pathways</a><a href="../../class-downloads.html">Downloads</a></nav>
+</header>
+<main id="main" class="web-main" data-glossary-root>
+
+<section class="web-hero web-split">
+<div>
+<p class="web-meta">Background lesson · How the web works · 45–60 minutes</p>
+<h1>What happens when you press Enter?</h1>
+<p class="web-lead">You type an address, press Enter, and a page appears in about a second. In that second your browser asked a stranger for directions, opened a locked line to a computer that may be on another continent, asked for one file, then went back for a dozen more. This lesson slows that second down so you can watch every step.</p>
+<p>You do not need this to write your first page. You do need it the first time your published site shows a blank screen, a padlock warning, or a 404, because each of those is one step in this trip going wrong.</p>
+</div>
+<div class="web-panel">
+<h2>By the end you can</h2>
+<ul>
+<li>Name every part of a <span data-glossary="URL">URL</span> and say which computer reads each part.</li>
+<li>Explain what <span data-glossary="DNS">DNS</span> does and why a typo in a domain gives a different error from a typo in a filename.</li>
+<li>Read an <span data-glossary="HTTP">HTTP</span> request and response, including the <span data-glossary="status code">status code</span>.</li>
+<li>Explain what the padlock in <span data-glossary="HTTPS">HTTPS</span> does and does not promise.</li>
+<li>Find every request your own site makes, using the Network tab.</li>
+</ul>
+<p class="web-muted">Fits before <a href="web-first-site.html">Lesson 1</a> as a big picture, or before <a href="web-publish.html">Lesson 9</a> when your site goes live.</p>
+</div>
+</section>
+
+<section class="web-section">
+<h2>The big picture: clients, servers and an address book</h2>
+<p>The web is a conversation between two kinds of computer. Your browser is the <span data-glossary="web client">client</span>: it asks. A <span data-glossary="web server">web server</span> is a computer that waits for requests and answers them by sending files. Nothing on the web arrives unless a client asked for it first.</p>
+<p>Computers on the internet find each other by number, an <span data-glossary="IP address">IP address</span> such as <code>185.199.108.153</code>. People are bad at remembering numbers, so we use names like <code>github.io</code> instead. The <span data-glossary="DNS">Domain Name System</span> is the internet's address book: it turns a name into a number. The internet is the roads; the web is one kind of traffic on those roads, alongside email, games, and video calls.</p>
+<figure data-video="what-is-the-internet" data-title="What Is the Internet?">
+<p data-pause="1:30">Pause: name one physical thing the internet is made of, and one rule (protocol) computers must agree on to use it.</p>
+<figcaption>Watch for the difference between the internet (the network of connected computers) and the web (pages and links that travel over it).</figcaption>
+</figure>
+</section>
+
+<section class="web-section">
+<h2>Lab 1 — Take an address apart</h2>
+<p>A <span data-glossary="URL">URL</span> packs several instructions into one line. Different computers read different parts: DNS reads only the domain, the server reads the path and query, and the fragment never leaves your browser at all.</p>
+<div class="web-lab hw-lab" id="url-lab">
+<label for="url-input">Type or paste any web address</label>
+<input id="url-input" type="text" value="https://maya-codes.github.io/portfolio/projects.html?sort=new#games" spellcheck="false" autocomplete="off">
+<div class="web-actions" aria-label="Example addresses">
+<button type="button" data-url-example="https://maya-codes.github.io/portfolio/projects.html?sort=new#games">Student site</button>
+<button type="button" data-url-example="https://www.example.com:8443/shop/cart?item=42&amp;qty=2">Port and two queries</button>
+<button type="button" data-url-example="http://info.cern.ch/hypertext/WWW/TheProject.html">The first website</button>
+</div>
+<ol class="hw-url-parts" id="url-parts" aria-live="polite"></ol>
+<p class="web-feedback" id="url-feedback" aria-live="polite"></p>
+</div>
+<p><strong>Try:</strong> delete the <code>s</code> from <code>https</code>, remove the path, then type an address with a space in it. What does each part's "who reads it" line say now?</p>
+</section>
+
+<section class="web-section">
+<h2>Lab 2 — One request, step by step</h2>
+<p>Here is the whole trip for one page. Step through it, then flip one of the switches and run it again. Each switch is a real fault students hit when they publish.</p>
+<div class="web-lab hw-lab" id="trip-lab" data-memory-ignore>
+<fieldset class="hw-switches">
+<legend>Change one thing</legend>
+<label><input type="radio" name="trip-mode" value="normal" checked> Everything works</label>
+<label><input type="radio" name="trip-mode" value="cached"> Second visit (files cached)</label>
+<label><input type="radio" name="trip-mode" value="domain"> Typo in the domain name</label>
+<label><input type="radio" name="trip-mode" value="file"> Typo in the CSS filename</label>
+<label><input type="radio" name="trip-mode" value="http"> Plain <code>http://</code></label>
+</fieldset>
+<div class="hw-route" aria-hidden="true">
+<span class="hw-node" data-node="browser">Your browser</span>
+<span class="hw-node" data-node="dns">DNS resolver</span>
+<span class="hw-node" data-node="server">Web server</span>
+</div>
+<div class="web-actions">
+<button type="button" id="trip-prev">← Back</button>
+<button type="button" id="trip-next">Next step →</button>
+<button type="button" id="trip-reset">Start over</button>
+<span class="hw-step-count" id="trip-count" aria-live="polite"></span>
+</div>
+<div class="hw-step" id="trip-step" aria-live="polite"></div>
+<pre class="hw-wire" id="trip-wire" aria-label="What is sent over the network at this step"></pre>
+<ol class="hw-waterfall" id="trip-waterfall" aria-label="Files requested so far"></ol>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Reading the server's reply</h2>
+<p>Every <span data-glossary="HTTP">HTTP</span> response starts with a three-digit <span data-glossary="status code">status code</span>. The first digit tells you who has the problem: 2 means it worked, 3 means "look somewhere else", 4 means the request was wrong, 5 means the server broke.</p>
+<div class="web-table">
+<table>
+<caption>Status codes you will actually meet</caption>
+<thead><tr><th scope="col">Code</th><th scope="col">Meaning</th><th scope="col">When you will see it</th></tr></thead>
+<tbody>
+<tr><td><code>200 OK</code></td><td>Here is the file you asked for.</td><td>Every working page, image and stylesheet.</td></tr>
+<tr><td><code>301 Moved Permanently</code></td><td>That file lives at a new address now; go there.</td><td>Typing <code>http://</code> on a site that forces <code>https://</code>.</td></tr>
+<tr><td><code>304 Not Modified</code></td><td>You already have the newest copy; use it.</td><td>Reloading a page whose files have not changed.</td></tr>
+<tr><td><code>404 Not Found</code></td><td>The server is there, but nothing lives at that path.</td><td>A misspelled filename, or <code>Photo.JPG</code> versus <code>photo.jpg</code>.</td></tr>
+<tr><td><code>500 Internal Server Error</code></td><td>The server crashed while answering.</td><td>Rare on GitHub Pages, which only hands out files and runs none of your code.</td></tr>
+</tbody>
+</table>
+</div>
+<p class="web-callout">A 404 and a "site can't be reached" error are different steps failing. 404 means DNS worked, the connection worked, and the server answered: only the path was wrong. "Can't be reached" means the trip never got that far, usually because the domain name is wrong.</p>
+</section>
+
+<section class="web-section">
+<h2>The padlock: what HTTPS promises</h2>
+<p><span data-glossary="HTTPS">HTTPS</span> is HTTP sent through an encrypted tunnel. Before any page is sent, your browser and the server agree on a secret key, and the server proves who it is with a certificate signed by an organisation your browser already trusts.</p>
+<div class="web-split">
+<div class="web-panel">
+<h3>The padlock does mean</h3>
+<ul>
+<li>Nobody on the Wi-Fi or along the route can read what you send or receive.</li>
+<li>Nobody along the way can change the page before it reaches you.</li>
+<li>You are connected to the domain shown in the address bar.</li>
+</ul>
+</div>
+<div class="web-panel">
+<h3>The padlock does not mean</h3>
+<ul>
+<li>The site is honest. A scam site can have a padlock too.</li>
+<li>The domain is the one you meant. <code>paypa1.com</code> can have a valid certificate.</li>
+<li>Your information is safe once it arrives. That depends on the people running the server.</li>
+</ul>
+</div>
+</div>
+<p>GitHub Pages gives every site HTTPS for free. Leave "Enforce HTTPS" switched on in your repository's Pages settings.</p>
+</section>
+
+<section class="web-section">
+<h2>Packets: how a file actually travels</h2>
+<p>A web page does not travel in one piece. It is cut into <span data-glossary="packet">packets</span> of about 1,500 bytes, each labelled with where it is going and its place in the sequence. <span data-glossary="router">Routers</span> pass each packet one hop closer to its destination, and different packets may take different routes. Your computer puts them back in order and asks again for any that went missing.</p>
+<div class="web-lab hw-lab" id="packet-lab" data-memory-ignore>
+<label for="packet-input">Type a message to send</label>
+<input id="packet-input" type="text" value="Meet at the library at 3" maxlength="60" autocomplete="off">
+<div class="web-actions">
+<button type="button" id="packet-send">Send as packets</button>
+<label class="hw-inline"><input type="checkbox" id="packet-lose"> Lose one packet on the way</label>
+</div>
+<div class="hw-packets" aria-live="polite">
+<div><h3>Arrived (in the order they came)</h3><ol id="packet-arrived" class="hw-packet-row"></ol></div>
+<div><h3>Rebuilt by sequence number</h3><p id="packet-rebuilt" class="hw-rebuilt"></p></div>
+</div>
+</div>
+<div class="web-figure-pair">
+<figure data-zoomable data-lightbox-group="how-the-web-works" class="web-figure">
+<img src="../../assets/images/lessons/web-how-the-web-works/arpanet-map-1977.png" alt="ARPANET logical map from March 1977: boxes for host computers joined by lines across the United States" loading="lazy" width="1000" height="716">
+<figcaption><strong>ARPANET, March 1977.</strong> The internet's ancestor connected a few dozen university and government computers. It was built on packet switching, so a message could route around a broken line instead of failing. Every packet you send today still works this way.
+<span class="web-figure-credit" data-no-glossary>DARPA, via <a href="https://commons.wikimedia.org/wiki/File:Arpanet_logical_map,_march_1977.png">Wikimedia Commons</a> · Public domain</span></figcaption>
+</figure>
+<figure data-zoomable data-lightbox-group="how-the-web-works" class="web-figure">
+<img src="../../assets/images/lessons/web-how-the-web-works/optical-fiber-cable.jpg" alt="Cut-away of an optical fibre cable showing protective layers around thin glass fibres" loading="lazy" width="698" height="289">
+<figcaption><strong>The internet is mostly glass.</strong> Packets crossing oceans travel as pulses of light inside hair-thin glass fibres, bundled in cables laid on the sea floor. "Wireless" only describes the last few metres to your device.
+<span class="web-figure-credit" data-no-glossary>Optical fibre cable, via <a href="https://commons.wikimedia.org/wiki/File:Optical_fiber_cable.jpg">Wikimedia Commons</a> · CC BY-SA 3.0</span></figcaption>
+</figure>
+</div>
+<figure data-zoomable data-lightbox-group="how-the-web-works" class="web-figure hw-figure-wide">
+<img src="../../assets/images/lessons/web-how-the-web-works/first-web-server.jpg" alt="A black NeXT cube computer in a museum case, with a handwritten label on its side" loading="lazy" width="1280" height="960">
+<figcaption><strong>The first web server (CERN, 1990).</strong> Tim Berners-Lee ran the first website on this NeXT computer. The sticker on its side reads "This machine is a server. DO NOT POWER IT DOWN!!" — because if someone switched it off, the whole web went dark. Today one popular site may run on thousands of servers in many countries.
+<span class="web-figure-credit" data-no-glossary>Coolcaesar, via <a href="https://commons.wikimedia.org/wiki/File:First_Web_Server.jpg">Wikimedia Commons</a> · CC BY-SA 3.0</span></figcaption>
+</figure>
+</section>
+
+<section class="web-section">
+<h2>Try it on your own site: the Network tab</h2>
+<p>Your browser records every request it makes. Open the developer tools (<kbd>F12</kbd>, or right-click → Inspect) and choose the <strong>Network</strong> tab, then reload the page.</p>
+<ol class="web-steps">
+<li><strong>Find the first row.</strong> It is your HTML file. Its status should be 200.</li>
+<li><strong>Count the rest.</strong> Each stylesheet, script, image and font is its own request, discovered only after the HTML arrived.</li>
+<li><strong>Look for red rows.</strong> Red usually means 404: the file your HTML names does not exist at that path.</li>
+<li><strong>Reload again.</strong> Notice files marked as coming from the cache, or 304. They were not downloaded again.</li>
+<li><strong>Read one request.</strong> Click a row and find the request method, the status code, and the response headers you saw in Lab 2.</li>
+</ol>
+<p><strong>Check:</strong> you can say how many requests your page makes and which one is the largest. <strong>Repair:</strong> fix any red row by matching the filename in your HTML to the real file, letter for letter.</p>
+</section>
+
+<section class="web-section">
+<h2>Check your understanding</h2>
+<div class="hw-quiz" id="hw-quiz">
+<div class="hw-q" data-answer="b">
+<p>1. You type <code>mayacodes.github.io</code> but the real site is <code>maya-codes.github.io</code>. Which step fails?</p>
+<button type="button" data-choice="a">The server returns 404</button>
+<button type="button" data-choice="b">The DNS lookup finds no address</button>
+<button type="button" data-choice="c">The CSS fails to load</button>
+<p class="web-feedback" aria-live="polite" data-why="The domain is the part DNS reads. No name, no number, so the browser never reaches any server and says the site can't be reached. A 404 needs a server to answer."></p>
+</div>
+<div class="hw-q" data-answer="c">
+<p>2. Which part of <code>https://site.org/about.html#team</code> is never sent to the server?</p>
+<button type="button" data-choice="a"><code>site.org</code></button>
+<button type="button" data-choice="b"><code>/about.html</code></button>
+<button type="button" data-choice="c"><code>#team</code></button>
+<p class="web-feedback" aria-live="polite" data-why="The fragment after # is read only by your browser, which scrolls to the element with that id. The server gets the path and query but never the fragment."></p>
+</div>
+<div class="hw-q" data-answer="a">
+<p>3. A page loads as plain black text with no colours. The HTML returned 200. What is the most likely cause?</p>
+<button type="button" data-choice="a">The stylesheet request returned 404</button>
+<button type="button" data-choice="b">DNS failed</button>
+<button type="button" data-choice="c">HTTPS is broken</button>
+<p class="web-feedback" aria-live="polite" data-why="The HTML arrived, so DNS and the connection both worked. The browser then asked for the CSS file separately; if that path is wrong, the page still shows, just unstyled."></p>
+</div>
+<div class="hw-q" data-answer="b">
+<p>4. A site has a padlock. What can you be sure of?</p>
+<button type="button" data-choice="a">The site is trustworthy</button>
+<button type="button" data-choice="b">Nobody along the route can read or change the page</button>
+<button type="button" data-choice="c">It is the site you meant to visit</button>
+<p class="web-feedback" aria-live="polite" data-why="HTTPS protects the trip, not the destination. A scam site, or a look-alike domain, can have a valid certificate."></p>
+</div>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Checkpoints</h2>
+<ul class="web-checklist">
+<li><label><input type="checkbox" data-web-check="0"> I can label the scheme, domain, path, query and fragment of a URL, and say who reads each one.</label></li>
+<li><label><input type="checkbox" data-web-check="1"> I can explain what DNS does in one sentence, without the words "domain name system".</label></li>
+<li><label><input type="checkbox" data-web-check="2"> I stepped through Lab 2 with every switch and can say which step each fault breaks.</label></li>
+<li><label><input type="checkbox" data-web-check="3"> I can explain what the HTTPS padlock promises and what it does not.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> I opened the Network tab on a real page and found its HTML request and status code.</label></li>
+</ul>
+<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+</section>
+
+<nav class="web-next" aria-label="Lesson sequence"><a href="web-design-pathway.html">← Course map</a><a href="web-first-site.html">Next: Set up your first site →</a></nav>
+</main>
+<footer>ClassroomOS web workshop · Read, change, test, explain. <a href="web-design-pathway.html">Course map</a></footer>
+<script src="../../assets/js/lesson-print-button.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/video-embed.js"></script>
+<script src="../../assets/js/site-glossary.js"></script>
+<script src="../../assets/js/nav-mobile.js"></script>
+</body>
+</html>
