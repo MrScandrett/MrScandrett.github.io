@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  TILE_W, TILE_H, MAX_TILES, YAW_SPAN, planTiles, screensFor, spherePoint, tilePatch, tileUvToPage, safeSource, sourceParam
+  TILE_W, TILE_H, TILE_GUTTER, PAGE_SLICE_H, SLICE_OVERLAP, SLICE_STEP,
+  MAX_TILES, YAW_SPAN, planTiles, screensFor, spherePoint, tilePatch, tileUvToPage, safeSource, sourceParam
 } from '../assets/js/vr/sphere-layout.mjs';
 
 test('screens go round the horizon first, then a second ring below', () => {
@@ -38,8 +39,10 @@ test('planTiles clamps its input', () => {
 });
 
 test('screensFor says when the page is too tall to show whole', () => {
-  assert.deepEqual(screensFor(TILE_H), { needed: 1, shown: 1, truncated: false });
-  assert.deepEqual(screensFor(TILE_H * 3 + 1), { needed: 4, shown: 4, truncated: false });
+  assert.equal(PAGE_SLICE_H, TILE_H - TILE_GUTTER * 2);
+  assert.equal(SLICE_STEP, PAGE_SLICE_H - SLICE_OVERLAP);
+  assert.deepEqual(screensFor(PAGE_SLICE_H), { needed: 1, shown: 1, truncated: false });
+  assert.deepEqual(screensFor(PAGE_SLICE_H + SLICE_STEP * 3), { needed: 4, shown: 4, truncated: false });
   const tall = screensFor(TILE_H * 40);
   assert.equal(tall.shown, MAX_TILES);
   assert.equal(tall.truncated, true);
@@ -71,8 +74,9 @@ test('a tile patch lies on the sphere and its uv runs left→right, bottom→top
 
 test('a laser hit maps to the right page coordinate', () => {
   assert.deepEqual(tileUvToPage(0, 0, 1), { x: 0, y: 0 }, 'top-left of screen 0 is the top-left of the page');
-  assert.deepEqual(tileUvToPage(0, 1, 0), { x: TILE_W, y: TILE_H });
-  assert.deepEqual(tileUvToPage(2, 0.5, 0.5), { x: TILE_W / 2, y: 2 * TILE_H + TILE_H / 2 });
+  assert.deepEqual(tileUvToPage(0, 1, 0), { x: TILE_W, y: PAGE_SLICE_H }, 'the bottom gutter clamps to the end of the slice');
+  assert.deepEqual(tileUvToPage(2, 0.5, 0.5), { x: TILE_W / 2, y: 2 * SLICE_STEP + PAGE_SLICE_H / 2 });
+  assert.equal(tileUvToPage(1, 0, 1).y, SLICE_STEP, 'the next panel repeats the overlap instead of losing cut content');
 });
 
 test('the sphere only opens pages from this site', () => {

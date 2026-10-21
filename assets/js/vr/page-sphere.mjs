@@ -11,11 +11,16 @@ import { createRig, createPointer, mountVRButton, createPanel } from '../xr-kit.
 import { rasterizeDocument, findMainScroller } from '../page-raster.mjs';
 import { createEnvironment } from './sphere-environment.mjs';
 import { MOTION_MODES, motionScale, environmentFor } from './sphere-theme.mjs';
-import { TILE_W, TILE_H, planTiles, screensFor, tilePatch, tileUvToPage, spherePoint, safeSource, sourceParam } from './sphere-layout.mjs';
+import {
+  TILE_W, TILE_H, TILE_GUTTER, PAGE_SLICE_H, SLICE_STEP,
+  planTiles, screensFor, tilePatch, tileUvToPage, spherePoint, safeSource, sourceParam
+} from './sphere-layout.mjs';
 
 const SITE = new URL('../../../', import.meta.url);
 const RADIUS = 3;
 const FRAME_NAME = 'classroomos-vr-sphere'; // vr-mode.js stays out of a frame with this name
+const HEADSET = /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic/i.test(navigator.userAgent || '');
+const TEXTURE_SCALE = HEADSET ? 0.75 : 1;
 
 const canvas = document.getElementById('vr-canvas');
 const status = document.getElementById('vr-status');
@@ -39,7 +44,14 @@ Object.assign(frame.style, {
 
 let view = null;
 try {
-  view = createScene(canvas, { THREE, clearColor: 0x0a0f1c, fov: 70, far: 50 });
+  view = createScene(canvas, {
+    THREE,
+    clearColor: 0x0a0f1c,
+    fov: 70,
+    far: 50,
+    antialias: !HEADSET,
+    maxDpr: HEADSET ? 1 : 1.5
+  });
 } catch {
   say('3D graphics are unavailable on this device. Open the page normally instead.');
 }
@@ -51,6 +63,9 @@ if (!source) {
 }
 
 function boot({ renderer, scene, camera, syncSize }) {
+  // Quest renders once per eye. A modest XR framebuffer scale is substantially smoother
+  // while the page textures keep text detail where the reader is actually looking.
+  renderer.xr.setFramebufferScaleFactor(HEADSET ? 0.72 : 0.9);
   const rig = createRig(THREE, scene, camera);
   const eye = rig.userData.eyeHeight;
   const sphere = new THREE.Group(); // centred on your head; turned to face you when VR starts
@@ -87,11 +102,11 @@ function boot({ renderer, scene, camera, syncSize }) {
     }
     for (const p of plan.slice(tiles.length)) {
       const c = document.createElement('canvas');
-      c.width = TILE_W;
-      c.height = TILE_H;
+      c.width = Math.round(TILE_W * TEXTURE_SCALE);
+      c.height = Math.round(TILE_H * TEXTURE_SCALE);
       const texture = new THREE.CanvasTexture(c);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = 8;
+      texture.anisotropy = HEADSET ? 2 : 4;
       const data = tilePatch(p, RADIUS);
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
@@ -173,15 +188,29 @@ function boot({ renderer, scene, camera, syncSize }) {
     drawing = true;
     try {
       const shot = await rasterizeDocument(doc, { width: TILE_W, viewportHeight: TILE_H });
-      const { shown, truncated } = screensFor(shot.height);
+      const { needed, shown, truncated } = screensFor(shot.height);
       ensureTiles(shown);
       for (const t of tiles) {
+        const scale = TEXTURE_SCALE;
+        const sourceY = t.plan.index * SLICE_STEP;
+        const sourceH = Math.max(0, Math.min(PAGE_SLICE_H, shot.height - sourceY));
         t.ctx.fillStyle = shot.background;
-        t.ctx.fillRect(0, 0, TILE_W, TILE_H);
-        t.ctx.drawImage(shot.image, 0, t.plan.index * TILE_H, TILE_W, TILE_H, 0, 0, TILE_W, TILE_H);
+        t.ctx.fillRect(0, 0, t.canvas.width, t.canvas.height);
+        if (sourceH > 0) {
+          t.ctx.drawImage(
+            shot.image,
+            0, sourceY, TILE_W, sourceH,
+            0, TILE_GUTTER * scale, t.canvas.width, sourceH * scale
+          );
+        }
+        // A quiet frame makes the end of each panel intentional. The 48 px repeated
+        // between panels keeps a split paragraph/card readable on the next panel.
+        t.ctx.fillStyle = 'rgba(130, 170, 220, 0.42)';
+        t.ctx.fillRect(0, (TILE_GUTTER - 2) * scale, t.canvas.width, 2 * scale);
+        t.ctx.fillRect(0, (TILE_GUTTER + PAGE_SLICE_H) * scale, t.canvas.width, 2 * scale);
         t.texture.needsUpdate = true;
       }
-      truncatedNote = truncated ? `Showing the first ${shown} of ${Math.ceil(shot.height / TILE_H)} screens.` : '';
+      truncatedNote = truncated ? `Showing the first ${shown} of ${needed} screens.` : '';
       say(`${doc.title || 'Page'} · ${shown} screen${shown === 1 ? '' : 's'} around you. ${truncatedNote}`.trim());
       if (announce) notify(truncatedNote || 'Redrawn.', 2500);
       else if (truncated) notify(truncatedNote, 6000);
@@ -194,7 +223,8 @@ function boot({ renderer, scene, camera, syncSize }) {
   }
   // After a click the page may animate or fetch; redraw as it settles.
   function redrawSoon() {
-    for (const ms of [350, 1200, 2600]) setTimeout(() => redraw(), ms);
+    const waits = renderer.xr.isPresenting ? [700] : [350, 1200, 2600];
+    for (const ms of waits) setTimeout(() => redraw(), ms);
   }
 
   function frameDoc() {
@@ -335,8 +365,15 @@ function boot({ renderer, scene, camera, syncSize }) {
     rig,
     enterLabel: 'Enter immersive 360°',
     exitLabel: 'Exit 360°',
-    onStart: () => { recenter = 3; },
-    onEnd: () => { sphere.position.set(0, eye, 0); sphere.rotation.y = 0; }
+    onStart: () => {
+      recenter = 3;
+      env.setLowPower(true);
+    },
+    onEnd: () => {
+      env.setLowPower(false);
+      sphere.position.set(0, eye, 0);
+      sphere.rotation.y = 0;
+    }
   });
   refreshBtn.addEventListener('click', () => redraw(true));
 

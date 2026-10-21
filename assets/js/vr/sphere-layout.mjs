@@ -1,7 +1,8 @@
 // sphere-layout.mjs — the geometry behind the 360° page sphere (vr/page-sphere.html).
 // Pure functions, no DOM or Three.js, so tests/page-sphere.test.mjs can pin them down.
 //
-// The page is rendered 1280 px wide and cut into TILE_W × TILE_H "screens". Screen 0 is
+// The page is rendered 1280 px wide and cut into framed, slightly overlapping "screens".
+// The overlap makes content split at an edge readable again on the next panel. Screen 0 is
 // straight ahead; the rest go round you to the right at eye level (ring 0), then round a
 // second ring below (ring 1, easier on the neck than looking up). Turning your head is
 // scrolling. Every screen covers the same angle per pixel, so text is equally sharp
@@ -10,6 +11,10 @@
 
 export const TILE_W = 1280;
 export const TILE_H = 720;
+export const TILE_GUTTER = 20;
+export const PAGE_SLICE_H = TILE_H - TILE_GUTTER * 2;
+export const SLICE_OVERLAP = 48;
+export const SLICE_STEP = PAGE_SLICE_H - SLICE_OVERLAP;
 export const MAX_TILES = 15;
 export const YAW_SPAN = 45; // degrees one screen covers at the horizon (1280 px → ~28 px/°)
 export const RING_STEP = 27.5; // degrees between ring centres
@@ -33,7 +38,9 @@ export function planTiles(count) {
 
 /** How many screens the page needs, and whether the sphere has to drop the rest. */
 export function screensFor(pageHeight) {
-  const needed = Math.max(1, Math.ceil(pageHeight / TILE_H));
+  const needed = pageHeight <= PAGE_SLICE_H
+    ? 1
+    : 1 + Math.ceil((pageHeight - PAGE_SLICE_H) / SLICE_STEP);
   return { needed, shown: Math.min(needed, planTiles(MAX_TILES).length), truncated: needed > planTiles(MAX_TILES).length };
 }
 
@@ -71,7 +78,9 @@ export function tilePatch(tile, r, segX = 24, segY = 12) {
 
 /** A laser hit on tile `index` at texture coordinates (u, v) → a point on the page, in CSS px. */
 export function tileUvToPage(index, u, v) {
-  return { x: u * TILE_W, y: index * TILE_H + (1 - v) * TILE_H };
+  const tileY = (1 - v) * TILE_H;
+  const contentY = Math.max(0, Math.min(PAGE_SLICE_H, tileY - TILE_GUTTER));
+  return { x: u * TILE_W, y: index * SLICE_STEP + contentY };
 }
 
 /**

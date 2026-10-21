@@ -25,6 +25,7 @@ void main() {
 const FRAGMENT = /* glsl */ `
 precision highp float;
 uniform float uTime;
+uniform float uLowPower;
 uniform int uLook;
 uniform int uCount;
 uniform vec3 uP0, uP1, uP2, uP3;
@@ -32,6 +33,17 @@ uniform vec3 uAccent;
 uniform vec4 uBlob[${MAX_BALLS}];   // xyz = unit direction, w = angular radius
 uniform vec3 uBlobColor[${MAX_BALLS}];
 varying vec3 vDir;
+
+vec3 calmWorld(vec3 d) {
+  vec3 horizon = mix(uP0, uP1, 0.34);
+  vec3 zenith = mix(uP0, uP2, 0.22);
+  vec3 floorColor = mix(uP0, uP3, 0.18) * 0.72;
+  vec3 col = d.y >= 0.0
+    ? mix(horizon, zenith, pow(d.y, 0.72))
+    : mix(horizon, floorColor, pow(-d.y, 0.62));
+  float glow = pow(max(0.0, 1.0 - abs(d.y)), 8.0);
+  return col + uAccent * glow * 0.06;
+}
 
 float hash(vec3 p) {
   p = fract(p * 0.3183099 + 0.1);
@@ -175,6 +187,10 @@ vec3 lava(vec3 d) {
 
 void main() {
   vec3 d = normalize(vDir);
+  if (uLowPower > 0.5) {
+    gl_FragColor = vec4(calmWorld(d), 1.0);
+    return;
+  }
   vec3 col;
   if (uLook == ${LOOK.night}) col = night(d);
   else if (uLook == ${LOOK.bark}) col = bark(d);
@@ -188,6 +204,7 @@ void main() {
 export function createEnvironment(THREE, { LiquidEngine, radius = 20 } = {}) {
   const uniforms = {
     uTime: { value: 0 },
+    uLowPower: { value: 0 },
     uLook: { value: LOOK.sky },
     uCount: { value: 0 },
     uP0: { value: new THREE.Vector3() },
@@ -267,5 +284,9 @@ export function createEnvironment(THREE, { LiquidEngine, radius = 20 } = {}) {
     material.dispose();
   }
 
-  return { mesh, setTheme, update, dispose, uniforms, get look() { return env.look; }, get environment() { return env; } };
+  function setLowPower(on) {
+    uniforms.uLowPower.value = on ? 1 : 0;
+  }
+
+  return { mesh, setTheme, setLowPower, update, dispose, uniforms, get look() { return env.look; }, get environment() { return env; } };
 }
