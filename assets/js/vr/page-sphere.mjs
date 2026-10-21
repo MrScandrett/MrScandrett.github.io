@@ -21,7 +21,9 @@ const RADIUS = 3;
 const FRAME_NAME = 'classroomos-vr-sphere'; // vr-mode.js stays out of a frame with this name
 const SOURCE_VIEWPORT_H = 720; // keep lesson responsive layout stable as VR panels get taller
 const HEADSET = /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic/i.test(navigator.userAgent || '');
-const TEXTURE_SCALE = HEADSET ? 0.75 : 1;
+// Keep lesson text at the full logical resolution. The low-cost immersive world and
+// taller/fewer panels recover far more performance than downscaling readable content.
+const TEXTURE_SCALE = 1;
 
 const canvas = document.getElementById('vr-canvas');
 const status = document.getElementById('vr-status');
@@ -64,9 +66,9 @@ if (!source) {
 }
 
 function boot({ renderer, scene, camera, syncSize }) {
-  // Quest renders once per eye. A modest XR framebuffer scale is substantially smoother
-  // while the page textures keep text detail where the reader is actually looking.
-  renderer.xr.setFramebufferScaleFactor(HEADSET ? 0.72 : 0.9);
+  // Quest renders once per eye. Keep a small performance margin without making lesson
+  // text visibly soft; the immersive background already switches to its cheap shader.
+  renderer.xr.setFramebufferScaleFactor(HEADSET ? 0.9 : 1);
   const rig = createRig(THREE, scene, camera);
   const eye = rig.userData.eyeHeight;
   const sphere = new THREE.Group(); // centred on your head; turned to face you when VR starts
@@ -107,7 +109,7 @@ function boot({ renderer, scene, camera, syncSize }) {
       c.height = Math.round(TILE_H * TEXTURE_SCALE);
       const texture = new THREE.CanvasTexture(c);
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = HEADSET ? 2 : 4;
+      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       const data = tilePatch(p, RADIUS);
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
