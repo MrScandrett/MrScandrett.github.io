@@ -30,13 +30,13 @@ Generated 2026-10-20 by a triage script, then hand-checked. Phase 3 works throug
 | [ ] | A | lessons/computer-science/graphics-and-games/perlin-noise.html | ol.pn-timeline 5/5 dates parse |
 | [ ] | A | lessons/computer-science/pioneers/ada-lovelace.html | section#al-sec-timeline.al-card 11/11 dates parse |
 | [ ] | A | lessons/computer-science/pioneers/margaret-hamilton.html | ol.mh-timeline: minute-by-minute Apollo 11 landing, July 20 1969 |
-| [ ] | A | lessons/cosmology/apollo-moon-landing.html | ul.sm-timeline 7/7 dates parse |
-| [ ] | A | lessons/cosmology/constellations.html | ul.timeline 9/9 dates parse |
-| [ ] | A | lessons/cosmology/heliocentrism.html | ul.hs-timeline 7/7 dates parse |
-| [ ] | A | lessons/cosmology/origins-of-the-universe.html | ol.og-timeline 11/11 dates parse |
-| [ ] | A | lessons/cosmology/pioneers/tycho-brahe.html | ul.tb-timeline 12/12 dates parse |
-| [ ] | A | lessons/cosmology/universe-expansion.html | ol.ue-timeline 9/9 dates parse |
-| [ ] | A | lessons/cosmology/uraniborg.html | ul.ur-timeline 8/8 dates parse |
+| [x] | A | lessons/cosmology/apollo-moon-landing.html | ul.sm-timeline 7/7 dates parse |
+| [x] | A | lessons/cosmology/constellations.html | ul.timeline 9/9 dates parse |
+| [x] | A | lessons/cosmology/heliocentrism.html | ul.hs-timeline 7/7 dates parse |
+| [x] | A | lessons/cosmology/origins-of-the-universe.html | ol.og-timeline 11/11 dates parse |
+| [x] | A | lessons/cosmology/pioneers/tycho-brahe.html | ul.tb-timeline 12/12 dates parse |
+| [x] | A | lessons/cosmology/universe-expansion.html | ol.ue-timeline 9/9 dates parse |
+| [x] | A | lessons/cosmology/uraniborg.html | ul.ur-timeline 8/8 dates parse |
 | [ ] | A | lessons/earth-science/earth-circumference.html | ul.ec-timeline 7/7 dates parse |
 | [ ] | A | lessons/humanities/frankfurt-school-culture-industry.html | ol.fs-timeline 17/17 dates parse |
 | [ ] | A | lessons/humanities/panama-canal.html | div.timeline 5/5 dates parse |
