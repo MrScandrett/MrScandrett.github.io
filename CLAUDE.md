@@ -361,6 +361,21 @@ scrolls) are found by `findMainScroller()` and expanded in the copy; copy *every
 cross-origin images without CORS. Tests: `node --test tests/page-sphere.test.mjs`, and
 `SPHERE_URL=http://localhost:8080 node tests/page-sphere-browser.mjs` against `serve-local.js`.
 
+**The site theme is the sphere's world.** `vr/sphere-environment.mjs` is one inward-facing sphere (radius 20,
+drawn first, no depth test) with one fragment shader and a look per theme from `vr/sphere-theme.mjs`
+(`environmentFor(registryTheme)`, pure, tested against every theme in `theme-registry.js`): Lava Lamp is
+`LiquidEngine.ThermalBlobs` wax wrapped onto the sphere (`blobToSphere`: box x → longitude, y → latitude, the
+heater pool under your feet; don't write a second lava sim), Vaporwave a neon grid floor and striped sun,
+Mandelbrot a seam-free stereographic fractal, Night stars, Bark wood grain, and every light theme a tinted sky.
+It reads `html[data-theme]` through a MutationObserver, so a theme changed in another tab or in Settings inside
+the sphere re-colours it live (theme-lighting.js already turns the `storage` event into `data-theme`); the
+control row restyles through `createPanel(...).userData.setStyle`. To add a theme look: add a case to
+`environmentFor` and a shader function, then `npm test` (it fails if a registry theme has no valid palette).
+Two things bite: a metaball's 1/d² tail is harmless on a flat screen but on a sphere two dozen tails sum past the
+threshold everywhere, so each blob's reach is windowed to ~3 radii; and **motion is a comfort setting**, not
+decoration: Motion = Auto (calm in a headset, still under reduced motion, full on a flat screen) / Calm / Still /
+Full, stored in `classroomos-sphere-motion`. Never make the world move faster than `motionScale()` allows.
+
 Immersive pages live in `vr/` and are listed in `vr.html` from `data/xr-experiences.json`.
 Build new ones on `assets/js/xr-kit.mjs` (Enter VR button with honest status, controller/
 hand lasers, teleport floors via `userData.teleport`, 30° snap turn, canvas text panels,

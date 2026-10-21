@@ -339,7 +339,10 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
  * A flat text panel (a canvas texture on a plane) for labels and info cards in VR,
  * where HTML can't follow you. setText(title, lines) redraws it.
  */
-export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', lines = [], accent = '#7cc4ff', background = 'rgba(10,18,32,0.92)' } = {}) {
+export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', lines = [], accent: accentColor = '#7cc4ff', background: backgroundColor = 'rgba(10,18,32,0.92)' } = {}) {
+  let accent = accentColor;
+  let background = backgroundColor;
+  let shown = { title, lines };
   const scale = 640;
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
@@ -367,6 +370,7 @@ export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', line
   }
 
   function setText(nextTitle, nextLines = []) {
+    shown = { title: nextTitle, lines: nextLines };
     const w = canvas.width;
     const h = canvas.height;
     const pad = 36;
@@ -398,5 +402,11 @@ export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', line
 
   setText(title, lines);
   mesh.userData.setText = setText;
+  // Re-colour without losing the text (e.g. when the site theme changes).
+  mesh.userData.setStyle = style => {
+    if (style.accent) accent = style.accent;
+    if (style.background) background = style.background;
+    setText(shown.title, shown.lines);
+  };
   return mesh;
 }

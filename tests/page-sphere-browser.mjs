@@ -34,7 +34,9 @@ try {
   // 1. The home page is drawn: several screens, the first one full of real content.
   await sphere('index.html');
   await drawn();
-  assert.ok(await page.evaluate(() => window.ClassroomOSPageSphere.tileCount()) >= 2, 'the home page needs more than one screen');
+  // The first draw can catch a half-loaded page; the sphere redraws as it settles.
+  await page.waitForFunction(() => window.ClassroomOSPageSphere.tileCount() >= 2, null, { timeout: 20000 })
+    .catch(() => assert.fail('the home page needs more than one screen'));
   assert.ok(await colours(0) > 40, 'screen 0 holds a drawn page, not a blank');
   assert.match(await page.textContent('#vr-status'), /ClassroomOS/);
 
@@ -78,6 +80,46 @@ try {
   await sphere('index.html');
   await page.waitForSelector('.vr-menu');
   assert.equal(await page.locator('.vr-menu-panel a[href*="page-sphere"]').count(), 0);
+
+  // 6. The theme is the world: Lava Lamp fills the dome with wax, and a theme changed elsewhere
+  //    (another tab, or Settings inside the sphere) re-colours it live.
+  const themed = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  await themed.addInitScript(() => { try { localStorage.setItem('classroomos-lighting-mode', 'manual'); localStorage.setItem('classroomos-lighting-phase', 'lavalamp'); } catch { /* ok */ } });
+  const lava = await themed.newPage();
+  lava.on('pageerror', e => problems.push(`pageerror: ${e.message}`));
+  lava.on('console', m => { if (m.type() === 'error' && /shader|THREE|WebGL/i.test(m.text())) problems.push(`console: ${m.text().slice(0, 300)}`); });
+  await lava.goto(`${base}/vr/page-sphere.html?src=index.html`);
+  await lava.waitForFunction(() => /screens? around you/.test(document.getElementById('vr-status').textContent), null, { timeout: 30000 });
+  const world = () => lava.evaluate(() => ({ look: window.ClassroomOSPageSphereEnv.env.look, name: document.getElementById('sphere-theme').textContent, wax: window.ClassroomOSPageSphereEnv.env.uniforms.uCount.value }));
+  const first = await world();
+  assert.deepEqual([first.look, first.name], [5, 'Lava Lamp'], 'Lava Lamp is wax in 360°');
+  assert.ok(first.wax > 4, 'there is wax (blobs merge, so the count varies) as well as the heater lumps');
+
+  const elsewhere = await themed.newPage();
+  await elsewhere.goto(`${base}/index.html`);
+  await elsewhere.evaluate(() => localStorage.setItem('classroomos-lighting-phase', 'vaporwave'));
+  await lava.waitForFunction(() => window.ClassroomOSPageSphereEnv.env.look === 3, null, { timeout: 10000 });
+  assert.equal((await world()).name, 'Vaporwave', 'a theme changed in another tab re-colours the sphere');
+  await elsewhere.evaluate(() => localStorage.setItem('classroomos-lighting-phase', 'day'));
+  await lava.waitForFunction(() => window.ClassroomOSPageSphereEnv.env.look === 0, null, { timeout: 10000 });
+
+  // 7. Motion: Still freezes the world, Full runs it, and Auto obeys reduced motion.
+  const clock = () => lava.evaluate(() => window.ClassroomOSPageSphereEnv.env.uniforms.uTime.value);
+  const settle = ms => lava.waitForTimeout(ms);
+  await lava.selectOption('#sphere-motion', 'full');
+  // (Software WebGL manages only a few frames a second, so test "it moves", not how far.)
+  const t0 = await clock();
+  await lava.waitForFunction(t => window.ClassroomOSPageSphereEnv.env.uniforms.uTime.value > t, t0, { timeout: 10000 })
+    .catch(() => assert.fail('Full motion runs the world'));
+  await lava.selectOption('#sphere-motion', 'still');
+  await settle(500); // let any frame already in flight land
+  const frozen = await clock(); await settle(1500);
+  assert.equal(await clock(), frozen, 'Still freezes it');
+  await lava.selectOption('#sphere-motion', 'auto');
+  assert.equal(await lava.evaluate(() => window.ClassroomOSPageSphereEnv.motionScale()), 1, 'Auto runs at full speed on a flat screen');
+  await elsewhere.evaluate(() => localStorage.setItem('classroomos-reduced-motion', 'on'));
+  await lava.waitForFunction(() => window.ClassroomOSPageSphereEnv.motionScale() === 0, null, { timeout: 5000 });
+  await themed.close();
 
   assert.deepEqual(problems, [], problems.join('\n'));
   console.log('page sphere: all browser checks passed');

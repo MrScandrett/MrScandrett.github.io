@@ -9,6 +9,8 @@ import { THREE } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
 import { createRig, createPointer, mountVRButton, createPanel } from '../xr-kit.mjs';
 import { rasterizeDocument, findMainScroller } from '../page-raster.mjs';
+import { createEnvironment } from './sphere-environment.mjs';
+import { MOTION_MODES, motionScale, environmentFor } from './sphere-theme.mjs';
 import { TILE_W, TILE_H, planTiles, screensFor, tilePatch, tileUvToPage, spherePoint, safeSource, sourceParam } from './sphere-layout.mjs';
 
 const SITE = new URL('../../../', import.meta.url);
@@ -55,6 +57,23 @@ function boot({ renderer, scene, camera, syncSize }) {
   sphere.position.set(0, eye, 0);
   scene.add(sphere);
 
+  /* The world around the screens follows the site theme: Lava Lamp is wax all around you. */
+  const env = createEnvironment(THREE, { LiquidEngine: window.LiquidEngine });
+  scene.add(env.mesh);
+  const registry = window.ClassroomOSThemeRegistry;
+  const currentTheme = () => (registry ? registry.get(document.documentElement.dataset.theme || 'day') : { id: 'day', swatch: ['#dff1ff', '#6eb6ff'], accentRGB: [0, 113, 227] });
+  const css = c => `rgb(${c.map(v => Math.round(v * 255)).join(',')})`;
+  const styled = []; // panels that wear the theme's colours (the Exit button keeps its red)
+  function applyTheme() {
+    const theme = currentTheme();
+    const look = env.setTheme(theme);
+    const dark = theme.tone === 'dark';
+    const [r, g, b] = look.dark.map(v => Math.round(v * 255 * 0.5));
+    const style = { accent: css(look.accent), background: dark ? `rgba(${r},${g},${b},0.94)` : 'rgba(16,24,38,0.94)' };
+    for (const panel of styled) panel.userData.setStyle(style);
+    document.getElementById('sphere-theme').textContent = theme.label || theme.id;
+  }
+
   /* Screens: one canvas, texture and patch each. */
   const tiles = []; // { plan, canvas, ctx, texture, mesh }
   function ensureTiles(count) {
@@ -85,6 +104,31 @@ function boot({ renderer, scene, camera, syncSize }) {
     }
   }
 
+  /* Motion: a world that moves all around you is the classic cause of VR sickness. */
+  const MOTION_KEY = 'classroomos-sphere-motion';
+  const motionSelect = document.getElementById('sphere-motion');
+  let motionMode = 'auto';
+  try { const saved = localStorage.getItem(MOTION_KEY); if (MOTION_MODES.includes(saved)) motionMode = saved; } catch { /* private mode */ }
+  let motionPanel = null;
+  const readReduced = () => {
+    let on = false;
+    try { on = localStorage.getItem('classroomos-reduced-motion') === 'on'; } catch { /* private mode */ }
+    return on || !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  };
+  let reduced = readReduced();
+  const Cap = w => w[0].toUpperCase() + w.slice(1);
+  function motionLabel() { return `◐ ${Cap(motionMode)}`; }
+  function setMotion(mode) {
+    motionMode = mode;
+    try { localStorage.setItem(MOTION_KEY, mode); } catch { /* private mode */ }
+    if (motionPanel) motionPanel.userData.setText(motionLabel());
+    motionSelect.value = mode;
+    notify(`Motion: ${Cap(mode)}${mode === 'auto' ? ' (calm in a headset, still if you asked for reduced motion)' : ''}`, 2500);
+  }
+  motionSelect.value = motionMode;
+  motionSelect.addEventListener('change', () => setMotion(motionSelect.value));
+  window.addEventListener('storage', () => { reduced = readReduced(); });
+
   /* Controls and notices float on the sphere, above the first screen. */
   function floatOnSphere(mesh, yaw, pitch, r = RADIUS - 0.06) {
     mesh.position.set(...spherePoint(yaw, pitch, r));
@@ -93,16 +137,21 @@ function boot({ renderer, scene, camera, syncSize }) {
     return mesh;
   }
   const titlePanel = floatOnSphere(createPanel(THREE, { width: 1.4, height: 0.2, title: 'Loading…' }), 0, 19);
+  styled.push(titlePanel);
   const buttons = [
     { label: '← Back', yaw: -22, run: () => { try { frame.contentWindow.history.back(); } catch { /* cross-origin */ } } },
     { label: '↻ Redraw', yaw: 20, run: () => redraw(true) },
-    { label: 'Exit', yaw: 32, accent: '#ff8f8f', run: exitSphere }
+    { label: motionLabel(), yaw: 33, id: 'motion', run: () => setMotion(MOTION_MODES[(MOTION_MODES.indexOf(motionMode) + 1) % MOTION_MODES.length]) },
+    { label: 'Exit', yaw: 46, accent: '#ff8f8f', run: exitSphere }
   ].map(b => {
     const panel = createPanel(THREE, { width: 0.66, height: 0.2, title: b.label, accent: b.accent });
     panel.userData.action = b.run;
+    if (!b.accent) styled.push(panel);
+    if (b.id === 'motion') motionPanel = panel;
     return floatOnSphere(panel, b.yaw, 19);
   });
   const notice = floatOnSphere(createPanel(THREE, { width: 1.7, height: 0.34, title: '' }), 0, 27);
+  styled.push(notice);
   notice.visible = false;
   let noticeTimer = 0;
   function notify(text, ms = 5000) {
@@ -132,7 +181,6 @@ function boot({ renderer, scene, camera, syncSize }) {
         t.ctx.drawImage(shot.image, 0, t.plan.index * TILE_H, TILE_W, TILE_H, 0, 0, TILE_W, TILE_H);
         t.texture.needsUpdate = true;
       }
-      scene.background = new THREE.Color(shot.background).multiplyScalar(0.55);
       truncatedNote = truncated ? `Showing the first ${shown} of ${Math.ceil(shot.height / TILE_H)} screens.` : '';
       say(`${doc.title || 'Page'} · ${shown} screen${shown === 1 ? '' : 's'} around you. ${truncatedNote}`.trim());
       if (announce) notify(truncatedNote || 'Redrawn.', 2500);
@@ -254,7 +302,15 @@ function boot({ renderer, scene, camera, syncSize }) {
   });
   // Hidden notice panels are not targets, so they cannot catch the laser.
 
+  applyTheme();
+  // A theme change (made on this page, or by clicking Settings inside the sphere) re-colours
+  // the world at once; the hidden page re-themes itself, so redraw the screens once it has.
+  new MutationObserver(() => { applyTheme(); setTimeout(() => redraw(), 700); setTimeout(() => redraw(), 1800); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.addEventListener('classroomos:lightingchange', () => { applyTheme(); });
+
   // Read-only hook for tests and debugging: what has been drawn so far.
+  window.ClassroomOSPageSphereEnv = { env, motionScale: () => motionScale(motionMode, { presenting: renderer.xr.isPresenting, reduced }) };
   window.ClassroomOSPageSphere = {
     tileCount: () => tiles.length,
     tileImage: index => tiles[index] && tiles[index].canvas.toDataURL('image/png'),
@@ -282,10 +338,15 @@ function boot({ renderer, scene, camera, syncSize }) {
   });
   refreshBtn.addEventListener('click', () => redraw(true));
 
+  const clock = new THREE.Clock();
+  const viewer = new THREE.Vector3();
   renderer.setAnimationLoop(() => {
+    const dt = Math.min(clock.getDelta(), 0.1);
     if (!renderer.xr.isPresenting) syncSize();
     else if (recenter > 0 && --recenter === 0) centreOnViewer(); // wait for the first real head pose
     pointer.update();
+    (renderer.xr.isPresenting ? renderer.xr.getCamera() : camera).getWorldPosition(viewer);
+    env.update(dt, motionScale(motionMode, { presenting: renderer.xr.isPresenting, reduced }), viewer);
     renderer.render(scene, camera);
   });
 }
