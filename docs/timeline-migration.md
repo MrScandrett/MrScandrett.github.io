@@ -16,9 +16,9 @@ Generated 2026-10-20 by a triage script, then hand-checked. Phase 3 works throug
 | [ ] | A | lessons/applied-physics-materials/dispersive-prism.html | div.prism-timeline 6/6 dates parse |
 | [ ] | A | lessons/applied-physics-materials/vr-technology.html | div.vr-mini-timeline 4/4 dates parse |
 | [ ] | A | lessons/chemistry/periodic-table.html | div.pt-timeline 8/8 dates parse |
-| [ ] | A | lessons/chemistry/pioneers/dalton-atomic-theory.html | section#timeline.pioneer-card 5/5 dates parse |
-| [ ] | A | lessons/chemistry/pioneers/lavoisier-conservation.html | section#timeline.pioneer-card 5/5 dates parse |
-| [ ] | A | lessons/chemistry/pioneers/mendeleev-periodic-law.html | section#timeline.pioneer-card 6/6 dates parse |
+| [x] | A | lessons/chemistry/pioneers/dalton-atomic-theory.html | section#timeline.pioneer-card 5/5 dates parse |
+| [x] | A | lessons/chemistry/pioneers/lavoisier-conservation.html | section#timeline.pioneer-card 5/5 dates parse |
+| [x] | A | lessons/chemistry/pioneers/mendeleev-periodic-law.html | section#timeline.pioneer-card 6/6 dates parse |
 | [ ] | A | lessons/computer-science/algorithms-and-ai/ai-concepts-foundations.html | section#timeline.origins-section 17/17 dates parse |
 | [ ] | A | lessons/computer-science/algorithms-and-ai/ai-eliza.html | ol.eliza1966-timeline 5/5 dates parse |
 | [ ] | A | lessons/computer-science/algorithms-and-ai/perceptron-lab.html | article.card 7/7 dates parse |
@@ -71,11 +71,11 @@ Generated 2026-10-20 by a triage script, then hand-checked. Phase 3 works throug
 | [ ] | A | lessons/physics/mechanics/wheel-and-axle.html | div.wa-timeline 7/7 dates parse |
 | [ ] | A | lessons/physics/modern-and-thermal/quantum-physics.html | ol.qp-timeline 13/13 dates parse |
 | [ ] | A | lessons/physics/modern-and-thermal/speed-of-light.html | ul.sol-timeline 5/5 dates parse |
-| [ ] | A | lessons/physics/pioneers/albert-einstein.html | ol.ae-timeline 8/8 dates parse |
-| [ ] | A | lessons/physics/pioneers/james-clerk-maxwell.html | ol.jcm-timeline 12/12 dates parse |
-| [ ] | A | lessons/physics/pioneers/marie-curie.html | ol.mc-timeline 11/11 dates parse |
-| [ ] | A | lessons/physics/pioneers/nikola-tesla.html | ol.ntl-timeline 10/10 dates parse |
-| [ ] | A | lessons/physics/pioneers/wright-brothers.html | ol.wb-timeline 5/5 dates parse |
+| [x] | A | lessons/physics/pioneers/albert-einstein.html | ol.ae-timeline 8/8 dates parse |
+| [x] | A | lessons/physics/pioneers/james-clerk-maxwell.html | ol.jcm-timeline 12/12 dates parse |
+| [x] | A | lessons/physics/pioneers/marie-curie.html | ol.mc-timeline 11/11 dates parse |
+| [x] | A | lessons/physics/pioneers/nikola-tesla.html | ol.ntl-timeline 10/10 dates parse |
+| [x] | A | lessons/physics/pioneers/wright-brothers.html | ol.wb-timeline 5/5 dates parse |
 | [ ] | A | lessons/physics/waves-and-sound/physics-of-music.html | div.music-timeline 8/8 dates parse |
 | [ ] | A-interactive | lessons/humanities/evolution-of-steam.html | "Interactive flight log" era picker, 1954–present |
 | [ ] | A-interactive | lessons/humanities/gold-rush.html | button picker ("Select a stop"), 5 dated stops |
