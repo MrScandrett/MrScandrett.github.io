@@ -10,14 +10,14 @@
 // lines of longitude closing together.
 
 export const TILE_W = 1280;
-export const TILE_H = 720;
-export const TILE_GUTTER = 20;
+export const TILE_H = 900;
+export const TILE_GUTTER = 24;
 export const PAGE_SLICE_H = TILE_H - TILE_GUTTER * 2;
-export const SLICE_OVERLAP = 48;
+export const SLICE_OVERLAP = 64;
 export const SLICE_STEP = PAGE_SLICE_H - SLICE_OVERLAP;
 export const MAX_TILES = 15;
 export const YAW_SPAN = 45; // degrees one screen covers at the horizon (1280 px → ~28 px/°)
-export const RING_STEP = 27.5; // degrees between ring centres
+export const RING_STEP = 34; // degrees between the taller ring centres; leaves a small visual gutter
 const PITCH_SPAN = (YAW_SPAN * TILE_H) / TILE_W;
 const RAD = Math.PI / 180;
 

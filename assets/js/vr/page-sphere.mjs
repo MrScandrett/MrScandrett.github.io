@@ -19,6 +19,7 @@ import {
 const SITE = new URL('../../../', import.meta.url);
 const RADIUS = 3;
 const FRAME_NAME = 'classroomos-vr-sphere'; // vr-mode.js stays out of a frame with this name
+const SOURCE_VIEWPORT_H = 720; // keep lesson responsive layout stable as VR panels get taller
 const HEADSET = /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic/i.test(navigator.userAgent || '');
 const TEXTURE_SCALE = HEADSET ? 0.75 : 1;
 
@@ -38,7 +39,7 @@ frame.title = 'Page shown in the 360° sphere';
 frame.tabIndex = -1;
 frame.setAttribute('aria-hidden', 'true');
 Object.assign(frame.style, {
-  position: 'fixed', left: '-20000px', top: '0', width: `${TILE_W}px`, height: `${TILE_H}px`,
+  position: 'fixed', left: '-20000px', top: '0', width: `${TILE_W}px`, height: `${SOURCE_VIEWPORT_H}px`,
   border: '0', opacity: '0', pointerEvents: 'none'
 });
 
@@ -187,7 +188,7 @@ function boot({ renderer, scene, camera, syncSize }) {
     if (!doc || !doc.body) return;
     drawing = true;
     try {
-      const shot = await rasterizeDocument(doc, { width: TILE_W, viewportHeight: TILE_H });
+      const shot = await rasterizeDocument(doc, { width: TILE_W, viewportHeight: SOURCE_VIEWPORT_H });
       const { needed, shown, truncated } = screensFor(shot.height);
       ensureTiles(shown);
       for (const t of tiles) {
