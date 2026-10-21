@@ -3,8 +3,15 @@
 .ll-viewport { --ll-panel-w: 320px; }
 .ws-hero { padding: 0.4rem 0 1.2rem; }
 .ws-hero h1 { max-width: 28ch; margin-left: 0; font-size: clamp(1.6rem, 3.6vw, 2.4rem); }
-.ws-meta { display: flex; flex-wrap: wrap; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
-.ws-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; align-self: center; }
+.ws-meta { display: flex; flex-wrap: wrap; gap: 0.35rem 0.45rem; margin: 0.6rem 0 0; padding: 0; list-style: none; font-size: 0.8rem; }
+.ws-meta li { padding: 0.12rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; color: var(--text-secondary, #3f4f65); white-space: nowrap; }
+.ws-jump { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.9rem 0 0; }
+.ws-jump a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.8rem; border-radius: 999px; border: 1px solid var(--line, #d2d2d7); font-size: 0.82rem; font-weight: 600; text-decoration: none; color: var(--text, #1d1d1f); }
+.ws-jump a:hover { background: rgba(14, 165, 233, 0.14); }
+.ws-jump b { display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: #0369a1; color: #fff; font-size: 0.72rem; }
+html { scroll-behavior: smooth; }
+.ws-card[id] { scroll-margin-top: 4.5rem; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 .ws-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.98rem; line-height: 1.62; }
 
 .ws-card { background: var(--surface-elevated, var(--white, #fff)); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #0ea5e9); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
@@ -79,9 +86,30 @@
 .ws-q .ws-row { margin: 0.3rem 0; }
 .ws-note { font-size: 0.8rem; color: var(--text-muted, #64748b); }
 
+.ws-worksheet { display: grid; gap: 0.25rem; margin-top: 0.8rem; }
+.ws-worksheet label { font-size: 0.82rem; font-weight: 600; color: var(--text, #1d1d1f); margin-top: 0.4rem; }
+.ws-worksheet textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.45rem 0.6rem; font: inherit; font-size: 0.86rem; background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); resize: vertical; }
+.ws-predict { border: 1.5px dashed var(--card-accent, #38bdf8); border-radius: 12px; padding: 0.8rem 1rem; margin: 0.8rem 0; }
+.ws-predict p { margin: 0 0 0.4rem; color: var(--text, #1d1d1f); }
+.ws-predict .ws-btn[aria-pressed="true"] { outline-offset: 1px; }
+
+/* Phones: the claims table becomes one card per statement */
+@media (max-width: 640px) {
+  .ws-claims, .ws-claims tbody, .ws-claims tr, .ws-claims td { display: block; width: 100%; box-sizing: border-box; }
+  .ws-claims thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .ws-claims tr { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.6rem 0.8rem; margin-bottom: 0.7rem; }
+  .ws-claims td { border: 0; padding: 0.2rem 0; }
+  .ws-claims td[data-label="Statement"] { font-weight: 700; font-size: 0.95rem; }
+  .ws-claims td[data-label="Why"]::before { content: "Why"; display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); margin-top: 0.2rem; }
+  .ws-jump { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.3rem; }
+  .ws-jump a { white-space: nowrap; }
+}
+
 @media (max-width: 820px) { .ws-twin { grid-template-columns: minmax(0, 1fr); } .ws-card { padding: 1rem; } .ws-readout { grid-template-columns: 1fr; } }
 
 @media print {
+  .ws-jump, .ws-predict .ws-row { display: none; }
+  .ws-worksheet textarea { min-height: 3.2rem; border-color: #999; }
   .ws-stage { break-inside: avoid; }
   .ws-code { max-height: none; white-space: pre-wrap; }
   .ws-btn, #ws-file { display: none; }
