@@ -638,4 +638,14 @@ $$('.ws-q').forEach((q) => {
   }));
 });
 
+const predictFb = ui('ws-predict-fb');
+$$('[data-pv]').forEach((b) => b.addEventListener('click', () => {
+  const ok = b.dataset.pv === 'c';
+  $$('[data-pv]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  predictFb.textContent = ok
+    ? 'Yes. Centimetre moves change the reflected path by a good fraction of a 12 cm wavelength, so you pass through strong spots and blind spots. Now go and find them.'
+    : 'Test it: drag the person a few centimetres at a time and watch the blue wave. Then come back and see if you would change your answer.';
+  predictFb.className = 'ws-fb ' + (ok ? 'ok' : 'err');
+}));
+
 window.__wifiSensing = { synth, dec, W, roomFrames }; // for the browser check

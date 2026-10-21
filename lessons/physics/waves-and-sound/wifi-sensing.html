@@ -6,9 +6,6 @@
   <title>Seeing Breath in Wi-Fi · Mr. Scandrett's ClassroomOS</title>
   <meta name="description" content="Explore how chest motion can affect Wi-Fi Channel State Information, test a room model and signal-processing lab, and evaluate an experimental ESP32 recipe.">
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css">
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css">
   <link rel="stylesheet" href="../../../assets/css/lessons/wifi-sensing.css">
@@ -39,28 +36,46 @@
           <section class="hero ws-hero">
             <p class="eyebrow">Physics · Waves &amp; Signals</p>
             <h1>Seeing Breath in Wi-Fi</h1>
-            <div class="ws-meta">
-              <span>Grades 8–12</span><span class="dot"></span><span>Interference</span><span class="dot"></span><span>Phase</span><span class="dot"></span><span>Signal processing</span><span class="dot"></span><span>ESP32 recipe</span>
-            </div>
+            <ul class="ws-meta" aria-label="Lesson facts">
+              <li>Grades 8–12</li><li>45 min (simulator)</li><li>Interference</li><li>Phase</li><li>Signal processing</li><li>ESP32 recipe</li>
+            </ul>
             <p class="ws-lede">A Wi-Fi receiver estimates how radio waves arrived so it can decode packets. Chest motion can change that estimate in a small, repeating way. In this lesson you will model why, estimate a breathing rate from simulated data, and explore an experimental ESP32 setup.</p>
+            <nav class="ws-jump" aria-label="Lesson parts">
+              <a href="#claims"><b>1</b> Sort the claims</a>
+              <a href="#physics"><b>2</b> The physics</a>
+              <a href="#room-lab"><b>3</b> Room lab</a>
+              <a href="#decode-lab"><b>4</b> Decode lab</a>
+              <a href="#recipe"><b>5</b> Build it</a>
+              <a href="#practice"><b>6</b> Practice</a>
+            </nav>
           </section>
 
-          <section class="ws-card" style="--card-accent:#f59e0b;">
+          <section class="ws-card" id="claims" style="--card-accent:#f59e0b;">
             <h2>What the physics allows, and what it doesn't</h2>
             <p>Before building anything, sort what Wi-Fi sensing can plausibly do from what needs more evidence. Each row is something you will test in the labs below.</p>
             <table class="ws-claims">
               <thead><tr><th scope="col">Statement</th><th scope="col">Status</th><th scope="col">Why</th></tr></thead>
               <tbody>
-                <tr><td>A breath can change the Wi-Fi channel.</td><td><span class="ws-tag real">Supported</span></td><td>Chest and body motion can alter reflected paths. The path change depends on the transmitter, receiver, and person's positions; it can be close to zero.</td></tr>
-                <tr><td>The breathing rhythm can be recovered from the signal.</td><td><span class="ws-tag real">Supported, with conditions</span></td><td>It works best for one person sitting still, a few metres from the link, over tens of seconds. You will see where it breaks.</td></tr>
-                <tr><td>Heartbeat can be read the same way.</td><td><span class="ws-tag stretch">Much harder</span></td><td>Heart-related motion is usually smaller than breathing motion; separating it from breathing, other movement, and receiver noise needs a more capable setup and validation.</td></tr>
-                <tr><td>Many people can be tracked across a large building at once.</td><td><span class="ws-tag hype">Needs strong evidence</span></td><td>Nothing in this lesson's physics scales up to that by itself. Many people moving, walls, and furniture all add paths. A claim like this needs measured accuracy, a described test setting, and a method.</td></tr>
+                <tr><td data-label="Statement">A breath can change the Wi-Fi channel.</td><td data-label="Status"><span class="ws-tag real">Supported</span></td><td data-label="Why">Chest and body motion can alter reflected paths. The path change depends on the transmitter, receiver, and person's positions; it can be close to zero.</td></tr>
+                <tr><td data-label="Statement">The breathing rhythm can be recovered from the signal.</td><td data-label="Status"><span class="ws-tag real">Supported, with conditions</span></td><td data-label="Why">It works best for one person sitting still, a few metres from the link, over tens of seconds. You will see where it breaks.</td></tr>
+                <tr><td data-label="Statement">Heartbeat can be read the same way.</td><td data-label="Status"><span class="ws-tag stretch">Much harder</span></td><td data-label="Why">Heart-related motion is usually smaller than breathing motion; separating it from breathing, other movement, and receiver noise needs a more capable setup and validation.</td></tr>
+                <tr><td data-label="Statement">Many people can be tracked across a large building at once.</td><td data-label="Status"><span class="ws-tag hype">Needs strong evidence</span></td><td data-label="Why">Nothing in this lesson's physics scales up to that by itself. Many people moving, walls, and furniture all add paths. A claim like this needs measured accuracy, a described test setting, and a method.</td></tr>
               </tbody>
             </table>
-            <div class="ws-callout"><strong>Your job:</strong> by the end, write one sentence for each row that says what measurement would change your mind.</div>
+            <div class="ws-callout"><strong>Your job:</strong> make a first call now, then revise it in the last section. For each row, write what measurement would change your mind.</div>
+            <div class="ws-worksheet">
+              <label for="ws-c1">Row 1: breath changes the channel. I would change my mind if…</label>
+              <textarea id="ws-c1" rows="2" placeholder="e.g. the signal stayed flat in every seat I tried"></textarea>
+              <label for="ws-c2">Row 2: rhythm recovered. I would change my mind if…</label>
+              <textarea id="ws-c2" rows="2"></textarea>
+              <label for="ws-c3">Row 3: heartbeat. I would change my mind if…</label>
+              <textarea id="ws-c3" rows="2"></textarea>
+              <label for="ws-c4">Row 4: many people across a building. I would change my mind if…</label>
+              <textarea id="ws-c4" rows="2"></textarea>
+            </div>
           </section>
 
-          <section class="ws-card" style="--card-accent:#0ea5e9;">
+          <section class="ws-card" id="physics" style="--card-accent:#0ea5e9;">
             <h2>What a Wi-Fi chip actually measures</h2>
             <p>A legacy 20 MHz Wi-Fi OFDM signal has <strong>52 occupied subcarriers</strong> spaced 312.5 kHz apart: 48 carry data and four are pilots. The receiver estimates a complex channel response for subcarriers to decode packets. Its magnitude and angle are called amplitude and phase; phase is <em>not</em> a direct clock measurement of travel time. Those estimates are <strong>Channel State Information</strong>, or <strong>CSI</strong>. This lesson's ESP32 sketch exports 52 magnitudes from the legacy training field, including pilot positions, and discards phase.</p>
             <p>Radio does not take one path. It goes straight from router to receiver, and it also bounces off walls, desks, and people. The receiver sees the <strong>sum</strong> of all those paths. Paths that arrive in step reinforce each other. Paths that arrive out of step cancel. That is interference, the same idea as the Huygens lesson, happening inside your room.</p>
@@ -86,6 +101,11 @@
           <section class="ws-card" id="room-lab" style="--card-accent:#38bdf8;">
             <h2>Room lab: watch a breath move the signal</h2>
             <p>This is a simulated 4 × 2.4 m corner of a room. The model samples 20 times a second and computes a simplified amplitude for each subcarrier. The blue line is its noisy output; the dashed gold line is the known chest motion. <strong>Drag the person</strong> (or click the room and use the arrow keys). The controls are just below the graphs.</p>
+            <div class="ws-predict" data-memory-ignore>
+              <p><strong>Predict first.</strong> The wavelength here is about 12 cm. If you slide the seated person a few centimetres at a time, with their breathing unchanged, what happens to the size of the breathing wave?</p>
+              <div class="ws-row"><button class="ws-btn ghost" data-pv="a" type="button">It stays about the same</button><button class="ws-btn ghost" data-pv="b" type="button">It grows steadily</button><button class="ws-btn ghost" data-pv="c" type="button">It can swing from strong to flat and back</button></div>
+              <span class="ws-fb" id="ws-predict-fb" role="status"></span>
+            </div>
             <div class="ws-stage"><canvas id="ws-room" class="ws-room" tabindex="0" role="application" aria-label="Simulated room with a router, a receiver and a seated person. Drag the person or use the arrow keys to move them."></canvas></div>
             <div class="ws-stage"><canvas id="ws-trace" role="img" aria-label="Live graph of the received signal amplitude following the breathing chest"></canvas></div>
             <div class="ws-controls" role="group" aria-label="Room lab controls">
@@ -333,16 +353,16 @@ void loop() {
             </ul>
           </section>
 
-          <section class="ws-card" style="--card-accent:#f59e0b;">
+          <section class="ws-card" id="practice" style="--card-accent:#f59e0b;">
             <h2>Practice</h2>
             <div class="ws-q" data-answer="c" data-explain="In this simplified model the chest-reflected path changes when the chest moves. The amount depends on geometry, up to about 1 cm for 5 mm of motion.">
               <p>1. Which path changes when you breathe?</p>
-              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The direct path from router to receiver</button><button class="ws-btn ghost" data-v="b">The wall bounces</button><button class="ws-btn ghost" data-v="c">The path that bounces off the chest</button></div>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The direct router-to-receiver path</button><button class="ws-btn ghost" data-v="b">The wall bounces</button><button class="ws-btn ghost" data-v="c">The bounce off the chest</button></div>
               <span class="ws-fb" role="status"></span>
             </div>
             <div class="ws-q" data-answer="a" data-explain="Changing position alters both the reflected path change and the phasor angles. A rotating reflected phasor can change total amplitude strongly in one position and hardly at all in another.">
               <p>2. Why can the same person show a clear breath in one seat and a flat line one chair-width away?</p>
-              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The reflected wave's angle relative to the other paths changed, so the total length responds differently</button><button class="ws-btn ghost" data-v="b">The router turned itself off</button><button class="ws-btn ghost" data-v="c">The person breathed differently</button></div>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">The reflected wave's phase relative to the other paths changed, so the sum responds differently</button><button class="ws-btn ghost" data-v="b">The router turned itself off</button><button class="ws-btn ghost" data-v="c">The person breathed differently</button></div>
               <span class="ws-fb" role="status"></span>
             </div>
             <div class="ws-q" data-answer="b" data-explain="The peak of the spectrum is at 0.25 Hz. 0.25 cycles per second × 60 = 15 per minute.">
@@ -352,12 +372,12 @@ void loop() {
             </div>
             <div class="ws-q" data-answer="c" data-explain="The chosen 6–36 per minute band focuses this experiment on plausible breathing rates and reduces slower drift and faster noise; it does not prove that a peak is breathing or cover every possible rate.">
               <p>4. Why band-pass between 0.1 and 0.6 Hz?</p>
-              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Wi-Fi only works there</button><button class="ws-btn ghost" data-v="b">It makes the graph prettier</button><button class="ws-btn ghost" data-v="c">It focuses on a selected plausible breathing-rate range and reduces signals outside it</button></div>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Wi-Fi only works there</button><button class="ws-btn ghost" data-v="b">It makes the graph prettier</button><button class="ws-btn ghost" data-v="c">It keeps a plausible breathing range and trims drift and fast noise</button></div>
               <span class="ws-fb" role="status"></span>
             </div>
             <div class="ws-q" data-answer="a" data-explain="Frequency-selective multipath and noise can make some subcarriers cleaner than others. Combining several can help, but all are close in frequency and a strong periodic interferer can still fool the estimate.">
               <p>5. Why does the page average the best six subcarriers instead of trusting one?</p>
-              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Multipath and noise vary across subcarriers, so combining several can improve a weak estimate</button><button class="ws-btn ghost" data-v="b">Wi-Fi requires six</button><button class="ws-btn ghost" data-v="c">It saves battery</button></div>
+              <div class="ws-row"><button class="ws-btn ghost" data-v="a">Subcarriers differ in noise and multipath, so combining helps</button><button class="ws-btn ghost" data-v="b">Wi-Fi requires six</button><button class="ws-btn ghost" data-v="c">It saves battery</button></div>
               <span class="ws-fb" role="status"></span>
             </div>
           </section>
