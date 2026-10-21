@@ -333,6 +333,8 @@ function boot({ renderer, scene, camera, syncSize }) {
     button: document.getElementById('vr-enter'),
     status,
     rig,
+    enterLabel: 'Enter immersive 360°',
+    exitLabel: 'Exit 360°',
     onStart: () => { recenter = 3; },
     onEnd: () => { sphere.position.set(0, eye, 0); sphere.rotation.y = 0; }
   });

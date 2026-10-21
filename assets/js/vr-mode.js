@@ -315,7 +315,7 @@
     if (here && !/^vr\/page-sphere/.test(here)) {
       sphereLink = document.createElement('a');
       sphereLink.href = siteRoot + 'vr/page-sphere.html?src=' + encodeURIComponent(here);
-      sphereLink.textContent = '◎ 360° page — wrap this page around you';
+      sphereLink.textContent = '◎ Open 360° viewer — wrap this page around you';
     }
     var lab = document.createElement('a');
     lab.href = siteRoot + 'vr.html';

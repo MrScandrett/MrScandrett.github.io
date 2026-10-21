@@ -34,6 +34,8 @@ try {
   // 1. The home page is drawn: several screens, the first one full of real content.
   await sphere('index.html');
   await drawn();
+  assert.equal(await page.locator('#vr-immersive-launch #vr-enter').count(), 1, 'the immersive entry button is prominent over the preview');
+  assert.match(await page.locator('#vr-immersive-launch').innerText(), /second press.*leave the browser panel/is);
   // The first draw can catch a half-loaded page; the sphere redraws as it settles.
   await page.waitForFunction(() => window.ClassroomOSPageSphere.tileCount() >= 2, null, { timeout: 20000 })
     .catch(() => assert.fail('the home page needs more than one screen'));
