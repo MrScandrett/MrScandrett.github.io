@@ -41,6 +41,12 @@
           <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
         </div>
         <div class="flag-stage" id="pledgeStage" aria-label="Animated American flag with rising pledge text">
+          <div class="sky-layer" aria-hidden="true">
+            <span class="sky-glow"></span>
+            <span class="sky-rays"></span>
+            <span class="sky-stars"></span>
+            <span class="sky-clouds"><i></i><i></i><i></i></span>
+          </div>
           <model-viewer loading="lazy"
             id="flagModel"
             class="flag-model-viewer"
@@ -68,7 +74,9 @@
             </div>
           </model-viewer>
           <div class="stage-shade" aria-hidden="true"></div>
-          <div class="stage-heading" aria-hidden="true">Pledge of Allegiance</div>
+          <canvas class="fireworks" id="fireworks" aria-hidden="true"></canvas>
+          <div class="stage-bunting" aria-hidden="true"></div>
+          <div class="stage-heading" aria-hidden="true"><span class="stage-star">★</span> Pledge of Allegiance <span class="stage-star">★</span></div>
           <div class="pledge-ready" aria-hidden="true">
             <span class="pledge-ready-symbol">✦</span>
             <span>Ready when your class is</span>
@@ -276,6 +284,62 @@
           }
         }, 1200);
       });
+    </script>
+
+    <script>
+      /* Fireworks: bursts while the pledge plays, a grand finale when it ends. */
+      (() => {
+        const stageEl = document.getElementById('pledgeStage');
+        const cv = document.getElementById('fireworks');
+        if (!stageEl || !cv || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const ctx = cv.getContext('2d');
+        const COLORS = ['#ff4d5e', '#ffffff', '#6aa8ff', '#ffd27a'];
+        let parts = [], rockets = [], raf = 0, last = 0, nextLaunch = 0, finaleDone = false, w = 0, h = 0;
+        function size() {
+          const r = stageEl.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+          w = r.width; h = r.height; cv.width = w * d; cv.height = h * d;
+          ctx.setTransform(d, 0, 0, d, 0, 0);
+        }
+        function launch() {
+          rockets.push({ x: w * (0.1 + Math.random() * 0.8), y: h, vy: -(h * (0.75 + Math.random() * 0.3)), ty: h * (0.12 + Math.random() * 0.3) });
+        }
+        function burst(x, y) {
+          const c = COLORS[Math.floor(Math.random() * COLORS.length)], n = 46;
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2, v = 60 + Math.random() * 110;
+            parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
+          }
+        }
+        function frame(t) {
+          const dt = Math.min((t - last) / 1000 || 0, 0.05); last = t;
+          const mode = stageEl.dataset.crawl;
+          ctx.clearRect(0, 0, w, h);
+          if (mode === 'playing' && t > nextLaunch) { launch(); nextLaunch = t + 900 + Math.random() * 1400; }
+          if (mode === 'finished' && !finaleDone) { finaleDone = true; for (let i = 0; i < 9; i++) setTimeout(launch, i * 260); }
+          if (mode === 'idle' || mode === undefined) finaleDone = false;
+          if (mode === 'playing') finaleDone = false;
+          rockets = rockets.filter(r => {
+            r.y += r.vy * dt;
+            ctx.fillStyle = '#fff4cf'; ctx.fillRect(r.x, r.y, 2, 6);
+            if (r.y <= r.ty) { burst(r.x, r.y); return false; }
+            return true;
+          });
+          parts = parts.filter(p => {
+            p.vy += 70 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 0.7;
+            if (p.life <= 0) return false;
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 2.4, 2.4);
+            return true;
+          });
+          ctx.globalAlpha = 1;
+          if ((mode === 'playing' || mode === 'finished') || parts.length || rockets.length) raf = requestAnimationFrame(frame);
+          else raf = 0;
+        }
+        function wake() { if (!raf && (stageEl.dataset.crawl === 'playing' || stageEl.dataset.crawl === 'finished')) { size(); last = performance.now(); raf = requestAnimationFrame(frame); } }
+        new MutationObserver(wake).observe(stageEl, { attributes: true, attributeFilter: ['data-crawl'] });
+        window.addEventListener('resize', size);
+        document.addEventListener('fullscreenchange', () => setTimeout(size, 150));
+        size();
+      })();
     </script>
     <script src="../assets/js/theme-registry.js"></script>
     <script src="../assets/js/nav-mobile.js"></script>
