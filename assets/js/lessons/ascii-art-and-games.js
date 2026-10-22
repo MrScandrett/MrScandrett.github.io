@@ -57,7 +57,7 @@
     for (var c = 32; c <= 126; c++) {
       var code = flipped && isLetter(c) ? c ^ 32 : c;
       html += '<button type="button" data-code="' + code + '" aria-pressed="false" style="--k:' + group(code) + '" aria-label="' +
-        describe(code).replace(/'/g, '') + '">' + (code === 32 ? '␠' : String.fromCharCode(code).replace('&', '&amp;').replace('<', '&lt;')) +
+        describe(code).replace(/'/g, '').replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">' + (code === 32 ? '␠' : String.fromCharCode(code).replace('&', '&amp;').replace('<', '&lt;')) +
         '<small>' + code + '</small></button>';
     }
     grid.innerHTML = html;

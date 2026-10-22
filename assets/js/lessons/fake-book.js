@@ -773,6 +773,17 @@
     view.tabGrips = null;
     if (t.staves.tab) {
       view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines;
+      if (tabOn() && opts.tabPos !== 'auto' && window.FakeBookTab && t.staves.tab.lines === 6) {
+        var tuning = t.staves.tab.tuning || window.FakeBookTab.STANDARD;
+        var tabOnsets = view.tab.map(function (e) {
+          return { start: e.start, ms: e.f.map(function (sf) { return tuning[sf[0] - 1] + sf[1]; }) };
+        }).filter(function (e) { return e.ms.length; });
+        var rerouted = window.FakeBookTab.plan(tabOnsets, {
+          tuning: tuning, maxFret: 22, position: opts.tabPos === 'reroute' ? 'auto' : opts.tabPos
+        });
+        view.tab = rerouted.events;
+        view.tabInfo = { generated: true, refingered: true, source: 'guitar', dropped: rerouted.dropped, total: rerouted.total };
+      }
       // The imported tab is the authority on how each chord is fingered: diagrams follow it.
       if (window.FakeBookGuitarVoice) view.tabGrips = window.FakeBookGuitarVoice.fromTab(view.concertChords.map(function (c) {
         return { start: c.start, dur: c.dur, rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
@@ -791,7 +802,7 @@
         }
         pm.push({ bar: pbar, midi: e.p.midi, name: noteName(e.p) });
       });
-      view.pos = window.FakeBookPosition.plan(opts.posInst, pm, opts.tabPos || 'auto');
+      view.pos = window.FakeBookPosition.plan(opts.posInst, pm, opts.tabPos === 'reroute' ? 'auto' : (opts.tabPos || 'auto'));
     }
   }
   // Finger positions: one small fingerboard per measure under the staff, in place of tab.
@@ -835,7 +846,7 @@
       onsets = onsets.filter(function (o) { return o.ms.length; });
     }
     onsets.sort(function (a, b) { return a.start - b.start; });
-    var res = window.FakeBookTab.plan(onsets, { position: opts.tabPos || 'auto' });
+    var res = window.FakeBookTab.plan(onsets, { maxFret: 22, position: opts.tabPos === 'reroute' ? 'auto' : (opts.tabPos || 'auto') });
     view.tab = res.events;
     view.tabInfo = { generated: true, source: source, dropped: res.dropped, total: res.total };
   }
@@ -1157,9 +1168,10 @@
     var share = info.dropped / Math.max(1, info.total);
     n.hidden = false;
     n.classList.toggle('is-warn', share >= 0.05);
-    n.textContent = share >= 0.05 ?
-      'This ' + (info.source === 'guitar' ? 'guitar part' : 'song') + ' isn’t playable on guitar as written: ' + info.dropped + ' of ' + info.total +
-        ' notes don’t fit under one hand or on the fretboard, so the tab leaves them out. Try a simpler version of this song.' :
+    n.textContent = info.refingered ?
+      'This position leaves out ' + info.dropped + ' of ' + info.total + ' notes. Try another fret area or As written to restore the original tab.' : share >= 0.05 ?
+      'The tab leaves out ' + info.dropped + ' of ' + info.total +
+        ' notes that do not fit together on the fretboard. Try Auto or another fret area.' :
       'The tab leaves out ' + info.dropped + ' note' + (info.dropped === 1 ? '' : 's') + ' that don’t fit on a guitar (too low, too high, or too far apart).';
   }
 
@@ -2032,12 +2044,14 @@
     rock: { label: 'Rock / pop', meters: [4], feel: 'straight', tip: 'Kick on 1 and 3, snare on 2 and 4, straight eighth notes on the hi-hat and bass.' },
     bossa: { label: 'Bossa nova', meters: [4], feel: 'straight', tip: 'Brazilian groove: a rim-click clave pattern over a two-bar cycle and a root–fifth bass.' },
     ballad: { label: 'Ballad', meters: [3, 4], feel: 'straight', tip: 'Slow and spacious: long bass notes, sustained chords, soft cymbal.' },
+    jig: { label: 'Jig (6/8)', meters: [3], feel: 'straight', tip: 'Two pulses per bar, each divided into three eighth notes. Keep the first and fourth eighths grounded.' },
     waltz: { label: 'Waltz', meters: [3], feel: 'straight', tip: 'Oom-pah-pah: bass on 1, chords on 2 and 3.' },
     jazzwaltz: { label: 'Jazz waltz', meters: [3], feel: 'swing', tip: 'A swinging 3/4: walking bass in three, ride pattern, comping on 1 and the “and” of 2.' }
   };
 
   function mapBandStyle(rawStyle, meter) {
     var s = (rawStyle || '').toLowerCase().trim();
+    if (meter && meter[0] === 6 && meter[1] === 8) return 'jig';
     var is3 = meter && meter[0] === 3;
     if (is3) {
       if (s.indexOf('swing') >= 0 || s.indexOf('jazz') >= 0) return 'jazzwaltz';
@@ -2151,13 +2165,14 @@
     bossa: [['kick', [0, 0.45], [1.5, 0.3], [2, 0.45], [3.5, 0.3]], ['hat', [0, 0.22], [0.5, 0.16], [1, 0.22], [1.5, 0.16], [2, 0.22], [2.5, 0.16], [3, 0.22], [3.5, 0.16]]],
     ballad4: [['ride', [0, 0.28], [1, 0.22], [2, 0.28], [3, 0.22]], ['kick', [0, 0.3]], ['rim', [2, 0.28]]],
     ballad3: [['ride', [0, 0.28], [1, 0.2], [2, 0.2]], ['kick', [0, 0.3]]],
+    jig: [['kick', [0, 0.5], [1.5, 0.34]], ['hat', [0, 0.32], [0.5, 0.18], [1, 0.18], [1.5, 0.3], [2, 0.18], [2.5, 0.18]]],
     waltz: [['kick', [0, 0.55]], ['hat', [1, 0.35], [2, 0.35]], ['snare', [1, 0.12], [2, 0.12]]],
     jazzwaltz: [['ride', [0, 0.5], [1, 0.45], [1.5, 0.3], [2, 0.45]], ['hat', [1, 0.35]], ['kick', [0, 0.18]]]
   };
   var BOSSA_RIM = [[0, 1.5, 3], [1, 2.5]];
   var COMP = {
     swing: [[0, 0.9], [1.5, 0.4]], twobeat: [[1, 0.45], [3, 0.45]], rock: [[0, 0.8], [1, 0.8], [2, 0.8], [3, 0.8]],
-    waltz: [[1, 0.6], [2, 0.6]], jazzwaltz: [[0, 0.8], [1.5, 0.4]]
+    jig: [[1.5, 1.2]], waltz: [[1, 0.6], [2, 0.6]], jazzwaltz: [[0, 0.8], [1.5, 0.4]]
   };
   function nearestBass(pc, prev) {
     var best = null;
@@ -2198,6 +2213,11 @@
             var m2 = opts2[0] || prevBass + 2; evs.push({ t: t, kind: 'bass', m: m2, dur: 0.95, vel: vel }); prevBass = m2;
           }
         }
+      } else if (style === 'jig') {
+        var cj = chords[cIndex(b0)];
+        bass(b0, bassPc(cj), 1.35, 0.8);
+        var cj2 = chords[cIndex(b0 + 1.5)];
+        bass(b0 + 1.5, near(cj2.start, b0) && !cj2.bass ? tones(cj2)[2] : bassPc(cj2), 1.35, 0.62);
       } else if (style === 'twobeat') {
         [0, 2].forEach(function (p) { var c = chords[cIndex(b0 + p)]; bass(b0 + p, p && near(c.start, b0) && !c.bass ? tones(c)[2] : bassPc(c), 1.8, 0.8); });
       } else if (style === 'rock') {
@@ -2366,8 +2386,9 @@
     for (var bar = r.from; bar <= r.to; bar++) {
       var b0 = g((bar - 1) * M);
       add.push({ b: b0, kind: 'ui', ui: 'bar', bar: bar, yours: yours(bar, P.range.from) });
-      for (var bt = 0; bt < M; bt++) {
-        add.push({ b: b0 + bt, kind: 'ui', ui: 'beat', n: bt });
+      var beatSize = tune.meter[0] === 6 && tune.meter[1] === 8 ? 1.5 : 1;
+      for (var bt = 0; bt < M; bt += beatSize) {
+        add.push({ b: b0 + bt, kind: 'ui', ui: 'beat', n: bt / beatSize });
         var on = opts.click === 'all' || (opts.click === 'one' && bt === 0) ||
           (opts.click === 'backbeat' && (M === 3 ? bt > 0 : bt % 2 === 1)) ||
           (opts.click === 'gap' && Math.floor((bar - r.from) / 2) % 2 === 0);
@@ -2571,16 +2592,29 @@
   }
 
   // ---- library
+  var LIBRARY_CATEGORIES = ['Traditional & folk', 'Hymns & spirituals', 'Classical themes', 'Seasonal songs', 'Early popular & ragtime', 'Jazz standards', 'Jazz practice charts', 'Original exercises'];
   function renderLibrary() {
     var builtInList = el('[data-fb-library]');
     if (builtInList) {
-      builtInList.innerHTML = defaultTunes.map(function (raw) {
-        return '<div class="fb-tune-item">' +
-          '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
-          '<strong>' + MN.escape(raw.title) + '</strong>' +
-          '<small>' + MN.escape(raw.composer) + '</small>' +
-          '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
-          '</div>';
+      var openCategories = Array.from(builtInList.querySelectorAll('.fb-library-group[open]')).map(function (group) {
+        return group.getAttribute('data-category-index');
+      });
+      var categories = LIBRARY_CATEGORIES.concat(defaultTunes.map(function (raw) { return raw.category || 'Other tunes'; }).filter(function (category) {
+        return LIBRARY_CATEGORIES.indexOf(category) < 0;
+      }).filter(function (category, index, all) { return all.indexOf(category) === index; }));
+      builtInList.innerHTML = categories.map(function (category, index) {
+        var songs = defaultTunes.filter(function (raw) { return (raw.category || 'Other tunes') === category; });
+        if (!songs.length) return '';
+        return '<details class="fb-library-group" data-category-index="' + index + '"' + (openCategories.indexOf(String(index)) >= 0 ? ' open' : '') + '>' +
+          '<summary class="fb-library-category"><span>' + MN.escape(category) + '</span><span class="fb-library-count">' + songs.length + ' ' + (songs.length === 1 ? 'tune' : 'tunes') + '</span></summary>' +
+          '<div class="fb-library-grid">' + songs.map(function (raw) {
+            return '<div class="fb-tune-item">' +
+              '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
+              '<strong>' + MN.escape(raw.title) + '</strong>' +
+              '<small>' + MN.escape(raw.composer) + '</small>' +
+              '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
+              '</div>';
+          }).join('') + '</div></details>';
       }).join('');
     }
     var importsWrap = el('[data-fb-imports-wrap]');
@@ -2768,7 +2802,7 @@
       opts.key = raw.key; opts.from = 1; opts.to = tune.bars; opts.tempo = raw.tempo;
       opts.style = raw.band; opts.feel = raw.feel;
     }
-    if (STYLES[opts.style].meters.indexOf(tune.M) < 0) opts.style = raw.band;
+    if (!styleFitsTune(opts.style)) opts.style = raw.band;
     if (!opts.tempo) opts.tempo = raw.tempo;
     if (!opts.feel) opts.feel = raw.feel;
     root.querySelectorAll('[data-tune]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-tune') === raw.id ? 'true' : 'false'); });
@@ -2805,9 +2839,13 @@
   }
   function styleOptions() {
     var sel = el('[data-fb-style]');
-    sel.innerHTML = Object.keys(STYLES).filter(function (k) { return STYLES[k].meters.indexOf(tune.M) >= 0; })
+    sel.innerHTML = Object.keys(STYLES).filter(function (k) { return styleFitsTune(k); })
       .map(function (k) { return '<option value="' + k + '">' + STYLES[k].label + '</option>'; }).join('');
     sel.value = opts.style;
+  }
+  function styleFitsTune(k) {
+    return STYLES[k] && STYLES[k].meters.indexOf(tune.M) >= 0 &&
+      (tune.meter.join('/') === '6/8' ? k === 'jig' : k !== 'jig');
   }
   function syncControls() {
     keyOptions(); styleOptions();
@@ -2845,8 +2883,16 @@
       positionKey.hidden = !posOn();
       positionKey.textContent = 'Numbers in dots = fingers; 0 = open string. The outlined dot starts the bar; the dashed ring is the previous bar’s last note. ' + (opts.posInst === 'violin' ? 'Bottom numbers count semitones above the open string. Dotted guides are pitch references, not frets or measured distances. ↓ = low finger; ↑ = high finger.' : 'Bottom numbers = frets. Low E is at the bottom; high e is at the top.');
       var tp = el('[data-fb-tab-pos]');
-      tp.value = opts.tabPos || 'auto';
-      tp.closest('label').hidden = !tabOn() || !!tune.staves.tab;
+      var authoredTab = !!(tune.staves.tab && tune.staves.tab.lines === 6);
+      tp.querySelector('[value="auto"]').textContent = authoredTab ? 'As written' : 'Auto: fewest shifts';
+      tp.querySelector('[value="reroute"]').hidden = !authoredTab;
+      tp.value = !authoredTab && opts.tabPos === 'reroute' ? 'auto' : (opts.tabPos || 'auto');
+      tp.closest('label').hidden = !tabOn() || !!(tune.staves.tab && !authoredTab);
+      var tabToolbar = el('[data-fb-tab-toolbar]');
+      if (tabToolbar) tabToolbar.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
+      var tabHint = el('[data-fb-tab-toolbar-hint]');
+      if (tabHint) tabHint.textContent = authoredTab && opts.tabPos === 'auto' ? 'Original string and fret choices.' :
+        tabOn() ? 'Same notes, different frets when possible.' : 'Show tab, then choose where to play it.';
     }
     var blw = el('[data-fb-bassline]');
     if (blw) { blw.value = opts.bassLine || 'score'; blw.closest('label').hidden = !hasB; }
@@ -2884,7 +2930,7 @@
     root.querySelectorAll('input[name="fb-melody"], input[name="fb-rhythm"]').forEach(function (i) {
       i.disabled = !!tune.chordsOnly || scoreTiming();
     });
-    dotsEl.innerHTML = new Array(tune.meter[0] + 1).join('<i></i>');
+    dotsEl.innerHTML = new Array((tune.meter.join('/') === '6/8' ? 2 : tune.meter[0]) + 1).join('<i></i>');
 
     // View switcher (Lead sheet vs Drum notation)
     root.querySelectorAll('[data-fb-view]').forEach(function (b) {
@@ -4157,7 +4203,7 @@
       else if (t.matches('[data-fb-show-sax]')) { opts.saxFingers = t.checked; if (t.checked) opts.measureShapes = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-pos-inst]')) { if (t.value === 'sax') { opts.saxFingers = true; opts.measureShapes = false; } else { opts.saxFingers = false; opts.posInst = opts.engineInst = t.value; } syncControls(); refresh(); renderBarPop(); save(); }
-      else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; refresh(); save(); }
+      else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
@@ -4274,6 +4320,7 @@
       }
       var tn = t.closest('[data-tune]');
       if (tn && !t.closest('[data-remove-tune], [data-print-tune]')) {
+        var categoryWrap = tn.closest('.fb-library-group'); if (categoryWrap) categoryWrap.open = false;
         var libWrap = tn.closest('.fb-library-wrap'); if (libWrap) libWrap.open = false;
         selectTune(tn.getAttribute('data-tune'), true);
         return;

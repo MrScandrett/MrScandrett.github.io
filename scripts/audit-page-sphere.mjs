@@ -43,7 +43,7 @@ for (const [i, src] of pages.entries()) {
   const r = { src, screens: 0, blank: [], truncated: false, errors, ms: 0, status: 'ok' };
   try {
     await page.goto(`${base}/vr/page-sphere.html?src=${encodeURIComponent(src)}`, { waitUntil: 'load', timeout: 30000 });
-    await page.waitForFunction(() => /screens? around you/.test(document.getElementById('vr-status').textContent), null, { timeout: 45000 });
+    await page.waitForFunction(() => /screens? around you|Showing the first/.test(document.getElementById("vr-status").textContent), null, { timeout: 45000 });
     r.ms = Date.now() - started;
     await page.waitForTimeout(1200); // let a settling page redraw once
     const info = await page.evaluate(async () => {

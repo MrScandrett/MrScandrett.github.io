@@ -271,6 +271,12 @@ export async function rasterizeDocument(doc, { width = 1280, viewportHeight = 72
   style.textContent = `${css}\n*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.reveal{opacity:1!important;transform:none!important}[data-vr-expand]{height:auto!important;max-height:none!important;overflow:visible!important}`;
   copy.insertBefore(style, copy.firstChild);
 
+  // HTML tolerates junk attribute names (an unescaped quote in markup makes `="" 34=""`);
+  // XML doesn't, and one of them would fail the whole picture. Drop them from the copy.
+  for (const el of copy.querySelectorAll('*')) {
+    for (const { name } of [...el.attributes]) if (!/^[A-Za-z_:][\w.:-]*$/.test(name)) el.removeAttribute(name);
+  }
+
   // The nested <html> doesn't paint its own background, so a wrapper carries the page colour.
   const xml = new XMLSerializer().serializeToString(copy);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject x="0" y="0" width="${width}" height="${height}"><div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden;background:${background}">${xml}</div></foreignObject></svg>`;

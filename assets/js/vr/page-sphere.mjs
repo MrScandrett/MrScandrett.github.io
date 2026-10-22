@@ -152,7 +152,7 @@ function boot({ renderer, scene, camera, syncSize }) {
       const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, toneMapped: false }));
       mesh.userData.tile = p.index;
       sphere.add(mesh);
-      tiles.push({ plan: p, canvas: c, ctx: c.getContext('2d'), texture, mesh });
+      tiles.push({ plan: p, canvas: c, ctx: c.getContext('2d', { willReadFrequently: true }), texture, mesh });
     }
   }
 
