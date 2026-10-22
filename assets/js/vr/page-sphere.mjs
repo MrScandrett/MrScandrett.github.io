@@ -531,6 +531,48 @@ function boot({ renderer, scene, camera, syncSize }) {
   });
   refreshBtn.addEventListener('click', () => redraw(true));
 
+  /* Phone or tablet as a window into the sphere: turn the device to look around. */
+  const phoneBtn = document.getElementById('look-phone');
+  const touch = navigator.maxTouchPoints > 0 && 'DeviceOrientationEvent' in window;
+  let tilt = null; // last device orientation, in radians
+  let heading = 0; // turns the sphere so where you point the device on start is straight ahead
+  const tiltEuler = new THREE.Euler();
+  const tiltQ = new THREE.Quaternion();
+  const toScreen = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2); // device z-up → camera looks out the back
+  const screenTurn = new THREE.Quaternion();
+  const zAxis = new THREE.Vector3(0, 0, 1);
+  const yAxis = new THREE.Vector3(0, 1, 0);
+  const headingQ = new THREE.Quaternion();
+  function onTilt(e) {
+    if (e.alpha == null) return;
+    const first = !tilt;
+    tilt = { a: THREE.MathUtils.degToRad(e.alpha), b: THREE.MathUtils.degToRad(e.beta), g: THREE.MathUtils.degToRad(e.gamma) };
+    if (first) heading = -tilt.a;
+  }
+  function deviceLook() {
+    if (!tilt || renderer.xr.isPresenting) return;
+    const orient = THREE.MathUtils.degToRad((screen.orientation && screen.orientation.angle) || window.orientation || 0);
+    tiltEuler.set(tilt.b, tilt.a, -tilt.g, 'YXZ');
+    tiltQ.setFromEuler(tiltEuler).multiply(toScreen).multiply(screenTurn.setFromAxisAngle(zAxis, -orient));
+    camera.quaternion.copy(headingQ.setFromAxisAngle(yAxis, heading).multiply(tiltQ));
+  }
+  async function setPhoneLook(on) {
+    if (on && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS asks once, and only from a tap.
+      const answer = await DeviceOrientationEvent.requestPermission().catch(() => 'denied');
+      if (answer !== 'granted') { notify('Motion access was not allowed. Drag to look instead.'); on = false; }
+    }
+    if (on) window.addEventListener('deviceorientation', onTilt);
+    else { window.removeEventListener('deviceorientation', onTilt); tilt = null; }
+    phoneBtn.setAttribute('aria-pressed', String(on));
+    phoneBtn.textContent = on ? '📱 Stop phone look' : '📱 Look with phone';
+    if (on) notify('Hold the device up and turn around to look. Tap the page to click.', 3500);
+  }
+  if (touch) {
+    phoneBtn.hidden = false;
+    phoneBtn.addEventListener('click', () => setPhoneLook(phoneBtn.getAttribute('aria-pressed') !== 'true'));
+  }
+
   const clock = new THREE.Clock();
   const viewer = new THREE.Vector3();
   const ahead = new THREE.Vector3();
@@ -541,6 +583,7 @@ function boot({ renderer, scene, camera, syncSize }) {
     if (!renderer.xr.isPresenting) syncSize();
     else if (recenter > 0 && --recenter === 0) centreOnViewer(); // wait for the first real head pose
     pointer.update();
+    deviceLook();
     (renderer.xr.isPresenting ? renderer.xr.getCamera() : camera).getWorldPosition(viewer);
     env.update(dt, motionScale(motionMode, { presenting: renderer.xr.isPresenting, reduced }), viewer);
     const eyes = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
@@ -550,3 +593,34 @@ function boot({ renderer, scene, camera, syncSize }) {
     renderer.render(scene, camera);
   });
 }
+
+/* ── Walk the site: step through every live lesson in the sphere (for testing it everywhere). */
+(async function walker() {
+  const form = document.getElementById('sphere-walk');
+  if (!form) return;
+  const input = document.getElementById('walk-input');
+  const list = document.getElementById('walk-pages');
+  const pos = document.getElementById('walk-pos');
+  const here = source ? sourceParam(source, SITE.href) : null;
+  let pages = [{ url: 'index.html', title: 'Home page' }];
+  try {
+    const res = await fetch(new URL('data/lessons.json', SITE));
+    const data = await res.json();
+    const lessons = (Array.isArray(data) ? data : data.lessons || []).filter(l => l.status === 'live' && l.url);
+    pages = pages.concat(lessons.map(l => ({ url: l.url, title: l.title })));
+  } catch { /* the home page alone still works */ }
+  list.replaceChildren(...pages.map(p => Object.assign(document.createElement('option'), { value: p.url, label: p.title })));
+  const at = pages.findIndex(p => p.url === (here || '').replace(/[?#].*$/, ''));
+  if (at >= 0) pos.textContent = `${at + 1} of ${pages.length}`;
+  const go = url => { location.search = `?src=${encodeURIComponent(url)}`; };
+  const step = dir => go(pages[((at < 0 ? 0 : at + dir) + pages.length) % pages.length].url);
+  document.getElementById('walk-prev').addEventListener('click', () => step(-1));
+  document.getElementById('walk-next').addEventListener('click', () => step(1));
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const q = input.value.trim().toLowerCase();
+    if (!q) return;
+    const hit = pages.find(p => p.url.toLowerCase() === q) || pages.find(p => p.title.toLowerCase().includes(q) || p.url.toLowerCase().includes(q));
+    if (hit) go(hit.url); else pos.textContent = 'No page matches that.';
+  });
+}());
