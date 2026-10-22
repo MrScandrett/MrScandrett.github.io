@@ -2898,7 +2898,7 @@
     root.querySelectorAll('[data-engine-inst]').forEach(function (b) {
       var act = b.getAttribute('data-engine-inst') === (opts.engineInst || 'piano');
       b.classList.toggle('is-active', act);
-      b.setAttribute('aria-selected', act ? 'true' : 'false');
+      b.setAttribute('aria-pressed', act ? 'true' : 'false');
     });
     root.querySelectorAll('input[name="fb-engine-mode"]').forEach(function (r) {
       r.checked = r.value === (opts.engineMode || 'voicings');
@@ -3761,7 +3761,7 @@
     root.querySelectorAll('[data-engine-inst]').forEach(function (b) {
       var act = b.getAttribute('data-engine-inst') === opts.engineInst;
       b.classList.toggle('is-active', act);
-      b.setAttribute('aria-selected', act ? 'true' : 'false');
+      b.setAttribute('aria-pressed', act ? 'true' : 'false');
     });
 
     var mode = opts.engineMode || 'voicings';

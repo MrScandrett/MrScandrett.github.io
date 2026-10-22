@@ -332,10 +332,10 @@
           '<span class="fb-mv-how" data-mv-how></span>' +
         '</div>' +
         '<div class="fb-mv-controls">' +
-          '<div class="fb-instr-tabs" role="tablist" aria-label="Show the melody on">' +
-            '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="piano">🎹 Piano</button>' +
-            '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="guitar">🎸 Guitar</button>' +
-            '<button type="button" class="fb-instr-tab" role="tab" data-mv-inst="violin">🎻 Violin</button>' +
+          '<div class="fb-instr-tabs" role="group" aria-label="Show the melody on">' +
+            '<button type="button" class="fb-instr-tab" data-mv-inst="piano">🎹 Piano</button>' +
+            '<button type="button" class="fb-instr-tab" data-mv-inst="guitar">🎸 Guitar</button>' +
+            '<button type="button" class="fb-instr-tab" data-mv-inst="violin">🎻 Violin</button>' +
           '</div>' +
           '<label class="fb-field fb-field-inline fb-mv-field"><span>Position</span><select data-mv-pos aria-label="Hand position"></select></label>' +
           '<label class="fb-field fb-field-inline fb-mv-field" data-mv-hand-wrap><span>Hand</span><select data-mv-hand aria-label="Which hand plays the melody">' +
@@ -388,7 +388,7 @@
     function syncControls() {
       host.querySelectorAll('[data-mv-inst]').forEach(function (b) {
         var on = b.getAttribute('data-mv-inst') === prefs.inst;
-        b.classList.toggle('is-active', on); b.setAttribute('aria-selected', String(on));
+        b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', String(on));
       });
       var sel = q('[data-mv-pos]');
       if (prefs.inst === 'guitar') {
