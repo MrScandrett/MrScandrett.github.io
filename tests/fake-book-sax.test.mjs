@@ -48,3 +48,18 @@ test('draw fills exactly the pressed keys', () => {
   assert.equal((svg.match(/class="fb-sx-key"/g) || []).length, X.KEYS.length);
   assert.match(svg, /aria-label="Saxophone fingering for F: LH 1 · index, LH 2 · middle, LH 3 · ring, RH 1 · index"/);
 });
+
+test('alternate B♭ fingerings use the shared table and identify the choice', () => {
+  for (const midi of [70, 82]) {
+    const note = F.byMidi.get(midi);
+    note.variants.forEach((variant, index) => {
+      const fingering = X.fingering(midi, index);
+      assert.deepEqual(fingering.keys, variant.keys);
+      assert.equal(fingering.name, variant.name);
+      const svg = X.draw(midi, 'B♭', index);
+      const filled = [...svg.matchAll(/data-key="(\w+)"[^>]*fill="currentColor"/g)].map((m) => m[1]).sort();
+      assert.deepEqual(filled, variant.keys.slice().sort());
+      if (index) assert.ok(svg.includes(variant.name));
+    });
+  }
+});

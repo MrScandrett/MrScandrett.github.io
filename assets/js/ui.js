@@ -242,6 +242,15 @@ export function createProjectCard(project, options = {}) {
   article.appendChild(link);
   article.appendChild(createLikeButton(project));
 
+  if (project.lessonUrl) {
+    const lesson = document.createElement("a");
+    lesson.className = "card-details-link card-lesson-link";
+    lesson.href = project.lessonUrl;
+    lesson.textContent = "Learn how games like this work →";
+    lesson.setAttribute("aria-label", `Learn how games like ${project.title} work`);
+    article.appendChild(lesson);
+  }
+
   if (options.showDetailsLink && launchesProject) {
     const details = document.createElement("a");
     details.className = "card-details-link";

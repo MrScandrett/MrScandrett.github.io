@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inside Classic Snake · ClassroomOS</title>
+  <meta name="description" content="Play Eric's Classic Snake, predict its next move, and discover the grid, ordered body, game loop, and collision rules that make it work.">
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css">
+  <link rel="stylesheet" href="../../../assets/css/lessons/inside-classic-snake.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print">
+  <script src="../../../assets/js/theme-registry.js"></script>
+</head>
+<body class="theme-liquid-woodland snake-lesson">
+  <a class="skip-link" href="#main-content">Skip to lesson</a>
+  <header class="site-header"><div class="nav-wrap">
+    <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+    <nav class="site-nav" aria-label="Primary"><ul>
+      <li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+      <li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li>
+      <li><a href="../../../applications.html">Apps</a></li><li><a href="../../../library.html">Library</a></li><li><a href="../../../about.html">About</a></li>
+    </ul></nav>
+  </div></header>
+  <main id="main-content" class="snake-shell">
+    <nav class="snake-breadcrumb" aria-label="Breadcrumb"><a href="../../../showcase.html">Showcase</a><span aria-hidden="true">/</span><span>Inside Classic Snake</span></nav>
+    <section class="snake-hero" aria-labelledby="lesson-title">
+      <div><p class="snake-eyebrow">Showcase mechanics · Eric's game</p><h1 id="lesson-title">A tiny rule makes a whole game.</h1>
+        <p>Move one square. Keep the new head. Drop the old tail—unless you find food. Learn to predict the next frame, then see how Eric's Classic Snake does it.</p>
+        <div class="snake-actions"><a class="snake-primary" href="../../../apps/classic-snake/">Play Eric's game <span aria-hidden="true">↗</span></a><a class="snake-secondary" href="#step-lab">See the game logic</a></div>
+        <p class="snake-credit">Made by Eric · Lesson for K–12 · About 15–25 minutes</p></div>
+      <div class="snake-hero-art" aria-hidden="true"><div class="snake-pixel-trail"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="snake-art-food"></div><small>HEAD → BODY → TAIL</small></div>
+    </section>
+    <nav class="snake-stages" aria-label="Lesson steps"><a href="#play-notice">1 Play</a><a href="#step-lab">2 Predict</a><a href="#rules">3 Explain</a><a href="#history">4 Connect</a></nav>
+
+    <section id="play-notice" class="snake-section snake-intro"><div class="snake-section-number">01 / PLAY & NOTICE</div><div>
+      <h2>What changes each time the snake moves?</h2><p>Play one round. Watch the head, the last square of the tail, and the score. The arrow keys or WASD turn the snake; on a phone, swipe across the board. Space pauses.</p>
+      <div class="snake-question"><strong>Notice:</strong> When the snake eats, which square <em>doesn't</em> disappear?</div>
+    </div></section>
+
+    <section id="step-lab" class="snake-section"><div class="snake-section-number">02 / STEP LAB</div><div>
+      <h2>Step through the game logic.</h2><p>Classic Snake has no server backend: its JavaScript runs in your browser. Watch one move travel from direction input to a new screen frame. This 7 × 7 model uses Eric's movement, collision, scoring, and growth rules. Its food positions are fixed so you can repeat a prediction; Eric's 20 × 20 game places food randomly.</p>
+      <ol class="snake-pipeline" aria-label="Operations in one game tick">
+        <li data-operation="input"><strong>1 Input</strong><span>Choose a direction</span></li>
+        <li data-operation="calculate"><strong>2 Calculate</strong><span>Find the next head</span></li>
+        <li data-operation="check"><strong>3 Check</strong><span>Wall, body, or food?</span></li>
+        <li data-operation="update"><strong>4 Update</strong><span>Change stored state</span></li>
+        <li data-operation="draw"><strong>5 Draw</strong><span>Show the new frame</span></li>
+      </ol>
+      <div class="snake-lab"><div class="snake-lab-main">
+        <div class="snake-grid-head"><span>7 × 7 practice board</span><span id="lab-step-count">Step 0</span></div>
+        <div id="snake-grid" class="snake-grid" role="img" aria-label="Practice Snake board"></div>
+        <div class="snake-controls" role="group" aria-label="Choose the snake's next direction"><button type="button" data-direction="up">↑ Up</button><button type="button" data-direction="left">← Left</button><button type="button" data-direction="right">Right →</button><button type="button" data-direction="down">↓ Down</button></div>
+        <p class="snake-screen-label">Screen <span id="snake-screen-note">shows the last drawn frame</span></p>
+        <div class="snake-lab-actions"><button id="snake-operation" type="button" class="snake-primary">Next operation</button><button id="snake-step" type="button" class="snake-secondary">Run full tick</button><button id="snake-reset" type="button" class="snake-secondary">Start again</button></div>
+      </div><div class="snake-lab-side"><p id="snake-prompt-label" class="snake-lab-label">Before you move</p><h3 id="snake-prediction-title">Make a prediction</h3><p id="snake-prompt">The head is at (2, 3), facing right. Food is at (4, 3). What will happen after one step?</p>
+        <div class="snake-predictions" role="group" aria-label="Prediction"><button type="button" data-predict="grow">It grows</button><button type="button" data-predict="same">Same length</button><button type="button" data-predict="end">Game over</button></div>
+        <p id="snake-feedback" class="snake-feedback" aria-live="polite">Choose a prediction, then run an operation or a full tick.</p>
+        <div class="snake-operation-readout"><strong>What the program is doing</strong><p id="snake-operation-message" aria-live="polite">Waiting for a direction. Next: calculate the new head.</p></div>
+        <div class="snake-state"><strong>Stored state (memory)</strong><dl>
+          <div><dt>Direction</dt><dd><output id="snake-direction-value"></output></dd></div>
+          <div><dt>Calculated head</dt><dd><output id="snake-next-head"></output></dd></div>
+          <div><dt>Result</dt><dd><output id="snake-result"></output></dd></div>
+          <div><dt>Score</dt><dd><output id="snake-score"></output></dd></div>
+          <div><dt>Tick interval</dt><dd><output id="snake-speed"></output></dd></div>
+        </dl><strong>Body array, head first</strong><output id="snake-body-list"></output><strong>Next operation</strong><output id="snake-rule"></output></div>
+      </div></div>
+      <p class="snake-small">Try two full ticks toward the red food. Then reset and use Next operation to see exactly when the stored body changes and when the screen catches up. On a collision, this model pauses on the final state; Eric's game shows an alert and resets.</p>
+    </div></section>
+
+    <section id="rules" class="snake-section"><div class="snake-section-number">03 / UNDER THE HOOD</div><div>
+      <h2>Four decisions, over and over.</h2><div class="snake-rule-grid">
+        <div><span>1 · TIME</span><h3>Tick</h3><p>Eric's game calls its update about every 100 milliseconds at first. Eating gradually shortens that wait, down to 50 milliseconds.</p></div>
+        <div><span>2 · POSITION</span><h3>New head</h3><p>Add the direction to the first body coordinate. Moving right from (2, 3) makes (3, 3).</p></div>
+        <div><span>3 · SAFETY</span><h3>Collision</h3><p>If that square is outside the 20 × 20 board or overlaps the current body, the round ends. A turn straight back is blocked.</p></div>
+        <div><span>4 · GROWTH</span><h3>Tail or food</h3><p>Add the new head. If it is food, keep the tail and gain 10 points. Otherwise remove the last body square.</p></div>
+      </div>
+      <details class="snake-code"><summary>See the small piece of Eric's code that moves the body</summary><p>The body is an ordered list of grid coordinates. The first item is the head.</p><pre><code>snake.unshift(head); // add a new first square
+if (head.x !== food.x || head.y !== food.y) {
+  snake.pop();        // remove the tail unless food was eaten
+}</code></pre><p>Adapted from <a href="https://github.com/MrScandrett/MrScandrett.github.io/blob/main/student-projects/Eric/classic-snake/script.js">Eric's source</a>. The full game checks collisions before these lines.</p></details>
+      <div class="snake-age-grid"><div><strong>K–2 · Act it out</strong><p>Use three paper squares as head, middle, and tail. Move the head one space and lift the last square.</p></div><div><strong>Grades 3–5 · Map it</strong><p>Write the snake's coordinates before and after a move. Predict when the tail stays.</p></div><div><strong>Grades 6–8 · Trace it</strong><p>Follow the ordered body list through an ordinary move and a food move. Explain why changing the order of checks matters.</p></div><div><strong>Grades 9–12 · Improve it</strong><p>Eric's food picker retries if it lands on the snake. What happens when few empty squares remain? Design a way to choose only from empty squares, including a full-board win.</p></div></div>
+    </div></section>
+
+    <section id="history" class="snake-section"><div class="snake-section-number">04 / WHERE IT CAME FROM</div><div>
+      <h2>From arcade trails to pocket games.</h2><p>Gremlin's <em>Blockade</em> (1976) used a related grid-and-trail idea: players lost when they hit a trail. Later single-player versions added food and a growing body. Taneli Armanto designed Nokia's Snake for the 6110 phone in 1997. A small screen and four direction controls helped make a short, repeatable game.</p>
+      <p class="snake-source">Sources: <a href="https://taneliarmanto.com/news/history-of-snake">Taneli Armanto's history of Snake</a> and <a href="https://taneliarmanto.com/nokia-snake">his account of Nokia Snake</a>. The genre predates Nokia's version.</p>
+      <div class="snake-finish"><div><h3>Play again with new eyes.</h3><p>Can you call out “new head,” “check,” and “drop tail” as the snake moves? When you eat, explain why its length changes.</p></div><a class="snake-primary" href="../../../apps/classic-snake/">Return to Classic Snake →</a></div>
+    </div></section>
+  </main>
+  <script src="../../../assets/js/lessons/inside-classic-snake.js" defer></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>

@@ -4,6 +4,11 @@ const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score');
 const highScoreElement = document.getElementById('high-score');
 const startMsgElement = document.getElementById('start-msg');
+const learnHowLink = document.getElementById('learn-how-link');
+if (learnHowLink) {
+    const siteRoot = location.pathname.includes('/apps/') ? '../../' : '../../../';
+    learnHowLink.href = new URL(`${siteRoot}lessons/computer-science/graphics-and-games/inside-classic-snake.html#step-lab`, location.href).href;
+}
 
 // Game settings
 const TILE_SIZE = 20;
@@ -202,6 +207,7 @@ const KEY_ALIASES = { KeyW: 'ArrowUp', KeyA: 'ArrowLeft', KeyS: 'ArrowDown', Key
 
 function changeDirection(event) {
     const code = KEY_ALIASES[event.code] || event.code;
+    const isDirection = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code);
 
     // Prevent scrolling with arrow keys
     if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", "Space"].indexOf(code) > -1) {
@@ -209,6 +215,7 @@ function changeDirection(event) {
     }
 
     if (!isGameRunning) {
+        if (!isDirection) return;
         startGame();
         return;
     }

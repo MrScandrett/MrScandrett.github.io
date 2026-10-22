@@ -568,7 +568,7 @@
     showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
-    guitarForm: 'open', guitarVoice: 'manual', chordShapes: {},
+    guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, pianoShapes: {}, saxShapes: {},
     triadInv: 0,
     triadSet: '123',
     lowBass: true,
@@ -717,6 +717,7 @@
       writtenChords: moveChords(ws, wFlat)
     };
     view.voicings = voiceChords(view.concertChords, opts.voicing);
+    applyPianoShapes();
     view.guitarGrips = window.FakeBookGuitarVoice ? window.FakeBookGuitarVoice.plan(view.concertChords.map(function (c) {
       return { rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
     }), opts.guitarVoice || 'manual', GT) : [];
@@ -1163,6 +1164,7 @@
   }
 
   function renderSheet() {
+    sheetEl.dispatchEvent(new Event('fakebook:before-render'));
     if (!view) return;
     hideBarPop();
     root.classList.toggle('is-original-score', opts.sheetView === 'arrangement' && !!(tune.raw.score && tune.raw.score.musicxml));
@@ -1688,7 +1690,7 @@
     });
 
     var H = Math.ceil(y + 0.4 * S);
-    sheetEl.innerHTML = '<svg class="fb-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
+    sheetEl.innerHTML = '<svg class="fb-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="group" aria-label="' +
       MN.escape(t.raw.title + ' lead sheet, written in ' + keyLabel(view.writtenKey) + ', ' + t.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
     sizeMeasureDiagrams(S);
     nowEls = []; barEls = {}; shapeEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape'));
@@ -3176,6 +3178,7 @@
       notes.map(function (m) { return noteName(respell(m)); }).join(' ') + '; striped keys are accidentals">' + palette.defs + whites.join('') + blacks.join('') + '</svg>';
   }
   function diagramPianoNotes(c, ci) {
+    if (pianoShapeIndex(c)) return view.voicings[ci] || rootPosition(c);
     if (opts.engineMode !== 'triads') return view.voicings[ci] || rootPosition(c);
     var pc = mod(NAT[c.root.l] + c.root.a, 12);
     var ivs = violinTones(c, chordTypeOf(c), 'triads').intervals;
@@ -3268,6 +3271,25 @@
   // automatic grips on the sheet, in the bar pop-up, in the big fretboard and when the chord is played.
   var SO = window.FakeBookShapeOptions;
   var shapeOptCache = {};
+  function tuneChoices(field) {
+    if (!opts[field] || typeof opts[field] !== 'object') opts[field] = {};
+    return opts[field][tune.id] || (opts[field][tune.id] = {});
+  }
+  function pianoShapeIndex(c) {
+    var all = opts.pianoShapes && opts.pianoShapes[tune.id];
+    return all ? Number(all[chordName(c)]) || 0 : 0;
+  }
+  function applyPianoShapes() {
+    if (!view || !tune) return;
+    view.concertChords.forEach(function (c, ci) {
+      var index = pianoShapeIndex(c);
+      if (index > 0) view.voicings[ci] = voiceChords([c], ['root', 'inv1', 'inv2', 'inv3'][index] || 'root')[0];
+    });
+  }
+  function saxShapeIndex(midi) {
+    var all = opts.saxShapes && opts.saxShapes[tune.id];
+    return all ? Number(all[String(midi)]) || 0 : 0;
+  }
   function pickedFrets(c) {
     var all = opts.chordShapes, mine = all && tune && all[tune.id];
     return mine && SO ? SO.fromId(mine[chordName(c)]) : null;
@@ -3504,9 +3526,10 @@
   }
   function saxRow(b, S, notes) {
     var cells = notes.filter(function (n) { return n.pc.p && !n.pc.tieFrom; }).map(function (n) {
-      var f = window.FakeBookSax.fingering(n.pc.p.midi), name = noteName(n.pc.p);
+      var midi = n.pc.p.midi, variant = saxShapeIndex(midi);
+      var f = window.FakeBookSax.fingering(midi, variant), name = noteName(n.pc.p);
       var label = name + (f.shift > 0 ? ' 8va' : f.shift < 0 ? ' 8vb' : '');
-      return '<div class="fb-measure-shape ' + (n.bass ? 'fb-sx fb-sxb' : 'fb-sx') + '" data-idx="' + n.pc.idx + '" data-x="' + (n.x - (b.x + S / 2)).toFixed(1) + '"><strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' + window.FakeBookSax.draw(n.pc.p.midi, name) + '</div>';
+      return '<div class="fb-measure-shape ' + (n.bass ? 'fb-sx fb-sxb' : 'fb-sx') + '" data-idx="' + n.pc.idx + '" data-fb-sax-midi="' + midi + '" data-x="' + (n.x - (b.x + S / 2)).toFixed(1) + '" role="button" tabindex="0" aria-describedby="fb-shape-hint" aria-keyshortcuts="ArrowLeft ArrowRight" aria-label="' + MN.escape(label + ', ' + f.name + ' fingering. Open alternatives.') + '"><strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' + window.FakeBookSax.draw(midi, name, variant) + '</div>';
     });
     if (!cells.length) return '<p>' + (tune.chordsOnly ? 'This tune has chords only, no melody to finger.' : 'No new melody notes in this measure.') + '</p>';
     return '<div class="fb-measure-row is-sax" style="height:' + shapeSize().rowH + 'em">' + cells.join('') + '</div>';
@@ -3514,7 +3537,7 @@
   function syncSaxKey() {
     var saxKey = el('[data-fb-sax-key]');
     saxKey.hidden = !opts.saxFingers;
-    saxKey.textContent = '🎷 One fingering per melody note, for the note as written (every saxophone fingers a written note the same way). Filled = pressed. Top half, left hand: octave key (thumb) at the left, then 1 · bis · 2 · 3, palm keys at the right and the pinky table below. Bottom half, right hand: side keys at the left, then 1 · 2 · 3 and the pinky keys below. 8va / 8vb: the note is out of the sax’s range, so it’s fingered an octave higher / lower. Hover a fingering to enlarge it.' +
+    saxKey.textContent = '🎷 One fingering per melody note, for the note as written (every saxophone fingers a written note the same way). Filled = pressed. Top half, left hand: octave key (thumb) at the left, then 1 · bis · 2 · 3, palm keys at the right and the pinky table below. Bottom half, right hand: side keys at the left, then 1 · 2 · 3 and the pinky keys below. 8va / 8vb: the note is out of the sax’s range, so it’s fingered an octave higher / lower. Hover or focus a fingering, then use the arrows for alternatives.' +
       (opts.instr === 'eb' || opts.instr === 'bb' ? '' : ' The sheet isn’t written for a saxophone yet: under Write it for, choose E♭ instruments (alto, bari) or B♭ instruments (tenor, soprano) so the notes and fingerings match your horn.');
   }
   function shapesRowOn() { return !!(opts.measureShapes || (opts.saxFingers && window.FakeBookSax)); }
@@ -3545,7 +3568,13 @@
       if (label && opts.instr !== 'concert' && opts.instr !== 'bass') label += ' (concert)';
       if (info.held && !label) label = 'Held from previous bar';
       var sx = !info.held && chordSymbolX[ci] !== undefined ? chordSymbolX[ci] - (b.x + S / 2) : 0;
-      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
+      var shapeLabel = chordName(c) + ', ' + opts.posInst + ' chord shape';
+      if (opts.posInst === 'piano') shapeLabel += ', ' + ['suggested voicing', 'root position', '1st inversion', '2nd inversion', '3rd inversion'][pianoShapeIndex(c)];
+      if (opts.posInst === 'guitar') {
+        var shownGrip = guitarShapeFor(pc, chordTypeOf(c), ci);
+        if (shownGrip) shapeLabel += ', frets low to high ' + SO.describe(shownGrip.frets);
+      }
+      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '" role="button" tabindex="0" aria-describedby="fb-shape-hint" aria-keyshortcuts="ArrowLeft ArrowRight" aria-label="' + MN.escape(shapeLabel + '. Open alternatives.') + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
     if (opts.saxFingers && window.FakeBookSax) html = [saxRow(b, S, notes || [])];
     else if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
@@ -4049,7 +4078,7 @@
   var scoreNav = window.ScoreNavigation({
     surface: sheetEl, selector: '.fb-bar', mount: el('[data-fb-nav]'), scroller: musicScroller, keyScope: root,
     unit: 'Bar', ariaLabel: 'Song map, bar jump and zoom', followToggle: false, follow: opts.follow !== false, markMeasures: false,
-    ignore: '.fb-chord, [data-strip-ci], [data-chg-ci]',
+    ignore: '.fb-chord, .fb-measure-shape, [data-strip-ci], [data-chg-ci]',
     visible: function () { return !!tune; },
     number: function (i, m) { return barOf(m); },
     section: function (i, m) { return tune && tune.sectionsByBar ? tune.sectionsByBar[barOf(m)] : null; },
@@ -4099,7 +4128,7 @@
       }
       else if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
-      else if (n === 'fb-voicing' || t.matches('[data-fb-notation-voicing]')) { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); syncControls(); showChord(true); renderSheet(); renderBarPop(); save(); respin(); }
+      else if (n === 'fb-voicing' || t.matches('[data-fb-notation-voicing]')) { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); applyPianoShapes(); syncControls(); showChord(true); renderSheet(); renderBarPop(); save(); respin(); }
       else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value !== 'shapes') hideBarPop(); save(); }
       else if (n === 'fb-engine-mode') { opts.engineMode = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (n === 'fb-triad-inv') { opts.triadInv = Number(t.value); showChord(false); renderSheet(); renderBarPop(); save(); }
@@ -4289,38 +4318,133 @@
       if (ev.scoreNavigation) return;           // a bar: ScoreNavigation's onSelect has it
       if (barPopBar !== null && !t.closest('[data-fb-barpop]')) hideBarPop();
     });
-    // Hover a chord diagram on the sheet to see it large. The sheet's help layer ignores pointer events
-    // (so bar clicks still work), hence the hit test by rectangle.
-    var zoomCard = null, zoomTarget = null, zoomFrame = 0;
+    // The projected diagram is a control. Hover previews it; click, focus or tap exposes
+    // the same arrows. Keep the chooser outside the score SVG so it is never clipped.
+    var zoomCard = null, zoomTarget = null, zoomFrame = 0, zoomPinned = false, zoomTimer = 0;
     function hideShapeZoom() {
+      clearTimeout(zoomTimer);
       if (zoomTarget) zoomTarget.classList.remove('is-zoom-target');
       zoomTarget = null;
+      zoomPinned = false;
       if (zoomCard) zoomCard.hidden = true;
     }
-    function showShapeZoom(shape, ev) {
+    function shapeChoices(shape) {
+      var ci = Number(shape.getAttribute('data-fb-shape-ci'));
+      if (shape.hasAttribute('data-fb-sax-midi')) {
+        var midi = Number(shape.getAttribute('data-fb-sax-midi'));
+        var f = window.FakeBookSax.fingering(midi, saxShapeIndex(midi));
+        return { kind: 'sax', at: f.index, count: f.count, label: f.name + ' fingering', detail: f.tip || '', midi: midi };
+      }
+      var c = view.concertChords[ci];
+      if (opts.posInst === 'guitar') {
+        var info = shapeListFor(c, ci);
+        return { kind: 'guitar', at: Math.max(0, info.list.findIndex(function (x) { return x.id === (info.pickId || info.autoId); })),
+          count: info.list.length, label: 'Guitar grip', detail: 'The selected grip is used for this chord throughout the tune.', ci: ci, info: info };
+      }
+      if (opts.posInst === 'piano') {
+        var at = pianoShapeIndex(c), names = ['Suggested voicing', 'Root position', '1st inversion', '2nd inversion', '3rd inversion'];
+        return { kind: 'piano', at: at, count: Math.min(5, Q[c.q].iv.length + 1), label: names[at],
+          detail: 'The selected inversion is used for this chord throughout the tune.', ci: ci };
+      }
+      return { kind: 'violin', at: 0, count: 1, label: 'Chord tones', detail: 'First-position tones on the violin.', ci: ci };
+    }
+    function positionShapeZoom(shape) {
+      var r = shape.getBoundingClientRect(), w = zoomCard.offsetWidth, h = zoomCard.offsetHeight;
+      zoomCard.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8)) + 'px';
+      var preferredTop = r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8;
+      zoomCard.style.top = Math.max(8, Math.min(preferredTop, innerHeight - h - 8)) + 'px';
+    }
+    function showShapeZoom(shape, pin) {
       var svg = shape.querySelector('svg');
       if (!svg) return hideShapeZoom();
-      if (!zoomCard) { zoomCard = document.createElement('div'); zoomCard.className = 'fb-shape-zoom'; zoomCard.setAttribute('aria-hidden', 'true'); document.body.appendChild(zoomCard); }
-      if (zoomTarget !== shape) {
-        if (zoomTarget) zoomTarget.classList.remove('is-zoom-target');
-        zoomTarget = shape;
-        shape.classList.add('is-zoom-target');
-        var label = shape.querySelector('strong'), big = svg.cloneNode(true);
-        big.removeAttribute('style'); big.removeAttribute('width'); big.removeAttribute('height');
-        zoomCard.innerHTML = (label ? '<strong>' + MN.escape(label.textContent) + '</strong>' : '');
-        zoomCard.appendChild(big);
-        var box = svg.viewBox.baseVal;
-        zoomCard.style.width = Math.min(300, Math.max(190, innerWidth * .3), box.width * 3.2) + 'px';
+      if (zoomTarget === shape && !pin && zoomCard && !zoomCard.hidden) return;
+      clearTimeout(zoomTimer);
+      if (!zoomCard) {
+        zoomCard = document.createElement('div'); zoomCard.className = 'fb-shape-zoom';
+        zoomCard.setAttribute('role', 'group'); zoomCard.setAttribute('aria-label', 'Diagram alternatives');
+        zoomCard.addEventListener('pointerenter', function () { clearTimeout(zoomTimer); });
+        zoomCard.addEventListener('pointerleave', function () { if (!zoomPinned && !zoomCard.contains(document.activeElement)) hideShapeZoom(); });
+        zoomCard.addEventListener('click', function (event) {
+          var btn = event.target.closest('[data-fb-shape-step]');
+          if (btn) stepProjectedShape(Number(btn.getAttribute('data-fb-shape-step')));
+        });
+        document.body.appendChild(zoomCard);
       }
+      if (zoomTarget) zoomTarget.classList.remove('is-zoom-target');
+      zoomTarget = shape; zoomPinned = zoomPinned || !!pin;
+      shape.classList.add('is-zoom-target');
+      var choice = shapeChoices(shape), label = shape.querySelector('strong'), big = svg.cloneNode(true);
+      big.removeAttribute('style'); big.removeAttribute('width'); big.removeAttribute('height'); big.setAttribute('aria-hidden', 'true');
+      zoomCard.innerHTML = '<strong>' + MN.escape(label ? label.textContent : shape.getAttribute('aria-label').split(',')[0]) + '</strong>' +
+        '<div class="fb-shape-zoom-art"></div><div class="fb-shape-zoom-nav">' +
+        '<button type="button" data-fb-shape-step="-1" aria-label="Previous ' + choice.kind + ' shape"' + (choice.count < 2 ? ' disabled' : '') + '>‹</button>' +
+        '<span role="status">' + MN.escape(choice.label + ' · ' + (choice.at + 1) + ' of ' + choice.count) + '</span>' +
+        '<button type="button" data-fb-shape-step="1" aria-label="Next ' + choice.kind + ' shape"' + (choice.count < 2 ? ' disabled' : '') + '>›</button></div>' +
+        '<p>' + MN.escape(choice.detail) + '</p>';
+      zoomCard.querySelector('.fb-shape-zoom-art').appendChild(big);
+      var box = svg.viewBox.baseVal;
+      var cardWidth = Math.min(310, Math.max(210, innerWidth * .35, box.width * 3.2));
+      zoomCard.style.width = cardWidth + 'px';
+      big.style.setProperty('width', Math.min(cardWidth - 28, box.width * Math.min(3.2, 250 / box.height)) + 'px', 'important');
+      big.style.setProperty('height', 'auto', 'important');
       zoomCard.hidden = false;
-      var r = shape.getBoundingClientRect(), w = zoomCard.offsetWidth, h = zoomCard.offsetHeight;
-      var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
-      var top = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.min(r.bottom + 8, innerHeight - h - 8);
-      zoomCard.style.left = left + 'px';
-      zoomCard.style.top = Math.max(8, top) + 'px';
+      positionShapeZoom(shape);
     }
+    function stepProjectedShape(dir) {
+      if (!zoomTarget) return;
+      var index = shapeEls.indexOf(zoomTarget), choice = shapeChoices(zoomTarget);
+      var focusedArrow = zoomCard && zoomCard.contains(document.activeElement);
+      if (choice.count < 2) return;
+      var next = (choice.at + dir + choice.count) % choice.count;
+      if (choice.kind === 'guitar') {
+        var c = view.concertChords[choice.ci], picked = choice.info.list[next];
+        setPick(c, picked.id); strumShape(picked.frets);
+        showChord(false); renderBarPop(); save();
+      } else if (choice.kind === 'piano') {
+        var chord = view.concertChords[choice.ci], mine = tuneChoices('pianoShapes');
+        if (next) mine[chordName(chord)] = next; else delete mine[chordName(chord)];
+        view.voicings = voiceChords(view.concertChords, opts.voicing); applyPianoShapes();
+        showChord(false); renderBarPop(); save(); respin();
+      } else if (choice.kind === 'sax') {
+        var picks = tuneChoices('saxShapes');
+        if (next) picks[String(choice.midi)] = next; else delete picks[String(choice.midi)];
+        save();
+      }
+      renderSheet();
+      var again = shapeEls[index];
+      if (again) {
+        showShapeZoom(again, true);
+        if (focusedArrow) zoomCard.querySelector('[data-fb-shape-step="' + dir + '"]').focus({ preventScroll: true });
+        else again.focus({ preventScroll: true });
+      }
+    }
+    sheetEl.addEventListener('click', function (ev) {
+      var shape = ev.target.closest && ev.target.closest('.fb-measure-shape');
+      if (!shape) return;
+      ev.preventDefault(); ev.stopPropagation();
+      showShapeZoom(shape, true);
+      shape.focus({ preventScroll: true });
+    }, true);
+    sheetEl.addEventListener('fakebook:before-render', hideShapeZoom);
+    sheetEl.addEventListener('focusin', function (ev) {
+      var shape = ev.target.closest && ev.target.closest('.fb-measure-shape');
+      if (shape) showShapeZoom(shape, true);
+    });
+    sheetEl.addEventListener('keydown', function (ev) {
+      var shape = ev.target.closest && ev.target.closest('.fb-measure-shape');
+      if (!shape) return;
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') { ev.preventDefault(); showShapeZoom(shape, true); stepProjectedShape(ev.key === 'ArrowLeft' ? -1 : 1); }
+      else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); showShapeZoom(shape, true); }
+      else if (ev.key === 'Escape') { hideShapeZoom(); shape.focus({ preventScroll: true }); }
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && zoomTarget) hideShapeZoom();
+    });
+    document.addEventListener('pointerdown', function (ev) {
+      if (zoomTarget && !zoomTarget.contains(ev.target) && !(zoomCard && zoomCard.contains(ev.target))) hideShapeZoom();
+    });
     sheetEl.addEventListener('pointermove', function (ev) {
-      if (ev.pointerType === 'touch' || zoomFrame) return;
+      if (ev.pointerType === 'touch' || zoomFrame || zoomPinned) return;
       var x = ev.clientX, y = ev.clientY;
       zoomFrame = requestAnimationFrame(function () {
         zoomFrame = 0;
@@ -4329,11 +4453,11 @@
           var r = shapeEls[i].getBoundingClientRect();
           if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && shapeEls[i].querySelector('svg')) hit = shapeEls[i];
         }
-        if (hit) showShapeZoom(hit); else hideShapeZoom();
+        if (hit) showShapeZoom(hit, false); else if (!zoomCard || !zoomCard.matches(':hover')) hideShapeZoom();
       });
     });
-    sheetEl.addEventListener('pointerleave', hideShapeZoom);
-    addEventListener('scroll', hideShapeZoom, true);
+    sheetEl.addEventListener('pointerleave', function () { if (!zoomPinned) zoomTimer = setTimeout(function () { if (!zoomCard || !zoomCard.matches(':hover')) hideShapeZoom(); }, 180); });
+    addEventListener('scroll', function () { if (!zoomPinned) hideShapeZoom(); }, true);
     var importInp = el('[data-fb-import-input]');
     if (importInp) {
       importInp.addEventListener('keydown', function (e) {
