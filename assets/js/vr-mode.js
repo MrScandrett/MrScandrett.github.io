@@ -193,7 +193,8 @@
     if (!h) return;
     var wait = now ? 0 : MIN_HOLD_MS - (Date.now() - h.at);
     if (wait > 0) {
-      if (!h.timer) h.timer = setTimeout(function () { release(code); }, wait);
+      // Timers can fire a millisecond early; force the release so the key can't stick down.
+      if (!h.timer) h.timer = setTimeout(function () { release(code, true); }, wait);
       return;
     }
     clearTimeout(h.timer);
@@ -332,6 +333,14 @@
     menu.appendChild(panel);
     document.body.appendChild(menu);
     syncMenu();
+
+    // An open panel covers the lesson; a press elsewhere or Escape puts it away.
+    document.addEventListener('pointerdown', function (e) {
+      if (!panel.hidden && !menu.contains(e.target)) closePanel();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { closePanel(); toggle.focus(); }
+    });
   }
 
   function closePanel() {
@@ -367,6 +376,8 @@
     if (on) ensureStyle();
     if (document.body) {
       if (on && !menu) buildMenu();
+      // Turning VR mode off mid full view would leave a fullscreen frame with no menu to exit it.
+      if (!on && document.querySelector('.vr-full-view:fullscreen')) document.exitFullscreen().catch(function () {});
       if (menu) menu.hidden = !on;
       if (!on && keys) { keys.hidden = true; releaseAll(); }
       syncMenu();

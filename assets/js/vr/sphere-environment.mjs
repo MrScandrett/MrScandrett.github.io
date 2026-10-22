@@ -223,7 +223,12 @@ export function createEnvironment(THREE, { LiquidEngine, radius = 20 } = {}) {
     depthWrite: false,
     depthTest: false
   });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 48, 32), material);
+  const mesh = new THREE.Mesh(
+    // Geodesic, like Sphere's exoskeleton: even triangles everywhere, so no thin slivers
+    // pinch at the zenith and under your feet (where a UV sphere crowds its poles).
+    new THREE.IcosahedronGeometry(radius, 8),
+    material
+  );
   mesh.renderOrder = -10; // behind the page screens
   mesh.frustumCulled = false;
   mesh.name = 'sphere-environment';

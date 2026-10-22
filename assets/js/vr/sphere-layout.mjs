@@ -104,3 +104,27 @@ export function sourceParam(href, siteRoot) {
   if (!href.startsWith(siteRoot)) return null;
   return href.slice(siteRoot.length) || 'index.html';
 }
+
+/**
+ * Unsharp mask by the discrete Laplacian: p' = p + amount·(4p − up − down − left − right).
+ * A headset shows ~25 px/° and filters the texture again on the way, so text loses its
+ * edges; subtracting the Laplacian puts them back. Edits RGBA `data` (w×h) in place;
+ * border pixels and alpha are left alone.
+ */
+export const SHARPEN_AMOUNT = 0.35;
+export function sharpen(data, w, h, amount = SHARPEN_AMOUNT) {
+  if (!(amount > 0) || w < 3 || h < 3) return data;
+  const src = data.slice();
+  const row = w * 4;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * row + x * 4;
+      for (let c = 0; c < 3; c++) {
+        const p = src[i + c];
+        const lap = 4 * p - src[i + c - 4] - src[i + c + 4] - src[i + c - row] - src[i + c + row];
+        data[i + c] = p + amount * lap; // Uint8ClampedArray clamps to 0..255
+      }
+    }
+  }
+  return data;
+}

@@ -100,3 +100,34 @@ test('sourceParam gives the path under the site root', () => {
   assert.equal(sourceParam('https://school.example/site/', root), 'index.html');
   assert.equal(sourceParam('https://other.example/', root), null);
 });
+
+test('Laplacian sharpening steepens edges and leaves flat areas alone', async () => {
+  const { sharpen } = await import('../assets/js/vr/sphere-layout.mjs');
+  const w = 6, h = 3;
+  const data = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    data.fill(x < 3 ? 40 : 200, i, i + 3);
+    data[i + 3] = 255;
+  }
+  sharpen(data, w, h, 0.5);
+  const at = x => data[(w + x) * 4];
+  assert.equal(at(1), 40, 'flat dark area unchanged');
+  assert.ok(at(2) < 40, 'dark side of the edge gets darker');
+  assert.ok(at(3) > 200, 'light side of the edge gets lighter');
+  assert.equal(data[(w + 3) * 4 + 3], 255, 'alpha untouched');
+});
+
+test('sphere sound: every world has ambience, modes default to clicks, media beams face you', async () => {
+  const { ambienceFor, soundMode, MEDIA_CONE } = await import('../assets/js/vr/sphere-sound.mjs');
+  const { LOOK } = await import('../assets/js/vr/sphere-theme.mjs');
+  for (const look of Object.values(LOOK)) {
+    const a = ambienceFor(look);
+    assert.ok(a.drone > 0 || a.noise > 0, `look ${look} makes some sound`);
+    assert.ok(a.level > 0 && a.level <= 0.06, `look ${look} stays quiet under the lesson`);
+    assert.ok(!a.rumble || a.rumble >= 25, 'rumble stays above what headphones can play');
+  }
+  assert.equal(soundMode('nonsense'), 'clicks');
+  assert.equal(soundMode('off'), 'off');
+  assert.ok(MEDIA_CONE.inner < MEDIA_CONE.outer && MEDIA_CONE.outerGain > 0 && MEDIA_CONE.outerGain < 1);
+});

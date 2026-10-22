@@ -12,9 +12,10 @@ import { createRig, createPointer, mountVRButton, createPanel } from '../xr-kit.
 import { rasterizeDocument, findMainScroller } from '../page-raster.mjs';
 import { createEnvironment } from './sphere-environment.mjs';
 import { MOTION_MODES, motionScale, environmentFor } from './sphere-theme.mjs';
+import { createSound, pulse, soundMode, SOUND_MODES, SOUND_KEY } from './sphere-sound.mjs';
 import {
   TILE_W, TILE_H, TILE_GUTTER, PAGE_SLICE_H, SLICE_STEP,
-  planTiles, screensFor, tilePatch, tileUvToPage, spherePoint, safeSource, sourceParam
+  planTiles, screensFor, tilePatch, tileUvToPage, spherePoint, safeSource, sourceParam, sharpen
 } from './sphere-layout.mjs';
 
 const SITE = new URL('../../../', import.meta.url);
@@ -86,12 +87,33 @@ function boot({ renderer, scene, camera, syncSize }) {
   function applyTheme() {
     const theme = currentTheme();
     const look = env.setTheme(theme);
+    sound.setLook(look.look);
     const dark = theme.tone === 'dark';
     const [r, g, b] = look.dark.map(v => Math.round(v * 255 * 0.5));
     const style = { accent: css(look.accent), background: dark ? `rgba(${r},${g},${b},0.94)` : 'rgba(16,24,38,0.94)' };
     for (const panel of styled) panel.userData.setStyle(style);
     document.getElementById('sphere-theme').textContent = theme.label || theme.id;
   }
+
+  /* Sound: every click, control and lesson video has a place in the room (sphere-sound.mjs). */
+  let savedSound = null;
+  try { savedSound = localStorage.getItem(SOUND_KEY); } catch { /* private mode */ }
+  const sound = createSound({ mode: soundMode(savedSound) });
+  const soundSelect = document.getElementById('sphere-sound');
+  let soundPanel = null;
+  const soundLabel = () => `♪ ${Cap(sound.mode)}`;
+  function setSound(mode) {
+    sound.setMode(mode);
+    try { localStorage.setItem(SOUND_KEY, sound.mode); } catch { /* private mode */ }
+    if (soundPanel) soundPanel.userData.setText(soundLabel());
+    soundSelect.value = sound.mode;
+    sound.wake();
+    notify(`Sound: ${Cap(sound.mode)}${sound.mode === 'full' ? ' (clicks plus the world around you; headphones work best)' : ''}`, 2500);
+  }
+  soundSelect.value = sound.mode;
+  soundSelect.addEventListener('change', () => setSound(soundSelect.value));
+  const session = () => renderer.xr.getSession && renderer.xr.getSession();
+  const worldOnTile = (plan, u, v) => sphere.localToWorld(pointOnTile(plan, u, v, RADIUS));
 
   /* Screens: one canvas, texture and patch each. */
   const tiles = []; // { plan, canvas, ctx, texture, mesh }
@@ -151,6 +173,9 @@ function boot({ renderer, scene, camera, syncSize }) {
     const x1 = Math.min(TILE_W, hotspot.x + hotspot.width) / TILE_W;
     const y0 = Math.max(0, hotspot.localY) / TILE_H;
     const y1 = Math.min(TILE_H, hotspot.localY + hotspot.height) / TILE_H;
+    // A faint tick and buzz as the laser lands on something clickable.
+    sound.tick(worldOnTile(plan, (x0 + x1) / 2, (y0 + y1) / 2), { soft: true });
+    pulse(session(), 0.12, 10);
     const points = [];
     const edge = (ax, ay, bx, by) => {
       for (let i = 0; i < 6; i++) {
@@ -195,6 +220,25 @@ function boot({ renderer, scene, camera, syncSize }) {
       }
     }
     showHotspot(-1, null);
+    placeMedia(doc, scroller);
+  }
+
+  // The lesson's own audio and video play from the panel they appear on, beamed at you.
+  const facing = new THREE.Vector3();
+  function placeMedia(doc, scroller) {
+    const win = doc.defaultView;
+    for (const el of doc.querySelectorAll('audio, video')) {
+      const rect = el.getBoundingClientRect();
+      const pageY = rect.top + rect.height / 2 + (scroller ? scroller.scrollTop : win.scrollY);
+      const index = Math.min(tiles.length - 1, Math.max(0, Math.floor(pageY / SLICE_STEP)));
+      const plan = tiles[index] && tiles[index].plan;
+      if (!plan) continue;
+      const u = Math.min(1, Math.max(0, (rect.left + rect.width / 2) / TILE_W));
+      const v = Math.min(1, Math.max(0, (pageY - index * SLICE_STEP + TILE_GUTTER) / TILE_H));
+      const at = worldOnTile(plan, u, v);
+      sphere.getWorldPosition(facing).sub(at).normalize();
+      sound.placeMedia(el, at, facing);
+    }
   }
 
   /* Motion: a world that moves all around you is the classic cause of VR sickness. */
@@ -232,6 +276,7 @@ function boot({ renderer, scene, camera, syncSize }) {
   const titlePanel = floatOnSphere(createPanel(THREE, { width: 1.4, height: 0.2, title: 'Loading…' }), 0, 19);
   styled.push(titlePanel);
   const buttons = [
+    { label: soundLabel(), yaw: -35, id: 'sound', run: () => setSound(SOUND_MODES[(SOUND_MODES.indexOf(sound.mode) + 1) % SOUND_MODES.length]) },
     { label: '← Back', yaw: -22, run: () => { try { frame.contentWindow.history.back(); } catch { /* cross-origin */ } } },
     { label: '↻ Redraw', yaw: 20, run: () => redraw(true) },
     { label: motionLabel(), yaw: 33, id: 'motion', run: () => setMotion(MOTION_MODES[(MOTION_MODES.indexOf(motionMode) + 1) % MOTION_MODES.length]) },
@@ -241,6 +286,7 @@ function boot({ renderer, scene, camera, syncSize }) {
     panel.userData.action = b.run;
     if (!b.accent) styled.push(panel);
     if (b.id === 'motion') motionPanel = panel;
+    if (b.id === 'sound') soundPanel = panel;
     return floatOnSphere(panel, b.yaw, 19);
   });
   const notice = floatOnSphere(createPanel(THREE, { width: 1.7, height: 0.34, title: '' }), 0, 27);
@@ -286,6 +332,11 @@ function boot({ renderer, scene, camera, syncSize }) {
         t.ctx.fillStyle = 'rgba(130, 170, 220, 0.42)';
         t.ctx.fillRect(0, (TILE_GUTTER - 2) * scale, t.canvas.width, 2 * scale);
         t.ctx.fillRect(0, (TILE_GUTTER + PAGE_SLICE_H) * scale, t.canvas.width, 2 * scale);
+        if (sourceH > 0) {
+          const px = t.ctx.getImageData(0, 0, t.canvas.width, t.canvas.height);
+          sharpen(px.data, px.width, px.height);
+          t.ctx.putImageData(px, 0, 0);
+        }
         t.texture.needsUpdate = true;
       }
       cacheHotspots(doc);
@@ -415,6 +466,9 @@ function boot({ renderer, scene, camera, syncSize }) {
       aimHotspot(tileIndex, x, y);
     },
     onSelect: hit => {
+      sound.wake();
+      sound.tick(hit.point);
+      pulse(session(), 0.35, 20);
       if (hit.object.userData.action) { hit.object.userData.action(); return; }
       if (hit.uv && hit.object.userData.tile !== undefined) {
         const at = tileUvToPage(hit.object.userData.tile, hit.uv.x, hit.uv.y);
@@ -467,6 +521,7 @@ function boot({ renderer, scene, camera, syncSize }) {
     onStart: () => {
       recenter = 3;
       env.setLowPower(true);
+      sound.wake();
     },
     onEnd: () => {
       env.setLowPower(false);
@@ -478,6 +533,9 @@ function boot({ renderer, scene, camera, syncSize }) {
 
   const clock = new THREE.Clock();
   const viewer = new THREE.Vector3();
+  const ahead = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  const turn = new THREE.Quaternion();
   renderer.setAnimationLoop(() => {
     const dt = Math.min(clock.getDelta(), 0.1);
     if (!renderer.xr.isPresenting) syncSize();
@@ -485,6 +543,10 @@ function boot({ renderer, scene, camera, syncSize }) {
     pointer.update();
     (renderer.xr.isPresenting ? renderer.xr.getCamera() : camera).getWorldPosition(viewer);
     env.update(dt, motionScale(motionMode, { presenting: renderer.xr.isPresenting, reduced }), viewer);
+    const eyes = renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+    eyes.getWorldDirection(ahead);
+    up.set(0, 1, 0).applyQuaternion(eyes.getWorldQuaternion(turn));
+    sound.listen(viewer, ahead, up);
     renderer.render(scene, camera);
   });
 }
