@@ -1,65 +1,141 @@
 (function () {
   "use strict";
 
-  var script = document.currentScript;
-  var main = document.querySelector("main");
+  const script = document.currentScript;
+  const main = document.querySelector("main");
   if (!script || !main) return;
-  // Steps are site-root paths; resolve them from this script's location so the
-  // links work no matter how deep the lesson sits.
-  var siteRoot = new URL("../../", script.src);
-  var dataUrl = new URL("data/math-pathway.json", siteRoot).href;
-  var lessonPath = location.pathname.slice(siteRoot.pathname.length) || "index.html";
 
-  var css = document.createElement("style");
-  css.textContent =
-    ".math-pathway{max-width:1000px;margin:3rem auto 1.5rem;padding:1.1rem 1.25rem;border:1px solid var(--border-subtle,#ccc);border-radius:14px;background:var(--glass-fill-strong,transparent)}" +
-    ".math-pathway-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:baseline;font-size:.8rem;color:var(--text-muted,#666)}" +
-    ".math-pathway-head a{color:var(--accent,#3157a4);font-weight:700}" +
-    ".math-pathway-bar{display:flex;gap:3px;margin:.7rem 0 .9rem}" +
-    ".math-pathway-bar i{flex:1;height:5px;border-radius:3px;background:var(--border-subtle,#ccc)}" +
-    ".math-pathway-bar i.done{background:var(--accent,#3157a4);opacity:.55}" +
-    ".math-pathway-bar i.here{background:var(--accent,#3157a4)}" +
-    ".math-pathway-links{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}" +
-    ".math-pathway-links a{display:block;padding:.75rem .9rem;border:1px solid var(--border-subtle,#ccc);border-radius:10px;text-decoration:none;color:var(--text-main,inherit)}" +
-    ".math-pathway-links a:hover,.math-pathway-links a:focus-visible{border-color:var(--accent,#3157a4)}" +
-    ".math-pathway-links small{display:block;font-size:.72rem;color:var(--text-muted,#666);text-transform:uppercase;letter-spacing:.05em}" +
-    ".math-pathway-links strong{font-size:.95rem}" +
-    ".math-pathway-links .next{text-align:right;grid-column:2}" +
-    "@media(max-width:560px){.math-pathway-links{grid-template-columns:1fr}.math-pathway-links .next{grid-column:1}}";
-  document.head.appendChild(css);
+  const siteRoot = new URL("../../", script.src);
+  const lessonPath = decodeURI(location.pathname.slice(siteRoot.pathname.length));
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = new URL("css/lessons/math-pathway.css", new URL("../", script.src)).href;
+  document.head.appendChild(stylesheet);
 
-  fetch(dataUrl).then(function (r) { return r.json(); }).then(function (data) {
-    var steps = data.steps;
-    var nav = document.createElement("nav");
-    nav.className = "math-pathway";
-    nav.setAttribute("aria-label", "Mathematics pathway");
-    main.appendChild(nav);
+  const node = (tag, className, content) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (content) element.textContent = content;
+    return element;
+  };
+  const pageUrl = (path) => new URL(path, siteRoot).href;
 
-    function currentIndex() {
-      var byHash = steps.findIndex(function (s) { return s.page === lessonPath + location.hash; });
-      if (byHash >= 0) return byHash;
-      return steps.findIndex(function (s) { return s.page.split("#")[0] === lessonPath; });
-    }
+  fetch(pageUrl("data/math-pathway.json"))
+    .then((response) => {
+      if (!response.ok) throw new Error("Math pathway data unavailable");
+      return response.json();
+    })
+    .then((data) => {
+      const guide = data.guides && data.guides[lessonPath];
+      const steps = data.steps || [];
+      if (!guide || !steps.length) return;
 
-    function link(step, cls, label) {
-      if (!step) return "";
-      return '<a class="' + cls + '" href="' + new URL(step.page, siteRoot).href + '"><small>' + label + "</small><strong>" + step.title + "</strong></a>";
-    }
+      const indices = steps.reduce((found, step, index) => {
+        if (step.page.split("#")[0] === lessonPath) found.push(index);
+        return found;
+      }, []);
+      if (!indices.length) return;
 
-    function render() {
-      var i = currentIndex();
-      if (i < 0) { nav.hidden = true; return; }
-      nav.hidden = false;
-      var level = data.levels.filter(function (l) { return l.id === steps[i].level; })[0];
-      var bar = steps.map(function (_, n) { return '<i class="' + (n < i ? "done" : n === i ? "here" : "") + '"></i>'; }).join("");
-      nav.innerHTML =
-        '<div class="math-pathway-head"><span>Math pathway · Level ' + level.id + " " + level.name + " (" + level.grades +
-        ") · Step " + (i + 1) + " of " + steps.length + '</span><a href="' + new URL("steam-lessons.html#module-math", siteRoot).href + '">All math lessons</a></div>' +
-        '<div class="math-pathway-bar" aria-hidden="true">' + bar + "</div>" +
-        '<div class="math-pathway-links">' + link(steps[i - 1], "prev", "← Previous") + link(steps[i + 1], "next", "Next →") + "</div>";
-    }
+      const guidePanel = node("section", "math-lesson-guide");
+      guidePanel.setAttribute("aria-label", "Start this mathematics lesson");
+      const header = node("div", "math-lesson-guide-header");
+      header.append(node("span", "math-lesson-guide-kicker", "Your learning route · " + guide.role));
+      const levelLabel = node("span", "math-lesson-guide-level");
+      header.append(levelLabel);
+      guidePanel.append(header);
 
-    render();
-    window.addEventListener("hashchange", render);
-  }).catch(function () { /* pathway nav is an enhancement */ });
+      const body = node("div", "math-lesson-guide-body");
+      const overview = node("div", "math-lesson-guide-overview");
+      overview.append(node("h2", "", "What you will learn"));
+      overview.append(node("p", "", guide.goal));
+      const readiness = node("p", "math-lesson-guide-readiness");
+      readiness.append(node("strong", "", "Helpful to know: "));
+      readiness.append(document.createTextNode(guide.prerequisite));
+      overview.append(readiness);
+      body.append(overview);
+
+      const action = node("div", "math-lesson-guide-action");
+      action.append(node("strong", "", "Start here"));
+      action.append(node("p", "", guide.start));
+      const startLink = node("a", "math-lesson-guide-start", "Go to the first task");
+      startLink.href = "#" + guide.anchor;
+      action.append(startLink);
+      body.append(action);
+      guidePanel.append(body);
+      const check = node("p", "math-lesson-guide-check");
+      check.append(node("strong", "", "Before you leave: "));
+      check.append(document.createTextNode(guide.check));
+      guidePanel.append(check);
+      if (guide.review) {
+        const review = node("p", "math-lesson-guide-review");
+        review.append(document.createTextNode("Source check · " + guide.review.scope + " · " + guide.review.date + " · "));
+        const source = node("a", "", guide.review.source);
+        source.href = guide.review.url;
+        review.append(source);
+        guidePanel.append(review);
+      }
+
+      const title = main.querySelector("h1");
+      const hero = title && title.closest("section, header");
+      if (hero && main.contains(hero)) hero.insertAdjacentElement("afterend", guidePanel);
+      else main.prepend(guidePanel);
+
+      const nav = node("nav", "math-pathway");
+      nav.setAttribute("aria-label", "Continue learning mathematics");
+      main.append(nav);
+
+      function currentIndex() {
+        const exact = indices.find((index) => steps[index].page === lessonPath + location.hash);
+        return exact === undefined ? indices[0] : exact;
+      }
+
+      function makeStepLink(step, label) {
+        const link = node("a", "math-pathway-step");
+        link.href = pageUrl(step.page);
+        link.append(node("small", "", label));
+        link.append(node("strong", "", step.title));
+        return link;
+      }
+
+      function render() {
+        const index = currentIndex();
+        const step = steps[index];
+        const level = data.levels.find((item) => item.id === step.level);
+        if (!level) return;
+        const isLab = lessonPath.endsWith("math-foundations-lab.html");
+        levelLabel.textContent = isLab && !location.hash ? "K–12 starting points" : level.name + " · " + level.grades;
+        if (isLab && location.hash) {
+          startLink.href = location.hash;
+          action.querySelector("p").textContent = "Explore the " + step.title.toLowerCase() + " station.";
+        } else if (isLab) {
+          startLink.href = "#" + guide.anchor;
+          action.querySelector("p").textContent = guide.start;
+        }
+
+        nav.replaceChildren();
+        const head = node("div", "math-pathway-head");
+        const name = node("div");
+        const sameLevel = steps.filter((item) => item.level === step.level);
+        name.append(node("strong", "", isLab && !location.hash ? "Choose a station to continue" : "Continue in " + level.name));
+        name.append(node("span", "", isLab && !location.hash ? "Pick your starting point and follow a station link." : "Lesson " + (sameLevel.indexOf(step) + 1) + " of " + sameLevel.length + " in this level"));
+        head.append(name);
+        const all = node("a", "", "Browse all math lessons");
+        all.href = pageUrl("steam-lessons.html#module-math");
+        head.append(all);
+        nav.append(head);
+
+        if (!isLab || location.hash) {
+          const links = node("div", "math-pathway-links");
+          if (steps[index - 1]) links.append(makeStepLink(steps[index - 1], "Previous idea"));
+          if (steps[index + 1]) links.append(makeStepLink(steps[index + 1], "Next idea"));
+          nav.append(links);
+        }
+      }
+
+      render();
+      window.addEventListener("hashchange", render);
+    })
+    .catch((error) => {
+      console.warn("Mathematics pathway could not load:", error);
+    });
 })();

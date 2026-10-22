@@ -1,0 +1,675 @@
+    /* ── Base ───────────────────────────────────────── */
+    :root {
+      color-scheme: dark;
+      --atom-bg: #070a10;
+      --atom-panel: rgba(13, 18, 28, 0.82);
+      --atom-line: rgba(205, 218, 238, 0.13);
+      --atom-line-strong: rgba(205, 218, 238, 0.22);
+      --atom-text: #e8eef8;
+      --atom-muted: rgba(232, 238, 248, 0.68);
+      --atom-dim: rgba(232, 238, 248, 0.46);
+      --atom-cyan: #4dd8ef;
+      --atom-violet: #a995ff;
+      --atom-amber: #f6c35b;
+      --atom-green: #53d89b;
+      --atom-rose: #ff7a94;
+      --atom-radius: 8px;
+      --atom-shadow: 0 26px 70px rgba(0, 0, 0, 0.32);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      color: var(--atom-text);
+      background:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(180deg, #080b12 0%, #0b1019 42%, #070a10 100%);
+      background-size: 38px 38px, 38px 38px, auto;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(110deg, rgba(77,216,239,0.10), transparent 30%),
+        linear-gradient(250deg, rgba(246,195,91,0.08), transparent 36%);
+      mask-image: linear-gradient(180deg, #000, transparent 80%);
+    }
+
+    .atom-shell {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1rem 0 4rem;
+      display: grid;
+      gap: 1rem;
+      position: relative;
+    }
+
+    /* ── Topbar ─────────────────────────────────────── */
+    .atom-topbar {
+      position: sticky; top: 0; z-index: 30;
+      backdrop-filter: blur(18px) saturate(150%);
+      background: rgba(7,10,16,0.86);
+      border-bottom: 1px solid var(--atom-line);
+    }
+    .atom-topbar-inner {
+      width: min(1320px, calc(100% - 2rem));
+      min-height: 56px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .atom-topbar a { color: #c8d7f3; text-decoration: none; font-size: 0.83rem; font-weight: 700; }
+    .atom-topbar a:hover { color: #fff; }
+    .atom-brand { color: #f1f5ff; font-size: 0.93rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+    .atom-nav {
+      display: flex; align-items: center; gap: 0.25rem;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .atom-nav::-webkit-scrollbar { display: none; }
+    .atom-nav a {
+      display: inline-flex; align-items: center; min-height: 1.9rem;
+      padding: 0 0.6rem; border-radius: var(--atom-radius);
+      color: var(--atom-dim); white-space: nowrap;
+    }
+    .atom-nav a:hover { color: var(--atom-text); background: rgba(255,255,255,0.06); }
+    .atom-pills { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+    .atom-pill {
+      display: inline-flex; align-items: center; height: 1.75rem;
+      padding: 0 0.65rem; border-radius: var(--atom-radius);
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+      border: 1px solid rgba(169,149,255,0.36);
+      background: rgba(169,149,255,0.12); color: #d8d0ff;
+    }
+    .atom-pill.cyan { border-color: rgba(77,216,239,0.36); background: rgba(77,216,239,0.1); color: #9cecff; }
+    @media (max-width: 980px) { .atom-brand { display: none; } }
+    @media (max-width: 760px) {
+      .atom-nav { display: none; }
+      .atom-topbar-inner { min-height: 52px; }
+    }
+
+    /* ── Hero ───────────────────────────────────────── */
+    .atom-hero {
+      display: grid;
+      grid-template-columns: minmax(0,1.28fr) minmax(300px,0.72fr);
+      gap: 1rem; align-items: stretch;
+      min-height: min(560px, calc(100vh - 92px));
+    }
+    @media (max-width:720px) { .atom-hero { grid-template-columns: 1fr; } }
+
+    .atom-hero-copy {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line-strong);
+      background:
+        linear-gradient(120deg, rgba(77,216,239,0.10), transparent 42%),
+        linear-gradient(180deg, rgba(17,24,38,0.92), rgba(9,13,22,0.92));
+      box-shadow: var(--atom-shadow);
+      padding: clamp(1.25rem, 3vw, 2.4rem);
+      position: relative; overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .atom-hero-copy::before {
+      content: "";
+      position: absolute; right: -8rem; top: -8rem;
+      width: 24rem; height: 24rem;
+      border: 1px solid rgba(77,216,239,0.18);
+      border-radius: 50%;
+      box-shadow:
+        inset 0 0 0 78px transparent,
+        inset 0 0 0 79px rgba(246,195,91,0.12),
+        inset 0 0 0 142px transparent,
+        inset 0 0 0 143px rgba(169,149,255,0.12);
+      transform: rotate(-18deg) scaleX(1.45);
+      pointer-events: none;
+    }
+    .atom-eyebrow {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--atom-cyan); margin: 0 0 0.7rem;
+    }
+    .atom-hero-copy h1 {
+      margin: 0 0 0.7rem;
+      max-width: 12ch;
+      font-size: clamp(2.4rem, 7vw, 5.9rem);
+      line-height: 0.92; letter-spacing: -0.055em; color: #fff;
+    }
+    .atom-hero-copy h1 em { font-style: normal; color: var(--atom-amber); }
+    .atom-lede {
+      max-width: 74ch;
+      color: var(--atom-muted); font-size: clamp(0.95rem, 1.5vw, 1.06rem); line-height: 1.72; margin: 0 0 1.1rem;
+    }
+    .atom-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    /* Feynman quote card */
+    .atom-quote-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.24);
+      background:
+        linear-gradient(180deg, rgba(246,195,91,0.10), transparent 58%),
+        rgba(13,18,28,0.82);
+      padding: clamp(1.15rem, 2.2vw, 1.8rem);
+      display: flex; flex-direction: column; justify-content: center; gap: 0.9rem;
+      box-shadow: var(--atom-shadow);
+    }
+    .atom-quote-mark { font-size: 3rem; line-height: 0.8; color: var(--atom-amber); opacity: 0.65; }
+    .atom-quote-text {
+      font-size: clamp(0.92rem, 2vw, 1.12rem);
+      font-style: italic; line-height: 1.62;
+      color: #e0f2fe; margin: 0;
+    }
+    .atom-quote-attr {
+      font-size: 0.77rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--atom-amber); opacity: 0.9;
+    }
+
+    /* ── Section cards ──────────────────────────────── */
+    .atom-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line);
+      background: var(--atom-panel);
+      backdrop-filter: blur(10px);
+      padding: clamp(1.1rem, 2vw, 1.6rem);
+      scroll-margin-top: 76px;
+    }
+    .atom-card-accent-violet { border-left: 4px solid var(--atom-violet); }
+    .atom-card-accent-cyan   { border-left: 4px solid var(--atom-cyan); }
+    .atom-card-accent-green  { border-left: 4px solid var(--atom-green); }
+    .atom-card-accent-amber  { border-left: 4px solid var(--atom-amber); }
+    .atom-card-accent-rose   { border-left: 4px solid var(--atom-rose); }
+
+    .atom-kicker {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; margin: 0 0 0.45rem;
+    }
+    .atom-kicker.violet { color: var(--atom-violet); }
+    .atom-kicker.cyan   { color: var(--atom-cyan); }
+    .atom-kicker.green  { color: var(--atom-green); }
+    .atom-kicker.amber  { color: var(--atom-amber); }
+    .atom-kicker.rose   { color: var(--atom-rose); }
+
+    .atom-card h2 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+      letter-spacing: -0.03em; color: #fff;
+    }
+    .atom-card h3 {
+      margin: 1rem 0 0.35rem;
+      font-size: 1.02rem; letter-spacing: -0.02em; color: #e0eaf8;
+    }
+    .atom-card p, .atom-card li {
+      color: var(--atom-muted); font-size: 0.92rem; line-height: 1.72; margin: 0 0 0.65rem;
+    }
+    .atom-card p:last-child { margin-bottom: 0; }
+    .atom-card ul { padding-left: 1.4rem; margin: 0.4rem 0 0.7rem; }
+    .atom-card li { margin-bottom: 0.35rem; }
+
+    /* two-col prose */
+    .atom-two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width:620px) { .atom-two-col { grid-template-columns: 1fr; } }
+
+    /* ── Highlight boxes ────────────────────────────── */
+    .atom-highlight {
+      border-radius: var(--atom-radius); padding: 1rem 1.2rem; margin: 0.9rem 0;
+    }
+    .atom-highlight.violet {
+      background: rgba(169,149,255,0.10); border: 1px solid rgba(169,149,255,0.28);
+    }
+    .atom-highlight.cyan {
+      background: rgba(77,216,239,0.09); border: 1px solid rgba(77,216,239,0.26);
+    }
+    .atom-highlight.amber {
+      background: rgba(246,195,91,0.09); border: 1px solid rgba(246,195,91,0.26);
+    }
+    .atom-highlight.green {
+      background: rgba(83,216,155,0.08); border: 1px solid rgba(83,216,155,0.26);
+    }
+    .atom-highlight strong {
+      display: block; font-size: 0.76rem; font-weight: 800;
+      letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.35rem;
+    }
+    .atom-highlight.violet strong { color: var(--atom-violet); }
+    .atom-highlight.cyan   strong { color: var(--atom-cyan); }
+    .atom-highlight.amber  strong { color: var(--atom-amber); }
+    .atom-highlight.green  strong { color: var(--atom-green); }
+    .atom-highlight p { margin: 0; font-size: 0.88rem; color: rgba(232,238,248,0.82); line-height: 1.65; }
+
+    /* Feynman chess analogy */
+    .feynman-chess-story {
+      margin: 1rem 0;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.28);
+      background:
+        linear-gradient(135deg, rgba(246,195,91,0.10), transparent 48%),
+        rgba(255,255,255,0.035);
+      padding: clamp(1rem, 2vw, 1.25rem);
+    }
+    .feynman-chess-story h3 {
+      margin-top: 0;
+      color: #f9df9b;
+    }
+    .feynman-chess-story p {
+      color: rgba(232,238,248,0.82);
+    }
+    .feynman-chess-lesson {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    @media (max-width:720px) { .feynman-chess-lesson { grid-template-columns: 1fr; } }
+    .feynman-chess-card {
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.18);
+      background: rgba(7,10,16,0.38);
+      padding: 0.8rem 0.9rem;
+    }
+    .feynman-chess-card strong {
+      display: block;
+      color: var(--atom-amber);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+    .feynman-chess-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: rgba(224,234,248,0.68);
+    }
+    .feynman-story-source {
+      margin-top: 0.75rem;
+      color: rgba(232,238,248,0.48);
+      font-size: 0.73rem;
+      line-height: 1.55;
+    }
+    .feynman-story-source a {
+      color: #f9df9b;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .feynman-story-source a:hover { color: #fff; }
+
+    /* ── Concept chips ──────────────────────────────── */
+    .atom-chip-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    .atom-chip {
+      border-radius: var(--atom-radius); padding: 0.85rem 1rem;
+      border: 1px solid var(--atom-line);
+      background: rgba(255,255,255,0.035);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .atom-chip:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(0,0,0,0.25); border-color: var(--atom-line-strong); }
+    .atom-chip .chip-icon {
+      width: 2.1rem; height: 2.1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      font-size: 1.15rem; margin-bottom: 0.55rem; line-height: 1;
+    }
+    .atom-chip .chip-title { font-size: 0.9rem; font-weight: 700; color: #f1f5ff; margin-bottom: 0.2rem; }
+    .atom-chip .chip-desc { font-size: 0.76rem; color: rgba(224,234,248,0.55); line-height: 1.45; }
+
+    /* ── Steps (Feynman method) ─────────────────────── */
+    .atom-steps { display: grid; gap: 0.7rem; margin: 0.85rem 0; }
+    .atom-step {
+      display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.8rem;
+      align-items: start;
+    }
+    .atom-step-num {
+      width: 2.2rem; height: 2.2rem; border-radius: var(--atom-radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800; flex-shrink: 0;
+      background: rgba(77,216,239,0.12); border: 1px solid rgba(77,216,239,0.3);
+      color: var(--atom-cyan);
+    }
+    .atom-step-body strong { display: block; color: #e0eaf8; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .atom-step-body p { margin: 0; color: rgba(224,234,248,0.62); font-size: 0.84rem; line-height: 1.55; }
+
+    /* ── Scale-of-the-atom visual ───────────────────── */
+    .atom-scale-visual {
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    }
+    .atom-scale-ring {
+      position: relative;
+      width: min(260px, 60vw); height: min(260px, 60vw);
+      border-radius: 50%;
+      border: 2px dashed rgba(246,195,91,0.42);
+      background: radial-gradient(circle at center, rgba(77,216,239,0.07), transparent 68%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .atom-scale-nucleus {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--atom-amber);
+      box-shadow: 0 0 14px 5px rgba(246,195,91,0.55);
+    }
+    .atom-scale-tag {
+      position: absolute;
+      font-size: 0.72rem; font-weight: 700;
+      color: rgba(224,234,248,0.72);
+      white-space: nowrap;
+    }
+    .atom-scale-tag-outer { top: -1.6rem; left: 50%; transform: translateX(-50%); color: var(--atom-cyan); }
+    .atom-scale-tag-inner { bottom: -1.6rem; left: 50%; transform: translateX(-50%); color: var(--atom-amber); }
+    .atom-scale-compare {
+      display: flex; align-items: center; justify-content: center; gap: 0.9rem;
+      flex-wrap: wrap; margin-top: 2.2rem;
+    }
+    .atom-scale-item { text-align: center; }
+    .atom-scale-item .scale-icon { font-size: 2.4rem; line-height: 1; }
+    .atom-scale-item .scale-label { font-size: 0.86rem; font-weight: 800; color: #f1f5ff; margin-top: 0.3rem; }
+    .atom-scale-item .scale-detail { font-size: 0.72rem; color: rgba(224,234,248,0.5); max-width: 12ch; margin: 0.15rem auto 0; line-height: 1.4; }
+    .atom-scale-arrow { font-size: 1.4rem; color: rgba(224,234,248,0.35); }
+
+    /* ── Particle-anatomy diagram (proton/neutron/electron) ── */
+    .atom-particle-diagram {
+      display: flex; justify-content: center;
+      padding: 0.3rem 0 0.15rem;
+    }
+    .atom-particle-ring {
+      position: relative;
+      width: 168px; height: 168px;
+      border-radius: 50%;
+      border: 2px dashed rgba(77,216,239,0.35);
+    }
+    .ap-electron {
+      position: absolute;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--atom-cyan);
+      box-shadow: 0 0 9px 3px rgba(77,216,239,0.55);
+    }
+    .ap-electron:nth-child(1) { top: -5px; left: calc(50% - 5px); }
+    .ap-electron:nth-child(2) { bottom: 14px; left: 4px; }
+    .ap-electron:nth-child(3) { bottom: 14px; right: 4px; }
+    .ap-nucleus {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 62px; height: 62px;
+      display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px;
+    }
+    .ap-proton, .ap-neutron { width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0; }
+    .ap-proton { background: var(--atom-amber); box-shadow: 0 0 6px 2px rgba(246,195,91,0.5); }
+    .ap-neutron { background: rgba(224,234,248,0.32); border: 1px solid rgba(224,234,248,0.5); }
+    .atom-particle-legend {
+      display: flex; justify-content: center; flex-wrap: wrap;
+      gap: 0.3rem 1rem; margin-top: 0.5rem;
+      font-size: 0.76rem; color: rgba(224,234,248,0.65);
+    }
+    .ap-legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .ap-swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .ap-swatch.proton { background: var(--atom-amber); }
+    .ap-swatch.neutron { background: rgba(224,234,248,0.32); border: 1px solid rgba(224,234,248,0.5); }
+    .ap-swatch.electron { background: var(--atom-cyan); }
+
+    /* ── Flow arrow ─────────────────────────────────── */
+    .atom-flow {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+      margin: 0.9rem 0; font-size: 0.84rem;
+    }
+    .atom-flow-node {
+      padding: 0.35rem 0.8rem; border-radius: var(--atom-radius);
+      border: 1px solid rgba(77,216,239,0.32);
+      background: rgba(77,216,239,0.10); color: #b6f3ff;
+      font-weight: 700; white-space: nowrap;
+    }
+    .atom-flow-arrow { color: rgba(224,234,248,0.35); font-size: 1.1rem; }
+
+    /* ── Canvas simulation containers ──────────────── */
+    .atom-sim {
+      border-radius: var(--atom-radius);
+      border: 1px solid var(--atom-line);
+      overflow: hidden;
+      background: #030912;
+      position: relative;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.24);
+      scroll-margin-top: 76px;
+    }
+    .atom-sim-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 0.6rem;
+      padding: 1rem 1.2rem 0.75rem;
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0));
+    }
+    .atom-sim-head-left { display: flex; flex-direction: column; gap: 0.2rem; }
+    .atom-sim-title { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .atom-sim-title.violet { color: var(--atom-violet); }
+    .atom-sim-title.cyan { color: var(--atom-cyan); }
+    .atom-sim-title.amber { color: var(--atom-amber); }
+    .atom-sim-sub { font-size: 0.79rem; color: rgba(224,234,248,0.5); }
+    .atom-sim canvas {
+      display: block; width: 100%;
+      background:
+        linear-gradient(rgba(255,255,255,0.026) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px),
+        #030912;
+      background-size: 26px 26px;
+    }
+
+    .atom-sim-controls {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem;
+      padding: 0.8rem 1.2rem;
+      background: rgba(0,0,0,0.28); border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .atom-ctrl { display: flex; flex-direction: column; gap: 0.22rem; min-width: 120px; }
+    .atom-control-row { display: flex; align-items: flex-end; gap: 0.4rem; }
+    .atom-align-end { align-self: flex-end; }
+    .atom-ctrl label {
+      font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: rgba(224,234,248,0.5);
+    }
+    .atom-ctrl input[type="range"] {
+      accent-color: var(--atom-cyan); cursor: pointer; width: 100%;
+    }
+    .atom-ctrl select {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--atom-radius); color: #e0eaf8; padding: 0.28rem 0.5rem;
+      font-size: 0.82rem; cursor: pointer;
+    }
+    .atom-ctrl select option { background: #111827; }
+    .atom-ctrl-val {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.74rem; font-weight: 700; color: var(--atom-cyan);
+    }
+    .atom-btn {
+      padding: 0.46rem 0.9rem; border-radius: var(--atom-radius);
+      border: 1px solid rgba(77,216,239,0.42);
+      background: rgba(77,216,239,0.13); color: #a8f1ff;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+      transition: background 0.14s;
+    }
+    .atom-btn:hover { background: rgba(77,216,239,0.22); }
+    .atom-btn.cyan-btn {
+      border-color: rgba(6,182,212,0.4); background: rgba(6,182,212,0.12); color: #67e8f9;
+    }
+    .atom-btn.cyan-btn:hover { background: rgba(6,182,212,0.24); }
+
+    /* sim readout strip */
+    .atom-readout {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      padding: 0.7rem 1.2rem;
+    }
+    .atom-readout-chip {
+      display: flex; flex-direction: column; gap: 0.1rem;
+      border-radius: var(--atom-radius); padding: 0.45rem 0.7rem;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.03);
+    }
+    .atom-readout-label {
+      font-size: 0.63rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(224,234,248,0.42);
+    }
+    .atom-readout-val {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.85rem; font-weight: 700; color: #e0eaf8;
+    }
+
+    /* ── AI Prompt Section ──────────────────────────── */
+    .atom-prompt-box {
+      border-radius: var(--atom-radius); padding: 1.1rem 1.3rem;
+      border: 1px solid rgba(6,182,212,0.28);
+      background: rgba(6,182,212,0.07);
+      margin-top: 0.85rem;
+    }
+    .atom-prompt-box pre {
+      margin: 0.6rem 0 0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.8rem; color: #a5f3fc;
+      white-space: pre-wrap; word-break: break-word;
+      line-height: 1.6;
+    }
+    .atom-prompt-label {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #67e8f9;
+    }
+
+    /* ── Energy bar ─────────────────────────────────── */
+    .energy-bar-track {
+      height: 8px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.25rem;
+    }
+    .energy-bar-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--atom-violet), var(--atom-cyan));
+      transition: width 0.3s;
+    }
+
+    /* ── Invariant showcase ─────────────────────────── */
+    .atom-invariant-row {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+      gap: 0.7rem; margin: 0.85rem 0;
+    }
+    .atom-invariant-item {
+      border-radius: var(--atom-radius); padding: 0.9rem 1rem;
+      border: 1px solid rgba(245,158,11,0.25);
+      background: rgba(245,158,11,0.07);
+    }
+    .atom-invariant-item .inv-label {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--atom-amber); margin-bottom: 0.3rem;
+    }
+    .atom-invariant-item .inv-from { font-size: 0.84rem; color: rgba(224,234,248,0.55); }
+    .atom-invariant-item .inv-arrow { color: var(--atom-amber); font-size: 1rem; }
+    .atom-invariant-item .inv-to { font-size: 0.84rem; color: rgba(224,234,248,0.85); font-weight: 600; }
+
+    /* ── Probability distribution bars ─────────────── */
+    .prob-bars {
+      display: flex; align-items: flex-end; gap: 4px;
+      height: 80px; padding: 0 0.2rem;
+    }
+    .prob-bar {
+      flex: 1; border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, var(--atom-cyan), #2975a0);
+      transition: height 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      min-height: 4px;
+    }
+
+    /* ── Sketchfab atom viewer ──────────────────────── */
+    .sketchfab-embed-wrapper {
+      overflow: hidden;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(169,149,255,0.28);
+      background:
+        linear-gradient(135deg, rgba(169,149,255,0.14), rgba(77,216,239,0.06)),
+        rgba(7,10,16,0.82);
+      box-shadow: var(--atom-shadow);
+    }
+    .sketchfab-embed-wrapper iframe {
+      display: block;
+      width: 100%;
+      min-height: clamp(360px, 52vw, 620px);
+      border: 0;
+    }
+    .sketchfab-credit {
+      margin: 0;
+      padding: 0.65rem 0.85rem;
+      border-top: 1px solid var(--atom-line);
+      color: var(--atom-dim);
+      font-size: 0.78rem;
+      line-height: 1.45;
+      background: rgba(3,6,12,0.54);
+    }
+    .sketchfab-credit a {
+      color: var(--atom-cyan);
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .sketchfab-credit a:hover { color: #fff; }
+
+    /* ── Gravity equation highlight ─────────────────── */
+    .atom-equation {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--atom-amber); text-align: center;
+      padding: 1rem; letter-spacing: 0.04em;
+      border-radius: var(--atom-radius);
+      border: 1px solid rgba(246,195,91,0.22);
+      background: rgba(246,195,91,0.07);
+    }
+
+    /* ── Feynman method interactive ─────────────────── */
+    .feynman-step-row {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    @media (max-width:640px) { .feynman-step-row { grid-template-columns: 1fr 1fr; } }
+    .feynman-step-card {
+      border-radius: var(--atom-radius); padding: 1rem;
+      border: 1px solid var(--atom-line);
+      background: rgba(255,255,255,0.03);
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.18s;
+    }
+    .feynman-step-card.active {
+      border-color: rgba(77,216,239,0.42);
+      background: rgba(77,216,239,0.12);
+      transform: translateY(-3px);
+    }
+    .feynman-step-card .fs-num {
+      font-size: 1.7rem; font-weight: 800; color: var(--atom-cyan); line-height: 1;
+    }
+    .feynman-step-card .fs-label {
+      font-size: 0.84rem; font-weight: 700; color: #e0eaf8; margin: 0.3rem 0 0.2rem;
+    }
+    .feynman-step-card .fs-icon { font-size: 1.5rem; }
+    .feynman-detail {
+      border-radius: var(--atom-radius); padding: 1.1rem 1.3rem; min-height: 5rem;
+      border: 1px solid rgba(77,216,239,0.28);
+      background: rgba(77,216,239,0.08);
+      font-size: 0.88rem; line-height: 1.65; color: rgba(224,234,248,0.8);
+      margin-top: 0.7rem;
+    }
+
+    /* ── Responsive gap helper ──────────────────────── */
+    .atom-two-sim {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width:720px) { .atom-two-sim { grid-template-columns: 1fr; } }
+    .atom-gap-sm { margin-top: 0.85rem; }
+    .atom-gap-md { margin-top: 1rem; }
+    .atom-gap-lg { margin-top: 1.1rem; }
+    .atom-footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--atom-dim);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--atom-line);
+      background: rgba(7,10,16,0.66);
+    }
+    .atom-footer a { color: var(--atom-cyan); text-decoration: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  

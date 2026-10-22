@@ -2776,6 +2776,7 @@
     syncControls();
     refresh();
     el('[data-fb-title]').textContent = raw.title;
+    var libCur = el('[data-fb-library-current]'); if (libCur) libCur.textContent = raw.title;
     el('[data-fb-meta]').textContent = raw.composer + (raw.year ? ' · ' + raw.year : '');
     el('[data-fb-about]').textContent = raw.about;
     renderLiner(raw.liner);
@@ -2824,7 +2825,7 @@
     var stv = el('[data-fb-staff-toggles]'), hasB = !!tune.staves.bass;
     if (stv) {
       stv.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
-      stv.querySelector('[data-fb-has="bass"]').hidden = !hasB;
+      el('[data-fb-has="bass"]').hidden = !hasB;
       el('[data-fb-show-bass]').checked = opts.showBass !== false;
       var bh = el('[data-fb-bass-horn]');
       if (bh) { bh.closest('label').hidden = !(hasB && INSTR[opts.instr].clef === 'treble'); bh.checked = opts.bassFor === 'horn'; }
@@ -2854,6 +2855,8 @@
     el('[data-fb-mode]').value = opts.mode;
     el('[data-fb-click]').value = opts.click;
     root.querySelectorAll('[data-fb-click-pattern]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-fb-click-pattern') === opts.click)); });
+    var clickBtn = root.querySelector('[data-fb-click-pattern="' + opts.click + '"]'), clickCur = el('[data-fb-click-current]');
+    if (clickCur) clickCur.textContent = clickBtn ? clickBtn.textContent : 'All';
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     var hasChords = !!(tune.raw && typeof tune.raw.chords === 'string' ? tune.raw.chords.trim() : (Array.isArray(tune.chords) ? tune.chords.length : (typeof tune.chords === 'string' && tune.chords.trim())));
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
@@ -4271,6 +4274,7 @@
       }
       var tn = t.closest('[data-tune]');
       if (tn && !t.closest('[data-remove-tune], [data-print-tune]')) {
+        var libWrap = tn.closest('.fb-library-wrap'); if (libWrap) libWrap.open = false;
         selectTune(tn.getAttribute('data-tune'), true);
         return;
       }
@@ -4284,6 +4288,7 @@
       if (clickPattern) {
         opts.click = clickPattern.getAttribute('data-fb-click-pattern');
         if (opts.click !== 'none') opts.clickPrev = opts.click;
+        var clickMenu = clickPattern.closest('details'); if (clickMenu) clickMenu.open = false;
         syncControls(); save(); respin(); return;
       }
       if (t.closest('[data-fb-click-toggle]')) {

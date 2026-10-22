@@ -1231,7 +1231,8 @@
     return e;
   }
 
-  function printScorePages(score) {
+  function preparePrintScorePages(score) {
+    if (document.body.classList.contains('se-print-score-active')) return true;
     var model = prepare(score);
     analyse(model);
     // Engrave at a fixed width so the paper edition does not depend on the
@@ -1239,7 +1240,7 @@
     // Same large-print engraving the fake book uses: bigger staff, noteheads and
     // letters, fewer bars per line, so a handout reads from a desk or a music stand.
     var layout = engrave(model, 1085, true);
-    if (!layout.systems.length) return;
+    if (!layout.systems.length) return false;
     var ns = 'http://www.w3.org/2000/svg';
     var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true' });
     var definitions = document.createElementNS(ns, 'svg');
@@ -1303,6 +1304,11 @@
       root.removeEventListener('afterprint', cleanup);
     }
     root.addEventListener('afterprint', cleanup);
+    return true;
+  }
+
+  function printScorePages(score) {
+    if (!preparePrintScorePages(score)) return;
     root.print();
   }
 
@@ -1731,7 +1737,7 @@
     return '<svg class="se-score" aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
   }
 
-  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, parseStaff: parseStaff,
+  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

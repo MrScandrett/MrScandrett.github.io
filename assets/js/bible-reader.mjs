@@ -351,7 +351,8 @@ function shelf(testament, title) {
   return h("section", { class: "bb-shelf", id: `bb-${testament.toLowerCase()}`, "aria-labelledby": `bb-${testament}-h` },
     h("div", { class: "bb-shelf-head" },
       h("h2", { id: `bb-${testament}-h`, text: title }),
-      h("span", { class: "bb-fine", text: `${list.length} books · ${done} of ${total} chapters read` })),
+      h("span", { class: "bb-fine", text: `${list.length} books · ${done} of ${total} chapters read` }),
+      meter(done / total, `${title} progress`)),
     cats.map((cat) => h("div", { class: "bb-cat", "data-cat": cat },
       h("h3", { text: cat }),
       h("ul", { class: "bb-tiles" }, list.filter((b) => b.cat === cat).map(tile)))));
@@ -428,7 +429,8 @@ async function renderChapter(b, ch, v1, v2, keepVerse) {
 
   const prev = neighbor(b, ch, -1);
   const next = neighbor(b, ch, 1);
-  const text = h("div", { class: "bb-text", lang: "en" }, h("p", { class: "bb-loading", text: `Loading ${b.name} ${ch}…` }));
+  const text = h("div", { class: "bb-text", lang: "en" },
+    h("div", { class: "bb-skel", role: "status", "aria-label": `Loading ${b.name} ${ch}` }, ...[0, 1, 2, 3, 4, 5, 6].map(() => h("span"))));
   const listen = window.speechSynthesis
     ? h("button", { type: "button", class: "bb-btn", id: "bbListen", "aria-pressed": "false", onclick: (e) => speakVerses([...text.querySelectorAll(".bb-v")], e.currentTarget) },
         h("span", { "aria-hidden": "true", text: "▶ " }), "Listen")
@@ -464,6 +466,7 @@ async function renderChapter(b, ch, v1, v2, keepVerse) {
       h("p", { class: "bb-fine", text: `${tr.name} (${tr.label}) · ${tr.note}` })));
   if (!keepVerse) window.scrollTo(0, 0);
   focusHeading();
+  paintPager(b, ch, prev, next);
 
   let chapters;
   try {
@@ -699,6 +702,10 @@ let homeScroll = 0;
 
 function route(keepVerse) {
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  const rb = bySlug.get(parts[1]);
+  const view = parts[0] === "read" && rb ? "read" : parts[0] === "book" && rb ? "book" : "home";
+  root.dataset.view = view;
+  setRefLabel(view === "read" ? `${rb.name} ${Math.min(Math.max(1, parseInt(parts[2], 10) || 1), rb.verses.length)}` : view === "book" ? rb.name : "Books");
   const wasHome = main.querySelector(".bb-hello");
   if (wasHome) homeScroll = window.scrollY;
   if (parts[0] === "go") { // #/go/Hebrews 12:14 — used by the homepage verse of the day
@@ -763,7 +770,23 @@ function initDisplay() {
   const panel = document.getElementById("bbDisplay");
   const btn = document.getElementById("bbDisplayBtn");
   const sizeOut = document.getElementById("bbSizeOut");
-  let size = Number(store.get("bible:size")) || 100;
+  const slider = document.getElementById("bbSizeRange");
+  const focusBtn = document.getElementById("bbFocusBtn");
+  let size = Math.min(200, Math.max(80, Number(store.get("bible:size")) || 100));
+  let lh = store.get("bible:lh") || "1.75";
+  let width = store.get("bible:width") || "40";
+  const applySize = (v) => {
+    size = Math.min(200, Math.max(80, v));
+    root.style.setProperty("--bb-scale", size / 100);
+    store.set("bible:size", String(size));
+  };
+  const applyLh = (v) => { lh = v; root.style.setProperty("--bb-lh", v); store.set("bible:lh", v); };
+  const applyWidth = (v) => { width = v; root.style.setProperty("--bb-measure", v + "rem"); store.set("bible:width", v); };
+  const setLayout = (v) => {
+    root.dataset.bibleLayout = v;
+    store.set("bible:layout", v);
+    if (currentRead) { const keep = topVisibleVerse(); renderChapter(currentRead.book, currentRead.ch, keep > 1 ? keep : 0, 0, true); }
+  };
   const paint = () => {
     const mode = root.dataset.readerMode || "";
     panel.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
@@ -771,13 +794,25 @@ function initDisplay() {
     panel.querySelectorAll("[data-face]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.face === (root.dataset.bibleFace || "serif"))));
     panel.querySelectorAll("[data-hl]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.hl === highlightColor)));
     sizeOut.textContent = size + "%";
+    slider.value = size;
+    panel.querySelectorAll("[data-lh]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lh === lh)));
+    panel.querySelectorAll("[data-width]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.width === width)));
+    focusBtn.setAttribute("aria-pressed", String(root.dataset.focus === "on"));
   };
+  const closePanel = () => { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); };
   btn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
     btn.setAttribute("aria-expanded", String(!panel.hidden));
+    paint();
   });
+  slider.addEventListener("input", () => { applySize(Number(slider.value)); paint(); });
+  document.addEventListener("click", (e) => {
+    if (!panel.hidden && !e.target.closest("#bbDisplay, #bbDisplayBtn")) closePanel();
+  });
+  document.getElementById("bbFocusExit").addEventListener("click", () => { delete root.dataset.focus; paint(); });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !panel.hidden) { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); btn.focus(); }
+    if (e.key === "Escape" && !panel.hidden) { closePanel(); btn.focus(); }
+    else if (e.key === "Escape" && root.dataset.focus === "on") { delete root.dataset.focus; paint(); }
   });
   panel.addEventListener("click", (e) => {
     const b = e.target.closest("button");
@@ -785,17 +820,24 @@ function initDisplay() {
     if (b.dataset.mode) {
       root.dataset.readerMode = b.dataset.mode;
       store.set("reader:mode", b.dataset.mode); // shared with reader.html
-    } else if (b.dataset.size) {
-      size = Math.min(170, Math.max(80, size + Number(b.dataset.size)));
-      root.style.setProperty("--bb-scale", size / 100);
-      store.set("bible:size", String(size));
+    } else if (b.dataset.lh) {
+      applyLh(b.dataset.lh);
+    } else if (b.dataset.width) {
+      applyWidth(b.dataset.width);
+    } else if (b.id === "bbFocusBtn") {
+      root.dataset.focus = root.dataset.focus === "on" ? "off" : "on";
+      if (root.dataset.focus === "on") { closePanel(); document.getElementById("bbFocusExit").focus(); }
+    } else if (b.id === "bbReset") {
+      applySize(100); applyLh("1.75"); applyWidth("40");
+      delete root.dataset.bibleFace;
+      store.set("bible:face", "");
+      setLayout("auto");
+      announce("Text settings reset.");
     } else if (b.dataset.face) {
       root.dataset.bibleFace = b.dataset.face;
       store.set("bible:face", b.dataset.face);
     } else if (b.dataset.layout) {
-      root.dataset.bibleLayout = b.dataset.layout;
-      store.set("bible:layout", b.dataset.layout);
-      if (currentRead) { const keep = topVisibleVerse(); renderChapter(currentRead.book, currentRead.ch, keep > 1 ? keep : 0, 0, true); }
+      setLayout(b.dataset.layout);
     } else if (b.dataset.hl) {
       setHighlightColor(b.dataset.hl);
     }
@@ -803,6 +845,88 @@ function initDisplay() {
   });
   paint();
 }
+
+/* ── Chrome: current-reference label, book/chapter picker, pager, reading progress ── */
+function setRefLabel(text) {
+  const el = document.getElementById("bbRefLabel");
+  if (el) el.textContent = text;
+}
+
+const pager = document.getElementById("bbPager");
+function paintPager(b, ch, prev, next) {
+  const link = (place, dir) => place
+    ? h("a", { class: `bb-pg ${dir > 0 ? "bb-pg-next" : "bb-pg-prev"}`, href: readHref(place.book.slug, place.ch), rel: dir > 0 ? "next" : "prev",
+        title: `${place.book.name} ${place.ch}`, "aria-label": `${dir > 0 ? "Next" : "Previous"} chapter, ${place.book.name} ${place.ch}`,
+        onclick: dir > 0 ? () => setRead(b.slug, ch, true) : null }, dir < 0 ? "‹ Prev" : "Next ›")
+    : h("span", { class: "bb-pg bb-pg-off", "aria-hidden": "true" });
+  pager.replaceChildren(link(prev, -1), h("span", { class: "bb-pg-ref", text: `${b.name} ${ch}` }), link(next, 1));
+  paintProgress();
+}
+
+const progressBar = document.querySelector("#bbProgress span");
+let progressQueued = false;
+function paintProgress() {
+  progressQueued = false;
+  const t = main.querySelector(".bb-text");
+  if (root.dataset.view !== "read" || !t) { progressBar.style.width = "0"; return; }
+  const r = t.getBoundingClientRect();
+  const p = (window.innerHeight - r.top) / Math.max(r.height, 1);
+  progressBar.style.width = `${Math.round(Math.min(1, Math.max(0, p)) * 100)}%`;
+}
+window.addEventListener("scroll", () => { if (!progressQueued) { progressQueued = true; requestAnimationFrame(paintProgress); } }, { passive: true });
+if (window.ResizeObserver) new ResizeObserver(paintProgress).observe(main);
+
+const picker = document.getElementById("bbPicker");
+const pickBody = document.getElementById("bbPickBody");
+const pickTabs = document.getElementById("bbPickTabs");
+const pickMsg = document.getElementById("bbPickMsg");
+const pickInput = document.getElementById("bbPickInput");
+let pickT = "OT";
+
+function pickBooks() {
+  pickTabs.hidden = false;
+  pickTabs.querySelectorAll("[data-t]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === pickT)));
+  pickBody.replaceChildren(h("ul", { class: "bb-pick-books" }, books.filter((b) => b.t === pickT).map((b) => {
+    const done = readSet(b.slug).size;
+    return h("li", null, h("button", { type: "button", class: "bb-pick-book", "data-cat": b.cat, onclick: () => pickChapters(b) },
+      h("span", { text: b.name }), h("small", { text: done ? `${done}/${b.verses.length}` : String(b.verses.length) })));
+  })));
+}
+
+function pickChapters(b) {
+  pickTabs.hidden = true;
+  const read = readSet(b.slug);
+  const back = h("button", { type: "button", class: "bb-linkbtn bb-pick-back", onclick: () => { pickT = b.t; pickBooks(); } }, "‹ All books");
+  pickBody.replaceChildren(back,
+    h("h3", { class: "bb-pick-title", text: b.name }),
+    h("ol", { class: "bb-chapters" }, b.verses.map((_, i) => h("li", null, h("a", {
+      class: "bb-ch" + (read.has(i + 1) ? " is-read" : "") + (currentRead?.book === b && currentRead.ch === i + 1 ? " is-last" : ""),
+      href: readHref(b.slug, i + 1), "aria-label": `Chapter ${i + 1}${read.has(i + 1) ? ", read" : ""}`,
+      onclick: () => picker.close(),
+    }, String(i + 1))))));
+  pickBody.querySelector(".bb-ch.is-last, .bb-ch")?.scrollIntoView({ block: "nearest" });
+}
+
+function openPicker() {
+  pickMsg.textContent = "";
+  pickInput.value = "";
+  if (currentRead) pickChapters(currentRead.book); else pickBooks();
+  if (picker.showModal) picker.showModal(); else picker.setAttribute("open", "");
+}
+document.getElementById("bbPickBtn").addEventListener("click", openPicker);
+document.getElementById("bbPickClose").addEventListener("click", () => picker.close());
+picker.addEventListener("click", (e) => { if (e.target === picker) picker.close(); });
+pickTabs.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-t]");
+  if (b) { pickT = b.dataset.t; pickBooks(); }
+});
+document.getElementById("bbPickSearch").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const ref = parseRef(pickInput.value);
+  if (!ref) { pickMsg.textContent = `Couldn't find "${pickInput.value}". Try a book name, like Romans 8 or Ps 23.`; return; }
+  picker.close();
+  location.hash = ref.ch ? readHref(ref.book.slug, ref.ch, ref.v1, ref.v2).split("#")[1] : `/book/${ref.book.slug}`;
+});
 
 /* ── Start ───────────────────────────────────────────────────────── */
 async function start() {

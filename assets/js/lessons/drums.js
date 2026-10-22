@@ -936,6 +936,7 @@
       });
       if (next) next.classList.add('is-current');
       bar.style.width = (count / items.length * 100) + '%';
+      bar.parentNode.setAttribute('aria-valuenow', Math.round(count / items.length * 100));
       status.textContent = count + ' of ' + items.length + ' stages complete';
       if (next) {
         nextText.textContent = next.querySelector('strong').textContent;

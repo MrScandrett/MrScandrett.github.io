@@ -44,6 +44,36 @@
   var panels = element('div','composer-reading'); area.appendChild(panels);
   var controls = [];
   var active = null;
+  var headerScorePrint = null;
+  function printWork(work) {
+    var figure = work && work.figure;
+    if (!figure || !figure.scoreData) return;
+    if (figure.dataset.score === 'mozart-turkish-march' && window.MozartRondoPrintScore) window.MozartRondoPrintScore();
+    else if (window.ScoreEngine) window.ScoreEngine.printScore(figure.scoreData);
+  }
+  function updateHeaderScorePrint() {
+    if (!headerScorePrint) return;
+    var ready = !!(active && active.figure.scoreData);
+    headerScorePrint.hidden = !ready;
+    if (ready) headerScorePrint.querySelector('small').textContent = active.heading.textContent;
+  }
+  // Browser Print and the header's score action follow the piece currently open.
+  // The header's explicit Print lesson action sets data-print-lesson to opt out.
+  window.addEventListener('beforeprint', function () {
+    if (!active || !active.figure.scoreData || document.body.hasAttribute('data-print-lesson') ||
+      document.body.classList.contains('se-print-score-active') || document.body.classList.contains('mz-print-rondo')) return;
+    if (window.ScoreEngine) window.ScoreEngine.preparePrintScore(active.figure.scoreData);
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var menu = document.querySelector('.lesson-print-menu');
+    if (!menu) return;
+    headerScorePrint = element('button',null,'');
+    headerScorePrint.type = 'button';
+    headerScorePrint.innerHTML = '<strong>Print open score</strong><small></small>';
+    headerScorePrint.addEventListener('click', function () { printWork(active); });
+    menu.insertBefore(headerScorePrint,menu.firstChild);
+    updateHeaderScorePrint();
+  });
   function stop(panel) {
     panel.querySelectorAll('.se-stop').forEach(function (button) { button.click(); });
     panel.querySelectorAll('audio').forEach(function (audio) { audio.pause(); });
@@ -55,6 +85,7 @@
       item.button.setAttribute('aria-expanded',String(item === work));
     });
     active = work;
+    updateHeaderScorePrint();
     var parent = area.parentElement;
     while (parent) { if (parent.tagName === 'DETAILS') parent.open = true; parent = parent.parentElement; }
     work.panel.querySelectorAll('figure[data-score]').forEach(function (figure) {
@@ -131,21 +162,17 @@
     var listen = element('button',null,'Listen');listen.type='button';listen.disabled=true;listen.setAttribute('aria-label','Listen to '+workTitle);
     var print = element('button',null,'Print score');print.type='button';print.disabled=true;
     print.setAttribute('aria-label','Print a paginated score of '+workTitle);
-    function printReady() { print.disabled = !firstFigure.scoreData; }
+    function printReady() { print.disabled = !firstFigure.scoreData; updateHeaderScorePrint(); }
     firstFigure.addEventListener('score:data',printReady);
     printReady();
-    print.addEventListener('click',function () {
-      if (!firstFigure.scoreData) return;
-      if (firstFigure.dataset.score === 'mozart-turkish-march' && window.MozartRondoPrintScore) window.MozartRondoPrintScore();
-      else if (window.ScoreEngine) window.ScoreEngine.printScore(firstFigure.scoreData);
-    });
+    print.addEventListener('click',function () { printWork(work); });
     actions.append(read,listen,print);card.appendChild(actions);grid.appendChild(card);
     var work = {panel:panel,button:button,heading:heading,preview:preview,figure:firstFigure}; controls.push(work);
     button.addEventListener('click',function () {show(work,true,false);});
     read.addEventListener('click',function () {show(work,true,false);});
     listen.addEventListener('click',function () {show(work,true,true);});
     back.addEventListener('click',function () {
-      stop(panel);panel.hidden=true;button.setAttribute('aria-expanded','false');active=null;
+      stop(panel);panel.hidden=true;button.setAttribute('aria-expanded','false');active=null;updateHeaderScorePrint();
       shelf.scrollIntoView({block:'start',behavior:'instant'});button.focus({preventScroll:true});
       history.pushState(null,'','#composer-piece-shelf');
     });

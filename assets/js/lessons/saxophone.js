@@ -104,6 +104,7 @@
     ];
     const selectedDiatonic=MN.parsePitch(selected()[$('sxSpelling').value]).diatonic, ns='http://www.w3.org/2000/svg';
     let index=Math.max(0,naturalNotes.findIndex(note=>MN.parsePitch(note.name).diatonic===selectedDiatonic));
+    svg.setAttribute('role','group');
     svg.setAttribute('aria-label','Interactive treble staff. Choose a line or space to learn its note and saxophone fingering.');
     const highlight=document.createElementNS(ns,'rect');
     highlight.setAttribute('x','72');highlight.setAttribute('y',String(108.5-index*7));

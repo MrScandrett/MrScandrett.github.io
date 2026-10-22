@@ -225,6 +225,7 @@
       var action = event.target.closest('[data-print-action]');
       if (!action) return;
       closeMenu();
+      document.body.setAttribute('data-print-lesson', '');
       window.print();
     });
     document.addEventListener('click', function (event) {
@@ -667,6 +668,7 @@
 
   window.addEventListener('beforeprint', prepareForPrint);
   window.addEventListener('afterprint', restoreAfterPrint);
+  window.addEventListener('afterprint', function () { document.body.removeAttribute('data-print-lesson'); });
   window.ClassroomOSPrint = { prepare: prepareForPrint, restore: restoreAfterPrint };
 
   var accessibilityObserver = new MutationObserver(function (records) {
