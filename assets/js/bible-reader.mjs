@@ -768,6 +768,7 @@ function initDisplay() {
     const mode = root.dataset.readerMode || "";
     panel.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
     panel.querySelectorAll("[data-layout]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.layout === root.dataset.bibleLayout)));
+    panel.querySelectorAll("[data-face]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.face === (root.dataset.bibleFace || "serif"))));
     panel.querySelectorAll("[data-hl]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.hl === highlightColor)));
     sizeOut.textContent = size + "%";
   };
@@ -788,6 +789,9 @@ function initDisplay() {
       size = Math.min(170, Math.max(80, size + Number(b.dataset.size)));
       root.style.setProperty("--bb-scale", size / 100);
       store.set("bible:size", String(size));
+    } else if (b.dataset.face) {
+      root.dataset.bibleFace = b.dataset.face;
+      store.set("bible:face", b.dataset.face);
     } else if (b.dataset.layout) {
       root.dataset.bibleLayout = b.dataset.layout;
       store.set("bible:layout", b.dataset.layout);

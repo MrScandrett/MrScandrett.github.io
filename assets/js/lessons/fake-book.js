@@ -3247,6 +3247,13 @@
     }
     if (!GT) return null;
     var forms = GT.availableForms(rootPC, cType);
+    if ((!opts.guitarForm || opts.guitarForm === 'open' || forms.indexOf(opts.guitarForm) < 0) && SO) {
+      var key = [rootPC, cType.suffix, bassPCOf(c)].join('|');
+      var ordered = shapeOptCache[key] || (shapeOptCache[key] = SO.options(GT, {
+        rootPC: rootPC, type: cType, bassPC: bassPCOf(c)
+      }));
+      if (ordered.length) return { frets: ordered[0].frets, formName: ordered[0].family ? ordered[0].family + ' family' : 'first voicing' };
+    }
     var form = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : forms[0];
     var shape = GT.getChordShape(rootPC, cType, 0, form);
     shape.formName = form;
@@ -3261,9 +3268,9 @@
     var c = view.concertChords[chordSel];
     var automatic = opts.guitarVoice && opts.guitarVoice !== 'manual';
     var forms = c && GT ? GT.availableForms(mod(NAT[c.root.l] + c.root.a, 12), chordTypeOf(c)) : [];
-    select.innerHTML = forms.map(function (form) { return '<option value="' + form + '">' + MN.escape(form.toUpperCase() + ' form') + '</option>'; }).join('');
-    select.value = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : forms[0] || '';
-    select.disabled = !!automatic || !forms.length;
+    select.innerHTML = '<option value="open">Familiar start</option>' + forms.map(function (form) { return '<option value="' + form + '">' + MN.escape(form.toUpperCase() + ' form') + '</option>'; }).join('');
+    select.value = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : 'open';
+    select.disabled = !!automatic;
     select.title = automatic ? 'Choose manual voice leading to select a grip.' : 'Preferred grip; unavailable forms use a supported grip for each chord.';
   }
   // ---- Pick your shapes (Chords tab, guitar): scroll through every shape of each chord in the tune and
@@ -3307,13 +3314,7 @@
     var list = base.slice();
     // What the sheet would show with no pick, and what is picked now, always belong in the list.
     var auto = guitarShapeFor(rootPC, cType, ci, true), pick = pickedFrets(c);
-    function ensure(frets, tag) {
-      if (!frets) return;
-      var id = SO.toId(frets);
-      if (!list.some(function (x) { return x.id === id; })) list.unshift({ frets: frets, id: id, tag: tag, where: '', position: 0 });
-    }
-    if (auto && auto.frets) ensure(auto.frets, 'Suggested');
-    if (pick) ensure(pick, 'Your pick');
+    list = SO.withExtras(list, { rootPC: rootPC, type: cType }, [auto, pick]);
     return { list: list, rootPC: rootPC, cType: cType, autoId: auto && auto.frets ? SO.toId(auto.frets) : null, pickId: pick ? SO.toId(pick) : null };
   }
   function uniqueChords() {
@@ -3327,7 +3328,7 @@
   }
   function shapeCardHTML(u) {
     var info = shapeListFor(u.c, u.ci), n = info.list.length;
-    var at = Math.max(0, info.list.findIndex(function (x) { return x.id === (info.pickId || info.autoId); }));
+    var at = info.pickId ? Math.max(0, info.list.findIndex(function (x) { return x.id === info.pickId; })) : 0;
     var cur = info.list[at], chord = { rootPC: info.rootPC, type: info.cType };
     var label = u.key + ', shape ' + (at + 1) + ' of ' + n + ': frets low to high ' + SO.describe(cur.frets);
     var tag = [cur.tag, cur.where].filter(Boolean).join(' · ');
@@ -3339,7 +3340,7 @@
       '<span class="fb-sp-count" aria-live="polite">' + (at + 1) + ' of ' + n + '</span>' +
       '<button type="button" data-sp-step="1" aria-label="Next shape for ' + MN.escape(u.key) + '"' + (n < 2 ? ' disabled' : '') + '>›</button></div>' +
       '<div class="fb-sp-tag">' + MN.escape(tag || ' ') + '</div>' +
-      '<div class="fb-sp-state">' + (picked ? '<span class="fb-sp-pill">✓ your pick</span><button type="button" class="fb-sp-reset" data-sp-reset aria-label="Go back to the suggested shape for ' + MN.escape(u.key) + '">reset</button>' : '<span class="fb-sp-auto">suggested</span>') + '</div></div>';
+      '<div class="fb-sp-state">' + (picked ? '<span class="fb-sp-pill">✓ your pick</span><button type="button" class="fb-sp-reset" data-sp-reset aria-label="Go back to the suggested shape for ' + MN.escape(u.key) + '">reset</button>' : '<span class="fb-sp-auto">' + (info.autoId === cur.id ? 'suggested' : 'automatic grip plays until picked') + '</span>') + '</div></div>';
   }
   var pickerSig = '';
   function syncShapePicker(force) {
@@ -3387,7 +3388,7 @@
     var stepBtn = t.closest('[data-sp-step]');
     if (stepBtn) {
       var dir = Number(stepBtn.getAttribute('data-sp-step')), info = shapeListFor(u.c, u.ci), n = info.list.length;
-      var at = Math.max(0, info.list.findIndex(function (x) { return x.id === (info.pickId || info.autoId); }));
+      var at = info.pickId ? Math.max(0, info.list.findIndex(function (x) { return x.id === info.pickId; })) : 0;
       var next = info.list[(at + dir + n) % n];
       setPick(u.c, next.id);
       chordSel = u.ci;
@@ -3415,7 +3416,8 @@
   function guitarFormLabel(rootPC, c, ci) {
     var shape = guitarShapeFor(rootPC, chordTypeOf(c), ci);
     if (shape && shape.picked) return ' · your pick';
-    return shape && shape.formName ? ' · ' + (opts.guitarVoice && opts.guitarVoice !== 'manual' ? el('[data-fb-guitar-voice] option:checked').textContent : String(shape.formName).toUpperCase() + ' form') : ' · no supported compact grip';
+    return shape && shape.formName ? ' · ' + (opts.guitarVoice && opts.guitarVoice !== 'manual' ? el('[data-fb-guitar-voice] option:checked').textContent :
+      (String(shape.formName).includes('family') || shape.formName === 'first voicing') ? shape.formName : String(shape.formName).toUpperCase() + ' form') : ' · no supported compact grip';
   }
   function miniGuitar(rootPC, cType, ci) {
     var shape = guitarShapeFor(rootPC, cType, ci);
@@ -3810,11 +3812,10 @@
         if (formSelEl && opts.guitarVoice && opts.guitarVoice !== 'manual') {
           formSelEl.innerHTML = '<option>' + el('[data-fb-guitar-voice] option:checked').textContent + '</option>';
         } else if (formSelEl) {
-          formSelEl.innerHTML = forms.map(function (fm) {
+          formSelEl.innerHTML = '<option value="open">Familiar start</option>' + forms.map(function (fm) {
             return '<option value="' + fm + '">' + fm.toUpperCase() + ' form</option>';
           }).join('');
-          if (forms.indexOf(opts.guitarForm) >= 0) formSelEl.value = opts.guitarForm;
-          else { formSelEl.value = forms[0]; opts.guitarForm = forms[0]; }
+          formSelEl.value = forms.indexOf(opts.guitarForm) >= 0 ? opts.guitarForm : 'open';
         }
         var shape = guitarShapeFor(rootPC, cType, chordSel);
         if (!shape) shape = { frets: ['x', 'x', 'x', 'x', 'x', 'x'] };
