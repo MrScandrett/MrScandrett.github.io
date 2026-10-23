@@ -214,6 +214,7 @@
         'outline: 2px solid var(--theme-accent, #007aff); outline-offset: 2px;' +
       '}' +
       '.nav-search-btn .nav-search-kbd { font-family: inherit; font-size: 0.62rem; padding: 0.05rem 0.28rem; border-radius: 4px; background: rgba(125, 136, 154, 0.16); border: 1px solid rgba(125, 136, 154, 0.24); color: inherit; opacity: 0.75; line-height: 1; }' +
+      '@media (min-width: 1121px) and (max-width: 1330px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } .site-nav a { padding-left: 0.4rem; padding-right: 0.4rem; } .site-nav ul { gap: 0.05rem; } }' +
       '@media (max-width: 720px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } }' +
       /* Responsive grid for theme/canvas chips */
       '.nav-theme-grid, .nav-canvas-grid {' +
