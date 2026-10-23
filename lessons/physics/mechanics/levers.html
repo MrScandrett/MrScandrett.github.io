@@ -1,962 +1,117 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Levers · Mr. Scandrett's ClassroomOS</title>
-  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Simple Machines — Levers: all three classes, the Law of the Lever, and 5,000 years of history from the Egyptian shaduf to piano keys and bicycle brakes. Interactive balance lab included." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
-  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Explore levers with interactive balance and catapult simulations, then build classroom-safe catapults with three STEAM recipes.">
+  <title>Levers &amp; Catapults · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css">
   <style>
-    :root {
-      color-scheme: dark;
-      --lv-bg:          #060b10;
-      --lv-panel:       rgba(8,14,22,0.86);
-      --lv-line:        rgba(180,230,200,0.12);
-      --lv-line-strong: rgba(180,230,200,0.21);
-      --lv-text:        #e8f5ee;
-      --lv-muted:       rgba(232,245,238,0.68);
-      --lv-dim:         rgba(232,245,238,0.42);
-      --lv-green:       #10b981;
-      --lv-amber:       #f59e0b;
-      --lv-violet:      #8b5cf6;
-      --lv-sky:         #38bdf8;
-      --lv-rose:        #f43f5e;
-      --lv-teal:        #2dd4bf;
-      --lv-radius:      8px;
-      --lv-shadow:      0 24px 64px rgba(0,0,0,0.38);
-    }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      font-family: var(--font-sans, 'Inter', sans-serif);
-      color: var(--lv-text);
-      background:
-        linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px),
-        linear-gradient(180deg, #030a08 0%, #060b10 50%, #060b10 100%);
-      background-size: 34px 34px, 34px 34px, auto;
-      min-height: 100vh;
-    }
-    body::before {
-      content: ""; position: fixed; inset: 0; pointer-events: none;
-      background:
-        linear-gradient(120deg, rgba(16,185,129,0.08), transparent 28%),
-        linear-gradient(260deg, rgba(245,158,11,0.05), transparent 34%);
-      mask-image: linear-gradient(180deg, #000, transparent 70%);
-    }
-
-    /* ── Shell ───────────────────────────────────────── */
-    .lv-shell { width: min(1280px, calc(100% - 2rem)); margin: 0 auto; padding: 1rem 0 4rem; display: grid; gap: 1rem; }
-
-    /* ── Topbar ──────────────────────────────────────── */
-    .lv-topbar { position: sticky; top: 0; z-index: 30; backdrop-filter: blur(18px) saturate(140%); background: rgba(6,11,16,0.91); border-bottom: 1px solid var(--lv-line); }
-    .lv-topbar-inner { width: min(1280px, calc(100% - 2rem)); min-height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .lv-topbar a { color: #a7d9c0; text-decoration: none; font-size: 0.82rem; font-weight: 700; }
-    .lv-topbar a:hover { color: #fff; }
-    .lv-brand { color: #e8f5ee; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
-    .lv-nav { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
-    .lv-nav::-webkit-scrollbar { display: none; }
-    .lv-nav a { display: inline-flex; align-items: center; min-height: 1.85rem; padding: 0 0.55rem; border-radius: var(--lv-radius); color: var(--lv-dim); white-space: nowrap; text-decoration: none; font-size: 0.82rem; font-weight: 600; }
-    .lv-nav a:hover { color: var(--lv-text); background: rgba(255,255,255,0.06); }
-    .lv-pills { display: flex; gap: 0.4rem; flex-shrink: 0; }
-    .lv-pill { display: inline-flex; align-items: center; height: 1.7rem; padding: 0 0.62rem; border-radius: var(--lv-radius); font-size: 0.69rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; border: 1px solid rgba(16,185,129,0.38); background: rgba(16,185,129,0.10); color: #6ee7b7; }
-    .lv-pill.amber { border-color: rgba(245,158,11,0.36); background: rgba(245,158,11,0.10); color: #fde68a; }
-    @media (max-width: 960px) { .lv-brand { display: none; } }
-    @media (max-width: 740px) { .lv-nav { display: none; } }
-
-    /* ── Hero ────────────────────────────────────────── */
-    .lv-hero { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(280px,0.7fr); gap: 1rem; align-items: stretch; min-height: min(520px,calc(100vh - 88px)); }
-    @media (max-width: 700px) { .lv-hero { grid-template-columns: 1fr; } }
-    .lv-hero-copy { border-radius: var(--lv-radius); border: 1px solid var(--lv-line-strong); background: linear-gradient(120deg, rgba(16,185,129,0.08), transparent 42%), linear-gradient(180deg, rgba(8,20,14,0.93), rgba(4,12,8,0.93)); box-shadow: var(--lv-shadow); padding: clamp(1.2rem,3vw,2.2rem); display: flex; flex-direction: column; justify-content: center; }
-    .lv-eyebrow { font-size: 0.71rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lv-green); margin: 0 0 0.65rem; }
-    .lv-hero-copy h1 { margin: 0 0 0.65rem; max-width: 14ch; font-size: clamp(2.2rem,6vw,5rem); line-height: 0.93; letter-spacing: -0.055em; color: #fff; }
-    .lv-hero-copy h1 em { font-style: normal; color: var(--lv-green); }
-    .lv-lede { max-width: 72ch; color: var(--lv-muted); font-size: clamp(0.93rem,1.4vw,1.04rem); line-height: 1.72; margin: 0 0 1rem; }
-    .lv-meta { display: flex; flex-wrap: wrap; gap: 0.38rem; }
-    .lv-quote-card { border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.26); background: linear-gradient(180deg, rgba(16,185,129,0.08), transparent 56%), rgba(6,14,10,0.82); padding: clamp(1.1rem,2.2vw,1.75rem); display: flex; flex-direction: column; justify-content: center; gap: 0.85rem; box-shadow: var(--lv-shadow); }
-    .lv-quote-mark { font-size: 2.8rem; line-height: 0.8; color: var(--lv-green); opacity: 0.6; }
-    .lv-quote-text { font-size: clamp(0.9rem,1.9vw,1.08rem); font-style: italic; line-height: 1.62; color: #d1fae5; margin: 0; }
-    .lv-quote-attr { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lv-green); opacity: 0.9; }
-
-    /* ── Cards ───────────────────────────────────────── */
-    .lv-card { border-radius: var(--lv-radius); border: 1px solid var(--lv-line); background: var(--lv-panel); backdrop-filter: blur(10px); padding: clamp(1.1rem,2vw,1.55rem); scroll-margin-top: 72px; }
-    .lv-green-acc  { border-left: 4px solid var(--lv-green); }
-    .lv-amber-acc  { border-left: 4px solid var(--lv-amber); }
-    .lv-violet-acc { border-left: 4px solid var(--lv-violet); }
-    .lv-sky-acc    { border-left: 4px solid var(--lv-sky); }
-    .lv-teal-acc   { border-left: 4px solid var(--lv-teal); }
-    .lv-kicker { font-size: 0.69rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 0.4rem; }
-    .lv-green-k  { color: var(--lv-green); }
-    .lv-amber-k  { color: var(--lv-amber); }
-    .lv-violet-k { color: var(--lv-violet); }
-    .lv-sky-k    { color: var(--lv-sky); }
-    .lv-teal-k   { color: var(--lv-teal); }
-    .lv-card h2 { margin: 0 0 0.7rem; font-size: clamp(1.18rem,2.3vw,1.6rem); letter-spacing: -0.03em; color: #fff; }
-    .lv-card h3 { margin: 1rem 0 0.32rem; font-size: 0.99rem; letter-spacing: -0.02em; color: #c7f5e2; }
-    .lv-card p, .lv-card li { color: var(--lv-muted); font-size: 0.9rem; line-height: 1.72; margin: 0 0 0.62rem; }
-    .lv-card p:last-child { margin-bottom: 0; }
-    .lv-card ul { padding-left: 1.35rem; margin: 0.35rem 0 0.65rem; }
-
-    /* ── Two-column ──────────────────────────────────── */
-    .lv-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 600px) { .lv-two { grid-template-columns: 1fr; } }
-
-    /* ── Info boxes ──────────────────────────────────── */
-    .lv-box { border-radius: var(--lv-radius); padding: 0.95rem 1.15rem; margin: 0.85rem 0; }
-    .lv-box.green  { background: rgba(16,185,129,0.09);  border: 1px solid rgba(16,185,129,0.26); }
-    .lv-box.amber  { background: rgba(245,158,11,0.09);  border: 1px solid rgba(245,158,11,0.26); }
-    .lv-box.violet { background: rgba(139,92,246,0.09);  border: 1px solid rgba(139,92,246,0.26); }
-    .lv-box.sky    { background: rgba(56,189,248,0.08);  border: 1px solid rgba(56,189,248,0.26); }
-    .lv-box.teal   { background: rgba(45,212,191,0.08);  border: 1px solid rgba(45,212,191,0.26); }
-    .lv-box strong { display: block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 0.32rem; }
-    .lv-box.green  strong { color: var(--lv-green); }
-    .lv-box.amber  strong { color: var(--lv-amber); }
-    .lv-box.violet strong { color: var(--lv-violet); }
-    .lv-box.sky    strong { color: var(--lv-sky); }
-    .lv-box.teal   strong { color: var(--lv-teal); }
-    .lv-box p { margin: 0; font-size: 0.87rem; color: rgba(232,245,238,0.8); line-height: 1.65; }
-
-    /* ── Equations ───────────────────────────────────── */
-    .lv-eq { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: clamp(1rem,2.5vw,1.38rem); color: var(--lv-green); text-align: center; padding: 0.9rem; letter-spacing: 0.04em; border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.22); background: rgba(16,185,129,0.07); margin: 0.75rem 0; }
-    .lv-eq.amber  { color: var(--lv-amber);  border-color: rgba(245,158,11,0.22);  background: rgba(245,158,11,0.07); }
-    .lv-eq.violet { color: var(--lv-violet); border-color: rgba(139,92,246,0.22); background: rgba(139,92,246,0.07); }
-
-    /* ── Class cards (three lever classes) ───────────── */
-    .lv-classes { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin: 1rem 0; }
-    @media (max-width: 640px) { .lv-classes { grid-template-columns: 1fr; } }
-    .lv-class-card { border-radius: var(--lv-radius); padding: 1rem 1.1rem; border: 1px solid var(--lv-line); background: rgba(255,255,255,0.024); }
-    .lv-class-badge { display: inline-flex; align-items: center; height: 1.55rem; padding: 0 0.58rem; border-radius: 6px; font-size: 0.67rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
-    .lv-class-badge.c1 { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
-    .lv-class-badge.c2 { background: rgba(245,158,11,0.13); color: #fde68a; border: 1px solid rgba(245,158,11,0.28); }
-    .lv-class-badge.c3 { background: rgba(139,92,246,0.13); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.28); }
-    .lv-class-card h3 { margin: 0 0 0.3rem; font-size: 0.92rem; font-weight: 700; color: #fff; }
-    .lv-class-pos { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; margin: 0 0 0.4rem; }
-    .lv-class-card p { font-size: 0.8rem; color: var(--lv-muted); line-height: 1.6; margin: 0 0 0.4rem; }
-    .lv-class-ma { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.8rem; font-weight: 700; }
-    .lv-class-examples { font-size: 0.76rem; color: var(--lv-dim); margin-top: 0.4rem; }
-
-    /* ── Timeline ────────────────────────────────────── */
-    .lv-timeline { position: relative; padding-left: 1.8rem; margin: 1rem 0 0; }
-    .lv-timeline::before { content: ""; position: absolute; left: 0.55rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: linear-gradient(180deg, var(--lv-green), var(--lv-amber) 55%, var(--lv-violet)); border-radius: 2px; }
-    .lv-tl-item { position: relative; margin-bottom: 1.05rem; }
-    .lv-tl-item:last-child { margin-bottom: 0; }
-    .lv-tl-dot { position: absolute; left: -1.35rem; top: 0.26rem; width: 10px; height: 10px; border-radius: 50%; background: #060b10; }
-    .lv-tl-item:nth-child(3n+1) .lv-tl-dot { border: 2px solid var(--lv-green); }
-    .lv-tl-item:nth-child(3n+2) .lv-tl-dot { border: 2px solid var(--lv-amber); }
-    .lv-tl-item:nth-child(3n)   .lv-tl-dot { border: 2px solid var(--lv-violet); }
-    .lv-tl-date  { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 0.12rem; }
-    .lv-tl-item:nth-child(3n+1) .lv-tl-date { color: var(--lv-green); }
-    .lv-tl-item:nth-child(3n+2) .lv-tl-date { color: var(--lv-amber); }
-    .lv-tl-item:nth-child(3n)   .lv-tl-date { color: var(--lv-violet); }
-    .lv-tl-title { font-size: 0.9rem; font-weight: 700; color: #fff; margin: 0 0 0.16rem; }
-    .lv-tl-desc  { font-size: 0.8rem; color: var(--lv-muted); line-height: 1.56; margin: 0; }
-
-    /* ── Applications grid ───────────────────────────── */
-    .lv-apps { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 0.62rem; margin: 0.9rem 0; }
-    .lv-app-card { border-radius: var(--lv-radius); padding: 0.85rem 0.95rem; border: 1px solid var(--lv-line); background: rgba(255,255,255,0.024); }
-    .lv-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .lv-app-name { font-size: 0.84rem; font-weight: 700; color: #d1fae5; margin-bottom: 0.18rem; }
-    .lv-app-class { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
-    .lv-app-class.c1 { color: var(--lv-green); }
-    .lv-app-class.c2 { color: var(--lv-amber); }
-    .lv-app-class.c3 { color: var(--lv-violet); }
-    .lv-app-desc { font-size: 0.73rem; color: rgba(210,240,220,0.50); line-height: 1.45; }
-
-    /* ── Simulations ─────────────────────────────────── */
-    .lv-sim { border-radius: var(--lv-radius); border: 1px solid var(--lv-line); overflow: hidden; background: #020a06; box-shadow: 0 16px 48px rgba(0,0,0,0.32); scroll-margin-top: 72px; }
-    .lv-sim-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; padding: 0.95rem 1.15rem 0.7rem; background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent); }
-    .lv-sim-hl { display: flex; flex-direction: column; gap: 0.18rem; }
-    .lv-sim-title { font-size: 0.77rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
-    .lv-sim-sub { font-size: 0.77rem; color: rgba(210,240,220,0.44); }
-    .lv-sim canvas { display: block; width: 100%; }
-    .lv-sim-controls { display: flex; flex-wrap: wrap; gap: 0.48rem 0.85rem; padding: 0.75rem 1.15rem; background: rgba(0,0,0,0.32); border-top: 1px solid rgba(255,255,255,0.06); }
-    .lv-ctrl { display: flex; flex-direction: column; gap: 0.2rem; min-width: 110px; }
-    .lv-ctrl label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(210,240,220,0.42); }
-    .lv-ctrl input[type="range"] { accent-color: var(--lv-green); cursor: pointer; width: 100%; }
-    .lv-ctrl-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.72rem; font-weight: 700; color: var(--lv-green); }
-    .lv-ctrl-val.amber  { color: var(--lv-amber); }
-    .lv-ctrl-val.violet { color: var(--lv-violet); }
-    .lv-readout { display: flex; flex-wrap: wrap; gap: 0.42rem; padding: 0.62rem 1.15rem; }
-    .lv-chip { display: flex; flex-direction: column; gap: 0.1rem; border-radius: var(--lv-radius); padding: 0.42rem 0.62rem; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.026); }
-    .lv-chip-label { font-size: 0.61rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(210,240,220,0.36); }
-    .lv-chip-val { font-family: "JetBrains Mono",ui-monospace,monospace; font-size: 0.83rem; font-weight: 700; color: #c7f5e2; }
-    .lv-chip-val.balanced   { color: var(--lv-green); }
-    .lv-chip-val.unbalanced { color: var(--lv-rose); }
-    .lv-btn { padding: 0.44rem 0.88rem; border-radius: var(--lv-radius); border: 1px solid rgba(16,185,129,0.42); background: rgba(16,185,129,0.12); color: #6ee7b7; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.14s; }
-    .lv-btn:hover { background: rgba(16,185,129,0.22); }
-    .lv-btn.active { background: rgba(16,185,129,0.28); border-color: rgba(16,185,129,0.6); }
-    .lv-btn.amber { border-color: rgba(245,158,11,0.42); background: rgba(245,158,11,0.12); color: #fde68a; }
-    .lv-btn.amber:hover, .lv-btn.amber.active { background: rgba(245,158,11,0.26); }
-    .lv-btn.violet { border-color: rgba(139,92,246,0.42); background: rgba(139,92,246,0.12); color: #c4b5fd; }
-    .lv-btn.violet:hover, .lv-btn.violet.active { background: rgba(139,92,246,0.26); }
-    .lv-class-info { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; padding: 0.65rem 1.15rem; background: rgba(0,0,0,0.22); border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--lv-muted); }
-    .lv-class-info strong { color: #c7f5e2; }
-
-    /* ── Footer ──────────────────────────────────────── */
-    .lv-footer { text-align: center; padding: 2rem 1rem; color: var(--lv-dim); font-size: 0.78rem; border-top: 1px solid var(--lv-line); background: rgba(6,11,16,0.66); }
-    .lv-footer a { color: var(--lv-green); text-decoration: none; }
+    :root{color-scheme:dark;--bg:#061014;--panel:#0c1c21;--panel2:#10262c;--ink:#f4fbf8;--muted:#b7d0c9;--line:#29434a;--green:#4ade80;--mint:#5eead4;--amber:#fbbf24;--violet:#c084fc;--sky:#38bdf8;--red:#fb7185;--r:18px;--shadow:0 24px 60px #0007}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 16% 8%,#124530 0,transparent 28rem),radial-gradient(circle at 88% 35%,#182d53 0,transparent 32rem),var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.6}.skip-link{position:fixed;left:1rem;top:-5rem;z-index:100;padding:.7rem 1rem;background:#fff;color:#111;border-radius:8px}.skip-link:focus{top:1rem}.wrap{width:min(1180px,calc(100% - 2rem));margin:auto}.lesson-nav{position:sticky;top:0;z-index:30;border-bottom:1px solid #ffffff1c;background:#061014ed;backdrop-filter:blur(18px)}.lesson-nav .wrap{min-height:58px;display:flex;align-items:center;gap:1rem}.back{color:var(--mint);text-decoration:none;font-weight:800;white-space:nowrap}.jump{display:flex;gap:.25rem;margin-left:auto;overflow:auto;scrollbar-width:none}.jump a{color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:700;padding:.48rem .65rem;border-radius:9px;white-space:nowrap}.jump a:hover,.jump a:focus-visible{color:#fff;background:#ffffff12}.hero{padding:clamp(2.4rem,7vw,6rem) 0 2rem}.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:1rem}.hero-copy,.hero-art,.card,.sim{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(145deg,#10252be8,#09161be8);box-shadow:var(--shadow)}.hero-copy{padding:clamp(1.5rem,4vw,3.5rem)}.eyebrow,.kicker{margin:0 0 .55rem;color:var(--green);font-size:.74rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.hero h1{margin:0;max-width:11ch;font-size:clamp(2.7rem,7vw,6rem);line-height:.92;letter-spacing:-.065em}.hero h1 span{color:var(--green)}.lede{max-width:62ch;color:var(--muted);font-size:clamp(1rem,1.7vw,1.15rem)}.badges,.legend{display:flex;flex-wrap:wrap;gap:.48rem}.badge{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .65rem;border:1px solid #4ade8066;border-radius:999px;background:#4ade8012;color:#b9f6ce;font-size:.75rem;font-weight:800}.badge.amber{border-color:#fbbf2466;background:#fbbf2412;color:#fde68a}.hero-art{min-height:340px;padding:1.2rem;display:grid;place-items:center;overflow:hidden}.hero-art svg{width:100%;height:auto;filter:drop-shadow(0 14px 18px #0008)}main{display:grid;gap:1rem;padding-bottom:4rem}.card{padding:clamp(1.2rem,3vw,2rem);scroll-margin-top:72px}.card h2{margin:.05rem 0 .6rem;font-size:clamp(1.4rem,3vw,2.1rem);letter-spacing:-.04em}.card h3{margin:.3rem 0;color:#fff}.card p,.card li{color:var(--muted)}.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.concept{padding:1rem;border:1px solid var(--line);border-radius:14px;background:#ffffff08}.equation{font:800 clamp(1rem,3vw,1.45rem)/1.35 "JetBrains Mono",monospace;text-align:center;color:var(--mint);padding:1rem;border-radius:12px;background:#071114;border:1px solid #5eead444}.classes{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}.class-card{padding:1rem;border:1px solid var(--line);border-radius:14px;background:#ffffff07}.class-card strong{display:block;font-size:1.1rem}.sequence{font:800 .88rem "JetBrains Mono",monospace;margin:.7rem 0}.f{color:var(--violet)}.e{color:var(--green)}.l{color:var(--amber)}.sim{overflow:hidden;scroll-margin-top:72px}.sim-head{padding:1rem 1.2rem .75rem;display:flex;gap:1rem;justify-content:space-between;align-items:flex-start}.sim-title{font-weight:900}.sim-sub{color:var(--muted);font-size:.86rem}.sim canvas{display:block;width:100%;height:auto;background:linear-gradient(#071a21,#0d2530 70%,#112d23 70%)}.controls{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:.8rem;padding:1rem 1.2rem;background:#050d10}.control label{display:flex;justify-content:space-between;gap:.5rem;color:var(--muted);font-size:.72rem;font-weight:800;text-transform:uppercase}.control output{color:var(--green);font-family:"JetBrains Mono",monospace}.control input{width:100%;accent-color:var(--green)}.readouts{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;padding:0 1.2rem 1.1rem;background:#050d10}.readout{padding:.6rem .75rem;border:1px solid var(--line);border-radius:11px;background:#ffffff08}.readout small{display:block;color:#86a59d;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.readout strong{font:800 .9rem "JetBrains Mono",monospace}.status{color:var(--amber)!important}.actions{display:flex;gap:.5rem;flex-wrap:wrap}.button{appearance:none;border:1px solid #4ade8077;border-radius:10px;padding:.62rem .9rem;background:#4ade8020;color:#c8fbd9;font:800 .82rem Inter;cursor:pointer}.button:hover,.button:focus-visible{background:#4ade8038}.button.secondary{border-color:#38bdf877;background:#38bdf81a;color:#c8efff}.challenge{padding:.85rem 1rem;margin:.8rem 1.2rem 1.1rem;border-left:4px solid var(--amber);border-radius:10px;background:#fbbf2410;color:#fef3c7;font-size:.86rem}.recipes{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}.recipe{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:16px;background:#ffffff07;overflow:hidden}.recipe-visual{height:170px;display:grid;place-items:center;background:linear-gradient(135deg,#153c35,#17283e)}.recipe-visual svg{width:90%;height:145px}.recipe-body{padding:1rem;display:flex;flex:1;flex-direction:column}.recipe h3{font-size:1.1rem}.recipe .level{color:var(--green);font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.materials{padding-left:1.1rem}.steps{padding-left:1.35rem}.steps li{margin:.38rem 0}.science{margin-top:auto;padding:.75rem;border-radius:10px;background:#5eead410;color:#bff8ee;font-size:.82rem}.safety{border-color:#fb718566;background:linear-gradient(145deg,#361622,#171216)}.safety .kicker{color:var(--red)}.test-table{width:100%;border-collapse:collapse}.test-table th,.test-table td{padding:.7rem;border-bottom:1px solid var(--line);text-align:left}.test-table th{color:var(--mint);font-size:.73rem;text-transform:uppercase}.test-table td{color:var(--muted)}footer{padding:2rem;text-align:center;color:#86a59d;border-top:1px solid var(--line)}footer a{color:var(--mint)}
+    .lever-diagram{position:relative;height:72px;margin:.75rem 0;border-bottom:2px solid #ffffff18}.lever-diagram .beam{position:absolute;left:8%;right:8%;top:31px;height:8px;border-radius:8px;background:linear-gradient(90deg,var(--amber),#fff3b4 50%,var(--green));transform:rotate(-4deg)}.lever-diagram .pivot{position:absolute;top:39px;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:27px solid var(--violet);transform:translateX(-50%)}.lever-diagram .node{position:absolute;top:1px;transform:translateX(-50%);font:900 .68rem Inter;padding:.22rem .4rem;border-radius:6px;color:#071014}.lever-diagram .node.e{background:var(--green)}.lever-diagram .node.l{background:var(--amber)}.lever-diagram.c1 .pivot{left:50%}.lever-diagram.c1 .node.e{left:14%}.lever-diagram.c1 .node.l{left:86%}.lever-diagram.c2 .pivot{left:12%}.lever-diagram.c2 .node.l{left:48%}.lever-diagram.c2 .node.e{left:87%}.lever-diagram.c3 .pivot{left:12%}.lever-diagram.c3 .node.e{left:47%}.lever-diagram.c3 .node.l{left:87%}
+    .photo-atlas{display:grid;grid-template-columns:1.2fr .8fr .8fr;grid-template-rows:240px 240px;gap:.75rem}.photo-card{position:relative;min-height:0;margin:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#071014}.photo-card:first-child{grid-row:1/3}.photo-card:last-child{grid-column:2/4}.photo-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease,filter .5s ease}.photo-card:hover img{transform:scale(1.025);filter:saturate(1.08)}.photo-card figcaption{position:absolute;left:0;right:0;bottom:0;padding:3.8rem .9rem .85rem;background:linear-gradient(transparent,#020607f2 48%);color:#d7ebe5;font-size:.76rem;line-height:1.45}.photo-card figcaption strong{display:block;color:#fff;font-size:.9rem}.photo-card figcaption a{color:var(--mint)}.photo-tag{position:absolute;top:.7rem;left:.7rem;z-index:2;padding:.25rem .48rem;border-radius:6px;background:#071014db;color:#fff;font:900 .65rem Inter;letter-spacing:.08em;text-transform:uppercase}
+    .timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-top:1rem}.era{position:relative;padding:1rem;border:1px solid var(--line);border-top:4px solid var(--green);border-radius:12px;background:#ffffff07}.era:nth-child(2){border-top-color:var(--amber)}.era:nth-child(3){border-top-color:var(--violet)}.era:nth-child(4){border-top-color:var(--sky)}.era time{color:var(--mint);font:800 .7rem "JetBrains Mono",monospace}.era h3{font-size:.95rem}.era p{font-size:.8rem!important;margin-bottom:0}.application-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem}.application{padding:.9rem;border:1px solid var(--line);border-radius:12px;background:#ffffff07}.application .icon{font-size:1.8rem}.application b{display:block;color:#fff}.application small{color:var(--muted)}
+    body{background:radial-gradient(circle at 16% 8%,#124530 0,transparent 28rem),radial-gradient(circle at 88% 35%,#182d53 0,transparent 32rem),#061014!important;color:#f4fbf8!important}
+    body .hero-copy,body .hero-art,body .card,body .sim{background:linear-gradient(145deg,#10252bf5,#09161bf5)!important;border-color:#355159!important;color:#f4fbf8!important}
+    body .class-card,body .concept,body .recipe,body .era,body .application{background:#ffffff08!important;border-color:#355159!important;color:#f4fbf8!important}
+    .hero h1,.card h2,.card h3,.sim-title,.recipe h3,.recipe h4{color:#f4fbf8!important}
+    .lede,.card p,.card li,.sim-sub,.control label,.test-table td{color:#b7d0c9!important}
+    .hero h1 span{color:#4ade80!important}
+    @media(max-width:820px){.hero-grid,.grid-2{grid-template-columns:1fr}.hero-art{min-height:240px}.controls,.readouts{grid-template-columns:repeat(2,1fr)}.recipes{grid-template-columns:1fr}.classes{grid-template-columns:1fr}.photo-atlas{grid-template-columns:1fr 1fr;grid-template-rows:300px 220px 260px}.photo-card:first-child{grid-column:1/3;grid-row:auto}.photo-card:last-child{grid-column:1/3}.timeline,.application-grid{grid-template-columns:repeat(2,1fr)}.jump a:nth-child(-n+2){display:none}}
+    @media(max-width:500px){.wrap{width:min(100% - 1rem,1180px)}.lesson-nav .wrap{min-height:52px}.controls,.readouts{grid-template-columns:1fr 1fr;padding-left:.75rem;padding-right:.75rem}.sim-head{padding:.85rem}.hero{padding-top:1.2rem}.hero-copy{padding:1.25rem}.hero-art{display:none}.test-table{font-size:.78rem}.photo-atlas{display:grid;grid-template-columns:1fr;grid-template-rows:repeat(4,240px)}.photo-card:first-child,.photo-card:last-child{grid-column:auto}.timeline,.application-grid{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{.lesson-nav,.actions,.controls{display:none}.hero-copy,.card,.sim{box-shadow:none}.recipes{grid-template-columns:1fr 1fr}body{background:#fff;color:#111}.card p,.card li,.sim-sub{color:#333}}
   </style>
 </head>
 <body>
-<a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+  <a class="skip-link" href="#main-content">Skip to lesson</a>
+  <header class="site-header"><div class="nav-wrap"><a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a><nav class="site-nav" aria-label="Primary"><ul><li><a href="../../../index.html">Home</a></li><li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../../paths.html">Paths</a></li><li><a href="../../../showcase.html">Showcase</a></li><li><a href="../../../applications.html">Apps</a></li><li><a href="../../../about.html">About</a></li></ul></nav></div></header>
+  <nav class="lesson-nav" aria-label="Lesson sections"><div class="wrap"><a class="back" href="../../../steam-lessons.html">← Lessons</a><div class="jump"><a href="#learn">Learn</a><a href="#atlas">Photo atlas</a><a href="#balance">Balance lab</a><a href="#launcher">Catapult lab</a><a href="#history">History</a><a href="#build">Build recipes</a><a href="#modern">Modern levers</a><a href="#test">Test &amp; improve</a></div></div></nav>
 
+  <section class="hero"><div class="wrap hero-grid"><div class="hero-copy"><p class="eyebrow">Physics · Engineering · Hands-on STEAM</p><h1 id="main-content">Levers <span>launch ideas.</span></h1><p class="lede">Move heavy loads, trade force for distance, and discover how a catapult turns stored energy into motion. Change the variables on screen, then build and test your own classroom-safe design.</p><div class="badges"><span class="badge">⚖ 2 live simulations</span><span class="badge amber">🛠 3 build recipes</span><span class="badge">Grades 3–10</span></div></div><div class="hero-art" aria-hidden="true"><svg viewBox="0 0 520 360"><defs><linearGradient id="beam" x1="0" x2="1"><stop stop-color="#fbbf24"/><stop offset=".52" stop-color="#fff0a6"/><stop offset="1" stop-color="#4ade80"/></linearGradient><radialGradient id="ball"><stop stop-color="#fff"/><stop offset=".3" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></radialGradient></defs><path d="M65 306H470" stroke="#315a4c" stroke-width="8" stroke-linecap="round"/><path d="M260 255l-42 51h84z" fill="#c084fc" opacity=".8"/><g transform="rotate(-17 260 245)"><rect x="72" y="230" width="380" height="22" rx="11" fill="url(#beam)"/><path d="M417 232v-75q0-20 20-20h14" fill="none" stroke="#4ade80" stroke-width="13" stroke-linecap="round"/></g><path d="M427 110Q377 22 286 68" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="9 10"/><circle cx="427" cy="110" r="17" fill="url(#ball)"/><path d="M145 241v54" stroke="#fbbf24" stroke-width="5"/><rect x="116" y="286" width="58" height="30" rx="5" fill="#fbbf24" opacity=".75"/><text x="257" y="339" text-anchor="middle" fill="#b7d0c9" font-family="Inter" font-weight="800" font-size="14">EFFORT × ARM = LOAD × ARM</text></svg></div></div></section>
 
-<div class="lv-topbar">
-  <div class="lv-topbar-inner">
-    <a href="../../../steam-lessons.html">← Lessons</a>
-    <span class="lv-brand">Mr. Scandrett's ClassroomOS</span>
-    <nav class="lv-nav">
-      <a href="#what">What Is It?</a>
-      <a href="#sim1">Balance Lab</a>
-      <a href="#classes">3 Classes</a>
-      <a href="#sim2">Class Explorer</a>
-      <a href="#history">History</a>
-      <a href="#modern">Modern</a>
-    </nav>
-    <div class="lv-pills">
-      <span class="lv-pill">Simple Machines</span>
-      <span class="lv-pill amber">Physics</span>
-    </div>
-  </div>
-</div>
+  <main class="wrap">
+    <section class="card" id="learn"><p class="kicker">The big idea</p><h2>A lever is a rigid bar that rotates around a fulcrum.</h2><div class="grid-2"><div><p>Your push or pull is the <strong>effort</strong>. The object you want to move is the <strong>load</strong>. Distance from each force to the fulcrum controls the turning effect, called <strong>torque</strong>.</p><div class="equation">torque = force × perpendicular distance</div><p>A longer effort arm lets a smaller force balance a larger load. The trade-off is distance: your end moves farther while the load moves less. No free energy—just a useful exchange.</p></div><div><div class="classes"><article class="class-card"><strong>Class 1</strong><div class="sequence"><span class="e">E</span> — <span class="f">F</span> — <span class="l">L</span></div><p>Fulcrum in the middle. Seesaw, scissors, claw hammer.</p></article><article class="class-card"><strong>Class 2</strong><div class="sequence"><span class="f">F</span> — <span class="l">L</span> — <span class="e">E</span></div><p>Load in the middle. Wheelbarrow, bottle opener.</p></article><article class="class-card"><strong>Class 3</strong><div class="sequence"><span class="f">F</span> — <span class="e">E</span> — <span class="l">L</span></div><p>Effort in the middle. Forearm, broom, fishing rod.</p></article></div><div class="concept"><h3>Spot the pattern</h3><p>The letter in the middle names the class: <b>F</b> in the middle is Class 1, <b>L</b> is Class 2, and <b>E</b> is Class 3.</p></div></div></div></section>
 
-<div class="lv-shell">
+    <section class="sim" id="balance" aria-labelledby="balance-title"><div class="sim-head"><div><div class="sim-title" id="balance-title">⚖ Balance Lab</div><div class="sim-sub">Make the two torque arrows match. Large labels and color coding show what each variable does.</div></div><div class="legend"><span class="badge">Effort</span><span class="badge amber">Load</span></div></div><canvas id="balanceCanvas" width="1160" height="430" aria-label="Animated lever balance showing effort, load, fulcrum, and torque"></canvas><div class="controls"><div class="control"><label for="fulcrum">Fulcrum <output id="fulcrumOut">4.0 m</output></label><input id="fulcrum" type="range" min="15" max="70" value="40"></div><div class="control"><label for="load">Load <output id="loadOut">60 N</output></label><input id="load" type="range" min="10" max="150" value="60"></div><div class="control"><label for="effort">Effort <output id="effortOut">30 N</output></label><input id="effort" type="range" min="5" max="100" value="30"></div><div class="actions"><button class="button" id="balanceIt" type="button">Balance it for me</button><button class="button secondary" id="balanceReset" type="button">Reset</button></div></div><div class="readouts"><div class="readout"><small>Effort torque</small><strong id="effortTorque">120 N·m</strong></div><div class="readout"><small>Load torque</small><strong id="loadTorque">240 N·m</strong></div><div class="readout"><small>Mechanical advantage</small><strong id="ma">1.00×</strong></div><div class="readout"><small>Result</small><strong class="status" id="balanceStatus" aria-live="polite">Load wins</strong></div></div><div class="challenge"><strong>Try it:</strong> Keep the load at 60 N and effort at 30 N. Where must the fulcrum move for the lever to balance? Explain why.</div></section>
 
-  <!-- ── Hero ──────────────────────────────────────── -->
-  <div class="lv-hero">
-    <div class="lv-hero-copy">
-      <p class="lv-eyebrow">Simple Machines · Classical Mechanics · History of Technology</p>
-      <h1 id="main-content">The <em>Lever</em></h1>
-      <p class="lv-lede">
-        The oldest tool in human history. A rigid bar on a pivot can move mountains — literally.
-        Three arrangements, one law, and the physics that put a human hand in charge of forces
-        a hundred times its own. From the shaduf on the Nile to the piano key under your finger.
-      </p>
-      <div class="lv-meta">
-        <span class="lv-pill">F × d = F × d</span>
-        <span class="lv-pill amber">2 Simulations</span>
-        <span class="lv-pill">Grades 3–10</span>
+    <section class="sim" id="launcher" aria-labelledby="launcher-title"><div class="sim-head"><div><div class="sim-title" id="launcher-title">🚀 Catapult Launch Lab</div><div class="sim-sub">Change the arm, launch angle, pull-back, and projectile mass. Predict first—then launch.</div></div><div class="actions"><button class="button" id="launch" type="button">Launch!</button><button class="button secondary" id="launchReset" type="button">Reset</button></div></div><canvas id="catapultCanvas" width="1160" height="500" aria-label="Catapult simulation showing a projectile trajectory and measured range"></canvas><div class="controls"><div class="control"><label for="arm">Arm length <output id="armOut">40 cm</output></label><input id="arm" type="range" min="20" max="60" value="40"></div><div class="control"><label for="angle">Release angle <output id="angleOut">45°</output></label><input id="angle" type="range" min="20" max="70" value="45"></div><div class="control"><label for="pull">Pull-back <output id="pullOut">60%</output></label><input id="pull" type="range" min="20" max="100" value="60"></div><div class="control"><label for="mass">Projectile mass <output id="massOut">5 g</output></label><input id="mass" type="range" min="2" max="20" value="5"></div></div><div class="readouts"><div class="readout"><small>Launch speed</small><strong id="speedRead">8.2 m/s</strong></div><div class="readout"><small>Predicted range</small><strong id="rangeRead">6.8 m</strong></div><div class="readout"><small>Flight time</small><strong id="timeRead">1.2 s</strong></div><div class="readout"><small>Best result</small><strong id="bestRead">—</strong></div></div><div class="challenge"><strong>Fair-test mission:</strong> Change only one variable at a time. Does 45° always travel farthest? Real catapults lose energy to air drag, arm flex, friction, and an imperfect release, so classroom results will differ from this simplified model.</div></section>
+
+    <section class="card" id="build"><p class="kicker">Make · test · improve</p><h2>Three classroom-safe catapult recipes</h2><p>Use soft projectiles only. Each recipe is a starting point, not a final answer—measure it, change one feature, and test again.</p><div class="recipes">
+      <article class="recipe"><div class="recipe-visual" aria-hidden="true"><svg viewBox="0 0 300 150"><rect x="35" y="114" width="205" height="13" rx="6" fill="#fbbf24"/><rect x="80" y="100" width="125" height="10" rx="5" fill="#fde68a" transform="rotate(-8 80 100)"/><g fill="#d97706"><rect x="98" y="82" width="85" height="8" rx="4"/><rect x="98" y="72" width="85" height="8" rx="4"/><rect x="98" y="62" width="85" height="8" rx="4"/><rect x="98" y="52" width="85" height="8" rx="4"/></g><path d="M120 85Q103 57 93 24" stroke="#4ade80" stroke-width="9" stroke-linecap="round"/><ellipse cx="89" cy="20" rx="19" ry="9" fill="#5eead4"/></svg></div><div class="recipe-body"><div class="level">10–15 minutes · beginner</div><h3>Craft-Stick Spoon Launcher</h3><h4>Materials</h4><ul class="materials"><li>7–10 jumbo craft sticks</li><li>4–6 rubber bands</li><li>Plastic spoon or bottle cap</li><li>Pom-poms or paper balls</li></ul><h4>Build</h4><ol class="steps"><li>Band 6 sticks into a flat stack.</li><li>Band 2 sticks together at one end.</li><li>Open the pair, slide the stack between them, and band the crossing point.</li><li>Attach the spoon to the top arm. Test with a pom-pom.</li></ol><div class="science"><strong>Investigate:</strong> Move the stick stack closer to or farther from the spoon. How does changing the fulcrum position affect range?</div></div></article>
+      <article class="recipe"><div class="recipe-visual" aria-hidden="true"><svg viewBox="0 0 300 150"><path d="M42 120h214l-28-76H70z" fill="#8b5e3c" stroke="#fbbf24" stroke-width="4"/><path d="M74 106l122-66" stroke="#4ade80" stroke-width="12" stroke-linecap="round"/><circle cx="103" cy="91" r="16" fill="#c084fc"/><path d="M195 42v-14h24" fill="none" stroke="#4ade80" stroke-width="9" stroke-linecap="round"/><circle cx="219" cy="25" r="10" fill="#fbbf24"/></svg></div><div class="recipe-body"><div class="level">25–35 minutes · intermediate</div><h3>Cardboard A-Frame Catapult</h3><h4>Materials</h4><ul class="materials"><li>Corrugated cardboard</li><li>Wooden dowel or pencil</li><li>Craft stick or cardboard arm</li><li>Rubber bands, tape, bottle cap</li></ul><h4>Build</h4><ol class="steps"><li>Cut two matching triangular side supports and a wide base.</li><li>Make aligned pivot holes and pass the dowel through them.</li><li>Attach the throwing arm so it rotates freely.</li><li>Add a bottle-cap cup and rubber-band power. Brace the frame.</li></ol><div class="science"><strong>Investigate:</strong> Add an adjustable stop that changes release angle. Graph angle versus range using three trials per angle.</div></div></article>
+      <article class="recipe"><div class="recipe-visual" aria-hidden="true"><svg viewBox="0 0 300 150"><rect x="30" y="119" width="235" height="10" rx="5" fill="#64748b"/><path d="M65 116l58-72 45 72" fill="none" stroke="#94a3b8" stroke-width="8"/><circle cx="123" cy="46" r="10" fill="#c084fc"/><path d="M124 47l88 38" stroke="#4ade80" stroke-width="10" stroke-linecap="round"/><path d="M210 85q22 4 25-15" fill="none" stroke="#5eead4" stroke-width="8"/><rect x="69" y="90" width="31" height="28" rx="4" fill="#fbbf24"/><path d="M98 94l25-48" stroke="#fde68a" stroke-width="4"/></svg></div><div class="recipe-body"><div class="level">35–50 minutes · design challenge</div><h3>Counterweight Trebuchet</h3><h4>Materials</h4><ul class="materials"><li>Cardboard or craft-stick frame</li><li>Skewer/dowel pivot and straw bearings</li><li>Long throwing arm</li><li>Small paper-cup counterweight</li><li>String sling and pom-poms</li></ul><h4>Build</h4><ol class="steps"><li>Build and brace an A-frame with a low, wide base.</li><li>Pivot the arm about one-quarter of its length from the counterweight end.</li><li>Hang a light cup from the short arm.</li><li>Add a simple string sling to the long arm. Start with very little weight.</li></ol><div class="science"><strong>Investigate:</strong> Keep arm length constant and change counterweight mass. Where do gains begin to level off?</div></div></article>
+    </div></section>
+
+    <section class="card safety"><p class="kicker">Safety first</p><h2>Launch soft, launch low, launch away.</h2><div class="grid-2"><ul><li>Use pom-poms, mini marshmallows, or loosely crumpled paper only.</li><li>Never launch toward a person, animal, window, light, or device.</li><li>Mark one launch direction and keep everyone behind the launcher.</li></ul><ul><li>Wear eye protection when using stretched rubber bands or skewers.</li><li>Adults should handle hot glue, cutting tools, or sharp ends.</li><li>Inspect bands and frames before every trial; stop if parts crack or fray.</li></ul></div></section>
+
+    <section class="card" id="test"><p class="kicker">Engineering cycle</p><h2>Turn a build into a STEAM investigation</h2><div class="grid-2"><div><ol><li><strong>Ask:</strong> Which one change might increase accuracy or range?</li><li><strong>Predict:</strong> State what you think will happen and why.</li><li><strong>Test:</strong> Run at least three trials with the same setup.</li><li><strong>Measure:</strong> Record distance from the launch line to first landing.</li><li><strong>Improve:</strong> Change one variable and repeat.</li></ol></div><div><table class="test-table"><thead><tr><th>Trial</th><th>Variable</th><th>Distance</th><th>Notes</th></tr></thead><tbody><tr><td>1</td><td>________</td><td>____ cm</td><td>________</td></tr><tr><td>2</td><td>________</td><td>____ cm</td><td>________</td></tr><tr><td>3</td><td>________</td><td>____ cm</td><td>________</td></tr></tbody></table></div></div><div class="concept"><h3>Cross-curricular STEAM prompts</h3><p><strong>Science:</strong> Where does the energy go? <strong>Technology:</strong> Film in slow motion and estimate release angle. <strong>Engineering:</strong> Reduce wobble without adding much mass. <strong>Art:</strong> Design a readable scale and team identity. <strong>Math:</strong> Find mean range, variation, and graph one input against distance.</p></div></section>
+    <section class="card" id="atlas">
+      <p class="kicker">Observe · identify · explain</p>
+      <h2>Levers in the real world: a photographic atlas</h2>
+      <p>Read each image like an engineer. Find the pivot, locate the load, and trace where a person or stored energy applies effort.</p>
+      <div class="photo-atlas">
+        <figure class="photo-card"><span class="photo-tag">Ancient technology</span><img src="../../../assets/images/lessons/levers/shaduf-giza.jpg" alt="Farmer operating a wooden shaduf beside an irrigation channel with the pyramids of Giza behind him" loading="lazy"><figcaption><strong>Shaduf · Class 1 lever</strong>The upright support is the fulcrum. A mud counterweight helps lift the water bucket. Matson Collection, Library of Congress · Public domain.</figcaption></figure>
+        <figure class="photo-card"><span class="photo-tag">Class 1</span><img src="../../../assets/images/lessons/levers/seesaw.jpg" alt="Red and wooden playground seesaw balanced on its central pivot" loading="lazy"><figcaption><strong>Seesaw</strong>The fulcrum sits between effort and load. Photo: Killarnee · <a href="https://commons.wikimedia.org/wiki/File:Playground_seesaw.jpg">CC BY-SA 4.0</a>.</figcaption></figure>
+        <figure class="photo-card"><span class="photo-tag">Class 2</span><img src="../../../assets/images/lessons/levers/wheelbarrow.jpg" alt="Metal wheelbarrow showing wheels at the fulcrum end and long handles at the effort end" loading="lazy"><figcaption><strong>Wheelbarrow</strong>The carried load sits between the wheel fulcrum and the effort at the handles. Photo: ProjectManhattan · <a href="https://commons.wikimedia.org/wiki/File:Wheelbarrow_.jpg">CC BY-SA 3.0</a>.</figcaption></figure>
+        <figure class="photo-card"><span class="photo-tag">Compound machine</span><img src="../../../assets/images/lessons/levers/trebuchet.jpg" alt="Full-size reconstructed wooden trebuchet at Château de Castelnaud in France" loading="lazy"><figcaption><strong>Trebuchet reconstruction</strong>A counterweight turns a long throwing arm; a sling extends the projectile path and release speed. Photo: Jebulon · <a href="https://commons.wikimedia.org/wiki/File:Tr%C3%A9buchet_Castelnaud.jpg">CC0</a>.</figcaption></figure>
       </div>
-    </div>
-    <div class="lv-quote-card">
-      <div class="lv-quote-mark">"</div>
-      <p class="lv-quote-text">
-        Give me a place to stand, and I shall move the Earth.
-      </p>
-      <div class="lv-quote-attr">— Archimedes, ~250 BCE</div>
-    </div>
-  </div>
+    </section>
 
-  <!-- ── Section 1: What Is a Lever? ──────────────── -->
-  <div class="lv-card lv-green-acc" id="what">
-    <p class="lv-kicker lv-green-k">Concept 1 · The Simple Machine</p>
-    <h2>What Is a Lever?</h2>
-    <div class="lv-two">
-      <div>
-        <p>
-          A <strong>lever</strong> is a rigid bar that rotates around a fixed point called the
-          <strong>fulcrum</strong>. A force applied at one point (the <em>effort</em>) creates
-          a larger or smaller force at another point (the <em>load</em>), depending on where
-          the fulcrum sits.
-        </p>
-        <p>
-          Levers are the simplest of all simple machines — in some form, they predate every other
-          tool. Any stick you've used to pry a rock loose, any door you've pushed open, any
-          pair of scissors you've used is a lever.
-        </p>
-        <div class="lv-box green">
-          <strong>The Law of the Lever</strong>
-          <p>
-            Effort Force × Effort Arm = Load Force × Load Arm<br/>
-            F<sub>effort</sub> × d<sub>effort</sub> = F<sub>load</sub> × d<sub>load</sub><br/><br/>
-            The lever never gives you free energy — it trades force for distance.
-            Move your hand far, the load moves less but with more force.
-          </p>
-        </div>
-      </div>
-      <div>
-        <h3>Mechanical Advantage</h3>
-        <p>
-          The mechanical advantage of a lever tells you how much your force is multiplied.
-          If your effort arm is three times longer than the load arm, you can lift three times
-          your applied force — but you'll push your end three times as far as the load moves.
-        </p>
-        <div class="lv-eq">MA = d<sub>effort</sub> / d<sub>load</sub></div>
-        <div class="lv-eq amber">F<sub>load</sub> = F<sub>effort</sub> × (d<sub>effort</sub> / d<sub>load</sub>)</div>
-        <div class="lv-box amber">
-          <strong>Torque: The Rotating Form of Force</strong>
-          <p>
-            Torque (τ) = Force × perpendicular distance from the fulcrum.<br/>
-            The Law of the Lever is really just torque balance:<br/>
-            τ<sub>effort</sub> = τ<sub>load</sub> when balanced.<br/>
-            The fulcrum is the pivot; the arms are the moment arms.
-          </p>
-        </div>
-        <div class="lv-box violet">
-          <strong>Work In = Work Out</strong>
-          <p>
-            As with all simple machines, energy is conserved. You gain force at the cost of
-            distance — or gain distance (speed) at the cost of force. A lever with MA = 4
-            multiplies your push by 4, but your end must move 4× farther than the load.
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+    <section class="card" id="history">
+      <p class="kicker">From the latest lesson · 7,000 years of leverage</p>
+      <h2>From irrigation beams to precision machines</h2>
+      <div class="grid-2"><div><p>The lever may be humanity's oldest machine. A branch beneath a stone already contains the complete idea: a rigid arm turns around a pivot, trading motion for force.</p><p>By roughly 3000 BCE, Egyptian and Mesopotamian farmers were using the <strong>shaduf</strong>, a counterweighted Class 1 lever, to raise water into irrigation channels. Around 250 BCE, Archimedes gave this practical knowledge a mathematical foundation with the law of the lever.</p></div><div class="concept"><h3>The law survives every redesign</h3><div class="equation">F<sub>effort</sub>d<sub>effort</sub> = F<sub>load</sub>d<sub>load</sub></div><p>A piano key, claw hammer, surgical forceps, seesaw, and trebuchet look unrelated, but all obey the same torque balance.</p></div></div>
+      <div class="timeline"><article class="era"><time>c. 3000 BCE</time><h3>Shaduf</h3><p>A counterweight reduces the effort needed to lift water.</p></article><article class="era"><time>c. 250 BCE</time><h3>Archimedes</h3><p>The relationship between force and distance is expressed mathematically.</p></article><article class="era"><time>1100s–1300s</time><h3>Trebuchet</h3><p>A counterweight and long arm convert gravitational energy into projectile motion.</p></article><article class="era"><time>Industrial age–today</time><h3>Linkages everywhere</h3><p>Presses, switches, brakes, keys, robotics, and tools combine levers into systems.</p></article></div>
+    </section>
 
-  <!-- ── SIM 1: Balance Lab ─────────────────────────── -->
-  <div class="lv-sim" id="sim1">
-    <div class="lv-sim-head">
-      <div class="lv-sim-hl">
-        <span class="lv-sim-title lv-green-k">⚖ Law of the Lever — Balance Lab</span>
-        <span class="lv-sim-sub">Slide the fulcrum to find the spot where effort balances the load — watch torques update in real time</span>
-      </div>
-    </div>
-    <canvas id="balanceCanvas" height="320"></canvas>
-    <div class="lv-sim-controls">
-      <div class="lv-ctrl">
-        <label>Fulcrum Position <span class="lv-ctrl-val" id="fulcrumLabel">4.0 m</span></label>
-        <input type="range" id="fulcrumSlider" min="10" max="70" value="40" />
-      </div>
-      <div class="lv-ctrl">
-        <label>Load Weight <span class="lv-ctrl-val amber" id="loadLabel">60 N</span></label>
-        <input type="range" id="loadSlider" min="10" max="150" value="60" />
-      </div>
-      <div class="lv-ctrl">
-        <label>Effort Force <span class="lv-ctrl-val" id="effortLabel">30 N</span></label>
-        <input type="range" id="effortSlider" min="5" max="100" value="30" />
-      </div>
-    </div>
-    <div class="lv-readout">
-      <span class="lv-chip"><span class="lv-chip-label">Effort Arm</span><span class="lv-chip-val" id="dEffortVal">4.0 m</span></span>
-      <span class="lv-chip"><span class="lv-chip-label">Load Arm</span><span class="lv-chip-val" id="dLoadVal">4.0 m</span></span>
-      <span class="lv-chip"><span class="lv-chip-label">MA</span><span class="lv-chip-val" id="maVal">1.0×</span></span>
-      <span class="lv-chip"><span class="lv-chip-label">τ Effort</span><span class="lv-chip-val" id="tauEffortVal">120 N·m</span></span>
-      <span class="lv-chip"><span class="lv-chip-label">τ Load</span><span class="lv-chip-val" id="tauLoadVal">240 N·m</span></span>
-      <span class="lv-chip"><span class="lv-chip-label">Balance</span><span class="lv-chip-val" id="balanceVal">Load wins</span></span>
-    </div>
-  </div>
-
-  <!-- ── Section 2: Three Classes ──────────────────── -->
-  <div class="lv-card lv-violet-acc" id="classes">
-    <p class="lv-kicker lv-violet-k">Concept 2 · Three Arrangements</p>
-    <h2>The Three Classes of Levers</h2>
-    <p>
-      Every lever has the same three components — fulcrum (F), effort (E), and load (L) — but
-      the order in which they appear along the beam determines the lever's class, its MA range,
-      and whether effort and load move in the same or opposite directions.
-    </p>
-    <div class="lv-classes">
-      <div class="lv-class-card">
-        <div class="lv-class-badge c1">Class 1</div>
-        <h3>Fulcrum in the Middle</h3>
-        <p class="lv-class-pos">E ——— △ ——— L</p>
-        <p>
-          The fulcrum sits between the effort and the load. Moving the fulcrum toward the load
-          increases MA; toward the effort decreases it. Effort and load move in <em>opposite</em> directions.
-        </p>
-        <p class="lv-class-ma" style="color:var(--lv-green)">MA = can be &lt;1, =1, or &gt;1</p>
-        <p class="lv-class-examples">Seesaw · Crowbar · Scissors · Pliers · Balance scale · Claw hammer · Nail clippers</p>
-      </div>
-      <div class="lv-class-card">
-        <div class="lv-class-badge c2">Class 2</div>
-        <h3>Load in the Middle</h3>
-        <p class="lv-class-pos">△ ——— L ——— E</p>
-        <p>
-          The load sits between the fulcrum and the effort. The effort arm is always the full
-          beam length; the load arm is always shorter. MA is <em>always greater than 1</em>.
-          Effort and load move in the <em>same</em> direction.
-        </p>
-        <p class="lv-class-ma" style="color:var(--lv-amber)">MA &gt; 1 always</p>
-        <p class="lv-class-examples">Wheelbarrow · Bottle opener · Nutcracker · Door · Stapler · Wheelbarrow · Diving board</p>
-      </div>
-      <div class="lv-class-card">
-        <div class="lv-class-badge c3">Class 3</div>
-        <h3>Effort in the Middle</h3>
-        <p class="lv-class-pos">△ ——— E ——— L</p>
-        <p>
-          The effort sits between the fulcrum and the load. The load arm is always longer than
-          the effort arm, so MA is <em>always less than 1</em>. You apply more force than
-          the load receives — but the load moves <em>faster and farther</em>.
-        </p>
-        <p class="lv-class-ma" style="color:var(--lv-violet)">MA &lt; 1 always — trades force for speed</p>
-        <p class="lv-class-examples">Tweezers · Fishing rod · Broom · Baseball bat · Forearm (bicep) · Shovel · Chopsticks</p>
-      </div>
-    </div>
-    <div class="lv-box teal">
-      <strong>The Human Body Is Full of Class 3 Levers</strong>
-      <p>
-        Your forearm is a classic Class 3 lever. Elbow joint = fulcrum. Bicep muscle attaches
-        ~5 cm from the elbow (effort). Your hand is ~35 cm from the elbow (load). MA ≈ 5/35 ≈ 0.14.
-        Your bicep must exert about 7× the weight it lifts! But your hand moves 7× faster
-        and farther than the muscle contracts — perfect for throwing, catching, and fine motor control.
-        Evolution optimized our arms for speed and range, not brute force.
-      </p>
-    </div>
-  </div>
-
-  <!-- ── SIM 2: Three Classes Explorer ─────────────── -->
-  <div class="lv-sim" id="sim2">
-    <div class="lv-sim-head">
-      <div class="lv-sim-hl">
-        <span class="lv-sim-title lv-violet-k">🔭 Three Classes Explorer</span>
-        <span class="lv-sim-sub">Select a class — see where effort, fulcrum, and load sit, and how the lever moves</span>
-      </div>
-      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-        <button class="lv-btn active" id="btn1">Class 1</button>
-        <button class="lv-btn amber" id="btn2">Class 2</button>
-        <button class="lv-btn violet" id="btn3">Class 3</button>
-      </div>
-    </div>
-    <canvas id="classCanvas" height="280"></canvas>
-    <div class="lv-class-info" id="classInfo">
-      <span><strong>Class 1</strong> — Fulcrum between effort and load</span>
-      <span>MA = d<sub>E</sub> / d<sub>L</sub> — can be &lt;1, 1, or &gt;1</span>
-      <span>Examples: seesaw, crowbar, scissors, pliers, balance scale</span>
-    </div>
-  </div>
-
-  <!-- ── Section 3: History ────────────────────────── -->
-  <div class="lv-card lv-amber-acc" id="history">
-    <p class="lv-kicker lv-amber-k">History · ~5000 BCE – Today</p>
-    <h2>From the Shaduf to the Piano Key: 7,000 Years of Levers</h2>
-    <div class="lv-two">
-      <div>
-        <p>
-          The lever may be the oldest human tool that isn't just a sharpened rock. As soon as
-          early humans discovered that a stick wedged under a boulder could pry it loose, they
-          had invented the lever — though they wouldn't name it for thousands of years.
-        </p>
-        <p>
-          The first <em>engineered</em> lever was the <strong>shaduf</strong> (~5000–3000 BCE),
-          a well-sweep used along the Nile, Tigris, and Euphrates rivers. A long horizontal
-          beam balanced on a vertical pole: a counterweight on the short end, a rope-and-bucket
-          on the long end. Farmers could lift hundreds of kilograms of water per hour with one
-          hand — a Class 1 lever in perfect action.
-        </p>
-        <div class="lv-box amber">
-          <strong>Building the Pyramids (c. 2560 BCE)</strong>
-          <p>Egyptians used levers — likely wooden beams braced against stone fulcra — to lift
-          2.5-ton granite blocks into place. Experiment and archaeological evidence suggest
-          organized gangs of workers used Class 1 levers to rock blocks onto log rollers,
-          raise them onto sledges, and inch them up ramps. No cranes. No machines. Just levers,
-          ramps, and 20,000 workers organized with military precision.</p>
-        </div>
-      </div>
-      <div>
-        <div class="lv-timeline">
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~5000–3000 BCE · Nile, Tigris &amp; Euphrates</p>
-            <p class="lv-tl-title">Shaduf (Well-Sweep)</p>
-            <p class="lv-tl-desc">First engineered lever: counterweighted beam over a pivot, lifts water buckets. Used across Egypt, Mesopotamia, and India for millennia and still used today.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~2560 BCE · Giza, Egypt</p>
-            <p class="lv-tl-title">Pyramid Construction</p>
-            <p class="lv-tl-desc">Wooden levers used to rock and lift 2.5-ton stone blocks. Evidence of lever sockets found in quarry stones at Abu Rawash and Giza.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~400 BCE · Greece &amp; Persia</p>
-            <p class="lv-tl-title">Catapult — The War Lever</p>
-            <p class="lv-tl-desc">Catapults (and later trebuchets) weaponize the Class 1 lever: a short, heavy throwing arm counterweight drives a long projectile arm. MA translates stored energy into devastating range.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~250 BCE · Syracuse, Sicily</p>
-            <p class="lv-tl-title">Archimedes Formalizes the Law</p>
-            <p class="lv-tl-desc">In <em>On the Equilibrium of Planes</em>, Archimedes proves mathematically that F·d = F·d. He builds giant lever-based war machines — cranes that could lift Roman warships out of the water.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~200 BCE · Rome</p>
-            <p class="lv-tl-title">Steelyard Balance</p>
-            <p class="lv-tl-desc">The Roman <em>statera</em> (steelyard) is an asymmetric Class 1 lever: slide a known counterweight along a graduated arm until balance is found. Used for trade across the empire for 1,500 years.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">~1150–1300 CE · Europe</p>
-            <p class="lv-tl-title">Trebuchet</p>
-            <p class="lv-tl-desc">The most powerful pre-gunpowder siege weapon uses a massive counterweight on a short lever arm to hurl 100–150 kg stones up to 300 m. Captured Jerusalem, Stirling Castle, and dozens of fortifications.</p>
-          </div>
-          <div class="lv-tl-item">
-            <div class="lv-tl-dot"></div>
-            <p class="lv-tl-date">1700s–present · Industrial World</p>
-            <p class="lv-tl-title">Levers Everywhere</p>
-            <p class="lv-tl-desc">Steam engine valve linkages, railway switches, piano keys (each a Class 1 lever launching a felt hammer), printing presses, typewriter keys, and every pair of scissors manufactured since the Bronze Age.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem; margin-top:1.2rem;">
-      <figure data-zoomable data-lightbox-group="levers" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Archimedes%20lever%20(Mechanics%20Magazine%201824).jpg?width=1600" style="margin:0; border:1px solid var(--lv-line, rgba(180,230,200,0.12)); border-radius:var(--lv-radius, 8px); overflow:hidden; background:rgba(8,14,22,0.85); display:flex; flex-direction:column;">
-        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Archimedes%20lever%20(Mechanics%20Magazine%201824).jpg?width=600" alt="Engraving illustrating Archimedes moving the Earth with a lever from Mechanics Magazine 1824" style="width:100%; height:230px; object-fit:contain; background:#040c08; padding:0.5rem; display:block;" loading="lazy" />
-        <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--lv-muted, #a7d9c0); border-top:1px solid var(--lv-line, rgba(180,230,200,0.12)); flex-grow:1;">
-          <strong>Archimedes' Lever Principle (Mechanics Magazine, 1824).</strong> Visualizing Archimedes' famous assertion: &ldquo;Give me a place to stand, and I shall move the Earth.&rdquo; By extending the effort arm, any finite input force can balance or lift an arbitrarily heavy load according to $F_1 d_1 = F_2 d_2$. Wikimedia Commons · Public domain.
-        </figcaption>
-      </figure>
-      <figure data-zoomable data-lightbox-group="levers" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/A%20Roman%20steelyard%20and%20weight%20Wellcome%20M0000471.jpg?width=1600" style="margin:0; border:1px solid var(--lv-line, rgba(180,230,200,0.12)); border-radius:var(--lv-radius, 8px); overflow:hidden; background:rgba(8,14,22,0.85); display:flex; flex-direction:column;">
-        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%20Roman%20steelyard%20and%20weight%20Wellcome%20M0000471.jpg?width=600" alt="Bronze Roman steelyard balance with sliding counterweight" style="width:100%; height:230px; object-fit:contain; background:#040c08; padding:0.5rem; display:block;" loading="lazy" />
-        <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--lv-muted, #a7d9c0); border-top:1px solid var(--lv-line, rgba(180,230,200,0.12)); flex-grow:1;">
-          <strong>Roman Steelyard Balance (statera).</strong> An asymmetric Class 1 lever utilizing a sliding counterpoise weight along a notched beam. Instead of balancing equal weights, varying the distance $d$ allows a compact bronze counterweight to accurately measure heavy commercial goods. Wellcome Collection / Wikimedia Commons · CC BY 4.0.
-        </figcaption>
-      </figure>
-    </div>
-  </div>
-
-  <!-- ── Section 4: Modern Applications ───────────── -->
-  <div class="lv-card lv-sky-acc" id="modern">
-    <p class="lv-kicker lv-sky-k">Modern World · Applications &amp; Deeper Ideas</p>
-    <h2>Levers in Every Corner of Life</h2>
-    <div class="lv-two">
-      <div>
-        <p>
-          Look around any room and you'll find levers: light switches (Class 1), door handles
-          (Class 2 or 3 depending on pivot placement), scissors, bottle openers, and
-          keyboard keys. The lever is not a historical artifact — it is the most common mechanism
-          in the engineered world.
-        </p>
-        <p>
-          In the body, levers are everywhere. Your jaw is a Class 3 lever (masseter muscle
-          behind the fulcrum at the jaw joint). Your foot is a Class 2 lever when you stand
-          on tiptoe (fulcrum at toes, load is your body weight at the ankle, effort is the
-          calf muscle at the heel). Your forearm is Class 3 for most lifting tasks.
-        </p>
-        <div class="lv-box sky">
-          <strong>Compound Levers</strong>
-          <p>Nail clippers combine two Class 1 levers in series: the top lever pivots to drive
-          the bottom lever, multiplying the force again. The MA of the compound system is the
-          product of both individual MAs. Compound lever arrangements appear in piano actions,
-          surgical forceps, and industrial presses, achieving MA in the hundreds.</p>
-        </div>
-      </div>
-      <div>
-        <h3>Connection to Other Simple Machines</h3>
-        <p>
-          The lever underlies all other simple machines. A pulley is a lever rotated into a
-          circle (the fulcrum at the axle center, effort and load on the rope). The wheel and
-          axle is two levers at right angles sharing a pivot. The inclined plane can be analyzed
-          as a continuous series of infinitesimally small levers along its slope.
-        </p>
-        <div class="lv-box green">
-          <strong>Feynman's Take</strong>
-          <p>
-            All of classical mechanics ultimately reduces to F = ma. The lever doesn't override
-            Newton — it multiplies force by sacrificing distance, keeping Work = F × d constant.
-            Any time a machine "multiplies" force, you're trading the shape of the energy,
-            not its quantity. Conservation of energy is inviolable — the lever is just one
-            of its most elegant disguises.
-          </p>
-        </div>
-      </div>
-    </div>
-    <h3>Modern Lever Applications by Class</h3>
-    <div class="lv-apps">
-      <div class="lv-app-card"><div class="lv-app-icon">✂️</div><div class="lv-app-name">Scissors</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Pivot (fulcrum) in the middle; effort on handles, load at the blade tips.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🔨</div><div class="lv-app-name">Claw Hammer</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Prying mode: nail is load; hammer head is fulcrum; hands apply effort at handle end.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🎹</div><div class="lv-app-name">Piano Key</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Key pivots at balance rail; finger presses front (effort); back end drives the hammer mechanism (load).</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🚪</div><div class="lv-app-name">Door</div><div class="lv-app-class c1">Class 1</div><div class="lv-app-desc">Hinges are the fulcrum; handle is far for maximum MA. Closer to hinges = much harder to open.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🛒</div><div class="lv-app-name">Wheelbarrow</div><div class="lv-app-class c2">Class 2</div><div class="lv-app-desc">Wheel = fulcrum; load sits between wheel and handles; hands lift at handles with MA &gt; 1.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🍾</div><div class="lv-app-name">Bottle Opener</div><div class="lv-app-class c2">Class 2</div><div class="lv-app-desc">Rim of bottle = fulcrum; cap = load; hand grips far end for multiplied lifting force.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🦾</div><div class="lv-app-name">Forearm</div><div class="lv-app-class c3">Class 3</div><div class="lv-app-desc">Elbow = fulcrum; bicep attaches 5 cm away (effort); hand 35 cm away is the load. MA ≈ 0.14 — speed beats force.</div></div>
-      <div class="lv-app-card"><div class="lv-app-icon">🎣</div><div class="lv-app-name">Fishing Rod</div><div class="lv-app-class c3">Class 3</div><div class="lv-app-desc">Grip = fulcrum; rod hand applies effort near base; rod tip (load) whips through large arc.</div></div>
-    </div>
-  </div>
-
-</div>
-
-<footer class="lv-footer site-footer">
-  Mr. Scandrett's ClassroomOS · <a href="../../../steam-lessons.html">All Lessons</a> ·
-  Simple Machines · Levers
-</footer>
-
-<script>
-/* ═══════════════════════════════════════════════════════
-   SIM 1 — Law of the Lever / Balance Lab
-   Beam = 8 m total.
-   Load (amber) always hangs from LEFT end.
-   Effort (green) always applied at RIGHT end.
-   Fulcrum (violet) slides between them.
-   ═══════════════════════════════════════════════════════ */
-(function () {
-  const cv        = document.getElementById('balanceCanvas');
-  const ctx       = cv.getContext('2d');
-  const fulcrSl   = document.getElementById('fulcrumSlider');
-  const loadSl    = document.getElementById('loadSlider');
-  const effortSl  = document.getElementById('effortSlider');
-  const fulcrLbl  = document.getElementById('fulcrumLabel');
-  const loadLbl   = document.getElementById('loadLabel');
-  const effortLbl = document.getElementById('effortLabel');
-  const dEffEl    = document.getElementById('dEffortVal');
-  const dLdEl     = document.getElementById('dLoadVal');
-  const maEl      = document.getElementById('maVal');
-  const tauEEl    = document.getElementById('tauEffortVal');
-  const tauLEl    = document.getElementById('tauLoadVal');
-  const balEl     = document.getElementById('balanceVal');
-
-  const BEAM_M = 8;       // total beam length in metres
-  let currentAngle = 0;   // animated tilt angle
-
-  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 320; }
-  resize(); window.addEventListener('resize', resize);
-
-  function getVals() {
-    const fp = +fulcrSl.value / 10;   // fulcrum position 1.0–7.0 m from left
-    const W  = +loadSl.value;
-    const F  = +effortSl.value;
-    return { fp, W, F };
-  }
-
-  function updateReadout() {
-    const { fp, W, F } = getVals();
-    const dLoad   = fp;                  // load arm: left end to fulcrum
-    const dEffort = BEAM_M - fp;         // effort arm: fulcrum to right end
-    const MA      = dEffort / dLoad;
-    const tauL    = W * dLoad;
-    const tauE    = F * dEffort;
-    const diff    = Math.abs(tauE - tauL);
-    const pct     = diff / Math.max(tauL, tauE) * 100;
-
-    fulcrLbl.textContent  = fp.toFixed(1) + ' m';
-    loadLbl.textContent   = W + ' N';
-    effortLbl.textContent = F + ' N';
-    dLdEl.textContent     = dLoad.toFixed(1) + ' m';
-    dEffEl.textContent    = dEffort.toFixed(1) + ' m';
-    maEl.textContent      = MA.toFixed(2) + '×';
-    tauEEl.textContent    = tauE.toFixed(0) + ' N·m';
-    tauLEl.textContent    = tauL.toFixed(0) + ' N·m';
-
-    if (pct < 3) {
-      balEl.textContent  = 'Balanced!';
-      balEl.className    = 'lv-chip-val balanced';
-    } else if (tauE > tauL) {
-      balEl.textContent  = 'Effort wins';
-      balEl.className    = 'lv-chip-val unbalanced';
-    } else {
-      balEl.textContent  = 'Load wins';
-      balEl.className    = 'lv-chip-val unbalanced';
-    }
-  }
-
-  fulcrSl.oninput = loadSl.oninput = effortSl.oninput = updateReadout;
-  updateReadout();
-
-  function draw() {
-    const W = cv.width, H = cv.height;
-    const { fp, W: loadW, F } = getVals();
-    const dLoad   = fp;
-    const dEffort = BEAM_M - fp;
-    const tauL    = loadW * dLoad;
-    const tauE    = F * dEffort;
-
-    // Smooth tilt animation
-    const maxTorque = Math.max(loadW * 7, F * 7, 1);
-    const targetAngle = Math.min(Math.max((tauE - tauL) / maxTorque * 0.38, -0.38), 0.38);
-    currentAngle += (targetAngle - currentAngle) * 0.07;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // ── Beam geometry ─────────────────────────────
-    const margin    = 54;
-    const beamLen   = W - margin * 2;
-    const fulcrumX  = margin + (fp / BEAM_M) * beamLen;
-    const beamY     = H * 0.44;
-
-    // Pixel distances from fulcrum
-    const dLoadPx   = (dLoad / BEAM_M) * beamLen;
-    const dEffortPx = (dEffort / BEAM_M) * beamLen;
-
-    const ang = currentAngle;
-
-    // World positions of beam endpoints
-    const loadX     = fulcrumX - dLoadPx   * Math.cos(ang);
-    const loadY     = beamY    - dLoadPx   * Math.sin(ang);
-    const effortX   = fulcrumX + dEffortPx * Math.cos(ang);
-    const effortY   = beamY    + dEffortPx * Math.sin(ang);
-
-    // ── Ground / fulcrum support ──────────────────
-    const groundY = beamY + 55;
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    ctx.fillRect(0, groundY, W, H - groundY);
-
-    // Fulcrum triangle
-    const tH = 36;
-    ctx.beginPath();
-    ctx.moveTo(fulcrumX, beamY + 2);
-    ctx.lineTo(fulcrumX - 16, groundY);
-    ctx.lineTo(fulcrumX + 16, groundY);
-    ctx.closePath();
-    ctx.fillStyle   = 'rgba(139,92,246,0.22)';
-    ctx.strokeStyle = 'rgba(139,92,246,0.8)';
-    ctx.lineWidth   = 1.8;
-    ctx.fill(); ctx.stroke();
-
-    // Fulcrum base line
-    ctx.beginPath();
-    ctx.moveTo(fulcrumX - 22, groundY);
-    ctx.lineTo(fulcrumX + 22, groundY);
-    ctx.strokeStyle = 'rgba(139,92,246,0.5)'; ctx.lineWidth = 2; ctx.stroke();
-
-    // ── Beam ──────────────────────────────────────
-    // Beam gradient
-    const grd = ctx.createLinearGradient(loadX, 0, effortX, 0);
-    grd.addColorStop(0, 'rgba(245,158,11,0.7)');
-    grd.addColorStop(fp / BEAM_M, 'rgba(180,200,180,0.9)');
-    grd.addColorStop(1, 'rgba(16,185,129,0.7)');
-    ctx.beginPath();
-    ctx.moveTo(loadX, loadY);
-    ctx.lineTo(effortX, effortY);
-    ctx.strokeStyle = grd; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.stroke();
-    ctx.lineCap = 'butt';
-
-    // ── Fulcrum point on beam ─────────────────────
-    ctx.beginPath(); ctx.arc(fulcrumX, beamY, 5.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(139,92,246,0.9)'; ctx.fill();
-
-    // ── Load weight (left end) ────────────────────
-    const ropeLen = 28 + loadW * 0.18;
-    // Rope (vertical from beam endpoint)
-    ctx.beginPath();
-    ctx.moveTo(loadX, loadY);
-    ctx.lineTo(loadX, loadY + ropeLen);
-    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
-    // Weight box
-    const bW = 36, bH = 24;
-    ctx.fillStyle   = 'rgba(245,158,11,0.18)';
-    ctx.strokeStyle = 'rgba(245,158,11,0.75)'; ctx.lineWidth = 1.5;
-    ctx.fillRect(loadX - bW / 2, loadY + ropeLen, bW, bH);
-    ctx.strokeRect(loadX - bW / 2, loadY + ropeLen, bW, bH);
-    ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fde68a';
-    ctx.fillText(loadW + ' N', loadX, loadY + ropeLen + bH * 0.65);
-
-    // Load force arrow (pointing down from box bottom)
-    const laLen = Math.min(loadW * 0.3, 42);
-    const laY   = loadY + ropeLen + bH;
-    ctx.beginPath(); ctx.moveTo(loadX, laY); ctx.lineTo(loadX, laY + laLen);
-    ctx.strokeStyle = 'rgba(245,158,11,0.6)'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.save(); ctx.translate(loadX, laY + laLen); ctx.rotate(Math.PI / 2);
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-8,3); ctx.lineTo(-8,-3); ctx.closePath();
-    ctx.fillStyle = 'rgba(245,158,11,0.6)'; ctx.fill(); ctx.restore();
-
-    // ── Effort arrow (right end, pointing down) ───
-    const eaLen = Math.min(F * 0.5, 60);
-    ctx.beginPath(); ctx.moveTo(effortX, effortY - eaLen); ctx.lineTo(effortX, effortY);
-    ctx.strokeStyle = 'rgba(16,185,129,0.9)'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.save(); ctx.translate(effortX, effortY); ctx.rotate(Math.PI / 2);
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-9,3.5); ctx.lineTo(-9,-3.5); ctx.closePath();
-    ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.fill(); ctx.restore();
-
-    // Effort label above arrow
-    ctx.font = 'bold 10px Inter,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(16,185,129,0.85)';
-    ctx.fillText(F + ' N', effortX, effortY - eaLen - 6);
-
-    // ── Dimension labels ──────────────────────────
-    const dimY = beamY + tH + 14;
-    // d_load: left end to fulcrum
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(margin, dimY); ctx.lineTo(fulcrumX, dimY);
-    ctx.strokeStyle = 'rgba(245,158,11,0.35)'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.font = '600 9px Inter,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(245,158,11,0.65)';
-    ctx.fillText('d_load = ' + dLoad.toFixed(1) + ' m', margin + (fulcrumX - margin) / 2, dimY + 11);
-
-    // d_effort: fulcrum to right end
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(fulcrumX, dimY); ctx.lineTo(margin + beamLen, dimY);
-    ctx.strokeStyle = 'rgba(16,185,129,0.35)'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(16,185,129,0.65)';
-    ctx.fillText('d_effort = ' + dEffort.toFixed(1) + ' m', fulcrumX + (margin + beamLen - fulcrumX) / 2, dimY + 11);
-
-    // ── MA display ────────────────────────────────
-    const maDisplay = (dEffort / dLoad).toFixed(2);
-    ctx.font = '800 14px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    ctx.fillText('MA = ' + maDisplay + '×', W / 2, H - 10);
-
-    currentAngle += 0; // no extra drift
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-/* ═══════════════════════════════════════════════════════
-   SIM 2 — Three Classes Explorer
-   ═══════════════════════════════════════════════════════ */
-(function () {
-  const cv    = document.getElementById('classCanvas');
-  const ctx   = cv.getContext('2d');
-  const btn1  = document.getElementById('btn1');
-  const btn2  = document.getElementById('btn2');
-  const btn3  = document.getElementById('btn3');
-  const info  = document.getElementById('classInfo');
-
-  let selectedClass = 1;
-  let oscPhase      = 0;
-
-  const CLASS_INFO = {
-    1: '<span><strong>Class 1</strong> — Fulcrum between effort &amp; load</span><span>MA = d<sub>E</sub> / d<sub>L</sub> — can be &lt;1, =1, or &gt;1</span><span>Examples: seesaw, crowbar, scissors, pliers, balance scale</span>',
-    2: '<span><strong>Class 2</strong> — Load between fulcrum &amp; effort</span><span>MA &gt; 1 always — force multiplication guaranteed</span><span>Examples: wheelbarrow, bottle opener, nutcracker, diving board, stapler</span>',
-    3: '<span><strong>Class 3</strong> — Effort between fulcrum &amp; load</span><span>MA &lt; 1 always — trades force for speed and range</span><span>Examples: tweezers, fishing rod, forearm (bicep), broom, baseball bat</span>',
-  };
-
-  function setClass(c) {
-    selectedClass = c;
-    btn1.classList.toggle('active', c === 1);
-    btn2.classList.toggle('active', c === 2);
-    btn3.classList.toggle('active', c === 3);
-    info.innerHTML = CLASS_INFO[c];
-  }
-
-  btn1.onclick = () => setClass(1);
-  btn2.onclick = () => setClass(2);
-  btn3.onclick = () => setClass(3);
-
-  function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 280; }
-  resize(); window.addEventListener('resize', resize);
-
-  /* Draw a lever with labeled positions */
-  function drawLever(ctx, W, H, osc, effortFrac, fulcrumFrac, loadFrac, MA) {
-    const margin  = 50;
-    const beamLen = W - margin * 2;
-    const beamY   = H * 0.42;
-
-    // Positions in pixels along beam
-    const effortPx  = margin + effortFrac  * beamLen;
-    const fulcrumPx = margin + fulcrumFrac * beamLen;
-    const loadPx    = margin + loadFrac    * beamLen;
-
-    // Tilt about fulcrum
-    const angle = osc * 0.22;
-    function beamPt(px) {
-      const d = px - fulcrumPx;
-      return { x: fulcrumPx + d * Math.cos(angle), y: beamY + d * Math.sin(angle) };
-    }
-
-    const ePt = beamPt(effortPx);
-    const lPt = beamPt(loadPx);
-    const fPt = { x: fulcrumPx, y: beamY };
-
-    // Beam
-    const leftEnd  = beamPt(margin);
-    const rightEnd = beamPt(margin + beamLen);
-    ctx.beginPath();
-    ctx.moveTo(leftEnd.x, leftEnd.y);
-    ctx.lineTo(rightEnd.x, rightEnd.y);
-    ctx.strokeStyle = 'rgba(180,200,190,0.6)'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
-    ctx.lineCap = 'butt';
-
-    // Fulcrum triangle
-    const groundY = beamY + 44;
-    ctx.beginPath();
-    ctx.moveTo(fPt.x, fPt.y + 2);
-    ctx.lineTo(fPt.x - 14, groundY);
-    ctx.lineTo(fPt.x + 14, groundY);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(139,92,246,0.25)'; ctx.strokeStyle = 'rgba(139,92,246,0.75)'; ctx.lineWidth = 1.5;
-    ctx.fill(); ctx.stroke();
-
-    // Fulcrum dot
-    ctx.beginPath(); ctx.arc(fPt.x, fPt.y, 4.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(139,92,246,0.9)'; ctx.fill();
-
-    // Effort (green arrow pointing down onto beam)
-    const eArrowLen = 38;
-    ctx.beginPath(); ctx.moveTo(ePt.x, ePt.y - eArrowLen); ctx.lineTo(ePt.x, ePt.y);
-    ctx.strokeStyle = 'rgba(16,185,129,0.9)'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.save(); ctx.translate(ePt.x, ePt.y); ctx.rotate(Math.PI / 2);
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-9,3.5); ctx.lineTo(-9,-3.5); ctx.closePath();
-    ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.fill(); ctx.restore();
-
-    // Load (amber, hanging from beam)
-    const ropeLen = 28;
-    ctx.beginPath(); ctx.moveTo(lPt.x, lPt.y); ctx.lineTo(lPt.x, lPt.y + ropeLen);
-    ctx.strokeStyle = 'rgba(245,158,11,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
-    const bW = 30, bH = 20;
-    ctx.fillStyle = 'rgba(245,158,11,0.18)'; ctx.strokeStyle = 'rgba(245,158,11,0.75)'; ctx.lineWidth = 1.5;
-    ctx.fillRect(lPt.x - bW/2, lPt.y + ropeLen, bW, bH);
-    ctx.strokeRect(lPt.x - bW/2, lPt.y + ropeLen, bW, bH);
-
-    // Labels
-    ctx.font = '800 11px Inter,sans-serif'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(16,185,129,0.9)';
-    ctx.fillText('E', ePt.x, ePt.y - eArrowLen - 8);
-    ctx.fillStyle = 'rgba(139,92,246,0.9)';
-    ctx.fillText('F', fPt.x, groundY + 14);
-    ctx.fillStyle = 'rgba(245,158,11,0.9)';
-    ctx.fillText('L', lPt.x, lPt.y + ropeLen + bH + 14);
-
-    // MA note
-    ctx.font = '700 11px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(200,240,220,0.55)';
-    ctx.fillText(MA, W / 2, H - 10);
-  }
-
-  function draw() {
-    const W = cv.width, H = cv.height;
-    ctx.clearRect(0, 0, W, H);
-    oscPhase += 0.018;
-    const osc = Math.sin(oscPhase);
-
-    switch (selectedClass) {
-      case 1:
-        // Fulcrum center, effort left, load right (seesaw)
-        drawLever(ctx, W, H, osc, 0.18, 0.5, 0.82, 'MA = d_E / d_L  (here: 1.0×)');
-        // Class label
-        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(16,185,129,0.75)';
-        ctx.fillText('Class 1 — Seesaw', W / 2, 22);
-        break;
-      case 2:
-        // Fulcrum left, load center, effort right (wheelbarrow)
-        drawLever(ctx, W, H, osc * 0.5, 0.82, 0.06, 0.42, 'MA = d_E / d_L = 0.82 / 0.36 ≈ 2.3×');
-        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(245,158,11,0.75)';
-        ctx.fillText('Class 2 — Wheelbarrow', W / 2, 22);
-        break;
-      case 3:
-        // Fulcrum left, effort center-left, load right (forearm)
-        drawLever(ctx, W, H, osc * 0.35, 0.28, 0.06, 0.82, 'MA = d_E / d_L = 0.22 / 0.76 ≈ 0.29×');
-        ctx.font = 'bold 13px Inter,sans-serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(139,92,246,0.75)';
-        ctx.fillText('Class 3 — Forearm / Bicep', W / 2, 22);
-        break;
-    }
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-</script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
-
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+    <section class="card" id="modern">
+      <p class="kicker">Modern applications · body and machine</p>
+      <h2>Levers are hiding in plain sight</h2>
+      <p>The latest version of this lesson connected the ancient principle to everyday engineering. Use these examples to identify the class, then explain whether the design favors force, speed, or range of motion.</p>
+      <div class="application-grid"><article class="application"><span class="icon">✂️</span><b>Scissors</b><small>Class 1 · fulcrum between handles and cutting load</small></article><article class="application"><span class="icon">🛒</span><b>Wheelbarrow</b><small>Class 2 · load between wheel and hands</small></article><article class="application"><span class="icon">💪</span><b>Forearm</b><small>Class 3 · biceps effort between elbow and hand</small></article><article class="application"><span class="icon">🎹</span><b>Piano action</b><small>Compound levers translate a small key motion into a fast hammer strike</small></article><article class="application"><span class="icon">🔨</span><b>Claw hammer</b><small>Class 1 while pulling a nail</small></article><article class="application"><span class="icon">🍾</span><b>Bottle opener</b><small>Class 2 · cap load between lip fulcrum and handle effort</small></article><article class="application"><span class="icon">🎣</span><b>Fishing rod</b><small>Class 3 · sacrifices force for speed and reach</small></article><article class="application"><span class="icon">🦾</span><b>Robot linkage</b><small>Multiple levers coordinate motion, torque, and control</small></article></div>
+    </section>
+  </main>
+  <footer>Mr. Scandrett's ClassroomOS · <a href="../../../steam-lessons.html">All lessons</a> · Physics / Mechanics / Levers</footer>
+  <script>
+  (()=>{
+    const q=s=>document.querySelector(s), cv=q('#balanceCanvas'), ctx=cv.getContext('2d');
+    const f=q('#fulcrum'), load=q('#load'), effort=q('#effort'); let tilt=0;
+    const state=()=>({fp:+f.value/10,w:+load.value,e:+effort.value});
+    function update(){const s=state(),dl=s.fp,de=8-s.fp,tl=s.w*dl,te=s.e*de,delta=(te-tl)/Math.max(te,tl);q('#fulcrumOut').value=dl.toFixed(1)+' m';q('#loadOut').value=s.w+' N';q('#effortOut').value=s.e+' N';q('#effortTorque').textContent=te.toFixed(0)+' N·m';q('#loadTorque').textContent=tl.toFixed(0)+' N·m';q('#ma').textContent=(de/dl).toFixed(2)+'×';const st=q('#balanceStatus');st.textContent=Math.abs(delta)<.025?'Balanced!':delta>0?'Effort wins':'Load wins';st.style.color=Math.abs(delta)<.025?'var(--green)':'var(--amber)'}
+    function resize(canvas,h){const d=Math.min(devicePixelRatio||1,2),w=canvas.clientWidth;canvas.width=w*d;canvas.height=h*d;canvas.getContext('2d').setTransform(d,0,0,d,0,0)}
+    function arrow(x,y,len,color,up,label){const yy=y+(up?-len:len);ctx.save();ctx.lineCap='round';ctx.strokeStyle='#02090b';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,yy);ctx.stroke();ctx.strokeStyle=color;ctx.lineWidth=4;ctx.stroke();ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,yy);ctx.lineTo(x-9,yy+(up?13:-13));ctx.lineTo(x+9,yy+(up?13:-13));ctx.closePath();ctx.fill();ctx.font='900 13px Inter';ctx.textAlign='center';ctx.fillStyle='#071014';const tw=ctx.measureText(label).width+18,ly=yy+(up?-28:31);ctx.fillStyle=color;ctx.roundRect(x-tw/2,ly-14,tw,23,7);ctx.fill();ctx.fillStyle='#071014';ctx.fillText(label,x,ly+3);ctx.restore()}
+    function draw(){const w=cv.clientWidth,h=430,s=state(),tl=s.w*s.fp,te=s.e*(8-s.fp),target=Math.max(-.28,Math.min(.28,(te-tl)/Math.max(te,tl)*.34));tilt+=(target-tilt)*.08;ctx.clearRect(0,0,w,h);const pad=Math.max(48,w*.075),span=w-pad*2,fx=pad+span*s.fp/8,y=210,lx=-span*s.fp/8,ex=span*(8-s.fp)/8,c=Math.cos(tilt),sn=Math.sin(tilt),loadX=fx+lx*c,loadY=y+lx*sn,effortX=fx+ex*c,effortY=y+ex*sn;
+      const sky=ctx.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#061a22');sky.addColorStop(.7,'#0b2630');sky.addColorStop(.701,'#102a21');sky.addColorStop(1,'#071510');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);ctx.strokeStyle='#ffffff0d';ctx.lineWidth=1;for(let gx=pad;gx<w-pad;gx+=Math.max(50,span/8)){ctx.beginPath();ctx.moveTo(gx,32);ctx.lineTo(gx,350);ctx.stroke()}
+      ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(fx,323,52,10,0,0,Math.PI*2);ctx.fill();const fg=ctx.createLinearGradient(fx-34,y,fx+34,318);fg.addColorStop(0,'#d8b4fe');fg.addColorStop(.48,'#a855f7');fg.addColorStop(1,'#5b21b6');ctx.fillStyle=fg;ctx.strokeStyle='#e9d5ff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fx,y+7);ctx.lineTo(fx-35,318);ctx.lineTo(fx+35,318);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.save();ctx.translate(fx,y);ctx.rotate(tilt);ctx.shadowColor='#000b';ctx.shadowBlur=14;ctx.shadowOffsetY=9;ctx.lineCap='round';ctx.lineWidth=20;ctx.strokeStyle='#071014';ctx.beginPath();ctx.moveTo(lx,0);ctx.lineTo(ex,0);ctx.stroke();ctx.shadowColor='transparent';const g=ctx.createLinearGradient(lx,0,ex,0);g.addColorStop(0,'#d97706');g.addColorStop(.18,'#fbbf24');g.addColorStop(.5,'#f8fafc');g.addColorStop(.82,'#86efac');g.addColorStop(1,'#16a34a');ctx.lineWidth=14;ctx.strokeStyle=g;ctx.stroke();ctx.lineWidth=2;ctx.strokeStyle='#ffffffaa';ctx.beginPath();ctx.moveTo(lx+5,-4);ctx.lineTo(ex-5,-4);ctx.stroke();ctx.restore();
+      ctx.fillStyle='#0b1215';ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.roundRect(loadX-25,loadY+16,50,39,7);ctx.fill();ctx.stroke();ctx.fillStyle='#fbbf24';ctx.font='900 13px JetBrains Mono';ctx.textAlign='center';ctx.fillText(s.w+' N',loadX,loadY+41);ctx.strokeStyle='#fbbf24aa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(loadX,loadY+6);ctx.lineTo(loadX,loadY+16);ctx.stroke();
+      ctx.fillStyle='#f8fafc';ctx.strokeStyle='#a855f7';ctx.lineWidth=4;ctx.beginPath();ctx.arc(fx,y,11,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#a855f7';ctx.beginPath();ctx.arc(fx,y,4,0,Math.PI*2);ctx.fill();arrow(loadX,loadY-2,Math.min(105,48+s.w*.35),'#fbbf24',false,'LOAD '+s.w+' N');arrow(effortX,effortY+2,Math.min(105,50+s.e*.45),'#4ade80',true,'EFFORT '+s.e+' N');
+      ctx.font='900 12px Inter';ctx.textAlign='center';ctx.fillStyle='#e9d5ff';ctx.fillText('FULCRUM / PIVOT',fx,344);const dimY=378;ctx.setLineDash([5,5]);ctx.lineWidth=1.5;ctx.strokeStyle='#fbbf2488';ctx.beginPath();ctx.moveTo(pad,dimY);ctx.lineTo(fx,dimY);ctx.stroke();ctx.strokeStyle='#4ade8088';ctx.beginPath();ctx.moveTo(fx,dimY);ctx.lineTo(w-pad,dimY);ctx.stroke();ctx.setLineDash([]);for(const x of [pad,fx,w-pad]){ctx.strokeStyle='#d7ebe5';ctx.beginPath();ctx.moveTo(x,dimY-7);ctx.lineTo(x,dimY+7);ctx.stroke()}ctx.font='800 13px JetBrains Mono';ctx.fillStyle='#fbbf24';ctx.fillText('LOAD ARM  '+s.fp.toFixed(1)+' m',pad+(fx-pad)/2,405);ctx.fillStyle='#4ade80';ctx.fillText('EFFORT ARM  '+(8-s.fp).toFixed(1)+' m',fx+(w-pad-fx)/2,405);requestAnimationFrame(draw)}
+    [f,load,effort].forEach(x=>x.addEventListener('input',update));q('#balanceIt').onclick=()=>{const s=state(),fp=8*s.e/(s.w+s.e);f.value=Math.round(Math.max(1.5,Math.min(7,fp))*10);update()};q('#balanceReset').onclick=()=>{f.value=40;load.value=60;effort.value=30;update()};new ResizeObserver(()=>resize(cv,430)).observe(cv);update();draw();
+  })();
+  (()=>{
+    const q=s=>document.querySelector(s),cv=q('#catapultCanvas'),ctx=cv.getContext('2d'),arm=q('#arm'),angle=q('#angle'),pull=q('#pull'),mass=q('#mass');let flight=null,best=0,last=0;
+    function calc(){const a=+arm.value,A=+angle.value,p=+pull.value,m=+mass.value,v=4.9*(a/40)*Math.sqrt(p/60)*Math.sqrt(5/m)+3.3,rad=A*Math.PI/180,g=9.81,t=(v*Math.sin(rad)+Math.sqrt((v*Math.sin(rad))**2+2*g*.7))/g,r=v*Math.cos(rad)*t;return{a,A,p,m,v,t,r,rad}}
+    function update(){const s=calc();q('#armOut').value=s.a+' cm';q('#angleOut').value=s.A+'°';q('#pullOut').value=s.p+'%';q('#massOut').value=s.m+' g';q('#speedRead').textContent=s.v.toFixed(1)+' m/s';q('#rangeRead').textContent=s.r.toFixed(1)+' m';q('#timeRead').textContent=s.t.toFixed(1)+' s'}
+    function resize(){const d=Math.min(devicePixelRatio||1,2),w=cv.clientWidth;cv.width=w*d;cv.height=500*d;ctx.setTransform(d,0,0,d,0,0)}
+    function render(now=0){const w=cv.clientWidth,h=500,s=calc(),ground=410,baseX=Math.max(105,w*.14),scale=Math.min((w-baseX-45)/Math.max(9,s.r*1.15),70),armPx=s.a*2.35,pivotX=baseX,pivotY=ground-108,rest=-s.rad,cs=Math.cos(rest),sn=Math.sin(rest),tipX=pivotX+cs*armPx,tipY=pivotY+sn*armPx,tailX=pivotX-cs*armPx*.32,tailY=pivotY-sn*armPx*.32;ctx.clearRect(0,0,w,h);
+      const sky=ctx.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#061923');sky.addColorStop(.72,'#123645');sky.addColorStop(.721,'#183727');sky.addColorStop(1,'#08150f');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);ctx.strokeStyle='#ffffff13';ctx.lineWidth=1;for(let x=baseX;x<w;x+=scale){ctx.beginPath();ctx.moveTo(x,45);ctx.lineTo(x,ground);ctx.stroke()}ctx.fillStyle='#1b3b28';ctx.fillRect(0,ground,w,h-ground);ctx.strokeStyle='#86a58e';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,ground);ctx.lineTo(w,ground);ctx.stroke();
+      ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(baseX,ground+8,82,13,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#94a3b8';ctx.lineWidth=9;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(baseX,pivotY);ctx.lineTo(baseX-55,ground);ctx.moveTo(baseX,pivotY);ctx.lineTo(baseX+55,ground);ctx.moveTo(baseX-60,ground);ctx.lineTo(baseX+65,ground);ctx.stroke();ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(baseX-42,ground-28);ctx.lineTo(baseX+42,ground-28);ctx.stroke();
+      ctx.strokeStyle='#fbbf24';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(tailX,tailY);ctx.lineTo(baseX-48,ground-5);ctx.stroke();ctx.fillStyle='#b45309';ctx.strokeStyle='#fbbf24';ctx.lineWidth=3;ctx.roundRect(tailX-20,tailY+8,40,38,5);ctx.fill();ctx.stroke();ctx.fillStyle='#fde68a';ctx.font='900 10px Inter';ctx.textAlign='center';ctx.fillText('POWER',tailX,tailY+31);
+      ctx.save();ctx.shadowColor='#000b';ctx.shadowBlur=12;ctx.shadowOffsetY=7;ctx.lineCap='round';ctx.strokeStyle='#071014';ctx.lineWidth=20;ctx.beginPath();ctx.moveTo(tailX,tailY);ctx.lineTo(tipX,tipY);ctx.stroke();ctx.shadowColor='transparent';const beam=ctx.createLinearGradient(tailX,tailY,tipX,tipY);beam.addColorStop(0,'#a16207');beam.addColorStop(.38,'#fbbf24');beam.addColorStop(1,'#4ade80');ctx.strokeStyle=beam;ctx.lineWidth=13;ctx.stroke();ctx.strokeStyle='#fff9';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(tailX+cs*4,tailY+sn*4-3);ctx.lineTo(tipX-cs*5,tipY-sn*5-3);ctx.stroke();ctx.restore();
+      ctx.fillStyle='#f8fafc';ctx.strokeStyle='#c084fc';ctx.lineWidth=5;ctx.beginPath();ctx.arc(pivotX,pivotY,12,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#7e22ce';ctx.beginPath();ctx.arc(pivotX,pivotY,4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#4ade80';ctx.lineWidth=8;ctx.beginPath();ctx.arc(tipX,tipY,20,rest-.25,rest+1.25);ctx.stroke();
+      ctx.strokeStyle='#38bdf877';ctx.lineWidth=2;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(pivotX,pivotY,54,-s.rad,0);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#7dd3fc';ctx.font='800 12px JetBrains Mono';ctx.fillText(s.A+'°',pivotX+62,pivotY-18);
+      ctx.fillStyle='#d7f9e4';ctx.font='700 12px JetBrains Mono';ctx.textAlign='center';for(let i=0;i<Math.ceil((w-baseX)/scale);i++){ctx.fillText(i+' m',baseX+i*scale,ground+28);ctx.strokeStyle='#d7f9e488';ctx.beginPath();ctx.moveTo(baseX+i*scale,ground-5);ctx.lineTo(baseX+i*scale,ground+7);ctx.stroke()}let bx=tipX,by=tipY;if(flight){const elapsed=Math.min((now-flight.start)/1000,s.t),x=s.v*Math.cos(s.rad)*elapsed,y=.7+s.v*Math.sin(s.rad)*elapsed-4.905*elapsed*elapsed;bx=baseX+x*scale;by=ground-y*scale;if(elapsed>=s.t){best=Math.max(best,s.r);q('#bestRead').textContent=best.toFixed(1)+' m';flight=null}ctx.setLineDash([8,7]);ctx.strokeStyle='#38bdf8';ctx.lineWidth=4;ctx.beginPath();for(let i=0;i<=40;i++){const tt=s.t*i/40,xx=baseX+s.v*Math.cos(s.rad)*tt*scale,yy=ground-(.7+s.v*Math.sin(s.rad)*tt-4.905*tt*tt)*scale;i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.stroke();ctx.setLineDash([])}ctx.fillStyle='#fbbf24';ctx.shadowColor='#fbbf24';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(bx,by,11,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx-3,by-3,4,Math.PI,Math.PI*1.7);ctx.stroke();ctx.fillStyle='#e9d5ff';ctx.font='900 11px Inter';ctx.fillText('AXLE / FULCRUM',pivotX,pivotY+33);last=now;requestAnimationFrame(render)}
+    [arm,angle,pull,mass].forEach(x=>x.addEventListener('input',()=>{update();flight=null}));q('#launch').onclick=()=>{flight={start:performance.now()}};q('#launchReset').onclick=()=>{arm.value=40;angle.value=45;pull.value=60;mass.value=5;flight=null;best=0;q('#bestRead').textContent='—';update()};new ResizeObserver(resize).observe(cv);update();render();
+  })();
+  </script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>
