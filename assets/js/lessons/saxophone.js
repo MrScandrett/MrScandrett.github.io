@@ -89,9 +89,6 @@
   function refreshVariants(){const n=selected();$('sxVariant').replaceChildren(...n.variants.map((v,i)=>new Option(v.name,i)));}
   const keyCode={octave:'T',L1:'LH 1',L2:'LH 2',L3:'LH 3',R1:'RH 1',R2:'RH 2',R3:'RH 3',bis:'Bis',Gsharp:'G♯',lowCsharp:'Low C♯',lowB:'Low B',lowBflat:'Low B♭',sideBflat:'Side B♭',lowC:'Low C',Eflat:'E♭'};
   function fingeringCode(keys){return keys.length?keys.map(key=>keyCode[key]||key).join(' · '):'Open · no finger keys';}
-  function miniFingering(n,name){
-    return `<span class="sx-mini-fingering" aria-hidden="true">${window.FakeBookSax.draw(n.midi,name)}</span>`;
-  }
   function makeStaffExplorer() {
     const host=$('sxNoteStaff'), svg=host.querySelector('svg');
     if(!svg)return;
@@ -128,6 +125,7 @@
   }
   function showFingering(reset=true) {
     const n=selected(), v=variant(), name=n[$('sxSpelling').value];
+    const building=studioView==='note'&&$('sxFingerMode').value!=='explore';
     if(reset)held=new Set(v.keys);
     const keys=[...held], concertMidi=n.midi+offsets[$('sxInstrument').value];
     const flatNames=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
@@ -139,6 +137,8 @@
     move.hidden=!(chg.press.length||chg.lift.length);
     move.innerHTML=move.hidden?'':`From ${F.notes[idx-1][$('sxSpelling').value]}: `+[chg.press.length?'press <b>'+chg.press.map(k=>nice[k]).join(', ')+'</b>':'',chg.lift.length?'lift <b>'+chg.lift.map(k=>nice[k]).join(', ')+'</b>':''].filter(Boolean).join(' · ');
     $('sxFingerDiagram').innerHTML=`<figure data-zoomable data-lightbox-group="sax-studio"><img alt="${name} fingering: ${fingeringCode(keys)}" src="data:image/svg+xml,${encodeURIComponent(instrumentSVG(keys,name,chg))}"><figcaption class="sx-diagram-caption">Written ${name}. Numbered filled circles mark pressed finger touches; open circles mark released touches. Original ClassroomOS illustration based on YAS-280 references, with enlarged views of hidden keys.</figcaption></figure>`;
+    $('sxKeyPattern').closest('.sx-key-pattern').hidden=building;
+    $('sxKeyPattern').innerHTML=window.FakeBookSax.draw(n.midi,name,Number($('sxVariant').value)||0);
     $('sxKeyControls').innerHTML=F.keys.map(k=>`<button type="button" data-key="${k.id}" aria-pressed="${held.has(k.id)}" ${$('sxFingerMode').value==='explore'?'disabled':''}><span class="sax-dot ${held.has(k.id)?'closed':''}" aria-hidden="true"></span>${k.label}</button>`).join('');
     $('sxKeyControls').querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{const key=b.dataset.key;held.has(key)?held.delete(key):held.add(key);showFingering(false);$('sxKeyControls').querySelector(`[data-key="${key}"]`).focus();});
     const touchNames={L1:'LH 1 index',L2:'LH 2 middle',L3:'LH 3 ring',R1:'RH 1 index',R2:'RH 2 middle',R3:'RH 3 ring',bis:'bis B♭',Gsharp:'G♯',lowCsharp:'low C♯',lowB:'low B',lowBflat:'low B♭',sideBflat:'side B♭',lowC:'low C',Eflat:'E♭'};
@@ -146,7 +146,6 @@
     const right=keys.filter(k=>['R1','R2','R3','sideBflat','lowC','Eflat'].includes(k)).map(k=>touchNames[k]);
     $('sxFingerText').textContent=keys.length?`Press — Left hand: ${left.join(', ')||'none'}. Right hand: ${right.join(', ')||'none'}.${held.has('octave')?' Add T, the left-thumb octave key.':''}`:'Open fingering: release all finger keys. Your thumbs still support the instrument; keep every fingertip close.';
     $('sxFingerTip').textContent=v===n.variants[0]&&F.coach[n.sharp]||v.tip;
-    const building=studioView==='note'&&$('sxFingerMode').value!=='explore';
     $('sxBuildTools').hidden=!building;
     $('sxKeyControls').hidden=!building;
     $('sxFingerText').classList.toggle('sx-visible-reading',!building);
@@ -178,19 +177,54 @@
     svg+=`<g transform="translate(34 ${height-38})" font-family="Arial,sans-serif" font-size="11"><circle cx="6" cy="0" r="6" fill="#111"/><text x="18" y="4">pressed</text><circle cx="92" cy="0" r="6" fill="none" stroke="#111" stroke-width="1.5" opacity=".55"/><text x="104" y="4">open</text><text x="170" y="4">Top half: left hand (octave key, 1 · bis · 2 · 3, palm keys, pinky table). Bottom half: right hand (side keys, 1 · 2 · 3, pinky keys).</text></g></svg>`;
     $('sxAcademicChart').innerHTML=`<figure data-zoomable data-lightbox-group="sax-academic"><img src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="Academic saxophone fingering chart for ${notes.length} written notes. Each entry shows a treble staff note and a key column: solid shapes are pressed keys, outlines are open."><figcaption><strong>Academic overview.</strong> Primary common fingering for each selected note, drawn in the same flat style as the sheet-music fingerings. Top half is the left hand: octave key at left, 1 · bis · 2 · 3, palm keys at right, and the little-finger table underneath. Bottom half is the right hand: side keys at left, 1 · 2 · 3, and the little-finger keys underneath. Solid means pressed; an outline means open. ClassroomOS original SVG, checked against the Yamaha fingering reference cited below.</figcaption></figure>`;
   }
+  function noteSearchText(value){
+    return value.toLowerCase().replace(/sharp/g,'#').replace(/flat/g,'b').replace(/♯/g,'#').replace(/♭/g,'b').replace(/\s+/g,'');
+  }
+  function renderSearch(){
+    const query=noteSearchText($('sxNoteSearch').value.trim());
+    const notes=query?F.notes.filter(n=>[n.flat,n.sharp].some(name=>noteSearchText(name).startsWith(query))):[];
+    $('sxChartStatus').textContent=query?`${notes.length} matching written note${notes.length===1?'':'s'}`:'Type a written note name to jump to it.';
+    $('sxSearchResults').innerHTML=query?(notes.length?notes.map(n=>`<button type="button" data-midi="${n.midi}" aria-current="${n.midi===selected().midi}">${n[$('sxSpelling').value]}</button>`).join(''):'<p>No note found. Try B♭4, Bb4, or F#5.</p>'):'';
+    $('sxSearchResults').querySelectorAll('[data-midi]').forEach(button=>button.onclick=()=>selectNote(F.byMidi.get(Number(button.dataset.midi)).flat));
+  }
   function chart(){
-    const range=$('sxRange').value;
-    const notes=F.notes.filter(n=>range==='first'?[64,65,67,69,71].includes(n.midi):range==='natural'?n.midi>=60&&n.flat===n.sharp:true);
-    academicChart(notes);
-    $('sxChart').innerHTML=notes.map(n=>{const name=n[$('sxSpelling').value],keys=n.variants[0].keys,current=n.midi===selected().midi;return `<button type="button" class="sx-chart-note" data-midi="${n.midi}" aria-current="${current}" aria-label="Choose written ${name}: ${fingeringCode(keys)}"><strong>${name}</strong>${miniFingering(n,name)}<span class="sx-chart-code">${fingeringCode(keys)}</span></button>`;}).join('');
-    $('sxChart').querySelectorAll('[data-midi]').forEach(button=>button.onclick=()=>{switchView('note');selectNote(F.byMidi.get(Number(button.dataset.midi)).flat);$('sxFingeringStudio').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
+    const compact=matchMedia('(max-width: 700px)').matches,perRow=compact?6:9,cell=compact?48:62;
+    const notes=F.notes,rows=[];
+    for(let i=0;i<notes.length;i+=perRow)rows.push(notes.slice(i,i+perRow));
+    $('sxChart').innerHTML=rows.map(row=>{
+      const space=11,bottom=80,width=48+perRow*cell,height=124;
+      let svg=`<svg class="sx-dictionary-staff" viewBox="0 0 ${width} ${height}" role="group" aria-label="Written saxophone notes ${row[0][$('sxSpelling').value]} through ${row.at(-1)[$('sxSpelling').value]}">`;
+      for(let line=0;line<5;line++)svg+=`<line class="sx-dictionary-line" x1="31" x2="${width-8}" y1="${bottom-line*space}" y2="${bottom-line*space}"/>`;
+      svg+=MN.clef('treble',9,bottom,space/2);
+      row.forEach((n,i)=>{
+        const name=n[$('sxSpelling').value],parsed=MN.parsePitch(name),step=parsed.diatonic-MN.clefs.treble.bottom;
+        const x=52+i*cell,y=bottom-step*space/2,current=n.midi===selected().midi;
+        svg+=`<g class="sx-staff-note" data-midi="${n.midi}" role="button" tabindex="0" aria-current="${current}" aria-label="Choose written ${name}: ${fingeringCode(n.variants[0].keys)}"><rect class="sx-staff-note-hit" x="${x-(compact?19:24)}" y="5" width="${compact?38:48}" height="112" rx="5"/>`;
+        MN.ledgerSteps(step).forEach(s=>{svg+=`<line class="sx-dictionary-ledger" x1="${x-14}" x2="${x+14}" y1="${bottom-s*space/2}" y2="${bottom-s*space/2}"/>`;});
+        if(parsed.a)svg+=MN.accidental(parsed.a,x-20,y,space);
+        svg+=MN.note(x,y,space,4,false,step<4,'',step%2===0)+`<text class="sx-staff-note-name" x="${x}" y="116">${name}</text></g>`;
+      });
+      return svg+'</svg>';
+    }).join('');
+    $('sxChart').querySelectorAll('[data-midi]').forEach(button=>{
+      button.addEventListener('click',()=>selectNote(F.byMidi.get(Number(button.dataset.midi)).flat));
+      button.addEventListener('keydown',event=>{
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();button.click();}
+        if(event.key==='ArrowLeft'||event.key==='ArrowRight'){
+          event.preventDefault();const index=F.notes.findIndex(n=>n.midi===Number(button.dataset.midi));
+          const next=F.notes[Math.max(0,Math.min(F.notes.length-1,index+(event.key==='ArrowRight'?1:-1)))];
+          selectNote(next.flat);$('sxChart').querySelector(`[data-midi="${next.midi}"]`)?.focus();
+        }
+      });
+    });
+    academicChart(notes);renderSearch();
   }
   refreshVariants();
   function switchView(view){
     stop();studioView=view;
     $('sxViewNote').setAttribute('aria-pressed',String(view==='note'));
     $('sxViewScale').setAttribute('aria-pressed',String(view==='scale'));
-    $('sxSingleControls').hidden=view!=='note';$('sxNoteStaff').hidden=view!=='note';
+    $('sxSingleControls').hidden=view!=='note';$('sxNoteStaff').hidden=view!=='note';$('sxFingeringStudio').querySelector('.sx-note-finder').hidden=view!=='note';
     $('sxScaleChoices').hidden=view!=='scale';$('sxScalePractice').hidden=view!=='scale';
     if(view==='scale'){$('sxFingerMode').value='explore';scale.index=0;renderPath(true);}
     else showFingering();
@@ -199,7 +233,8 @@
   $('sxVariant').onchange=()=>{stop();showFingering();};
   $('sxSpelling').onchange=()=>{stop();F.notes.forEach((n,i)=>$('sxNote').options[i].text=n[$('sxSpelling').value]);showFingering();chart();renderPath(studioView==='scale');};
   $('sxFingerMode').onchange=()=>{switchView('note');showFingering();if($('sxFingerMode').value==='challenge'){held.clear();showFingering(false);}$('sxFingeringStudio').scrollIntoView({block:'start'});};
-  $('sxRange').onchange=chart;
+  $('sxNoteSearch').oninput=renderSearch;
+  matchMedia('(max-width: 700px)').addEventListener('change',chart);
   ['sxPreviousNote','sxNextNote'].forEach((id,i)=>$(id).onclick=()=>{stop();const index=F.notes.indexOf(selected());selectNote(F.notes[(index+(i?1:-1)+F.notes.length)%F.notes.length].flat);});
   $('sxClearFingering').onclick=()=>{held.clear();showFingering(false);};
   $('sxRevealFingering').onclick=()=>showFingering();
@@ -263,7 +298,7 @@
   const questions=[['Why is a saxophone a woodwind?',['It has a wooden body','Its sound uses a single reed','Its bell is small'],1,'The reed and air column vibrate together; body material does not define this family.'],['What generally happens as more tone holes close?',['Effective air column lengthens and pitch lowers','Pitch always rises','The reed stops vibrating'],0,'A longer effective air column favors lower resonances.'],['Written C5 on alto sounds as…',['C5','B♭3','E♭4'],2,'Alto sounds a major sixth (9 semitones) below its written pitch.'],['Which notes belong to ii in written C major?',['D–F–A','D–F♯–A','C–E–G'],0,'ii starts on degree 2; its minor triad uses D, F and A.'],['What does a quarter rest mean in 4/4?',['Stop counting','One beat of measured silence','Play softly'],1,'Silence occupies a beat. Keep the pulse moving.']];
   $('sxQuiz').innerHTML=questions.map((q,i)=>`<fieldset><legend>${i+1}. ${q[0]}</legend>${q[1].map((a,j)=>`<label><input type="radio" name="sxq${i}" value="${j}"> ${a}</label>`).join('')}<p id="sxFeedback${i}"></p></fieldset>`).join('');
   $('sxCheck').onclick=()=>{let correct=0,answered=0;questions.forEach((q,i)=>{const selected=document.querySelector(`input[name="sxq${i}"]:checked`);if(selected)answered++;const ok=selected&&Number(selected.value)===q[2];if(ok)correct++;$(`sxFeedback${i}`).textContent=(ok?'Correct. ':selected?'Revisit this. ':'Choose an answer. ')+q[3];});$('sxQuizResult').textContent=`${correct} of ${questions.length} correct; ${answered} answered. Use the explanations, revise, and check again.`;};
-  $('sxNote').onchange=()=>{stop();refreshVariants();showFingering();};$('sxInstrument').onchange=()=>{stop();showFingering();if(studioView==='scale'){scale.index=0;renderPath(true);scaleStatus('Ready');}};
+  $('sxNote').onchange=()=>{stop();selectNote(selected().flat);};$('sxInstrument').onchange=()=>{stop();showFingering();if(studioView==='scale'){scale.index=0;renderPath(true);scaleStatus('Ready');}};
   $('sxHearNote').onclick=()=>play([study(showFingering(),2)],null,false);
   $('sxCompare').onclick=()=>play(['B4','A4','G4'].map(n=>study(n)),null,false);
   $('sxPiece').onchange=()=>{stop();renderPiece();};$('sxNames').onchange=()=>{stop();renderPiece();};$('sxPlay').onclick=()=>play(pieces[$('sxPiece').value].notes,$('sxPieceStaff'));
@@ -282,7 +317,7 @@
     const show=row=>{rows.forEach(r=>r.classList.toggle('is-on',r===row));img.src='data:image/svg+xml,'+encodeURIComponent(KM.svg(row?row.dataset.kmPressed.split(' '):['L1','L2','L3'],row?row.dataset.kmKey:null));};
     rows.forEach(r=>{['mouseenter','focus','click'].forEach(e=>r.addEventListener(e,()=>show(r)));r.addEventListener('mouseleave',()=>{if(document.activeElement!==r)show(null);});r.addEventListener('blur',()=>show(null));});
   })();
-  // Phone layout: the finger legend and note chart fold away (desktop CSS ignores data-folded).
+  // On phones only the finger-number legend folds; the note dictionary stays visible.
   document.querySelectorAll('#sxFingeringStudio [data-fold-toggle]').forEach(btn=>btn.addEventListener('click',()=>{
     const host=btn.closest('[data-folded]'),folded=host.dataset.folded!=='true';
     host.dataset.folded=String(folded);btn.setAttribute('aria-expanded',String(!folded));
