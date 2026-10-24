@@ -28,7 +28,55 @@
     'cosmology/pale-blue-dot.html': [[CONSTELLATIONS, 'Constellations: the neighborhood of the pale blue dot', 'Every star in a constellation is another sun. Find their distances, temperatures and histories.']],
     'earth-science/seasons-and-the-heavens.html': [[CONSTELLATIONS, 'Constellations: the zodiac, precession and Spica', 'See how the equinox point has drifted from Aries into Pisces, and how Hipparchus discovered precession from Spica.']],
     'physics/modern-and-thermal/speed-of-light.html': [[CONSTELLATIONS, 'Constellations: every star is a look back in time', 'Betelgeuse is about 700 ly away, Deneb about 2,600. Click stars to see the age of the light you’re seeing.']],
-    'chemistry/periodic-table.html': [[CONSTELLATIONS, 'Constellations: elements in starlight', 'Helium was found in the Sun before Earth. Read the spectra of Betelgeuse, Rigel, Cassiopeia A and more.']]
+    'chemistry/periodic-table.html': [[CONSTELLATIONS, 'Constellations: elements in starlight', 'Helium was found in the Sun before Earth. Read the spectra of Betelgeuse, Rigel, Cassiopeia A and more.']],
+    'mathematics/foundations/numbers.html': [
+      ['computer-science/security/cryptography-enigma.html', 'Cryptography & the Enigma Machine', 'See how prime numbers, modular arithmetic, and binary encodings protect secret messages.'],
+      ['humanities/quadrivium.html', 'The Medieval Quadrivium', 'Explore how arithmetic, geometry, music, and astronomy were taught as four branches of number.']
+    ],
+    'mathematics/foundations/clocks-and-time.html': [
+      ['cosmology/heliocentrism.html', 'Heliocentrism — The Sun at the Center', 'Connect sundials, solar days, and orbital periods to our changing model of the Solar System.'],
+      ['physics/mechanics/pendulum.html', 'The Pendulum Lab', 'Discover why Galileo and Huygens used pendulum period to build the first accurate mechanical clocks.']
+    ],
+    'mathematics/foundations/measuring-length.html': [
+      ['engineering/arduino-and-electronics/multimeter-lab.html', 'Multimeter Lab: Measuring Electricity', 'Put SI units (volts, amperes, ohms) to work on a live virtual circuit bench.']
+    ],
+    'mathematics/foundations/proportional-reasoning.html': [
+      ['engineering/arduino-and-electronics/ohms-law.html', 'Ohm’s Law: Voltage, Current & Resistance', 'See direct and inverse proportionality in action inside an electrical circuit.'],
+      ['physics/mechanics/levers.html', 'Levers & Mechanical Advantage', 'Balance torque with proportional distances from the fulcrum.']
+    ],
+    'mathematics/geometry-and-trigonometry/pythagoras.html': [
+      ['humanities/school-of-athens.html', 'The School of Athens', 'Meet Pythagoras, Euclid, and Hypatia in Raphael’s fresco of classical mathematics and philosophy.'],
+      ['physics/mechanics/vectors.html', 'Vectors: Magnitude & Direction', 'Use the Pythagorean theorem to combine perpendicular velocity and force components.']
+    ],
+    'mathematics/geometry-and-trigonometry/pi.html': [
+      ['physics/mechanics/wheel-and-axle.html', 'Wheel & Axle Mechanics', 'See how circumference (2πr) translates rotational turns into linear distance.']
+    ],
+    'mathematics/geometry-and-trigonometry/soh-cah-toa.html': [
+      ['physics/mechanics/vectors.html', 'Vectors: Resolving Forces with Sine & Cosine', 'Use SOH-CAH-TOA to split angled forces and velocities into horizontal and vertical components.']
+    ],
+    'mathematics/geometry-and-trigonometry/unit-circle-waves.html': [
+      ['physics/waves-and-sound/sound-and-vibration.html', 'Sound & Vibration', 'Hear how sine waves on the unit circle become musical pitch, amplitude, and phase.'],
+      ['physics/waves-and-sound/physics-of-music.html', 'The Physics of Music', 'Connect trigonometric wave frequency ratios to musical intervals and harmony.']
+    ],
+    'mathematics/advanced-and-calculus/fourier-series.html': [
+      ['physics/waves-and-sound/digital-signal-processing.html', 'Digital Signal Processing (DSP)', 'Apply Fourier transforms to filter audio, sample signals, and analyze real-world waveforms.'],
+      ['physics/waves-and-sound/physics-of-music.html', 'The Physics of Music & Overtones', 'See how harmonic overtones give each musical instrument its distinct timbre.']
+    ],
+    'mathematics/advanced-and-calculus/slope-of-a-curve.html': [
+      ['physics/mechanics/kinematics.html', 'Kinematics: Position, Velocity & Acceleration', 'Watch instantaneous slope become velocity and acceleration in real physical motion.'],
+      ['engineering/arduino-and-electronics/pid-control.html', 'PID Control Systems', 'See how the Derivative (D) term uses instantaneous slope to damp oscillations in robots.']
+    ],
+    'mathematics/advanced-and-calculus/time-derivatives-snap-crackle-pop.html': [
+      ['physics/mechanics/kinematics.html', 'Kinematics Lab', 'Connect position, velocity, and acceleration curves to real-time motion experiments.'],
+      ['engineering/arduino-and-electronics/pid-control.html', 'PID Control Lab', 'Explore how engineers control velocity, acceleration, and jerk in physical actuators.']
+    ],
+    'mathematics/advanced-and-calculus/eulers-number.html': [
+      ['engineering/arduino-and-electronics/capacitors-rc-time.html', 'Capacitors & RC Time Constants', 'Watch e⁻ᵗ/RC govern how every capacitor charges and discharges in real circuits.']
+    ],
+    'mathematics/algebra/equations-iceberg.html': [
+      ['physics/mechanics/newtons-laws.html', 'Newton’s Laws of Motion', 'Experiment with F = ma and see how physical equations predict real motion.'],
+      ['cosmology/keplers-laws.html', 'Kepler’s Laws of Planetary Motion', 'Explore T² ∝ a³ and see how algebraic power laws govern planetary orbits.']
+    ]
   };
 
   var script = document.currentScript;
