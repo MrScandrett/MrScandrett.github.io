@@ -1624,7 +1624,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var emptyEl = document.getElementById('gcPracticeEmpty');
     if (emptyEl) emptyEl.hidden = practiceList.length > 0;
     var tab = document.querySelector('.ll-tab[data-pane="pane-practice"]');
-    if (tab) tab.textContent = 'Practice list' + (practiceList.length ? ' (' + practiceList.length + ')' : '');
+    if (tab) (tab.querySelector('.instrument-chapter-copy') || tab).textContent = 'Practice list' + (practiceList.length ? ' (' + practiceList.length + ')' : '');
   }
 
   var addChordToPracticeBtn = document.getElementById('gcAddChordToPractice');
