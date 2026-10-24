@@ -284,9 +284,54 @@ def convert(path, staff_labels=None, keep=None, instruments=None):
                         out.append(c)
                 else:
                     out.append(e)
+            # A note held past its barline (a breve in 4/4) becomes tied notes, one per bar.
+            split = []
+            for e in out:
+                bi = bar_index(e['now'])
+                bar_end = starts[bi][0] + starts[bi][1]
+                if e['kind'] != 'note' or e['grace'] or e['scale'] != 1 or e['now'] + e['len'] <= bar_end:
+                    split.append(e)
+                    continue
+                now, left = e['now'], e['len']
+                while left > 0:
+                    bi = bar_index(now)
+                    piece = min(left, starts[bi][0] + starts[bi][1] - now)
+                    log_dots = next(((lg, dt) for lg in range(0, 6) for dt in (0, 1) if dur_len(lg, dt, F(1)) == piece), None)
+                    if log_dots is None:
+                        raise ValueError(f'cannot split a note of {e["len"]} across the bar at {now}')
+                    c = dict(e)
+                    c['now'], c['len'], c['log'], c['dots'], c['key'] = now, piece, log_dots[0], log_dots[1], (now, e['grace'])
+                    last = left == piece
+                    c['pitches'] = [(q[0], q[1] if last else True) for q in e['pitches']]
+                    if now != e['now']:
+                        c['arts'], c['dyn'] = [], None
+                    split.append(c)
+                    now += piece
+                    left -= piece
+            out = split
             for e in out:
                 e['bar'] = bar_index(e['now'])
             ctx_events[v] = out
+        # A voice can overlap itself (`<< bf2. { s8 <f bf>4 } >>` without \\): split it into
+        # non-overlapping lines so each gets its own lane.
+        for v, evs in list(ctx_events.items()):
+            chains = [[]]
+            ends = [F(-1)]
+            for e in evs:
+                if e['grace'] or e['kind'] == 'skip':
+                    chains[0].append(e)
+                    continue
+                k = next((i for i, end in enumerate(ends) if end <= e['now']), None)
+                if k is None:
+                    chains.append([])
+                    ends.append(F(-1))
+                    k = len(chains) - 1
+                chains[k].append(e)
+                ends[k] = e['now'] + e['len']
+            if len(chains) > 1:
+                ctx_events[v] = chains[0]
+                for i, ch in enumerate(chains[1:], 1):
+                    ctx_events[f'{v}#{i}'] = ch
 
         # Lanes: pack voice contexts so overlapping ones get separate lanes (upper first), per bar.
         lanes_by_bar = [dict() for _ in range(nb)]   # bar -> lane -> [events]
@@ -455,10 +500,23 @@ def bar_tokens(evs, start, length, hide, clefs):
             graces.append(e)
             continue
         if e['now'] > t:
-            if tup:
-                toks.append('}')
-                tup = None
-            toks += gap_tokens(e['now'] - t, hide)
+            gap = e['now'] - t
+            if e['scale'] != 1 and (gap * 2 ** 5).denominator != 1 and ((gap / e['scale']) * 2 ** 5).denominator == 1:
+                # A gap inside a tuplet (an arpeggio that crosses to the other hand): hidden tuplet rests.
+                if tup and tup[0] != e['scale']:
+                    toks.append('}')
+                    tup = None
+                if not tup:
+                    n, d = e['scale'].denominator, e['scale'].numerator
+                    toks.append('{3' if (n, d) == (3, 2) else '{%d:%d' % (n, d))
+                    tup = [e['scale'], F(0)]
+                toks += gap_tokens(gap / e['scale'], True)
+                tup[1] += gap
+            else:
+                if tup:
+                    toks.append('}')
+                    tup = None
+                toks += gap_tokens(gap, hide)
             t = e['now']
         if e['now'] < t:
             # Overlap inside one lane: shorten the earlier item is not possible; give up loudly.
@@ -512,6 +570,17 @@ def bar_tokens(evs, start, length, hide, clefs):
             if (tup[1] / scale) % (unit * scale.denominator) == 0:
                 toks.append('}')
                 tup = None
+    gap = start + length - t
+    last = next((e for e in reversed(evs) if not e['grace']), None)
+    if gap and last and last['scale'] != 1 and (gap * 2 ** 5).denominator != 1 and ((gap / last['scale']) * 2 ** 5).denominator == 1:
+        if not tup:
+            n, d = last['scale'].denominator, last['scale'].numerator
+            toks.append('{3' if (n, d) == (3, 2) else '{%d:%d' % (n, d))
+        toks += gap_tokens(gap / last['scale'], True)
+        toks.append('}')
+        if graces:
+            raise ValueError('grace notes at the end of a bar')
+        return toks
     if tup:
         toks.append('}')
     if t < start + length:
