@@ -43,6 +43,9 @@ the engine's score text:
   (upper voice first); stems are forced up/down only in bars where two voices overlap (`@U`/`@D`/`@A`).
 - Bars come from LilyPond's own barlines, so incomplete bars at repeat endings become `@L:` bars. A repeat
   sign in the middle of a bar splits the bar (both halves keep the bar's number, `@N:`).
+- A voice that overlaps itself (`<< bf2. { s8 <f bf>4 } >>` without `\\`) is split into extra lanes.
+- A tuplet with a gap in it (an arpeggio that crosses to the other hand) is filled with hidden tuplet rests.
+- A note held past its barline (a breve in 4/4) is written as tied notes, one per bar.
 - Measured tremolos are written out as the notes they stand for; transposing instruments are shown at
   sounding pitch; `\afterGrace` notes lead into the next bar's first note.
 
@@ -61,7 +64,10 @@ the engine's score text:
 | mozart-sonata-facile | Mutopia 998 (CC BY-SA 3.0) | all but 17 grace notes |
 | mozart-eine-kleine-1 | Mutopia 900 (PD) | all but 146 grace notes and 12 trill realisations written only for MIDI |
 | tchaikovsky-old-french-song | Mutopia 2080 (PD) | 188/188 |
+| tchaikovsky-wooden-soldiers | Mutopia 1806 (PD) | 318/318 |
 | vivaldi-spring-1 | Mutopia 301 (CC BY-SA 3.0) | 3173/3173; 19 staccatissimo durations differ |
+| debussy-clair-de-lune | Mutopia 1778 (PD) | 1467/1468 (1 grace note); 26 extra = unisons between voices that MIDI merges |
+| debussy-arabesque-1 | Mutopia 1777 (PD) | 1448/1448; 10 extra = unisons between voices |
 
 The Gershwin refrains were transcribed from the original sheet-music scans in
 `assets/images/lessons/jazz-scores/` (and the Ohio State University PDF for the last page of *Fascinating

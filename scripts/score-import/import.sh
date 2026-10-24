@@ -19,7 +19,7 @@ cp -r "$src"/. "$work"/
 cd "$work"
 # Update old syntax, then the one shorthand convert-ly misses (old staccatissimo "-|").
 for f in $(find . -name '*.ly' -o -name '*.ily'); do "$LILYPOND/convert-ly" -e "$f" > /dev/null 2>&1 || true; done
-sed -i -E 's/-\|/-!/g' $(find . -name '*.ly' -o -name '*.ily')
+sed -i -E 's/(^|[^-])-\|/\1-!/g' $(find . -name '*.ly' -o -name '*.ily')
 rm -f ./*.events
 "$LILYPOND/lilypond" -dinclude-settings="$HERE/dump.ly" -dbackend=null --loglevel=ERROR "$main" > lily.log 2>&1 || true
 ev=$(ls -t ./*.events 2>/dev/null | head -1)
