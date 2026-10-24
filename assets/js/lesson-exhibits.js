@@ -81,6 +81,25 @@
     'mathematics/algebra/where-lines-meet.html': [
       ['lights-out', 'A puzzle solved as a system of equations, one equation per light, using elimination in on/off arithmetic where 1 + 1 = 0.']
     ],
+    'mathematics/foundations/pemdas.html': [
+      ['magic-squares', 'Evaluate row, column, and diagonal sums accurately so every line reaches the same target constant.']
+    ],
+    'mathematics/foundations/area-perimeter-playground.html': [
+      ['magic-squares', 'Explore grid symmetry and spatial balance on a 3×3 or 4×4 square grid.'],
+      ['mini-sudoku', 'Use grid rows, columns, and regions to deduce missing values without guessing.']
+    ],
+    'mathematics/algebra/algebra-tiles-factoring.html': [
+      ['sliding-puzzle', 'Rearrange rectangular tiles within a bounded grid to reach an ordered target configuration.']
+    ],
+    'mathematics/algebra/completing-the-square.html': [
+      ['magic-squares', 'Complete a square grid by finding the missing entries that balance every row and column.']
+    ],
+    'mathematics/statistics-and-probability/probability-simulator.html': [
+      ['nim', 'Contrast pure chance with a game of complete information where binary math guarantees a winning strategy.']
+    ],
+    'mathematics/statistics-and-probability/probability-pachinko.html': [
+      ['peg-solitaire', 'Trade random peg bounces for deterministic peg jumps on a triangular/cross board.']
+    ],
     'humanities/quadrivium.html': [
       ['river-crossing', 'A math puzzle from the medieval liberal-arts schools: it appears in a collection attributed to Alcuin of York, teacher at Charlemagne’s court.'],
       ['magic-squares', 'Magic squares fascinated medieval and Renaissance scholars; Dürer engraved one in 1514.']

@@ -49,6 +49,14 @@ the engine's score text:
 - Measured tremolos are written out as the notes they stand for; transposing instruments are shown at
   sounding pitch; `\afterGrace` notes lead into the next bar's first note.
 
+## Fixes made by hand after converting
+
+Some engravings need a small edit the converter cannot make; each one is scripted and listed here.
+
+- **Moonlight III**: the secondary voices (`topsecondary`, `bottomsecondary`) only draw hold-ties from hidden noteheads, so a wrapper `.ly` empties them before `\book`. LilyPond logs the bar-188 cadenza (grace notes) three bars late, so it is moved back and spelled out in sixteenths as its own incomplete bar, also numbered 188 (`@L:39/4 @N:188`). After the cadenza LilyPond's MIDI right hand runs 0.714 beats late; shift it before comparing.
+- **Moonlight II**: Beethoven's "Allegretto D.C." is not in the source; add `@Fine` at the end of bar 36 and `@DC` on the last bar.
+- **Fifth Symphony I**: the fermata chord and oboe cadenza in bar 268 are written under `\cadenzaOn`, which the converter cuts into one-beat bars; rebuild them as bar 268 plus an 8-beat bar 268, and delete the empty `s2` the source adds after `\cadenzaOff` (the movement then ends at bar 502). The cello's seven tied pp bars sit in their own voice, so the tie into the ff eighth in bar 492 is not engraved and MIDI re-strikes it; drop that tie.
+
 ## Current complete scores
 
 | Score | Source | Check against MIDI |
@@ -57,6 +65,8 @@ the engine's score text:
 | bach-prelude-c-major | Mutopia 5 (PD) | 549/549 |
 | bach-cello-prelude | Mutopia 517 (PD) | 656/656 |
 | beethoven-fur-elise | Mutopia 931 (PD) | all but 3 grace notes |
+| beethoven-moonlight-1 / -2 / -3 | Mutopia 276 (CC BY-SA 2.5) | 1142/1142 / 373/373 / all but 85 grace and ornament notes; 2 / 0 / 41 extra = unisons and the chords the edition ties over from an arpeggio, which MIDI holds instead of re-striking |
+| beethoven-symphony-5-1 | Mutopia 941 (PD) | every MIDI note; 436 extra = measured tremolos (`c2:8`) written out, which MIDI holds as one note; 96 extra = unisons between parts |
 | beethoven-symphony-7-allegretto | Mutopia 595 (PD) | all but 28 grace notes; durations of some cross-instrument unisons differ in the check only |
 | chopin-prelude-4 / -7 / -20 | Mutopia 468 / 470 / 472 (PD) | all but 2 / 1 / 0 grace notes |
 | joplin-entertainer | Mutopia 263 (PD) | all notes; 5 second-ending chords with `\repeatTie` are re-struck instead of held |

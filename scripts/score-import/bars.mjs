@@ -9,7 +9,7 @@ console.log(`${sc.title}: ${m.count} bars, key ${sc.key}, ${sc.time}, pickup ${s
 for (let bi = 0; bi < m.count; bi++) {
   const no = E.barNumber(m, bi); if (no < +from || no > +to) continue;
   const mt = m.barMeta[bi];
-  const marks = [mt.repStart && '|:', mt.repEnd && ':|', mt.volta && 'ending ' + mt.volta, mt.keyChange && 'key→' + mt.key, mt.timeChange && 'time→' + mt.ts.num + '/' + mt.ts.den].filter(Boolean).join(' ');
+  const marks = [mt.repStart && '|:', mt.repEnd && ':|', mt.volta && 'ending ' + mt.volta, mt.fine && 'Fine', mt.dc && 'D.C.', mt.keyChange && 'key→' + mt.key, mt.timeChange && 'time→' + mt.ts.num + '/' + mt.ts.den].filter(Boolean).join(' ');
   const parts = m.staves.map((st) => st.bars[bi].events.filter((e) => !e.hidden).map((e) => e.kind === 'rest' ? 'r' : (e.pitches.map(name).join('+') + (e.tie ? '~' : ''))).join(' '));
   console.log(String(no).padStart(3) + (marks ? ' [' + marks + ']' : '') + ' :: ' + parts.join('  ||  '));
 }
