@@ -270,6 +270,8 @@ const PROJECT_EXTRA_SKIP_DIRS = {
 };
 const PROJECT_EXTRA_SKIP_FILES = {
   thomas: new Set(["server.py"]),
+  asteroids: new Set(["assets.js"]),
+  crawlspace: new Set(["assets.js"]),
 };
 
 function listSubdirs(dirPath) {
