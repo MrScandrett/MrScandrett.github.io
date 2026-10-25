@@ -216,8 +216,9 @@ function compare(baseline, results) {
     const js = r.bytes.js || 0, bjs = b.bytes.js || 0;
     if (js > bjs * 1.1 + 20 * 1024) problems.push(`${r.page}: JS ${kb(bjs)} KB -> ${kb(js)} KB`);
     if (r.requests > b.requests * 1.2 + 5) problems.push(`${r.page}: requests ${b.requests} -> ${r.requests}`);
-    // Pages that keep a canvas in view (app shells) are allowed to keep drawing.
-    if (!r.canvasesStillVisible && r.offscreen.rafPerSec > b.offscreen.rafPerSec + 5) {
+    // Pages that keep a canvas in view (app shells) are allowed to keep drawing. A sim that lost its
+    // pause runs at 15-60 frames a second; a few stray frames (model-viewer, contrast catch-up) are noise.
+    if (!r.canvasesStillVisible && r.offscreen.rafPerSec > b.offscreen.rafPerSec + 10) {
       problems.push(`${r.page}: offscreen rAF/s ${b.offscreen.rafPerSec} -> ${r.offscreen.rafPerSec}`);
     }
   }
