@@ -329,5 +329,5 @@ func collect() -> void:
 
   renderSystem();
   updateHud();
-  SimKit.loop(update);
+  SimKit.loop(update, { el: SimKit.stage(lab) });
 })();

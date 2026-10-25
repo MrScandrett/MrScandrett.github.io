@@ -408,7 +408,7 @@
     }
     if (!reducedMotion) photoPhase = (photoPhase + Math.min(dt, 0.05) * .38) % 1;
     drawRelativity(); drawPhotoelectric();
-  });
+  }, { el: SimKit.stage('#ae-photoelectric-canvas') });
 
   resetRelativity(); updatePhotoelectric(); updateMassEnergy(); updateScore();
 }());

@@ -1447,6 +1447,6 @@
     window.SimKit.loop((dt) => {
       gearPhase += dt * 1.8;
       drawGearCanvas();
-    });
+    }, { el: SimKit.stage('#rb-chassis-canvas') });
   }
 })();

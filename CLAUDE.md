@@ -85,10 +85,30 @@ Saved links, bookmarks and students' saved work point at old URLs, so moving a l
 
 ## Performance notes
 
-- Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML
+- Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML/JSON
   and inlines the `@import`s of `classroom-fonts.css` and `components/lesson-shell.css` into the CSS that
   imports them. Source CSS keeps the `@import`s, so `serve-local.js` still shows the extra round trip;
-  judge load speed against a served `dist/`, not the dev server.
+  judge load speed against a served `dist/`, not the dev server. It also: gives PNG/JPGs over 150 KB a WebP
+  (≤1920 px) and points `<img src>`/`data-full` at it; lazy-loads every `<img>` after a page's first two;
+  splits `score-library.json` into `data/scores/<id>.json` (serve-local.js serves the same URLs);
+  meshopt-compresses the models in `MESHOPT_MODELS` (only add one whose viewer has a meshopt decoder);
+  and writes `sw.js`, a content-hashed asset cache for repeat visits (`scripts/sw-template.js`; production
+  only, `?sw=on` on localhost).
+- `npm run audit:perf` serves `dist/` with a 4× CPU throttle and reports LCP, blocking time, bytes, and
+  main-thread/rAF cost before and after scrolling every sim off-screen. `--all` ranks every lesson;
+  `--check` (run on deploy) fails on JS/request growth or a sim that keeps animating off-screen against
+  `docs/perf-baseline.json` (`--save-baseline` after a deliberate change).
+- **Sims pause when nobody can see them.** Drive animation with `SimKit.loop(fn, { el: SimKit.stage(canvas) })`,
+  or in a hand-rolled loop write `SimKit.frame(canvas, draw)` where it said `requestAnimationFrame(draw)`
+  (`SimKit.frame.cancel(canvas, id)` for `cancelAnimationFrame`; `SimKit.raf(el)` gives a reusable gate).
+  Frames are held while the element is >200px off-screen, in a hidden panel, or in a hidden tab, and the
+  paused time is skipped so `dt` stays one frame on resume. Point `el` at what the loop draws (the canvas,
+  SVG or Three.js `renderer.domElement`); `SimKit.stage(a, b)` lists several and runs while any shows. It
+  widens each to its own `<figure>` but never to `.ll-sim`/`<section>`/`<main>`, which never leave the
+  screen. Make sure the page loads `sim-kit.js`. Rosetta 2D games and `classroom-animations.js` pause on
+  their own. Tests: `tests/sim-kit-raf.test.mjs`, `tests/classroom-animations.test.mjs`.
+- The animated site background (`canvas-bg.js`) draws t-driven looks at 30 fps and freezes after 60 s
+  without input; keep new background looks cheap (batch canvas paths, no per-item `stroke()`).
 - Fonts are self-hosted (`assets/fonts/`). Don't add Google Fonts / CDN font `@import`s to shared CSS.
 - Homepage JS lives in `assets/js/pages/index-*.js` (deferred), not inline. The featured video is picked
   from `data/video-library.json` and plays in `watch.html`; don't point it at `assets/videos/*.mp4` files
@@ -341,7 +361,8 @@ headset browser. It turns on automatically in Quest/Pico/Wolvic/Vision Pro brows
 targets, a hover ring for the laser, the animated background paused, and a 🥽 VR menu with
 Full view (fullscreens the biggest on-screen sim's `.ll-sim`/`figure`, or `[data-vr-stage]`),
 text size, and on-screen keys (arrows/Space/Enter, or `<body data-vr-keys="KeyW Space">`).
-It's injected by nav-mobile.js, lesson-print-button.js and ui.js like visitor-memory.js;
+It's injected by nav-mobile.js, lesson-print-button.js and ui.js like visitor-memory.js, but only when it
+will switch on (a headset browser, a saved "on", or `?vr=`; choosing On in Settings loads it);
 pages without those load it with a plain `<script … vr-mode.js defer>`.
 `lib/touch-controls.js` also shows the student-game pads in headsets (rebuild the slugs
 in `data/touch-controls.json` after changing it).

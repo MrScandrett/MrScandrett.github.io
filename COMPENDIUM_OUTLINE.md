@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 434 public lessons and classifies 15 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 436 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -257,7 +257,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 93 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 94 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -316,7 +316,8 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-39** — Gustave Eiffel
 - **ENG-40** — Henry Ford — _also indexed in Design, Materials & Fabrication_
 - **ENG-41** — Rube Goldberg Machine Lab
-- **ENG-42** — Hedy Lamarr
+- **ENG-42** — Siege Engines: Physics You Can Launch
+- **ENG-43** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 
@@ -413,73 +414,74 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 75 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 76 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
 ### Computing Foundations & Representation
 
 - **CSC-01** — Computer Science & Artificial Intelligence Pathway
-- **CSC-02** — Ada Lovelace — The First Programmer
-- **CSC-03** — ASCII: Text That Became Games
-- **CSC-04** — Before Computers: Myths, Logic, and AI Imagination
-- **CSC-05** — Build Your Student Page
-- **CSC-06** — GitHub — From Idea to Shared Prototype
-- **CSC-07** — Ethical Hacking & Cyber Safety
-- **CSC-08** — Blocks World Parser
-- **CSC-09** — N-gram Text Predictor
-- **CSC-10** — Python Foundations — _also indexed in Game Design & Development_
-- **CSC-11** — AI Hacking: When Agents Cross the Line
+- **CSC-02** — Binary, Bits & Logic Gates
+- **CSC-03** — Ada Lovelace — The First Programmer
+- **CSC-04** — ASCII: Text That Became Games
+- **CSC-05** — Before Computers: Myths, Logic, and AI Imagination
+- **CSC-06** — Build Your Student Page
+- **CSC-07** — GitHub — From Idea to Shared Prototype
+- **CSC-08** — Ethical Hacking & Cyber Safety
+- **CSC-09** — Blocks World Parser
+- **CSC-10** — N-gram Text Predictor
+- **CSC-11** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-12** — AI Hacking: When Agents Cross the Line
 
 ### Algorithms, Structures & Search
 
-- **CSC-12** — Sorting Algorithms
-- **CSC-13** — State Machines
-- **CSC-14** — A* Pathfinding Agent
-- **CSC-15** — Minimum Spanning Tree
-- **CSC-16** — Cryptography & The Enigma
+- **CSC-13** — Sorting Algorithms
+- **CSC-14** — State Machines
+- **CSC-15** — A* Pathfinding Agent
+- **CSC-16** — Minimum Spanning Tree
+- **CSC-17** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-17** — Life Lab: The Game of Life
-- **CSC-18** — Perlin Noise
-- **CSC-19** — The Demoscene
-- **CSC-20** — CGI Water: From Physics to Pixels
-- **CSC-21** — Liquid Engine Benchmark
+- **CSC-18** — Life Lab: The Game of Life
+- **CSC-19** — Perlin Noise
+- **CSC-20** — The Demoscene
+- **CSC-21** — CGI Water: From Physics to Pixels
+- **CSC-22** — Liquid Engine Benchmark
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-22** — Alan Turing and The Turing Test
-- **CSC-23** — AI Origins: ELIZA Chatbot
-- **CSC-24** — Rule Engine Expert System
-- **CSC-25** — Perceptron Lab
-- **CSC-26** — Chess: Origins and How to Play
-- **CSC-27** — 1v1 Game AI: Minimax
-- **CSC-28** — AI Chess Through History
-- **CSC-29** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-23** — Alan Turing and The Turing Test
+- **CSC-24** — AI Origins: ELIZA Chatbot
+- **CSC-25** — Rule Engine Expert System
+- **CSC-26** — Perceptron Lab
+- **CSC-27** — Chess: Origins and How to Play
+- **CSC-28** — 1v1 Game AI: Minimax
+- **CSC-29** — AI Chess Through History
+- **CSC-30** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-30** — Grace Hopper
-- **CSC-31** — Margaret Hamilton: Software for the Moon
-- **CSC-32** — Steve Jobs
+- **CSC-31** — Grace Hopper
+- **CSC-32** — Margaret Hamilton: Software for the Moon
+- **CSC-33** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-33** — How the Web Works
-- **CSC-34** — Build Your Own Web — Web Design Pathway
-- **CSC-35** — Set Up Your First Site
-- **CSC-36** — Give the Page Meaning with HTML
-- **CSC-37** — Design with CSS
-- **CSC-38** — Make It Respond with JavaScript
-- **CSC-39** — Test, Debug, and Include Everyone
-- **CSC-40** — Website Project Studios
-- **CSC-41** — Web Studio — Draw, Blocks and Code
-- **CSC-42** — The Flash Era: What Happened to Browser Games
-- **CSC-43** — Build a Home for Interactive Work
-- **CSC-44** — Publish and Maintain Your Website
-- **CSC-45** — Tim Berners-Lee and the First Website
-- **CSC-46** — Extend into WebXR
+- **CSC-34** — How the Web Works
+- **CSC-35** — Build Your Own Web — Web Design Pathway
+- **CSC-36** — Set Up Your First Site
+- **CSC-37** — Give the Page Meaning with HTML
+- **CSC-38** — Design with CSS
+- **CSC-39** — Make It Respond with JavaScript
+- **CSC-40** — Test, Debug, and Include Everyone
+- **CSC-41** — Website Project Studios
+- **CSC-42** — Web Studio — Draw, Blocks and Code
+- **CSC-43** — The Flash Era: What Happened to Browser Games
+- **CSC-44** — Build a Home for Interactive Work
+- **CSC-45** — Publish and Maintain Your Website
+- **CSC-46** — Tim Berners-Lee and the First Website
+- **CSC-47** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -618,7 +620,7 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-03** — The School of Athens
 - **SYS-04** — The Quadrivium
 - **SYS-05** — From Rocket Clubs to STEAM
-- **SYS-06** — Leonardo da Vinci
+- **SYS-06** — Leonardo da Vinci — _also indexed in Engineering Systems & Electronics_
 - **SYS-07** — The History of Medicine
 - **SYS-08** — Lewis & Clark: Knowledge on the Trail
 - **SYS-09** — Magellan & Elcano: A World of Water
@@ -680,6 +682,7 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 These pages remain attached to their parent lesson or module and do not become duplicate canonical lessons.
 
+- `lessons/leonardo-da-vinci.html` — interactive-extension; parent-appendix; parent: `lessons/humanities/pioneers/leonardo-da-vinci.html`
 - `lessons/chemistry/index.html` — module-navigation; module-appendix; parent: `lessons/chemistry/feynman-atoms.html`
 - `lessons/physics/modern-and-thermal/world-quantum-day-2026.html` — redirect; parent-appendix; parent: `lessons/physics/modern-and-thermal/quantum-physics.html`
 - `lessons/life-sciences/animalia/explorer.html` — interactive-extension; parent-appendix; parent: `lessons/life-sciences/animalia/index.html`

@@ -19,6 +19,15 @@
   var STYLE_ID = 'classroomos-canvas-bg-style';
 
   var canvas, ctx, raf;
+  /* Backgrounds whose motion is a pure function of `t` draw at 30 fps and step `t`
+   * by the frames they skipped, so they move at the same speed for half the paint
+   * work. Petals, hive and goldfish run per-frame physics, so they keep the native
+   * rate; lava and Mandelbrot pace themselves. */
+  var PACED = { particles: true, mesh: true, aurora: true };
+  var PACED_MS = 1000 / 30, lastPaced = 0;
+  /* A background nobody is touching freezes on its current frame after a minute and
+   * wakes on the next input: a lesson left on the projector shouldn't cost a core. */
+  var IDLE_MS = 60000, lastInput = Date.now(), idle = false, idleTimer = null;
   var lavaRenderer = null, lavaLoading = false, lavaLast = null, lavaAccumulator = 0;
   function loadLavaRenderer() {
     if (lavaLoading) return;
@@ -222,7 +231,8 @@
 
   function resize() {
     if (!canvas) return;
-    var ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    // Decorative at 42% opacity: 1.5x looks the same as 2x and paints 44% fewer pixels.
+    var ratio = Math.max(1, Math.min(1.5, window.devicePixelRatio || 1));
     var cssW = window.innerWidth || document.documentElement.clientWidth || 960;
     var cssH = window.innerHeight || document.documentElement.clientHeight || 720;
     w = canvas.width = Math.max(1, Math.round(cssW * ratio));
@@ -288,37 +298,51 @@
     }
   }
 
-  function drawParticles() {
+  // Lines are bucketed by alpha so a frame is ~9 draw calls instead of one stroke per pair.
+  var PARTICLE_ALPHA_STEPS = 8;
+  function drawParticles(steps) {
+    steps = steps || 1;
     ctx.clearRect(0, 0, w, h);
     var rgb = accentRGB();
     var MAX = Math.min(w, h) * 0.26;
+    var MAX2 = MAX * MAX;
 
+    ctx.beginPath();
     for (var i = 0; i < pts.length; i++) {
       var p = pts[i];
-      p.x += p.vx;  p.y += p.vy;
+      p.x += p.vx * steps;  p.y += p.vy * steps;
       if (p.x < 0) p.x = w;  if (p.x > w) p.x = 0;
       if (p.y < 0) p.y = h;  if (p.y > h) p.y = 0;
-
-      ctx.beginPath();
+      ctx.moveTo(p.x + 1.6, p.y);
       ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
-      ctx.fillStyle = rgba(rgb, 0.55);
-      ctx.fill();
     }
+    ctx.fillStyle = rgba(rgb, 0.55);
+    ctx.fill();
 
+    var buckets = [];
+    for (var k = 0; k < PARTICLE_ALPHA_STEPS; k++) buckets.push([]);
     for (var i = 0; i < pts.length; i++) {
       for (var j = i + 1; j < pts.length; j++) {
-        var dx   = pts[i].x - pts[j].x;
-        var dy   = pts[i].y - pts[j].y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < MAX) {
-          ctx.beginPath();
-          ctx.moveTo(pts[i].x, pts[i].y);
-          ctx.lineTo(pts[j].x, pts[j].y);
-          ctx.strokeStyle = rgba(rgb, 0.16 * (1 - dist / MAX));
-          ctx.lineWidth   = 0.9;
-          ctx.stroke();
+        var dx = pts[i].x - pts[j].x;
+        var dy = pts[i].y - pts[j].y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 < MAX2) {
+          var k = Math.min(PARTICLE_ALPHA_STEPS - 1, Math.floor((1 - Math.sqrt(d2) / MAX) * PARTICLE_ALPHA_STEPS));
+          buckets[k].push(i, j);
         }
       }
+    }
+    ctx.lineWidth = 0.9;
+    for (var k = 0; k < PARTICLE_ALPHA_STEPS; k++) {
+      var pairs = buckets[k];
+      if (!pairs.length) continue;
+      ctx.beginPath();
+      for (var n = 0; n < pairs.length; n += 2) {
+        ctx.moveTo(pts[pairs[n]].x, pts[pairs[n]].y);
+        ctx.lineTo(pts[pairs[n + 1]].x, pts[pairs[n + 1]].y);
+      }
+      ctx.strokeStyle = rgba(rgb, 0.16 * (k + 0.5) / PARTICLE_ALPHA_STEPS);
+      ctx.stroke();
     }
   }
 
@@ -1716,9 +1740,16 @@
 
   /* ── Animation loop ──────────────────────────────────────────── */
   function tick(now) {
-    if (currentBg !== 'lavalamp') t++;
+    raf = requestAnimationFrame(tick);
+    var steps = 1;
+    if (PACED[currentBg]) {
+      if (lastPaced && now - lastPaced < PACED_MS - 2) return;
+      steps = lastPaced ? Math.max(1, Math.min(4, Math.round((now - lastPaced) / (1000 / 60)))) : 1;
+      lastPaced = now;
+    }
+    if (currentBg !== 'lavalamp') t += steps;
     if      (currentBg === 'mesh')      drawMesh();
-    else if (currentBg === 'particles') drawParticles();
+    else if (currentBg === 'particles') drawParticles(steps);
     else if (currentBg === 'aurora')    drawAurora();
     else if (currentBg === 'petals')    drawPetals();
     else if (currentBg === 'hive')      drawHive();
@@ -1731,11 +1762,10 @@
         while (lavaAccumulator >= 1000 / 60) { t++; drawLavaLamp(); lavaAccumulator -= 1000 / 60; }
       }
     }
-    raf = requestAnimationFrame(tick);
   }
 
   function stop() {
-    lavaLast = null; lavaAccumulator = 0;
+    lavaLast = null; lavaAccumulator = 0; lastPaced = 0;
     if (lavaRenderer) lavaRenderer.pause();
     if (mandelRenderer) mandelRenderer.pause();
     if (raf) { cancelAnimationFrame(raf); raf = null; }
@@ -1767,7 +1797,33 @@
     if (bg === 'mandelbrot') { loadMandelRenderer(); mandel = null; makeMandelbrot(); }
     if (bg === 'lavalamp')  { loadLavaRenderer(); lavaBlobs = null; lavaBubbles = null; makeLavaLamp(); }
 
+    idle = false;
+    lastInput = Date.now();
+    scheduleIdle();
     raf = requestAnimationFrame(tick);
+  }
+
+  function canAnimate() {
+    return currentBg !== 'none' && !document.hidden && !reducedMotionOverride() &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function scheduleIdle() {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () {
+      idleTimer = null;
+      var quiet = Date.now() - lastInput;
+      if (quiet < IDLE_MS) { scheduleIdle(); return; }
+      if (raf) { idle = true; stop(); }
+    }, Math.max(1000, IDLE_MS - (Date.now() - lastInput)));
+  }
+
+  function noteInput() {
+    lastInput = Date.now();
+    if (!idle) return;
+    idle = false;
+    if (!raf && canvas && canAnimate()) raf = requestAnimationFrame(tick);
+    scheduleIdle();
   }
 
   /* ── Public API (called by nav-mobile.js settings panel) ─────── */
@@ -1838,7 +1894,11 @@
     // Pause when tab is backgrounded (battery / CPU)
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stop();
-      else if (currentBg !== 'none' && !reducedMotionOverride() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) { stop(); raf = requestAnimationFrame(tick); }
+      else if (canAnimate()) { stop(); idle = false; lastInput = Date.now(); scheduleIdle(); raf = requestAnimationFrame(tick); }
+    });
+
+    ['pointermove', 'pointerdown', 'keydown', 'wheel', 'scroll', 'touchstart'].forEach(function (type) {
+      window.addEventListener(type, noteInput, { passive: true, capture: true });
     });
 
     // Theme changed (live, no reload): switch to that theme's pick/default

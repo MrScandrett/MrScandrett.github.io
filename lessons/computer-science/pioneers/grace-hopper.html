@@ -11,7 +11,23 @@
   <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
   <style>
     :root { --fl-accent: #0f766e; --fl-accent-2: #7c3aed; --fl-ink: #042f2e; }
+    .gh-lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0.9rem 0; }
+    @media (max-width: 720px) { .gh-lab-grid { grid-template-columns: 1fr; } }
+    .gh-console { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 14px; padding: 0.9rem 1rem; font-family: ui-monospace, "Cascadia Code", Menlo, monospace; font-size: 0.8rem; line-height: 1.6; }
+    .gh-console-head { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #38bdf8; margin-bottom: 0.45rem; display: block; }
+    .gh-btn-row { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.65rem 0; }
+    .gh-btn { padding: 0.42rem 0.8rem; border-radius: 8px; border: 1px solid var(--line, #cbd5e1); background: var(--white, #fff); color: var(--text, #0f172a); font: 700 0.8rem/1.2 inherit; cursor: pointer; }
+    :where(html[data-lighting="night"]) .gh-btn { background: #1e293b; border-color: #475569; color: #f8fafc; }
+    .gh-btn.is-active { background: #0f766e; border-color: #0f766e; color: #fff; }
+    .gh-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-top: 0.85rem; }
+    .gh-gallery figure { margin: 0; border: 1px solid var(--line, #cbd5e1); border-radius: 14px; overflow: hidden; background: var(--white, #fff); display: flex; flex-direction: column; }
+    :where(html[data-lighting="night"]) .gh-gallery figure { background: #1e293b; border-color: #334155; }
+    .gh-gallery img { width: 100%; height: 210px; object-fit: cover; display: block; }
+    .gh-gallery figcaption { padding: 0.75rem 0.9rem; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary, #475569); flex: 1; }
+    :where(html[data-lighting="night"]) .gh-gallery figcaption { color: #cbd5e1; }
+    .gh-gallery-credit { display: block; margin-top: 0.35rem; font-size: 0.72rem; color: var(--text-muted, #64748b); }
   </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -40,7 +56,7 @@
 
         <nav class="ll-breadcrumb" aria-label="Breadcrumb">
           <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
-          <a href="../../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../computer-science-pathway.html">Computer Science</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
           <span class="ll-crumb-current" aria-current="page">Grace Hopper</span>
         </nav>
 
@@ -61,6 +77,8 @@
           <a href="#fl-sec-bio">Biography</a>
           <a href="#fl-sec-timeline">Timeline</a>
           <a href="#fl-sec-science">The Science</a>
+          <a href="#fl-sec-lab">Compiler Lab</a>
+          <a href="#fl-sec-gallery">Archival Photos</a>
           <a href="#fl-sec-contributions">Contributions</a>
           <a href="#fl-sec-watch">Watch</a>
           <a href="#fl-sec-legacy">Legacy</a>
@@ -123,6 +141,78 @@
               <summary>Did Hopper coin the word "bug"?</summary>
               <div class="ll-accordion-body">No — "bug" was already old engineering slang for a mechanical fault. But Hopper's team's 1947 logbook, with an actual moth taped inside next to the note "First actual case of bug being found," is the most famous artifact tying the term "debugging" to computing, and Hopper enjoyed retelling the story for the rest of her career.</div>
             </details>
+          </div>
+        </section>
+
+        <!-- Interactive Compiler & Nanosecond Lab -->
+        <section class="fl-card" id="fl-sec-lab" style="--card-accent:#0284c7;">
+          <h2>Interactive Lab: Inside Hopper's Compiler &amp; Nanosecond Wire</h2>
+          <p>Before Hopper's A-0 compiler (1952) and FLOW-MATIC / COBOL (1959), programmers had to look up octal or binary machine instructions by hand and wire every memory address themselves. Pick an English-like COBOL statement below to watch how a compiler translates human words into assembly mnemonics and raw binary machine code—and compare how many manual errors a human programmer avoids.</p>
+
+          <div class="gh-btn-row" role="group" aria-label="Choose a COBOL statement to compile">
+            <button type="button" class="gh-btn is-active" data-gh-stmt="payroll">1. MULTIPLY HOURS BY RATE GIVING PAY</button>
+            <button type="button" class="gh-btn" data-gh-stmt="tax">2. SUBTRACT TAX FROM PAY GIVING NET</button>
+            <button type="button" class="gh-btn" data-gh-stmt="check">3. IF STOCK LESS THAN 10 DISPLAY "REORDER"</button>
+          </div>
+
+          <div class="gh-lab-grid">
+            <div class="gh-console">
+              <span class="gh-console-head">Step 1 · Human-Readable Source (COBOL / FLOW-MATIC)</span>
+              <div id="gh-src-out">MULTIPLY HOURS BY RATE GIVING PAY.</div>
+              <hr style="border:none;border-top:1px solid #334155;margin:0.65rem 0;" />
+              <span class="gh-console-head" style="color:#a78bfa;">Step 2 · Compiler Subroutine Lookup (Symbolic Assembly)</span>
+              <div id="gh-asm-out">LOAD   R1, [0x0104]  ; HOURS<br>MUL    R1, [0x0108]  ; RATE<br>STORE  [0x010C], R1  ; PAY</div>
+            </div>
+            <div class="gh-console">
+              <span class="gh-console-head" style="color:#34d399;">Step 3 · Compiled Machine Binary (Executed by CPU)</span>
+              <div id="gh-bin-out">00010010 00000001 00000001 00000100<br>00101100 00000001 00000001 00001000<br>00011011 00000001 00000001 00001100</div>
+              <hr style="border:none;border-top:1px solid #334155;margin:0.65rem 0;" />
+              <div id="gh-stat-out" style="color:#fde68a;font-size:0.76rem;">1 English sentence → 3 machine instructions (96 bits). A-0 automated this lookup in milliseconds instead of hours of hand-coding.</div>
+            </div>
+          </div>
+
+          <h3>Hold a Nanosecond: Signal Latency Calculator</h3>
+          <p>Why did Hopper hand out <strong>11.8-inch (30 cm)</strong> pieces of wire to admirals and engineers? Because electricity and light travel at most ~30 cm in one <strong>nanosecond</strong> (10<sup>−9</sup> s). Slide or pick a time unit below to see how far a signal can travel—and why faster computers must be physically smaller.</p>
+          <div class="gh-btn-row" role="group" aria-label="Choose a time unit">
+            <button type="button" class="gh-btn is-active" data-gh-time="ns">1 Nanosecond (10⁻⁹ s)</button>
+            <button type="button" class="gh-btn" data-gh-time="us">1 Microsecond (10⁻⁶ s)</button>
+            <button type="button" class="gh-btn" data-gh-time="ms">1 Millisecond (10⁻³ s)</button>
+            <button type="button" class="gh-btn" data-gh-time="s">1 Full Second (1 s)</button>
+          </div>
+          <div class="gh-console" id="gh-wire-out" aria-live="polite">
+            <strong>1 Nanosecond (billionth of a second):</strong> Light/electricity in vacuum travels <strong>11.8 inches (29.98 cm)</strong> — the length of one sheet of paper. Inside a silicon chip, signals travel even slower (~15–20 cm), so if two parts of a CPU are too far apart, a 3 GHz clock tick finishes before the signal arrives!
+          </div>
+        </section>
+
+        <!-- Archival Photo Gallery -->
+        <section class="fl-card" id="fl-sec-gallery" style="--card-accent:#7c3aed;">
+          <h2>Archival Photo Gallery</h2>
+          <p>Click any photograph to open it full-screen in the classroom lightbox and inspect the historical artifacts with your class.</p>
+          <div class="gh-gallery">
+            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Commodore_Grace_M._Hopper,_USN_(covered).jpg?width=600" alt="Official U.S. Navy portrait of Commodore Grace M. Hopper in uniform, January 1984" loading="lazy" />
+              <figcaption>
+                <strong>Commodore Grace M. Hopper, USN (1984)</strong>
+                <span>Official U.S. Navy portrait of Hopper in Washington, D.C., two years before her final retirement as a rear admiral at age 79.</span>
+                <span class="gh-gallery-credit">Photo: James S. Davis / U.S. Navy · Public domain (Wikimedia Commons)</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Grace_Hopper_and_UNIVAC.jpg?width=600" alt="Grace Hopper seated at the UNIVAC I console keyboard in 1960" loading="lazy" />
+              <figcaption>
+                <strong>Grace Hopper at the UNIVAC I Console (1960)</strong>
+                <span>Hopper at the keyboard of UNIVAC I, the first commercial electronic computer in the United States, where she developed the A-0 compiler series and FLOW-MATIC.</span>
+                <span class="gh-gallery-credit">Smithsonian Institution Archives / Science Service · Public domain (Wikimedia Commons)</span>
+              </figcaption>
+            </figure>
+            <figure data-zoomable data-lightbox-group="grace-hopper" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=1400">
+              <img src="https://commons.wikimedia.org/wiki/Special:FilePath/First_Computer_Bug,_1945.jpg?width=600" alt="Harvard Mark II logbook page from September 9, 1947 with a real moth taped to the page and the note: First actual case of bug being found" loading="lazy" />
+              <figcaption>
+                <strong>The Harvard Mark II "First Actual Bug" Logbook (1947)</strong>
+                <span>On September 9, 1947, operators traced a failure in Relay #70, Panel F of the Harvard Mark II to a trapped moth and taped it into the logbook with the note: "First actual case of bug being found."</span>
+                <span class="gh-gallery-credit">Smithsonian National Museum of American History / U.S. Naval Surface Warfare Center · Public domain</span>
+              </figcaption>
+            </figure>
           </div>
         </section>
 
@@ -317,11 +407,64 @@
   </div><!-- .ll-stage -->
   </div><!-- .ll-viewport -->
 
+<script>
+(() => {
+  'use strict';
+  const STMTS = {
+    payroll: {
+      src: 'MULTIPLY HOURS BY RATE GIVING PAY.',
+      asm: 'LOAD   R1, [0x0104]  ; HOURS<br>MUL    R1, [0x0108]  ; RATE<br>STORE  [0x010C], R1  ; PAY',
+      bin: '00010010 00000001 00000001 00000100<br>00101100 00000001 00000001 00001000<br>00011011 00000001 00000001 00001100',
+      stat: '1 English sentence → 3 machine instructions (96 bits). A-0 automated this lookup in milliseconds instead of hours of hand-coding.'
+    },
+    tax: {
+      src: 'SUBTRACT TAX FROM PAY GIVING NET.',
+      asm: 'LOAD   R2, [0x010C]  ; PAY<br>SUB    R2, [0x0110]  ; TAX<br>STORE  [0x0114], R2  ; NET',
+      bin: '00010010 00000010 00000001 00001100<br>00100101 00000010 00000001 00010000<br>00011011 00000010 00000001 00010100',
+      stat: '1 English sentence → 3 machine instructions (96 bits). The compiler tracks variable addresses (0x010C, 0x0110, 0x0114) automatically.'
+    },
+    check: {
+      src: 'IF STOCK LESS THAN 10 DISPLAY "REORDER".',
+      asm: 'LOAD   R3, [0x0200]  ; STOCK<br>CMP    R3, #10       ; compare 10<br>BGE    SKIP_MSG      ; branch if >= 10<br>CALL   SYS_PRINT     ; "REORDER"',
+      bin: '00010010 00000011 00000010 00000000<br>00110001 00000011 00000000 00001010<br>01000110 00000000 00000000 00000100<br>01111000 00000000 00001111 00100100',
+      stat: '1 English conditional → 4 machine instructions (128 bits) including a conditional branch and system call.'
+    }
+  };
+  document.querySelectorAll('[data-gh-stmt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = STMTS[btn.dataset.ghStmt];
+      if (!d) return;
+      document.querySelectorAll('[data-gh-stmt]').forEach(b => b.classList.toggle('is-active', b === btn));
+      document.getElementById('gh-src-out').textContent = d.src;
+      document.getElementById('gh-asm-out').innerHTML = d.asm;
+      document.getElementById('gh-bin-out').innerHTML = d.bin;
+      document.getElementById('gh-stat-out').textContent = d.stat;
+    });
+  });
+
+  const TIMES = {
+    ns: '<strong>1 Nanosecond (billionth of a second):</strong> Light/electricity in vacuum travels <strong>11.8 inches (29.98 cm)</strong> — the length of one sheet of paper. Inside a silicon chip, signals travel even slower (~15–20 cm), so if two parts of a CPU are too far apart, a 3 GHz clock tick finishes before the signal arrives!',
+    us: '<strong>1 Microsecond (millionth of a second):</strong> Light travels <strong>984 feet (299.8 meters)</strong> — nearly three football fields! Hopper carried a heavy 984-foot coil of wire and joked she wanted to hang it around a programmer\'s neck whenever they wasted a microsecond.',
+    ms: '<strong>1 Millisecond (thousandth of a second):</strong> Light travels <strong>186 miles (299.8 km)</strong> — roughly the distance from New York City to Boston or Baltimore. Network ping times across a continent are measured in tens of milliseconds because of this physical speed limit.',
+    s:  '<strong>1 Full Second:</strong> Light travels <strong>186,282 miles (299,792 km)</strong> — 7.5 times around the Earth, or almost all the way from Earth to the Moon (1.3 light-seconds)!'
+  };
+  document.querySelectorAll('[data-gh-time]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const html = TIMES[btn.dataset.ghTime];
+      if (!html) return;
+      document.querySelectorAll('[data-gh-time]').forEach(b => b.classList.toggle('is-active', b === btn));
+      document.getElementById('gh-wire-out').innerHTML = html;
+    });
+  });
+})();
+</script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
 <script src="../../../assets/js/lesson-content.js"></script>
 <script src="../../../assets/js/figure-lesson.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/video-embed.js"></script>
+<script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

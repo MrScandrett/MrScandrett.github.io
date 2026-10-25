@@ -1123,6 +1123,7 @@
 
 </div><!-- /.r-shell -->
 
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 'use strict';
 
@@ -1265,6 +1266,9 @@ function render() {
 }
 
 // ═══ Animation Loop ══════════════════════════════════════════════════
+// The gait canvas and the layer diagram near the top of the page each pause while off-screen.
+const simRaf = SimKit.raf(SimKit.stage('#hexCanvas'));
+const layerRaf = SimKit.raf(SimKit.stage('#layer-viz'));
 let lastTs = null;
 function tick(ts) {
   if (lastTs === null) lastTs = ts;
@@ -1280,7 +1284,12 @@ function tick(ts) {
 
   render();
   updateUI();
-  requestAnimationFrame(tick);
+  simRaf(tick);
+}
+
+function layerTick() {
+  updateLayerViz();
+  layerRaf(layerTick);
 }
 
 function updateUI() {
@@ -1305,8 +1314,10 @@ function updateUI() {
     const thresh = i <= 4 ? 0.5 : 0.8;
     el.classList.toggle('on', noise > thresh);
   });
+}
 
-  // Main layer viz
+function updateLayerViz() {
+  const t = Date.now() / 1000;
   const layers = document.querySelectorAll('#layer-viz .r-layer');
   layers.forEach((el, i) => {
     const li = parseInt(el.dataset.layer);
@@ -1326,7 +1337,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (speedVal) speedVal.textContent = speed.toFixed(1) + '×';
     });
   }
-  requestAnimationFrame(tick);
+  simRaf(tick);
+  layerRaf(layerTick);
 });
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

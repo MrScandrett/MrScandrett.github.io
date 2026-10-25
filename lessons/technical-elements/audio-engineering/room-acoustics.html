@@ -181,7 +181,8 @@
     <div class="te-footer-nav"><a href="microphone-polar-patterns.html">← Microphone Patterns</a><a href="eq-problem-frequency.html">Corrective EQ →</a></div>
   </main>
 
-  <script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+<script>
   (()=>{
     const $=id=>document.getElementById(id), canvas=$('room-canvas'),ctx=canvas.getContext('2d');
     const C=343;
@@ -291,7 +292,7 @@
     $('simulation-view').addEventListener('change',update);
     $('load-gym').addEventListener('click',()=>{$('preset').value='gym';presets.gym.forEach((v,i)=>$( ['length','width','height','softness','audience'][i]).value=v);update();});
     $('check-design').addEventListener('click',()=>{const m=model(),cost=m.soft*70+m.aud*5,o=$('design-readout');const pass=m.rt<=1.2&&cost<=8000;o.className='te-readout '+(pass?'good':'bad');o.innerHTML=pass?'<strong>Design accepted.</strong> The model meets both intelligibility and budget constraints. Explain which treatment provided the best improvement per dollar.':'<strong>Keep iterating.</strong> '+(m.rt>1.2?'RT60 is still above 1.2 seconds. ':'')+(cost>8000?'The design exceeds the $8,000 budget.':'');});
-    function animate(now){const dt=Math.max(0,Math.min(.05,(now-lastFrame)/1000));lastFrame=now;simClock+=dt;draw(model());requestAnimationFrame(animate);} update();requestAnimationFrame(animate);
+    function animate(now){const dt=Math.max(0,Math.min(.05,(now-lastFrame)/1000));lastFrame=now;simClock+=dt;draw(model());SimKit.frame('#room-canvas', animate);} update();SimKit.frame('#room-canvas', animate);
   })();
   </script>
 <script src="../../../assets/js/photo-lightbox.js"></script>

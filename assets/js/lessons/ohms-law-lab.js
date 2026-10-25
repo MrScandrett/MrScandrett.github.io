@@ -104,7 +104,7 @@
     placeDots();
   }
   if (!reduceMotion) {
-    if (window.SimKit) window.SimKit.loop(tick);
+    if (window.SimKit) window.SimKit.loop(tick, { el: window.SimKit.stage(lab) });
     else {
       let last = null;
       const raf = t => { if (last !== null) tick((t - last) / 1000); last = t; requestAnimationFrame(raf); };

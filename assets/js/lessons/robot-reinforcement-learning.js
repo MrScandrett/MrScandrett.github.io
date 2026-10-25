@@ -238,5 +238,5 @@
       for (var i = 0; i < n && running; i++) step();
     }
     draw();
-  });
+  }, canvas);
 })();

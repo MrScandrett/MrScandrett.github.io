@@ -2911,9 +2911,9 @@
       resizeCanvas();
       const loop = (now) => {
         drawScaleScene((now || 0) / 1000);
-        if (!prefersReducedMotion) animationFrame = requestAnimationFrame(loop);
+        if (!prefersReducedMotion) animationFrame = SimKit.frame(canvasEl, loop);
       };
-      if (animationFrame) cancelAnimationFrame(animationFrame);
+      if (animationFrame) SimKit.frame.cancel(canvasEl, animationFrame);
       loop(0);
     }
 
@@ -4595,7 +4595,7 @@
           c.setAttribute('cx', x.toFixed(1));
           c.setAttribute('cy', y.toFixed(1));
         });
-        requestAnimationFrame(frame);
+        SimKit.frame(host, frame);
       }
 
       function fmtSI(n, unit) {
@@ -4636,7 +4636,7 @@
       vS.addEventListener('input', update);
       rS.addEventListener('input', update);
       update();
-      if (!reduce) requestAnimationFrame(frame);
+      if (!reduce) SimKit.frame(host, frame);
       else charges.forEach((c, i) => {
         const [x, y] = pointAt((i * PERIM) / charges.length);
         c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1));

@@ -1,494 +1,128 @@
 /**
- * Animal Sorter Styles
- * Interactive drag-and-drop classification game UI
+ * Animal Sorter game (sorter.html). Classes are created by animal-sorter.js.
+ * Colors come from animal-lab.css (body.animalia-lab); nothing is set on :root.
  */
 
-:root {
-  --accent: #2f7d32;
-  --accent2: #7cb342;
-  --line: #d7e3d2;
-  --soft: #eef6ea;
-  --ink: #1f2a1f;
-  --card: #ffffff;
-  --success-color: #4caf50;
-  --error-color: #f44336;
-  --info-color: #2196f3;
-}
+.animal-sorter-container { margin-top: 1rem; }
+.animal-sorter-container.completion-celebration { animation: celebrationPulse .6s ease-in-out; }
+@keyframes celebrationPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.01); } }
 
-/* ============================================
-   ANIMAL SORTER CONTAINER
-   ============================================ */
+#sorter-progress { margin: 0 0 .75rem; color: var(--al-teal); font: 800 .78rem/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 
-.animal-sorter-container {
-  margin-top: 20px;
-  padding: 0;
-}
-
-.animal-sorter-container.completion-celebration {
-  animation: celebrationPulse 0.6s ease-in-out;
-}
-
-@keyframes celebrationPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-/* ============================================
-   ANIMAL POOL (Draggable Cards)
-   ============================================ */
-
+/* ── Animal pool ── */
 .animal-pool {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  padding: 16px;
-  background: #f9fdf8;
-  border: 2px dashed var(--line);
-  border-radius: 12px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: .6rem;
   min-height: 120px;
-}
-
-.animal-card {
-  background: var(--card);
-  border: 2px solid var(--accent2);
-  border-radius: 10px;
-  padding: 12px;
-  cursor: grab;
-  transition: all 0.2s ease;
-  user-select: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-.animal-card:hover:not(.placed) {
-  border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(47, 125, 50, 0.15);
-  transform: translateY(-2px);
-}
-
-.animal-card.selected, .animal-card:focus-visible, .place-animal-btn:focus-visible, .zoned-animal-card:focus-visible {
-  outline: 3px solid #174f91;
-  outline-offset: 3px;
-}
-
-.animal-card.selected { background: #e6f4ff; }
-
-.animal-card:active:not(.placed) {
-  cursor: grabbing;
-}
-
-.animal-card.dragging {
-  opacity: 0.6;
-  cursor: grabbing;
-}
-
-.animal-card.placed {
-  opacity: 0.3;
-  border-color: #ccc;
-  cursor: not-allowed;
-  background: #f5f5f5;
-}
-
-.animal-card-name {
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 1rem;
-  margin-bottom: 4px;
-}
-
-.animal-card-desc {
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
-}
-
-/* ============================================
-   DROP ZONES
-   ============================================ */
-
-.drop-zones-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  margin-bottom: 20px;
-}
-
-.drop-zones-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.drop-zones-row.habitat-row {
-  margin-top: 12px;
-}
-
-.drop-zone {
-  background: linear-gradient(135deg, #f0f8f0 0%, #fafef9 100%);
-  border: 3px dashed var(--accent2);
+  margin-bottom: 1.25rem;
+  padding: .8rem;
+  border: 1px dashed var(--al-line2);
   border-radius: 12px;
-  padding: 16px;
-  min-height: 150px;
-  transition: all 0.2s ease;
+  background: rgba(4, 9, 12, .45);
+}
+.animal-card {
+  padding: .7rem .8rem;
+  border: 1px solid var(--al-line);
+  border-radius: 10px;
+  background: var(--al-panel2);
+  cursor: grab;
+  user-select: none;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.animal-card:hover:not(.placed) { border-color: var(--al-teal); transform: translateY(-2px); }
+.animal-card.selected { border-color: var(--al-amber); background: rgba(251, 191, 36, .1); box-shadow: 0 0 0 1px var(--al-amber); }
+.animal-card:active:not(.placed) { cursor: grabbing; }
+.animal-card.dragging { opacity: .55; cursor: grabbing; }
+.animal-card.placed { display: none; }
+.animal-card-name { margin-bottom: .2rem; color: var(--al-text); font-weight: 800; font-size: .95rem; }
+.animal-card-desc { color: var(--al-muted); font-size: .8rem; line-height: 1.4; }
+
+/* ── Drop zones ── */
+.drop-zones-container { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+.drop-zones-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: .8rem; }
+.drop-zones-row.habitat-row { margin-top: .6rem; }
+.drop-zone {
   position: relative;
+  min-height: 150px;
+  padding: 1rem;
+  border: 2px dashed var(--al-line2);
+  border-radius: 12px;
+  background: rgba(45, 212, 191, .04);
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
 }
-
-.drop-zone:hover {
-  background: linear-gradient(135deg, #e8f5e9 0%, #f1fdf0 100%);
-  border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(47, 125, 50, 0.1);
-}
-
-.drop-zone.drag-over {
-  background: linear-gradient(135deg, #e8f5e9 0%, #f1fdf0 100%);
-  border-color: var(--accent);
-  border-width: 3px;
-  box-shadow: 0 6px 16px rgba(47, 125, 50, 0.2);
-  transform: scale(1.02);
-}
-
-.drop-zone.correct-placement {
-  background: #e8f5e9;
-  border-color: var(--success-color);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
-}
-
-.drop-zone-label {
-  font-weight: 700;
-  color: var(--accent);
-  font-size: 1.1rem;
-  margin-bottom: 4px;
-}
-
-.drop-zone-sublabel {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.drop-zone-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-}
-
+.drop-zones-row .drop-zone:first-child { border-color: rgba(125, 211, 252, .45); background: rgba(56, 189, 248, .05); }
+.drop-zones-row .drop-zone:nth-child(2) { border-color: rgba(196, 181, 253, .45); background: rgba(167, 139, 250, .05); }
+.drop-zone:hover, .drop-zone.drag-over { border-style: solid; background: rgba(45, 212, 191, .1); }
+.drop-zone.drag-over { transform: scale(1.01); }
+.drop-zone.correct-placement { border-style: solid; border-color: #4ade80; background: rgba(74, 222, 128, .1); }
+.drop-zone-label { margin-bottom: .15rem; color: var(--al-text); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.drop-zones-row .drop-zone:first-child .drop-zone-label { color: var(--al-sky); }
+.drop-zones-row .drop-zone:nth-child(2) .drop-zone-label { color: var(--al-violet); }
+.drop-zone-sublabel { margin-bottom: .7rem; color: var(--al-muted); font-size: .86rem; }
 .place-animal-btn {
   display: block;
   width: 100%;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  border: 2px solid var(--accent);
-  border-radius: 8px;
-  background: #fff;
-  color: #205c25;
+  min-height: 44px;
+  margin-bottom: .7rem;
+  padding: .5rem .8rem;
+  border: 1px solid var(--al-line2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--al-teal-ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
+.place-animal-btn:hover { background: rgba(45, 212, 191, .12); }
+.drop-zone-content { display: flex; flex-wrap: wrap; gap: .45rem; min-height: 40px; padding: .4rem; border-radius: 8px; background: rgba(4, 9, 12, .35); }
+.drop-zone-content:empty::after { content: 'Drop animals here'; width: 100%; padding: .4rem; color: var(--al-dim); font-style: italic; font-size: .85rem; text-align: center; }
 
-.drop-zone-content:empty::after {
-  content: 'Drop animals here';
-  display: block;
-  width: 100%;
-  color: #aaa;
-  font-style: italic;
-  font-size: 0.9rem;
-  padding: 8px;
-  text-align: center;
-}
-
-/* ============================================
-   ZONED ANIMAL CARDS (In Drop Zones)
-   ============================================ */
-
+/* ── Cards that landed in a zone ── */
 .zoned-animal-card {
-  background: var(--card);
-  border: 2px solid var(--success-color);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--success-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.15);
-  animation: slideInCard 0.3s ease-out;
-}
-
-.zoned-animal-card:hover {
-  background: #f0f8f0;
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
-  transform: scale(1.05);
-}
-
-@keyframes slideInCard {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ============================================
-   FEEDBACK MESSAGES
-   ============================================ */
-
-.sorter-feedback {
-  margin-top: 16px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  text-align: center;
-  min-height: 1.2em;
-  transition: all 0.3s ease;
-  animation: fadeInFeedback 0.3s ease-out;
-}
-
-@keyframes fadeInFeedback {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.sorter-feedback-correct {
-  background: #c8e6c9;
-  color: #2e7d32;
-  border-left: 4px solid var(--success-color);
-}
-
-.sorter-feedback-incorrect {
-  background: #ffcdd2;
-  color: #c62828;
-  border-left: 4px solid var(--error-color);
-  animation: bounceInFeedback 0.4s ease-out;
-}
-
-.sorter-feedback-info {
-  background: #bbdefb;
-  color: #1565c0;
-  border-left: 4px solid var(--info-color);
-}
-
-.sorter-feedback-celebration {
-  background: linear-gradient(135deg, #c8e6c9 0%, #bbdefb 100%);
-  color: var(--accent);
-  border-left: 4px solid var(--success-color);
-  font-size: 1.1rem;
-  padding: 16px;
-  animation: celebrationFade 1.5s ease-in-out;
-}
-
-@keyframes bounceInFeedback {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
-}
-
-@keyframes celebrationFade {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.sorter-feedback strong {
-  display: inline;
+  min-height: 44px;
+  padding: .4rem .8rem;
+  border: 1px solid rgba(74, 222, 128, .55);
+  border-radius: 999px;
+  background: rgba(74, 222, 128, .1);
+  color: #bbf7d0;
+  font: inherit;
+  font-size: .86rem;
   font-weight: 700;
-}
-
-/* ============================================
-   BOUNCE BACK ANIMATION (Incorrect Placement)
-   ============================================ */
-
-.animal-card.bounce-back {
-  animation: bounceBack 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-@keyframes bounceBack {
-  0% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(20px);
-  }
-  75% {
-    transform: translateX(-20px);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-
-/* ============================================
-   RESET BUTTON
-   ============================================ */
-
-.sorter-reset-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 16px;
-  box-shadow: 0 2px 6px rgba(47, 125, 50, 0.2);
+  animation: slideInCard .3s ease-out;
 }
+.zoned-animal-card:hover { background: rgba(74, 222, 128, .18); }
+@keyframes slideInCard { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
 
-.sorter-reset-btn:hover {
-  background: #1b5e20;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(47, 125, 50, 0.3);
-}
+/* ── Feedback ── */
+.sorter-feedback { min-height: 4rem; margin-top: 1rem; padding: .8rem 1rem; border-radius: 10px; color: var(--al-text); font-weight: 600; text-align: center; animation: fadeInFeedback .3s ease-out; }
+.sorter-feedback:empty { padding: 0; }
+@keyframes fadeInFeedback { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.sorter-feedback-correct { border-left: 4px solid #4ade80; background: rgba(74, 222, 128, .12); color: #dcfce7; }
+.sorter-feedback-incorrect { border-left: 4px solid #fb7185; background: rgba(251, 113, 133, .12); color: #ffe4e6; animation: shakeFeedback .4s ease-out; }
+.sorter-feedback-info { border-left: 4px solid var(--al-sky); background: rgba(56, 189, 248, .1); color: #e0f2fe; }
+.sorter-feedback-celebration { border-left: 4px solid var(--al-amber); background: linear-gradient(120deg, rgba(74, 222, 128, .16), rgba(56, 189, 248, .14)); font-size: 1.05rem; }
+.sorter-feedback strong { color: inherit; }
+@keyframes shakeFeedback { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-.sorter-reset-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(47, 125, 50, 0.2);
-}
+.animal-card.bounce-back { animation: bounceBack .4s cubic-bezier(.68, -.55, .265, 1.55); }
+@keyframes bounceBack { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(16px); } 75% { transform: translateX(-16px); } }
 
-/* ============================================
-   HABITAT SECTION LABEL
-   ============================================ */
+.sorter-reset-btn { min-height: 44px; margin-top: 1rem; padding: .55rem 1.2rem; border: 1px solid var(--al-line2); border-radius: 999px; background: transparent; color: var(--al-teal-ink); font: inherit; font-weight: 700; cursor: pointer; }
+.sorter-reset-btn:hover { background: rgba(45, 212, 191, .12); }
 
-.habitat-section-label {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--accent);
-  margin-top: 20px;
-  margin-bottom: 12px;
-  padding: 12px;
-  background: #fff9e6;
-  border-left: 4px solid #c9a227;
-  border-radius: 6px;
-}
-
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
-
-@media (max-width: 768px) {
-  .animal-pool {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .drop-zones-row {
-    grid-template-columns: 1fr;
-  }
-
-  .drop-zones-row.habitat-row {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  }
-
-  .drop-zone {
-    min-height: 120px;
-    padding: 12px;
-  }
-
-  .drop-zone-label {
-    font-size: 1rem;
-  }
-
-  .animal-card {
-    padding: 10px;
-  }
-
-  .animal-card-name {
-    font-size: 0.95rem;
-  }
-
-  .animal-card-desc {
-    font-size: 0.8rem;
-  }
-
-  .sorter-reset-btn {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-}
+.habitat-section-label { margin: 1.2rem 0 .7rem; padding: .7rem .9rem; border-left: 3px solid var(--al-amber); border-radius: 0 8px 8px 0; background: rgba(251, 191, 36, .07); color: var(--al-text); font-weight: 700; }
 
 @media (max-width: 480px) {
-  .animal-pool {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .drop-zone {
-    padding: 10px;
-    min-height: 100px;
-  }
-
-  .drop-zone-label {
-    font-size: 0.95rem;
-  }
-
-  .drop-zone-sublabel {
-    font-size: 0.8rem;
-    margin-bottom: 8px;
-  }
-
-  .drop-zone-content:empty::after {
-    font-size: 0.8rem;
-  }
-
-  .animal-card {
-    padding: 8px;
-  }
-
-  .animal-card-name {
-    font-size: 0.9rem;
-  }
-
-  .animal-card-desc {
-    font-size: 0.75rem;
-  }
-
-  .zoned-animal-card {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-  }
-
-  .sorter-feedback {
-    font-size: 0.9rem;
-    padding: 10px 12px;
-  }
+  .animal-pool { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); padding: .6rem; }
+  .drop-zone { min-height: 110px; padding: .75rem; }
+  .sorter-reset-btn { width: 100%; }
 }
-
-/* ============================================
-   ACCESSIBILITY
-   ============================================ */
-
-.animal-card:focus-visible,
-.sorter-reset-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+@media (prefers-reduced-motion: reduce) {
+  .animal-sorter-container * { animation: none !important; transition: none !important; }
 }
-
-.drop-zone:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+@media print {
+  .animal-pool, .place-animal-btn, .sorter-reset-btn { display: none !important; }
 }
-/* Keep evidence readable and sorting usable with keyboard, touch, and reduced motion. */
-#sorter-progress{font-weight:700;color:#14532d;margin-bottom:1rem}.animal-card:focus-visible,.zoned-animal-card:focus-visible,.place-animal-btn:focus-visible{outline:3px solid #92400e;outline-offset:3px}.place-animal-btn,.zoned-animal-card{min-height:44px}.animal-card.placed{display:none}.sorter-feedback{min-height:4rem}@media(prefers-reduced-motion:reduce){.animal-sorter-container *{animation:none!important;transition:none!important}}

@@ -116,53 +116,201 @@
     };
   }
 
+  /* ── Visibility-gated requestAnimationFrame ───────────────────────
+     SimKit.raf(el) returns a drop-in requestAnimationFrame that holds
+     its callbacks while `el` (an element, selector, or list of them; see
+     SimKit.stage) is scrolled out of view, sits in a hidden
+     panel (display:none), or the tab is hidden, and releases them when
+     it can be seen again. A sim scrolled past costs nothing.
+
+       var raf = SimKit.raf(canvas);
+       function frame(t) { ...draw...; raf(frame); }
+       raf(frame);              // raf.cancel(id) replaces cancelAnimationFrame
+
+     Timestamps skip the time spent paused, so `dt = t - last` in the
+     callback sees one ordinary frame on resume instead of minutes of
+     physics at once. `margin` (default '200px') starts drawing a little
+     before the element scrolls into view.
+  */
+  function gatedRaf(el, opts) {
+    opts = opts || {};
+    var targets = stage(el) || [];
+    var pauseHidden = opts.pauseHidden !== false;
+    var onScreen = true;
+    var live = true;
+    var offset = 0;
+    var pausedAt = null;
+    var pending = {};
+    var nextId = 1;
+    var observer = null;
+
+    function fire(id) {
+      return function (timestamp) {
+        var entry = pending[id];
+        if (!entry) return;
+        delete pending[id];
+        entry.cb(timestamp - offset);
+      };
+    }
+
+    function update() {
+      var now = onScreen && !(pauseHidden && document.hidden);
+      if (now === live) return;
+      live = now;
+      var id;
+      if (!live) {
+        pausedAt = global.performance.now();
+        for (id in pending) {
+          if (pending[id].real !== null) { global.cancelAnimationFrame(pending[id].real); pending[id].real = null; }
+        }
+      } else {
+        if (pausedAt !== null) offset += global.performance.now() - pausedAt;
+        pausedAt = null;
+        for (id in pending) {
+          if (pending[id].real === null) pending[id].real = global.requestAnimationFrame(fire(id));
+        }
+      }
+    }
+
+    function raf(cb) {
+      var id = nextId++;
+      pending[id] = { cb: cb, real: live ? global.requestAnimationFrame(fire(id)) : null };
+      return id;
+    }
+
+    raf.cancel = function (id) {
+      var entry = pending[id];
+      if (!entry) return;
+      if (entry.real !== null) global.cancelAnimationFrame(entry.real);
+      delete pending[id];
+    };
+
+    raf.isLive = function () { return live; };
+
+    raf.destroy = function () {
+      if (observer) observer.disconnect();
+      document.removeEventListener('visibilitychange', update);
+    };
+
+    if (targets.length && global.IntersectionObserver) {
+      var showing = [];
+      observer = new IntersectionObserver(function (entries) {
+        for (var e = 0; e < entries.length; e++) {
+          var at = showing.indexOf(entries[e].target);
+          if (entries[e].isIntersecting && at === -1) showing.push(entries[e].target);
+          else if (!entries[e].isIntersecting && at !== -1) showing.splice(at, 1);
+        }
+        onScreen = showing.length > 0;
+        update();
+      }, { rootMargin: opts.margin || '200px' });
+      targets.forEach(function (t) { observer.observe(t); });
+    }
+    document.addEventListener('visibilitychange', update);
+    update();
+    return raf;
+  }
+
+  /* ── What a sim's loop should watch ──────────────────────────────
+     SimKit.stage('#canvas', '#graph') lists the elements a loop draws to,
+     each widened to its own <figure> when it has one (so a caption or
+     readout under the canvas counts). The loop runs while any of them is
+     near the screen. It never climbs to page-wide wrappers: lesson-layout
+     wraps whole lessons in .ll-sim, and <main> or a long <section> would
+     never leave the screen. Missing elements are dropped; with none left
+     it returns null and the loop simply never pauses for scrolling.
+  */
+  function stage() {
+    var out = [];
+    for (var i = 0; i < arguments.length; i++) {
+      var list = Array.isArray(arguments[i]) ? arguments[i] : [arguments[i]];
+      for (var j = 0; j < list.length; j++) {
+        var t = typeof list[j] === 'string' ? document.querySelector(list[j]) : list[j];
+        if (!t) continue;
+        var fig = t.closest ? t.closest('figure') : null;
+        var el = fig || t;
+        if (out.indexOf(el) === -1) out.push(el);
+      }
+    }
+    return out.length ? out : null;
+  }
+
+  /* ── One-line swap for a hand-rolled loop ─────────────────────────
+     SimKit.frame('#my-canvas', draw) is requestAnimationFrame(draw)
+     that waits while that canvas (or its figure) is off-screen.
+     The gate is made once per element and reused, so it is cheap to call
+     every frame. SimKit.frame.cancel('#my-canvas', id) cancels. With no
+     such element it falls back to plain requestAnimationFrame.
+  */
+  var frameGates = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function gateFor(target) {
+    var el = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!el || !frameGates) return null;
+    var gate = frameGates.get(el);
+    if (!gate) {
+      gate = gatedRaf(el);
+      frameGates.set(el, gate);
+    }
+    return gate;
+  }
+  function frame(target, cb) {
+    var gate = gateFor(target);
+    return gate ? gate(cb) : global.requestAnimationFrame(cb);
+  }
+  frame.cancel = function (target, id) {
+    var gate = gateFor(target);
+    if (gate) gate.cancel(id);
+    else global.cancelAnimationFrame(id);
+  };
+
   /* ── Animation loop ───────────────────────────────────────────────
      rAF wrapper that hands the callback a delta time in seconds and
-     pauses itself while the tab is hidden (no lesson does this today
-     — it's free battery/CPU savings for background tabs).
+     pauses itself while the tab is hidden. Pass `el` (the sim's canvas
+     or stage) and it also pauses while that element is off-screen.
+     `maxDt` caps one step (seconds) after a long main-thread stall.
+     The handle's pause()/resume() are for a sim's own Pause button.
   */
   function loop(callback, opts) {
     opts = opts || {};
-    var pauseHidden = opts.pauseHidden !== false;
+    var raf = gatedRaf(opts.el || null, opts);
     var rafId = null;
     var lastTime = null;
     var alive = true;
+    var userPaused = false;
 
     function tick(timestamp) {
+      rafId = null;
       if (lastTime === null) lastTime = timestamp;
       var dt = (timestamp - lastTime) / 1000;
+      if (opts.maxDt && dt > opts.maxDt) dt = opts.maxDt;
       lastTime = timestamp;
       callback(dt, timestamp);
-      if (alive) rafId = global.requestAnimationFrame(tick);
+      if (alive && !userPaused && rafId === null) rafId = raf(tick);
     }
 
     function resume() {
       if (rafId !== null || !alive) return;
+      userPaused = false;
       lastTime = null;
-      rafId = global.requestAnimationFrame(tick);
+      rafId = raf(tick);
     }
 
     function pause() {
+      userPaused = true;
       if (rafId !== null) {
-        global.cancelAnimationFrame(rafId);
+        raf.cancel(rafId);
         rafId = null;
       }
     }
 
-    function onVisibility() {
-      if (!pauseHidden) return;
-      if (document.hidden) pause();
-      else resume();
-    }
-
-    document.addEventListener('visibilitychange', onVisibility);
     resume();
 
     return {
+      pause: pause,
+      resume: resume,
       stop: function () {
         alive = false;
         pause();
-        document.removeEventListener('visibilitychange', onVisibility);
+        raf.destroy();
       }
     };
   }
@@ -201,6 +349,9 @@
     theme: { colors: themeColors, onChange: onThemeChange },
     canvas2d: canvas2d,
     loop: loop,
+    raf: gatedRaf,
+    stage: stage,
+    frame: frame,
     noise: { hash: noiseHash, value: valueNoise, fbm: fbm }
   };
 }(window));

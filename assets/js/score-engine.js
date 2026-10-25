@@ -1706,6 +1706,23 @@
     return library;
   }
 
+  // Each piece is also published on its own (data/scores/<id>.json, written by build:dist
+  // and served by serve-local.js), so a page with one sonata doesn't download the
+  // whole 500 KB library. Any other server falls back to the full library.
+  var pieces = {};
+  function loadScore(id) {
+    if (!pieces[id]) {
+      var url = new URL('../../data/scores/' + encodeURIComponent(id) + '.json', scriptUrl || location.href);
+      pieces[id] = fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('score ' + r.status);
+        return r.json();
+      }).catch(function () {
+        return loadLibrary().then(function (lib) { return lib.scores && lib.scores[id]; });
+      });
+    }
+    return pieces[id];
+  }
+
   function injectCss() {
     if (document.querySelector('link[data-score-css]')) return;
     var link = el('link', { rel: 'stylesheet', href: new URL('../css/score-engine.css', scriptUrl || location.href).href, 'data-score-css': '' });
@@ -1716,10 +1733,9 @@
     var figs = document.querySelectorAll('figure[data-score]');
     if (!figs.length) return;
     injectCss();
-    loadLibrary().then(function (lib) {
-      figs.forEach(function (fig) {
-        var id = fig.getAttribute('data-score');
-        var score = lib.scores && lib.scores[id];
+    figs.forEach(function (fig) {
+      var id = fig.getAttribute('data-score');
+      loadScore(id).then(function (score) {
         if (!score) { fig.insertBefore(el('p', { class: 'se-error' }, 'Unknown score "' + id + '".'), fig.firstChild); return; }
         score.id = id;
         fig.scoreData = score;
@@ -1743,9 +1759,9 @@
         // opening previews can use scoreData, while the expensive full engraving
         // waits until a learner actually opens that work.
         if (!fig.closest('[hidden]')) renderOnce();
+      }).catch(function (err) {
+        fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild);
       });
-    }).catch(function (err) {
-      figs.forEach(function (fig) { fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild); });
     });
   }
 

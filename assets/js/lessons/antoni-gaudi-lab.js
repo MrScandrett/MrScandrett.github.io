@@ -207,5 +207,5 @@
     var sub = 2, h = Math.min(dt, 1 / 30) / sub;
     for (var i = 0; i < sub; i++) step(h);
     render();
-  });
+  }, { el: SimKit.stage('#ga-chain') });
 })();

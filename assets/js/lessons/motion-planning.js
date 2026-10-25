@@ -407,7 +407,7 @@
     ui.rep.addEventListener('input', function () { document.getElementById('mp-rep-out').textContent = ui.rep.value; restart(); });
     ui.explain.textContent = EXPLAIN[mode];
     preset('forest');
-    RA.loop(function (dt) { tick(dt); draw(); });
+    RA.loop(function (dt) { tick(dt); draw(); }, canvas);
   }
 
   /* ── Differential-drive kinematics ─────────────────────────────── */
@@ -495,6 +495,6 @@
       ctx.restore();
       var radius = Math.abs(w) < 1e-3 ? '∞ (straight line)' : (Math.abs(v / w)).toFixed(0) + ' px';
       out.textContent = 'v = (vR + vL) / 2 = ' + v.toFixed(0) + ' px/s · ω = (vR − vL) / L = ' + w.toFixed(2) + ' rad/s · turn radius = ' + radius;
-    });
+    }, kc);
   }
 })();

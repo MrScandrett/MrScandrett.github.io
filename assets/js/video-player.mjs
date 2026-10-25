@@ -52,6 +52,11 @@ const store = {
   del(key) { try { localStorage.removeItem(key); } catch { /* private mode */ } },
 };
 
+// paint() runs every frame while a video plays; only touch the DOM when a value changes,
+// so screen readers aren't told the scrubber "changed" sixty times a second.
+const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
+const setAttr = (node, name, value) => { if (node.getAttribute(name) !== value) node.setAttribute(name, value); };
+
 const el = (tag, cls, text) => {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -536,6 +541,7 @@ export class Player extends EventTarget {
   }
 
   buildChapters() {
+    this.currentChapter = undefined;
     const list = el("ol", "vp-chapters");
     list.setAttribute("aria-label", "Chapters");
     for (const c of this.entry.chapters) {
@@ -602,6 +608,7 @@ export class Player extends EventTarget {
     if (this.info.state === "playing" && was !== "playing") {
       for (const p of players) if (p !== this && p.info.state === "playing") p.pause();
       this.ui.ask.hidden = true;
+      this.loop(); // back to every frame straight away, not on the next 250 ms idle tick
     }
     if (this.info.state === "ended") { this.finish(); return; }
     this.ui.root.dataset.state = this.info.state === "idle" ? "loading" : this.info.state;
@@ -609,13 +616,18 @@ export class Player extends EventTarget {
     this.dispatchEvent(new CustomEvent("state", { detail: { ...this.info } }));
   }
 
+  // Every frame while playing (clip ends and pause points need it); four times a second
+  // otherwise, which is enough to notice a seek or a state change from the provider.
   loop() {
     cancelAnimationFrame(this.raf);
+    clearTimeout(this.idleTick);
     const tick = () => {
       if (!this.adapter) return;
       this.watch();
       this.paint();
-      this.raf = requestAnimationFrame(tick);
+      const playing = this.info.state === "playing" || this.info.state === "buffering";
+      if (playing && !document.hidden) this.raf = requestAnimationFrame(tick);
+      else this.idleTick = setTimeout(tick, 250);
     };
     this.raf = requestAnimationFrame(tick);
   }
@@ -695,12 +707,13 @@ export class Player extends EventTarget {
     const { ui } = this;
     const span = this.clipEnd - this.clipStart;
     const rel = Math.max(0, Math.min(span || 0, this.adapter.now() - this.clipStart));
-    ui.time.textContent = formatTime(rel);
-    ui.total.textContent = span ? formatTime(span) : "";
-    ui.scrub.fill.style.width = span ? `${(rel / span) * 100}%` : "0";
-    ui.scrub.wrap.setAttribute("aria-valuemax", String(Math.round(span || 0)));
-    ui.scrub.wrap.setAttribute("aria-valuenow", String(Math.round(rel)));
-    ui.scrub.wrap.setAttribute("aria-valuetext", `${formatTime(rel)} of ${formatTime(span)}`);
+    setText(ui.time, formatTime(rel));
+    setText(ui.total, span ? formatTime(span) : "");
+    const width = span ? `${((rel / span) * 100).toFixed(2)}%` : "0";
+    if (ui.scrub.fill.style.width !== width) ui.scrub.fill.style.width = width;
+    setAttr(ui.scrub.wrap, "aria-valuemax", String(Math.round(span || 0)));
+    setAttr(ui.scrub.wrap, "aria-valuenow", String(Math.round(rel)));
+    setAttr(ui.scrub.wrap, "aria-valuetext", `${formatTime(rel)} of ${formatTime(span)}`);
     const playing = this.info.state === "playing" || this.info.state === "buffering";
     if (ui.playBtn.dataset.on !== String(playing)) {
       ui.playBtn.dataset.on = String(playing);
@@ -716,9 +729,12 @@ export class Player extends EventTarget {
     if (this.chaptersEl) {
       const t = this.adapter.now();
       const current = this.entry.chapters.findLast((c) => c.t <= t + 0.25);
-      [...this.chaptersEl.querySelectorAll(".vp-chapter")].forEach((b, i) => {
-        b.toggleAttribute("aria-current", this.entry.chapters[i] === current);
-      });
+      if (current !== this.currentChapter) {
+        this.currentChapter = current;
+        [...this.chaptersEl.querySelectorAll(".vp-chapter")].forEach((b, i) => {
+          b.toggleAttribute("aria-current", this.entry.chapters[i] === current);
+        });
+      }
     }
     this.drawTicks();
   }
@@ -739,6 +755,7 @@ export class Player extends EventTarget {
   teardown() {
     this.clearAskTimer();
     cancelAnimationFrame(this.raf);
+    clearTimeout(this.idleTick);
     if (this.adapter) { this.adapter.destroy(); this.adapter = null; }
     this.info.state = "idle";
     if (this.ui) { this.ui.bar.hidden = true; this.ui.ask.hidden = true; }
@@ -927,8 +944,9 @@ export async function renderTranscript(player, container) {
       }
       last = i;
     }
-    requestAnimationFrame(follow);
+    // Cues are a second or more apart, so four checks a second keep the highlight in step.
+    if (container.isConnected) setTimeout(follow, 250);
   };
-  requestAnimationFrame(follow);
+  setTimeout(follow, 250);
   return true;
 }

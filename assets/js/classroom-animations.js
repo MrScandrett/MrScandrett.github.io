@@ -27,6 +27,8 @@ const ClassroomAnimations = (() => {
   };
 
   let isRunning = false;
+  // The loop only runs while something is animating; an idle page costs no frames.
+  let ticking = false;
   let frameCount = 0;
   let frameSkipCount = 0;
   let lastFrameTime = 0;
@@ -222,8 +224,15 @@ const ClassroomAnimations = (() => {
 
   // ─── Main Loop ───────────────────────────────────────────────────────────────
 
+  function wake() {
+    if (!isRunning || ticking || !animations.length) return;
+    ticking = true;
+    lastFrameTime = performance.now(); // first step is one frame, not the idle gap
+    requestAnimationFrame(loop);
+  }
+
   function loop() {
-    if (!isRunning) return;
+    if (!isRunning || !animations.length) { ticking = false; return; }
 
     const now = performance.now();
     const delta = now - lastFrameTime;
@@ -256,8 +265,7 @@ const ClassroomAnimations = (() => {
     init() {
       if (isRunning) return;
       isRunning = true;
-      lastFrameTime = performance.now();
-      loop();
+      wake();
     },
 
     stop() {
@@ -278,11 +286,12 @@ const ClassroomAnimations = (() => {
       if (idx !== -1) animations.splice(idx, 1);
       const anim = new Animation(id, update, duration, easing, onComplete);
       animations.push(anim);
+      wake();
       return anim;
     },
 
     pauseAnimation(id)  { const a = animations.find(a => a.id === id); if (a) a.pause(); },
-    resumeAnimation(id) { const a = animations.find(a => a.id === id); if (a) a.resume(); },
+    resumeAnimation(id) { const a = animations.find(a => a.id === id); if (a) { a.resume(); wake(); } },
 
     cancelAnimation(id) {
       const idx = animations.findIndex(a => a.id === id);

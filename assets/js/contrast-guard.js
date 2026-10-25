@@ -517,11 +517,20 @@
     }
   }
 
-  function schedule() {
+  // A sim that rewrites its readout's innerHTML or toggles classes every frame would otherwise
+  // get a whole-page pass every frame. DOM changes are caught up at most twice a second; theme
+  // changes, load and fonts (which call schedule() directly) still run on the next frame.
+  var MUTATION_GAP = 500;
+  function scheduleForMutation() {
+    schedule(MUTATION_GAP);
+  }
+
+  function schedule(minGap) {
     if (scheduled) return;
     scheduled = true;
     // On a heavy page a pass is expensive: space passes out (up to 1s) so they can't take every frame.
-    var wait = lastCost > 24 ? Math.min(1000, lastCost * 4) - (performance.now() - lastRun) : 0;
+    var gap = Math.max(lastCost > 24 ? Math.min(1000, lastCost * 4) : 0, typeof minGap === "number" ? minGap : 0);
+    var wait = gap ? gap - (performance.now() - lastRun) : 0;
     if (wait > 0) setTimeout(function () { window.requestAnimationFrame(run); }, wait);
     else window.requestAnimationFrame(run);
   }
@@ -534,13 +543,44 @@
   window.addEventListener("load", schedule);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
 
+  // A sim's live readout ("v = 3.2 m/s") rewrites its text every frame. Text can't change an
+  // element's colours, so those changes re-check just that element instead of the whole page.
+  var textTargets = new Set();
+  var textScheduled = false;
+  function runText() {
+    textScheduled = false;
+    if (scheduled) { textTargets.clear(); return; }
+    textTargets.forEach(function (element) {
+      if (element.isConnected && containsReadableText(element)) inspect(element);
+    });
+    textTargets.clear();
+  }
+
+  function onlyText(record) {
+    if (record.type === "characterData") return true;
+    if (record.type !== "childList") return false;
+    var lists = [record.addedNodes, record.removedNodes];
+    for (var l = 0; l < 2; l += 1) {
+      for (var n = 0; n < lists[l].length; n += 1) {
+        if (lists[l][n].nodeType !== Node.TEXT_NODE) return false;
+      }
+    }
+    return true;
+  }
+
   if (typeof MutationObserver === "function") {
     // Changes inside a skipped region (a playback cursor stepping through a score) don't need a pass.
     new MutationObserver(function (records) {
       for (var index = 0; index < records.length; index += 1) {
         var target = records[index].target;
         var element = target.nodeType === 1 ? target : target.parentElement;
-        if (!element || !element.closest("[" + SKIP_ATTR + "]")) { schedule(); return; }
+        if (element && element.closest("[" + SKIP_ATTR + "]")) continue;
+        if (!element || !onlyText(records[index])) { scheduleForMutation(); return; }
+        textTargets.add(element);
+      }
+      if (textTargets.size && !textScheduled && !scheduled) {
+        textScheduled = true;
+        window.requestAnimationFrame(runText);
       }
     }).observe(document.documentElement, {
       attributes: true,

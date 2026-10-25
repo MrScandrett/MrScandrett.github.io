@@ -109,5 +109,5 @@
       : 'Set frequency above 220 Hz while keeping amplitude at 50%. Frequency controls pitch; amplitude controls wave height.';
   });
   start.addEventListener('click', toggleSound);
-  updateLabels(); window.SimKit.loop(draw);
+  updateLabels(); window.SimKit.loop(draw, { el: SimKit.stage('#sound-lab-canvas') });
 }());

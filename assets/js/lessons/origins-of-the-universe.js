@@ -65,7 +65,7 @@
       ctx.fillText('hot + dense', 16, 20); ctx.textAlign = 'right'; ctx.fillText('cool + structured', w - 14, 20); ctx.textAlign = 'left';
     }
     updateEpoch();
-    SimKit.loop(drawEpoch);
+    SimKit.loop(drawEpoch, { el: SimKit.stage('#og-epoch-canvas') });
   }
 
   var origins = {
@@ -217,7 +217,7 @@
       ctx.fillText(frozen ? 'CMB imprint · 380,000 years' : 'photon–baryon plasma · pressure waves', 14, 20);
       ctx.fillText('compression', 14, h - 15); ctx.textAlign = 'right'; ctx.fillText('rarefaction', w - 14, h - 15); ctx.textAlign = 'left';
     }
-    SimKit.loop(drawSound);
+    SimKit.loop(drawSound, { el: SimKit.stage('#og-sound-canvas') });
     window.addEventListener('pagehide', stopAudio);
   }
 

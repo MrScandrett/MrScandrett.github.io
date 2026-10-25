@@ -1134,7 +1134,11 @@
       window.addEventListener("classroomos:vrmodechange", syncVr);
       vrSelect.addEventListener("change", function () {
         if (window.ClassroomOSVR) window.ClassroomOSVR.set(vrSelect.value);
-        else writeStorage(STORAGE_VR_MODE, vrSelect.value);
+        else {
+          writeStorage(STORAGE_VR_MODE, vrSelect.value);
+          // vr-mode.js is only fetched when it will switch on; load it now for "on".
+          if (vrSelect.value === "on" && window.ClassroomOSLoadVrMode) window.ClassroomOSLoadVrMode();
+        }
       });
     }
 
@@ -1753,16 +1757,40 @@ function classroomOSWhenIdle(fn) {
 }());
 
 // VR headset mode (vr-mode.js): bigger targets, laser hover rings, full view, on-screen keys.
+// Fetched only for a headset, a saved "on", or ?vr= (see vrModeWanted in lesson-print-button.js).
 (function () {
-  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
-  var s = document.createElement('script');
   var baseScript = document.currentScript && document.currentScript.src;
-  s.src = baseScript ? new URL('vr-mode.js', baseScript).href : '/assets/js/vr-mode.js';
-  s.defer = true;
-  s.dataset.vrModeScript = 'true';
-  classroomOSWhenIdle(function () {
+  function load() {
     if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+    var s = document.createElement('script');
+    s.src = baseScript ? new URL('vr-mode.js', baseScript).href : '/assets/js/vr-mode.js';
+    s.defer = true;
+    s.dataset.vrModeScript = 'true';
     document.head.appendChild(s);
+  }
+  function wanted() {
+    var ua = navigator.userAgent || '';
+    var pref = null;
+    try { pref = localStorage.getItem('classroomos-vr-mode'); } catch (e) { /* private mode */ }
+    return pref === 'on' || /[?&]vr=/.test(location.search) ||
+      /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
+      (/Macintosh/.test(ua) && 'xr' in navigator && navigator.maxTouchPoints > 0);
+  }
+  window.ClassroomOSLoadVrMode = load;
+  if (wanted()) classroomOSWhenIdle(load);
+}());
+
+// Asset cache for repeat visits (dist/sw.js, built from scripts/sw-template.js). Service workers
+// need a secure context, so this is the published site; ?sw=on tries it on localhost.
+(function () {
+  if (!('serviceWorker' in navigator) || window.__classroomosSwRegistered) return;
+  if (location.protocol !== 'https:' && !/[?&]sw=on\b/.test(location.search)) return;
+  var src = document.currentScript && document.currentScript.src;
+  if (!src) return;
+  window.__classroomosSwRegistered = true;
+  var root = new URL('../../', src);
+  classroomOSWhenIdle(function () {
+    navigator.serviceWorker.register(new URL('sw.js', root).href, { scope: root.pathname }).catch(function () { /* not published here */ });
   });
 }());
 

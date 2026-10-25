@@ -207,7 +207,8 @@
   </main>
 
   <script src="../../../assets/js/audio-effects.js"></script>
-  <script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+<script>
   (()=>{
     const $=id=>document.getElementById(id);
     const SR=22050, DUR=4, BLOCK=0.005, NB=Math.round(DUR/BLOCK);
@@ -344,12 +345,12 @@
       audioSync(params());startT=ac.currentTime+.05;node.start(startT);
       $('play').textContent='■ Stop';tick();
     }
-    function stop(){if(ac){ac.close();ac=null;comp=null;}cancelAnimationFrame(raf);playPos=null;liveGR=0;$('play').textContent='▶ Play';$('gr-fill').style.width='0';$('gr-live').textContent='0.0 dB';update();}
+    function stop(){if(ac){ac.close();ac=null;comp=null;}SimKit.frame.cancel(SimKit.stage('#curve', '#timeline'), raf);playPos=null;liveGR=0;$('play').textContent='▶ Play';$('gr-fill').style.width='0';$('gr-live').textContent='0.0 dB';update();}
     function tick(){
       if(!ac)return;playPos=Math.max(0,(ac.currentTime-startT)%DUR);
       liveGR=bypass?0:(typeof comp.reduction==='number'?comp.reduction:comp.reduction.value||0);
       $('gr-fill').style.width=Math.min(100,-liveGR/24*100)+'%';$('gr-live').textContent=liveGR.toFixed(1)+' dB';
-      render();raf=requestAnimationFrame(tick);
+      render();raf=SimKit.frame(SimKit.stage('#curve', '#timeline'), tick);
     }
 
     // ---- UI ----

@@ -556,7 +556,7 @@
         if (hudTimer > 0.1 || stepLeft === 0) { hudTimer = 0; updateHud(); }
       }
       if (active || flash > 0) draw();
-    });
+    }, { el: SimKit.stage('#arena') });
 
     boxes = DEFAULT_BOXES.map(function (b) { return { x: b.x, y: b.y, w: b.w, h: b.h }; });
     reset();

@@ -14,7 +14,7 @@ Allow 45–60 minutes for the main lesson, or use the sorter (10–15 minutes) a
 
 ## Source and maintenance
 
-`assets/animal-data.js` supplies the body-plan lab. `assets/animal-explorer.js` renders the explorer and comparison table. The sorter maintains its own 20-animal set in `assets/animal-sorter.js`. No build is needed. Edit these source files directly.
+`assets/animal-lab.css` is the shared look for the sorter and the body-plan lab (the same teal-on-ink field notebook as `index.html`); `assets/animal-sorter.css` skins only the sorting game. `assets/animal-data.js` supplies the body-plan lab, including each phylum's photo and credit (images in `assets/images/classification-of-life/phyla/`). `assets/animal-explorer.js` renders the explorer and comparison table. The sorter maintains its own 20-animal set in `assets/animal-sorter.js`. No build is needed. Edit these source files directly.
 
 Scientific references are linked in the lesson. Photos use the shared `photo-lightbox.js`; credits and licenses belong in each figure caption. Keep speculative evidence cards visually separate from actual organism photographs.
 

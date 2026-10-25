@@ -430,7 +430,7 @@
 
     opts.reset(game);
     if (realtime) showReady(); else setState('playing');
-    if (global.SimKit) global.SimKit.loop(frame);
+    if (global.SimKit) global.SimKit.loop(frame, { el: global.SimKit.stage ? global.SimKit.stage(canvas) : null });
     else {
       var last = null;
       (function tick(t) {

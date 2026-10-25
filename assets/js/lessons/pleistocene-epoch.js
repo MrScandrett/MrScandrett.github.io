@@ -180,7 +180,7 @@
       signalLoop = window.SimKit.loop(dt => {
         phase += dt * .7;
         drawSignal();
-      });
+      }, { el: SimKit.stage('#orbit-canvas') });
     } else if (signalLoop) {
       signalLoop.stop();
       signalLoop = null;

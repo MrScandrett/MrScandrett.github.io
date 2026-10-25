@@ -213,7 +213,7 @@
       if (!playing) return;
       t = (t + Math.min(dt, 0.1)) % CYCLE;
       render();
-    });
+    }, { el: SimKit.stage(canvas) });
     SimKit.theme.onChange(render);
   }
 

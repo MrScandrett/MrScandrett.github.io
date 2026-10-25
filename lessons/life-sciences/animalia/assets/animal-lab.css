@@ -1,1 +1,200 @@
-.animal-shell{width:min(1100px,calc(100% - 2rem));margin:2rem auto;color:#172b26;font-family:system-ui,sans-serif;line-height:1.65}.animal-shell h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.15}.animal-shell a{color:#006348}.animal-shell button{font:inherit;min-height:44px;cursor:pointer;border:1px solid #78968c;border-radius:8px;padding:.6rem 1rem;color:#17382d;background:#fff}.animal-shell button[aria-pressed=true]{background:#075c44;color:#fff}.animal-shell :focus-visible{outline:3px solid #b45309;outline-offset:3px}.animal-intro,.animal-panel,.animal-task{padding:clamp(1rem,3vw,2rem);background:#fff;border:1px solid #bfd0c9;border-radius:14px;margin-bottom:1rem}.animal-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}.animal-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}.animal-facts>div{background:#eef6f2;padding:1rem;border-radius:8px}.animal-table-wrap{overflow:auto}.animal-shell table{width:100%;border-collapse:collapse;min-width:700px}.animal-shell th,.animal-shell td{padding:.8rem;border:1px solid #bfd0c9;text-align:left;vertical-align:top}.animal-shell caption{text-align:left;font-weight:bold;padding:.8rem 0}.animal-shell textarea{display:block;width:100%;min-height:100px;font:inherit;padding:.6rem;margin:.5rem 0;border:1px solid #78968c;border-radius:6px}.animal-shell details{padding:.8rem;background:#eef6f2;margin-top:1rem}.animal-shell summary{cursor:pointer;font-weight:700;min-height:44px}@media(max-width:600px){.animal-facts{grid-template-columns:1fr}}@media print{.animal-tabs,button,.site-header{display:none!important}.animal-shell{width:100%;margin:0}.animal-panel,.animal-task{break-inside:avoid}}
+/*
+ * Animalia labs (sorter.html, explorer.html)
+ * Same field-notebook look as the Classification of Life lesson (index.html):
+ * teal on ink, grid paper, and real specimen photos. Tokens are scoped to
+ * body.animalia-lab so they never leak into the shared site header.
+ */
+
+body.animalia-lab {
+  --al-bg: #0a0f14;
+  --al-panel: rgba(15, 24, 32, .92);
+  --al-panel2: #0d1620;
+  --al-line: rgba(45, 212, 191, .16);
+  --al-line2: rgba(45, 212, 191, .34);
+  --al-text: #eef6f4;
+  --al-muted: rgba(228, 244, 240, .74);
+  --al-dim: rgba(228, 244, 240, .5);
+  --al-teal: #2dd4bf;
+  --al-teal-ink: #99f6ea;
+  --al-amber: #fbbf24;
+  --al-violet: #c4b5fd;
+  --al-sky: #7dd3fc;
+  --al-radius: 14px;
+  color-scheme: dark;
+  margin: 0;
+  color: var(--al-text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  background:
+    radial-gradient(circle at 8% 6%, rgba(45, 212, 191, .12), transparent 30%),
+    radial-gradient(circle at 90% 38%, rgba(167, 139, 250, .07), transparent 28%),
+    linear-gradient(rgba(45, 212, 191, .018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, .014) 1px, transparent 1px),
+    var(--al-bg);
+  background-size: auto, auto, 40px 40px, 40px 40px;
+  min-height: 100vh;
+}
+.animalia-lab *, .animalia-lab *::before, .animalia-lab *::after { box-sizing: border-box; }
+.animalia-lab :focus-visible { outline: 3px solid var(--al-amber); outline-offset: 3px; }
+.animalia-lab button, .animalia-lab select, .animalia-lab textarea { font: inherit; }
+.animalia-lab figure { margin: 0; }
+.animalia-lab img { max-width: 100%; height: auto; display: block; }
+
+/* ── Lesson bar: back to the hub + the two lab steps ── */
+.al-topbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--al-line); background: rgba(10, 15, 20, .9); backdrop-filter: blur(16px); }
+.al-topbar-inner { width: min(1180px, calc(100% - 2rem)); min-height: 56px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.al-topbar a { color: var(--al-teal-ink); text-decoration: none; font-size: .82rem; font-weight: 700; }
+.al-steps { display: flex; gap: .3rem; overflow-x: auto; }
+.al-steps a { display: flex; align-items: center; gap: .45rem; padding: .4rem .7rem; border-radius: 999px; color: var(--al-dim); white-space: nowrap; }
+.al-steps a b { display: grid; place-items: center; width: 1.4rem; height: 1.4rem; border: 1px solid var(--al-line2); border-radius: 50%; font-size: .7rem; }
+.al-steps a:hover { color: var(--al-text); }
+.al-steps a[aria-current="page"] { color: var(--al-text); background: rgba(45, 212, 191, .1); }
+.al-steps a[aria-current="page"] b { background: var(--al-teal); border-color: var(--al-teal); color: #04201c; }
+.al-badge { padding: .34rem .62rem; border: 1px solid var(--al-line2); border-radius: 999px; color: var(--al-teal-ink); background: rgba(45, 212, 191, .08); font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+
+/* ── Page frame ── */
+.al-shell { width: min(1180px, calc(100% - 2rem)); margin: auto; padding: 1.25rem 0 4rem; display: grid; gap: 1rem; }
+.al-panel { padding: clamp(1.1rem, 3vw, 1.9rem); background: var(--al-panel); border: 1px solid var(--al-line); border-radius: var(--al-radius); box-shadow: 0 18px 50px rgba(0, 0, 0, .22); }
+.al-panel > :first-child { margin-top: 0; }
+.al-panel > :last-child { margin-bottom: 0; }
+.al-eyebrow { margin: 0 0 .5rem; color: var(--al-teal); font: 800 .7rem/1.3 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.animalia-lab h1, .animalia-lab h2, .animalia-lab h3 { font-family: var(--font-display); color: var(--al-text); letter-spacing: -.01em; }
+.animalia-lab h2 { margin: 0 0 .7rem; font-size: clamp(1.3rem, 2.4vw, 1.75rem); line-height: 1.2; }
+.animalia-lab h3 { margin: 1.2rem 0 .45rem; font-size: 1.02rem; }
+.animalia-lab p { color: var(--al-muted); }
+.animalia-lab strong { color: var(--al-text); }
+.animalia-lab a { color: var(--al-teal-ink); }
+
+/* ── Hero: words on the left, specimens on the right ── */
+.al-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 1rem; align-items: stretch; }
+.al-hero-text { display: flex; flex-direction: column; justify-content: center; }
+.al-hero h1 { margin: .2rem 0 .8rem; font-size: clamp(2.1rem, 5vw, 3.6rem); line-height: 1.02; letter-spacing: -.035em; }
+.al-hero h1 em { font-style: normal; color: var(--al-teal); }
+.al-hero-text > p { max-width: 58ch; }
+.al-pills { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .6rem; }
+.al-pills span { padding: .3rem .65rem; border: 1px solid var(--al-line2); border-radius: 999px; color: var(--al-teal-ink); font: 700 .7rem/1.2 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.al-bigidea { margin: 1rem 0 0; padding: .85rem 1rem; border-left: 3px solid var(--al-amber); border-radius: 0 10px 10px 0; background: rgba(251, 191, 36, .07); color: var(--al-muted); }
+
+/* Specimen mosaic (explorer hero): each tile jumps to that phylum */
+.al-mosaic { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; padding: .5rem; }
+.al-mosaic button { position: relative; padding: 0; min-height: 0; aspect-ratio: 4 / 3; overflow: hidden; border: 1px solid var(--al-line); border-radius: 10px; background: var(--al-panel2); cursor: pointer; }
+.al-mosaic img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease, filter .35s ease; filter: saturate(.9); }
+.al-mosaic button:hover img, .al-mosaic button:focus-visible img { transform: scale(1.06); filter: saturate(1.1); }
+.al-mosaic span { position: absolute; left: .4rem; bottom: .4rem; padding: .15rem .45rem; border-radius: 6px; background: rgba(5, 10, 14, .78); color: var(--al-text); font: 700 .7rem/1.3 var(--font-mono); }
+
+/* Paired specimens (sorter hero) */
+.al-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; align-content: center; }
+.al-pair figure { overflow: hidden; border: 1px solid var(--al-line); border-radius: 12px; background: var(--al-panel2); }
+.al-pair img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.al-pair figcaption { padding: .6rem .75rem .7rem; font-size: .78rem; color: var(--al-muted); line-height: 1.45; }
+.al-pair figcaption b { display: block; color: var(--al-text); font-size: .9rem; }
+.al-pair-note { grid-column: 1 / -1; margin: 0; text-align: center; font-size: .88rem; }
+.al-credit { display: block; margin-top: .3rem; color: var(--al-dim); font-size: .68rem; }
+.al-credit a { color: var(--al-dim); }
+
+/* ── Cards and grids ── */
+.al-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.al-grid.two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.al-card { padding: 1rem 1.05rem; border: 1px solid var(--al-line); border-radius: 12px; background: var(--al-panel2); }
+.al-card h3 { margin: 0 0 .3rem; }
+.al-card p { margin: 0; font-size: .9rem; }
+.al-card.is-vert { border-color: rgba(125, 211, 252, .38); background: linear-gradient(160deg, rgba(56, 189, 248, .1), var(--al-panel2) 60%); }
+.al-card.is-vert h3 { color: var(--al-sky); }
+.al-card.is-invert { border-color: rgba(196, 181, 253, .38); background: linear-gradient(160deg, rgba(167, 139, 250, .1), var(--al-panel2) 60%); }
+.al-card.is-invert h3 { color: var(--al-violet); }
+.al-mark { display: inline-block; width: .55rem; height: .55rem; margin-right: .45rem; border-radius: 50%; background: var(--al-teal); vertical-align: .08em; }
+
+.al-checks { margin: 0; padding: 0; list-style: none; display: grid; gap: .5rem; }
+.al-checks li { position: relative; padding-left: 1.6rem; color: var(--al-muted); }
+.al-checks li::before { content: ""; position: absolute; left: .15rem; top: .45em; width: .7rem; height: .4rem; border-left: 2px solid var(--al-teal); border-bottom: 2px solid var(--al-teal); transform: rotate(-45deg); }
+
+.al-questions { margin: 0; padding: 0; list-style: none; counter-reset: q; display: grid; gap: .55rem; }
+.al-questions li { counter-increment: q; display: grid; grid-template-columns: 2rem 1fr; align-items: baseline; padding: .65rem .8rem; border: 1px solid var(--al-line); border-radius: 10px; background: var(--al-panel2); color: var(--al-muted); }
+.al-questions li::before { content: counter(q, decimal-leading-zero); color: var(--al-teal); font: 800 .78rem var(--font-mono); }
+
+.al-vocab { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); margin: 0; }
+.al-vocab div { padding: .75rem .9rem; border-left: 3px solid var(--al-teal); border-radius: 0 10px 10px 0; background: var(--al-panel2); }
+.al-vocab dt { color: var(--al-text); font-weight: 800; }
+.al-vocab dd { margin: .15rem 0 0; color: var(--al-muted); font-size: .9rem; }
+
+.al-next { display: block; padding: 1rem 1.1rem; border: 1px solid var(--al-line2); border-radius: 12px; background: rgba(45, 212, 191, .06); text-decoration: none; }
+.al-next b { display: block; color: var(--al-text); font-size: 1.05rem; }
+.al-next span { color: var(--al-muted); font-size: .9rem; }
+.al-next:hover { background: rgba(45, 212, 191, .12); }
+
+/* ── Controls ── */
+.al-btn, .al-tabs button { min-height: 44px; padding: .55rem 1rem; border: 1px solid var(--al-line2); border-radius: 999px; background: transparent; color: var(--al-teal-ink); font-weight: 700; cursor: pointer; }
+.al-btn:hover, .al-tabs button:hover { background: rgba(45, 212, 191, .1); }
+.al-tabs { display: flex; flex-wrap: wrap; gap: .5rem; }
+.al-tabs button[aria-pressed="true"] { background: var(--al-teal); border-color: var(--al-teal); color: #04201c; }
+.animalia-lab label { display: block; margin-top: .9rem; color: var(--al-text); font-weight: 700; font-size: .9rem; }
+.animalia-lab textarea { display: block; width: 100%; min-height: 104px; margin: .45rem 0 0; padding: .7rem .8rem; border: 1px solid var(--al-line2); border-radius: 10px; background: rgba(4, 9, 12, .7); color: var(--al-text); line-height: 1.5; resize: vertical; }
+.animalia-lab textarea::placeholder { color: var(--al-dim); }
+.animalia-lab details { margin-top: 1rem; padding: .2rem .95rem; border: 1px solid var(--al-line); border-radius: 10px; background: var(--al-panel2); }
+.animalia-lab summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--al-teal-ink); font-weight: 700; }
+
+/* ── Explorer: phylum picker + research card ── */
+.al-phyla { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .5rem; margin: 1rem 0; }
+.al-phyla button { display: grid; grid-template-rows: auto 1fr; padding: 0; overflow: hidden; border: 1px solid var(--al-line); border-radius: 12px; background: var(--al-panel2); color: var(--al-muted); text-align: left; cursor: pointer; }
+.al-phyla button img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; filter: saturate(.75) brightness(.85); transition: filter .25s; }
+.al-phyla button span { padding: .45rem .6rem .55rem; font-size: .74rem; line-height: 1.3; }
+.al-phyla button span b { display: block; color: var(--al-text); font-size: .86rem; }
+.al-phyla button:hover img { filter: none; }
+.al-phyla button[aria-pressed="true"] { border-color: var(--al-teal); box-shadow: 0 0 0 1px var(--al-teal), 0 10px 30px rgba(45, 212, 191, .15); }
+.al-phyla button[aria-pressed="true"] img { filter: none; }
+
+.al-research { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1.4rem; align-items: start; }
+.al-research figure { overflow: hidden; border: 1px solid var(--al-line); border-radius: 12px; background: var(--al-panel2); }
+.al-research figure img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.al-research figcaption { padding: .7rem .85rem .8rem; font-size: .84rem; color: var(--al-muted); line-height: 1.5; }
+.al-research figcaption b { color: var(--al-text); }
+.al-research h2 { margin-bottom: .2rem; }
+.al-research h2 small { display: block; color: var(--al-teal); font: 800 .72rem/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.al-traits { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+.al-traits li { padding: .3rem .65rem; border: 1px solid var(--al-line2); border-radius: 999px; color: var(--al-teal-ink); font-size: .8rem; }
+.al-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; margin-top: 1rem; }
+.al-facts div { padding: .7rem .8rem; border: 1px solid var(--al-line); border-radius: 10px; background: rgba(45, 212, 191, .05); }
+.al-facts strong { display: block; color: var(--al-teal); font: 800 .68rem/1.3 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.al-facts p { margin: .25rem 0 0; font-size: .86rem; color: var(--al-text); }
+.al-closer { margin-top: 1rem; padding: .8rem 1rem; border-left: 3px solid var(--al-amber); border-radius: 0 10px 10px 0; background: rgba(251, 191, 36, .07); }
+.al-closer p { margin: 0; }
+
+.al-table-wrap { overflow-x: auto; border: 1px solid var(--al-line); border-radius: 12px; }
+.animalia-lab table { width: 100%; min-width: 640px; border-collapse: collapse; }
+.animalia-lab caption { padding: .8rem 1rem; text-align: left; color: var(--al-muted); font-size: .85rem; }
+.animalia-lab th, .animalia-lab td { padding: .75rem .9rem; border-top: 1px solid var(--al-line); text-align: left; vertical-align: top; font-size: .88rem; color: var(--al-muted); }
+.animalia-lab thead th { color: var(--al-teal); font: 800 .7rem/1.3 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.animalia-lab tbody th { color: var(--al-text); }
+.al-table-thumb { display: flex; align-items: center; gap: .6rem; }
+.al-table-thumb img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+
+.al-footer { padding: 1.4rem 0 2.5rem; text-align: center; color: var(--al-dim); font-size: .8rem; }
+
+/* ── Small screens ── */
+@media (max-width: 900px) {
+  .al-hero, .al-research { grid-template-columns: 1fr; }
+  .al-phyla { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .al-topbar .al-badge { display: none; }
+  .al-phyla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .al-facts { grid-template-columns: 1fr; }
+  .al-steps a span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animalia-lab *, .animalia-lab *::before, .animalia-lab *::after { transition: none !important; animation: none !important; }
+}
+
+/* ── Print: the shared print pass repaints dark boxes; drop the controls ── */
+@media print {
+  .al-topbar, .al-mosaic, .al-phyla, .al-tabs, .al-btn, .al-footer { display: none !important; }
+  /* Chrome won't fragment grid rows cleanly, so print flows as plain blocks. */
+  .al-shell, .al-hero, .al-research { display: block; width: 100%; padding: 0; }
+  .al-shell > *, .al-hero > * { margin-bottom: .8rem; }
+  .al-panel { box-shadow: none; }
+  .al-research figure { float: right; width: 44%; margin: 0 0 .6rem 1rem; }
+  .al-research::after { content: ""; display: block; clear: both; }
+  .animalia-lab h2 { break-after: avoid; }
+  .animalia-lab textarea { background: #fff !important; color: #000 !important; border-color: #9aa !important; }
+  .animalia-lab table { min-width: 0; }
+}

@@ -179,7 +179,7 @@
   }
   var last = 0;
   function frame(now, force) {
-    if (!force) requestAnimationFrame(frame);
+    if (!force) (window.SimKit ? SimKit.frame('#as-hero', frame) : requestAnimationFrame(frame));
     if (!force && (document.hidden || now - last < 40)) return;
     last = now;
     var t = now / 1000;

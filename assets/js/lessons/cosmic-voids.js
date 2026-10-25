@@ -275,7 +275,7 @@
         timeInput.value = v;
         refresh();
         if (v >= 1000) stop();
-      });
+      }, { el: SimKit.stage('#cvWeb') });
     });
 
     document.getElementById('cvReset').addEventListener('click', function () {

@@ -414,7 +414,7 @@ function lerp(a, b, t) { return a + (b - a) * t; }
   tempSl.addEventListener('input',()=>{if(paused)tick();});
   ['hbondFreezeBtn','hbondBoilBtn'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{if(paused)tick();}));
   new ResizeObserver(()=>{resize();tick();}).observe(cv.parentElement);
-  let elapsed=0;SimKit.loop(dt=>{elapsed+=dt;if(!paused && elapsed>=1/60){tick();elapsed=0;}});
+  let elapsed=0;SimKit.loop(dt=>{elapsed+=dt;if(!paused && elapsed>=1/60){tick();elapsed=0;}}, { el: SimKit.stage('#cvHbond') });
 })();
 
 

@@ -1042,7 +1042,8 @@
       draw();
       if (hooks.onFrame) hooks.onFrame(api);
     }
-    var loop = global.SimKit ? global.SimKit.loop(tick) : (function () {
+    // Each game pauses while its own card is off-screen (several games share a lesson page).
+    var loop = global.SimKit ? global.SimKit.loop(tick, { el: global.SimKit.stage ? global.SimKit.stage(canvas) : null }) : (function () {
       var last = null, id, alive = true;
       function f(t) { if (last !== null) tick((t - last) / 1000); last = t; if (alive) id = requestAnimationFrame(f); }
       id = requestAnimationFrame(f); return { stop: function () { alive = false; cancelAnimationFrame(id); } };

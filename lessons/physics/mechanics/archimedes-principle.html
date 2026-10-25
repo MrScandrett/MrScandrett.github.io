@@ -480,7 +480,8 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
-  <script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+<script>
   (function () {
 
     /* ── Objects data ──────────────────────────────────── */
@@ -738,7 +739,7 @@
 
     /* ── Drop animation ────────────────────────────────── */
     document.getElementById('ap-drop-btn').addEventListener('click', () => {
-      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      if (animFrame) { SimKit.frame.cancel('#ap-tank-canvas', animFrame); animFrame = null; }
       const density = usingCustom
         ? customDensity
         : OBJECTS.find(o => o.id === selectedId)?.density ?? 1.0;
@@ -750,17 +751,17 @@
         const t = Math.min((now - start) / dur, 1);
         drawTank(t, density);
         if (t < 1) {
-          animFrame = requestAnimationFrame(frame);
+          animFrame = SimKit.frame('#ap-tank-canvas', frame);
         } else {
           document.getElementById('ap-drop-btn').disabled = false;
           showResult(density);
         }
       }
-      animFrame = requestAnimationFrame(frame);
+      animFrame = SimKit.frame('#ap-tank-canvas', frame);
     });
 
     document.getElementById('ap-reset-btn').addEventListener('click', () => {
-      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      if (animFrame) { SimKit.frame.cancel('#ap-tank-canvas', animFrame); animFrame = null; }
       document.getElementById('ap-drop-btn').disabled = false;
       hideResult();
       drawTank(null, 0);
