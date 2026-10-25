@@ -96,8 +96,9 @@ Saved links, bookmarks and students' saved work point at old URLs, so moving a l
   only, `?sw=on` on localhost).
 - `npm run audit:perf` serves `dist/` with a 4× CPU throttle and reports LCP, blocking time, bytes, and
   main-thread/rAF cost before and after scrolling every sim off-screen. `--all` ranks every lesson;
-  `--check` (run on deploy) fails on JS/request growth or a sim that keeps animating off-screen against
-  `docs/perf-baseline.json` (`--save-baseline` after a deliberate change).
+  `--check` (run on deploy) fails on JS/request growth against `docs/perf-baseline.json` and warns about
+  sims still animating off-screen (`--strict-frames` fails on those too; use it locally, since frame counts
+  depend on the machine). `--save-baseline` after a deliberate change.
 - **Sims pause when nobody can see them.** Drive animation with `SimKit.loop(fn, { el: SimKit.stage(canvas) })`,
   or in a hand-rolled loop write `SimKit.frame(canvas, draw)` where it said `requestAnimationFrame(draw)`
   (`SimKit.frame.cancel(canvas, id)` for `cancelAnimationFrame`; `SimKit.raf(el)` gives a reusable gate).

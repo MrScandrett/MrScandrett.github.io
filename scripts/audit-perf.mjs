@@ -14,14 +14,16 @@
 //   node scripts/audit-perf.mjs --match=cymatics    only pages whose path contains the text
 //   node scripts/audit-perf.mjs --list=pages.txt    only the pages listed (one path per line)
 //   node scripts/audit-perf.mjs --save-baseline     write docs/perf-baseline.json
-//   node scripts/audit-perf.mjs --check             fail if a page got heavier than the baseline
+//   node scripts/audit-perf.mjs --check             fail if a page's JS or requests grew past the baseline
 //   --dir=DIR (default dist, or . when dist/ is missing)  --cpu=N (throttle, default 4)
 //   --window=MS (sampling window, default 3000)  --concurrency=N  --out=report.json
 //   --with-bg   keep the animated site background on (off by default so each page's
 //               numbers are its own code; the background is the same on every page)
 //
-// --check only gates the stable numbers (bytes, requests, offscreen rAF/s). Timings are reported
-// but never fail the run; they swing too much between machines.
+// --check fails on JS or request growth, which is the same on every machine. Sims still animating
+// off-screen are reported as warnings: how many frames an ungated loop gets depends on how busy the
+// machine is, so a baseline from one machine can't gate another. --strict-frames makes them fail
+// too (use it locally, on the machine that saved the baseline). Timings are informational only.
 
 import fs from "node:fs";
 import http from "node:http";
@@ -210,6 +212,7 @@ const kb = (n) => Math.round((n || 0) / 1024);
 
 function compare(baseline, results) {
   const problems = [];
+  const warnings = [];
   for (const r of results) {
     const b = baseline.pages[r.page];
     if (!b || r.failed) continue;
@@ -219,10 +222,10 @@ function compare(baseline, results) {
     // Pages that keep a canvas in view (app shells) are allowed to keep drawing. A sim that lost its
     // pause runs at 15-60 frames a second; a few stray frames (model-viewer, contrast catch-up) are noise.
     if (!r.canvasesStillVisible && r.offscreen.rafPerSec > b.offscreen.rafPerSec + 10) {
-      problems.push(`${r.page}: offscreen rAF/s ${b.offscreen.rafPerSec} -> ${r.offscreen.rafPerSec}`);
+      (flag("strict-frames") ? problems : warnings).push(`${r.page}: offscreen rAF/s ${b.offscreen.rafPerSec} -> ${r.offscreen.rafPerSec}`);
     }
   }
-  return problems;
+  return { problems, warnings };
 }
 
 const server = await serve();
@@ -267,7 +270,8 @@ if (flag("save-baseline")) {
 
 if (flag("check")) {
   if (!fs.existsSync(baselinePath)) { console.error("No baseline; run with --save-baseline first."); process.exit(1); }
-  const problems = compare(JSON.parse(fs.readFileSync(baselinePath, "utf8")), results);
+  const { problems, warnings } = compare(JSON.parse(fs.readFileSync(baselinePath, "utf8")), results);
+  if (warnings.length) console.warn(`\n${warnings.length} sim(s) animating off-screen more than the baseline (warning; --strict-frames to fail):\n  ${warnings.join("\n  ")}`);
   if (problems.length) { console.error(`\n${problems.length} regression(s):\n  ${problems.join("\n  ")}`); process.exit(1); }
   console.log("\nNo regressions against the baseline.");
 }
