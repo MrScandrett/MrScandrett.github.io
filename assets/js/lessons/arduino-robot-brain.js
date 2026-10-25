@@ -243,7 +243,7 @@
         if (idx >= seq.length) { seq = loopSteps; idx = 0; }
         enter(seq[idx]);
       }
-    });
+    }, { el: SimKit.stage('#arb-loop-count', '#arb-flow-led') });
     document.getElementById('anatomy-run').addEventListener('click', function () {
       if (running) {
         running = false; clear(); token.style.opacity = '0';
@@ -333,7 +333,7 @@
       }
       var win = 6000;
       scope.draw(segments, Math.max(0, t - win), Math.max(win, t), t);
-    });
+    }, { el: SimKit.stage('#blink-readout') });
   })();
 
   /* ── 3. Morse challenge ── */
@@ -465,7 +465,7 @@
         }
       }
       scope.draw(plan.segs, 0, plan.total, playing ? t : null, labels);
-    });
+    }, { el: SimKit.stage('#morse-status', '#morse-chart') });
   })();
 
   /* ── Quiz ── */

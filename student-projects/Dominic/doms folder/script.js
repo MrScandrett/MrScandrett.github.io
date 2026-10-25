@@ -32,16 +32,9 @@ const godzillaImg = new Image();
 godzillaImg.src = "assets/sprites/godzilla.png";
 
 const kongImg = new Image();
-kongImg.src = "assets/sprites/kong.png";
-
 const mothraImg = new Image();
-mothraImg.src = "assets/sprites/mothra.png";
-
 const rodanImg = new Image();
-rodanImg.src = "assets/sprites/rodan.png";
-
 const mechaImg = new Image();
-mechaImg.src = "assets/sprites/mecha.png";
 
 // =========================
 // STAND-IN SPRITES
@@ -51,17 +44,19 @@ mechaImg.src = "assets/sprites/mecha.png";
 const standInSprites = new Map(); // image -> canvas
 
 function spriteFor(img) {
-    if (img.complete && img.naturalWidth > 0) return img;
+    if (img.src && img.complete && img.naturalWidth > 0) return img;
     return standInSprites.get(img) || img;
 }
 
 function makeStandIn(img, paint) {
-    img.addEventListener("error", () => {
+    const build = () => {
         const c = document.createElement("canvas");
         c.width = c.height = 128;
         paint(c.getContext("2d"));
         standInSprites.set(img, c);
-    });
+    };
+    build();
+    img.addEventListener("error", build);
 }
 
 // All stand-ins face left, like godzilla.png

@@ -15,7 +15,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "In some sponge species, separated cells can reaggregate under suitable laboratory conditions. This is not a property of every sponge.",
       symmetry: "Asymmetrical",
       skeleton: "Spicules and/or spongin fibers",
-      movement: "Sessile"
+      movement: "Sessile",
+      photo: {
+        src: "porifera.webp",
+        name: "Tube sponge (<i>Callyspongia</i> sp.)",
+        caption: "No true tissues and no symmetry. Water pulled in through the pores carries food to the sponge’s cells.",
+        credit: "Nick Hobgood",
+        license: "CC BY-SA 3.0",
+        source: "https://commons.wikimedia.org/wiki/File:Callyspongia_sp._(Tube_sponge).jpg"
+      }
     },
     "Cnidaria": {
       name: "Cnidaria",
@@ -26,7 +34,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "Some jellyfish can return to an earlier life stage under certain conditions; they can still die from disease or predation.",
       symmetry: "Radial",
       skeleton: "Hydrostatic support; corals may build calcium carbonate skeletons",
-      movement: "Swimming medusae; mostly attached polyps"
+      movement: "Swimming medusae; mostly attached polyps",
+      photo: {
+        src: "cnidaria.webp",
+        name: "Moon jelly (<i>Aurelia aurita</i>)",
+        caption: "Radial symmetry: the body repeats around a center, like slices of a pie. Stinging cells line the tentacles.",
+        credit: "Hans Hillewaert",
+        license: "CC BY-SA 4.0",
+        source: "https://commons.wikimedia.org/wiki/File:Aurelia_aurita_2.jpg"
+      }
     },
     "Mollusca": {
       name: "Mollusca",
@@ -37,7 +53,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "Mollusks range from tiny snails to the colossal squid, which has eyes the size of basketballs—the largest eyes in the animal kingdom.",
       symmetry: "Bilateral",
       skeleton: "Variable (Shell or None)",
-      movement: "Foot-based or jet propulsion"
+      movement: "Foot-based or jet propulsion",
+      photo: {
+        src: "mollusca.webp",
+        name: "Common octopus (<i>Octopus vulgaris</i>)",
+        caption: "A mollusk with no outer shell. Its arms are part of the muscular foot, and it jets water to swim.",
+        credit: "H. Zell",
+        license: "CC BY-SA 3.0",
+        source: "https://commons.wikimedia.org/wiki/File:Octopus_vulgaris_02.JPG"
+      }
     },
     "Arthropoda": {
       name: "Arthropoda",
@@ -48,7 +72,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "Arthropoda contains more described animal species than any other phylum. Species counts change as scientists discover and revise species.",
       symmetry: "Bilateral",
       skeleton: "External (Chitin Exoskeleton)",
-      movement: "Jointed legs, wings, or swimming"
+      movement: "Jointed legs, wings, or swimming",
+      photo: {
+        src: "arthropoda.webp",
+        name: "Ladybird beetle (<i>Coccinella magnifica</i>)",
+        caption: "Jointed legs, a segmented body, and a hard exoskeleton on the outside instead of a skeleton inside.",
+        credit: "Gilles San Martin",
+        license: "CC BY-SA 2.0",
+        source: "https://commons.wikimedia.org/wiki/File:Coccinella_magnifica01.jpg"
+      }
     },
     "Echinodermata": {
       name: "Echinodermata",
@@ -59,7 +91,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "The water vascular system operates tube feet for movement, feeding, and gas exchange. It is not simply a replacement blood circulation system.",
       symmetry: "Usually five-part radial as adults; bilateral larvae",
       skeleton: "Internal (Calcite ossicles)",
-      movement: "Water vascular system, tube feet"
+      movement: "Water vascular system, tube feet",
+      photo: {
+        src: "echinodermata.webp",
+        name: "Common starfish (<i>Asterias rubens</i>)",
+        caption: "A five-part adult body. Underneath, hundreds of tube feet worked by water pressure move it along.",
+        credit: "Hans Hillewaert",
+        license: "CC BY-SA 4.0",
+        source: "https://commons.wikimedia.org/wiki/File:Asterias_rubens.jpg"
+      }
     },
     "Chordata": {
       name: "Chordata",
@@ -70,7 +110,15 @@ const ANIMAL_KINGDOM_DATA = {
       keyFact: "Tunicate larvae have a notochord but no vertebral column. Chordata and Vertebrata are not interchangeable groups.",
       symmetry: "Bilateral",
       skeleton: "Bone/cartilage in vertebrates; notochord in other chordates",
-      movement: "Muscle and skeletal system"
+      movement: "Muscle and skeletal system",
+      photo: {
+        src: "chordata.webp",
+        name: "White shark (<i>Carcharodon carcharias</i>)",
+        caption: "A vertebrate whose skeleton is cartilage, not bone. A backbone does not have to be made of bone.",
+        credit: "Terry Goss",
+        license: "CC BY 2.5",
+        source: "https://commons.wikimedia.org/wiki/File:White_shark.jpg"
+      }
     }
   },
 

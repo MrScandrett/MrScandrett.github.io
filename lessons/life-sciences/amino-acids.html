@@ -199,17 +199,67 @@
       border: 1px solid rgba(167,139,250,0.28);
       background: rgba(10,5,28,0.95);
     }
-    .aa-model-frame {
-      display: block;
+    .aa-model-view {
+      position: relative;
       width: 100%;
       height: 300px;
-      border: none;
+      cursor: grab;
+    }
+    .aa-model-view:active { cursor: grabbing; }
+    .aa-model-fallback {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      padding: 1.5rem;
+      color: rgba(220,205,255,0.8);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    .aa-model-label {
+      position: absolute;
+      left: 0.8rem;
+      top: 0.7rem;
+      z-index: 2;
+      margin: 0;
+      color: #f5f0ff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .aa-model-label span {
+      display: block;
+      color: rgba(200,180,255,0.75);
+      font-weight: 600;
+      font-size: 0.72rem;
+    }
+    .aa-model-switch {
+      display: flex;
+      gap: 0.35rem;
+      padding: 0.5rem 0.6rem 0;
+      background: rgba(10,5,28,0.9);
+    }
+    .aa-model-switch button {
+      flex: 1;
+      padding: 0.4rem 0.5rem;
+      border: 1px solid rgba(167,139,250,0.35);
+      border-radius: 999px;
+      background: transparent;
+      color: #ddd6fe;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .aa-model-switch button[aria-pressed="true"] {
+      background: #7c3aed;
+      border-color: #a78bfa;
+      color: #fff;
     }
     .aa-model-credit {
       margin: 0;
       padding: 0.45rem 0.9rem;
       background: rgba(10,5,28,0.9);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       color: rgba(200,180,255,0.65);
       text-align: right;
     }
@@ -996,6 +1046,7 @@
       /* Short laptop screens: a second pinned bar under the site header cost 107-148px of an 800px screen. */
     @media (max-height: 900px) { .aa-lesson-map { position: static; } }
   </style>
+  <link rel="stylesheet" href="../../assets/css/lessons/life-sciences-route.css" />
 </head>
 <body class="aa-page">
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -1042,20 +1093,16 @@
 
       <!-- 3D model panel -->
       <div class="aa-hero-mol">
-        <div class="aa-model-wrap">
-          <iframe
-            title="Amino acid 3D model"
-            class="aa-model-frame"
-            loading="lazy"
-            frameborder="0"
-            allowfullscreen
-            mozallowfullscreen="true"
-            webkitallowfullscreen="true"
-            allow="autoplay; fullscreen; xr-spatial-tracking"
-            src="https://sketchfab.com/models/c90c988fb9fd4e88ad786acc62efab11/embed?autospin=0.4&autostart=1&ui_theme=dark&ui_infos=0&ui_watermark_link=0&ui_watermark=0">
-          </iframe>
+        <div class="aa-model-wrap" data-memory-ignore>
+          <div class="aa-model-view" id="aaHeroModel" role="img" aria-label="3D ball-and-stick model of phenylalanine. Drag to rotate.">
+            <p class="aa-model-label" id="aaHeroModelLabel">Phenylalanine<span>Phe · F · nonpolar ring</span></p>
+          </div>
+          <div class="aa-model-switch" role="group" aria-label="Choose an amino acid">
+            <button type="button" data-aa-model="phenylalanine" aria-pressed="true">Phe</button>
+            <button type="button" data-aa-model="lysine" aria-pressed="false">Lys</button>
+          </div>
         </div>
-        <p class="aa-model-credit">3D model: <a href="https://sketchfab.com/edumol" target="_blank" rel="noopener">Edumol</a> on Sketchfab</p>
+        <p class="aa-model-credit">Drag to rotate · 3D conformers: PubChem (NCBI) · <a href="https://3dmol.csb.pitt.edu/" target="_blank" rel="noopener">3Dmol.js</a></p>
       </div>
     </section>
 
@@ -2085,5 +2132,52 @@
   </script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/photo-lightbox.js"></script>
+<script src="../../assets/js/lessons/life-sciences-route.js"></script>
+<script>
+  // Hero model: vendored 3Dmol + PubChem conformers. The hero is hidden on
+  // phones, so the 500 KB renderer only loads when it will be seen.
+  (() => {
+    const host = document.getElementById('aaHeroModel');
+    if (!host || !matchMedia('(min-width: 721px)').matches) return;
+    const label = document.getElementById('aaHeroModelLabel');
+    const MODELS = {
+      phenylalanine: { name: 'Phenylalanine', sub: 'Phe · F · nonpolar ring' },
+      lysine: { name: 'Lysine', sub: 'Lys · K · positively charged' }
+    };
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let viewer = null, onScreen = true, current = 'phenylalanine';
+    const fail = msg => { host.innerHTML = `<div class="aa-model-fallback">${msg}</div>`; };
+    const spin = () => { if (viewer) viewer.spin(!still && onScreen && !document.hidden ? 'y' : false, 0.4); };
+
+    async function show(key) {
+      const m = MODELS[key];
+      current = key;
+      document.querySelectorAll('[data-aa-model]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.aaModel === key)));
+      label.innerHTML = `${m.name}<span>${m.sub}</span>`;
+      host.setAttribute('aria-label', `3D ball-and-stick model of ${m.name.toLowerCase()}. Drag to rotate.`);
+      if (!viewer) return;
+      const sdf = await fetch(`../../assets/geodata/molecules/${key}.sdf`).then(r => r.text());
+      viewer.clear();
+      viewer.addModel(sdf, 'sdf');
+      viewer.setStyle({}, { stick: { radius: 0.14, colorscheme: 'Jmol' }, sphere: { scale: 0.27, colorscheme: 'Jmol' } });
+      viewer.zoomTo();
+      viewer.zoom(1.15);
+      viewer.render();
+    }
+
+    const s = document.createElement('script');
+    s.src = '../../assets/vendor/3Dmol-min.js';
+    s.onload = () => {
+      try { viewer = $3Dmol.createViewer(host, { backgroundColor: '#0a051c', antialias: true }); }
+      catch { fail('3D needs WebGL. Explore the structure diagram below.'); return; }
+      show(current).then(spin).catch(() => fail('The 3D model could not load.'));
+      new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; spin(); }).observe(host);
+      document.addEventListener('visibilitychange', spin);
+    };
+    s.onerror = () => fail('The 3D model could not load.');
+    document.body.append(s);
+    document.querySelectorAll('[data-aa-model]').forEach(b => b.addEventListener('click', () => show(b.dataset.aaModel)));
+  })();
+</script>
 </body>
 </html>

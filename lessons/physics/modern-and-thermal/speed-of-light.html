@@ -1950,7 +1950,8 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
-  <script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+<script>
   (function () {
 
     /* ── Destinations data with educational context ────── */
@@ -2368,7 +2369,7 @@
 
     function animateLightClock(timestamp) {
       drawLightClock(currentBeta, timestamp || 0);
-      if (!reduceMotion.matches) requestAnimationFrame(animateLightClock);
+      if (!reduceMotion.matches) SimKit.frame('#sol-light-clock', animateLightClock);
     }
 
     function updateRelativityRamp() {
@@ -2544,7 +2545,7 @@
     }
 
     launchBtn.addEventListener('click', function () {
-      if (animFrame) { cancelAnimationFrame(animFrame); }
+      if (animFrame) { SimKit.frame.cancel('#sol-canvas', animFrame); }
       const key = destSelect.value;
       const dest = DESTS[key];
       launchBtn.disabled = true;
@@ -2569,7 +2570,7 @@
 
         if (progress < 1) {
           result.innerHTML = `🚀 In flight: <span>${formatTime(actualTime)}</span> / <span>${formatTime(dest.travelSec)}</span>`;
-          animFrame = requestAnimationFrame(frame);
+          animFrame = SimKit.frame('#sol-canvas', frame);
         } else {
           result.innerHTML = `✓ <span>ARRIVED at ${dest.label}</span> — Total travel time: <span>${formatTimeFull(dest.travelSec)}</span>`;
           isAnimating = false;
@@ -2577,7 +2578,7 @@
           launchBtn.disabled = false;
         }
       }
-      animFrame = requestAnimationFrame(frame);
+      animFrame = SimKit.frame('#sol-canvas', frame);
     });
 
     // Update context on destination change

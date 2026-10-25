@@ -936,6 +936,7 @@
       });
       if (next) next.classList.add('is-current');
       bar.style.width = (count / items.length * 100) + '%';
+      bar.parentNode.setAttribute('aria-valuenow', Math.round(count / items.length * 100));
       status.textContent = count + ' of ' + items.length + ' stages complete';
       if (next) {
         nextText.textContent = next.querySelector('strong').textContent;
@@ -958,6 +959,7 @@
 
   /* ---------------------------------------------------- collapsible chapters */
   function initChapters() {
+    var chapterIcons = { anatomy: '🥁', notation: '🎼', beats: '🎧', perform: '🎯', rudiments: '🥢', fills: '⚡', build: '🧩', check: '✅' };
     var sections = Array.prototype.slice.call(document.querySelectorAll('.lesson-section'));
     function setExpanded(section, expanded, moveFocus) {
       var button = section.querySelector('.dr-chapter-toggle');
@@ -989,6 +991,8 @@
       var button = htmlEl('button', 'dr-chapter-toggle', null, label);
       button.type = 'button'; button.setAttribute('aria-controls', content.id); button.setAttribute('aria-expanded', 'false');
       htmlEl('span', 'dr-chapter-number', number, button);
+      var icon = htmlEl('span', 'dr-chapter-emoji', chapterIcons[section.id] || '🎵', button);
+      icon.setAttribute('aria-hidden', 'true');
       var copy = htmlEl('span', 'dr-chapter-copy', null, button);
       htmlEl('span', 'dr-chapter-kicker', 'Chapter ' + number + ' · ' + category, copy);
       htmlEl('span', 'dr-chapter-title', title, copy);

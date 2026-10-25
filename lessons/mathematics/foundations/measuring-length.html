@@ -6,9 +6,6 @@
   <title>Measuring Length &amp; Every Other Unit · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <meta name="description" content="Mathematics Lesson — length from the Planck scale to the observable universe, plus every other unit humans measure with: temperature, pressure, electricity, energy, light, sound, radiation, and data. Interactive labs, an SI unit library, and a universal converter." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground.css" />
@@ -27,6 +24,8 @@
     }
 
     .ll-viewport { --ll-panel-w: 300px; --ll-accent: #f59e0b; --ll-tab-active: #f59e0b; --ll-tab-active-bg: rgba(245,158,11,0.12); }
+    /* The tray already names each component beside its decorative SVG. */
+    circuit-playground .cp-tray .cp-part svg text { display: none; }
     .ml-panel-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -2333,19 +2332,19 @@
 
             <span class="ll-label">Jump to Section</span>
             <div class="ml-panel-grid" role="group" aria-label="Quick Nav">
-              <a href="#scale-explorer" class="ml-panel-preset" style="text-decoration:none;">
+              <a href="#sec-scale" class="ml-panel-preset" style="text-decoration:none;">
                 Scale Explorer
                 <small>Powers of 10 Lab</small>
               </a>
-              <a href="#si-system" class="ml-panel-preset" style="text-decoration:none;">
+              <a href="#sec-base" class="ml-panel-preset" style="text-decoration:none;">
                 SI Base Units
                 <small>The 7 Foundations</small>
               </a>
-              <a href="#metric-prefixes" class="ml-panel-preset" style="text-decoration:none;">
+              <a href="#sec-prefixes" class="ml-panel-preset" style="text-decoration:none;">
                 Metric Prefixes
                 <small>Yocto to Yotta</small>
               </a>
-              <a href="#caliper-lab" class="ml-panel-preset" style="text-decoration:none;">
+              <a href="#sec-tools" class="ml-panel-preset" style="text-decoration:none;">
                 Vernier Caliper
                 <small>Sub-millimeter Lab</small>
               </a>
@@ -2376,7 +2375,7 @@
           <div class="ll-pane" id="ml-guide" aria-hidden="true">
             <span class="ll-label">The Architecture of Measurement</span>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>The Metre Defined:</strong> Since 1983, the metre is defined as the distance traveled by light in a vacuum in exactly \(1 / 299,792,458\) of a second.
+              <strong>The Metre Defined:</strong> Since 1983, the metre is defined as the distance traveled by light in a vacuum in exactly 1 / 299,792,458 of a second.
             </p>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
               <strong>The 7 SI Base Units:</strong>
@@ -2912,9 +2911,9 @@
       resizeCanvas();
       const loop = (now) => {
         drawScaleScene((now || 0) / 1000);
-        if (!prefersReducedMotion) animationFrame = requestAnimationFrame(loop);
+        if (!prefersReducedMotion) animationFrame = SimKit.frame(canvasEl, loop);
       };
-      if (animationFrame) cancelAnimationFrame(animationFrame);
+      if (animationFrame) SimKit.frame.cancel(canvasEl, animationFrame);
       loop(0);
     }
 
@@ -4596,7 +4595,7 @@
           c.setAttribute('cx', x.toFixed(1));
           c.setAttribute('cy', y.toFixed(1));
         });
-        requestAnimationFrame(frame);
+        SimKit.frame(host, frame);
       }
 
       function fmtSI(n, unit) {
@@ -4637,7 +4636,7 @@
       vS.addEventListener('input', update);
       rS.addEventListener('input', update);
       update();
-      if (!reduce) requestAnimationFrame(frame);
+      if (!reduce) SimKit.frame(host, frame);
       else charges.forEach((c, i) => {
         const [x, y] = pointAt((i * PERIM) / charges.length);
         c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1));

@@ -1522,7 +1522,8 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
-  <script>
+  <script src="../../../assets/js/sim-kit.js"></script>
+<script>
   (function () {
     'use strict';
 
@@ -2331,7 +2332,7 @@
     function animateGlow(ts) {
       ledGlowPhase = ts / 600;
       drawChalBoard();
-      if (state.ledOn) animFrame = requestAnimationFrame(animateGlow);
+      if (state.ledOn) animFrame = SimKit.frame('#bb-chal-canvas', animateGlow);
     }
 
     // ── Target hole highlighting ───────────────────────────
@@ -2446,8 +2447,8 @@
               // All done — light the LED!
               state.ledOn = true;
               showFeedback('🎉 Circuit complete! The LED is lit — you did it!', 'correct');
-              if (animFrame) cancelAnimationFrame(animFrame);
-              animFrame = requestAnimationFrame(animateGlow);
+              if (animFrame) SimKit.frame.cancel('#bb-chal-canvas', animFrame);
+              animFrame = SimKit.frame('#bb-chal-canvas', animateGlow);
               nextBtn.textContent = '↺ Try Again';
               nextBtn.classList.add('visible');
             } else {
@@ -2503,7 +2504,7 @@
       state.placedComponents = [];
       state.ledOn = false;
       state.chalComplete = [false, false, false, false];
-      if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+      if (animFrame) { SimKit.frame.cancel('#bb-chal-canvas', animFrame); animFrame = null; }
 
       if (palette) {
         palette.querySelectorAll('.bb-palette-btn').forEach(b => {

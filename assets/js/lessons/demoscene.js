@@ -388,5 +388,5 @@
 
   select('plasma');
   syncPanel();
-  SimKit.loop(frame);
+  SimKit.loop(frame, { el: SimKit.stage('#ds-canvas') });
 })();

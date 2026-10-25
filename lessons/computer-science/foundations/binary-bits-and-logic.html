@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Binary, Bits &amp; Logic Gates · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Computer Science Foundations — from unplugged step-by-step robot instructions to 8-bit binary flip cards, bitmap pixel grids, and interactive logic gates (NOT, AND, OR, XOR) that build a binary half-adder." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 300px;
+      --ll-accent: #0ea5e9;
+      --ll-tab-active: #0284c7;
+      --ll-tab-active-bg: rgba(14, 165, 233, 0.12);
+    }
+
+    .bb-page {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 1rem 3.5rem;
+    }
+
+    .bb-hero {
+      padding: 0.6rem 0 1.35rem;
+    }
+    .bb-hero h1 {
+      font-size: clamp(1.65rem, 3.8vw, 2.45rem);
+      margin: 0.25rem 0 0.55rem;
+      letter-spacing: -0.025em;
+    }
+    .bb-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.7rem;
+      margin: 0.4rem 0 0;
+      font-size: 0.82rem;
+      color: var(--text-muted, #64748b);
+    }
+    .bb-meta .dot {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.45;
+      display: inline-block;
+    }
+    .bb-lede {
+      margin: 0.65rem 0 0;
+      max-width: 70ch;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.96rem;
+      line-height: 1.65;
+    }
+    :where(html[data-lighting="night"]) .bb-lede,
+    :where(html[data-theme="vaporwave"]) .bb-lede,
+    :where(html[data-theme="bark"]) .bb-lede {
+      color: rgba(245, 245, 247, 0.75);
+    }
+
+    .bb-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--line, #d2d2d7);
+      border-left: 4px solid var(--card-accent, #0284c7);
+      border-radius: 18px;
+      box-shadow: var(--shadow, 0 10px 30px rgba(0, 0, 0, 0.06));
+      padding: 1.25rem 1.45rem;
+      margin-bottom: 1.15rem;
+    }
+    :where(html[data-lighting="night"]) .bb-card,
+    :where(html[data-theme="vaporwave"]) .bb-card,
+    :where(html[data-theme="bark"]) .bb-card {
+      background: #1e293b;
+      border-color: #334155;
+      color: #f8fafc;
+    }
+    .bb-card h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .bb-card h3 {
+      margin: 1rem 0 0.4rem;
+      font-size: 1.02rem;
+    }
+    .bb-card p {
+      margin: 0 0 0.65rem;
+      color: var(--text-secondary, #3f4f65);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    :where(html[data-lighting="night"]) .bb-card p,
+    :where(html[data-theme="vaporwave"]) .bb-card p,
+    :where(html[data-theme="bark"]) .bb-card p {
+      color: #cbd5e1;
+    }
+    .bb-step-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--card-accent, #0284c7);
+      margin-bottom: 0.3rem;
+    }
+    :where(html[data-lighting="night"]) .bb-step-tag {
+      color: #38bdf8;
+    }
+
+    /* Part 1: Unplugged Robot Grid */
+    .bb-robot-layout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.25rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    @media (max-width: 720px) {
+      .bb-robot-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .bb-grid-board {
+      display: grid;
+      grid-template-columns: repeat(5, 52px);
+      grid-template-rows: repeat(5, 52px);
+      gap: 4px;
+      padding: 8px;
+      background: #0f172a;
+      border-radius: 14px;
+      border: 2px solid #334155;
+      width: max-content;
+    }
+    .bb-cell {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      color: #f8fafc;
+      position: relative;
+      user-select: none;
+    }
+    .bb-cell.is-wall {
+      background: #334155;
+      border: 1px dashed #64748b;
+    }
+    .bb-cell.is-goal {
+      background: rgba(16, 185, 129, 0.22);
+      border: 1px solid #10b981;
+    }
+    .bb-cell.is-visited {
+      background: rgba(56, 189, 248, 0.18);
+    }
+    .bb-cmd-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+    .bb-btn {
+      padding: 0.45rem 0.85rem;
+      border-radius: 9px;
+      border: 1px solid var(--line, #cbd5e1);
+      background: var(--white, #fff);
+      color: var(--text, #0f172a);
+      font: 700 0.82rem/1.2 inherit;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+    }
+    :where(html[data-lighting="night"]) .bb-btn {
+      background: #0f172a;
+      border-color: #475569;
+      color: #f8fafc;
+    }
+    .bb-btn:hover {
+      border-color: #0284c7;
+      transform: translateY(-1px);
+    }
+    .bb-btn.primary {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #fff;
+    }
+    .bb-program-strip {
+      min-height: 46px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px dashed var(--line, #94a3b8);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+    }
+    :where(html[data-lighting="night"]) .bb-program-strip {
+      background: rgba(15, 23, 42, 0.55);
+      border-color: #475569;
+    }
+    .bb-cmd-chip {
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: #0284c7;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.76rem;
+    }
+    .bb-cmd-chip.is-active {
+      background: #f59e0b;
+      color: #0f172a;
+    }
+
+    /* Part 2: 8-Bit Binary Flip Cards */
+    .bb-bits-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(56px, 1fr));
+      gap: 0.5rem;
+      margin: 0.9rem 0;
+    }
+    @media (max-width: 640px) {
+      .bb-bits-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .bb-bit-card {
+      border: 2px solid var(--line, #cbd5e1);
+      border-radius: 14px;
+      padding: 0.65rem 0.4rem;
+      text-align: center;
+      background: var(--white, #fff);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, background 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    :where(html[data-lighting="night"]) .bb-bit-card {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f8fafc;
+    }
+    .bb-bit-card[aria-pressed="true"] {
+      background: linear-gradient(180deg, rgba(14, 165, 233, 0.18), rgba(14, 165, 233, 0.06));
+      border-color: #0284c7;
+      transform: translateY(-2px);
+    }
+    .bb-bit-place {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--text-muted, #64748b);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .bb-bit-digit {
+      font-size: 1.65rem;
+      font-weight: 900;
+      font-family: "JetBrains Mono", monospace;
+      color: var(--text, #0f172a);
+    }
+    :where(html[data-lighting="night"]) .bb-bit-digit {
+      color: #f8fafc;
+    }
+    .bb-bit-card[aria-pressed="true"] .bb-bit-digit {
+      color: #0284c7;
+    }
+    :where(html[data-lighting="night"]) .bb-bit-card[aria-pressed="true"] .bb-bit-digit {
+      color: #38bdf8;
+    }
+    .bb-bit-lamp {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .bb-readouts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.65rem;
+      margin: 0.85rem 0;
+    }
+    .bb-readout {
+      padding: 0.7rem 0.9rem;
+      border-radius: 12px;
+      background: rgba(14, 165, 233, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      text-align: center;
+    }
+    .bb-readout-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #64748b);
+    }
+    .bb-readout-val {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0284c7;
+    }
+    :where(html[data-lighting="night"]) .bb-readout-val {
+      color: #38bdf8;
+    }
+
+    /* Part 3: Pixel Bitmap Painter */
+    .bb-pixel-layout {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.25rem;
+      align-items: start;
+      margin-top: 0.85rem;
+    }
+    @media (max-width: 720px) {
+      .bb-pixel-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .bb-pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 34px);
+      grid-template-rows: repeat(8, 34px);
+      gap: 3px;
+      padding: 8px;
+      background: #0f172a;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      width: max-content;
+    }
+    .bb-px {
+      width: 34px;
+      height: 34px;
+      border-radius: 4px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #64748b;
+      font: 700 0.72rem/1 "JetBrains Mono", monospace;
+      cursor: pointer;
+      padding: 0;
+    }
+    .bb-px[aria-pressed="true"] {
+      background: #38bdf8;
+      color: #0f172a;
+      border-color: #bae6fd;
+    }
+    .bb-hex-table {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .bb-hex-table th,
+    .bb-hex-table td {
+      padding: 0.35rem 0.55rem;
+      border-bottom: 1px solid var(--line, #e2e8f0);
+      text-align: left;
+    }
+    :where(html[data-lighting="night"]) .bb-hex-table th,
+    :where(html[data-lighting="night"]) .bb-hex-table td {
+      border-color: #334155;
+    }
+
+    /* Part 4: Logic Gates & Half Adder */
+    .bb-gate-bench {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.15rem;
+      margin-top: 0.85rem;
+    }
+    @media (max-width: 760px) {
+      .bb-gate-bench {
+        grid-template-columns: 1fr;
+      }
+    }
+    .bb-gate-stage {
+      padding: 1rem;
+      border-radius: 14px;
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #334155;
+    }
+    .bb-truth-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82rem;
+    }
+    .bb-truth-table th,
+    .bb-truth-table td {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--line, #cbd5e1);
+      text-align: center;
+    }
+    :where(html[data-lighting="night"]) .bb-truth-table th,
+    :where(html[data-lighting="night"]) .bb-truth-table td {
+      border-color: #334155;
+    }
+    .bb-truth-table tr.is-current {
+      background: rgba(14, 165, 233, 0.22);
+      font-weight: 800;
+    }
+
+    .bb-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-top: 0.85rem;
+    }
+    .bb-gallery figure {
+      margin: 0;
+      border: 1px solid var(--line, #cbd5e1);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--white, #fff);
+    }
+    :where(html[data-lighting="night"]) .bb-gallery figure {
+      background: #0f172a;
+      border-color: #334155;
+    }
+    .bb-gallery img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+    }
+    .bb-gallery figcaption {
+      padding: 0.7rem 0.85rem;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: var(--text-secondary, #475569);
+    }
+    :where(html[data-lighting="night"]) .bb-gallery figcaption {
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content" class="bb-page">
+          <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+            <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+            <a href="../computer-science-pathway.html">Computer Science</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+            <span class="ll-crumb-current" aria-current="page">Binary, Bits &amp; Logic Gates</span>
+          </nav>
+
+          <section class="hero bb-hero">
+            <p class="eyebrow">Computer Science · Foundations · Grades K–8</p>
+            <h1>Binary, Bits &amp; Logic Gates</h1>
+            <div class="bb-meta">
+              <span>Unplugged Algorithms (K–2)</span><span class="dot"></span>
+              <span>8-Bit Binary &amp; Pixels (3–5)</span><span class="dot"></span>
+              <span>Logic Gates &amp; Half-Adder (6–8)</span>
+            </div>
+            <p class="bb-lede">Inside every computer, phone, and game console, there are no letters, colors, or numbers—only billions of microscopic switches flipping between <strong>0 (OFF)</strong> and <strong>1 (ON)</strong>. Start with step-by-step robot instructions, then flip 8-bit binary cards, paint a bitmap sprite out of bits, and wire logic gates that make switches add numbers.</p>
+          </section>
+
+          <!-- Part 1: Unplugged Robot Grid (K-2) -->
+          <section class="bb-card" id="bb-unplugged" style="--card-accent:#10b981;">
+            <span class="bb-step-tag">Level 1 · Grades K–2 · Precise Instructions</span>
+            <h2>1. Unplugged Robot: Computers Do What You Say, Not What You Mean</h2>
+            <p>Before we touch binary numbers or code, an <strong>algorithm</strong> is simply an exact list of steps. A robot has no common sense: if a step is missing or out of order, it walks into a crate! Build a sequence of arrows to guide the rover (🤖) to the battery (🔋), then test and <strong>debug</strong> your program.</p>
+
+            <div class="bb-robot-layout">
+              <div class="bb-grid-board" id="bb-robot-grid" role="img" aria-label="5 by 5 robot obstacle grid"></div>
+              <div>
+                <div class="bb-cmd-palette" role="group" aria-label="Add robot commands">
+                  <button type="button" class="bb-btn" data-robot-cmd="U">⬆️ Up</button>
+                  <button type="button" class="bb-btn" data-robot-cmd="D">⬇️ Down</button>
+                  <button type="button" class="bb-btn" data-robot-cmd="L">⬅️ Left</button>
+                  <button type="button" class="bb-btn" data-robot-cmd="R">➡️ Right</button>
+                  <button type="button" class="bb-btn" id="bb-robot-buggy">Load Buggy Program</button>
+                </div>
+                <div class="bb-program-strip" id="bb-robot-program" aria-live="polite">Click arrow buttons above to queue instructions…</div>
+                <div class="bb-cmd-palette">
+                  <button type="button" class="bb-btn primary" id="bb-robot-run">▶ Run Program</button>
+                  <button type="button" class="bb-btn" id="bb-robot-step">Step 1 Move</button>
+                  <button type="button" class="bb-btn" id="bb-robot-undo">⌫ Undo Last</button>
+                  <button type="button" class="bb-btn" id="bb-robot-clear">Reset</button>
+                </div>
+                <p id="bb-robot-status" style="font-weight:700;color:#0284c7;" aria-live="polite">Mission: Reach the battery at (col 5, row 1) without hitting crates (📦).</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Part 2: 8-Bit Binary Flip Cards (3-5) -->
+          <section class="bb-card" id="bb-binary" style="--card-accent:#0284c7;">
+            <span class="bb-step-tag">Level 2 · Grades 3–5 · Base-2 Place Value</span>
+            <h2>2. Eight Switches Make a Byte: The Binary Flip Cards</h2>
+            <p>Humans count in <strong>base-10</strong> (ones, tens, hundreds) because we have ten fingers. Computers count in <strong>base-2 (binary)</strong> because an electrical switch has two states: <strong>0 (OFF)</strong> and <strong>1 (ON)</strong>. Each switch is a <strong>bit</strong>, and 8 bits together make 1 <strong>byte</strong> (values <code>0</code> to <code>255</code>). Click any card below to flip its bit and watch how the powers of two add up.</p>
+
+            <div class="bb-bits-row" id="bb-bits-row" role="group" aria-label="8-bit binary flip cards"></div>
+
+            <div class="bb-readouts">
+              <div class="bb-readout">
+                <span class="bb-readout-label">Binary (Base 2)</span>
+                <span class="bb-readout-val" id="bb-out-bin">01000001</span>
+              </div>
+              <div class="bb-readout">
+                <span class="bb-readout-label">Active Sum</span>
+                <span class="bb-readout-val" id="bb-out-sum" style="font-size:0.95rem;">64 + 1</span>
+              </div>
+              <div class="bb-readout">
+                <span class="bb-readout-label">Decimal (Base 10)</span>
+                <span class="bb-readout-val" id="bb-out-dec">65</span>
+              </div>
+              <div class="bb-readout">
+                <span class="bb-readout-label">Hexadecimal (Base 16)</span>
+                <span class="bb-readout-val" id="bb-out-hex">0x41</span>
+              </div>
+              <div class="bb-readout">
+                <span class="bb-readout-label">ASCII Character</span>
+                <span class="bb-readout-val" id="bb-out-ascii">'A'</span>
+              </div>
+            </div>
+
+            <div class="bb-cmd-palette">
+              <button type="button" class="bb-btn" data-byte-preset="0">All OFF (0)</button>
+              <button type="button" class="bb-btn" data-byte-preset="42">Make 42</button>
+              <button type="button" class="bb-btn" data-byte-preset="65">ASCII 'A' (65)</button>
+              <button type="button" class="bb-btn" data-byte-preset="170">Alternating (170)</button>
+              <button type="button" class="bb-btn" data-byte-preset="255">Max Byte (255)</button>
+              <button type="button" class="bb-btn primary" id="bb-byte-challenge">🎯 Random Target Challenge</button>
+            </div>
+            <p id="bb-byte-target-msg" style="font-weight:700;" aria-live="polite"></p>
+          </section>
+
+          <!-- Part 3: Binary Pixels (3-6) -->
+          <section class="bb-card" id="bb-pixels" style="--card-accent:#8b5cf6;">
+            <span class="bb-step-tag">Level 2 · Grades 3–6 · Data Representation</span>
+            <h2>3. Bits as Pictures: 8×8 Binary Sprite Painter</h2>
+            <p>How do 0s and 1s become graphics? On an early 1-bit screen, each row of 8 pixels is stored as a single byte: <code>1</code> lights the pixel up, and <code>0</code> leaves it dark. Click squares in the 8×8 grid (or load a preset) and watch the computer encode each row into binary and decimal in real time.</p>
+
+            <div class="bb-pixel-layout">
+              <div>
+                <div class="bb-pixel-grid" id="bb-pixel-grid" role="group" aria-label="8 by 8 binary pixel grid"></div>
+                <div class="bb-cmd-palette" style="margin-top:0.65rem;">
+                  <button type="button" class="bb-btn" data-sprite="smile">😊 Smiley</button>
+                  <button type="button" class="bb-btn" data-sprite="heart">❤️ Heart</button>
+                  <button type="button" class="bb-btn" data-sprite="invader">👾 Space Invader</button>
+                  <button type="button" class="bb-btn" data-sprite="invert">⇄ Invert Bits</button>
+                  <button type="button" class="bb-btn" data-sprite="clear">Clear</button>
+                </div>
+              </div>
+              <div>
+                <table class="bb-hex-table" aria-label="Encoded bytes for each pixel row">
+                  <thead>
+                    <tr><th>Row</th><th>8-Bit Binary</th><th>Decimal</th><th>Hex</th></tr>
+                  </thead>
+                  <tbody id="bb-pixel-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- Part 4: Logic Gates & Half-Adder (6-8) -->
+          <section class="bb-card" id="bb-gates" style="--card-accent:#f59e0b;">
+            <span class="bb-step-tag">Level 3 · Grades 6–8 · Boolean Logic &amp; Circuits</span>
+            <h2>4. Logic Gates: Teaching Switches to Think and Add</h2>
+            <p>In 1854, mathematician <strong>George Boole</strong> showed that logical reasoning could be written as algebra with only TRUE (<code>1</code>) and FALSE (<code>0</code>). In 1937, <strong>Claude Shannon</strong> proved that electrical switches could execute Boole's rules—creating <strong>logic gates</strong>. Toggle Input A and Input B below, test each gate, and see how pairing an <code>XOR</code> gate with an <code>AND</code> gate builds a <strong>Binary Half-Adder</strong> that adds two bits in hardware!</p>
+
+            <div class="bb-cmd-palette" role="group" aria-label="Select logic gate">
+              <button type="button" class="bb-btn primary" data-gate="AND">AND Gate</button>
+              <button type="button" class="bb-btn" data-gate="OR">OR Gate</button>
+              <button type="button" class="bb-btn" data-gate="XOR">XOR Gate</button>
+              <button type="button" class="bb-btn" data-gate="NAND">NAND Gate</button>
+              <button type="button" class="bb-btn" data-gate="ADDER">⚡ Half-Adder (XOR + AND)</button>
+            </div>
+
+            <div class="bb-gate-bench">
+              <div class="bb-gate-stage">
+                <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.85rem;flex-wrap:wrap;">
+                  <button type="button" class="bb-btn primary" id="bb-in-a" aria-pressed="false">Input A = 0</button>
+                  <button type="button" class="bb-btn primary" id="bb-in-b" aria-pressed="false">Input B = 0</button>
+                  <span id="bb-gate-Result" style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.05rem;color:#38bdf8;">Output = 0</span>
+                </div>
+                <svg id="bb-gate-svg" viewBox="0 0 460 190" style="width:100%;height:auto;display:block;" role="img" aria-label="Interactive logic gate circuit diagram"></svg>
+                <p id="bb-gate-desc" style="margin:0.65rem 0 0;font-size:0.84rem;color:#cbd5e1;"></p>
+              </div>
+              <div>
+                <h3 style="margin-top:0;">Live Truth Table</h3>
+                <table class="bb-truth-table" id="bb-truth-table">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+                <p style="margin-top:0.65rem;font-size:0.82rem;"><strong>Connection to AI:</strong> Notice how <code>XOR</code> outputs <code>1</code> only when Inputs A and B differ. In <a href="../algorithms-and-ai/perceptron-lab.html">Perceptron Lab</a>, you will see why a single-layer 1958 neural network can learn <code>AND</code> and <code>OR</code>, but needs multiple layers to solve <code>XOR</code>!</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Part 5: Historical Gallery -->
+          <section class="bb-card" id="bb-history" style="--card-accent:#0f766e;">
+            <span class="bb-step-tag">History of Computing · Primary Artifacts</span>
+            <h2>5. From Punched Cards to Silicon Transistors</h2>
+            <p>Click any photograph to enlarge it in the classroom lightbox and examine how engineers physically represented <code>0</code> and <code>1</code> across two centuries.</p>
+            <div class="bb-gallery">
+              <figure data-zoomable data-lightbox-group="binary-history">
+                <img src="../../../assets/images/ada-lovelace-history/analytical-engine-plan.webp" alt="1840 plan drawing of Charles Babbage's Analytical Engine showing gear columns and punched cards" loading="lazy" />
+                <figcaption><strong>Punched Cards &amp; Gears (1840):</strong> Babbage and <a href="../pioneers/ada-lovelace.html">Ada Lovelace</a> used holes in stiff paper cards to encode operations and variables—a hole versus no-hole binary choice borrowed from the Jacquard silk loom. Credit: Science Museum, London / Public domain.</figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="binary-history">
+                <img src="../../../assets/images/lessons/demoscene/c64.webp" alt="A 1982 Commodore 64 home computer with 64 kilobytes of RAM" loading="lazy" />
+                <figcaption><strong>8-Bit Home Computers (1982):</strong> The Commodore 64 used an 8-bit processor (the MOS 6510) that handled numbers one byte (<code>0–255</code>) at a time—just like the 8-bit flip cards and 8×8 sprite grid you used in Parts 2 and 3. Photo: JIP (<a href="https://commons.wikimedia.org/wiki/File:Demoscene_Commodore_64.jpg" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a>).</figcaption>
+              </figure>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* ── Part 1: Unplugged Robot Grid ── */
+    const gridEl = document.getElementById('bb-robot-grid');
+    const progEl = document.getElementById('bb-robot-program');
+    const statusEl = document.getElementById('bb-robot-status');
+    const WALLS = new Set(['1,0', '1,1', '3,1', '3,2', '1,3']);
+    const START = { x: 0, y: 4 };
+    const GOAL = { x: 4, y: 0 };
+    let robot = { ...START };
+    let visited = new Set(['0,4']);
+    let queue = [];
+    let stepCursor = -1;
+    let timer = null;
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      for (let y = 0; y < 5; y++) {
+        for (let x = 0; x < 5; x++) {
+          const cell = document.createElement('div');
+          const key = `${x},${y}`;
+          cell.className = 'bb-cell';
+          if (WALLS.has(key)) {
+            cell.classList.add('is-wall');
+            cell.textContent = '📦';
+          } else if (robot.x === x && robot.y === y) {
+            cell.classList.add('is-visited');
+            cell.textContent = '🤖';
+          } else if (GOAL.x === x && GOAL.y === y) {
+            cell.classList.add('is-goal');
+            cell.textContent = '🔋';
+          } else if (visited.has(key)) {
+            cell.classList.add('is-visited');
+            cell.textContent = '·';
+          }
+          gridEl.appendChild(cell);
+        }
+      }
+    }
+
+    function renderQueue() {
+      if (!queue.length) {
+        progEl.textContent = 'Click arrow buttons above to queue instructions…';
+        return;
+      }
+      const labels = { U: '⬆️ UP', D: '⬇️ DOWN', L: '⬅️ LEFT', R: '➡️ RIGHT' };
+      progEl.innerHTML = queue.map((cmd, idx) =>
+        `<span class="bb-cmd-chip${idx === stepCursor ? ' is-active' : ''}">${idx + 1}. ${labels[cmd]}</span>`
+      ).join('');
+    }
+
+    function resetRobotPosition() {
+      if (timer) { clearInterval(timer); timer = null; }
+      robot = { ...START };
+      visited = new Set(['0,4']);
+      stepCursor = -1;
+      renderGrid();
+      renderQueue();
+    }
+
+    function stepRobot() {
+      if (stepCursor + 1 >= queue.length) {
+        if (timer) { clearInterval(timer); timer = null; }
+        if (robot.x === GOAL.x && robot.y === GOAL.y) {
+          statusEl.textContent = `✓ Success! The rover reached the battery in ${queue.length} steps!`;
+          statusEl.style.color = '#10b981';
+        } else {
+          statusEl.textContent = `Program finished at (${robot.x + 1}, ${robot.y + 1}), before reaching the battery. Add or debug steps!`;
+          statusEl.style.color = '#f59e0b';
+        }
+        return false;
+      }
+      stepCursor++;
+      const cmd = queue[stepCursor];
+      const delta = { U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0] }[cmd];
+      const nx = robot.x + delta[0];
+      const ny = robot.y + delta[1];
+      renderQueue();
+      if (nx < 0 || nx > 4 || ny < 0 || ny > 4) {
+        if (timer) { clearInterval(timer); timer = null; }
+        statusEl.textContent = `✗ Bug at Step ${stepCursor + 1} (${cmd}): Rover drove off the edge of the board!`;
+        statusEl.style.color = '#ef4444';
+        return false;
+      }
+      if (WALLS.has(`${nx},${ny}`)) {
+        if (timer) { clearInterval(timer); timer = null; }
+        statusEl.textContent = `✗ Bug at Step ${stepCursor + 1} (${cmd}): Rover bumped into a crate at (${nx + 1}, ${ny + 1})!`;
+        statusEl.style.color = '#ef4444';
+        return false;
+      }
+      robot = { x: nx, y: ny };
+      visited.add(`${nx},${ny}`);
+      renderGrid();
+      if (robot.x === GOAL.x && robot.y === GOAL.y) {
+        if (timer) { clearInterval(timer); timer = null; }
+        statusEl.textContent = `✓ Mission complete! Rover reached the battery in ${stepCursor + 1} steps!`;
+        statusEl.style.color = '#10b981';
+        return false;
+      }
+      statusEl.textContent = `Executed step ${stepCursor + 1} (${cmd}).`;
+      statusEl.style.color = '#0284c7';
+      return true;
+    }
+
+    document.querySelectorAll('[data-robot-cmd]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (queue.length < 16) {
+          queue.push(btn.dataset.robotCmd);
+          resetRobotPosition();
+        }
+      });
+    });
+    document.getElementById('bb-robot-buggy').addEventListener('click', () => {
+      queue = ['U', 'U', 'R', 'R', 'U', 'R', 'R', 'U'];
+      resetRobotPosition();
+      statusEl.textContent = 'Loaded a buggy program! Click "Step 1 Move" or "Run Program" to find which step hits a crate.';
+      statusEl.style.color = '#f59e0b';
+    });
+    document.getElementById('bb-robot-undo').addEventListener('click', () => {
+      queue.pop();
+      resetRobotPosition();
+    });
+    document.getElementById('bb-robot-clear').addEventListener('click', () => {
+      queue = [];
+      resetRobotPosition();
+      statusEl.textContent = 'Cleared program. Queue arrows to guide the rover to the battery.';
+      statusEl.style.color = '#0284c7';
+    });
+    document.getElementById('bb-robot-step').addEventListener('click', () => {
+      if (stepCursor === -1) resetRobotPosition();
+      stepRobot();
+    });
+    document.getElementById('bb-robot-run').addEventListener('click', () => {
+      resetRobotPosition();
+      if (!queue.length) return;
+      timer = setInterval(stepRobot, 320);
+    });
+    renderGrid();
+
+    /* ── Part 2: 8-Bit Binary Flip Cards ── */
+    const bitsRow = document.getElementById('bb-bits-row');
+    const PLACES = [128, 64, 32, 16, 8, 4, 2, 1];
+    let byteVal = 65;
+    let targetVal = null;
+
+    function renderBits() {
+      bitsRow.innerHTML = '';
+      const activePlaces = [];
+      PLACES.forEach((place, idx) => {
+        const bitOn = (byteVal & place) !== 0;
+        if (bitOn) activePlaces.push(place);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bb-bit-card';
+        btn.setAttribute('aria-pressed', String(bitOn));
+        btn.setAttribute('aria-label', `${place} place value bit, currently ${bitOn ? '1 on' : '0 off'}`);
+        btn.innerHTML = `
+          <span class="bb-bit-place">2<sup>${7 - idx}</sup> = ${place}</span>
+          <span class="bb-bit-digit">${bitOn ? '1' : '0'}</span>
+          <span class="bb-bit-lamp">${bitOn ? '💡 ON' : 'OFF'}</span>
+        `;
+        btn.addEventListener('click', () => {
+          byteVal ^= place;
+          renderBits();
+        });
+        bitsRow.appendChild(btn);
+      });
+
+      const binStr = byteVal.toString(2).padStart(8, '0');
+      document.getElementById('bb-out-bin').textContent = binStr;
+      document.getElementById('bb-out-sum').textContent = activePlaces.length ? activePlaces.join(' + ') : '0';
+      document.getElementById('bb-out-dec').textContent = String(byteVal);
+      document.getElementById('bb-out-hex').textContent = '0x' + byteVal.toString(16).toUpperCase().padStart(2, '0');
+      document.getElementById('bb-out-ascii').textContent =
+        (byteVal >= 33 && byteVal <= 126) ? `'${String.fromCharCode(byteVal)}'` : (byteVal === 32 ? 'SPACE' : 'ctrl/ext');
+
+      const targetMsg = document.getElementById('bb-byte-target-msg');
+      if (targetVal !== null) {
+        if (byteVal === targetVal) {
+          targetMsg.textContent = `🎉 Bullseye! You built ${targetVal} in binary (${binStr})!`;
+          targetMsg.style.color = '#10b981';
+        } else {
+          const diff = targetVal - byteVal;
+          targetMsg.textContent = `🎯 Target: Make ${targetVal} in binary (currently at ${byteVal}, need ${diff > 0 ? '+' + diff : diff}).`;
+          targetMsg.style.color = '#0284c7';
+        }
+      }
+    }
+
+    document.querySelectorAll('[data-byte-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        targetVal = null;
+        document.getElementById('bb-byte-target-msg').textContent = '';
+        byteVal = Number(btn.dataset.bytePreset);
+        renderBits();
+      });
+    });
+    document.getElementById('bb-byte-challenge').addEventListener('click', () => {
+      targetVal = Math.floor(Math.random() * 254) + 1;
+      byteVal = 0;
+      renderBits();
+    });
+    renderBits();
+
+    /* ── Part 3: 8x8 Binary Pixel Painter ── */
+    const SPRITES = {
+      smile:   [0b00111100, 0b01000010, 0b10100101, 0b10000001, 0b10100101, 0b10011001, 0b01000010, 0b00111100],
+      heart:   [0b00000000, 0b01100110, 0b11111111, 0b11111111, 0b01111110, 0b00111100, 0b00011000, 0b00000000],
+      invader: [0b00011000, 0b00111100, 0b01111110, 0b11011011, 0b11111111, 0b00100100, 0b01011010, 0b10100101]
+    };
+    let rows = [...SPRITES.smile];
+    const pxGrid = document.getElementById('bb-pixel-grid');
+    const pxTable = document.getElementById('bb-pixel-rows');
+
+    function renderPixels() {
+      pxGrid.innerHTML = '';
+      pxTable.innerHTML = '';
+      rows.forEach((rowByte, r) => {
+        for (let c = 0; c < 8; c++) {
+          const mask = 1 << (7 - c);
+          const on = (rowByte & mask) !== 0;
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'bb-px';
+          b.setAttribute('aria-pressed', String(on));
+          b.setAttribute('aria-label', `Row ${r + 1} Column ${c + 1} pixel, ${on ? '1 lit' : '0 dark'}`);
+          b.textContent = on ? '1' : '0';
+          b.addEventListener('click', () => {
+            rows[r] ^= mask;
+            renderPixels();
+          });
+          pxGrid.appendChild(b);
+        }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>Row ${r + 1}</td>
+          <td><code>${rowByte.toString(2).padStart(8, '0')}</code></td>
+          <td>${rowByte}</td>
+          <td><code>0x${rowByte.toString(16).toUpperCase().padStart(2, '0')}</code></td>
+        `;
+        pxTable.appendChild(tr);
+      });
+    }
+
+    document.querySelectorAll('[data-sprite]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.sprite;
+        if (k === 'clear') rows = [0, 0, 0, 0, 0, 0, 0, 0];
+        else if (k === 'invert') rows = rows.map(b => (~b) & 0xFF);
+        else if (SPRITES[k]) rows = [...SPRITES[k]];
+        renderPixels();
+      });
+    });
+    renderPixels();
+
+    /* ── Part 4: Logic Gates & Half-Adder ── */
+    let gateMode = 'AND';
+    let inA = 0;
+    let inB = 0;
+    const btnA = document.getElementById('bb-in-a');
+    const btnB = document.getElementById('bb-in-b');
+    const gateSvg = document.getElementById('bb-gate-svg');
+    const gateDesc = document.getElementById('bb-gate-desc');
+    const gateResult = document.getElementById('bb-gate-Result');
+    const truthTable = document.getElementById('bb-truth-table');
+
+    const GATE_INFO = {
+      AND: {
+        desc: 'AND Gate: Outputs 1 only when BOTH Input A AND Input B are 1 (like two switches wired in series).',
+        eval: (a, b) => ({ out: a & b })
+      },
+      OR: {
+        desc: 'OR Gate: Outputs 1 when EITHER Input A OR Input B (or both) is 1 (like two switches wired in parallel).',
+        eval: (a, b) => ({ out: a | b })
+      },
+      XOR: {
+        desc: 'XOR (Exclusive OR) Gate: Outputs 1 only when Input A and Input B are DIFFERENT. If both are 1, it outputs 0!',
+        eval: (a, b) => ({ out: a ^ b })
+      },
+      NAND: {
+        desc: 'NAND (NOT-AND) Gate: The opposite of AND. Outputs 0 only when both inputs are 1. Any computer chip can be built purely from NAND gates!',
+        eval: (a, b) => ({ out: (a & b) ? 0 : 1 })
+      },
+      ADDER: {
+        desc: 'Half-Adder Circuit: Combines an XOR gate (for the Sum bit) and an AND gate (for the Carry bit) to add two binary digits: A + B!',
+        eval: (a, b) => ({ sum: a ^ b, carry: a & b })
+      }
+    };
+
+    function renderGate() {
+      btnA.setAttribute('aria-pressed', String(Boolean(inA)));
+      btnB.setAttribute('aria-pressed', String(Boolean(inB)));
+      btnA.textContent = `Input A = ${inA}`;
+      btnB.textContent = `Input B = ${inB}`;
+
+      const info = GATE_INFO[gateMode];
+      gateDesc.textContent = info.desc;
+      const res = info.eval(inA, inB);
+
+      const wireA = inA ? '#38bdf8' : '#475569';
+      const wireB = inB ? '#38bdf8' : '#475569';
+
+      if (gateMode === 'ADDER') {
+        const wireSum = res.sum ? '#10b981' : '#475569';
+        const wireCarry = res.carry ? '#f59e0b' : '#475569';
+        const decSum = inA + inB;
+        gateResult.textContent = `${inA} + ${inB} = ${res.carry}${res.sum}₂ (Decimal ${decSum})`;
+        gateSvg.innerHTML = `
+          <line x1="30" y1="55" x2="175" y2="55" stroke="${wireA}" stroke-width="5" />
+          <line x1="30" y1="135" x2="175" y2="135" stroke="${wireB}" stroke-width="5" />
+          <line x1="95" y1="55" x2="95" y2="120" stroke="${wireA}" stroke-width="4" stroke-dasharray="4 3" />
+          <line x1="95" y1="120" x2="175" y2="120" stroke="${wireA}" stroke-width="4" />
+          <line x1="125" y1="135" x2="125" y2="75" stroke="${wireB}" stroke-width="4" stroke-dasharray="4 3" />
+          <line x1="125" y1="75" x2="175" y2="75" stroke="${wireB}" stroke-width="4" />
+          <rect x="175" y="40" width="95" height="50" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="2.5" />
+          <text x="222" y="70" text-anchor="middle" fill="#f8fafc" font-family="JetBrains Mono,monospace" font-weight="800" font-size="15">XOR</text>
+          <rect x="175" y="105" width="95" height="50" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="2.5" />
+          <text x="222" y="135" text-anchor="middle" fill="#f8fafc" font-family="JetBrains Mono,monospace" font-weight="800" font-size="15">AND</text>
+          <line x1="270" y1="65" x2="415" y2="65" stroke="${wireSum}" stroke-width="5" />
+          <line x1="270" y1="130" x2="415" y2="130" stroke="${wireCarry}" stroke-width="5" />
+          <text x="40" y="42" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="13">A=${inA}</text>
+          <text x="40" y="160" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="13">B=${inB}</text>
+          <text x="345" y="53" fill="#10b981" font-family="JetBrains Mono,monospace" font-weight="800" font-size="13">SUM = ${res.sum}</text>
+          <text x="335" y="118" fill="#f59e0b" font-family="JetBrains Mono,monospace" font-weight="800" font-size="13">CARRY = ${res.carry}</text>
+        `;
+        truthTable.querySelector('thead').innerHTML = `<tr><th>A</th><th>B</th><th>Carry (AND)</th><th>Sum (XOR)</th><th>A + B</th></tr>`;
+        truthTable.querySelector('tbody').innerHTML = [[0,0],[0,1],[1,0],[1,1]].map(([a, b]) => {
+          const r = info.eval(a, b);
+          const cur = (a === inA && b === inB) ? ' class="is-current"' : '';
+          return `<tr${cur}><td>${a}</td><td>${b}</td><td>${r.carry}</td><td>${r.sum}</td><td><code>${r.carry}${r.sum}₂</code> (${a+b})</td></tr>`;
+        }).join('');
+      } else {
+        const wireOut = res.out ? '#10b981' : '#475569';
+        gateResult.textContent = `Output = ${res.out}`;
+        gateSvg.innerHTML = `
+          <line x1="35" y1="65" x2="170" y2="65" stroke="${wireA}" stroke-width="6" />
+          <line x1="35" y1="125" x2="170" y2="125" stroke="${wireB}" stroke-width="6" />
+          <rect x="170" y="42" width="120" height="106" rx="18" fill="#1e293b" stroke="#38bdf8" stroke-width="3" />
+          <text x="230" y="102" text-anchor="middle" fill="#f8fafc" font-family="JetBrains Mono,monospace" font-weight="800" font-size="20">${gateMode}</text>
+          <line x1="290" y1="95" x2="420" y2="95" stroke="${wireOut}" stroke-width="6" />
+          <circle cx="420" cy="95" r="14" fill="${res.out ? '#10b981' : '#1e293b'}" stroke="#cbd5e1" stroke-width="2" />
+          <text x="45" y="50" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="14">Input A = ${inA}</text>
+          <text x="45" y="152" fill="#cbd5e1" font-family="JetBrains Mono,monospace" font-size="14">Input B = ${inB}</text>
+          <text x="345" y="75" fill="${res.out ? '#10b981' : '#94a3b8'}" font-family="JetBrains Mono,monospace" font-weight="800" font-size="14">OUT = ${res.out}</text>
+        `;
+        truthTable.querySelector('thead').innerHTML = `<tr><th>Input A</th><th>Input B</th><th>${gateMode} Output</th></tr>`;
+        truthTable.querySelector('tbody').innerHTML = [[0,0],[0,1],[1,0],[1,1]].map(([a, b]) => {
+          const r = info.eval(a, b);
+          const cur = (a === inA && b === inB) ? ' class="is-current"' : '';
+          return `<tr${cur}><td>${a}</td><td>${b}</td><td>${r.out}</td></tr>`;
+        }).join('');
+      }
+    }
+
+    btnA.addEventListener('click', () => { inA = inA ? 0 : 1; renderGate(); });
+    btnB.addEventListener('click', () => { inB = inB ? 0 : 1; renderGate(); });
+    document.querySelectorAll('[data-gate]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        gateMode = btn.dataset.gate;
+        document.querySelectorAll('[data-gate]').forEach(b => b.classList.toggle('primary', b === btn));
+        renderGate();
+      });
+    });
+    renderGate();
+  })();
+  </script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+</body>
+</html>
+

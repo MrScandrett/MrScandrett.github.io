@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Siege Engines · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Siege Engines: how slingshots, catapults and trebuchets store energy and turn it into flight. A launch lab, 2,400 years of history, and three safe builds for the classroom or home." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <style>
+    .se-page { width: min(1100px, calc(100% - 2rem)); margin: 0 auto; padding: 1.5rem 0 4rem; color: var(--text); }
+    .se-page h1 { font-family: var(--font-display, inherit); font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.05; margin: .3rem 0 .8rem; }
+    .se-page h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); margin: 0 0 .6rem; }
+    .se-page h3 { margin: 1rem 0 .4rem; font-size: 1.15rem; }
+    .se-page p, .se-page li { line-height: 1.6; }
+    .se-eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: .78rem; font-weight: 800; color: var(--accent); margin: 0; }
+    .se-lede { font-size: 1.15rem; max-width: 62ch; color: var(--muted, var(--text)); }
+    .se-jump { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 0; padding: 0; list-style: none; }
+    .se-jump a { display: inline-block; padding: .35rem .75rem; border: 1px solid var(--border-default); border-radius: 999px; text-decoration: none; color: var(--text); font-size: .9rem; font-weight: 600; }
+    .se-jump a:hover { border-color: var(--accent); color: var(--accent); }
+    .se-section { margin-top: 2.6rem; scroll-margin-top: 1rem; }
+    .se-card { background: var(--surface-elevated); border: 1px solid var(--border-subtle, var(--border-default)); border-radius: 12px; padding: 1rem 1.2rem; }
+    .se-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+    .se-safety { border-left: 6px solid #dc2626; }
+    .se-safety ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+    .se-big { font-size: 1.05rem; font-weight: 700; }
+    .se-formula { font-family: var(--font-mono, monospace); font-weight: 700; color: var(--accent); }
+    figure[data-zoomable] { margin: 0; }
+    figure[data-zoomable] img { width: 100%; height: auto; border-radius: 8px; display: block; cursor: zoom-in; }
+    figure[data-zoomable] figcaption { font-size: .92rem; margin-top: .5rem; }
+
+    /* Launch lab */
+    .se-lab { display: grid; gap: 1rem; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); align-items: start; }
+    .se-controls label { display: block; font-weight: 600; font-size: .92rem; margin-top: .7rem; }
+    .se-controls input[type=range], .se-controls select { width: 100%; }
+    .se-controls output { float: right; font-family: var(--font-mono, monospace); font-weight: 700; }
+    .se-tabs { display: flex; gap: .3rem; flex-wrap: wrap; }
+    .se-tabs button, .se-btn { font: inherit; font-weight: 700; padding: .45rem .8rem; border-radius: 8px; border: 1px solid var(--border-default); background: var(--bg); color: var(--text); cursor: pointer; }
+    .se-tabs button[aria-pressed=true], .se-btn.primary { background: var(--accent); color: var(--accent-contrast, #fff); border-color: var(--accent); }
+    .se-btns { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1rem; }
+    .se-canvas-box { height: 340px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-default); }
+    .se-canvas-box canvas { display: block; }
+    .se-readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .5rem; margin-top: .7rem; }
+    .se-readout div { background: var(--bg); border: 1px solid var(--border-subtle, var(--border-default)); border-radius: 8px; padding: .45rem .6rem; }
+    .se-readout b { display: block; font-family: var(--font-mono, monospace); font-size: 1.1rem; }
+    .se-readout span { font-size: .78rem; color: var(--muted, var(--text)); }
+    .se-msg { min-height: 1.6em; font-weight: 700; margin: .6rem 0 0; }
+
+    /* Builds */
+    .se-build { margin-top: 1.4rem; }
+    .se-build-head { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; }
+    .se-build-head h3 { margin: 0; }
+    .se-tag { font-size: .8rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; border: 1px solid var(--border-default); }
+    .se-two { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+    .se-two ol, .se-two ul { padding-left: 1.2rem; margin: .3rem 0; }
+    .se-tip { font-size: .95rem; border-top: 1px dashed var(--border-default); margin-top: .7rem; padding-top: .6rem; }
+
+    /* Worksheet */
+    .se-table-wrap { overflow-x: auto; }
+    .se-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: .95rem; }
+    .se-table th, .se-table td { border: 1px solid var(--border-default); padding: .35rem; text-align: left; }
+    .se-table input { width: 100%; box-sizing: border-box; font: inherit; padding: .25rem; background: var(--bg); color: var(--text); border: 1px solid var(--border-subtle, var(--border-default)); border-radius: 4px; }
+    .se-page textarea { width: 100%; box-sizing: border-box; min-height: 4.5rem; font: inherit; padding: .5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border-default); border-radius: 6px; }
+
+    /* Quiz */
+    .se-q { margin-top: 1rem; }
+    .se-q fieldset { border: 1px solid var(--border-default); border-radius: 10px; padding: .6rem 1rem; }
+    .se-q legend { font-weight: 700; padding: 0 .3rem; }
+    .se-q label { display: block; padding: .2rem 0; cursor: pointer; }
+    .se-q .se-fb { font-weight: 600; margin: .3rem 0 0; min-height: 1.4em; }
+
+    @media (max-width: 760px) {
+      .se-lab, .se-two { grid-template-columns: minmax(0, 1fr); }
+      .se-canvas-box { height: 260px; }
+      .se-table th, .se-table td { padding: .2rem; font-size: .82rem; }
+    }
+    @media print {
+      .se-lab { grid-template-columns: minmax(0, 1fr); }
+      .se-btns, .se-tabs { display: none; }
+      .se-canvas-box { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<main id="main-content" class="se-page" data-glossary-root>
+  <p class="se-eyebrow">Engineering · Simple Machines · Energy · Projectile Motion</p>
+  <h1>Siege Engines: Physics You Can Launch</h1>
+  <p class="se-lede">For 2,400 years, engineers built machines to throw things farther than any arm could. Every one of them works the same way: <strong>store energy slowly, then let it go all at once.</strong> In this lesson you'll learn the three ways to store that energy, test designs in a launch lab, and then build your own launcher out of craft sticks, cardboard and rubber bands.</p>
+  <ul class="se-jump">
+    <li><a href="#safety">Safety first</a></li>
+    <li><a href="#energy">Three ways to store energy</a></li>
+    <li><a href="#history">History</a></li>
+    <li><a href="#lab">Launch lab</a></li>
+    <li><a href="#build">Build your own</a></li>
+    <li><a href="#test">Fair test</a></li>
+    <li><a href="#quiz">Check yourself</a></li>
+  </ul>
+
+  <section id="safety" class="se-section">
+    <div class="se-card se-safety">
+      <h2>Safety first: launcher rules</h2>
+      <p class="se-big">These are real machines. Small ones can still hurt an eye.</p>
+      <ul>
+        <li><strong>Soft ammo only:</strong> mini marshmallows, pom-poms, cotton balls, crumpled paper, ping-pong balls. No rocks, marbles, coins, pencils or anything sharp.</li>
+        <li><strong>Never aim at a person, a pet, or a window.</strong> Launch toward a wall or an empty target zone.</li>
+        <li><strong>Wear safety glasses</strong> when you load or launch, and so does anyone standing nearby.</li>
+        <li><strong>Say "Clear!"</strong> before every launch, and wait until nobody is in front of the machine.</li>
+        <li><strong>Keep fingers out of the arm's path.</strong> Rubber bands and counterweights snap back hard.</li>
+        <li>At home, build with an adult nearby, and ask before you cut anything.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="energy" class="se-section">
+    <h2>Three ways to store energy</h2>
+    <p>A siege engine is an energy converter. You put in work slowly: pulling, twisting or lifting. The machine stores it as <span data-glossary="potential energy">potential energy</span>, and on release it turns that energy into the <span data-glossary="kinetic energy">kinetic energy</span> of the flying shot. Engineers have only ever found three good ways to store it:</p>
+    <div class="se-grid">
+      <figure data-zoomable data-lightbox-group="engines">
+        <img src="../../../assets/images/lessons/siege-engines/tension-slingshot.svg" alt="Slingshot with stretched rubber bands pulling back a ball" />
+        <figcaption><strong>1. Tension (stretching)</strong> Slingshots, crossbows and the Greek <em>ballista</em> store energy in something stretched: a bow or a band. Stretch it twice as far and it holds <em>four</em> times the energy (<span class="se-formula">E = ½kx²</span>).</figcaption>
+      </figure>
+      <figure data-zoomable data-lightbox-group="engines">
+        <img src="../../../assets/images/lessons/siege-engines/torsion-catapult.svg" alt="Mangonel catapult with a twisted rope bundle at the base of its arm" />
+        <figcaption><strong>2. <span data-glossary="torsion">Torsion</span> (twisting)</strong> The Roman onager and the <span data-glossary="mangonel">mangonel</span> twisted thick ropes of hair or animal sinew. The twisted bundle is a spring; when released it whips the arm up until it hits a crossbar.</figcaption>
+      </figure>
+      <figure data-zoomable data-lightbox-group="engines">
+        <img src="../../../assets/images/lessons/siege-engines/gravity-trebuchet.svg" alt="Counterweight trebuchet with a heavy box on the short arm and a sling on the long arm" />
+        <figcaption><strong>3. Gravity (lifting)</strong> A <span data-glossary="trebuchet">trebuchet</span> lifts a heavy <span data-glossary="counterweight">counterweight</span>. When it falls, the beam acts as a lever: the short arm moves slowly with lots of force, the long arm moves fast. A sling on the end adds even more speed.</figcaption>
+      </figure>
+    </div>
+    <div class="se-card" style="margin-top:1rem">
+      <h3 style="margin-top:0">Why the trebuchet won</h3>
+      <p>Ropes and bands lose their spring when they get wet, cold or old. A rock weighs the same in the rain. And to throw a bigger stone, you just add more weight to the box. That's why the biggest medieval engines were trebuchets, and why the trebuchet is a great machine for learning about <a href="../../physics/mechanics/levers.html">levers</a> and <a href="../../physics/mechanics/conservation-of-energy.html">conservation of energy</a>.</p>
+      <p>Once the shot is in the air, the engine doesn't matter any more. Every shot follows the same <span data-glossary="trajectory">trajectory</span> rules from <a href="../../physics/mechanics/kinematics.html">kinematics</a>: launch speed and launch angle decide where it lands. With no air in the way, 45° goes farthest.</p>
+    </div>
+  </section>
+
+  <section id="history" class="se-section">
+    <h2>2,400 years of throwing machines</h2>
+    <ol data-timeline data-timeline-title="Siege engines through history" data-timeline-tour>
+      <li data-when="399 BC" data-label="Syracuse's engineers" data-major>Dionysius I of Syracuse gathers engineers who build the <em>gastraphetes</em> ("belly bow"), a giant crossbow braced against the stomach, and early arrow-throwing catapults.</li>
+      <li data-when="c. 350 BC" data-label="Torsion springs">Greek engineers under Philip II of Macedon switch from bows to twisted rope springs (torsion). The machines get much more powerful.</li>
+      <li data-when="c. 300 BC" data-label="Traction trebuchet in China">Chinese texts describe the traction trebuchet: a beam on a pivot, pulled down by a team of people tugging ropes instead of a falling weight.</li>
+      <li data-when="214 BC" data-label="Archimedes defends Syracuse" data-major>Archimedes designs machines that defend Syracuse against the Roman fleet for about two years.</li>
+      <li data-when="c. 25 BC" data-label="Vitruvius's formula">The Roman engineer Vitruvius writes that every part of a catapult should be sized from the diameter of its spring hole: one of the first engineering design rules.</li>
+      <li data-when="c. AD 380" data-label="The onager">The Roman historian Ammianus Marcellinus describes the onager ("wild donkey"), a one-armed torsion catapult named for its violent kick.</li>
+      <li data-when="AD 597" data-label="Trebuchets reach Europe">Traction trebuchets are used at the siege of Thessalonica, after spreading west from China across Asia.</li>
+      <li data-when="12th century" data-label="Counterweight trebuchet" data-major>Engineers in the Mediterranean world replace the rope-pullers with a heavy counterweight. Now a machine can throw stones of 100 kg or more.</li>
+      <li data-when="1304" data-label="Warwolf">Edward I of England builds the giant trebuchet "Warwolf" at the siege of Stirling Castle in Scotland.</li>
+      <li data-when="1453" data-label="Cannons take over" data-major>Ottoman cannons break the walls of Constantinople. Gunpowder replaces the trebuchet as the way to knock down walls.</li>
+      <li data-when="1844" data-label="Vulcanized rubber">Charles Goodyear patents vulcanized rubber, which stays stretchy in heat and cold. Rubber-band slingshots become possible.</li>
+      <li data-when="1986" data-label="Pumpkin chunkin'">The first "Punkin Chunkin" contest is held in Delaware. Teams now build trebuchets, catapults and air cannons just to throw pumpkins.</li>
+      <li data-when="present" data-label="Your class build" data-major>Engineers still build trebuchets to teach energy, levers and design, and you're next.</li>
+    </ol>
+  </section>
+
+  <section id="lab" class="se-section" data-memory-ignore>
+    <h2>Launch lab</h2>
+    <p>Test designs before you build. Choose a machine, change one setting at a time, and launch. The numbers are sized for classroom models built from the kinds of parts in the builds below. Try the <strong>Target challenge</strong> to practise aiming.</p>
+    <div class="se-lab">
+      <div class="se-card se-controls">
+        <div class="se-tabs" role="group" aria-label="Machine">
+          <button type="button" data-engine="slingshot" aria-pressed="false">Slingshot</button>
+          <button type="button" data-engine="catapult" aria-pressed="true">Catapult</button>
+          <button type="button" data-engine="trebuchet" aria-pressed="false">Trebuchet</button>
+        </div>
+        <div id="seKnobs"></div>
+        <label for="seAngle">Launch angle <output id="seAngleOut"></output></label>
+        <input id="seAngle" type="range" min="10" max="80" step="1" value="45" />
+        <label for="seAmmo">Ammo</label>
+        <select id="seAmmo">
+          <option value="marsh">Mini marshmallow (1.5 g)</option>
+          <option value="pong">Ping-pong ball (2.7 g)</option>
+          <option value="pom">Pom-pom (0.8 g)</option>
+          <option value="clay">Clay ball (10 g)</option>
+        </select>
+        <label><input id="seDrag" type="checkbox" checked /> Air resistance</label>
+        <div class="se-btns">
+          <button type="button" class="se-btn primary" id="seLaunch">Launch!</button>
+          <button type="button" class="se-btn" id="seTarget">Target challenge</button>
+          <button type="button" class="se-btn" id="seClear">Clear shots</button>
+        </div>
+      </div>
+      <div>
+        <div class="se-canvas-box"><canvas id="seCanvas" aria-label="Launch field showing shot paths and distances"></canvas></div>
+        <div class="se-readout" aria-live="polite">
+          <div><b id="rStored">–</b><span>energy stored</span></div>
+          <div><b id="rSpeed">–</b><span>launch speed</span></div>
+          <div><b id="rRange">–</b><span>distance</span></div>
+          <div><b id="rHeight">–</b><span>highest point</span></div>
+          <div><b id="rEff">–</b><span>energy that reached the shot</span></div>
+        </div>
+        <p class="se-msg" id="seMsg"></p>
+      </div>
+    </div>
+    <div class="se-card" style="margin-top:1rem">
+      <h3 style="margin-top:0">Investigate</h3>
+      <ol>
+        <li>Turn air resistance <strong>off</strong>. Which launch angle goes farthest? Now turn it <strong>on</strong> and fire a pom-pom. Does the best angle change?</li>
+        <li>On the trebuchet, keep the counterweight the same and change the <strong>arm ratio</strong>. Why doesn't a longer arm always throw farther? (Hint: watch "energy that reached the shot". The arm has to speed itself up too.)</li>
+        <li>On the slingshot, double the stretch. What happens to the stored energy? To the launch speed?</li>
+        <li>A clay ball is heavier than a marshmallow. Which goes farther from the same machine, and why?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="build" class="se-section">
+    <h2>Build your own</h2>
+    <p>Pick one build. All three work at a desk or a kitchen table and cost almost nothing. Read every step before you start.</p>
+
+    <article class="se-card se-build">
+      <div class="se-build-head"><h3>Build A: Craft-stick catapult</h3><span class="se-tag">Easiest · 20 min</span><span class="se-tag">Energy: tension</span></div>
+      <div class="se-two">
+        <div>
+          <strong>You need</strong>
+          <ul>
+            <li>9 jumbo craft sticks</li>
+            <li>6–8 rubber bands</li>
+            <li>1 plastic spoon or a bottle cap</li>
+            <li>Masking tape or a glue dot</li>
+            <li>Soft ammo</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Steps</strong>
+          <ol>
+            <li>Stack 7 sticks and wrap a rubber band tightly around each end. This is the <em>fulcrum block</em>.</li>
+            <li>Put the other 2 sticks together and band them at <strong>one end only</strong>. Open them into a V.</li>
+            <li>Slide the stack between the two sticks of the V, close to the banded end.</li>
+            <li>Cross a rubber band around the place where the stack meets the V, in an X, so it holds firm.</li>
+            <li>Tape or band the spoon to the end of the top stick. That's your throwing arm.</li>
+            <li>Load, say "Clear!", press the spoon down and let go.</li>
+          </ol>
+          <p class="se-tip"><strong>Experiment:</strong> slide the stack closer to or farther from the banded end. Which way throws higher? Farther? You're changing the lever's fulcrum.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="se-card se-build">
+      <div class="se-build-head"><h3>Build B: Shoebox trebuchet</h3><span class="se-tag">Medium · 45–60 min</span><span class="se-tag">Energy: gravity</span></div>
+      <div class="se-two">
+        <div>
+          <strong>You need</strong>
+          <ul>
+            <li>A shoebox or 2 pieces of stiff cardboard (sides)</li>
+            <li>1 wooden dowel or round pencil (the axle)</li>
+            <li>1 ruler or paint stirrer, about 30 cm (the beam)</li>
+            <li>A small paper cup, tape, and coins or washers (counterweight)</li>
+            <li>String, a paper clip, and a 10 × 15 cm piece of cloth or a cut-up sock (the sling)</li>
+            <li>Scissors (adult help), a hole punch or a sharp pencil</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Steps</strong>
+          <ol>
+            <li>Cut the lid off the box. Poke a hole in each long side, the same height, about 4/5 of the way up. The dowel goes through both holes.</li>
+            <li>Tape the beam to the dowel about 1/4 of the way along it. The short end is for the weight, the long end for the sling. (That's a 3 : 1 arm ratio.)</li>
+            <li>Hang the cup from the short end with string, so it can swing. Add coins.</li>
+            <li>Tie a string to each side of the cloth to make a pouch. Tie one string tightly to the long end. Make a loop in the other string.</li>
+            <li>Bend a paper clip into a small hook and tape it to the very tip of the long end, pointing forward. The loop slips over this hook.</li>
+            <li>Lay the pouch with the ammo along the floor of the box, under the machine. Hold the long arm down, say "Clear!", let go.</li>
+          </ol>
+          <p class="se-tip"><strong>Tuning:</strong> if the shot flies straight up or backward, the loop slips off too late: bend the hook <em>forward</em> (more open). If it slams into the floor, it lets go too early: bend the hook <em>up</em>. The hook angle sets your launch angle, just like the slider in the lab. Adding coins is the easiest way to throw farther.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="se-card se-build">
+      <div class="se-build-head"><h3>Build C: Cup slingshot</h3><span class="se-tag">Easiest · 10 min</span><span class="se-tag">Energy: tension</span></div>
+      <div class="se-two">
+        <div>
+          <strong>You need</strong>
+          <ul>
+            <li>1 paper or plastic cup</li>
+            <li>1 balloon</li>
+            <li>Scissors and tape</li>
+            <li>Pom-poms only (lightest and safest)</li>
+          </ul>
+        </div>
+        <div>
+          <strong>Steps</strong>
+          <ol>
+            <li>With an adult, cut the bottom out of the cup.</li>
+            <li>Tie a knot in the balloon's neck, then cut off the top of the round end.</li>
+            <li>Stretch the balloon's open end over the bottom of the cup, knot pointing out. Tape it in place.</li>
+            <li>Drop a pom-pom in the cup, aim at the target zone, pull the knot back, and let go.</li>
+          </ol>
+          <p class="se-tip"><strong>Experiment:</strong> mark the knot's pull distance on a ruler: 2 cm, 4 cm, 6 cm. Does doubling the pull double the distance? Compare with the slingshot in the lab.</p>
+        </div>
+      </div>
+    </article>
+
+    <div class="se-card" style="margin-top:1rem">
+      <h3 style="margin-top:0">Class contests</h3>
+      <ul>
+        <li><strong>Distance:</strong> 3 shots each, best one counts. Measure from the front of the machine to where the shot first lands.</li>
+        <li><strong>Accuracy:</strong> tape a target on the floor (bullseye rings at 10, 20 and 30 cm) 1.5 m away. Highest total in 5 shots wins.</li>
+        <li><strong>Castle siege:</strong> stack a paper-cup castle 2 m away. Fewest shots to knock down the top cup wins.</li>
+        <li><strong>Engineering award:</strong> the team that shows the best fair test (below) and explains its change wins, whatever the distance.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="test" class="se-section">
+    <h2>Run a fair test</h2>
+    <p>Engineers improve a machine by changing <strong>one</strong> thing at a time and keeping everything else the same. Pick one variable (counterweight, pull distance, hook angle, fulcrum position or ammo), test 3 settings, and do 3 launches at each one.</p>
+    <div class="se-card">
+      <label for="seVar"><strong>The one thing I'm changing:</strong></label>
+      <input id="seVar" type="text" style="width:100%;box-sizing:border-box;font:inherit;padding:.4rem;margin:.3rem 0 .8rem;background:var(--bg);color:var(--text);border:1px solid var(--border-default);border-radius:6px" />
+      <div class="se-table-wrap"><table class="se-table">
+        <thead><tr><th>Setting</th><th>Launch 1 (cm)</th><th>Launch 2 (cm)</th><th>Launch 3 (cm)</th><th>Average (cm)</th></tr></thead>
+        <tbody>
+          <tr><td><input aria-label="Setting 1" /></td><td><input aria-label="Setting 1 launch 1" inputmode="decimal" /></td><td><input aria-label="Setting 1 launch 2" inputmode="decimal" /></td><td><input aria-label="Setting 1 launch 3" inputmode="decimal" /></td><td><input aria-label="Setting 1 average" inputmode="decimal" /></td></tr>
+          <tr><td><input aria-label="Setting 2" /></td><td><input aria-label="Setting 2 launch 1" inputmode="decimal" /></td><td><input aria-label="Setting 2 launch 2" inputmode="decimal" /></td><td><input aria-label="Setting 2 launch 3" inputmode="decimal" /></td><td><input aria-label="Setting 2 average" inputmode="decimal" /></td></tr>
+          <tr><td><input aria-label="Setting 3" /></td><td><input aria-label="Setting 3 launch 1" inputmode="decimal" /></td><td><input aria-label="Setting 3 launch 2" inputmode="decimal" /></td><td><input aria-label="Setting 3 launch 3" inputmode="decimal" /></td><td><input aria-label="Setting 3 average" inputmode="decimal" /></td></tr>
+        </tbody>
+      </table></div>
+      <label for="seClaim" style="display:block;margin-top:.8rem"><strong>What I found, and why I think it happened (use the words energy, lever or angle):</strong></label>
+      <textarea id="seClaim"></textarea>
+      <label for="seNext" style="display:block;margin-top:.8rem"><strong>What I'd change next on my machine:</strong></label>
+      <textarea id="seNext"></textarea>
+    </div>
+  </section>
+
+  <section id="quiz" class="se-section" data-memory-ignore>
+    <h2>Check yourself</h2>
+    <div id="seQuiz"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  Mr. Scandrett's ClassroomOS · <a href="../../../steam-lessons.html">All Lessons</a> · Engineering · Siege Engines
+</footer>
+
+<script src="../../../assets/js/sim-kit.js"></script>
+<script>
+(function () {
+  'use strict';
+  var g = 9.81;
+  var AMMO = {
+    marsh: { m: 0.0015, d: 0.018, cd: 0.6 },
+    pong:  { m: 0.0027, d: 0.040, cd: 0.5 },
+    pom:   { m: 0.0008, d: 0.025, cd: 1.0 },
+    clay:  { m: 0.010,  d: 0.020, cd: 0.47 }
+  };
+  // Each engine: knobs, a stored-energy formula, and how much mass the stored
+  // energy has to speed up besides the shot (pouch, arm, falling weight).
+  var ENGINES = {
+    slingshot: {
+      height: 1.0, loss: 0.75,
+      knobs: [
+        { id: 'bands', label: 'Rubber bands', min: 1, max: 4, step: 1, value: 2, fmt: function (v) { return v; } },
+        { id: 'stretch', label: 'Pull back', min: 5, max: 30, step: 1, value: 15, fmt: function (v) { return v + ' cm'; } }
+      ],
+      stored: function (k) { var kk = 40 * k.bands, x = k.stretch / 100; return 0.5 * kk * x * x; },
+      extraMass: function () { return 0.004; }
+    },
+    catapult: {
+      height: 0.1, loss: 0.6,
+      knobs: [
+        { id: 'bands', label: 'Rubber bands', min: 1, max: 6, step: 1, value: 3, fmt: function (v) { return v; } },
+        { id: 'pull', label: 'Pull-back angle', min: 15, max: 75, step: 1, value: 50, fmt: function (v) { return v + '°'; } }
+      ],
+      stored: function (k) { var th = k.pull * Math.PI / 180; return 0.5 * 0.035 * k.bands * th * th; },
+      // a 15 cm, 10 g arm: I = mL²/3, expressed as mass at the tip
+      extraMass: function () { return 0.010 / 3; }
+    },
+    trebuchet: {
+      height: 0.35, loss: 0.7,
+      knobs: [
+        { id: 'weight', label: 'Counterweight', min: 50, max: 600, step: 10, value: 400, fmt: function (v) { return v + ' g'; } },
+        { id: 'short', label: 'Short arm', min: 4, max: 12, step: 1, value: 8, fmt: function (v) { return v + ' cm'; } },
+        { id: 'ratio', label: 'Arm ratio (long : short)', min: 1.5, max: 6, step: 0.5, value: 4, fmt: function (v) { return v + ' : 1'; } }
+      ],
+      // the weight falls about 1.5 short-arm lengths
+      stored: function (k) { return (k.weight / 1000) * g * 1.5 * (k.short / 100); },
+      extraMass: function (k) {
+        var r = k.ratio, M = k.weight / 1000, s = k.short / 100, L = s * r;
+        var beam = 0.02 * (L * L * L + s * s * s) / (3 * (L + s)) / (L * L);
+        return M / (r * r) + beam;
+      }
+    }
+  };
+
+  var state = { engine: 'catapult', knobs: {}, shots: [], target: null, anim: null };
+  var knobsEl = document.getElementById('seKnobs');
+  var angleEl = document.getElementById('seAngle');
+  var ammoEl = document.getElementById('seAmmo');
+  var dragEl = document.getElementById('seDrag');
+  var msgEl = document.getElementById('seMsg');
+  var canvas = document.getElementById('seCanvas');
+  var view = SimKit.canvas2d(canvas, { onResize: function () { draw(); } });
+
+  function buildKnobs() {
+    var e = ENGINES[state.engine];
+    knobsEl.innerHTML = '';
+    state.knobs = {};
+    e.knobs.forEach(function (k) {
+      state.knobs[k.id] = k.value;
+      var lab = document.createElement('label');
+      lab.htmlFor = 'k-' + k.id;
+      lab.innerHTML = k.label + ' <output></output>';
+      var inp = document.createElement('input');
+      inp.type = 'range'; inp.id = 'k-' + k.id;
+      inp.min = k.min; inp.max = k.max; inp.step = k.step; inp.value = k.value;
+      var out = lab.querySelector('output');
+      function sync() { state.knobs[k.id] = Number(inp.value); out.textContent = k.fmt(Number(inp.value)); }
+      inp.addEventListener('input', sync);
+      sync();
+      knobsEl.appendChild(lab);
+      knobsEl.appendChild(inp);
+    });
+  }
+
+  function syncAngle() { document.getElementById('seAngleOut').textContent = angleEl.value + '°'; }
+
+  function fly(v, angleDeg, h0, ammo, drag) {
+    var a = angleDeg * Math.PI / 180, vx = v * Math.cos(a), vy = v * Math.sin(a);
+    var x = 0, y = h0, dt = 0.002, top = h0, pts = [[0, h0]];
+    var area = Math.PI * ammo.d * ammo.d / 4, kd = drag ? 0.5 * 1.2 * ammo.cd * area / ammo.m : 0;
+    for (var i = 0; i < 20000; i++) {
+      var sp = Math.hypot(vx, vy);
+      vx -= kd * sp * vx * dt;
+      vy -= (g + kd * sp * vy) * dt;
+      var nx = x + vx * dt, ny = y + vy * dt;
+      if (ny <= 0) { x = x + (nx - x) * (y / (y - ny)); y = 0; pts.push([x, 0]); break; }
+      x = nx; y = ny; top = Math.max(top, y);
+      if (i % 10 === 0) pts.push([x, y]);
+    }
+    return { range: x, top: top, pts: pts };
+  }
+
+  function launch() {
+    var e = ENGINES[state.engine], ammo = AMMO[ammoEl.value];
+    var E = e.stored(state.knobs);
+    var mTotal = ammo.m + e.extraMass(state.knobs);
+    var v = Math.sqrt(2 * e.loss * E / mTotal);
+    var shotE = 0.5 * ammo.m * v * v;
+    var res = fly(v, Number(angleEl.value), e.height, ammo, dragEl.checked);
+    document.getElementById('rStored').textContent = E < 1 ? (E * 1000).toFixed(0) + ' mJ' : E.toFixed(2) + ' J';
+    document.getElementById('rSpeed').textContent = v.toFixed(1) + ' m/s';
+    document.getElementById('rRange').textContent = res.range.toFixed(2) + ' m';
+    document.getElementById('rHeight').textContent = res.top.toFixed(2) + ' m';
+    document.getElementById('rEff').textContent = Math.round(100 * shotE / E) + '%';
+    var shot = { pts: res.pts, range: res.range, shown: 0 };
+    state.shots.push(shot);
+    if (state.shots.length > 6) state.shots.shift();
+    if (state.target != null) {
+      var miss = res.range - state.target;
+      msgEl.textContent = Math.abs(miss) <= 0.15 ? 'Direct hit! 🎯 New target set.' :
+        (miss < 0 ? 'Short by ' : 'Long by ') + Math.abs(miss).toFixed(2) + ' m. Adjust and try again.';
+      if (Math.abs(miss) <= 0.15) newTarget();
+    } else {
+      msgEl.textContent = '';
+    }
+    animate(shot);
+  }
+
+  function animate(shot) {
+    if (state.anim) state.anim.stop();
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { shot.shown = shot.pts.length; draw(); return; }
+    state.anim = SimKit.loop(function () {
+      shot.shown = Math.min(shot.pts.length, shot.shown + 4);
+      draw();
+      if (shot.shown >= shot.pts.length) { state.anim.stop(); state.anim = null; }
+    }, { el: SimKit.stage('#seCanvas') });
+  }
+
+  function newTarget() {
+    var maxR = { slingshot: 9, catapult: 3, trebuchet: 4 }[state.engine];
+    state.target = Math.round((0.6 + Math.random() * (maxR - 0.6)) * 10) / 10;
+    if (msgEl.textContent.indexOf('hit') < 0) msgEl.textContent = 'Land within 15 cm of the flag at ' + state.target.toFixed(1) + ' m.';
+    draw();
+  }
+
+  function draw() {
+    if (!view) return;
+    var ctx = view.ctx, W = view.width, H = view.height;
+    if (!W || !H) return;
+    var c = SimKit.theme.colors();
+    var span = 1;
+    state.shots.forEach(function (s) { s.pts.forEach(function (p) { span = Math.max(span, p[0] * 1.1, p[1] * 2.2); }); });
+    if (state.target != null) span = Math.max(span, state.target * 1.15);
+    var pad = 30, ground = H - 28, scale = Math.min((W - pad - 10) / span, (ground - 14) / (span / 2));
+    ctx.fillStyle = c.bg; ctx.fillRect(0, 0, W, H);
+    // distance markers
+    var stepM = span > 12 ? 2 : span > 5 ? 1 : 0.5;
+    ctx.font = '11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    for (var m = 0; m <= span; m += stepM) {
+      var gx = pad + m * scale;
+      ctx.strokeStyle = c.textMuted; ctx.globalAlpha = 0.25;
+      ctx.beginPath(); ctx.moveTo(gx, 10); ctx.lineTo(gx, ground); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = c.textMuted;
+      ctx.fillText(m + ' m', gx, ground + 16);
+    }
+    ctx.strokeStyle = c.text; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(W, ground); ctx.stroke();
+    // machine
+    var h0 = ENGINES[state.engine].height * scale;
+    ctx.fillStyle = c.accent;
+    ctx.fillRect(pad - 8, ground - Math.max(h0, 6), 16, Math.max(h0, 6));
+    // target flag
+    if (state.target != null) {
+      var tx = pad + state.target * scale;
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(tx - 0.15 * scale, ground - 3, 0.3 * scale, 6);
+      ctx.strokeStyle = c.text; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(tx, ground); ctx.lineTo(tx, ground - 34); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(tx, ground - 34); ctx.lineTo(tx + 16, ground - 28); ctx.lineTo(tx, ground - 22); ctx.fill();
+    }
+    // shots: newest is brightest
+    state.shots.forEach(function (s, i) {
+      var newest = i === state.shots.length - 1;
+      ctx.strokeStyle = newest ? c.accent : c.textMuted;
+      ctx.globalAlpha = newest ? 1 : 0.45;
+      ctx.lineWidth = newest ? 2.5 : 1.5;
+      ctx.beginPath();
+      for (var j = 0; j < s.shown; j++) {
+        var px = pad + s.pts[j][0] * scale, py = ground - s.pts[j][1] * scale;
+        if (j) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+      }
+      ctx.stroke();
+      if (s.shown) {
+        var last = s.pts[s.shown - 1];
+        ctx.fillStyle = newest ? c.accent : c.textMuted;
+        ctx.beginPath(); ctx.arc(pad + last[0] * scale, ground - last[1] * scale, newest ? 5 : 3, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  document.querySelectorAll('[data-engine]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('[data-engine]').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      state.engine = b.dataset.engine;
+      state.shots = [];
+      if (state.target != null) { state.target = null; msgEl.textContent = ''; }
+      buildKnobs(); draw();
+    });
+  });
+  angleEl.addEventListener('input', syncAngle);
+  document.getElementById('seLaunch').addEventListener('click', launch);
+  document.getElementById('seTarget').addEventListener('click', function () { msgEl.textContent = ''; newTarget(); });
+  document.getElementById('seClear').addEventListener('click', function () { state.shots = []; draw(); });
+  SimKit.theme.onChange(draw);
+  buildKnobs(); syncAngle(); draw();
+
+  // Quiz
+  var QUIZ = [
+    { q: 'A trebuchet stores its energy by…', a: ['stretching a rubber band', 'lifting a heavy counterweight', 'twisting a rope', 'burning gunpowder'], c: 1,
+      why: 'The counterweight is lifted high. Its gravitational potential energy (PE = mgh) is released when it falls.' },
+    { q: 'You stretch a slingshot twice as far. The stored energy becomes about…', a: ['the same', '2 times as much', '4 times as much', 'half as much'], c: 2,
+      why: 'Elastic energy is ½kx². Double x and x² becomes four times bigger.' },
+    { q: 'With no air resistance, which launch angle throws farthest from the ground?', a: ['15°', '30°', '45°', '75°'], c: 2,
+      why: '45° is the best split between going up (time in the air) and going forward (speed across the ground).' },
+    { q: 'Why did medieval engineers prefer trebuchets for the biggest stones?', a: ['They were faster to build', 'A counterweight works the same in rain and cold, and you can just add more weight', 'They used less wood', 'They were invented first'], c: 1,
+      why: 'Rope and sinew springs weaken when wet or old. Gravity never changes, and power scales with the weight in the box.' },
+    { q: 'In your fair test, you change the counterweight. What must you keep the same?', a: ['Nothing, change everything', 'Only the ammo', 'The ammo, the arm, the release hook and where you measure from', 'Only who launches it'], c: 2,
+      why: 'Change one variable and control all the others, or you can\'t tell which change made the difference.' }
+  ];
+  var quizEl = document.getElementById('seQuiz');
+  QUIZ.forEach(function (item, qi) {
+    var wrap = document.createElement('div'); wrap.className = 'se-q';
+    var fs = document.createElement('fieldset');
+    var lg = document.createElement('legend'); lg.textContent = (qi + 1) + '. ' + item.q; fs.appendChild(lg);
+    var fb = document.createElement('p'); fb.className = 'se-fb'; fb.setAttribute('aria-live', 'polite');
+    item.a.forEach(function (ans, ai) {
+      var lab = document.createElement('label');
+      var r = document.createElement('input'); r.type = 'radio'; r.name = 'seq' + qi;
+      r.addEventListener('change', function () {
+        fb.textContent = (ai === item.c ? '✓ Right. ' : '✗ Not quite. ') + item.why;
+      });
+      lab.appendChild(r); lab.appendChild(document.createTextNode(' ' + ans));
+      fs.appendChild(lab);
+    });
+    fs.appendChild(fb); wrap.appendChild(fs); quizEl.appendChild(wrap);
+  });
+})();
+</script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>

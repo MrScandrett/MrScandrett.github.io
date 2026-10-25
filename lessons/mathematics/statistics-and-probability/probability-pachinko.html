@@ -6,9 +6,6 @@
   <title>Galton Board &amp; Pachinko Lab · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <meta name="description" content="Mathematics Lesson 05 - explore the Galton board and pachinko-style simulations, the bell curve, the central limit theorem, binomial distributions, sample size, bias, expected value, and the history of pachinko for K-12 STEM students." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <style>
@@ -730,7 +727,7 @@
           <section class="pk-card" id="pk-galton" style="--card-accent:#16a34a;">
             <h2>The Galton Board: Where the Bell Curve Comes From</h2>
             <p>The simulator above is a digital <span data-glossary="Galton board">Galton board</span>. Sir Francis Galton (1822–1911), an English scientist, built one in the 1870s to show how the <span data-glossary="normal distribution">normal distribution</span> arises. He described it in his 1889 book <em>Natural Inheritance</em>. He called it a <span data-glossary="quincunx">quincunx</span>, after the five-dot pattern on a die, because the pins sit in staggered rows: each pin is centered under the gap between two pins above it.</p>
-            <p>Each ball that falls through the pins makes a string of <span data-glossary="independent events">independent</span> left-or-right bounces. One ball's path is impossible to predict, so you might expect the balls to scatter evenly across the bins. They don't. With enough balls and enough rows, the stacks in the bins always build roughly the same shape: a tall middle that tapers to thin edges, the bell curve.</p>
+            <p>In this model, each ball makes a string of independent left-or-right choices with the same probability at every row. The landing bin follows a discrete binomial distribution. On a fair board with many rows, that shape can be approximated by a smooth normal curve; a small sample may still look lumpy.</p>
             <div class="pk-galton-figures">
               <figure class="pk-figure" data-zoomable data-lightbox-group="pk-galton" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=1600">
                 <img style="object-position: center 78%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/Galton_box.jpg?width=520" alt="A tall wooden Galton board with rows of pins above narrow bins, the balls piled into a bell shape" loading="lazy" />
@@ -747,7 +744,7 @@
             </div>
             <div class="pk-callout">
               <strong>The big idea: the central limit theorem</strong>
-              <p>Each ball's landing spot is the <em>sum</em> of many small random bounces. The <span data-glossary="central limit theorem">central limit theorem</span> says that when you add up many independent random pieces, the total piles up in a bell shape. The pieces don't have to be bell-shaped themselves; a single bounce is just "left or right." That is why measurement errors, heights, and test scores so often make bell curves: each one is the sum of many small causes.</p>
+              <p>Each landing bin counts the rightward choices across a fixed number of rows. If those choices are independent and each has the same probability, the count is binomial. With enough rows and probabilities away from 0 and 1, a normal curve is a useful approximation. Real-world data need their own evidence before we call them normal. See <a href="https://openstax.org/books/introductory-statistics-2e/pages/7-3-using-the-central-limit-theorem">OpenStax's normal-approximation conditions</a>.</p>
             </div>
             <div class="pk-scenario-grid">
               <article class="pk-mini-card">
@@ -841,7 +838,7 @@
             <h2>Teach the Math</h2>
             <p><strong>Independent events:</strong> In the simplest model, each peg collision is treated as a new left-or-right event. The previous bounce does not force the next bounce to compensate.</p>
             <p><strong>Binomial distribution:</strong> If a board has 10 rows, the ball makes 10 left-right decisions and lands in one of 11 bins. The number of right bounces determines the bin.</p>
-            <p><strong>Normal approximation:</strong> As rows increase, the binomial bins match the smooth <span data-glossary="normal distribution">normal curve</span> with mean <em>np</em> and standard deviation √(<em>np</em>(1 − <em>p</em>)). For a fair 10-row board that is mean 5 and standard deviation about 1.58, so about 68% of balls land within 1.58 bins of the center. See <a href="how-spread-out.html#bell">How Spread Out?</a> for the 68–95–99.7 rule.</p>
+            <p><strong>Normal approximation:</strong> With enough independent rows and a right-bounce probability away from 0 or 1, the binomial shape can be approximated by a <span data-glossary="normal distribution">normal curve</span> with mean <em>np</em> and standard deviation √(<em>np</em>(1 − <em>p</em>)). On a fair 10-row board, the mean is 5 and the standard deviation is about 1.58; the discrete bin probabilities give the exact answer. The 68–95–99.7 rule in <a href="how-spread-out.html#bell">How Spread Out?</a> describes a continuous normal model.</p>
             <p><strong>Expected value:</strong> If bins have point values, multiply each bin's value by its probability and add the results. Expected value is a long-run average, not a promise for one ball.</p>
             <div class="pk-vocab-grid">
               <article class="pk-mini-card">
@@ -974,19 +971,19 @@
           <div class="ll-pane" id="pk-guide" aria-hidden="true">
             <span class="ll-label">Key Principles</span>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Galton's Quincunx (1873):</strong> Sir Francis Galton engineered the quincunx to prove that order emerges from sheer chaos. Each peg represents an independent binary choice: bounce left (\(q = 1-p\)) or bounce right (\(p\)).
+              <strong>Galton's Quincunx (1873):</strong> Sir Francis Galton engineered the quincunx to prove that order emerges from sheer chaos. Each peg represents an independent binary choice: bounce left (<em>q</em> = 1 − <em>p</em>) or bounce right (<em>p</em>).
             </p>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Pascal's Triangle &amp; Combinatorics:</strong> The number of distinct routes to bin \(k\) on row \(n\) is given by the binomial coefficient:
+              <strong>Pascal's Triangle &amp; Combinatorics:</strong> The number of distinct routes to bin <em>k</em> on row <em>n</em> is given by the binomial coefficient:
             </p>
             <div style="background:rgba(0,0,0,0.06); padding:0.4rem; border-radius:6px; font-family:var(--font-mono, monospace); font-size:0.82rem; text-align:center; margin-bottom:0.75rem;">
-              \(\binom{n}{k} = \frac{n!}{k!(n-k)!}\)
+              C(<em>n</em>, <em>k</em>) = <em>n</em>! / [<em>k</em>!(<em>n</em> − <em>k</em>)!]
             </div>
             <p style="font-size:0.8rem; line-height:1.55; margin-bottom:0.75rem;">
-              <strong>Central Limit Theorem:</strong> As row count \(n\) grows, the discrete binomial distribution converges to a continuous Gaussian bell curve with \(\mu = np\) and \(\sigma = \sqrt{np(1-p)}\).
+              <strong>Normal approximation:</strong> For sufficiently many independent rows with the same right-bounce probability <em>p</em>, the binomial bin counts are well approximated by a normal curve with <em>μ</em> = <em>np</em> and <em>σ</em> = √(<em>np</em>(1 − <em>p</em>)), after accounting for the discrete bins.
             </p>
             <p style="font-size:0.8rem; line-height:1.55;">
-              <strong>Law of Large Numbers:</strong> Individual ball bounces are unpredictable, but over hundreds or thousands of drops, experimental frequencies converge tightly to expected theoretical probabilities.
+              <strong>Law of Large Numbers:</strong> As the number of independent drops grows, the frequency in each bin tends toward its theoretical probability. Any finite run can still differ.
             </p>
           </div>
         </div>

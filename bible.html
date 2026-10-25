@@ -7,6 +7,7 @@
   <meta name="description" content="Read all 66 books of the Bible in the BSB, KJV or ASV, track your progress chapter by chapter, and start each day with the verse of the day." />
   <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
   <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/reader-fonts.css" />
   <link rel="stylesheet" href="assets/css/pages/bible.css" />
   <script>
     try {
@@ -18,6 +19,12 @@
       d.dataset.bibleLayout = localStorage.getItem('bible:layout') || 'auto';
       var h = localStorage.getItem('bible:highlight');
       if (h) d.dataset.highlight = h;
+      var f = localStorage.getItem('bible:face');
+      if (f) d.dataset.bibleFace = f;
+      var lh = localStorage.getItem('bible:lh');
+      if (lh) d.style.setProperty('--bb-lh', lh);
+      var w = localStorage.getItem('bible:width');
+      if (w) d.style.setProperty('--bb-measure', w + 'rem');
     } catch (e) {}
   </script>
 </head>
@@ -49,15 +56,40 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M12 6.5v6M9.5 9h5" /></svg>
       <span>The Bible</span>
     </a>
+    <button type="button" class="bb-btn bb-pick" id="bbPickBtn" aria-haspopup="dialog" title="Find a book, chapter or passage">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" /></svg><span id="bbRefLabel">Books</span>
+    </button>
     <div class="bb-tools">
       <div class="bb-seg bb-tr" id="bbTr" role="group" aria-label="Translation"></div>
       <button type="button" class="bb-btn" id="bbDisplayBtn" aria-controls="bbDisplay" aria-expanded="false" title="Display settings">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l5-14h1l5 14M6.5 13h7M17 19l2.5-7 2.5 7M18 17h3" /></svg><span>Display</span>
       </button>
     </div>
+    <div class="bb-progress" id="bbProgress" aria-hidden="true"><span></span></div>
   </header>
 
+  <dialog class="bb-picker" id="bbPicker" aria-labelledby="bbPickTitle">
+    <div class="bb-pick-head">
+      <h2 id="bbPickTitle">Go to…</h2>
+      <button type="button" class="bb-btn" id="bbPickClose" aria-label="Close">✕</button>
+    </div>
+    <form class="bb-pick-search" id="bbPickSearch" role="search">
+      <input type="search" id="bbPickInput" placeholder="John 3:16, Psalm 23, Genesis…" autocomplete="off" enterkeyhint="go" aria-label="Go to a passage" />
+      <button type="submit" class="bb-btn bb-primary">Go</button>
+    </form>
+    <p class="bb-fine" id="bbPickMsg" aria-live="polite"></p>
+    <div class="bb-seg bb-pick-tabs" id="bbPickTabs" role="group" aria-label="Testament">
+      <button type="button" data-t="OT" aria-pressed="true">Old Testament</button>
+      <button type="button" data-t="NT" aria-pressed="false">New Testament</button>
+    </div>
+    <div class="bb-pick-body" id="bbPickBody"></div>
+  </dialog>
+
+  <button type="button" class="bb-btn bb-focus-exit" id="bbFocusExit">Exit focus mode</button>
+  <nav class="bb-pager" id="bbPager" aria-label="Chapter navigation"></nav>
+
   <div class="bb-display" id="bbDisplay" role="region" aria-label="Display settings" hidden>
+    <p class="bb-preview" aria-hidden="true">In the beginning God created the heavens and the earth.</p>
     <fieldset>
       <legend>Page</legend>
       <div class="bb-seg" role="group">
@@ -67,11 +99,34 @@
       </div>
     </fieldset>
     <fieldset>
-      <legend>Text size</legend>
+      <legend>Text size <output id="bbSizeOut">100%</output></legend>
+      <input type="range" id="bbSizeRange" min="80" max="200" step="5" value="100" aria-label="Text size" />
+    </fieldset>
+    <fieldset>
+      <legend>Line spacing</legend>
       <div class="bb-seg" role="group">
-        <button type="button" data-size="-10" aria-label="Smaller text">A−</button>
-        <output id="bbSizeOut">100%</output>
-        <button type="button" data-size="10" aria-label="Larger text">A+</button>
+        <button type="button" data-lh="1.55" aria-pressed="false">Tight</button>
+        <button type="button" data-lh="1.75" aria-pressed="false">Normal</button>
+        <button type="button" data-lh="2" aria-pressed="false">Roomy</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Column width</legend>
+      <div class="bb-seg" role="group">
+        <button type="button" data-width="34" aria-pressed="false">Narrow</button>
+        <button type="button" data-width="40" aria-pressed="false">Medium</button>
+        <button type="button" data-width="52" aria-pressed="false">Wide</button>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Typeface</legend>
+      <div class="bb-seg bb-face-options" role="group" aria-label="Typeface">
+        <button type="button" data-face="serif" aria-pressed="false">Serif</button>
+        <button type="button" data-face="sans" aria-pressed="false">Sans</button>
+        <button type="button" data-face="chicago" aria-pressed="false">Chicago</button>
+        <button type="button" data-face="literata" aria-pressed="false">Literata</button>
+        <button type="button" data-face="atkinson" aria-pressed="false" aria-label="Atkinson Hyperlegible">Atkinson</button>
+        <button type="button" data-face="lexend" aria-pressed="false">Lexend</button>
       </div>
     </fieldset>
     <fieldset>
@@ -92,10 +147,14 @@
         <button type="button" data-hl="purple" aria-pressed="false" title="Purple highlight">Purple</button>
       </div>
     </fieldset>
+    <div class="bb-display-foot">
+      <button type="button" class="bb-btn" id="bbFocusBtn">Focus mode</button>
+      <button type="button" class="bb-btn" id="bbReset">Reset text settings</button>
+    </div>
   </div>
 
   <main class="bb-main" id="bbMain" tabindex="-1">
-    <p class="bb-loading">Opening the Bible…</p>
+    <div class="bb-skel" role="status" aria-label="Opening the Bible"><span></span><span></span><span></span><span></span><span></span></div>
   </main>
 
   <div class="bb-selbar" id="bbSelbar" role="region" aria-label="Selected passage" hidden>

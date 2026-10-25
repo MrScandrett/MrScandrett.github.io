@@ -44,6 +44,6 @@
     ctx.fillStyle = colors.accent; ctx.beginPath(); ctx.arc(16 + position, view.height / 2, 12, 0, Math.PI * 2); ctx.fill();
     reportTime += dt;
     if (running && reportTime >= 1) { report(); reportTime = 0; }
-  });
+  }, { el: SimKit.stage('#motion-canvas') });
   report();
 })();

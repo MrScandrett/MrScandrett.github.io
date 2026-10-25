@@ -57,7 +57,10 @@
   ];
   const $ = id => document.getElementById(id);
   const read = $('presence-read');
+  const useScene = $('presence-use-scene');
+  let currentScene = 0;
   const show = i => {
+    currentScene = i;
     const [, ref, heading, text, question, go] = scenes[i];
     $('presence-ref').textContent = ref;
     $('presence-heading').textContent = heading;
@@ -77,6 +80,18 @@
     b.type = 'button'; b.textContent = `${i + 1} · ${label}`; b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', () => show(i));
     li.append(b); list.append(li);
+  });
+  useScene.addEventListener('click', () => {
+    const notes = $('prophet-notes');
+    const [place, ref, heading] = scenes[currentScene];
+    const starter = `${ref} · ${heading} (${place})\nWhat the passage shows: \nWhat it means for the exiles: \nHow it answers the lesson question: `;
+    const before = notes.value.trim();
+    notes.value = before ? `${before}\n\n${starter}` : starter;
+    notes.dispatchEvent(new Event('input', { bubbles: true }));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('reflect').scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' });
+    notes.focus({ preventScroll: true });
+    notes.setSelectionRange(notes.value.length, notes.value.length);
   });
   show(0);
 })();

@@ -202,6 +202,14 @@
       overflow: hidden;
     }
 
+    /* The resize code sets each canvas's pixel size to its box × devicePixelRatio; without a CSS
+       size the box then grew to match (3× wide on an iPhone, mostly cut off). */
+    .view-panel > canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
     .view-label {
       position: absolute;
       top: 10px;
@@ -378,7 +386,7 @@
 
     @media (max-width: 768px) {
       .day-night-stage {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
       .moon-phase-grid {
         grid-template-columns: 1fr;
@@ -739,7 +747,8 @@
   <script src="../../assets/js/video-embed.js"></script>
 
   <!-- INTERACTIVE LOGIC SCRIPT -->
-  <script>
+  <script src="../../assets/js/sim-kit.js"></script>
+<script>
   (()=>{
     /* =========================================================================
        1. DAY, NIGHT & SHADOWS SIMULATOR
@@ -1136,7 +1145,7 @@
         timeDisplay.textContent = formatTime(currentHour);
         drawDayNightScene();
       }
-      dayAnimId = requestAnimationFrame(tickDayNight);
+      dayAnimId = SimKit.frame('#spaceDayCanvas', tickDayNight);
     }
 
     timeSlider.addEventListener('input', e => {
@@ -1682,7 +1691,7 @@
         skyAngle += 0.003;
         drawStarField();
       }
-      requestAnimationFrame(tickStars);
+      SimKit.frame('#starCanvas', tickStars);
     }
 
     playSkyBtn.addEventListener('click', () => {

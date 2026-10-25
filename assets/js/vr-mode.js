@@ -30,6 +30,12 @@
 (function () {
   'use strict';
   if (window.ClassroomOSVR) return;
+  // The 360° page sphere (vr/page-sphere.html) runs the page in a hidden frame to draw it.
+  // Here VR mode must stay off: no zoom, no menu, and ?vr= must not rewrite the preference.
+  if (window.name === 'classroomos-vr-sphere') {
+    window.ClassroomOSVR = { enabled: function () { return false; }, headset: false, preference: function () { return 'off'; }, set: function () {} };
+    return;
+  }
 
   var STORAGE_KEY = 'classroomos-vr-mode';
   var ZOOM_KEY = 'classroomos-vr-zoom';
@@ -179,13 +185,24 @@
     target.dispatchEvent(event);
   }
   var held = {};
-  function release(code) {
-    if (!held[code]) return;
-    held[code].button.classList.remove('is-down');
-    sendKey('keyup', held[code].d);
+  // A laser trigger click can be down and up inside one frame, and a game that polls its
+  // key state per frame would never see it. Keep each key down for a few frames.
+  var MIN_HOLD_MS = 90;
+  function release(code, now) {
+    var h = held[code];
+    if (!h) return;
+    var wait = now ? 0 : MIN_HOLD_MS - (Date.now() - h.at);
+    if (wait > 0) {
+      // Timers can fire a millisecond early; force the release so the key can't stick down.
+      if (!h.timer) h.timer = setTimeout(function () { release(code, true); }, wait);
+      return;
+    }
+    clearTimeout(h.timer);
+    h.button.classList.remove('is-down');
+    sendKey('keyup', h.d);
     delete held[code];
   }
-  function releaseAll() { Object.keys(held).forEach(release); }
+  function releaseAll() { Object.keys(held).forEach(function (code) { release(code, true); }); }
 
   function keyCodes() {
     var custom = document.body && document.body.getAttribute('data-vr-keys');
@@ -215,7 +232,7 @@
         e.preventDefault(); // keep focus on the game
         if (held[code]) return;
         try { b.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
-        held[code] = { d: d, button: b };
+        held[code] = { d: d, button: b, at: Date.now(), timer: 0 };
         b.classList.add('is-down');
         sendKey('keydown', d);
       });
@@ -294,6 +311,13 @@
     row.appendChild(smaller);
     row.appendChild(bigger);
 
+    var sphereLink = null;
+    var here = location.href.indexOf(siteRoot) === 0 ? location.href.slice(siteRoot.length) || 'index.html' : null;
+    if (here && !/^vr\/page-sphere/.test(here)) {
+      sphereLink = document.createElement('a');
+      sphereLink.href = siteRoot + 'vr/page-sphere.html?src=' + encodeURIComponent(here);
+      sphereLink.textContent = '◎ Open 360° viewer — wrap this page around you';
+    }
     var lab = document.createElement('a');
     lab.href = siteRoot + 'vr.html';
     lab.textContent = '✦ VR Lab — immersive experiences';
@@ -304,11 +328,19 @@
     note.setAttribute('role', 'status');
     note.hidden = true;
 
-    [fullBtn, keysBtn, row, lab, off, note].forEach(function (n) { panel.appendChild(n); });
+    [fullBtn, keysBtn, row, sphereLink, lab, off, note].forEach(function (n) { if (n) panel.appendChild(n); });
     menu.appendChild(toggle);
     menu.appendChild(panel);
     document.body.appendChild(menu);
     syncMenu();
+
+    // An open panel covers the lesson; a press elsewhere or Escape puts it away.
+    document.addEventListener('pointerdown', function (e) {
+      if (!panel.hidden && !menu.contains(e.target)) closePanel();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) { closePanel(); toggle.focus(); }
+    });
   }
 
   function closePanel() {
@@ -344,6 +376,8 @@
     if (on) ensureStyle();
     if (document.body) {
       if (on && !menu) buildMenu();
+      // Turning VR mode off mid full view would leave a fullscreen frame with no menu to exit it.
+      if (!on && document.querySelector('.vr-full-view:fullscreen')) document.exitFullscreen().catch(function () {});
       if (menu) menu.hidden = !on;
       if (!on && keys) { keys.hidden = true; releaseAll(); }
       syncMenu();

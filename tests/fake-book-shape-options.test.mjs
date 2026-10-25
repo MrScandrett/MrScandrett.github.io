@@ -29,9 +29,35 @@ test('every offered shape is playable and spells the chord', () => {
       for (const p of got) assert.ok(t.intervals.includes(p), `${sh.id} has a foreign tone`);
       assert.equal(pcs(sh.frets)[0], root, `${sh.id} bass is the root`);
     }
-    assert.equal(list[0].tag === 'Standard' || list[0].position <= 3, true, 'open or standard shape first');
-    for (let i = 1; i < list.length; i++) assert.ok(list[i].rank >= list[i - 1].rank, 'neck order');
+    const foundations = list.filter((shape) => shape.foundation);
+    const standard = list.find((shape) => shape.origin === 'standard');
+    const cycle = ['C', 'A', 'G', 'E', 'D'];
+    const start = standard?.family ? cycle.indexOf(standard.family) : 0;
+    const rotated = cycle.slice(start).concat(cycle.slice(0, start));
+    assert.deepEqual(foundations.map((shape) => shape.family).filter(Boolean), rotated.filter((family) => foundations.some((shape) => shape.family === family)), 'foundation cycle begins at this chord’s standard family');
+    if (standard) assert.equal(list[0].id, standard.id, 'start at the standard grip');
+    if (foundations.length) assert.equal(list[0].foundation, true, 'start with a foundation');
+    for (let i = 1; i < list.length; i++) assert.ok(list[i].stage >= list[i - 1].stage, 'foundation, compact, fuller progression');
   }
+});
+
+test('E major starts with open E, then D, C, A and G families', () => {
+  const chord = { rootPC: 4, type: type('') };
+  const list = S.options(GT, chord);
+  assert.equal(list[0].id, '0,2,2,1,0,0');
+  assert.deepEqual(list.slice(0, 5).map((shape) => shape.family), ['E', 'D', 'C', 'A', 'G']);
+  const extra = S.withExtras(list, chord, [{ frets: [12, 14, 14, 13, 12, 12] }]);
+  assert.equal(extra[0].id, '0,2,2,1,0,0');
+  assert.deepEqual(extra.slice(0, 5).map((shape) => shape.family), ['E', 'D', 'C', 'A', 'G']);
+});
+
+test('B7 begins with its open C-family grip, then A, G, E and D', () => {
+  const chord = { rootPC: 11, type: type('7') };
+  const list = S.options(GT, chord);
+  assert.deepEqual(list.slice(0, 5).map((shape) => shape.family), ['C', 'A', 'G', 'E', 'D']);
+  assert.equal(list[0].id, 'x,2,1,2,0,2');
+  const extra = S.withExtras(list, chord, [{ frets: ['x', 14, 13, 14, 'x', 14] }]);
+  assert.deepEqual(extra.slice(0, 5).map((shape) => shape.family), ['C', 'A', 'G', 'E', 'D']);
 });
 
 test('a slash chord keeps its bass', () => {

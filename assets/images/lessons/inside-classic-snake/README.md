@@ -1,0 +1,23 @@
+# Inside Classic Snake — Historical Photographs & Technical Diagrams
+
+All historical photographs and technical diagrams in `lessons/computer-science/graphics-and-games/inside-classic-snake.html` are open-source or public-domain resources configured to open in the classroom lightbox (`data-zoomable`).
+
+## Historical Hardware & Software Photographs (`data-lightbox-group="snake-history"`)
+
+- `nec-tk80-intel-8080.jpg`: **1976 NEC TK-80 Single-Board Trainer with Intel 8080 Microprocessor**, National Museum of Nature and Science, Tokyo. Illustrates the 8-bit Intel 8080 microprocessor architecture used by Lane Hauck, Ago Kiss, and Bob Pecoraro for Gremlin's 1976 arcade game *Blockade*. Photograph by Daderot, **CC0 1.0 Universal (Public Domain Dedication)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:NEC_TK_80_kit_(Intel_8080_processor)_-_National_Museum_of_Nature_and_Science,_Tokyo_-_DSC07319.JPG).
+- `atari-2600-console.jpg`: **1977 Atari 2600 Video Computer System (Four-Switch Woodgrain) & CX40 Joystick**. Illustrates the 128-byte RAM console hardware that ran Atari's 1977 launch title *Surround* (the home adaptation of *Blockade*). Photograph by Evan-Amos (The Vanamo Online Game Museum), **Public Domain**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Atari-2600-Wood-4Sw-Set.jpg).
+- `tandy-trs80-model1.jpg`: **1977 Radio Shack Tandy TRS-80 Model I Microcomputer**. One of the two 8-bit personal computers for which Peter Trefonas wrote *Worm* (published by *CLOAD* magazine in 1978), which introduced tail erasure and numbered food targets. Photograph by Prolete, **CC0 1.0 Universal (Public Domain Dedication)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Tandy_TRS-80_Model_I.jpg).
+- `commodore-pet-2001.jpg`: **1977 Commodore PET 2001 Personal Computer with Built-in Datasette**, Bonami SpelComputer Museum. Companion 8-bit system for 1978 *Worm* using character-cell video memory. Photograph by Prolete, **CC0 1.0 Universal (Public Domain Dedication)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Commodore_PET_2001_Bonami_01.jpg).
+- `atari-arcade-cabinet-patent.png`: **Upright Video Arcade Cabinet Schematic (U.S. Patent 4,084,194, April 11, 1978)**. Technical patent illustration by Roger D. Hector for Atari, Inc., showing the internal raster CRT monitor, viewing bezel, coin mechanism, and control deck typical of golden-age arcade cabinets (*Blockade*, *Nibbler*, *Tron*). **Public Domain (U.S. Patent document)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Atari_game_cabinet_patent.png).
+- `nibbles-level3.png`: **Classic *Nibbles* Level 3 Gameplay Screenshot**. Shows the royal-blue playfield, red maze walls, yellow right-angle snake, and numbered target (`6`) popularized by Rick Raddatz's `NIBBLES.BAS` in MS-DOS 5.0 (1991). Created by Matthias S. and Rudwolf, **Free & Open-Source Software (GNU GPL)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Nibbles_level3.png).
+- `ibm-pc-5150.jpg`: **IBM Personal Computer 5150 with Dual Floppy Drives and Monochrome Display**. Represents the MS-DOS PC classroom hardware on which QBasic `NIBBLES.BAS` taught structured game programming. Photograph by Fried Dough, **Public Domain**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Ibm_computer_pc_5150_(6049156797).jpg).
+- `nokia-3310-blue.jpg`: **Nokia 3310 Monochrome-LCD Mobile Handset**. Shows the 84 × 48 reflective monochrome LCD and `2 / 4 / 6 / 8` numeric thumb keypad used to play Taneli Armanto's 1997 *Snake* (Nokia 6110) and 2000 *Snake II* (Nokia 3310). Photograph by Michael Brandtner, **Public Domain**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:Nokia_3310_blue.jpg).
+- `arduino-led-matrix.jpg`: **DIY Arduino Microcontroller with Tiled 8 × 8 LED Dot-Matrix Displays**. Illustrates modern embedded microcontroller implementations of Snake on discrete LED grids. Photograph by Retired electrician, **CC0 1.0 Universal (Public Domain Dedication)**. [Wikimedia Commons record](https://commons.wikimedia.org/wiki/File:DIY_Arduino_LED_screen_for_audio_spectrum_analyzer_1.jpg).
+
+## ClassroomOS Technical Diagrams (`data-lightbox-group="snake-diagrams"`)
+
+- `snake-conveyor-diagram.svg`: Queue `unshift(head)` and conditional `pop()` conveyor-belt model (CC BY 4.0).
+- `snake-methods-comparison.svg`: Four architectural memory representations for Snake (CC BY 4.0).
+- `snake-grid-canvas-diagram.svg`: Logical 20 × 20 grid coordinates versus 400 × 400 `<canvas>` pixels (CC BY 4.0).
+- `snake-input-buffer-diagram.svg`: 100 ms tick window and `lastDx`/`lastDy` 180° reversal guard (CC BY 4.0).
+

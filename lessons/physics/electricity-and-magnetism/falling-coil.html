@@ -250,6 +250,7 @@
 
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 (function () {
   const canvas = document.getElementById('fc-canvas');
@@ -564,7 +565,7 @@
     }
 
     drawScene(brakeForce);
-    if (running) raf = requestAnimationFrame(step);
+    if (running) raf = SimKit.frame(SimKit.stage('#fc-graph-canvas', '#fc-canvas'), step);
   }
 
   window.fcDrop = function () {
@@ -572,12 +573,12 @@
     running = true;
     lastTime = null;
     document.getElementById('fc-drop-btn').disabled = true;
-    raf = requestAnimationFrame(step);
+    raf = SimKit.frame(SimKit.stage('#fc-graph-canvas', '#fc-canvas'), step);
   };
 
   window.fcReset = function () {
     running = false;
-    if (raf) cancelAnimationFrame(raf);
+    if (raf) SimKit.frame.cancel(SimKit.stage('#fc-graph-canvas', '#fc-canvas'), raf);
     magnetY = startY;
     magnetVel = 0;
     currentA = 0;

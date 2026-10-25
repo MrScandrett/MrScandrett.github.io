@@ -124,7 +124,7 @@ export function mountVRButton(renderer, { button, status, rig, onStart, onEnd, e
  *
  * Returns { update(), teleportTo(point), turn(radians), face(point) }. Call update() every frame.
  */
-export function createPointer(THREE, renderer, { rig, camera, canvas, targets, onSelect, onHover, maxDistance = 40 }) {
+export function createPointer(THREE, renderer, { rig, camera, canvas, targets, onSelect, onHover, onAim, maxDistance = 40 }) {
   const raycaster = new THREE.Raycaster();
   raycaster.far = maxDistance;
   const tmpMatrix = new THREE.Matrix4();
@@ -148,7 +148,11 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
 
   function cast() {
     const hits = raycaster.intersectObjects(targets(), true);
-    return hits.find(h => h.object.visible !== false) || null;
+    // A hidden parent hides its children too, but Raycaster doesn't check ancestors.
+    return hits.find(h => {
+      for (let o = h.object; o; o = o.parent) if (o.visible === false) return false;
+      return true;
+    }) || null;
   }
 
   function viewerWorldPosition(out) {
@@ -256,6 +260,7 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     const hit = castFromScreen(e);
     const target = hit ? selectableAncestor(hit.object) : null;
     setHover(target);
+    onAim?.(hit);
     canvas.style.cursor = target ? 'pointer' : 'grab';
   });
   canvas.addEventListener('pointerup', e => {
@@ -265,7 +270,7 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     if (click && !renderer.xr.isPresenting) activate(castFromScreen(e));
   });
   canvas.addEventListener('pointercancel', () => { drag = null; });
-  canvas.addEventListener('pointerleave', () => { if (!drag) setHover(null); });
+  canvas.addEventListener('pointerleave', () => { if (!drag) { setHover(null); onAim?.(null); } });
   if (!canvas.hasAttribute('tabindex')) canvas.tabIndex = 0;
   canvas.addEventListener('keydown', e => {
     const step = new THREE.Vector3();
@@ -287,11 +292,21 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
     // The headset pose was written into the camera; put the preview camera back.
     camera.position.set(0, rig.userData.eyeHeight || 1.6, 0);
     applyLook();
+    // update() stops running outside VR, so clear what the lasers left behind:
+    // the hit dots and the hover highlight would otherwise stay on in the preview.
+    for (const controller of controllers) {
+      const data = controller.userData;
+      data.hit = null;
+      data.turnArmed = true;
+      data.dot.visible = false;
+    }
+    setHover(null);
   });
 
   function update() {
     if (!renderer.xr.isPresenting) return;
     let anyHover = null;
+    let aimHit = null;
     for (const controller of controllers) {
       const data = controller.userData;
       if (!data.connected) continue;
@@ -304,9 +319,11 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
       if (hit) {
         data.dot.position.copy(hit.point);
         anyHover = anyHover || selectableAncestor(hit.object);
+        aimHit = aimHit || hit;
       }
     }
     setHover(anyHover);
+    onAim?.(aimHit);
   }
 
   /** Point the flat-preview camera at a world position (e.g. after a "Go to" button). */
@@ -326,7 +343,10 @@ export function createPointer(THREE, renderer, { rig, camera, canvas, targets, o
  * A flat text panel (a canvas texture on a plane) for labels and info cards in VR,
  * where HTML can't follow you. setText(title, lines) redraws it.
  */
-export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', lines = [], accent = '#7cc4ff', background = 'rgba(10,18,32,0.92)' } = {}) {
+export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', lines = [], accent: accentColor = '#7cc4ff', background: backgroundColor = 'rgba(10,18,32,0.92)' } = {}) {
+  let accent = accentColor;
+  let background = backgroundColor;
+  let shown = { title, lines };
   const scale = 640;
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(width * scale);
@@ -354,6 +374,7 @@ export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', line
   }
 
   function setText(nextTitle, nextLines = []) {
+    shown = { title: nextTitle, lines: nextLines };
     const w = canvas.width;
     const h = canvas.height;
     const pad = 36;
@@ -385,5 +406,11 @@ export function createPanel(THREE, { width = 1.2, height = 0.7, title = '', line
 
   setText(title, lines);
   mesh.userData.setText = setText;
+  // Re-colour without losing the text (e.g. when the site theme changes).
+  mesh.userData.setStyle = style => {
+    if (style.accent) accent = style.accent;
+    if (style.background) background = style.background;
+    setText(shown.title, shown.lines);
+  };
   return mesh;
 }

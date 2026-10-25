@@ -24,6 +24,12 @@ test('an end-repeat without a start-repeat returns to the end of the previous re
   assert.deepEqual(m.order, [0, 0, 1, 2, 1, 2, 3]);
 });
 
+test('D.C. al Fine takes the trio repeat, then goes back to the top without repeats, last ending only', () => {
+  const m = model({ time: '2/4', staves: [{ notes: 'C5/2 |: D5/2 | @1 E5/2 :| @2 F5/2 @Fine | : G5/2 | A5/2 @DC :' }] });
+  assert.deepEqual(m.order.map((bi) => engine.barNumber(m, bi)), [1, 2, 3, 2, 4, 5, 6, 5, 6, 1, 2, 4]);
+  assert.ok(m.barMeta[3].fine && m.barMeta[5].dc);
+});
+
 test('key, clef and time changes apply from their bar', () => {
   const m = model({ time: '2/4', key: 0, staves: [
     { notes: 'C5/2 | @K:-1 @T:3/4 Bb4/2. | Bb4/2.' },

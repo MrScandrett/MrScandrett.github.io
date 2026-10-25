@@ -12,7 +12,7 @@
     draggable: true,
     position: 'start',
     onDrop: onDrop,
-    pieceTheme: 'https://unpkg.com/chessboardjs@1.0.0/www/img/chesspieces/wikipedia/{piece}.png'
+    pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
   };
 
   board = Chessboard('board', config);
@@ -21,7 +21,7 @@
   const undoBtn = document.getElementById('undoBtn');
   const statusEl = document.getElementById('status');
   const depthRange = document.getElementById('depth');
-  const balls = document.getElementById('depthVal');
+  const depthVal = document.getElementById('depthVal');
 
   depthRange.addEventListener('input', ()=>{depthVal.textContent = depthRange.value});
 
@@ -40,7 +40,7 @@
     game.undo(); // undo AI move
     board.position(game.fen());
     updateStatus();
-  }balls
+  }
 
   function onDrop(source, target, piece, newPos, oldPos, orientation){
     if(aiThinking) return 'snapback';

@@ -85,10 +85,31 @@ Saved links, bookmarks and students' saved work point at old URLs, so moving a l
 
 ## Performance notes
 
-- Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML
+- Only `dist/` (from `npm run build:dist`, what Pages deploys) is optimized. It minifies CSS/JS/MJS/HTML/JSON
   and inlines the `@import`s of `classroom-fonts.css` and `components/lesson-shell.css` into the CSS that
   imports them. Source CSS keeps the `@import`s, so `serve-local.js` still shows the extra round trip;
-  judge load speed against a served `dist/`, not the dev server.
+  judge load speed against a served `dist/`, not the dev server. It also: gives PNG/JPGs over 150 KB a WebP
+  (≤1920 px) and points `<img src>`/`data-full` at it; lazy-loads every `<img>` after a page's first two;
+  splits `score-library.json` into `data/scores/<id>.json` (serve-local.js serves the same URLs);
+  meshopt-compresses the models in `MESHOPT_MODELS` (only add one whose viewer has a meshopt decoder);
+  and writes `sw.js`, a content-hashed asset cache for repeat visits (`scripts/sw-template.js`; production
+  only, `?sw=on` on localhost).
+- `npm run audit:perf` serves `dist/` with a 4× CPU throttle and reports LCP, blocking time, bytes, and
+  main-thread/rAF cost before and after scrolling every sim off-screen. `--all` ranks every lesson;
+  `--check` (run on deploy) fails on JS/request growth against `docs/perf-baseline.json` and warns about
+  sims still animating off-screen (`--strict-frames` fails on those too; use it locally, since frame counts
+  depend on the machine). `--save-baseline` after a deliberate change.
+- **Sims pause when nobody can see them.** Drive animation with `SimKit.loop(fn, { el: SimKit.stage(canvas) })`,
+  or in a hand-rolled loop write `SimKit.frame(canvas, draw)` where it said `requestAnimationFrame(draw)`
+  (`SimKit.frame.cancel(canvas, id)` for `cancelAnimationFrame`; `SimKit.raf(el)` gives a reusable gate).
+  Frames are held while the element is >200px off-screen, in a hidden panel, or in a hidden tab, and the
+  paused time is skipped so `dt` stays one frame on resume. Point `el` at what the loop draws (the canvas,
+  SVG or Three.js `renderer.domElement`); `SimKit.stage(a, b)` lists several and runs while any shows. It
+  widens each to its own `<figure>` but never to `.ll-sim`/`<section>`/`<main>`, which never leave the
+  screen. Make sure the page loads `sim-kit.js`. Rosetta 2D games and `classroom-animations.js` pause on
+  their own. Tests: `tests/sim-kit-raf.test.mjs`, `tests/classroom-animations.test.mjs`.
+- The animated site background (`canvas-bg.js`) draws t-driven looks at 30 fps and freezes after 60 s
+  without input; keep new background looks cheap (batch canvas paths, no per-item `stroke()`).
 - Fonts are self-hosted (`assets/fonts/`). Don't add Google Fonts / CDN font `@import`s to shared CSS.
 - Homepage JS lives in `assets/js/pages/index-*.js` (deferred), not inline. The featured video is picked
   from `data/video-library.json` and plays in `watch.html`; don't point it at `assets/videos/*.mp4` files
@@ -142,6 +163,21 @@ top-navigation; the player is pinned to the chosen video and removes the frame a
 end instead of showing the provider's end screen. Never draw over a provider's player —
 YouTube's embed terms forbid overlays; our controls sit below the frame. To allow a new
 host, add a narrow rule to `video-sources.mjs` and to `watch.html`'s CSP `media-src`.
+
+## Lesson rule: sims fill the screen for the projector
+
+`assets/js/sim-present.js` (loaded by lesson-print-button.js on any page with a canvas, svg or
+`<model-viewer>`) puts a ⛶ pill on each sim block. Pressing it fills the screen with that sim: in
+the lesson layout the whole `.ll-stage` goes full screen (so the side panel's controls come along)
+with everything else in `.ll-sim` hidden; elsewhere the block's parent does, with the block's siblings
+hidden. The block is then narrowed toward the screen's shape and CSS-`zoom`ed up to fit (≤ 2.25×), so
+labels are readable from the back of the room. iPhone gets a fixed overlay instead.
+
+- The block is the sim's `<figure>` / `[data-present]` / `[data-vr-stage]`, else the biggest wrapper
+  under one screen tall. Put `data-present` on the right wrapper when the guess is wrong, and
+  `data-present="off"` to opt out. Blocks with their own full-screen button are skipped.
+- Read pointer positions with `getBoundingClientRect()` + `clientX` (zoom-safe). `offsetX/Y` are
+  corrected while presenting, but nothing else is.
 
 ## Lesson rule: lessons print cleanly on letter paper
 
@@ -341,10 +377,41 @@ headset browser. It turns on automatically in Quest/Pico/Wolvic/Vision Pro brows
 targets, a hover ring for the laser, the animated background paused, and a 🥽 VR menu with
 Full view (fullscreens the biggest on-screen sim's `.ll-sim`/`figure`, or `[data-vr-stage]`),
 text size, and on-screen keys (arrows/Space/Enter, or `<body data-vr-keys="KeyW Space">`).
-It's injected by nav-mobile.js, lesson-print-button.js and ui.js like visitor-memory.js;
+It's injected by nav-mobile.js, lesson-print-button.js and ui.js like visitor-memory.js, but only when it
+will switch on (a headset browser, a saved "on", or `?vr=`; choosing On in Settings loads it);
 pages without those load it with a plain `<script … vr-mode.js defer>`.
 `lib/touch-controls.js` also shows the student-game pads in headsets (rebuild the slugs
 in `data/touch-controls.json` after changing it).
+
+**360° page sphere** (`vr/page-sphere.html?src=<page>`, 🥽 VR menu → "360° page"): wraps any same-origin
+page around the viewer. WebXR can't take a live DOM as a texture, so the page runs in a hidden same-origin
+iframe (`name="classroomos-vr-sphere"`; `vr-mode.js` keeps itself off in it), `assets/js/page-raster.mjs` draws
+it to an image (clone the doc, wrap in SVG `<foreignObject>`, inline CSS/fonts/images as data: URLs), and
+`assets/js/vr/sphere-layout.mjs` (pure, tested) cuts it into 1280×720 screens: a horizon ring of 8, then a ring
+below (max 15; longer pages are cut and say so). A laser hit becomes a page coordinate and the click is replayed
+in the iframe, so a link navigates the iframe and the immersive session survives (a real navigation ends it).
+Things that will bite: draw from a **data:** URL, never blob: (Chrome taints the canvas, texImage2D then throws);
+a nested `<html>` paints no background, so a wrapper div carries it; `:root` rules are rewritten to
+`html[data-vr-snap]`; `vh` is pinned to 720 px; app-shell lessons (document one screen tall, an inner panel
+scrolls) are found by `findMainScroller()` and expanded in the copy; copy *every* attribute when swapping a
+`<canvas>` for an `<img>` (rules key off `id`). Not supported: typing, `<select>`, dragging, live video/WebGL,
+cross-origin images without CORS. Tests: `node --test tests/page-sphere.test.mjs`, and
+`SPHERE_URL=http://localhost:8080 node tests/page-sphere-browser.mjs` against `serve-local.js`.
+
+**The site theme is the sphere's world.** `vr/sphere-environment.mjs` is one inward-facing sphere (radius 20,
+drawn first, no depth test) with one fragment shader and a look per theme from `vr/sphere-theme.mjs`
+(`environmentFor(registryTheme)`, pure, tested against every theme in `theme-registry.js`): Lava Lamp is
+`LiquidEngine.ThermalBlobs` wax wrapped onto the sphere (`blobToSphere`: box x → longitude, y → latitude, the
+heater pool under your feet; don't write a second lava sim), Vaporwave a neon grid floor and striped sun,
+Mandelbrot a seam-free stereographic fractal, Night stars, Bark wood grain, and every light theme a tinted sky.
+It reads `html[data-theme]` through a MutationObserver, so a theme changed in another tab or in Settings inside
+the sphere re-colours it live (theme-lighting.js already turns the `storage` event into `data-theme`); the
+control row restyles through `createPanel(...).userData.setStyle`. To add a theme look: add a case to
+`environmentFor` and a shader function, then `npm test` (it fails if a registry theme has no valid palette).
+Two things bite: a metaball's 1/d² tail is harmless on a flat screen but on a sphere two dozen tails sum past the
+threshold everywhere, so each blob's reach is windowed to ~3 radii; and **motion is a comfort setting**, not
+decoration: Motion = Auto (calm in a headset, still under reduced motion, full on a flat screen) / Calm / Still /
+Full, stored in `classroomos-sphere-motion`. Never make the world move faster than `motionScale()` allows.
 
 Immersive pages live in `vr/` and are listed in `vr.html` from `data/xr-experiences.json`.
 Build new ones on `assets/js/xr-kit.mjs` (Enter VR button with honest status, controller/

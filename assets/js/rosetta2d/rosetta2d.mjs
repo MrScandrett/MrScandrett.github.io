@@ -1108,15 +1108,31 @@ export class Game extends Emitter {
     if (this.canvas && !this.running && typeof requestAnimationFrame !== 'undefined') {
       this.running = true;
       this._last = null;
+      this._watchVisibility();
       this._raf = requestAnimationFrame(this._loop);
     }
     return this;
+  }
+  // A game scrolled off the page stops asking for frames and picks up where it was
+  // when it comes back (dt restarts at 0, so nothing jumps).
+  _watchVisibility() {
+    if (this._io || typeof IntersectionObserver === 'undefined') return;
+    this._onScreen = true;
+    this._io = new IntersectionObserver((entries) => {
+      this._onScreen = entries[entries.length - 1].isIntersecting;
+      if (this._onScreen && this.running && !this._raf) {
+        this._last = null;
+        this._raf = requestAnimationFrame(this._loop);
+      }
+    }, { rootMargin: '200px' });
+    this._io.observe(this.canvas);
   }
   /** Switch scenes at the end of this frame. */
   change(scene) { this._next = scene; return this; }
   stop() {
     this.running = false;
     if (this._raf && typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(this._raf);
+    this._raf = null;
     return this;
   }
   /** Stop and remove every listener (call when a lesson page swaps games). */
@@ -1125,6 +1141,7 @@ export class Game extends Emitter {
     if (Game.active === this) Game.active = null;
     if (this.scene) this.scene._exit();
     if (this._detachInput) this._detachInput();
+    if (this._io) { this._io.disconnect(); this._io = null; }
     if (this.audio.ctx) this.audio.ctx.close();
   }
 
@@ -1142,6 +1159,7 @@ export class Game extends Emitter {
 
   _loop(now) {
     if (!this.running) return;
+    if (this._onScreen === false) { this._raf = null; return; }
     this._raf = requestAnimationFrame(this._loop);
     const dt = this._last == null ? 0 : (now - this._last) / 1000;
     this._last = now;

@@ -156,6 +156,7 @@ function updateAmmo(){
 const bullets=[];
 
 function shootBullet(){
+    if(!gameStarted||ended) return;
     const now=Date.now();
     if(ammo<=0||isReloading||now-lastShotTime<SHOOT_COOLDOWN) return;
 
@@ -275,7 +276,8 @@ const startButton=document.getElementById('startButton');
 let gameStarted=false;
 let ended=false;
 
-startButton.addEventListener('click',()=>{
+startButton.addEventListener('click',(e)=>{
+    e.stopPropagation();
     startScreen.style.display='none';
     resetGame();
     gameStarted=true;
@@ -310,7 +312,8 @@ function showRestartButton(){
     btn.textContent='RESTART';
     document.body.appendChild(btn);
 
-    btn.addEventListener('click',()=>{
+    btn.addEventListener('click',(e)=>{
+        e.stopPropagation();
         document.querySelectorAll('.message')
             .forEach(m=>m.remove());
         btn.remove();
@@ -530,3 +533,7 @@ window.addEventListener('resize',()=>{
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth,window.innerHeight);
 });
+
+camera.position.set(player.position.x,8,player.position.z-10);
+camera.lookAt(player.position);
+renderer.render(scene,camera);

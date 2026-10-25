@@ -53,9 +53,20 @@
     document.head.appendChild(memory);
   }
 
+  // Same headset test as vr-mode.js. On a laptop with the default "auto" the module only
+  // installs a disabled stub, so it isn't worth fetching unless it will switch on.
+  function vrModeWanted() {
+    var ua = navigator.userAgent || '';
+    var pref = null;
+    try { pref = localStorage.getItem('classroomos-vr-mode'); } catch (e) { /* private mode */ }
+    return pref === 'on' || /[?&]vr=/.test(location.search) ||
+      /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
+      (/Macintosh/.test(ua) && 'xr' in navigator && navigator.maxTouchPoints > 0);
+  }
+
   // VR headset mode (vr-mode.js): lessons are where students use the sims from a headset.
   function loadVrMode() {
-    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]') || !vrModeWanted()) return;
     var vr = document.createElement('script');
     vr.src = script && script.src ? new URL('vr-mode.js', script.src).href : '/assets/js/vr-mode.js';
     vr.defer = true;
@@ -71,6 +82,17 @@
     timeline.src = script && script.src ? new URL('timeline.js', script.src).href : '/assets/js/timeline.js';
     timeline.defer = true;
     document.head.appendChild(timeline);
+  }
+
+  // ⛶ Fill the screen on each sim, for the projector (sim-present.js).
+  function loadSimPresent() {
+    if (window.ClassroomOSPresent || document.querySelector('script[data-sim-present="true"]') ||
+      !document.querySelector('canvas, svg, model-viewer, [data-present]')) return;
+    var present = document.createElement('script');
+    present.src = script && script.src ? new URL('sim-present.js', script.src).href : '/assets/js/sim-present.js';
+    present.defer = true;
+    present.dataset.simPresent = 'true';
+    document.head.appendChild(present);
   }
 
   function cleanText(value) {
@@ -161,11 +183,33 @@
     stylesheet.href = new URL('../css/components/lesson-print-button.css', script.src).href;
     document.head.appendChild(stylesheet);
   }
+  // Related links and exhibits sit at the end of the lesson, so they wait until the
+  // lesson's own scripts and sims have loaded and the browser is idle.
+  function whenIdle(fn) {
+    function schedule() {
+      if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2500 });
+      else setTimeout(fn, 300);
+    }
+    if (document.readyState === 'complete') schedule();
+    else window.addEventListener('load', schedule, { once: true });
+  }
+
+  // Asset cache for repeat visits (dist/sw.js); same rule as nav-mobile.js, which many lessons don't load.
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator) || window.__classroomosSwRegistered || !script || !script.src) return;
+    if (location.protocol !== 'https:' && !/[?&]sw=on\b/.test(location.search)) return;
+    window.__classroomosSwRegistered = true;
+    var root = new URL('../../', script.src);
+    navigator.serviceWorker.register(new URL('sw.js', root).href, { scope: root.pathname }).catch(function () { /* not published here */ });
+  }
+
   ensureContrastGuard();
-  loadRelatedLinks();
-  loadExhibitLinks();
   loadVisitorMemory();
-  loadVrMode();
+  whenIdle(registerServiceWorker);
+  whenIdle(loadRelatedLinks);
+  whenIdle(loadExhibitLinks);
+  whenIdle(loadVrMode);
+  whenIdle(loadSimPresent);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadTimeline);
   else loadTimeline();
   // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
@@ -225,6 +269,7 @@
       var action = event.target.closest('[data-print-action]');
       if (!action) return;
       closeMenu();
+      document.body.setAttribute('data-print-lesson', '');
       window.print();
     });
     document.addEventListener('click', function (event) {
@@ -667,6 +712,7 @@
 
   window.addEventListener('beforeprint', prepareForPrint);
   window.addEventListener('afterprint', restoreAfterPrint);
+  window.addEventListener('afterprint', function () { document.body.removeAttribute('data-print-lesson'); });
   window.ClassroomOSPrint = { prepare: prepareForPrint, restore: restoreAfterPrint };
 
   var accessibilityObserver = new MutationObserver(function (records) {

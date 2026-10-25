@@ -23,6 +23,8 @@
  *   @U @D @A       stems (and rests) up, down or automatic from here on in this voice
  *   @L:3/2         this bar is incomplete: 3/2 quarter beats long (repeat endings, mid-piece pickups)
  *   @N:12          printed bar number of this bar (numbering continues from it)
+ *   @Fine  @DC     Fine at the end of this bar; D.C. al Fine at the end of this bar (back to the top,
+ *                  repeats not taken, last endings only, stopping at Fine or, without one, at this bar)
  *   g:C5/16        grace note (sounds just before the next note; takes no time in the bar)
  *   {3 C5/8 D5 E5 }   tuplet: three in the time of two ({6:4 …}, {5:4 …} likewise)
  *   C5/4+tr  +mord  +turn  +.  +>  +-   trill, mordent, turn, staccato, accent, tenuto
@@ -73,6 +75,8 @@
           var lm = /^@L:(\d+)(?:\/(\d+))?$/.exec(tok), nm = /^@N:(\d+)$/.exec(tok);
           if (lm) { meta.len = +lm[1] / (lm[2] ? +lm[2] : 1); return; }
           if (nm) { meta.number = +nm[1]; return; }
+          if (tok === '@Fine') { meta.fine = true; return; }
+          if (tok === '@DC') { meta.dc = true; return; }
           var mark = /^@(?:(K):(-?\d)|(T):(\d+\/\d+)|(C):(treble|bass|alto)|([1-9](?:\.[1-9])*))$/.exec(tok);
           if (!mark) fail(w, 'unknown mark');
           if (mark[1]) { if (events.length) fail(w, 'key changes go at the start of a bar'); meta.key = +mark[2]; }
@@ -159,7 +163,7 @@
     if (Math.abs(ksig) > 7) throw new Error(id + ': key must be -7…7 (flats negative, sharps positive)');
     var curKey = ksig, curTs = ts;
     var barMeta = metaBars.map(function (bar, bi) {
-      var m = bar.meta, out = { repStart: !!m.repStart, repEnd: !!m.repEnd, volta: m.volta || null, len: m.len || null, number: m.number == null ? null : m.number };
+      var m = bar.meta, out = { repStart: !!m.repStart, repEnd: !!m.repEnd, volta: m.volta || null, len: m.len || null, number: m.number == null ? null : m.number, fine: !!m.fine, dc: !!m.dc };
       if (m.key != null && m.key !== curKey) { if (Math.abs(m.key) > 7) fail(id + ', bar ' + (bi + 1), 'key must be -7…7'); out.keyChange = true; out.prevKey = curKey; curKey = m.key; }
       if (m.time) { var nt = timeSig(score, m.time); if (nt.num !== curTs.num || nt.den !== curTs.den) { out.timeChange = true; curTs = nt; } }
       out.key = curKey; out.ts = curTs;
@@ -255,9 +259,10 @@
     return bi + (model.score.startMeasure || 1) - (model.pickup ? 1 : 0);
   }
 
-  // Written bars in the order they are played: repeats taken once, first/second endings honoured.
+  // Written bars in the order they are played: repeats taken once, first/second endings honoured,
+  // then a D.C. al Fine from the top without repeats.
   function performanceOrder(model) {
-    var meta = model.barMeta, order = [], i = 0, start = 0, pass = 1, jumped = {}, sectionEnd = -1;
+    var meta = model.barMeta, order = [], i = 0, start = 0, pass = 1, jumped = {}, sectionEnd = -1, dcAt = -1;
     while (i < model.count && order.length < model.count * 4) {
       var m = meta[i];
       // Past a repeated section (and its endings): an end-repeat without a start-repeat comes back here.
@@ -266,9 +271,25 @@
       if (m.volta && m.volta.split('.').indexOf(String(pass)) < 0) { i++; continue; }
       order.push(i);
       if (m.repEnd && !jumped[i]) { jumped[i] = true; pass++; sectionEnd = Math.max(sectionEnd, i); i = start; continue; }
+      if (m.dc) { dcAt = i; break; }
       i++;
     }
+    if (dcAt >= 0) {
+      var fine = -1;
+      for (var f = 0; f < dcAt && fine < 0; f++) if (meta[f].fine) fine = f;
+      if (fine < 0) fine = dcAt;
+      for (var j = 0; j <= fine; j++) if (!meta[j].volta || isLastEnding(meta, j)) order.push(j);
+    }
     return order;
+  }
+
+  // Does bar bi belong to the last ending of its group (the one a da capo takes)?
+  function isLastEnding(meta, bi) {
+    var a = bi, b = bi, most = 0;
+    while (a > 0 && meta[a - 1].volta) a--;
+    while (b < meta.length - 1 && meta[b + 1].volta) b++;
+    for (var k = a; k <= b; k++) meta[k].volta.split('.').forEach(function (n) { most = Math.max(most, +n); });
+    return meta[bi].volta.split('.').indexOf(String(most)) >= 0;
   }
 
   // Key-signature alteration for each letter (C=0 … B=6).
@@ -635,7 +656,7 @@
       if (last && stretch > 1.45) stretch = 1;
       if (stretch < 1) stretch = 1;
       var ext = model.staves.map(function (_, si) { return extents(sys, si); });
-      var hasAbove = sys.bars.some(function (bi) { return model.barMeta[bi].volta || sectionAt[bi]; });
+      var hasAbove = sys.bars.some(function (bi) { var mt = model.barMeta[bi]; return mt.volta || mt.fine || mt.dc || sectionAt[bi]; });
       var bottoms = [];
       var top = y + (sIndex === 0 && model.score.tempoText ? 2.4 * S : 0.6 * S) + (hasAbove ? 2.6 * S : 0);
       model.staves.forEach(function (st, si) {
@@ -719,6 +740,9 @@
           var sy = aboveY - (meta.volta ? 2.2 * S : 0) - 0.6 * S;
           out.push('<g class="se-section"><rect x="' + (bx0 + 0.1 * S) + '" y="' + (sy - 1.35 * S) + '" width="' + tw + '" height="' + (1.75 * S) + '" rx="' + (0.25 * S) + '" fill="none" stroke="currentColor" stroke-width="' + lineW + '"/>' +
             '<text x="' + (bx0 + 0.1 * S + tw / 2) + '" y="' + (sy - 0.05 * S) + '" font-size="' + (1.2 * S) + '" text-anchor="middle">' + M.escape(lab) + '</text></g>');
+        }
+        if (meta.fine || meta.dc) {
+          out.push('<text class="se-volta se-jump" x="' + (bx0 + bw - 0.4 * S) + '" y="' + (aboveY + 1.4 * S) + '" font-size="' + (1.15 * S) + '" text-anchor="end">' + (meta.dc ? 'D.C. al Fine' : 'Fine') + '</text>');
         }
         var sx = function (u) { return bx0 + (bar.whole ? bw * 0.5 - 0.9 * S : u * S * stretch); };
         bar.cols.forEach(function (c) { c.px = sx(c.x); sysCols.push({ t: model.barStart[bi] + c.t, x: c.px, sys: sIndex }); });
@@ -1231,7 +1255,8 @@
     return e;
   }
 
-  function printScorePages(score) {
+  function preparePrintScorePages(score) {
+    if (document.body.classList.contains('se-print-score-active')) return true;
     var model = prepare(score);
     analyse(model);
     // Engrave at a fixed width so the paper edition does not depend on the
@@ -1239,7 +1264,7 @@
     // Same large-print engraving the fake book uses: bigger staff, noteheads and
     // letters, fewer bars per line, so a handout reads from a desk or a music stand.
     var layout = engrave(model, 1085, true);
-    if (!layout.systems.length) return;
+    if (!layout.systems.length) return false;
     var ns = 'http://www.w3.org/2000/svg';
     var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true' });
     var definitions = document.createElementNS(ns, 'svg');
@@ -1303,6 +1328,11 @@
       root.removeEventListener('afterprint', cleanup);
     }
     root.addEventListener('afterprint', cleanup);
+    return true;
+  }
+
+  function printScorePages(score) {
+    if (!preparePrintScorePages(score)) return;
     root.print();
   }
 
@@ -1525,7 +1555,9 @@
       lastDrawWidth = w;
       layout = engrave(model, w, fig.hasAttribute('data-score-readable'));
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
-      svgWrap.innerHTML = '<svg class="se-score" role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
+      // The score is always paper with its own ink, so contrast-guard's text pass stays out: it reads the
+      // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
+      svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
       cursorEl = svgWrap.querySelector('.se-cursor');
       // Expose the current engraving to page-specific teaching overlays. The layout
@@ -1674,6 +1706,23 @@
     return library;
   }
 
+  // Each piece is also published on its own (data/scores/<id>.json, written by build:dist
+  // and served by serve-local.js), so a page with one sonata doesn't download the
+  // whole 500 KB library. Any other server falls back to the full library.
+  var pieces = {};
+  function loadScore(id) {
+    if (!pieces[id]) {
+      var url = new URL('../../data/scores/' + encodeURIComponent(id) + '.json', scriptUrl || location.href);
+      pieces[id] = fetch(url).then(function (r) {
+        if (!r.ok) throw new Error('score ' + r.status);
+        return r.json();
+      }).catch(function () {
+        return loadLibrary().then(function (lib) { return lib.scores && lib.scores[id]; });
+      });
+    }
+    return pieces[id];
+  }
+
   function injectCss() {
     if (document.querySelector('link[data-score-css]')) return;
     var link = el('link', { rel: 'stylesheet', href: new URL('../css/score-engine.css', scriptUrl || location.href).href, 'data-score-css': '' });
@@ -1684,10 +1733,9 @@
     var figs = document.querySelectorAll('figure[data-score]');
     if (!figs.length) return;
     injectCss();
-    loadLibrary().then(function (lib) {
-      figs.forEach(function (fig) {
-        var id = fig.getAttribute('data-score');
-        var score = lib.scores && lib.scores[id];
+    figs.forEach(function (fig) {
+      var id = fig.getAttribute('data-score');
+      loadScore(id).then(function (score) {
         if (!score) { fig.insertBefore(el('p', { class: 'se-error' }, 'Unknown score "' + id + '".'), fig.firstChild); return; }
         score.id = id;
         fig.scoreData = score;
@@ -1711,9 +1759,9 @@
         // opening previews can use scoreData, while the expensive full engraving
         // waits until a learner actually opens that work.
         if (!fig.closest('[hidden]')) renderOnce();
+      }).catch(function (err) {
+        fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild);
       });
-    }).catch(function (err) {
-      figs.forEach(function (fig) { fig.insertBefore(el('p', { class: 'se-error' }, 'Sheet music could not load (' + err.message + ').'), fig.firstChild); });
     });
   }
 
@@ -1728,10 +1776,10 @@
     });
     var model = prepare(copy); analyse(model);
     var out = engrave(model, width || 640);
-    return '<svg class="se-score" aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
+    return '<svg class="se-score" data-contrast-guard-skip aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
   }
 
-  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, parseStaff: parseStaff,
+  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

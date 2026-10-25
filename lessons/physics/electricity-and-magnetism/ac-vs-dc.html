@@ -144,7 +144,7 @@
     .acd-app { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
     .acd-app b { display:block; margin:.25rem 0; }
     .acd-app p { margin:0; color: var(--text-muted, #64748b); font-size:.78rem; line-height:1.5; }
-    .acd-quiz { display:grid; gap:.7rem; }
+    .acd-quiz { display:grid; grid-template-columns:minmax(0,1fr); gap:.7rem; }
     .acd-question { padding:.85rem; border:1px solid var(--line,#d2d2d7); border-radius:13px; }
     .acd-question p { margin:0 0 .55rem; font-size:.86rem; font-weight:700; }
     .acd-options { display:flex; flex-wrap:wrap; gap:.4rem; }
@@ -431,7 +431,7 @@
     document.querySelectorAll('.acd-toggle button').forEach(function(b){b.setAttribute('aria-pressed',b.classList.contains('active')?'true':'false');b.addEventListener('click',function(){kind=b.dataset.kind;document.querySelectorAll('.acd-toggle button').forEach(function(x){var active=x===b;x.classList.toggle('active',active);x.setAttribute('aria-pressed',active?'true':'false')});update()})});
     document.getElementById('acd-pause').addEventListener('click',function(){paused=!paused;this.setAttribute('aria-pressed',paused?'true':'false');this.textContent=paused?'Resume trace':'Pause trace';});
     document.getElementById('acd-grid-toggle').addEventListener('click',function(){gridOn=!gridOn;this.setAttribute('aria-pressed',gridOn?'true':'false');this.textContent=gridOn?'Grid on':'Grid off';});
-    voltage.addEventListener('input',update);frequency.addEventListener('input',update);update();SimKit.loop(draw);
+    voltage.addEventListener('input',update);frequency.addEventListener('input',update);update();SimKit.loop(draw, { el: SimKit.stage('#acd-scope') });
     var calcInputs=['acd-power','acd-resistance','acd-vlow','acd-vhigh'].map(function(id){return document.getElementById(id)});
     function calculate(){var p=Math.max(0,+calcInputs[0].value)*1000,r=Math.max(0,+calcInputs[1].value),vl=Math.max(.001,+calcInputs[2].value)*1000,vh=Math.max(.001,+calcInputs[3].value)*1000,il=p/vl,ih=p/vh,ll=il*il*r,lh=ih*ih*r,s=ll?100*(1-lh/ll):0;document.getElementById('acd-ilow').textContent=il.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-ihigh').textContent=ih.toLocaleString(undefined,{maximumFractionDigits:1})+' A';document.getElementById('acd-saving').textContent=s.toFixed(1)+'%'}
     calcInputs.forEach(function(i){i.addEventListener('input',calculate)});calculate();

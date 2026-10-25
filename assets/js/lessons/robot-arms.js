@@ -334,7 +334,7 @@
     });
 
     resetWorld(); setMode('joints'); checkScore();
-    RA.loop(function (dt) { step(dt); draw(); });
+    RA.loop(function (dt) { step(dt); draw(); }, canvas);
   }
 
   /* ── Sim 2: configuration space ────────────────────────────────── */
@@ -513,6 +513,6 @@
     rebuild();
     q = { a: 200, b: -40 };
     if (collides(q.a, q.b)) for (var k = 0; k < N * N; k++) if (!grid[k]) { var an0 = angles(k % N, (k / N) | 0); q = { a: an0.a, b: an0.b }; break; }
-    RA.loop(function () { step(); draw(); });
+    RA.loop(function () { step(); draw(); }, canvas);
   }
 })();

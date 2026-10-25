@@ -188,5 +188,5 @@
   RA.loop(function (dt) {
     if (running) { acc += dt; while (acc >= DT) { acc -= DT; sample(); } }
     draw();
-  });
+  }, canvas);
 })();

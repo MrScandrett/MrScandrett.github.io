@@ -78,6 +78,22 @@ http
       return;
     }
 
+    // build:dist publishes each piece of the score library on its own; mirror that here so the
+    // score engine fetches the same URLs in development (see loadScore in score-engine.js).
+    const scoreMatch = req.method === "GET" && /^\/data\/scores\/([a-z0-9-]+)\.json$/.exec(urlPath);
+    if (scoreMatch) {
+      try {
+        const library = JSON.parse(fs.readFileSync(path.join(root, "data", "score-library.json"), "utf8"));
+        const score = library.scores && library.scores[scoreMatch[1]];
+        res.writeHead(score ? 200 : 404, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(score ? JSON.stringify(score) : "{}");
+      } catch (error) {
+        res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end(String(error.message || error));
+      }
+      return;
+    }
+
     if (urlPath === "/api/files" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
       res.end(JSON.stringify(findFiles(root, editableExtension).sort()));

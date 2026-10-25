@@ -73,8 +73,11 @@
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   }
 
-  function loop(fn) {
-    if (global.SimKit && global.SimKit.loop) return global.SimKit.loop(function (dt) { fn(Math.min(0.05, dt)); });
+  // Pass the sim's canvas (or card) as `el` and the loop pauses while it is off-screen.
+  function loop(fn, el) {
+    if (global.SimKit && global.SimKit.loop) {
+      return global.SimKit.loop(function (dt) { fn(Math.min(0.05, dt)); }, { el: el && global.SimKit.stage ? global.SimKit.stage(el) : null });
+    }
     var last = 0, id = 0;
     function tick(t) { var dt = last ? Math.min(0.05, (t - last) / 1000) : 0; last = t; fn(dt); id = requestAnimationFrame(tick); }
     id = requestAnimationFrame(tick);

@@ -335,7 +335,7 @@ function animateMolecules() {
             particle.node.setAttribute('cx', `${particle.baseX + offsetX}`);
             particle.node.setAttribute('cy', `${particle.baseY + offsetY}`);
         });
-        requestAnimationFrame(tick);
+        SimKit.frame(particles[0] && particles[0].node.ownerSVGElement, tick);
     }
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) tick();
 }
@@ -575,7 +575,7 @@ function initSimulation(stageController) {
             rainField.update(safeDt);
         }
         render();
-    });
+    }, { el: SimKit.stage(canvas) });
 
     [['input', el.sun, 'sun'], ['input', el.temp, 'temperature'], ['input', el.humidity, 'humidity'], ['change', el.season, 'season']].forEach(([type, node, key]) => {
         node?.addEventListener(type, (event) => {

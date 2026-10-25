@@ -79,6 +79,15 @@ test('tab: a chosen position keeps the hand there', () => {
   }
 });
 
+test('tab: a new fretboard area keeps imported guitar pitches', () => {
+  const tuning = [64, 59, 55, 50, 45, 40];
+  const written = [{ start: 0, ms: [55] }, { start: 2, ms: [59] }, { start: 4, ms: [57] }, { start: 6, ms: [62] }];
+  const moved = T.plan(written, { tuning, maxFret: 22, position: 7 });
+  assert.equal(moved.dropped, 0);
+  moved.events.forEach((e, i) => assert.equal(tuning[e.f[0][0] - 1] + e.f[0][1], written[i].ms[0]));
+  assert.ok(moved.events.some((e) => e.f[0][1] >= 7), 'at least one note moves up the neck');
+});
+
 test('tab: fingerstyle keeps the melody on top and the bass below, one note per string', () => {
   const on = [{ start: 0, ms: [76, 52] }, { start: 1, ms: [72, 60] }, { start: 2, ms: [71, 55] }, { start: 3, ms: [72, 64, 57] }];
   const r = T.plan(on);

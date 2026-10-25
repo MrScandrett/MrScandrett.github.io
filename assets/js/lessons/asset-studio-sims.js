@@ -233,7 +233,7 @@
     qa(root,'[data-animation-style]').forEach(button=>button.addEventListener('click',()=>{style=button.dataset.animationStyle;root.dataset.motionStyle=style;poses=targets().map(p=>({...p}));qa(root,'[data-animation-style]').forEach(b=>{const active=b===button;b.classList.toggle('is-active',active);b.setAttribute('aria-pressed',String(active));});q(root,'[data-animation-style-label]').textContent=profile().label;q(root,'[data-animation-style-brief]').textContent=profile().brief;selectPose(selected);}));
     for(const [selector,key] of [['[data-animation-onion]','onion'],['[data-animation-arcs]','arcs']])q(root,selector).addEventListener('click',e=>{if(key==='onion')onion=!onion;else arcs=!arcs;const active=key==='onion'?onion:arcs;e.currentTarget.classList.toggle('is-active',active);e.currentTarget.setAttribute('aria-pressed',String(active));draw();});
     api.canvas.addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();setPlaying(false);time=(time+(event.key==='ArrowLeft'?-.125:.125)+4)%4;draw();}else if(event.key===' '){event.preventDefault();setPlaying(!playing);draw();}else if(/^[1-4]$/.test(event.key)){event.preventDefault();selectPose(+event.key-1);}});
-    SimKit.loop(dt=>{if(playing){time=(time+dt*1.6*speed)%4;draw();}});draw();
+    SimKit.loop(dt=>{if(playing){time=(time+dt*1.6*speed)%4;draw();}}, { el: SimKit.stage(root) });draw();
   }
 
   const initializers={texture:initTexture,furniture:initFurniture,room:initRoom,uv:initUv,animation:initAnimation};

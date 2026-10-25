@@ -197,7 +197,7 @@
       el.addEventListener('input', function () { document.getElementById(el.id + '-out').textContent = el.value; });
     });
     reset();
-    RA.loop(function (dt) { step(dt); draw(); });
+    RA.loop(function (dt) { step(dt); draw(); }, canvas);
   }
 
   /* ── Sim 2: particle filter (Monte Carlo localization) ─────────── */
@@ -325,7 +325,7 @@
     ui.reset.addEventListener('click', reset);
     ui.sigma.addEventListener('input', function () { document.getElementById('pf-sigma-out').textContent = ui.sigma.value; });
     reset();
-    RA.loop(function (dt) { step(dt); draw(); });
+    RA.loop(function (dt) { step(dt); draw(); }, canvas);
   }
 
   mappingSim();

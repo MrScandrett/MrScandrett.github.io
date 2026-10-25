@@ -240,7 +240,7 @@
     'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY',
     'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY',
     'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY', 'TOLLY'
-  ];
+  ].filter((w, i, arr) => /^[A-Z]{5}$/.test(w) && arr.indexOf(w) === i);
 
   let word = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
   let guess = '';
@@ -271,6 +271,20 @@
       btn.addEventListener('click', () => handleKey(letter));
       keyboard.appendChild(btn);
     });
+    const enterBtn = document.createElement('button');
+    enterBtn.className = 'key';
+    enterBtn.textContent = 'ENTER';
+    enterBtn.id = 'key-ENTER';
+    enterBtn.addEventListener('click', () => handleKey('ENTER'));
+    keyboard.appendChild(enterBtn);
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'key';
+    backBtn.textContent = '⌫';
+    backBtn.id = 'key-BACKSPACE';
+    backBtn.setAttribute('aria-label', 'Backspace');
+    backBtn.addEventListener('click', () => handleKey('BACKSPACE'));
+    keyboard.appendChild(backBtn);
   }
 
   function handleKey(letter){

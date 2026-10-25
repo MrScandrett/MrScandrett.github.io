@@ -1263,7 +1263,9 @@ function init(lab) {
     renderer.render(scene, cam);
     drawGizmo();
   }
-  function frame() { render(); requestAnimationFrame(frame); }
+  // Waits while the viewport is off-screen (SimKit.frame); plain rAF if sim-kit.js isn't on the page.
+  const nextFrame = (fn) => (window.SimKit ? window.SimKit.frame(canvas, fn) : requestAnimationFrame(fn));
+  function frame() { render(); nextFrame(frame); }
   new ResizeObserver(() => { dirty = true; }).observe(canvas);
   window.addEventListener('theme:changed', () => { dirty = true; });
 
@@ -1271,7 +1273,7 @@ function init(lab) {
   refreshOutliner();
   changed({ type: 'state' }, false);
   say('Click the viewport to give it the keyboard, then follow the drill. Esc with no tool running hands the keyboard back to the page.');
-  requestAnimationFrame(frame);
+  nextFrame(frame);
 
   // exposed for automated checks (scripts drive the page with Playwright)
   lab.blPractice = { get state() { return snapshot(); }, get drillStep() { return drill.i; }, dims: id => dims(byId(id))?.toArray(), view, navStats };

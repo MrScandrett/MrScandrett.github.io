@@ -887,7 +887,7 @@
   document.getElementById('audio-play').addEventListener('click', () => playWave(activeWave));
   document.getElementById('audio-stop').addEventListener('click', stopAudio);
   document.getElementById('audio-mic').addEventListener('click', useMic);
-  SimKit.loop(drawAudioPanels);
+  SimKit.loop(drawAudioPanels, { el: SimKit.stage('#scope-canvas', '#spectrum-canvas', '#music-canvas') });
 
   const canvas = document.getElementById('music-canvas');
   const ctx = canvas.getContext('2d');
@@ -1170,7 +1170,7 @@
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       t += 1;
     }
-  });
+  }, { el: SimKit.stage('#music-canvas', '#interference-canvas') });
 
   const interferenceCanvas = document.getElementById('interference-canvas');
   const interferenceCtx = interferenceCanvas.getContext('2d');
@@ -1288,7 +1288,7 @@
     interferenceCtx.fillText(`resonance curve, natural frequency ${NATURAL_FREQ} Hz — teal dot = theory, white ring = live integrated oscillator`, 12, bottomTop - 8);
     resonanceReadout.textContent = `${Math.round(response * 100)}% theory · ${Math.round(Math.min(115, responseEnvelope * 100))}% measured at ${drive} Hz`;
   }
-  SimKit.loop(drawInterference);
+  SimKit.loop(drawInterference, { el: SimKit.stage('#interference-canvas', '#music-canvas', '#scope-canvas') });
 
   window.musicCheck = function(n, answer, tol) {
     const input = document.getElementById(`music-ans-${n}`);

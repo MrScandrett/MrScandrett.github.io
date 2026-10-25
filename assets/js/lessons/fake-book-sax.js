@@ -28,13 +28,16 @@
 
   // { keys: [...], played: midi actually fingered, shift: +12 / -12 / 0 } or null for a non-number.
   // Notes outside the horn's range are fingered an octave in (shift says which way).
-  function fingering(writtenMidi) {
+  function fingering(writtenMidi, variantIndex) {
     if (typeof writtenMidi !== 'number' || !isFinite(writtenMidi)) return null;
     var m = Math.round(writtenMidi), shift = 0;
     while (m < LOW) { m += 12; shift += 12; }
     while (m > HIGH) { m -= 12; shift -= 12; }
-    if (!STANDARD[m]) return null;                 // a gap in the shared table
-    return { keys: STANDARD[m].slice(), played: m, shift: shift };
+    var note = F.byMidi.get(m);
+    if (!note) return null;                 // a gap in the shared table
+    var index = Math.max(0, Math.min(Number(variantIndex) || 0, note.variants.length - 1));
+    return { keys: note.variants[index].keys.slice(), played: m, shift: shift, index: index,
+      count: note.variants.length, name: note.variants[index].name, tip: note.variants[index].tip };
   }
 
   // Key drawings, ids as in saxophone-fingerings.js: [id, shape, cx, cy, rx, ry].
@@ -71,8 +74,8 @@
   }
 
   // name: the note's printed name (for the aria label). Returns an <svg> string.
-  function draw(writtenMidi, name) {
-    var f = fingering(writtenMidi);
+  function draw(writtenMidi, name, variantIndex) {
+    var f = fingering(writtenMidi, variantIndex);
     if (!f) return '';
     var on = {};
     f.keys.forEach(function (k) { on[k] = true; });
@@ -84,7 +87,7 @@
         ? '<circle class="fb-sx-key" data-key="' + k[0] + '" cx="' + k[2] + '" cy="' + k[3] + '" r="' + k[4] + '"' + paint + '/>'
         : '<ellipse class="fb-sx-key" data-key="' + k[0] + '" cx="' + k[2] + '" cy="' + k[3] + '" rx="' + k[4] + '" ry="' + k[5] + '"' + paint + '/>');
     });
-    var label = 'Saxophone fingering' + (name ? ' for ' + name : '') + (f.shift > 0 ? ', played an octave higher' : f.shift < 0 ? ', played an octave lower' : '') + ': ' + describe(f);
+    var label = 'Saxophone fingering' + (name ? ' for ' + name : '') + (f.shift > 0 ? ', played an octave higher' : f.shift < 0 ? ', played an octave lower' : '') + ': ' + describe(f) + (f.index ? ' (' + f.name + ')' : '');
     return '<svg class="fb-sx-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(label) + '">' + o.join('') + '</svg>';
   }
 

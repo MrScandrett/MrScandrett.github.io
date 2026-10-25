@@ -149,7 +149,7 @@
     }
     drawRobot();
     if (phase === null || PHASES[phase][0] !== 'err') drawError(1);
-    requestAnimationFrame(frame);
+    SimKit.frame(robotEl.ownerSVGElement || robotEl, frame);
   }
 
   x.addEventListener('input', drawStatic);

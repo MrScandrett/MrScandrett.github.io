@@ -685,7 +685,7 @@
     SimKit.loop(function (dt) {
       if (state.playing) { setDay(state.day + Math.min(dt, 0.1) * 30); }
       if (state.dirty) { state.dirty = false; render(); }
-    });
+    }, { el: SimKit.stage('#sth-orbit-canvas') });
   }
 
   /* ─── Stage 2: beam-spread demo ──────────────────────────────────── */

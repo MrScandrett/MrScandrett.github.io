@@ -487,9 +487,9 @@ if (root) {
       let lastFrame = performance.now();
       const loop = now => {
         const dt = Math.min(.05,(now-lastFrame)/1000); lastFrame = now;
-        syncSize(); updateHunt(dt); controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
+        syncSize(); updateHunt(dt); controls.update(); renderer.render(scene, camera); (window.SimKit ? window.SimKit.frame(canvas, loop) : requestAnimationFrame(loop));
       };
-      requestAnimationFrame(loop);
+      (window.SimKit ? window.SimKit.frame(canvas, loop) : requestAnimationFrame(loop));
     } catch (error) {
       console.error('Furniture workshop could not start:', error);
       q('[data-engine-fallback]').hidden = false;

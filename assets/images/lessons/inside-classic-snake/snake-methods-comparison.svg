@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 480" role="img" aria-labelledby="title desc">
+  <title id="title">Four Ways to Build Snake Across Computing History</title>
+  <desc id="desc">Four architectural panels comparing how Snake can be implemented using (1) an ordered coordinate array with unshift and pop, (2) a fixed-size circular ring buffer with head and tail pointers, (3) a 2D countdown matrix where each cell stores ticks remaining, and (4) 1970s video RAM framebuffer readback.</desc>
+  <defs>
+    <style>
+      .bg { fill: #102219; }
+      .card { fill: #173124; stroke: #356348; stroke-width: 2; rx: 14px; }
+      .heading { font: 800 20px 'Inter', system-ui, sans-serif; fill: #ecffc0; }
+      .sub { font: 600 13px 'Inter', system-ui, sans-serif; fill: #b4d6bc; }
+      .card-title { font: 800 15.5px 'Inter', system-ui, sans-serif; fill: #d9f29b; }
+      .era { font: 800 10.5px 'JetBrains Mono', ui-monospace, monospace; fill: #7be0a0; letter-spacing: .08em; }
+      .code { font: 700 12px 'JetBrains Mono', ui-monospace, monospace; fill: #e8ffcf; }
+      .note { font: 600 12px 'Inter', system-ui, sans-serif; fill: #b4d6bc; }
+      .box { fill: #204230; stroke: #528c69; stroke-width: 1.5; rx: 6px; }
+      .box-head { fill: #2c8a56; stroke: #ecffc0; stroke-width: 2; rx: 6px; }
+      .box-tail { fill: #28563c; stroke: #95d560; stroke-width: 1.5; rx: 6px; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="480" rx="18"/>
+
+  <text x="32" y="36" class="heading">Four Architectures for the Same Game</text>
+  <text x="32" y="58" class="sub">On screen the player sees the same moving snake, but under the hood programmers choose very different data structures.</text>
+
+  <!-- PANEL 1: DYNAMIC COORDINATE ARRAY -->
+  <rect class="card" x="28" y="76" width="420" height="182" rx="14"/>
+  <text x="46" y="98" class="era">METHOD 1 · HIGH-LEVEL LANGUAGES (JS / PYTHON / QBASIC)</text>
+  <text x="46" y="120" class="card-title">Ordered Coordinate Array (unshift &amp; pop)</text>
+  <g transform="translate(46, 134)">
+    <rect class="box-head" x="0" y="0" width="84" height="40" rx="6"/>
+    <text x="42" y="18" class="code" text-anchor="middle">[0] HEAD</text>
+    <text x="42" y="33" class="code" text-anchor="middle">(3, 2)</text>
+
+    <rect class="box" x="94" y="0" width="84" height="40" rx="6"/>
+    <text x="136" y="18" class="code" text-anchor="middle">[1] BODY</text>
+    <text x="136" y="33" class="code" text-anchor="middle">(2, 2)</text>
+
+    <rect class="box-tail" x="188" y="0" width="84" height="40" rx="6"/>
+    <text x="230" y="18" class="code" text-anchor="middle">[2] TAIL</text>
+    <text x="230" y="33" class="code" text-anchor="middle">(1, 2)</text>
+
+    <text x="286" y="25" class="code">← pop()</text>
+  </g>
+  <text x="46" y="202" class="note">• Stores only occupied (x, y) pairs in head-to-tail order.</text>
+  <text x="46" y="222" class="note">• Move: O(L) array shift · Self-collision: O(L) loop scan.</text>
+  <text x="46" y="242" class="code">snake.unshift(head); if (!fed) snake.pop();</text>
+
+  <!-- PANEL 2: FIXED RING BUFFER -->
+  <rect class="card" x="472" y="76" width="420" height="182" rx="14"/>
+  <text x="490" y="98" class="era">METHOD 2 · EMBEDDED C &amp; 1997 NOKIA HANDSETS</text>
+  <text x="490" y="120" class="card-title">Circular Ring Buffer (Zero Array Shifting)</text>
+  <g transform="translate(490, 134)">
+    <rect class="box" x="0" y="0" width="64" height="40" rx="6"/>
+    <text x="32" y="24" class="code" text-anchor="middle">empty</text>
+
+    <rect class="box-tail" x="70" y="0" width="76" height="40" rx="6"/>
+    <text x="108" y="17" class="code" text-anchor="middle">tail=1</text>
+    <text x="108" y="33" class="code" text-anchor="middle">(1, 2)</text>
+
+    <rect class="box" x="152" y="0" width="76" height="40" rx="6"/>
+    <text x="190" y="17" class="code" text-anchor="middle">idx=2</text>
+    <text x="190" y="33" class="code" text-anchor="middle">(2, 2)</text>
+
+    <rect class="box-head" x="234" y="0" width="76" height="40" rx="6"/>
+    <text x="272" y="17" class="code" text-anchor="middle">head=3</text>
+    <text x="272" y="33" class="code" text-anchor="middle">(3, 2)</text>
+
+    <rect class="box" x="316" y="0" width="64" height="40" rx="6"/>
+    <text x="348" y="24" class="code" text-anchor="middle">next→</text>
+  </g>
+  <text x="490" y="202" class="note">• Pre-allocates fixed array; no elements ever shift in RAM.</text>
+  <text x="490" y="222" class="note">• Move: O(1) pointer increment modulo capacity.</text>
+  <text x="490" y="242" class="code">head = (head + 1) % MAX; if (!fed) tail = (tail + 1) % MAX;</text>
+
+  <!-- PANEL 3: 2D COUNTDOWN MATRIX -->
+  <rect class="card" x="28" y="276" width="420" height="182" rx="14"/>
+  <text x="46" y="298" class="era">METHOD 3 · LED MATRICES, SHADERS &amp; CELLULAR AUTOMATA</text>
+  <text x="46" y="320" class="card-title">2D Lifetime Countdown Grid (grid[y][x])</text>
+  <g transform="translate(46, 334)">
+    <rect class="box" x="0" y="0" width="44" height="40" rx="6"/><text x="22" y="25" class="code" text-anchor="middle">0</text>
+    <rect class="box-tail" x="50" y="0" width="44" height="40" rx="6"/><text x="72" y="25" class="code" text-anchor="middle">1</text>
+    <rect class="box" x="100" y="0" width="44" height="40" rx="6"/><text x="122" y="25" class="code" text-anchor="middle">2</text>
+    <rect class="box-head" x="150" y="0" width="44" height="40" rx="6"/><text x="172" y="25" class="code" text-anchor="middle">3</text>
+    <rect class="box" x="200" y="0" width="44" height="40" rx="6"/><text x="222" y="25" class="code" text-anchor="middle">0</text>
+    <text x="256" y="18" class="code">3 = Head (stays 3 ticks)</text>
+    <text x="256" y="35" class="code">1 = Tail (0 next tick!)</text>
+  </g>
+  <text x="46" y="402" class="note">• Each square stores how many ticks until the snake leaves it.</text>
+  <text x="46" y="422" class="note">• Self-collision is O(1): just check if grid[ny][nx] &gt; 0!</text>
+  <text x="46" y="442" class="code">if (!fed) decrementPositiveCells(); grid[ny][nx] = len;</text>
+
+  <!-- PANEL 4: VRAM READBACK -->
+  <rect class="card" x="472" y="276" width="420" height="182" rx="14"/>
+  <text x="490" y="298" class="era">METHOD 4 · 1976 BLOCKADE ARCADE &amp; 8-BIT HOME COMPUTERS</text>
+  <text x="490" y="320" class="card-title">Video RAM (Screen Buffer) Pixel/Char Readback</text>
+  <g transform="translate(490, 334)">
+    <rect class="box" x="0" y="0" width="176" height="40" rx="6"/>
+    <text x="88" y="18" class="code" text-anchor="middle">RAM Variables: 2 bytes</text>
+    <text x="88" y="33" class="code" text-anchor="middle">headX = 14, headY = 9</text>
+
+    <rect class="box-head" x="190" y="0" width="190" height="40" rx="6"/>
+    <text x="285" y="18" class="code" text-anchor="middle">VRAM Address 0x048E</text>
+    <text x="285" y="33" class="code" text-anchor="middle">PEEK(addr) != BLANK?</text>
+  </g>
+  <text x="490" y="402" class="note">• No body array in RAM—the screen itself IS the memory!</text>
+  <text x="490" y="422" class="note">• Reads video memory at (nextX, nextY) before drawing head.</text>
+  <text x="490" y="442" class="code">if (vram[ny][nx] !== 0) crash(); vram[ny][nx] = BLOCK;</text>
+</svg>
+

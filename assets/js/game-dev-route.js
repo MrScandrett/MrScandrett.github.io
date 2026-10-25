@@ -98,7 +98,14 @@
 
     var head = el('div', 'gdr-head');
     head.appendChild(el('span', 'gdr-kicker', 'Game Dev Route'));
-    head.appendChild(el('span', 'gdr-note', 'One path from game history to a shipped game'));
+    var noteWrap = el('span', 'gdr-note');
+    noteWrap.appendChild(document.createTextNode('One path from game history to a shipped game · '));
+    var csLink = el('a', null, 'CS & AI Pathway →');
+    csLink.href = url('lessons/computer-science/computer-science-pathway.html#chapter-6');
+    csLink.style.color = 'inherit';
+    csLink.style.textDecoration = 'underline';
+    noteWrap.appendChild(csLink);
+    head.appendChild(noteWrap);
     host.appendChild(head);
 
     var ol = el('ol', 'gdr-stages');

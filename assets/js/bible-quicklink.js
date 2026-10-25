@@ -442,10 +442,19 @@
     document.body.appendChild(dataScript);
   }
 
+  function loadClassroomGuide() {
+    if (location.pathname.indexOf('/lessons/bible-studies/') === -1 || document.getElementById('bible-classroom-script')) return;
+    var guide = document.createElement('script');
+    guide.id = 'bible-classroom-script';
+    guide.src = new URL('assets/js/bible-classroom.js', base).href;
+    document.body.appendChild(guide);
+  }
+
   function init() {
     addStyles();
     placePill();
     loadPathwayNavigation();
+    loadClassroomGuide();
     loadMeta().then(linkReferences).catch(function () { /* no data: links still open the reader */ });
   }
 

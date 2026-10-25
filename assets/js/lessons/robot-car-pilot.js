@@ -78,7 +78,7 @@
 
   var simRunning = false;
   function simLoop(dt) { sim.step(Math.min(0.05, dt)); drawSim(); }
-  if (window.SimKit && SimKit.loop) SimKit.loop(function (dt) { if (simRunning || state.kind === 'sim') simLoop(dt); });
+  if (window.SimKit && SimKit.loop) SimKit.loop(function (dt) { if (simRunning || state.kind === 'sim') simLoop(dt); }, { el: SimKit.stage('#rc-sim') });
   drawSim();
 
   // ---- Log -----------------------------------------------------------------

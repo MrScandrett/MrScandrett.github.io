@@ -180,8 +180,8 @@ function ensureViewportMeta(html) {
 
 const A11Y_DEFAULTS_CSS =
   ":where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid #1d4ed8!important;outline-offset:2px!important}" +
-  "@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;" +
-  "animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}";
+  "@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;" +
+  "animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}";
 
 // Student pages are written without anyone running an accessibility check, so
 // guarantee the floor at build time (same idea as ensureViewportMeta): a page
@@ -270,6 +270,8 @@ const PROJECT_EXTRA_SKIP_DIRS = {
 };
 const PROJECT_EXTRA_SKIP_FILES = {
   thomas: new Set(["server.py"]),
+  asteroids: new Set(["assets.js"]),
+  crawlspace: new Set(["assets.js"]),
 };
 
 function listSubdirs(dirPath) {
@@ -875,7 +877,10 @@ async function processScratchProject(source, slug) {
   </footer>
   <script>
     (function () {
-      var fileUrl = new URL("./project.sb3", window.location.href).href;
+      var localUrl = new URL("./project.sb3", window.location.href);
+      var fileUrl = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(localUrl.hostname)
+        ? "https://mrscandrett.github.io" + localUrl.pathname
+        : localUrl.href;
       var embedUrl = "https://turbowarp.org/embed?autoplay&settings-button&project_url=" + encodeURIComponent(fileUrl);
       var editorUrl = "https://turbowarp.org/editor?project_url=" + encodeURIComponent(fileUrl);
       document.getElementById("player").src = embedUrl;

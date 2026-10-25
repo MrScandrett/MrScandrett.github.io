@@ -259,7 +259,7 @@
       var x = anim === 'run' ? 52 + ((t * 40) % 108) : 100;
       ctx.drawImage(PC.bake(a.frames[frame], pal), Math.round(x - 8), 24, 16, 16);
       if (frame !== lastShown) { lastShown = frame; drawSheet(); }
-    });
+    }, { el: global.SimKit.stage(play) });
     store.subscribe(function () { lastShown = -1; });
     sync();
   }

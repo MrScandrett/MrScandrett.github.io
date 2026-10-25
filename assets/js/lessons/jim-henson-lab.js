@@ -568,6 +568,6 @@
     });
 
     render();
-    SimKit.loop(function () { if (round && !round.done) render(); });
+    SimKit.loop(function () { if (round && !round.done) render(); }, { el: SimKit.stage(canvas) });
   }
 })();

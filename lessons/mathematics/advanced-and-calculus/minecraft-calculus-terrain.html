@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Minecraft Calculus: Terrain &amp; Water Flow · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="See the calculus hiding inside Minecraft: build procedural mountains from stacked wave functions, read slope as a derivative, and watch water flow downhill by following the steepest gradient." />
+  <meta name="description" content="Model Minecraft-like terrain with layered functions, use slope to study a height surface, and explore a simplified downhill-flow simulation." />
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
@@ -210,10 +210,11 @@
     <main class="ll-sim mc-main">
       <div class="mc-wrap">
         <header class="hero">
-          <p class="eyebrow">Ages 12–17 · 60-minute interactive lesson</p>
-          <h1>The calculus hiding inside every Minecraft mountain</h1>
-          <p>Every time Minecraft generates a new world, it is quietly running calculus: stacking wave functions to sculpt terrain, measuring slope with a derivative, and moving water downhill by following the steepest gradient. Build all three yourself.</p>
-          <div class="promise"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.1 3.4 9.8 8 11 4.6-1.2 8-5.9 8-11V5l-8-3Zm-1.1 14.1-3.5-3.5 1.4-1.4 2.1 2.1 4.7-4.7L17 10l-6.1 6.1Z" /></svg> Big idea: a "height function" f(x, y) plus its derivative (the slope) can generate an entire landscape and decide exactly where water goes.</div>
+          <p class="eyebrow">Algebra-to-calculus extension · 60-minute interactive lesson</p>
+          <h1>Modeling Minecraft-like terrain with calculus</h1>
+          <p>Build a simplified terrain model from layered functions. Then use slope to predict where water would move on that model. Minecraft uses noise-based world generation, but this classroom simulation is not a reproduction of its terrain or fluid algorithms.</p>
+          <div class="promise"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6c0 5.1 3.4 9.8 8 11 4.6-1.2 8-5.9 8-11V5l-8-3Zm-1.1 14.1-3.5-3.5 1.4-1.4 2.1 2.1 4.7-4.7L17 10l-6.1 6.1Z" /></svg> Big idea: a height function f(x, y) describes a surface; its gradient describes the direction of steepest increase.</div>
+          <p class="history-note">Model boundary: the sine waves and downhill flow here are teaching tools. <a href="https://feedback.minecraft.net/hc/en-us/articles/4414284658701-Minecraft-Caves-Cliffs-Part-II-1-18-0-Bedrock">Minecraft's 1.18 release notes</a> describe noise caves and world-generation changes.</p>
         </header>
 
         <div class="schedule" aria-label="Lesson schedule">
@@ -224,10 +225,10 @@
         </div>
 
         <section class="mission" data-accent="blue" aria-labelledby="mission-1-title">
-          <div class="mission-head"><span class="mission-num">1</span><div><h2 id="mission-1-title">Terrain is a function</h2><p>Minecraft never stores every mountain by hand. It evaluates a math function at every (x, z) column and turns the output into a height.</p></div></div>
+          <div class="mission-head"><span class="mission-num">1</span><div><h2 id="mission-1-title">Terrain as a function</h2><p>Our model assigns a height to each (x, z) position. Real game terrain also has caves, overhangs, and other features that a single height value cannot describe.</p></div></div>
           <div class="definition-grid">
             <article class="definition"><strong>📈 f(x, y)</strong><p>A function of two inputs (position east/west and north/south) that outputs one number: the ground height at that spot.</p></article>
-            <article class="definition"><strong>🌊 Continuous</strong><p>Real terrain has no sudden jumps between neighboring columns — the height function has to change smoothly, the same way a calculus function must be continuous to have a derivative.</p></article>
+            <article class="definition"><strong>🌊 Smooth model</strong><p>We use a smoothly changing height function so we can discuss its slope. Real terrain can include abrupt edges, and a continuous function need not have a derivative at every point.</p></article>
             <article class="definition"><strong>🎲 Deterministic randomness</strong><p>The "randomness" in a Minecraft world is actually a fixed function of the seed and coordinates — plug in the same numbers and you always get the same mountain.</p></article>
           </div>
           <p class="password-note" style="color:var(--mc-sand);font-size:.78rem;line-height:1.5;margin-top:.8rem;">Think of it like a giant spreadsheet: column A is x, column B is y (called z in-game), and column C is a formula that computes height from A and B. Missions 2–4 build that formula from scratch.</p>
@@ -235,8 +236,8 @@
             <summary>📜 History Files: from graph paper to procedural worlds</summary>
             <div class="history-entries">
               <div class="history-entry"><b>1687 · Newton &amp; Leibniz formalize calculus</b><span>Calculus gave mathematicians tools to describe smoothly changing quantities — exactly the kind of continuous surface a landscape is — and to find the rate of change (the derivative) at any point.</span></div>
-              <div class="history-entry"><b>1983 · Ken Perlin's noise function</b><span>Working on visual effects for the movie Tron, Ken Perlin invented "Perlin noise" — a fast way to compute a smooth, natural-looking random function of position. It won a Technical Achievement Academy Award and now runs inside almost every procedural landscape, including Minecraft's.</span></div>
-              <div class="history-entry"><b>2009 · Minecraft's first terrain generator</b><span>Minecraft layers several noise functions at different frequencies (an "octave" stack, Mission 2) to get both huge mountain ranges and small bumpy detail from the same underlying math.</span></div>
+              <div class="history-entry"><b>1980s · Procedural noise</b><span>Ken Perlin's work helped computer graphics produce natural-looking variation from mathematical functions.</span></div>
+              <div class="history-entry"><b>Minecraft · Noise-based world generation</b><span>The game's documented noise caves show one use of procedural noise. The waves in this lesson are a simpler model for exploring related mathematical ideas.</span></div>
             </div>
           </details>
         </section>
@@ -285,7 +286,7 @@
         </section>
 
         <section class="mission" data-accent="blue" aria-labelledby="mission-4-title">
-          <div class="mission-head"><span class="mission-num">4</span><div><h2 id="mission-4-title">Water flow &amp; steepest descent</h2><p>Minecraft's water doesn't know any physics — it just repeatedly asks "which neighboring block is lower?" and flows there. That greedy rule is steepest descent in disguise.</p></div></div>
+          <div class="mission-head"><span class="mission-num">4</span><div><h2 id="mission-4-title">Water flow &amp; steepest descent</h2><p>In this simplified simulation, water follows a lower neighboring position. Compare that discrete rule with the continuous gradient of a height function; it does not describe Minecraft's fluid algorithm.</p></div></div>
           <p class="history-note"><strong>Real-world version:</strong> gravity accelerates real water down the true gradient continuously, but the "always move toward the locally lowest spot" rule is such a good approximation that it is also how erosion-simulation software and machine-learning training (gradient descent) both work — same math, three very different uses.</p>
           <div class="water-lab">
             <div class="wave-canvas-wrap"><canvas id="water-canvas" width="500" height="500" role="img" aria-label="Terrain map where you can drop water and watch it flow downhill"></canvas></div>
@@ -352,7 +353,7 @@
         </div>
         <div class="ll-pane" id="pane-teacher">
           <div class="panel-card"><h3>Prerequisite check</h3><p>Students should already be comfortable with slope as rise-over-run and reading a function graph (see the Graphing Calculator lab) before this lesson's jump to two variables.</p></div>
-          <div class="panel-card"><h3>Where the real math is simplified</h3><p>Minecraft actually uses 3D Perlin/simplex noise, not literal stacked sine waves, but the sum-of-frequencies structure (an "octave stack" or fractal Brownian motion) is mathematically the same idea and much easier to compute by hand or read as a formula.</p></div>
+          <div class="panel-card"><h3>Where the model is simplified</h3><p>The lesson uses stacked sine waves and a simple downhill rule. Minecraft's documented noise caves and world generation are more complex, so students should compare ideas rather than infer the game's exact formulas from this model.</p></div>
           <div class="panel-card"><h3>Common misconception</h3><p>Students often think the gradient arrow points downhill. Clarify: ∇f points uphill (direction of increase); water and marbles move along −∇f.</p></div>
         </div>
         <div class="ll-pane" id="pane-exit">

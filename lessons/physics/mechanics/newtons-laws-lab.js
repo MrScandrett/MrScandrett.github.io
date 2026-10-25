@@ -1525,5 +1525,5 @@
     else { drawSkate(real); skateCaption(); skateReadouts(); }
     drawGraph();
     checkPending();
-  });
+  }, { el: SimKit.stage('#ng-canvas') });
 }());

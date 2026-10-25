@@ -1,6 +1,11 @@
 let cache = null;
 let loadingPromise = null;
 const PLACEHOLDER_THUMB = "/assets/thumbs/showcase/student-showcase-thumb.png";
+// Source-reviewed showcase lessons. Keyed by the public project id so links
+// survive regeneration of apps/ from student-projects/.
+const PROJECT_LESSONS = {
+  "app-classic-snake": "lessons/computer-science/graphics-and-games/inside-classic-snake.html",
+};
 
 function getAvatarForProject(projectSlug) {
   const avatars = [
@@ -88,6 +93,7 @@ function normalizeProjects(projects) {
         featured: Boolean(p.featured),
         date_added: p.date_added || "1970-01-01",
         appUrl: p.appUrl || null,
+        lessonUrl: PROJECT_LESSONS[p.id] || null,
         remixZip: p.remixZip || null,
       };
     })
@@ -154,6 +160,7 @@ function normalizeManifestApps(payload) {
         featured: false,
         date_added: item.date_added || today,
         appUrl: item.url,
+        lessonUrl: PROJECT_LESSONS[`app-${slug}`] || null,
         remixZip: item.remixZip || null,
       };
     });

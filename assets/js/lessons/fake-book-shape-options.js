@@ -1,4 +1,4 @@
-/* Every playable guitar shape for one chord, in neck order, for the Fake Book's "Pick your shapes" panel,
+/* Every playable guitar shape for one chord, starting with its standard grip and following CAGED teaching order,
    plus the fingerboard diagram it draws (finger numbers, barre bars, root dots).
    options(GT, chord) -> [{ frets, id, tag, where, position, barre }] with frets low E -> high E ('x' = muted).
    chord = { rootPC, type: { suffix, intervals }, bassPC? }. GT is window.GuitarTheory (guitar-chords.js). */
@@ -6,6 +6,8 @@
   'use strict';
   var OPEN = [40, 45, 50, 55, 59, 64];
   var MAX_SHAPES = 24;
+  var CAGED = ['C', 'A', 'G', 'E', 'D'];
+  var OPEN_ROOTS = { 0: 'C', 9: 'A', 7: 'G', 4: 'E', 2: 'D' };
   function pc(n) { return ((n % 12) + 12) % 12; }
   function pitches(frets) {
     return frets.map(function (f, s) { return typeof f === 'number' ? OPEN[s] + f : null; })
@@ -51,24 +53,90 @@
     return frets.slice(first, last + 1).some(function (f) { return typeof f !== 'number'; });
   }
 
+  function standardFamily(GT, chord, standardShape, forms) {
+    var match = forms.find(function (entry) { return entry.id === toId(standardShape.frets); });
+    if (match) return match.family;
+    // The traditional open B7 (x-2-1-2-0-2) expands the C7-derived grip at
+    // frets 1–2; the nearby A7-derived barre is a different family.
+    if (chord.rootPC === 11 && chord.type.suffix === '7') return 'C';
+    if (OPEN_ROOTS[chord.rootPC] && standardShape.frets.some(function (f) { return f === 0; })) return OPEN_ROOTS[chord.rootPC];
+    if (standardShape.source && /^barre-[CAGED]$/.test(standardShape.source)) return standardShape.source.slice(-1);
+    var best = null, distance = Infinity, first = pitches(standardShape.frets)[0];
+    forms.forEach(function (entry) {
+      if (pc(pitches(entry.frets)[0]) !== pc(first)) return;
+      var d = entry.frets.reduce(function (sum, fret, i) {
+        return sum + (typeof fret === 'number' && typeof standardShape.frets[i] === 'number'
+          ? Math.abs(fret - standardShape.frets[i]) : fret === standardShape.frets[i] ? 0 : 3);
+      }, 0);
+      if (d < distance) { distance = d; best = entry.family; }
+    });
+    return distance <= 8 ? best : null;
+  }
+
+  function teachingOrder(shapes, chord) {
+    var anchors = {};
+    var starter = shapes.find(function (s) { return s.origin === 'standard'; });
+    var start = starter && starter.family ? CAGED.indexOf(starter.family) : 0;
+    var cycle = CAGED.slice(start).concat(CAGED.slice(0, start));
+    CAGED.forEach(function (family) {
+      anchors[family] = shapes.find(function (s) { return s.family === family && s.origin === 'standard'; }) ||
+        shapes.find(function (s) { return s.family === family && s.origin === 'form'; });
+    });
+    shapes.forEach(function (s) {
+      if (s.family) return;
+      var best = null, distance = Infinity;
+      CAGED.forEach(function (family) {
+        var a = anchors[family];
+        if (!a) return;
+        var d = Math.min(Math.abs(s.position - a.position), Math.abs(s.position - a.position - 12), Math.abs(s.position - a.position + 12));
+        if (d < distance) { distance = d; best = family; }
+      });
+      if (distance <= 2) s.family = best;
+    });
+    shapes.forEach(function (s) {
+      s.foundation = anchors[s.family] === s || (s === starter && !s.family);
+      s.voices = pitches(s.frets).length;
+      s.stage = s.foundation ? 0 : s.voices <= chord.type.intervals.length ? 1 : 2;
+      s.tag = s.foundation ? (s.family ? s.family + ' family · foundation' : 'Standard grip · foundation') :
+        s.family ? 'Near ' + s.family + ' form · ' + (s.stage === 1 ? 'compact' : 'fuller') :
+          (s.stage === 1 ? 'Compact voicing' : 'Fuller voicing');
+    });
+    shapes.sort(function (a, b) {
+      if (a === starter) return -1;
+      if (b === starter) return 1;
+      return a.stage - b.stage || (a.family ? cycle.indexOf(a.family) : 5) - (b.family ? cycle.indexOf(b.family) : 5) ||
+        a.rank - b.rank || a.id.localeCompare(b.id);
+    });
+    return shapes;
+  }
+
   function options(GT, chord) {
     if (!GT || !chord || !chord.type) return [];
     var ex = expand(GT, chord), found = [], seen = {};
-    function add(frets, tag) {
+    function add(frets, tag, family, origin) {
       if (!frets || frets.length !== 6) return;
       var id = toId(frets);
-      if (seen[id]) { if (tag && !seen[id].tag) seen[id].tag = tag; return; }
+      if (seen[id]) {
+        if (family && !seen[id].family) seen[id].family = family;
+        return;
+      }
       if (!fits(frets, ex) || spanOf(frets) > 4) return;
       if (!tag && innerMute(frets)) return;   // a skipped string inside the grip is awkward to strum
-      var shape = { frets: frets.slice(), id: id, tag: tag || '', position: minFret(frets) };
+      var shape = { frets: frets.slice(), id: id, tag: tag || '', family: family || null,
+        origin: origin || 'variation', position: minFret(frets) };
       seen[id] = shape;
       found.push(shape);
     }
     var standard = chord.bassPC == null || chord.bassPC === chord.rootPC;
     if (standard) {
-      add(GT.getChordShape(chord.rootPC, chord.type, 0).frets, 'Standard');
+      var standardShape = GT.getChordShape(chord.rootPC, chord.type, 0);
+      var forms = GT.availableForms(chord.rootPC, chord.type).map(function (family) {
+        var shape = GT.getChordShape(chord.rootPC, chord.type, 0, family);
+        return { family: family, frets: shape.frets, id: toId(shape.frets) };
+      });
+      add(standardShape.frets, 'Standard', standardFamily(GT, chord, standardShape, forms), 'standard');
       GT.availableForms(chord.rootPC, chord.type).forEach(function (form) {
-        add(GT.getChordShape(chord.rootPC, chord.type, 0, form).frets, form.toUpperCase() + ' form');
+        add(GT.getChordShape(chord.rootPC, chord.type, 0, form).frets, form.toUpperCase() + ' form', form, 'form');
       });
     }
     GT.findVoicings(chord.rootPC, ex.type, ex.inversion).forEach(function (frets) { add(frets, ''); });
@@ -87,8 +155,25 @@
     var named = found.filter(function (s) { return s.tag; }), rest = found.filter(function (s) { return !s.tag; });
     rest.sort(function (a, b) { return a.rank - b.rank; });
     var list = named.concat(rest.slice(0, Math.max(0, MAX_SHAPES - named.length)));
-    list.sort(function (a, b) { return a.rank - b.rank || (a.tag ? -1 : 0) - (b.tag ? -1 : 0); });
-    return list;
+    return teachingOrder(list, chord);
+  }
+
+  // Imported TAB and saved user grips may sit outside the 24 generated options.
+  // Keep the five foundations at the front when those grips are included.
+  function withExtras(list, chord, extras) {
+    var out = list.slice(), known = {};
+    out.forEach(function (s) { known[s.id] = true; });
+    (extras || []).forEach(function (extra) {
+      if (!extra || !extra.frets) return;
+      var id = toId(extra.frets);
+      if (known[id]) return;
+      known[id] = true;
+      var position = minFret(extra.frets);
+      out.push({ frets: extra.frets.slice(), id: id, position: position,
+        rank: position * 10 + spanOf(extra.frets) * 2 + extra.frets.filter(function (f) { return typeof f !== 'number'; }).length,
+        family: null, origin: 'variation' });
+    });
+    return teachingOrder(out, chord);
   }
 
   // A barre is the same finger holding down two or more strings at one fret.
@@ -129,7 +214,7 @@
     return frets.map(function (f) { return typeof f === 'number' ? f : 'muted'; }).join(' ');
   }
 
-  var api = { options: options, diagram: diagram, barres: barres, toId: toId, fromId: fromId, describe: describe };
+  var api = { options: options, withExtras: withExtras, diagram: diagram, barres: barres, toId: toId, fromId: fromId, describe: describe };
   host.FakeBookShapeOptions = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);

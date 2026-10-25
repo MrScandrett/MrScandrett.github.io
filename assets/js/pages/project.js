@@ -53,6 +53,15 @@ function renderLinks(project, mount) {
     count += 1;
   }
 
+  if (project.lessonUrl) {
+    const a = document.createElement("a");
+    a.href = project.lessonUrl;
+    a.className = "button secondary";
+    a.textContent = "Learn how games like this work";
+    list.appendChild(a);
+    count += 1;
+  }
+
   if (count > 0) mount.appendChild(list);
 }
 

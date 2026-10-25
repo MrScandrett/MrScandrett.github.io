@@ -96,8 +96,18 @@ function ensureVisitorMemory() {
 }
 
 // VR headset mode (vr-mode.js); nav-mobile.js loads it too, this covers pages without it.
+// Fetched only when it will switch on (same test as vr-mode.js and nav-mobile.js).
+function vrModeWanted() {
+  const ua = navigator.userAgent || "";
+  let pref = null;
+  try { pref = localStorage.getItem("classroomos-vr-mode"); } catch { /* private mode */ }
+  return pref === "on" || /[?&]vr=/.test(location.search) ||
+    /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
+    (/Macintosh/.test(ua) && "xr" in navigator && navigator.maxTouchPoints > 0);
+}
+
 function ensureVrMode() {
-  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
+  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]') || !vrModeWanted()) return;
   const script = document.createElement("script");
   script.src = new URL("./vr-mode.js", import.meta.url).href;
   script.defer = true;
@@ -241,6 +251,15 @@ export function createProjectCard(project, options = {}) {
   link.append(thumb, body);
   article.appendChild(link);
   article.appendChild(createLikeButton(project));
+
+  if (project.lessonUrl) {
+    const lesson = document.createElement("a");
+    lesson.className = "card-details-link card-lesson-link";
+    lesson.href = project.lessonUrl;
+    lesson.textContent = "Learn how games like this work →";
+    lesson.setAttribute("aria-label", `Learn how games like ${project.title} work`);
+    article.appendChild(lesson);
+  }
 
   if (options.showDetailsLink && launchesProject) {
     const details = document.createElement("a");
