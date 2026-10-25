@@ -70,13 +70,21 @@
     toolsButton.setAttribute('aria-expanded', 'false');
     toolsButton.focus({ preventScroll: true });
   }
-  toolsButton.addEventListener('click', function () {
-    if (!dock.hidden) { closeTools(); return; }
+  function openTools(tab, focusPane) {
     dock.hidden = false;
     placeDock();
     toolsButton.setAttribute('aria-expanded', 'true');
-    setTab(lastTab);
-    tabs.find(function (tab) { return tab.dataset.fbDockTab === lastTab; }).focus();
+    setTab(tab, focusPane);
+    if (!focusPane) tabs.find(function (t) { return t.dataset.fbDockTab === tab; }).focus();
+  }
+  toolsButton.addEventListener('click', function () {
+    if (!dock.hidden) { closeTools(); return; }
+    openTools(lastTab, false);
+  });
+  // fake-book.js asks for a tab (the settings summary, the practice steps).
+  root.addEventListener('fakebook:tools', function (ev) {
+    var tab = ev.detail && ev.detail.tab;
+    if (tabs.some(function (t) { return t.dataset.fbDockTab === tab; })) openTools(tab, true);
   });
   root.querySelector('[data-fb-tools-close]').addEventListener('click', closeTools);
   root.querySelector('[data-fb-tools-size]').addEventListener('click', function (event) {
@@ -155,6 +163,11 @@
     var key = chosen('[data-fb-key]').replace(/\s*\(.*\)$/, '');
     var instr = root.querySelector('[data-fb-instr]');
     setVal('key', key + (instr && instr.value !== 'concert' ? ' · ' + chosen('[data-fb-instr]').split(/[,(]/)[0].trim() : ''));
+    var shows = [['[data-fb-show-tab]', 'Tab'], ['.fb-sheet-pane [data-fb-names]', 'Names'], ['.fb-sheet-pane [data-fb-show-shapes]', 'Shapes'], ['[data-fb-show-pos]', 'Fingers'], ['[data-fb-show-sax]', 'Sax']]
+      .filter(function (p) { var c = root.querySelector(p[0]); return c && c.checked; }).map(function (p) { return p[1]; });
+    var counts = root.querySelector('[data-fb-beat-counts]');
+    if (counts && counts.value !== 'off') shows.push('Counts');
+    setVal('sheet', shows.length ? shows.join(' · ') : 'Notes only');
     setVal('melody', checkedLabel('[data-fb-melody]') || 'Original');
     setVal('rhythm', checkedLabel('[data-fb-rhythm]') || 'As written');
     var inst = root.querySelector('.fb-panel [data-engine-inst].is-active');

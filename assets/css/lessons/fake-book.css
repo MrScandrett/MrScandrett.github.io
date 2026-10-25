@@ -1107,9 +1107,9 @@ body.fb-focused .fb-pos-key { font-weight: 400; letter-spacing: normal; }
   body.fb-focused .fb-tools-reset { display: none; }
 }
 
-/* Compact settings navigation leaves the instrument preview in view. */
+/* Compact settings navigation leaves the instrument preview in view. Nine tabs: a 3 × 3 grid. */
 body.fb-focused .fb-dock-rail {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px; padding: 4px; overflow: visible;
 }
 body.fb-focused .fb-dock-tab {
@@ -1633,9 +1633,7 @@ canvas[data-coach-crop] {
   body.fb-focused .fb-print-btn, body.fb-focused .fb-notation-toggle { flex: 0 0 auto; min-height: 36px; padding: .15rem .5rem; font-size: .76rem; line-height: 1.2; }
   .fb-notation-toggle { margin-left: 0; }
 
-  /* Import ↓ shares a row with the "Ready at measure" summary instead of taking its own. */
-  body.fb-focused .fb-transport > .fb-practice-controls { grid-column: 1 / 4; grid-row: 3; align-self: center; }
-  body.fb-focused .fb-transport > [data-fb-goto-import] { grid-column: 4; grid-row: 3; min-height: 30px; padding-inline: .5rem; }
+  body.fb-focused .fb-transport > .fb-practice-controls { grid-column: 1 / -1; grid-row: 3; align-self: center; }
   body.fb-focused .fb-print-btn, body.fb-focused .fb-notation-toggle { min-height: 32px; }
 }
 
@@ -1656,15 +1654,12 @@ canvas[data-coach-crop] {
     display: inline-flex; grid-column: 4; grid-row: 1; align-items: center; justify-content: center;
     min-width: 3.8rem; color: #fff; border-color: #d9cdb4; background: transparent;
   }
-  body.fb-focused .fb-transport > :is(.fb-stand-toggle, [data-fb-tools], [data-fb-goto-import], .fb-metronome) { display: none; }
+  body.fb-focused .fb-transport > :is(.fb-stand-toggle, [data-fb-tools], .fb-metronome) { display: none; }
   body.fb-focused .fb-transport.is-mobile-more-open > .fb-stand-toggle {
     display: inline-flex; grid-column: 1; grid-row: 2;
   }
   body.fb-focused .fb-transport.is-mobile-more-open > [data-fb-tools] {
     display: inline-flex; grid-column: 2; grid-row: 2;
-  }
-  body.fb-focused .fb-transport.is-mobile-more-open > [data-fb-goto-import] {
-    display: inline-flex; grid-column: 3 / 5; grid-row: 2; justify-self: end;
   }
   body.fb-focused .fb-transport.is-mobile-more-open > .fb-metronome {
     display: flex; grid-column: 1 / -1; grid-row: 3; justify-self: stretch;
@@ -1804,6 +1799,11 @@ html[data-lighting="night"] canvas[data-coach-crop] {
 .fb-library-wrap[open] .fb-library-change { visibility: hidden; }
 .fb-transport .fb-metronome, body.fb-focused .fb-transport .fb-metronome { position: relative; width: auto; display: inline-flex; align-items: stretch; gap: 2px; }
 body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { width: auto; }
+/* The display above ties the phone rule that tucks the metronome behind More; restate it. */
+@media screen and (max-width: 560px) {
+  body.fb-focused .fb-transport > .fb-metronome { display: none; }
+  body.fb-focused .fb-transport.is-mobile-more-open > .fb-metronome { display: flex; }
+}
 .fb-click-menu > summary { list-style: none; display: inline-flex; align-items: center; height: 100%; min-height: 26px; padding: 0 .45rem; border: 1px solid #796448; border-radius: 6px; background: #30271d; color: #fff2d8; font-size: .72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .fb-click-menu > summary::-webkit-details-marker { display: none; }
 .fb-click-menu > summary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -1816,3 +1816,57 @@ body .fb-transport .fb-click-menu .fb-click-grid button { min-height: 30px; font
 @media (max-width: 640px) { .fb-sheet-hint .fb-tip-quiet { display: none; } body .fb-transport .fb-click-menu[open] > .fb-click-grid { left: 0; right: auto; } }
 @media print { .fb-click-menu { display: none; } }
 body .fb-transport:has(.fb-click-menu[open]) { overflow: visible; }
+
+/* UX pass: find a tune, say what you play, practise in steps. */
+.fb-library-find { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .6rem; margin: 0 0 .55rem; }
+.fb-library-search { flex: 1 1 16rem; min-width: 0; }
+.fb-library-search input { width: 100%; min-height: 40px; padding: .45rem .7rem; border: 1.5px solid #d4c6a8; border-radius: 10px; background: #fffdf7; color: #1f1a14; font: 600 .95rem "DM Sans", sans-serif; }
+.fb-library-search input:focus-visible { outline: 3px solid #f3b54a; outline-offset: 1px; border-color: #0f5d63; }
+.fb-library-levels { display: flex; flex-wrap: wrap; gap: .3rem; }
+.fb-level { min-height: 36px; padding: .3rem .7rem; border: 1.5px solid #d4c6a8; border-radius: 99px; background: #fffdf7; color: #1f1a14; font: 700 .8rem "DM Sans", sans-serif; cursor: pointer; }
+.fb-level[aria-pressed="true"] { border-color: #0f5d63; background: #0f5d63; color: #fff; }
+.fb-level:focus-visible, .fb-plan-step:focus-visible, .fb-settings-sum:focus-visible { outline: 3px solid #f3b54a; outline-offset: 2px; }
+.fb-surprise { min-height: 36px; padding: .3rem .75rem; font-size: .82rem; }
+.fb-library-results { margin: 0 0 .4rem; color: #5d5345; font-size: .82rem; font-weight: 700; }
+.fb-library-results:empty { display: none; }
+.fb-library-recent > .fb-library-category { border-color: #0f5d63; background: #e3f1f0; }
+.fb-library-import { margin: .6rem 0 0; color: #5d5345; font-size: .85rem; }
+
+.fb-setup { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; padding: .5rem 0 .2rem; }
+.fb-player { display: inline-flex; align-items: center; gap: .45rem; font-weight: 800; color: #1f1a14; }
+.fb-player-lbl { font-size: .86rem; }
+.fb-player select { min-height: 40px; padding: .35rem .6rem; border: 1.5px solid #0f5d63; border-radius: 10px; background: #fff; color: #0f5d63; font: 750 .92rem "DM Sans", sans-serif; cursor: pointer; }
+.fb-player-ask { flex: 1 1 14rem; margin: 0; color: #7a4508; font-size: .84rem; font-weight: 700; }
+.fb-setup.is-asking .fb-player select { border-color: #c2410c; box-shadow: 0 0 0 3px rgba(243, 181, 74, .55); animation: fb-ask 1.6s ease-in-out 3; }
+@keyframes fb-ask { 50% { box-shadow: 0 0 0 7px rgba(243, 181, 74, .25); } }
+@media (prefers-reduced-motion: reduce) { .fb-setup.is-asking .fb-player select { animation: none; } }
+.fb-settings-sum { margin-left: auto; min-height: 36px; padding: .3rem .75rem; border: 1px solid #e3d7bf; border-radius: 10px; background: #fffdf7; color: #0f5d63; font: 700 .82rem "DM Sans", sans-serif; cursor: pointer; }
+.fb-settings-sum:hover { border-color: #0f5d63; }
+
+.fb-plan { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .35rem 0 .1rem; padding: .4rem .5rem; border: 1px solid #e3d7bf; border-radius: 10px; background: #f7f0e1; }
+.fb-plan-lbl { margin-right: .15rem; color: #5d5345; font-size: .74rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.fb-plan-step { display: inline-flex; align-items: center; gap: .35rem; min-height: 34px; padding: .2rem .65rem .2rem .3rem; border: 1.5px solid #d4c6a8; border-radius: 99px; background: #fffdf7; color: #1f1a14; font: 700 .82rem "DM Sans", sans-serif; cursor: pointer; }
+.fb-plan-step b { display: inline-grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; background: #e3d7bf; font-size: .74rem; }
+.fb-plan-step[aria-pressed="true"] { border-color: #0f5d63; background: #0f5d63; color: #fff; }
+.fb-plan-step[aria-pressed="true"] b { background: #f3b54a; color: #1f1a14; }
+.fb-plan-tip { flex: 1 1 100%; margin: .15rem .2rem 0; color: #1f1a14; font-size: .85rem; }
+.fb-plan-tip:empty { display: none; }
+
+.fb-hint-touch { display: none; }
+@media (pointer: coarse) { .fb-hint-fine { display: none; } .fb-hint-touch { display: inline; } }
+.fb-sheet svg { -webkit-user-select: none; user-select: none; }
+.fb-speedup { display: flex; margin: .1rem .5rem .3rem; font-size: .8rem; }
+.fb-tempo input[type="number"].is-bumped { background: #f3b54a; color: #1f1a14; transition: background .2s; }
+
+@media (max-width: 560px) {
+  .fb-setup { gap: .35rem .5rem; }
+  .fb-player select { font-size: 16px; min-height: 44px; }
+  .fb-settings-sum { margin-left: 0; }
+  .fb-plan { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .25rem; padding: .3rem; }
+  .fb-plan-lbl { grid-column: 1 / -1; }
+  .fb-plan-step { flex-direction: column; justify-content: center; gap: .15rem; min-width: 0; min-height: 48px; padding: .25rem .1rem; border-radius: 10px; font-size: .7rem; line-height: 1.1; text-align: center; }
+  .fb-plan-long { display: none; }
+  .fb-plan-tip { grid-column: 1 / -1; }
+  .fb-library-search input { font-size: 16px; min-height: 44px; }
+}
+@media print { .fb-setup, .fb-plan, .fb-library-find { display: none !important; } }

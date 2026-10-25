@@ -101,6 +101,16 @@
     bass: { label: 'Concert pitch, bass clef', who: 'trombone, cello, bass, bassoon, tuba', letters: 0, semis: 0, clef: 'bass', center: 50, sound: 57 }
   };
 
+  // "I play": one choice sets the written part (INSTR), the chord-diagram instrument and guitar tab.
+  var PLAYERS = {
+    piano: { instr: 'concert', chords: 'piano' }, guitar: { instr: 'concert', chords: 'guitar', tab: true },
+    violin: { instr: 'concert', chords: 'violin' }, cello: { instr: 'bass', chords: 'piano' }, bass: { instr: 'bass', chords: 'piano' },
+    flute: { instr: 'concert', chords: 'piano' }, clarinet: { instr: 'bb', chords: 'piano' }, alto: { instr: 'eb', chords: 'piano' },
+    tenor: { instr: 'bb', chords: 'piano' }, trumpet: { instr: 'bb', chords: 'piano' }, horn: { instr: 'f', chords: 'piano' },
+    trombone: { instr: 'bass', chords: 'piano' }, voice: { instr: 'concert', chords: 'piano' }, bells: { instr: 'concert', chords: 'piano' }
+  };
+  var CLICK_NAMES = { all: 'Every beat', backbeat: 'Beats 2 & 4', one: 'Beat 1 only', gap: '2 on, 2 off', off: 'Count-in only', none: 'Off' };
+
   /* ================================================================ chords */
   var Q = {
     '': { iv: [0, 4, 7], lo: [0, 2, 4], sym: '', name: 'major triad' },
@@ -576,7 +586,8 @@
     scaleType: 'ionian',
     showShapes: true,
     follow: true,
-    barClick: 'shapes'
+    barClick: 'shapes',
+    player: '', speedUp: false, recent: []
   };
   var opts = load();
   if (opts.beatCounts === true) opts.beatCounts = 'all';
@@ -2430,7 +2441,29 @@
     var now = ctx.currentTime, horizon = beatAt(now + LOOKAHEAD);
     var cur = passInfo(P.k), chorusEnd = cur.off + cur.len;
     if (opts.loop && horizon > chorusEnd - tune.M - (tune.pickup > 0 && P.range.from === 1 ? tune.pickup : 0)) appendChorus(++P.k);
-    while (P.qi < P.queue.length && P.queue[P.qi].b < horizon) fire(P.queue[P.qi++]);
+    // Speed trainer: each new pass starts 4 BPM faster. Notes before the pass boundary fire first, then the
+    // clock is re-anchored on the boundary itself, so the change lands exactly on the downbeat.
+    var bump = opts.speedUp && opts.loop && P.k > (P.bumped || 0) ? passInfo((P.bumped || 0) + 1).off : null;
+    while (P.qi < P.queue.length && P.queue[P.qi].b < horizon) {
+      if (bump !== null && P.queue[P.qi].b >= bump) { speedUp(bump); bump = null; horizon = beatAt(now + LOOKAHEAD); continue; }
+      fire(P.queue[P.qi++]);
+    }
+  }
+  function speedUp(atBeat) {
+    var at = timeAt(atBeat);
+    P.bumped = (P.bumped || 0) + 1;
+    if (opts.tempo >= 240) return;
+    opts.tempo = Math.min(240, opts.tempo + 4);
+    P.anchorBeat = atBeat; P.anchorTime = at; P.spb = 60 / opts.tempo;
+    var delay = Math.max(0, (at - ctx.currentTime) * 1000);
+    var shown = opts.tempo;
+    setTimeout(function () {
+      el('[data-fb-tempo]').value = shown; el('[data-fb-tempo-num]').value = shown;
+      el('[data-fb-tempo-num]').classList.add('is-bumped');
+      setTimeout(function () { el('[data-fb-tempo-num]').classList.remove('is-bumped'); }, 900);
+      el('[data-fb-live]').textContent = 'Speed trainer: ' + shown + ' BPM.';
+    }, delay);
+    save();
   }
   function fire(e) {
     var t = Math.max(ctx.currentTime, timeAt(e.b)), L = P.lanes;
@@ -2593,6 +2626,21 @@
 
   // ---- library
   var LIBRARY_CATEGORIES = ['Traditional & folk', 'Hymns & spirituals', 'Classical themes', 'Seasonal songs', 'Early popular & ragtime', 'Jazz standards', 'Jazz practice charts', 'Original exercises'];
+  var libQuery = '', libLevel = '';
+  function libMatches(raw) {
+    if (libLevel && raw.level !== libLevel) return false;
+    if (!libQuery) return true;
+    var hay = [raw.title, raw.composer, raw.style, raw.category, raw.level, raw.key].join(' ').toLowerCase();
+    return libQuery.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
+  }
+  function tuneItem(raw) {
+    return '<div class="fb-tune-item">' +
+      '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
+      '<strong>' + MN.escape(raw.title) + '</strong>' +
+      '<small>' + MN.escape(raw.composer) + '</small>' +
+      '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
+      '</div>';
+  }
   function renderLibrary() {
     var builtInList = el('[data-fb-library]');
     if (builtInList) {
@@ -2602,20 +2650,24 @@
       var categories = LIBRARY_CATEGORIES.concat(defaultTunes.map(function (raw) { return raw.category || 'Other tunes'; }).filter(function (category) {
         return LIBRARY_CATEGORIES.indexOf(category) < 0;
       }).filter(function (category, index, all) { return all.indexOf(category) === index; }));
-      builtInList.innerHTML = categories.map(function (category, index) {
-        var songs = defaultTunes.filter(function (raw) { return (raw.category || 'Other tunes') === category; });
+      var filtering = !!(libQuery || libLevel), shown = 0;
+      // Recently played sits on top while browsing; a search or level filter shows only matches.
+      var recent = filtering ? [] : (opts.recent || []).map(function (id) { return defaultTunes.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+      builtInList.innerHTML = (recent.length ? '<details class="fb-library-group fb-library-recent" data-category-index="recent"' + (openCategories.indexOf('recent') >= 0 || !openCategories.length ? ' open' : '') + '>' +
+        '<summary class="fb-library-category"><span>Recently played</span><span class="fb-library-count">' + recent.length + '</span></summary>' +
+        '<div class="fb-library-grid">' + recent.map(tuneItem).join('') + '</div></details>' : '') +
+        categories.map(function (category, index) {
+        var songs = defaultTunes.filter(function (raw) { return (raw.category || 'Other tunes') === category && libMatches(raw); });
         if (!songs.length) return '';
-        return '<details class="fb-library-group" data-category-index="' + index + '"' + (openCategories.indexOf(String(index)) >= 0 ? ' open' : '') + '>' +
+        shown += songs.length;
+        var open = libQuery || openCategories.indexOf(String(index)) >= 0;
+        return '<details class="fb-library-group" data-category-index="' + index + '"' + (open ? ' open' : '') + '>' +
           '<summary class="fb-library-category"><span>' + MN.escape(category) + '</span><span class="fb-library-count">' + songs.length + ' ' + (songs.length === 1 ? 'tune' : 'tunes') + '</span></summary>' +
-          '<div class="fb-library-grid">' + songs.map(function (raw) {
-            return '<div class="fb-tune-item">' +
-              '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
-              '<strong>' + MN.escape(raw.title) + '</strong>' +
-              '<small>' + MN.escape(raw.composer) + '</small>' +
-              '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
-              '</div>';
-          }).join('') + '</div></details>';
+          '<div class="fb-library-grid">' + songs.map(tuneItem).join('') + '</div></details>';
       }).join('');
+      var results = el('[data-fb-library-results]');
+      if (results) results.textContent = !filtering ? '' : shown ? shown + (shown === 1 ? ' tune matches.' : ' tunes match.') : 'No tunes match. Try fewer words or All levels.';
+      root.querySelectorAll('[data-fb-level]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-fb-level') === libLevel)); });
     }
     var importsWrap = el('[data-fb-imports-wrap]');
     var importsList = el('[data-fb-imports-library]');
@@ -2798,6 +2850,7 @@
     if (opts.sheetView === 'arrangement' && !(raw.score && raw.score.musicxml)) opts.sheetView = 'lead';
     if (!raw.score && (opts.mode === 'score' || opts.mode === 'changes')) opts.mode = 'all';
     opts.tune = raw.id;
+    if (!raw.imported) opts.recent = [raw.id].concat((opts.recent || []).filter(function (id) { return id !== raw.id; })).slice(0, 6);
     if (reset || !opts.key) {
       opts.key = raw.key; opts.from = 1; opts.to = tune.bars; opts.tempo = raw.tempo;
       opts.style = raw.band; opts.feel = raw.feel;
@@ -2846,6 +2899,40 @@
   function styleFitsTune(k) {
     return STYLES[k] && STYLES[k].meters.indexOf(tune.M) >= 0 &&
       (tune.meter.join('/') === '6/8' ? k === 'jig' : k !== 'jig');
+  }
+  // The "I play" picker shows "My own setup" once the key/chord settings no longer match the instrument.
+  function playerFits(id) {
+    var pl = PLAYERS[id];
+    return !!pl && opts.instr === pl.instr && !opts.saxFingers && (opts.posInst || 'guitar') === pl.chords;
+  }
+  function syncSetup() {
+    var sel = el('[data-fb-player]');
+    if (!sel) return;
+    var custom = !!opts.player && !playerFits(opts.player);
+    sel.querySelector('[value="custom"]').hidden = !custom;
+    sel.value = custom ? 'custom' : (opts.player || '');
+    el('[data-fb-setup]').classList.toggle('is-asking', !opts.player);
+    el('[data-fb-player-ask]').hidden = !!opts.player;
+    var mode = el('[data-fb-mode]'), keySel = el('[data-fb-key]');
+    var keyText = keySel.selectedIndex >= 0 ? keySel.options[keySel.selectedIndex].textContent.replace(/\s*\(.*\)$/, '') : '';
+    var modeText = mode.selectedIndex >= 0 ? mode.options[mode.selectedIndex].textContent.replace(/:.*$/, '') : '';
+    var part = { bb: 'B♭ part', eb: 'E♭ part', f: 'F part', bass: 'bass clef' }[opts.instr];
+    el('[data-fb-settings-text]').textContent = keyText + (part ? ' (' + part + ')' : '') + ' · ' + modeText;
+    root.querySelectorAll('[data-fb-speedup]').forEach(function (c) { c.checked = !!opts.speedUp; });
+    // Guitar tab is guitar notation: a player who picked a horn, voice or keyboard doesn't need the switch.
+    if (opts.player && !custom && !PLAYERS[opts.player].tab && !tabOn()) el('[data-fb-tab-toolbar]').hidden = true;
+  }
+  function applyPlayer(id) {
+    var pl = PLAYERS[id];
+    if (!pl) return;
+    opts.player = id;
+    opts.instr = pl.instr;
+    opts.saxFingers = false;
+    opts.posInst = opts.engineInst = pl.chords;
+    if (pl.chords === 'piano') opts.showPos = false;
+    opts.showTab = pl.tab ? true : null;
+    syncControls(); refresh(); renderBarPop(); syncSaxKey(); save(); respin();
+    el('[data-fb-live]').textContent = 'Music written for ' + el('[data-fb-player]').selectedOptions[0].textContent.replace(/^\W+/, '') + ': ' + INSTR[pl.instr].label + '.';
   }
   function syncControls() {
     keyOptions(); styleOptions();
@@ -2902,7 +2989,7 @@
     el('[data-fb-click]').value = opts.click;
     root.querySelectorAll('[data-fb-click-pattern]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-fb-click-pattern') === opts.click)); });
     var clickBtn = root.querySelector('[data-fb-click-pattern="' + opts.click + '"]'), clickCur = el('[data-fb-click-current]');
-    if (clickCur) clickCur.textContent = clickBtn ? clickBtn.textContent : 'All';
+    if (clickCur) clickCur.textContent = CLICK_NAMES[opts.click] || (clickBtn ? clickBtn.textContent : 'Every beat');
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     var hasChords = !!(tune.raw && typeof tune.raw.chords === 'string' ? tune.raw.chords.trim() : (Array.isArray(tune.chords) ? tune.chords.length : (typeof tune.chords === 'string' && tune.chords.trim())));
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
@@ -2910,8 +2997,7 @@
     var mixedMeter = tune.scoreBars && (STYLES[opts.style].meters.indexOf(tune.M) < 0 || tune.scoreBars.some(function (b) { return b.meter.join('/') !== tune.meter.join('/') || (b.bar > 0 && !near(b.len, tune.M)); }));
     el('[data-fb-mode]').querySelectorAll('option').forEach(function (o) { if (o.value !== 'score' && o.value !== 'changes') o.disabled = !!mixedMeter; });
     if (mixedMeter && opts.mode !== 'score' && opts.mode !== 'changes') { opts.mode = 'score'; el('[data-fb-mode]').value = 'score'; }
-    var quickMode = el('[data-fb-quick-mode]');
-    if (quickMode) { quickMode.innerHTML = el('[data-fb-mode]').innerHTML; quickMode.value = opts.mode; }
+    syncSetup();
     renderScoreParts();
     el('[data-fb-loop]').checked = !!opts.loop;
     var r = loopRange();
@@ -4114,7 +4200,7 @@
     });
     var selected = startBar || r.from;
     el('[data-fb-ready]').textContent = 'Ready at measure ' + selected;
-    el('[data-fb-loop-status]').textContent = opts.loop ? 'Loop ' + r.from + '–' + r.to : (full ? 'Whole tune' : 'Range ' + r.from + '–' + r.to);
+    el('[data-fb-loop-status]').textContent = full ? (opts.loop ? 'Whole tune, repeating' : 'Whole tune') : (opts.loop ? 'Loop ' : 'Bars ') + r.from + '–' + r.to;
     paintChangesLoop();
     scoreNav.paint();
   }
@@ -4166,6 +4252,38 @@
     }
   });
 
+  // Tools drawer lives in fake-book-layout.js; ask it to open on a tab.
+  function openTools(tab) { root.dispatchEvent(new CustomEvent('fakebook:tools', { detail: { tab: tab } })); }
+  function modeOk(m) { var o = el('[data-fb-mode] option[value="' + m + '"]'); return !!o && !o.disabled; }
+  // The "Fifteen minutes with one tune" plan as buttons: each one sets up its step.
+  function practiceStep(step) {
+    var chordsOnly = !!tune.chordsOnly, tip = '', go = false;
+    root.querySelectorAll('[data-fb-plan-step]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-fb-plan-step') === step)); });
+    if (step === 'listen') {
+      opts.mode = modeOk('all') ? 'all' : (modeOk('score') ? 'score' : opts.mode);
+      opts.tempo = Math.max(40, Math.round(tune.raw.tempo * 0.8));
+      opts.from = 1; opts.to = tune.bars; opts.loop = true; startBar = 0;
+      tip = chordsOnly ? 'Listen to the band play the changes, slower than usual. Hum the bass notes and feel where each chord changes.' : 'Listen at a slower tempo. Follow the highlighted bar and sing along quietly.';
+      go = true;
+    } else if (step === 'play') {
+      if (modeOk('band')) opts.mode = 'band';
+      tip = chordsOnly ? 'This chart has chords only. Play the roots for one chorus, then the 3rds and 7ths, moving to the nearest note each time.' : 'The band plays and you play the melody. ' + (matchMedia('(pointer: coarse)').matches ? 'To loop a hard spot, tap its first bar, open “Ready at measure” and press 2 bars' : 'Drag across a hard spot to loop it') + ', and slow the tempo until it’s easy.';
+      go = true;
+    } else if (step === 'key') {
+      openTools('key');
+      tip = 'Pick a new key in the drawer, then play it again. The shape of the tune stays the same; only the starting note moves.';
+    } else if (step === 'vary') {
+      if (chordsOnly || scoreTiming()) tip = 'This tune has no lead-sheet melody to change. Try a new key or a different band style instead.';
+      else { openTools('melody'); tip = 'Pick one melody change and one rhythm change. Play the variation, then make up your own in between.'; }
+    } else if (step === 'trade') {
+      if (modeOk('trade')) { opts.mode = 'trade'; go = true; tip = 'The tune plays four bars, then the shaded four bars are yours to answer. Start with chord tones and a rhythm you like.'; }
+      else tip = 'Trading fours needs the lead-sheet band; this score plays as written.';
+    }
+    el('[data-fb-plan-tip]').textContent = tip;
+    syncControls(); refresh(); paintLoop(); save();
+    if (go) play(); else stop();
+  }
+
   function bind() {
     var shapeBox = el('[data-fb-shape-picker]');
     if (shapeBox) shapeBox.addEventListener('toggle', function () { syncShapePicker(true); });
@@ -4187,6 +4305,8 @@
       else if (t.matches('[data-fb-guitar-voice], [data-fb-tools-guitar-voice]')) { opts.guitarVoice = t.value; refresh(); syncControls(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-guitar-form-sel], [data-fb-quick-guitar-form]')) { opts.guitarForm = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
       else if (t.matches('[data-fb-guitar-triad-set]')) { opts.triadSet = t.value; showChord(false); renderSheet(); renderBarPop(); save(); }
+      else if (t.matches('[data-fb-player]')) { if (PLAYERS[t.value]) applyPlayer(t.value); }
+      else if (t.matches('[data-fb-speedup]')) { opts.speedUp = t.checked; syncSetup(); save(); }
       else if (t.matches('[data-fb-key], [data-fb-quick-key]')) { opts.key = t.value; syncControls(); refresh(); respin(); }
       else if (t.matches('[data-fb-instr], [data-fb-quick-instr]')) { opts.instr = t.value; syncControls(); refresh(); respin(); syncSaxKey(); }
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
@@ -4226,6 +4346,7 @@
     });
     root.addEventListener('input', function (ev) {
       var t = ev.target;
+      if (t.matches('[data-fb-library-search]')) { libQuery = t.value.trim(); renderLibrary(); return; }
       if (t.matches('[data-fb-tempo], [data-fb-tempo-num]')) {
         var v = Math.max(40, Math.min(240, Number(t.value) || opts.tempo));
         reanchor(function () { opts.tempo = v; });
@@ -4279,15 +4400,17 @@
         stop(); var selected = startBar || loopRange().from;
         showBarPop(selected, barEls[selected]); return;
       }
-      var qsToggle = t.closest('[data-fb-notation-toggle]');
-      if (qsToggle) {
-        var qsBody = el('[data-fb-notation-body]'), qsOpen = qsBody.hidden;
-        qsBody.hidden = !qsOpen;
-        qsToggle.setAttribute('aria-expanded', String(qsOpen));
-        return;
-      }
-      if (t.closest('[data-fb-quick-tools]')) {
-        el('[data-fb-tools]').click();
+      if (t.closest('[data-fb-settings-sum]')) { openTools('key'); return; }
+      var planStep = t.closest('[data-fb-plan-step]');
+      if (planStep) { practiceStep(planStep.getAttribute('data-fb-plan-step')); return; }
+      var lvl = t.closest('[data-fb-level]');
+      if (lvl) { libLevel = lvl.getAttribute('data-fb-level'); renderLibrary(); return; }
+      if (t.closest('[data-fb-surprise]')) {
+        var pool = defaultTunes.filter(function (x) { return (!libLevel || x.level === libLevel) && x.id !== opts.tune; });
+        if (pool.length) {
+          root.querySelector('.fb-library-wrap').open = false;
+          selectTune(pool[Math.floor(Math.random() * pool.length)].id, true);
+        }
         return;
       }
       if (t.closest('[data-fb-print]')) { printNotation(); return; }
@@ -4525,6 +4648,7 @@
       gotoImport.addEventListener('click', function () {
         var card = el('[data-fb-import-card]');
         if (!card) return;
+        root.querySelector('.fb-library-wrap').open = false;
         card.open = true;
         var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
         card.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' });
@@ -4577,6 +4701,50 @@
       var r = root.getBoundingClientRect();
       if (r.bottom < 0 || r.top > innerHeight) return;
       ev.preventDefault(); if (P) stop(); else play();
+    });
+    // Bars are background rects under the notes, so find them by position, not by the element hit.
+    var drag = null;
+    function barAt(x, y) {
+      for (var k in barEls) {
+        var r = barEls[k].getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return barEls[k];
+      }
+      return null;
+    }
+    sheetEl.addEventListener('pointerdown', function (ev) {
+      if (ev.pointerType === 'touch' || ev.button !== 0 || ev.shiftKey) return;
+      if (ev.target.closest && ev.target.closest('.fb-chord, .fb-measure-shape')) return;
+      var bar = barAt(ev.clientX, ev.clientY);
+      if (bar && barOf(bar)) drag = { from: barOf(bar), to: barOf(bar), moved: false };
+    });
+    sheetEl.addEventListener('pointermove', function (ev) {
+      if (!drag || !(ev.buttons & 1)) return;
+      var bar = barAt(ev.clientX, ev.clientY);
+      if (!bar || !barOf(bar) || barOf(bar) === drag.to) return;
+      drag.to = barOf(bar); drag.moved = true;
+      var lo = Math.min(drag.from, drag.to), hi = Math.max(drag.from, drag.to);
+      Object.keys(barEls).forEach(function (k) { barEls[k].classList.toggle('in-loop', Number(k) >= lo && Number(k) <= hi); });
+      ev.preventDefault();
+    });
+    addEventListener('pointerup', function () {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (!d.moved) return;
+      stop(); hideBarPop();
+      opts.from = Math.max(1, Math.min(d.from, d.to)); opts.to = Math.max(d.from, d.to); opts.loop = true; startBar = 0;
+      syncControls(); paintLoop(); save();
+      el('[data-fb-live]').textContent = 'Loop set: bars ' + opts.from + ' to ' + opts.to + '. Press Play.';
+      // The click that ends a drag must not also pick a start bar.
+      var swallow = function (e) { e.stopImmediatePropagation(); e.preventDefault(); };
+      sheetEl.addEventListener('click', swallow, true);
+      setTimeout(function () { sheetEl.removeEventListener('click', swallow, true); }, 0);
+    });
+    var search = el('[data-fb-library-search]');
+    if (search) search.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter') return;
+      ev.preventDefault();
+      var first = el('[data-fb-library] [data-tune]');
+      if (first) first.click();
     });
     var lastW = 0, rt = 0;
     new ResizeObserver(function () {
