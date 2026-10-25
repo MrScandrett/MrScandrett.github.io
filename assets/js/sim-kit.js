@@ -189,9 +189,12 @@
 
     raf.destroy = function () {
       if (observer) observer.disconnect();
+      observer = null;
       document.removeEventListener('visibilitychange', update);
     };
 
+    // The observer is the authority, including for sims inside a closed <details>: their layout
+    // still has a size (getBoundingClientRect), but nothing in them is painted until it opens.
     if (targets.length && global.IntersectionObserver) {
       var showing = [];
       observer = new IntersectionObserver(function (entries) {

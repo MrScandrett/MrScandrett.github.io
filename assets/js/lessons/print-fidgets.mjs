@@ -424,7 +424,7 @@ function spiralLab(root) {
       controls.update();
       syncSize();
       renderer.render(scene, camera);
-    });
+    }, { el: SimKit.stage(canvas) });
   }
 
   pushButton?.addEventListener('click', () => {

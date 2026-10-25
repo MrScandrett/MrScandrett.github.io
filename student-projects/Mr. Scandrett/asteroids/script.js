@@ -6,7 +6,7 @@
 // tilted orthographic camera looks at that field from just off vertical, so
 // the shapes keep their arcade-exact size and screen position while showing
 // enough of a side to read as solid.
-import * as THREE from "three";
+import { THREE } from "../../../assets/vendor/three-bundle.min.js";
 import {
   PALETTE,
   ROCK_VARIANTS,

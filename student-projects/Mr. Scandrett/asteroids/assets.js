@@ -9,7 +9,7 @@
 //
 // Convention for every model: +X is forward, +Z is up, and one unit is one
 // pixel of the old 2D playfield, so gameplay maths needs no rescaling.
-import * as THREE from "three";
+import { THREE } from "../../../assets/vendor/three-bundle.min.js";
 
 export const PALETTE = {
   space: "#05050c",

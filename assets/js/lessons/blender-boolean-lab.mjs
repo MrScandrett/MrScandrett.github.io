@@ -582,13 +582,15 @@ function init(lab) {
     }
     if (controls.enabled && controls.update()) dirty = true;
     if (dirty) { dirty = false; renderer.render(scene, renderView ? renderCam : camera); }
-    requestAnimationFrame(frame);
+    nextFrame(frame);
   }
+  // Waits while the viewport is off-screen (SimKit.frame); plain rAF if sim-kit.js isn't on the page.
+  function nextFrame(fn) { return window.SimKit ? window.SimKit.frame(canvas, fn) : requestAnimationFrame(fn); }
   new ResizeObserver(() => { dirty = true; }).observe(canvas);
 
   changed({ type: 'state' });
   say('Drag to orbit, scroll to zoom, click to select. Follow the drill on the right.');
-  requestAnimationFrame(frame);
+  nextFrame(frame);
   lab.bblLab = { get state() { return clone(state); }, analysis, get drillStep() { return drill.i; }, get fixed() { return [...fixed]; } };
 
   function hasWebGL() {

@@ -28,7 +28,7 @@ export const SOURCES = [
     id: "standard-ebooks",
     label: "Standard Ebooks",
     host: "standardebooks.org",
-    path: /^\/ebooks\/[a-z0-9-]+(?:\/[a-z0-9-]+){1,4}\/downloads\/[a-z0-9_-]+\.epub$/,
+    path: /^\/ebooks\/[a-z0-9_-]+(?:\/[a-z0-9_-]+){1,4}\/downloads\/[a-z0-9_-]+\.epub$/,
     query: /^(?:\?source=download)?$/,
     format: "epub",
     cors: true,

@@ -8,10 +8,11 @@
   camera.position.set(0, 3, 8);
   camera.lookAt(0, 2, 0);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const canvasEl = document.getElementById('canvas');
+  const renderer = new THREE.WebGLRenderer(canvasEl ? { canvas: canvasEl, antialias: true } : { antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
-  document.body.appendChild(renderer.domElement);
+  if (!canvasEl) document.body.appendChild(renderer.domElement);
 
   // Lighting
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -209,8 +210,8 @@
     if(e.code === 'Space') spacePressed = false;
   });
   renderer.domElement.addEventListener('click', () => {
-    spacePressed = true;
     if(gameOver) restart();
+    else jump();
   });
 
   function jump(){

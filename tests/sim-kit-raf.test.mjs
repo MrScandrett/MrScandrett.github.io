@@ -11,13 +11,20 @@ function makeWorld() {
   const frames = new Map();
   const observers = [];
   const listeners = {};
+  const timers = [];
+  const winListeners = {};
   const ctx = {
     performance: { now: () => now },
+    innerWidth: 1000, innerHeight: 800,
+    setTimeout(fn) { timers.push(fn); return timers.length; },
+    addEventListener(type, fn) { (winListeners[type] ||= []).push(fn); },
+    removeEventListener() {},
     requestAnimationFrame(cb) { const id = nextReal++; frames.set(id, cb); return id; },
     cancelAnimationFrame(id) { frames.delete(id); },
     IntersectionObserver: class {
       constructor(cb) { this.cb = cb; observers.push(this); }
-      observe(el) { this.el = el; (this.els ||= []).push(el); }
+      observe(el) { this.el = el; (this.els ||= []).push(el); if (!el.getBoundingClientRect) el.getBoundingClientRect = () => ({ width: 0, height: 0, top: 0, bottom: 0, left: 0, right: 0 }); }
+      unobserve() {}
       disconnect() { this.gone = true; }
     },
     document: {
@@ -41,8 +48,11 @@ function makeWorld() {
       for (const cb of due) cb(now);
     },
     wait(ms) { now += ms; },
-    setOnScreen(on) { for (const o of observers) o.cb([{ isIntersecting: on, target: o.el }]); },
-    setTarget(el, on) { for (const o of observers) if (o.els.includes(el)) o.cb([{ isIntersecting: on, target: el }]); },
+    setOnScreen(on) { for (const o of observers) o.cb([{ isIntersecting: on, target: o.el, boundingClientRect: on ? { width: 10, height: 10 } : { width: 10, height: 10, top: -5000 } }]); },
+    runTimers() { while (timers.length) timers.shift()(); },
+    scroll() { for (const fn of winListeners.scroll || []) fn(); },
+    quirk() { for (const o of observers) o.cb([{ isIntersecting: false, target: o.el, boundingClientRect: { width: 0, height: 0 } }]); },
+    setTarget(el, on) { for (const o of observers) if (o.els.includes(el)) o.cb([{ isIntersecting: on, target: el, boundingClientRect: { width: 10, height: 10 } }]); },
     setHidden(hidden) { ctx.document.hidden = hidden; for (const fn of listeners.visibilitychange || []) fn(); },
   };
 }

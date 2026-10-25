@@ -205,7 +205,7 @@ async function mount(host){
  rebuild();fit();refresh();
  const observer=new ResizeObserver(()=>{dirty=true;});observer.observe(canvas);
  const intersection=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)dirty=true;});intersection.observe(host);
- let elapsed=0;loop=window.SimKit.loop((dt,time)=>{if(!visible)return;if(playing&&group.userData.joint){elapsed+=(dt||0);const t=(elapsed/(state.params.duration||2))%1;group.userData.joint.rotation.z=keyAngle(state.keys,t)*Math.PI/180;dirty=true;}if(dirty)render();});
+ let elapsed=0;loop=window.SimKit.loop((dt,time)=>{if(!visible)return;if(playing&&group.userData.joint){elapsed+=(dt||0);const t=(elapsed/(state.params.duration||2))%1;group.userData.joint.rotation.z=keyAngle(state.keys,t)*Math.PI/180;dirty=true;}if(dirty)render();},{el:host});
  host.dataset.ready='true';say('Scene ready. Make a design choice, inspect it, then test your technique.');
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();playing=false;host.dataset.ready='false';host.dataset.check='revise';$('[data-completion]').textContent='';say('The 3D context was lost. Save your project, reload, or continue in your chosen app.');});
  window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();disposeDesign(group);texture.dispose();sceneKit.dispose();},{once:true});

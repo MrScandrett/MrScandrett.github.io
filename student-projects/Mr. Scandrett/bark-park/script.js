@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { THREE } from "../../../assets/vendor/three-bundle.min.js";
 
 function hasWebGL() {
   try {

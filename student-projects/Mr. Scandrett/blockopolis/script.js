@@ -4,9 +4,7 @@
 // each tile with a model from the KayKit "City Builder Bits" kit (CC0, Kay
 // Lousberg — see models/License.txt). The kit is authored on a 2x2 unit lot, so
 // one grid cell maps to one 2x2 patch of world space with no rescaling.
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { THREE, GLTFLoader, OrbitControls } from "../../../assets/vendor/three-bundle.min.js";
 
 const canvas = document.getElementById("game");
 const loadingEl = document.getElementById("loading");

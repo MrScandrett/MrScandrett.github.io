@@ -18,7 +18,7 @@
  * model: what you can see now is warm and lit by flame, what you only remember
  * is cold, flat and faintly blue.
  * ---------------------------------------------------------------------- */
-import * as THREE from "three";
+import { THREE } from "../../../assets/vendor/three-bundle.min.js";
 import {
   PALETTE,
   TORCH_LIGHT_COUNT,

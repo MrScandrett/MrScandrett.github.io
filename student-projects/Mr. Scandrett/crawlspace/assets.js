@@ -14,7 +14,7 @@
 // Convention for every model: one unit is one map cell, +X is east, +Y is
 // north (the map's row index runs the other way, so the caller negates it),
 // and +Z is up with the floor surface at z = 0.
-import * as THREE from "three";
+import { THREE } from "../../../assets/vendor/three-bundle.min.js";
 
 export const PALETTE = {
   dark: "#07060a",

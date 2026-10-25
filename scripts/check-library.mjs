@@ -165,6 +165,7 @@ async function findStandardEbook(book) {
 function rightsFor(book, url) {
   const host = url ? new URL(url).hostname : "";
   if (/nasa\.gov$/.test(host)) return { rights: "U.S. Government work (NASA) — no U.S. copyright", publicDomain: true };
+  if (host === "standardebooks.org") return { rights: "Public domain in the USA (Standard Ebooks / CC0)", publicDomain: true };
   if (/Asimov/.test(book.author))
     return { rights: "In copyright (Isaac Asimov estate); third-party upload, licence unverified", publicDomain: false };
   if (host === "craphound.com") return { rights: "CC BY-NC-SA, author-hosted", publicDomain: false };

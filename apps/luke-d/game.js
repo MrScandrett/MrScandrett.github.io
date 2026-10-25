@@ -156,6 +156,7 @@ function updateAmmo(){
 const bullets=[];
 
 function shootBullet(){
+    if(!gameStarted||ended) return;
     const now=Date.now();
     if(ammo<=0||isReloading||now-lastShotTime<SHOOT_COOLDOWN) return;
 
@@ -530,3 +531,7 @@ window.addEventListener('resize',()=>{
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth,window.innerHeight);
 });
+
+camera.position.set(player.position.x,8,player.position.z-10);
+camera.lookAt(player.position);
+renderer.render(scene,camera);

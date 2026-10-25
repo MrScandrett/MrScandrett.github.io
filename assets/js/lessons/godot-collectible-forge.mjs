@@ -241,7 +241,7 @@ if (forge) {
     else if (state.dimension !== '3d') modelRoot.rotation.y += (0 - modelRoot.rotation.y) * Math.min(1, delta * 6);
     controls.update();
     renderer.render(scene, camera);
-    requestAnimationFrame(animate);
+    (window.SimKit ? window.SimKit.frame(canvas, animate) : requestAnimationFrame(animate));
   };
-  requestAnimationFrame(animate);
+  (window.SimKit ? window.SimKit.frame(canvas, animate) : requestAnimationFrame(animate));
 }
