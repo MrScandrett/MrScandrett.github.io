@@ -39,6 +39,15 @@
     .cb-fig figcaption { font-size: 0.84rem; margin-top: 0.3rem; }
     .cb-go { border: 1px solid var(--line, #d2d2d7); background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); border-radius: 8px; padding: 0.4rem 0.8rem; font-weight: 700; cursor: pointer; }
     .cb-go:hover { border-color: var(--fl-accent, #0e7490); }
+    .cb-3d { border-bottom: 1px solid var(--line, #d2d2d7); }
+    .cb-3d[hidden] { display: none; }
+    .fl-lab-stage .cb-3d canvas { height: 380px; cursor: grab; }
+    .fl-lab-stage .cb-3d canvas:active { cursor: grabbing; }
+    .cb-3d-bar { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: center; padding: 0.45rem 0.6rem; font-size: 0.84rem; }
+    .cb-3d-bar label { display: flex; gap: 0.35rem; align-items: center; font-weight: 700; }
+    .cb-3d-hint { opacity: 0.75; }
+    @media (max-width: 720px) { .fl-lab-stage .cb-3d canvas { height: 300px; } }
+    @media print { .cb-3d-bar { display: none; } }
     @media (max-width: 720px) { .cb-lab-grid { grid-template-columns: minmax(0, 1fr); } }
   </style>
 </head>
@@ -139,7 +148,17 @@
 
           <div class="fl-lab" data-memory-ignore>
             <div class="cb-lab-grid">
-              <div class="fl-lab-stage"><canvas id="cb-canvas" role="img" aria-label="Three-quarter view of the ring stack built by the program"></canvas></div>
+              <div class="fl-lab-stage">
+                <div class="cb-3d" data-cb-for="fidget" hidden>
+                  <canvas id="cb-canvas-3d" role="img" aria-label="3-D model of the locked ring fidget on a print bed, built from the same triangles as the STL download"></canvas>
+                  <div class="cb-3d-bar">
+                    <label class="fl-lab-check"><input type="checkbox" id="cb-3d-cut" /> Cut in half</label>
+                    <button type="button" class="cb-go" id="cb-3d-view">Reset view</button>
+                    <span class="cb-3d-hint" id="cb-3d-hint">Drag to turn · scroll or pinch to zoom</span>
+                  </div>
+                </div>
+                <canvas id="cb-canvas" role="img" aria-label="Three-quarter view of the ring stack built by the program"></canvas>
+              </div>
               <div class="cb-program" id="cb-program" aria-live="polite" aria-label="The Codeblocks program for this design"></div>
             </div>
             <div class="fl-lab-controls">
@@ -237,7 +256,7 @@
             <li><strong>Everything sits on the bed.</strong> Every ring starts at height 0, so the whole fidget prints in place in one go. Each ring out is a bit taller than the last, and that extra height is how far the rings can slide.</li>
             <li><strong>Leave a real air gap.</strong> About 0.5 mm of clear space between neighbours. Smaller and the printer fuses them into one lump; much bigger and the fidget rattles.</li>
           </ol>
-          <p><button type="button" class="cb-go" data-cb-mode="fidget">Open the lab in Locked fidget mode</button> Then drag <em>lock steps</em> down to 0, watch the red <strong>falls apart</strong> message, and use the <em>lift test</em> slider on a locked design to see the whole stack come up with the outer ring.</p>
+          <p><button type="button" class="cb-go" data-cb-mode="fidget">Open the lab in Locked fidget mode</button> Then drag <em>lock steps</em> down to 0, watch the red <strong>falls apart</strong> message, and use the <em>lift test</em> slider on a locked design to see the whole stack come up with the outer ring. The same fidget is also a part in <a href="../../../forge.html?part=rings"><strong>Forge</strong></a>, which checks the real air gap against your printer before you download.</p>
           <div class="fl-callout a1"><strong>Why a star?</strong> Round rings can spin; star rings can't, because the points catch. A star fidget slides up and down in clicks instead. A star's flat sides sit about 0.7 of the way out to its points, so the lab reports the air gap measured <em>across a side</em>, which is the one that counts.</div>
         </section>
 
@@ -310,126 +329,126 @@
           <div class="fl-practice">
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>1. A loop runs <em>Count with i from 1 to 6</em>. How many rings does it make?</p>
+              <p id="flq-1"><span class="ll-badge" data-tone="easy">Easy</span>1. A loop runs <em>Count with i from 1 to 6</em>. How many rings does it make?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-1" step="1" placeholder="rings" />
+                <input type="number" class="fl-ans-input" id="flans-1" aria-labelledby="flq-1" step="1" placeholder="rings" />
                 <button class="fl-check-btn" onclick="flCheck(1, 6, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-1"></span>
+                <span class="fl-feedback" id="flfb-1" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-1">Hint: i takes the values 1, 2, 3, &hellip;</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>2. Pushing a flat outline straight up to a height to make a solid is called&hellip;</p>
+              <p id="flq-2"><span class="ll-badge" data-tone="easy">Easy</span>2. Pushing a flat outline straight up to a height to make a solid is called&hellip;</p>
               <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-2" style="width:180px;">
+                <select class="fl-ans-input" id="flans-2" aria-labelledby="flq-2" style="width:180px;">
                   <option value="">Choose&hellip;</option>
                   <option value="extrude">Extruding</option>
                   <option value="rotate">Rotating</option>
                   <option value="mirror">Mirroring</option>
                 </select>
                 <button class="fl-check-btn" onclick="flCheckText(2,'extrude')">Check</button>
-                <span class="fl-feedback" id="flfb-2"></span>
+                <span class="fl-feedback" id="flfb-2" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-2">Hint: Toothpaste squeezed from a tube keeps its outline as it gets longer.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>3. Each ring is 5 mm tall and Move sets z to (i &minus; 1) &times; 5. At what height (mm) does ring 4 start?</p>
+              <p id="flq-3"><span class="ll-badge" data-tone="mid">Medium</span>3. Each ring is 5 mm tall and Move sets z to (i &minus; 1) &times; 5. At what height (mm) does ring 4 start?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-3" step="1" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-3" aria-labelledby="flq-3" step="1" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(3, 15, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-3"></span>
+                <span class="fl-feedback" id="flfb-3" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-3">Hint: (4 &minus; 1) &times; 5.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>4. Radius starts at 30 mm and changes by &minus;3 each loop. What is the radius of ring 5?</p>
+              <p id="flq-4"><span class="ll-badge" data-tone="mid">Medium</span>4. Radius starts at 30 mm and changes by &minus;3 each loop. What is the radius of ring 5?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-4" step="1" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-4" aria-labelledby="flq-4" step="1" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(4, 18, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-4"></span>
+                <span class="fl-feedback" id="flfb-4" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-4">Hint: Ring 1 is 30. The change happens after each ring, so ring 5 has had 4 changes.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>5. What is the circumference of a 20 mm radius ring, to the nearest mm?</p>
+              <p id="flq-5"><span class="ll-badge" data-tone="mid">Medium</span>5. What is the circumference of a 20 mm radius ring, to the nearest mm?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-5" step="1" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-5" aria-labelledby="flq-5" step="1" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(5, 126, 1)">Check</button>
-                <span class="fl-feedback" id="flfb-5"></span>
+                <span class="fl-feedback" id="flfb-5" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-5">Hint: C = 2 &times; &pi; &times; 20.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>6. In Concentric mode with a 3 mm wall, what should <em>change radius by</em> be so the rings just touch with no gap and no overlap?</p>
+              <p id="flq-6"><span class="ll-badge" data-tone="hard">Challenge</span>6. In Concentric mode with a 3 mm wall, what should <em>change radius by</em> be so the rings just touch with no gap and no overlap?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-6" step="0.5" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-6" aria-labelledby="flq-6" step="0.5" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(6, 3, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-6"></span>
+                <span class="fl-feedback" id="flfb-6" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-6">Hint: The next ring's inside edge should sit exactly on this ring's outside edge.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>7. What makes a design <em>parametric</em>?</p>
+              <p id="flq-7"><span class="ll-badge" data-tone="hard">Challenge</span>7. What makes a design <em>parametric</em>?</p>
               <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-7" style="width:380px;">
+                <select class="fl-ans-input" id="flans-7" aria-labelledby="flq-7" style="width:380px;">
                   <option value="">Choose&hellip;</option>
                   <option value="a">It uses lots of different colours</option>
                   <option value="b">Changing a few numbers correctly rebuilds the whole design</option>
                   <option value="c">It was drawn by hand very carefully</option>
                 </select>
                 <button class="fl-check-btn" onclick="flCheckText(7,'b')">Check</button>
-                <span class="fl-feedback" id="flfb-7"></span>
+                <span class="fl-feedback" id="flfb-7" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-7">Hint: Think about what happened when you moved the <em>rings</em> slider.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="easy">Easy</span>8. A ridge sticks out 2 mm and the gap between rings is 1 mm. Will the inner ring lift out?</p>
+              <p id="flq-8"><span class="ll-badge" data-tone="easy">Easy</span>8. A ridge sticks out 2 mm and the gap between rings is 1 mm. Will the inner ring lift out?</p>
               <div class="fl-problem-row">
-                <select class="fl-ans-input" id="flans-8" style="width:300px;">
+                <select class="fl-ans-input" id="flans-8" aria-labelledby="flq-8" style="width:300px;">
                   <option value="">Choose&hellip;</option>
                   <option value="a">Yes, the ridge slips through</option>
                   <option value="b">No, the ridge is wider than the opening</option>
                   <option value="c">It depends on the colour</option>
                 </select>
                 <button class="fl-check-btn" onclick="flCheckText(8,'b')">Check</button>
-                <span class="fl-feedback" id="flfb-8"></span>
+                <span class="fl-feedback" id="flfb-8" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-8">Hint: Compare 2 mm with 1 mm. Capture means the opening is narrower than the part.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>9. Each slab is 0.5 mm tall. A ring climbs for 4 slabs, runs straight for 2 mm, then steps back in for 4 slabs. How tall is the ring (mm)?</p>
+              <p id="flq-9"><span class="ll-badge" data-tone="mid">Medium</span>9. Each slab is 0.5 mm tall. A ring climbs for 4 slabs, runs straight for 2 mm, then steps back in for 4 slabs. How tall is the ring (mm)?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-9" step="0.5" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-9" aria-labelledby="flq-9" step="0.5" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(9, 6, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-9"></span>
+                <span class="fl-feedback" id="flfb-9" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-9">Hint: 4 &times; 0.5 up, plus 2 straight, plus 4 &times; 0.5 down.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="mid">Medium</span>10. The main loop does <em>Change flat by 1</em> each time round. Ring 1 is 6 mm tall. How tall is ring 6 (mm)?</p>
+              <p id="flq-10"><span class="ll-badge" data-tone="mid">Medium</span>10. The main loop does <em>Change flat by 1</em> each time round. Ring 1 is 6 mm tall. How tall is ring 6 (mm)?</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-10" step="0.5" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-10" aria-labelledby="flq-10" step="0.5" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(10, 11, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-10"></span>
+                <span class="fl-feedback" id="flfb-10" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-10">Hint: Ring 6 has had 5 changes of +1.</div>
             </div>
 
             <div class="fl-problem">
-              <p><span class="ll-badge" data-tone="hard">Challenge</span>11. In the star fidget code, <code>wall</code> is 3 and the gap is 1.5, both typed as numbers out to the star's points. The main loop says <em>Change radius by wall + gap</em>. What is that change (mm)? (Across a flat side the true sizes are only about 0.7 times as big, but the code uses the point numbers.)</p>
+              <p id="flq-11"><span class="ll-badge" data-tone="hard">Challenge</span>11. In the star fidget code, <code>wall</code> is 3 and the gap is 1.5, both typed as numbers out to the star's points. The main loop says <em>Change radius by wall + gap</em>. What is that change (mm)? (Across a flat side the true sizes are only about 0.7 times as big, but the code uses the point numbers.)</p>
               <div class="fl-problem-row">
-                <input type="number" class="fl-ans-input" id="flans-11" step="0.5" placeholder="mm" />
+                <input type="number" class="fl-ans-input" id="flans-11" aria-labelledby="flq-11" step="0.5" placeholder="mm" />
                 <button class="fl-check-btn" onclick="flCheck(11, 4.5, 0)">Check</button>
-                <span class="fl-feedback" id="flfb-11"></span>
+                <span class="fl-feedback" id="flfb-11" role="status"></span>
               </div>
               <div class="fl-hint" id="flhint-11">Hint: Add the wall and the gap. The 0.7 only changes what you measure across a side, not what you type.</div>
             </div>

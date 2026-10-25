@@ -23,7 +23,22 @@
   const inConus = p => p.lat > 23 && p.lat < 50.5 && p.lon > -126 && p.lon < -65;
   const SEV_RANK = { Extreme: 4, Severe: 3, Moderate: 2, Minor: 1 };
 
-  const st = { loc: null, atm: null, meta: null, alerts: null, warnings: null, spc: null, storms: null, tomorrow: null, token: 0, loadedAt: 0, voice: store.get('ww:briefing:voice', 'anchor') };
+  const st = {
+    loc: null,
+    atm: null,
+    meta: null,
+    alerts: null,
+    warnings: null,
+    spc: null,
+    storms: null,
+    today: null,
+    tomorrow: null,
+    currentWeatherData: null,
+    token: 0,
+    loadedAt: 0,
+    horizon: store.get('ww:briefing:horizon', 'today'),
+    voice: store.get('ww:briefing:voice', 'anchor')
+  };
 
   function setText(id, text) { const el = $(id); if (el && el.textContent !== text) el.textContent = text; }
 
@@ -80,14 +95,55 @@
     setText('ls-tropics-sub', `${st.storms.length} active · ${near.s.maxwindKt} kt · ${S.compass16(S.bearingDeg(p.lat, p.lon, near.s.lat, near.s.lon))} of you`);
   }
   function briefing() {
+    if (st.horizon === 'today') {
+      const src = st.today || st.currentWeatherData || window.__homeWeatherData;
+      if (!src && !st.atm) return null;
+      const curData = src ? {
+        location: st.loc,
+        temperature: src.temperature != null ? src.temperature : (src.currentTemp != null ? src.currentTemp : (st.atm && st.atm.tempF ? st.atm.tempF[0] : 72)),
+        feelsLike: src.feelsLike,
+        condition: src.condition,
+        code: src.currentCode != null ? src.currentCode : (src.weatherCode != null ? src.weatherCode : 0),
+        max: src.max != null ? src.max : (src.hi != null ? src.hi : (src.temperature || 75)),
+        min: src.min != null ? src.min : (src.lo != null ? src.lo : (src.temperature ? src.temperature - 10 : 60)),
+        wind: src.wind != null ? src.wind : (src.windSpeed != null ? src.windSpeed : 0),
+        windDirection: src.windDirection,
+        humidity: src.humidity,
+        uv: src.uv != null ? src.uv : (src.uvIndex != null ? src.uvIndex : 0),
+        rainChance: src.rainChance || 0
+      } : {
+        location: st.loc,
+        temperature: st.atm.tempF ? st.atm.tempF[0] : 72,
+        feelsLike: st.atm.tempF ? st.atm.tempF[0] : 72,
+        condition: 'Current conditions',
+        code: 0,
+        max: 75,
+        min: 60,
+        wind: 8,
+        rainChance: 10,
+        uv: 5
+      };
+      return S.composeCurrentSummary(curData, { voice: st.voice, prefs: store.get('ww:briefing:prefs', {}) });
+    }
     if (!st.tomorrow) return null;
     const rows = ingredientsNext(12, 36), tier = rows.length ? Math.max(...rows.map(r => r.tier)) : 0;
     return S.composeDailySummary({ ...st.tomorrow, stormTier: tier }, { voice: st.voice, prefs: store.get('ww:briefing:prefs', {}) });
   }
   function renderBrief() {
     const out = briefing(), safety = $('ls-safety');
-    setText('ls-brief', out ? out.text : st.loc ? 'Tomorrow\'s briefing is unavailable right now.' : 'Loading tomorrow\'s briefing…');
+    const horizonWord = st.horizon === 'today' ? "today's" : "tomorrow's";
+    setText('ls-brief', out ? out.text : st.loc ? `Loading ${horizonWord} briefing…` : 'Waiting for location…');
     if (safety) { safety.hidden = !(out && out.safety); setText('ls-safety', out && out.safety ? out.safety : ''); }
+
+    const btnToday = $('ls-btn-today'), btnTomorrow = $('ls-btn-tomorrow');
+    if (btnToday) {
+      btnToday.classList.toggle('is-active', st.horizon === 'today');
+      btnToday.setAttribute('aria-pressed', String(st.horizon === 'today'));
+    }
+    if (btnTomorrow) {
+      btnTomorrow.classList.toggle('is-active', st.horizon === 'tomorrow');
+      btnTomorrow.setAttribute('aria-pressed', String(st.horizon === 'tomorrow'));
+    }
   }
   function renderAll() {
     renderNowcast(); const sc = stormCards(); renderOutlook(); renderTropics(); renderBrief();
@@ -100,9 +156,14 @@
   async function load() {
     const p = st.loc; if (!p) return;
     const token = ++st.token;
-    const [atm, meta, tomorrow] = await Promise.all([S.fetchAtmosphere(p.lat, p.lon), S.fetchPointMeta(p.lat, p.lon), S.fetchTomorrow(p.lat, p.lon)]);
+    const [atm, meta, tomorrow, today] = await Promise.all([
+      S.fetchAtmosphere(p.lat, p.lon),
+      S.fetchPointMeta(p.lat, p.lon),
+      S.fetchTomorrow(p.lat, p.lon),
+      S.fetchToday ? S.fetchToday(p.lat, p.lon) : null
+    ]);
     if (token !== st.token) return;
-    st.atm = atm; st.meta = meta; st.tomorrow = tomorrow; st.loadedAt = Date.now();
+    st.atm = atm; st.meta = meta; st.tomorrow = tomorrow; st.today = today; st.loadedAt = Date.now();
     renderAll();
     const [alerts, warnings, spc, storms] = await Promise.all([
       meta ? S.fetchAlertsAt(p.lat, p.lon) : null,
@@ -122,7 +183,7 @@
     const same = st.loc && Math.abs(st.loc.lat - loc.lat) < 0.01 && Math.abs(st.loc.lon - loc.lon) < 0.01;
     st.loc = loc;
     if (same && Date.now() - st.loadedAt < 4 * MIN) return;
-    if (!same) { st.atm = st.meta = st.alerts = st.warnings = st.tomorrow = null; }
+    if (!same) { st.atm = st.meta = st.alerts = st.warnings = st.tomorrow = st.today = null; }
     ensureVisible(load);
   }
   let visibleOnce = false;
@@ -132,17 +193,99 @@
     io.observe(root);
   }
   document.addEventListener('home-weather:location', e => onLocation(e.detail));
+  document.addEventListener('home-weather:data', e => {
+    if (e.detail) {
+      st.currentWeatherData = e.detail;
+      renderBrief();
+    }
+  });
   if (window.__homeWeatherLocation) onLocation(window.__homeWeatherLocation);
+  if (window.__homeWeatherData) st.currentWeatherData = window.__homeWeatherData;
   setInterval(() => { if (st.loc && !document.hidden && Date.now() - st.loadedAt > 5 * MIN) load(); else if (st.loc) renderNowcast(); }, MIN);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && st.loc && Date.now() - st.loadedAt > 10 * MIN) load(); });
 
-  // ── voice ──────────────────────────────────────────────────────────────────
+  // ── voice & speech ─────────────────────────────────────────────────────────
   const voice = $('ls-voice');
   if (voice) {
     voice.innerHTML = Object.entries(S.VOICES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
     voice.value = S.VOICES[st.voice] ? st.voice : 'anchor';
-    voice.addEventListener('change', () => { st.voice = voice.value; store.set('ww:briefing:voice', st.voice); renderBrief(); });
+    voice.addEventListener('change', () => {
+      st.voice = voice.value;
+      store.set('ww:briefing:voice', st.voice);
+      if (S.isSpeaking()) S.stopSpeaking();
+      renderBrief();
+    });
     voice.addEventListener('click', e => e.stopPropagation());
+  }
+
+  ['ls-btn-today', 'ls-btn-tomorrow'].forEach(id => {
+    const btn = $(id);
+    if (btn) {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        st.horizon = btn.dataset.horizon;
+        store.set('ww:briefing:horizon', st.horizon);
+        if (S.isSpeaking()) S.stopSpeaking();
+        renderBrief();
+      });
+    }
+  });
+
+  const listenBtn = $('ls-listen');
+  const speakBtn = $('home-weather-speak');
+
+  function updateListenUi(speaking, activeBtn) {
+    if (listenBtn) {
+      const isThis = activeBtn === listenBtn;
+      listenBtn.classList.toggle('is-speaking', isThis && speaking);
+      listenBtn.innerHTML = (isThis && speaking)
+        ? '<span aria-hidden="true">◼</span> Stop'
+        : '<span aria-hidden="true">▶</span> Listen';
+      listenBtn.setAttribute('aria-label', (isThis && speaking) ? 'Stop reading forecast' : 'Listen to weather briefing');
+    }
+    if (speakBtn) {
+      const isThis = activeBtn === speakBtn;
+      speakBtn.classList.toggle('is-speaking', isThis && speaking);
+      speakBtn.innerHTML = (isThis && speaking)
+        ? '<span class="speak-icon" aria-hidden="true">◼</span> <span class="speak-text">Stop</span>'
+        : '<span class="speak-icon" aria-hidden="true">🔊</span> <span class="speak-text">Listen</span>';
+      speakBtn.setAttribute('aria-label', (isThis && speaking) ? 'Stop reading weather' : 'Listen to current weather report out loud');
+    }
+  }
+
+  function handleSpeakClick(btn, targetHorizon) {
+    if (S.isSpeaking()) {
+      S.stopSpeaking();
+      updateListenUi(false, null);
+      return;
+    }
+    if (targetHorizon && st.horizon !== targetHorizon) {
+      st.horizon = targetHorizon;
+      renderBrief();
+    }
+    const out = briefing();
+    if (!out || !out.text) return;
+    const textToSpeak = out.text + (out.safety ? ` ${out.safety}` : '');
+    const started = S.speakWeather(textToSpeak, {
+      voice: st.voice,
+      onStart: () => updateListenUi(true, btn),
+      onEnd: () => updateListenUi(false, null),
+      onError: () => updateListenUi(false, null)
+    });
+    if (!started) updateListenUi(false, null);
+  }
+
+  if (listenBtn) {
+    listenBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      handleSpeakClick(listenBtn, null);
+    });
+  }
+  if (speakBtn) {
+    speakBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      handleSpeakClick(speakBtn, 'today');
+    });
   }
 
   // ── opt-in notifications (only while the page is open) ─────────────────────

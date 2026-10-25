@@ -153,6 +153,38 @@
   // The sheet's Realbook chord font has no lowercase, so "Gm7" would print as "GM7", a major chord.
   // On the sheet, minor is written Real Book style: G-7, A-(maj7). Everywhere else keeps a lowercase m.
   function realbookChord(name) { return name.replace(/^([A-G][#b♯♭]?)(?:min|mi|m)(?!aj)/, '$1-'); }
+  // Chord labels on the sheet: letters (C, Am7), Roman numerals (I, vi7) or Nashville numbers (1, 6m7).
+  // The degree is measured from the key the sheet is written in; Roman numerals in a minor key count from
+  // the natural minor scale (i, iv, ♭III), Nashville numbers always count from the major scale.
+  var DEG_MAJOR = { 0: [1, 0], 1: [2, -1], 2: [2, 0], 3: [3, -1], 4: [3, 0], 5: [4, 0], 6: [4, 1], 7: [5, 0], 8: [6, -1], 9: [6, 0], 10: [7, -1], 11: [7, 0] };
+  var DEG_MINOR = { 0: [1, 0], 1: [2, -1], 2: [2, 0], 3: [3, 0], 4: [3, 1], 5: [4, 0], 6: [4, 1], 7: [5, 0], 8: [6, 0], 9: [6, 1], 10: [7, 0], 11: [7, 1] };
+  var NUMERALS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  var FN_LOW = { 'm': 1, 'm7': 1, 'm6': 1, 'mmaj7': 1, 'dim': 1, 'dim7': 1, 'm7b5': 1 };
+  var FN_ROMAN = { '': '', 'm': '', '7': '7', 'maj7': 'maj7', 'm7': '7', 'dim': '°', 'dim7': '°7', 'm7b5': 'ø7', '6': '6', 'm6': '6', 'aug': '+', 'sus4': 'sus4', 'sus2': 'sus2', '7sus4': '7sus4', 'mmaj7': 'maj7', '9': '9' };
+  var FN_NASH = { '': '', 'm': 'm', '7': '7', 'maj7': 'maj7', 'm7': 'm7', 'dim': '°', 'dim7': '°7', 'm7b5': 'ø7', '6': '6', 'm6': 'm6', 'aug': '+', 'sus4': 'sus4', 'sus2': 'sus2', '7sus4': '7sus4', 'mmaj7': 'm(maj7)', '9': '9' };
+  function degreeOf(p, key, nashville) {
+    var d = mod(NAT[p.l] + p.a - (NAT[key.l] + key.a), 12);
+    var g = (key.minor && !nashville ? DEG_MINOR : DEG_MAJOR)[d];
+    return { n: g[0], a: g[1] };
+  }
+  function accMark(a) { return a < 0 ? '♭' : a > 0 ? '♯' : ''; }
+  function functionName(c, key, style) {
+    var nash = style === 'nashville', g = degreeOf(c.root, key, nash), q = c.q;
+    var tail = (nash ? FN_NASH : FN_ROMAN)[q];
+    if (tail === undefined) tail = Q[q] ? Q[q].sym : q;
+    var head = nash ? String(g.n) : (FN_LOW[q] ? NUMERALS[g.n].toLowerCase() : NUMERALS[g.n]);
+    var out = accMark(g.a) + head + tail;
+    if (c.bass) { var b = degreeOf(c.bass, key, nash); out += '/' + accMark(b.a) + b.n; }
+    return out;
+  }
+  // What the sheet prints for a chord: main (letters, or '') plus fn (the Roman/Nashville label, or '').
+  function sheetChordLabels(c, key) {
+    var style = opts.chordLabels, letters = realbookChord(chordName(c));
+    if (style === 'roman' || style === 'nashville') return { main: '', fn: functionName(c, key, style) };
+    if (style === 'letters+roman') return { main: letters, fn: functionName(c, key, 'roman') };
+    if (style === 'letters+nashville') return { main: letters, fn: functionName(c, key, 'nashville') };
+    return { main: letters, fn: '' };
+  }
   function chordAt(chords, t) {
     for (var i = chords.length - 1; i >= 0; i--) if (chords[i].start <= t + EPS) return chords[i];
     return chords[0] || null;
@@ -574,7 +606,7 @@
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
-    sheetView: 'lead', beatCounts: 'off',
+    sheetView: 'lead', beatCounts: 'off', chordLabels: 'letters',
     showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
@@ -592,6 +624,7 @@
   var opts = load();
   if (opts.beatCounts === true) opts.beatCounts = 'all';
   else if (!/^(quarter|eighth|all|written)$/.test(opts.beatCounts)) opts.beatCounts = 'off';
+  if (!/^(letters|roman|nashville|letters\+roman|letters\+nashville)$/.test(opts.chordLabels)) opts.chordLabels = 'letters';
   var defaultTunes = [], importedTunes = [];
   var tunes = [], tune = null, view = null, chordSel = 0;
 
@@ -1465,10 +1498,11 @@
           if (oi > 0 && cx < lastChordRight + 0.6 * S) {
             cx = lastChordRight + 0.6 * S;
           }
-          var textEstWidth = chordName(o.c).length * 1.05 * S;
+          var lab = sheetChordLabels(o.c, view.writtenKey), shown = lab.main || lab.fn;
+          var textEstWidth = (lab.main.length + (lab.main && lab.fn ? lab.fn.length + 1 : lab.fn.length)) * 1.05 * S;
           lastChordRight = cx + textEstWidth;
           chordSymbolX[o.ci] = cx;
-          out.push('<text class="fb-chord' + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + ', bar ' + b.i + '">' + MN.escape(realbookChord(chordName(o.c))) + '</text>');
+          out.push('<text class="fb-chord' + (lab.main ? '' : ' fb-chord-fn') + (o.ci === chordSel ? ' is-sel' : '') + '" data-ci="' + o.ci + '" x="' + cx.toFixed(1) + '" y="' + chordBase.toFixed(1) + '" font-size="' + (1.75 * S) + '" tabindex="0" role="button" aria-label="Chord ' + MN.escape(chordName(o.c)) + (lab.fn ? ', ' + MN.escape(lab.fn) : '') + ', bar ' + b.i + '">' + MN.escape(shown) + (lab.main && lab.fn ? '<tspan class="fb-fn" dx="' + (0.45 * S).toFixed(1) + '" font-size="' + (1.3 * S).toFixed(1) + '">' + MN.escape(lab.fn) + '</tspan>' : '') + '</text>');
         });
         // accidental memory per bar
         var placedBar = [];
@@ -2942,6 +2976,7 @@
     el('[data-fb-octave]').value = String(opts.octave);
     root.querySelectorAll('[data-fb-names]').forEach(function (control) { control.checked = !!opts.names; });
     el('[data-fb-beat-counts]').value = /^(quarter|eighth|all|written)$/.test(opts.beatCounts) ? opts.beatCounts : 'off';
+    el('[data-fb-chord-labels]').value = opts.chordLabels;
     el('[data-fb-analysis]').checked = !!opts.showAnalysis;
     el('[data-fb-analysis-note]').hidden = !opts.showAnalysis;
     var nsel = el('[data-fb-name-style]'); nsel.value = opts.nameStyle === 'under' ? 'under' : 'notes'; nsel.disabled = !opts.names;
@@ -4313,6 +4348,7 @@
       else if (t.matches('[data-fb-analysis]')) { opts.showAnalysis = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
+      else if (t.matches('[data-fb-chord-labels]')) { opts.chordLabels = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-show-bass]')) { opts.showBass = t.checked; renderSheet(); save(); }
       else if (t.matches('[data-fb-bass-horn]')) { opts.bassFor = t.checked ? 'horn' : 'concert'; renderSheet(); save(); }

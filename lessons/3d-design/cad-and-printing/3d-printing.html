@@ -275,7 +275,7 @@
       display: none;
     }
     .p3d-scenario-detail.active { display: block; }
-    .p3d-scenario-detail h4 { margin: 0 0 0.8rem; font-size: 1rem; font-weight: 800; color: #8a2900; }
+    .p3d-scenario-detail h3 { margin: 0 0 0.8rem; font-size: 1rem; font-weight: 800; color: #8a2900; }
     .p3d-setting-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     .p3d-setting-table th {
       text-align: left; padding: 0.5rem 0.7rem;
@@ -729,12 +729,12 @@
       border-color: var(--border, rgba(255, 255, 255, 0.15));
       color: var(--text, #e6edf3);
     }
-    [data-theme="night"] .p3d-scenario-detail h4,
-    [data-theme="vaporwave"] .p3d-scenario-detail h4,
-    [data-theme="mandelbrot"] .p3d-scenario-detail h4,
-    [data-theme="bark"] .p3d-scenario-detail h4,
-    [data-theme="obsidian"] .p3d-scenario-detail h4,
-    [data-theme="mahogany"] .p3d-scenario-detail h4 {
+    [data-theme="night"] .p3d-scenario-detail h3,
+    [data-theme="vaporwave"] .p3d-scenario-detail h3,
+    [data-theme="mandelbrot"] .p3d-scenario-detail h3,
+    [data-theme="bark"] .p3d-scenario-detail h3,
+    [data-theme="obsidian"] .p3d-scenario-detail h3,
+    [data-theme="mahogany"] .p3d-scenario-detail h3 {
       color: #ffffff;
     }
     [data-theme="night"] .p3d-setting-table th,
@@ -1111,7 +1111,7 @@
       border: 1px solid rgba(255, 42, 77, 0.4);
       color: #ffdfe5;
     }
-    [data-theme="lavalamp"] .p3d-scenario-detail h4 {
+    [data-theme="lavalamp"] .p3d-scenario-detail h3 {
       color: #ffffff;
     }
     [data-theme="lavalamp"] .p3d-setting-table th {
@@ -1316,6 +1316,7 @@
     @media (max-width: 640px) { .p3d-decision .p3d-step-grid { grid-template-columns: 1fr; } }
   </style>
 <link rel="stylesheet" href="../../../assets/css/components/design3d-workspace.css">
+<link rel="stylesheet" href="../../../assets/css/components/blueprint-game.css">
 </head>
 <body class="theme-liquid-woodland theme-steam">
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -1388,6 +1389,29 @@
     <p id="p3d-handoff-result" class="p3d-handoff-result" role="status" aria-live="polite">Enter what you can see in your slicer, then review. Estimates are evidence from that slicer and profile, not promises of print time or strength.</p>
   </form>
   <details><summary>Teacher handoff · before any physical print</summary><p>Confirm the model's size and orientation in the approved slicer; inspect the first layer, supports, toolpath preview and estimated duration. Choose the room's approved material and printer profile. The teacher controls the machine, ventilation, hot nozzle, heated bed, removal tools and cooling. After a supervised test, students compare the actual result with their prediction and revise one variable at a time.</p></details>
+</section>
+
+<section class="p3d-card" id="blueprint-game" aria-labelledby="blueprint-game-title" data-memory-ignore>
+  <p class="p3d-label">Blueprint studio · Fold &amp; Unfold game · 15–30 minutes</p>
+  <h2 id="blueprint-game-title">Fold &amp; Unfold: read and draw the blueprint</h2>
+  <p>Before a part goes to a printer or a machine shop, engineers draw it in CAD software like AutoCAD. The drawing shows each <span data-glossary="orthographic view">orthographic view</span> separately: the part seen straight from the top, the front and the right side. Picture the part sitting inside a glass box. Trace what you see on each glass wall, then unfold the walls flat. That flat sheet is the blueprint. In <span data-glossary="third-angle projection">third-angle projection</span>, the top view sits above the front view and the right view sits beside it. Edges you can't see because something is in front of them are drawn as dashed <span data-glossary="hidden line">hidden lines</span>.</p>
+  <div class="bpg-intro">
+    <div><h3>Unfold · 3D → blueprint</h3><p>You get the folded part as an <span data-glossary="isometric view">isometric view</span>. Drag it to look around. Then draw its TOP, FRONT and RIGHT views with the Line tool, and press Check.</p></div>
+    <div><h3>Fold · blueprint → 3D</h3><p>You get the three-view blueprint. Stack blocks on the print bed until your solid casts exactly those views. If a different solid fits the same views, it counts, because the drawing allows it.</p></div>
+    <div><h3>Why this is a printing skill</h3><p>Every part here rises straight up from the bed, so it would print without supports. The top view is the part's footprint on the plate, so it shows you the first layer.</p></div>
+  </div>
+  <div data-blueprint-game data-present></div>
+  <details>
+    <summary>How to drive it like CAD (mouse, keys and the command line)</summary>
+    <ul>
+      <li><strong>Line:</strong> click a start point, then click each next point; the line keeps going until you press <kbd>Esc</kbd> or right-click. Or press, drag and let go for one line. ORTHO is on, so lines go straight across or straight up.</li>
+      <li><strong>Layers:</strong> draw edges you can see on VISIBLE (solid). Switch to HIDDEN (dashed) for edges behind something. On Hard, hidden lines count.</li>
+      <li><strong>Keyboard:</strong> click the sheet, then use the arrow keys to move the crosshair and <kbd>Enter</kbd> to place a point. <kbd>T</kbd> / <kbd>F</kbd> / <kbd>R</kbd> picks the view, <kbd>L</kbd> / <kbd>E</kbd> picks Line or Erase, and <kbd>H</kbd> swaps the layer.</li>
+      <li><strong>Command line:</strong> type <code>LINE 0,0 3,0 3,2</code> (or <code>L</code>, then points; <code>@2,0</code> means "2 right of the last point"), <code>ERASE</code>, <code>VIEW TOP</code>, <code>LAYER HIDDEN</code>, <code>UNDO</code>, <code>CHECK</code>. In Fold mode, <code>BUILD 1,0 3</code> stacks column 1, front row, 3 blocks high. Type <code>HELP</code> for the full list.</li>
+      <li><strong>Glass box:</strong> once a drawing checks out, the glass box unfolds to show where each view comes from.</li>
+    </ul>
+    <p><strong>Grade bands:</strong> K–2 play Fold on Easy with a partner and count blocks out loud. Grades 3–5 play Unfold on Easy and Medium. Grades 6–12 play Hard in both modes, where the hidden lines count. Then they explain what someone could build wrong from a blueprint that left the hidden lines out.</p>
+  </details>
 </section>
 
 <div class="p3d-jump-banner" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;padding:1.1rem 1.4rem;background:linear-gradient(135deg,rgba(255,107,53,0.12),rgba(255,196,0,0.08));border:1px solid rgba(255,107,53,0.25);border-radius:18px;margin:.5rem 0 1.2rem;">
@@ -2150,7 +2174,7 @@
 
       <div class="p3d-tab-panels">
         <div class="p3d-tab-panel active p3d-scenario-detail" id="panel-prototype">
-          <h4>🚀 Quick Prototype Settings</h4>
+          <h3>🚀 Quick Prototype Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20–0.30 mm</span></td><td>Compare a coarser approved profile with the 0.20 mm baseline; 0.40 mm is machine-specific, not a default</td></tr>
@@ -2165,7 +2189,7 @@
         </div>
 
         <div class="p3d-tab-panel p3d-scenario-detail" id="panel-display">
-          <h4>🏆 Display / Figurine Settings</h4>
+          <h3>🏆 Display / Figurine Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.08–0.12 mm</span></td><td>Ultra-fine layers = near-smooth surface; less sanding needed</td></tr>
@@ -2180,7 +2204,7 @@
         </div>
 
         <div class="p3d-tab-panel p3d-scenario-detail" id="panel-functional">
-          <h4>🔩 Functional / Mechanical Part Settings</h4>
+          <h3>🔩 Functional / Mechanical Part Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Layer Height</td><td><span class="p3d-setting-val">0.20 mm</span></td><td>Good layer adhesion without excessive print time</td></tr>
@@ -2195,7 +2219,7 @@
         </div>
 
         <div class="p3d-tab-panel p3d-scenario-detail" id="panel-flexible">
-          <h4>🧤 Flexible / Wearable Settings</h4>
+          <h3>🧤 Flexible / Wearable Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Material</td><td><span class="p3d-setting-val">TPU 95A or 87A</span></td><td>Shore A = hardness rating; lower number = softer/more elastic</td></tr>
@@ -2210,7 +2234,7 @@
         </div>
 
         <div class="p3d-tab-panel p3d-scenario-detail" id="panel-outdoor">
-          <h4>☀️ Outdoor / UV-Exposed Settings</h4>
+          <h3>☀️ Outdoor / UV-Exposed Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Material</td><td><span class="p3d-setting-val">ASA or PETG</span></td><td>ASA = UV stable + weather resistant. PETG = moisture resistant. Outdoor life depends on the specific formulation, heat, and exposure.</td></tr>
@@ -2225,7 +2249,7 @@
         </div>
 
         <div class="p3d-tab-panel p3d-scenario-detail" id="panel-vase">
-          <h4>🏺 Vase / Hollow Container Settings</h4>
+          <h3>🏺 Vase / Hollow Container Settings</h3>
           <table class="p3d-setting-table">
             <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
             <tr><td>Mode</td><td><span class="p3d-setting-val">Spiralise / Vase Mode</span></td><td>One continuous spiral path — reduces repeated layer seams; thin walls and watertightness need testing</td></tr>
@@ -2985,7 +3009,12 @@
   ══════════════════════════════════════════════════ -->
   <script>
   (function () {
-    document.querySelectorAll('.p3d-flip-card').forEach(function(card) {
+    document.querySelectorAll('.p3d-flip-card').forEach(function(card, i) {
+      // a toggle button named by the front heading and described by the back, so screen readers get the definition too
+      var front = card.querySelector('.p3d-flip-front h3'), back = card.querySelector('.p3d-flip-back p');
+      card.setAttribute('role','button');
+      if (front) { front.id = front.id || 'p3d-flip-term-' + i; card.setAttribute('aria-labelledby', front.id); card.removeAttribute('aria-label'); }
+      if (back) { back.id = back.id || 'p3d-flip-def-' + i; card.setAttribute('aria-describedby', back.id); }
       card.setAttribute('aria-pressed','false');
       function toggle() { card.classList.toggle('flipped'); card.setAttribute('aria-pressed',String(card.classList.contains('flipped'))); }
       card.addEventListener('click', toggle);
@@ -3142,5 +3171,6 @@
 <script src="../../../assets/js/design3d-route.js"></script>
 <script src="../../../assets/js/tool-rosetta.js"></script>
 <script type="module" src="../../../assets/js/design3d/workspace.mjs"></script>
+<script type="module" src="../../../assets/js/blueprint-game/game.mjs"></script>
 </body>
 </html>

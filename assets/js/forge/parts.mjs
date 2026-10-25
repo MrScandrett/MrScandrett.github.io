@@ -363,6 +363,347 @@ const gears = {
   },
 };
 
+/* ── print-in-place fidgets ───────────────────────────────────────────── */
+
+/* A polygon in either winding, as a filled cross-section. */
+function poly(CS, pts) {
+  let s = 0;
+  for (let i = 0; i < pts.length; i++) { const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length]; s += ax * by - bx * ay; }
+  return CS.ofPolygons([s < 0 ? [...pts].reverse() : pts]);
+}
+
+/* A profile drawn as (radius, height) spun into a solid round the Z axis.
+   Anything left of the axis is clipped off first. */
+function spin(CS, section, segments = 96) {
+  return section.intersect(CS.square([500, 1000]).translate([0, -500])).revolve(segments);
+}
+
+/* The captured spinner from the Print Fidgets lesson: a disc printed inside
+   a cup whose lip is narrower than the disc. Defaults are the lesson's own
+   numbers (Ø40 cup, 0.4 mm at the side, one layer above and below). */
+const captured = {
+  id: 'captured',
+  name: 'Captured spinner',
+  group: 'Fidgets',
+  blurb: 'A disc that spins inside a cup, printed as one piece. The lip is narrower than the disc, so it can turn but never fall out.',
+  lesson: { href: 'lessons/3d-design/cad-and-printing/print-fidgets.html', label: 'Print-in-place fidgets' },
+  params: [
+    { id: 'radius', label: 'Cup radius', type: 'range', min: 14, max: 35, step: 0.5, default: 20, unit: 'mm' },
+    { id: 'wall', label: 'Cup wall', type: 'range', min: 1.2, max: 5, step: 0.2, default: 3.4, unit: 'mm', kind: 'wall' },
+    { id: 'floor', label: 'Cup floor', type: 'range', min: 1.2, max: 4, step: 0.2, default: 2.6, unit: 'mm', kind: 'wall' },
+    { id: 'disc', label: 'Disc thickness', type: 'range', min: 2, max: 8, step: 0.2, default: 4, unit: 'mm', kind: 'wall' },
+    { id: 'hole', label: 'Finger hole radius', type: 'range', min: 0, max: 12, step: 0.5, default: 8, unit: 'mm', help: '0 makes a solid disc.' },
+    { id: 'lip', label: 'Lip reach', type: 'range', min: 1, max: 5, step: 0.2, default: 3, unit: 'mm', help: 'How far the lip reaches in over the groove. Its underside slopes at 45°, so it needs no supports.' },
+    { id: 'gap', label: 'Side gap', type: 'range', min: 0.2, max: 0.8, step: 0.05, default: 0.4, unit: 'mm', help: 'Air between the disc rim and the cup wall. The gaps above and below are one layer.' },
+  ],
+  build(ctx, p) {
+    const { CrossSection: CS } = ctx;
+    const { layer, nozzle, clearance } = ctx.settings;
+    const groove = p.radius - p.wall;
+    const discR = groove - p.gap;
+    const lipR = groove - p.lip;
+    const z0 = p.floor + layer, z1 = z0 + p.disc;      // the disc floats one layer up
+    const ceil = z1 + layer;                           // groove ceiling at the outer wall
+    const top = ceil + p.lip;                          // 45°: up as far as it reaches in
+    const hole = Math.min(p.hole, discR - 3 * nozzle);
+
+    const cup = spin(CS, poly(CS, [[0, 0], [p.radius, 0], [p.radius, top], [lipR, top], [groove, ceil], [groove, p.floor], [0, p.floor]]));
+    const disc = spin(CS, CS.square([discR - hole, p.disc]).translate([hole, z0]));
+
+    const verdicts = [];
+    if (hole < p.hole) verdicts.push({ tone: 'bad', tag: 'DISC', text: `A ${p.hole} mm finger hole leaves no rim on a ${round(discR)} mm disc. It has been shrunk to ${round(hole)} mm; make the hole smaller or the cup wider.` });
+    if (p.gap < clearance) verdicts.push({ tone: 'bad', tag: 'FUSED', text: `${p.gap} mm at the side is less than your class clearance (${clearance} mm, from the comb). The disc rim will weld to the wall.` });
+    else if (p.gap > clearance + 0.4) verdicts.push({ tone: 'warn', tag: 'LOOSE', text: `${p.gap} mm at the side is well over your class clearance. It spins, but rattles and wobbles.` });
+    else verdicts.push({ tone: 'ok', tag: 'SIDE GAP', text: `${p.gap} mm of air all round the rim: at or above your class clearance (${clearance} mm), so the slicer keeps it open.` });
+    verdicts.push({ tone: 'ok', tag: 'CAPTURED', text: `The lip opening (Ø${round(2 * lipR)}) is ${round(2 * (discR - lipR))} mm narrower than the disc (Ø${round(2 * discR)}), so it turns but cannot come out.` });
+    if (hole > 0 && lipR - hole < 2) verdicts.push({ tone: 'warn', tag: 'NO GRIP', text: `Only ${round(Math.max(0, lipR - hole))} mm of disc shows between the finger hole and the lip. Shrink the hole or the lip so a finger can push the disc round.` });
+
+    return {
+      bodies: [{ name: 'Cup', manifold: cup }, { name: 'Disc', manifold: disc }],
+      layout: 'nested',
+      verdicts,
+      overhangNote: `The disc's underside shows red because it is not on the bed: it prints one ${layer} mm layer above the cup's floor, on plastic that has already cooled, so the two don't bond. The lip's underside slopes at 45°, the steepest a printer holds by itself. Print with supports OFF — support would fill the gaps and lock the disc.`,
+      stats: [
+        { label: 'Gaps (side / below / above)', value: `${p.gap} / ${layer} / ${layer} mm` },
+        { label: 'Disc / lip opening', value: `Ø${round(2 * discR)} / Ø${round(2 * lipR)} mm` },
+      ],
+    };
+  },
+};
+
+/* The locked star fidget from the Tinkercad Codeblocks lesson. The ring maths
+   (slabs, chevron ridges, the lift test) lives in lessons/fidget-rings.js,
+   which forge.html loads as a classic script; this part only turns each slab
+   into a solid, exactly as the Codeblocks program stacks them. */
+const fidgetRings = () => {
+  const FR = globalThis.FidgetRings;
+  if (!FR) throw new Error('The ring maths (fidget-rings.js) is not loaded on this page.');
+  return FR;
+};
+
+const rings = {
+  id: 'rings',
+  name: 'Locked star fidget',
+  group: 'Fidgets',
+  blurb: 'Nested star rings that click up and down but can\'t be pulled apart: each ring\'s ridge is trapped in the next ring\'s groove.',
+  lesson: { href: 'lessons/3d-design/cad-and-printing/tinkercad-codeblocks.html', label: 'Tinkercad Codeblocks' },
+  params: [
+    { id: 'shape', label: 'Ring shape', type: 'select', default: 'star', options: [{ value: 'star', label: 'Star (slides in clicks)' }, { value: 'round', label: 'Round (spins too)' }] },
+    { id: 'n', label: 'Rings', type: 'range', min: 2, max: 12, step: 1, default: 6 },
+    { id: 'r', label: 'Inner ring radius', type: 'range', min: 6, max: 30, step: 1, default: 14, unit: 'mm', help: 'Measured to the star\'s points, as in Codeblocks.' },
+    { id: 'w', label: 'Wall', type: 'range', min: 1.5, max: 5, step: 0.5, default: 3, unit: 'mm', help: 'To the points. Across a flat side a star is about 0.7 of this.' },
+    { id: 'g', label: 'Gap', type: 'range', min: 0.5, max: 3, step: 0.1, default: 1.5, unit: 'mm', help: 'To the points. Forge reports the real air across the leaning sides.' },
+    { id: 'k', label: 'Lock steps', type: 'range', min: 0, max: 6, step: 1, default: 4, help: 'Slabs that climb out (and back in) to make the ridge. 0 gives loose rings.' },
+    { id: 'flat', label: 'Straight middle', type: 'range', min: 1, max: 8, step: 0.5, default: 2, unit: 'mm' },
+    { id: 'step', label: 'Extra height per ring', type: 'range', min: 0, max: 2, step: 0.5, default: 1, unit: 'mm', help: 'How far each ring can slide.' },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const FR = fidgetRings();
+    const { nozzle, clearance } = ctx.settings;
+    if (p.r - p.w < 1) throw new Error(`The inner ring has no hole: its radius (${p.r} mm) must be at least 1 mm more than the wall (${p.w} mm).`);
+    const unit = FR.unitOutline(p.shape);
+    const outline = (rho) => CS.ofPolygons([unit.map(([x, y]) => [x * rho, y * rho])]);
+    const bodies = [];
+    for (let i = 1; i <= p.n; i++) {
+      const slabs = FR.ringSlabs(p, i).map((s, j, all) =>
+        // each slab reaches a hair into the next so the stack fuses into one ring
+        outline(s.ro).subtract(outline(s.ri)).extrude(s.z1 - s.z0 + (j < all.length - 1 ? 0.01 : 0)).translate([0, 0, s.z0]));
+      bodies.push({ name: i === 1 ? 'Ring 1 (inner)' : i === p.n ? `Ring ${i} (outer)` : `Ring ${i}`, manifold: M.union(slabs) });
+    }
+
+    const an = FR.analyze(p);
+    const verdicts = [];
+    if (!an.locked) verdicts.push({ tone: 'bad', tag: 'FALLS APART', text: p.k === 0
+      ? 'With no lock steps each ring is a plain tube. Lift the outer ring and the rest stay on the table.'
+      : `The ridge (${round(an.ridge, 2)} mm) is not deeper than the gap (${round(an.gapTrue, 2)} mm), so the rings slide apart. Add lock steps or shrink the gap.` });
+    else verdicts.push({ tone: 'ok', tag: 'LOCKED', text: `Each ridge is trapped in the next ring's groove. Lift the outer ring and the whole fidget comes up; each ring slides ${round(an.play)} mm.` });
+    if (an.clearance < clearance) verdicts.push({ tone: 'bad', tag: 'FUSED', text: `Only ${round(an.clearance, 2)} mm of real air between neighbours, under your class clearance (${clearance} mm). The rings print as one lump. Raise the gap.` });
+    else if (an.clearance > 0.9) verdicts.push({ tone: 'warn', tag: 'RATTLES', text: `${round(an.clearance, 2)} mm of air between neighbours. It moves, but rattles. Lower the gap.` });
+    else verdicts.push({ tone: 'ok', tag: 'AIR GAP', text: `${round(an.clearance, 2)} mm of real air between neighbours${p.shape === 'star' ? ', measured across a flat side' : ''}: free, without rattling.` });
+    if (an.wallTrue < nozzle * 3) verdicts.push({ tone: 'warn', tag: 'THIN', text: `Across a side the wall is only ${round(an.wallTrue, 2)} mm. Thicken it so the rings survive a pocket.` });
+
+    return {
+      bodies,
+      layout: 'nested',
+      verdicts,
+      overhangNote: `Each ring climbs out and steps back in ${FR.SLAB} mm at a time (two layers), so the walls lean at about 45°. The red faces are those small steps, each only ${round(an.run * an.h, 2)} mm across a side, which the printer bridges. Print with supports OFF — support would fill the gaps and glue the rings.`,
+      stats: [
+        { label: 'Real air between rings', value: `${round(an.clearance, 2)} mm` },
+        { label: 'Slide per ring', value: an.locked ? `${round(an.play)} mm` : 'falls apart' },
+        { label: 'Outer ring height', value: `${round(FR.ringHeight(p, p.n))} mm` },
+        { label: 'Slabs', value: `${FR.slabCount(p)}` },
+      ],
+    };
+  },
+};
+
+/* A fidget spinner, either on a 608 skateboard bearing or on a printed hub
+   that needs no hardware: the hub carries a diamond ridge riding in a matching
+   groove in the body, every face at 40° from vertical so neither needs supports. */
+const BEARING_608 = { od: 22, width: 7, bore: 8 };
+const PENNY = { d: 19.05, t: 1.52 };
+const HUB = { r: 9, ridge: 1.6, bevel: 1.2, lift: 1.2, lean: (40 * Math.PI) / 180 };
+
+/* Hub profile and the hole it turns in, as (radius, height) sections. */
+function printedHub(CS, T, g) {
+  const { r, ridge: d, bevel, lift } = HUB;
+  const t = Math.tan(HUB.lean);
+  const e = d / t, zm = T / 2, hb = bevel / t, R0 = r + g + bevel;
+  const hub = poly(CS, [[0, 0], [r, 0], [r, zm - e], [r + d, zm], [r, zm + e], [r, T + lift], [0, T + lift]]);
+  // the bevels on both faces leave the hub standing proud for your fingers
+  const hole = CS.union([
+    hub.offset(g, 'Miter', 4),
+    poly(CS, [[0, -1], [R0 + t, -1], [r + g, hb], [0, hb]]),
+    poly(CS, [[0, T + 1], [R0 + t, T + 1], [r + g, T - hb], [0, T - hb]]),
+  ]);
+  // narrowest the hole gets above and below the ridge (the hole radius at z
+  // is the widest of the bevel, the straight bore and the groove)
+  const holeR = (z) => Math.max(r + g, R0 - Math.min(z, T - z) * t, r + g / Math.cos(HUB.lean) + (e - Math.abs(z - zm)) * t);
+  let narrowest = 0;
+  for (const [a, b] of [[0, zm], [zm, T]]) {
+    let m = Infinity;
+    for (let k = 0; k <= 200; k++) m = Math.min(m, holeR(a + ((b - a) * k) / 200));
+    narrowest = Math.max(narrowest, m);
+  }
+  return { hub, hole, holeR: Math.max(r + g + d, R0), trap: r + d - narrowest };
+}
+
+const spinner = {
+  id: 'spinner',
+  name: 'Fidget spinner',
+  group: 'Fidgets',
+  blurb: 'Two to six arms around a hub that spins on a 608 skateboard bearing, or on a printed hub that needs no hardware at all.',
+  lesson: { href: 'lessons/3d-design/cad-and-printing/print-fidgets.html', label: 'Print-in-place fidgets' },
+  params: [
+    { id: 'hub', label: 'Centre', type: 'select', default: 'printed', options: [
+      { value: 'printed', label: 'Printed hub — no hardware, one print' },
+      { value: 'bearing', label: '608 bearing + two finger caps' },
+    ] },
+    { id: 'weights', label: 'Arm weights', type: 'select', default: 'none', options: [
+      { value: 'none', label: 'Solid arms' },
+      { value: 'bearing', label: '608 bearings pressed in' },
+      { value: 'penny', label: 'Stacks of US pennies' },
+    ], help: 'Weight out at the tips makes it spin longer.' },
+    { id: 'arms', label: 'Arms', type: 'range', min: 2, max: 6, step: 1, default: 3 },
+    { id: 'thickness', label: 'Thickness', type: 'range', min: 6, max: 12, step: 0.5, default: 7, unit: 'mm', help: 'A 608 bearing is 7 mm wide.' },
+    { id: 'rim', label: 'Rim round each hole', type: 'range', min: 1.6, max: 5, step: 0.2, default: 3, unit: 'mm', kind: 'wall' },
+    { id: 'gap', label: 'Hub gap', type: 'range', min: 0.25, max: 0.8, step: 0.05, default: 0.4, unit: 'mm', showIf: (p) => p.hub === 'printed' },
+    { id: 'fit', label: 'Press-fit allowance', type: 'range', min: 0, max: 0.6, step: 0.05, default: 0.2, unit: 'mm', help: 'Added to bearing and penny holes, which print a little small.', showIf: (p) => p.hub === 'bearing' || p.weights !== 'none' },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const { clearance } = ctx.settings;
+    const T = p.thickness;
+    const printed = p.hub === 'printed' ? printedHub(CS, T, p.gap) : null;
+    const hubHoleR = printed ? printed.holeR : (BEARING_608.od + p.fit) / 2;
+    const pocketR = p.weights === 'bearing' ? (BEARING_608.od + p.fit) / 2 : p.weights === 'penny' ? (PENNY.d + p.fit) / 2 : 0;
+    const lobeCore = pocketR || 8;
+    const reach = hubHoleR + p.rim + lobeCore;          // hub centre to lobe centre
+    const lobeR = lobeCore + p.rim;
+    const tips = Array.from({ length: p.arms }, (_, i) => {
+      const a = (2 * Math.PI * i) / p.arms + Math.PI / 2;
+      return [reach * Math.cos(a), reach * Math.sin(a)];
+    });
+
+    // circles for hub and lobes, then a fillet where they meet
+    const outline = CS.union([CS.circle(hubHoleR + p.rim, 96), ...tips.map((c) => CS.circle(lobeR, 96).translate(c))]).offset(5, 'Round', 2, 48).offset(-5, 'Round', 2, 48).simplify(0.005);
+    let body = outline.extrude(T);
+    const cuts = [];
+    if (printed) cuts.push(spin(CS, printed.hole));
+    else cuts.push(M.cylinder(T + 2, hubHoleR, hubHoleR, 96).translate([0, 0, -1]));
+    if (pocketR) for (const c of tips) cuts.push(M.cylinder(T + 2, pocketR, pocketR, 96).translate([c[0], c[1], -1]));
+    body = body.subtract(M.union(cuts));
+
+    const bodies = [{ name: 'Spinner', manifold: body }];
+    if (printed) bodies.push({ name: 'Hub', manifold: spin(CS, printed.hub) });
+    else {
+      // a small boss presses only on the bearing's inner race, so the caps don't rub the body
+      const cap = () => M.union([
+        M.cylinder(1.6, 10, 10, 72),
+        M.cylinder(0.62, 5.5, 5.5, 48).translate([0, 0, 1.59]),
+        M.cylinder(2.9, (BEARING_608.bore - 0.1) / 2, (BEARING_608.bore - 0.1) / 2, 48).translate([0, 0, 2.2]),
+      ]);
+      bodies.push({ name: 'Cap 1', manifold: cap() }, { name: 'Cap 2', manifold: cap() });
+    }
+
+    const verdicts = [];
+    const bearings = (p.hub === 'bearing' ? 1 : 0) + (p.weights === 'bearing' ? p.arms : 0);
+    if (printed) {
+      if (p.gap < clearance) verdicts.push({ tone: 'bad', tag: 'FUSED', text: `A ${p.gap} mm hub gap is under your class clearance (${clearance} mm). The hub will weld into the body.` });
+      else if (p.gap > clearance + 0.4) verdicts.push({ tone: 'warn', tag: 'WOBBLY', text: `${p.gap} mm round the hub is well over your class clearance. It spins, but wobbles.` });
+      else verdicts.push({ tone: 'ok', tag: 'PRINTED HUB', text: `The hub prints inside the body with ${p.gap} mm of air on every face. Its ridge is ${round(printed.trap, 2)} mm wider than the narrowest part of the hole, so it can't push out. Twist it once to break the first layer free.` });
+      if (printed.trap < 0.6) verdicts.push({ tone: 'warn', tag: 'SHALLOW RIDGE', text: `The hub's ridge overlaps the hole by only ${round(printed.trap, 2)} mm. A hard pinch could pop it out.` });
+    }
+    if (bearings) verdicts.push({ tone: 'ok', tag: 'HARDWARE', text: `Needs ${bearings} × 608 bearing (22 mm across, 7 mm wide — the skateboard size). Holes are ${p.fit} mm oversize; press bearings in with a vise or a flat book, not a hammer.` });
+    if ((p.hub === 'bearing' || p.weights === 'bearing') && T < BEARING_608.width) verdicts.push({ tone: 'warn', tag: 'BEARING PROUD', text: `The body is ${T} mm thick and a 608 bearing is 7 mm wide, so the bearings stick out. Make it 7 mm.` });
+    if (p.hub === 'bearing' && T > BEARING_608.width + 0.6) verdicts.push({ tone: 'warn', tag: 'CAPS RUB', text: `The bearing sits ${round((T - BEARING_608.width) / 2)} mm below each face, deeper than the caps' boss. The caps will rub the body. Make it 7 mm.` });
+    if (p.weights === 'penny') verdicts.push({ tone: 'ok', tag: 'PENNIES', text: `Each arm holds a stack of ${Math.floor(T / PENNY.t)} pennies (${p.arms * Math.floor(T / PENNY.t)} in all). A drop of glue keeps the stacks in.` });
+    if (p.weights === 'none') verdicts.push({ tone: 'ok', tag: 'NO WEIGHTS', text: 'Solid arms make it light, so it spins for seconds, not minutes. Weights out at the tips store more spin.' });
+
+    return {
+      bodies,
+      layout: printed ? 'nested' : 'apart',
+      verdicts,
+      stats: [
+        { label: 'Across the arms', value: `${round(2 * (reach + lobeR))} mm` },
+        { label: 'Hardware', value: bearings ? `${bearings} × 608 bearing` : p.weights === 'penny' ? `${p.arms * Math.floor(T / PENNY.t)} pennies` : 'none' },
+      ],
+    };
+  },
+};
+
+/* A hinge that prints flat and already assembled. Knuckles alternate between
+   the two leaves; a cone pin on each Leaf A knuckle sits in a matching socket
+   in the next Leaf B knuckle. Knuckles have a flat foot on the bed and every
+   face that points down leans 40° from vertical, so no supports are needed. */
+const HINGE_LEAN = (40 * Math.PI) / 180;
+
+const hinge = {
+  id: 'hinge',
+  name: 'Print-in-place hinge',
+  group: 'Fidgets',
+  blurb: 'Two leaves joined by knuckles and cone pins, printed flat and already assembled. One leaf folds right over onto the other.',
+  lesson: { href: 'lessons/3d-design/cad-and-printing/print-fidgets.html', label: 'Print-in-place fidgets' },
+  params: [
+    { id: 'width', label: 'Hinge length', type: 'range', min: 20, max: 80, step: 1, default: 40, unit: 'mm' },
+    { id: 'leaf', label: 'Leaf width', type: 'range', min: 12, max: 40, step: 1, default: 22, unit: 'mm' },
+    { id: 'knuckles', label: 'Knuckles', type: 'range', min: 3, max: 9, step: 2, default: 5 },
+    { id: 'radius', label: 'Knuckle radius', type: 'range', min: 2.5, max: 6, step: 0.5, default: 3.5, unit: 'mm' },
+    { id: 'thick', label: 'Leaf thickness', type: 'range', min: 1.2, max: 3, step: 0.2, default: 2, unit: 'mm', kind: 'wall' },
+    { id: 'gap', label: 'Clearance', type: 'range', min: 0.25, max: 0.8, step: 0.05, default: 0.4, unit: 'mm' },
+    { id: 'ring', label: 'Keyring hole', type: 'toggle', default: true },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const { clearance } = ctx.settings;
+    const r = p.radius, g = p.gap, L = p.leaf, W = p.width;
+    const n = 2 * Math.floor(p.knuckles / 2) + 1;      // odd, so both ends belong to Leaf A
+    const seg = (W - (n - 1) * g) / n;
+    const t = Math.tan(HINGE_LEAN);
+
+    // knuckle section in (x, z): the axis circle hulled to a narrow foot whose
+    // sides lean 40° from vertical; Rs is how far it reaches when it turns
+    const foot = r * Math.tan((Math.PI / 2 - HINGE_LEAN) / 2);
+    const knuckle = CS.hull([CS.circle(r, 64).translate([0, r]), CS.square([2 * foot, 0.2], true).translate([0, 0.1])]);
+    const Rs = Math.hypot(foot, r);
+    // section in (x, z), extruded along the hinge axis from y0 to y1
+    const alongY = (section, y0, y1) => section.extrude(y1 - y0).rotate([90, 0, 0]).translate([0, y1, 0]);
+
+    // cone pin, half-angle 50° so its underside leans 40°; sized so two
+    // sockets fit in one knuckle
+    const deep = g / Math.cos(HINGE_LEAN);
+    const rp = Math.min(0.55 * r, (seg / 2 - 0.4 - deep) / t);
+    const hp = rp * t;
+    const pinSection = poly(CS, [[0, -0.3], [rp, -0.3], [rp, 0], [0, hp]]);
+    const pin = spin(CS, pinSection, 48), socket = spin(CS, pinSection.offset(g, 'Miter', 4), 48);
+    // +1: the pin points up the axis (+y); −1: down it
+    const place = (solid, y, dir) => solid.rotate([dir > 0 ? -90 : 90, 0, 0]).translate([0, y, r]);
+
+    const ranges = Array.from({ length: n }, (_, j) => {
+      const y0 = -W / 2 + j * (seg + g);
+      return { y0, y1: y0 + seg, a: j % 2 === 0 };
+    });
+    const leaf = (side) => {
+      // x from the axis outward; only the outer corners are rounded
+      const plate = roundedRect(CS, L + 4, W, 3).translate([side * (L + 4) / 2 - side * 4, 0])
+        .intersect(CS.square([L + 1, W + 2]).translate([side > 0 ? 0 : -L - 1, -W / 2 - 1]));
+      let solid = plate.extrude(p.thick);
+      const mine = ranges.filter((k) => k.a === (side < 0));
+      const theirs = ranges.filter((k) => k.a !== (side < 0));
+      solid = solid.subtract(M.union(theirs.map((k) => alongY(CS.circle(Rs + g, 64).translate([0, r]), k.y0 - g, k.y1 + g))));
+      return solid.add(M.union(mine.map((k) => alongY(knuckle, k.y0, k.y1))));
+    };
+
+    let A = leaf(-1), B = leaf(1);
+    const pins = [], sockets = [];
+    ranges.forEach((k, j) => {
+      if (!k.a) return;
+      if (j > 0) { pins.push(place(pin, k.y0, -1)); sockets.push(place(socket, k.y0, -1)); }
+      if (j < n - 1) { pins.push(place(pin, k.y1, 1)); sockets.push(place(socket, k.y1, 1)); }
+    });
+    A = A.add(M.union(pins));
+    B = B.subtract(M.union(sockets));
+    if (p.ring) A = A.subtract(M.cylinder(p.thick + 2, 2.5, 2.5, 40).translate([-L + 5, 0, -1]));
+
+    const verdicts = [];
+    if (g < clearance) verdicts.push({ tone: 'bad', tag: 'FUSED', text: `${g} mm round the knuckles is under your class clearance (${clearance} mm). The hinge will print stuck.` });
+    else verdicts.push({ tone: 'ok', tag: 'PRINT-IN-PLACE', text: `${g} mm of air round every knuckle and pin. Flex it gently both ways after printing to break the first layer free.` });
+    if (rp < 1) verdicts.push({ tone: 'warn', tag: 'SMALL PINS', text: `Each knuckle is only ${round(seg)} mm long, so the cone pins shrink to ${round(2 * rp)} mm across and may snap. Use fewer knuckles or a longer hinge.` });
+    if (p.thick >= r) verdicts.push({ tone: 'warn', tag: 'HALF FOLD', text: `Leaves ${p.thick} mm thick on ${r} mm knuckles hit each other before folding flat. Make the knuckles bigger than the leaves are thick.` });
+
+    return {
+      bodies: [{ name: 'Leaf A', manifold: A }, { name: 'Leaf B', manifold: B }],
+      layout: 'nested',
+      verdicts,
+      stats: [
+        { label: 'Knuckles', value: `${n} × ${round(seg)} mm` },
+        { label: 'Cone pins', value: `${n - 1} × Ø${round(2 * rp)} mm` },
+      ],
+    };
+  },
+};
+
 const tag = {
   id: 'tag',
   name: 'Name tag / keychain',
@@ -567,6 +908,6 @@ const comb = {
   },
 };
 
-export const PARTS = [caseCase, spiral, gears, tag, storage, stand, clip, comb];
+export const PARTS = [caseCase, captured, spinner, hinge, rings, gears, spiral, tag, storage, stand, clip, comb];
 export const PART_GROUPS = ['Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
 export const partById = (id) => PARTS.find((p) => p.id === id);

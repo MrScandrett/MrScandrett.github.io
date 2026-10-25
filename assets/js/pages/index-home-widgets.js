@@ -860,6 +860,8 @@
           }
           setWeatherCard(weather);
           writeWeatherCache(weather);
+          window.__homeWeatherData = weather;
+          document.dispatchEvent(new CustomEvent('home-weather:data', { detail: weather }));
           weatherLastUpdated = Date.now();
           weatherRetryDelay = 30 * 1000;
           scheduleWeatherRefresh(WEATHER_REFRESH_MS);
@@ -867,6 +869,8 @@
           const cached = readWeatherCache();
           if (cached) {
             setWeatherCard(cached.data);
+            window.__homeWeatherData = cached.data;
+            document.dispatchEvent(new CustomEvent('home-weather:data', { detail: cached.data }));
             weatherEls.status.textContent = `STATUS: STALE · AS OF ${formatUpdatedTime(cached.savedAt)}`;
             weatherEls.shell.dataset.weatherStatus = 'standby';
             weatherLastUpdated = cached.savedAt;

@@ -41,7 +41,7 @@
     atm: null, warnings: null, lightning: { status: 'idle', strikes: [], listenStart: 0 },
     spc: { 1: null, 2: null, 3: null }, storms: null, gtwo: null, selected: null,
     replays: null, replay: { slug: '', idx: 0, timer: null },
-    ncGuessed: false, hour: 0, voice: store.get('ww:briefing:voice', 'anchor'), prefs: { ...S.DEFAULT_PREFS, ...store.get('ww:briefing:prefs', {}) },
+    ncGuessed: false, hour: 0, voice: store.get('ww:briefing:voice', 'anchor'), horizon: store.get('ww:briefing:horizon', 'today'), prefs: { ...S.DEFAULT_PREFS, ...store.get('ww:briefing:prefs', {}) },
     token: 0
   };
   const point = () => state.probe || state.loc;
@@ -392,17 +392,110 @@
   }
   function renderBriefing() {
     const w = state.weather, text = $('bf-text'); if (!text) return;
-    if (!w || !w.daily || !w.daily[1]) { setText(text, 'Loading tomorrow\'s forecast…'); return; }
-    const d = w.daily[1];
-    const rows = state.atm ? state.atm.ingredients : [], t0 = now();
-    const tomorrow = rows.filter(r => r.ms >= t0 + 12 * 3600e3 && r.ms <= t0 + 36 * 3600e3);
-    const stormTier = tomorrow.length ? Math.max(...tomorrow.map(r => r.tier)) : 0;
-    const dayName = new Date(`${d.dateStr}T12:00:00`).toLocaleDateString([], { weekday: 'long' });
-    const out = S.composeDailySummary({ dayName, dateStr: d.dateStr, hi: d.max, lo: d.min, rainChance: d.rainChance, precipIn: d.precipSum, gust: d.gustMax != null ? d.gustMax : 0, uv: d.uvMax, code: d.code, stormTier }, { voice: state.voice, prefs: state.prefs });
+    const horizon = state.horizon || 'today';
+    let out = null;
+
+    if (horizon === 'today') {
+      if (!w) { setText(text, 'Loading current conditions…'); return; }
+      out = S.composeCurrentSummary(w, { voice: state.voice, prefs: state.prefs });
+    } else {
+      if (!w || !w.daily || !w.daily[1]) { setText(text, 'Loading tomorrow\'s forecast…'); return; }
+      const d = w.daily[1];
+      const rows = state.atm ? state.atm.ingredients : [], t0 = now();
+      const tomorrow = rows.filter(r => r.ms >= t0 + 12 * 3600e3 && r.ms <= t0 + 36 * 3600e3);
+      const stormTier = tomorrow.length ? Math.max(...tomorrow.map(r => r.tier)) : 0;
+      const dayName = new Date(`${d.dateStr}T12:00:00`).toLocaleDateString([], { weekday: 'long' });
+      out = S.composeDailySummary({ dayName, dateStr: d.dateStr, hi: d.max, lo: d.min, rainChance: d.rainChance, precipIn: d.precipSum, gust: d.gustMax != null ? d.gustMax : 0, uv: d.uvMax, code: d.code, stormTier }, { voice: state.voice, prefs: state.prefs });
+    }
+
     setText(text, out.text);
-    const safety = $('bf-safety'); safety.hidden = !out.safety; setText(safety, out.safety || '');
-    setText($('bf-facts'), JSON.stringify({ source: 'Open-Meteo daily forecast + model ingredients', voice: out.voice, thresholds: state.prefs, facts: out.facts, modelStormTier: stormTier }, null, 2));
-    ['hot', 'cold'].forEach(k => setText($(`bf-${k}-out`), `${state.prefs[k]}°`)); setText($('bf-rain-out'), `${state.prefs.rain}%`);
+    const safety = $('bf-safety');
+    if (safety) {
+      safety.hidden = !out.safety;
+      setText(safety, out.safety || '');
+    }
+    const factsEl = $('bf-facts');
+    if (factsEl) {
+      setText(factsEl, JSON.stringify({
+        horizon,
+        source: horizon === 'today' ? 'WeatherEngine current telemetry' : 'Open-Meteo daily forecast + model ingredients',
+        voice: out.voice,
+        thresholds: state.prefs,
+        facts: out.facts
+      }, null, 2));
+    }
+    ['hot', 'cold'].forEach(k => setText($(`bf-${k}-out`), `${state.prefs[k]}°`));
+    setText($('bf-rain-out'), `${state.prefs.rain}%`);
+
+    const btnToday = $('bf-btn-today'), btnTomorrow = $('bf-btn-tomorrow');
+    if (btnToday) {
+      btnToday.classList.toggle('is-active', horizon === 'today');
+      btnToday.setAttribute('aria-pressed', String(horizon === 'today'));
+    }
+    if (btnTomorrow) {
+      btnTomorrow.classList.toggle('is-active', horizon === 'tomorrow');
+      btnTomorrow.setAttribute('aria-pressed', String(horizon === 'tomorrow'));
+    }
+  }
+
+  const bfListenBtn = $('bf-listen');
+  const cockpitSpeakBtn = $('ww-cockpit-speak');
+
+  function updateBfListenUi(speaking, btn) {
+    if (bfListenBtn) {
+      const isThis = btn === bfListenBtn;
+      bfListenBtn.classList.toggle('is-speaking', isThis && speaking);
+      bfListenBtn.innerHTML = (isThis && speaking)
+        ? '<span class="sd-listen-icon" aria-hidden="true">◼</span> <span class="sd-listen-text">Stop Reading</span>'
+        : '<span class="sd-listen-icon" aria-hidden="true">▶</span> <span class="sd-listen-text">Listen to Briefing</span>';
+      bfListenBtn.setAttribute('aria-label', (isThis && speaking) ? 'Stop reading forecast' : 'Listen to weather briefing out loud');
+    }
+    if (cockpitSpeakBtn) {
+      const isThis = btn === cockpitSpeakBtn;
+      cockpitSpeakBtn.classList.toggle('is-speaking', isThis && speaking);
+      cockpitSpeakBtn.innerHTML = (isThis && speaking)
+        ? '<span aria-hidden="true">◼</span> Stop'
+        : '<span aria-hidden="true">🔊</span> Broadcast';
+      cockpitSpeakBtn.setAttribute('aria-label', (isThis && speaking) ? 'Stop reading broadcast' : 'Broadcast current conditions aloud');
+    }
+  }
+
+  function handleBfSpeak(btn, horizon) {
+    if (S.isSpeaking()) {
+      S.stopSpeaking();
+      updateBfListenUi(false, null);
+      return;
+    }
+    if (horizon && state.horizon !== horizon) {
+      state.horizon = horizon;
+      renderBriefing();
+    }
+    const w = state.weather;
+    if (!w) return;
+    const isToday = (state.horizon || 'today') === 'today';
+    const out = isToday
+      ? S.composeCurrentSummary(w, { voice: state.voice, prefs: state.prefs })
+      : (w.daily && w.daily[1] ? S.composeDailySummary({
+          dayName: new Date(`${w.daily[1].dateStr}T12:00:00`).toLocaleDateString([], { weekday: 'long' }),
+          dateStr: w.daily[1].dateStr,
+          hi: w.daily[1].max,
+          lo: w.daily[1].min,
+          rainChance: w.daily[1].rainChance,
+          precipIn: w.daily[1].precipSum,
+          gust: w.daily[1].gustMax || 0,
+          uv: w.daily[1].uvMax,
+          code: w.daily[1].code
+        }, { voice: state.voice, prefs: state.prefs }) : null);
+
+    if (!out || !out.text) return;
+    const spoken = out.text + (out.safety ? ` ${out.safety}` : '');
+    const started = S.speakWeather(spoken, {
+      voice: state.voice,
+      onStart: () => updateBfListenUi(true, btn),
+      onEnd: () => updateBfListenUi(false, null),
+      onError: () => updateBfListenUi(false, null)
+    });
+    if (!started) updateBfListenUi(false, null);
   }
 
   // ── MAP LAYERS ─────────────────────────────────────────────────────────────
@@ -539,7 +632,10 @@
     const sc = t.closest('#sd-scenario [data-scenario]'); if (sc) { setScenario(sc.dataset.scenario); return; }
     if (t.closest('#sd-restart')) { startPractice(); renderAll(); return; }
     const storm = t.closest('.sd-storm'); if (storm) { state.selected = state.selected === storm.dataset.slot ? null : storm.dataset.slot; state.replay.slug = ''; $('tr-replay').value = ''; stopReplay(); renderAll(); if (state.selected) fitTropics(); return; }
-    const v = t.closest('.sd-voice'); if (v) { state.voice = v.dataset.voice; store.set('ww:briefing:voice', state.voice); renderVoices(); renderBriefing(); return; }
+    const v = t.closest('.sd-voice'); if (v) { state.voice = v.dataset.voice; store.set('ww:briefing:voice', state.voice); if (S.isSpeaking()) S.stopSpeaking(); renderVoices(); renderBriefing(); return; }
+    if (t.closest('#bf-listen')) { handleBfSpeak(bfListenBtn, null); return; }
+    if (t.closest('#ww-cockpit-speak')) { handleBfSpeak(cockpitSpeakBtn, 'today'); return; }
+    const hz = t.closest('#briefing [data-horizon]'); if (hz) { state.horizon = hz.dataset.horizon; store.set('ww:briefing:horizon', state.horizon); if (S.isSpeaking()) S.stopSpeaking(); renderBriefing(); return; }
     const cell = t.closest('.sd-cellbtn'); if (cell) { state.hour = Number(cell.dataset.h); renderIngredients(); return; }
     if (t.closest('#ww-map-fit')) { fitTropics(); return; }
     if (t.closest('#nc-check')) { checkGuess(); return; }

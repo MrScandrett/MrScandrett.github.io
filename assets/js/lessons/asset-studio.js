@@ -116,6 +116,8 @@
     });
     const bar = document.querySelector('[data-asset-progress]');
     if (bar) bar.style.width = `${done.length / 6 * 100}%`;
+    const meter = bar?.closest('[role="progressbar"]');
+    if (meter) { meter.setAttribute('aria-valuenow', done.length); meter.setAttribute('aria-valuetext', `${done.length} of 6 lessons complete`); }
     const label = document.querySelector('[data-asset-progress-label]');
     if (label) label.textContent = `${done.length} of 6 lessons complete`;
   };
@@ -152,8 +154,9 @@
     export:['Export','Apply transforms, name assets, export glTF/GLB, and test the real file in-engine.']
   };
   document.querySelectorAll('.pipeline-stage').forEach(button => button.addEventListener('click', () => {
-    document.querySelectorAll('.pipeline-stage').forEach(item => item.classList.remove('is-active'));
+    document.querySelectorAll('.pipeline-stage').forEach(item => { item.classList.remove('is-active'); item.setAttribute('aria-pressed', 'false'); });
     button.classList.add('is-active');
+    button.setAttribute('aria-pressed', 'true');
     const [name,note] = notes[button.dataset.stage];
     const out = document.querySelector('.pipeline-readout');
     if (out) out.innerHTML = `<strong>${name}:</strong> ${note}`;

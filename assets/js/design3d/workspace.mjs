@@ -52,7 +52,9 @@ async function mount(host){
   }
  }catch{}
  host.classList.add('d3w');host.setAttribute('aria-labelledby',id+'-title');
- host.innerHTML=`<header class="d3w-head"><p>3D workshop · ${escape(def.technique)}</p><h1 id="${id}-title">${escape(def.title)}</h1><p>${escape(def.challenge)}</p></header>
+ // the workshop title is the page heading unless the page already shows its own h1
+ const hx=[...document.querySelectorAll('h1')].some(h=>!host.contains(h)&&!h.closest('.d3-original-reference'))?'h2':'h1';
+ host.innerHTML=`<header class="d3w-head"><p>3D workshop · ${escape(def.technique)}</p><${hx} id="${id}-title">${escape(def.title)}</${hx}><p>${escape(def.challenge)}</p></header>
  <div class="d3w-options"><div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>
  <div class="d3w-scheme"><label for="${id}-scheme">Control scheme</label><select id="${id}-scheme" data-scheme><option value="tinkercad"${state.scheme==='tinkercad'?' selected':''}>Tinkercad / Default</option><option value="blender"${state.scheme==='blender'?' selected':''}>Blender (MMB)</option><option value="fusion"${state.scheme==='fusion'?' selected':''}>Fusion 360 / CAD (Shift+MMB)</option></select><span class="d3w-scheme-hint" data-scheme-hint>Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom</span></div></div>
  ${mode==='character'?`<section class="d3w-character-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a starting character</h2><p>Presets are starting points, not fixed identities. Every feature stays editable.</p></div><div class="d3w-presets">${Object.entries(CHARACTER_PRESETS).map(([key,preset])=>`<button type="button" data-character-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}

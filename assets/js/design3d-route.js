@@ -63,6 +63,12 @@
   const style = document.createElement('link');
   style.rel = 'stylesheet'; style.href = new URL('assets/css/components/design3d-route.css', root).href;
   document.head.append(style);
+  // The older walkthrough's h1 sits in a collapsed disclosure under the workshop (or the
+  // page's own h1); announce it one level down so the page keeps a single top heading.
+  const refTitles = [...document.querySelectorAll('.d3-original-reference h1')];
+  if (refTitles.length && (document.querySelector('[data-design3d-workshop]') || [...document.querySelectorAll('h1')].some(h => !h.closest('.d3-original-reference')))) {
+    refTitles.forEach(h => h.setAttribute('aria-level', '2'));
+  }
   document.querySelectorAll('[data-design3d-route]').forEach(host => {
     host.classList.add('d3-route');
     const nav = document.createElement('nav'); nav.setAttribute('aria-label', '3D Design curriculum');

@@ -459,8 +459,66 @@
     coach: { label: 'Coach', open: f => [`Alright team, ${f.day} game plan:`, `Listen up. ${f.day} looks like this:`], temp: f => `${f.band} conditions, ${f.hi}° high, ${f.lo}° low. Dress like it.`, rain: { dry: 'Dry field. No excuses.', maybe: f => `${f.chance}% chance of rain. Pack the jacket.`, likely: f => `Rain is coming (${f.chance}%). We play through it, smartly.`, storms: 'Thunder on the field means we go inside. Non-negotiable.' }, wind: f => `Gusts to ${f.gust} mph, so lean into it.`, uv: f => `UV ${f.uv}. Sunscreen is part of the uniform.`, close: ['Hydrate. Hustle.', 'Now go earn it.'] },
     captain: { label: 'Sea captain', open: f => [`Ahoy! The glass reads thus for ${f.day}:`, `Mark me words, mates, ${f.day} brings:`], temp: f => `${f.band} air, ${f.hi}° by afternoon, ${f.lo}° by the night watch.`, rain: { dry: 'Fair skies, not a drop in sight.', maybe: f => `A ${f.chance}% chance of squalls; stow the gear.`, likely: f => `Rain on the horizon (${f.chance}%). Batten down.`, storms: 'Thunderheads on the horizon! Every hand below deck.' }, wind: f => `Gusts of ${f.gust} mph will fill the sails.`, uv: f => `The sun bites at UV ${f.uv}. Cover up, sailor.`, close: ['Fair winds!', 'Steady as she goes.'] },
     deadpan: { label: 'Deadpan', open: f => [`${f.day}. Weather will occur.`, `${f.day}, summarized:`], temp: f => `It will be ${f.band}. ${f.hi}° and ${f.lo}°. Make of that what you will.`, rain: { dry: 'Precipitation: unlikely. Disappointing, honestly.', maybe: f => `${f.chance}% rain. A coin that cannot decide.`, likely: f => `${f.chance}% rain. The sky has made up its mind.`, storms: 'Thunderstorms. Please do not stand in them.' }, wind: f => `Gusts ${f.gust} mph. Hats are optional but futile.`, uv: f => `UV ${f.uv}. The sun is doing sun things.`, close: ['That is all.', 'Carry on.'] },
-    sage: { label: 'Calm guide', open: f => [`Breathe. Here is ${f.day}:`, `Gently, ${f.day} arrives:`], temp: f => `a ${f.band} day, ${f.hi}° rising and ${f.lo}° resting.`, rain: { dry: 'The sky holds its water.', maybe: f => `Rain may visit (${f.chance}%).`, likely: f => `Rain will likely visit (${f.chance}%). Let it.`, storms: 'Storms are near. Be somewhere safe and still.' }, wind: f => `The wind speaks up to ${f.gust} mph.`, uv: f => `The sun is strong (UV ${f.uv}). Rest in shade.`, close: ['Move through it with care.', 'All is weather.'] }
+    sage: { label: 'Calm guide', open: f => [`Breathe. Here is ${f.day}:`, `Gently, ${f.day} arrives:`], temp: f => `a ${f.band} day, ${f.hi}° rising and ${f.lo}° resting.`, rain: { dry: 'The sky holds its water.', maybe: f => `Rain may visit (${f.chance}%).`, likely: f => `Rain will likely visit (${f.chance}%). Let it.`, storms: 'Storms are near. Be somewhere safe and still.' }, wind: f => `The wind speaks up to ${f.gust} mph.`, uv: f => `The sun is strong (UV ${f.uv}). Rest in shade.`, close: ['Move through it with care.', 'All is weather.'] },
+    meteorologist: {
+      label: 'Meteorologist',
+      open: f => [`ClassroomOS meteorological desk, outlook for ${f.day}:`, `Synoptic forecast for ${f.day}:`],
+      temp: f => `numerical models indicate a ${f.band} thermal profile, reaching a high of ${f.hi}° and a low of ${f.lo}°.`,
+      rain: {
+        dry: 'Atmospheric moisture remains low with negligible precipitation probability.',
+        maybe: f => `Regional moisture brings a ${f.chance}% chance of scattered showers.`,
+        likely: f => `Tropospheric saturation supports likely precipitation (${f.chance}%).`,
+        storms: 'Convective instability indicates thunderstorms are probable.'
+      },
+      wind: f => `Surface wind velocity indicates peak gusts near ${f.gust} mph.`,
+      uv: f => `Solar irradiance peaks at UV ${f.uv}.`,
+      close: ['Monitoring regional telemetry.', 'ClassroomOS atmospheric telemetry complete.']
+    },
+    student: {
+      label: 'Classroom kid',
+      open: f => [`Classroom weather desk! Here is the scoop for ${f.day}:`, `Hey everyone! Recess forecast for ${f.day}:`],
+      temp: f => `it will feel ${f.band}, with a high of ${f.hi}° and a low of ${f.lo}°.`,
+      rain: {
+        dry: 'No rain on the playground all day.',
+        maybe: f => `Keep a jacket handy, there is a ${f.chance}% chance of rain.`,
+        likely: f => `Rain is super likely (${f.chance}%), so pack rain boots for recess.`,
+        storms: 'Thunderstorms are in the forecast, so stay safe inside.'
+      },
+      wind: f => `Gusts up to ${f.gust} mph will blow hats around!`,
+      uv: f => `UV index is ${f.uv}, so remember sunscreen before outdoor play.`,
+      close: ['Have an awesome day!', 'That is the student weather desk!']
+    }
   };
+  const VOICE_PROFILES = {
+    anchor: { label: 'Newsroom anchor', rate: 1.0, pitch: 1.0, lang: 'en-US' },
+    coach: { label: 'Coach', rate: 1.08, pitch: 1.06, lang: 'en-US' },
+    captain: { label: 'Sea captain', rate: 0.90, pitch: 0.82, lang: 'en-US' },
+    deadpan: { label: 'Deadpan', rate: 0.94, pitch: 0.86, lang: 'en-US' },
+    sage: { label: 'Calm guide', rate: 0.82, pitch: 0.96, lang: 'en-US' },
+    meteorologist: { label: 'Meteorologist', rate: 1.02, pitch: 1.02, lang: 'en-US' },
+    student: { label: 'Classroom kid', rate: 1.08, pitch: 1.14, lang: 'en-US' }
+  };
+  /** Converts meteorological text and symbols into natural, spoken English for speech synthesis. */
+  function toSpeechText(text) {
+    if (!text) return '';
+    return text
+      .replace(/(\d+)°F/g, '$1 degrees Fahrenheit')
+      .replace(/(\d+)°/g, '$1 degrees')
+      .replace(/(\d+)%/g, '$1 percent')
+      .replace(/(\d+)\s*mph\b/gi, '$1 miles per hour')
+      .replace(/(\d+)\s*kt\b/gi, '$1 knots')
+      .replace(/\bUV\s*(?:index)?\s*(\d+(\.\d+)?)/gi, 'U V index $1')
+      .replace(/\bUV\b/g, 'U V')
+      .replace(/~/g, 'about ')
+      .replace(/\/\//g, ', ')
+      .replace(/·/g, ', ')
+      .replace(/⚠/g, 'Warning: ')
+      .replace(/\bNWS\b/g, 'National Weather Service')
+      .replace(/\bSPC\b/g, 'Storm Prediction Center')
+      .replace(/[\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
   /** Voice changes the tone, never the numbers; safety guidance stays voice-neutral. */
   function composeDailySummary(input, opts = {}) {
     const prefs = { ...DEFAULT_PREFS, ...(opts.prefs || {}) };
@@ -476,7 +534,211 @@
     const safety = f.severe ? `Safety: ${f.severeWhy} expected. Follow National Weather Service alerts and plan to be indoors for the worst of it.` : null;
     // Capitalize a fragment only when the previous one ended a sentence ("Gently, Sunday arrives:" continues in lower case).
     const text = parts.reduce((out, part) => (out && !/[.!?]$/.test(out) ? `${out} ${part}` : `${out ? out + ' ' : ''}${part.charAt(0).toUpperCase()}${part.slice(1)}`), '');
-    return { voice, voiceLabel: v.label, text, safety, facts: f };
+    return { voice, voiceLabel: v.label, text, speechText: toSpeechText(text), safety, facts: f };
+  }
+
+  function currentFacts(d, prefs = DEFAULT_PREFS) {
+    const temp = Math.round(d.temperature != null ? d.temperature : (d.currentTemp != null ? d.currentTemp : (d.hi || 72)));
+    const feels = Math.round(d.feelsLike != null ? d.feelsLike : temp);
+    const hi = Math.round(d.max != null ? d.max : (d.hi != null ? d.hi : temp));
+    const lo = Math.round(d.min != null ? d.min : (d.lo != null ? d.lo : temp - 10));
+    const chance = Math.round(d.rainChance || 0);
+    const wind = Math.round(d.wind != null ? d.wind : (d.windSpeed != null ? d.windSpeed : 0));
+    const gust = Math.round(d.windGusts != null ? d.windGusts : (d.gust != null ? d.gust : wind));
+    const uv = Math.round((d.uvIndex != null ? d.uvIndex : (d.uv != null ? d.uv : 0)) * 10) / 10;
+    const humidity = Math.round(d.humidity != null ? d.humidity : 50);
+    const condition = (d.condition || (d.code != null ? (WW_CODES[d.code] || 'Fair') : 'Fair')).toLowerCase();
+    const dir = typeof d.windCompass === 'string' ? d.windCompass : (d.windCompass && d.windCompass.full ? d.windCompass.full : (d.windDirection != null ? compass16(d.windDirection) : ''));
+    const band = warmthBand(temp, prefs);
+    const code = d.weatherCode != null ? d.weatherCode : (d.currentCode != null ? d.currentCode : (d.code || 0));
+    const codeThunder = code >= 95;
+    const severe = Boolean(d.severe || codeThunder || gust >= 40 || temp >= prefs.hot + 10 || lo <= 25);
+    const severeWhy = d.severeWhy || (codeThunder ? 'thunderstorms' : gust >= 40 ? 'damaging wind gusts' : temp >= prefs.hot + 10 ? 'dangerous heat' : lo <= 25 ? 'freeze warning' : null);
+    const city = (d.location && d.location.label ? d.location.label.split(',')[0] : (d.city || 'your area')).trim();
+    const rain = codeThunder ? 'storms' : chance >= 60 ? 'likely' : chance >= prefs.rain ? 'maybe' : 'dry';
+    return {
+      city, temp, feels, hi, lo, chance, wind, gust, uv, humidity, condition, dir, band,
+      windy: wind >= 18 || gust >= 25,
+      uvHigh: uv >= 6,
+      humidityHigh: humidity >= 70,
+      hasSpread: Math.abs(feels - temp) >= 3,
+      code, severe, severeWhy, rain
+    };
+  }
+
+  const CURRENT_VOICES = {
+    anchor: {
+      label: 'Newsroom anchor',
+      open: f => [`Live from the weather center for ${f.city}.`, `Current conditions in ${f.city}:`],
+      temp: f => `the temperature is ${f.temp}°${f.hasSpread ? `, feels like ${f.feels}°` : ''} under ${f.condition}. High reaches ${f.hi}°, low ${f.lo}°.`,
+      rain: {
+        dry: 'No precipitation on local radar.',
+        maybe: f => `A ${f.chance}% chance of scattered showers today.`,
+        likely: f => `Rain is active or expected soon, with chances at ${f.chance}%.`,
+        storms: 'Active thunderstorms in the vicinity; stay weather-aware.'
+      },
+      wind: f => `Winds are ${f.wind} mph${f.dir ? ` from the ${f.dir}` : ''}.`,
+      uv: f => `UV index is ${f.uv}: sunscreen advised.`,
+      close: ['Back to the studio.', 'We will keep watching the skies.']
+    },
+    coach: {
+      label: 'Coach',
+      open: f => [`Alright team, ${f.city} field report right now:`, `Listen up. Here is what we have outside:`],
+      temp: f => `it is ${f.temp}°${f.hasSpread ? `, feels like ${f.feels}°` : ''} with ${f.condition}. Topping out at ${f.hi}°, dropping to ${f.lo}° tonight.`,
+      rain: {
+        dry: 'Dry field today. No excuses.',
+        maybe: f => `Keep your jacket in your bag, ${f.chance}% chance of rain.`,
+        likely: f => `Rain is coming (${f.chance}%). We play smart and stay focused.`,
+        storms: 'Lightning protocol in effect. Move indoors immediately.'
+      },
+      wind: f => `Winds at ${f.wind} mph${f.dir ? ` from the ${f.dir}` : ''}. Lean into it.`,
+      uv: f => `UV is ${f.uv}. Sunscreen is mandatory.`,
+      close: ['Hydrate. Hustle.', 'Now go earn it.']
+    },
+    captain: {
+      label: 'Sea captain',
+      open: f => [`Ahoy! Deck log for ${f.city}:`, `The glass speaks for ${f.city}:`],
+      temp: f => `we mark ${f.temp}° on deck${f.hasSpread ? `, feels like ${f.feels}°` : ''} amid ${f.condition}. High tide of heat hits ${f.hi}°, dipping to ${f.lo}° by the night watch.`,
+      rain: {
+        dry: 'Fair skies and dry planks all around.',
+        maybe: f => `Keep a weather eye aloft for squalls, ${f.chance}% chance of rain.`,
+        likely: f => `Batten down, rain is upon us (${f.chance}%).`,
+        storms: 'Thunderheads brewing! All hands below deck.'
+      },
+      wind: f => `Wind pulling ${f.wind} knots${f.dir ? ` from the ${f.dir}` : ''}.`,
+      uv: f => `The sun cuts sharp at UV ${f.uv}. Cover your crown, matey.`,
+      close: ['Steady as she goes!', 'Fair winds!']
+    },
+    deadpan: {
+      label: 'Deadpan',
+      open: f => [`${f.city}. Atmospheric telemetry currently reports:`, `Current status for ${f.city}:`],
+      temp: f => `it is ${f.temp}°. Feels like ${f.feels}°. Condition: ${f.condition}. High: ${f.hi}°. Low: ${f.lo}°.`,
+      rain: {
+        dry: 'Precipitation: none. Moving on.',
+        maybe: f => `A ${f.chance}% chance of rain. Indecisive.`,
+        likely: f => `Rain chance ${f.chance}%. Water falling from the sky is probable.`,
+        storms: 'Thunderstorms. Do not argue with electricity.'
+      },
+      wind: f => `Wind is ${f.wind} mph. Air molecules in motion.`,
+      uv: f => `UV ${f.uv}. The sun continues existing.`,
+      close: ['That is all.', 'Carry on.']
+    },
+    sage: {
+      label: 'Calm guide',
+      open: f => [`Be present with the sky over ${f.city}:`, `Gently observing ${f.city}:`],
+      temp: f => `the air rests at ${f.temp}°${f.hasSpread ? `, feeling like ${f.feels}°` : ''} under ${f.condition}. The day warms to ${f.hi}°, then softens to ${f.lo}° tonight.`,
+      rain: {
+        dry: 'The clouds drift peacefully without rain.',
+        maybe: f => `Showers may touch the earth (${f.chance}%).`,
+        likely: f => `Rain arrives to nourish the ground (${f.chance}%). Let it come.`,
+        storms: 'Storms are near. Seek a safe, still place.'
+      },
+      wind: f => `The wind breathes at ${f.wind} mph${f.dir ? ` from the ${f.dir}` : ''}.`,
+      uv: f => `The sun is bright at UV ${f.uv}. Rest in shade.`,
+      close: ['Move through this day with care.', 'All is weather.']
+    },
+    meteorologist: {
+      label: 'Meteorologist',
+      open: f => [`ClassroomOS meteorological desk, live update for ${f.city}:`, `Current surface observation for ${f.city}:`],
+      temp: f => `ambient temperature registers ${f.temp}°${f.hasSpread ? `, apparent temperature ${f.feels}°` : ''} with ${f.condition}. Maximum expected today is ${f.hi}°, minimum ${f.lo}°.`,
+      rain: {
+        dry: 'Reflectivity displays zero precipitation returns.',
+        maybe: f => `Atmospheric moisture suggests a ${f.chance}% probability of precipitation.`,
+        likely: f => `Tropospheric column saturation indicates likely rain (${f.chance}%).`,
+        storms: 'Convective available potential energy supports active thunderstorms.'
+      },
+      wind: f => `Surface wind velocity measures ${f.wind} mph${f.dir ? ` from the ${f.dir}` : ''}.`,
+      uv: f => `Ultraviolet solar flux registers index ${f.uv}.`,
+      close: ['Tracking regional telemetry.', 'ClassroomOS atmospheric telemetry complete.']
+    },
+    student: {
+      label: 'Classroom kid',
+      open: f => [`Classroom weather reporter here with today's scoop for ${f.city}!`, `Hey everybody! Playground weather report for ${f.city}:`],
+      temp: f => `right now it is ${f.temp}°${f.hasSpread ? `, but feels like ${f.feels}°` : ''} and ${f.condition}! Today's high is ${f.hi}°, and low tonight is ${f.lo}°.`,
+      rain: {
+        dry: 'No rain on the playground! Recess is all clear.',
+        maybe: f => `Watch out for sprinkles, there is a ${f.chance}% chance of rain.`,
+        likely: f => `Rain chance is ${f.chance}%, so grab boots and a jacket for recess!`,
+        storms: 'Lightning alert! Remember: when thunder roars, stay indoors!'
+      },
+      wind: f => `Wind is blowing at ${f.wind} mph${f.dir ? ` from the ${f.dir}` : ''}.`,
+      uv: f => `UV is ${f.uv}, so slap on sunscreen before recess!`,
+      close: ['Have an awesome day in class!', 'Back to the classroom!']
+    }
+  };
+
+  /** Composes a live spoken-ready summary of current conditions. */
+  function composeCurrentSummary(input, opts = {}) {
+    const prefs = { ...DEFAULT_PREFS, ...(opts.prefs || {}) };
+    const f = currentFacts(input, prefs);
+    const voice = CURRENT_VOICES[opts.voice] ? opts.voice : 'anchor', v = CURRENT_VOICES[voice];
+    const seed = hashSeed(`${f.city}|${f.temp}|${f.code}|${voice}`);
+    const pick = a => a[seed % a.length];
+    const r = v.rain[f.rain];
+    const parts = [pick(v.open(f)), v.temp(f), typeof r === 'function' ? r(f) : r];
+    if (f.windy || f.wind > 0) parts.push(v.wind(f));
+    if (f.uvHigh) parts.push(v.uv(f));
+    parts.push(pick(v.close));
+    const safety = f.severe ? `Safety: ${f.severeWhy} reported. Follow National Weather Service alerts and take appropriate precautions.` : null;
+    const text = parts.reduce((out, part) => (out && !/[.!?]$/.test(out) ? `${out} ${part}` : `${out ? out + ' ' : ''}${part.charAt(0).toUpperCase()}${part.slice(1)}`), '');
+    return { voice, voiceLabel: v.label, text, speechText: toSpeechText(text), safety, facts: f };
+  }
+
+  // ── SPEECH SYNTHESIS NARRATION ─────────────────────────────────────────────
+  let activeUtterance = null;
+  function stopSpeaking() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ }
+    }
+    activeUtterance = null;
+  }
+  function isSpeaking() {
+    return typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.speaking;
+  }
+  function speakWeather(text, opts = {}) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+    stopSpeaking();
+    const spoken = toSpeechText(text);
+    if (!spoken) return false;
+    const voiceKey = opts.voice || 'anchor';
+    const profile = VOICE_PROFILES[voiceKey] || VOICE_PROFILES.anchor;
+    const utterance = new SpeechSynthesisUtterance(spoken);
+    utterance.rate = opts.rate != null ? opts.rate : profile.rate;
+    utterance.pitch = opts.pitch != null ? opts.pitch : profile.pitch;
+    utterance.lang = opts.lang || profile.lang;
+
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (voices.length > 0) {
+        const enVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+        if (voiceKey === 'captain') {
+          const britOrDeep = enVoices.find(v => /daniel|oliver|george|british|uk|scotland/i.test(v.name));
+          if (britOrDeep) utterance.voice = britOrDeep;
+        } else if (voiceKey === 'sage') {
+          const softVoice = enVoices.find(v => /serena|samantha|karen|victoria|natural/i.test(v.name));
+          if (softVoice) utterance.voice = softVoice;
+        } else if (voiceKey === 'student') {
+          const brightVoice = enVoices.find(v => /junior|fred|albert|kid|child|samantha/i.test(v.name));
+          if (brightVoice) utterance.voice = brightVoice;
+        }
+      }
+    } catch (e) { /* voice list access */ }
+
+    utterance.onstart = () => {
+      activeUtterance = utterance;
+      if (typeof opts.onStart === 'function') opts.onStart();
+    };
+    utterance.onend = () => {
+      activeUtterance = null;
+      if (typeof opts.onEnd === 'function') opts.onEnd();
+    };
+    utterance.onerror = (e) => {
+      activeUtterance = null;
+      if (typeof opts.onError === 'function') opts.onError(e);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    return true;
   }
 
   // ── FETCHERS ───────────────────────────────────────────────────────────────
@@ -527,6 +789,32 @@
     u.searchParams.set('forecast_days', '3'); u.searchParams.set('timezone', 'auto');
     const d = await fetchJson(u.toString(), { ttlMs: 30 * MIN });
     return d && d.daily ? dayFromDaily(d.daily, 1) : null;
+  }
+  async function fetchToday(lat, lon) {
+    const u = new URL('https://api.open-meteo.com/v1/forecast');
+    u.searchParams.set('latitude', round2(lat)); u.searchParams.set('longitude', round2(lon));
+    u.searchParams.set('current', 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m');
+    u.searchParams.set('daily', 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_gusts_10m_max,uv_index_max');
+    u.searchParams.set('temperature_unit', 'fahrenheit'); u.searchParams.set('wind_speed_unit', 'mph'); u.searchParams.set('precipitation_unit', 'inch');
+    u.searchParams.set('forecast_days', '3'); u.searchParams.set('timezone', 'auto');
+    const d = await fetchJson(u.toString(), { ttlMs: 15 * MIN });
+    if (!d || !d.daily) return null;
+    const cur = d.current || {};
+    const today = dayFromDaily(d.daily, 0);
+    if (!today) return null;
+    return {
+      ...today,
+      dayName: 'Today',
+      currentTemp: cur.temperature_2m != null ? cur.temperature_2m : today.hi,
+      temperature: cur.temperature_2m != null ? cur.temperature_2m : today.hi,
+      feelsLike: cur.apparent_temperature != null ? cur.apparent_temperature : today.hi,
+      humidity: cur.relative_humidity_2m != null ? cur.relative_humidity_2m : 50,
+      windSpeed: cur.wind_speed_10m != null ? cur.wind_speed_10m : 0,
+      wind: cur.wind_speed_10m != null ? cur.wind_speed_10m : 0,
+      windDirection: cur.wind_direction_10m,
+      currentCode: cur.weather_code != null ? cur.weather_code : today.code,
+      weatherCode: cur.weather_code != null ? cur.weather_code : today.code
+    };
   }
   async function fetchPointMeta(lat, lon) {
     const d = await fetchJson(`https://api.weather.gov/points/${lat.toFixed(2)},${lon.toFixed(2)}`, { ttlMs: 6 * 3600e3, ...NWS });
@@ -599,6 +887,8 @@
     saffirSimpson, analyzeStormThreat, parseNhcStorm, replayFrame, distanceToPath,
     createPracticeStorm, practicePosition, practiceAlert, practiceStrikes, practiceNowcast,
     summaryFacts, composeDailySummary, dayFromDaily,
-    fetchAtmosphere, fetchTomorrow, fetchPointMeta, fetchRadarStation, fetchWarnings, fetchAlertsAt, fetchSpcOutlook, fetchActiveStorms, fetchTropicalOutlook
+    currentFacts, composeCurrentSummary, toSpeechText, speakWeather, stopSpeaking, isSpeaking,
+    VOICE_PROFILES, CURRENT_VOICES,
+    fetchAtmosphere, fetchToday, fetchTomorrow, fetchPointMeta, fetchRadarStation, fetchWarnings, fetchAlertsAt, fetchSpcOutlook, fetchActiveStorms, fetchTropicalOutlook
   };
 });

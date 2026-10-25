@@ -4,12 +4,15 @@
    the previous ring (stack) or on the same floor (concentric). The view is a
    painter's-order three-quarter projection; the STL is built from the same
    ring list, so what you see is what you download. The Locked fidget layout
-   swaps the 3-D picture for a cutaway and builds its rings with fidget-rings.js
-   (which also has the tests). Needs sim-kit.js and fidget-rings.js. */
+   builds its rings with fidget-rings.js (which also has the tests) and shows
+   them twice: a real 3-D model (fidget-rings-3d.mjs, loaded with Three.js the
+   first time the layout opens) above a cutaway that shows the lock. Needs
+   sim-kit.js and fidget-rings.js. */
 (function () {
   'use strict';
   if (!window.SimKit) return;
   var FR = window.FidgetRings;
+  var scriptSrc = document.currentScript && document.currentScript.src;
   var canvas = document.getElementById('cb-canvas');
   if (!canvas || !FR) return;
 
@@ -95,6 +98,7 @@
     var s = Math.max(0.01, Math.min((W - 60) / (xMax * 1.04), (H - 70) / (zMax + liftCap)));
     var x0 = 30, floor = H - 26;
     var z = FR.lift(p, an, +fIn.lift.value);
+    if (fidget3d) fidget3d.update(p, z);
 
     // bed
     ctx.strokeStyle = colors.text; ctx.fillStyle = colors.text; ctx.lineWidth = 2; ctx.globalAlpha = 0.55;
@@ -150,6 +154,27 @@
 
     updateFidgetText(p, an);
   }
+
+  /* ── Locked fidget in 3-D ─────────────────────────────────────────── */
+  var canvas3d = document.getElementById('cb-canvas-3d');
+  var cut3d = document.getElementById('cb-3d-cut');
+  var fidget3d = null, loading3d = false;
+  function load3d() {
+    if (fidget3d || loading3d || !canvas3d || !scriptSrc) return;
+    loading3d = true;
+    import(new URL('fidget-rings-3d.mjs', scriptSrc).href).then(function (m) {
+      fidget3d = m.mount(canvas3d, FR);
+      fidget3d.setCut(cut3d.checked);
+      if (window.ResizeObserver) new ResizeObserver(function () { fidget3d.resize(); }).observe(canvas3d);
+      render();
+    }).catch(function () {
+      // No WebGL, or the module failed to load: the cutaway still teaches the lock.
+      canvas3d.closest('.cb-3d').remove();
+    });
+  }
+  if (cut3d) cut3d.addEventListener('change', function () { if (fidget3d) fidget3d.setCut(cut3d.checked); });
+  var view3d = document.getElementById('cb-3d-view');
+  if (view3d) view3d.addEventListener('click', function () { if (fidget3d) fidget3d.resetView(); });
 
   function renderMode() { if (currentMode() === 'fidget') renderFidget(); else render(); }
 
@@ -406,6 +431,7 @@
     var mode = currentMode();
     for (var g = 0; g < groups.length; g++) groups[g].hidden = groups[g].getAttribute('data-cb-for') !== (mode === 'fidget' ? 'fidget' : 'classic');
     statusEl.hidden = mode !== 'fidget';
+    if (mode === 'fidget') load3d();
     canvas.setAttribute('aria-label', mode === 'fidget' ? 'Cutaway of the locked ring fidget: each ring has a ridge that sits in a groove of the next ring out' : canvasLabel);
     lastProgram = '';
   }
@@ -416,6 +442,7 @@
     shapeInputs[0].checked = true;
     setFidgetInputs(FR.DEFAULTS.star);
     fIn.lift.value = 0;
+    if (cut3d) { cut3d.checked = false; if (fidget3d) fidget3d.setCut(false); }
     showControls();
     render();
   });

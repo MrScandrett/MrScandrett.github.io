@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import Module from '../assets/vendor/manifold/manifold.js';
 import { createEngine, resolveParams } from '../assets/js/forge/engine.mjs';
 import { PARTS, spiralConeMath } from '../assets/js/forge/parts.mjs';
@@ -10,6 +11,8 @@ import { bounds, edgeReport, prepareForPrint, signedVolume } from '../assets/js/
 
 const font = JSON.parse(await readFile(new URL('../assets/vendor/fonts/droid-sans-bold.typeface.json', import.meta.url), 'utf8'));
 const engine = await createEngine(Module, { font });
+// forge.html loads the locked-ring maths as a classic script
+globalThis.FidgetRings = createRequire(import.meta.url)('../assets/js/lessons/fidget-rings.js');
 
 /* Defaults, every range at its min and at its max, and every select option. */
 function variants(part) {
@@ -40,8 +43,10 @@ for (const part of PARTS) {
         const report = edgeReport(b.positions);
         assert.ok(report.watertight, `${label} / ${b.name}: ${JSON.stringify(report)}`);
         assert.ok(signedVolume(b.positions) > 0, `${label} / ${b.name}: inside out`);
-        assert.ok(Math.abs(bounds(b.positions).min[2]) < 1e-3, `${label} / ${b.name}: not on the bed`);
+        // nested print-in-place pieces may float inside each other; the group sits on the bed
+        if (!r.layout.nested) assert.ok(Math.abs(bounds(b.positions).min[2]) < 1e-3, `${label} / ${b.name}: not on the bed`);
       }
+      if (r.layout.nested) assert.ok(Math.abs(bounds(concat(r.bodies.map((b) => b.positions))).min[2]) < 1e-3, `${label}: not on the bed`);
       assert.ok(r.verdicts.some((v) => v.tag === 'FITS' || v.tag === 'TOO BIG'), `${label}: no bed check`);
     }
   });
@@ -110,4 +115,55 @@ test('spiral cone: the pair prints nested without touching, and the cone screws 
   const apart = engine.run(part, { ...p, arrange: 'apart' });
   assert.ok(nested.layout.nested && nested.layout.size[0] < 85, 'nested pair shares one footprint');
   assert.ok(apart.layout.size[0] > 140, 'apart layout puts the pieces side by side');
+});
+
+/* Print-in-place fidgets: the pieces must not touch as printed, the moving
+   piece must be free to move the way the toy works, and it must be trapped. */
+const SETTINGS = { nozzle: 0.4, layer: 0.2, clearance: 0.3 };
+function buildPart(id, given = {}) {
+  const { Manifold, CrossSection } = engine.wasm;
+  const part = PARTS.find((p) => p.id === id);
+  const p = resolveParams(part, given);
+  const built = part.build({ Manifold, CrossSection, settings: SETTINGS }, p);
+  const body = (name) => built.bodies.find((b) => b.name === name).manifold;
+  // every manifold made here is tracked by the engine and freed by its next run
+  const overlap = (a, b) => a.intersect(b).volume();
+  return { p, built, body, overlap };
+}
+
+test('captured spinner: the disc turns in place but cannot lift out of the cup', () => {
+  const { body, overlap } = buildPart('captured');
+  const cup = body('Cup'), disc = body('Disc');
+  assert.ok(overlap(cup, disc) < 0.01, 'as printed, cup and disc must not touch');
+  for (const a of [7, 45, 90]) assert.ok(overlap(cup, disc.rotate([0, 0, a])) < 0.01, `turning ${a}° must be free`);
+  assert.ok(overlap(cup, disc.translate([0, 0, 3])) > 1, 'lifting the disc must hit the lip');
+});
+
+test('fidget spinner: the printed hub spins but is trapped both ways', () => {
+  const { body, overlap } = buildPart('spinner');
+  const spinner = body('Spinner'), hub = body('Hub');
+  assert.ok(overlap(spinner, hub) < 0.01, 'as printed, hub and body must not touch');
+  assert.ok(overlap(spinner, hub.rotate([0, 0, 33])) < 0.01, 'turning the hub must be free');
+  assert.ok(overlap(spinner, hub.translate([0, 0, 1.5])) > 1, 'pushing the hub up must jam on the ridge');
+  assert.ok(overlap(spinner, hub.translate([0, 0, -1.5])) > 1, 'pushing the hub down must jam on the ridge');
+});
+
+test('hinge: Leaf B folds flat over Leaf A and partway back, but cannot pull off', () => {
+  const { p, body, overlap } = buildPart('hinge');
+  const a = body('Leaf A'), b = body('Leaf B');
+  assert.ok(overlap(a, b) < 0.01, 'as printed, the leaves must not touch');
+  const fold = (deg) => b.translate([0, 0, -p.radius]).rotate([0, deg, 0]).translate([0, 0, p.radius]);
+  for (const deg of [-45, -90, -135, -175, 30, 60]) assert.ok(overlap(a, fold(deg)) < 0.01, `folding ${deg}° must be free`);
+  assert.ok(overlap(a, fold(120)) > 1, 'folding backwards stops where the leaves meet under the axis');
+  assert.ok(overlap(a, b.translate([1.5, 0, 0])) > 0.5, 'pulling the leaves apart must catch on the pins');
+});
+
+test('locked star fidget: neighbouring rings never touch at rest, slide within their play, and lock', () => {
+  const { p, built, overlap } = buildPart('rings');
+  const an = globalThis.FidgetRings.analyze(p);
+  assert.ok(an.locked);
+  const [inner, next] = built.bodies.map((b) => b.manifold);
+  assert.ok(overlap(inner, next) < 0.01, 'as printed, rings 1 and 2 must not touch');
+  assert.ok(overlap(inner.translate([0, 0, an.up - 0.2]), next) < 0.01, 'sliding up within the play must be free');
+  assert.ok(overlap(inner.translate([0, 0, an.up + 0.5]), next) > 0.5, 'sliding past the play must hit the groove');
 });

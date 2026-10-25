@@ -377,3 +377,53 @@ test('daily summary: a model-only storm tier mentions storms at Slight but only 
   const enhanced = S.composeDailySummary({ ...day, stormTier: 4 }, { voice: 'anchor' });
   assert.match(enhanced.safety, /strong thunderstorms/);
 });
+
+test('toSpeechText converts weather notation into natural spoken English', () => {
+  const raw = 'Currently 78°F, feels like 81°. Rain chance 60%. Gusts near 25 mph. UV index 6. ⚠ Thunderstorm Warning · NWS';
+  const spoken = S.toSpeechText(raw);
+  assert.ok(spoken.includes('78 degrees Fahrenheit'));
+  assert.ok(spoken.includes('81 degrees'));
+  assert.ok(spoken.includes('60 percent'));
+  assert.ok(spoken.includes('25 miles per hour'));
+  assert.ok(spoken.includes('U V index 6'));
+  assert.ok(spoken.includes('Warning: Thunderstorm Warning'));
+  assert.ok(spoken.includes('National Weather Service'));
+  assert.ok(!spoken.includes('°'));
+  assert.ok(!spoken.includes('⚠'));
+  assert.ok(!spoken.includes('·'));
+});
+
+test('current summary: composes today observations across all voices and includes spoken text', () => {
+  const current = {
+    location: { label: 'Longwood, FL' },
+    temperature: 78.2,
+    feelsLike: 82.1,
+    condition: 'Partly cloudy',
+    code: 2,
+    max: 85,
+    min: 66,
+    wind: 12,
+    windDirection: 90,
+    humidity: 68,
+    rainChance: 25,
+    uv: 6.4
+  };
+  for (const v of Object.keys(S.CURRENT_VOICES)) {
+    const res = S.composeCurrentSummary(current, { voice: v });
+    assert.ok(res.text.includes('78'), `${v} should mention temp 78: ${res.text}`);
+    assert.ok(res.text.includes('85'), `${v} should mention high 85: ${res.text}`);
+    assert.ok(res.text.includes('66'), `${v} should mention low 66: ${res.text}`);
+    assert.ok(res.speechText.includes('78 degrees'), `${v} speechText should say 78 degrees`);
+    assert.ok(/^[A-Z]/.test(res.text), `${v} should start with capital letter`);
+    assert.ok(!/[.!?] [a-z]/.test(res.text), `${v} should not have lowercase after sentence end`);
+  }
+});
+
+test('voice profiles: defined with valid rate and pitch for all voices', () => {
+  for (const v of Object.keys(S.VOICES)) {
+    const prof = S.VOICE_PROFILES[v];
+    assert.ok(prof, `Profile exists for ${v}`);
+    assert.ok(Number.isFinite(prof.rate) && prof.rate > 0.5 && prof.rate < 2.0);
+    assert.ok(Number.isFinite(prof.pitch) && prof.pitch > 0.5 && prof.pitch < 2.0);
+  }
+});

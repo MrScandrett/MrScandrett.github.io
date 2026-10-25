@@ -289,9 +289,10 @@ function paint() {
   if (!view) return;
   const show = el.showOverhangs.checked;
   view.parts.children.forEach((mesh, i) => {
-    // nested pieces sit inside each other, so shade each one differently to tell them apart
+    // nested pieces sit inside each other, so shade every other one darker to
+    // tell neighbours apart (a dozen locked rings would otherwise fade to black)
     const base = new THREE.Color(state.color);
-    if (result?.layout?.nested && i > 0) base.offsetHSL(0, 0, -0.2 * i);
+    if (result?.layout?.nested && i % 2) base.offsetHSL(0, 0, -0.2);
     const colors = mesh.geometry.getAttribute('color');
     const mask = mesh.userData.mask;
     for (let t = 0; t < mask.length; t++) {

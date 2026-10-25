@@ -137,3 +137,11 @@ test('binary STL header counts match the facets', () => {
   assert.equal(dv.getUint32(80, true), F.triangles(p).length);
   assert.equal(buf.byteLength, 84 + dv.getUint32(80, true) * 50);
 });
+
+test('the 3-D view builds ring by ring from exactly the STL triangles', () => {
+  for (const shape of shapes) {
+    const p = F.DEFAULTS[shape], perRing = [];
+    for (let i = 1; i <= p.n; i++) perRing.push(...F.triangles(p, i));
+    assert.deepEqual(perRing, F.triangles(p));
+  }
+});

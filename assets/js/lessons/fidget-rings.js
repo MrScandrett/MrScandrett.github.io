@@ -168,10 +168,11 @@
   function slabCount(p) { return p.n * (2 * p.k + 1); }
 
   /* ── mesh: each ring is one closed shell ───────────────────────────── */
-  function triangles(p) {
+  // only: build just that ring (the 3-D view moves rings one at a time).
+  function triangles(p, only) {
     var u = unitOutline(p.shape), N = u.length, tris = [], i;
     function pt(rho, z, k) { return [rho * u[k % N][0], rho * u[k % N][1], z]; }
-    for (i = 1; i <= p.n; i++) {
+    for (i = only || 1; i <= (only || p.n); i++) {
       var o = ringOutline(p, i);
       for (var e = 0; e < o.length; e++) {
         var P = o[e], Q = o[(e + 1) % o.length];
