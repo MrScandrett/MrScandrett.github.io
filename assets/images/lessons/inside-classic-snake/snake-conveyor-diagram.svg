@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" role="img" aria-labelledby="title desc">
+  <title id="title">The Snake Conveyor Belt: unshift(head) and pop()</title>
+  <desc id="desc">Comparison of an ordinary move where snake.unshift(head) adds one front square and snake.pop() removes one tail square, versus a food move where snake.pop() is skipped so the snake grows by one square.</desc>
+  <defs>
+    <style>
+      .bg { fill: #12261c; }
+      .panel { fill: #183326; stroke: #356348; stroke-width: 2; rx: 14px; }
+      .heading { font: 800 20px 'Inter', system-ui, sans-serif; fill: #ecffc0; }
+      .sub { font: 600 13px 'Inter', system-ui, sans-serif; fill: #b4d6bc; }
+      .code { font: 700 13px 'JetBrains Mono', ui-monospace, monospace; fill: #d9f29b; }
+      .code-dim { font: 600 12px 'JetBrains Mono', ui-monospace, monospace; fill: #98bfa3; }
+      .cell { fill: #204030; stroke: #366149; stroke-width: 1.5; rx: 6px; }
+      .head { fill: #2e8b57; stroke: #ecffc0; stroke-width: 2.5; rx: 6px; }
+      .new-head { fill: #46b872; stroke: #ffffff; stroke-width: 2.5; rx: 6px; }
+      .body { fill: #8ccf58; stroke: #204030; stroke-width: 1.5; rx: 6px; }
+      .tail-drop { fill: #2b4436; stroke: #e06d53; stroke-width: 2; stroke-dasharray: 5 3; rx: 6px; }
+      .tail-keep { fill: #8ccf58; stroke: #ffd166; stroke-width: 2.5; rx: 6px; }
+      .food { fill: #e86b58; stroke: #ffd2c9; stroke-width: 2; rx: 6px; }
+      .label { font: 800 12px 'JetBrains Mono', ui-monospace, monospace; fill: #102419; text-anchor: middle; }
+      .label-light { font: 800 12px 'JetBrains Mono', ui-monospace, monospace; fill: #ffffff; text-anchor: middle; }
+      .label-drop { font: 700 11px 'JetBrains Mono', ui-monospace, monospace; fill: #ff9f89; text-anchor: middle; }
+      .badge { fill: #244b37; stroke: #4e8766; stroke-width: 1.2; rx: 8px; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="460" rx="18"/>
+
+  <text x="32" y="38" class="heading">How the Snake Moves Without Moving Every Square</text>
+  <text x="32" y="60" class="sub">Middle body squares stay untouched in memory. Each tick only edits the front (index 0) and back (last index) of the array.</text>
+
+  <!-- LEFT PANEL: ORDINARY MOVE -->
+  <rect class="panel" x="28" y="78" width="420" height="354" rx="14"/>
+  <text x="48" y="110" class="heading" style="font-size:17px;">A · Ordinary Tick (Empty Square Ahead)</text>
+  <text x="48" y="130" class="sub">Length stays 3: add 1 new head, remove 1 old tail</text>
+
+  <!-- Before row -->
+  <text x="48" y="162" class="code-dim">BEFORE TICK · snake = [(2,3), (1,3), (0,3)]</text>
+  <g transform="translate(48, 174)">
+    <rect class="body" x="0" y="0" width="54" height="54" rx="6"/>
+    <text x="27" y="25" class="label">[2]</text>
+    <text x="27" y="42" class="label">(0,3)</text>
+
+    <rect class="body" x="62" y="0" width="54" height="54" rx="6"/>
+    <text x="89" y="25" class="label">[1]</text>
+    <text x="89" y="42" class="label">(1,3)</text>
+
+    <rect class="head" x="124" y="0" width="54" height="54" rx="6"/>
+    <text x="151" y="25" class="label-light">[0]</text>
+    <text x="151" y="42" class="label-light">(2,3)</text>
+
+    <rect class="cell" x="186" y="0" width="54" height="54" rx="6"/>
+    <text x="213" y="32" class="code-dim" text-anchor="middle">(3,3)</text>
+
+    <rect class="food" x="248" y="0" width="54" height="54" rx="6"/>
+    <text x="275" y="25" class="label-light">FOOD</text>
+    <text x="275" y="42" class="label-light">(4,3)</text>
+  </g>
+
+  <!-- After row -->
+  <text x="48" y="264" class="code-dim">AFTER TICK · snake = [(3,3), (2,3), (1,3)]</text>
+  <g transform="translate(48, 276)">
+    <rect class="tail-drop" x="0" y="0" width="54" height="54" rx="6"/>
+    <text x="27" y="25" class="label-drop">pop()</text>
+    <text x="27" y="42" class="label-drop">gone</text>
+
+    <rect class="body" x="62" y="0" width="54" height="54" rx="6"/>
+    <text x="89" y="25" class="label">[2]</text>
+    <text x="89" y="42" class="label">(1,3)</text>
+
+    <rect class="body" x="124" y="0" width="54" height="54" rx="6"/>
+    <text x="151" y="25" class="label">[1]</text>
+    <text x="151" y="42" class="label">(2,3)</text>
+
+    <rect class="new-head" x="186" y="0" width="54" height="54" rx="6"/>
+    <text x="213" y="25" class="label-light">[0]</text>
+    <text x="213" y="42" class="label-light">(3,3)</text>
+
+    <rect class="food" x="248" y="0" width="54" height="54" rx="6"/>
+    <text x="275" y="25" class="label-light">FOOD</text>
+    <text x="275" y="42" class="label-light">(4,3)</text>
+  </g>
+
+  <rect class="badge" x="48" y="348" width="380" height="66" rx="8"/>
+  <text x="62" y="372" class="code">1. snake.unshift({x: 3, y: 3}); // new [0]</text>
+  <text x="62" y="396" class="code">2. snake.pop();                 // drops (0,3)</text>
+
+  <!-- RIGHT PANEL: FOOD MOVE -->
+  <rect class="panel" x="472" y="78" width="420" height="354" rx="14"/>
+  <text x="492" y="110" class="heading" style="font-size:17px;">B · Food Tick (Head Lands on Food)</text>
+  <text x="492" y="130" class="sub">Length grows 3 → 4: add 1 new head, keep old tail!</text>
+
+  <!-- Before row -->
+  <text x="492" y="162" class="code-dim">BEFORE TICK · snake = [(3,3), (2,3), (1,3)]</text>
+  <g transform="translate(492, 174)">
+    <rect class="cell" x="0" y="0" width="54" height="54" rx="6"/>
+    <text x="27" y="32" class="code-dim" text-anchor="middle">(0,3)</text>
+
+    <rect class="body" x="62" y="0" width="54" height="54" rx="6"/>
+    <text x="89" y="25" class="label">[2]</text>
+    <text x="89" y="42" class="label">(1,3)</text>
+
+    <rect class="body" x="124" y="0" width="54" height="54" rx="6"/>
+    <text x="151" y="25" class="label">[1]</text>
+    <text x="151" y="42" class="label">(2,3)</text>
+
+    <rect class="head" x="186" y="0" width="54" height="54" rx="6"/>
+    <text x="213" y="25" class="label-light">[0]</text>
+    <text x="213" y="42" class="label-light">(3,3)</text>
+
+    <rect class="food" x="248" y="0" width="54" height="54" rx="6"/>
+    <text x="275" y="25" class="label-light">FOOD</text>
+    <text x="275" y="42" class="label-light">(4,3)</text>
+  </g>
+
+  <!-- After row -->
+  <text x="492" y="264" class="code-dim">AFTER TICK · snake = [(4,3), (3,3), (2,3), (1,3)]</text>
+  <g transform="translate(492, 276)">
+    <rect class="cell" x="0" y="0" width="54" height="54" rx="6"/>
+    <text x="27" y="32" class="code-dim" text-anchor="middle">(0,3)</text>
+
+    <rect class="tail-keep" x="62" y="0" width="54" height="54" rx="6"/>
+    <text x="89" y="25" class="label">[3] KEPT</text>
+    <text x="89" y="42" class="label">(1,3)</text>
+
+    <rect class="body" x="124" y="0" width="54" height="54" rx="6"/>
+    <text x="151" y="25" class="label">[2]</text>
+    <text x="151" y="42" class="label">(2,3)</text>
+
+    <rect class="body" x="186" y="0" width="54" height="54" rx="6"/>
+    <text x="213" y="25" class="label">[1]</text>
+    <text x="213" y="42" class="label">(3,3)</text>
+
+    <rect class="new-head" x="248" y="0" width="54" height="54" rx="6"/>
+    <text x="275" y="25" class="label-light">[0] EAT</text>
+    <text x="275" y="42" class="label-light">(4,3)</text>
+  </g>
+
+  <rect class="badge" x="492" y="348" width="380" height="66" rx="8"/>
+  <text x="506" y="372" class="code">1. snake.unshift({x: 4, y: 3}); // new [0]</text>
+  <text x="506" y="396" class="code">2. // pop() skipped! Tail (1,3) stays</text>
+</svg>
+

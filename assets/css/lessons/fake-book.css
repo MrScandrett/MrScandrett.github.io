@@ -1870,3 +1870,160 @@ body .fb-transport:has(.fb-click-menu[open]) { overflow: visible; }
   .fb-library-search input { font-size: 16px; min-height: 44px; }
 }
 @media print { .fb-setup, .fb-plan, .fb-library-find { display: none !important; } }
+
+/* Liquid glass: the play bar and the practice row as thin frosted strips in the same
+   brown / amber / teal palette. Last in the file so it wins over the layers above.
+   The glass stays opaque enough (.88+) that small cream text keeps 4.5:1 even over white paper. */
+.fb-shell {
+  --fb-cream: 255, 242, 216;
+  --fb-amber: 243, 181, 74;
+  --fb-glass: linear-gradient(180deg, rgba(58, 48, 36, .88), rgba(31, 26, 20, .92));
+  --fb-glass-solid: #2a231a;
+  --fb-glass-blur: blur(16px) saturate(160%);
+  --fb-glass-edge: inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -1px 0 rgba(0, 0, 0, .25);
+  --fb-teal-fill: linear-gradient(180deg, #14727a, #0f5d63);
+}
+body.fb-focused .fb-transport {
+  gap: .2rem .45rem; padding: .28rem .45rem; border: 1px solid rgba(var(--fb-cream), .12); border-radius: 14px;
+  background: var(--fb-glass);
+  -webkit-backdrop-filter: var(--fb-glass-blur); backdrop-filter: var(--fb-glass-blur);
+  box-shadow: var(--fb-glass-edge), 0 8px 24px rgba(31, 26, 20, .2);
+}
+body.fb-focused .fb-transport :is(.fb-btn, .fb-mini, .fb-click-menu > summary, .fb-nav .sn-btn, .fb-nav .sn-mini),
+body.fb-focused .fb-transport :is(input[type="number"], select, .sn-goto input) {
+  border: 1px solid rgba(var(--fb-cream), .14); background: rgba(var(--fb-cream), .07); background-image: none; color: rgb(var(--fb-cream));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); transform: none;
+}
+body.fb-focused .fb-transport :is(.fb-btn, .fb-click-menu > summary) { min-height: 26px; padding: .1rem .55rem; border-radius: 99px; font-size: .74rem; }
+@media (hover: hover) {
+  body.fb-focused .fb-transport :is(.fb-btn, .fb-mini, .fb-click-menu > summary, .fb-nav .sn-btn, .fb-nav .sn-mini):not(:disabled):hover {
+    background: rgba(var(--fb-cream), .15); border-color: rgba(var(--fb-amber), .45); transform: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+  }
+}
+body.fb-focused .fb-transport :is(.fb-btn[aria-pressed="true"]:not(.fb-click-toggle), .fb-btn[aria-expanded="true"]) {
+  border-color: rgba(var(--fb-amber), .6); background: rgba(var(--fb-amber), .22); color: #fff;
+}
+body.fb-focused .fb-play.fb-play {
+  min-height: 30px; padding: .15rem .8rem .15rem .65rem; font-size: .84rem;
+  background: linear-gradient(180deg, #f8c766, #f3b54a 55%, #e9a535);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 0 0 1px rgba(var(--fb-amber), .35), 0 3px 10px rgba(var(--fb-amber), .25);
+}
+body.fb-focused .fb-play[aria-pressed="true"] { background: linear-gradient(180deg, #fdab6a, #fb923c); }
+body.fb-focused .fb-tempo { gap: .2rem; font-size: .7rem; color: #f3d9a4; }
+body.fb-focused .fb-tempo .fb-mini { width: 22px; height: 22px; min-width: 22px; min-height: 22px; flex-basis: 22px; border-radius: 50%; font-size: .85rem; }
+body.fb-focused .fb-tempo input[type="number"] { width: 2.9rem; min-height: 24px; padding: 0 .3rem; border-radius: 99px; text-align: center; font-size: 13px; }
+body.fb-focused .fb-tempo input[type="range"] { height: 18px; }
+body.fb-focused .fb-unit { color: #d9cdb4; font-size: .66rem; letter-spacing: .04em; }
+body.fb-focused .fb-transport .fb-metronome .fb-click-toggle { width: auto; flex: 0 0 auto; min-height: 26px; }
+.fb-dots i { width: .55rem; height: .55rem; background: rgba(var(--fb-cream), .14); }
+body .fb-transport .fb-click-menu[open] > .fb-click-grid {
+  border: 1px solid rgba(var(--fb-cream), .14); border-radius: 12px; background: rgba(36, 29, 21, .88);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+body .fb-transport .fb-click-menu .fb-click-grid button { border-radius: 8px; }
+
+/* Practice status: a quiet inline pill instead of its own row. */
+body.fb-focused .fb-transport .fb-practice-controls summary {
+  display: inline-flex; align-items: center; gap: .3rem; min-height: 26px; padding: 0 .65rem; list-style: none;
+  border: 1px solid rgba(var(--fb-cream), .1); border-radius: 99px; background: rgba(var(--fb-cream), .05);
+  color: #f3d9a4; font-size: .72rem; white-space: nowrap;
+}
+body.fb-focused .fb-practice-controls summary::-webkit-details-marker { display: none; }
+body.fb-focused .fb-practice-controls summary::before { content: "↻"; color: #4dd0c4; font-weight: 800; }
+body.fb-focused .fb-practice-controls[open] summary { border-color: rgba(var(--fb-amber), .45); }
+body.fb-focused .fb-loop-actions { gap: .25rem; padding: .3rem 0 .1rem; }
+body.fb-focused .fb-loop-actions .fb-btn { min-height: 28px; }
+body.fb-focused .fb-practice-controls .fb-speedup { font-size: .74rem; color: rgb(var(--fb-cream)); }
+
+/* Song map: a slimmer strip. */
+body.fb-focused .fb-nav.score-nav { --sn-h: 24px; --sn-map-h: 20px; --sn-bg: rgba(var(--fb-cream), .06); --sn-line: rgba(var(--fb-cream), .16);
+  gap: .35rem; padding-top: .2rem; border-top: 1px solid rgba(var(--fb-cream), .08); }
+body.fb-focused .fb-nav .sn-map { border-radius: 99px; overflow: hidden; }
+body.fb-focused .fb-nav .sn-btn { padding: 0 .5rem; font-size: .72rem; border-radius: 99px; }
+body.fb-focused .fb-nav .sn-mini { border-radius: 50%; }
+
+@media (min-width: 761px) and (min-height: 501px) {
+  body.fb-focused .fb-transport .fb-practice-controls { flex: 0 1 auto; margin-left: auto; }
+  body.fb-focused .fb-transport .fb-practice-controls[open] { flex: 1 1 100%; margin-left: 0; }
+}
+
+/* Setup + practice steps: one airy line of frosted chips on the sheet. */
+.fb-setup { gap: .3rem .6rem; padding: .3rem 0 .1rem; }
+.fb-player select { min-height: 32px; padding: .2rem .55rem; border-radius: 99px; font-size: .86rem;
+  background: rgba(255, 253, 247, .7); box-shadow: inset 0 1px 0 #fff, 0 1px 3px rgba(31, 26, 20, .06); }
+.fb-player-ask { font-size: .78rem; }
+.fb-settings-sum { min-height: 30px; padding: .15rem .7rem; border-color: rgba(15, 93, 99, .18); border-radius: 99px; font-size: .76rem;
+  background: rgba(255, 253, 247, .6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 1px 0 #fff; }
+.fb-plan {
+  display: inline-flex; gap: .2rem; margin: .3rem 0 .1rem; padding: .2rem; border: 1px solid rgba(212, 198, 168, .55); border-radius: 99px;
+  background: linear-gradient(180deg, rgba(255, 253, 247, .75), rgba(247, 240, 225, .6));
+  -webkit-backdrop-filter: blur(12px) saturate(150%); backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 2px 8px rgba(31, 26, 20, .06);
+}
+.fb-plan-lbl { margin: 0 .2rem 0 .45rem; font-size: .64rem; }
+.fb-plan-step { gap: .3rem; min-height: 26px; padding: .1rem .6rem .1rem .2rem; border: 1px solid transparent; background: transparent; font-size: .76rem; }
+.fb-plan-step b { width: 1.2rem; height: 1.2rem; background: rgba(212, 198, 168, .55); font-size: .66rem; }
+@media (hover: hover) { .fb-plan-step:not([aria-pressed="true"]):hover { background: rgba(255, 255, 255, .7); border-color: rgba(212, 198, 168, .7); } }
+.fb-plan-step[aria-pressed="true"] { background: var(--fb-teal-fill); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 2px 6px rgba(15, 93, 99, .25); }
+.fb-plan:has(.fb-plan-tip:not(:empty)) { display: flex; border-radius: 14px; }
+.fb-plan-tip { font-size: .8rem; }
+@media (max-width: 640px) {
+  .fb-plan { display: grid; border-radius: 14px; }
+  .fb-plan-step { min-height: 44px; border-radius: 10px; }
+  .fb-player select { min-height: 44px; }
+}
+html[data-lighting="night"] .fb-plan { background: rgba(255, 253, 247, .06); border-color: rgba(255, 253, 247, .14); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); }
+
+/* Practice tools panel: the tab grid as the same dark glass capsule as the play bar. */
+body.fb-focused .fb-dock {
+  border: 1px solid rgba(15, 93, 99, .35); border-radius: 16px; background: rgba(255, 253, 247, .94);
+  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 1px 0 #fff, 0 16px 40px rgba(31, 26, 20, .22);
+}
+body.fb-focused .fb-dock-rail {
+  margin: .35rem .45rem; padding: 3px; gap: 3px; border: 1px solid rgba(var(--fb-cream), .12); border-radius: 12px;
+  background: var(--fb-glass); box-shadow: var(--fb-glass-edge);
+}
+body.fb-focused .fb-dock-tab { border: 1px solid transparent; border-radius: 9px; background: transparent; color: rgb(var(--fb-cream)); }
+@media (hover: hover) {
+  body.fb-focused .fb-dock-tab:not([aria-selected="true"]):hover { background: rgba(var(--fb-cream), .1); border-color: rgba(var(--fb-amber), .35); color: #fff; }
+}
+body.fb-focused .fb-dock-tab[aria-selected="true"] {
+  background: var(--fb-teal-fill); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 0 0 1px rgba(var(--fb-amber), .55);
+}
+body.fb-focused .fb-dock-tab:focus-visible { outline: 2px solid rgb(var(--fb-amber)); outline-offset: 1px; }
+body.fb-focused .fb-tools-head .fb-btn, body.fb-focused .fb-tools-reset .fb-btn { border-radius: 99px; }
+
+/* Touch screens of any width (iPads, touch Chromebooks) get 44px targets in the slim bars. */
+@media (pointer: coarse) {
+  body.fb-focused .fb-transport :is(.fb-btn, .fb-click-menu > summary, .fb-practice-controls summary, .fb-nav .sn-btn, input[type="number"], select, .sn-goto input),
+  body.fb-focused .fb-play.fb-play,
+  body.fb-focused .fb-loop-actions .fb-btn,
+  .fb-plan-step, .fb-player select, .fb-settings-sum { min-height: 44px; }
+  body.fb-focused .fb-tempo .fb-mini, body.fb-focused .fb-nav .sn-mini { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-basis: 44px; }
+  body .fb-transport .fb-click-menu .fb-click-grid button { min-width: 44px; min-height: 44px; }
+  body.fb-focused .fb-nav.score-nav { --sn-h: 44px; --sn-map-h: 32px; }
+  body.fb-focused .fb-practice-controls .fb-speedup { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* Reduce transparency: solid bars, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  body.fb-focused .fb-transport, body.fb-focused .fb-dock-rail, body .fb-transport .fb-click-menu[open] > .fb-click-grid {
+    background: var(--fb-glass-solid); -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  body.fb-focused .fb-dock, .fb-plan, .fb-settings-sum, .fb-player select { background: #fffdf7; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html[data-lighting="night"] .fb-plan { background: var(--surface-panel, #221914); }
+}
+
+/* Windows high contrast: faint hairlines vanish, so draw real borders and a system-colour selection. */
+@media (forced-colors: active) {
+  body.fb-focused .fb-transport, body.fb-focused .fb-dock, body.fb-focused .fb-dock-rail, .fb-plan { border: 1px solid CanvasText; }
+  body.fb-focused .fb-transport :is(.fb-btn, .fb-play, .fb-mini, .fb-click-menu > summary, .fb-practice-controls summary, .fb-nav .sn-btn, .fb-nav .sn-mini),
+  .fb-plan-step, body.fb-focused .fb-dock-tab { border: 1px solid ButtonText; }
+  body.fb-focused .fb-transport :is(.fb-btn[aria-pressed="true"], .fb-btn[aria-expanded="true"]),
+  .fb-plan-step[aria-pressed="true"], body.fb-focused .fb-dock-tab[aria-selected="true"] {
+    forced-color-adjust: none; border-color: Highlight; background: Highlight; color: HighlightText;
+  }
+}

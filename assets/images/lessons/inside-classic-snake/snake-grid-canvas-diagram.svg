@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 450" role="img" aria-labelledby="title desc">
+  <title id="title">From Logical Grid Coordinates to HTML5 Canvas Pixels</title>
+  <desc id="desc">Diagram showing how a 20 by 20 logical grid maps each (x, y) coordinate to pixel coordinates (x * 20, y * 20) on a 400 by 400 pixel canvas, with 18 by 18 pixel tiles leaving a 2 pixel gap and four boundary inequalities guarding the walls.</desc>
+  <defs>
+    <style>
+      .bg { fill: #10231a; }
+      .panel { fill: #173124; stroke: #356348; stroke-width: 2; rx: 14px; }
+      .heading { font: 800 20px 'Inter', system-ui, sans-serif; fill: #ecffc0; }
+      .sub { font: 600 13px 'Inter', system-ui, sans-serif; fill: #b4d6bc; }
+      .code { font: 700 13px 'JetBrains Mono', ui-monospace, monospace; fill: #d9f29b; }
+      .code-warn { font: 700 12.5px 'JetBrains Mono', ui-monospace, monospace; fill: #ff9b85; }
+      .axis { font: 700 12px 'JetBrains Mono', ui-monospace, monospace; fill: #9ec5a8; }
+      .wall-zone { fill: #4a1e1b; stroke: #d65a4b; stroke-width: 1.5; stroke-dasharray: 4 3; }
+      .tile-outer { fill: #1c3d2c; stroke: #4c8565; stroke-width: 1.5; }
+      .tile-inner { fill: #33ff33; }
+      .tile-head { fill: #ccffcc; }
+      .dim-line { stroke: #ffd166; stroke-width: 2; }
+      .dim-text { font: 800 12px 'JetBrains Mono', ui-monospace, monospace; fill: #ffd166; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="450" rx="18"/>
+
+  <text x="32" y="38" class="heading">Logical Grid Coordinates (x, y) vs. Screen Pixels (px)</text>
+  <text x="32" y="60" class="sub">Game logic thinks in whole grid squares (0 to 19). Only the draw() function multiplies by TILE_SIZE = 20.</text>
+
+  <!-- LEFT PANEL: 20x20 BOUNDARY BOX -->
+  <rect class="panel" x="28" y="78" width="430" height="344" rx="14"/>
+  <text x="48" y="108" class="heading" style="font-size:16px;">1 · The 20 × 20 Logical Board &amp; Wall Checks</text>
+
+  <rect class="wall-zone" x="96" y="124" width="240" height="24" rx="4"/>
+  <text x="216" y="140" class="code-warn" text-anchor="middle">head.y &lt; 0 (Top Wall Crash)</text>
+
+  <rect class="wall-zone" x="96" y="348" width="240" height="24" rx="4"/>
+  <text x="216" y="364" class="code-warn" text-anchor="middle">head.y &gt;= 20 (Bottom Wall Crash)</text>
+
+  <rect class="wall-zone" x="44" y="154" width="46" height="188" rx="4"/>
+  <text x="67" y="245" class="code-warn" text-anchor="middle" transform="rotate(-90 67 245)">head.x &lt; 0</text>
+
+  <rect class="wall-zone" x="342" y="154" width="96" height="188" rx="4"/>
+  <text x="390" y="238" class="code-warn" text-anchor="middle">head.x &gt;= 20</text>
+  <text x="390" y="256" class="axis" text-anchor="middle">(Right Wall)</text>
+
+  <rect x="96" y="154" width="240" height="188" fill="#0d1c14" stroke="#63b884" stroke-width="2" rx="4"/>
+  <text x="104" y="172" class="code" style="font-size:11px;">(0, 0)</text>
+  <text x="278" y="172" class="code" style="font-size:11px;">(19, 0)</text>
+  <text x="104" y="332" class="code" style="font-size:11px;">(0, 19)</text>
+  <text x="270" y="332" class="code" style="font-size:11px;">(19, 19)</text>
+
+  <rect x="172" y="232" width="22" height="22" fill="#33ff33" rx="3"/>
+  <rect x="196" y="232" width="22" height="22" fill="#33ff33" rx="3"/>
+  <rect x="220" y="232" width="22" height="22" fill="#ccffcc" rx="3"/>
+  <text x="216" y="218" class="code" text-anchor="middle">Head at (10, 10)</text>
+  <text x="216" y="278" class="axis" text-anchor="middle">Valid x: 0..19 · Valid y: 0..19</text>
+  <text x="243" y="404" class="axis" text-anchor="middle">Notice: y = 0 is the TOP row; y grows downward!</text>
+
+  <!-- RIGHT PANEL: ZOOMED PIXEL CELL -->
+  <rect class="panel" x="478" y="78" width="414" height="344" rx="14"/>
+  <text x="498" y="108" class="heading" style="font-size:16px;">2 · Inside One 20 × 20 Pixel Grid Cell</text>
+  <text x="498" y="130" class="sub">Why draw TILE_SIZE - 2 (18 px) instead of 20 px?</text>
+
+  <g transform="translate(520, 152)">
+    <rect class="tile-outer" x="0" y="0" width="140" height="140"/>
+    <rect class="tile-inner" x="0" y="0" width="126" height="126"/>
+
+    <rect class="tile-outer" x="140" y="0" width="140" height="140"/>
+    <rect class="tile-head" x="140" y="0" width="126" height="126"/>
+
+    <line class="dim-line" x1="0" y1="158" x2="126" y2="158"/>
+    <text x="63" y="176" class="dim-text" text-anchor="middle">18 px painted</text>
+
+    <line class="dim-line" x1="126" y1="63" x2="140" y2="63"/>
+    <text x="133" y="-8" class="dim-text" text-anchor="middle">2 px gap leaves crisp</text>
+    <text x="133" y="6" class="dim-text" text-anchor="middle">black divider between segments</text>
+
+    <text x="63" y="66" font-family="JetBrains Mono, monospace" font-weight="800" font-size="13" fill="#0d2618" text-anchor="middle">(9, 10)</text>
+    <text x="63" y="84" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11" fill="#0d2618" text-anchor="middle">x=180px</text>
+
+    <text x="203" y="66" font-family="JetBrains Mono, monospace" font-weight="800" font-size="13" fill="#0d2618" text-anchor="middle">(10, 10)</text>
+    <text x="203" y="84" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11" fill="#0d2618" text-anchor="middle">x=200px</text>
+  </g>
+
+  <rect x="498" y="344" width="374" height="62" rx="8" fill="#102419" stroke="#356348"/>
+  <text x="512" y="368" class="code" style="font-size:12px;">ctx.fillRect(</text>
+  <text x="512" y="385" class="code" style="font-size:12px;">  part.x * 20, part.y * 20, 18, 18</text>
+  <text x="512" y="400" class="code" style="font-size:12px;">);</text>
+</svg>

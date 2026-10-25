@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inside Classic Snake · ClassroomOS</title>
-  <meta name="description" content="Play Eric's Classic Snake, predict its next move, and discover the grid, ordered body, game loop, and collision rules that make it work.">
+  <title>Inside Classic Snake: History, Logic &amp; Game Architectures · ClassroomOS</title>
+  <meta name="description" content="Explore the history of Snake from 1976 Blockade to Nokia phones, step through its game loop on a 7×7 grid, and compare four programming methods used to build Snake.">
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css">
   <link rel="stylesheet" href="../../../assets/css/lessons/inside-classic-snake.css">
@@ -22,70 +22,739 @@
     </ul></nav>
   </div></header>
   <main id="main-content" class="snake-shell">
-    <nav class="snake-breadcrumb" aria-label="Breadcrumb"><a href="../../../showcase.html">Showcase</a><span aria-hidden="true">/</span><span>Inside Classic Snake</span></nav>
+    <nav class="snake-breadcrumb" aria-label="Breadcrumb"><a href="../../../steam-lessons.html">Lessons</a><span aria-hidden="true">/</span><a href="../index.html">Computer Science</a><span aria-hidden="true">/</span><span>Inside Classic Snake</span></nav>
+
     <section class="snake-hero" aria-labelledby="lesson-title">
-      <div><p class="snake-eyebrow">Showcase mechanics · Eric's game</p><h1 id="lesson-title">A tiny rule makes a whole game.</h1>
-        <p>Move one square. Keep the new head. Drop the old tail—unless you find food. Learn to predict the next frame, then see how Eric's Classic Snake does it.</p>
-        <div class="snake-actions"><a class="snake-primary" href="../../../apps/classic-snake/">Play Eric's game <span aria-hidden="true">↗</span></a><a class="snake-secondary" href="#step-lab">See the game logic</a></div>
-        <p class="snake-credit">Made by Eric · Lesson for K–12 · About 15–25 minutes</p></div>
-      <div class="snake-hero-art" aria-hidden="true"><div class="snake-pixel-trail"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="snake-art-food"></div><small>HEAD → BODY → TAIL</small></div>
-    </section>
-    <nav class="snake-stages" aria-label="Lesson steps"><a href="#play-notice">1 Play</a><a href="#step-lab">2 Predict</a><a href="#rules">3 Explain</a><a href="#history">4 Connect</a></nav>
-
-    <section id="play-notice" class="snake-section snake-intro"><div class="snake-section-number">01 / PLAY & NOTICE</div><div>
-      <h2>What changes each time the snake moves?</h2><p>Play one round. Watch the head, the last square of the tail, and the score. The arrow keys or WASD turn the snake; on a phone, swipe across the board. Space pauses.</p>
-      <div class="snake-question"><strong>Notice:</strong> When the snake eats, which square <em>doesn't</em> disappear?</div>
-    </div></section>
-
-    <section id="step-lab" class="snake-section"><div class="snake-section-number">02 / STEP LAB</div><div>
-      <h2>Step through the game logic.</h2><p>Classic Snake has no server backend: its JavaScript runs in your browser. Watch one move travel from direction input to a new screen frame. This 7 × 7 model uses Eric's movement, collision, scoring, and growth rules. Its food positions are fixed so you can repeat a prediction; Eric's 20 × 20 game places food randomly.</p>
-      <ol class="snake-pipeline" aria-label="Operations in one game tick">
-        <li data-operation="input"><strong>1 Input</strong><span>Choose a direction</span></li>
-        <li data-operation="calculate"><strong>2 Calculate</strong><span>Find the next head</span></li>
-        <li data-operation="check"><strong>3 Check</strong><span>Wall, body, or food?</span></li>
-        <li data-operation="update"><strong>4 Update</strong><span>Change stored state</span></li>
-        <li data-operation="draw"><strong>5 Draw</strong><span>Show the new frame</span></li>
-      </ol>
-      <div class="snake-lab"><div class="snake-lab-main">
-        <div class="snake-grid-head"><span>7 × 7 practice board</span><span id="lab-step-count">Step 0</span></div>
-        <div id="snake-grid" class="snake-grid" role="img" aria-label="Practice Snake board"></div>
-        <div class="snake-controls" role="group" aria-label="Choose the snake's next direction"><button type="button" data-direction="up">↑ Up</button><button type="button" data-direction="left">← Left</button><button type="button" data-direction="right">Right →</button><button type="button" data-direction="down">↓ Down</button></div>
-        <p class="snake-screen-label">Screen <span id="snake-screen-note">shows the last drawn frame</span></p>
-        <div class="snake-lab-actions"><button id="snake-operation" type="button" class="snake-primary">Next operation</button><button id="snake-step" type="button" class="snake-secondary">Run full tick</button><button id="snake-reset" type="button" class="snake-secondary">Start again</button></div>
-      </div><div class="snake-lab-side"><p id="snake-prompt-label" class="snake-lab-label">Before you move</p><h3 id="snake-prediction-title">Make a prediction</h3><p id="snake-prompt">The head is at (2, 3), facing right. Food is at (4, 3). What will happen after one step?</p>
-        <div class="snake-predictions" role="group" aria-label="Prediction"><button type="button" data-predict="grow">It grows</button><button type="button" data-predict="same">Same length</button><button type="button" data-predict="end">Game over</button></div>
-        <p id="snake-feedback" class="snake-feedback" aria-live="polite">Choose a prediction, then run an operation or a full tick.</p>
-        <div class="snake-operation-readout"><strong>What the program is doing</strong><p id="snake-operation-message" aria-live="polite">Waiting for a direction. Next: calculate the new head.</p></div>
-        <div class="snake-state"><strong>Stored state (memory)</strong><dl>
-          <div><dt>Direction</dt><dd><output id="snake-direction-value"></output></dd></div>
-          <div><dt>Calculated head</dt><dd><output id="snake-next-head"></output></dd></div>
-          <div><dt>Result</dt><dd><output id="snake-result"></output></dd></div>
-          <div><dt>Score</dt><dd><output id="snake-score"></output></dd></div>
-          <div><dt>Tick interval</dt><dd><output id="snake-speed"></output></dd></div>
-        </dl><strong>Body array, head first</strong><output id="snake-body-list"></output><strong>Next operation</strong><output id="snake-rule"></output></div>
-      </div></div>
-      <p class="snake-small">Try two full ticks toward the red food. Then reset and use Next operation to see exactly when the stored body changes and when the screen catches up. On a collision, this model pauses on the final state; Eric's game shows an alert and resets.</p>
-    </div></section>
-
-    <section id="rules" class="snake-section"><div class="snake-section-number">03 / UNDER THE HOOD</div><div>
-      <h2>Four decisions, over and over.</h2><div class="snake-rule-grid">
-        <div><span>1 · TIME</span><h3>Tick</h3><p>Eric's game calls its update about every 100 milliseconds at first. Eating gradually shortens that wait, down to 50 milliseconds.</p></div>
-        <div><span>2 · POSITION</span><h3>New head</h3><p>Add the direction to the first body coordinate. Moving right from (2, 3) makes (3, 3).</p></div>
-        <div><span>3 · SAFETY</span><h3>Collision</h3><p>If that square is outside the 20 × 20 board or overlaps the current body, the round ends. A turn straight back is blocked.</p></div>
-        <div><span>4 · GROWTH</span><h3>Tail or food</h3><p>Add the new head. If it is food, keep the tail and gain 10 points. Otherwise remove the last body square.</p></div>
+      <div>
+        <p class="snake-eyebrow">Computer Science · Game History &amp; Data Structures</p>
+        <h1 id="lesson-title">A tiny rule makes a whole game.</h1>
+        <p>Move one square. Keep the new head. Drop the old tail—unless you find food. From 1976 arcade cabinets and MS-DOS QBasic to 350 million Nokia pocket phones, discover how Snake evolved and compare the four fundamental ways programmers build it.</p>
+        <div class="snake-actions">
+          <a class="snake-primary" href="#play-notice">Play across eras ↓</a>
+          <a class="snake-secondary" href="#step-lab">Step through one tick</a>
+          <a class="snake-secondary" href="#methods">4 ways to code Snake</a>
+        </div>
+        <p class="snake-credit">Grades K–12 · About 25–35 minutes · Interactive Arcade, History, Architecture &amp; Bug Labs</p>
       </div>
-      <details class="snake-code"><summary>See the small piece of Eric's code that moves the body</summary><p>The body is an ordered list of grid coordinates. The first item is the head.</p><pre><code>snake.unshift(head); // add a new first square
-if (head.x !== food.x || head.y !== food.y) {
-  snake.pop();        // remove the tail unless food was eaten
-}</code></pre><p>Adapted from <a href="https://github.com/MrScandrett/MrScandrett.github.io/blob/main/student-projects/Eric/classic-snake/script.js">Eric's source</a>. The full game checks collisions before these lines.</p></details>
-      <div class="snake-age-grid"><div><strong>K–2 · Act it out</strong><p>Use three paper squares as head, middle, and tail. Move the head one space and lift the last square.</p></div><div><strong>Grades 3–5 · Map it</strong><p>Write the snake's coordinates before and after a move. Predict when the tail stays.</p></div><div><strong>Grades 6–8 · Trace it</strong><p>Follow the ordered body list through an ordinary move and a food move. Explain why changing the order of checks matters.</p></div><div><strong>Grades 9–12 · Improve it</strong><p>Eric's food picker retries if it lands on the snake. What happens when few empty squares remain? Design a way to choose only from empty squares, including a full-board win.</p></div></div>
-    </div></section>
+      <div class="snake-hero-art" aria-hidden="true">
+        <div class="snake-hero-hud"><span>1976 → 1997 → TODAY</span><span>TICK: 100 ms</span></div>
+        <div class="snake-pixel-trail">
+          <span title="Head [0]">0</span>
+          <span title="Body [1]">1</span>
+          <span title="Body [2]">2</span>
+          <span title="Body [3]">3</span>
+          <span title="Body [4]">4</span>
+          <span title="Body [5]">5</span>
+          <span title="Tail [6]">6</span>
+        </div>
+        <div class="snake-art-food">◆</div>
+        <small>HEAD [0] → BODY → TAIL [L−1]</small>
+      </div>
+    </section>
 
-    <section id="history" class="snake-section"><div class="snake-section-number">04 / WHERE IT CAME FROM</div><div>
-      <h2>From arcade trails to pocket games.</h2><p>Gremlin's <em>Blockade</em> (1976) used a related grid-and-trail idea: players lost when they hit a trail. Later single-player versions added food and a growing body. Taneli Armanto designed Nokia's Snake for the 6110 phone in 1997. A small screen and four direction controls helped make a short, repeatable game.</p>
-      <p class="snake-source">Sources: <a href="https://taneliarmanto.com/news/history-of-snake">Taneli Armanto's history of Snake</a> and <a href="https://taneliarmanto.com/nokia-snake">his account of Nokia Snake</a>. The genre predates Nokia's version.</p>
-      <div class="snake-finish"><div><h3>Play again with new eyes.</h3><p>Can you call out “new head,” “check,” and “drop tail” as the snake moves? When you eat, explain why its length changes.</p></div><a class="snake-primary" href="../../../apps/classic-snake/">Return to Classic Snake →</a></div>
-    </div></section>
+    <nav class="snake-stages" aria-label="Lesson steps">
+      <a href="#play-notice">1 Play &amp; Notice</a>
+      <a href="#history">2 History of Snake</a>
+      <a href="#step-lab">3 Step Lab</a>
+      <a href="#methods">4 Four Methods</a>
+      <a href="#rules">5 Under the Hood</a>
+      <a href="#bug-clinic">6 Bug Clinic</a>
+      <a href="#check-understanding">7 Self-Check</a>
+    </nav>
+
+    <!-- 01 / PLAY & NOTICE -->
+    <section id="play-notice" class="snake-section snake-intro">
+      <div class="snake-section-number">01 / PLAY &amp; NOTICE</div>
+      <div>
+        <h2>What actually changes each time the snake moves?</h2>
+        <p>Play a quick round in the interactive simulator below, switching between historical hardware displays—or toggle between the <strong>Classic Snake Queue</strong> rule (where the tail follows the head) and the <strong>1976 <em>Blockade</em> Trail</strong> rule (where the tail never disappears). Use the arrow keys, <kbd>WASD</kbd>, or the on-screen directional pad.</p>
+
+        <!-- EMBEDDED MULTI-ERA PLAYABLE ARCADE -->
+        <div class="snake-arcade-card" aria-labelledby="arcade-heading">
+          <div class="snake-arcade-top">
+            <div>
+              <p class="snake-lab-label">Live Historical Sandbox</p>
+              <h3 id="arcade-heading">Play Snake Across Four Hardware Eras</h3>
+            </div>
+            <div class="snake-era-skins" role="group" aria-label="Select display era">
+              <button type="button" class="snake-skin-btn" data-era-skin="nokia" aria-pressed="true">1997 Nokia LCD</button>
+              <button type="button" class="snake-skin-btn" data-era-skin="blockade" aria-pressed="false">1976 Arcade CRT</button>
+              <button type="button" class="snake-skin-btn" data-era-skin="nibbles" aria-pressed="false">1991 DOS Nibbles</button>
+              <button type="button" class="snake-skin-btn" data-era-skin="modern" aria-pressed="false">Modern Canvas</button>
+            </div>
+          </div>
+
+          <div class="snake-arcade-body">
+            <div class="snake-arcade-stage">
+              <div class="snake-arcade-hud">
+                <span>Score: <strong id="arcade-score">0</strong></span>
+                <span>Length: <strong id="arcade-length">3</strong></span>
+                <span>Head: <code id="arcade-head">(10, 10)</code></span>
+                <span>Tick: <code id="arcade-speed">100 ms</code></span>
+              </div>
+              <div class="snake-canvas-wrap" data-skin="nokia">
+                <canvas id="snake-live-canvas" width="320" height="320" aria-label="Playable Classic Snake board, 16 by 16 grid"></canvas>
+              </div>
+              <div class="snake-arcade-actions">
+                <button type="button" id="arcade-start-btn" class="snake-primary">▶ Start / Pause</button>
+                <button type="button" id="arcade-reset-btn" class="snake-secondary">Reset Board</button>
+                <label class="snake-trail-toggle">
+                  <input type="checkbox" id="arcade-eternal-trail">
+                  <span>1976 <em>Blockade</em> Mode (never drop tail)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="snake-arcade-side">
+              <strong>Steer (or use Arrow keys / WASD)</strong>
+              <div class="snake-dpad" role="group" aria-label="Arcade directional pad">
+                <button type="button" data-arcade-dir="up">↑ Up</button>
+                <button type="button" data-arcade-dir="left">← Left</button>
+                <button type="button" data-arcade-dir="right">Right →</button>
+                <button type="button" data-arcade-dir="down">↓ Down</button>
+              </div>
+              <div class="snake-question">
+                <strong>Observation challenge:</strong> Watch a 5-square snake move across an empty row. Do the middle 3 squares actually move, or do they sit completely still while the front adds 1 square and the back erases 1 square?
+              </div>
+              <p id="arcade-status" class="snake-small" aria-live="polite">Press <strong>Start / Pause</strong> or any direction button to play. Eating ◆ adds 10 points and keeps the old tail for 1 tick.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="snake-compare-card" aria-labelledby="compare-heading">
+          <div class="snake-compare-header">
+            <div>
+              <p class="snake-lab-label">Frame-by-frame illusion</p>
+              <h3 id="compare-heading">Compare an Ordinary Move vs. a Food Move</h3>
+            </div>
+            <div class="snake-compare-tabs" role="group" aria-label="Choose move type to compare">
+              <button type="button" class="snake-compare-btn" data-compare-mode="move" aria-pressed="true">Ordinary Move (Empty Square)</button>
+              <button type="button" class="snake-compare-btn" data-compare-mode="eat" aria-pressed="false">Food Move (Eating ◆)</button>
+            </div>
+          </div>
+          <div class="snake-compare-frames">
+            <div class="snake-mini-frame">
+              <div class="snake-mini-title"><span>Before Tick (Frame <em>T</em>)</span><code id="compare-before-array">[(2,3), (1,3), (0,3)]</code></div>
+              <div id="compare-grid-before" class="snake-mini-grid" role="img" aria-label="Row before the tick"></div>
+            </div>
+            <div class="snake-mini-arrow" aria-hidden="true">→</div>
+            <div class="snake-mini-frame">
+              <div class="snake-mini-title"><span>After Tick (Frame <em>T + 1</em>)</span><code id="compare-after-array">[(3,3), (2,3), (1,3)]</code></div>
+              <div id="compare-grid-after" class="snake-mini-grid" role="img" aria-label="Row after the tick"></div>
+            </div>
+          </div>
+          <p id="compare-explanation" class="snake-compare-note" aria-live="polite">
+            <strong>Key insight:</strong> Squares <code>(2, 3)</code> and <code>(1, 3)</code> never moved on the board! The program only added one new head at <code>(3, 3)</code> with <code>snake.unshift(head)</code> and erased one old tail at <code>(0, 3)</code> with <code>snake.pop()</code>.
+          </p>
+        </div>
+
+        <figure class="snake-figure" data-zoomable data-lightbox-group="snake-diagrams" data-full="../../../assets/images/lessons/inside-classic-snake/snake-conveyor-diagram.svg">
+          <img src="../../../assets/images/lessons/inside-classic-snake/snake-conveyor-diagram.svg" alt="Diagram comparing an ordinary tick where unshift adds a new head at index 0 and pop removes the old tail, versus a food tick where pop is skipped so the tail stays and the snake grows." width="920" height="460" loading="lazy">
+          <figcaption>
+            <strong>The Conveyor Belt Illusion: <code>unshift(head)</code> and <code>pop()</code></strong> Instead of shifting every segment across the screen, Snake treats the body as a queue: add one square at the front (index <code>0</code>) every tick, and remove one square from the back unless the new head landed on food. Click to enlarge.
+            <span class="photo-credit">ClassroomOS computer science diagram · CC BY 4.0</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- 02 / THE HISTORY OF SNAKE -->
+    <section id="history" class="snake-section">
+      <div class="snake-section-number">02 / HISTORY OF SNAKE</div>
+      <div>
+        <h2>From 1976 arcade trails to 350 million pockets.</h2>
+        <p>The game we call <em>Snake</em> was not invented all at once. It evolved across five decades as engineers adapted a simple grid-and-trail rule to fit the strict memory, display, and controller limits of each generation's hardware.</p>
+
+        <div class="snake-history-timeline" role="list" aria-label="Key milestones in the history of Snake">
+          <div class="snake-era-card" role="listitem">
+            <span>1976 · SAN DIEGO ARCADE</span>
+            <h3>Gremlin's <em>Blockade</em></h3>
+            <figure class="snake-era-photo" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/nec-tk80-intel-8080.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/nec-tk80-intel-8080.jpg" alt="1976 NEC TK-80 single-board microprocessor kit displaying the white ceramic Intel 8080 CPU package, memory chips, and hexadecimal keypad." width="960" height="640" loading="lazy">
+              <figcaption>
+                <strong>Intel 8080 Microprocessor Architecture (1976)</strong> Gremlin's <em>Blockade</em> ran on an 8-bit Intel 8080 CPU (seen here in the white ceramic DIP package at lower left on a 1976 TK-80 trainer board). Because RAM chips were expensive, <em>Blockade</em> stored trails directly in video RAM rather than a coordinate array.
+                <span class="photo-credit">Photo: Daderot (National Museum of Nature and Science, Tokyo) · Public domain (<a href="https://commons.wikimedia.org/wiki/File:NEC_TK_80_kit_(Intel_8080_processor)_-_National_Museum_of_Nature_and_Science,_Tokyo_-_DSC07319.JPG">CC0 1.0</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Designed by Lane Hauck, Ago Kiss, and Bob Pecoraro on an Intel 8080 microprocessor. Two players steered orthogonal arrows that left permanent solid trails behind them. There was no food and no tail removal—every tick painted a new block into video RAM until one player boxed the other in. Atari followed with <em>Surround</em> (1977) on the 2600.</p>
+          </div>
+          <div class="snake-era-card" role="listitem">
+            <span>1978 · 8-BIT MICROCOMPUTERS</span>
+            <h3>Peter Trefonas's <em>Worm</em></h3>
+            <figure class="snake-era-photo" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/tandy-trs80-model1.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/tandy-trs80-model1.jpg" alt="1977 Radio Shack Tandy TRS-80 Model I microcomputer with monochrome CRT monitor and integrated keyboard." width="960" height="720" loading="lazy">
+              <figcaption>
+                <strong>Tandy TRS-80 Model I Microcomputer (1977–1978)</strong> Distributed on audio cassette by <em>CLOAD</em> magazine for the TRS-80 and Commodore PET, Peter Trefonas's 1978 <em>Worm</em> introduced tail erasure—turning an infinite wall game into a finite, growing creature.
+                <span class="photo-credit">Photo: Prolete · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Tandy_TRS-80_Model_I.jpg">CC0 1.0</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Published through <em>CLOAD</em> magazine for the TRS-80 and Commodore PET, <em>Worm</em> made the crucial leap from an infinite wall to a finite, moving creature. By erasing the tail tip each tick—and only letting the body grow when the head ate numbered targets (<code>1</code>–<code>9</code>)—it turned a two-player duel into a solo survival puzzle.</p>
+          </div>
+          <div class="snake-era-card" role="listitem">
+            <span>1982 · ARCADE &amp; CINEMA</span>
+            <h3><em>Nibbler</em> &amp; <em>Tron</em> Light Cycles</h3>
+            <figure class="snake-era-photo snake-era-photo--contain" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/atari-arcade-cabinet-patent.png">
+              <img src="../../../assets/images/lessons/inside-classic-snake/atari-arcade-cabinet-patent.png" alt="U.S. Patent 4,084,194 technical drawing of an upright arcade video game cabinet showing exterior controls and a cross-section of the internal CRT monitor and mirror." width="960" height="1410" loading="lazy">
+              <figcaption>
+                <strong>Upright Arcade Cabinet Engineering (U.S. Patent 4,084,194)</strong> Cross-section of a golden-age arcade cabinet showing the internal raster CRT, viewing bezel, coin box, and two-player control deck that housed early trail and maze games.
+                <span class="photo-credit">U.S. Patent &amp; Trademark Office / Atari, Inc. (1978) · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Atari_game_cabinet_patent.png">source</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Rock-Ola's arcade cabinet <em>Nibbler</em> placed a growing snake inside a tight maze, becoming famous as the first video game with a nine-digit (billion-point) scoreboard. The same summer, Disney's <em>Tron</em> dramatized <em>Blockade</em>'s permanent-trail duel as neon Light Cycles.</p>
+          </div>
+          <div class="snake-era-card" role="listitem">
+            <span>1991 · PC SOURCE CODE</span>
+            <h3>MS-DOS QBasic <em>Nibbles</em></h3>
+            <figure class="snake-era-photo snake-era-photo--contain" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/nibbles-level3.png">
+              <img src="../../../assets/images/lessons/inside-classic-snake/nibbles-level3.png" alt="Screenshot of classic Nibbles Level 3 showing a yellow right-angle snake approaching the number 6 between two vertical red walls on a dark blue grid." width="960" height="450" loading="lazy">
+              <figcaption>
+                <strong>Classic <em>Nibbles</em> Level 3 Grid &amp; Numbered Food</strong> Following Peter Trefonas's 1978 <em>Worm</em> convention, <em>Nibbles</em> spawned sequential digits (<code>1</code> through <code>9</code>) on a royal-blue 80 × 50 text-block playfield bordered by red walls.
+                <span class="photo-credit">Screenshot: Matthias S. &amp; Rudwolf · Free &amp; Open-Source (<a href="https://commons.wikimedia.org/wiki/File:Nibbles_level3.png">GNU GPL</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Written by Rick Raddatz and shipped as <code>NIBBLES.BAS</code> with every copy of MS-DOS 5.0. Because the full BASIC source code was open on disk, millions of students learned how game loops, 2D coordinate arrays, and collision checks work by reading and modding <em>Nibbles</em>.</p>
+          </div>
+          <div class="snake-era-card" role="listitem">
+            <span>1997 · MOBILE REVOLUTION</span>
+            <h3>Nokia 6110 &amp; 3310 <em>Snake</em></h3>
+            <figure class="snake-era-photo snake-era-photo--contain" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/nokia-3310-blue.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/nokia-3310-blue.jpg" alt="Front photograph of a blue Nokia 3310 handset showing its 84 by 48 pixel monochrome green LCD screen and physical 2, 4, 6, 8 numeric keypad." width="960" height="2272" loading="lazy">
+              <figcaption>
+                <strong>Nokia Monochrome 84 × 48 LCD &amp; Numeric Keypad</strong> Players steered up, left, right, and down using thumb keys <code>2</code>, <code>4</code>, <code>6</code>, and <code>8</code> on reflective green LCDs across the Nokia 6110 (1997) and Nokia 3310 (2000).
+                <span class="photo-credit">Photo: Michael Brandtner · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Nokia_3310_blue.jpg">source</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Finnish engineer Taneli Armanto programmed <em>Snake</em> for Nokia's 84 × 48 monochrome LCD and numeric keypad (<code>2</code>, <code>4</code>, <code>6</code>, <code>8</code>). Armanto added a split-second grace delay before wall crashes so thumb-key players could turn at the last instant, and added infrared two-player mode—shipping on over 350 million phones.</p>
+          </div>
+          <div class="snake-era-card" role="listitem">
+            <span>TODAY · WEB &amp; AI LABS</span>
+            <h3>Canvas, LED Grids &amp; AI</h3>
+            <figure class="snake-era-photo" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/arduino-led-matrix.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/arduino-led-matrix.jpg" alt="DIY electronics board combining an Arduino microcontroller with nine tiled 8 by 8 LED dot-matrix modules." width="960" height="640" loading="lazy">
+              <figcaption>
+                <strong>Arduino Microcontroller &amp; Tiled 8 × 8 LED Dot Matrices</strong> On microcontrollers with only 2 KB of SRAM, students often implement Snake using a fixed circular ring buffer or a 2D countdown matrix wired directly to LED rows and columns.
+                <span class="photo-credit">Photo: Retired electrician · Public domain (<a href="https://commons.wikimedia.org/wiki/File:DIY_Arduino_LED_screen_for_audio_spectrum_analyzer_1.jpg">CC0 1.0</a>)</span>
+              </figcaption>
+            </figure>
+            <p>Today Snake is the "Hello, World!" of interactive graphics—built on HTML5 <code>&lt;canvas&gt;</code>, 8×8 Arduino LED matrices, and AI research benchmarks where reinforcement-learning agents learn Hamiltonian cycles to fill 100% of the board without trapping themselves.</p>
+          </div>
+        </div>
+
+        <div class="snake-history-gallery-card" aria-labelledby="history-gallery-heading">
+          <div class="snake-compare-header">
+            <div>
+              <p class="snake-lab-label">Primary-Source Hardware Archive · Click any photo to enlarge</p>
+              <h3 id="history-gallery-heading">The Machines That Shaped How Snake Was Coded</h3>
+            </div>
+          </div>
+          <p class="snake-small">Each generation of hardware forced programmers to rethink how a moving trail is stored in memory—from 128 bytes of console RAM to cassette-loaded 8-bit microcomputers and MS-DOS floppy disks.</p>
+          <div class="snake-history-gallery">
+            <figure class="snake-gallery-item" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/atari-2600-console.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/atari-2600-console.jpg" alt="Atari 2600 woodgrain four-switch console with a single-button CX40 joystick on a white background." width="960" height="560" loading="lazy">
+              <figcaption>
+                <strong>1977 Atari 2600 &amp; CX40 Joystick (<em>Surround</em>)</strong> Atari's console had only <strong>128 bytes of RAM</strong>—no frame buffer at all! To run <em>Surround</em> (the home version of 1976 <em>Blockade</em>), the CPU had to pack playfield wall bits and feed each horizontal scanline to the television electron beam in real time.
+                <span class="photo-credit">Photo: Evan-Amos (The Vanamo Online Game Museum) · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Atari-2600-Wood-4Sw-Set.jpg">source</a>)</span>
+              </figcaption>
+            </figure>
+            <figure class="snake-gallery-item" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/commodore-pet-2001.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/commodore-pet-2001.jpg" alt="1977 Commodore PET 2001 personal computer in a museum display showing the built-in cassette drive, chiclet keyboard, and trapezoidal CRT monitor." width="960" height="720" loading="lazy">
+              <figcaption>
+                <strong>1977 Commodore PET 2001 with Built-In Datasette</strong> Alongside the TRS-80, the PET 2001 ran Peter Trefonas's 1978 <em>Worm</em> from cassette tape. Its 40 × 25 character-cell screen memory (<code>1,000 bytes</code>) let BASIC programs POKE head characters and erase tail characters directly on the grid.
+                <span class="photo-credit">Photo: Prolete (Bonami SpelComputer Museum) · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Commodore_PET_2001_Bonami_01.jpg">CC0 1.0</a>)</span>
+              </figcaption>
+            </figure>
+            <figure class="snake-gallery-item" data-zoomable data-lightbox-group="snake-history" data-full="../../../assets/images/lessons/inside-classic-snake/ibm-pc-5150.jpg">
+              <img src="../../../assets/images/lessons/inside-classic-snake/ibm-pc-5150.jpg" alt="IBM Personal Computer 5150 desktop unit with dual 5.25-inch floppy drives, Model F keyboard, and green phosphor monitor." width="960" height="720" loading="lazy">
+              <figcaption>
+                <strong>IBM PC 5150 &amp; the MS-DOS Classroom Era</strong> With 64 KB to 640 KB of RAM, IBM PCs had plenty of memory for QBasic's <code>NIBBLES.BAS</code> (1991) to store both a 2D arena array <code>arena(row, col)</code> and a snake body coordinate array—teaching structured programming to millions of beginners.
+                <span class="photo-credit">Photo: Fried Dough · Public domain (<a href="https://commons.wikimedia.org/wiki/File:Ibm_computer_pc_5150_(6049156797).jpg">CC PDM / CC0</a>)</span>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+
+        <p class="snake-source">Primary historical sources: <a href="https://taneliarmanto.com/news/history-of-snake">Taneli Armanto's history of Snake</a> and <a href="https://taneliarmanto.com/nokia-snake">his design notes on Nokia Snake (1997)</a>.</p>
+      </div>
+    </section>
+
+    <!-- 03 / STEP LAB -->
+    <section id="step-lab" class="snake-section">
+      <div class="snake-section-number">03 / STEP LAB</div>
+      <div>
+        <h2>Step through one tick of the game loop.</h2>
+        <p>Watch a single move travel through all five operations from direction input to a newly drawn screen frame. This 7 × 7 model uses labeled <code>(x, y)</code> coordinates so you can verify every vector addition, boundary check, and array update before the screen redraws.</p>
+
+        <div class="snake-scenario-bar" role="group" aria-label="Load a board scenario">
+          <span class="snake-scenario-title">Scenario preset:</span>
+          <button type="button" class="snake-scenario-btn" data-scenario="standard" aria-pressed="true">1 · Eat &amp; Grow</button>
+          <button type="button" class="snake-scenario-btn" data-scenario="wall" aria-pressed="false">2 · Wall Crash</button>
+          <button type="button" class="snake-scenario-btn" data-scenario="loop" aria-pressed="false">3 · Self-Loop Trap</button>
+          <button type="button" class="snake-scenario-btn" data-scenario="tailchase" aria-pressed="false">4 · Tail-Chase Subtlety</button>
+          <button type="button" class="snake-scenario-btn" data-scenario="endgame" aria-pressed="false">5 · 47/49 Endgame Win</button>
+        </div>
+
+        <ol class="snake-pipeline" aria-label="Operations in one game tick">
+          <li data-operation="input"><strong>1 Input</strong><span>Choose a direction</span></li>
+          <li data-operation="calculate"><strong>2 Calculate</strong><span>Find the next head</span></li>
+          <li data-operation="check"><strong>3 Check</strong><span>Wall, body, or food?</span></li>
+          <li data-operation="update"><strong>4 Update</strong><span>Change stored state</span></li>
+          <li data-operation="draw"><strong>5 Draw</strong><span>Show the new frame</span></li>
+        </ol>
+
+        <div class="snake-lab">
+          <div class="snake-lab-main">
+            <div class="snake-grid-head">
+              <span>7 × 7 practice board <small>(0-indexed x, y)</small></span>
+              <span id="lab-step-count">Tick 0</span>
+            </div>
+
+            <div class="snake-board-frame">
+              <div class="snake-axis-x" aria-hidden="true">
+                <span class="snake-axis-corner">x→<br>y↓</span>
+                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+              </div>
+              <div class="snake-board-row">
+                <div class="snake-axis-y" aria-hidden="true">
+                  <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+                </div>
+                <div id="snake-grid" class="snake-grid" role="img" aria-label="Practice Snake board"></div>
+              </div>
+            </div>
+
+            <div class="snake-board-legend" aria-hidden="true">
+              <span><i class="legend-swatch is-head">0</i> Head <code>[0]</code></span>
+              <span><i class="legend-swatch is-body">1</i> Body <code>[1..n]</code></span>
+              <span><i class="legend-swatch is-food">◆</i> Food</span>
+              <span><i class="legend-swatch is-preview">?</i> Proposed Head</span>
+              <label class="snake-coord-toggle"><input type="checkbox" id="snake-show-coords"> Show (x,y)</label>
+            </div>
+
+            <div class="snake-controls" role="group" aria-label="Choose the snake's next direction">
+              <button type="button" data-direction="up">↑ Up <small>(0, −1)</small></button>
+              <button type="button" data-direction="left">← Left <small>(−1, 0)</small></button>
+              <button type="button" data-direction="right">Right → <small>(+1, 0)</small></button>
+              <button type="button" data-direction="down">↓ Down <small>(0, +1)</small></button>
+            </div>
+
+            <p class="snake-screen-label">Screen <span id="snake-screen-note">shows the last drawn frame</span></p>
+
+            <div class="snake-lab-actions">
+              <button id="snake-operation" type="button" class="snake-primary">Next operation</button>
+              <button id="snake-step" type="button" class="snake-secondary">Run full tick</button>
+              <button id="snake-autoplay" type="button" class="snake-secondary" aria-pressed="false">▶ Auto-step</button>
+              <button id="snake-reset" type="button" class="snake-secondary">Start again</button>
+            </div>
+          </div>
+
+          <div class="snake-lab-side">
+            <p id="snake-prompt-label" class="snake-lab-label">Before you move</p>
+            <h3 id="snake-prediction-title">Make a prediction</h3>
+            <p id="snake-prompt">The head is at (2, 3), facing right. Food is at (4, 3). What will happen after one step?</p>
+
+            <div class="snake-predictions" role="group" aria-label="Prediction">
+              <button type="button" data-predict="grow">It grows (+10 pts)</button>
+              <button type="button" data-predict="same">Same length</button>
+              <button type="button" data-predict="end">Game over (crash)</button>
+            </div>
+
+            <p id="snake-feedback" class="snake-feedback" aria-live="polite">Choose a prediction, then run an operation or a full tick.</p>
+
+            <div class="snake-operation-readout">
+              <strong>What the program is doing</strong>
+              <p id="snake-operation-message" aria-live="polite">Waiting for a direction. Next: calculate the new head.</p>
+            </div>
+
+            <div class="snake-state">
+              <strong>Stored state (memory in RAM)</strong>
+              <dl>
+                <div><dt>Direction (dx, dy)</dt><dd><output id="snake-direction-value"></output></dd></div>
+                <div><dt>Calculated head</dt><dd><output id="snake-next-head"></output></dd></div>
+                <div><dt>Check result</dt><dd><output id="snake-result"></output></dd></div>
+                <div><dt>Score</dt><dd><output id="snake-score"></output></dd></div>
+                <div><dt>Tick interval</dt><dd><output id="snake-speed"></output></dd></div>
+                <div><dt>Snake length</dt><dd><output id="snake-length">3</output></dd></div>
+              </dl>
+              <strong>Body array (<code>snake</code>), head first</strong>
+              <div id="snake-array-chips" class="snake-array-chips" aria-hidden="true"></div>
+              <output id="snake-body-list" class="snake-sr-only-text"></output>
+              <strong>Next operation</strong>
+              <output id="snake-rule"></output>
+            </div>
+
+            <div class="snake-code-trace" aria-live="polite">
+              <div class="snake-trace-head"><span>Active JavaScript line in the game loop</span><code id="snake-trace-stage">stage: input</code></div>
+              <pre id="snake-trace-code"><code><span data-trace="input">changeDirection(event); // sets dx, dy</span>
+<span data-trace="calculate">const head = { x: snake[0].x + dx, y: snake[0].y + dy };</span>
+<span data-trace="check">if (wallCrash(head) || bodyCrash(head)) return gameOver();</span>
+<span data-trace="update">snake.unshift(head); if (!ateFood) snake.pop();</span>
+<span data-trace="draw">ctx.fillRect(0, 0, 400, 400); drawFood(); drawSnake();</span></code></pre>
+            </div>
+          </div>
+        </div>
+        <p class="snake-small">Tip: Try two full ticks toward the red food in Scenario 1. Then click <strong>Start again</strong> and use <strong>Next operation</strong> to watch Operation 4 (<em>Update</em>) change the stored array in memory while the board waits for Operation 5 (<em>Draw</em>) to catch up! Try Scenario 4 (<em>Tail-Chase Subtlety</em>) to see what happens when the head moves into the square the tail tip is about to vacate.</p>
+      </div>
+    </section>
+
+    <!-- 04 / FOUR METHODS OF MAKING SNAKE -->
+    <section id="methods" class="snake-section">
+      <div class="snake-section-number">04 / FOUR METHODS</div>
+      <div>
+        <h2>Four ways to build Snake in code.</h2>
+        <p>On screen, every version of Snake looks the same: a head advances one tile and a tail follows. Under the hood, however, programmers across eras have invented <strong>four completely different ways</strong> to represent the snake in memory depending on whether they were writing for a 1976 arcade circuit, a 1997 Nokia microcontroller, an Arduino LED matrix, or a modern browser.</p>
+
+        <figure class="snake-figure" data-zoomable data-lightbox-group="snake-diagrams" data-full="../../../assets/images/lessons/inside-classic-snake/snake-methods-comparison.svg">
+          <img src="../../../assets/images/lessons/inside-classic-snake/snake-methods-comparison.svg" alt="Four architectural panels comparing (1) an ordered coordinate array using unshift and pop, (2) a circular ring buffer using head and tail indices, (3) a 2D countdown matrix where each cell stores remaining ticks, and (4) 1970s video RAM framebuffer readback." width="920" height="480" loading="lazy">
+          <figcaption>
+            <strong>Four Architectures for the Same Game</strong> A dynamic array shifts coordinates every tick; a circular ring buffer moves two integer pointers in <code>O(1)</code> time; a 2D countdown grid stores a lifetime timer in each cell; and 1970s VRAM readback uses the screen pixels themselves as the collision database. Click to enlarge.
+            <span class="photo-credit">ClassroomOS computer science diagram · CC BY 4.0</span>
+          </figcaption>
+        </figure>
+
+        <!-- INTERACTIVE MULTI-ARCHITECTURE SYNCHRONIZER -->
+        <div class="snake-clinic-card" aria-labelledby="arch-lab-title">
+          <div class="snake-clinic-header">
+            <div>
+              <p class="snake-lab-label">Interactive Data-Structure Lab</p>
+              <h3 id="arch-lab-title">Watch Three Memory Models Represent the Exact Same Move</h3>
+            </div>
+            <div class="snake-compare-tabs">
+              <button type="button" id="arch-step-move" class="snake-primary">Step Forward (Normal)</button>
+              <button type="button" id="arch-step-eat" class="snake-secondary">Step &amp; Eat Food (+1 Length)</button>
+              <button type="button" id="arch-step-reset" class="snake-secondary">Reset</button>
+            </div>
+          </div>
+          <p>Click <strong>Step Forward</strong> or <strong>Step &amp; Eat Food</strong> below. The snake travels clockwise around a 5 × 5 loop while all three data structures update simultaneously:</p>
+
+          <div class="snake-arch-workbench">
+            <div class="snake-arch-panel">
+              <span class="snake-arch-tag">METHOD 3 · 2D COUNTDOWN MATRIX</span>
+              <h4><code>grid[y][x]</code> (Ticks Remaining)</h4>
+              <div id="arch-countdown-grid" class="snake-arch-grid" role="img" aria-label="5 by 5 countdown matrix where positive numbers show remaining lifetime of each snake segment"></div>
+              <p class="snake-small">Head stamps <code>length</code>. Every positive number subtracts <code>1</code> on a normal step (or pauses subtraction for 1 tick when eating food!). Collision check: <code>grid[ny][nx] &gt; 0</code>.</p>
+            </div>
+
+            <div class="snake-arch-panel">
+              <span class="snake-arch-tag">METHOD 1 · DYNAMIC COORDINATE ARRAY</span>
+              <h4><code>snake[]</code> (<code>unshift</code> &amp; <code>pop</code>)</h4>
+              <div id="arch-array-view" class="snake-arch-list"></div>
+              <p class="snake-small">Index <code>0</code> is always the head. Every element shifts right by 1 index whenever <code>unshift(head)</code> runs.</p>
+
+              <hr class="snake-arch-divider">
+
+              <span class="snake-arch-tag">METHOD 2 · CIRCULAR RING BUFFER</span>
+              <h4><code>ring[8]</code> (Fixed RAM, Moving Pointers)</h4>
+              <div id="arch-ring-view" class="snake-arch-ring"></div>
+              <p class="snake-small">Coordinates never shift! Only <code>headPtr</code> and <code>tailPtr</code> advance modulo 8: <code>(ptr + 1) % 8</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED METHOD TABS -->
+        <div class="snake-clinic-card" aria-labelledby="method-detail-title">
+          <div class="snake-clinic-header">
+            <div>
+              <p class="snake-lab-label">Code &amp; Tradeoffs</p>
+              <h3 id="method-detail-title">Compare Implementation Code Across All Four Methods</h3>
+            </div>
+          </div>
+          <div class="snake-bug-tabs" role="group" aria-label="Select a Snake implementation method">
+            <button type="button" class="snake-method-btn" data-method="array" aria-pressed="true">1 · Coordinate Array (JS / Python)</button>
+            <button type="button" class="snake-method-btn" data-method="ring" aria-pressed="false">2 · Circular Ring Buffer (Nokia / C)</button>
+            <button type="button" class="snake-method-btn" data-method="countdown" aria-pressed="false">3 · 2D Countdown Grid (Shaders / LED)</button>
+            <button type="button" class="snake-method-btn" data-method="vram" aria-pressed="false">4 · Video RAM Readback (1976 Arcade)</button>
+          </div>
+          <div class="snake-bug-stage">
+            <div class="snake-bug-code-col">
+              <div class="snake-trace-head"><span id="method-code-title">Method 1 · Coordinate Array (unshift &amp; pop)</span><code id="method-complexity-badge" class="badge-ok">Move: O(L) · Collision: O(L)</code></div>
+              <pre id="method-code-view" class="snake-bug-pre"></pre>
+            </div>
+            <div class="snake-bug-sim-col">
+              <strong id="method-era-heading">Where &amp; why this method is used:</strong>
+              <p id="method-summary"></p>
+              <div id="method-pros-cons" class="snake-bug-strip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 / UNDER THE HOOD -->
+    <section id="rules" class="snake-section">
+      <div class="snake-section-number">05 / UNDER THE HOOD</div>
+      <div>
+        <h2>Four decisions every tick.</h2>
+        <p>Whether you use an array, a ring buffer, or a countdown grid, every real-time Snake game is driven by a <strong>game loop</strong>—a timer that calls <code>update()</code> and <code>draw()</code> repeatedly and makes four mathematical decisions:</p>
+
+        <div class="snake-rule-grid">
+          <div>
+            <span>1 · TIME &amp; ACCELERATION</span>
+            <h3>The Heartbeat Tick</h3>
+            <p>A typical browser Snake starts with <code>setInterval(gameLoop, 100)</code>—10 ticks per second. Each food eaten shortens the wait by <code>2 ms</code> down to a floor of <code>50 ms</code> (20 ticks per second): <code>currentSpeed = Math.max(50, currentSpeed - 2)</code>.</p>
+          </div>
+          <div>
+            <span>2 · 2D VECTOR ADDITION</span>
+            <h3>Calculating the New Head</h3>
+            <p>Direction is stored as a velocity pair <code>(dx, dy)</code>: Right is <code>(+1, 0)</code>, Left is <code>(−1, 0)</code>, Down is <code>(0, +1)</code>, and Up is <code>(0, −1)</code>. Because <code>y = 0</code> is the top edge of computer screens, moving <em>up</em> subtracts 1 from <code>y</code>.</p>
+          </div>
+          <div>
+            <span>3 · SAFETY BOUNDARIES</span>
+            <h3>Wall &amp; Body Collisions</h3>
+            <p>Before changing the snake, <code>update()</code> tests the proposed head <code>(head.x, head.y)</code>. If <code>head.x &lt; 0 || head.x &gt;= 20 || head.y &lt; 0 || head.y &gt;= 20</code>, it hit a wall. Next, it checks if any body square occupies those coordinates.</p>
+          </div>
+          <div>
+            <span>4 · QUEUE DATA STRUCTURE</span>
+            <h3>Advance Head, Conditionally Drop Tail</h3>
+            <p><code>snake.unshift(head)</code> inserts the new head at index <code>0</code>. If <code>head</code> matches <code>food</code>, the score rises by 10, new food spawns, and <code>snake.pop()</code> is skipped so the snake grows by 1 square. Otherwise <code>snake.pop()</code> removes the tail tip.</p>
+          </div>
+        </div>
+
+        <figure class="snake-figure" data-zoomable data-lightbox-group="snake-diagrams" data-full="../../../assets/images/lessons/inside-classic-snake/snake-grid-canvas-diagram.svg">
+          <img src="../../../assets/images/lessons/inside-classic-snake/snake-grid-canvas-diagram.svg" alt="Diagram showing the 20 by 20 logical grid with valid coordinates 0 to 19, four out-of-bounds wall regions, and a zoomed view of two 20-pixel cells painted at 18 by 18 pixels to leave a 2-pixel divider." width="920" height="450" loading="lazy">
+          <figcaption>
+            <strong>Logical Grid Coordinates vs. Canvas Pixels</strong> Game state never stores pixel numbers like <code>180 px</code>; it stores whole grid indices <code>0..19</code>. Only <code>draw()</code> multiplies by <code>TILE_SIZE = 20</code> and draws an <code>18 × 18 px</code> square (<code>TILE_SIZE - 2</code>) so adjacent body squares have a crisp 2-pixel gap. Click to enlarge.
+            <span class="photo-credit">ClassroomOS computer science diagram · CC BY 4.0</span>
+          </figcaption>
+        </figure>
+
+        <details class="snake-code" open>
+          <summary>Read the complete annotated <code>update()</code> function (Method 1: Coordinate Array)</summary>
+          <p>The body is an ordered JavaScript array of <code>{ x, y }</code> coordinate objects. Index <code>0</code> is always the head; index <code>snake.length - 1</code> is always the tail.</p>
+          <pre><code>function update() {
+  // 1. Propose the next head coordinate without changing the snake yet
+  const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+  // 2. Wall collision: valid grid indices on a 20x20 board are 0 through 19
+  if (head.x &lt; 0 || head.x &gt;= TILE_COUNT || head.y &lt; 0 || head.y &gt;= TILE_COUNT) {
+    gameOver();
+    return;
+  }
+
+  // 3. Self collision: does the proposed head overlap any current segment?
+  for (let i = 0; i &lt; snake.length; i++) {
+    if (head.x === snake[i].x &amp;&amp; head.y === snake[i].y) {
+      gameOver();
+      return;
+    }
+  }
+
+  // 4. Safe! Insert the new head at index 0 and record the direction we actually moved
+  snake.unshift(head);
+  lastDx = dx;
+  lastDy = dy;
+
+  // 5. Eat food (keep tail &amp; speed up) OR normal step (pop old tail)
+  if (head.x === food.x &amp;&amp; head.y === food.y) {
+    score += 10;
+    currentSpeed = Math.max(50, currentSpeed - 2);
+    placeFood(); // Note: no snake.pop() here, so length increases by 1!
+  } else {
+    snake.pop(); // Drop the last square so length stays the same
+  }
+}</code></pre>
+        </details>
+
+        <div class="snake-age-grid">
+          <div>
+            <strong>K–2 · Act it out (Unplugged)</strong>
+            <p>Lay down three paper squares on floor tiles as head, middle, and tail. Each clap ("tick"), place a new square in front of the head and pick up the last tail square—unless the new head lands on a red beanbag ("food")!</p>
+          </div>
+          <div>
+            <strong>Grades 3–5 · Coordinate Mapper</strong>
+            <p>Write the snake's three <code>(x, y)</code> coordinates before and after moving Up, Right, Down, and Left. Explain why moving Up subtracts 1 from <code>y</code> while moving Down adds 1 to <code>y</code>.</p>
+          </div>
+          <div>
+            <strong>Grades 6–8 · Order-of-Operations Detective</strong>
+            <p>Trace what happens if you move <code>snake.unshift(head)</code> above the self-collision loop, or if a player taps two arrow keys inside a single <code>100 ms</code> tick. Test your hypothesis in Lab A below.</p>
+          </div>
+          <div>
+            <strong>Grades 9–12 · Algorithm Redesign</strong>
+            <p>A naive recursive <code>placeFood()</code> picks random squares until it misses the snake. What happens when 395 of 400 squares are full? Use Lab B below to benchmark rejection sampling against an empty-square filter.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 / BUG CLINIC & ENGINEERING LABS -->
+    <section id="bug-clinic" class="snake-section">
+      <div class="snake-section-number">06 / BUG CLINIC</div>
+      <div>
+        <h2>What breaks if you change one line?</h2>
+        <p>Every programmer who builds Snake from scratch encounters a few classic pitfalls. Explore two interactive engineering labs built around real bugs in Snake implementations.</p>
+
+        <!-- LAB A: ORDER OF OPERATIONS & INPUT TIMING -->
+        <div class="snake-clinic-card" aria-labelledby="clinic-a-title">
+          <div class="snake-clinic-header">
+            <div>
+              <p class="snake-lab-label">Engineering Lab A · Grades 6–12</p>
+              <h3 id="clinic-a-title">Trace the Bug: Order of Checks &amp; the 100 ms Input Window</h3>
+            </div>
+          </div>
+          <p>Select a code version below to inspect the code diff and see what happens when the next tick runs:</p>
+
+          <div class="snake-bug-tabs" role="group" aria-label="Choose a code version to test">
+            <button type="button" class="snake-bug-btn" data-bug="correct" aria-pressed="true">✓ Reference Working Code</button>
+            <button type="button" class="snake-bug-btn" data-bug="unshift-first" aria-pressed="false">Bug 1: <code>unshift()</code> Before Collision Check</button>
+            <button type="button" class="snake-bug-btn" data-bug="double-key" aria-pressed="false">Bug 2: Two Keys in 100 ms (No <code>lastDx</code>)</button>
+            <button type="button" class="snake-bug-btn" data-bug="no-clear" aria-pressed="false">Bug 3: Missing Canvas Clear in <code>draw()</code></button>
+          </div>
+
+          <div class="snake-bug-stage">
+            <div class="snake-bug-code-col">
+              <div class="snake-trace-head"><span id="bug-code-label">Reference Working Implementation</span><code id="bug-status-badge" class="badge-ok">PASSES</code></div>
+              <pre id="bug-code-view" class="snake-bug-pre"></pre>
+            </div>
+            <div class="snake-bug-sim-col">
+              <strong id="bug-trace-heading">What happens on the very next tick:</strong>
+              <p id="bug-trace-summary"></p>
+              <div id="bug-visual-strip" class="snake-bug-strip" role="region" aria-label="Step-by-step execution trace"></div>
+              <p id="bug-takeaway" class="snake-bug-takeaway"></p>
+            </div>
+          </div>
+        </div>
+
+        <figure class="snake-figure" data-zoomable data-lightbox-group="snake-diagrams" data-full="../../../assets/images/lessons/inside-classic-snake/snake-input-buffer-diagram.svg">
+          <img src="../../../assets/images/lessons/inside-classic-snake/snake-input-buffer-diagram.svg" alt="Timeline between Tick N at 0 ms and Tick N+1 at 100 ms showing how pressing ArrowUp at 25 ms and ArrowLeft at 55 ms causes a naive check to reverse the snake into its own neck, while checking against lastDx prevents the crash." width="920" height="430" loading="lazy">
+          <figcaption>
+            <strong>Why Two Quick Key Presses Can Break Snake (and How <code>lastDx</code> Fixes It)</strong> Because <code>keydown</code> events happen immediately while <code>update()</code> only runs every <code>100 ms</code>, checking illegal 180° turns against the pending <code>dx, dy</code> lets a fast player turn 90° and then another 90° before the snake has moved a single square. Comparing against <code>lastDx, lastDy</code> (the direction of the last completed move) closes the loophole. Click to enlarge.
+            <span class="photo-credit">ClassroomOS computer science diagram · CC BY 4.0</span>
+          </figcaption>
+        </figure>
+
+        <!-- LAB B: CROWDED BOARD FOOD SPAWNER SIMULATOR -->
+        <div class="snake-clinic-card" aria-labelledby="clinic-b-title">
+          <div class="snake-clinic-header">
+            <div>
+              <p class="snake-lab-label">Engineering Lab B · Grades 9–12 Challenge</p>
+              <h3 id="clinic-b-title">Food Spawner Benchmark: Random Retry vs. Empty-Square Filter</h3>
+            </div>
+          </div>
+          <p>A common beginner implementation of <code>placeFood()</code> picks a random <code>(x, y)</code> on the 20 × 20 board (400 squares) and calls itself recursively if that square overlaps the snake. At the start of a game (length 3), 397 of 400 squares are empty, so a random guess succeeds <strong>99.25%</strong> of the time. What happens near the end of a perfect game when the snake covers almost the entire board?</p>
+
+          <div class="snake-spawner-controls">
+            <label for="spawner-length-slider">
+              <strong>Snake length on 20 × 20 board (400 total squares):</strong>
+              <span id="spawner-length-readout" class="snake-spawner-pill">Length: 3 / 400 (397 empty · 99.3% free)</span>
+            </label>
+            <input type="range" id="spawner-length-slider" min="3" max="400" value="3" step="1">
+            <div class="snake-spawner-presets" role="group" aria-label="Quick snake lengths">
+              <button type="button" class="snake-Preset-len" data-len="3">Start (3)</button>
+              <button type="button" class="snake-Preset-len" data-len="200">Half full (200)</button>
+              <button type="button" class="snake-Preset-len" data-len="360">90% full (360)</button>
+              <button type="button" class="snake-Preset-len" data-len="395">395 / 400</button>
+              <button type="button" class="snake-Preset-len" data-len="399">Last square (399)</button>
+              <button type="button" class="snake-Preset-len" data-len="400">Full board (400!)</button>
+            </div>
+            <button type="button" id="spawner-run-btn" class="snake-primary">Run 100 Spawn Trials</button>
+          </div>
+
+          <div class="snake-spawner-comparison">
+            <div class="snake-spawner-col">
+              <h4>Method A · Recursive Random Retry (Rejection Sampling)</h4>
+              <p class="snake-small">Keep rolling a 400-sided die until you hit an empty square.</p>
+              <dl class="snake-spawner-stats">
+                <div><dt>Expected tries per food</dt><dd><output id="spawner-a-expected">1.01</output></dd></div>
+                <div><dt>Trial average tries</dt><dd><output id="spawner-a-avg">1.01</output></dd></div>
+                <div><dt>Worst single spawn (max tries)</dt><dd><output id="spawner-a-max">2</output></dd></div>
+                <div><dt>At 400 / 400 full board</dt><dd><output id="spawner-a-status">OK</output></dd></div>
+              </dl>
+              <pre class="snake-spawner-code"><code>function placeFoodNaive() {
+  food.x = Math.floor(Math.random() * 20);
+  food.y = Math.floor(Math.random() * 20);
+  snake.forEach(part =&gt; {
+    if (part.x === food.x &amp;&amp; part.y === food.y) {
+      placeFoodNaive(); // retries (overflows at 400!)
+    }
+  });
+}</code></pre>
+            </div>
+
+            <div class="snake-spawner-col">
+              <h4>Method B · Empty-Square List Filter (Deterministic O(N) Scan)</h4>
+              <p class="snake-small">Collect all empty coordinates first, then pick 1 random index.</p>
+              <dl class="snake-spawner-stats">
+                <div><dt>Random picks per food</dt><dd><output id="spawner-b-expected">1 (always)</output></dd></div>
+                <div><dt>Empty squares scanned</dt><dd><output id="spawner-b-avg">400 cells</output></dd></div>
+                <div><dt>Worst single spawn</dt><dd><output id="spawner-b-max">1 random pick</output></dd></div>
+                <div><dt>At 400 / 400 full board</dt><dd><output id="spawner-b-status">Detects Win!</output></dd></div>
+              </dl>
+              <pre class="snake-spawner-code"><code>function placeFoodSafe() {
+  const occupied = new Set(snake.map(p =&gt; `${p.x},${p.y}`));
+  const empty = [];
+  for (let y = 0; y &lt; 20; y++)
+    for (let x = 0; x &lt; 20; x++)
+      if (!occupied.has(`${x},${y}`)) empty.push({ x, y });
+  if (empty.length === 0) return winGame(); // Full board!
+  food = empty[Math.floor(Math.random() * empty.length)];
+}</code></pre>
+            </div>
+          </div>
+          <p id="spawner-live-summary" class="snake-compare-note" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 / CHECK YOUR UNDERSTANDING -->
+    <section id="check-understanding" class="snake-section">
+      <div class="snake-section-number">07 / SELF-CHECK</div>
+      <div>
+        <h2>Test your mental model.</h2>
+        <p>Can you predict what the program will do without running the code? Answer these four quick questions to check your understanding of Snake's history, data structures, and game loop.</p>
+
+        <div class="snake-quiz-grid" id="snake-quiz">
+          <article class="snake-quiz-card" data-quiz-q="0">
+            <p class="snake-lab-label">Question 1 · Array Queue State</p>
+            <h3>A snake's body array is <code>[(4, 2), (3, 2), (2, 2)]</code> and it moves Right <code>(+1, 0)</code> onto an empty square. What is the array after the tick?</h3>
+            <div class="snake-quiz-options" role="group" aria-label="Question 1 options">
+              <button type="button" data-answer="wrong" data-explain="That would keep the old tail (2, 2) and grow the snake to length 4, which only happens when eating food."><code>[(5, 2), (4, 2), (3, 2), (2, 2)]</code></button>
+              <button type="button" data-answer="correct" data-explain="Exactly! unshift({x:5, y:2}) adds the new head at index 0, and pop() drops the old tail (2, 2)."><code>[(5, 2), (4, 2), (3, 2)]</code></button>
+              <button type="button" data-answer="wrong" data-explain="Remember: index 0 is the head, so (5, 2) goes at the front of the array, not the back."><code>[(4, 2), (3, 2), (5, 2)]</code></button>
+            </div>
+            <p class="snake-quiz-feedback" aria-live="polite"></p>
+          </article>
+
+          <article class="snake-quiz-card" data-quiz-q="1">
+            <p class="snake-lab-label">Question 2 · Alternative Architectures</p>
+            <h3>In the 2D Countdown Matrix method (<code>grid[y][x]</code>), each cell stores an integer representing ticks remaining before that cell becomes empty. How does the snake grow by 1 when eating food?</h3>
+            <div class="snake-quiz-options" role="group" aria-label="Question 2 options">
+              <button type="button" data-answer="wrong" data-explain="Multiplying all numbers by 2 would double the snake's length instead of adding 1 square.">Multiply every cell in <code>grid[y][x]</code> by 2</button>
+              <button type="button" data-answer="correct" data-explain="Correct! Incrementing length by 1 and skipping the -1 countdown for one tick keeps every existing body square alive for 1 extra tick while adding the new head.">Increment <code>length</code> by 1 and skip subtracting 1 from positive cells on that tick</button>
+              <button type="button" data-answer="wrong" data-explain="Setting all cells to 0 would erase the entire snake!">Reset all positive cells to <code>0</code></button>
+            </div>
+            <p class="snake-quiz-feedback" aria-live="polite"></p>
+          </article>
+
+          <article class="snake-quiz-card" data-quiz-q="2">
+            <p class="snake-lab-label">Question 3 · Order of Operations</p>
+            <h3>Why must <code>update()</code> check for self-collision <em>before</em> calling <code>snake.unshift(head)</code>?</h3>
+            <div class="snake-quiz-options" role="group" aria-label="Question 3 options">
+              <button type="button" data-answer="correct" data-explain="Spot on! Once unshift(head) puts head at snake[0], comparing head against snake[0] is always true—ending the game immediately.">If <code>unshift(head)</code> runs first, <code>snake[0]</code> <em>is</em> <code>head</code>, so the loop always thinks the head hit itself</button>
+              <button type="button" data-answer="wrong" data-explain="JavaScript arrays can grow to millions of elements; unshift() does not affect wall coordinates.">Because <code>unshift(head)</code> would erase the wall coordinates</button>
+              <button type="button" data-answer="wrong" data-explain="Collision checks run in microseconds; the bug is logical, not a frame-rate slowdown.">Because checking collisions after <code>unshift()</code> makes the frame rate too slow</button>
+            </div>
+            <p class="snake-quiz-feedback" aria-live="polite"></p>
+          </article>
+
+          <article class="snake-quiz-card" data-quiz-q="3">
+            <p class="snake-lab-label">Question 4 · Input Buffering</p>
+            <h3>Why must a well-engineered Snake game store <code>lastDx</code> and <code>lastDy</code> in addition to <code>dx</code> and <code>dy</code>?</h3>
+            <div class="snake-quiz-options" role="group" aria-label="Question 4 options">
+              <button type="button" data-answer="wrong" data-explain="The tail is removed simply with snake.pop(), which doesn't need the direction vector.">So <code>snake.pop()</code> knows which direction the tail was facing</button>
+              <button type="button" data-answer="wrong" data-explain="High scores are saved using localStorage, which only stores numbers/strings.">To save the high score in <code>localStorage</code></button>
+              <button type="button" data-answer="correct" data-explain="Correct! Checking against the direction of the last actual step prevents two rapid key presses inside one 100 ms tick from reversing the snake 180° into its neck.">To stop two quick key presses inside one tick from reversing the snake 180° into itself</button>
+            </div>
+            <p class="snake-quiz-feedback" aria-live="polite"></p>
+          </article>
+        </div>
+
+        <div class="snake-finish">
+          <div>
+            <h3>Ready to build your own game loop?</h3>
+            <p>Take what you learned about grid coordinates, state arrays, and frame-by-frame rendering into the next Computer Science game-dev guides.</p>
+          </div>
+          <a class="snake-primary" href="from-scratch-browser-game.html">Next: Build a Browser Game From Scratch →</a>
+        </div>
+      </div>
+    </section>
   </main>
   <script src="../../../assets/js/lessons/inside-classic-snake.js" defer></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>

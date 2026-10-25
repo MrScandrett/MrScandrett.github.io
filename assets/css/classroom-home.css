@@ -1303,6 +1303,13 @@ body {
   min-height: 100%;
 }
 
+/* iPhone Safari enlarges text when the phone turns sideways unless told not to, which made every
+   lesson longer in landscape. Pinch-zoom still works. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--page-wash), var(--bg);
   color: var(--text);
@@ -1423,6 +1430,14 @@ html[data-site-theme="kiwi"] body {
 .site-header ~ [class*="-topbar"],
 .site-header ~ .ll-topbar {
   top: auto;
+}
+
+/* Below 1120px a lesson's old topbar collapses its links (no menu button of its own), leaving a
+   second copy of the brand pinned under the shared header: 64-73px, a fifth of a sideways phone. */
+@media (max-width: 1120px) {
+  .site-header ~ .ll-topbar:has(> .nav-wrap > .brand):not(:has(.nav-toggle)) {
+    display: none;
+  }
 }
 
 .nav-wrap {
@@ -3499,6 +3514,28 @@ body :where(code, pre, samp, kbd, code *, pre *, samp *, kbd *, .mono, .font-mon
   }
 }
 
+/* ── Nothing wider than its column ──
+   iPhone audit: a bare <img width="960"> or a wide <select> ran past the phone screen, and inside
+   .ll-sim (overflow-x: hidden) the rest was simply cut off. Zero specificity, so any lesson rule
+   that sizes these still wins. height:auto only where both size attributes give the shape. */
+:where(img, video, select, textarea) {
+  max-width: 100%;
+}
+:where(img[width][height], video[width][height]) {
+  height: auto;
+}
+/* Set by nav-mobile.js only on a table wider than its column: it scrolls sideways by itself. */
+table.cos-table-scroll {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media print {
+  table.cos-table-scroll { display: table; overflow: visible; }
+}
+
 /* ── Global keyboard focus indicator (accessibility) ── */
 a:focus-visible,
 button:focus-visible,
@@ -3554,8 +3591,10 @@ summary:focus-visible,
    (the pill used to wrap onto its own row, and the header is sticky, so that
    chrome followed students down every lesson).
    Selectors are prefixed "html body" so they outrank theme rules such as
-   `body.theme-liquid-woodland .nav-wrap` (which kept 63-117px headers on 163 pages). */
-@media (max-width: 720px) {
+   `body.theme-liquid-woodland .nav-wrap` (which kept 63-117px headers on 163 pages).
+   Phones held sideways (short landscape) get the same row: at 700-930px wide the full header
+   wrapped to two rows and took 131px of a 343px screen. */
+@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) {
   html body .site-header .nav-wrap {
     min-height: 0;
     padding: 0.25rem 0;
@@ -3601,6 +3640,12 @@ summary:focus-visible,
   }
 
   html body .site-header .nav-wrap .lesson-print-button__compact-label {
+    display: none !important;
+  }
+
+  /* Gear + theme chip only. nav-mobile.js injects this too, but pages with a strict CSP
+     (watch.html: style-src 'self') block injected styles. */
+  html body .site-header .nav-settings-toggle > span:not(.nav-settings-status) {
     display: none !important;
   }
 

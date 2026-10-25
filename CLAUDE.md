@@ -164,6 +164,21 @@ end instead of showing the provider's end screen. Never draw over a provider's p
 YouTube's embed terms forbid overlays; our controls sit below the frame. To allow a new
 host, add a narrow rule to `video-sources.mjs` and to `watch.html`'s CSP `media-src`.
 
+## Lesson rule: sims fill the screen for the projector
+
+`assets/js/sim-present.js` (loaded by lesson-print-button.js on any page with a canvas, svg or
+`<model-viewer>`) puts a ⛶ pill on each sim block. Pressing it fills the screen with that sim: in
+the lesson layout the whole `.ll-stage` goes full screen (so the side panel's controls come along)
+with everything else in `.ll-sim` hidden; elsewhere the block's parent does, with the block's siblings
+hidden. The block is then narrowed toward the screen's shape and CSS-`zoom`ed up to fit (≤ 2.25×), so
+labels are readable from the back of the room. iPhone gets a fixed overlay instead.
+
+- The block is the sim's `<figure>` / `[data-present]` / `[data-vr-stage]`, else the biggest wrapper
+  under one screen tall. Put `data-present` on the right wrapper when the guess is wrong, and
+  `data-present="off"` to opt out. Blocks with their own full-screen button are skipped.
+- Read pointer positions with `getBoundingClientRect()` + `clientX` (zoom-safe). `offsetX/Y` are
+  corrected while presenting, but nothing else is.
+
 ## Lesson rule: lessons print cleanly on letter paper
 
 Teachers print lessons as handouts (the Print / Save PDF pill). Shared pieces do most of

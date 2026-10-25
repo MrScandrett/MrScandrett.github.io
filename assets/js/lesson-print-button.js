@@ -84,6 +84,17 @@
     document.head.appendChild(timeline);
   }
 
+  // ⛶ Fill the screen on each sim, for the projector (sim-present.js).
+  function loadSimPresent() {
+    if (window.ClassroomOSPresent || document.querySelector('script[data-sim-present="true"]') ||
+      !document.querySelector('canvas, svg, model-viewer, [data-present]')) return;
+    var present = document.createElement('script');
+    present.src = script && script.src ? new URL('sim-present.js', script.src).href : '/assets/js/sim-present.js';
+    present.defer = true;
+    present.dataset.simPresent = 'true';
+    document.head.appendChild(present);
+  }
+
   function cleanText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
   }
@@ -198,6 +209,7 @@
   whenIdle(loadRelatedLinks);
   whenIdle(loadExhibitLinks);
   whenIdle(loadVrMode);
+  whenIdle(loadSimPresent);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadTimeline);
   else loadTimeline();
   // Wait for parsing to finish so a lesson's own site-glossary.js tag (often

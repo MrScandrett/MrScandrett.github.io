@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 430" role="img" aria-labelledby="title desc">
+  <title id="title">The Rapid Two-Key Bug: Why Snake Needs lastDx and lastDy</title>
+  <desc id="desc">Timeline between Tick 0 (0 ms) and Tick 1 (100 ms) showing how pressing Up at 25 ms and Left at 55 ms causes a naive direction check to reverse the snake into its own neck, and how comparing against lastDx and lastDy prevents it.</desc>
+  <defs>
+    <style>
+      .bg { fill: #12241b; }
+      .panel-bad { fill: #2c1a19; stroke: #b84a39; stroke-width: 2; rx: 14px; }
+      .panel-good { fill: #173325; stroke: #3e8e5a; stroke-width: 2; rx: 14px; }
+      .heading { font: 800 20px 'Inter', system-ui, sans-serif; fill: #ecffc0; }
+      .sub { font: 600 13px 'Inter', system-ui, sans-serif; fill: #b4d6bc; }
+      .title-bad { font: 800 16px 'Inter', system-ui, sans-serif; fill: #ffb4a6; }
+      .title-good { font: 800 16px 'Inter', system-ui, sans-serif; fill: #a8f0c0; }
+      .code { font: 700 12.5px 'JetBrains Mono', ui-monospace, monospace; fill: #e8ffcf; }
+      .code-bad { font: 700 12.5px 'JetBrains Mono', ui-monospace, monospace; fill: #ff9e8e; }
+      .code-good { font: 700 12.5px 'JetBrains Mono', ui-monospace, monospace; fill: #9ef5b8; }
+      .timeline { stroke: #6c997a; stroke-width: 3; }
+      .key-pill { fill: #ffd166; rx: 5px; }
+      .key-text { font: 800 11px 'JetBrains Mono', ui-monospace, monospace; fill: #1b241e; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="430" rx="18"/>
+
+  <text x="32" y="38" class="heading">The 100 ms Window: Why Two Fast Keys Can Break Direction Checks</text>
+  <text x="32" y="60" class="sub">Keyboard events fire immediately, but the snake only moves when the 100 ms timer tick runs update().</text>
+
+  <!-- TIMELINE BAR -->
+  <line class="timeline" x1="60" y1="108" x2="860" y2="108"/>
+
+  <circle cx="90" cy="108" r="8" fill="#8ccf58"/>
+  <text x="90" y="90" class="code" text-anchor="middle">t = 0 ms (Tick N)</text>
+  <text x="90" y="130" class="sub" text-anchor="middle">Moving Right (+1, 0)</text>
+
+  <circle cx="340" cy="108" r="8" fill="#ffd166"/>
+  <rect class="key-pill" x="285" y="72" width="110" height="22" rx="5"/>
+  <text x="340" y="87" class="key-text">Key 1: ArrowUp</text>
+  <text x="340" y="130" class="sub" text-anchor="middle">t = 25 ms (before tick!)</text>
+
+  <circle cx="590" cy="108" r="8" fill="#ffd166"/>
+  <rect class="key-pill" x="530" y="72" width="120" height="22" rx="5"/>
+  <text x="590" y="87" class="key-text">Key 2: ArrowLeft</text>
+  <text x="590" y="130" class="sub" text-anchor="middle">t = 55 ms (still same tick!)</text>
+
+  <circle cx="830" cy="108" r="8" fill="#ff7b6b"/>
+  <text x="830" y="90" class="code" text-anchor="middle">t = 100 ms (Tick N+1)</text>
+  <text x="830" y="130" class="sub" text-anchor="middle">update() finally runs</text>
+
+  <!-- LEFT: NAIVE CHECK (BUGGY) -->
+  <rect class="panel-bad" x="28" y="156" width="420" height="246" rx="14"/>
+  <text x="48" y="186" class="title-bad">Naive Check: Compares Against Pending dx</text>
+  <text x="48" y="212" class="code">const goingRight = (dx === 1);</text>
+  <text x="48" y="238" class="code-bad">• At t = 25 ms (Up):   dx becomes 0, dy becomes -1</text>
+  <text x="48" y="262" class="code-bad">• At t = 55 ms (Left): goingRight is FALSE (dx is 0!)</text>
+  <text x="48" y="286" class="code-bad">  so Left is allowed → dx becomes -1, dy becomes 0</text>
+  <text x="48" y="316" class="code-bad">• At t = 100 ms: Head (10,10) steps Left into (9,10)</text>
+  <text x="48" y="340" class="code-bad">  which is snake[1] (its own neck) → INSTANT CRASH!</text>
+  <rect x="48" y="356" width="380" height="32" rx="6" fill="#47211f"/>
+  <text x="238" y="377" class="code-bad" text-anchor="middle">Result: Player turned Up-then-Left too fast and died</text>
+
+  <!-- RIGHT: SAFE CHECK -->
+  <rect class="panel-good" x="472" y="156" width="420" height="246" rx="14"/>
+  <text x="492" y="186" class="title-good">Robust Fix: Compares Against Actual Move (lastDx)</text>
+  <text x="492" y="212" class="code">const goingRight = (lastDx === 1);</text>
+  <text x="492" y="238" class="code-good">• At t = 25 ms (Up):   dx = 0, dy = -1 (lastDx stays 1)</text>
+  <text x="492" y="262" class="code-good">• At t = 55 ms (Left): goingRight is TRUE (lastDx === 1)</text>
+  <text x="492" y="286" class="code-good">  so Left is ignored! dx stays 0, dy stays -1</text>
+  <text x="492" y="316" class="code-good">• At t = 100 ms: Head (10,10) safely steps Up to (10,9)</text>
+  <text x="492" y="340" class="code-good">  and update() records lastDx = 0, lastDy = -1</text>
+  <rect x="492" y="356" width="380" height="32" rx="6" fill="#1e4a33"/>
+  <text x="682" y="377" class="code-good" text-anchor="middle">Result: Only legal 90° turns from last drawn move!</text>
+</svg>

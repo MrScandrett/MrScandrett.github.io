@@ -215,7 +215,7 @@
       '}' +
       '.nav-search-btn .nav-search-kbd { font-family: inherit; font-size: 0.62rem; padding: 0.05rem 0.28rem; border-radius: 4px; background: rgba(125, 136, 154, 0.16); border: 1px solid rgba(125, 136, 154, 0.24); color: inherit; opacity: 0.75; line-height: 1; }' +
       '@media (min-width: 1121px) and (max-width: 1330px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } .site-nav a { padding-left: 0.4rem; padding-right: 0.4rem; } .site-nav ul { gap: 0.05rem; } }' +
-      '@media (max-width: 720px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } }' +
+      '@media (max-width: 720px), (orientation: landscape) and (max-height: 500px) { .nav-search-btn { min-width: 2.25rem !important; min-height: 2.25rem !important; padding: 0.38rem !important; justify-content: center; } .nav-search-btn .nav-search-text, .nav-search-btn .nav-search-kbd { display: none !important; } }' +
       /* Responsive grid for theme/canvas chips */
       '.nav-theme-grid, .nav-canvas-grid {' +
         'display: grid;' +
@@ -271,7 +271,7 @@
           'transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0s 0s;' +
         '}' +
       '}' +
-      '@media (max-width: 680px) {' +
+      '@media (max-width: 680px), (orientation: landscape) and (max-height: 500px) {' +
         '.nav-settings-toggle > span:not(.nav-settings-status) { display: none !important; }' +
         '.nav-settings-panel {' +
           'top: var(--nav-settings-top, 4rem) !important;' +
@@ -1810,17 +1810,23 @@ function classroomOSWhenIdle(fn) {
 
 // Phones: tuck the sticky site header away while reading (scroll down) and bring it back on any
 // scroll up. Header audit: it was the one piece of chrome pinned on every page (45px of 844).
+// Phones held sideways count too: there the header is 45px of a ~340px screen.
+// Lesson-layout pages (.ll-viewport) never scroll the document; their .ll-sim column scrolls, so
+// follow that instead, and fold the header's height away (it sits in the flex column, so moving it
+// alone would leave a gap).
 // Always visible near the top, while the menu/settings is open, or while focus is inside it.
 // Opt out per page with <html data-header-autohide="off">.
 (function () {
   if (!window.matchMedia) return;
-  var phone = window.matchMedia("(max-width: 720px)");
+  var phone = window.matchMedia("(max-width: 720px), (orientation: landscape) and (max-height: 500px)");
   var root = document.documentElement;
-  var header = null, lastY = 0, ticking = false, MIN_Y = 120, STEP = 10;
+  var header = null, scroller = null, lastY = 0, ticking = false, MIN_Y = 120, STEP = 10;
 
   function setHidden(hide) {
-    if (hide) root.setAttribute("data-header-hidden", "true");
-    else root.removeAttribute("data-header-hidden");
+    if (hide) {
+      if (scroller) root.style.setProperty("--site-header-h", header.offsetHeight + "px");
+      root.setAttribute("data-header-hidden", "true");
+    } else root.removeAttribute("data-header-hidden");
   }
   function pinned() {
     return !header
@@ -1829,8 +1835,10 @@ function classroomOSWhenIdle(fn) {
   }
   function update() {
     ticking = false;
-    var y = window.pageYOffset || 0;
-    var max = Math.max(0, root.scrollHeight - window.innerHeight);
+    var y = scroller ? scroller.scrollTop : (window.pageYOffset || 0);
+    var max = scroller
+      ? Math.max(0, scroller.scrollHeight - scroller.clientHeight)
+      : Math.max(0, root.scrollHeight - window.innerHeight);
     if (!phone.matches || root.getAttribute("data-header-autohide") === "off" || y < MIN_Y || pinned()) {
       setHidden(false); lastY = y; return;
     }
@@ -1846,21 +1854,53 @@ function classroomOSWhenIdle(fn) {
   function init() {
     header = document.querySelector(".site-header");
     if (!header) return;
+    var shell = header.parentElement && header.parentElement.classList.contains("ll-viewport") ? header.parentElement : null;
+    scroller = shell ? shell.querySelector(".ll-sim") : null;
     var pos = window.getComputedStyle(header).position;
-    if (pos !== "sticky" && pos !== "fixed") return;
+    if (!scroller && pos !== "sticky" && pos !== "fixed") return;
     var style = document.createElement("style");
     style.textContent =
-      "@media (max-width:720px){.site-header{transition:transform .22s ease}" +
-      "html[data-header-hidden='true'] .site-header{transform:translateY(-100%)}}" +
-      "@media (prefers-reduced-motion:reduce){.site-header{transition:none}}" +
-      "@media print{html[data-header-hidden='true'] .site-header{transform:none}}";
+      "@media (max-width:720px),(orientation:landscape) and (max-height:500px){.site-header{transition:transform .22s ease}" +
+      "html[data-header-hidden='true'] .site-header{transform:translateY(-100%)}" +
+      ".ll-viewport>.site-header{transition:transform .22s ease,margin-top .22s ease}" +
+      "html[data-header-hidden='true'] .ll-viewport>.site-header{margin-top:calc(-1 * var(--site-header-h,45px))}}" +
+      "@media (prefers-reduced-motion:reduce){.site-header,.ll-viewport>.site-header{transition:none}}" +
+      "@media print{html[data-header-hidden='true'] .site-header{transform:none;margin-top:0}}";
     document.head.appendChild(style);
-    lastY = window.pageYOffset || 0;
-    window.addEventListener("scroll", onScroll, { passive: true });
+    lastY = scroller ? scroller.scrollTop : (window.pageYOffset || 0);
+    (scroller || window).addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     header.addEventListener("focusin", function () { setHidden(false); });
     header.addEventListener("click", function () { window.setTimeout(update, 0); });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
+}());
+
+// Tables wider than their column scroll sideways on their own instead of running off the screen
+// (inside .ll-sim, overflow-x: hidden, the rest was simply cut off on phones). Only tables that
+// overflow and aren't already in a scroller get .cos-table-scroll (styled in classroom-home.css,
+// so it works under a strict CSP); rechecked after late content and on resize / rotation.
+(function () {
+  function scrolls(el) {
+    for (var p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      var ox = window.getComputedStyle(p).overflowX;
+      if (ox === "auto" || ox === "scroll") return !p.classList.contains("ll-sim");
+    }
+    return false;
+  }
+  function check() {
+    var tables = document.querySelectorAll("main table, .ll-sim table");
+    for (var i = 0; i < tables.length; i++) {
+      var t = tables[i];
+      t.classList.remove("cos-table-scroll");
+      var box = t.parentElement;
+      if (!box || !t.offsetWidth || t.closest("svg, [data-score], .tl") || scrolls(t)) continue;
+      if (t.offsetWidth > box.clientWidth + 2) t.classList.add("cos-table-scroll");
+    }
+  }
+  var timer = 0;
+  function later() { window.clearTimeout(timer); timer = window.setTimeout(check, 250); }
+  window.addEventListener("load", function () { check(); window.setTimeout(check, 1500); }, { once: true });
+  window.addEventListener("resize", later, { passive: true });
 }());
