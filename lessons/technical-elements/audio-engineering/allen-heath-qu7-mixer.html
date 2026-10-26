@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Running the Allen &amp; Heath Qu-7 · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Learn the Allen & Heath Qu-7 digital mixer the way you will use it: set gain with PAFL, handle 48V phantom power safely, build a monitor mix with Sends on Faders, and use Scenes, Safes and DCAs, with a practice lab for each." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    body { background: #0a0d13; color: #e6e9ef; margin: 0; overflow-x: hidden; }
+
+    .qu-topbar { position: sticky; top: 0; z-index: 40; backdrop-filter: blur(14px); background: rgba(10, 13, 19, 0.94); border-bottom: 1px solid rgba(108, 180, 255, 0.25); }
+    .qu-topbar-inner { width: min(1440px, calc(100% - 2rem)); margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .qu-topbar a { color: #6cb4ff; text-decoration: none; font-size: 0.82rem; }
+    .qu-topbar a:hover { color: #fff; }
+    .qu-topbar-title { font-size: 0.9rem; font-weight: 700; color: #eaf3ff; }
+
+    .qu-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 780px; margin: 0 auto; }
+    .qu-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .qu-hero p { font-size: 0.86rem; color: rgba(230, 233, 239, 0.7); margin: 0; line-height: 1.55; }
+    .qu-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    .qu-card { background: rgba(16, 21, 30, 0.8); border: 1px solid rgba(108, 180, 255, 0.16); border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem; }
+    .qu-card h2 { font-size: 1.02rem; font-weight: 800; color: #fff; margin: 0 0 0.35rem; }
+    .qu-card h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: rgba(160, 200, 240, 0.7); text-transform: uppercase; margin: 0 0 0.6rem; }
+    .qu-card p { font-size: 0.82rem; line-height: 1.6; color: rgba(230, 233, 239, 0.82); margin: 0 0 0.6rem; }
+    .qu-card p:last-child { margin-bottom: 0; }
+    .qu-card strong { color: #9ccbff; }
+    .qu-card kbd { background: #1d2635; border: 1px solid rgba(108,180,255,0.35); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; font: 700 0.74rem/1.5 system-ui, sans-serif; color: #dff0ff; }
+    .qu-note { font-size: 0.74rem !important; color: rgba(200, 212, 228, 0.62) !important; }
+    .qu-verify { border-left: 3px solid #f0b448; background: rgba(240,180,72,0.07); border-radius: 0 10px 10px 0; padding: 8px 12px; font-size: 0.76rem; line-height: 1.55; color: rgba(245,230,200,0.88); margin-top: 0.7rem; }
+    .qu-verify strong { color: #f0b448; }
+
+    .qu-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.85rem; }
+    @media (min-width: 900px) { .qu-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 0.7rem 0; }
+    .stat { background: rgba(9,12,18,0.75); border: 1px solid rgba(108,180,255,0.18); border-radius: 10px; padding: 8px 6px; text-align: center; }
+    .stat b { display: block; font-size: 1.1rem; color: #fff; font-variant-numeric: tabular-nums; }
+    .stat small { font-size: 0.62rem; color: rgba(200,212,228,0.62); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* controls */
+    .ctl-row { margin-bottom: 0.8rem; }
+    .ctl-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; font-weight: 700; color: rgba(230,233,239,0.78); margin-bottom: 5px; gap: 0.5rem; }
+    .ctl-label output { color: #6cb4ff; font-variant-numeric: tabular-nums; }
+    .ctl-row input[type="range"], .strip input[type="range"] { width: 100%; accent-color: #6cb4ff; }
+    .ctl-row select { width: 100%; background: #0c1119; color: #e6e9ef; border: 1px solid rgba(150,190,230,0.3); border-radius: 8px; padding: 7px 9px; font-size: 0.8rem; }
+    .btn { border: 1px solid rgba(108,180,255,0.4); background: rgba(108,180,255,0.1); color: #cfe6ff; border-radius: 999px; padding: 7px 14px; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
+    .btn:hover { background: rgba(108,180,255,0.22); }
+    .btn:focus-visible, .quiz-opt:focus-visible, .part:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #f6c453; outline-offset: 2px; }
+    .btn.primary { background: linear-gradient(180deg, #5aa8f5, #2b72c4); border-color: transparent; color: #04142a; }
+    .btn.on { background: linear-gradient(180deg, #f0b448, #c98a1e); border-color: transparent; color: #201400; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 0.6rem 0; }
+    .verdict { padding: 10px 12px; border-radius: 11px; font-size: 0.8rem; line-height: 1.5; border: 1px solid rgba(150,190,230,0.25); background: rgba(8,11,17,0.7); }
+    .verdict.good { border-color: rgba(76,192,96,0.55); color: #8fe6a0; }
+    .verdict.warn { border-color: rgba(240,180,72,0.6); color: #f6cf85; }
+    .verdict.bad { border-color: rgba(255,107,87,0.55); color: #ffb3a7; }
+
+    /* meter */
+    .meter { position: relative; height: 34px; border-radius: 9px; background: linear-gradient(90deg, #1a2433 0%, #1a2433 100%); border: 1px solid rgba(150,190,230,0.25); overflow: hidden; margin: 0.4rem 0 0.2rem; }
+    .meter-zones { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(60,80,110,0.5) 0 50%, rgba(76,192,96,0.28) 50% 70%, rgba(240,180,72,0.3) 70% 90%, rgba(255,90,60,0.4) 90% 100%); }
+    .meter-bar { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: linear-gradient(90deg, #3b8be0, #6cb4ff); transition: width .08s linear; }
+    .meter-bar.good { background: linear-gradient(90deg, #2da24a, #6be08a); }
+    .meter-bar.hot { background: linear-gradient(90deg, #c98a1e, #f0b448); }
+    .meter-bar.clip { background: linear-gradient(90deg, #c2391f, #ff6b57); }
+    .meter-ticks { display: flex; justify-content: space-between; font-size: 0.6rem; color: rgba(200,212,228,0.55); font-variant-numeric: tabular-nums; }
+
+    /* console map */
+    .map-wrap { overflow-x: auto; }
+    .map { min-width: 620px; width: 100%; height: auto; display: block; background: #090c12; border-radius: 12px; border: 1px solid rgba(108,180,255,0.18); }
+    .part { cursor: pointer; }
+    .part rect.hit { fill: rgba(108,180,255,0.08); stroke: rgba(108,180,255,0.45); stroke-width: 1.5; }
+    .part:hover rect.hit, .part:focus rect.hit, .part[aria-pressed="true"] rect.hit { fill: rgba(240,180,72,0.2); stroke: #f0b448; }
+    .part text { fill: #dff0ff; font: 700 11px system-ui, sans-serif; pointer-events: none; }
+    .part-info { margin-top: 0.7rem; }
+
+    /* chain */
+    .chain { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 6px; align-items: stretch; }
+    .stage { flex: 1 0 96px; background: rgba(20,27,38,0.9); border: 1px solid rgba(140,170,210,0.22); border-radius: 12px; padding: 9px 6px; text-align: center; cursor: pointer; color: #e6e9ef; font: inherit; }
+    .stage:hover { border-color: rgba(108,180,255,0.6); }
+    .stage[aria-pressed="true"] { border-color: #f0b448; background: rgba(50,40,18,0.85); }
+    .stage b { display: block; font-size: 0.72rem; color: #f2f7ff; }
+    .stage small { font-size: 0.6rem; color: rgba(200,212,228,0.55); }
+    .arrow { align-self: center; color: rgba(108,180,255,0.6); }
+
+    /* mix labs */
+    .strips { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin: 0.6rem 0; }
+    .strip { background: rgba(9,12,18,0.75); border: 1px solid rgba(108,180,255,0.18); border-radius: 11px; padding: 8px 9px; }
+    .strip h4 { font-size: 0.74rem; margin: 0 0 6px; color: #eaf3ff; }
+    .strip label { display: block; font-size: 0.64rem; color: rgba(200,212,228,0.7); margin: 6px 0 2px; }
+    .strip output { font-size: 0.7rem; color: #6cb4ff; font-variant-numeric: tabular-nums; }
+    .strip .chk { display: flex; align-items: center; gap: 5px; font-size: 0.66rem; color: rgba(230,233,239,0.8); margin-top: 5px; }
+    .lvl { height: 8px; border-radius: 4px; background: #1a2433; overflow: hidden; margin-top: 4px; }
+    .lvl i { display: block; height: 100%; width: 0; background: #6cb4ff; border-radius: 4px; }
+    .seg { display: inline-flex; border: 1px solid rgba(108,180,255,0.4); border-radius: 999px; overflow: hidden; }
+    .seg button { border: 0; background: transparent; color: #cfe6ff; padding: 6px 12px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
+    .seg button[aria-pressed="true"] { background: #6cb4ff; color: #04142a; }
+
+    table.io { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+    table.io th, table.io td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(150,190,230,0.14); vertical-align: top; }
+    table.io th { color: #9ccbff; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* panel */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(16,21,30,0.8); border: 1px solid rgba(108,180,255,0.14); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #6cb4ff; margin: 0 0 0.4rem; }
+    .info-card p, .info-card li { font-size: 0.77rem; color: rgba(230,233,239,0.76); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card ol, .info-card ul { margin: 0; padding-left: 1.15rem; }
+    .check-list { list-style: none; padding: 0 !important; }
+    .check-list label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; padding: 3px 0; }
+    .check-list input { margin-top: 3px; accent-color: #6cb4ff; }
+    .quiz-q { background: rgba(108,180,255,0.08); border: 1px solid rgba(108,180,255,0.28); border-radius: 11px; padding: 9px 12px; font-size: 0.8rem; line-height: 1.5; color: #dff0ff; margin-bottom: 0.6rem; }
+    .quiz-opts { display: grid; gap: 6px; }
+    .quiz-opt { text-align: left; border: 1px solid rgba(150,190,230,0.25); background: #0c1119; color: #e6e9ef; border-radius: 10px; padding: 8px 10px; font-size: 0.76rem; line-height: 1.45; cursor: pointer; }
+    .quiz-opt:hover:not(:disabled) { border-color: #6cb4ff; }
+    .quiz-opt.right { border-color: #4cc060; background: rgba(18,48,26,0.6); }
+    .quiz-opt.wrong { border-color: #ff6b57; background: rgba(58,20,16,0.55); }
+    .quiz-why { font-size: 0.75rem; line-height: 1.5; color: rgba(230,233,239,0.78); margin-top: 0.6rem; }
+    .quiz-score { font-size: 0.72rem; color: rgba(200,212,228,0.6); margin-top: 0.6rem; }
+
+    .ll-viewport {
+      --ll-panel-bg: rgba(10, 13, 19, 0.97); --ll-panel-border: rgba(108, 180, 255, 0.22);
+      --ll-tab-color: rgba(190, 215, 240, 0.6); --ll-tab-active-bg: rgba(108, 180, 255, 0.18);
+      --ll-tab-active: #6cb4ff; --ll-toggle-bg: rgba(10, 13, 19, 0.97);
+    }
+    @media print { .map { min-width: 0; } .btn-row, .seg { display: none; } }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <nav class="qu-topbar ll-topbar">
+    <div class="qu-topbar-inner">
+      <a href="../../../steam-lessons.html">← Technical Elements</a>
+      <span class="qu-topbar-title">🎛️ Running the Allen &amp; Heath Qu-7</span>
+      <a href="../../../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="qu-hero">
+        <h1>🎛️ Running the Allen &amp; Heath Qu-7</h1>
+        <p>A digital mixer is the same signal chain you already know, with the knobs replaced by one set of controls that follows whichever channel you select. Learn the Qu-7's workflow, then practise the four jobs that matter most on show day: gain, phantom power, monitor mixes and scenes.</p>
+      </header>
+
+      <div class="qu-wrap">
+
+        <!-- 1 · what it is -->
+        <section class="qu-card" aria-labelledby="h-what">
+          <h2 id="h-what">1 · What the Qu-7 is</h2>
+          <p>The Qu-7 is a 96 kHz digital live mixer. Microphones plug into <strong>combi XLR/jack inputs</strong> on the desk, the preamps are digitally controlled so their settings are saved with the show, and everything after the preamp (EQ, compression, effects, mixes) happens inside the desk as numbers. It is a <strong>"walk up and mix"</strong> design: you pick a channel, then edit that one channel.</p>
+          <div class="stat-row" role="list">
+            <div class="stat" role="listitem"><b>32 + 3</b><small>Mono + stereo inputs to mix</small></div>
+            <div class="stat" role="listitem"><b>33</b><small>Motorised 100 mm faders</small></div>
+            <div class="stat" role="listitem"><b>12 + LR</b><small>Mixes, plus Main</small></div>
+            <div class="stat" role="listitem"><b>6</b><small>FX engines</small></div>
+            <div class="stat" role="listitem"><b>8 / 8</b><small>DCAs / mute groups</small></div>
+            <div class="stat" role="listitem"><b>8</b><small>SoftKeys</small></div>
+            <div class="stat" role="listitem"><b>7″</b><small>Touchscreen</small></div>
+            <div class="stat" role="listitem"><b>&lt;0.7 ms</b><small>Mic in to Main out</small></div>
+          </div>
+          <p class="qu-note">Mixes are 6 mono/linkable plus 6 stereo, each usable as an aux (monitor or effects send) or a group. There are also 4 matrix outputs, and the preamp gain runs 0 to +60 dB in 1 dB steps.</p>
+          <div class="qu-verify"><strong>Check against the real desk.</strong> Allen &amp; Heath's own site would not load for the research behind this page, so the numbers above come from two retailer spec sheets that agree with each other. Button names, the number of layers (one listing says four) and anything added by a newer firmware (for example Expander and DCA Spills arrived in v1.2) should be confirmed on our console and in its manual before you teach from them.</div>
+        </section>
+
+        <!-- 2 · tour -->
+        <section class="qu-card" aria-labelledby="h-tour">
+          <h2 id="h-tour">2 · A tour of the surface</h2>
+          <p>Press a region to see what it does. This is a <strong>concept map</strong>: the regions are real, but where they sit is simplified.</p>
+          <div class="map-wrap">
+            <svg class="map" viewBox="0 0 640 250" role="group" aria-label="Concept map of the Qu-7 surface. Regions: touchscreen, SoftKeys, channel strips and layers, Main fader, rear inputs and outputs.">
+              <rect x="6" y="6" width="628" height="238" rx="14" fill="#10161f" stroke="#2a3648"/>
+              <g class="part" id="p-screen" role="button" tabindex="0" aria-pressed="false" aria-label="Touchscreen"><rect class="hit" x="20" y="20" width="250" height="100" rx="8"/><text x="145" y="75" text-anchor="middle">7″ TOUCHSCREEN</text></g>
+              <g class="part" id="p-soft" role="button" tabindex="0" aria-pressed="false" aria-label="SoftKeys"><rect class="hit" x="285" y="20" width="200" height="46" rx="8"/><text x="385" y="48" text-anchor="middle">8 SOFTKEYS</text></g>
+              <g class="part" id="p-select" role="button" tabindex="0" aria-pressed="false" aria-label="Selected channel controls"><rect class="hit" x="285" y="74" width="200" height="46" rx="8"/><text x="385" y="102" text-anchor="middle">SELECTED-CHANNEL CONTROLS</text></g>
+              <g class="part" id="p-main" role="button" tabindex="0" aria-pressed="false" aria-label="Main fader and mix master"><rect class="hit" x="500" y="20" width="120" height="206" rx="8"/><text x="560" y="125" text-anchor="middle">MAIN FADER</text></g>
+              <g class="part" id="p-strips" role="button" tabindex="0" aria-pressed="false" aria-label="Channel strips and layers"><rect class="hit" x="20" y="132" width="465" height="94" rx="8"/><text x="252" y="182" text-anchor="middle">CHANNEL STRIPS · FADER · MUTE · SEL · PAFL</text></g>
+            </svg>
+          </div>
+          <div class="verdict part-info" id="part-info" aria-live="polite">Pick a region on the map.</div>
+          <p class="qu-note" style="margin-top:.6rem">On the back: 32 combi mic/line inputs, 2 stereo line inputs, 20 XLR outputs plus two TRS outputs, an AES digital output, an SLink expansion port, USB and SD, a network port and the footswitch jack.</p>
+        </section>
+
+        <!-- 3 · channel chain -->
+        <section class="qu-card" aria-labelledby="h-chain">
+          <h2 id="h-chain">3 · Follow one channel</h2>
+          <p>Every input channel passes through the same stages, in about this order. Press a stage to read what it is for. Nothing on a digital desk changes the order unless the manual says so, so when a sound is wrong you can walk this list.</p>
+          <div class="chain" role="group" aria-label="Channel signal chain">
+            <button type="button" class="stage" data-i="0" aria-pressed="true"><b>Preamp</b><small>gain · 48V · polarity</small></button><span class="arrow" aria-hidden="true">→</span>
+            <button type="button" class="stage" data-i="1" aria-pressed="false"><b>Filter + dynamics</b><small>HPF · gate/expander</small></button><span class="arrow" aria-hidden="true">→</span>
+            <button type="button" class="stage" data-i="2" aria-pressed="false"><b>EQ</b><small>parametric</small></button><span class="arrow" aria-hidden="true">→</span>
+            <button type="button" class="stage" data-i="3" aria-pressed="false"><b>Compressor</b><small>level control</small></button><span class="arrow" aria-hidden="true">→</span>
+            <button type="button" class="stage" data-i="4" aria-pressed="false"><b>Sends</b><small>monitors · FX</small></button><span class="arrow" aria-hidden="true">→</span>
+            <button type="button" class="stage" data-i="5" aria-pressed="false"><b>Fader · Mute</b><small>then pan to Main</small></button>
+          </div>
+          <div class="verdict" id="chain-info" aria-live="polite" style="margin-top:.7rem"></div>
+          <p class="qu-note" style="margin-top:.6rem">New to these stages? <a href="audio-mixer-signal-flow.html" style="color:#6cb4ff">Analog Mixer Lab</a> teaches the signal flow with real knobs, <a href="eq-problem-frequency.html" style="color:#6cb4ff">EQ</a> and <a href="audio-compression.html" style="color:#6cb4ff">compression</a> go deeper on the middle stages.</p>
+        </section>
+
+        <div class="qu-grid two">
+          <!-- 4 · gain -->
+          <section class="qu-card" aria-labelledby="h-gain">
+            <h2 id="h-gain">4 · Lab: set the gain</h2>
+            <p>Gain is the first decision and the one that you cannot fix later. Too low and you bury the signal in noise. Too high and the converter <strong>clips</strong>, which is permanent: pulling the fader down afterwards only makes clipped audio quieter. On the desk, press <kbd>PAFL</kbd> on the channel, have the person play or sing at full performance volume, and turn the gain until the peaks sit in the green-to-amber area, never red.</p>
+            <div class="ctl-row">
+              <div class="ctl-label"><label for="g-src">Source</label></div>
+              <select id="g-src"></select>
+            </div>
+            <div class="ctl-row">
+              <div class="ctl-label"><label for="g-gain">Preamp gain</label><output id="g-gain-o">20 dB</output></div>
+              <input type="range" id="g-gain" min="0" max="60" step="1" value="20" />
+            </div>
+            <div class="meter" aria-hidden="true"><div class="meter-zones"></div><div class="meter-bar" id="g-bar"></div></div>
+            <div class="meter-ticks" aria-hidden="true"><span>−60</span><span>−48</span><span>−36</span><span>−24</span><span>−12</span><span>0 dBFS</span></div>
+            <div class="stat-row">
+              <div class="stat"><b id="g-peak">−18</b><small>Peak dBFS</small></div>
+              <div class="stat"><b id="g-head">18 dB</b><small>Headroom</small></div>
+              <div class="stat"><b id="g-sugg">20 dB</b><small>Gain to aim for</small></div>
+            </div>
+            <div class="verdict" id="g-verdict" aria-live="polite"></div>
+            <div class="btn-row"><button type="button" class="btn primary" id="g-auto">Set it for me</button><button type="button" class="btn" id="g-loud">Make the singer louder (+6 dB)</button></div>
+            <p class="qu-note">Model: the peak at the converter is the source's peak in dBu plus gain, minus 18 dB, because the desk's spec puts nominal level at the input where dBu plus gain equals 0. "Aim for" is peaks at −12 dBFS.</p>
+          </section>
+
+          <!-- 5 · phantom -->
+          <section class="qu-card" aria-labelledby="h-phantom">
+            <h2 id="h-phantom">5 · Lab: 48V phantom power</h2>
+            <p>Condenser microphones need <strong>+48 V</strong> sent down the same cable that carries the audio. The Qu-7's preamps can send it, one channel at a time. It helps some sources and harms others, so you decide per channel.</p>
+            <div class="ctl-row">
+              <div class="ctl-label"><label for="p-src">What is plugged in?</label></div>
+              <select id="p-src"></select>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn" id="p-48" aria-pressed="false">48V: OFF</button>
+              <button type="button" class="btn" id="p-mute" aria-pressed="false">Channel muted: NO</button>
+            </div>
+            <div class="verdict" id="p-verdict" aria-live="polite"></div>
+            <p class="qu-note" style="margin-top:.6rem">The habit to keep: <strong>mute the channel (or lower the fader and Main) before you press 48V</strong>, because a mic connecting or powering up can thump the speakers. Never plug or unplug a condenser with 48V on. Check ribbon mics before you send phantom power to them.</p>
+          </section>
+        </div>
+
+        <!-- 6 · monitors -->
+        <section class="qu-card" aria-labelledby="h-mon">
+          <h2 id="h-mon">6 · Lab: a monitor mix with Sends on Faders</h2>
+          <p>The audience hears <strong>Main LR</strong>. The singer on stage hears a different mix through a wedge or in-ears, built on one of the 12 aux mixes. <strong>Sends on Faders</strong> turns the channel faders into the sends for the mix you choose, so you can build that mix at the real faders and see all channels at once. Here the faders are tiny sliders and a toggle swaps what they control.</p>
+          <p><strong>Scenario:</strong> the singer says <em>"I can't hear my guitar."</em> Fix it in <em>Mix 1</em> without changing what the audience hears in Main.</p>
+          <div class="btn-row">
+            <span class="seg" role="group" aria-label="What the faders control">
+              <button type="button" id="m-main" aria-pressed="true">Faders: Main LR</button>
+              <button type="button" id="m-sof" aria-pressed="false">Faders: Mix 1 sends</button>
+            </span>
+            <span class="seg" role="group" aria-label="Send tap point">
+              <button type="button" id="m-pre" aria-pressed="true">Pre-fader</button>
+              <button type="button" id="m-post" aria-pressed="false">Post-fader</button>
+            </span>
+            <button type="button" class="btn" id="m-reset">Reset</button>
+          </div>
+          <div class="strips" id="m-strips"></div>
+          <div class="verdict" id="m-verdict" aria-live="polite"></div>
+          <p class="qu-note" style="margin-top:.6rem">Try it: with sends set <strong>post</strong>-fader, pull the vocal's Main fader down. The singer's own voice drops in the wedge too. Switch to <strong>pre</strong>-fader and it does not. That is why monitor mixes are almost always pre-fader.</p>
+        </section>
+
+        <!-- 7 · scenes -->
+        <section class="qu-card" aria-labelledby="h-scene">
+          <h2 id="h-scene">7 · Lab: Scenes, Safes and DCAs</h2>
+          <p>A <strong>scene</strong> is a saved snapshot of the mix. Store one for each part of a day (soundcheck, band set, assembly) and recall it with one press. A <strong>Safe</strong> protects a channel from a recall, so the person on the live mic does not suddenly jump. A <strong>DCA</strong> is one fader that scales a group of channels, so "all the band" comes down together while each channel keeps its own balance.</p>
+          <div class="strips" id="s-strips"></div>
+          <div class="btn-row" role="group" aria-label="Scenes">
+            <button type="button" class="btn" data-store="0">Store → Soundcheck</button>
+            <button type="button" class="btn" data-store="1">Store → Band set</button>
+            <button type="button" class="btn" data-store="2">Store → Assembly</button>
+          </div>
+          <div class="btn-row" role="group" aria-label="Recall scenes">
+            <button type="button" class="btn primary" data-recall="0">Recall Soundcheck</button>
+            <button type="button" class="btn primary" data-recall="1">Recall Band set</button>
+            <button type="button" class="btn primary" data-recall="2">Recall Assembly</button>
+          </div>
+          <div class="ctl-row" style="max-width:420px">
+            <div class="ctl-label"><label for="s-dca">DCA 1 "Band" (guitar + keys)</label><output id="s-dca-o">0.0 dB</output></div>
+            <input type="range" id="s-dca" min="0" max="1" step="0.01" value="0.75" />
+          </div>
+          <div class="verdict" id="s-verdict" aria-live="polite">Start with the three scenes already stored. Tick Safe on the Vocal channel, then recall Assembly and see what stays put.</div>
+        </section>
+
+        <!-- 8 · recording and expansion -->
+        <section class="qu-card" aria-labelledby="h-rec">
+          <h2 id="h-rec">8 · Getting audio in and out</h2>
+          <table class="io">
+            <thead><tr><th>Port</th><th>What it does</th><th>Reach for it when…</th></tr></thead>
+            <tbody>
+              <tr><td><strong>USB-A</strong> (front)</td><td>Records a stereo mix to a USB stick, plays back files, moves show data.</td><td>You want a quick recording of the whole show or play-in music.</td></tr>
+              <tr><td><strong>USB-C</strong></td><td>32×32 multichannel audio interface to a computer.</td><td>You want every channel on its own track for a DAW, or a virtual soundcheck.</td></tr>
+              <tr><td><strong>SD card</strong></td><td>Multitrack record and playback with no computer: 16 tracks at 96 kHz or 32 at 48 kHz.</td><td>You want an unattended multitrack of the band.</td></tr>
+              <tr><td><strong>SLink</strong></td><td>One network cable to digital stage boxes and other Allen &amp; Heath gear.</td><td>Mics are far from the desk and you do not want a thick analog snake.</td></tr>
+              <tr><td><strong>Dante</strong></td><td>Networked audio on the Qu-7D model only.</td><td>You are tying into a Dante system.</td></tr>
+            </tbody>
+          </table>
+          <p class="qu-note" style="margin-top:.6rem">A computer app (Qu MixPad) can control the desk and edit a show offline, so you can prepare channel names and scenes before you arrive.</p>
+        </section>
+
+      </div><!-- .qu-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="qu-pane-show">Show day</button>
+          <button class="ll-tab" aria-selected="false" data-pane="qu-pane-quiz">Quiz</button>
+          <button class="ll-tab" aria-selected="false" data-pane="qu-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="qu-pane-show">
+          <div class="info-card">
+            <h4>✅ Build a mix, in order</h4>
+            <ol class="check-list">
+              <li><label><input type="checkbox" /> <span><strong>Power up in order:</strong> sources first, desk, then the amplified speakers last. Power down in reverse.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Start from a known scene</strong> and name every channel so strips match the stage plot.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Check the Main fader and amps are down</strong> before you enable any 48V.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Set gain</strong> channel by channel with <kbd>PAFL</kbd>, at performance volume, peaks away from red.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Filter first:</strong> high-pass every channel that has no real bass, so rumble does not eat headroom.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Rough the faders,</strong> then bring Main up. Mute any channel nobody is using.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Build monitor mixes</strong> with Sends on Faders, pre-fader, one performer at a time.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Ring out and shape:</strong> EQ and compression only where you can hear the reason.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Store a scene</strong> and note which channels are Safe before doors open.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Walk the room</strong> and listen from the back, not only from the desk.</span></label></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="qu-pane-quiz">
+          <div class="info-card">
+            <h4>🧠 Check yourself</h4>
+            <div class="quiz-q" id="quiz-q" aria-live="polite">Loading…</div>
+            <div class="quiz-opts" id="quiz-opts"></div>
+            <div class="quiz-why" id="quiz-why" aria-live="polite"></div>
+            <div class="btn-row"><button type="button" class="btn" id="quiz-next" hidden>Next question →</button></div>
+            <div class="quiz-score" id="quiz-score"></div>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="qu-pane-guide">
+          <div class="info-row">
+            <div class="info-card">
+              <h4>📖 Words you will hear</h4>
+              <ul>
+                <li><strong>PAFL:</strong> pre-fade listen. Sends a channel to your headphones and the meter, without putting it in the room.</li>
+                <li><strong>Gain / trim:</strong> the preamp's level before conversion.</li>
+                <li><strong>Phantom (48V):</strong> power for condenser mics, sent down the cable.</li>
+                <li><strong>HPF:</strong> high-pass filter. Cuts low rumble.</li>
+                <li><strong>Aux / mix:</strong> a separate output mix, usually monitors or effects.</li>
+                <li><strong>Matrix:</strong> a mix of mixes, e.g. a feed to a lobby speaker.</li>
+                <li><strong>DCA:</strong> one fader for several channels' levels.</li>
+                <li><strong>Scene:</strong> a stored snapshot of the show.</li>
+              </ul>
+            </div>
+            <div class="info-card">
+              <h4>🧯 Troubleshooting</h4>
+              <ul>
+                <li><strong>No sound on a channel:</strong> walk the chain: phantom for a condenser, mute, fader, assigned to Main, mute group or DCA muted.</li>
+                <li><strong>Distorted but meters look fine:</strong> look for clipping earlier in the chain, such as at a wireless pack or a DI, not only at the desk.</li>
+                <li><strong>Hum or buzz:</strong> try another cable or a DI box before touching EQ.</li>
+                <li><strong>Singer's wedge changes when you move a fader:</strong> that send is post-fader.</li>
+                <li><strong>A scene recall surprised you:</strong> check Safes and what the recall filter loads.</li>
+                <li><strong>Feedback:</strong> lower the offending mic's gain or send first, EQ second. See <a href="room-acoustics.html" style="color:#6cb4ff">room acoustics</a>.</li>
+              </ul>
+            </div>
+            <div class="info-card">
+              <h4>⚠️ Not yet confirmed</h4>
+              <p>These need a look at the desk or the Qu-7 manual: number of layers, exact button labels, per-channel EQ band count, whether our firmware has the newer Expander and DCA Spills features, and the recall-filter menu. The labs teach the ideas, and your hands on the real console confirm the names.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- .ll-panel-body -->
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+  <div class="te-footer-nav" style="display:flex;justify-content:space-between;gap:1rem;width:min(1440px,calc(100% - 2rem));margin:0 auto;padding:1rem 0 2rem;font-size:.85rem">
+    <a href="live-audio-signal-chain.html" style="color:#6cb4ff">← Live Audio Signal Chain</a>
+    <a href="wireless-mic-rf-coordination.html" style="color:#6cb4ff">Wireless Mics &amp; RF →</a>
+  </div>
+</div><!-- .ll-viewport -->
+
+<script type="module">
+import {
+  peakDbfs, zone, suggestGain, SOURCES, phantomVerdict, phantomPop,
+  faderDb, sendLevelDb, applyDca, recallScene,
+} from '../../../assets/js/qu7-core.mjs';
+
+const $ = (id) => document.getElementById(id);
+const fmtDb = (d) => (d === -Infinity ? '−∞' : (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d).toFixed(1));
+
+/* ─────────── 2 · tour ─────────── */
+const PARTS = {
+  'p-screen': ['Touchscreen', 'A 7-inch capacitive screen. It shows the selected channel\'s processing, the routing, scenes, the library and meters. Touch is for setup and fine edits; the faders and keys are for the things you do mid-song.'],
+  'p-soft': ['SoftKeys', 'Eight keys you can assign to your most-used jobs, such as mute groups, tap tempo for a delay, or recalling a scene. Set them up once so a volunteer can run the show with a few big buttons. A footswitch jack can add more.'],
+  'p-select': ['Selected-channel controls', 'The heart of a digital desk: one set of controls that works on whichever channel you picked with its <kbd>Sel</kbd> key. Select a channel, then change its gain, filter, EQ or compressor, rather than having a knob for every parameter on every strip.'],
+  'p-main': ['Main fader', 'The fader for the Main LR output, which is what the audience hears. Keep it at or near unity (0 dB) and do most of your balancing on the channel faders, so you keep headroom to push when you need it.'],
+  'p-strips': ['Channel strips and layers', 'Motorised faders with mute, select and PAFL keys. The desk has more channels than strips, so <strong>layers</strong> swap which channels the faders show. Because the faders are motorised, they jump to the right position when you change layer or recall a scene.'],
+};
+const info = $('part-info');
+document.querySelectorAll('.part').forEach((g) => {
+  const pick = () => {
+    document.querySelectorAll('.part').forEach((x) => x.setAttribute('aria-pressed', String(x === g)));
+    const [t, d] = PARTS[g.id];
+    info.innerHTML = '<strong>' + t + '.</strong> ' + d;
+  };
+  g.addEventListener('click', pick);
+  g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+});
+
+/* ─────────── 3 · chain ─────────── */
+const CHAIN = [
+  ['Preamp', 'Raises a tiny mic signal to a working level before it is turned into numbers. Gain is 0 to +60 dB here. The same stage holds <strong>48V</strong> and <strong>polarity</strong> (flip the wave if two mics on one source fight each other). Get this right and everything after it behaves.'],
+  ['Filter and dynamics', 'The <strong>high-pass filter</strong> removes low rumble the audience should not hear and the speakers cannot reproduce. A <strong>gate</strong> or expander (newer firmware can swap in an Expander) closes the channel when nobody is playing, to cut spill from a quiet drum or an idle mic.'],
+  ['EQ', 'Shapes the tone by boosting or cutting frequency bands. Cut first to remove what is muddy, then boost lightly. Corrective EQ is one of the biggest wins in a small room. See <a href="eq-problem-frequency.html" style="color:#6cb4ff">the EQ lesson</a>.'],
+  ['Compressor', 'Narrows the difference between loud and quiet, so a vocal sits evenly in the mix. Use light settings and listen for pumping. See <a href="audio-compression.html" style="color:#6cb4ff">the compression lesson</a>.'],
+  ['Sends', 'Copies of the channel sent to monitor mixes, effects (the 6 FX engines) and matrices. Each send can be tapped <strong>pre-fader</strong> or <strong>post-fader</strong>, which decides whether your Main fader moves it.'],
+  ['Fader, mute and pan', 'The last control you touch: level, mute, and pan or width into Main LR. By now every earlier decision is baked in, which is why fixing a bad gain here only turns a problem down.'],
+];
+const chainInfo = $('chain-info');
+function pickStage(i) {
+  document.querySelectorAll('.stage').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.i) === i)));
+  chainInfo.innerHTML = '<strong>' + CHAIN[i][0] + '.</strong> ' + CHAIN[i][1];
+}
+document.querySelectorAll('.stage').forEach((b) => b.addEventListener('click', () => pickStage(Number(b.dataset.i))));
+pickStage(0);
+
+/* ─────────── 4 · gain lab ─────────── */
+const gSrc = $('g-src'), gGain = $('g-gain');
+let boost = 0;
+SOURCES.forEach((s, i) => gSrc.add(new Option(s.label, String(i))));
+const ZONE_TEXT = {
+  quiet: ['bad', 'Far too quiet. The signal is buried near the noise floor, and you would have to boost it later, which boosts the noise too. Add gain.'],
+  low: ['warn', 'Too low. Usable, but you are wasting headroom and signal-to-noise ratio. Add some gain.'],
+  good: ['good', 'In the sweet spot. Healthy level with room for a louder moment. This is where peaks should live.'],
+  hot: ['warn', 'Hot. A louder moment could clip. Back the gain off a little.'],
+  clip: ['bad', 'Clipping. The converter runs out of numbers and flat-tops the wave. That distortion is permanent. Lower the gain, not the fader.'],
+};
+function gainRender() {
+  const s = SOURCES[Number(gSrc.value)];
+  const gain = Number(gGain.value);
+  const pk = peakDbfs(s.dbu + boost, gain);
+  const z = zone(pk);
+  $('g-gain-o').textContent = gain + ' dB';
+  const w = Math.max(0, Math.min(100, ((pk + 60) / 60) * 100));
+  const bar = $('g-bar');
+  bar.style.width = w + '%';
+  bar.className = 'meter-bar' + (z === 'good' || z === 'hot' || z === 'clip' ? ' ' + z : '');
+  $('g-peak').textContent = fmtDb(Math.round(pk * 10) / 10).replace('+', '');
+  $('g-head').textContent = Math.max(0, Math.round(-pk)) + ' dB';
+  $('g-sugg').textContent = suggestGain(s.dbu + boost) + ' dB';
+  const v = $('g-verdict');
+  v.className = 'verdict ' + ZONE_TEXT[z][0];
+  v.textContent = ZONE_TEXT[z][1];
+}
+gSrc.addEventListener('change', () => { boost = 0; gGain.value = String(Math.max(0, suggestGain(SOURCES[Number(gSrc.value)].dbu) - 14)); gainRender(); });
+gGain.addEventListener('input', gainRender);
+$('g-auto').addEventListener('click', () => { gGain.value = String(suggestGain(SOURCES[Number(gSrc.value)].dbu + boost)); gainRender(); });
+$('g-loud').addEventListener('click', () => {
+  boost += 6;
+  gainRender();
+  const v = $('g-verdict');
+  v.textContent = 'The performer got louder by 6 dB. ' + v.textContent;
+});
+gSrc.value = '0'; gGain.value = '20'; gainRender();
+
+/* ─────────── 5 · phantom lab ─────────── */
+const pSrc = $('p-src'), p48 = $('p-48'), pMute = $('p-mute');
+SOURCES.slice(0, 7).forEach((s, i) => pSrc.add(new Option(s.label, String(i))));
+let on48 = false, muted = false;
+function phantomRender() {
+  const s = SOURCES[Number(pSrc.value)];
+  p48.textContent = '48V: ' + (on48 ? 'ON' : 'OFF');
+  p48.setAttribute('aria-pressed', String(on48));
+  p48.classList.toggle('on', on48);
+  pMute.textContent = 'Channel muted: ' + (muted ? 'YES' : 'NO');
+  pMute.setAttribute('aria-pressed', String(muted));
+  pMute.classList.toggle('on', muted);
+  const r = phantomVerdict(s, on48, muted);
+  const v = $('p-verdict');
+  let text = r.text;
+  let cls = r.ok ? 'good' : 'bad';
+  if (phantomPop(on48, muted) && s.phantom !== 'never-needed') {
+    text += ' Also: the channel is live. Expect a thump in the room. Mute it first.';
+    if (cls === 'good') cls = 'warn';
+  }
+  v.className = 'verdict ' + cls;
+  v.textContent = text;
+}
+pSrc.addEventListener('change', phantomRender);
+p48.addEventListener('click', () => { on48 = !on48; phantomRender(); });
+pMute.addEventListener('click', () => { muted = !muted; phantomRender(); });
+phantomRender();
+
+/* ─────────── 6 · monitor lab ─────────── */
+const MCH = [
+  { id: 'vocal', name: 'Lead vocal' }, { id: 'guitar', name: 'Guitar' },
+  { id: 'keys', name: 'Keys' }, { id: 'drums', name: 'Drums' },
+];
+const M0 = { main: { vocal: 0.75, guitar: 0.66, keys: 0.66, drums: 0.7 }, send: { vocal: 0.75, guitar: 0.4, keys: 0.5, drums: 0.45 } };
+let mState = JSON.parse(JSON.stringify(M0));
+let mSof = false, mPre = true;
+const mBox = $('m-strips');
+MCH.forEach((c) => {
+  const d = document.createElement('div');
+  d.className = 'strip';
+  d.innerHTML = '<h4>' + c.name + '</h4><label for="m-f-' + c.id + '" id="m-fl-' + c.id + '">Main fader</label><input type="range" id="m-f-' + c.id + '" min="0" max="1" step="0.01" />' +
+    '<output id="m-fo-' + c.id + '"></output>' +
+    '<div>Main <div class="lvl"><i id="m-lm-' + c.id + '"></i></div></div><div style="margin-top:4px">Mix 1 <div class="lvl"><i id="m-lx-' + c.id + '" style="background:#f0b448"></i></div></div>';
+  mBox.appendChild(d);
+  $('m-f-' + c.id).addEventListener('input', (e) => {
+    mState[mSof ? 'send' : 'main'][c.id] = Number(e.target.value);
+    monRender();
+  });
+});
+const barPct = (db) => (db === -Infinity ? 0 : Math.max(0, Math.min(100, ((db + 40) / 50) * 100)));
+function monRender() {
+  $('m-main').setAttribute('aria-pressed', String(!mSof));
+  $('m-sof').setAttribute('aria-pressed', String(mSof));
+  $('m-pre').setAttribute('aria-pressed', String(mPre));
+  $('m-post').setAttribute('aria-pressed', String(!mPre));
+  const lv = {};
+  MCH.forEach((c) => {
+    const f = $('m-f-' + c.id);
+    f.value = String(mState[mSof ? 'send' : 'main'][c.id]);
+    $('m-fl-' + c.id).textContent = mSof ? 'Mix 1 send' : 'Main fader';
+    const mainDb = faderDb(mState.main[c.id]);
+    const sendDb = faderDb(mState.send[c.id]);
+    const mixDb = sendLevelDb({ faderPos: mState.main[c.id], sendDb, pre: mPre });
+    lv[c.id] = { main: mainDb, mix: mixDb };
+    $('m-fo-' + c.id).textContent = (mSof ? 'send ' : 'fader ') + fmtDb(mSof ? sendDb : mainDb) + ' dB';
+    $('m-lm-' + c.id).style.width = barPct(mainDb) + '%';
+    $('m-lx-' + c.id).style.width = barPct(mixDb) + '%';
+  });
+  const v = $('m-verdict');
+  const changedMain = MCH.some((c) => Math.abs(mState.main[c.id] - M0.main[c.id]) > 0.001);
+  const gap = lv.vocal.mix - lv.guitar.mix;
+  if (changedMain && mPre === false) {
+    v.className = 'verdict warn';
+    v.textContent = 'You moved a Main fader, and with post-fader sends the singer\'s wedge moved with it. That is the trap.';
+  } else if (changedMain) {
+    v.className = 'verdict bad';
+    v.textContent = 'The Main mix has changed, so the audience hears something different. The task was to fix Mix 1 only. Reset, then switch the faders to Mix 1 sends.';
+  } else if (gap <= 3) {
+    v.className = 'verdict good';
+    v.textContent = 'Solved. The guitar is within ' + Math.max(0, gap).toFixed(1) + ' dB of the vocal in Mix 1 and the audience mix is untouched.';
+  } else {
+    v.className = 'verdict';
+    v.textContent = 'In Mix 1 the guitar is ' + gap.toFixed(1) + ' dB below the vocal. Switch the faders to Mix 1 sends and bring the guitar up until it is within 3 dB.';
+  }
+}
+$('m-main').addEventListener('click', () => { mSof = false; monRender(); });
+$('m-sof').addEventListener('click', () => { mSof = true; monRender(); });
+$('m-pre').addEventListener('click', () => { mPre = true; monRender(); });
+$('m-post').addEventListener('click', () => { mPre = false; monRender(); });
+$('m-reset').addEventListener('click', () => { mState = JSON.parse(JSON.stringify(M0)); mSof = false; mPre = true; monRender(); });
+monRender();
+
+/* ─────────── 7 · scenes lab ─────────── */
+const SCH = [
+  { id: 'vocal', name: 'Vocal' }, { id: 'guitar', name: 'Guitar' },
+  { id: 'keys', name: 'Keys' }, { id: 'laptop', name: 'Laptop' },
+];
+const SCENES = [
+  { vocal: { fader: 0.75, mute: false, gain: 30 }, guitar: { fader: 0.6, mute: false, gain: 24 }, keys: { fader: 0.6, mute: false, gain: 4 }, laptop: { fader: 0.55, mute: false, gain: 0 } },
+  { vocal: { fader: 0.78, mute: false, gain: 32 }, guitar: { fader: 0.7, mute: false, gain: 24 }, keys: { fader: 0.68, mute: false, gain: 4 }, laptop: { fader: 0.0, mute: true, gain: 0 } },
+  { vocal: { fader: 0.7, mute: false, gain: 28 }, guitar: { fader: 0.0, mute: true, gain: 24 }, keys: { fader: 0.0, mute: true, gain: 4 }, laptop: { fader: 0.72, mute: false, gain: 0 } },
+];
+const SNAME = ['Soundcheck', 'Band set', 'Assembly'];
+let cur = JSON.parse(JSON.stringify(SCENES[0]));
+const safes = new Set();
+const dca = { members: ['guitar', 'keys'], faderPos: 0.75, muted: false };
+const sBox = $('s-strips');
+SCH.forEach((c) => {
+  const d = document.createElement('div');
+  d.className = 'strip';
+  d.innerHTML = '<h4>' + c.name + '</h4><label for="s-f-' + c.id + '">Fader</label><input type="range" id="s-f-' + c.id + '" min="0" max="1" step="0.01" /><output id="s-o-' + c.id + '"></output>' +
+    '<div class="lvl"><i id="s-l-' + c.id + '"></i></div>' +
+    '<label class="chk"><input type="checkbox" id="s-m-' + c.id + '" /> Mute</label>' +
+    '<label class="chk"><input type="checkbox" id="s-s-' + c.id + '" /> Safe</label>';
+  sBox.appendChild(d);
+  $('s-f-' + c.id).addEventListener('input', (e) => { cur[c.id].fader = Number(e.target.value); sRender(); });
+  $('s-m-' + c.id).addEventListener('change', (e) => { cur[c.id].mute = e.target.checked; sRender(); });
+  $('s-s-' + c.id).addEventListener('change', (e) => { e.target.checked ? safes.add(c.id) : safes.delete(c.id); });
+});
+function sRender(msg) {
+  const rows = SCH.map((c) => ({ id: c.id, faderPos: cur[c.id].fader, muted: cur[c.id].mute }));
+  const eff = applyDca(rows, dca);
+  eff.forEach((r) => {
+    $('s-f-' + r.id).value = String(cur[r.id].fader);
+    $('s-m-' + r.id).checked = cur[r.id].mute;
+    $('s-o-' + r.id).textContent = fmtDb(r.effectiveDb) + ' dB';
+    $('s-l-' + r.id).style.width = barPct(r.effectiveDb) + '%';
+  });
+  $('s-dca-o').textContent = fmtDb(faderDb(dca.faderPos)) + ' dB';
+  if (msg) { const v = $('s-verdict'); v.className = 'verdict good'; v.textContent = msg; }
+}
+document.querySelectorAll('[data-store]').forEach((b) => b.addEventListener('click', () => {
+  const i = Number(b.dataset.store);
+  SCENES[i] = JSON.parse(JSON.stringify(cur));
+  sRender('Stored the current mix as "' + SNAME[i] + '".');
+}));
+document.querySelectorAll('[data-recall]').forEach((b) => b.addEventListener('click', () => {
+  const i = Number(b.dataset.recall);
+  cur = recallScene(cur, SCENES[i], { safes: [...safes] });
+  const kept = [...safes].map((id) => SCH.find((c) => c.id === id).name);
+  sRender('Recalled "' + SNAME[i] + '".' + (kept.length ? ' Safe channels kept their own settings: ' + kept.join(', ') + '.' : ' No channels were Safe, so every channel loaded.'));
+}));
+$('s-dca').addEventListener('input', (e) => { dca.faderPos = Number(e.target.value); sRender(); });
+sRender();
+
+/* ─────────── quiz ─────────── */
+const QUIZ = [
+  { q: 'You are about to switch on 48V for a condenser mic that is already plugged in. What first?', o: ['Nothing, 48V is always safe.', 'Mute the channel (or pull the fader and Main down), then enable 48V.', 'Turn the gain to maximum.'], a: 1, why: 'Powering a mic can thump the speakers. Muting first costs one press, and avoids hurting the audience\'s ears or the speakers.' },
+  { q: 'A vocal clips. What is the right fix?', o: ['Pull the channel fader down.', 'Lower the preamp gain.', 'Raise the Main fader.'], a: 1, why: 'The clipping happens at the converter, before the fader. The fader only turns clipped audio down; the gain fixes the source of the problem.' },
+  { q: 'Which control sends a channel to your headphones without putting it into the room?', o: ['PAFL', 'DCA', 'Scene recall'], a: 0, why: 'PAFL (pre-fade listen) lets you hear and meter one channel privately while you set its gain.' },
+  { q: 'The singer\'s wedge gets quieter whenever you pull their Main fader down. Why?', o: ['The send is post-fader.', 'The wedge is broken.', '48V is on.'], a: 0, why: 'A post-fader send follows the channel fader. Monitor mixes are normally pre-fader so FOH moves do not change what a performer hears.' },
+  { q: 'What does a DCA do?', o: ['Records the show to an SD card.', 'Controls the level of a group of channels with one fader, keeping their balance.', 'Adds 48V to many mics at once.'], a: 1, why: 'A DCA is a remote fader for a set of channels. Each channel keeps its own fader position, and the DCA scales them together.' },
+  { q: 'You recall the Assembly scene during a rehearsal, but the lead vocal must not jump. What protects it?', o: ['Setting the Main fader to 0.', 'A Safe on the vocal channel.', 'Muting the laptop.'], a: 1, why: 'A Safe keeps a channel out of a scene recall, so it holds its current settings while everything else loads.' },
+  { q: 'You want every channel recorded separately, straight to a DAW on a laptop. Which connection?', o: ['USB-A', 'USB-C (32×32 audio interface)', 'The headphone jack'], a: 1, why: 'USB-C acts as a multichannel audio interface. USB-A records a stereo mix; the SD card records multitrack without a computer.' },
+  { q: 'A keyboard through a DI box has no sound, and you suspect phantom power. What do you do?', o: ['Turn 48V on, it can only help.', 'Leave 48V off. A line-level source does not need it.', 'Plug it into the stereo output.'], a: 1, why: 'Line-level and unbalanced gear should not get 48V. Look elsewhere: mute, fader, Main assignment or a bad cable.' },
+];
+(function () {
+  let i = 0, score = 0, answered = false;
+  const q = $('quiz-q'), opts = $('quiz-opts'), why = $('quiz-why'), next = $('quiz-next'), sc = $('quiz-score');
+  function show() {
+    answered = false; why.textContent = ''; next.hidden = true;
+    const item = QUIZ[i];
+    q.textContent = (i + 1) + ' / ' + QUIZ.length + ' · ' + item.q;
+    opts.innerHTML = '';
+    item.o.forEach((t, k) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'quiz-opt'; b.textContent = t;
+      b.addEventListener('click', () => {
+        if (answered) return;
+        answered = true;
+        const ok = k === item.a;
+        if (ok) score++;
+        b.classList.add(ok ? 'right' : 'wrong');
+        if (!ok) opts.children[item.a].classList.add('right');
+        Array.from(opts.children).forEach((c) => { c.disabled = true; });
+        why.textContent = (ok ? '✔ ' : '✘ ') + item.why;
+        sc.textContent = 'Score: ' + score + ' / ' + (i + 1);
+        next.textContent = i === QUIZ.length - 1 ? 'See result' : 'Next question →';
+        next.hidden = false;
+      });
+      opts.appendChild(b);
+    });
+  }
+  let done = false;
+  next.addEventListener('click', () => {
+    if (done) { i = 0; score = 0; done = false; sc.textContent = ''; show(); return; }
+    if (i < QUIZ.length - 1) { i++; show(); return; }
+    done = true;
+    q.textContent = 'Finished: ' + score + ' / ' + QUIZ.length + (score === QUIZ.length ? '. Ready to run the desk.' : '. Revisit the labs above and try again.');
+    opts.innerHTML = ''; why.textContent = ''; next.textContent = 'Try again';
+  });
+  show();
+})();
+</script>
+<script src="../../../assets/js/classroom-animations.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>
