@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wireless Mics &amp; RF Coordination · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Why eight wireless microphones can't just be set to eight random channels. Learn RF frequencies, intermodulation, TV-channel conflicts and antenna placement, then coordinate a rig of up to 8 mics yourself." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <style>
+    body { background: #090d10; color: #e4eaea; margin: 0; overflow-x: hidden; }
+
+    .rf-topbar { position: sticky; top: 0; z-index: 40; backdrop-filter: blur(14px); background: rgba(9, 13, 16, 0.94); border-bottom: 1px solid rgba(90, 209, 199, 0.25); }
+    .rf-topbar-inner { width: min(1440px, calc(100% - 2rem)); margin: 0 auto; min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .rf-topbar a { color: #5ad1c7; text-decoration: none; font-size: 0.82rem; }
+    .rf-topbar a:hover { color: #fff; }
+    .rf-topbar-title { font-size: 0.9rem; font-weight: 700; color: #e9f6f4; }
+
+    .rf-hero { padding: 0.8rem 1.5rem 0.5rem; text-align: center; max-width: 760px; margin: 0 auto; }
+    .rf-hero h1 { font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 800; color: #fff; margin: 0 0 0.4rem; }
+    .rf-hero p { font-size: 0.86rem; color: rgba(228, 234, 234, 0.7); margin: 0; line-height: 1.55; }
+    .rf-wrap { padding: 0 1.1rem 1rem; max-width: 1440px; margin: 0 auto; }
+
+    .rf-card { background: rgba(14, 20, 24, 0.78); border: 1px solid rgba(90, 209, 199, 0.16); border-radius: 15px; padding: 1rem 1.1rem; margin-bottom: 0.85rem; }
+    .rf-card h2 { font-size: 1.02rem; font-weight: 800; color: #fff; margin: 0 0 0.35rem; }
+    .rf-card h3 { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: rgba(160, 220, 214, 0.65); text-transform: uppercase; margin: 0 0 0.7rem; }
+    .rf-card p { font-size: 0.82rem; line-height: 1.6; color: rgba(228, 234, 234, 0.82); margin: 0 0 0.6rem; }
+    .rf-card p:last-child { margin-bottom: 0; }
+    .rf-card strong { color: #8fe6dc; }
+    .rf-card code { background: rgba(90, 209, 199, 0.1); border-radius: 5px; padding: 1px 5px; font-size: 0.78rem; color: #bff3ec; }
+    .rf-note { font-size: 0.74rem !important; color: rgba(200, 214, 214, 0.62) !important; }
+
+    .rf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.85rem; }
+    @media (min-width: 900px) { .rf-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+    /* controls */
+    .ctl-row { margin-bottom: 0.8rem; }
+    .ctl-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; font-weight: 700; color: rgba(228,234,234,0.78); margin-bottom: 5px; gap: 0.5rem; }
+    .ctl-label output { color: #5ad1c7; font-variant-numeric: tabular-nums; }
+    .ctl-row input[type="range"] { width: 100%; accent-color: #5ad1c7; }
+    .ctl-row select, .ctl-row input[type="number"] { width: 100%; background: #0b1114; color: #e4eaea; border: 1px solid rgba(150,200,196,0.3); border-radius: 8px; padding: 7px 9px; font-size: 0.8rem; }
+    .btn { border: 1px solid rgba(90,209,199,0.4); background: rgba(90,209,199,0.1); color: #bff3ec; border-radius: 999px; padding: 7px 14px; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
+    .btn:hover { background: rgba(90,209,199,0.22); }
+    .btn:focus-visible, .chip:focus-visible, canvas:focus-visible { outline: 2px solid #f6c453; outline-offset: 2px; }
+    .btn.primary { background: linear-gradient(180deg, #3cc2b6, #1f8d83); border-color: transparent; color: #04201d; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 7px; margin: 0.6rem 0; }
+
+    /* coordinator */
+    .coord { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.85rem; }
+    @media (min-width: 1000px) { .coord { grid-template-columns: minmax(0, 1.9fr) minmax(250px, 1fr); } }
+    .canvas-box { position: relative; width: 100%; background: #060a0c; border: 1px solid rgba(90,209,199,0.18); border-radius: 12px; overflow: hidden; }
+    .canvas-box canvas { display: block; touch-action: none; }
+    #spec-box { height: 290px; }
+    #over-box { height: 62px; margin-top: 8px; }
+    #scale-box { height: 230px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.6rem 0 0.2rem; }
+    .chip { border: 1px solid rgba(150,200,196,0.3); background: #0b1114; color: #e4eaea; border-radius: 9px; padding: 6px 9px; font-size: 0.72rem; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; }
+    .chip[aria-checked="true"] { border-color: #5ad1c7; background: rgba(90,209,199,0.16); }
+    .chip.bad { border-color: #ff6b57; color: #ffb3a7; }
+    .chip.off { opacity: 0.35; cursor: default; }
+    .fine { display: flex; gap: 6px; align-items: center; margin-top: 0.5rem; }
+    .fine input { flex: 1; min-width: 0; }
+    .verdict { padding: 10px 12px; border-radius: 11px; font-size: 0.8rem; line-height: 1.5; border: 1px solid rgba(150,200,196,0.25); background: rgba(8,12,14,0.7); }
+    .verdict.good { border-color: rgba(76,192,96,0.55); color: #8fe6a0; }
+    .verdict.bad { border-color: rgba(255,107,87,0.55); color: #ffb3a7; }
+    .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0.7rem 0; }
+    .stat { background: rgba(8,12,14,0.7); border: 1px solid rgba(150,200,196,0.18); border-radius: 10px; padding: 8px 6px; text-align: center; }
+    .stat b { display: block; font-size: 1.15rem; color: #fff; font-variant-numeric: tabular-nums; }
+    .stat small { font-size: 0.62rem; color: rgba(200,214,214,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+    .issues { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.75rem; line-height: 1.55; color: rgba(255,200,190,0.9); }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.68rem; color: rgba(200,214,214,0.7); margin-top: 0.5rem; }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+    table.golomb { width: 100%; border-collapse: collapse; font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+    table.golomb th, table.golomb td { text-align: right; padding: 4px 8px; border-bottom: 1px solid rgba(150,200,196,0.14); }
+    table.golomb th:first-child, table.golomb td:first-child { text-align: left; }
+    table.golomb tr.me td { color: #5ad1c7; font-weight: 800; }
+
+    .big-eq { font-size: 0.95rem; text-align: center; padding: 10px; margin: 0.5rem 0; background: rgba(8,12,14,0.7); border-radius: 10px; border: 1px dashed rgba(90,209,199,0.3); color: #d9fbf6; }
+
+    .gear-card .pg-grid { --pg-card-bg: rgba(8, 12, 14, 0.7); --pg-line: rgba(90, 209, 199, 0.2); --pg-text: rgba(228, 234, 234, 0.85); --pg-heading: #5ad1c7; --pg-muted: rgba(190, 214, 212, 0.7); }
+    .stage-svg { width: 100%; height: auto; display: block; background: #060a0c; border-radius: 12px; border: 1px solid rgba(90,209,199,0.18); }
+
+    /* guide + quiz */
+    .info-row { display: grid; grid-template-columns: 1fr; gap: 0.7rem; }
+    .info-card { background: rgba(14,20,24,0.78); border: 1px solid rgba(90,209,199,0.14); border-radius: 13px; padding: 1rem; }
+    .info-card h4 { font-size: 0.8rem; font-weight: 700; color: #5ad1c7; margin: 0 0 0.4rem; }
+    .info-card p, .info-card li { font-size: 0.77rem; color: rgba(228,234,234,0.74); margin: 0 0 0.4rem; line-height: 1.55; }
+    .info-card ol, .info-card ul { margin: 0; padding-left: 1.15rem; }
+    .check-list { list-style: none; padding: 0 !important; }
+    .check-list label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; padding: 3px 0; }
+    .check-list input { margin-top: 3px; accent-color: #5ad1c7; }
+    .quiz-q { background: rgba(90,209,199,0.08); border: 1px solid rgba(90,209,199,0.28); border-radius: 11px; padding: 9px 12px; font-size: 0.8rem; line-height: 1.5; color: #d9fbf6; margin-bottom: 0.6rem; }
+    .quiz-opts { display: grid; gap: 6px; }
+    .quiz-opt { text-align: left; border: 1px solid rgba(150,200,196,0.25); background: #0b1114; color: #e4eaea; border-radius: 10px; padding: 8px 10px; font-size: 0.76rem; line-height: 1.45; cursor: pointer; }
+    .quiz-opt:hover:not(:disabled) { border-color: #5ad1c7; }
+    .quiz-opt.right { border-color: #4cc060; background: rgba(18,48,26,0.6); }
+    .quiz-opt.wrong { border-color: #ff6b57; background: rgba(58,20,16,0.55); }
+    .quiz-why { font-size: 0.75rem; line-height: 1.5; color: rgba(228,234,234,0.78); margin-top: 0.6rem; }
+    .quiz-score { font-size: 0.72rem; color: rgba(200,214,214,0.6); margin-top: 0.6rem; }
+
+    .ll-viewport {
+      --ll-panel-bg: rgba(9, 13, 16, 0.97); --ll-panel-border: rgba(90, 209, 199, 0.22);
+      --ll-tab-color: rgba(190, 220, 216, 0.6); --ll-tab-active-bg: rgba(90, 209, 199, 0.18);
+      --ll-tab-active: #5ad1c7; --ll-toggle-bg: rgba(9, 13, 16, 0.97);
+    }
+    @media print {
+      .btn-row, .fine, .chips { display: none; }
+      #spec-box, #over-box, #scale-box { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport ll-dark">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <nav class="rf-topbar ll-topbar">
+    <div class="rf-topbar-inner">
+      <a href="../../../steam-lessons.html">← Technical Elements</a>
+      <span class="rf-topbar-title">📡 Wireless Mics &amp; RF Coordination</span>
+      <a href="../../../index.html">ClassroomOS</a>
+    </div>
+  </nav>
+
+  <div class="ll-stage" id="main-content">
+
+    <div class="ll-sim">
+      <header class="rf-hero">
+        <h1>📡 Wireless Mics &amp; RF Coordination</h1>
+        <p>A wireless mic is a tiny radio station. Put eight of them on one stage and they can wreck each other, even when every one is on its own channel. Learn why, then place up to eight mics in the spectrum without a single collision.</p>
+      </header>
+
+      <div class="rf-wrap">
+
+        <!-- 1 · radio basics -->
+        <div class="rf-grid two">
+          <section class="rf-card" aria-labelledby="h-basics">
+            <h2 id="h-basics">1 · The link is just a radio wave</h2>
+            <p>The bodypack turns your voice into a radio signal on a <strong>carrier frequency</strong>. The receiver tunes to that one frequency and turns the wave back into audio. Frequency and wavelength are tied together by the speed of light:</p>
+            <div class="big-eq">λ = c ÷ f &nbsp;&nbsp;·&nbsp;&nbsp; c ≈ 300 000 000 m/s</div>
+            <p>An antenna works best when it is about a quarter of a wavelength long. That's why a bodypack's little whip is only about 15 cm: it is tuned to UHF.</p>
+            <p class="rf-note">Wireless mics are <em>FM or digital</em> radio. Your voice rides on the carrier, but the carrier's frequency is what you set and what other mics must avoid.</p>
+          </section>
+
+          <section class="rf-card" aria-labelledby="h-lambda">
+            <h2 id="h-lambda">Wavelength calculator</h2>
+            <div class="ctl-row">
+              <div class="ctl-label"><label for="s-freq">Carrier frequency</label><output id="v-freq">500 MHz</output></div>
+              <input type="range" id="s-freq" min="100" max="2500" step="1" value="500" />
+            </div>
+            <div class="btn-row" aria-label="Frequency presets">
+              <button type="button" class="btn" data-f="100">FM radio ~100</button>
+              <button type="button" class="btn" data-f="500">UHF mic ~500</button>
+              <button type="button" class="btn" data-f="915">900 MHz band</button>
+              <button type="button" class="btn" data-f="2400">2.4 GHz (Wi-Fi)</button>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><b id="o-lambda">0.60 m</b><small>Wavelength</small></div>
+              <div class="stat"><b id="o-quarter">15 cm</b><small>Quarter-wave</small></div>
+              <div class="stat"><b id="o-tv">ch 20</b><small>US TV channel</small></div>
+            </div>
+            <p class="rf-note" id="o-note">UHF mics live in the TV band. Each US TV channel is 6 MHz wide, and channels 14–36 cover 470–608 MHz.</p>
+          </section>
+        </div>
+
+        <!-- 2 · coordinator -->
+        <section class="rf-card" aria-labelledby="h-coord">
+          <h2 id="h-coord">2 · The 8-mic coordinator</h2>
+          <p>Each <strong style="color:#5ad1c7">teal bar</strong> is a mic's carrier. Every <strong style="color:#f6a553">orange tick</strong> is a <em>third-order intermodulation product</em> the carriers create when they mix inside a receiver (more on that below). If a tick lands inside a mic's channel, that mic hears hiss, bursts or dropouts, and the bar turns red. Drag a bar, use the arrow keys, or press <strong>Auto-coordinate</strong>.</p>
+
+          <div class="coord">
+            <div>
+              <div class="canvas-box" id="spec-box"><canvas id="spec" tabindex="0" role="img" aria-label="Spectrum view: carriers, intermodulation products and TV channels. Select a mic below and use the left and right arrow keys to tune it."></canvas></div>
+              <div class="canvas-box" id="over-box"><canvas id="over" role="img" aria-label="Whole UHF band overview. Click to move the zoom window."></canvas></div>
+              <div class="legend" aria-hidden="true">
+                <span><i style="background:#5ad1c7"></i>Mic carrier</span>
+                <span><i style="background:#ff6b57"></i>Mic hit by a collision</span>
+                <span><i style="background:#f6a553"></i>Intermod product</span>
+                <span><i style="background:repeating-linear-gradient(45deg,#6a7478 0 3px,#2a3236 3px 6px)"></i>Occupied TV channel</span>
+              </div>
+              <div class="chips" id="chips" role="radiogroup" aria-label="Choose a microphone to tune"></div>
+              <div class="fine">
+                <button type="button" class="btn" id="b-minus" aria-label="Lower selected mic by 25 kilohertz">−25 kHz</button>
+                <input type="number" id="n-freq" min="470" max="608" step="0.025" aria-label="Selected mic frequency in megahertz" />
+                <button type="button" class="btn" id="b-plus" aria-label="Raise selected mic by 25 kilohertz">+25 kHz</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="ctl-row">
+                <div class="ctl-label"><label for="s-n">Number of mics</label><output id="v-n">4</output></div>
+                <input type="range" id="s-n" min="1" max="8" step="1" value="4" />
+              </div>
+              <div class="ctl-row">
+                <div class="ctl-label"><label for="s-clear">Receiver clearance</label><output id="v-clear">0.25 MHz</output></div>
+                <input type="range" id="s-clear" min="0.1" max="0.5" step="0.05" value="0.25" />
+              </div>
+              <div class="ctl-row">
+                <div class="ctl-label"><label for="s-tv">TV stations nearby</label></div>
+                <select id="s-tv"></select>
+              </div>
+              <div class="ctl-row">
+                <div class="ctl-label"><label for="s-wid">Zoom</label><output id="v-wid">12 MHz</output></div>
+                <input type="range" id="s-wid" min="6" max="48" step="6" value="12" />
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn primary" id="b-auto">Auto-coordinate</button>
+                <button type="button" class="btn" id="b-even">Space evenly</button>
+                <button type="button" class="btn" id="b-golomb">Golomb pattern</button>
+                <button type="button" class="btn" id="b-rand">Random</button>
+              </div>
+              <div class="stat-row">
+                <div class="stat"><b id="o-prod">12</b><small>Products</small></div>
+                <div class="stat"><b id="o-hits">0</b><small>Collisions</small></div>
+                <div class="stat"><b id="o-span">0 MHz</b><small>Span used</small></div>
+              </div>
+              <div class="verdict" id="verdict" aria-live="polite"></div>
+              <ul class="issues" id="issues"></ul>
+            </div>
+          </div>
+          <p class="rf-note" style="margin-top:.7rem">The TV lineups are made up for practice. A real venue uses the FCC's lookup or the maker's planning software (such as Shure Wireless Workbench) with the real stations in its area.</p>
+        </section>
+
+        <!-- 3 · why -->
+        <div class="rf-grid two">
+          <section class="rf-card" aria-labelledby="h-why">
+            <h2 id="h-why">3 · Why different channels still collide</h2>
+            <p>A receiver's first amplifier isn't perfectly straight. Real circuits bend signals slightly, so the output includes a cubic term: <code>y = a₁x + a₂x² + a₃x³</code>. Feed in two carriers at <code>f₁</code> and <code>f₂</code> and the cubic term makes new frequencies you never transmitted:</p>
+            <div class="big-eq">2f₁ − f₂ &nbsp;·&nbsp; 2f₂ − f₁ &nbsp;·&nbsp; f₁ + f₂ − f₃</div>
+            <p>Example: mics on 501.0 and 500.5 MHz make 2(501.0) − 500.5 = <strong>501.5 MHz</strong>. If a third mic is parked on 501.5, it is now being jammed by its neighbours. Evenly spaced channels are the worst plan, because every product lands exactly on the next carrier.</p>
+            <p>Same maths as audio distortion: clip a signal and its harmonics appear; play two tones into a clipping preamp and intermod shows up there too (see <a href="live-audio-signal-chain.html" style="color:#5ad1c7">gain staging</a> and the <a href="../../mathematics/advanced-and-calculus/fourier-series.html" style="color:#5ad1c7">Fourier series lesson</a>).</p>
+          </section>
+
+          <section class="rf-card" aria-labelledby="h-scale">
+            <h2 id="h-scale">The problem grows faster than the rig</h2>
+            <div class="ctl-row">
+              <div class="ctl-label"><label for="s-count">Mics on the stage</label><output id="v-count">8</output></div>
+              <input type="range" id="s-count" min="1" max="16" step="1" value="8" />
+            </div>
+            <div class="canvas-box" id="scale-box"><canvas id="scale" role="img" aria-label="Bar chart: the number of third-order intermodulation products for 1 to 16 microphones"></canvas></div>
+            <p id="o-count" style="margin-top:.6rem"></p>
+          </section>
+        </div>
+
+        <!-- 4 · Golomb -->
+        <section class="rf-card" aria-labelledby="h-golomb">
+          <h2 id="h-golomb">4 · The cleanest layout is a Golomb ruler</h2>
+          <p>A product <code>2f₁ − f₂</code> hits a carrier <code>f₃</code> only when <code>f₁ − f₃ = f₃ − f₂</code>, two gaps that are equal. A three-carrier product <code>f₁ + f₂ − f₃</code> hits <code>f₄</code> only when two <em>pairs</em> of carriers have the same sum, which again means two equal gaps. So the perfect plan is a set of frequencies in which <strong>every gap between any two mics is different</strong>. Mathematicians call that a <strong>Golomb ruler</strong>.</p>
+          <p>Shortest possible rulers have known lengths. Multiply each by your receiver clearance to get the minimum spectrum an ideal plan needs. Change the clearance slider above and the table follows.</p>
+          <table class="golomb" id="golomb-table">
+            <thead><tr><th scope="col">Mics</th><th scope="col">Marks (× clearance)</th><th scope="col">Min. span</th><th scope="col">TV channels</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <p class="rf-note" style="margin-top:.6rem">Real coordination is messier: it also checks 5th-order products, intermod made between <em>transmitters</em>, and each receiver's measured selectivity. But the ruler idea is why 8 mics need more than the "8 slots" you'd count by eye: the span grows roughly with the <em>square</em> of the mic count.</p>
+        </section>
+
+        <!-- 5 · stage layout -->
+        <section class="rf-card" aria-labelledby="h-stage">
+          <h2 id="h-stage">5 · Where the antennas go</h2>
+          <p>Frequency planning gets the channels right. <strong>Antenna placement</strong> keeps the signal strong enough to use them. At UHF the wave is blocked by people, scenery and metal, so give each receiver antenna a clear line of sight to the stage.</p>
+          <svg class="stage-svg" viewBox="0 0 640 260" role="img" aria-label="Plan view of a stage with a performer wearing a bodypack, a receiver rack and two antennas mounted at the front of house with a clear sight line, and a blocked path behind scenery.">
+            <rect x="10" y="10" width="620" height="240" rx="12" fill="#0a1114"/>
+            <rect x="40" y="30" width="360" height="130" rx="6" fill="#16222a" stroke="#2f4a55"/>
+            <text x="220" y="52" text-anchor="middle" fill="#7fb7b0" font-size="12" font-family="system-ui,sans-serif">STAGE</text>
+            <rect x="60" y="120" width="320" height="10" fill="#2a3b44"/>
+            <text x="220" y="148" text-anchor="middle" fill="#7a9490" font-size="10" font-family="system-ui,sans-serif">upstage scenery (metal) · weak, reflective</text>
+            <circle cx="250" cy="90" r="9" fill="#5ad1c7"/><text x="250" y="72" text-anchor="middle" fill="#bff3ec" font-size="11" font-family="system-ui,sans-serif">performer + bodypack</text>
+            <circle cx="120" cy="90" r="9" fill="#ff6b57"/><text x="120" y="72" text-anchor="middle" fill="#ffb3a7" font-size="11" font-family="system-ui,sans-serif">behind scenery</text>
+            <rect x="470" y="170" width="140" height="62" rx="8" fill="#16222a" stroke="#5ad1c7"/>
+            <text x="540" y="196" text-anchor="middle" fill="#e4eaea" font-size="12" font-family="system-ui,sans-serif">receiver rack</text>
+            <text x="540" y="214" text-anchor="middle" fill="#8fb0ab" font-size="10" font-family="system-ui,sans-serif">in the booth</text>
+            <path d="M300 180 L318 150 L336 180 Z" fill="#f6c453"/><text x="318" y="198" text-anchor="middle" fill="#f6d98a" font-size="11" font-family="system-ui,sans-serif">antennas at front of house</text>
+            <path d="M336 175 L470 200" stroke="#f6c453" stroke-width="2" fill="none"/>
+            <text x="406" y="226" text-anchor="middle" fill="#9fb4b0" font-size="10" font-family="system-ui,sans-serif">low-loss coax to rack</text>
+            <path d="M259 98 L318 150" stroke="#5ad1c7" stroke-width="2.5" stroke-dasharray="1 0" fill="none"/>
+            <text x="298" y="112" fill="#bff3ec" font-size="10" font-family="system-ui,sans-serif">clear line of sight</text>
+            <path d="M129 98 L312 150" stroke="#ff6b57" stroke-width="2" stroke-dasharray="5 5" fill="none"/>
+            <text x="170" y="116" fill="#ffb3a7" font-size="10" font-family="system-ui,sans-serif">blocked ✗</text>
+          </svg>
+          <div class="info-row" style="margin-top:.8rem">
+            <div class="info-card">
+              <h4>Diversity receivers</h4>
+              <p>Each receiver has two antennas and always uses the one with the stronger signal. A radio wave bounces off walls and meets itself, so at some spots the signal cancels out. That is a <strong>dropout</strong>, and a second antenna a few wavelengths away is rarely in the same dead spot.</p>
+            </div>
+            <div class="info-card">
+              <h4>Share the antennas</h4>
+              <p>Eight receivers don't need sixteen antennas on the wall. An <strong>antenna distribution</strong> box splits two good antennas to every receiver, so every mic hears the same strong signal and the rack stays tidy.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- gear -->
+        <div class="rf-card gear-card">
+          <h3>📷 Meet the real gear</h3>
+          <p>Click a photo to enlarge it. Find the mic's end of the radio link, then the receiver's end.</p>
+          <div class="pg-grid">
+            <figure class="pg-card" data-zoomable data-lightbox-group="wireless-mic-rf">
+              <img src="../../../assets/images/lessons/microphone-polar-patterns/ear-mounted-headset-microphone.jpg" alt="Ear-mounted miniature headset microphone connected to a bodypack transmitter" loading="lazy" />
+              <figcaption><strong>Transmitter end: headset and bodypack</strong><span>The bodypack's short antenna is the radio station. Its frequency is set from a menu, and every other bodypack on the stage must be set to a different, coordinated one.</span>
+                <span class="pg-credit" data-no-glossary>CC0 public-domain dedication · <a href="https://commons.wikimedia.org/wiki/File:SpencerKimballEarMountedMicrophone.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+            </figure>
+            <figure class="pg-card" data-zoomable data-lightbox-group="wireless-mic-rf">
+              <img src="../../../assets/images/lessons/microphone-polar-patterns/wireless-receiver-rack.jpg" alt="Rack containing multiple professional wireless microphone receivers with antennas and channel labels" loading="lazy" />
+              <figcaption><strong>Receiver end: a rack of channels</strong><span>One receiver per mic, each labelled and tuned to its partner. Notice the antennas: they decide how reliably the link works, so they get a clear view of the stage.</span>
+                <span class="pg-credit" data-no-glossary>CC0 public-domain dedication · <a href="https://commons.wikimedia.org/wiki/File:Sennheiser_wireless_receivers_rack_(2011-04-28_by_)_pixabay_-_337545.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+            </figure>
+          </div>
+        </div>
+
+      </div><!-- .rf-wrap -->
+    </div><!-- .ll-sim -->
+
+    <aside class="ll-panel" aria-hidden="true">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="rf-pane-setup">Setup</button>
+          <button class="ll-tab" aria-selected="false" data-pane="rf-pane-quiz">Quiz</button>
+          <button class="ll-tab" aria-selected="false" data-pane="rf-pane-guide">Guide</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="rf-pane-setup">
+          <div class="info-card">
+            <h4>🧰 Setting up 8 mics, in order</h4>
+            <ol class="check-list">
+              <li><label><input type="checkbox" /> <span><strong>Find the free spectrum.</strong> Look up the TV stations at the venue. Turn on every other wireless device (in-ears, intercom, a lighting desk with wireless DMX) before scanning.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Scan with all transmitters off.</strong> Let each receiver's scan show where the room is already noisy.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Pick one coordinated group</strong> from the maker's software or manual, or compute your own with the rule from the lab. Don't choose 8 channels by eye.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Assign each mic a number.</strong> The same number goes on the bodypack, the receiver, the console channel and the cast list.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Sync each bodypack to its receiver,</strong> then switch them all on together.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Mount the antennas</strong> with a clear view of the stage, away from metal and a few feet from each other.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Walk-test the whole stage</strong> with every mic on. Watch each RF meter. Note any dropout spot and fix it with an antenna move.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Set gain last,</strong> at the transmitter first and the console second, so a loud line never clips.</span></label></li>
+              <li><label><input type="checkbox" /> <span><strong>Fresh batteries every show,</strong> and keep a spare pack on a known-good frequency.</span></label></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="rf-pane-quiz">
+          <div class="info-card">
+            <h4>🧠 Check yourself</h4>
+            <div class="quiz-q" id="quiz-q" aria-live="polite">Loading…</div>
+            <div class="quiz-opts" id="quiz-opts"></div>
+            <div class="quiz-why" id="quiz-why" aria-live="polite"></div>
+            <div class="btn-row"><button type="button" class="btn" id="quiz-next" hidden>Next question →</button></div>
+            <div class="quiz-score" id="quiz-score"></div>
+          </div>
+        </div>
+
+        <div class="ll-pane" id="rf-pane-guide">
+          <div class="info-row">
+            <div class="info-card">
+              <h4>📶 Bands you'll meet</h4>
+              <ul>
+                <li><strong>UHF TV band, 470–608 MHz:</strong> where most professional mics live today. Shared with TV stations, so the local lineup matters.</li>
+                <li><strong>900 MHz:</strong> a licence-free band in the US, shared with many other gadgets.</li>
+                <li><strong>2.4 GHz:</strong> digital mics. Compact antennas, but it shares the air with Wi-Fi and Bluetooth.</li>
+              </ul>
+              <p>Rules change. The 600 MHz band was sold to cellular carriers, and mics made for it stopped being legal in the US in 2020. Always check the current FCC rules and your gear's frequency range before you buy or use it.</p>
+            </div>
+            <div class="info-card">
+              <h4>🧯 When a mic breaks up</h4>
+              <ul>
+                <li><strong>Hiss or bursts on one mic:</strong> check for an intermod hit or a new nearby transmitter. Move that mic's frequency.</li>
+                <li><strong>Dropout in a spot on stage:</strong> a dead spot. Move or add an antenna.</li>
+                <li><strong>Dropout everywhere:</strong> low battery, wrong antenna or a blocked sight line.</li>
+                <li><strong>RF meter high but audio distorted:</strong> that's a gain problem, not RF. See <a href="live-audio-signal-chain.html" style="color:#5ad1c7">signal chain</a>.</li>
+                <li><strong>Whole rig suddenly noisy:</strong> a new source nearby: an LED wall, a wireless intercom or a TV station that was off in rehearsal.</li>
+              </ul>
+            </div>
+            <div class="info-card">
+              <h4>🎭 In our productions</h4>
+              <p>Every wireless lav on a show is one of these mics. The cast list, the bodypack label, the receiver number and the console channel should all match, so if a mic fails you can find its whole chain in seconds.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- .ll-panel-body -->
+    </aside>
+
+    <button class="ll-open-btn" aria-label="Open panel">
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+      <span class="ll-open-dot"></span>
+    </button>
+
+  </div><!-- .ll-stage -->
+
+  <div class="te-footer-nav" style="display:flex;justify-content:space-between;gap:1rem;width:min(1440px,calc(100% - 2rem));margin:0 auto;padding:1rem 0 2rem;font-size:.85rem">
+    <a href="microphone-polar-patterns.html" style="color:#5ad1c7">← Microphone Polar Patterns</a>
+    <a href="live-audio-signal-chain.html" style="color:#5ad1c7">Live Audio Signal Chain →</a>
+  </div>
+</div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/sim-kit.js"></script>
+<script type="module">
+import {
+  BAND, GRID, tvChannelEdge, tvChannelOf, wavelengthM, productCounts, products, analyze,
+  freeRanges, coordinate, GOLOMB, PRESETS,
+} from '../../../assets/js/wireless-rf-core.mjs';
+
+const $ = (id) => document.getElementById(id);
+const C = { teal: '#5ad1c7', red: '#ff6b57', orange: '#f6a553', grid: 'rgba(150,200,196,0.12)', text: 'rgba(200,214,214,0.75)', tv: '#2a3236', tvLine: '#6a7478', amber: '#f6c453' };
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ─────────── 1 · wavelength calculator ─────────── */
+(function () {
+  const s = $('s-freq');
+  function update() {
+    const f = +s.value, lam = wavelengthM(f);
+    $('v-freq').textContent = f + ' MHz';
+    $('o-lambda').textContent = lam >= 1 ? lam.toFixed(2) + ' m' : (lam * 100).toFixed(1) + ' cm';
+    const q = lam / 4;
+    $('o-quarter').textContent = q >= 1 ? q.toFixed(2) + ' m' : (q * 100).toFixed(1) + ' cm';
+    const ch = tvChannelOf(f);
+    $('o-tv').textContent = ch ? 'ch ' + ch : '—';
+    $('o-note').textContent = ch
+      ? 'This sits in US TV channel ' + ch + ' (' + tvChannelEdge(ch) + '–' + (tvChannelEdge(ch) + 6) + ' MHz). A mic here has to avoid any station using that channel.'
+      : f < 470 ? 'Below the UHF TV band. Long waves need long antennas, which is why FM radio uses a big whip.'
+      : f > 608 && f < 1000 ? 'Above the 470–608 MHz mic window. The 900 MHz band is shared with many other gadgets.'
+      : f >= 2300 ? 'Around Wi-Fi and Bluetooth. Tiny antennas, but a crowded neighbourhood.'
+      : 'Outside the UHF mic window used in this lesson.';
+  }
+  s.addEventListener('input', update);
+  document.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => { s.value = b.dataset.f; update(); }));
+  update();
+})();
+
+/* ─────────── 2 · coordinator ─────────── */
+const st = {
+  n: 4,
+  freqs: [500, 500.5, 501, 501.5, 502, 502.5, 503, 503.5],
+  sel: 0,
+  clearance: 0.25,
+  preset: 'empty',
+  start: 498,
+  width: 12,
+};
+const snap = (f) => Math.min(BAND.hi - 0.1, Math.max(BAND.lo + 0.1, Math.round(f / GRID) * GRID));
+const minSpacing = () => st.clearance;   // two carriers can sit one clearance apart
+const active = () => st.freqs.slice(0, st.n);
+const blocked = () => PRESETS[st.preset].blocked;
+const fmt = (f) => f.toFixed(3);
+
+let analysis = null;   // declared before the canvases: canvas2d fires onResize at once
+const specC = SimKit.canvas2d($('spec'), { box: $('spec-box'), onResize: drawAll });
+const overC = SimKit.canvas2d($('over'), { box: $('over-box'), onResize: drawAll });
+const scaleC = SimKit.canvas2d($('scale'), { box: $('scale-box'), onResize: drawAll });
+
+function clampWindow() {
+  st.start = Math.max(BAND.lo, Math.min(BAND.hi - st.width, st.start));
+}
+function centerOn(f) { st.start = f - st.width / 2; clampWindow(); }
+
+function recompute() {
+  const f = active();
+  analysis = analyze(f, { clearance: st.clearance, minSpacing: minSpacing() });
+  analysis.inTv = [];
+  f.forEach((hz, i) => {
+    const ch = tvChannelOf(hz);
+    if (ch && blocked().includes(ch)) analysis.inTv.push({ mic: i, ch });
+  });
+  analysis.products = products(f);
+}
+
+function niceStep(width) { return width <= 6 ? 0.5 : width <= 12 ? 1 : width <= 24 ? 2 : 6; }
+
+function drawSpectrum() {
+  const { ctx, width: W, height: H } = specC;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 10, padR = 10, top = 34, axisY = H - 26;
+  const x = (f) => padL + ((f - st.start) / st.width) * (W - padL - padR);
+  const lo = st.start, hi = st.start + st.width;
+
+  // TV channels
+  ctx.save();
+  for (let ch = 14; ch <= 36; ch++) {
+    const a = tvChannelEdge(ch), b = a + 6;
+    if (b < lo || a > hi) continue;
+    const x0 = x(Math.max(a, lo)), x1 = x(Math.min(b, hi));
+    if (blocked().includes(ch)) {
+      ctx.fillStyle = C.tv; ctx.fillRect(x0, 0, x1 - x0, axisY);
+      ctx.strokeStyle = 'rgba(106,116,120,0.35)'; ctx.lineWidth = 1;
+      for (let k = x0 - axisY; k < x1; k += 9) { ctx.beginPath(); ctx.moveTo(k, axisY); ctx.lineTo(k + axisY, 0); ctx.stroke(); }
+      ctx.save(); ctx.beginPath(); ctx.rect(x0, 0, x1 - x0, axisY); ctx.clip();
+      ctx.fillStyle = C.text; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('TV ' + ch, x0 + 6, 14);
+      ctx.restore();
+    }
+    ctx.strokeStyle = C.tvLine; ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(x0, axisY); ctx.lineTo(x0, axisY + 5); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // grid + axis
+  ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = C.text; ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+  const step = niceStep(st.width);
+  for (let f = Math.ceil(lo / step) * step; f <= hi + 1e-9; f += step) {
+    const px = x(f);
+    ctx.beginPath(); ctx.moveTo(px, top); ctx.lineTo(px, axisY); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText(f.toFixed(step < 1 ? 1 : 0), px, axisY + 14);
+  }
+  ctx.textAlign = 'right'; ctx.fillText('MHz', W - 4, axisY + 24);
+  ctx.strokeStyle = C.tvLine; ctx.beginPath(); ctx.moveTo(padL, axisY); ctx.lineTo(W - padR, axisY); ctx.stroke();
+
+  const f = active();
+  const victims = new Set(analysis.victims);
+
+  // products (short ticks, hits drawn on top)
+  const prodH = 46;
+  analysis.products.forEach((p) => {
+    if (p.f < lo || p.f > hi) return;
+    const isHit = analysis.hits.some((h) => h.from.join() === p.from.join() && h.kind === p.kind);
+    if (isHit) return;
+    ctx.strokeStyle = 'rgba(246,165,83,0.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x(p.f), axisY); ctx.lineTo(x(p.f), axisY - prodH); ctx.stroke();
+  });
+
+  // carriers
+  const barTop = top + 18;
+  f.forEach((hz, i) => {
+    if (hz < lo - st.clearance || hz > hi + st.clearance) return;
+    const px = x(hz), bad = victims.has(i), sel = i === st.sel;
+    const w = (st.clearance * 2 / st.width) * (W - padL - padR);
+    ctx.fillStyle = bad ? 'rgba(255,107,87,0.14)' : 'rgba(90,209,199,0.1)';
+    ctx.fillRect(px - w / 2, barTop - 6, w, axisY - barTop + 6);
+    ctx.strokeStyle = bad ? C.red : C.teal; ctx.lineWidth = sel ? 4 : 2.5;
+    ctx.beginPath(); ctx.moveTo(px, axisY); ctx.lineTo(px, barTop); ctx.stroke();
+    ctx.fillStyle = bad ? C.red : C.teal;
+    ctx.beginPath(); ctx.arc(px, barTop, sel ? 11 : 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#041512'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(String(i + 1), px, barTop + 4);
+    if (sel) { ctx.strokeStyle = C.amber; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, barTop, 15, 0, Math.PI * 2); ctx.stroke(); }
+  });
+
+  // collisions on top: bright red tick from the product up to the victim
+  analysis.hits.forEach((h) => {
+    if (h.f < lo || h.f > hi) return;
+    ctx.strokeStyle = C.red; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x(h.f), axisY); ctx.lineTo(x(h.f), axisY - prodH - 10); ctx.stroke();
+    ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(x(h.f), axisY - prodH - 10, 3.5, 0, Math.PI * 2); ctx.fill();
+  });
+
+  ctx.textAlign = 'left'; ctx.fillStyle = C.text; ctx.font = '11px system-ui, sans-serif';
+  ctx.fillText('Window ' + lo.toFixed(1) + '–' + hi.toFixed(1) + ' MHz · ' + (hi - lo) / 6 + ' TV channels', padL, 14 + (blocked().length ? 14 : 0));
+  specC.map = { x, padL, padR, W };
+}
+
+function drawOverview() {
+  const { ctx, width: W, height: H } = overC;
+  ctx.clearRect(0, 0, W, H);
+  const x = (f) => 6 + ((f - BAND.lo) / (BAND.hi - BAND.lo)) * (W - 12);
+  const base = H - 16;
+  for (let ch = 14; ch <= 36; ch++) {
+    const a = tvChannelEdge(ch), x0 = x(a), x1 = x(a + 6);
+    ctx.fillStyle = blocked().includes(ch) ? C.tv : 'rgba(90,209,199,0.05)';
+    ctx.fillRect(x0 + 0.5, 6, x1 - x0 - 1, base - 6);
+    if (blocked().includes(ch)) { ctx.fillStyle = C.text; ctx.font = '9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(ch, (x0 + x1) / 2, 18); }
+  }
+  const victims = new Set(analysis.victims);
+  active().forEach((hz, i) => {
+    ctx.strokeStyle = victims.has(i) ? C.red : C.teal; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x(hz), base); ctx.lineTo(x(hz), 24); ctx.stroke();
+  });
+  ctx.strokeStyle = C.amber; ctx.lineWidth = 2;
+  ctx.strokeRect(x(st.start), 3, x(st.start + st.width) - x(st.start), base - 1);
+  ctx.fillStyle = C.text; ctx.font = '10px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.fillText('470', 4, H - 3);
+  ctx.textAlign = 'right'; ctx.fillText('608 MHz', W - 4, H - 3);
+  overC.map = { x };
+}
+
+function ordinal(p) {
+  const n = (k) => 'Mic ' + (k + 1);
+  return p.kind === 2 ? '2×' + n(p.from[0]) + ' − ' + n(p.from[1]) : n(p.from[0]) + ' + ' + n(p.from[1]) + ' − ' + n(p.from[2]);
+}
+
+function updateReadout() {
+  const f = active(), pc = productCounts(f.length);
+  $('o-prod').textContent = pc.total;
+  $('o-hits').textContent = analysis.hits.length + analysis.close.length + analysis.inTv.length;
+  $('o-span').textContent = f.length > 1 ? (Math.max(...f) - Math.min(...f)).toFixed(2) + ' MHz' : '—';
+  $('v-n').textContent = st.n;
+  $('v-clear').textContent = st.clearance.toFixed(2) + ' MHz';
+  $('v-wid').textContent = st.width + ' MHz';
+
+  const v = $('verdict'), list = $('issues');
+  list.innerHTML = '';
+  const bad = !analysis.clean || analysis.inTv.length;
+  if (!bad) {
+    v.className = 'verdict good';
+    v.textContent = f.length === 1 ? 'One mic can sit anywhere clear of a TV station.' : '✔ Clean plan: all ' + f.length + ' mics have no intermod product inside their channel (' + pc.total + ' products checked).';
+  } else {
+    v.className = 'verdict bad';
+    const k = analysis.victims.length + new Set(analysis.inTv.map((t) => t.mic)).size;
+    v.textContent = '✘ ' + (k === 1 ? 'A mic is' : 'Some mics are') + ' in trouble. Move a bar, or press Auto-coordinate.';
+    const seen = new Set();
+    analysis.hits.slice(0, 40).forEach((h) => {
+      const key = h.victim + ordinal(h);
+      if (seen.has(key) || seen.size >= 4) return;
+      seen.add(key);
+      const li = document.createElement('li');
+      li.textContent = 'Mic ' + (h.victim + 1) + ' (' + fmt(f[h.victim]) + ') gets ' + ordinal(h) + ' = ' + fmt(h.f);
+      list.appendChild(li);
+    });
+    analysis.close.slice(0, 2).forEach(([a, b]) => {
+      const li = document.createElement('li');
+      li.textContent = 'Mics ' + (a + 1) + ' and ' + (b + 1) + ' are only ' + Math.abs(f[a] - f[b]).toFixed(3) + ' MHz apart.';
+      list.appendChild(li);
+    });
+    analysis.inTv.slice(0, 2).forEach((t) => {
+      const li = document.createElement('li');
+      li.textContent = 'Mic ' + (t.mic + 1) + ' is inside TV channel ' + t.ch + ', which has a station.';
+      list.appendChild(li);
+    });
+  }
+
+  // chips
+  const chips = $('chips');
+  chips.innerHTML = '';
+  const victims = new Set(analysis.victims);
+  analysis.inTv.forEach((t) => victims.add(t.mic));
+  for (let i = 0; i < 8; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip' + (i >= st.n ? ' off' : '') + (victims.has(i) && i < st.n ? ' bad' : '');
+    b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', i === st.sel ? 'true' : 'false');
+    b.disabled = i >= st.n;
+    b.textContent = (i + 1) + ' · ' + (i < st.n ? st.freqs[i].toFixed(3) : '—');
+    b.addEventListener('click', () => { st.sel = i; centerOnIfOut(st.freqs[i]); render(); });
+    chips.appendChild(b);
+  }
+  $('n-freq').value = st.freqs[st.sel].toFixed(3);
+}
+
+function centerOnIfOut(f) {
+  if (f < st.start + 0.2 || f > st.start + st.width - 0.2) centerOn(f);
+}
+
+function drawAll() { if (analysis) { drawSpectrum(); drawOverview(); drawScale(); } }
+function render() { recompute(); updateReadout(); drawAll(); }
+
+function setFreq(i, f) { st.freqs[i] = +snap(f).toFixed(3); }
+
+/* drag */
+(function () {
+  const cv = $('spec');
+  let drag = -1;
+  const toF = (ev) => {
+    const r = cv.getBoundingClientRect(), m = specC.map;
+    const px = ev.clientX - r.left;
+    return st.start + ((px - m.padL) / (r.width - m.padL - m.padR)) * st.width;
+  };
+  const hit = (ev) => {
+    const r = cv.getBoundingClientRect(), m = specC.map;
+    const px = ev.clientX - r.left;
+    let best = -1, bd = 22;
+    active().forEach((hz, i) => { const d = Math.abs(m.x(hz) - px); if (d < bd) { bd = d; best = i; } });
+    return best;
+  };
+  cv.addEventListener('pointerdown', (ev) => {
+    const i = hit(ev);
+    if (i < 0) return;
+    drag = i; st.sel = i; cv.setPointerCapture(ev.pointerId); cv.focus({ preventScroll: true }); render();
+  });
+  cv.addEventListener('pointermove', (ev) => {
+    if (drag < 0) return;
+    setFreq(drag, toF(ev)); render();
+  });
+  const end = () => { drag = -1; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('keydown', (ev) => {
+    const big = ev.shiftKey ? 10 : 1;
+    if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      setFreq(st.sel, st.freqs[st.sel] + (ev.key === 'ArrowRight' ? 1 : -1) * GRID * big); centerOnIfOut(st.freqs[st.sel]); render();
+    } else if (ev.key === 'Tab') { /* leave */ }
+    else if (/^[1-8]$/.test(ev.key) && +ev.key <= st.n) { st.sel = +ev.key - 1; centerOnIfOut(st.freqs[st.sel]); render(); }
+  });
+  const ov = $('over');
+  const moveWin = (ev) => {
+    const r = ov.getBoundingClientRect();
+    const f = BAND.lo + ((ev.clientX - r.left - 6) / (r.width - 12)) * (BAND.hi - BAND.lo);
+    centerOn(f); drawAll();
+  };
+  let od = false;
+  ov.addEventListener('pointerdown', (ev) => { od = true; ov.setPointerCapture(ev.pointerId); moveWin(ev); });
+  ov.addEventListener('pointermove', (ev) => { if (od) moveWin(ev); });
+  ov.addEventListener('pointerup', () => { od = false; });
+  ov.addEventListener('pointercancel', () => { od = false; });
+})();
+
+/* controls */
+$('s-n').addEventListener('input', (e) => { st.n = +e.target.value; if (st.sel >= st.n) st.sel = st.n - 1; render(); });
+$('s-clear').addEventListener('input', (e) => { st.clearance = +e.target.value; render(); renderGolomb(); });
+$('s-wid').addEventListener('input', (e) => { st.width = +e.target.value; clampWindow(); render(); });
+$('s-tv').addEventListener('change', (e) => { st.preset = e.target.value; render(); });
+$('n-freq').addEventListener('change', (e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) { setFreq(st.sel, v); centerOnIfOut(st.freqs[st.sel]); render(); } });
+$('b-minus').addEventListener('click', () => { setFreq(st.sel, st.freqs[st.sel] - GRID); centerOnIfOut(st.freqs[st.sel]); render(); });
+$('b-plus').addEventListener('click', () => { setFreq(st.sel, st.freqs[st.sel] + GRID); centerOnIfOut(st.freqs[st.sel]); render(); });
+
+Object.entries(PRESETS).forEach(([k, p]) => { const o = document.createElement('option'); o.value = k; o.textContent = p.label; $('s-tv').appendChild(o); });
+
+function placeAll(arr, note) {
+  arr.forEach((f, i) => { st.freqs[i] = +snap(f).toFixed(3); });
+  centerOn((Math.min(...arr) + Math.max(...arr)) / 2);
+  render();
+  if (note) $('verdict').textContent += ' ' + note;
+}
+
+$('b-auto').addEventListener('click', () => {
+  const r = coordinate(st.n, freeRanges(blocked()), { clearance: st.clearance, minSpacing: minSpacing() });
+  if (r.ok) placeAll(r.freqs, 'Auto-coordinate placed them lowest-first; a Golomb layout would be tighter.');
+  else { render(); $('verdict').className = 'verdict bad'; $('verdict').textContent = 'No clean plan found in the free spectrum. Try fewer mics, a smaller clearance, or fewer TV stations.'; }
+});
+$('b-even').addEventListener('click', () => {
+  const c = (st.start + st.width / 2), step = 0.5;
+  placeAll(Array.from({ length: st.n }, (_, i) => c + (i - (st.n - 1) / 2) * step), 'Even spacing is the trap: every product lands on the next carrier.');
+});
+$('b-golomb').addEventListener('click', () => {
+  const g = st.n === 1 ? [0] : GOLOMB[st.n];
+  const span = g[g.length - 1] * st.clearance;
+  // first free stretch of spectrum long enough for the ruler, else the zoom window (and the TV warning says why)
+  const room = freeRanges(blocked()).find(([a, b]) => b - a - 0.2 >= span);
+  const base = room ? room[0] + 0.1 : Math.min(st.start + 0.2, BAND.hi - 0.1 - span);
+  placeAll(g.map((m) => base + m * st.clearance), room ? 'Golomb layout: no two gaps are equal.' : 'No TV-free stretch is wide enough for the ruler, so it overlaps a station.');
+});
+$('b-rand').addEventListener('click', () => {
+  const lo = st.start + 0.2, hi = st.start + st.width - 0.2;
+  placeAll(Array.from({ length: st.n }, () => lo + Math.random() * (hi - lo)));
+});
+
+/* ─────────── 3 · scaling chart ─────────── */
+function drawScale() {
+  const { ctx, width: W, height: H } = scaleC;
+  ctx.clearRect(0, 0, W, H);
+  const padL = 36, padB = 24, padT = 12, padR = 8, N = 16;
+  const maxV = productCounts(N).total;
+  const bw = (W - padL - padR) / N;
+  const y = (v) => padT + (1 - v / maxV) * (H - padT - padB);
+  ctx.font = '10px system-ui, sans-serif'; ctx.fillStyle = C.text; ctx.strokeStyle = C.grid; ctx.textAlign = 'right';
+  [0, 500, 1000, 1500, 2000].forEach((v) => {
+    if (v > maxV) return;
+    ctx.beginPath(); ctx.moveTo(padL, y(v)); ctx.lineTo(W - padR, y(v)); ctx.stroke(); ctx.fillText(v, padL - 4, y(v) + 3);
+  });
+  const sel = +$('s-count').value;
+  for (let n = 1; n <= N; n++) {
+    const c = productCounts(n), x0 = padL + (n - 1) * bw + 2, w = bw - 4;
+    ctx.fillStyle = n === sel ? C.amber : C.orange; ctx.globalAlpha = n === sel ? 1 : 0.7;
+    ctx.fillRect(x0, y(c.two), w, y(0) - y(c.two));
+    ctx.fillStyle = n === sel ? '#fff' : C.teal;
+    ctx.fillRect(x0, y(c.total), w, y(c.two) - y(c.total));
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = n === sel ? '#fff' : C.text; ctx.textAlign = 'center';
+    ctx.fillText(n, x0 + w / 2, H - 8);
+  }
+  ctx.textAlign = 'left'; ctx.fillStyle = C.orange; ctx.fillText('■ 2fa − fb', padL + 6, padT + 8);
+  ctx.fillStyle = C.teal; ctx.fillText('■ fa + fb − fc', padL + 76, padT + 8);
+}
+function updateCount() {
+  const n = +$('s-count').value, c = productCounts(n);
+  $('v-count').textContent = n;
+  $('o-count').innerHTML = '<strong>' + n + ' mic' + (n === 1 ? '' : 's') + '</strong> make ' + c.two + ' two-carrier products and ' + c.three + ' three-carrier products: <strong>' + c.total + '</strong> places for noise to land. Double the mics and the count rises roughly eight times.';
+  drawScale();
+}
+$('s-count').addEventListener('input', updateCount);
+
+/* ─────────── 4 · Golomb table ─────────── */
+function renderGolomb() {
+  const tb = document.querySelector('#golomb-table tbody');
+  tb.innerHTML = '';
+  for (let n = 2; n <= 10; n++) {
+    const marks = GOLOMB[n], span = marks[marks.length - 1] * st.clearance;
+    const tr = document.createElement('tr');
+    if (n === 8) tr.className = 'me';
+    tr.innerHTML = '<td>' + n + '</td><td>' + marks.join(', ') + '</td><td>' + span.toFixed(2) + ' MHz</td><td>' + (span / 6).toFixed(2) + '</td>';
+    tb.appendChild(tr);
+  }
+}
+
+/* ─────────── quiz ─────────── */
+const QUIZ = [
+  { q: 'A bodypack\'s antenna is about 15 cm long. Why that length?', o: ['It is a quarter of a wavelength at UHF frequencies.', 'Longer antennas are illegal.', 'It is the length that stores the most battery.'], a: 0, why: 'At 500 MHz the wavelength is 60 cm, and a quarter-wave antenna is 15 cm.' },
+  { q: 'You set 8 mics to 8 different channels and one still hisses. What is the likeliest cause?', o: ['The mics are in different time zones.', 'Intermodulation products from other mics landing in its channel.', 'Wireless mics can only run in groups of four.'], a: 1, why: 'Different channels don\'t guarantee a clean link. Nonlinear mixing makes new frequencies, and one can land on a carrier.' },
+  { q: 'Mics at 500.0, 500.5 and 501.0 MHz. Which product lands exactly on a carrier?', o: ['2(500.5) − 500.0 = 501.0', '500.0 + 501.0 = 1001', '500.5 ÷ 2 = 250.25'], a: 0, why: 'Evenly spaced carriers form an arithmetic progression, so 2fb − fa equals the next one.' },
+  { q: 'How many third-order products do 8 mics create (both kinds, per this lesson)?', o: ['16', '56', '224'], a: 2, why: '8×7 = 56 products of the form 2fa − fb, plus 8×7×6÷2 = 168 of the form fa + fb − fc: 224 in total.' },
+  { q: 'What makes a layout intermod-free in this model?', o: ['Every gap between any two carriers is different (a Golomb ruler).', 'All carriers sit as close together as possible.', 'All carriers are multiples of 1 MHz.'], a: 0, why: 'A product only lands on a carrier when two gaps are equal. Unique gaps remove every collision.' },
+  { q: 'A rehearsal in an empty hall is clean, but the show has a collision. What changed?', o: ['The audience adds more TV stations.', 'Another transmitter or a new TV signal arrived in the band.', 'The mic frequencies drift every hour.'], a: 1, why: 'Scan again at the venue with everything on. New devices (in-ears, an LED wall, a nearby station) change the room\'s RF.' },
+  { q: 'Where do you mount receiver antennas?', o: ['Behind the rack, next to a metal cabinet.', 'In sight of the stage, clear of metal, ideally shared through an antenna distribution box.', 'Under the stage floor, so they\'re hidden.'], a: 1, why: 'UHF is blocked by bodies and metal. A clear line of sight keeps the signal strong.' },
+];
+(function () {
+  let i = 0, score = 0, answered = false;
+  const q = $('quiz-q'), opts = $('quiz-opts'), why = $('quiz-why'), next = $('quiz-next'), sc = $('quiz-score');
+  function show() {
+    answered = false; why.textContent = ''; next.hidden = true;
+    const item = QUIZ[i];
+    q.textContent = (i + 1) + ' / ' + QUIZ.length + ' · ' + item.q;
+    opts.innerHTML = '';
+    item.o.forEach((t, k) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'quiz-opt'; b.textContent = t;
+      b.addEventListener('click', () => {
+        if (answered) return;
+        answered = true;
+        const ok = k === item.a;
+        if (ok) score++;
+        b.classList.add(ok ? 'right' : 'wrong');
+        if (!ok) opts.children[item.a].classList.add('right');
+        Array.from(opts.children).forEach((c) => { c.disabled = true; });
+        why.textContent = (ok ? '✔ ' : '✘ ') + item.why;
+        sc.textContent = 'Score: ' + score + ' / ' + (i + 1);
+        next.textContent = i === QUIZ.length - 1 ? 'See result' : 'Next question →';
+        next.hidden = false;
+      });
+      opts.appendChild(b);
+    });
+  }
+  let done = false;
+  next.addEventListener('click', () => {
+    if (done) { i = 0; score = 0; done = false; sc.textContent = ''; show(); return; }
+    if (i < QUIZ.length - 1) { i++; show(); return; }
+    done = true;
+    q.textContent = 'Finished: ' + score + ' / ' + QUIZ.length + (score === QUIZ.length ? '. Ready to coordinate a rig.' : '. Review the sections above and try again.');
+    opts.innerHTML = ''; why.textContent = ''; next.textContent = 'Try again';
+  });
+  show();
+})();
+
+centerOn(501.25);
+renderGolomb();
+updateCount();
+render();
+</script>
+<script src="../../../assets/js/classroom-animations.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>
