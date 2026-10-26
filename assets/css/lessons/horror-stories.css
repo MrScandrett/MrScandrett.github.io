@@ -1,0 +1,326 @@
+/* Horror in Literature: each story shelf entry is a themed "chapter".
+   horror-in-literature.css owns the page; this file owns the 18 work cards.
+   A chapter reads its look from custom properties set once per [data-story]:
+     --s1/--s2 banner gradient   --panel/--panel2 body + inset surfaces
+     --ink/--muted text          --accent links, rules, buttons
+     --hink/--hmeta title + byline   --font/--tt/--ls/--fv title treatment
+     --motif illustration (assets/images/lessons/horror-in-literature/motifs)
+     --fig-filter treatment for the story's plate
+   Screen only: print keeps the plain card from horror-in-literature.css. */
+@media screen {
+  .horror-list { grid-template-columns:minmax(0,1fr); gap:1.9rem; }
+
+  .horror-work[data-story] {
+    --s1:#2a1840; --s2:#14101c; --panel:#211b27; --panel2:#2d2432;
+    --ink:#f6eddf; --muted:#d2c1c4; --accent:#ffc47a; --hink:#ffd08c; --hmeta:#e6d2b0;
+    --font:Fraunces,Georgia,serif; --tt:none; --ls:-.01em; --fv:normal; --fw:600;
+    --fig-bg:#f4ecd8; --fig-line:#cdbf9c; --fig-filter:sepia(.35) contrast(1.05);
+    --motif:none; --motif-w:min(30%,230px);
+    display:block; padding:0; overflow:hidden;
+    background:var(--panel); color:var(--ink);
+    border:1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-top-width:1px;
+    border-radius:4px; box-shadow:0 22px 44px -26px #000;
+  }
+
+  /* Banner: gradient + the story's own illustration, title in the story's own voice. */
+  .story-head {
+    position:relative; isolation:isolate; overflow:hidden; min-height:190px;
+    display:flex; flex-direction:column; justify-content:flex-end;
+    padding:clamp(1.3rem,3vw,2.1rem) clamp(1.2rem,3vw,2.3rem);
+    padding-right:calc(var(--motif-w) + 2.5rem);
+    background:linear-gradient(118deg,var(--s1),var(--s2));
+    border-bottom:3px solid var(--accent);
+  }
+  .story-head::after {
+    content:""; position:absolute; z-index:-1; right:clamp(.5rem,2.5vw,1.8rem); bottom:-10px; top:8px;
+    width:var(--motif-w); background:var(--motif) right bottom / contain no-repeat;
+    transform-origin:50% 60%;
+  }
+  .horror-page .horror-main .horror-work[data-story] .story-head h3 {
+    font-family:var(--font) !important; font-weight:var(--fw); font-variant:var(--fv);
+    font-size:var(--fsize,clamp(1.75rem,4.2vw,3.1rem)); line-height:1.04; letter-spacing:var(--ls);
+    text-transform:var(--tt); color:var(--hink); margin:0 0 .45rem; padding:0; border:0;
+    text-wrap:balance; text-shadow:var(--tshadow,0 2px 18px #0009);
+  }
+  .horror-page .horror-main .horror-work[data-story] .horror-meta {
+    color:var(--hmeta); margin:0; max-width:52ch; font-size:.9rem;
+  }
+
+  /* Body: text left, plate right (no plate: full width). */
+  .horror-work[data-story] > .story-body { padding:1.5rem clamp(1.2rem,3vw,2.3rem) .4rem; }
+  .horror-work[data-story] > .story-body:has(> .horror-fig) {
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(210px,300px); column-gap:2rem; align-items:start;
+  }
+  .horror-work[data-story] .story-body > :not(.horror-fig):not(.horror-landscape-fig) { grid-column:1; max-width:68ch; }
+  .horror-work[data-story] .story-body > p { margin:.5rem 0; font-size:1.02rem; }
+  .horror-work[data-story] .story-body > .horror-fig {
+    grid-column:2; grid-row:1 / span 6; float:none; width:100%; margin:0;
+    background:var(--fig-bg); border:1px solid var(--fig-line); border-radius:2px;
+    box-shadow:0 14px 28px -12px #000c;
+  }
+  .horror-work[data-story] .horror-fig img { filter:var(--fig-filter); }
+  .horror-work[data-story] .horror-fig figcaption { border-top-color:var(--fig-line); }
+
+  /* Landscape synopsis picture box below description and portrait plate */
+  .horror-work[data-story] .horror-landscape-fig {
+    grid-column: 1 / -1;
+    margin: 1.4rem 0 .5rem;
+    padding: 0;
+    background: var(--panel2);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 16px 36px -16px #000c;
+  }
+  .horror-work[data-story] .horror-landscape-fig img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    filter: none !important;
+  }
+  .horror-work[data-story] .horror-landscape-fig figcaption {
+    padding: .8rem 1.1rem;
+    font-size: .9rem;
+    line-height: 1.5;
+    background: color-mix(in srgb, var(--panel2) 90%, black);
+    border-top: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--ink);
+  }
+  .horror-work[data-story] .horror-landscape-fig figcaption strong {
+    color: var(--accent);
+  }
+  .horror-work[data-story] .horror-landscape-fig figcaption em {
+    font-style: italic;
+  }
+
+  /* Bible section landscape plate styling */
+  .horror-scripture .horror-landscape-fig {
+    margin: 1.2rem 0 .5rem;
+    padding: 0;
+    background: rgba(0,0,0,.3);
+    border: 1px solid var(--h-rule, rgba(255,255,255,.15));
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 12px 28px -12px #000c;
+  }
+  .horror-scripture .horror-landscape-fig img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+    filter: none !important;
+  }
+  .horror-scripture .horror-landscape-fig figcaption {
+    padding: .75rem 1rem;
+    font-size: .88rem;
+    line-height: 1.5;
+    background: rgba(0,0,0,.45);
+    border-top: 1px solid var(--h-rule, rgba(255,255,255,.15));
+    color: var(--h-ink, #f5f2eb);
+  }
+  .horror-scripture .horror-landscape-fig figcaption strong {
+    color: var(--h-gold, #f5d78e);
+  }
+  .horror-work[data-story] .horror-prompt {
+    margin:1rem 0 .5rem; padding:.75rem 1rem; border:0; border-left:4px solid var(--accent);
+    background:var(--panel2); border-radius:0 3px 3px 0;
+  }
+  .horror-work[data-story] .horror-prompt strong { color:var(--accent); }
+  .horror-work[data-story] .horror-content { color:var(--muted); font-size:.86rem; }
+
+  .horror-work[data-story] > div:not(.story-body) { padding:.4rem clamp(1.2rem,3vw,2.3rem) 1.6rem; }
+  .horror-work[data-story] a { color:var(--accent); }
+  .horror-work[data-story] a:hover { filter:brightness(1.2); }
+  .horror-work[data-story] .horror-drawer-toggle {
+    background:var(--panel2); color:var(--ink); border-color:var(--accent);
+  }
+  .horror-work[data-story] .horror-drawer-toggle:hover { background:var(--accent); color:var(--panel); }
+  .horror-work[data-story] .horror-drawer {
+    background:var(--panel2); border:1px dashed var(--accent); border-radius:3px; color:var(--ink);
+  }
+  .horror-work[data-story] .horror-drawer blockquote { color:var(--ink); }
+  .horror-work[data-story] .horror-drawer small { color:var(--muted); }
+  .horror-work[data-story] :focus-visible { outline-color:var(--accent); }
+
+  /* ——— Gothic & moral dread ——— */
+  .horror-work[data-story="sleepy-hollow"] {
+    --s1:#2c1a44; --s2:#6a3416; --panel:#1f1727; --panel2:#2c2036; --accent:#ff9f45;
+    --hink:#ffb866; --hmeta:#f3d5b0; --tshadow:0 0 26px #ff8a2a99,0 2px 12px #000a; --motif:url("../../images/lessons/horror-in-literature/motifs/sleepy-hollow.svg");
+  }
+  
+  .horror-work[data-story="monkeys-paw"] {
+    --s1:#1a120a; --s2:#4a2d12; --panel:#17110c; --panel2:#251a10; --accent:#f0b35a;
+    --hink:#f0d9a8; --hmeta:#d9bf8c; --font:Georgia,"Times New Roman",serif; --fw:400; --ls:.005em;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/monkeys-paw.svg");
+  }
+  .horror-work[data-story="monkeys-paw"] h3 { font-style:italic; }
+
+  .horror-work[data-story="tell-tale-heart"] {
+    --s1:#050203; --s2:#3a060c; --panel:#120709; --panel2:#220c10; --accent:#ff6b72;
+    --hink:#ff8a90; --hmeta:#f0c4c6; --tt:uppercase; --ls:.07em; --fw:700; --muted:#e0b9bc;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/tell-tale-heart.svg");
+  }
+  .horror-work[data-story="tell-tale-heart"] .story-head::after { animation:horror-thump 1.15s ease-in-out infinite; }
+
+  .horror-work[data-story="usher"] {
+    --s1:#17201d; --s2:#3b4d46; --panel:#121917; --panel2:#1d2825; --accent:#b9d6a4;
+    --hink:#dfe9b0; --hmeta:#bcd0c6; --fv:small-caps; --ls:.12em; --fw:500; --muted:#bccbc4;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/usher.svg");
+    --fig-filter:grayscale(.55) contrast(1.05);
+  }
+
+  .horror-work[data-story="conqueror-worm"] {
+    --s1:#240509; --s2:#7a1423; --panel:#190a0d; --panel2:#2a1217; --accent:#ff7d8c;
+    --hink:#ffd9a0; --hmeta:#f3c9cd; --ls:.01em; --fw:500; --motif-w:min(34%,260px);
+    --motif:url("../../images/lessons/horror-in-literature/motifs/conqueror-worm.svg");
+  }
+  .horror-work[data-story="conqueror-worm"] h3 { font-style:italic; }
+  .horror-work[data-story="conqueror-worm"] .horror-drawer blockquote { font-style:italic; }
+
+  .horror-work[data-story="never-bet"] {
+    --s1:#1b0b27; --s2:#55267a; --panel:#170e1f; --panel2:#251833; --accent:#e8c24a;
+    --hink:#f4dc86; --hmeta:#e1caef; --muted:#d3c3de;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/never-bet.svg");
+  }
+  .horror-work[data-story="never-bet"] h3 { font-style:italic; transform:rotate(-1deg); transform-origin:left bottom; }
+
+  .horror-work[data-story="goodman-brown"] {
+    --s1:#06130d; --s2:#1d4130; --panel:#0c1712; --panel2:#15271e; --accent:#ff8fb8;
+    --hink:#ffb3cf; --hmeta:#c8e0d2; --muted:#bdd3c6;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/goodman-brown.svg");
+  }
+
+  .horror-work[data-story="daniel-webster"] {
+    --s1:#0f1b2e; --s2:#2b4263; --panel:#0e1624; --panel2:#18253a; --accent:#e8c76a;
+    --hink:#f0d78a; --hmeta:#c5d3e6; --muted:#b9c8dc; --tt:uppercase; --ls:.08em; --fw:600;
+    --font:Georgia,"Times New Roman",serif;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/daniel-webster.svg");
+  }
+
+  .horror-work[data-story="yellow-wallpaper"] {
+    --s1:#e3c418; --s2:#c9a700; --panel:#f6efb8; --panel2:#ecdf8a; --ink:#2a2000; --muted:#4d3f00;
+    --accent:#6b4f00; --tshadow:none; --hink:#2a1d00; --hmeta:#3d2f00; --fw:500;
+    --fig-bg:#fff9d6; --fig-line:#8a6a00; --fig-filter:sepia(.5) saturate(1.2);
+    --motif:url("../../images/lessons/horror-in-literature/motifs/yellow-wallpaper.svg");
+  }
+  .horror-work[data-story="yellow-wallpaper"] h3 { font-style:italic; }
+  .horror-work[data-story="yellow-wallpaper"] .story-head { border-bottom-color:#6b4f00; }
+  .horror-work[data-story="yellow-wallpaper"] .story-head::after {
+    inset:0; width:auto; background-size:120px 120px; background-position:0 0; background-repeat:repeat; opacity:.5;
+    -webkit-mask:linear-gradient(90deg,transparent 0,#000 55%); mask:linear-gradient(90deg,transparent 0,#000 55%);
+  }
+  .horror-work[data-story="yellow-wallpaper"] .story-body > .horror-fig { box-shadow:0 12px 24px -14px #4d3f00; }
+  .horror-work[data-story="yellow-wallpaper"] .horror-fig figcaption { color:#2a2000; }
+
+  .horror-work[data-story="lottery"] {
+    --s1:#fff3c4; --s2:#bfe0f7; --panel:#f6f1e4; --panel2:#e6dfcb; --ink:#1b1b1b; --muted:#444;
+    --accent:#111; --hink:#111; --hmeta:#2c2c2c; --font:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    --tt:uppercase; --ls:.14em; --fw:700; --tshadow:none; --fsize:clamp(1.5rem,3.6vw,2.6rem);
+    --fig-bg:#fff; --fig-line:#111; --fig-filter:grayscale(.2);
+    --motif:url("../../images/lessons/horror-in-literature/motifs/lottery.svg");
+  }
+  .horror-work[data-story="lottery"] .story-head { border-bottom:10px solid #111; }
+  .horror-work[data-story="lottery"] .horror-drawer blockquote { font-family:"JetBrains Mono",ui-monospace,monospace !important; font-style:normal; font-size:.92rem; }
+  .horror-work[data-story="lottery"] .horror-drawer-toggle:hover { color:#fff; background:#111; }
+  .horror-work[data-story="lottery"] a { text-decoration-thickness:2px; }
+
+  /* ——— Sci-fi & speculative dread ——— */
+  .horror-work[data-story="frankenstein"] {
+    --s1:#020f14; --s2:#0c4251; --panel:#091519; --panel2:#10262d; --accent:#6fe9f7;
+    --hink:#aef6ff; --tshadow:0 0 22px #3fd8ec88,0 2px 10px #000a; --hmeta:#bfe4ea; --muted:#b4d2d8; --tt:uppercase; --ls:.1em; --fw:600;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/frankenstein.svg");
+    --fig-filter:grayscale(.4) contrast(1.1);
+  }
+  .horror-work[data-story="frankenstein"] .story-head::before {
+    content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(circle at 80% 30%,#d8fcff,#6fe9f755 40%,transparent 70%);
+    opacity:0; animation:horror-flash 8s linear infinite; pointer-events:none;
+  }
+
+  .horror-work[data-story="birth-mark"] {
+    --s1:#fde8e1; --s2:#f0b9b9; --panel:#fcf0eb; --panel2:#f5dcd6; --ink:#3a1a20; --muted:#5b3037;
+    --accent:#a10f2a; --tshadow:none; --hink:#7b0f22; --hmeta:#5b2630; --fw:500;
+    --fig-bg:#fff7f3; --fig-line:#b9696f; --fig-filter:sepia(.25);
+    --motif:url("../../images/lessons/horror-in-literature/motifs/birth-mark.svg");
+  }
+  .horror-work[data-story="birth-mark"] h3 { font-style:italic; }
+  .horror-work[data-story="birth-mark"] .story-head { border-bottom-color:#a10f2a; }
+  .horror-work[data-story="birth-mark"] .horror-fig figcaption { color:#3a1a20; }
+
+  .horror-work[data-story="war-of-worlds"] {
+    --s1:#1e0905; --s2:#7a2812; --panel:#170d0a; --panel2:#26140f; --accent:#ff9a5c;
+    --hink:#ffb48a; --hmeta:#f0cdb9; --muted:#e0c2b2; --tt:uppercase; --ls:.04em; --fw:800;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/war-of-worlds.svg"); --motif-w:min(34%,260px);
+  }
+
+  .horror-work[data-story="invisible-man"] {
+    --s1:#18222a; --s2:#3f505d; --panel:#131b21; --panel2:#1f2b34; --accent:#aac4d6;
+    --hink:#e4edf3; --hmeta:#c5d4de; --muted:#b9c9d4; --ls:.16em; --fw:300;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/invisible-man.svg");
+    --fig-filter:grayscale(.7);
+  }
+  .horror-work[data-story="invisible-man"] .story-head::before {
+    content:""; position:absolute; inset:-20% -10%; z-index:-1; pointer-events:none; opacity:.35;
+    background:radial-gradient(ellipse at 20% 70%,#dbe6ee66,transparent 55%),radial-gradient(ellipse at 75% 40%,#dbe6ee55,transparent 50%);
+    animation:horror-fog 14s ease-in-out infinite alternate;
+  }
+
+  /* ——— Forensic, conscience & true crime ——— */
+  .horror-work[data-story="captain-white"] {
+    --s1:#0e0507; --s2:#3a111a; --panel:#140a0d; --panel2:#24131a; --accent:#d9a87a;
+    --hink:#ecd1ab; --hmeta:#d9bea0; --muted:#d3bfae; --font:Georgia,"Times New Roman",serif; --fw:400; --ls:.01em;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/captain-white.svg");
+    --fig-filter:sepia(.5) contrast(1.05);
+  }
+
+  .horror-work[data-story="edalji"] {
+    --s1:#141a20; --s2:#34424e; --panel:#10151a; --panel2:#1b242c; --accent:#ffd36e;
+    --hink:#ffd36e; --hmeta:#c7d1da; --muted:#b9c4ce; --tt:uppercase; --ls:.06em; --fw:700;
+    --font:"JetBrains Mono",ui-monospace,Menlo,monospace; --fsize:clamp(1.4rem,3.2vw,2.3rem);
+    --motif:url("../../images/lessons/horror-in-literature/motifs/edalji.svg");
+    --fig-filter:grayscale(.85) contrast(1.1);
+  }
+  .horror-work[data-story="edalji"] .horror-drawer blockquote { font-family:"JetBrains Mono",ui-monospace,monospace !important; font-size:.9rem; font-style:normal; }
+
+  .horror-work[data-story="rebecca-nurse"] {
+    --s1:#080808; --s2:#2a2a2a; --panel:#131313; --panel2:#202020; --accent:#d6b34a;
+    --hink:#ece4cf; --hmeta:#cfc7b2; --muted:#c4bda9; --font:Georgia,"Times New Roman",serif; --fw:700; --ls:.02em;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/rebecca-nurse.svg");
+    --fig-filter:grayscale(.9) contrast(1.1);
+  }
+  .horror-work[data-story="rebecca-nurse"] .story-head { border-bottom-style:double; border-bottom-width:6px; }
+
+  .horror-work[data-story="mary-celeste"] {
+    --s1:#03111a; --s2:#0f4152; --panel:#061419; --panel2:#0d2229; --accent:#7fd0e0;
+    --hink:#c4eaf1; --hmeta:#b2d6de; --muted:#a9cbd3; --font:Georgia,"Times New Roman",serif; --fw:400;
+    --motif:url("../../images/lessons/horror-in-literature/motifs/mary-celeste.svg"); --motif-w:min(32%,250px);
+  }
+  .horror-work[data-story="mary-celeste"] h3 { font-style:italic; }
+  .horror-work[data-story="mary-celeste"] .story-head::after { animation:horror-bob 6s ease-in-out infinite alternate; }
+
+  .horror-work[data-story="monkeys-paw"] .story-head::after { animation:horror-candle 3.4s ease-in-out infinite; }
+
+  @keyframes horror-thump {
+    0%,100% { transform:scale(1); } 10% { transform:scale(1.07); } 20% { transform:scale(1); }
+    32% { transform:scale(1.1); } 46% { transform:scale(1); }
+  }
+  @keyframes horror-flash {
+    0%,92%,95.5%,100% { opacity:0; } 93% { opacity:.55; } 94% { opacity:.1; } 95% { opacity:.7; }
+  }
+  @keyframes horror-fog { from { transform:translateX(-4%); } to { transform:translateX(5%); } }
+  @keyframes horror-bob { from { transform:translateY(-3px) rotate(-1.2deg); } to { transform:translateY(4px) rotate(1.2deg); } }
+  @keyframes horror-candle { 0%,100% { opacity:1; } 30% { opacity:.86; } 55% { opacity:.97; } 75% { opacity:.8; } }
+
+  @media (max-width:880px) {
+    .horror-work[data-story] > .story-body:has(> .horror-fig) { grid-template-columns:minmax(0,1fr); }
+    .horror-work[data-story] .story-body > .horror-fig { grid-column:1; grid-row:auto; max-width:340px; margin:.5rem 0 1rem; order:-1; }
+  }
+  @media (max-width:640px) {
+    .horror-work[data-story] { --motif-w:96px; }
+    .story-head { padding-right:calc(var(--motif-w) + 1.4rem); min-height:150px; }
+    .horror-work[data-story] .story-body > p { font-size:1rem; }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .story-head::before, .story-head::after { animation:none !important; }
+  }
+}
