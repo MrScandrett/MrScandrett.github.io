@@ -1875,7 +1875,7 @@
           </figure></div>
           <span class="p3d-icon">🛏️</span>
           <h3>Bed Tramming: The 0.1 mm Paper Test</h3>
-          <p>On printers with adjustable bed screws, <strong>tramming</strong> aligns the bed with the printhead's travel. A paper-gap check can be a starting method on those machines, but paper thickness and the correct procedure vary. Follow the printer's own calibration instructions; do not assume the classroom SKETCH Large has manual corner screws or student-adjustable Z-offset controls.</p>
+          <p>On printers with adjustable bed screws, <strong>tramming</strong> aligns the bed with the printhead's travel. A paper-gap check can be a starting method on those machines, but paper thickness and the correct procedure vary. Follow the printer's own calibration instructions; the SKETCH Large has no corner screws to turn: it sets nozzle height with a paper test under Settings → Utilities → Calibration (see the Operator's Manual below).</p>
         </div>
 
         <div class="p3d-block">
@@ -2556,6 +2556,306 @@
       </div>
     </div>
 
+    <!-- ══ CLASS PRINTER OPERATIONS: SKETCH LARGE + ULTIMAKER SLICING ══ -->
+    <div class="p3d-card" id="sketch-large-operations">
+      <p class="p3d-label">11b — Running the Class Printer</p>
+      <h2>Operator's Manual: MakerBot SKETCH Large</h2>
+      <p>This is everything you need to run the class <strong>MakerBot SKETCH Large</strong> on your own when the teacher is away: start it, prepare and start a print, change filament, take the print off, keep the machine healthy, and fix the problems that come up. It is written from MakerBot's own SKETCH Large user manual and support pages. The printer has a 220 × 200 × 250 mm build volume, a 0.4 mm stainless-steel nozzle, a heated removable build plate, and a camera.</p>
+      <div class="p3d-callout warn"><strong>Screen beats paper.</strong> If this page and the printer's touchscreen ever disagree, follow the touchscreen: MakerBot updates it more often than any manual. If the screen tells you something this page doesn't cover, read it, do what it says, and write it in the log.</div>
+
+      <p style="margin-bottom:.3rem"><strong>Jump to:</strong>
+        <a href="#slo-rules">The rules</a> ·
+        <a href="#slo-parts">Parts</a> ·
+        <a href="#slo-start">Start-up</a> ·
+        <a href="#slo-file">Prepare a file</a> ·
+        <a href="#slo-print">Run a print</a> ·
+        <a href="#slo-after">After a print</a> ·
+        <a href="#slo-material">Filament</a> ·
+        <a href="#slo-cal">Calibrate</a> ·
+        <a href="#slo-maint">Maintenance</a> ·
+        <a href="#slo-trouble">Troubleshooting</a> ·
+        <a href="#slo-stop">When to stop</a> ·
+        <a href="#slo-slicers">CloudPrint vs. Cura</a></p>
+
+      <h3 id="slo-rules">The operator rules</h3>
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <div class="p3d-block">
+          <h3>Who may do what</h3>
+          <ul>
+            <li><strong>Any trained student:</strong> start-up, send and start a print, watch it, pause or cancel it, take the print off, clean the plate, load and unload filament, run calibration, shut down, write the log.</li>
+            <li><strong>Lead operator only</strong> (a student named by the teacher, with a second person present): removing or installing the extruder and the monthly guide-rod grease. Steps are in the Maintenance section.</li>
+            <li><strong>Never:</strong> factory reset, firmware update, changing Wi-Fi or accounts, opening the printer's covers, bypassing a sensor, or using a knife or metal scraper on the plate. The teacher does those.</li>
+          </ul>
+        </div>
+        <div class="p3d-block">
+          <h3>Always</h3>
+          <ul>
+            <li>Two people present when the printer is running; one stays in the room for the whole print.</li>
+            <li>Watch the first few layers of every print, every time.</li>
+            <li>Only MakerBot PLA for Sketch or MakerBot Tough filament. No other filament, no mystery spools.</li>
+            <li>Nozzle and plate are hot (the plate can reach 110 °C). Wait for the plate to cool before touching it.</li>
+            <li>Keep hair, sleeves, lanyards and fingers out of the moving gantry. Keep the front door closed while printing.</li>
+            <li>Leave the room's ventilation on. The printer has a particle filter, but fumes and fine particles are still released.</li>
+            <li>Print in the room's normal range: the printer is rated for 15–30 °C and 10–70% humidity, not condensing.</li>
+          </ul>
+        </div>
+        <div class="p3d-block">
+          <h3>If anything is hot, burning, smoking or sparking</h3>
+          <p><strong>Flip the power switch off</strong> (bottom right side of the printer), unplug it if you can do so safely, move people back, and tell an adult in the building. Do not try to fix it. Do not use water on it.</p>
+        </div>
+      </div>
+
+      <h3 id="slo-parts">Know the machine</h3>
+      <div style="overflow-x:auto">
+      <table class="p3d-setting-table">
+        <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Power switch</td><td>Bottom right side. Toggle to turn the printer on or off.</td></tr>
+          <tr><td>Touchscreen</td><td>4.3 in color screen, upper right. Home screen has three icons: <strong>PRINT</strong>, <strong>MATERIAL</strong>, <strong>SETTINGS</strong>.</td></tr>
+          <tr><td>USB flash drive port</td><td>Under the touchscreen. The USB drive must be formatted <strong>FAT32</strong>; an NTFS drive will not show up.</td></tr>
+          <tr><td>Extruder</td><td>The removable print head: it pulls filament in, melts it, and pushes it out of the nozzle. It clips into the carriage and has two release buttons or clips on its sides.</td></tr>
+          <tr><td>Guide tube &amp; connector</td><td>Plastic tube that carries filament from the spool enclosure to the extruder.</td></tr>
+          <tr><td>Spool enclosure, hub, material port</td><td>Where the spool sits and the filament enters the tube.</td></tr>
+          <tr><td>Heated removable build plate</td><td>Flexible plate with the <strong>Grip Surface</strong>. Bend it to pop a print off.</td></tr>
+          <tr><td>Camera</td><td>Lets you watch from CloudPrint. The camera and USB port cannot be used at the same time (see Settings → Utilities → Camera).</td></tr>
+          <tr><td>Front door</td><td>Keep closed while printing.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3 id="slo-start">1 · Start-up checklist (every session)</h3>
+      <ol>
+        <li><strong>Look first.</strong> Read the last lines of the log. Is a problem noted? Is the printer marked down? If so, stop here and do not print.</li>
+        <li><strong>Check the room.</strong> Table steady, nothing leaning on or behind the printer, no fan blowing on it, ventilation on, area around it clear.</li>
+        <li><strong>Power on</strong> with the switch on the bottom right side. Wait for the home screen with PRINT, MATERIAL, SETTINGS.</li>
+        <li><strong>Check the spool.</strong> Is there enough filament for your print? A 1 kg spool is about 1000 g; CloudPrint shows the grams your print needs. Does the spool turn freely? Is the filament free of tangles and kinks?</li>
+        <li><strong>Check the build plate.</strong> The plate must be fully seated, flat, clean and cool. Wipe off dust. Fingerprints and skin oil ruin adhesion, so touch only the edges. If the surface is gouged, peeling, or will not lie flat, mark the printer down and tell the teacher.</li>
+        <li><strong>Check the nozzle.</strong> Look for stuck plastic blobs on the nozzle or the plate area. If you see them, you must remove them cold (see Maintenance) before you print.</li>
+        <li><strong>Check the log</strong> for the last calibration and the last print. If prints have been failing, recalibrate first (see Calibrate).</li>
+      </ol>
+
+      <h3 id="slo-file">2 · Prepare your file</h3>
+      <p>The SKETCH Large prints from a <strong>.makerbot</strong> file. You make one in <strong>MakerBot CloudPrint</strong>, MakerBot's free slicer that runs in the browser at <strong>cloudprint.makerbot.com</strong>. It also opens STL and several other 3D file types. Use the class MakerBot account that the teacher set up and the shared printer in your workspace.</p>
+      <ol>
+        <li><strong>Export your design</strong> from your CAD tool as an STL (or another supported type) in millimeters. Name it <em>lastname-part-v1</em>.</li>
+        <li><strong>Open CloudPrint</strong> and sign in. Add or open your model. Check that it is the right size, that it fits the 220 × 200 × 250 mm volume, and that the biggest flat face is on the plate.</li>
+        <li><strong>Pick the SKETCH Large and the material</strong> (PLA or Tough, matching the spool). Use <strong>Balanced</strong> print mode unless you have a reason the teacher approved; MakerBot tunes it for the best overall quality and speed. Its layer height is tuned for 200 microns (0.20 mm).</li>
+        <li><strong>Decide supports and adhesion</strong> (supports for overhangs past about 45°; a raft for tall or small-footprint parts). Use the preview to check, layer by layer.</li>
+        <li><strong>Read the estimate.</strong> Write down the time and the grams of material. A print that will not finish before you must leave needs the teacher's approval, or it waits.</li>
+        <li><strong>Send it.</strong>
+          <ul>
+            <li><em>Network:</em> press <strong>PRINT</strong>. CloudPrint slices the model and sends the .makerbot file straight to the printer. It will remind you to clear the build plate.</li>
+            <li><em>USB:</em> if CloudPrint is not connected to the printer, PRINT opens a dialog to export a .makerbot file instead. Save it to the root of a <strong>FAT32</strong> USB drive, then put the drive in the port under the touchscreen.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3 id="slo-print">3 · Run the print</h3>
+      <ol>
+        <li><strong>Confirm the plate is clear.</strong> Nothing on it, no old brim or raft bits.</li>
+        <li><strong>On the printer:</strong> if you sent it by network, tap <strong>BEGIN PRINTING</strong> on the touchscreen. From USB or internal memory, tap <strong>PRINT</strong>, choose the file (tap the folder icon to switch between the USB drive and internal storage), then tap <strong>PRINT NOW</strong>. Tapping the play button on a filename starts it immediately; tapping the filename opens its details.</li>
+        <li><strong>Wait for heating.</strong> The extruder and plate heat first, then the print begins.</li>
+        <li><strong>Watch the first layer</strong> (the first 2–5 minutes) up close. It should be a smooth, slightly flattened, continuous line, stuck to the plate with no gaps and no curling edges. If it is not, <strong>cancel immediately</strong> and see Troubleshooting. A first layer that is wrong never gets better by itself.</li>
+        <li><strong>Check again</strong> after 10 minutes, then every 15 minutes, or watch from the camera. The screen shows progress.</li>
+      </ol>
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+        <div class="p3d-block">
+          <h3>Pause</h3>
+          <p>Tap the <strong>pause</strong> icon on the progress screen, or select the printer in CloudPrint and choose PAUSE. Use it if you need to check something or the filament is running out. Do not touch the nozzle or the plate; they are hot.</p>
+        </div>
+        <div class="p3d-block">
+          <h3>Cancel</h3>
+          <p>Tap the top of the screen where it says <strong>printing</strong> or <strong>paused</strong>. A drop-down appears with <strong>cancel</strong>. Cancel for any failure: a lifted corner, spaghetti, the part knocked loose, strange noises, or a bad first layer. Then let things cool, clear the plate completely, and log it.</p>
+        </div>
+        <div class="p3d-block">
+          <h3>Running out of filament</h3>
+          <p>The printer detects filament. If it pauses for empty material, load a new spool through <strong>MATERIAL → LOAD</strong> and resume only as the screen instructs. If the new spool is a different color, remember that the leftover plastic in the nozzle will blend for a short stretch. If the part must be one clean color, cancel and restart with enough filament.</p>
+        </div>
+      </div>
+
+      <h3 id="slo-after">4 · After the print</h3>
+      <ol>
+        <li>When the screen says the print is complete, <strong>wait for the plate to cool</strong>. Hot plastic bends and sticks. Give it several minutes.</li>
+        <li>Open the door and <strong>lift the build plate out</strong> of the printer (flexible plate, so hold it flat and by the edges).</li>
+        <li><strong>Bend the plate slightly</strong> so the print pops loose. If it stays stuck, use the <strong>tool that came with the printer</strong>. Never pry with a knife or metal scraper.</li>
+        <li>If bits of <strong>raft</strong> remain on the plate, remove them with a <strong>flat, non-sharp tool such as a putty knife</strong>. Never use a knife on the raft: it damages the build plate.</li>
+        <li><strong>Clean the plate</strong> of any scraps, touching only the edges, and set it back in the printer fully seated.</li>
+        <li><strong>Tidy up:</strong> remove the print from the printer area, put the USB drive away, close the door, and fill in the log.</li>
+      </ol>
+
+      <h3 id="slo-material">5 · Load, unload and store filament</h3>
+      <p>The SKETCH Large has a filament sensor and an auto load/unload system, so you let the printer do the work and follow its on-screen steps. The sequence below is the manual's.</p>
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <h3>Load</h3>
+          <ol>
+            <li><strong>Prepare the end.</strong> Pull a few inches off the spool and <strong>cut the tip to a clean edge</strong> with flush cutters or scissors. Straighten bent or crimped sections, or cut them off. Bent filament gets stuck in the tube.</li>
+            <li><strong>Brittle test.</strong> Bend a piece back on itself. If it survives at least <strong>3 bends</strong>, it is fine. If it snaps sooner, remove at least 2 feet (60 cm), test again, and replace the spool if it still snaps.</li>
+            <li>If the filament has been used before, remove any old, scarred filament near the end.</li>
+            <li>Put the spool in the spool enclosure and insert the end into the material port.</li>
+            <li>On the touchscreen choose <strong>MATERIAL → LOAD</strong> and follow the instructions.</li>
+            <li>Wait for plastic to flow from the nozzle. If it does not, see Troubleshooting.</li>
+          </ol>
+        </div>
+        <div class="p3d-block">
+          <h3>Unload</h3>
+          <ol>
+            <li>Choose <strong>MATERIAL → UNLOAD</strong> and follow the instructions.</li>
+            <li>While the filament backs out of the guide tube, <strong>keep the spool tightly wound</strong> with your hand so it does not unravel and tangle.</li>
+            <li><strong>Rewind</strong> the filament onto the spool. Do not leave the free end loose.</li>
+            <li>Push the free end into one of the <strong>storage slots</strong> in the spool rim. This stops tangles and lets the next person find the end instantly.</li>
+            <li>Put the spool in a sealed bag or box with desiccant, in a dry place.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="p3d-callout tip"><strong>Habit:</strong> unload the filament before long breaks (weekends and holidays count). Filament left loaded can absorb moisture and become brittle or jam on the next load.</div>
+
+      <h3 id="slo-cal">6 · Calibrate (nozzle height)</h3>
+      <p>Calibration tells the printer exactly where the plate is. Run it when prints won't stick, the nozzle scrapes, material won't come out at the start of a print, the extruder has been changed, or print quality has dropped.</p>
+      <ol>
+        <li>Make sure the plate is clean, cold and seated. Use a normal sheet of printer paper (about 0.25 mm thick).</li>
+        <li>On the touchscreen choose <strong>SETTINGS → UTILITIES → CALIBRATION</strong> and follow the prompts.</li>
+        <li>When asked, <strong>slide the paper back and forth</strong> between the nozzle and the plate. Tap the up and down arrows until you feel <em>slight friction</em>, like a pencil writing on paper. Too tight and the paper will crumple or stick; too loose and the paper moves freely.</li>
+        <li>Tap <strong>OK</strong> to finish.</li>
+        <li>Print a small test (a 20 mm cube is ideal), check the first layer, and record the calibration in the log.</li>
+      </ol>
+
+      <h3>7 · Shut down (every session)</h3>
+      <ol>
+        <li>No print running. If one is still running, it stays running and you stay in the room.</li>
+        <li>Let the nozzle and plate cool, and take the print and tools off the plate.</li>
+        <li>Unload the filament if the printer will sit more than a few days; otherwise leave the free end safely in the guide tube or storage slot.</li>
+        <li>Clean the plate, set it back, and close the door.</li>
+        <li>Power off with the switch only after the screen shows idle and the extruder is cool. Complete the log.</li>
+      </ol>
+
+      <h3 id="slo-maint">8 · Maintenance</h3>
+      <div style="overflow-x:auto">
+      <table class="p3d-setting-table">
+        <thead><tr><th>When</th><th>Task</th><th>Who</th></tr></thead>
+        <tbody>
+          <tr><td>Every print</td><td>Check first layer. Clean and inspect the plate. Check spool and filament path. Log it.</td><td>Operator</td></tr>
+          <tr><td>Weekly</td><td>Brush stray plastic from around the plate area when everything is cold. Dust the outside, the vents and the door. Check cables. Check the guide tube is seated at both ends. Wipe the camera lens with a dry soft cloth.</td><td>Operator</td></tr>
+          <tr><td>Every 30 days of regular use, or after a long break</td><td>Apply <strong>grease to the guide rods</strong>, as MakerBot's manual says. Use only the grease the teacher keeps for this; do not use other lubricants.</td><td>Lead operator</td></tr>
+          <tr><td>After a jam, a crash, or any drop in quality</td><td>Run calibration. Check the extruder is seated (no gap at the seam).</td><td>Operator</td></tr>
+          <tr><td>When prompted by the screen</td><td>Follow the prompt. Firmware updates are done by the teacher.</td><td>Teacher</td></tr>
+          <tr><td>When the plate is worn or damaged</td><td>Replace it with a new MakerBot build plate from the store.</td><td>Teacher</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="p3d-callout danger"><strong>Before any hands-on maintenance:</strong> the extruder must be <strong>below 50 °C</strong> (35 °C for some swaps), and the printer <strong>powered off</strong> with the switch. MakerBot's manual says: never remove an extruder during or right after a print.</div>
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <h3>Lead operator: remove the extruder</h3>
+          <ol>
+            <li>Unload the filament first (MATERIAL → UNLOAD). It is possible to remove the extruder with filament still inside, but unloading is recommended.</li>
+            <li>Let the extruder cool below 50 °C, then <strong>power off</strong>.</li>
+            <li>Press the <strong>left and right clips</strong> on the sides and pull the extruder straight down until it releases. Wear gloves to avoid pinching if you need a firmer grip.</li>
+            <li>If filament is still inside, cut it so that several inches stay attached to the extruder, then rotate the spool so the free end lies back in the guide tube.</li>
+          </ol>
+        </div>
+        <div class="p3d-block">
+          <h3>Lead operator: install an extruder</h3>
+          <ol>
+            <li>Printer <strong>powered off</strong>.</li>
+            <li>Push the extruder straight up into the carriage until you hear a <strong>click</strong>.</li>
+            <li>Check the extruder detachment buttons have sprung back, and that there is <strong>no seam</strong> between the extruder and the carriage (a visible seam means it is not seated).</li>
+            <li>Power on and run <strong>calibration</strong> (SETTINGS → UTILITIES → CALIBRATION).</li>
+            <li>A new extruder comes with a slip that carries a temperature-offset number; do not throw the slip away. If the screen asks for the number, enter it.</li>
+          </ol>
+        </div>
+        <div class="p3d-block">
+          <h3>Removing the guide tube</h3>
+          <p>Press down on the guide tube connector, then pull the tube up and out. Reseat it by pushing the tube fully in until the connector holds it. A loose guide tube causes load and feed errors.</p>
+        </div>
+      </div>
+
+      <h3 id="slo-trouble">9 · Troubleshooting</h3>
+      <p>Work down the list <strong>cheapest first</strong>, change one thing at a time, and test with a small print. Write what you tried in the log.</p>
+      <div style="overflow-x:auto">
+      <table class="p3d-setting-table">
+        <thead><tr><th>Symptom</th><th>Likely cause and what to do</th></tr></thead>
+        <tbody>
+          <tr><td>Printer won't power on</td><td>Check the power cable at both ends and the power switch. Try another outlet. If still dead: <strong>mark it down and tell the teacher.</strong></td></tr>
+          <tr><td>Printer not visible in CloudPrint</td><td>Check it is powered and that the network symbol on the screen is connected. Reload the page and sign in again. As a workaround, export a .makerbot file to a FAT32 USB drive.</td></tr>
+          <tr><td>USB drive not seen on the printer</td><td>FAT32 only (NTFS is invisible). File must be a .makerbot or STL. Camera and USB cannot be on at once: check <strong>SETTINGS → UTILITIES → CAMERA</strong> (Auto mode turns USB on when idle and off while printing).</td></tr>
+          <tr><td>Material loads but nothing comes out at the start of a print</td><td>The nozzle is too close to the plate so plastic has nowhere to go. Run <strong>calibration</strong> (paper test) and reprint.</td></tr>
+          <tr><td>Print won't stick, corners lift, part moves</td><td>Wipe the plate (touch only the edges). Make sure it is fully seated. Recalibrate the nozzle height. Turn on a raft in CloudPrint. Reduce drafts. Orient the part so the largest flat face lies on the plate.</td></tr>
+          <tr><td>First layer is thin or see-through, or the nozzle scrapes</td><td>The nozzle is too close or too far. Cancel. Recalibrate with the paper test.</td></tr>
+          <tr><td>Filament won't load</td><td>Re-cut the tip to a clean edge and remove bent sections. Do the brittle test. Make sure the spool unwinds freely and the guide tube is seated. Try LOAD again. If it stops partway, <strong>squeeze the two tabs on the extruder's side and push the filament firmly</strong> by hand while the extruder is heated, as the screen directs. Repeat 3–4 times to push a small blockage through.</td></tr>
+          <tr><td>Filament won't unload</td><td>Follow MATERIAL → UNLOAD again so the extruder is hot. Do not yank the filament. If it will not come out, <strong>stop and ask the teacher</strong>.</td></tr>
+          <tr><td>Under-extrusion (gaps, thin walls, plastic stops mid-print), or "air printing" (the nozzle moves but nothing comes out)</td><td>Cancel. Check for a tangled or stuck spool, brittle filament, or a damp spool. Reload (cut, brittle test, load). If it was a one-off, a good load will fix it. If it keeps happening on every print, the extruder is wearing and needs replacing: <strong>mark it down.</strong></td></tr>
+          <tr><td>Extruder temperature error</td><td>The extruder is probably not seated in the carriage. Let it cool below 50 °C, power off, press the clips and reseat it until it clicks, then check there is no seam. A lead operator does this.</td></tr>
+          <tr><td>Stringing and blobs</td><td>Usually wet filament or a long hot print. Store filament dry. Try a fresh spool. Clean the nozzle when cold.</td></tr>
+          <tr><td>Layer shifts, ringing or odd noises</td><td>Did the table get bumped? Is something blocking the gantry? Is the part knocked loose? Cancel, clear the plate, reprint. If noises continue, tell the teacher; the guide rods may need grease.</td></tr>
+          <tr><td>Axis does not move, grinding at start, "homing" problem</td><td>Cancel. Power off, check nothing blocks the gantry or the plate area and that the plate is flat. Power on and use <strong>SETTINGS → UTILITIES → HOMING</strong>. If it repeats, mark it down.</td></tr>
+          <tr><td>Part is the wrong size</td><td>Check the model's units and scale in CloudPrint, then measure a 20 mm calibration cube with calipers. If the cube is also wrong, mark it down.</td></tr>
+          <tr><td>Print stops mid-way with a message</td><td>Read the whole message. Common causes are out of filament, door open, power or network drop. Fix the cause; resume only if the screen offers to. Otherwise cancel. Log the message word for word.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="p3d-callout tip"><strong>Method:</strong> change one thing, test, log it. If you change the model, the filament, the plate and the calibration all at once and the print improves, you will not know why, and the fix will not work next time.</div>
+
+      <h3 id="slo-stop">10 · When to stop and leave it for the teacher</h3>
+      <div class="p3d-callout danger"><strong>Stop. Mark the printer DOWN.</strong> Put a sign on it, power it off, write in the log, and tell an adult in the building if any of these happen:
+        <ul style="margin:.4rem 0 0 1.1rem">
+          <li>Smoke, burning smell, sparks, melted casing, or a hot cable.</li>
+          <li>The extruder, nozzle or plate is damaged or won't seat.</li>
+          <li>The same failure happens twice in a row after you have recalibrated and reloaded.</li>
+          <li>Filament won't unload, or you've tried the load/clog steps above and it still won't extrude.</li>
+          <li>Any error message you can't clear, or one that tells you to contact support.</li>
+          <li>Anyone is hurt.</li>
+        </ul>
+      </div>
+      <p><strong>The "printer down" note</strong> should say: date and time, your name, what you were doing, the exact words on the screen, what you tried, and what is left on the plate. Photograph the screen and the failure. The teacher can then take it to <strong>support.makerbot.com</strong> (guides and troubleshooting) or <strong>my.makerbot.com/support</strong> (open a case) with the evidence ready.</p>
+
+      <h3>The printer log</h3>
+      <p>One line per print: <em>date · name · file · material and spool · estimated vs. actual time · result (good / flawed / failed) · calibration done? · problems and what you did</em>. Keep it on paper beside the printer or in the shared sheet. The log is how the next operator, and the teacher, find out what happened while they weren't there.</p>
+
+      <h3 id="slo-slicers">11 · Slicing with MakerBot CloudPrint vs. UltiMaker Cura</h3>
+      <p>A <strong>slicer</strong> cuts a 3D model into layers and writes the instructions the printer follows. The SKETCH Large uses <strong>MakerBot CloudPrint</strong> and prints <strong>.makerbot</strong> files. UltiMaker printers use <strong>UltiMaker Cura</strong>. Every slicer asks the same questions, but a file sliced for one printer is not a file for the other: slice again, with that printer's profile.</p>
+      <div class="p3d-callout warn"><strong>Do not send Cura output to the SKETCH Large.</strong> The SKETCH accepts .makerbot files and 3D model files (STL, OBJ, 3MF and others) that CloudPrint slices. Cura's output is made for UltiMaker and other G-code printers. Export the <em>model</em> once as STL or 3MF and slice it separately for each printer.</div>
+
+      <div style="overflow-x:auto">
+      <table class="p3d-setting-table">
+        <thead><tr><th>Idea</th><th>MakerBot CloudPrint (SKETCH Large)</th><th>UltiMaker Cura (UltiMaker printer)</th></tr></thead>
+        <tbody>
+          <tr><td>Printer and material</td><td>Choose the SKETCH Large and MakerBot PLA or Tough.</td><td>Choose the exact UltiMaker model, the nozzle (for example 0.4 mm) and the material.</td></tr>
+          <tr><td>Quality</td><td>Print mode: <strong>Balanced</strong> (recommended) or a high-resolution mode.</td><td>Profiles such as Fast, Normal and Fine set layer height and speed; Custom shows every setting.</td></tr>
+          <tr><td>Layer height</td><td>Set by the print mode (Balanced is tuned for 0.20 mm). The printer supports 0.10–0.40 mm.</td><td>Layer Height. Stay under about 80% of nozzle diameter.</td></tr>
+          <tr><td>Walls</td><td>Shells / wall count in the settings.</td><td>Wall Line Count under Shell.</td></tr>
+          <tr><td>Infill</td><td>Infill percentage and pattern in the settings.</td><td>Infill Density and Infill Pattern under Infill.</td></tr>
+          <tr><td>Supports</td><td>Turn supports on and check the preview.</td><td>Generate Support, then Support Structure (Normal or Tree), placement and overhang angle.</td></tr>
+          <tr><td>Bed adhesion</td><td>Raft on or off (the Grip Surface sticks well, but tall thin parts may still need a raft).</td><td>Build Plate Adhesion Type: Skirt, Brim, Raft or None.</td></tr>
+          <tr><td>Preview</td><td>Layer preview shows time and material.</td><td>Preview shows layers, line types and the time/material estimate.</td></tr>
+          <tr><td>Send to printer</td><td>PRINT sends a .makerbot over the network, or exports one for a FAT32 USB drive.</td><td>Print over the network (UltiMaker Digital Factory) or save to a USB drive.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Workflow: one model, two printers</h3>
+      <ol>
+        <li><strong>Check the model.</strong> Export your CAD model as STL or 3MF in millimeters. Check it fits the smaller build volume if it will go to both machines.</li>
+        <li><strong>Slice it in the first slicer.</strong> Pick that printer's profile and material. Orient the part so the largest face lies on the plate and overhangs are few.</li>
+        <li><strong>Read the preview.</strong> Scroll through the layers. Look at the first layer, thin walls, supports, and the estimated time and grams. Write all four in your notes.</li>
+        <li><strong>Repeat in the second slicer</strong> using the equivalent settings from the table.</li>
+        <li><strong>Compare.</strong> Are the layer heights equal? Does one slicer put supports where the other does not? Which estimate is longer, and why?</li>
+        <li><strong>Print on the printer that is available.</strong> Don't run both without the teacher's approval.</li>
+      </ol>
+      <div class="p3d-callout tip"><strong>Why compare?</strong> Two slicers given the "same" settings still produce slightly different toolpaths, supports and time estimates. A profile is a recipe for <em>one</em> printer, nozzle and material; it never transfers perfectly.</div>
+
+      <h3>Check yourself</h3>
+      <ul>
+        <li>The first layer looks see-through and the nozzle is scraping. What do you do, in order?</li>
+        <li>Filament snaps when you bend it twice. Can you load it? What do you do?</li>
+        <li>You get a "printer not found" in CloudPrint with a class waiting. What is the backup way to get the file to the printer, and what must the drive be formatted as?</li>
+        <li>A part finishes and is stuck to the plate. Describe the safe way to remove it and a raft remnant.</li>
+        <li>Why is a model sliced in UltiMaker Cura sliced again in CloudPrint instead of copied across?</li>
+        <li>Name three things that mean "stop, mark it down, tell an adult".</li>
+      </ul>
+      <details><summary>Sources and limits</summary><p>Procedures follow the <a href="https://um-support-files.ultimaker.com/manuals/user-manual/Sketch-Large/Sketch-Large-manual-2022-10-17.pdf">MakerBot Sketch Large user manual (Oct. 2022)</a> and MakerBot's support articles for the SKETCH line (<a href="https://support.makerbot.com/troubleshooting/makerbot-sketch/troubleshooting/material-not-extruding_12447/10129">material not extruding</a>, <a href="https://support.makerbot.com/s/article/SKETCH-Air-Printing">air printing</a>, <a href="https://support.makerbot.com/learn/makerbot-sketch/troubleshooting/error-messages_13771">error messages</a>, <a href="https://support.makerbot.com/learn/makerbot-sketch/basic-usage/how-to-replace-the-extruder_13768">replacing the extruder</a>). Specifications: <a href="https://www.makerbot.com/3d-printers/sketch-large/">MakerBot SKETCH Large</a>. Cura setting names: <a href="https://ultimaker.com/software/ultimaker-cura/">UltiMaker Cura</a>. Menu names and software change with updates; the touchscreen and MakerBot's current pages win. Practical tips that are not in the manual (watching the first layer, the log, the "stop" list, one-change-at-a-time) are classroom practice.</p></details>
+    </div>
+
     <!-- ══ QUIZ ══ -->
     <div class="p3d-card">
       <p class="p3d-label">12 — Check Your Understanding</p>
@@ -2652,7 +2952,7 @@
     <div class="p3d-card" style="border-left: 5px solid #e8792a;">
       <p class="p3d-label">14 — Design &amp; Print in the Classroom</p>
       <h2>Ready to Build? Design Parametric Parts in Forge</h2>
-      <p>Put the golden rules to work with <a href="../../../forge.html" style="color:#c43d00;font-weight:700;">Forge</a> — ClassroomOS’s parametric 3D CAD tool. Design electronics cases, spiral fidgets, gear pairs, and custom clips with real-time design-rule checks for nozzle walls, bridges, overhang angles, and bed fit, then download clean STLs ready for MakerBot Print.</p>
+      <p>Put the golden rules to work with <a href="../../../forge.html" style="color:#c43d00;font-weight:700;">Forge</a> — ClassroomOS’s parametric 3D CAD tool. Design electronics cases, spiral fidgets, gear pairs, and custom clips with real-time design-rule checks for nozzle walls, bridges, overhang angles, and bed fit, then download clean STLs ready for MakerBot CloudPrint.</p>
     </div>
 
   </details>
