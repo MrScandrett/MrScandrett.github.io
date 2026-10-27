@@ -550,6 +550,7 @@
     var fallback = this.events.length >= 3 && (this.root.clientWidth || global.innerWidth) >= 640 ? 'track' : 'list';
     this.setView(store.view || this.opts.view || fallback, { save: false });
     this.intro();
+    this.followHash();
 
     if (typeof ResizeObserver === 'function') {
       var lastW = 0;
@@ -2039,7 +2040,9 @@
       var px = toX(t);
       // Only ticks inside the view: the axis re-renders on every scroll frame anyway.
       if (px < vis0 || px > vis1 || px < PAD - 1 || px > W - PAD + 1) return;
-      var now = t >= NOW - 0.5;
+      // Deep time counts back from today, so nothing lies past it; on a calendar axis the track
+      // can run on past today to make room for the last label, and those ticks keep their years.
+      var now = ctx.deep ? t >= NOW - 0.5 : Math.abs(t - NOW) <= 0.5;
       var text = now && !ctx.deep ? 'today' : formatTick(t, ctx);
       var tick = el('span', 'tl-tick' + (now ? ' tl-now' : ''), text);
       tick.style.left = px + 'px';
@@ -2217,6 +2220,21 @@
     }
   };
 
+  // A link to an item's id (lesson.html#era-arcade) selects that item. In Track view the list
+  // is hidden, so on its own the browser would scroll to nothing.
+  Timeline.prototype.followHash = function () {
+    var id;
+    try { id = decodeURIComponent(global.location.hash.slice(1)); } catch (e) { return false; }
+    var target = id && document.getElementById(id);
+    if (!target || !this.list.contains(target)) return false;
+    var i = -1;
+    this.events.forEach(function (ev, k) { if (ev.li.contains(target)) i = k; });
+    if (i === -1) return false;
+    this.selectIndex(i);
+    (this.root.dataset.tlView === 'track' ? this.root : this.events[i].li).scrollIntoView({ block: 'start' });
+    return true;
+  };
+
   // The card's first photo moves to the top, beside the text, and opens in the lesson's
   // lightbox (photo-lightbox.js) like every lesson photo. Small icons and linked images stay put.
   Timeline.prototype.liftMedia = function (body) {
@@ -2257,7 +2275,6 @@
     ['.pt-timeline', '.pt-timeline-item', 'How the periodic table emerged'],
     ['.tt-timeline', '.tt-time', 'Milestones toward the Turing test'],
     ['.pf-timeline', '.pf-tl-item', 'A brief history of Python'],
-    ['.cgi-timeline', '.cgi-era', 'Breakthrough moments in computer graphics'],
     ['.timeline[aria-label="Panama Canal timeline"]', ':scope > *', 'Building the Panama Canal'],
     ['.athens-timeline', '.athens-timeline-card', 'Ideas behind the School of Athens'],
     ['.dv-timeline', '.dv-timeline-card', 'Leonardo across science and art'],
@@ -2272,7 +2289,6 @@
     ['.wa-timeline', '.wa-tl-item', 'The wheel and axle through history'],
     ['.music-timeline', '.music-era', 'Ideas that shaped the physics of music'],
     ['.ch-history-grid', '.ch-timeline-card', 'Chess history', true],
-    ['.history-timeline', '.tl-era', 'The history of video games', true],
     ['.timeline-track', '.tl-node', 'The evolution of wood', true],
     ['.we-timeline-nav', '.we-timeline-btn', 'The history of electricity', true]
   ];
@@ -2402,6 +2418,10 @@
     });
     return out;
   }
+
+  global.addEventListener('hashchange', function () {
+    all.some(function (t) { return t.followHash(); });
+  });
 
   // Print always uses the list. Capture so this runs before the print planner measures.
   var printViews = null;

@@ -443,6 +443,8 @@
             <div class="blockly-js-out code-block" id="bk-loop-out"><pre></pre></div>
             <p>"Green flag clicked" is Scratch's <code>requestAnimationFrame(gameLoop)</code> — the signal that starts everything. "Forever" is the loop itself: everything snapped inside it runs again and again, exactly like <code>update()</code> and <code>render()</code> firing every frame in the JS version. Scratch just hides the ~16ms timing math from you.</p>
           </div>
+          <p>The loop you just wrote, the keys you will read in Step 4 and the overlap test you will write in Step 5 exist in every engine, under different names:</p>
+          <div data-rosetta="loop.frame core.input col.overlap"></div>
           <div class="callout checkpoint">
             <strong>✅ Checkpoint:</strong> type the <code>gameLoop</code> function into a blank <code>game.js</code> and confirm it doesn't crash (it won't draw anything yet — that's Step 3). If you're on the Scratch path, drag the block above into a real project and click the green flag.
           </div>
@@ -673,6 +675,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../assets/js/sim-kit.js"></script>
 <script>
 /* ── Dodge Mini-Game ───────────────────────────────────── */
 (function() {
@@ -796,7 +799,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
   function loop() {
     update();
     render();
-    if (!over) frameId = requestAnimationFrame(loop);
+    if (!over) frameId = SimKit.frame(canvas, loop);
   }
 
   document.addEventListener('keydown', e => {
@@ -806,7 +809,7 @@ document.<span class="fn">addEventListener</span>(<span class="str">'keyup'</spa
   });
   document.addEventListener('keyup', e => keys[e.code] = false);
 
-  restartBtn.addEventListener('click', () => { cancelAnimationFrame(frameId); init(); });
+  restartBtn.addEventListener('click', () => { SimKit.frame.cancel(canvas, frameId); init(); });
   init();
 })();
 
@@ -917,5 +920,6 @@ document.querySelectorAll('.ll-tab').forEach(tab => {
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/game-dev-route.js"></script>
+<script src="../../../assets/js/tool-rosetta.js"></script>
 </body>
 </html>

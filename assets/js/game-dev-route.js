@@ -167,8 +167,8 @@
     var byEra = {};
     Object.keys(TUTORIALS).forEach(function (k) { (byEra[TUTORIALS[k].era] = byEra[TUTORIALS[k].era] || { t: [], l: [] }).t.push(k); });
     LESSONS.forEach(function (l) { (byEra[l.era] = byEra[l.era] || { t: [], l: [] }).l.push(l.slug); });
-    document.querySelectorAll('[data-era]').forEach(function (card) {
-      var hit = byEra[card.getAttribute('data-era')]; if (!hit || card.querySelector('.gdr-era-links')) return;
+    document.querySelectorAll('[data-game-era]').forEach(function (card) {
+      var hit = byEra[card.getAttribute('data-game-era')]; if (!hit || card.querySelector('.gdr-era-links')) return;
       var box = el('p', 'gdr-era-links'); box.appendChild(el('span', null, 'Build it today: '));
       hit.t.forEach(function (t) { var a = el('a', null, TUTORIALS[t].icon + ' ' + TUTORIALS[t].title); a.href = url(TUT + t + '.html'); box.appendChild(a); });
       hit.l.forEach(function (sl) {
