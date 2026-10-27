@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trail Game Builder: Make Your Own Oregon Trail · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build an Oregon Trail style survival game from scratch in about 80 lines of JavaScript, then re-skin it into your own spin-off: Mars, the Silk Road, the deep sea, or an idea of your own." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    :root { --acc: #b45309; --acc-soft: rgba(180,83,9,0.1); --acc-border: rgba(180,83,9,0.32); }
+    :root:where([data-lighting="night"]) { --acc: #f59e0b; --acc-soft: rgba(245,158,11,0.12); --acc-border: rgba(245,158,11,0.4); }
+    @media (prefers-color-scheme: dark) { :root:where(:not([data-lighting])) { --acc: #f59e0b; } }
+
+    .cl-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--acc); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p, .cl-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p { margin: 0 0 0.6rem; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    .cl-card ul, .cl-card ol { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
+    [data-lighting="night"] .cl-card, [data-theme="vaporwave"] .cl-card, [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p, [data-lighting="night"] .cl-card li,
+    [data-theme="vaporwave"] .cl-card p, [data-theme="vaporwave"] .cl-card li,
+    [data-theme="bark"] .cl-card p, [data-theme="bark"] .cl-card li,
+    [data-lighting="night"] .cl-lede, [data-theme="vaporwave"] .cl-lede, [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.74); }
+
+    .step-tag { display: inline-block; background: var(--acc); color: #fff; border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.65rem; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+
+    /* The daily loop */
+    .loop-diagram { display: flex; align-items: stretch; justify-content: center; gap: 0.35rem; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+    .loop-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 10px; padding: 0.55rem 0.8rem; text-align: center; min-width: 96px; flex: 1 1 96px; max-width: 150px; }
+    .loop-box strong { display: block; font-size: 0.84rem; color: var(--acc); }
+    .loop-box small { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-top: 0.1rem; line-height: 1.35; }
+    .loop-arrow { align-self: center; font-size: 1.2rem; color: var(--text-muted, #64748b); }
+
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.85rem 1.05rem; margin: 0.7rem 0; overflow-x: auto; max-width: 100%; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; line-height: 1.65; color: #e2e8f0; white-space: pre; }
+    .code-title { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #64748b); margin-top: 0.7rem; }
+
+    .callout { border-radius: 12px; padding: 0.8rem 1rem; margin: 0.8rem 0; font-size: 0.85rem; line-height: 1.6; background: var(--acc-soft); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
+    .callout.checkpoint { background: rgba(34,197,94,0.09); border-left-color: #22c55e; }
+    .callout.checkpoint strong { color: #15803d; }
+    [data-lighting="night"] .callout, [data-theme="vaporwave"] .callout, [data-theme="bark"] .callout { color: rgba(245,245,247,0.76); }
+    [data-lighting="night"] .callout.checkpoint strong, [data-theme="vaporwave"] .callout.checkpoint strong, [data-theme="bark"] .callout.checkpoint strong { color: #4ade80; }
+
+    .btn { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.42rem 0.95rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; color: var(--acc); border: 1.5px solid var(--acc-border); }
+    .btn:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    [data-lighting="night"] .btn:not(.ghost), [data-theme="vaporwave"] .btn:not(.ghost), [data-theme="bark"] .btn:not(.ghost) { color: #1d1d1f; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.6rem 0; }
+    .row label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary, #3f4f65); }
+    select, .cl-card input[type=number], .cl-card textarea.field { font: inherit; font-size: 0.84rem; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+
+    /* Trail Lab */
+    .lab-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    @media (max-width: 960px) { .lab-grid { grid-template-columns: minmax(0, 1fr); } }
+    #lab-config { width: 100%; box-sizing: border-box; min-height: 26rem; max-height: 34rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; line-height: 1.5; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 10px; padding: 0.7rem; resize: vertical; tab-size: 2; }
+    #lab-status { font-size: 0.8rem; margin: 0.4rem 0 0; min-height: 1.3em; font-weight: 600; }
+    #lab-status.ok { color: #15803d; } #lab-status.bad { color: #b91c1c; }
+    [data-lighting="night"] #lab-status.ok { color: #4ade80; } [data-lighting="night"] #lab-status.bad { color: #fca5a5; }
+
+    .map-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0; }
+    .map-table th, .map-table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .map-table th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted,#64748b); }
+    .table-scroll { overflow-x: auto; }
+    [data-lighting="night"] .map-table td, [data-theme="vaporwave"] .map-table td, [data-theme="bark"] .map-table td { color: rgba(245,245,247,0.76); }
+
+    .dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0.7rem 0; }
+    @media (max-width: 640px) { .dice { grid-template-columns: minmax(0, 1fr); } }
+    .die { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.7rem 0.8rem; min-height: 4.6rem; }
+    .die small { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--acc); }
+    .die b { display: block; margin-top: 0.2rem; font-size: 0.92rem; color: var(--text, #1d1d1f); }
+    .calc-out { font-size: 0.9rem; font-weight: 600; line-height: 1.6; }
+    .calc-out .warn { color: #b91c1c; } .calc-out .good { color: #15803d; }
+    [data-lighting="night"] .calc-out .warn { color: #fca5a5; } [data-lighting="night"] .calc-out .good { color: #4ade80; }
+    .worksheet textarea { width: 100%; box-sizing: border-box; min-height: 3.4rem; margin: 0.15rem 0 0.6rem; font: inherit; font-size: 0.85rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .worksheet label { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary,#3f4f65); }
+
+
+    /* Art guide */
+    .art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+    .art-card { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; }
+    .art-slot { display: flex; align-items: center; justify-content: center; max-width: 100%; margin: 0 auto 0.5rem; border: 2px dashed var(--acc-border); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--acc); background: rgba(255,255,255,0.35); }
+    .art-card h4 { margin: 0; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+    .art-card p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+    .art-tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 999px; border: 1.5px solid var(--acc-border); color: var(--acc); }
+    .art-tag.must { background: var(--acc); color: #fff; }
+    [data-lighting="night"] .art-tag.must { color: #1d1d1f; }
+    .art-count { font-size: 0.95rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .art-check { list-style: none; padding-left: 0 !important; }
+    .art-check li { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.15rem 0; }
+    .art-check input { margin-top: 0.3rem; flex: none; }
+
+    @media print {
+      .lab-grid { grid-template-columns: minmax(0, 1fr); }
+      #lab-config { max-height: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
+          <h1>Trail Game Builder: Make Your Own Oregon Trail</h1>
+          <div class="cl-hero-meta">
+            <span>Game state</span><span class="dot"></span>
+            <span>Data-driven design</span><span class="dot"></span>
+            <span>Weighted randomness</span><span class="dot"></span>
+            <span>Balancing</span><span class="dot"></span>
+            <span>Spin-offs</span>
+          </div>
+          <p class="cl-lede">A wagon, five travelers and 2,000 miles: <em>The Oregon Trail</em> has no twitch reflexes and no fancy graphics, yet millions of students have never forgotten it. That is because it is a <strong><span data-glossary="resource management">risk-and-resource game</span></strong>, and those are built from a few simple ideas. In this lesson you build the whole engine in about 80 lines of JavaScript, then change the <em>data</em> to turn it into your own <span data-glossary="spin-off">spin-off</span>: a trip to Mars, a Silk Road caravan, a dive to the ocean floor, or something nobody has made yet.</p>
+        </section>
+        <div data-game-route="code:trail-clone"></div>
+
+        <!-- 1. Why it works -->
+        <section class="cl-card" id="why">
+          <h2>1 · Why this game works</h2>
+          <p>Every day of the trail is the same small question: <strong>do I spend something I need to get somewhere I want to be?</strong> Food, time, health and money all trade against distance. The fun comes from three design ideas.</p>
+          <ul>
+            <li><strong>Scarcity.</strong> Nothing is free. Pushing hard saves days but costs health. Resting heals but eats food.</li>
+            <li><strong>Uncertainty.</strong> A <span data-glossary="weighted random">random event table</span> means two trips are never the same, but the odds are fair enough that good planning wins most of the time.</li>
+            <li><strong>Stories from numbers.</strong> "A wheel cracked" is just <code>days += 2</code> wearing a costume. Short sentences let a student's imagination do the graphics.</li>
+          </ul>
+          <p>The program that runs it is the same loop every day. Learn this loop and you can build almost any survival or management game:</p>
+          <div class="loop-diagram" role="img" aria-label="Daily loop: choose pace and rations, eat and travel, roll for an event, check for a landmark, check for the end of the game, then repeat.">
+            <div class="loop-box"><strong>Choose</strong><small>pace, rations, rest or hunt</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Spend</strong><small>eat food, lose health, gain miles</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Event?</strong><small>roll the dice on the event table</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Landmark?</strong><small>river, fort, shop, story</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>End?</strong><small>won, dead, or out of time</small></div>
+          </div>
+          <p style="text-align:center;font-size:0.75rem;color:var(--text-muted,#64748b);">…then the next day begins. It is a state machine: the game is always in exactly one state, and each button press moves it to the next one.</p>
+        </section>
+
+        <!-- 2. Play + edit -->
+        <section class="cl-card" id="lab">
+          <span class="step-tag">TRY IT FIRST</span>
+          <h2>2 · The Trail Lab: play it, then break it</h2>
+          <p>This is the finished engine. Everything about the game, including its story, items, events, landmarks and balance numbers, lives in the <strong>config</strong> on the left. Pick a preset, press <strong>Run my game</strong>, and play a few days. Then change something small (the party names, the title, one event) and run it again. You are already designing.</p>
+          <div class="row">
+            <label for="lab-preset">Start from</label>
+            <select id="lab-preset" aria-label="Preset game"></select>
+            <button class="btn" id="lab-run" type="button">▶ Run my game</button>
+            <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
+            <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+          </div>
+          <div class="lab-grid">
+            <div>
+              <label for="lab-config" class="sr-only" style="position:absolute;left:-9999px;">Game config</label>
+              <textarea id="lab-config" spellcheck="false" aria-describedby="lab-status"></textarea>
+              <p id="lab-status" role="status" aria-live="polite"></p>
+            </div>
+            <div id="lab-game" data-night-keep data-memory-ignore aria-label="Trail game"></div>
+          </div>
+          <div class="callout">
+            <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. Click <em>Run</em> and an error message will tell you which line is broken (usually a missing comma). Things to try:
+            <ul>
+              <li><code>"deadline"</code> smaller = a tighter race. <code>"eventChance"</code> (0 to 1) = how dangerous each day is.</li>
+              <li>Each event has a <code>weight</code>. A weight of 4 happens four times as often as a weight of 1.</li>
+              <li><code>"fixWith": "parts"</code> means a spare part cancels that event's lost days and miles. That is a decision the player gets to make when shopping.</li>
+              <li>Landmark <code>type</code> can be <code>"shop"</code>, <code>"river"</code> or <code>"info"</code>.</li>
+              <li>Add <code>"seed": 7</code> and the dice roll the same every time, which is handy for testing your balance.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 3. Build it -->
+        <section class="cl-card" id="build">
+          <span class="step-tag">BUILD IT</span>
+          <h2>3 · Build the engine yourself in seven steps</h2>
+          <p>The Lab above has extras (paces, rations, a shop, hunting). To understand it, first build the <strong>core</strong>. Make a file called <code>trail.html</code>, paste the page skeleton below, and then add each step inside its <code>&lt;script&gt;</code> tag in order. After every step, save, reload, and run it. Don't move on until the checkpoint is true.</p>
+          <div class="code-title"><span>Page skeleton</span></div>
+          <div class="code-block"><pre id="code-skeleton"></pre></div>
+
+          <h3>Step 1 · Put the whole game in one data object</h3>
+          <p>Before any logic, write down what the game <em>is</em>. Keeping the content in <code>GAME</code> and the rules in functions means a spin-off only needs to change this one block. This is called <strong><span data-glossary="data-driven design">data-driven design</span></strong>, and every engine you will ever use works this way.</p>
+          <div class="code-block"><pre data-mini="data"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Open the browser console (F12) and type <code>GAME.party.length</code>. It should print 3.</div>
+
+          <h3>Step 2 · Track the state</h3>
+          <p>The <strong><span data-glossary="game state">state</span></strong> is everything that changes while the game runs. If you can list the state, you can save the game, undo a move, or replay a bug. Notice that <code>health</code> is a list with one number per traveler.</p>
+          <div class="code-block"><pre data-mini="state"></pre></div>
+
+          <h3>Step 3 · Small helpers</h3>
+          <p><code>say()</code> writes a line to the trail log, <code>hurt()</code> changes a traveler's health and keeps it between 0 and 100, and <code>weighted()</code> is the trick behind event tables: add up the weights, pick a number in that range, and walk down the list until it runs out.</p>
+          <div class="code-block"><pre data-mini="helpers"></pre></div>
+          <div class="callout"><strong>Why weights?</strong> If three events have weights 3, 2 and 1, the total is 6. A roll of 0 to 6 lands on the first event half the time (3 of 6), the second a third of the time, and the last a sixth. You choose the odds by choosing numbers instead of writing a pile of <code>if</code> statements.</div>
+
+          <h3>Step 4 · One day</h3>
+          <p>This function <em>is</em> the game. Everyone eats; if there is not enough food they starve. Then you either travel (random miles near your normal pace, never past the next stop) or rest (everyone heals). After that there is a 40% chance of an event, and finally the day counter moves on.</p>
+          <div class="code-block"><pre data-mini="day"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Press <em>Travel</em> five times. The mileage should climb about 15 a day, food should drop by 6 each day, and now and then the log should show an event.</div>
+
+          <h3>Step 5 · The event table</h3>
+          <p>Events are rows of data, so adding a new danger is one line. The <code>fixWith</code> trick gives the player a reason to have bought spare parts. Preparation pays off, and that is a real choice, not just luck.</p>
+          <div class="code-block"><pre data-mini="events"></pre></div>
+
+          <h3>Step 6 · Landmarks and choices</h3>
+          <p>When your miles pass a landmark, the game stops and asks a question. The <code>choose()</code> helper shows buttons and waits. A river crossing is a perfect <strong>risk vs. cost</strong> decision: fording is free but risky, the raft is safe but costs a day.</p>
+          <div class="code-block"><pre data-mini="landmarks"></pre></div>
+
+          <h3>Step 7 · Win, lose, and wire it up</h3>
+          <p>A game needs an ending. Check the three ways the trip can finish after every day, then connect the buttons.</p>
+          <div class="code-block"><pre data-mini="end"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> You can win (reach 600 miles), lose by starvation (set <code>start.food</code> to 20 and travel), and lose by time (set <code>deadline</code> to 10). If all three endings work, your engine is finished.</div>
+
+          <div class="row">
+            <button class="btn" id="mini-download" type="button">⬇ Download the finished trail.html</button>
+            <button class="btn ghost" id="mini-copy" type="button">Copy the whole program</button>
+            <span id="mini-status" role="status" aria-live="polite" style="font-size:0.8rem;font-weight:600;"></span>
+          </div>
+          <details>
+            <summary style="cursor:pointer;font-weight:700;font-size:0.86rem;">Show the complete program</summary>
+            <div class="code-block"><pre id="code-full"></pre></div>
+          </details>
+        </section>
+
+        <!-- 4. Balance -->
+        <section class="cl-card" id="balance">
+          <span class="step-tag">THINK LIKE A DESIGNER</span>
+          <h2>4 · Balance it with arithmetic</h2>
+          <p>A game that is impossible is frustrating and one that is trivial is boring. You can check <span data-glossary="game balance">balance</span> <em>before</em> you play, with a back-of-the-envelope calculation: how many days will the trip take, and how much food does that need? Compare the answer with the deadline and the starting supplies.</p>
+          <div class="row">
+            <label for="b-goal">Distance</label><input id="b-goal" type="number" value="600" min="1" style="width:6rem" />
+            <label for="b-pace">Miles/day</label><input id="b-pace" type="number" value="15" min="1" style="width:5rem" />
+            <label for="b-party">Travelers</label><input id="b-party" type="number" value="3" min="1" max="8" style="width:4.5rem" />
+            <label for="b-eat">Food each/day</label><input id="b-eat" type="number" value="2" min="0.5" step="0.5" style="width:5rem" />
+            <label for="b-dead">Deadline (days)</label><input id="b-dead" type="number" value="60" min="1" style="width:5rem" />
+            <label for="b-food">Starting food</label><input id="b-food" type="number" value="250" min="0" style="width:5.5rem" />
+          </div>
+          <p class="calc-out" id="b-out" role="status" aria-live="polite"></p>
+          <p>Notice that the starting food is <em>less</em> than the trip needs on purpose. The gap is what hunting, forts and berries are for. A good rule of thumb is to make a careful player's best case about 20% under the deadline, so that events and mistakes use up the slack. Then <strong><span data-glossary="playtest">playtest</span></strong>: set <span data-glossary="random seed"><code>"seed"</code></span> and ask a friend to play three times while you stay quiet and watch where they get stuck.</p>
+        </section>
+
+        <!-- 5. Spin-offs -->
+        <section class="cl-card" id="spinoffs">
+          <span class="step-tag">YOUR TWIST</span>
+          <h2>5 · Design your spin-off</h2>
+          <p>A good spin-off keeps the <em>structure</em> (limited resources, a long route, surprises, a deadline) and changes the <em>world</em>. Translate each part of the original, and you will notice that most of the game is already written.</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Part of the game</th><th scope="col">Oregon Trail</th><th scope="col">Mission to Mars</th><th scope="col">Silk Road</th><th scope="col">Your spin-off</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Journey</th><td>Missouri to Oregon</td><td>Earth to Mars</td><td>Chang'an to Baghdad</td><td>?</td></tr>
+              <tr><th scope="row">Food</th><td>Pounds of food</td><td>Air and rations</td><td>Grain and water</td><td>?</td></tr>
+              <tr><th scope="row">Spare parts</th><td>Wagon wheels</td><td>Hull patches</td><td>Rope and saddles</td><td>?</td></tr>
+              <tr><th scope="row">River crossing</th><td>A real river</td><td>Asteroid belt</td><td>The desert</td><td>?</td></tr>
+              <tr><th scope="row">Health event</th><td>Fever, snakebite</td><td>Solar flare</td><td>Sandstorm</td><td>?</td></tr>
+              <tr><th scope="row">Shop</th><td>Frontier forts</td><td>Lunar gateway</td><td>Market oases</td><td>?</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>Not sure where to start? Roll the idea dice.</h3>
+          <div class="dice" aria-live="polite">
+            <div class="die"><small>Journey</small><b id="d-journey">…</b></div>
+            <div class="die"><small>What runs out</small><b id="d-resource">…</b></div>
+            <div class="die"><small>The twist</small><b id="d-twist">…</b></div>
+          </div>
+          <div class="row"><button class="btn" id="dice-roll" type="button">🎲 Roll the dice</button><span style="font-size:0.8rem;color:var(--text-muted,#64748b);">Roll until something makes you laugh, then put it in your design sheet below.</span></div>
+
+          <h3>Twists that change the rules, not just the pictures</h3>
+          <ul>
+            <li><strong>Reverse it:</strong> the player is the one <em>running the store</em> at the fort and has to decide what to stock.</li>
+            <li><strong>A rival:</strong> a second party travels ahead of you and buys out each shop first.</li>
+            <li><strong>Morale:</strong> add a new meter. Good news raises it, and a low value triggers bad events.</li>
+            <li><strong>A map:</strong> let the player choose between a short dangerous route and a long safe one at forks.</li>
+            <li><strong>Seasons:</strong> make event weights depend on the day, so winter is deadlier than summer.</li>
+            <li><strong>Co-op:</strong> two players on one keyboard decide each day together or vote on a river crossing.</li>
+          </ul>
+
+          <h3>Design sheet</h3>
+          <div class="worksheet">
+            <label for="ws-pitch">Pitch (one sentence): "You are ___ trying to reach ___ before ___."</label>
+            <textarea id="ws-pitch"></textarea>
+            <label for="ws-resources">Your three resources and what each one is used for</label>
+            <textarea id="ws-resources"></textarea>
+            <label for="ws-events">Five events: what happens, how likely (weight), and what it costs</label>
+            <textarea id="ws-events"></textarea>
+            <label for="ws-landmarks">Four landmarks (one river or hazard, one shop, two story stops)</label>
+            <textarea id="ws-landmarks"></textarea>
+            <label for="ws-twist">Your twist: the one rule that makes this game different</label>
+            <textarea id="ws-twist"></textarea>
+          </div>
+          <p>When the sheet is done, put it in the Lab config (or into the <code>GAME</code> object of your own <code>trail.html</code>), run it, and balance it with the calculator above.</p>
+        </section>
+
+        <!-- 6. Art guide -->
+        <section class="cl-card" id="art">
+          <span class="step-tag">YOUR ART</span>
+          <h2>6 · Art guide: what you need to draw</h2>
+          <p>The Trail Lab uses emoji (🐂 🍖 🛞) as stand-ins so the game works on day one. A finished game replaces them with <strong>your own art</strong>. Before you open a drawing tool, make a list. Most of the pictures a trail game needs are the same, whatever your world looks like, so here is the whole shopping list.</p>
+          <p><strong>Draw in this order:</strong> every <span class="art-tag must">Must</span> first (the game can ship with only those), then <span class="art-tag">Should</span>, then <span class="art-tag">Bonus</span>. A finished game with a dozen pictures beats an unfinished one with thirty.</p>
+
+          <div class="art-grid">
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Title screen <span class="art-tag must">Must</span></h4><p><strong>1 picture</strong> · The first thing players see: game name, your world, a mood. Leave a quiet area for the Start button.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:75px" aria-hidden="true">128 × 64</div><h4>Your vehicle <span class="art-tag must">Must</span></h4><p><strong>1 sprite</strong> · Wagon, rocket, camel, sub. Side view, facing right, transparent background. It slides along the trail every day.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">960 × 540</div><h4>Landmark scenes <span class="art-tag must">Must</span></h4><p><strong>1 per landmark</strong> · Fort, mountain pass, city: each stop gets its own picture so players feel the journey. Four landmarks is four scenes.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">960 × 540</div><h4>River or hazard scene <span class="art-tag must">Must</span></h4><p><strong>1 picture</strong> · Your river crossing (or asteroid belt, desert, storm). The scariest picture in the game; it shows when the player must choose.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">960 × 540</div><h4>Shop scene <span class="art-tag ">Should</span></h4><p><strong>1 picture</strong> · The store where players spend money. Shelves of your three supplies tell them what matters.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:130px;height:130px" aria-hidden="true">128 × 128</div><h4>Traveler portraits <span class="art-tag ">Should</span></h4><p><strong>1 per traveler</strong> · Give each person a face and one detail (hat, glasses, helmet). Players care when someone gets sick.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:130px;height:130px" aria-hidden="true">64 × 64</div><h4>Supply icons <span class="art-tag must">Must</span></h4><p><strong>1 per resource</strong> · Food, spare parts, money. These replace the emoji in the status bar, so they must read clearly when small.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:100px" aria-hidden="true">600 × 400</div><h4>Event cards <span class="art-tag ">Should</span></h4><p><strong>1 per event</strong> · Broken wheel, storm, lucky find. Five events is five cards; bad ones can be dark and good ones bright.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Ending screens <span class="art-tag must">Must</span></h4><p><strong>3 pictures</strong> · Win, starved, out of time. Players replay to see them all, so make each different and memorable.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:38px" aria-hidden="true">1600 × 400</div><h4>Trail strip <span class="art-tag ">Bonus</span></h4><p><strong>1 tileable strip</strong> · A scrolling landscape behind the vehicle. Left and right edges must match so it repeats without a seam.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:130px;height:130px" aria-hidden="true">128 × 128</div><h4>Tombstone <span class="art-tag ">Bonus</span></h4><p><strong>1 sprite</strong> · Shown where a traveler dies. Players can write a message on it.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:112px" aria-hidden="true">800 × 600</div><h4>Route map <span class="art-tag ">Bonus</span></h4><p><strong>1 picture</strong> · The whole journey from start to goal, with each landmark marked.</p></div>
+          </div>
+
+          <h3>How many pictures is your game?</h3>
+          <p>Use the numbers from your design sheet. The totals include 1 title, 1 vehicle, 3 endings and 3 supply icons.</p>
+          <div class="row">
+            <label for="art-lm">Landmarks</label><input id="art-lm" type="number" value="4" min="1" max="20" style="width:4.5rem" />
+            <label for="art-pt">Travelers</label><input id="art-pt" type="number" value="4" min="1" max="8" style="width:4.5rem" />
+            <label for="art-ev">Events</label><input id="art-ev" type="number" value="5" min="0" max="30" style="width:4.5rem" />
+          </div>
+          <p class="art-count" id="art-out" aria-live="polite"></p>
+
+          <h3>Rules that make it look like one game</h3>
+          <ul>
+            <li><strong>Pick a palette first.</strong> Five to eight colours for the whole game, written down as hex codes (#b45309). Every picture uses only those. This single rule does the most to make student art look professional.</li>
+            <li><strong>One style.</strong> Pixel art, flat shapes or ink and watercolour: choose one and never mix. If your vehicle is pixel art and your scenes are photos, the game looks broken.</li>
+            <li><strong>Same viewpoint.</strong> Vehicle and portraits face the same way every time. Scenes all use the same horizon height, so the trail seems to continue from one to the next.</li>
+            <li><strong>Draw big, show small.</strong> Make the picture at the size in the cards and check it again at half size. If you can't tell what it is, simplify it. This matters most for icons.</li>
+            <li><strong>Leave room for words.</strong> Event and landmark text appears over or beside the picture. Keep the busiest part of the scene away from the bottom third.</li>
+            <li><strong>Transparent or solid?</strong> Vehicle, icons, portraits and the tombstone need a <em>transparent</em> background (save as PNG). Scenes and screens fill the whole rectangle.</li>
+            <li><strong>Only your own art.</strong> Don't paste in pictures from a search. If you use a photo or asset you didn't make, write down who made it and its license.</li>
+            <li><strong>Draw hazards, not enemies.</strong> Show weather, rivers and broken equipment. If real people appear in a real place or time, draw them with respect, never as a monster or a target (see <a href="#history">designing with care</a>).</li>
+          </ul>
+
+          <h3>Name and save every file</h3>
+          <p>Make a folder called <code>art</code> next to your <code>trail.html</code>. Save each picture as a PNG with a plain lowercase name, no spaces: <code>title.png</code>, <code>wagon.png</code>, <code>fort-kearny.png</code>, <code>portrait-ana.png</code>, <code>icon-food.png</code>, <code>event-wheel.png</code>, <code>end-win.png</code>. Keep each file under about 200 KB so the game loads fast.</p>
+
+          <h3>Put it in the game</h3>
+          <p>Your art belongs in the <code>GAME</code> data object next to the thing it shows, so the logic stays untouched. Same idea as the rest of the lesson: content in data, logic in code.</p>
+          <div class="code-block"><pre>landmarks: [
+  { at: 150, name: "Fort Kearny", type: "shop", art: "art/fort-kearny.png" },
+  { at: 400, name: "Platte River", type: "river", art: "art/platte-river.png" }
+],
+vehicleArt: "art/wagon.png",
+resources: {
+  food: { label: "Food", icon: "art/icon-food.png", start: 250 }
+}</pre></div>
+          <p>Then, in your own <code>trail.html</code>, show the picture when the player arrives. (The Trail Lab above still draws emoji; it doesn't read these art fields.)</p>
+          <div class="code-block"><pre>&lt;img id="scene" alt="" width="480" height="270"&gt;
+
+function arrive(landmark) {
+  const pic = document.getElementById("scene");
+  pic.src = landmark.art;
+  pic.alt = landmark.name;      // describe it for screen readers
+}</pre></div>
+          <div class="callout"><strong>Always write the <code>alt</code>.</strong> One short sentence about what the picture shows ("A wooden ferry crossing a wide brown river"). It is what a player using a screen reader hears, and it is what shows if a file name is mistyped.</div>
+
+          <h3>Where to draw</h3>
+          <ul>
+            <li>The <a href="../../web-design/web-studio.html">Web Studio</a> Draw mode, for quick pictures and icons on a grid.</li>
+            <li><a href="../../2d-game-dev/pixel-art-sprites.html">Pixel Art &amp; Sprites</a>, for how to build a vehicle or portrait pixel by pixel, with a palette.</li>
+            <li>Paper first: sketch the title screen and one landmark on paper, photograph them, and trace over the photo. A real sketch beats a first-try computer drawing.</li>
+          </ul>
+
+          <h3>Art checklist</h3>
+          <p>Tick each one when the file is saved in your <code>art</code> folder. Use <strong>Save answers</strong> to keep your progress.</p>
+          <ul class="art-check">
+            <li><input type="checkbox" id="ac1" /><label for="ac1">My palette (5 to 8 hex colours) is written down</label></li>
+            <li><input type="checkbox" id="ac2" /><label for="ac2">Title screen</label></li>
+            <li><input type="checkbox" id="ac3" /><label for="ac3">Vehicle (transparent, facing right)</label></li>
+            <li><input type="checkbox" id="ac4" /><label for="ac4">Supply icons (food, parts, money)</label></li>
+            <li><input type="checkbox" id="ac5" /><label for="ac5">A scene for every landmark</label></li>
+            <li><input type="checkbox" id="ac6" /><label for="ac6">River or hazard scene</label></li>
+            <li><input type="checkbox" id="ac7" /><label for="ac7">All three ending screens (win, starved, out of time)</label></li>
+            <li><input type="checkbox" id="ac8" /><label for="ac8">Shop scene</label></li>
+            <li><input type="checkbox" id="ac9" /><label for="ac9">A portrait for every traveler</label></li>
+            <li><input type="checkbox" id="ac10" /><label for="ac10">A card for every event</label></li>
+            <li><input type="checkbox" id="ac11" /><label for="ac11">Credits written for anything I didn't draw myself</label></li>
+            <li><input type="checkbox" id="ac12" /><label for="ac12">Every <code>&lt;img&gt;</code> has an <code>alt</code></label></li>
+          </ul>
+          <div class="worksheet">
+            <label for="ws-art">Art plan: my style, my palette, and the one picture I will make first</label>
+            <textarea id="ws-art"></textarea>
+          </div>
+        </section>
+        <script>
+        (function () {
+          var ids = ['art-lm', 'art-pt', 'art-ev'], out = document.getElementById('art-out');
+          function upd() {
+            var v = ids.map(function (i) { return Math.max(0, parseInt(document.getElementById(i).value, 10) || 0); });
+            var must = 1 + 1 + 3 + v[0] + 1 + 3;
+            out.textContent = 'Must-haves: ' + must + ' pictures. Everything: ' + (must + v[1] + v[2] + 1) + ' (plus any bonus art).';
+          }
+          ids.forEach(function (i) { document.getElementById(i).addEventListener('input', upd); });
+          upd();
+        })();
+        </script>
+
+        <!-- 7. Level up -->
+        <section class="cl-card" id="levelup">
+          <span class="step-tag">LEVEL UP</span>
+          <h2>7 · Challenges</h2>
+          <p>Pick one or two. They get harder as you go down the list.</p>
+          <ol>
+            <li><strong>Pace and rations.</strong> Add <code>pace</code> and <code>rations</code> choices to your own engine. The Lab version stores them as lists of <code>{ label, miles, cost }</code>.</li>
+            <li><strong>A shop.</strong> Add money and a store at the start. Where is the <em>interesting</em> decision? (Hint: spend too much on food and you can't afford spare parts.)</li>
+            <li><strong>Hunting.</strong> A timing mini-game: a marker slides along a bar, and the player presses a button in the green zone. Look at how the Lab does it.</li>
+            <li><strong>Draw it.</strong> Replace the text log with a canvas: a wagon sliding along the trail with landmarks as dots. The <a href="from-scratch-browser-game.html">From Scratch</a> lesson shows the canvas loop.</li>
+            <li><strong>Save and resume.</strong> Put the state in <code>localStorage</code> so a closed tab doesn't end the trip. The <a href="../../2d-game-dev/ship-your-2d-game.html">Menus, Saving &amp; Shipping</a> lesson explains how.</li>
+            <li><strong>A score board</strong> and a "tombstone" for travelers who didn't make it, with a message the player can write.</li>
+          </ol>
+        </section>
+
+        <!-- 7. Responsible design -->
+        <section class="cl-card" id="history">
+          <h2>8 · Where the original came from, and designing with care</h2>
+          <p><em>The Oregon Trail</em> began in 1971, when a student teacher named Don Rawitsch and two classmates, Bill Heinemann and Paul Dillenberger, wrote a text game for an eighth-grade history class in Minneapolis. A Minnesota education company later turned it into the Apple II version that filled school computer labs through the 1980s and 1990s. It is one of the most famous educational games ever made, and its core is exactly the loop you just built.</p>
+          <p>It is also a good example of why <strong>who is left out of a game matters</strong>. In the real history, the trail ran through the homelands of Native nations, and the migration brought disease and conflict. Early versions of the game told that story thinly or badly, and later versions tried to improve it. When you design a spin-off set in a real place or time:</p>
+          <ul>
+            <li>Ask whose story the game tells, and whose it skips. A landmark can teach something true, not just be scenery.</li>
+            <li>Don't turn a real group of people into an enemy event that you can shoot. Make hazards come from weather, terrain, supplies and choices.</li>
+            <li>When you write a bit of history on a landmark card, check it with a second source, and say where it came from.</li>
+          </ul>
+          <p>Invented worlds (Mars, the deep sea, a fantasy kingdom) are a great way to practise the same design while giving you the freedom to write your own rules.</p>
+        </section>
+
+        <!-- 8. Rubric -->
+        <section class="cl-card" id="rubric">
+          <h2>9 · Show what you built</h2>
+          <p>Hand in your <code>trail.html</code> (or the file from the Lab) and a design sheet. Your teacher will look for:</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Criterion</th><th scope="col">Meets the goal when…</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">It works</th><td>You can start it, play it, and reach all three endings without errors.</td></tr>
+              <tr><th scope="row">Data-driven</th><td>Story, numbers and events live in one data object, and the logic doesn't hard-code them.</td></tr>
+              <tr><th scope="row">Real choices</th><td>At least two decisions where both options have a cost.</td></tr>
+              <tr><th scope="row">Balanced</th><td>You used the calculator and playtested; a careful player can win and a careless one can lose.</td></tr>
+              <tr><th scope="row">A twist</th><td>One rule or mechanic that makes it more than a re-skin.</td></tr>
+              <tr><th scope="row">Written with care</th><td>Events are original and, if real history appears, it is accurate and respectful.</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>Next: plan your whole build in <a href="game-jam-week.html">Game Jam Week</a>, or add real art and animation with the <a href="../../2d-game-dev/2d-pathway.html">2D Game Developer Pathway</a>.</p>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Describe a game as <em>state</em> plus <em>rules</em></li>
+            <li>Write a daily loop that spends resources and changes state</li>
+            <li>Use weighted random choice for an event table</li>
+            <li>Separate content (data) from logic so a spin-off is easy</li>
+            <li>Check game balance with arithmetic, then playtest</li>
+            <li>Design a spin-off with one new rule</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Time</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;">Two to three class periods: one to build the engine (steps 1 to 7), one to design and balance a spin-off, and optional time for a challenge.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <ul style="font-size:0.79rem;color:var(--text-muted,#64748b);line-height:1.7;padding-left:1.1rem;">
+            <li>Nothing happens: open the console (F12) and read the red error.</li>
+            <li>"Unexpected token": a missing comma between list items.</li>
+            <li>Buttons stay grey: a landmark choice is waiting for you.</li>
+            <li>Run the Lab with <code>"seed": 1</code> to get the same game every time while you debug.</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Related</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;"><a href="game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> · <a href="from-scratch-browser-game.html" style="color:var(--acc);">From Scratch</a> · <a href="roguelike-builder.html" style="color:var(--acc);">Roguelike Builder</a> · <a href="game-jam-week.html" style="color:var(--acc);">Game Jam Week</a></p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:var(--text-secondary,#3f4f65);">
+            <dt style="font-weight:700;margin-top:0.6rem;">State</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Everything about the game that can change: the day, miles, supplies, each traveler's health.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Resource management</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A game genre about spending limited supplies wisely to reach a goal.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Data-driven design</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Keeping content and numbers in data rather than buried in code, so they can change without rewriting the rules.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Weighted random</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Picking from a list where some items are more likely than others, according to their weights.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Seed</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A starting number that makes a random generator repeat the same sequence, so a bug can be reproduced.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Game balance</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Tuning numbers so a game is challenging but fair.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Playtest</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Watching real players try your game, without helping, to find what confuses or bores them.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Spin-off</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A new game that reuses the structure of an existing one in a different setting or with a new rule.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<!-- ─────────────────────────────────────────────────────────────
+     The student's build-along program. Steps 1–7 above are sliced out of
+     this one string by its "// ---- name ----" markers, so the lesson text,
+     the download and the tests can never drift apart.
+     (String.raw keeps \n as two characters; no backticks or dollar-braces inside.)
+     ───────────────────────────────────────────────────────────── -->
+<script>
+window.TRAIL_MINI_JS = String.raw`// ---- data ----
+// Everything a spin-off needs to change lives in this one object.
+const GAME = {
+  title: "The Oregon Trail",
+  unit: "miles", goal: 600, deadline: 60,
+  milesPerDay: 15,
+  party: ["Ana", "Ben", "Cy"],
+  foodPerPerson: 2,
+  start: { food: 250, parts: 2 },
+  events: [
+    { weight: 3, text: "{who} caught a fever.", health: -15 },
+    { weight: 2, text: "A wagon wheel cracked!", days: 1, fixWith: "parts" },
+    { weight: 2, text: "You found wild berries by the creek.", food: 40 },
+    { weight: 1, text: "A thunderstorm soaked some food.", food: -40 }
+  ],
+  landmarks: [
+    { at: 150, name: "Big River", river: true },
+    { at: 400, name: "Fort Kearny", text: "You trade at the fort and get 60 food.", food: 60 }
+  ]
+};
+
+// ---- state ----
+let day = 1, miles = 0, over = false, next = 0;
+let food = GAME.start.food, parts = GAME.start.parts;
+const health = GAME.party.map(() => 100);
+
+// ---- helpers ----
+const $ = id => document.getElementById(id);
+const alive = () => health.map((h, i) => i).filter(i => health[i] > 0);
+const pick = list => list[Math.floor(Math.random() * list.length)];
+
+function say(text) {
+  $("log").textContent = "Day " + day + ": " + text + "\n" + $("log").textContent;
+}
+function hurt(i, n) {
+  health[i] = Math.max(0, Math.min(100, health[i] + n));
+  if (health[i] === 0) say(GAME.party[i] + " has died.");
+}
+function weighted(list) {
+  let roll = Math.random() * list.reduce((sum, e) => sum + e.weight, 0);
+  for (const e of list) { roll -= e.weight; if (roll <= 0) return e; }
+  return list[list.length - 1];
+}
+function draw() {
+  $("status").textContent = "Day " + day + " of " + GAME.deadline + " · " + Math.round(miles) + " of " +
+    GAME.goal + " " + GAME.unit + " · food " + food + " · spare parts " + parts;
+  $("party").textContent = GAME.party.map((n, i) => n + " " + health[i]).join(" · ");
+}
+function setButtons() {
+  const busy = over || $("choices").children.length > 0;
+  $("go").disabled = busy; $("rest").disabled = busy;
+}
+
+// ---- day ----
+function nextStop() {
+  const lm = GAME.landmarks[next];
+  return lm ? Math.min(lm.at, GAME.goal) : GAME.goal;
+}
+function nextDay(resting) {
+  if (over) return;
+  const people = alive();
+  const need = GAME.foodPerPerson * people.length;
+  if (food >= need) { food -= need; }
+  else { food = 0; people.forEach(i => hurt(i, -12)); say("No food! Everyone is starving."); }
+  if (resting) { people.forEach(i => hurt(i, 8)); }
+  else { miles = Math.min(miles + GAME.milesPerDay * (0.8 + Math.random() * 0.4), nextStop()); }
+  if (!resting && Math.random() < 0.4) runEvent();
+  day++;
+  checkEnd();
+  if (!over) checkLandmark();
+  draw(); setButtons();
+}
+
+// ---- events ----
+function runEvent() {
+  const e = weighted(GAME.events), who = pick(alive());
+  let text = e.text.replace("{who}", GAME.party[who]);
+  if (e.fixWith && parts > 0) { parts--; text += " You used a spare part and fixed it fast!"; }
+  else if (e.days) {
+    day += e.days;
+    food = Math.max(0, food - GAME.foodPerPerson * alive().length * e.days);
+  }
+  if (e.health) hurt(who, e.health);
+  if (e.food) food = Math.max(0, food + e.food);
+  say(text);
+}
+
+// ---- landmarks ----
+function choose(question, options) {
+  say(question);
+  $("choices").replaceChildren(...options.map(([label, action]) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => { $("choices").replaceChildren(); action(); draw(); setButtons(); };
+    return b;
+  }));
+  setButtons();
+}
+function cross(risk, daysLost) {
+  day += daysLost;
+  if (Math.random() < risk) {
+    food = Math.floor(food / 2);
+    hurt(pick(alive()), -25);
+    say("Disaster! Half your food was swept away.");
+  } else { say("You crossed safely."); }
+}
+function checkLandmark() {
+  const lm = GAME.landmarks[next];
+  if (!lm || miles < lm.at) return;
+  next++;
+  if (lm.river) {
+    choose("You reached " + lm.name + ". How will you cross?", [
+      ["Ford it (free, risky)", () => cross(0.35, 0)],
+      ["Build a raft (costs a day, safer)", () => cross(0.1, 1)]
+    ]);
+    return;
+  }
+  if (lm.food) food += lm.food;
+  say("You reached " + lm.name + ". " + (lm.text || ""));
+}
+
+// ---- end ----
+function finish(message) { over = true; say(message); }
+function checkEnd() {
+  if (alive().length === 0) return finish("Everyone is gone. Game over.");
+  if (miles >= GAME.goal) {
+    return finish("You made it with " + alive().length + " survivors! Score: " + (alive().length * 100 + food));
+  }
+  if (day > GAME.deadline) return finish("You ran out of time. Winter came.");
+}
+
+$("title").textContent = GAME.title;
+$("go").onclick = () => nextDay(false);
+$("rest").onclick = () => nextDay(true);
+say("Your journey begins!");
+draw();
+`;
+window.TRAIL_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Trail Game</title>\n</head>\n<body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <p id="status"></p>\n  <p id="party"></p>\n  <pre id="log" style="background:#f4ecd8; color:#2b1d12; padding:1rem; height:14rem; overflow:auto; white-space:pre-wrap;"></pre>\n  <div id="choices"></div>\n  <p><button id="go">Travel one day</button> <button id="rest">Rest one day</button></p>\n\n<script>\n';
+window.TRAIL_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   TrailEngine: the finished game used by the Trail Lab.
+   Self-contained on purpose: "Download as a game file" serialises this
+   function with toString(), so it must not reach for anything outside itself.
+   ═════════════════════════════════════════════════════════════ */
+function TrailEngine(root, cfg) {
+  if (root._trail) root._trail.destroy();
+  var C = JSON.parse(JSON.stringify(cfg));
+  function need(ok, msg) { if (!ok) throw new Error(msg); }
+
+  // ---- validate, with messages a student can act on ----
+  need(typeof C.title === 'string' && C.title, '"title" must be a phrase in quotes.');
+  need(typeof C.goalMiles === 'number' && C.goalMiles > 0, '"goalMiles" must be a number above 0.');
+  need(Array.isArray(C.party) && C.party.length >= 1 && C.party.length <= 8, '"party" must be a list of 1 to 8 names.');
+  var R = C.resources || {};
+  need(R.food, '"resources" must include a "food" entry (it is what travelers eat each day).');
+  var rkeys = Object.keys(R);
+  rkeys.forEach(function (k) {
+    need(typeof R[k].start === 'number', 'Resource "' + k + '" needs a numeric "start".');
+    need(typeof R[k].label === 'string', 'Resource "' + k + '" needs a "label".');
+  });
+  var unit = C.unit || 'miles';
+  var PACES = (C.paces && C.paces.length) ? C.paces : [
+    { label: 'Steady', miles: 15, cost: 0 }, { label: 'Strenuous', miles: 20, cost: 2 }, { label: 'Grueling', miles: 26, cost: 5 }];
+  var RATIONS = (C.rations && C.rations.length) ? C.rations : [
+    { label: 'Filling', per: 2, health: 2 }, { label: 'Meager', per: 1.5, health: 0 }, { label: 'Bare bones', per: 1, health: -3 }];
+  PACES.forEach(function (p) { need(typeof p.miles === 'number' && p.miles > 0, 'Every pace needs "miles" above 0.'); p.cost = p.cost || 0; });
+  RATIONS.forEach(function (r) { need(typeof r.per === 'number' && r.per >= 0, 'Every ration needs a number "per" (food per person per day).'); r.health = r.health || 0; });
+  var EVENTS = C.events || [];
+  EVENTS.forEach(function (e, n) {
+    need(typeof e.text === 'string' && typeof e.weight === 'number' && e.weight > 0, 'Event ' + (n + 1) + ' needs "text" and a "weight" above 0.');
+    Object.keys(e.effects || {}).forEach(function (k) {
+      need(k === 'health' || k === 'days' || k === 'miles' || R[k], 'Event ' + (n + 1) + ' changes "' + k + '", which is not a resource.');
+    });
+    if (e.fixWith) need(R[e.fixWith], 'Event ' + (n + 1) + ' has "fixWith": "' + e.fixWith + '", which is not a resource.');
+  });
+  var LM = (C.landmarks || []).slice().sort(function (a, b) { return a.at - b.at; });
+  LM.forEach(function (l, n) {
+    need(typeof l.name === 'string' && typeof l.at === 'number', 'Landmark ' + (n + 1) + ' needs a "name" and a number "at".');
+    need(l.at > 0 && l.at < C.goalMiles, 'Landmark "' + l.name + '" must be between 0 and goalMiles.');
+    need(!l.type || l.type === 'shop' || l.type === 'river' || l.type === 'info', 'Landmark "' + l.name + '": type must be "shop", "river" or "info".');
+  });
+  var hasMoney = !!R.money;
+  var sellable = rkeys.filter(function (k) { return typeof R[k].price === 'number'; });
+  var HUNT = C.hunt === false ? null : { label: 'Hunt', max: 100 };
+  if (HUNT && C.hunt) { HUNT.label = C.hunt.label || HUNT.label; HUNT.max = C.hunt.max || HUNT.max; }
+  var W = Object.assign({ ford: 'Ford it', float: 'Caulk and float', ferry: 'Pay for a ferry', wait: 'Wait a day' }, C.words || {});
+  var deadline = C.deadline || 9999;
+  var eventChance = typeof C.eventChance === 'number' ? C.eventChance : 0.4;
+
+  // ---- tiny seeded random, so a bug can be replayed ----
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var rng = (C.seed != null) ? mulberry(C.seed) : Math.random;
+
+  // ---- styles (injected once, scoped with .tr-) ----
+  if (!document.getElementById('tr-style')) {
+    var st = document.createElement('style'); st.id = 'tr-style';
+    st.textContent = [
+      '.tr{position:relative;background:#f4ecd8;color:#2b1d12;border:2px solid #7c4a1e;border-radius:14px;padding:.8rem;font:14px/1.45 system-ui,sans-serif;box-sizing:border-box}',
+      '.tr *{box-sizing:border-box}',
+      '.tr h3{margin:0;font-size:1.05rem;color:#5b3512}.tr-top{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:baseline}',
+      '.tr-track{position:relative;height:34px;margin:.9rem .4rem .4rem;border-bottom:3px dashed #7c4a1e}',
+      '.tr-dot{position:absolute;bottom:-7px;width:10px;height:10px;border-radius:50%;background:#7c4a1e;transform:translateX(-5px)}',
+      '.tr-dot.done{background:#15803d}.tr-dot.river{background:#1d4ed8}.tr-dot.shop{background:#b45309}',
+      '.tr-car{position:absolute;bottom:2px;font-size:22px;transform:translateX(-50%);transition:left .35s}',
+      '.tr-next{font-size:.8rem;color:#5b3512;margin:.2rem 0 .5rem}',
+      '.tr-res{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}.tr-chip{background:#fff8e6;border:1px solid #c9a56a;border-radius:8px;padding:.15rem .5rem;font-weight:600;font-size:.82rem}',
+      '.tr-party{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:.3rem;margin-bottom:.5rem}',
+      '.tr-p{background:#fff8e6;border:1px solid #c9a56a;border-radius:8px;padding:.2rem .4rem;font-size:.78rem}.tr-p.dead{opacity:.5}',
+      '.tr-hp{height:6px;border-radius:3px;background:#e5d3ae;margin-top:2px;overflow:hidden}.tr-hp i{display:block;height:100%;background:#16a34a}',
+      '.tr-ctl{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:.5rem}.tr-ctl label{font-size:.76rem;font-weight:700}',
+      '.tr select{font:inherit;font-size:.8rem;padding:.2rem .3rem;border:1px solid #c9a56a;border-radius:6px;background:#fff;color:#2b1d12}',
+      '.tr button{font:inherit;font-size:.82rem;font-weight:700;border:0;border-radius:8px;padding:.4rem .8rem;background:#7c4a1e;color:#fff;cursor:pointer}',
+      '.tr button:disabled{opacity:.45;cursor:not-allowed}.tr button.alt{background:#fff8e6;color:#5b3512;border:1.5px solid #c9a56a}',
+      '.tr button:focus-visible,.tr select:focus-visible{outline:3px solid #2563eb;outline-offset:2px}',
+      '.tr-log{background:#fffdf5;border:1px solid #c9a56a;border-radius:8px;padding:.4rem .6rem;height:9.5rem;overflow:auto;font-size:.8rem;white-space:pre-wrap}',
+      '.tr-log div{padding:1px 0}.tr-log .bad{color:#b91c1c}.tr-log .good{color:#15803d}',
+      '.tr-modal{position:absolute;inset:0;background:rgba(43,29,18,.78);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.8rem;z-index:5}',
+      '.tr-box{background:#f4ecd8;border:2px solid #7c4a1e;border-radius:12px;padding:1rem;max-width:30rem;width:100%;max-height:100%;overflow:auto}',
+      '.tr-box h4{margin:0 0 .35rem;font-size:1.05rem;color:#5b3512}.tr-box p{margin:0 0 .6rem}.tr-btns{display:flex;flex-wrap:wrap;gap:.4rem}',
+      '.tr-shop{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px dotted #c9a56a}',
+      '.tr-bar{position:relative;height:22px;background:#e5d3ae;border-radius:11px;margin:.6rem 0;overflow:hidden}.tr-zone{position:absolute;left:42%;width:16%;top:0;bottom:0;background:#86efac}.tr-mark{position:absolute;top:0;bottom:0;width:6px;background:#7c2d12;left:0}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  // ---- state ----
+  var S, timers = [], destroyed = false;
+  function later(fn, ms) { var id = setTimeout(fn, ms); timers.push(id); return id; }
+  function h(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function r1(n) { return Math.round(n * 10) / 10; }
+  function fmt(n) { return String(r1(n)); }
+  function pick(a) { return a[Math.floor(rng() * a.length)]; }
+  function alive() { var o = []; S.hp.forEach(function (v, i) { if (v > 0) o.push(i); }); return o; }
+  function say(t, cls) { S.log.unshift({ t: 'Day ' + S.day + ': ' + t, c: cls || '' }); if (S.log.length > 60) S.log.pop(); }
+  function hurt(i, n) {
+    if (S.hp[i] <= 0) return;
+    S.hp[i] = Math.max(0, Math.min(100, S.hp[i] + n));
+    if (S.hp[i] === 0) say(C.party[i] + ' has died.', 'bad');
+  }
+  function newGame() {
+    S = { day: 1, miles: 0, res: {}, hp: C.party.map(function () { return 100; }), pace: 0, ration: 0, idx: 0, log: [], over: false, modal: false, auto: false };
+    rkeys.forEach(function (k) { S.res[k] = R[k].start; });
+    say('Your journey begins' + (C.start ? ' in ' + C.start : '') + '. ' + (C.goalName ? 'Goal: ' + C.goalName + '.' : ''));
+    draw();
+    if (hasMoney && sellable.length) shop({ name: C.start || 'the starting point', markup: 1 }, 'Before you set out');
+  }
+
+  // ---- UI ----
+  var el = {};
+  function build() {
+    root.replaceChildren();
+    var box = h('div', 'tr'); root.appendChild(box); el.box = box;
+    var top = h('div', 'tr-top'); top.appendChild(h('h3', null, C.title)); el.day = h('span'); top.appendChild(el.day); box.appendChild(top);
+    el.track = h('div', 'tr-track'); box.appendChild(el.track);
+    LM.forEach(function (l) { var d = h('span', 'tr-dot ' + (l.type || '')); d.style.left = (l.at / C.goalMiles * 100) + '%'; d.title = l.name + ' (' + l.at + ' ' + unit + ')'; l._dot = d; el.track.appendChild(d); });
+    el.car = h('span', 'tr-car', C.vehicle || '🛻'); el.track.appendChild(el.car);
+    el.next = h('div', 'tr-next'); box.appendChild(el.next);
+    el.res = h('div', 'tr-res'); box.appendChild(el.res);
+    el.party = h('div', 'tr-party'); box.appendChild(el.party);
+    var ctl = h('div', 'tr-ctl'); box.appendChild(ctl);
+    var l1 = h('label', null, 'Pace'); el.pace = h('select'); l1.htmlFor = el.pace.id = 'tr-pace-' + Math.floor(Math.random() * 1e6);
+    PACES.forEach(function (p, i) { var o = h('option', null, p.label + ' (' + p.miles + '/day)'); o.value = i; el.pace.appendChild(o); });
+    el.pace.onchange = function () { S.pace = +el.pace.value; };
+    var l2 = h('label', null, 'Rations'); el.ration = h('select'); l2.htmlFor = el.ration.id = 'tr-ration-' + Math.floor(Math.random() * 1e6);
+    RATIONS.forEach(function (p, i) { var o = h('option', null, p.label + ' (' + p.per + ' each)'); o.value = i; el.ration.appendChild(o); });
+    el.ration.onchange = function () { S.ration = +el.ration.value; };
+    ctl.appendChild(l1); ctl.appendChild(el.pace); ctl.appendChild(l2); ctl.appendChild(el.ration);
+    var btns = h('div', 'tr-ctl'); box.appendChild(btns);
+    el.go = h('button', null, '▶ Travel'); el.go.type = 'button'; el.go.onclick = function () { S.auto = false; travel(); };
+    el.auto = h('button', 'alt', '⏩ Auto-travel'); el.auto.type = 'button'; el.auto.onclick = function () { S.auto = !S.auto; if (S.auto) autoStep(); draw(); };
+    el.rest = h('button', 'alt', '🛌 Rest'); el.rest.type = 'button'; el.rest.onclick = function () { S.auto = false; dayPass('rest'); };
+    btns.appendChild(el.go); btns.appendChild(el.auto); btns.appendChild(el.rest);
+    if (HUNT) { el.hunt = h('button', 'alt', '🎯 ' + HUNT.label); el.hunt.type = 'button'; el.hunt.onclick = function () { S.auto = false; startHunt(); }; btns.appendChild(el.hunt); }
+    el.log = h('div', 'tr-log'); el.log.setAttribute('role', 'log'); el.log.setAttribute('aria-live', 'polite'); box.appendChild(el.log);
+  }
+  function draw() {
+    if (destroyed) return;
+    el.day.textContent = 'Day ' + S.day + (deadline < 9999 ? ' of ' + deadline : '');
+    el.car.style.left = Math.min(100, S.miles / C.goalMiles * 100) + '%';
+    LM.forEach(function (l, i) { l._dot.classList.toggle('done', i < S.idx); });
+    var nx = LM[S.idx];
+    el.next.textContent = Math.round(S.miles) + ' of ' + C.goalMiles + ' ' + unit + '.  ' +
+      (nx ? 'Next: ' + nx.name + ' in ' + Math.max(0, Math.round(nx.at - S.miles)) + '.' : 'Next: ' + (C.goalName || 'the finish') + ' in ' + Math.max(0, Math.round(C.goalMiles - S.miles)) + '.');
+    el.res.replaceChildren();
+    rkeys.forEach(function (k) { el.res.appendChild(h('span', 'tr-chip', (R[k].icon || '') + ' ' + R[k].label + ': ' + fmt(S.res[k]))); });
+    el.party.replaceChildren();
+    C.party.forEach(function (n, i) {
+      var p = h('div', 'tr-p' + (S.hp[i] <= 0 ? ' dead' : '')); p.appendChild(h('div', null, (S.hp[i] <= 0 ? '🪦 ' : '') + n + ' · ' + S.hp[i]));
+      var bar = h('div', 'tr-hp'); var fill = h('i'); fill.style.width = S.hp[i] + '%'; if (S.hp[i] < 35) fill.style.background = '#dc2626'; bar.appendChild(fill); p.appendChild(bar); el.party.appendChild(p);
+    });
+    el.log.replaceChildren();
+    S.log.slice(0, 14).forEach(function (l) { el.log.appendChild(h('div', l.c, l.t)); });
+    var busy = S.over || S.modal;
+    el.go.disabled = el.rest.disabled = el.auto.disabled = busy;
+    if (el.hunt) el.hunt.disabled = busy;
+    el.auto.textContent = S.auto ? '⏸ Stop auto' : '⏩ Auto-travel';
+    el.pace.value = S.pace; el.ration.value = S.ration;
+  }
+
+  // ---- modal ----
+  function modal(title, text, buttons) {
+    S.modal = true; draw();
+    var m = h('div', 'tr-modal'); m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-label', title);
+    var b = h('div', 'tr-box'); b.appendChild(h('h4', null, title));
+    var p = h('p', null, text); b.appendChild(p);
+    var body = h('div'); b.appendChild(body);
+    var row = h('div', 'tr-btns'); b.appendChild(row);
+    (buttons || []).forEach(function (bt) {
+      var x = h('button', bt.alt ? 'alt' : null, bt.label); x.type = 'button'; if (bt.disabled) x.disabled = true;
+      x.onclick = function () { bt.fn(); }; row.appendChild(x);
+    });
+    m.appendChild(b); el.box.appendChild(m);
+    var first = row.querySelector('button:not(:disabled)'); if (first) first.focus();
+    return { box: b, text: p, body: body, row: row, close: function () { if (m.parentNode) m.parentNode.removeChild(m); S.modal = false; draw(); } };
+  }
+
+  // ---- one day ----
+  function foodNeed() { return RATIONS[S.ration].per * alive().length; }
+  function dayPass(mode) {
+    if (S.over || S.modal) return;
+    var al = alive(), rt = RATIONS[S.ration], ps = PACES[S.pace];
+    var need = r1(rt.per * al.length);
+    if (S.res.food >= need) { S.res.food = r1(S.res.food - need); al.forEach(function (i) { hurt(i, rt.health + (mode === 'rest' ? 8 : 0)); }); }
+    else { S.res.food = 0; say('Out of ' + R.food.label.toLowerCase() + '! Everyone is suffering.', 'bad'); al.forEach(function (i) { hurt(i, -12); }); }
+    if (mode === 'travel') {
+      al.forEach(function (i) { hurt(i, -ps.cost); });
+      var stop = LM[S.idx] ? LM[S.idx].at : C.goalMiles;
+      S.miles = Math.min(S.miles + ps.miles * (0.8 + rng() * 0.4), stop, C.goalMiles);
+    }
+    if (rng() < (mode === 'travel' ? eventChance : eventChance / 2) && alive().length) runEvent();
+    S.day++;
+    if (!endCheck()) landmarkCheck();
+    draw();
+  }
+  function travel() { dayPass('travel'); }
+  function autoStep() {
+    if (destroyed) return;
+    if (!S.auto || S.over || S.modal) { S.auto = false; draw(); return; }
+    var before = S.log.length ? S.log[0].t : '', logLen = S.log.length;
+    travel();
+    if (S.log[0] && S.log[0].t !== before) S.auto = false;
+    draw();
+    if (S.auto) later(autoStep, 420);
+  }
+  function summary(eff) {
+    var parts = [];
+    Object.keys(eff).forEach(function (k) {
+      var v = eff[k], name = k === 'health' ? 'health' : k === 'days' ? (v === 1 ? 'day' : 'days') : k === 'miles' ? unit : R[k].label;
+      parts.push((v > 0 ? '+' : '') + v + ' ' + name);
+    });
+    return parts.length ? ' (' + parts.join(', ') + ')' : '';
+  }
+  function runEvent() {
+    if (!EVENTS.length) return;
+    var total = EVENTS.reduce(function (s, e) { return s + e.weight; }, 0), roll = rng() * total, ev = EVENTS[EVENTS.length - 1];
+    for (var n = 0; n < EVENTS.length; n++) { roll -= EVENTS[n].weight; if (roll <= 0) { ev = EVENTS[n]; break; } }
+    var who = pick(alive()), eff = ev.effects || {}, fixed = false;
+    var text = ev.text.replace('{who}', C.party[who]);
+    if (ev.fixWith && S.res[ev.fixWith] >= 1) { S.res[ev.fixWith] -= 1; fixed = true; text += ' You used a spare (' + R[ev.fixWith].label + ') and lost no time!'; }
+    var bad = false;
+    Object.keys(eff).forEach(function (k) {
+      var v = eff[k];
+      if (v < 0 || (k === 'days' && v > 0)) bad = true;
+      if (k === 'health') { if (ev.everyone) alive().forEach(function (i) { hurt(i, v); }); else hurt(who, v); }
+      else if (k === 'days') { if (!fixed) { S.day += v; S.res.food = Math.max(0, r1(S.res.food - foodNeed() * v)); } }
+      else if (k === 'miles') { if (!fixed) S.miles = Math.max(0, S.miles + v); }
+      else S.res[k] = Math.max(0, r1(S.res[k] + v));
+    });
+    say(text + (fixed ? '' : summary(eff)), fixed ? 'good' : (bad ? 'bad' : 'good'));
+    S.auto = false;
+  }
+
+  // ---- landmarks ----
+  function landmarkCheck() {
+    var l = LM[S.idx];
+    if (!l || S.miles < l.at) return;
+    S.idx++;
+    if (l.type === 'shop') { say('You reached ' + l.name + '.'); shop(l, l.name); }
+    else if (l.type === 'river') { say('You reached ' + l.name + '.'); river(l); }
+    else {
+      say('You reached ' + l.name + '. ' + (l.text || ''), 'good');
+      var m = modal(l.name, l.text || 'You made it this far.', [{ label: 'Continue', fn: function () { m.close(); } }]);
+    }
+  }
+  function shop(l, title) {
+    var markup = l.markup || 1;
+    var m = modal(title, (l.text ? l.text + ' ' : '') + 'Buy supplies' + (markup > 1 ? ' (prices are higher out here).' : '.'), []);
+    function paint() {
+      m.body.replaceChildren();
+      m.body.appendChild(h('p', null, (R.money.icon || '') + ' ' + R.money.label + ': ' + fmt(S.res.money)));
+      sellable.forEach(function (k) {
+        var lot = R[k].lot || 1, cost = r1(R[k].price * lot * markup);
+        var row = h('div', 'tr-shop'); row.appendChild(h('span', null, (R[k].icon || '') + ' ' + R[k].label + ': ' + fmt(S.res[k])));
+        var b = h('button', 'alt', 'Buy ' + lot + ' · ' + cost); b.type = 'button'; b.disabled = S.res.money < cost;
+        b.onclick = function () { S.res.money = r1(S.res.money - cost); S.res[k] = r1(S.res[k] + lot); paint(); draw(); S.modal = true; };
+        row.appendChild(b); m.body.appendChild(row);
+      });
+    }
+    paint();
+    var done = h('button', null, 'Done shopping'); done.type = 'button'; done.onclick = function () { m.close(); };
+    m.row.appendChild(done); done.focus();
+  }
+  function river(l) {
+    var depth = l.depth || 3, ferry = l.ferry != null ? l.ferry : depth * 8;
+    function cross(risk, days, label) {
+      S.day += days;
+      if (rng() < risk) {
+        S.res.food = Math.floor(S.res.food / 2); hurt(pick(alive()), -25);
+        say(label + ': it went badly. Half your ' + R.food.label.toLowerCase() + ' was lost and someone was hurt.', 'bad');
+      } else say(label + ': you got across safely.', 'good');
+      m.close(); endCheck(); draw();
+    }
+    var m = modal(l.name, (l.text ? l.text + ' ' : '') + 'The danger here is level ' + depth + '. How will you get across?', []);
+    function add(label, fn, disabled) { var b = h('button', null, label); b.type = 'button'; b.disabled = !!disabled; b.onclick = fn; m.row.appendChild(b); return b; }
+    add(W.ford + ' (free, ' + Math.round(Math.min(0.9, depth * 0.12) * 100) + '% risk)', function () { cross(Math.min(0.9, depth * 0.12), 0, W.ford); });
+    add(W.float + ' (1 day, ' + Math.round(Math.min(0.9, depth * 0.05 + 0.05) * 100) + '% risk)', function () { cross(Math.min(0.9, depth * 0.05 + 0.05), 1, W.float); });
+    if (hasMoney) add(W.ferry + ' (' + ferry + ' ' + R.money.label + ', safe)', function () { S.res.money = r1(S.res.money - ferry); cross(0, 0, W.ferry); }, S.res.money < ferry);
+    add(W.wait, function () { depth = Math.max(1, depth + (rng() < 0.5 ? -1 : 1)); S.day++; S.res.food = Math.max(0, r1(S.res.food - foodNeed())); say('You waited a day. The danger is now level ' + depth + '.'); m.close(); if (!endCheck()) river(l); draw(); });
+  }
+
+  // ---- hunting mini-game: stop the marker in the green zone ----
+  function startHunt() {
+    if (S.over || S.modal) return;
+    var shots = 3, total = 0, pos = 0, dir = 1, timer;
+    var m = modal(HUNT.label, 'Press the button when the marker is over the green zone. 3 shots.', []);
+    var bar = h('div', 'tr-bar'), zone = h('div', 'tr-zone'), mark = h('div', 'tr-mark'); bar.appendChild(zone); bar.appendChild(mark); m.body.appendChild(bar);
+    var out = h('p', null, 'Shots left: 3'); m.body.appendChild(out);
+    timer = setInterval(function () { pos += dir * 2.2; if (pos >= 100 || pos <= 0) dir = -dir; mark.style.left = 'calc(' + pos + '% - 3px)'; }, 16); timers.push(timer);
+    var shoot = h('button', null, 'Shoot!'); shoot.type = 'button'; m.row.appendChild(shoot); shoot.focus();
+    shoot.onclick = function () {
+      var d = Math.abs(pos - 50), g = d <= 8 ? HUNT.max / 3 : d <= 22 ? HUNT.max / 6 : 0;
+      total += g; shots--;
+      out.textContent = (g ? 'Hit! +' + Math.round(g) : 'Missed.') + '  Shots left: ' + shots;
+      if (shots === 0) {
+        clearInterval(timer); shoot.disabled = true; total = Math.round(total);
+        var done = h('button', null, 'Bring it back'); done.type = 'button'; m.row.appendChild(done); done.focus();
+        out.textContent += '  You gather ' + total + ' ' + R.food.label + '.';
+        done.onclick = function () { S.res.food = r1(S.res.food + total); say(HUNT.label + ': +' + total + ' ' + R.food.label + '.', total ? 'good' : 'bad'); m.close(); dayPass('hunt'); };
+      }
+    };
+  }
+
+  // ---- ending ----
+  function endCheck() {
+    if (S.over) return true;
+    var al = alive().length, lose = null;
+    if (!al) lose = 'Everyone has died. The journey is over.';
+    else if (S.miles >= C.goalMiles) {
+      var score = al * 200 + Math.floor(S.res.food / 5) + Math.floor(S.res.money || 0) + Math.max(0, deadline < 9999 ? deadline - S.day : 0);
+      finish(true, 'You reached ' + (C.goalName || 'the end') + ' on day ' + S.day + ' with ' + al + ' of ' + C.party.length + ' travelers.', score); return true;
+    } else if (S.day > deadline) lose = 'You ran out of time before reaching ' + (C.goalName || 'the end') + '.';
+    if (lose) { finish(false, lose, 0); return true; }
+    return false;
+  }
+  function finish(win, text, score) {
+    S.over = true; S.auto = false; say(text, win ? 'good' : 'bad');
+    var m = modal(win ? '🎉 You made it!' : 'Game over', text + (win ? ' Score: ' + score + '.' : ''), [{ label: 'Play again', fn: function () { newGame(); } }]);
+    m.row.querySelector('button').onclick = function () { m.close(); newGame(); };
+  }
+
+  root._trail = { destroy: function () { destroyed = true; timers.forEach(function (t) { clearTimeout(t); clearInterval(t); }); root.replaceChildren(); root._trail = null; }, state: function () { return S; }, travel: travel };
+  build(); newGame();
+}
+
+/* ═════════════════════════════════════════════════════════════
+   Presets for the Trail Lab
+   ═════════════════════════════════════════════════════════════ */
+var TRAIL_PRESETS = {
+  oregon: { label: 'The Oregon Trail, 1848', config: {
+    title: 'The Oregon Trail, 1848', start: 'Independence, Missouri', goalName: 'Oregon City', unit: 'miles', goalMiles: 2000, deadline: 190, vehicle: '🐂',
+    party: ['Ana', 'Ben', 'Cy', 'Dee', 'Eli'], eventChance: 0.4,
+    resources: {
+      food: { label: 'Food (lbs)', icon: '🍖', start: 300, price: 0.2, lot: 50 },
+      parts: { label: 'Spare wheels', icon: '🛞', start: 1, price: 15, lot: 1 },
+      money: { label: 'Money ($)', icon: '💵', start: 350 } },
+    hunt: { label: 'Hunt', max: 120 },
+    events: [
+      { text: '{who} has a fever.', weight: 4, effects: { health: -18 } },
+      { text: 'A wheel cracked on a rock.', weight: 3, fixWith: 'parts', effects: { days: 2 } },
+      { text: '{who} was bitten by a snake.', weight: 1, effects: { health: -30 } },
+      { text: 'Wild berries along the creek!', weight: 3, effects: { food: 40 } },
+      { text: 'A thunderstorm soaked the food.', weight: 2, effects: { food: -40 } },
+      { text: 'The oxen wandered off overnight.', weight: 2, effects: { days: 1 } },
+      { text: 'You lost the trail and had to backtrack.', weight: 2, effects: { days: 1, miles: -20 } },
+      { text: 'Other travelers shared supper and stories.', weight: 2, everyone: true, effects: { health: 6 } },
+      { text: 'Bad water made everyone queasy.', weight: 2, everyone: true, effects: { health: -8 } },
+      { text: 'A thief took cash from the wagon.', weight: 1, effects: { money: -20 } }
+    ],
+    landmarks: [
+      { at: 102, name: 'Kansas River', type: 'river', depth: 3, text: 'Spring rain has the river running high.' },
+      { at: 304, name: 'Fort Kearny', type: 'shop', markup: 1.3, text: 'A military post on the Platte River.' },
+      { at: 554, name: 'Chimney Rock', type: 'info', text: 'A stone spire you can see for days. Many travelers wrote their names near its base.' },
+      { at: 640, name: 'Fort Laramie', type: 'shop', markup: 1.4, text: 'A busy trading post. Everyone is selling.' },
+      { at: 830, name: 'Independence Rock', type: 'info', text: 'Travelers hoped to get here by the Fourth of July, so they could cross the mountains before snow.' },
+      { at: 932, name: 'South Pass', type: 'info', text: 'A wide, gentle gap through the Rocky Mountains. The hardest climb is behind you.' },
+      { at: 1288, name: 'Fort Hall', type: 'shop', markup: 1.5, text: 'Prices are high. Think hard about what you really need.' },
+      { at: 1431, name: 'Snake River', type: 'river', depth: 5, text: 'Wide, fast, and cold.' },
+      { at: 1700, name: 'Blue Mountains', type: 'info', text: 'Steep, forested and slow. Rest if anyone is weak.' }
+    ] } },
+  mars: { label: 'Mission to Mars', config: {
+    title: 'Mission to Mars', start: 'Earth orbit', goalName: 'Jezero Crater', unit: 'million km', goalMiles: 180, deadline: 260, vehicle: '🚀',
+    party: ['Cmdr Rivera', 'Dr. Okafor', 'Eng. Lin', 'Pilot Haas'], eventChance: 0.45,
+    paces: [{ label: 'Coast', miles: 1, cost: 0 }, { label: 'Burn', miles: 1.4, cost: 2 }, { label: 'Overburn', miles: 1.9, cost: 5 }],
+    rations: [{ label: 'Full air flow', per: 1.5, health: 2 }, { label: 'Reduced', per: 1.1, health: 0 }, { label: 'Emergency', per: 0.8, health: -3 }],
+    words: { ford: 'Fly straight through', float: 'Slow down and steer', ferry: 'Hire a tug pilot', wait: 'Wait for a gap' },
+    resources: {
+      food: { label: 'Air and rations (kg)', icon: '🫁', start: 500, price: 1, lot: 50 },
+      parts: { label: 'Hull patches', icon: '🩹', start: 1, price: 60, lot: 1 },
+      money: { label: 'Credits', icon: '💳', start: 1400 } },
+    hunt: { label: 'Mine ice', max: 90 },
+    events: [
+      { text: 'A solar flare! {who} takes a radiation dose.', weight: 3, effects: { health: -18 } },
+      { text: 'A micrometeoroid punched a hole in the hull.', weight: 3, fixWith: 'parts', effects: { days: 2, food: -30 } },
+      { text: 'The recycler needs a long, boring repair.', weight: 3, effects: { days: 1 } },
+      { text: 'Mission control sent a course fix that saves time.', weight: 2, effects: { miles: 4 } },
+      { text: 'A call home lifted everyone’s spirits.', weight: 2, everyone: true, effects: { health: 8 } },
+      { text: 'Space sickness hits the whole crew.', weight: 2, everyone: true, effects: { health: -8 } },
+      { text: 'A cargo strap broke and supplies floated away.', weight: 1, effects: { food: -40 } }
+    ],
+    landmarks: [
+      { at: 5, name: 'Lunar Gateway', type: 'shop', markup: 1.3, text: 'A station near the Moon. Last cheap supplies.' },
+      { at: 70, name: 'Asteroid belt edge', type: 'river', depth: 3, ferry: 120, text: 'Rocks the size of buses tumble through your path.' },
+      { at: 110, name: 'Halfway point', type: 'info', text: 'Earth is now just a bright blue dot. Everyone watches it for a while.' },
+      { at: 150, name: 'Phobos relay', type: 'shop', markup: 1.8, text: 'A tiny station that charges a lot.' }
+    ] } },
+  silk: { label: 'Silk Road Caravan', config: {
+    title: 'Silk Road Caravan', start: 'Chang’an', goalName: 'Baghdad', unit: 'miles', goalMiles: 2400, deadline: 240, vehicle: '🐪',
+    party: ['Marco', 'Layla', 'Tariq', 'Mei'], eventChance: 0.4,
+    words: { ford: 'Cross at dawn', float: 'Follow the guide', ferry: 'Hire a desert guide', wait: 'Wait out the heat' },
+    resources: {
+      food: { label: 'Grain and water (sacks)', icon: '🌾', start: 120, price: 2, lot: 10 },
+      parts: { label: 'Spare rope and saddles', icon: '🪢', start: 1, price: 12, lot: 1 },
+      money: { label: 'Silver coins', icon: '🪙', start: 450 } },
+    paces: [{ label: 'Easy', miles: 14, cost: 0 }, { label: 'Brisk', miles: 19, cost: 2 }, { label: 'Forced march', miles: 25, cost: 5 }],
+    rations: [{ label: 'Full', per: 0.4, health: 2 }, { label: 'Light', per: 0.3, health: 0 }, { label: 'Sparse', per: 0.2, health: -3 }],
+    hunt: { label: 'Trade at an oasis', max: 25 },
+    events: [
+      { text: 'A sandstorm buries the road.', weight: 3, effects: { days: 1, food: -4 } },
+      { text: 'A camel went lame.', weight: 3, fixWith: 'parts', effects: { days: 2 } },
+      { text: '{who} fell ill from bad water.', weight: 3, effects: { health: -18 } },
+      { text: 'You found a hidden spring!', weight: 2, everyone: true, effects: { health: 6, food: 5 } },
+      { text: 'Bandits took some silver.', weight: 2, effects: { money: -40 } },
+      { text: 'A friendly merchant bought your spare goods.', weight: 2, effects: { money: 30 } }
+    ],
+    landmarks: [
+      { at: 600, name: 'Dunhuang', type: 'shop', markup: 1.1, text: 'The last green oasis before the great desert.' },
+      { at: 900, name: 'The Taklamakan Desert', type: 'river', depth: 4, ferry: 60, text: 'Its name is said to mean “go in and you won’t come out.”' },
+      { at: 1500, name: 'Kashgar', type: 'shop', markup: 1.2, text: 'A great market where east meets west.' },
+      { at: 1900, name: 'Samarkand', type: 'shop', markup: 1.2, text: 'Blue-tiled domes and paper from the East.' }
+    ] } },
+  sub: { label: 'Deep-Sea Descent', config: {
+    title: 'Deep-Sea Descent', start: 'the surface ship', goalName: 'the ocean floor', unit: 'meters', goalMiles: 3000, deadline: 62, vehicle: '🛟',
+    party: ['Pilot Reyes', 'Dr. Ito', 'Tech Moana'], eventChance: 0.5,
+    paces: [{ label: 'Gentle', miles: 60, cost: 0 }, { label: 'Standard', miles: 90, cost: 2 }, { label: 'Fast', miles: 130, cost: 5 }],
+    rations: [{ label: 'Full oxygen', per: 1, health: 2 }, { label: 'Thrifty', per: 0.75, health: 0 }, { label: 'Minimum', per: 0.5, health: -3 }],
+    words: { ford: 'Push through', float: 'Ease through slowly', ferry: 'Call the tow drone', wait: 'Hold position' },
+    resources: {
+      food: { label: 'Oxygen (units)', icon: '🫧', start: 100, price: 2, lot: 10 },
+      parts: { label: 'Seals and gaskets', icon: '🔩', start: 1, price: 25, lot: 1 },
+      money: { label: 'Grant money', icon: '💶', start: 300 } },
+    hunt: { label: 'Collect samples', max: 30 },
+    events: [
+      { text: 'The hull creaked under pressure.', weight: 3, fixWith: 'parts', effects: { days: 1 } },
+      { text: 'A giant squid wrapped the sub in its arms!', weight: 1, effects: { health: -20, miles: -60 } },
+      { text: 'A sonar glitch sent you the wrong way.', weight: 3, effects: { days: 1, miles: -40 } },
+      { text: 'A warm vent heated the cabin.', weight: 2, everyone: true, effects: { health: -6 } },
+      { text: 'Glowing jellyfish cheered up the crew.', weight: 3, everyone: true, effects: { health: 6 } },
+      { text: 'An oxygen valve leaked.', weight: 2, effects: { food: -12 } },
+      { text: 'A strong current carried you deeper.', weight: 2, effects: { miles: 80 } }
+    ],
+    landmarks: [
+      { at: 600, name: 'Shipwreck', type: 'info', text: 'An old cargo ship rests here, covered in coral.' },
+      { at: 1200, name: 'Cold seep', type: 'info', text: 'Strange tube worms live on chemicals, not sunlight.' },
+      { at: 1800, name: 'Pressure wall', type: 'river', depth: 4, ferry: 50, text: 'The sub shakes hard here.' },
+      { at: 2400, name: 'Research habitat', type: 'shop', markup: 1.4, text: 'A tiny lab on the sea floor with spare supplies.' }
+    ] } }
+};
+
+/* ═════════════════════════════════════════════════════════════
+   Lesson page wiring
+   ═════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // build-along: slice the program into its steps
+  var sections = {};
+  window.TRAIL_MINI_JS.split(/^\/\/ ---- (\w+) ----\n/m).forEach(function (part, i, arr) {
+    if (i % 2 === 1) sections[part] = arr[i + 1].replace(/\n+$/, '');
+  });
+  document.querySelectorAll('[data-mini]').forEach(function (pre) { pre.textContent = sections[pre.dataset.mini] || ''; });
+  var fullDoc = window.TRAIL_MINI_HEAD + window.TRAIL_MINI_JS + window.TRAIL_MINI_TAIL;
+  $('code-skeleton').textContent = window.TRAIL_MINI_HEAD + '  // …steps 1 to 7 go here…\n' + window.TRAIL_MINI_TAIL;
+  $('code-full').textContent = fullDoc;
+
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/html' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  $('mini-download').addEventListener('click', function () { download('trail.html', fullDoc); $('mini-status').textContent = 'Saved trail.html'; });
+  $('mini-copy').addEventListener('click', function () {
+    var done = function (ok) { $('mini-status').textContent = ok ? 'Copied!' : 'Copy failed. Open "Show the complete program" and select it.'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(fullDoc).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+
+  // lab
+  var sel = $('lab-preset'), ta = $('lab-config'), status = $('lab-status'), host = $('lab-game');
+  Object.keys(TRAIL_PRESETS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = TRAIL_PRESETS[k].label; sel.appendChild(o); });
+  function loadPreset() { ta.value = JSON.stringify(TRAIL_PRESETS[sel.value].config, null, 2); run(); }
+  function run() {
+    var cfg;
+    try { cfg = JSON.parse(ta.value); }
+    catch (e) {
+      var m = /position (\d+)/.exec(e.message), line = m ? ta.value.slice(0, +m[1]).split('\n').length : null;
+      status.className = 'bad'; status.textContent = 'JSON problem' + (line ? ' near line ' + line : '') + ': ' + e.message + '. Look for a missing comma or quote.'; return;
+    }
+    try { TrailEngine(host, cfg); status.className = 'ok'; status.textContent = 'Running “' + cfg.title + '”.'; }
+    catch (e) { status.className = 'bad'; status.textContent = e.message; }
+  }
+  sel.addEventListener('change', loadPreset);
+  $('lab-run').addEventListener('click', run);
+  $('lab-reset').addEventListener('click', loadPreset);
+  $('lab-download').addEventListener('click', function () {
+    var cfg; try { cfg = JSON.parse(ta.value); TrailEngine(document.createElement('div'), cfg); } catch (e) { status.className = 'bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
+    var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
+    var title = String(cfg.title).replace(/[<>&"]/g, '');
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#2b1d12;">\n<div id="game" style="max-width:860px;margin:0 auto;"></div>\n<script>\n' +
+      TrailEngine.toString() + '\nvar CONFIG = ' + json + ';\nTrailEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</body>\n</html>\n';
+    download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
+    status.className = 'ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
+  });
+  loadPreset();
+
+  // balance calculator
+  var ids = ['b-goal', 'b-pace', 'b-party', 'b-eat', 'b-dead', 'b-food'];
+  function calc() {
+    var v = {}; ids.forEach(function (i) { v[i] = parseFloat($(i).value) || 0; });
+    var days = v['b-pace'] > 0 ? Math.ceil(v['b-goal'] / v['b-pace']) : 0;
+    var food = days * v['b-party'] * v['b-eat'];
+    var slack = v['b-dead'] - days, gap = Math.round(food - v['b-food']);
+    var out = 'At ' + v['b-pace'] + ' per day the trip takes about ' + days + ' days and needs about ' + Math.round(food) + ' food. ';
+    var dl = slack < 0 ? '<span class="warn">The deadline is ' + (-slack) + ' days too short: it is impossible.</span> ' : slack / Math.max(1, days) < 0.1 ? '<span class="warn">Only ' + slack + ' spare days: events will make it very hard.</span> ' : '<span class="good">' + slack + ' spare days to absorb events.</span> ';
+    var fd = gap > 0 ? 'You start ' + gap + ' food short, so the player must hunt, trade or find some.' : '<span class="warn">You start with enough food for the whole trip, so food is not a decision.</span>';
+    $('b-out').innerHTML = out + dl + fd;
+  }
+  ids.forEach(function (i) { $(i).addEventListener('input', calc); }); calc();
+
+  // idea dice
+  var DICE = {
+    journey: ['A school bus from home to the championship game', 'A food truck from coast to coast', 'A band on tour to the big festival', 'A rocket to a space station', 'A pirate crew to the buried treasure', 'A migrating herd of caribou', 'A medieval pilgrimage to a cathedral', 'A rescue boat crossing a flooded city', 'A courier delivering the last vaccine', 'Explorers climbing Mount Everest'],
+    resource: ['Fuel and batteries', 'Ingredients and ice', 'Fans and morale', 'Fresh water', 'Daylight hours', 'Battery charge on your phone', 'Rope and oxygen', 'Cargo to deliver'],
+    twist: ['A rival crew buys out every shop before you', 'Weather changes the odds each season', 'Morale is a second health bar', 'A fork in the road: short and risky or long and safe', 'Two players decide together', 'You also run the shop at each stop', 'Each death leaves a note for the next run', 'Every landmark teaches a true fact']
+  };
+  function roll() { ['journey', 'resource', 'twist'].forEach(function (k) { var a = DICE[k]; $('d-' + k).textContent = a[Math.floor(Math.random() * a.length)]; }); }
+  $('dice-roll').addEventListener('click', roll); roll();
+})();
+</script>
+<script src="../../../assets/js/reveal.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script>
+</body>
+</html>

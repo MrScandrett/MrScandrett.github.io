@@ -3,7 +3,9 @@
  *
  * The dungeon underneath is exactly the one Rogue built: the map is divided
  * into a 3x3 grid of cells, one room is dropped per cell, and cells are
- * connected to their grid neighbours with straight tunnels. Every position is
+ * connected to their grid neighbours with straight tunnels. That generator
+ * lives in assets/js/rogue-dungeon.js, shared with the Roguelike Builder
+ * lesson, and it is seeded: a seed names a dungeon. Every position is
  * still an integer cell, every fight is still a dice roll, and a turn still
  * only passes when the player spends one.
  *
@@ -19,6 +21,7 @@
  * is cold, flat and faintly blue.
  * ---------------------------------------------------------------------- */
 import { THREE } from "../../../assets/vendor/three-bundle.min.js";
+import RogueDungeon from "../../../assets/js/rogue-dungeon.js";
 import {
   PALETTE,
   TORCH_LIGHT_COUNT,
@@ -50,24 +53,27 @@ const statEls = {
   gold: document.getElementById("stat-gold"),
   potions: document.getElementById("stat-potions"),
   turn: document.getElementById("stat-turn"),
+  seed: document.getElementById("stat-seed"),
 };
-
-const MAP_COLS = 68;
-const MAP_ROWS = 21;
 
 const W = canvas.width;
 const H = canvas.height;
 
-const MONSTER_TYPES = [
-  { ch: "r", name: "rat", hp: 3, atk: 1, xp: 2, minDepth: 1 },
-  { ch: "s", name: "snake", hp: 4, atk: 2, xp: 3, minDepth: 1 },
-  { ch: "g", name: "goblin", hp: 6, atk: 2, xp: 4, minDepth: 2 },
-  { ch: "o", name: "orc", hp: 10, atk: 3, xp: 7, minDepth: 3 },
-  { ch: "T", name: "troll", hp: 16, atk: 5, xp: 15, minDepth: 5 },
-];
+// The dungeon itself comes from the generator this game shares with the
+// Roguelike Builder lesson: the same seed builds the same level in both, one
+// drawn in characters and one in stone. RULES are Rogue's 3 x 3 rooms and
+// the five monsters below; the lesson checks its own copy against them.
+const RULES = RogueDungeon.CRAWLSPACE;
+const MAP_COLS = RULES.dungeon.cols;
+const MAP_ROWS = RULES.dungeon.rows;
 
-let tiles, rooms, monsters, items, player, depth, turnCount, message, gameOver, seen, visible;
+// ?seed=lantern replays a dungeon someone shared; otherwise every descent
+// rolls a fresh one. Words work as well as numbers.
+const urlSeed = new URLSearchParams(location.search).get("seed");
 
+let tiles, rooms, monsters, items, player, depth, turnCount, message, gameOver, seen, visible, seed;
+
+// Fights still roll real dice. Only the stone is fixed by the seed.
 function rnd(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -78,114 +84,21 @@ function makeTilesGrid() {
   return grid;
 }
 
-function carveRoom(room) {
-  for (let y = room.y; y < room.y + room.h; y++) {
-    for (let x = room.x; x < room.x + room.w; x++) {
-      tiles[y][x] = ".";
-    }
-  }
-}
-
-function carveCorridor(x1, y1, x2, y2) {
-  let x = x1;
-  let y = y1;
-  while (x !== x2) {
-    if (tiles[y][x] === " ") tiles[y][x] = "#";
-    x += x2 > x ? 1 : -1;
-  }
-  while (y !== y2) {
-    if (tiles[y][x] === " ") tiles[y][x] = "#";
-    y += y2 > y ? 1 : -1;
-  }
-  if (tiles[y][x] === " ") tiles[y][x] = "#";
-}
-
-function roomCenter(room) {
-  return { x: Math.floor(room.x + room.w / 2), y: Math.floor(room.y + room.h / 2) };
-}
-
 function generateLevel() {
-  tiles = makeTilesGrid();
-  rooms = [];
-
-  const gridCols = 3;
-  const gridRows = 3;
-  const cellW = Math.floor(MAP_COLS / gridCols);
-  const cellH = Math.floor(MAP_ROWS / gridRows);
-
-  for (let gr = 0; gr < gridRows; gr++) {
-    for (let gc = 0; gc < gridCols; gc++) {
-      const cellX = gc * cellW + 1;
-      const cellY = gr * cellH + 1;
-      const w = rnd(4, Math.max(4, cellW - 4));
-      const h = rnd(3, Math.max(3, cellH - 4));
-      const x = rnd(cellX, Math.max(cellX, cellX + (cellW - w) - 2));
-      const y = rnd(cellY, Math.max(cellY, cellY + (cellH - h) - 2));
-      const room = { x, y, w, h, gr, gc };
-      rooms.push(room);
-      carveRoom(room);
-    }
-  }
-
-  const at = (gr, gc) => rooms[gr * gridCols + gc];
-  for (let gr = 0; gr < gridRows; gr++) {
-    for (let gc = 0; gc < gridCols; gc++) {
-      if (gc < gridCols - 1) {
-        const a = roomCenter(at(gr, gc));
-        const b = roomCenter(at(gr, gc + 1));
-        carveCorridor(a.x, a.y, b.x, b.y);
-      }
-      if (gr < gridRows - 1) {
-        const a = roomCenter(at(gr, gc));
-        const b = roomCenter(at(gr + 1, gc));
-        carveCorridor(a.x, a.y, b.x, b.y);
-      }
-    }
-  }
-
-  const startRoom = rooms[0];
-  const stairRoom = rooms[rooms.length - 1];
-  const start = roomCenter(startRoom);
-  const stairs = roomCenter(stairRoom);
-  tiles[stairs.y][stairs.x] = ">";
-
-  monsters = [];
-  const monsterCount = rnd(4, 7);
-  const available = MONSTER_TYPES.filter((m) => m.minDepth <= depth);
-  for (let i = 0; i < monsterCount; i++) {
-    const room = rooms[rnd(1, rooms.length - 1)];
-    const pos = randomFloorInRoom(room);
-    if (!pos) continue;
-    const type = available[rnd(0, available.length - 1)];
-    monsters.push({ ...type, x: pos.x, y: pos.y, hp: type.hp, maxHp: type.hp });
-  }
-
-  items = [];
-  const itemCount = rnd(4, 6);
-  for (let i = 0; i < itemCount; i++) {
-    const room = rooms[rnd(0, rooms.length - 1)];
-    const pos = randomFloorInRoom(room);
-    if (!pos) continue;
-    const isGold = Math.random() < 0.6;
-    items.push(isGold ? { ch: "$", kind: "gold", amount: rnd(5, 20) * depth, x: pos.x, y: pos.y } : { ch: "!", kind: "potion", x: pos.x, y: pos.y });
-  }
+  const level = RogueDungeon.generate(RULES, seed, depth);
+  tiles = level.tiles;
+  rooms = level.rooms;
+  monsters = level.monsters;
+  items = level.items;
 
   seen = makeTilesGrid().map((row) => row.map(() => false));
   visible = makeTilesGrid().map((row) => row.map(() => false));
 
-  return start;
+  return level.start;
 }
 
-function randomFloorInRoom(room) {
-  for (let tries = 0; tries < 20; tries++) {
-    const x = rnd(room.x, room.x + room.w - 1);
-    const y = rnd(room.y, room.y + room.h - 1);
-    if (tiles[y][x] === "." && !(player && player.x === x && player.y === y)) return { x, y };
-  }
-  return null;
-}
-
-function newGame() {
+function newGame(seedText) {
+  seed = seedText || String(rnd(1, 999999));
   depth = 1;
   turnCount = 0;
   gameOver = false;
@@ -828,13 +741,14 @@ function syncHud() {
   statEls.gold.textContent = player.gold;
   statEls.potions.textContent = player.potions;
   statEls.turn.textContent = turnCount;
+  statEls.seed.textContent = seed;
   messageEl.textContent = message;
   messageEl.classList.toggle("dire", gameOver);
 
   overlay.hidden = !gameOver;
   if (gameOver) {
     overlay.querySelector(".overlay-sub").textContent =
-      `Depth ${depth} · ${player.gold} gold · ${turnCount} turns — press R to go back down`;
+      `Depth ${depth} · ${player.gold} gold · ${turnCount} turns · seed ${seed} — press R to go back down`;
   }
 }
 
@@ -902,8 +816,8 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-function restart() {
-  newGame();
+function restart(seedText) {
+  newGame(seedText);
   playerBody.x = worldX(player.x);
   playerBody.y = worldY(player.y);
   playerBody.hp = player.hp;
@@ -913,7 +827,7 @@ function restart() {
   shake = 0;
 }
 
-startBtn.addEventListener("click", restart);
+startBtn.addEventListener("click", () => restart());
 
-restart();
+restart(urlSeed);
 requestAnimationFrame(loop);

@@ -69,6 +69,10 @@
   var CODE_PAGES = {
     'from-scratch': { title: 'From Scratch: Browser Game', lessons: ['game-loop-rendering', 'tile-collision'] },
     pygame: { title: 'Python & Pygame Loop', lessons: ['game-loop-rendering', 'platformer-movement'] },
+    'trail-clone': { title: 'Trail Game Builder', lessons: ['game-loop-rendering', 'animation-states', 'level-design-game-feel'] },
+    'lemonade-tycoon': { title: 'Lemonade Tycoon Builder', lessons: ['game-loop-rendering', 'level-design-game-feel', 'ship-your-2d-game'] },
+    'text-adventure': { title: 'Text Adventure Builder', lessons: ['animation-states', 'level-design-game-feel', 'ship-your-2d-game'] },
+    roguelike: { title: 'Roguelike Builder', lessons: ['tilesets-tilemaps', 'tile-collision', 'level-design-game-feel'] },
     engines: { title: '2D Engines: Kaplay & Phaser', lessons: ['sprite-animation', 'tilesets-tilemaps', 'cameras-parallax'] }
   };
 

@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lemonade Tycoon Builder: Make Your Own Business Game · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build a lemonade-stand economy game in about 90 lines of JavaScript: supply and demand, a weather forecast you cannot fully trust, random events and upgrades that compound. Then re-skin it into a school store, a food truck or a 3D-print farm." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    :root { --acc: #a16207; --acc-soft: rgba(161,98,7,0.1); --acc-border: rgba(161,98,7,0.34); }
+    :root:where([data-lighting="night"]) { --acc: #facc15; --acc-soft: rgba(250,204,21,0.12); --acc-border: rgba(250,204,21,0.4); }
+    @media (prefers-color-scheme: dark) { :root:where(:not([data-lighting])) { --acc: #facc15; } }
+
+    .cl-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--acc); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p, .cl-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p { margin: 0 0 0.6rem; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    .cl-card ul, .cl-card ol { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
+    [data-lighting="night"] .cl-card, [data-theme="vaporwave"] .cl-card, [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p, [data-lighting="night"] .cl-card li,
+    [data-theme="vaporwave"] .cl-card p, [data-theme="vaporwave"] .cl-card li,
+    [data-theme="bark"] .cl-card p, [data-theme="bark"] .cl-card li,
+    [data-lighting="night"] .cl-lede, [data-theme="vaporwave"] .cl-lede, [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.74); }
+
+    .step-tag { display: inline-block; background: var(--acc); color: #fff; border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.65rem; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+
+    /* The daily loop */
+    .loop-diagram { display: flex; align-items: stretch; justify-content: center; gap: 0.35rem; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+    .loop-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 10px; padding: 0.55rem 0.8rem; text-align: center; min-width: 96px; flex: 1 1 96px; max-width: 150px; }
+    .loop-box strong { display: block; font-size: 0.84rem; color: var(--acc); }
+    .loop-box small { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-top: 0.1rem; line-height: 1.35; }
+    .loop-arrow { align-self: center; font-size: 1.2rem; color: var(--text-muted, #64748b); }
+
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.85rem 1.05rem; margin: 0.7rem 0; overflow-x: auto; max-width: 100%; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; line-height: 1.65; color: #e2e8f0; white-space: pre; }
+    .code-title { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #64748b); margin-top: 0.7rem; }
+
+    .callout { border-radius: 12px; padding: 0.8rem 1rem; margin: 0.8rem 0; font-size: 0.85rem; line-height: 1.6; background: var(--acc-soft); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
+    .callout.checkpoint { background: rgba(34,197,94,0.09); border-left-color: #22c55e; }
+    .callout.checkpoint strong { color: #15803d; }
+    [data-lighting="night"] .callout, [data-theme="vaporwave"] .callout, [data-theme="bark"] .callout { color: rgba(245,245,247,0.76); }
+    [data-lighting="night"] .callout.checkpoint strong, [data-theme="vaporwave"] .callout.checkpoint strong, [data-theme="bark"] .callout.checkpoint strong { color: #4ade80; }
+
+    .btn { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.42rem 0.95rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; color: var(--acc); border: 1.5px solid var(--acc-border); }
+    .btn:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    [data-lighting="night"] .btn:not(.ghost), [data-theme="vaporwave"] .btn:not(.ghost), [data-theme="bark"] .btn:not(.ghost) { color: #1d1d1f; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.6rem 0; }
+    .row label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary, #3f4f65); }
+    select, .cl-card input[type=number], .cl-card textarea.field { font: inherit; font-size: 0.84rem; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+
+    /* Trail Lab */
+    .lab-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    @media (max-width: 960px) { .lab-grid { grid-template-columns: minmax(0, 1fr); } }
+    #lab-config { width: 100%; box-sizing: border-box; min-height: 26rem; max-height: 34rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; line-height: 1.5; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 10px; padding: 0.7rem; resize: vertical; tab-size: 2; }
+    #lab-status { font-size: 0.8rem; margin: 0.4rem 0 0; min-height: 1.3em; font-weight: 600; }
+    #lab-status.ok { color: #15803d; } #lab-status.bad { color: #b91c1c; }
+    [data-lighting="night"] #lab-status.ok { color: #4ade80; } [data-lighting="night"] #lab-status.bad { color: #fca5a5; }
+
+    .map-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0; }
+    .map-table th, .map-table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .map-table th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted,#64748b); }
+    .table-scroll { overflow-x: auto; }
+    [data-lighting="night"] .map-table td, [data-theme="vaporwave"] .map-table td, [data-theme="bark"] .map-table td { color: rgba(245,245,247,0.76); }
+
+    .dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0.7rem 0; }
+    @media (max-width: 640px) { .dice { grid-template-columns: minmax(0, 1fr); } }
+    .die { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.7rem 0.8rem; min-height: 4.6rem; }
+    .die small { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--acc); }
+    .die b { display: block; margin-top: 0.2rem; font-size: 0.92rem; color: var(--text, #1d1d1f); }
+    .calc-out { font-size: 0.9rem; font-weight: 600; line-height: 1.6; }
+    .calc-out .warn { color: #b91c1c; } .calc-out .good { color: #15803d; }
+    [data-lighting="night"] .calc-out .warn { color: #fca5a5; } [data-lighting="night"] .calc-out .good { color: #4ade80; }
+    .worksheet textarea { width: 100%; box-sizing: border-box; min-height: 3.4rem; margin: 0.15rem 0 0.6rem; font: inherit; font-size: 0.85rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .worksheet label { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary,#3f4f65); }
+
+
+    /* Art guide */
+    .art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+    .art-card { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; }
+    .art-slot { display: flex; align-items: center; justify-content: center; max-width: 100%; margin: 0 auto 0.5rem; border: 2px dashed var(--acc-border); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--acc); background: rgba(255,255,255,0.35); }
+    .art-card h4 { margin: 0; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+    .art-card p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+    .art-tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 999px; border: 1.5px solid var(--acc-border); color: var(--acc); }
+    .art-tag.must { background: var(--acc); color: #fff; }
+    [data-lighting="night"] .art-tag.must { color: #1d1d1f; }
+    .art-count { font-size: 0.95rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .art-check { list-style: none; padding-left: 0 !important; }
+    .art-check li { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.15rem 0; }
+    .art-check input { margin-top: 0.3rem; flex: none; }
+
+    @media print {
+      .lab-grid { grid-template-columns: minmax(0, 1fr); }
+      #lab-config { max-height: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
+          <h1>Lemonade Tycoon Builder: Make Your Own Business Game</h1>
+          <div class="cl-hero-meta">
+            <span data-glossary="supply and demand">Supply and demand</span><span class="dot"></span>
+            <span>Pricing math</span><span class="dot"></span>
+            <span>Random events</span><span class="dot"></span>
+            <span>Compound growth</span><span class="dot"></span>
+            <span>Spin-offs</span>
+          </div>
+          <p class="cl-lede">Every morning you check the weather, decide how many cups to make and what to charge, and then find out whether you guessed right. <em>Lemonade Stand</em> has been teaching that loop to students since the 1970s, and it is a perfect <strong>economy simulation</strong>: a few numbers, one formula for demand, and a lot of tension. In this lesson you build the whole engine in about 90 lines of JavaScript, work out the best price with arithmetic, and then change the <em>data</em> to turn it into your own business: a school store, a food truck, a 3D-print farm, or something nobody has opened yet.</p>
+        </section>
+        <div data-game-route="code:lemonade-tycoon"></div>
+
+        <!-- 1. Why it works -->
+        <section class="cl-card" id="why">
+          <h2>1 · Why this game works</h2>
+          <p>A tycoon game is a machine for making <strong>decisions with a price on them</strong>. Nothing here needs fast thumbs. The fun comes from three design ideas.</p>
+          <ul>
+            <li><strong>A trade-off with a sweet spot.</strong> Charge too little and you sell out but <span data-glossary="profit margin">earn almost nothing per cup</span>. Charge too much and nobody stops. The best price is somewhere in the middle, and you can find it with math.</li>
+            <li><strong>Information you can't fully trust.</strong> The forecast is right most of the time, not always. Betting on it is a decision about probability, not a puzzle with one answer.</li>
+            <li><strong>Growth that feeds itself.</strong> Spend money on a sign or a cooler today and every later day earns more. That is <em><span data-glossary="compound growth">compound growth</span></em>, and the question is always whether there are enough days left to <span data-glossary="payback time">pay it back</span>.</li>
+          </ul>
+          <p>The program is the same loop every day. Learn it and you can build almost any shop, farm or factory game:</p>
+          <div class="loop-diagram" role="img" aria-label="Daily loop: read the forecast, choose a price and how many to make, open for business, see the results, optionally buy an upgrade, then repeat.">
+            <div class="loop-box"><strong>Forecast</strong><small>weather and news, mostly true</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Decide</strong><small>how many to make, what to charge</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Open</strong><small>demand formula meets your stock</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Results</strong><small>sold, wasted, walked away</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Upgrade?</strong><small>spend now to earn more later</small></div>
+          </div>
+          <p style="text-align:center;font-size:0.75rem;color:var(--text-muted,#64748b);">…then tomorrow's forecast arrives. Like every game loop, it is a state machine: the game is always in one state (a morning waiting for your choices, or the end), and each button moves it on.</p>
+        </section>
+
+        <!-- 2. Play + edit -->
+        <section class="cl-card" id="lab">
+          <span class="step-tag">TRY IT FIRST</span>
+          <h2>2 · The Tycoon Lab: play it, then break it</h2>
+          <p>This is the finished engine. Everything about the business, including what it sells, the weather, the events, the upgrades and every balance number, lives in the <strong>config</strong> on the left. Pick a preset, press <strong>Run my game</strong>, and run the stand for a few days. Open the <em>analyst's chart</em> and see whether it agrees with your gut. Then change something small and run it again. You are already designing.</p>
+          <div class="row">
+            <label for="lab-preset">Start from</label>
+            <select id="lab-preset" aria-label="Preset game"></select>
+            <button class="btn" id="lab-run" type="button">▶ Run my game</button>
+            <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
+            <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+          </div>
+          <div class="lab-grid">
+            <div>
+              <label for="lab-config" class="sr-only" style="position:absolute;left:-9999px;">Game config</label>
+              <textarea id="lab-config" spellcheck="false" aria-describedby="lab-status"></textarea>
+              <p id="lab-status" role="status" aria-live="polite"></p>
+            </div>
+            <div id="lab-game" data-night-keep data-memory-ignore aria-label="Tycoon game"></div>
+          </div>
+          <div class="callout">
+            <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. An error message will tell you which line is broken (usually a missing comma). Things to try:
+            <ul>
+              <li><code>"topPrice"</code> is the price where nobody buys. Raise it and your customers become less price-sensitive. <code>"baseCustomers"</code> is how many people walk by on a normal day.</li>
+              <li>Each weather type has a <code>demand</code> multiplier. Rain at <code>0.4</code> means 40% as many customers. A <code>weight</code> of 4 happens four times as often as a weight of 1.</li>
+              <li><code>"forecastAccuracy"</code> (0 to 1) is how often the forecast is right. At 1 there is no uncertainty, and the game gets much easier. At 0.3 it is nearly useless.</li>
+              <li>An event can change <code>demand</code> (a multiplier for today), <code>cost</code> (added to what each item costs today) or <code>cash</code> (a one-time bill or bonus).</li>
+              <li>An upgrade multiplies your demand <em>forever</em>. Try making one cheap and strong, and see how it ruins the game's balance.</li>
+              <li>Add <code>"seed": 7</code> and the dice roll the same every time, which is handy for testing your balance.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 3. Build it -->
+        <section class="cl-card" id="build">
+          <span class="step-tag">BUILD IT</span>
+          <h2>3 · Build the engine yourself in seven steps</h2>
+          <p>The Lab above has extras (a chart, an end screen, a currency and item names you can change). To understand it, first build the <strong>core</strong>. Make a file called <code>lemonade.html</code>, paste the page skeleton below, and then add each step inside its <code>&lt;script&gt;</code> tag in order. After every step, save, reload, and run it. Don't move on until the checkpoint is true.</p>
+          <div class="code-title"><span>Page skeleton</span></div>
+          <div class="code-block"><pre id="code-skeleton"></pre></div>
+
+          <h3>Step 1 · Put the whole business in one data object</h3>
+          <p>Before any logic, write down what the game <em>is</em>: prices, costs, weather and events. Keeping the content in <code>GAME</code> and the rules in functions means a spin-off only needs to change this one block. This is called <strong>data-driven design</strong>, and every engine you will ever use works this way.</p>
+          <div class="code-block"><pre data-mini="data"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Open the browser console (F12) and type <code>GAME.weather.length</code>. It should print 4.</div>
+
+          <h3>Step 2 · Track the state</h3>
+          <p>The <strong>state</strong> is everything that changes while the game runs. Notice that <code>boost</code> starts at 1 and is <em>multiplied</em> every time you buy an upgrade. That one number is the whole compound-growth engine.</p>
+          <div class="code-block"><pre data-mini="state"></pre></div>
+
+          <h3>Step 3 · Small helpers</h3>
+          <p><code>say()</code> writes a line to the log, <code>money()</code> formats a number as dollars, and <code>weighted()</code> is the trick behind <span data-glossary="weighted random">weather and event tables</span>: add up the weights, pick a number in that range, and walk down the list until it runs out. <code>draw()</code> shows the current state and builds the upgrade buttons.</p>
+          <div class="code-block"><pre data-mini="helpers"></pre></div>
+          <div class="callout"><strong>Why weights?</strong> If weather has weights 4, 3, 2 and 1, the total is 10. Sunny comes up 4 times in 10, cloudy 3 in 10, and so on. You choose the odds by choosing numbers instead of writing a pile of <code>if</code> statements.</div>
+
+          <h3>Step 4 · The demand formula</h3>
+          <p>This is the heart of the game, and it is only three lines. How many people <em>would</em> buy? Start with the crowd for today (base customers × weather × your upgrades × any event). Then each person only buys if the price is below what they are willing to pay. We model that with a straight line: at a price of $0 everyone buys, at <code>topPrice</code> nobody does, and in between the share falls steadily.</p>
+          <div class="code-block"><pre data-mini="demand"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> In the console, type <code>demand(1, GAME.weather[1], 1)</code> (a cloudy day at $1). It should print 30: 60 customers, and half of them are willing to pay $1.</div>
+
+          <h3>Step 5 · A morning and a business day</h3>
+          <p><code>morning()</code> rolls the real weather and then a <em>forecast</em>: with probability <code>forecastAccuracy</code> the forecast is right, and otherwise it is a fresh random roll. The player only sees the forecast. <code>openStand()</code> then reads the price and cup count, asks the demand formula how many people want one, and sells <code>min(demand, cups)</code>. Unsold cups are wasted, and customers you couldn't serve walk away. Both mistakes cost money in different ways.</p>
+          <div class="code-block"><pre data-mini="day"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Make 30 cups at $1.00 on a day where the forecast says Cloudy. You should usually sell between 15 and 40 cups and see the money line in the log. Try $0.25 and $1.90 as well: both lose money in different ways.</div>
+
+          <h3>Step 6 · Upgrades</h3>
+          <p>An upgrade costs cash now and multiplies <code>boost</code> from then on. It is the same decision as buying a bigger oven or a delivery bike: the answer depends on how many days are left.</p>
+          <div class="code-block"><pre data-mini="upgrades"></pre></div>
+
+          <h3>Step 7 · Win, lose, and wire it up</h3>
+          <p>A game needs an ending. After every day, check the two ways the season can finish, then connect the button.</p>
+          <div class="code-block"><pre data-mini="end"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> You can win (reach $300 by day 14), lose by going broke (make far more cups than you can sell, at a very low price), and lose by finishing the season short. If all three endings work, your engine is finished.</div>
+
+          <div class="row">
+            <button class="btn" id="mini-download" type="button">⬇ Download the finished lemonade.html</button>
+            <button class="btn ghost" id="mini-copy" type="button">Copy the whole program</button>
+            <span id="mini-status" role="status" aria-live="polite" style="font-size:0.8rem;font-weight:600;"></span>
+          </div>
+          <details>
+            <summary style="cursor:pointer;font-weight:700;font-size:0.86rem;">Show the complete program</summary>
+            <div class="code-block"><pre id="code-full"></pre></div>
+          </details>
+        </section>
+
+        <!-- 4. Balance -->
+        <section class="cl-card" id="balance">
+          <span class="step-tag">THINK LIKE A DESIGNER</span>
+          <h2>4 · Find the best price with arithmetic</h2>
+          <p>Here is the secret of the demand formula. If you sell <em>every</em> customer who wants a cup, then <span data-glossary="profit">profit</span> per day is</p>
+          <p style="text-align:center;font-weight:700;">profit(p) = (p − cost) × customers × (1 − p ÷ topPrice) − rent</p>
+          <p>The first part is zero when the price equals the cost, and the second part is zero when the price equals <code>topPrice</code>. A curve that is zero at two prices peaks <strong>exactly halfway between them</strong>, so the best price is</p>
+          <p style="text-align:center;font-weight:700;">best price = (cost + topPrice) ÷ 2</p>
+          <p>Try the numbers below. The chart is profit against price for a normal day, and the dot is the best price. Move <code>topPrice</code> and <code>cost</code> and watch where the peak goes.</p>
+          <div class="row">
+            <label for="b-cost">Cost each</label><input id="b-cost" type="number" value="0.30" min="0.01" step="0.05" style="width:5.5rem" />
+            <label for="b-top">Top price</label><input id="b-top" type="number" value="2" min="0.1" step="0.25" style="width:5.5rem" />
+            <label for="b-cust">Customers/day</label><input id="b-cust" type="number" value="60" min="1" style="width:5.5rem" />
+            <label for="b-rent">Rent/day</label><input id="b-rent" type="number" value="2" min="0" step="0.5" style="width:5rem" />
+          </div>
+          <div class="row">
+            <label for="b-ucost">Upgrade cost</label><input id="b-ucost" type="number" value="15" min="0" style="width:5.5rem" />
+            <label for="b-ubonus">Upgrade boost (%)</label><input id="b-ubonus" type="number" value="20" min="1" max="200" style="width:5rem" />
+            <label for="b-days">Days left</label><input id="b-days" type="number" value="14" min="1" style="width:5rem" />
+          </div>
+          <svg id="b-chart" viewBox="0 0 320 120" role="img" aria-label="Profit against price" style="width:100%;max-width:26rem;height:auto;display:block;margin:0.4rem 0;"></svg>
+          <p class="calc-out" id="b-out" role="status" aria-live="polite"></p>
+          <p>Two warnings. First, this assumes you made enough cups. In the real game you must <em>guess</em> the day's crowd from an imperfect forecast, so the formula tells you the price and the forecast tells you the quantity. Second, a price that is perfect on paper is only the start: <strong><span data-glossary="playtest">playtest</span></strong>. Set <span data-glossary="random seed"><code>"seed"</code></span> in the Lab, ask a friend to play three seasons while you stay quiet, and watch where they get stuck. If everyone finds the best price on day one, make the formula less obvious or add a reason to change it, such as an event that adds to the cost.</p>
+          <p><strong>Tuning the goal.</strong> A good goal is one that a player using the best price <em>and</em> buying the right upgrades wins most of the time, while one who ignores the math almost never does. A simulation of thousands of seasons of the default stand found that a player with the best price and the sign and cooler won about four seasons in five, one who skipped the upgrades about one in three, and one who always charged 90% of the top price never won. You can run your own experiment with a loop and <code>Math.random()</code>: that is how real studios balance games.</p>
+        </section>
+
+        <!-- 5. Spin-offs -->
+        <section class="cl-card" id="spinoffs">
+          <span class="step-tag">YOUR TWIST</span>
+          <h2>5 · Design your spin-off</h2>
+          <p>A good spin-off keeps the <em>structure</em> (a price, a stock decision, an uncertain day, an upgrade) and changes the <em>world</em>. Translate each part of the original, and you will notice that most of the game is already written.</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Part of the game</th><th scope="col">Lemonade stand</th><th scope="col">School store</th><th scope="col">3D-print farm</th><th scope="col">Your spin-off</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">What you sell</th><td>Cups of lemonade</td><td>Snacks and supplies</td><td>Printed models</td><td>?</td></tr>
+              <tr><th scope="row">Cost each</th><td>Lemons, sugar, cup</td><td>What the store paid</td><td>Filament and power</td><td>?</td></tr>
+              <tr><th scope="row">The day's crowd</th><td>Weather</td><td>Game night, spirit week</td><td>Science fair rush</td><td>?</td></tr>
+              <tr><th scope="row">Surprise</th><td>Sugar price jumps</td><td>A broken freezer</td><td>A failed print</td><td>?</td></tr>
+              <tr><th scope="row">Fixed cost</th><td>Stand rent</td><td>None (volunteers)</td><td>Printer maintenance</td><td>?</td></tr>
+              <tr><th scope="row">Upgrade</th><td>Painted sign, cooler</td><td>Bigger display, card reader</td><td>A second printer</td><td>?</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>Not sure where to start? Roll the idea dice.</h3>
+          <div class="dice" aria-live="polite">
+            <div class="die"><small>Business</small><b id="d-business">…</b></div>
+            <div class="die"><small>What makes the day uncertain</small><b id="d-uncertain">…</b></div>
+            <div class="die"><small>The twist</small><b id="d-twist">…</b></div>
+          </div>
+          <div class="row"><button class="btn" id="dice-roll" type="button">🎲 Roll the dice</button><span style="font-size:0.8rem;color:var(--text-muted,#64748b);">Roll until something makes you laugh, then put it in your design sheet below.</span></div>
+
+          <h3>Twists that change the rules, not just the pictures</h3>
+          <ul>
+            <li><strong>A rival:</strong> a second stand across the street. If your prices differ, customers move toward the cheaper one.</li>
+            <li><strong>Loans:</strong> borrow $20 on day 1 and owe it back with interest. This is compound growth working <em>against</em> you.</li>
+            <li><strong>Quality:</strong> add a recipe slider. Better ingredients cost more but raise <code>topPrice</code>, so the best price moves.</li>
+            <li><strong>Reputation:</strong> a second meter that rises when you sell out fairly and falls when you waste stock or overcharge. High reputation raises tomorrow's crowd.</li>
+            <li><strong>Leftovers:</strong> unsold items carry over, but some spoil each night. Now stock is a real long-term decision.</li>
+            <li><strong>Seasons:</strong> make the weather weights depend on the day, so winter is slow and summer is a rush.</li>
+          </ul>
+
+          <h3>Design sheet</h3>
+          <div class="worksheet">
+            <label for="ws-pitch">Pitch (one sentence): "You run ___ and must earn ___ in ___ days."</label>
+            <textarea id="ws-pitch"></textarea>
+            <label for="ws-numbers">Your numbers: cost each, top price, customers on a normal day, rent (then work out the best price)</label>
+            <textarea id="ws-numbers"></textarea>
+            <label for="ws-weather">Three to five "kinds of day" and how each changes the crowd (the demand multiplier and the weight)</label>
+            <textarea id="ws-weather"></textarea>
+            <label for="ws-events">Four events: what happens, how likely (weight), and what it costs or earns</label>
+            <textarea id="ws-events"></textarea>
+            <label for="ws-upgrades">Two upgrades: the price, the boost, and the day it stops being worth buying</label>
+            <textarea id="ws-upgrades"></textarea>
+            <label for="ws-twist">Your twist: the one rule that makes this game different</label>
+            <textarea id="ws-twist"></textarea>
+          </div>
+          <p>When the sheet is done, put it in the Lab config (or into the <code>GAME</code> object of your own <code>lemonade.html</code>), run it, and balance it with the calculator above.</p>
+        </section>
+
+        <!-- 6. Art guide -->
+        <section class="cl-card" id="art">
+          <span class="step-tag">YOUR ART</span>
+          <h2>6 · Art guide: what you need to draw</h2>
+          <p>The Lab uses emoji (🍋 ☀️ 🌧️) as stand-ins so the game works on day one. A finished game replaces them with <strong>your own art</strong>. Make a list before you open a drawing tool. Draw every <span class="art-tag must">Must</span> first (the game can ship with only those), then <span class="art-tag">Should</span>, then <span class="art-tag">Bonus</span>.</p>
+          <div class="art-grid">
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Title screen <span class="art-tag must">Must</span></h4><p><strong>1 picture</strong> · The game name and your shop. Leave a quiet area for the Start button.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:100px" aria-hidden="true">960 × 640</div><h4>The shop <span class="art-tag must">Must</span></h4><p><strong>1 picture, plus 1 per upgrade</strong> · The main screen. Draw it so each upgrade (sign, cooler, second printer) visibly appears.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:100px;height:100px" aria-hidden="true">128 × 128</div><h4>Product <span class="art-tag must">Must</span></h4><p><strong>1 sprite</strong> · The thing you sell, with a transparent background so it works on any scene.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:100px;height:100px" aria-hidden="true">64 × 64</div><h4>Day icons <span class="art-tag must">Must</span></h4><p><strong>1 per kind of day</strong> · Sun, rain, rush. They must be readable at half size, because they sit beside the forecast.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Ending screens <span class="art-tag must">Must</span></h4><p><strong>3 pictures</strong> · Win, went broke, and season ended short. Each should make the player want one more try.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:130px;height:130px" aria-hidden="true">128 × 128</div><h4>Customers <span class="art-tag ">Should</span></h4><p><strong>3 to 5 sprites</strong> · Different people lining up. A crowd that grows with demand shows the formula working.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:100px" aria-hidden="true">600 × 400</div><h4>Event cards <span class="art-tag ">Should</span></h4><p><strong>1 per event</strong> · A small illustration for the fair, the inspector or the broken printer.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">800 × 400</div><h4>Cash chart skin <span class="art-tag ">Bonus</span></h4><p><strong>1 picture</strong> · A background for your own line graph of cash by day.</p></div>
+          </div>
+          <ul>
+            <li><strong>Pick a palette first.</strong> Five to eight colours written down as hex codes, and every picture uses only those. This does the most to make student art look like one game.</li>
+            <li><strong>One style, one viewpoint.</strong> Pixel art, flat shapes or ink: pick one. Keep the counter and the horizon at the same height in every scene.</li>
+            <li><strong>Draw big, show small.</strong> Check each icon at half size. If you can't tell what it is, simplify it.</li>
+            <li><strong>Only your own art.</strong> If you use something you didn't make, write down who made it and the license.</li>
+            <li><strong>Always write the <code>alt</code></strong> on each <code>&lt;img&gt;</code>: one short sentence about what it shows.</li>
+          </ul>
+          <p>Put each picture's file name in the data next to the thing it shows (<code>art: "art/sign.png"</code> on an upgrade, <code>icon: "art/rain.png"</code> on a weather type), so the logic stays untouched. The Lab still draws emoji; it doesn't read these art fields. Where to draw: <a href="../../web-design/web-studio.html">Web Studio</a> Draw mode, or <a href="../../2d-game-dev/pixel-art-sprites.html">Pixel Art &amp; Sprites</a>.</p>
+          <ul class="art-check">
+            <li><input type="checkbox" id="ac1" /><label for="ac1">My palette (5 to 8 hex colours) is written down</label></li>
+            <li><input type="checkbox" id="ac2" /><label for="ac2">Title screen</label></li>
+            <li><input type="checkbox" id="ac3" /><label for="ac3">The shop, with a version for each upgrade</label></li>
+            <li><input type="checkbox" id="ac4" /><label for="ac4">Product sprite (transparent)</label></li>
+            <li><input type="checkbox" id="ac5" /><label for="ac5">An icon for every kind of day</label></li>
+            <li><input type="checkbox" id="ac6" /><label for="ac6">All three ending screens</label></li>
+            <li><input type="checkbox" id="ac7" /><label for="ac7">Credits written for anything I didn't draw myself</label></li>
+          </ul>
+          <div class="worksheet">
+            <label for="ws-art">Art plan: my style, my palette, and the one picture I will make first</label>
+            <textarea id="ws-art"></textarea>
+          </div>
+        </section>
+
+        <!-- 7. Level up -->
+        <section class="cl-card" id="levelup">
+          <span class="step-tag">LEVEL UP</span>
+          <h2>7 · Challenges</h2>
+          <p>Pick one or two. They get harder as you go down the list.</p>
+          <ol>
+            <li><strong>Show the history.</strong> Keep an array of each day's cash and draw it as a line graph on a <code>&lt;canvas&gt;</code>. Which day did you turn a corner?</li>
+            <li><strong>Recipe slider.</strong> Add a quality choice with three levels. Each level changes both <code>cost</code> and <code>topPrice</code>. Where does the best price land now?</li>
+            <li><strong>A loan.</strong> At the start, offer $30 that you repay at 10% per day. Work out on paper whether it ever pays off.</li>
+            <li><strong>Leftovers.</strong> Let unsold stock carry over, with 30% spoiling each night. How does that change how many you make?</li>
+            <li><strong>A rival.</strong> A computer stand with its own price takes customers from you: the cheaper stand gets more of the crowd. What's your best response, and does the game have a stable price?</li>
+            <li><strong>Save and resume.</strong> Put the state in <code>localStorage</code> so a closed tab doesn't end the season. The <a href="../../2d-game-dev/ship-your-2d-game.html">Menus, Saving &amp; Shipping</a> lesson explains how.</li>
+          </ol>
+        </section>
+
+        <!-- 8. Responsible design -->
+        <section class="cl-card" id="history">
+          <h2>8 · Where it came from, and designing with care</h2>
+          <p><em>Lemonade Stand</em> is one of the oldest educational computer games. A version was written in the 1970s on a school time-sharing system and later spread on the Apple II through the Minnesota Educational Computing Consortium, the same group that made <em>The Oregon Trail</em> famous in school computer labs. Both games are small and text-heavy, and both have a whole economy or survival model inside them. You can build either one yourself after one lesson.</p>
+          <p>Economics in a game is also a place to think about <strong>who gets hurt by a number</strong>. When you design a business game:</p>
+          <ul>
+            <li><strong>Price gouging.</strong> In this model a heat wave or a storm raises demand, so the "best" price goes up exactly when people are most desperate. In real life many places ban that after disasters. Does your game reward it, punish it, or just describe it? Decide on purpose.</li>
+            <li><strong>Fair rewards.</strong> If a timer, a streak or a "buy now" button pushes players to keep coming back or spend real money, ask whether it respects them. A school game should never ask for real money.</li>
+            <li><strong>Real businesses.</strong> If your spin-off sells something real (food, medicine, services), check that your prices and costs are believable, and say where you found them.</li>
+            <li><strong>Real lemonade stands.</strong> In some places a child needs a permit or a parent's permission to sell food. The game is a model. Check the rules before you start a real stand.</li>
+          </ul>
+        </section>
+
+        <!-- 9. Rubric -->
+        <section class="cl-card" id="rubric">
+          <h2>9 · Show what you built</h2>
+          <p>Hand in your <code>lemonade.html</code> (or the file from the Lab) and a design sheet. Your teacher will look for:</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Criterion</th><th scope="col">Meets the goal when…</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">It works</th><td>You can start it, play it, and reach all three endings without errors.</td></tr>
+              <tr><th scope="row">Data-driven</th><td>Prices, weather, events and upgrades live in one data object, and the logic doesn't hard-code them.</td></tr>
+              <tr><th scope="row">Real choices</th><td>At least two decisions where both options have a cost (price, stock, upgrade timing).</td></tr>
+              <tr><th scope="row">Balanced with math</th><td>You worked out the best price on paper, checked it against the game, and playtested; a careful player can win and a careless one can lose.</td></tr>
+              <tr><th scope="row">A twist</th><td>One rule or mechanic that makes it more than a re-skin.</td></tr>
+              <tr><th scope="row">Designed with care</th><td>Events are original, numbers are believable, and nothing pushes players to feel tricked.</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>Next: plan your whole build in <a href="game-jam-week.html">Game Jam Week</a>, build the other classic of the genre in <a href="trail-game-builder.html">Trail Game Builder</a>, or add real art and animation with the <a href="../../2d-game-dev/2d-pathway.html">2D Game Developer Pathway</a>.</p>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Model supply and demand with a simple formula</li>
+            <li>Find an optimal price from a profit curve</li>
+            <li>Use weighted randomness and an unreliable forecast</li>
+            <li>See compound growth in upgrades, and judge payback time</li>
+            <li>Separate content (data) from logic so a spin-off is easy</li>
+            <li>Balance with arithmetic, then playtest</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Time</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;">Two to three class periods: one to build the engine (steps 1 to 7), one for the pricing math and a spin-off design, and optional time for a challenge.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <ul style="font-size:0.79rem;color:var(--text-muted,#64748b);line-height:1.7;padding-left:1.1rem;">
+            <li>Nothing happens: open the console (F12) and read the red error.</li>
+            <li>"Unexpected token": a missing comma between list items.</li>
+            <li>Always going broke: check the cost against the price, and don't make more cups than the forecast supports.</li>
+            <li>Run the Lab with <code>"seed": 1</code> to get the same game every time while you debug.</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Related</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;"><a href="trail-game-builder.html" style="color:var(--acc);">Trail Game Builder</a> · <a href="roguelike-builder.html" style="color:var(--acc);">Roguelike Builder</a> · <a href="game-design-thinking.html" style="color:var(--acc);">What Makes a Game?</a> · <a href="game-jam-week.html" style="color:var(--acc);">Game Jam Week</a></p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:var(--text-secondary,#3f4f65);">
+            <dt style="font-weight:700;margin-top:0.6rem;">Supply and demand</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">How many people want something (demand) falls as its price rises, while how much you make (supply) is your choice.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Profit</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Money earned minus every cost: ingredients, rent and bills.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Margin</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">What you keep from each sale after the item's own cost: price minus cost.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Compound growth</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Growth that builds on earlier growth, like an upgrade that makes every later day earn more.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Payback time</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">How many days of extra income it takes for an upgrade to earn back what it cost.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Weighted random</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Picking from a list where some items are more likely than others, according to their weights.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Seed</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A starting number that makes a random generator repeat the same sequence, so a bug can be reproduced.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Playtest</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Watching real players try your game, without helping, to find what confuses or bores them.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<!-- ─────────────────────────────────────────────────────────────
+     The student's build-along program. Steps 1–7 above are sliced out of
+     this one string by its "// ---- name ----" markers, so the lesson text,
+     the download and the tests can never drift apart.
+     (String.raw keeps \n as two characters; no backticks or dollar-braces inside.)
+     ───────────────────────────────────────────────────────────── -->
+<script>
+window.LEMON_MINI_JS = String.raw`// ---- data ----
+// Everything a spin-off needs to change lives in this one object.
+const GAME = {
+  title: "Lemonade Stand",
+  days: 14, goal: 300,
+  startCash: 20, rent: 2,
+  cost: 0.30,                  // what one cup costs you to make
+  baseCustomers: 60,           // people who walk by on a normal day
+  topPrice: 2.00,              // the price where nobody buys
+  forecastAccuracy: 0.75, eventChance: 0.4,
+  weather: [
+    { weight: 4, name: "Sunny", demand: 1.3 },
+    { weight: 3, name: "Cloudy", demand: 1.0 },
+    { weight: 2, name: "Rainy", demand: 0.4 },
+    { weight: 1, name: "Heat wave", demand: 1.8 }
+  ],
+  events: [
+    { weight: 2, text: "A school fair is down the street!", demand: 1.5 },
+    { weight: 2, text: "Sugar got expensive today.", cost: 0.10 },
+    { weight: 1, text: "The health inspector fined you $5.", cash: -5 }
+  ],
+  upgrades: [
+    { name: "Painted sign", cost: 15, demand: 1.2 },
+    { name: "Cooler with ice", cost: 25, demand: 1.15 }
+  ]
+};
+
+// ---- state ----
+let day = 1, cash = GAME.startCash, boost = 1, over = false;
+const owned = [];
+let today = null;
+
+// ---- helpers ----
+const $ = id => document.getElementById(id);
+const money = n => (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
+
+function say(text) {
+  $("log").textContent = "Day " + day + ": " + text + "\n" + $("log").textContent;
+}
+function weighted(list) {
+  let roll = Math.random() * list.reduce((sum, e) => sum + e.weight, 0);
+  for (const e of list) { roll -= e.weight; if (roll <= 0) return e; }
+  return list[list.length - 1];
+}
+function draw() {
+  $("status").textContent = "Day " + Math.min(day, GAME.days) + " of " + GAME.days +
+    " · cash " + money(cash) + " · goal " + money(GAME.goal);
+  $("forecast").textContent = over ? "" : "Forecast: " + today.forecast.name +
+    " (right about " + Math.round(GAME.forecastAccuracy * 100) + "% of the time)";
+  $("upgrades").replaceChildren(...GAME.upgrades.map(u => {
+    const b = document.createElement("button");
+    b.textContent = u.name + " (" + money(u.cost) + ", +" + Math.round((u.demand - 1) * 100) + "% customers)";
+    b.disabled = over || owned.includes(u.name) || cash < u.cost;
+    b.onclick = () => buy(u);
+    return b;
+  }));
+  $("open").disabled = over;
+}
+
+// ---- demand ----
+// How many people want a cup at this price?
+function demand(price, weather, extra) {
+  const customers = GAME.baseCustomers * weather.demand * boost * extra;
+  const willing = Math.max(0, 1 - price / GAME.topPrice);   // 1 at $0, 0 at topPrice
+  return Math.round(customers * willing);
+}
+
+// ---- day ----
+function morning() {
+  const weather = weighted(GAME.weather);
+  const forecast = Math.random() < GAME.forecastAccuracy ? weather : weighted(GAME.weather);
+  const event = Math.random() < GAME.eventChance ? weighted(GAME.events) : null;
+  today = {
+    weather, forecast, event,
+    cost: GAME.cost + (event && event.cost || 0),
+    extra: event && event.demand || 1
+  };
+  if (event) say("News: " + event.text);
+}
+function openStand() {
+  if (over) return;
+  const price = parseFloat($("price").value);
+  const cups = Math.floor(Number($("cups").value));
+  if (!(price > 0) || !(cups >= 0)) return say("Type a price above 0 and a number of cups.");
+  const spend = cups * today.cost;
+  if (spend > cash) return say("You only have " + money(cash) + " for ingredients. Make fewer cups.");
+
+  const want = demand(price, today.weather, today.extra);
+  const sold = Math.min(want, cups);
+  const bill = today.event && today.event.cash || 0;
+  const profit = sold * price - spend - GAME.rent + bill;
+  cash = Math.round((cash + profit) * 100) / 100;
+  say(today.weather.name + ": " + want + " people wanted one. You made " + cups + " and sold " + sold +
+    " (" + Math.max(0, want - cups) + " walked away, " + Math.max(0, cups - want) + " wasted). Profit " + money(profit) + ".");
+  day++;
+  checkEnd();
+  if (!over) morning();
+  draw();
+}
+
+// ---- upgrades ----
+function buy(u) {
+  if (over || owned.includes(u.name) || cash < u.cost) return;
+  cash -= u.cost; boost *= u.demand; owned.push(u.name);
+  say("Bought " + u.name + ". Customers are up " + Math.round((u.demand - 1) * 100) + "% from now on.");
+  draw();
+}
+
+// ---- end ----
+function finish(message) { over = true; say(message); }
+function checkEnd() {
+  if (cash < 0) return finish("Bankrupt! You can't pay the bills.");
+  if (day > GAME.days) {
+    finish(cash >= GAME.goal
+      ? "Season over: you finished with " + money(cash) + ". You win!"
+      : "Season over: " + money(cash) + " is short of the " + money(GAME.goal) + " goal. Try again.");
+  }
+}
+
+$("title").textContent = GAME.title;
+$("open").onclick = openStand;
+say("Your stand is ready!");
+morning();
+draw();
+`;
+window.LEMON_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Lemonade Game</title>\n</head>\n<body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <p id="status"></p>\n  <p id="forecast"></p>\n  <p>\n    <label>Price $ <input id="price" type="number" value="1" min="0.05" step="0.05" style="width:5rem"></label>\n    <label>Cups to make <input id="cups" type="number" value="20" min="0" style="width:5rem"></label>\n    <button id="open">Open the stand</button>\n  </p>\n  <div id="upgrades"></div>\n  <pre id="log" style="background:#fffbe6; color:#3b2f0b; padding:1rem; height:14rem; overflow:auto; white-space:pre-wrap;"></pre>\n\n<script>\n';
+window.LEMON_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   LemonadeEngine: the finished game used by the Tycoon Lab.
+   Self-contained on purpose: "Download as a game file" serialises this
+   function with toString(), so it must not reach for anything outside itself.
+   ═════════════════════════════════════════════════════════════ */
+function LemonadeEngine(root, cfg) {
+  if (root._lemon) root._lemon.destroy();
+  var C = JSON.parse(JSON.stringify(cfg));
+  function need(ok, msg) { if (!ok) throw new Error(msg); }
+  function isNum(v, min) { return typeof v === 'number' && isFinite(v) && v >= min; }
+
+  // ---- validate, with messages a student can act on ----
+  need(typeof C.title === 'string' && C.title, '"title" must be a phrase in quotes.');
+  need(isNum(C.days, 1), '"days" must be a number of 1 or more.');
+  need(isNum(C.goal, 1), '"goal" must be a number above 0.');
+  need(isNum(C.startCash, 0), '"startCash" must be a number, 0 or more.');
+  need(isNum(C.cost, 0.01), '"cost" (what one item costs you) must be a number above 0.');
+  need(isNum(C.topPrice, 0.01) && C.topPrice > C.cost, '"topPrice" must be higher than "cost", or no price can ever make a profit.');
+  need(isNum(C.baseCustomers, 1), '"baseCustomers" must be a number above 0.');
+  var rent = C.rent == null ? 0 : C.rent;
+  need(isNum(rent, 0), '"rent" must be a number, 0 or more.');
+  var acc = C.forecastAccuracy == null ? 0.75 : C.forecastAccuracy;
+  need(isNum(acc, 0) && acc <= 1, '"forecastAccuracy" must be between 0 and 1.');
+  var chance = C.eventChance == null ? 0.4 : C.eventChance;
+  need(isNum(chance, 0) && chance <= 1, '"eventChance" must be between 0 and 1.');
+  var I = Object.assign({ name: 'cup', plural: 'cups', icon: '🍋' }, C.item || {});
+  var cur = C.currency || '$';
+  need(Array.isArray(C.weather) && C.weather.length >= 1, '"weather" must be a list with at least one kind of day.');
+  C.weather.forEach(function (w, n) {
+    need(typeof w.name === 'string' && isNum(w.weight, 0.001) && isNum(w.demand, 0), 'Weather ' + (n + 1) + ' needs a "name", a "weight" above 0 and a "demand" of 0 or more.');
+  });
+  var EVENTS = C.events || [];
+  EVENTS.forEach(function (e, n) {
+    need(typeof e.text === 'string' && isNum(e.weight, 0.001), 'Event ' + (n + 1) + ' needs "text" and a "weight" above 0.');
+    need(e.demand == null || isNum(e.demand, 0), 'Event ' + (n + 1) + ': "demand" must be a number of 0 or more.');
+    need(e.cost == null || typeof e.cost === 'number', 'Event ' + (n + 1) + ': "cost" must be a number.');
+    need(e.cash == null || typeof e.cash === 'number', 'Event ' + (n + 1) + ': "cash" must be a number.');
+  });
+  var UPS = C.upgrades || [];
+  UPS.forEach(function (u, n) {
+    need(typeof u.name === 'string' && isNum(u.cost, 0) && isNum(u.demand, 0.01), 'Upgrade ' + (n + 1) + ' needs a "name", a "cost" and a "demand" multiplier above 0.');
+  });
+
+  // ---- tiny seeded random, so a bug can be replayed ----
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var rng = (C.seed != null) ? mulberry(C.seed) : Math.random;
+
+  // ---- styles (injected once, scoped with .lm-) ----
+  if (!document.getElementById('lm-style')) {
+    var st = document.createElement('style'); st.id = 'lm-style';
+    st.textContent = [
+      '.lm{position:relative;background:#fffbe6;color:#3b2f0b;border:2px solid #a16207;border-radius:14px;padding:.8rem;font:14px/1.45 system-ui,sans-serif;box-sizing:border-box}',
+      '.lm *{box-sizing:border-box}',
+      '.lm h3{margin:0;font-size:1.05rem;color:#713f12}.lm-top{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:baseline}',
+      '.lm-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}.lm-chip{background:#fff;border:1px solid #d4a017;border-radius:8px;padding:.15rem .5rem;font-weight:600;font-size:.82rem}',
+      '.lm-goal{height:10px;border-radius:5px;background:#f1e3a6;overflow:hidden;margin-bottom:.5rem}.lm-goal i{display:block;height:100%;width:0;background:#16a34a;transition:width .3s}',
+      '.lm-day{background:#fff;border:1px solid #d4a017;border-radius:10px;padding:.5rem .65rem;margin-bottom:.5rem}',
+      '.lm-day b{font-size:1rem}.lm-day small{display:block;color:#713f12;font-size:.76rem}.lm-news{color:#9a3412;font-weight:600;font-size:.82rem;margin-top:.15rem}',
+      '.lm-ctl{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin-bottom:.4rem}.lm-ctl label{font-size:.78rem;font-weight:700;display:flex;gap:.3rem;align-items:center}',
+      '.lm input[type=number]{font:inherit;font-size:.85rem;width:5.2rem;padding:.25rem .35rem;border:1px solid #d4a017;border-radius:6px;background:#fff;color:#3b2f0b}',
+      '.lm button{font:inherit;font-size:.82rem;font-weight:700;border:0;border-radius:8px;padding:.4rem .8rem;background:#a16207;color:#fff;cursor:pointer}',
+      '.lm button:disabled{opacity:.45;cursor:not-allowed}.lm button.alt{background:#fff;color:#713f12;border:1.5px solid #d4a017}',
+      '.lm button:focus-visible,.lm input:focus-visible,.lm summary:focus-visible{outline:3px solid #2563eb;outline-offset:2px}',
+      '.lm-msg{min-height:1.3em;font-size:.8rem;font-weight:600;color:#b91c1c;margin:0 0 .3rem}',
+      '.lm-res{background:#fff;border:1px dashed #d4a017;border-radius:10px;padding:.45rem .65rem;margin-bottom:.5rem;font-size:.82rem;min-height:3.2rem}.lm-res .good{color:#15803d;font-weight:700}.lm-res .bad{color:#b91c1c;font-weight:700}',
+      '.lm-ups{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.5rem}',
+      '.lm details{margin-bottom:.5rem;font-size:.8rem}.lm summary{cursor:pointer;font-weight:700;color:#713f12}.lm svg{width:100%;height:auto;display:block;margin-top:.3rem}',
+      '.lm-log{background:#fff;border:1px solid #d4a017;border-radius:8px;padding:.4rem .6rem;height:8rem;overflow:auto;font-size:.78rem}.lm-log div{padding:1px 0}',
+      '.lm-modal{position:absolute;inset:0;background:rgba(59,47,11,.8);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.8rem;z-index:5}',
+      '.lm-box{background:#fffbe6;border:2px solid #a16207;border-radius:12px;padding:1rem;max-width:26rem;width:100%}.lm-box h4{margin:0 0 .35rem;font-size:1.1rem;color:#713f12}.lm-box p{margin:0 0 .7rem}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  // ---- state ----
+  var S, el = {}, destroyed = false;
+  function h(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function money(n) { return (n < 0 ? '-' : '') + cur + Math.abs(n).toFixed(2); }
+  function cents(n) { return Math.round(n * 100) / 100; }
+  function weighted(list) {
+    var roll = rng() * list.reduce(function (s, e) { return s + e.weight; }, 0);
+    for (var i = 0; i < list.length; i++) { roll -= list[i].weight; if (roll <= 0) return list[i]; }
+    return list[list.length - 1];
+  }
+  // how many people want one at this price
+  function wanted(price, w, extra, boost) {
+    return Math.round(C.baseCustomers * w.demand * boost * extra * Math.max(0, 1 - price / C.topPrice));
+  }
+  function say(t, cls) { S.log.unshift({ t: 'Day ' + Math.min(S.day, C.days) + ': ' + t, c: cls || '' }); if (S.log.length > 60) S.log.pop(); }
+
+  function morning() {
+    var w = weighted(C.weather);
+    var f = rng() < acc ? w : weighted(C.weather);
+    var ev = (EVENTS.length && rng() < chance) ? weighted(EVENTS) : null;
+    S.today = { w: w, f: f, ev: ev, cost: C.cost + (ev && ev.cost || 0), extra: ev && ev.demand != null ? ev.demand : 1 };
+    if (ev) say('News: ' + ev.text);
+  }
+  function newGame() {
+    S = { day: 1, cash: C.startCash, boost: 1, owned: [], log: [], over: false, last: null, today: null };
+    say('Your ' + (I.name === 'cup' ? 'stand' : 'business') + ' opens! Goal: ' + money(C.goal) + ' in ' + C.days + ' days.');
+    morning(); build(); draw();
+  }
+
+  // ---- UI ----
+  function build() {
+    root.replaceChildren();
+    var box = h('div', 'lm'); root.appendChild(box); el.box = box;
+    var top = h('div', 'lm-top'); top.appendChild(h('h3', null, C.title)); el.day = h('span'); top.appendChild(el.day); box.appendChild(top);
+    el.chips = h('div', 'lm-chips'); box.appendChild(el.chips);
+    var g = h('div', 'lm-goal'); el.goal = h('i'); g.appendChild(el.goal); g.setAttribute('aria-hidden', 'true'); box.appendChild(g);
+    el.today = h('div', 'lm-day'); el.today.setAttribute('aria-live', 'polite'); box.appendChild(el.today);
+
+    var ctl = h('div', 'lm-ctl');
+    var lp = h('label', null, 'Price '); el.price = h('input'); el.price.type = 'number'; el.price.min = '0.05'; el.price.step = '0.05'; el.price.value = String(cents(C.topPrice / 2)); lp.appendChild(el.price); ctl.appendChild(lp);
+    var lq = h('label', null, 'Make '); el.qty = h('input'); el.qty.type = 'number'; el.qty.min = '0'; el.qty.step = '1'; el.qty.value = String(Math.max(1, Math.round(C.baseCustomers * 0.4))); lq.appendChild(el.qty); lq.appendChild(document.createTextNode(' ' + I.plural)); ctl.appendChild(lq);
+    el.open = h('button', null, '▶ Open for the day'); ctl.appendChild(el.open); box.appendChild(ctl);
+    el.msg = h('p', 'lm-msg'); el.msg.setAttribute('role', 'status'); box.appendChild(el.msg);
+
+    el.res = h('div', 'lm-res'); el.res.setAttribute('aria-live', 'polite'); box.appendChild(el.res);
+    el.ups = h('div', 'lm-ups'); box.appendChild(el.ups);
+
+    var det = h('details'); det.appendChild(h('summary', null, "Analyst's chart: profit at every price"));
+    el.chartNote = h('p'); el.chartNote.style.margin = '.3rem 0 0'; det.appendChild(el.chartNote);
+    el.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); el.svg.setAttribute('viewBox', '0 0 320 120'); el.svg.setAttribute('role', 'img'); det.appendChild(el.svg);
+    box.appendChild(det);
+
+    el.log = h('div', 'lm-log'); el.log.setAttribute('role', 'log'); box.appendChild(el.log);
+
+    el.open.addEventListener('click', openDay);
+    el.price.addEventListener('input', chart); el.qty.addEventListener('input', chart);
+    [el.price, el.qty].forEach(function (i) { i.addEventListener('keydown', function (e) { if (e.key === 'Enter') openDay(); }); });
+  }
+
+  function chart() {
+    if (!el.svg || !S || !S.today) return;
+    var T = S.today, qty = Math.max(0, Math.floor(Number(el.qty.value)) || 0), W = 320, H = 120, L = 6, B = 16, N = 60, pts = [], best = null;
+    for (var i = 0; i <= N; i++) {
+      var p = C.topPrice * i / N, sold = Math.min(wanted(p, T.f, T.extra, S.boost), qty);
+      var prof = sold * p - qty * T.cost - rent; pts.push([p, prof]); if (!best || prof > best[1]) best = [p, prof];
+    }
+    var lo = Math.min(0, Math.min.apply(null, pts.map(function (q) { return q[1]; }))), hi = Math.max(1, best[1]);
+    function X(p) { return L + (W - 2 * L) * p / C.topPrice; }
+    function Y(v) { return 6 + (H - B - 6) * (1 - (v - lo) / (hi - lo)); }
+    var cur_p = parseFloat(el.price.value);
+    var d = pts.map(function (q, k) { return (k ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); }).join(' ');
+    el.svg.innerHTML = '<line x1="' + L + '" x2="' + (W - L) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#a8a29e" stroke-dasharray="3 3"/>' +
+      '<path d="' + d + '" fill="none" stroke="#a16207" stroke-width="2.5"/>' +
+      '<circle cx="' + X(best[0]) + '" cy="' + Y(best[1]) + '" r="4.5" fill="#16a34a"/>' +
+      (cur_p > 0 && cur_p <= C.topPrice ? '<line x1="' + X(cur_p) + '" x2="' + X(cur_p) + '" y1="4" y2="' + (H - B) + '" stroke="#2563eb" stroke-width="1.5"/>' : '') +
+      '<text x="' + L + '" y="' + (H - 3) + '" font-size="9" fill="#713f12">' + cur + '0</text>' +
+      '<text x="' + (W - L) + '" y="' + (H - 3) + '" font-size="9" fill="#713f12" text-anchor="end">' + cur + C.topPrice + ' price →</text>';
+    el.svg.setAttribute('aria-label', 'Expected profit for each price if you make ' + qty + ' ' + I.plural + '. Best price about ' + money(best[0]) + '.');
+    el.chartNote.textContent = 'Using the forecast (' + T.f.name + ') and ' + qty + ' ' + I.plural + ': the green dot is the best price (about ' + money(best[0]) + '), the blue line is yours. The forecast can be wrong!';
+  }
+
+  function draw() {
+    if (destroyed) return;
+    var T = S.today;
+    el.day.textContent = S.over ? 'Season over' : 'Day ' + Math.min(S.day, C.days) + ' of ' + C.days;
+    el.chips.replaceChildren();
+    [['💰 ' + money(S.cash), 'Cash'], ['🎯 Goal ' + money(C.goal)], ['👥 Customers ×' + S.boost.toFixed(2)], [I.icon + ' costs ' + money(T.cost) + ' each']].forEach(function (c) { el.chips.appendChild(h('span', 'lm-chip', c[0])); });
+    el.goal.style.width = Math.max(0, Math.min(100, S.cash / C.goal * 100)) + '%';
+    el.today.replaceChildren();
+    if (!S.over) {
+      var b = h('b', null, (T.f.icon || '☁️') + ' Forecast: ' + T.f.name); el.today.appendChild(b);
+      el.today.appendChild(h('small', null, 'Right about ' + Math.round(acc * 100) + '% of the time. Rent today: ' + money(rent) + '.'));
+      if (T.ev) el.today.appendChild(h('div', 'lm-news', 'News: ' + T.ev.text));
+    } else el.today.appendChild(h('b', null, 'Final cash: ' + money(S.cash)));
+    el.res.replaceChildren();
+    if (S.last) {
+      var L = S.last;
+      el.res.appendChild(h('div', null, 'Yesterday was actually ' + L.w.name + (L.w === L.f ? ', just as forecast.' : ' (the forecast said ' + L.f.name + ').')));
+      el.res.appendChild(h('div', null, L.want + ' people wanted one at ' + money(L.price) + '. You made ' + L.qty + ' and sold ' + L.sold + '. ' + L.walked + ' walked away, ' + L.wasted + ' wasted.'));
+      el.res.appendChild(h('div', L.profit >= 0 ? 'good' : 'bad', 'Sales ' + money(L.earned) + ' − ingredients ' + money(L.spend) + ' − rent ' + money(rent) + (L.bill ? ' ' + (L.bill < 0 ? '− ' : '+ ') + money(Math.abs(L.bill)) + ' news' : '') + ' = ' + money(L.profit)));
+    } else el.res.appendChild(h('div', null, 'Choose a price and how many ' + I.plural + ' to make, then open for the day.'));
+    el.ups.replaceChildren();
+    UPS.forEach(function (u) {
+      var owned = S.owned.indexOf(u.name) >= 0;
+      var btn = h('button', 'alt', (owned ? '✓ ' : '') + u.name + ' (' + money(u.cost) + ', ' + (u.demand >= 1 ? '+' : '') + Math.round((u.demand - 1) * 100) + '% customers)');
+      btn.disabled = S.over || owned || S.cash < u.cost;
+      btn.addEventListener('click', function () { buy(u); });
+      el.ups.appendChild(btn);
+    });
+    el.log.replaceChildren();
+    S.log.forEach(function (l) { el.log.appendChild(h('div', l.c, l.t)); });
+    el.open.disabled = S.over;
+    chart();
+  }
+
+  function msg(t) { el.msg.textContent = t; }
+
+  function buy(u) {
+    if (S.over || S.owned.indexOf(u.name) >= 0 || S.cash < u.cost) return;
+    S.cash = cents(S.cash - u.cost); S.boost *= u.demand; S.owned.push(u.name);
+    say('Bought ' + u.name + '. Customers ×' + u.demand + ' from now on.', 'good'); msg(''); draw();
+  }
+
+  function openDay() {
+    if (S.over || destroyed) return;
+    var price = parseFloat(el.price.value), qty = Math.floor(Number(el.qty.value));
+    if (!(price > 0)) return msg('Type a price above 0.');
+    if (!(qty >= 0)) return msg('Type how many ' + I.plural + ' to make (0 or more).');
+    var T = S.today, spend = cents(qty * T.cost);
+    if (spend > S.cash + 1e-9) return msg('You can only afford ' + Math.floor(S.cash / T.cost) + ' ' + I.plural + ' today (' + money(S.cash) + ' ÷ ' + money(T.cost) + ').');
+    msg('');
+    var want = wanted(price, T.w, T.extra, S.boost), sold = Math.min(want, qty);
+    var earned = cents(sold * price), bill = T.ev && T.ev.cash || 0, profit = cents(earned - spend - rent + bill);
+    S.cash = cents(S.cash + profit);
+    S.last = { w: T.w, f: T.f, want: want, qty: qty, sold: sold, price: price, walked: Math.max(0, want - qty), wasted: Math.max(0, qty - want), earned: earned, spend: spend, bill: bill, profit: profit };
+    say(T.w.name + ': sold ' + sold + ' of ' + want + ' wanted. Profit ' + money(profit) + '.', profit >= 0 ? 'good' : 'bad');
+    S.day++;
+    if (S.cash < 0) finish('Bankrupt!', "You couldn't pay the bills. Try fewer " + I.plural + ' or a better price.', false);
+    else if (S.day > C.days) {
+      var win = S.cash >= C.goal;
+      finish(win ? 'You win!' : 'Season over', win ? 'You finished with ' + money(S.cash) + ', past the ' + money(C.goal) + ' goal.' : 'You finished with ' + money(S.cash) + ', short of the ' + money(C.goal) + ' goal.', win);
+    } else morning();
+    draw();
+  }
+
+  function finish(title, text, win) {
+    S.over = true; say(title + ' ' + text, win ? 'good' : 'bad');
+    var m = h('div', 'lm-modal'), bx = h('div', 'lm-box');
+    bx.setAttribute('role', 'dialog'); bx.setAttribute('aria-label', title);
+    bx.appendChild(h('h4', null, (win ? '🏆 ' : '📉 ') + title)); bx.appendChild(h('p', null, text));
+    var again = h('button', null, 'Play again'); again.addEventListener('click', function () { newGame(); });
+    bx.appendChild(again); m.appendChild(bx); el.box.appendChild(m);
+    setTimeout(function () { if (!destroyed) again.focus(); }, 0);
+  }
+
+  root._lemon = { destroy: function () { destroyed = true; root.replaceChildren(); root._lemon = null; }, state: function () { return S; }, open: openDay };
+  newGame();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Presets. Balanced by simulating thousands of seasons: the best
+   price plus the right upgrades wins most of the time, careless
+   pricing almost never.
+   ───────────────────────────────────────────────────────────── */
+var LEMON_PRESETS = {
+  lemonade: { label: '🍋 Lemonade stand', config: {
+    title: 'Lemonade Stand', item: { name: 'cup', plural: 'cups', icon: '🍋' }, currency: '$',
+    days: 14, goal: 300, startCash: 20, rent: 2, cost: 0.3, baseCustomers: 60, topPrice: 2,
+    forecastAccuracy: 0.75, eventChance: 0.4,
+    weather: [
+      { name: 'Sunny', icon: '☀️', weight: 4, demand: 1.3 },
+      { name: 'Cloudy', icon: '⛅', weight: 3, demand: 1 },
+      { name: 'Rainy', icon: '🌧️', weight: 2, demand: 0.4 },
+      { name: 'Heat wave', icon: '🔥', weight: 1, demand: 1.8 }
+    ],
+    events: [
+      { text: 'A school fair is down the street!', weight: 2, demand: 1.5 },
+      { text: 'Sugar got expensive today.', weight: 2, cost: 0.1 },
+      { text: 'The health inspector fined you $5.', weight: 1, cash: -5 }
+    ],
+    upgrades: [
+      { name: 'Painted sign', cost: 15, demand: 1.2 },
+      { name: 'Cooler with ice', cost: 25, demand: 1.15 }
+    ] } },
+  store: { label: '🍪 School store', config: {
+    title: 'The Corner Store', item: { name: 'snack', plural: 'snacks', icon: '🍪' }, currency: '$',
+    days: 20, goal: 480, startCash: 30, rent: 0, cost: 0.6, baseCustomers: 50, topPrice: 3,
+    forecastAccuracy: 0.75, eventChance: 0.4,
+    weather: [
+      { name: 'Normal day', icon: '🏫', weight: 4, demand: 1 },
+      { name: 'Game night', icon: '🏀', weight: 2, demand: 1.3 },
+      { name: 'Rainy lunch', icon: '🌧️', weight: 2, demand: 0.5 },
+      { name: 'Spirit week', icon: '🎉', weight: 1, demand: 1.6 }
+    ],
+    events: [
+      { text: 'A teacher ordered snacks for the whole class!', weight: 2, demand: 1.5 },
+      { text: 'The supplier raised prices.', weight: 2, cost: 0.15 },
+      { text: 'The freezer broke. Repairs cost $8.', weight: 1, cash: -8 }
+    ],
+    upgrades: [{ name: 'Bigger display', cost: 20, demand: 1.2 }] } },
+  print: { label: '🖨️ 3D-print farm', config: {
+    title: 'Print Farm', item: { name: 'print', plural: 'prints', icon: '🧩' }, currency: '$',
+    days: 12, goal: 520, startCash: 100, rent: 10, cost: 1.5, baseCustomers: 30, topPrice: 9,
+    forecastAccuracy: 0.7, eventChance: 0.4,
+    weather: [
+      { name: 'Steady orders', icon: '📦', weight: 4, demand: 1 },
+      { name: 'Science-fair rush', icon: '🔬', weight: 3, demand: 1.3 },
+      { name: 'Slow week', icon: '🐢', weight: 2, demand: 0.6 },
+      { name: 'Viral model', icon: '🚀', weight: 1, demand: 1.8 }
+    ],
+    events: [
+      { text: 'A school ordered a big batch.', weight: 2, demand: 1.6 },
+      { text: 'Filament prices spiked.', weight: 2, cost: 0.5 },
+      { text: 'A nozzle clogged. Repairs cost $25.', weight: 1, cash: -25 }
+    ],
+    upgrades: [{ name: 'Second printer', cost: 60, demand: 1.25 }] } }
+};
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   Lesson page wiring
+   ═════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // build-along: slice the program into its steps
+  var sections = {};
+  window.LEMON_MINI_JS.split(/^\/\/ ---- (\w+) ----\n/m).forEach(function (part, i, arr) {
+    if (i % 2 === 1) sections[part] = arr[i + 1].replace(/\n+$/, '');
+  });
+  document.querySelectorAll('[data-mini]').forEach(function (pre) { pre.textContent = sections[pre.dataset.mini] || ''; });
+  var fullDoc = window.LEMON_MINI_HEAD + window.LEMON_MINI_JS + window.LEMON_MINI_TAIL;
+  $('code-skeleton').textContent = window.LEMON_MINI_HEAD + '  // …steps 1 to 7 go here…\n' + window.LEMON_MINI_TAIL;
+  $('code-full').textContent = fullDoc;
+
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/html' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  $('mini-download').addEventListener('click', function () { download('lemonade.html', fullDoc); $('mini-status').textContent = 'Saved lemonade.html'; });
+  $('mini-copy').addEventListener('click', function () {
+    var done = function (ok) { $('mini-status').textContent = ok ? 'Copied!' : 'Copy failed. Open "Show the complete program" and select it.'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(fullDoc).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+
+  // lab
+  var sel = $('lab-preset'), ta = $('lab-config'), status = $('lab-status'), host = $('lab-game');
+  Object.keys(LEMON_PRESETS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = LEMON_PRESETS[k].label; sel.appendChild(o); });
+  function loadPreset() { ta.value = JSON.stringify(LEMON_PRESETS[sel.value].config, null, 2); run(); }
+  function run() {
+    var cfg;
+    try { cfg = JSON.parse(ta.value); }
+    catch (e) {
+      var m = /position (\d+)/.exec(e.message), line = m ? ta.value.slice(0, +m[1]).split('\n').length : null;
+      status.className = 'bad'; status.textContent = 'JSON problem' + (line ? ' near line ' + line : '') + ': ' + e.message + '. Look for a missing comma or quote.'; return;
+    }
+    try { LemonadeEngine(host, cfg); status.className = 'ok'; status.textContent = 'Running “' + cfg.title + '”.'; }
+    catch (e) { status.className = 'bad'; status.textContent = e.message; }
+  }
+  sel.addEventListener('change', loadPreset);
+  $('lab-run').addEventListener('click', run);
+  $('lab-reset').addEventListener('click', loadPreset);
+  $('lab-download').addEventListener('click', function () {
+    var cfg; try { cfg = JSON.parse(ta.value); LemonadeEngine(document.createElement('div'), cfg); } catch (e) { status.className = 'bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
+    var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
+    var title = String(cfg.title).replace(/[<>&"]/g, '');
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#3b2f0b;">\n<div id="game" style="max-width:700px;margin:0 auto;"></div>\n<script>\n' +
+      LemonadeEngine.toString() + '\nvar CONFIG = ' + json + ';\nLemonadeEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</body>\n</html>\n';
+    download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
+    status.className = 'ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
+  });
+  loadPreset();
+
+  // pricing calculator + profit curve
+  var ids = ['b-cost', 'b-top', 'b-cust', 'b-rent', 'b-ucost', 'b-ubonus', 'b-days'];
+  function money(n) { return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2); }
+  function calc() {
+    var v = {}; ids.forEach(function (i) { v[i] = parseFloat($(i).value) || 0; });
+    var c = v['b-cost'], T = v['b-top'], B = v['b-cust'], R = v['b-rent'], svg = $('b-chart');
+    if (!(c > 0 && T > c && B > 0)) { svg.innerHTML = ''; $('b-out').innerHTML = '<span class="warn">Top price must be higher than cost, and both above 0.</span>'; return; }
+    var profit = function (p) { return (p - c) * B * (1 - p / T) - R; };
+    var best = (T + c) / 2, cust = B * (1 - best / T), top = profit(best);
+    // chart
+    var pts = [], i, N = 60, lo = Math.min(0, profit(0)), hi = Math.max(1, top), W = 320, H = 120, L = 6, Bm = 16;
+    for (i = 0; i <= N; i++) { var p = T * i / N; pts.push([p, profit(p)]); lo = Math.min(lo, profit(p)); }
+    var X = function (p) { return L + (W - 2 * L) * p / T; }, Y = function (y) { return 6 + (H - Bm - 6) * (1 - (y - lo) / (hi - lo)); };
+    svg.innerHTML = '<line x1="' + L + '" x2="' + (W - L) + '" y1="' + Y(0) + '" y2="' + Y(0) + '" stroke="#a8a29e" stroke-dasharray="3 3"/>' +
+      '<path d="' + pts.map(function (q, k) { return (k ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); }).join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="2.5"/>' +
+      '<circle cx="' + X(best) + '" cy="' + Y(top) + '" r="4.5" fill="#16a34a"/>' +
+      '<text x="' + L + '" y="' + (H - 3) + '" font-size="9" fill="currentColor">$0</text>' +
+      '<text x="' + (W - L) + '" y="' + (H - 3) + '" font-size="9" fill="currentColor" text-anchor="end">$' + T + ' price →</text>';
+    var low = c * 1.5, high = T * 0.9;
+    var margin = best - c, gain = margin * cust * (v['b-ubonus'] / 100), pay = gain > 0 ? v['b-ucost'] / gain : Infinity;
+    var out = 'Best price: <b>' + money(best) + '</b>. About ' + cust.toFixed(1) + ' of ' + B + ' people buy, you keep ' + money(margin) + ' on each, so a normal day earns about <b>' + money(top) + '</b> after rent. ';
+    out += 'Compare: at ' + money(low) + ' (1.5× cost) you earn ' + money(profit(low)) + ', and at ' + money(high) + ' (90% of the top) you earn ' + money(profit(high)) + '. ';
+    out += pay === Infinity ? '' : 'The upgrade adds about ' + money(gain) + ' a day, so it pays for itself in about ' + Math.ceil(pay) + ' days. ' +
+      (pay < v['b-days'] ? '<span class="good">With ' + v['b-days'] + ' days left, buy it.</span>' : '<span class="warn">With only ' + v['b-days'] + ' days left, it never earns back its cost.</span>');
+    $('b-out').innerHTML = out;
+  }
+  ids.forEach(function (i) { $(i).addEventListener('input', calc); }); calc();
+
+  // idea dice
+  var DICE = {
+    business: ['A hot-chocolate stand at a winter festival', 'A food truck outside a stadium', 'A bakery that sells out by noon', 'A repair booth for phones and bikes', 'A 3D-print shop for board-game pieces', 'A plant nursery at the farmers market', 'A school radio station selling ad slots', 'A concert merch table', 'A bike-courier company', 'A pop-up bookstore'],
+    uncertain: ['Weather', 'Which team wins on Friday', 'Whether the supplier is late', 'Trends: this week\'s craze', 'Holidays and school breaks', 'A viral video', 'Traffic and road works', 'The season: summer rush, winter lull'],
+    twist: ['A rival across the street sets their own price', 'You borrow money and owe interest', 'Quality: better ingredients move the best price', 'Reputation carries over from day to day', 'Unsold stock spoils a little each night', 'Staff: hire a helper for a daily wage', 'Two players share one stand and vote on the price', 'Every upgrade also teaches a true fact']
+  };
+  function roll() { ['business', 'uncertain', 'twist'].forEach(function (k) { var a = DICE[k]; $('d-' + k).textContent = a[Math.floor(Math.random() * a.length)]; }); }
+  $('dice-roll').addEventListener('click', roll); roll();
+})();
+</script>
+<script src="../../../assets/js/reveal.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script>
+</body>
+</html>

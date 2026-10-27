@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text Adventure Builder: Make Your Own Zork · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build a type-your-commands text adventure in about 100 lines of JavaScript: rooms as a graph, a parser that turns words into a verb and a noun, an inventory, flags and locks. Then check your map with breadth-first search and design a spin-off." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    :root { --acc: #0f766e; --acc-soft: rgba(15,118,110,0.1); --acc-border: rgba(15,118,110,0.34); }
+    :root:where([data-lighting="night"]) { --acc: #2dd4bf; --acc-soft: rgba(45,212,191,0.12); --acc-border: rgba(45,212,191,0.4); }
+    @media (prefers-color-scheme: dark) { :root:where(:not([data-lighting])) { --acc: #2dd4bf; } }
+
+    .cl-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--acc); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p, .cl-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p { margin: 0 0 0.6rem; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    .cl-card ul, .cl-card ol { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
+    [data-lighting="night"] .cl-card, [data-theme="vaporwave"] .cl-card, [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p, [data-lighting="night"] .cl-card li,
+    [data-theme="vaporwave"] .cl-card p, [data-theme="vaporwave"] .cl-card li,
+    [data-theme="bark"] .cl-card p, [data-theme="bark"] .cl-card li,
+    [data-lighting="night"] .cl-lede, [data-theme="vaporwave"] .cl-lede, [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.74); }
+
+    .step-tag { display: inline-block; background: var(--acc); color: #fff; border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.65rem; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+
+    /* The command loop */
+    .loop-diagram { display: flex; align-items: stretch; justify-content: center; gap: 0.35rem; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+    .loop-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 10px; padding: 0.55rem 0.8rem; text-align: center; min-width: 96px; flex: 1 1 96px; max-width: 150px; }
+    .loop-box strong { display: block; font-size: 0.84rem; color: var(--acc); }
+    .loop-box small { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-top: 0.1rem; line-height: 1.35; }
+    .loop-arrow { align-self: center; font-size: 1.2rem; color: var(--text-muted, #64748b); }
+
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.85rem 1.05rem; margin: 0.7rem 0; overflow-x: auto; max-width: 100%; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; line-height: 1.65; color: #e2e8f0; white-space: pre; }
+    .code-title { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #64748b); margin-top: 0.7rem; }
+
+    .callout { border-radius: 12px; padding: 0.8rem 1rem; margin: 0.8rem 0; font-size: 0.85rem; line-height: 1.6; background: var(--acc-soft); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
+    .callout.checkpoint { background: rgba(34,197,94,0.09); border-left-color: #22c55e; }
+    .callout.checkpoint strong { color: #15803d; }
+    [data-lighting="night"] .callout, [data-theme="vaporwave"] .callout, [data-theme="bark"] .callout { color: rgba(245,245,247,0.76); }
+    [data-lighting="night"] .callout.checkpoint strong, [data-theme="vaporwave"] .callout.checkpoint strong, [data-theme="bark"] .callout.checkpoint strong { color: #4ade80; }
+
+    .btn { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.42rem 0.95rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; color: var(--acc); border: 1.5px solid var(--acc-border); }
+    .btn:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    [data-lighting="night"] .btn:not(.ghost), [data-theme="vaporwave"] .btn:not(.ghost), [data-theme="bark"] .btn:not(.ghost) { color: #1d1d1f; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.6rem 0; }
+    .row label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary, #3f4f65); }
+    select, .cl-card input[type=number], .cl-card textarea.field { font: inherit; font-size: 0.84rem; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+
+    /* Adventure Lab */
+    .lab-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    @media (max-width: 960px) { .lab-grid { grid-template-columns: minmax(0, 1fr); } }
+    #lab-config { width: 100%; box-sizing: border-box; min-height: 26rem; max-height: 34rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; line-height: 1.5; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 10px; padding: 0.7rem; resize: vertical; tab-size: 2; }
+    #lab-status { font-size: 0.8rem; margin: 0.4rem 0 0; min-height: 1.3em; font-weight: 600; }
+    #lab-status.ok { color: #15803d; } #lab-status.bad { color: #b91c1c; }
+    [data-lighting="night"] #lab-status.ok { color: #4ade80; } [data-lighting="night"] #lab-status.bad { color: #fca5a5; }
+
+    .map-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0; }
+    .map-table th, .map-table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .map-table th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted,#64748b); }
+    .table-scroll { overflow-x: auto; }
+    [data-lighting="night"] .map-table td, [data-theme="vaporwave"] .map-table td, [data-theme="bark"] .map-table td { color: rgba(245,245,247,0.76); }
+
+    /* Map checker */
+    .bfs-layers { list-style: none; padding-left: 0 !important; margin: 0.4rem 0 0.7rem; display: grid; gap: 0.35rem; }
+    .bfs-layers li { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+    .bfs-step { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--acc); min-width: 4.8rem; }
+    .bfs-room { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 999px; padding: 0.05rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text, #1d1d1f); }
+    .check-list { list-style: none; padding-left: 0 !important; }
+    .check-list li { padding: 0.25rem 0 0.25rem 1.6rem; position: relative; }
+    .check-list li::before { position: absolute; left: 0.1rem; top: 0.25rem; font-weight: 800; }
+    .check-list li.good::before { content: "✓"; color: #15803d; }
+    .check-list li.bad::before { content: "✗"; color: #b91c1c; }
+    .check-list li.warn::before { content: "!"; color: #a16207; }
+    [data-lighting="night"] .check-list li.good::before { color: #4ade80; } [data-lighting="night"] .check-list li.bad::before { color: #fca5a5; } [data-lighting="night"] .check-list li.warn::before { color: #facc15; }
+    .map-out { margin-top: 0.4rem; }
+    .map-out ol.walk { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.8rem; }
+
+    .dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0.7rem 0; }
+    @media (max-width: 640px) { .dice { grid-template-columns: minmax(0, 1fr); } }
+    .die { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.7rem 0.8rem; min-height: 4.6rem; }
+    .die small { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--acc); }
+    .die b { display: block; margin-top: 0.2rem; font-size: 0.92rem; color: var(--text, #1d1d1f); }
+    .worksheet textarea { width: 100%; box-sizing: border-box; min-height: 3.4rem; margin: 0.15rem 0 0.6rem; font: inherit; font-size: 0.85rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .worksheet label { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary,#3f4f65); }
+
+    /* Art guide */
+    .art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+    .art-card { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; }
+    .art-slot { display: flex; align-items: center; justify-content: center; max-width: 100%; margin: 0 auto 0.5rem; border: 2px dashed var(--acc-border); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--acc); background: rgba(255,255,255,0.35); }
+    .art-card h4 { margin: 0; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+    .art-card p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+    .art-tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 999px; border: 1.5px solid var(--acc-border); color: var(--acc); }
+    .art-tag.must { background: var(--acc); color: #fff; }
+    [data-lighting="night"] .art-tag.must { color: #1d1d1f; }
+    .art-count { font-size: 0.95rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .art-check { list-style: none; padding-left: 0 !important; }
+    .art-check li { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.15rem 0; }
+    .art-check input { margin-top: 0.3rem; flex: none; }
+
+    @media print {
+      .lab-grid { grid-template-columns: minmax(0, 1fr); }
+      #lab-config { max-height: none; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
+          <h1>Text Adventure Builder: Make Your Own Zork</h1>
+          <div class="cl-hero-meta">
+            <span>Parsers</span><span class="dot"></span>
+            <span>Rooms as a graph</span><span class="dot"></span>
+            <span>Inventory and flags</span><span class="dot"></span>
+            <span>Breadth-first search</span><span class="dot"></span>
+            <span>Spin-offs</span>
+          </div>
+          <p class="cl-lede">There are no pictures and no buttons. The game describes a place, and you <em>type</em> what you want to do: <code>take the lamp</code>, <code>go north</code>, <code>unlock door with key</code>. The computer has to understand you, remember what you carry and what you have already done, and decide whether a door opens. That is a <strong>world model</strong>, and it is the same idea behind every game save file. In this lesson you build a whole text adventure in about 100 lines of JavaScript, check your map with a real search algorithm, and then write your own world: a haunted school, a space station, a voyage from the book of Acts, or somewhere nobody has explored yet.</p>
+        </section>
+        <div data-game-route="code:text-adventure"></div>
+
+        <!-- 1. Why it works -->
+        <section class="cl-card" id="why">
+          <h2>1 · Why this game works</h2>
+          <p>The site already has a <a href="game-tutorials/cyoa.html">choose-your-own-adventure tutorial</a>, where you click one of two or three buttons. A text adventure is different: you can type <em>anything</em>, so the game has to keep a model of its whole world and work out what your words mean. Three ideas make that possible.</p>
+          <ul>
+            <li><strong>The world is a <span data-glossary="graph">graph</span>.</strong> Each room is a point, and each exit is a line to another room: <code>{ north: "hall" }</code>. Moving is just following a line. Nothing about a map needs pictures.</li>
+            <li><strong>A <span data-glossary="parser">parser</span> turns words into a command.</strong> It lowercases what you typed, drops little words like <em>the</em> and <em>a</em>, and splits the rest into a <em>verb</em> and a <em>noun</em>. A table of synonyms means <code>get</code>, <code>take</code> and <code>grab</code> all do the same thing.</li>
+            <li><strong>State plus conditions makes puzzles.</strong> The game remembers which room you are in, your <span data-glossary="inventory">inventory</span>, and a set of <span data-glossary="flag variable">flags</span> (door unlocked, lamp lit). An exit or action can <em>need</em> an item or a flag, and an action can <em>set</em> a flag. A locked door is just an exit with a condition.</li>
+          </ul>
+          <p>The program is the same loop for every command you type:</p>
+          <div class="loop-diagram" role="img" aria-label="Command loop: read what the player typed, parse it into a verb and a noun, look up the matching exit, item or action, change the state, then describe what happened. Then wait for the next command.">
+            <div class="loop-box"><strong>Read</strong><small>the line the player typed</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Parse</strong><small>verb + noun, synonyms, no "the"</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Look up</strong><small>an exit, an item or an action</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Change state</strong><small>move, take, set a flag</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Describe</strong><small>tell the player what happened</small></div>
+          </div>
+          <p style="text-align:center;font-size:0.75rem;color:var(--text-muted,#64748b);">…then wait for the next command. The whole game is a <span data-glossary="state machine">state machine</span>: it is always in exactly one state (this room, these items, these flags), each command moves it to another state, and <strong>winning means reaching a particular state</strong>.</p>
+        </section>
+
+        <!-- 2. Play + edit -->
+        <section class="cl-card" id="lab">
+          <span class="step-tag">TRY IT FIRST</span>
+          <h2>2 · The Adventure Lab: play it, then break it</h2>
+          <p>This is the finished engine. Every room, exit, item, lock and ending lives in the <strong>config</strong> on the left. Pick a preset, press <strong>Run my game</strong>, and play. Type into the box under the story and press Enter. The ↑ key brings back your last command, and the <em>Look</em>, <em>Inventory</em> and <em>Help</em> buttons are there for when you don't know what to type. Then change something small in the config and run it again.</p>
+          <div class="row">
+            <label for="lab-preset">Start from</label>
+            <select id="lab-preset" aria-label="Preset game"></select>
+            <button class="btn" id="lab-run" type="button">▶ Run my game</button>
+            <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
+            <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+          </div>
+          <div class="lab-grid">
+            <div>
+              <label for="lab-config" class="sr-only" style="position:absolute;left:-9999px;">Game config</label>
+              <textarea id="lab-config" spellcheck="false" aria-describedby="lab-status"></textarea>
+              <p id="lab-status" role="status" aria-live="polite"></p>
+            </div>
+            <div id="lab-game" data-night-keep data-memory-ignore aria-label="Text adventure game"></div>
+          </div>
+          <div class="callout">
+            <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. If something is wrong, the message under the config says what and where. Things to try:
+            <ul>
+              <li><code>"rooms"</code> is the map. Each room has a <code>"name"</code>, a <code>"text"</code> and <code>"exits"</code>. An exit can be a room id (<code>"north": "hallway"</code>) or a locked exit: <code>{ "to": "office", "needs": "keys", "locked": "The door is locked." }</code>. Exit names can be any word, so <code>"aft"</code>, <code>"inland"</code> and <code>"sail"</code> work too.</li>
+              <li>A <strong>need</strong> is an item id (you must be carrying it) or a flag name (it must be set). Put <code>!</code> in front to mean "not": <code>"!doors_open"</code>.</li>
+              <li><code>"items"</code> are the things in the world. <code>"words"</code> lists other names the player might type. <code>"fixed": true</code> means scenery that can't be carried.</li>
+              <li>Each of the <code>"actions"</code> has a <code>"verb"</code>, usually a <code>"noun"</code>, maybe a <code>"room"</code>, and <code>"needs"</code>. When it works it shows <code>"text"</code> and can <code>"set"</code> flags, <code>"give"</code> or <code>"remove"</code> items, <code>"place"</code> an item in the room, or <code>"goto"</code> another room. <code>"fail"</code> is what it says when a need is missing. <code>"once": true</code> means it only happens one time.</li>
+              <li>A room with <code>"dark"</code> needs light: <code>"dark": ["flashlight", "flashlight_on"]</code>. <code>"extra"</code> lines appear only <code>"if"</code> their condition is true, so a room's description can change as the story moves on.</li>
+              <li><code>"win"</code> says what winning means: a <code>"room"</code>, some <code>"needs"</code>, or both. Add <code>"seed": 7</code> and the random background sounds repeat the same way every time.</li>
+            </ul>
+          </div>
+          <p>The <strong>Paul's Voyage</strong> preset follows the shipwreck in <a data-bible-ref href="../../../bible.html#/go/Acts 27">Acts 27</a> and <a data-bible-ref href="../../../bible.html#/go/Acts 28">Acts 28</a>. Every scene quotes or retells the text and gives the verse, so you can check it as you play.</p>
+        </section>
+
+        <!-- 3. Build it -->
+        <section class="cl-card" id="build">
+          <span class="step-tag">BUILD IT</span>
+          <h2>3 · Build the engine yourself in seven steps</h2>
+          <p>The Lab above has extras (darkness, one-time actions, endings, background sounds). To understand it, first build the <strong>core</strong>: a four-room house with a locked door. Make a file called <code>adventure.html</code>, paste the page skeleton below, and then add each step inside its <code>&lt;script&gt;</code> tag in order. After every step, save, reload, and try it. Don't move on until the checkpoint is true.</p>
+          <div class="code-title"><span>Page skeleton</span></div>
+          <div class="code-block"><pre id="code-skeleton"></pre></div>
+
+          <h3>Step 1 · Draw the map as data</h3>
+          <p>Before any logic, write down what the world <em>is</em>. Each room lists its exits, and each exit names another room, so the rooms and exits together form a graph. The locked door is an exit with a condition: it <code>needs</code> the flag <code>"unlocked"</code>. The one thing to <em>do</em> in this world, unlocking the door, is data too.</p>
+          <div class="code-block"><pre data-mini="data"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Open the browser console (F12) and type <code>GAME.rooms.hall.exits</code>. It should show <code>{north: 'library', up: 'attic'}</code>.</div>
+
+          <h3>Step 2 · Track the state</h3>
+          <p>The <strong>state</strong> is everything that changes while you play: where you are, what you carry, and which flags are set. Notice how small it is. Saving the game would only mean saving these few variables.</p>
+          <div class="code-block"><pre data-mini="state"></pre></div>
+
+          <h3>Step 3 · Small helpers</h3>
+          <p><code>say()</code> adds a line to the story, <code>look()</code> describes the current room, and <code>has()</code> answers one question that the whole game depends on: is this need met? A need is met if you carry an item with that id <em>or</em> a flag with that name is true.</p>
+          <div class="code-block"><pre data-mini="helpers"></pre></div>
+
+          <h3>Step 4 · The parser</h3>
+          <p>This is the part that makes typing feel like talking. Lowercase the input and remove punctuation, split it into words, and throw away <em>the</em>, <em>a</em> and <em>an</em>. The first word is the verb and the rest is the noun. Then two shortcuts: the synonym table turns <code>grab</code> into <code>take</code> and <code>n</code> into <code>north</code>, and a direction on its own means "go that way".</p>
+          <div class="code-block"><pre data-mini="parser"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> In the console, <code>parse("Grab the brass key!")</code> should give <code>{verb: 'take', noun: 'brass key'}</code>, and <code>parse("n")</code> should give <code>{verb: 'go', noun: 'north'}</code>. Try a few of your own. What does <code>parse("")</code> do?</div>
+
+          <h3>Step 5 · Moving between rooms</h3>
+          <p>An open exit is just a room name, so you move straight there. A locked exit is an object, so check its condition with <code>has()</code> first, and if the condition fails, show the <code>locked</code> message. That message is your chance to give a <strong>clue</strong>.</p>
+          <div class="code-block"><pre data-mini="moving"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> In the console, <code>go("up")</code> should describe the attic, <code>go("down")</code> brings you back, and <code>go("north"); go("north")</code> should stop at the locked door.</div>
+
+          <h3>Step 6 · Items and actions</h3>
+          <p>Taking an item moves its id from the room's list to your inventory, and dropping moves it back. <code>findItem()</code> lets the player type just the last word, so <code>key</code> finds the <em>brass key</em>. <code>act()</code> looks through the data for an action with the right verb, noun and room, checks its condition, and sets its flag. Every puzzle in a text adventure is this one pattern.</p>
+          <div class="code-block"><pre data-mini="items"></pre></div>
+          <div class="callout"><strong>Why actions are data.</strong> You could write <code>if (verb === "unlock" &amp;&amp; noun === "door")</code> in the code, but then every new puzzle means new code. With actions in the data, a new puzzle is a new line in <code>GAME.actions</code>. The Lab works the same way, and so do real engines.</div>
+
+          <h3>Step 7 · Run a command, and win</h3>
+          <p><code>run()</code> is the whole command loop from the diagram: echo what was typed, parse it, look it up, change the state, describe it. After every command, check for the win state: here, standing in the garden. Then connect the Enter key.</p>
+          <div class="code-block"><pre data-mini="play"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Win the game by typing: <code>read note</code>, <code>up</code>, <code>take key</code>, <code>down</code>, <code>north</code>, <code>unlock door</code>, <code>north</code>. Then try nonsense (<code>dance</code>), a missing item (<code>take sandwich</code>) and the locked door without the key. Every one should get a sensible reply, not an error.</div>
+
+          <div class="row">
+            <button class="btn" id="mini-download" type="button">⬇ Download the finished adventure.html</button>
+            <button class="btn ghost" id="mini-copy" type="button">Copy the whole program</button>
+            <span id="mini-status" role="status" aria-live="polite" style="font-size:0.8rem;font-weight:600;"></span>
+          </div>
+          <details>
+            <summary style="cursor:pointer;font-weight:700;font-size:0.86rem;">Show the complete program</summary>
+            <div class="code-block"><pre id="code-full"></pre></div>
+          </details>
+        </section>
+
+        <!-- 4. Check the map -->
+        <section class="cl-card" id="check">
+          <span class="step-tag">THINK LIKE A COMPUTER SCIENTIST</span>
+          <h2>4 · Check your map with an algorithm</h2>
+          <p>Big text adventures have dozens of rooms and hundreds of exits, and it is easy to make a mistake: an exit that points to a room you misspelled, a room nobody can get to, a key in a place the player can never reach, or a puzzle that can't be solved. Playtesting finds some of these. An algorithm finds <em>all</em> of them, and the one we use is <strong><span data-glossary="breadth-first search">breadth-first search</span></strong> (BFS).</p>
+          <h3>Breadth-first search in plain words</h3>
+          <p>Think of dropping a pebble into a pond. The ripple reaches everything one step away, then everything two steps away, then three. BFS explores a map the same way, with a to-do list called a <strong>queue</strong>:</p>
+          <ol>
+            <li>Put the start room in the queue and mark it as seen.</li>
+            <li>Take the room at the <em>front</em> of the queue.</li>
+            <li>For each exit, if the room it leads to hasn't been seen, mark it seen and add it to the <em>back</em> of the queue.</li>
+            <li>Repeat until the queue is empty. Any room never marked as seen can't be reached.</li>
+          </ol>
+          <p>Because rooms are taken from the front and added at the back, BFS always finishes every room one step away before it looks at any room two steps away. So the first time it reaches a room, it has found the <strong>shortest</strong> route there. Here it is in JavaScript, using the map from step 1:</p>
+          <div class="code-block"><pre>function reachable(rooms, start) {
+  const seen = new Set([start]);
+  const queue = [start];
+  while (queue.length) {
+    const here = queue.shift();                  // take from the front
+    for (const exit of Object.values(rooms[here].exits)) {
+      const next = typeof exit === "string" ? exit : exit.to;
+      if (rooms[next] &amp;&amp; !seen.has(next)) {
+        seen.add(next);
+        queue.push(next);                        // add to the back
+      }
+    }
+  }
+  return seen;                                   // every room you can get to
+}</pre></div>
+          <h3>The bigger trick: search over situations, not rooms</h3>
+          <p>A room list alone can't tell whether the game can be won. The principal's office in the Haunted School is "reachable" on the map, but only once you carry the keys, and the keys are in a basement you can only search with a working flashlight. So the checker runs BFS over <strong>situations</strong>: where you are, what you carry, which flags are set. Every command you could type (go somewhere, take something, do an action) is a line from one situation to another. If BFS can reach a situation that counts as a win, the game can be won, and the path it followed is the shortest walkthrough. The checker also runs the search backwards from every win to find <strong>dead ends</strong>: situations where the player can no longer win, however well they play.</p>
+          <div class="row">
+            <button class="btn" id="map-check" type="button">🔍 Check the Lab's map</button>
+            <button class="btn ghost" id="map-broken" type="button">🧪 Check a broken example</button>
+          </div>
+          <div id="map-out" class="map-out" role="status" aria-live="polite"></div>
+          <details id="broken-wrap" hidden>
+            <summary style="cursor:pointer;font-weight:700;font-size:0.86rem;">Show the broken example's config</summary>
+            <div class="code-block"><pre id="broken-json"></pre></div>
+          </details>
+          <p>The checker is honest about what it skips: it never drops items (dropping rarely solves anything), it ignores random background sounds, and it stops if a world has more than 20,000 situations. Real studios run tools like this on every build, because a puzzle that can't be solved is a bug players can't report until they're stuck.</p>
+        </section>
+
+        <!-- 5. Spin-offs -->
+        <section class="cl-card" id="spinoffs">
+          <span class="step-tag">YOUR TWIST</span>
+          <h2>5 · Design your spin-off</h2>
+          <p>A good spin-off keeps the <em>structure</em> (rooms joined by exits, items that open locks, flags that change the world, a winning state) and changes the <em>world</em>. Fill in the last column and you will notice that most of the work is writing.</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Part of the game</th><th scope="col">Haunted School</th><th scope="col">Space Station</th><th scope="col">Paul's Voyage</th><th scope="col">Your spin-off</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">The world</th><td>An empty school at night</td><td>An orbiting station with a broken antenna</td><td>A grain ship in a storm, then Malta (Acts 27–28)</td><td>?</td></tr>
+              <tr><th scope="row">Rooms</th><td>7</td><td>7</td><td>8</td><td>?</td></tr>
+              <tr><th scope="row">Win state</th><td>Outside, holding your project</td><td>The flag <code>called</code> is set</td><td>Reaching Rome</td><td>?</td></tr>
+              <tr><th scope="row">A lock</th><td>Office door needs the keys</td><td>Control room needs the keycard</td><td>The shore needs a plank</td><td>?</td></tr>
+              <tr><th scope="row">A flag</th><td><code>doors_open</code></td><td><code>suit_on</code></td><td><code>anchored</code></td><td>?</td></tr>
+              <tr><th scope="row">A clue before the lock</th><td>The custodian's note</td><td>The commander's tablet</td><td>The centurion's order (27:44)</td><td>?</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>Not sure where to start? Roll the idea dice.</h3>
+          <div class="dice" aria-live="polite">
+            <div class="die"><small>Setting</small><b id="d-setting">…</b></div>
+            <div class="die"><small>Goal (your win state)</small><b id="d-goal">…</b></div>
+            <div class="die"><small>The twist</small><b id="d-twist">…</b></div>
+          </div>
+          <div class="row"><button class="btn" id="dice-roll" type="button">🎲 Roll the dice</button><span style="font-size:0.8rem;color:var(--text-muted,#64748b);">Roll until something makes you curious, then put it in your design sheet below.</span></div>
+
+          <h3>Twists that change the rules, not just the words</h3>
+          <ul>
+            <li><strong>A light that runs out:</strong> the lamp has 40 turns of oil. Now every move costs something.</li>
+            <li><strong>A character who talks:</strong> <code>ask guard about key</code>. The answer depends on your flags.</li>
+            <li><strong>A carrying limit:</strong> only three items at once, so the player has to plan.</li>
+            <li><strong>A room that changes:</strong> after an event, the flooded cellar drains and a new exit opens.</li>
+            <li><strong>Two items that look alike:</strong> a brass key and an iron key. The parser has to ask "Which key do you mean?"</li>
+            <li><strong>Points for discoveries:</strong> a score for every new flag, so exploring is rewarded.</li>
+          </ul>
+
+          <h3>Design sheet</h3>
+          <div class="worksheet">
+            <label for="ws-pitch">Pitch (one sentence): "You are ___ in ___ and must ___."</label>
+            <textarea id="ws-pitch"></textarea>
+            <label for="ws-map">Your map: every room and its exits (draw it on paper first, then list it here)</label>
+            <textarea id="ws-map"></textarea>
+            <label for="ws-items">Items: each one's name, other words for it, and where it starts</label>
+            <textarea id="ws-items"></textarea>
+            <label for="ws-locks">Locks and clues: each lock, what it needs, and where the player learns about it first</label>
+            <textarea id="ws-locks"></textarea>
+            <label for="ws-win">The win state: which room, items and flags count as winning</label>
+            <textarea id="ws-win"></textarea>
+            <label for="ws-twist">Your twist: the one rule that makes this game different</label>
+            <textarea id="ws-twist"></textarea>
+          </div>
+          <p>When the sheet is done, put it in the Lab config (or into the <code>GAME</code> object of your own <code>adventure.html</code>), run it, and then run the map checker until it finds nothing wrong.</p>
+        </section>
+
+        <!-- 6. Art guide -->
+        <section class="cl-card" id="art">
+          <span class="step-tag">YOUR ART</span>
+          <h2>6 · Art guide: what you need to draw</h2>
+          <p>A text adventure works with no pictures at all, and the words always come first. But a picture for each room helps players remember the map, and an icon for each item makes the inventory easy to read. Make a list before you open a drawing tool. Draw every <span class="art-tag must">Must</span> first (the game can ship with only those), then <span class="art-tag">Should</span>, then <span class="art-tag">Bonus</span>.</p>
+          <div class="art-grid">
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Title screen <span class="art-tag must">Must</span></h4><p><strong>1 picture</strong> · The game name over the first room. Leave a quiet area for the words.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">960 × 540</div><h4>Room illustrations <span class="art-tag must">Must</span></h4><p><strong>1 per room</strong> · Show what the text describes, including every exit, so the picture and the words agree.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:100px;height:100px" aria-hidden="true">64 × 64</div><h4>Item icons <span class="art-tag must">Must</span></h4><p><strong>1 per item you can carry</strong> · Transparent background. They sit in a row as the inventory, so they must read clearly when small.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Win screen <span class="art-tag must">Must</span></h4><p><strong>1 picture</strong> · The reward for solving everything. Make it feel like arriving.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:112px" aria-hidden="true">800 × 600</div><h4>The map <span class="art-tag ">Should</span></h4><p><strong>1 picture</strong> · Boxes for rooms and lines for exits, the same graph as your data. Leave locked doors drawn as locked.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:130px;height:130px" aria-hidden="true">128 × 128</div><h4>Character portraits <span class="art-tag ">Should</span></h4><p><strong>1 per character</strong> · Anyone the player can talk to or watch. One clear detail each.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Other endings <span class="art-tag ">Bonus</span></h4><p><strong>1 per extra ending</strong> · Only if your game has ways to lose. Warn the player before they happen.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:38px" aria-hidden="true">1600 × 400</div><h4>Story frame <span class="art-tag ">Bonus</span></h4><p><strong>1 border</strong> · A frame around the text (a ship's log, a school notebook, a computer screen) that sets the mood.</p></div>
+          </div>
+
+          <h3>How many pictures is your game?</h3>
+          <p>Use the numbers from your design sheet.</p>
+          <div class="row">
+            <label for="art-rooms">Rooms</label><input id="art-rooms" type="number" value="7" min="1" max="60" style="width:4.5rem" />
+            <label for="art-items">Items you can carry</label><input id="art-items" type="number" value="5" min="0" max="40" style="width:4.5rem" />
+            <label for="art-chars">Characters</label><input id="art-chars" type="number" value="1" min="0" max="20" style="width:4.5rem" />
+          </div>
+          <p class="art-count" id="art-out" aria-live="polite"></p>
+
+          <ul>
+            <li><strong>Pick a palette first.</strong> Five to eight colours written down as hex codes, and every picture uses only those. This does the most to make student art look like one game.</li>
+            <li><strong>One style, one viewpoint.</strong> Pixel art, ink or flat shapes: pick one. Draw every room from the doorway you usually enter by, so north is always the far wall.</li>
+            <li><strong>The words win.</strong> If the picture shows a door the text doesn't mention, players will type <code>open door</code> and get confused. Change the picture or the text so they match.</li>
+            <li><strong>Draw big, show small.</strong> Check each icon at half size. If you can't tell what it is, simplify it.</li>
+            <li><strong>Only your own art.</strong> If you use something you didn't make, write down who made it and the license.</li>
+            <li><strong>Real people, real places.</strong> If your story is about real history or scripture, draw people with respect, and draw what the source says rather than what a movie showed.</li>
+          </ul>
+          <p>Put each picture's file name in the data next to the thing it shows, so the logic stays untouched: <code>"art": "art/hallway.png"</code> on a room, <code>"icon": "art/key.png"</code> on an item. The Lab ignores these fields, so they won't break anything. In your own <code>adventure.html</code>, show the room's picture inside <code>look()</code>:</p>
+          <div class="code-block"><pre>&lt;img id="scene" alt="" width="480" height="270"&gt;
+
+const pic = document.getElementById("scene");
+pic.src = room.art;
+pic.alt = room.name;      // describe it for screen readers</pre></div>
+          <p>Where to draw: <a href="../../web-design/web-studio.html">Web Studio</a> Draw mode, or <a href="../../2d-game-dev/pixel-art-sprites.html">Pixel Art &amp; Sprites</a>. Paper is fine too: sketch the map first, because it is also your level design.</p>
+          <ul class="art-check">
+            <li><input type="checkbox" id="ac1" /><label for="ac1">My palette (5 to 8 hex colours) is written down</label></li>
+            <li><input type="checkbox" id="ac2" /><label for="ac2">Title screen</label></li>
+            <li><input type="checkbox" id="ac3" /><label for="ac3">A picture for every room, matching its text and exits</label></li>
+            <li><input type="checkbox" id="ac4" /><label for="ac4">An icon for every item you can carry (transparent)</label></li>
+            <li><input type="checkbox" id="ac5" /><label for="ac5">Win screen</label></li>
+            <li><input type="checkbox" id="ac6" /><label for="ac6">The map</label></li>
+            <li><input type="checkbox" id="ac7" /><label for="ac7">A portrait for every character</label></li>
+            <li><input type="checkbox" id="ac8" /><label for="ac8">Credits written for anything I didn't draw myself</label></li>
+            <li><input type="checkbox" id="ac9" /><label for="ac9">Every <code>&lt;img&gt;</code> has an <code>alt</code></label></li>
+          </ul>
+          <div class="worksheet">
+            <label for="ws-art">Art plan: my style, my palette, and the one picture I will make first</label>
+            <textarea id="ws-art"></textarea>
+          </div>
+        </section>
+        <script>
+        (function () {
+          var ids = ['art-rooms', 'art-items', 'art-chars'], out = document.getElementById('art-out');
+          function upd() {
+            var v = ids.map(function (i) { return Math.max(0, parseInt(document.getElementById(i).value, 10) || 0); });
+            var must = 1 + v[0] + v[1] + 1;
+            out.textContent = 'Must-haves: ' + must + ' pictures. With the map and portraits: ' + (must + 1 + v[2]) + ' (plus any bonus art).';
+          }
+          ids.forEach(function (i) { document.getElementById(i).addEventListener('input', upd); });
+          upd();
+        })();
+        </script>
+
+        <!-- 7. Level up -->
+        <section class="cl-card" id="levelup">
+          <span class="step-tag">LEVEL UP</span>
+          <h2>7 · Challenges</h2>
+          <p>Pick one or two. They get harder as you go down the list.</p>
+          <ol>
+            <li><strong>Save and load.</strong> Add <code>save</code> and <code>load</code> verbs that put <code>here</code>, <code>inventory</code>, <code>flags</code> and every room's item list into <code>localStorage</code> as one JSON string. The <a href="../../2d-game-dev/ship-your-2d-game.html">Menus, Saving &amp; Shipping</a> lesson explains how. Why do the room lists need saving too?</li>
+            <li><strong>Two-word nouns.</strong> Add an iron key next to the brass key. <code>take brass key</code> must take the right one, and <code>take key</code> should ask "Which key do you mean?" instead of guessing.</li>
+            <li><strong>A scoring system.</strong> Give points the first time each flag is set, and show "Score: 25 of 100" after every command. A <code>score</code> verb that lists what is still missing makes a good hint system.</li>
+            <li><strong>A light that runs out.</strong> The flashlight has 30 turns of battery. Count down every command while it is on, warn at 5, and make the dark rooms dark again at 0. How do you keep this from making the game unwinnable?</li>
+            <li><strong>Characters who talk.</strong> Add <code>ask &lt;person&gt; about &lt;topic&gt;</code>. Give each character a list of topics, and let some answers depend on flags, so the custodian only mentions the keys after you have seen the locked office.</li>
+            <li><strong>An auto-drawn map.</strong> Use the BFS from section 4 to give every room a distance from the start, then place rooms on a grid using their exit directions (north is one row up) and draw them on a <code>&lt;canvas&gt;</code>. Only draw rooms the player has visited.</li>
+          </ol>
+        </section>
+
+        <!-- 8. History and responsible design -->
+        <section class="cl-card" id="history">
+          <h2>8 · Where it came from, and designing with care</h2>
+          <p>The first text adventure was <em>Colossal Cave Adventure</em>. Will Crowther, a programmer and caver, wrote it around 1976, basing its cave on part of Kentucky's Mammoth Cave system that he had explored. In 1977 Don Woods at Stanford found it, got Crowther's permission, and greatly expanded it. Players typed two-word commands like <code>GET LAMP</code> and <code>GO NORTH</code>, which is exactly the verb-and-noun parser you just built.</p>
+          <p>Between 1977 and 1979 a group of students at MIT wrote <em>Zork</em>, inspired by <em>Adventure</em>. Its parser understood whole sentences with more than one noun, such as <code>put the coin in the box</code>. Some of its authors went on to found the company Infocom, which sold Zork for home computers in the early 1980s. Every adventure game since, including the ones with pictures, comes from this family.</p>
+          <p>Those games were also famous for puzzles that were <em>unfair</em>. When you design yours:</p>
+          <ul>
+            <li><strong>Clue before lock.</strong> The player should be able to learn what a lock needs before (or at) the lock: a note, a sign, a character. The map checker shows which order the player meets things in, so read its walkthrough and ask "Would I know to do that?"</li>
+            <li><strong>No dead ends without warning.</strong> If the player can make the game unwinnable (eat the only bread, drop the key down a well), warn them first or give them a way back. The checker's dead-end search exists for exactly this.</li>
+            <li><strong>No "guess the verb".</strong> If the answer is <code>press button</code>, then <code>push button</code> and <code>use button</code> should work too. List the special verbs in <code>help</code>.</li>
+            <li><strong>Respectful settings.</strong> A spooky school is fun when the ghost turns out to be the boiler. Don't make real people or real groups into monsters, and don't set a game in somewhere real to make fun of it.</li>
+            <li><strong>Scripture and history.</strong> If you retell a true story, as <em>Paul's Voyage</em> does with <a data-bible-ref href="../../../bible.html#/go/Acts 27">Acts 27</a>–28, keep the events in the text and give the verse for each scene. Your puzzles decide <em>when</em> the player sees each event, never <em>what</em> happened. Don't make up miracles, and don't turn prayer into a magic button.</li>
+          </ul>
+        </section>
+
+        <!-- 9. Rubric -->
+        <section class="cl-card" id="rubric">
+          <h2>9 · Show what you built</h2>
+          <p>Hand in your <code>adventure.html</code> (or the file from the Lab), your design sheet and a screenshot of the map checker's report. Your teacher will look for:</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Criterion</th><th scope="col">Meets the goal when…</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">It works</th><td>You can start it, play it, and win without errors. Nonsense input gets a friendly reply.</td></tr>
+              <tr><th scope="row">Data-driven</th><td>Rooms, exits, items and actions live in one data object, and the code doesn't hard-code any of them.</td></tr>
+              <tr><th scope="row">A real parser</th><td>Articles are ignored, at least three synonyms work, and the player can type the last word of a two-word item.</td></tr>
+              <tr><th scope="row">State and conditions</th><td>At least one lock that needs an item and one that needs a flag, and the world changes when a flag is set.</td></tr>
+              <tr><th scope="row">Checked with BFS</th><td>The map checker finds no broken exits, no unreachable rooms, no lost items, no dead ends, and a win.</td></tr>
+              <tr><th scope="row">Fair and careful</th><td>Every lock has a clue first, special verbs are listed in help, and the setting is treated with respect.</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>Next: plan your whole build in <a href="game-jam-week.html">Game Jam Week</a>, see how A* improves on BFS in <a href="../algorithms-and-ai/pathfinding.html">Rescue Grid: The A* Mission</a>, or build the other classics in <a href="trail-game-builder.html">Trail Game Builder</a>, <a href="lemonade-tycoon-builder.html">Lemonade Tycoon Builder</a> and <a href="roguelike-builder.html">Roguelike Builder</a>.</p>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Model a world as a graph of rooms and exits</li>
+            <li>Write a parser: lowercase, drop articles, verb + noun, synonyms</li>
+            <li>Track state with a current room, an inventory and flags</li>
+            <li>Use conditions and effects to build fair puzzles</li>
+            <li>See a game as a state machine with a winning state</li>
+            <li>Use breadth-first search to check a map and find the shortest solution</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Time</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;">Two to three class periods: one to build the engine (steps 1 to 7), one for the map checker and a spin-off design, and optional time for a challenge.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <ul style="font-size:0.79rem;color:var(--text-muted,#64748b);line-height:1.7;padding-left:1.1rem;">
+            <li>Nothing happens: open the console (F12) and read the red error.</li>
+            <li>"Unexpected token": a missing comma between rooms or items.</li>
+            <li>"Doesn't exist": an exit or item id is spelled differently in two places.</li>
+            <li>Can't win your own game: run the map checker and read its walkthrough.</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Related</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;"><a href="game-tutorials/cyoa.html" style="color:var(--acc);">Choose-Your-Own-Adventure tutorial</a> · <a href="trail-game-builder.html" style="color:var(--acc);">Trail Game Builder</a> · <a href="lemonade-tycoon-builder.html" style="color:var(--acc);">Lemonade Tycoon Builder</a> · <a href="roguelike-builder.html" style="color:var(--acc);">Roguelike Builder</a> · <a href="../algorithms-and-ai/pathfinding.html" style="color:var(--acc);">Rescue Grid (A*)</a></p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:var(--text-secondary,#3f4f65);">
+            <dt style="font-weight:700;margin-top:0.6rem;">Parser</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">The part of a program that reads typed text and breaks it into pieces it understands, like a verb and a noun.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">State machine</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A program that is always in exactly one state and moves to another when an input arrives. A text adventure's state is the room, the inventory and the flags.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Graph</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A set of points (rooms) joined by lines (exits).</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Breadth-first search (BFS)</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Exploring a graph one step at a time, using a queue, so the first route found to anything is the shortest.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Flag</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A true-or-false value the game remembers, like <code>doors_open</code>, so later code can check whether something has happened.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Inventory</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">The list of items the player is carrying.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Queue</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A list where you add at the back and take from the front, like a line at a shop.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Dead end (soft lock)</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A situation the player can reach but can never win from.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<!-- ─────────────────────────────────────────────────────────────
+     The student's build-along program. Steps 1–7 above are sliced out of
+     this one string by its "// ---- name ----" markers, so the lesson text,
+     the download and the tests can never drift apart.
+     (String.raw keeps \n as two characters; no backticks or dollar-braces inside.)
+     ───────────────────────────────────────────────────────────── -->
+<script>
+window.ADV_MINI_JS = String.raw`// ---- data ----
+// The whole world is data: rooms, the exits between them, and the items inside.
+const GAME = {
+  title: "The Locked Library",
+  start: "hall",
+  winRoom: "garden",
+  rooms: {
+    hall: { name: "Front Hall", text: "Dusty trophies line the walls. A door leads north and stairs go up.",
+      exits: { north: "library", up: "attic" }, items: ["note"] },
+    attic: { name: "Attic", text: "Low beams, old boxes and a family of sleeping bats.",
+      exits: { down: "hall" }, items: ["key"] },
+    library: { name: "Library", text: "Shelves to the ceiling. A heavy door leads north to the garden.",
+      exits: { south: "hall", north: { to: "garden", needs: "unlocked", locked: "The door is locked. It has a brass keyhole." } },
+      items: [] },
+    garden: { name: "Garden", text: "Fresh air at last!", exits: {}, items: [] }
+  },
+  items: {
+    note: { name: "note", text: "It says: The key sleeps where the bats sleep." },
+    key: { name: "brass key", text: "Small, brass and a little rusty." }
+  },
+  actions: [
+    { verb: "unlock", noun: "door", room: "library", needs: "key", set: "unlocked",
+      text: "The brass key turns. Click! The door is unlocked.", fail: "You need a key for that." }
+  ]
+};
+
+// ---- state ----
+// Everything that changes while you play.
+let here = GAME.start;
+let over = false;
+const inventory = [];
+const flags = {};
+
+// ---- helpers ----
+const $ = id => document.getElementById(id);
+function say(text) {
+  $("log").textContent += text + "\n";
+  $("log").scrollTop = $("log").scrollHeight;
+}
+function names(ids) { return ids.map(id => GAME.items[id].name).join(", "); }
+function look() {
+  const room = GAME.rooms[here];
+  say("\n" + room.name + "\n" + room.text);
+  if (room.items.length) say("You see: " + names(room.items) + ".");
+  say("Exits: " + Object.keys(room.exits).join(", ") + ".");
+}
+// A need is met if you carry an item with that id, or a flag with that name is set.
+function has(need) { return !need || inventory.includes(need) || flags[need] === true; }
+
+// ---- parser ----
+const ARTICLES = ["the", "a", "an"];
+const SYNONYMS = { get: "take", grab: "take", x: "examine", read: "examine", l: "look",
+  i: "inventory", n: "north", s: "south", e: "east", w: "west", u: "up", d: "down" };
+const DIRECTIONS = ["north", "south", "east", "west", "up", "down"];
+function parse(input) {
+  const words = input.toLowerCase().replace(/[^a-z ]/g, "").split(" ")
+    .filter(w => w && !ARTICLES.includes(w));
+  let verb = SYNONYMS[words[0]] || words[0] || "";
+  let noun = words.slice(1).join(" ");
+  noun = SYNONYMS[noun] || noun;                                 // "go n" means "go north"
+  if (DIRECTIONS.includes(verb)) { noun = verb; verb = "go"; }   // "north" means "go north"
+  return { verb: verb, noun: noun };
+}
+
+// ---- moving ----
+function go(dir) {
+  const exit = GAME.rooms[here].exits[dir];
+  if (!exit) return say("You can't go that way.");
+  if (typeof exit === "string") here = exit;           // an open exit is just a room id
+  else if (has(exit.needs)) here = exit.to;            // a locked exit has a condition
+  else return say(exit.locked);
+  look();
+}
+
+// ---- items ----
+// Find an item by its name, or by its last word ("key" finds "brass key").
+function findItem(noun, ids) {
+  return ids.find(id => GAME.items[id].name === noun || GAME.items[id].name.endsWith(" " + noun));
+}
+function take(noun) {
+  const items = GAME.rooms[here].items;
+  const id = findItem(noun, items);
+  if (!id) return say("There is no " + noun + " here.");
+  items.splice(items.indexOf(id), 1);
+  inventory.push(id);
+  say("Taken: " + GAME.items[id].name + ".");
+}
+function drop(noun) {
+  const id = findItem(noun, inventory);
+  if (!id) return say("You aren't carrying that.");
+  inventory.splice(inventory.indexOf(id), 1);
+  GAME.rooms[here].items.push(id);
+  say("Dropped: " + GAME.items[id].name + ".");
+}
+function examine(noun) {
+  const id = findItem(noun, inventory.concat(GAME.rooms[here].items));
+  say(id ? GAME.items[id].text : "You don't see that here.");
+}
+// Right verb, right noun, right room? Then check the condition and set the flag.
+function act(verb, noun) {
+  const action = GAME.actions.find(a => a.verb === verb && a.noun === noun && a.room === here);
+  if (!action) return false;
+  if (!has(action.needs)) say(action.fail);
+  else { flags[action.set] = true; say(action.text); }
+  return true;
+}
+
+// ---- play ----
+function run(input) {
+  if (over || !input.trim()) return;
+  say("\n> " + input);
+  const cmd = parse(input);
+  if (cmd.verb === "go") go(cmd.noun);
+  else if (cmd.verb === "look") look();
+  else if (cmd.verb === "take") take(cmd.noun);
+  else if (cmd.verb === "drop") drop(cmd.noun);
+  else if (cmd.verb === "examine") examine(cmd.noun);
+  else if (cmd.verb === "inventory") say(inventory.length ? "You carry: " + names(inventory) + "." : "You carry nothing.");
+  else if (cmd.verb === "help") say("Try: look, north, take note, read note, inventory, unlock door.");
+  else if (!act(cmd.verb, cmd.noun)) say("I don't know how to do that. Type help.");
+  if (here === GAME.winRoom) { over = true; say("\nYou escaped! You win."); }   // winning is reaching a state
+}
+
+$("cmd").addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  run(e.target.value);
+  e.target.value = "";
+});
+$("title").textContent = GAME.title;
+say("You wake up in an old house. Find a way out. (Type help.)");
+look();
+`;
+window.ADV_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Text Adventure</title>\n</head>\n<body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <pre id="log" role="log" style="background:#0d1410; color:#d9f99d; padding:1rem; height:18rem; overflow:auto; white-space:pre-wrap;"></pre>\n  <p>\n    <label for="cmd">What do you do?</label>\n    <input id="cmd" autocomplete="off" style="width:16rem">\n  </p>\n\n<script>\n';
+window.ADV_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   AdventureEngine: the finished game used by the Adventure Lab.
+   Self-contained on purpose: "Download as a game file" serialises this
+   function with toString(), so it must not reach for anything outside itself.
+   AdventureEngine(null, cfg, { lenient: true }) returns the same rules with
+   no screen, which is what the map checker searches.
+   ═════════════════════════════════════════════════════════════ */
+function AdventureEngine(root, cfg, opts) {
+  if (root && root._adv) root._adv.destroy();
+  var C = JSON.parse(JSON.stringify(cfg == null ? {} : cfg));
+  var lenient = !!(opts && opts.lenient);
+
+  // ---- the words every story understands ----
+  var BUILTIN = ['go', 'look', 'examine', 'take', 'drop', 'inventory', 'help', 'wait'];
+  var ARTICLES = ['the', 'a', 'an', 'some'];
+  var LEADING = ['to', 'at', 'with', 'on', 'in', 'into', 'onto'];
+  var SPLIT = ['with', 'on', 'in', 'into', 'onto', 'to', 'at', 'using', 'inside', 'from'];
+  var DIRS = { n: 'north', s: 'south', e: 'east', w: 'west', u: 'up', d: 'down', ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest' };
+  var DIR_WORDS = ['north', 'south', 'east', 'west', 'up', 'down', 'northeast', 'northwest', 'southeast', 'southwest', 'in', 'out'];
+  var SYN = {
+    get: 'take', grab: 'take', carry: 'take', pick: 'take', 'pick up': 'take',
+    x: 'examine', inspect: 'examine', check: 'examine', read: 'examine', search: 'examine', 'look at': 'examine', 'look in': 'examine',
+    l: 'look', 'look around': 'look', i: 'inventory', inv: 'inventory',
+    walk: 'go', run: 'go', move: 'go', head: 'go', climb: 'go', 'go to': 'go',
+    'put down': 'drop', discard: 'drop', h: 'help', z: 'wait', speak: 'talk', chat: 'talk', 'talk to': 'talk'
+  };
+
+  function lower(s) { return String(s == null ? '' : s).toLowerCase(); }
+  function words(s) { return lower(s).replace(/[^a-z0-9' -]+/g, ' ').split(/\s+/).filter(function (w) { return w && ARTICLES.indexOf(w) < 0; }); }
+  function norm(s) { return words(s).join(' '); }
+  function list(v) { return v == null ? [] : Array.isArray(v) ? v : [v]; }
+  function str(v) { return typeof v === 'string' && v.trim() !== ''; }
+  function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+  // ---- validate, with messages a student can act on ----
+  function lint() {
+    var P = [];
+    if (!isObj(C)) return ['The config must be one { } object.'];
+    if (!str(C.title)) P.push('"title" must be a phrase in quotes.');
+    if (!isObj(C.rooms) || !Object.keys(C.rooms).length) { P.push('"rooms" must be an object with at least one room inside { }.'); return P; }
+    var R = C.rooms, I = isObj(C.items) ? C.items : {};
+    if (C.items != null && !isObj(C.items)) P.push('"items" must be an object { } of items, keyed by id.');
+    if (!R[C.start]) P.push('"start" is "' + C.start + '", but there is no room with that id. Pick one of: ' + Object.keys(R).join(', ') + '.');
+    var A = C.actions == null ? [] : C.actions;
+    if (!Array.isArray(A)) { P.push('"actions" must be a list [ ].'); A = []; }
+    var settable = {};
+    A.forEach(function (a) { if (isObj(a)) list(a.set).forEach(function (f) { settable[f] = true; }); });
+    function checkNeeds(needs, where) {
+      list(needs).forEach(function (n) {
+        if (!str(n)) { P.push(where + ': every need must be a word in quotes.'); return; }
+        var k = n.charAt(0) === '!' ? n.slice(1) : n;
+        if (!I[k] && !settable[k]) P.push(where + ' needs "' + k + '", but no item has that id and no action sets that flag.');
+      });
+    }
+    var placedIn = {};
+    Object.keys(R).forEach(function (id) {
+      var r = R[id], w = 'Room "' + id + '"';
+      if (!isObj(r)) { P.push(w + ' must be an object { }.'); return; }
+      if (!str(r.name)) P.push(w + ' needs a "name".');
+      if (!str(r.text)) P.push(w + ' needs a "text" description.');
+      if (r.exits != null && !isObj(r.exits)) P.push(w + ': "exits" must be an object like { "north": "hall" }.');
+      else Object.keys(r.exits || {}).forEach(function (dir) {
+        var x = r.exits[dir], to = typeof x === 'string' ? x : isObj(x) ? x.to : null;
+        if (!str(to)) P.push(w + ' exit ' + dir + ' needs a room id, or { "to": "room id" }.');
+        else if (!R[to]) P.push(w + ' exit ' + dir + ' points to "' + to + '", which doesn\'t exist.');
+        if (isObj(x)) checkNeeds(x.needs, w + ' exit ' + dir);
+      });
+      if (r.items != null && !Array.isArray(r.items)) P.push(w + ': "items" must be a list [ ].');
+      else (r.items || []).forEach(function (it) {
+        if (!isObj(I[it])) P.push(w + ' lists item "' + it + '", but there is no item with that id in "items".');
+        else if (placedIn[it] && !I[it].fixed) P.push('Item "' + it + '" is in two rooms ("' + placedIn[it] + '" and "' + id + '"). Only "fixed" scenery can be in more than one room.');
+        else placedIn[it] = placedIn[it] || id;
+      });
+      if (r.dark != null) checkNeeds(r.dark, w + ' "dark"');
+      list(r.extra).forEach(function (e, n) {
+        if (!isObj(e) || !str(e.text)) P.push(w + ' extra ' + (n + 1) + ' needs a "text".');
+        else checkNeeds(e.if, w + ' extra ' + (n + 1));
+      });
+      if (r.sounds != null && !Array.isArray(r.sounds)) P.push(w + ': "sounds" must be a list of sentences.');
+    });
+    Object.keys(I).forEach(function (id) {
+      var it = I[id];
+      if (!isObj(it) || !str(it.name)) P.push('Item "' + id + '" needs a "name".');
+      else if (it.words != null && !Array.isArray(it.words)) P.push('Item "' + id + '": "words" must be a list like ["key", "brass key"].');
+    });
+    A.forEach(function (a, n) {
+      var w = 'Action ' + (n + 1);
+      if (!isObj(a)) { P.push(w + ' must be an object { }.'); return; }
+      if (list(a.verb).length && list(a.verb).every(str)) w += ' ("' + list(a.verb)[0] + (a.noun != null ? ' ' + list(a.noun)[0] : '') + '")';
+      else P.push(w + ' needs a "verb".');
+      if (!str(a.text)) P.push(w + ' needs a "text" to show when it works.');
+      if (a.room != null && !R[a.room]) P.push(w + ': "room" is "' + a.room + '", which doesn\'t exist.');
+      if (a.goto != null && !R[a.goto]) P.push(w + ': "goto" is "' + a.goto + '", which doesn\'t exist.');
+      ['give', 'place', 'remove'].forEach(function (k) {
+        list(a[k]).forEach(function (it) { if (!isObj(I[it])) P.push(w + ': "' + k + '" names item "' + it + '", which isn\'t in "items".'); });
+      });
+      checkNeeds(a.needs, w);
+    });
+    function checkEnd(e, w) {
+      if (!isObj(e)) { P.push(w + ' must be an object like { "room": "outside" }.'); return; }
+      if (e.room == null && !list(e.needs).length) P.push(w + ' needs a "room", some "needs", or both.');
+      if (e.room != null && !R[e.room]) P.push(w + ': room "' + e.room + '" doesn\'t exist.');
+      checkNeeds(e.needs, w);
+    }
+    if (C.win == null) P.push('"win" is missing. Say what winning means, for example "win": { "room": "outside" }.');
+    else checkEnd(C.win, '"win"');
+    list(C.lose).forEach(function (e, n) { checkEnd(e, 'Lose ending ' + (n + 1)); });
+    if (C.seed != null && typeof C.seed !== 'number') P.push('"seed" must be a number.');
+    if (C.synonyms != null && !isObj(C.synonyms)) P.push('"synonyms" must be an object like { "grab": "take" }.');
+    return P;
+  }
+
+  var problems = lint();
+  if (problems.length && !lenient) throw new Error(problems[0] + (problems.length > 1 ? ' (Then ' + (problems.length - 1) + ' more to fix.)' : ''));
+  var R = isObj(C.rooms) ? C.rooms : {};
+  Object.keys(R).forEach(function (k) { if (!isObj(R[k])) delete R[k]; });
+  if (!R[C.start]) return { problems: problems, fatal: true };
+  var ITEMS = isObj(C.items) ? C.items : {};
+  Object.keys(ITEMS).forEach(function (k) { if (!isObj(ITEMS[k])) delete ITEMS[k]; else if (!str(ITEMS[k].name)) ITEMS[k].name = k; });
+  if (isObj(C.synonyms)) Object.keys(C.synonyms).forEach(function (k) { SYN[norm(k)] = norm(C.synonyms[k]); });
+  function canon(v) { for (var hop = 0; hop < 4 && SYN[v] && SYN[v] !== v; hop++) v = SYN[v]; return v; }   // open → search → examine
+  var ACTS = (Array.isArray(C.actions) ? C.actions : []).filter(function (a) { return isObj(a) && list(a.verb).length; });
+  var ACT_VERBS = {};
+  ACTS.forEach(function (a) {
+    a._verbs = list(a.verb).map(function (v) { return canon(norm(v)); });
+    a._verbs.forEach(function (v) { ACT_VERBS[v] = true; });
+  });
+  var WIN = isObj(C.win) ? C.win : null, LOSE = list(C.lose).filter(isObj);
+
+  // ---- tiny seeded random, so a playthrough can be replayed ----
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var rng = !root ? null : (typeof C.seed === 'number' ? mulberry(C.seed) : Math.random);
+
+  // ---- the world model ----
+  function nameOf(id) { return ITEMS[id] ? ITEMS[id].name : id; }
+  function matches(id, noun) {
+    var it = ITEMS[id];
+    if (!it || !noun) return false;
+    var names = [norm(it.name), norm(id)].concat(list(it.words).map(norm));
+    if (names.indexOf(noun) >= 0) return true;
+    return noun.indexOf(' ') < 0 && names.some(function (n) { return n.split(' ').pop() === noun; });   // "key" finds "brass key"
+  }
+  function find(ids, noun) { for (var i = 0; i < ids.length; i++) if (matches(ids[i], noun)) return ids[i]; return null; }
+  function exitsOf(rid) {
+    var r = R[rid], o = {};
+    if (!r || !isObj(r.exits)) return o;
+    Object.keys(r.exits).forEach(function (d) {
+      var x = r.exits[d], to = typeof x === 'string' ? x : isObj(x) ? x.to : null;
+      if (typeof to === 'string') o[norm(d)] = { to: to, needs: isObj(x) ? x.needs : null, locked: isObj(x) ? x.locked : null };
+    });
+    return o;
+  }
+  function initial() {
+    var where = {};
+    Object.keys(R).forEach(function (id) { where[id] = (Array.isArray(R[id].items) ? R[id].items : []).filter(function (it) { return ITEMS[it]; }); });
+    return { room: C.start, inv: [], flags: {}, where: where, done: {}, turns: 0, over: null, end: '' };
+  }
+  function clone(S) { return JSON.parse(JSON.stringify(S)); }
+  function key(S) {
+    return S.room + '|' + S.inv.slice().sort().join(',') + '|' + Object.keys(S.flags).sort().join(',') + '|' + Object.keys(S.done).sort().join(',') + '|' +
+      Object.keys(S.where).map(function (r) { return S.where[r].slice().sort().join(','); }).join(';') + '|' + (S.over || '');
+  }
+  function has(S, need) {
+    var not = need.charAt(0) === '!', k = not ? need.slice(1) : need;
+    var yes = S.inv.indexOf(k) >= 0 || S.flags[k] === true;
+    return not ? !yes : yes;
+  }
+  function met(S, needs) { return list(needs).every(function (n) { return str(n) && has(S, n); }); }
+  function missingItem(S, needs) {
+    var l = list(needs);
+    for (var i = 0; i < l.length; i++) if (str(l[i]) && ITEMS[l[i]] && S.inv.indexOf(l[i]) < 0) return l[i];
+    return null;
+  }
+  function lit(S, rid) { var r = R[rid]; return !r || r.dark == null || met(S, r.dark); }
+  function visible(S) { return (lit(S, S.room) ? S.where[S.room] : []).concat(S.inv); }
+  function removeEverywhere(S, it) {
+    S.inv = S.inv.filter(function (x) { return x !== it; });
+    Object.keys(S.where).forEach(function (r) { S.where[r] = S.where[r].filter(function (x) { return x !== it; }); });
+  }
+
+  function describe(S, out, ambient) {
+    var r = R[S.room], ex = Object.keys(exitsOf(S.room));
+    out.push({ c: 'room', t: r.name });
+    if (!lit(S, S.room)) out.push({ t: r.darkText || 'It is pitch dark. You can\'t see a thing, but you could feel your way back out.' });
+    else {
+      out.push({ t: r.text });
+      list(r.extra).forEach(function (e) { if (isObj(e) && str(e.text) && met(S, e.if)) out.push({ t: e.text }); });
+      var loose = S.where[S.room].filter(function (it) { return !ITEMS[it].fixed; });
+      if (loose.length) out.push({ t: 'You see: ' + loose.map(nameOf).join(', ') + '.' });
+    }
+    out.push({ c: 'dim', t: 'Exits: ' + (ex.length ? ex.join(', ') : 'none') + '.' });
+    if (ambient && rng && Array.isArray(r.sounds) && r.sounds.length && rng() < 0.4) out.push({ c: 'dim', t: String(r.sounds[Math.floor(rng() * r.sounds.length)]) });
+  }
+
+  // ---- the parser: words in, { verb, noun, noun2 } out ----
+  function parse(S, line) {
+    var w = words(line);
+    if (!w.length) return { verb: '', noun: '', noun2: '' };
+    var verb, rest, two = w.length > 1 ? w[0] + ' ' + w[1] : '';
+    if (two && (SYN[two] || ACT_VERBS[two])) { verb = canon(two); rest = w.slice(2); }
+    else { verb = canon(w[0]); rest = w.slice(1); }
+    var ex = exitsOf(S.room), d = DIRS[verb] || verb;
+    if (verb !== 'go' && !rest.length && !ACT_VERBS[verb] && BUILTIN.indexOf(verb) < 0 && (ex[d] || DIR_WORDS.indexOf(d) >= 0)) return { verb: 'go', noun: d, noun2: '' };
+    if (verb === 'go') {
+      var dir = rest.join(' ');
+      if (rest.length > 1 && LEADING.indexOf(rest[0]) >= 0 && !ex[dir]) dir = rest.slice(1).join(' ');
+      return { verb: 'go', noun: DIRS[dir] || dir, noun2: '' };
+    }
+    while (rest.length > 1 && LEADING.indexOf(rest[0]) >= 0) rest.shift();   // "talk to paul" → paul
+    var whole = rest.join(' ');
+    if (Object.keys(ITEMS).some(function (id) { return matches(id, whole); })) return { verb: verb, noun: whole, noun2: '' };
+    var cut = -1;
+    for (var i = 1; i < rest.length; i++) if (SPLIT.indexOf(rest[i]) >= 0) { cut = i; break; }
+    return { verb: verb, noun: (cut < 0 ? rest : rest.slice(0, cut)).join(' '), noun2: cut < 0 ? '' : rest.slice(cut + 1).join(' ') };
+  }
+
+  // ---- one command: a new state and what to say about it ----
+  function exec(S0, line) {
+    var S = clone(S0), out = [];
+    if (S.over) return { S: S, out: [{ c: 'err', t: 'The story is over. Press Play again.' }] };
+    var cmd = parse(S, line);
+    if (!cmd.verb) return { S: S, out: [{ c: 'err', t: 'Type a command, like look or go north.' }] };
+    S.turns++;
+    if (!runAction(S, cmd, out)) builtin(S, cmd, out);
+    checkEnd(S, out);
+    return { S: S, out: out };
+  }
+  function nounOk(spec, noun, vis) {
+    if (spec == null) return true;
+    if (!noun) return false;
+    return list(spec).some(function (n) {
+      if (ITEMS[n]) return vis.indexOf(n) >= 0 && matches(n, noun);
+      return norm(n) === noun;
+    });
+  }
+  function runAction(S, cmd, out) {
+    var vis = visible(S), cands = [];
+    ACTS.forEach(function (a, i) {
+      if (a._verbs.indexOf(cmd.verb) < 0) return;
+      if (a.room != null && a.room !== S.room) return;
+      if (!nounOk(a.noun, cmd.noun, vis)) return;
+      if (a.with != null && !nounOk(a.with, cmd.noun2, vis)) return;
+      cands.push(i);
+    });
+    if (!cands.length) return false;
+    var open = cands.filter(function (i) { return !S.done[i]; });
+    if (!open.length) {   // every match was a one-time action that already happened
+      if (BUILTIN.indexOf(cmd.verb) >= 0) return false;
+      out.push({ t: ACTS[cands[0]].done || 'You\'ve already done that.' });
+      return true;
+    }
+    var ready = open.filter(function (i) { return met(S, ACTS[i].needs); });
+    if (ready.length) { apply(S, ACTS[ready[0]], ready[0], out); return true; }
+    var a = ACTS[open[0]], miss = missingItem(S, a.needs);
+    out.push({ t: miss ? 'You need to be holding the ' + nameOf(miss) + ' first.' : (a.fail || 'Nothing happens.') });
+    return true;
+  }
+  function apply(S, a, i, out) {
+    list(a.remove).forEach(function (it) { removeEverywhere(S, it); });
+    list(a.give).forEach(function (it) { if (ITEMS[it]) { removeEverywhere(S, it); S.inv.push(it); } });
+    list(a.place).forEach(function (it) { if (ITEMS[it] && S.where[S.room].indexOf(it) < 0 && S.inv.indexOf(it) < 0) S.where[S.room].push(it); });
+    list(a.set).forEach(function (f) { if (str(f)) S.flags[f] = true; });
+    list(a.clear).forEach(function (f) { delete S.flags[f]; });
+    if (a.once) S.done[i] = true;
+    out.push({ t: String(a.text) });
+    if (str(a.goto) && R[a.goto]) { S.room = a.goto; describe(S, out, true); }
+  }
+  function builtin(S, cmd, out) {
+    var noun = cmd.noun, here = S.where[S.room], ex = exitsOf(S.room), id;
+    function say(t, c) { out.push({ t: t, c: c }); }
+    switch (cmd.verb) {
+      case 'go':
+        if (!noun) return say('Go where? Exits: ' + Object.keys(ex).join(', ') + '.');
+        var x = ex[noun];
+        if (!x) return say('You can\'t go ' + noun + ' from here. Exits: ' + (Object.keys(ex).join(', ') || 'none') + '.');
+        if (!R[x.to]) return say('That way leads nowhere: the map says "' + x.to + '", which isn\'t a room.', 'err');
+        if (!met(S, x.needs)) return say(x.locked || 'That way is blocked.');
+        S.room = x.to;
+        return describe(S, out, true);
+      case 'look':
+        if (!noun) return describe(S, out, true);
+      // falls through: "look lamp" means "examine lamp"
+      case 'examine':
+        if (!noun) return say('Examine what?');
+        id = find(visible(S), noun);
+        if (id) return say(ITEMS[id].text || 'You see nothing special about the ' + nameOf(id) + '.');
+        if (!lit(S, S.room)) return say('It is too dark to see.');
+        if (lower(R[S.room].text).indexOf(noun) >= 0) return say('You see nothing special about the ' + noun + '.');
+        return say('You don\'t see any "' + noun + '" here.');
+      case 'take':
+        if (!noun) return say('Take what?');
+        id = find(here, noun);
+        if (id && !lit(S, S.room)) {   // in the dark you can only find the thing that would light it
+          var T = clone(S); removeEverywhere(T, id); T.inv.push(id);
+          if (!lit(T, S.room)) id = null;
+        }
+        if (!id) return say(find(S.inv, noun) ? 'You already have it.' : !lit(S, S.room) ? 'It is too dark to find anything.' : 'You don\'t see any "' + noun + '" here.');
+        if (ITEMS[id].fixed) return say(ITEMS[id].fixedText || 'You can\'t carry the ' + nameOf(id) + '.');
+        removeEverywhere(S, id); S.inv.push(id);
+        return say('Taken: ' + nameOf(id) + '.');
+      case 'drop':
+        if (!noun) return say('Drop what?');
+        id = find(S.inv, noun);
+        if (!id) return say('You aren\'t carrying that.');
+        removeEverywhere(S, id); here.push(id);
+        return say('Dropped: ' + nameOf(id) + '.');
+      case 'inventory':
+        return say(S.inv.length ? 'You are carrying: ' + S.inv.map(nameOf).join(', ') + '.' : 'You are empty-handed.');
+      case 'help':
+        var extra = Object.keys(ACT_VERBS).filter(function (v) { return BUILTIN.indexOf(v) < 0; });
+        say('Type what you want to do, like "take key" or "go north". Words every story knows: look (l), go (n, s, e, w, up, down), examine (x), take (get), drop, inventory (i), wait.' +
+          (extra.length ? ' This story also knows: ' + extra.join(', ') + '.' : ''));
+        return say('Exits here: ' + (Object.keys(ex).join(', ') || 'none') + '.', 'dim');
+      case 'wait':
+        return say('Time passes.');
+      default:
+        if (ACT_VERBS[cmd.verb]) {
+          if (!noun) return say(cmd.verb.charAt(0).toUpperCase() + cmd.verb.slice(1) + ' what?');
+          var named = find(visible(S), noun) || ACTS.some(function (a) { return list(a.noun).concat(list(a.with)).some(function (n) { return !ITEMS[n] && norm(n) === noun; }); });
+          return say(named ? 'That doesn\'t work here.' : 'You don\'t see any "' + noun + '" here.');
+        }
+        return say('I don\'t know the word "' + cmd.verb + '". Type help to see the words I know.', 'err');
+    }
+  }
+  function checkEnd(S, out) {
+    function hit(e) { return (e.room == null || e.room === S.room) && met(S, e.needs); }
+    if (WIN && hit(WIN)) { S.over = 'win'; S.end = WIN.text || 'You win!'; out.push({ c: 'win', t: S.end }); return; }
+    for (var i = 0; i < LOSE.length; i++) if (hit(LOSE[i])) { S.over = 'lose'; S.end = LOSE[i].text || 'The end.'; out.push({ c: 'lose', t: S.end }); return; }
+  }
+  // every command worth trying from here (the map checker's edges)
+  function options(S) {
+    var o = [], vis = visible(S);
+    Object.keys(exitsOf(S.room)).forEach(function (d) { o.push('go ' + d); });
+    S.where[S.room].forEach(function (it) { if (!ITEMS[it].fixed) o.push('take ' + norm(ITEMS[it].name)); });
+    function pick(spec) {
+      if (spec == null) return '';
+      var l = list(spec);
+      for (var i = 0; i < l.length; i++) {
+        if (!ITEMS[l[i]]) return norm(l[i]);
+        if (vis.indexOf(l[i]) >= 0) return norm(ITEMS[l[i]].name);
+      }
+      return null;
+    }
+    ACTS.forEach(function (a) {
+      if (a.room != null && a.room !== S.room) return;
+      var n = pick(a.noun), w = pick(a.with);
+      if (n === null || w === null) return;
+      o.push(a._verbs[0] + (n ? ' ' + n : '') + (w ? ' with ' + w : ''));
+    });
+    return o;
+  }
+
+  if (!root) return { problems: problems, fatal: false, rooms: R, items: ITEMS, actions: ACTS, start: C.start, exitsOf: exitsOf, initial: initial, exec: exec, options: options, key: key, parse: function (line, S) { return parse(S || initial(), line); } };
+
+  // ---- styles (injected once, scoped with .adv-) ----
+  if (!document.getElementById('adv-style')) {
+    var st = document.createElement('style'); st.id = 'adv-style';
+    st.textContent = [
+      '.adv{position:relative;background:#0d1410;color:#e4f5e8;border:2px solid #166534;border-radius:14px;padding:.8rem;font:14px/1.5 system-ui,sans-serif;box-sizing:border-box}',
+      '.adv *{box-sizing:border-box}',
+      '.adv h3{margin:0;font-size:1.05rem;color:#86efac;font-family:ui-monospace,monospace}.adv-top{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap;align-items:baseline}',
+      '.adv-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}.adv-chip{background:#132019;border:1px solid #2f5d3f;border-radius:8px;padding:.1rem .5rem;font-weight:600;font-size:.78rem;color:#d1fae5}',
+      '.adv-log{background:#050a07;border:1px solid #1f3a2a;border-radius:10px;padding:.6rem .75rem;height:20rem;overflow:auto;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.8rem;line-height:1.55}',
+      '.adv-log p{margin:0 0 .35rem;white-space:pre-wrap;overflow-wrap:anywhere;color:#e4f5e8}',
+      '.adv-log .adv-room{color:#fde68a;font-weight:700;margin-top:.7rem}.adv-log .adv-cmd{color:#7dd3fc;font-weight:700;margin-top:.7rem}',
+      '.adv-log .adv-dim{color:#9fb8a7}.adv-log .adv-err{color:#fca5a5}.adv-log .adv-intro{color:#c4b5fd}.adv-log .adv-win{color:#86efac;font-weight:700}.adv-log .adv-lose{color:#fca5a5;font-weight:700}',
+      '.adv-form{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.55rem 0 .45rem}.adv-form label{font-weight:700;font-size:.82rem;color:#bbf7d0;flex:0 0 100%}',
+      '.adv-form input{flex:1 1 10rem;min-width:0;font:inherit;font-family:ui-monospace,monospace;font-size:.9rem;padding:.4rem .55rem;border:1.5px solid #2f5d3f;border-radius:8px;background:#050a07;color:#ecfdf5}',
+      '.adv button{font:inherit;font-size:.8rem;font-weight:700;border:0;border-radius:8px;padding:.38rem .75rem;background:#22c55e;color:#052e16;cursor:pointer}',
+      '.adv button.alt{background:transparent;color:#bbf7d0;border:1.5px solid #2f5d3f}.adv button:disabled,.adv input:disabled{opacity:.45;cursor:not-allowed}',
+      '.adv button:focus-visible,.adv input:focus-visible,.adv-log:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}',
+      '.adv-hints{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}.adv-hints span{font-size:.76rem;color:#9fb8a7}',
+      '.adv-modal{position:absolute;inset:0;background:rgba(5,10,7,.86);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:.8rem;z-index:5}',
+      '.adv-box{background:#0d1410;border:2px solid #22c55e;border-radius:12px;padding:1rem;max-width:26rem;width:100%;max-height:100%;overflow:auto}.adv-box h4{margin:0 0 .35rem;font-size:1.1rem;color:#86efac}.adv-box p{margin:0 0 .7rem}.adv-box div{display:flex;flex-wrap:wrap;gap:.4rem}',
+      '@media print{.adv,.adv-log,.adv-chip{background:#fff!important;color:#111!important;border-color:#999!important}.adv-log{height:auto!important;overflow:visible!important}.adv-log p,.adv h3{color:#111!important}.adv-form,.adv-hints,.adv-modal{display:none!important}}'
+    ].join('');
+    document.head.appendChild(st);
+  }
+
+  // ---- UI ----
+  var S, el = {}, hist = [], hpos = 0, destroyed = false, uid = 'adv' + Math.floor(Math.random() * 1e6);
+  function h(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function build() {
+    root.replaceChildren();
+    var box = h('div', 'adv'); root.appendChild(box); el.box = box;
+    var top = h('div', 'adv-top'); top.appendChild(h('h3', null, C.title)); el.turns = h('span', 'adv-chip'); top.appendChild(el.turns); box.appendChild(top);
+    el.chips = h('div', 'adv-chips'); box.appendChild(el.chips);
+    el.log = h('div', 'adv-log'); el.log.setAttribute('role', 'log'); el.log.setAttribute('aria-live', 'polite'); el.log.setAttribute('aria-label', 'The story so far'); el.log.tabIndex = 0; box.appendChild(el.log);
+    var form = h('form', 'adv-form'), lab = h('label', null, 'What do you do?');
+    el.input = h('input'); el.input.id = uid + '-cmd'; el.input.type = 'text'; el.input.autocomplete = 'off'; el.input.spellcheck = false;
+    el.input.setAttribute('autocapitalize', 'off'); el.input.placeholder = 'look, go north, take key…'; lab.htmlFor = el.input.id;
+    el.enter = h('button', null, 'Enter ⏎'); el.enter.type = 'submit';
+    form.appendChild(lab); form.appendChild(el.input); form.appendChild(el.enter); box.appendChild(form);
+    var hints = h('div', 'adv-hints'); hints.appendChild(h('span', null, 'Stuck? Try:'));
+    [['look', 'Look'], ['inventory', 'Inventory'], ['help', 'Help']].forEach(function (b) {
+      var btn = h('button', 'alt', b[1]); btn.type = 'button'; btn.dataset.cmd = b[0];
+      btn.addEventListener('click', function () { play(b[0]); }); hints.appendChild(btn);
+    });
+    var again = h('button', 'alt', '↺ Restart'); again.type = 'button'; again.addEventListener('click', newGame); hints.appendChild(again);
+    box.appendChild(hints);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = el.input.value.trim(); if (!v) return;
+      if (hist[hist.length - 1] !== v) hist.push(v);
+      hpos = hist.length; el.input.value = ''; play(v);
+    });
+    el.input.addEventListener('keydown', function (e) {   // ↑ and ↓ walk through earlier commands
+      if (e.key === 'ArrowUp' && hpos > 0) { hpos--; el.input.value = hist[hpos]; e.preventDefault(); }
+      else if (e.key === 'ArrowDown' && hpos < hist.length) { hpos++; el.input.value = hist[hpos] || ''; e.preventDefault(); }
+    });
+  }
+  function print(lines) {
+    lines.forEach(function (l) { el.log.appendChild(h('p', l.c ? 'adv-' + l.c : null, l.t)); });
+    while (el.log.childNodes.length > 400) el.log.removeChild(el.log.firstChild);
+    el.log.scrollTop = el.log.scrollHeight;
+  }
+  function draw() {
+    var dark = !lit(S, S.room);
+    el.turns.textContent = '⏱ Turn ' + S.turns;
+    el.chips.replaceChildren();
+    el.chips.appendChild(h('span', 'adv-chip', '📍 ' + (dark ? 'Somewhere dark' : R[S.room].name)));
+    el.chips.appendChild(h('span', 'adv-chip', '🎒 ' + (S.inv.length ? S.inv.map(nameOf).join(', ') : 'nothing')));
+    el.input.disabled = el.enter.disabled = !!S.over;
+  }
+  function play(cmd) {
+    if (destroyed) return;
+    print([{ c: 'cmd', t: '> ' + cmd }]);
+    var r = exec(S, cmd);
+    S = r.S; print(r.out); draw();
+    if (S.over && !el.box.querySelector('.adv-modal')) finish();
+  }
+  function finish() {
+    var win = S.over === 'win', m = h('div', 'adv-modal'), bx = h('div', 'adv-box'), row = h('div');
+    bx.setAttribute('role', 'dialog'); bx.setAttribute('aria-label', win ? 'You win' : 'The end');
+    bx.appendChild(h('h4', null, win ? '🏆 You win!' : '📜 The end'));
+    bx.appendChild(h('p', null, S.end));
+    bx.appendChild(h('p', null, 'Finished in ' + S.turns + ' turns.'));
+    var again = h('button', null, 'Play again'); again.addEventListener('click', newGame);
+    var read = h('button', 'alt', 'Read the story'); read.addEventListener('click', function () { m.remove(); el.log.focus(); });
+    row.appendChild(again); row.appendChild(read); bx.appendChild(row); m.appendChild(bx); el.box.appendChild(m);
+    setTimeout(function () { if (!destroyed) again.focus(); }, 0);
+  }
+  function newGame() {
+    var m = el.box.querySelector('.adv-modal'); if (m) m.remove();
+    S = initial(); hpos = hist.length;
+    el.log.replaceChildren();
+    if (str(C.intro)) print([{ c: 'intro', t: C.intro }]);
+    var out = []; describe(S, out, false); print(out); draw();
+  }
+
+  root._adv = { destroy: function () { destroyed = true; root.replaceChildren(); root._adv = null; }, state: function () { return S; }, run: play };
+  build(); newGame();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Presets. Each one is checked by the map checker below: every
+   room reachable, every item collectable, no dead ends, and a win.
+   ───────────────────────────────────────────────────────────── */
+var ADV_PRESETS = {
+  haunted: { label: '👻 Haunted School', config: {
+    title: 'The Haunted School',
+    intro: 'You ran back to school after dark to fetch your volcano project for tomorrow\'s science fair. Now the lights are off, the custodian has gone home, and something downstairs keeps going BOOM.',
+    start: 'classroom',
+    rooms: {
+      classroom: { name: 'Room 12', text: 'Your science classroom. Chairs are stacked on the desks and the clock ticks loudly. The door leads south to the hallway.',
+        exits: { south: 'hallway' }, items: ['project', 'flashlight'] },
+      hallway: { name: 'Hallway', text: 'A long hallway lit only by a red EXIT sign. The science lab is east, the principal\'s office is west, the lobby is south, and stairs lead down to the basement. A cleaning cart is parked by the stairs.',
+        exits: { north: 'classroom', east: 'lab', south: 'lobby', down: 'basement',
+          west: { to: 'office', needs: 'keys', locked: 'The office door is locked. The sign says PRINCIPAL. Maybe the custodian has a key.' } },
+        items: ['note', 'cart'],
+        sounds: ['A locker door creaks open, then slowly closes.', 'The EXIT sign buzzes.', 'BOOM. Something downstairs.'] },
+      lab: { name: 'Science Lab', text: 'Mr. Bones the skeleton grins from the corner. A drawer under the teacher\'s desk is labelled SPARE BATTERIES. The door is west.',
+        exits: { west: 'hallway' }, items: ['batteries', 'skeleton'] },
+      basement: { name: 'Boiler Room', text: 'The old boiler goes BOOM-clank every few seconds. So that\'s the ghost! The stairs lead up.',
+        darkText: 'It is pitch dark down here, and something goes BOOM-clank. You won\'t find anything without a light. The stairs lead back up.',
+        dark: ['flashlight', 'flashlight_on'],
+        exits: { up: 'hallway' }, items: ['keys'],
+        sounds: ['BOOM-clank.', 'The pipes hiss and tick.'] },
+      office: { name: 'Principal\'s Office', text: 'It smells like coffee. On the wall is a big red button labelled DOOR RELEASE. The door is east.',
+        exits: { east: 'hallway' }, items: ['button'] },
+      lobby: { name: 'Front Lobby', text: 'Trophy cases glow faintly. The front doors lead south, outside. The hallway is north.',
+        extra: [{ if: '!doors_open', text: 'A sign on the doors says: AFTER 6 PM, DOORS ARE RELEASED FROM THE MAIN OFFICE.' }],
+        exits: { north: 'hallway', south: { to: 'outside', needs: 'doors_open', locked: 'The front doors are locked tight. The sign says they are released from the main office.' } } },
+      outside: { name: 'Front Steps', text: 'Cool night air, streetlights, and your ride waiting at the curb. The lobby is back north.',
+        extra: [{ if: '!project', text: 'Wait. Your volcano project is still inside!' }],
+        exits: { north: 'lobby' } }
+    },
+    items: {
+      project: { name: 'volcano project', words: ['project', 'volcano'], text: 'Your papier-mâché volcano. It took three weeks. You are not leaving without it.' },
+      flashlight: { name: 'flashlight', words: ['torch', 'light'], text: 'Your teacher\'s heavy flashlight.' },
+      note: { name: 'note', words: ['paper'], text: 'Taped to the cart: "Left my key ring on the hook by the boiler. Back Monday. — Mr. O, Custodian"' },
+      cart: { name: 'cleaning cart', words: ['cart', 'mop', 'bucket'], fixed: true, fixedText: 'It squeaks too much to take anywhere.', text: 'A mop, a bucket, and a note taped to the handle.' },
+      batteries: { name: 'batteries', words: ['battery', 'drawer'], text: 'Two fresh D batteries.' },
+      skeleton: { name: 'Mr. Bones', words: ['skeleton', 'bones'], fixed: true, fixedText: 'Mr. Bones stays in the lab.', text: 'A plastic skeleton in a party hat. Not haunted. Probably.' },
+      keys: { name: 'ring of keys', words: ['keys', 'key ring', 'key'], text: 'The custodian\'s keys. One is labelled OFFICE.' },
+      button: { name: 'red button', words: ['button', 'door release', 'release'], fixed: true, fixedText: 'It is bolted to the wall.', text: 'DOOR RELEASE. It unlocks the front doors.' }
+    },
+    synonyms: { 'switch on': 'turn on', light: 'turn on' },
+    actions: [
+      { verb: ['put', 'insert', 'use'], noun: 'batteries', needs: ['batteries', 'flashlight'], remove: 'batteries', set: 'charged', once: true,
+        text: 'You click the fresh batteries into the flashlight.' },
+      { verb: ['turn on', 'use'], noun: 'flashlight', needs: ['flashlight', 'charged'], set: 'flashlight_on',
+        text: 'A bright beam cuts through the dark.', fail: 'Click. Nothing. The batteries must be dead.' },
+      { verb: ['press', 'push', 'use'], noun: 'button', set: 'doors_open', once: true, done: 'You already pressed it. The doors are open.',
+        text: 'CLUNK! All through the school, the front doors unlock.' }
+    ],
+    win: { room: 'outside', needs: 'project', text: 'You climb into the car with your volcano project. Mystery solved: the ghost was the boiler all along.' }
+  } },
+
+  space: { label: '🛰️ Space Station', config: {
+    title: 'Station Tern: No Signal',
+    intro: 'A tiny meteoroid has knocked out Station Tern\'s antenna. Your crewmates are asleep after a long shift, so it\'s up to you, the newest cadet, to fix it and call Mission Control.',
+    start: 'quarters',
+    rooms: {
+      quarters: { name: 'Crew Quarters', text: 'Sleeping bags are strapped to the walls and your crewmates are snoring. The hatch is east.',
+        exits: { east: 'corridor' }, items: ['tablet'] },
+      corridor: { name: 'Central Corridor', text: 'The corridor hums. Hatches lead west to quarters, south to the galley, north to the control room and east to the airlock. A ladder goes down to storage.',
+        exits: { west: 'quarters', south: 'galley', east: 'airlock', down: 'storage',
+          north: { to: 'control', needs: 'keycard', locked: 'The control room hatch is sealed. A card reader blinks red.' } },
+        sounds: ['The air fans whirr.', 'A drink pouch drifts past.'] },
+      galley: { name: 'Galley', text: 'Food packets are stuck to every surface with tape. The commander\'s coffee mug is clipped to the table. The corridor is north.',
+        exits: { north: 'corridor' }, items: ['mug'] },
+      storage: { name: 'Storage Bay', text: 'Lockers, coiled cables and spare parts. The ladder goes up.',
+        exits: { up: 'corridor' }, items: ['suit', 'board'] },
+      airlock: { name: 'Airlock', text: 'A small room with a round window full of stars. A big lever on the wall is labelled CYCLE. The outer hatch leads out; the corridor is west.',
+        extra: [{ if: 'cycled', text: 'The air has been pumped out. The outer hatch light is green.' }],
+        items: ['lever'],
+        exits: { west: 'corridor', out: { to: 'hull', needs: ['suit_on', 'cycled'], locked: 'The outer hatch is locked until the airlock is cycled, and you need to be wearing a suit.' } } },
+      hull: { name: 'Outside on the Hull', text: 'Earth turns slowly below you. The antenna dish is bent, and its circuit slot is scorched. The airlock is back in.',
+        extra: [{ if: 'antenna_fixed', text: 'The antenna\'s light blinks green.' }],
+        exits: { in: 'airlock' }, items: ['antenna'],
+        sounds: ['You hear only your own breathing.'] },
+      control: { name: 'Control Room', text: 'Screens glow in the dark. The radio is here. The corridor is south.',
+        extra: [{ if: '!antenna_fixed', text: 'The radio screen says: NO SIGNAL. CHECK ANTENNA.' }],
+        exits: { south: 'corridor' }, items: ['radio'] }
+    },
+    items: {
+      tablet: { name: 'commander\'s tablet', words: ['tablet', 'log'], text: 'Commander\'s log: "Meteoroid hit the antenna. Spare circuit board is in storage. Note to self: stop leaving my keycard in my coffee mug."' },
+      mug: { name: 'coffee mug', words: ['mug', 'cup', 'coffee'], fixed: true, fixedText: 'It is clipped to the table.', text: 'The commander\'s mug, with a lid.' },
+      keycard: { name: 'keycard', words: ['card', 'key card'], text: 'COMMANDER: ALL ACCESS.' },
+      suit: { name: 'spacesuit', words: ['suit', 'space suit'], text: 'A white spacesuit with your name on the arm.' },
+      board: { name: 'circuit board', words: ['board', 'circuit', 'part'], text: 'A spare circuit board for the antenna.' },
+      antenna: { name: 'antenna', words: ['dish', 'slot'], fixed: true, fixedText: 'It is bolted to the station.', text: 'The antenna dish. Its circuit slot is scorched.' },
+      radio: { name: 'radio', words: ['screen', 'microphone'], fixed: true, fixedText: 'It is built into the console.', text: 'The station radio. It can reach Mission Control if the antenna works.' },
+      lever: { name: 'lever', words: ['cycle'], fixed: true, text: 'CYCLE: pumps the air out so the outer hatch can open.' }
+    },
+    synonyms: { 'put on': 'wear', fix: 'repair', mend: 'repair', open: 'search' },
+    actions: [
+      { verb: ['search', 'shake'], noun: 'mug', place: 'keycard', once: true,
+        text: 'You pop the lid. Floating in cold coffee: the commander\'s keycard!' },
+      { verb: 'wear', noun: 'suit', needs: 'suit', set: 'suit_on', once: true, done: 'You are already wearing it.',
+        text: 'You climb into the spacesuit and lock the helmet. Air hisses. Ready.' },
+      { verb: ['pull', 'use'], noun: ['lever', 'airlock'], room: 'airlock', needs: 'suit_on', set: 'cycled', once: true,
+        text: 'Pumps whine as the air is drawn out. The outer hatch light turns green.', fail: 'A warning flashes: SUIT NOT DETECTED. The lever is locked.' },
+      { verb: ['repair', 'use', 'put', 'insert'], noun: ['antenna', 'board'], room: 'hull', needs: 'board', remove: 'board', set: 'antenna_fixed', once: true,
+        text: 'You slot the new circuit board into the antenna. Its light blinks green.' },
+      { verb: ['use', 'call'], noun: ['radio', 'home', 'mission control'], room: 'control', needs: 'antenna_fixed', set: 'called',
+        text: 'You key the radio: "Station Tern to Mission Control..." A voice crackles back. They hear you!', fail: 'The radio hisses. NO SIGNAL. The antenna must still be broken.' }
+    ],
+    win: { needs: 'called', text: 'Mission Control talks you through the last checks. When your crewmates wake up, the station is back in touch with Earth, and they never even knew it was gone.' }
+  } },
+
+  paul: { label: '⛵ Paul\'s Voyage (Acts 27–28)', config: {
+    title: 'Paul\'s Voyage',
+    intro: 'Acts 27–28. You are one of Paul\'s companions: Acts tells this part of the story as "we". Paul is a prisoner on his way to Rome, guarded by a centurion named Julius (Acts 27:1). Soon after leaving Crete, a violent wind called the Northeaster caught the ship (27:13–15). Type help if you are stuck.',
+    start: 'deck',
+    rooms: {
+      deck: { name: 'Main deck, in the storm', text: 'Rain and spray sweep the deck. The crew has hauled the lifeboat aboard, bound ropes under the hull, and let the wind drive the ship along (Acts 27:16–17). The hatch leads down to the hold; the stern is aft and the bow is fore. Paul is here.',
+        extra: [
+          { if: '!storm_days', text: 'Below, the crew is fighting to make the ship lighter.' },
+          { if: ['storm_days', '!heard_paul'], text: 'For many days neither sun nor stars have appeared, and everyone has given up hope (27:20). Paul has stood up to speak.' },
+          { if: ['heard_paul', '!anchored'], text: 'Night after night the wind drives you on. At the stern, sailors are listening hard to the sea.' },
+          { if: ['anchored', '!lifeboat_gone'], text: 'At the bow, some sailors are busy with the lifeboat.' },
+          { if: ['lifeboat_gone', '!ate'], text: 'Day is about to dawn. Paul keeps urging everyone to eat something (27:33–34).' },
+          { if: 'ate', text: 'The ship is lighter now. Everyone waits for daylight.' }
+        ],
+        exits: { down: 'hold', aft: 'stern', fore: 'bow' }, items: ['paul'],
+        sounds: ['A wave breaks over the rail.', 'The ropes groan under the hull.'] },
+      hold: { name: 'Cargo hold', text: 'The hold of an Alexandrian ship bound for Italy (27:6). Water sloshes around your feet. The hatch leads up to the deck.',
+        extra: [{ if: '!ate', text: 'Sacks of grain are piled in the dark.' }, { if: 'ate', text: 'The grain is gone: the men threw it into the sea to lighten the ship (27:38).' }],
+        exits: { up: 'deck' }, items: ['sailors', 'grain'] },
+      stern: { name: 'Stern', text: 'The back of the ship, where the rudders are. Sailors stand at the rail. The deck is fore.',
+        exits: { fore: 'deck' }, items: ['sailors'] },
+      bow: { name: 'Bow', text: 'The front of the ship rises and crashes into the waves. The lifeboat is tied here. The deck is aft.',
+        extra: [{ if: 'lifeboat_gone', text: 'Only cut ropes hang where the lifeboat was (27:32).' }],
+        exits: { aft: 'deck' }, items: ['sailors', 'lifeboat'] },
+      sandbar: { name: 'On the sandbar', text: 'The ship has struck a sandbar. The bow is stuck fast and the stern is being broken up by the waves (Acts 27:41). The soldiers planned to kill the prisoners so none could swim away, but the centurion, wanting to spare Paul, stopped them. He ordered everyone who could swim to jump overboard first and get to land (27:42–43). Broken planks float all around. The shore lies ahead.',
+        exits: { shore: { to: 'beach', needs: 'plank', locked: 'It is too far to swim in these waves. The centurion said the rest should follow on planks and pieces of the ship (27:44).' } },
+        items: ['plank'] },
+      beach: { name: 'A beach on Malta', text: 'Everyone has been brought safely to land (Acts 27:44). The island is called Malta. It is raining and cold, and the islanders show you extraordinary kindness: they light a fire and welcome you all (28:1–2). A path leads inland.',
+        extra: [
+          { if: '!viper', text: 'Paul is gathering a bundle of sticks for the fire.' },
+          { if: 'supplied', text: 'After three months, an Alexandrian ship that spent the winter at the island is ready to sail. Its figurehead is the Twin Brothers (28:11).' }
+        ],
+        exits: { inland: 'estate', sail: { to: 'rome', needs: 'supplied', locked: 'No ship is ready to sail yet. You will stay on Malta for three months (28:11).' } },
+        items: ['paul', 'fire', 'islanders'],
+        sounds: ['Rain hisses on the fire.'] },
+      estate: { name: 'The estate of Publius', text: 'Nearby is the estate of Publius, the chief official of the island. He welcomes you and looks after you for three days (Acts 28:7). The path leads back to the beach.',
+        extra: [{ if: '!supplied', text: 'Publius\'s father is sick in bed with fever and dysentery (28:8).' }, { if: 'supplied', text: 'Publius\'s father is well again (28:8).' }],
+        exits: { beach: 'beach' }, items: ['publius', 'father'] },
+      rome: { name: 'Rome', text: 'You put in at Syracuse for three days, then Rhegium, then Puteoli, where believers invite you to stay a week. And so you come to Rome (Acts 28:12–14). Believers from Rome travel as far as the Forum of Appius and the Three Taverns to meet you, and when Paul sees them he thanks God and takes courage (28:15). In Rome, Paul is allowed to live by himself, with a soldier to guard him (28:16).',
+        exits: {} }
+    },
+    items: {
+      paul: { name: 'Paul', fixed: true, fixedText: 'Paul is a fellow traveller, not cargo.', text: 'Paul, an apostle, is a prisoner on his way to Rome with some other prisoners (Acts 27:1). Aristarchus, a Macedonian from Thessalonica, is with you too (27:2).' },
+      sailors: { name: 'sailors', words: ['crew', 'men', 'sailor'], fixed: true, fixedText: 'The crew has work to do.', text: 'The crew of the grain ship, soaked and exhausted.' },
+      grain: { name: 'sacks of grain', words: ['grain', 'sacks', 'sack', 'cargo'], fixed: true, fixedText: 'Each sack is far too heavy to lift.', text: 'Grain, the ship\'s cargo.' },
+      lifeboat: { name: 'lifeboat', words: ['boat', 'skiff'], fixed: true, fixedText: 'It is tied down tight.', text: 'The small boat the crew barely managed to secure near the island of Cauda (Acts 27:16).' },
+      plank: { name: 'plank', words: ['planks', 'board', 'wood'], text: 'A broken plank from the ship, big enough to hold on to (Acts 27:44).' },
+      fire: { name: 'fire', words: ['sticks', 'bonfire'], fixed: true, fixedText: 'Better to stand near it.', text: 'A fire the islanders lit because of the rain and the cold (Acts 28:2).' },
+      islanders: { name: 'islanders', words: ['people', 'locals'], fixed: true, fixedText: 'They are your hosts!', text: 'The people of Malta, who showed you extraordinary kindness (Acts 28:2).' },
+      publius: { name: 'Publius', words: ['official'], fixed: true, fixedText: 'He is your host.', text: 'Publius, the chief official of the island (Acts 28:7).' },
+      father: { name: 'Publius\'s father', words: ['father', 'sick man'], fixed: true, fixedText: 'He needs to rest.', text: 'Publius\'s father, who has been sick with fever and dysentery (Acts 28:8).' }
+    },
+    synonyms: { observe: 'watch', swim: 'go', jump: 'go' },
+    actions: [
+      { verb: ['watch', 'help', 'examine'], noun: 'sailors', room: 'hold', set: 'storm_days', once: true,
+        text: 'You stay close to the crew as they work. The ship is tossed so violently that the next day the men begin to throw the cargo overboard, and on the third day they throw the ship\'s tackle overboard with their own hands. Then for many days neither sun nor stars appear, and everyone gives up hope of being saved (Acts 27:18–20).' },
+      { verb: ['talk', 'listen'], noun: 'paul', room: 'deck', needs: 'storm_days', set: 'heard_paul', once: true,
+        done: 'Paul\'s words stay with you: "Keep up your courage" (27:22).', fail: 'Paul is quiet. The storm has only just begun, and the crew needs every hand below.',
+        text: 'Paul stands up among them: "Men, you should have followed my advice not to sail from Crete... But now I urge you to keep up your courage, because you will not experience any loss of life, but only of the ship. For just last night an angel of God, whose I am and whom I serve, stood beside me and said, \'Do not be afraid, Paul; you must stand before Caesar. And look, God has granted you the lives of all who sail with you.\' So take courage, men, for I believe God that it will happen just as He told me. However, we must run aground on some island." (Acts 27:21–26)' },
+      { verb: ['watch', 'listen', 'examine'], noun: 'sailors', room: 'stern', needs: 'heard_paul', set: 'anchored', once: true,
+        fail: 'The sailors are fighting the wind. Nothing has changed yet.',
+        text: 'On the fourteenth night you are still being driven across the Adriatic Sea. About midnight the sailors sense they are near land. They take soundings: twenty fathoms, then fifteen. Afraid of running onto rocks, they drop four anchors from the stern and pray for daybreak (Acts 27:27–29).' },
+      { verb: ['watch', 'examine'], noun: ['sailors', 'lifeboat'], room: 'bow', needs: 'anchored', set: 'lifeboat_gone', once: true,
+        fail: 'The sailors are checking the ropes that hold the lifeboat.',
+        text: 'Pretending to lower anchors from the bow, some sailors let the lifeboat down into the sea to escape. Paul says to the centurion and the soldiers, "Unless these men remain with the ship, you cannot be saved." So the soldiers cut the ropes and set the lifeboat adrift (Acts 27:30–32).' },
+      { verb: 'eat', noun: ['food', 'bread', 'something'], room: 'deck', needs: 'lifeboat_gone', set: 'ate', once: true,
+        fail: 'Nobody has eaten in a long time (27:21). It is hard to think about food in this storm.',
+        text: 'Paul takes bread, gives thanks to God in front of them all, breaks it and begins to eat. Everyone is encouraged and eats too, and so do you. There are 276 people on board. When everyone has eaten enough, the men lighten the ship by throwing the grain into the sea (Acts 27:35–38).' },
+      { verb: 'wait', room: 'deck', needs: 'ate', goto: 'sandbar', once: true, fail: 'Time passes. The storm goes on.',
+        text: 'Daylight comes. Nobody recognizes the land, but there is a bay with a sandy beach. The crew cuts away the anchors, loosens the ropes on the rudders, raises the foresail and heads for the beach (Acts 27:39–40).' },
+      { verb: ['watch', 'examine', 'help'], noun: ['paul', 'fire'], room: 'beach', set: 'viper', once: true,
+        text: 'Paul gathers a bundle of sticks. As he lays them on the fire, a viper, driven out by the heat, fastens itself on his hand. The islanders say to one another, "Surely this man is a murderer." But Paul shakes the creature off into the fire and suffers no harm. They wait a long time for him to swell up or drop dead. When nothing happens, they change their minds and say he is a god (Acts 28:3–6).' },
+      { verb: ['visit', 'talk', 'watch', 'help'], noun: ['father', 'publius', 'paul'], room: 'estate', needs: 'viper', set: 'supplied', once: true,
+        fail: 'Everyone is still down at the fire on the beach (28:2–3).',
+        text: 'Paul goes in to see Publius\'s father. He prays, places his hands on him, and heals him. After this, the rest of the sick on the island come and are cured. The islanders honour you in many ways, and when it is time to sail they supply what you need (Acts 28:8–10).' }
+    ],
+    win: { room: 'rome', text: 'Paul stays in Rome two full years in his own rented house, welcoming all who come to visit him. Boldly and freely he proclaims the kingdom of God and teaches about the Lord Jesus Christ (Acts 28:30–31). Everyone on the ship came through, just as Paul was told (27:24, 44).' }
+  } }
+};
+
+/* ─────────────────────────────────────────────────────────────
+   The map checker: breadth-first search, twice.
+   1. Over rooms only (ignoring locks): which rooms are on the map at all?
+   2. Over situations (room + items + flags): can the game be won, what is the
+      shortest walkthrough, and is there anywhere the player gets stuck?
+   ───────────────────────────────────────────────────────────── */
+function checkAdventure(cfg, cap) {
+  cap = cap || 20000;
+  var m;
+  try { m = AdventureEngine(null, cfg, { lenient: true }); } catch (e) { return { problems: ['The checker could not read this config: ' + e.message], fatal: true }; }
+  var rep = { problems: m.problems.slice(), fatal: !!m.fatal };
+  if (m.fatal) return rep;
+  var R = m.rooms, ids = Object.keys(R);
+
+  // 1. rooms by distance from the start, following every exit (and every "goto")
+  var dist = {}, queue = [m.start];
+  dist[m.start] = 0;
+  function link(from) {
+    var out = Object.keys(m.exitsOf(from)).map(function (d) { return m.exitsOf(from)[d].to; });
+    m.actions.forEach(function (a) { if (typeof a.goto === 'string' && (a.room == null || a.room === from)) out.push(a.goto); });
+    return out;
+  }
+  while (queue.length) {
+    var here = queue.shift();
+    link(here).forEach(function (to) { if (R[to] && dist[to] == null) { dist[to] = dist[here] + 1; queue.push(to); } });
+  }
+  rep.layers = [];
+  ids.forEach(function (id) { if (dist[id] != null) (rep.layers[dist[id]] = rep.layers[dist[id]] || []).push(id); });
+  rep.unreachable = ids.filter(function (id) { return dist[id] == null; });
+
+  // 2. breadth-first search over situations
+  var S0 = m.initial(), nodes = [S0], parent = [-1], via = [''], index = {}, preds = [[]], wins = [], q = 0;
+  index[m.key(S0)] = 0;
+  var visited = {}, held = {};
+  rep.capped = false;
+  while (q < nodes.length) {
+    var i = q++, S = nodes[i];
+    visited[S.room] = true;
+    S.inv.forEach(function (it) { held[it] = true; });
+    if (S.over) { if (S.over === 'win') wins.push(i); continue; }
+    if (nodes.length > cap) { rep.capped = true; break; }
+    m.options(S).forEach(function (cmd) {
+      var next = m.exec(S, cmd).S, k = m.key(next), j = index[k];
+      if (j == null) { j = nodes.length; index[k] = j; nodes.push(next); parent.push(i); via.push(cmd); preds.push([]); }
+      if (j !== i) preds[j].push(i);
+    });
+  }
+  rep.states = nodes.length;
+  function pathTo(n) { var p = []; while (n > 0) { p.unshift(via[n]); n = parent[n]; } return p; }
+  rep.lockedAway = ids.filter(function (id) { return dist[id] != null && !visited[id]; });
+  var gives = {};
+  m.actions.forEach(function (a) { [].concat(a.give || [], a.place || []).forEach(function (it) { gives[it] = true; }); });
+  var placed = {};
+  ids.forEach(function (id) { (Array.isArray(R[id].items) ? R[id].items : []).forEach(function (it) { placed[it] = placed[it] || id; }); });
+  rep.neverTaken = Object.keys(m.items).filter(function (it) { return !m.items[it].fixed && !held[it]; }).map(function (it) {
+    var why = !placed[it] && !gives[it] ? 'isn\'t in any room, and no action gives or places it'
+      : placed[it] && dist[placed[it]] == null ? 'is in "' + placed[it] + '", which no exit leads to'
+      : 'can\'t be reached: it is behind a lock, in the dark, or only appears after something that never happens';
+    return { id: it, why: why };
+  });
+  rep.win = wins.length > 0;
+  rep.path = rep.win ? pathTo(wins[0]) : null;
+  // backwards from every win: which situations can still reach one?
+  rep.deadEnds = 0; rep.deadPath = null;
+  if (rep.win && !rep.capped) {
+    var good = {}, back = wins.slice();
+    wins.forEach(function (w) { good[w] = true; });
+    while (back.length) { var n = back.shift(); preds[n].forEach(function (p) { if (!good[p]) { good[p] = true; back.push(p); } }); }
+    for (var d = 0; d < nodes.length; d++) {
+      if (!good[d] && !nodes[d].over) { rep.deadEnds++; if (!rep.deadPath) rep.deadPath = pathTo(d); }
+    }
+  }
+  return rep;
+}
+
+// A deliberately broken world, for the "Check a broken example" button.
+var ADV_BROKEN = {
+  title: 'The Broken Lighthouse',
+  start: 'dock',
+  rooms: {
+    dock: { name: 'Dock', text: 'Waves slap the dock. The lighthouse door is north.', exits: { north: 'base' }, items: ['rope'] },
+    base: { name: 'Lighthouse Base', text: 'A spiral stair goes up. A door leads east to the kitchen.', exits: { south: 'dock', east: 'kichen', up: { to: 'lamp_room', needs: 'gold_key', locked: 'A gate blocks the stair. It has a gold lock.' } } },
+    lamp_room: { name: 'Lamp Room', text: 'The great lamp, dark and cold.', exits: { down: 'base' } },
+    cellar: { name: 'Cellar', text: 'Damp and forgotten. Nothing leads here.', exits: { up: 'base' }, items: ['gold_key'] }
+  },
+  items: {
+    rope: { name: 'rope', text: 'A coil of rope.' },
+    gold_key: { name: 'gold key', words: ['key'], text: 'A heavy gold key.' },
+    lamp_oil: { name: 'lamp oil', words: ['oil'], text: 'A can of lamp oil.' }
+  },
+  actions: [
+    { verb: 'light', noun: 'lamp', room: 'lamp_room', needs: 'lamp_oil', set: 'lamp_lit', text: 'The lamp blazes across the sea!' }
+  ],
+  win: { needs: 'lamp_lit', text: 'Ships are safe tonight.' }
+};
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   Lesson page wiring
+   ═════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // build-along: slice the program into its steps
+  var sections = {};
+  window.ADV_MINI_JS.split(/^\/\/ ---- (\w+) ----\n/m).forEach(function (part, i, arr) {
+    if (i % 2 === 1) sections[part] = arr[i + 1].replace(/\n+$/, '');
+  });
+  document.querySelectorAll('[data-mini]').forEach(function (pre) { pre.textContent = sections[pre.dataset.mini] || ''; });
+  var fullDoc = window.ADV_MINI_HEAD + window.ADV_MINI_JS + window.ADV_MINI_TAIL;
+  $('code-skeleton').textContent = window.ADV_MINI_HEAD + '  // …steps 1 to 7 go here…\n' + window.ADV_MINI_TAIL;
+  $('code-full').textContent = fullDoc;
+
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/html' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  $('mini-download').addEventListener('click', function () { download('adventure.html', fullDoc); $('mini-status').textContent = 'Saved adventure.html'; });
+  $('mini-copy').addEventListener('click', function () {
+    var done = function (ok) { $('mini-status').textContent = ok ? 'Copied!' : 'Copy failed. Open "Show the complete program" and select it.'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(fullDoc).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+
+  // map checker report
+  function h(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function report(cfg, label) {
+    var out = $('map-out'), rep = checkAdventure(cfg), names = cfg && cfg.rooms ? cfg.rooms : {};
+    function nm(id) { return names[id] && names[id].name ? names[id].name : id; }
+    out.replaceChildren();
+    out.appendChild(h('h3', null, 'Checking “' + (cfg && cfg.title || 'untitled') + '”' + (label ? ' (' + label + ')' : '')));
+    var ul = h('ul', 'check-list');
+    function item(cls, text) { ul.appendChild(h('li', cls, text)); }
+    rep.problems.forEach(function (p) { item('bad', p); });
+    if (rep.fatal) { item('bad', 'The checker needs a valid "rooms" object and "start" room before it can search.'); out.appendChild(ul); return rep; }
+    out.appendChild(h('p', null, 'Rooms by distance from the start, following every exit and ignoring locks:'));
+    var layers = h('ol', 'bfs-layers');
+    rep.layers.forEach(function (row, d) {
+      var li = h('li'); li.appendChild(h('span', 'bfs-step', d === 0 ? 'Start' : d + (d === 1 ? ' step' : ' steps')));
+      row.forEach(function (id) { li.appendChild(h('span', 'bfs-room', nm(id))); });
+      layers.appendChild(li);
+    });
+    out.appendChild(layers);
+    if (!rep.problems.length) item('good', 'Every exit points to a room that exists, and every name in the config is defined.');
+    if (rep.unreachable.length) rep.unreachable.forEach(function (id) { item('bad', 'Unreachable room: "' + nm(id) + '". No exit leads there from the start.'); });
+    else item('good', 'Every room is connected to the start on the map.');
+    rep.lockedAway.forEach(function (id) { item('bad', '"' + nm(id) + '" is on the map, but the player can never get in: its lock can never be opened.'); });
+    if (rep.neverTaken.length) rep.neverTaken.forEach(function (x) { item('bad', 'Nobody can pick up "' + x.id + '": it ' + x.why + '.'); });
+    else item('good', 'Every item that can be carried can actually be picked up.');
+    if (rep.capped) item('warn', 'This world has more than 20,000 situations, so the search stopped early. The results above may be incomplete.');
+    if (rep.win) item('good', 'The win state can be reached. The shortest walkthrough is ' + rep.path.length + ' commands, found after exploring ' + rep.states + ' situations.');
+    else if (!rep.capped) item('bad', 'The win state can never be reached. BFS explored all ' + rep.states + ' situations the player can get into, and none of them is a win.');
+    if (rep.win && !rep.capped) {
+      if (rep.deadEnds) item('warn', rep.deadEnds + ' situation' + (rep.deadEnds === 1 ? '' : 's') + ' where the player can no longer win. Shortest way into one: ' + rep.deadPath.join(', ') + '. Warn the player, or give them a way back.');
+      else item('good', 'No dead ends: from every situation the player can reach, the game can still be won.');
+    }
+    out.appendChild(ul);
+    if (rep.path) {
+      var det = h('details'), ol = h('ol', 'walk');
+      det.appendChild(h('summary', null, 'Show the shortest walkthrough (spoilers!)'));
+      det.querySelector('summary').style.cssText = 'cursor:pointer;font-weight:700;font-size:0.86rem;';
+      rep.path.forEach(function (c) { ol.appendChild(h('li', null, c)); });
+      det.appendChild(ol); out.appendChild(det);
+    }
+    return rep;
+  }
+  window.ADV_REPORT = report;
+
+  // lab
+  var sel = $('lab-preset'), ta = $('lab-config'), status = $('lab-status'), host = $('lab-game');
+  Object.keys(ADV_PRESETS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = ADV_PRESETS[k].label; sel.appendChild(o); });
+  function loadPreset() { ta.value = JSON.stringify(ADV_PRESETS[sel.value].config, null, 2); run(); }
+  function readConfig() {
+    try { return JSON.parse(ta.value); }
+    catch (e) {
+      var m = /position (\d+)/.exec(e.message), line = m ? ta.value.slice(0, +m[1]).split('\n').length : null;
+      status.className = 'bad'; status.textContent = 'JSON problem' + (line ? ' near line ' + line : '') + ': ' + e.message + '. Look for a missing comma or quote.';
+      return null;
+    }
+  }
+  function run() {
+    var cfg = readConfig(); if (!cfg) return;
+    try { AdventureEngine(host, cfg); status.className = 'ok'; status.textContent = 'Running “' + cfg.title + '”. Type in the box under the story.'; }
+    catch (e) { status.className = 'bad'; status.textContent = e.message; }
+    report(cfg);
+  }
+  sel.addEventListener('change', loadPreset);
+  $('lab-run').addEventListener('click', run);
+  $('lab-reset').addEventListener('click', loadPreset);
+  $('lab-download').addEventListener('click', function () {
+    var cfg = readConfig(); if (!cfg) return;
+    try { AdventureEngine(null, cfg); } catch (e) { status.className = 'bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
+    var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
+    var title = String(cfg.title).replace(/[<>&"]/g, '');
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#050a07;">\n<div id="game" style="max-width:760px;margin:0 auto;"></div>\n<script>\n' +
+      AdventureEngine.toString() + '\nvar CONFIG = ' + json + ';\nAdventureEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</body>\n</html>\n';
+    download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
+    status.className = 'ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
+  });
+  $('map-check').addEventListener('click', function () { var cfg = readConfig(); if (cfg) report(cfg); });
+  $('map-broken').addEventListener('click', function () {
+    $('broken-json').textContent = JSON.stringify(ADV_BROKEN, null, 2);
+    $('broken-wrap').hidden = false;
+    report(ADV_BROKEN, 'broken on purpose');
+  });
+  loadPreset();
+
+  // idea dice
+  var DICE = {
+    setting: ['A lighthouse on a stormy night', 'A museum after closing time', 'A submarine with a jammed hatch', 'A treehouse village', 'A robot factory', 'A castle library', 'A desert dig site', 'A train stuck in the snow', 'Inside a giant computer', 'A greenhouse on the Moon'],
+    goal: ['Escape before morning', 'Find the missing map', 'Restore the power', 'Deliver a message in time', 'Rescue the class pet', 'Get everyone home safely', 'Fix the broken machine', 'Open the time capsule'],
+    twist: ['A light that runs out after 30 turns', 'A character who answers questions', 'Two keys that look alike', 'One room changes after an event', 'A map that draws itself', 'Points for every discovery', 'You can only carry three things', 'A door that only opens at night']
+  };
+  function roll() { ['setting', 'goal', 'twist'].forEach(function (k) { var a = DICE[k]; $('d-' + k).textContent = a[Math.floor(Math.random() * a.length)]; }); }
+  $('dice-roll').addEventListener('click', roll); roll();
+})();
+</script>
+<script src="../../../assets/js/reveal.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script>
+</body>
+</html>

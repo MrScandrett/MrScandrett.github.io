@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roguelike Builder: Make Your Own Rogue · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build a roguelike in about 150 lines of JavaScript: a seeded random number generator, Rogue's 3 × 3 rooms and tunnels, a turn-based loop and monsters that chase. Check the generator with flood fill, balance fights with dice math, walk your dungeon in 3D in our Crawlspace showcase game, and design a spin-off." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .cl-page { padding-bottom: 0; }
+    .ll-viewport { --ll-panel-w: 300px; }
+    :root { --acc: #7c3aed; --acc-soft: rgba(124,58,237,0.09); --acc-border: rgba(124,58,237,0.34); }
+    :root:where([data-lighting="night"]) { --acc: #c4b5fd; --acc-soft: rgba(196,181,253,0.12); --acc-border: rgba(196,181,253,0.4); }
+    @media (prefers-color-scheme: dark) { :root:where(:not([data-lighting])) { --acc: #c4b5fd; } }
+
+    .cl-hero { padding: 0.4rem 0 1.2rem; text-align: left; }
+    .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
+    .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--acc); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .cl-card h3 { margin: 0.9rem 0 0.3rem; font-size: 1rem; }
+    .cl-card p, .cl-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card p { margin: 0 0 0.6rem; }
+    .cl-card p:last-child { margin-bottom: 0; }
+    .cl-card ul, .cl-card ol { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
+    [data-lighting="night"] .cl-card, [data-theme="vaporwave"] .cl-card, [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
+    [data-lighting="night"] .cl-card p, [data-lighting="night"] .cl-card li,
+    [data-theme="vaporwave"] .cl-card p, [data-theme="vaporwave"] .cl-card li,
+    [data-theme="bark"] .cl-card p, [data-theme="bark"] .cl-card li,
+    [data-lighting="night"] .cl-lede, [data-theme="vaporwave"] .cl-lede, [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.74); }
+
+    .step-tag { display: inline-block; background: var(--acc); color: #fff; border-radius: 999px; font-size: 0.72rem; font-weight: 700; padding: 0.12rem 0.65rem; margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+    [data-lighting="night"] .step-tag { color: #1d1d1f; }
+
+    /* The turn loop */
+    .loop-diagram { display: flex; align-items: stretch; justify-content: center; gap: 0.35rem; flex-wrap: wrap; margin: 1rem 0 0.4rem; }
+    .loop-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 10px; padding: 0.55rem 0.8rem; text-align: center; min-width: 96px; flex: 1 1 96px; max-width: 150px; }
+    .loop-box strong { display: block; font-size: 0.84rem; color: var(--acc); }
+    .loop-box small { display: block; font-size: 0.72rem; color: var(--text-muted, #64748b); margin-top: 0.1rem; line-height: 1.35; }
+    .loop-arrow { align-self: center; font-size: 1.2rem; color: var(--text-muted, #64748b); }
+
+    .code-block { background: #0f172a; border-radius: 12px; padding: 0.85rem 1.05rem; margin: 0.7rem 0; overflow-x: auto; max-width: 100%; }
+    .code-block pre { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.78rem; line-height: 1.65; color: #e2e8f0; white-space: pre; }
+    .code-title { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.78rem; font-weight: 700; color: var(--text-muted, #64748b); margin-top: 0.7rem; }
+
+    .callout { border-radius: 12px; padding: 0.8rem 1rem; margin: 0.8rem 0; font-size: 0.85rem; line-height: 1.6; background: var(--acc-soft); border-left: 3px solid var(--acc); color: var(--text-secondary, #3f4f65); }
+    .callout.checkpoint { background: rgba(34,197,94,0.09); border-left-color: #22c55e; }
+    .callout.checkpoint strong { color: #15803d; }
+    [data-lighting="night"] .callout, [data-theme="vaporwave"] .callout, [data-theme="bark"] .callout { color: rgba(245,245,247,0.76); }
+    [data-lighting="night"] .callout.checkpoint strong, [data-theme="vaporwave"] .callout.checkpoint strong, [data-theme="bark"] .callout.checkpoint strong { color: #4ade80; }
+
+    .btn { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--acc); color: #fff; border: none; border-radius: 8px; padding: 0.42rem 0.95rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; color: var(--acc); border: 1.5px solid var(--acc-border); }
+    .btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+    .btn:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    [data-lighting="night"] .btn:not(.ghost), [data-theme="vaporwave"] .btn:not(.ghost), [data-theme="bark"] .btn:not(.ghost) { color: #1d1d1f; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.6rem 0; }
+    .row label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary, #3f4f65); }
+    select, .cl-card input[type=number], .cl-card input[type=text] { font: inherit; font-size: 0.84rem; padding: 0.35rem 0.55rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+
+    /* Dungeon Lab */
+    .lab-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: 0.8rem; }
+    @media (max-width: 960px) { .lab-grid { grid-template-columns: minmax(0, 1fr); } }
+    #lab-config { width: 100%; box-sizing: border-box; min-height: 24rem; max-height: 34rem; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.74rem; line-height: 1.5; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 10px; padding: 0.7rem; resize: vertical; tab-size: 2; }
+    .lab-status { font-size: 0.8rem; margin: 0.4rem 0 0; min-height: 1.3em; font-weight: 600; }
+    .lab-status.ok { color: #15803d; } .lab-status.bad { color: #b91c1c; }
+    [data-lighting="night"] .lab-status.ok { color: #4ade80; } [data-lighting="night"] .lab-status.bad { color: #fca5a5; }
+    .to3d { display: flex; flex-wrap: wrap; gap: 0.5rem 0.8rem; align-items: center; margin: 0.7rem 0 0; padding: 0.6rem 0.8rem; border: 1.5px dashed var(--acc-border); border-radius: 12px; }
+    .to3d p { margin: 0 !important; flex: 1 1 18rem; font-size: 0.82rem !important; }
+
+    .map-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0; }
+    .map-table th, .map-table td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); vertical-align: top; }
+    .map-table th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted,#64748b); }
+    .map-table td.num { font-variant-numeric: tabular-nums; }
+    .table-scroll { overflow-x: auto; }
+    [data-lighting="night"] .map-table td, [data-theme="vaporwave"] .map-table td, [data-theme="bark"] .map-table td { color: rgba(245,245,247,0.76); }
+
+    /* Seeds */
+    .seed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+    .seed-card { background: #0d0b09; border: 1.5px solid #4a3d2c; border-radius: 12px; padding: 0.5rem; color: #f2e6cf; text-align: left; font: inherit; cursor: pointer; }
+    .seed-card:hover { border-color: #e0a84a; }
+    .seed-card canvas, .seed-big canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 6px; }
+    .seed-card b { display: block; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.8rem; margin-top: 0.35rem; color: #ffd98a; }
+    .seed-card small { display: block; font-size: 0.72rem; color: #a89878; }
+    .seed-big { background: #0d0b09; border: 1.5px solid #4a3d2c; border-radius: 12px; padding: 0.6rem; max-width: 34rem; }
+    .seed-nums { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.8rem; color: var(--text,#1d1d1f); background: var(--acc-soft); border-radius: 8px; padding: 0.45rem 0.6rem; margin: 0.4rem 0; overflow-wrap: anywhere; }
+
+    /* Checker */
+    .check-list { list-style: none; padding-left: 0 !important; }
+    .check-list li { padding: 0.25rem 0 0.25rem 1.6rem; position: relative; }
+    .check-list li::before { position: absolute; left: 0.1rem; top: 0.25rem; font-weight: 800; }
+    .check-list li.good::before { content: "✓"; color: #15803d; }
+    .check-list li.bad::before { content: "✗"; color: #b91c1c; }
+    .check-list li.warn::before { content: "!"; color: #a16207; }
+    [data-lighting="night"] .check-list li.good::before { color: #4ade80; } [data-lighting="night"] .check-list li.bad::before { color: #fca5a5; } [data-lighting="night"] .check-list li.warn::before { color: #facc15; }
+    .check-out { margin-top: 0.4rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.3rem 0.9rem; font-size: 0.76rem; color: var(--text-muted,#64748b); margin: 0.3rem 0; }
+    .legend i { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 3px; vertical-align: -0.1rem; margin-right: 0.3rem; }
+
+    /* Crawlspace */
+    .cs-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+    @media (max-width: 900px) { .cs-grid { grid-template-columns: minmax(0, 1fr); } }
+    .cs-grid figure { margin: 0; }
+    .cs-grid img { width: 100%; height: auto; border-radius: 10px; display: block; }
+    .cs-grid figcaption { font-size: 0.8rem; color: var(--text-muted,#64748b); margin-top: 0.35rem; line-height: 1.5; }
+    .cs-frame { width: 100%; height: min(860px, 88vh); border: 1.5px solid #4a3d2c; border-radius: 12px; background: #07060a; display: block; }
+    .credit { font-size: 0.72rem; color: var(--text-muted,#64748b); }
+
+    /* Balance */
+    .fight-out { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: 0.6rem; margin: 0.6rem 0; }
+    .stat-box { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.55rem 0.7rem; }
+    .stat-box small { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--acc); }
+    .stat-box b { display: block; font-size: 1.15rem; color: var(--text,#1d1d1f); font-variant-numeric: tabular-nums; }
+    .stat-box span { display: block; font-size: 0.74rem; color: var(--text-muted,#64748b); line-height: 1.4; }
+
+    .dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin: 0.7rem 0; }
+    @media (max-width: 640px) { .dice { grid-template-columns: minmax(0, 1fr); } }
+    .die { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.7rem 0.8rem; min-height: 4.6rem; }
+    .die small { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--acc); }
+    .die b { display: block; margin-top: 0.2rem; font-size: 0.92rem; color: var(--text, #1d1d1f); }
+    .worksheet textarea { width: 100%; box-sizing: border-box; min-height: 3.4rem; margin: 0.15rem 0 0.6rem; font: inherit; font-size: 0.85rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
+    .worksheet label { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary,#3f4f65); }
+
+    /* Art guide */
+    .art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.7rem; margin: 0.7rem 0; }
+    .art-card { background: var(--acc-soft); border: 1.5px solid var(--acc-border); border-radius: 12px; padding: 0.6rem 0.7rem 0.7rem; }
+    .art-slot { display: flex; align-items: center; justify-content: center; max-width: 100%; margin: 0 auto 0.5rem; border: 2px dashed var(--acc-border); border-radius: 6px; font-size: 0.7rem; font-weight: 700; color: var(--acc); background: rgba(255,255,255,0.35); }
+    .art-card h4 { margin: 0; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+    .art-card p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.5; }
+    .art-tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.05rem 0.45rem; border-radius: 999px; border: 1.5px solid var(--acc-border); color: var(--acc); }
+    .art-tag.must { background: var(--acc); color: #fff; }
+    [data-lighting="night"] .art-tag.must { color: #1d1d1f; }
+    .art-count { font-size: 0.95rem; font-weight: 700; color: var(--text, #1d1d1f); }
+    .art-check { list-style: none; padding-left: 0 !important; }
+    .art-check li { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.15rem 0; }
+    .art-check input { margin-top: 0.3rem; flex: none; }
+
+    @media print {
+      .lab-grid, .cs-grid { grid-template-columns: minmax(0, 1fr); }
+      #lab-config { max-height: none; }
+      .cs-frame, .to3d, #cs-play-row { display: none !important; }
+      .seed-card, .seed-big { background: #fff !important; }
+    }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="cl-page">
+
+        <section class="hero cl-hero">
+          <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
+          <h1>Roguelike Builder: Make Your Own Rogue</h1>
+          <div class="cl-hero-meta">
+            <span>Procedural generation</span><span class="dot"></span>
+            <span>Seeds</span><span class="dot"></span>
+            <span>Turn-based loop</span><span class="dot"></span>
+            <span>Flood fill</span><span class="dot"></span>
+            <span>Dice math</span><span class="dot"></span>
+            <span>Crawlspace in 3D</span>
+          </div>
+          <p class="cl-lede">Every time you start <em>Rogue</em>, the computer builds you a new dungeon: new rooms, new tunnels, new monsters in new places. Nobody drew it. A few rules and one number made it, and the same number will make exactly the same dungeon again. That number is called a <strong>seed</strong>. In this lesson you build a whole roguelike in about 150 lines of JavaScript, check your dungeon generator with an algorithm, balance the fights with dice math, and design a spin-off. Our showcase game <a href="../../../apps/crawlspace/index.html">Crawlspace</a> uses the same generator, so if you keep Crawlspace's rules, you can also walk through your dungeon in 3D.</p>
+        </section>
+        <div data-game-route="code:roguelike"></div>
+
+        <!-- 1. Why it works -->
+        <section class="cl-card" id="why">
+          <h2>1 · Why this game works</h2>
+          <p>A <span data-glossary="roguelike">roguelike</span> is a game like <em>Rogue</em> (1980): you explore a dungeon on a grid, one move at a time, and when you die you start again in a brand-new dungeon. Three ideas make it work, and none of them need art.</p>
+          <ul>
+            <li><strong>The dungeon is made by rules, not drawn.</strong> This is <span data-glossary="procedural generation">procedural generation</span>. Rogue splits the map into a 3 × 3 grid, puts one room in each cell, and digs a tunnel between neighbouring rooms. Nine rooms, twelve tunnels, a new layout every game.</li>
+            <li><strong>A seed names a dungeon.</strong> Computers can't really roll dice. They use a <span data-glossary="pseudorandom number generator">pseudorandom number generator</span>, a formula that turns one starting number, the <span data-glossary="random seed">seed</span>, into a long list of numbers that look random. Same seed, same list, same dungeon. That lets you share a dungeon with a friend, or test the same one over and over.</li>
+            <li><strong>The world waits for you.</strong> A roguelike is <span data-glossary="turn-based">turn-based</span>. Nothing moves until you do. Then every monster gets one move. Everything stands on whole squares, so the whole game is a grid of characters and a few lists.</li>
+          </ul>
+          <p>The program repeats one loop, once for every key you press:</p>
+          <div class="loop-diagram" role="img" aria-label="Turn loop: take a seed, generate the level from it, wait for the player's move, let each monster move, update what the player can see, then wait again. Stairs mean a new level from the next seed.">
+            <div class="loop-box"><strong>Seed</strong><small>one number names the level</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Generate</strong><small>rooms, tunnels, monsters, gold</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Your move</strong><small>walk, or bump to attack</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Their move</strong><small>each awake monster steps or hits</small></div><span class="loop-arrow" aria-hidden="true">→</span>
+            <div class="loop-box"><strong>Look</strong><small>light the room you're in</small></div>
+          </div>
+          <p style="text-align:center;font-size:0.75rem;color:var(--text-muted,#64748b);">…then wait for the next key. Take the stairs and the loop starts again from a new seed. Die and the run is over: that's <span data-glossary="permadeath">permadeath</span>, and it is why every run is short and every dungeon is new.</p>
+        </section>
+
+        <!-- 2. Play + edit -->
+        <section class="cl-card" id="lab">
+          <span class="step-tag">TRY IT FIRST</span>
+          <h2>2 · The Dungeon Lab: play it, then break it</h2>
+          <p>This is the finished engine. It plays by Crawlspace's rules, and everything it knows lives in the <strong>config</strong> under the game. Pick a preset and play. Click the map first, then use the arrow keys (or the buttons, on a tablet). Walk into a monster to fight it, find the <code>&gt;</code> and press <kbd>&gt;</kbd> to go deeper. Then change something small in the config and press <strong>Run my dungeon</strong>.</p>
+          <div class="row">
+            <label for="lab-preset">Start from</label>
+            <select id="lab-preset"></select>
+            <button class="btn" id="lab-run" type="button">▶ Run my dungeon</button>
+            <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
+            <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+          </div>
+          <div id="lab-game" data-night-keep data-memory-ignore aria-label="Roguelike game"></div>
+          <div class="to3d">
+            <p id="to3d-text" role="status" aria-live="polite"></p>
+            <a class="btn" id="to3d-link" href="../../../apps/crawlspace/index.html">🕯 Walk it in Crawlspace (3D)</a>
+          </div>
+          <div class="lab-grid">
+            <div>
+              <label for="lab-config" style="position:absolute;left:-9999px;">Dungeon config</label>
+              <textarea id="lab-config" spellcheck="false" aria-describedby="lab-status" data-memory-ignore></textarea>
+              <p id="lab-status" class="lab-status" role="status" aria-live="polite"></p>
+            </div>
+            <div class="callout" style="margin-top:0;">
+              <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. If something is wrong, the line under the config tells you what.
+              <ul>
+                <li><code>"seed"</code> names the dungeon. Any word or number works. Change one letter and the whole dungeon changes.</li>
+                <li><code>"dungeon"</code> is the generator: <code>"grid"</code> (Rogue's rooms), <code>"bsp"</code> (rooms from cutting the map in half again and again) or <code>"caves"</code> (cellular automata). <code>"cols"</code> and <code>"rows"</code> are the map size, and <code>"grid": [3, 3]</code> is how many rooms across and down.</li>
+                <li><code>"sight"</code> is <code>"room"</code> (Rogue: a room lights up when you walk in) or a number of squares you can see in every direction.</li>
+                <li>Each of the <code>"monsters"</code> <code>"types"</code> has a letter <code>"ch"</code>, <code>"hp"</code> (hit points), <code>"atk"</code> (it hits for 1 up to atk), <code>"xp"</code> (you get xp × 3 gold for beating it) and <code>"minDepth"</code>, the first depth it appears on. <code>"wakeRange"</code> is how close you get before monsters notice you.</li>
+                <li><code>"player"</code> sets your starting <code>"hp"</code>, <code>"atk"</code> and <code>"potions"</code>, and <code>"perLevel"</code> is how much you grow on each new depth.</li>
+                <li><code>"goal": { "depth": 5 }</code> means reaching depth 5 wins. <code>0</code> means go as deep as you can.</li>
+                <li><code>"words"</code> and <code>"glyphs"</code> re-skin the game: call gold "crystals" and draw it as <code>*</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Seeds -->
+        <section class="cl-card" id="seeds">
+          <span class="step-tag">THE BIG IDEA</span>
+          <h2>3 · Seeds: same seed, same dungeon</h2>
+          <p>A <span data-glossary="pseudorandom number generator">pseudorandom number generator</span> is a recipe. Start with a number, scramble it with multiplication and bit shifts, hand out the result, then scramble <em>that</em> to get the next one. The numbers look random, but each one is completely decided by the one before it, all the way back to the seed. The dungeon generator asks for a number every time it needs a choice: how wide is this room? Where does it go? Which monster? So the seed decides every choice.</p>
+          <div class="row">
+            <label for="seed-in">Type a seed</label>
+            <input type="text" id="seed-in" value="lantern" maxlength="40" style="width:12rem" />
+            <button class="btn ghost" id="seed-send" type="button">Play this seed in the Lab ↑</button>
+          </div>
+          <div class="seed-nums" id="seed-nums" aria-live="polite"></div>
+          <div class="seed-big" data-present="off"><canvas id="seed-canvas" width="272" height="84" role="img" aria-label="Map of the dungeon this seed makes"></canvas></div>
+          <h3>Change one letter, change everything</h3>
+          <p>These six seeds are almost the same words, and their dungeons have nothing in common. A good generator spreads every tiny change across the whole result. Press any map to play it in the Lab.</p>
+          <div class="seed-grid" id="seed-grid" data-present="off"></div>
+          <h3>Why every level gets its own seed</h3>
+          <p>Fights use random numbers too. If depth 2 were made from the same list of numbers as depth 1's fights, then how many swings you took on depth 1 would change what depth 2 looks like, and two players with the same seed would see different dungeons. So the game mixes the run's seed with the depth number and gives each level its own seed. Minecraft does the same with chunks of its world, and the daily puzzles on our home page do it with today's date: everyone gets the same crossword because everyone's generator starts from the same day.</p>
+          <div class="table-scroll"><table class="map-table" id="level-seeds"></table></div>
+        </section>
+
+        <!-- 4. Build it -->
+        <section class="cl-card" id="build">
+          <span class="step-tag">BUILD IT</span>
+          <h2>4 · Build the engine yourself in eight steps</h2>
+          <p>The Lab has extras (three generators, line of sight, potions, goals). To understand it, first build the <strong>core</strong>: Rogue's nine rooms, tunnels, a few monsters, gold, and stairs. Make a file called <code>rogue.html</code>, paste the page skeleton below, then add each step inside its <code>&lt;script&gt;</code> tag in order. After every step, save, reload, and try it. Don't move on until the checkpoint works.</p>
+          <div class="code-title"><span>Page skeleton</span></div>
+          <div class="code-block"><pre id="code-skeleton"></pre></div>
+
+          <h3>Step 1 · A random number generator with a seed</h3>
+          <p><code>Math.random()</code> gives a different number every time, and you can't make it repeat. So write your own. This one is called <strong>mulberry32</strong>: a few lines of multiplying and shifting that turn a seed into a list of numbers between 0 and 1. <code>rnd(1, 6)</code> uses it to roll a whole number, like a die.</p>
+          <div class="code-block"><pre data-mini="random"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Open the browser console (F12) and type <code>rnd(1, 6)</code> five times. Write the numbers down. Reload the page and do it again: you get the same five. Now change <code>SEED</code> to <code>7</code>, reload, and you get a different five.</div>
+
+          <h3>Step 2 · Carve nine rooms</h3>
+          <p>The map is a list of rows, and each row is a list of characters. Start with solid rock (<code>" "</code>) everywhere. Cut the map into a 3 × 3 grid of cells, and in each cell carve a room of floor (<code>"."</code>) with a random size and position. Every random choice comes from <code>rnd()</code>, so the seed decides them all.</p>
+          <div class="code-block"><pre data-mini="rooms"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> In the console, run <code>carveRooms(); console.log(map.map(row =&gt; row.join("")).join("\n"))</code>. You should see nine rectangles of dots in three rows.</div>
+
+          <h3>Step 3 · Dig the tunnels</h3>
+          <p>Join each room to the room on its right and the room below it, centre to centre. <code>dig()</code> walks sideways until it lines up, then up or down, and turns any rock it passes into tunnel (<code>"#"</code>). That makes twelve tunnels, and every room is connected to every other room.</p>
+          <div class="code-block"><pre data-mini="tunnels"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Run <code>carveRooms(); digTunnels();</code> and print the map again. Tunnels of <code>#</code> should join every room to its neighbours. Why does <code>dig()</code> check for <code>" "</code> before writing <code>"#"</code>?</div>
+
+          <h3>Step 4 · Put things in the dungeon</h3>
+          <p><code>newLevel()</code> builds a whole level. It starts a fresh random generator from the seed <em>and</em> the depth, so every level is different but repeatable. The player starts in the middle of the first room, and the stairs go in the middle of the last one. Monsters and gold go on empty floor in any room except the first, so you never wake up next to a monster. Deeper levels have more monsters, and tougher kinds.</p>
+          <div class="code-block"><pre data-mini="things"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Run <code>player = { x: 0, y: 0, hp: 20, atk: 3, gold: 0 }; depth = 1; newLevel(); monsters</code>. You should see four monsters, each with a position. Run <code>newLevel(); monsters</code> again: the same four, in the same places.</div>
+
+          <h3>Step 5 · Draw it</h3>
+          <p>Drawing is just building one long string: for every square, write the player if they are there, else a monster, else gold, else the map character. The game data and the picture are separate. Crawlspace draws exactly the same data as stone and torchlight instead.</p>
+          <div class="code-block"><pre data-mini="draw"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Run <code>draw()</code>. The dungeon appears on the page with <code>@</code>, monster letters and <code>$</code>, and a status line under it.</div>
+
+          <h3>Step 6 · Your turn</h3>
+          <p>One key is one turn. If the square you step toward has a monster, you attack it instead of moving: this is called <strong>bump to attack</strong>, and it means fighting needs no extra keys. If the square is floor, you move, and you pick up any gold there. If it's rock, nothing happens, and that doesn't use up a turn.</p>
+          <div class="code-block"><pre data-mini="turn"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Run <code>playerTurn(1, 0)</code> a few times. The <code>@</code> walks right and the turn counter goes up. Walk into a wall: "Solid rock," and the turn counter doesn't change.</div>
+
+          <h3>Step 7 · The monsters' turn</h3>
+          <p>After every move of yours, each monster gets one. A monster more than 8 steps away is asleep. A monster next to you (diagonals count) attacks. Otherwise it steps toward you: diagonally if it can, else sideways, else up or down. That's the whole monster brain, and it's the same one Crawlspace uses.</p>
+          <div class="code-block"><pre data-mini="monsters"></pre></div>
+
+          <h3>Step 8 · Keys, stairs and starting again</h3>
+          <p>Connect the keys. Arrow keys move, and so do Rogue's own letters: <kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd>, with <kbd>y</kbd> <kbd>u</kbd> <kbd>b</kbd> <kbd>n</kbd> for diagonals. They were the arrow keys printed on the terminals Rogue was written on. <kbd>&gt;</kbd> on the stairs makes the next level and makes you a little stronger.</p>
+          <div class="code-block"><pre data-mini="play"></pre></div>
+          <div class="callout checkpoint"><strong>Checkpoint:</strong> Play it! Reach depth 3. Die on purpose and press <kbd>R</kbd>: it's the same dungeon, because the seed didn't change. Change <code>SEED</code> and reload for a new one. Then try a monster that hits harder, or a fourth kind.</div>
+
+          <div class="row">
+            <button class="btn" id="mini-download" type="button">⬇ Download the finished rogue.html</button>
+            <button class="btn ghost" id="mini-copy" type="button">Copy the whole program</button>
+            <span id="mini-status" role="status" aria-live="polite" style="font-size:0.8rem;font-weight:600;"></span>
+          </div>
+          <details>
+            <summary style="cursor:pointer;font-weight:700;font-size:0.86rem;">Show the complete program</summary>
+            <div class="code-block"><pre id="code-full"></pre></div>
+          </details>
+        </section>
+
+        <!-- 5. Inside Crawlspace -->
+        <section class="cl-card" id="crawlspace">
+          <span class="step-tag">FROM OUR SHOWCASE</span>
+          <h2>5 · Inside Crawlspace: the same engine in stone</h2>
+          <div class="cs-grid">
+            <figure data-zoomable>
+              <img src="../../../assets/thumbs/showcase/shots/crawlspace.webp" alt="Crawlspace: a torch-lit 3D stone dungeon seen from above at an angle, with a small parchment map of characters in the corner" loading="lazy" width="1200" height="750" />
+              <figcaption><strong>Crawlspace (Mr. Scandrett).</strong> Under the stone it is Rogue: a 3 × 3 grid of rooms, whole-number squares, dice-roll fights, one turn per key. The parchment map in the corner is the same dungeon drawn in characters, like your Lab. <span class="credit" data-no-glossary>Screenshot: ClassroomOS showcase.</span></figcaption>
+            </figure>
+            <div>
+              <p><a href="../../../apps/crawlspace/index.html">Crawlspace</a> is a roguelike in our showcase. It looks nothing like your <code>rogue.html</code>: every stone, flame and creature is a 3D model built from simple shapes when the page loads. But its <em>game</em> is the one you just wrote, and since this lesson it gets its dungeons from the same generator file as the Lab: <code>assets/js/rogue-dungeon.js</code>. Here is where it asks for a level:</p>
+              <div class="code-block"><pre data-crawlspace-quote>function generateLevel() {
+  const level = RogueDungeon.generate(RULES, seed, depth);
+  tiles = level.tiles;
+  rooms = level.rooms;
+  monsters = level.monsters;
+  items = level.items;</pre></div>
+              <p>So a seed is a real name for a dungeon in both games. Play the Crawlspace preset in the Lab, press <strong>Walk it in Crawlspace</strong>, and you arrive in the same rooms with the monsters in the same places. Only the fights differ: Crawlspace rolls fresh dice in each fight.</p>
+            </div>
+          </div>
+
+          <h3>Find your code in Crawlspace</h3>
+          <p>Every rule from steps 6 and 7 is in <a href="../../../apps/crawlspace/index.html">Crawlspace</a>'s <code>script.js</code>, almost word for word. These lines are copied straight from it:</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Rogue's rule</th><th scope="col">In Crawlspace's code</th><th scope="col">In your rogue.html</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Bump to attack</th><td><div class="code-block" style="margin:0"><pre data-crawlspace-quote>  const target = monsterAt(nx, ny);
+  if (target) {
+    const dmg = rnd(1, player.atk);
+    target.hp -= dmg;</pre></div></td><td>Step 6, <code>if (m) { … }</code></td></tr>
+              <tr><th scope="row">Walls cost no turn</th><td><div class="code-block" style="margin:0"><pre data-crawlspace-quote>  if (!isWalkable(nx, ny)) {
+    message = "You bump into cold stone.";
+    return; // doesn't cost a turn
+  }</pre></div></td><td>Step 6, <code>return draw();</code></td></tr>
+              <tr><th scope="row">Far monsters sleep</th><td><div class="code-block" style="margin:0"><pre data-crawlspace-quote>    if (dist &gt; 9) continue; // asleep / out of range, like Rogue's wandering monsters</pre></div></td><td>Step 7, <code>if (away &gt; 8 …) continue;</code></td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>The rule that makes the 3D possible</h3>
+          <p>Halfway down Crawlspace's code there is a line every game programmer should know:</p>
+          <div class="code-block"><pre data-crawlspace-quote> * Nothing past this line writes to the simulation. It reads the same tiles,
+ * monsters, items and player the loop above owns, and rebuilds its own scene
+ * when it notices those have been replaced.</pre></div>
+          <p>The top half is the <strong>simulation</strong>: the grid, the turn loop, the dice. The bottom half is the <strong>renderer</strong>: it only <em>reads</em> the simulation and draws it. Because the two are kept apart, the same game can be drawn as characters (your Lab, and Crawlspace's parchment map) or as stone (Crawlspace's 3D view) without changing a single rule. The renderer even keeps its own copy of where each model is, so creatures can glide between squares while the game still thinks in whole squares:</p>
+          <div class="code-block"><pre data-crawlspace-quote>// Rendered positions, kept apart from logical ones so models walk between
+// cells instead of teleporting. The simulation never reads any of this.</pre></div>
+          <p>Rogue's lighting survives too. Rogue remembered which squares you had <em>seen</em> and which you can see <em>now</em>. Your Lab draws remembered squares dim. Crawlspace paints the same two states onto the stone: lit by flame if you can see it now, cold and blue if you only remember it.</p>
+
+          <div class="row" id="cs-play-row">
+            <button class="btn" id="cs-play" type="button">▶ Play Crawlspace here</button>
+            <a class="btn ghost" id="cs-open" href="../../../apps/crawlspace/index.html">Open it on its own page</a>
+            <span style="font-size:0.8rem;color:var(--text-muted,#64748b);">Click inside the game, then use the arrow keys.</span>
+          </div>
+          <div id="cs-host"></div>
+        </section>
+
+        <!-- 6. Check the generator -->
+        <section class="cl-card" id="check">
+          <span class="step-tag">THINK LIKE A COMPUTER SCIENTIST</span>
+          <h2>6 · Check your generator with flood fill</h2>
+          <p>A generator makes thousands of dungeons, and you can only play a few. What if seed 4,107 puts the stairs somewhere you can't reach? Nobody would find out until a player got stuck. So programmers write a <strong>checker</strong>: a program that builds hundreds of dungeons and tests each one. The test is a <span data-glossary="floodfill">flood fill</span>, the same idea as the paint-bucket tool. Start at the player, and spread to every square you can walk to, one step at a time. Any floor the flood never reaches is cut off.</p>
+          <p>If you count the steps as the flood spreads, you get a <span data-glossary="distance map">distance map</span>: every square holds its number of steps from the start. That is <span data-glossary="breadth-first search">breadth-first search</span>, with a queue (a list where you add at the back and take from the front):</p>
+          <div class="code-block"><pre>function distanceMap(start) {
+  const dist = map.map(row =&gt; row.map(() =&gt; -1));   // -1 means "not reached yet"
+  dist[start.y][start.x] = 0;
+  const queue = [start];
+  while (queue.length) {
+    const here = queue.shift();                      // take from the front
+    for (let dy = -1; dy &lt;= 1; dy++) {
+      for (let dx = -1; dx &lt;= 1; dx++) {
+        const x = here.x + dx, y = here.y + dy;
+        if (walkable(x, y) &amp;&amp; dist[y][x] === -1) {
+          dist[y][x] = dist[here.y][here.x] + 1;
+          queue.push({ x: x, y: y });                // add to the back
+        }
+      }
+    }
+  }
+  return dist;   // if dist[stairs.y][stairs.x] is -1, the stairs can't be reached
+}</pre></div>
+          <p>Turn on <strong>Distance map</strong> under the Lab game to watch it: blue squares are near you and red ones are far away. The generator uses the same map to put the stairs in the room <em>farthest</em> from the start (the <code>"farthest"</code> option), so every level makes you cross it. Monsters can use it too: a monster that always steps to a square with a smaller number will find you around any corner.</p>
+          <div class="row">
+            <button class="btn" id="check-run" type="button">🔍 Check the Lab's rules on 300 dungeons</button>
+            <button class="btn ghost" id="check-broken" type="button">🧪 Check a broken cave generator</button>
+          </div>
+          <div id="check-out" class="check-out" role="status" aria-live="polite"></div>
+          <h3>Why caves need the flood fill</h3>
+          <p>Rogue's grid can't fail: the tunnels join every room to its neighbours. Caves are different. The <span data-glossary="cellular automaton">cellular automaton</span> starts with random rock (about 45%), then smooths it four times with one rule: a square becomes rock if 5 or more of the 9 squares around it (including itself) are rock. The noise settles into smooth caverns, but some are sealed off. The fix is two lines of thinking: flood fill every cave, keep only the biggest, and fill the others with rock. Then put the stairs at the far end of the distance map. The broken example skips both fixes. Check it and count the dungeons a player could never finish.</p>
+          <p>Our generator also splits maps with <span data-glossary="binary space partitioning">binary space partitioning</span> (<code>"bsp"</code>): cut the map in two, cut each half in two, and keep going until the pieces are small. One room goes in each piece, and a tunnel joins the two halves of every cut, so it is always connected, like Rogue's grid.</p>
+        </section>
+
+        <!-- 7. Balance -->
+        <section class="cl-card" id="balance">
+          <span class="step-tag">DICE MATH</span>
+          <h2>7 · Balance the fights with dice math</h2>
+          <p>A hit does <code>rnd(1, atk)</code> damage: any whole number from 1 to atk, all equally likely. The average of 1, 2 and 3 is 2. The average of 1 to 5 is 3. In general, the average hit, the <span data-glossary="expected value">expected value</span>, is <strong>(1 + atk) ÷ 2</strong>. That one formula is enough to <span data-glossary="game balance">balance</span> a roguelike:</p>
+          <ul>
+            <li><strong>Swings to win ≈ monster hp ÷ your average hit.</strong> A troll (16 hp) against attack 3 (average 2) takes about 8 swings.</li>
+            <li><strong>Damage you take ≈ (swings − 1) × its average hit.</strong> You swing first, so the monster gets one fewer turn. The troll hits for 3 on average, so about 7 × 3 = 21. That's more than your 20 hp at the start, which is why trolls only appear from depth 5.</li>
+          </ul>
+          <p>Averages hide bad luck, though. To see the luck, run a <span data-glossary="Monte Carlo simulation">Monte Carlo simulation</span>: let the computer play the same fight 10,000 times and count what happens. The calculator below reads the monsters and player from the Lab config, so if you change a monster there, its numbers change here.</p>
+          <div class="row">
+            <label for="fight-mon">Monster</label><select id="fight-mon"></select>
+            <label for="fight-depth">On depth</label><input id="fight-depth" type="number" value="1" min="1" max="30" style="width:4.5rem" />
+            <button class="btn" id="fight-run" type="button">⚔ Fight it 10,000 times</button>
+          </div>
+          <div class="fight-out" id="fight-out" aria-live="polite"></div>
+          <div class="table-scroll"><table class="map-table" id="fight-table"></table></div>
+          <p>Things to notice: an average can be safe while one fight in twenty goes badly, and that is where the elixirs matter. And the player grows on every level while the monsters don't, so each monster has a depth where it stops being scary. A good <code>minDepth</code> makes each monster arrive just before that.</p>
+        </section>
+
+        <!-- 8. Spin-offs -->
+        <section class="cl-card" id="spinoffs">
+          <span class="step-tag">YOUR TWIST</span>
+          <h2>8 · Design your spin-off</h2>
+          <p>A good spin-off keeps the <em>structure</em> (a seeded generator, turns, bump to attack, stairs, permadeath) and changes the <em>world</em>: its generator, its monsters, its words and its goal. The Lab's presets are spin-offs of Crawlspace. Fill in the last column.</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Part of the game</th><th scope="col">Crawlspace</th><th scope="col">Sunken Library</th><th scope="col">Crystal Caves</th><th scope="col">Bug Hunt</th><th scope="col">Your spin-off</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">The world</th><td>A dungeon under the house</td><td>A library sinking into a lake</td><td>Caves full of glowing crystals</td><td>The inside of an infected computer</td><td>?</td></tr>
+              <tr><th scope="row">Generator</th><td><code>grid</code> 3 × 3</td><td><code>bsp</code></td><td><code>caves</code></td><td><code>grid</code> 4 × 3</td><td>?</td></tr>
+              <tr><th scope="row">Sight</th><td>The room you're in</td><td>The room you're in</td><td>7 squares</td><td>The room you're in</td><td>?</td></tr>
+              <tr><th scope="row">Weakest / toughest</th><td>rat <code>r</code> / troll <code>T</code></td><td>bookworm <code>w</code> / dust golem <code>G</code></td><td>cave bat <code>b</code> / cave troll <code>T</code></td><td>bug <code>b</code> / worm <code>W</code></td><td>?</td></tr>
+              <tr><th scope="row">Treasure</th><td>gold <code>$</code></td><td>pages <code>?</code></td><td>crystals <code>*</code></td><td>data <code>$</code></td><td>?</td></tr>
+              <tr><th scope="row">Goal</th><td>None: go as deep as you dare</td><td>Reach depth 5</td><td>Reach depth 6</td><td>Reach depth 4</td><td>?</td></tr>
+            </tbody>
+          </table>
+          </div>
+
+          <h3>Not sure where to start? Roll the idea dice.</h3>
+          <div class="dice" aria-live="polite">
+            <div class="die"><small>Setting</small><b id="d-setting">…</b></div>
+            <div class="die"><small>Who you are</small><b id="d-hero">…</b></div>
+            <div class="die"><small>The twist</small><b id="d-twist">…</b></div>
+          </div>
+          <div class="row"><button class="btn" id="dice-roll" type="button">🎲 Roll the dice</button><span style="font-size:0.8rem;color:var(--text-muted,#64748b);">Roll until something makes you curious, then put it in your design sheet.</span></div>
+
+          <h3>Twists that change the rules, not just the words</h3>
+          <ul>
+            <li><strong>A hunger clock:</strong> food runs down every turn. Now exploring costs something, and you can't wait in a corner forever.</li>
+            <li><strong>A daily dungeon:</strong> make the seed from today's date, so the whole class plays the same dungeon and compares scores.</li>
+            <li><strong>Monsters that don't fight:</strong> a thief that steals gold and runs, or a slime that splits in two when hit.</li>
+            <li><strong>A light that shrinks:</strong> your sight radius goes down by one every 50 turns until you find oil.</li>
+            <li><strong>Pacifist run:</strong> no attacking at all. Sneak past, and score points for the monsters you never woke.</li>
+            <li><strong>Mixed generators:</strong> grid on depths 1 to 3, caves below, so the dungeon changes as you go deeper.</li>
+          </ul>
+
+          <h3>Design sheet</h3>
+          <div class="worksheet">
+            <label for="ws-pitch">Pitch (one sentence): "You are ___ going down into ___ to ___."</label>
+            <textarea id="ws-pitch"></textarea>
+            <label for="ws-gen">Generator: which one, how big, and why it suits your world</label>
+            <textarea id="ws-gen"></textarea>
+            <label for="ws-mon">Monsters: letter, name, hp, atk, xp, and the first depth for each (check them with the fight calculator)</label>
+            <textarea id="ws-mon"></textarea>
+            <label for="ws-words">Words and glyphs: what you call gold, potions, stairs and walls, and the characters that draw them</label>
+            <textarea id="ws-words"></textarea>
+            <label for="ws-goal">Goal: the depth that wins, or a score to beat</label>
+            <textarea id="ws-goal"></textarea>
+            <label for="ws-twist">Your twist: the one rule that makes this game different</label>
+            <textarea id="ws-twist"></textarea>
+          </div>
+          <p>When the sheet is done, put it in the Lab config, run the generator checker until it finds nothing wrong, and test every monster in the fight calculator.</p>
+        </section>
+
+        <!-- 9. Art guide -->
+        <section class="cl-card" id="art">
+          <span class="step-tag">YOUR ART</span>
+          <h2>9 · Art guide: what you need to draw</h2>
+          <p>Rogue shipped with no art at all, and it is still played. So make the game work in characters first. When you add art, draw <strong>tiles</strong>: small squares that each stand for one character. Make a list before you open a drawing tool. Draw every <span class="art-tag must">Must</span> first (the game can ship with only those), then <span class="art-tag">Should</span>, then <span class="art-tag">Bonus</span>.</p>
+          <div class="art-grid">
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>Floor, tunnel, wall <span class="art-tag must">Must</span></h4><p><strong>3 tiles</strong> · <code>.</code> <code>#</code> and rock. Keep them quiet and dark so everything standing on them stands out.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>Stairs <span class="art-tag must">Must</span></h4><p><strong>1 tile</strong> · The most important square on every level. Make it the brightest thing on the floor.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>The player <span class="art-tag must">Must</span></h4><p><strong>1 tile</strong> · Readable at a glance in a crowd. One colour no monster uses.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>Monsters <span class="art-tag must">Must</span></h4><p><strong>1 per monster type</strong> · Make tougher monsters look bigger or brighter, so players can judge danger before they fight.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>Treasure and potions <span class="art-tag must">Must</span></h4><p><strong>2 tiles</strong> · Gold and elixir. Warm colours that say "pick me up".</p></div>
+            <div class="art-card"><div class="art-slot" style="width:64px;height:64px" aria-hidden="true">32 × 32</div><h4>Floor variants <span class="art-tag">Should</span></h4><p><strong>2 to 4 per floor tile</strong> · Cracks and moss, picked at random from the square's position (like Crawlspace's stones), so big rooms don't look like wallpaper.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:110px;height:24px" aria-hidden="true">16 × 16 icons</div><h4>HUD icons <span class="art-tag">Should</span></h4><p><strong>5 icons</strong> · Health, attack, gold, potions, depth. Small, so keep the shapes simple.</p></div>
+            <div class="art-card"><div class="art-slot" style="width:150px;height:84px" aria-hidden="true">1280 × 720</div><h4>Title and game-over screens <span class="art-tag">Bonus</span></h4><p><strong>2 pictures</strong> · The game-over screen shows the seed, so players can try the same dungeon again.</p></div>
+          </div>
+
+          <h3>How many tiles is your game?</h3>
+          <div class="row">
+            <label for="art-mon">Monster types</label><input id="art-mon" type="number" value="5" min="1" max="40" style="width:4.5rem" />
+            <label for="art-var">Variants per floor tile</label><input id="art-var" type="number" value="3" min="1" max="8" style="width:4.5rem" />
+          </div>
+          <p class="art-count" id="art-out" aria-live="polite"></p>
+
+          <ul>
+            <li><strong>One size, one grid.</strong> Every tile is the same size (16 × 16 or 32 × 32), because the game is a grid. Draw on a canvas that size, never bigger and shrunk down.</li>
+            <li><strong>Pick a palette first.</strong> Five to eight colours, written down as hex codes. Crawlspace's parchment map uses only seven, and the Lab copies them.</li>
+            <li><strong>Shape before colour.</strong> Some players can't tell red from green. A monster should be recognisable by its outline (or its letter) alone.</li>
+            <li><strong>Remembered squares look different.</strong> Plan a dim version of each floor tile for places the player has seen but can't see now, or draw the remembered map with a dark overlay.</li>
+            <li><strong>Only your own art.</strong> If you use something you didn't make, write down who made it and the license.</li>
+          </ul>
+          <p>Swap characters for tiles without touching the rules: keep a table from character to picture, like <code>const TILES = { "#": "art/tunnel.png", "r": "art/rat.png" }</code>, and draw <code>TILES[ch]</code> on a <code>&lt;canvas&gt;</code> at <code>x * 32, y * 32</code>. The <a href="ascii-art-and-games.html">ASCII Art &amp; Rogue</a> lesson has a demo that switches between characters and tiles. Where to draw: <a href="../../2d-game-dev/pixel-art-sprites.html">Pixel Art &amp; Sprites</a>, <a href="../../2d-game-dev/tilesets-tilemaps.html">Tilesets &amp; Tilemaps</a>, or <a href="../../web-design/web-studio.html">Web Studio</a> Draw mode.</p>
+          <ul class="art-check">
+            <li><input type="checkbox" id="ac1" /><label for="ac1">My palette (5 to 8 hex colours) is written down</label></li>
+            <li><input type="checkbox" id="ac2" /><label for="ac2">Floor, tunnel, wall and stairs tiles</label></li>
+            <li><input type="checkbox" id="ac3" /><label for="ac3">The player, readable in a crowd</label></li>
+            <li><input type="checkbox" id="ac4" /><label for="ac4">A tile for every monster type, with tougher ones looking tougher</label></li>
+            <li><input type="checkbox" id="ac5" /><label for="ac5">Treasure and potion tiles</label></li>
+            <li><input type="checkbox" id="ac6" /><label for="ac6">A dim look for remembered squares</label></li>
+            <li><input type="checkbox" id="ac7" /><label for="ac7">Credits written for anything I didn't draw myself</label></li>
+          </ul>
+          <div class="worksheet">
+            <label for="ws-art">Art plan: my tile size, my palette, and the tile I will draw first</label>
+            <textarea id="ws-art"></textarea>
+          </div>
+        </section>
+        <script>
+        (function () {
+          var mon = document.getElementById('art-mon'), vr = document.getElementById('art-var'), out = document.getElementById('art-out');
+          function upd() {
+            var m = Math.max(1, parseInt(mon.value, 10) || 1), v = Math.max(1, parseInt(vr.value, 10) || 1);
+            var must = 4 + 1 + m + 2;
+            out.textContent = 'Must-haves: ' + must + ' tiles. With floor variants and HUD icons: ' + (must + 3 * (v - 1) + 5) + ' (plus any bonus screens).';
+          }
+          mon.addEventListener('input', upd); vr.addEventListener('input', upd); upd();
+        })();
+        </script>
+
+        <!-- 10. Level up -->
+        <section class="cl-card" id="levelup">
+          <span class="step-tag">LEVEL UP</span>
+          <h2>10 · Challenges</h2>
+          <p>Pick one or two for your <code>rogue.html</code>. They get harder as you go down the list.</p>
+          <ol>
+            <li><strong>A daily dungeon.</strong> Make <code>SEED</code> from today's date, like <code>20261026</code>, and show it on screen. Everyone in the class plays the same dungeon today. Who gets deepest?</li>
+            <li><strong>Potions.</strong> Add <code>!</code> items that heal 6 to 12 when you press <kbd>q</kbd>. Count how many you carry in the status line.</li>
+            <li><strong>Rogue's lighting.</strong> Keep a <code>seen</code> grid of true and false. Only draw squares in the room you're standing in (and the eight around you in a tunnel), plus squares you've seen before. Draw remembered squares in a dimmer colour by putting them in a <code>&lt;span&gt;</code>.</li>
+            <li><strong>A morgue file.</strong> Roguelike players call the record of a dead character a <em>morgue file</em>. When you die, save the seed, depth, gold and what killed you to <code>localStorage</code>, and show the five best runs. The <a href="../../2d-game-dev/ship-your-2d-game.html">Menus, Saving &amp; Shipping</a> lesson explains how.</li>
+            <li><strong>Smarter monsters.</strong> Use the distance map from section 6, starting from the player. Each monster steps to the neighbouring square with the smallest number, so it follows you around corners instead of getting stuck on walls.</li>
+            <li><strong>A new generator.</strong> Write <code>carveCaves()</code> with the cellular automaton from section 6, then flood fill to keep the biggest cave. Check it with your own <code>distanceMap()</code> on 100 seeds before you play it.</li>
+          </ol>
+        </section>
+
+        <!-- 11. History and responsible design -->
+        <section class="cl-card" id="history">
+          <h2>11 · Where it came from, and designing with care</h2>
+          <p>In 1980, Michael Toy and Glenn Wichman, students at UC Santa Cruz, wanted an adventure game that would be different every time, even for its own authors. Their terminals could only show text, so they used Ken Arnold's <code>curses</code> library to put characters anywhere on the screen, and built <em>Rogue</em>. It spread on university computers, and its descendants are still being made. In 2008, developers at a roguelike conference in Berlin wrote down what makes a game "roguelike" (the <em>Berlin Interpretation</em>): random dungeons, permadeath, turns, a grid, and making the most of what you find.</p>
+          <ol data-timeline data-timeline-title="Roguelikes, from Rogue to Crawlspace">
+            <li data-when="1980" data-label="Rogue">Michael Toy and Glenn Wichman make <em>Rogue</em> at UC Santa Cruz. Each game builds a new dungeon from a 3 × 3 grid of rooms.</li>
+            <li data-when="1982" data-label="Hack">Jay Fenlason and his friends, students at Lincoln-Sudbury Regional High School in Massachusetts, write <em>Hack</em>, inspired by Rogue.</li>
+            <li data-when="1983" data-label="Moria">Robert Koeneke writes <em>Moria</em> at the University of Oklahoma: one huge dungeon, inspired by Tolkien.</li>
+            <li data-when="1987" data-label="NetHack">Hack grows into <em>NetHack</em>, written by volunteers over the early internet. It is still being updated today.</li>
+            <li data-when="1990" data-label="Angband">Moria grows into <em>Angband</em>, with a dungeon a hundred levels deep.</li>
+            <li data-when="2008" data-label="Berlin Interpretation">Developers at a roguelike conference in Berlin list what makes a game roguelike: random levels, permadeath, turns, a grid.</li>
+            <li data-when="2008" data-label="Spelunky">Derek Yu's <em>Spelunky</em> puts Rogue's generated levels and permadeath into a platformer, and "roguelite" games take off.</li>
+            <li data-when="2012" data-label="FTL">Spin-offs go everywhere: <em>FTL: Faster Than Light</em> makes the dungeon a spaceship's journey through generated star systems.</li>
+            <li data-when="2026" data-label="Crawlspace">Our showcase gets <em>Crawlspace</em>: Rogue's 3 × 3 rooms, rebuilt in stone and lit by one lantern.</li>
+          </ol>
+          <p>Random games can be unfair in ways a hand-made level can't. When you design yours:</p>
+          <ul>
+            <li><strong>Every seed must be winnable.</strong> A player who dies to bad luck tries again. A player whose stairs are sealed in rock stops playing. That's why the checker in section 6 exists: run it on hundreds of seeds, not just the one you tested.</li>
+            <li><strong>Let players see danger coming.</strong> Monsters should be visible before they can hit you, and tougher monsters should look tougher. Death should feel like "I should have drunk the elixir," not "what was that?"</li>
+            <li><strong>Be kind about permadeath.</strong> Keep runs short, show what killed the player and the seed, and offer "same seed again", so losing teaches something.</li>
+            <li><strong>Never sell randomness.</strong> Random loot is fun when it's earned by playing. Paying real money for a random chance at a prize is gambling, and games aimed at young people shouldn't do it.</li>
+            <li><strong>Respectful monsters.</strong> Rats, slimes and dust golems are fine. Don't make real people or real groups of people into monsters.</li>
+            <li><strong>Play without colour.</strong> Many players can't tell some colours apart. If your game is still playable in black and white, it is playable for them too.</li>
+          </ul>
+        </section>
+
+        <!-- 12. Rubric -->
+        <section class="cl-card" id="rubric">
+          <h2>12 · Show what you built</h2>
+          <p>Hand in your <code>rogue.html</code> (or the file from the Lab), your design sheet, and a screenshot of the generator checker's report. Your teacher will look for:</p>
+          <div class="table-scroll">
+          <table class="map-table">
+            <thead><tr><th scope="col">Criterion</th><th scope="col">Meets the goal when…</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">It works</th><td>You can play from depth 1 down several levels and die or win without errors.</td></tr>
+              <tr><th scope="row">Seeded</th><td>The same seed always builds the same dungeon, and changing the seed builds a different one. You can explain why each level has its own seed.</td></tr>
+              <tr><th scope="row">Turn-based</th><td>Monsters move only after the player does, walls cost no turn, and walking into a monster attacks it.</td></tr>
+              <tr><th scope="row">Checked</th><td>The checker (or your own flood fill) shows the stairs can be reached on at least 100 seeds.</td></tr>
+              <tr><th scope="row">Balanced</th><td>Every monster's numbers are explained with expected value or the fight calculator, and each one appears at a sensible depth.</td></tr>
+              <tr><th scope="row">Fair and careful</th><td>Dangers are visible, the game-over screen shows the seed, and the monsters treat real people with respect.</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <p>Next: walk your dungeon in <a href="../../../apps/crawlspace/index.html">Crawlspace</a>, see how Rogue drew with characters in <a href="ascii-art-and-games.html">ASCII Art &amp; Rogue</a>, grow natural-looking terrain in <a href="perlin-noise.html">Perlin Noise</a>, make monsters plan routes with <a href="../algorithms-and-ai/pathfinding.html">Rescue Grid: The A* Mission</a>, or build the other classics: <a href="trail-game-builder.html">Trail Game Builder</a>, <a href="lemonade-tycoon-builder.html">Lemonade Tycoon Builder</a> and <a href="text-adventure-builder.html">Text Adventure Builder</a>.</p>
+        </section>
+
+      </main>
+    </div><!-- /.ll-sim -->
+
+    <aside class="ll-panel" aria-label="Guide panel">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="pane-guide">Guide</button>
+          <button class="ll-tab" aria-selected="false" data-pane="pane-vocab">Vocab</button>
+        </div>
+        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+      </div>
+      <div class="ll-panel-body">
+        <div class="ll-pane ll-active" id="pane-guide">
+          <p class="ll-pane-title">Learning Goals</p>
+          <ul class="ll-guide-list">
+            <li>Use a seeded pseudorandom generator so the same seed rebuilds the same world</li>
+            <li>Generate a dungeon procedurally: rooms, tunnels, monsters and items</li>
+            <li>Write a turn-based loop with bump-to-attack and simple monster AI</li>
+            <li>Check a generator on hundreds of seeds with flood fill and a distance map</li>
+            <li>Balance fights with expected value and a Monte Carlo simulation</li>
+            <li>Keep the simulation apart from the renderer, as Crawlspace does</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Time</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;">Two to three class periods: one to build the engine (steps 1 to 8), one for seeds, the checker and the fight calculator, and one for a spin-off design or a challenge.</p>
+          <p class="ll-pane-title" style="margin-top:1rem;">Stuck?</p>
+          <ul style="font-size:0.79rem;color:var(--text-muted,#64748b);line-height:1.7;padding-left:1.1rem;">
+            <li>Nothing happens: open the console (F12) and read the red error.</li>
+            <li>"Cannot read properties of undefined": something walked off the edge of the map. Check your bounds.</li>
+            <li>The page freezes: <code>emptySpot()</code> can't find floor. Are your rooms being carved?</li>
+            <li>A different dungeon every reload: something is using <code>Math.random()</code> instead of <code>rnd()</code>.</li>
+          </ul>
+          <p class="ll-pane-title" style="margin-top:1rem;">Related</p>
+          <p style="font-size:0.82rem;color:var(--text-muted,#64748b);line-height:1.55;"><a href="../../../apps/crawlspace/index.html" style="color:var(--acc);">Crawlspace (showcase)</a> · <a href="ascii-art-and-games.html" style="color:var(--acc);">ASCII Art &amp; Rogue</a> · <a href="perlin-noise.html" style="color:var(--acc);">Perlin Noise</a> · <a href="text-adventure-builder.html" style="color:var(--acc);">Text Adventure Builder</a> · <a href="../algorithms-and-ai/pathfinding.html" style="color:var(--acc);">Rescue Grid (A*)</a></p>
+        </div>
+        <div class="ll-pane" id="pane-vocab">
+          <p class="ll-pane-title">Key Vocabulary</p>
+          <dl style="font-size:0.82rem;line-height:1.6;color:var(--text-secondary,#3f4f65);">
+            <dt style="font-weight:700;margin-top:0.6rem;">Roguelike</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A game like Rogue (1980): a new generated dungeon every run, turns on a grid, and starting over when you lose.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Procedural generation</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Making levels, pictures or sounds from rules while the program runs, instead of drawing them by hand.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Seed</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">The starting number for a random number generator. The same seed always gives the same numbers.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Pseudorandom number generator</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A formula that makes numbers that look random but are decided by the seed.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Turn-based</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">The world waits for you, and only moves after you take your turn.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Permadeath</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">When you die, the run is over for good. You start a new one.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Flood fill</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Marking every square connected to a starting square, like a paint bucket.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Distance map</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A grid where each square holds its number of steps from a start, found with breadth-first search.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Cellular automaton</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">A grid where every cell updates by one rule about its neighbours. Used here to grow caves.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Expected value</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">The long-run average of a random result. A hit of 1 to atk averages (1 + atk) ÷ 2.</dd>
+            <dt style="font-weight:700;margin-top:0.6rem;">Monte Carlo simulation</dt>
+            <dd style="margin:0 0 0 0.8rem;color:var(--text-muted,#64748b);">Answering a chance question by running the random experiment thousands of times and counting.</dd>
+          </dl>
+        </div>
+      </div>
+    </aside>
+    <button class="ll-open-btn" aria-label="Open panel">&#x22EE;</button>
+  </div><!-- /.ll-stage -->
+</div><!-- /.ll-viewport -->
+
+<script src="../../../assets/js/rogue-dungeon.js"></script>
+<script src="../../../assets/js/rogue-lab.js"></script>
+
+<!-- ─────────────────────────────────────────────────────────────
+     The student's build-along program. Steps 1–8 above are sliced out of
+     this one string by its "// ---- name ----" markers, so the lesson text,
+     the download and the tests can never drift apart.
+     (String.raw keeps \n as two characters; no backticks or dollar-braces inside.)
+     ───────────────────────────────────────────────────────────── -->
+<script>
+window.ROGUE_MINI_JS = String.raw`// ---- random ----
+// A seeded random number generator (mulberry32). Same seed, same numbers.
+let SEED = 2026;
+function makeRandom(seed) {
+  return function () {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), seed | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;    // a number from 0 up to 1
+  };
+}
+let random = makeRandom(SEED);
+// A whole number from min to max, like rolling a die: rnd(1, 6).
+function rnd(min, max) { return min + Math.floor(random() * (max - min + 1)); }
+
+// ---- rooms ----
+const COLS = 60, ROWS = 21;
+let map, rooms;   // map[y][x] is one character: " " rock, "." floor, "#" tunnel, ">" stairs
+function carveRooms() {
+  map = [];
+  for (let y = 0; y < ROWS; y++) map.push(new Array(COLS).fill(" "));
+  rooms = [];
+  const cellW = COLS / 3, cellH = ROWS / 3;          // Rogue's 3 x 3 grid: one room per cell
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      const w = rnd(4, cellW - 4), h = rnd(3, cellH - 4);
+      const x = col * cellW + rnd(1, cellW - w - 2);
+      const y = row * cellH + rnd(1, cellH - h - 2);
+      rooms.push({ x: x, y: y, w: w, h: h });
+      for (let yy = y; yy < y + h; yy++) {
+        for (let xx = x; xx < x + w; xx++) map[yy][xx] = ".";
+      }
+    }
+  }
+}
+
+// ---- tunnels ----
+function center(r) { return { x: Math.floor(r.x + r.w / 2), y: Math.floor(r.y + r.h / 2) }; }
+// Dig sideways, then up or down. Rock turns into tunnel; floor stays floor.
+function dig(a, b) {
+  let x = a.x, y = a.y;
+  while (x !== b.x) { if (map[y][x] === " ") map[y][x] = "#"; x += Math.sign(b.x - x); }
+  while (y !== b.y) { if (map[y][x] === " ") map[y][x] = "#"; y += Math.sign(b.y - y); }
+}
+function digTunnels() {
+  for (let i = 0; i < 9; i++) {
+    if (i % 3 < 2) dig(center(rooms[i]), center(rooms[i + 1]));   // to the room on the right
+    if (i < 6) dig(center(rooms[i]), center(rooms[i + 3]));       // to the room below
+  }
+}
+
+// ---- things ----
+const KINDS = [
+  { ch: "r", name: "rat", hp: 3, atk: 1 },
+  { ch: "g", name: "goblin", hp: 6, atk: 2 },
+  { ch: "o", name: "orc", hp: 10, atk: 3 }
+];
+let player, monsters, golds, depth, turn, message, over;
+function thingAt(x, y) {
+  return monsters.find(o => o.x === x && o.y === y) || golds.find(o => o.x === x && o.y === y);
+}
+// An empty floor square in any room but the first, where the player starts.
+function emptySpot() {
+  while (true) {
+    const r = rooms[rnd(1, 8)];
+    const x = rnd(r.x, r.x + r.w - 1), y = rnd(r.y, r.y + r.h - 1);
+    if (map[y][x] === "." && !thingAt(x, y)) return { x: x, y: y };
+  }
+}
+function newLevel() {
+  random = makeRandom(SEED * 1000 + depth);         // every level has its own seed
+  carveRooms();
+  digTunnels();
+  const stairs = center(rooms[8]);
+  map[stairs.y][stairs.x] = ">";
+  const start = center(rooms[0]);
+  player.x = start.x;
+  player.y = start.y;
+  monsters = [];
+  golds = [];
+  for (let i = 0; i < 3 + depth; i++) {
+    const kind = KINDS[rnd(0, Math.min(depth, KINDS.length) - 1)];   // tougher kinds appear deeper
+    const spot = emptySpot();
+    monsters.push({ ch: kind.ch, name: kind.name, hp: kind.hp, atk: kind.atk, x: spot.x, y: spot.y });
+  }
+  for (let i = 0; i < 4; i++) {
+    const spot = emptySpot();
+    golds.push({ amount: rnd(5, 20) * depth, x: spot.x, y: spot.y });
+  }
+}
+
+// ---- draw ----
+function draw() {
+  let text = "";
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const m = monsters.find(o => o.x === x && o.y === y);
+      if (x === player.x && y === player.y) text += "@";
+      else if (m) text += m.ch;
+      else if (golds.some(o => o.x === x && o.y === y)) text += "$";
+      else text += map[y][x];
+    }
+    text += "\n";
+  }
+  document.getElementById("map").textContent = text;
+  document.getElementById("status").textContent = "Depth " + depth + "   HP " + player.hp +
+    "   Attack " + player.atk + "   Gold " + player.gold + "   Turn " + turn + "   Seed " + SEED + "\n" + message;
+}
+
+// ---- turn ----
+function walkable(x, y) {
+  return y >= 0 && y < ROWS && (map[y][x] === "." || map[y][x] === "#" || map[y][x] === ">");
+}
+function playerTurn(dx, dy) {
+  if (over) return;
+  const x = player.x + dx, y = player.y + dy;
+  const m = monsters.find(o => o.x === x && o.y === y);
+  if (m) {                                         // walking into a monster is an attack
+    const hit = rnd(1, player.atk);
+    m.hp -= hit;
+    message = "You hit the " + m.name + " for " + hit + ".";
+    if (m.hp <= 0) {
+      monsters = monsters.filter(o => o !== m);
+      message = "You defeat the " + m.name + "!";
+    }
+  } else if (walkable(x, y)) {
+    player.x = x;
+    player.y = y;
+    const g = golds.find(o => o.x === x && o.y === y);
+    if (g) {
+      player.gold += g.amount;
+      golds = golds.filter(o => o !== g);
+      message = "You find " + g.amount + " gold.";
+    } else {
+      message = map[y][x] === ">" ? "Stairs down! Press > to go deeper." : "";
+    }
+  } else {
+    message = "Solid rock.";                       // bumping a wall costs no turn
+    return draw();
+  }
+  turn++;
+  monstersTurn();
+  draw();
+}
+
+// ---- monsters ----
+function monstersTurn() {
+  for (const m of monsters) {
+    const away = Math.abs(player.x - m.x) + Math.abs(player.y - m.y);
+    if (away > 8 || over) continue;                              // too far away: still asleep
+    if (Math.abs(player.x - m.x) <= 1 && Math.abs(player.y - m.y) <= 1) {
+      const hit = rnd(1, m.atk);
+      player.hp -= hit;
+      message += " The " + m.name + " hits you for " + hit + ".";
+      if (player.hp <= 0) {
+        player.hp = 0;
+        over = true;
+        message = "You died on depth " + depth + " with " + player.gold + " gold. Press R to try again.";
+      }
+      continue;
+    }
+    // Step toward the player: diagonally if it can, else sideways, else up or down.
+    const dx = Math.sign(player.x - m.x), dy = Math.sign(player.y - m.y);
+    for (const [x, y] of [[m.x + dx, m.y + dy], [m.x + dx, m.y], [m.x, m.y + dy]]) {
+      if (walkable(x, y) && !monsters.some(o => o.x === x && o.y === y)) {
+        m.x = x;
+        m.y = y;
+        break;
+      }
+    }
+  }
+}
+
+// ---- play ----
+const KEYS = {
+  ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+  k: [0, -1], j: [0, 1], h: [-1, 0], l: [1, 0], y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1]
+};
+function newGame() {
+  depth = 1;
+  turn = 0;
+  over = false;
+  player = { x: 0, y: 0, hp: 20, atk: 3, gold: 0 };
+  message = "Find the > stairs. Walk into a monster to fight it.";
+  newLevel();
+  draw();
+}
+document.addEventListener("keydown", e => {
+  if (KEYS[e.key]) {
+    e.preventDefault();
+    playerTurn(KEYS[e.key][0], KEYS[e.key][1]);
+  } else if (e.key === ">" && !over && map[player.y][player.x] === ">") {
+    depth++;
+    player.atk++;                                  // a little stronger on every level
+    player.hp += 5;
+    newLevel();
+    message = "You go down to depth " + depth + ".";
+    draw();
+  } else if (e.key === "r" && over) {
+    newGame();
+  }
+});
+newGame();
+`;
+window.ROGUE_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Roguelike</title>\n</head>\n<body style="background:#111; color:#ddd; font-family: system-ui, sans-serif; margin: 2rem;">\n  <h1>My Roguelike</h1>\n  <pre id="map" style="font: 16px/1.1 monospace; color:#cbb693;"></pre>\n  <pre id="status" style="font: 15px/1.4 monospace; white-space: pre-wrap;"></pre>\n  <p>Arrow keys or h j k l (y u b n for diagonals) to move. Walk into a monster to fight it.\n     Press &gt; on the stairs to go down. R starts again after you die.</p>\n\n<script>\n';
+window.ROGUE_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+</script>
+
+<script>
+/* ═════════════════════════════════════════════════════════════
+   Lesson page wiring
+   ═════════════════════════════════════════════════════════════ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var D = window.RogueDungeon, CS = D.CRAWLSPACE;
+  function h(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/html' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  // ---- presets ----
+  // Crawlspace's preset is built from the rules Crawlspace itself loads, so the
+  // two can't drift apart: unedited, it builds Crawlspace's exact dungeons.
+  var PRESETS = {
+    crawlspace: { label: 'Crawlspace (Rogue\'s 3 × 3 rooms, also in 3D)', config: {
+      title: 'Crawlspace', seed: 'lantern',
+      intro: 'You climb down into the crawlspace. The lantern is all you brought.',
+      dungeon: CS.dungeon, sight: 'room',
+      player: { hp: 20, atk: 3, potions: 1, perLevel: { hp: 3, heal: 5, atk: 1 } },
+      monsters: { count: CS.monsters.count, wakeRange: 9, types: CS.monsters.types },
+      items: { count: CS.items.count, goldChance: CS.items.goldChance, gold: CS.items.gold, heal: [6, 12] },
+      goal: { depth: 0 },
+      words: { gold: 'gold', elixir: 'elixir', stairs: 'steps', rock: 'cold stone' }
+    } },
+    library: { label: 'Sunken Library (BSP rooms)', config: {
+      title: 'The Sunken Library', seed: 'index',
+      intro: 'The library is sinking into the lake, and the lost index is somewhere on floor 5. Mind the bookworms.',
+      dungeon: { generator: 'bsp', cols: 64, rows: 24, leaf: [14, 7] }, sight: 'room',
+      player: { hp: 18, atk: 3, potions: 2, perLevel: { hp: 3, heal: 6, atk: 1 } },
+      monsters: { count: [4, 6], wakeRange: 8, types: [
+        { ch: 'w', name: 'bookworm', hp: 3, atk: 1, xp: 2, minDepth: 1 },
+        { ch: 'b', name: 'paper bat', hp: 4, atk: 2, xp: 3, minDepth: 1 },
+        { ch: 'i', name: 'ink blot', hp: 7, atk: 2, xp: 5, minDepth: 2 },
+        { ch: 'G', name: 'dust golem', hp: 14, atk: 4, xp: 12, minDepth: 3 }
+      ] },
+      items: { count: [4, 6], goldChance: 0.6, gold: [3, 12], heal: [6, 12] },
+      goal: { depth: 5, text: 'You reach the drowned archive and lift out the lost index. The library is saved!' },
+      words: { gold: 'pages', elixir: 'tea', stairs: 'spiral stairs', rock: 'a wet bookshelf' },
+      glyphs: { gold: '?', elixir: '!', stairs: '>' }
+    } },
+    caves: { label: 'Crystal Caves (cellular automata)', config: {
+      title: 'Crystal Caves', seed: 'geode',
+      intro: 'Your lamp lights seven squares. Somewhere below, the caves open into daylight.',
+      dungeon: { generator: 'caves', cols: 70, rows: 24, fill: 0.45, smooth: 4 }, sight: 7,
+      player: { hp: 22, atk: 3, potions: 1, perLevel: { hp: 3, heal: 5, atk: 1 } },
+      monsters: { count: [5, 8], wakeRange: 7, types: [
+        { ch: 'b', name: 'cave bat', hp: 3, atk: 1, xp: 2, minDepth: 1 },
+        { ch: 'j', name: 'slime', hp: 6, atk: 1, xp: 3, minDepth: 1 },
+        { ch: 'c', name: 'crystal crab', hp: 8, atk: 3, xp: 6, minDepth: 2 },
+        { ch: 'T', name: 'cave troll', hp: 18, atk: 5, xp: 15, minDepth: 4 }
+      ] },
+      items: { count: [5, 8], goldChance: 0.65, gold: [5, 15], heal: [6, 12] },
+      goal: { depth: 6, text: 'You climb out into daylight with a sack of crystals.' },
+      words: { gold: 'crystals', elixir: 'glow water', stairs: 'crack in the floor', rock: 'damp rock' },
+      glyphs: { gold: '*' }
+    } },
+    bugs: { label: 'Bug Hunt (inside a computer)', config: {
+      title: 'Bug Hunt', seed: 'reboot',
+      intro: 'You are an antivirus program, dropped into a computer full of bugs. Reach the kernel on level 4.',
+      dungeon: { generator: 'grid', cols: 72, rows: 21, grid: [4, 3] }, sight: 'room',
+      player: { hp: 20, atk: 3, potions: 1, perLevel: { hp: 4, heal: 6, atk: 1 } },
+      monsters: { count: [5, 8], wakeRange: 9, types: [
+        { ch: 'b', name: 'bug', hp: 2, atk: 1, xp: 1, minDepth: 1 },
+        { ch: 'g', name: 'glitch', hp: 5, atk: 2, xp: 3, minDepth: 1 },
+        { ch: 'v', name: 'virus', hp: 7, atk: 2, xp: 5, minDepth: 2 },
+        { ch: 'W', name: 'worm', hp: 12, atk: 4, xp: 10, minDepth: 3 }
+      ] },
+      items: { count: [4, 6], goldChance: 0.6, gold: [5, 20], heal: [6, 12] },
+      goal: { depth: 4, text: 'You reach the kernel, the computer reboots, and every bug is gone. Mission complete!' },
+      words: { gold: 'data', elixir: 'patch', stairs: 'down port', rock: 'a firewall' },
+      glyphs: { stairs: '%', tunnel: ':' }
+    } }
+  };
+  var BROKEN = {
+    dungeon: { generator: 'caves', cols: 68, rows: 21, keepLargest: false, stairs: 'random' },
+    monsters: CS.monsters, items: CS.items
+  };
+
+  // JSON that fits on screen: short lists and flat objects stay on one line.
+  function pretty(v, ind) {
+    ind = ind || '';
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    var prim = function (x) { return x === null || typeof x !== 'object'; };
+    var keys = Array.isArray(v) ? null : Object.keys(v);
+    var flat = Array.isArray(v)
+      ? (v.every(prim) ? '[' + v.map(function (x) { return JSON.stringify(x); }).join(', ') + ']' : null)
+      : (keys.every(function (k) { return prim(v[k]) || (Array.isArray(v[k]) && v[k].every(prim)); })
+        ? '{ ' + keys.map(function (k) { return JSON.stringify(k) + ': ' + pretty(v[k]); }).join(', ') + ' }' : null);
+    if (flat && ind.length + flat.length < 100) return flat;
+    var inner = ind + '  ';
+    if (Array.isArray(v)) return '[\n' + v.map(function (x) { return inner + pretty(x, inner); }).join(',\n') + '\n' + ind + ']';
+    return '{\n' + keys.map(function (k) { return inner + JSON.stringify(k) + ': ' + pretty(v[k], inner); }).join(',\n') + '\n' + ind + '}';
+  }
+
+  // ---- build-along: slice the program into its steps ----
+  var sections = {};
+  window.ROGUE_MINI_JS.split(/^\/\/ ---- (\w+) ----\n/m).forEach(function (part, i, arr) {
+    if (i % 2 === 1) sections[part] = arr[i + 1].replace(/\n+$/, '');
+  });
+  document.querySelectorAll('[data-mini]').forEach(function (pre) { pre.textContent = sections[pre.dataset.mini] || ''; });
+  var fullDoc = window.ROGUE_MINI_HEAD + window.ROGUE_MINI_JS + window.ROGUE_MINI_TAIL;
+  $('code-skeleton').textContent = window.ROGUE_MINI_HEAD + '  // …steps 1 to 8 go here…\n' + window.ROGUE_MINI_TAIL;
+  $('code-full').textContent = fullDoc;
+  $('mini-download').addEventListener('click', function () { download('rogue.html', fullDoc); $('mini-status').textContent = 'Saved rogue.html'; });
+  $('mini-copy').addEventListener('click', function () {
+    var done = function (ok) { $('mini-status').textContent = ok ? 'Copied!' : 'Copy failed. Open "Show the complete program" and select it.'; };
+    if (navigator.clipboard) navigator.clipboard.writeText(fullDoc).then(function () { done(true); }, function () { done(false); }); else done(false);
+  });
+
+  // ---- tiny maps on a canvas (seeds, checker) ----
+  var COLORS = { ' ': '#0d0b09', '.': '#8a7a5e', '#': '#5f5240', '>': '#ffd98a' };
+  function drawMini(canvas, level, scale, dist) {
+    canvas.width = level.cols * scale; canvas.height = level.rows * scale;
+    var g = canvas.getContext('2d'), far = 1, x, y;
+    if (dist) for (y = 0; y < level.rows; y++) for (x = 0; x < level.cols; x++) far = Math.max(far, dist[y][x]);
+    for (y = 0; y < level.rows; y++) {
+      for (x = 0; x < level.cols; x++) {
+        var t = level.tiles[y][x], c = COLORS[t];
+        if (dist && t !== ' ' && t !== '>') c = dist[y][x] < 0 ? '#d946ef' : 'hsl(' + Math.round(200 - 200 * dist[y][x] / far) + ' 60% 45%)';
+        g.fillStyle = c; g.fillRect(x * scale, y * scale, scale, scale);
+      }
+    }
+    g.fillStyle = '#ff6b5e';
+    level.monsters.forEach(function (m) { g.fillRect(m.x * scale, m.y * scale, scale, scale); });
+    g.fillStyle = '#ffd166';
+    level.items.forEach(function (i) { g.fillRect(i.x * scale, i.y * scale, scale, scale); });
+    g.fillStyle = '#ffffff';
+    g.fillRect(level.start.x * scale - 1, level.start.y * scale - 1, scale + 2, scale + 2);
+    if (level.tiles[level.stairs.y][level.stairs.x] === '>') { g.fillStyle = '#ffd98a'; g.fillRect(level.stairs.x * scale - 1, level.stairs.y * scale - 1, scale + 2, scale + 2); }
+  }
+
+  // ---- lab ----
+  var sel = $('lab-preset'), ta = $('lab-config'), status = $('lab-status'), host = $('lab-game'), game = null, current = null;
+  Object.keys(PRESETS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = PRESETS[k].label; sel.appendChild(o); });
+  var CS_KEY = D.rulesKey(PRESETS.crawlspace.config);
+  function readConfig(quiet) {
+    try { return JSON.parse(ta.value); }
+    catch (e) {
+      if (quiet) return null;
+      var m = /position (\d+)/.exec(e.message), line = m ? ta.value.slice(0, +m[1]).split('\n').length : null;
+      status.className = 'lab-status bad'; status.textContent = 'JSON problem' + (line ? ' near line ' + line : '') + ': ' + e.message + '. Look for a missing comma or quote.';
+      return null;
+    }
+  }
+  // The config the other tools should use: the Lab's if it runs, else Crawlspace.
+  function labRules() { return current || PRESETS.crawlspace.config; }
+  function update3d(S) {
+    var link = $('to3d-link'), text = $('to3d-text'), same = current && D.rulesKey(current) === CS_KEY;
+    if (same && S) {
+      link.href = '../../../apps/crawlspace/index.html?seed=' + encodeURIComponent(S.seed);
+      link.removeAttribute('aria-disabled'); link.tabIndex = 0;
+      text.textContent = 'These are Crawlspace\'s rules, so Crawlspace will build this exact dungeon from seed “' + S.seed + '”, starting at depth 1, with every room, tunnel and monster in the same place.';
+    } else {
+      link.href = '../../../apps/crawlspace/index.html';
+      link.setAttribute('aria-disabled', 'true'); link.tabIndex = -1;
+      text.textContent = 'Crawlspace only knows its own rules. A seed is half of a dungeon\'s recipe; the rules are the other half. Pick the Crawlspace preset (you can still change the seed, the player and the words) to walk your dungeon in 3D.';
+    }
+  }
+  function run() {
+    var cfg = readConfig(); if (!cfg) return;
+    try {
+      game = RogueEngine(host, cfg, { onChange: update3d });
+      current = cfg;
+      status.className = 'lab-status ok'; status.textContent = 'Running “' + (cfg.title || 'My Roguelike') + '”. Click the map, then use the arrow keys.';
+      update3d(game.state());
+      fightOptions();
+    } catch (e) { status.className = 'lab-status bad'; status.textContent = e.message; }
+  }
+  function loadPreset() { ta.value = pretty(PRESETS[sel.value].config); run(); }
+  sel.addEventListener('change', loadPreset);
+  $('lab-run').addEventListener('click', run);
+  $('lab-reset').addEventListener('click', loadPreset);
+  $('lab-download').addEventListener('click', function () {
+    var cfg = readConfig(); if (!cfg) return;
+    try { RogueEngine(null, cfg); } catch (e) { status.className = 'lab-status bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
+    var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
+    var title = String(cfg.title || 'My Roguelike').replace(/[<>&"]/g, '');
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#070605;">\n<div id="game" style="max-width:980px;margin:0 auto;"></div>\n<script>\n' +
+      'var RogueDungeon = (' + D.factory.toString() + ')();\n' + RogueEngine.toString() + '\nvar CONFIG = ' + json + ';\nRogueEngine(document.getElementById("game"), CONFIG).focus();\n<' + '/script>\n</body>\n</html>\n';
+    download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
+    status.className = 'lab-status ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
+  });
+  function playSeed(seed) {
+    var cfg = readConfig(true) || PRESETS.crawlspace.config;
+    cfg.seed = String(seed);
+    ta.value = pretty(cfg);
+    run();
+    $('lab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (game && game.focus) setTimeout(game.focus, 400);
+  }
+
+  // ---- seeds ----
+  function seedLevel(seed, depth) {
+    try { return D.generate(labRules(), seed, depth || 1); } catch (e) { return D.generate(CS, seed, depth || 1); }
+  }
+  function showSeed() {
+    var s = $('seed-in').value.trim() || 'lantern';
+    var r = D.mulberry32(D.levelSeed(s, 1)), rolls = [];
+    for (var i = 0; i < 8; i++) rolls.push(Math.floor(r() * 6) + 1);
+    $('seed-nums').textContent = '“' + s + '” → seed number ' + D.toSeed(s) + ' → depth 1 rolls a die: ' + rolls.join(', ') + ', …';
+    var lvl = seedLevel(s, 1);
+    drawMini($('seed-canvas'), lvl, 4);
+    $('seed-canvas').setAttribute('aria-label', 'Map of the dungeon seed ' + s + ' makes: ' + (lvl.rooms.length ? lvl.rooms.length + ' rooms, ' : '') + lvl.monsters.length + ' monsters, ' + lvl.items.length + ' items');
+    var rows = '<thead><tr><th scope="col">Depth</th><th scope="col">Level seed (from “' + s.replace(/[<>&]/g, '') + '” and the depth)</th><th scope="col">Monsters</th><th scope="col">Items</th></tr></thead><tbody>';
+    for (var d = 1; d <= 4; d++) {
+      var L = seedLevel(s, d);
+      rows += '<tr><td class="num">' + d + '</td><td class="num">' + L.seed + '</td><td class="num">' + L.monsters.length + '</td><td class="num">' + L.items.length + '</td></tr>';
+    }
+    $('level-seeds').innerHTML = rows + '</tbody>';
+  }
+  function showSeedGrid() {
+    var grid = $('seed-grid'); grid.replaceChildren();
+    ['lantern', 'lanterns', 'Lantern', 'lantern!', '1', '2'].forEach(function (s) {
+      var b = h('button', 'seed-card'), c = h('canvas');
+      b.type = 'button';
+      var L = seedLevel(s, 1);
+      drawMini(c, L, 3);
+      c.setAttribute('aria-hidden', 'true');
+      b.appendChild(c); b.appendChild(h('b', null, '“' + s + '”')); b.appendChild(h('small', null, 'seed ' + D.toSeed(s) + ' · ' + L.monsters.length + ' monsters'));
+      b.setAttribute('aria-label', 'Play seed ' + s + ' in the Lab');
+      b.addEventListener('click', function () { playSeed(s); });
+      grid.appendChild(b);
+    });
+  }
+  $('seed-in').addEventListener('input', showSeed);
+  $('seed-send').addEventListener('click', function () { playSeed($('seed-in').value.trim() || 'lantern'); });
+
+  // ---- checker ----
+  function checkReport(cfg, label) {
+    var out = $('check-out');
+    out.replaceChildren(h('p', null, 'Building and checking 300 dungeons…'));
+    setTimeout(function () {
+      var t0 = performance.now(), n = 0, ok = 0, whole = 0, lost = 0, steps = [], errors = 0, firstErr = '', worst = null;
+      for (var s = 0; s < 100; s++) {
+        for (var d = 1; d <= 3; d++) {
+          var L;
+          try { L = D.generate(cfg, 'check-' + s, d); } catch (e) { errors++; firstErr = firstErr || e.message; continue; }
+          var r = D.inspect(L); n++;
+          if (r.stairs >= 0) { ok++; steps.push(r.stairs); } else if (!worst) worst = L;
+          if (r.reached === r.open) whole++;
+          lost += r.lostThings;
+        }
+      }
+      var ms = Math.round(performance.now() - t0);
+      out.replaceChildren(h('h3', null, 'Checking ' + (label || '“' + (cfg.title || 'the Lab') + '”')));
+      var ul = h('ul', 'check-list');
+      function item(cls, text) { ul.appendChild(h('li', cls, text)); }
+      if (errors) item('bad', errors + ' dungeons could not be built: ' + firstErr);
+      if (!n) { out.appendChild(ul); return; }
+      item(ok === n ? 'good' : 'bad', 'The stairs can be reached in ' + ok + ' of ' + n + ' dungeons.' + (ok < n ? ' In the others the player is stuck forever.' : ''));
+      item(whole === n ? 'good' : 'warn', 'Every floor square can be reached in ' + whole + ' of ' + n + ' dungeons.' + (whole < n ? ' The rest have sealed-off pockets the player will never see.' : ''));
+      item(lost ? 'warn' : 'good', lost ? lost + ' monsters or items were placed where the player can never reach them.' : 'Every monster and item can be reached.');
+      if (steps.length) {
+        steps.sort(function (a, b) { return a - b; });
+        var avg = steps.reduce(function (a, b) { return a + b; }, 0) / steps.length;
+        item('good', 'Steps from the start to the stairs: shortest ' + steps[0] + ', average ' + avg.toFixed(1) + ', longest ' + steps[steps.length - 1] + '.');
+      }
+      item('good', 'Built and flood-filled ' + n + ' dungeons in ' + ms + ' ms. No player could test that many.');
+      out.appendChild(ul);
+      var shown = worst || D.generate(cfg, 'check-0', 1);
+      var fig = h('figure'); fig.style.margin = '0.4rem 0';
+      var c = h('canvas'); c.style.cssText = 'display:block;max-width:100%;height:auto;image-rendering:pixelated;border-radius:8px;';
+      drawMini(c, shown, 5, D.distanceMap(shown.tiles, shown.start));
+      c.setAttribute('role', 'img');
+      c.setAttribute('aria-label', worst ? 'A failing dungeon: magenta floor cannot be reached from the start, including the stairs.' : 'A distance map: floor coloured from blue near the start to red far away.');
+      fig.appendChild(c);
+      fig.appendChild(h('figcaption', 'credit', worst ? 'One dungeon that failed. White is the start, gold is the stairs, and magenta is floor the flood never reached.' : 'The distance map of one dungeon: blue is near the start (white), red is far, and the stairs (gold) sit at the far end.'));
+      out.appendChild(fig);
+      var leg = h('div', 'legend');
+      leg.innerHTML = '<span><i style="background:#ffffff;box-shadow:inset 0 0 0 1px #64748b"></i>start</span><span><i style="background:#ffd98a"></i>stairs</span><span><i style="background:hsl(200 60% 45%)"></i>near</span><span><i style="background:hsl(0 60% 45%)"></i>far</span><span><i style="background:#d946ef"></i>never reached</span>';
+      out.appendChild(leg);
+    }, 30);
+  }
+  $('check-run').addEventListener('click', function () { var cfg = readConfig(true); checkReport(cfg && cfg.dungeon ? cfg : labRules()); });
+  $('check-broken').addEventListener('click', function () { checkReport(BROKEN, 'a cave generator with no flood fill and stairs dropped anywhere'); });
+
+  // ---- fight calculator ----
+  function fighter(depth) {
+    var p = labRules().player || {}, g = p.perLevel || {};
+    var hp = (p.hp || 20) + (depth - 1) * (g.hp == null ? 3 : g.hp), atk = (p.atk || 3) + (depth - 1) * (g.atk == null ? 1 : g.atk);
+    return { hp: hp, atk: atk };
+  }
+  function types() { var m = labRules().monsters; return m && Array.isArray(m.types) && m.types.length ? m.types : CS.monsters.types; }
+  function fightOptions() {
+    var s = $('fight-mon'), old = s.value; s.replaceChildren();
+    types().forEach(function (t, i) { var o = document.createElement('option'); o.value = i; o.textContent = t.name + ' (' + t.ch + ')'; s.appendChild(o); });
+    if (old && s.options[old]) s.value = old;
+    fight();
+  }
+  function simulate(you, mon, times) {
+    var wins = 0, lostSum = 0, losses = [];
+    for (var k = 0; k < times; k++) {
+      var hp = you.hp, mhp = mon.hp;
+      while (hp > 0) {
+        mhp -= 1 + Math.floor(Math.random() * you.atk);
+        if (mhp <= 0) break;
+        hp -= 1 + Math.floor(Math.random() * mon.atk);
+      }
+      if (hp > 0) wins++;
+      var lostHp = you.hp - Math.max(0, hp);
+      lostSum += lostHp; losses.push(lostHp);
+    }
+    losses.sort(function (a, b) { return a - b; });
+    return { win: wins / times, avgLost: lostSum / times, bad: losses[Math.floor(times * 0.95)] };
+  }
+  function fight() {
+    var depth = Math.max(1, Math.min(30, parseInt($('fight-depth').value, 10) || 1));
+    var mon = types()[+$('fight-mon').value || 0] || types()[0], you = fighter(depth);
+    var yourAvg = (1 + you.atk) / 2, itsAvg = (1 + mon.atk) / 2, swings = mon.hp / yourAvg;
+    var sim = simulate(you, mon, 10000);
+    var out = $('fight-out'); out.replaceChildren();
+    function box(label, big, small) { var b = h('div', 'stat-box'); b.appendChild(h('small', null, label)); b.appendChild(h('b', null, big)); b.appendChild(h('span', null, small)); out.appendChild(b); }
+    box('You on depth ' + depth, you.hp + ' hp · atk ' + you.atk, 'Average hit (1 + ' + you.atk + ') ÷ 2 = ' + yourAvg);
+    box('The ' + mon.name, mon.hp + ' hp · atk ' + mon.atk, 'Average hit (1 + ' + mon.atk + ') ÷ 2 = ' + itsAvg);
+    box('Estimate', '≈ ' + swings.toFixed(1) + ' swings', mon.hp + ' ÷ ' + yourAvg + '. You take about ' + Math.max(0, (Math.ceil(swings) - 1) * itsAvg).toFixed(1) + ' damage.');
+    box('10,000 fights', Math.round(sim.win * 1000) / 10 + '% won', 'Average hp lost ' + sim.avgLost.toFixed(1) + '. One fight in 20 costs ' + sim.bad + ' or more.');
+    var rows = '<thead><tr><th scope="col">Monster</th><th scope="col">First depth</th><th scope="col">Won (of 10,000)</th><th scope="col">Average hp lost</th><th scope="col">Worst 1 in 20</th></tr></thead><tbody>';
+    types().forEach(function (t) {
+      var r = simulate(you, t, 10000);
+      rows += '<tr><td>' + String(t.name).replace(/[<>&]/g, '') + '</td><td class="num">' + t.minDepth + '</td><td class="num">' + (Math.round(r.win * 1000) / 10) + '%</td><td class="num">' + r.avgLost.toFixed(1) + ' of ' + you.hp + '</td><td class="num">' + r.bad + '</td></tr>';
+    });
+    $('fight-table').innerHTML = rows + '</tbody>';
+  }
+  $('fight-run').addEventListener('click', fight);
+  $('fight-mon').addEventListener('change', fight);
+  $('fight-depth').addEventListener('change', fight);
+
+  // ---- Crawlspace, played in the page ----
+  $('cs-play').addEventListener('click', function () {
+    var hostEl = $('cs-host'), btn = $('cs-play');
+    if (hostEl.firstChild) { hostEl.replaceChildren(); btn.textContent = '▶ Play Crawlspace here'; return; }
+    var S = game && game.state(), same = current && D.rulesKey(current) === CS_KEY;
+    var f = h('iframe', 'cs-frame');
+    f.title = 'Crawlspace, a 3D roguelike from our showcase';
+    f.src = '../../../apps/crawlspace/index.html' + (same && S ? '?seed=' + encodeURIComponent(S.seed) : '');
+    f.setAttribute('allow', 'fullscreen');
+    hostEl.appendChild(f);
+    btn.textContent = '✕ Close Crawlspace';
+    f.addEventListener('load', function () { try { f.contentWindow.focus(); } catch (e) {} });
+  });
+
+  // ---- idea dice ----
+  var DICE = {
+    setting: ['A sunken pirate ship', 'The tunnels under a volcano', 'A haunted greenhouse', 'An abandoned space station', 'The inside of a beehive', 'A clockwork tower', 'A frozen mine', 'A library with no exit', 'The sewers under a city', 'An ant colony'],
+    hero: ['A lost robot', 'A mouse with a candle', 'A deep-sea diver', 'A white blood cell', 'A lighthouse keeper', 'An archaeologist', 'A tiny dragon', 'A delivery drone'],
+    twist: ['A hunger clock', 'A daily dungeon seed', 'Monsters that steal and run', 'Your light shrinks over time', 'No attacking allowed', 'Caves below depth 3', 'Potions you must identify', 'A shop on every third level']
+  };
+  function roll() { ['setting', 'hero', 'twist'].forEach(function (k) { var a = DICE[k]; $('d-' + k).textContent = a[Math.floor(Math.random() * a.length)]; }); }
+  $('dice-roll').addEventListener('click', roll); roll();
+
+  loadPreset();
+  showSeed();
+  showSeedGrid();
+})();
+</script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/reveal.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-layout.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script>
+</body>
+</html>

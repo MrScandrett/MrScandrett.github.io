@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 436 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 442 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -257,7 +257,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 94 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 96 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -353,22 +353,24 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **TEC-01** — Microphone Polar Pattern Lab
 - **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
-- **TEC-03** — EQ: Find the Problem Frequency
-- **TEC-04** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
-- **TEC-05** — Room Acoustics & Reverb Lab
-- **TEC-06** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
-- **TEC-07** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
+- **TEC-03** — Wireless Mics & RF Coordination — _also indexed in Engineering Systems & Electronics_
+- **TEC-04** — Running the Allen & Heath Qu-7 — _also indexed in Engineering Systems & Electronics_
+- **TEC-05** — EQ: Find the Problem Frequency
+- **TEC-06** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
+- **TEC-07** — Room Acoustics & Reverb Lab
+- **TEC-08** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
+- **TEC-09** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-08** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-09** — Camera Exposure Triangle
-- **TEC-10** — White Balance & Color Temperature
-- **TEC-11** — Projection & Throw-Ratio Lab
-- **TEC-12** — Theatre Cue Sheets
-- **TEC-13** — Stage Plotting
-- **TEC-14** — Walt Disney — _also indexed in Visual Art & Design_
-- **TEC-15** — Jim Henson
+- **TEC-10** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-11** — Camera Exposure Triangle
+- **TEC-12** — White Balance & Color Temperature
+- **TEC-13** — Projection & Throw-Ratio Lab
+- **TEC-14** — Theatre Cue Sheets
+- **TEC-15** — Stage Plotting
+- **TEC-16** — Walt Disney — _also indexed in Visual Art & Design_
+- **TEC-17** — Jim Henson
 
 ## 3D Design (D3D)
 
@@ -414,7 +416,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 76 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 80 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -496,35 +498,42 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-07** — Rosetta 2D: Our Own Game Engine
 - **GAM-08** — Python & Pygame: The Game Loop
 
+### Build a Classic
+
+- **GAM-09** — Trail Game Builder: Make Your Own Oregon Trail
+- **GAM-10** — Lemonade Tycoon Builder: Make Your Own Business Game
+- **GAM-11** — Text Adventure Builder: Make Your Own Zork
+- **GAM-12** — Roguelike Builder: Make Your Own Rogue
+
 ### Game Jam Project
 
-- **GAM-09** — Game Jam Week: From Idea to Demo
+- **GAM-13** — Game Jam Week: From Idea to Demo
 
 ### 2D Game Developer Pathway
 
-- **GAM-10** — 2D Game Developer Pathway
-- **GAM-11** — Pixel Art & Sprites
-- **GAM-12** — Sprite Sheets & Animation
-- **GAM-13** — Tilesets & Tilemaps
-- **GAM-14** — Game Loop & Rendering
-- **GAM-15** — Movement & Jump Feel
-- **GAM-16** — Collision & Response
-- **GAM-17** — Cameras, Layers & Parallax
-- **GAM-18** — Animation State Machines
-- **GAM-19** — Level Design & Game Feel
-- **GAM-20** — Menus, Saving & Shipping
+- **GAM-14** — 2D Game Developer Pathway
+- **GAM-15** — Pixel Art & Sprites
+- **GAM-16** — Sprite Sheets & Animation
+- **GAM-17** — Tilesets & Tilemaps
+- **GAM-18** — Game Loop & Rendering
+- **GAM-19** — Movement & Jump Feel
+- **GAM-20** — Collision & Response
+- **GAM-21** — Cameras, Layers & Parallax
+- **GAM-22** — Animation State Machines
+- **GAM-23** — Level Design & Game Feel
+- **GAM-24** — Menus, Saving & Shipping
 
 ### Godot Engine Pathway
 
-- **GAM-21** — Godot Game Developer Pathway
-- **GAM-22** — Godot Basics: Your First 3D Room
-- **GAM-23** — GDScript Fundamentals
-- **GAM-24** — Player Controller & Camera
-- **GAM-25** — Collectibles, Signals & UI
-- **GAM-26** — Enemies & Simple AI
-- **GAM-27** — Animation & Game Feel
-- **GAM-28** — Levels & Game State
-- **GAM-29** — Export, Test & Publish
+- **GAM-25** — Godot Game Developer Pathway
+- **GAM-26** — Godot Basics: Your First 3D Room
+- **GAM-27** — GDScript Fundamentals
+- **GAM-28** — Player Controller & Camera
+- **GAM-29** — Collectibles, Signals & UI
+- **GAM-30** — Enemies & Simple AI
+- **GAM-31** — Animation & Game Feel
+- **GAM-32** — Levels & Game State
+- **GAM-33** — Export, Test & Publish
 
 # Volume VI — Visual Design, Communication & Human Systems
 
