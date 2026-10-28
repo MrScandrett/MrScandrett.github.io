@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 442 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 443 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -537,7 +537,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 111 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 112 lessons
 
 ## Visual Art & Design (DES)
 
@@ -649,6 +649,10 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-17** — The 10-80-10 Productivity Process
 - **SYS-18** — The Psychology of Polymaths
 - **SYS-19** — The Nobel Prize — Ideas That Changed the World
+
+### 50 States: Land, Water & People
+
+- **SYS-20** — Florida: Land, Water & People
 
 ## Bible Story, Theology & Christian Formation (BIB)
 
