@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 448 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 449 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -539,7 +539,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 115 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 116 lessons
 
 ## Visual Art & Design (DES)
 
@@ -569,30 +569,31 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 ### Instruments You Can Play
 
 - **MUS-01** — Sheet Music Trainer
-- **MUS-02** — The Guitar: History, Frets & Chords
-- **MUS-03** — The Piano: History, Keys & Chords
-- **MUS-04** — The Violin: Hold It, Tune It, Think in Fifths
-- **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **MUS-06** — The Saxophone: Reed, Breath & Melody
-- **MUS-07** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-02** — The Circle of Fifths
+- **MUS-03** — The Guitar: History, Frets & Chords
+- **MUS-04** — The Piano: History, Keys & Chords
+- **MUS-05** — The Violin: Hold It, Tune It, Think in Fifths
+- **MUS-06** — Drum Lab: Kit, Notation, Rudiments & Fills
+- **MUS-07** — The Saxophone: Reed, Breath & Melody
+- **MUS-08** — Fake Book: Lead Sheets, Variations & Play-Along
 
 ### Composers & Music History
 
-- **MUS-08** — Antonio Vivaldi
-- **MUS-09** — Johann Sebastian Bach
-- **MUS-10** — Wolfgang Amadeus Mozart
-- **MUS-11** — Ludwig van Beethoven
-- **MUS-12** — Frédéric Chopin
-- **MUS-13** — Pyotr Ilyich Tchaikovsky
-- **MUS-14** — Claude Debussy
-- **MUS-15** — Erik Satie
-- **MUS-16** — Scott Joplin
-- **MUS-17** — George Gershwin
-- **MUS-18** — Jelly Roll Morton
-- **MUS-19** — Duke Ellington
-- **MUS-20** — Charlie Parker
-- **MUS-21** — Louis Armstrong
-- **MUS-22** — Modes: From Greece to Today
+- **MUS-09** — Antonio Vivaldi
+- **MUS-10** — Johann Sebastian Bach
+- **MUS-11** — Wolfgang Amadeus Mozart
+- **MUS-12** — Ludwig van Beethoven
+- **MUS-13** — Frédéric Chopin
+- **MUS-14** — Pyotr Ilyich Tchaikovsky
+- **MUS-15** — Claude Debussy
+- **MUS-16** — Erik Satie
+- **MUS-17** — Scott Joplin
+- **MUS-18** — George Gershwin
+- **MUS-19** — Jelly Roll Morton
+- **MUS-20** — Duke Ellington
+- **MUS-21** — Charlie Parker
+- **MUS-22** — Louis Armstrong
+- **MUS-23** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 

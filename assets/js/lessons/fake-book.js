@@ -4819,6 +4819,25 @@
 
   // Exposed for tests and for other lessons that want to reuse the tune engine.
   window.FakeBook = {
+    // Read-only lesson adapter: use the same parser, spelling and labels as the sheet.
+    lessonLibrary: function () { return tunes.map(function (raw) { return { id: raw.id, title: raw.title, key: raw.key, mode: raw.mode }; }); },
+    lessonChart: function (id, targetKey) {
+      var raw = tunes.find(function (item) { return item.id === id; });
+      if (!raw) throw new Error('Choose a registered tune.');
+      var parsed = parseTune(raw), key = parseKey(targetKey || raw.key, raw.mode === 'minor');
+      var sh = shiftBetween(parsed.key, key), flat = keySig(key) < 0;
+      var chords = parsed.chords.map(function (c) {
+        var copy = Object.assign({}, c);
+        copy.root = shiftPitch(pitch(c.root.l + 28, c.root.a), sh.letters, sh.semis, flat);
+        if (Math.abs(copy.root.a) > 1) copy.root = respell(copy.root.midi, flat);
+        if (c.bass) {
+          copy.bass = shiftPitch(pitch(c.bass.l + 28, c.bass.a), sh.letters, sh.semis, flat);
+          if (Math.abs(copy.bass.a) > 1) copy.bass = respell(copy.bass.midi, flat);
+        }
+        return { bar: c.bar, beats: c.dur, letters: chordName(copy), roman: functionName(copy, key, 'roman'), nashville: functionName(copy, key, 'nashville'), notes: chordTones(copy).map(function (tone) { return 60 + tone.pc; }) };
+      });
+      return { title: raw.title, key: keyLabel(key), meter: raw.meter, pickup: raw.pickup || 0, bars: parsed.bars, source: raw.source || '', chords: chords };
+    },
     saveTranscription: function (raw) {
       if (!root.classList.contains('is-ready')) throw new Error('The tune library is still loading. Try again in a moment.');
       parseTune(raw);
