@@ -111,6 +111,7 @@
     next.color = typeof source.color === 'string' ? source.color : next.color;
     next.volume = clamp(source.volume, 0, 1.2, 0.8);
     next.pan = clamp(source.pan, -1, 1, 0);
+    next.mixSafe = !!source.mixSafe;
     next.mute = !!source.mute; next.solo = !!source.solo; next.armed = false;
     next.strip = normalizeStrip(source.strip);
     next.automation = normalizeAutomation(source.automation);

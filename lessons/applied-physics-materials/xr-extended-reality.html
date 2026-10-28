@@ -37,7 +37,7 @@
     .xr-topbar a:hover { color: #005540; }
     .xr-topbar-title { font-size: 0.92rem; font-weight: 800; letter-spacing: -0.01em; text-align: center; color: #00120e; }
 
-    .xr-shell { padding: 2rem 0 3rem; display: grid; gap: 1.2rem; }
+    .xr-shell { padding: 2rem 0 3rem; display: grid; grid-template-columns:minmax(0,1fr); gap: 1.2rem; }
 
     /* ── shared card ── */
     .xr-card {
@@ -240,7 +240,7 @@
 
     .xr-arch-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.4rem;
       align-items: start;
     }
@@ -428,6 +428,21 @@
     .xr-quiz-rationale.correct   { background: rgba(52,199,89,0.1);  color: #1a5c2a; border-left: 3px solid #34c759; }
     .xr-quiz-rationale.incorrect { background: rgba(255,59,48,0.08); color: #6b1515; border-left: 3px solid #ff3b30; }
     @keyframes xr-rationale-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+    .xr-shell > *, .xr-hero-card > * { min-width:0; }
+    .xr-shell { overflow-wrap:anywhere; }
+    .xr-code-tabs { flex-wrap:wrap; }
+    .xr-launch-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:1.2rem; margin:1.5rem 0; }
+    .xr-launch-grid article { padding:1.2rem; border:1px solid currentColor; border-radius:16px; min-width:0; }
+    .xr-launch a { display:inline-block; padding:0.65rem 0; text-underline-offset:0.2em; }
+    .xr-launch a:focus-visible, .xr-arch-mode-btn:focus-visible { outline:3px solid var(--accent,#0071e3); outline-offset:4px; }
+    [data-vr-stage]:fullscreen { overflow:auto; padding:1.5rem; }
+    @media (max-width:480px) { .xr-slider-row { flex-wrap:wrap; } #xr-spectrum-slider { flex-basis:100%; min-height:48px; } }
+    @media print {
+      .xr-shell { max-width:100%; padding:0; }
+      .xr-hero-card, .xr-arch-layout, .xr-launch-grid { grid-template-columns:minmax(0,1fr); }
+      pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+      [data-vr-stage] { background:white !important; color:black !important; }
+    }
   </style>
 </head>
 <body>
@@ -476,6 +491,34 @@
         <span>XR Sessions</span>
       </div>
     </div>
+
+    <section class="xr-card xr-launch" aria-labelledby="xr-try-title">
+      <p class="xr-section-label">Try it here · Screen or headset</p>
+      <h2 id="xr-try-title">One lesson, three ways to explore</h2>
+      <p>Start on a screen, use the headset browser, or step into an immersive room. Each view serves a different purpose.</p>
+      <div class="xr-launch-grid">
+        <article>
+          <h3>Read in a headset</h3>
+          <p>VR mode adapts this page with larger controls, a laser hover ring, text size options and on-screen keys. It turns on automatically in supported headset browsers. Open Settings → Access to change it.</p>
+          <a href="?vr=on">Enable VR mode on this page</a>
+          <p>Scroll a simulation into view, then choose Full view in the VR menu. Its controls and explanation stay together.</p>
+        </article>
+        <article>
+          <h3>Wrap the page around you</h3>
+          <p>The 360° Page Sphere places page snapshots around you. Point and click to follow links while staying in VR. Your site theme becomes the surrounding world.</p>
+          <a href="../../vr/page-sphere.html?src=lessons%2Fapplied-physics-materials%2Fxr-extended-reality.html">Open this lesson in the Page Sphere</a>
+          <p>Snapshots are not live simulations: dragging, typing, menus, video and WebGL are limited. Use the regular page for the spectrum slider. Long pages may be cut off.</p>
+        </article>
+        <article>
+          <h3>Enter a purpose-built world</h3>
+          <p>Visit the Solar System Walk or Student Showcase Hall in the VR Lab. These use WebXR to render a scene around you, with a screen preview available too.</p>
+          <a href="../../vr.html">Explore the VR Lab</a>
+          <p>Immersive entry needs a compatible browser and headset, permission and a button press. Enabling VR mode alone does not start an immersive session.</p>
+        </article>
+      </div>
+      <p><strong>Comfort first:</strong> start seated or standing within a clear space. Use teleport and snap turn where offered. In the Page Sphere, Motion offers Auto, Calm, Still and Full; Auto keeps the world calm in a headset and still under reduced motion. Stop if you feel uncomfortable.</p>
+      <p><strong>Build next:</strong> <a href="../computer-science/graphics-and-games/webxr-gallery.html">create your own WebXR gallery</a>. Our shared XR kit supplies session entry, controller and hand lasers, teleport and snap turn. Keep a flat version available, and use the renderer’s XR animation loop for immersive scenes.</p>
+    </section>
 
     <!-- ══ SECTION 00: XR SPECTRUM FLIP CARDS ══ -->
     <div class="xr-card">
@@ -554,7 +597,7 @@
     </div>
 
     <!-- ══ SECTION 01: SPECTRUM VISUALISER ══ -->
-    <div class="xr-sim-card">
+    <div class="xr-sim-card" data-vr-stage>
       <p class="xr-section-label" style="color:#00c8a0">01 — Milgram's Continuum</p>
       <h2>Drag to Explore the Reality-Virtuality Spectrum</h2>
       <p>Move the slider to slide along Milgram's continuum. The canvas shows how much of the view is real-world vs. virtual. Each coloured zone on the spectrum strip lights up as you enter it, and the description below updates to explain that zone.</p>
@@ -606,7 +649,7 @@
     </div>
 
     <!-- ══ SECTION 03: ARCHITECTURE DIAGRAM ══ -->
-    <div class="xr-arch-card">
+    <div class="xr-arch-card" data-vr-stage>
       <p class="xr-section-label" style="color:#c8b8ff; border-color:rgba(124,92,255,0.2)">03 — OpenXR Layer Stack</p>
       <h2>How Your Code Reaches the Hardware</h2>
       <p>Click each layer in the diagram to learn what it does. The toggle below switches between the <em>unified</em> OpenXR architecture and the <em>fragmented</em> pre-OpenXR world — showing exactly what problem OpenXR solves.</p>
@@ -615,11 +658,17 @@
         <div class="xr-arch-scene">
           <canvas id="xr-arch-canvas" width="300" height="340" aria-label="OpenXR layer stack diagram"></canvas>
         </div>
-        <div class="xr-arch-detail" id="xr-arch-detail">
+        <div class="xr-arch-detail" id="xr-arch-detail" aria-live="polite">
           <p class="xr-arch-detail-hint">Click a layer in the diagram to see its details.</p>
         </div>
       </div>
 
+      <div class="xr-arch-controls" aria-label="Explore architecture layers">
+        <button type="button" class="xr-arch-mode-btn" data-xr-layer="app">Application</button>
+        <button type="button" class="xr-arch-mode-btn" data-xr-layer="api">OpenXR API</button>
+        <button type="button" class="xr-arch-mode-btn" data-xr-layer="runtime">Runtime</button>
+        <button type="button" class="xr-arch-mode-btn" data-xr-layer="hw">Hardware</button>
+      </div>
       <div class="xr-arch-controls">
         <button class="xr-arch-mode-btn active" id="xr-arch-btn-with">With OpenXR (unified)</button>
         <button class="xr-arch-mode-btn" id="xr-arch-btn-without">Without OpenXR (fragmented)</button>
@@ -987,11 +1036,12 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
   <!-- ══════════════════════════════════════════════════
        SPECTRUM VISUALISER CANVAS
   ══════════════════════════════════════════════════ -->
+  <script src="../../assets/js/sim-kit.js"></script>
   <script>
   (function () {
     var canvas = document.getElementById('xr-spectrum-canvas');
     var ctx    = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
+    var W = 800, H = 240;
 
     var STRIP_H   = 28;
     var STRIP_Y   = H - STRIP_H - 10;
@@ -1161,6 +1211,10 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
       draw(v); updateZone(v);
     });
 
+    SimKit.canvas2d(canvas, { height: 240, onResize: function () {
+      ctx.scale(canvas.clientWidth / W, 1);
+      draw(Number(slider.value));
+    } });
     draw(50); updateZone(50);
   })();
   </script>
@@ -1173,7 +1227,7 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
   (function () {
     var canvas     = document.getElementById('xr-arch-canvas');
     var ctx        = canvas.getContext('2d');
-    var W = canvas.width, H = canvas.height;
+    var W = 300, H = 340;
     var detail     = document.getElementById('xr-arch-detail');
     var btnWith    = document.getElementById('xr-arch-btn-with');
     var btnWithout = document.getElementById('xr-arch-btn-without');
@@ -1181,7 +1235,7 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
     var mode        = 'with';
     var activeLayer = null;
     var dashOffset  = 0;
-    var rafId       = null;
+
 
     var LAYERS = [
       { id: 'app',     label: 'Application',       color: '#00c8a0', y: 20,
@@ -1329,10 +1383,12 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
       if (mode === 'with') drawWith(); else drawWithout();
     }
 
-    function animate() {
-      dashOffset = (dashOffset + 0.4) % 18;
+    var reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    function animate(dt) {
+      if (!reducedMotion.matches && !(window.ClassroomOSVR && window.ClassroomOSVR.enabled())) {
+        dashOffset = (dashOffset + dt * 24) % 18;
+      }
       draw();
-      rafId = SimKit.frame('#xr-arch-canvas', animate);
     }
 
     canvas.addEventListener('click', function(e) {
@@ -1348,6 +1404,14 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
       }
     });
 
+    document.querySelectorAll('[data-xr-layer]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        btnWith.click();
+        activeLayer = LAYERS.find(function (layer) { return layer.id === button.dataset.xrLayer; });
+        detail.innerHTML = activeLayer.detail;
+        draw();
+      });
+    });
     btnWith.addEventListener('click', function() {
       mode = 'with'; activeLayer = null;
       detail.innerHTML = '<p class="xr-arch-detail-hint">Click a layer in the diagram to see its details.</p>';
@@ -1359,7 +1423,11 @@ session.<span class="c-fn">addEventListener</span>(<span class="c-s">'end'</span
       btnWithout.classList.add('active'); btnWith.classList.remove('active');
     });
 
-    animate();
+    SimKit.canvas2d(canvas, { height: 340, onResize: function () {
+      ctx.scale(canvas.clientWidth / W, 1);
+      draw();
+    } });
+    SimKit.loop(animate);
   })();
   </script>
 

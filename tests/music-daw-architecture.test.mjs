@@ -206,3 +206,15 @@ test('offline trim preserves music and a short effect tail', () => {
   assert.equal(trimmed[0].length, 655);
   assert.equal(trimmed[1].length, 655);
 });
+
+test('Qu-7 scene safes survive the shared Music Lab project round trip', () => {
+  const song = Project.create();
+  song.tracks[0].mixSafe = true;
+  song.tracks[0].volume = .31;
+  song.mixSnapshots = [{ name: 'Mix A', masterVolume: .85, returns: song.returns, tracks: { [song.tracks[0].id]: { volume: .8 } } }];
+  const restored = Project.parse(Project.stringify(song));
+  assert.equal(restored.tracks[0].mixSafe, true);
+  assert.equal(restored.tracks[1].mixSafe, false);
+  assert.equal(restored.tracks[0].volume, .31);
+  assert.equal(restored.mixSnapshots[0].tracks[song.tracks[0].id].volume, .8);
+});

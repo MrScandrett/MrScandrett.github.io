@@ -378,7 +378,24 @@ function init() {
         dom.activeSummary.hidden = !dom.activeSummary.children.length;
       }
 
+      const surprise = document.getElementById("surprise-project");
+      const discoveryCount = document.getElementById("discovery-count");
+      surprise?.addEventListener("click", () => {
+        const choices = byCreator(activeCreator).filter((project) => projectMatches(project, state));
+        if (!choices.length) return;
+        const project = choices[Math.floor(Math.random() * choices.length)];
+        const link = gridCards.get(project.id)?.querySelector(".card-link");
+        if (link) window.location.assign(link.href);
+      });
+      document.getElementById("empty-reset")?.addEventListener("click", () => {
+        dom.clear.click();
+        dom.search.focus();
+      });
+
       function apply(resetLimit = false) {
+        const discoveryPool = byCreator(activeCreator).filter((project) => projectMatches(project, state));
+        if (surprise) surprise.disabled = discoveryPool.length === 0;
+        if (discoveryCount) discoveryCount.textContent = `${plural(discoveryPool.length)} to discover`;
         if (resetLimit) visibleLimit = PAGE_SIZE;
         dom.search.value = state.q;
         dom.sort.value = [...dom.sort.options].some((opt) => opt.value === state.sort) ? state.sort : "newest";

@@ -101,7 +101,7 @@ export function sendLevelDb({ faderPos, sendDb, pre }) {
 export function applyDca(channels, dca) {
   return channels.map((c) => ({
     ...c,
-    effectiveDb: dca.members.includes(c.id)
+    effectiveDb: c.muted ? -Infinity : dca.members.includes(c.id)
       ? (dca.muted ? -Infinity : faderDb(c.faderPos) + faderDb(dca.faderPos))
       : (c.muted ? -Infinity : faderDb(c.faderPos)),
   }));

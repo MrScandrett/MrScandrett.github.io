@@ -248,7 +248,7 @@
         'font: inherit; font-size: 1.35rem; line-height: 1; cursor: pointer;' +
       '}' +
       '.nav-settings-head { position: relative; padding-right: 3rem; }' +
-      '@media (max-width: 1120px) {' +
+      '@media (max-width: 1280px) {' +
         '.nav-settings {' +
           'position: relative !important; order: 1; flex: 0 0 auto; min-width: 0; margin-left: auto !important;' +
         '}' +
@@ -467,6 +467,19 @@
         }
       }
     }
+  }
+
+  // Give every page the same compact laptop brand while retaining its full name.
+  var sharedBrand = header.querySelector('.brand');
+  if (sharedBrand && sharedBrand.textContent.trim() === "Mr. Scandrett's ClassroomOS" && !sharedBrand.querySelector('span')) {
+    sharedBrand.setAttribute('aria-label', sharedBrand.textContent.trim());
+    sharedBrand.textContent = '';
+    var prefix = document.createElement('span');
+    prefix.className = 'home-brand-prefix';
+    prefix.textContent = "Mr. Scandrett's ";
+    var name = document.createElement('span');
+    name.textContent = 'ClassroomOS';
+    sharedBrand.append(prefix, name);
   }
 
   var navWrap = header.querySelector(".nav-wrap");

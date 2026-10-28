@@ -29,7 +29,10 @@
   const root = document.getElementById('trackStudio');
   if (!root || !IO || !ProjectModel || !Core || !AudioRuntime || !RenderEngine || !PluginHost) return;
 
+  const quConsole = root.dataset.console === 'qu7';
+  if (quConsole) root.classList.add('qu-console');
   const SCRIPT_URL = document.currentScript ? document.currentScript.src : location.href;
+  const siteURL = path => new URL('../../' + path, SCRIPT_URL).href;
   const WORKLET_URL = new URL('music-daw-recorder.worklet.js', SCRIPT_URL).href;
   const JSZIP_URL = new URL('../vendor/jszip.min.js', SCRIPT_URL).href;
 
@@ -61,7 +64,7 @@
   const ui = {
     pxPerBeat: 28, snap: 1, playhead: 0, selTrack: null, selClip: null,
     auto: new Map(), chord: 'single', arp: 'up', qStrength: 100, swing: 0, selNotes: new Set(), rollGrid: 0.25, noteLen: 0.25, rollPx: 72, follow: true, menu: null,
-    tab: 'tools', rollTool: 'draw', playOct: 4, playTrack: null, timeSelection: null,
+    tab: quConsole ? 'mix' : 'tools', mixBank: 'main', rollTool: 'draw', playOct: 4, playTrack: null, timeSelection: null,
   };
   const history = { undo: [], redo: [], last: '' };
   const audio = { ctx: null, mix: null, meter: null, meterData: null };
@@ -1018,11 +1021,12 @@
     saveTimer = setTimeout(runSave, 900);
   }
   let saveDirty = false, saveFailing = false;
+  let saveInFlight = Promise.resolve();
   function runSave() {
     clearTimeout(saveTimer);
-    if (!saveDirty) return Promise.resolve();
+    if (!saveDirty) return saveInFlight;
     saveDirty = false;
-    return autosave().then(() => {
+    saveInFlight = saveInFlight.then(() => autosave()).then(() => {
       if (saveFailing) { saveFailing = false; status('Saving works again: your song is stored in this browser.'); }
       root.removeAttribute('data-save-failed');
     }).catch(() => {
@@ -1031,6 +1035,7 @@
       if (!saveFailing) status('⚠ This song could not be saved in the browser (storage is full or blocked). Export it (Save/Export) so you do not lose your work.');
       saveFailing = true;
     });
+    return saveInFlight;
   }
   // Ask the browser not to evict the saved song when disk space runs low.
   try { navigator.storage?.persist?.(); } catch (_e) { /* optional */ }
@@ -1748,7 +1753,12 @@
   selBar.setAttribute('role', 'group');
   selBar.setAttribute('aria-label', 'Selected track');
   commandStrip.append(selBar);
-  root.dataset.view = 'split';
+  root.dataset.view = quConsole ? 'instrument' : 'split';
+  if (quConsole) {
+    views.querySelector('[data-view=instrument]').textContent = 'Console';
+    views.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === 'instrument')));
+    root.querySelector('.daw-workflow').innerHTML = '<strong>Qu-7 / Music Lab</strong><span>Record & arrange in Tracks · Mix on the console · Shape the selected channel · Save scenes & export</span>';
+  }
   views.addEventListener('click', event => {
     const button = event.target.closest('[data-view]'); if (!button) return;
     silenceLive(); root.dataset.view = button.dataset.view;
@@ -2226,9 +2236,15 @@
   const toDb = (g) => (g <= 0.0001 ? '−∞' : (20 * Math.log10(g)).toFixed(1));
   const panLabel = (p) => (Math.abs(p) < 0.025 ? 'C' : (p < 0 ? 'L' : 'R') + Math.round(Math.abs(p) * 100));
 
+  function consoleFader(track) {
+    const send = ui.mixBank !== 'main', index = Number(ui.mixBank);
+    const value = send ? (track.sends?.[index] || 0) : track.volume;
+    const name = send ? `FX ${index ? 'B' : 'A'} send` : 'Main LR';
+    return `<label class="daw-strip-fader qu-main-fader"><span>${name}</span><input type="range" data-mx="${send ? 'send' : 'volume'}" ${send ? `data-send="${index}"` : ''} data-focus="${track.id}-console" min="0" max="${send ? 1 : 1.2}" step="0.01" value="${value}" aria-label="${esc(track.name)} ${name}"><output>${send ? Math.round(value * 100) + '%' : toDb(value) + ' dB'}</output></label>`;
+  }
   function renderMixer() {
     keepFocus(R.mixer, () => {
-      R.mixer.innerHTML = `<div class="daw-strips">${project.tracks.map((t) => `
+      R.mixer.innerHTML = `${quConsole ? `<div class="qu-bank" role="group" aria-label="Fader assignment"><strong>FADERS →</strong><button type="button" class="daw-btn" data-act="qu-soundcheck">＋ Soundcheck band</button>${[['main','Main LR'],['0','FX A sends'],['1','FX B sends']].map(([id,name]) => `<button type="button" class="daw-btn" data-qu-bank="${id}" aria-pressed="${ui.mixBank === id}">${name}</button>`).join('')}<span>FX sends are post-fader effects buses, not separate monitor outputs.</span></div>` : ''}<div class="daw-strips">${project.tracks.map((t) => `
         <div class="daw-strip${t.id === ui.selTrack ? ' is-selected' : ''}" data-strip="${t.id}" style="--tc:${t.color}">
           <div class="daw-strip-head">
             <input class="daw-th-name" data-mx="name" data-focus="${t.id}-name" value="${esc(t.name)}" maxlength="40" aria-label="${esc(t.name)} name">
@@ -2236,6 +2252,7 @@
               ? hasInstrumentExperience(t) ? `<select data-mx="instrument" data-focus="${t.id}-inst" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-btn" data-mx="tools">Add instrument experience</button>'
               : '<span class="daw-tag">🎙 Audio</span>'}
           </div>
+          ${quConsole ? `<button type="button" class="daw-btn qu-sel" data-mx="select" aria-label="Select ${esc(t.name)} channel" aria-pressed="${t.id === ui.selTrack}">SEL · Channel</button><button type="button" class="daw-btn qu-safe" data-mx="safe" aria-label="Scene safe ${esc(t.name)}" aria-pressed="${!!t.mixSafe}">SAFE</button>` : ''}
           <div class="daw-strip-btns">
             <button type="button" class="daw-mini" data-mx="mute" data-focus="${t.id}-m" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
             <button type="button" class="daw-mini" data-mx="solo" data-focus="${t.id}-s" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}">S</button>
@@ -2243,7 +2260,7 @@
             <button type="button" class="daw-btn daw-fx-btn" data-mx="fx" data-focus="${t.id}-fx" aria-label="Effects on ${esc(t.name)}">FX${(t.effects || []).length ? ' ' + t.effects.length : ''}</button>
             <button type="button" class="daw-mini daw-del" data-mx="delete" data-focus="${t.id}-del" aria-label="Delete ${esc(t.name)}">✕</button>
           </div>
-          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>
+          ${quConsole ? consoleFader(t) : `<label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>`}
           <label class="daw-strip-fader"><span>Pan</span><input type="range" data-mx="pan" data-focus="${t.id}-pan" min="-1" max="1" step="0.05" value="${t.pan}" aria-label="${esc(t.name)} pan"><output>${panLabel(t.pan)}</output></label>
           ${(project.returns || []).map((r, i) => `<label class="daw-strip-fader"><span>${esc(r.id)}</span><input type="range" data-mx="send" data-send="${i}" data-focus="${t.id}-send${i}" min="0" max="1" step="0.01" value="${t.sends?.[i] || 0}" aria-label="${esc(t.name)} send to ${esc(r.name)}"><output>${Math.round((t.sends?.[i] || 0) * 100)}%</output></label>`).join('')}
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="${t.id}"></i></span>
@@ -2260,8 +2277,8 @@
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="master"></i></span>
         </div>
       </div>
-      <div class="daw-bar daw-snapshots" aria-label="Mix snapshots">
-        <button type="button" class="daw-btn" data-act="snap-save" title="Remember every fader, pan, send, mute, solo, EQ and effect setting">📸 Save mix snapshot</button>
+      <div class="daw-bar daw-snapshots" aria-label="Mix scenes and snapshots">
+        <button type="button" class="daw-btn" data-act="snap-save" title="Remember every fader, pan, send, mute, solo, EQ and effect setting">${quConsole ? 'Store mix scene' : '📸 Save mix snapshot'}</button>
         ${(project.mixSnapshots || []).map((m, i) => `<span class="daw-marker"><button type="button" class="daw-btn" data-act="snap-recall" data-i="${i}" title="Recall ${esc(m.name)}">${esc(m.name)}</button><button type="button" class="daw-mini daw-del" data-act="snap-del" data-i="${i}" aria-label="Delete ${esc(m.name)}">✕</button></span>`).join('')}
         <span class="daw-note">Compare two mixes: save A, change things, save B, then flip between them.</span>
       </div>
@@ -2274,11 +2291,15 @@
   }
 
   R.mixer.addEventListener('click', (e) => {
+    const bank = e.target.closest('[data-qu-bank]');
+    if (bank) { ui.mixBank = bank.dataset.quBank; renderMixer(); return; }
     const b = e.target.closest('button[data-mx]'), strip = e.target.closest('[data-strip]');
     const track = strip && findTrack(strip.dataset.strip);
     if (!b || !track) return;
     const what = b.dataset.mx;
-    if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); }
+    if (what === 'select') { ui.selTrack = track.id; setTab('tools'); }
+    else if (what === 'safe') { track.mixSafe = !track.mixSafe; commit(); }
+    else if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); }
     else if (what === 'arm') setArmed(track, !track.armed);
     else if (what === 'delete') deleteTrack(track.id);
     else if (what === 'tools') {ui.selTrack=track.id;setTab('tools');}
@@ -2305,6 +2326,12 @@
       track.sends ||= [0, 0];
       track.sends[Number(el.dataset.send)] = Number(el.value);
       if (out) out.textContent = Math.round(Number(el.value) * 100) + '%';
+      // The console bank and the small send control represent the same parameter.
+      el.closest('[data-strip]').querySelectorAll(`[data-mx="send"][data-send="${el.dataset.send}"]`).forEach(other => {
+        if (other === el) return;
+        other.value = el.value;
+        other.parentElement.querySelector('output').textContent = Math.round(Number(el.value) * 100) + '%';
+      });
       applyMix();
       return;
     }
@@ -2381,7 +2408,7 @@
     return `<div class="daw-score"><svg viewBox="0 ${top} ${width} ${bottom-top}" width="${width}" height="240" role="img" aria-label="Treble staff preview. Exact pitches and timings are editable in the note list below.">${out}</svg></div><p class="daw-note">Staff preview uses sharp spellings and the nearest basic duration; chords share an onset. The note list preserves exact timing. First 64 notes shown.</p>`;
   }
   let lessonCatalog = [];
-  fetch('data/lessons.json').then(r => r.json()).then(data => {
+  fetch(siteURL('data/lessons.json')).then(r => r.json()).then(data => {
     lessonCatalog = (data.lessons || []).filter(l => l.url?.startsWith('lessons/music/') || (l.url?.startsWith('lessons/technical-elements/') && /audio|acoustic|microphone|eq-|cymatic/.test(l.url)));
     if (ui.tab === 'tools') renderChannel();
   }).catch(() => {});
@@ -2430,7 +2457,7 @@
   function channelConsoleHtml(track, sub, clipCount) {
     const strip = ProjectModel.normalizeStrip(track.strip), L = ProjectModel.STRIP_LIMITS, uid2 = track.id;
     const sec = (id, num, title, caption, body, extra = '') => `<section class="mc-sec mc-s-${id}" data-mc-section="${id}" aria-labelledby="mc-${id}-${uid2}">
-      <header><span class="mc-num" aria-hidden="true">${num}</span><h4 id="mc-${id}-${uid2}" tabindex="-1">${title}</h4>${FLOW_LESSONS[id] ? `<a class="mc-learn" href="${FLOW_LESSONS[id]}" aria-label="Lesson: ${esc(title)}">Learn ↗</a>` : ''}</header>
+      <header><span class="mc-num" aria-hidden="true">${num}</span><h4 id="mc-${id}-${uid2}" tabindex="-1">${title}</h4>${FLOW_LESSONS[id] ? `<a class="mc-learn" href="${siteURL(FLOW_LESSONS[id])}" aria-label="Lesson: ${esc(title)}">Learn ↗</a>` : ''}</header>
       <p class="mc-cap">${caption}</p>${body}${extra}</section>`;
     const noSound = track.kind === 'instrument' && !hasInstrumentExperience(track);
     const strips = [
@@ -2509,7 +2536,7 @@
       <details class="daw-channel-options"><summary>Mix · effects · presets · delete</summary><div class="daw-opt-grid"><button type="button" class="daw-btn" data-channel-open="mix">Open the mixer</button><button type="button" class="daw-btn" data-channel-open="fx">Open the FX rack</button><button type="button" class="daw-btn" data-channel-preset="save">Save preset</button><button type="button" class="daw-btn" data-channel-preset="load">Load preset</button><button type="button" class="daw-btn daw-danger" data-channel-delete>🗑 Delete channel</button></div>
       <p class="daw-note">${track.kind==='audio'?'Microphone / imported audio → trim → EQ → inserts → fader / pan → master.':'Instrument → trim → EQ → inserts → fader / pan → master.'} Strip settings, tools and effects travel in saved .mlab.zip projects.</p>
       </details>
-      ${(track.tools||[]).filter(id => Object.hasOwn(CHANNEL_TOOLS,id) && CHANNEL_TOOLS[id].accepts(track)).map(id => `<section class="daw-module" data-installed-tool="${id}"><div class="daw-group"><h4>${CHANNEL_TOOLS[id].name}</h4><a href="${CHANNEL_TOOLS[id].lesson}">Lesson counterpart</a><button type="button" class="daw-btn" data-tool-remove="${id}">Remove experience</button></div>
+      ${(track.tools||[]).filter(id => Object.hasOwn(CHANNEL_TOOLS,id) && CHANNEL_TOOLS[id].accepts(track)).map(id => `<section class="daw-module" data-installed-tool="${id}"><div class="daw-group"><h4>${CHANNEL_TOOLS[id].name}</h4><a href="${siteURL(CHANNEL_TOOLS[id].lesson)}">Lesson counterpart</a><button type="button" class="daw-btn" data-tool-remove="${id}">Remove experience</button></div>
       ${window.MusicChannelExperiences.registry[id]?`<div data-experience="${id}"></div>`:`<label class="daw-field">Note clip<select data-channel-clip aria-label="Channel note clip"><option value="">Choose / create clip</option>${track.clips.filter(c => c.type==='midi').map(c => `<option value="${c.id}" ${c===clip?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
       ${id==='rhythm'?rhythmHtml(clip):`${clip?notationSvg(clip):''}<button type="button" class="daw-btn" data-note-add>Add note</button>${noteListHtml(clip)}`}`}</section>`).join('')}
       <details class="daw-module daw-arrange"><summary>Arrange clips precisely</summary><label class="daw-field">Clip<select data-arrange-clip aria-label="Clip to arrange"><option value="">Select a clip</option>${track.clips.map(c=>`<option value="${c.id}" ${c===arrange?'selected':''}>${esc(c.name)} · beat ${c.start+1}</option>`).join('')}</select></label>
@@ -2518,7 +2545,7 @@
         ${sounds.length ? `<h4 class="daw-tile-title">Sound <span>one per channel; switching keeps your clips</span></h4><div class="daw-tool-catalog">${sounds.map(id => toolTile(id, track)).join('')}</div>` : ''}
         ${learning.length ? `<h4 class="daw-tile-title">Learning tools <span>${track.instrument === 'drums' ? 'sequencing lives on drum channels' : 'notation and theory live on melodic channels'}</span></h4><div class="daw-tool-catalog">${learning.map(id => toolTile(id, track)).join('')}</div>` : ''}</details>`
         : '<div class="daw-audio-note">Audio channels play and record sound as-is. Process them in <strong>FX</strong>, balance them in <strong>Mix</strong>, or add an Instrument channel for keys, drums and more.</div>'}
-      <details class="daw-lesson-browser"><summary>Music + audio engineering lesson library</summary><p class="daw-note">Learn a technique, then apply it to this channel. Historical and listening lessons are references; sound processors appear in FX.</p><div class="daw-lesson-links">${lessonCatalog.map(l => `<a href="${esc(l.url)}">${esc(l.title)}</a>`).join('')}</div></details>`;
+      <details class="daw-lesson-browser"><summary>Music + audio engineering lesson library</summary><p class="daw-note">Learn a technique, then apply it to this channel. Historical and listening lessons are references; sound processors appear in FX.</p><div class="daw-lesson-links">${lessonCatalog.map(l => `<a href="${esc(siteURL(l.url))}">${esc(l.title)}</a>`).join('')}</div></details>`;
     window.MusicDawControls.init(host);
     host.querySelectorAll('[data-experience]').forEach(element => {
       const id=element.dataset.experience;
@@ -2685,7 +2712,7 @@
           <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
           <button type="button" class="daw-btn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" ${i === all.length - 1 ? 'disabled' : ''}>Later</button>
           <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
-          ${d.lesson ? `<a href="lessons/technical-elements/audio-engineering/${d.lesson}">Learn ${esc(d.name)}</a>` : ''}</div>
+          ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn ${esc(d.name)}</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
           <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
@@ -3849,6 +3876,37 @@
         });
         break;
       }
+      case 'qu-soundcheck': {
+        if (!quConsole) break;
+        if (transport.recording || finishingTake) { status('Finish the take before adding the soundcheck band.'); break; }
+        if (transport.playing) pause();
+        const start = Math.ceil(songEnd() / 4) * 4;
+        const parts = [
+          ['Soundcheck drums', 'drums', 'rock-beat', 0.5],
+          ['Soundcheck bass', 'bass', 'bass-roots', 0.45],
+          ['Soundcheck keys', 'piano', 'pop-chords', 0.45],
+        ];
+        // Append, never replace: the current song and its tempo stay intact.
+        parts.forEach(([name, instrument, loopId, volume], i) => {
+          const loop = LOOPS[loopId];
+          if (!loop) return;
+          const track = templateTrack('instrument', name, instrument, project.tracks.length, { volume, sends: i === 2 ? [0.2, 0] : [0, 0] });
+          project.tracks.push(track);
+          const clip = newMidiClip(track, start, 16);
+          clip.name = 'Soundcheck';
+          const phrase = loop.notes(IO.DRUM_KEYS, project.key?.root || 0);
+          clip.notes = [];
+          for (let offset = 0; offset < 16; offset += loop.bars * 4) phrase.forEach(([pitch, beat, duration]) => {
+            clip.notes.push({ pitch, start: offset + beat, duration: duration || 0.25, velocity: 0.75 });
+          });
+          ui.selTrack = track.id;
+        });
+        ui.playhead = start;
+        project.loop = { on: true, start, end: start + 16 };
+        commit();
+        status('Soundcheck band appended: drums, bass and keys. Press Play, ride the faders, select a channel for EQ, then save a mix scene. Undo removes the band.');
+        break;
+      }
       case 'snap-save': {
         project.mixSnapshots ||= [];
         if (project.mixSnapshots.length >= 6) { status('Six snapshots is the limit: delete one first.'); break; }
@@ -3863,8 +3921,8 @@
         const m = project.mixSnapshots?.[Number(btn.dataset.i)];
         if (!m) break;
         project.masterVolume = m.masterVolume; project.returns = JSON.parse(JSON.stringify(m.returns));
-        project.tracks.forEach((t) => { const v = m.tracks[t.id]; if (v) Object.assign(t, JSON.parse(JSON.stringify(v))); });
-        commit(); status(`Recalled ${m.name}.${project.tracks.some((t) => !m.tracks[t.id]) ? ' Tracks added after it kept their settings.' : ''}`);
+        project.tracks.forEach((t) => { const v = m.tracks[t.id]; if (v && !t.mixSafe) Object.assign(t, JSON.parse(JSON.stringify(v))); });
+        commit(); status(`Recalled ${m.name}. Scene-safe channels kept their settings.${project.tracks.some((t) => !m.tracks[t.id]) ? ' Tracks added after it kept their settings.' : ''}`);
         break;
       }
       case 'snap-del': { project.mixSnapshots?.splice(Number(btn.dataset.i), 1); commit(); renderMixer(); break; }
@@ -4395,6 +4453,16 @@
   root.addEventListener('pointerdown', () => {
     if (!audio.ctx || audio.ctx.state !== 'running') ctx();
   }, { capture: true });
+
+  document.querySelectorAll('[data-studio-link]').forEach(link => link.addEventListener('click', async event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return;
+    event.preventDefault();
+    if (transport.recording || finishingTake) { status('Stop recording before switching workspaces.'); return; }
+    pause();
+    await runSave();
+    if (saveFailing) { status('Save failed. Export your project before switching workspaces.'); return; }
+    location.assign(link.href);
+  }));
 
   // ── Boot ─────────────────────────────────────────────────────────────────
   (async () => {
