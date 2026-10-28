@@ -10,7 +10,7 @@
     ['B♭','G',-2,'B♭ C D E♭ F G A',10], ['F','D',-1,'F G A B♭ C D E',5]
   ];
   const flatSix = ['G♭','E♭',-6,'G♭ A♭ B♭ C♭ D♭ E♭ F',6];
-  const colors = ['#d7eea6','#bce7c3','#b6e7de','#b9e3f5','#c3d6fa','#d5ccf8','#e7caf1','#f4cbdc','#f8ccd0','#f7d5b6','#f4e3a4','#e8ec9e'];
+  const colors = ['#dfe6c9','#d4e2c8','#cde0d5','#cddfe0','#d1dce4','#d9d8e6','#e3d5e2','#ead6dc','#ecd8cf','#eadfc9','#e6e2c7','#e1e5c8'];
   const major = [0,2,4,5,7,9,11,12];
   const patterns = { home:[0,3,4,0], pop:[0,4,5,3], turn:[1,4,0] };
   const hints = {home:'Home → wander → build tension → land.',pop:'A familiar loop: home → tension → minor → open space.',turn:'A minor chord → tension → home. A classic landing.'};
