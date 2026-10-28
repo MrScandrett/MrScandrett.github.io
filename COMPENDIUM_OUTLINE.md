@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 442 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 444 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -537,7 +537,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 111 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 113 lessons
 
 ## Visual Art & Design (DES)
 
@@ -610,15 +610,17 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **LAN-12** — The Baloney Detection Kit
 - **LAN-13** — Plato's Allegory of the Cave
 - **LAN-14** — William Blake: Songs of Innocence and of Experience
-- **LAN-15** — Dylan Thomas: An Annotated Reading Compendium
-- **LAN-16** — Dante’s Inferno: A Journey Through the Nine Circles
-- **LAN-17** — John Milton’s Paradise Lost
-- **LAN-18** — John Bunyan’s The Pilgrim’s Progress
-- **LAN-19** — Horror in Literature
-- **LAN-20** — L. Frank Baum’s The Wonderful Wizard of Oz
-- **LAN-21** — Tolkien and the Art of Worldbuilding
-- **LAN-22** — Learning Egyptian Hieroglyphs
-- **LAN-23** — Learning Cuneiform
+- **LAN-15** — Arnaut Daniel: The Sestina Workshop
+- **LAN-16** — Dylan Thomas: An Annotated Reading Compendium
+- **LAN-17** — Dante’s Inferno: A Journey Through the Nine Circles
+- **LAN-18** — John Milton’s Paradise Lost
+- **LAN-19** — John Bunyan’s The Pilgrim’s Progress
+- **LAN-20** — Edgar Allan Poe: Sound, Suspense & the Uncertain Narrator
+- **LAN-21** — Horror in Literature
+- **LAN-22** — L. Frank Baum’s The Wonderful Wizard of Oz
+- **LAN-23** — Tolkien and the Art of Worldbuilding
+- **LAN-24** — Learning Egyptian Hieroglyphs
+- **LAN-25** — Learning Cuneiform
 
 ## History, Economics & Social Systems (SYS)
 

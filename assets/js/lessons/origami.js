@@ -188,7 +188,7 @@
     flappingBird: {
       id: 'flappingBird',
       name: 'Kinetic Flapping Bird',
-      tag: 'Dynamic Action Model · 14 Steps',
+      tag: 'Dynamic Action Model · 6 Steps',
       difficulty: 'Intermediate',
       base: 'Bird Base Variant',
       mathNote: 'Mechanical 4-bar linkage created purely out of folded paper. Pulling the tail rotates the wing hinge levers.',
@@ -255,7 +255,7 @@
     frog: {
       id: 'frog',
       name: 'Jumping Frog',
-      tag: 'Action Origami · Elasticity · 10 Steps',
+      tag: 'Action Origami · Elasticity · 7 Steps',
       difficulty: 'Easy–Medium',
       base: 'Waterbomb Half-Base',
       mathNote: 'The frog stores mechanical strain energy in a folded accordion spring pleat. Releasing the finger transfers elastic potential energy into kinetic vertical leap.',
@@ -329,7 +329,7 @@
     kabuto: {
       id: 'kabuto',
       name: 'Samurai Helmet (Kabuto)',
-      tag: 'Historic Edo Model · 8 Steps',
+      tag: 'Historic Edo Model · 6 Steps',
       difficulty: 'Beginner',
       base: 'Diagonal Triangle Base',
       mathNote: 'Features dramatic bilateral reflection symmetry. The horns and rim use 45° and 90° rotational folds.',
@@ -395,7 +395,7 @@
     sonobe: {
       id: 'sonobe',
       name: 'Modular Sonobe Polyhedron Unit',
-      tag: 'Modular Origami · 3D Spatial Geometry · 8 Steps',
+      tag: 'Modular Origami · 3D Spatial Geometry · 7 Steps',
       difficulty: 'Easy–Intermediate',
       base: 'Parallelogram Modular Unit',
       mathNote: 'Invented by Mitsunobu Sonobe in the late 1960s. Six identical units interlock at 90° dihedral angles to form a rigid mathematical cube without glue.',
@@ -469,7 +469,7 @@
     miura: {
       id: 'miura',
       name: 'Miura-ori Herringbone Unit Tile',
-      tag: 'Engineering Tessellation · Auxetic · 8 Steps',
+      tag: 'Engineering Tessellation · Auxetic · 4 Steps',
       difficulty: 'Intermediate',
       base: 'Grid Tessellation',
       mathNote: 'Koryo Miura’s rigid fold pattern. All parallelogram facets remain flat while the vertices act as spatial spherical hinges with negative Poisson ratio.',
