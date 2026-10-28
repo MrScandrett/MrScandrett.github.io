@@ -267,7 +267,8 @@
         flagModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
         flagModel.timeScale = wind.timeScale;
         flagModel.setAttribute('camera-orbit', wind.orbit);
-        if (typeof flagModel.play === 'function') flagModel.play();
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) flagModel.pause?.();
+        else if (typeof flagModel.play === 'function') flagModel.play();
       }
 
       flagModel?.addEventListener('load', applyWindPreset);
@@ -297,6 +298,7 @@
         stage.dataset.crawl = 'playing';
         btnPause.disabled = false;
         btnPause.textContent = 'Pause';
+        btnPlay.disabled = true;
         playMusic();
       }
 
@@ -331,6 +333,7 @@
       crawl?.addEventListener('animationend', () => {
         stage.dataset.crawl = 'finished';
         btnPause.disabled = true;
+        btnPlay.disabled = false;
         audio?.pause?.();
         if (readyText) readyText.textContent = 'Presentation complete. Restart to replay.';
       });

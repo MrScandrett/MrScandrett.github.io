@@ -12,6 +12,7 @@
     button.addEventListener('click', () => {
       document.querySelectorAll('[data-habitat]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
       const [title, description, pressure, question] = habitats[button.dataset.habitat];
+      readout.dataset.activeHabitat = button.dataset.habitat;
       readout.replaceChildren();
       const heading = document.createElement('h3'); heading.textContent = title;
       const text = document.createElement('p'); text.textContent = description;
