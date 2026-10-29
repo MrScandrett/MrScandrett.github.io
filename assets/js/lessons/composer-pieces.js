@@ -9,7 +9,7 @@
     chopin: [['prelude','Prelude in A major',['chopin-prelude-7']],['eminor','Prelude in E minor',['chopin-prelude-4']],['cminor','Prelude in C minor',['chopin-prelude-20']]],
     joplin: [['entertainer','The Entertainer',['joplin-entertainer']]],
     mozart: [['nachtmusik','Eine kleine Nachtmusik',['mozart-eine-kleine-1']],['turkish','Turkish March',['mozart-turkish-march']],['sonata','Sonata facile',['mozart-sonata-facile']],['maman','Ah, vous dirai-je, Maman',['mozart-ah-vous-theme']]],
-    tchaikovsky: [['song','Old French Song',['tchaikovsky-old-french-song']]],
+    tchaikovsky: [['swan','Swan Lake theme',['tchaikovsky-swan-theme']],['sugar-plum','Dance of the Sugar Plum Fairy',['tchaikovsky-sugar-plum']],['flowers','Waltz of the Flowers',['tchaikovsky-waltz-flowers']],['song','Old French Song',['tchaikovsky-old-french-song']],['soldiers','March of the Wooden Soldiers',['tchaikovsky-wooden-soldiers']]],
     debussy: [['clair','Clair de Lune',['debussy-clair-de-lune']],['arabesque','Première Arabesque',['debussy-arabesque-1']]],
     satie: [['gymnopedie1','Gymnopédie No. 1',['satie-gymnopedie-1']],['gnossienne1','Gnossienne No. 1',['satie-gnossienne-1']]],
     vivaldi: [['spring','Spring',['vivaldi-spring-1']]]

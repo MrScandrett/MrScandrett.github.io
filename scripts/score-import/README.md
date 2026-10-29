@@ -59,6 +59,11 @@ Some engravings need a small edit the converter cannot make; each one is scripte
 
 ## Current complete scores
 
+For the separately labeled ballet arrangements of **Swan Lake theme**, **Dance
+of the Sugar Plum Fairy**, and **Waltz of the Flowers**, see the
+[archived sources, excerpt ranges, license evidence, reproduction steps and MIDI results](sources/tchaikovsky-hits/README.md).
+These excerpts do not represent complete ballet or orchestral scores.
+
 | Score | Source | Check against MIDI |
 | --- | --- | --- |
 | bach-invention-8 | Mutopia 61 (PD) | 598/598 notes |

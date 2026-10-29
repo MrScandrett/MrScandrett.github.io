@@ -72,6 +72,16 @@ test('two voices striking the same pitch together sound it once', () => {
   assert.equal(notes[0].dur, 2);
 });
 
+test('staccato releases early while keeping written beats, chords and ties intact', () => {
+  const m = model({ time: '4/4', staves: [{ notes: '(C5 E5)/4+. D5/4 E5/2~ | E5/4+. F5/2. | G5/2~+. G5/2' }] });
+  const notes = engine.playList(m);
+  assert.deepEqual(notes.map(({ start, dur, midi }) => [start, dur, midi]), [
+    [0, 0.5, 72], [0, 0.5, 76], [1, 1, 74], [2, 2.5, 76], [5, 3, 77], [8, 4, 79]
+  ]);
+  assert.deepEqual(m.barStart, [0, 4, 8]);
+  assert.equal(m.total, 12);
+});
+
 test('every complete composer score is long, sourced and guided', () => {
   const complete = Object.entries(library).filter(([, s]) => s.complete);
   assert.ok(complete.length >= 14);

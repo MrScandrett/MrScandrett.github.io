@@ -383,6 +383,9 @@
               if (target.bar !== cur.bar && target.bar !== nextBar && target.bar !== bi) break;
               cur = target; dur += cur.dur;
             }
+            // Staccato changes the release, not the written rhythm. If a tied
+            // chain ends staccato, detach only its final segment.
+            if (cur.orn && cur.orn.indexOf('.') >= 0) dur -= cur.dur * 0.5;
             out.push({ staff: si, start: ev.abs + off, dur: dur, midi: p.midi, vel: vel, fermata: ev.fermata, written: ev.abs });
           });
         });
