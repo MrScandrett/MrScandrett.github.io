@@ -473,8 +473,14 @@ copy):
 - `assets/vendor/matter-bundle.min.js` (rebuild with `npm run build:matter`, source
   in `scripts/matter-bundle-entry.js`) — a pinned Matter.js build (`Engine`,
   `Bodies`, `Body`, `Composite`, `World`) for sims that need real 2D rigid-body
-  collision instead of independently-moving points. See `lessons/technical-elements/audio-engineering/cymatics.html`'s
-  sand-grain physics for a worked example.
+  collision instead of independently-moving points. See `assets/js/cymatics/cymatics-lab.mjs`
+  (`separateGrains`, the Cymatics lesson's sand) for a worked example.
+- `assets/js/cymatics/plate-physics.mjs` — real Chladni-plate physics in SI units: Kirchhoff plate
+  modes for a centre-bolted square or circle (polar Rayleigh–Ritz with the bolt clamped exactly),
+  driver/bow modal forcing and ring-up, with `granular.mjs` for sand that lifts off where Γ = ω²A/g > 1
+  and Faraday's air-streamed powder. Tests (`tests/cymatics-plate.test.mjs`) check it against the exact
+  free-circle Bessel solution and Leissa's square-plate values; keep them passing if you touch the
+  solver, and keep `SQUARE_TRUST` honest (the lesson shades frequencies above it as "beyond the model").
 - `<script src="../assets/js/liquid-engine.js"></script>` — `LiquidEngine` for liquids:
   `Surface` (1-D waves), `Particles`/`FlowParticles`, `DepthField` (2-D depth-averaged grid
   flow over terrain for lava fields, floods and mudflows; conserves volume, has a yield threshold
