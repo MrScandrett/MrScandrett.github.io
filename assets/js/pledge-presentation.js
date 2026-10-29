@@ -178,6 +178,7 @@
     fullscreen.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
   });
   document.addEventListener('keydown', event => {
+    if (event.defaultPrevented) return;
     if (event.key === 'Escape' && presentation.classList.contains('presentation-expanded')) {
       setExpanded(false);
       fullscreen.focus();

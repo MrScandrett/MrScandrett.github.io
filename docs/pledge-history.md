@@ -43,3 +43,44 @@ and ten vertical intervals. These use the construction ratios accompanying
 [Executive Order 10834](https://www.govinfo.gov/content/pkg/USCODE-2022-title4/html/USCODE-2022-title4-chap1-sec1.htm).
 SVG colors are screen approximations; lighting and cloth folds affect their
 appearance. The former GLB model and fireworks are no longer loaded by this page.
+
+## Optional national-landmark webcam
+
+Added 2026-10-29. `assets/js/pledge-camera.js` supplies a view selector alongside
+the existing pledge. The initial view remains the local rendered flag, and no
+webcam request is made until the user selects it. The current free option is the
+National Park Service's Devils Tower visitor-center flag camera:
+
+- [Official camera page](https://www.nps.gov/media/webcam/view.htm?id=353840EE-9D49-67A6-C3D2292B5251E4DD)
+- [Published image endpoint](https://www.nps.gov/webcams-deto/deto5.jpg)
+- [NPS ownership and reuse notice](https://www.nps.gov/aboutus/disclaimer.htm)
+
+The NPS camera page identifies this as a still image updated every 60 seconds,
+not streaming video. Its published image URL was verified directly and the image
+visually checked for the American flag on 2026-10-29. The camera is NPS-operated
+with no separate third-party credit on its camera page; the NPS ownership notice
+generally places its own work in the public domain unless otherwise indicated.
+The page credits NPS, links to the source, preserves the full camera frame, and
+uses neither NPS insignia nor a claim of NPS endorsement. Recheck the owning
+source and its credits before adding or replacing any camera.
+
+Images are requested directly from NPS, at most once per minute automatically;
+manual refresh is also available. The displayed receipt time is explicitly not
+a camera capture time or a guarantee of freshness. Automatic updates stop when
+the user freezes the image, pauses the pledge, hides the tab, scrolls away, or
+returns to the rendered flag. Automatic offscreen work and all tab-hidden or
+superseded requests are canceled; explicit selections/manual refreshes may finish
+below the fold or while pledge playback is paused. Late callbacks cannot replace a newly selected view. The first request times out after
+12 seconds and returns to the rendered flag on failure. A later refresh failure
+keeps the previous image and labels it as the last received image. The shared
+photo lightbox enlarges the current snapshot with its caption and credit.
+
+Fort McHenry and Pearl Harbor are provided as links to official/provider pages,
+not embedded feeds. [EarthCam's FAQ](https://www.earthcam.com/faq.php) directs
+website embedding requests to licensing; its NPS partnerships do not establish
+free reuse permission. The NPS Pearl Harbor camera listing currently has no
+working embedded player in its served HTML, so the link uses the actual EarthCam
+provider page. The old CamStreamer Frying Pan flag listing was not admitted:
+[the station operator](https://fpsls.com/stay) says no camera currently operates
+there, despite old listings describing it as live. No accounts, paid services,
+stream extraction, proxying, or archived footage presented as live are involved.

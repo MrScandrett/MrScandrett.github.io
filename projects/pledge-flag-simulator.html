@@ -42,11 +42,37 @@
           <button class="btn" id="btnMute" type="button" aria-pressed="true">Enable music</button>
           <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
         </div>
-        <div class="flag-stage" id="pledgeStage" data-crawl="idle" aria-label="American flag and pledge presentation">
+        <div class="pledge-view-controls">
+          <label for="flagView"><span>Flag view</span>
+            <select id="flagView" aria-label="Flag view">
+              <option value="rendered" selected>Rendered flag · works offline</option>
+              <option value="devils-tower">Devils Tower · NPS webcam stills</option>
+            </select>
+          </label>
+          <div class="camera-actions" id="cameraActions" role="group" aria-label="Webcam controls" hidden>
+            <button class="btn camera-icon-button" id="btnRefreshCamera" type="button" aria-label="Refresh webcam image" title="Refresh webcam image">↻</button>
+            <button class="btn" id="btnFreezeCamera" type="button" aria-pressed="false">Freeze image</button>
+            <button class="btn" id="btnReturnFlag" type="button" aria-label="Return to rendered flag">Rendered flag</button>
+          </div>
+        </div>
+        <div class="flag-stage" id="pledgeStage" data-view="rendered" data-crawl="idle" aria-label="American flag and pledge presentation">
           <div class="flag-scene">
+            <div class="flag-rendered" id="renderedFlag">
             <img class="flag-fallback" src="../assets/images/american-flag.svg" alt="The American flag, with fifty white stars and thirteen alternating red and white stripes.">
             <canvas id="flagCanvas" class="flag-canvas" role="img" aria-label="An American flag gently waving from a silver flagpole in daylight. Fifty stars in nine alternating rows of six and five, and thirteen stripes."></canvas>
             <span class="flag-scene-caption">The United States of America</span>
+            </div>
+            <figure class="flag-camera" id="flagCamera" data-zoomable hidden>
+              <div class="camera-image-area" id="cameraImageArea">
+                <p class="camera-placeholder" id="cameraPlaceholder">Select the webcam to load a view from the National Park Service.</p>
+              </div>
+              <figcaption class="camera-caption">
+                <strong>Devils Tower, Wyoming</strong>
+                <span class="camera-format">NPS webcam · still images, refreshed every 60 seconds</span>
+                <span id="cameraStatus" role="status">No webcam image loaded.</span>
+                <span class="camera-credit">Credit: National Park Service · <a href="https://www.nps.gov/aboutus/disclaimer.htm" target="_blank" rel="noopener noreferrer">Public domain</a> · <a href="https://www.nps.gov/media/webcam/view.htm?id=353840EE-9D49-67A6-C3D2292B5251E4DD" target="_blank" rel="noopener noreferrer">Camera source</a></span>
+              </figcaption>
+            </figure>
           </div>
           <div class="pledge-reading">
             <h2 class="stage-heading">Pledge of Allegiance</h2>
@@ -60,7 +86,7 @@
 
         <div class="pledge-panel">
           <div class="lesson-actions pledge-settings">
-            <label class="control-inline" for="windMode">
+            <label class="control-inline" for="windMode" data-rendered-control>
               Wind
               <select id="windMode" aria-label="Wind strength">
                 <option value="calm" selected>Light breeze</option>
@@ -68,7 +94,7 @@
                 <option value="strong">Fresh breeze</option>
               </select>
             </label>
-            <button class="btn" id="btnMotion" type="button" aria-pressed="false">Pause flag</button>
+            <button class="btn" id="btnMotion" data-rendered-control type="button" aria-pressed="false">Pause flag</button>
             <label class="control-inline" for="volumeControl">
               Volume
               <input id="volumeControl" type="range" min="0" max="100" value="40" />
@@ -103,7 +129,7 @@
             <source src="../assets/audio/star-spangled-banner.mp3" type="audio/mpeg" />
           </audio>
         </div>
-        <p class="flag-design-note">50 stars · 13 stripes · 10:19 proportions. Flag design follows <a href="https://www.govinfo.gov/content/pkg/USCODE-2022-title4/html/USCODE-2022-title4-chap1-sec1.htm">Executive Order 10834</a>; cloth motion and daylight are illustrative.</p>
+        <p class="flag-design-note">Rendered flag: 50 stars · 13 stripes · 10:19 proportions. Flag design follows <a href="https://www.govinfo.gov/content/pkg/USCODE-2022-title4/html/USCODE-2022-title4-chap1-sec1.htm">Executive Order 10834</a>; cloth motion and daylight are illustrative.</p>
       </section>
 
       <section class="lesson-section">
@@ -111,9 +137,19 @@
         <ul class="checklist">
           <li>Start the presentation to read the pledge in four measured passages. Pause or restart whenever the class needs more time.</li>
           <li>Use Fullscreen to show the flag and words on a classroom display.</li>
-          <li>Choose a breeze or pause the flag. Music is off until you enable it; reduced-motion settings keep the flag still.</li>
+          <li>Choose a breeze or pause the rendered flag. Music is off until you enable it; reduced-motion settings keep the rendered flag still.</li>
+          <li>Choose the Devils Tower webcam for a real national-landmark view beside the pledge. It uses still images, not streaming video. Freeze the image or return to the rendered flag at any time. Lighting, weather, camera framing, and delays can affect the view.</li>
         </ul>
       </section>
+
+      <details class="landmark-camera-links">
+        <summary>Other official landmark webcams</summary>
+        <p>These cameras open on their providers’ websites. They are linked here rather than embedded.</p>
+        <ul>
+          <li><a href="https://www.nps.gov/fomc/learn/photosmultimedia/webcams.htm" target="_blank" rel="noopener noreferrer">Fort McHenry · NPS / EarthCam</a></li>
+          <li><a href="https://www.earthcam.com/usa/hawaii/oahu/pearlharbor/" target="_blank" rel="noopener noreferrer">Pearl Harbor National Memorial · NPS / EarthCam</a></li>
+        </ul>
+      </details>
 
       <nav class="history-jumps" aria-label="Explore American history">
         <a href="#history-today">This day in history</a><a href="#america-before-1492">America before 1492</a><a href="#history-paintings">Painting gallery</a>
@@ -244,6 +280,7 @@
 
     <script src="../assets/js/sim-kit.js"></script>
     <script src="../assets/js/pledge-presentation.js" defer></script>
+    <script src="../assets/js/pledge-camera.js" defer></script>
     <script type="module" src="../assets/js/pledge-flag.mjs"></script>
     <script src="../assets/js/pledge-history.js" defer></script>
     <script src="../assets/js/photo-lightbox.js"></script>

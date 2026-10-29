@@ -117,6 +117,7 @@ async function createFlag() {
     geometry.computeVertexNormals();
   }
   function frameCamera() {
+    if (!canvas.clientWidth || !canvas.clientHeight) return false;
     syncSize();
     // Contain the flag, finial, and a generous length of pole at every aspect.
     const aspect = canvas.clientWidth / Math.max(1, canvas.clientHeight);
@@ -124,21 +125,21 @@ async function createFlag() {
     camera.position.set(.2, .55, distance);
     camera.lookAt(-.03, .25, 0);
     camera.updateProjectionMatrix();
+    return true;
   }
   function draw() { renderer.render(scene, camera); }
   deform(0);
-  frameCamera();
-  draw();
+  if (frameCamera()) draw();
   stage.dataset.renderer = 'ready';
   // Only the canvas is announced once the static fallback has been replaced.
   stage.querySelector('.flag-fallback').setAttribute('aria-hidden', 'true');
   let loop = SimKit.loop(dt => { deform(dt); draw(); }, { el: canvas, maxDt: .06 });
   function syncMotion() {
-    if (stage.dataset.motion === 'paused' || stage.dataset.crawl === 'paused') loop.pause();
+    if (stage.dataset.view !== 'rendered' || stage.dataset.motion === 'paused' || stage.dataset.crawl === 'paused') loop.pause();
     else loop.resume();
   }
-  new MutationObserver(syncMotion).observe(stage, { attributes: true, attributeFilter: ['data-motion', 'data-crawl'] });
-  const resize = new ResizeObserver(() => { frameCamera(); draw(); });
+  new MutationObserver(syncMotion).observe(stage, { attributes: true, attributeFilter: ['data-view', 'data-motion', 'data-crawl'] });
+  const resize = new ResizeObserver(() => { if (frameCamera()) draw(); });
   resize.observe(canvas);
   syncMotion();
   canvas.addEventListener('webglcontextlost', event => {
