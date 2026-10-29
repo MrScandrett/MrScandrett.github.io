@@ -1,309 +1,93 @@
-/* Keep the classroom reader independent of the showcase display typeface. */
+/* A quiet civic presentation: daylight, navy, silver, and the flag itself. */
 body.theme-eliza1966 {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: var(--font-sans);
+  --pledge-serif: Georgia, "Times New Roman", serif;
+  --bg: #f2f5f8;
+  --text: #20344b;
+  --muted: #526478;
+  --accent: #943445;
   font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
 }
-
-/* The flag is the setting; the pledge is the one moving visual element. */
-.eliza-page {
-  width: min(1240px, calc(100% - 2rem));
+body.theme-eliza1966 .site-header { background: #f8fafcf5; border-color: #d1dbe4; }
+.eliza-page { width: min(1320px, calc(100% - 3rem)); padding-top: clamp(2rem, 4vw, 3.5rem); }
+.lesson-hero { margin: 0 0 2rem; max-width: none; }
+.lesson-hero h1 { font-family: var(--pledge-serif); font-size: clamp(2.3rem, 4.8vw, 4.2rem); font-weight: 400; line-height: 1.12; letter-spacing: -.035em; margin: 0 0 1rem; color: #1b324b; }
+.lesson-hero .lesson-subtitle { max-width: 62ch; color: #526478; font-size: clamp(1rem, 1.5vw, 1.15rem); line-height: 1.7; margin: 0; }
+.pledge-hero-links { display: flex; flex-wrap: wrap; gap: .65rem 1.5rem; margin-top: 1.15rem; }
+.pledge-hero-links a { color: #304f70; font-size: .9rem; text-underline-offset: .3em; }
+.terminal.eliza-app { padding: clamp(.8rem, 2vw, 1.6rem); background: #fff; border: 1px solid #cbd5df; border-radius: 12px; box-shadow: 0 12px 36px #20344b0a; font-family: var(--font-sans); scroll-margin-top: 5rem; }
+.presentation-label { display: flex; justify-content: space-between; gap: 1rem; color: #526478; font-size: .82rem; padding-bottom: .9rem; border-bottom: 1px solid #dce3ea; }
+.pledge-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 1rem 0 1.2rem; }
+.pledge-actions .btn, .pledge-settings .btn { min-height: 44px; border: 1px solid #aebdcb; border-radius: 5px; color: #253e58; background: #fff; padding: .65rem 1rem; font-size: .9rem; font-weight: 600; box-shadow: none; }
+.pledge-actions .btn.primary { background: #263f5c; border-color: #263f5c; color: #fff; padding-inline: 1.3rem; }
+.pledge-actions .btn:hover:not(:disabled), .pledge-settings .btn:hover { background: #edf2f7; }
+.pledge-actions .btn.primary:hover:not(:disabled) { background: #365577; }
+.pledge-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
+.eliza-page :is(button, a, select, input, summary):focus-visible { outline: 3px solid #2972bc; outline-offset: 4px; }
+.flag-stage { position: relative; isolation: isolate; display: grid; place-items: stretch; grid-template-columns: 60% 40%; height: clamp(460px, 44vw, 610px); min-height: 0; padding: 0; margin: 0; overflow: hidden; border-radius: 6px; border: 1px solid #bac9d6; background: #cedfea; }
+.flag-scene { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: radial-gradient(ellipse at 8% 8%, #f9faf6a6, transparent 55%), linear-gradient(180deg, #8eb4ce 0%, #c9dce7 64%, #e4e8e4 100%); }
+.flag-scene::before { content: ""; position: absolute; inset: 12% -20% 35%; background: radial-gradient(ellipse at 20% 65%, #ffffff5c, transparent 42%), radial-gradient(ellipse at 78% 22%, #ffffff30, transparent 35%); filter: blur(18px); pointer-events: none; }
+.flag-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .35s ease; }
+.flag-stage[data-renderer="ready"] .flag-canvas { opacity: 1; }
+.flag-stage[data-renderer="ready"] .flag-fallback { visibility: hidden; }
+.flag-fallback { position: absolute; top: 25%; left: 9%; width: 82%; height: auto; box-shadow: 0 12px 28px #20344b18; }
+.flag-scene-caption { position: absolute; bottom: 1.5rem; left: 0; right: 0; text-align: center; font-size: .78rem; letter-spacing: .025em; color: #344e63; }
+.pledge-reading { display: flex; flex-direction: column; position: relative; padding: clamp(1.4rem, 3vw, 2.8rem); color: #f7f8fa; background: linear-gradient(145deg, #223c57, #172c43); border-left: 1px solid #ffffff29; }
+.stage-heading { margin: 0; font-family: var(--font-sans); font-size: .9rem; line-height: 1.5; font-weight: 500; color: #cedbe7; }
+.pledge-words { display: flex; align-items: center; flex: 1; padding: 1.8rem 0; }
+.pledge-crawl { margin: 0; font-family: var(--pledge-serif); font-size: clamp(1.8rem, 3vw, 2.9rem); font-weight: 400; line-height: 1.38; letter-spacing: -.015em; color: #fff; text-wrap: pretty; }
+.pledge-crawl.passage-enter { animation: passage-reveal .45s ease both; }
+@keyframes passage-reveal { from { opacity: 0; } to { opacity: 1; } }
+.pledge-ready { margin: 0 0 .85rem; min-height: 1.5em; color: #d1deea; font-size: .82rem; line-height: 1.5; }
+.pledge-progress { height: 2px; width: 100%; background: #ffffff29; }
+.pledge-progress span { display: block; height: 100%; width: 0%; background: #c2cfdc; }
+.pledge-panel { margin: 0; padding: 1rem 0 0; }
+.pledge-settings { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.3rem; margin: 0 0 .6rem; color: #344b62; }
+.pledge-settings .control-inline { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .6rem; font-size: .9rem; }
+.pledge-settings select { min-height: 44px; background: #fff; color: #263f5c; border: 1px solid #aebdcb; border-radius: 5px; padding: .5rem; font: inherit; }
+.pledge-settings input { accent-color: #304f70; min-height: 44px; width: 110px; }
+.audio-status, .respect-note, .flag-design-note { color: #526478; font-size: .85rem; line-height: 1.7; }
+.audio-status { margin: .6rem 0 1.2rem; }
+.flag-design-note { margin: 1.1rem 0 0; padding-top: 1rem; border-top: 1px solid #dce3ea; font-size: .78rem; }
+.flag-design-note a { color: #304f70; text-underline-offset: .2em; }
+.pledge-transcript { padding: clamp(1rem, 2vw, 1.5rem); border: 1px solid #d6e0e9; border-radius: 5px; background: #f2f6f9; color: #203b57; }
+.pledge-transcript .pledge-title { margin: 0 0 .6rem; font: 600 .85rem var(--font-sans); color: #3d566f; }
+.pledge-transcript .pledge-text { max-width: 80ch; margin: 0; font: clamp(1.15rem, 1.8vw, 1.5rem)/1.7 var(--pledge-serif); }
+.respect-note { margin: 1rem 0; }
+.etiquette { color: #344b62; font-size: .9rem; }
+.etiquette summary { cursor: pointer; padding: .5rem 0; }
+.lesson-section { padding: 1.4rem 0; background: transparent; border: 0; color: #344b62; }
+.lesson-section h2 { font-size: 1.1rem; color: #203b57; }
+.lesson-section li { line-height: 1.8; }
+.eliza-app:is(:fullscreen, .presentation-expanded) { display: flex; flex-direction: column; justify-content: center; padding: 1rem; background: #14283d; color: #fff; border: 0; border-radius: 0; overflow: auto; }
+.eliza-app:is(:fullscreen, .presentation-expanded) .flag-stage { flex: 1 1 auto; height: auto; min-height: 220px; border: 0; }
+.eliza-app:is(:fullscreen, .presentation-expanded) .pledge-actions { flex: 0 0 auto; margin: 0 0 1rem; }
+.eliza-app:is(:fullscreen, .presentation-expanded) :is(.presentation-label, .pledge-panel, .flag-design-note) { display: none; }
+.eliza-app:is(:fullscreen, .presentation-expanded) .pledge-crawl { font-size: clamp(1.6rem, 3.6vw, 4rem); }
+@media (max-width: 700px) {
+  .eliza-page { width: calc(100% - 1.5rem); padding-top: 1.8rem; }
+  .lesson-hero { margin-bottom: 1.5rem; }
+  .presentation-label span:last-child { display: none; }
+  .pledge-actions { gap: .5rem; }
+  .pledge-actions .btn { flex: 1 1 auto; padding-inline: .8rem; }
+  .pledge-actions .btn:first-child { flex-basis: 100%; }
+  .flag-stage { grid-template-columns: 1fr; grid-template-rows: 270px minmax(290px, auto); height: auto; }
+  .flag-scene-caption { bottom: 1rem; font-size: .72rem; }
+  .pledge-reading { padding: 1.4rem; border-left: 0; border-top: 1px solid #ffffff29; }
+  .pledge-words { padding: 1.4rem 0; }
+  .pledge-crawl { font-size: clamp(1.6rem, 6.5vw, 2.1rem); line-height: 1.4; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .flag-stage { grid-template-rows: minmax(170px, 42%) minmax(210px, 1fr); }
 }
-
-.lesson-hero {
-  max-width: 760px;
-  margin: 0 0 1.5rem;
+@media (max-height: 500px) and (orientation: landscape) {
+  .eliza-app:is(:fullscreen, .presentation-expanded) .flag-stage { grid-template-columns: 55% 45%; grid-template-rows: 1fr; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-reading { padding: 1rem 1.5rem; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-words { padding: .6rem 0; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-crawl { font-size: clamp(1.2rem, 3.2vw, 2rem); }
 }
-
-.lesson-hero h1 {
-  font-size: clamp(2.3rem, 5vw, 4.4rem);
-  line-height: 1.05;
-  letter-spacing: -0.045em;
-  margin-bottom: 0;
-}
-
-.lesson-hero .lesson-subtitle {
-  font-size: clamp(1rem, 1.6vw, 1.2rem);
-  line-height: 1.55;
-}
-
-.terminal.eliza-app {
-  padding: clamp(1rem, 2vw, 1.5rem);
-}
-
-.flag-stage {
-  position: relative;
-  isolation: isolate;
-  display: block;
-  height: clamp(420px, 58vw, 670px);
-  min-height: 0;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  border-radius: 15px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #0a1d45 0%, #1b4b86 45%, #5d8fc4 78%, #f2b483 100%);
-  box-shadow: 0 0 0 3px #ffd27a, 0 0 0 7px #002868, 0 0 0 10px #fff, 0 0 0 13px #bf0a30, 0 14px 40px rgba(0, 20, 60, 0.45);
-}
-
-.flag-model-viewer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  z-index: 0;
-  transform: translateX(-7%);
-}
-
-.sky-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.sky-glow {
-  position: absolute; inset: auto -10% -35% -10%; height: 85%;
-  background: radial-gradient(ellipse at 50% 100%, rgba(255, 196, 120, 0.85), rgba(255, 140, 90, 0.35) 40%, transparent 70%);
-}
-.sky-rays {
-  position: absolute; left: 50%; bottom: -60%; width: 220%; aspect-ratio: 1; translate: -50% 0;
-  background: repeating-conic-gradient(from 0deg, rgba(255, 224, 160, 0.12) 0 5deg, transparent 5deg 12deg);
-  mask-image: radial-gradient(circle, #000 0%, transparent 62%);
-  animation: sky-spin 240s linear infinite;
-}
-.sky-stars {
-  position: absolute; inset: 0 0 45% 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 8% 20%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 22% 55%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 35% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 47% 40%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 61% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 73% 60%, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 86% 28%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 95% 8%, #fff 50%, transparent 51%);
-  animation: sky-twinkle 4s ease-in-out infinite alternate;
-}
-.sky-clouds i {
-  position: absolute; height: 5.5%; width: 26%; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22); filter: blur(10px);
-  animation: sky-drift 70s linear infinite;
-}
-.sky-clouds i:nth-child(1) { top: 62%; left: -30%; }
-.sky-clouds i:nth-child(2) { top: 48%; left: -30%; width: 34%; animation-duration: 95s; animation-delay: -40s; }
-.sky-clouds i:nth-child(3) { top: 72%; left: -30%; width: 20%; animation-duration: 55s; animation-delay: -20s; }
-@keyframes sky-drift { to { transform: translateX(470%); } }
-@keyframes sky-twinkle { from { opacity: 0.45; } to { opacity: 1; } }
-@keyframes sky-spin { to { rotate: 360deg; } }
-
-.fireworks { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; mix-blend-mode: screen; }
-
-.stage-bunting {
-  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; height: 10px; pointer-events: none;
-  background: repeating-linear-gradient(90deg, #bf0a30 0 40px, #fff 40px 80px, #002868 80px 120px);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.35);
-}
-
-.stage-star { color: #ffd27a; text-shadow: 0 0 14px rgba(255, 210, 122, 0.8); }
-
-.stage-shade {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(5, 17, 39, 0.35), rgba(5, 17, 39, 0) 40%, rgba(5, 17, 39, 0.3));
-  transition: background 0.4s ease;
-}
-
-.flag-stage[data-crawl="playing"] .stage-shade,
-.flag-stage[data-crawl="paused"] .stage-shade {
-  background: linear-gradient(180deg, rgba(5, 17, 39, 0.7), rgba(5, 17, 39, 0.4) 45%, rgba(5, 17, 39, 0.65));
-}
-
-.stage-heading {
-  position: absolute;
-  z-index: 3;
-  top: clamp(1rem, 3vw, 2rem);
-  left: clamp(1rem, 3vw, 2rem);
-  right: 1rem;
-  color: #fff;
-  font-size: clamp(1.2rem, 2.7vw, 2.2rem);
-  font-weight: 750;
-  letter-spacing: -0.03em;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
-}
-
-.pledge-ready {
-  position: absolute;
-  z-index: 3;
-  left: clamp(1rem, 3vw, 2rem);
-  bottom: clamp(1rem, 3vw, 2rem);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  max-width: calc(100% - 2rem);
-  padding: 0.6rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 10px;
-  background: rgba(7, 24, 49, 0.6);
-  color: #fff;
-  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
-  backdrop-filter: blur(12px);
-}
-
-.pledge-ready-symbol {
-  color: #fbd78b;
-}
-
-.flag-stage[data-crawl="playing"] .pledge-ready,
-.flag-stage[data-crawl="paused"] .pledge-ready {
-  display: none;
-}
-
-.pledge-crawl-viewport {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  overflow: hidden;
-  pointer-events: none;
-  mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 88%, transparent 100%);
-}
-
-.pledge-crawl {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(820px, 88%);
-  margin: 0;
-  color: #fff9e9;
-  font-size: clamp(1.5rem, 3.3vw, 3.1rem);
-  font-weight: 750;
-  line-height: 1.48;
-  letter-spacing: 0.012em;
-  text-align: center;
-  text-wrap: balance;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.9), 0 0 35px rgba(5, 17, 39, 0.75), 0 0 22px rgba(255, 210, 122, 0.35);
-  opacity: 0;
-}
-
-.flag-stage[data-crawl="playing"] .pledge-crawl,
-.flag-stage[data-crawl="paused"] .pledge-crawl {
-  opacity: 1;
-  animation: pledge-rise 28s linear forwards;
-}
-
-.flag-stage[data-crawl="paused"] .pledge-crawl {
-  animation-play-state: paused;
-}
-
-@keyframes pledge-rise {
-  from { transform: translate(-50%, 60%) perspective(900px) rotateX(11deg); }
-  to { transform: translate(-50%, -205%) perspective(900px) rotateX(11deg); }
-}
-
-.pledge-panel {
-  margin: 0;
-  padding: 1.25rem clamp(0.3rem, 1vw, 0.75rem) 0.3rem;
-}
-
-.pledge-actions {
-  align-items: center;
-  margin: 0.15rem 0 1.5rem;
-}
-
-.pledge-actions .btn {
-  min-height: 44px;
-  padding-inline: 0.95rem;
-  font-weight: 650;
-}
-
-.pledge-actions .btn:focus-visible,
-.pledge-settings select:focus-visible,
-.pledge-settings input:focus-visible {
-  outline: 3px solid #2477d4;
-  outline-offset: 2px;
-}
-
-.pledge-settings {
-  align-items: center;
-  margin: 0.4rem 0;
-  color: #34445b;
-}
-
-.audio-status {
-  margin: 0.3rem 0 1rem;
-}
-
-.pledge-transcript {
-  padding: clamp(1rem, 2vw, 1.5rem);
-  border-radius: 14px;
-  background: #f1f5fa;
-  color: #1c2e49;
-}
-
-.pledge-transcript .pledge-title {
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.pledge-transcript .pledge-text {
-  max-width: 72ch;
-  margin: 0;
-  font-size: clamp(1.05rem, 1.65vw, 1.3rem);
-  line-height: 1.65;
-}
-
-.respect-note {
-  margin: 0.9rem 0;
-}
-
-.flag-stage:fullscreen {
-  border-radius: 0;
-}
-
-.eliza-app:fullscreen {
-  display: flex;
-  flex-direction: column;
-  background: #07172d;
-  color: #fff;
-  border-radius: 0;
-  overflow: auto;
-}
-
-.eliza-app:fullscreen .flag-stage {
-  flex: 1 1 auto;
-  height: calc(100dvh - 100px);
-  min-height: 160px;
-}
-
-.eliza-app:fullscreen .pledge-panel {
-  flex: 0 0 auto;
-}
-
-.eliza-app:fullscreen .pledge-settings,
-.eliza-app:fullscreen .audio-status,
-.eliza-app:fullscreen .pledge-transcript,
-.eliza-app:fullscreen .respect-note,
-.eliza-app:fullscreen .etiquette {
-  display: none;
-}
-
-@media (max-width: 650px) {
-  .stage-bunting { height: 7px; }
-  .flag-stage { height: min(68svh, 570px); min-height: 380px; }
-  .pledge-crawl { font-size: clamp(1.35rem, 5.5vw, 2rem); line-height: 1.5; width: 91%; }
-  .pledge-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pledge-actions .btn:first-child { grid-column: 1 / -1; }
-  .pledge-settings { justify-content: space-between; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sky-rays, .sky-stars, .sky-clouds i { animation: none; }
-  .fireworks { display: none; }
-  .flag-stage[data-crawl="playing"] .pledge-crawl,
-  .flag-stage[data-crawl="paused"] .pledge-crawl {
-    top: 50%;
-    transform: translate(-50%, -50%);
-    animation: pledge-still 28s linear forwards;
-  }
-  .flag-stage[data-crawl="paused"] .pledge-crawl { animation-play-state: paused; }
-  .pledge-crawl { font-size: clamp(1rem, 2.8vw, 2.6rem); line-height: 1.4; }
-  @keyframes pledge-still {
-    from, to { transform: translate(-50%, -50%); }
-  }
-}
+@media (prefers-reduced-motion: reduce) { .flag-canvas { transition: none; } .pledge-crawl.passage-enter { animation: none; } }
+@media print { .pledge-actions, .pledge-settings, .flag-stage, .audio-status { display: none; } .terminal.eliza-app { box-shadow: none; } }
 
 /* Classroom history reader: ink, paper, and generous captions. */
 .history-jumps { display:flex; flex-wrap:wrap; gap:.65rem; margin:2rem 0; }
@@ -416,71 +200,26 @@ a.history-lesson-card:hover { border-color:#174e86; background:#f1f6fc; }
 @media print { .history-era-gallery img { height:180px; } .history-era-gallery figure { break-inside:avoid; } }
 
 
-/* Civics field guide: warm paper, bold ink, and a little schoolhouse spirit. */
-body.theme-eliza1966 {
-  --bg: #f7f2e8;
-  --text: #172e48;
-  --muted: #536174;
-  --accent: #a42e3e;
-  background: radial-gradient(circle at 1px 1px, #172e4812 1px, transparent 0) 0 0 / 24px 24px, #f7f2e8;
-  color: var(--text);
+
+/* The reading collection keeps the same restrained civic palette. */
+.history-jumps { border-block: 1px solid #ccd7e1; padding: 1rem 0; }
+.history-jumps a { background: #e6edf4; border-radius: 5px; font-size: .88rem; }
+.history-section { box-shadow: none; }
+.history-section h2 { font-family: var(--pledge-serif); font-weight: 400; letter-spacing: -.025em; }
+.history-today { border-top-color: #365575; }
+
+.eliza-app.presentation-expanded { position: fixed; inset: 0; z-index: 10000; width: 100%; height: 100dvh; box-sizing: border-box; }
+
+/* This page's ceremonial display text uses a serif alongside system controls. */
+body.theme-eliza1966 :is(.lesson-hero h1, .pledge-crawl, .pledge-transcript .pledge-text, .history-section h2) { font-family: var(--pledge-serif) !important; }
+/* Keep site navigation behind the in-page fullscreen fallback. */
+body:has(.presentation-expanded) .site-header { display: none; }
+.eliza-app.presentation-expanded { z-index: 2147483647; }
+@media (max-width: 700px) and (max-height: 650px) and (orientation: portrait) {
+  .eliza-app:is(:fullscreen, .presentation-expanded) .flag-stage { grid-template-rows: minmax(120px, 40%) minmax(220px, 1fr); }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-reading { padding: 1rem; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-words { padding: .7rem 0; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-crawl { font-size: 1.35rem; line-height: 1.35; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .stage-heading { font-size: .8rem; }
+  .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-ready { font-size: .75rem; margin-bottom: .5rem; }
 }
-body.theme-eliza1966 .site-header { background: #f7f2e8f2; border-color: #172e4826; }
-.eliza-page { padding-top: 3rem; }
-.lesson-hero { position: relative; max-width: none; padding: 0 15rem 2.5rem 0; margin-bottom: 1.5rem; border-bottom: 2px solid #172e48; }
-.lesson-kicker { display: flex; align-items: center; gap: .65rem; color: #a42e3e; font-weight: 800; font-size: .78rem; text-transform: uppercase; letter-spacing: .14em; }
-.lesson-kicker span { font-size: 1.2rem; }
-.lesson-hero h1 { margin: 1.2rem 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(3.4rem, 7vw, 6.5rem); font-weight: 700; line-height: .98; letter-spacing: -.055em; color: #172e48; }
-.lesson-hero h1 span { color: #a42e3e; }
-.lesson-hero .lesson-subtitle { max-width: 52ch; color: #536174; line-height: 1.7; }
-.pledge-hero-stamp { position: absolute; right: 1.5rem; top: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 175px; aspect-ratio: 1; border: 2px dashed #a42e3e; border-radius: 50%; outline: 7px solid #f7f2e8; box-shadow: 0 0 0 9px #a42e3e; color: #a42e3e; transform: rotate(10deg); }
-.pledge-hero-stamp span { font-size: .68rem; font-weight: 800; letter-spacing: .13em; }
-.pledge-hero-stamp b { font-size: 4rem; line-height: 1.4; }
-.pledge-hero-links { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
-.pledge-hero-links a { display: inline-flex; gap: 1.5rem; align-items: center; padding: .7rem 1rem; border: 1px solid #172e48; border-radius: 6px; color: #172e48; background: #fffdf8; font-weight: 700; text-decoration: none; }
-.pledge-hero-links a:first-child { background: #172e48; color: #fffdf8; }
-.pledge-hero-links a:hover { box-shadow: 3px 3px 0 #c79d54; }
-.terminal.eliza-app { padding: clamp(1rem, 2.5vw, 2rem); border: 2px solid #172e48; border-radius: 18px; background: #fffdf8; box-shadow: 7px 7px 0 #172e4818; font-family: var(--font-sans); scroll-margin-top: 5rem; }
-.presentation-label { display: flex; justify-content: space-between; gap: 1rem; color: #536174; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; padding-bottom: .9rem; border-bottom: 1px solid #d8d5cc; }
-.pledge-actions { gap: .65rem; margin: 1rem 0 1.4rem; }
-.pledge-actions .btn { border: 1px solid #b3bdc6; border-radius: 8px; color: #172e48; background: #fffdf8; transition: transform .15s, box-shadow .15s; }
-.pledge-actions .btn.primary { background: #a42e3e; border-color: #a42e3e; color: #fff; padding-inline: 1.5rem; box-shadow: 0 3px 0 #702030; }
-.pledge-actions .btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 3px 0 #172e4833; }
-.pledge-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
-.flag-stage { border: 1px solid #172e48; border-radius: 10px; box-shadow: none; }
-.stage-heading { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
-.pledge-ready { border-radius: 999px; }
-.pledge-settings { gap: 1rem; padding: .8rem 0; }
-.pledge-settings .control-inline { background: #edf1f4; padding: .6rem .8rem; border-radius: 8px; font-size: .9rem; font-weight: 650; }
-.pledge-settings input { accent-color: #a42e3e; }
-.audio-status, .respect-note { color: #536174; font-size: .87rem; line-height: 1.65; }
-.pledge-transcript { position: relative; background: #f6efdf; border: 1px solid #e0d2b5; border-left: 5px solid #c79d54; border-radius: 8px; }
-.pledge-transcript .pledge-title { color: #80551e; text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; font-weight: 800; }
-.pledge-transcript .pledge-text { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.65; }
-.lesson-section { background: #edf1f4; color: #172e48; border: 1px solid #cad3dc; padding: 1.4rem; }
-.lesson-section h2 { font-size: 1.1rem; margin-top: 0; color: #172e48; }
-.lesson-section li { line-height: 1.75; }
-.history-jumps { padding: 1.2rem 0; border-block: 1px solid #c9c5bb; gap: .6rem; }
-.history-jumps a { border: 1px solid #c9c5bb; border-radius: 6px; background: #fffdf8; font-size: .88rem; text-decoration: none; }
-.history-jumps a:hover { background: #172e48; color: white; border-color: #172e48; }
-.history-section { border-color: #d6d0c3; box-shadow: 0 4px 0 #172e4809; }
-.history-section h2 { font-family: Georgia, 'Times New Roman', serif; letter-spacing: -.035em; }
-.history-today { border-top: 5px solid #a42e3e; background: #fffdf8; }
-.history-era-nav a { border-left: 3px solid #a42e3e; background: #f7f2e8; }
-.history-question { border-color: #c79d54; background: #f6efdf; }
-.eliza-app:fullscreen .presentation-label { display: none; }
-.pledge-hero-links a:focus-visible { outline: 3px solid #2477d4; outline-offset: 4px; }
-@media (max-width: 700px) {
-  .eliza-page { padding-top: 1.5rem; }
-  .lesson-hero { padding: 0 0 1.5rem; }
-  .lesson-hero h1 { font-size: clamp(3.2rem, 11vw, 5rem); }
-  .pledge-hero-stamp { width: 88px; right: .6rem; top: 2.7rem; outline-width: 4px; box-shadow: 0 0 0 6px #a42e3e; }
-  .pledge-hero-stamp b { font-size: 2rem; }
-  .pledge-hero-stamp span { font-size: .38rem; letter-spacing: .06em; }
-  .lesson-hero h1 { padding-right: 5.5rem; }
-  .presentation-label span:last-child { display: none; }
-  .pledge-settings .control-inline { flex-wrap: wrap; }
-  .pledge-settings { align-items: stretch; }
-}
-@media (prefers-reduced-motion: reduce) { .pledge-actions .btn { transition: none; } }
-@media print { body.theme-eliza1966 { background: white; } .pledge-hero-stamp, .pledge-hero-links { display: none; } .lesson-hero { padding-right: 0; } }

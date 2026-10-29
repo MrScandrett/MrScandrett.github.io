@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../assets/css/style.css" />
     <link rel="stylesheet" href="../assets/css/classroom-home.css" />
     <link rel="stylesheet" href="../assets/css/pages/pledge.css" />
-    <script type="module" src="../assets/js/vendor/model-viewer.min.js"></script>
+
   </head>
   <body class="theme-eliza1966">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -28,65 +28,33 @@
 
     <main id="main" class="eliza-page">
       <header class="lesson-hero">
-        <p class="lesson-kicker"><span aria-hidden="true">★</span> The civics field guide</p>
-        <h1>Pledge of<br><span>Allegiance.</span></h1>
-        <p class="lesson-subtitle">A moment together. A story to explore. Bring the words to life, then discover the people, art, and ideas behind American history.</p>
-        <div class="pledge-hero-stamp" aria-hidden="true"><span>LIBERTY</span><b>★</b><span>&amp; JUSTICE FOR ALL</span></div>
-        <nav class="pledge-hero-links" aria-label="Start exploring"><a href="#presentation">Present together <span aria-hidden="true">↗</span></a><a href="#history-today">Discover history <span aria-hidden="true">↓</span></a></nav>
+        <h1>Pledge of Allegiance</h1>
+        <p class="lesson-subtitle">A moment to reflect on the words we share, and the promise of liberty and justice for all.</p>
+        <nav class="pledge-hero-links" aria-label="Start exploring"><a href="#presentation">Classroom presentation</a><a href="#history-today">Explore American history</a></nav>
       </header>
 
       <section id="presentation" class="terminal eliza-app" aria-label="Pledge presentation">
-        <div class="presentation-label"><span>01 / Gather together</span><span>Classroom presentation</span></div>
+        <div class="presentation-label"><span>Classroom presentation</span><span>A time for reflection</span></div>
         <div class="lesson-actions pledge-actions" role="group" aria-label="Presentation controls">
           <button class="btn primary" id="btnPlay" type="button">Start presentation</button>
           <button class="btn" id="btnPause" type="button" disabled>Pause</button>
           <button class="btn" id="btnRestart" type="button">Restart</button>
-          <button class="btn" id="btnMute" type="button" aria-pressed="false">Mute</button>
+          <button class="btn" id="btnMute" type="button" aria-pressed="true">Enable music</button>
           <button class="btn" id="btnFullscreen" type="button">Fullscreen</button>
         </div>
-        <div class="flag-stage" id="pledgeStage" aria-label="Animated American flag with rising pledge text">
-          <div class="sky-layer" aria-hidden="true">
-            <span class="sky-glow"></span>
-            <span class="sky-rays"></span>
-            <span class="sky-stars"></span>
-            <span class="sky-clouds"><i></i><i></i><i></i></span>
+        <div class="flag-stage" id="pledgeStage" data-crawl="idle" aria-label="American flag and pledge presentation">
+          <div class="flag-scene">
+            <img class="flag-fallback" src="../assets/images/american-flag.svg" alt="The American flag, with fifty white stars and thirteen alternating red and white stripes.">
+            <canvas id="flagCanvas" class="flag-canvas" role="img" aria-label="An American flag gently waving from a silver flagpole in daylight. Fifty stars in nine alternating rows of six and five, and thirteen stripes."></canvas>
+            <span class="flag-scene-caption">The United States of America</span>
           </div>
-          <model-viewer loading="lazy"
-            id="flagModel"
-            class="flag-model-viewer"
-            src="../assets/models/moving_american_flag.glb"
-            alt="Animated 3D model of an American flag waving on a flagpole."
-            autoplay
-            animation-name="Flag Moving"
-            scale="2.2 2.2 2.2"
-            camera-controls
-            touch-action="pan-y"
-            interaction-prompt="auto"
-            shadow-intensity="1"
-            environment-image="neutral"
-            exposure="1.2"
-            camera-orbit="30deg 84deg 84%"
-            camera-target="0m 0.1m 0m"
-            field-of-view="22deg"
-            min-camera-orbit="auto 45deg auto"
-            max-camera-orbit="auto 100deg auto"
-            min-field-of-view="18deg"
-            max-field-of-view="38deg">
-            <div class="flag-model-fallback">
-              Your browser can't display the interactive flag model.
-              <a href="../assets/models/moving_american_flag.glb">Download the GLB file instead</a>.
+          <div class="pledge-reading">
+            <h2 class="stage-heading">Pledge of Allegiance</h2>
+            <div class="pledge-words">
+              <p class="pledge-crawl" id="pledgeCrawl" aria-live="polite" aria-atomic="true">With liberty<br>and justice<br>for all.</p>
             </div>
-          </model-viewer>
-          <div class="stage-shade" aria-hidden="true"></div>
-          <canvas class="fireworks" id="fireworks" aria-hidden="true"></canvas>
-          <div class="stage-bunting" aria-hidden="true"></div>
-          <div class="stage-heading" aria-hidden="true"><span class="stage-star">★</span> Pledge of Allegiance <span class="stage-star">★</span></div>
-          <div class="pledge-ready" aria-hidden="true">
-            <span class="pledge-ready-symbol">✦</span>
-            <span>Ready when your class is</span>
-          </div>
-          <div class="pledge-crawl-viewport" aria-hidden="true">
-            <p class="pledge-crawl" id="pledgeCrawl">I pledge allegiance to the Flag of the United States of America,<br>and to the Republic for which it stands,<br>one Nation under God, indivisible,<br>with liberty and justice for all.</p>
+            <p class="pledge-ready" id="presentationStatus" role="status">Ready when your class is.</p>
+            <div class="pledge-progress" role="progressbar" aria-label="Presentation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pledgeProgress"></span></div>
           </div>
         </div>
 
@@ -95,19 +63,20 @@
             <label class="control-inline" for="windMode">
               Wind
               <select id="windMode" aria-label="Wind strength">
-                <option value="calm" selected>Calm</option>
-                <option value="medium">Medium</option>
-                <option value="strong">Strong</option>
+                <option value="calm" selected>Light breeze</option>
+                <option value="medium">Steady breeze</option>
+                <option value="strong">Fresh breeze</option>
               </select>
             </label>
+            <button class="btn" id="btnMotion" type="button" aria-pressed="false">Pause flag</button>
             <label class="control-inline" for="volumeControl">
               Volume
-              <input id="volumeControl" type="range" min="0" max="100" value="70" />
-              <span id="volumeValue">70%</span>
+              <input id="volumeControl" type="range" min="0" max="100" value="40" />
+              <span id="volumeValue">40%</span>
             </label>
           </div>
 
-          <p class="audio-status" id="audioStatus" aria-live="polite">Optional music loading: &ldquo;The Star-Spangled Banner&rdquo; (instrumental).</p>
+          <p class="audio-status" id="audioStatus" aria-live="polite">Music is optional and starts only when enabled. “The Star-Spangled Banner,” instrumental · U.S. Army Band · Public domain.</p>
 
           <div class="pledge-transcript">
             <h2 class="pledge-title">Read the pledge</h2>
@@ -134,14 +103,15 @@
             <source src="../assets/audio/star-spangled-banner.mp3" type="audio/mpeg" />
           </audio>
         </div>
+        <p class="flag-design-note">50 stars · 13 stripes · 10:19 proportions. Flag design follows <a href="https://www.govinfo.gov/content/pkg/USCODE-2022-title4/html/USCODE-2022-title4-chap1-sec1.htm">Executive Order 10834</a>; cloth motion and daylight are illustrative.</p>
       </section>
 
       <section class="lesson-section">
         <h2>Using this presentation</h2>
         <ul class="checklist">
-          <li>Start the presentation to move the words upward over the flag. Pause or restart whenever the class needs more time.</li>
+          <li>Start the presentation to read the pledge in four measured passages. Pause or restart whenever the class needs more time.</li>
           <li>Use Fullscreen to show the flag and words on a classroom display.</li>
-          <li>Drag the flag to inspect the model, or change Wind to adjust its animation.</li>
+          <li>Choose a breeze or pause the flag. Music is off until you enable it; reduced-motion settings keep the flag still.</li>
         </ul>
       </section>
 
@@ -272,206 +242,9 @@
       <a href="../index.html">Back to ClassroomOS</a>
     </main>
 
-    <script>
-      const WIND = {
-        calm:   { timeScale: 0.72, orbit: '32deg 86deg 88%' },
-        medium: { timeScale: 1.0, orbit: '30deg 84deg 84%' },
-        strong: { timeScale: 1.32, orbit: '28deg 80deg 80%' },
-      };
-      let wind = WIND.calm;
-
-      /* ── UI controls ─────────────────────────────────────────── */
-      const stage = document.getElementById('pledgeStage');
-      const presentation = document.querySelector('.eliza-app');
-      const crawl = document.getElementById('pledgeCrawl');
-      const readyText = document.querySelector('.pledge-ready span:last-child');
-      const flagModel     = document.getElementById('flagModel');
-      const audio         = document.getElementById('patrioticAudio');
-      const btnPlay       = document.getElementById('btnPlay');
-      const btnPause      = document.getElementById('btnPause');
-      const btnRestart    = document.getElementById('btnRestart');
-      const btnMute       = document.getElementById('btnMute');
-      const btnFullscreen = document.getElementById('btnFullscreen');
-      const audioStatus   = document.getElementById('audioStatus');
-      const volumeControl = document.getElementById('volumeControl');
-      const volumeValue   = document.getElementById('volumeValue');
-      function applyWindPreset() {
-        if (!flagModel) return;
-        const scale = window.matchMedia('(max-width: 650px)').matches ? 1.25 : 2.2;
-        flagModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
-        flagModel.timeScale = wind.timeScale;
-        flagModel.setAttribute('camera-orbit', wind.orbit);
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) flagModel.pause?.();
-        else if (typeof flagModel.play === 'function') flagModel.play();
-      }
-
-      flagModel?.addEventListener('load', applyWindPreset);
-      window.addEventListener('resize', applyWindPreset);
-
-      function setAudioAvailability(available, message) {
-        if (btnMute) btnMute.disabled = !available;
-        if (volumeControl) volumeControl.disabled = !available;
-        if (audioStatus) audioStatus.textContent = message;
-      }
-
-      function playMusic() {
-        if (audio?.error || audio?.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) return;
-        audio?.play?.().catch(() => {
-          if (audioStatus) audioStatus.textContent = 'Music could not start. The pledge presentation still works.';
-        });
-      }
-
-      function startPresentation(restart = false) {
-        if (!stage || !crawl) return;
-        if (readyText) readyText.textContent = 'Ready when your class is';
-        if (restart || stage.dataset.crawl === 'finished') {
-          stage.dataset.crawl = 'idle';
-          void crawl.offsetWidth;
-          if (audio) audio.currentTime = 0;
-        }
-        stage.dataset.crawl = 'playing';
-        btnPause.disabled = false;
-        btnPause.textContent = 'Pause';
-        btnPlay.disabled = true;
-        playMusic();
-      }
-
-      if (audio) {
-        audio.volume = 0.7;
-        audio.muted = false;
-      }
-
-      audio?.addEventListener('canplaythrough', () => {
-        setAudioAvailability(true, 'Music ready: The Star-Spangled Banner, instrumental (U.S. Army Band, public domain).');
-      }, { once: true });
-
-      audio?.addEventListener('error', () => {
-        setAudioAvailability(false, 'Backing track unavailable. The pledge presentation still works.');
-      });
-
-      btnPlay?.addEventListener('click', () => startPresentation());
-
-      btnPause?.addEventListener('click', () => {
-        if (!stage) return;
-        if (stage.dataset.crawl === 'playing') {
-          stage.dataset.crawl = 'paused';
-          btnPause.textContent = 'Resume';
-          audio?.pause?.();
-        } else if (stage.dataset.crawl === 'paused') {
-          startPresentation();
-        }
-      });
-
-      btnRestart?.addEventListener('click', () => startPresentation(true));
-
-      crawl?.addEventListener('animationend', () => {
-        stage.dataset.crawl = 'finished';
-        btnPause.disabled = true;
-        btnPlay.disabled = false;
-        audio?.pause?.();
-        if (readyText) readyText.textContent = 'Presentation complete. Restart to replay.';
-      });
-
-      btnMute?.addEventListener('click', () => {
-        if (!audio) return;
-        audio.muted = !audio.muted;
-        btnMute.textContent = audio.muted ? 'Unmute' : 'Mute';
-        btnMute.setAttribute('aria-pressed', audio.muted ? 'true' : 'false');
-      });
-
-      btnFullscreen?.addEventListener('click', async () => {
-        try {
-          if (!document.fullscreenElement) await presentation.requestFullscreen?.();
-          else await document.exitFullscreen?.();
-        } catch { /* ignore */ }
-      });
-
-      document.addEventListener('fullscreenchange', () => {
-        btnFullscreen.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
-      });
-
-      document.getElementById('windMode')?.addEventListener('change', (e) => {
-        wind = WIND[e.target.value] || WIND.calm;
-        applyWindPreset();
-      });
-
-      volumeControl?.addEventListener('input', (e) => {
-        if (!audio) return;
-        const val = Number(e.target.value);
-        audio.volume = val / 100;
-        if (volumeValue) volumeValue.textContent = `${val}%`;
-      });
-
-      window.addEventListener('load', () => {
-        applyWindPreset();
-        if (!audio?.currentSrc) {
-          setAudioAvailability(false, 'Backing track unavailable. The pledge presentation still works.');
-          return;
-        }
-        audio.load();
-        setTimeout(() => {
-          if (audio.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
-            setAudioAvailability(false, 'Backing track unavailable. The pledge presentation still works.');
-          }
-        }, 1200);
-      });
-    </script>
-
-    <script>
-      /* Fireworks: bursts while the pledge plays, a grand finale when it ends. */
-      (() => {
-        const stageEl = document.getElementById('pledgeStage');
-        const cv = document.getElementById('fireworks');
-        if (!stageEl || !cv || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const ctx = cv.getContext('2d');
-        const COLORS = ['#ff4d5e', '#ffffff', '#6aa8ff', '#ffd27a'];
-        let parts = [], rockets = [], raf = 0, last = 0, nextLaunch = 0, finaleDone = false, w = 0, h = 0;
-        function size() {
-          const r = stageEl.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
-          w = r.width; h = r.height; cv.width = w * d; cv.height = h * d;
-          ctx.setTransform(d, 0, 0, d, 0, 0);
-        }
-        function launch() {
-          rockets.push({ x: w * (0.1 + Math.random() * 0.8), y: h, vy: -(h * (0.75 + Math.random() * 0.3)), ty: h * (0.12 + Math.random() * 0.3) });
-        }
-        function burst(x, y) {
-          const c = COLORS[Math.floor(Math.random() * COLORS.length)], n = 46;
-          for (let i = 0; i < n; i++) {
-            const a = (i / n) * Math.PI * 2, v = 60 + Math.random() * 110;
-            parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
-          }
-        }
-        function frame(t) {
-          const dt = Math.min((t - last) / 1000 || 0, 0.05); last = t;
-          const mode = stageEl.dataset.crawl;
-          ctx.clearRect(0, 0, w, h);
-          if (mode === 'playing' && t > nextLaunch) { launch(); nextLaunch = t + 900 + Math.random() * 1400; }
-          if (mode === 'finished' && !finaleDone) { finaleDone = true; for (let i = 0; i < 9; i++) setTimeout(launch, i * 260); }
-          if (mode === 'idle' || mode === undefined) finaleDone = false;
-          if (mode === 'playing') finaleDone = false;
-          rockets = rockets.filter(r => {
-            r.y += r.vy * dt;
-            ctx.fillStyle = '#fff4cf'; ctx.fillRect(r.x, r.y, 2, 6);
-            if (r.y <= r.ty) { burst(r.x, r.y); return false; }
-            return true;
-          });
-          parts = parts.filter(p => {
-            p.vy += 70 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 0.7;
-            if (p.life <= 0) return false;
-            ctx.globalAlpha = p.life; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 2.4, 2.4);
-            return true;
-          });
-          ctx.globalAlpha = 1;
-          if ((mode === 'playing' || mode === 'finished') || parts.length || rockets.length) raf = requestAnimationFrame(frame);
-          else raf = 0;
-        }
-        function wake() { if (!raf && (stageEl.dataset.crawl === 'playing' || stageEl.dataset.crawl === 'finished')) { size(); last = performance.now(); raf = requestAnimationFrame(frame); } }
-        new MutationObserver(wake).observe(stageEl, { attributes: true, attributeFilter: ['data-crawl'] });
-        window.addEventListener('resize', size);
-        document.addEventListener('fullscreenchange', () => setTimeout(size, 150));
-        size();
-      })();
-    </script>
+    <script src="../assets/js/sim-kit.js"></script>
+    <script src="../assets/js/pledge-presentation.js" defer></script>
+    <script type="module" src="../assets/js/pledge-flag.mjs"></script>
     <script src="../assets/js/pledge-history.js" defer></script>
     <script src="../assets/js/photo-lightbox.js"></script>
     <script src="../assets/js/theme-registry.js"></script>

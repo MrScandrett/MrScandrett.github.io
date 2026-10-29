@@ -15,3 +15,31 @@ The people pathway links to 19 existing lessons. Four founding-generation cards 
 ## Era navigation and pre-1492 history
 
 The overview now begins with a dedicated pre-1492 section covering Indigenous diversity, agriculture and exchange, Cahokia, Ancestral Pueblo communities, and the wider Americas. It includes a locally saved, NPS-credited public-domain Long House photograph with the shared lightbox. Ten independently labeled post-1492 sections run from Atlantic contact through contemporary America. All eleven sections have stable anchors and an era navigation menu. Date boundaries are teaching guides rather than claims that every community changed at the same moment.
+
+## Flag presentation
+
+The presentation uses `assets/js/pledge-presentation.js` for four stationary,
+measured passages (9, 7, 6, and 6 seconds), with pause, resume, restart, progress,
+and optional instrumental music. Music starts disabled. Playback waits while the
+presentation is off screen or the tab is hidden. Native fullscreen has an expanded
+page fallback for browsers without that API; Escape exits the fallback.
+
+`assets/js/pledge-flag.mjs` uses the shared vendored Three.js bundle,
+`sim-kit-three.mjs`, and `SimKit.loop`. The cloth is attached to an upright pole;
+its primary folds integrate tangent angles to preserve length along the fly.
+Fine woven relief, double-stitched hems, grommets, a silver pole, a small brass
+finial, and directional daylight provide detail without decorative effects.
+The motion is an illustration, not a physical cloth simulation. Wind presets
+blend gradually. A separate flag pause control and live reduced-motion preference
+keep motion optional. Rendering pauses when hidden or away from the viewport.
+
+The original vector construction, `assets/images/american-flag.svg`, is both
+the cloth texture and the static fallback if WebGL is unavailable. It has fifty
+five-pointed stars in nine alternating rows of six and five, thirteen equal
+stripes beginning and ending with red, a 10:19 outline, a union covering seven
+stripes with a fly of 0.76 times the flag's hoist, and stars whose diameter is
+0.0616 times the hoist. Star centers divide the union into twelve horizontal
+and ten vertical intervals. These use the construction ratios accompanying
+[Executive Order 10834](https://www.govinfo.gov/content/pkg/USCODE-2022-title4/html/USCODE-2022-title4-chap1-sec1.htm).
+SVG colors are screen approximations; lighting and cloth folds affect their
+appearance. The former GLB model and fireworks are no longer loaded by this page.
