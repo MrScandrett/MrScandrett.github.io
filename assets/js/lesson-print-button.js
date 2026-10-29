@@ -221,6 +221,66 @@
     loadSiteGlossary();
   }
 
+  /* Save ink: an optional print setting, off by default and remembered per browser.
+     While it is on, <html data-print-ink="save"> switches on the print-only rules in
+     lesson-print-button.css, and saveInk() also turns filled reading panels white (see
+     plainPanels). Nothing on screen reads it. The print menu has the switch; any
+     element marked [data-print-ink-toggle] becomes the same switch as a checkbox, so a
+     lesson's own print button (practice sheet, cue sheet, journal) can sit beside it. */
+  var INK_KEY = 'classroomos-print-ink';
+
+  function inkSaving() {
+    return document.documentElement.getAttribute('data-print-ink') === 'save';
+  }
+
+  function applyInkSaving(on) {
+    if (on) document.documentElement.setAttribute('data-print-ink', 'save');
+    else document.documentElement.removeAttribute('data-print-ink');
+    document.querySelectorAll('[data-print-ink-option]').forEach(function (item) {
+      item.setAttribute('aria-checked', String(on));
+    });
+    document.querySelectorAll('[data-print-ink-toggle] input').forEach(function (input) {
+      input.checked = on;
+    });
+  }
+
+  function setInkSaving(on) {
+    try {
+      if (on) localStorage.setItem(INK_KEY, 'save');
+      else localStorage.removeItem(INK_KEY);
+    } catch (e) { /* private mode: the choice lasts until the page closes */ }
+    applyInkSaving(on);
+  }
+
+  function storedInkSaving() {
+    try { return localStorage.getItem(INK_KEY) === 'save'; } catch (e) { return false; }
+  }
+
+  var INK_HINT = 'White backgrounds, lighter lines, no shaded boxes. Photos, diagrams and notation still print.';
+
+  function upgradeInkToggles(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var found = Array.prototype.slice.call(scope.querySelectorAll('[data-print-ink-toggle]'));
+    if (scope.matches && scope.matches('[data-print-ink-toggle]')) found.push(scope);
+    found.forEach(function (host) {
+      if (host.querySelector('input')) return;
+      host.classList.add('print-ink-toggle');
+      host.setAttribute('data-no-print', '');
+      host.title = INK_HINT;
+      host.innerHTML = '<label><input type="checkbox"><span>Save ink</span></label>';
+      var input = host.querySelector('input');
+      input.checked = inkSaving();
+      input.addEventListener('change', function () { setInkSaving(input.checked); });
+    });
+  }
+
+  applyInkSaving(storedInkSaving());
+  window.addEventListener('storage', function (event) {
+    if (event.key === INK_KEY || event.key === null) applyInkSaving(storedInkSaving());
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { upgradeInkToggles(document); }, { once: true });
+  else upgradeInkToggles(document);
+
   function createActions() {
     var wrapper = document.createElement('div');
     wrapper.className = 'lesson-print-actions';
@@ -253,6 +313,11 @@
       '</button>' +
       '<button type="button" role="menuitem" data-print-action="pdf">' +
         '<strong>Save as PDF</strong><small>Choose “Save to PDF” in the print window</small>' +
+      '</button>' +
+      '<div class="lesson-print-menu__rule" role="separator"></div>' +
+      '<button type="button" role="menuitemcheckbox" class="lesson-print-menu__ink" data-print-ink-option aria-checked="' + inkSaving() + '">' +
+        '<span class="lesson-print-menu__check" aria-hidden="true"></span>' +
+        '<strong>Save ink</strong><small>' + INK_HINT + '</small>' +
       '</button>';
 
     function closeMenu() {
@@ -266,6 +331,10 @@
       if (!menu.hidden) menu.querySelector('button').focus();
     });
     menu.addEventListener('click', function (event) {
+      if (event.target.closest('[data-print-ink-option]')) {
+        setInkSaving(!inkSaving());
+        return;
+      }
       var action = event.target.closest('[data-print-action]');
       if (!action) return;
       closeMenu();
@@ -279,6 +348,13 @@
       if (event.key === 'Escape') {
         closeMenu();
         button.focus();
+      }
+      if (!menu.hidden && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        var items = Array.prototype.slice.call(menu.querySelectorAll('button'));
+        var at = items.indexOf(document.activeElement);
+        var step = event.key === 'ArrowDown' ? 1 : -1;
+        items[(at + step + items.length) % items.length].focus();
+        event.preventDefault();
       }
     });
 
@@ -595,9 +671,149 @@
     };
   }
 
+  // WCAG relative luminance, for the Save ink contrast test (luminance() above is a cheap estimate).
+  function relativeLuminance(c) {
+    function channel(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+  }
+
+  function chroma(c) {
+    return (Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b)) / 255;
+  }
+
+  // A fill worth removing: a solid or gradient background that isn't already paper white.
+  // Background photos (url()) are content and never count.
+  function inkFill(style) {
+    if (/url\(/.test(style.backgroundImage)) return null;
+    var bg = parseColor(style.backgroundColor);
+    if (bg && bg.a >= 0.08 && luminance(bg) < 0.95) return bg;
+    if (style.backgroundImage.indexOf('gradient') === -1) return null;
+    var stops = (style.backgroundImage.match(/rgba?\([^)]+\)/g) || []).map(parseColor)
+      .filter(function (c) { return c && c.a >= 0.08 && luminance(c) < 0.95; });
+    return stops[0] || null;
+  }
+
+  // A text node that reads as prose or a sentence label, not a key name or a fret number.
+  function hasReadingText(element) {
+    var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.textContent.trim().split(/\s+/).length >= 3) return true;
+    }
+    return false;
+  }
+
+  var INK_KEEP = '[data-print-ink-keep], [data-night-keep], svg, .vp';
+  var INK_TABLE = 'table, caption, thead, tbody, tfoot, tr, th, td';
+  var INK_DECOR = /(^|[-_\s])(blob|blobs|glow|orb|orbs|aurora|backdrop|bg|decor|decoration|sparkle|sparkles|grain|noise|shine)($|[-_\s])/i;
+
+  function inkMark(element, name, value) {
+    if (element.hasAttribute(name)) return;
+    element.setAttribute(name, value);
+    printMarks.push([element, name]);
+  }
+
+  /* Save ink, on top of the readability pass: filled panels that hold reading text
+     (heroes, callouts, cards, tinted sections, quiz options) print as white boxes with
+     a light line; grey table shading goes white. Left alone, because the colour is
+     the content: anything without sentences (swatches, keys, chips, frets), boxes
+     holding six or more such cells (a keyboard or fretboard bed), saturated table
+     cells (colour-coded answers), media, SVG and [data-print-ink-keep] /
+     [data-night-keep]. Glows marked as decoration (aria-hidden, or a blob/glow/bg
+     class) with no text or media are dropped, and so are the large gradient
+     overlays painted by a panel's ::before/::after. Repeating gradients (ruled
+     writing lines) are never touched. */
+  function plainPanels(all) {
+    var candidates = [];
+    var cells = [];
+    Array.prototype.forEach.call(all, function (element) {
+      if (element.matches(PRINT_MEDIA + ', ' + PRINT_SKIP) || element.closest(INK_KEEP) ||
+        element.hasAttribute('data-print-ink-saver')) return;
+      var style = getComputedStyle(element);
+      var fill = inkFill(style);
+      var text = element.textContent.trim();
+      if (!fill) return;
+      if (element.matches(INK_TABLE)) {
+        if (chroma(fill) < 0.08) inkMark(element, 'data-print-ink-plain', 'cell');
+        return;
+      }
+      if (text.length <= 3) {
+        if (decorative(element, style, text)) inkMark(element, 'data-print-ink-plain', 'deco');
+        else cells.push(element);
+        return;
+      }
+      if (text.length >= 40 && hasReadingText(element)) candidates.push([element, style]);
+    });
+
+    function isDiagram(element) {
+      var inside = 0;
+      for (var i = 0; i < cells.length && inside < 6; i += 1) if (element.contains(cells[i])) inside += 1;
+      return inside >= 6;
+    }
+
+    function plain(element, style) {
+      inkMark(element, 'data-print-ink-plain', borderKind(element, style));
+      dropDecorativeLayers(element);
+    }
+
+    candidates.forEach(function (entry) {
+      var element = entry[0];
+      if (element.hasAttribute('data-print-ink-plain') || isDiagram(element)) return;
+      plain(element, entry[1]);
+      // Cards in a set print alike, even a sibling whose text is too short to qualify alone.
+      var parent = element.parentElement;
+      Array.prototype.forEach.call(parent ? parent.children : [], function (sibling) {
+        if (sibling === element || sibling.hasAttribute('data-print-ink-plain') || sibling.tagName !== element.tagName ||
+          sibling.className !== element.className || !sibling.className || sibling.matches(INK_KEEP) ||
+          sibling.hasAttribute('data-print-ink-saver') || isDiagram(sibling)) return;
+        var style = getComputedStyle(sibling);
+        if (inkFill(style)) plain(sibling, style);
+      });
+    });
+  }
+
+  function decorative(element, style, text) {
+    // Glows are empty leaves; a box with children (a keyboard bed, a stage) is part of a drawing.
+    if (text || element.children.length || !/absolute|fixed/.test(style.position)) return false;
+    if (element.closest('figure, [role="img"], [data-present], [data-vr-stage]')) return false;
+    var cls = typeof element.className === 'string' ? element.className : '';
+    if (INK_DECOR.test(cls)) return true;
+    // A hidden-from-readers soft glow behind the content, not a diagram's dot or marker.
+    var rect = element.getBoundingClientRect();
+    return element.getAttribute('aria-hidden') === 'true' && rect.width * rect.height >= 2500 &&
+      (/radial-gradient/.test(style.backgroundImage) || /blur\(/.test(style.filter));
+  }
+
+  function borderKind(element, style) {
+    var sides = ['Top', 'Right', 'Bottom', 'Left'].map(function (side) {
+      var color = parseColor(style['border' + side + 'Color']);
+      var visible = style['border' + side + 'Style'] !== 'none' && color && color.a > 0.1;
+      return visible ? parseFloat(style['border' + side + 'Width']) || 0 : 0;
+    });
+    var widest = Math.max.apply(null, sides);
+    // A thick accent on one side is how a callout says what kind it is; keep its colour.
+    if (widest >= 3 && Math.min.apply(null, sides) < widest) return 'stripe';
+    if (widest >= 0.5) return 'box';
+    var height = element.getBoundingClientRect().height;
+    return height > 700 ? 'bare' : 'outline';
+  }
+
+  function dropDecorativeLayers(element) {
+    var rect = element.getBoundingClientRect();
+    var area = Math.max(1, rect.width * rect.height);
+    var layers = ['before', 'after'].filter(function (which) {
+      var pseudo = getComputedStyle(element, '::' + which);
+      if (pseudo.content === 'none' || pseudo.content === 'normal' || !/absolute|fixed/.test(pseudo.position)) return false;
+      if (!/gradient/.test(pseudo.backgroundImage) || /repeating-|url\(/.test(pseudo.backgroundImage)) return false;
+      if (pseudo.content.replace(/["']/g, '').trim()) return false;
+      return (parseFloat(pseudo.width) || 0) * (parseFloat(pseudo.height) || 0) >= area * 0.25;
+    });
+    if (layers.length) inkMark(element, 'data-print-ink-deco', layers.join(' '));
+  }
+
   function saveInk() {
     printInDayTheme();
     var all = document.body.querySelectorAll('*');
+    var ink = inkSaving();
 
     // 1. Dark boxes that carry text become light boxes.
     Array.prototype.forEach.call(all, function (element) {
@@ -609,7 +825,11 @@
       printMark(element, 'data-print-ink-saver');
     });
 
-    // 2. Light text that will sit on white paper is darkened (hue kept).
+    // 1b. Save ink: filled reading panels and grey table shading become white.
+    if (ink) plainPanels(all);
+
+    // 2. Light text that will sit on white paper is darkened (hue kept). With Save ink
+    //    on, any text under 4.5:1 against white is, since its panel may have gone white.
     Array.prototype.forEach.call(all, function (element) {
       if (element.matches(PRINT_MEDIA) || element.closest('svg')) return;
       var hasText = Array.prototype.some.call(element.childNodes, function (node) {
@@ -617,10 +837,10 @@
       });
       if (!hasText && !element.matches('input, select, textarea, button')) return;
       var color = parseColor(getComputedStyle(element).color);
-      if (!color || luminance(color) < 0.6) return;
+      if (!color || (ink ? 1.05 / (relativeLuminance(color) + 0.05) >= 4.5 : luminance(color) < 0.6)) return;
       // Leave it if it still sits on a colour on paper (a button, a swatch, an image tile).
       for (var node = element; node && node !== document.body; node = node.parentElement) {
-        if (node.hasAttribute('data-print-ink-saver')) break;
+        if (node.hasAttribute('data-print-ink-saver') || node.hasAttribute('data-print-ink-plain')) break;
         var style = getComputedStyle(node);
         if (darkFill(style, 0.75) || /url\(/.test(style.backgroundImage)) return;
       }
@@ -718,7 +938,10 @@
   var accessibilityObserver = new MutationObserver(function (records) {
     records.forEach(function (record) {
       record.addedNodes.forEach(function (node) {
-        if (node.nodeType === 1) enhanceLessonAccessibility(node);
+        if (node.nodeType === 1) {
+          enhanceLessonAccessibility(node);
+          upgradeInkToggles(node);
+        }
       });
     });
   });

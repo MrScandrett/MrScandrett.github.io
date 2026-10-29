@@ -181,6 +181,7 @@
 
     var r3 = row();
     btn(r3, 'Print this sheet', 'print', 'dr-mini-primary');
+    el('span', null, null, r3).setAttribute('data-print-ink-toggle', '');   // Save ink (lesson-print-button.js)
     btn(r3, 'Export this sheet', 'exportOne'); btn(r3, 'Export all sheets', 'exportAll'); btn(r3, 'Import…', 'importBtn');
     ui.importFile = el('input', null, null, r3); ui.importFile.type = 'file'; ui.importFile.accept = 'application/json,.json'; ui.importFile.hidden = true;
     var det = el('details', 'gs-site', null, r3);
