@@ -111,3 +111,14 @@
   buttons.addEventListener('click', sync);
   sync();
 })();
+
+// Hero emblem: hold its CSS animation while the hero is off-screen or the tab is hidden.
+(() => {
+  'use strict';
+  const hero = document.querySelector('.ez-hero');
+  if (!hero || !('IntersectionObserver' in window)) return;
+  let visible = true;
+  const sync = () => hero.classList.toggle('is-offscreen', !visible || document.hidden);
+  new IntersectionObserver(entries => { visible = entries[entries.length - 1].isIntersecting; sync(); }, { rootMargin: '200px' }).observe(hero);
+  document.addEventListener('visibilitychange', sync);
+})();
