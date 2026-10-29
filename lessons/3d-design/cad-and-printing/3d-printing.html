@@ -1338,13 +1338,13 @@
   </header>
 
 
-  <div class="p3d-topbar">
+  <nav class="p3d-topbar" aria-label="Lesson navigation">
     <div class="p3d-topbar-inner">
-      <a href="../../../steam-lessons.html">← Lessons</a>
-      <span class="p3d-topbar-title">Fabrication · Lesson 03</span>
-      <a href="../../../steam-lessons.html#module-fabrication">Fabrication</a>
+      <a href="../3d-design.html#make-real">← 3D Design</a>
+      <span class="p3d-topbar-title">3D Printing · Orientation &amp; Slicer Evidence</span>
+      <a href="print-fidgets.html">Next: Moving Fits &amp; Clearance →</a>
     </div>
-  </div>
+  </nav>
 
   <main id="main-content" tabindex="-1" class="p3d-shell">
 <div data-design3d-route="real"></div>
@@ -1847,6 +1847,138 @@
           <span class="p3d-icon">🛌</span>
           <h3>Bed Temperature</h3>
           <p>Keeps the first layer warm to prevent warping. <strong>PLA:</strong> 55–65 °C. <strong>PETG:</strong> 70–85 °C. <strong>ABS/ASA:</strong> 90–110 °C (needs enclosure). <strong>TPU:</strong> 40–60 °C. No heated bed = PLA only and small prints. Mismatched bed temp is the #1 cause of prints popping off mid-print.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PRINT-IN-PLACE MECHANISMS & MOVING PARTS SETTINGS ══ -->
+    <div class="p3d-card" id="pip-mechanisms">
+      <p class="p3d-label">Special Protocol · Moving Parts &amp; Print-in-Place</p>
+      <h2>Print-in-Place Mechanisms: The Wheel &amp; Axle Slicer Rules</h2>
+      <p>When an object has moving parts that stay together — such as a captive wheel on an axle, a rolling creature tool, or a captured hinge — standard slicer defaults will ruin the print. A slicer configured for static brackets will try to fill bearing gaps with supports and bridge wheels to chassis with brims. <strong>Students must write down, verify, and defend these exact slicer settings</strong> before submitting their print job:</p>
+
+      <figure data-zoomable>
+        <picture>
+          <source media="(max-width: 700px)" srcset="../../../assets/images/lessons/design3d-visuals/print-clearance-mobile.svg" width="480" height="1680" />
+          <img src="../../../assets/images/lessons/design3d-visuals/print-clearance.svg" alt="Diagram showing cross-sections of print-in-place clearance gaps: too tight welds together, calibrated air gap allows free rotation, too loose rattles" width="1000" height="520" loading="lazy" />
+        </picture>
+        <figcaption>In print-in-place wheel and axle assemblies, empty space is as critical as solid plastic. A 0.35–0.50 mm radial air gap allows parts to spin freely without welding together. Original ClassroomOS teaching diagram.</figcaption>
+      </figure>
+
+      <div class="p3d-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+        <div class="p3d-block">
+          <span class="p3d-icon">🚫</span>
+          <h3>1. Supports: OFF (or Support Blockers)</h3>
+          <p><strong>The Failure Mode:</strong> If automatic supports are enabled, the slicer generates support filament inside the 0.4 mm cylindrical air gap between the axle shaft and the wheel hub. Once cooled, this plastic permanently welds the moving wheel to the axle into an unmovable lump.</p>
+          <p><strong>The Setting:</strong> Turn supports <strong>OFF</strong> entirely, or place a manual <em>Support Blocker</em> cylinder over the axle journal. To hold itself up without supports, the axle must be designed with <strong>45° conical retaining flanges</strong> and base chamfers.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">⭕</span>
+          <h3>2. Bed Adhesion: SKIRT ONLY (NO BRIM)</h3>
+          <p><strong>The Failure Mode:</strong> A standard brim draws concentric rings around every part touching the build plate on Layer 1. Because the wheel rim and chassis axle are separated by only 0.4 mm, the brim bridges across the gap, cementing the wheel directly to the stationary frame on the very first layer.</p>
+          <p><strong>The Setting:</strong> Select <strong>Skirt</strong> (1–2 loops, 4–5 mm offset from the part) to prime the nozzle. If bed adhesion is poor on a large chassis, use a <strong>Raft</strong> (which introduces an intentional vertical air gap) or set <em>Brim-Object Gap</em> to &ge;0.4 mm.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">🧱</span>
+          <h3>3. Shell Thickness / Wall Count: 3 to 4 Perimeters</h3>
+          <p><strong>The Failure Mode:</strong> The default 2 walls (0.8 mm) leave small cylindrical axles hollow inside with weak infill. When downward pressure is applied to a rolling tool, bending and shear stress concentrate at the axle root, causing the shaft to snap along layer lines.</p>
+          <p><strong>The Setting:</strong> Set Wall Count to <strong>3 or 4 perimeters</strong> (1.2 mm to 1.6 mm shell thickness). For an 8 mm axle printed with a 0.4 mm nozzle, 4 concentric wall loops ensure the axle shaft is <strong>100% solid plastic</strong>, multiplying its shear strength.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">🕸️</span>
+          <h3>4. Infill: 25%–35% Gyroid or Cubic</h3>
+          <p><strong>The Failure Mode:</strong> Standard grid or lines infill has directional weak axes that collapse when downward force is applied across the rolling wheels.</p>
+          <p><strong>The Setting:</strong> Choose <strong>Gyroid</strong> or <strong>Cubic</strong> at <strong>25%–35% density</strong>. Gyroid infill provides isotropic (uniform in all 3D directions) mechanical resistance, preventing the creature or tool chassis from deforming under hand pressure.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">📏</span>
+          <h3>5. Layer Height: 0.16 mm – 0.20 mm</h3>
+          <p><strong>The Failure Mode:</strong> Coarse layer heights (0.28–0.32 mm) produce prominent stairstep ridges inside circular bores, creating extreme mechanical friction against the axle and catching during rotation.</p>
+          <p><strong>The Setting:</strong> Use <strong>0.16 mm (fine) or 0.20 mm (standard)</strong>. Thinner layers yield smooth bearing contact surfaces and allow clean bridging across 45° overhang chamfers.</p>
+        </div>
+
+        <div class="p3d-block">
+          <span class="p3d-icon">🦶</span>
+          <h3>6. Elephant's Foot Compensation: -0.15 mm</h3>
+          <p><strong>The Failure Mode:</strong> First-layer thermal expansion and bed squish cause the bottom layers of plastic to bulge outward, bridging the narrow 0.4 mm gap at the build plate.</p>
+          <p><strong>The Setting:</strong> Set <em>Initial Layer Horizontal Expansion</em> to <strong>-0.15 mm</strong> in the slicer, and model a <strong>45° base chamfer (&ge;1.0 mm)</strong> at the bottom of the wheel hub and axle boss.</p>
+        </div>
+      </div>
+
+      <!-- ── Student Specification Worksheet ── -->
+      <div class="p3d-step-grid" style="margin-top:1.5rem;">
+        <div class="p3d-step" style="grid-column: 1 / -1;">
+          <h3>Student Print-in-Place Specification Worksheet</h3>
+          <p>Fill out and verify this record before sending your print to the classroom queue:</p>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:0.95rem;">
+              <thead>
+                <tr style="border-bottom:2px solid var(--p3d-line, #ddd); text-align:left;">
+                  <th style="padding:0.5rem;">Parameter</th>
+                  <th style="padding:0.5rem;">Target Value</th>
+                  <th style="padding:0.5rem;">Student Slicer Value</th>
+                  <th style="padding:0.5rem;">Engineering Justification</th>
+                  <th style="padding:0.5rem;">Check</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Supports</strong></td>
+                  <td style="padding:0.5rem;">OFF / Blockers</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Prevents support filament from welding the 0.4 mm axle journal shut.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Build Plate Adhesion</strong></td>
+                  <td style="padding:0.5rem;">Skirt (never Brim)</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Prevents brim lines from connecting wheel to chassis on Layer 1.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Wall Count (Shell)</strong></td>
+                  <td style="padding:0.5rem;">3 to 4 walls (&ge;1.2 mm)</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Ensures axle shaft is solid concentric plastic to resist rolling shear.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Infill Density &amp; Pattern</strong></td>
+                  <td style="padding:0.5rem;">25%–35% Gyroid</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Isotropic strength against downward tool pressure.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Layer Height</strong></td>
+                  <td style="padding:0.5rem;">0.16 mm – 0.20 mm</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Smooth journal contact surface; minimizes bearing friction.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--p3d-line, #eee);">
+                  <td style="padding:0.5rem;"><strong>Radial Clearance</strong></td>
+                  <td style="padding:0.5rem;">0.35 mm – 0.50 mm</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Calibrated via Clearance Comb; exceeds printer line width.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+                <tr>
+                  <td style="padding:0.5rem;"><strong>Initial Layer Expansion</strong></td>
+                  <td style="padding:0.5rem;">-0.15 mm / 45° bevel</td>
+                  <td style="padding:0.5rem;">[ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ]</td>
+                  <td style="padding:0.5rem;">Compensates for elephant's foot squish at build plate.</td>
+                  <td style="padding:0.5rem;">&square;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:1rem;"><strong>Ready to test in The Forge?</strong> Experiment with scalable parameters in the browser: <a href="../../../forge.html?part=wheel-axle">Captive Wheel &amp; Axle Template</a> &middot; <a href="../../../forge.html?part=rolling-tool">Rolling Creature Tool Template</a> &middot; <a href="../3d-design.html#grand-challenge">&larr; Back to 3D Design Pathway</a></p>
         </div>
       </div>
     </div>

@@ -20,15 +20,23 @@
       ['blender/blender-windows-doors.html', 'Make an opening']
     ], [
       ['forge.html', 'Build in Forge'],
-      ['cad-and-printing/3d-printing.html', 'Prepare the print']
+      ['cad-and-printing/3d-printing.html', 'Prepare the print'],
+      ['cad-and-printing/print-fidgets.html', 'Design a moving fit'],
+      ['cad-and-printing/tinkercad-codeblocks.html', 'Computational modeling']
     ], [
       ['blender/blender-props-tools.html', 'Refine your model'],
-      ['blender/blender-materials-render.html', 'Render the model']
+      ['blender/blender-materials-render.html', 'Render the model'],
+      ['blender/blender-character-modeling.html', 'Character modeling'],
+      ['blender/blender-sculpting.html', 'Sculpt surfaces'],
+      ['blender/blender-geometry-nodes.html', 'Geometry nodes'],
+      ['blender/blender-compositing.html', 'Compositing & presentation']
     ], [
       ['game-asset-studio/game-asset-textures.html', 'Create textures'],
       ['game-asset-studio/game-asset-furniture.html', 'Build a prop'],
       ['game-asset-studio/game-asset-modular-rooms.html', 'Assemble a room'],
-      ['game-asset-studio/game-asset-uv-export.html', 'Export and test']
+      ['game-asset-studio/game-asset-uv-export.html', 'Export and test'],
+      ['game-asset-studio/game-asset-character-rigging.html', 'Rig a character'],
+      ['game-asset-studio/game-asset-character-animation.html', 'Author walk cycle']
     ]
   ];
   const lessonUrl = path => new URL(path.includes('/') ? 'lessons/3d-design/' + path : path, root).href;
@@ -44,6 +52,13 @@
       actions: ['Practice the camera on the sample model.', 'Return to your desk helper: draw or capture its Top and Front views. Check the opening and base.'],
       evidence: 'Keep two views of your helper and name one proportion to change.',
       next: 'cad-and-printing/blueprint-drafting.html', nextLabel: 'Next: draw and measure'
+    },
+    blueprint: {
+      label: 'Shared skill 2 of 4 · Plan the dimensions',
+      question: 'What are the exact height, width, and base dimensions of your helper?',
+      actions: ['Practice drawing the top and front views on the blueprint grid.', 'Sketch your own desk helper to scale with key dimensions marked before 3D modeling.'],
+      evidence: 'Keep your blueprint drawing showing top and front views with marked dimensions.',
+      next: 'blender/blender-interface-basics.html', nextLabel: 'Next: change one size'
     },
     transform: {
       label: 'Shared skill 3 of 4 · Change the object',

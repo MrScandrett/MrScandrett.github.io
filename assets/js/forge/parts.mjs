@@ -908,6 +908,329 @@ const comb = {
   },
 };
 
-export const PARTS = [caseCase, captured, spinner, hinge, rings, gears, spiral, tag, storage, stand, clip, comb];
-export const PART_GROUPS = ['Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
+/* ── mechanisms & 3-in-1 print-in-place challenges ────────────────────── */
+
+const wheelAxle = {
+  id: 'wheel-axle',
+  name: 'Captive wheel & axle',
+  group: 'Mechanisms',
+  blurb: 'A wheel captured on a central axle by a 45° conical retaining head. Prints in place without supports or assembly.',
+  lesson: { href: 'lessons/3d-design/cad-and-printing/3d-printing.html#pip-mechanisms', label: '3D printing & mechanisms' },
+  params: [
+    { id: 'wheelD', label: 'Wheel diameter', type: 'range', min: 20, max: 70, step: 2, default: 40, unit: 'mm' },
+    { id: 'wheelW', label: 'Wheel width', type: 'range', min: 6, max: 24, step: 1, default: 10, unit: 'mm', kind: 'wall' },
+    { id: 'axleD', label: 'Axle diameter', type: 'range', min: 5, max: 14, step: 1, default: 8, unit: 'mm' },
+    { id: 'gap', label: 'Clearance gap', type: 'range', min: 0.25, max: 0.8, step: 0.05, default: 0.4, unit: 'mm', help: 'Air gap between axle shaft and wheel bore.' },
+    { id: 'spokes', label: 'Wheel pattern', type: 'select', default: 'spoked', options: [
+      { value: 'spoked', label: '4-spoke cutouts' },
+      { value: 'solid', label: 'Solid disc' },
+      { value: 'gear', label: 'Gear / cog teeth' },
+    ] },
+    { id: 'tool', label: 'Tool feature', type: 'select', default: 'plain', options: [
+      { value: 'plain', label: 'Plain test wheel' },
+      { value: 'measuring', label: 'Measuring index pointer & marks' },
+      { value: 'spool', label: 'Cord / wire spool groove' },
+    ] },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const { nozzle, clearance } = ctx.settings;
+    const g = p.gap;
+    const axleR = p.axleD / 2;
+    const wheelR = p.wheelD / 2;
+    const wheelW = p.wheelW;
+    const baseT = 3.2;
+    const baseW = Math.max(p.wheelD + 10, 42);
+    const baseD = Math.max(axleR * 4 + 14, 26);
+
+    const plate = CS.square([baseW, baseD], true).offset(3, 'Round', 2, 24).extrude(baseT);
+    const holeR = 2.2;
+    const holeX = baseW / 2 - 2;
+    const holes = M.union([
+      M.cylinder(baseT + 2, holeR, holeR, 20).translate([-holeX, 0, -1]),
+      M.cylinder(baseT + 2, holeR, holeR, 20).translate([holeX, 0, -1]),
+    ]);
+    const base = plate.subtract(holes);
+
+    const bossH = 1.0;
+    const boss = M.cylinder(bossH, axleR + bossH, axleR, 36).translate([0, 0, baseT - 0.01]);
+
+    const capH = Math.min(2.2, axleR * 0.45);
+    const capR = axleR + capH;
+    const shaftH = bossH + g + wheelW + g;
+    const shaft = M.cylinder(shaftH, axleR, axleR, 36).translate([0, 0, baseT]);
+
+    const headZ = baseT + bossH + g + wheelW;
+    const capCone = M.cylinder(capH, axleR, capR, 36).translate([0, 0, headZ]);
+    const capTop = M.cylinder(1.0, capR, Math.max(axleR, capR - 1.0), 36).translate([0, 0, headZ + capH - 0.01]);
+
+    let pointer = null;
+    if (p.tool === 'measuring') {
+      const ptrSec = CS.hull([
+        CS.circle(1.8, 16).translate([0, -baseD / 2 + 2]),
+        CS.square([1.8, 3.5], true).translate([0, -wheelR + 1]),
+      ]);
+      pointer = ptrSec.extrude(baseT + bossH + g + 2);
+    }
+
+    let mount = M.union([base, boss, shaft, capCone, capTop]);
+    if (pointer) mount = mount.add(pointer);
+
+    const z0 = baseT + bossH + g;
+    const hubR = axleR + g + 3;
+
+    let wheelSolid = M.cylinder(wheelW, wheelR, wheelR, 48).translate([0, 0, z0]);
+
+    const boreBottom = M.cylinder(bossH + 0.1, axleR + g + bossH, axleR + g, 36).translate([0, 0, z0 - 0.05]);
+    const boreMain = M.cylinder(wheelW + 1, axleR + g, axleR + g, 36).translate([0, 0, z0 - 0.5]);
+    const boreTop = M.cylinder(capH + g + 0.1, axleR + g, capR + g, 36).translate([0, 0, headZ - g]);
+    const boreCapRelief = M.cylinder(2, capR + g, capR + g, 36).translate([0, 0, headZ + capH - 0.01]);
+
+    let wheel = wheelSolid.subtract(M.union([boreBottom, boreMain, boreTop, boreCapRelief]));
+
+    if (p.spokes === 'spoked' && wheelR - hubR > 5) {
+      const spokeCutters = [];
+      const nSpokes = 4;
+      const cutR = Math.max(1.5, (wheelR - hubR - 2) / 2);
+      const cutDist = hubR + cutR;
+      for (let i = 0; i < nSpokes; i++) {
+        const ang = (2 * Math.PI * i) / nSpokes + Math.PI / 4;
+        const cx = cutDist * Math.cos(ang), cy = cutDist * Math.sin(ang);
+        spokeCutters.push(M.cylinder(wheelW + 2, cutR, cutR, 24).translate([cx, cy, z0 - 1]));
+      }
+      wheel = wheel.subtract(M.union(spokeCutters));
+    } else if (p.spokes === 'gear') {
+      const teeth = Math.max(8, Math.floor(p.wheelD * 0.7));
+      const notchW = 2, notchD = 1.5;
+      const cutters = [];
+      for (let i = 0; i < teeth; i++) {
+        const ang = (2 * Math.PI * i) / teeth;
+        cutters.push(M.cube([notchW, notchD * 2, wheelW + 2], true).translate([0, wheelR, z0 + wheelW / 2]).rotate([0, 0, (ang * 180) / Math.PI]));
+      }
+      wheel = wheel.subtract(M.union(cutters));
+    }
+
+    if (p.tool === 'measuring') {
+      const marks = [];
+      const nMarks = 8;
+      for (let i = 0; i < nMarks; i++) {
+        const ang = (2 * Math.PI * i) / nMarks;
+        marks.push(M.cube([1.2, 2.0, 1.2], true).translate([0, wheelR - 0.8, z0 + wheelW - 0.6]).rotate([0, 0, (ang * 180) / Math.PI]));
+      }
+      wheel = wheel.subtract(M.union(marks));
+    }
+
+    if (p.tool === 'spool' && wheelW >= 10 && wheelR - hubR > 4) {
+      const grooveH = wheelW - 4;
+      const grooveD = Math.min(5, (wheelR - hubR) * 0.45);
+      const groove = M.cylinder(grooveH, wheelR + 1, wheelR + 1, 48).translate([0, 0, z0 + 2])
+        .subtract(M.cylinder(grooveH + 2, wheelR - grooveD, wheelR - grooveD, 48).translate([0, 0, z0 + 1]));
+      wheel = wheel.subtract(groove);
+    }
+
+    const verdicts = [];
+    if (g < clearance) {
+      verdicts.push({ tone: 'bad', tag: 'FUSED', text: `${g} mm clearance is below your class clearance (${clearance} mm). The wheel will weld to the axle.` });
+    } else if (g > clearance + 0.35) {
+      verdicts.push({ tone: 'warn', tag: 'LOOSE', text: `${g} mm clearance leaves too much wobble.` });
+    } else {
+      verdicts.push({ tone: 'ok', tag: 'CAPTIVE FIT', text: `${g} mm air gap keeps the wheel free to rotate while permanently retained by the 45° conical head.` });
+    }
+
+    verdicts.push({ tone: 'ok', tag: 'SUPPORTS OFF', text: 'Axle retaining head and base boss use 45° self-supporting angles. Turn SUPPORTS OFF in the slicer — support material would fill the axle gap and lock the wheel.' });
+    verdicts.push({ tone: 'ok', tag: 'ADHESION SKIRT', text: 'Use a Skirt only — never a Brim. A standard brim bridges across the 0.4 mm gap at layer 1, gluing the wheel to the base.' });
+
+    const solidWalls = Math.ceil(axleR / nozzle);
+    verdicts.push({ tone: 'ok', tag: 'SHELL STRENGTH', text: `Axle radius is ${axleR} mm. Set Wall Count to at least ${Math.min(4, solidWalls)} perimeters (≥1.2 mm shell) so the axle prints solid for maximum shear strength.` });
+
+    return {
+      bodies: [{ name: 'Mount & Axle', manifold: mount }, { name: 'Wheel', manifold: wheel }],
+      layout: 'nested',
+      overhangNote: 'The wheel floats above the base on a calibrated clearance gap. Print with supports OFF — slicer supports will fill the radial gap and fuse the wheel to the axle.',
+      verdicts,
+      stats: [
+        { label: 'Wheel diameter / width', value: `Ø${p.wheelD} × ${p.wheelW} mm` },
+        { label: 'Axle diameter', value: `Ø${p.axleD} mm` },
+        { label: 'Radial & axial clearance', value: `${g} mm` },
+        { label: 'Retaining head overlap', value: `${round(capR - axleR, 2)} mm` },
+      ],
+    };
+  },
+};
+
+const rollingTool = {
+  id: 'rolling-tool',
+  name: 'Rolling creature tool',
+  group: 'Mechanisms',
+  blurb: 'A 3-in-1 print-in-place design challenge: a functional desk tool, sculpted in the likeness of an animal or vehicle, with captive rolling wheels on axles.',
+  lesson: { href: 'lessons/3d-design/3d-design.html#grand-challenge', label: '3-in-1 Design Challenge' },
+  params: [
+    { id: 'likeness', label: 'Likeness form', type: 'select', default: 'turtle', options: [
+      { value: 'turtle', label: 'Sea turtle / tortoise' },
+      { value: 'beetle', label: 'Scarab beetle' },
+      { value: 'rover', label: 'Planetary rover' },
+      { value: 'armadillo', label: 'Armadillo' },
+    ] },
+    { id: 'tool', label: 'Tool utility', type: 'select', default: 'caddy', options: [
+      { value: 'caddy', label: 'Desk pencil & tool caddy' },
+      { value: 'tape', label: 'Tape / cord dispenser & reel' },
+      { value: 'gauge', label: 'Distance measuring wheel' },
+    ] },
+    { id: 'wheelD', label: 'Wheel diameter', type: 'range', min: 20, max: 48, step: 2, default: 30, unit: 'mm' },
+    { id: 'wheelW', label: 'Wheel width', type: 'range', min: 6, max: 18, step: 1, default: 10, unit: 'mm', kind: 'wall' },
+    { id: 'axleD', label: 'Axle diameter', type: 'range', min: 5, max: 12, step: 1, default: 7, unit: 'mm' },
+    { id: 'gap', label: 'Clearance gap', type: 'range', min: 0.25, max: 0.8, step: 0.05, default: 0.4, unit: 'mm' },
+    { id: 'bodyL', label: 'Body length', type: 'range', min: 60, max: 120, step: 2, default: 80, unit: 'mm' },
+    { id: 'bodyW', label: 'Body width', type: 'range', min: 36, max: 70, step: 2, default: 50, unit: 'mm' },
+    { id: 'bodyH', label: 'Body height', type: 'range', min: 20, max: 46, step: 1, default: 28, unit: 'mm' },
+    { id: 'tread', label: 'Wheel tread', type: 'select', default: 'ribbed', options: [
+      { value: 'smooth', label: 'Smooth' },
+      { value: 'ribbed', label: 'Ribbed notches' },
+      { value: 'knobby', label: 'Knobby studs' },
+    ] },
+  ],
+  build(ctx, p) {
+    const { Manifold: M, CrossSection: CS } = ctx;
+    const { nozzle, clearance } = ctx.settings;
+    const g = p.gap;
+    const wD = p.wheelD;
+    const wR = wD / 2;
+    const wW = p.wheelW;
+    const aD = p.axleD;
+    const aR = aD / 2;
+    const bL = p.bodyL;
+    const bW = p.bodyW;
+    const bH = p.bodyH;
+
+    let bodySec;
+    if (p.likeness === 'turtle') {
+      bodySec = CS.circle(1, 36).scale([bL / 2, bW / 2]);
+      const head = CS.circle(bW * 0.2, 24).translate([bL * 0.52, 0]);
+      const tail = CS.hull([CS.circle(1, 12).translate([-bL * 0.56, 0]), CS.square([2, bW * 0.15], true).translate([-bL * 0.46, 0])]);
+      const fL = CS.hull([CS.circle(bW * 0.1, 16).translate([bL * 0.2, bW * 0.46]), CS.circle(bW * 0.05, 16).translate([bL * 0.3, bW * 0.58])]);
+      const fR = fL.mirror([0, 1]);
+      const rL = CS.hull([CS.circle(bW * 0.08, 16).translate([-bL * 0.22, bW * 0.4]), CS.circle(bW * 0.04, 16).translate([-bL * 0.3, bW * 0.5])]);
+      const rR = rL.mirror([0, 1]);
+      bodySec = CS.union([bodySec, head, tail, fL, fR, rL, rR]);
+    } else if (p.likeness === 'beetle') {
+      const thorax = CS.circle(1, 24).scale([bL * 0.2, bW * 0.4]).translate([bL * 0.18, 0]);
+      const abdomen = CS.circle(1, 24).scale([bL * 0.3, bW * 0.44]).translate([-bL * 0.16, 0]);
+      const horns = CS.hull([CS.circle(2, 12).translate([bL * 0.54, bW * 0.14]), CS.circle(3, 12).translate([bL * 0.36, 0])]);
+      const hornR = horns.mirror([0, 1]);
+      bodySec = CS.union([thorax, abdomen, horns, hornR]);
+    } else if (p.likeness === 'rover') {
+      bodySec = CS.square([bL * 0.82, bW * 0.78], true).offset(3, 'Round', 2, 20);
+      const mast = CS.square([bL * 0.14, bW * 0.32], true).translate([bL * 0.44, 0]);
+      bodySec = CS.union([bodySec, mast]);
+    } else {
+      bodySec = CS.hull([
+        CS.circle(bW * 0.22, 24).translate([bL * 0.44, 0]),
+        CS.circle(bW * 0.42, 24).translate([0, 0]),
+        CS.circle(bW * 0.14, 24).translate([-bL * 0.44, 0]),
+      ]);
+    }
+
+    const floorT = 3.0;
+    let bodySolid = bodySec.extrude(bH);
+
+    const wellL = wD + 2 * g + 4;
+    const wellW = wW + 2 * g + 2;
+    const wellH = bH + 2;
+    const wellCavity = M.cube([wellL, wellW, wellH], true).translate([0, 0, bH / 2 + 1]);
+
+    const capH = Math.min(2.2, aR * 0.45);
+    const capR = aR + capH;
+    const axleBaseZ = floorT;
+    const wheelZ0 = axleBaseZ + g + 0.8;
+    const axleShaftH = wheelZ0 + wW + g - axleBaseZ;
+
+    const axleBoss = M.cylinder(0.8, aR + 0.8, aR, 32).translate([0, 0, axleBaseZ]);
+    const axleShaft = M.cylinder(axleShaftH, aR, aR, 32).translate([0, 0, axleBaseZ]);
+    const headZ = wheelZ0 + wW;
+    const axleCap = M.cylinder(capH, aR, capR, 32).translate([0, 0, headZ]);
+    const axleCapTop = M.cylinder(1.0, capR, aR, 32).translate([0, 0, headZ + capH - 0.01]);
+    const axleAssembly = M.union([axleBoss, axleShaft, axleCap, axleCapTop]);
+
+    let chassis = bodySolid.subtract(wellCavity).add(axleAssembly);
+
+    if (p.tool === 'caddy') {
+      const wellR = Math.max(3, Math.min(9, (bW * 0.3) / 2));
+      const wellDepth = Math.max(5, bH - floorT - 1);
+      const frontWellX = Math.min(bL * 0.36, (bL + wellL) / 4 + wellL / 2);
+      const backWellX = -frontWellX;
+      const penWells = M.union([
+        M.cylinder(wellDepth + 2, wellR, wellR, 24).translate([frontWellX, 0, floorT + 1]),
+        M.cylinder(wellDepth + 2, wellR, wellR, 24).translate([backWellX, 0, floorT + 1]),
+      ]);
+      chassis = chassis.subtract(penWells);
+    } else if (p.tool === 'tape') {
+      const slotW = Math.min(14, wW + 4);
+      const feedSlot = M.cube([bL * 0.38, slotW, bH + 2], true).translate([bL * 0.34, 0, bH / 2]);
+      chassis = chassis.subtract(feedSlot);
+    } else if (p.tool === 'gauge') {
+      const pointer = CS.hull([
+        CS.circle(1.5, 12).translate([-wellL / 2 - 2, 0]),
+        CS.square([1.5, 3], true).translate([-wR - g, 0]),
+      ]).extrude(Math.min(12, bH * 0.7)).translate([0, 0, floorT]);
+      chassis = chassis.add(pointer);
+    }
+
+    let wheelSolid = M.cylinder(wW, wR, wR, 48).translate([0, 0, wheelZ0]);
+    const boreBottom = M.cylinder(1.0, aR + g + 0.8, aR + g, 32).translate([0, 0, wheelZ0 - 0.1]);
+    const boreMain = M.cylinder(wW + 1, aR + g, aR + g, 32).translate([0, 0, wheelZ0 - 0.5]);
+    const boreTop = M.cylinder(capH + g + 0.1, aR + g, capR + g, 32).translate([0, 0, headZ - g]);
+    const boreRelief = M.cylinder(2, capR + g, capR + g, 32).translate([0, 0, headZ + capH - 0.01]);
+    let wheel = wheelSolid.subtract(M.union([boreBottom, boreMain, boreTop, boreRelief]));
+
+    if (p.tread === 'knobby') {
+      const teeth = 14;
+      const cutters = [];
+      for (let i = 0; i < teeth; i++) {
+        const ang = (2 * Math.PI * i) / teeth;
+        cutters.push(M.cylinder(wW + 2, 1.2, 1.2, 12).translate([wR * Math.cos(ang), wR * Math.sin(ang), wheelZ0 - 1]));
+      }
+      wheel = wheel.subtract(M.union(cutters));
+    } else if (p.tread === 'ribbed') {
+      const ribs = 10;
+      const cuts = [];
+      for (let i = 0; i < ribs; i++) {
+        const ang = (2 * Math.PI * i) / ribs;
+        cuts.push(M.cube([1.4, 1.8, wW + 2], true).translate([0, wR, wheelZ0 + wW / 2]).rotate([0, 0, (ang * 180) / Math.PI]));
+      }
+      wheel = wheel.subtract(M.union(cuts));
+    }
+
+    const verdicts = [];
+    if (g < clearance) {
+      verdicts.push({ tone: 'bad', tag: 'FUSED', text: `${g} mm clearance is below class clearance (${clearance} mm). The captive wheel will weld to the chassis axle.` });
+    } else if (g > clearance + 0.35) {
+      verdicts.push({ tone: 'warn', tag: 'WOBBLY', text: `${g} mm clearance leaves too much play.` });
+    } else {
+      verdicts.push({ tone: 'ok', tag: 'CAPTIVE ROLL', text: `${g} mm clearance keeps the wheel free to roll while trapped captive on the central axle post.` });
+    }
+
+    verdicts.push({ tone: 'ok', tag: 'SUPPORTS OFF', text: 'All retaining flanges use 45° self-supporting angles. Disable slicer supports so the axle cavity stays clean.' });
+    verdicts.push({ tone: 'ok', tag: 'ADHESION SKIRT', text: 'Print with Skirt only. Never use a Brim, as it bridges the wheel-to-chassis air gap on layer 1.' });
+
+    const solidWalls = Math.ceil(aR / nozzle);
+    verdicts.push({ tone: 'ok', tag: 'WALL COUNT', text: `Use 3 to 4 perimeters (Wall count ≥ 3) so the ${round(aD)} mm axle prints solid concentric loops for maximum shear strength.` });
+
+    return {
+      bodies: [{ name: 'Chassis & Axle', manifold: chassis }, { name: 'Wheel', manifold: wheel }],
+      layout: 'nested',
+      overhangNote: 'The captive wheel prints in-place around the axle with self-supporting 45° angles. Print with supports OFF to prevent fusing the bearing journal.',
+      verdicts,
+      stats: [
+        { label: 'Likeness', value: p.likeness },
+        { label: 'Tool mode', value: p.tool },
+        { label: 'Wheel diameter / width', value: `Ø${wD} × ${wW} mm` },
+        { label: 'Axle diameter', value: `Ø${aD} mm` },
+        { label: 'Clearance', value: `${g} mm` },
+      ],
+    };
+  },
+};
+
+export const PARTS = [rollingTool, wheelAxle, caseCase, captured, spinner, hinge, rings, gears, spiral, tag, storage, stand, clip, comb];
+export const PART_GROUPS = ['Mechanisms', 'Electronics housings', 'Fidgets', 'Everyday', 'Calibration'];
 export const partById = (id) => PARTS.find((p) => p.id === id);
