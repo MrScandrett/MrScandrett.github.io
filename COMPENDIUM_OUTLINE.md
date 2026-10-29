@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 449 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 450 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -539,7 +539,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 116 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 117 lessons
 
 ## Visual Art & Design (DES)
 
@@ -576,24 +576,25 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-06** — Drum Lab: Kit, Notation, Rudiments & Fills
 - **MUS-07** — The Saxophone: Reed, Breath & Melody
 - **MUS-08** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-09** — Chord Progressions & Arranging
 
 ### Composers & Music History
 
-- **MUS-09** — Antonio Vivaldi
-- **MUS-10** — Johann Sebastian Bach
-- **MUS-11** — Wolfgang Amadeus Mozart
-- **MUS-12** — Ludwig van Beethoven
-- **MUS-13** — Frédéric Chopin
-- **MUS-14** — Pyotr Ilyich Tchaikovsky
-- **MUS-15** — Claude Debussy
-- **MUS-16** — Erik Satie
-- **MUS-17** — Scott Joplin
-- **MUS-18** — George Gershwin
-- **MUS-19** — Jelly Roll Morton
-- **MUS-20** — Duke Ellington
-- **MUS-21** — Charlie Parker
-- **MUS-22** — Louis Armstrong
-- **MUS-23** — Modes: From Greece to Today
+- **MUS-10** — Antonio Vivaldi
+- **MUS-11** — Johann Sebastian Bach
+- **MUS-12** — Wolfgang Amadeus Mozart
+- **MUS-13** — Ludwig van Beethoven
+- **MUS-14** — Frédéric Chopin
+- **MUS-15** — Pyotr Ilyich Tchaikovsky
+- **MUS-16** — Claude Debussy
+- **MUS-17** — Erik Satie
+- **MUS-18** — Scott Joplin
+- **MUS-19** — George Gershwin
+- **MUS-20** — Jelly Roll Morton
+- **MUS-21** — Duke Ellington
+- **MUS-22** — Charlie Parker
+- **MUS-23** — Louis Armstrong
+- **MUS-24** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 

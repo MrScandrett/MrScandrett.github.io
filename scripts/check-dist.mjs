@@ -11,9 +11,9 @@ const FORBIDDEN = [
   "serve-local.js", ".pa11yci.json", "AGENTS.md", "CLAUDE.md", "README.md",
   "OSeditor.html", "assets/js/OSeditor-app.js", "assets/css/OSeditor.css", "data/app-sources.json",
 ];
-// The October 2026 public bundle is 389 MiB, including lesson media and student
-// apps. Keep a narrow growth cap while allowing the current site to deploy.
-const MAX_BYTES = 400 * 1024 * 1024;
+// The October 2026 public bundle is 405 MiB, including lesson media and student
+// apps. Keep roughly 11 MiB of headroom so unexpected growth still fails.
+const MAX_BYTES = 416 * 1024 * 1024;
 // A single oversized thumbnail (a full-resolution photo dropped in instead of
 // a resized one) can silently eat most of the MAX_BYTES margin on its own —
 // see vla-telescope.jpg, once 9.1 MiB. Cap individual thumbnails well above

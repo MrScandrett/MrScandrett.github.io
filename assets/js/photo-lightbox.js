@@ -47,6 +47,12 @@
   var group = [];
   var index = 0;
   var lastFocus = null;
+  var previousOverflow = '';
+  var closeBtn = root.querySelector('.plb-close');
+
+  function focusableControls() {
+    return Array.prototype.slice.call(root.querySelectorAll('button:not([hidden]), a[href]'));
+  }
 
   function show(fig, clickedThumb) {
     var thumb = clickedThumb || (fig.tagName === 'IMG' ? fig : fig.querySelector('img'));
@@ -71,27 +77,34 @@
       clone.querySelectorAll('strong').forEach(function (n) { n.textContent = n.textContent + '. '; });
       text = clone.textContent.trim();
     }
-    if (thumb && thumb.alt && text.length < 25) text = thumb.alt;
+    if (thumb && thumb.alt && !text) text = thumb.alt;
     capEl.textContent = text;
   }
 
   function open(fig, clickedThumb) {
     var g = fig.getAttribute('data-lightbox-group');
-    group = g ? Array.prototype.slice.call(document.querySelectorAll('[data-zoomable][data-lightbox-group="' + g + '"]')) : [fig];
+    group = g ? Array.prototype.slice.call(document.querySelectorAll('[data-zoomable]')).filter(function (item) {
+      return item.getAttribute('data-lightbox-group') === g && (item.tagName === 'IMG' || item.querySelector('img'));
+    }) : [fig];
     index = Math.max(0, group.indexOf(fig));
-    lastFocus = document.activeElement;
+    if (!root.classList.contains('plb-open')) {
+      lastFocus = document.activeElement;
+      previousOverflow = document.documentElement.style.overflow;
+    }
     show(group[index], clickedThumb);
     prevBtn.hidden = nextBtn.hidden = group.length < 2;
     root.classList.add('plb-open');
     document.documentElement.style.overflow = 'hidden';
-    root.querySelector('.plb-close').focus();
+    closeBtn.focus();
   }
 
   function close() {
+    if (!root.classList.contains('plb-open')) return;
     root.classList.remove('plb-open');
-    document.documentElement.style.overflow = '';
+    document.documentElement.style.overflow = previousOverflow;
     img.removeAttribute('src');
-    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    if (lastFocus && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    lastFocus = null;
   }
 
   function step(d) {
@@ -102,9 +115,11 @@
 
   document.addEventListener('click', function (e) {
     var fig = e.target.closest && e.target.closest('[data-zoomable]');
-    if (fig && (fig.tagName === 'IMG' || fig.querySelector('img')) && e.target.closest('img')) {
+    var thumb = fig && e.target.closest('img');
+    if (fig && (fig.tagName === 'IMG' || fig.querySelector('img')) &&
+        (thumb || !e.target.closest('a, button'))) {
       e.preventDefault();
-      open(fig, e.target.closest('img'));
+      open(fig, thumb);
       return;
     }
     if (!root.classList.contains('plb-open')) return;
@@ -112,9 +127,17 @@
   });
   document.addEventListener('keydown', function (e) {
     if (root.classList.contains('plb-open')) {
-      if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowLeft') step(-1);
-      else if (e.key === 'ArrowRight') step(1);
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+      else if (e.key === 'Tab') {
+        var controls = focusableControls();
+        var first = controls[0];
+        var last = controls[controls.length - 1];
+        if (!root.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
       return;
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-zoomable] img, img[data-zoomable]')) {
@@ -122,7 +145,7 @@
       open(e.target.closest('[data-zoomable]') || e.target, e.target.matches('img') ? e.target : null);
     }
   });
-  root.querySelector('.plb-close').addEventListener('click', close);
+  closeBtn.addEventListener('click', close);
   prevBtn.addEventListener('click', function () { step(-1); });
   nextBtn.addEventListener('click', function () { step(1); });
 

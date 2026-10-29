@@ -77,7 +77,7 @@ const state = {
   group: null,
   query: "",
   grade: "all",
-  access: "all",
+  access: "no-account",
   pendingTool: null,
   lastFocused: null
 };
@@ -402,7 +402,7 @@ function launchTool(tool) {
 function restoreFromHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   const access = params.get("access");
-  state.access = Object.hasOwn(ACCESS_HELP, access) ? access : "all";
+  state.access = Object.hasOwn(ACCESS_HELP, access) ? access : "no-account";
   elements.access.value = state.access;
   elements.accessExplanation.textContent = ACCESS_HELP[state.access];
   state.grade = "all";
@@ -463,8 +463,10 @@ function refreshFilters() {
 elements.grade.addEventListener("change", () => { state.grade = elements.grade.value; refreshFilters(); });
 elements.access.addEventListener("change", () => { state.access = elements.access.value; refreshFilters(); });
 elements.resetFilters.addEventListener("click", () => {
+  state.access = "no-account";
   state.grade = "all";
   state.query = "";
+  elements.access.value = state.access;
   elements.grade.value = "all";
   elements.search.value = "";
   elements.clearSearch.hidden = true;
