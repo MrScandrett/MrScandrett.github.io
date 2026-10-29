@@ -14,6 +14,7 @@
     { file: 'lessons/music/theory/sheet-music-trainer.html', label: 'Sheet Music' },
     { file: 'lessons/music/instruments/piano.html', label: 'Piano' },
     { file: 'lessons/music/theory/music-modes-evolution.html', label: 'Modes' },
+    { file: 'lessons/music/theory/drop-voicings.html', label: 'Drop Voicings' },
     { file: 'lessons/music/instruments/guitar.html', label: 'Guitar' },
     { file: 'lessons/music/instruments/violin-fingerboard.html', label: 'Violin' },
     { file: 'lessons/music/instruments/drums.html', label: 'Drums' },

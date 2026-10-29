@@ -297,6 +297,36 @@ window.MajorProphets = {
         ],
         2,
         "43:1–5 reverses the departure of 10–11 and answers the fear of abandonment."
+      ],
+      [
+        "What news turns the book from warning toward hope (Ezekiel 33:21–22)?",
+        [
+          "Babylon has been defeated",
+          "Jerusalem has fallen",
+          "The exiles may go home"
+        ],
+        1,
+        "A survivor reports the city’s fall, Ezekiel’s mouth is opened, and Act III, the rebuilding, begins."
+      ],
+      [
+        "Jesus says, “I am the good shepherd… there will be one flock and one shepherd” (John 10:11, 16). Which Ezekiel chapter does this echo?",
+        [
+          "Ezekiel 34, where God seeks the lost and appoints one shepherd",
+          "Ezekiel 4, the clay-tile siege",
+          "Ezekiel 28, the ruler of Tyre"
+        ],
+        0,
+        "Ezekiel 34:11–16 and 34:23 promise God’s own care and one shepherd from David’s line."
+      ],
+      [
+        "Revelation 22:1–2 describes a river and trees whose leaves are for healing. Which vision does it draw on?",
+        [
+          "The four living creatures (Ezekiel 1)",
+          "The two sticks (Ezekiel 37)",
+          "The river from the temple (Ezekiel 47)"
+        ],
+        2,
+        "Ezekiel 47:12: fruit every month and “their leaves for healing.” Revelation ends with Ezekiel’s last vision."
       ]
     ],
     "slug": "ezekiel"
