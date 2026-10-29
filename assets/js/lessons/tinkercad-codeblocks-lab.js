@@ -7,7 +7,7 @@ import { PRESETS, rings, checks, recipe, stl } from './codeblocks-rings.mjs';
   if (!canvas) return;
   var colors = SimKit.theme.colors();
   SimKit.theme.onChange(function (c) { colors = c; render(); });
-  var SQUASH = 0.42, PLA = 1.24;
+  var PLA = 1.24;
   var ids = ['n', 'r', 'gap', 'h', 'w'], inputs = {}, outputs = {};
   ids.forEach(function(k) { inputs[k] = document.getElementById('cb-' + k); outputs[k] = document.getElementById('cb-' + k + '-out'); });
   var program = document.getElementById('cb-program');
@@ -25,45 +25,26 @@ import { PRESETS, rings, checks, recipe, stl } from './codeblocks-rings.mjs';
     ctx.clearRect(0, 0, W, H);
     if (!list.length) { updateText(p, list); return; }
 
-    var maxR = 0, top = 0;
-    list.forEach(function (g) { maxR = Math.max(maxR, g.R); top = Math.max(top, g.z + g.h); });
-    var s = Math.max(0.01, Math.min((W - 40) / (2 * maxR), (H - 40) / (top + 2 * maxR * SQUASH)));
-    var cx = W / 2, base = H - 20 - maxR * SQUASH * s;
-
-    // Floor shadow.
-    ctx.fillStyle = 'rgba(0,0,0,0.08)';
-    ctx.beginPath(); ctx.ellipse(cx, base, maxR * s * 1.05, maxR * s * SQUASH * 1.05, 0, 0, Math.PI * 2); ctx.fill();
-
-    // Concentric rings share a floor and a top, so draw outermost first and
-    // let each inner top sit in the hole of the one around it.
-    var order = list;
-    order.forEach(function (g, k) {
+    // A top view shows the actual clearance without perspective hiding gaps.
+    var s = Math.min((W - 48) / (2 * p.r), (H - 70) / (2 * p.r));
+    var cx = W / 2, cy = H / 2;
+    list.forEach(function (g) {
       var hue = 190 - (g.i - 1) * (150 / Math.max(1, p.n - 1));
-      var y0 = base - g.z * s, y1 = base - (g.z + g.h) * s;
-      var rx = g.R * s, ry = g.R * s * SQUASH;
-      var showSide = true;
-      if (showSide) {
-        var grad = ctx.createLinearGradient(cx - rx, 0, cx + rx, 0);
-        grad.addColorStop(0, 'hsl(' + hue + ',60%,32%)');
-        grad.addColorStop(0.45, 'hsl(' + hue + ',65%,52%)');
-        grad.addColorStop(1, 'hsl(' + hue + ',60%,28%)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(cx, y0, rx, ry, 0, 0, Math.PI);
-        ctx.lineTo(cx - rx, y1);
-        ctx.ellipse(cx, y1, rx, ry, 0, Math.PI, 0, true);
-        ctx.closePath();
-        ctx.fill();
-      }
-      // Top face: the ring outline, then the hole.
-      ctx.fillStyle = 'hsl(' + hue + ',70%,64%)';
-      ctx.beginPath(); ctx.ellipse(cx, y1, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = 'hsl(' + hue + ',60%,25%)'; ctx.lineWidth = 1; ctx.stroke();
-      if (g.r > 0) {
-        ctx.fillStyle = colors.bg || "#f1f5f9";
-        ctx.beginPath(); ctx.ellipse(cx, y1, g.r * s, g.r * s * SQUASH, 0, 0, Math.PI * 2); ctx.fill();
-      }
+      ctx.fillStyle = 'hsl(' + hue + ',65%,56%)';
+      ctx.strokeStyle = colors.text;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, g.R * s, 0, Math.PI * 2);
+      ctx.moveTo(cx + g.r * s, cy);
+      ctx.arc(cx, cy, g.r * s, 0, Math.PI * 2, true);
+      ctx.fill('evenodd'); ctx.stroke();
     });
+    ctx.fillStyle = colors.text;
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TOP VIEW', cx, cy - 10);
+    ctx.fillText('Height: ' + fmt(p.h) + ' mm', cx, cy + 12);
+    ctx.textAlign = 'left';
 
     // Scale bar: 10 mm.
     ctx.strokeStyle = colors.text; ctx.fillStyle = colors.text; ctx.lineWidth = 2;

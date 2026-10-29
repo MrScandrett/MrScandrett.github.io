@@ -10,6 +10,7 @@
   var base = script ? script.src.replace(/assets\/js\/music-family\.js.*$/, '') : '';
 
   var THEORY = [
+    { file: 'lessons/music/theory/circle-of-fifths.html', label: 'Circle of Fifths' },
     { file: 'lessons/music/theory/sheet-music-trainer.html', label: 'Sheet Music' },
     { file: 'lessons/music/instruments/piano.html', label: 'Piano' },
     { file: 'lessons/music/theory/music-modes-evolution.html', label: 'Modes' },

@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 444 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 450 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -416,74 +416,76 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 80 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 82 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
 ### Computing Foundations & Representation
 
-- **CSC-01** — Computer Science & Artificial Intelligence Pathway
-- **CSC-02** — Binary, Bits & Logic Gates
-- **CSC-03** — Ada Lovelace — The First Programmer
-- **CSC-04** — ASCII: Text That Became Games
-- **CSC-05** — Before Computers: Myths, Logic, and AI Imagination
-- **CSC-06** — Build Your Student Page
-- **CSC-07** — GitHub — From Idea to Shared Prototype
-- **CSC-08** — Ethical Hacking & Cyber Safety
-- **CSC-09** — Blocks World Parser
-- **CSC-10** — N-gram Text Predictor
-- **CSC-11** — Python Foundations — _also indexed in Game Design & Development_
-- **CSC-12** — AI Hacking: When Agents Cross the Line
+- **CSC-01** — Anatomy of a Computer
+- **CSC-02** — Operating Systems, Files & Terminal
+- **CSC-03** — Computer Science & Artificial Intelligence Pathway
+- **CSC-04** — Binary, Bits & Logic Gates
+- **CSC-05** — Ada Lovelace — The First Programmer
+- **CSC-06** — ASCII: Text That Became Games
+- **CSC-07** — Before Computers: Myths, Logic, and AI Imagination
+- **CSC-08** — Build Your Student Page
+- **CSC-09** — GitHub — From Idea to Shared Prototype
+- **CSC-10** — Ethical Hacking & Cyber Safety
+- **CSC-11** — Blocks World Parser
+- **CSC-12** — N-gram Text Predictor
+- **CSC-13** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-14** — AI Hacking: When Agents Cross the Line
 
 ### Algorithms, Structures & Search
 
-- **CSC-13** — Sorting Algorithms
-- **CSC-14** — State Machines
-- **CSC-15** — A* Pathfinding Agent
-- **CSC-16** — Minimum Spanning Tree
-- **CSC-17** — Cryptography & The Enigma
+- **CSC-15** — Sorting Algorithms
+- **CSC-16** — State Machines
+- **CSC-17** — A* Pathfinding Agent
+- **CSC-18** — Minimum Spanning Tree
+- **CSC-19** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-18** — Life Lab: The Game of Life
-- **CSC-19** — Perlin Noise
-- **CSC-20** — The Demoscene
-- **CSC-21** — CGI Water: From Physics to Pixels
-- **CSC-22** — Liquid Engine Benchmark
+- **CSC-20** — Life Lab: The Game of Life
+- **CSC-21** — Perlin Noise
+- **CSC-22** — The Demoscene
+- **CSC-23** — CGI Water: From Physics to Pixels
+- **CSC-24** — Liquid Engine Benchmark
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-23** — Alan Turing and The Turing Test
-- **CSC-24** — AI Origins: ELIZA Chatbot
-- **CSC-25** — Rule Engine Expert System
-- **CSC-26** — Perceptron Lab
-- **CSC-27** — Chess: Origins and How to Play
-- **CSC-28** — 1v1 Game AI: Minimax
-- **CSC-29** — AI Chess Through History
-- **CSC-30** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-25** — Alan Turing and The Turing Test
+- **CSC-26** — AI Origins: ELIZA Chatbot
+- **CSC-27** — Rule Engine Expert System
+- **CSC-28** — Perceptron Lab
+- **CSC-29** — Chess: Origins and How to Play
+- **CSC-30** — 1v1 Game AI: Minimax
+- **CSC-31** — AI Chess Through History
+- **CSC-32** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-31** — Grace Hopper
-- **CSC-32** — Margaret Hamilton: Software for the Moon
-- **CSC-33** — Steve Jobs
+- **CSC-33** — Grace Hopper
+- **CSC-34** — Margaret Hamilton: Software for the Moon
+- **CSC-35** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-34** — How the Web Works
-- **CSC-35** — Build Your Own Web — Web Design Pathway
-- **CSC-36** — Set Up Your First Site
-- **CSC-37** — Give the Page Meaning with HTML
-- **CSC-38** — Design with CSS
-- **CSC-39** — Make It Respond with JavaScript
-- **CSC-40** — Test, Debug, and Include Everyone
-- **CSC-41** — Website Project Studios
-- **CSC-42** — Web Studio — Draw, Blocks and Code
-- **CSC-43** — The Flash Era: What Happened to Browser Games
-- **CSC-44** — Build a Home for Interactive Work
-- **CSC-45** — Publish and Maintain Your Website
-- **CSC-46** — Tim Berners-Lee and the First Website
-- **CSC-47** — Extend into WebXR
+- **CSC-36** — How the Web Works
+- **CSC-37** — Build Your Own Web — Web Design Pathway
+- **CSC-38** — Set Up Your First Site
+- **CSC-39** — Give the Page Meaning with HTML
+- **CSC-40** — Design with CSS
+- **CSC-41** — Make It Respond with JavaScript
+- **CSC-42** — Test, Debug, and Include Everyone
+- **CSC-43** — Website Project Studios
+- **CSC-44** — Web Studio — Draw, Blocks and Code
+- **CSC-45** — The Flash Era: What Happened to Browser Games
+- **CSC-46** — Build a Home for Interactive Work
+- **CSC-47** — Publish and Maintain Your Website
+- **CSC-48** — Tim Berners-Lee and the First Website
+- **CSC-49** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -537,7 +539,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 113 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 117 lessons
 
 ## Visual Art & Design (DES)
 
@@ -567,30 +569,32 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 ### Instruments You Can Play
 
 - **MUS-01** — Sheet Music Trainer
-- **MUS-02** — The Guitar: History, Frets & Chords
-- **MUS-03** — The Piano: History, Keys & Chords
-- **MUS-04** — The Violin: Hold It, Tune It, Think in Fifths
-- **MUS-05** — Drum Lab: Kit, Notation, Rudiments & Fills
-- **MUS-06** — The Saxophone: Reed, Breath & Melody
-- **MUS-07** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-02** — The Circle of Fifths
+- **MUS-03** — The Guitar: History, Frets & Chords
+- **MUS-04** — The Piano: History, Keys & Chords
+- **MUS-05** — The Violin: Hold It, Tune It, Think in Fifths
+- **MUS-06** — Drum Lab: Kit, Notation, Rudiments & Fills
+- **MUS-07** — The Saxophone: Reed, Breath & Melody
+- **MUS-08** — Fake Book: Lead Sheets, Variations & Play-Along
+- **MUS-09** — Chord Progressions & Arranging
 
 ### Composers & Music History
 
-- **MUS-08** — Antonio Vivaldi
-- **MUS-09** — Johann Sebastian Bach
-- **MUS-10** — Wolfgang Amadeus Mozart
-- **MUS-11** — Ludwig van Beethoven
-- **MUS-12** — Frédéric Chopin
-- **MUS-13** — Pyotr Ilyich Tchaikovsky
-- **MUS-14** — Claude Debussy
-- **MUS-15** — Erik Satie
-- **MUS-16** — Scott Joplin
-- **MUS-17** — George Gershwin
-- **MUS-18** — Jelly Roll Morton
-- **MUS-19** — Duke Ellington
-- **MUS-20** — Charlie Parker
-- **MUS-21** — Louis Armstrong
-- **MUS-22** — Modes: From Greece to Today
+- **MUS-10** — Antonio Vivaldi
+- **MUS-11** — Johann Sebastian Bach
+- **MUS-12** — Wolfgang Amadeus Mozart
+- **MUS-13** — Ludwig van Beethoven
+- **MUS-14** — Frédéric Chopin
+- **MUS-15** — Pyotr Ilyich Tchaikovsky
+- **MUS-16** — Claude Debussy
+- **MUS-17** — Erik Satie
+- **MUS-18** — Scott Joplin
+- **MUS-19** — George Gershwin
+- **MUS-20** — Jelly Roll Morton
+- **MUS-21** — Duke Ellington
+- **MUS-22** — Charlie Parker
+- **MUS-23** — Louis Armstrong
+- **MUS-24** — Modes: From Greece to Today
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -609,18 +613,19 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **LAN-11** — The Tower of Babel, the Library of Alexandria, and the Internet
 - **LAN-12** — The Baloney Detection Kit
 - **LAN-13** — Plato's Allegory of the Cave
-- **LAN-14** — William Blake: Songs of Innocence and of Experience
-- **LAN-15** — Arnaut Daniel: The Sestina Workshop
-- **LAN-16** — Dylan Thomas: An Annotated Reading Compendium
-- **LAN-17** — Dante’s Inferno: A Journey Through the Nine Circles
-- **LAN-18** — John Milton’s Paradise Lost
-- **LAN-19** — John Bunyan’s The Pilgrim’s Progress
-- **LAN-20** — Edgar Allan Poe: Sound, Suspense & the Uncertain Narrator
-- **LAN-21** — Horror in Literature
-- **LAN-22** — L. Frank Baum’s The Wonderful Wizard of Oz
-- **LAN-23** — Tolkien and the Art of Worldbuilding
-- **LAN-24** — Learning Egyptian Hieroglyphs
-- **LAN-25** — Learning Cuneiform
+- **LAN-14** — William Shakespeare: Words Made for the Stage
+- **LAN-15** — William Blake: Songs of Innocence and of Experience
+- **LAN-16** — Arnaut Daniel: The Sestina Workshop
+- **LAN-17** — Dylan Thomas: An Annotated Reading Compendium
+- **LAN-18** — Dante’s Inferno: A Journey Through the Nine Circles
+- **LAN-19** — John Milton’s Paradise Lost
+- **LAN-20** — John Bunyan’s The Pilgrim’s Progress
+- **LAN-21** — Edgar Allan Poe: Sound, Suspense & the Uncertain Narrator
+- **LAN-22** — Horror in Literature
+- **LAN-23** — L. Frank Baum’s The Wonderful Wizard of Oz
+- **LAN-24** — Tolkien and the Art of Worldbuilding
+- **LAN-25** — Learning Egyptian Hieroglyphs
+- **LAN-26** — Learning Cuneiform
 
 ## History, Economics & Social Systems (SYS)
 
@@ -651,6 +656,10 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-17** — The 10-80-10 Productivity Process
 - **SYS-18** — The Psychology of Polymaths
 - **SYS-19** — The Nobel Prize — Ideas That Changed the World
+
+### 50 States: Land, Water & People
+
+- **SYS-20** — Florida: Land, Water & People
 
 ## Bible Story, Theology & Christian Formation (BIB)
 

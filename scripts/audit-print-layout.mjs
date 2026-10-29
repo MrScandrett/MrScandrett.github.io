@@ -12,7 +12,7 @@
 //   shrink — something wider than the paper, so Chrome shrinks every page to fit
 //
 // Usage: node scripts/audit-print-layout.mjs [--lesson=a,b] [--jobs=4] [--keep-pdf]
-//        [--theme=night] [--out=tmp/dir]
+//        [--theme=night] [--ink=save] [--out=tmp/dir]
 // Report: tmp/print-layout-audit/report.json (+ summary on stdout)
 
 import fs from "node:fs";
@@ -64,6 +64,10 @@ await Promise.all(Array.from({ length: jobs }, async () => {
       localStorage.setItem("classroomos-lighting-mode", "manual");
       localStorage.setItem("classroomos-lighting-phase", value);
     }, theme);
+  }
+  // --ink=save: print with the print menu's "Save ink" setting on.
+  if (argValue("ink") === "save") {
+    await context.addInitScript(() => localStorage.setItem("classroomos-print-ink", "save"));
   }
   while (next < lessons.length) {
     const url = lessons[next++];

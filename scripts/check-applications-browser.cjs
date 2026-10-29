@@ -1,7 +1,10 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
-const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || chromium.executablePath(),headless:true,args:['--no-sandbox']});
+const {findChromium}=await import('../lib/find-chromium.mjs');
+const executablePath=findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH','PLAYWRIGHT_CHROMIUM_EXECUTABLE']);
+if(!executablePath)throw new Error('No usable Chromium executable was found. Set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH.');
+const browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox']});
 const page=await browser.newPage({viewport:{width:1365,height:1000}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto((process.env.APPLICATIONS_BASE_URL || 'http://localhost:8080') + '/applications.html');

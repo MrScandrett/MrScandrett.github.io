@@ -1,3 +1,10 @@
+/* Keep the classroom reader independent of the showcase display typeface. */
+body.theme-eliza1966 {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+  font-family: var(--font-sans);
+}
+
 /* The flag is the setting; the pledge is the one moving visual element. */
 .eliza-page {
   width: min(1240px, calc(100% - 2rem));
@@ -188,12 +195,12 @@
 
 .pledge-panel {
   margin: 0;
-  padding: 0.5rem clamp(0.3rem, 1vw, 0.75rem) 0.3rem;
+  padding: 1.25rem clamp(0.3rem, 1vw, 0.75rem) 0.3rem;
 }
 
 .pledge-actions {
   align-items: center;
-  margin: 0.15rem 0 0.8rem;
+  margin: 0.15rem 0 1.5rem;
 }
 
 .pledge-actions .btn {
@@ -258,7 +265,7 @@
 .eliza-app:fullscreen .flag-stage {
   flex: 1 1 auto;
   height: calc(100dvh - 100px);
-  min-height: 300px;
+  min-height: 160px;
 }
 
 .eliza-app:fullscreen .pledge-panel {
@@ -289,6 +296,191 @@
   .flag-stage[data-crawl="paused"] .pledge-crawl {
     top: 50%;
     transform: translate(-50%, -50%);
-    animation: none;
+    animation: pledge-still 28s linear forwards;
+  }
+  .flag-stage[data-crawl="paused"] .pledge-crawl { animation-play-state: paused; }
+  .pledge-crawl { font-size: clamp(1rem, 2.8vw, 2.6rem); line-height: 1.4; }
+  @keyframes pledge-still {
+    from, to { transform: translate(-50%, -50%); }
   }
 }
+
+/* Classroom history reader: ink, paper, and generous captions. */
+.history-jumps { display:flex; flex-wrap:wrap; gap:.65rem; margin:2rem 0; }
+.history-jumps a { padding:.65rem 1rem; background:#e9eff7; color:#173657; border-radius:999px; font-weight:650; }
+.history-section { margin:2rem 0; padding:clamp(1.15rem,3vw,2.5rem); border:1px solid #c7d1df; border-radius:20px; background:#fffdf8; color:#1c2e49; scroll-margin-top:2rem; }
+.history-section a { color:#174e86; text-decoration:underline; text-underline-offset:.18em; }
+.history-section h2 { font-size:clamp(1.6rem,3vw,2.4rem); line-height:1.2; color:#142d4b; margin:.3rem 0 1rem; }
+.history-section h3 { color:#142d4b; font-size:1.35rem; line-height:1.3; }
+.history-section h4 { color:#142d4b; font-size:1.1rem; line-height:1.35; margin:.5rem 0; }
+.history-section p { line-height:1.75; }
+.history-eyebrow, .history-era-date { color:#73501c; font-size:.85rem; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }
+.history-lede { max-width:78ch; font-size:1.1rem; }
+.history-today { background:#edf3fa; border-top:5px solid #284e78; }
+.history-date-controls { display:flex; flex-wrap:wrap; gap:.7rem; align-items:end; margin:1.25rem 0; }
+.history-date-controls label { display:grid; gap:.35rem; font-weight:650; }
+.history-date-controls input { min-height:44px; padding:.5rem; border:1px solid #74859a; border-radius:7px; background:white; color:#1c2e49; font:inherit; max-width:100%; }
+.history-section .btn { min-height:44px; border:1px solid #74859a; background:white; color:#173657; }
+#history-day-result { border-top:1px solid #b4c5d8; padding-top:.6rem; }
+#history-day-result article { max-width:78ch; margin:1.25rem 0; }
+.history-source, .history-image-credit { font-size:.83rem; color:#47566b; line-height:1.6; }
+.history-era { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:2rem; padding:2rem 0; border-top:1px solid #d6dce4; align-items:start; }
+.history-era-text { max-width:74ch; }
+.history-era-text:only-child { grid-column:1 / -1; }
+.history-era h3 { margin:.35rem 0 .8rem; }
+.history-era figure { margin:.5rem 0; padding:.8rem; background:#f0ece3; border:1px solid #d6cfc0; border-radius:12px; }
+.history-era img { display:block; width:100%; max-height:390px; object-fit:contain; background:#e3ded3; border-radius:5px; }
+.history-era figcaption { margin-top:.8rem; font-size:.94rem; line-height:1.65; }
+.history-image-credit { display:block; margin-top:.6rem; }
+.history-question { padding:.8rem 1rem; background:#e8eef5; border-left:3px solid #45688f; color:#203b59; }
+.history-pledge-note { padding:1.3rem; background:#eee9df; border-radius:12px; }
+.history-lesson-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:1rem; margin:1rem 0 2rem; }
+.history-section .history-lesson-card { display:block; padding:1.25rem; background:white; border:1px solid #c7d1df; border-radius:12px; text-decoration:none; color:#253c58; }
+.history-lesson-card p { font-size:.95rem; margin:.7rem 0; }
+.history-lesson-card > span:last-child { color:#174e86; font-weight:650; text-decoration:underline; }
+a.history-lesson-card:hover { border-color:#174e86; background:#f1f6fc; }
+.history-badge { display:inline-block; font-size:.73rem; font-weight:750; padding:.2rem .5rem; border-radius:5px; color:#1b5338; background:#e3f1e6; }
+.history-badge-future { color:#69451c; background:#f6ead4; }
+.history-section :focus-visible, .history-jumps a:focus-visible { outline:3px solid #2466aa; outline-offset:4px; }
+@media (max-width:700px) { .history-era { grid-template-columns:1fr; gap:.7rem; } .history-section { border-radius:12px; } }
+@media print { .history-date-controls, .history-jumps { display:none; } .history-section { break-inside:auto; } .history-era figure, .history-lesson-card { break-inside:avoid; } }
+.history-section { font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-weight:400; letter-spacing:normal; }
+.history-section p, .history-section figcaption { font-weight:400; }
+.history-section { --font-sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; --font-display:var(--font-sans); }
+
+.history-era-nav { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:.6rem; margin:1.5rem 0; }
+.history-era-nav a { padding:.7rem .85rem; border:1px solid #c7d1df; border-radius:8px; background:#edf3fa; font-size:.9rem; line-height:1.45; }
+.history-period { padding:2rem 0; border-top:1px solid #d6dce4; }
+.history-period, .history-era[id] { scroll-margin-top:6rem; }
+.history-precontact-visual { border-top:0; padding:1rem 0; }
+.history-topic-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:1rem; margin:1rem 0; }
+.history-topic-grid article { padding:1.2rem; background:#f1f5fa; border:1px solid #d6dce4; border-radius:10px; }
+.history-topic-grid p { font-size:.95rem; }
+
+/* A museum reading room: complete compositions, clear labels, quiet frames. */
+#american-story { background:linear-gradient(135deg,#fffdf8,#f6f0e4); border-color:#cabea9; box-shadow:0 12px 35px #28364b0d; }
+#american-story > h2 { font-family:Georgia,"Times New Roman",serif; font-weight:500; font-size:clamp(2rem,4.4vw,3.5rem); max-width:23ch; letter-spacing:-.035em; }
+.history-gallery { margin:2.5rem 0; scroll-margin-top:5rem; }
+.history-gallery-heading { display:grid; grid-template-columns:1fr 1fr; align-items:end; gap:2rem; margin-bottom:1.4rem; }
+.history-gallery-heading h3 { font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.65rem,3vw,2.3rem); font-weight:500; margin:.5rem 0; }
+.history-gallery-heading > p { color:#47566b; font-size:.95rem; margin:0; }
+.history-art-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; }
+.history-artwork { margin:0; min-width:0; background:#fffdf9; border:1px solid #cabea9; border-radius:14px; overflow:hidden; box-shadow:0 6px 20px #2e271412; }
+.history-art-image { position:relative; padding:1rem; background:#192b3b; }
+.history-art-image img { display:block; width:100%; height:auto; aspect-ratio:1.65; object-fit:contain; background:#192b3b; box-shadow:0 0 0 1px #d4b47b80; }
+.history-art-zoom { position:absolute; bottom:1.5rem; right:1.5rem; padding:.4rem .7rem; background:#101e2def; border:1px solid #bfa474; border-radius:5px; color:#fff3db; font-size:.75rem; pointer-events:none; }
+.history-artwork figcaption { padding:clamp(1rem,2vw,1.65rem); }
+.history-art-kind { display:block; color:#73501c; font-size:.74rem; font-weight:750; letter-spacing:.09em; text-transform:uppercase; margin-bottom:.6rem; }
+.history-artwork figcaption > strong { display:block; font-family:Georgia,"Times New Roman",serif; color:#172e46; font-size:1.5rem; font-weight:500; line-height:1.25; }
+.history-art-artist { display:block; font-size:.85rem; color:#47566b; margin-top:.5rem; }
+.history-artwork figcaption p { font-size:.95rem; line-height:1.7; }
+.history-artwork-featured { grid-column:1 / -1; }
+.history-artwork-featured .history-art-image { padding:clamp(.8rem,2vw,1.5rem); }
+.history-artwork-featured .history-art-image img { aspect-ratio:auto; }
+.history-artwork-featured figcaption { columns:2; column-gap:2.5rem; }
+.history-artwork-featured figcaption > * { break-inside:avoid; }
+.history-artwork-featured figcaption > strong { font-size:clamp(1.6rem,3vw,2.2rem); }
+.history-artwork:last-child { grid-column:1 / -1; display:grid; grid-template-columns:1.15fr 1fr; }
+.history-artwork:last-child .history-art-image { display:flex; align-items:center; }
+.history-artwork:last-child img { aspect-ratio:auto; }
+.history-art-question { border-left:2px solid #b49153; padding-left:.8rem; color:#35495d; }
+.history-art-era { display:inline-block; margin-top:1rem; font-size:.9rem; font-weight:650; }
+.history-gallery-note { padding:1.2rem 1.4rem; background:#e9e1d1; border-radius:10px; color:#354355; font-size:.95rem; }
+.history-gallery-note strong { display:block; color:#60451e; margin-bottom:.3rem; }
+.history-era-nav a { text-decoration:none; background:#fffcf5; border-color:#cabea9; border-left:3px solid #9d7842; transition:background .15s; }
+.history-era-nav a:hover { background:#e9e1d1; }
+.history-era-date { display:inline-block; padding:.25rem .65rem; border-radius:4px; background:#eee3cf; }
+.history-era h3, .history-period > h3 { font-family:Georgia,"Times New Roman",serif; font-size:1.7rem; font-weight:500; }
+@media (max-width:700px) {
+  .history-gallery-heading, .history-art-grid, .history-artwork:last-child { grid-template-columns:1fr; }
+  .history-gallery-heading { gap:.5rem; }
+  .history-artwork-featured figcaption { columns:auto; }
+  .history-art-zoom { font-size:.7rem; bottom:1.3rem; right:1.3rem; }
+}
+@media print {
+  .history-artwork { break-inside:avoid; box-shadow:none; }
+  .history-art-zoom { display:none; }
+  .history-artwork-featured figcaption { columns:auto; }
+}
+
+/* Each era pairs its reading with a small, navigable evidence gallery. */
+.history-timeline > .history-era { display:block; }
+.history-timeline > .history-era .history-era-text { max-width:82ch; }
+.history-era-gallery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.25rem; margin:1.5rem 0 .5rem; align-items:start; }
+.history-era-gallery figure { margin:0; padding:1rem; background:#fffdf9; border:1px solid #cabea9; border-radius:12px; }
+.history-era-gallery img { display:block; width:100%; height:300px; max-height:none; object-fit:contain; background:#192b3b; border-radius:6px; }
+.history-era-gallery figcaption { margin-top:1rem; line-height:1.7; font-size:.95rem; }
+.history-era-gallery figcaption > strong { display:block; color:#172e46; font-size:1.15rem; margin-bottom:.5rem; }
+.history-precontact-gallery { margin-bottom:1.5rem; }
+@media (max-width:700px) { .history-era-gallery { grid-template-columns:1fr; } .history-era-gallery img { height:auto; max-height:380px; } }
+@media print { .history-era-gallery img { height:180px; } .history-era-gallery figure { break-inside:avoid; } }
+
+
+/* Civics field guide: warm paper, bold ink, and a little schoolhouse spirit. */
+body.theme-eliza1966 {
+  --bg: #f7f2e8;
+  --text: #172e48;
+  --muted: #536174;
+  --accent: #a42e3e;
+  background: radial-gradient(circle at 1px 1px, #172e4812 1px, transparent 0) 0 0 / 24px 24px, #f7f2e8;
+  color: var(--text);
+}
+body.theme-eliza1966 .site-header { background: #f7f2e8f2; border-color: #172e4826; }
+.eliza-page { padding-top: 3rem; }
+.lesson-hero { position: relative; max-width: none; padding: 0 15rem 2.5rem 0; margin-bottom: 1.5rem; border-bottom: 2px solid #172e48; }
+.lesson-kicker { display: flex; align-items: center; gap: .65rem; color: #a42e3e; font-weight: 800; font-size: .78rem; text-transform: uppercase; letter-spacing: .14em; }
+.lesson-kicker span { font-size: 1.2rem; }
+.lesson-hero h1 { margin: 1.2rem 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(3.4rem, 7vw, 6.5rem); font-weight: 700; line-height: .98; letter-spacing: -.055em; color: #172e48; }
+.lesson-hero h1 span { color: #a42e3e; }
+.lesson-hero .lesson-subtitle { max-width: 52ch; color: #536174; line-height: 1.7; }
+.pledge-hero-stamp { position: absolute; right: 1.5rem; top: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 175px; aspect-ratio: 1; border: 2px dashed #a42e3e; border-radius: 50%; outline: 7px solid #f7f2e8; box-shadow: 0 0 0 9px #a42e3e; color: #a42e3e; transform: rotate(10deg); }
+.pledge-hero-stamp span { font-size: .68rem; font-weight: 800; letter-spacing: .13em; }
+.pledge-hero-stamp b { font-size: 4rem; line-height: 1.4; }
+.pledge-hero-links { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
+.pledge-hero-links a { display: inline-flex; gap: 1.5rem; align-items: center; padding: .7rem 1rem; border: 1px solid #172e48; border-radius: 6px; color: #172e48; background: #fffdf8; font-weight: 700; text-decoration: none; }
+.pledge-hero-links a:first-child { background: #172e48; color: #fffdf8; }
+.pledge-hero-links a:hover { box-shadow: 3px 3px 0 #c79d54; }
+.terminal.eliza-app { padding: clamp(1rem, 2.5vw, 2rem); border: 2px solid #172e48; border-radius: 18px; background: #fffdf8; box-shadow: 7px 7px 0 #172e4818; font-family: var(--font-sans); scroll-margin-top: 5rem; }
+.presentation-label { display: flex; justify-content: space-between; gap: 1rem; color: #536174; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; padding-bottom: .9rem; border-bottom: 1px solid #d8d5cc; }
+.pledge-actions { gap: .65rem; margin: 1rem 0 1.4rem; }
+.pledge-actions .btn { border: 1px solid #b3bdc6; border-radius: 8px; color: #172e48; background: #fffdf8; transition: transform .15s, box-shadow .15s; }
+.pledge-actions .btn.primary { background: #a42e3e; border-color: #a42e3e; color: #fff; padding-inline: 1.5rem; box-shadow: 0 3px 0 #702030; }
+.pledge-actions .btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 3px 0 #172e4833; }
+.pledge-actions .btn:disabled { opacity: .45; cursor: not-allowed; }
+.flag-stage { border: 1px solid #172e48; border-radius: 10px; box-shadow: none; }
+.stage-heading { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
+.pledge-ready { border-radius: 999px; }
+.pledge-settings { gap: 1rem; padding: .8rem 0; }
+.pledge-settings .control-inline { background: #edf1f4; padding: .6rem .8rem; border-radius: 8px; font-size: .9rem; font-weight: 650; }
+.pledge-settings input { accent-color: #a42e3e; }
+.audio-status, .respect-note { color: #536174; font-size: .87rem; line-height: 1.65; }
+.pledge-transcript { position: relative; background: #f6efdf; border: 1px solid #e0d2b5; border-left: 5px solid #c79d54; border-radius: 8px; }
+.pledge-transcript .pledge-title { color: #80551e; text-transform: uppercase; letter-spacing: .12em; font-size: .72rem; font-weight: 800; }
+.pledge-transcript .pledge-text { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.25rem, 2vw, 1.6rem); line-height: 1.65; }
+.lesson-section { background: #edf1f4; color: #172e48; border: 1px solid #cad3dc; padding: 1.4rem; }
+.lesson-section h2 { font-size: 1.1rem; margin-top: 0; color: #172e48; }
+.lesson-section li { line-height: 1.75; }
+.history-jumps { padding: 1.2rem 0; border-block: 1px solid #c9c5bb; gap: .6rem; }
+.history-jumps a { border: 1px solid #c9c5bb; border-radius: 6px; background: #fffdf8; font-size: .88rem; text-decoration: none; }
+.history-jumps a:hover { background: #172e48; color: white; border-color: #172e48; }
+.history-section { border-color: #d6d0c3; box-shadow: 0 4px 0 #172e4809; }
+.history-section h2 { font-family: Georgia, 'Times New Roman', serif; letter-spacing: -.035em; }
+.history-today { border-top: 5px solid #a42e3e; background: #fffdf8; }
+.history-era-nav a { border-left: 3px solid #a42e3e; background: #f7f2e8; }
+.history-question { border-color: #c79d54; background: #f6efdf; }
+.eliza-app:fullscreen .presentation-label { display: none; }
+.pledge-hero-links a:focus-visible { outline: 3px solid #2477d4; outline-offset: 4px; }
+@media (max-width: 700px) {
+  .eliza-page { padding-top: 1.5rem; }
+  .lesson-hero { padding: 0 0 1.5rem; }
+  .lesson-hero h1 { font-size: clamp(3.2rem, 11vw, 5rem); }
+  .pledge-hero-stamp { width: 88px; right: .6rem; top: 2.7rem; outline-width: 4px; box-shadow: 0 0 0 6px #a42e3e; }
+  .pledge-hero-stamp b { font-size: 2rem; }
+  .pledge-hero-stamp span { font-size: .38rem; letter-spacing: .06em; }
+  .lesson-hero h1 { padding-right: 5.5rem; }
+  .presentation-label span:last-child { display: none; }
+  .pledge-settings .control-inline { flex-wrap: wrap; }
+  .pledge-settings { align-items: stretch; }
+}
+@media (prefers-reduced-motion: reduce) { .pledge-actions .btn { transition: none; } }
+@media print { body.theme-eliza1966 { background: white; } .pledge-hero-stamp, .pledge-hero-links { display: none; } .lesson-hero { padding-right: 0; } }

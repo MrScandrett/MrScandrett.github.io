@@ -43,7 +43,9 @@ try {
       const scoreCount = await page.locator('figure[data-score]').count();
       if (scoreCount) {
         const firstDetails = page.locator('figure[data-score]').first().locator('xpath=ancestor::details[1]');
-        if (await firstDetails.count() && await firstDetails.getAttribute('open') === null) await firstDetails.locator('summary').click();
+        if (await firstDetails.count() && await firstDetails.getAttribute('open') === null) {
+          await firstDetails.locator(':scope > summary').click();
+        }
         const spotlight = page.locator('.composer-cover').first();
         if (await spotlight.count()) await spotlight.click();
         const figure = page.locator('figure[data-score]').first();
