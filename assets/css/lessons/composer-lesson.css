@@ -52,13 +52,29 @@
 
 @media print {
   .fl-player audio, .fl-track-select { display: none; }
+  .fl-look-for > div { break-inside: avoid-page; page-break-inside: avoid; }
   /* Two pictures print at the size they had in the three-column grid, so the gallery fits under its heading. */
   .fl-gallery-grid:has(> :nth-child(2):last-child) { max-width: 28rem; }
   /* Open original-score galleries are reading copies, not tiny thumbnails. */
   .fl-gallery-grid:has(> .is-page) { display: block; max-width: none; }
+  /* Portraits stay compact on paper. */
+  .fl-gallery-grid > .fl-gallery-figure:not(.is-page) { max-width: 2.6in; margin: 0 auto .2in; }
+  .fl-gallery-grid > .fl-gallery-figure:not(.is-page) img { width: 100%; max-height: 3in !important; object-fit: contain; }
+  .fl-gallery-figure figcaption { break-after: auto; page-break-after: auto; }
   .fl-gallery-grid > .is-page { width: 100%; margin: 0 0 0.22in; break-inside: avoid-page; page-break-inside: avoid; }
   .fl-gallery-grid > .is-page img { width: auto; max-width: 100%; height: auto; max-height: 7.6in !important; margin-inline: auto; }
   .fl-gallery-grid > .is-page figcaption { font-size: 9pt; }
+  /* A portrait and one facsimile share a sheet instead of stranding the portrait
+     ahead of an entire manuscript page. Standalone score galleries stay full size. */
+  .fl-gallery-grid:has(> .fl-gallery-figure:not(.is-page)):has(> .is-page):has(> :nth-child(2):last-child) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    max-width: none;
+    align-items: start;
+    gap: .15in;
+    break-inside: avoid-page;
+  }
+  .fl-gallery-grid:has(> .fl-gallery-figure:not(.is-page)) > .is-page img { aspect-ratio: auto; max-height: 6in !important; }
 }
 .composer-piece-group {
   margin: 0.75rem 0;
