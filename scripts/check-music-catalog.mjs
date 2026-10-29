@@ -17,6 +17,7 @@ const lessons = [
   'lessons/music/pioneers/morton.html',
   'lessons/music/pioneers/mozart.html',
   'lessons/music/theory/music-modes-evolution.html',
+  'lessons/music/theory/drop-voicings.html',
   'lessons/music/instruments/piano.html',
   'lessons/music/theory/sheet-music-trainer.html',
   'lessons/music/pioneers/tchaikovsky.html',
