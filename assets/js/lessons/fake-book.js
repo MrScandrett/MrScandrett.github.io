@@ -1942,12 +1942,12 @@
       var rowPx = (parseFloat(row.style.height) || 0) * S, g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'fb-print-shapes');
       Array.prototype.forEach.call(row.querySelectorAll('.fb-measure-shape'), function (sh) {
-        var left = parseFloat(sh.style.left) || 0, w = parseFloat(sh.style.width) || 0, sax = sh.classList.contains('fb-sx');
+        var left = parseFloat(sh.style.left) || 0, top = parseFloat(sh.style.top) || 0, w = parseFloat(sh.style.width) || 0, sax = sh.classList.contains('fb-sx');
         var lab = sh.querySelector('strong'), sv = sh.querySelector('svg');
         if (lab && lab.textContent) {
           var t = document.createElementNS(NS, 'text');
           t.setAttribute('x', (x0 + left + (sax ? w / 2 : 0)).toFixed(2));
-          t.setAttribute('y', (y0 + S).toFixed(2));
+          t.setAttribute('y', (y0 + top + S).toFixed(2));
           t.setAttribute('text-anchor', sax ? 'middle' : 'start');
           t.setAttribute('font-size', (1.1 * S).toFixed(2));
           t.setAttribute('font-weight', '700');
@@ -1961,7 +1961,7 @@
         var n = sv.cloneNode(true);
         n.removeAttribute('style');
         n.setAttribute('x', (x0 + left + (sax ? (w - vw) / 2 : 0)).toFixed(2));
-        n.setAttribute('y', (y0 + 1.7 * S).toFixed(2));
+        n.setAttribute('y', (y0 + top + 1.7 * S).toFixed(2));
         n.setAttribute('width', vw.toFixed(2));
         n.setAttribute('height', vh.toFixed(2));
         g.appendChild(n);
@@ -3832,50 +3832,79 @@
   function sizeMeasureDiagrams(S) {
     var rows = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-row'));
     if (!rows.length) return;
-    var cap = shapeSize().cap * S, systems = [], info = [];
-    // Per system, the cell is the narrowest "bar width / chords in the bar", and one scale fits every
-    // diagram on the line into a cell and under the height cap, so they all match.
+    var cap = shapeSize().cap * S, LABEL = 1.7 * S, chordRows = [];
+    // The scale a row's diagrams reach in `tiers` stacked lines: each line holds every tiers-th chord,
+    // so a busy bar trades height it isn't using for width.
+    var fit = function (row, tiers) {
+      var cell = row._W / Math.ceil(row._n / tiers), tall = row._H / tiers - LABEL, s = Infinity;
+      row._boxes.forEach(function (box) { s = Math.min(s, cell / box.width, tall / box.height, cap / box.height); });
+      return s;
+    };
     rows.forEach(function (row) {
-      var g = row.closest('.fb-system') || row.ownerSVGElement, i = systems.indexOf(g);
-      if (i < 0) { systems.push(g); info.push({ cell: Infinity, scale: Infinity }); i = systems.length - 1; }
-      row._sys = i;
-      var shapes = row.querySelectorAll('.fb-measure-shape'), W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      var shapes = row.querySelectorAll('.fb-measure-shape');
+      row._W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      row._H = (parseFloat(row.style.height) || 0) * S;
+      row._n = shapes.length;
+      row._boxes = [];
+      row.querySelectorAll('svg').forEach(function (svg) {
+        var box = svg.viewBox.baseVal;
+        if (box.width > 0 && box.height > 0) row._boxes.push(box);
+      });
       if (row.classList.contains('is-sax')) {
         // Sax fingerings: each bar sizes its own (a bar of sixteenths gets W / 16 each), so busy
         // bars don't shrink the quarter notes beside them. Notes can sit closer than that (phone
         // engraving packs sixteenths tight); the nudge below keeps every one in the bar anyway.
-        row._own = { cell: shapes.length ? W / shapes.length : Infinity, scale: Infinity };
+        row._tiers = 1;
+        row._scale = fit(row, 1);
         return;
       }
-      if (shapes.length) info[i].cell = Math.min(info[i].cell, W / shapes.length);
+      row._best = 1;
+      row._scale = fit(row, 1);
+      for (var t = 2; t <= Math.min(3, row._n); t++) {
+        var st = fit(row, t);
+        if (st > row._scale * 1.05) { row._scale = st; row._best = t; }
+      }
+      if (row._n) chordRows.push(row);
+    });
+    // One scale for the whole score, so a chord looks the same size on every line. A bar too crowded to
+    // reach it even in tiers (under half the typical bar) keeps its own smaller scale instead of
+    // shrinking every other diagram to match.
+    var sorted = chordRows.map(function (row) { return row._scale; }).sort(function (a, b) { return a - b; });
+    var floor = 0.5 * (sorted[Math.floor(sorted.length / 2)] || 0), common = Infinity;
+    sorted.forEach(function (sc) { if (sc >= floor) common = Math.min(common, sc); });
+    chordRows.forEach(function (row) {
+      if (row._scale < common) { row._tiers = row._best; return; }
+      row._scale = common;
+      // The fewest lines that reach the common size: one line unless the bar is crowded.
+      for (row._tiers = 1; row._tiers < row._best && fit(row, row._tiers) < common - 1e-9; row._tiers++);
     });
     rows.forEach(function (row) {
-      var o = row._own || info[row._sys];
-      row.querySelectorAll('svg').forEach(function (svg) {
-        var box = svg.viewBox.baseVal;
-        if (box.width > 0 && box.height > 0) o.scale = Math.min(o.scale, o.cell / box.width, cap / box.height);
-      });
-    });
-    // One scale for the whole score, so a chord looks the same size on every line.
-    var common = Math.min.apply(null, info.map(function (o) { return o.scale; }));
-    info.forEach(function (o) { o.scale = common; });
-    rows.forEach(function (row) {
-      var o = row._own || info[row._sys], d = o.cell, W = Number(row.closest('.fb-measure-help').getAttribute('width'));
+      var tiers = row._tiers, n = row._n, W = row._W, sax = row.classList.contains('is-sax');
+      var d = W / Math.ceil(n / tiers), lineH = row._H / tiers;
       var shapes = Array.prototype.slice.call(row.querySelectorAll('.fb-measure-shape')), left = [];
-      var centre = row.classList.contains('is-sax') ? d / 2 : 0;
+      var centre = sax ? d / 2 : 0;
       if (!isFinite(d)) return;
-      // Left to right, nudge a diagram right of its neighbour only when they would overlap; then pull
-      // any overflow back from the right edge. n * d <= W, so it always fits.
-      shapes.forEach(function (sh, i) { left[i] = Math.max((Number(sh.getAttribute('data-x')) || 0) - centre, i ? left[i - 1] + d : 0); });
-      for (var i = shapes.length - 1, bound = W; i >= 0; i--) { left[i] = Math.min(left[i], bound - d); bound = left[i]; }
+      // Left to right, nudge a diagram right of the one before it on its line only when they would
+      // overlap; then pull any overflow back from the right edge. Each line holds at most W / d, so it fits.
+      shapes.forEach(function (sh, i) { left[i] = Math.max((Number(sh.getAttribute('data-x')) || 0) - centre, i >= tiers ? left[i - tiers] + d : 0); });
+      var bound = [];
+      for (var i = shapes.length - 1; i >= 0; i--) {
+        var k = i % tiers;
+        left[i] = Math.min(left[i], (bound[k] === undefined ? W : bound[k]) - d);
+        bound[k] = left[i];
+      }
       shapes.forEach(function (sh, i) {
         sh.style.left = left[i].toFixed(2) + 'px';
         sh.style.width = d.toFixed(2) + 'px';
+        if (tiers > 1) {
+          sh.style.top = ((i % tiers) * lineH).toFixed(2) + 'px';
+          sh.style.height = lineH.toFixed(2) + 'px';
+        }
         var svg = sh.querySelector('svg');
-        if (!svg || !isFinite(o.scale) || o.scale <= 0) return;
+        if (!svg || !isFinite(row._scale) || row._scale <= 0) return;
         var box = svg.viewBox.baseVal;
-        svg.style.setProperty('width', (box.width * o.scale).toFixed(3) + 'px', 'important');
-        svg.style.setProperty('height', (box.height * o.scale).toFixed(3) + 'px', 'important');
+        svg.style.setProperty('width', (box.width * row._scale).toFixed(3) + 'px', 'important');
+        svg.style.setProperty('height', (box.height * row._scale).toFixed(3) + 'px', 'important');
         svg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
       });
     });
