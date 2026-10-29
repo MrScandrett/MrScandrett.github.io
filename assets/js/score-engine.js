@@ -1422,15 +1422,20 @@
     var player = new Player(fig, model);
     players.push(player);
     var layout = null, eventsByBar = [], lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
-    function drawWidth() {
+    function paperWidth() {
       return Math.max(280, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
-    function applyScale() {
-      var svg = svgWrap.querySelector('.se-score');
-      if (!svg || !layout) return;
-      svg.setAttribute('width', layout.width * staffScale);
-      svg.setAttribute('height', layout.height * staffScale);
+    // Zoom sets the staff size; the lines reflow so they still fill the paper. Zooming out
+    // engraves more bars per line instead of shrinking a fixed page into one corner.
+    function engraveWidth(z) { return Math.max(280, Math.round(paperWidth() / z)); }
+    function drawWidth() { return engraveWidth(staffScale); }
+    var measured = {};
+    function heightAtZoom(z) {
+      var w = engraveWidth(z), key = z + '@' + w;
+      if (!(key in measured)) measured[key] = engrave(model, w, fig.hasAttribute('data-score-readable')).height * z;
+      return measured[key];
     }
+    function applyScale() { draw(); }
     function measureAt(beat) { return model.barStart.reduce(function (at, start, i) { return beat >= start - EPS ? i : at; }, -1); }
     // The shared ScoreNavigation: song map, measure jump and steps, fast visual zoom,
     // and follow playback inside the paper. Choosing a measure seeks there; playback carries on.
@@ -1470,7 +1475,7 @@
         if (!(info.preview && player.playing)) player.seek(model.barStart[i]);
       },
       zoom: { steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return staffScale; },
-        measure: function (z) { return layout ? layout.height * z : 0; },
+        measure: function (z) { return layout ? heightAtZoom(z) : 0; },
         set: function (z) { staffScale = z; applyScale(); } },
       fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
     });
