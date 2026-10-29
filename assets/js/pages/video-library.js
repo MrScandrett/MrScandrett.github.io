@@ -9,7 +9,8 @@ const GROUPS = {
   science: ['vl-group-science', 'vl-grid-science', 'vl-count-science'],
   tech: ['vl-group-tech', 'vl-grid-tech', 'vl-count-tech'],
   purpose: ['vl-group-purpose', 'vl-grid-purpose', 'vl-count-purpose'],
-  film: ['vl-group-film', 'vl-grid-film', 'vl-count-film']
+  film: ['vl-group-film', 'vl-grid-film', 'vl-count-film'],
+  music: ['vl-group-music', 'vl-grid-music', 'vl-count-music']
 };
 const WATCH_KEY = 'vl-watched-v2';
 const $ = (id) => document.getElementById(id);

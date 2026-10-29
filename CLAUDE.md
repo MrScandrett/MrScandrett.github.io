@@ -200,6 +200,19 @@ flex scrollers, and prints in the Day theme. When writing lesson CSS:
   (PDFs + report in `tmp/print-layout-audit/`). It flags ink-heavy pages, blank and
   half-empty pages, stranded headings, one-line paragraph splits, and shrunk printouts.
 
+**Save ink** is an optional print setting in the print menu (off by default, remembered per browser in
+`classroomos-print-ink`; `<html data-print-ink="save">` while on). With it on, `beforeprint` also marks filled
+reading panels `data-print-ink-plain` (`box`/`outline`/`stripe`/`bare`, `cell` for grey table shading, `deco` for
+empty glows) and big gradient overlays `data-print-ink-deco`, and the print-only rules in `lesson-print-button.css`
+print them as white boxes with light lines; photos, diagrams, colour-coded cells and notation still print. Put an
+empty `<span data-print-ink-toggle></span>` beside a lesson's own print button (practice sheet, cue sheet, journal)
+to show the same switch as a checkbox, and `data-print-ink-keep` on anything whose fill is the content. Hidden
+print-only portals (Fake Book, the groove sheet, Theory 101) aren't measurable when `beforeprint` runs, so each
+needs its own `html[data-print-ink="save"]` adapter in `lesson-print-button.css`. Scores and other notation flows
+are left alone on purpose: they are already white sheets of notation. With the setting off a lesson must print
+exactly as it did without it, so the switches leave the page while a print is planned (the page-break planner
+reads text lengths and positions). Check with `npm run audit:print-layout -- --ink=save`.
+
 ## Lesson rule: timelines go through the Timeline engine
 
 Don't hand-build another timeline (lessons accumulated ~40 one-off `*-timeline` styles).

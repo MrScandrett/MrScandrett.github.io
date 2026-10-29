@@ -263,15 +263,49 @@
     var found = Array.prototype.slice.call(scope.querySelectorAll('[data-print-ink-toggle]'));
     if (scope.matches && scope.matches('[data-print-ink-toggle]')) found.push(scope);
     found.forEach(function (host) {
-      if (host.querySelector('input')) return;
+      if (host.querySelector('input') || stowedInk.some(function (entry) { return entry[1] === host; })) return;
       host.classList.add('print-ink-toggle');
-      host.setAttribute('data-no-print', '');
-      host.title = INK_HINT;
-      host.innerHTML = '<label><input type="checkbox"><span>Save ink</span></label>';
+      host.innerHTML = '<label data-no-print><input type="checkbox"><span>Save ink</span></label>';
+      host.firstChild.title = INK_HINT;
       var input = host.querySelector('input');
       input.checked = inkSaving();
       input.addEventListener('change', function () { setInkSaving(input.checked); });
     });
+  }
+
+  /* The page-break planner reads text lengths and box positions on screen, and the
+     print menu sits in the lesson's hero on many pages. So the Save ink controls (the
+     menu item and every checkbox) leave the page while a print is prepared and come
+     back after it: the planner sees the page exactly as it was before the setting
+     existed, and a lesson printed with it off comes out the same. */
+  var stowedInk = [];
+
+  function stowInkControls() {
+    var active = document.activeElement;
+    document.querySelectorAll('.lesson-print-menu__rule, [data-print-ink-option], [data-print-ink-toggle] > *')
+      .forEach(function (element) {
+        stowedInk.push([element, element.parentNode, element.nextSibling, element.contains(active)]);
+      });
+    stowedInk.forEach(function (entry) {
+      var host = entry[1];
+      entry[0].remove();
+      if (!host.matches('[data-print-ink-toggle]')) return;
+      host.classList.remove('print-ink-toggle');
+      if (!host.classList.length) host.removeAttribute('class');
+    });
+  }
+
+  function returnInkControls() {
+    if (!stowedInk.length) return;
+    // Last out, first back, so each one's next sibling is already in place.
+    for (var i = stowedInk.length - 1; i >= 0; i -= 1) {
+      var entry = stowedInk[i];
+      entry[1].insertBefore(entry[0], entry[2] && entry[2].parentNode === entry[1] ? entry[2] : null);
+      if (entry[1].matches('[data-print-ink-toggle]')) entry[1].classList.add('print-ink-toggle');
+      if (entry[3]) (entry[0].querySelector('input') || entry[0]).focus();
+    }
+    stowedInk = [];
+    applyInkSaving(inkSaving());
   }
 
   applyInkSaving(storedInkSaving());
@@ -917,6 +951,7 @@
 
   function prepareForPrint() {
     restoreAfterPrint();
+    stowInkControls();
     revealFadedContent();
     unrollScrollers();
     fitWideContent();
@@ -928,6 +963,7 @@
     restoreZoom();
     restoreInk();
     clearPrintBreaks();
+    returnInkControls();
   }
 
   window.addEventListener('beforeprint', prepareForPrint);

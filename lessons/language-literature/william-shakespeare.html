@@ -4,61 +4,473 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>William Shakespeare: Words Made for the Stage · Mr. Scandrett's ClassroomOS</title>
-  <meta name="description" content="Meet William Shakespeare through the stage, compare comedy and tragedy, and test how performance changes the meaning of a line." />
+  <meta name="description" content="Meet William Shakespeare through the stage, explore iambic pentameter with an interactive rhythm lab, discover words he coined, and test how acting choices change meaning. Built for Grades 6–12." />
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
   <style>
-    :root { --sh-ink:#251d25; --sh-plum:#603148; --sh-gold:#986423; --sh-paper:#fffaf0; --sh-line:#d6c3aa; }
-    .sh-main { width:min(1100px,calc(100% - 2rem)); margin:auto; padding:1.5rem 0 4rem; color:var(--sh-ink); display:grid; gap:1.2rem; }
-    .sh-card { background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:20px; padding:clamp(1rem,2.8vw,2rem); box-shadow:0 12px 32px #251d2514; }
-    .sh-card h2,.sh-card h3,.sh-hero h1 { font-family:Fraunces,Georgia,serif; line-height:1.15; }
-    .sh-card h2 { color:var(--sh-plum); margin:0 0 .7rem; } .sh-card p,.sh-card li { line-height:1.65; }
-    .sh-hero { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(230px,1fr); gap:1.5rem; align-items:center; background:linear-gradient(125deg,#fff9ec,#f4e5da); }
-    .sh-hero h1 { font-size:clamp(2.3rem,5vw,4rem); margin:.2rem 0; } .sh-kicker { color:var(--sh-plum); font-weight:800; letter-spacing:.1em; text-transform:uppercase; font-size:.8rem; }
-    .sh-lead { font-size:1.18rem; max-width:58ch; } .sh-hero figure { margin:0; } .sh-hero img { width:100%; max-height:390px; object-fit:contain; display:block; }
-    figcaption { font-size:.85rem; line-height:1.5; } figcaption a,.sh-main a { color:#603148; text-underline-offset:3px; }
-    .sh-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } .sh-grid article { border:1px solid var(--sh-line); border-radius:14px; padding:1rem; background:#fff; }
-    .sh-grid h3 { margin:.1rem 0; color:var(--sh-plum); } .sh-grid p { margin:.4rem 0; }
-    .sh-route { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; } .sh-route > div { background:#fff; padding:1rem; border-left:5px solid var(--sh-gold); border-radius:10px; }
-    .sh-stage { border:2px solid var(--sh-plum); border-radius:18px; padding:1rem; background:#faf1e7; }
-    .sh-stage blockquote { font:clamp(1.25rem,2.6vw,1.8rem)/1.5 Fraunces,Georgia,serif; margin:.5rem 0 1rem; }
-    .sh-controls { display:flex; flex-wrap:wrap; gap:.5rem; } .sh-controls button { padding:.65rem .9rem; border-radius:10px; border:2px solid var(--sh-plum); background:#fff; color:var(--sh-plum); font:700 .95rem Inter,sans-serif; cursor:pointer; }
-    .sh-controls button[aria-pressed="true"] { background:var(--sh-plum); color:#fff; } .sh-controls button:focus-visible,.sh-main a:focus-visible { outline:3px solid var(--sh-gold); outline-offset:3px; }
-    .sh-reading { min-height:5rem; background:#fff; border-radius:10px; padding:.7rem 1rem; margin-top:1rem; }
-    .sh-source { font-size:.85rem; } .sh-prompt { background:#f5e8d8; padding:.8rem 1rem; border-radius:12px; }
-    @media(max-width:750px) { .sh-hero,.sh-grid,.sh-route { grid-template-columns:1fr; } .sh-hero figure { max-width:330px; } }
-    @media print { .sh-controls { display:none; } .sh-card { box-shadow:none; break-inside:avoid; } }
+    :root {
+      --sh-ink: #251d25;
+      --sh-plum: #603148;
+      --sh-plum-soft: rgba(96, 49, 72, 0.1);
+      --sh-gold: #986423;
+      --sh-gold-soft: rgba(152, 100, 35, 0.12);
+      --sh-paper: #fffaf0;
+      --sh-line: #d6c3aa;
+      --sh-teal: #1e555c;
+    }
+    .sh-main { width: min(1100px, calc(100% - 2rem)); margin: auto; padding: 1.5rem 0 4rem; color: var(--sh-ink); display: grid; gap: 1.3rem; }
+    .sh-card { background: var(--sh-paper); border: 1px solid var(--sh-line); border-radius: 20px; padding: clamp(1rem, 2.8vw, 2rem); box-shadow: 0 12px 32px #251d2514; }
+    .sh-card h2, .sh-card h3, .sh-hero h1 { font-family: Fraunces, Georgia, serif; line-height: 1.15; }
+    .sh-card h2 { color: var(--sh-plum); margin: 0 0 .7rem; font-size: clamp(1.4rem, 2.6vw, 1.85rem); }
+    .sh-card p, .sh-card li { line-height: 1.65; }
+
+    /* Hero */
+    .sh-hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(230px, 1fr); gap: 1.5rem; align-items: center; background: linear-gradient(125deg, #fff9ec, #f4e5da); }
+    .sh-hero h1 { font-size: clamp(2.3rem, 5vw, 3.8rem); margin: .2rem 0; }
+    .sh-kicker { color: var(--sh-plum); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; }
+    .sh-lead { font-size: 1.15rem; max-width: 58ch; }
+    .sh-hero figure { margin: 0; }
+    .sh-hero img { width: 100%; max-height: 380px; object-fit: contain; display: block; }
+    figcaption { font-size: .85rem; line-height: 1.5; }
+    figcaption a, .sh-main a { color: var(--sh-plum); text-underline-offset: 3px; font-weight: 600; }
+
+    /* Pathway selector */
+    .sh-path-box { background: var(--sh-plum-soft); border: 1px solid var(--sh-plum); border-radius: 14px; padding: 1rem 1.25rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+    .sh-path-title { font-weight: 800; font-size: .92rem; color: var(--sh-plum); text-transform: uppercase; letter-spacing: .05em; margin: 0; }
+    .sh-path-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .sh-path-chip { font: 700 .82rem Inter, sans-serif; padding: .35rem .75rem; border-radius: 99px; border: 1px solid var(--sh-plum); background: #fff; color: var(--sh-plum); text-decoration: none; cursor: pointer; transition: all .15s ease; }
+    .sh-path-chip:hover { background: var(--sh-plum); color: #fff; text-decoration: none; }
+
+    /* Grid cards */
+    .sh-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .sh-grid article { border: 1px solid var(--sh-line); border-radius: 14px; padding: 1rem; background: #fff; }
+    .sh-grid h3 { margin: .1rem 0; color: var(--sh-plum); font-size: 1.15rem; }
+    .sh-grid p { margin: .4rem 0; font-size: .95rem; }
+    .sh-badge { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: .15rem .45rem; border-radius: 6px; background: var(--sh-gold-soft); color: var(--sh-gold); margin-bottom: .4rem; }
+
+    /* Iambic Rhythm Lab */
+    .sh-meter-stage { background: #1c1520; color: #fdfaf6; border-radius: 16px; padding: 1.25rem; margin: 1rem 0; border: 2px solid var(--sh-plum); }
+    .sh-meter-picker { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: 1rem; }
+    .sh-meter-btn { background: #2f2334; color: #e8dbe8; border: 1px solid #5a3d56; padding: .45rem .85rem; border-radius: 8px; font: 600 .85rem Inter, sans-serif; cursor: pointer; }
+    .sh-meter-btn[aria-pressed="true"] { background: var(--sh-plum); color: #fff; border-color: var(--sh-gold); font-weight: 700; }
+    .sh-meter-feet { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; justify-content: center; padding: 1.2rem .5rem; min-height: 80px; }
+    .sh-syllable { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 48px; padding: .4rem .3rem; border-radius: 8px; background: #2a202f; border: 1px solid #44344c; transition: all .12s ease; }
+    .sh-syllable.is-stress { border-color: #f6c879; background: #4a2d3c; font-weight: 800; color: #ffe6a3; }
+    .sh-syllable.is-active { transform: scale(1.15); box-shadow: 0 0 16px #f6c879; border-color: #ffd98a; background: var(--sh-gold); color: #251d25; }
+    .sh-syl-text { font-family: Fraunces, Georgia, serif; font-size: 1.15rem; }
+    .sh-syl-mark { font-family: 'JetBrains Mono', monospace; font-size: .75rem; opacity: .75; margin-top: .15rem; }
+    .sh-meter-controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1rem; }
+    .sh-meter-action { font: 700 .9rem Inter, sans-serif; padding: .55rem 1rem; border-radius: 8px; border: 0; cursor: pointer; background: var(--sh-gold); color: #251d25; }
+    .sh-meter-action.secondary { background: #3b2c40; color: #fdfaf6; border: 1px solid #634b6c; }
+    .sh-meter-note { font-size: .88rem; color: #c4b5c4; margin: .5rem 0 0; }
+
+    /* Word Bank */
+    .sh-words-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .75rem; margin-top: .9rem; }
+    .sh-word-card { background: #fff; border: 1px solid var(--sh-line); border-radius: 12px; padding: .85rem; cursor: pointer; text-align: left; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; border-left: 4px solid var(--sh-gold); }
+    .sh-word-card:hover { transform: translateY(-2px); border-color: var(--sh-plum); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+    .sh-word-term { font-weight: 800; font-size: 1.05rem; color: var(--sh-plum); display: flex; justify-content: space-between; align-items: baseline; }
+    .sh-word-play { font-size: .75rem; font-style: italic; color: var(--sh-gold); }
+    .sh-word-desc { font-size: .85rem; line-height: 1.45; color: var(--sh-ink); margin: .3rem 0 0; }
+
+    /* Performance lab */
+    .sh-stage { border: 2px solid var(--sh-plum); border-radius: 18px; padding: 1.2rem; background: #faf1e7; }
+    .sh-stage blockquote { font: clamp(1.2rem, 2.6vw, 1.7rem)/1.5 Fraunces, Georgia, serif; margin: .5rem 0 1rem; color: var(--sh-ink); }
+    .sh-controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .sh-controls button { padding: .65rem .9rem; border-radius: 10px; border: 2px solid var(--sh-plum); background: #fff; color: var(--sh-plum); font: 700 .95rem Inter, sans-serif; cursor: pointer; }
+    .sh-controls button[aria-pressed="true"] { background: var(--sh-plum); color: #fff; }
+    .sh-controls button:focus-visible, .sh-main a:focus-visible, .sh-meter-btn:focus-visible, .sh-word-card:focus-visible { outline: 3px solid var(--sh-gold); outline-offset: 3px; }
+    .sh-reading { min-height: 5rem; background: #fff; border-radius: 10px; padding: .85rem 1.1rem; margin-top: 1rem; border: 1px solid var(--sh-line); }
+
+    /* Jargon Buster & Tiered routes */
+    .sh-jargon-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .sh-jargon-card { background: #fff; border: 1px solid var(--sh-line); border-radius: 12px; padding: 1rem; }
+    .sh-jargon-term { font-weight: 800; font-size: 1rem; color: var(--sh-plum); margin: 0 0 .25rem; }
+    .sh-jargon-def { font-size: .9rem; line-height: 1.5; margin: 0; }
+
+    .sh-route { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .sh-route > div { background: #fff; padding: 1.1rem; border-left: 5px solid var(--sh-gold); border-radius: 10px; border: 1px solid var(--sh-line); border-left-width: 5px; }
+    .sh-source { font-size: .88rem; }
+    .sh-prompt { background: #f5e8d8; padding: .8rem 1rem; border-radius: 12px; margin-top: .9rem; border-left: 4px solid var(--sh-gold); }
+
+    @media (max-width: 750px) {
+      .sh-hero, .sh-grid, .sh-route, .sh-jargon-grid { grid-template-columns: 1fr; }
+      .sh-hero figure { max-width: 320px; }
+    }
+    @media print {
+      .sh-controls, .sh-meter-stage, .sh-path-box { display: none; }
+      .sh-card { box-shadow: none; break-inside: avoid; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header"><div class="nav-wrap"><a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a><nav class="site-nav" aria-label="Primary"><ul><li><a href="../../index.html">Home</a></li><li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li><li><a href="../../paths.html">Paths</a></li><li><a href="../../showcase.html">Showcase</a></li><li><a href="../../applications.html">Apps</a></li><li><a href="../../library.html">Library</a></li><li><a href="../../about.html">About</a></li></ul></nav></div></header>
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../index.html">Home</a></li>
+          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../paths.html">Paths</a></li>
+          <li><a href="../../showcase.html">Showcase</a></li>
+          <li><a href="../../applications.html">Apps</a></li>
+          <li><a href="../../library.html">Library</a></li>
+          <li><a href="../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
   <main id="main-content" class="sh-main">
-    <section class="sh-card sh-hero" aria-labelledby="sh-title"><div><p class="sh-kicker">Language &amp; Literature · Drama</p><h1 id="sh-title">William Shakespeare</h1><p class="sh-lead">His words were written to be spoken, interrupted, and acted in front of people. Start with a question: how does a line change when an actor changes the way it is said?</p><p><strong>Big idea:</strong> A play gives us words and actions; performers and audiences help make their meaning.</p><p>Shakespeare (1564–1616) was an actor, playwright, and shareholder in a London theater company. His plays moved between public stages, royal courts, and, later, an indoor theater. We know some facts from records, but much of his private life remains uncertain.</p></div><figure data-zoomable><img src="https://commons.wikimedia.org/wiki/Special:FilePath/William_Shakespeare_Chandos.jpg?width=650" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/William_Shakespeare_Chandos.jpg?width=1400" alt="The Chandos portrait, traditionally identified as William Shakespeare, with dark hair, a beard, and a white collar" /><figcaption>The Chandos portrait is traditionally identified as Shakespeare, though the identification is not certain. Ask what a portrait can and cannot prove about its sitter. <a href="https://commons.wikimedia.org/wiki/File:William_Shakespeare_Chandos.jpg">Attributed to John Taylor; public domain, via Wikimedia Commons.</a></figcaption></figure></section>
-    <section class="sh-card" aria-labelledby="sh-context"><h2 id="sh-context">A playwright in a working theater</h2><div class="sh-grid"><article><h3>Company</h3><p>Shakespeare wrote for actors in the Lord Chamberlain's Men, later the King's Men. A scene had to work with bodies, voices, entrances, and a live audience.</p></article><article><h3>Stage</h3><p>Many plays were performed at the Globe, which opened in 1599. Imagine the audience close enough to react while an actor speaks.</p></article><article><h3>Book</h3><p>In 1623, fellow actors John Heminge and Henry Condell helped publish the <em>First Folio</em>. Some plays survive in print because of that collection.</p></article></div></section>
-    <section class="sh-card" aria-labelledby="sh-genres"><h2 id="sh-genres">Three ways a story can turn</h2><div class="sh-grid"><article><h3>Comedy</h3><p>Confusion, disguise, and mistaken love often lead toward reunion. In <em>A Midsummer Night's Dream</em>, amateur actors rehearse a play inside the play.</p></article><article><h3>Tragedy</h3><p>Choices, conflict, and limited knowledge can move toward loss. In <em>Macbeth</em>, ambition presses against conscience.</p></article><article><h3>History</h3><p>Rulers fight over power and legitimacy. A history play interprets the past for an audience; it is not a neutral record.</p></article></div><p class="sh-source">These are useful starting categories, not rules that every scene follows.</p></section>
-    <section class="sh-card" aria-labelledby="sh-lab"><h2 id="sh-lab">Performance lab: one line, three choices</h2><p>Read the opening line of Macbeth's Act 1, scene 7. He is thinking about killing King Duncan. Predict which delivery will make him sound most certain; then try each aloud.</p><div class="sh-stage"><blockquote>“If it were done when ’tis done, then ’twere well / It were done quickly.”</blockquote><div class="sh-controls" role="group" aria-label="Choose an acting direction"><button type="button" data-reading="fear" aria-pressed="true">Afraid</button><button type="button" data-reading="resolve" aria-pressed="false">Resolved</button><button type="button" data-reading="secret" aria-pressed="false">Secretive</button></div><div class="sh-reading" id="sh-reading" aria-live="polite"><strong>Afraid:</strong> Pause after “done.” Let “quickly” come out as a wish to escape the consequences. What words suggest he is hesitating?</div></div><p class="sh-prompt"><strong>Discuss:</strong> Which delivery fits the rest of the speech best? Read the <a href="https://www.folger.edu/explore/shakespeares-works/macbeth/read/1/7/">full scene at the Folger Shakespeare Library</a> and cite a later line that supports or challenges your choice.</p></section>
-    <section class="sh-card" aria-labelledby="sh-reading-route"><h2 id="sh-reading-route">Choose a first scene</h2><div class="sh-route"><div><h3>Start with conflict</h3><p>Read the <a href="https://www.folger.edu/explore/shakespeares-works/romeo-and-juliet/read/PRO/">prologue to <em>Romeo and Juliet</em></a>. Mark what the audience learns before the characters do. How does that knowledge change the opening?</p></div><div><h3>Start with performance</h3><p>Read <a href="https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/3/1/"><em>A Midsummer Night's Dream</em>, Act 3, scene 1</a>. Find the moment rehearsal turns into surprise. What must an actor show without explaining it?</p></div></div><p><strong>Exit ticket:</strong> Choose one short line, write two different acting directions for it, and explain which word in the line supports each direction.</p></section>
-    <section class="sh-card sh-source" aria-labelledby="sh-sources"><h2 id="sh-sources">Sources and further reading</h2><ul><li><a href="https://www.folger.edu/explore/shakespeares-life/">Folger Shakespeare Library: Shakespeare's life</a> — biography and limits of the record.</li><li><a href="https://www.folger.edu/explore/shakespeare-in-print/first-folio/">Folger Shakespeare Library: the First Folio</a> — the 1623 collection and its theater context.</li><li><a href="https://www.rsc.org.uk/shakespeares-life-and-times">Royal Shakespeare Company: life and times</a> — timeline and company history.</li></ul></section>
+    <!-- Hero Section -->
+    <section class="sh-card sh-hero" aria-labelledby="sh-title">
+      <div>
+        <p class="sh-kicker">Language &amp; Literature · Drama &amp; Verse · Grades 6–12</p>
+        <h1 id="sh-title">William Shakespeare</h1>
+        <p class="sh-lead">His plays were not written to sit quietly on library shelves. They were written to be shouted, whispered, interrupted, and acted before roaring crowds in open-air wooden theaters.</p>
+        <div class="sh-path-box">
+          <p class="sh-path-title">Target Your Level</p>
+          <div class="sh-path-chips">
+            <a class="sh-path-chip" href="#sh-meter">Grades 6–8: Heartbeat Rhythm</a>
+            <a class="sh-path-chip" href="#sh-words">Grades 6–12: Words Coined</a>
+            <a class="sh-path-chip" href="#sh-lab">Grades 7–12: Performance Lab</a>
+            <a class="sh-path-chip" href="#sh-jargon">Grades 9–12: Theater Jargon</a>
+          </div>
+        </div>
+      </div>
+      <figure data-zoomable data-lightbox-group="shakespeare-hero">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Shakespeare.jpg?width=600" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Shakespeare.jpg?width=1200" alt="The Chandos portrait of William Shakespeare, showing him with a gold hoop earring and dark doublet" />
+        <figcaption>The Chandos portrait (c. 1600–1610), attributed to John Taylor. National Portrait Gallery, London. Public domain. Tap to enlarge.</figcaption>
+      </figure>
+    </section>
+
+    <!-- Context Cards -->
+    <section class="sh-card" aria-labelledby="sh-world">
+      <h2 id="sh-world">The Three Pillars of Elizabethan Theater</h2>
+      <div class="sh-grid">
+        <article>
+          <span class="sh-badge">The City</span>
+          <h3>London</h3>
+          <p>A booming port of about 200,000 people. Plays competed with street markets, river traffic, church bells, and bear-baiting rings for attention.</p>
+        </article>
+        <article>
+          <span class="sh-badge">The Stage</span>
+          <h3>The Globe</h3>
+          <p>Built in 1599. Up to 3,000 spectators stood in the yard for a penny or sat in covered galleries under daylight with no electric lights or microphones.</p>
+        </article>
+        <article>
+          <span class="sh-badge">The Book</span>
+          <h3>The First Folio</h3>
+          <p>In 1623, fellow actors John Heminge and Henry Condell compiled 36 plays. Without their effort, masterpieces like <em>Macbeth</em> and <em>The Tempest</em> would be lost.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Interactive Iambic Pentameter Rhythm Lab -->
+    <section class="sh-card" id="sh-meter" aria-labelledby="sh-meter-title">
+      <h2 id="sh-meter-title">Interactive Lab: The Heartbeat Rhythm (Iambic Pentameter)</h2>
+      <p>Why does Shakespeare sound so memorable? Most of his dialogue is written in <strong>iambic pentameter</strong>: five pairs of syllables that follow a human heartbeat rhythm: <em>da-DUM, da-DUM, da-DUM, da-DUM, da-DUM</em> (10 syllables total).</p>
+      
+      <div class="sh-meter-stage">
+        <div class="sh-meter-picker" role="group" aria-label="Select line to scan">
+          <button type="button" class="sh-meter-btn" data-line-id="sonnet18" aria-pressed="true">Sonnet 18 (Love)</button>
+          <button type="button" class="sh-meter-btn" data-line-id="romeo" aria-pressed="false">Romeo &amp; Juliet (Fate)</button>
+          <button type="button" class="sh-meter-btn" data-line-id="macbeth" aria-pressed="false">Macbeth (Guilt)</button>
+          <button type="button" class="sh-meter-btn" data-line-id="richard" aria-pressed="false">Richard III (Ambition)</button>
+        </div>
+
+        <div class="sh-meter-feet" id="sh-meter-feet" aria-live="polite">
+          <!-- Syllables injected by JavaScript -->
+        </div>
+
+        <div class="sh-meter-controls">
+          <button type="button" class="sh-meter-action" id="sh-play-beat">▶ Play Heartbeat Rhythm</button>
+          <button type="button" class="sh-meter-action secondary" id="sh-step-beat">Step Syllable by Syllable</button>
+          <span id="sh-meter-status" style="font-size: .85rem; color: #f6c879;"></span>
+        </div>
+        <p class="sh-meter-note">💡 <strong>Actor's Rule:</strong> When a character breaks the regular 10-syllable heartbeat, it means their emotions are breaking down or their world is falling apart.</p>
+      </div>
+    </section>
+
+    <!-- Words Coined -->
+    <section class="sh-card" id="sh-words" aria-labelledby="sh-words-title">
+      <h2 id="sh-words-title">Words Shakespeare Invented for You</h2>
+      <p>Scholars estimate Shakespeare introduced or popularized over 1,700 words into English. Click each card to see the line and play where it first came alive:</p>
+      <div class="sh-words-grid" id="sh-words-grid">
+        <button type="button" class="sh-word-card" data-word="swagger">
+          <div class="sh-word-term"><span>Swagger</span> <span class="sh-word-play">A Midsummer Night's Dream</span></div>
+          <p class="sh-word-desc">“What hempen home-spuns have we <strong>swaggering</strong> here?” — walking with boastful, insolent confidence.</p>
+        </button>
+        <button type="button" class="sh-word-card" data-word="eyeball">
+          <div class="sh-word-term"><span>Eyeball</span> <span class="sh-word-play">The Tempest</span></div>
+          <p class="sh-word-desc">Prospero warns Ariel to stay invisible to every “<strong>eyeball</strong> else.” He turned organs into vivid visual words.</p>
+        </button>
+        <button type="button" class="sh-word-card" data-word="lonely">
+          <div class="sh-word-term"><span>Lonely</span> <span class="sh-word-play">Coriolanus</span></div>
+          <p class="sh-word-desc">“I go alone, like to a <strong>lonely</strong> dragon.” The feeling of isolation in an unforgiving world.</p>
+        </button>
+        <button type="button" class="sh-word-card" data-word="ice">
+          <div class="sh-word-term"><span>Break the ice</span> <span class="sh-word-play">The Taming of the Shrew</span></div>
+          <p class="sh-word-desc">“And if you <strong>break the ice</strong> and do this feat...” — warming up an awkward initial encounter.</p>
+        </button>
+        <button type="button" class="sh-word-card" data-word="green">
+          <div class="sh-word-term"><span>Green-eyed monster</span> <span class="sh-word-play">Othello</span></div>
+          <p class="sh-word-desc">Iago warns Othello to beware of jealousy: “It is the <strong>green-eyed monster</strong> which doth mock the meat it feeds on.”</p>
+        </button>
+        <button type="button" class="sh-word-card" data-word="cold">
+          <div class="sh-word-term"><span>Cold-blooded</span> <span class="sh-word-play">King John</span></div>
+          <p class="sh-word-desc">Describing a calculated, emotionless decision without passion or mercy.</p>
+        </button>
+      </div>
+    </section>
+
+    <!-- Genre Foundations -->
+    <section class="sh-card" aria-labelledby="sh-genres">
+      <h2 id="sh-genres">Three Ways a Story Can Turn</h2>
+      <div class="sh-grid">
+        <article>
+          <span class="sh-badge">Reunion &amp; Wit</span>
+          <h3>Comedy</h3>
+          <p>Disguises, mistaken identity, and chaotic love that resolves in marriage and celebration (e.g., <em>Much Ado About Nothing</em>, <em>Twelfth Night</em>).</p>
+        </article>
+        <article>
+          <span class="sh-badge">Catastrophe &amp; Choice</span>
+          <h3>Tragedy</h3>
+          <p>A noble character makes a fateful choice driven by flaw, ambition, or blinded judgment, ending in sorrow (e.g., <em>Macbeth</em>, <em>Hamlet</em>).</p>
+        </article>
+        <article>
+          <span class="sh-badge">Crowns &amp; War</span>
+          <h3>History</h3>
+          <p>Rival kings and rebellious nobles fight over who has the rightful claim to the throne of England (e.g., <em>Henry V</em>, <em>Richard III</em>).</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Performance Lab -->
+    <section class="sh-card" id="sh-lab" aria-labelledby="sh-lab-title">
+      <h2 id="sh-lab-title">Performance Lab: One Line, Three Deliveries</h2>
+      <p>In Act 1, scene 7 of <em>Macbeth</em>, the general contemplates assassinating King Duncan in his own castle. How an actor delivers this single sentence alters the audience's understanding of his conscience:</p>
+      
+      <div class="sh-stage">
+        <blockquote>“If it were done when ’tis done, then ’twere well<br>It were done quickly.”</blockquote>
+        <div class="sh-controls" role="group" aria-label="Choose an acting direction">
+          <button type="button" data-reading="fear" aria-pressed="true">Afraid &amp; Trembling</button>
+          <button type="button" data-reading="resolve" aria-pressed="false">Cold &amp; Resolved</button>
+          <button type="button" data-reading="secret" aria-pressed="false">Hushed &amp; Paranoid</button>
+        </div>
+        <div class="sh-reading" id="sh-reading" aria-live="polite">
+          <strong>Afraid:</strong> Pause after “done.” Let “quickly” come out as a terrified wish to escape judgment. Notice how the repetition of “done” feels like an echo he cannot silence.
+        </div>
+      </div>
+
+      <p class="sh-prompt">
+        <strong>Discussion Question:</strong> Which delivery makes Macbeth seem more dangerous: when he is shaking with terror, or when he is cold and matter-of-fact? Find a partner and recite the line both ways.
+      </p>
+    </section>
+
+    <!-- Theater Jargon Buster (Grades 8-12) -->
+    <section class="sh-card" id="sh-jargon" aria-labelledby="sh-jargon-title">
+      <h2 id="sh-jargon-title">Essential Theater Jargon for Grades 6–12</h2>
+      <div class="sh-jargon-grid">
+        <article class="sh-jargon-card">
+          <p class="sh-jargon-term">Soliloquy vs. Monologue</p>
+          <p class="sh-jargon-def">A <strong>soliloquy</strong> is spoken by an actor alone on stage, revealing their private inner truth to the audience. A <strong>monologue</strong> is a long speech delivered to <em>other characters</em> in the room.</p>
+        </article>
+        <article class="sh-jargon-card">
+          <p class="sh-jargon-term">The Aside</p>
+          <p class="sh-jargon-def">A quick, private remark whispered directly to the audience that other characters on stage pretend not to hear. It creates a secret partnership between the actor and the crowd.</p>
+        </article>
+        <article class="sh-jargon-card">
+          <p class="sh-jargon-term">Dramatic Irony</p>
+          <p class="sh-jargon-def">When the audience knows a crucial secret that a character on stage does not (e.g., we know Juliet took a sleeping potion, but Romeo genuinely believes she is dead).</p>
+        </article>
+        <article class="sh-jargon-card">
+          <p class="sh-jargon-term">Verse vs. Prose</p>
+          <p class="sh-jargon-def">Kings and philosophers speak in dignified, rhythmic <strong>verse</strong> (iambic pentameter). Everyday workers, comedic clowns, and characters losing their minds speak in ordinary <strong>prose</strong>.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Guided First Scenes -->
+    <section class="sh-card" aria-labelledby="sh-reading-route">
+      <h2 id="sh-reading-route">Choose Your Starting Scene</h2>
+      <div class="sh-route">
+        <div>
+          <span class="sh-badge">Grades 6–9 Track</span>
+          <h3>Start with Action &amp; Surprise</h3>
+          <p>Read <a href="https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/3/1/" target="_blank" rel="noopener noreferrer"><em>A Midsummer Night's Dream</em>, Act 3, scene 1</a>. Watch a group of bumbling amateur actors rehearse a play in the enchanted woods until magical mischief transforms one of them.</p>
+          <p><strong>Look for:</strong> How does Shakespeare use stage directions and sound effects for comedy?</p>
+        </div>
+        <div>
+          <span class="sh-badge">Grades 9–12 Track</span>
+          <h3>Start with Foreshadowing &amp; Fate</h3>
+          <p>Read the <a href="https://www.folger.edu/explore/shakespeares-works/romeo-and-juliet/read/PRO/" target="_blank" rel="noopener noreferrer">Prologue to <em>Romeo and Juliet</em></a>. In fourteen lines of a sonnet, the Chorus tells the audience the ending before the play even starts.</p>
+          <p><strong>Look for:</strong> How does knowing the ending create intense suspense rather than spoiling the story?</p>
+        </div>
+      </div>
+      <div class="sh-prompt">
+        <strong>Exit Ticket:</strong> Pick any three lines from Shakespeare. Mark which syllables are stressed, and write one acting direction instructing an actor where to pause for breath or look at the audience.
+      </div>
+    </section>
+
+    <!-- Sources -->
+    <section class="sh-card sh-source" aria-labelledby="sh-sources">
+      <h2 id="sh-sources">Sources and Further Reading</h2>
+      <ul>
+        <li><a href="https://www.folger.edu/explore/shakespeares-life/" target="_blank" rel="noopener noreferrer">Folger Shakespeare Library: Shakespeare's Life</a> — Biographical facts, theater records, and documents.</li>
+        <li><a href="https://www.folger.edu/explore/shakespeare-in-print/first-folio/" target="_blank" rel="noopener noreferrer">Folger Shakespeare Library: The First Folio</a> — The preservation of the 1623 edition.</li>
+        <li><a href="https://www.rsc.org.uk/shakespeares-life-and-times" target="_blank" rel="noopener noreferrer">Royal Shakespeare Company: Life and Times</a> — Timeline and Elizabethan staging practices.</li>
+      </ul>
+    </section>
   </main>
+
   <script src="../../assets/js/theme-registry.js"></script>
   <script src="../../assets/js/nav-mobile.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
   <script src="../../assets/js/lesson-print-button.js"></script>
   <script>
+    // ── Performance Lab Direction Handler ─────────────────────────────
     const directions = {
-      fear: '<strong>Afraid:</strong> Pause after “done.” Let “quickly” come out as a wish to escape the consequences. What words suggest he is hesitating?',
-      resolve: '<strong>Resolved:</strong> Speak without a pause and stress “quickly.” Does the rest of the speech sustain this confidence?',
-      secret: '<strong>Secretive:</strong> Lower your voice and glance toward the door. Who might overhear, and why would that matter?'
+      fear: '<strong>Afraid:</strong> Pause after “done.” Let “quickly” come out as a terrified wish to escape judgment. Notice how the repetition of “done” feels like an echo he cannot silence.',
+      resolve: '<strong>Resolved:</strong> Speak without pausing, hard-hitting and decisive on “well” and “quickly.” Does the rest of the speech sustain this chilling confidence?',
+      secret: '<strong>Secretive:</strong> Lower your voice to an urgent whisper, checking the room’s dark corners. Who might overhear, and what happens if his treason is discovered before dawn?'
     };
-    document.querySelectorAll('[data-reading]').forEach(button => button.addEventListener('click', () => {
-      document.querySelectorAll('[data-reading]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-      document.getElementById('sh-reading').innerHTML = directions[button.dataset.reading];
-    }));
+    document.querySelectorAll('[data-reading]').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-reading]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        document.getElementById('sh-reading').innerHTML = directions[button.dataset.reading];
+      });
+    });
+
+    // ── Iambic Pentameter Rhythm Lab ─────────────────────────────────
+    const linesData = {
+      sonnet18: [
+        { text: 'Shall', stress: false }, { text: 'I', stress: true },
+        { text: 'com-', stress: false }, { text: 'PARE', stress: true },
+        { text: 'thee', stress: false }, { text: 'TO', stress: true },
+        { text: 'a', stress: false }, { text: 'SUM-', stress: true },
+        { text: 'mer’s', stress: false }, { text: 'DAY?', stress: true }
+      ],
+      romeo: [
+        { text: 'Two', stress: false }, { text: 'HOUSE-', stress: true },
+        { text: 'holds,', stress: false }, { text: 'BOTH', stress: true },
+        { text: 'a-', stress: false }, { text: 'LIKE', stress: true },
+        { text: 'in', stress: false }, { text: 'DIG-', stress: true },
+        { text: 'ni-', stress: false }, { text: 'TY', stress: true }
+      ],
+      macbeth: [
+        { text: 'A', stress: false }, { text: 'LIT-', stress: true },
+        { text: 'tle', stress: false }, { text: 'WA-', stress: true },
+        { text: 'ter', stress: false }, { text: 'CLEARS', stress: true },
+        { text: 'us', stress: false }, { text: 'OF', stress: true },
+        { text: 'this', stress: false }, { text: 'DEED', stress: true }
+      ],
+      richard: [
+        { text: 'Now', stress: false }, { text: 'IS', stress: true },
+        { text: 'the', stress: false }, { text: 'WIN-', stress: true },
+        { text: 'ter', stress: false }, { text: 'OF', stress: true },
+        { text: 'our', stress: false }, { text: 'DIS-', stress: true },
+        { text: 'con-', stress: false }, { text: 'TENT', stress: true }
+      ]
+    };
+
+    let activeLineKey = 'sonnet18';
+    let currentSyllableIdx = -1;
+    let playInterval = null;
+
+    const feetEl = document.getElementById('sh-meter-feet');
+    const statusEl = document.getElementById('sh-meter-status');
+
+    function renderMeterLine(key) {
+      activeLineKey = key;
+      currentSyllableIdx = -1;
+      if (playInterval) { clearInterval(playInterval); playInterval = null; }
+      document.getElementById('sh-play-beat').textContent = '▶ Play Heartbeat Rhythm';
+      statusEl.textContent = '';
+      
+      const syllables = linesData[key];
+      feetEl.innerHTML = syllables.map((s, i) => `
+        <div class="sh-syllable ${s.stress ? 'is-stress' : ''}" id="syl-${i}">
+          <span class="sh-syl-text">${s.text}</span>
+          <span class="sh-syl-mark">${s.stress ? 'DUM (–)' : 'da (˘)'}</span>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('[data-line-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-line-id]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+        renderMeterLine(btn.dataset.lineId);
+      });
+    });
+
+    // Sound synth for meter beat
+    function playClick(isStress) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = isStress ? 520 : 340;
+        gain.gain.setValueAtTime(isStress ? 0.25 : 0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) { /* ignore audio blocked */ }
+    }
+
+    function highlightSyllable(idx) {
+      const total = linesData[activeLineKey].length;
+      for (let i = 0; i < total; i++) {
+        const el = document.getElementById(`syl-${i}`);
+        if (el) el.classList.toggle('is-active', i === idx);
+      }
+      if (idx >= 0 && idx < total) {
+        const s = linesData[activeLineKey][idx];
+        statusEl.textContent = s.stress ? '• STRESSED beat (DUM)' : '• unstressed beat (da)';
+        playClick(s.stress);
+      }
+    }
+
+    document.getElementById('sh-step-beat').addEventListener('click', () => {
+      const total = linesData[activeLineKey].length;
+      currentSyllableIdx = (currentSyllableIdx + 1) % total;
+      highlightSyllable(currentSyllableIdx);
+    });
+
+    document.getElementById('sh-play-beat').addEventListener('click', function() {
+      if (playInterval) {
+        clearInterval(playInterval);
+        playInterval = null;
+        this.textContent = '▶ Play Heartbeat Rhythm';
+        return;
+      }
+      this.textContent = '⏸ Pause Rhythm';
+      currentSyllableIdx = -1;
+      const total = linesData[activeLineKey].length;
+      playInterval = setInterval(() => {
+        currentSyllableIdx++;
+        if (currentSyllableIdx >= total) {
+          clearInterval(playInterval);
+          playInterval = null;
+          document.getElementById('sh-play-beat').textContent = '▶ Play Heartbeat Rhythm';
+          statusEl.textContent = 'Completed line (5 feet = 10 syllables)';
+          return;
+        }
+        highlightSyllable(currentSyllableIdx);
+      }, 420);
+    });
+
+    // Initialize default line
+    renderMeterLine('sonnet18');
   </script>
 </body>
 </html>

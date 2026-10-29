@@ -7,10 +7,12 @@
   background: color-mix(in srgb, var(--bg, #fff) 92%, var(--accent, #557a68) 8%);
   color: var(--text, #222);
 }
-.pno-shell .instrument-compass { --practice-accent: #245f78; }
-.gtr-shell .instrument-compass { --practice-accent: #7b532f; }
-.vln-lesson .instrument-compass { --practice-accent: #0055ad; }
-.sax-shell .instrument-compass { --practice-accent: #762b32; }
+/* One accent per instrument, shared by the ritual and the pathway (instrument-pathway.js). */
+.pno-shell { --practice-accent: #245f78; }
+.gtr-shell { --practice-accent: #7b532f; }
+.vln-lesson { --practice-accent: #0055ad; }
+.sax-shell { --practice-accent: #762b32; }
+.dr-shell { --practice-accent: #b4410a; }
 .instrument-compass { border-top: 4px solid var(--practice-accent, var(--accent, #557a68)); }
 .instrument-compass h2,
 .instrument-compass h3 { margin: 0 0 .35rem; }
@@ -46,4 +48,90 @@
 }
 @media print {
   .instrument-compass { break-inside: avoid; }
+}
+
+/* ---- The instrument pathway: the same six stages on every instrument (instrument-pathway.js) ----
+   Kept deliberately small: a strip at the top and a one-line divider at each stage, so the
+   pathway guides without getting in the way of scrolling through the lesson. */
+.ip-map,
+.ip-sign {
+  --ip-accent: var(--practice-accent, var(--accent, #557a68));
+  --ip-line: color-mix(in srgb, var(--text, #222) 16%, transparent);
+  --ip-done: #1a7f45;
+  color: var(--text, #222);
+}
+.ip-map {
+  margin: 1rem 0;
+  padding: .6rem .75rem .45rem;
+  scroll-margin-top: 5rem;
+  border: 1px solid var(--ip-line);
+  border-left: 4px solid var(--ip-accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg, #fff) 95%, var(--ip-accent) 5%);
+}
+.sax-shell > .ip-map, .sax-shell > .ip-sign { max-width: 1040px; margin-inline: auto; }
+.ip-head { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .75rem; }
+.ip-map h2 { margin: 0; font-size: 1.05rem; line-height: 1.2; }
+.ip-status { margin: 0; font-size: .8rem; font-weight: 700; opacity: .8; }
+.ip-continue { color: var(--ip-accent); font-size: .85rem; font-weight: 800; text-decoration: none; }
+.ip-continue:hover { text-decoration: underline; }
+button.ip-reset { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: .75rem; text-decoration: underline; opacity: .75; cursor: pointer; }
+.ip-switch { display: flex; gap: .25rem; margin-left: auto; }
+.ip-chip { display: inline-flex; align-items: center; gap: .2rem; min-width: 2rem; min-height: 2rem; justify-content: center; padding: 0 .35rem; border: 1px solid transparent; border-radius: 999px; color: inherit; font-size: 1rem; text-decoration: none; }
+.ip-chip small { font-size: .68rem; font-weight: 700; opacity: .75; }
+.ip-chip[aria-current="page"] { border-color: var(--ip-accent); }
+.ip-chip:hover { border-color: var(--ip-line); }
+
+.ip-stages { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .3rem; margin: .5rem 0 0; padding: 0; list-style: none; }
+.ip-step a { display: flex; align-items: center; gap: .35rem; min-height: 2.25rem; padding: .2rem .45rem; border: 1px solid var(--ip-line); border-radius: 8px; color: inherit; font-size: .85rem; font-weight: 700; text-decoration: none; }
+.ip-step a:hover { border-color: var(--ip-accent); }
+.ip-step.is-next a { border-color: var(--ip-accent); box-shadow: inset 0 -2px 0 var(--ip-accent); }
+.ip-step-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ip-num { display: inline-grid; flex: none; width: 1.45rem; height: 1.45rem; place-items: center; border: 1.5px solid var(--ip-accent); border-radius: 50%; color: var(--ip-accent); font-weight: 800; font-size: .72rem; }
+.ip-step.is-done .ip-num { border-color: var(--ip-done); background: var(--ip-done); color: #fff; }
+.ip-icon { flex: none; font: 1rem/1 system-ui, sans-serif; }
+
+.ip-more { margin-top: .35rem; font-size: .8rem; }
+.ip-more summary { width: max-content; max-width: 100%; padding: .15rem 0; cursor: pointer; opacity: .8; }
+.ip-lede { margin: .3rem 0 .4rem; max-width: 68ch; line-height: 1.45; }
+.ip-rows { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.ip-row { display: flex; align-items: center; gap: .6rem; padding: .35rem 0; border-top: 1px solid var(--ip-line); }
+.ip-row > div { flex: 1; min-width: 0; }
+.ip-row-title, .ip-here, .ip-sections { margin: 0; line-height: 1.45; }
+.ip-sections a, .ip-other a, .ip-finish-copy a { color: inherit; text-decoration: underline; text-underline-offset: .18em; }
+
+button.ip-done { flex: none; min-height: 2rem; padding: .2rem .6rem; border: 1px solid var(--ip-accent); border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: .76rem; font-weight: 700; white-space: nowrap; cursor: pointer; }
+button.ip-done[aria-pressed="true"] { border-color: var(--ip-done); background: var(--ip-done); color: #fff; }
+.ip-done:focus-visible, .ip-step a:focus-visible, .ip-sections a:focus-visible, .ip-other a:focus-visible, .ip-chip:focus-visible, .ip-continue:focus-visible, .ip-more summary:focus-visible { outline: 3px solid var(--ip-accent); outline-offset: 2px; }
+
+/* The divider at the start of every stage (and after the last). */
+.ip-sign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .3rem .8rem;
+  margin: 1.25rem 0 .75rem;
+  padding: .4rem 0;
+  border-top: 2px solid var(--ip-accent);
+}
+.ip-sign-main { display: flex; flex: 1 1 18rem; align-items: baseline; flex-wrap: wrap; gap: .1rem .45rem; min-width: 0; }
+.ip-sign-main .ip-num, .ip-sign-main .ip-icon { align-self: center; }
+.ip-sign-title { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.2; }
+.ip-goal { font-size: .82rem; opacity: .8; }
+.ip-other { display: flex; align-items: center; gap: .15rem; margin: 0; font-size: .74rem; }
+.ip-other span { margin-right: .2rem; opacity: .75; }
+.ip-other a { display: inline-grid; min-width: 1.75rem; min-height: 1.75rem; place-items: center; font-size: .95rem; text-decoration: none; }
+.ip-finish { margin-top: 1rem; }
+.ip-finish-copy { flex: 1 1 14rem; margin: 0; font-size: .85rem; font-weight: 600; }
+.ip-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .ip-stages { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ip-switch { margin-left: 0; }
+  .ip-step .ip-icon, .ip-sign .ip-goal { display: none; }
+  .ip-sign-main { flex-basis: auto; }
+}
+@media print {
+  /* The strip prints as the course overview; the dividers are on-screen navigation. */
+  .ip-continue, .ip-reset, .ip-switch, .ip-more, .ip-sign { display: none !important; }
 }

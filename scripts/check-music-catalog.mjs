@@ -1,31 +1,17 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
+import { readdir } from 'node:fs/promises';
+import { sep } from 'node:path';
 import { chromium } from 'playwright';
 import { findChromium } from '../lib/find-chromium.mjs';
 
 const base = process.env.MUSIC_TEST_URL || 'http://localhost:8080/';
-const lessons = [
-  'lessons/music/pioneers/bach.html',
-  'lessons/music/pioneers/beethoven.html',
-  'lessons/music/pioneers/chopin.html',
-  'lessons/music/instruments/drums.html',
-  'lessons/music/theory/fake-book.html',
-  'lessons/music/instruments/guitar.html',
-  'lessons/music/pioneers/joplin.html',
-  'lessons/music/pioneers/gershwin.html',
-  'lessons/music/pioneers/morton.html',
-  'lessons/music/pioneers/mozart.html',
-  'lessons/music/theory/music-modes-evolution.html',
-  'lessons/music/theory/drop-voicings.html',
-  'lessons/music/instruments/piano.html',
-  'lessons/music/theory/sheet-music-trainer.html',
-  'lessons/music/pioneers/tchaikovsky.html',
-  'lessons/music/pioneers/debussy.html',
-  'lessons/music/pioneers/satie.html',
-  'lessons/music/instruments/violin-fingerboard.html',
-  'lessons/music/pioneers/vivaldi.html',
-];
+// Every page under lessons/music/, so a new lesson is checked without being listed here.
+const lessons = (await readdir('lessons/music', { recursive: true }))
+  .filter((file) => file.endsWith('.html'))
+  .map((file) => `lessons/music/${file.split(sep).join('/')}`)
+  .sort();
 const sizes = [{ width: 1440, height: 1000 }, { width: 390, height: 844 }, { width: 844, height: 390 }];
 const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
 let checked = 0;
@@ -66,8 +52,10 @@ try {
       const integrity = await page.evaluate(() => ({
         zoomFigures: document.querySelectorAll('figure[data-zoomable]').length,
         lightboxScript: [...document.scripts].some((script) => script.src.includes('photo-lightbox.js')),
+        familyScript: [...document.scripts].some((script) => script.src.includes('music-family.js')),
         overflow: document.documentElement.scrollWidth - innerWidth,
       }));
+      assert.equal(integrity.familyScript, true, `${lesson}: missing music-family.js navigation strip`);
       if (integrity.zoomFigures) assert.equal(integrity.lightboxScript, true, `${lesson}: zoomable figures lack lightbox script`);
       assert.ok(integrity.overflow <= 1, `${lesson}: horizontal overflow ${integrity.overflow}px at ${size.width}x${size.height}`);
       assert.deepEqual(errors, [], `${lesson}: browser errors`);

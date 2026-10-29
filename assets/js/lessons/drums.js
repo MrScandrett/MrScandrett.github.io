@@ -913,53 +913,13 @@
     if (sizeSel) sizeSel.addEventListener('change', function () { document.body.classList.toggle('dr-large', sizeSel.value === 'large'); });
   }
 
-  /* ----------------------------------------------------------- guided path */
-  var markPathStep = function () {};
-  function initLearningPath() {
-    var root = document.getElementById('learning-path');
-    if (!root) return;
-    var items = Array.prototype.slice.call(root.querySelectorAll('[data-path-step]'));
-    var bar = document.getElementById('drPathBar'), status = document.getElementById('drPathStatus');
-    var nextText = document.getElementById('drPathNextText'), nextLink = document.getElementById('drPathNextLink');
-    var reset = document.getElementById('drPathReset'), done = {};
-    try { done = JSON.parse(localStorage.getItem('drumLabPath.v1') || '{}') || {}; } catch (e) { done = {}; }
-    function save() { try { localStorage.setItem('drumLabPath.v1', JSON.stringify(done)); } catch (e) { /* ignore */ } }
-    function render() {
-      var count = 0, next = null;
-      items.forEach(function (item) {
-        var key = item.getAttribute('data-path-step'), complete = !!done[key], button = item.querySelector('.dr-path-toggle');
-        item.classList.toggle('is-complete', complete);
-        item.classList.remove('is-current');
-        button.textContent = complete ? 'Completed — undo' : 'Mark complete';
-        button.setAttribute('aria-pressed', complete ? 'true' : 'false');
-        if (complete) count++; else if (!next) next = item;
-      });
-      if (next) next.classList.add('is-current');
-      bar.style.width = (count / items.length * 100) + '%';
-      bar.parentNode.setAttribute('aria-valuenow', Math.round(count / items.length * 100));
-      status.textContent = count + ' of ' + items.length + ' stages complete';
-      if (next) {
-        nextText.textContent = next.querySelector('strong').textContent;
-        nextLink.href = next.querySelector('a').getAttribute('href');
-        nextLink.textContent = 'Jump-start stage';
-      } else {
-        nextText.textContent = 'Path complete — choose tomorrow’s starting tempo';
-        nextLink.href = '#perform'; nextLink.textContent = 'Practice again';
-      }
-    }
-    items.forEach(function (item) {
-      item.querySelector('.dr-path-toggle').addEventListener('click', function () {
-        var key = item.getAttribute('data-path-step'); done[key] = !done[key]; save(); render();
-      });
-    });
-    markPathStep = function (key) { if (!done[key]) { done[key] = true; save(); render(); } };
-    reset.addEventListener('click', function () { done = {}; save(); render(); });
-    render();
-  }
+  /* ------------------------------------------------- shared instrument pathway */
+  // Finishing a stage's capstone activity ticks that stage on the pathway (instrument-pathway.js).
+  function markPathStep(stage) { if (window.InstrumentPathway) window.InstrumentPathway.complete(stage); }
 
   /* ---------------------------------------------------- collapsible chapters */
   function initChapters() {
-    var chapterIcons = { anatomy: '🥁', notation: '🎼', beats: '🎧', perform: '🎯', rudiments: '🥢', fills: '⚡', build: '🧩', check: '✅' };
+    var chapterIcons = { anatomy: '🥁', setup: '🪑', notation: '🎼', beats: '🎧', perform: '🎯', rudiments: '🥢', fills: '⚡', build: '🧩', check: '✅' };
     var sections = Array.prototype.slice.call(document.querySelectorAll('.lesson-section'));
     function setExpanded(section, expanded, moveFocus) {
       var button = section.querySelector('.dr-chapter-toggle');
@@ -976,6 +936,8 @@
       if (!hash || hash === '#') return null;
       var target;
       try { target = document.querySelector(hash); } catch (e) { return null; }
+      if (!target) return null;
+      if (target.classList.contains('ip-sign')) target = target.nextElementSibling;   // a pathway stage signpost sits just before its chapter
       if (!target) return null;
       return target.classList.contains('lesson-section') ? target : target.closest('.lesson-section');
     }
@@ -1015,97 +977,275 @@
     openHashChapter();
   }
 
-  /* ------------------------------------------- generated funky rhythm page */
+  /* ------------------------------------------- funky rhythm ladder (a method-book page) */
+  /* Modelled on the classic funk primers: the hands keep one fixed pattern, each rung changes
+     exactly one thing, exercises are numbered straight through, and every caption is written
+     from the notes themselves, so a label can never describe a groove it isn't. */
+  var FUNK_HAT8 = [0, 2, 4, 6, 8, 10, 12, 14];
+  var FUNK_RUNGS = [
+    { title: 'Eighth-note bass drum', stays: 'hi-hat on every eighth note, snare on 2 and 4.',
+      changes: 'the bass drum, on eighth notes only, so every kick lands with a hi-hat stroke.',
+      count: 'eighth', vary: 'kick',
+      lines: [[0, 8], [0, 2, 8], [0, 8, 10], [0, 10], [0, 6, 8], [0, 8, 14], [0, 2, 10], [0, 6, 10], [0, 8, 10, 14], [0, 2, 6, 8], [0, 6, 10, 14], [0, 2, 8, 10, 14]] },
+    { title: 'Sixteenth-note bass drum', stays: 'the hands: eighth-note hi-hat, snare on 2 and 4.',
+      changes: 'one kick moves between two hi-hat strokes, onto an “a” (it leads into the next beat) or an “e” (it comes just after one).',
+      count: 'sixteenth', vary: 'kick',
+      lines: [[0, 7, 8], [0, 8, 15], [0, 3, 8], [0, 8, 11], [0, 1, 8], [0, 8, 9], [0, 5, 8], [0, 8, 13], [0, 7, 10], [0, 2, 7, 10], [0, 2, 10, 13], [0, 2, 7, 10, 13]] },
+    { title: 'Ghost notes', stays: 'eighth-note hi-hat, snare on 2 and 4, and the bass drum from exercise 4 (1 and the “&” of 3).',
+      changes: 'quiet left-hand ghost notes, drawn in brackets: one per line until the last two.',
+      count: 'sixteenth', vary: 'ghost', kick: [0, 10],
+      lines: [[6], [14], [7], [15], [3], [11], [9], [1], [13], [5], [7, 15], [3, 7, 11, 15]] },
+    { title: 'Open hi-hat', stays: 'snare on 2 and 4 and the bass drum from exercise 4.',
+      changes: 'which “&” the hi-hat opens on (the little circle). The next hi-hat stroke closes it: press the foot down as the stick lands.',
+      count: 'eighth', vary: 'open', kick: [0, 10],
+      lines: [[14], [6], [2], [10], [6, 14], [2, 10], [2, 6], [10, 14], [2, 14], [6, 10], [2, 6, 10], [2, 6, 10, 14]] },
+    { title: 'Sixteenth-note hi-hat', stays: 'the right hand plays all sixteen sixteenths on the hi-hat; snare on 2 and 4.',
+      changes: 'the bass drum: the twelve patterns of rung 2 in the same order. Now every kick lines up with a stick stroke.',
+      count: 'sixteenth', vary: 'kick', hat16: true, from: 1 },
+    { title: 'Put it together', stays: 'nothing new: every line is built only from parts you have already played.',
+      changes: 'the parts combine. Each caption names the exercises it borrows from.',
+      count: 'sixteenth', combos: [
+        { kick: 21, ghost: [28] }, { kick: 21, ghost: [29, 30] }, { kick: 7, ghost: [35] }, { kick: 21, open: [37] },
+        { kick: 21, ghost: [29], open: [37] }, { kick: 22, ghost: [28], open: [38] }, { kick: 16, ghost: [27], open: [37] },
+        { kick: 24, ghost: [29, 30], open: [37] }] }
+  ];
+  var FUNK_FEELS = {   // where each sixteenth of a beat falls, as a fraction of the beat (5th entry = next beat)
+    straight: [0, 0.25, 0.5, 0.75, 1],
+    swing16: [0, 1 / 3, 0.5, 5 / 6, 1]   // swung sixteenths: "e" and "a" late (2:1), the "&" stays on the eighth
+  };
+  var FUNK_TEMPOS = [60, 72, 84, 96];
+
+  function funkCountName(k) {
+    var beat = Math.floor(k / 4) + 1, rem = k % 4;
+    return rem === 0 ? String(beat) : ['', '“e”', '“&”', '“a”'][rem] + ' of ' + beat;
+  }
+  function funkListNames(steps) { return steps.map(funkCountName).join(' · '); }
+
+  /* Every exercise as { n, rung, kick, ghost, open, hat16, caption, pattern }. Pure data, built once. */
+  function buildFunkLadder() {
+    var all = [], n = 0;
+    function make(rung, parts, caption) {
+      var hat = blankSteps(), ohat = blankSteps(), snare = blankSteps(), kick = blankSteps();
+      (parts.hat16 ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] : FUNK_HAT8).forEach(function (i) { hat[i] = 'x'; });
+      parts.open.forEach(function (i) { hat[i] = '-'; ohat[i] = 'x'; });
+      snare[4] = snare[12] = 'x';
+      parts.ghost.forEach(function (i) { snare[i] = 'g'; });
+      parts.kick.forEach(function (i) { kick[i] = 'x'; });
+      n++;
+      var ex = { n: n, rung: rung, kick: parts.kick, ghost: parts.ghost, open: parts.open, hat16: !!parts.hat16, caption: caption,
+        pattern: { name: 'Exercise ' + n, count: FUNK_RUNGS[rung].count,
+          tracks: { hat: hat.join(''), ohat: ohat.join(''), snare: snare.join(''), kick: kick.join('') } } };
+      all.push(ex);
+      return ex;
+    }
+    function byNumber(num) { return all[num - 1]; }
+    function union(nums, key) {
+      var set = {};
+      nums.forEach(function (num) { byNumber(num)[key].forEach(function (i) { set[i] = true; }); });
+      return Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+    }
+    FUNK_RUNGS.forEach(function (R, r) {
+      if (R.combos) {
+        R.combos.forEach(function (c) {
+          var ghost = union(c.ghost || [], 'ghost'), open = union(c.open || [], 'open'), from = ['Kick of #' + c.kick];
+          if (c.ghost) from.push((ghost.length > 1 ? 'ghosts of #' : 'ghost of #') + c.ghost.join(' and #'));
+          if (c.open) from.push('open hi-hat of #' + c.open.join(' and #'));
+          make(r, { kick: byNumber(c.kick).kick, ghost: ghost, open: open }, from.join(' + ') + '.');
+        });
+        return;
+      }
+      var lines = R.from !== undefined ? all.filter(function (ex) { return ex.rung === R.from; }).map(function (ex) { return ex.kick; }) : R.lines;
+      lines.forEach(function (steps, i) {
+        var parts = { kick: R.kick || [], ghost: [], open: [], hat16: R.hat16 };
+        parts[R.vary] = steps;
+        var cap = { kick: 'Kick on ', ghost: 'Ghost on ', open: 'Hi-hat opens on ' }[R.vary] + funkListNames(steps);
+        if (R.from !== undefined) cap += ' (the kick of #' + (all.filter(function (ex) { return ex.rung === R.from; })[i].n) + ')';
+        make(r, parts, cap + '.');
+      });
+    });
+    return all;
+  }
+  function blankSteps() { return '----------------'.split(''); }
+
   function initFunkLadder() {
     var root = document.getElementById('drFunkLab'), page = document.getElementById('drFunkPage');
     if (!root || !page) return;
     var feel = document.getElementById('drFunkFeel'), tempo = document.getElementById('drFunkTempo');
-    var tempoOut = document.getElementById('drFunkTempoOut'), generateBtn = document.getElementById('drFunkGenerate');
+    var tempoOut = document.getElementById('drFunkTempoOut'), repeatSel = document.getElementById('drFunkRepeats');
     var playPageBtn = document.getElementById('drFunkPlayPage'), status = document.getElementById('drFunkStatus');
-    var patterns = [], timers = [], playing = false, pageNumber = 0;
+    var rungsEl = document.getElementById('drFunkRungs'), ruleEl = document.getElementById('drFunkRule');
+    var printRoot = document.getElementById('drFunkPrint');
+    var LADDER = buildFunkLadder(), rung = 0, lines = [];
+    var playing = false, timer = 0, raf = 0, seq = [], bar = 0, step = 0, nextTime = 0, endTime = 0, queue = [], shown = null, playBtn = null;
+    var self = { stop: function () { stop(); } };
+    allPlayers.push(self);
 
-    function blank() { return '----------------'.split(''); }
-    function cloneTracks(t) { var out = {}; Object.keys(t).forEach(function (k) { out[k] = t[k].slice(); }); return out; }
-    function choose(list, n) { return list[(pageNumber + n * 3) % list.length]; }
-    function buildPatterns() {
-      var t = { hat: blank(), snare: blank(), kick: blank(), ohat: blank(), crash: blank() };
-      [0,2,4,6,8,10,12,14].forEach(function (i) { t.hat[i] = 'x'; });
-      t.kick[0] = t.kick[8] = 'x'; t.snare[4] = t.snare[12] = 'X';
-      var stages = [
-        ['Find the pocket', function () {}],
-        ['Add a syncopated kick', function () { t.kick[choose([6,10,14],1)] = 'x'; }],
-        ['Add a quiet snare pickup', function () { t.snare[choose([3,7,11,15],2)] = 'g'; }],
-        ['Open the hi-hat offbeat', function () { var k=choose([6,14],3); t.hat[k]='-'; t.ohat[k]='x'; }],
-        ['Push into beat 2', function () { t.kick[choose([3,5],4)] = 'x'; }],
-        ['Fill one beat with sixteenths', function () { var b=choose([0,8],5); for(var i=b;i<b+4;i++) t.hat[i]='x'; }],
-        ['Add ghost-note conversation', function () { t.snare[choose([9,10,11],6)] = 'g'; }],
-        ['Accent the hi-hat phrase', function () { t.hat[0]='X'; t.hat[8]='X'; }],
-        ['Answer beat 4 with kick', function () { t.kick[choose([13,14,15],8)] = 'x'; }],
-        ['Add a second ghost pickup', function () { t.snare[choose([1,2,5,6],9)] = 'g'; }],
-        ['Connect the sixteenth-note flow', function () { [1,5,9,13].forEach(function(i){ if(t.hat[i]==='-') t.hat[i]='x'; }); }],
-        ['Final funky phrase', function () { t.crash[0]='X'; t.snare[14]='g'; t.kick[11]='x'; }]
-      ];
-      patterns = stages.map(function (stage, i) {
-        stage[1](); var tracks = cloneTracks(t), serialized = {};
-        Object.keys(tracks).forEach(function (k) { serialized[k] = tracks[k].join(''); });
-        return { name: 'Line ' + (i + 1) + ': ' + stage[0], desc: stage[0], tempo: +tempo.value, swing: feel.value !== 'straight', tracks: serialized };
-      });
-    }
-    function renderPage() {
-      stop(); buildPatterns(); page.innerHTML = '';
-      patterns.forEach(function (pattern, i) {
-        var row = htmlEl('div', 'dr-funk-line', null, page); row.setAttribute('data-line', i);
-        htmlEl('span', 'dr-funk-line-number', '' + (i + 1), row);
-        var notation = htmlEl('div', 'dr-funk-notation', null, row); notation.appendChild(renderStaff(pattern).svg);
+    function exercisesOf(r) { return LADDER.filter(function (ex) { return ex.rung === r; }); }
+    function span(r) { var exs = exercisesOf(r); return exs[0].n + '–' + exs[exs.length - 1].n; }
+
+    FUNK_RUNGS.forEach(function (R, r) {
+      var b = htmlEl('button', 'dr-funk-rung', null, rungsEl);
+      b.type = 'button'; b.setAttribute('aria-pressed', r === 0 ? 'true' : 'false');
+      htmlEl('b', null, 'Rung ' + (r + 1), b); htmlEl('span', null, R.title, b); htmlEl('small', null, '#' + span(r), b);
+      b.addEventListener('click', function () { showRung(r); });
+    });
+
+    function showRung(r) {
+      stop(); rung = r; lines = [];
+      Array.prototype.forEach.call(rungsEl.children, function (b, j) { b.setAttribute('aria-pressed', j === r ? 'true' : 'false'); });
+      var R = FUNK_RUNGS[r];
+      ruleEl.innerHTML = '';
+      htmlEl('strong', null, 'Rung ' + (r + 1) + ': ' + R.title + ' (exercises ' + span(r) + ')', ruleEl);
+      var p1 = htmlEl('p', null, null, ruleEl); htmlEl('b', null, 'Stays the same: ', p1); p1.appendChild(document.createTextNode(R.stays));
+      var p2 = htmlEl('p', null, null, ruleEl); htmlEl('b', null, 'Changes: ', p2); p2.appendChild(document.createTextNode(R.changes));
+      page.innerHTML = '';
+      exercisesOf(r).forEach(function (ex, i) {
+        var row = htmlEl('li', 'dr-funk-line', null, page);
+        htmlEl('span', 'dr-funk-line-number', String(ex.n), row);
+        var view = renderStaff(ex.pattern, { crop: true });
+        view.svg.setAttribute('aria-label', 'Exercise ' + ex.n + ': ' + ex.caption);
+        htmlEl('div', 'dr-funk-notation', null, row).appendChild(view.svg);
         var meta = htmlEl('div', 'dr-funk-line-meta', null, row);
-        htmlEl('span', null, pattern.desc, meta);
-        var btn = htmlEl('button', null, '▶ Practice line', meta); btn.type = 'button';
-        btn.addEventListener('click', function () { play([pattern], i); });
+        htmlEl('span', null, ex.caption, meta);
+        var btn = htmlEl('button', null, '▶ Play #' + ex.n, meta); btn.type = 'button';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.addEventListener('click', function () { if (playing && playBtn === btn) { stop(); say('Stopped.'); } else play([i], btn); });
+        lines.push({ ex: ex, row: row, view: view, btn: btn });
       });
-      status.textContent = 'New page ready. Begin with line 1; move on after three steady repetitions.';
+      say(swingIsMoot() ? swingMootText()
+        : 'Start with exercise ' + exercisesOf(r)[0].n + '. Move down when you can play it four times in a row while counting out loud.');
     }
-    function stepOffsets() {
-      if (feel.value === 'straight') return [0,.25,.5,.75];
-      if (feel.value === 'heavy') return [0,.38,.72,.9];
-      return [0,1/3,2/3,5/6];
+
+    function say(msg) { status.textContent = msg; }
+    /* Swing only moves the "e" and "a"; a rung written in eighth notes sounds the same either way. */
+    function swingIsMoot() {
+      return feel.value === 'swing16' && exercisesOf(rung).every(function (ex) {
+        var tr = ex.pattern.tracks;
+        return Object.keys(tr).every(function (k) { return tr[k].split('').every(function (ch, i) { return i % 2 === 0 || ch === '-'; }); });
+      });
+    }
+    function swingMootText() { return 'Rung ' + (rung + 1) + ' is all eighth notes, so swung sixteenths sound the same as straight here.'; }
+    function repeats() { return repeatSel.value === 'loop' ? Infinity : +repeatSel.value; }
+
+    /* Audio-clock scheduler, like the groove players: one bar of clicks to count in, then each line
+       `repeats` times. Tempo and feel are read at every step, so changing them mid-line just works. */
+    function play(lineIdxs, btn) {
+      stopAll();
+      if (!ensureAudio()) { say('Audio is not available in this browser.'); return; }
+      var reps = repeats();
+      if (reps === Infinity && lineIdxs.length > 1) reps = 4;   // a whole page never loops forever
+      seq = [];
+      lineIdxs.forEach(function (li) { for (var k = 0; k < (reps === Infinity ? 1 : reps); k++) seq.push({ li: li, pass: k + 1, of: reps }); });
+      playing = true; playBtn = btn; bar = -1; step = 0; queue = []; shown = null; endTime = 0;
+      nextTime = ctx.currentTime + 0.12;
+      btn.setAttribute('aria-pressed', 'true');
+      btn.textContent = btn === playPageBtn ? '■ Stop page' : '■ Stop';
+      tick(); timer = setInterval(tick, 25); raf = requestAnimationFrame(frame);
+    }
+    function tick() {
+      var horizon = ctx.currentTime + 0.12;
+      while (!endTime && nextTime < horizon) {
+        var off = FUNK_FEELS[feel.value] || FUNK_FEELS.straight, beatDur = 60 / +tempo.value;
+        if (bar < 0) {
+          if (step % 4 === 0) click(nextTime, step === 0);
+        } else {
+          var line = lines[seq[bar].li], tr = line.ex.pattern.tracks;
+          ['hat', 'ohat', 'snare', 'kick'].forEach(function (inst) { var v = VEL[tr[inst][step]]; if (v) kit.hit(inst, nextTime, v * volume); });
+        }
+        var dur = (off[step % 4 + 1] - off[step % 4]) * beatDur;
+        queue.push({ t: nextTime, bar: bar, step: step });
+        nextTime += dur;
+        if (++step === 16) {
+          step = 0; bar++;
+          if (bar >= seq.length) {
+            if (seq.length === 1 && seq[0].of === Infinity) bar = 0;
+            else endTime = nextTime;
+          }
+        }
+      }
+    }
+    function frame() {
+      if (!playing) return;
+      var now = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
+      while (queue.length && queue[0].t <= now) {
+        var q = queue.shift();
+        if (shown && shown.view.countEls[shown.step]) shown.view.countEls[shown.step].classList.remove('is-now');
+        if (q.bar < 0) { if (q.step % 4 === 0) say('Count-in: ' + (q.step / 4 + 1)); shown = null; continue; }
+        var s = seq[q.bar], line = lines[s.li];
+        lines.forEach(function (l) { l.row.classList.toggle('is-now', l === line); });
+        if (q.step === 0) say('Exercise ' + line.ex.n + (s.of === Infinity ? ' (looping)' : ', time ' + s.pass + ' of ' + s.of) + ' · ' + tempo.value + ' BPM');
+        if (line.view.countEls[q.step]) line.view.countEls[q.step].classList.add('is-now');
+        shown = { view: line.view, step: q.step };
+        if (q.step === 0 && s.pass === 1 && seq.length > 1) line.row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      if (endTime && now >= endTime) {
+        var wholePage = playBtn === playPageBtn;
+        stop();
+        say(wholePage ? 'Page complete. Go back to the exercise that felt least steady and play it four more times.' : 'Done. Four clean times in a row? Move to the next exercise.');
+        if (wholePage) markPathStep('build');
+        return;
+      }
+      raf = requestAnimationFrame(frame);
     }
     function stop() {
-      timers.forEach(clearTimeout); timers = []; playing = false;
-      Array.prototype.forEach.call(page.querySelectorAll('.dr-funk-line'), function (r) { r.classList.remove('is-now'); });
-      playPageBtn.innerHTML = '<span aria-hidden="true">▶</span> Play full page'; playPageBtn.setAttribute('aria-pressed','false');
+      if (!playing) return;
+      playing = false; clearInterval(timer); cancelAnimationFrame(raf);
+      if (shown && shown.view.countEls[shown.step]) shown.view.countEls[shown.step].classList.remove('is-now');
+      lines.forEach(function (l) { l.row.classList.remove('is-now'); l.btn.setAttribute('aria-pressed', 'false'); l.btn.textContent = '▶ Play #' + l.ex.n; });
+      playPageBtn.setAttribute('aria-pressed', 'false'); playPageBtn.innerHTML = '<span aria-hidden="true">▶</span> Play this rung';
+      playBtn = null;
     }
-    function play(list, startIndex) {
-      stopAll(); if (!ensureAudio()) return; playing = true;
-      playPageBtn.innerHTML = '<span aria-hidden="true">■</span> Stop page'; playPageBtn.setAttribute('aria-pressed','true');
-      var beatMs = 60000 / +tempo.value, lineMs = beatMs * 4, offsets = stepOffsets();
-      list.forEach(function (pattern, lineIndex) {
-        var absoluteLine = list.length === 1 ? startIndex : lineIndex;
-        timers.push(setTimeout(function () {
-          Array.prototype.forEach.call(page.querySelectorAll('.dr-funk-line'), function (r) { r.classList.toggle('is-now', +r.getAttribute('data-line') === absoluteLine); });
-          status.textContent = 'Playing line ' + (absoluteLine + 1) + ' of 12 — ' + pattern.desc + '.';
-        }, lineIndex * lineMs));
-        for (var s=0;s<16;s++) (function(step){
-          var when = lineIndex * lineMs + Math.floor(step/4)*beatMs + offsets[step%4]*beatMs;
-          timers.push(setTimeout(function () {
-            ORDER.forEach(function(inst){ var ch=pattern.tracks[inst] && pattern.tracks[inst][step]; if(VEL[ch]) hitNow(inst,VEL[ch]); });
-          }, when));
-        })(s);
-      });
-      timers.push(setTimeout(function () {
-        var completedPage = list.length > 1;
-        stop();
-        status.textContent = completedPage ? 'Page complete. Choose the line that felt least steady and practice it three times.' : 'Line complete. Repeat it twice more before moving down.';
-        if (completedPage) markPathStep('technique');
-      }, list.length * lineMs + 120));
-    }
-    tempo.addEventListener('input', function () { tempoOut.textContent = tempo.value + ' BPM'; });
-    generateBtn.addEventListener('click', function () { pageNumber++; renderPage(); });
-    feel.addEventListener('change', renderPage);
-    playPageBtn.addEventListener('click', function () { if (playing) { stop(); status.textContent='Playback stopped.'; } else play(patterns,0); });
-    allPlayers.push({ stop: stop });
-    renderPage();
-  }
 
+    /* Print: a method-book page per rung, built fresh into #drFunkPrint (hidden on screen). */
+    function sheetFor(r) {
+      var R = FUNK_RUNGS[r], sheet = htmlEl('section', 'dr-fl-sheet');
+      sheet.setAttribute('data-night-keep', '');
+      var head = htmlEl('header', 'dr-fl-head', null, sheet);
+      var band = htmlEl('div', 'dr-fl-band', null, head);
+      htmlEl('span', 'dr-fl-rungno', 'Rung ' + (r + 1) + ' of ' + FUNK_RUNGS.length, band);
+      htmlEl('h2', null, R.title, band);
+      htmlEl('span', 'dr-fl-span', 'Exercises ' + span(r), band);
+      var who = htmlEl('p', 'dr-fl-who', null, head);
+      ['Name', 'Date', 'Teacher check'].forEach(function (t) { htmlEl('span', null, t, who); });
+      var rule = htmlEl('p', 'dr-fl-rule', null, sheet);
+      htmlEl('b', null, 'Stays the same: ', rule); rule.appendChild(document.createTextNode(R.stays + ' '));
+      htmlEl('b', null, 'Changes: ', rule); rule.appendChild(document.createTextNode(R.changes));
+      htmlEl('p', 'dr-fl-howto', 'Count out loud. Play each exercise four times in a row without stopping, then tick the tempo. Feel: ' +
+        (feel.value === 'swing16' ? 'swung sixteenths (“e” and “a” late; the “&” stays put).' : 'straight.'), sheet);
+      var grid = htmlEl('ol', 'dr-fl-grid', null, sheet);
+      exercisesOf(r).forEach(function (ex) {
+        var li = htmlEl('li', 'dr-fl-ex', null, grid);
+        htmlEl('span', 'dr-fl-num', String(ex.n), li);
+        var body = htmlEl('div', 'dr-fl-body', null, li);
+        body.appendChild(renderStaff(ex.pattern, { crop: true }).svg);
+        htmlEl('p', 'dr-fl-cap', ex.caption, body);
+        var t = htmlEl('p', 'dr-fl-tempos', null, body);
+        FUNK_TEMPOS.forEach(function (bpm) { var s = htmlEl('span', null, null, t); htmlEl('i', null, null, s); s.appendChild(document.createTextNode(bpm)); });
+      });
+      htmlEl('p', 'dr-fl-foot', 'Funky Rhythm Ladder · Drum Lab · ✕ on the top space = hi-hat, ○ = open hi-hat, (  ) = ghost note, bottom space = bass drum', sheet);
+      return sheet;
+    }
+    function printRungs(list) {
+      stop();
+      printRoot.textContent = '';
+      list.forEach(function (r) { printRoot.appendChild(sheetFor(r)); });
+      document.body.classList.add('dr-printing-funk');
+      window.print();
+    }
+    window.addEventListener('afterprint', function () { document.body.classList.remove('dr-printing-funk'); printRoot.textContent = ''; });
+    document.getElementById('drFunkPrint1').addEventListener('click', function () { printRungs([rung]); });
+    document.getElementById('drFunkPrintAll').addEventListener('click', function () { printRungs(FUNK_RUNGS.map(function (R, r) { return r; })); });
+
+    tempo.addEventListener('input', function () { tempoOut.textContent = tempo.value + ' BPM'; });
+    feel.addEventListener('change', function () {
+      if (swingIsMoot()) say(swingMootText());
+    });
+    playPageBtn.addEventListener('click', function () {
+      if (playing && playBtn === playPageBtn) { stop(); say('Stopped.'); }
+      else play(lines.map(function (l, i) { return i; }), playPageBtn);
+    });
+    showRung(0);
+  }
   /* ---------------------------------------------------- practice list: pick patterns, print a sheet */
   var SET_LABEL = { beats: 'Beat', rudiments: 'Rudiment', fills: 'Fill' };
   var practiceList = [];
@@ -1419,7 +1559,6 @@
       else message = matched.length + ' of 4 backbeats landed. Listen for the kick on 1 and 3, then answer it with snare on 2 and 4.';
       result.textContent = message;
       prompt.textContent = 'Challenge complete — use the feedback, then try again.';
-      if (matched.length >= 3) markPathStep('perform');
     }
     function stop() {
       generation++; clearTimers(); setRunning(false); resetCells();
@@ -1572,7 +1711,7 @@
       });
       out.textContent = unanswered ? 'Answer every question first (' + unanswered + ' left).' :
         'You got ' + score + ' of ' + sets.length + '. ' + (score === sets.length ? 'Great listening and reading!' : 'Review the sections above and try again.');
-      if (!unanswered && score === sets.length) markPathStep('reflect');
+      if (!unanswered && score === sets.length) markPathStep('check');
     });
   }
 
@@ -1602,7 +1741,7 @@
         createPlayer(root, { patterns: SETS[name], setKey: name !== 'values' ? name : null });
       }
     });
-    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice(); initPerformance(); initLearningPath(); initFunkLadder(); initChapters(); openLinkedGroove();
+    initKit(); initAnatomy(); initTuning(); initKey(); initFlashcards(); initQuiz(); initMeterTrainer(); initStudioBar(); initPractice(); initPerformance(); initFunkLadder(); initChapters(); openLinkedGroove();
   }
 
   window.DrumLab = { renderStaff: renderStaff, SETS: SETS };

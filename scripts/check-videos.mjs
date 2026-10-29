@@ -116,6 +116,8 @@ for await (const file of htmlFiles(root)) {
 }
 
 /* ── 3. Online ──────────────────────────────────────────────────── */
+// Wikimedia asks automated clients to identify themselves; a bare fetch UA can be refused.
+const FILE_UA = "ClassroomOS-video-check/1.0 (https://github.com/MrScandrett/MrScandrett.github.io)";
 async function probe(url, opts = {}) {
   try {
     const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(20000), ...opts });
@@ -137,8 +139,14 @@ if (ONLINE) {
       if (r.status === 403) err(where, `${source.url} — embedding not allowed on other sites`);
       else if (r.status === 404) err(where, `${source.url} — removed or private`);
     } else if (source.host !== "local") {
-      r = await probe(source.url, { method: "HEAD" });
-      if (r.status >= 400) err(where, `${source.url} — HTTP ${r.status}`);
+      // Commons rate-limits anonymous bursts (429) and blips (5xx); neither means the file is gone.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        r = await probe(source.url, { method: "HEAD", headers: { "User-Agent": FILE_UA } });
+        if (r.status !== 429 && r.status < 500) break;
+        await new Promise((res) => setTimeout(res, 5000 * (attempt + 1)));
+      }
+      if (r.status === 429 || r.status >= 500) warn(where, `${source.url} — HTTP ${r.status} (host busy; try again later)`);
+      else if (r.status >= 400) err(where, `${source.url} — HTTP ${r.status}`);
     } else continue;
     if (r.status === 0) warn(where, `${source.url} — couldn't reach provider (${r.error})`);
     else if (r.json?.title) console.log(`  ok  ${source.url}  “${r.json.title}”${r.json.author_name ? ` · ${r.json.author_name}` : ""}`);
