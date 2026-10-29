@@ -183,20 +183,35 @@
                 </div>
                 <div class="fb-tab-toolbar" data-fb-tab-toolbar>
                   <label class="fb-check"><input type="checkbox" data-fb-show-tab /> <span>Guitar tab</span></label>
-                  <label class="fb-field fb-tab-pos"><span>Play near</span>
-                    <select data-fb-tab-pos aria-label="Guitar tab fretboard position">
-                      <option value="auto">Auto: fewest shifts</option>
-                      <option value="reroute" hidden>Auto: new fingering</option>
-                      <option value="0">Open position</option>
-                      <option value="2">2nd fret</option>
-                      <option value="3">3rd fret</option>
-                      <option value="5">5th fret</option>
-                      <option value="7">7th fret</option>
-                      <option value="9">9th fret</option>
-                      <option value="12">12th fret</option>
+                  <label class="fb-field fb-tab-style" hidden><span>Style</span>
+                    <select data-fb-tab-style aria-label="Guitar tab style">
+                      <option value="melody">Melody</option>
+                      <option value="bass">Melody + bass</option>
+                      <option value="chord">Chord melody</option>
                     </select>
                   </label>
+                  <div class="fb-field fb-tab-pos" role="group" aria-labelledby="fbTabPosLbl"><span id="fbTabPosLbl">Play near</span>
+                    <button type="button" class="fb-tab-step" data-fb-tab-step="-1" aria-label="Move the tab down the neck" title="Down the neck">◀</button>
+                    <select data-fb-tab-pos aria-labelledby="fbTabPosLbl">
+                      <option value="auto">Auto: fewest shifts</option>
+                    </select>
+                    <button type="button" class="fb-tab-step" data-fb-tab-step="1" aria-label="Move the tab up the neck" title="Up the neck">▶</button>
+                  </div>
+                  <div class="fb-field fb-tab-oct" role="group" aria-labelledby="fbTabOctLbl" hidden><span id="fbTabOctLbl">Octave</span>
+                    <button type="button" class="fb-tab-step" data-fb-tab-oct="-1" aria-label="Whole tab an octave lower" title="Lower">▼</button>
+                    <output class="fb-tab-oct-val" data-fb-tab-oct-val>as written</output>
+                    <button type="button" class="fb-tab-step" data-fb-tab-oct="1" aria-label="Whole tab an octave higher" title="Higher">▲</button>
+                  </div>
+                  <button type="button" class="fb-tab-pick-btn" data-fb-tab-pick aria-pressed="false" aria-controls="fbTabPickBar" hidden><span aria-hidden="true">✋</span> Choose fingerings</button>
                   <span class="fb-tab-toolbar-hint" data-fb-tab-toolbar-hint>Same notes, different frets when possible.</span>
+                </div>
+                <div class="fb-tab-pick-bar" id="fbTabPickBar" data-fb-tab-pick-bar hidden>
+                  <p class="fb-tab-pick-summary" data-fb-tab-pick-summary></p>
+                  <p class="fb-tab-pick-status" data-fb-tab-pick-status role="status" aria-live="polite"></p>
+                  <span class="fb-tab-pick-actions">
+                    <button type="button" class="fb-tab-pick-act" data-fb-pin-undo hidden>Undo</button>
+                    <button type="button" class="fb-tab-pick-act" data-fb-pin-clear hidden>Clear picks</button>
+                  </span>
                 </div>
                 <p class="fb-tab-note" data-fb-tab-note role="status" hidden></p>
                 <div class="fb-sheet-hint">Tap a measure to start there. <span class="fb-hint-fine">Drag across measures to loop them.</span><span class="fb-hint-touch">To loop, open “Ready at measure” above.</span> Tap a chord symbol to see and hear it. <span class="fb-tip-quiet">Chord names are coloured by their root note.</span></div>
@@ -243,6 +258,26 @@
                   <span>Middle space (●) = Snare (✕ = Rim click)</span>
                   <span>Bottom space (●) = Bass drum (Kick)</span>
                   <span>Below staff (✕) = Hi-hat foot pedal</span>
+                </div>
+                <div class="fb-barpop fb-fingerpop" data-fb-fingerpop role="dialog" aria-labelledby="fbFingerTitle" aria-describedby="fbFingerHelp" hidden>
+                  <div class="fb-barpop-head">
+                    <strong id="fbFingerTitle" data-fb-finger-title>Beat</strong>
+                    <span class="fb-finger-notes" data-fb-finger-notes></span>
+                    <button type="button" class="fb-drawer-close" data-fb-finger-close aria-label="Close fingering chooser">✕</button>
+                  </div>
+                  <div class="fb-finger-opts" role="group" aria-label="Fingerings for this beat, lowest on the neck first" data-fb-finger-opts></div>
+                  <fieldset class="fb-finger-scope">
+                    <legend>When you pick, the notes around it follow:</legend>
+                    <label><input type="radio" name="fb-pin-scope" value="note" /> <span>Only this beat</span></label>
+                    <label><input type="radio" name="fb-pin-scope" value="bar" /> <span>Its bar</span></label>
+                    <label><input type="radio" name="fb-pin-scope" value="on" /> <span>Until the next pick</span></label>
+                  </fieldset>
+                  <div class="fb-finger-actions">
+                    <button type="button" class="fb-tab-pick-act" data-fb-finger-step="-1"><span aria-hidden="true">◀</span> Previous beat</button>
+                    <button type="button" class="fb-tab-pick-act" data-fb-finger-step="1">Next beat <span aria-hidden="true">▶</span></button>
+                    <button type="button" class="fb-tab-pick-act" data-fb-finger-auto>Back to automatic</button>
+                  </div>
+                  <p class="fb-barpop-note" id="fbFingerHelp">“These notes” sound exactly as written; the octave groups move this beat (and the notes that follow your pick) up or down, marked 8va / 8vb over the tab. In the tab: ←/→ move between beats, ↑/↓ try the next fingering, Shift+↑/↓ move the beat an octave, Delete un-picks.</p>
                 </div>
                 <div class="fb-barpop" data-fb-barpop role="dialog" aria-labelledby="fbBarPopTitle" hidden>
                   <div class="fb-barpop-head">
@@ -805,6 +840,7 @@
               <li><strong>Project it.</strong> The highlight follows the beat, and the banner announces the count-in, the pickup and each student’s turn during Trade fours.</li>
               <li><strong>Play the melody.</strong> Under the chord shapes, the melody panel shows each note of the tune on piano (finger numbers, smooth fingering or five-finger positions, either hand), guitar (string, fret and finger in open position, a fixed position, or an automatic route) or violin (string, finger with low/high placement, and position, on a fretless board). It follows the band, or step through it with ◀ ▶.</li>
               <li><strong>Violin chords.</strong> Wherever you see Piano | Guitar (the live chord view, the Chords tab and the bar pop-up), pick 🎻 Violin. A violin doesn’t grip chord shapes, so you see every tone of the chord, triad or scale on the first-position fingerboard, labelled R, 3, 5, 7 with the finger to use (↓ low, ↑ high). Click a dot to hear it; Play this chord arpeggiates it.</li>
+              <li><strong>Guitar tab, your way.</strong> Tick <em>Guitar tab</em> above the music. <em>Style</em> sets what the tab plays: the melody, the melody over a bass line, or chord melody (the chord’s 3rd and 7th tucked under the tune). <em>Play near</em> lists the hand positions that fit the tune in this key and names where the key’s root sits under your hand; ◀ ▶ walk the tab down or up the neck. A chosen position moves with the key when you transpose. <em>Octave</em> ▼ ▲ moves the whole tab lower or higher than the staff (an arrangement keeps its bass line under the tune); notes that would run off the neck stay as close as they fit, and the page says how many. Press <em>✋ Choose fingerings</em>, then click any beat in the tab (or Tab to the tab and press Enter) to see every way to play it, lowest on the neck first, with how far your hand moves. The chooser also offers the same beat an octave higher or lower, so you can lift a phrase up the neck or drop it down. Pick one and the notes around it re-route to fit (just that beat, its bar, or up to your next pick; an octave move covers the same stretch, marked 8va or 8vb over the tab); the ones that moved are outlined, a ◆ marks your picks, and Roman numerals under the tab show each new hand position. With the keyboard, ←/→ move between beats, ↑/↓ try the next fingering up or down the neck, Shift+↑/↓ move a beat up or down an octave, and Delete un-picks. Undo is beside the message.</li>
               <li><strong>Finger positions.</strong> In Quick settings, tick <em>Finger positions</em> (instead of Tab) to see a small guitar or violin fingerboard under every measure, with the fingers for that bar’s notes. The route is planned for the whole tune, so each bar starts where the last one ended; the dashed ring marks that last note, and “→” in the label means the hand shifts inside the bar.</li>
               <li><strong>Sax fingering.</strong> In Quick settings, tick <em>🎷 Sax fingering</em> (instead of Chord shapes) to see a saxophone fingering under every melody note, up to a whole bar of sixteenths. It fingers the note as written, so set <em>Write it for</em> to E♭ (alto, bari) or B♭ (tenor, soprano). Filled keys are pressed; hover, tap, or focus one and use the arrows for alternates.</li>
               <li><strong>Theory on demand.</strong> Click any chord symbol to show its notes on the keyboard. Switch voicings to compare root position, inversions and smooth voice leading.</li>
@@ -867,6 +903,7 @@
   <script src="../../../assets/js/lessons/fake-book-sax.js?v=20261015shared"></script>
   <script src="../../../assets/js/lessons/fake-book-harmony.js"></script>
   <script src="../../../assets/js/lessons/fake-book-tab.js"></script>
+  <script src="../../../assets/js/lessons/fake-book-fingering.js"></script>
   <script src="../../../assets/js/lessons/fake-book-arrangement.js?v=20261014original"></script>
   <script src="../../../assets/js/lessons/fake-book-musicxml.js?v=20261014gpnames"></script>
   <script src="../../../assets/js/lessons/fake-book-gtp.js?v=20261013a"></script>

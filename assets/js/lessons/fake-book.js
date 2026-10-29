@@ -607,7 +607,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead', beatCounts: 'off', chordLabels: 'letters',
-    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
+    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, pianoShapes: {}, saxShapes: {},
@@ -815,25 +815,33 @@
     view.tabInfo = null;
     view.tabLines = 6;
     view.tabGrips = null;
+    view.tabOnsets = null; view.tabBaseOnsets = null; view.tabTuning = null; view.tabPinInfo = null; view.tabPositions = null;
+    view.tabShift = null; view.tabWant = null; view.tabShort = 0;
+    var tabPos = tabPosition(concertKey);
     if (t.staves.tab) {
       view.tab = moveTab(t.staves.tab, cs.semis); view.tabLines = t.staves.tab.lines;
-      if (tabOn() && opts.tabPos !== 'auto' && window.FakeBookTab && t.staves.tab.lines === 6) {
+      if (tabOn() && window.FakeBookTab && t.staves.tab.lines === 6) {
         var tuning = t.staves.tab.tuning || window.FakeBookTab.STANDARD;
-        var tabOnsets = view.tab.map(function (e) {
+        var played = view.tab.filter(function (e) { return e.f.length; });
+        var tabOnsets = played.map(function (e) {
           return { start: e.start, ms: e.f.map(function (sf) { return tuning[sf[0] - 1] + sf[1]; }) };
-        }).filter(function (e) { return e.ms.length; });
-        var rerouted = window.FakeBookTab.plan(tabOnsets, {
-          tuning: tuning, maxFret: 22, position: opts.tabPos === 'reroute' ? 'auto' : opts.tabPos
         });
-        view.tab = rerouted.events;
-        view.tabInfo = { generated: true, refingered: true, source: 'guitar', dropped: rerouted.dropped, total: rerouted.total };
+        view.tabOnsets = view.tabBaseOnsets = tabOnsets; view.tabTuning = tuning;
+        // As written, the imported tab stays put except where a pick or an octave needs it to move.
+        var asWritten = tabPos === 'auto';
+        if (!asWritten || tabPins().length || tabOctave()) {
+          var rerouted = routeTab(tabOnsets, tuning, tabPos, asWritten ? played.map(function (e) { return e.f; }) : null);
+          view.tab = rerouted.res.events;
+          if (!asWritten) view.tabInfo = { generated: true, refingered: true, source: 'guitar', dropped: rerouted.res.dropped, total: rerouted.res.total };
+        }
       }
       // The imported tab is the authority on how each chord is fingered: diagrams follow it.
       if (window.FakeBookGuitarVoice) view.tabGrips = window.FakeBookGuitarVoice.fromTab(view.concertChords.map(function (c) {
         return { start: c.start, dur: c.dur, rootPC: mod(NAT[c.root.l] + c.root.a, 12), type: chordTypeOf(c), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null };
       }), view.tab, t.staves.tab.tuning);
     }
-    else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat);
+    else if (tabOn() && window.FakeBookTab) generateTab(t, cs, cFlat, tabPos);
+    if (view.tabOnsets) view.tabPositions = window.FakeBookTab.keyPositions(view.tabOnsets, keyPc(concertKey), { tuning: view.tabTuning });
     view.pos = null;
     if (posOn() && window.FakeBookPosition) {
       var pm = [];
@@ -854,9 +862,10 @@
   // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
   function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
 
-  // Tab for a song that came without any: the guitar part's own notes, or else the melody over the
-  // bass line, fingered by FakeBookTab (fewest hand shifts, or near the chosen position).
-  function generateTab(t, cs, cFlat) {
+  // Tab for a song that came without any: the guitar part's own notes, or else an arrangement of the
+  // melody (Tab style: melody alone, over a bass line, or chord melody), fingered by FakeBookTab
+  // (fewest hand shifts, or near the chosen position) around the player's pinned fingerings.
+  function generateTab(t, cs, cFlat, position) {
     var onsets = [], byStart = {}, source;
     var at = function (start) {
       var k = start.toFixed(3);
@@ -872,8 +881,14 @@
       onsets.forEach(function (o) { o.ms.sort(function (a, b) { return b - a; }); });
     } else {
       source = 'arrangement';
+      var style = tabStyle();
       var mel = view.concert.filter(function (e) { return e.p; });
-      var bass = (view.bass || []).map(function (e) { return { start: e.start, m: e.ps[0].midi + 12 }; });
+      var chords = view.concertChords.map(function (c) {
+        return { start: c.start, rootPC: mod(NAT[c.root.l] + c.root.a, 12), bassPC: c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : null, type: chordTypeOf(c) };
+      });
+      // The bass: the score's bass line, else (when asked for) each chord's root on the low strings.
+      var bass = style === 'melody' ? [] : (view.bass || []).map(function (e) { return { start: e.start, m: e.ps[0].midi + 12 }; });
+      if (style !== 'melody' && !bass.length) bass = chords.map(function (c) { return { start: c.start, m: 52 + mod((c.bassPC === null ? c.rootPC : c.bassPC) - 4, 12) }; });
       bass.forEach(function (b) { while (b.m < 52) b.m += 12; });             // below the low E: up an octave, as arrangers do
       var bassTop = bass.length ? Math.max.apply(null, bass.map(function (b) { return b.m; })) : 0;
       // The melody's octave: on the neck, above the bass, around the middle of the fretboard.
@@ -887,13 +902,92 @@
       mel.forEach(function (e) { at(e.start).mel = e.p.midi + 12 * best.k; });
       bass.forEach(function (b) { at(b.start).low.push(b.m); });
       onsets.forEach(function (o) { o.ms = (o.mel !== null ? [o.mel] : []).concat(o.low.filter(function (m) { return o.mel === null || m < o.mel; })); });
+      // Chord melody: the chord's third and seventh (or fifth) tucked under the melody where the chord
+      // changes. They are optional: the planner leaves them out when the hand can't reach them.
+      if (style === 'chord') chords.forEach(function (c) {
+        var o = byStart[c.start.toFixed(3)];
+        if (!o || !o.ms.length) return;
+        // `low`: the bass that actually sounds here (one equal to the melody was left out)
+        var bassNow = o.ms.slice(o.mel !== null ? 1 : 0), ivs = c.type.intervals, low = bassNow.length ? Math.max.apply(null, bassNow) : 0;
+        var third = [4, 3, 5, 2].filter(function (iv) { return ivs.indexOf(iv) >= 0; })[0];
+        var color = [10, 11, 9, 7].filter(function (iv) { return ivs.indexOf(iv) >= 0; })[0];
+        o.extra = [third, color].filter(function (iv) { return iv !== undefined; }).map(function (iv) {
+          var pc = mod(c.rootPC + iv, 12);
+          if (o.mel === null) { var up = low + 1 + mod(pc - low - 1, 12); return up - low < 3 ? up + 12 : up; }
+          return o.mel - 1 - mod(o.mel - 1 - pc, 12);                        // the nearest one below the melody
+        }).filter(function (m) { return m > low + 2 && m >= 52; });
+        if (o.mel === null) o.free = true;                                     // no melody to keep on top
+      });
       onsets = onsets.filter(function (o) { return o.ms.length; });
     }
     onsets.sort(function (a, b) { return a.start - b.start; });
-    var res = window.FakeBookTab.plan(onsets, { maxFret: 22, position: opts.tabPos === 'reroute' ? 'auto' : (opts.tabPos || 'auto') });
-    view.tab = res.events;
-    view.tabInfo = { generated: true, source: source, dropped: res.dropped, total: res.total };
+    if (source === 'arrangement') onsets.forEach(function (o) { o.arranged = true; });   // octaves move the tune, not the bass
+    view.tabBaseOnsets = onsets; view.tabTuning = window.FakeBookTab.STANDARD;
+    var routed = routeTab(onsets, window.FakeBookTab.STANDARD, position, null);
+    view.tab = routed.res.events;
+    view.tabInfo = { generated: true, source: source, style: source === 'arrangement' ? tabStyle() : null, dropped: routed.res.dropped, total: routed.res.total };
   }
+  // Tab style for a worked-out arrangement: the melody over the score's bass line when it has one.
+  function tabStyle() { return /^(melody|bass|chord)$/.test(opts.tabStyle) ? opts.tabStyle : (view && view.bass ? 'bass' : 'melody'); }
+
+  /* ---- Fingering picks: the player pins tab columns to fingerings of their choice. Pins are kept per
+     tune, by beat, with the pitches they played, so they follow the tune into another key. */
+  function tabPins() { return (tune && opts.tabPins && opts.tabPins[opts.tune]) || []; }
+  function setTabPins(list) {
+    var all = Object.assign({}, opts.tabPins || {});
+    if (list.length) all[opts.tune] = list; else delete all[opts.tune];
+    opts.tabPins = all;
+  }
+  /* Plans a tab around the pins. original: an imported tab's fingerings, kept wherever the pins allow;
+     otherwise the plain plan is the one kept, so a pin only moves the notes it has to. */
+  // Octaves come first (Tab octave, then each pick's own octave over its scope); the shifted onsets are
+  // what gets fingered and what the chooser offers. Sets view.tabOnsets / tabShift / tabWant / tabShort / tabPinInfo.
+  function routeTab(onsets, tuning, position, original) {
+    var FT = window.FakeBookTab, pins = tabPins();
+    var oct = FT.shiftOctaves(onsets, { octave: tabOctave(), pins: pins, spanOf: barSpanAt });
+    onsets = oct.onsets;
+    view.tabOnsets = onsets; view.tabShift = oct.shift; view.tabWant = oct.want; view.tabShort = oct.short;
+    // An imported fingering is only worth keeping where its notes are still the ones played.
+    if (original) original = original.map(function (f, t) { return oct.shift[t] ? null : f; });
+    var base = { tuning: tuning, maxFret: 22, position: position === 'reroute' ? 'auto' : position };
+    var keep = original, res = null, info = null;
+    if (!keep) {
+      res = FT.plan(onsets, base);
+      if (!pins.length) return { res: res, pins: null };
+      keep = res.events.map(function (e) { return e.f; });
+    }
+    if (pins.length) info = FT.resolvePins(onsets, pins, { tuning: tuning, maxFret: 22, spanOf: barSpanAt, keep: keep });
+    res = FT.plan(onsets, Object.assign({}, base, { fixed: info && info.fixed, near: info && info.near, keep: keep, stick: original ? 1 : 0.3 }));
+    view.tabPinInfo = info;
+    return { res: res, pins: info };
+  }
+  function tabOctave() { var k = Number(opts.tabOctave) || 0; return Math.max(-1, Math.min(2, k)); }
+  var OCT_MARK = { '-2': '15mb', '-1': '8vb', '1': '8va', '2': '15ma', '3': '22ma' };
+  function octaveWords(k) { return k > 0 ? (k === 1 ? 'an octave higher' : k + ' octaves higher') : k < 0 ? (k === -1 ? 'an octave lower' : -k + ' octaves lower') : 'as written'; }
+  // "Play near" moves with the key: a position chosen in G is the same shape two frets higher in A.
+  function tabPosition(concertKey) {
+    var p = opts.tabPos;
+    if (p === undefined || p === null || p === 'auto' || p === 'reroute') return p || 'auto';
+    p = Number(p);
+    if (opts.tabPosKey !== null && opts.tabPosKey !== undefined && concertKey) {
+      p += mod(keyPc(concertKey) - opts.tabPosKey + 6, 12) - 6;
+      if (p < 0) p += 12; else if (p > 12) p -= 12;
+    }
+    return p;
+  }
+  // The bar holding a moment of the tune: { bar, from, to } (bar 0 = the pickup).
+  function barSpanAt(start) { var b = barAtTime(start); return [b.from, b.to]; }
+  function barAtTime(start) {
+    var t = tune;
+    if (t.scoreBars) {
+      var sb = t.scoreBars.filter(function (x) { return start >= x.start - EPS && start < x.start + x.len - EPS; })[0];
+      if (sb) return { bar: sb.bar, from: sb.start, to: sb.start + sb.len };
+    }
+    if (start < 0) return { bar: 0, from: -t.M, to: 0 };                   // count the pickup as the end of a full bar
+    var b = Math.floor(start / t.M + EPS);
+    return { bar: b + 1, from: b * t.M, to: (b + 1) * t.M };
+  }
+
   // Tab in another key: each note keeps its string if the new fret fits, else moves to the nearest string that has it.
   function moveTab(T, semis) {
     var n = T.lines;
@@ -1208,15 +1302,18 @@
     var n = el('[data-fb-tab-note]');
     if (!n) return;
     var info = view.tabInfo, on = tabOn() && opts.sheetView !== 'drums';
-    if (!on || !info || !info.dropped) { n.hidden = true; n.textContent = ''; return; }
+    // Octaves asked for that the neck can't reach: say so, rather than quietly playing them elsewhere.
+    var short = on && view.tabShort ? view.tabShort + ' beat' + (view.tabShort === 1 ? '' : 's') + ' couldn’t move ' +
+      (tabOctave() > 0 || (view.tabWant || []).some(function (w) { return w > 0; }) ? 'up' : 'down') + ' as far as you asked: those notes would be off the end of the neck, so they stay as close as fits.' : '';
+    if (!on || !info || !info.dropped) { n.hidden = !short; n.classList.remove('is-warn'); n.textContent = short; return; }
     var share = info.dropped / Math.max(1, info.total);
     n.hidden = false;
     n.classList.toggle('is-warn', share >= 0.05);
-    n.textContent = info.refingered ?
+    n.textContent = (short ? short + ' ' : '') + (info.refingered ?
       'This position leaves out ' + info.dropped + ' of ' + info.total + ' notes. Try another fret area or As written to restore the original tab.' : share >= 0.05 ?
       'The tab leaves out ' + info.dropped + ' of ' + info.total +
         ' notes that do not fit together on the fretboard. Try Auto or another fret area.' :
-      'The tab leaves out ' + info.dropped + ' note' + (info.dropped === 1 ? '' : 's') + ' that don’t fit on a guitar (too low, too high, or too far apart).';
+      'The tab leaves out ' + info.dropped + ' note' + (info.dropped === 1 ? '' : 's') + ' that don’t fit on a guitar (too low, too high, or too far apart).');
   }
 
   function renderSheet() {
@@ -1286,6 +1383,13 @@
     // "Bass part on my horn's staff": the same line in the instrument's clef, key and transposition (drawing only).
     var bassHorn = !!(showBass && view.bassHorn && opts.bassFor === 'horn'), bassEvents = bassHorn ? view.bassHorn : view.bass;
     var CB = bassHorn ? C : MN.clefs.bass, sigB = bassHorn ? sig : keySig(view.concertKey), tabGap = 1.3 * S, tabLines = view.tabLines || 6;
+    // Choose fingerings: pickable columns, the pinned ones, and where the hand moves to a new position.
+    var tabPick = showTab && tabPickOn(), tabPinned = {}, tabHands = tabPick ? window.FakeBookFingering.handMarks(view.tab) : {};
+    if (showTab && view.tabPinInfo) view.tabPinInfo.used.forEach(function (u) { tabPinned[view.tabOnsets[u.index].start.toFixed(3)] = true; });
+    // Beats moved by octaves get an 8va / 8vb line over the tab (and a row of room for it).
+    var tabShiftAt = {};
+    if (showTab && view.tabShift) view.tabOnsets.forEach(function (o, t) { if (view.tabShift[t]) tabShiftAt[o.start.toFixed(3)] = view.tabShift[t]; });
+    var tabOctRow = Object.keys(tabShiftAt).length ? 1.3 * S : 0;
     renderTabNote();
     var showV2 = !!view.voice2, v2Placed = {};
     if (showBass) layoutBars(bassEvents, t).forEach(function (bb, i) { bars[i].bassBar = bb; });
@@ -1374,8 +1478,8 @@
         rowsBottom = bassBot - bbot * half + 1.2 * S + (namesUnder ? (bchord + 0.4) * 1.25 * S : 0);
       }
       if (showTab) {
-        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S);
-        rowsBottom = tabTop + (tabLines - 1) * tabGap + 1.2 * S;
+        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S) + tabOctRow;
+        rowsBottom = tabTop + (tabLines - 1) * tabGap + (tabPick ? 2.2 : 1.2) * S;      // room for the hand positions
       }
       var helpTop = 0, helpH = 0;
       var POSH = showPos ? window.FakeBookPosition.height(view.pos.inst, S) : 0, posTop = 0;
@@ -1701,18 +1805,34 @@
         });
         infos.forEach(function (n) { n.g.push(n.heads.join('')); n.g.push('</g>'); out.push(n.g.join('')); });
       }
-      // One bar of tablature: the fret on each string at the moment each note starts.
+      // One bar of tablature: the fret on each string at the moment each note starts. With Choose
+      // fingerings on, each column is a button (one tab stop for the whole tab; arrows move along it).
       function drawTabBar(b, xAt) {
+        var runs = [];
         view.tab.forEach(function (e, idx) {
           if (e.start < b.start - EPS || e.start >= b.start + b.len - EPS) return;
-          var x = xAt(e.start - b.start) + headW / 2;
-          out.push('<g class="fb-tn" data-idx="' + idx + '">');
+          var x = xAt(e.start - b.start) + headW / 2, at = e.start.toFixed(3), pinned = !!tabPinned[at], pick = tabPick && e.f.length, k = tabShiftAt[at] || 0;
+          var run = runs[runs.length - 1];
+          if (k && run && run.k === k) run.x2 = x; else if (k) runs.push({ k: k, x1: x, x2: x }); else runs.push({ k: 0 });
+          out.push('<g class="fb-tn' + (pinned ? ' is-pinned' : '') + (pick ? ' fb-tn-pick' : '') + '" data-idx="' + idx + '" data-tab-at="' + at + '"' +
+            (pick ? ' role="button" tabindex="-1" aria-haspopup="dialog" aria-keyshortcuts="Enter ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowUp Shift+ArrowDown Delete" aria-label="' + MN.escape(tabColumnLabel(e, pinned, k)) + '"' : '') + '>');
+          if (pick) out.push('<rect class="fb-tn-hit" x="' + (x - 1.3 * S).toFixed(1) + '" y="' + (tabTop - 2 * S).toFixed(1) + '" width="' + (2.6 * S).toFixed(1) + '" height="' + ((tabLines - 1) * tabGap + 4.2 * S).toFixed(1) + '" rx="' + (0.5 * S).toFixed(1) + '"/>');
+          if (pinned) out.push('<path class="fb-tab-pin" d="M' + x.toFixed(1) + ' ' + (tabTop - 1.8 * S).toFixed(1) + 'l' + (0.45 * S).toFixed(1) + ' ' + (0.45 * S).toFixed(1) + 'l' + (-0.45 * S).toFixed(1) + ' ' + (0.45 * S).toFixed(1) + 'l' + (-0.45 * S).toFixed(1) + ' ' + (-0.45 * S).toFixed(1) + 'z"><title>Your pick</title></path>');
+          if (tabPick && tabHands[idx] !== undefined) out.push(txt(x, tabTop + (tabLines - 1) * tabGap + 1.85 * S, window.FakeBookFingering.ROMAN[tabHands[idx]], 'fb-tab-hand', ' font-size="' + (0.95 * S) + '" text-anchor="middle"'));
           e.f.forEach(function (sf) {
             var ty = tabTop + (sf[0] - 1) * tabGap, label = String(sf[1]), w = label.length * 0.72 * S + 0.3 * S;
             out.push('<rect class="fb-tab-bg" x="' + (x - w / 2).toFixed(1) + '" y="' + (ty - 0.62 * S).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + (1.24 * S).toFixed(1) + '"/>');
             out.push(txt(x, ty + 0.45 * S, label, 'fb-tab-fret', ' font-size="' + (1.25 * S) + '" text-anchor="middle"'));
           });
           out.push('</g>');
+        });
+        // 8va ---┐ over each run of beats moved by the same octaves (8vb under-reads the same way on tab)
+        runs.forEach(function (r) {
+          if (!r.k) return;
+          var y = tabTop - 2.35 * S, label = OCT_MARK[r.k] || '', x1 = r.x1 - 0.7 * S, tw = label.length * 0.78 * S, x2 = Math.max(r.x2 + 0.8 * S, x1 + tw + 0.6 * S);
+          out.push('<g class="fb-tab-oct"><title>' + MN.escape('Tab ' + octaveWords(r.k) + ' than the staff') + '</title>' +
+            txt(x1, y + 0.4 * S, label, 'fb-tab-oct-label', ' font-size="' + (1.3 * S).toFixed(1) + '"') +
+            (x2 > x1 + tw + 0.3 * S ? '<path class="fb-tab-oct-line" d="M' + (x1 + tw + 0.25 * S).toFixed(1) + ' ' + y.toFixed(1) + 'H' + x2.toFixed(1) + 'v' + ((r.k > 0 ? 0.55 : -0.55) * S).toFixed(1) + '" stroke-width="' + (0.1 * S).toFixed(2) + '"/>' : '') + '</g>');
         });
       }
     });
@@ -1754,6 +1874,7 @@
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
     paintLoop();
+    afterTabRender();
   }
 
   /* ================================================================ print notation */
@@ -1857,7 +1978,8 @@
     if (!view || !tune) return false;
     if (P) stop();
     endPrint();
-    var prevZoom = opts.zoom, prevStyle = sheetEl.getAttribute('style'), svg, pages, W, clones = [];
+    var prevZoom = opts.zoom, prevPick = opts.tabPick, prevStyle = sheetEl.getAttribute('style'), svg, pages, W, clones = [];
+    opts.tabPick = false;                         // paper gets plain tab: no pick targets or hand-position row
     // Biggest engraving that doesn't add a page: a short tune is blown up to fill the sheet, a long
     // score keeps the size that needs the fewest pages. [engraving width, zoom] from largest to smallest.
     var tries = opts.sheetView === 'drums' ? [[620, 1], [700, 1], [900, 1], [1000, 1]] : [[1000, 2], [1000, 1.5], [700, 1], [900, 1], [1000, 1]];
@@ -1868,7 +1990,7 @@
       renderSheet();
       svg = sheetEl.querySelector('svg');
       // Bar click targets reach well past the staves and would make every system look taller than it is.
-      if (svg) Array.prototype.forEach.call(svg.querySelectorAll('.fb-bar'), function (node) { node.remove(); });
+      if (svg) Array.prototype.forEach.call(svg.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
       pages = svg ? printPages(svg) : null;
     };
     try {
@@ -1887,13 +2009,14 @@
         c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
         c.setAttribute('focusable', 'false');
         // Click targets and playback highlights are screen-only.
-        Array.prototype.forEach.call(c.querySelectorAll('.fb-bar'), function (node) { node.remove(); });
+        Array.prototype.forEach.call(c.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
         Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
         nativizeMeasureRows(c);
         clones.push(c.outerHTML);
       });
     } finally {
       opts.zoom = prevZoom;
+      opts.tabPick = prevPick;
       if (prevStyle === null) sheetEl.removeAttribute('style'); else sheetEl.setAttribute('style', prevStyle);
       renderSheet();
     }
@@ -3004,17 +3127,7 @@
       var positionKey = el('[data-fb-position-key]');
       positionKey.hidden = !posOn();
       positionKey.textContent = 'Numbers in dots = fingers; 0 = open string. The outlined dot starts the bar; the dashed ring is the previous bar’s last note. ' + (opts.posInst === 'violin' ? 'Bottom numbers count semitones above the open string. Dotted guides are pitch references, not frets or measured distances. ↓ = low finger; ↑ = high finger.' : 'Bottom numbers = frets. Low E is at the bottom; high e is at the top.');
-      var tp = el('[data-fb-tab-pos]');
-      var authoredTab = !!(tune.staves.tab && tune.staves.tab.lines === 6);
-      tp.querySelector('[value="auto"]').textContent = authoredTab ? 'As written' : 'Auto: fewest shifts';
-      tp.querySelector('[value="reroute"]').hidden = !authoredTab;
-      tp.value = !authoredTab && opts.tabPos === 'reroute' ? 'auto' : (opts.tabPos || 'auto');
-      tp.closest('label').hidden = !tabOn() || !!(tune.staves.tab && !authoredTab);
-      var tabToolbar = el('[data-fb-tab-toolbar]');
-      if (tabToolbar) tabToolbar.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
-      var tabHint = el('[data-fb-tab-toolbar-hint]');
-      if (tabHint) tabHint.textContent = authoredTab && opts.tabPos === 'auto' ? 'Original string and fret choices.' :
-        tabOn() ? 'Same notes, different frets when possible.' : 'Show tab, then choose where to play it.';
+      syncTabTools();
     }
     var blw = el('[data-fb-bassline]');
     if (blw) { blw.value = opts.bassLine || 'score'; blw.closest('label').hidden = !hasB; }
@@ -3117,8 +3230,96 @@
       (view && view.octaveOut ? ' In this key the tune is a little wider than the instrument’s range, so ' + view.octaveOut + ' note' + (view.octaveOut === 1 ? '' : 's') + ' sit just outside it (the octave is set to keep that to a minimum). Try another key for a perfect fit.'
         : view && view.octaveLimited ? ' The octave is held where every note stays in this instrument’s range.' : '');
   }
+  // The tab toolbar: Style, Play near (the hand positions for this key), and Choose fingerings.
+  function syncTabTools() {
+    var tp = el('[data-fb-tab-pos]');
+    if (!tp || !tune) return;
+    var FT = window.FakeBookTab, FF = window.FakeBookFingering;
+    var authoredTab = !!(tune.staves.tab && tune.staves.tab.lines === 6), on = tabOn();
+    var cur = view ? tabPosition(view.concertKey) : (opts.tabPos || 'auto');
+    var tonic = view ? noteName(view.concertKey) : '';
+    var opt = function (v, label) { return '<option value="' + v + '">' + MN.escape(label) + '</option>'; };
+    var html = [opt('auto', authoredTab ? 'As written' : 'Auto: fewest shifts')];
+    if (authoredTab) html.push(opt('reroute', 'Auto: new fingering'));
+    ((view && view.tabPositions) || []).forEach(function (p) {
+      if (p.fit < 0.6 && p.fret !== cur) return;
+      // Name the key's root where it anchors the hand: under the 1st or 2nd finger (or in the open shapes).
+      var anchor = p.root && (p.fret === 0 ? p.root.fret <= 3 : p.root.fret - p.fret <= 1);
+      html.push(opt(String(p.fret), (p.fret ? 'Fret ' + p.fret + ' (pos. ' + FT.ROMAN[p.fret] + ')' : 'Open position') +
+        (anchor ? ' · ' + tonic + ' root on ' + (p.root.string === 6 ? 'low E' : 'A') + (p.root.fret ? ' fr. ' + p.root.fret : ' open') : '') +
+        (p.fit < 0.995 ? ' · ' + Math.round(p.fit * 100) + '% in reach' : '')));
+    });
+    if (typeof cur === 'number' && !(view && view.tabPositions && view.tabPositions.some(function (p) { return p.fret === cur; }))) html.push(opt(String(cur), 'Fret ' + cur));
+    tp.innerHTML = html.join('');
+    tp.value = !authoredTab && cur === 'reroute' ? 'auto' : String(cur);
+    var posBox = tp.closest('.fb-tab-pos');
+    posBox.hidden = !on || !!(tune.staves.tab && !authoredTab);
+    root.querySelectorAll('[data-fb-tab-step]').forEach(function (b) { b.disabled = !view || !view.tabPositions; });
+    var octBox = el('.fb-tab-oct'), ko = tabOctave();
+    if (octBox) {
+      octBox.hidden = !on || !(view && view.tabBaseOnsets);
+      el('[data-fb-tab-oct-val]').textContent = ko ? OCT_MARK[ko] + ' (' + octaveWords(ko) + ')' : 'as written';
+      el('[data-fb-tab-oct="-1"]').disabled = ko <= -1;
+      el('[data-fb-tab-oct="1"]').disabled = ko >= 2;
+    }
+    // Style: only for an arrangement worked out from the lead sheet (not an imported tab or guitar part).
+    var st = el('[data-fb-tab-style]'), arranged = !!(view && view.tabInfo && view.tabInfo.source === 'arrangement');
+    if (st) { st.value = tabStyle(); st.closest('label').hidden = !on || !arranged; }
+    // Choose fingerings: any six-string tab.
+    var pickable = on && !!(view && view.tabOnsets) && !!FF;
+    if (fingerAt && !tabPickOn()) hideFingerPop(false);
+    var pick = el('[data-fb-tab-pick]');
+    if (pick) { pick.hidden = !pickable; pick.setAttribute('aria-pressed', String(pickable && !!opts.tabPick)); }
+    var bar = el('[data-fb-tab-pick-bar]'), pins = tabPins(), info = view && view.tabPinInfo;
+    if (bar) {
+      bar.hidden = !pickable || (!opts.tabPick && !pins.length);
+      el('[data-fb-pin-clear]').hidden = !pins.length;
+      el('[data-fb-pin-clear]').textContent = 'Clear ' + pins.length + ' pick' + (pins.length === 1 ? '' : 's');
+      el('[data-fb-pin-undo]').hidden = !pinUndo.some(function (u) { return u.tune === opts.tune; });
+      var stale = info ? info.stale.length : 0, summary = el('[data-fb-tab-pick-summary]');
+      summary.textContent = !pins.length ? (opts.tabPick ? 'Click a beat in the tab (or Tab to it and press Enter) to choose how it is fingered.' : '') :
+        (pins.length - stale) + ' pinned fingering' + (pins.length - stale === 1 ? '' : 's') + ' (◆ above the tab)' +
+        (stale ? '. ' + stale + ' pick' + (stale === 1 ? ' is' : 's are') + ' for other notes (another melody, rhythm or tab style) and wait until those notes come back.' : '.');
+    }
+    var tabToolbar = el('[data-fb-tab-toolbar]');
+    if (tabToolbar) tabToolbar.hidden = opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
+    var tabHint = el('[data-fb-tab-toolbar-hint]');
+    if (tabHint) tabHint.textContent = !on ? 'Show tab, then choose where to play it.' :
+      opts.tabPick && pickable ? 'Roman numerals under the tab mark each move to a new hand position.' :
+      authoredTab && cur === 'auto' ? 'Original string and fret choices.' :
+      typeof cur === 'number' ? 'Same notes, near this fret. Follows the key when you transpose.' : 'Same notes, different frets when possible.';
+  }
+  // ◀ ▶ beside Play near: the next hand position down or up the neck that fits this tune and actually
+  // changes the tab (neighbouring frets often give the same fingering, which would look like a dead button).
+  function stepTabPosition(dir) {
+    if (!view || !view.tabPositions || !view.tabOnsets) return;
+    var FT = window.FakeBookTab, list = view.tabPositions.filter(function (p) { return p.fit >= 0.6; }).map(function (p) { return p.fret; });
+    var cur = tabPosition(view.concertKey);
+    var sig = function (position) {
+      return FT.plan(view.tabOnsets, { tuning: view.tabTuning, maxFret: 22, position: position }).events.map(function (e) { return FT.key(e.f); }).join('|');
+    };
+    var now = sig(cur === 'reroute' ? 'auto' : cur);
+    if (typeof cur !== 'number') {
+      // From Auto: start from where the tab's hand mostly is now.
+      var hands = (view.tab || []).map(function (e) { return FT.hand(e.f); }).filter(function (h) { return h > 0; }).sort(function (a, b) { return a - b; });
+      cur = hands.length ? hands[hands.length >> 1] : 0;
+    }
+    var ahead = dir > 0 ? list.filter(function (f) { return f > cur; }) : list.filter(function (f) { return f < cur; }).reverse();
+    for (var i = 0; i < ahead.length; i++) if (sig(ahead[i]) !== now) { setTabPosition(ahead[i]); return; }
+    el('[data-fb-live]').textContent = dir > 0 ? 'Already as high on the neck as this tune fits.' : 'Already as low on the neck as it goes.';
+    tabStatus(el('[data-fb-live]').textContent);
+  }
+  function setTabPosition(v) {
+    opts.tabPos = String(v);
+    opts.tabPosKey = /^\d+$/.test(opts.tabPos) && view ? keyPc(view.concertKey) : null;
+    refresh();
+    var tp = el('[data-fb-tab-pos]'), o = tp && tp.selectedOptions[0];
+    if (o) el('[data-fb-live]').textContent = 'Tab: ' + o.textContent + '.';
+  }
+
   function refresh() {
     computeView();
+    syncTabTools();
     feedMelodyView();
     renderSheet();
     renderChanges();
@@ -3761,6 +3962,246 @@
     return '<foreignObject class="fb-measure-help" x="' + (b.x + S/2) + '" y="' + y + '" width="' + (b.w - S) + '" height="' + h + '"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:' + S + 'px">' + html.join('') + '</div></foreignObject>';
   }
 
+  /* ================================================================ fingering picks (tab)
+     Choose fingerings: each tab column is a button. Picking a fingering pins it (FakeBookTab), and the
+     notes around it re-route to fit; the ones that moved are outlined and counted. */
+  var pinUndo = [], fingerAt = null, fingerList = [], pickFocusAt = null, pickRefocus = null;
+  function tabPickOn() {
+    return !!(opts.tabPick && view && view.tab && view.tabOnsets && (view.tabLines || 6) === 6 && window.FakeBookFingering &&
+      tabOn() && opts.sheetView !== 'drums' && opts.sheetView !== 'arrangement');
+  }
+  function tabNames() {
+    var tun = view.tabTuning || window.FakeBookTab.STANDARD;
+    if (tun.join() === window.FakeBookTab.STANDARD.join()) return window.FakeBookFingering.STD_NAMES;
+    return tun.map(function (m, i) { var n = noteName(respell(m)); return i === 0 ? 'high ' + n : i === tun.length - 1 ? 'low ' + n : n; });
+  }
+  function beatLabel(start) { var b = barAtTime(start); return (b.bar < 1 ? 'Pickup' : 'Bar ' + b.bar) + ', ' + window.FakeBookFingering.beatName(start - b.from); }
+  function tabColumnLabel(e, pinned, k) {
+    return beatLabel(e.start) + ': ' + window.FakeBookFingering.describe(e.f, tabNames()) + (k ? ', ' + octaveWords(k) + ' than written' : '') + (pinned ? '. Your pick' : '') + '. Choose fingering';
+  }
+  function tabEventAt(at) { return ((view && view.tab) || []).filter(function (e) { return e.f.length && e.start.toFixed(3) === at; })[0] || null; }
+  function tabOnsetAt(at) { return ((view && view.tabOnsets) || []).filter(function (o) { return o.start.toFixed(3) === at; })[0] || null; }
+  function tabPinAt(at) { return tabPins().filter(function (p) { return Number(p.start).toFixed(3) === at; })[0] || null; }
+  function tabChoicesAt(at) {
+    var o = tabOnsetAt(at), e = tabEventAt(at);
+    return o ? window.FakeBookTab.choices(o, { tuning: view.tabTuning, maxFret: 22, include: e && e.f }) : [];
+  }
+  function pickCol(at) { return sheetEl.querySelector('.fb-tn-pick[data-tab-at="' + at + '"]'); }
+  function tabStatus(msg) { var n = el('[data-fb-tab-pick-status]'); if (n) n.textContent = msg; }
+
+  function tabIndexAt(at) { var os = (view && view.tabOnsets) || []; for (var i = 0; i < os.length; i++) if (os[i].start.toFixed(3) === at) return i; return -1; }
+  // Pin a beat to a fingering (f = null un-pins it). scope = how far its hand position (and octave) carries;
+  // oct = octaves above the Tab octave for that scope (by default whatever the beat already has).
+  function setTabPin(at, f, scope, oct) {
+    var FT = window.FakeBookTab, FF = window.FakeBookFingering, before = {};
+    view.tab.forEach(function (e) { before[e.start.toFixed(3)] = FT.key(e.f); });
+    pinUndo.push({ tune: opts.tune, pins: tabPins().slice(), at: at });
+    if (pinUndo.length > 30) pinUndo.shift();
+    var old = tabPinAt(at), t = tabIndexAt(at);
+    if (oct === undefined) oct = old ? old.oct || 0 : (view.tabWant && t >= 0 ? view.tabWant[t] : 0);
+    var list = tabPins().filter(function (p) { return Number(p.start).toFixed(3) !== at; });
+    if (f) {
+      var pin = { start: Number(at), f: f.map(function (x) { return [x[0], x[1]]; }), ms: FT.pitches(f, view.tabTuning), scope: scope || (old ? old.scope : opts.tabPinScope || 'bar') };
+      if (oct) pin.oct = oct;
+      list.push(pin);
+    }
+    list.sort(function (a, b) { return a.start - b.start; });
+    setTabPins(list);
+    refresh();
+    var moved = 0;
+    view.tab.forEach(function (e) {
+      var k = e.start.toFixed(3);
+      if (k === at || before[k] === undefined || before[k] === FT.key(e.f)) return;
+      moved++;
+      var col = sheetEl.querySelector('.fb-tn[data-tab-at="' + k + '"]');
+      if (col) col.classList.add('is-reflow');
+    });
+    var e = tabEventAt(at), t2 = tabIndexAt(at), k = view.tabShift && t2 >= 0 ? view.tabShift[t2] : 0;
+    tabStatus(beatLabel(Number(at)) + (k ? ' (' + octaveWords(k) + ')' : '') + ': ' + (f && e ? FF.describe(e.f, tabNames()) + ' (' + FF.posName(FF.hand(e.f)) + ')' : 'back to automatic') +
+      (moved ? '. ' + moved + ' nearby note' + (moved === 1 ? '' : 's') + ' moved to fit (outlined in the tab).' : '. Nothing else had to move.'));
+  }
+  function undoTabPin() {
+    for (var i = pinUndo.length - 1; i >= 0; i--) {
+      if (pinUndo[i].tune !== opts.tune) continue;
+      var u = pinUndo.splice(i, 1)[0];
+      setTabPins(u.pins);
+      refresh();
+      tabStatus('Undone: ' + beatLabel(Number(u.at)) + ' is back the way it was.');
+      return;
+    }
+  }
+  function clearTabPins() {
+    if (!tabPins().length) return;
+    pinUndo.push({ tune: opts.tune, pins: tabPins().slice(), at: tabPins()[0].start.toFixed(3) });
+    setTabPins([]);
+    hideFingerPop(false);
+    refresh();
+    tabStatus('Cleared your picks: the tab is automatic again. Undo brings them back.');
+  }
+  function setPinScope(v) {
+    opts.tabPinScope = v;
+    var pin = fingerAt && tabPinAt(fingerAt);
+    if (pin && pin.scope !== v) { pickRefocus = 'scope'; setTabPin(fingerAt, pin.f, v); }
+    else save();
+  }
+  // ↑/↓ on a column: the next fingering up or down the neck, pinned straight away.
+  function cycleTabPin(at, dir) {
+    var FT = window.FakeBookTab, list = tabChoicesAt(at), e = tabEventAt(at);
+    if (!e) return;
+    var i = list.map(function (c) { return FT.key(c.f); }).indexOf(FT.key(e.f)), j = i + dir;
+    if (list.length < 2) { tabStatus(beatLabel(e.start) + ': there is only one way to play this.'); return; }
+    if (j < 0 || j >= list.length) { tabStatus(beatLabel(e.start) + ': already the ' + (dir > 0 ? 'highest' : 'lowest') + ' fingering on the neck.'); return; }
+    pickRefocus = 'col';
+    setTabPin(at, list[j].f);
+  }
+  // Shift+↑/↓ on a column: the beat (and its pick's scope) up or down an octave, kept near the hand.
+  function octaveTabPin(at, dir) {
+    var FT = window.FakeBookTab, t = tabIndexAt(at), e = tabEventAt(at);
+    if (t < 0 || !e) return;
+    var k = view.tabShift ? view.tabShift[t] : 0, target = k + dir, mv = FT.moveOctave(view.tabBaseOnsets[t], target);
+    if (mv.k !== target || target - tabOctave() > 3 || target - tabOctave() < -2) { tabStatus(beatLabel(e.start) + ': it can’t go ' + (dir > 0 ? 'higher' : 'lower') + ' on this guitar.'); return; }
+    var h = FT.hand(e.f), list = FT.choices(mv.onset, { tuning: view.tabTuning, maxFret: 22 });
+    if (!list.length) { tabStatus(beatLabel(e.start) + ': no way to play that an octave ' + (dir > 0 ? 'up' : 'down') + '.'); return; }
+    list.sort(function (a, b) { return Math.abs(a.hand - h) - Math.abs(b.hand - h) || a.hand - b.hand; });
+    pickRefocus = 'col';
+    setTabPin(at, list[0].f, undefined, target - tabOctave());
+  }
+  function stepTabOctave(dir) {
+    var k = Math.max(-1, Math.min(2, tabOctave() + dir));
+    if (k === tabOctave()) return;
+    opts.tabOctave = k;
+    refresh();
+    tabStatus('Tab ' + octaveWords(k) + (k ? ' than the staff' : '') + '.' + (view.tabShort ? ' ' + view.tabShort + ' beat' + (view.tabShort === 1 ? '' : 's') + ' stay where they fit on the neck.' : ''));
+    el('[data-fb-live]').textContent = el('[data-fb-tab-pick-status]').textContent;
+  }
+  function toggleTabPick() {
+    opts.tabPick = !opts.tabPick;
+    if (!opts.tabPick) hideFingerPop(false);
+    renderSheet();
+    syncTabTools();
+    save();
+    tabStatus(opts.tabPick ? 'Choose fingerings is on. Click a beat in the tab, or Tab to the tab and use the arrow keys.' : 'Choose fingerings is off. Your picks still shape the tab.');
+  }
+
+  function showFingerPop(at, focus) {
+    fingerAt = at; pickFocusAt = at;
+    renderFingerPop();
+    placeFingerPop();
+    if (focus) focusFingerOpt();
+  }
+  function hideFingerPop(refocus) {
+    var pop = el('[data-fb-fingerpop]'), at = fingerAt;
+    if (pop) pop.hidden = true;
+    fingerAt = null;
+    sheetEl.querySelectorAll('.fb-tn.is-choosing').forEach(function (n) { n.classList.remove('is-choosing'); n.removeAttribute('aria-expanded'); });
+    if (refocus && at && pickCol(at)) pickCol(at).focus({ preventScroll: true });
+  }
+  function focusFingerOpt() {
+    var b = el('[data-fb-finger-opts] [aria-pressed="true"]') || el('[data-fb-finger-opts] button');
+    if (b) b.focus({ preventScroll: true });
+  }
+  function renderFingerPop() {
+    var pop = el('[data-fb-fingerpop]'), FF = window.FakeBookFingering, FT = window.FakeBookTab;
+    var e = fingerAt && tabPickOn() && tabEventAt(fingerAt);
+    if (!pop || !e) { if (pop) pop.hidden = true; fingerAt = null; return; }
+    var i = view.tab.indexOf(e), prev = null, next = null;
+    for (var q = i - 1; q >= 0 && !prev; q--) if (view.tab[q].f.length) prev = view.tab[q].f;
+    for (q = i + 1; q < view.tab.length && !next; q++) if (view.tab[q].f.length) next = view.tab[q].f;
+    var cur = FT.key(e.f), pin = tabPinAt(fingerAt), names = tabNames(), flat = keySig(view.concertKey) < 0;
+    // Three groups: these notes, then the same beat an octave up and an octave down (where the neck allows).
+    var t = tabIndexAt(fingerAt), g = tabOctave(), k = view.tabShift ? view.tabShift[t] : 0;
+    var sections = [];
+    [0, 1, -1].forEach(function (dk) {
+      var target = k + dk, list;
+      if (!dk) list = tabChoicesAt(fingerAt);
+      else {
+        if (target - g > 3 || target - g < -2) return;
+        var mv = FT.moveOctave(view.tabBaseOnsets[t], target);
+        if (mv.k !== target) return;
+        list = FT.choices(mv.onset, { tuning: view.tabTuning, maxFret: 22 });
+      }
+      if (list.length) sections.push({ dk: dk, oct: dk ? target - g : (view.tabWant ? view.tabWant[t] : 0), target: target, list: list });
+    });
+    fingerList = [];
+    sections.forEach(function (sec) { sec.list.forEach(function (c) { fingerList.push({ c: c, oct: sec.oct, dk: sec.dk }); }); });
+    var same = sections[0] && !sections[0].dk ? sections[0].list.length : 0;
+    el('[data-fb-finger-title]').textContent = beatLabel(e.start);
+    el('[data-fb-finger-notes]').textContent = FT.pitches(e.f, view.tabTuning).reverse().map(function (m) { return noteName(respell(m, flat)); }).join(' + ') +
+      (k ? ' (' + OCT_MARK[k] + ')' : '') + ' · ' + (same === 1 ? 'one way to play these notes' : same + ' ways to play these notes');
+    var n = 0;
+    el('[data-fb-finger-opts]').innerHTML = sections.map(function (sec) {
+      var head = !sec.dk ? 'These notes' + (k ? ' · ' + octaveWords(k) + ' than written' : '') :
+        (sec.dk > 0 ? 'An octave higher' : 'An octave lower') + ' · ' + (sec.target ? OCT_MARK[sec.target] : 'as written');
+      return '<div class="fb-finger-sec' + (sec.dk ? ' is-octave' : '') + '" role="group" aria-label="' + MN.escape(head) + '"><p class="fb-finger-sec-h" aria-hidden="true">' + MN.escape(head) + '</p><div class="fb-finger-grid">' +
+        sec.list.map(function (c) { return optHtml(c, n++, sec); }).join('') + '</div></div>';
+    }).join('');
+    function optHtml(c, j, sec) {
+      var now = !sec.dk && FT.key(c.f) === cur, mv = FF.handMove(prev, c.f), then = next ? FF.handMove(c.f, next) : null;
+      var tag = now ? (pin ? 'your pick' : 'in the tab now') : '';
+      var thenText = then && then.kind === 'shift' ? 'next note: ' + Math.abs(then.frets) + ' fret' + (Math.abs(then.frets) === 1 ? '' : 's') + (then.frets > 0 ? ' up' : ' down') : '';
+      return '<button type="button" class="fb-finger-opt is-' + mv.kind + (now ? ' is-now' : '') + '" data-fb-finger-opt="' + j + '" aria-pressed="' + now + '" tabindex="' + (now ? 0 : -1) + '" aria-label="' +
+        MN.escape(FF.describe(c.f, names) + ', ' + FF.posName(c.hand) + '. From the last note: ' + mv.text + (thenText ? '; ' + thenText : '') + (c.full ? '' : '. Leaves out a chord tone') + (tag ? '. ' + tag : '')) + '">' +
+        FF.miniBoard(c.f, { strings: view.tabTuning.length }) +
+        '<strong>' + MN.escape(FF.posName(c.hand)) + '</strong>' +
+        '<small>' + MN.escape(mv.text) + '</small>' +
+        (thenText ? '<small class="fb-finger-then">' + MN.escape(thenText) + '</small>' : '') +
+        (c.full ? '' : '<small class="fb-finger-thin">fewer notes</small>') +
+        (tag ? '<em>' + tag + '</em>' : '') + '</button>';
+    }
+    if (!el('[data-fb-finger-opts] [tabindex="0"]') && el('[data-fb-finger-opts] button')) el('[data-fb-finger-opts] button').setAttribute('tabindex', '0');
+    var scope = pin ? pin.scope : (opts.tabPinScope || 'bar');
+    root.querySelectorAll('input[name="fb-pin-scope"]').forEach(function (r) { r.checked = r.value === scope; });
+    el('[data-fb-finger-auto]').disabled = !pin;
+    var cols = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-tn-pick')), ci = cols.indexOf(pickCol(fingerAt));
+    el('[data-fb-finger-step="-1"]').disabled = ci <= 0;
+    el('[data-fb-finger-step="1"]').disabled = ci < 0 || ci >= cols.length - 1;
+    sheetEl.querySelectorAll('.fb-tn.is-choosing').forEach(function (n) { n.classList.remove('is-choosing'); n.removeAttribute('aria-expanded'); });
+    var col = pickCol(fingerAt);
+    if (col) { col.classList.add('is-choosing'); col.setAttribute('aria-expanded', 'true'); }
+    pop.hidden = false;
+  }
+  // Under the column (or above it when there's no room below), inside the sheet card.
+  function placeFingerPop() {
+    var pop = el('[data-fb-fingerpop]'), card = root.querySelector('.fb-sheet-card'), col = fingerAt && pickCol(fingerAt);
+    if (!pop || pop.hidden || !card || !col) return;
+    var cr = card.getBoundingClientRect(), br = col.getBoundingClientRect();
+    var sc = root.closest('.ll-sim'), vb = sc ? sc.getBoundingClientRect().bottom : innerHeight;
+    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(br.left + br.width / 2 - cr.left - pw / 2, card.clientWidth - pw - 8)) + 'px';
+    pop.style.top = ((br.bottom + ph + 12 > vb && br.top - cr.top - ph - 6 > 0) ? br.top - cr.top - ph - 6 : br.bottom - cr.top + 6) + 'px';
+  }
+  // Move the chooser (and the tab's one tab stop) to another column.
+  function focusPickCol(col, keepChooser) {
+    sheetEl.querySelectorAll('.fb-tn-pick[tabindex="0"]').forEach(function (n) { n.setAttribute('tabindex', '-1'); });
+    col.setAttribute('tabindex', '0');
+    pickFocusAt = col.getAttribute('data-tab-at');
+    col.focus();
+    if (keepChooser && fingerAt) showFingerPop(pickFocusAt, false);
+  }
+  function stepFinger(dir) {
+    var cols = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-tn-pick')), i = cols.indexOf(pickCol(fingerAt)), c = cols[i + dir];
+    if (!c) return;
+    pickFocusAt = c.getAttribute('data-tab-at');
+    showFingerPop(pickFocusAt, false);
+    c.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    placeFingerPop();
+    focusFingerOpt();
+  }
+  // After each engraving: one tab stop for the tab, the chooser re-anchored, focus put back.
+  function afterTabRender() {
+    var cols = sheetEl.querySelectorAll('.fb-tn-pick');
+    if (!cols.length) { if (fingerAt) hideFingerPop(false); pickRefocus = null; return; }
+    var target = (pickFocusAt && pickCol(pickFocusAt)) || cols[0];
+    target.setAttribute('tabindex', '0');
+    if (fingerAt) {
+      if (pickCol(fingerAt)) { renderFingerPop(); placeFingerPop(); } else hideFingerPop(false);
+    }
+    var again = pickRefocus; pickRefocus = null;
+    if (again === 'col') target.focus({ preventScroll: true });
+    else if (again === 'opt' && fingerAt) focusFingerOpt();
+    else if (again === 'scope' && fingerAt) { var r = root.querySelector('input[name="fb-pin-scope"]:checked'); if (r) r.focus({ preventScroll: true }); }
+  }
+
   function renderBarPop() {
     var pop = el('[data-fb-barpop]');
     if (!pop || barPopBar === null || !view) return;
@@ -4249,7 +4690,7 @@
   var scoreNav = window.ScoreNavigation({
     surface: sheetEl, selector: '.fb-bar', mount: el('[data-fb-nav]'), scroller: musicScroller, keyScope: root,
     unit: 'Bar', ariaLabel: 'Song map, bar jump and zoom', followToggle: false, follow: opts.follow !== false, markMeasures: false,
-    ignore: '.fb-chord, .fb-measure-shape, [data-strip-ci], [data-chg-ci]',
+    ignore: '.fb-chord, .fb-measure-shape, [data-strip-ci], [data-chg-ci], .fb-tn-pick',
     visible: function () { return !!tune; },
     number: function (i, m) { return barOf(m); },
     section: function (i, m) { return tune && tune.sectionsByBar ? tune.sectionsByBar[barOf(m)] : null; },
@@ -4359,7 +4800,9 @@
       else if (t.matches('[data-fb-show-sax]')) { opts.saxFingers = t.checked; if (t.checked) opts.measureShapes = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-show-pos]')) { opts.showPos = t.checked; if (t.checked) opts.showTab = false; syncControls(); refresh(); save(); }
       else if (t.matches('[data-fb-pos-inst]')) { if (t.value === 'sax') { opts.saxFingers = true; opts.measureShapes = false; } else { opts.saxFingers = false; opts.posInst = opts.engineInst = t.value; } syncControls(); refresh(); renderBarPop(); save(); }
-      else if (t.matches('[data-fb-tab-pos]')) { opts.tabPos = t.value; syncControls(); refresh(); save(); }
+      else if (t.matches('[data-fb-tab-pos]')) { setTabPosition(t.value); }
+      else if (t.matches('[data-fb-tab-style]')) { opts.tabStyle = t.value; refresh(); }
+      else if (n === 'fb-pin-scope') { setPinScope(t.value); }
       else if (t.matches('[data-fb-bassline]')) { opts.bassLine = t.value; save(); respin(); }
       else if (t.matches('[data-fb-style]')) { opts.style = t.value; opts.feel = STYLES[opts.style].feel; el('[data-fb-feel]').value = opts.feel; tips(); save(); respin(); }
       else if (t.matches('[data-fb-feel]')) { reanchor(function () { opts.feel = t.value; }); save(); }
@@ -4450,6 +4893,13 @@
         return;
       }
       if (t.closest('[data-fb-print]')) { printNotation(); return; }
+      if (t.closest('[data-fb-tab-pick]')) { toggleTabPick(); return; }
+      var tabStep = t.closest('[data-fb-tab-step]');
+      if (tabStep) { stepTabPosition(Number(tabStep.getAttribute('data-fb-tab-step'))); return; }
+      if (t.closest('[data-fb-pin-undo]')) { undoTabPin(); return; }
+      var tabOct = t.closest('[data-fb-tab-oct]');
+      if (tabOct) { stepTabOctave(Number(tabOct.getAttribute('data-fb-tab-oct'))); return; }
+      if (t.closest('[data-fb-pin-clear]')) { clearTabPins(); return; }
       if (onShapePickerClick(t)) return;
       if (t.closest('[data-fb-shapes-reset]')) { resetShapePicks(); return; }
       var vBtn = t.closest('[data-fb-view]');
@@ -4638,6 +5088,67 @@
       shape.focus({ preventScroll: true });
     }, true);
     sheetEl.addEventListener('fakebook:before-render', hideShapeZoom);
+    // ---- Choose fingerings: click a tab column (or Enter on it) for its chooser; arrows walk the tab.
+    sheetEl.addEventListener('click', function (ev) {
+      var col = ev.target.closest && ev.target.closest('.fb-tn-pick');
+      if (!col) return;
+      ev.preventDefault(); ev.stopPropagation();
+      var at = col.getAttribute('data-tab-at');
+      focusPickCol(col, false);
+      if (fingerAt === at) hideFingerPop(false); else showFingerPop(at, false);
+    }, true);
+    // However a column gets focus, it becomes the tab's one tab stop and the beat the keys act on.
+    sheetEl.addEventListener('focusin', function (ev) {
+      var col = ev.target.closest && ev.target.closest('.fb-tn-pick');
+      if (!col || col.getAttribute('tabindex') === '0') return;
+      sheetEl.querySelectorAll('.fb-tn-pick[tabindex="0"]').forEach(function (n) { n.setAttribute('tabindex', '-1'); });
+      col.setAttribute('tabindex', '0');
+      pickFocusAt = col.getAttribute('data-tab-at');
+    });
+    sheetEl.addEventListener('keydown', function (ev) {
+      var col = ev.target.closest && ev.target.closest('.fb-tn-pick');
+      if (!col || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      var at = col.getAttribute('data-tab-at'), k = ev.key;
+      if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Home' || k === 'End') {
+        var cols = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-tn-pick')), i = cols.indexOf(col);
+        var to = cols[k === 'Home' ? 0 : k === 'End' ? cols.length - 1 : i + (k === 'ArrowLeft' ? -1 : 1)];
+        if (to) focusPickCol(to, true);
+      }
+      else if (k === 'Enter' || k === ' ') showFingerPop(at, true);
+      else if ((k === 'ArrowUp' || k === 'ArrowDown') && ev.shiftKey) octaveTabPin(at, k === 'ArrowUp' ? 1 : -1);
+      else if (k === 'ArrowUp' || k === 'ArrowDown') cycleTabPin(at, k === 'ArrowUp' ? 1 : -1);
+      else if (k === 'Delete' || k === 'Backspace') { if (tabPinAt(at)) { pickRefocus = 'col'; setTabPin(at, null); } else tabStatus(beatLabel(Number(at)) + ' is not one of your picks.'); }
+      else if (k === 'Escape' && fingerAt) hideFingerPop(true);
+      else return;
+      ev.preventDefault(); ev.stopPropagation();
+    });
+    var fingerPop = el('[data-fb-fingerpop]');
+    if (fingerPop) {
+      fingerPop.addEventListener('click', function (ev) {
+        var t = ev.target, b;
+        ev.stopPropagation();
+        if ((b = t.closest('[data-fb-finger-opt]'))) { var c = fingerList[Number(b.getAttribute('data-fb-finger-opt'))]; if (c) { pickRefocus = 'opt'; setTabPin(fingerAt, c.c.f, undefined, c.oct); } return; }
+        if (t.closest('[data-fb-finger-close]')) { hideFingerPop(true); return; }
+        if (t.closest('[data-fb-finger-auto]')) { pickRefocus = 'opt'; setTabPin(fingerAt, null); return; }
+        if ((b = t.closest('[data-fb-finger-step]'))) stepFinger(Number(b.getAttribute('data-fb-finger-step')));
+      });
+      fingerPop.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); hideFingerPop(true); return; }
+        var opt = ev.target.closest('[data-fb-finger-opt]');
+        if (!opt || !/^(Arrow(Left|Right|Up|Down)|Home|End)$/.test(ev.key)) { ev.stopPropagation(); return; }
+        var all = Array.prototype.slice.call(fingerPop.querySelectorAll('[data-fb-finger-opt]')), i = all.indexOf(opt);
+        var to = all[ev.key === 'Home' ? 0 : ev.key === 'End' ? all.length - 1 : i + (/Left|Up/.test(ev.key) ? -1 : 1)];
+        ev.preventDefault(); ev.stopPropagation();
+        if (!to) return;
+        opt.setAttribute('tabindex', '-1'); to.setAttribute('tabindex', '0'); to.focus();
+      });
+    }
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && fingerAt) hideFingerPop(true);
+    });
+    document.addEventListener('pointerdown', function (ev) {
+      if (fingerAt && fingerPop && !fingerPop.contains(ev.target) && !(ev.target.closest && ev.target.closest('.fb-tn-pick'))) hideFingerPop(false);
+    });
     sheetEl.addEventListener('focusin', function (ev) {
       var shape = ev.target.closest && ev.target.closest('.fb-measure-shape');
       if (shape) showShapeZoom(shape, true);
@@ -4749,7 +5260,7 @@
     }
     sheetEl.addEventListener('pointerdown', function (ev) {
       if (ev.pointerType === 'touch' || ev.button !== 0 || ev.shiftKey) return;
-      if (ev.target.closest && ev.target.closest('.fb-chord, .fb-measure-shape')) return;
+      if (ev.target.closest && ev.target.closest('.fb-chord, .fb-measure-shape, .fb-tn-pick')) return;
       var bar = barAt(ev.clientX, ev.clientY);
       if (bar && barOf(bar)) drag = { from: barOf(bar), to: barOf(bar), moved: false };
     });
