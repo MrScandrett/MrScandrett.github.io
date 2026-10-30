@@ -183,7 +183,7 @@ function renderFolders(folderIds) {
     preview.setAttribute("aria-hidden", "true");
     const track = document.createElement("span");
     track.className = "folder-conveyor";
-    const pages = Math.ceil(folderTools.length / 6);
+    const pages = Math.ceil(folderTools.length / 3);
     track.style.setProperty("--preview-pages", pages);
     track.style.setProperty("--preview-duration", `${pages * 24}s`);
     track.style.setProperty("--preview-delay", `${-(stableHash(folderId) % (pages * 24))}s`);
@@ -192,8 +192,8 @@ function renderFolders(folderIds) {
       for (let page = 0; page < pages; page++) {
         const panel = document.createElement("span");
         panel.className = "folder-icon-panel";
-        for (let slot = 0; slot < 6; slot++) {
-          const tool = folderTools[page * 6 + slot];
+        for (let slot = 0; slot < 3; slot++) {
+          const tool = folderTools[page * 3 + slot];
           const icon = tool ? makeMiniIcon(tool) : document.createElement("span");
           panel.append(icon);
         }
