@@ -37,7 +37,7 @@ function parentGroupOf(folderId) {
   return Object.keys(FOLDER_GROUPS).find((groupId) => FOLDER_GROUPS[groupId].includes(folderId)) || null;
 }
 
-const QUICK_START_IDS = ["tinkercad", "printables", "scratch", "clever"];
+const QUICK_START_IDS = ["scratch", "tinkercad", "piskel", "beepbox", "chrome-music-lab", "twine", "vscode", "printables", "clever"];
 const ICON_COLORS = ["#3f68dc", "#d84e67", "#2d9c72", "#7c59c7", "#d87932", "#168d9c", "#52617c", "#b64993"];
 
 const tools = steamGalaxyNodes.filter((node) => node.type === "tool" && node.link);
@@ -55,8 +55,6 @@ const elements = {
   folderDescription: document.getElementById("folder-description"),
   folderSymbol: document.getElementById("folder-symbol"),
   back: document.getElementById("folder-back"),
-  searchToggle: document.getElementById("search-toggle"),
-  searchPanel: document.getElementById("app-search-panel"),
   search: document.getElementById("app-search"),
   clearSearch: document.getElementById("clear-app-search"),
   grade: document.getElementById("grade-filter"),
@@ -182,7 +180,27 @@ function renderFolders(folderIds) {
     shape.style.setProperty("--folder-color", details.color);
     const preview = document.createElement("span");
     preview.className = "folder-preview";
-    folderTools.slice(0, 4).forEach((tool) => preview.append(makeMiniIcon(tool)));
+    preview.setAttribute("aria-hidden", "true");
+    const track = document.createElement("span");
+    track.className = "folder-conveyor";
+    const pages = Math.ceil(folderTools.length / 6);
+    track.style.setProperty("--preview-pages", pages);
+    track.style.setProperty("--preview-duration", `${pages * 24}s`);
+    track.style.setProperty("--preview-delay", `${-(stableHash(folderId) % (pages * 24))}s`);
+    // Two identical sequences make the conveyor loop without a visible jump.
+    for (let copy = 0; copy < 2; copy++) {
+      for (let page = 0; page < pages; page++) {
+        const panel = document.createElement("span");
+        panel.className = "folder-icon-panel";
+        for (let slot = 0; slot < 6; slot++) {
+          const tool = folderTools[page * 6 + slot];
+          const icon = tool ? makeMiniIcon(tool) : document.createElement("span");
+          panel.append(icon);
+        }
+        track.append(panel);
+      }
+    }
+    preview.append(track);
     shape.append(preview);
 
     const label = document.createElement("span");
@@ -245,9 +263,9 @@ function makeAppButton(tool, compact = false) {
 
 function renderDock() {
   elements.dockApps.replaceChildren();
-  const favorites = QUICK_START_IDS.map(id => toolById.get(id)).filter(tool => tool && matchesFilters(tool));
-  const picks = favorites.length ? favorites : tools.filter(matchesFilters).slice(0, 6);
-  picks.slice(0, 6).forEach(tool => elements.dockApps.append(makeAppButton(tool, true)));
+  // Everyday classroom shortcuts stay available independently of catalog filters.
+  const picks = QUICK_START_IDS.map(id => toolById.get(id)).filter(Boolean);
+  picks.forEach(tool => elements.dockApps.append(makeAppButton(tool, true)));
   elements.dock.hidden = !!state.folder || !!state.group || !picks.length;
 }
 
@@ -326,24 +344,13 @@ function showFolders(options = {}) {
   elements.folderView.hidden = false;
   elements.appsView.hidden = true;
   elements.back.hidden = true;
-  elements.title.textContent = "Choose a folder.";
-  elements.instruction.textContent = "Choose an activity. Read how to save it.";
+  elements.title.textContent = "Apps";
+  elements.instruction.textContent = "Open a favorite or choose a folder.";
   elements.location.textContent = folderLocationText();
   renderDock();
   renderFolders(FOLDER_ORDER);
   updateHash();
   if (options.focus !== false) document.querySelector(".folder-button")?.focus();
-}
-
-function openSearch() {
-  elements.searchPanel.hidden = false;
-  elements.searchToggle.setAttribute("aria-expanded", "true");
-  elements.search.focus();
-}
-
-function closeSearch() {
-  elements.searchPanel.hidden = true;
-  elements.searchToggle.setAttribute("aria-expanded", "false");
 }
 
 function searchAllApps() {
@@ -414,7 +421,7 @@ function restoreFromHash() {
   }
   const folder = params.get("folder");
   const group = params.get("group");
-  if (folder === "search" || params.get("q")) { elements.search.value = params.get("q") || ""; openSearch(); searchAllApps(); }
+  if (folder === "search" || params.get("q")) { elements.search.value = params.get("q") || ""; elements.search.focus(); searchAllApps(); }
   else if (folder && FOLDER_DETAILS[folder] && !FOLDER_GROUPS[folder]) openFolder(folder, { focus: false });
   else if (group && FOLDER_GROUPS[group]) openGroup(group, { focus: false });
   else showFolders({ focus: false });
@@ -439,7 +446,6 @@ elements.back.addEventListener("click", () => {
   if (!elements.appsView.hidden && state.group) openGroup(state.group);
   else showFolders();
 });
-elements.searchToggle.addEventListener("click", () => elements.searchPanel.hidden ? openSearch() : closeSearch());
 elements.search.addEventListener("input", searchAllApps);
 elements.clearSearch.addEventListener("click", () => {
   elements.search.value = "";
@@ -497,7 +503,6 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   const dialog = [elements.aiDialog, elements.tinkercadDialog].find((candidate) => !candidate.hidden);
   if (!dialog) {
-    if (event.key === "Escape" && !elements.searchPanel.hidden) closeSearch();
     return;
   }
   if (event.key === "Escape") {
@@ -592,3 +597,10 @@ window.addEventListener("hashchange", () => {
   restoreFromHash();
 });
 restoreFromHash();
+
+const previewMotion = document.getElementById("preview-motion");
+previewMotion.addEventListener("click", () => {
+  const paused = elements.folderGrid.classList.toggle("previews-paused");
+  previewMotion.setAttribute("aria-pressed", String(paused));
+  previewMotion.textContent = paused ? "Play previews" : "Pause previews";
+});

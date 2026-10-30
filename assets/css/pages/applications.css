@@ -451,7 +451,7 @@
   gap: clamp(0.75rem, 2vw, 1.5rem);
   width: fit-content;
   max-width: 100%;
-  margin: 1rem auto 0;
+  margin: 0 0 1.25rem;
   padding: 0.8rem 1rem;
   overflow-x: auto;
   background: rgba(225, 230, 241, 0.8);
@@ -646,4 +646,105 @@
   .applications-page:not([data-theme="light"]) .dialog-panel { background:#18202f; color:var(--launch-ink); }
   .applications-page:not([data-theme="light"]) .dialog-primary { color:#172038; }
   .applications-page:not([data-theme="light"]) .dialog-check { background:#303c55; }
+}
+
+/* Keep the launcher's folders in the first screen, including laptop displays. */
+.applications-page .launchpad-shell { width: min(1500px, 100%); padding: .75rem 1.25rem; }
+.applications-page .launchpad { min-height: 0; padding: 1.1rem 1.5rem; border-radius: 1.25rem; }
+.launchpad-topbar { padding-bottom: .65rem; gap: .75rem; }
+.launchpad-heading h1 { font-size: 1.8rem; line-height: 1.1; letter-spacing: -.035em; }
+.launchpad-kicker { font-size: .65rem; margin-bottom: .2rem; }
+.launchpad-heading > p:last-child { font-size: .85rem; margin-top: .2rem; }
+.favorites-dock { width: 100%; margin: 0 0 .65rem; padding: .45rem .75rem; gap: 1rem; border-radius: .85rem; }
+.dock-label { min-width: 5rem; padding-right: .75rem; }
+.dock-label span { display: none; }
+.dock-apps { gap: .75rem; }
+.dock-button { width: 4rem; }
+.dock-icon { width: 2.15rem; font-size: .75rem; }
+.dock-button .app-label { margin-top: .2rem; }
+.app-search-panel { padding: 0; margin-bottom: .5rem; background: transparent; }
+.app-search-panel label { font-size: .75rem; margin: 0 0 .2rem; }
+.app-search-box { min-height: 2.5rem; }
+.app-search-box input { padding: .45rem 0; font-size: .9rem; min-width: 0; }
+.access-controls { padding: 0 0 .35rem; gap: .5rem; font-size: .8rem; }
+.access-controls select { min-height: 2.2rem; }
+.launchpad-status-row { min-height: 2.5rem; padding: .3rem 0; font-size: .8rem; }
+.folder-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1rem 1.25rem; padding: 1rem 0 .5rem; }
+.folder-shape { aspect-ratio: 1.65; padding: 9%; max-height: 110px; }
+.folder-label { font-size: .8rem; margin-top: .4rem; }
+.folder-count { font-size: .65rem; }
+.access-explanation { font-size: .8rem; margin: .65rem 0; }
+@media (max-width: 1050px) {
+  .folder-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .85rem .75rem; }
+  .folder-shape { max-height: 90px; }
+}
+@media (max-width: 700px) {
+  .applications-page .launchpad-shell { padding: .5rem; }
+  .applications-page .launchpad { padding: .8rem; }
+  .launchpad-heading h1 { font-size: 1.5rem; }
+  .launchpad-kicker { display: none; }
+  .favorites-dock { gap: .5rem; padding: .45rem; }
+  .dock-label { min-width: 0; padding-right: .4rem; }
+  .dock-label strong { font-size: .7rem; }
+  .dock-apps { flex: 1; justify-content: space-between; gap: .25rem; }
+  .dock-button { width: 2.75rem; }
+  .dock-icon { width: 1.8rem; }
+  .dock-button .app-label { font-size: .55rem; }
+  .access-controls .grade-control { flex-direction: row; align-items: center; }
+  .access-controls select { min-width: 0; flex: 1; width: 0; }
+  .launchpad-status-row { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .launchpad-status-row .grade-control { width: auto; margin-left: auto; }
+  .folder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem .65rem; padding-inline: 0; }
+  .folder-shape { max-height: 80px; }
+  .folder-preview { padding: .3rem; gap: .25rem; }
+}
+
+/* A quiet two-row conveyor inside each folder; only transforms animate. */
+.folder-preview { display: block; padding: 0; overflow: hidden; backdrop-filter: none; }
+.folder-conveyor {
+  display: flex;
+  width: calc(var(--preview-pages) * 200%);
+  height: 100%;
+  animation: folder-stream var(--preview-duration) linear infinite;
+  animation-delay: var(--preview-delay);
+}
+.folder-icon-panel {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  padding: .5rem;
+}
+.folder-icon-panel .mini-app-icon {
+  height: 100%; width: auto; max-width: 100%; aspect-ratio: 1;
+  justify-self: center; border-radius: 25%; font-size: .55rem;
+}
+@keyframes folder-stream { to { transform: translateX(-50%); } }
+.folder-button:hover .folder-conveyor,
+.folder-button:focus-visible .folder-conveyor,
+.previews-paused .folder-conveyor { animation-play-state: paused; }
+#preview-motion {
+  order: 1; margin-right: auto; padding: .35rem .5rem;
+  border: 1px solid var(--launch-line); border-radius: .5rem;
+  background: transparent; color: var(--launch-muted); font: inherit; cursor: pointer;
+}
+.launchpad-status-row .grade-control { order: 2; }
+@media (max-width: 700px) {
+  .folder-icon-panel { padding: .3rem; gap: .2rem; }
+  .folder-preview { padding: 0; }
+  #preview-motion { font-size: .7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .folder-conveyor { animation: none; }
+  #preview-motion { display: none; }
+}
+
+/* Wrap the expanded quick-start collection without squeezing its icons. */
+.favorites-dock { overflow: visible; }
+.dock-apps { flex: 1; display: flex; flex-wrap: wrap; gap: .35rem .75rem; min-width: 0; }
+@media (max-width: 700px) {
+  .dock-apps { justify-content: flex-start; gap: .35rem; }
+  .dock-button { width: 2.75rem; }
 }
