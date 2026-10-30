@@ -1,6 +1,6 @@
-import { categoryMeta, steamGalaxyNodes } from "./app-registry.js";
+import { categoryMeta, steamGalaxyNodes } from "./app-registry.js?v=20261030launch";
 
-import { projectPaths } from "./app-learning-resources.js";
+import { projectPaths } from "./app-learning-resources.js?v=20261030launch";
 
 const ACCESS_LABELS = {"no-account":"No account", classroom:"Join your class", installed:"Installed / lab", account:"Account needed", check:"Access to check"};
 const ACCESS_HELP = {"no-account":"Use these free activities without signing in. Open “Save & return” to learn how to keep your work.", classroom:"Your teacher sets up access. You do not need a personal email address.", installed:"Ask your teacher which tools are ready on your classroom computer. Links may open download or store pages.", account:"Use these only with an account your teacher has approved. Free tiers may have limits.", all:"The full collection. “Access to check” means we have not yet confirmed whether you can use the tool without signing in."};

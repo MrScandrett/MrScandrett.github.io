@@ -1,4 +1,4 @@
-import { learningTools, applyStudentAccess } from "./app-learning-resources.js";
+import { learningTools, applyStudentAccess } from "./app-learning-resources.js?v=20261030launch";
 
 /**
  * ClassroomOS: STEAM Galaxy Explorer — Data Registry
