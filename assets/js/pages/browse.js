@@ -1,16 +1,18 @@
 import { loadProjects } from "../data.js";
 import {
   createEmptyState,
-  createProjectCard,
-  createProjectCardSkeleton,
+  createLikeButton,
+  projectAction,
   projectMatches,
+  projectUrl,
   setActiveNav,
   sortProjects,
   uniqueValues,
 } from "../ui.js";
 
-// One scrolling page: with no search/filters the page shows a shelf per collection;
-// any search, filter, or collection pick swaps the shelves for a single results grid.
+// One scrolling page laid out like an app store: a side-scrolling feature carousel of the
+// newest work, then a side-scrolling list shelf per collection (three app rows per column).
+// Any search, filter, or collection pick swaps the shelves for a single results list.
 
 const FILTER_KEYS = ["category", "tech", "difficulty", "year", "term", "type", "program", "cohort"];
 const CREATOR_GROUPS = {
@@ -27,8 +29,12 @@ const COLLECTIONS = [
   { title: "Music", symbol: "♫", categories: ["Music"], description: "Playable instruments, rhythm tools, and sound experiments." },
   { title: "Web & Art", symbol: "✦", categories: ["Web", "Art"], description: "Websites, visual designs, and creative digital work." },
 ];
-const SHELF_SIZE = 4;
-const PAGE_SIZE = 12;
+const FEATURE_SIZE = 6;
+const SHELF_SIZE = 15;
+const PAGE_SIZE = 24;
+// The store's one-word action pill, from ui.js's longer launch labels.
+const SHORT_ACTION = { "Play game": "Play", "Explore 3D": "Explore", Watch: "Watch", "Open project": "Open" };
+const EYEBROW = { Game: "Game", "3D": "3D world", Simulation: "Simulation", Animation: "Animation", Music: "Music", Web: "Website", Art: "Art" };
 
 // Fixed display order for the cohort picker (School Year before Camp), not alphabetical.
 const COHORT_ORDER = ["25-26 School Year", "2026 Summer Camp"];
@@ -117,6 +123,136 @@ function renderChipGroup({ mount, title, filterKey, values, selectedSet, onToggl
   mount.appendChild(group);
 }
 
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function launchHref(project) {
+  return project.appUrl || projectUrl(project.id);
+}
+
+function appIcon(project, className = "aps-icon") {
+  const image = el("img", className);
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.src = project.thumbnail;
+  image.alt = "";
+  return image;
+}
+
+// The pill on the right of every row: launches the project (Play / Explore / Watch / Open).
+function getButton(project) {
+  const launches = Boolean(project.appUrl);
+  const action = projectAction(project);
+  const link = el("a", "aps-get", launches ? SHORT_ACTION[action.label] || "Open" : "View");
+  link.href = launchHref(project);
+  link.setAttribute("aria-label", `${launches ? action.label : "View project"}: ${project.title} by ${project.student}`);
+  if (launches) {
+    link.dataset.memoryPlay = "";
+    link.dataset.memoryId = project.id;
+    link.dataset.memoryTitle = project.title || "";
+    link.dataset.memoryBy = project.student || "";
+    if (project.thumbnail) link.dataset.memoryThumb = new URL(project.thumbnail, document.baseURI).href;
+  }
+  return link;
+}
+
+// One app-store row: icon, name, "by <student>", heart, and the action pill.
+// The name opens the project page; the pill launches the project.
+function createAppRow(project) {
+  const row = el("article", "aps-row");
+  row.dataset.id = project.id;
+  row.dataset.category = project.category;
+
+  const main = el("a", "aps-row-main");
+  main.href = projectUrl(project.id);
+  main.setAttribute("aria-label", `About ${project.title} by ${project.student}`);
+  const text = el("span", "aps-row-text");
+  text.append(el("span", "aps-row-title", project.title), el("span", "aps-row-sub", `by ${project.student}`));
+  main.append(appIcon(project), text);
+
+  const action = el("div", "aps-row-action");
+  action.appendChild(getButton(project));
+  if (project.lessonUrl) {
+    const lesson = el("a", "aps-get-note aps-get-lesson", "How it works");
+    lesson.href = project.lessonUrl;
+    lesson.setAttribute("aria-label", `Learn how games like ${project.title} work`);
+    action.appendChild(lesson);
+  } else if (project.tech?.[0]) {
+    action.appendChild(el("span", "aps-get-note", project.tech[0]));
+  }
+
+  const like = createLikeButton(project);
+  like.classList.add("aps-like");
+  row.append(main, like, action);
+  return row;
+}
+
+// A feature card: eyebrow, name and maker above a wide screenshot that launches the project.
+function createFeatureCard(project) {
+  const card = el("article", "aps-feature");
+  card.dataset.category = project.category;
+  const head = el("a", "aps-feature-head");
+  head.href = projectUrl(project.id);
+  head.append(
+    el("span", "aps-feature-eyebrow", `New ${EYEBROW[project.category] || "project"}`),
+    el("span", "aps-feature-title", project.title),
+    el("span", "aps-feature-sub", `by ${project.student}`),
+  );
+  const media = el("a", "aps-feature-media");
+  media.href = launchHref(project);
+  media.tabIndex = -1;
+  media.setAttribute("aria-hidden", "true");
+  media.appendChild(appIcon(project, "aps-feature-shot"));
+  const bar = el("div", "aps-feature-bar");
+  // The guard can't see the screenshot under this glass; the CSS keeps white text ≥4.5:1 over any image.
+  bar.setAttribute("data-contrast-guard-skip", "");
+  const name = el("span", "aps-feature-bar-text");
+  name.append(el("strong", "", project.title), el("span", "", project.tech?.[0] || project.category));
+  bar.append(appIcon(project, "aps-icon aps-icon-sm"), name, getButton(project));
+  const like = createLikeButton(project);
+  like.classList.add("aps-like", "aps-like-float");
+  card.append(head, media, bar, like);
+  return card;
+}
+
+function createRowSkeleton() {
+  const row = el("div", "aps-row aps-row-skeleton");
+  row.setAttribute("aria-hidden", "true");
+  row.innerHTML = '<span class="aps-icon"></span><span class="aps-row-text"><span></span><span></span></span><span class="aps-get"></span>';
+  return row;
+}
+
+// Prev/next buttons for pointer devices; touch users just swipe.
+function attachScroller(row, head) {
+  const nav = el("div", "aps-scroll-nav");
+  const prev = el("button", "aps-scroll-btn");
+  const next = el("button", "aps-scroll-btn");
+  prev.type = next.type = "button";
+  prev.innerHTML = '<span aria-hidden="true">‹</span>';
+  next.innerHTML = '<span aria-hidden="true">›</span>';
+  prev.setAttribute("aria-label", "Scroll back");
+  next.setAttribute("aria-label", "Scroll forward");
+  const page = (dir) => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    row.scrollBy({ left: dir * row.clientWidth * 0.9, behavior: reduce ? "auto" : "smooth" });
+  };
+  prev.addEventListener("click", () => page(-1));
+  next.addEventListener("click", () => page(1));
+  const sync = () => {
+    prev.disabled = row.scrollLeft <= 2;
+    next.disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 2;
+    nav.hidden = prev.disabled && next.disabled;
+  };
+  row.addEventListener("scroll", sync, { passive: true });
+  new ResizeObserver(sync).observe(row);
+  nav.append(prev, next);
+  head.appendChild(nav);
+}
+
 function init() {
   setActiveNav();
 
@@ -141,12 +277,13 @@ function init() {
     moreWrap: document.getElementById("showcase-more-wrap"),
     more: document.getElementById("showcase-more"),
     launcher: document.querySelector(".showcase-launcher"),
+    tabs: [...document.querySelectorAll("[data-aps-tab]")],
   };
 
   if (!dom.grid || !dom.shelves) return;
 
-  for (let index = 0; index < SHELF_SIZE * 2; index += 1) {
-    dom.shelves.appendChild(createProjectCardSkeleton());
+  for (let index = 0; index < 9; index += 1) {
+    dom.shelves.appendChild(createRowSkeleton());
   }
 
   const state = readStateFromQuery();
@@ -184,13 +321,8 @@ function init() {
   loadProjects()
     .then((projects) => {
       dom.shelves.setAttribute("aria-busy", "false");
-      const cardFor = (project) => {
-        const card = createProjectCard(project, { showFeatured: true, directLaunch: true, showDetailsLink: true, modelPreview: false });
-        card.classList.add("is-visible");
-        return card;
-      };
-      // Results-grid cards are built once and reordered; shelves build their own small set.
-      const gridCards = new Map(projects.map((project) => [project.id, cardFor(project)]));
+      // Results rows are built once and reordered; shelves build their own set.
+      const gridCards = new Map(projects.map((project) => [project.id, createAppRow(project)]));
       dom.grid.append(...gridCards.values());
 
       const byCreator = (creator) => projects.filter((project) => project.creatorGroup === creator);
@@ -212,7 +344,7 @@ function init() {
           pill.type = "button";
           pill.className = "sc-pill";
           pill.dataset.categories = collection.categories.join(",");
-          pill.innerHTML = `${collection.symbol ? `<span aria-hidden="true">${collection.symbol}</span> ` : ""}${collection.title} <span class="sc-pill-count">${count}</span>`;
+          pill.innerHTML = `${collection.title} <span class="sc-pill-count">${count}</span>`;
           pill.addEventListener("click", () => selectCollection(collection));
           dom.collectionPills.appendChild(pill);
         });
@@ -257,25 +389,35 @@ function init() {
         });
       }
 
-      function buildShelf({ id, title, symbol, description, list, total, seeAllLabel, onSeeAll, variant }) {
-        const shelf = document.createElement("section");
-        shelf.className = `showcase-shelf${variant ? ` shelf-${variant}` : ""}`;
+      function buildShelf({ id, title, description, list, total, onSeeAll, variant = "list" }) {
+        const shelf = el("section", `showcase-shelf aps-shelf aps-shelf-${variant}`);
         shelf.setAttribute("aria-labelledby", id);
-        const head = document.createElement("header");
-        head.className = "shelf-head";
-        head.innerHTML = `<div><h2 id="${id}"><span class="shelf-symbol" aria-hidden="true">${symbol}</span>${title}</h2><p>${description}</p></div>`;
-        if (onSeeAll && total > list.length) {
-          const more = document.createElement("button");
+        const head = el("header", "shelf-head");
+        const heading = el("h2");
+        heading.id = id;
+        if (onSeeAll) {
+          // Like the store, the shelf title itself is the "see all" link.
+          const more = el("button", "aps-shelf-title");
           more.type = "button";
-          more.className = "shelf-see-all";
-          more.textContent = `${seeAllLabel || "See all"} ${total} →`;
-          more.setAttribute("aria-label", `See all ${total} ${title} projects`);
+          more.innerHTML = `<span></span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>`;
+          more.firstChild.textContent = title;
+          more.setAttribute("aria-label", `${title}: see all ${total}`);
           more.addEventListener("click", onSeeAll);
-          head.appendChild(more);
+          heading.appendChild(more);
+        } else {
+          heading.textContent = title;
         }
-        const row = document.createElement("div");
-        row.className = "project-grid shelf-row";
-        row.append(...list.map(cardFor));
+        const titles = el("div", "shelf-titles");
+        titles.append(heading, el("p", "", description));
+        head.appendChild(titles);
+        const row = el("div", `aps-scroll aps-scroll-${variant}`);
+        row.setAttribute("role", "list");
+        list.forEach((project) => {
+          const item = variant === "feature" ? createFeatureCard(project) : createAppRow(project);
+          item.setAttribute("role", "listitem");
+          row.appendChild(item);
+        });
+        attachScroller(row, head);
         shelf.append(head, row);
         return shelf;
       }
@@ -288,13 +430,11 @@ function init() {
         frag.appendChild(buildShelf({
           id: "shelf-newest",
           title: "Just added",
-          symbol: "★",
-          description: `The newest ${creatorLabel} projects.`,
-          list: source.slice(0, SHELF_SIZE),
+          description: `The newest ${creatorLabel} projects, fresh from class.`,
+          list: source.slice(0, FEATURE_SIZE),
           total: source.length,
-          seeAllLabel: "Browse all",
           onSeeAll: () => selectCollection({ categories: [] }, { forceGrid: true }),
-          variant: "newest",
+          variant: "feature",
         }));
 
         COLLECTIONS.forEach((collection, index) => {
@@ -303,7 +443,6 @@ function init() {
           frag.appendChild(buildShelf({
             id: `shelf-${index}`,
             title: collection.title,
-            symbol: collection.symbol,
             description: collection.description,
             list: list.slice(0, SHELF_SIZE),
             total: list.length,
@@ -317,7 +456,6 @@ function init() {
             frag.appendChild(buildShelf({
               id: "shelf-teacher",
               title: "Teacher Studio",
-              symbol: "⌁",
               description: "Classroom examples and original projects made by Mr. Scandrett.",
               list: teacher.slice(0, SHELF_SIZE),
               total: teacher.length,
@@ -384,8 +522,7 @@ function init() {
         const choices = byCreator(activeCreator).filter((project) => projectMatches(project, state));
         if (!choices.length) return;
         const project = choices[Math.floor(Math.random() * choices.length)];
-        const link = gridCards.get(project.id)?.querySelector(".card-link");
-        if (link) window.location.assign(link.href);
+        window.location.assign(launchHref(project));
       });
       document.getElementById("empty-reset")?.addEventListener("click", () => {
         dom.clear.click();
@@ -442,6 +579,7 @@ function init() {
           chip.setAttribute("aria-pressed", state[chip.dataset.filter].has(chip.dataset.value) ? "true" : "false");
         });
         updatePills();
+        updateTabs(showGrid);
         renderActiveSummary();
         updateFilterToggle();
         dom.clear.disabled = !(hasCustomState() || forceGrid);
@@ -449,6 +587,43 @@ function init() {
 
       dom.creatorPresets.forEach((button) => {
         button.addEventListener("click", () => switchCreator(button.dataset.creatorPreset));
+      });
+
+      // Phone tab bar: Discover / Games / 3D / Studio / Search.
+      function updateTabs(showGrid) {
+        const only = state.category.size === 1 && FILTER_KEYS.every((key) => key === "category" || state[key].size === 0) && !state.q ? [...state.category][0] : null;
+        let current = "search";
+        if (activeCreator === "teacher" && !showGrid) current = "teacher";
+        else if (!showGrid) current = "discover";
+        else if (activeCreator === "student" && (only === "Game" || only === "3D")) current = only;
+        dom.tabs.forEach((tab) => {
+          if (tab.dataset.apsTab === current) tab.setAttribute("aria-current", "page");
+          else tab.removeAttribute("aria-current");
+        });
+      }
+      dom.tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const name = tab.dataset.apsTab;
+          if (name === "search") {
+            dom.search.scrollIntoView({ behavior: "smooth", block: "center" });
+            dom.search.focus({ preventScroll: true });
+            return;
+          }
+          if (name === "teacher") {
+            switchCreator("teacher");
+            return;
+          }
+          if (activeCreator !== "student") switchCreator("student");
+          if (name === "discover") {
+            resetState();
+            forceGrid = false;
+            apply(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            return;
+          }
+          const collection = COLLECTIONS.find((c) => c.categories.length === 1 && c.categories[0] === name);
+          if (collection) selectCollection(collection);
+        });
       });
 
       dom.search.addEventListener("input", () => {
@@ -470,7 +645,7 @@ function init() {
       dom.more.addEventListener("click", () => {
         visibleLimit += PAGE_SIZE;
         apply(false);
-        dom.grid.querySelector(`.project-card:nth-child(${visibleLimit - PAGE_SIZE + 1})`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        dom.grid.querySelector(`.aps-row:nth-child(${visibleLimit - PAGE_SIZE + 1})`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       });
 
       renderCollectionPills();

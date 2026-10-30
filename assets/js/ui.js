@@ -71,7 +71,7 @@ export function projectUrl(projectId) {
   return `project.html?id=${encodeURIComponent(projectId)}`;
 }
 
-function projectAction(project) {
+export function projectAction(project) {
   if (is3DModelProject(project) || project.category === "3D") {
     return { label: "Explore 3D", icon: "🧱" };
   }
