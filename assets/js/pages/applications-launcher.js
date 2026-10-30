@@ -604,3 +604,13 @@ previewMotion.addEventListener("click", () => {
   previewMotion.setAttribute("aria-pressed", String(paused));
   previewMotion.textContent = paused ? "Play previews" : "Pause previews";
 });
+
+// Keep projects one click away without filling the home screen with instructions.
+function revealProjectDrawer() {
+  if (location.hash === "#project-paths") document.getElementById("project-drawer").open = true;
+}
+document.querySelector('a[href="#project-paths"]').addEventListener("click", () => {
+  document.getElementById("project-drawer").open = true;
+});
+window.addEventListener("hashchange", revealProjectDrawer);
+revealProjectDrawer();
