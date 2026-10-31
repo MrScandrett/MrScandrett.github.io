@@ -656,7 +656,8 @@
     systems.forEach(function (sys, sIndex) {
       var stretch = sys.avail / sys.used;
       var last = sIndex === systems.length - 1;
-      if (last && stretch > 1.45) stretch = 1;
+      // A ragged last line, unless it is a cut that filled a full line (score.justifyLast).
+      if (last && stretch > 1.45 && !model.score.justifyLast) stretch = 1;
       if (stretch < 1) stretch = 1;
       var ext = model.staves.map(function (_, si) { return extents(sys, si); });
       var hasAbove = sys.bars.some(function (bi) { var mt = model.barMeta[bi]; return mt.volta || mt.fine || mt.dc || sectionAt[bi]; });
@@ -1773,21 +1774,126 @@
     });
   }
 
-  // A small engraving of a score's first bars (shelf covers, previews): cheap even for a whole symphony.
-  function previewSvg(score, bars, width) {
+  // The first `bars` bars of a score as a model of their own, ending on a plain barline.
+  function openingModel(score, bars, suffix) {
     var cut = function (text) { return String(text || '').split('|').slice(0, bars).join('|').replace(/:\s*$/, ''); };
     var copy = JSON.parse(JSON.stringify(score));
-    copy.id = (score.id || 'score') + '-preview';
+    copy.id = (score.id || 'score') + '-' + suffix;
     copy.ending = 'open'; delete copy.sections;
     copy.staves.forEach(function (st) {
       if (st.voices) st.voices.forEach(function (v) { v.notes = cut(v.notes); }); else st.notes = cut(st.notes);
     });
     var model = prepare(copy); analyse(model);
-    var out = engrave(model, width || 640);
+    return model;
+  }
+
+  // A small engraving of a score's first bars (shelf covers, previews): cheap even for a whole symphony.
+  function previewSvg(score, bars, width) {
+    var out = engrave(openingModel(score, bars, 'preview'), width || 640);
     return '<svg class="se-score" data-contrast-guard-skip aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
   }
 
-  root.ScoreEngine = { previewSvg: previewSvg, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
+  // ── Lesson print: the opening lines ───────────────────────────────────────
+  // A whole piece squeezed into a lesson page is unreadable, so a printed lesson shows each
+  // figure marked data-score-print="opening" as its first one or two lines, in the same
+  // large-print engraving as the Print score pages. The complete score stays one button away.
+  // Engraving units across the ~6.5in of a lesson column: large print a little under the Print score
+  // pages' size (staff spaces about 2mm, against 1.75mm in most printed music), so a handout keeps
+  // more bars to a line.
+  var OPENING_WIDTH = 1150;
+  // The first line or two of a score engraved `width` units across a 6.5in column: up to 3in of
+  // paper, re-engraved to end on its own last line (a crop above the next line would clip low notes
+  // or catch that line's bar number and high beams).
+  function opening(score, total, width, readable) {
+    var unitsPerInch = width / 6.5, model = null, layout = null;
+    // 16 bars fills two lines with room to spare (8 for a full score, which keeps one); fewer if a cut
+    // leaves an ending half-open.
+    [score.staves.length > 4 ? 8 : 16, 12, 8, 4, 2].some(function (bars) {
+      try {
+        model = openingModel(score, Math.min(bars, total), 'print');
+        layout = engrave(model, width, readable);
+        return layout.systems.length > 0;
+      } catch (err) { layout = null; return false; }
+    });
+    if (!layout) return null;
+    var systems = layout.systems, kept = 1, shownBars = 0;
+    while (kept < Math.min(2, systems.length) && systems[kept].bottom - systems[0].top <= unitsPerInch * 3) kept += 1;
+    systems.slice(0, kept).forEach(function (sys) { sys.cols.forEach(function (c) { if (c.barEnd) shownBars += 1; }); });
+    if (kept < systems.length) {
+      try {
+        var exact = openingModel(score, shownBars, 'print');
+        exact.score.justifyLast = true;
+        var exactLayout = engrave(exact, width, readable);
+        if (exactLayout.systems.length === kept) { model = exact; layout = exactLayout; }
+      } catch (err) { /* keep the cropped engraving */ }
+    }
+    return { model: model, layout: layout, kept: kept, shownBars: shownBars };
+  }
+  function openingFigure(score) {
+    var staff = score.staves[0], text = staff.voices ? staff.voices[0].notes : staff.notes;
+    var segments = String(text || '').split('|');
+    if (segments[segments.length - 1].trim() === '') segments.pop();
+    var total = segments.length;
+    // Large print first. A full score would fill a page with one system at that size, and a dense
+    // piano piece can fit only a bar or two to a line, so those print at ordinary engraving size
+    // (staff spaces about 1.6mm, like a study score) to show at least four bars.
+    var big = score.staves.length > 4;
+    var plan = big ? null : opening(score, total, OPENING_WIDTH, true);
+    if (!plan || (plan.shownBars < 4 && plan.shownBars < total)) plan = opening(score, total, 1000, false) || plan;
+    if (!plan) return null;
+    var model = plan.model, layout = plan.layout, systems = layout.systems, kept = plan.kept, shownBars = plan.shownBars;
+    var unitsPerInch = layout.width / 6.5;
+    var top = Math.max(0, systems[0].top - layout.S * 1.8);
+    var bottom = kept < systems.length ? systems[kept].top : layout.height;
+    var first = barNumber(model, 0), last = barNumber(model, shownBars - 1);
+    var whole = shownBars >= total;
+    var bars = function (a, b) { return a === b ? 'bar ' + a : 'bars ' + a + '–' + b; };
+    var box = el('div', { class: 'se-print-opening', 'aria-hidden': 'true' });
+    // A tall system (a big orchestra) is narrowed to share its page with the text: 4.5in, or 5.5in
+    // for a full score, whose dozen staves would otherwise shrink below a study score's size.
+    var inches = (bottom - top) / unitsPerInch, cap = score.staves.length > 8 ? 5.5 : 4.5;
+    var fit = inches > cap ? ' style="width:' + Math.round(cap / inches * 100) + '% !important"' : '';
+    box.innerHTML = '<svg class="se-score" data-contrast-guard-skip' + fit + ' viewBox="0 ' + top + ' ' + layout.width + ' ' + (bottom - top) + '">' + layout.svg + '</svg>';
+    var note = whole ? (total === 1 ? 'The whole passage.' : 'All ' + total + ' bars.') :
+      'Opening ' + (first < 1 ? (last < 1 ? 'pickup' : 'pickup and ' + bars(1, last)) : bars(first, last)) + ' · full score: open the piece on screen and choose Print score.';
+    if (score.source && score.source.label) note += ' Notes: ' + score.source.label + (score.source.license ? ' · ' + score.source.license : '') + '.';
+    box.appendChild(el('p', { class: 'se-print-opening-note' }, note));
+    return box;
+  }
+  function addPrintOpenings() {
+    removePrintOpenings();
+    if (document.body.classList.contains('se-print-score-active') || document.body.classList.contains('mz-print-rondo')) return;
+    document.querySelectorAll('figure[data-score-print="opening"]').forEach(function (fig) {
+      if (!fig.scoreData) return;
+      var box = openingFigure(fig.scoreData);
+      if (!box) return;
+      // Chrome strands a heading above an unbreakable box despite break-after: avoid, so the
+      // heading just before the figure prints inside the box (the original is hidden in print).
+      var heading = fig.previousElementSibling;
+      if (heading && /^H[2-6]$/.test(heading.tagName)) {
+        var copy = heading.cloneNode(true);
+        copy.removeAttribute('id'); copy.removeAttribute('tabindex');
+        box.insertBefore(copy, box.firstChild);
+        heading.setAttribute('data-se-print-moved', '');
+      }
+      var paper = fig.querySelector(':scope > .se-paper');
+      var cap = fig.querySelector(':scope > figcaption');
+      if (paper) paper.after(box); else fig.insertBefore(box, cap);
+    });
+  }
+  function removePrintOpenings() {
+    document.querySelectorAll('.se-print-opening').forEach(function (box) { box.remove(); });
+    document.querySelectorAll('[data-se-print-moved]').forEach(function (h) { h.removeAttribute('data-se-print-moved'); });
+  }
+  if (typeof window !== 'undefined' && root === window) {
+    // lesson-print-button.js asks for print-only content before it plans page breaks;
+    // pages without it get the openings on beforeprint.
+    root.addEventListener('classroomos:print-prepare', addPrintOpenings);
+    root.addEventListener('beforeprint', function () { if (!root.ClassroomOSPrint) addPrintOpenings(); });
+    root.addEventListener('afterprint', removePrintOpenings);
+  }
+
+  root.ScoreEngine = { previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

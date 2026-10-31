@@ -23,22 +23,38 @@
     { file: 'lessons/music/theory/fake-book.html', label: 'Fake Book' },
     { file: 'music-lab.html', label: 'Music Lab' }
   ];
-  var COMPOSERS = [
-    { file: 'lessons/music/pioneers/vivaldi.html', label: 'Vivaldi' },
-    { file: 'lessons/music/pioneers/bach.html', label: 'Bach' },
-    { file: 'lessons/music/pioneers/mozart.html', label: 'Mozart' },
-    { file: 'lessons/music/pioneers/beethoven.html', label: 'Beethoven' },
-    { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin' },
-    { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky' },
-    { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy' },
-    { file: 'lessons/music/pioneers/satie.html', label: 'Satie' },
-    { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin' },
-    { file: 'lessons/music/pioneers/gershwin.html', label: 'Gershwin' },
-    { file: 'lessons/music/pioneers/morton.html', label: 'Morton' },
-    { file: 'lessons/music/pioneers/duke-ellington.html', label: 'Ellington' },
-    { file: 'lessons/music/pioneers/charlie-parker.html', label: 'Parker' },
-    { file: 'lessons/music/pioneers/louis-armstrong.html', label: 'Armstrong' }
+  // The composer route: eras in date order, composers in birth order within each.
+  // composer-route.js builds each lesson's era strip and "What came next" card from this.
+  var ERAS = [
+    { id: 'baroque', label: 'Baroque', composers: [
+      { file: 'lessons/music/pioneers/vivaldi.html', label: 'Vivaldi', name: 'Antonio Vivaldi', dates: '1678–1741' },
+      { file: 'lessons/music/pioneers/bach.html', label: 'Bach', name: 'Johann Sebastian Bach', dates: '1685–1750' }
+    ] },
+    { id: 'classical', label: 'Classical', composers: [
+      { file: 'lessons/music/pioneers/mozart.html', label: 'Mozart', name: 'Wolfgang Amadeus Mozart', dates: '1756–1791' },
+      { file: 'lessons/music/pioneers/beethoven.html', label: 'Beethoven', name: 'Ludwig van Beethoven', dates: '1770–1827' }
+    ] },
+    { id: 'romantic', label: 'Romantic', composers: [
+      { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin', name: 'Frédéric Chopin', dates: '1810–1849' },
+      { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky', name: 'Pyotr Ilyich Tchaikovsky', dates: '1840–1893' }
+    ] },
+    { id: 'modern', label: 'Modern', composers: [
+      { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy', name: 'Claude Debussy', dates: '1862–1918' },
+      { file: 'lessons/music/pioneers/satie.html', label: 'Satie', name: 'Erik Satie', dates: '1866–1925' }
+    ] },
+    { id: 'jazz', label: 'American roots & jazz', short: 'Roots & jazz', tiny: 'Jazz', composers: [
+      { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin', name: 'Scott Joplin', dates: 'c. 1868–1917' },
+      { file: 'lessons/music/pioneers/morton.html', label: 'Morton', name: 'Jelly Roll Morton', dates: 'c. 1890–1941' },
+      { file: 'lessons/music/pioneers/gershwin.html', label: 'Gershwin', name: 'George Gershwin', dates: '1898–1937' },
+      { file: 'lessons/music/pioneers/duke-ellington.html', label: 'Ellington', name: 'Duke Ellington', dates: '1899–1974' },
+      { file: 'lessons/music/pioneers/louis-armstrong.html', label: 'Armstrong', name: 'Louis Armstrong', dates: '1901–1971' },
+      { file: 'lessons/music/pioneers/charlie-parker.html', label: 'Parker', name: 'Charlie Parker', dates: '1920–1955' }
+    ] }
   ];
+  var COMPOSERS = [];
+  ERAS.forEach(function (era) {
+    era.composers.forEach(function (c) { c.era = era; COMPOSERS.push(c); });
+  });
   var SCIENCE = [
     { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },
     { file: 'lessons/physics/waves-and-sound/do-atoms-make-music.html', label: 'Do Atoms Make Music?' },
@@ -49,6 +65,8 @@
     var path = location.pathname.replace(/\/index\.html$/, '/');
     return path.slice(-file.length) === file;
   }
+
+  window.MusicFamily = { base: base, eras: ERAS, composers: COMPOSERS, here: here };
 
   function group(title, items) {
     var g = document.createElement('div');
@@ -67,8 +85,10 @@
     return g;
   }
 
-  // Composers fold into one dropdown chip so the strip stays short on phones.
-  function menu(title, items) {
+  // Composers fold into one dropdown chip, grouped by era, so the strip stays short on phones.
+  function menu(title, eras) {
+    var items = [];
+    eras.forEach(function (era) { items = items.concat(era.composers); });
     var d = document.createElement('details');
     d.className = 'mf-menu';
     var sum = document.createElement('summary');
@@ -79,12 +99,18 @@
     d.appendChild(sum);
     var list = document.createElement('div');
     list.className = 'mf-menu-list';
-    items.forEach(function (it) {
-      var a = document.createElement('a');
-      a.href = base + it.file;
-      a.textContent = it.label;
-      if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
-      list.appendChild(a);
+    eras.forEach(function (era) {
+      var head = document.createElement('span');
+      head.className = 'mf-menu-era';
+      head.textContent = era.label;
+      list.appendChild(head);
+      era.composers.forEach(function (it) {
+        var a = document.createElement('a');
+        a.href = base + it.file;
+        a.textContent = it.label;
+        if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
+        list.appendChild(a);
+      });
     });
     d.appendChild(list);
     document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false; });
@@ -116,7 +142,7 @@
     var body = document.createElement('div');
     body.className = 'mf-body';
     body.appendChild(group('Music theory & instruments', THEORY));
-    body.appendChild(menu('Composers', COMPOSERS));
+    body.appendChild(menu('Composers', ERAS));
     body.appendChild(group('Science of sound', SCIENCE));
     fold.appendChild(body);
     nav.appendChild(fold);
@@ -150,7 +176,10 @@
       '.music-family .mf-menu summary:hover,.music-family .mf-menu summary:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none;box-shadow:0 0 0 2px #ffd166}' +
       '.music-family .mf-menu summary[aria-current="page"]{background:#ffd9bd;color:#241a14;border-color:#ffd9bd}' +
       '.music-family .mf-menu-list{position:absolute;left:0;top:calc(100% + .3rem);z-index:40;display:grid;min-width:11rem;padding:.35rem;border-radius:12px;background:#241a14;border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 30px rgba(0,0,0,.35)}' +
-      '.music-family .mf-menu-list a{display:block;border-radius:8px}';
+      '.music-family .mf-menu-list a{display:block;border-radius:8px}' +
+      '.music-family .mf-menu-list{max-height:70vh;overflow-y:auto}' +
+      '.music-family .mf-menu-era{padding:.45rem .6rem .1rem;color:#ffb98a;font-size:.62rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
+      '.music-family .mf-menu-era:first-child{padding-top:.15rem}';
     document.head.appendChild(css);
 
     var anchor = document.querySelector('.ll-topbar, .pno-topbar, .gtr-topbar, .vln-topbar, header.site-header, header');

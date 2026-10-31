@@ -24,15 +24,18 @@
   .composer-display,.composer-back { display:none; }
   .composer-work-panel[hidden] { display:block !important; }
   #fl-sec-score { break-inside:auto !important; page-break-inside:auto !important; }
-  /* A complete piece squeezed into one portrait-page box is unreadable.
-     The score player's Print score control supplies full-size pages instead. */
-  body:not(.se-print-score-active):not(.mz-print-rondo) .composer-reading .se-paper { display:none; }
-  body:not(.se-print-score-active):not(.mz-print-rondo) .composer-reading figure[data-score]::after {
-    content:"To print legible notation, open this piece on screen and choose Print score.";
-    display:block;
-    margin-top:0.35rem;
-    font:700 9pt/1.35 system-ui,sans-serif;
-  }
+  /* A complete piece squeezed into one portrait-page box is unreadable. The lesson prints
+     each piece's opening lines (ScoreEngine's .se-print-opening); Print score gives the rest.
+     The player's title row and source line repeat the passage heading and the opening's note. */
+  /* (Child selector: noteheads inside the score are also class "se-head".) */
+  body:not(.se-print-score-active):not(.mz-print-rondo) .composer-reading figure[data-score] > :is(.se-paper, .se-head, .se-source) { display:none; }
+  /* lesson-print.css keeps a figcaption with what follows; here it closes its passage, and that avoid
+     would carry up to the break between two works, leaving Chrome nowhere clean to start a page. */
+  .composer-reading figure[data-score] > figcaption { break-after: auto; page-break-after: auto; }
+  /* Only the notation box must stay whole; its write-up may run on to the next page. */
+  .composer-reading figure[data-score] { break-inside: auto; page-break-inside: auto; }
+  /* Each passage heading names its work ("Für Elise · complete", "“Moonlight” Sonata · I. …"). */
+  .composer-work-panel > h3 { display:none; }
 }
 .composer-score-preview { --se-ink: #16130f; --se-accent: #c2410c; --se-muted: #5b5348; }
 .composer-display .music-section-navigation { margin-top: 1rem; }

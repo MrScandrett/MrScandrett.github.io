@@ -949,9 +949,124 @@
     printZoomRestore = [];
   }
 
+  /* Practice questions on paper. A dropdown prints as an empty "Choose…" box and
+     Check/Hint buttons as dead pills, so a printed quiz couldn't be answered.
+     Just before printing, each answer dropdown gets its options written out as
+     A/B/C/D tick boxes (the student's pick ticked, never the right answer),
+     answer fields and reflection boxes become ruled lines that keep anything
+     already typed, and the question's own buttons are hidden. Done before the
+     page-break planner so it measures the printed form; undone afterwards.
+     Sim controls are left alone: a field only counts inside a question-like
+     block (a class naming a problem, question, quiz, practice item or exercise,
+     or [data-print-answers]), and never in nav, a score, [data-memory-ignore] or
+     [data-print-answers="off"]. Reflection textareas count anywhere, unless
+     they hold code. */
+  var QUESTION_TOKEN = /(^|[_-])(problems?|questions?|quiz|practice|exercises?|q)($|[_-])/i;
+  var ANSWER_SKIP = 'nav, header, [data-memory-ignore], [data-score], .se-score, [data-no-print], [data-print-answers="off"], .lesson-print-actions';
+  var QUESTION_BUTTON = /check|hint|reveal|show|answer|submit|try|reset|clear|solution|grade|score/i;
+  var answerRestore = [];
+
+  function questionBlock(control) {
+    var node = control.parentElement;
+    for (var depth = 0; node && depth < 5 && !node.matches('main, body, section'); depth += 1) {
+      if (node.hasAttribute('data-print-answers')) return node.getAttribute('data-print-answers') === 'off' ? null : node;
+      if (Array.prototype.some.call(node.classList, function (name) { return QUESTION_TOKEN.test(name); })) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function printedAnswer(control, sheet) {
+    sheet.setAttribute('data-print-answer', '');
+    sheet.setAttribute('aria-hidden', 'true');
+    control.after(sheet);
+    control.setAttribute('data-print-answered', '');
+    answerRestore.push([control, sheet]);
+  }
+
+  function answerLine(text, className) {
+    var line = document.createElement('span');
+    line.className = className;
+    line.textContent = text || ' ';
+    return line;
+  }
+
+  function writeAnswerSheets() {
+    var root = document.querySelector('main') || document.body;
+    var blocks = new Set();
+    root.querySelectorAll('select, input, textarea').forEach(function (control) {
+      if (control.closest(ANSWER_SKIP) || control.hasAttribute('data-print-answered')) return;
+      if (!control.getClientRects().length && !control.closest('.ll-panel, .ll-pane')) return;
+      var block = questionBlock(control);
+      var tag = control.tagName;
+      if (tag === 'SELECT') {
+        var options = Array.prototype.filter.call(control.options, function (option) {
+          return option.value !== '' && option.textContent.trim() && !option.disabled;
+        });
+        if (!block || options.length < 2) return;
+        var list = document.createElement('ol');
+        list.className = 'lp-print-choices';
+        // Short choices share a row in equal columns (4 across, or 2 × 2), so a set never wraps unevenly.
+        var longest = Math.max.apply(null, options.map(function (option) { return option.textContent.trim().length; }));
+        var columns = longest <= 12 ? 4 : longest <= 26 ? 2 : 1;
+        if (columns > 1 && options.length > 2 && options.length % columns && options.length % 2 === 0) columns = 2;
+        if (columns > 1) {
+          list.classList.add('lp-print-choices--row');
+          list.style.setProperty('--lp-choice-columns', String(Math.min(columns, options.length)));
+        }
+        options.forEach(function (option, index) {
+          var item = document.createElement('li');
+          item.textContent = (option.selected && control.value !== '' ? '☑ ' : '☐ ') +
+            String.fromCharCode(65 + index) + '. ' + option.textContent.trim();
+          list.appendChild(item);
+        });
+        printedAnswer(control, list);
+      } else if (tag === 'TEXTAREA') {
+        var code = /code|editor|css|html|json|script|source/i.test(control.className + ' ' + control.id) ||
+          /mono|courier|consolas/i.test(getComputedStyle(control).fontFamily);
+        if (code || control.readOnly) return;
+        var lines = document.createElement('span');
+        lines.className = 'lp-print-lines';
+        var rows = Math.max(2, Math.min(6, parseInt(control.getAttribute('rows'), 10) || 3));
+        var typed = control.value.trim();
+        lines.appendChild(answerLine(typed, 'lp-print-line lp-print-line--typed'));
+        for (var row = 1; row < rows && !typed; row += 1) lines.appendChild(answerLine('', 'lp-print-line'));
+        printedAnswer(control, lines);
+      } else if (block && /^(text|number|search)$/.test(control.type)) {
+        printedAnswer(control, answerLine(control.value.trim(), 'lp-print-blank'));
+      }
+      if (block) blocks.add(block);
+    });
+
+    blocks.forEach(function (block) {
+      block.querySelectorAll('button, input[type="button"], input[type="submit"], input[type="reset"]').forEach(function (button) {
+        var label = button.textContent || button.value || '';
+        if (/opt|choice/i.test(button.className) || !QUESTION_BUTTON.test(label + ' ' + button.className)) return;
+        printMark(button, 'data-print-answered');
+      });
+    });
+    // "Show hints automatically" switches above a practice set.
+    root.querySelectorAll('label').forEach(function (label) {
+      if (label.querySelector('input[type="checkbox"]') && /show (hints|answers)/i.test(label.textContent)) {
+        printMark(label, 'data-print-answered');
+      }
+    });
+  }
+
+  function clearAnswerSheets() {
+    answerRestore.forEach(function (entry) {
+      entry[0].removeAttribute('data-print-answered');
+      entry[1].remove();
+    });
+    answerRestore = [];
+  }
+
   function prepareForPrint() {
     restoreAfterPrint();
+    // Print-only content (score-engine.js's opening bars) goes in here, so the planner measures it.
+    window.dispatchEvent(new Event('classroomos:print-prepare'));
     stowInkControls();
+    writeAnswerSheets();
     revealFadedContent();
     unrollScrollers();
     fitWideContent();
@@ -963,6 +1078,7 @@
     restoreZoom();
     restoreInk();
     clearPrintBreaks();
+    clearAnswerSheets();
     returnInkControls();
   }
 

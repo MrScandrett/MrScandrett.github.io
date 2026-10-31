@@ -20,9 +20,10 @@
   if (!works || !area) return;
   // Larger staff spacing lets a class read the notation at the default zoom.
   // ScoreEngine still reflows systems to the available width, and its zoom
-  // controls remain available for closer study.
+  // controls remain available for closer study. A printed lesson shows each piece's opening lines.
   area.querySelectorAll('figure[data-score]').forEach(function (figure) {
     figure.setAttribute('data-score-readable', '');
+    figure.setAttribute('data-score-print', 'opening');
   });
   function element(tag, className, text) {
     var node = document.createElement(tag);
