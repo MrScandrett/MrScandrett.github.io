@@ -1788,9 +1788,44 @@
   }
 
   // A small engraving of a score's first bars (shelf covers, previews): cheap even for a whole symphony.
+  // A cover is a fixed box, so the preview is always one system of at most two staves: a dozen
+  // orchestral staves scaled into a thumbnail is a grey smear, and a second system gets cropped.
+  // Ensembles show their two busiest staves in the opening bars (score order kept), so the cover
+  // shows the tune rather than resting winds.
+  function previewStaves(score, bars) {
+    if (score.staves.length <= 2) return score;
+    var busy = score.staves.map(function (st, si) {
+      var count = 0;
+      (st.voices || [{ notes: st.notes }]).forEach(function (voice) {
+        try {
+          parseStaff(String(voice.notes || '').split('|').slice(0, bars).join('|'), 'preview').forEach(function (bar) {
+            bar.events.forEach(function (ev) { if (ev.kind === 'note') count += 1; });
+          });
+        } catch (err) { /* an unparsable cut just counts as quiet */ }
+      });
+      return { si: si, count: count };
+    });
+    var keep = busy.slice().sort(function (a, b) { return b.count - a.count || a.si - b.si; }).slice(0, 2)
+      .map(function (b) { return b.si; }).sort(function (a, b) { return a - b; });
+    var copy = JSON.parse(JSON.stringify(score));
+    // Bar marks (repeats, key and time changes) are read from the first staff; keep them on whichever leads.
+    copy.staves = keep.map(function (si) { return copy.staves[si]; });
+    copy.grand = false;
+    return copy;
+  }
   function previewSvg(score, bars, width) {
-    var out = engrave(openingModel(score, bars, 'preview'), width || 640);
-    return '<svg class="se-score" data-contrast-guard-skip aria-hidden="true" viewBox="0 0 ' + out.width + ' ' + out.height + '">' + out.svg + '</svg>';
+    bars = Math.max(1, bars || 2);
+    var source = previewStaves(score, bars), out = null;
+    for (var n = bars; n >= 1; n -= 1) {
+      // Justified, so a short opening (one held chord) spans the plate like a full line does.
+      try { var model = openingModel(source, n, 'preview'); model.score.justifyLast = true; out = engrave(model, width || 640); } catch (err) { out = null; continue; }
+      if (out.systems.length <= 1) break;
+    }
+    if (!out && source !== score) out = engrave(openingModel(score, bars, 'preview'), width || 640);
+    if (!out) throw new Error((score.id || 'score') + ': no preview');
+    var sys = out.systems[0], top = 0, height = out.height;
+    if (out.systems.length > 1 && sys) { top = Math.max(0, sys.top - out.S); height = out.systems[1].top - top; }
+    return '<svg class="se-score" data-contrast-guard-skip aria-hidden="true" viewBox="0 ' + top + ' ' + out.width + ' ' + height + '">' + out.svg + '</svg>';
   }
 
   // ── Lesson print: the opening lines ───────────────────────────────────────
