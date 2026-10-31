@@ -71,6 +71,207 @@ export function smoothPoints(points, passes, closed) {
 
 const polygonArea = (pts) => pts.reduce((a, [x, y], i) => { const [x2, y2] = pts[(i + 1) % pts.length]; return a + x * y2 - x2 * y; }, 0) / 2;
 
+/* ── Sweep and loft ───────────────────────────────────────────────────── */
+
+const cross2 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+const ccw = (pts) => (polygonArea(pts) < 0 ? [...pts].reverse() : pts);
+
+function segmentsCross(a, b, c, d) {
+  const d1 = cross2(c, d, a), d2 = cross2(c, d, b), d3 = cross2(a, b, c), d4 = cross2(a, b, d);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+
+/* True when two non-neighbouring edges of a closed outline cross. */
+export function selfCrossing(pts) {
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      if (segmentsCross(pts[i], pts[(i + 1) % n], pts[j], pts[(j + 1) % n])) return true;
+    }
+  }
+  return false;
+}
+
+/* Ear clipping for a simple counter-clockwise outline → index triples. */
+function earClip(P) {
+  const idx = P.map((_, i) => i);
+  const tris = [];
+  const xs = P.map((p) => p[0]), ys = P.map((p) => p[1]);
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1;
+  const eps = span * span * 1e-12;
+  const inside = (p, a, b, c) => cross2(a, b, p) >= -eps && cross2(b, c, p) >= -eps && cross2(c, a, p) >= -eps;
+  let i = 0, misses = 0;
+  while (idx.length > 3) {
+    const m = idx.length;
+    const ia = idx[(i + m - 1) % m], ib = idx[i % m], ic = idx[(i + 1) % m];
+    const a = P[ia], b = P[ib], c = P[ic];
+    let ear = cross2(a, b, c) > eps;
+    if (ear) {
+      for (const j of idx) {
+        if (j === ia || j === ib || j === ic) continue;
+        if (inside(P[j], a, b, c)) { ear = false; break; }
+      }
+    }
+    if (ear) { tris.push([ia, ib, ic]); idx.splice(i % m, 1); misses = 0; i = Math.max(0, (i % m) - 1); }
+    else if (++misses > m) throw new Error('An outline crosses itself. Drag its points so no two edges cross.');
+    else i = (i + 1) % m;
+  }
+  tris.push(idx);
+  return tris;
+}
+
+/* Fraction of the way round a closed outline at each vertex (0 at vertex 0). */
+function arcParams(P) {
+  const n = P.length, s = [0];
+  let total = 0;
+  for (let i = 0; i < n; i++) { const a = P[i], b = P[(i + 1) % n]; total += Math.hypot(b[0] - a[0], b[1] - a[1]); if (i < n - 1) s.push(total); }
+  return { s: s.map((v) => v / (total || 1)), total };
+}
+
+/* Points on a closed outline at the sorted fractions `us` (walks once). */
+function sampleOutline(P, s, us) {
+  const n = P.length, out = [];
+  let k = 0;
+  for (const u of us) {
+    while (k < n - 1 && s[k + 1] <= u) k++;
+    const a = P[k], b = P[(k + 1) % n];
+    const s0 = s[k], s1 = k + 1 < n ? s[k + 1] : 1;
+    const t = s1 > s0 ? (u - s0) / (s1 - s0) : 0;
+    out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+  }
+  return out;
+}
+
+const centroidOf = (P) => {
+  let a = 0, cx = 0, cy = 0;
+  P.forEach(([x, y], i) => { const [x2, y2] = P[(i + 1) % P.length]; const c = x * y2 - x2 * y; a += c; cx += (x + x2) * c; cy += (y + y2) * c; });
+  return Math.abs(a) < 1e-12 ? [0, 0] : [cx / (3 * a), cy / (3 * a)];
+};
+
+/* A loft: a skin stretched from one closed outline (at z = 0) to another (at
+   z = h). Both are walked counter-clockwise from matching starts, every vertex
+   of each outline appears in every ring (so both outlines keep their corners),
+   and `belly` swells (or pinches) the middle like a third, scaled outline. */
+export function loftMesh(bottom, top, h, belly = 1, rows = 1) {
+  const B = ccw(bottom), T0 = ccw(top);
+  for (const P of [B, T0]) {
+    if (P.length < 3 || Math.abs(polygonArea(P)) < 1e-9) throw new Error('Each outline needs at least three points that enclose an area.');
+    if (selfCrossing(P)) throw new Error('An outline crosses itself. Drag its points so no two edges cross.');
+  }
+  const cb = centroidOf(B), ct = centroidOf(T0);
+  const { s: sB } = arcParams(B);
+  // start the top outline at whichever vertex lines it up best with the bottom (least twist)
+  const K = 48, us = Array.from({ length: K }, (_, k) => k / K);
+  const refB = sampleOutline(B, sB, us).map(([x, y]) => [x - cb[0], y - cb[1]]);
+  let start = 0, bestCost = Infinity;
+  for (let j = 0; j < T0.length; j++) {
+    const Tj = [...T0.slice(j), ...T0.slice(0, j)];
+    const pts = sampleOutline(Tj, arcParams(Tj).s, us);
+    let cost = 0;
+    for (let k = 0; k < K; k++) cost += (pts[k][0] - ct[0] - refB[k][0]) ** 2 + (pts[k][1] - ct[1] - refB[k][1]) ** 2;
+    if (cost < bestCost) { bestCost = cost; start = j; }
+  }
+  const T = [...T0.slice(start), ...T0.slice(0, start)];
+  const { s: sT } = arcParams(T);
+  // one ring of fractions holding every vertex of both outlines
+  const U = [...new Set([...sB, ...sT])].sort((a, b) => a - b).filter((u, i, a) => i === 0 || u - a[i - 1] > 1e-9);
+  const where = (u) => { let lo = 0, hi = U.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (U[mid] < u - 1e-9) lo = mid + 1; else hi = mid; } return lo; };
+  const bIdx = sB.map(where), tIdx = sT.map(where);
+  const ringB = sampleOutline(B, sB, U), ringT = sampleOutline(T, sT, U);
+  bIdx.forEach((k, i) => { ringB[k] = B[i]; });
+  const N = U.length, R = Math.max(1, Math.round(rows));
+  const verts = [];
+  for (let r = 0; r <= R; r++) {
+    const t = r / R, swell = 1 + (belly - 1) * 4 * t * (1 - t);
+    const c = [cb[0] + (ct[0] - cb[0]) * t, cb[1] + (ct[1] - cb[1]) * t];
+    for (let k = 0; k < N; k++) {
+      const x = ringB[k][0] + (ringT[k][0] - ringB[k][0]) * t, y = ringB[k][1] + (ringT[k][1] - ringB[k][1]) * t;
+      verts.push(c[0] + (x - c[0]) * swell, c[1] + (y - c[1]) * swell, h * t);
+    }
+  }
+  const tris = [];
+  for (let r = 0; r < R; r++) {
+    for (let k = 0; k < N; k++) {
+      const a = r * N + k, b = r * N + (k + 1) % N, c = (r + 1) * N + (k + 1) % N, d = (r + 1) * N + k;
+      tris.push(a, b, c, a, c, d);
+    }
+  }
+  // caps: triangulate each outline on its own vertices, then fan any ring points lying on its edges
+  const cap = (P, idxOf, row, up) => {
+    const n = P.length, base = row * N;
+    for (const [i0, i1, i2] of earClip(P)) {
+      const loop = [];
+      for (const [ia, ib] of [[i0, i1], [i1, i2], [i2, i0]]) {
+        loop.push(base + idxOf[ia]);
+        if (ib === (ia + 1) % n) {
+          const from = idxOf[ia], to = ib === 0 ? N : idxOf[ib];
+          for (let k = from + 1; k < to; k++) loop.push(base + k);
+        }
+      }
+      const emit = (a, b, c) => (up ? tris.push(a, b, c) : tris.push(a, c, b));
+      if (loop.length === 3) { emit(loop[0], loop[1], loop[2]); continue; }
+      const mid = verts.length / 3;
+      let mx = 0, my = 0;
+      for (const v of loop) { mx += verts[v * 3]; my += verts[v * 3 + 1]; }
+      verts.push(mx / loop.length, my / loop.length, verts[loop[0] * 3 + 2]);
+      loop.forEach((v, k) => emit(mid, v, loop[(k + 1) % loop.length]));
+    }
+  };
+  cap(B, bIdx, 0, false);
+  cap(T, tIdx, R, true);
+  return { vertProperties: Float32Array.from(verts), triVerts: Uint32Array.from(tris) };
+}
+
+/* A sweep: a closed profile carried along an open path drawn in X (across) and
+   Z (up). The profile's x lies in the path's plane, its y points out of the
+   drawing, and it stays square to the path: at every corner of the path the
+   ring of profile points is mitred (stretched along the bisector), as every
+   CAD sweep does. A bend tighter than the profile is wide would fold the skin
+   through itself, so that is refused with a message, like a CAD app's error. */
+export function sweepMesh(profile, path) {
+  const Q = ccw(profile);
+  if (Q.length < 3 || Math.abs(polygonArea(Q)) < 1e-9) throw new Error('The profile needs at least three points that enclose an area.');
+  if (selfCrossing(Q)) throw new Error('The profile crosses itself. Drag its points so no two edges cross.');
+  const P = path.filter((p, i) => i === 0 || Math.hypot(p[0] - path[i - 1][0], p[1] - path[i - 1][1]) > 1e-6);
+  if (P.length < 2) throw new Error('The path needs at least two separate points.');
+  const dirs = [];
+  for (let i = 0; i < P.length - 1; i++) {
+    const dx = P[i + 1][0] - P[i][0], dz = P[i + 1][1] - P[i][1], l = Math.hypot(dx, dz);
+    dirs.push([dx / l, dz / l]);
+  }
+  const n = Q.length, rings = [];
+  for (let i = 0; i < P.length; i++) {
+    const a = dirs[Math.max(0, i - 1)], b = dirs[Math.min(dirs.length - 1, i)];
+    let mx = a[0] + b[0], mz = a[1] + b[1];
+    const ml = Math.hypot(mx, mz);
+    const cosHalf = ml / 2;
+    if (cosHalf < 0.2) throw new Error('The path doubles back too sharply. Spread its points out or turn on Smooth path.');
+    mx /= ml; mz /= ml;
+    const stretch = 1 / cosHalf;
+    // in-plane normal: the tangent turned a quarter turn (local x of the profile)
+    const nx = mz * stretch, nz = -mx * stretch;
+    rings.push(Q.map(([u, v]) => [P[i][0] + u * nx, v, P[i][1] + u * nz]));
+  }
+  for (let i = 0; i < dirs.length; i++) {
+    const [dx, dz] = dirs[i];
+    for (let k = 0; k < n; k++) {
+      const a = rings[i][k], b = rings[i + 1][k];
+      if ((b[0] - a[0]) * dx + (b[2] - a[2]) * dz <= 1e-9) throw new Error('The path bends more tightly than the profile is wide, so the skin would fold through itself. Make the bend bigger, the profile thinner, or turn up Smooth path.');
+    }
+  }
+  const verts = rings.flat(2), tris = [];
+  for (let i = 0; i < rings.length - 1; i++) {
+    for (let k = 0; k < n; k++) {
+      const a = i * n + k, b = i * n + (k + 1) % n, c = (i + 1) * n + (k + 1) % n, d = (i + 1) * n + k;
+      tris.push(a, b, c, a, c, d);
+    }
+  }
+  const last = (rings.length - 1) * n;
+  for (const [a, b, c] of earClip(Q)) { tris.push(a, c, b); tris.push(last + a, last + b, last + c); }
+  return { vertProperties: Float32Array.from(verts), triVerts: Uint32Array.from(tris) };
+}
+
 /* A profile drawn in X (across) and Y (up), extruded `depth` toward the viewer:
    x stays x, the profile's y becomes height (z), the extrusion runs along y. */
 const standUp = (m) => m.rotate([90, 0, 0]);
@@ -651,6 +852,35 @@ const sketches = [
       }
       if (region.isEmpty()) throw new Error('The silhouette has no area to spin.');
       return region.revolve(p.sides, p.degrees);
+    },
+  },
+  {
+    id: 'sketch-loft', name: 'Sketch → loft (blend two outlines)', group: SKETCH, kind: 'object', blurb: 'Draw a bottom outline and a top outline; the skin blends one into the other: square to round, bottle shoulders, boat hulls, vents.',
+    params: [
+      { id: 'bottom', label: 'Bottom outline', type: 'points', closed: true, len: true, max: 400, smooth: 'smooth', help: 'The outline the shape starts from, seen from above.', default: [[-14, -14], [14, -14], [14, 14], [-14, 14]] },
+      { id: 'top', label: 'Top outline', type: 'points', closed: true, len: true, max: 400, smooth: 'smooth', help: 'The outline it ends at, seen from above. Any number of points.', default: Array.from({ length: 16 }, (_, i) => [Math.round(10 * Math.cos((i * TAU) / 16 - TAU / 8) * 100) / 100, Math.round(10 * Math.sin((i * TAU) / 16 - TAU / 8) * 100) / 100]) },
+      len('h', 'Height', 0.2, 600, 0.5, 36), range('belly', 'Middle size', 40, 200, 5, 100, { unit: '%', help: 'Above 100% the middle bulges out like a bottle or hull; below, it pinches in like a waist.' }), range('smooth', 'Smooth corners', 0, 3, 1, 0),
+    ],
+    build({ Mesh, Manifold: M, track }, p) {
+      const bottom = smoothPoints(p.bottom, p.smooth, true), top = smoothPoints(p.top, p.smooth, true);
+      const mesh = loftMesh(bottom, top, p.h, p.belly / 100, p.belly === 100 ? 1 : 16);
+      const solid = track(new M(new Mesh({ numProp: 3, ...mesh })));
+      if (solid.status() !== 'NoError' || solid.isEmpty()) throw new Error('These two outlines could not be blended. Try fewer points or a less tangled outline.');
+      return solid;
+    },
+  },
+  {
+    id: 'sketch-sweep', name: 'Sketch → sweep (along a path)', group: SKETCH, kind: 'object', blurb: 'Draw a cross-section and a path; the section slides along the path: mug handles, pipes, railings, hooks, picture frames.',
+    params: [
+      { id: 'path', label: 'Path', type: 'points', closed: false, path: true, len: true, max: 400, smooth: 'smooth', help: 'Seen from the front: the line the profile travels along.', default: [[0, 0], [14, 2], [20, 15], [14, 28], [0, 30]] },
+      { id: 'profile', label: 'Profile', type: 'points', closed: true, len: true, max: 200, smooth: 'round', help: 'The cross-section, centred on the cross where the two grid lines meet.', default: [[-3, -5], [3, -5], [3, 5], [-3, 5]] },
+      range('smooth', 'Smooth path', 0, 4, 1, 3), range('round', 'Round the profile', 0, 4, 1, 2),
+    ],
+    build({ Mesh, Manifold: M, track }, p) {
+      const mesh = sweepMesh(smoothPoints(p.profile, p.round, true), smoothPoints(p.path, p.smooth, false));
+      const solid = track(new M(new Mesh({ numProp: 3, ...mesh })));
+      if (solid.status() !== 'NoError' || solid.isEmpty()) throw new Error('This sweep could not be built. Try a simpler profile or path.');
+      return solid;
     },
   },
 ];

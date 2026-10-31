@@ -7,10 +7,16 @@
     table:{label:'Table',w:3,d:3,fill:'#f7d797',stroke:'#695124'},
     chair:{label:'Chair',w:2,d:2,fill:'#f7d797',stroke:'#695124'},
     platform:{label:'Platform / scenery',w:6,d:4,fill:'#f7d797',stroke:'#695124'},
+    flat:{label:'Scenic flat / wall',w:8,d:1,fill:'#f7d797',stroke:'#695124'},
+    stairs:{label:'Step unit / stairs',w:4,d:4,fill:'#f7d797',stroke:'#695124'},
+    curtain:{label:'Masking leg / traveler',w:6,d:1,fill:'#f7d797',stroke:'#695124'},
+    prop_table:{label:'Wing prop table',w:6,d:2.5,fill:'#f0d5df',stroke:'#754559'},
+    quick_change:{label:'Quick-change booth',w:4,d:4,fill:'#f0d5df',stroke:'#754559'},
     actor:{label:'Performer',w:2,d:2,fill:'#c7daef',stroke:'#224e78'},
     mic:{label:'Microphone',w:1.5,d:1.5,fill:'#d8d0ed',stroke:'#55447b'},
     speaker:{label:'Speaker / monitor',w:2,d:2,fill:'#d8d0ed',stroke:'#55447b'},
     piano:{label:'Keyboard / piano',w:5,d:4,fill:'#d8d0ed',stroke:'#55447b'},
+    screen:{label:'Projection screen / cyc',w:16,d:1,fill:'#d8d0ed',stroke:'#55447b'},
     clear:{label:'Keep-clear area',w:4,d:10,fill:'#ddf0e8',stroke:'#23674f'},
     route:{label:'Movement arrow',w:6,d:1,fill:'#23674f',stroke:'#23674f'},
     custom:{label:'Custom item',w:3,d:3,fill:'#f0d5df',stroke:'#754559'}
@@ -109,6 +115,8 @@
       else if(item.type==='route')shape.append(s('path',{d:`M ${-item.w/2} ${-item.d*.2} H ${item.w*.2} V ${-item.d/2} L ${item.w/2} 0 L ${item.w*.2} ${item.d/2} V ${item.d*.2} H ${-item.w/2} Z`,...attrs}));
       else shape.append(s('rect',{x:-item.w/2,y:-item.d/2,width:item.w,height:item.d,...attrs,...(item.type==='clear'?{'stroke-dasharray':`${F*.5} ${F*.35}`}:{} )}));
       if(item.type==='chair')shape.append(s('line',{x1:-item.w*.4,y1:-item.d*.35,x2:item.w*.4,y2:-item.d*.35,stroke:type.stroke,'stroke-width':M*.04}));
+      if(item.type==='stairs'){for(const frac of [-0.25,0,0.25])shape.append(s('line',{x1:-item.w*.46,y1:item.d*frac,x2:item.w*.46,y2:item.d*frac,stroke:type.stroke,'stroke-width':M*.025}));}
+      if(item.type==='curtain')shape.append(s('line',{x1:-item.w*.45,y1:0,x2:item.w*.45,y2:0,stroke:type.stroke,'stroke-width':M*.035,'stroke-dasharray':`${F*.35} ${F*.25}`}));
       g.append(shape);
       g.append(s('circle',{cx:0,cy:0,r:F*.63,fill:'#fff',stroke:type.stroke,'stroke-width':M*.02}));
       g.append(text(0,F*.32,String(index),{'font-size':F*.95,'font-weight':'bold','pointer-events':'none'}));
@@ -163,6 +171,33 @@
   $('grid').addEventListener('change',e=>change(()=>state.grid=Number(e.target.value)));$('snap').addEventListener('change',e=>change(()=>state.snap=e.target.checked));
   $('undo').addEventListener('click',()=>{if(!undo.length)return;redo.push(snapshot());state=JSON.parse(undo.pop());render();save();});$('redo').addEventListener('click',()=>{if(!redo.length)return;undo.push(snapshot());state=JSON.parse(redo.pop());render();save();});
   $('clear').addEventListener('click',()=>{if(state.items.length&&!window.confirm('Remove all plotted items? Your production details and notes stay. You can undo this.'))return;change(()=>{state.items=[];selected=null;});});
+  $('pirates-example')?.addEventListener('click',()=>{
+    if(state.items.length&&!window.confirm('Replace your plotted items with The Pirates of Penzance Act I ground plan? You can undo this.'))return;
+    change(()=>{
+      state.items=[];state.width=30;state.depth=20;state.unit='ft';state.grid=2;
+      state.meta.production='The Pirates of Penzance';
+      state.meta.scene='Act I — Rocky Seashore on the Coast of Cornwall';
+      state.notes='Upstage painted drop: calm sea and schooner at anchor. Keep 4 ft entrance route through R.C. arch clear for Pirate King entrance (Cue LX 3 / SND 2). Offstage SL wing reserved for Major-General’s daughters entrance.';
+      const entries=[
+        ['platform',24.5,9,11,14,'Rock L. sloping to L.C.','Slopes down from SL toward L.C.; bolted to stage deck'],
+        ['custom',28.5,3.5,3,3,'Cavern mouth (1st entrance L.)','Under SL rock at first entrance Left'],
+        ['platform',10,11,7,2,'Natural rock arch (R.C.)','4 ft clear opening for Pirate King entrance'],
+        ['clear',10,10,4,10,'Pirate King entrance route','Keep clear from upstage R.C. through arch to downstage'],
+        ['actor',7,5,2,2,'Pirate Group A (DR)','Discovered pouring sherry at rise of curtain (FLY 1)'],
+        ['actor',17.5,6,2,2,'Pirate Group B (L.C.)','Balances Group A across centerline'],
+        ['actor',15,16,2,2,'Frederic (seated US)','Seated in despondent attitude at back of scene'],
+        ['actor',15,14.5,2,2,'Ruth (kneeling CS)','Kneels at Frederic’s feet; steps DS for LX 2 / MIC 2'],
+        ['mic',15,1.5,1.5,1.5,'Apron boundary mic (Center)','100 Hz HPF engaged; picks up pirate chorus']
+      ];
+      entries.forEach(([type,x,y,w,d,label,notes])=>{
+        const item=newItem(type,x,y,label);
+        item.w=w;item.d=d;item.notes=notes;
+        state.items.push(item);
+      });
+      selected=state.items[0].id;
+    });
+    $('save-status').textContent='Pirates of Penzance Act I loaded: 30 × 20 ft. Inspect items 1–9 or click Check layout.';
+  });
   $('example').addEventListener('click',()=>{
     if(state.items.length&&!window.confirm('Replace your plotted items with the market example? You can undo this.'))return;
     change(()=>{state.items=[];state.width=30;state.depth=20;state.unit='ft';state.grid=2;

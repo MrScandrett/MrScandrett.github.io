@@ -105,6 +105,12 @@
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
 
+        <nav aria-label="Technical Elements pathway" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;padding:0.55rem 0.85rem;border:1px solid var(--line,#d2d2d7);border-radius:10px;font-size:0.82rem;font-weight:700;">
+          <a href="stage-lighting-design-lab.html" style="text-decoration:none;">← Stage Lighting Design Lab</a>
+          <a href="../technical-elements.html" style="text-decoration:none;">Technical Elements Curriculum Hub</a>
+          <a href="../audio-engineering/cymatics.html" style="text-decoration:none;">Next: Cymatics &amp; Sound →</a>
+        </nav>
+
         <section class="hero cl-hero">
           <p class="eyebrow">Audio, Lighting &amp; Production Technology · Grades 9–12</p>
           <h1>Projection &amp; Throw-Ratio Lab</h1>
@@ -150,6 +156,38 @@
         <section class="cl-card" style="--card-accent:#34c759;">
           <h2>Go Deeper: The Throw-Ratio Formula</h2>
           <p><strong>Throw ratio = distance ÷ image width.</strong> A 1.5:1 lens set 15 ft from the screen throws a 10 ft wide image (15 ÷ 1.5 = 10). A "short-throw" lens (around 0.8:1) fills the same 10 ft screen from only 8 ft away — perfect for a shallow stage. A "long-throw" lens (around 2.5:1) needs 25 ft of distance for that same image — the right call in a large auditorium where the projector sits far from the screen, but useless in a cramped room.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#f59e0b;">
+          <h2>Musical Stagecraft: Actor Shadow Dead-Zone &amp; Front vs. Rear Projection</h2>
+          <p>When a school musical projects animated backdrops (such as newspaper headlines in <em>Newsies</em> or the Cornwall sea horizon in <em>The Pirates of Penzance</em>), the scenic and lighting crew must solve two stage problems during pre-production:</p>
+          <ul style="font-size:0.88rem;line-height:1.6;">
+            <li><strong>1. The Actor Shadow Dead-Zone:</strong> If a front-projection lens hangs on an overhead pipe at height <em>H<sub>proj</sub></em> and throws down toward the upstage screen at distance <em>D<sub>throw</sub></em>, any performer of height <em>H<sub>actor</sub></em> who steps too close to the backdrop intercepts the beam. By similar triangles, the downstage shadow dead-zone is <strong><em>d<sub>shadow</sub> = D<sub>throw</sub> × (H<sub>actor</sub> ÷ H<sub>proj</sub>)</em></strong>. The Stage Manager spikes a glow-tape line at this distance on the <a href="stage-plotting.html">Stage Plot</a> so dancers never cross upstage into the beam.</li>
+            <li><strong>2. Rear Projection (RP) vs. Ultra-Short-Throw (UST):</strong> Rear projection hides the projector behind a translucent upstage screen (zero actor shadows!), but requires empty backstage depth behind the cyc. Where backstage depth is tight, hanging a <strong>0.5:1–0.8:1 short-throw projector</strong> high on the 1st or 2nd Electric keeps the shadow zone under 4 feet.</li>
+            <li><strong>3. Stage Wash Spill &amp; Shutter Cuts:</strong> Even an 8,000-lumen laser projector looks washed out if front stage lights hit the screen. During focus (<a href="stage-lighting-design-lab.html">Stage Lighting Lab</a>), use Leko framing shutters and Fresnel barn doors to keep stage light off the top 80% of the projection surface.</li>
+          </ul>
+
+          <div class="ptr-lab" style="margin-top:0.85rem;">
+            <h3 style="margin:0 0 0.5rem;font-size:0.96rem;">Interactive Pre-Production Tool: Upstage Shadow Buffer Calculator</h3>
+            <div class="ptr-slider-row">
+              <label><span>Projector Pipe Height (<em>H<sub>proj</sub></em>)</span><span id="ptr-sh-hproj-val">16 ft</span></label>
+              <input type="range" min="10" max="26" step="1" value="16" id="ptr-sh-hproj" oninput="ptrShadowUpdate()" />
+            </div>
+            <div class="ptr-slider-row">
+              <label><span>Projector-to-Screen Throw (<em>D<sub>throw</sub></em>)</span><span id="ptr-sh-dist-val">12 ft</span></label>
+              <input type="range" min="5" max="24" step="1" value="12" id="ptr-sh-dist" oninput="ptrShadowUpdate()" />
+            </div>
+            <div class="ptr-slider-row">
+              <label><span>Tallest Performer + Hat Height (<em>H<sub>actor</sub></em>)</span><span id="ptr-sh-hactor-val">6.0 ft</span></label>
+              <input type="range" min="4.5" max="7.5" step="0.5" value="6.0" id="ptr-sh-hactor" oninput="ptrShadowUpdate()" />
+            </div>
+            <div class="ptr-readouts">
+              <div class="ptr-readout"><span class="ptr-readout-label">Shadow Dead-Zone</span><span class="ptr-readout-val" id="ptr-sh-zone">4.5 ft</span></div>
+              <div class="ptr-readout"><span class="ptr-readout-label">Recommended Spike Line</span><span class="ptr-readout-val" id="ptr-sh-spike">5.0 ft DS of Screen</span></div>
+              <div class="ptr-readout"><span class="ptr-readout-label">Stage Depth Left for Cast</span><span class="ptr-readout-val" id="ptr-sh-usable">15.5 / 20 ft</span></div>
+            </div>
+            <div class="ptr-verdict pass" id="ptr-sh-verdict">✓ Spike a keep-clear buffer 5.0 ft downstage of the backdrop so performers never cast head shadows on the projection.</div>
+          </div>
         </section>
 
         <!-- Practice Problems -->
@@ -368,9 +406,35 @@
     }
   }
 
+  function ptrShadowUpdate() {
+    var hProj = Number(document.getElementById('ptr-sh-hproj').value);
+    var dist = Number(document.getElementById('ptr-sh-dist').value);
+    var hActor = Number(document.getElementById('ptr-sh-hactor').value);
+    document.getElementById('ptr-sh-hproj-val').textContent = hProj + ' ft';
+    document.getElementById('ptr-sh-dist-val').textContent = dist + ' ft';
+    document.getElementById('ptr-sh-hactor-val').textContent = hActor.toFixed(1) + ' ft';
+
+    var shadow = dist * (hActor / hProj);
+    var spike = Math.ceil((shadow + 0.5) * 2) / 2;
+    var usable = Math.max(0, 20 - shadow);
+    document.getElementById('ptr-sh-zone').textContent = shadow.toFixed(1) + ' ft';
+    document.getElementById('ptr-sh-spike').textContent = spike.toFixed(1) + ' ft DS';
+    document.getElementById('ptr-sh-usable').textContent = usable.toFixed(1) + ' / 20 ft';
+
+    var v = document.getElementById('ptr-sh-verdict');
+    if (shadow <= 5.5) {
+      v.className = 'ptr-verdict pass';
+      v.textContent = '✓ Compact shadow zone (' + shadow.toFixed(1) + ' ft). Spike a keep-clear buffer ' + spike.toFixed(1) + ' ft downstage of the backdrop.';
+    } else {
+      v.className = 'ptr-verdict fail';
+      v.textContent = '✗ Wide shadow dead-zone (' + shadow.toFixed(1) + ' ft eats into acting space). Hang the projector higher or switch to a shorter-throw lens closer to the screen.';
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     ptrRenderLensButtons();
     ptrUpdate();
+    ptrShadowUpdate();
   });
 </script>
 <script src="../../../assets/js/classroom-animations.js"></script>

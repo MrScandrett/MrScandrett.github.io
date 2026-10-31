@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 451 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 454 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -257,7 +257,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 96 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 113 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -349,28 +349,58 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 ## Audio, Lighting & Production Technology (TEC)
 
+### Start Here · Pre-Production to Opening Night
+
+- **TEC-01** — Technical Elements Curriculum Hub: From Script to Opening Night
+
 ### Audio, Acoustics & Signal Flow
 
-- **TEC-01** — Microphone Polar Pattern Lab
-- **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
-- **TEC-03** — Wireless Mics & RF Coordination — _also indexed in Engineering Systems & Electronics_
-- **TEC-04** — Running the Allen & Heath Qu-7 — _also indexed in Engineering Systems & Electronics_
-- **TEC-05** — EQ: Find the Problem Frequency
-- **TEC-06** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
-- **TEC-07** — Room Acoustics & Reverb Lab
-- **TEC-08** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
-- **TEC-09** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
+- **TEC-02** — Microphone Polar Pattern Lab
+- **TEC-03** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
+- **TEC-04** — Wireless Mics & RF Coordination — _also indexed in Engineering Systems & Electronics_
+- **TEC-05** — Running the Allen & Heath Qu-7 — _also indexed in Engineering Systems & Electronics_
+- **TEC-06** — EQ: Find the Problem Frequency
+- **TEC-07** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
+- **TEC-08** — Room Acoustics & Reverb Lab
+- **TEC-09** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
+- **TEC-10** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-10** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-11** — Camera Exposure Triangle
-- **TEC-12** — White Balance & Color Temperature
-- **TEC-13** — Projection & Throw-Ratio Lab
-- **TEC-14** — Theatre Cue Sheets
-- **TEC-15** — Stage Plotting
-- **TEC-16** — Walt Disney — _also indexed in Visual Art & Design_
+- **TEC-11** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-12** — Camera Exposure Triangle
+- **TEC-13** — White Balance & Color Temperature
+- **TEC-14** — Projection & Throw-Ratio Lab
+- **TEC-15** — Theatre Cue Sheets
+- **TEC-16** — Stage Plotting
 - **TEC-17** — Jim Henson
+
+## 2D Design (D2D)
+
+### Start Here
+
+- **D2D-01** — 2D Design: Draw It, Move It, Play It
+
+### Pioneers · Painters & Animators
+
+- **D2D-02** — Vincent van Gogh
+- **D2D-03** — Pablo Picasso
+- **D2D-04** — Katsushika Hokusai
+- **D2D-05** — Walt Disney
+
+### Make It Play · 2D Game Developer Pathway
+
+- **D2D-06** — 2D Game Developer Pathway
+- **D2D-07** — Pixel Art & Sprites
+- **D2D-08** — Sprite Sheets & Animation
+- **D2D-09** — Tilesets & Tilemaps
+- **D2D-10** — Game Loop & Rendering
+- **D2D-11** — Movement & Jump Feel
+- **D2D-12** — Collision & Response
+- **D2D-13** — Cameras, Layers & Parallax
+- **D2D-14** — Animation State Machines
+- **D2D-15** — Level Design & Game Feel
+- **D2D-16** — Menus, Saving & Shipping
 
 ## 3D Design (D3D)
 
@@ -392,31 +422,32 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 - **D3D-09** — Shape a character · Extrusion and symmetry
 - **D3D-10** — Sculpt a surface · Brush radius, displacement and smoothing
-- **D3D-11** — Finish a hard-surface prop · Beveled edges
-- **D3D-12** — Light and present your model · Material properties and directional lighting
-- **D3D-13** — Build a repeatable design · Parameter-driven repetition
-- **D3D-14** — Compose a finished image · Exposure and foreground/background decisions
+- **D3D-11** — In the Likeness · Carve a marble sculpture
+- **D3D-12** — Finish a hard-surface prop · Beveled edges
+- **D3D-13** — Light and present your model · Material properties and directional lighting
+- **D3D-14** — Build a repeatable design · Parameter-driven repetition
+- **D3D-15** — Compose a finished image · Exposure and foreground/background decisions
 
 ### Make It Play · Game Asset Studio
 
-- **D3D-15** — Game Asset Studio
-- **D3D-16** — Design a repeating surface · Texture repetition and scale
-- **D3D-17** — Build a reusable chair · Proportion and repeated parts
-- **D3D-18** — Assemble a room kit · Grid snapping and modular repetition
-- **D3D-19** — Map and export a surface · UV coordinates and texture density
-- **D3D-20** — Bind a bending mesh · Joint position and skin weights
-- **D3D-21** — Author a looping action · Keyframes and interpolation
+- **D3D-16** — Game Asset Studio
+- **D3D-17** — Design a repeating surface · Texture repetition and scale
+- **D3D-18** — Build a reusable chair · Proportion and repeated parts
+- **D3D-19** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-20** — Map and export a surface · UV coordinates and texture density
+- **D3D-21** — Bind a bending mesh · Joint position and skin weights
+- **D3D-22** — Author a looping action · Keyframes and interpolation
 
 ### Optional Blender Walkthroughs & Workspace Reference
 
-- **D3D-22** — 3D Modeling Field Guide
-- **D3D-23** — 3D Workflow & Techniques
-- **D3D-24** — Build a reusable chair · Proportion and repeated parts
-- **D3D-25** — Assemble a room kit · Grid snapping and modular repetition
+- **D3D-23** — 3D Modeling Field Guide
+- **D3D-24** — 3D Workflow & Techniques
+- **D3D-25** — Build a reusable chair · Proportion and repeated parts
+- **D3D-26** — Assemble a room kit · Grid snapping and modular repetition
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 82 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 71 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -511,35 +542,21 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 - **GAM-13** — Game Jam Week: From Idea to Demo
 
-### 2D Game Developer Pathway
-
-- **GAM-14** — 2D Game Developer Pathway
-- **GAM-15** — Pixel Art & Sprites
-- **GAM-16** — Sprite Sheets & Animation
-- **GAM-17** — Tilesets & Tilemaps
-- **GAM-18** — Game Loop & Rendering
-- **GAM-19** — Movement & Jump Feel
-- **GAM-20** — Collision & Response
-- **GAM-21** — Cameras, Layers & Parallax
-- **GAM-22** — Animation State Machines
-- **GAM-23** — Level Design & Game Feel
-- **GAM-24** — Menus, Saving & Shipping
-
 ### Godot Engine Pathway
 
-- **GAM-25** — Godot Game Developer Pathway
-- **GAM-26** — Godot Basics: Your First 3D Room
-- **GAM-27** — GDScript Fundamentals
-- **GAM-28** — Player Controller & Camera
-- **GAM-29** — Collectibles, Signals & UI
-- **GAM-30** — Enemies & Simple AI
-- **GAM-31** — Animation & Game Feel
-- **GAM-32** — Levels & Game State
-- **GAM-33** — Export, Test & Publish
+- **GAM-14** — Godot Game Developer Pathway
+- **GAM-15** — Godot Basics: Your First 3D Room
+- **GAM-16** — GDScript Fundamentals
+- **GAM-17** — Player Controller & Camera
+- **GAM-18** — Collectibles, Signals & UI
+- **GAM-19** — Enemies & Simple AI
+- **GAM-20** — Animation & Game Feel
+- **GAM-21** — Levels & Game State
+- **GAM-22** — Export, Test & Publish
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 118 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 115 lessons
 
 ## Visual Art & Design (DES)
 
@@ -557,12 +574,9 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 ### People Who Changed Visual Art
 
-- **DES-10** — Vincent van Gogh
-- **DES-11** — Pablo Picasso
-- **DES-12** — Charles & Ray Eames
-- **DES-13** — Nam June Paik
-- **DES-14** — Antoni Gaudí
-- **DES-15** — Katsushika Hokusai
+- **DES-10** — Charles & Ray Eames
+- **DES-11** — Nam June Paik
+- **DES-12** — Antoni Gaudí
 
 ## Music: Theory, Instruments & Sound (MUS)
 

@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scan a Likeness · Photogrammetry to a printed copy · ClassroomOS</title>
+  <meta name="description" content="Capture a real object as a 3D model. Learn how overlapping photos become a point cloud, a mesh and a textured model, plan a good shoot, clean up the raw scan, scale it with calipers, and print or carve the likeness. Includes a camera triangulation lab and a shooting-plan checker." />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/scan-a-likeness.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fl-page" data-glossary-root>
+
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../3d-design.html">3D Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="marble-sculpture.html">Sculpture</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">Scan a Likeness</span>
+        </nav>
+        <div data-design3d-route="look"></div>
+
+        <!-- Hook -->
+        <section class="hero fl-hero" id="sal-hook">
+          <div class="sal-hero-grid">
+            <div>
+              <p class="eyebrow">3D Design · Sculpture · Trio Challenge: Likeness</p>
+              <h1>Scan a Likeness</h1>
+              <p class="fl-lede">Walk around a small owl figurine taking photos, every step or two. Feed those photos to an app, and a few minutes later you can spin a 3D copy of the owl on your screen, with every chip and scratch in place. Nobody modelled it: the shape came out of the photos. That's <span data-glossary="photogrammetry">photogrammetry</span>, and it's one way to make the third Trio trait, something made in the <span data-glossary="likeness">likeness</span> of something real.</p>
+              <p>The catch is that the app can only rebuild what your photos prove. Shiny spots, missing angles and a wobbly camera all turn into holes and lumps. In this lesson you'll find out <em>why</em>, plan a shoot that works, clean up what comes out, give it its real size, and print or carve it.</p>
+              <ul class="sal-facts" aria-label="Lesson at a glance">
+                <li>Photos → points → mesh</li>
+                <li>Every spot in 3+ photos</li>
+                <li>Measure once, scale once</li>
+                <li>Grades K–12 · 3–4 class periods</li>
+              </ul>
+            </div>
+            <figure class="sal-fig" data-zoomable data-lightbox-group="scan">
+              <img src="../../../assets/images/lessons/scan-a-likeness/pipeline.svg" alt="Six stages of photogrammetry shown with an owl figurine: overlapping photos, matched features, solved camera positions, a dense point cloud, a triangle mesh, and the textured model." width="1000" height="612" />
+              <figcaption>Six stages, one owl. You do stage 1; the app does stages 2 to 6, and it can only work with what stage 1 gave it. Original ClassroomOS teaching diagram.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#sal-idea">The idea</a>
+          <a href="#sal-lab">Triangulation lab</a>
+          <a href="#sal-shoot">Plan the shoot</a>
+          <a href="#sal-scanners">Other scanners</a>
+          <a href="#sal-raw">The raw scan</a>
+          <a href="#sal-clean">Clean &amp; scale</a>
+          <a href="#sal-ethics">Permission</a>
+          <a href="#sal-task">Your scan</a>
+          <a href="#sal-practice">Practice</a>
+        </nav>
+
+        <!-- Trio tie-in -->
+        <section class="fl-card" id="sal-trio">
+          <h2>Why scan for the Trio Challenge?</h2>
+          <p>This quarter every student shows three traits: something that <strong>moves while all its printed pieces stay together</strong>, something <strong>useful</strong>, and something made <strong>in the likeness</strong> of something else (<a href="../3d-design.html#grand-challenge">see the Trio Challenge</a>). A scan is a fast, honest start for the likeness trait: the proportions come from the real thing, not your guess.</p>
+          <p>A scan is not the finished piece, though. You will still choose what to keep, fix what the camera missed, and decide how big to make it. A scanned seashell can become the lid of a hinged box; a scanned toy dinosaur can become the handle of a useful tool. That's where your design comes in.</p>
+        </section>
+
+        <!-- Core idea -->
+        <section class="fl-card" id="sal-idea">
+          <h2>The idea: two views pin down a point</h2>
+          <p>Close one eye and hold a finger up. Swap eyes and the finger jumps sideways against the background. That jump is <span data-glossary="parallax">parallax</span>, and your brain uses it to judge distance. Photogrammetry does the same thing with photos taken from different places.</p>
+          <ol class="sal-steps">
+            <li><strong>Find features.</strong>The app looks for <span data-glossary="feature point">feature points</span> in every photo: corners, specks, the edge of a painted eye, anything small and distinctive.</li>
+            <li><strong>Match them.</strong>It finds the <em>same</em> feature in other photos. A plain white wall has nothing to match; a speckled stone has thousands.</li>
+            <li><strong>Work out where each photo was taken.</strong>From hundreds of matches the app solves where each camera stood and which way it pointed. Researchers call this <em>structure from motion</em>.</li>
+            <li><strong>Triangulate.</strong>A feature in one photo only tells you a <em>direction</em>: a ray from the camera through that spot. Two rays from two cameras cross at one place. That crossing is a 3D point. This is <span data-glossary="triangulation">triangulation</span>.</li>
+            <li><strong>Fill in, connect, paint.</strong>Millions of points make a <span data-glossary="point cloud">point cloud</span>. The app joins neighbouring points into triangles (a mesh), then projects the photos back onto it as a <span data-glossary="texture map">texture map</span>.</li>
+          </ol>
+          <div class="fl-callout a1"><strong>Rule that follows from this:</strong> a spot that appears in only one photo can't be placed in 3D, so it becomes a hole. Every spot needs at least two photos, and good guides ask for three or more. The Agisoft Metashape manual, for example, asks for 60–70% overlap between photos of an object so that "each point should be visible on at least three photos".</div>
+        </section>
+
+        <!-- Lab -->
+        <section class="fl-card" id="sal-lab">
+          <h2>Triangulation lab: where do the rays cross?</h2>
+          <p>This is a top view of a table. The tan shape is a figurine, the yellow dot is one feature on its surface, and the numbered blocks are camera positions. Each camera that sees the feature casts a ray through it. Every ray has a tiny error (the app can be off by a pixel or so), so the rays cross in a small <strong>orange region</strong>, not a perfect point. The smaller the region, the more precisely that point is known.</p>
+          <div class="fl-lab" data-sal-tri data-memory-ignore data-present>
+            <h3>Drag the cameras · drag the dot around the figurine</h3>
+            <div class="sal-stage">
+              <canvas tabindex="0" role="img" aria-label="Top view of cameras around a figurine. Rays from each camera cross at a feature point; the orange region shows how precisely the point is known. Keys: 1, 2, 3 select a camera, arrow keys move it, square brackets move the feature." ></canvas>
+            </div>
+            <dl class="sal-readout" aria-live="polite">
+              <div><dt>Cameras</dt><dd data-sal-out="seeing">–</dd></div>
+              <div><dt>Angle between rays</dt><dd data-sal-out="angle">–</dd></div>
+              <div><dt>Baseline</dt><dd data-sal-out="baseline">–</dd></div>
+              <div><dt>Depth uncertainty</dt><dd data-sal-out="depth">–</dd></div>
+              <div><dt>Outline covered</dt><dd data-sal-out="coverage">–</dd></div>
+            </dl>
+            <p class="sal-verdict" data-sal-verdict data-tone="good">Loading the lab…</p>
+            <div class="fl-lab-controls">
+              <label>Matching error <output data-sal-out="error">1 px</output>
+                <input type="range" min="0.5" max="4" step="0.5" value="1" data-sal-input="error" />
+              </label>
+              <label class="fl-lab-check"><input type="checkbox" data-sal-input="third" /> Third camera</label>
+              <label class="fl-lab-check"><input type="checkbox" data-sal-input="coverage" checked /> Colour the outline by coverage</label>
+            </div>
+            <div class="sal-presets fl-lab-buttons" role="group" aria-label="Try a setup">
+              <button type="button" data-sal-preset="close">Too close together</button>
+              <button type="button" data-sal-preset="good">16° apart</button>
+              <button type="button" data-sal-preset="wide">70° apart</button>
+              <button type="button" data-sal-preset="three">Three cameras</button>
+              <button type="button" data-sal-preset="far">Same angle, farther away</button>
+              <button type="button" data-sal-preset="side">Feature on the side</button>
+            </div>
+            <ul class="sal-legend">
+              <li><i style="background:#15803d"></i>outline seen by 2+ matching cameras: reconstructed</li>
+              <li><i style="background:#d97706"></i>seen, but not matched: a hole</li>
+              <li><i style="background:#b91c1c"></i>never seen: a hole</li>
+            </ul>
+          </div>
+          <h3>Try these, in order</h3>
+          <ol class="sal-steps">
+            <li><strong>Too close together.</strong>The rays are nearly parallel, so the orange region stretches into a long sliver: the app knows the direction but not the distance. The distance between the cameras is the <span data-glossary="baseline">baseline</span>, and a tiny baseline means a poor depth estimate.</li>
+            <li><strong>16° apart.</strong>The rays cross at a healthy angle and the region shrinks to a small blob. Read the depth uncertainty.</li>
+            <li><strong>70° apart.</strong>Now the baseline is huge, but the feature looks too different from the two places to be recognised as the same spot, so nothing matches. (This lab treats views more than 40° apart as unmatchable. Real apps vary, but all of them struggle with big jumps.) That is why you take <em>many small steps</em> rather than a few big ones.</li>
+            <li><strong>Three cameras.</strong>A third ray cuts the region down further and covers more of the outline. Count how much of the outline turns green.</li>
+            <li><strong>Same angle, farther away.</strong>Each pixel now covers more of the object, so the region grows. Precision gets worse quickly with distance: in the standard stereo formula, depth error grows with the <em>square</em> of the distance.</li>
+            <li><strong>Feature on the side.</strong>Both cameras see the side at a grazing angle or not at all. To capture the sides and back, the cameras have to go there.</li>
+          </ol>
+          <div class="fl-callout a2"><strong>For grades 9–12: the formula.</strong> For two cameras side by side, depth is Z = f·B ÷ d (focal length in pixels × baseline ÷ disparity in pixels). A matching error of δd pixels gives a depth error of about δZ ≈ Z² · δd ÷ (f · B). Doubling the distance makes the error four times bigger; doubling the baseline halves it. The lab uses a 4000-pixel-wide photo with a 65° field of view, so 1 pixel is about 0.016°. The orange region is drawn 60× larger than life so you can see it; the numbers in the readout are the real size.</div>
+        </section>
+
+        <!-- Shooting plan -->
+        <section class="fl-card" id="sal-shoot">
+          <h2>Plan the shoot</h2>
+          <p>The lab gives you the rules. Small steps keep neighbouring photos overlapping, so features match. Several heights cover the top. Soft, even light keeps the surface looking the same from every side, so the app recognises it.</p>
+          <figure class="sal-fig" data-zoomable data-lightbox-group="scan">
+            <img src="../../../assets/images/lessons/scan-a-likeness/shooting-plan.svg" alt="Top view: 24 camera positions 15 degrees apart in a ring around an object, two neighbouring views overlapping. Side view: three rings of photos, level, 30 degrees down and 60 degrees down. Below: matte, textured objects in soft even light scan well; shiny, transparent, thin or moving subjects scan badly." width="1000" height="600" loading="lazy" />
+            <figcaption>A photo every 15° gives 24 per ring, and each spot lands in several photos. Add a ring from above so the top isn't a hole. Glass, mirrors, fur and anything that moves are the hard cases for every photo-based scanner. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <div class="sal-cards">
+            <article class="sal-card"><span class="sal-tag">Choose the object</span><h3>Matte, textured, solid</h3><p>Stone, wood, unglazed clay, a sneaker, a painted figurine. Avoid glass, chrome, glossy plastic, hair and thin wires.</p></article>
+            <article class="sal-card"><span class="sal-tag">Light it</span><h3>Soft and even</h3><p>An overcast day, a shaded window, or lights bounced off a white wall. No flash: it moves with the camera, so the shading changes in every shot.</p></article>
+            <article class="sal-card"><span class="sal-tag">Shoot it</span><h3>Small steps, several heights</h3><p>Fill most of the frame, keep it sharp, move 10–15° between photos, and do two or three rings at different heights. Keep the object still.</p></article>
+            <article class="sal-card"><span class="sal-tag">Size it</span><h3>Bring a reference</h3><p>Photos can't tell a toy from a statue. Put a ruler in the shots, or measure one length with calipers to scale the model later.</p></article>
+          </div>
+
+          <h3>Shooting-plan checker</h3>
+          <p>Fill in your plan before you shoot. The checker estimates overlap, how much of the frame your object fills, and flags the usual problems. Its overlap figure assumes a patch of surface can be matched while you see it within about 45° of face-on, so each patch stays in view for about 90° of travel around the object.</p>
+          <div class="fl-lab" data-sal-plan data-memory-ignore>
+            <div class="sal-plan-grid">
+              <form class="sal-form" aria-label="Shooting plan">
+                <label>Object's largest size (cm)<input type="number" name="size" min="1" max="200" step="0.5" value="12" /></label>
+                <label>Camera distance (cm)<input type="number" name="dist" min="5" max="500" step="1" value="30" /></label>
+                <label>Photos per ring<input type="number" name="per" min="3" max="180" step="1" value="12" /></label>
+                <label>Heights (rings)
+                  <select name="rings"><option value="1" selected>1 · level only</option><option value="2">2 · level + 30° down</option><option value="3">3 · level, 30°, 60° down</option></select>
+                </label>
+                <label>Underside
+                  <select name="under"><option value="base" selected>Sits on a flat base</option><option value="flip">Flip it and shoot again</option><option value="stand">Propped on a stand</option></select>
+                </label>
+                <label>Method
+                  <select name="method"><option value="walk" selected>I walk around it</option><option value="turntable">It turns on a turntable</option></select>
+                </label>
+                <label>Background
+                  <select name="bg"><option value="busy" selected>Textured table and room</option><option value="plain">Plain, even backdrop</option></select>
+                </label>
+                <label>Light
+                  <select name="light"><option value="diffuse">Soft and even (shade, overcast)</option><option value="room" selected>Ceiling lights</option><option value="hard">Direct sun or a spotlight</option><option value="flash">Camera flash</option></select>
+                </label>
+                <label>Surface
+                  <select name="surface"><option value="matte">Matte, lots of detail</option><option value="plain">Matte, plain one colour</option><option value="satin" selected>A little shiny</option><option value="mirror">Shiny metal or mirror</option><option value="clear">Glass or clear plastic</option></select>
+                </label>
+                <label>Thin parts
+                  <select name="thin"><option value="none" selected>None</option><option value="some">Some (ears, handle, tail)</option><option value="fine">Hair, fur, wire, leaves</option></select>
+                </label>
+                <label>Size reference
+                  <select name="scale"><option value="none" selected>None</option><option value="ruler">Ruler in the photos</option><option value="calipers">I'll measure with calipers</option></select>
+                </label>
+                <label>Whose is it?
+                  <select name="perm"><option value="own" selected>Mine</option><option value="borrowed">Borrowed, with permission</option><option value="person">It's a person</option><option value="unsure">Not sure</option></select>
+                </label>
+              </form>
+              <div>
+                <p class="sal-plan-summary" data-sal-plan-summary aria-live="polite"></p>
+                <p class="sal-plan-stats" data-sal-plan-stats></p>
+                <ul class="sal-plan-list" data-sal-plan-list></ul>
+              </div>
+            </div>
+          </div>
+          <p>The starting plan has several problems on purpose. Fix them one at a time until the checker says <em>Ready to shoot</em>, and copy the final plan onto your record sheet.</p>
+        </section>
+
+        <!-- Other scanners -->
+        <section class="fl-card" id="sal-scanners">
+          <h2>Other ways to scan</h2>
+          <p>Photogrammetry needs only a camera. Two other families of scanners shine their own light instead of relying on the room's.</p>
+          <figure class="sal-fig" data-zoomable data-lightbox-group="scan">
+            <img src="../../../assets/images/lessons/scan-a-likeness/three-ways.svg" alt="Three panels. Photogrammetry: cameras from several places look at an owl. Structured light: a projector shines stripes on the owl and an offset camera sees them bend. LiDAR: a sensor sends light pulses to the owl and times their return." width="1000" height="540" loading="lazy" />
+            <figcaption>All three measure where light lands on the surface. Structured light still uses triangulation, with the projector standing in for the second camera. LiDAR times light instead. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <div class="sal-table-wrap">
+            <table class="sal-table">
+              <thead><tr><th scope="col">Method</th><th scope="col">How it measures</th><th scope="col">Good at</th><th scope="col">Struggles with</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Photogrammetry</th><td>Matches features across many photos and triangulates them</td><td>Colour texture, objects from coins to buildings, costs nothing but time</td><td>Plain, shiny or clear surfaces; anything that moves</td></tr>
+                <tr><th scope="row"><span data-glossary="structured light">Structured light</span></th><td>Projects a known pattern of stripes or dots; a camera set to one side sees how the pattern bends over the surface</td><td>Fine detail on small objects, fast capture</td><td>Bright sunlight washes out the pattern; still dislikes shiny and clear surfaces</td></tr>
+                <tr><th scope="row"><span data-glossary="LiDAR">LiDAR</span> and depth sensors</th><td>Sends out pulses of light and times how long they take to come back</td><td>Rooms and large objects, plain walls, quick capture</td><td>Small details: a phone sensor's depth points are spaced too far apart for a figurine's features</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Some phones and tablets now carry a small LiDAR sensor (Apple added one to the iPad Pro and the iPhone 12 Pro in 2020), and many scanning apps combine its depth readings with photogrammetry. Free scanning apps appear, change their names and change their free tiers often, so this lesson teaches the workflow rather than one app. Whatever your class uses, you will still choose the object, plan the light and angles, and clean the result.</p>
+        </section>
+
+        <!-- Raw scan -->
+        <section class="fl-card" id="sal-raw">
+          <h2>What really comes out</h2>
+          <p>Open a raw scan and you'll rarely find a clean statue. Expect a draft with problems you can name and fix. Each problem traces back to something in the photos.</p>
+          <figure class="sal-fig" data-zoomable data-lightbox-group="scan">
+            <img src="../../../assets/images/lessons/scan-a-likeness/raw-scan-problems.svg" alt="A raw scan of an owl with six problems labelled: a hole on top of the head, a thin ear tip lost, floating noise points, a melted blob where the surface was shiny, the table fused to the base, and an unknown size." width="1000" height="560" loading="lazy" />
+            <figcaption>Every problem has a cause: the top was never photographed from above, the ear was too thin, the background leaked in, a shiny spot confused matching, and nothing in the photos said how big the owl is. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <div class="sal-table-wrap">
+            <table class="sal-table">
+              <thead><tr><th scope="col">You see</th><th scope="col">Because</th><th scope="col">Next time</th><th scope="col">This time</th></tr></thead>
+              <tbody>
+                <tr><td>Holes</td><td>Parts seen in fewer than two matching photos</td><td>More heights; small steps</td><td>Fill holes in cleanup</td></tr>
+                <tr><td>Floor or stand fused to the base</td><td>The table was in the photos too</td><td>Plain base, or a cut line you can find</td><td>Crop with a plane</td></tr>
+                <tr><td>Floating specks</td><td>Background points and mismatches</td><td>Fill the frame with the object</td><td>Delete loose pieces</td></tr>
+                <tr><td>Melted lumps</td><td>Glare and plain areas that matched wrongly</td><td>Soft light; matte objects</td><td>Smooth, or rebuild in CAD</td></tr>
+                <tr><td>Lost thin parts</td><td>Too few pixels across them</td><td>Get closer; pick thicker subjects</td><td>Rebuild them in CAD</td></tr>
+                <tr><td>Unknown size</td><td>Photos have no built-in scale</td><td>Ruler in the shots</td><td>Scale to a caliper measurement</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Cleanup -->
+        <section class="fl-card" id="sal-clean">
+          <h2>Clean it, then scale it</h2>
+          <p>Do the same five steps in the same order every time, and save a new copy after each one, so a bad step costs you one step, not the whole scan. Any mesh editor can do them: the free, open-source MeshLab and Blender both can, and many scanning apps have crop and fill tools built in. The steps below name what to do, not which button to press.</p>
+          <figure class="sal-fig" data-zoomable data-lightbox-group="scan">
+            <img src="../../../assets/images/lessons/scan-a-likeness/cleanup-steps.svg" alt="Five cleanup steps: crop the floor with a cutting plane, fill holes, decimate from about a million to about one hundred thousand triangles, make it watertight with a flat base, and scale so a caliper measurement of 84 millimetres matches a model measurement of 0.42, a factor of 200." width="1000" height="520" loading="lazy" />
+            <figcaption>Crop, fill, decimate, close, scale. The last step is arithmetic: real size ÷ model size = scale factor. Here 84 mm ÷ 0.42 units = ×200. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <ol class="sal-steps">
+            <li><strong>Crop the floor and the junk.</strong>Cut the mesh with a flat plane just above the table, then delete every loose piece that isn't connected to the main body.</li>
+            <li><strong>Fill the holes.</strong>Patch each gap. Small holes fill neatly; a big one (the whole top of a head) may need modelling by hand.</li>
+            <li><strong><span data-glossary="decimation">Decimate</span>.</strong>A raw scan can have millions of triangles, far more than a printer can show. Reduce the count in steps (half, then half again) and stop as soon as the silhouette starts to change.</li>
+            <li><strong>Make it <span data-glossary="watertight">watertight</span> with a flat base.</strong>A printer needs one closed skin with an inside and an outside: a <span data-glossary="manifold mesh">manifold mesh</span>. Close the base flat so it sits on the bed.</li>
+            <li><strong>Scale to a real measurement.</strong>Measure one clear length on the real object with <span data-glossary="calipers">calipers</span>, measure the same length on the model, and multiply the model by real ÷ model. That number is the <span data-glossary="scale factor">scale factor</span>.</li>
+          </ol>
+          <h3>Scale calculator</h3>
+          <div class="sal-scale" data-sal-scale data-memory-ignore>
+            <label>Real length (mm, calipers)<input type="number" name="real" min="0" step="0.1" value="84" /></label>
+            <label>Same length on the model<input type="number" name="model" min="0" step="0.001" value="0.42" /></label>
+            <label>Another model length (optional)<input type="number" name="other" min="0" step="0.001" value="0.31" /></label>
+            <output data-sal-scale-out aria-live="polite"></output>
+          </div>
+          <p>Measure the longest straight length you can find on the object: an error of 0.1 mm matters less on 80 mm than on 8 mm. Then check a second length. If the second one is off by more than a couple of percent, something is warped; measure again before you print.</p>
+          <p>Units trip people up here. The same file can open at different sizes in different apps, because each app guesses what "1" means:</p>
+          <div data-rosetta="model.units model.import model.export"></div>
+          <p>New to meshes? <a href="../foundations/what-is-a-3d-model.html">What is a 3D model?</a> explains vertices, faces and watertight meshes, and <a href="../cad-and-printing/measure-and-fit.html">Measure and fit</a> covers calipers in depth.</p>
+        </section>
+
+        <!-- Ethics -->
+        <section class="fl-card" id="sal-ethics">
+          <h2>Permission: whose likeness is it?</h2>
+          <p>A camera can copy almost anything it can see. That doesn't mean you may copy it, keep it or share it.</p>
+          <div class="sal-cards">
+            <article class="sal-card"><span class="sal-tag">People</span><h3>Ask first, every time</h3><p>A scan of a face or a body is personal. Only scan a person who has clearly agreed, with your teacher's OK, and tell them where the scan will go. If they later ask you to delete it, delete it. Never scan someone secretly.</p></article>
+            <article class="sal-card"><span class="sal-tag">Things that belong to someone</span><h3>Owners decide</h3><p>A friend's sculpture, a shop's product, a museum piece: ask before you scan, and ask again before you share. Some museums don't allow photography of certain objects at all.</p></article>
+            <article class="sal-card"><span class="sal-tag">Cultural and sacred objects</span><h3>Some objects aren't for copying</h3><p>Some objects are sacred to a living community, or belong to a people whose history was taken from them. Their community may ask that they not be photographed, copied or printed. Respect that, even when a scan is available.</p></article>
+            <article class="sal-card"><span class="sal-tag">Open collections</span><h3>Read the licence</h3><p>Every downloaded scan carries a licence. <span data-glossary="CC0">CC0</span> (public domain) means use it any way you like; CC BY means credit the source; NC means non-commercial only. Write the licence on your record sheet.</p></article>
+          </div>
+          <p>Museums now share thousands of scans on purpose, so you can study objects you could never touch:</p>
+          <ul>
+            <li><strong>Smithsonian 3D</strong> (<a href="https://3d.si.edu/" target="_blank" rel="noopener noreferrer">3d.si.edu</a>), part of <a href="https://www.si.edu/openaccess" target="_blank" rel="noopener noreferrer">Smithsonian Open Access</a>: thousands of models made by the Smithsonian's Digitization Program Office, from the Apollo 11 command module to a woolly mammoth. Models marked CC0 can be downloaded, changed and printed freely.</li>
+            <li><strong>Scan the World</strong> (<a href="https://www.myminifactory.com/scantheworld/" target="_blank" rel="noopener noreferrer">myminifactory.com/scantheworld</a>): a community project begun in 2014 that shares scans of sculptures and artefacts, many from partner museums, for 3D printing. Licences vary by object, so check each one.</li>
+          </ul>
+        </section>
+
+        <!-- Physical task -->
+        <section class="fl-card" id="sal-task">
+          <h2>Your scan: capture, clean, measure, make</h2>
+          <p>Work in pairs: one person moves the camera, the other keeps the object still and the lighting even, then swap.</p>
+          <ol class="sal-steps">
+            <li><strong>Choose and check.</strong>Pick a matte, palm-sized classroom object (a carved animal, a shoe, a fossil cast, a clay pot). Run your plan through the checker until it says <em>Ready to shoot</em>.</li>
+            <li><strong>Measure the real thing first.</strong>With calipers, measure two lengths you can find again on the model: height and width, say. Write them down to 0.1 mm.</li>
+            <li><strong>Shoot.</strong>Follow your plan: rings, steps, light. Count your photos. Check a few for blur before you put the object away.</li>
+            <li><strong>Process.</strong>Run the photos through your class's scanning app. Save the raw result before changing anything.</li>
+            <li><strong>Name the problems.</strong>Mark the raw scan's holes, floor, noise, lumps and lost parts on your sheet.</li>
+            <li><strong>Clean and scale.</strong>Do the five cleanup steps. Scale with your first measurement, then check the second.</li>
+            <li><strong>Make it.</strong>Either <em>print it</em> (orient it, check overhangs; see <a href="../cad-and-printing/3d-printing.html">Plan a printable orientation</a>), or <em>carve it</em>: export an STL, open the <a href="marble-sculpture.html#studio">Marble Studio</a>, choose <em>Use my 3D model (STL)</em> as the maquette, run the autopilot and read its likeness score. No printer? <a href="../cad-and-printing/beyond-the-printer.html">Beyond the printer</a> shows cardboard-slice and cast versions.</li>
+            <li><strong>Compare.</strong>Measure the print (or read the studio's size) against the real object. Hold them side by side and run the three-second silhouette test from <a href="marble-sculpture.html#check">In the Likeness</a>.</li>
+          </ol>
+          <div class="fl-callout a1"><strong>No object, or the scan failed?</strong> Use a provided open-licensed scan instead: your teacher downloads a CC0 model from Smithsonian 3D or a suitably licensed one from Scan the World. Do steps 5–8 with it: you'll still crop, check it is watertight, scale it to a size you choose, and record the licence and credit.</div>
+
+          <h3>Record sheet</h3>
+          <div class="sal-sheet-wrap">
+            <table class="sal-sheet">
+              <tbody>
+                <tr><th scope="row">Object, and whose it is</th><td><input type="text" aria-label="Object and owner" /></td></tr>
+                <tr><th scope="row">Permission from / licence of a downloaded scan</th><td><input type="text" aria-label="Permission or licence" /></td></tr>
+                <tr><th scope="row">Plan: photos per ring × rings, light, method</th><td><input type="text" aria-label="Shooting plan" /></td></tr>
+                <tr><th scope="row">Photos taken / app used</th><td><input type="text" aria-label="Photos taken and app used" /></td></tr>
+                <tr><th scope="row">Problems in the raw scan</th><td><textarea aria-label="Problems in the raw scan"></textarea></td></tr>
+                <tr><th scope="row">Cleanup steps done (and triangle count before → after)</th><td><textarea aria-label="Cleanup steps"></textarea></td></tr>
+                <tr><th scope="row">Real length 1 (mm) / model length 1 / scale factor</th><td><input type="text" aria-label="Length 1, model length and scale factor" /></td></tr>
+                <tr><th scope="row">Real length 2 (mm) / scaled model length 2 / % difference</th><td><input type="text" aria-label="Length 2 check" /></td></tr>
+                <tr><th scope="row">Made as: print / Marble Studio carve / other. Final size</th><td><input type="text" aria-label="How it was made and final size" /></td></tr>
+                <tr><th scope="row">Likeness test: what a classmate named it, and how fast</th><td><input type="text" aria-label="Likeness test result" /></td></tr>
+                <tr><th scope="row">Next time I would change…</th><td><textarea aria-label="Next time I would change"></textarea></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Grade bands -->
+        <section class="fl-card" id="sal-grades">
+          <h2>Choose your level</h2>
+          <div class="sal-cards">
+            <article class="sal-card"><span class="sal-tag">Grades K–2</span><h3>Good scan, bad scan</h3><ul><li>Sort a tray of objects into "camera can copy it" and "camera gets confused": a rock, a spoon, a glass, a teddy bear.</li><li>Walk around a toy in a circle with the teacher's tablet, one small step per photo.</li><li>Look at a museum scan on screen and name what it is a likeness of.</li></ul></article>
+            <article class="sal-card"><span class="sal-tag">Grades 3–5</span><h3>Plan and shoot</h3><ul><li>Use the lab's buttons and say in one sentence why "too close together" fails.</li><li>Fill in the checker until it's ready, then shoot with a partner.</li><li>Measure the object with a ruler and compare it with the model's size.</li></ul></article>
+            <article class="sal-card"><span class="sal-tag">Grades 6–8</span><h3>The whole pipeline</h3><ul><li>Shoot, process, name the problems, do all five cleanup steps.</li><li>Scale with calipers and check a second length to within 2%.</li><li>Print it or carve it in the Marble Studio for the Trio likeness trait.</li></ul></article>
+            <article class="sal-card"><span class="sal-tag">Grades 9–12</span><h3>Measure the accuracy</h3><ul><li>Use δZ ≈ Z²·δd ÷ (f·B) to predict how error changes with distance; test it by scanning one object from two distances.</li><li>Report the % error of three caliper lengths.</li><li>Remix the scan into a design that also moves or does a job.</li></ul></article>
+          </div>
+        </section>
+
+        <!-- Checkpoint -->
+        <section class="fl-card" id="sal-checkpoint">
+          <h2>Checkpoint</h2>
+          <p>Before you call your scan finished, you should be able to say yes to each of these:</p>
+          <ul class="sal-check">
+            <li>I can explain why a spot seen in only one photo becomes a hole.</li>
+            <li>I can explain why cameras too close together, and too far apart, both fail.</li>
+            <li>My plan passed the checker, and I can say what each fix was for.</li>
+            <li>I named the problems in my raw scan before fixing them.</li>
+            <li>My model is watertight, has a flat base, and matches two caliper measurements.</li>
+            <li>I have permission for my object (or a licence for a downloaded scan) written on my sheet.</li>
+          </ul>
+          <p>Exit prompt: “My scan is a likeness of ___. The hardest part to capture was ___ because ___. Next time I would ___.”</p>
+        </section>
+
+        <!-- Practice -->
+        <section class="fl-card" id="sal-practice">
+          <h2>Practice problems</h2>
+          <label class="ll-toggle" style="margin-bottom:0.8rem;">
+            <input type="checkbox" id="fl-hints-toggle">
+            <span class="ll-toggle-track" aria-hidden="true"></span>
+            <span>Show hints automatically</span>
+          </label>
+          <div class="fl-practice">
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>1. You take a photo every 15° in a full circle around an object. How many photos is that?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-1" step="1" placeholder="photos" aria-label="Answer to problem 1" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(1, 24, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-1"></span>
+              </div>
+              <div class="fl-hint" id="flhint-1">Hint: a full circle is 360°. 360 ÷ 15.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>2. Which object will be hardest to capture with photogrammetry?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-2" aria-label="Answer to problem 2">
+                  <option value="">Choose…</option>
+                  <option value="a">An unglazed clay pot</option>
+                  <option value="b">A clear glass vase</option>
+                  <option value="c">A wooden carving</option>
+                  <option value="d">A muddy sneaker</option>
+                </select>
+                <button class="fl-check-btn" type="button" onclick="flCheckText(2,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-2"></span>
+              </div>
+              <div class="fl-hint" id="flhint-2">Hint: what does the camera see when it looks at glass?</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>3. A feature appears in only one photo. What can't the app work out?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-3" aria-label="Answer to problem 3">
+                  <option value="">Choose…</option>
+                  <option value="a">Its colour</option>
+                  <option value="b">How far along the ray it is</option>
+                  <option value="c">Which direction it is from the camera</option>
+                </select>
+                <button class="fl-check-btn" type="button" onclick="flCheckText(3,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-3"></span>
+              </div>
+              <div class="fl-hint" id="flhint-3">Hint: in the lab, one camera gives a long red sliver.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>4. Calipers say the real owl is 84 mm tall. The raw model says 0.42 units. What scale factor makes it real size?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-4" step="any" placeholder="×" aria-label="Answer to problem 4" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(4, 200, 0.5)">Check</button>
+                <span class="fl-feedback" id="flfb-4"></span>
+              </div>
+              <div class="fl-hint" id="flhint-4">Hint: real ÷ model = 84 ÷ 0.42.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>5. A model already in millimetres is 42 mm wide, but the real object is 63 mm wide. What percentage do you type into the slicer's scale box?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-5" step="any" placeholder="%" aria-label="Answer to problem 5" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(5, 150, 0.5)">Check</button>
+                <span class="fl-feedback" id="flfb-5"></span>
+              </div>
+              <div class="fl-hint" id="flhint-5">Hint: 63 ÷ 42 = 1.5. Write it as a percentage.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>6. You decimate a 1,200,000-triangle scan to 10% of its triangles. How many are left?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-6" step="1" placeholder="triangles" aria-label="Answer to problem 6" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(6, 120000, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-6"></span>
+              </div>
+              <div class="fl-hint" id="flhint-6">Hint: 10% of 1,200,000.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>7. Why does a turntable scan go wrong in front of a busy, patterned wall?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-7" aria-label="Answer to problem 7">
+                  <option value="">Choose…</option>
+                  <option value="a">The wall makes the photos too dark</option>
+                  <option value="b">The object turns but the wall doesn't, so the matches disagree about how the camera moved</option>
+                  <option value="c">Patterns use up the phone's memory</option>
+                </select>
+                <button class="fl-check-btn" type="button" onclick="flCheckText(7,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-7"></span>
+              </div>
+              <div class="fl-hint" id="flhint-7">Hint: on a turntable the camera stays still. Which features move between photos, and which don't?</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>8. Keep the baseline and the matching error the same, but stand twice as far away. About how many times bigger does the depth error get?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-8" step="any" placeholder="times" aria-label="Answer to problem 8" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(8, 4, 0)">Check</button>
+                <span class="fl-feedback" id="flfb-8"></span>
+              </div>
+              <div class="fl-hint" id="flhint-8">Hint: δZ ≈ Z²·δd ÷ (f·B). What happens to Z² when Z doubles?</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>9. Your height measurement scales the model correctly. The width should be 52.0 mm, but the scaled model measures 53.3 mm. What is the percentage error, to one decimal place?</p>
+              <div class="fl-problem-row">
+                <input type="number" class="fl-ans-input" id="flans-9" step="any" placeholder="%" aria-label="Answer to problem 9" />
+                <button class="fl-check-btn" type="button" onclick="flCheck(9, 2.5, 0.06)">Check</button>
+                <span class="fl-feedback" id="flfb-9"></span>
+              </div>
+              <div class="fl-hint" id="flhint-9">Hint: (53.3 − 52.0) ÷ 52.0 × 100.</div>
+            </div>
+
+            <div class="fl-problem">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>10. You want to scan a classmate's head for a game character. What comes first?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" id="flans-10" aria-label="Answer to problem 10">
+                  <option value="">Choose…</option>
+                  <option value="a">Scan quickly while they aren't looking, so they stay still</option>
+                  <option value="b">Ask them and your teacher, and say where the scan will be used</option>
+                  <option value="c">Scan first, then ask if they mind</option>
+                </select>
+                <button class="fl-check-btn" type="button" onclick="flCheckText(10,'b')">Check</button>
+                <span class="fl-feedback" id="flfb-10"></span>
+              </div>
+              <div class="fl-hint" id="flhint-10">Hint: a scan of a face is personal. Permission comes before the camera.</div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Vocabulary -->
+        <section class="fl-card" id="sal-vocab">
+          <h2>Vocabulary</h2>
+          <dl class="sal-vocab">
+            <div><dt>Photogrammetry</dt><dd>Measuring shapes from photographs; here, building a 3D model from many overlapping photos.</dd></div>
+            <div><dt>Feature point</dt><dd>A small, distinctive spot (a corner, a speck) that an app can find again in another photo.</dd></div>
+            <div><dt>Triangulation</dt><dd>Finding a point's position where rays from two or more viewpoints cross.</dd></div>
+            <div><dt>Baseline</dt><dd>The distance between two camera positions. Too short gives poor depth; too long and features stop matching.</dd></div>
+            <div><dt>Point cloud</dt><dd>A set of 3D points, often coloured, measured from a surface.</dd></div>
+            <div><dt>Texture map</dt><dd>An image wrapped onto a mesh to give it colour and surface detail.</dd></div>
+            <div><dt>Structured light</dt><dd>Scanning by projecting a known pattern and watching how it bends over a surface.</dd></div>
+            <div><dt>LiDAR</dt><dd>A sensor that measures distance by timing reflected pulses of light.</dd></div>
+            <div><dt>Decimation</dt><dd>Reducing a mesh's triangle count while keeping its shape.</dd></div>
+            <div><dt>Watertight</dt><dd>A mesh with no holes: one closed skin with a clear inside and outside, ready to print.</dd></div>
+            <div><dt>Calipers</dt><dd>A measuring tool with jaws that reads lengths to a tenth of a millimetre or better.</dd></div>
+            <div><dt>Scale factor</dt><dd>The number you multiply a model by to make it the right size: real length ÷ model length.</dd></div>
+            <div><dt>CC0</dt><dd>A licence that places a work in the public domain: anyone may use it for anything.</dd></div>
+          </dl>
+          <p>Next: carve your scan in the <a href="marble-sculpture.html">Marble Studio</a>, refine its surface in <a href="../modeling/sculpt-a-surface.html">Sculpt a surface</a>, or build its other Trio traits in <a href="../../../workbench.html">Workbench</a>. If a print fails, see <a href="../cad-and-printing/print-troubleshooting.html">Print troubleshooting</a>.</p>
+        </section>
+
+        <!-- Sources -->
+        <section class="fl-card" id="sal-sources">
+          <h2>Sources</h2>
+          <ul class="fl-sources">
+            <li>Agisoft. <em>Metashape User Manual, Standard Edition, Version 2.3</em>, “Capturing scenarios”: at least 60–70% overlap so each point is on at least three photos; avoid untextured, shiny, highly reflective or transparent objects; place a ruler or markers of known distance for measurement. <a href="https://www.agisoft.com/pdf/metashape_2_3_en.pdf" target="_blank" rel="noopener noreferrer">agisoft.com</a></li>
+            <li>Schönberger, J. L. and Frahm, J.-M. (2016). “Structure-from-Motion Revisited.” <em>IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>. The paper behind the open-source COLMAP software. <a href="https://colmap.github.io/" target="_blank" rel="noopener noreferrer">colmap.github.io</a></li>
+            <li>Lowe, D. G. (2004). “Distinctive Image Features from Scale-Invariant Keypoints.” <em>International Journal of Computer Vision</em> 60(2), 91–110. The SIFT feature detector, a classic way to find and match feature points.</li>
+            <li>Hartley, R. and Zisserman, A. (2004). <em>Multiple View Geometry in Computer Vision</em>, 2nd ed. Cambridge University Press. Triangulation and stereo depth.</li>
+            <li>AliceVision. <em>Meshroom</em>, free and open-source photogrammetry software. <a href="https://alicevision.org/" target="_blank" rel="noopener noreferrer">alicevision.org</a></li>
+            <li>Visual Computing Lab, ISTI-CNR. <em>MeshLab</em>, free and open-source mesh processing. <a href="https://www.meshlab.net/" target="_blank" rel="noopener noreferrer">meshlab.net</a></li>
+            <li>Apple Newsroom (13 October 2020). “Apple introduces iPhone 12 Pro and iPhone 12 Pro Max with 5G.” (LiDAR scanner.) <a href="https://www.apple.com/newsroom/2020/10/apple-introduces-iphone-12-pro-and-iphone-12-pro-max-with-5g/" target="_blank" rel="noopener noreferrer">apple.com</a></li>
+            <li>Smithsonian Institution. <em>Smithsonian Open Access</em> (launched February 2020) and <em>Smithsonian 3D</em>, Digitization Program Office. <a href="https://www.si.edu/openaccess" target="_blank" rel="noopener noreferrer">si.edu/openaccess</a> · <a href="https://3d.si.edu/" target="_blank" rel="noopener noreferrer">3d.si.edu</a></li>
+            <li>MyMiniFactory. <em>Scan the World</em>, community archive of scanned cultural artefacts, begun 2014. <a href="https://www.myminifactory.com/scantheworld/" target="_blank" rel="noopener noreferrer">myminifactory.com/scantheworld</a></li>
+          </ul>
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../3d-design.html">3D Design</a> · Related: <a href="marble-sculpture.html">In the Likeness: Marble Studio</a> · <a href="../cad-and-printing/measure-and-fit.html">Measure and fit</a> · <a href="../foundations/what-is-a-3d-model.html">What is a 3D model?</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+  </div><!-- .ll-stage -->
+</div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/site-glossary.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-content.js"></script>
+<script src="../../../assets/js/figure-lesson.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/tool-rosetta.js"></script>
+<script src="../../../assets/js/design3d-route.js"></script>
+<script src="../../../assets/js/lessons/scan-a-likeness.js"></script>
+</body>
+</html>

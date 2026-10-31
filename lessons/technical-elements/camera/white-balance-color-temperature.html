@@ -96,6 +96,12 @@
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
 
+        <nav aria-label="Technical Elements pathway" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.85rem;padding:0.55rem 0.85rem;border:1px solid var(--line,#d2d2d7);border-radius:10px;font-size:0.82rem;font-weight:700;">
+          <a href="camera-exposure-triangle.html" style="text-decoration:none;">← Camera Exposure Triangle</a>
+          <a href="../technical-elements.html" style="text-decoration:none;">Technical Elements Curriculum Hub</a>
+          <a href="../stagecraft/stage-plotting.html" style="text-decoration:none;">Back to Unit I: Stage Plotting →</a>
+        </nav>
+
         <section class="hero cl-hero">
           <p class="eyebrow">Audio, Lighting &amp; Production Technology · Grades 9–12</p>
           <h1>White Balance &amp; Color Temperature</h1>
@@ -137,6 +143,24 @@
         <section class="cl-card" style="--card-accent:#34c759;">
           <h2>Go Deeper: The Kelvin Scale &amp; CRI</h2>
           <p><strong>Color temperature</strong> runs from warm/orange at low Kelvin (candlelight ≈ 1900K) to cool/blue at high Kelvin (open shade ≈ 8000K) — the opposite of how "warm" and "cool" sound, since higher-temperature stars really do glow bluer. <strong>CRI (Color Rendering Index)</strong> is a separate number: it measures how accurately a light source reveals true colors, on a scale to 100. A light can be perfectly white-balanced and still have poor CRI — meaning skin and fabric colors look slightly wrong no matter how you correct the tint, because the light itself is missing parts of the color spectrum. That's why productions care about high-CRI bulbs, not just correct Kelvin.</p>
+        </section>
+
+        <section class="cl-card" style="--card-accent:#f59e0b;">
+          <h2>Theatrical &amp; Musical Production: Stage Gels, Dimmer Red-Shift &amp; Multi-Camera Matching</h2>
+          <p>When filming or livestreaming a musical production, camera operators must coordinate directly with the Lighting Designer (<a href="../stagecraft/stage-lighting-design-lab.html">Stage Lighting Lab</a>) before tech rehearsal:</p>
+          <ul style="font-size:0.88rem;line-height:1.6;">
+            <li><strong>1. Never Use Auto White Balance (AWB) on a Lit Stage:</strong> If the Lighting Designer cues a 6500K moonlight blue wash for a night scene in <em>The Pirates of Penzance</em> or a warm 2200K amber sunset for <em>Newsies</em>, an AWB camera tries to "fix" the color back to neutral grey—erasing the lighting designer’s storytelling! Always lock stage cameras to a <strong>fixed manual Kelvin setting</strong> (typically <strong>3200K</strong> for halogen/tungsten rigs or <strong>4200K–5000K</strong> for mixed LED/followspot rigs).</li>
+            <li><strong>2. Tungsten Dimmer Red-Shift ("Amber Drift"):</strong> Traditional 3200K theatrical halogen lamps cool down physically when dimmed: at 100% intensity they burn at 3200K, but dimmed to 35% for a quiet ballad, the filament drops to ~2100K (candlelight amber). Modern theatrical LED fixtures include a <em>Tungsten Red-Shift Emulation</em> curve so LEDs warm up smoothly alongside halogen Lekos.</li>
+            <li><strong>3. Multi-Camera Matching &amp; Color-Correction Gels:</strong> In a 2- or 3-camera shoot (Wide Center + Left/Right Close-up), every camera must be dialed to the <strong>exact same Kelvin number and tint</strong> so editing between angles never jumps from warm to cool. When mixing a 5600K arc followspot with 3200K stage washes, lighting crews drop a <strong>CTO (Color Temperature Orange)</strong> gel frame into the followspot to bring it down to 3200K.</li>
+          </ul>
+          <div class="wbc-lab" style="margin-top:0.8rem;">
+            <p style="margin:0 0 0.5rem;font-size:0.84rem;font-weight:700;">Test a Stage Lighting Scenario in the Simulator Above:</p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+              <button type="button" class="cl-check-btn" onclick="wbcStagePreset('tungsten',3200,'✓ Locked 3200K Tungsten Stage Rig: Un-gelled halogen Lekos read neutral; warm &amp; cool gels register truthfully.')">🎭 3200K Theatrical Halogen Rig (Matched)</button>
+              <button type="button" class="cl-check-btn" onclick="wbcStagePreset('candle',3200,'✓ Dimmed Ballad / Amber Sunset (1900K light on 3200K camera): Preserves the Lighting Designer’s warm golden mood!')">🌅 Dimmed 35% Tungsten Ballad (Intentional Warmth)</button>
+              <button type="button" class="cl-check-btn" onclick="wbcStagePreset('shade',3200,'✓ Moonlight Night Scene (8000K blue wash on 3200K camera): Preserves dramatic midnight blue on camera!')">🌙 Moonlight Blue Stage Wash (Intentional Cool)</button>
+            </div>
+          </div>
         </section>
 
         <!-- Practice Problems -->
@@ -347,6 +371,16 @@
       fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok'; hint.style.display = 'none';
     } else {
       fb.textContent = '✗ Not quite — check the hint below.'; fb.className = 'cl-feedback err'; hint.style.display = 'block';
+    }
+  }
+
+  function wbcStagePreset(srcKey, wbVal, msg) {
+    wbcCurrentSource = srcKey;
+    document.getElementById('wbc-wb-slider').value = wbVal;
+    wbcRenderSourceButtons();
+    wbcUpdate();
+    if (msg) {
+      document.getElementById('wbc-verdict').textContent = msg;
     }
   }
 

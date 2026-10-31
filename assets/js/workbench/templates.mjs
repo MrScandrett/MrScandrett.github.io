@@ -149,6 +149,56 @@ function bridge() {
   };
 }
 
+/* A two-storey school block, 10 × 7 m, built the way a 1:100 model is printed:
+   each storey (slab + walls) and the roof are separate parts that stack on
+   two pegs. Walls are 0.25 m outside and 0.2 m inside, so they print 2.5 mm
+   and 2 mm thick; a real 0.1 m partition would print 1 mm and is thickened.
+   Used by lessons/3d-design/architecture/scale-models.html. */
+function schoolBlock() {
+  const W = 10, D = 7, T = 0.25, TI = 0.2, SLAB = 0.3, H = 2.8;   // binary-exact sizes keep shared faces exactly flush
+  const LIFT = SLAB + H - 0.01;                       // floor to floor: 3.09 m
+  const cx = W / 2 - T / 2, cy = D / 2 - T / 2;        // wall centre lines
+  // two pegs on the inside wall, off-centre, so each floor fits only one way round
+  const pegSpots = [[0.5, 2.4], [0.5, -1.6]];
+  const wall = (o) => ({ h: H, t: T, ww: 1.8, wh: 1.4, sill: 0.9, dw: 1.2, dh: 2.1, ...o });
+  // pegs 1.8 mm across × 1.8 mm tall at 1:100; holes 2.6 mm leave 0.4 mm of play
+  const pegs = (z) => pegSpots.map(([x, y]) => S('cylinder', { d: 0.18, h: 0.18, sides: 24 }, { name: 'Locating peg', color: C.grey, ...at(x, y, z) }));
+  const pegHoles = () => pegSpots.map(([x, y]) => S('cylinder', { d: 0.26, h: 0.25, sides: 24 }, { name: 'Peg hole', hole: true, color: C.hole, ...at(x, y, -0.05) }));
+  const storey = (name, frontDoor, color, withPegs, withHoles) => G(name, [
+    S('box', { w: W, d: D, h: SLAB, r: 0 }, { name: 'Floor slab', color: C.concrete, ...at(0, 0, 0) }),
+    S('wall', wall({ l: W, windows: frontDoor ? 2 : 3, door: frontDoor ? 'center' : 'none' }), { name: 'Front wall', color, ...at(0, -cy, SLAB - 0.01) }),
+    S('wall', wall({ l: W, windows: 3, door: 'none' }), { name: 'Back wall', color, ...at(0, cy, SLAB - 0.01) }),
+    S('wall', wall({ l: D - 2 * T + 0.1, windows: 1, door: 'none' }), { name: 'Left wall', color, ...at(-cx, 0, SLAB - 0.01, { rot: [0, 0, 90] }) }),
+    S('wall', wall({ l: D - 2 * T + 0.1, windows: 1, door: 'none' }), { name: 'Right wall', color, ...at(cx, 0, SLAB - 0.01, { rot: [0, 0, 90] }) }),
+    S('wall', wall({ l: D - 2 * T + 0.1, t: TI, windows: 0, door: 'center', dw: 1 }), { name: 'Inside wall (thickened to 0.2 m so it prints)', color: C.white, ...at(0.5, 0, SLAB - 0.01, { rot: [0, 0, 90] }) }),
+    ...(withPegs ? pegs(LIFT - 0.01) : []),
+    ...(withHoles ? pegHoles() : []),
+  ]);
+  const parapet = (w, d, x, y) => S('box', { w, d, h: 0.5, r: 0 }, { name: 'Parapet', color: C.cream, ...at(x, y, SLAB - 0.01) });
+  return {
+    preset: 'building', name: 'school-block-stacking-floors',
+    objects: [
+      storey('Ground floor', true, C.cream, true, false),
+      { ...storey('Upper floor', false, C.stone, true, true), pos: [0, 0, LIFT] },
+      G('Flat roof', [
+        S('box', { w: W, d: D, h: SLAB, r: 0 }, { name: 'Roof slab', color: C.grey, ...at(0, 0, 0) }),
+        parapet(W, 0.25, 0, -cy), parapet(W, 0.25, 0, cy),
+        parapet(0.25, D - 0.4, -cx, 0), parapet(0.25, D - 0.4, cx, 0),
+        ...pegHoles(),
+      ], { pos: [0, 0, 2 * LIFT] }),
+      // a 1.7 m person: 17 mm tall at 1:100, the yardstick every architectural model carries
+      G('Person (1.7 m)', [
+        S('cylinder', { d: 0.5, h: 0.06, sides: 24 }, { name: 'Stand', color: C.black, ...at(0, 0, 0) }),
+        S('cone', { d1: 0.4, d2: 0.28, h: 1.0, sides: 16 }, { name: 'Legs', color: C.black, ...at(0, 0, 0.05) }),
+        S('cone', { d1: 0.3, d2: 0.44, h: 0.35, sides: 16 }, { name: 'Body', color: C.black, ...at(0, 0, 1.04) }),
+        S('cone', { d1: 0.42, d2: 0.16, h: 0.12, sides: 16 }, { name: 'Shoulders', color: C.black, ...at(0, 0, 1.38) }),
+        S('cylinder', { d: 0.22, h: 0.21, sides: 16 }, { name: 'Head', color: C.black, ...at(0, 0, 1.49) }),
+      ], { pos: [0, -D / 2 - 1.2, 0] }),
+    ],
+    print: { arrange: 'apart' },
+  };
+}
+
 /* ── product prototypes (millimetres) ─────────────────────────────────── */
 
 function phoneStand() {
@@ -308,6 +358,7 @@ export const TEMPLATES = [
   { id: 'hinge', title: 'Hinge keychain', realm: 'Fidgets & toys', blurb: 'A hinge that prints already assembled, if the clearance suits your printer.', make: hinge },
   { id: 'house', title: 'House with lift-off roof', realm: 'Architecture', blurb: 'Walls with real window and door sizes; prints as a 1:100 model.', make: house },
   { id: 'temple', title: 'Greek temple', realm: 'Architecture', blurb: 'Fluted columns on a stepped base, under an entablature and pediment.', make: temple },
+  { id: 'school', title: 'School block in stacking floors', realm: 'Architecture', blurb: 'Two storeys and a roof that lift apart on pegs, with a 1.7 m person for scale; prints at 1:100.', make: schoolBlock },
   { id: 'bridge', title: 'Truss bridge', realm: 'Architecture', blurb: 'Two Pratt trusses carry a 24 m deck between concrete piers.', make: bridge },
   { id: 'stand', title: 'Phone stand', realm: 'Product prototypes', blurb: 'A back rest tipped 20° with a cable hole, on a weighted base.', make: phoneStand },
   { id: 'controller', title: 'Game controller shell', realm: 'Product prototypes', blurb: 'A rounded enclosure with screw posts, and a lid with button cut-outs.', make: controller },

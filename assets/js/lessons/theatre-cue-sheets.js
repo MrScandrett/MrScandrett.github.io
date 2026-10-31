@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const key = 'classroomos-theatre-cue-sheet-v1';
-  const departments = ['Audio', 'Scene transition', 'Costume change', 'Lighting', 'Props', 'Projection / video', 'Other'];
+  const departments = ['Audio', 'Lighting', 'Fly rail', 'Scene transition', 'Costume change', 'Props', 'Projection / video', 'Wireless mic', 'Other'];
   const fields = [
     ['id','Cue ID','SND 1'], ['department','Department',''], ['location','Script / score location','p. 12 / bar 32, beat 1'], ['owner','Operator / crew','Name or crew role'],
     ['standby','Standby trigger / self-cued','Previous line or action; or “self-cued”'], ['trigger','Exact GO / action trigger','On the word… / after the exit…'],
@@ -72,6 +72,24 @@
   $('add').addEventListener('click',add); $('add-bottom').addEventListener('click',add);
   document.querySelectorAll('#metadata input').forEach(i => i.addEventListener('input',()=> {state.meta[i.name]=i.value; save();}));
   $('sheet-notes').addEventListener('input',()=> { state.notes=$('sheet-notes').value; save(); });
+  $('pirates-cues')?.addEventListener('click',()=> {
+    if(state.cues.some(c=>fields.some(([f])=>f!=='department'&&c[f].trim())) && !window.confirm('Replace current cues with The Pirates of Penzance Act I opening cues?')) return;
+    state.meta.production = 'The Pirates of Penzance';
+    state.meta.scene = 'Act I Opening — Rocky Seashore on the Coast of Cornwall';
+    state.notes = 'Booth cues to conductor for Overture and FLY 1 + LX 2. Add a seventh cue (e.g., LX 4 or LX 3.5) for the end of Ruth’s song to restore the full beach wash.';
+    const pirates = [
+      ['LX 1','Lighting','Pre-show / Overture','Lighting op','House manager gives clearance','Conductor reaches the podium','House lights out over 5 s; pit lights stay on.','Confirm conductor is in the pit before calling GO.'],
+      ['FLY 1','Fly rail','Overture, final 8 bars','Fly crew','8 bars before the end of the overture','Cutoff of the final chord (with LX 2)','Main curtain out on a 4-count to its high mark.','Called together with LX 2 on a single GO.'],
+      ['LX 2','Lighting','Overture, final chord','Lighting op','With FLY 1 (8 bars before end of overture)','Same GO as FLY 1 (cutoff of final chord)','Rocky-shore daylight look over 4 s.','Verify pirate chorus is in discovered positions.'],
+      ['SND 1','Audio','Act I, Opening Chorus','Sound op','During the opening chorus','Pirate King steps through the R.C. arch','Unmute ch. 7 (Pirate King) at the rehearsed level.','Keep R.C. arch entrance route clear (see Stage Plot).'],
+      ['SND 2','Audio','Act I, after Samuel’s line','Sound op','Samuel: “An error? What error?”','Ruth rises and comes forward','Unmute ch. 4 (Ruth) one line before she speaks.','Check hairline mic for costume rustle.'],
+      ['LX 3','Lighting','Act I, before Ruth’s song','Lighting op','Ruth: “…cankering tooth of mystery.”','On the word “once”','Song look: warm downstage-center special; rest of stage to 50% over 3 s.','Next task: add cue row 7 for end of Ruth’s song.']
+    ];
+    state.cues = pirates.map(values => Object.fromEntries(fields.map(([f],i) => [f,values[i]])));
+    state.cues.push(blank());
+    hydrate();
+    save('Loaded The Pirates of Penzance Act I opening (6 cues + 1 blank row for the end of Ruth’s song).');
+  });
   $('example').addEventListener('click',()=> {
     const examples = [
       ['SND 1','Audio','Act 1, scene 1, p. 2','Sound operator','On “Are you ready?”','On the word “begin”','Play track 01, “Market opening”; fade in over 2 seconds at rehearsed level.','Confirm track is loaded before standby.'],
@@ -114,4 +132,107 @@
   });
   $('clear').addEventListener('click',()=> {if(!window.confirm('Clear all names, notes, and cues? Download a backup first to keep this sheet.'))return;state={version:1,meta:{},notes:'',cues:[blank(),blank(),blank(),blank()]};hydrate();save('Sheet cleared. Start your next draft.');$('metadata').querySelector('input').focus();});
   hydrate(); buildPrint(); save();
+
+  // Interactive Booth Caller Trainer
+  const callerSim = $('caller-sim');
+  if (callerSim) {
+    const MOMENTS = {
+      curtain: {
+        context: '[STAGE MONITOR]: Orchestra is 8 bars from the end of the Overture. Pirates are in discovered positions behind the main curtain.',
+        sbCall: 'SM (you): “Standby Fly 1 and Lights 2.”',
+        ackReply: 'FLY RAIL: “Fly standing by.”\nLIGHTING OP: “Lights standing by.”',
+        goCall: 'SM (you): [Final chord cutoff] “Fly 1 and Lights 2… GO.”\n[STAGE MONITOR]: Main curtain flies out on a 4-count as the Cornwall rocky shore daylight wash fades up smoothly.',
+        goFeedback: 'Clean execution! Naming both departments before a single “GO” keeps the curtain rise and the 4-second daylight fade locked together.',
+        holdFeedback: 'HOLD called: Fly crew locks the batten brake immediately and Lighting freezes the crossfade.'
+      },
+      king: {
+        context: '[STAGE MONITOR]: Opening chorus (“Pour, O Pour the Pirate Sherry”) is playing. Pirate King is waiting upstage of the R.C. rocky arch.',
+        sbCall: 'SM (you): “Standby Sound 1.”',
+        ackReply: 'SOUND OP (A1): “Sound standing by on Channel 7.”',
+        goCall: 'SM (you): [Pirate King steps through R.C. arch] “Sound 1… GO.”\n[STAGE MONITOR]: Channel 7 unmutes cleanly at 0 dB just before the Pirate King speaks his first line.',
+        goFeedback: 'Spot on! Unmuting on his visible entrance step guarantees his mic is live before his first consonant without picking up backstage chatter.',
+        holdFeedback: 'HOLD called: Sound keeps Channel 7 muted until the entrance obstruction is cleared.'
+      },
+      ruth: {
+        context: '[STAGE MONITOR]: SAMUEL asks, “An error? What error?” RUTH prepares to rise and confess her mistake before singing her solo.',
+        sbCall: 'SM (you): “Standby Sound 2 and Lights 3.”',
+        ackReply: 'SOUND OP: “Sound standing by.”\nLIGHTING OP: “Lights standing by.”',
+        goCall: 'SM (you): [Ruth rises] “Sound 2… GO.” … [Ruth says “Better have it out at ONCE”] “Lights 3… GO.”\n[STAGE MONITOR]: Ruth’s mic opens before her spoken line, and the warm downstage-center special blooms on the word “once.”',
+        goFeedback: 'Textbook musical calling! Opening the mic on her physical rise and calling the lighting special on the exact cadence word “once” frames the solo.',
+        holdFeedback: 'HOLD called: Crew pauses transition and awaits Stage Manager instructions.'
+      },
+      hold: {
+        context: '[STAGE MONITOR]: During a fast blackout shift, the stage-left deck captain spots a chorus member’s cloak snagged on a moving rock wagon near the fly line.',
+        sbCall: 'SM (you): “Standby Deck Shift 4 and Fly 3.”',
+        ackReply: 'DECK CHIEF: “Wait—cloak snagged on SL wagon! Do not move!”',
+        goCall: 'WARNING: Never call GO when a crew member reports a fouled line or actor in a hazard zone! Click Emergency: “HOLD!” instead.',
+        goFeedback: 'Safety violation! When a wagon or fly line is fouled, calling GO risks injury or torn scenery. Always call “HOLD!” immediately.',
+        holdFeedback: 'Correct safety call! Saying “HOLD! HOLD! HOLD!” on headset immediately stops all fly, wagon, and automation movement until the deck chief confirms “All clear.”'
+      }
+    };
+    let currentMoment = 'curtain';
+    let stepState = 0; // 0 = initial, 1 = standby called, 2 = crew acked, 3 = complete
+    const logEl = $('caller-log');
+    const fbEl = $('caller-feedback');
+    const momentBtns = callerSim.querySelectorAll('[data-moment]');
+
+    function renderCaller(lines, fbText, fbTone) {
+      logEl.textContent = lines.join('\n');
+      fbEl.textContent = fbText;
+      fbEl.className = 'te-readout' + (fbTone ? ' ' + fbTone : '');
+    }
+
+    function selectMoment(key) {
+      currentMoment = key;
+      stepState = 0;
+      momentBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.moment === key)));
+      const m = MOMENTS[key];
+      renderCaller([m.context], 'Step 1: Call Standby to alert the crew before the trigger arrives.', '');
+    }
+
+    momentBtns.forEach(b => b.addEventListener('click', () => selectMoment(b.dataset.moment)));
+
+    $('caller-btn-sb')?.addEventListener('click', () => {
+      const m = MOMENTS[currentMoment];
+      stepState = 1;
+      renderCaller([m.context, m.sbCall], 'Step 2: Poll the crew so every department confirms “standing by” before you call GO.', 'warn');
+    });
+
+    $('caller-btn-ack')?.addEventListener('click', () => {
+      const m = MOMENTS[currentMoment];
+      if (stepState < 1) {
+        renderCaller([m.context], 'Call Standby first! Crew cannot acknowledge a cue you haven’t warned them about.', 'bad');
+        return;
+      }
+      stepState = 2;
+      renderCaller([m.context, m.sbCall, m.ackReply], currentMoment === 'hold' ? 'Hazard reported on deck! Call Emergency “HOLD!” immediately.' : 'Step 3: Crew is standing by. Watch the script/score trigger and call GO!', 'warn');
+    });
+
+    $('caller-btn-go')?.addEventListener('click', () => {
+      const m = MOMENTS[currentMoment];
+      if (currentMoment === 'hold') {
+        renderCaller([m.context, m.sbCall, m.ackReply, m.goCall], m.goFeedback, 'bad');
+        return;
+      }
+      if (stepState === 0) {
+        renderCaller([m.context, 'SM (you): “GO!” (called cold with no Standby)'], 'Too sudden! Calling GO without a Standby catches operators off-guard and causes late cues.', 'bad');
+        return;
+      }
+      if (stepState === 1) {
+        renderCaller([m.context, m.sbCall, 'SM (you): “GO!” (called before crew acknowledged readiness)'], 'Wait for acknowledgment! Always confirm the fly rail and board operators answered “standing by” before calling GO.', 'warn');
+        return;
+      }
+      stepState = 3;
+      renderCaller([m.context, m.sbCall, m.ackReply, m.goCall], m.goFeedback, 'good');
+    });
+
+    $('caller-btn-hold')?.addEventListener('click', () => {
+      const m = MOMENTS[currentMoment];
+      stepState = 3;
+      renderCaller([m.context, 'SM (you): “HOLD! HOLD! All departments HOLD!”'], m.holdFeedback, currentMoment === 'hold' ? 'good' : 'warn');
+    });
+
+    $('caller-btn-reset')?.addEventListener('click', () => selectMoment(currentMoment));
+    selectMoment('curtain');
+  }
 })();

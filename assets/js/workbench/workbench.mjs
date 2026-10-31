@@ -630,7 +630,7 @@ function paramControl(node, shape, spec) {
   if (spec.type === 'points') {
     return h('div', { class: 'wb-field' }, h('span', { class: 'wb-label', text: spec.label }),
       h('button', { type: 'button', class: 'wb-primary-soft', onclick: () => editSketch(node, shape, spec) }, `Edit the ${spec.label.toLowerCase()} (${value.length} points)`),
-      h('p', { class: 'wb-help', text: spec.axis ? 'Draw half the silhouette to the right of the spin axis.' : 'Click to add points, drag to move them.' }));
+      h('p', { class: 'wb-help', text: spec.help || (spec.axis ? 'Draw half the silhouette to the right of the spin axis.' : 'Click to add points, drag to move them.') }));
   }
   const lim = W.paramLimits(spec, f);
   return numberRow(spec.label, value, {
@@ -652,7 +652,9 @@ function keepBottom(node, change) {
 
 function editSketch(node, shape, spec) {
   openSketch(el.sketch, {
-    points: node.params[spec.id], closed: spec.closed, axis: spec.axis, smooth: node.params.smooth || 0,
+    points: node.params[spec.id], closed: spec.closed, axis: spec.axis,
+    // a sketch names the setting that smooths it (`smooth: 'round'`); older shapes all use `smooth`
+    smooth: (spec.smooth === undefined ? node.params.smooth : spec.smooth ? node.params[spec.smooth] : 0) || 0,
     grid: preset().grid, units: units(), title: `${shape.name}: ${spec.label.toLowerCase()}`,
   }, (pts) => {
     keepBottom(node, () => { node.params[spec.id] = pts; node.params = W.resolveParams(shape, node.params, project.preset); });
