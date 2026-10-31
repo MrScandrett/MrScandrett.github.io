@@ -1,0 +1,178 @@
+/* Marble Studio (assets/js/sculpture/marble-studio.mjs): a dark sculptor's workshop in
+   every theme, so the white stone reads clearly. The studio marks itself data-night-keep. */
+.ms-studio {
+  --ms-bg: #141518;
+  --ms-panel: #1d1f24;
+  --ms-panel-2: #262931;
+  --ms-line: #3a3e48;
+  --ms-ink: #eceae4;
+  --ms-dim: #b4b2ab;
+  --ms-accent: #f0c35a;
+  --ms-accent-ink: #1b1608;
+  --ms-good: #2fbf71;
+  --ms-warn: #ff8a7a;
+  margin: 1.5rem 0;
+  padding: 0;
+  color: var(--ms-ink);
+  font: 400 0.92rem/1.4 var(--font-sans, system-ui, sans-serif);
+}
+.ms-studio > figcaption { margin-top: 0.6rem; color: var(--text-secondary, inherit); font-size: 0.92rem; }
+.ms-shell {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--ms-bg);
+  border: 1px solid #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.6);
+}
+.ms-shell button, .ms-shell select, .ms-shell input { font: inherit; color: inherit; }
+.ms-shell { -webkit-user-select: none; user-select: none; }
+.ms-shell input[type="text"] { -webkit-user-select: text; user-select: text; }
+.ms-shell :focus-visible { outline: 2px solid var(--ms-accent); outline-offset: 2px; }
+
+/* top bar */
+.ms-bar { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; background: var(--ms-panel); border-bottom: 1px solid var(--ms-line); }
+.ms-bar-group { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; min-width: 0; }
+.ms-field { display: inline-flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.ms-field > span { font-size: 0.78rem; color: var(--ms-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.ms-shell select { max-width: 15rem; padding: 0.3rem 0.45rem; border-radius: 6px; border: 1px solid var(--ms-line); background: var(--ms-panel-2); color: var(--ms-ink); }
+.ms-btn, .ms-toggle, .ms-mini {
+  appearance: none; cursor: pointer; border: 1px solid var(--ms-line); background: var(--ms-panel-2); color: var(--ms-ink);
+  border-radius: 7px; padding: 0.32rem 0.6rem; line-height: 1.2; white-space: nowrap;
+}
+.ms-mini { padding: 0.2rem 0.5rem; font-size: 0.82rem; }
+.ms-btn:hover, .ms-toggle:hover, .ms-mini:hover { border-color: #5b606c; background: #2e323b; }
+.ms-btn:disabled, .ms-mini:disabled { opacity: 0.45; cursor: not-allowed; }
+.ms-toggle[aria-pressed="true"], .ms-mini[aria-pressed="true"] { background: var(--ms-accent); border-color: var(--ms-accent); color: var(--ms-accent-ink); font-weight: 700; }
+.ms-primary { background: var(--ms-accent); border-color: var(--ms-accent); color: var(--ms-accent-ink); font-weight: 700; }
+.ms-primary:hover { background: #f6d27f; border-color: #f6d27f; }
+/* theme-surfaces.css restyles disabled and pressed controls site-wide; the workshop keeps its own */
+html[data-theme] body .ms-shell :is(button, input, select):disabled, .ms-shell :is(button, input, select):disabled {
+  opacity: 0.45; color: var(--ms-dim); background: var(--ms-panel-2); border: 1px solid var(--ms-line); box-shadow: none;
+}
+html[data-theme] body .ms-shell button[aria-pressed="true"] { outline: none; }
+html[data-theme] body .ms-shell button[aria-pressed="true"]:focus-visible { outline: 2px solid var(--ms-accent); }
+html[data-theme] body .ms-shell input[type="range"], .ms-shell input[type="range"] { accent-color: var(--ms-accent); }
+
+/* body: tools | view | side */
+.ms-body { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 19rem; min-height: 0; }
+.ms-tools { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.6rem; background: var(--ms-panel); border-right: 1px solid var(--ms-line); }
+.ms-tool {
+  appearance: none; cursor: pointer; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 0.4rem;
+  align-items: center; text-align: left; padding: 0.35rem 0.45rem; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--ms-ink);
+}
+.ms-tool:hover { background: var(--ms-panel-2); }
+.ms-tool[aria-pressed="true"] { background: var(--ms-panel-2); border-color: var(--ms-accent); box-shadow: inset 3px 0 0 var(--ms-accent); }
+.ms-tool-icon { grid-row: span 2; width: 1.9rem; height: 1.9rem; display: grid; place-items: center; border-radius: 6px; background: #2d3038; }
+.ms-tool[aria-pressed="true"] .ms-tool-icon { background: var(--ms-accent); color: var(--ms-accent-ink); }
+.ms-tool-icon svg { width: 1.3rem; height: 1.3rem; }
+.ms-tool-name { font-weight: 700; font-size: 0.86rem; line-height: 1.15; }
+.ms-tool-it { font-size: 0.74rem; color: var(--ms-dim); font-style: italic; }
+.ms-size { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.35rem; align-items: center; margin-top: 0.3rem; font-size: 0.8rem; color: var(--ms-dim); }
+.ms-size input { width: 100%; min-width: 3rem; accent-color: var(--ms-accent); }
+.ms-mode { margin-top: 0.2rem; }
+.ms-mode[aria-pressed="true"] { background: #3a6ea5; border-color: #3a6ea5; }
+.ms-tool-use { margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--ms-dim); }
+
+.ms-view { position: relative; height: clamp(26rem, 70vh, 48rem); min-width: 0; background: #0d0e10; }
+.ms-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: none; outline: none; }
+.ms-canvas.ms-looking { cursor: grab; }
+.ms-hint { position: absolute; left: 0.75rem; bottom: 0.5rem; margin: 0; font-size: 0.78rem; color: rgba(236, 234, 228, 0.75); pointer-events: none; text-shadow: 0 1px 2px #000; }
+.ms-toast {
+  position: absolute; left: 50%; top: 0.75rem; transform: translate(-50%, -0.4rem); width: min(34rem, calc(100% - 1.5rem));
+  padding: 0.6rem 0.85rem; border-radius: 10px; background: rgba(20, 21, 24, 0.94); border: 1px solid var(--ms-line);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+.ms-toast.is-on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.ms-toast p { margin: 0; }
+.ms-toast .ms-row { margin-top: 0.45rem; }
+.ms-legend { position: absolute; right: 0.6rem; bottom: 0.6rem; max-width: min(26rem, calc(100% - 1.2rem)); padding: 0.45rem 0.65rem; border-radius: 8px; background: rgba(20, 21, 24, 0.88); border: 1px solid var(--ms-line); font-size: 0.8rem; }
+.ms-legend p { margin: 0.15rem 0; }
+.ms-key i { display: inline-block; width: 0.7rem; height: 0.7rem; margin: 0 0.25rem 0 0.5rem; border-radius: 50%; background: var(--c); vertical-align: -0.05rem; }
+.ms-busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(13, 14, 16, 0.55); font-weight: 700; }
+
+.ms-side { display: flex; flex-direction: column; gap: 0; background: var(--ms-panel); border-left: 1px solid var(--ms-line); overflow-y: auto; max-height: clamp(26rem, 70vh, 48rem); }
+.ms-panel { padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--ms-line); }
+.ms-panel h3 { margin: 0 0 0.45rem; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ms-accent); }
+.ms-row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.45rem; }
+.ms-check { display: inline-flex; gap: 0.35rem; align-items: center; font-size: 0.84rem; cursor: pointer; }
+.ms-check input { accent-color: var(--ms-accent); }
+.ms-note { margin: 0.45rem 0 0; font-size: 0.8rem; color: var(--ms-dim); }
+.ms-note:empty { display: none; }
+
+.ms-steps { list-style: none; margin: 0; padding: 0; counter-reset: ms-step; display: grid; gap: 0.25rem; }
+.ms-step { counter-increment: ms-step; padding: 0.4rem 0.45rem; border-radius: 8px; border: 1px solid transparent; }
+.ms-step.is-active { border-color: var(--ms-accent); background: #2a2a24; }
+.ms-step-head { display: grid; grid-template-columns: minmax(0, 1fr) 3.4rem; gap: 0.5rem; align-items: center; }
+.ms-step-head strong { font-size: 0.86rem; }
+.ms-step-head strong::before { content: counter(ms-step) " · "; color: var(--ms-dim); font-weight: 400; }
+.ms-step.is-done .ms-step-head strong::after { content: " ✓"; color: var(--ms-good); }
+.ms-step-bar { height: 0.35rem; border-radius: 1rem; background: #33363f; overflow: hidden; }
+.ms-step-bar i { display: block; height: 100%; width: 0; background: var(--ms-good); transition: width 0.4s; }
+.ms-step p { margin: 0.15rem 0 0.25rem; font-size: 0.78rem; color: var(--ms-dim); }
+.ms-step-actions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.ms-speed { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; margin-top: 0.55rem; font-size: 0.8rem; color: var(--ms-dim); }
+
+.ms-like { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.6rem; align-items: center; }
+.ms-like-num { font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+.ms-meter { height: 0.6rem; border-radius: 1rem; background: #33363f; overflow: hidden; }
+.ms-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #d35b4b, #f0c35a 55%, #2fbf71); transition: width 0.5s; }
+.ms-stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.15rem 0.6rem; margin: 0.55rem 0 0; font-size: 0.82rem; }
+.ms-stats dt { color: var(--ms-dim); }
+.ms-stats dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.ms-stats dd.is-warn { color: var(--ms-warn); font-weight: 700; }
+
+/* drawing panel */
+.ms-drawer { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 1rem; background: rgba(8, 9, 11, 0.78); overflow-y: auto; }
+.ms-drawer[hidden] { display: none; }
+.ms-drawer-card { width: min(56rem, 100%); padding: 1rem 1.1rem; border-radius: 12px; background: var(--ms-panel); border: 1px solid var(--ms-line); }
+.ms-drawer-card h3 { margin: 0 0 0.3rem; font-size: 1.15rem; }
+.ms-drawer-card > p { margin: 0 0 0.5rem; color: var(--ms-dim); }
+.ms-draw-row { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 0.7rem; }
+.ms-draw-fig { margin: 0; width: min(18rem, 100%); }
+.ms-draw-canvas {
+  display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; border-radius: 6px; border: 1px solid var(--ms-line);
+  background-color: #2b2e35;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-position: left bottom;
+}
+.ms-draw-fig figcaption { margin-top: 0.3rem; text-align: center; font-size: 0.82rem; color: var(--ms-dim); }
+.ms-fallback { padding: 1rem; border-radius: 10px; background: var(--surface-elevated, #f4f4f4); color: var(--text, #111); }
+
+/* full screen (and the iPhone stand-in) */
+.ms-studio:fullscreen { margin: 0; background: var(--ms-bg); }
+.ms-studio:fullscreen > figcaption { display: none; }
+.ms-studio:fullscreen .ms-shell, .ms-studio.ms-fs-fallback .ms-shell { height: 100vh; height: 100dvh; border-radius: 0; border: 0; }
+.ms-studio:fullscreen .ms-view, .ms-studio:fullscreen .ms-side,
+.ms-studio.ms-fs-fallback .ms-view, .ms-studio.ms-fs-fallback .ms-side { height: auto; max-height: none; }
+.ms-studio.ms-fs-fallback { position: fixed; inset: 0; z-index: 2147483000; margin: 0; background: var(--ms-bg); }
+.ms-studio.ms-fs-fallback > figcaption { display: none; }
+
+@media (max-width: 1100px) {
+  .ms-body { grid-template-columns: 9.5rem minmax(0, 1fr); }
+  .ms-side { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); max-height: none; border-left: 0; border-top: 1px solid var(--ms-line); }
+  .ms-panel { border-right: 1px solid var(--ms-line); }
+  .ms-studio:fullscreen .ms-body { grid-template-rows: minmax(0, 1fr) auto; }
+  .ms-studio:fullscreen .ms-side { max-height: 34vh; }
+}
+@media (max-width: 700px) {
+  .ms-body { grid-template-columns: minmax(0, 1fr); }
+  .ms-tools { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--ms-line); }
+  .ms-tool { grid-template-columns: 1.7rem auto; padding: 0.3rem 0.4rem; }
+  .ms-tool-it { display: none; }
+  .ms-size { margin-top: 0; flex: 1 1 10rem; }
+  .ms-tool-use { flex-basis: 100%; }
+  .ms-view { height: clamp(22rem, 62vh, 36rem); }
+  .ms-bar { justify-content: flex-start; }
+  .ms-shell select { max-width: 11rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ms-toast, .ms-meter i, .ms-step-bar i { transition: none; }
+}
+@media print {
+  .ms-shell { display: none !important; }
+  .ms-studio::before { content: "Marble Studio: open this lesson online to carve, point and polish a block of marble."; display: block; padding: 0.5rem 0.7rem; border: 1px solid #999; border-radius: 6px; color: #111; }
+  .ms-studio { color: #111; }
+}

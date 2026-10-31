@@ -28,6 +28,7 @@
       ['blender/blender-materials-render.html', 'Render the model'],
       ['blender/blender-character-modeling.html', 'Character modeling'],
       ['blender/blender-sculpting.html', 'Sculpt surfaces'],
+      ['sculpture/marble-sculpture.html', 'Carve a likeness'],
       ['blender/blender-geometry-nodes.html', 'Geometry nodes'],
       ['blender/blender-compositing.html', 'Compositing & presentation']
     ], [

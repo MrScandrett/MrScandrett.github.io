@@ -6,6 +6,8 @@
   'use strict';
   var PC = global.PixelCourier, PP = global.PixelPathway, el = PP.el;
   var store = PC.store;
+  // site root from this file's own URL, so links work at any lesson depth
+  var SITE = new URL('../../../', document.currentScript.src);
 
   /* ══ Pixel editor component ═════════════════════════════════════════ */
   // Edits one 16×16 frame string. opts: { value, onChange(frame, final), onion() -> frame|null, label }
@@ -758,7 +760,7 @@
     var dl = el('button', 'px-button', '⬇ Download my art.js'); dl.type = 'button';
     dl.addEventListener('click', function () { PC.download('art.js', store.exportJS(), 'text/javascript'); });
     row.appendChild(dl);
-    var pack = el('a', 'px-button alt', '⬇ Pixel Courier starter pack (.zip)'); pack.href = '../../downloads/pixel-courier-starter-pack.zip'; pack.setAttribute('download', '');
+    var pack = el('a', 'px-button alt', '⬇ Pixel Courier starter pack (.zip)'); pack.href = new URL('downloads/pixel-courier-starter-pack.zip', SITE).href; pack.setAttribute('download', '');
     row.appendChild(pack);
     var label = el('label', 'px-button alt', '⬆ Load art.js or .json'); var file = el('input'); file.type = 'file'; file.accept = '.js,.json,text/javascript,application/json'; file.style.position = 'absolute'; file.style.opacity = '0'; file.style.width = '1px';
     label.appendChild(file); row.appendChild(label);

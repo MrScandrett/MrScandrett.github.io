@@ -278,6 +278,7 @@ if (FIX) {
   );
 
   const ICON_BY_MODULE = {
+    "2D Design": "🖌️",
     "3D Design": "📐",
     "Mathematics":                        "📐",
     "Physics":                            "⚡",

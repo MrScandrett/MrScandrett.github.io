@@ -4,25 +4,25 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Collision & Response · 2D Game Developer Pathway</title>
   <meta name="description" content="2D Game Developer Pathway Lesson 6: detect AABB overlap against tiles, resolve X and Y separately, prevent tunnelling with sub-steps, and build one-way platforms and fair hitboxes.">
-  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../assets/css/lessons/pixel-pathway.css">
-  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../../assets/css/lessons/pixel-pathway.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
 </head>
 <body class="px-body"><a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="nav-wrap">
-      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
         <ul>
-          <li><a href="../../index.html">Home</a></li>
-          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../paths.html">Paths</a></li>
-          <li><a href="../../showcase.html">Showcase</a></li>
-          <li><a href="../../applications.html">Apps</a></li>
-          <li><a href="../../library.html">Library</a></li>
-          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
         </ul>
       </nav>
     </div>
@@ -38,7 +38,7 @@
          a.y &lt; b.y + b.h &amp;&amp; a.y + a.h &gt; b.y;
 }</code></pre></div><p>The courier’s <span data-glossary="hitbox">hitbox</span> is 10 × 14 inside a 16 × 16 drawing. Spikes use an even smaller box. Hitboxes slightly smaller than the art make near-misses feel fair — the Shooter tutorial does the same with bullets.</p></div></section>
 <section class="px-section"><div class="px-section-mark">02 / STEP</div><div><p class="px-kicker">Collision stepper</p><h2>Watch one frame in slow motion.</h2><p>Each frame has two halves. <strong>Move</strong>: put the box where its velocity says (red dashed outline). <strong>Resolve</strong>: if it is inside a solid tile, push it out and zero the velocity on that axis.</p><div class="px-lab"><p class="px-lab-title">Step through collisions<small>Try every scenario with both methods</small></p><div data-px-lab="collision"></div></div><ul><li><strong>Sliding over tile seams</strong> with “both at once”: the box overlaps the next floor tile by a sliver horizontally <em>and</em> vertically, the smaller push is sideways, and the courier snags on a flat floor.</li><li><strong>Very fast fall</strong> with no sub-steps: the box moves 26 px in one step and lands entirely below a 16 px floor — it never overlapped, so nothing stopped it. That is <span data-glossary="tunnelling">tunnelling</span>.</li></ul></div></section>
-<section class="px-section"><div class="px-section-mark">03 / THEORY</div><div><p class="px-kicker">The fix</p><h2>Move one axis at a time, in small steps.</h2><figure data-zoomable class="px-figure"><img src="../../assets/images/lessons/2d-game-dev/aabb-collision-diagram.svg" alt="AABB Collision and Resolution Architecture Diagram showing overlap tests, seam snagging vs sequential axis movement, tunnelling sub-steps, and one-way platform logic" width="800" height="420" loading="lazy"><figcaption><strong>AABB Collision &amp; Axis-Separated Resolution:</strong> Moving both axes simultaneously causes diagonal seam-snagging on flat floors. Resolving X then Y in small sub-steps (&le; 4 px) eliminates snagging and prevents high-speed tunnelling through thin walls.</figcaption></figure><div class="px-code"><div class="px-code-head"><span>moveX then moveY · JavaScript</span><button type="button">Copy</button></div><pre><code><span class="k">function</span> moveX(dx) {
+<section class="px-section"><div class="px-section-mark">03 / THEORY</div><div><p class="px-kicker">The fix</p><h2>Move one axis at a time, in small steps.</h2><figure data-zoomable class="px-figure"><img src="../../../assets/images/lessons/2d-game-dev/aabb-collision-diagram.svg" alt="AABB Collision and Resolution Architecture Diagram showing overlap tests, seam snagging vs sequential axis movement, tunnelling sub-steps, and one-way platform logic" width="800" height="420" loading="lazy"><figcaption><strong>AABB Collision &amp; Axis-Separated Resolution:</strong> Moving both axes simultaneously causes diagonal seam-snagging on flat floors. Resolving X then Y in small sub-steps (&le; 4 px) eliminates snagging and prevents high-speed tunnelling through thin walls.</figcaption></figure><div class="px-code"><div class="px-code-head"><span>moveX then moveY · JavaScript</span><button type="button">Copy</button></div><pre><code><span class="k">function</span> moveX(dx) {
   p.x += dx;
   <span class="k">for</span> (<span class="k">const</span> t <span class="k">of</span> solidTilesTouching(p)) {
     p.x = dx &gt; <span class="n">0</span> ? t.left - p.w : t.right;   <span class="c">// push back out the way we came</span>
@@ -57,10 +57,10 @@
 <section class="px-section"><div class="px-section-mark">04 / PLAY</div><div><p class="px-kicker">In the real game</p><h2>Turn the debug view on and play.</h2><div class="px-lab"><p class="px-lab-title">Hitboxes in Pixel Courier<small>Blue = solid · yellow = one-way · pink = hazard / player</small></p><div data-px-lab="collision-game"></div></div><div data-rosetta="col.overlap col.solid col.oneway"></div></div></section>
 <section class="px-section"><div class="px-section-mark">05 / SHIP</div><div><p class="px-kicker">Definition of done</p><h2>Your collisions are solid when…</h2><div class="px-checklist"><label><input type="checkbox">I can step through a collision and say what happens in the move half and the resolve half.</label><label><input type="checkbox">I reproduced the seam snag and tunnelling bugs on purpose, then fixed them.</label><label><input type="checkbox">I can explain why the hitbox is smaller than the sprite.</label><label><input type="checkbox">I can describe the two conditions for landing on a one-way plank.</label></div><p data-check-status>0/4 checked</p><p class="px-evidence"><strong>Evidence:</strong> Screenshot the debug view and annotate the player hitbox, a solid tile, a one-way plank and a hazard box.</p><div class="px-complete"><div><h3>Lesson 06 complete?</h3><p>Your art and settings are already saved for the next lesson.</p></div><button class="px-button" type="button" data-complete-lesson="6">Mark lesson complete</button></div></div></section>
 </main>
-<script src="../../assets/js/theme-registry.js"></script><script src="../../assets/js/theme-lighting.js"></script>
-<script src="../../assets/js/sim-kit.js"></script><script src="../../assets/js/lessons/pixel-courier-kit.js"></script>
-<script src="../../assets/js/lessons/pixel-pathway.js"></script><script src="../../assets/js/lessons/pixel-pathway-labs.js"></script>
-<script src="../../assets/js/game-dev-route.js"></script><script src="../../assets/js/tool-rosetta.js"></script><script src="../../assets/js/photo-lightbox.js"></script>
-<script src="../../assets/js/site-glossary.js" data-glossary-src="../../data/game-dev-glossary.json"></script><script src="../../assets/js/lesson-print-button.js"></script>
-<script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script><script src="../../../assets/js/theme-lighting.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script><script src="../../../assets/js/lessons/pixel-courier-kit.js"></script>
+<script src="../../../assets/js/lessons/pixel-pathway.js"></script><script src="../../../assets/js/lessons/pixel-pathway-labs.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script><script src="../../../assets/js/tool-rosetta.js"></script><script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/game-dev-glossary.json"></script><script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
 </body></html>

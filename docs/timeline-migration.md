@@ -95,7 +95,7 @@ its now-unused timeline CSS) is housekeeping: do it when you are editing that pa
 | Not a chronology | lessons/earth-science/volcano-simulator.html | div#timeline-overlay.timeline-overlay 3 items, 1 dated |
 | Not a chronology | lessons/earth-science/weather-watch.html | div.ww-radar-timeline 3 items, 0 dated |
 | Not a chronology | lessons/life-sciences/human-ear-anatomy.html | ol.fl-timeline is numbered steps of hearing (1–7), not dates |
-| Word only | lessons/2d-game-dev/2d-pathway.html | mention only |
+| Word only | lessons/2d-design/2d-game-dev/2d-pathway.html | mention only |
 | Word only | lessons/3d-design/blender/blender-interface-basics.html | mention only |
 | Word only | lessons/3d-design/blender/blender-workspaces-pathway.html | mention only |
 | Word only | lessons/3d-design/game-asset-studio/game-asset-character-animation.html | mention only |
@@ -105,7 +105,7 @@ its now-unused timeline CSS) is housekeeping: do it when you are editing that pa
 | Word only | lessons/computer-science/algorithms-and-ai/go-ai.html | mention only |
 | Word only | lessons/cosmology/seti-search.html | mention only |
 | Word only | lessons/design/origami.html | mention only |
-| Word only | lessons/design/pioneers/katsushika-hokusai.html | mention only |
+| Word only | lessons/2d-design/pioneers/katsushika-hokusai.html | mention only |
 | Word only | lessons/earth-science/ocean-zones.html | mention only |
 | Word only | lessons/engineering/arduino-and-electronics/electronics-capstone.html | mention only |
 | Word only | lessons/engineering/mechanical-and-civil-design/biomimicry.html | mention only |

@@ -6,7 +6,8 @@
   'use strict';
   var dirs = {
     "lessons/blender/": "lessons/3d-design/blender/",
-    "lessons/game-asset-studio/": "lessons/3d-design/game-asset-studio/"
+    "lessons/game-asset-studio/": "lessons/3d-design/game-asset-studio/",
+    "lessons/2d-game-dev/": "lessons/2d-design/2d-game-dev/"
   };
   var pages = {
     "lessons/pi": "lessons/mathematics/geometry-and-trigonometry/pi",
@@ -55,6 +56,10 @@
     "lessons/design/nam-june-paik": "lessons/design/pioneers/nam-june-paik",
     "lessons/design/pablo-picasso": "lessons/design/pioneers/pablo-picasso",
     "lessons/design/vincent-van-gogh": "lessons/design/pioneers/vincent-van-gogh",
+    "lessons/design/pioneers/katsushika-hokusai": "lessons/2d-design/pioneers/katsushika-hokusai",
+    "lessons/design/pioneers/pablo-picasso": "lessons/2d-design/pioneers/pablo-picasso",
+    "lessons/design/pioneers/vincent-van-gogh": "lessons/2d-design/pioneers/vincent-van-gogh",
+    "lessons/technical-elements/pioneers/walt-disney": "lessons/2d-design/pioneers/walt-disney",
     "lessons/humanities/leonardo-da-vinci": "lessons/humanities/pioneers/leonardo-da-vinci",
     "lessons/humanities/magellan": "lessons/humanities/pioneers/magellan",
     "lessons/humanities/lewis-and-clark": "lessons/humanities/pioneers/lewis-and-clark",
@@ -104,5 +109,5 @@
     }
     return moved ? p : null;
   }
-  root.ClassroomOSLessonMoves = { version: 2, resolve: resolve };
+  root.ClassroomOSLessonMoves = { version: 3, resolve: resolve };
 }(typeof window !== 'undefined' ? window : globalThis));

@@ -1,6 +1,6 @@
 /* pixel-courier-kit.js — shared art store + game engine for the 2D Game Developer Pathway.
  *
- * Every lesson in lessons/2d-game-dev/ reads and writes the SAME art object, so the
+ * Every lesson in lessons/2d-design/2d-game-dev/ reads and writes the SAME art object, so the
  * sprite a student draws in lesson 01 is the player they tune in lesson 05 and the
  * hero of the game they ship in lesson 10.
  *

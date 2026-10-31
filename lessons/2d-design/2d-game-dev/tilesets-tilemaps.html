@@ -4,25 +4,25 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Tilesets & Tilemaps · 2D Game Developer Pathway</title>
   <meta name="description" content="2D Game Developer Pathway Lesson 3: paint seamless tiles, build a tilemap as a 2D grid of tile IDs, separate art from collision rules, and learn 4-bit autotiling.">
-  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../assets/css/lessons/pixel-pathway.css">
-  <link rel="stylesheet" href="../../assets/css/lesson-print.css" media="print" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css"><link rel="stylesheet" href="../../../assets/css/lessons/pixel-pathway.css">
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
 </head>
 <body class="px-body"><a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header">
     <div class="nav-wrap">
-      <a class="brand" href="../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
       <nav class="site-nav" aria-label="Primary">
         <ul>
-          <li><a href="../../index.html">Home</a></li>
-          <li><a href="../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../paths.html">Paths</a></li>
-          <li><a href="../../showcase.html">Showcase</a></li>
-          <li><a href="../../applications.html">Apps</a></li>
-          <li><a href="../../library.html">Library</a></li>
-          <li><a href="../../about.html">About</a></li>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
         </ul>
       </nav>
     </div>
@@ -42,7 +42,7 @@
 ];
 <span class="k">const</span> tile = (col, row) =&gt; level[row][col];       <span class="c">// look up any cell</span>
 <span class="k">const</span> isSolid = id =&gt; tiles[id] &amp;&amp; tiles[id].solid; <span class="c">// rules live in data</span></code></pre></div><div class="px-practice" data-question data-correct="Correct. Art and rules are separate layers of the same ID." data-retry="Think about what happens when an artist recolours the brick."><strong>Why keep “solid / one-way / hazard” in the tile’s data instead of checking its colours?</strong><div class="px-practice-options"><button type="button" data-answer="correct">So you can redraw the art without breaking collision, and the game checks one ID instead of 256 pixels.</button><button type="button" data-answer="wrong">Because colours cannot be read in JavaScript.</button><button type="button" data-answer="wrong">Because tiles must be grey to be solid.</button></div><p class="px-practice-result" aria-live="polite"></p></div></div></section>
-<section class="px-section"><div class="px-section-mark">04 / AUTOTILE</div><div><p class="px-kicker">Theory: autotiling</p><h2>Let neighbours choose the edge.</h2><p>Hand-placing “top-left corner”, “top edge”, “right wall”… is slow. <span data-glossary="autotiling">Autotiling</span> looks at the four neighbours and adds up a <span data-glossary="bitmask">bitmask</span>: up = 1, right = 2, down = 4, left = 8. The total (0–15) picks one of 16 tile variants. Click cells below.</p><figure data-zoomable class="px-figure"><img src="../../assets/images/lessons/2d-game-dev/autotile-bitmask-diagram.svg" alt="4-Bit Autotile Bitmask Diagram showing cardinal neighbor summation formula and the 16-state tile atlas" width="800" height="420" loading="lazy"><figcaption><strong>4-Bit Autotile Bitmask:</strong> Each cardinal neighbour represents a power of two: Up (+1), Right (+2), Down (+4), Left (+8). Summing adjacent solid tiles yields a unique bitmask from 0 (isolated) to 15 (fully enclosed), indexing directly into a 16-tile atlas.</figcaption></figure><div class="px-lab"><p class="px-lab-title">4-bit autotile<small>Click to add or remove ground</small></p><div data-px-lab="bitmask"></div></div><div class="px-code"><div class="px-code-head"><span>bitmask · JavaScript</span><button type="button">Copy</button></div><pre><code><span class="k">function</span> mask(x, y) {
+<section class="px-section"><div class="px-section-mark">04 / AUTOTILE</div><div><p class="px-kicker">Theory: autotiling</p><h2>Let neighbours choose the edge.</h2><p>Hand-placing “top-left corner”, “top edge”, “right wall”… is slow. <span data-glossary="autotiling">Autotiling</span> looks at the four neighbours and adds up a <span data-glossary="bitmask">bitmask</span>: up = 1, right = 2, down = 4, left = 8. The total (0–15) picks one of 16 tile variants. Click cells below.</p><figure data-zoomable class="px-figure"><img src="../../../assets/images/lessons/2d-game-dev/autotile-bitmask-diagram.svg" alt="4-Bit Autotile Bitmask Diagram showing cardinal neighbor summation formula and the 16-state tile atlas" width="800" height="420" loading="lazy"><figcaption><strong>4-Bit Autotile Bitmask:</strong> Each cardinal neighbour represents a power of two: Up (+1), Right (+2), Down (+4), Left (+8). Summing adjacent solid tiles yields a unique bitmask from 0 (isolated) to 15 (fully enclosed), indexing directly into a 16-tile atlas.</figcaption></figure><div class="px-lab"><p class="px-lab-title">4-bit autotile<small>Click to add or remove ground</small></p><div data-px-lab="bitmask"></div></div><div class="px-code"><div class="px-code-head"><span>bitmask · JavaScript</span><button type="button">Copy</button></div><pre><code><span class="k">function</span> mask(x, y) {
   <span class="k">return</span> (filled(x, y - <span class="n">1</span>) ? <span class="n">1</span> : <span class="n">0</span>)  <span class="c">// up</span>
        + (filled(x + <span class="n">1</span>, y) ? <span class="n">2</span> : <span class="n">0</span>)  <span class="c">// right</span>
        + (filled(x, y + <span class="n">1</span>) ? <span class="n">4</span> : <span class="n">0</span>)  <span class="c">// down</span>
@@ -51,10 +51,10 @@
 <span class="k">const</span> variant = groundTiles[mask(x, y)]; <span class="c">// 16 hand-drawn variants</span></code></pre></div><div data-rosetta="tile.data tile.paint tile.autotile"></div></div></section>
 <section class="px-section"><div class="px-section-mark">05 / SHIP</div><div><p class="px-kicker">Definition of done</p><h2>Your world kit is ready when…</h2><div class="px-checklist"><label><input type="checkbox">My ground tile passes the seam test with no visible squares.</label><label><input type="checkbox">The level text has one S, at least one P, and an M.</label><label><input type="checkbox">I can point to where solid / one-way / hazard is stored.</label><label><input type="checkbox">I can compute a tile’s bitmask from its neighbours.</label></div><p data-check-status>0/4 checked</p><p class="px-evidence"><strong>Evidence:</strong> Explain to a partner how the text grid becomes both the picture and the walls.</p><div class="px-complete"><div><h3>Lesson 03 complete?</h3><p>Your art and settings are already saved for the next lesson.</p></div><button class="px-button" type="button" data-complete-lesson="3">Mark lesson complete</button></div></div></section>
 </main>
-<script src="../../assets/js/theme-registry.js"></script><script src="../../assets/js/theme-lighting.js"></script>
-<script src="../../assets/js/sim-kit.js"></script><script src="../../assets/js/lessons/pixel-courier-kit.js"></script>
-<script src="../../assets/js/lessons/pixel-pathway.js"></script><script src="../../assets/js/lessons/pixel-pathway-labs.js"></script>
-<script src="../../assets/js/game-dev-route.js"></script><script src="../../assets/js/tool-rosetta.js"></script><script src="../../assets/js/photo-lightbox.js"></script>
-<script src="../../assets/js/site-glossary.js" data-glossary-src="../../data/game-dev-glossary.json"></script><script src="../../assets/js/lesson-print-button.js"></script>
-<script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script><script src="../../../assets/js/theme-lighting.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script><script src="../../../assets/js/lessons/pixel-courier-kit.js"></script>
+<script src="../../../assets/js/lessons/pixel-pathway.js"></script><script src="../../../assets/js/lessons/pixel-pathway-labs.js"></script>
+<script src="../../../assets/js/game-dev-route.js"></script><script src="../../../assets/js/tool-rosetta.js"></script><script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/game-dev-glossary.json"></script><script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
 </body></html>

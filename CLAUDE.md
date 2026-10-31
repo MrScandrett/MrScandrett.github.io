@@ -70,7 +70,7 @@ and `node tests/web-studio-browser.mjs` against a running `serve-local.js`.
 `lessons/<module>/` holds each module; big modules split into topic subfolders, and
 person-centred lessons (biographies, "Dalton and the Atomic Theory") go in that module's
 `pioneers/`. 3D design is one tree: `lessons/3d-design/3d-design.html` (curriculum home),
-`cad-and-printing/`, `blender/`, `game-asset-studio/`. Technical Elements splits into
+`cad-and-printing/`, `blender/`, `game-asset-studio/`, `sculpture/`. Technical Elements splits into
 `audio-engineering/`, `stagecraft/`, `camera/`, `pioneers/`; Music into `pioneers/`,
 `instruments/`, `theory/`.
 
@@ -535,6 +535,23 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
   - Tests: `npm run test:workbench` (every shape at its range ends must be closed, every template
     must build, round-trip and fit the printer at its print scale). When you add a shape or template,
     the test covers it automatically.
+
+## Marble Studio (sculpture lesson)
+
+`lessons/3d-design/sculpture/marble-sculpture.html` ("In the Likeness") carves a 40 × 56 × 36 cm marble block.
+`assets/js/sculpture/marble-core.mjs` is pure (no DOM/Three): the stone is a Uint8 density field (0 air … 255
+stone, surface at 127.5) plus a per-voxel `finish` byte (which tool touched it last; the shader turns it into
+pits, claw grooves, facets, scratches or polish). It holds the six tools, edge spalling, `findDetached` (stone
+cut free of the base falls off), maquettes as signed distances (`REFERENCES` presets, front+side drawings,
+or an STL voxelised by 3-axis parity vote), the pointing machine, `measure()` (likeness = IoU + front/side
+silhouettes), the autopilot (`STAGES`, `planStage`, `autoStep`: never cuts inside the maquette), chunked
+naive surface nets with volumetric AO, undo journals per 16³ chunk, RLE saves and STL export.
+`marble-studio.mjs` draws it with the vendored Three.js (procedural veined marble via `onBeforeCompile`),
+mounts on `[data-marble-studio]`, and has its own full-screen button (`data-present="off"`). Add a maquette
+by appending to `REFERENCES`; `node --test tests/marble-sculpture.test.mjs` checks every preset stands on the
+base in one piece and that the autopilot never over-cuts.
+`assets/js/lessons/trio-planner.js` (`[data-trio-planner]`) is the quarter's Trio Challenge planner (moves in
+one piece · useful · likeness, any combination), used there and on `3d-design.html#grand-challenge`.
 
 ## Engine-neutral game lessons: Tool Rosetta + Rosetta 2D
 

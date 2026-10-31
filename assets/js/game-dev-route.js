@@ -18,7 +18,7 @@
   var ROOT = new URL('../../', script && script.src ? script.src : global.location.href);
   var DESIGN = 'lessons/computer-science/graphics-and-games/game-design-thinking.html';
   var TUT = 'lessons/computer-science/graphics-and-games/game-tutorials/';
-  var PATH = 'lessons/2d-game-dev/';
+  var PATH = 'lessons/2d-design/2d-game-dev/';
 
   var STAGES = [
     { id: 'design', n: '1', title: 'History & design', sub: 'What makes a game?', href: DESIGN },

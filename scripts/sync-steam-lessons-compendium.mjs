@@ -20,6 +20,7 @@ const sectionIds = MODULE_SECTION_IDS;
 
 const icons = ["📐", "⚛️", "🌿", "🛠️", "💻", "📚"];
 const modulePresentations = {
+  "2d-design": { subtitle: "Painters, animators and pixel artists: color, line and layout on a flat surface, drawings that move, and a finished 2D game", level: "K–12 · Pioneers → Make It Move → Make It Play" },
   "3d-design": { subtitle: "Shared spatial skills, then a printable object, a finished scene, or game-ready assets", level: "Grades 7–12 · Foundation → Three Outcome Tracks" },
   mathematics: {
     subtitle: "Number, proportion, geometry, measurement, probability, and patterns as languages for describing reality",
