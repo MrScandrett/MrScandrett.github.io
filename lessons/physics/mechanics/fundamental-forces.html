@@ -167,7 +167,7 @@
       </p>
       <div class="f-meta">
         <span class="f-pill">Gravity · EM · Weak · Strong</span>
-        <span class="f-pill rose">2 Simulations</span>
+        <span class="f-pill rose">Interactive Lab</span>
         <span class="f-pill">Grades 7–12</span>
       </div>
     </div>
@@ -283,6 +283,7 @@
         <span class="f-sim-title ak">🧱 Friction Simulator</span>
         <span class="f-sim-sub">Apply force to a block — watch static friction hold, then kinetic friction take over</span>
       </div>
+      <button class="f-pill" id="fricReset" type="button" style="cursor:pointer;">Reset</button>
     </div>
     <canvas id="fricCanvas" height="240"></canvas>
     <div class="f-sim-controls">
@@ -306,7 +307,9 @@
     <div class="f-readout">
       <span class="f-chip"><span class="f-chip-label">Normal Force</span><span class="f-chip-val" id="normalVal">98 N</span></span>
       <span class="f-chip"><span class="f-chip-label">Max Static Friction</span><span class="f-chip-val" id="maxStaticVal">—</span></span>
+      <span class="f-chip"><span class="f-chip-label">Friction Force</span><span class="f-chip-val" id="fricForceVal">0.0 N</span></span>
       <span class="f-chip"><span class="f-chip-label">Net Force</span><span class="f-chip-val" id="netForceVal">—</span></span>
+      <span class="f-chip"><span class="f-chip-label">Acceleration</span><span class="f-chip-val" id="accelVal">0.00 m/s²</span></span>
       <span class="f-chip"><span class="f-chip-label">Status</span><span class="f-chip-val" id="motionStatus">Static</span></span>
     </div>
   </div>
@@ -448,24 +451,67 @@
   const muSSl = document.getElementById('muSSl');
   const muKSl = document.getElementById('muKSl');
   const massSl = document.getElementById('massSl');
+  const resetBtn = document.getElementById('fricReset');
 
-  let blockX = null, blockV = 0, sliding = false;
+  let blockX = null, blockV = 0, sliding = false, lastTs = null;
+  const pxPerMeter = 42;
 
-  function updateLabels() {
+  function updateLabels(source) {
+    // Physical constraint: kinetic friction coefficient cannot exceed static friction coefficient (μ_k <= μ_s)
+    if (source === muSSl && parseFloat(muKSl.value) > parseFloat(muSSl.value)) {
+      muKSl.value = muSSl.value;
+    } else if (source === muKSl && parseFloat(muKSl.value) > parseFloat(muSSl.value)) {
+      muSSl.value = muKSl.value;
+    }
     document.getElementById('fApplLabel').textContent = fApplSl.value + ' N';
     document.getElementById('muSLabel').textContent = parseFloat(muSSl.value).toFixed(2);
     document.getElementById('muKLabel').textContent = parseFloat(muKSl.value).toFixed(2);
     document.getElementById('massLabel').textContent = massSl.value + ' kg';
   }
-  [fApplSl, muSSl, muKSl, massSl].forEach(el => el.oninput = updateLabels);
+  [fApplSl, muSSl, muKSl, massSl].forEach(el => { el.oninput = () => updateLabels(el); });
   updateLabels();
 
-  function draw() {
+  if (resetBtn) {
+    resetBtn.onclick = () => {
+      fApplSl.value = 0;
+      blockX = cv.width * 0.25;
+      blockV = 0;
+      sliding = false;
+      lastTs = null;
+      updateLabels();
+    };
+  }
+
+  function drawArrow(x1, y1, x2, y2, color, width) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 2) return;
+    const ux = dx / len, uy = dy / len;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width || 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    const head = Math.min(8, len * 0.45);
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * head - uy * head * 0.55, y2 - uy * head + ux * head * 0.55);
+    ctx.lineTo(x2 - ux * head + uy * head * 0.55, y2 - uy * head - ux * head * 0.55);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
 
+    const dt = (typeof ts === 'number' && lastTs !== null) ? Math.min((ts - lastTs) / 1000, 0.035) : 0.016;
+    if (typeof ts === 'number') lastTs = ts;
+
     const fAppl = +fApplSl.value;
-    const muS = +muSSl.value, muK = +muKSl.value;
+    const muS = +muSSl.value, muK = Math.min(muS, +muKSl.value);
     const mass = +massSl.value;
     const g = 9.8;
     const N = mass * g;
@@ -475,70 +521,95 @@
     document.getElementById('normalVal').textContent = N.toFixed(1) + ' N';
     document.getElementById('maxStaticVal').textContent = maxStatic.toFixed(1) + ' N';
 
-    if (blockX === null) blockX = W * 0.35;
+    if (blockX === null) blockX = W * 0.25;
 
-    if (!sliding) {
-      if (fAppl > maxStatic) { sliding = true; blockV = 0; }
+    if (!sliding && fAppl > maxStatic) {
+      sliding = true;
     }
 
-    let netF;
+    let fricF = 0;
+    let netF = 0;
+    let accel = 0;
+
     if (sliding) {
-      netF = fAppl - kineticF;
-      blockV += netF * 0.016 * 8 / mass;
-      blockX += blockV * 0.5;
-      if (blockX > W - 60) { blockX = W - 60; blockV = 0; sliding = false; }
-      if (blockX < 60) { blockX = 60; blockV = 0; }
+      fricF = kineticF;
+      netF = fAppl - fricF;
+      accel = netF / mass;
+      const nextV = blockV + accel * dt;
+      // If decelerating (netF <= 0) and velocity reaches 0, block stops and static friction takes over if fAppl <= maxStatic
+      if (nextV <= 0 && fAppl <= maxStatic) {
+        blockV = 0;
+        sliding = false;
+        fricF = fAppl;
+        netF = 0;
+        accel = 0;
+      } else {
+        blockV = Math.max(0, nextV);
+        blockX += blockV * pxPerMeter * dt;
+        // Wrap smoothly across track so continuous sliding can be observed
+        if (blockX > W - 50) blockX = 50;
+      }
     } else {
+      fricF = Math.min(fAppl, maxStatic);
       netF = 0;
+      accel = 0;
+      blockV = 0;
     }
 
+    const fricEl = document.getElementById('fricForceVal');
+    const accelEl = document.getElementById('accelVal');
+    if (fricEl) fricEl.textContent = fricF.toFixed(1) + ' N';
     document.getElementById('netForceVal').textContent = netF.toFixed(1) + ' N';
-    document.getElementById('motionStatus').textContent = sliding ? '🟠 Sliding' : '🟢 Static';
+    if (accelEl) accelEl.textContent = accel.toFixed(2) + ' m/s²';
+    document.getElementById('motionStatus').textContent = sliding ? '🟠 Sliding (' + blockV.toFixed(1) + ' m/s)' : '🟢 Static (v = 0)';
 
     // Ground
-    const gy = H - 50;
-    ctx.fillStyle = 'rgba(245,158,11,0.08)'; ctx.fillRect(0, gy, W, 50);
+    const gy = H - 55;
+    ctx.fillStyle = 'rgba(245,158,11,0.08)'; ctx.fillRect(0, gy, W, H - gy);
     ctx.strokeStyle = 'rgba(245,158,11,0.4)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
 
     // Block
-    const bW = 60, bH = 40;
+    const bW = 64, bH = 42;
+    const cy = gy - bH / 2;
     ctx.fillStyle = sliding ? 'rgba(251,113,133,0.4)' : 'rgba(56,189,248,0.3)';
     ctx.strokeStyle = sliding ? '#fb7185' : '#38bdf8'; ctx.lineWidth = 2;
     ctx.fillRect(blockX - bW / 2, gy - bH, bW, bH);
     ctx.strokeRect(blockX - bW / 2, gy - bH, bW, bH);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(mass + 'kg', blockX, gy - bH / 2); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(mass + ' kg', blockX, cy); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
-    // Applied force arrow
+    // Applied force arrow (pointing RIGHT in direction of applied pull/motion)
     if (fAppl > 0) {
-      const arrowLen = Math.min(fAppl * 1.2, 100);
-      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(blockX - bW / 2 - 4, gy - bH / 2); ctx.lineTo(blockX - bW / 2 - 4 - arrowLen, gy - bH / 2); ctx.stroke();
-      // No arrowhead needed here for simplicity
-      ctx.fillStyle = 'rgba(245,158,11,0.8)'; ctx.font = '10px Inter,sans-serif';
-      ctx.fillText('F=' + fAppl + 'N', blockX - bW / 2 - arrowLen - 4, gy - bH / 2 - 8);
+      const arrowLen = Math.min(fAppl * 1.15, 110);
+      drawArrow(blockX + bW / 2 + 4, cy, blockX + bW / 2 + 4 + arrowLen, cy, '#f59e0b', 3);
+      ctx.fillStyle = 'rgba(245,158,11,0.92)'; ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.fillText('F_app = ' + fAppl + ' N →', blockX + bW / 2 + 8, cy - 8);
     }
 
-    // Friction arrow
-    const fricF = sliding ? kineticF : Math.min(fAppl, maxStatic);
+    // Friction arrow (pointing LEFT opposing motion / attempted motion)
     if (fricF > 0) {
-      const fLen = Math.min(fricF * 1.2, 80);
-      ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(blockX + bW / 2 + 4, gy - bH / 2); ctx.lineTo(blockX + bW / 2 + 4 + fLen, gy - bH / 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(74,222,128,0.8)'; ctx.font = '10px Inter,sans-serif';
-      ctx.fillText('f=' + fricF.toFixed(0) + 'N', blockX + bW / 2 + 8, gy - bH / 2 - 8);
+      const fLen = Math.min(fricF * 1.15, 110);
+      drawArrow(blockX - bW / 2 - 4, cy + 8, blockX - bW / 2 - 4 - fLen, cy + 8, '#4ade80', 2.5);
+      ctx.fillStyle = 'rgba(74,222,128,0.92)'; ctx.font = 'bold 10px Inter,sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('← f_' + (sliding ? 'k' : 's') + ' = ' + fricF.toFixed(1) + ' N', blockX - bW / 2 - 8, cy - 2);
+      ctx.textAlign = 'left';
     }
 
-    // Normal force arrow
-    ctx.strokeStyle = 'rgba(192,132,252,0.7)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(blockX, gy - bH); ctx.lineTo(blockX, gy - bH - 35); ctx.stroke();
-    ctx.fillStyle = 'rgba(192,132,252,0.7)'; ctx.font = '10px Inter,sans-serif';
-    ctx.fillText('N=' + N.toFixed(0) + 'N', blockX + 4, gy - bH - 38);
+    // Normal force arrow (upward) & Gravity force arrow (downward, balanced)
+    const vLen = Math.min(24 + mass * 0.8, 48);
+    drawArrow(blockX, gy - bH - 2, blockX, gy - bH - 2 - vLen, 'rgba(192,132,252,0.85)', 2);
+    ctx.fillStyle = 'rgba(192,132,252,0.85)'; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText('N = ' + N.toFixed(0) + ' N', blockX + 6, gy - bH - vLen + 4);
+
+    drawArrow(blockX, gy + 2, blockX, gy + 2 + vLen, 'rgba(56,189,248,0.75)', 2);
+    ctx.fillStyle = 'rgba(56,189,248,0.8)';
+    ctx.fillText('mg = ' + N.toFixed(0) + ' N', blockX + 6, gy + vLen);
 
     SimKit.frame('#fricCanvas', draw);
   }
-  draw();
+  SimKit.frame('#fricCanvas', draw);
 })();
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

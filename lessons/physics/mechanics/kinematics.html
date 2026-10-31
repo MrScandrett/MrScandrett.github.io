@@ -192,7 +192,7 @@
       </p>
       <div class="kin-meta">
         <span class="kin-pill">Position · Velocity · Acceleration</span>
-        <span class="kin-pill teal">3 Simulations</span>
+        <span class="kin-pill teal">2 Simulations</span>
         <span class="kin-pill">Grades 6–12</span>
       </div>
     </div>
@@ -265,13 +265,13 @@
       <figure data-zoomable data-lightbox-group="kinematics" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Piano%20inclinato,%20Museo%20Galileo,%20Florence,%20Inv.%20104,%20224108.jpg?width=1600" style="margin:0; border:1px solid var(--kin-line, rgba(196,210,236,0.13)); border-radius:var(--kin-radius, 8px); overflow:hidden; background:rgba(11,17,28,0.85); display:flex; flex-direction:column;">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Piano%20inclinato,%20Museo%20Galileo,%20Florence,%20Inv.%20104,%20224108.jpg?width=600" alt="Galileo's inclined plane experiment apparatus in Museo Galileo" style="width:100%; height:230px; object-fit:contain; background:#080d16; padding:0.5rem; display:block;" loading="lazy" />
         <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--kin-muted, #c4d4f0); border-top:1px solid var(--kin-line, rgba(196,210,236,0.13)); flex-grow:1;">
-          <strong>Galileo's Inclined Plane (Museo Galileo, Florence).</strong> By rolling bronze balls down a grooved wooden ramp to "dilute" gravitational acceleration, Galileo proved that distance traversed is proportional to the square of elapsed time ($d \propto t^2$), founding modern quantitative kinematics. Sailko / Museo Galileo / Wikimedia Commons · CC BY 3.0.
+          <strong>Galileo's Inclined Plane (Museo Galileo, Florence).</strong> By rolling bronze balls down a grooved wooden ramp to "dilute" gravitational acceleration, Galileo proved that distance traversed is proportional to the square of elapsed time (<em>d</em> &prop; <em>t</em>²), founding modern quantitative kinematics. Sailko / Museo Galileo / Wikimedia Commons · CC BY 3.0.
         </figcaption>
       </figure>
       <figure data-zoomable data-lightbox-group="kinematics" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/The%20Horse%20in%20Motion%20high%20res.jpg?width=1600" style="margin:0; border:1px solid var(--kin-line, rgba(196,210,236,0.13)); border-radius:var(--kin-radius, 8px); overflow:hidden; background:rgba(11,17,28,0.85); display:flex; flex-direction:column;">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/The%20Horse%20in%20Motion%20high%20res.jpg?width=600" alt="Eadweard Muybridge's chronophotographic sequence The Horse in Motion from 1878" style="width:100%; height:230px; object-fit:contain; background:#080d16; padding:0.5rem; display:block;" loading="lazy" />
         <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--kin-muted, #c4d4f0); border-top:1px solid var(--kin-line, rgba(196,210,236,0.13)); flex-grow:1;">
-          <strong>Eadweard Muybridge's *The Horse in Motion* (1878).</strong> Sequential high-speed chronophotography captured motion at millisecond intervals, decomposing continuous animal locomotion into discrete positions ($\Delta x / \Delta t$) and resolving the famous debate over whether all four hooves leave the turf simultaneously. Library of Congress / Wikimedia Commons · Public domain.
+          <strong>Eadweard Muybridge's <em>The Horse in Motion</em> (1878).</strong> Sequential high-speed chronophotography captured motion at millisecond intervals, decomposing continuous animal locomotion into discrete positions (&Delta;<em>x</em> / &Delta;<em>t</em>) and resolving the famous debate over whether all four hooves leave the turf simultaneously. Library of Congress / Wikimedia Commons · Public domain.
         </figcaption>
       </figure>
     </div>
@@ -460,66 +460,87 @@
   const tLbl = document.getElementById('tVal');
   const xLbl = document.getElementById('xVal');
   const vLbl = document.getElementById('vVal');
-  document.getElementById('simRestart').onclick = () => { t = 0; };
+  document.getElementById('simRestart').onclick = () => { t = 0; lastTs = null; };
 
-  let t = 0, running = true;
+  let t = 0, lastTs = null;
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 340; }
   resize();
   window.addEventListener('resize', resize);
 
-  v0Sl.oninput = () => { v0Lbl.textContent = (+v0Sl.value).toFixed(1) + ' m/s'; t = 0; };
-  aSl.oninput = () => { aLbl.textContent = (+aSl.value).toFixed(1) + ' m/s²'; t = 0; };
+  v0Sl.oninput = () => { v0Lbl.textContent = (+v0Sl.value).toFixed(1) + ' m/s'; t = 0; lastTs = null; };
+  aSl.oninput = () => { aLbl.textContent = (+aSl.value).toFixed(1) + ' m/s²'; t = 0; lastTs = null; };
 
-  function draw() {
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
     const v0 = +v0Sl.value, a = +aSl.value;
-    const TMAX = 5, dt = TMAX / (W - 20);
+    const TMAX = 5;
+    const padX = 12;
+    const plotW = Math.max(1, W - padX * 2);
+    const dtPerPx = TMAX / plotW;
     const rowH = H / 3;
+
+    if (typeof ts === 'number') {
+      const frameDt = lastTs === null ? 0 : Math.min((ts - lastTs) / 1000, 0.05);
+      lastTs = ts;
+      t = (t + frameDt) % TMAX;
+    }
 
     const labels = ['x (m)', 'v (m/s)', 'a (m/s²)'];
     const colors = ['#2dd4bf', '#a78bfa', '#fbbf24'];
 
-    // Find ranges for auto-scale
+    // Find ranges for auto-scale (fixed 15 m/s² full-scale for acceleration so slider changes move the line)
     let xMax = 0, vMax = 0;
-    for (let i = 0; i < W; i++) {
-      const tt = i * dt;
+    for (let i = 0; i <= plotW; i++) {
+      const tt = i * dtPerPx;
       const xi = v0 * tt + 0.5 * a * tt * tt;
       const vi = v0 + a * tt;
       xMax = Math.max(xMax, Math.abs(xi));
       vMax = Math.max(vMax, Math.abs(vi));
     }
-    xMax = Math.max(xMax, 1); vMax = Math.max(vMax, 1);
-    const aMax = Math.max(Math.abs(a), 1);
+    xMax = Math.max(xMax, 5); vMax = Math.max(vMax, 5);
+    const aMax = 15;
     const scales = [xMax, vMax, aMax];
+
+    const xNow = v0 * t + 0.5 * a * t * t;
+    const vNow = v0 + a * t;
+    const nowVals = [xNow, vNow, a];
+    const tx = padX + (t / TMAX) * plotW;
 
     for (let row = 0; row < 3; row++) {
       const y0 = row * rowH;
       // Background
       ctx.fillStyle = 'rgba(255,255,255,0.02)';
       ctx.fillRect(0, y0, W, rowH);
-      // Center line
+      // Center line (0 axis)
       ctx.strokeStyle = 'rgba(255,255,255,0.12)';
       ctx.lineWidth = 1; ctx.setLineDash([4,4]);
-      ctx.beginPath(); ctx.moveTo(0, y0 + rowH/2); ctx.lineTo(W, y0 + rowH/2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(padX, y0 + rowH/2); ctx.lineTo(W - padX, y0 + rowH/2); ctx.stroke();
       ctx.setLineDash([]);
       // Label
       ctx.fillStyle = colors[row]; ctx.font = 'bold 10px Inter,sans-serif';
-      ctx.fillText(labels[row], 8, y0 + 14);
+      ctx.fillText(labels[row] + '  [±' + scales[row].toFixed(0) + ']', 8, y0 + 14);
 
       // Plot
       ctx.beginPath(); ctx.strokeStyle = colors[row]; ctx.lineWidth = 2.5;
-      for (let i = 0; i < W; i++) {
-        const tt = i * dt;
+      for (let i = 0; i <= plotW; i++) {
+        const tt = i * dtPerPx;
         let val;
         if (row === 0) val = v0 * tt + 0.5 * a * tt * tt;
         else if (row === 1) val = v0 + a * tt;
         else val = a;
-        const py = y0 + rowH / 2 - (val / scales[row]) * (rowH / 2 - 10);
-        if (i === 0) ctx.moveTo(i, py); else ctx.lineTo(i, py);
+        const py = y0 + rowH / 2 - (val / scales[row]) * (rowH / 2 - 12);
+        if (i === 0) ctx.moveTo(padX + i, py); else ctx.lineTo(padX + i, py);
       }
       ctx.stroke();
+
+      // Current value marker dot on curve
+      const curPy = y0 + rowH / 2 - (nowVals[row] / scales[row]) * (rowH / 2 - 12);
+      ctx.beginPath();
+      ctx.arc(tx, curPy, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = colors[row];
+      ctx.fill();
 
       // Separator
       if (row < 2) {
@@ -529,21 +550,17 @@
     }
 
     // Current time cursor
-    const tx = (t / TMAX) * W;
     ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([6,4]);
     ctx.beginPath(); ctx.moveTo(tx, 0); ctx.lineTo(tx, H); ctx.stroke(); ctx.setLineDash([]);
 
     // Readouts
-    const xNow = v0 * t + 0.5 * a * t * t;
-    const vNow = v0 + a * t;
     tLbl.textContent = t.toFixed(2);
     xLbl.textContent = xNow.toFixed(2);
     vLbl.textContent = vNow.toFixed(2);
 
-    t = (t + 0.025) % TMAX;
     SimKit.frame('#kinCanvas', draw);
   }
-  draw();
+  SimKit.frame('#kinCanvas', draw);
 })();
 
 /* ── SIM 2: Projectile ──────────────────────────────── */
@@ -558,7 +575,7 @@
   const heightLbl = document.getElementById('heightVal');
   const timeLbl = document.getElementById('timeVal');
 
-  let proj = null, trail = [], launched = false;
+  let proj = null, trail = [], launched = false, lastTs = null;
   const g = 9.8;
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
@@ -567,7 +584,15 @@
   function getParams() {
     const deg = +angleSl.value, spd = +speedSl.value;
     const rad = deg * Math.PI / 180;
-    return { vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
+    return { deg, spd, rad, vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
+  }
+
+  // Isotropic physical scale (px per meter) based on max range R_max = v^2/g for the chosen speed
+  // so that varying angle at fixed speed preserves scale and visually proves 45° maximizes range!
+  function computeScale(W, H, spd) {
+    const maxRangeForSpeed = Math.max(100, (spd * spd) / g);
+    const maxHeightForSpeed = Math.max(35, (spd * spd) / (2 * g));
+    return Math.min((W - 48) / maxRangeForSpeed, (H - 44) / maxHeightForSpeed);
   }
 
   angleSl.oninput = () => { angleLbl.textContent = angleSl.value + '°'; updateStats(); };
@@ -585,93 +610,120 @@
   updateStats();
 
   document.getElementById('launchBtn').onclick = () => {
-    const { vx, vy } = getParams();
-    const W = cv.width, H = cv.height;
-    const scale = (W - 40) / Math.max((vx * 2 * vy / g) || 1, 1);
-    proj = { x: 20, y: H - 30, vx, vy, t: 0, scale, H };
-    trail = []; launched = true;
+    const { spd, vx, vy } = getParams();
+    const tFlight = 2 * vy / g;
+    proj = { vx, vy, spd, t: 0, tFlight, landed: false };
+    trail = [];
+    launched = true;
+    lastTs = null;
   };
 
-  function draw() {
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
+    const groundY = H - 26;
 
     // Ground
     ctx.fillStyle = 'rgba(45,212,191,0.12)';
-    ctx.fillRect(0, H - 26, W, 26);
+    ctx.fillRect(0, groundY, W, 26);
     ctx.strokeStyle = 'rgba(45,212,191,0.5)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(0, H - 26); ctx.lineTo(W, H - 26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+
+    const live = getParams();
+    const activeSpd = (proj && !proj.landed) ? proj.spd : live.spd;
+    const sc = computeScale(W, H, activeSpd);
+
+    // Distance ticks on ground
+    const maxMeters = (W - 40) / sc;
+    const stepM = maxMeters > 220 ? 50 : maxMeters > 90 ? 20 : 10;
+    ctx.fillStyle = 'rgba(218,228,248,0.42)';
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let m = 0; m <= maxMeters; m += stepM) {
+      const gx = 24 + m * sc;
+      ctx.beginPath(); ctx.moveTo(gx, groundY); ctx.lineTo(gx, groundY + 4); ctx.stroke();
+      ctx.fillText(m + 'm', gx, groundY + 15);
+    }
+    ctx.textAlign = 'left';
+
+    // Reference 45° max-range ghost curve + live preview curve
+    const previewVx = live.vx, previewVy = live.vy;
+    const previewT = 2 * previewVy / g;
+    ctx.strokeStyle = 'rgba(167,139,250,0.28)'; ctx.lineWidth = 1.2; ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    for (let i = 0; i <= 80; i++) {
+      const tt = (i / 80) * previewT;
+      const px = 24 + previewVx * tt * sc;
+      const py = groundY - (previewVy * tt - 0.5 * g * tt * tt) * sc;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
 
     // Angle guide
-    if (!launched) {
-      const deg = +angleSl.value, rad = deg * Math.PI / 180;
-      const len = 60;
-      ctx.strokeStyle = 'rgba(251,191,36,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
-      ctx.beginPath(); ctx.moveTo(20, H - 26); ctx.lineTo(20 + len * Math.cos(rad), H - 26 - len * Math.sin(rad)); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.font = 'bold 11px Inter,sans-serif';
-      ctx.fillText(angleSl.value + '°', 30 + len * Math.cos(rad * 0.6), H - 26 - len * Math.sin(rad * 0.6) - 4);
+    if (!launched || (proj && proj.landed)) {
+      const deg = live.deg, rad = live.rad;
+      const len = 56;
+      ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(24, groundY); ctx.lineTo(24 + len * Math.cos(rad), groundY - len * Math.sin(rad)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(251,191,36,0.8)'; ctx.font = 'bold 11px Inter,sans-serif';
+      ctx.fillText(deg + '°', 32 + len * Math.cos(rad * 0.6), groundY - len * Math.sin(rad * 0.6) - 4);
     }
 
     if (proj) {
-      // Preview arc
-      const { vx, vy } = getParams();
-      const tFlight = 2 * vy / g;
-      const range = vx * tFlight;
-      const sc = Math.min((W - 40) / Math.max(range, 1), (H - 40) / Math.max(vy * vy / (2 * g), 1));
-
-      ctx.strokeStyle = 'rgba(167,139,250,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
-      ctx.beginPath();
-      for (let i = 0; i <= 80; i++) {
-        const tt = (i / 80) * tFlight;
-        const px = 20 + vx * tt * sc;
-        const py = H - 26 - (vy * tt - 0.5 * g * tt * tt) * sc;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      if (typeof ts === 'number' && !proj.landed) {
+        const dt = lastTs === null ? 0 : Math.min((ts - lastTs) / 1000, 0.04);
+        lastTs = ts;
+        proj.t += dt;
+        if (proj.t >= proj.tFlight) {
+          proj.t = proj.tFlight;
+          proj.landed = true;
+          launched = false;
+        }
       }
-      ctx.stroke(); ctx.setLineDash([]);
+
+      const bx = 24 + proj.vx * proj.t * sc;
+      const by = groundY - Math.max(0, proj.vy * proj.t - 0.5 * g * proj.t * proj.t) * sc;
+      if (!proj.landed || trail.length === 0 || trail[trail.length - 1].t !== proj.t) {
+        trail.push({ x: bx, y: by, t: proj.t });
+        if (trail.length > 140) trail.shift();
+      }
 
       // Trail — glowing comet tail
       if (trail.length > 1) {
         for (let i = 1; i < trail.length; i++) {
-          const t = i / trail.length;
+          const frac = i / trail.length;
           ctx.beginPath();
           ctx.moveTo(trail[i-1].x, trail[i-1].y);
           ctx.lineTo(trail[i].x, trail[i].y);
-          ctx.strokeStyle = `rgba(45,212,191,${0.06 + 0.58 * t})`;
-          ctx.lineWidth = 1 + t * 5.5;
-          ctx.shadowBlur = t * 16;
+          ctx.strokeStyle = `rgba(45,212,191,${0.12 + 0.58 * frac})`;
+          ctx.lineWidth = 1.2 + frac * 4.5;
+          ctx.shadowBlur = frac * 14;
           ctx.shadowColor = '#2dd4bf';
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
       }
 
-      // Ball
-      const bx = 20 + proj.vx * proj.t * sc;
-      const by = H - 26 - (proj.vy * proj.t - 0.5 * g * proj.t * proj.t) * sc;
-      trail.push({ x: bx, y: by });
-      if (trail.length > 80) trail.shift();
-
-      // Velocity arrows
-      const avx = proj.vx * 0.4, avy = (proj.vy - g * proj.t) * 0.4;
-      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + avx, by); ctx.stroke();
-      ctx.strokeStyle = '#fb7185';
-      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - avy); ctx.stroke();
+      // Velocity arrows while in flight
+      if (!proj.landed) {
+        const avx = proj.vx * 0.85, avy = (proj.vy - g * proj.t) * 0.85;
+        ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + avx, by); ctx.stroke();
+        ctx.strokeStyle = '#fb7185';
+        ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - avy); ctx.stroke();
+      }
 
       ctx.shadowBlur = 22; ctx.shadowColor = '#2dd4bf';
-      ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2);
-      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 8);
+      ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
+      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 7);
       grd.addColorStop(0, '#ffffff'); grd.addColorStop(0.35, '#a7f3d0'); grd.addColorStop(1, '#2dd4bf');
       ctx.fillStyle = grd; ctx.fill();
       ctx.shadowBlur = 0;
-
-      proj.t += 0.035;
-      if (by > H - 20) { proj = null; launched = false; }
     }
 
     SimKit.frame('#projCanvas', draw);
   }
-  draw();
+  SimKit.frame('#projCanvas', draw);
 })();
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

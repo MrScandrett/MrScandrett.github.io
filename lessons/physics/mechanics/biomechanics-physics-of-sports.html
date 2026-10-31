@@ -327,8 +327,8 @@
         <input type="range" id="heightSlider" min="0" max="2.5" value="2.2" step="0.1" />
       </div>
       <div class="bio-ctrl">
-        <label>Angle θ <span class="bio-ctrl-val" id="angleLabel">50°</span></label>
-        <input type="range" id="angleSlider" min="5" max="85" value="50" />
+        <label>Angle θ <span class="bio-ctrl-val" id="angleLabel">50.0°</span></label>
+        <input type="range" id="angleSlider" min="5" max="85" step="0.5" value="50" />
       </div>
       <div class="bio-ctrl">
         <label>Speed v₀ <span class="bio-ctrl-val" id="speedLabel">7.5 m/s</span></label>
@@ -543,7 +543,7 @@
     longjump:   { h0: 1.0, angle: 20, speed: 9.5 }
   };
 
-  let proj = null, trail = [], launched = false;
+  let proj = null, trail = [], launched = false, lastLaunchTs = null;
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
   resize(); window.addEventListener('resize', resize);
@@ -551,7 +551,7 @@
   function getParams() {
     const h0 = +heightSl.value, deg = +angleSl.value, spd = +speedSl.value;
     const rad = deg * Math.PI / 180;
-    return { h0, vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
+    return { h0, deg, spd, rad, vx: spd * Math.cos(rad), vy: spd * Math.sin(rad) };
   }
 
   function flightTime(h0, vy) {
@@ -560,8 +560,17 @@
     return (vy + Math.sqrt(Math.max(disc, 0))) / g;
   }
 
+  // Isotropic scale (px/m) based on max possible range and height for the current speed & h0
+  // so changing angle preserves scale (showing true range differences) and never clips vertically.
+  function computeScale(W, H, h0, spd) {
+    const maxRange = Math.max(12, (spd / g) * Math.sqrt(spd * spd + 2 * g * h0) * 1.06);
+    const maxHeight = Math.max(5.5, (h0 + (spd * spd) / (2 * g)) * 1.12);
+    return Math.min((W - 60) / maxRange, (H - 42) / maxHeight);
+  }
+
   function updateStats() {
-    const { h0, vx, vy } = getParams();
+    const { h0, deg, vx, vy } = getParams();
+    angleLbl.textContent = deg.toFixed(1) + '°';
     const t = flightTime(h0, vy);
     const range = vx * t;
     const hMax = h0 + (vy * vy) / (2 * g);
@@ -571,7 +580,7 @@
   }
 
   heightSl.oninput = () => { heightLbl.textContent = (+heightSl.value).toFixed(1) + ' m'; updateStats(); };
-  angleSl.oninput = () => { angleLbl.textContent = angleSl.value + '°'; updateStats(); };
+  angleSl.oninput = () => { updateStats(); };
   speedSl.oninput = () => { speedLbl.textContent = (+speedSl.value).toFixed(1) + ' m/s'; updateStats(); };
   updateStats();
 
@@ -581,39 +590,34 @@
       if (!p) return;
       heightSl.value = p.h0; angleSl.value = p.angle; speedSl.value = p.speed;
       heightLbl.textContent = p.h0.toFixed(1) + ' m';
-      angleLbl.textContent = p.angle + '°';
+      angleLbl.textContent = p.angle.toFixed(1) + '°';
       speedLbl.textContent = p.speed.toFixed(1) + ' m/s';
+      proj = null; trail = []; launched = false;
       updateStats();
     });
   });
 
   document.getElementById('findOptimalBtn').onclick = () => {
     const h0 = +heightSl.value, spd = +speedSl.value;
-    let bestAngle = 45, bestRange = -1;
-    for (let deg = 1; deg < 90; deg++) {
-      const rad = deg * Math.PI / 180;
-      const vx = spd * Math.cos(rad), vy = spd * Math.sin(rad);
-      const t = flightTime(h0, vy);
-      const range = vx * t;
-      if (range > bestRange) { bestRange = range; bestAngle = deg; }
-    }
-    angleSl.value = bestAngle;
-    angleLbl.textContent = bestAngle + '°';
+    // Exact analytical optimal angle for launch height h0: tan(theta_opt) = v0 / sqrt(v0^2 + 2*g*h0)
+    const exactRad = Math.atan2(spd, Math.sqrt(spd * spd + 2 * g * h0));
+    const exactDeg = exactRad * 180 / Math.PI;
+    const snapped = Math.round(exactDeg * 2) / 2;
+    angleSl.value = snapped;
+    angleLbl.textContent = snapped.toFixed(1) + '°';
     updateStats();
   };
 
   document.getElementById('launchBtn').onclick = () => {
-    const { h0, vx, vy } = getParams();
-    const t = flightTime(h0, vy);
-    const range = Math.max(vx * t, 1);
-    const W = cv.width, H = cv.height;
-    const groundY = H - 26;
-    const scale = (W - 60) / range;
-    proj = { x: 30, vx, vy, h0, t: 0, scale, groundY };
-    trail = []; launched = true;
+    const { h0, spd, vx, vy } = getParams();
+    const tFlight = flightTime(h0, vy);
+    proj = { vx, vy, h0, spd, t: 0, tFlight, landed: false };
+    trail = [];
+    launched = true;
+    lastLaunchTs = null;
   };
 
-  function draw() {
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
     const groundY = H - 26;
@@ -624,36 +628,70 @@
     ctx.strokeStyle = 'rgba(251,146,60,0.5)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
 
-    if (!launched) {
-      const { h0, vx, vy } = getParams();
-      const deg = +angleSl.value, rad = deg * Math.PI / 180;
-      const releaseY = groundY - h0 * 22;
+    const live = getParams();
+    const activeH0 = (proj && !proj.landed) ? proj.h0 : live.h0;
+    const activeSpd = (proj && !proj.landed) ? proj.spd : live.spd;
+    const scale = computeScale(W, H, activeH0, activeSpd);
+
+    // Distance ticks on ground
+    const maxM = (W - 45) / scale;
+    const stepM = maxM > 60 ? 10 : maxM > 25 ? 5 : 2;
+    ctx.fillStyle = 'rgba(240,222,206,0.42)';
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let m = 0; m <= maxM; m += stepM) {
+      const gx = 30 + m * scale;
+      ctx.beginPath(); ctx.moveTo(gx, groundY); ctx.lineTo(gx, groundY + 4); ctx.stroke();
+      ctx.fillText(m + 'm', gx, groundY + 15);
+    }
+    ctx.textAlign = 'left';
+
+    // Live preview arc
+    const prevT = flightTime(live.h0, live.vy);
+    ctx.strokeStyle = 'rgba(34,211,238,0.28)'; ctx.lineWidth = 1.2; ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    for (let i = 0; i <= 80; i++) {
+      const tt = (i / 80) * prevT;
+      const px = 30 + live.vx * tt * scale;
+      const py = groundY - (live.h0 + live.vy * tt - 0.5 * g * tt * tt) * scale;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+
+    if (!launched || (proj && proj.landed)) {
+      const { h0, deg, rad } = live;
+      const releaseY = groundY - h0 * scale;
       // Release point + angle guide
       ctx.strokeStyle = 'rgba(34,211,238,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
       ctx.beginPath(); ctx.moveTo(30, groundY); ctx.lineTo(30, releaseY); ctx.stroke(); ctx.setLineDash([]);
-      const len = 55;
+      const len = 52;
       ctx.strokeStyle = 'rgba(251,191,36,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([4,3]);
       ctx.beginPath(); ctx.moveTo(30, releaseY); ctx.lineTo(30 + len * Math.cos(rad), releaseY - len * Math.sin(rad)); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(251,191,36,0.7)'; ctx.font = 'bold 11px Inter,sans-serif';
-      ctx.fillText(deg + '°', 40 + len * Math.cos(rad * 0.6), releaseY - len * Math.sin(rad * 0.6) - 4);
+      ctx.fillStyle = 'rgba(251,191,36,0.78)'; ctx.font = 'bold 11px Inter,sans-serif';
+      ctx.fillText(deg.toFixed(1) + '°', 38 + len * Math.cos(rad * 0.6), releaseY - len * Math.sin(rad * 0.6) - 4);
       ctx.fillStyle = 'rgba(34,211,238,0.85)';
       ctx.beginPath(); ctx.arc(30, releaseY, 5, 0, Math.PI * 2); ctx.fill();
     }
 
     if (proj) {
-      const { h0, vx, vy, scale } = proj;
-      const tFlight = flightTime(h0, vy);
-
-      // Preview arc
-      ctx.strokeStyle = 'rgba(34,211,238,0.25)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
-      ctx.beginPath();
-      for (let i = 0; i <= 80; i++) {
-        const tt = (i / 80) * tFlight;
-        const px = 30 + vx * tt * scale;
-        const py = groundY - (h0 + vy * tt - 0.5 * g * tt * tt) * 22;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      if (typeof ts === 'number' && !proj.landed) {
+        const dt = lastLaunchTs === null ? 0 : Math.min((ts - lastLaunchTs) / 1000, 0.04);
+        lastLaunchTs = ts;
+        proj.t += dt;
+        if (proj.t >= proj.tFlight) {
+          proj.t = proj.tFlight;
+          proj.landed = true;
+          launched = false;
+        }
       }
-      ctx.stroke(); ctx.setLineDash([]);
+
+      const { h0, vx, vy } = proj;
+      const bx = 30 + vx * proj.t * scale;
+      const by = groundY - Math.max(0, h0 + vy * proj.t - 0.5 * g * proj.t * proj.t) * scale;
+      if (!proj.landed || trail.length === 0 || trail[trail.length - 1].t !== proj.t) {
+        trail.push({ x: bx, y: by, t: proj.t });
+        if (trail.length > 140) trail.shift();
+      }
 
       // Trail
       if (trail.length > 1) {
@@ -662,34 +700,26 @@
           ctx.beginPath();
           ctx.moveTo(trail[i-1].x, trail[i-1].y);
           ctx.lineTo(trail[i].x, trail[i].y);
-          ctx.strokeStyle = `rgba(251,146,60,${0.06 + 0.58 * tt})`;
-          ctx.lineWidth = 1 + tt * 5.5;
-          ctx.shadowBlur = tt * 16;
+          ctx.strokeStyle = `rgba(251,146,60,${0.1 + 0.58 * tt})`;
+          ctx.lineWidth = 1.2 + tt * 4.5;
+          ctx.shadowBlur = tt * 14;
           ctx.shadowColor = '#fb923c';
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
       }
 
-      const bx = 30 + vx * proj.t * scale;
-      const by = groundY - (h0 + vy * proj.t - 0.5 * g * proj.t * proj.t) * 22;
-      trail.push({ x: bx, y: by });
-      if (trail.length > 80) trail.shift();
-
       ctx.shadowBlur = 22; ctx.shadowColor = '#fb923c';
-      ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2);
-      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 8);
+      ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
+      const grd = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 7);
       grd.addColorStop(0, '#ffffff'); grd.addColorStop(0.35, '#fed7aa'); grd.addColorStop(1, '#fb923c');
       ctx.fillStyle = grd; ctx.fill();
       ctx.shadowBlur = 0;
-
-      proj.t += 0.035;
-      if (proj.t >= tFlight) { proj = null; launched = false; }
     }
 
     SimKit.frame('#launchCanvas', draw);
   }
-  draw();
+  SimKit.frame('#launchCanvas', draw);
 })();
 
 /* ── SIM 2: Angular momentum spin lab ──────────────────────────────── */
@@ -703,7 +733,7 @@
   const lLbl = document.getElementById('lVal');
 
   const I0 = 0.4; // torso + legs, constant baseline moment of inertia (relative units)
-  let angle = 0, spinning = false, L = 0;
+  let angle = 0, spinning = false, L = 0, lastSpinTs = null;
   let trail = [];
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
@@ -729,20 +759,20 @@
   updateReadouts();
 
   document.getElementById('spinStartBtn').onclick = () => {
-    const r = +armSl.value;
-    const omega0 = 2.0; // rad/s, starting spin rate
-    L = momentOfInertia(r) * omega0;
+    const omega0 = 2.0; // rad/s at full arm extension (r = 1.0)
+    L = momentOfInertia(1.0) * omega0; // Constant conserved angular momentum L = 2.80
     spinning = true;
+    lastSpinTs = null;
     trail = [];
     updateReadouts();
   };
   document.getElementById('spinResetBtn').onclick = () => {
-    spinning = false; angle = 0; trail = [];
+    spinning = false; angle = 0; trail = []; lastSpinTs = null;
     armSl.value = 1;
     updateReadouts();
   };
 
-  function draw() {
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
     const cx = W / 2, cy = H / 2;
@@ -765,7 +795,11 @@
       ctx.beginPath(); ctx.arc(cx, cy, rr * pxPerUnit, 0, Math.PI * 2); ctx.stroke();
     });
 
-    if (spinning) angle += omega * 0.02;
+    if (spinning && typeof ts === 'number') {
+      const dt = lastSpinTs === null ? 0 : Math.min((ts - lastSpinTs) / 1000, 0.04);
+      lastSpinTs = ts;
+      angle += omega * dt;
+    }
 
     // Arm mass trail (motion blur ring)
     const armR = r * pxPerUnit;
@@ -813,7 +847,7 @@
     updateReadouts();
     SimKit.frame('#spinCanvas', draw);
   }
-  draw();
+  SimKit.frame('#spinCanvas', draw);
 })();
 </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>

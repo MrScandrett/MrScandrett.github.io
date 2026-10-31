@@ -36,10 +36,10 @@
 
   /* ── Data ─────────────────────────────────────────────────── */
   var WORLDS = {
-    earth:   { name: 'Earth',    g: 9.8,  rho: 1.2,  sky: ['#9fd3fb', '#e9f6ff'], ground: '#86b24f', soil: '#5b7a2c' },
-    moon:    { name: 'the Moon', g: 1.62, rho: 0,    sky: ['#04050b', '#1b1e2c'], ground: '#a8a8ad', soil: '#6d6d73' },
-    mars:    { name: 'Mars',     g: 3.71, rho: 0.02, sky: ['#d99a6c', '#f4d6bb'], ground: '#b65a2e', soil: '#7a3416' },
-    jupiter: { name: 'Jupiter',  g: 24.8, rho: 0.16, sky: ['#c98e57', '#f1d7b0'], ground: '#9c7650', soil: '#6b4c2f' }
+    earth:   { name: 'Earth',    label: 'Earth',   g: 9.8,  rho: 1.2,  M: 5.97e24, sky: ['#9fd3fb', '#e9f6ff'], ground: '#86b24f', soil: '#5b7a2c' },
+    moon:    { name: 'the Moon', label: 'Moon',    g: 1.62, rho: 0,    M: 7.35e22, sky: ['#04050b', '#1b1e2c'], ground: '#a8a8ad', soil: '#6d6d73' },
+    mars:    { name: 'Mars',     label: 'Mars',    g: 3.71, rho: 0.02, M: 6.42e23, sky: ['#d99a6c', '#f4d6bb'], ground: '#b65a2e', soil: '#7a3416' },
+    jupiter: { name: 'Jupiter',  label: 'Jupiter', g: 24.8, rho: 0.16, M: 1.90e27, sky: ['#c98e57', '#f1d7b0'], ground: '#9c7650', soil: '#6b4c2f' }
   };
   /* cda = drag coefficient × frontal area (m²). Feather numbers give a
      terminal speed of about 1 m/s in Earth air, roughly a real feather. */
@@ -315,14 +315,19 @@
       c.fillStyle = '#f1d3b3';
       c.beginPath(); c.arc(m(a[2]), -m(a[3]), Math.max(1.5, m(0.045)), 0, Math.PI * 2); c.fill();
     });
-    // wig (behind head)
+    // wig or bare head (behind head)
     var hy = -m(1.58), hr = m(0.115);
-    c.fillStyle = '#eceff3';
-    c.strokeStyle = '#a3aab5';
-    c.lineWidth = Math.max(1, m(0.012));
-    [[0, 1.63, 0.14], [-0.13, 1.53, 0.065], [0.13, 1.53, 0.065], [-0.14, 1.43, 0.06], [0.14, 1.43, 0.06]].forEach(function (cl) {
-      c.beginPath(); c.arc(m(cl[0]), -m(cl[1]), m(cl[2]), 0, Math.PI * 2); c.fill(); c.stroke();
-    });
+    if (o.wig !== false) {
+      c.fillStyle = '#eceff3';
+      c.strokeStyle = '#a3aab5';
+      c.lineWidth = Math.max(1, m(0.012));
+      [[0, 1.63, 0.14], [-0.13, 1.53, 0.065], [0.13, 1.53, 0.065], [-0.14, 1.43, 0.06], [0.14, 1.43, 0.06]].forEach(function (cl) {
+        c.beginPath(); c.arc(m(cl[0]), -m(cl[1]), m(cl[2]), 0, Math.PI * 2); c.fill(); c.stroke();
+      });
+    } else {
+      c.fillStyle = '#6b4f35';
+      c.beginPath(); c.arc(0, hy - m(0.015), hr * 1.03, Math.PI * 0.95, Math.PI * 2.05); c.fill();
+    }
     // face
     c.fillStyle = '#f1d3b3';
     c.strokeStyle = '#3b2f22';
@@ -623,10 +628,13 @@
         var headHit = !d.L.racing && !b.hitHead && Math.abs(b.x - d.L.newtonX) < 0.2;
         var surf = headHit ? HEAD_TOP : 0;
         if (b.y <= surf && b.vy < 0) {
+          var dtOver = Math.min(h, Math.max(0, (surf - b.y) / (-b.vy)));
+          var tHit = d.t - dtOver;
+          var vHit = Math.max(0, -b.vy + b.a * dtOver);
           b.y = surf;
-          if (headHit) { headImpact(b, g); break; }
-          if (b.landedAt == null) { b.landedAt = d.t; b.impactV = -b.vy; }
-          if (-b.vy > 0.8 && o.bounce > 0) { b.vy = -b.vy * o.bounce; }
+          if (headHit) { b.vy = -vHit; headImpact(b, g, tHit); break; }
+          if (b.landedAt == null) { b.landedAt = tHit; b.impactV = vHit; b.hist.push([tHit, vHit]); }
+          if (vHit > 0.8 && o.bounce > 0) { b.vy = vHit * o.bounce; }
           else { b.vy = 0; b.onGround = true; if (!b.vx) b.resting = true; }
         }
       }
@@ -638,17 +646,18 @@
         });
       }
     }
-    var allDown = d.bodies.every(function (b) { return d.L.racing ? b.landedAt != null && (b.resting || b.onGround) : b.resting; });
+    var allDown = d.bodies.every(function (b) { return d.L.racing ? b.landedAt != null : b.resting; });
     if (allDown && d.phase !== 'done') d.phase = 'done';
   }
-  function headImpact(b, g) {
+  function headImpact(b, g, tHit) {
     var d = drop, v = -b.vy, stop = HEADGEAR[S.head].d;
     var F = b.o.m * v * v / (2 * stop) + b.o.m * g;   // average contact force while stopping
-    b.hist.push([d.t, v]);
+    var hitT = tHit != null ? tHit : d.t;
+    b.hist.push([hitT, v]);
     b.hitHead = true;
-    b.landedAt = d.t;
+    b.landedAt = hitT;
     b.vy = 0;
-    d.impact = { v: v, F: F, stopTime: 2 * stop / Math.max(v, 1e-6), t: d.t };
+    d.impact = { v: v, F: F, stopTime: 2 * stop / Math.max(v, 1e-6), t: hitT };
     d.frozen = true;
     d.phase = 'impact';
     continueBtn.hidden = false;
@@ -734,6 +743,7 @@
     if (L.racing && d.phase === 'done') face = 'happy';
     drawNewton(sx(L.newtonX), groundY, s, {
       face: face, dir: L.racing ? -1 : 1,
+      wig: L.racing || S.head !== 'bare',
       helmet: env.world !== WORLDS.earth, foam: !L.racing && S.head === 'helmet'
     });
 
@@ -814,18 +824,20 @@
       }
     }
 
-    drawHud(['On ' + env.world.name + ' · g = ' + env.g + ' m/s²'].concat(d.phase === 'hang' ? [] : timeLines(d.t)));
+    var hudT = d.impact ? d.impact.t : (d.L.racing && d.phase === 'done' ? Math.max.apply(null, d.bodies.map(function (b) { return b.landedAt || 0; })) : d.t);
+    drawHud(['On ' + env.world.name + ' · g = ' + env.g + ' m/s²'].concat(d.phase === 'hang' ? [] : timeLines(hudT)));
   }
   function u_labels() { return view.width > 420; }
 
   function dropCaption() {
     var d = drop, env = dropEnv(), b = d.bodies[0], o = b.o, Wt = o.m * env.g;
+    var nameLc = o.name.toLowerCase();
     if (d.L.racing) {
       var b1 = d.bodies[1];
       if (d.phase === 'hang') return caption('Law 1', 'Both hang at rest: each stem pulls up exactly as hard as gravity pulls down. Shake the tree to drop them together.');
       if (d.phase === 'shake') return caption('Law 1', 'Shaking the branch…');
       if (d.phase === 'fall') {
-        return caption('Law 2', 'Gravity pulls the ' + o.name.toLowerCase() + ' with ' + nice(Wt) + ' N and the ' + b1.o.name.toLowerCase() + ' with ' + nice(b1.o.m * env.g) +
+        return caption('Law 2', 'Gravity pulls the ' + nameLc + ' with ' + nice(Wt) + ' N and the ' + b1.o.name.toLowerCase() + ' with ' + nice(b1.o.m * env.g) +
           ' N. Divide each by its mass: a = F ÷ m = ' + env.g + ' m/s² for both' + (env.rho ? ', until air resistance starts to matter.' : '.'));
       }
       var ta = b.landedAt, tb = b1.landedAt;
@@ -836,18 +848,25 @@
     }
     switch (d.phase) {
       case 'hang':
-        return caption('Law 1', 'At rest: the stem pulls up with ' + nice(Wt) + ' N and gravity pulls down with ' + nice(Wt) + ' N. Balanced forces, net force 0, so the apple stays put.');
+        return caption('Law 1', 'At rest: the stem pulls up with ' + nice(Wt) + ' N and gravity pulls down with ' + nice(Wt) + ' N. Balanced forces, net force 0, so the ' + nameLc + ' stays put.');
       case 'shake':
         return caption('Law 1', 'Shaking the branch… the stem is about to snap.');
       case 'fall':
+        if (env.rho > 0 && b.drag >= 0.95 * Wt) {
+          return caption('Laws 1 + 2', 'Air resistance (' + nice(b.drag) + ' N ↑) now balances gravity (' + nice(Wt) + ' N ↓): net force ≈ 0 N, acceleration ≈ 0 m/s², so the ' + nameLc + ' falls at steady terminal velocity with equal strobe spacing.');
+        }
+        if (env.rho > 0 && b.drag > 0.05 * Wt) {
+          var netNow = Math.max(0, Wt - b.drag);
+          return caption('Law 2', 'Air drag (' + nice(b.drag) + ' N ↑) opposes gravity (' + nice(Wt) + ' N ↓), leaving a net force of ' + nice(netNow) + ' N and a = ' + fix(netNow / o.m, 2) + ' m/s².');
+        }
         return caption('Law 2', 'The stem snapped, so gravity is unbalanced: a = F ÷ m = ' + nice(Wt) + ' ÷ ' + o.m + ' = ' + env.g +
           ' m/s². The strobe gaps grow because it speeds up the whole way down.');
       case 'impact':
         var im = d.impact;
-        return caption('Law 3', 'BONK! The apple pushes down on Newton\'s head with ' + nice(im.F) + ' N and his head pushes up on the apple with ' + nice(im.F) +
+        return caption('Law 3', 'BONK! The ' + nameLc + ' pushes down on Newton\'s head with ' + nice(im.F) + ' N and his head pushes up on the ' + nameLc + ' with ' + nice(im.F) +
           ' N. Equal size, opposite directions, on two different objects. (The ' + HEADGEAR[S.head].name + ' stops it in ' + fix(im.stopTime * 1000, 1) + ' ms.)');
       default:
-        return caption('Law 1', b.resting ? 'The apple rolled to a stop: friction from the grass was the outside force that stopped it.' : 'The apple bounces off and rolls. Friction from the grass will slow it down.');
+        return caption('Law 1', b.resting ? 'The ' + nameLc + ' came to a stop: friction from the grass was the outside force that stopped it.' : 'The ' + nameLc + ' bounces off and rolls. Friction from the grass will slow it down.');
     }
   }
   function dropReadouts() {
@@ -875,7 +894,7 @@
       ['Acceleration', net == null ? '—' : fix(net / o.m, 2), 'm/s² ↓'],
       ['Speed', d.impact ? fix(d.impact.v, 2) : fix(Math.max(0, -b.vy), 2), d.impact ? 'm/s at impact' : 'm/s'],
       ['Impact force', d.impact ? nice(d.impact.F) : '—', 'N (avg)'],
-      ['Earth pulled up by apple', sci(Wt / EARTH_MASS), 'm/s²']
+      [env.world.label + ' pulled up by ' + o.name.toLowerCase(), sci(Wt / env.world.M), 'm/s²']
     ];
     if (env.rho > 0) list.splice(3, 0, ['Air resistance', nice(b.drag), 'N ↑']);
     readouts(list);
@@ -917,6 +936,7 @@
     var p = push, g = 9.8, mu = SURFACES[S.surface].mu, mus = mu * STATIC_FACTOR;
     p.lanes[0].force = S.force;
     if (p.lanes[1]) p.lanes[1].force = S.forceB;
+    if (!p.pushing && !p.released) return;
     var left = dt;
     while (left > 1e-12) {
       // land exactly on the auto-release instant so 2 s × a gives a clean speed
@@ -1046,7 +1066,7 @@
       else pill('net force 0 N', cxp, ny, COLORS.net, 'center');
       if (L.v > 0.02) arrow(cxp, ny - 30, cxp + Math.min(200, L.v * 18), ny - 30, COLORS.vel, 'v = ' + fix(L.v, 2) + ' m/s', 'left', 6, -14);
     }
-    drawHud(['Earth · ' + SURFACES[surf].name + (SURFACES[surf].mu ? ' (μ = ' + SURFACES[surf].mu + ')' : '')].concat(timeLines(p.t)));
+    drawHud(['Earth · ' + SURFACES[surf].name + (SURFACES[surf].mu ? ' (μₖ = ' + SURFACES[surf].mu + ', μₛ = ' + +(SURFACES[surf].mu * STATIC_FACTOR).toFixed(3) + ')' : '')].concat(p.pushing || p.released ? timeLines(p.t) : []));
   }
   function pushCaption() {
     var L = push.lanes[0], mu = SURFACES[S.surface].mu;
@@ -1171,14 +1191,10 @@
 
     if (S.showForces) {
       var y = groundY - 0.62 * s, len = Math.min(140, S.shove * 0.35);
-      if (k.phase === 'push' || k.phase === 'ready') {
-        var faint = k.phase === 'ready';
-        ctx.save();
-        if (faint) ctx.globalAlpha = 0.35;
+      if (k.phase === 'push') {
         arrow(cxp - CART_HALF * s, y, cxp - CART_HALF * s + len, y, COLORS.b, 'Newton on cart: ' + S.shove + ' N', 'left', 6, -18);
         arrow(nxp, y - 0.25 * s, nxp - len, y - 0.25 * s, COLORS.a, 'Cart on Newton: ' + S.shove + ' N', 'right', -6, -18);
-        ctx.restore();
-      } else {
+      } else if (k.phase !== 'ready') {
         if (Math.abs(k.vC) > 0.01) arrow(cxp, y - 0.7 * s, cxp + Math.min(220, k.vC * 16), y - 0.7 * s, COLORS.vel, 'v = ' + fix(k.vC, 2) + ' m/s', 'left', 6, -14);
         if (Math.abs(k.vN) > 0.01) arrow(nxp, y - 1.25 * s, nxp + Math.max(-220, k.vN * 16), y - 1.25 * s, COLORS.vel, 'v = ' + fix(Math.abs(k.vN), 2) + ' m/s', 'right', -6, -14);
       }
@@ -1359,7 +1375,7 @@
         explain: 'Same 200 N for 0.5 s on each, but a = F ÷ m: the cart gets 10 m/s², Newton only 2.9 m/s². Their momenta (mass × velocity) are equal and opposite: about 100 kg·m/s each way.'
       },
       {
-        q: 'Load the cart until it weighs the same as Newton (70 kg). After the shove…',
+        q: 'Load the cart until it has the same mass as Newton (70 kg). After the shove…',
         choices: ['Newton moves faster', 'The cart moves faster', 'They move apart at the same speed'], answer: 2,
         setup: function () { cfg({ mNewton: 70, mCart: 70, shove: 200 }); resetSkate(); shoveOff(); },
         done: function () { return skate.t >= 1.5; },

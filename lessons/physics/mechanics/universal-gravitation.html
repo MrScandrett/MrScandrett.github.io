@@ -403,7 +403,7 @@
         <figure data-zoomable data-lightbox-group="universal-gravitation" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Cavendish%27s%20apparatus,%20Smithsonian%201901.jpg?width=1600" style="margin:0; border:1px solid var(--line,#d2d2d7); border-radius:12px; overflow:hidden; background:var(--white,#fff); display:flex; flex-direction:column;">
           <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Cavendish%27s%20apparatus,%20Smithsonian%201901.jpg?width=600" alt="Diagram of Henry Cavendish's torsion balance experiment measuring the gravitational constant" style="width:100%; height:230px; object-fit:contain; background:#f8fafc; padding:0.5rem; display:block;" loading="lazy" />
           <figcaption style="padding:0.6rem 0.85rem; font-size:0.78rem; line-height:1.5; color:var(--text-secondary,#3f4f65); border-top:1px solid var(--line,#d2d2d7); flex-grow:1;">
-            <strong>Cavendish's Torsion Balance (1798).</strong> Measuring the gravitational attraction between suspended lead spheres using a delicate torsion wire, Henry Cavendish determined the universal constant $G$ and effectively "weighed the Earth." Smithsonian Report (1901) / Wikimedia Commons · Public domain.
+            <strong>Cavendish's Torsion Balance (1798).</strong> Measuring the gravitational attraction between suspended lead spheres using a delicate torsion wire, Henry Cavendish determined the universal constant <em>G</em> and effectively "weighed the Earth." Smithsonian Report (1901) / Wikimedia Commons · Public domain.
           </figcaption>
         </figure>
       </div>
@@ -498,14 +498,14 @@
         <div class="ug-slider-group">
           <label class="ug-slider-label" for="ug-dist-slider">
             Orbital Distance
-            <span id="ug-dist-val">1.0×</span>
+            <span id="ug-dist-val">1.00×</span>
           </label>
           <input class="ug-slider" type="range" id="ug-dist-slider" min="30" max="120" value="75" step="1">
         </div>
         <div class="ug-slider-group">
           <label class="ug-slider-label" for="ug-speed-slider">
             Launch Speed
-            <span id="ug-speed-val">1.0×</span>
+            <span id="ug-speed-val">1.00×</span>
           </label>
           <input class="ug-slider" type="range" id="ug-speed-slider" min="30" max="170" value="100" step="1">
         </div>
@@ -785,15 +785,15 @@
         </div>
         <div class="ll-info">
           <strong>The Inverse-Square Rule</strong>
-          Double the orbital radius \(r \to 2r\), and the gravitational pull weakens by a factor of \(2^2 = 4\). Triple distance \(\to 1/9\) the force.
+          Double the orbital radius <em>r</em> &rarr; 2<em>r</em>, and the gravitational pull weakens by a factor of 2&sup2; = 4. Triple distance &rarr; 1/9 the force.
         </div>
         <div class="ll-info">
           <strong>Circular Orbit Velocity</strong>
-          For circular motion, gravity provides the centripetal force: \(G M m / r^2 = m v^2 / r \implies v = \sqrt{G M / r}\). Speed decreases as distance increases.
+          For circular motion, gravity provides the centripetal force: <em>G M m</em> / <em>r</em>&sup2; = <em>m v</em>&sup2; / <em>r</em> &rArr; <em>v</em> = &radic;(<em>G M</em> / <em>r</em>). Speed decreases as distance increases.
         </div>
         <div class="ll-info">
           <strong>Kepler's Third Law</strong>
-          The square of the orbital period is proportional to the cube of the orbital radius: \(T^2 \propto r^3\). Outer planets take exponentially longer to orbit!
+          The square of the orbital period is proportional to the cube of the orbital semi-major axis: <em>T</em>&sup2; &prop; <em>a</em>&sup3;. Outer planets take much longer to orbit!
         </div>
         <div class="ll-info">
           <strong>Classroom Discussion</strong>
@@ -825,10 +825,11 @@
     const CX = canvas.width  / 2;
     const CY = canvas.height / 2;
 
-    const BASE_DIST  = 75;   // baseline radius in px (slider default)
-    const BASE_SPEED = 100;  // baseline speed (slider default)
-    const G_SIM      = 1;    // sim gravitational constant
-    const STAR_MASS  = 5000;
+    const BASE_DIST   = 75;   // baseline radius in px (slider default)
+    const BASE_SPEED  = 100;  // baseline speed (slider default)
+    const G_SIM       = 1;    // sim gravitational constant
+    const STAR_MASS   = 5000;
+    const STAR_RADIUS = 14;
 
     let distSlider  = document.getElementById('ug-dist-slider');
     let speedSlider = document.getElementById('ug-speed-slider');
@@ -862,28 +863,43 @@
         y:  CY,
         vx: 0,
         vy: -vc * vScale,
-        r:  r
+        r:  r,
+        unbound: vScale >= Math.SQRT2 - 1e-4
       };
     }
 
-    function updateReadout() {
+    function updateReadout(liveDist) {
       const { r, v } = getParams();
+      const rNow    = (typeof liveDist === 'number' && liveDist > 0) ? liveDist : r;
+      const rNowRel = rNow / BASE_DIST;
       const rRel    = r / BASE_DIST;
       const vRel    = v / BASE_SPEED;
-      const vc      = circularSpeed(r);
-      const vActual = vc * vRel;
-      const forceRel = (1 / (rRel * rRel)).toFixed(2);
+      const forceRel = (1 / (rNowRel * rNowRel)).toFixed(2);
 
-      // Kepler T ∝ r^1.5
-      const periodRel = Math.pow(rRel, 1.5).toFixed(2);
-
-      // Orbit type label
-      const ratio = vActual / vc;
+      // Vis-viva equation at tangential launch: a = r / (2 - v_rel^2)
       let orbitType = 'Circular';
-      if (ratio < 0.85)       orbitType = 'Falls In';
-      else if (ratio < 0.98)  orbitType = 'Elliptical';
-      else if (ratio > 1.40)  orbitType = 'Escaping';
-      else if (ratio > 1.02)  orbitType = 'Elliptical';
+      let periodRel = '1.00';
+
+      if (vRel >= Math.SQRT2 - 1e-4) {
+        orbitType = 'Escaping';
+        periodRel = '— (Unbound)';
+      } else {
+        const denom = 2 - vRel * vRel;
+        const aPx = r / denom;
+        const aRel = rRel / denom;
+        // Periapsis distance for tangential launch at r
+        const rPeri = vRel < 1 ? r * (vRel * vRel) / denom : r;
+        if (rPeri <= STAR_RADIUS) {
+          orbitType = 'Falls In';
+          periodRel = '— (Impact)';
+        } else {
+          if (Math.abs(vRel - 1) >= 0.02) {
+            orbitType = 'Elliptical';
+          }
+          // Kepler's Third Law: T ∝ a^(3/2)
+          periodRel = Math.pow(aRel, 1.5).toFixed(2);
+        }
+      }
 
       document.getElementById('ug-r-type').textContent   = orbitType;
       document.getElementById('ug-r-force').textContent  = forceRel;
@@ -917,7 +933,7 @@
       grad.addColorStop(0.4, '#ffcc00');
       grad.addColorStop(1,   'rgba(255,180,0,0)');
       ctx.beginPath();
-      ctx.arc(CX, CY, 14, 0, Math.PI * 2);
+      ctx.arc(CX, CY, STAR_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = grad;
       ctx.fill();
 
@@ -943,24 +959,42 @@
     function drawFrame() {
       if (!planet) return;
 
-      // Physics step (Euler — simple, good for demo)
-      const STEPS = 6;
+      // Symplectic Velocity Verlet integration to conserve orbital energy & prevent artificial precession
+      const STEPS = 12;
       const dt = 0.4 / STEPS;
       for (let s = 0; s < STEPS; s++) {
-        const dx = CX - planet.x;
-        const dy = CY - planet.y;
-        const distSq = dx * dx + dy * dy;
-        const dist   = Math.sqrt(distSq);
-        if (dist < 14) { running = false; break; } // hit the star
-        const f = G_SIM * STAR_MASS / distSq;
-        planet.vx += (dx / dist) * f * dt;
-        planet.vy += (dy / dist) * f * dt;
-        planet.x  += planet.vx * dt;
-        planet.y  += planet.vy * dt;
+        const dx0 = CX - planet.x;
+        const dy0 = CY - planet.y;
+        const distSq0 = dx0 * dx0 + dy0 * dy0;
+        const dist0   = Math.sqrt(distSq0);
+        if (dist0 <= STAR_RADIUS) { running = false; break; }
+        const f0  = G_SIM * STAR_MASS / distSq0;
+        const ax0 = (dx0 / dist0) * f0;
+        const ay0 = (dy0 / dist0) * f0;
+
+        planet.x += planet.vx * dt + 0.5 * ax0 * dt * dt;
+        planet.y += planet.vy * dt + 0.5 * ay0 * dt * dt;
+
+        const dx1 = CX - planet.x;
+        const dy1 = CY - planet.y;
+        const distSq1 = dx1 * dx1 + dy1 * dy1;
+        const dist1   = Math.sqrt(distSq1);
+        if (dist1 <= STAR_RADIUS) { running = false; break; }
+        const f1  = G_SIM * STAR_MASS / distSq1;
+        const ax1 = (dx1 / dist1) * f1;
+        const ay1 = (dy1 / dist1) * f1;
+
+        planet.vx += 0.5 * (ax0 + ax1) * dt;
+        planet.vy += 0.5 * (ay0 + ay1) * dt;
+
         trail.push({ x: planet.x, y: planet.y });
-        if (trail.length > 500) trail.shift();
-        // Escape check
-        if (dist > Math.max(canvas.width, canvas.height)) { running = false; break; }
+        if (trail.length > 900) trail.shift();
+
+        // Only halt when genuinely escaping beyond the viewport
+        if (planet.unbound && dist1 > Math.max(canvas.width, canvas.height) * 1.1) {
+          running = false;
+          break;
+        }
       }
 
       // Draw
@@ -997,16 +1031,17 @@
       grad.addColorStop(0.4, '#ffcc00');
       grad.addColorStop(1,   'rgba(255,180,0,0)');
       ctx.beginPath();
-      ctx.arc(CX, CY, 14, 0, Math.PI * 2);
+      ctx.arc(CX, CY, STAR_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Gravity force vector
+      // Gravity force vector (scaled by inverse-square 1/r^2)
       if (planet) {
         const dx   = CX - planet.x;
         const dy   = CY - planet.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const fLen = Math.min(30, 3000 / dist);
+        updateReadout(dist);
+        const fLen = Math.max(8, Math.min(55, 22 * Math.pow(BASE_DIST / Math.max(dist, STAR_RADIUS), 2)));
         ctx.beginPath();
         ctx.moveTo(planet.x, planet.y);
         ctx.lineTo(planet.x + (dx / dist) * fLen, planet.y + (dy / dist) * fLen);
@@ -1042,13 +1077,13 @@
     // Slider updates
     distSlider.addEventListener('input', () => {
       const rRel = parseFloat(distSlider.value) / BASE_DIST;
-      distVal.textContent = rRel.toFixed(1) + '×';
+      distVal.textContent = rRel.toFixed(2) + '×';
       updateReadout();
       if (!running) drawStatic();
     });
     speedSlider.addEventListener('input', () => {
       const vRel = parseFloat(speedSlider.value) / BASE_SPEED;
-      speedVal.textContent = vRel.toFixed(1) + '×';
+      speedVal.textContent = vRel.toFixed(2) + '×';
       updateReadout();
     });
 
@@ -1068,8 +1103,8 @@
       trail   = [];
       distSlider.value  = BASE_DIST;
       speedSlider.value = BASE_SPEED;
-      distVal.textContent  = '1.0×';
-      speedVal.textContent = '1.0×';
+      distVal.textContent  = '1.00×';
+      speedVal.textContent = '1.00×';
       updateReadout();
       drawStatic();
     });

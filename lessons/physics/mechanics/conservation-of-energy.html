@@ -168,7 +168,7 @@
       </p>
       <div class="e-meta">
         <span class="e-pill">KE · PE · Work · Power</span>
-        <span class="e-pill gold">3 Simulations</span>
+        <span class="e-pill gold">2 Simulations</span>
         <span class="e-pill">Grades 6–12</span>
       </div>
     </div>
@@ -227,13 +227,13 @@
       <figure data-zoomable data-lightbox-group="conservation-of-energy" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Joule%27s%20Apparatus%20(Harper%27s%20Scan).png?width=1600" style="margin:0; border:1px solid var(--e-line, rgba(205,195,240,0.13)); border-radius:var(--e-radius, 8px); overflow:hidden; background:rgba(14,10,26,0.85); display:flex; flex-direction:column;">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Joule%27s%20Apparatus%20(Harper%27s%20Scan).png?width=600" alt="Diagram of James Prescott Joule's mechanical equivalent of heat paddle wheel apparatus" style="width:100%; height:230px; object-fit:contain; background:#0a0718; padding:0.5rem; display:block;" loading="lazy" />
         <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--e-muted, #ccc0f4); border-top:1px solid var(--e-line, rgba(205,195,240,0.13)); flex-grow:1;">
-          <strong>Joule's Paddle-Wheel Apparatus (1845).</strong> Falling lead weights turned rotating paddles inside an insulated water container, converting gravitational potential energy ($mgh$) into thermal energy and demonstrating the exact mechanical equivalent of heat. Harper's Magazine / Wikimedia Commons · Public domain.
+          <strong>Joule's Paddle-Wheel Apparatus (1845).</strong> Falling lead weights turned rotating paddles inside an insulated water container, converting gravitational potential energy (<em>mgh</em>) into thermal energy and demonstrating the exact mechanical equivalent of heat. Harper's Magazine / Wikimedia Commons · Public domain.
         </figcaption>
       </figure>
       <figure data-zoomable data-lightbox-group="conservation-of-energy" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Gabrielle%20Emilie%20le%20Tonnelier%20de%20Breteuil%20du%20Chatelet.jpg?width=1600" style="margin:0; border:1px solid var(--e-line, rgba(205,195,240,0.13)); border-radius:var(--e-radius, 8px); overflow:hidden; background:rgba(14,10,26,0.85); display:flex; flex-direction:column;">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Gabrielle%20Emilie%20le%20Tonnelier%20de%20Breteuil%20du%20Chatelet.jpg?width=600" alt="Portrait of French mathematician and physicist Émilie du Châtelet" style="width:100%; height:230px; object-fit:contain; background:#0a0718; padding:0.5rem; display:block;" loading="lazy" />
         <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--e-muted, #ccc0f4); border-top:1px solid var(--e-line, rgba(205,195,240,0.13)); flex-grow:1;">
-          <strong>Émilie du Châtelet (1706&ndash;1749).</strong> French natural philosopher whose dropping-ball experiments demonstrated that kinetic energy (then called <em>vis viva</em>) scales with the square of velocity ($v^2$) rather than $v$, providing the foundation for $KE = \frac{1}{2}mv^2$. Maurice Quentin de La Tour / Wikimedia Commons · Public domain.
+          <strong>Émilie du Châtelet (1706&ndash;1749).</strong> French natural philosopher whose dropping-ball experiments demonstrated that kinetic energy (then called <em>vis viva</em>) scales with the square of velocity (<em>v</em>²) rather than <em>v</em>, providing the foundation for KE = ½<em>mv</em>². Maurice Quentin de La Tour / Wikimedia Commons · Public domain.
         </figcaption>
       </figure>
     </div>
@@ -372,8 +372,9 @@
         <input type="range" id="dSlider" min="1" max="10" value="4" />
       </div>
       <div class="e-readout" style="padding:0;align-self:flex-end;">
-        <span class="e-chip"><span class="e-chip-label">Work Done</span><span class="e-chip-val" id="workVal">200 J</span></span>
-        <span class="e-chip"><span class="e-chip-label">Wasted (⊥)</span><span class="e-chip-val" id="perpVal">0 J</span></span>
+        <span class="e-chip"><span class="e-chip-label">Work Done (W)</span><span class="e-chip-val" id="workVal">200.0 J</span></span>
+        <span class="e-chip"><span class="e-chip-label">F_∥ (Useful)</span><span class="e-chip-val" id="parVal">50.0 N</span></span>
+        <span class="e-chip"><span class="e-chip-label">F_⊥ (0 J Work)</span><span class="e-chip-val" id="perpVal">0.0 N</span></span>
       </div>
     </div>
   </div>
@@ -441,8 +442,8 @@
   const heatEl = document.getElementById('heatVal');
   const totalEl = document.getElementById('totalVal');
 
-  let ball = null, initPE = 0;
-  const g = 0.35;
+  let ball = null, initPE = 0, lastTs = null;
+  const g = 520; // px/s²
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 300; }
   resize(); window.addEventListener('resize', resize);
@@ -453,12 +454,55 @@
 
   function resetBall() {
     const H = cv.height, startH = +hSl.value;
-    ball = { x: cv.width / 2, y: H - startH - 14, vy: 0, heatLost: 0 };
-    initPE = startH;
+    const ground = H - 24 - 12;
+    initPE = g * startH;
+    ball = { x: cv.width / 2, y: ground - startH, vy: 0, heatLost: 0, resting: false };
+    lastTs = null;
   }
   resetBall();
 
-  function draw() {
+  function stepBall(dt) {
+    if (!ball || ball.resting) return;
+    const ground = cv.height - 24 - 12;
+    const elast = +elastSl.value / 100;
+
+    let rem = dt;
+    let safety = 0;
+    while (rem > 1e-6 && safety++ < 8) {
+      const yNext = ball.y + ball.vy * rem + 0.5 * g * rem * rem;
+      if (yNext >= ground) {
+        // Solve ball.y + ball.vy * tHit + 0.5 * g * tHit^2 = ground
+        const dy = Math.max(0, ground - ball.y);
+        const disc = Math.max(0, ball.vy * ball.vy + 2 * g * dy);
+        const vImpact = Math.sqrt(disc);
+        const tHit = g > 0 ? Math.max(0, Math.min(rem, (vImpact - ball.vy) / g)) : rem;
+
+        // Exact mechanical energy at impact = initPE - heatLost
+        const keBefore = Math.max(0, initPE - ball.heatLost);
+        const vExact = Math.sqrt(2 * keBefore);
+        const lostFrac = 1 - elast * elast;
+        ball.heatLost = Math.min(initPE, ball.heatLost + keBefore * lostFrac);
+
+        const vRebound = vExact * elast;
+        ball.y = ground;
+        if (vRebound < 12) {
+          ball.vy = 0;
+          ball.heatLost = initPE;
+          ball.resting = true;
+          break;
+        } else {
+          ball.vy = -vRebound;
+        }
+        rem -= tHit;
+      } else {
+        ball.y = yNext;
+        ball.vy += g * rem;
+        rem = 0;
+      }
+    }
+  }
+
+  function draw(ts) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
 
@@ -468,35 +512,36 @@
     ctx.beginPath(); ctx.moveTo(0, H - 24); ctx.lineTo(W, H - 24); ctx.stroke();
 
     if (!ball) { SimKit.frame('#coasterCanvas', draw); return; }
+    ball.x = W / 2;
 
-    ball.vy += g;
-    ball.y += ball.vy;
-
-    const ground = H - 24 - 12;
-    if (ball.y >= ground) {
-      ball.y = ground;
-      const elast = +elastSl.value / 100;
-      const lostFrac = 1 - elast * elast;
-      const keBefore = 0.5 * ball.vy * ball.vy;
-      ball.heatLost += keBefore * lostFrac;
-      ball.vy = -Math.abs(ball.vy) * elast;
+    if (typeof ts === 'number') {
+      const dt = lastTs === null ? 0 : Math.min((ts - lastTs) / 1000, 0.035);
+      lastTs = ts;
+      stepBall(dt);
     }
 
-    // Energy calculations
-    const height = ground - ball.y;
-    const pe = height;
-    const ke = 0.5 * ball.vy * ball.vy;
-    const total = initPE;
-    const keP = Math.min(100, (ke / total * 100)).toFixed(0);
-    const peP = Math.min(100, (pe / total * 100)).toFixed(0);
-    const heatP = Math.min(100, (ball.heatLost / total * 100)).toFixed(0);
-    const sumP = (+keP + +peP + +heatP);
+    const ground = H - 24 - 12;
+
+    // Energy calculations: E_total = m*g*h + 0.5*m*v^2 + Q_heat (with m = 1)
+    const height = Math.max(0, ground - ball.y);
+    const pe = ball.resting ? 0 : g * height;
+    const ke = ball.resting ? 0 : Math.max(0, initPE - ball.heatLost - pe);
+    const total = Math.max(initPE, 1e-6);
+
+    const pePctNum = Math.max(0, Math.min(100, (pe / total) * 100));
+    const heatPctNum = Math.max(0, Math.min(100, (ball.heatLost / total) * 100));
+    const kePctNum = Math.max(0, Math.min(100, 100 - pePctNum - heatPctNum));
+
+    const peP = Math.round(pePctNum);
+    const heatP = Math.round(heatPctNum);
+    const keP = Math.max(0, 100 - peP - heatP);
+    const sumP = keP + peP + heatP;
 
     keEl.textContent = keP + '%'; peEl.textContent = peP + '%'; heatEl.textContent = heatP + '%'; totalEl.textContent = sumP + '%';
 
     // Energy bars
     const barX = 20, barW = 12, barH = H - 60;
-    const barColors = [{ color: '#8b5cf6', val: +keP }, { color: '#f59e0b', val: +peP }, { color: '#f43f5e', val: +heatP }];
+    const barColors = [{ color: '#8b5cf6', val: kePctNum }, { color: '#f59e0b', val: pePctNum }, { color: '#f43f5e', val: heatPctNum }];
     const barLabels = ['KE', 'PE', 'Heat'];
     barColors.forEach((b, i) => {
       const bx = barX + i * (barW + 8);
@@ -524,11 +569,11 @@
     ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(ball.x + 20, ball.y); ctx.lineTo(ball.x + 20, ground); ctx.stroke();
     ctx.fillStyle = 'rgba(245,158,11,0.7)'; ctx.font = '10px Inter,sans-serif';
-    ctx.fillText('h=' + height.toFixed(0), ball.x + 24, (ball.y + ground) / 2);
+    ctx.fillText('h=' + height.toFixed(0) + ' px', ball.x + 24, (ball.y + ground) / 2);
 
     SimKit.frame('#coasterCanvas', draw);
   }
-  draw();
+  SimKit.frame('#coasterCanvas', draw);
 })();
 
 /* ── SIM 2: Work = F·d·cos(θ) ──────────────────────── */
@@ -542,6 +587,7 @@
   const fLbl = document.getElementById('fLabel');
   const dLbl = document.getElementById('dLabel');
   const workLbl = document.getElementById('workVal');
+  const parLbl = document.getElementById('parVal');
   const perpLbl = document.getElementById('perpVal');
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 240; }
@@ -551,15 +597,18 @@
     const theta = +thetaSl.value, F = +fSl.value, d = +dSl.value;
     thetaLbl.textContent = theta + '°'; fLbl.textContent = F + ' N'; dLbl.textContent = d + ' m';
     const rad = theta * Math.PI / 180;
-    const work = (F * Math.cos(rad) * d).toFixed(1);
-    const perp = (F * Math.sin(rad) * d).toFixed(1);
-    workLbl.textContent = work + ' J'; perpLbl.textContent = perp + ' J';
-    draw(theta, F, d, +work, +perp);
+    const fPar = F * Math.cos(rad);
+    const fPerp = F * Math.sin(rad);
+    const work = fPar * d;
+    workLbl.textContent = work.toFixed(1) + ' J';
+    if (parLbl) parLbl.textContent = fPar.toFixed(1) + ' N';
+    perpLbl.textContent = fPerp.toFixed(1) + ' N';
+    draw(theta, F, d, work, fPar, fPerp);
   }
   thetaSl.oninput = update; fSl.oninput = update; dSl.oninput = update;
   window.addEventListener('resize', update);
 
-  function draw(theta, F, d, work, perp) {
+  function draw(theta, F, d, work, fPar, fPerp) {
     const W = cv.width, H = cv.height;
     ctx.clearRect(0, 0, W, H);
 
@@ -602,9 +651,9 @@
 
     // Labels
     ctx.fillStyle = 'rgba(16,185,129,0.9)'; ctx.font = 'bold 11px Inter,sans-serif';
-    ctx.fillText('→ useful: ' + work.toFixed(0) + ' J', cx + gLen * 0.3, cy + 36);
+    ctx.fillText('→ F∥ = ' + fPar.toFixed(1) + ' N (W = ' + work.toFixed(1) + ' J)', cx + gLen * 0.15, cy + 36);
     ctx.fillStyle = 'rgba(244,63,94,0.9)';
-    ctx.fillText('↑ wasted: ' + perp.toFixed(0) + ' J', ax + 28, (cy + ay) / 2);
+    ctx.fillText('↑ F⊥ = ' + fPerp.toFixed(1) + ' N (0 J work)', ax + 28, (cy + ay) / 2);
 
     // Work bar
     const barX = W * 0.78, barW = 28, barH = H - 50;

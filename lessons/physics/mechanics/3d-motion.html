@@ -1247,7 +1247,7 @@
                 <figure data-zoomable data-lightbox-group="3d-motion" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Apollo_Inertial_Measurement_Unit.jpg?width=1600" style="margin:0; border:1px solid var(--hud-line, rgba(147,197,253,0.16)); border-radius:18px; overflow:hidden; background:rgba(7,18,37,0.76); display:flex; flex-direction:column;">
                   <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Apollo_Inertial_Measurement_Unit.jpg?width=600" alt="Apollo Spacecraft Inertial Measurement Unit IMU navigation system" style="width:100%; height:230px; object-fit:contain; background:#020817; padding:0.5rem; display:block;" loading="lazy" />
                   <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--text-soft, rgba(226,232,240,0.72)); border-top:1px solid var(--hud-line, rgba(147,197,253,0.16)); flex-grow:1;">
-                    <strong>Apollo Inertial Measurement Unit (IMU).</strong> A 3-axis gimbaled stable platform containing three orthogonal gyroscopes and accelerometers. By measuring acceleration independently along $X$, $Y$, and $Z$ axes without external radio signals, the Apollo Guidance Computer integrated position in 3D translunar space. NASA / Wikimedia Commons · Public domain.
+                    <strong>Apollo Inertial Measurement Unit (IMU).</strong> A 3-axis gimbaled stable platform containing three orthogonal gyroscopes and accelerometers. By measuring acceleration independently along <em>X</em>, <em>Y</em>, and <em>Z</em> axes without external radio signals, the Apollo Guidance Computer integrated position in 3D translunar space. NASA / Wikimedia Commons · Public domain.
                   </figcaption>
                 </figure>
               </div>
@@ -1390,9 +1390,9 @@
     };
 
     const graphConfigs = [
-      { key: "position", canvas: document.getElementById("graph-position"), limit: 60, colors: ["#fb7185", "#34d399", "#60a5fa"] },
-      { key: "velocity", canvas: document.getElementById("graph-velocity"), limit: 18, colors: ["#fb7185", "#34d399", "#60a5fa"] },
-      { key: "acceleration", canvas: document.getElementById("graph-acceleration"), limit: 14, colors: ["#fb7185", "#34d399", "#60a5fa"] }
+      { key: "position", canvas: document.getElementById("graph-position"), limit: 20, colors: ["#fb7185", "#34d399", "#60a5fa"] },
+      { key: "velocity", canvas: document.getElementById("graph-velocity"), limit: 5, colors: ["#fb7185", "#34d399", "#60a5fa"] },
+      { key: "acceleration", canvas: document.getElementById("graph-acceleration"), limit: 9, colors: ["#fb7185", "#34d399", "#60a5fa"] }
     ];
 
     const keys = Object.create(null);
@@ -1402,8 +1402,10 @@
       acceleration: []
     };
 
+    const BASE_Y = 0.6;
+
     const state = {
-      position: new THREE.Vector3(0, 0.6, 0),
+      position: new THREE.Vector3(0, BASE_Y, 0),
       velocity: new THREE.Vector3(),
       acceleration: new THREE.Vector3(),
       prevVelocity: new THREE.Vector3(),
@@ -1413,9 +1415,9 @@
     };
 
     const config = {
-      thrust: 7.2,
-      damping: 0.9,
-      verticalDamping: 0.92,
+      thrust: 7.5,
+      damping: 0.965,
+      verticalDamping: 0.965,
       maxAltitude: 16,
       graphLength: 140
     };
@@ -1446,9 +1448,17 @@
     grid.position.y = 0;
     scene.add(grid);
 
-    const axes = new THREE.AxesHelper(4.5);
-    axes.position.set(-8, 0.02, -8);
-    scene.add(axes);
+    // Coordinate legend axes matching lesson convention: X = rose (+x), Y = green (-z forward), Z = blue (+y up)
+    const axesGroup = new THREE.Group();
+    axesGroup.position.set(-8, 0.02, -8);
+    const makeAxisLine = (dir, color) => {
+      const geom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), dir]);
+      return new THREE.Line(geom, new THREE.LineBasicMaterial({ color }));
+    };
+    axesGroup.add(makeAxisLine(new THREE.Vector3(4.5, 0, 0), 0xfb7185));
+    axesGroup.add(makeAxisLine(new THREE.Vector3(0, 0, -4.5), 0x34d399));
+    axesGroup.add(makeAxisLine(new THREE.Vector3(0, 4.5, 0), 0x60a5fa));
+    scene.add(axesGroup);
 
     const droneGroup = new THREE.Group();
     const core = new THREE.Mesh(
@@ -1537,7 +1547,8 @@
 
     function pushHistory(bucket, vector) {
       const list = history[bucket];
-      list.push({ x: vector.x, y: vector.z, z: vector.y });
+      const zVal = bucket === "position" ? vector.y - BASE_Y : vector.y;
+      list.push({ x: vector.x, y: -vector.z, z: zVal });
       if (list.length > config.graphLength) {
         list.shift();
       }
@@ -1585,7 +1596,7 @@
     }
 
     function resetFlight() {
-      state.position.set(0, 0.6, 0);
+      state.position.set(0, BASE_Y, 0);
       state.velocity.set(0, 0, 0);
       state.acceleration.set(0, 0, 0);
       state.prevVelocity.set(0, 0, 0);
@@ -1602,7 +1613,15 @@
     function updateArrow(arrow, component, axis) {
       const magnitude = Math.abs(component);
       arrow.position.copy(state.position);
-      arrow.setLength(Math.max(0.14, magnitude * 1.2), 0.38, 0.2);
+      if (!state.vectorsVisible || magnitude < 0.04) {
+        arrow.visible = false;
+        return;
+      }
+      arrow.visible = true;
+      const len = Math.max(0.22, magnitude * 0.9);
+      const headLen = Math.min(0.36, len * 0.45);
+      const headWidth = Math.min(0.2, headLen * 0.6);
+      arrow.setLength(len, headLen, headWidth);
 
       if (axis === "x") {
         arrow.setDirection(new THREE.Vector3(component >= 0 ? 1 : -1, 0, 0));
@@ -1614,33 +1633,37 @@
     }
 
     function formatSigned(value) {
-      return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+      const clean = Math.abs(value) < 0.05 ? 0 : value;
+      return `${clean >= 0 ? "+" : ""}${clean.toFixed(1)}`;
     }
 
     function updateHUD() {
       const speedMagnitude = state.velocity.length();
       const accelMagnitude = state.acceleration.length();
-      const altitudeMeters = state.position.y * 2.6;
+      const altitudeMeters = Math.max(0, state.position.y - BASE_Y);
+      const yForwardPos = -state.position.z;
+      const yForwardVel = -state.velocity.z;
+      const yForwardAcc = -state.acceleration.z;
 
-      if (altitudeMeters >= 5) completeMission("lift");
-      if (state.position.y > 1.2 && Math.hypot(state.position.x, state.position.z) > 0.45) completeMission("combine");
+      if (altitudeMeters >= 2.0) completeMission("lift");
+      if (altitudeMeters > 0.6 && Math.hypot(state.position.x, state.position.z) > 0.45) completeMission("combine");
 
       hud.altitude.textContent = `${altitudeMeters.toFixed(1)} m`;
       hud.altitudeBar.style.width = `${Math.min(100, (altitudeMeters / config.maxAltitude) * 100)}%`;
 
       hud.speed.textContent = `${speedMagnitude.toFixed(1)} m/s`;
-      hud.speedBar.style.width = `${Math.min(100, speedMagnitude * 12)}%`;
+      hud.speedBar.style.width = `${Math.min(100, speedMagnitude * 20)}%`;
 
       hud.accel.textContent = `${accelMagnitude.toFixed(1)} m/s²`;
-      hud.accelBar.style.width = `${Math.min(100, accelMagnitude * 7)}%`;
+      hud.accelBar.style.width = `${Math.min(100, accelMagnitude * 9)}%`;
 
-      hud.xPos.textContent = state.position.x.toFixed(1);
-      hud.yPos.textContent = state.position.z.toFixed(1);
+      hud.xPos.textContent = (Math.abs(state.position.x) < 0.05 ? 0 : state.position.x).toFixed(1);
+      hud.yPos.textContent = (Math.abs(yForwardPos) < 0.05 ? 0 : yForwardPos).toFixed(1);
       hud.heading.textContent = `${Math.round(state.heading)}°`;
 
       hud.axisX.textContent = `s=${formatSigned(state.position.x)} · v=${formatSigned(state.velocity.x)} · a=${formatSigned(state.acceleration.x)}`;
-      hud.axisY.textContent = `s=${formatSigned(state.position.z)} · v=${formatSigned(state.velocity.z)} · a=${formatSigned(state.acceleration.z)}`;
-      hud.axisZ.textContent = `s=${formatSigned(state.position.y)} · v=${formatSigned(state.velocity.y)} · a=${formatSigned(state.acceleration.y)}`;
+      hud.axisY.textContent = `s=${formatSigned(yForwardPos)} · v=${formatSigned(yForwardVel)} · a=${formatSigned(yForwardAcc)}`;
+      hud.axisZ.textContent = `s=${formatSigned(altitudeMeters)} · v=${formatSigned(state.velocity.y)} · a=${formatSigned(state.acceleration.y)}`;
     }
 
     function drawGraph(canvas, samples, limit, colors) {
@@ -1692,42 +1715,37 @@
     }
 
     function updatePhysics(dt) {
-      const thrustVector = new THREE.Vector3(
-        (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0),
-        (keys.Space ? 1 : 0) - (keys.ShiftLeft || keys.ShiftRight ? 1 : 0),
-        (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0)
-      );
+      // Independent per-axis thrust (no 3D vector normalization) so orthogonal axes remain truly independent
+      const thrustX = ((keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0)) * config.thrust * dt;
+      const thrustY = ((keys.Space ? 1 : 0) - (keys.ShiftLeft || keys.ShiftRight ? 1 : 0)) * config.thrust * dt;
+      const thrustZ = ((keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0)) * config.thrust * dt;
 
-      if (thrustVector.lengthSq() > 0) {
-        thrustVector.normalize().multiplyScalar(config.thrust * dt);
-      }
-
-      state.velocity.x += thrustVector.x;
-      state.velocity.y += thrustVector.y;
-      state.velocity.z += thrustVector.z;
-
-      state.velocity.x *= Math.pow(config.damping, dt * 60);
-      state.velocity.z *= Math.pow(config.damping, dt * 60);
-      state.velocity.y *= Math.pow(config.verticalDamping, dt * 60);
+      state.velocity.x = state.velocity.x * Math.pow(config.damping, dt * 60) + thrustX;
+      state.velocity.z = state.velocity.z * Math.pow(config.damping, dt * 60) + thrustZ;
+      state.velocity.y = state.velocity.y * Math.pow(config.verticalDamping, dt * 60) + thrustY;
 
       state.position.addScaledVector(state.velocity, dt);
 
-      if (state.position.y < 0.6) {
-        state.position.y = 0.6;
+      if (state.position.y < BASE_Y) {
+        state.position.y = BASE_Y;
         if (state.velocity.y < 0) state.velocity.y = 0;
       }
+      if (state.position.y > BASE_Y + config.maxAltitude) {
+        state.position.y = BASE_Y + config.maxAltitude;
+        if (state.velocity.y > 0) state.velocity.y = 0;
+      }
 
-        // Grid boundaries (keep drone within the 60x60 grid area)
-        if (state.position.x > 30) { state.position.x = 30; state.velocity.x = 0; }
-        if (state.position.x < -30) { state.position.x = -30; state.velocity.x = 0; }
-        if (state.position.z > 30) { state.position.z = 30; state.velocity.z = 0; }
-        if (state.position.z < -30) { state.position.z = -30; state.velocity.z = 0; }
+      // Grid boundaries (keep drone within the 60x60 grid area)
+      if (state.position.x > 30) { state.position.x = 30; state.velocity.x = 0; }
+      if (state.position.x < -30) { state.position.x = -30; state.velocity.x = 0; }
+      if (state.position.z > 30) { state.position.z = 30; state.velocity.z = 0; }
+      if (state.position.z < -30) { state.position.z = -30; state.velocity.z = 0; }
 
       state.acceleration.copy(state.velocity).sub(state.prevVelocity).divideScalar(Math.max(dt, 0.0001));
       state.prevVelocity.copy(state.velocity);
 
       if (Math.abs(state.velocity.x) + Math.abs(state.velocity.z) > 0.01) {
-        state.heading = THREE.MathUtils.radToDeg(Math.atan2(state.velocity.x, state.velocity.z));
+        state.heading = (THREE.MathUtils.radToDeg(Math.atan2(state.velocity.x, -state.velocity.z)) + 360) % 360;
       }
 
       droneGroup.position.copy(state.position);

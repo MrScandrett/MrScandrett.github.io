@@ -508,8 +508,10 @@
   function getGeometry() {
     const width = canvas.width;
     const height = canvas.height;
-    const maxLength = Math.min(height - 96, width * 0.32);
-    const lengthPx = Math.max(90, Math.min(maxLength, getLength() * 94));
+    const maxLength = Math.min(height - 96, width * 0.45);
+    const minLength = 65;
+    const frac = (getLength() - 0.5) / 3.0; // slider is 0.50m to 3.50m
+    const lengthPx = minLength + Math.max(0, Math.min(1, frac)) * Math.max(40, maxLength - minLength);
     const pivot = { x: width / 2, y: 72 };
     const bob = {
       x: pivot.x + Math.sin(state.angle) * lengthPx,
@@ -539,22 +541,46 @@
     }
   }
 
+  function computeExactPeriod(energy) {
+    const length = getLength();
+    const gravity = Math.max(getGravity(), 0.01);
+    const mass = getMass();
+    const T0 = 2 * Math.PI * Math.sqrt(length / gravity);
+    // Effective amplitude theta_max from current mechanical energy: E = m*g*L*(1 - cos(theta_max))
+    const cosThetaMax = Math.max(-0.999, Math.min(1, 1 - energy.total / Math.max(mass * gravity * length, 1e-6)));
+    const cosHalf = Math.sqrt(Math.max(1e-6, 0.5 * (1 + cosThetaMax)));
+    // Arithmetic-Geometric Mean (AGM) for exact complete elliptic integral K(sin(theta_max/2))
+    let a = 1, b = cosHalf;
+    for (let i = 0; i < 4; i++) {
+      const nextA = 0.5 * (a + b);
+      b = Math.sqrt(a * b);
+      a = nextA;
+    }
+    return T0 / a;
+  }
+
   function updateEnergyHud(energy) {
-    const denominator = Math.max(state.initialMechanicalEnergy, energy.total + state.heatEnergy, 0.0001);
-    const pePct = Math.max(0, Math.min(100, (energy.pe / denominator) * 100));
-    const kePct = Math.max(0, Math.min(100, (energy.ke / denominator) * 100));
-    const heatPct = Math.max(0, Math.min(100, (state.heatEnergy / denominator) * 100));
+    const totalNow = state.initialMechanicalEnergy;
+    const denominator = Math.max(totalNow, 0.0001);
+    const heatPct = state. heatEnergy > 0 ? Math.max(0, Math.min(100, (state.heatEnergy / denominator) * 100)) : 0;
+    const mechFraction = Math.max(0, 100 - heatPct);
+    const mechDenom = Math.max(energy.total, 1e-8);
+    const pePct = energy.total > 1e-7 ? Math.max(0, Math.min(100, (energy.pe / mechDenom) * mechFraction)) : 0;
+    const kePct = energy.total > 1e-7 ? Math.max(0, Math.min(100, mechFraction - pePct)) : 0;
 
     readouts.peFill.style.height = pePct.toFixed(2) + '%';
     readouts.keFill.style.height = kePct.toFixed(2) + '%';
     readouts.heatFill.style.height = heatPct.toFixed(2) + '%';
-    readouts.pePct.textContent = Math.round(pePct) + '%';
-    readouts.kePct.textContent = Math.round(kePct) + '%';
-    readouts.heatPct.textContent = Math.round(heatPct) + '%';
-    readouts.period.textContent = (2 * Math.PI * Math.sqrt(getLength() / Math.max(getGravity(), 0.01))).toFixed(2) + ' s';
+    const peR = Math.round(pePct);
+    const heatR = Math.round(heatPct);
+    const keR = Math.max(0, 100 - peR - heatR);
+    readouts.pePct.textContent = peR + '%';
+    readouts.kePct.textContent = keR + '%';
+    readouts.heatPct.textContent = heatR + '%';
+    readouts.period.textContent = computeExactPeriod(energy).toFixed(2) + ' s';
     readouts.angle.textContent = Math.round((state.angle * 180) / Math.PI) + '°';
     readouts.speed.textContent = Math.abs(energy.tangentialSpeed).toFixed(2) + ' m/s';
-    readouts.totalEnergy.textContent = (energy.total + state.heatEnergy).toFixed(2) + ' J';
+    readouts.totalEnergy.textContent = state.initialMechanicalEnergy.toFixed(2) + ' J';
   }
 
   function spawnDust(bx, by, speed) {
@@ -658,11 +684,12 @@
     const speedFactor = Math.min(1, Math.abs(energy.tangentialSpeed) / 3.5);
     const bobRadius = 14 + getMass() * 0.46;
 
-    // Squash/stretch: stretch along velocity direction when moving fast
+    // Squash/stretch: stretch along tangential velocity direction (dx = cos(theta)*dir, dy = -sin(theta)*dir)
     const stretch = Math.min(0.26, speedFactor * 0.26);
+    const dirSign = state.omega >= 0 ? 1 : -1;
     const velAngle = Math.atan2(
-      Math.cos(state.angle) * (state.omega >= 0 ? 1 : -1),
-      Math.sin(state.angle) * (state.omega >= 0 ? 1 : -1)
+      -Math.sin(state.angle) * dirSign,
+      Math.cos(state.angle) * dirSign
     );
 
     ctx.save();
@@ -747,15 +774,32 @@
       const length = getLength();
       const gravity = getGravity();
       const damping = getDamping();
+      const mass = getMass();
 
-      const alpha = -(gravity / length) * Math.sin(state.angle) - damping * state.omega;
-      state.omega += alpha * dt;
-      state.angle = clampAngle(state.angle + state.omega * dt);
+      // 4th-order Runge-Kutta (RK4) integration for high-accuracy nonlinear pendulum dynamics
+      const substeps = 4;
+      const h = dt / substeps;
+      const accel = (th, om) => -(gravity / length) * Math.sin(th) - damping * om;
+      for (let s = 0; s < substeps; s++) {
+        const th0 = state.angle, om0 = state.omega;
+        const k1_th = om0, k1_om = accel(th0, om0);
+        const k2_th = om0 + 0.5 * h * k1_om, k2_om = accel(th0 + 0.5 * h * k1_th, om0 + 0.5 * h * k1_om);
+        const k3_th = om0 + 0.5 * h * k2_om, k3_om = accel(th0 + 0.5 * h * k2_th, om0 + 0.5 * h * k2_om);
+        const k4_th = om0 + h * k3_om, k4_om = accel(th0 + h * k3_th, om0 + h * k3_om);
 
-      const energy = computeMechanicalEnergy();
-      const lostEnergy = Math.max(0, state.initialMechanicalEnergy - energy.total - state.heatEnergy);
-      if (lostEnergy > 0) {
-        state.heatEnergy += lostEnergy;
+        state.angle = clampAngle(th0 + (h / 6) * (k1_th + 2 * k2_th + 2 * k3_th + k4_th));
+        state.omega = om0 + (h / 6) * (k1_om + 2 * k2_om + 2 * k3_om + k4_om);
+
+        if (damping > 0) {
+          const omMid = 0.5 * (om0 + state.omega);
+          state.heatEnergy = Math.min(
+            state.initialMechanicalEnergy,
+            state.heatEnergy + mass * length * length * damping * omMid * omMid * h
+          );
+        }
+      }
+      if (damping === 0) {
+        state.heatEnergy = 0;
       }
     }
 

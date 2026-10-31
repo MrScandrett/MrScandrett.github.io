@@ -392,16 +392,6 @@
   </main>
   </div><!-- /.ll-sim -->
 
-  <div class="ap-lightbox" id="apLightbox" role="dialog" aria-modal="true" aria-label="Enlarged photo">
-    <div class="ap-lightbox-frame">
-      <button type="button" class="ap-lightbox-close" id="apLightboxClose" aria-label="Close enlarged photo">✕</button>
-      <figure>
-  <img id="apLightboxImg" src="" alt="" />
-</figure>
-      <p class="ap-lightbox-cap" id="apLightboxCap"></p>
-    </div>
-  </div>
-
   <aside class="ll-panel" aria-hidden="false">
     <div class="ll-panel-head">
       <div class="ll-tabs">
@@ -595,33 +585,37 @@
 
       if (objProgress === null) return;
 
-      // Determine float/sink and final Y
-      const floats = objDensity < WATER_DENSITY;
+      // Determine float / neutral / sink and final Y
+      const isNeutral = Math.abs(objDensity - WATER_DENSITY) < 1e-4;
+      const floats = objDensity < WATER_DENSITY && !isNeutral;
       const cx = W / 2;
 
       // Animate: progress 0→1
-      // Float: obj travels from top into water, then rises to float line
-      // Sink: obj travels from top through water to bottom
       let objY;
       let submergedFraction; // how much of object is underwater (0 to 1)
+      const startY = WATER_TOP - OBJ_R - 4;
 
       if (floats) {
-        const floatLine = WATER_TOP + OBJ_R * objDensity; // float at correct depth
-        const startY    = TANK_TOP + OBJ_R + 4;
-        // phase 1 (0→0.6): drop from top to float line
-        // phase 2 (0.6→1): bob slightly then settle
+        // Linear immersion depth so submerged vertical height fraction === objDensity / WATER_DENSITY
+        const frac = objDensity / WATER_DENSITY;
+        const floatLine = WATER_TOP - OBJ_R + 2 * OBJ_R * frac;
         if (objProgress <= 0.6) {
           const t = objProgress / 0.6;
           const ease = 1 - Math.pow(1 - t, 2);
           objY = startY + (floatLine - startY) * ease;
         } else {
           const t = (objProgress - 0.6) / 0.4;
-          const bob = Math.sin(t * Math.PI * 3) * 6 * (1 - t);
+          const bob = Math.sin(t * Math.PI * 3) * 5 * (1 - t);
           objY = floatLine + bob;
         }
         submergedFraction = Math.max(0, Math.min(1, (objY - WATER_TOP + OBJ_R) / (OBJ_R * 2)));
+      } else if (isNeutral) {
+        // Neutrally buoyant: settles suspended mid-water with 100% submergence
+        const neutralY = WATER_TOP + WATER_H * 0.48;
+        const ease = 1 - Math.pow(1 - objProgress, 2.2);
+        objY = startY + (neutralY - startY) * ease;
+        submergedFraction = Math.max(0, Math.min(1, (objY - WATER_TOP + OBJ_R) / (OBJ_R * 2)));
       } else {
-        const startY  = TANK_TOP + OBJ_R + 4;
         const bottomY = TANK_BOTTOM - OBJ_R - 4;
         const ease = objProgress < 0.5
           ? 2 * objProgress * objProgress
@@ -630,55 +624,10 @@
         submergedFraction = Math.max(0, Math.min(1, (objY - WATER_TOP + OBJ_R) / (OBJ_R * 2)));
       }
 
-      // Draw force arrows (only when in water)
-      if (submergedFraction > 0.1 && objProgress > 0.2) {
-        const arrowAlpha = Math.min(1, (submergedFraction - 0.1) / 0.3);
-
-        // Weight arrow (down)
-        const wLen = 36;
-        ctx.globalAlpha = arrowAlpha;
-        ctx.strokeStyle = '#ff3b30';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(cx, objY + OBJ_R + 4);
-        ctx.lineTo(cx, objY + OBJ_R + 4 + wLen);
-        ctx.stroke();
-        ctx.fillStyle = '#ff3b30';
-        ctx.beginPath();
-        ctx.moveTo(cx, objY + OBJ_R + 4 + wLen + 6);
-        ctx.lineTo(cx - 5, objY + OBJ_R + 4 + wLen);
-        ctx.lineTo(cx + 5, objY + OBJ_R + 4 + wLen);
-        ctx.closePath();
-        ctx.fill();
-        ctx.font = 'bold 9px Inter,sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('Weight ↓', cx + 7, objY + OBJ_R + 28);
-
-        // Buoyancy arrow (up)
-        const bLen = floats ? 42 : 24;
-        ctx.strokeStyle = '#34c759';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(cx, objY - OBJ_R - 4);
-        ctx.lineTo(cx, objY - OBJ_R - 4 - bLen);
-        ctx.stroke();
-        ctx.fillStyle = '#34c759';
-        ctx.beginPath();
-        ctx.moveTo(cx, objY - OBJ_R - 4 - bLen - 6);
-        ctx.lineTo(cx - 5, objY - OBJ_R - 4 - bLen);
-        ctx.lineTo(cx + 5, objY - OBJ_R - 4 - bLen);
-        ctx.closePath();
-        ctx.fill();
-        ctx.textAlign = 'right';
-        ctx.fillText('Buoyancy ↑', cx - 7, objY - OBJ_R - 12);
-        ctx.globalAlpha = 1;
-      }
-
-      // Draw object
+      // Draw object first, then water tint over submerged portion, then force vectors
       const obj = usingCustom ? null : OBJECTS.find(o => o.id === selectedId);
       const objColor = obj ? obj.color : '#af52de';
 
-      // Clip circle to only show above-water part without the water overlay
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, objY, OBJ_R, 0, Math.PI * 2);
@@ -697,13 +646,71 @@
         ctx.fillText(obj.icon, cx, objY);
         ctx.textBaseline = 'alphabetic';
       } else {
-        // Custom: show density number
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 10px Inter,sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(customDensity.toFixed(2), cx, objY);
         ctx.textBaseline = 'alphabetic';
+      }
+
+      // Subtle water overlay on submerged part of object
+      if (objY + OBJ_R > WATER_TOP) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(PAD + 1, WATER_TOP, W - PAD * 2 - 2, WATER_H);
+        ctx.clip();
+        ctx.beginPath();
+        ctx.arc(cx, objY, OBJ_R, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0, 122, 255, 0.22)';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw force arrows (scaled consistently so Buoyancy === Weight at floating/neutral equilibrium)
+      if (submergedFraction > 0.05 && objProgress > 0.15) {
+        const arrowAlpha = Math.min(1, (objProgress - 0.15) / 0.25);
+        const forceScale = 30; // px per (1.0 g/cm³ equivalent weight)
+        const wLen = Math.max(14, Math.min(48, objDensity * forceScale));
+        const displacedDensity = submergedFraction * WATER_DENSITY;
+        const bLen = Math.max(14, Math.min(48, displacedDensity * forceScale));
+
+        // Weight arrow (down)
+        ctx.globalAlpha = arrowAlpha;
+        ctx.strokeStyle = '#ff3b30';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, objY + OBJ_R + 4);
+        ctx.lineTo(cx, objY + OBJ_R + 4 + wLen);
+        ctx.stroke();
+        ctx.fillStyle = '#ff3b30';
+        ctx.beginPath();
+        ctx.moveTo(cx, objY + OBJ_R + 4 + wLen + 6);
+        ctx.lineTo(cx - 5, objY + OBJ_R + 4 + wLen);
+        ctx.lineTo(cx + 5, objY + OBJ_R + 4 + wLen);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = 'bold 9px Inter,sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Weight ↓', cx + 7, Math.min(TANK_BOTTOM - 4, objY + OBJ_R + 18));
+
+        // Buoyancy arrow (up)
+        ctx.strokeStyle = '#34c759';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, objY - OBJ_R - 4);
+        ctx.lineTo(cx, objY - OBJ_R - 4 - bLen);
+        ctx.stroke();
+        ctx.fillStyle = '#34c759';
+        ctx.beginPath();
+        ctx.moveTo(cx, objY - OBJ_R - 4 - bLen - 6);
+        ctx.lineTo(cx - 5, objY - OBJ_R - 4 - bLen);
+        ctx.lineTo(cx + 5, objY - OBJ_R - 4 - bLen);
+        ctx.closePath();
+        ctx.fill();
+        ctx.textAlign = 'right';
+        ctx.fillText('Buoyancy ↑', cx - 7, Math.max(TANK_TOP + 12, objY - OBJ_R - 10));
+        ctx.globalAlpha = 1;
       }
     }
 
@@ -712,19 +719,23 @@
       row.style.display = 'grid';
       document.getElementById('ap-r-density').textContent = density.toFixed(2);
       const diff = density - WATER_DENSITY;
+      const isNeutral = Math.abs(diff) < 1e-4;
       const compareEl = document.getElementById('ap-r-compare');
-      if (density < WATER_DENSITY) {
-        compareEl.textContent = (Math.abs(diff)).toFixed(2) + ' less';
+      if (density < WATER_DENSITY && !isNeutral) {
+        compareEl.textContent = (Math.abs(diff)).toFixed(2) + ' less (' + Math.round((density / WATER_DENSITY) * 100) + '% submerged)';
         compareEl.style.color = '#34c759';
-      } else if (density > WATER_DENSITY) {
+      } else if (density > WATER_DENSITY && !isNeutral) {
         compareEl.textContent = diff.toFixed(2) + ' more';
         compareEl.style.color = '#ff3b30';
       } else {
-        compareEl.textContent = 'Equal';
+        compareEl.textContent = 'Equal (100% submerged)';
         compareEl.style.color = '#64748b';
       }
       const verdict = document.getElementById('ap-r-verdict');
-      if (density <= WATER_DENSITY) {
+      if (isNeutral) {
+        verdict.textContent = 'Neutral ⚖';
+        verdict.className = 'ap-result-verdict verdict-float';
+      } else if (density < WATER_DENSITY) {
         verdict.textContent = 'Floats ✓';
         verdict.className = 'ap-result-verdict verdict-float';
       } else {
@@ -767,8 +778,11 @@
       drawTank(null, 0);
     });
 
-    // Initial draw
+    // Initial draw + resize handler
     drawTank(null, 0);
+    window.addEventListener('resize', () => {
+      if (!animFrame) drawTank(null, 0);
+    });
 
     /* ── Practice checker ─────────────────────────────── */
     window.apCheck = function (num, correct, tol) {
@@ -797,31 +811,6 @@
   </script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
-  <script>
-    (() => {
-      const lightbox = document.getElementById('apLightbox'), lbImg = document.getElementById('apLightboxImg'), lbCap = document.getElementById('apLightboxCap');
-      let lastFocused = null;
-      function open(img) {
-        lastFocused = document.activeElement;
-        lbImg.src = img.currentSrc || img.src;
-        lbImg.alt = img.alt || '';
-        lbCap.textContent = img.alt || '';
-        lightbox.classList.add('open');
-        document.getElementById('apLightboxClose').focus();
-      }
-      function close() {
-        lightbox.classList.remove('open');
-        lbImg.src = '';
-        if (lastFocused) lastFocused.focus();
-      }
-      document.addEventListener('click', e => {
-        const img = e.target.closest('.ap-zoomable');
-        if (img) { open(img); return; }
-        if (e.target === lightbox || e.target.id === 'apLightboxClose') close();
-      });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape' && lightbox.classList.contains('open')) close(); });
-    })();
-  </script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

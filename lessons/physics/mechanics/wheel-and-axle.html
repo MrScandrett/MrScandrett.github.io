@@ -370,7 +370,7 @@
       <figure data-zoomable data-lightbox-group="wheel-and-axle" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Agricola17.png?width=1600" style="margin:0; border:1px solid var(--wa-line, rgba(200,180,245,0.13)); border-radius:var(--wa-radius, 8px); overflow:hidden; background:rgba(12,9,26,0.85); display:flex; flex-direction:column;">
         <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Agricola17.png?width=600" alt="Woodcut of a mine windlass hoist from Georgius Agricola's De Re Metallica (1556)" style="width:100%; height:230px; object-fit:contain; background:#080611; padding:0.5rem; display:block;" loading="lazy" />
         <figcaption style="padding:0.75rem 0.9rem; font-size:0.8rem; line-height:1.55; color:var(--wa-muted, #ede8fc); border-top:1px solid var(--wa-line, rgba(200,180,245,0.13)); flex-grow:1;">
-          <strong>Georgius Agricola's Mine Windlass (*De Re Metallica*, 1556).</strong> A classic Renaissance wheel-and-axle windlass hoist: cranking the wide outer handle ($R$) winds heavy rope around a narrow cylindrical drum ($r$), multiplying worker lifting force ($MA = R/r$) to hoist ore buckets from deep shafts. Georgius Agricola / Wikimedia Commons · Public domain.
+          <strong>Georgius Agricola's Mine Windlass (<em>De Re Metallica</em>, 1556).</strong> A classic Renaissance wheel-and-axle windlass hoist: cranking the wide outer handle (<em>R</em>) winds heavy rope around a narrow cylindrical drum (<em>r</em>), multiplying worker lifting force (MA = <em>R</em> / <em>r</em>) to hoist ore buckets from deep shafts. Georgius Agricola / Wikimedia Commons · Public domain.
         </figcaption>
       </figure>
     </div>
@@ -402,10 +402,10 @@
     <div class="wa-readout">
       <span class="wa-chip"><span class="wa-chip-label">Mech. Advantage</span><span class="wa-chip-val" id="maVal">4.0×</span></span>
       <span class="wa-chip"><span class="wa-chip-label">Load Force</span><span class="wa-chip-val" id="loadVal">80 N</span></span>
-      <span class="wa-chip"><span class="wa-chip-label">Rim Travel / rev</span><span class="wa-chip-val" id="rimTravelVal">754 px</span></span>
-      <span class="wa-chip"><span class="wa-chip-label">Axle Travel / rev</span><span class="wa-chip-val" id="axleTravelVal">188 px</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Rim Travel / rev</span><span class="wa-chip-val" id="rimTravelVal">754 cm</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Axle Travel / rev</span><span class="wa-chip-val" id="axleTravelVal">188 cm</span></span>
     </div>
-    <p class="wa-sim-note" id="maExperiment"><strong>Fair-test rule:</strong> change one radius at a time. Pixel-sized radii are a model; the ratio is unitless, so the same relationship works for centimeters or meters.</p>
+    <p class="wa-sim-note" id="maExperiment"><strong>Fair-test rule:</strong> change one radius at a time. One revolution winds 2&pi;<em>r</em> of rope on the axle while your hand travels 2&pi;<em>R</em> around the rim.</p>
   </div>
 
   <section class="wa-card wa-teal-acc" id="evidence">
@@ -606,7 +606,7 @@
     <div class="wa-readout">
       <span class="wa-chip"><span class="wa-chip-label">MA</span><span class="wa-chip-val" id="wMaVal">5.7×</span></span>
       <span class="wa-chip"><span class="wa-chip-label">Crank Force Needed</span><span class="wa-chip-val" id="wCrankVal">7.0 N</span></span>
-      <span class="wa-chip"><span class="wa-chip-label">Bucket Height</span><span class="wa-chip-val" id="wHeightVal">0 m</span></span>
+      <span class="wa-chip"><span class="wa-chip-label">Bucket Height</span><span class="wa-chip-val" id="wHeightVal">0.00 m</span></span>
       <span class="wa-chip"><span class="wa-chip-label">Rope Wound</span><span class="wa-chip-val" id="wRopeVal">0 cm</span></span>
     </div>
     <p class="wa-sim-note">Drag the amber handle, or use ← and → while the diagram is focused. The model is ideal: it does not include bearing friction.</p>
@@ -799,8 +799,8 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
     effLbl.textContent  = F + ' N';
     maEl.textContent    = MA + '×';
     loadEl.textContent  = load + ' N';
-    rimTrEl.textContent  = (2 * Math.PI * R).toFixed(0) + ' px';
-    axlTrEl.textContent  = (2 * Math.PI * r).toFixed(0) + ' px';
+    rimTrEl.textContent  = (2 * Math.PI * R).toFixed(0) + ' cm';
+    axlTrEl.textContent  = (2 * Math.PI * r).toFixed(0) + ' cm';
   }
 
   rWSl.oninput = () => { clampAxle(); updateReadout(); };
@@ -848,31 +848,27 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
     ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fill();
 
-    // Effort arrow — tangential to wheel rim (top, pointing right)
-    const eAngle = angle - Math.PI / 2;
-    const epx = cx + R * Math.cos(eAngle);
-    const epy = cy + R * Math.sin(eAngle);
-    const tangX = Math.cos(eAngle + Math.PI / 2);
-    const tangY = Math.sin(eAngle + Math.PI / 2);
+    // Effort arrow — tangential to wheel rim (top, pointing right -> clockwise torque F * R)
+    const epx = cx;
+    const epy = cy - R;
     const aLen = Math.min(F * 0.85, 65);
 
     ctx.beginPath();
     ctx.moveTo(epx, epy);
-    ctx.lineTo(epx + tangX * aLen, epy + tangY * aLen);
+    ctx.lineTo(epx + aLen, epy);
     ctx.strokeStyle = 'rgba(245,158,11,0.95)';
     ctx.lineWidth = 2.5; ctx.stroke();
 
     ctx.save();
-    ctx.translate(epx + tangX * aLen, epy + tangY * aLen);
-    ctx.rotate(Math.atan2(tangY, tangX));
+    ctx.translate(epx + aLen, epy);
     ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, 4); ctx.lineTo(-10, -4); ctx.closePath();
     ctx.fillStyle = 'rgba(245,158,11,0.95)'; ctx.fill();
     ctx.restore();
 
-    // Load arrow — downward from axle bottom
+    // Load arrow — tangential downward from left side of axle (lever arm r, opposing CW effort torque)
     const load = F * R / r;
     const lLen = Math.min(load * 0.45, 72);
-    const lpx = cx, lpy = cy + r;
+    const lpx = cx - r, lpy = cy;
 
     ctx.beginPath();
     ctx.moveTo(lpx, lpy);
@@ -887,19 +883,27 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
     ctx.fillStyle = 'rgba(45,212,191,0.9)'; ctx.fill();
     ctx.restore();
 
+    // Radius lever-arm indicator lines (dashed)
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(245,158,11,0.5)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - R); ctx.stroke();
+    ctx.strokeStyle = 'rgba(45,212,191,0.6)';
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - r, cy); ctx.stroke();
+    ctx.setLineDash([]);
+
     // Radius labels
     ctx.font = '600 10px Inter,sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(245,158,11,0.82)';
-    ctx.fillText('R = ' + R, cx, cy - R - 10);
+    ctx.fillText('R = ' + R + ' cm', cx - 32, cy - R * 0.5);
     ctx.fillStyle = 'rgba(45,212,191,0.82)';
-    ctx.fillText('r = ' + r, cx + r + 18, cy + 4);
+    ctx.fillText('r = ' + r + ' cm', cx + r + 26, cy + 4);
 
     // Force labels
     ctx.font = '700 10px Inter,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(245,158,11,0.8)';
-    ctx.fillText(F + ' N effort', epx + tangX * aLen + 6, epy + tangY * aLen + 4);
-    ctx.fillStyle = 'rgba(45,212,191,0.8)'; ctx.textAlign = 'left';
-    ctx.fillText(load.toFixed(1) + ' N load', lpx + 8, lpy + lLen * 0.55);
+    ctx.fillStyle = 'rgba(245,158,11,0.85)';
+    ctx.fillText(F + ' N effort', epx + aLen + 6, epy + 4);
+    ctx.fillStyle = 'rgba(45,212,191,0.85)'; ctx.textAlign = 'right';
+    ctx.fillText(load.toFixed(1) + ' N load', lpx - 8, lpy + lLen * 0.6);
 
     // MA display centred at bottom
     ctx.font = '800 15px "JetBrains Mono",monospace'; ctx.textAlign = 'center';
@@ -929,15 +933,22 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
   const wRpEl   = document.getElementById('wRopeVal');
 
   let crankAngle  = -Math.PI / 2;   // start handle pointing up-right
-  let ropeWound   = 0;              // px of rope wound onto axle drum
+  let ropeWound   = 0;              // cm of rope wound onto axle drum
   let dragging    = false;
   let prevMouseAngle = 0;
 
   function resize() { cv.width = cv.parentElement.clientWidth; cv.height = 360; }
   resize(); window.addEventListener('resize', resize);
 
-  wWSl.oninput  = () => { wWLbl.textContent  = wWSl.value + ''; };
-  wASl.oninput  = () => { wALbl.textContent  = wASl.value + ''; };
+  function clampWinchRadii() {
+    const R = +wWSl.value, r = +wASl.value;
+    if (r >= R - 4) wASl.value = Math.max(6, R - 4);
+    wWLbl.textContent = wWSl.value + '';
+    wALbl.textContent = wASl.value + '';
+  }
+
+  wWSl.oninput  = clampWinchRadii;
+  wASl.oninput  = clampWinchRadii;
   wWtSl.oninput = () => { wWtLbl.textContent = wWtSl.value + ' N'; };
 
   document.getElementById('winchReset').onclick = () => {
@@ -1018,7 +1029,7 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
 
     wMaEl.textContent  = MA + '×';
     wCrEl.textContent  = crankForce + ' N';
-    wHtEl.textContent  = (bucketRise / 10).toFixed(1) + ' m';
+    wHtEl.textContent  = (bucketRise / 100).toFixed(2) + ' m';
     wRpEl.textContent  = ropeWound.toFixed(0) + ' cm';
 
     ctx.clearRect(0, 0, W, H);
@@ -1047,39 +1058,49 @@ document.getElementById('checkPrediction').addEventListener('click', () => {
     ctx.lineTo(wellCX + wellW / 2 - 2, waterY);
     ctx.stroke();
 
-    // Drum (axle) at top of well
-    const drumX = wellCX, drumY = wellTop - r - 2;
+    // Drum (axle) at top of well, positioned so its right tangent edge (drumX + r) aligns with wellCX
+    const drumX = wellCX - r, drumY = wellTop - r - 2;
     ctx.beginPath(); ctx.arc(drumX, drumY, r, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(45,212,191,0.14)';
     ctx.strokeStyle = 'rgba(45,212,191,0.75)'; ctx.lineWidth = 2;
     ctx.fill(); ctx.stroke();
 
-    // Rope from drum down to bucket
-    const ropeStartY = drumY + r;
-    const bucketTopY = ropeStartY + (maxRope - bucketRise);
+    // Rotating spokes on the well drum so rotation is visible
+    for (let i = 0; i < 4; i++) {
+      const a = crankAngle + i * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(drumX, drumY);
+      ctx.lineTo(drumX + r * Math.cos(a), drumY + r * Math.sin(a));
+      ctx.strokeStyle = 'rgba(45,212,191,0.45)'; ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    // Rope from right tangent edge of drum (drumX + r = wellCX, drumY) down to bucket
+    const ropeStartY = drumY;
+    const bucketTopY = (drumY + r) + (maxRope - bucketRise);
 
     ctx.beginPath();
-    ctx.moveTo(drumX, ropeStartY);
-    ctx.lineTo(drumX, bucketTopY);
+    ctx.moveTo(wellCX, ropeStartY);
+    ctx.lineTo(wellCX, bucketTopY);
     ctx.strokeStyle = 'rgba(200,165,90,0.85)'; ctx.lineWidth = 2; ctx.stroke();
 
     // Bucket
     const bW = 28, bH = 22;
     ctx.fillStyle = 'rgba(90,60,25,0.7)';
     ctx.strokeStyle = 'rgba(180,130,55,0.85)'; ctx.lineWidth = 1.5;
-    ctx.fillRect(drumX - bW / 2, bucketTopY, bW, bH);
-    ctx.strokeRect(drumX - bW / 2, bucketTopY, bW, bH);
+    ctx.fillRect(wellCX - bW / 2, bucketTopY, bW, bH);
+    ctx.strokeRect(wellCX - bW / 2, bucketTopY, bW, bH);
 
     // Water in bucket near top
     if (bucketRise > maxRope * 0.65) {
       ctx.fillStyle = 'rgba(56,189,248,0.5)';
-      ctx.fillRect(drumX - bW / 2 + 2, bucketTopY + bH * 0.45, bW - 4, bH * 0.48);
+      ctx.fillRect(wellCX - bW / 2 + 2, bucketTopY + bH * 0.45, bW - 4, bH * 0.48);
     }
 
     // Bucket weight label
     ctx.font = 'bold 9px Inter,sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(220,210,248,0.7)';
-    ctx.fillText(Wt + ' N', drumX, bucketTopY + bH + 12);
+    ctx.fillText(Wt + ' N', wellCX, bucketTopY + bH + 12);
 
     /* Shaft connecting crank to drum (dashed) */
     ctx.setLineDash([4, 3]);
