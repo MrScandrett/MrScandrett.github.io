@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import Module from '../assets/vendor/manifold/manifold.js';
 import { createEngine } from '../assets/js/forge/engine.mjs';
 import { edgeReport } from '../assets/js/fab-io.mjs';
-import { SHAPES, SHAPE_GROUPS } from '../assets/js/workbench/shapes.mjs';
+import { SHAPES, SHAPE_GROUPS, sweepMesh } from '../assets/js/workbench/shapes.mjs';
 import * as W from '../assets/js/workbench/model.mjs';
 import { TEMPLATES, REALMS, BLANKS, finishTemplate } from '../assets/js/workbench/templates.mjs';
 
@@ -229,4 +229,71 @@ test('animated templates have tracks on real nodes', () => {
     assert.ok(tracks.length > 0, `${id}: no animation`);
     for (const t of tracks) assert.ok(ids.has(t), `${id}: track for missing node ${t}`);
   }
+});
+
+/* ── student-drawn profiles: revolve, loft, sweep ──────────────────────── */
+
+const buildShape = (id, params) => engine.scoped((ctx) => {
+  const shape = SHAPES.find((s) => s.id === id);
+  const m = shape.build({ ...ctx, noise }, W.resolveParams(shape, params, 'print'));
+  return { volume: m.volume(), genus: m.genus(), box: m.boundingBox(), watertight: m.status() === 'NoError' && !m.isEmpty() };
+});
+
+test('revolve: a rectangle beside the axis spins into a cylinder, and a hollow wall opens the top', () => {
+  const solid = buildShape('sketch-revolve', { points: [[10, 0], [10, 20]], sides: 96, wall: 0, smooth: 0 });
+  assert.ok(near(solid.volume, Math.PI * 100 * 20, 0.01), `cylinder volume ${solid.volume}`);
+  const cup = buildShape('sketch-revolve', { points: [[10, 0], [10, 20]], sides: 96, wall: 2, smooth: 0 });
+  // floor 2 thick + a 2 mm wall: 20 high cylinder minus a 8 mm radius, 18 mm deep pocket
+  assert.ok(near(cup.volume, Math.PI * (100 * 20 - 64 * 18), 0.02), `cup volume ${cup.volume}`);
+  assert.equal(cup.genus, 0, 'a cup is one piece with no tunnel');
+  const half = buildShape('sketch-revolve', { points: [[10, 0], [10, 20]], sides: 96, degrees: 180, wall: 0, smooth: 0 });
+  assert.ok(near(half.volume, solid.volume / 2, 0.01), 'half a turn is half a cylinder');
+});
+
+test('loft: equal squares make a prism; outlines with different point counts still blend', () => {
+  const sq = [[-10, -10], [10, -10], [10, 10], [-10, 10]];
+  const prism = buildShape('sketch-loft', { bottom: sq, top: sq, h: 30, belly: 100, smooth: 0 });
+  assert.ok(near(prism.volume, 400 * 30, 1e-4), `prism volume ${prism.volume}`);
+  const tri = [[-12, -8], [12, -8], [0, 14]];
+  const circle = Array.from({ length: 16 }, (_, i) => [8 * Math.cos((i * Math.PI) / 8), 8 * Math.sin((i * Math.PI) / 8)]);
+  const blend = buildShape('sketch-loft', { bottom: tri, top: circle, h: 30, belly: 130, smooth: 0 });
+  assert.ok(blend.watertight && blend.volume > 0);
+  // drawn clockwise is the same outline
+  const cw = buildShape('sketch-loft', { bottom: [...sq].reverse(), top: sq, h: 30, belly: 100, smooth: 0 });
+  assert.ok(near(cw.volume, prism.volume, 1e-4));
+});
+
+test('sweep: a straight path is a prism, and a bend tighter than the profile still builds', () => {
+  const straight = buildShape('sketch-sweep', { path: [[0, 0], [0, 40]], profile: [[-3, -5], [3, -5], [3, 5], [-3, 5]], smooth: 0, round: 0 });
+  assert.ok(near(straight.volume, 60 * 40, 1e-4), `prism volume ${straight.volume}`);
+  // a hairpin 4 mm across with a 12 mm-wide profile: the mitred skin would fold, so the welded fallback builds it
+  const hairpin = { path: [[0, 0], [20, 0], [20, 4], [0, 4]], profile: [[-6, -3], [6, -3], [6, 3], [-6, 3]], smooth: 0, round: 0 };
+  assert.throws(() => sweepMesh(hairpin.profile, hairpin.path), (e) => e.fold === true);
+  const bent = buildShape('sketch-sweep', hairpin);
+  assert.ok(bent.watertight && bent.volume > 0, 'the hairpin builds a closed solid');
+  // a profile that crosses itself is still refused with a reason
+  const project = W.freshProject('print');
+  const node = W.newShapeNode(project, 'sketch-sweep', { params: { profile: [[0, 0], [10, 10], [10, 0], [0, 4]], round: 0 } });
+  const r = evaluate({ ...project, objects: [node] });
+  assert.match(r.errors[0]?.message || '', /crosses itself/);
+});
+
+test('a lesson link opens a drawn profile as a shape, inside the shape’s limits', () => {
+  const pts = [[30, 0], [34, 40], [38, 90]];
+  const link = W.shapeLink(`?shape=sketch-revolve&params=${encodeURIComponent(JSON.stringify({ points: pts, wall: 2.4, sides: 9999 }))}&name=My%20cup<script>`);
+  assert.equal(link.shape, 'sketch-revolve');
+  assert.equal(link.preset, 'print');
+  assert.deepEqual(link.params.points, pts);
+  assert.equal(link.params.wall, 2.4);
+  assert.equal(link.params.sides, 96, 'clamped to the range');
+  assert.equal(link.name, 'My cupscript');
+  assert.equal(W.shapeLink('?shape=nope'), null);
+  assert.deepEqual(W.shapeLink('?shape=sketch-loft&params=%7Bbroken').params, W.defaultParams(SHAPES.find((s) => s.id === 'sketch-loft'), 'print'));
+});
+
+test('lathe mug: the swept handle fuses to the spun cup at both ends', () => {
+  const project = finishTemplate(TEMPLATES.find((t) => t.id === 'mug'), sizeOf);
+  const genus = engine.scoped((ctx) => W.printBodies(ctx, project, opts).bodies.map((b) => b.manifold.genus()));
+  // one body, and the handle makes one loop through it
+  assert.deepEqual(genus, [1]);
 });

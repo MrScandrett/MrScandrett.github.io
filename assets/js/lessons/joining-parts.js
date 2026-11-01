@@ -6,13 +6,17 @@
   'use strict';
 
   /* Allowable strain (%) for ONE snap, by print orientation. How each number was made is
-     explained on the page ("Where the safe-strain numbers come from"). */
+     explained on the page ("Where the safe-strain numbers come from"):
+       flat    = 70 % of the strain at yield of printed test bars (Prusament TDS, horizontal bars),
+       upright = interlayer strength ÷ modulus, the strain at which layers came apart in Prusa's test,
+       PP      = capped at 8 %: printed PP (Ultimaker PP TDS) yields far later, but the simple
+                 beam formula is only good for small bends. */
   var MATERIALS = {
-    pla:  { name: 'PLA',  E: 2300, flat: 2.0,  upright: 1.0,
+    pla:  { name: 'PLA',  E: 2300, flat: 2.0, upright: 0.7,
             fail: 'PLA barely bends before it breaks: expect a crack at the root, not a bend.' },
-    petg: { name: 'PETG', E: 1500, flat: 3.6,  upright: 1.4,
+    petg: { name: 'PETG', E: 1500, flat: 3.6, upright: 1.2,
             fail: 'PETG will usually whiten (stress-whitening) and keep a permanent bend before it cracks.' },
-    pp:   { name: 'PP',   E: 250,  flat: 10.0, upright: 9.0,
+    pp:   { name: 'PP',   E: 250,  flat: 8.0, upright: 8.0,
             fail: 'Even PP takes a permanent set at this strain, and the simple beam formula is no longer accurate.' }
   };
   var REPEAT_FACTOR = 0.6;  // Covestro: frequent separation → about 60 % of the single-snap value
@@ -163,7 +167,8 @@
       var spanY = p.t + 3 + g.depth + p.y + 3;
       var k = Math.min((W - 40) / (spanX + maxS * 0.35), (H - 70) / spanY);
       var ox = 20 + baseW * k;                 // screen x of root
-      var oy = 30 + (p.t + p.y + 2.2) * k;     // screen y of arm underside (y = 0)
+      var drawnH = (p.t + 4 + g.depth) * k;    // base block top (t + 3) down to its foot (−depth − 1)
+      var oy = 30 + Math.max(0, (H - 60 - drawnH) / 2) + (p.t + 3) * k;   // screen y of arm underside (y = 0), centred
       function X(x) { return ox + x * k; }
       function Y(y) { return oy - y * k; }
 
@@ -301,7 +306,9 @@
       meterFill.setAttribute('data-level', a.ratio > 1 ? 'fail' : (a.ratio > 0.8 ? 'close' : 'ok'));
       meterText.textContent = fmt(a.eps, 2) + ' % strain = ' + fmt(a.ratio * 100, 0) + ' % of the ' + fmt(a.allow, 1) + ' % limit';
 
-      var pushTxt = fmt(a.push, a.push < 10 ? 1 : 0) + ' N (about the weight of ' + fmt(a.push / 9.81 * 1000, 0) + ' g)';
+      var grams = a.push / 9.81 * 1000;
+      var pushTxt = fmt(a.push, a.push < 10 ? 1 : 0) + ' N (about the weight of ' +
+        (grams >= 1000 ? fmt(grams / 1000, 1) + ' kg' : fmt(grams, 0) + ' g') + ')';
       var pullTxt = a.locked ? 'locked: pulling will not lift the hook; press the arm to release it'
         : fmt(a.pull, a.pull < 10 ? 1 : 0) + ' N to pull it apart';
       readout.innerHTML =
@@ -381,8 +388,8 @@
       var rec = [];
       if (motion === 'swing') {
         if (prints === 'one') {
-          rec.push(['Print-in-place pin hinge', 'Knuckles printed around a pin with a clearance gap: swings freely, prints in one go. Find your gap with the clearance comb in <a href="print-fidgets.html">Design a moving fit</a>.']);
-          rec.push(['Living hinge', 'One thin strip. Great in PP; PETG lasts longer than PLA; in PLA expect only a few dozen folds before it cracks.']);
+          rec.push(['Print-in-place pin hinge', 'Knuckles printed around a pin with a loose-fit gap (about 0.35–0.50 mm per side): swings freely, prints in one go. Find your gap with the clearance comb in <a href="print-fidgets.html">Design a moving fit</a>.']);
+          rec.push(['Living hinge', 'One thin strip. Great in PP; PETG lasts longer than PLA; a PLA hinge can crack after only a few folds, so test it before you trust it.']);
         } else {
           rec.push(['Assembled pin hinge', 'Two printed leaves and a pin (a piece of filament, a nail or a bolt). Each part can be printed in its strongest orientation, and the pin can be replaced.']);
           rec.push(['Living hinge', 'If it must be one part after all: PP or PETG, strands running across the fold.']);
@@ -392,7 +399,7 @@
         if (prints === 'one') rec.push(['Print-in-place slider', 'Possible with a clearance gap all round, but a separate rail is easier to tune.']);
       } else if (apart === 'never') {
         rec.push([load === 'heavy' ? 'Bolt and nut trap' : 'Snap-fit with a 90° return face', load === 'heavy' ? 'A metal bolt carries big loads; the hex pocket stops the nut turning.' : 'Locks for good: the hook can only be released by pressing it, or not at all.']);
-        rec.push(['Press-fit peg', 'A peg about 0–0.1 mm bigger than its hole (test first). Strong in shear, hard to undo.']);
+        rec.push(['Press-fit peg', 'A peg with a press-fit gap, 0.05–0.15 mm per side (printed holes come out small; find your number with the <a href="measure-and-fit.html#mf-coupon">fit test coupon</a>). Strong in shear, hard to undo.']);
       } else if (load === 'heavy') {
         rec.push(['Screw into a heat-set insert', 'Metal threads in the plastic: strong and can be screwed in and out many times.']);
         rec.push(['Bolt and nut trap', 'No special tools, strong, and the nut can be replaced.']);
@@ -401,7 +408,7 @@
         rec.push(['Coarse printed thread', 'Like a jar lid: twist to open, many times. Make it big and coarse with a chamfered start.']);
       } else {
         rec.push(['Snap-fit with a sloped (≈45°) return face', 'Pulls apart and goes back together. Design it to about 60 % of the one-snap strain limit, and print the arm lying down.']);
-        rec.push(['Slip-fit pegs', 'About 0.2–0.3 mm of clearance on the diameter: lines parts up, lifts off.']);
+        rec.push(['Slip-fit pegs', 'A slip-fit gap, 0.20–0.30 mm per side: lines parts up, lifts off.']);
       }
       if (!motion || !apart || !load || !prints) { out.innerHTML = '<p>Answer all four questions to see a suggestion.</p>'; return; }
       out.innerHTML = rec.map(function (r, i) {

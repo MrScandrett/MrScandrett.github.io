@@ -392,7 +392,10 @@ function mountMaker(root) {
   const history = [];
   let model = null;
 
-  const planKit = window.SimKit.canvas2d(planCanvas, { onResize: () => drawPlan() });
+  // canvas2d sizes the canvas (and calls onResize) before it returns, so the
+  // first draw waits until planKit exists
+  let planKit = null;
+  planKit = window.SimKit.canvas2d(planCanvas, { onResize: () => { if (planKit) drawPlan(); } });
   const cell = () => planKit.width / SITE.w;
 
   const controls = {

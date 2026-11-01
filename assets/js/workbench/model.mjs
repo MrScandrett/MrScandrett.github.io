@@ -92,6 +92,23 @@ export function resolveParams(shape, given = {}, preset = 'print') {
 
 export const shapeScale = (preset, shapeId) => kindScale(preset, shapeById(shapeId));
 
+/* workbench.html?shape=sketch-revolve&params={"points":[[12,0],…]}&name=cup
+   (from a lesson's own sketch editor): which shape, with what settings, in
+   which kind of project. Returns null for anything Workbench can't open; the
+   params pass through resolveParams, so a hand-made link can't ask for a
+   shape outside its ranges. Params arrive in the project's units. */
+export function shapeLink(search) {
+  const q = new URLSearchParams(search);
+  const shape = shapeById(q.get('shape') || '');
+  if (!shape) return null;
+  const preset = PRESETS[q.get('preset')] ? q.get('preset') : 'print';
+  let given = {};
+  try { given = JSON.parse(q.get('params') || '{}'); } catch { given = {}; }
+  if (!given || typeof given !== 'object' || Array.isArray(given)) given = {};
+  const name = (q.get('name') || '').replace(/[^\w .,'()+-]/g, '').slice(0, 60);
+  return { shape: shape.id, preset, name, params: resolveParams(shape, given, preset) };
+}
+
 /* ── projects ─────────────────────────────────────────────────────────── */
 
 export function freshProject(preset = 'print', name = '') {

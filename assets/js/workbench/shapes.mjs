@@ -228,7 +228,8 @@ export function loftMesh(bottom, top, h, belly = 1, rows = 1) {
    drawing, and it stays square to the path: at every corner of the path the
    ring of profile points is mitred (stretched along the bisector), as every
    CAD sweep does. A bend tighter than the profile is wide would fold the skin
-   through itself, so that is refused with a message, like a CAD app's error. */
+   through itself, so that throws a fold error and the shape falls back to
+   sweepJoined(), which handles any bend. */
 export function sweepMesh(profile, path) {
   const Q = ccw(profile);
   if (Q.length < 3 || Math.abs(polygonArea(Q)) < 1e-9) throw new Error('The profile needs at least three points that enclose an area.');
@@ -246,7 +247,7 @@ export function sweepMesh(profile, path) {
     let mx = a[0] + b[0], mz = a[1] + b[1];
     const ml = Math.hypot(mx, mz);
     const cosHalf = ml / 2;
-    if (cosHalf < 0.2) throw new Error('The path doubles back too sharply. Spread its points out or turn on Smooth path.');
+    if (cosHalf < 0.2) throw foldError('The path doubles back too sharply. Spread its points out or turn on Smooth path.');
     mx /= ml; mz /= ml;
     const stretch = 1 / cosHalf;
     // in-plane normal: the tangent turned a quarter turn (local x of the profile)
@@ -257,7 +258,7 @@ export function sweepMesh(profile, path) {
     const [dx, dz] = dirs[i];
     for (let k = 0; k < n; k++) {
       const a = rings[i][k], b = rings[i + 1][k];
-      if ((b[0] - a[0]) * dx + (b[2] - a[2]) * dz <= 1e-9) throw new Error('The path bends more tightly than the profile is wide, so the skin would fold through itself. Make the bend bigger, the profile thinner, or turn up Smooth path.');
+      if ((b[0] - a[0]) * dx + (b[2] - a[2]) * dz <= 1e-9) throw foldError('The path bends more tightly than the profile is wide, so the skin would fold through itself. Make the bend bigger, the profile thinner, or turn up Smooth path.');
     }
   }
   const verts = rings.flat(2), tris = [];
@@ -270,6 +271,41 @@ export function sweepMesh(profile, path) {
   const last = (rings.length - 1) * n;
   for (const [a, b, c] of earClip(Q)) { tris.push(a, c, b); tris.push(last + a, last + b, last + c); }
   return { vertProperties: Float32Array.from(verts), triVerts: Uint32Array.from(tris) };
+}
+
+/* A mitred sweep that would fold through itself throws one of these, so the
+   caller can fall back to sweepJoined() instead of refusing the drawing. */
+function foldError(message) { const e = new Error(message); e.fold = true; return e; }
+
+/* The same profile and path as sweepMesh, built so any bend works: one
+   straight prism per path segment (each square to its own segment), and at
+   every corner the hull of the two end rings fills the joint, like a welded
+   pipe elbow. The pieces overlap at tight bends; the union melts them into one
+   closed solid. Concave profiles get a filled-in (convex) joint, which is the
+   price of never failing. */
+export function sweepJoined({ Manifold: M, CrossSection: CS }, profile, path) {
+  const Q = ccw(profile);
+  if (Q.length < 3 || Math.abs(polygonArea(Q)) < 1e-9) throw new Error('The profile needs at least three points that enclose an area.');
+  if (selfCrossing(Q)) throw new Error('The profile crosses itself. Drag its points so no two edges cross.');
+  const P = path.filter((p, i) => i === 0 || Math.hypot(p[0] - path[i - 1][0], p[1] - path[i - 1][1]) > 1e-6);
+  if (P.length < 2) throw new Error('The path needs at least two separate points.');
+  const section = poly(CS, Q);
+  const ring = ([px, pz], [dx, dz]) => Q.map(([u, v]) => [px + u * dz, v, pz - u * dx]);
+  const parts = [], dirs = [];
+  for (let i = 0; i < P.length - 1; i++) {
+    const dx = P[i + 1][0] - P[i][0], dz = P[i + 1][1] - P[i][1], l = Math.hypot(dx, dz);
+    const d = [dx / l, dz / l];
+    dirs.push(d);
+    // columns: profile u → in-plane normal, profile v → y, extrusion → along the segment
+    parts.push(section.extrude(l).transform([d[1], 0, -d[0], 0, 0, 1, 0, 0, d[0], 0, d[1], 0, P[i][0], 0, P[i][1], 1]));
+  }
+  for (let i = 1; i < P.length - 1; i++) {
+    const a = dirs[i - 1], b = dirs[i];
+    if (a[0] * b[0] + a[1] * b[1] > 1 - 1e-9) continue;   // straight on: nothing to fill
+    const joint = M.hull([...ring(P[i], a), ...ring(P[i], b)]);
+    if (!joint.isEmpty()) parts.push(joint);
+  }
+  return parts.length === 1 ? parts[0] : M.union(parts);
 }
 
 /* A profile drawn in X (across) and Y (up), extruded `depth` toward the viewer:
@@ -841,7 +877,10 @@ const sketches = [
       if (line.length < 2 || Math.abs(polygonArea(outline)) < 1e-9) throw new Error('Draw a silhouette to the right of the axis with at least two points.');
       let region = poly(CS, outline);
       if (p.wall > 0) {
-        const inner = region.offset(-p.wall, 'Round', 2, 16);
+        // offset the silhouette and its mirror image together, so the axis is not
+        // treated as a wall (that would leave a solid post up the middle)
+        const ext = Math.max(...line.map(([x, y]) => Math.max(x, Math.abs(y)))) * 4 + p.wall * 4 + 1;
+        const inner = CS.union([region, region.mirror([1, 0])]).offset(-p.wall, 'Round', 2, 16).intersect(CS.square([ext, ext * 2]).translate([0, -ext]));
         if (!inner.isEmpty()) {
           const topY = Math.max(line[0][1], line[line.length - 1][1]);
           const lastX = (line[line.length - 1][1] >= line[0][1] ? line[line.length - 1] : line[0])[0];
@@ -876,9 +915,17 @@ const sketches = [
       { id: 'profile', label: 'Profile', type: 'points', closed: true, len: true, max: 200, smooth: 'round', help: 'The cross-section, centred on the cross where the two grid lines meet.', default: [[-3, -5], [3, -5], [3, 5], [-3, 5]] },
       range('smooth', 'Smooth path', 0, 4, 1, 3), range('round', 'Round the profile', 0, 4, 1, 2),
     ],
-    build({ Mesh, Manifold: M, track }, p) {
-      const mesh = sweepMesh(smoothPoints(p.profile, p.round, true), smoothPoints(p.path, p.smooth, false));
-      const solid = track(new M(new Mesh({ numProp: 3, ...mesh })));
+    build(ctx, p) {
+      const { Mesh, Manifold: M, track } = ctx;
+      const profile = smoothPoints(p.profile, p.round, true), path = smoothPoints(p.path, p.smooth, false);
+      // a clean mitred skin when the path allows it; welded segments when a bend is too tight
+      let mesh = null;
+      try { mesh = sweepMesh(profile, path); } catch (error) { if (!error.fold) throw error; }
+      if (mesh) {
+        const solid = track(new M(new Mesh({ numProp: 3, ...mesh })));
+        if (solid.status() === 'NoError' && !solid.isEmpty()) return solid;
+      }
+      const solid = sweepJoined(ctx, profile, path);
       if (solid.status() !== 'NoError' || solid.isEmpty()) throw new Error('This sweep could not be built. Try a simpler profile or path.');
       return solid;
     },

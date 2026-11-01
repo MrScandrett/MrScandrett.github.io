@@ -1,0 +1,94 @@
+/* Profiles: Extrude, Revolve, Loft, Sweep (lessons/3d-design/modeling/profiles-revolve-loft-sweep.html).
+   Builds on figure-lesson.css (fl-*). Prefix: pr- */
+:root { --fl-accent: #b4561a; --fl-accent-2: #2f6fd6; --fl-ink: #1d2228; }
+
+.pr-fig { margin: 0.9rem 0; }
+.pr-fig img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line, #d2d2d7); cursor: zoom-in; background: #fff; }
+.pr-fig figcaption { font-size: 0.82rem; line-height: 1.55; color: var(--text-secondary, #3f4f65); margin-top: 0.45rem; }
+.pr-fig figcaption b { color: var(--text, #1d1d1f); }
+
+.pr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 0.7rem; margin: 0.8rem 0; }
+.pr-cardlet { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.8rem 0.9rem; }
+.pr-cardlet b { display: block; font-size: 0.92rem; margin-bottom: 0.25rem; color: var(--text, #1d1d1f); }
+.pr-cardlet span { display: block; font-size: 0.82rem; line-height: 1.5; color: var(--text-secondary, #3f4f65); }
+.pr-cardlet .pr-tag { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fl-accent); margin-bottom: 0.2rem; }
+:where(html[data-lighting="night"]) .pr-cardlet .pr-tag, :where(html[data-lighting="night"]) .pr-band h3 { color: #fdba74; }
+
+/* shared widget frame */
+.pr-widget { border: 1px solid var(--line, #d2d2d7); border-radius: 14px; padding: 0.8rem; margin: 0.6rem 0 1rem; background: color-mix(in srgb, var(--fl-accent) 4%, transparent); font-size: 0.86rem; }
+.pr-widget label { font-weight: 600; }
+.pr-widget select, .pr-widget input[type="number"], .pr-widget input[type="text"] { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.3rem 0.5rem; background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); font: inherit; max-width: 100%; }
+.pr-row { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: center; margin: 0.45rem 0; }
+.pr-row label { display: inline-flex; gap: 0.35rem; align-items: center; }
+.pr-btn { display: inline-block; border: 1px solid var(--line, #d2d2d7); background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); border-radius: 8px; padding: 0.34rem 0.75rem; font: inherit; font-size: 0.84rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+.pr-btn:hover { border-color: var(--fl-accent); }
+.pr-btn-main { background: #9a4512; color: #fff; border-color: transparent; }
+.pr-note { font-size: 0.8rem; line-height: 1.5; color: var(--text-muted, #64748b); margin: 0.2rem 0 0.5rem; }
+.pr-bad { color: #b42318; font-weight: 600; }
+:where(html[data-lighting="night"]) .pr-bad { color: #fca5a5; }
+
+/* Profile Lab */
+.pr-modes { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem; }
+.pr-modes button { border: 1px solid var(--line, #d2d2d7); background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); border-radius: 999px; padding: 0.35rem 0.95rem; font: inherit; font-weight: 700; cursor: pointer; }
+.pr-modes button[aria-selected="true"] { background: #9a4512; color: #fff; border-color: transparent; }
+.pr-lab-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.9rem; align-items: start; }
+.pr-pads { display: grid; gap: 0.6rem; }
+.pr-pad-label { font-weight: 700; font-size: 0.84rem; margin: 0 0 0.25rem; color: var(--text, #1d1d1f); }
+.pr-pad canvas { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; touch-action: none; cursor: crosshair; background: #1d2228; }
+.pr-pad canvas:focus-visible { outline: 3px solid var(--fl-accent-2); outline-offset: 2px; }
+.pr-lab[data-pr-active="loft"] .pr-pad canvas, .pr-lab[data-pr-active="sweep"] .pr-pad canvas { aspect-ratio: 16 / 10; }
+.pr-pad-info { font-size: 0.76rem; color: var(--text-muted, #64748b); margin: 0.2rem 0 0; font-variant-numeric: tabular-nums; }
+.pr-view-box { border-radius: 10px; overflow: hidden; border: 1px solid var(--line, #d2d2d7); background: linear-gradient(#f4f1ea, #dcd6ca); }
+.pr-view-box canvas { display: block; width: 100%; aspect-ratio: 4 / 3; touch-action: none; }
+.pr-params { display: grid; gap: 0.3rem; margin: 0.6rem 0; }
+.pr-param { display: grid !important; grid-template-columns: minmax(0, 9em) minmax(0, 1fr) 4.5em; gap: 0.5rem; align-items: center; font-size: 0.82rem; }
+.pr-param input { width: 100%; accent-color: #9a4512; }
+.pr-param output { font-variant-numeric: tabular-nums; text-align: right; }
+.pr-stats { min-height: 4em; }
+.pr-dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.2rem 0.7rem; margin: 0.3rem 0 0.6rem; font-size: 0.82rem; line-height: 1.45; }
+.pr-dl dt { font-weight: 700; color: var(--text, #1d1d1f); }
+.pr-dl dd { margin: 0; color: var(--text-secondary, #3f4f65); font-variant-numeric: tabular-nums; }
+
+/* Cup designer */
+.pr-cup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 0.9rem; align-items: start; }
+.pr-cup-grid fieldset { border: 1px solid var(--line, #d2d2d7); border-radius: 10px; padding: 0.4rem 0.7rem 0.6rem; margin: 0 0 0.5rem; }
+.pr-cup-grid legend { font-weight: 700; font-size: 0.8rem; padding: 0 0.25rem; }
+.pr-cup-out { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.7rem 0.9rem; background: var(--surface-elevated, #fff); }
+.pr-big { font-size: 1.02rem; margin: 0 0 0.4rem; color: var(--text, #1d1d1f); }
+.pr-big strong { font-size: 1.3rem; color: #9a4512; font-variant-numeric: tabular-nums; }
+:where(html[data-lighting="night"]) .pr-big strong { color: #fdba74; }
+.pr-list { margin: 0.2rem 0 0.4rem; padding-left: 1.1rem; font-size: 0.84rem; line-height: 1.55; }
+.pr-section { display: block; width: 100%; height: auto; margin-top: 0.6rem; background: #fbfaf6; border-radius: 10px; border: 1px solid var(--line, #d2d2d7); }
+.pr-sec-wall { fill: #f0b48a; stroke: #8a4b1c; stroke-width: 1.5; }
+.pr-sec-item { fill: rgba(47, 111, 214, 0.08); stroke: #2f6fd6; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.pr-sec-axis { stroke: #c98a1f; stroke-width: 1.5; stroke-dasharray: 8 5; }
+.pr-sec-ground { stroke: #6b7c93; stroke-width: 1; }
+.pr-sec-dim { stroke: #1d2228; stroke-width: 1.2; }
+.pr-sec-label { font: 600 12px system-ui, sans-serif; fill: #1d2228; }
+.pr-sec-item-label { fill: #2552a3; }
+
+.pr-table-wrap { overflow-x: auto; margin: 0.6rem 0; }
+.pr-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.pr-table caption { text-align: left; font-weight: 700; padding-bottom: 0.35rem; color: var(--text, #1d1d1f); }
+.pr-table th, .pr-table td { text-align: left; padding: 0.36rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); vertical-align: top; line-height: 1.45; }
+.pr-table th { font-weight: 700; color: var(--text, #1d1d1f); }
+.pr-table td { color: var(--text-secondary, #3f4f65); }
+.pr-table input { width: 100%; min-width: 4.5em; box-sizing: border-box; border: 1px solid var(--line, #d2d2d7); border-radius: 6px; padding: 0.22rem 0.4rem; font: inherit; font-size: 0.82rem; background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); }
+
+.pr-bands { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 0.7rem; }
+.pr-band { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.75rem 0.9rem; }
+.pr-band h3 { margin: 0 0 0.3rem; font-size: 0.95rem; color: #9a4512; }
+.pr-band p { margin: 0; font-size: 0.84rem; line-height: 1.55; }
+.pr-vocab { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 0.4rem 1rem; margin: 0; }
+.pr-vocab dt { font-weight: 700; }
+.pr-vocab dd { margin: 0 0 0.35rem; font-size: 0.86rem; color: var(--text-secondary, #3f4f65); }
+
+@media (max-width: 760px) {
+  .pr-lab-grid, .pr-cup-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media print {
+  .pr-lab-grid, .pr-cup-grid { grid-template-columns: minmax(0, 1fr); }
+  .pr-pad canvas, .pr-view-box canvas { max-height: 260px; width: auto; max-width: 100%; }
+  .pr-param { grid-template-columns: minmax(0, 9em) minmax(0, 1fr) 4.5em; }
+}
+.pr-row output { white-space: nowrap; font-variant-numeric: tabular-nums; }

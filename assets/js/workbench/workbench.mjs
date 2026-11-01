@@ -1267,17 +1267,35 @@ async function start() {
   renderThumbnails();
 }
 
-/* workbench.html?template=house or ?new=building (from lesson links). Your
-   own project stays one undo away, and the link is cleared so a reload keeps
-   working on whatever you did next. */
+/* workbench.html?template=house or ?new=building (from lesson links), or
+   ?shape=sketch-revolve&params={…} (a profile drawn in a lesson, see
+   W.shapeLink). Your own project stays one undo away, and the link is cleared
+   so a reload keeps working on whatever you did next. */
 function openFromLink() {
   const params = new URLSearchParams(location.search);
-  const template = params.get('template'), blank = params.get('new');
-  if (!template && !blank) return false;
+  const template = params.get('template'), blank = params.get('new'), linked = W.shapeLink(location.search);
+  if (!template && !blank && !params.get('shape')) return false;
   window.history.replaceState(null, '', location.pathname + location.hash);
   if (template && templateById(template)) { startTemplate(template); return true; }
   if (blank && W.PRESETS[blank]) { startBlank(blank); return true; }
+  if (linked) { startLinkedShape(linked); return true; }
   return false;
+}
+
+function startLinkedShape(link) {
+  project = W.freshProject(link.preset, link.name);
+  el.multi.checked = false;
+  const node = W.newShapeNode(project, link.shape, { params: link.params, color: nextColor() });
+  node.pos = [0, 0, W.nice(shapeSize(node)[2] / 2)];
+  project.objects.push(node);
+  selection = [];
+  commit();
+  setMode('build');
+  projectChanged(true);
+  showLibrary('objects');
+  showMobilePanel('properties');
+  select([node.id]);
+  say(`Opened your ${shapeById(link.shape).name.toLowerCase()} from the lesson. Edit its sketch in Properties, add more shapes, or print it. Undo brings back what you had before.`);
 }
 
 start();

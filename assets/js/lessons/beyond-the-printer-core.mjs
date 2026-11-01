@@ -607,20 +607,9 @@ export function printableArea() {
   return { x: PAPER.margin, y: PAPER.top, w: PAPER.w - 2 * PAPER.margin, h: PAPER.h - PAPER.top - PAPER.bottom };
 }
 
-// Shelf-pack the slice pieces (plus the fit strip) onto letter pages.
-export function layoutSliceForm(form, opts = {}) {
-  const area = printableArea();
-  const gap = 5;
-  const items = form.pieces.map((p) => {
-    let w = p.bbox.w, h = p.bbox.h, rotate = false;
-    if ((w > area.w || h > area.h) && h <= area.w && w <= area.h) { rotate = true; [w, h] = [h, w]; }
-    return { kind: 'piece', piece: p, w, h, rotate, oversize: w > area.w + 0.01 || h > area.h + 0.01 };
-  });
-  items.sort((a, b) => b.h - a.h);
-  if (opts.strip !== false) {
-    const strip = fitStrip(form.thickness, opts.kerf || 0);
-    items.push({ kind: 'strip', strip, w: strip.w, h: strip.h, rotate: false, oversize: false });
-  }
+// Shelf-pack the slice pieces (plus the fit strip) onto letter pages. Each piece may lie as drawn
+// or turned 90°; the packing is tried both ways and the one with fewer pages wins.
+function shelfPack(items, area, gap) {
   // First fit: an item goes on the first shelf (on any page) with room, else a new shelf, else a new page.
   const pages = [];
   for (const it of items) {
@@ -649,7 +638,29 @@ export function layoutSliceForm(form, opts = {}) {
       pages.push(page);
     }
   }
-  return { pages, oversize: items.filter((i) => i.oversize).map((i) => i.piece.name) };
+  return pages;
+}
+
+export function layoutPieces(pieces, opts = {}) {
+  const area = printableArea();
+  const gap = 5;
+  const tries = [];
+  for (const turn of ['asDrawn', 'turned']) {
+    const items = pieces.map((p) => {
+      let w = p.bbox.w, h = p.bbox.h, rotate = false;
+      const fitsAsIs = w <= area.w && h <= area.h, fitsTurned = h <= area.w && w <= area.h;
+      if ((!fitsAsIs && fitsTurned) || (turn === 'turned' && fitsTurned && w > h)) { rotate = true; [w, h] = [h, w]; }
+      return { kind: 'piece', piece: p, w, h, rotate, oversize: w > area.w + 0.01 || h > area.h + 0.01 };
+    });
+    items.sort((a, b) => b.h - a.h || b.w - a.w);
+    if (opts.strip) items.push({ kind: 'strip', strip: opts.strip, w: opts.strip.w, h: opts.strip.h, rotate: false, oversize: false });
+    tries.push({ pages: shelfPack(items, area, gap), oversize: items.filter((i) => i.oversize).map((i) => i.piece.name) });
+  }
+  return tries[1].pages.length < tries[0].pages.length ? tries[1] : tries[0];
+}
+
+export function layoutSliceForm(form, opts = {}) {
+  return layoutPieces(form.pieces, { strip: opts.strip === false ? null : fitStrip(form.thickness, opts.kerf || 0) });
 }
 
 export function layoutNet(net, opts = {}) {
@@ -696,11 +707,8 @@ function pathFromLoops(loops, map) {
   return loops.map((l) => 'M' + l.map((pt) => { const [x, y] = map(pt); return f2(x) + ' ' + f2(y); }).join('L') + 'Z').join('');
 }
 
-export function sliceSheets(form, layout, { style = 'print', title = 'Slice-form', kerf = 0 } = {}) {
+export function piecesSheets(layout, { style = 'print', title = 'Template', subtitle = '', legend = '' } = {}) {
   const s = styleFor(style);
-  const subtitle = `Board ${f2(form.thickness)} mm · slots drawn ${f2(Math.max(0.2, form.slot))} mm wide` + (kerf ? ` (kerf ${f2(kerf)} mm already taken off)` : '') +
-    ` · model ${Math.round(form.size.w)} × ${Math.round(form.size.d)} × ${Math.round(form.size.h)} mm`;
-  const legend = 'Cut the solid lines. A slices: slots open at the top. B slices: slots open at the bottom. Small labels name the slice that fits each slot. Slide each B down onto the A slices.';
   return layout.pages.map((page, idx) => {
     const parts = page.items.map((it) => {
       if (it.kind === 'strip') {
@@ -721,10 +729,119 @@ export function sliceSheets(form, layout, { style = 'print', title = 'Slice-form
       };
       return `<path d="${pathFromLoops(p.loops, map)}" ${s.cut} fill-rule="evenodd"/>` +
         text(p.label.u, p.label.v, p.label.size, p.name, 700) +
-        p.slotLabels.map((l) => text(l.u, l.v, l.size, l.text)).join('');
+        (p.slotLabels || []).map((l) => text(l.u, l.v, l.size, l.text)).join('');
     });
     return sheetFrame(parts.join(''), { title, subtitle, pageNo: idx + 1, pageCount: layout.pages.length, style, legend });
   });
+}
+
+export function sliceSheets(form, layout, { style = 'print', title = 'Slice-form', kerf = 0 } = {}) {
+  const subtitle = `Board ${f2(form.thickness)} mm · slots drawn ${f2(Math.max(0.2, form.slot))} mm wide` + (kerf ? ` (kerf ${f2(kerf)} mm already taken off)` : '') +
+    ` · model ${Math.round(form.size.w)} × ${Math.round(form.size.d)} × ${Math.round(form.size.h)} mm`;
+  const legend = 'Cut the solid lines. A slices: slots open at the top. B slices: slots open at the bottom. Small labels name the slice that fits each slot. Slide each B down onto the A slices.';
+  return piecesSheets(layout, { style, title, subtitle, legend });
+}
+
+/* ── Flat-pack tray: tab-and-slot (finger) joints with kerf ─────── */
+//
+// An open-top tray of OUTER size w × d × h from board of thickness t. Every joined edge is cut
+// into an odd number of equal fingers. On each edge a finger is either "full" (the panel reaches
+// the outside face) or "notched" (cut back by t), and the two panels meeting at an edge use
+// opposite patterns, so each finger of one fills a notch of the other. The base is notched at
+// the ends of every edge, the front/back walls are full at the ends of every edge, and the side
+// walls are full along the bottom but notched at the ends of their upright edges: so each
+// corner cube belongs to exactly one panel. A laser burns away a line `kerf` wide centred on the
+// drawn line, so every outline is drawn kerf/2 bigger all round; then tabs come out at full size
+// and slots at the right width.
+
+export function fingerCount(len, finger) {
+  let n = Math.max(3, Math.round(len / Math.max(1, finger)));
+  if (n % 2 === 0) n += (len / n > finger ? -1 : 1);
+  return Math.max(3, n);
+}
+
+// Panel outline, counter-clockwise from (0, 0) along the bottom edge. `edges` = [bottom, right,
+// top, left]; each is null (plain) or { n, endsNotched }.
+function fingerPanel(W, H, t, edges) {
+  const corners = [[0, 0], [W, 0], [W, H], [0, H]];
+  const inward = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+  const depthAt = (e, i) => (e && ((i % 2 === 0) === e.endsNotched) ? t : 0);
+  const pts = [];
+  for (let k = 0; k < 4; k++) {
+    const a = corners[k], b = corners[(k + 1) % 4], e = edges[k];
+    const dir = [(b[0] - a[0]), (b[1] - a[1])], len = Math.hypot(dir[0], dir[1]);
+    const u = [dir[0] / len, dir[1] / len], inn = inward[k];
+    const prev = edges[(k + 3) % 4], prevN = prev ? prev.n : 1;
+    const n = e ? e.n : 1;
+    // corner point: inset by this edge's first depth and the previous edge's last depth
+    const d0 = depthAt(e, 0), dPrev = depthAt(prev, prevN - 1);
+    const innPrev = inward[(k + 3) % 4];
+    pts.push([a[0] + inn[0] * d0 + innPrev[0] * dPrev, a[1] + inn[1] * d0 + innPrev[1] * dPrev]);
+    for (let i = 1; i < n; i++) {
+      const at = len * i / n, d1 = depthAt(e, i - 1), d2 = depthAt(e, i);
+      if (d1 === d2) continue;
+      const base = [a[0] + u[0] * at, a[1] + u[1] * at];
+      pts.push([base[0] + inn[0] * d1, base[1] + inn[1] * d1], [base[0] + inn[0] * d2, base[1] + inn[1] * d2]);
+    }
+  }
+  return pts;
+}
+
+// Grow a counter-clockwise rectilinear outline outward by r (half the kerf).
+export function offsetRectilinear(pts, r) {
+  if (!r) return pts.map((p) => p.slice());
+  const n = pts.length;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i + n - 1) % n], p1 = pts[i], p2 = pts[(i + 1) % n];
+    const e1 = [p1[0] - p0[0], p1[1] - p0[1]], e2 = [p2[0] - p1[0], p2[1] - p1[1]];
+    const l1 = Math.hypot(e1[0], e1[1]) || 1, l2 = Math.hypot(e2[0], e2[1]) || 1;
+    // outward normal of a CCW edge (dx, dy) is (dy, −dx)
+    const n1 = [e1[1] / l1, -e1[0] / l1], n2 = [e2[1] / l2, -e2[0] / l2];
+    out.push([p1[0] + r * (n1[0] + n2[0]), p1[1] + r * (n1[1] + n2[1])]);
+  }
+  return out;
+}
+
+export function computeTray(opts = {}) {
+  const t = clamp(Number(opts.thickness) || 3, 0.5, 12);
+  const w = clamp(Number(opts.width) || 120, 6 * t, 400);
+  const d = clamp(Number(opts.depth) || 80, 6 * t, 400);
+  const h = clamp(Number(opts.height) || 40, 4 * t, 300);
+  const finger = clamp(Number(opts.finger) || 12, 2 * t, 60);
+  const kerf = clamp(Number(opts.kerf) || 0, 0, 1);
+  const nW = fingerCount(w, finger), nD = fingerCount(d, finger), nH = fingerCount(h, finger);
+  const notch = (n) => ({ n, endsNotched: true }), full = (n) => ({ n, endsNotched: false });
+  const panels = [
+    { name: 'Base', W: w, H: d, edges: [notch(nW), notch(nD), notch(nW), notch(nD)] },
+    { name: 'Front', W: w, H: h, edges: [full(nW), full(nH), null, full(nH)] },
+    { name: 'Back', W: w, H: h, edges: [full(nW), full(nH), null, full(nH)] },
+    { name: 'Left side', W: d, H: h, edges: [full(nD), notch(nH), null, notch(nH)] },
+    { name: 'Right side', W: d, H: h, edges: [full(nD), notch(nH), null, notch(nH)] }
+  ];
+  const pieces = panels.map((pa, index) => {
+    const loop = offsetRectilinear(fingerPanel(pa.W, pa.H, t, pa.edges), kerf / 2);
+    let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+    for (const [u, v] of loop) { u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); }
+    return {
+      name: pa.name, kind: 'panel', index, loops: [loop], outerCount: 1,
+      bbox: { u0, u1, v0, v1, w: u1 - u0, h: v1 - v0 },
+      label: { u: pa.W / 2, v: pa.H / 2, size: clamp(Math.min(pa.W, pa.H) / 6, 3, 7) },
+      slotLabels: [], size: [pa.W, pa.H]
+    };
+  });
+  return {
+    thickness: t, kerf, finger, counts: { w: nW, d: nD, h: nH },
+    size: { w, d, h }, inside: { w: w - 2 * t, d: d - 2 * t, h: h - t },
+    fingerSize: { w: w / nW, d: d / nD, h: h / nH }, pieces
+  };
+}
+
+export function traySheets(tray, layout, { style = 'print', title = 'Flat-pack tray' } = {}) {
+  const sub = `Board ${f2(tray.thickness)} mm · outside ${f2(tray.size.w)} × ${f2(tray.size.d)} × ${f2(tray.size.h)} mm · inside ${f2(tray.inside.w)} × ${f2(tray.inside.d)} mm` +
+    (tray.kerf ? ` · outlines grown by half the ${f2(tray.kerf)} mm kerf` : ' · no kerf (knife)');
+  const legend = 'Cut the solid lines. Tabs (fingers) on one panel fill the notches of the next. Fit the walls onto the base, then the corners. Glue only if it is loose.';
+  return piecesSheets(layout, { style, title, subtitle: sub, legend });
 }
 
 export function netSheet(net, place, { style = 'print', title = 'Net' } = {}) {

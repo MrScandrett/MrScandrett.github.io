@@ -250,6 +250,24 @@ function vase() {
   };
 }
 
+/* A cup turned on a lathe (one half-silhouette, spun and hollowed) with a
+   handle swept along a C-shaped path: the two sketch tools a potter and a
+   CAD designer both use. Sized for a hand: 80 mm across the rim, 78 mm tall,
+   2.4 mm walls (six 0.4 mm beads). */
+function mug() {
+  return {
+    preset: 'print', name: 'lathe-mug',
+    objects: [G('Mug', [
+      S('sketch-revolve', { points: [[33, 0], [35, 25], [38, 55], [40, 78]], degrees: 360, sides: 96, wall: 2.4, smooth: 2 },
+        { name: 'Cup (spun silhouette)', color: C.teal, finish: 'satin', ...at(0, 0, 0) }),
+      // its ends sit inside the cup wall, so the two melt into one piece; pos is the
+      // centre of the handle's own box (x 32.47–60.75, z 11.54–65.47 above the cup's floor)
+      S('sketch-sweep', { path: [[37.2, 62], [52, 60], [58, 46], [56, 28], [46, 17], [33, 15]], profile: [[-3.5, -6], [3.5, -6], [3.5, 6], [-3.5, 6]], smooth: 3, round: 2 },
+        { name: 'Handle (swept along a path)', color: C.teal, finish: 'satin', pos: [46.61, 0, 38.5] }),
+    ])],
+  };
+}
+
 /* ── game assets & animation (metres) ─────────────────────────────────── */
 
 function chest() {
@@ -363,6 +381,7 @@ export const TEMPLATES = [
   { id: 'stand', title: 'Phone stand', realm: 'Product prototypes', blurb: 'A back rest tipped 20° with a cable hole, on a weighted base.', make: phoneStand },
   { id: 'controller', title: 'Game controller shell', realm: 'Product prototypes', blurb: 'A rounded enclosure with screw posts, and a lid with button cut-outs.', make: controller },
   { id: 'vase', title: 'Twist vase', realm: 'Product prototypes', blurb: 'A sketched outline, twisted and flared, hollowed by a matching hole.', make: vase },
+  { id: 'mug', title: 'Lathe mug', realm: 'Product prototypes', blurb: 'A spun silhouette hollowed to a 2.4 mm wall, with a handle swept along a path.', make: mug },
   { id: 'chest', title: 'Treasure chest', realm: 'Game assets', blurb: 'A hinged lid that opens and slams shut. Exports as an animated GLB.', make: chest },
   { id: 'forest', title: 'Low-poly forest kit', realm: 'Game assets', blurb: 'Trees, rocks, a barrel and a crate on a hex tile, ready for a level.', make: forestKit },
   { id: 'windmill', title: 'Windmill', realm: 'Animation', blurb: 'Sails that turn on a loop, on a tower with a door and window cut in.', make: windmill },
