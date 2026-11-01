@@ -299,7 +299,7 @@
       loop: true,
       dragging: null, // { kind: 'origin' | 'joint', figIndex, segIndex }
       hoverHandle: null,
-      lastTick: 0
+      playbackElapsed: 0
     };
 
     var elFramesScroll = document.getElementById("piv-frames-scroll");
@@ -318,10 +318,12 @@
     var elName = document.getElementById("piv-project-name");
     var elScrubber = document.getElementById("piv-scrubber");
     var undoStack = [], redoStack = [], lastSnapshot = null;
+    var lastContext = null;
     var replaying = false, filmstripDirty = true, loadRequest = 0;
     var storageKey = "classroom-pivot-project-v1";
     var stageView = { scale: 1, x: 0, y: 0 };
     var sizing;
+    var frameClipboard = null;
 
     function snapshot() {
       return JSON.stringify({ name: elName.value, doc: state.doc }, function (key, value) {
@@ -355,28 +357,33 @@
       var next = snapshot();
       var changed = next !== lastSnapshot;
       if (changed && lastSnapshot !== null && !replaying) {
-        undoStack.push(lastSnapshot);
+        undoStack.push(Object.assign({ value: lastSnapshot }, lastContext));
         // Bound history for long classroom animations.
-        while (undoStack.length > 30 || (undoStack.length > 1 && undoStack.reduce(function (n, item) { return n + item.length; }, 0) > 12000000)) undoStack.shift();
+        while (undoStack.length > 30 || (undoStack.length > 1 && undoStack.reduce(function (n, item) { return n + item.value.length; }, 0) > 12000000)) undoStack.shift();
         redoStack = [];
       }
       if (changed) { loadRequest++; lastSnapshot = next; filmstripDirty = true; saveLocal(next); }
+      lastContext = { frame: state.frameIndex, figure: state.selectedFigIndex, segment: state.selectedSegIndex };
       document.getElementById("piv-btn-undo").disabled = !undoStack.length;
       document.getElementById("piv-btn-redo").disabled = !redoStack.length;
     }
     function stopPlayback() {
+      var wasPlaying = state.playing;
       state.playing = false;
       if (elPlayBtn) { elPlayBtn.textContent = "▶ Play"; elPlayBtn.setAttribute("aria-pressed", "false"); }
+      if (wasPlaying) { renderStage(); renderRigTree(); }
     }
     function historyStep(from, to, message) {
       if (!from.length) return;
       loadRequest++;
       stopPlayback();
-      to.push(snapshot());
+      to.push({ value: snapshot(), frame: state.frameIndex, figure: state.selectedFigIndex, segment: state.selectedSegIndex });
       replaying = true;
-      var frameIndex = state.frameIndex;
-      restoreSnapshot(from.pop());
-      state.frameIndex = Math.min(frameIndex, state.doc.frames.length - 1);
+      var entry = from.pop();
+      restoreSnapshot(entry.value);
+      state.frameIndex = Math.min(entry.frame, state.doc.frames.length - 1);
+      state.selectedFigIndex = entry.figure;
+      state.selectedSegIndex = entry.segment;
       syncAll();
       replaying = false;
       showToast(message);
@@ -400,12 +407,26 @@
         button.append(dot, document.createTextNode(figureName(fig, index)));
         list.append(button);
       });
+      updateLayerControls();
+    }
+    function updateLayerControls() {
+      var order = currentFrame().order;
+      var depth = order.indexOf(state.selectedFigIndex);
+      document.getElementById("piv-btn-send-back").disabled = depth <= 0;
+      document.getElementById("piv-btn-bring-front").disabled = depth < 0 || depth === order.length - 1;
     }
     function updateTimeline(follow) {
       elScrubber.max = state.doc.frames.length;
       elScrubber.value = state.frameIndex + 1;
       document.getElementById("piv-current-frame").textContent = state.frameIndex + 1;
       document.getElementById("piv-duration").textContent = state.doc.frames.length + " frames / " + (state.doc.frames.length / (state.doc.fps || 12)).toFixed(2) + " s";
+      document.getElementById("piv-btn-frame-earlier").disabled = state.frameIndex === 0;
+      document.getElementById("piv-btn-frame-later").disabled = state.frameIndex === state.doc.frames.length - 1;
+      document.getElementById("piv-btn-del-frame").disabled = state.doc.frames.length <= 1;
+      document.getElementById("piv-btn-tween").disabled = state.frameIndex === 0;
+      document.getElementById("piv-tween-hint").textContent = state.frameIndex === 0
+        ? "Select frame 2 or later."
+        : "Between frames " + state.frameIndex + " and " + (state.frameIndex + 1) + ".";
       if (elFramesScroll) {
         elFramesScroll.querySelectorAll(".piv-frame-thumb").forEach(function (thumb, index) {
           var active = index === state.frameIndex;
@@ -421,13 +442,25 @@
         });
       }
     }
-    function setView(learn) {
+    function setView(learn, skipHash) {
       stopPlayback();
-      document.getElementById("piv-learning").hidden = !learn;
-      document.getElementById("piv-sec-studio").hidden = learn;
-      document.getElementById("piv-view-learn").setAttribute("aria-pressed", String(learn));
-      document.getElementById("piv-view-animate").setAttribute("aria-pressed", String(!learn));
+      var elLearn = document.getElementById("piv-learning");
+      var elStudio = document.getElementById("piv-sec-studio");
+      var btnLearn = document.getElementById("piv-view-learn");
+      var btnAnimate = document.getElementById("piv-view-animate");
+      if (elLearn) elLearn.hidden = !learn;
+      if (elStudio) elStudio.hidden = learn;
+      if (btnLearn) btnLearn.setAttribute("aria-pressed", String(learn));
+      if (btnAnimate) btnAnimate.setAttribute("aria-pressed", String(!learn));
       if (!learn && sizing) sizing.resize();
+      if (!skipHash) {
+        var curHash = window.location.hash;
+        if (learn && (!curHash || curHash === "#piv-sec-studio" || curHash === "#animate")) {
+          history.replaceState(null, "", "#piv-sec-rig");
+        } else if (!learn && curHash && curHash !== "#piv-sec-studio") {
+          history.replaceState(null, "", "#piv-sec-studio");
+        }
+      }
     }
 
     function showToast(msg) {
@@ -463,7 +496,10 @@
       if (state.selectedFigIndex >= fr.figures.length) {
         state.selectedFigIndex = fr.figures.length - 1;
       }
-      return fr.figures[state.selectedFigIndex];
+      var fig = fr.figures[state.selectedFigIndex];
+      var type = state.doc.types[fig.type] || state.doc.types[0];
+      state.selectedSegIndex = Math.max(0, Math.min(state.selectedSegIndex, type.segments.length - 1));
+      return fig;
     }
 
     // Draw a translucent ghost frame for Onion Skinning
@@ -593,7 +629,8 @@
       // Draw interactive handles & Center of Mass when paused
       var fr = currentFrame();
       if (!state.playing) {
-        for (var fi = 0; fi < fr.figures.length; fi++) {
+        for (var oi = 0; oi < fr.order.length; oi++) {
+          var fi = fr.order[oi];
           var fig = fr.figures[fi];
           var isSelFig = fi === state.selectedFigIndex;
           var joints = computeFigureJoints(state.doc, fig);
@@ -652,8 +689,16 @@
           "Frame " + (state.frameIndex + 1) + " / " + state.doc.frames.length +
           " · " + state.doc.fps + " FPS";
       }
+      canvas.setAttribute(
+        "aria-label",
+        "Stick figure animation stage. Frame " + (state.frameIndex + 1) + " of " + state.doc.frames.length +
+        ", " + fr.figures.length + " figure" + (fr.figures.length === 1 ? "" : "s") +
+        ". Drag orange hip to position or red joints to rotate."
+      );
       updateInspectorReadout();
+      updateLayerControls();
       updateTimeline(false);
+      lastContext = { frame: state.frameIndex, figure: state.selectedFigIndex, segment: state.selectedSegIndex };
     }
 
     function updateInspectorReadout() {
@@ -769,6 +814,14 @@
       }
     }
 
+    function nextFigureId() {
+      var max = 0;
+      state.doc.frames.forEach(function (frame) {
+        frame.figures.forEach(function (fig) { max = Math.max(max, fig.id || 0); });
+      });
+      return max + 1;
+    }
+
     // Canvas pointer coordinate helper
     function getStageCoords(e) {
       var rect = canvas.getBoundingClientRect();
@@ -780,11 +833,12 @@
 
     function hitTestHandles(pt) {
       var fr = currentFrame();
-      var best = null;
-      var bestDist = Math.max(18, 12 / stageView.scale); // Keep handles usable on small screens.
 
-      // Check figures in reverse draw order (frontmost first)
-      for (var fi = fr.figures.length - 1; fi >= 0; fi--) {
+      // Respect the scene's paint order when figures overlap.
+      for (var oi = fr.order.length - 1; oi >= 0; oi--) {
+        var fi = fr.order[oi];
+        var best = null;
+        var bestDist = Math.max(18, 12 / stageView.scale); // Keep handles usable on small screens.
         var fig = fr.figures[fi];
         var dOrigin = Math.hypot(pt.x - fig.x, pt.y - fig.y);
         if (dOrigin <= bestDist) {
@@ -799,8 +853,9 @@
             best = { kind: "joint", figIndex: fi, segIndex: s };
           }
         }
+        if (best) return best;
       }
-      return best;
+      return null;
     }
 
     canvas.addEventListener("pointerdown", function (e) {
@@ -814,6 +869,13 @@
         state.selectedFigIndex = hit.figIndex;
         state.selectedSegIndex = hit.segIndex;
         state.dragging = hit;
+        var fig = currentFrame().figures[hit.figIndex];
+        hit.offsetX = fig.x - pt.x;
+        hit.offsetY = fig.y - pt.y;
+        if (hit.kind === "joint") {
+          var joints = computeFigureJoints(state.doc, fig);
+          hit.angleOffset = (fig.angles[hit.segIndex] || 0) - Math.atan2(pt.y - joints.startY[hit.segIndex], pt.x - joints.startX[hit.segIndex]);
+        }
         canvas.setPointerCapture(e.pointerId);
         renderStage();
         renderRigTree();
@@ -829,34 +891,15 @@
       if (!fig) return;
 
       if (state.dragging.kind === "origin") {
-        fig.x = Math.max(16, Math.min((state.doc.width || STAGE_W) - 16, pt.x));
-        fig.y = Math.max(16, Math.min((state.doc.height || STAGE_H) - 16, pt.y));
+        fig.x = Math.max(0, Math.min(state.doc.width || STAGE_W, pt.x + state.dragging.offsetX));
+        fig.y = Math.max(0, Math.min(state.doc.height || STAGE_H, pt.y + state.dragging.offsetY));
         renderStage();
       } else if (state.dragging.kind === "joint") {
         var s = state.dragging.segIndex;
         var joints = computeFigureJoints(state.doc, fig);
         var sx = joints.startX[s];
         var sy = joints.startY[s];
-        var newAngle = Math.atan2(pt.y - sy, pt.x - sx);
-        var oldAngle = fig.angles[s] || 0;
-        var delta = normAngle(newAngle - oldAngle);
-        fig.angles[s] = newAngle;
-
-        if (joints.type.builtIn && s === 2 && fig.angles.length > 3) {
-          fig.angles[3] = normAngle(fig.angles[2] + Math.PI);
-        }
-
-        if (state.fkChain) {
-          var desc = getDescendants(joints.segs, s);
-          for (var d = 0; d < desc.length; d++) {
-            var di = desc[d];
-            if (joints.type.builtIn && di === 3) {
-              fig.angles[3] = normAngle(fig.angles[2] + Math.PI);
-            } else {
-              fig.angles[di] = normAngle((fig.angles[di] || 0) + delta);
-            }
-          }
-        }
+        rotateJoint(fig, s, Math.atan2(pt.y - sy, pt.x - sx) + state.dragging.angleOffset);
         renderStage();
       }
     });
@@ -869,6 +912,17 @@
     }
     canvas.addEventListener("pointerup", finishDrag);
     canvas.addEventListener("pointercancel", finishDrag);
+    canvas.addEventListener("lostpointercapture", finishDrag);
+
+    function rotateJoint(fig, s, angle) {
+      var joints = computeFigureJoints(state.doc, fig);
+      var delta = normAngle(angle - (fig.angles[s] || 0));
+      fig.angles[s] = normAngle(angle);
+      if (state.fkChain) getDescendants(joints.segs, s).forEach(function (child) {
+        fig.angles[child] = normAngle((fig.angles[child] || 0) + delta);
+      });
+      if (joints.type.builtIn) fig.angles[3] = normAngle(fig.angles[2] + Math.PI);
+    }
 
     // Click on filmstrip frame
     if (elFramesScroll) {
@@ -904,7 +958,7 @@
       showToast("Added Frame " + (state.frameIndex + 1) + " — pose your figure for the next step!");
     }
 
-    // Auto-Tween: generate 3 interpolated in-between frames between previous and current frame
+    // Preserve figure identity even when a character was removed or arrays changed order.
     function autoTweenFrames() {
       if (state.frameIndex < 1) {
         showToast("Select Frame 2 or later so Auto-Tween has a previous keyframe to blend from.");
@@ -912,13 +966,21 @@
       }
       var prev = state.doc.frames[state.frameIndex - 1];
       var next = state.doc.frames[state.frameIndex];
-      var steps = 3;
+      var countInput = document.getElementById("piv-tween-count");
+      var steps = Math.max(1, Math.min(24, Math.round(Number(countInput.value) || 3)));
+      countInput.value = steps;
+      var easing = document.getElementById("piv-tween-easing").value;
       var inserted = [];
       for (var step = 1; step <= steps; step++) {
         var t = step / (steps + 1);
-        var tweenFigs = next.figures.map(function (nf, idx) {
-          var pf = prev.figures[idx];
-          if (!pf || pf.type !== nf.type) return cloneFrame({ figures: [nf], order: [0] }).figures[0];
+        if (easing === "ease-in") t = t * t;
+        else if (easing === "ease-out") t = 1 - (1 - t) * (1 - t);
+        else if (easing === "ease-in-out") t = t * t * (3 - 2 * t);
+        var tween = cloneFrame(prev);
+        tween.figures = tween.figures.map(function (pf) {
+          var nf = next.figures.find(function (fig) { return fig.id === pf.id && fig.type === pf.type && fig.angles.length === pf.angles.length; });
+          // Figures appear/disappear at the destination keyframe; unmatched poses hold.
+          if (!nf) return pf;
           var angles = new Float64Array(nf.angles.length);
           for (var a = 0; a < angles.length; a++) {
             angles[a] = lerpAngle(pf.angles[a] || 0, nf.angles[a] || 0, t);
@@ -927,13 +989,13 @@
             id: nf.id,
             type: nf.type,
             scale: pf.scale + (nf.scale - pf.scale) * t,
-            color: nf.color ? nf.color.slice() : null,
+            color: pf.color && nf.color ? pf.color.map(function (c, i) { return Math.round(c + (nf.color[i] - c) * t); }) : pf.color,
             angles: angles,
             x: pf.x + (nf.x - pf.x) * t,
             y: pf.y + (nf.y - pf.y) * t
           };
         });
-        inserted.push({ figures: tweenFigs, order: next.order.slice() });
+        inserted.push(tween);
       }
       Array.prototype.splice.apply(
         state.doc.frames,
@@ -941,20 +1003,52 @@
       );
       state.frameIndex += inserted.length;
       syncAll();
-      showToast("Inserted 3 smooth in-between frames using shortest-arc angle interpolation!");
+      showToast("Inserted " + steps + " in-between frame" + (steps === 1 ? "" : "s") + ". Undo removes this set.");
     }
 
     // Button wiring helper
     function onClick(id, fn) {
       var el = document.getElementById(id);
       if (el) el.addEventListener("click", function (event) {
-        if (/piv-btn-(add-|del-|flip|reset|tween|undo|redo|new)/.test(id)) stopPlayback();
+        if (/piv-btn-(add-|del-|flip|reset|tween|undo|redo|new|frame-|paste-|duplicate-|send-|bring-)/.test(id)) stopPlayback();
         fn(event);
       });
     }
 
     onClick("piv-btn-add-frame", addNextFrame);
     onClick("piv-btn-tween", autoTweenFrames);
+
+    function moveFrame(direction) {
+      var target = state.frameIndex + direction;
+      if (target < 0 || target >= state.doc.frames.length) return;
+      var frame = state.doc.frames.splice(state.frameIndex, 1)[0];
+      state.doc.frames.splice(target, 0, frame);
+      state.frameIndex = target;
+      syncAll();
+      showToast("Moved frame to position " + (target + 1) + ".");
+    }
+    onClick("piv-btn-frame-earlier", function () { moveFrame(-1); });
+    onClick("piv-btn-frame-later", function () { moveFrame(1); });
+    onClick("piv-btn-copy-frame", function () {
+      frameClipboard = { frame: cloneFrame(currentFrame()), types: JSON.parse(JSON.stringify(state.doc.types)) };
+      document.getElementById("piv-btn-paste-frame").disabled = false;
+      showToast("Copied frame " + (state.frameIndex + 1) + ". Select a frame, then paste to insert after it.");
+    });
+    onClick("piv-btn-paste-frame", function () {
+      if (!frameClipboard) return;
+      var pasted = cloneFrame(frameClipboard.frame);
+      pasted.figures.forEach(function (fig) {
+        var type = frameClipboard.types[fig.type];
+        var key = JSON.stringify(type);
+        var index = JSON.stringify(state.doc.types[fig.type]) === key ? fig.type : state.doc.types.findIndex(function (candidate) { return JSON.stringify(candidate) === key; });
+        if (index < 0) { index = state.doc.types.length; state.doc.types.push(JSON.parse(key)); }
+        fig.type = index;
+      });
+      state.doc.frames.splice(state.frameIndex + 1, 0, pasted);
+      state.frameIndex++;
+      syncAll();
+      showToast("Pasted a new frame at position " + (state.frameIndex + 1) + ".");
+    });
 
     onClick("piv-btn-del-frame", function () {
       if (state.doc.frames.length <= 1) {
@@ -971,9 +1065,17 @@
 
     onClick("piv-btn-play", function () {
       state.playing = !state.playing;
+      if (state.playing && !state.loop && state.frameIndex === state.doc.frames.length - 1) state.frameIndex = 0;
       if (elPlayBtn) { elPlayBtn.textContent = state.playing ? "⏸ Pause" : "▶ Play"; elPlayBtn.setAttribute("aria-pressed", String(state.playing)); }
-      state.lastTick = performance.now();
+      state.playbackElapsed = 0;
       renderStage();
+      renderRigTree();
+      renderScene();
+    });
+    onClick("piv-btn-loop", function (e) {
+      state.loop = !state.loop;
+      e.currentTarget.setAttribute("aria-pressed", String(state.loop));
+      showToast(state.loop ? "Playback repeats in a loop." : "Playback stops after the last frame.");
     });
 
     onClick("piv-btn-prev", function () {
@@ -1010,7 +1112,7 @@
     // Add Stick Figure / Prop
     onClick("piv-btn-add-stick", function () {
       var fr = currentFrame();
-      var newId = fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1;
+      var newId = nextFigureId();
       var typeIndex = state.doc.types.findIndex(function (type) { return type.builtIn; });
       if (typeIndex < 0) { typeIndex = state.doc.types.length; state.doc.types.push(Piv.defaultFigureType()); }
       var palette = [[37, 99, 235], [220, 38, 38], [22, 163, 74], [147, 51, 234]];
@@ -1035,7 +1137,7 @@
       state.doc.types.push(createPropTypes()[2]);
       var fr = currentFrame();
       fr.figures.push({
-        id: fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1,
+        id: nextFigureId(),
         type: typeIndex,
         scale: 1,
         color: null,
@@ -1055,7 +1157,7 @@
       state.doc.types.push(createPropTypes()[3]);
       var fr = currentFrame();
       fr.figures.push({
-        id: fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1,
+        id: nextFigureId(),
         type: typeIndex,
         scale: 1,
         color: [234, 88, 12],
@@ -1069,6 +1171,33 @@
       syncAll();
       showToast("Added Bouncing Sphere prop.");
     });
+
+    onClick("piv-btn-duplicate-fig", function () {
+      var fig = selectedFigure();
+      if (!fig) return;
+      var copy = cloneFrame({ figures: [fig], order: [0] }).figures[0];
+      copy.id = nextFigureId();
+      copy.x = Math.max(0, Math.min((state.doc.width || STAGE_W) - 16, copy.x + 30));
+      var fr = currentFrame();
+      fr.figures.push(copy);
+      fr.order.push(fr.figures.length - 1);
+      state.selectedFigIndex = fr.figures.length - 1;
+      syncAll();
+      showToast("Duplicated figure in this frame. Drag its orange hip to position it.");
+    });
+    function changeLayer(direction) {
+      var order = currentFrame().order;
+      var index = order.indexOf(state.selectedFigIndex);
+      var target = index + direction;
+      if (index < 0 || target < 0 || target >= order.length) return;
+      var other = order[target];
+      order[target] = state.selectedFigIndex;
+      order[index] = other;
+      syncAll();
+      showToast(direction < 0 ? "Moved figure back one layer." : "Moved figure forward one layer.");
+    }
+    onClick("piv-btn-send-back", function () { changeLayer(-1); });
+    onClick("piv-btn-bring-front", function () { changeLayer(1); });
 
     onClick("piv-btn-flip", function () {
       var fig = selectedFigure();
@@ -1103,8 +1232,9 @@
         showToast("Keep at least one figure on the stage.");
         return;
       }
-      fr.figures.splice(state.selectedFigIndex, 1);
-      fr.order = fr.figures.map(function (_, i) { return i; });
+      var removed = state.selectedFigIndex;
+      fr.figures.splice(removed, 1);
+      fr.order = fr.order.filter(function (index) { return index !== removed; }).map(function (index) { return index > removed ? index - 1 : index; });
       state.selectedFigIndex = Math.max(0, state.selectedFigIndex - 1);
       syncAll();
       showToast("Removed selected figure from frame.");
@@ -1188,12 +1318,17 @@
     }
 
     // Preset selector
+    function clearFrameClipboard() {
+      frameClipboard = null;
+      document.getElementById("piv-btn-paste-frame").disabled = true;
+    }
     var elPresetSelect = document.getElementById("piv-preset-select");
     if (elPresetSelect) {
       elPresetSelect.addEventListener("change", function () {
         var val = elPresetSelect.value;
         var request = ++loadRequest;
         var presetName = elPresetSelect.selectedOptions[0].textContent;
+        clearFrameClipboard();
         if (val.indexOf("piv:") !== 0) elName.value = presetName;
         stopPlayback();
         state.frameIndex = 0;
@@ -1254,6 +1389,7 @@
         }).then(function (doc) {
           if (request !== loadRequest) return;
           stopPlayback();
+          clearFrameClipboard();
           elName.value = file.name.replace(/\.piv$/i, "");
           state.doc = doc;
           state.frameIndex = 0;
@@ -1319,6 +1455,7 @@
     onClick("piv-btn-redo", function () { historyStep(redoStack, undoStack, "Redid edit."); });
     onClick("piv-btn-new", function () {
       loadRequest++;
+      clearFrameClipboard();
       state.doc = buildWalkPreset();
       state.doc.frames = [cloneFrame(state.doc.frames[0])];
       state.doc.frames[0].figures[0].angles = makeStandingAngles();
@@ -1342,6 +1479,15 @@
     });
     onClick("piv-view-animate", function () { setView(false); });
     onClick("piv-view-learn", function () { setView(true); });
+    document.addEventListener("click", function (e) {
+      var link = e.target.closest('a[href="#piv-sec-studio"]');
+      if (link) {
+        e.preventDefault();
+        setView(false);
+        var studio = document.getElementById("piv-sec-studio");
+        if (studio) studio.scrollIntoView({ behavior: "smooth" });
+      }
+    });
     elName.addEventListener("change", function () { syncAll(); });
     if (elFpsSlider) elFpsSlider.addEventListener("change", syncAll);
     if (elScaleSlider) elScaleSlider.addEventListener("change", syncAll);
@@ -1372,11 +1518,7 @@
       stopPlayback();
       var s = Math.min(state.selectedSegIndex, fig.angles.length - 1);
       var next = Math.max(-180, Math.min(180, value)) * Math.PI / 180;
-      var delta = normAngle(next - fig.angles[s]);
-      var joints = computeFigureJoints(state.doc, fig);
-      fig.angles[s] = next;
-      if (state.fkChain) getDescendants(joints.segs, s).forEach(function (child) { fig.angles[child] = normAngle(fig.angles[child] + delta); });
-      if (joints.type.builtIn) fig.angles[3] = normAngle(fig.angles[2] + Math.PI);
+      rotateJoint(fig, s, next);
       this.value = Math.round(next * 180 / Math.PI);
       syncAll();
     });
@@ -1395,6 +1537,21 @@
         e.preventDefault(); document.getElementById(e.shiftKey ? "piv-btn-redo" : "piv-btn-undo").click(); return;
       }
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyS") { e.preventDefault(); document.getElementById("piv-btn-save-piv").click(); return; }
+      if ((e.ctrlKey || e.metaKey) && (active === canvas || elFramesScroll.contains(active))) {
+        if (e.code === "KeyC" || e.code === "KeyV") {
+          e.preventDefault(); document.getElementById(e.code === "KeyC" ? "piv-btn-copy-frame" : "piv-btn-paste-frame").click(); return;
+        }
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && active === canvas && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {
+        e.preventDefault(); stopPlayback();
+        var selected = selectedFigure();
+        if (selected) {
+          var segment = Math.min(state.selectedSegIndex, selected.angles.length - 1);
+          rotateJoint(selected, segment, selected.angles[segment] + (e.code === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1) * Math.PI / 180);
+          syncAll();
+        }
+        return;
+      }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.code === "Space" && (!active || active.tagName !== "BUTTON")) { e.preventDefault(); elPlayBtn.click(); }
       if (e.code === "KeyN") { e.preventDefault(); stopPlayback(); addNextFrame(); }
@@ -1406,6 +1563,8 @@
         if (e.code === "ArrowRight") fig.x += step;
         if (e.code === "ArrowUp") fig.y -= step;
         if (e.code === "ArrowDown") fig.y += step;
+        fig.x = Math.max(0, Math.min(state.doc.width || STAGE_W, fig.x));
+        fig.y = Math.max(0, Math.min(state.doc.height || STAGE_H, fig.y));
         syncAll();
       } else if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
         e.preventDefault(); document.getElementById(e.code === "ArrowLeft" ? "piv-btn-prev" : "piv-btn-next").click();
@@ -1413,14 +1572,24 @@
     });
 
     // Playback animation loop
-    function tick(now) {
+    function tick(dt) {
       if (state.playing) {
+        state.playbackElapsed += dt * 1000;
         var interval = 1000 / Math.max(1, state.doc.fps || 12);
-        if (now - state.lastTick >= interval) {
-          state.lastTick = now;
-          state.frameIndex = (state.frameIndex + 1) % state.doc.frames.length;
+        if (state.playbackElapsed >= interval) {
+          var elapsed = Math.floor(state.playbackElapsed / interval);
+          state.playbackElapsed -= elapsed * interval;
+          var target = state.frameIndex + elapsed;
+          if (!state.loop && target >= state.doc.frames.length) {
+            state.frameIndex = state.doc.frames.length - 1;
+            stopPlayback();
+            showToast("Playback finished. Play starts again from frame 1.");
+          } else {
+            state.frameIndex = target % state.doc.frames.length;
+          }
           renderStage();
           updateTimeline(true);
+          if (!state.playing) renderRigTree();
           renderScene();
         }
       }
@@ -1432,7 +1601,35 @@
     } catch (err) { showToast("Could not restore a local project. Use Open animation to load a saved file."); }
     sizing = SimKit.canvas2d(canvas, { onResize: function () { if (sizing) renderStage(); } });
     syncAll();
-    SimKit.loop(function (dt, now) { tick(now); }, { el: canvas });
+
+    function handleHash() {
+      var hash = window.location.hash;
+      if (!hash) return;
+      if (hash === "#piv-sec-studio" || hash === "#animate" || hash === "#studio") {
+        setView(false, true);
+      } else if (
+        hash === "#piv-sec-rig" ||
+        hash === "#piv-sec-principles" ||
+        hash === "#piv-sec-code" ||
+        hash === "#piv-sec-pipeline" ||
+        hash === "#piv-sec-practice" ||
+        hash === "#learn" ||
+        hash === "#learning" ||
+        hash === "#piv-learning"
+      ) {
+        setView(true, true);
+        var target = document.querySelector(hash);
+        if (target) {
+          setTimeout(function () {
+            target.scrollIntoView({ behavior: "smooth" });
+          }, 40);
+        }
+      }
+    }
+    window.addEventListener("hashchange", handleHash);
+    handleHash();
+
+    SimKit.loop(function (dt) { tick(dt); }, { el: canvas });
   }
 
   if (document.readyState === "loading") {

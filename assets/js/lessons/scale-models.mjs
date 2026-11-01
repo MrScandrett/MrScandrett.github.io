@@ -319,7 +319,7 @@ function mountCalculator(root) {
     out.innerHTML = '';
     out.append(
       el('p', { class: 'sm-big' }, el('strong', { text: `${fmt(mm)} mm` }), ` on the model (${fmt(mm / 25.4)} in)`),
-      el('p', { text: `${fmt(Number(len.value) || 0)} ${unit.value} ÷ ${n.toLocaleString('en-US')} = ${fmt(m)} m ÷ ${n.toLocaleString('en-US')} = ${fmt(mm)} mm. A 1.7 m person at 1:${n.toLocaleString('en-US')} is ${fmt(toModelMm(PERSON_HEIGHT, n))} mm tall; a 0.1 m partition wall is ${fmt(toModelMm(0.1, n))} mm thick (${wallVerdict(toModelMm(0.1, n)).tag.toLowerCase()}).` }),
+      el('p', { text: `${unit.value === 'mm' ? '' : `${fmt(Number(len.value) || 0)} ${unit.value} = ${fmt(m * 1000)} mm; `}${fmt(m * 1000)} mm ÷ ${n.toLocaleString('en-US')} = ${fmt(mm)} mm. A 1.7 m person at 1:${n.toLocaleString('en-US')} is ${fmt(toModelMm(PERSON_HEIGHT, n))} mm tall; a 0.1 m partition wall is ${fmt(toModelMm(0.1, n))} mm thick (${wallVerdict(toModelMm(0.1, n)).tag.toLowerCase()}).` }),
     );
     drawBar(bar, n, m);
     const model = Number(modelIn.value) || 0;
@@ -671,8 +671,9 @@ function mountMaker(root) {
     for (const v of m.verdicts) ul.append(el('li', { 'data-tone': v.tone }, el('b', { text: `${v.tag} · ${v.part}: ` }), v.text));
     if (settings.thicken && settings.mode !== 'massing') {
       const notes = [];
-      if (m.thick.ext > settings.ext + 1e-9) notes.push(`outside walls ${fmt(settings.ext)} → ${fmt(m.thick.ext)} m`);
-      if (m.thick.int > settings.int + 1e-9) notes.push(`inside walls ${fmt(settings.int)} → ${fmt(m.thick.int)} m`);
+      const kinds = new Set(m.segs.map((sg) => sg.kind));
+      if (kinds.has('ext') && m.thick.ext > settings.ext + 1e-9) notes.push(`outside walls ${fmt(settings.ext)} → ${fmt(m.thick.ext)} m`);
+      if (kinds.has('int') && m.thick.int > settings.int + 1e-9) notes.push(`inside walls ${fmt(settings.int)} → ${fmt(m.thick.int)} m`);
       if (m.thick.slab > settings.slab + 1e-9) notes.push(`floors ${fmt(settings.slab)} → ${fmt(m.thick.slab)} m`);
       if (notes.length) ul.append(el('li', { 'data-tone': 'warn' }, el('b', { text: 'THICKENED · ' }), `To print, the model exaggerates: ${notes.join('; ')} (real sizes).`));
     }
@@ -695,7 +696,7 @@ function mountMaker(root) {
     const { buffer } = stlFor(model);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([buffer], { type: 'model/stl' }));
-    a.download = `scale-model-1-${settings.scale}-${settings.mode}${settings.split ? '-split' : ''}.stl`;
+    a.download = `scale-model-1-${settings.scale}-${settings.mode}${settings.split && settings.mode !== 'massing' ? '-split' : ''}.stl`;
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }

@@ -95,7 +95,15 @@
               <div class="piv-workspace">
                 <!-- Left Panel: Figure & Stage Controls -->
                 <aside class="piv-tool-panel" aria-label="Scene and assets">
-                  <div class="piv-panel-section"><h2 class="piv-panel-heading">Scene</h2><div id="piv-scene-list" class="piv-scene-list" aria-label="Figures in this frame"></div></div>
+                  <div class="piv-panel-section">
+                    <h2 class="piv-panel-heading">Scene</h2>
+                    <div id="piv-scene-list" class="piv-scene-list" aria-label="Figures in this frame"></div>
+                    <button type="button" class="piv-btn piv-duplicate" id="piv-btn-duplicate-fig">Duplicate figure</button>
+                    <div class="piv-layer-actions">
+                      <button type="button" class="piv-btn" id="piv-btn-send-back" title="Move selected figure behind the next figure">Send back</button>
+                      <button type="button" class="piv-btn" id="piv-btn-bring-front" title="Move selected figure in front of the next figure">Bring forward</button>
+                    </div>
+                  </div>
                   <div class="piv-panel-section">
                     <h3 class="piv-panel-heading">Add to Stage</h3>
                     <div class="piv-btn-grid">
@@ -132,6 +140,7 @@
                       <button type="button" class="piv-btn piv-btn--accent" id="piv-btn-play" aria-pressed="false">▶ Play</button>
                       <button type="button" class="piv-btn" id="piv-btn-prev" aria-label="Previous frame">⏮</button>
                       <button type="button" class="piv-btn" id="piv-btn-next" aria-label="Next frame">⏭</button>
+                      <button type="button" class="piv-btn" id="piv-btn-loop" aria-pressed="true" title="Turn off to play through once">Loop</button>
                     </div>
                     <div style="display:flex;align-items:center;gap:0.55rem;min-width:170px;">
                       <label for="piv-fps-slider" style="font-size:0.78rem;font-weight:700;white-space:nowrap;">Speed: <span id="piv-fps-val">10 FPS</span></label>
@@ -139,7 +148,7 @@
                     </div>
 
                   </div>
-                  <p class="piv-stage-help" id="piv-stage-help"><span class="piv-handle-key"></span>Orange hip: move <span class="piv-handle-key piv-handle-key--joint"></span>Red joint: pose <span>Focus stage + arrow keys: nudge figure</span></p>
+                  <p class="piv-stage-help" id="piv-stage-help"><span class="piv-handle-key"></span>Orange hip: move <span class="piv-handle-key piv-handle-key--joint"></span>Red joint: pose <span>Stage + arrows: nudge · Shift: larger steps · Alt + ← →: rotate joint</span></p>
                 </div>
 
                 <!-- Right Panel: Rig Hierarchy & Live Math Inspector -->
@@ -182,14 +191,32 @@
               <div class="piv-timeline-heading"><h2>Timeline</h2><span id="piv-duration">8 frames</span><label for="piv-scrubber">Frame <output id="piv-current-frame">1</output></label><input id="piv-scrubber" type="range" min="1" max="8" value="1" aria-label="Scrub animation frames" /></div>
               <!-- Filmstrip Timeline Bar -->
               <div class="piv-filmstrip-bar">
-                <div style="display:flex;flex-direction:column;gap:0.35rem;flex-shrink:0;">
+                <div class="piv-frame-actions">
                   <button type="button" class="piv-btn piv-btn--primary" id="piv-btn-add-frame" title="Duplicate this pose into a new frame (N)">＋ Add frame <kbd>N</kbd></button>
-                  <div style="display:flex;gap:0.35rem;">
-                    <button type="button" class="piv-btn" id="piv-btn-tween" title="Generate 3 smooth in-between frames between previous and current pose">✦ +3 In-Betweens</button>
-                    <button type="button" class="piv-btn" id="piv-btn-del-frame" aria-label="Delete current frame" title="Delete current frame">Delete</button>
+                  <div class="piv-layer-actions">
+                    <button type="button" class="piv-btn" id="piv-btn-frame-earlier" aria-label="Move current frame earlier" title="Move frame earlier">← Earlier</button>
+                    <button type="button" class="piv-btn" id="piv-btn-frame-later" aria-label="Move current frame later" title="Move frame later">Later →</button>
                   </div>
                 </div>
                 <div class="piv-frames-scroll" id="piv-frames-scroll" role="region" aria-label="Animation timeline frames"></div>
+              </div>
+              <div class="piv-timing-bar">
+                <div class="piv-tween-controls" role="group" aria-label="Create in-between frames">
+                  <label for="piv-tween-count">In-betweens <input id="piv-tween-count" type="number" min="1" max="24" step="1" value="3" /></label>
+                  <label for="piv-tween-easing">Spacing <select id="piv-tween-easing" class="piv-select">
+                    <option value="linear">Even</option>
+                    <option value="ease-in-out">Slow start &amp; end</option>
+                    <option value="ease-in">Slow start</option>
+                    <option value="ease-out">Slow end</option>
+                  </select></label>
+                  <button type="button" class="piv-btn" id="piv-btn-tween" aria-describedby="piv-tween-hint">Create in-betweens</button>
+                  <span id="piv-tween-hint">Select frame 2 or later.</span>
+                </div>
+                <div class="piv-clipboard-controls" role="group" aria-label="Frame editing">
+                  <button type="button" class="piv-btn" id="piv-btn-copy-frame" title="Copy this frame (Ctrl / ⌘ C)">Copy frame</button>
+                  <button type="button" class="piv-btn" id="piv-btn-paste-frame" title="Insert copied frame after this frame (Ctrl / ⌘ V)" disabled>Paste frame</button>
+                  <button type="button" class="piv-btn" id="piv-btn-del-frame" aria-label="Delete current frame">Delete frame</button>
+                </div>
               </div>
 
               <div class="piv-statusbar"><span class="piv-status-toast" id="piv-status-toast" role="status" aria-live="polite">Ready. Drag the orange hip to move; red joints to pose.</span><span>Space: play · N: add frame · ← →: step</span></div>
@@ -197,7 +224,14 @@
           </section>
 
           <div id="piv-learning" hidden>
-          <nav class="ll-lesson-steps" aria-label="Lesson sections"><a href="#piv-sec-rig">Rigging</a><a href="#piv-sec-principles">Spacing &amp; balance</a><a href="#piv-sec-code">Code a rig</a><a href="#piv-sec-pipeline">Game exports</a><a href="#piv-sec-practice">Practice</a></nav>
+          <nav class="ll-lesson-steps" aria-label="Lesson sections">
+            <a href="#piv-sec-studio">1. Animation Studio</a>
+            <a href="#piv-sec-rig">2. Rigging &amp; FK</a>
+            <a href="#piv-sec-principles">3. Spacing &amp; Balance</a>
+            <a href="#piv-sec-code">4. Code a Rig</a>
+            <a href="#piv-sec-pipeline">5. Game Pipeline</a>
+            <a href="#piv-sec-practice">6. Practice</a>
+          </nav>
           <!-- SECTION 2: FORWARD KINEMATICS & PARENT-CHILD HIERARCHIES -->
           <section class="fl-card" id="piv-sec-rig" style="--card-accent:#2563eb;">
             <p class="eyebrow">Section 2 · How Skeletal Rigs Work</p>
@@ -247,7 +281,8 @@
               </div>
               <div class="fl-mini-card">
                 <h3>4. Shortest-Arc Auto-Tweening</h3>
-                <p>When you click <strong>✦ +3 In-Betweens</strong>, the studio interpolates every joint angle from frame <code>A</code> to frame <code>B</code>. To prevent limbs from spinning the long way around (`350°` instead of `-10°`), it normalizes <code>Δθ = b − a</code> into <code>[−π, +π]</code> before blending.</p>
+                <p>Select the later of two keyframes, choose <strong>1–24 in-betweens</strong>, then click <strong>Create in-betweens</strong>. The studio blends each matching character's position, size, color, and joint angles. To prevent limbs from spinning the long way around (<code>350°</code> instead of <code>−10°</code>), it normalizes <code>Δθ = b − a</code> into <code>[−π, +π]</code> before blending.</p>
+                <p>Use <strong>Even</strong> spacing for steady movement, <strong>Slow start</strong> to accelerate, <strong>Slow end</strong> to settle, or <strong>Slow start &amp; end</strong> for a gentle transition. More in-betweens make the action take longer at the same FPS. Figures added or removed appear or disappear at the later keyframe. Turn off <strong>Loop</strong> to watch the action once.</p>
               </div>
             </div>
           </section>
@@ -300,6 +335,18 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
           <section class="fl-card" id="piv-sec-practice" style="--card-accent:#ea580c;">
             <p class="eyebrow">Practice · Check Your Understanding</p>
             <h2>Rigging &amp; Animation Check</h2>
+            <div class="fl-score-bar" id="piv-practice-score-bar" style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;padding:0.65rem 0.85rem;border-radius:10px;background:rgba(234,88,12,0.08);border:1px solid rgba(234,88,12,0.2);">
+              <span style="font-size:0.82rem;font-weight:700;">Score</span>
+              <span id="piv-practice-score" style="font-size:1.15rem;font-weight:800;color:var(--fl-accent, #ea580c);">0 / 5</span>
+              <div style="flex:1;height:8px;border-radius:4px;background:rgba(0,0,0,0.08);overflow:hidden;">
+                <div id="piv-practice-fill" style="height:100%;border-radius:4px;background:linear-gradient(90deg, #ea580c, #16a34a);width:0%;transition:width 0.35s ease;"></div>
+              </div>
+              <label class="ll-toggle" style="margin:0;font-size:0.8rem;">
+                <input type="checkbox" id="fl-hints-toggle">
+                <span class="ll-toggle-track" aria-hidden="true"></span>
+                <span>Hints</span>
+              </label>
+            </div>
             <div class="fl-problems">
               <div class="fl-problem">
                 <p><span class="ll-badge" data-tone="easy">Concept</span>1. In a stick-figure rig, which point serves as the root origin <code>(x, y)</code> from which both the spine and the thighs branch?</p>
@@ -321,7 +368,7 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
                 <p><span class="ll-badge" data-tone="mid">Math</span>2. A forearm segment starts at the elbow <code>(200, 150)</code>, has length <code>40 px</code>, and points straight to the right (angle <code>θ = 0°</code>, where <code>cos(0°) = 1</code> and <code>sin(0°) = 0</code>). What is the <code>endX</code> coordinate of the hand?</p>
                 <div class="fl-problem-row">
                   <input type="number" class="fl-ans-input" id="flans-2" placeholder="endX" aria-label="Answer to question 2" />
-                  <button class="fl-check-btn" onclick="flCheckNum(2, 240, 0.5)">Check</button>
+                  <button class="fl-check-btn" onclick="flCheck(2, 240, 0.5)">Check</button>
                   <span role="status" class="fl-feedback" id="flfb-2"></span>
                 </div>
                 <div class="fl-hint" id="flhint-2">Hint: <code>endX = startX + length × cos(0°) = 200 + 40 × 1</code>.</div>
@@ -346,7 +393,7 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
                 <p><span class="ll-badge" data-tone="mid">Timing</span>4. Your animation has <code>24</code> frames and plays at <code>12 FPS</code>. How many seconds does one full loop last?</p>
                 <div class="fl-problem-row">
                   <input type="number" class="fl-ans-input" id="flans-4" placeholder="Seconds" aria-label="Answer to question 4" />
-                  <button class="fl-check-btn" onclick="flCheckNum(4, 2, 0.05)">Check</button>
+                  <button class="fl-check-btn" onclick="flCheck(4, 2, 0.05)">Check</button>
                   <span role="status" class="fl-feedback" id="flfb-4"></span>
                 </div>
                 <div class="fl-hint" id="flhint-4">Hint: divide total frames (24) by frames per second (12).</div>
@@ -366,6 +413,9 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
                 </div>
                 <div class="fl-hint" id="flhint-5">Hint: watch the green Balance marker in the studio when the figure stands vs. leans far forward.</div>
               </div>
+            </div>
+            <div style="margin-top:1.75rem;text-align:center;">
+              <a href="#piv-sec-studio" class="piv-btn piv-btn--primary" style="display:inline-flex;padding:8px 18px;font-size:0.95rem;text-decoration:none;">← Return to Animation Studio</a>
             </div>
           </section>
 

@@ -111,7 +111,35 @@ try {
   assert.equal(await page.locator('#piv-sec-studio').isVisible(), false);
   assert.equal(await page.locator('#piv-learning').isVisible(), true);
   assert.equal(await page.locator('#piv-learning figure:not([data-zoomable])').count(), 0);
-  await page.locator('#piv-view-animate').click();
+
+  // Practice problem checks, Enter key submission, and score bar
+  await page.locator('#flans-1').selectOption('hip');
+  await page.locator('#flans-1').locator('xpath=ancestor::div[contains(@class,"fl-problem-row")]//button').click();
+  assert.equal(await page.locator('#flfb-1').innerText(), '✓ Correct!');
+
+  await page.locator('#flans-2').fill('240');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#flfb-2').innerText(), '✓ Correct!');
+  assert.equal(await page.locator('#piv-practice-score').innerText(), '2 / 5');
+
+  await page.locator('#flans-3').selectOption('follow');
+  await page.locator('#flans-3').locator('xpath=ancestor::div[contains(@class,"fl-problem-row")]//button').click();
+  assert.equal(await page.locator('#flfb-3').innerText(), '✓ Correct!');
+
+  await page.locator('#flans-4').fill('2');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#flfb-4').innerText(), '✓ Correct!');
+
+  await page.locator('#flans-5').selectOption('base');
+  await page.locator('#flans-5').locator('xpath=ancestor::div[contains(@class,"fl-problem-row")]//button').click();
+  assert.equal(await page.locator('#flfb-5').innerText(), '✓ Correct!');
+  assert.equal(await page.locator('#piv-practice-score').innerText(), '5 / 5');
+
+  // Return to Animation Studio via step nav link
+  await page.locator('.ll-lesson-steps a[href="#piv-sec-studio"]').click();
+  assert.equal(await page.locator('#piv-sec-studio').isVisible(), true);
+  assert.equal(await page.locator('#piv-learning').isVisible(), false);
+  assert.ok(await page.locator('#piv-stage-canvas').getAttribute('aria-label').then(l => l.includes('Frame 1 of 5')));
   await page.locator('#piv-preset-select').selectOption('jump');
   assert.equal(await page.locator('#piv-project-name').inputValue(), 'Jump & landing');
   await page.locator('#piv-preset-select').selectOption('piv:../../student-projects/pivotstickfigure/Tatums animation.piv');
@@ -127,10 +155,109 @@ try {
   const [longSheet] = await Promise.all([page.waitForEvent('download'), page.locator('#piv-btn-export-spritesheet').click()]);
   const longPng = await sharp(await fs.readFile(await longSheet.path())).metadata();
   assert.ok(longPng.width <= 8192 && longPng.height > 140, 'Long animations export as a grid within browser canvas limits');
+
+  // Duplicate/layer figures, and keep the grabbed point stable during a root drag.
+  await page.locator('#piv-btn-new').click();
+  await editNumber('#piv-fig-x', 100);
+  await page.locator('#piv-btn-duplicate-fig').click();
+  project = await readProject();
+  assert.equal(project.doc.frames[0].figures.length, 2);
+  const characterId = project.doc.frames[0].figures[1].id;
+  assert.notEqual(characterId, project.doc.frames[0].figures[0].id);
+  await editNumber('#piv-fig-x', 100);
+  await page.locator('#piv-btn-send-back').click();
+  assert.deepEqual((await readProject()).doc.frames[0].order, [1, 0]);
+  assert.equal(await page.locator('#piv-btn-send-back').isDisabled(), true);
+  const fitted = await page.locator('#piv-stage-canvas').boundingBox();
+  const fitScale = Math.min(fitted.width / 690, fitted.height / 420);
+  const rootX = fitted.x + (fitted.width - 690 * fitScale) / 2 + 100 * fitScale;
+  const rootY = fitted.y + (fitted.height - 420 * fitScale) / 2 + 270 * fitScale;
+  await page.mouse.move(rootX + 4 * fitScale, rootY); await page.mouse.down();
+  await page.mouse.move(rootX + 24 * fitScale, rootY, { steps: 3 }); await page.mouse.up();
+  project = await readProject();
+  assert.ok(Math.abs(project.doc.frames[0].figures[0].x - 120) < 1, 'Frontmost figure moves by drag distance without snapping to the pointer');
+  assert.equal(project.doc.frames[0].figures[1].x, 100);
+  assert.equal(await page.locator('#piv-selection-name').innerText(), 'Stick figure 1');
+  await editNumber('#piv-fig-x', 100);
+  await page.locator('[data-figure-index="1"]').click();
+  await editNumber('#piv-fig-x', 400);
+  await page.locator('#piv-btn-add-frame').click();
+  await editNumber('#piv-fig-x', 500);
+  await page.locator('[data-figure-index="0"]').click();
+  await page.locator('#piv-btn-del-fig').click();
+  await page.locator('#piv-tween-count').fill('1');
+  await page.locator('#piv-btn-tween').click();
+  project = await readProject();
+  assert.equal(project.doc.frames.length, 3);
+  assert.equal(project.doc.frames[1].figures.find(f => f.id === characterId).x, 450, 'Tween matches identity after a figure is removed');
+  assert.equal(project.doc.frames[1].figures[0].x, 100, 'Unmatched figure holds until destination keyframe');
+  await page.locator('#piv-btn-undo').click();
+  assert.equal(await frameCount(), 2);
+  assert.equal(await page.locator('#piv-current-frame').innerText(), '2', 'Undo restores the edited keyframe');
+  await page.locator('#piv-btn-redo').click();
+  assert.equal(await frameCount(), 3);
+  await page.locator('#piv-btn-undo').click();
+  await page.locator('#piv-tween-count').fill('3');
+  for (const [easing, expected] of [['ease-in', 406.25], ['ease-out', 443.75], ['ease-in-out', 415.625]]) {
+    await page.locator('#piv-tween-easing').selectOption(easing);
+    await page.locator('#piv-btn-tween').click();
+    project = await readProject();
+    assert.equal(project.doc.frames.length, 5);
+    assert.equal(project.doc.frames[1].figures.find(f => f.id === characterId).x, expected, `${easing} changes spacing`);
+    await page.locator('#piv-btn-undo').click();
+  }
+
+  // Reordering keeps the current pose selected; copy/paste inserts independent poses.
+  await page.locator('#piv-btn-frame-earlier').click();
+  assert.equal((await readProject()).doc.frames[0].figures[0].x, 500);
+  assert.equal(await page.locator('#piv-current-frame').innerText(), '1');
+  assert.equal(await page.locator('#piv-btn-frame-earlier').isDisabled(), true);
+  await page.locator('#piv-btn-undo').click();
+  assert.equal(await page.locator('#piv-current-frame').innerText(), '2');
+  await page.locator('#piv-btn-frame-earlier').click();
+  await page.locator('#piv-btn-frame-later').click();
+  await page.locator('#piv-stage-canvas').focus();
+  await page.keyboard.press('Control+c');
+  await page.locator('[data-frame-idx="0"]').click();
+  await page.keyboard.press('Control+v');
+  assert.equal(await frameCount(), 3);
+  await editNumber('#piv-fig-x', 480);
+  project = await readProject();
+  assert.equal(project.doc.frames[1].figures[0].x, 480);
+  assert.equal(project.doc.frames[2].figures[0].x, 500, 'Pasted frame does not share pose arrays with its source');
+  assert.equal(project.doc.frames[1].figures[0].type, project.doc.frames[2].figures[0].type, 'Pasting preserves figure type identity');
+  await page.locator('[data-seg-index="4"]').click();
+  const beforeRotate = (await readProject()).doc.frames[1].figures[0].angles;
+  await page.locator('#piv-stage-canvas').focus();
+  await page.keyboard.press('Alt+Shift+ArrowRight');
+  project = await readProject();
+  assert.ok(Math.abs(project.doc.frames[1].figures[0].angles[4] - beforeRotate[4] - Math.PI / 18) < 0.001);
+  assert.ok(Math.abs(project.doc.frames[1].figures[0].angles[6] - beforeRotate[6] - Math.PI / 18) < 0.001, 'Keyboard rotation carries child joints');
+  assert.deepEqual(project.doc.frames[2].figures[0].angles, beforeRotate, 'Rotating pasted pose leaves its source unchanged');
+  // IDs stay unique across the whole animation, including figures absent here.
+  const existingIds = project.doc.frames.flatMap(f => f.figures.map(fig => fig.id));
+  await page.locator('#piv-btn-add-stick').click();
+  assert.ok(!existingIds.includes((await readProject()).doc.frames[1].figures[1].id));
+
+  // One-shot playback stops with editable handles, then replays from frame one.
+  await page.locator('#piv-btn-loop').click();
+  await page.locator('#piv-fps-slider').fill('24');
+  await page.locator('#piv-fps-slider').dispatchEvent('change');
+  await page.locator('#piv-btn-play').click();
+  await page.waitForFunction(() => document.getElementById('piv-btn-play').getAttribute('aria-pressed') === 'false');
+  assert.equal(await page.locator('#piv-current-frame').innerText(), '3');
+  assert.equal(await page.locator('#piv-fig-x').isDisabled(), false);
+  await page.locator('#piv-fps-slider').fill('4');
+  await page.locator('#piv-fps-slider').dispatchEvent('change');
+  await page.locator('#piv-btn-play').click();
+  assert.equal(await page.locator('#piv-current-frame').innerText(), '1');
+  await page.locator('#piv-btn-play').click();
+  await page.locator('#piv-btn-loop').click();
   await page.locator('#piv-preset-select').selectOption('walk');
+  assert.equal(await page.locator('#piv-btn-paste-frame').isDisabled(), true, 'Loading another project clears frame clipboard');
   await page.screenshot({ path: '/tmp/pivot-desktop.png', fullPage: true });
 
-  for (const width of [390, 768, 1024]) {
+  for (const width of [320, 390, 768, 1024]) {
     await page.setViewportSize({ width, height: 900 });
     await page.waitForFunction(() => document.getElementById('piv-stage-canvas').clientWidth > 100);
     assert.ok(await page.evaluate(() => document.querySelector('.ll-sim').scrollWidth <= innerWidth + 1), `No horizontal page overflow at ${width}`);
@@ -139,13 +266,20 @@ try {
     if (width === 390) {
       const timeline = await page.locator('.piv-filmstrip-bar').boundingBox();
       const panel = await page.locator('.piv-tool-panel').boundingBox();
-      assert.ok(timeline.y < panel.y, 'Mobile timeline appears before property panels');
+      const timing = await page.locator('.piv-timing-bar').boundingBox();
+      assert.ok(timeline.y < timing.y && timing.y < panel.y, 'Mobile timeline and timing controls appear before property panels');
       await page.screenshot({ path: '/tmp/pivot-mobile.png', fullPage: true });
       await page.locator('#piv-btn-focus').click();
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#piv-btn-focus').getAttribute('aria-pressed'), 'false');
+      await page.locator('#piv-tween-count').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: '/tmp/pivot-mobile-timing.png', fullPage: true });
     }
   }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.evaluate(() => document.documentElement.dataset.lighting = 'night');
+  await page.locator('#piv-stage-canvas').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '/tmp/pivot-night.png', fullPage: true });
   assert.deepEqual(errors, []);
-  console.log('Pivot studio browser checks passed: posing, fitted-stage drag, history, scene selection, tweening, playback, local recovery, file round-trip, sprite export, classroom file, view switching, and responsive layout.');
+  console.log('Pivot studio browser checks passed: posing, fitted-stage drag, joint keyboard controls, history, figure duplication/layering, identity-safe tweens and easing, frame reordering/copy/paste, loop/one-shot playback, local recovery, file round-trip, sprite export, classroom files, view switching, and responsive layout at 320–1440px.');
 } finally { await browser.close(); }
