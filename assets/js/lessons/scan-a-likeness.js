@@ -106,7 +106,8 @@
       drag: -1,
       selected: 0
     };
-    var view = SimKit.canvas2d(canvas, { height: null, onResize: function () { draw(); } });
+    var view = null;
+    view = SimKit.canvas2d(canvas, { height: null, onResize: function () { if (view) draw(); } });
     var geom = { s: 1, ox: 0, oy: 0 };
 
     function activeCams() { return thirdInput && thirdInput.checked ? state.cams : state.cams.slice(0, 2); }

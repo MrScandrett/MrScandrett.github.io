@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What Is a 3D Model? · Vertices, normals and watertight meshes · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="What a 3D model really is: coordinates, vertices, edges and faces, normals, and the watertight check a slicer runs. Inspect meshes, repair broken ones in the Mesh Inspector, compare STL, OBJ, GLB, 3MF and STEP, then build paper solids and test Euler's V − E + F = 2." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/figure-lesson.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/what-is-a-3d-model.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+<div class="ll-viewport">
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fl-page">
+
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../3d-design.html">3D Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">What Is a 3D Model?</span>
+        </nav>
+        <div data-design3d-route="foundation"></div>
+
+        <section class="hero fl-hero">
+          <p class="eyebrow">3D Design · Foundations · What is a 3D model?</p>
+          <h1>A 3D Model Is a List of Points and a Promise About the Inside</h1>
+          <div class="fl-hero-meta">
+            <span>Coordinates</span><span class="dot"></span>
+            <span>Vertices, edges, faces</span><span class="dot"></span>
+            <span>Normals</span><span class="dot"></span>
+            <span>Watertight meshes</span><span class="dot"></span>
+            <span>STL · OBJ · GLB · 3MF · STEP</span>
+          </div>
+          <p class="fl-lede">On screen a model looks solid. Inside the file there is no plastic and no clay: only numbers. A list of corner points, a list of which corners make each flat face, and an agreement about which side of every face is "outside". In this lesson you take a model apart into those numbers, break meshes and repair them the way a slicer needs, then build real solids out of paper and count their corners to find a rule that is over 250 years old.</p>
+        </section>
+
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#wm-coords">Coordinates</a>
+          <a href="#wm-parts">Vertices · edges · faces</a>
+          <a href="#wm-normals">Normals</a>
+          <a href="#wm-watertight">Watertight</a>
+          <a href="#wm-lab">Mesh Inspector</a>
+          <a href="#wm-formats">File formats</a>
+          <a href="#wm-euler">Build &amp; count</a>
+          <a href="#fl-sec-practice">Practice</a>
+        </nav>
+
+        <section class="fl-card" id="wm-hook" style="--card-accent:#c2410c;">
+          <h2>Start with a real object: a teapot</h2>
+          <p>In 1975 a computer-graphics researcher at the University of Utah, Martin Newell, wanted a real object to test his drawings on. He picked up his family's white Melitta teapot, sketched it on graph paper, and typed the coordinates of its outline into a computer. The "Utah teapot" became one of the most-drawn objects in computer graphics, and the real pot now sits in the Computer History Museum in California.</p>
+          <p>That is what every 3D model still is: someone measured a shape and wrote it down as <span data-glossary="coordinate">coordinates</span>. Even the idea of showing a solid by its edges alone is old. Five hundred years before computers, Leonardo da Vinci drew polyhedra as open frames so you could see every edge at once, the way a 3D app's wireframe view does.</p>
+          <div class="wm-pair">
+            <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+              <img src="../../../assets/images/lessons/what-is-a-3d-model/utah-teapot.webp" alt="A plain white ceramic teapot with a curved spout, a round lid and a loop handle, on a museum shelf." width="1200" height="900" loading="lazy" />
+              <figcaption><b>The real Utah teapot.</b> Its smooth curves were written down as numbers in 1975 and are still used to test 3D software today. A real object came first; the model is a measured description of it. <span class="wm-credit" data-no-glossary>Photo: Marshall Astor, <a href="https://commons.wikimedia.org/wiki/File:Original_Utah_Teapot.jpg">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>; resized to WebP.</span></figcaption>
+            </figure>
+            <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+              <img src="../../../assets/images/lessons/what-is-a-3d-model/leonardo-rhombicuboctahedron.webp" alt="An old woodcut of a many-sided solid made of square and triangular openings, drawn as a hollow frame so the back edges show through." width="800" height="867" loading="lazy" />
+              <figcaption><b>A wireframe from 1509.</b> Leonardo drew this rhombicuboctahedron as an empty frame: every edge, no surfaces. Count its parts and you get 24 vertices, 48 edges and 26 faces (8 triangles, 18 squares). <span class="wm-credit" data-no-glossary>Woodcut after Leonardo da Vinci, in Luca Pacioli, <cite>De divina proportione</cite> (Venice, 1509). Public domain; <a href="https://commons.wikimedia.org/wiki/File:De_divina_proportione_-_Vigintisex_Basium_Planum_Vacuum.jpg">Wikimedia Commons</a> (Internet Archive scan).</span></figcaption>
+            </figure>
+          </div>
+          <div class="fl-callout a1"><strong>Why this matters for your Trio Challenge:</strong> all three Trio prints (<a href="../3d-design.html#grand-challenge">moves in one piece · useful tool · likeness</a>) leave your computer as a mesh file. A slicer can only print a mesh that is <em>closed</em>, with every face pointing out. A part that moves in one piece is two separate closed meshes with air between them. A scanned likeness usually arrives broken and has to be repaired. This lesson is how you check all three.</div>
+        </section>
+
+        <section class="fl-card" id="wm-coords" style="--card-accent:#1f5f6b;">
+          <h2>1 · Every point is three numbers</h2>
+          <p>Pick any corner of your desk. To tell someone exactly where it is, you need three distances from a starting corner: how far right, how far back, how far up. Those three numbers, written <code>(x, y, z)</code>, are the point's <span data-glossary="coordinate">coordinates</span>. The starting corner is the <span data-glossary="origin">origin</span>, <code>(0, 0, 0)</code>, and the three directions are the <span data-glossary="axis">axes</span>. Every 3D app colours them the same way: <strong style="color:#c53030">X red</strong>, <strong style="color:#1f7a39">Y green</strong>, <strong style="color:#1e56b0">Z blue</strong>.</p>
+          <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/coordinates.svg" alt="Left: a box with X, Y and Z axes, Z pointing up. A corner at 30, 20, 15 millimetres is reached by 30 right, 20 back and 15 up. Right: the same corner with game-engine axes where Y points up, written 0.030, 0.015, minus 0.020 metres." width="1000" height="560" loading="lazy" />
+            <figcaption><b>Same corner, two ways of writing it.</b> CAD apps and slicers count millimetres with Z up. Game engines and glTF files count metres with Y up, so "up" moves to the second number and "back" becomes −Z. Moving a model between them without converting is how a 30 mm part arrives 30 metres tall, or lying on its back. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <div class="wm-cards">
+            <div class="wm-cardlet"><span class="wm-big">mm</span><b>Printing uses millimetres</b><span>A slicer reads 25 as 25 mm. Type 2.5 when you meant centimetres and the part prints ten times too small.</span></div>
+            <div class="wm-cardlet"><span class="wm-big">Z ↑</span><b>Up is not always Z</b><span>CAD and slicers: Z up. glTF, most game engines: Y up. Exporters usually convert; check the result.</span></div>
+            <div class="wm-cardlet"><span class="wm-big">0,0,0</span><b>The origin is a choice</b><span>Put it at a corner on the bed or the centre of the base, then every other number is measured from there.</span></div>
+          </div>
+          <p>Where to find units and the up axis in the app you use (the column you pick is remembered across the site):</p>
+          <div data-rosetta="model.units model.axis"></div>
+        </section>
+
+        <section class="fl-card" id="wm-parts" style="--card-accent:#c2410c;">
+          <h2>2 · Vertices, edges and faces</h2>
+          <p>A <span data-glossary="polygon mesh">mesh</span> is the most common kind of 3D model. It has three parts:</p>
+          <div class="wm-cards">
+            <div class="wm-cardlet"><b><span data-glossary="vertex">Vertex</span> (plural: vertices)</b><span>A corner point: three numbers. The file stores a list of them, numbered 0, 1, 2…</span></div>
+            <div class="wm-cardlet"><b><span data-glossary="mesh face">Face</span></b><span>A flat surface, stored as a loop of vertex numbers, such as <code>0 → 1 → 5 → 4</code>. A face with three corners is a triangle; with more than four it is an <span data-glossary="n-gon">n-gon</span>.</span></div>
+            <div class="wm-cardlet"><b><span data-glossary="mesh edge">Edge</span></b><span>A straight line between two vertices where faces meet. Most files don't store edges at all: they come from the faces.</span></div>
+          </div>
+          <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/vertex-edge-face.svg" alt="A cube drawn three times: first its 8 numbered vertices, then its 12 edges with edge 4 to 5 highlighted, then its faces with face 0-1-5-4 shaded. 8 minus 12 plus 6 equals 2." width="1000" height="540" loading="lazy" />
+            <figcaption><b>Eight corners, twelve edges, six faces.</b> The file lists the 8 corners and the 6 faces; the 12 edges are whatever lines the faces share. Notice that 8 − 12 + 6 = 2. Keep that number in mind for the build task. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <h3>A mesh has no curves</h3>
+          <p>Every face is flat, so a mesh can only fake a curve with many small flat <span data-glossary="facet">facets</span>. A CAD program keeps the true circle ("radius 10 mm") until you export. Then it is cut into triangles, which is called <span data-glossary="triangulation">triangulation</span>, or tessellation.</p>
+          <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/solid-vs-mesh.svg" alt="Left: a smooth CAD cylinder labelled r = 10 mm. An export arrow points right to a 12-sided mesh cylinder made of flat strips and fan-shaped triangles on top." width="1000" height="520" loading="lazy" />
+            <figcaption><b>Exporting turns exact curves into flats.</b> A STEP file keeps the true circle. STL, OBJ, 3MF and glTF store flat triangles. With 12 sides, the flats miss the circle by up to 0.34 mm, more than a printed layer. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <div class="wm-facets" data-wm-facets>
+            <canvas role="img" aria-label="A dashed true circle with an orange polygon drawn through it; a black tick shows the biggest gap between a flat side and the circle."></canvas>
+            <div>
+              <label>Flat sides around a 20 mm-wide cylinder
+                <input type="range" min="3" max="128" step="1" value="12" aria-describedby="wm-facet-out" />
+              </label>
+              <p id="wm-facet-out" data-facet-out aria-live="polite"></p>
+              <p class="wm-note">This is the "resolution" or "segments" setting in an exporter or a CAD app. More sides means smoother prints and bigger files. Past the point where the error is smaller than a printed layer, extra sides buy nothing you can see.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="fl-card" id="wm-normals" style="--card-accent:#1f5f6b;">
+          <h2>3 · Which side is outside? Normals</h2>
+          <p>A face is a flat sheet with two sides, and the computer has to know which side faces the air. That direction is the <span data-glossary="face normal">face normal</span>: an arrow sticking straight out of the face. The file doesn't store an "outside" label. It stores the <em>order</em> of the corners. Listed counter-clockwise as you look at the face from outside, the normal points at you. This is called the <span data-glossary="winding order">winding order</span>.</p>
+          <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/normals-winding.svg" alt="Two triangles. The blue one lists its corners 1, 2, 3 counter-clockwise and its normal points toward the viewer, outside. The red one lists the same corners 1, 3, 2, clockwise, and its normal points away, into the solid." width="1000" height="520" loading="lazy" />
+            <figcaption><b>Same three corners, opposite order, opposite normal.</b> Use the right-hand rule: curl the fingers of your right hand in the order of the corners and your thumb points along the normal. A face listed the wrong way round is a <em>flipped</em> face, and 3D apps show it red (or dark) in a face-orientation view. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <p><strong>Try it with your hand:</strong> hold a sticky note flat on your desk and number its corners 1, 2, 3 counter-clockwise as you look down at it. Curl your right-hand fingers 1 → 2 → 3. Your thumb points up, out of the desk. Now number them clockwise. Your thumb points down into the desk. A slicer reading a flipped face thinks the air is inside the part.</p>
+        </section>
+
+        <section class="fl-card" id="wm-watertight" style="--card-accent:#c2410c;">
+          <h2>4 · Watertight: the promise a printer needs</h2>
+          <p>A slicer has to decide, layer by layer, which spots are plastic and which are air. It can only do that if the mesh is a closed skin with a clear inside, like a balloon with no holes. Such a mesh is called <span data-glossary="watertight mesh">watertight</span>, or a <span data-glossary="manifold mesh">manifold mesh</span>. The test is simple enough to do by hand:</p>
+          <ol>
+            <li><strong>Every edge is shared by exactly two faces.</strong> One face means a hole or a crack (an <em>open edge</em>). Three or more means something extra is stuck on (a <span data-glossary="non-manifold edge">non-manifold edge</span>).</li>
+            <li><strong>Every normal points out.</strong> Neighbouring faces must walk their shared edge in opposite directions.</li>
+            <li><strong>Corners that touch are one corner.</strong> Two separate vertices sitting a hair apart leave a crack you can't see, called a gap.</li>
+          </ol>
+          <figure class="wm-fig" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/broken-meshes.svg" alt="Six small cubes: a watertight one; one missing a face; one with a face pointing inward; one with an extra fin making three faces share an edge; one with two shells pushed through each other; and a single flat sheet with no inside." width="1000" height="640" loading="lazy" />
+            <figcaption><b>Six ways a mesh can be broken.</b> Holes, flipped faces and gaps are the common ones after modelling. Self-intersections come from shapes pushed into each other without a Boolean union, and zero-thickness walls come from forgetting to give a surface any thickness. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <p>Most slicers and 3D apps can show these problems. Look for a <em>face orientation</em> view (flipped faces turn red), a "non-manifold" or "3D print" check, or a "repair model" button. Know what they fix, because an automatic repair can guess wrong.</p>
+        </section>
+
+        <section class="fl-card" id="wm-lab" style="--card-accent:#1f5f6b;">
+          <h2>Mesh Inspector</h2>
+          <p><strong>Inspect</strong> mode: load a shape, click a vertex, edge or face, and read its numbers. Turn on <em>Normals</em> and <em>Inside / outside</em> to see which way every face points. Predict V, E and F before you press <em>Reveal counts</em>.</p>
+          <p><strong>Repair</strong> mode is the fix-the-broken-mesh challenge: each puzzle number is a mesh with hidden faults. Find them, repair them with the same four moves real repair tools make, and press <em>Check watertight</em>. Fewer moves is better. Give your neighbour your puzzle number and race.</p>
+          <div class="wm-inspector" data-wm-inspector data-present data-memory-ignore>
+            <div class="wm-modebar">
+              <button type="button" data-wm-mode="inspect" aria-pressed="true">Inspect</button>
+              <button type="button" data-wm-mode="repair" aria-pressed="false">Repair challenge</button>
+              <p class="wm-status" data-wm-status role="status" aria-live="polite"></p>
+            </div>
+            <div class="wm-grid">
+              <div class="wm-stage">
+                <canvas aria-label="3D view of the mesh. Drag to orbit, scroll or pinch to zoom, click to pick a vertex, edge or face."></canvas>
+                <div class="wm-labels" aria-hidden="true"></div>
+                <p class="wm-stage-key">Drag to turn · scroll to zoom · click to pick · grid squares are 10 mm</p>
+                <button type="button" class="wm-resetview" data-wm-reset-view>Reset view</button>
+              </div>
+              <div class="wm-side">
+                <div data-wm-pane="inspect">
+                  <fieldset>
+                    <legend>Shape</legend>
+                    <select data-wm-shape aria-label="Shape to inspect"></select>
+                    <p class="wm-note" data-wm-shape-note></p>
+                  </fieldset>
+                </div>
+                <div data-wm-pane="repair" hidden>
+                  <fieldset>
+                    <legend>Puzzle</legend>
+                    <div class="wm-row">
+                      <label>No. <input type="number" min="1" max="99" value="1" data-wm-seed style="width:4.2em" /></label>
+                      <select data-wm-level aria-label="Difficulty"></select>
+                    </div>
+                    <div class="wm-row">
+                      <button type="button" class="wm-btn" data-wm-load>Load</button>
+                      <button type="button" class="wm-btn" data-wm-next>Next puzzle</button>
+                      <label><input type="checkbox" data-wm-show="hints" /> Show problems</label>
+                    </div>
+                  </fieldset>
+                  <fieldset>
+                    <legend>Repair tools</legend>
+                    <div class="wm-row">
+                      <button type="button" class="wm-btn" data-wm-tool="flip" title="Reverse a face's corner order">Flip face</button>
+                      <button type="button" class="wm-btn" data-wm-tool="delete" title="Remove a face">Delete face</button>
+                    </div>
+                    <div class="wm-row">
+                      <button type="button" class="wm-btn" data-wm-tool="fill" title="Pick an open edge, then fill the hole it belongs to">Fill hole</button>
+                      <button type="button" class="wm-btn" data-wm-tool="weld" title="Merge a vertex with the nearest separate vertex">Weld vertex</button>
+                    </div>
+                    <div class="wm-row">
+                      <button type="button" class="wm-btn" data-wm-tool="undo">Undo</button>
+                      <button type="button" class="wm-btn" data-wm-tool="restart">Start over</button>
+                      <button type="button" class="wm-btn wm-btn-main" data-wm-tool="check">Check watertight</button>
+                    </div>
+                    <p class="wm-note wm-toolmsg" data-wm-toolmsg aria-live="polite"></p>
+                    <p class="wm-moves" data-wm-moves></p>
+                  </fieldset>
+                </div>
+                <fieldset>
+                  <legend>Pick</legend>
+                  <div class="wm-pickrow">
+                    <label><input type="radio" name="wm-pick" value="vertex" data-wm-pick checked /> Vertex</label>
+                    <label><input type="radio" name="wm-pick" value="edge" data-wm-pick /> Edge</label>
+                    <label><input type="radio" name="wm-pick" value="face" data-wm-pick /> Face</label>
+                  </div>
+                  <div class="wm-row">
+                    <button type="button" class="wm-btn" data-wm-prev aria-label="Previous">◀</button>
+                    <button type="button" class="wm-btn" data-wm-step aria-label="Next">▶</button>
+                    <span class="wm-note">step through them one by one</span>
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>Show</legend>
+                  <div class="wm-checks">
+                    <label><input type="checkbox" data-wm-show="faces" /> Faces</label>
+                    <label><input type="checkbox" data-wm-show="edges" /> Edges</label>
+                    <label><input type="checkbox" data-wm-show="verts" /> Vertices</label>
+                    <label><input type="checkbox" data-wm-show="nums" /> Vertex numbers</label>
+                    <label><input type="checkbox" data-wm-show="normals" /> Normals</label>
+                    <label><input type="checkbox" data-wm-show="orient" /> Inside / outside</label>
+                    <label><input type="checkbox" data-wm-show="xray" /> X-ray</label>
+                    <label><input type="checkbox" data-wm-show="axes" /> Axes &amp; bed</label>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+            <div class="wm-readouts">
+              <div class="wm-box">
+                <h3>Selection</h3>
+                <div data-wm-selection aria-live="polite"></div>
+              </div>
+              <div class="wm-box">
+                <h3>Counts</h3>
+                <dl class="wm-counts" data-wm-counts></dl>
+                <div data-wm-pane="inspect"><button type="button" class="wm-btn" data-wm-reveal style="margin-top:0.45rem;">Reveal counts</button></div>
+                <div data-wm-pane="repair" hidden><div data-wm-report aria-live="polite" style="margin-top:0.45rem;"></div></div>
+              </div>
+            </div>
+            <ul class="wm-legend" aria-label="Colour key">
+              <li><i style="background:#3f7fe6"></i>outside of a face</li>
+              <li><i style="background:#e04848"></i>inside of a face</li>
+              <li><i style="background:#ff3b30"></i>open edge</li>
+              <li><i style="background:#fb923c"></i>non-manifold edge</li>
+              <li><i style="background:#d946ef"></i>flipped face</li>
+              <li><i style="background:#a3e635"></i>gap (corners almost touching)</li>
+              <li><i style="background:#facc15"></i>selected</li>
+            </ul>
+          </div>
+          <div class="wm-cards">
+            <div class="wm-cardlet"><b>Flip face</b><span>Reverses a face's corner order. Fixes a face whose normal points in.</span></div>
+            <div class="wm-cardlet"><b>Fill hole</b><span>Pick an open edge; a new face is built around the hole's rim, wound to face out.</span></div>
+            <div class="wm-cardlet"><b>Weld vertex</b><span>Merges a corner with the nearest separate corner closer than 4 mm. Closes a gap.</span></div>
+            <div class="wm-cardlet"><b>Delete face</b><span>Removes a face. Use it on a stray face stuck inside the solid (a non-manifold edge).</span></div>
+          </div>
+          <div class="fl-callout a2"><strong>Repair order matters.</strong> Weld gaps first (a crack is not a hole: filling it would cover it with a sliver face), delete stray faces next, then fill holes, then flip what is still flipped. That is the same order automatic repair tools follow, and it is why they sometimes guess wrong on a badly broken scan.</div>
+          <p>Where the same tools live in a full 3D app:</p>
+          <div data-rosetta="model.components"></div>
+        </section>
+
+        <section class="fl-card" id="wm-formats" style="--card-accent:#c2410c;">
+          <h2>5 · File formats: what each one remembers</h2>
+          <p>The same shape can be saved in many file types. They differ in what they remember about it. Pick the format by asking where the file is going next.</p>
+          <div class="wm-table-wrap">
+            <table class="wm-table">
+              <caption>Five formats you will meet</caption>
+              <thead><tr><th scope="col">Format</th><th scope="col">Stores the shape as</th><th scope="col">Units</th><th scope="col">Colour, textures</th><th scope="col">Use it for</th></tr></thead>
+              <tbody>
+                <tr><th scope="row"><span data-glossary="STL file">STL</span><br><small>3D Systems, documented 1988</small></th><td>A plain list of triangles, each with its three corners and a normal. Corners are repeated, not shared.</td><td class="wm-no">None (slicers assume mm)</td><td class="wm-no">No</td><td>Sending a single-colour part to almost any slicer.</td></tr>
+                <tr><th scope="row"><span data-glossary="OBJ file">OBJ</span><br><small>Wavefront Technologies, about 1990</small></th><td>Text lines: <code>v</code> for vertices, <code>f</code> for faces that point to vertex numbers; optional normals and texture coordinates.</td><td class="wm-no">None</td><td>Through a separate <code>.mtl</code> file</td><td>Moving a textured model between modelling apps.</td></tr>
+                <tr><th scope="row"><span data-glossary="glTF">GLB / glTF</span><br><small>Khronos Group, version 2.0 in 2017</small></th><td>Triangle meshes plus materials, textures, a scene tree and animation. GLB packs it all into one file.</td><td class="wm-yes">Metres, Y up</td><td class="wm-yes">Yes</td><td>Games, the web, VR, AR; anything that is looked at rather than printed.</td></tr>
+                <tr><th scope="row"><span data-glossary="3MF file">3MF</span><br><small>3MF Consortium, 2015</small></th><td>Shared vertices and triangles in a zipped package, several objects per file, plus print information.</td><td class="wm-yes">Yes (mm by default)</td><td class="wm-yes">Yes</td><td>3D printing when you want units, colours and several parts kept together.</td></tr>
+                <tr><th scope="row"><span data-glossary="STEP file">STEP</span><br><small>ISO 10303, first published 1994</small></th><td>Exact surfaces and edges (a true cylinder, a true fillet), not triangles.</td><td class="wm-yes">Yes</td><td>Basic colours</td><td>Sending a part to another CAD program, or to an engineer who will change it.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>A good habit:</strong> keep the editable original (your CAD file or STEP) and export a mesh only to print or to show. A mesh is like a photocopy: easy to use, hard to edit, and every round trip loses something.</p>
+          <p>How to export and import in the app you use:</p>
+          <div data-rosetta="model.export model.import"></div>
+          <p>In this site's tools: <a href="../../../workbench.html">Workbench</a> exports STL, animated GLB and OBJ, and checks the print before it lets you export. <a href="../../../forge.html">Forge</a> builds closed, print-checked parts from numbers.</p>
+        </section>
+
+        <section class="fl-card" id="wm-euler" style="--card-accent:#1f5f6b;">
+          <h2>6 · Build it, then count it: V − E + F</h2>
+          <p>Leonardo's frame, the cube, the house in the inspector: count their vertices, edges and faces and something strange happens every time. Leonhard Euler noticed it and wrote it to his friend Christian Goldbach in 1750: for any solid without a hole through it, <span data-glossary="Euler's polyhedron formula">V − E + F = 2</span>. Now test it on solids you build with your hands.</p>
+          <div class="fl-formula-box">
+            <span class="fl-formula-sym">V − E + F = 2</span>
+            <div class="fl-formula-vars"><span>V = vertices (corners)</span><span>E = edges</span><span>F = faces</span></div>
+          </div>
+          <h3>Materials</h3>
+          <p>The printable nets below (card stock, scissors, glue stick), or straws or toothpicks joined with modelling clay, mini marshmallows or pipe cleaners. A marker for dotting corners as you count.</p>
+          <figure class="wm-fig wm-fig-sheet" data-zoomable data-lightbox-group="wm-figures">
+            <img src="../../../assets/images/lessons/what-is-a-3d-model/polyhedron-nets.svg" alt="Printable nets for a cube, a square pyramid and a triangular prism with grey glue tabs, plus three small boxes for writing V, E, F and V minus E plus F." width="1000" height="1240" loading="lazy" />
+            <figcaption><b>Nets to cut, fold and glue.</b> Cut on solid lines, fold on dashed lines, glue the grey tabs. Print one page per pair. A net is also how a folded or flat-pack model is unfolded, the same idea a 3D app uses when it unwraps a mesh for textures. Original ClassroomOS teaching diagram.</figcaption>
+          </figure>
+          <h3>Steps</h3>
+          <ol>
+            <li><strong>Build</strong> three solids: a net, or a straw frame (straws are edges, clay balls are vertices).</li>
+            <li><strong>Count V</strong> by putting a dot on each corner as you go, so you never count one twice.</li>
+            <li><strong>Count E</strong> by running a finger along each edge and ticking it. On a straw frame, count the straws.</li>
+            <li><strong>Count F</strong> by numbering each face with a marker.</li>
+            <li><strong>Predict, then compute</strong> V − E + F and write it in the sheet. Is it 2?</li>
+            <li><strong>Break the rule on purpose:</strong> build a picture frame (a square ring with a hole through it) from straws or card. Count again. What do you get now?</li>
+          </ol>
+          <div class="wm-table-wrap wm-sheet">
+            <table class="wm-table" data-euler-sheet>
+              <caption>Euler record sheet (fill in V, E and F; the last column works itself out)</caption>
+              <thead><tr><th scope="col">Solid</th><th scope="col">My prediction</th><th scope="col">V</th><th scope="col">E</th><th scope="col">F</th><th scope="col">V − E + F</th></tr></thead>
+              <tbody>
+                <tr data-euler-row><th scope="row">Cube</th><td><input class="wm-wide" type="text" aria-label="Cube prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="Cube vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="Cube edges" /></td><td><input type="number" min="0" data-k="f" aria-label="Cube faces" /></td><td><output></output></td></tr>
+                <tr data-euler-row><th scope="row">Square pyramid</th><td><input class="wm-wide" type="text" aria-label="Square pyramid prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="Square pyramid vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="Square pyramid edges" /></td><td><input type="number" min="0" data-k="f" aria-label="Square pyramid faces" /></td><td><output></output></td></tr>
+                <tr data-euler-row><th scope="row">Triangular prism</th><td><input class="wm-wide" type="text" aria-label="Triangular prism prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="Triangular prism vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="Triangular prism edges" /></td><td><input type="number" min="0" data-k="f" aria-label="Triangular prism faces" /></td><td><output></output></td></tr>
+                <tr data-euler-row><th scope="row">Tetrahedron (4 triangles)</th><td><input class="wm-wide" type="text" aria-label="Tetrahedron prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="Tetrahedron vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="Tetrahedron edges" /></td><td><input type="number" min="0" data-k="f" aria-label="Tetrahedron faces" /></td><td><output></output></td></tr>
+                <tr data-euler-row><th scope="row">My own solid: <input class="wm-wide" type="text" aria-label="Name of my own solid" style="max-width:9em" /></th><td><input class="wm-wide" type="text" aria-label="My own solid prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="My own solid vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="My own solid edges" /></td><td><input type="number" min="0" data-k="f" aria-label="My own solid faces" /></td><td><output></output></td></tr>
+                <tr data-euler-row><th scope="row">Picture frame (has a hole)</th><td><input class="wm-wide" type="text" aria-label="Picture frame prediction" /></td><td><input type="number" min="0" data-k="v" aria-label="Picture frame vertices" /></td><td><input type="number" min="0" data-k="e" aria-label="Picture frame edges" /></td><td><input type="number" min="0" data-k="f" aria-label="Picture frame faces" /></td><td><output></output></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Check your counts against the Mesh Inspector: its cube, pyramid, house and picture frame use the same shapes. The frame should give <strong>0</strong>, not 2. Every tunnel through a solid lowers V − E + F by 2. That is why mathematicians use the number to count holes, and why a 3D app's mesh statistics can hint that a model has a hole you didn't mean to make.</p>
+          <p>Use <strong>Save answers</strong> in the lesson's heart | save | print pill to keep this sheet in your browser, or print the lesson as a handout.</p>
+        </section>
+
+        <section class="fl-card" id="wm-bands" style="--card-accent:#c2410c;">
+          <h2>Pick your level</h2>
+          <div class="wm-bands">
+            <div class="wm-band"><h3>K–2 · Corners and sides</h3><p>Build a cube from clay balls and straws. Count the corners (clay balls) and the sticks together. Find a face on the inspector's cube and say which way its arrow points: out to the air.</p></div>
+            <div class="wm-band"><h3>3–5 · Count and check</h3><p>Fold two nets and fill in their rows. Predict V, E and F for a shape in the inspector before pressing Reveal. Solve Repair puzzle 1 at Level 1.</p></div>
+            <div class="wm-band"><h3>6–8 · Repair and explain</h3><p>Fill the whole record sheet including the picture frame. Solve two Level 2 puzzles and explain each fault in the words <em>open edge</em>, <em>flipped</em> and <em>gap</em>. Read one vertex's coordinates in both mm and metres.</p></div>
+            <div class="wm-band"><h3>9–12 · Prove and choose</h3><p>Solve a Level 3 puzzle in the fewest moves and justify the order. Explain why a tunnel lowers V − E + F by 2. Choose a format for each Trio print and for a game version of it, and defend the choice.</p></div>
+          </div>
+        </section>
+
+        <section class="fl-card" id="wm-check" style="--card-accent:#1f5f6b;">
+          <h2>Checkpoint</h2>
+          <div class="fl-callout a1">
+            <p><strong>You're ready to move on when you can:</strong></p>
+            <ol>
+              <li>Read a vertex's coordinates and say which number is "up" in a CAD file and in a game file.</li>
+              <li>Point to a vertex, an edge and a face on a real object and on a mesh.</li>
+              <li>Explain how the order of a face's corners decides its normal.</li>
+              <li>State the three watertight checks and repair a broken mesh in the inspector.</li>
+              <li>Choose STL, 3MF, GLB, OBJ or STEP for a job and say what the file will forget.</li>
+              <li>Show V − E + F = 2 on a solid you built, and explain why a ring gives 0.</li>
+            </ol>
+          </div>
+          <p>Next: measure a real object and design parts that fit it in <a href="../cad-and-printing/measure-and-fit.html">Measure and Fit</a>, then <a href="../cad-and-printing/3d-printing.html">prepare a print</a>. Rebuild a shape by its three views in <a href="../cad-and-printing/cad-camera-controls.html">CAD camera controls</a>. Scans arrive broken: repair them in <a href="../sculpture/scan-a-likeness.html">Scan a Likeness</a>.</p>
+        </section>
+
+        <section class="fl-card" id="fl-sec-practice" style="--card-accent:#007aff;">
+          <h2>Practice Problems</h2>
+          <label class="ll-toggle" style="margin-bottom:0.8rem;">
+            <input type="checkbox" id="fl-hints-toggle">
+            <span class="ll-toggle-track" aria-hidden="true"></span>
+            <span>Show hints automatically</span>
+          </label>
+          <div class="fl-practice">
+            <div class="fl-problem" data-answer="6">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>1. A triangular prism (a tent shape) has how many vertices?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" aria-label="Answer 1" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: a triangle at the front and a triangle at the back: 3 + 3.</div>
+            </div>
+            <div class="fl-problem" data-answer="12">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>2. A cube is saved as an STL file, which stores only triangles. How many triangles is it?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" aria-label="Answer 2" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: 6 square faces, and each square is cut into 2 triangles.</div>
+            </div>
+            <div class="fl-problem" data-answer="two">
+              <p><span class="ll-badge" data-tone="easy">Easy</span>3. In a mesh that a slicer can print, every edge is shared by how many faces?</p>
+              <div class="fl-problem-row">
+                <select class="fl-ans-input" aria-label="Answer 3" style="width:260px;">
+                  <option value="">Choose…</option>
+                  <option value="one">Exactly one</option>
+                  <option value="two">Exactly two</option>
+                  <option value="three">Three or more</option>
+                </select>
+                <button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: one face on each side of the edge. One face means a hole; three means something extra is stuck on.</div>
+            </div>
+            <div class="fl-problem" data-answer="15">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>4. The inspector's house has 10 vertices and 7 faces. Use Euler's formula: how many edges?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" aria-label="Answer 4" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: V − E + F = 2, so E = V + F − 2.</div>
+            </div>
+            <div class="fl-problem" data-answer="48">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>5. Leonardo's rhombicuboctahedron has 8 triangle faces and 18 square faces. Each edge is shared by two faces. How many edges does it have?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" aria-label="Answer 5" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: count the sides of all the faces (8 × 3 + 18 × 4), then halve it, because each edge was counted twice. Check: 24 − 48 + 26 = 2.</div>
+            </div>
+            <div class="fl-problem" data-answer="0.01" data-tol="0.0005">
+              <p><span class="ll-badge" data-tone="mid">Medium</span>6. A CAD corner is at (40, 25, 10) mm with Z up. In a glTF file (metres, Y up), what is its <em>y</em> value?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" step="0.001" placeholder="m" aria-label="Answer 6" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: glTF's y is "up", which was CAD's z = 10 mm. Now change millimetres to metres: divide by 1000.</div>
+            </div>
+            <div class="fl-problem" data-answer="684">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>7. A binary STL file has an 84-byte header and count, then 50 bytes per triangle. How many bytes is the 12-triangle cube?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" aria-label="Answer 7" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: 84 + 50 × 12. (Each triangle is a normal and three corners, 12 numbers of 4 bytes, plus 2 spare bytes.)</div>
+            </div>
+            <div class="fl-problem" data-answer="0.048" data-tol="0.002">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>8. A 20 mm-wide cylinder (radius 10 mm) is exported with 32 flat sides. The biggest gap between a flat side and the true circle is r × (1 − cos(180° ÷ n)). How big is it, in mm (three decimal places)?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" step="0.001" placeholder="mm" aria-label="Answer 8" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: 180 ÷ 32 = 5.625°, cos 5.625° ≈ 0.99518, so 10 × 0.00482. Check it with the facet slider above. Smaller than one 0.2 mm layer?</div>
+            </div>
+            <div class="fl-problem" data-answer="9.9" data-tol="0.1">
+              <p><span class="ll-badge" data-tone="hard">Challenge</span>9. The inspector says a repaired cube holds 8.00 cm³. PLA weighs about 1.24 g per cm³. About how many grams is it, printed solid?</p>
+              <div class="fl-problem-row"><input type="number" class="fl-ans-input" step="0.1" placeholder="g" aria-label="Answer 9" /><button type="button" class="fl-check-btn">Check</button><span class="fl-feedback" aria-live="polite"></span></div>
+              <div class="fl-hint">Hint: 8 × 1.24. A slicer can only work out a volume because the mesh is watertight: an open mesh has no inside to measure.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="fl-card" id="wm-vocab" style="--card-accent:#c2410c;">
+          <h2>Vocabulary</h2>
+          <dl class="wm-vocab">
+            <div><dt>Coordinates</dt><dd>Three numbers (x, y, z) that say where a point is, measured from the origin along the three axes.</dd></div>
+            <div><dt>Up axis</dt><dd>The axis that points up: Z in CAD and slicers, Y in glTF and most game engines.</dd></div>
+            <div><dt>Mesh</dt><dd>A 3D model made of vertices joined into flat faces.</dd></div>
+            <div><dt>Vertex</dt><dd>A corner point of a mesh. Plural: vertices.</dd></div>
+            <div><dt>Edge</dt><dd>A straight line between two vertices where faces meet.</dd></div>
+            <div><dt>Face</dt><dd>A flat surface of a mesh, stored as a loop of vertex numbers.</dd></div>
+            <div><dt>Facet</dt><dd>One of the flat faces a mesh uses to imitate a curved surface.</dd></div>
+            <div><dt>Triangulation</dt><dd>Cutting faces or curved surfaces into triangles, as STL export does.</dd></div>
+            <div><dt>Face normal</dt><dd>The direction a face points outward, set by the order of its corners.</dd></div>
+            <div><dt>Winding order</dt><dd>The order a face's corners are listed in; counter-clockwise from outside means the normal points out.</dd></div>
+            <div><dt>Watertight (manifold) mesh</dt><dd>A closed mesh with every edge shared by exactly two faces and every normal pointing out.</dd></div>
+            <div><dt>Non-manifold edge</dt><dd>An edge shared by three or more faces.</dd></div>
+            <div><dt>Euler's polyhedron formula</dt><dd>V − E + F = 2 for any solid without a hole through it.</dd></div>
+            <div><dt>STL · OBJ · glTF/GLB · 3MF · STEP</dt><dd>3D file formats. The first four store meshes; STEP stores exact CAD surfaces.</dd></div>
+          </dl>
+        </section>
+
+        <section class="fl-card" id="wm-sources" style="--card-accent:#64748b;">
+          <h2>Sources</h2>
+          <ul class="fl-sources" data-no-glossary>
+            <li>Library of Congress, Sustainability of Digital Formats: <a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000504.shtml">STL (STereoLithography) File Format Family</a> (documented by 3D Systems in 1988; triangle surface, single colour), <a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000507.shtml">Wavefront OBJ File Format</a> (Wavefront Technologies, about 1990; materials in an MTL file), <a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000557.shtml">3D Manufacturing Format (3MF)</a> (3MF Consortium, 2015; units, colour, multiple objects), and <a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000448.shtml">STEP-file, ISO 10303-21</a> (first edition 1994).</li>
+            <li>The Khronos Group, <a href="https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html">glTF 2.0 Specification</a>, section 3.4 "Coordinate System and Units" (+Y up; linear distances in metres).</li>
+            <li>D. S. Richeson, <cite>Euler's Gem: The Polyhedron Formula and the Birth of Topology</cite>, Princeton University Press, 2008 (Euler's 1750 letter to Goldbach; holes and V − E + F).</li>
+            <li>L. Pacioli, <cite>De divina proportione</cite>, Venice, 1509, with illustrations after Leonardo da Vinci: <a href="https://archive.org/details/divinaproportion00paci">Internet Archive scan</a>.</li>
+            <li><a href="https://en.wikipedia.org/wiki/Utah_teapot">Utah teapot</a> (Martin Newell, University of Utah, 1975; the original pot at the Computer History Museum), and the photo's <a href="https://commons.wikimedia.org/wiki/File:Original_Utah_Teapot.jpg">Wikimedia Commons page</a>.</li>
+            <li>PLA density of about 1.24 g/cm³: typical filament datasheet value; check the one for your spool.</li>
+          </ul>
+
+        </section>
+
+        <footer class="site-footer">
+          <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../../index.html">Home</a> · <a href="../../../steam-lessons.html">Lessons</a> · <a href="../3d-design.html">3D Design</a></p>
+        </footer>
+      </main>
+    </div><!-- .ll-sim -->
+  </div><!-- .ll-stage -->
+  </div><!-- .ll-viewport -->
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-content.js"></script>
+<script src="../../../assets/js/figure-lesson.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/design3d-route.js"></script>
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/tool-rosetta.js"></script>
+<script type="module" src="../../../assets/js/lessons/what-is-a-3d-model.mjs"></script>
+</body>
+</html>

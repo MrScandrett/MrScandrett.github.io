@@ -258,10 +258,13 @@ function mountCaliper(root, events) {
   const btnSend = $('[data-mf-send]');
 
   const S = { tool: toolSel.value, kind: kindSel.value, obj: null, base: 0, v: 0, unit: 'mm', zeroed: true, off: 0, closed: false, reveal: false, trials: [], checked: false };
+  // canvas2d() calls onResize once before it returns, so draw() waits until sim/ctx exist.
+  let ready = false;
   const sim = window.SimKit && window.SimKit.canvas2d
-    ? window.SimKit.canvas2d(canvas, { box, height: 360, onResize: () => draw() })
+    ? window.SimKit.canvas2d(canvas, { box, height: 470, onResize: () => { if (ready) draw(); } })
     : null;
   const ctx = sim ? sim.ctx : canvas.getContext('2d');
+  ready = true;
 
   const res = () => (S.tool === 'digital' ? 0.01 : VERNIERS[S.tool].res);
   const shown = () => (S.closed ? 0 : S.v);
@@ -315,8 +318,9 @@ function mountCaliper(root, events) {
 
   /* drawing */
   function draw() {
+    if (!ready || !S.obj) return;
     const W = sim ? sim.width : canvas.clientWidth || 700;
-    const Hh = sim ? sim.height : 360;
+    const Hh = sim ? sim.height : 470;
     ctx.clearRect(0, 0, W, Hh);
     ctx.fillStyle = '#fbfaf6';
     ctx.fillRect(0, 0, W, Hh);
@@ -424,7 +428,7 @@ function mountCaliper(root, events) {
     const V = VERNIERS[S.tool];
     const v = shown();
     const div = V.span / V.n;
-    const y0 = 238; // main/vernier boundary
+    const y0 = 350; // main/vernier boundary (below the overview drawing, which reaches y ≈ 240)
     const from = Math.floor(v) - 4, to = v + V.span + 4;
     const s = (W - 40) / (to - from);
     const X = (mm) => 20 + (mm - from) * s;
@@ -467,7 +471,7 @@ function mountCaliper(root, events) {
       ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(X(read.main) + 0.5, y0 - 34); ctx.lineTo(X(read.main) + 0.5, y0 - 2); ctx.stroke();
       ctx.fillStyle = '#1d4ed8'; ctx.font = '700 13px system-ui, sans-serif'; ctx.textAlign = 'left';
-      ctx.fillText(`${read.main} mm`, X(read.main) + 4, y0 - 46);
+      ctx.fillText(`${read.main} mm`, X(read.main) + 4, y0 - 50);
       ctx.fillStyle = '#b8410c'; ctx.textAlign = 'center';
       ctx.fillText(`line ${read.line} → ${fmt(read.fraction, 2)}`, X(v + read.line * div), y0 + 58 + 14);
     }
@@ -475,7 +479,7 @@ function mountCaliper(root, events) {
 
   function drawLcd(W, Hh) {
     const d = displayValue();
-    const bw = Math.min(380, W - 40), bh = 96, bx = (W - bw) / 2, by = 200;
+    const bw = Math.min(380, W - 40), bh = 96, bx = (W - bw) / 2, by = 300;
     ctx.fillStyle = '#374151';
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx - 14, by - 14, bw + 28, bh + 28, 14) : ctx.rect(bx - 14, by - 14, bw + 28, bh + 28); ctx.fill();
     ctx.fillStyle = '#c5d3b5'; ctx.fillRect(bx, by, bw, bh);
@@ -484,7 +488,7 @@ function mountCaliper(root, events) {
     ctx.fillText(d.text, bx + bw - 62, by + 70);
     ctx.font = '700 20px system-ui, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText(d.unit, bx + bw - 52, by + 70);
-    ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#e5e7eb'; ctx.textAlign = 'center';
+    ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#475569'; ctx.textAlign = 'center';
     ctx.fillText('digital caliper display', W / 2, by + bh + 32);
   }
 
@@ -681,10 +685,10 @@ function mountCoupon(root, events) {
     const big = L.width > 200;
     const word = o.shape === 'slot' ? 'slot' : 'hole';
     info.innerHTML = `Plate ${fmt(L.width, 1)} × ${fmt(L.height, 1)} × ${fmt(o.thickness, 1)} mm · ${L.sizes.length} ${word}s from ${fmt(L.sizes[0])} to ${fmt(L.sizes[L.sizes.length - 1])} mm · the notched corner marks ${word} A, the smallest.${big ? ' <strong>Over 200 mm long:</strong> choose “5 sizes” or check it fits your printer bed.' : ''}`;
-    const fitName = (d) => (d <= 0.3 + 1e-9 ? 'press' : d <= 0.6 + 1e-9 ? 'slip' : 'loose');
+    const fitName = (d) => (d < 0.05 ? 'no gap: line-to-line' : d <= 0.3 + 1e-9 ? 'press range' : d <= 0.6 + 1e-9 ? 'slip range' : 'loose range');
     sheet.innerHTML = L.sizes.map((s, i) => {
       const extra = round(s - o.item, 0.01);
-      return `<tr><th scope="row">${String.fromCharCode(65 + i)}</th><td>${fmt(s)}</td><td>+${fmt(extra)} (${fmt(extra / 2)} per side, ${fitName(extra)} range)</td><td><input type="text" inputmode="decimal" aria-label="Printed size of ${word} ${String.fromCharCode(65 + i)}" placeholder="mm"></td><td><select aria-label="How ${word} ${String.fromCharCode(65 + i)} fits"><option value="">—</option><option>Won't go in</option><option>Press: push, stays</option><option>Slip: slides, no wobble</option><option>Loose: drops, turns</option><option>Too loose</option></select></td></tr>`;
+      return `<tr><th scope="row">${String.fromCharCode(65 + i)}</th><td>${fmt(s)}</td><td>+${fmt(extra)} (${fmt(extra / 2)} per side, ${fitName(extra)})</td><td><input type="text" inputmode="decimal" aria-label="Printed size of ${word} ${String.fromCharCode(65 + i)}" placeholder="mm"></td><td><select aria-label="How ${word} ${String.fromCharCode(65 + i)} fits"><option value="">—</option><option>Won't go in</option><option>Press: push, stays</option><option>Slip: slides, no wobble</option><option>Loose: drops, turns</option><option>Too loose</option></select></td></tr>`;
     }).join('');
     dlNote.textContent = '';
   }

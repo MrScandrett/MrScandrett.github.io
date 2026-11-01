@@ -403,13 +403,19 @@
   }
 
   // Performance beat → printed beat (and back): repeats play some printed bars twice.
+  // Index of the last value <= target. Used on sorted beat/column indexes instead
+  // of walking a whole movement on every animation frame.
+  function floorIndex(values, target) {
+    var lo = 0, hi = values.length;
+    while (lo < hi) { var mid = (lo + hi) >>> 1; if (values[mid] <= target) lo = mid + 1; else hi = mid; }
+    return lo - 1;
+  }
   function writtenBeat(model, perf) {
-    var order = model.order, ps = model.perfStart, pos = 0;
-    for (var k = 0; k < order.length; k++) if (perf >= ps[k] - EPS) pos = k;
+    var order = model.order, ps = model.perfStart, pos = Math.max(0, floorIndex(ps, perf + EPS));
     return model.barStart[order[pos]] + Math.max(0, perf - ps[pos]);
   }
   function perfBeat(model, written, after) {
-    var bi = model.barStart.reduce(function (at, s, i) { return written >= s - EPS ? i : at; }, 0);
+    var bi = Math.max(0, floorIndex(model.barStart, written + EPS));
     var hits = [];
     model.order.forEach(function (b, k) { if (b === bi) hits.push(model.perfStart[k] + written - model.barStart[bi]); });
     if (!hits.length) return 0;
@@ -679,6 +685,7 @@
       var sysKey = model.barMeta[sys.first].key;
       var barRanges = grand ? [[sysTop, sysBottom]] : bottoms.map(function (bb) { return [bb - 8 * h, bb]; });
 
+      out.push('<g data-se-system="' + sIndex + '">');
       // Staff lines, clefs, key and time signatures.
       model.staves.forEach(function (st, si) {
         var b = bottoms[si], clef = st.clefAt[sys.first];
@@ -785,13 +792,15 @@
         sysCols.push({ t: model.barStart[bi] + model.staves[0].bars[bi].length, x: xe - 0.6 * S, sys: sIndex, barEnd: true });
         bx0 = xe;
       });
-      hl.push({ top: sysTop - 1.5 * S, bottom: sysBottom + 1.5 * S, cols: sysCols });
-      y = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + 2.2 * S;
+      out.push('</g>');
+      var inkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
+      hl.push({ index: sIndex, top: y, bottom: inkBottom, cols: sysCols });
+      y = inkBottom + 1.2 * S;
     });
 
     // Ties need every event placed first (they can cross bars and systems).
-    allEvents.forEach(function (ev) { if (ev.tie && ev.tieTo) out.push(drawTie(ev, S, h, model)); });
-    tupletDraws.forEach(function (tp) { out.push(drawTuplet(tp, S, h)); });
+    allEvents.forEach(function (ev) { if (ev.tie && ev.tieTo) out.push('<g data-se-from="' + ev.sys + '" data-se-to="' + ev.tieTo.sys + '">' + drawTie(ev, S, h, model) + '</g>'); });
+    tupletDraws.forEach(function (tp) { out.push('<g data-se-system="' + tp.events[0].sys + '">' + drawTuplet(tp, S, h) + '</g>'); });
 
     var height = Math.ceil(y + S);
     return { svg: shareGlyphs(out.join(''), model.id), height: height, width: width, systems: hl, events: allEvents, S: S };
@@ -1129,6 +1138,12 @@
   function Player(fig, model) {
     this.fig = fig; this.model = model;
     this.notes = playList(model);
+    var end = 0;
+    this.ends = this.notes.map(function (n) {
+      end = Math.max(end, n.start + n.dur * (n.fermata ? 1.8 : 1));
+      return end;
+    });
+    this.maxVoices = 128;
     var sc = model.score;
     var unit = { '2': 2, '4': 1, '4.': 1.5, '8': 0.5, '8.': 0.75, '2.': 3 }[sc.tempoUnit || '4'] || 1;
     this.baseQpm = (sc.tempo || 90) * unit;
@@ -1143,6 +1158,7 @@
   };
   Player.prototype.qpm = function () { return this.baseQpm * this.rate; };
   Player.prototype.play = function () {
+    if (this.playing) return;
     var self = this;
     players.forEach(function (p) { if (p !== self && p.playing) p.pause(); });
     var c = context();
@@ -1151,8 +1167,10 @@
     this.playing = true;
     this.t0 = c.currentTime + 0.08;
     this.b0 = this.pos;
-    this.next = this.notes.findIndex(function (n) { return n.start >= self.pos - EPS; });
-    if (this.next < 0) this.next = this.notes.length;
+    // Include notes already sustaining at a seek/pause position. Prefix maximum
+    // note ends let a late seek skip all earlier, fully completed polyphony.
+    this.next = floorIndex(this.ends, this.pos + EPS) + 1;
+    this.lastUiTime = null;
     this.timer = setInterval(function () { self.schedule(); }, 25);
     this.schedule();
     this.frame();
@@ -1166,12 +1184,23 @@
     while (this.next < this.notes.length && this.timeOf(this.notes[this.next].start) < horizon && this.notes[this.next].start < span.to - EPS) {
       var n = this.notes[this.next++];
       if (this.mutes[n.staff]) continue;
+      var end = Math.min(span.to, n.start + n.dur * (n.fermata ? 1.8 : 1));
+      var release = this.timeOf(end) - 0.01;
+      // After a timer stall, skip expired attacks rather than sounding a burst.
+      if (release <= c.currentTime || end <= this.b0 + EPS) continue;
       var st = this.model.staves[n.staff];
       var inst = this.instOverride ? this.instrument : (st.instrument || this.instrument);
-      var t = Math.max(c.currentTime, this.timeOf(n.start));
+      var t = Math.max(c.currentTime, this.t0, this.timeOf(n.start));
+      // Bound the Web Audio graph, including release tails. Steal the earliest
+      // ending voice only at extreme density; ordinary scores keep every part.
+      if (this.voices.size >= this.maxVoices) {
+        var oldest = null;
+        this.voices.forEach(function (voice) { if (!oldest || voice.scoreEnd < oldest.scoreEnd) oldest = voice; });
+        oldest.kill(c.currentTime); this.voices.delete(oldest);
+      }
       var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi, n.vel, t, function (voice) { self.voices.delete(voice); });
-      var hold = n.fermata ? 1.8 : 1;
-      v.release(this.timeOf(n.start + n.dur * hold) - 0.01);
+      v.scoreEnd = release;
+      v.release(Math.max(t + 0.01, release));
       this.voices.add(v);
     }
     if (this.timeOf(span.to) < c.currentTime) {
@@ -1186,7 +1215,7 @@
   };
   Player.prototype.pause = function () {
     if (!this.playing) return;
-    this.pos = Math.min(this.model.perfTotal, this.beatAt(audio.ctx.currentTime));
+    this.pos = Math.max(this.b0, Math.min(this.model.perfTotal, this.beatAt(audio.ctx.currentTime)));
     this.halt();
   };
   Player.prototype.halt = function () {
@@ -1259,7 +1288,8 @@
     return e;
   }
 
-  function preparePrintScorePages(score) {
+  function preparePrintScorePages(score, options) {
+    options = options || {};
     if (document.body.classList.contains('se-print-score-active')) return true;
     var model = prepare(score);
     analyse(model);
@@ -1270,16 +1300,14 @@
     var layout = engrave(model, 1085, true);
     if (!layout.systems.length) return false;
     var ns = 'http://www.w3.org/2000/svg';
-    var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true' });
-    var definitions = document.createElementNS(ns, 'svg');
-    definitions.setAttribute('class', 'se-print-defs');
-    var defs = document.createElementNS(ns, 'defs');
-    var source = document.createElementNS(ns, 'g');
-    source.id = 'sePrintScoreSource';
+    var portal = el('main', { class: 'se-print-score-pages', 'aria-hidden': 'true', 'data-contrast-guard-skip': '' });
+    var source = document.createElementNS(ns, 'svg');
     source.innerHTML = layout.svg;
-    defs.appendChild(source);
-    definitions.appendChild(defs);
-    portal.appendChild(definitions);
+    source.querySelectorAll('.se-accidental-back').forEach(function (mask) { mask.style.setProperty('fill', '#fff', 'important'); });
+    if (options.decorate) options.decorate(source, layout);
+    // Each sheet carries only its systems, rather than a <use> of the whole
+    // movement. Large scores otherwise render the full SVG once per page.
+    var fragments = Array.from(source.children);
     var groups = [];
     // Portrait US Letter, 7.5in x 9.2in of staves per sheet (0.6in less on the first,
     // which carries the notation note). Pack by height, not by a fixed system count.
@@ -1288,7 +1316,8 @@
     layout.systems.forEach(function (system) {
       var group = groups[groups.length - 1];
       var maxHeight = unitsPerInch * (groups.length === 1 ? 8.6 : 9.2);
-      if (!group || system.bottom - group[0].top + layout.S * 1.8 > maxHeight) {
+      var cropTop = group && groups.length > 1 ? Math.max(0, group[0].top - layout.S * 1.8) : 0;
+      if (!group || system.bottom - cropTop > maxHeight) {
         group = [];
         groups.push(group);
       }
@@ -1297,7 +1326,7 @@
     groups.forEach(function (systems, index) {
       var first = systems[0], last = systems[systems.length - 1];
       var pad = layout.S * 1.8;
-      var top = Math.max(0, first.top - pad);
+      var top = index === 0 ? 0 : Math.max(0, first.top - pad);
       // The system bound already includes space below the staff. Extending it
       // reaches the next system's bar number, which belongs on the next sheet.
       var bottom = Math.min(layout.height, last.bottom);
@@ -1310,16 +1339,34 @@
       svg.setAttribute('role', 'img');
       svg.setAttribute('aria-label', (score.title || 'Score') + ', page ' + (index + 1));
       svg.setAttribute('viewBox', '0 ' + top + ' ' + layout.width + ' ' + (bottom - top));
-      var use = document.createElementNS(ns, 'use');
-      use.setAttribute('href', '#sePrintScoreSource');
-      svg.appendChild(use);
+      // Explicit aspect ratio/height avoids the SVG default 300×150 viewport in
+      // print engines, and scales an unusually tall orchestral system as a unit.
+      var inches = Math.min(bottom - top, unitsPerInch * (index === 0 ? 8.6 : 9.2)) / unitsPerInch;
+      svg.style.setProperty('height', inches + 'in', 'important');
+      svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+      var firstIndex = first.index, lastIndex = last.index;
+      fragments.forEach(function (fragment) {
+        var system = fragment.getAttribute('data-se-system');
+        var from = fragment.getAttribute('data-se-from'), to = fragment.getAttribute('data-se-to');
+        var belongs = system !== null ? +system >= firstIndex && +system <= lastIndex :
+          from !== null ? (+from >= firstIndex && +from <= lastIndex) || (+to >= firstIndex && +to <= lastIndex) : fragment.tagName.toLowerCase() === 'defs';
+        if (belongs) svg.appendChild(fragment.cloneNode(true));
+      });
+      // Keep glyph references local to the sheet, including while the screen
+      // edition remains in the DOM. Every page can render independently.
+      var idMap = {};
+      svg.querySelectorAll('[id]').forEach(function (node) { var id = node.id; node.id = idMap[id] = id + '-print-' + index; });
+      svg.querySelectorAll('use[href]').forEach(function (use) {
+        var id = use.getAttribute('href').slice(1);
+        if (idMap[id]) use.setAttribute('href', '#' + idMap[id]);
+      });
       page.append(header, svg);
       if (index === 0) {
         var aids = [];
         if (root.MusicNotation.preferences.pitchNames) aids.push('pitch letters (accidentals in notation)');
         if (root.MusicNotation.preferences.noteColors) aids.push('note colors');
         page.appendChild(el('p', { class: 'se-print-score-note' },
-          'Notation aids: ' + (aids.length ? aids.join(' and ') : 'off') + '. ' +
+          (options.note ? options.note + ' ' : '') + 'Notation aids: ' + (aids.length ? aids.join(' and ') : 'off') + '. ' +
           (score.source && score.source.label ? 'Source: ' + score.source.label + '.' : '')));
       }
       portal.appendChild(page);
@@ -1363,8 +1410,14 @@
     var svgWrap = el('div', { class: 'se-svg' });
     paper.appendChild(svgWrap);
 
+    var workspace = el('div', { class: 'se-workspace' });
+    var toolbar = el('div', { class: 'se-toolbar' });
     var bar = el('div', { class: 'se-controls', role: 'group', 'aria-label': 'Score player' });
-    var playBtn = el('button', { type: 'button', class: 'se-play' }, '▶ Play');
+    var settings = el('details', { class: 'se-settings' });
+    settings.appendChild(el('summary', {}, 'Sound, display & print'));
+    var settingsBar = el('div', { class: 'se-options se-controls', role: 'group', 'aria-label': 'Sound and notation options' });
+    settings.appendChild(settingsBar);
+    var playBtn = el('button', { type: 'button', class: 'se-play', 'aria-pressed': 'false' }, '▶ Play');
     var stopBtn = el('button', { type: 'button', class: 'se-stop', 'aria-label': 'Stop and go back to the start' }, '■');
     var tempoLbl = el('label', { class: 'se-tempo-ctl' });
     tempoLbl.appendChild(el('span', {}, 'Speed'));
@@ -1383,7 +1436,7 @@
     var loopText = document.createTextNode(' Loop');
     loopLbl.appendChild(loop); loopLbl.appendChild(loopText);
     var clearLoop = el('button', { type: 'button', class: 'se-toggle se-clear-loop', hidden: '' }, 'Clear loop range');
-    bar.appendChild(playBtn); bar.appendChild(stopBtn); bar.appendChild(tempoLbl); bar.appendChild(instLbl); bar.appendChild(loopLbl); bar.appendChild(clearLoop);
+    bar.appendChild(playBtn); bar.appendChild(stopBtn); bar.appendChild(tempoLbl); settingsBar.appendChild(instLbl); bar.appendChild(loopLbl); bar.appendChild(clearLoop);
     var muteBoxes = [];
     if (model.staves.length > 1) {
       model.staves.forEach(function (st, si) {
@@ -1391,19 +1444,27 @@
         var cb = el('input', { type: 'checkbox', checked: '' });
         cb.checked = true;
         l.appendChild(cb); l.appendChild(document.createTextNode(' ' + (st.label || 'Staff ' + (si + 1))));
-        bar.appendChild(l); muteBoxes.push(cb);
+        settingsBar.appendChild(l); muteBoxes.push(cb);
       });
     }
-    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen' }, '⤢');
+    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false' }, 'Full screen');
+    var position = el('output', { class: 'se-position', 'aria-live': 'off' }, 'Bar ' + barNumber(model, 0));
+    bar.appendChild(position);
     bar.appendChild(full);
+    var timeline = el('div', { class: 'se-timeline' });
+    var elapsed = el('output', { 'aria-live': 'off' }, '0:00');
+    var seek = el('input', { type: 'range', min: '0', max: String(model.perfTotal), step: '0.01', value: '0', 'aria-label': 'Playback position' });
+    var duration = el('output', { 'aria-live': 'off' });
+    timeline.append(elapsed, seek, duration);
     var status = el('p', { class: 'se-status', 'aria-live': 'polite' });
-    var help = el('p', { class: 'se-help' }, 'Click a measure to start there, or a note to hear it. Shift-click a second measure to loop the bars between. Keys: [ and ] move a line, − and = zoom, F fits the score.');
+    var help = el('p', { class: 'se-help' }, 'Click a measure to start there, or a note to hear it. Shift-click a second measure to loop the bars between. Keys: Space in the score plays or pauses; [ and ] move a line, − and = zoom, F fits the score.');
     var guideBox = null, guideNow = null, guideList = null;
 
     var cap = fig.querySelector('figcaption');
     fig.insertBefore(head, cap);
-    fig.insertBefore(paper, cap);
-    fig.insertBefore(bar, cap);
+    fig.insertBefore(workspace, cap);
+    workspace.append(toolbar, paper);
+    toolbar.append(bar, timeline, settings);
     fig.insertBefore(status, cap);
     fig.insertBefore(help, cap);
     if (score.source) {
@@ -1422,22 +1483,27 @@
 
     var player = new Player(fig, model);
     players.push(player);
-    var layout = null, eventsByBar = [], lit = [], cursorEl = null, staffScale = 1, lastDrawWidth = null;
+    fig.scorePlayer = player;
+    var layout = null, eventsByBar = [], eventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
     function paperWidth() {
-      return Math.max(280, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
+      return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
     // Zoom sets the staff size; the lines reflow so they still fill the paper. Zooming out
     // engraves more bars per line instead of shrinking a fixed page into one corner.
     function engraveWidth(z) { return Math.max(280, Math.round(paperWidth() / z)); }
     function drawWidth() { return engraveWidth(staffScale); }
-    var measured = {};
-    function heightAtZoom(z) {
-      var w = engraveWidth(z), key = z + '@' + w;
-      if (!(key in measured)) measured[key] = engrave(model, w, fig.hasAttribute('data-score-readable')).height * z;
-      return measured[key];
+    function fitWidth() {
+      // Reflow at normal engraving size, then fit the widest bar and one full
+      // system. A dense bar on a phone must never disappear beyond the edge.
+      if (document.fullscreenElement !== fig) {
+        var header = document.querySelector('.site-header');
+        workspace.style.scrollMarginTop = (header ? Math.max(0, Math.min(100, header.getBoundingClientRect().bottom)) : 8) + 'px';
+        workspace.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+      staffScale = 1; fitMode = true; layout = null; draw();
     }
     function applyScale() { draw(); }
-    function measureAt(beat) { return model.barStart.reduce(function (at, start, i) { return beat >= start - EPS ? i : at; }, -1); }
+    function measureAt(beat) { return floorIndex(model.barStart, beat + EPS); }
     // The shared ScoreNavigation: song map, measure jump and steps, fast visual zoom,
     // and follow playback inside the paper. Choosing a measure seeks there; playback carries on.
     var sectionStart = {};
@@ -1473,13 +1539,16 @@
         }
         selectedBar = i;
         showGuide(i);
-        if (!(info.preview && player.playing)) player.seek(model.barStart[i]);
+        if (!info.noSeek && !(info.preview && player.playing)) player.seek(model.barStart[i]);
+        position.textContent = 'Bar ' + barNumber(model, i) + ' / ' + barNumber(model, model.count - 1);
+        updateTimeline(player.pos);
       },
-      zoom: { steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return staffScale; },
-        measure: function (z) { return layout ? heightAtZoom(z) : 0; },
-        set: function (z) { staffScale = z; applyScale(); } },
+      fitLabel: 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
+      zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
+        set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
       fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
     });
+    toolbar.insertBefore(navigation.el, settings);
     if (guide.length) {
       guideBox = el('section', { class: 'se-guide', 'aria-label': 'Measure-by-measure guide' });
       guideNow = el('div', { class: 'se-guide-now', 'aria-live': 'polite' });
@@ -1532,19 +1601,23 @@
       pitchToggle.textContent = prefs.pitchNames ? '✓ Pitch names' : 'Pitch names';
       colorToggle.textContent = prefs.noteColors ? '✓ Note colors' : 'Note colors';
     }
-    function noteButtons() { return Array.prototype.slice.call(noteList.querySelectorAll('button[data-note-index]')); }
+    var activeNoteButton = null, noteButtonMap = new Map();
+    function noteButtons() { return Array.from(noteButtonMap.values()); }
     function updateNoteList(active) {
-      noteButtons().forEach(function (button) {
-        var selected = active && button.getAttribute('data-note-index') === String(active.i);
-        if (selected) button.setAttribute('aria-current', 'true'); else button.removeAttribute('aria-current');
-      });
+      if (noteList.hidden) return;
+      var next = active ? noteButtonMap.get(active.i) : null;
+      if (next === activeNoteButton) return;
+      if (activeNoteButton) activeNoteButton.removeAttribute('aria-current');
+      if (next) next.setAttribute('aria-current', 'true');
+      activeNoteButton = next;
     }
     function renderNoteList() {
       if (!layout || noteList.hasAttribute('hidden')) return;
-      noteList.innerHTML = '';
+      noteList.innerHTML = ''; noteButtonMap.clear(); activeNoteButton = null;
       layout.events.filter(function (ev) { return !ev.hidden; }).sort(function (a, b) { return a.abs - b.abs || a.staff - b.staff || a.i - b.i; }).forEach(function (ev, index) {
         var li = document.createElement('li');
         var button = el('button', { type: 'button', 'data-note-index': ev.i, 'aria-label': eventLabel(ev, model) });
+        noteButtonMap.set(ev.i, button);
         button.textContent = (index + 1) + '. ' + eventLabel(ev, model);
         button.addEventListener('click', function () { selectEvent(ev); });
         button.addEventListener('keydown', function (e) {
@@ -1555,20 +1628,38 @@
         });
         li.appendChild(button); noteList.appendChild(li);
       });
-      updateNoteList(layout.events.find(function (ev) { return lit.indexOf(ev.i) >= 0; }));
+      updateNoteList(layout.events.find(function (ev) { return lit.has(ev.i); }));
     }
 
     function draw() {
-      var w = drawWidth();
-      if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) return;
-      lastDrawWidth = w;
+      var w = drawWidth(), room = paper.clientHeight;
+      if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) {
+        if (room === lastDrawHeight) return;
+        lastDrawHeight = room;
+        if (fitMode) {
+          screenScale = Math.min(staffScale, paperWidth() / layout.width, Math.max(120, room - 12) / layout.systems[0].bottom);
+          var svg = svgWrap.querySelector('svg');
+          svg.setAttribute('width', layout.width * screenScale); svg.setAttribute('height', layout.height * screenScale);
+        }
+        navigation.refresh(); return;
+      }
+      lastDrawWidth = w; lastDrawHeight = room;
       layout = engrave(model, w, fig.hasAttribute('data-score-readable'));
+      screenScale = fitMode ? Math.min(staffScale, paperWidth() / layout.width,
+        Math.max(120, paper.clientHeight - 12) / layout.systems[0].bottom) : staffScale;
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
       // The score is always paper with its own ink, so contrast-guard's text pass stays out: it reads the
       // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
-      svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * staffScale) + '" height="' + (layout.height * staffScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
+      svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
       cursorEl = svgWrap.querySelector('.se-cursor');
+      eventNodes = [];
+      svgWrap.querySelectorAll('.se-ev').forEach(function (node) { eventNodes[+node.getAttribute('data-i')] = node; });
+      cursorColumns = [];
+      layout.systems.forEach(function (system) {
+        system.cols.slice(0, -1).forEach(function (col, i) { cursorColumns.push({ a: col, b: system.cols[i + 1], sys: system }); });
+      });
+      cursorTimes = cursorColumns.map(function (col) { return col.a.t; });
       // Expose the current engraving to page-specific teaching overlays. The layout
       // is replaced after every reflow/zoom, so consumers should listen for the
       // event instead of retaining references to an older SVG.
@@ -1576,8 +1667,8 @@
       eventsByBar = [];
       layout.events.forEach(function (ev) { (eventsByBar[ev.bar] = eventsByBar[ev.bar] || []).push(ev); });
       fig.dispatchEvent(new CustomEvent('score:draw', { detail: { layout: layout } }));
-      lit = [];
-      if (!player.playing) player.ui.cursor(player.pos);
+      lit = new Set();
+      if (!player.playing) player.ui.cursor(writtenBeat(model, player.pos));
       renderNoteList();
       navigation.refresh();
     }
@@ -1587,6 +1678,8 @@
         playBtn.textContent = player.playing ? '❚❚ Pause' : '▶ Play';
         playBtn.setAttribute('aria-pressed', player.playing ? 'true' : 'false');
         fig.classList.toggle('se-playing', player.playing);
+        status.setAttribute('aria-live', player.playing ? 'off' : 'polite');
+        updateTimeline(player.pos);
       },
       light: function (beat) {
         if (!layout) return;
@@ -1597,10 +1690,15 @@
         var on = candidates.filter(function (ev) {
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
-        var ids = on.map(function (e) { return e.i; });
-        lit.forEach(function (i) { if (ids.indexOf(i) < 0) { var g = svgWrap.querySelector('.se-ev[data-i="' + i + '"]'); if (g) g.classList.remove('is-on'); } });
-        ids.forEach(function (i) { if (lit.indexOf(i) < 0) { var g = svgWrap.querySelector('.se-ev[data-i="' + i + '"]'); if (g) g.classList.add('is-on'); } });
+        var ids = new Set(on.map(function (e) { return e.i; }));
+        lit.forEach(function (i) { if (!ids.has(i) && eventNodes[i]) eventNodes[i].classList.remove('is-on'); });
+        ids.forEach(function (i) { if (!lit.has(i) && eventNodes[i]) eventNodes[i].classList.add('is-on'); });
         lit = ids;
+        if (beat >= 0) {
+          var barText = 'Bar ' + barNumber(model, Math.max(0, measure)) + ' / ' + barNumber(model, model.count - 1);
+          if (position.textContent !== barText) position.textContent = barText;
+          updateTimeline(Math.max(player.b0, player.beatAt(audio.ctx.currentTime)));
+        }
         updateNoteList(on[0]);
         if (on.length) {
           var msg = eventLabel(on[0], model);
@@ -1609,17 +1707,10 @@
       },
       cursor: function (beat) {
         if (!layout || !cursorEl) return;
-        var best = null;
-        for (var si = 0; si < layout.systems.length && !best; si++) {
-          var sys = layout.systems[si];
-          for (var i = 0; i < sys.cols.length - 1; i++) {
-            var a = sys.cols[i], b = sys.cols[i + 1];
-            if (beat >= a.t - EPS && beat < b.t + EPS) {
-              var f = b.t > a.t ? (beat - a.t) / (b.t - a.t) : 0;
-              best = { x: a.x + (b.x - a.x) * Math.min(1, f), sys: sys };
-              break;
-            }
-          }
+        var col = cursorColumns[Math.max(0, floorIndex(cursorTimes, beat + EPS))], best = null;
+        if (col && beat <= col.b.t + EPS) {
+          var f = col.b.t > col.a.t ? Math.max(0, Math.min(1, (beat - col.a.t) / (col.b.t - col.a.t))) : 0;
+          best = { x: col.a.x + (col.b.x - col.a.x) * f, sys: col.sys };
         }
         if (!best || (!player.playing && beat <= EPS)) { cursorEl.setAttribute('opacity', '0'); return; }
         cursorEl.setAttribute('x', best.x - layout.S * 0.5);
@@ -1629,22 +1720,70 @@
       }
     };
 
-    playBtn.addEventListener('click', function () { if (player.playing) player.pause(); else player.play(); });
+    function clockText(beats) {
+      var seconds = Math.max(0, Math.round(beats * 60 / player.qpm()));
+      return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+    }
+    function updateTimeline(beat) {
+      beat = Math.max(0, Math.min(model.perfTotal, beat));
+      seek.value = beat;
+      var nowText = clockText(beat), endText = clockText(model.perfTotal);
+      // Avoid waking page-wide mutation observers for the same time every frame.
+      if (elapsed.textContent !== nowText) elapsed.textContent = nowText;
+      if (duration.textContent !== endText) duration.textContent = endText;
+      var valueText = nowText + ' of ' + endText;
+      if (seek.getAttribute('aria-valuetext') !== valueText) seek.setAttribute('aria-valuetext', valueText);
+    }
+    seek.addEventListener('input', function () {
+      var target = +seek.value, was = player.playing;
+      if (was) player.halt();
+      player.pos = target;
+      var written = writtenBeat(model, player.pos);
+      player.ui.cursor(written); updateTimeline(player.pos);
+      navigation.go(Math.max(0, measureAt(written)), { source: 'timeline', noSeek: true });
+      if (was) player.play();
+    });
+    updateTimeline(0);
+    function togglePlay() { if (player.playing) player.pause(); else player.play(); }
+    playBtn.addEventListener('click', togglePlay);
+    fig.addEventListener('keydown', function (event) {
+      if (event.code !== 'Space' || event.ctrlKey || event.metaKey || event.altKey ||
+        event.target.closest('input, select, textarea, button, summary, a, [contenteditable="true"], [role="slider"]')) return;
+      event.preventDefault(); togglePlay();
+    });
+    paper.tabIndex = 0;
+    paper.setAttribute('role', 'region');
+    paper.setAttribute('aria-label', (score.title || 'Score') + ' notation. Space to play or pause.');
     stopBtn.addEventListener('click', function () { player.stop(); navigation.reset(); status.textContent = ''; });
     tempo.addEventListener('input', function () {
       var r = +tempo.value / 100;
       tempoOut.textContent = tempo.value + '%';
       if (player.playing) { player.pause(); player.rate = r; player.play(); } else player.rate = r;
+      updateTimeline(player.pos);
     });
-    inst.addEventListener('change', function () { player.instOverride = !!inst.value; player.instrument = inst.value || score.instrument || 'piano'; });
+    inst.addEventListener('change', function () {
+      var was = player.playing; if (was) player.pause();
+      player.instOverride = !!inst.value; player.instrument = inst.value || score.instrument || 'piano';
+      if (was) player.play();
+    });
     loop.addEventListener('change', function () { player.loop = loop.checked; navigation.refresh(); });
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
-    muteBoxes.forEach(function (cb, i) { cb.addEventListener('change', function () { player.mutes[i] = !cb.checked; }); });
+    muteBoxes.forEach(function (cb, i) { cb.addEventListener('change', function () {
+      var was = player.playing; if (was) player.pause();
+      player.mutes[i] = !cb.checked;
+      if (was) player.play();
+    }); });
     full.addEventListener('click', function () {
       if (document.fullscreenElement === fig) document.exitFullscreen();
       else if (fig.requestFullscreen) fig.requestFullscreen().catch(function () {});
     });
-    document.addEventListener('fullscreenchange', function () { layout = null; requestAnimationFrame(draw); });
+    document.addEventListener('fullscreenchange', function () {
+      var isFull = document.fullscreenElement === fig;
+      full.textContent = isFull ? 'Exit full screen' : 'Full screen';
+      full.setAttribute('aria-pressed', String(isFull));
+      full.setAttribute('aria-label', isFull ? 'Exit full screen' : 'Show the score full screen');
+      layout = null; requestAnimationFrame(draw);
+    });
 
     // Click a note: hear it, and start playback from there next time.
     svgWrap.addEventListener('click', function (e) {
@@ -1652,27 +1791,20 @@
       if (!g || !layout) return;
       var ev = layout.events[+g.getAttribute('data-i')];
       if (!ev || ev.kind !== 'note') return;
-      var c = context();
-      var st = model.staves[ev.staff];
-      ev.pitches.forEach(function (p) {
-        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
-      });
-      player.seek(ev.abs);
-      navigation.select(measureAt(ev.abs));
-      selectedBar = measureAt(ev.abs); showGuide(selectedBar);
-      status.textContent = eventLabel(ev, model) + ' — press Play to start here';
-      updateNoteList(ev);
+      selectEvent(ev);
     });
 
     function selectEvent(ev) {
       if (!ev) return;
       var c = context(), st = model.staves[ev.staff];
-      if (ev.kind === 'note') ev.pitches.forEach(function (p) {
+      if (!player.playing && ev.kind === 'note') ev.pitches.forEach(function (p) {
         root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
       navigation.select(measureAt(ev.abs));
-      status.textContent = eventLabel(ev, model) + ' — press Play to start here';
+      selectedBar = measureAt(ev.abs); showGuide(selectedBar); updateTimeline(player.pos);
+      position.textContent = 'Bar ' + barNumber(model, selectedBar) + ' / ' + barNumber(model, model.count - 1);
+      status.textContent = eventLabel(ev, model) + (player.playing ? ' — playing from here' : ' — press Play to start here');
       updateNoteList(ev);
     }
 
@@ -1688,15 +1820,17 @@
     updatePreferenceButtons();
 
     draw();
-    bar.appendChild(pitchToggle); bar.appendChild(colorToggle); bar.appendChild(noteListToggle);
-    if (score.id !== 'mozart-turkish-march') bar.appendChild(printButton);
+    settingsBar.appendChild(pitchToggle); settingsBar.appendChild(colorToggle); settingsBar.appendChild(noteListToggle);
+    if (score.id !== 'mozart-turkish-march') settingsBar.appendChild(printButton);
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
       if (!pieceGroup.open) { player.stop(); status.textContent = ''; }
       else { layout = null; requestAnimationFrame(draw); }
     });
-    if (root.ResizeObserver) new ResizeObserver(function () { requestAnimationFrame(draw); }).observe(svgWrap);
+    var drawFrame = 0;
+    function queueDraw() { if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; draw(); }); }
+    if (root.ResizeObserver) new ResizeObserver(queueDraw).observe(paper);
     else root.addEventListener('resize', draw);
     return player;
   }
@@ -1929,7 +2063,7 @@
   }
 
   root.ScoreEngine = { previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
-    barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat };
+    barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();

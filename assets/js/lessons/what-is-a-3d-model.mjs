@@ -353,7 +353,7 @@ function initInspector(root) {
   function renderSelection() {
     const m = state.mesh, s = state.sel;
     if (!s) {
-      readout.innerHTML = `<p class="wm-muted">Click a ${state.pick} on the model, or step through them with ◀ ▶.</p>`;
+      readout.innerHTML = `<p class="wm-muted">Click ${state.pick === 'edge' ? 'an' : 'a'} ${state.pick} on the model, or step through them with ◀ ▶.</p>`;
       return;
     }
     if (s.type === 'vertex') {
@@ -474,7 +474,7 @@ function initInspector(root) {
   }
   function needSel(type) {
     if (state.sel && state.sel.type === type) return true;
-    const msg = `Pick a ${type} first: choose “${type[0].toUpperCase() + type.slice(1)}” under Pick, then click it on the model.`;
+    const msg = `Pick ${type === 'edge' ? 'an' : 'a'} ${type} first: choose “${type[0].toUpperCase() + type.slice(1)}” under Pick, then click it on the model.`;
     toolMsg.textContent = msg;
     status.textContent = msg;
     return false;
@@ -643,13 +643,21 @@ function initRecordSheet(table) {
 
 function initProblems() {
   for (const p of $$('.fl-problem[data-answer]')) {
-    const input = $('input', p), btn = $('button', p), fb = $('.fl-feedback', p), hint = $('.fl-hint', p);
+    const input = $('input, select', p), btn = $('button', p), fb = $('.fl-feedback', p), hint = $('.fl-hint', p);
+    const showHint = () => { if (hint) { hint.hidden = false; hint.style.display = 'block'; } };
     const check = () => {
-      const val = parseFloat(String(input.value).replace(',', '.').replace('−', '-'));
-      const ans = parseFloat(p.dataset.answer), tol = parseFloat(p.dataset.tol || '0');
-      if (Number.isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'fl-feedback err'; return; }
-      if (Math.abs(val - ans) <= tol + 1e-9) { fb.textContent = '✓ Correct'; fb.className = 'fl-feedback ok'; if (hint) hint.hidden = false; }
-      else { fb.textContent = '✗ Not yet. Read the hint.'; fb.className = 'fl-feedback err'; if (hint) hint.hidden = false; }
+      let ok;
+      if (input.tagName === 'SELECT') {
+        if (!input.value) { fb.textContent = 'Choose an answer.'; fb.className = 'fl-feedback err'; return; }
+        ok = input.value === p.dataset.answer;
+      } else {
+        const val = parseFloat(String(input.value).replace(',', '.').replace('−', '-'));
+        const ans = parseFloat(p.dataset.answer), tol = parseFloat(p.dataset.tol || '0');
+        if (Number.isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'fl-feedback err'; return; }
+        ok = Math.abs(val - ans) <= tol + 1e-9;
+      }
+      if (ok) { fb.textContent = '✓ Correct'; fb.className = 'fl-feedback ok'; showHint(); }
+      else { fb.textContent = '✗ Not yet. Read the hint.'; fb.className = 'fl-feedback err'; showHint(); }
     };
     btn.addEventListener('click', check);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });

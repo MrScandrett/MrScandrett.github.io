@@ -111,62 +111,16 @@
 
   function buildPrintPages() {
     if (!figure.scoreData || !window.ScoreEngine) return null;
-    var model = window.ScoreEngine.prepare(figure.scoreData);
-    window.ScoreEngine.analyse(model);
-    // A fixed engraving width makes the paper score identical whether Print
-    // score was chosen on a phone, tablet, or desktop display.
-    var layout = window.ScoreEngine.engrave(model, 1085);
-    if (!layout.systems.length) return null;
-    if (printPortal) printPortal.remove();
-    printPortal = document.createElement('main');
-    printPortal.className = 'mz-print-score';
-    printPortal.setAttribute('aria-hidden', 'true');
-    var ns = 'http://www.w3.org/2000/svg';
-    var definitions = document.createElementNS(ns, 'svg');
-    definitions.setAttribute('class', 'mz-print-defs');
-    var defs = document.createElementNS(ns, 'defs');
-    var scoreGroup = document.createElementNS(ns, 'g');
-    scoreGroup.id = 'mzPrintRondoScore';
-    scoreGroup.innerHTML = layout.svg;
-    defs.appendChild(scoreGroup); definitions.appendChild(defs); printPortal.appendChild(definitions);
-    addFingerMarks(definitions, layout);
-    var groups = [];
-    for (var i = 0; i < layout.systems.length; i += 2) groups.push(layout.systems.slice(i, i + 2));
-    groups.forEach(function (systems, pageIndex) {
-      var first = systems[0], last = systems[systems.length - 1];
-      var pad = layout.S * 1.8;
-      var top = Math.max(0, first.top - pad), bottom = Math.min(layout.height, last.bottom + pad);
-      var page = document.createElement('section');
-      page.className = 'mz-print-page';
-      var header = document.createElement('header');
-      header.className = 'mz-print-page-header';
-      var title = document.createElement('strong');
-      title.textContent = 'Mozart · Rondo alla turca, K. 331';
-      var count = document.createElement('span');
-      count.textContent = 'Score page ' + (pageIndex + 1) + ' of ' + groups.length;
-      header.append(title, count);
-      var copy = document.createElementNS(ns, 'svg');
-      copy.setAttribute('class', 'se-score');
-      copy.setAttribute('viewBox', '0 ' + top + ' ' + layout.width + ' ' + (bottom - top));
-      copy.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-      var use = document.createElementNS(ns, 'use');
-      use.setAttribute('href', '#mzPrintRondoScore');
-      copy.appendChild(use);
-      page.append(header, copy);
-      if (pageIndex === 0) {
-        var legend = document.createElement('p');
-        legend.className = 'mz-print-legend';
-        legend.textContent = 'Finger numbers: 1 thumb · 2 index · 3 middle · 4 ring · 5 little finger. Letter names are printed inside the noteheads.';
-        page.appendChild(legend);
-      }
-      printPortal.appendChild(page);
+    window.ScoreEngine.preparePrintScore(figure.scoreData, {
+      decorate: addFingerMarks,
+      note: 'Suggested fingering: 1 thumb · 2 index · 3 middle · 4 ring · 5 little finger.'
     });
-    document.body.appendChild(printPortal);
+    printPortal = document.querySelector('.se-print-score-pages');
     return printPortal;
   }
 
   function finishPrint() {
-    document.body.classList.remove('mz-print-rondo');
+    document.body.classList.remove('se-print-score-active');
     if (printPortal) { printPortal.remove(); printPortal = null; }
     if (restorePitchNames === false) window.MusicNotation.setPreferences({ pitchNames: false });
     if (restoreFingering === false) { enabled = false; mark(); }
@@ -179,7 +133,6 @@
     restoreFingering = enabled;
     enabled = true;
     if (!restorePitchNames) window.MusicNotation.setPreferences({ pitchNames: true });
-    document.body.classList.add('mz-print-rondo');
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         mark(); buildPrintPages(); window.print();
@@ -189,7 +142,7 @@
   window.MozartRondoPrintScore = printScore;
 
   function install() {
-    var controls = figure.querySelector('.se-controls');
+    var controls = figure.querySelector('.se-options');
     if (!controls || controls.querySelector('.mz-fingering-toggle')) return;
     var button = document.createElement('button');
     button.type = 'button';

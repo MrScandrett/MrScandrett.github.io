@@ -45,6 +45,7 @@
       '<span class="sn-status" role="status" aria-live="polite"></span>';
     if (!options.mount) surface.parentNode.insertBefore(nav, surface);
     var q = function (s) { return nav.querySelector(s); };
+    if (zoom && options.fitLabel) { var fitButton = q('[data-sn-zoom="fit"]'); fitButton.textContent = options.fitLabel; fitButton.title = options.fitTitle || options.fitLabel; }
     var mapEl = q('.sn-map'), gotoEl = q('.sn-goto input'), statusEl = q('.sn-status');
     var followEl = q('.sn-follow'), resumeEl = q('.sn-resume'), zoomOut = q('.sn-zoom output');
 
@@ -192,6 +193,12 @@
     }
     // The largest zoom (up to 100%) at which the whole score fits in the space it has.
     function fit() {
+      if (zoom.fit) {
+        var keep = current >= 0 ? current : Math.max(0, sel());
+        zoom.fit(); cache = null;
+        scrollToMeasure(keep, { instant: true });
+        paint(); queueView(); announce('Score fitted to the reading pane.'); return;
+      }
       var st = steps().filter(function (z) { return z <= 1 + 1e-6; }), pick = st[0];
       var room = options.fitRoom ? options.fitRoom() : (function (v) { return v.bottom - v.top - 40; })(viewport());
       var height = options.contentHeight || function () { var svg = surface.querySelector('svg'); return (svg || surface).getBoundingClientRect().height; };

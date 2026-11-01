@@ -132,18 +132,54 @@
 </section>
 
 <section class="web-section">
-<h2>Pick a spacing scale and keep it</h2>
-<p>Beginner pages look untidy for one boring reason: the spacing is 13px here, 7px there, 22px somewhere else. Professional pages usually use one small set of numbers everywhere. Store them once as <strong>custom properties</strong>:</p>
+<h2>Design tokens: Spacing, colors &amp; dark mode themes</h2>
+<p>Beginner pages look untidy for one boring reason: the spacing is 13px here, 7px there, 22px somewhere else. Professional pages use one small set of numbers and colors everywhere. Store them once as <strong>custom properties (CSS variables)</strong>:</p>
 <pre><code>:root {
-  --space: 16px;          /* one step */
-  --space-lg: 32px;       /* two steps */
-  --accent: #2455a6;
+  /* Spacing Scale */
+  --space-sm: 8px;
+  --space: 16px;
+  --space-lg: 32px;
+  --radius: 10px;
+
+  /* Light Theme (Default) */
+  --paper: #ffffff;
+  --surface: #f8fafc;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --line: #cbd5e1;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
 }
 
-.card { padding: var(--space); }
+/* Dark Theme: One small rule switches the entire palette */
+body.dark-theme, [data-theme="dark"] {
+  --paper: #0f172a;
+  --surface: #1e293b;
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --line: #334155;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+}
+
+.card {
+  background: var(--surface);
+  color: var(--ink);
+  padding: var(--space);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
 section { margin-bottom: var(--space-lg); }
 a { color: var(--accent); }</code></pre>
-<p>A custom property is a name you invent, starting with two dashes, that holds a value; declaring it on <code>:root</code> makes it available to the whole document. Changing your accent color across fifty rules is now one edit, not fifty.</p>
+<p>A custom property is a name you invent, starting with two dashes (<code>--</code>), that holds a value; declaring it on <code>:root</code> makes it available to the entire document. Notice how changing the theme requires zero edits to your card or section rules — they automatically read whatever values the current theme provides!</p>
+
+<h3>Color formats decoded</h3>
+<p>Modern CSS supports three main ways to express colors:</p>
+<ul>
+  <li><code>HEX (#2563eb)</code>: 6 hexadecimal characters representing Red, Green, and Blue from <code>00</code> to <code>ff</code>. Compact and standard.</li>
+  <li><code>RGB (rgb(37, 99, 235))</code>: Numbers from 0 to 255. Add alpha transparency with <code>rgba(37, 99, 235, 0.5)</code> or <code>rgb(37 99 235 / 50%)</code>.</li>
+  <li><code>HSL (hsl(221, 83%, 53%))</code>: Hue (0–360° on color wheel), Saturation (0–100%), and Lightness (0–100%). Easiest for designing complementary tint and shade scales by hand.</li>
+</ul>
 </section>
 
 <section class="web-section">
@@ -162,7 +198,7 @@ p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
     <img src="https://commons.wikimedia.org/wiki/Special:FilePath/H%C3%A5kon_Wium_Lie.jpg?width=600" alt="Portrait of Håkon Wium Lie, the creator of Cascading Style Sheets (CSS)" loading="lazy" width="600" height="450">
     <figcaption>
       <strong>Håkon Wium Lie (Inventor of CSS)</strong>
-      Norwegian computer scientist Håkon Wium Lie proposed Cascading Style Sheets (CSS) in October 1994 while working at CERN with Tim Berners-Lee. Lie argued that web presentation should be cleanly separated from document structure, creating a cascading language that balances author designs with reader preferences, screen sizes, and accessible contrast.
+      Norwegian computer scientist <a href="pioneers/hakon-wium-lie.html">Håkon Wium Lie</a> proposed Cascading Style Sheets (CSS) in October 1994 while working at CERN with Tim Berners-Lee. Lie argued that web presentation should be cleanly separated from document structure, creating a cascading language that balances author designs with reader preferences, screen sizes, and accessible contrast.
       <span class="web-figure-credit">Credit: Jarle Vines / Wikimedia Commons · CC BY-SA 3.0</span>
     </figcaption>
   </figure>
@@ -200,6 +236,18 @@ p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
   flex-wrap: wrap;           /* let them drop to a new line if narrow */
 }</code></pre>
 <p>Add <code>justify-content: space-between;</code> and the first child hugs the left edge while the last hugs the right. Leave <code>flex-wrap: wrap</code> on, or a narrow phone squashes your links instead of stacking them.</p>
+
+<div class="web-table">
+<table>
+<caption>Flexbox alignment cheat sheet</caption>
+<thead><tr><th scope="col">Property</th><th scope="col">Common values</th><th scope="col">Visual effect</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>justify-content</code> (Main Axis)</th><td><code>flex-start</code> | <code>center</code> | <code>space-between</code></td><td>Pushes items to the left, groups them in the center, or spreads them evenly from edge to edge.</td></tr>
+<tr><th scope="row"><code>align-items</code> (Cross Axis)</th><td><code>center</code> | <code>stretch</code> | <code>flex-start</code></td><td>Centers items vertically, stretches them to matching heights, or aligns tops.</td></tr>
+<tr><th scope="row"><code>gap</code></th><td><code>16px</code> | <code>var(--space)</code></td><td>Gives items breathing room without messy margin calculations.</td></tr>
+</tbody>
+</table>
+</div>
 </section>
 
 <section class="web-section">
@@ -268,53 +316,97 @@ p { max-width: 65ch; }   /* about 65 characters per line */</code></pre>
 </section>
 
 <section class="web-section">
-<h2>Your starting stylesheet</h2>
-<p>This is a complete, working <code>style.css</code>. Replace the file from Lesson 1 with it, then change the custom properties at the top first — those five lines control the feel of the whole site.</p>
-<pre><code>/* ---------------------------------------------------------
-   style.css — starting point for the Build Your Own Web site
-   Change the values in :root first. Everything else follows.
-   --------------------------------------------------------- */
+<h2>Micro-interactions &amp; visual polish</h2>
+<p>What turns a plain document into a polished digital product is responsive feedback when a visitor interacts with it:</p>
 
-/* 1. Design tokens: the numbers and colors used everywhere. */
-:root {
-  --space: 16px;
-  --space-lg: 32px;
-  --accent: #2455a6;
-  --ink: #172944;
-  --paper: #ffffff;
-  --line: #c6d0df;
+<h3>1. Card Hover Lift</h3>
+<p>Give your project cards a subtle physical sensation when the mouse moves over them:</p>
+<pre><code>.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* 2. Sensible defaults. box-sizing keeps widths predictable. */
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.12);
+}</code></pre>
+
+<h3>2. Smooth Scrolling &amp; Tactile Buttons</h3>
+<pre><code>/* Smoothly glide to anchor links like #projects or #contact */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Tactile click press on buttons */
+button:active, .web-button:active {
+  transform: scale(0.97);
+}</code></pre>
+</section>
+
+<section class="web-section">
+<h2>Your starting stylesheet</h2>
+<p>This is a complete, working <code>style.css</code>. Replace the placeholder file from Lesson 1 with it, then customize the design tokens in <code>:root</code> first — those variables control the feel of the whole site.</p>
+<pre><code>/* ---------------------------------------------------------
+   style.css — Starting stylesheet with Design Tokens & Themes
+   --------------------------------------------------------- */
+
+/* 1. Design tokens: colors, spacing, and radius */
+:root {
+  --space-sm: 8px;
+  --space: 16px;
+  --space-lg: 32px;
+  --radius: 10px;
+
+  --paper: #ffffff;
+  --surface: #f8fafc;
+  --ink: #0f172a;
+  --ink-muted: #64748b;
+  --line: #cbd5e1;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+}
+
+/* Dark mode theme token overrides */
+body.dark-theme, [data-theme="dark"] {
+  --paper: #0f172a;
+  --surface: #1e293b;
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --line: #334155;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+}
+
+/* 2. Sensible layout resets */
 *, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   padding: var(--space);
   background: var(--paper);
   color: var(--ink);
-  font-family: system-ui, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 18px;
   line-height: 1.6;
 }
 
-/* 3. A heading scale. Three steps is enough for one site. */
-h1 { font-size: 2rem;    line-height: 1.2; margin: 0 0 var(--space); }
-h2 { font-size: 1.5rem;  line-height: 1.25; margin: var(--space-lg) 0 var(--space); }
-h3 { font-size: 1.25rem; line-height: 1.3; margin: var(--space) 0 8px; }
+/* 3. Heading scale */
+h1 { font-size: 2.2rem;  line-height: 1.2; margin: 0 0 var(--space); color: var(--ink); }
+h2 { font-size: 1.6rem;  line-height: 1.25; margin: var(--space-lg) 0 var(--space); color: var(--ink); }
+h3 { font-size: 1.25rem; line-height: 1.3; margin: var(--space) 0 8px; color: var(--ink); }
 
-/* 4. Readable measure: about 65 characters per line. */
+/* 4. Readable line measure */
 p, li { max-width: 65ch; }
 
-/* 5. Links, and a focus ring keyboard users can see. */
-a { color: var(--accent); }
-a:hover { text-decoration-thickness: 2px; }
+/* 5. Links, hover states, and focus rings */
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+a:hover { color: var(--accent-hover); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
-/* 6. The page container: fluid, but never uncomfortably wide. */
+/* 6. Page container */
 .page { width: 100%; max-width: 1100px; margin: 0 auto; }
 
-/* 7. A row (Flexbox) for the navigation. */
+/* 7. Flexbox navigation */
 .site-nav {
   display: flex;
   gap: var(--space);
@@ -324,10 +416,10 @@ a:hover { text-decoration-thickness: 2px; }
   border-bottom: 1px solid var(--line);
 }
 
-/* 8. A layout (Grid) for the project cards. */
+/* 8. CSS Grid auto-fit card shelf */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: var(--space);
   padding: 0;
   list-style: none;
@@ -335,20 +427,43 @@ a:hover { text-decoration-thickness: 2px; }
 
 .card {
   padding: var(--space);
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.1);
 }
 .card h3 { margin-top: 0; }
 .card img { display: block; width: 100%; height: auto; border-radius: 6px; }
 
-/* 9. One breakpoint, chosen because the cards get cramped here. */
+/* 9. Responsive adjustments */
 @media (max-width: 700px) {
   body { font-size: 17px; padding: 12px; }
-  h1 { font-size: 1.65rem; }
+  h1 { font-size: 1.75rem; }
   .site-nav { gap: 10px; }
 }</code></pre>
 <p class="web-muted">This file styles a page whose wrapper has <code>class="page"</code>, whose nav has <code>class="site-nav"</code>, and whose card list has <code>class="cards"</code> with each item <code>class="card"</code>. Add those class names to your HTML from Lesson 2 or nothing will change.</p>
+</section>
+
+<section class="web-section">
+<h2>Level-Up Challenges for CSS</h2>
+<div class="web-template-grid">
+  <article class="web-panel">
+    <h3>Tier 1: Google Font Pairing</h3>
+    <p>Visit <a href="https://fonts.google.com/">Google Fonts</a>, pick a distinct heading font (like <em>Space Grotesk</em>) and body font (like <em>Inter</em>), and add the <code>&lt;link&gt;</code> to your <code>&lt;head&gt;</code>.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 2: Pill Badges &amp; Tags</h3>
+    <p>Style project category tags with <code>display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;</code> inside each card.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 3: Dark Mode Custom Palette</h3>
+    <p>Craft custom values for <code>body.dark-theme</code> in your CSS file and preview it in DevTools by temporarily adding <code>class="dark-theme"</code> to your <code>&lt;body&gt;</code>.</p>
+  </article>
+</div>
 </section>
 
 <section class="web-section">
@@ -357,11 +472,12 @@ a:hover { text-decoration-thickness: 2px; }
 <ul class="web-checklist">
 <li><label><input type="checkbox" data-web-check="0"> My stylesheet defines custom properties in <code>:root</code> and uses <code>var()</code> instead of repeating values.</label></li>
 <li><label><input type="checkbox" data-web-check="1"> I can explain the difference between padding and margin using my own page as the example.</label></li>
-<li><label><input type="checkbox" data-web-check="2"> My project cards use CSS Grid and rearrange themselves when the window gets narrow.</label></li>
+<li><label><input type="checkbox" data-web-check="2"> My project cards use CSS Grid with auto-fit and adapt across phone and desktop screens.</label></li>
 <li><label><input type="checkbox" data-web-check="3"> My body text has a readable line length and passes a 4.5:1 contrast check.</label></li>
-<li><label><input type="checkbox" data-web-check="4"> Pressing Tab shows a visible focus outline on every link.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> Pressing Tab shows a visible focus outline on every interactive element.</label></li>
+<li><label><input type="checkbox" data-web-check="5"> My cards feature smooth hover micro-interactions and transitions.</label></li>
 </ul>
-<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+<div class="web-progress"><progress data-web-meter max="5" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
 </section>
 
 <nav class="web-next" aria-label="Lesson sequence"><a href="web-html.html">← Previous: Give the page meaning with HTML</a><a href="web-javascript.html">Next: Make it respond with JavaScript →</a></nav>

@@ -401,7 +401,161 @@
     update();
   }
 
+  /* ── Tilt-board tipping predictor ([data-st-tip], needs sim-kit.js) ──
+     A holder sits on a board with its downhill edge against a stop strip. It tips once the
+     line straight down from its centre of mass passes the downhill edge of its base:
+     tan θ = (b ÷ 2) ÷ h. Redraws on input; "Raise the board" animates through SimKit.loop,
+     which pauses while the canvas is off-screen. */
+  function mountTip(host) {
+    var canvas = $('canvas', host);
+    if (!canvas || !window.SimKit) return;
+    var SK = window.SimKit, DEG = Math.PI / 180;
+    var inputs = {}; $$('input[data-tip]', host).forEach(function (i) { inputs[i.getAttribute('data-tip')] = i; });
+    var outs = {}; $$('output[data-tip-out]', host).forEach(function (o) { outs[o.getAttribute('data-tip-out')] = o; });
+    var verdict = $('[data-st-tip-verdict]', host);
+    var anim = null, loop = null, view = null;
+    var BOARD = 240, STRIP = 40; // mm: board length, where the stop strip sits up the board
+
+    function vals() {
+      return { b: num(inputs.b.value, 40), h: num(inputs.h.value, 75), a: anim ? anim.theta : num(inputs.a.value, 15) };
+    }
+    function tipAngle(v) { return Math.atan((v.b / 2) / v.h) / DEG; }
+    function palette() {
+      var bg = String(SK.theme.colors().bg || '').trim(), dark = false, m = /^#?([0-9a-f]{6})$/i.exec(bg);
+      if (m) { var n = parseInt(m[1], 16); dark = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 110; }
+      else if (/rgb/.test(bg)) { var p = bg.match(/[\d.]+/g).map(Number); dark = (0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2]) < 110; }
+      if (document.documentElement.getAttribute('data-lighting') === 'night') dark = true;
+      return dark
+        ? { bg: '#14201f', ink: '#eef6f5', muted: '#9fb4b1', ground: '#3b4b49', board: '#a16207', boardEdge: '#facc15', body: '#5eead4', bodyEdge: '#ccfbf1', roll: '#94a3b8', good: '#4ade80', bad: '#f87171', strip: '#f97316' }
+        : { bg: '#f6faf9', ink: '#10302c', muted: '#4b635f', ground: '#cbd5d3', board: '#d6a35c', boardEdge: '#7c4a0e', body: '#99e0d6', bodyEdge: '#0f766e', roll: '#64748b', good: '#15803d', bad: '#b91c1c', strip: '#c2410c' };
+    }
+
+    function draw() {
+      if (!view) return;
+      var ctx = view.ctx, W = view.width, H = view.height, pal = palette(), v = vals();
+      var th = v.a * DEG, phi = anim ? anim.phi : 0, crit = tipAngle(v);
+      ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
+      var bodyH = Math.max(v.h * 1.35, v.h + 18);
+      // scale depends only on the holder's height, so raising the board never rescales the picture
+      var k = Math.min(W / (BOARD + 70), (H - 70) / Math.max(BOARD * Math.sin(45 * DEG), STRIP * Math.sin(45 * DEG) + bodyH + 10));
+      var ox = 40 * k + 10, oy = H - 24;
+      function toScreen(x, y) { return [ox + x * k, oy - y * k]; }
+      function board(u, w) { return [u * Math.cos(th) - w * Math.sin(th), u * Math.sin(th) + w * Math.cos(th)]; }
+      // body point (p from the downhill edge, q up) → board → screen, with the tip rotation φ about the downhill corner
+      function bodyPt(p, q) {
+        var x = p * Math.cos(phi) - q * Math.sin(phi), y = p * Math.sin(phi) + q * Math.cos(phi);
+        var w = board(STRIP + x, 8 + y); return toScreen(w[0], w[1]);
+      }
+      function poly(pts, fill, stroke, lw) {
+        ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); ctx.closePath();
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1.5; ctx.stroke(); }
+      }
+      // ground and hinge
+      ctx.fillStyle = pal.ground; ctx.fillRect(0, oy, W, H - oy);
+      // the board (8 mm thick), hinged at its low end
+      poly([[0, 0], [BOARD, 0], [BOARD, 8], [0, 8]].map(function (p) { var w = board(p[0], p[1]); return toScreen(w[0], w[1]); }), pal.board, pal.boardEdge, 1.5);
+      // prop under the raised end
+      var end = board(BOARD, 0), e0 = toScreen(end[0], end[1]), e1 = toScreen(end[0], 0);
+      ctx.strokeStyle = pal.muted; ctx.lineWidth = Math.max(2, 5 * k); ctx.beginPath(); ctx.moveTo(e0[0], e0[1]); ctx.lineTo(e1[0], e1[1]); ctx.stroke();
+      // stop strip
+      poly([[STRIP - 6, 8], [STRIP, 8], [STRIP, 14], [STRIP - 6, 14]].map(function (p) { var w = board(p[0], p[1]); return toScreen(w[0], w[1]); }), pal.strip);
+      // angle arc
+      var hinge = toScreen(0, 0), r = 70 * k;
+      ctx.strokeStyle = pal.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(hinge[0], hinge[1], r, -th, 0); ctx.stroke();
+      ctx.fillStyle = pal.ink; ctx.font = '700 ' + Math.max(12, Math.round(15 * Math.min(1.4, k * 2))) + 'px system-ui, sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(v.a.toFixed(1).replace(/\.0$/, '') + '°', hinge[0] + r + 6, hinge[1] - 6);
+      // the holder: base plate, post, tape roll centred at the centre-of-mass height
+      var b = v.b, h = v.h, rr = clampN(h * 0.32, 9, 32);
+      poly([bodyPt(0, 0), bodyPt(b, 0), bodyPt(b, 7), bodyPt(0, 7)], pal.body, pal.bodyEdge, 2);
+      poly([bodyPt(b / 2 - 5, 7), bodyPt(b / 2 + 5, 7), bodyPt(b / 2 + 5, h + rr * 0.7), bodyPt(b / 2 - 5, h + rr * 0.7)], pal.body, pal.bodyEdge, 2);
+      var c = bodyPt(b / 2, h);
+      ctx.strokeStyle = pal.roll; ctx.lineWidth = Math.max(3, rr * 0.55 * k);
+      ctx.beginPath(); ctx.arc(c[0], c[1], rr * 0.72 * k, 0, 2 * Math.PI); ctx.stroke();
+      // centre of mass marker
+      ctx.fillStyle = pal.ink; ctx.beginPath(); ctx.arc(c[0], c[1], Math.max(5, 6 * k), 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = pal.bg; ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.arc(c[0], c[1], Math.max(5, 6 * k), 0, Math.PI / 2); ctx.lineTo(c[0], c[1]);
+      ctx.arc(c[0], c[1], Math.max(5, 6 * k), Math.PI, 1.5 * Math.PI); ctx.fill();
+      // plumb line straight down from the centre of mass to the board surface
+      var tips = v.a > crit + 1e-9 || phi > 0;
+      if (!phi) {
+        var cw = (function () { var x = (c[0] - ox) / k, y = (oy - c[1]) / k; return [x, y]; })();
+        // intersect the vertical line x = cw[0] with the board's top surface: u cosθ - 8 sinθ = x
+        var u = (cw[0] + 8 * Math.sin(th)) / Math.cos(th), top = board(u, 8), foot = toScreen(top[0], top[1]);
+        ctx.setLineDash([6, 5]); ctx.strokeStyle = tips ? pal.bad : pal.good; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(foot[0], foot[1]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = tips ? pal.bad : pal.good; ctx.beginPath(); ctx.arc(foot[0], foot[1], 5, 0, 2 * Math.PI); ctx.fill();
+        // base span marker
+        var a0 = bodyPt(0, -3), a1 = bodyPt(b, -3);
+        ctx.strokeStyle = pal.good; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(a0[0], a0[1]); ctx.lineTo(a1[0], a1[1]); ctx.stroke();
+      }
+      ctx.font = '600 13px system-ui, sans-serif'; ctx.fillStyle = pal.muted; ctx.textAlign = 'right';
+      ctx.fillText('Side view, to scale · ⊕ = centre of mass · dashed = straight down', W - 10, 20);
+      if (phi > 0) { ctx.fillStyle = pal.bad; ctx.font = '800 22px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.fillText('TIPPED at ' + crit.toFixed(1) + '°', W - 10, 48); }
+      report(v, crit);
+    }
+    function clampN(x, a, z) { return Math.max(a, Math.min(z, x)); }
+
+    function report(v, crit) {
+      if (outs.b) outs.b.textContent = fmt(v.b, 0) + ' mm';
+      if (outs.h) outs.h.textContent = fmt(v.h, 0) + ' mm';
+      if (outs.a) outs.a.textContent = fmt(v.a, 1) + '°';
+      if (outs.crit) outs.crit.textContent = fmt(crit, 1) + '°';
+      var over = v.h * Math.tan(v.a * DEG), margin = v.b / 2 - over;
+      if (outs.margin) outs.margin.textContent = margin >= 0 ? fmt(margin, 1) + ' mm inside the base' : fmt(-margin, 1) + ' mm past the edge';
+      if (!verdict || anim) return;
+      var ok = v.a <= crit;
+      verdict.setAttribute('data-tone', ok ? 'good' : 'bad');
+      verdict.textContent = (ok ? 'PASS at ' : 'FAIL at ') + fmt(v.a, 1) + '°: predicted to tip at ' + fmt(crit, 1) + '° (tan θ = ' + fmt(v.b / 2, 1) + ' ÷ ' + fmt(v.h, 0) + ' = ' + (v.b / 2 / v.h).toFixed(2) + '). ' +
+        (ok ? (crit - v.a < 3 ? 'Too close to call: a real print, a bumpy desk or a pulled strip of tape could tip it. Widen the base or lower the load.' : 'Margin: ' + fmt(crit - v.a, 1) + '°. Still run the real tilt test: the prediction assumes the base is flat and the load does not slide.') : 'Widen the base, lower the heavy part, or add weight low down.');
+    }
+
+    function stop() { if (loop) { loop.stop(); loop = null; } }
+    function raise() {
+      stop();
+      var v0 = vals();
+      anim = { theta: 0, phi: 0, crit: tipAngle(v0), target: num(inputs.a.max, 45) };
+      if (verdict) { verdict.setAttribute('data-tone', 'warn'); verdict.textContent = 'Raising the board slowly…'; }
+      loop = SK.loop(function (dt) {
+        dt = Math.min(dt, 0.05);
+        if (anim.phi === 0) {
+          anim.theta += 6 * dt;
+          if (anim.theta >= anim.crit) { anim.theta = anim.crit; anim.phi = 1e-4; }
+          else if (anim.theta >= anim.target) { anim.theta = anim.target; finish('It never tipped: the board reached ' + anim.target + '°.'); return; }
+        } else {
+          anim.phi = Math.min(32 * DEG, anim.phi + dt * (0.4 + anim.phi * 4));
+          if (anim.phi >= 32 * DEG) { finish('It tipped at ' + fmt(anim.crit, 1) + '°, exactly where tan θ = (b ÷ 2) ÷ h says. Set the slider back to your test angle to compare.', true); return; }
+        }
+        draw();
+      }, { el: SK.stage(canvas) });
+    }
+    // The final frame stays (anim.done) until the next input, so a resize redraws it too.
+    function finish(msg, tipped) {
+      stop();
+      anim.done = true;
+      draw();
+      if (verdict) { verdict.setAttribute('data-tone', tipped ? 'bad' : 'good'); verdict.textContent = msg; }
+    }
+
+    $$('input[data-tip]', host).forEach(function (i) { i.addEventListener('input', function () { stop(); anim = null; draw(); }); });
+    $$('[data-st-tip-preset]', host).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        stop(); anim = null;
+        var p = JSON.parse(btn.getAttribute('data-st-tip-preset'));
+        Object.keys(p).forEach(function (key) { if (inputs[key]) inputs[key].value = p[key]; });
+        draw();
+      });
+    });
+    var raiseBtn = $('[data-st-tip-raise]', host);
+    if (raiseBtn) raiseBtn.addEventListener('click', raise);
+    view = SK.canvas2d(canvas, { onResize: function () { if (view) draw(); } });
+    SK.theme.onChange(draw);
+    draw();
+    host.stTip = { tipAngle: tipAngle, vals: vals, draw: draw };
+  }
+
   function init() {
+    $$('[data-st-tip]').forEach(mountTip);
     $$('[data-st-builder]').forEach(mountBuilder);
     $$('[data-st-qcheck]').forEach(mountQCheck);
     $$('[data-st-checklist]').forEach(mountChecklist);

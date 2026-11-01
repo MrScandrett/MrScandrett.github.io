@@ -67,6 +67,24 @@
 </section>
 
 <section class="web-section">
+<h2>Write HTML at lightning speed with Emmet in VS Code</h2>
+<p>You do not need to type every bracket and closing tag by hand. Visual Studio Code comes with <strong>Emmet</strong> built-in. Type a short abbreviation and press <kbd>Tab</kbd> or <kbd>Enter</kbd> to expand it into clean HTML instantly:</p>
+<div class="web-table">
+<table>
+<caption>Instant Emmet expansions for building your site structure</caption>
+<thead><tr><th scope="col">What you want</th><th scope="col">What you type in VS Code</th><th scope="col">What Emmet produces</th></tr></thead>
+<tbody>
+<tr><th scope="row">Accessible Nav Menu</th><td><code>nav&gt;ul&gt;li*3&gt;a</code></td><td>A <code>&lt;nav&gt;</code> wrapping a <code>&lt;ul&gt;</code> with 3 separate <code>&lt;li&gt;&lt;a href=""&gt;&lt;/a&gt;&lt;/li&gt;</code> items!</td></tr>
+<tr><th scope="row">3 Project Cards</th><td><code>article.card*3&gt;h3+p+a</code></td><td>Three <code>&lt;article class="card"&gt;</code> elements, each containing an <code>&lt;h3&gt;</code>, <code>&lt;p&gt;</code>, and <code>&lt;a&gt;</code>.</td></tr>
+<tr><th scope="row">Page Landmarks</th><td><code>header+main+footer</code></td><td>The three essential root landmarks laid out in sequence.</td></tr>
+<tr><th scope="row">Wrap Selection</th><td>Select text, press <kbd>Shift+Alt+W</kbd></td><td>Wraps the highlighted words in any tag you specify (e.g. <code>strong</code>, <code>p</code>, or <code>a</code>).</td></tr>
+</tbody>
+</table>
+</div>
+<p class="web-callout"><strong>Pro Tip:</strong> When you rename an HTML tag in VS Code, install the free <em>Auto Rename Tag</em> extension. Changing <code>&lt;h2&gt;</code> to <code>&lt;h3&gt;</code> will automatically update the matching <code>&lt;/h3&gt;</code> tag without you needing to scroll down!</p>
+</section>
+
+<section class="web-section">
 <h2>A heading is not big text</h2>
 <p>There are six heading elements, <code>&lt;h1&gt;</code> through <code>&lt;h6&gt;</code>. It is tempting to choose one by how large it looks. Don't. The number is a <strong>level in an outline</strong>, exactly like the indentation of a contents page.</p>
 <pre><code>&lt;h1&gt;Ada's creation station&lt;/h1&gt;
@@ -140,6 +158,30 @@
 </section>
 
 <section class="web-section">
+<h2>The Semantic Trio: &lt;section&gt;, &lt;article&gt;, and &lt;aside&gt;</h2>
+<p>Inside <code>&lt;main&gt;</code>, you will group content. Three semantic elements give these groups exact meaning:</p>
+<div class="web-table">
+<table>
+<caption>When to use which container tag</caption>
+<thead><tr><th scope="col">Element</th><th scope="col">Meaning</th><th scope="col">Best used for</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>&lt;article&gt;</code></th><td>A self-contained item that makes sense even if copied somewhere else completely on its own.</td><td>A project card, a blog post, a student game review, a customer testimonial.</td></tr>
+<tr><th scope="row"><code>&lt;section&gt;</code></th><td>A thematic chapter or major block of the page that begins with its own heading.</td><td>"About Me", "Featured Creations", "My Skills", "Contact Info".</td></tr>
+<tr><th scope="row"><code>&lt;aside&gt;</code></th><td>Secondary or supporting information tangentially related to the content around it.</td><td>Author bio sidebar, quick tool tips, related resource links, callout notes.</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code>&lt;section id="creations"&gt;
+  &lt;h2&gt;Featured Creations&lt;/h2&gt;
+  &lt;article class="card"&gt;
+    &lt;h3&gt;Tide Pool Simulator&lt;/h3&gt;
+    &lt;p&gt;An interactive hydrodynamic wave simulation running on HTML5 Canvas.&lt;/p&gt;
+    &lt;a href="tide-pool.html"&gt;Launch simulation&lt;/a&gt;
+  &lt;/article&gt;
+&lt;/section&gt;</code></pre>
+</section>
+
+<section class="web-section">
 <h2>Links, images, and lists that carry information</h2>
 <h3>Links that make sense out of context</h3>
 <p>Assistive software can list every link on a page on its own, stripped of the sentences around them. This means a visitor can press a shortcut key to summon a dialog box containing all links on the page. A page filled with "click here", "read more", and "this link" becomes completely unusable in that view, because none of the entries explain where they lead. Therefore, always write the destination directly into the link text so that the action explains itself even when read in isolation.</p>
@@ -156,17 +198,40 @@
 
 &lt;!-- Useful --&gt;
 &lt;img src="images/chart.png"
-     alt="Playtest scores rose from 40 to 85 over five rounds."&gt;
+     alt="Playtest scores rose from 40 to 85 over five rounds."
+     loading="lazy" width="640" height="360"&gt;
 
 &lt;!-- Purely decorative: empty alt, deliberately --&gt;
 &lt;img src="images/swirl.svg" alt=""&gt;</code></pre>
+<p>Notice <code>loading="lazy"</code>: this instructs modern browsers to wait and download the image only when the visitor scrolls near it, saving mobile data. Always include <code>width</code> and <code>height</code> attributes so the browser reserves the exact pixel dimensions before the image arrives, preventing unpleasant layout shifts as the page renders.</p>
+
+<h3>Figures with Captions &amp; Rich Media</h3>
+<p>When an image, diagram, or chart carries educational or narrative weight, wrap it in a <code>&lt;figure&gt;</code> with a <code>&lt;figcaption&gt;</code>. On our class platform, adding <code>data-zoomable</code> enables the click-to-enlarge photo lightbox so the class can examine details together:</p>
+<pre><code>&lt;figure data-zoomable&gt;
+  &lt;img src="images/my-circuit.jpg" alt="A breadboard circuit with three LEDs wired in parallel" width="800" height="600" loading="lazy"&gt;
+  &lt;figcaption&gt;
+    &lt;strong&gt;Parallel Circuit Prototype&lt;/strong&gt;
+    Testing resistor values to balance LED brightness before soldering the permanent shield.
+  &lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+<p>Modern HTML5 also handles audio and video natively without third-party plugins:</p>
+<pre><code>&lt;!-- Accessible audio clip with fallback --&gt;
+&lt;audio controls src="audio/theme-song.mp3"&gt;
+  Your browser does not support the audio element.
+&lt;/audio&gt;
+
+&lt;!-- Accessible video player --&gt;
+&lt;video controls width="640" height="360" poster="images/video-cover.jpg"&gt;
+  &lt;source src="video/demo.mp4" type="video/mp4"&gt;
+  Your browser does not support the video tag.
+&lt;/video&gt;</code></pre>
 <p>An empty <code>alt=""</code> is a real answer, not a shortcut: it tells a screen reader that an image is decorative, which causes assistive software to skip it quietly. This is much kinder than forcing the listener to hear "swirl dot s v g". Leaving the attribute off entirely is different and worse: because the software has no guidance, it assumes the image might be informative and reads the raw filename aloud, which confuses the listener. Therefore, every <code>&lt;img&gt;</code> gets an <code>alt</code> attribute; you only decide whether it communicates meaning or signals decoration.</p>
 <div class="web-figure-pair">
   <figure data-zoomable data-lightbox-group="web-design" class="web-figure" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/WorldWideWeb.1.png?width=1600">
     <img src="https://commons.wikimedia.org/wiki/Special:FilePath/WorldWideWeb.1.png?width=600" alt="Screenshot of the original WorldWideWeb application on NeXTSTEP showing formatted hypertext documents and menus" loading="lazy" width="600" height="450">
     <figcaption>
       <strong>The WorldWideWeb Browser-Editor (NeXTSTEP, 1990)</strong>
-      The very first web browser, named <em>WorldWideWeb</em> (and later renamed <em>Nexus</em>), running on NeXTSTEP in 1990. Tim Berners-Lee created it simultaneously as a browser and a document editor. Notice the early semantic tags at work: headings, paragraphs, and underlined hypertext links pointing across the CERN network.
+      The very first web browser, named <em>WorldWideWeb</em> (and later renamed <em>Nexus</em>), running on NeXTSTEP in 1990. <a href="pioneers/tim-berners-lee.html">Tim Berners-Lee</a> created it simultaneously as a browser and a document editor. Notice the early semantic tags at work: headings, paragraphs, and underlined hypertext links pointing across the CERN network.
       <span class="web-figure-credit">Credit: CERN / Tim Berners-Lee / Wikimedia Commons · CC BY-SA 3.0</span>
     </figcaption>
   </figure>
@@ -174,7 +239,7 @@
     <img src="https://commons.wikimedia.org/wiki/Special:FilePath/NCSA%20Mosaic%20Browser%20Screenshot.png?width=600" alt="Screenshot of the early NCSA Mosaic browser displaying inline color graphics and formatted text" loading="lazy" width="600" height="450">
     <figcaption>
       <strong>NCSA Mosaic: The Dawn of the Visual Web (1993)</strong>
-      Developed by Marc Andreessen and Eric Bina at the National Center for Supercomputing Applications (NCSA), Mosaic 1.0 was the breakthrough browser that introduced the <code>&lt;img&gt;</code> tag. For the first time, images and formatted text appeared side-by-side inside the page body rather than in separate pop-up windows, turning HTML into a rich publishing format and igniting explosive public adoption of the World Wide Web.
+      Developed by <a href="pioneers/marc-andreessen.html">Marc Andreessen</a> and Eric Bina at the National Center for Supercomputing Applications (NCSA), Mosaic 1.0 was the breakthrough browser that introduced the <code>&lt;img&gt;</code> tag. For the first time, images and formatted text appeared side-by-side inside the page body rather than in separate pop-up windows, turning HTML into a rich publishing format and igniting explosive public adoption of the World Wide Web.
       <span class="web-figure-credit">Credit: NCSA / University of Illinois / Wikimedia Commons · Public domain</span>
     </figcaption>
   </figure>
@@ -211,22 +276,77 @@
 </section>
 
 <section class="web-section">
-<h2>An accessible form</h2>
+<h2>Accessible forms with modern inputs &amp; validation</h2>
 <p>Every control needs a <code>&lt;label&gt;</code> whose <code>for</code> matches the control's <code>id</code>. That link is what makes the label clickable, and it is what tells a screen reader which words belong to which box. Placeholder text is not a label: it disappears the moment someone starts typing.</p>
-<pre><code>&lt;form&gt;
-  &lt;p&gt;
-    &lt;label for="name"&gt;Your name&lt;/label&gt;
-    &lt;input id="name" name="name" type="text" autocomplete="name"&gt;
-  &lt;/p&gt;
-  &lt;p&gt;
-    &lt;label for="message"&gt;What should I build next?&lt;/label&gt;
-    &lt;textarea id="message" name="message"&gt;&lt;/textarea&gt;
-  &lt;/p&gt;
-  &lt;button type="submit"&gt;Send&lt;/button&gt;
+<p>Modern HTML provides specialized input types that automatically trigger appropriate keyboards on mobile devices and provide built-in validation:</p>
+<pre><code>&lt;form action="#" method="post"&gt;
+  &lt;fieldset&gt;
+    &lt;legend&gt;Visitor Feedback&lt;/legend&gt;
+
+    &lt;p&gt;
+      &lt;label for="visitor-name"&gt;Your Name (required):&lt;/label&gt;
+      &lt;input id="visitor-name" name="name" type="text" required autocomplete="name"&gt;
+    &lt;/p&gt;
+
+    &lt;p&gt;
+      &lt;label for="visitor-email"&gt;Email Address:&lt;/label&gt;
+      &lt;input id="visitor-email" name="email" type="email" autocomplete="email" placeholder="name@example.com"&gt;
+    &lt;/p&gt;
+
+    &lt;p&gt;
+      &lt;label for="favorite-category"&gt;Favorite topic:&lt;/label&gt;
+      &lt;select id="favorite-category" name="category"&gt;
+        &lt;option value="games"&gt;Browser Games&lt;/option&gt;
+        &lt;option value="sims"&gt;Physics Simulations&lt;/option&gt;
+        &lt;option value="art"&gt;Interactive Art&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/p&gt;
+
+    &lt;p&gt;
+      &lt;label for="rating"&gt;Satisfaction rating (1 to 10):&lt;/label&gt;
+      &lt;input id="rating" name="rating" type="range" min="1" max="10" value="8"&gt;
+    &lt;/p&gt;
+
+    &lt;p&gt;
+      &lt;label for="message"&gt;Project suggestion:&lt;/label&gt;
+      &lt;textarea id="message" name="message" rows="4"&gt;&lt;/textarea&gt;
+    &lt;/p&gt;
+
+    &lt;p&gt;
+      &lt;label&gt;
+        &lt;input type="checkbox" name="newsletter" value="yes"&gt;
+        Notify me when new projects launch
+      &lt;/label&gt;
+    &lt;/p&gt;
+
+    &lt;button type="submit"&gt;Send Feedback&lt;/button&gt;
+  &lt;/fieldset&gt;
 &lt;/form&gt;</code></pre>
+<p>Notice the <code>required</code> attribute: modern browsers will stop the form from submitting and display a friendly prompt if the field is left empty, without needing any JavaScript!</p>
 <div class="web-callout">
-<p><strong>Be honest about what this form does: nothing.</strong> A page made only of HTML, CSS and JavaScript cannot send email, save a message, or store an order. Sending mail requires a server or a paid form service. Until you connect one, say so on the page — a line like "This form is a practice form and does not send anything yet" — rather than letting a visitor type a real message into a void. You will look at real options in the publishing lesson.</p>
+<p><strong>Be honest about what this form does: nothing yet.</strong> A static page made only of HTML and CSS cannot send an email or store database records on its own. Until you connect a form backend (such as Formspree or Netlify Forms, covered in <a href="web-publish.html">the publishing lesson</a>), add a short note saying <em>"This is a practice form for demonstration."</em></p>
 </div>
+</section>
+
+<section class="web-section">
+<h2>Don't forget the &lt;head&gt;: Favicon &amp; Social Previews</h2>
+<p>While the <code>&lt;body&gt;</code> contains what people see on the canvas, the <code>&lt;head&gt;</code> provides metadata that makes your site look professional in browser tabs and search results:</p>
+<pre><code>&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+
+  &lt;!-- The tab title and search engine description --&gt;
+  &lt;title&gt;Jordan's Creative Tech Lab&lt;/title&gt;
+  &lt;meta name="description" content="Interactive simulations, 3D models, and web games built in STEAM Lab."&gt;
+
+  &lt;!-- The tab icon (Favicon) --&gt;
+  &lt;link rel="icon" href="images/favicon.svg" type="image/svg+xml"&gt;
+
+  &lt;!-- Social media preview card (Open Graph) --&gt;
+  &lt;meta property="og:title" content="Jordan's Creative Tech Lab"&gt;
+  &lt;meta property="og:description" content="Explore interactive web games and simulations."&gt;
+  &lt;meta property="og:image" content="images/preview-banner.png"&gt;
+&lt;/head&gt;</code></pre>
 </section>
 
 <section class="web-section">
@@ -255,14 +375,38 @@
 <h2>Put it into your own site</h2>
 <p>Now do it for real in <code>index.html</code>: wrap your content in <code>&lt;header&gt;</code>, <code>&lt;nav aria-label="Main"&gt;</code>, <code>&lt;main&gt;</code> and <code>&lt;footer&gt;</code>; give the page one <code>&lt;h1&gt;</code>; add your project list with an <code>&lt;h2&gt;</code> above it; add one image with alt text you actually thought about; and add the practice form with its honest note. Save, reload, and run the page through the W3C validator before you stop.</p>
 <p>Your page will look plain, and that is expected — you have written meaning, not appearance. The next lesson gives that structure a design, and it will be far easier because every part of the page is now something CSS can name.</p>
+</section>
+
+<section class="web-section">
+<h2>Level-Up Challenges for Your Website</h2>
+<p>Want to push beyond the minimum? Pick a challenge tier to make your personal site stand out:</p>
+<div class="web-template-grid">
+  <article class="web-panel">
+    <h3>Tier 1: Media Showcase</h3>
+    <p>Add a dedicated <code>&lt;figure data-zoomable&gt;</code> with an authentic image or screenshot of something you made, accompanied by a descriptive <code>&lt;figcaption&gt;</code> explaining what you learned while building it.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 2: Interactive Feedback Form</h3>
+    <p>Expand your <code>&lt;form&gt;</code> with at least four distinct input types (e.g. <code>email</code>, <code>range</code>, <code>color</code>, and <code>checkbox</code>). Wrap them inside a semantic <code>&lt;fieldset&gt;</code> with a <code>&lt;legend&gt;</code>.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 3: Multi-Page Navigation</h3>
+    <p>Create a <code>pages/</code> subfolder holding <code>about.html</code> and <code>projects.html</code>. Connect them with an accessible <code>&lt;nav&gt;</code> menu and verify all relative paths back to <code>index.html</code> work seamlessly.</p>
+  </article>
+</div>
+</section>
+
+<section class="web-section">
+<h2>Before you move on</h2>
 <ul class="web-checklist">
 <li><label><input type="checkbox" data-web-check="0"> My page has exactly one h1 and headings that do not skip levels.</label></li>
 <li><label><input type="checkbox" data-web-check="1"> My content sits inside header, nav, main and footer landmarks.</label></li>
 <li><label><input type="checkbox" data-web-check="2"> Every image has an alt attribute, empty only where the image is decoration.</label></li>
 <li><label><input type="checkbox" data-web-check="3"> Every link makes sense read on its own, with no "click here".</label></li>
-<li><label><input type="checkbox" data-web-check="4"> My form controls have labels, and the page says plainly that the form does not send anything yet.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> My form controls have matching labels, and the page explains the form is for practice.</label></li>
+<li><label><input type="checkbox" data-web-check="5"> I added a descriptive &lt;title&gt;, meta description, and favicon to the &lt;head&gt;.</label></li>
 </ul>
-<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+<div class="web-progress"><progress data-web-meter max="5" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
 </section>
 
 <nav class="web-next" aria-label="Lesson sequence"><a href="web-first-site.html">← Previous: Set up your first site</a><a href="web-css.html">Next: Design with CSS →</a></nav>

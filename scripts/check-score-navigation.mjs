@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 import { findChromium } from '../lib/find-chromium.mjs';
 import assert from 'node:assert/strict';
 
-const BASE = 'http://localhost:8080/lessons/music/';
+const BASE = (process.env.SCORE_TEST_URL || 'http://localhost:8080') + '/lessons/music/';
 const PAGES = [
   { name: 'pioneers/bach', measure: '.se-measure', play: '.se-play' },
   { name: 'pioneers/gershwin', measure: '.se-measure', play: '.se-play' },
@@ -15,7 +15,7 @@ const PAGES = [
 
 const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
 try {
-  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }].filter(s => !process.env.SCORE_TEST_WIDTH || s.width === +process.env.SCORE_TEST_WIDTH)) {
     const page = await browser.newPage({ viewport: size, reducedMotion: 'reduce' });
     page.setDefaultTimeout(8000);
     const errors = [];

@@ -1,0 +1,149 @@
+/* Read a Failed Print (lessons/3d-design/cad-and-printing/print-troubleshooting.html).
+   Builds on figure-lesson.css (fl-*) and components/photo-gallery.css (pg-*). Prefix: pt- */
+:root { --fl-accent: #0f766e; --fl-accent-2: #c2410c; --fl-ink: #082f2b; }
+
+.pt-muted { color: var(--text-muted, #64748b) !important; font-size: 0.82rem !important; }
+
+/* Numbered step lists (hook, shelf routine) */
+.pt-steps { margin: 0.6rem 0 0.8rem; padding-left: 1.3rem; display: grid; gap: 0.4rem; font-size: 0.88rem; line-height: 1.6; color: var(--text-secondary, #3f4f65); }
+.pt-steps strong { color: var(--text, #1d1d1f); }
+.pt-safety { border-left-color: #b91c1c !important; background: color-mix(in srgb, #b91c1c 8%, transparent) !important; }
+
+/* The four questions + grade bands: numbered tiles */
+.pt-four, .pt-levels { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 0.65rem; margin: 0.8rem 0; }
+.pt-four article, .pt-levels article { border: 1px solid var(--line, #d2d2d7); border-radius: 12px; padding: 0.75rem 0.85rem; min-width: 0; }
+.pt-four span, .pt-levels span { display: inline-block; font-size: 0.78rem; font-weight: 800; color: #fff; background: var(--fl-accent); border-radius: 999px; padding: 0.05rem 0.55rem; margin-bottom: 0.3rem; }
+.pt-levels span { background: var(--fl-accent-2); }
+.pt-four h3, .pt-levels h3 { margin: 0.1rem 0 0.25rem !important; font-size: 0.95rem !important; }
+.pt-four p, .pt-levels p { font-size: 0.83rem !important; margin: 0 !important; line-height: 1.55 !important; }
+:where(html[data-lighting="night"]) .pt-four span { background: #0b6b62; }
+:where(html[data-lighting="night"]) .pt-levels span { background: #9a3412; }
+
+/* Failure map */
+.pt-map { margin: 0.9rem 0; }
+.pt-map img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line, #d2d2d7); background: #fff; cursor: zoom-in; }
+.pt-map figcaption { font-size: 0.82rem; line-height: 1.55; color: var(--text-secondary, #3f4f65); margin-top: 0.45rem; }
+.pt-map figcaption strong { color: var(--text, #1d1d1f); }
+
+/* Gallery filters */
+.pt-filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.7rem 0 0.3rem; }
+.pt-filters button, .pt-tabs button, .pt-answers button, .pt-btn-row button, .pt-back, .pt-next, .pt-result > button {
+  border: 1px solid var(--line, #d2d2d7); background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f);
+  border-radius: 999px; padding: 0.35rem 0.8rem; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+}
+.pt-filters button:hover, .pt-tabs button:hover, .pt-answers button:hover:not(:disabled), .pt-btn-row button:hover, .pt-back:hover { border-color: var(--fl-accent); }
+.pt-filters button[aria-pressed="true"], .pt-tabs button[aria-selected="true"] { background: var(--fl-accent); border-color: var(--fl-accent); color: #fff; }
+:where(html[data-lighting="night"]) .pt-filters button[aria-pressed="true"],
+:where(html[data-lighting="night"]) .pt-tabs button[aria-selected="true"] { background: #0b6b62; border-color: #0b6b62; }
+.pt-filter-status { min-height: 1.2em; font-size: 0.8rem !important; color: var(--text-muted, #64748b) !important; margin: 0 !important; }
+
+/* Gallery cards: show each drawing whole */
+.pt-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.pt-grid .pg-card img { height: auto; aspect-ratio: 480 / 300; background: #fff; }
+.pt-card figcaption > span { display: block; }
+.pt-card figcaption b { color: var(--text, #1d1d1f); }
+.pt-who { margin-top: 0.15rem; padding: 0.3rem 0.5rem; border-radius: 8px; font-size: 0.8rem; }
+.pt-who[data-who="design"] { background: color-mix(in srgb, #2563eb 10%, transparent); }
+.pt-who[data-who="machine"] { background: color-mix(in srgb, #b45309 12%, transparent); }
+.pt-who[data-who="both"] { background: color-mix(in srgb, #7c3aed 10%, transparent); }
+.pt-card { scroll-margin: 6rem; }
+.pt-flash { outline: 3px solid var(--fl-accent-2); outline-offset: 2px; animation: pt-flash 0.8s ease 2; }
+@keyframes pt-flash { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .pt-flash { animation: none; } }
+
+/* Print Doctor */
+.pt-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.7rem 0; }
+.pt-panel { border: 1px solid var(--line, #d2d2d7); border-radius: 14px; padding: 0.9rem 1rem; background: color-mix(in srgb, var(--fl-accent) 4%, transparent); }
+.pt-crumbs { font-size: 0.8rem !important; color: var(--text-muted, #64748b) !important; margin-bottom: 0.4rem !important; }
+.pt-q { margin: 0.2rem 0 0.6rem !important; font-size: 1.02rem !important; }
+.pt-answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 0.45rem; }
+.pt-answers button { border-radius: 10px; text-align: left; line-height: 1.45; padding: 0.55rem 0.75rem; font-weight: 500; }
+.pt-answers button.is-right { border-color: #15803d; background: color-mix(in srgb, #15803d 12%, transparent); font-weight: 700; }
+.pt-answers button.is-wrong { border-color: #b91c1c; background: color-mix(in srgb, #b91c1c 8%, transparent); text-decoration: line-through; }
+.pt-answers button:disabled { cursor: default; opacity: 1; }
+.pt-answers button.is-wrong:disabled { opacity: 0.75; }
+.pt-back { margin-top: 0.7rem; }
+.pt-result { border: 1px solid color-mix(in srgb, var(--fl-accent) 45%, transparent); border-left: 4px solid var(--fl-accent); border-radius: 12px; padding: 0.8rem 0.95rem; }
+.pt-result h3 { margin: 0.1rem 0 0.45rem !important; font-size: 1.1rem !important; }
+.pt-result p { font-size: 0.86rem !important; }
+.pt-result p b { color: var(--text, #1d1d1f); }
+.pt-result-label, .pt-story-label { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem !important; font-weight: 800; color: var(--fl-accent) !important; margin: 0 !important; }
+.pt-btn-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+.pt-next { margin-top: 0.6rem; background: var(--fl-accent); border-color: var(--fl-accent); color: #fff; }
+:where(html[data-lighting="night"]) .pt-next { background: #0b6b62; border-color: #0b6b62; }
+
+.pt-tree-title { margin-bottom: 0.4rem !important; }
+.pt-tree { margin: 0; padding-left: 1.3rem; font-size: 0.86rem; line-height: 1.6; color: var(--text-secondary, #3f4f65); display: grid; gap: 0.35rem; }
+.pt-tree strong { color: var(--text, #1d1d1f); }
+.pt-tree ul { margin: 0.15rem 0 0; padding-left: 1.1rem; }
+.pt-print-only { display: none; }
+
+.pt-score { font-size: 0.82rem !important; font-weight: 700; color: var(--text, #1d1d1f) !important; margin-bottom: 0.6rem !important; font-variant-numeric: tabular-nums; }
+.pt-quiz-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
+.pt-quiz-img { border: 1px solid var(--line, #d2d2d7); border-radius: 10px; overflow: hidden; background: #fff; aspect-ratio: 480 / 300; display: flex; align-items: center; justify-content: center; }
+.pt-quiz-img img, .pt-quiz-img svg { display: block; width: 100%; height: 100%; object-fit: contain; }
+.pt-quiz-credit { font-size: 0.72rem !important; color: var(--text-muted, #64748b) !important; margin: 0.3rem 0 0 !important; }
+.pt-story { font-size: 0.95rem !important; color: var(--text, #1d1d1f) !important; line-height: 1.6 !important; }
+.pt-feedback { min-height: 1.2em; margin-top: 0.5rem !important; font-size: 0.84rem !important; font-weight: 600; }
+.pt-feedback.ok { color: #15803d !important; }
+.pt-feedback.err { color: #b42318 !important; }
+:where(html[data-lighting="night"]) .pt-feedback.ok { color: #86efac !important; }
+:where(html[data-lighting="night"]) .pt-feedback.err { color: #fca5a5 !important; }
+
+/* Diagnosis card */
+.pt-card-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; margin: 0.9rem 0 0.6rem; }
+.pt-card-note { font-size: 0.8rem; color: var(--text-muted, #64748b); }
+.pt-dx-card { border: 2px solid var(--text, #1d1d1f); border-radius: 12px; padding: 0.8rem 0.95rem; display: grid; gap: 0.6rem; font-size: 0.84rem; color: var(--text, #1d1d1f); margin: 0.4rem 0 0.9rem; }
+.pt-dx-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line, #d2d2d7); padding-bottom: 0.35rem; font-size: 0.95rem; }
+.pt-dx-head span { font-weight: 800; font-size: 1.2rem; color: var(--fl-accent-2); }
+.pt-dx-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 0.5rem 0.8rem; }
+.pt-dx-card label { display: flex; flex-direction: column; gap: 0.2rem; font-weight: 600; min-width: 0; }
+.pt-dx-card input[type="text"], .pt-dx-card textarea { width: 100%; min-width: 0; box-sizing: border-box; border: 1px solid var(--line, #d2d2d7); border-radius: 6px; padding: 0.28rem 0.45rem; font: inherit; font-weight: 400; background: var(--surface-elevated, #fff); color: var(--text, #1d1d1f); }
+.pt-dx-card textarea { resize: vertical; min-height: 5.5rem; }
+.pt-dx-checks { border: 1px solid var(--line, #d2d2d7); border-radius: 8px; padding: 0.4rem 0.7rem 0.55rem; margin: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; }
+.pt-dx-checks legend { font-weight: 700; padding: 0 0.3rem; }
+.pt-dx-checks label { flex-direction: row; align-items: center; gap: 0.35rem; font-weight: 500; flex-wrap: wrap; }
+.pt-dx-card input.pt-dx-short { width: 4.5em; display: inline-block; }
+.pt-dx-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem 0.9rem; }
+.pt-dx-col { display: grid; gap: 0.5rem; align-content: start; }
+.pt-print-cards { display: none; }
+
+.pt-vocab { display: grid; grid-template-columns: minmax(0, 12em) minmax(0, 1fr); gap: 0.35rem 1rem; margin: 0.6rem 0 0; font-size: 0.85rem; line-height: 1.5; }
+.pt-vocab dt { font-weight: 700; color: var(--text, #1d1d1f); }
+.pt-vocab dd { margin: 0; color: var(--text-secondary, #3f4f65); }
+.pt-links { margin: 0.4rem 0 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; font-size: 0.86rem; line-height: 1.55; color: var(--text-secondary, #3f4f65); }
+
+@media (max-width: 680px) {
+  .pt-quiz-grid, .pt-dx-split { grid-template-columns: minmax(0, 1fr); }
+  .pt-vocab { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+  .pt-vocab dd { margin-bottom: 0.4rem; }
+}
+
+@media print {
+  .pt-filters, .pt-filter-status, .pt-tabs, .pt-triage, #pt-panel-rounds, .pt-card-tools { display: none !important; }
+  .pt-print-only { display: block !important; }
+  .pt-map img { max-width: 5in; margin: 0 auto; }
+  /* lesson-print.css keeps a caption with what follows; the callout after the map may start a new page */
+  .pt-map figcaption { break-after: auto; page-break-after: auto; }
+  .pt-panel { border: 0; padding: 0; background: none; }
+  /* Each failure prints as one short full-width row (drawing beside its four answers), kept whole. */
+  .pt-grid { display: block; }
+  .pt-grid .pt-card, .pt-card[hidden] { display: grid !important; grid-template-columns: 2.1in minmax(0, 1fr); gap: 0 0.18in; width: auto; margin: 0 0 0.1in; padding: 0.06in; break-inside: avoid; page-break-inside: avoid; }
+  .pt-grid .pg-card img { width: 2.1in; height: auto !important; aspect-ratio: 480 / 300; object-fit: contain !important; align-self: start; }
+  .pt-card figcaption { font-size: 8.5pt; gap: 0.1rem; padding: 0; }
+  .pt-card .pg-credit { padding-top: 0.1rem; }
+  .pt-who { background: none !important; border: 1px solid #c7c7cc; padding: 0.15rem 0.35rem; }
+  .pt-dx-card { border-color: #111827; color: #111827; break-inside: avoid; }
+  .pt-dx-card input[type="text"], .pt-dx-card textarea { border: none; border-bottom: 1px solid #94a3b8; border-radius: 0; background: transparent; color: #111827; }
+  .pt-dx-card textarea { min-height: 1.4in; border: 1px solid #94a3b8; }
+  .pt-dx-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pt-flash { outline: none; animation: none; }
+
+  /* "Print blank diagnosis cards": only the two card copies print, one per half page. */
+  html.pt-printing-cards .site-header,
+  html.pt-printing-cards .ll-sim > :not(main),
+  html.pt-printing-cards main > :not(.pt-print-cards) { display: none !important; }
+  html.pt-printing-cards .pt-print-cards { display: grid !important; gap: 0.35in; width: 100%; }
+  html.pt-printing-cards .pt-print-cards .pt-dx-card { height: 4.6in; margin: 0; align-content: start; }
+  html.pt-printing-cards .pt-print-cards .pt-dx-card textarea { min-height: 1.3in; }
+}

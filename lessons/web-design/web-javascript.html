@@ -58,12 +58,30 @@
 
 <section class="web-section">
 <h2>First tool: see what your program believes</h2>
-<p>Programs almost never fail mysteriously. They do exactly what you wrote, on values you did not expect. <code>console.log()</code> is how you find out which.</p>
+<p>Programs almost never fail mysteriously. They do exactly what you wrote, on values you did not expect. <code>console.log()</code> is how you inspect what the program is doing step by step.</p>
 <pre><code>const name = "Ada";
 console.log("name is:", name);
-console.log("length is:", name.length);</code></pre>
-<p>Open the page, press <kbd>F12</kbd> (or right-click and choose <strong>Inspect</strong>), then click the <strong>Console</strong> tab. Red text there is an error with a file name and a line number — read it before changing anything, because it usually names the problem exactly.</p>
-<p class="web-callout"><strong>Habit to build now:</strong> when something does not work, do not guess and retype. Log the value one line <em>before</em> the line that misbehaves, and log it again one line after. The bug is between the last value that looked right and the first value that looked wrong.</p>
+console.log("length is:", name.length);
+
+// Pro Tip 1: Wrap in braces to print the variable name automatically!
+console.log({ name }); // prints: { name: "Ada" }</code></pre>
+<p>Open your browser, press <kbd>F12</kbd> (or right-click and choose <strong>Inspect</strong>), then click the <strong>Console</strong> tab. Red text there is an error with a file name and a line number — click it to jump straight to the source line in your code.</p>
+
+<h3>Writing JavaScript in VS Code</h3>
+<p>Visual Studio Code gives you three big advantages when writing JavaScript:</p>
+<ul>
+  <li><strong>IntelliSense Autocompletion:</strong> As you type <code>document.</code> or <code>localStorage.</code>, VS Code suggests every valid property and explains what parameters it expects.</li>
+  <li><strong>Auto-Closing Pairs:</strong> Typing <code>(</code>, <code>[</code>, <code>{</code>, or <code>"</code> automatically inserts the closing partner.</li>
+  <li><strong>Code Formatting:</strong> Press <kbd>Shift+Alt+F</kbd> (Mac: <kbd>Shift+Option+F</kbd>) anytime to clean up your indentation and semicolon placement instantly.</li>
+</ul>
+
+<div class="web-callout">
+<p><strong>Two Pro Debugging Moves:</strong></p>
+<ol>
+  <li><code>console.table(projects)</code> — When logging arrays of objects, this prints a beautiful spreadsheet table right inside your browser console!</li>
+  <li><code>debugger;</code> — Type this keyword on any line in <code>script.js</code>. When your browser encounters it with DevTools open, it pauses program execution so you can hover over any variable and inspect its live value.</li>
+</ol>
+</div>
 </section>
 
 <section class="web-section">
@@ -138,7 +156,7 @@ button.addEventListener("click", function () {
     <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Brendan_Eich_Mozilla_Foundation_official_photo.jpg?width=600" alt="Portrait of Brendan Eich, creator of the JavaScript programming language" loading="lazy" width="600" height="450">
     <figcaption>
       <strong>Brendan Eich (Creator of JavaScript)</strong>
-      In May 1995, Brendan Eich developed the initial version of JavaScript (originally codenamed <em>Mocha</em>, then <em>LiveScript</em>) in just ten days at Netscape Communications. Designed to run directly inside web browsers alongside HTML, JavaScript transformed the web from static document viewing into an interactive, event-driven computing platform.
+      In May 1995, <a href="pioneers/brendan-eich.html">Brendan Eich</a> developed the initial version of JavaScript (originally codenamed <em>Mocha</em>, then <em>LiveScript</em>) in just ten days at Netscape Communications. Designed to run directly inside web browsers alongside HTML, JavaScript transformed the web from static document viewing into an interactive, event-driven computing platform.
       <span class="web-figure-credit">Credit: Mozilla Foundation / Wikimedia Commons · CC BY-SA 3.0</span>
     </figcaption>
   </figure>
@@ -299,16 +317,89 @@ toggle.addEventListener("change", function () {
 </section>
 
 <section class="web-section">
+<h2>Essential interaction: Dark / Light Mode Switcher</h2>
+<p>Remember the CSS tokens from Lesson 3? Now you can let visitors switch themes with a single button, and remember their choice between visits:</p>
+<pre><code>// 1. Find the toggle button in the header
+const themeBtn = document.querySelector("#theme-btn");
+
+// 2. Check if dark mode was previously saved
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark-theme");
+  if (themeBtn) themeBtn.textContent = "☀️ Light Mode";
+}
+
+// 3. Listen for clicks and toggle the class
+if (themeBtn) {
+  themeBtn.addEventListener("click", function () {
+    document.body.classList.toggle("dark-theme");
+    const isDark = document.body.classList.contains("dark-theme");
+
+    // Update button text and persist in localStorage
+    themeBtn.textContent = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+  });
+}</code></pre>
+<p>Because CSS variables control the colors, this single JavaScript snippet updates every element on the entire site instantaneously.</p>
+</section>
+
+<section class="web-section">
+<h2>Essential interaction: Project Detail Modal Dialog</h2>
+<p>When a visitor clicks on one of your project cards, popping up a modal window with extra screenshots and design details makes your site feel like a professional portfolio. Modern browsers support the native HTML5 <code>&lt;dialog&gt;</code> element:</p>
+<pre><code>&lt;!-- In your index.html --&gt;
+&lt;dialog id="project-modal"&gt;
+  &lt;h3 id="modal-title"&gt;Project Details&lt;/h3&gt;
+  &lt;p id="modal-desc"&gt;Detailed overview and playtest notes.&lt;/p&gt;
+  &lt;button type="button" id="modal-close"&gt;Close&lt;/button&gt;
+&lt;/dialog&gt;</code></pre>
+<pre><code>// In your script.js
+const modal = document.querySelector("#project-modal");
+const closeBtn = document.querySelector("#modal-close");
+
+// Open modal when any card button is clicked
+document.querySelectorAll(".card button").forEach(function (button) {
+  button.addEventListener("click", function () {
+    modal.showModal(); // Built-in: disables background and traps focus!
+  });
+});
+
+// Close modal when close button is clicked
+closeBtn.addEventListener("click", function () {
+  modal.close();
+});
+
+// The browser automatically closes <dialog> when the visitor presses Escape!</code></pre>
+</section>
+
+<section class="web-section">
+<h2>Level-Up Challenges for JavaScript</h2>
+<div class="web-template-grid">
+  <article class="web-panel">
+    <h3>Tier 1: Theme Switcher</h3>
+    <p>Add a <code>&lt;button id="theme-btn"&gt;🌙 Dark Mode&lt;/button&gt;</code> to your navigation bar and implement the theme switcher script above.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 2: Category Filter Buttons</h3>
+    <p>Add filter pills (e.g. "All", "Games", "Tools") that filter project cards by category tag when clicked, highlighting the currently active button.</p>
+  </article>
+  <article class="web-panel">
+    <h3>Tier 3: Project Detail Modal</h3>
+    <p>Implement an accessible <code>&lt;dialog&gt;</code> modal that populates dynamically with the clicked project&rsquo;s title, screenshot, and writeup.</p>
+  </article>
+</div>
+</section>
+
+<section class="web-section">
 <h2>Before you move on</h2>
 <p>Test your search with the mouse, then with the keyboard alone: <kbd>Tab</kbd> to the field, type, <kbd>Tab</kbd> to Clear, press <kbd>Enter</kbd>. Screenshot a successful search and your empty state, and keep both as evidence. Next lesson you will break a feature like this one and repair it.</p>
 <ul class="web-checklist">
-<li><label><input type="checkbox" data-web-check="0"> I used <code>console.log()</code> to inspect a value and can say what it showed me.</label></li>
+<li><label><input type="checkbox" data-web-check="0"> I used <code>console.log()</code> and pro logging techniques to inspect live values.</label></li>
 <li><label><input type="checkbox" data-web-check="1"> My search filters my own cards and updates a live count on every keystroke.</label></li>
 <li><label><input type="checkbox" data-web-check="2"> I can explain why <code>.trim()</code> and <code>.toLowerCase()</code> are in the code.</label></li>
 <li><label><input type="checkbox" data-web-check="3"> My empty state names the search term and tells the visitor what to do next.</label></li>
-<li><label><input type="checkbox" data-web-check="4"> I saved one preference with <code>localStorage</code> and can state its real limits.</label></li>
+<li><label><input type="checkbox" data-web-check="4"> I saved a user preference with <code>localStorage</code> (like theme or view mode).</label></li>
+<li><label><input type="checkbox" data-web-check="5"> I understand how JavaScript events and class toggling create responsive user interfaces.</label></li>
 </ul>
-<div class="web-progress"><progress data-web-meter max="1" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
+<div class="web-progress"><progress data-web-meter max="5" value="0" aria-label="Lesson checkpoints"></progress><span data-web-progress aria-live="polite"></span><button type="button" data-web-reset>Reset this lesson’s checks</button></div>
 </section>
 
 <nav class="web-next" aria-label="Lesson sequence"><a href="web-css.html">← Previous: Design with CSS</a><a href="web-accessibility-debugging.html">Next: Test, debug, and include everyone →</a></nav>
