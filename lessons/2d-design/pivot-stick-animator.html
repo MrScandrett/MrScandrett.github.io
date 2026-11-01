@@ -44,45 +44,36 @@
             <span class="ll-crumb-current" aria-current="page">Pivot Stick Figure Studio</span>
           </nav>
 
-          <section class="hero fl-hero">
-            <p class="eyebrow">2D Design · Character Rigging · Keyframe Animation</p>
-            <h1>Pivot Stick Figure Studio: 2D Rigging &amp; Keyframes</h1>
-            <div class="fl-hero-meta">
-              <span>In-House Stick Figure Animator</span><span class="dot"></span>
-              <span>Forward Kinematics (FK)</span><span class="dot"></span>
-              <span>Onion Skinning &amp; Auto-Tween</span><span class="dot"></span>
-              <span>Loads &amp; Saves Real <code>.piv</code> Files</span><span class="dot"></span>
-              <span>Exports PNG Game Sprite Sheets</span>
-            </div>
-            <p class="fl-lede">Before an animator worries about clothing, shading, or facial detail, the entire performance—weight, balance, anticipation, and timing—must read clearly in a simple skeleton. Inspired by Peter Bone's classic <em>Pivot Stickfigure Animator</em> and powered by ClassroomOS's own <code>PivEngine</code>, this in-house studio lets you pose joint hierarchies, scrub onion-skinned timelines, inspect real student <code>.piv</code> projects, and learn the exact trigonometry that makes a 2D character rig move.</p>
-            <div class="fl-callout a1"><strong>How to animate in 15 seconds:</strong> Drag the <strong>orange handle</strong> at the hips to move a figure across the stage. Drag any <strong>red handle</strong> to rotate a limb. Press <strong>+ Add Frame</strong> (or hit <kbd>Space</kbd>) to lock in the pose and step forward, then press <strong>▶ Play</strong>.</div>
-          </section>
-
-          <nav class="ll-lesson-steps" aria-label="Lesson sections">
-            <a href="#piv-sec-studio">1. Animation Studio</a>
-            <a href="#piv-sec-rig">2. Forward Kinematics</a>
-            <a href="#piv-sec-principles">3. Spacing &amp; Balance</a>
-            <a href="#piv-sec-code">4. Code Your Own Rig</a>
-            <a href="#piv-sec-pipeline">5. Game &amp; Showcase Pipeline</a>
-            <a href="#piv-sec-practice">6. Practice</a>
-          </nav>
+          <header class="piv-page-header">
+            <div><h1>Pivot <span>Stick Figure Studio</span></h1><p>Pose a character. Add a frame. Bring it to life.</p></div>
+            <nav class="piv-view-switch" aria-label="Workspace view">
+              <button type="button" class="piv-btn" id="piv-view-animate" aria-pressed="true">Animate</button>
+              <button type="button" class="piv-btn" id="piv-view-learn" aria-pressed="false">Learn &amp; practice</button>
+            </nav>
+          </header>
 
           <!-- SECTION 1: IN-HOUSE PIVOT STICK FIGURE STUDIO -->
-          <section class="fl-card" id="piv-sec-studio" style="--card-accent:#ea580c;">
-            <p class="eyebrow">Interactive Workshop · Pose · Keyframe · Tween · Export</p>
-            <h2>In-House Pivot Stick Figure Studio</h2>
-            <p>Switch between starter presets (Walk Cycle, Anticipation Jump, Martial Arts Kick) or load real student <code>.piv</code> animations from the STEAM Showcase. Toggle <strong>FK Chain</strong> to feel the difference between rotating a whole limb hierarchy versus a single bone, and watch the green <strong>Center of Mass (CoM)</strong> plumb line to see when your character is balanced or airborne.</p>
-
-            <div class="piv-studio-shell" id="piv-studio-root">
+          <section class="piv-studio-section" id="piv-sec-studio" aria-label="Animation workspace">
+            <div class="piv-studio-shell" id="piv-studio-root" tabindex="-1" data-present="off">
+              <div class="piv-projectbar">
+                <label class="piv-project-label" for="piv-project-name">Project <input id="piv-project-name" maxlength="80" value="Walk cycle" autocomplete="off" /></label>
+                <span id="piv-save-status">Saved on this device</span>
+                <div class="piv-topbar-group">
+                  <button type="button" class="piv-btn" id="piv-btn-new">New</button>
+                  <button type="button" class="piv-btn" id="piv-btn-undo" title="Undo (Ctrl / ⌘ Z)" disabled>↶ Undo</button>
+                  <button type="button" class="piv-btn" id="piv-btn-redo" title="Redo (Ctrl / ⌘ Shift Z)" disabled>↷ Redo</button>
+                  <button type="button" class="piv-btn" id="piv-btn-focus" aria-pressed="false">Expand workspace</button>
+                </div>
+              </div>
               <!-- Top Preset & File Bar -->
               <div class="piv-topbar">
                 <div class="piv-topbar-group">
-                  <label class="piv-topbar-label" for="piv-preset-select">Scene / File:</label>
+                  <label class="piv-topbar-label" for="piv-preset-select">Start with:</label>
                   <select id="piv-preset-select" class="piv-select" aria-label="Load starter preset or classroom Pivot file">
                     <optgroup label="Starter Teaching Presets">
-                      <option value="walk" selected>Preset 1 · 8-Frame Walk Cycle</option>
-                      <option value="jump">Preset 2 · Anticipation, Jump &amp; Squash</option>
-                      <option value="martial">Preset 3 · Two-Figure Martial Arts Kick</option>
+                      <option value="walk" selected>Walk cycle</option>
+                      <option value="jump">Jump &amp; landing</option>
+                      <option value="martial">Martial arts duet</option>
                     </optgroup>
                     <optgroup label="Classroom Student .piv Showcase">
                       <option value="piv:../../student-projects/pivotstickfigure/Tatums animation.piv">Student .piv · Tatum's Animation (9f)</option>
@@ -90,32 +81,21 @@
                       <option value="piv:../../student-projects/pivotstickfigure/cooper.piv">Student .piv · Cooper's Rocket Scene (443f)</option>
                     </optgroup>
                   </select>
-                  <button type="button" class="piv-btn" id="piv-btn-open-file">📂 Open <code>.piv</code>…</button>
+                  <button type="button" class="piv-btn" id="piv-btn-open-file">Open animation…</button>
                   <input type="file" id="piv-file-input" accept=".piv" hidden />
                 </div>
 
                 <div class="piv-topbar-group">
-                  <button type="button" class="piv-btn piv-btn--accent" id="piv-btn-save-piv">⬇ Save <code>.piv</code></button>
-                  <button type="button" class="piv-btn" id="piv-btn-export-spritesheet">⬇ Export Sprite Sheet (PNG)</button>
+                  <button type="button" class="piv-btn piv-btn--accent" id="piv-btn-save-piv">Save .piv</button>
+                  <button type="button" class="piv-btn" id="piv-btn-export-spritesheet">Export sprite sheet</button>
                 </div>
-              </div>
-
-              <!-- Filmstrip Timeline Bar -->
-              <div class="piv-filmstrip-bar">
-                <div style="display:flex;flex-direction:column;gap:0.35rem;flex-shrink:0;">
-                  <button type="button" class="piv-btn piv-btn--primary" id="piv-btn-add-frame" title="Clone current frame and advance (Shortcut: Space)">＋ Add Frame <kbd style="background:rgba(0,0,0,0.2);padding:1px 4px;border-radius:4px;font-size:0.7rem;">Space</kbd></button>
-                  <div style="display:flex;gap:0.35rem;">
-                    <button type="button" class="piv-btn" id="piv-btn-tween" title="Generate 3 smooth in-between frames between previous and current pose">✦ +3 In-Betweens</button>
-                    <button type="button" class="piv-btn" id="piv-btn-del-frame" title="Delete current frame">🗑</button>
-                  </div>
-                </div>
-                <div class="piv-frames-scroll" id="piv-frames-scroll" role="region" aria-label="Animation timeline frames"></div>
               </div>
 
               <!-- Workspace Grid: Left Tools + Center Stage + Right Rig Inspector -->
               <div class="piv-workspace">
                 <!-- Left Panel: Figure & Stage Controls -->
-                <div class="piv-tool-panel">
+                <aside class="piv-tool-panel" aria-label="Scene and assets">
+                  <div class="piv-panel-section"><h2 class="piv-panel-heading">Scene</h2><div id="piv-scene-list" class="piv-scene-list" aria-label="Figures in this frame"></div></div>
                   <div class="piv-panel-section">
                     <h3 class="piv-panel-heading">Add to Stage</h3>
                     <div class="piv-btn-grid">
@@ -127,7 +107,49 @@
                   </div>
 
                   <div class="piv-panel-section">
-                    <h3 class="piv-panel-heading">Selected Figure</h3>
+                    <h3 class="piv-panel-heading">Stage guides</h3>
+                    <button type="button" class="piv-btn" id="piv-btn-fk" aria-pressed="true">Move connected limbs</button>
+                    <div class="piv-btn-grid">
+                      <button type="button" class="piv-btn" id="piv-btn-onion" aria-pressed="true">Onion Skin</button>
+                      <button type="button" class="piv-btn" id="piv-btn-com" aria-pressed="false">Balance</button>
+                    </div>
+                  </div>
+                </aside>
+
+                <!-- Center Stage Column -->
+                <div class="piv-stage-column">
+                  <div class="piv-stage-title"><strong>Stage</strong><span id="piv-stage-size">690 × 420</span><button type="button" class="piv-btn" id="piv-btn-grid" aria-pressed="true">Grid</button></div>
+                  <div class="piv-canvas-wrap">
+                    <canvas id="piv-stage-canvas" class="piv-canvas" tabindex="0" aria-describedby="piv-stage-help" width="690" height="420" aria-label="Stick figure animation stage. Drag the orange hip handle to position the figure or drag red joint handles to rotate segments."></canvas>
+                    <div class="piv-stage-hud">
+                      <span class="piv-hud-pill" id="piv-hud-frame">Frame 1 / 8 · 10 FPS</span>
+                      <span class="piv-hud-pill" id="piv-hud-readout">Drag orange root or red joints</span>
+                    </div>
+                  </div>
+
+                  <div class="piv-transport-bar">
+                    <div style="display:flex;align-items:center;gap:0.4rem;">
+                      <button type="button" class="piv-btn piv-btn--accent" id="piv-btn-play" aria-pressed="false">▶ Play</button>
+                      <button type="button" class="piv-btn" id="piv-btn-prev" aria-label="Previous frame">⏮</button>
+                      <button type="button" class="piv-btn" id="piv-btn-next" aria-label="Next frame">⏭</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.55rem;min-width:170px;">
+                      <label for="piv-fps-slider" style="font-size:0.78rem;font-weight:700;white-space:nowrap;">Speed: <span id="piv-fps-val">10 FPS</span></label>
+                      <input type="range" id="piv-fps-slider" min="4" max="24" value="10" style="width:95px;accent-color:#2563eb;" />
+                    </div>
+
+                  </div>
+                  <p class="piv-stage-help" id="piv-stage-help"><span class="piv-handle-key"></span>Orange hip: move <span class="piv-handle-key piv-handle-key--joint"></span>Red joint: pose <span>Focus stage + arrow keys: nudge figure</span></p>
+                </div>
+
+                <!-- Right Panel: Rig Hierarchy & Live Math Inspector -->
+                <aside class="piv-rig-panel" aria-label="Figure properties">
+                  <div class="piv-panel-section">
+                    <h2 class="piv-panel-heading" id="piv-selection-name">Figure properties</h2>
+                    <div class="piv-property-grid"><label>X <input id="piv-fig-x" type="number" step="1" /></label><label>Y <input id="piv-fig-y" type="number" step="1" /></label></div>
+                  </div>
+                  <div class="piv-panel-section">
+                    <h3 class="piv-panel-heading">Appearance &amp; pose</h3>
                     <div class="piv-swatches" id="piv-swatches" aria-label="Figure color swatches">
                       <button type="button" class="piv-swatch" data-rgb="15,23,42" style="background:#0f172a;" aria-label="Ink Black"></button>
                       <button type="button" class="piv-swatch is-active" data-rgb="37,99,235" style="background:#2563eb;" aria-label="Cobalt Blue"></button>
@@ -147,59 +169,35 @@
                     <button type="button" class="piv-btn" id="piv-btn-del-fig">Remove Selected Figure</button>
                   </div>
 
-                  <div class="piv-panel-section">
-                    <h3 class="piv-panel-heading">Kinematics &amp; Guides</h3>
-                    <button type="button" class="piv-btn" id="piv-btn-fk" aria-pressed="true">FK Chain: ON</button>
-                    <div class="piv-btn-grid">
-                      <button type="button" class="piv-btn" id="piv-btn-onion" aria-pressed="true">Onion Skin</button>
-                      <button type="button" class="piv-btn" id="piv-btn-com" aria-pressed="true">CoM Balance</button>
-                    </div>
-                  </div>
-                </div>
 
-                <!-- Center Stage Column -->
-                <div class="piv-stage-column">
-                  <div class="piv-canvas-wrap">
-                    <canvas id="piv-stage-canvas" class="piv-canvas" width="690" height="420" aria-label="Stick figure animation stage. Drag the orange hip handle to position the figure or drag red joint handles to rotate segments."></canvas>
-                    <div class="piv-stage-hud">
-                      <span class="piv-hud-pill" id="piv-hud-frame">Frame 1 / 8 · 10 FPS</span>
-                      <span class="piv-hud-pill" id="piv-hud-readout">Drag orange root or red joints</span>
-                    </div>
-                  </div>
-
-                  <div class="piv-transport-bar">
-                    <div style="display:flex;align-items:center;gap:0.4rem;">
-                      <button type="button" class="piv-btn piv-btn--accent" id="piv-btn-play">▶ Play</button>
-                      <button type="button" class="piv-btn" id="piv-btn-prev" aria-label="Previous frame">⏮</button>
-                      <button type="button" class="piv-btn" id="piv-btn-next" aria-label="Next frame">⏭</button>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:0.55rem;min-width:170px;">
-                      <label for="piv-fps-slider" style="font-size:0.78rem;font-weight:700;white-space:nowrap;">Speed: <span id="piv-fps-val">10 FPS</span></label>
-                      <input type="range" id="piv-fps-slider" min="4" max="24" value="10" style="width:95px;accent-color:#2563eb;" />
-                    </div>
-                    <div class="piv-status-toast" id="piv-status-toast" role="status" aria-live="polite">Ready — drag any red joint handle!</div>
-                  </div>
-                </div>
-
-                <!-- Right Panel: Rig Hierarchy & Live Math Inspector -->
-                <div class="piv-rig-panel">
-                  <div class="piv-panel-section">
-                    <h3 class="piv-panel-heading">12-Bone Hierarchy Tree</h3>
-                    <p style="font-size:0.75rem;margin:0;color:var(--muted,#64748b);">Click a segment to highlight it on the stage and inspect its parent joint:</p>
-                    <ul class="piv-tree-list" id="piv-rig-tree" aria-label="Segment hierarchy list"></ul>
-                  </div>
-
-                  <div class="piv-panel-section">
-                    <h3 class="piv-panel-heading">Live Trig &amp; FK Readout</h3>
-                    <div class="piv-readout-box" id="piv-kinematics-box">
-                      Select or drag any joint handle to see how <code>PivEngine</code> calculates its endpoint coordinates.
-                    </div>
-                  </div>
-                </div>
+                  <details class="piv-panel-section" open><summary>Joints</summary>
+                    <ul class="piv-tree-list" id="piv-rig-tree" aria-label="Select a joint"></ul>
+                    <label class="piv-angle-label" for="piv-joint-angle">Joint angle <input id="piv-joint-angle" type="number" min="-180" max="180" step="1" /> °</label>
+                  </details>
+                  <details class="piv-panel-section"><summary>How this joint moves</summary>
+                    <div class="piv-readout-box" id="piv-kinematics-box"></div>
+                  </details>
+                </aside>
               </div>
+              <div class="piv-timeline-heading"><h2>Timeline</h2><span id="piv-duration">8 frames</span><label for="piv-scrubber">Frame <output id="piv-current-frame">1</output></label><input id="piv-scrubber" type="range" min="1" max="8" value="1" aria-label="Scrub animation frames" /></div>
+              <!-- Filmstrip Timeline Bar -->
+              <div class="piv-filmstrip-bar">
+                <div style="display:flex;flex-direction:column;gap:0.35rem;flex-shrink:0;">
+                  <button type="button" class="piv-btn piv-btn--primary" id="piv-btn-add-frame" title="Duplicate this pose into a new frame (N)">＋ Add frame <kbd>N</kbd></button>
+                  <div style="display:flex;gap:0.35rem;">
+                    <button type="button" class="piv-btn" id="piv-btn-tween" title="Generate 3 smooth in-between frames between previous and current pose">✦ +3 In-Betweens</button>
+                    <button type="button" class="piv-btn" id="piv-btn-del-frame" aria-label="Delete current frame" title="Delete current frame">Delete</button>
+                  </div>
+                </div>
+                <div class="piv-frames-scroll" id="piv-frames-scroll" role="region" aria-label="Animation timeline frames"></div>
+              </div>
+
+              <div class="piv-statusbar"><span class="piv-status-toast" id="piv-status-toast" role="status" aria-live="polite">Ready. Drag the orange hip to move; red joints to pose.</span><span>Space: play · N: add frame · ← →: step</span></div>
             </div>
           </section>
 
+          <div id="piv-learning" hidden>
+          <nav class="ll-lesson-steps" aria-label="Lesson sections"><a href="#piv-sec-rig">Rigging</a><a href="#piv-sec-principles">Spacing &amp; balance</a><a href="#piv-sec-code">Code a rig</a><a href="#piv-sec-pipeline">Game exports</a><a href="#piv-sec-practice">Practice</a></nav>
           <!-- SECTION 2: FORWARD KINEMATICS & PARENT-CHILD HIERARCHIES -->
           <section class="fl-card" id="piv-sec-rig" style="--card-accent:#2563eb;">
             <p class="eyebrow">Section 2 · How Skeletal Rigs Work</p>
@@ -220,7 +218,7 @@
             <div class="fl-grid-2">
               <div class="fl-mini-card">
                 <h3>FK Chain ON vs. Single-Bone Mode</h3>
-                <p>When you rotate your shoulder by <code>+30°</code> without bending your elbow, your forearm's world angle also changes by <code>+30°</code>. Try toggling <strong>FK Chain: OFF</strong> in the studio above and dragging an upper arm—you will see the forearm keep its old world angle while still staying glued to the elbow!</p>
+                <p>When you rotate your shoulder by <code>+30°</code> without bending your elbow, your forearm's world angle also changes by <code>+30°</code>. Try toggling <strong>Move connected limbs</strong> off in the Animate view and dragging an upper arm—you will see the forearm keep its old world angle while still staying glued to the elbow!</p>
               </div>
               <div class="fl-mini-card">
                 <h3>Why the Pelvis Is Root <code>0</code></h3>
@@ -241,11 +239,11 @@
               </div>
               <div class="fl-mini-card">
                 <h3>2. Center of Mass (CoM) &amp; Balance</h3>
-                <p>Turn on <strong>CoM Balance</strong> in the studio and watch the green plumb line drop to the floor. For a standing pose to look stable, that green dot on the floor must land <em>between the character's feet</em> (the base of support). The moment it moves outside the feet, the viewer's brain knows the character is falling, running, or leaping!</p>
+                <p>Turn on <strong>Balance</strong> in the studio and watch the green plumb line drop to the floor. For a standing pose to look stable, that green dot on the floor must land <em>between the character's feet</em> (the base of support). The moment it moves outside the feet, the viewer's brain knows the character is falling, running, or leaping!</p>
               </div>
               <div class="fl-mini-card">
                 <h3>3. Anticipation &amp; Squash/Stretch</h3>
-                <p>Load <strong>Preset 2 · Anticipation, Jump &amp; Squash</strong>. Notice Frame 2: before jumping <em>up</em>, the figure crouches <em>down</em> and swings both arms backward. Without that downward crouch, a jump feels robotic and weightless.</p>
+                <p>Load <strong>Jump &amp; landing</strong>. Notice Frame 2: before jumping <em>up</em>, the figure crouches <em>down</em> and swings both arms backward. Without that downward crouch, a jump feels robotic and weightless.</p>
               </div>
               <div class="fl-mini-card">
                 <h3>4. Shortest-Arc Auto-Tweening</h3>
@@ -291,10 +289,10 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
           <section class="fl-card" id="piv-sec-pipeline" style="--card-accent:#2563eb;">
             <p class="eyebrow">Section 5 · Connect Your Work</p>
             <h2>From Stick Figure to Game Sprite Sheet &amp; Showcase</h2>
-            <p>Every animation you build in the studio above can go two places immediately:</p>
+            <p>Every animation you build in the Animate view can go two places immediately:</p>
             <ol>
-              <li><strong>Save <code>.piv</code> for the STEAM Showcase:</strong> Click <strong>⬇ Save <code>.piv</code></strong> to download a binary version-5 <code>.piv</code> file compressed with Deflate—the exact format decoded by <code>lib/piv-engine.js</code> and <code>lib/piv-player.js</code> in the ClassroomOS Showcase.</li>
-              <li><strong>Export PNG Sprite Sheet for Your 2D Game:</strong> Click <strong>⬇ Export Sprite Sheet (PNG)</strong> to render every frame side-by-side on a transparent strip. Take that strip into <a href="2d-game-dev/sprite-animation.html">2D Game Dev 02 · Sprite Sheets &amp; Animation</a> or open it in <a href="photo-editing-workshop.html">Photo Editing Workshop (Layer Lab)</a> to paint custom armor, hair, and effects on a new layer above your posed stick-figure skeleton (rotoscoping)!</li>
+              <li><strong>Save <code>.piv</code> for the STEAM Showcase:</strong> Click <strong>Save .piv</strong> to download a binary version-5 <code>.piv</code> file compressed with Deflate—the exact format decoded by <code>lib/piv-engine.js</code> and <code>lib/piv-player.js</code> in the ClassroomOS Showcase.</li>
+              <li><strong>Export PNG Sprite Sheet for Your 2D Game:</strong> Click <strong>Export sprite sheet</strong> to render your frames on a transparent sprite sheet (long animations wrap into rows). Take that sheet into <a href="2d-game-dev/sprite-animation.html">2D Game Dev 02 · Sprite Sheets &amp; Animation</a> or open it in <a href="photo-editing-workshop.html">Photo Editing Workshop (Layer Lab)</a> to paint custom armor, hair, and effects on a new layer above your posed stick-figure skeleton (rotoscoping)!</li>
             </ol>
           </section>
 
@@ -341,7 +339,7 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
                   <button class="fl-check-btn" onclick="flCheckText(3,'follow')">Check</button>
                   <span role="status" class="fl-feedback" id="flfb-3"></span>
                 </div>
-                <div class="fl-hint" id="flhint-3">Hint: test dragging an upper arm with FK Chain ON in the studio above.</div>
+                <div class="fl-hint" id="flhint-3">Hint: test dragging an upper arm with FK Chain ON in the Animate view.</div>
               </div>
 
               <div class="fl-problem">
@@ -366,11 +364,12 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
                   <button class="fl-check-btn" onclick="flCheckText(5,'base')">Check</button>
                   <span role="status" class="fl-feedback" id="flfb-5"></span>
                 </div>
-                <div class="fl-hint" id="flhint-5">Hint: watch the green CoM Balance marker in the studio when the figure stands vs. leans far forward.</div>
+                <div class="fl-hint" id="flhint-5">Hint: watch the green Balance marker in the studio when the figure stands vs. leans far forward.</div>
               </div>
             </div>
           </section>
 
+          </div>
           <footer class="site-footer">
             <p>Mr. Scandrett's ClassroomOS &mdash; <a href="../../index.html">Home</a> · <a href="../../steam-lessons.html#module-design2d">Lessons</a> · <a href="2d-design.html">2D Design</a></p>
           </footer>
@@ -385,6 +384,7 @@ fig.angles[s] = Math.atan2(my - startY[s], mx - startX[s]);</code></pre>
   <script src="../../assets/js/figure-lesson.js"></script>
   <script src="../../assets/js/lesson-print-button.js"></script>
   <script src="../../assets/js/photo-lightbox.js"></script>
+  <script src="../../assets/js/sim-kit.js"></script>
   <script src="../../lib/piv-engine.js"></script>
   <script src="../../assets/js/lessons/pivot-animator.js"></script>
   <script src="../../assets/js/site-glossary.js"></script>

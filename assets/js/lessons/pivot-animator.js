@@ -293,7 +293,7 @@
       selectedSegIndex: 4,
       fkChain: true,
       onionSkin: true,
-      showCoM: true,
+      showCoM: false,
       showGrid: true,
       playing: false,
       loop: true,
@@ -313,6 +313,122 @@
     var elFpsVal = document.getElementById("piv-fps-val");
     var elScaleSlider = document.getElementById("piv-scale-slider");
     var elScaleVal = document.getElementById("piv-scale-val");
+
+    var root = document.getElementById("piv-studio-root");
+    var elName = document.getElementById("piv-project-name");
+    var elScrubber = document.getElementById("piv-scrubber");
+    var undoStack = [], redoStack = [], lastSnapshot = null;
+    var replaying = false, filmstripDirty = true, loadRequest = 0;
+    var storageKey = "classroom-pivot-project-v1";
+    var stageView = { scale: 1, x: 0, y: 0 };
+    var sizing;
+
+    function snapshot() {
+      return JSON.stringify({ name: elName.value, doc: state.doc }, function (key, value) {
+        return ArrayBuffer.isView(value) ? Array.from(value) : value;
+      });
+    }
+    function restoreSnapshot(value) {
+      var saved = JSON.parse(value);
+      if (!saved.doc || !saved.doc.frames || !saved.doc.frames.length || !saved.doc.types) throw new Error("Empty project");
+      saved.doc.frames.forEach(function (frame) {
+        frame.figures.forEach(function (fig) { fig.angles = new Float64Array(fig.angles); });
+      });
+      state.doc = saved.doc;
+      if (elPresetSelect) elPresetSelect.selectedIndex = -1;
+      elName.value = saved.name || "Untitled animation";
+      state.frameIndex = 0;
+      state.selectedFigIndex = 0;
+      state.selectedSegIndex = 0;
+      filmstripDirty = true;
+    }
+    function saveLocal(value) {
+      var label = document.getElementById("piv-save-status");
+      try {
+        localStorage.setItem(storageKey, value);
+        label.textContent = "Saved on this device";
+      } catch (err) {
+        label.textContent = "Local save unavailable — use Save .piv";
+      }
+    }
+    function commitChange() {
+      var next = snapshot();
+      var changed = next !== lastSnapshot;
+      if (changed && lastSnapshot !== null && !replaying) {
+        undoStack.push(lastSnapshot);
+        // Bound history for long classroom animations.
+        while (undoStack.length > 30 || (undoStack.length > 1 && undoStack.reduce(function (n, item) { return n + item.length; }, 0) > 12000000)) undoStack.shift();
+        redoStack = [];
+      }
+      if (changed) { loadRequest++; lastSnapshot = next; filmstripDirty = true; saveLocal(next); }
+      document.getElementById("piv-btn-undo").disabled = !undoStack.length;
+      document.getElementById("piv-btn-redo").disabled = !redoStack.length;
+    }
+    function stopPlayback() {
+      state.playing = false;
+      if (elPlayBtn) { elPlayBtn.textContent = "▶ Play"; elPlayBtn.setAttribute("aria-pressed", "false"); }
+    }
+    function historyStep(from, to, message) {
+      if (!from.length) return;
+      loadRequest++;
+      stopPlayback();
+      to.push(snapshot());
+      replaying = true;
+      var frameIndex = state.frameIndex;
+      restoreSnapshot(from.pop());
+      state.frameIndex = Math.min(frameIndex, state.doc.frames.length - 1);
+      syncAll();
+      replaying = false;
+      showToast(message);
+    }
+    function figureName(fig, index) {
+      var type = state.doc.types[fig.type] || state.doc.types[0];
+      return (type.builtIn ? "Stick figure" : (type.name || "Figure")) + " " + (index + 1);
+    }
+    function renderScene() {
+      var list = document.getElementById("piv-scene-list");
+      list.replaceChildren();
+      currentFrame().figures.forEach(function (fig, index) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "piv-btn piv-scene-item";
+        button.dataset.figureIndex = index;
+        button.setAttribute("aria-pressed", String(index === state.selectedFigIndex));
+        var dot = document.createElement("span");
+        dot.className = "piv-scene-dot";
+        dot.style.backgroundColor = "rgb(" + (fig.color || [15, 23, 42]).join(",") + ")";
+        button.append(dot, document.createTextNode(figureName(fig, index)));
+        list.append(button);
+      });
+    }
+    function updateTimeline(follow) {
+      elScrubber.max = state.doc.frames.length;
+      elScrubber.value = state.frameIndex + 1;
+      document.getElementById("piv-current-frame").textContent = state.frameIndex + 1;
+      document.getElementById("piv-duration").textContent = state.doc.frames.length + " frames / " + (state.doc.frames.length / (state.doc.fps || 12)).toFixed(2) + " s";
+      if (elFramesScroll) {
+        elFramesScroll.querySelectorAll(".piv-frame-thumb").forEach(function (thumb, index) {
+          var active = index === state.frameIndex;
+          thumb.classList.toggle("is-active", active);
+          thumb.setAttribute("aria-current", String(active));
+          if (active && follow) {
+            if (thumb.offsetLeft < elFramesScroll.scrollLeft) {
+              elFramesScroll.scrollLeft = thumb.offsetLeft;
+            } else if (thumb.offsetLeft + thumb.offsetWidth > elFramesScroll.scrollLeft + elFramesScroll.clientWidth) {
+              elFramesScroll.scrollLeft = thumb.offsetLeft + thumb.offsetWidth - elFramesScroll.clientWidth;
+            }
+          }
+        });
+      }
+    }
+    function setView(learn) {
+      stopPlayback();
+      document.getElementById("piv-learning").hidden = !learn;
+      document.getElementById("piv-sec-studio").hidden = learn;
+      document.getElementById("piv-view-learn").setAttribute("aria-pressed", String(learn));
+      document.getElementById("piv-view-animate").setAttribute("aria-pressed", String(!learn));
+      if (!learn && sizing) sizing.resize();
+    }
 
     function showToast(msg) {
       if (!elToast) return;
@@ -351,7 +467,7 @@
     }
 
     // Draw a translucent ghost frame for Onion Skinning
-    function drawGhostFrame(frameIdx, tintRgba) {
+    function paintPose(frameIdx, tintRgba) {
       if (frameIdx < 0 || frameIdx >= state.doc.frames.length) return;
       var ops = Piv.frameOps(state.doc, frameIdx);
       ctx.save();
@@ -360,7 +476,7 @@
       for (var i = 0; i < ops.length; i++) {
         var op = ops[i];
         if (op.kind === "line") {
-          ctx.strokeStyle = tintRgba;
+          ctx.strokeStyle = tintRgba || op.color;
           ctx.lineWidth = op.width;
           ctx.beginPath();
           ctx.moveTo(op.x1, op.y1);
@@ -370,10 +486,10 @@
           ctx.beginPath();
           ctx.arc(op.cx, op.cy, Math.max(0.5, op.r), 0, Math.PI * 2);
           if (op.filled) {
-            ctx.fillStyle = tintRgba;
+            ctx.fillStyle = tintRgba || op.color;
             ctx.fill();
           }
-          ctx.strokeStyle = tintRgba;
+          ctx.strokeStyle = tintRgba || op.color;
           ctx.lineWidth = op.width;
           ctx.stroke();
         }
@@ -425,34 +541,35 @@
     }
 
     function renderStage() {
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var targetW = Math.round(STAGE_W * dpr);
-      var targetH = Math.round(STAGE_H * dpr);
-      if (canvas.width !== targetW || canvas.height !== targetH) {
-        canvas.width = targetW;
-        canvas.height = targetH;
-      }
+      if (!sizing || !sizing.width || !sizing.height) return;
+      var width = state.doc.width || STAGE_W, height = state.doc.height || STAGE_H;
+      var dpr = canvas.width / sizing.width;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, sizing.width, sizing.height);
+      stageView.scale = Math.min(sizing.width / width, sizing.height / height);
+      stageView.x = (sizing.width - width * stageView.scale) / 2;
+      stageView.y = (sizing.height - height * stageView.scale) / 2;
       ctx.save();
-      ctx.scale(dpr, dpr);
-
-      // Clear stage background
+      ctx.translate(stageView.x, stageView.y);
+      ctx.scale(stageView.scale, stageView.scale);
+      ctx.beginPath(); ctx.rect(0, 0, width, height); ctx.clip();
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, STAGE_W, STAGE_H);
+      ctx.fillRect(0, 0, width, height);
 
       // Subtle motion grid & ground plane
       if (state.showGrid) {
         ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
         ctx.lineWidth = 1;
-        for (var gx = 60; gx < STAGE_W; gx += 60) {
+        for (var gx = 60; gx < width; gx += 60) {
           ctx.beginPath();
           ctx.moveTo(gx, 0);
-          ctx.lineTo(gx, STAGE_H);
+          ctx.lineTo(gx, height);
           ctx.stroke();
         }
-        for (var gy = 60; gy < STAGE_H; gy += 60) {
+        for (var gy = 60; gy < height; gy += 60) {
           ctx.beginPath();
           ctx.moveTo(0, gy);
-          ctx.lineTo(STAGE_W, gy);
+          ctx.lineTo(width, gy);
           ctx.stroke();
         }
         // Floor line
@@ -460,18 +577,18 @@
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, GROUND_Y);
-        ctx.lineTo(STAGE_W, GROUND_Y);
+        ctx.lineTo(width, GROUND_Y);
         ctx.stroke();
       }
 
       // Onion skin ghosts (when paused or scrubbing)
       if (state.onionSkin && !state.playing) {
-        drawGhostFrame(state.frameIndex - 2, "rgba(59, 130, 246, 0.15)");
-        drawGhostFrame(state.frameIndex - 1, "rgba(59, 130, 246, 0.34)");
+        paintPose(state.frameIndex - 2, "rgba(59, 130, 246, 0.15)");
+        paintPose(state.frameIndex - 1, "rgba(59, 130, 246, 0.34)");
       }
 
       // Draw current frame figures using PivEngine
-      Piv.drawFrame(ctx, state.doc, state.frameIndex, { background: null });
+      paintPose(state.frameIndex, null);
 
       // Draw interactive handles & Center of Mass when paused
       var fr = currentFrame();
@@ -536,6 +653,7 @@
           " · " + state.doc.fps + " FPS";
       }
       updateInspectorReadout();
+      updateTimeline(false);
     }
 
     function updateInspectorReadout() {
@@ -569,8 +687,23 @@
           "<code>endY = " + sy + " + " + len + "·sin(" + deg(ang) + ") = " + ey + "</code>";
       }
 
+      var name = figureName(fig, state.selectedFigIndex);
+      document.getElementById("piv-selection-name").textContent = name;
+      [["piv-fig-x", Math.round(fig.x)], ["piv-fig-y", Math.round(fig.y)], ["piv-joint-angle", Math.round(ang * 180 / Math.PI)]].forEach(function (entry) {
+        var input = document.getElementById(entry[0]);
+        input.disabled = state.playing;
+        if (document.activeElement !== input) input.value = entry[1];
+      });
+      document.getElementById("piv-stage-size").textContent = (state.doc.width || STAGE_W) + " × " + (state.doc.height || STAGE_H);
+      document.querySelectorAll("#piv-swatches [data-rgb]").forEach(function (swatch) {
+        var active = swatch.dataset.rgb === (fig.color || []).join(",");
+        swatch.classList.toggle("is-active", active);
+        swatch.setAttribute("aria-pressed", String(active));
+      });
       if (elScaleSlider && elScaleVal) {
         var pct = Math.round((fig.scale || 1) * 100);
+        elScaleSlider.min = Math.min(50, pct);
+        elScaleSlider.max = Math.max(175, pct);
         elScaleSlider.value = String(pct);
         elScaleVal.textContent = pct + "%";
       }
@@ -589,15 +722,15 @@
         if (type.builtIn && i === 3) continue;
         var seg = type.segments[i];
         var label = type.builtIn && BUILTIN_SEG_NAMES[i]
-          ? BUILTIN_SEG_NAMES[i]
-          : i + " · Custom Bone (" + Math.round(seg.length) + "px)";
+          ? BUILTIN_SEG_NAMES[i].replace(/^\d+ · /, "").split(" (")[0]
+          : "Bone " + (i + 1);
         var parentTag = seg.parent === 0 ? "root" : "←P" + (seg.parent - 1);
         var cls = "piv-tree-item" + (i === state.selectedSegIndex ? " is-selected" : "");
         html +=
-          '<li class="' + cls + '" data-seg-index="' + i + '">' +
+          '<li class="' + cls + '"><button type="button" class="piv-tree-button" data-seg-index="' + i + '" aria-pressed="' + (i === state.selectedSegIndex) + '">' +
           '<span>' + label + '</span>' +
-          '<span class="piv-tree-badge">' + parentTag + " · " + deg(fig.angles[i] || 0) + '</span>' +
-          '</li>';
+          '<span class="piv-tree-badge">' + deg(fig.angles[i] || 0) + '</span>' +
+          '</button></li>';
       }
       elRigTree.innerHTML = html;
     }
@@ -623,26 +756,32 @@
     }
 
     function syncAll() {
+      commitChange();
       renderStage();
-      renderFilmstrip();
+      if (filmstripDirty) { renderFilmstrip(); filmstripDirty = false; }
       renderRigTree();
+      renderScene();
+      updateTimeline(true);
+      if (elFpsSlider) {
+        elFpsSlider.max = Math.max(24, state.doc.fps || 12);
+        elFpsSlider.value = state.doc.fps || 12;
+        elFpsVal.textContent = (state.doc.fps || 12) + " FPS";
+      }
     }
 
     // Canvas pointer coordinate helper
     function getStageCoords(e) {
       var rect = canvas.getBoundingClientRect();
-      var scaleX = (state.doc.width || STAGE_W) / rect.width;
-      var scaleY = (state.doc.height || STAGE_H) / rect.height;
       return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY
+        x: (e.clientX - rect.left - stageView.x) / stageView.scale,
+        y: (e.clientY - rect.top - stageView.y) / stageView.scale
       };
     }
 
     function hitTestHandles(pt) {
       var fr = currentFrame();
       var best = null;
-      var bestDist = 18; // hit radius in stage px
+      var bestDist = Math.max(18, 12 / stageView.scale); // Keep handles usable on small screens.
 
       // Check figures in reverse draw order (frontmost first)
       for (var fi = fr.figures.length - 1; fi >= 0; fi--) {
@@ -666,9 +805,9 @@
 
     canvas.addEventListener("pointerdown", function (e) {
       if (state.playing) {
-        state.playing = false;
-        if (elPlayBtn) elPlayBtn.textContent = "▶ Play";
+        stopPlayback();
       }
+      canvas.focus({ preventScroll: true });
       var pt = getStageCoords(e);
       var hit = hitTestHandles(pt);
       if (hit) {
@@ -678,6 +817,7 @@
         canvas.setPointerCapture(e.pointerId);
         renderStage();
         renderRigTree();
+        renderScene();
       }
     });
 
@@ -724,8 +864,7 @@
     function finishDrag() {
       if (state.dragging) {
         state.dragging = null;
-        renderFilmstrip();
-        renderRigTree();
+        syncAll();
       }
     }
     canvas.addEventListener("pointerup", finishDrag);
@@ -736,8 +875,7 @@
       elFramesScroll.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-frame-idx]");
         if (!btn) return;
-        state.playing = false;
-        if (elPlayBtn) elPlayBtn.textContent = "▶ Play";
+        stopPlayback();
         state.frameIndex = parseInt(btn.getAttribute("data-frame-idx"), 10) || 0;
         syncAll();
       });
@@ -750,7 +888,9 @@
         if (!item) return;
         state.selectedSegIndex = parseInt(item.getAttribute("data-seg-index"), 10) || 0;
         renderStage();
-        renderRigTree();
+        elRigTree.querySelectorAll("[data-seg-index]").forEach(function (button) {
+          button.setAttribute("aria-pressed", String(Number(button.dataset.segIndex) === state.selectedSegIndex));
+        });
       });
     }
 
@@ -807,7 +947,10 @@
     // Button wiring helper
     function onClick(id, fn) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener("click", fn);
+      if (el) el.addEventListener("click", function (event) {
+        if (/piv-btn-(add-|del-|flip|reset|tween|undo|redo|new)/.test(id)) stopPlayback();
+        fn(event);
+      });
     }
 
     onClick("piv-btn-add-frame", addNextFrame);
@@ -828,21 +971,19 @@
 
     onClick("piv-btn-play", function () {
       state.playing = !state.playing;
-      if (elPlayBtn) elPlayBtn.textContent = state.playing ? "⏸ Pause" : "▶ Play";
+      if (elPlayBtn) { elPlayBtn.textContent = state.playing ? "⏸ Pause" : "▶ Play"; elPlayBtn.setAttribute("aria-pressed", String(state.playing)); }
       state.lastTick = performance.now();
       renderStage();
     });
 
     onClick("piv-btn-prev", function () {
-      state.playing = false;
-      if (elPlayBtn) elPlayBtn.textContent = "▶ Play";
+      stopPlayback();
       state.frameIndex = (state.frameIndex - 1 + state.doc.frames.length) % state.doc.frames.length;
       syncAll();
     });
 
     onClick("piv-btn-next", function () {
-      state.playing = false;
-      if (elPlayBtn) elPlayBtn.textContent = "▶ Play";
+      stopPlayback();
       state.frameIndex = (state.frameIndex + 1) % state.doc.frames.length;
       syncAll();
     });
@@ -850,7 +991,7 @@
     onClick("piv-btn-fk", function (e) {
       state.fkChain = !state.fkChain;
       e.currentTarget.setAttribute("aria-pressed", String(state.fkChain));
-      e.currentTarget.textContent = state.fkChain ? "FK Chain: ON" : "FK Chain: OFF";
+      e.currentTarget.textContent = state.fkChain ? "Move connected limbs" : "Move one joint";
       showToast(state.fkChain ? "FK Chain ON: child limbs follow their parent." : "Single-Bone Mode: only the dragged segment rotates.");
     });
 
@@ -869,59 +1010,62 @@
     // Add Stick Figure / Prop
     onClick("piv-btn-add-stick", function () {
       var fr = currentFrame();
-      var newId = fr.figures.length + 1;
+      var newId = fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1;
+      var typeIndex = state.doc.types.findIndex(function (type) { return type.builtIn; });
+      if (typeIndex < 0) { typeIndex = state.doc.types.length; state.doc.types.push(Piv.defaultFigureType()); }
       var palette = [[37, 99, 235], [220, 38, 38], [22, 163, 74], [147, 51, 234]];
       fr.figures.push({
         id: newId,
-        type: 1,
+        type: typeIndex,
         scale: 1,
         color: palette[(newId - 1) % palette.length],
         angles: makeStandingAngles(),
-        x: 200 + ((newId * 75) % 280),
-        y: 270
+        x: (state.doc.width || STAGE_W) / 2,
+        y: (state.doc.height || STAGE_H) * 0.64
       });
       fr.order.push(fr.figures.length - 1);
       state.selectedFigIndex = fr.figures.length - 1;
+      state.selectedSegIndex = 0;
       syncAll();
       showToast("Added Stick Figure #" + fr.figures.length + ".");
     });
 
     onClick("piv-btn-add-sword", function () {
-      if (state.doc.types.length < 3) {
-        state.doc.types = createPropTypes();
-      }
+      var typeIndex = state.doc.types.length;
+      state.doc.types.push(createPropTypes()[2]);
       var fr = currentFrame();
       fr.figures.push({
-        id: fr.figures.length + 1,
-        type: 2,
+        id: fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1,
+        type: typeIndex,
         scale: 1,
         color: null,
         angles: new Float64Array([1.57, 0, -1.57]),
-        x: STAGE_W / 2,
-        y: 230
+        x: (state.doc.width || STAGE_W) / 2,
+        y: (state.doc.height || STAGE_H) * 0.55
       });
       fr.order.push(fr.figures.length - 1);
       state.selectedFigIndex = fr.figures.length - 1;
+      state.selectedSegIndex = 0;
       syncAll();
       showToast("Added Sword Prop to stage.");
     });
 
     onClick("piv-btn-add-ball", function () {
-      if (state.doc.types.length < 4) {
-        state.doc.types = createPropTypes();
-      }
+      var typeIndex = state.doc.types.length;
+      state.doc.types.push(createPropTypes()[3]);
       var fr = currentFrame();
       fr.figures.push({
-        id: fr.figures.length + 1,
-        type: 3,
+        id: fr.figures.reduce(function (max, fig) { return Math.max(max, fig.id || 0); }, 0) + 1,
+        type: typeIndex,
         scale: 1,
         color: [234, 88, 12],
         angles: new Float64Array([0]),
-        x: STAGE_W / 2 + 60,
-        y: 220
+        x: (state.doc.width || STAGE_W) * 0.6,
+        y: (state.doc.height || STAGE_H) * 0.55
       });
       fr.order.push(fr.figures.length - 1);
       state.selectedFigIndex = fr.figures.length - 1;
+      state.selectedSegIndex = 0;
       syncAll();
       showToast("Added Bouncing Sphere prop.");
     });
@@ -980,7 +1124,7 @@
           return Object.assign({}, s, { color: s.color ? s.color.slice() : [0, 0, 0] });
         })
       };
-      var parentOneBased = state.selectedSegIndex + 1;
+      var parentOneBased = Math.min(state.selectedSegIndex, baseType.segments.length - 1) + 1;
       customType.segments.push({
         length: 44,
         restAngle: -0.6,
@@ -1011,6 +1155,7 @@
       swatchWrap.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-rgb]");
         if (!btn) return;
+        stopPlayback();
         var fig = selectedFigure();
         if (!fig) return;
         var parts = btn.getAttribute("data-rgb").split(",").map(Number);
@@ -1032,12 +1177,13 @@
 
     if (elScaleSlider) {
       elScaleSlider.addEventListener("input", function () {
+        stopPlayback();
         var fig = selectedFigure();
         if (!fig) return;
         var pct = parseInt(elScaleSlider.value, 10) || 100;
         fig.scale = pct / 100;
         if (elScaleVal) elScaleVal.textContent = pct + "%";
-        syncAll();
+        renderStage();
       });
     }
 
@@ -1046,8 +1192,10 @@
     if (elPresetSelect) {
       elPresetSelect.addEventListener("change", function () {
         var val = elPresetSelect.value;
-        state.playing = false;
-        if (elPlayBtn) elPlayBtn.textContent = "▶ Play";
+        var request = ++loadRequest;
+        var presetName = elPresetSelect.selectedOptions[0].textContent;
+        if (val.indexOf("piv:") !== 0) elName.value = presetName;
+        stopPlayback();
         state.frameIndex = 0;
         state.selectedFigIndex = 0;
         if (val === "walk") {
@@ -1073,6 +1221,8 @@
               return Piv.decodePiv(new Uint8Array(buf));
             })
             .then(function (doc) {
+              if (request !== loadRequest) return;
+              elName.value = presetName;
               state.doc = doc;
               state.frameIndex = 0;
               state.selectedFigIndex = 0;
@@ -1082,7 +1232,7 @@
               showToast("Loaded classroom .piv file (" + doc.frames.length + " frames)!");
             })
             .catch(function (err) {
-              showToast("Could not load .piv file: " + err.message);
+              if (request === loadRequest) showToast("Could not load .piv file: " + err.message);
             });
         }
       });
@@ -1097,56 +1247,64 @@
       elFileInput.addEventListener("change", function () {
         var file = elFileInput.files && elFileInput.files[0];
         if (!file) return;
+        var request = ++loadRequest;
+        elFileInput.value = "";
         file.arrayBuffer().then(function (buf) {
           return Piv.decodePiv(new Uint8Array(buf));
         }).then(function (doc) {
+          if (request !== loadRequest) return;
+          stopPlayback();
+          elName.value = file.name.replace(/\.piv$/i, "");
           state.doc = doc;
           state.frameIndex = 0;
           state.selectedFigIndex = 0;
           syncAll();
           showToast("Opened " + file.name + " (" + doc.frames.length + " frames)!");
         }).catch(function (err) {
-          showToast("Could not parse .piv file: " + err.message);
+          if (request === loadRequest) showToast("Could not parse .piv file: " + err.message);
         });
       });
     }
 
     // Export binary .piv file
     onClick("piv-btn-save-piv", function () {
+      var fileName = (elName.value.trim() || "my-stick-animation").replace(/[^a-z0-9_-]+/gi, "-") + ".piv";
       Piv.encodePiv(state.doc).then(function (bytes) {
         var blob = new Blob([bytes], { type: "application/octet-stream" });
         var url = URL.createObjectURL(blob);
         var a = document.createElement("a");
         a.href = url;
-        a.download = "my-stick-animation.piv";
+        a.download = fileName;
         a.click();
         setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-        showToast("Saved my-stick-animation.piv (" + state.doc.frames.length + " frames)!");
+        showToast("Saved animation (" + state.doc.frames.length + " frames).");
       }).catch(function (err) {
         showToast("Export error: " + err.message);
       });
     });
 
-    // Export Horizontal PNG Sprite Sheet (ready for 2D Game Dev pathway)
+    // Export a PNG sprite sheet; wrap long animations to fit browser canvas limits. (ready for 2D Game Dev pathway)
     onClick("piv-btn-export-spritesheet", function () {
       var count = state.doc.frames.length;
       var cellW = 230;
       var cellH = 140;
       var sheet = document.createElement("canvas");
-      sheet.width = cellW * count;
-      sheet.height = cellH;
+      var columns = Math.min(count, Math.floor(8192 / cellW));
+      sheet.width = cellW * columns;
+      sheet.height = cellH * Math.ceil(count / columns);
       var sctx = sheet.getContext("2d");
       var scaleX = cellW / (state.doc.width || STAGE_W);
       var scaleY = cellH / (state.doc.height || STAGE_H);
       for (var i = 0; i < count; i++) {
         sctx.save();
-        sctx.translate(i * cellW, 0);
+        sctx.translate((i % columns) * cellW, Math.floor(i / columns) * cellH);
+        sctx.beginPath(); sctx.rect(0, 0, cellW, cellH); sctx.clip();
         sctx.scale(scaleX, scaleY);
         Piv.drawFrame(sctx, state.doc, i, { background: null });
         sctx.restore();
       }
       sheet.toBlob(function (blob) {
-        if (!blob) return;
+        if (!blob) { showToast("This sprite sheet is too large. Try exporting a shorter animation."); return; }
         var url = URL.createObjectURL(blob);
         var a = document.createElement("a");
         a.href = url;
@@ -1157,18 +1315,100 @@
       }, "image/png");
     });
 
-    // Keyboard shortcut: Spacebar adds frame when studio is focused
+    onClick("piv-btn-undo", function () { historyStep(undoStack, redoStack, "Undid last edit."); });
+    onClick("piv-btn-redo", function () { historyStep(redoStack, undoStack, "Redid edit."); });
+    onClick("piv-btn-new", function () {
+      loadRequest++;
+      state.doc = buildWalkPreset();
+      state.doc.frames = [cloneFrame(state.doc.frames[0])];
+      state.doc.frames[0].figures[0].angles = makeStandingAngles();
+      state.doc.frames[0].figures[0].x = STAGE_W / 2;
+      state.frameIndex = 0; state.selectedFigIndex = 0; state.selectedSegIndex = 4;
+      elName.value = "Untitled animation";
+      elPresetSelect.selectedIndex = -1;
+      syncAll();
+      showToast("New animation. Pose your figure, then add a frame. Undo brings back your previous project.");
+    });
+    onClick("piv-btn-grid", function (e) {
+      state.showGrid = !state.showGrid;
+      e.currentTarget.setAttribute("aria-pressed", String(state.showGrid));
+      renderStage();
+    });
+    onClick("piv-btn-focus", function (e) {
+      var expanded = root.classList.toggle("is-expanded");
+      e.currentTarget.textContent = expanded ? "Exit expanded view" : "Expand workspace";
+      e.currentTarget.setAttribute("aria-pressed", String(expanded));
+      sizing.resize();
+    });
+    onClick("piv-view-animate", function () { setView(false); });
+    onClick("piv-view-learn", function () { setView(true); });
+    elName.addEventListener("change", function () { syncAll(); });
+    if (elFpsSlider) elFpsSlider.addEventListener("change", syncAll);
+    if (elScaleSlider) elScaleSlider.addEventListener("change", syncAll);
+    document.getElementById("piv-scene-list").addEventListener("click", function (e) {
+      var button = e.target.closest("[data-figure-index]");
+      if (!button) return;
+      stopPlayback();
+      state.selectedFigIndex = Number(button.dataset.figureIndex);
+      state.selectedSegIndex = 0;
+      renderStage(); renderRigTree();
+      this.querySelectorAll("button").forEach(function (item) { item.setAttribute("aria-pressed", String(item === button)); });
+    });
+    ["x", "y"].forEach(function (axis) {
+      var input = document.getElementById("piv-fig-" + axis);
+      input.addEventListener("change", function () {
+        var fig = selectedFigure(), value = Number(input.value);
+        if (!fig || input.value === "" || !Number.isFinite(value)) return;
+        stopPlayback();
+        var limit = axis === "x" ? state.doc.width || STAGE_W : state.doc.height || STAGE_H;
+        fig[axis] = Math.max(0, Math.min(limit, value));
+        input.value = fig[axis];
+        syncAll();
+      });
+    });
+    document.getElementById("piv-joint-angle").addEventListener("change", function () {
+      var fig = selectedFigure(), value = Number(this.value);
+      if (!fig || this.value === "" || !Number.isFinite(value)) return;
+      stopPlayback();
+      var s = Math.min(state.selectedSegIndex, fig.angles.length - 1);
+      var next = Math.max(-180, Math.min(180, value)) * Math.PI / 180;
+      var delta = normAngle(next - fig.angles[s]);
+      var joints = computeFigureJoints(state.doc, fig);
+      fig.angles[s] = next;
+      if (state.fkChain) getDescendants(joints.segs, s).forEach(function (child) { fig.angles[child] = normAngle(fig.angles[child] + delta); });
+      if (joints.type.builtIn) fig.angles[3] = normAngle(fig.angles[2] + Math.PI);
+      this.value = Math.round(next * 180 / Math.PI);
+      syncAll();
+    });
+    elScrubber.addEventListener("input", function () {
+      stopPlayback();
+      state.frameIndex = Number(this.value) - 1;
+      syncAll();
+    });
     window.addEventListener("keydown", function (e) {
+      if (e.code === "Escape" && root.classList.contains("is-expanded")) { document.getElementById("piv-btn-focus").click(); return; }
       var active = document.activeElement;
-      if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT")) {
-        return;
+      if (active && (active.matches("input, textarea, select") || active.isContentEditable)) return;
+      if (document.getElementById("piv-sec-studio").hidden) return;
+      if (!root.contains(active) && active !== document.body) return;
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ") {
+        e.preventDefault(); document.getElementById(e.shiftKey ? "piv-btn-redo" : "piv-btn-undo").click(); return;
       }
-      if (e.code === "Space" && e.target === document.body) {
-        var rect = canvas.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0) {
-          e.preventDefault();
-          addNextFrame();
-        }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyS") { e.preventDefault(); document.getElementById("piv-btn-save-piv").click(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.code === "Space" && (!active || active.tagName !== "BUTTON")) { e.preventDefault(); elPlayBtn.click(); }
+      if (e.code === "KeyN") { e.preventDefault(); stopPlayback(); addNextFrame(); }
+      if (e.code.indexOf("Arrow") === 0 && active === canvas) {
+        e.preventDefault(); stopPlayback();
+        var fig = selectedFigure(); if (!fig) return;
+        var step = e.shiftKey ? 10 : 1;
+        if (e.code === "ArrowLeft") fig.x -= step;
+        if (e.code === "ArrowRight") fig.x += step;
+        if (e.code === "ArrowUp") fig.y -= step;
+        if (e.code === "ArrowDown") fig.y += step;
+        syncAll();
+      } else if (e.code === "ArrowLeft" || e.code === "ArrowRight") {
+        e.preventDefault(); document.getElementById(e.code === "ArrowLeft" ? "piv-btn-prev" : "piv-btn-next").click();
       }
     });
 
@@ -1180,19 +1420,19 @@
           state.lastTick = now;
           state.frameIndex = (state.frameIndex + 1) % state.doc.frames.length;
           renderStage();
-          if (elFramesScroll) {
-            var thumbs = elFramesScroll.querySelectorAll(".piv-frame-thumb");
-            thumbs.forEach(function (t, idx) {
-              t.classList.toggle("is-active", idx === state.frameIndex);
-            });
-          }
+          updateTimeline(true);
+          renderScene();
         }
       }
-      requestAnimationFrame(tick);
     }
 
+    try {
+      var saved = localStorage.getItem(storageKey);
+      if (saved) { restoreSnapshot(saved); showToast("Restored your locally saved project."); elPresetSelect.selectedIndex = -1; }
+    } catch (err) { showToast("Could not restore a local project. Use Open animation to load a saved file."); }
+    sizing = SimKit.canvas2d(canvas, { onResize: function () { if (sizing) renderStage(); } });
     syncAll();
-    requestAnimationFrame(tick);
+    SimKit.loop(function (dt, now) { tick(now); }, { el: canvas });
   }
 
   if (document.readyState === "loading") {
