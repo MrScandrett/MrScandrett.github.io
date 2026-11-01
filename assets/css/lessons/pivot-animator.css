@@ -1,0 +1,461 @@
+/* ============================================================================
+   Pivot Stick Figure Studio — In-House 2D Keyframe & Forward-Kinematics Lab
+   ============================================================================ */
+
+.piv-studio-shell {
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: var(--surface, #ffffff);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  margin: 1.25rem 0 1.5rem;
+}
+
+html[data-theme="dark"] .piv-studio-shell,
+body.theme-dark .piv-studio-shell {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Top preset & file toolbar */
+.piv-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(234, 88, 12, 0.08));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.piv-topbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.piv-topbar-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #475569);
+  margin-right: 0.2rem;
+}
+
+.piv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: var(--surface, #ffffff);
+  color: var(--text, #0f172a);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+html[data-theme="dark"] .piv-btn,
+body.theme-dark .piv-btn {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.piv-btn:hover {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.piv-btn:active {
+  transform: translateY(1px);
+}
+
+.piv-btn--primary {
+  background: #ea580c;
+  color: #ffffff !important;
+  border-color: #c2410c;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.28);
+}
+
+.piv-btn--primary:hover {
+  background: #c2410c;
+  border-color: #9a3412;
+}
+
+.piv-btn--accent {
+  background: #2563eb;
+  color: #ffffff !important;
+  border-color: #1d4ed8;
+}
+
+.piv-btn--accent:hover {
+  background: #1d4ed8;
+}
+
+.piv-btn--active,
+.piv-btn[aria-pressed="true"] {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: #2563eb;
+  color: #1d4ed8;
+}
+
+html[data-theme="dark"] .piv-btn--active,
+html[data-theme="dark"] .piv-btn[aria-pressed="true"] {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #60a5fa;
+  color: #93c5fd;
+}
+
+.piv-select {
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: var(--surface, #ffffff);
+  color: var(--text, #0f172a);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+html[data-theme="dark"] .piv-select {
+  background: #1e293b;
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Filmstrip Timeline */
+.piv-filmstrip-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1rem;
+  background: rgba(15, 23, 42, 0.03);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  overflow-x: auto;
+}
+
+html[data-theme="dark"] .piv-filmstrip-bar {
+  background: rgba(2, 6, 23, 0.45);
+}
+
+.piv-frames-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.2rem 0.1rem;
+  flex: 1;
+  min-height: 74px;
+}
+
+.piv-frame-thumb {
+  position: relative;
+  width: 78px;
+  height: 62px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.piv-frame-thumb:hover {
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.piv-frame-thumb.is-active {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.28);
+}
+
+.piv-frame-thumb svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.piv-frame-num {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Main Workspace Grid: Sidebar + Stage + Inspector */
+.piv-workspace {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 260px;
+  gap: 0;
+  min-height: 460px;
+}
+
+@media (max-width: 1080px) {
+  .piv-workspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .piv-rig-panel {
+    grid-column: 1 / -1;
+    border-left: none !important;
+    border-top: 1px solid rgba(148, 163, 184, 0.22);
+  }
+}
+
+@media (max-width: 740px) {
+  .piv-workspace {
+    grid-template-columns: 1fr;
+  }
+  .piv-tool-panel {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  }
+}
+
+.piv-tool-panel,
+.piv-rig-panel {
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: rgba(248, 250, 252, 0.65);
+}
+
+html[data-theme="dark"] .piv-tool-panel,
+html[data-theme="dark"] .piv-rig-panel {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.piv-tool-panel {
+  border-right: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.piv-rig-panel {
+  border-left: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.piv-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.piv-panel-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.piv-panel-heading {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #475569);
+  margin: 0;
+}
+
+.piv-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.piv-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+  align-items: center;
+}
+
+.piv-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+
+.piv-swatch.is-active {
+  box-shadow: 0 0 0 2px #2563eb;
+  transform: scale(1.1);
+}
+
+.piv-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  font-size: 0.79rem;
+  font-weight: 600;
+}
+
+.piv-slider-row label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.piv-slider-row input[type="range"] {
+  width: 100%;
+  accent-color: #2563eb;
+}
+
+/* Center Stage Area */
+.piv-stage-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem;
+  background: radial-gradient(circle at center, rgba(37, 99, 235, 0.05), rgba(15, 23, 42, 0.06));
+}
+
+html[data-theme="dark"] .piv-stage-column {
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.9), rgba(2, 6, 23, 0.95));
+}
+
+.piv-canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 690px;
+  aspect-ratio: 690 / 440;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  border: 2px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+}
+
+.piv-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+.piv-canvas:active {
+  cursor: grabbing;
+}
+
+.piv-stage-hud {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.piv-hud-pill {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.76);
+  color: #f8fafc;
+  font-size: 0.74rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.piv-transport-bar {
+  width: 100%;
+  max-width: 690px;
+  margin-top: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: var(--surface, #ffffff);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+}
+
+html[data-theme="dark"] .piv-transport-bar {
+  background: #1e293b;
+}
+
+/* Rig Tree List in Right Inspector */
+.piv-tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 235px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.piv-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.32rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--text, #0f172a);
+}
+
+html[data-theme="dark"] .piv-tree-item {
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.75);
+}
+
+.piv-tree-item:hover,
+.piv-tree-item.is-selected {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.13);
+}
+
+.piv-tree-badge {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: var(--muted, #64748b);
+}
+
+.piv-readout-box {
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.07);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.piv-status-toast {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #15803d;
+  min-height: 1.2em;
+}
+
+html[data-theme="dark"] .piv-status-toast {
+  color: #4ade80;
+}

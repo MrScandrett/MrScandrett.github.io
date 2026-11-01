@@ -31,11 +31,13 @@ const PIVOTS = [
 const $ = (id) => document.getElementById(id);
 const el = {
   name: $('wb-name'), preset: $('wb-preset'), canvas: $('wb-canvas'), status: $('wb-status'), nogl: $('wb-nogl'), legend: $('wb-legend'),
-  shapes: $('wb-shapes'), search: $('wb-search'), templates: $('wb-templates'), libTabs: document.querySelectorAll('[data-lib-tab]'),
-  libPanels: { shapes: $('wb-lib-shapes'), start: $('wb-lib-start') },
-  modeTabs: document.querySelectorAll('[data-mode]'), panels: { build: $('wb-panel-build'), animate: $('wb-panel-animate'), export: $('wb-panel-export') },
+  shapes: $('wb-shapes'), search: $('wb-search'), templates: $('wb-templates'), libTabs: document.querySelectorAll('.wb [data-lib-tab]'),
+  libPanels: { shapes: $('wb-lib-shapes'), objects: $('wb-lib-objects') },
+  category: $('wb-category'), saved: $('wb-saved'), welcome: $('wb-welcome'), projectDialog: $('wb-project-dialog'), helpDialog: $('wb-help-dialog'),
+  multi: $('wb-multiselect'), layout: document.querySelector('.wb-layout'), mobilePanels: document.querySelectorAll('.wb [data-mobile-panel]:is(button)'),
+  modeTabs: document.querySelectorAll('.wb [data-mode]'), panels: { build: $('wb-panel-build'), animate: $('wb-panel-animate'), export: $('wb-panel-export') },
   inspector: $('wb-inspector'), tree: $('wb-tree'), count: $('wb-count'),
-  tools: document.querySelectorAll('[data-tool]'), gizmoModes: document.querySelectorAll('[data-gizmo]'), snap: $('wb-snap'), views: document.querySelectorAll('[data-view]'),
+  tools: document.querySelectorAll('.wb [data-tool]'), gizmoModes: document.querySelectorAll('.wb [data-gizmo]'), snap: $('wb-snap'), views: document.querySelectorAll('.wb [data-view]'),
   timeline: $('wb-timeline'), play: $('wb-play'), scrub: $('wb-scrub'), time: $('wb-time'), lanes: $('wb-lanes'),
   animate: $('wb-animate'), duration: $('wb-duration'), loop: $('wb-loop'),
   arrange: $('wb-arrange'), printScale: $('wb-print-scale'), printScaleRow: $('wb-print-scale-row'), printView: $('wb-print-view'),
@@ -71,8 +73,16 @@ function loadProject() {
 let persistTimer = 0;
 function persist() {
   clearTimeout(persistTimer);
+  el.saved.textContent = 'Saving…';
   persistTimer = setTimeout(() => {
-    try { localStorage.setItem(STORE_KEY, undoLog.now); } catch { /* private window: the page still works */ }
+    try {
+      localStorage.setItem(STORE_KEY, undoLog.now);
+      el.saved.textContent = 'Saved in this browser';
+      el.saved.classList.remove('is-warning');
+    } catch {
+      el.saved.textContent = 'Use Save a copy to keep your work';
+      el.saved.classList.add('is-warning');
+    }
   }, 250);
 }
 
@@ -136,8 +146,13 @@ function rebuild() {
   view?.select(selection, gizmoOptions());
   renderTree();
   renderErrors();
-  const ms = Math.round(performance.now() - started);
-  el.status.textContent = result.errors.length ? `${result.errors.length} shape${result.errors.length > 1 ? 's' : ''} need attention` : `Built in ${ms} ms`;
+  const n = W.countNodes(project.objects);
+  el.status.textContent = result.errors.length ? `${result.errors.length} shape${result.errors.length > 1 ? 's' : ''} need attention` : n ? `${n} object${n === 1 ? '' : 's'} · ${units()}` : `Workplane · ${units()}`;
+  el.status.title = `Geometry updated in ${Math.round(performance.now() - started)} ms`;
+  el.welcome.hidden = project.objects.length > 0 || !view;
+  el.glb.disabled = el.obj.disabled = !result.pieces.length;
+  el.png.disabled = !view;
+  refreshTools();
   el.status.classList.toggle('is-bad', result.errors.length > 0);
   el.canvas.setAttribute('aria-label', sceneSummary());
   refreshSize();
@@ -198,12 +213,29 @@ function gizmoOptions() {
 }
 
 function select(ids) {
+  const before = selection.join(',');
   selection = [...new Set(ids)].filter((id) => W.findNode(project, id));
+  if (before !== selection.join(',')) $('wb-side').scrollTop = 0;
   view?.select(selection, gizmoOptions());
   renderInspector();
   renderTree();
   renderAnimatePanel();
   el.canvas.setAttribute('aria-label', sceneSummary());
+  refreshTools();
+}
+
+function refreshTools() {
+  const ids = topmost(selection);
+  el.tools.forEach((button) => {
+    const tool = button.dataset.tool;
+    if (tool === 'undo' || tool === 'redo' || tool === 'frame') return;
+    button.disabled = !ids.length || mode === 'export' || (tool === 'group' && (ids.length < 2 || new Set(ids.map((id) => W.findNode(project, id).list)).size > 1)) || (tool === 'ungroup' && !ids.some((id) => nodeOf(id)?.type === 'group'));
+  });
+  el.gizmoModes.forEach((button) => { button.disabled = selection.length !== 1 || mode === 'export'; });
+  const names = selection.map((id) => nodeOf(id)?.name).filter(Boolean);
+  $('wb-selection').textContent = names.length === 1 ? names[0] + ' selected' : names.length ? `${names.length} objects selected` : 'No selection';
+  $('wb-properties-heading').textContent = mode === 'animate' ? 'Animation' : mode === 'export' ? 'Print & export' : 'Properties';
+  document.querySelector('button[data-mobile-panel="properties"]').textContent = names.length ? `Properties (${names.length})` : 'Properties';
 }
 
 /* Ids from the top of the tree down to `id`. */
@@ -222,7 +254,7 @@ function onPick(leafId, { shift }) {
   const current = selection.length === 1 ? selection[0] : null;
   const i = chain.indexOf(current);
   const target = i >= 0 && i < chain.length - 1 ? chain[i + 1] : i === chain.length - 1 ? current : chain[0];
-  if (shift) select(selection.includes(target) ? selection.filter((s) => s !== target) : [...selection, target]);
+  if (shift || el.multi.checked) select(selection.includes(target) ? selection.filter((s) => s !== target) : [...selection, target]);
   else select([target]);
 }
 
@@ -241,11 +273,11 @@ function addShape(shapeId, at) {
   const size = shapeSize(node);
   node.pos = [snapValue(x), snapValue(y), W.nice(size[2] / 2)];
   project.objects.push(node);
-  if (mode === 'export') setMode('build');
+  if (mode !== 'build') setMode('build');
   commit();
   schedule(0);
   select([node.id]);
-  say(`Added ${shapeById(shapeId).name}. Drag the arrows to move it, or type exact numbers on the right.`);
+  say(`Added ${shapeById(shapeId).name}. Drag its handles, or open Properties to change its size.`);
 }
 
 /* Move a node by a world-space amount, whatever group it sits in. */
@@ -547,7 +579,7 @@ function renderInspector() {
     const empty = project.objects.length === 0;
     box.append(h('div', { class: 'wb-empty' },
       h('h3', { text: empty ? 'Start building' : 'Nothing selected' }),
-      h('p', { text: empty ? 'Pick a shape on the left (or drag it onto the workplane), or open Start from for a ready-made project to take apart.' : 'Click a shape in the scene or in the list below. Click it again to reach a shape inside a group. Shift-click to select several.' }),
+      h('p', { text: empty ? 'Add a shape to begin. Its dimensions, color, and other settings will appear here.' : 'Select a part on the workplane or in Objects to change it. Shift-click to select several parts.' }),
       h('dl', { class: 'wb-facts' },
         h('dt', { text: 'Project type' }), h('dd', { text: `${preset().label} — ${preset().hint}` }),
         h('dt', { text: 'Units' }), h('dd', { text: units() === 'mm' ? 'millimetres' : 'metres' }))));
@@ -581,9 +613,9 @@ function renderInspector() {
   if (!node.hole) {
     box.append(colorPicker(node));
     const finishId = fieldId();
-    box.append(h('div', { class: 'wb-field' }, h('label', { for: finishId, class: 'wb-label', text: 'Finish (for images and games)' }),
+    box.append(h('details', { class: 'wb-more' }, h('summary', { text: 'Surface finish' }), h('div', { class: 'wb-field' }, h('label', { for: finishId, class: 'wb-label', text: 'Finish (for images and games)' }),
       h('select', { id: finishId, onchange: (e) => { W.walk([node], (n) => { n.finish = e.target.value; }); schedule(0); commit(); } },
-        ...Object.entries(W.FINISHES).map(([value, f]) => h('option', { value, selected: node.finish === value, text: f.label })))));
+        ...Object.entries(W.FINISHES).map(([value, f]) => h('option', { value, selected: node.finish === value, text: f.label }))))));
   }
   if (shape) {
     if (shape.blurb) box.append(h('p', { class: 'wb-blurb', text: shape.blurb }));
@@ -594,11 +626,11 @@ function renderInspector() {
   }
   const p = poseOf(node), u = units();
   const animated = Boolean(project.animation.tracks[node.id]);
-  box.append(h('h4', { class: 'wb-section', text: mode === 'animate' ? `Pose at ${time.toFixed(2)} s` : 'Place' }),
+  box.append(h('details', { class: 'wb-more', open: mode === 'animate' || undefined }, h('summary', { text: mode === 'animate' ? `Pose at ${time.toFixed(2)} s` : 'Position, rotation & scale' }),
     mode === 'build' && animated ? h('p', { class: 'wb-help', text: 'This one is animated. Its keys keep their own poses; change the motion on the Animate tab.' }) : null,
     vectorRow('Position', p.pos, u, 'pos', snapStep() || preset().grid),
     vectorRow('Turn', p.rot, 'degrees', 'rot', 15),
-    vectorRow('Scale', p.scale.map((s) => s * 100), '%', 'scale', 5),
+    vectorRow('Scale', p.scale.map((s) => s * 100), '%', 'scale', 5)),
     h('p', { class: 'wb-size' }, h('span', { text: 'Size ' }), h('strong', { dataset: { size: '' } })),
     h('div', { class: 'wb-btn-row' },
       h('button', { type: 'button', onclick: TOOLS.floor }, 'Drop to floor'),
@@ -729,11 +761,12 @@ function renderErrors() {
 /* ── scene list ───────────────────────────────────────────────────────── */
 
 function renderTree() {
+  const focusId = el.tree.contains(document.activeElement) ? document.activeElement.dataset.node : null;
   const errs = new Set((result?.errors || []).map((e) => e.id));
   const list = (nodes) => h('ul', { role: 'group' }, ...nodes.map((n) => h('li', {},
     h('button', {
-      type: 'button', class: `wb-node${n.hole ? ' is-hole' : ''}`, 'aria-pressed': String(selection.includes(n.id)),
-      onclick: (e) => (e.shiftKey ? select(selection.includes(n.id) ? selection.filter((s) => s !== n.id) : [...selection, n.id]) : select([n.id])),
+      type: 'button', dataset: { node: n.id }, class: `wb-node${n.hole ? ' is-hole' : ''}`, 'aria-pressed': String(selection.includes(n.id)),
+      onclick: (e) => ((e.shiftKey || el.multi.checked) ? select(selection.includes(n.id) ? selection.filter((s) => s !== n.id) : [...selection, n.id]) : select([n.id])),
     },
     h('span', { class: 'wb-node-icon', 'aria-hidden': 'true', style: n.hole ? null : `--sw:${n.type === 'group' ? '#8fb4d8' : n.color}`, text: n.type === 'group' ? '▤' : n.hole ? '◌' : '' }),
     h('span', { class: 'wb-node-name', text: n.name }),
@@ -742,15 +775,18 @@ function renderTree() {
     errs.has(n.id) ? h('span', { class: 'wb-node-warn', title: 'Needs attention', text: '!' }) : null),
     n.type === 'group' && n.children.length ? list(n.children) : null)));
   el.tree.replaceChildren(project.objects.length ? list(project.objects) : h('p', { class: 'wb-help', text: 'Nothing here yet.' }));
+  if (focusId) [...el.tree.querySelectorAll('[data-node]')].find((button) => button.dataset.node === focusId)?.focus({ preventScroll: true });
   const n = W.countNodes(project.objects);
-  el.count.textContent = `${n} / ${W.MAX_NODES}`;
+  el.count.textContent = String(n);
+  el.count.title = `${n} of ${W.MAX_NODES} objects`;
+  refreshTools();
 }
 
 /* ── animate panel + timeline ─────────────────────────────────────────── */
 
 function renderAnimatePanel() {
-  const box = el.animate;
-  box.replaceChildren();
+  el.animate.replaceChildren();
+  const box = { append: (...items) => el.animate.append(...items.flat().filter((item) => item !== null && item !== undefined && item !== false)) };
   el.duration.value = String(project.animation.duration);
   el.loop.checked = project.animation.loop;
   if (selection.length !== 1) {
@@ -777,7 +813,7 @@ function renderAnimatePanel() {
     h('div', { class: 'wb-inline' }, h('span', { text: 'Turn' }), turns, h('span', { text: 'times' }), axis),
     h('div', { class: 'wb-btn-row' }, h('button', { type: 'button', onclick: () => { W.addSpin(project, node.id, axis.value, Number(turns.value) || 1); commit(); setTime(time); renderAnimatePanel(); renderTree(); say('Spinning at a steady speed. It turns around its pivot.'); } }, 'Spin over the loop')),
     keys.length ? h('div', { class: 'wb-btn-row' }, h('button', { type: 'button', onclick: () => { delete project.animation.tracks[node.id]; commit(); setTime(time); renderAnimatePanel(); renderTree(); } }, 'Remove its animation')) : null,
-    h('p', { class: 'wb-help', text: 'Things turn and scale around their pivot (Build → Pivot). Put a lid’s pivot on its back edge, a ball’s on its bottom so it squashes on the floor.' }));
+    h('p', { class: 'wb-help', text: 'Things turn and scale around their pivot (Design → Pivot). Put a lid’s pivot on its back edge, a ball’s on its bottom so it squashes on the floor.' }));
 }
 
 function renderLanes() {
@@ -800,7 +836,10 @@ function renderLanes() {
 /* ── modes ────────────────────────────────────────────────────────────── */
 
 function setMode(next) {
+  if (!el.panels[next]) return;
   mode = next;
+  if (mode === 'animate') el.panels.animate.append(el.inspector);
+  else el.panels.build.prepend(el.inspector);
   el.modeTabs.forEach((t) => { const on = t.dataset.mode === mode; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
   Object.entries(el.panels).forEach(([k, p]) => { p.hidden = k !== mode; });
   el.timeline.hidden = mode !== 'animate';
@@ -815,6 +854,8 @@ function setMode(next) {
   renderAnimatePanel();
   renderLanes();
   if (mode === 'export') { renderExport(); schedulePrint(0); }
+  refreshTools();
+  if (next !== 'build') showMobilePanel('properties');
 }
 
 /* ── print + export ───────────────────────────────────────────────────── */
@@ -937,8 +978,12 @@ async function openProject(file) {
     const next = W.validateProject(JSON.parse(await file.text()));
     project = next;
     selection = [];
+    el.multi.checked = false;
     commit();
+    setMode('build');
     projectChanged(true);
+    showLibrary('objects');
+    showMobilePanel('objects');
     say(`Opened ${file.name}. Undo brings back what you had before.`);
   } catch (error) {
     say(error instanceof SyntaxError ? `${file.name} is not a Workbench project file (.workbench.json).` : error.message);
@@ -950,14 +995,16 @@ async function openProject(file) {
 const thumbs = new Map();
 function renderLibrary() {
   const q = el.search.value.trim().toLowerCase();
+  const category = el.category.value;
   el.shapes.replaceChildren();
   for (const group of SHAPE_GROUPS) {
+    if (category !== 'all' && group !== category) continue;
     const shapes = SHAPES.filter((s) => s.group === group && (!q || `${s.name} ${s.blurb} ${group}`.toLowerCase().includes(q)));
     if (!shapes.length) continue;
     el.shapes.append(h('h3', { class: 'wb-group', text: group }), h('ul', { class: 'wb-shape-grid' }, ...shapes.map((s) => h('li', {},
       h('button', {
         type: 'button', class: 'wb-shape', draggable: 'true', title: s.blurb, dataset: { shape: s.id },
-        onclick: () => addShape(s.id), ondragstart: (e) => { e.dataTransfer.setData('text/x-workbench-shape', s.id); e.dataTransfer.effectAllowed = 'copy'; },
+        onclick: () => { addShape(s.id); }, ondragstart: (e) => { e.dataTransfer.setData('text/x-workbench-shape', s.id); e.dataTransfer.effectAllowed = 'copy'; },
       }, h('img', { alt: '', src: thumbs.get(s.id) || null, width: '64', height: '64', loading: 'lazy', dataset: { thumb: s.id } }), h('span', { text: s.name }))))));
   }
   if (!el.shapes.children.length) el.shapes.append(h('p', { class: 'wb-help', text: 'No shape matches that. Try “box”, “roof” or “gear”.' }));
@@ -976,10 +1023,15 @@ function renderTemplates() {
 
 function startBlank(presetId) {
   project = W.freshProject(presetId, '');
+  el.multi.checked = false;
   selection = [];
   commit();
+  setMode('build');
   projectChanged(true);
+  el.projectDialog.close();
   showLibrary('shapes');
+  showMobilePanel('library');
+  el.canvas.focus({ preventScroll: true });
   say(`New ${W.PRESETS[presetId].label.toLowerCase()} project (${W.PRESETS[presetId].hint.toLowerCase()}). Undo brings back what you had.`);
 }
 
@@ -987,11 +1039,23 @@ function startTemplate(id) {
   if (!engine) { say('The geometry engine is still starting. Try again in a moment.'); return; }
   const t = templateById(id);
   project = finishTemplate(t, (node) => shapeSize(node));
+  el.multi.checked = false;
   selection = [];
   commit();
+  setMode('build');
   projectChanged(true);
+  el.projectDialog.close();
+  showLibrary('objects');
+  showMobilePanel('objects');
   say(`Opened “${t.title}”. Click any part to see how it is made. Undo brings back what you had before.`);
   if (Object.keys(project.animation.tracks).length) { setMode('animate'); setPlaying(true); }
+}
+
+function showMobilePanel(panel) {
+  el.layout.dataset.mobilePanel = panel;
+  el.mobilePanels.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mobilePanel === panel)));
+  if (panel === 'objects') showLibrary('objects');
+  if (panel === 'library') showLibrary('shapes');
 }
 
 function showLibrary(tab) {
@@ -1050,10 +1114,29 @@ function fillSnap() {
 /* ── events ───────────────────────────────────────────────────────────── */
 
 function wire() {
-  el.name.addEventListener('input', () => { project.name = el.name.value.slice(0, 60); });
+  const header = document.querySelector('.site-header');
+  const sizeStudio = () => document.body.style.setProperty('--wb-header-height', `${header.getBoundingClientRect().height}px`);
+  new ResizeObserver(sizeStudio).observe(header);
+  sizeStudio();
+  let nameTimer;
+  el.name.addEventListener('input', () => { project.name = el.name.value.slice(0, 60); clearTimeout(nameTimer); nameTimer = setTimeout(commit, 450); });
   el.name.addEventListener('change', commit);
   el.search.addEventListener('input', renderLibrary);
   el.libTabs.forEach((t) => t.addEventListener('click', () => showLibrary(t.dataset.libTab)));
+  el.mobilePanels.forEach((button) => button.addEventListener('click', () => showMobilePanel(button.dataset.mobilePanel)));
+  el.category.append(...SHAPE_GROUPS.map((group) => h('option', { value: group, text: group })));
+  el.category.addEventListener('change', renderLibrary);
+  const newProject = () => { setPlaying(false); el.projectDialog.showModal(); };
+  $('wb-new').addEventListener('click', newProject);
+  document.querySelectorAll('[data-new-project]').forEach((button) => button.addEventListener('click', newProject));
+  $('wb-add-box').addEventListener('click', () => { addShape('box'); el.canvas.focus({ preventScroll: true }); });
+  $('wb-help').addEventListener('click', () => el.helpDialog.showModal());
+  document.querySelectorAll('[data-close-dialog]').forEach((button) => button.addEventListener('click', () => button.closest('dialog').close()));
+  $('wb-focus').addEventListener('click', toggleFocus);
+  window.addEventListener('pagehide', () => {
+    clearTimeout(persistTimer);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(project)); } catch { /* Save a copy remains available. */ }
+  });
   el.modeTabs.forEach((t) => t.addEventListener('click', () => setMode(t.dataset.mode)));
   tablistKeys(el.libTabs, (t) => showLibrary(t.dataset.libTab));
   tablistKeys(el.modeTabs, (t) => setMode(t.dataset.mode));
@@ -1105,8 +1188,17 @@ function setGizmoMode(m) {
   view?.setGizmo(m, gizmoOptions().snap);
 }
 
+function toggleFocus() {
+  const on = document.body.classList.toggle('wb-focused');
+  $('wb-focus').setAttribute('aria-pressed', String(on));
+  $('wb-focus').textContent = on ? 'Exit focus' : 'Focus view';
+  $('wb-focus').title = on ? 'Return to the page (Escape)' : 'Expand the studio to fill this tab';
+}
+
 function onKey(e) {
   const t = e.target;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && !t.closest?.('dialog')) { e.preventDefault(); commit(); saveProject(); return; }
+  if (e.key === 'Escape' && document.body.classList.contains('wb-focused') && !document.querySelector('dialog[open]')) { toggleFocus(); return; }
   if (t.closest?.('input, textarea, select, [contenteditable], dialog')) return;
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   const act = (fn) => { e.preventDefault(); fn(); };
@@ -1170,7 +1262,8 @@ async function start() {
   dirty = true;
   rebuild();
   view?.frame(result?.solidAll);
-  if (!openFromLink() && !project.objects.length) showLibrary('start');
+  if (!openFromLink() && project.objects.length) say('Your last design is ready. Select a part to continue.');
+  refreshTools();
   renderThumbnails();
 }
 

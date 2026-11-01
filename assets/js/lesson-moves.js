@@ -59,6 +59,7 @@
     "lessons/design/pioneers/katsushika-hokusai": "lessons/2d-design/pioneers/katsushika-hokusai",
     "lessons/design/pioneers/pablo-picasso": "lessons/2d-design/pioneers/pablo-picasso",
     "lessons/design/pioneers/vincent-van-gogh": "lessons/2d-design/pioneers/vincent-van-gogh",
+    "lessons/design/photo-editing-workshop": "lessons/2d-design/photo-editing-workshop",
     "lessons/technical-elements/pioneers/walt-disney": "lessons/2d-design/pioneers/walt-disney",
     "lessons/humanities/leonardo-da-vinci": "lessons/humanities/pioneers/leonardo-da-vinci",
     "lessons/humanities/magellan": "lessons/humanities/pioneers/magellan",
@@ -109,5 +110,5 @@
     }
     return moved ? p : null;
   }
-  root.ClassroomOSLessonMoves = { version: 3, resolve: resolve };
+  root.ClassroomOSLessonMoves = { version: 4, resolve: resolve };
 }(typeof window !== 'undefined' ? window : globalThis));

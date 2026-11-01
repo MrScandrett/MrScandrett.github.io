@@ -12,7 +12,7 @@
   <script src="assets/js/theme-registry.js"></script>
   <script src="assets/js/theme-lighting.js"></script>
 </head>
-<body class="theme-forge">
+<body class="theme-forge wb-app">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <header class="site-header">
@@ -33,41 +33,51 @@
   </header>
 
   <main id="main-content" class="wb">
-    <div data-design3d-route="workbench"></div>
-    <section class="wb-intro" aria-labelledby="wb-title">
-      <div>
-        <p class="wb-kicker">3D design studio</p>
-        <h1 id="wb-title">Workbench</h1>
-        <p class="wb-lede">Build anything from shapes. Drop them in, make some of them <strong>holes</strong> to cut with, group and repeat them, then animate them. Print the result on the MakerBot, or take it into a game engine as an animated GLB.</p>
-      </div>
+    <header class="wb-appbar">
+      <div class="wb-identity"><h1 id="wb-title">Workbench</h1><a href="lessons/3d-design/3d-design.html">3D lessons</a></div>
       <div class="wb-project">
-        <label class="wb-name">
-          <span>Project name</span>
-          <input type="text" id="wb-name" maxlength="60" autocomplete="off" spellcheck="false" placeholder="my-design" />
-        </label>
-        <p class="wb-preset" id="wb-preset" aria-live="polite"></p>
+        <label class="wb-name"><span class="visually-hidden">Project name</span><input type="text" id="wb-name" maxlength="60" autocomplete="off" spellcheck="false" placeholder="Untitled design" /></label>
+        <span id="wb-saved" class="wb-saved" role="status">Saved in this browser</span>
       </div>
-    </section>
-
-    <div class="wb-layout">
-      <nav class="wb-library" aria-label="Shapes and starter projects">
+      <div class="wb-file-actions" role="group" aria-label="Project">
+        <button type="button" id="wb-new">New</button>
+        <button type="button" id="wb-open">Open</button>
+        <button type="button" id="wb-save" title="Download an editable project (Ctrl+S)">Save a copy</button>
+        <button type="button" id="wb-help">Help</button>
+        <button type="button" id="wb-focus" aria-pressed="false" title="Expand the studio to fill this tab">Focus view</button>
+        <input type="file" id="wb-open-file" accept=".json,application/json" aria-label="Open project file" hidden />
+      </div>
+    </header>
+    <div class="wb-workflow">
+      <div class="wb-tabs wb-modes" role="tablist" aria-label="Mode">
+        <button type="button" role="tab" id="wb-mode-build" aria-controls="wb-panel-build" aria-selected="true" data-mode="build">Design</button>
+        <button type="button" role="tab" id="wb-mode-animate" aria-controls="wb-panel-animate" aria-selected="false" tabindex="-1" data-mode="animate">Animate</button>
+        <button type="button" role="tab" id="wb-mode-export" aria-controls="wb-panel-export" aria-selected="false" tabindex="-1" data-mode="export">Print &amp; export</button>
+      </div>
+      <p class="wb-preset" id="wb-preset"></p>
+    </div>
+    <div class="wb-layout" data-mobile-panel="library">
+      <nav id="wb-library" class="wb-library" aria-label="Shapes and objects">
         <div class="wb-tabs" role="tablist" aria-label="Library">
           <button type="button" role="tab" id="wb-tab-shapes" aria-controls="wb-lib-shapes" aria-selected="true" data-lib-tab="shapes">Shapes</button>
-          <button type="button" role="tab" id="wb-tab-start" aria-controls="wb-lib-start" aria-selected="false" tabindex="-1" data-lib-tab="start">Start from</button>
+          <button type="button" role="tab" id="wb-tab-objects" aria-controls="wb-lib-objects" aria-selected="false" tabindex="-1" data-lib-tab="objects">Objects</button>
         </div>
         <div id="wb-lib-shapes" role="tabpanel" aria-labelledby="wb-tab-shapes">
           <label class="wb-search"><span class="visually-hidden">Find a shape</span><input type="search" id="wb-search" placeholder="Find a shape…" autocomplete="off" /></label>
-          <p class="wb-help">Click to add, or drag onto the workplane.</p>
+          <label class="wb-category"><span class="visually-hidden">Shape category</span><select id="wb-category"><option value="all">All shapes</option></select></label>
+          <p class="wb-help">Click a shape to add it to your design.</p>
           <div id="wb-shapes"></div>
         </div>
-        <div id="wb-lib-start" role="tabpanel" aria-labelledby="wb-tab-start" hidden>
-          <p class="wb-help">Each one is a real, working model. Open it, click its parts, and change them. Undo brings back your own project.</p>
-          <div id="wb-templates"></div>
+        <div id="wb-lib-objects" role="tabpanel" aria-labelledby="wb-tab-objects" hidden>
+          <div class="wb-objects-heading"><h2>Objects</h2><span id="wb-count" class="wb-count"></span></div>
+          <label class="wb-check"><input type="checkbox" id="wb-multiselect" /><span>Select multiple</span></label>
+          <p class="wb-help">Select parts here, including parts inside groups.</p>
+          <div id="wb-tree" class="wb-tree"></div>
         </div>
       </nav>
 
       <section class="wb-stage" aria-label="3D workspace">
-        <div class="wb-toolbar" role="toolbar" aria-label="Edit tools">
+        <div class="wb-toolbar" data-contrast-guard-skip role="toolbar" aria-label="Edit tools">
           <div class="wb-tool-group" role="group" aria-label="Gizmo">
             <button type="button" data-gizmo="translate" aria-pressed="true" title="Move (W)">Move</button>
             <button type="button" data-gizmo="rotate" aria-pressed="false" title="Turn (E)">Turn</button>
@@ -83,19 +93,26 @@
             <button type="button" data-tool="ungroup" title="Ungroup (Ctrl+Shift+G)">Ungroup</button>
             <button type="button" data-tool="delete" title="Delete (Del)">Delete</button>
           </div>
-          <div class="wb-tool-group" role="group" aria-label="Camera">
+
+        </div>
+        <div class="wb-canvas-wrap">
+          <div class="wb-camera" data-contrast-guard-skip role="group" aria-label="Camera">
             <button type="button" data-view="home" title="3D view">3D</button>
             <button type="button" data-view="front" title="From the front">Front</button>
             <button type="button" data-view="side" title="From the right side">Side</button>
             <button type="button" data-view="top" title="From above">Top</button>
             <button type="button" data-tool="frame" title="Fit to the selection (F)">Fit</button>
           </div>
-        </div>
-        <div class="wb-canvas-wrap">
           <canvas id="wb-canvas" tabindex="0" aria-label="3D workspace"></canvas>
           <p class="wb-status" id="wb-status" role="status">Loading…</p>
           <p class="wb-legend" id="wb-legend" hidden><span class="sw sw-part"></span> part <span class="sw sw-bridge"></span> bridge (fine) <span class="sw sw-overhang"></span> overhang (needs support)</p>
-          <p class="wb-hint">Drag: orbit · Right-drag: pan · Scroll: zoom · Click: select (again to go inside a group) · Shift-click: add to selection</p>
+          <div class="wb-welcome" id="wb-welcome" hidden>
+            <span class="wb-welcome-icon" aria-hidden="true">◇</span>
+            <h2>Make something yours.</h2>
+            <p>Add a shape, then drag its handles to move, turn, or resize it.</p>
+            <div class="wb-btn-row"><button type="button" class="wb-primary-soft" id="wb-add-box">Add a box</button><button type="button" data-new-project>Browse starters</button></div>
+          </div>
+          <p class="wb-hint">Drag to orbit · Scroll to zoom · Right-drag to pan</p>
           <p class="wb-nogl" id="wb-nogl" hidden>This browser cannot start WebGL, so the 3D view is off. Try another browser or computer.</p>
         </div>
         <div class="wb-timeline" id="wb-timeline" hidden>
@@ -109,19 +126,15 @@
         </div>
       </section>
 
-      <aside class="wb-side" aria-label="Properties">
-        <div class="wb-tabs wb-modes" role="tablist" aria-label="Mode">
-          <button type="button" role="tab" id="wb-mode-build" aria-controls="wb-panel-build" aria-selected="true" data-mode="build">Build</button>
-          <button type="button" role="tab" id="wb-mode-animate" aria-controls="wb-panel-animate" aria-selected="false" tabindex="-1" data-mode="animate">Animate</button>
-          <button type="button" role="tab" id="wb-mode-export" aria-controls="wb-panel-export" aria-selected="false" tabindex="-1" data-mode="export">Print &amp; export</button>
-        </div>
-
+    <div class="wb-mobile-panels" role="group" aria-label="Workspace panels">
+      <button type="button" data-mobile-panel="library" aria-pressed="true" aria-controls="wb-library">Add shapes</button>
+      <button type="button" data-mobile-panel="objects" aria-pressed="false" aria-controls="wb-library">Objects</button>
+      <button type="button" data-mobile-panel="properties" aria-pressed="false" aria-controls="wb-side">Properties</button>
+    </div>
+      <aside id="wb-side" class="wb-side" aria-label="Properties">
+        <h2 class="wb-properties-heading" id="wb-properties-heading">Properties</h2>
         <section id="wb-panel-build" role="tabpanel" aria-labelledby="wb-mode-build">
           <div id="wb-inspector" class="wb-inspector"></div>
-          <details class="wb-outline" open>
-            <summary>Everything in the scene <span id="wb-count" class="wb-count"></span></summary>
-            <div id="wb-tree" class="wb-tree"></div>
-          </details>
         </section>
 
         <section id="wb-panel-animate" role="tabpanel" aria-labelledby="wb-mode-animate" hidden>
@@ -160,18 +173,27 @@
           </div>
           <p class="wb-help">GLB is Y-up and in metres, with holes already cut, one object per shape, and your animation. It opens in Godot, Unity, Blender and the <a href="lessons/3d-design/game-asset-studio/game-asset-uv-export.html">Asset Bench</a>.</p>
 
-          <h3 class="wb-panel-title">Project file</h3>
-          <div class="wb-btn-row">
-            <button type="button" id="wb-save">Save project</button>
-            <button type="button" id="wb-open">Open project</button>
-            <input type="file" id="wb-open-file" accept=".json,application/json" aria-label="Open project file" hidden />
-          </div>
-          <p class="wb-help">Workbench also keeps your latest project in this browser.</p>
         </section>
-        <p class="wb-note" id="wb-note" aria-live="polite"></p>
+
       </aside>
     </div>
 
+    <div class="wb-statusbar"><p id="wb-selection">No selection</p><p class="wb-note" id="wb-note" role="status">Ready. Add a shape to begin.</p><span>Workbench 3D</span></div>
+
+    <dialog id="wb-project-dialog" class="wb-dialog" aria-labelledby="wb-project-title">
+      <div class="wb-dialog-heading"><div><h2 id="wb-project-title">New project</h2><p>Start with a blank workplane or make a starter your own.</p></div><button type="button" data-close-dialog>Close</button></div>
+      <p class="wb-dialog-tip">Your current design stays one Undo away. Use Save a copy to keep a project file.</p>
+      <div id="wb-templates"></div>
+    </dialog>
+    <dialog id="wb-help-dialog" class="wb-dialog wb-help-dialog" aria-labelledby="wb-help-title">
+      <div class="wb-dialog-heading"><h2 id="wb-help-title">Getting around Workbench</h2><button type="button" data-close-dialog>Close</button></div>
+      <h3>Build with shapes</h3><p>Click a shape to add it. Select it on the workplane or in Objects. Use its colored handles to move, turn, or scale it; Properties has sliders and exact dimensions.</p>
+      <h3>Cut a hole</h3><p>Add a second shape, choose Hole, and overlap it with a solid. Group them to keep the cut together.</p>
+      <h3>Move the camera</h3><p>Drag empty space to orbit, right-drag to pan, and scroll to zoom. On a touch screen, drag to orbit and use two fingers to pan or pinch to zoom. Use 3D, Front, Side, Top, and Fit above the workplane to reset your view.</p>
+      <h3>Select more than one</h3><p>Shift-click parts, or enable Select multiple in Objects. Then group, align, or delete the selection.</p>
+      <dl class="wb-shortcuts"><dt>Move / Turn / Scale</dt><dd>W / E / R</dd><dt>Fit selection</dt><dd>F</dd><dt>Duplicate</dt><dd>Ctrl / ⌘ + D</dd><dt>Group / Ungroup</dt><dd>Ctrl / ⌘ + G / Shift + G</dd><dt>Undo / Redo</dt><dd>Ctrl / ⌘ + Z / Shift + Z</dd><dt>Save a copy</dt><dd>Ctrl / ⌘ + S</dd><dt>Nudge selected part</dt><dd>Arrow keys; Page Up / Down for height</dd></dl>
+      <p>Changes save in this browser. Save a copy downloads an editable project; Open brings it back. Print &amp; export creates STL, GLB, OBJ, or a picture.</p>
+    </dialog>
     <dialog id="wb-sketch" class="wb-sketch" aria-labelledby="wb-sketch-title">
       <h2 id="wb-sketch-title" data-sketch-title>Sketch</h2>
       <p class="wb-help">Click to add a point. Drag points to move them. Select one and press Delete to remove it. Scroll to zoom.</p>
@@ -192,6 +214,5 @@
   <script src="assets/js/sim-kit.js"></script>
   <script type="module" src="assets/js/workbench/workbench.mjs"></script>
   <script src="assets/js/nav-mobile.js"></script>
-  <script src="assets/js/design3d-route.js"></script>
 </body>
 </html>

@@ -36,97 +36,68 @@
   </header>
 
   <main id="main-content" class="forge">
-<div data-design3d-route="real"></div>
-    <section class="forge-intro" aria-labelledby="forge-title">
-      <div>
-        <p class="forge-kicker">3D design &amp; fabrication</p>
-        <h1 id="forge-title">Forge</h1>
-        <p class="forge-lede">Pick a part, design it with numbers, and let Forge check it the way a slicer would — walls, overhangs, clearances and bed size. When every check is green, download the STL and print it on the MakerBot, or take a GLB into your game. Want to build something of your own from shapes? Open <a href="workbench.html">Workbench</a>.</p>
-      </div>
-      <label class="forge-name">
-        <span>Project name</span>
-        <input type="text" id="forge-project-name" maxlength="40" autocomplete="off" spellcheck="false" placeholder="my-part" />
-      </label>
-    </section>
+    <header class="forge-toolbar">
+      <div class="forge-app-title"><span class="forge-mark" aria-hidden="true">F</span><div><h1 id="forge-title">Forge</h1><span>Part designer</span></div></div>
+      <label class="forge-name"><span class="sr-only">Project name</span><input type="text" id="forge-project-name" maxlength="40" autocomplete="off" spellcheck="false" placeholder="Untitled project" /><span id="forge-save-status" role="status">Saved in this browser</span></label>
+      <div class="forge-history" aria-label="Edit history"><button type="button" id="forge-undo" title="Undo (Ctrl/⌘ Z)" aria-label="Undo" disabled>↶</button><button type="button" id="forge-redo" title="Redo (Ctrl/⌘ Shift Z)" aria-label="Redo" disabled>↷</button></div>
+      <div class="forge-file-tools"><button type="button" id="forge-open">Open</button><button type="button" id="forge-save">Save a copy</button><button type="button" id="forge-help" aria-label="How to use Forge" title="How to use Forge">?</button><button type="button" class="forge-primary" id="forge-export-open">Export…</button></div>
+      <input type="file" id="forge-open-file" accept=".json,application/json" aria-label="Open project file" hidden />
+    </header>
 
     <div class="forge-layout">
-      <nav class="forge-library" aria-label="Parts">
-        <h2 class="forge-panel-title">Parts</h2>
-        <div id="forge-parts"></div>
-      </nav>
+      <aside class="forge-library" aria-label="Parts library">
+        <details id="forge-library-disclosure" open>
+          <summary><h2>Parts library</h2><span id="forge-part-count">14 parts</span></summary>
+          <div class="forge-library-search"><label class="sr-only" for="forge-search">Search parts</label><input type="search" id="forge-search" placeholder="Search parts…" autocomplete="off" /><button type="button" id="forge-search-clear" aria-label="Clear search" hidden>×</button></div>
+          <nav id="forge-parts" aria-label="Choose a part"></nav>
+          <p id="forge-no-parts" class="forge-help" hidden>No parts match. Try “box”, “fidget”, or “wheel”.</p>
+        </details>
+        <a class="forge-workbench" href="workbench.html"><strong>Build from shapes</strong><span>Open Workbench ↗</span></a>
+      </aside>
 
       <section class="forge-stage" aria-label="3D preview">
-        <div class="forge-stage-bar">
-          <p id="forge-part-title" class="forge-part-title">Loading…</p>
-          <div class="forge-stage-tools">
-            <label class="forge-switch"><input type="checkbox" id="forge-show-overhangs" checked /> <span>Show overhangs</span></label>
-            <button type="button" id="forge-reset-view">Reset view</button>
-          </div>
-        </div>
+        <div class="forge-stage-bar"><div><span class="forge-stage-eyebrow">On the print bed</span><h2 id="forge-part-title" class="forge-part-title">Loading…</h2></div><button type="button" id="forge-reset-view" title="Fit the part in view (F)">Fit view</button></div>
         <div class="forge-canvas-wrap">
-          <canvas id="forge-canvas" role="img" aria-label="3D preview of the part on the print bed."></canvas>
+          <canvas id="forge-canvas" tabindex="0" role="img" aria-label="3D preview of the part on the print bed." aria-describedby="forge-orbit-help"></canvas>
           <p class="forge-status" id="forge-status" role="status">Starting the geometry engine…</p>
-          <p class="forge-nogl" id="forge-nogl" hidden>This browser cannot start WebGL, so the 3D preview is off. The checks and downloads below still work.</p>
-          <p class="forge-legend" aria-hidden="true"><span class="sw sw-part"></span>part <span class="sw sw-bridge"></span>bridge <span class="sw sw-overhang"></span>overhang <span class="sw sw-bed"></span>MakerBot Sketch Large bed</p>
+          <p class="forge-nogl" id="forge-nogl" hidden>This browser cannot start WebGL. You can still adjust the design, check it, and export files.</p>
+          <div class="forge-view-tools" role="group" aria-label="Camera views"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="top" aria-pressed="false">Top</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="side" aria-pressed="false">Side</button></div>
+          <p class="forge-legend" aria-hidden="true"><span class="sw sw-bridge"></span>Bridge <span class="sw sw-overhang"></span>Overhang</p>
         </div>
-        <p class="forge-blurb" id="forge-blurb"></p>
-
-        <div class="forge-report">
-          <ul class="forge-stats" id="forge-stats"></ul>
-          <ul class="forge-verdicts" id="forge-verdicts" aria-live="polite"></ul>
-        </div>
+        <div class="forge-stage-bottom"><p id="forge-orbit-help">Drag to orbit · Scroll to zoom · Right-drag to pan</p><label class="forge-switch"><input type="checkbox" id="forge-show-overhangs" checked /> <span>Highlight overhangs</span></label></div>
+        <button type="button" class="forge-check-summary" id="forge-check-summary"><span id="forge-check-label">Checking your design…</span><span>View checks ›</span></button>
+        <div class="forge-stage-meta"><p class="forge-blurb" id="forge-blurb"></p><p id="forge-quick-stats"></p></div>
       </section>
 
-      <aside class="forge-controls" aria-label="Design">
-        <h2 class="forge-panel-title">Design</h2>
-        <div id="forge-params" class="forge-params" role="group" aria-label="Design parameters"></div>
-
-        <details class="forge-printer" id="forge-printer">
-          <summary>Printer settings</summary>
-          <p class="forge-help">MakerBot Sketch Large · 260 × 160 × 230 mm · 0.4 mm nozzle · PLA</p>
-          <div class="forge-field">
-            <div class="forge-field-top"><label for="forge-clearance">Class clearance</label><output id="forge-clearance-out" for="forge-clearance"></output></div>
-            <input type="range" id="forge-clearance" min="0.1" max="0.8" step="0.05" />
-            <p class="forge-help">The narrowest gap your printer leaves open. Find it with the <button type="button" class="forge-linkish" data-goto-part="comb">clearance comb</button>.</p>
-          </div>
-          <div class="forge-field">
-            <div class="forge-field-top"><label for="forge-layer">Layer height</label></div>
-            <select id="forge-layer">
-              <option value="0.1">0.10 mm — fine</option>
-              <option value="0.2">0.20 mm — standard</option>
-              <option value="0.3">0.30 mm — draft</option>
-            </select>
-          </div>
-          <fieldset class="forge-field forge-colors">
-            <legend>Filament colour</legend>
-            <div id="forge-colors"></div>
-          </fieldset>
-        </details>
-
-        <div class="forge-export">
-          <h2 class="forge-panel-title">Export</h2>
-          <button type="button" class="forge-primary" id="forge-dl-stl">Download STL for the MakerBot</button>
-          <p class="forge-help">Open it in MakerBot Print or CloudPrint. All parts come laid out on one plate.</p>
-          <button type="button" id="forge-dl-parts" hidden>One STL per part</button>
-          <div class="forge-export-row">
-            <button type="button" id="forge-dl-glb">GLB for games</button>
-            <button type="button" id="forge-dl-obj">OBJ</button>
-          </div>
-          <p class="forge-help">Real size in metres, Y-up — drop straight into Godot or Blender.</p>
-          <div class="forge-export-row">
-            <button type="button" id="forge-save">Save project</button>
-            <button type="button" id="forge-open">Open project</button>
-            <input type="file" id="forge-open-file" accept=".json,application/json" aria-label="Open project file" hidden />
-          </div>
-          <p class="forge-help" id="forge-export-note" aria-live="polite"></p>
-        </div>
+      <aside class="forge-controls" aria-label="Part inspector">
+        <div class="forge-tabs" role="tablist" aria-label="Part inspector"><button type="button" role="tab" id="forge-tab-design" aria-controls="forge-panel-design" aria-selected="true" tabindex="0">Design</button><button type="button" role="tab" id="forge-tab-checks" aria-controls="forge-panel-checks" aria-selected="false" tabindex="-1">Checks <span id="forge-check-count"></span></button><button type="button" role="tab" id="forge-tab-export" aria-controls="forge-panel-export" aria-selected="false" tabindex="-1">Export</button></div>
+        <section class="forge-inspector-panel" role="tabpanel" id="forge-panel-design" aria-labelledby="forge-tab-design">
+          <div class="forge-inspector-heading"><h2>Customize your part</h2><button type="button" id="forge-reset-design" title="Restore this part’s starting dimensions">Reset</button></div>
+          <p class="forge-help forge-design-hint">Drag a slider or type an exact measurement.</p>
+          <fieldset class="forge-field forge-colors"><legend>Preview colour</legend><div id="forge-colors"></div><p class="forge-help">Your printer uses the loaded filament.</p></fieldset>
+          <div id="forge-params" class="forge-params" role="group" aria-label="Design parameters"></div>
+          <details class="forge-printer" id="forge-printer">
+            <summary>Printer settings</summary>
+            <p class="forge-help">MakerBot Sketch Large · 260 × 160 × 230 mm · 0.4 mm nozzle · PLA</p>
+            <div class="forge-field"><div class="forge-field-top"><label for="forge-clearance">Class clearance</label><output id="forge-clearance-out" for="forge-clearance"></output></div><input type="range" id="forge-clearance" min="0.1" max="0.8" step="0.05" /><p class="forge-help">The narrowest gap your printer leaves open. Find it with the <button type="button" class="forge-linkish" data-goto-part="comb">clearance comb</button>.</p></div>
+            <div class="forge-field"><label for="forge-layer">Layer height</label><select id="forge-layer"><option value="0.1">0.10 mm — fine</option><option value="0.2">0.20 mm — standard</option><option value="0.3">0.30 mm — draft</option></select></div>
+          </details>
+        </section>
+        <section class="forge-inspector-panel" role="tabpanel" id="forge-panel-checks" aria-labelledby="forge-tab-checks" hidden>
+          <h2>Print checks</h2><p class="forge-help">Review these before slicing. Estimates depend on your printer and slicer settings.</p>
+          <ul class="forge-verdicts" id="forge-verdicts" aria-live="polite"></ul><h3>Size &amp; estimates</h3><ul class="forge-stats" id="forge-stats"></ul>
+        </section>
+        <section class="forge-inspector-panel" role="tabpanel" id="forge-panel-export" aria-labelledby="forge-tab-export" hidden>
+          <h2>Take your design with you</h2><p class="forge-help" id="forge-export-readiness">Checking the model…</p>
+          <div class="forge-export"><h3>3D print</h3><button type="button" class="forge-primary" id="forge-dl-stl" disabled>Download STL</button><p class="forge-help">One plate, ready for MakerBot Print or CloudPrint. Review the print checks and slice before printing.</p><button type="button" id="forge-dl-parts" hidden disabled>One STL per part</button><h3>Game or 3D scene</h3><div class="forge-export-row"><button type="button" id="forge-dl-glb" disabled>Download GLB</button><button type="button" id="forge-dl-obj" disabled>Download OBJ</button></div><p class="forge-help">Real size in metres. GLB keeps the preview colour; each part is a separate object.</p><h3>Keep editing later</h3><button type="button" id="forge-save-export">Save project file</button><p class="forge-help">Includes your measurements and settings. Use Open to return to it on any computer.</p></div>
+        </section>
       </aside>
     </div>
+    <footer class="forge-footer"><span>MakerBot Sketch Large · Dimensions in mm</span><details><summary>Lesson &amp; credits</summary><div data-design3d-route="real"></div><p>Geometry by <a href="https://github.com/elalish/manifold">Manifold</a> (Apache 2.0). Lettering in Droid Sans (Apache 2.0).</p></details></footer>
+    <p id="forge-export-note" class="forge-toast" role="status" hidden></p>
+    <dialog id="forge-help-dialog" aria-labelledby="forge-help-title"><div class="forge-dialog-heading"><h2 id="forge-help-title">Your first part in Forge</h2><button type="button" id="forge-help-close" aria-label="Close help">×</button></div><ol><li><strong>Choose a part.</strong> Search the library for a mechanism, fidget, or everyday object. Each part remembers its measurements.</li><li><strong>Make it yours.</strong> Use sliders or type values. The 3D view updates as you work. Undo brings back earlier edits.</li><li><strong>Check, then export.</strong> Read the Checks tab. Download an STL to slice for printing, or a GLB for a game.</li></ol><p>Changes stay in this browser automatically. Save a copy to keep a project file you can move to another computer.</p><p class="forge-help">Shortcuts: Ctrl/⌘ Z to undo · Ctrl/⌘ Shift Z to redo · Ctrl/⌘ S to save a copy · F to fit the view. Focus the preview and use arrow keys to orbit.</p></dialog>
+    <noscript><p>Forge needs JavaScript to build and preview parts. Enable JavaScript and reload this page.</p></noscript>
   </main>
-
-  <footer class="site-footer">
-    <p>Geometry by <a href="https://github.com/elalish/manifold">Manifold</a> (Apache 2.0). Lettering in Droid Sans (Apache 2.0). <a href="index.html">Back to Home</a></p>
-  </footer>
 
   <script src="assets/js/sim-kit.js"></script>
   <script src="assets/js/lessons/fidget-rings.js"></script>

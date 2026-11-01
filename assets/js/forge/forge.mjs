@@ -32,6 +32,10 @@ const el = {
   layer: $('forge-layer'), colors: $('forge-colors'), showOverhangs: $('forge-show-overhangs'), resetView: $('forge-reset-view'),
   stl: $('forge-dl-stl'), partStls: $('forge-dl-parts'), glb: $('forge-dl-glb'), obj: $('forge-dl-obj'), save: $('forge-save'), open: $('forge-open'),
   openFile: $('forge-open-file'), note: $('forge-export-note'),
+  search: $('forge-search'), undo: $('forge-undo'), redo: $('forge-redo'), saved: $('forge-save-status'),
+  summary: $('forge-check-summary'), checkLabel: $('forge-check-label'), checkCount: $('forge-check-count'),
+  readiness: $('forge-export-readiness'), quickStats: $('forge-quick-stats'),
+
 };
 
 /* ── state ────────────────────────────────────────────────────────────── */
@@ -47,62 +51,144 @@ function loadState() {
   return {
     part: partById(fromUrl) ? fromUrl : (partById(saved.part) ? saved.part : PARTS[0].id),
     params: typeof saved.params === 'object' && saved.params ? saved.params : {},
-    settings: { ...DEFAULT_SETTINGS, ...(saved.settings || {}) },
+    settings: { ...DEFAULT_SETTINGS, ...pickSettings(saved.settings || {}) },
     color: COLORS.some((c) => c.value === saved.color) ? saved.color : COLORS[0].value,
     name: typeof saved.name === 'string' ? saved.name : '',
   };
 }
 
 function persist() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* private window: work stays on the page */ }
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    el.saved.textContent = 'Saved in this browser';
+  } catch {
+    el.saved.textContent = 'Browser save unavailable — save a copy';
+  }
 }
 
+const past = [], future = [];
+let historyKey = '', historyTime = 0;
+function checkpoint(key = '') {
+  const now = performance.now();
+  if (!key || key !== historyKey || now - historyTime > 700) {
+    past.push(JSON.stringify(state));
+    if (past.length > 60) past.shift();
+  }
+  historyKey = key;
+  historyTime = now;
+  future.length = 0;
+  syncHistory();
+}
+function syncHistory() { el.undo.disabled = !past.length; el.redo.disabled = !future.length; }
+function syncSettings() {
+  el.name.value = state.name;
+  el.clearance.value = state.settings.clearance;
+  el.clearanceOut.textContent = `${Number(state.settings.clearance).toFixed(2)} mm`;
+  el.layer.value = String(state.settings.layer);
+  el.colors.querySelectorAll('input').forEach((i) => { i.checked = i.value === state.color; });
+}
+function navigatePart() {
+  const url = new URL(location.href);
+  url.searchParams.set('part', state.part);
+  history.replaceState(null, '', url);
+  el.parts.querySelectorAll('[data-part]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.part === state.part)));
+}
+function travelHistory(from, to) {
+  if (!from.length) return;
+  to.push(JSON.stringify(state));
+  Object.assign(state, JSON.parse(from.pop()));
+  historyKey = '';
+  persist(); syncHistory(); syncSettings(); navigatePart(); renderControls();
+  framed = false;
+  schedule();
+}
+
+let toastTimer;
+function notify(message) {
+  clearTimeout(toastTimer);
+  el.note.textContent = message;
+  el.note.hidden = false;
+  toastTimer = setTimeout(() => { el.note.hidden = true; }, 10000);
+}
+function activateTab(name, focus = false) {
+  for (const tab of document.querySelectorAll('.forge-tabs [role="tab"]')) {
+    const selected = tab.id === `forge-tab-${name}`;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    $(tab.getAttribute('aria-controls')).hidden = !selected;
+    if (selected && focus) tab.focus();
+  }
+}
+
+
 const currentPart = () => partById(state.part);
-const currentParams = () => resolveParams(currentPart(), state.params[state.part]);
+const currentParams = () => resolveParams(currentPart(), state.params[state.part] || {});
 
 /* ── part library ─────────────────────────────────────────────────────── */
 
+// Small line drawings make templates recognizable without loading 14 previews.
+const PART_ICONS = {
+  'rolling-tool': '<path d="M5 20V12Q16 2 27 12V20Z"/><circle cx="10" cy="23" r="4"/><circle cx="23" cy="23" r="4"/>',
+  'wheel-axle': '<circle cx="16" cy="16" r="11"/><circle cx="16" cy="16" r="4"/><path d="M16 5V12M16 20V27M5 16H12M20 16H27"/>',
+  case: '<rect x="4" y="10" width="24" height="17" rx="3"/><path d="M8 6H24M10 14V18M16 14V18M22 14V18M9 23H23"/>',
+  captured: '<ellipse cx="16" cy="18" rx="12" ry="9"/><ellipse cx="16" cy="16" rx="8" ry="5"/><circle cx="16" cy="16" r="2"/>',
+  spinner: '<path d="M12 13L9 6Q16 0 20 7L19 12L26 14Q30 22 22 25L17 21L11 26Q2 25 5 17Z"/><circle cx="16" cy="16" r="3"/>',
+  hinge: '<path d="M4 7H14V26H4ZM18 7H28V26H18ZM14 9H18M14 15H18M14 22H18"/>',
+  rings: '<path d="M16 3L20 11L29 12L23 19L24 28L16 24L8 28L9 19L3 12L12 11ZM16 10L18 15L23 16L19 20L16 18L12 20L13 16L9 15L14 14Z"/>',
+  gears: '<circle cx="11" cy="12" r="7"/><circle cx="23" cy="23" r="6"/><circle cx="11" cy="12" r="2"/><circle cx="23" cy="23" r="2"/><path d="M11 2V5M1 12H4M11 19V22M18 12H21M23 14V17M29 23H32"/>',
+  tag: '<path d="M3 12L11 5H28V26H11L3 19Z"/><circle cx="9" cy="16" r="2"/><path d="M15 12H24M15 16H22M15 20H24"/>',
+  box: '<path d="M4 12L16 6L28 12V25L16 30L4 25ZM4 12L16 18L28 12M16 18V30M7 5L16 1L25 5"/>',
+  stand: '<path d="M9 26L21 5L26 8L16 26H29V29H4V23H9Z"/>',
+  clip: '<path d="M3 25H29M6 25V14Q6 4 14 6M18 6Q26 4 26 14V25M11 25V14Q11 11 14 11M18 11Q21 11 21 14V25"/>',
+  comb: '<path d="M3 27V5H7V19H11V5H15V19H19V5H23V19H27V5H30V27Z"/>',
+};
 function renderLibrary() {
   el.parts.replaceChildren();
   for (const group of PART_GROUPS) {
     const parts = PARTS.filter((p) => p.group === group);
     if (!parts.length) continue;
     const h = document.createElement('h3');
-    h.className = 'forge-group';
-    h.textContent = group;
+    h.className = 'forge-group'; h.textContent = group;
     const list = document.createElement('ul');
     for (const part of parts) {
       const li = document.createElement('li');
       const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'forge-part';
-      b.dataset.part = part.id;
+      b.type = 'button'; b.className = 'forge-part'; b.dataset.part = part.id;
       b.setAttribute('aria-pressed', String(part.id === state.part));
-      b.innerHTML = '<strong></strong><span></span>';
+      b.title = part.blurb;
+      b.innerHTML = `<svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">${PART_ICONS[part.id] || '<path d="M7 26L16 4L27 26ZM5 21H29M9 15H24M12 9H21"/>'}</svg><strong></strong>`;
       b.querySelector('strong').textContent = part.name;
-      b.querySelector('span').textContent = part.blurb;
       b.addEventListener('click', () => selectPart(part.id));
-      li.append(b);
-      list.append(li);
+      li.append(b); list.append(li);
     }
     const section = document.createElement('div');
-    section.className = 'forge-group-wrap';
-    section.append(h, list);
-    el.parts.append(section);
+    section.className = 'forge-group-wrap'; section.append(h, list); el.parts.append(section);
   }
+  filterLibrary();
 }
-
+function filterLibrary() {
+  const query = el.search.value.trim().toLowerCase();
+  let count = 0;
+  el.parts.querySelectorAll('.forge-group-wrap').forEach((group) => {
+    let visible = 0;
+    group.querySelectorAll('[data-part]').forEach((button) => {
+      const part = partById(button.dataset.part);
+      const match = `${part.name} ${part.blurb} ${part.group}`.toLowerCase().includes(query);
+      button.parentElement.hidden = !match;
+      if (match) visible++;
+    });
+    group.hidden = !visible; count += visible;
+  });
+  $('forge-part-count').textContent = `${count} part${count === 1 ? '' : 's'}`;
+  $('forge-no-parts').hidden = count > 0;
+  $('forge-search-clear').hidden = !query;
+}
 function selectPart(id) {
   if (!partById(id)) return;
-  state.part = id;
-  persist();
-  el.parts.querySelectorAll('[data-part]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.part === id)));
-  const url = new URL(location.href);
-  url.searchParams.set('part', id);
-  history.replaceState(null, '', url);
-  renderControls();
-  framed = false;
-  schedule();
+  if (id !== state.part) { checkpoint(); state.part = id; persist(); }
+  navigatePart(); renderControls(); activateTab('design');
+  if (window.matchMedia('(max-width: 900px)').matches) $('forge-library-disclosure').open = false;
+  framed = false; schedule();
 }
 
 /* ── parameter controls ───────────────────────────────────────────────── */
@@ -117,7 +203,7 @@ function renderControls() {
   if (part.lesson) {
     const a = document.createElement('a');
     a.href = part.lesson.href;
-    a.textContent = `Lesson: ${part.lesson.label} →`;
+    a.textContent = `Lesson: ${part.lesson.label}`;
     el.blurb.append(a);
   }
   el.params.replaceChildren();
@@ -134,13 +220,35 @@ function renderControls() {
     top.append(label);
     let input;
     if (spec.type === 'range') {
-      const out = document.createElement('output');
-      out.htmlFor = id;
-      out.textContent = fmt(params[spec.id], spec);
-      top.append(out);
+      const measure = document.createElement('span');
+      measure.className = 'forge-measure';
+      const exact = document.createElement('input');
+      Object.assign(exact, { type: 'number', min: spec.min, max: spec.max, step: spec.step, value: params[spec.id] });
+      exact.setAttribute('aria-label', `${spec.label}${spec.unit ? ` (${spec.unit})` : ''}, exact value`);
+      if (spec.help) exact.setAttribute('aria-describedby', `${id}-help`);
+      const unit = document.createElement('span'); unit.textContent = spec.unit || '';
+      measure.append(exact, unit); top.append(measure);
       input = document.createElement('input');
       Object.assign(input, { type: 'range', min: spec.min, max: spec.max, step: spec.step, value: params[spec.id] });
-      input.addEventListener('input', () => { out.textContent = fmt(input.value, spec); update(spec.id, Number(input.value)); });
+      input.setAttribute('aria-valuetext', fmt(params[spec.id], spec));
+      input.addEventListener('input', () => {
+        exact.value = input.value;
+        input.setAttribute('aria-valuetext', fmt(input.value, spec));
+        update(spec.id, Number(input.value));
+      });
+      const commitExact = (normalize = true) => {
+        if (!exact.value || !Number.isFinite(exact.valueAsNumber)) { exact.value = currentParams()[spec.id]; return; }
+        const clamped = Math.min(spec.max, Math.max(spec.min, exact.valueAsNumber));
+        const value = Number((spec.min + Math.round((clamped - spec.min) / spec.step) * spec.step).toFixed(6));
+        if (normalize) exact.value = value;
+        input.value = value;
+        input.setAttribute('aria-valuetext', fmt(value, spec));
+        update(spec.id, value);
+      };
+      exact.addEventListener('input', () => { if (exact.validity.valid && exact.value !== '') commitExact(false); });
+      exact.addEventListener('change', () => commitExact());
+      exact.addEventListener('keydown', (event) => { if (event.key === 'Enter') exact.blur(); });
+      input.addEventListener('change', () => { historyKey = ''; });
     } else if (spec.type === 'select') {
       input = document.createElement('select');
       for (const o of spec.options) input.add(new Option(o.label, o.value, false, o.value === params[spec.id]));
@@ -183,6 +291,8 @@ function applyVisibility() {
 }
 
 function update(id, value, structural = false) {
+  if (currentParams()[id] === value) return;
+  checkpoint(`param:${state.part}:${id}`);
   state.params[state.part] = { ...currentParams(), [id]: value };
   persist();
   if (structural) applyVisibility();
@@ -196,12 +306,13 @@ function renderSettings() {
   el.clearanceOut.textContent = `${Number(state.settings.clearance).toFixed(2)} mm`;
   el.layer.value = String(state.settings.layer);
   el.clearance.addEventListener('input', () => {
+    checkpoint('clearance');
     state.settings.clearance = Number(el.clearance.value);
     el.clearanceOut.textContent = `${state.settings.clearance.toFixed(2)} mm`;
     persist();
     schedule();
   });
-  el.layer.addEventListener('change', () => { state.settings.layer = Number(el.layer.value); persist(); schedule(); });
+  el.layer.addEventListener('change', () => { checkpoint(); state.settings.layer = Number(el.layer.value); persist(); schedule(); });
   el.colors.replaceChildren();
   for (const c of COLORS) {
     const label = document.createElement('label');
@@ -210,7 +321,7 @@ function renderSettings() {
     const input = document.createElement('input');
     Object.assign(input, { type: 'radio', name: 'forge-color', value: c.value, checked: c.value === state.color });
     input.setAttribute('aria-label', c.label);
-    input.addEventListener('change', () => { state.color = c.value; persist(); paint(); });
+    input.addEventListener('change', () => { checkpoint(); state.color = c.value; persist(); paint(); });
     const dot = document.createElement('span');
     dot.style.background = c.value;
     label.append(input, dot);
@@ -257,6 +368,8 @@ function setupView() {
     const parts = new THREE.Group();
     root.add(parts);
     view = { scene, camera, renderer, syncSize, controls, parts };
+    controls.addEventListener('start', () => setCameraButtons(null));
+    syncSize();
     window.SimKit.loop(() => {
       controls.update();
       syncSize();
@@ -282,7 +395,7 @@ function showBodies() {
     view.parts.add(mesh);
   }
   paint();
-  if (!framed) { frame(); framed = true; }
+  if (!framed) { frame(cameraView); framed = true; }
 }
 
 function paint() {
@@ -303,8 +416,16 @@ function paint() {
   });
 }
 
-function frame() {
+let cameraView = 'iso';
+function setCameraButtons(name) {
+  document.querySelectorAll('[data-camera]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.camera === name)));
+}
+function frame(name = 'iso') {
+  if (typeof name !== 'string') name = 'iso';
+  cameraView = name;
+  setCameraButtons(name);
   if (!view || !result?.layout) return;
+  view.syncSize();
   const [w, d, h] = result.layout.size;
   // distance that fits the bounding sphere in the narrower of the two view angles
   const radius = Math.max(Math.hypot(w, d, h) / 2, 25);
@@ -313,7 +434,7 @@ function frame() {
   const distance = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.05;
   const target = new THREE.Vector3(0, h / 2, 0);
   view.controls.target.copy(target);
-  view.camera.position.copy(target).add(new THREE.Vector3(-0.55, 0.62, 0.95).normalize().multiplyScalar(distance));
+  view.camera.position.copy(target).add(new THREE.Vector3(...({ iso: [-0.55, 0.62, 0.95], top: [0, 1, 0.0001], front: [0, 0, 1], side: [1, 0, 0] }[name] || [-0.55, 0.62, 0.95])).normalize().multiplyScalar(distance));
   view.controls.update();
 }
 
@@ -322,7 +443,10 @@ function frame() {
 let pending = 0;
 function schedule() {
   clearTimeout(pending);
-  el.status.textContent = 'Building…';
+  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = true; });
+  el.readiness.textContent = 'Updating your model…';
+  el.checkLabel.textContent = 'Updating print checks…';
+  el.status.textContent = 'Updating model…';
   el.status.hidden = false;
   pending = setTimeout(rebuild, 90);
 }
@@ -346,6 +470,15 @@ function rebuild() {
 }
 
 function renderReport() {
+  const bad = result.verdicts.filter((v) => v.tone === 'bad').length;
+  const warn = result.verdicts.filter((v) => v.tone === 'warn').length;
+  const failed = result.error || !result.bodies.length;
+  el.summary.dataset.tone = failed || bad ? 'bad' : warn ? 'warn' : 'ok';
+  const summary = failed ? 'Model unavailable — review the checks' : bad ? `${bad} issue${bad === 1 ? '' : 's'} to fix before printing` : warn ? `${warn} note${warn === 1 ? '' : 's'} to review before printing` : 'Print checks passed';
+  el.checkLabel.textContent = summary;
+  el.checkCount.textContent = bad + warn || '';
+  el.readiness.textContent = failed ? 'Adjust your design before exporting.' : bad || warn ? `${summary}. You can export, but review the Checks tab first.` : 'Print checks passed. Export your model, then review it in your slicer.';
+  el.quickStats.textContent = result.stats.filter((s) => ['Print size', 'PLA', 'Print time'].includes(s.label)).map((s) => `${s.label}: ${s.value}`).join(' · ');
   el.stats.replaceChildren(...result.stats.map((s) => {
     const li = document.createElement('li');
     li.innerHTML = '<span></span><strong></strong>';
@@ -389,7 +522,7 @@ function exportStl() {
   const header = `${slug()} | ${currentPart().name} | ClassroomOS Forge`;
   download(writeBinaryStl(plate, header), `${slug()}.stl`, 'model/stl');
   const red = result.verdicts.filter((v) => v.tone === 'bad').length;
-  el.note.textContent = `Saved ${slug()}.stl — ${result.bodies.length} part${result.bodies.length > 1 ? 's' : ''} on one plate.` + (red ? ` ${red} red check${red > 1 ? 's' : ''} still showing: it will print, but expect that failure.` : ' Slice at ' + state.settings.layer + ' mm layers.');
+  notify(`Saved ${slug()}.stl — ${result.bodies.length} part${result.bodies.length > 1 ? 's' : ''} on one plate.` + (red ? ` ${red} red check${red > 1 ? 's' : ''} still showing: review the Checks tab before printing.` : ' Slice at ' + state.settings.layer + ' mm layers.'));
 }
 
 /* Each body as its own STL, e.g. for two filament colours. Every body keeps
@@ -409,7 +542,7 @@ function exportPartStls() {
     download(writeBinaryStl(p, `${slug()} ${body.name} | ClassroomOS Forge`), file, 'model/stl');
     names.push(file);
   }
-  el.note.textContent = `Saved ${names.join(' and ')}. Load them together and they land exactly where they sat on the plate.`;
+  notify(`Saved ${names.join(' and ')}. Load them together and they land exactly where they sat on the plate.`);
 }
 
 function gameBodies() {
@@ -419,13 +552,13 @@ function gameBodies() {
 function exportGlb() {
   if (!result?.bodies.length) return;
   download(writeGlb(gameBodies()), `${slug()}.glb`, 'model/gltf-binary');
-  el.note.textContent = `Saved ${slug()}.glb — each part is its own object, base at the origin, real size in metres.`;
+  notify(`Saved ${slug()}.glb — each part is its own object, base at the origin, real size in metres.`);
 }
 
 function exportObj() {
   if (!result?.bodies.length) return;
   download(writeObj(gameBodies(), { comment: `${slug()} — ClassroomOS Forge` }), `${slug()}.obj`, 'text/plain');
-  el.note.textContent = `Saved ${slug()}.obj (metres, Y-up).`;
+  notify(`Saved ${slug()}.obj (metres, Y-up).`);
 }
 
 function saveProject() {
@@ -434,32 +567,30 @@ function saveProject() {
     params: currentParams(), settings: state.settings, color: state.color, savedAt: new Date().toISOString(),
   };
   download(JSON.stringify(project, null, 2), `${slug()}.forge.json`, 'application/json');
-  el.note.textContent = `Saved ${slug()}.forge.json — open it here any time to keep working.`;
+  notify(`Saved ${slug()}.forge.json — open it here any time to keep working.`);
 }
 
 async function openProject(file) {
   try {
     const project = JSON.parse(await file.text());
     if (project?.format !== FORMAT || !partById(project.part)) throw new Error('not a Forge project');
+    const params = resolveParams(partById(project.part), project.params && typeof project.params === 'object' ? project.params : {});
+    const settings = { ...DEFAULT_SETTINGS, ...pickSettings(project.settings) };
+    checkpoint();
     state.part = project.part;
-    state.params[project.part] = resolveParams(partById(project.part), project.params);
-    state.settings = { ...DEFAULT_SETTINGS, ...pickSettings(project.settings) };
+    state.params[project.part] = params;
+    state.settings = settings;
     if (COLORS.some((c) => c.value === project.color)) state.color = project.color;
     state.name = typeof project.name === 'string' ? project.name.slice(0, 40) : '';
-    persist();
-    el.name.value = state.name;
-    el.clearance.value = state.settings.clearance;
-    el.clearanceOut.textContent = `${Number(state.settings.clearance).toFixed(2)} mm`;
-    el.layer.value = String(state.settings.layer);
-    el.colors.querySelectorAll('input').forEach((i) => { i.checked = i.value === state.color; });
-    selectPart(state.part);
-    el.note.textContent = `Opened ${file.name}.`;
+    persist(); syncSettings(); selectPart(state.part);
+    notify(`Opened ${file.name}.`);
   } catch (error) {
-    el.note.textContent = `${file.name} is not a Forge project file (.forge.json).`;
+    notify(`${file.name} is not a Forge project file (.forge.json).`);
   }
 }
 
 function pickSettings(s = {}) {
+  if (!s || typeof s !== 'object') s = {};
   const out = {};
   const c = Number(s.clearance);
   if (Number.isFinite(c) && c >= 0.1 && c <= 0.8) out.clearance = c;
@@ -474,7 +605,63 @@ async function start() {
   renderControls();
   renderSettings();
   el.name.value = state.name;
-  el.name.addEventListener('input', () => { state.name = el.name.value; persist(); });
+  el.name.addEventListener('input', () => { checkpoint('name'); state.name = el.name.value; persist(); });
+  el.search.addEventListener('input', filterLibrary);
+  $('forge-search-clear').addEventListener('click', () => { el.search.value = ''; filterLibrary(); el.search.focus(); });
+  el.undo.addEventListener('click', () => travelHistory(past, future));
+  el.redo.addEventListener('click', () => travelHistory(future, past));
+  $('forge-reset-design').addEventListener('click', () => {
+    checkpoint(); delete state.params[state.part]; persist(); renderControls(); schedule();
+    notify('Starting dimensions restored. Use Undo to bring back your edits.');
+  });
+  const tabs = [...document.querySelectorAll('.forge-tabs [role="tab"]')];
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => activateTab(tab.id.replace('forge-tab-', '')));
+    tab.addEventListener('keydown', (event) => {
+      let next;
+      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+      if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = tabs.length - 1;
+      if (next === undefined) return;
+      event.preventDefault(); activateTab(tabs[next].id.replace('forge-tab-', ''), true);
+    });
+  });
+  const showPanel = (name) => {
+    activateTab(name, true);
+    if (window.matchMedia('(max-width: 620px)').matches) $(`forge-tab-${name}`).scrollIntoView({ block: 'start', behavior: reduceMotion ? 'instant' : 'smooth' });
+  };
+  $('forge-export-open').addEventListener('click', () => showPanel('export'));
+  el.summary.addEventListener('click', () => showPanel('checks'));
+  $('forge-save-export').addEventListener('click', saveProject);
+  const dialog = $('forge-help-dialog');
+  $('forge-help').addEventListener('click', () => dialog.showModal());
+  $('forge-help-close').addEventListener('click', () => dialog.close());
+  document.querySelectorAll('[data-camera]').forEach((b) => b.addEventListener('click', () => frame(b.dataset.camera)));
+  el.canvas.addEventListener('keydown', (event) => {
+    if (!view || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '-', '='].includes(event.key)) return;
+    event.preventDefault();
+    const offset = view.camera.position.clone().sub(view.controls.target);
+    if (['+', '-', '='].includes(event.key)) offset.multiplyScalar(event.key === '-' ? 1.15 : 1 / 1.15);
+    else {
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      spherical.theta += event.key === 'ArrowLeft' ? -.15 : event.key === 'ArrowRight' ? .15 : 0;
+      spherical.phi += event.key === 'ArrowUp' ? -.15 : event.key === 'ArrowDown' ? .15 : 0;
+      spherical.makeSafe(); offset.setFromSpherical(spherical);
+    }
+    view.camera.position.copy(view.controls.target).add(offset); view.controls.update(); setCameraButtons(null);
+  });
+  document.addEventListener('keydown', (event) => {
+    if (dialog.open) return;
+    const typing = event.target.closest('input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select, textarea, [contenteditable="true"]');
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); saveProject(); }
+    if (typing) return;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? travelHistory(future, past) : travelHistory(past, future); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); travelHistory(future, past); }
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === 'f') { event.preventDefault(); frame(); }
+  });
+  $('forge-library-disclosure').open = !window.matchMedia('(max-width: 900px)').matches;
+  persist();
   el.showOverhangs.addEventListener('change', paint);
   el.resetView.addEventListener('click', frame);
   el.stl.addEventListener('click', exportStl);
@@ -490,7 +677,10 @@ async function start() {
     const font = await fetch(new URL('../../vendor/fonts/droid-sans-bold.typeface.json', import.meta.url)).then((r) => r.json());
     engine = await createEngine(ManifoldModule, { font });
   } catch (error) {
-    el.status.textContent = 'The geometry engine could not start in this browser.';
+    el.status.hidden = false;
+    el.status.textContent = 'The geometry engine could not start. Reload to try again.';
+    el.checkLabel.textContent = 'Forge could not start. Reload to try again.';
+    el.readiness.textContent = 'The geometry engine is unavailable. Reload to try again.';
     console.error(error);
     return;
   }
