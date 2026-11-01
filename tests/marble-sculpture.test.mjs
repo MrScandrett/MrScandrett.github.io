@@ -3,6 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as M from '../assets/js/sculpture/marble-core.mjs';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 const small = () => M.createStone({ h: 1.4 });
 
@@ -182,6 +184,60 @@ test('STL: export, read back, and voxelize as a maquette', () => {
   assert.ok(inter / union > 0.55, 'voxelized cat overlaps the original ' + (inter / union));
   const ascii = 'solid t\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid t\n';
   assert.equal(M.parseSTL(new TextEncoder().encode(ascii).buffer).length, 9);
+});
+
+test('STL and OBJ export the same closed, outward-facing carving at the chosen height', () => {
+  const s = M.createStone({ h: 1, block: { w: 12, h: 16, d: 10 } });
+  const uncarved = M.exportSTL(s);
+  M.strike(s, M.TOOLS.point, [s.nx / 2, s.ny - 1, s.nz / 2], [0, -1, 0], [1, 0, 0], { random: M.rng(4), size: 3 });
+  // Lift the remaining stone away from the original block's base to check rebasing.
+  for (let z = 1; z < s.nz - 1; z++) for (let y = 1; y < 4; y++) for (let x = 1; x < s.nx - 1; x++) s.density[M.idx(s, x, y, z)] = 0;
+  const before = s.density.slice();
+  for (const heightMm of [60, 80, 100, 150]) {
+    const stl = M.exportSTL(s, { heightMm });
+    assert.notDeepEqual(stl, uncarved, 'exports the cuts, not the original block');
+    const obj = M.exportOBJ(s, { heightMm });
+    const positions = [], index = [];
+    for (const line of obj.split('\n')) {
+      if (line.startsWith('v ')) positions.push(...line.slice(2).split(' ').map(Number));
+      if (line.startsWith('f ')) index.push(...line.slice(2).split(' ').map(v => Number(v.split('/')[0]) - 1));
+    }
+    assertClosed({ index });
+    const tris = M.parseSTL(stl);
+    const objTris = index.flatMap(i => positions.slice(i * 3, i * 3 + 3));
+    assert.equal(objTris.length, tris.length);
+    assert.ok(objTris.every((v, i) => v === tris[i]), 'formats have identical oriented triangles (ignoring signed zero)');
+    let volume6 = 0;
+    for (let i = 0; i < tris.length; i += 9) {
+      const [ax, ay, az, bx, by, bz, cx, cy, cz] = tris.subarray(i, i + 9);
+      volume6 += ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx);
+    }
+    assert.ok(volume6 > 0, 'outward winding gives positive enclosed volume');
+    // Independent importers must read the files and agree about their scale/orientation.
+    const stlGeo = new STLLoader().parse(stl);
+    const objGroup = new OBJLoader().parse(obj);
+    const objGeo = objGroup.children[0].geometry;
+    for (const geo of [stlGeo, objGeo]) {
+      geo.computeBoundingBox();
+      assert.ok(Math.abs(geo.boundingBox.min.z) < 1e-5, 'bottom at zero');
+      assert.ok(Math.abs(geo.boundingBox.max.z - heightMm) < 1e-5, 'height in mm along Z');
+      assert.equal(geo.attributes.position.count, tris.length / 3);
+    }
+    assert.ok(objGeo.attributes.position.array.every((v, i) => v === stlGeo.attributes.position.array[i]));
+    assert.ok(objGeo.attributes.normal.array.every(Number.isFinite));
+  }
+  assert.deepEqual(s.density, before, 'export never changes the carving');
+});
+
+test('both mesh exporters reject an empty carving and invalid sizes', () => {
+  const s = M.createStone({ h: 1, block: { w: 4, h: 4, d: 4 } });
+  for (const exporter of [M.exportSTL, M.exportOBJ]) {
+    for (const heightMm of [0, -10, NaN, Infinity, '100']) {
+      assert.throws(() => exporter(s, { heightMm }), /height greater than zero/);
+    }
+  }
+  s.density.fill(0);
+  for (const exporter of [M.exportSTL, M.exportOBJ]) assert.throws(() => exporter(s), /no stone left/);
 });
 
 test('saving round-trips the carving exactly', () => {

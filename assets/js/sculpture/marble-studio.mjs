@@ -389,7 +389,11 @@ class Studio {
       el('div', { class: 'ms-bar-group' },
         el('button', { type: 'button', class: 'ms-btn', title: 'Turn the banker left (Q)', 'aria-label': 'Turn the sculpture left', onclick: () => this.turnBy(-Math.PI / 4) }, '⟲'),
         el('button', { type: 'button', class: 'ms-btn', title: 'Turn the banker right (E)', 'aria-label': 'Turn the sculpture right', onclick: () => this.turnBy(Math.PI / 4) }, '⟳'),
-        this.undoBtn, this.redoBtn, this.soundBtn, this.fullBtn));
+        this.undoBtn, this.redoBtn, this.soundBtn,
+        el('button', { type: 'button', class: 'ms-btn ms-primary', onclick: () => {
+          this.stlBtn.scrollIntoView({ block: 'nearest' });
+          this.stlBtn.focus({ preventScroll: true });
+        } }, 'Export sculpture'), this.fullBtn));
     this.toolBtns = {};
     const tools = el('div', { class: 'ms-tools', role: 'toolbar', 'aria-label': 'Carving tools' });
     for (const [id, t] of Object.entries(M.TOOLS)) {
@@ -454,26 +458,35 @@ class Studio {
     const likeness = el('section', { class: 'ms-panel', 'aria-label': 'Likeness' },
       el('h3', {}, 'Likeness'), el('div', { class: 'ms-like' }, this.likeOut, this.meter), this.likeList);
 
-    this.heightSel = el('select', { 'aria-label': 'Print height', onchange: e => { this.heightMm = +e.target.value; } });
+    this.heightSel = el('select', { 'aria-label': 'Export height', onchange: e => { this.heightMm = +e.target.value; } });
     for (const v of [60, 80, 100, 150]) this.heightSel.append(el('option', { value: v, selected: v === this.heightMm }, v + ' mm tall'));
+    this.stlBtn = el('button', { type: 'button', class: 'ms-btn ms-primary', onclick: () => this.exportSculpture('stl') }, 'Download STL');
+    this.objBtn = el('button', { type: 'button', class: 'ms-btn', onclick: () => this.exportSculpture('obj') }, 'Download OBJ');
+    const exports = el('section', { class: 'ms-panel ms-export', 'aria-label': 'Export sculpture' },
+      el('h3', {}, 'Export your sculpture'),
+      el('label', { class: 'ms-field' }, el('span', {}, 'Height'), this.heightSel),
+      el('div', { class: 'ms-row' }, this.stlBtn, this.objBtn),
+      el('p', { class: 'ms-note' }, 'STL for 3D printing · OBJ for your 3D projects. Both export your current carving in millimetres, Z-up, with its bottom at zero.'),
+      el('p', { class: 'ms-note' }, 'Shape only: marble veins, polish effects and the stand are not included. Check size, thin parts and supports in your slicer; set OBJ import units to millimetres.'),
+      this.exportStatus = el('p', { class: 'ms-note', role: 'status', 'aria-live': 'polite' }));
     this.qualitySel = el('select', { 'aria-label': 'Block detail', onchange: e => this.askNewBlock(e.target.value) });
     for (const [v, t] of [['fast', 'Fast (7 mm grains)'], ['standard', 'Standard (5 mm)'], ['fine', 'Fine (4 mm)']]) this.qualitySel.append(el('option', { value: v, selected: v === this.quality }, t));
     this.rulesBox = el('input', { type: 'checkbox', onchange: e => this.setStoneRules(e.target.checked) });
     this.fileIn = el('input', { type: 'file', accept: '.json,.marble.json,application/json', hidden: true, onchange: e => this.openFile(e.target.files[0]) });
     this.stlIn = el('input', { type: 'file', accept: '.stl,model/stl', hidden: true, onchange: e => this.loadStl(e.target.files[0]) });
-    const make = el('section', { class: 'ms-panel', 'aria-label': 'Save and print' },
-      el('h3', {}, 'Save, photograph, print'),
-      el('div', { class: 'ms-row' }, el('label', { class: 'ms-field' }, el('span', {}, 'Print'), this.heightSel), el('button', { type: 'button', class: 'ms-btn ms-primary', onclick: () => this.exportStl() }, 'Download STL')),
+    const make = el('section', { class: 'ms-panel', 'aria-label': 'Save and settings' },
+      el('h3', {}, 'Save, photograph, settings'),
       el('div', { class: 'ms-row' },
         el('button', { type: 'button', class: 'ms-btn', onclick: () => this.photograph() }, '📷 Photograph'),
         el('button', { type: 'button', class: 'ms-btn', onclick: () => this.saveFile() }, 'Save file'),
         el('button', { type: 'button', class: 'ms-btn', onclick: () => this.fileIn.click() }, 'Open file'),
         el('button', { type: 'button', class: 'ms-btn', onclick: () => this.askNewBlock(this.quality) }, 'New block')),
+      el('p', { class: 'ms-note' }, 'Save file keeps your carving editable here. Open file resumes a saved Marble Studio project.'),
       el('div', { class: 'ms-row' }, el('label', { class: 'ms-field' }, el('span', {}, 'Detail'), this.qualitySel),
         el('label', { class: 'ms-check', title: 'Real marble has no undo' }, this.rulesBox, el('span', {}, 'Stone rules (no undo)'))),
       this.fileIn, this.stlIn);
 
-    const side = el('aside', { class: 'ms-side' }, process, likeness, make);
+    const side = el('aside', { class: 'ms-side' }, exports, process, likeness, make);
     this.drawer = this.buildDrawer();
     this.shell = el('div', { class: 'ms-shell' }, bar, el('div', { class: 'ms-body' }, tools, this.viewBox, side), this.drawer);
     h.prepend(this.shell);
@@ -1454,13 +1467,24 @@ class Studio {
     catch (err) { this.say(err.message || 'That file could not be opened.'); }
   }
 
-  exportStl() {
+  exportSculpture(format) {
+    this.stopAuto();
     try {
-      download(`my-sculpture-${this.heightMm}mm.stl`, M.exportSTL(this.stone, { heightMm: this.heightMm }), 'model/stl');
+      const obj = format === 'obj';
+      const data = (obj ? M.exportOBJ : M.exportSTL)(this.stone, { heightMm: this.heightMm });
+      download(`my-sculpture-${this.heightMm}mm.${obj ? 'obj' : 'stl'}`, data, obj ? 'model/obj' : 'model/stl');
       this.presented = true;
-      this.say(`STL saved, ${this.heightMm} mm tall, base flat on the bed. Slice it with supports where your figure overhangs.`);
-    } catch (err) { this.say(err.message); }
+      this.metricsDue = 0;
+      const msg = `${obj ? 'OBJ' : 'STL'} downloaded, ${this.heightMm} mm tall. ${obj ? 'Import into your project using millimetres and Z-up.' : 'Open in your slicer and check thin parts and supports before printing.'}`;
+      this.exportStatus.textContent = msg;
+      this.say(msg);
+    } catch (err) {
+      this.exportStatus.textContent = err.message;
+      this.say(err.message);
+    }
   }
+
+  exportStl() { this.exportSculpture('stl'); }
 
   photograph() {
     const ring = this.ring.visible, tool = this.toolHolder.visible;

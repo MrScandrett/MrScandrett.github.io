@@ -1205,22 +1205,38 @@ export function decodeInto(s, data) {
   markAll(s);
 }
 
-/* ── STL export ────────────────────────────────────────────────── */
+/* ── Mesh exports ──────────────────────────────────────────────── */
 
-// The whole carving as a binary STL, scaled so it stands heightMm tall, base at z = 0
-// (Z-up, the way slicers expect).
-export function exportSTL(s, { heightMm = 100 } = {}) {
+// Export the actual density field, independent of display chunks, the ghost reference,
+// tools, debris and turntable. Both formats use millimetres, Z-up and a base at z = 0.
+function exportMesh(s, heightMm) {
+  if (!Number.isFinite(heightMm) || heightMm <= 0) throw new Error('Choose a height greater than zero in millimetres.');
   const m = meshRegion(s, 0, 0, 0, s.nx - 1, s.ny - 1, s.nz - 1);
   if (!m) throw new Error('There is no stone left to export.');
-  const p = m.positions, tri = m.index;
+  const p = m.positions;
   let minY = 1e9, maxY = -1e9;
   for (let i = 1; i < p.length; i += 3) { minY = Math.min(minY, p[i]); maxY = Math.max(maxY, p[i]); }
   const k = heightMm / Math.max(1e-6, maxY - minY), cx = (s.nx - 1) / 2, cz = (s.nz - 1) / 2;
+  for (let i = 0; i < p.length; i += 3) {
+    const y = p[i + 1], z = p[i + 2];
+    p[i] = (p[i] - cx) * k;
+    p[i + 1] = -(z - cz) * k;
+    p[i + 2] = (y - minY) * k;
+    const ny = m.normals[i + 1];
+    m.normals[i + 1] = -m.normals[i + 2];
+    m.normals[i + 2] = ny;
+  }
+  return m;
+}
+
+// The whole carving as a binary STL, scaled so it stands heightMm tall.
+export function exportSTL(s, { heightMm = 100 } = {}) {
+  const { positions: p, index: tri } = exportMesh(s, heightMm);
   const count = tri.length / 3, buf = new ArrayBuffer(84 + count * 50), view = new DataView(buf);
   const header = 'ClassroomOS Marble Studio carving';
   for (let i = 0; i < header.length; i++) view.setUint8(i, header.charCodeAt(i));
   view.setUint32(80, count, true);
-  const P = j => [(p[j * 3] - cx) * k, -(p[j * 3 + 2] - cz) * k, (p[j * 3 + 1] - minY) * k]; // y-up lattice → z-up mm
+  const P = j => [p[j * 3], p[j * 3 + 1], p[j * 3 + 2]];
   let o = 84;
   for (let t = 0; t < count; t++) {
     const a = P(tri[t * 3]), b = P(tri[t * 3 + 1]), c = P(tri[t * 3 + 2]);
@@ -1229,4 +1245,24 @@ export function exportSTL(s, { heightMm = 100 } = {}) {
     o += 2;
   }
   return buf;
+}
+
+// Indexed Wavefront OBJ: shared vertices preserve the closed surface, and vertex
+// normals preserve smooth shading when the sculpture is imported into another app.
+export function exportOBJ(s, { heightMm = 100 } = {}) {
+  const { positions: p, normals: n, index: tri } = exportMesh(s, heightMm);
+  const lines = [
+    '# ClassroomOS Marble Studio carving',
+    '# Units: millimetres; up: Z; base: Z = 0',
+    `# Height: ${heightMm} mm; geometry only (no marble texture)`,
+    'o My_Sculpture'
+  ];
+  for (let i = 0; i < p.length; i += 3) lines.push(`v ${p[i]} ${p[i + 1]} ${p[i + 2]}`);
+  for (let i = 0; i < n.length; i += 3) lines.push(`vn ${n[i]} ${n[i + 1]} ${n[i + 2]}`);
+  lines.push('s 1');
+  for (let i = 0; i < tri.length; i += 3) {
+    const a = tri[i] + 1, b = tri[i + 1] + 1, c = tri[i + 2] + 1;
+    lines.push(`f ${a}//${a} ${b}//${b} ${c}//${c}`);
+  }
+  return lines.join('\n') + '\n';
 }

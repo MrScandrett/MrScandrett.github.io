@@ -1439,6 +1439,7 @@
     { label: "Period 2 Robotics/Coding", url: "https://www.tinkercad.com/joinclass/FKE9NVCHB" },
     { label: "Period 3 Robotics/Coding", url: "https://www.tinkercad.com/joinclass/PUA5MPIDG" },
     { label: "Period 5 Enrichment Wheel",url: "https://www.tinkercad.com/joinclass/ZNWEZ4N6G" },
+    { label: "Technical Elements",       url: "https://www.tinkercad.com/joinclass/C4FR4RPSJ" },
     { label: "Friday Study Hall",        url: "https://www.tinkercad.com/joinclass/4JMSDSC5Z" }
   ];
 
