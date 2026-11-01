@@ -69,8 +69,7 @@
           x: ((slot % 10) + 0.5 + Math.sin(id * 4.7) * 0.2) / 10,
           y: (Math.floor(slot / 10) + 0.5 + Math.cos(id * 3.1) * 0.2) / 5,
           vx: Math.sin(id * 2.3 + 1) * 0.009,
-          vy: Math.cos(id * 1.7 + 1) * 0.007,
-          phase: id * 1.8
+          vy: Math.cos(id * 1.7 + 1) * 0.007
         });
       }
       arr.length = n;
@@ -341,7 +340,7 @@
 
   function drawSheep(animal, farmer, number) {
     var p = fieldPoint(0.045 + animal.x * 0.91, 0.12 + animal.y * 0.77);
-    var scale = Math.max(0.84, Math.min(1.18, pastureDims.width / 850)) * (0.86 + animal.y * 0.2);
+    var scale = Math.max(0.96, Math.min(1.18, pastureDims.width / 850)) * (0.86 + animal.y * 0.2);
     var facing = animal.vx < 0 ? -1 : 1;
     pctx.save(); pctx.translate(p.x, p.y); pctx.scale(scale, scale);
     ellipse(pctx, 3, 7, 14, 4, 'rgba(43,60,30,.23)');
@@ -393,6 +392,11 @@
     var colors = SimKit.theme.colors();
     gctx.clearRect(0, 0, w, h);
     gctx.fillStyle = colors.bg; gctx.fillRect(0, 0, w, h);
+    // Choose chart inks against the rendered theme surface, including custom themes.
+    var surface = gctx.getImageData(0, 0, 1, 1).data;
+    var dark = surface[0] * 0.2126 + surface[1] * 0.7152 + surface[2] * 0.0722 < 140;
+    var inks = dark ? ['#ff8b9c', '#f6b671', '#73d4e4', '#c8a0ef', '#e2d174'] : FARMERS.map(function (f) { return COLORS[f]; });
+    var healthInk = dark ? '#a7d387' : '#568e42';
     var left = 48, right = w - 18, plotWidth = right - left;
     var seasons = Math.max(10, history.length - 1);
     var maxWealth = 100;
@@ -425,28 +429,28 @@
     }
 
     axes('Pasture health (%)', 32, 100);
-    axes('Cumulative income (model units)', 206, maxWealth);
+    axes('Cumulative income (model units)', 226, maxWealth);
     // Health has a fixed scale, separate from the income scale below it.
     gctx.beginPath(); gctx.moveTo(xFor(0), 128);
     history.forEach(function (point) { gctx.lineTo(xFor(point.round), yFor(point.health, 32, 100)); });
     gctx.lineTo(xFor(history.length - 1), 128); gctx.closePath();
     gctx.fillStyle = '#609a4a'; gctx.globalAlpha = 0.17; gctx.fill(); gctx.globalAlpha = 1;
-    gctx.strokeStyle = '#568e42'; gctx.lineWidth = 2.5; gctx.beginPath();
+    gctx.strokeStyle = healthInk; gctx.lineWidth = 2.5; gctx.beginPath();
     history.forEach(function (point, i) { var x = xFor(point.round), y = yFor(point.health, 32, 100); if (i) gctx.lineTo(x, y); else gctx.moveTo(x, y); });
     gctx.stroke();
     var latest = history[history.length - 1];
-    ellipse(gctx, xFor(latest.round), yFor(latest.health, 32, 100), 3.5, 3.5, collapsed ? '#b13e37' : '#568e42');
+    ellipse(gctx, xFor(latest.round), yFor(latest.health, 32, 100), 3.5, 3.5, collapsed ? (dark ? '#ff9c8b' : '#b13e37') : healthInk);
     FARMERS.forEach(function (f, index) {
-      gctx.strokeStyle = COLORS[f]; gctx.lineWidth = f === 'f1' ? 2.5 : 1.8;
+      gctx.strokeStyle = inks[index]; gctx.lineWidth = f === 'f1' ? 2.5 : 1.8;
       gctx.setLineDash(LINE_STYLES[index]); gctx.beginPath();
-      history.forEach(function (point, i) { var x = xFor(point.round), y = yFor(point.wealth[f], 206, maxWealth); if (i) gctx.lineTo(x, y); else gctx.moveTo(x, y); });
+      history.forEach(function (point, i) { var x = xFor(point.round), y = yFor(point.wealth[f], 226, maxWealth); if (i) gctx.lineTo(x, y); else gctx.moveTo(x, y); });
       gctx.stroke(); gctx.setLineDash([]);
     });
     // The key includes both a farmer number and the line's distinct dash pattern.
     var legendY = 182;
     FARMERS.forEach(function (f, index) {
       var x = left + index * plotWidth / 5;
-      gctx.strokeStyle = COLORS[f]; gctx.lineWidth = 2; gctx.setLineDash(LINE_STYLES[index]);
+      gctx.strokeStyle = inks[index]; gctx.lineWidth = 2; gctx.setLineDash(LINE_STYLES[index]);
       gctx.beginPath(); gctx.moveTo(x, legendY); gctx.lineTo(x + 18, legendY); gctx.stroke(); gctx.setLineDash([]);
       gctx.fillStyle = colors.text; gctx.textAlign = 'left'; gctx.font = '11px Inter, sans-serif';
       gctx.fillText(index === 0 && w > 500 ? '1 You' : String(index + 1), x + 23, legendY + 4);
@@ -496,7 +500,7 @@
 
   initState();
   pastureView = SimKit.canvas2d(pastureCanvas, { onResize: function (ctx, w, h) { pastureDims = { width: w, height: h }; rebuildPasture(); drawPasture(0); } });
-  graphView = SimKit.canvas2d(graphCanvas, { height: 356, onResize: function (ctx, w, h) { graphDims = { width: w, height: h }; drawGraph(); } });
+  graphView = SimKit.canvas2d(graphCanvas, { height: 376, onResize: function (ctx, w, h) { graphDims = { width: w, height: h }; drawGraph(); } });
   resizeAll();
   updateHerdDisplays();
   updateHealthMeter();
