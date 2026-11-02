@@ -139,6 +139,15 @@
 
   root.ClassroomOSThemeRegistry = api;
   if (root.document) {
+    // A shared launcher on every themed page; audio lives in the persistent listening shell.
+    var musicSource = document.currentScript;
+    if (musicSource && !document.querySelector('script[data-site-music]')) {
+      var musicScript = document.createElement('script');
+      musicScript.type = 'module';
+      musicScript.src = new URL('site-music.mjs', musicSource.src).href;
+      musicScript.dataset.siteMusic = 'true';
+      document.head.appendChild(musicScript);
+    }
     syncPresentation();
     loadSurfaces();
     root.addEventListener("storage", function (event) {

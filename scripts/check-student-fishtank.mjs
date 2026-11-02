@@ -65,11 +65,19 @@ async function open(options = {}) {
   const page = await context.newPage();
   page.setDefaultTimeout(20000);
   page.on('pageerror', error => { errors.push(error.message); console.error('Browser error:', error.message); });
+  page.on('console', message => {
+    // Shader compilation errors do not raise pageerror; a broken habitat can
+    // otherwise pass interaction checks while individual meshes stay invisible.
+    if (message.type() === 'error' && /THREE\.WebGLProgram|Shader Error|VALIDATE_STATUS/.test(message.text())) {
+      errors.push(message.text());
+      console.error('Rendering error:', message.text());
+    }
+  });
   await page.route('**/assets/vendor/firebase-compat.min.js', route => route.fulfill({ contentType: 'text/javascript', body: `(${firebaseMock.toString()})()` }));
   // A page regression must not leak requests to the production database.
   await page.route(/firebaseio\.com|firebasedatabase\.app/, route => route.abort());
   await page.goto(`${baseURL}/student-fishtank.html`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => typeof window.onFeed === 'function');
+  await page.waitForFunction(() => typeof window.onFeed === 'function', null, { polling: 100 });
   return page;
 }
 async function ready(page, count) {
@@ -141,15 +149,14 @@ try {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#systemsBtn').evaluate(el => el === document.activeElement), true);
 
-    await page.locator('#mPlayBtn').click();
-    await page.waitForFunction(() => document.querySelector('#mPlayBtn').getAttribute('aria-pressed') === 'true');
+    // Shared-player playback and persistent browsing are exercised by check:site-music.
+    await page.waitForFunction(() => window.SiteMusic?.snapshot().track);
     const piece = await page.locator('#music-title').textContent();
     await page.getByRole('button', { name: 'Next piece', exact: true }).click();
     await page.waitForFunction(previous => document.querySelector('#music-title').textContent !== previous, piece);
     await page.locator('#music-vol').evaluate(el => { el.value = '.2'; el.dispatchEvent(new Event('input')); });
-    await page.waitForFunction(() => !document.querySelector('#mPlayBtn').disabled);
-    await page.locator('#mPlayBtn').click();
-    assert.equal(await page.locator('#mPlayBtn').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.evaluate(() => window.SiteMusic.snapshot().volume), .2);
+    assert(await page.getByRole('link', { name: 'Browse all recordings' }).isVisible());
     if (await page.locator('#fsBtn').isVisible()) {
       await page.locator('#fsBtn').click();
       await page.waitForFunction(() => !!document.fullscreenElement);
@@ -157,7 +164,7 @@ try {
       await page.locator('#fsBtn').click();
       await page.waitForFunction(() => !document.fullscreenElement);
     }
-    console.log('PASS synthesized music and fullscreen controls');
+    console.log('PASS shared recording controls and fullscreen controls');
 
     // Fish edited elsewhere update locally; removed IDs can join again.
     await page.evaluate(value => window.__mock.emit(value), { ...fixtures, bubbles: { ...fixtures.bubbles, name: 'Bubbles II', role: 'eel' } });

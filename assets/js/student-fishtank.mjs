@@ -1,5 +1,7 @@
 import { THREE, STLLoader, GLTFLoader, CSS2DRenderer, CSS2DObject } from '../vendor/three-bundle.min.js';
 import { createScene } from './sim-kit-three.mjs';
+import { buildHabitat } from './student-fishtank-habitat.mjs';
+import { SiteMusic } from './site-music.mjs';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const BOUNDS   = { x: 10, y: 5.5, z: 4.5 };  // tank half-extents
@@ -13,6 +15,7 @@ const DIRTY_PER_FEED = 15;
 let renderer, labelRenderer, scene, camera;
 let simulationTime = 0;
 let animationLoop;
+let habitat;
 let paused = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let selectedFish = null;
 let cardReturnFocus = null;
@@ -28,10 +31,6 @@ let foodResources = [];
 let foods        = [];   // { mesh, vy, eaten }
 let bubbles      = [];   // { mesh, vel, life, decay }
 let dirtBits     = [];   // { mesh, drift }
-let plankton     = [];   // { mesh, drift }
-let seaweeds     = [];   // { group, segments:[{mesh,idx}], phase }
-let anemones     = [];   // { group, tentacles:[{mesh,angle,baseRotZ,baseRotX}], phase }
-
 // ── State ──────────────────────────────────────────────────────────────────
 let dirtiness    = 0;
 let isFeeding    = false;
@@ -67,16 +66,14 @@ const $card     = document.getElementById('fish-card');
 
 function initScene() {
   // Renderer
-  ({ renderer, scene, camera } = createScene($canvas, { THREE, fov: 58, far: 100, maxDpr: 1.5 }));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  ({ renderer, scene, camera } = createScene($canvas, { THREE, fov: 58, far: 180, maxDpr: 1.5 }));
 
   // CSS2D renderer for name labels
   labelRenderer = new CSS2DRenderer({ element: $labels });
 
   // Scene
   scene.background = makeBgTexture();
-  scene.fog = new THREE.FogExp2(0x0b3444, 0.021);
+  scene.fog = new THREE.FogExp2(0x174552, 0.032);
 
   // Camera
   camera.position.set(0, 0.5, 18);
@@ -94,14 +91,10 @@ function initScene() {
   });
 
   // Lighting
-  scene.add(new THREE.AmbientLight(0x639aa3, 1.7));
+  scene.add(new THREE.HemisphereLight(0xc0eee2, 0x746e5d, 2.0));
 
   const sun = new THREE.DirectionalLight(0xffefd6, 2.5);
-  sun.position.set(3, 12, 10);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(512, 512);
-  sun.shadow.camera.near = 0.5;
-  sun.shadow.camera.far = 50;
+  sun.position.set(-6, 14, 7);
   scene.add(sun);
 
   const fill = new THREE.PointLight(0x003366, 4, 30);
@@ -141,231 +134,6 @@ function resize() {
   camera.lookAt(0, -0.3, 0);
   camera.updateProjectionMatrix();
   renderFrame();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ENVIRONMENT
-// ═══════════════════════════════════════════════════════════════════════════
-
-function buildEnvironment() {
-  // Sandy floor
-  const floorGeo = new THREE.PlaneGeometry(BOUNDS.x * 3, 90, 24, 24);
-  const fp = floorGeo.attributes.position;
-  for (let i = 0; i < fp.count; i++) fp.setZ(i, (Math.random() - 0.5) * 0.18);
-  floorGeo.computeVertexNormals();
-  const floor = new THREE.Mesh(floorGeo,
-    new THREE.MeshStandardMaterial({ color: 0xc8a860, roughness: 0.95, metalness: 0.0 }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -BOUNDS.y;
-  floor.position.z = 35;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Seaweed clusters — more coverage than before
-  const swPositions = [
-    [-8,-2],[-5.5,-1.5],[-3,-3.5],[0,-2],[3,-3],[5.5,-1.8],[8.5,-2.5],[-1.5,-3.8],
-    [-7,-3],[6.5,-3.2],[2,-1.5],[-4,-1],[9,-1.5],[-9,-3.5]
-  ];
-  swPositions.forEach(([x, z]) => addSeaweed(x, z));
-
-  // Coral formations
-  [[-7,-3.5],[-4.5,-2.5],[-2,-4],[1.5,-3.5],[4,-2],[7,-3],[9.5,-2],[-6,-1],[0.5,-4.2]]
-    .forEach(([x, z]) => addCoral(x + (Math.random()-0.5)*0.8, z + (Math.random()-0.5)*0.6));
-
-  // Anemones
-  [[-6.5,-2.5],[3.5,-3.8],[7.5,-1.5],[-2.5,-2],[0,-4.0]].forEach(([x, z]) => addAnemone(x, z));
-
-  // Starfish
-  for (let i = 0; i < 7; i++)
-    addStarfish((Math.random()-0.5)*BOUNDS.x*1.7, (Math.random()-0.5)*BOUNDS.z*1.5);
-
-  // Pebbles
-  addPebbles();
-
-  // Rocks
-  for (let i = 0; i < 8; i++) {
-    addRock((Math.random() - 0.5) * BOUNDS.x * 1.6,
-            (Math.random() - 0.5) * BOUNDS.z * 1.3);
-  }
-
-  // Ambient plankton
-  const plankMat = new THREE.MeshBasicMaterial({ color: 0x88ccff, transparent: true, opacity: 0.22 });
-  for (let i = 0; i < 35; i++) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.018 + Math.random() * 0.024, 4, 4), plankMat);
-    m.position.set(
-      (Math.random() - 0.5) * BOUNDS.x * 2,
-      (Math.random() - 0.5) * BOUNDS.y * 1.8,
-      (Math.random() - 0.5) * BOUNDS.z * 1.8
-    );
-    scene.add(m);
-    plankton.push({ mesh: m, drift: new THREE.Vector3(
-      (Math.random() - 0.5) * 0.006,
-      (Math.random() - 0.5) * 0.004,
-      (Math.random() - 0.5) * 0.005
-    )});
-  }
-
-
-}
-
-function addSeaweed(x, z) {
-  const group = new THREE.Group();
-  const segments = [];
-  const palette = [0x338e68, 0x4eaa76, 0x28785e, 0x72b57e];
-  const material = new THREE.MeshStandardMaterial({ color: palette[Math.random() * palette.length | 0], roughness: .8, side: THREE.DoubleSide });
-  for (let i = 0; i < 5; i++) {
-    const height = 1.1 + Math.random() * 2.1;
-    const width = .1 + Math.random() * .12;
-    const bend = (Math.random() - .5) * .7;
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);
-    shape.bezierCurveTo(-width, height * .3, bend - width, height * .75, bend, height);
-    shape.bezierCurveTo(bend + width, height * .65, width, height * .2, 0, 0);
-    const leaf = new THREE.Mesh(new THREE.ShapeGeometry(shape, 10), material);
-    leaf.position.set((i - 2) * .13, 0, (Math.random() - .5) * .25);
-    leaf.rotation.y = (Math.random() - .5) * 1.2;
-    leaf.castShadow = true;
-    group.add(leaf);
-    segments.push({ mesh: leaf, idx: i });
-  }
-  group.position.set(x, -BOUNDS.y, z);
-  scene.add(group);
-  seaweeds.push({ group, segments, phase: Math.random() * Math.PI * 2 });
-}
-
-function addRock(x, z) {
-  const geo = new THREE.DodecahedronGeometry(0.28 + Math.random() * 0.38, 0);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    pos.setX(i, pos.getX(i) * (0.75 + Math.random() * 0.45));
-    pos.setY(i, pos.getY(i) * (0.55 + Math.random() * 0.35));
-    pos.setZ(i, pos.getZ(i) * (0.75 + Math.random() * 0.45));
-  }
-  geo.computeVertexNormals();
-  const cols = [0x5a5a5a, 0x7a6a5a, 0x4a4a5a, 0x6a5a4a];
-  const rock = new THREE.Mesh(geo,
-    new THREE.MeshStandardMaterial({ color: cols[cols.length * Math.random() | 0], roughness: 0.9 }));
-  rock.position.set(x, -BOUNDS.y + 0.15, z);
-  rock.rotation.set(Math.random() * 2, Math.random() * 6, Math.random() * 2);
-  rock.castShadow = true;
-  rock.receiveShadow = true;
-  scene.add(rock);
-}
-
-function addCoral(x, z) {
-  const group = new THREE.Group();
-  const palette = [0xe84393, 0xff7043, 0x9b59b6, 0xef4444, 0xf59e0b, 0x06b6d4, 0xec4899];
-  const col = new THREE.Color(palette[Math.floor(Math.random() * palette.length)]);
-  const mat     = new THREE.MeshStandardMaterial({ color: col, roughness: 0.65, metalness: 0.05 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.55), roughness: 0.8 });
-
-  const stemH = 0.5 + Math.random() * 1.0;
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.09, stemH, 7), darkMat);
-  stem.position.y = stemH / 2;
-  stem.castShadow = true;
-  group.add(stem);
-
-  const numBranches = 2 + Math.floor(Math.random() * 4);
-  for (let b = 0; b < numBranches; b++) {
-    const branchH = 0.22 + Math.random() * 0.42;
-    const angle = (b / numBranches) * Math.PI * 2 + Math.random() * 0.4;
-    const tilt  = 0.45 + Math.random() * 0.35;
-    const startY = stemH * (0.35 + Math.random() * 0.45);
-
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.04, branchH, 5), mat);
-    branch.position.set(Math.cos(angle) * 0.12, startY + Math.cos(tilt) * branchH * 0.5, Math.sin(angle) * 0.12);
-    branch.rotation.z = Math.cos(angle) * tilt;
-    branch.rotation.x = Math.sin(angle) * tilt;
-    branch.castShadow = true;
-    group.add(branch);
-
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.055 + Math.random() * 0.04, 8, 6), mat);
-    tip.position.set(
-      branch.position.x + Math.cos(angle) * Math.sin(tilt) * branchH * 0.5,
-      branch.position.y + Math.cos(tilt) * branchH * 0.5 + 0.04,
-      branch.position.z + Math.sin(angle) * Math.sin(tilt) * branchH * 0.5
-    );
-    group.add(tip);
-  }
-
-  group.position.set(x, -BOUNDS.y, z);
-  scene.add(group);
-}
-
-function addStarfish(x, z) {
-  const palette = [0xe85d04, 0xc1121f, 0x7b2d8b, 0xff6b6b, 0xfca311];
-  const col = palette[Math.floor(Math.random() * palette.length)];
-  const shape = new THREE.Shape();
-  const arms = 5, outer = 0.14 + Math.random() * 0.1, inner = outer * 0.4;
-  for (let i = 0; i < arms * 2; i++) {
-    const a = (i * Math.PI) / arms - Math.PI / 2;
-    const r = i % 2 === 0 ? outer : inner;
-    i === 0 ? shape.moveTo(Math.cos(a)*r, Math.sin(a)*r) : shape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
-  }
-  shape.closePath();
-  const mesh = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(shape, { depth: 0.03, bevelEnabled: true, bevelSize: 0.01, bevelThickness: 0.01 }),
-    new THREE.MeshStandardMaterial({ color: col, roughness: 0.75 })
-  );
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.rotation.z = Math.random() * Math.PI * 2;
-  mesh.position.set(x, -BOUNDS.y + 0.01, z);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-}
-
-function addPebbles() {
-  const cols = [0x8b7355, 0x9e9e9e, 0x7b6b4f, 0xa0a0a0, 0xb5a48a, 0x6b7280, 0x795548];
-  const mats = cols.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.95 }));
-  for (let i = 0; i < 55; i++) {
-    const r = 0.04 + Math.random() * 0.08;
-    const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mats[Math.floor(Math.random() * mats.length)]);
-    mesh.position.set(
-      (Math.random()-0.5)*BOUNDS.x*2.0, -BOUNDS.y + r*0.4,
-      (Math.random()-0.5)*BOUNDS.z*2.0
-    );
-    mesh.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
-    mesh.scale.set(1+Math.random()*0.7, 0.5+Math.random()*0.5, 1+Math.random()*0.7);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-  }
-}
-
-function addAnemone(x, z) {
-  const group = new THREE.Group();
-  const col = new THREE.Color([0xff6b9d, 0xff8c42, 0x9b59b6, 0x06b6d4][Math.floor(Math.random()*4)]);
-  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
-  const baseMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.9 });
-
-  const base = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), baseMat);
-  base.scale.set(1, 0.7, 1);
-  base.position.y = 0.09;
-  group.add(base);
-
-  const tentacles = [];
-  const count = 9 + Math.floor(Math.random() * 7);
-  const tipMat = new THREE.MeshStandardMaterial({ color: col.clone().lerp(new THREE.Color(0xffffff), 0.4), roughness: 0.4 });
-  for (let i = 0; i < count; i++) {
-    const tentH = 0.18 + Math.random() * 0.18;
-    const angle = (i / count) * Math.PI * 2;
-    const radius = 0.04 + Math.random() * 0.055;
-    const tent = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.014, tentH, 4), mat);
-    const bRotZ = Math.cos(angle) * 0.32;
-    const bRotX = Math.sin(angle) * 0.32;
-    tent.position.set(Math.cos(angle)*radius, 0.1 + tentH/2, Math.sin(angle)*radius);
-    tent.rotation.z = bRotZ;
-    tent.rotation.x = bRotX;
-    const tipBall = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 5), tipMat);
-    tipBall.position.y = tentH / 2 + 0.01;
-    tent.add(tipBall);
-    group.add(tent);
-    tentacles.push({ mesh: tent, angle, baseRotZ: bRotZ, baseRotX: bRotX });
-  }
-
-  group.position.set(x, -BOUNDS.y, z);
-  scene.add(group);
-  anemones.push({ group, tentacles, phase: Math.random() * Math.PI * 2 });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1189,10 +957,24 @@ function updateFood() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function spawnBubbles(x, y, z, count = 1) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.32, roughness: 0.1, metalness: 0.6 });
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { opacity: { value: .45 } },
+    vertexShader: `varying vec3 vBubbleNormal; varying vec3 vBubbleView;
+      void main() { vec4 view = modelViewMatrix * vec4(position, 1.0);
+        vBubbleNormal = normalize(normalMatrix * normal); vBubbleView = -view.xyz;
+        gl_Position = projectionMatrix * view; }`,
+    fragmentShader: `varying vec3 vBubbleNormal; varying vec3 vBubbleView; uniform float opacity;
+      void main() { vec3 n = normalize(vBubbleNormal);
+        float rim = pow(1.0 - abs(dot(n, normalize(vBubbleView))), 2.4);
+        float glint = pow(max(dot(n, normalize(vec3(-0.4, 0.7, 0.6))), 0.0), 24.0);
+        gl_FragColor = vec4(vec3(0.67, 0.91, 0.91) + glint * .25, (rim * .65 + glint * .45 + .025) * opacity);
+        #include <colorspace_fragment>
+      }`,
+  });
   for (let i = 0; i < count; i++) {
     const r = 0.04 + Math.random() * 0.07;
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 6), mat.clone());
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat.clone());
     mesh.position.set(x + (Math.random() - 0.5) * 0.45, y, z + (Math.random() - 0.5) * 0.3);
     scene.add(mesh);
     bubbles.push({
@@ -1209,7 +991,7 @@ function updateBubbles() {
   bubbles = bubbles.filter(b => {
     b.mesh.position.add(b.vel);
     b.life -= b.decay;
-    b.mesh.material.opacity = b.life * 0.32;
+    b.mesh.material.uniforms.opacity.value = b.life * .55;
     if (b.life <= 0 || b.mesh.position.y > BOUNDS.y + 1) {
       scene.remove(b.mesh); disposeObject(b.mesh); return false;
     }
@@ -1253,38 +1035,6 @@ function updateDirt() {
 function clearDirt() {
   dirtBits.forEach(d => { scene.remove(d.mesh); disposeObject(d.mesh); });
   dirtBits = [];
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PLANKTON
-// ═══════════════════════════════════════════════════════════════════════════
-
-function updatePlankton() {
-  for (const p of plankton) {
-    p.mesh.position.add(p.drift);
-    if (Math.abs(p.mesh.position.x) > BOUNDS.x * 1.1) p.drift.x *= -1;
-    if (Math.abs(p.mesh.position.y) > BOUNDS.y * 1.1) p.drift.y *= -1;
-    if (Math.abs(p.mesh.position.z) > BOUNDS.z * 1.1) p.drift.z *= -1;
-  }
-}
-
-function updateSeaweeds(t) {
-  for (const sw of seaweeds) {
-    sw.segments.forEach(({ mesh, idx }) => {
-      mesh.rotation.z = Math.sin(t * 0.65 + sw.phase + idx * 0.55) * 0.16;
-      mesh.rotation.x = Math.sin(t * 0.45 + sw.phase * 1.3 + idx * 0.38) * 0.07;
-    });
-  }
-}
-
-function updateAnemones(t) {
-  for (const an of anemones) {
-    an.tentacles.forEach(({ mesh, angle, baseRotZ, baseRotX }, i) => {
-      const wave = Math.sin(t * 1.1 + an.phase + i * 0.65) * 0.18;
-      mesh.rotation.z = baseRotZ + wave * Math.cos(angle);
-      mesh.rotation.x = baseRotX + wave * Math.sin(angle);
-    });
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1523,233 +1273,24 @@ window.toggleSystems = function () {
 window.closeSystems = function () { document.getElementById('systems-panel').close(); };
 document.getElementById('systemsBtn').addEventListener('click', window.toggleSystems);
 
-// ── Ambient Classical Music ──────────────────────────────────────────────────
-// Transcribed opening motifs — public domain works performed on synthesis.
-// Each event: [beatTime, note|notes[], durationBeats, velocity 0-1]
-
-const CLASSICAL_PIECES = [
-  {
-    name: 'La Cathédrale Engloutie',
-    composer: 'Debussy', year: '1910',
-    bpm: 52, loopBeats: 72,           // 12 bars × 6/4
-    atk: 0.20, rel: 5.5,
-    events: [
-      // Parallel open-5ths rise from the depths (pp, sans nuances)
-      [0,  ['C3','G3','C4','G4'],        6, 0.22],
-      [6,  ['D3','A3','D4','A4'],        6, 0.22],
-      [12, ['E3','B3','E4','B4'],        3, 0.24],
-      [15, ['F3','C4','F4','C5'],        3, 0.24],
-      [18, ['G3','D4','G4','D5'],        6, 0.26],
-      [24, ['Bb2','F3','Bb3','F4'],      6, 0.23],
-      [30, ['Ab2','Eb3','Ab3','Eb4'],    6, 0.22],
-      // Descending — cathedral submerges again
-      [36, ['G2','D3','G3','D4'],        6, 0.21],
-      [42, ['F2','C3','F3','C4'],        6, 0.20],
-      [48, ['E2','B2','E3','B3'],        6, 0.19],
-      [54, ['D2','A2','D3','A3'],        6, 0.19],
-      [60, ['C2','G2','C3','G3','C4'], 12, 0.17],
-    ]
-  },
-  {
-    name: 'Clair de Lune',
-    composer: 'Debussy', year: '1905',
-    bpm: 60, loopBeats: 72,           // 8 bars × 9 eighth-note beats (9/8)
-    atk: 0.08, rel: 4.0,
-    events: [
-      // Rolling Db major arpeggios — moonlight on water
-      // Bar 1: Db major (I)
-      [0,'Db3',9,0.28],  [0,'Db4',1,0.18],[1,'F4',1,0.16],[2,'Ab4',1,0.16],
-      [3,'Db5',1,0.20],  [4,'F5',1,0.18], [5,'Ab5',1,0.18],[6,'Db5',1,0.17],
-      [7,'Ab4',1,0.16],  [8,'F4',1,0.16],
-      // Bar 2: Ab major (V)
-      [9,'Ab2',9,0.26],  [9,'Ab3',1,0.17],[10,'C4',1,0.15],[11,'Eb4',1,0.15],
-      [12,'Ab4',1,0.18], [13,'C5',1,0.17],[14,'Eb5',1,0.16],[15,'Ab5',1,0.18],
-      [16,'Eb5',1,0.16], [17,'C5',1,0.15],
-      // Bar 3: Gb major (IV)
-      [18,'Gb2',9,0.25], [18,'Gb3',1,0.16],[19,'Bb3',1,0.15],[20,'Db4',1,0.15],
-      [21,'Gb4',1,0.18], [22,'Bb4',1,0.17],[23,'Db5',1,0.16],[24,'Gb5',1,0.19],
-      [25,'Db5',1,0.16], [26,'Bb4',1,0.15],
-      // Bar 4: Db/F (I⁶)
-      [27,'F2',9,0.26],  [27,'Db4',1,0.16],[28,'F4',1,0.16],[29,'Ab4',1,0.16],
-      [30,'Db5',1,0.18], [31,'F5',1,0.17], [32,'Ab5',1,0.18],[33,'Db5',1,0.16],
-      [34,'Ab4',1,0.16], [35,'F4',1,0.15],
-      // Bar 5: Bbm (vi)
-      [36,'Bb2',9,0.24], [36,'Bb3',1,0.16],[37,'Db4',1,0.15],[38,'F4',1,0.15],
-      [39,'Bb4',1,0.17], [40,'Db5',1,0.16],[41,'F5',1,0.16], [42,'Bb5',1,0.19],
-      [43,'F5',1,0.16],  [44,'Db5',1,0.15],
-      // Bar 6: Ebm (iim)
-      [45,'Eb2',9,0.23], [45,'Eb3',1,0.15],[46,'Gb3',1,0.14],[47,'Bb3',1,0.14],
-      [48,'Eb4',1,0.16], [49,'Gb4',1,0.15],[50,'Bb4',1,0.15],[51,'Eb5',1,0.17],
-      [52,'Bb4',1,0.15], [53,'Gb4',1,0.14],
-      // Bar 7: Ab major (V)
-      [54,'Ab2',9,0.25], [54,'Ab3',1,0.16],[55,'C4',1,0.15],[56,'Eb4',1,0.15],
-      [57,'Ab4',1,0.18], [58,'C5',1,0.17], [59,'Eb5',1,0.17],[60,'Ab5',1,0.20],
-      [61,'Eb5',1,0.17], [62,'C5',1,0.16],
-      // Bar 8: Db (I) — resolution
-      [63,'Db2',9,0.27], [63,'Db4',1,0.17],[64,'F4',1,0.16],[65,'Ab4',1,0.16],
-      [66,'Db5',1,0.20], [67,'F5',1,0.18], [68,'Ab5',1,0.18],[69,'Db5',1,0.17],
-      [70,'Ab4',1,0.16], [71,'F4',1,0.16],
-    ]
-  },
-  {
-    name: "Jeux d'eau",
-    composer: 'Ravel', year: '1901',
-    bpm: 120, loopBeats: 48,          // 6 bars, 8th-note pulse
-    atk: 0.03, rel: 2.5,
-    events: [
-      // E major cascading fountain — up then down each bar
-      // Bar 1: E major
-      [0,'E2',8,0.25],
-      [0,'E4',.5,0.18],[.5,'G#4',.5,0.16],[1,'B4',.5,0.16],[1.5,'E5',.5,0.18],
-      [2,'G#5',.5,0.17],[2.5,'B5',.5,0.17],[3,'E6',.5,0.22],
-      [3.5,'B5',.5,0.17],[4,'G#5',.5,0.16],[4.5,'E5',.5,0.16],
-      [5,'B4',.5,0.15],[5.5,'G#4',.5,0.15],[6,'E4',.5,0.14],[6.5,'B3',.5,0.14],[7,'G#3',.5,0.13],[7.5,'E3',.5,0.13],
-      // Bar 2: F# major
-      [8,'F#2',8,0.22],
-      [8,'F#3',.5,0.16],[8.5,'A#3',.5,0.15],[9,'C#4',.5,0.15],[9.5,'F#4',.5,0.17],
-      [10,'A#4',.5,0.16],[10.5,'C#5',.5,0.16],[11,'F#5',.5,0.20],
-      [11.5,'C#5',.5,0.16],[12,'A#4',.5,0.15],[12.5,'F#4',.5,0.15],
-      [13,'C#4',.5,0.14],[13.5,'A#3',.5,0.14],[14,'F#3',.5,0.13],[14.5,'C#3',.5,0.13],[15,'A#2',.5,0.12],[15.5,'F#2',.5,0.12],
-      // Bar 3: B major
-      [16,'B2',8,0.23],
-      [16,'B3',.5,0.16],[16.5,'D#4',.5,0.15],[17,'F#4',.5,0.15],[17.5,'B4',.5,0.17],
-      [18,'D#5',.5,0.16],[18.5,'F#5',.5,0.16],[19,'B5',.5,0.20],
-      [19.5,'F#5',.5,0.16],[20,'D#5',.5,0.15],[20.5,'B4',.5,0.15],
-      [21,'F#4',.5,0.14],[21.5,'D#4',.5,0.14],[22,'B3',.5,0.13],[22.5,'F#3',.5,0.13],[23,'D#3',.5,0.12],[23.5,'B2',.5,0.12],
-      // Bar 4: A major (IV)
-      [24,'A2',8,0.22],
-      [24,'A3',.5,0.16],[24.5,'C#4',.5,0.15],[25,'E4',.5,0.15],[25.5,'A4',.5,0.17],
-      [26,'C#5',.5,0.16],[26.5,'E5',.5,0.16],[27,'A5',.5,0.20],
-      [27.5,'E5',.5,0.16],[28,'C#5',.5,0.15],[28.5,'A4',.5,0.15],
-      [29,'E4',.5,0.14],[29.5,'C#4',.5,0.14],[30,'A3',.5,0.13],[30.5,'E3',.5,0.13],[31,'C#3',.5,0.12],[31.5,'A2',.5,0.12],
-      // Bar 5: E major (return)
-      [32,'E2',8,0.24],
-      [32,'E4',.5,0.18],[32.5,'G#4',.5,0.17],[33,'B4',.5,0.17],[33.5,'E5',.5,0.19],
-      [34,'G#5',.5,0.17],[34.5,'B5',.5,0.17],[35,'E6',.5,0.21],
-      [35.5,'B5',.5,0.17],[36,'G#5',.5,0.16],[36.5,'E5',.5,0.16],
-      [37,'B4',.5,0.15],[37.5,'G#4',.5,0.15],[38,'E4',.5,0.14],[38.5,'B3',.5,0.14],[39,'G#3',.5,0.13],[39.5,'E3',.5,0.13],
-      // Bar 6: G#m (vi) — shadow before return
-      [40,'G#2',8,0.21],
-      [40,'G#3',.5,0.15],[40.5,'B3',.5,0.14],[41,'D#4',.5,0.14],[41.5,'G#4',.5,0.16],
-      [42,'B4',.5,0.15],[42.5,'D#5',.5,0.15],[43,'G#5',.5,0.18],
-      [43.5,'D#5',.5,0.15],[44,'B4',.5,0.14],[44.5,'G#4',.5,0.14],
-      [45,'D#4',.5,0.13],[45.5,'B3',.5,0.13],[46,'G#3',.5,0.12],[46.5,'D#3',.5,0.12],[47,'B2',.5,0.11],[47.5,'G#2',.5,0.11],
-    ]
-  },
-];
-
-let _musicReady   = false;
-let _musicPlaying = false;
-let _musicIdx     = 0;
-let _musicPart    = null;
-let _musicSynth   = null;
-let _musicReverb  = null;
-let _musicVol     = null;
-
-async function _initMusic() {
-  if (_musicReady) return;
-  if (typeof Tone === 'undefined') { toast('⚠ Music engine unavailable'); return; }
-  await Tone.start();
-  _musicReverb = new Tone.Reverb({ decay: 5.5, preDelay: 0.04, wet: 0.62 });
-  await _musicReverb.generate();
-  _musicVol = new Tone.Volume(-10).toDestination();
-  _musicSynth = new Tone.PolySynth(Tone.Synth, {
-    maxPolyphony: 28,
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.14, decay: 0.6, sustain: 0.55, release: 4.5 }
-  });
-  _musicSynth.connect(_musicReverb);
-  _musicReverb.connect(_musicVol);
-  // Initial volume from slider
-  const vol = document.getElementById('music-vol');
-  if (vol) setMusicVol(vol.value);
-  _musicReady = true;
+// The aquarium shares the same real-recording player as the rest of the site.
+function updateMusicUI() {
+  const { track, playing, volume } = SiteMusic.snapshot();
+  const button = document.getElementById('mPlayBtn');
+  button.textContent = playing ? 'Pause music' : 'Play music';
+  button.setAttribute('aria-pressed', String(playing));
+  button.classList.toggle('on', playing);
+  document.getElementById('mpulse').classList.toggle('on', playing);
+  document.getElementById('music-title').textContent = track?.title || 'Classroom recordings';
+  document.getElementById('music-sub').textContent = track ? `${track.composer} · real recording` : '41 real recordings · website player';
+  document.getElementById('music-vol').value = String(volume);
 }
-
-async function _playPiece() {
-  await _initMusic();
-  if (!_musicReady) return;
-
-  const p   = CLASSICAL_PIECES[_musicIdx];
-  const spb = 60 / p.bpm;
-
-  // Reconfigure synth for this piece's articulation
-  _musicSynth.set({
-    envelope: { attack: p.atk, decay: 0.6, sustain: 0.55, release: p.rel }
-  });
-
-  // Tear down existing part
-  if (_musicPart) { _musicPart.stop(); _musicPart.dispose(); _musicPart = null; }
-  Tone.Transport.stop();
-  Tone.Transport.cancel();
-
-  const evts = p.events.map(([bt, n, d, v]) => [
-    bt * spb,
-    { notes: Array.isArray(n) ? n : [n], dur: d * spb, vel: v }
-  ]);
-
-  _musicPart = new Tone.Part((time, ev) => {
-    _musicSynth.triggerAttackRelease(ev.notes, ev.dur, time, ev.vel);
-  }, evts);
-  _musicPart.loop    = true;
-  _musicPart.loopEnd = p.loopBeats * spb;
-  _musicPart.start(0);
-
-  Tone.Transport.start();
-  _musicPlaying = true;
-  _updateMusicUI();
-}
-
-function _stopMusic() {
-  if (_musicPart) { _musicPart.stop(); _musicPart.dispose(); _musicPart = null; }
-  if (typeof Tone !== 'undefined' && Tone.Transport) { Tone.Transport.stop(); Tone.Transport.cancel(); }
-  _musicPlaying = false;
-  _updateMusicUI();
-}
-
-function _updateMusicUI() {
-  const p    = CLASSICAL_PIECES[_musicIdx];
-  const btn  = document.getElementById('mPlayBtn');
-  const pulse = document.getElementById('mpulse');
-  const title = document.getElementById('music-title');
-  const sub   = document.getElementById('music-sub');
-  if (!btn) return;
-  title.title = `${p.name} · ${p.composer}`;
-  btn.setAttribute('aria-pressed', String(_musicPlaying));
-  if (_musicPlaying) {
-    btn.textContent = 'Pause music';
-    btn.classList.add('on');
-    pulse.classList.add('on');
-    title.textContent = p.name;
-    sub.textContent = `${p.composer} (${p.year}) · synthesized piano`;
-  } else {
-    btn.textContent = 'Play music';
-    btn.classList.remove('on');
-    pulse.classList.remove('on');
-    title.textContent = p.name;
-    sub.textContent = `${p.composer} · synthesized piano`;
-  }
-}
-
-window.toggleMusic = function () {
-  if (_musicPlaying) _stopMusic(); else playMusicSafely();
-};
-window.musicPrev = function () {
-  const wrap = CLASSICAL_PIECES.length;
-  _musicIdx  = ((_musicIdx - 1 + wrap) % wrap);
-  if (_musicPlaying) playMusicSafely(); else _updateMusicUI();
-};
-window.musicNext = function () {
-  _musicIdx = (_musicIdx + 1) % CLASSICAL_PIECES.length;
-  if (_musicPlaying) playMusicSafely(); else _updateMusicUI();
-};
-window.setMusicVol = function (v) {
-  if (!_musicVol) return;
-  _musicVol.volume.value = parseFloat(v) < 0.02 ? -80 : Tone.gainToDb(parseFloat(v));
-};
-
-// Initialize title display
-_updateMusicUI();
+window.toggleMusic = () => SiteMusic.toggle();
+window.musicPrev = () => SiteMusic.previous();
+window.musicNext = () => SiteMusic.next();
+window.setMusicVol = value => SiteMusic.setVolume(value);
+window.addEventListener('site-music-change', updateMusicUI);
+updateMusicUI();
 
 // ── Admin Panel ─────────────────────────────────────────────────────────────
 const $admin       = document.getElementById('admin-panel');
@@ -1905,6 +1446,7 @@ function toast(msg) {
 let nextLabelLayout = 0;
 function renderFrame() {
   if (!renderer || !camera || !labelRenderer) return;
+  habitat?.update(simulationTime);
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
   const now = performance.now();
@@ -1924,6 +1466,13 @@ function renderFrame() {
 
 function animate() {
   let accumulator = 0;
+  let renderAccumulator = 0;
+  const gl = renderer.getContext();
+  const graphicsInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  const graphicsName = graphicsInfo ? gl.getParameter(graphicsInfo.UNMASKED_RENDERER_WEBGL) : '';
+  // Software WebGL needs time to finish a frame before submitting another.
+  // Keep the 60 Hz simulation and immediate controls on either rendering path.
+  const renderInterval = /swiftshader|llvmpipe|software rasterizer/i.test(graphicsName) ? 1 / 8 : 1 / 30;
   animationLoop = SimKit.loop(dt => {
     updateCare(dt);
     accumulator += Math.min(dt, .05);
@@ -1935,14 +1484,17 @@ function animate() {
       updateFood();
       updateBubbles();
       updateDirt();
-      updatePlankton();
-      updateSeaweeds(simulationTime);
-      updateAnemones(simulationTime);
       updateSystems(1 / 60);
       if (Math.random() < .022) spawnBubbles(-5, -BOUNDS.y, -1);
       if (Math.random() < .015) spawnBubbles(6, -BOUNDS.y, -.5);
     }
-    renderFrame();
+    // This slow-moving scene stays fluid at 30 fps while leaving graphics
+    // headroom for the reef, especially on classroom laptops.
+    renderAccumulator += dt;
+    if (renderAccumulator >= renderInterval) {
+      renderAccumulator %= renderInterval;
+      renderFrame();
+    }
   }, { el: $canvas });
   setPaused(paused);
 }
@@ -2147,21 +1699,10 @@ async function reconcileFish(records) {
   renderFrame();
 }
 
-let musicStarting = false;
-async function playMusicSafely() {
-  if (musicStarting) return;
-  musicStarting = true;
-  const button = document.getElementById('mPlayBtn');
-  button.disabled = true;
-  try { await _playPiece(); }
-  catch { _stopMusic(); toast('Music could not start. Try Play music again.'); }
-  finally { musicStarting = false; button.disabled = false; }
-}
-
 // Read-only viewing never seeds or overwrites the shared class tank.
 async function main() {
   initScene();
-  buildEnvironment();
+  habitat = buildHabitat({ THREE, scene });
   setDirtiness(0);
   applyNames();
   animate();
