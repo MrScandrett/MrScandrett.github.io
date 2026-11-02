@@ -208,6 +208,9 @@
     style.id = "classroomos-nav-a11y";
     style.textContent =
       '.nav-search { position: relative; display: inline-flex; align-items: center; }' +
+      '.nav-music { position: relative; display: inline-flex; align-items: center; margin-left: 0.35rem; }' +
+      '.nav-music-btn { min-width: 2.25rem; min-height: 2.25rem; padding: 0.38rem !important; justify-content: center; }' +
+      '@media (max-width: 1280px) { .nav-wrap > .nav-music { order: 1; } }' +
       '.nav-search-btn { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 1.75rem; padding: 0.18rem 0.55rem 0.18rem 0.5rem; border: 1px solid var(--control-border, color-mix(in srgb, var(--line, rgba(125,136,154,0.3)) 70%, rgba(255, 255, 255, 0.88))); border-radius: 999px; background: var(--surface-1, rgba(255, 255, 255, 0.65)); color: var(--nav-ink-strong, var(--text, #1d1d1f)); font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: color 160ms ease, background 160ms ease, border-color 160ms ease, transform 160ms ease; }' +
       '.nav-search-btn:hover { border-color: color-mix(in srgb, var(--theme-accent, #007aff) 42%, rgba(255, 255, 255, 0.76)); background: var(--surface-2, rgba(255, 255, 255, 0.85)); transform: translateY(-1px); }' +
       '.nav-search-btn:focus-visible, .nav-settings-toggle:focus-visible, .nav-settings-close:focus-visible, .site-nav a:focus-visible, .nav-mode-pill:focus-visible, .nav-tone-pill:focus-visible, .nav-theme-chip:focus-visible {' +
@@ -604,6 +607,28 @@
     }
   });
   nav.parentNode.appendChild(searchContainer);
+
+  /* Music: an icon beside Settings that pins the listening widget over the site.
+     The floating "♫ Music" pill is hidden on phones (site-music.css); this is the way in. */
+  var musicContainer = document.createElement("div");
+  musicContainer.className = "nav-music";
+  musicContainer.innerHTML =
+    '<button type="button" class="nav-search-btn nav-music-btn" aria-label="Open music player" title="Music player">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>' +
+      '</svg>' +
+    '</button>';
+  musicContainer.querySelector(".nav-music-btn").addEventListener("click", function () {
+    if (window.SiteMusic && typeof window.SiteMusic.open === "function") {
+      window.SiteMusic.open();
+    } else {
+      /* site-music.mjs not ready yet: go straight to the listening shell, returning to this page */
+      var url = new URL("/listen.html", location.origin);
+      url.searchParams.set("browse", location.pathname + location.search + location.hash);
+      location.assign(url);
+    }
+  });
+  nav.parentNode.appendChild(musicContainer);
 
   function readStorage(key) {
     try {
