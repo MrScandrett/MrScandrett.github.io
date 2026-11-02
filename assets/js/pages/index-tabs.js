@@ -26,6 +26,8 @@
           window.history.replaceState(null, "", "#" + tabKey);
         }
 
+        document.dispatchEvent(new CustomEvent("home-tabchange", { detail: { panel: panel.id } }));
+
         // The physics/drawing canvases measure their own width on first
         // paint; if that happened while the Sandbox tab was hidden they'd
         // size to zero, so re-trigger their resize handling now that the
@@ -68,6 +70,7 @@
       }
       syncFromHash();
       window.addEventListener("popstate", syncFromHash);
+      window.addEventListener("hashchange", syncFromHash);
     })();
 
     const homeLaunchSettings = document.getElementById("home-launch-settings");
@@ -78,40 +81,7 @@
       });
     }
 
-    // Rocket Launch Animation
-    const launchBtn = document.querySelector('.home-launch-card--lessons');
-    if (launchBtn) {
-      launchBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const rocket = this.querySelector('.card-emoji');
-        const href = this.getAttribute('href');
-
-        if (this.classList.contains('is-launching')) return;
-        this.classList.add('is-launching');
-        this.style.zIndex = '9999'; // ensure the card sits on top of nearby UI elements
-
-        rocket.classList.add('rocket-launching');
-
-        const spawnParticle = () => {
-          const rect = rocket.getBoundingClientRect();
-          const p = document.createElement('div');
-          p.className = 'rocket-particle';
-          p.style.left = (rect.left + rect.width * 0.2) + 'px';
-          p.style.top = (rect.top + rect.height * 0.8) + 'px';
-          p.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
-          p.style.setProperty('--dy', (Math.random() * 80 - 40) + 'px');
-          document.body.appendChild(p);
-          setTimeout(() => p.remove(), 600);
-        };
-
-        const particles = setInterval(spawnParticle, 30);
-
-        setTimeout(() => {
-          clearInterval(particles);
-          window.location.href = href;
-        }, 1200); // Wait for the 1.2s CSS animation
-      });
-    }
+    // Start Class is a native link: navigate immediately, including modified clicks.
 
     const commandTrigger = document.getElementById('home-command-trigger');
     if (commandTrigger) {

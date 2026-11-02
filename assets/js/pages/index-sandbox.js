@@ -2,6 +2,12 @@
     var drawCanvas = document.getElementById('pdraw-canvas');
     var physCanvas = document.getElementById('pphys-canvas');
     if (!drawCanvas || !physCanvas) return;
+    var sandboxPanel = document.getElementById('tabpanel-sandbox');
+    var sandboxNearScreen = false;
+    function canAnimate(mode) {
+      return sandboxNearScreen && !document.hidden && !sandboxPanel.hidden &&
+        document.getElementById('ppanel-' + mode).classList.contains('is-active');
+    }
     var dCtx = drawCanvas.getContext('2d');
     var pCtx = physCanvas.getContext('2d');
     var DPR  = window.devicePixelRatio || 1;
@@ -29,9 +35,9 @@
         tab.classList.add('is-active'); tab.setAttribute('aria-selected', 'true');
         var panel = document.getElementById(tab.getAttribute('aria-controls'));
         if (panel) panel.classList.add('is-active');
-        if (tab.id === 'ptab-phys') { stopRider(); stopPhys(); resizeP(); startPhys(); }
-        else if (tab.id === 'ptab-rider') { stopPhys(); resizeR(); startRider(); }
-        else { stopPhys(); stopRider(); resizeD(); }
+        stopPhys(); stopRider();
+        resizeActive();
+        syncSandbox();
       });
     });
 
@@ -238,7 +244,7 @@
 
     // Keyboard shortcuts (active when draw panel is visible)
     document.addEventListener('keydown', function (e) {
-      if (!document.getElementById('ppanel-draw').classList.contains('is-active')) return;
+      if (sandboxPanel.hidden || !document.getElementById('ppanel-draw').classList.contains('is-active')) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undoDraw(); return; }
       var map = { p: 'pencil', l: 'line', r: 'rect', c: 'circle', m: 'ruler', e: 'eraser' };
@@ -545,6 +551,7 @@
     }
 
     function loop(ts) {
+      if (!canAnimate('phys')) { stopPhys(); return; }
       if (!lastT) lastT = ts;
       var dt = Math.min((ts-lastT)/1000, 0.05); lastT = ts;
       if (!physPaused) for (var s=0;s<3;s++) step(dt/3);
@@ -552,7 +559,7 @@
       rafId = requestAnimationFrame(loop);
     }
 
-    function startPhys() { if (!rafId) { lastT=null; rafId=requestAnimationFrame(loop); } }
+    function startPhys() { if (canAnimate('phys') && !rafId) { lastT=null; rafId=requestAnimationFrame(loop); } }
     function stopPhys()  { if (rafId)  { cancelAnimationFrame(rafId); rafId=null; lastT=null; } }
 
     document.querySelectorAll('#ppanel-phys .ptool[data-spawn]').forEach(function (btn) {
@@ -624,8 +631,6 @@
       e.preventDefault(); setPaused(!physPaused);
     });
 
-    document.getElementById('ptab-phys') && document.getElementById('ptab-phys').addEventListener('click', function () { resizeP(); startPhys(); });
-    document.getElementById('ptab-draw') && document.getElementById('ptab-draw').addEventListener('click', function () { stopPhys(); resizeD(); });
 
     // ══════════════════════════════════════════════════════
     // LINE RIDER MODE — draw a course, drop sleds, race gravity
@@ -932,6 +937,7 @@
       }
 
       function riderLoop(ts) {
+        if (!canAnimate('rider')) { stopRider(); return; }
         if (!riderLastT) riderLastT = ts;
         var dt = Math.min((ts-riderLastT)/1000, 0.05); riderLastT = ts;
         if (riderRunning && !document.hidden && !document.getElementById('tabpanel-sandbox').hidden) {
@@ -945,7 +951,7 @@
         drawRider();
         riderRafId = requestAnimationFrame(riderLoop);
       }
-      function startRider() { if (!riderRafId) { riderLastT = null; riderRafId = requestAnimationFrame(riderLoop); } }
+      function startRider() { if (canAnimate('rider') && !riderRafId) { riderLastT = null; riderRafId = requestAnimationFrame(riderLoop); } }
       function stopRider()  { if (riderRafId)  { cancelAnimationFrame(riderRafId); riderRafId = null; riderLastT = null; } }
 
       function setRiderRunLabel() {
@@ -976,17 +982,32 @@
         startPts = [{x:pts[2].x,y:pts[2].y-32}];
         rebuildSegs(); updateRiderUi(); drawRider();
       });
-      document.getElementById('ptab-rider') && document.getElementById('ptab-rider').addEventListener('click', function () { stopPhys(); resizeR(); startRider(); });
     }
 
-    window.addEventListener('resize', function () {
+    function resizeActive() {
+      if (sandboxPanel.hidden || document.hidden) return;
       if (document.getElementById('ppanel-draw').classList.contains('is-active')) resizeD();
       else if (document.getElementById('ppanel-rider') && document.getElementById('ppanel-rider').classList.contains('is-active')) resizeR();
       else resizeP();
-    });
-
-    if (document.getElementById('ppanel-phys').classList.contains('is-active')) { resizeP(); startPhys(); }
-    else resizeD();
+    }
+    function syncSandbox() {
+      var rect = sandboxPanel.getBoundingClientRect();
+      sandboxNearScreen = rect.width > 0 && rect.height > 0 && rect.bottom > -200 && rect.top < innerHeight + 200;
+      if (canAnimate('phys')) startPhys(); else stopPhys();
+      if (canAnimate('rider')) startRider(); else stopRider();
+    }
+    window.addEventListener('resize', function () { resizeActive(); syncSandbox(); });
+    document.addEventListener('home-tabchange', function () { resizeActive(); syncSandbox(); });
+    document.addEventListener('visibilitychange', syncSandbox);
+    window.addEventListener('pagehide', function () { stopPhys(); stopRider(); });
+    window.addEventListener('pageshow', syncSandbox);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(syncSandbox, { rootMargin: '200px' }).observe(sandboxPanel);
+    } else {
+      window.addEventListener('scroll', syncSandbox, { passive: true });
+    }
+    resizeActive();
+    syncSandbox();
     updateDrawUi();
   })();
   

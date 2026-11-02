@@ -9,15 +9,44 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      z-index: 9999;
+    }
+    .skip-link:focus {
+      position: fixed;
+      left: 1rem;
+      top: 1rem;
+      width: auto;
+      height: auto;
+      background: #ffffff;
+      color: #041630;
+      padding: 0.65rem 1.1rem;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      text-decoration: none;
+      font-weight: 700;
+      outline: 3px solid #0284c7;
+      outline-offset: 2px;
+    }
+
     html, body {
       min-height: 100%;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: #020d1a;
-      color: #fff;
+      background: radial-gradient(circle at 50% 0%, #062348 0%, #020d1a 75%, #01060e 100%);
+      color: #ffffff;
+      background-attachment: fixed;
     }
 
     body {
-      display: flex; flex-direction: column; align-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 0 0 max(56px, env(safe-area-inset-bottom)) 0;
     }
 
@@ -25,279 +54,759 @@
 
     /* Top nav */
     .top-nav {
-      width: 100%; max-width: 520px;
-      margin-bottom: 22px;
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto 22px;
+      padding: 0 16px;
+      display: flex;
+      gap: 12px;
     }
     .back-link {
-      color: #7dd3fc; text-decoration: none; font-weight: 700; font-size: 0.92rem;
-      background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.25);
-      padding: 8px 18px; border-radius: 20px; display: inline-block;
-      transition: background 0.2s;
+      color: #7dd3fc;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.92rem;
+      background: rgba(125, 211, 252, 0.12);
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      padding: 9px 18px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
     }
-    .back-link:hover { background: rgba(125,211,252,0.22); }
+    .back-link:hover {
+      background: rgba(125, 211, 252, 0.22);
+      border-color: rgba(125, 211, 252, 0.5);
+      transform: translateY(-1px);
+    }
+    .back-link:focus-visible {
+      outline: 2.5px solid #7dd3fc;
+      outline-offset: 3px;
+    }
 
     /* Card */
     .card {
-      width: 100%; max-width: 520px;
-      background: rgba(4,22,48,0.92);
-      border: 1px solid rgba(125,211,252,0.22);
-      border-radius: 24px; padding: 36px 32px 42px;
-      box-shadow: 0 8px 56px rgba(0,60,160,0.22);
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      background: rgba(4, 22, 48, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(125, 211, 252, 0.22);
+      border-radius: 26px;
+      padding: 36px 32px 42px;
+      box-shadow: 0 16px 56px rgba(0, 40, 120, 0.35), 0 0 0 1px rgba(125, 211, 252, 0.08) inset;
     }
 
     h1 {
-      font-size: 1.6rem; font-weight: 900; color: #7dd3fc; text-align: center;
-      text-shadow: 0 0 24px rgba(125,211,252,0.4);
-      margin-bottom: 5px; letter-spacing: 0.01em;
+      font-size: 1.65rem;
+      font-weight: 900;
+      color: #7dd3fc;
+      text-align: center;
+      text-shadow: 0 0 24px rgba(125, 211, 252, 0.45);
+      margin-bottom: 6px;
+      letter-spacing: 0.01em;
     }
-    .subtitle { text-align: center; color: #4b6481; font-size: 0.88rem; margin-bottom: 28px; }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.92rem;
+      margin-bottom: 24px;
+    }
 
-    /* Fish preview */
-    .fish-preview {
-      display: flex; justify-content: center; align-items: center;
-      height: 120px; margin-bottom: 28px;
+    /* Creature preview stage */
+    .preview-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(14, 165, 233, 0.14) 0%, rgba(2, 13, 26, 0.5) 75%);
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      border-radius: 20px;
+      padding: 16px 12px 14px;
+      margin-bottom: 26px;
+      min-height: 160px;
+      position: relative;
+      overflow: hidden;
     }
-    .fish-swim {
-      animation: swimpreview 2.6s ease-in-out infinite;
-      display: flex; align-items: center; justify-content: center;
+    .preview-bubble-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.25;
+      background-image: radial-gradient(circle at 20% 80%, rgba(125,211,252,0.4) 0%, transparent 8%),
+                        radial-gradient(circle at 75% 30%, rgba(125,211,252,0.3) 0%, transparent 6%),
+                        radial-gradient(circle at 45% 60%, rgba(125,211,252,0.35) 0%, transparent 5%);
     }
-    @keyframes swimpreview {
-      0%,100% { transform: translateX(-10px) rotate(-4deg); }
-      50%      { transform: translateX(10px) rotate(4deg); }
+    .preview-name-badge {
+      display: inline-block;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: #e0f2fe;
+      background: rgba(2, 13, 26, 0.7);
+      border: 1px solid rgba(125, 211, 252, 0.35);
+      padding: 3px 12px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+      max-width: 85%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .creature-viewport {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 110px;
+      width: 100%;
+      z-index: 2;
+    }
+    .creature-scaler {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .creature-svg {
+      display: none;
+      width: 180px;
+      height: 105px;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+    }
+    .creature-svg.active {
+      display: block;
+    }
+
+    /* Creature animations */
+    .swim-anim-fish {
+      animation: swimFish 2.8s ease-in-out infinite;
+    }
+    .swim-anim-bottom {
+      animation: scuttleCrab 2.2s ease-in-out infinite;
+    }
+    .swim-anim-wall {
+      animation: crawlSnail 3.8s ease-in-out infinite;
+    }
+    .swim-anim-eel {
+      animation: slitherEel 2.6s ease-in-out infinite;
+    }
+    .swim-anim-jelly {
+      animation: pulseJelly 2.8s ease-in-out infinite;
+    }
+
+    @keyframes swimFish {
+      0%, 100% { transform: translateX(-8px) rotate(-3deg); }
+      50%      { transform: translateX(8px) rotate(3deg); }
+    }
+    @keyframes scuttleCrab {
+      0%, 100% { transform: translateX(-10px) translateY(1px); }
+      50%      { transform: translateX(10px) translateY(-1px); }
+    }
+    @keyframes crawlSnail {
+      0%, 100% { transform: translateX(-5px) scaleY(0.98); }
+      50%      { transform: translateX(5px) scaleY(1.02); }
+    }
+    @keyframes slitherEel {
+      0%, 100% { transform: translateX(-8px) rotate(-2deg) scaleY(0.96); }
+      50%      { transform: translateX(8px) rotate(2deg) scaleY(1.04); }
+    }
+    @keyframes pulseJelly {
+      0%, 100% { transform: translateY(6px) scale(0.95, 1.05); }
+      50%      { transform: translateY(-7px) scale(1.04, 0.95); }
+    }
+
+    /* Creature SVG internal tinting via CSS vars */
+    :root {
+      --creature-color: #4FC3F7;
+    }
+    .creature-tint-body {
+      fill: var(--creature-color);
+    }
+    .creature-tint-accent {
+      fill: var(--creature-color);
+    }
+    .creature-tint-stroke {
+      stroke: var(--creature-color);
     }
 
     /* Form */
     .field { margin-bottom: 22px; }
-    label {
-      display: block; font-size: 0.82rem; font-weight: 800; color: #93c5fd;
-      margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.09em;
+    .field-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #93c5fd;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
-    input[type="text"], input[type="url"] {
-      width: 100%; padding: 13px 16px;
-      background: rgba(125,211,252,0.07);
-      border: 1.5px solid rgba(125,211,252,0.22);
-      border-radius: 10px; color: #e0f2fe;
-      font-size: 1rem; font-family: inherit;
-      outline: none; transition: border-color 0.2s, background 0.2s;
+    input[type="text"] {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(125, 211, 252, 0.08);
+      border: 1.5px solid rgba(125, 211, 252, 0.24);
+      border-radius: 12px;
+      color: #e0f2fe;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
-    input[type="text"]:focus, input[type="url"]:focus {
-      border-color: rgba(125,211,252,0.6); background: rgba(125,211,252,0.11);
+    input[type="text"]:focus {
+      border-color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.14);
+      box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.25);
     }
-    input[type="text"]::placeholder, input[type="url"]::placeholder { color: #2a4a6a; }
+    input[type="text"]::placeholder {
+      color: #64748b;
+    }
 
     /* Color swatches */
-    .color-grid { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .swatch {
-      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
-      border: 2.5px solid transparent; flex-shrink: 0;
-      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    .color-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
     }
-    .swatch:hover { transform: scale(1.15); }
-    .swatch.active { border-color: #fff; transform: scale(1.18); box-shadow: 0 0 0 3px rgba(255,255,255,0.22); }
-    .custom-color-wrap { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+    .swatch {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2.5px solid transparent;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      touch-action: manipulation;
+    }
+    .swatch:hover {
+      transform: scale(1.15);
+    }
+    .swatch:focus-visible {
+      outline: 2.5px solid #ffffff;
+      outline-offset: 3px;
+    }
+    .swatch.active {
+      border-color: #ffffff;
+      transform: scale(1.18);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28), 0 0 16px var(--swatch-color, rgba(125,211,252,0.4));
+    }
+    .custom-color-wrap {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+    }
     .custom-color-wrap input[type="color"] {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      opacity: 0; cursor: pointer; border: none; padding: 0;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      padding: 0;
     }
     .custom-swatch {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
       background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
-      border: 2.5px solid rgba(255,255,255,0.28);
+      border: 2.5px solid rgba(255, 255, 255, 0.4);
       pointer-events: none;
+      transition: transform 0.15s;
+    }
+    .custom-color-wrap:hover .custom-swatch {
+      transform: scale(1.15);
+    }
+    .custom-color-wrap input[type="color"]:focus-visible + .custom-swatch {
+      box-shadow: 0 0 0 3px #ffffff;
     }
 
     /* Size selector */
-    .size-options { display: flex; gap: 10px; }
+    .size-options {
+      display: flex;
+      gap: 10px;
+    }
     .size-opt {
-      flex: 1; padding: 14px 8px; border-radius: 14px; cursor: pointer;
-      border: 2px solid rgba(125,211,252,0.18); background: rgba(125,211,252,0.06);
-      text-align: center; transition: all 0.18s; user-select: none;
+      flex: 1;
+      padding: 13px 8px;
+      border-radius: 14px;
+      cursor: pointer;
+      border: 2px solid rgba(125, 211, 252, 0.18);
+      background: rgba(125, 211, 252, 0.06);
+      text-align: center;
+      transition: all 0.18s ease;
+      user-select: none;
+      font-family: inherit;
+      color: inherit;
+      touch-action: manipulation;
     }
-    .size-opt:hover { background: rgba(125,211,252,0.14); }
+    .size-opt:hover {
+      background: rgba(125, 211, 252, 0.14);
+      border-color: rgba(125, 211, 252, 0.35);
+    }
+    .size-opt:focus-visible {
+      outline: 2.5px solid #7dd3fc;
+      outline-offset: 3px;
+    }
     .size-opt.active {
-      border-color: #7dd3fc; background: rgba(125,211,252,0.2);
-      box-shadow: 0 0 18px rgba(125,211,252,0.18);
+      border-color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.22);
+      box-shadow: 0 0 18px rgba(125, 211, 252, 0.22);
     }
-    .size-opt .size-emoji { font-size: 1.5rem; display: block; margin-bottom: 5px; }
-    .size-opt .size-label { font-size: 0.78rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.06em; }
+    .size-opt .size-emoji {
+      font-size: 1.5rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .size-opt .size-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #93c5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
 
     /* Creature role selector */
-    .role-options { display: flex; flex-direction: column; gap: 8px; }
+    .role-options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
     .role-opt {
-      display: flex; align-items: center; gap: 14px;
-      padding: 12px 16px; border-radius: 12px; cursor: pointer;
-      border: 2px solid rgba(125,211,252,0.18); background: rgba(125,211,252,0.06);
-      transition: all 0.18s; user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      cursor: pointer;
+      border: 2px solid rgba(125, 211, 252, 0.18);
+      background: rgba(125, 211, 252, 0.06);
+      transition: all 0.18s ease;
+      user-select: none;
+      font-family: inherit;
+      color: inherit;
+      text-align: left;
+      touch-action: manipulation;
     }
-    .role-opt:hover { background: rgba(125,211,252,0.12); }
+    .role-opt:hover {
+      background: rgba(125, 211, 252, 0.14);
+      border-color: rgba(125, 211, 252, 0.35);
+    }
+    .role-opt:focus-visible {
+      outline: 2.5px solid #7dd3fc;
+      outline-offset: 3px;
+    }
     .role-opt.active {
-      border-color: #7dd3fc; background: rgba(125,211,252,0.18);
-      box-shadow: 0 0 14px rgba(125,211,252,0.14);
+      border-color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.2);
+      box-shadow: 0 0 16px rgba(125, 211, 252, 0.16);
     }
-    .role-opt-emoji { font-size: 1.5rem; flex-shrink: 0; }
-    .role-opt-info  { display: flex; flex-direction: column; gap: 2px; }
-    .role-opt-label { font-size: 0.88rem; font-weight: 800; color: #93c5fd; }
-    .role-opt-desc  { font-size: 0.75rem; color: #2a4a6a; }
-    .role-opt.active .role-opt-desc { color: #4b6481; }
+    .role-opt-emoji {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .role-opt-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .role-opt-label {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #93c5fd;
+    }
+    .role-opt-desc {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+    .role-opt.active .role-opt-desc {
+      color: #cbd5e1;
+    }
 
-    /* Advanced (TinkerCAD) */
-    details { margin-bottom: 22px; }
+    /* Advanced 3D Model Upload */
+    details {
+      margin: 24px 0;
+      background: rgba(2, 13, 26, 0.5);
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      border-radius: 16px;
+      padding: 14px 18px;
+    }
     summary {
-      cursor: pointer; color: #4b6481; font-size: 0.84rem; font-weight: 700;
-      letter-spacing: 0.05em; user-select: none; list-style: none;
-      display: flex; align-items: center; gap: 6px; padding: 6px 0;
+      cursor: pointer;
+      color: #93c5fd;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      user-select: none;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
     }
     summary::-webkit-details-marker { display: none; }
-    summary::before { content: '▸'; transition: transform 0.2s; display: inline-block; }
-    details[open] summary::before { transform: rotate(90deg); }
-    details .field { margin-top: 12px; margin-bottom: 0; }
+    summary::before {
+      content: '▸';
+      font-size: 1rem;
+      transition: transform 0.2s ease;
+      display: inline-block;
+      color: #7dd3fc;
+    }
+    details[open] summary::before {
+      transform: rotate(90deg);
+    }
+    summary:focus-visible {
+      outline: 2.5px solid #7dd3fc;
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+    details .field {
+      margin-top: 14px;
+      margin-bottom: 0;
+    }
 
-    /* STL file upload */
+    /* STL/GLB File Drop */
     .file-drop {
       position: relative;
-      border: 2px dashed rgba(125,211,252,0.28); border-radius: 12px;
-      padding: 22px 16px; text-align: center; cursor: pointer;
+      border: 2px dashed rgba(125, 211, 252, 0.35);
+      border-radius: 14px;
+      padding: 22px 16px;
+      text-align: center;
+      cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
-      background: rgba(125,211,252,0.04);
+      background: rgba(125, 211, 252, 0.05);
+      display: block;
     }
     .file-drop:hover, .file-drop.dragover {
-      border-color: rgba(125,211,252,0.6); background: rgba(125,211,252,0.1);
+      border-color: #7dd3fc;
+      background: rgba(125, 211, 252, 0.12);
+    }
+    .file-drop:focus-within {
+      outline: 2.5px solid #7dd3fc;
+      outline-offset: 3px;
     }
     .file-drop input[type="file"] {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      opacity: 0; cursor: pointer;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
     }
-    .file-drop-icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
-    .file-drop-text { color: #7dd3fc; font-weight: 700; font-size: 0.9rem; display: block; }
-    .file-drop-hint { color: #2a4a6a; font-size: 0.78rem; margin-top: 4px; display: block; }
+    .file-drop-icon {
+      font-size: 1.8rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .file-drop-text {
+      color: #7dd3fc;
+      font-weight: 700;
+      font-size: 0.92rem;
+      display: block;
+    }
+    .file-drop-hint {
+      color: #94a3b8;
+      font-size: 0.78rem;
+      margin-top: 4px;
+      display: block;
+    }
     .file-chosen {
-      display: none; align-items: center; gap: 10px;
-      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
-      border-radius: 10px; padding: 10px 14px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      border-radius: 12px;
+      padding: 10px 16px;
     }
     .file-chosen.show { display: flex; }
-    .file-chosen-name { flex: 1; color: #bbf7d0; font-weight: 700; font-size: 0.88rem; word-break: break-all; }
-    .file-clear-btn {
-      background: rgba(239,68,68,0.14); border: 1px solid rgba(239,68,68,0.3);
-      color: #fca5a5; padding: 3px 10px; border-radius: 6px;
-      cursor: pointer; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
-      font-family: inherit;
+    .file-chosen-name {
+      flex: 1;
+      color: #bbf7d0;
+      font-weight: 700;
+      font-size: 0.88rem;
+      word-break: break-all;
     }
-    .file-clear-btn:hover { background: rgba(239,68,68,0.28); }
+    .file-clear-btn {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .file-clear-btn:hover { background: rgba(239, 68, 68, 0.28); }
+    .file-clear-btn:focus-visible { outline: 2.5px solid #fca5a5; outline-offset: 2px; }
     .stl-steps {
-      margin-top: 10px; padding: 10px 14px;
-      background: rgba(125,211,252,0.05); border-radius: 8px;
-      color: #4b6481; font-size: 0.78rem; line-height: 1.7;
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(125, 211, 252, 0.05);
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      line-height: 1.6;
     }
     .stl-steps strong { color: #7dd3fc; }
 
     /* STL dot-placement preview */
-    #stl-preview-section { display: none; margin-top: 14px; }
+    #stl-preview-section { display: none; margin-top: 16px; }
     #stl-canvas-wrap {
-      position: relative; border-radius: 12px; overflow: hidden;
-      border: 1px solid rgba(125,211,252,0.18); background: #020d1a;
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(125, 211, 252, 0.22);
+      background: #020d1a;
     }
-    #stl-preview-canvas { display: block; width: 100%; height: 280px; }
+    #stl-preview-canvas {
+      display: block;
+      width: 100%;
+      height: 280px;
+      touch-action: none;
+    }
     .dot-guide {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 8px 14px; font-size: 0.82rem; font-weight: 700;
-      background: rgba(2,13,26,0.9); backdrop-filter: blur(4px);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 10px 14px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      background: rgba(2, 13, 26, 0.92);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       text-align: center;
+      border-top: 1px solid rgba(125, 211, 252, 0.15);
     }
-    .dot-guide-head { color: #ffaaaa; }
-    .dot-guide-tail { color: #99ccff; }
-    .dot-guide-fin  { color: #ffee88; }
-    .dot-guide-done { color: #99ffcc; }
+    .dot-guide-head { color: #fca5a5; }
+    .dot-guide-tail { color: #93c5fd; }
+    .dot-guide-back { color: #6ee7b7; }
+    .dot-guide-fin  { color: #fde047; }
+    .dot-guide-done { color: #86efac; }
+
     #dot-controls {
-      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
     }
     .dot-btn {
-      flex: 1; padding: 9px 6px; border-radius: 9px;
-      font-weight: 800; font-size: 0.82rem; cursor: pointer;
-      font-family: inherit; transition: all 0.15s; min-width: 68px;
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      min-width: 68px;
+      touch-action: manipulation;
     }
-    .dot-btn-head { background: rgba(255,60,60,0.12); border: 2px solid rgba(255,60,60,0.28); color: #ffaaaa; }
-    .dot-btn-head.active { background: rgba(255,60,60,0.3); border-color: #ff4444; color: #ffdddd; }
-    .dot-btn-tail { background: rgba(50,140,255,0.12); border: 2px solid rgba(50,140,255,0.28); color: #88bbff; }
-    .dot-btn-tail.active { background: rgba(50,140,255,0.3); border-color: #3388ff; color: #cce0ff; }
-    .dot-btn-fin  { background: rgba(255,200,30,0.12); border: 2px solid rgba(255,200,30,0.28); color: #ffe080; }
-    .dot-btn-fin.active  { background: rgba(255,200,30,0.3); border-color: #ffcc00; color: #fff0bb; }
-    .dot-btn-back  { background: rgba(52,211,153,0.12); border: 2px solid rgba(52,211,153,0.28); color: #6ee7b7; }
-    .dot-btn-back.active  { background: rgba(52,211,153,0.3); border-color: #34d399; color: #d1fae5; }
-    .dot-btn-reset { background: rgba(125,211,252,0.06); border: 2px solid rgba(125,211,252,0.14); color: #2a4a6a; }
-    .dot-btn-reset:hover { background: rgba(125,211,252,0.13); color: #7dd3fc; }
-    #dot-status { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .dot-btn:focus-visible { outline: 2.5px solid #ffffff; outline-offset: 2px; }
+    .dot-btn-head { background: rgba(255, 60, 60, 0.14); border: 2px solid rgba(255, 60, 60, 0.35); color: #fca5a5; }
+    .dot-btn-head.active { background: rgba(255, 60, 60, 0.35); border-color: #ef4444; color: #ffffff; }
+    .dot-btn-tail { background: rgba(50, 140, 255, 0.14); border: 2px solid rgba(50, 140, 255, 0.35); color: #93c5fd; }
+    .dot-btn-tail.active { background: rgba(50, 140, 255, 0.35); border-color: #3b82f6; color: #ffffff; }
+    .dot-btn-back { background: rgba(52, 211, 153, 0.14); border: 2px solid rgba(52, 211, 153, 0.35); color: #6ee7b7; }
+    .dot-btn-back.active { background: rgba(52, 211, 153, 0.35); border-color: #10b981; color: #ffffff; }
+    .dot-btn-fin  { background: rgba(255, 200, 30, 0.14); border: 2px solid rgba(255, 200, 30, 0.35); color: #fde047; }
+    .dot-btn-fin.active  { background: rgba(255, 200, 30, 0.35); border-color: #eab308; color: #ffffff; }
+    .dot-btn-reset { background: rgba(125, 211, 252, 0.08); border: 2px solid rgba(125, 211, 252, 0.2); color: #94a3b8; }
+    .dot-btn-reset:hover { background: rgba(125, 211, 252, 0.16); color: #7dd3fc; }
+
+    #dot-status { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .dot-stat {
-      font-size: 0.78rem; font-weight: 700; color: #1e3a52;
-      padding: 4px 12px; border-radius: 20px;
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(125,211,252,0.1);
-      transition: color 0.2s, border-color 0.2s;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #64748b;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(125, 211, 252, 0.14);
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
     }
-    .dot-stat.placed { color: #7dd3fc; border-color: rgba(125,211,252,0.38); }
-    .preview-tip { color: #1a3448; font-size: 0.72rem; text-align: center; margin-top: 6px; }
+    .dot-stat.placed {
+      color: #7dd3fc;
+      border-color: rgba(125, 211, 252, 0.45);
+      background: rgba(125, 211, 252, 0.1);
+    }
+    .preview-tip {
+      color: #94a3b8;
+      font-size: 0.75rem;
+      text-align: center;
+      margin-top: 8px;
+    }
 
     /* Error */
-    .error-msg { color: #fca5a5; font-size: 0.85rem; font-weight: 700; margin-top: 8px; display: none; }
+    .error-msg {
+      color: #fca5a5;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-top: 8px;
+      display: none;
+      padding: 6px 12px;
+      background: rgba(239, 68, 68, 0.12);
+      border-left: 3px solid #ef4444;
+      border-radius: 6px;
+    }
     .error-msg.show { display: block; }
 
     /* Submit */
     .submit-btn {
-      width: 100%; padding: 17px;
-      background: linear-gradient(135deg, #0891b2, #0e7490);
-      border: none; border-radius: 14px;
-      color: #cffafe; font-size: 1.15rem; font-weight: 900;
-      cursor: pointer; letter-spacing: 0.03em;
-      transition: all 0.2s; box-shadow: 0 4px 28px rgba(6,182,212,0.3);
+      width: 100%;
+      padding: 17px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1px solid rgba(125, 211, 252, 0.3);
+      border-radius: 16px;
+      color: #f0f9ff;
+      font-size: 1.15rem;
+      font-weight: 900;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 28px rgba(2, 132, 199, 0.35);
+      font-family: inherit;
+      touch-action: manipulation;
     }
-    .submit-btn:hover { background: linear-gradient(135deg, #0ea5e9, #0891b2); box-shadow: 0 4px 36px rgba(6,182,212,0.5); transform: translateY(-1px); }
-    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      box-shadow: 0 8px 36px rgba(2, 132, 199, 0.5);
+      transform: translateY(-2px);
+    }
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+    .submit-btn:focus-visible {
+      outline: 3px solid #7dd3fc;
+      outline-offset: 4px;
+    }
+    .submit-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
 
     /* Success */
-    #success { display: none; text-align: center; padding: 16px 0; }
+    #success { display: none; text-align: center; padding: 20px 0 10px; }
     #success.show { display: block; }
     #form-area.hidden { display: none; }
-    .success-fish { font-size: 3.8rem; animation: successbounce 0.55s cubic-bezier(.36,.07,.19,.97); display: block; }
-    @keyframes successbounce { 0% { transform: scale(0.4); } 60% { transform: scale(1.22); } 100% { transform: scale(1); } }
-    .success-msg { font-size: 1.35rem; font-weight: 900; color: #7dd3fc; margin: 14px 0 6px; }
-    .success-sub { color: #4b6481; font-size: 0.92rem; margin-bottom: 28px; }
-    .success-actions { display: flex; flex-direction: column; gap: 10px; }
+    .success-fish {
+      font-size: 4rem;
+      animation: successbounce 0.6s cubic-bezier(.36,.07,.19,.97);
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    @keyframes successbounce {
+      0%   { transform: scale(0.3); opacity: 0; }
+      60%  { transform: scale(1.25); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .success-msg {
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: #7dd3fc;
+      margin: 10px 0 6px;
+    }
+    .success-sub {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+    }
+    .success-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
     .btn-primary {
-      display: block; padding: 15px; border-radius: 12px; text-align: center;
-      background: rgba(6,182,212,0.16); border: 1.5px solid rgba(6,182,212,0.4);
-      color: #7dd3fc; font-weight: 800; font-size: 0.98rem; text-decoration: none;
-      transition: background 0.2s;
+      display: block;
+      padding: 16px;
+      border-radius: 14px;
+      text-align: center;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid rgba(125, 211, 252, 0.35);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(2, 132, 199, 0.3);
     }
-    .btn-primary:hover { background: rgba(6,182,212,0.3); }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      transform: translateY(-1px);
+    }
+    .btn-primary:focus-visible {
+      outline: 3px solid #7dd3fc;
+      outline-offset: 3px;
+    }
     .btn-secondary {
-      display: block; width: 100%; padding: 15px; border-radius: 12px; text-align: center;
-      background: transparent; border: 1.5px solid rgba(125,211,252,0.16);
-      color: #4b6481; font-weight: 700; font-size: 0.92rem; cursor: pointer;
-      transition: background 0.2s, color 0.2s; font-family: inherit;
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      text-align: center;
+      background: transparent;
+      border: 1.5px solid rgba(125, 211, 252, 0.22);
+      color: #93c5fd;
+      font-weight: 700;
+      font-size: 0.94rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
     }
-    .btn-secondary:hover { background: rgba(125,211,252,0.08); color: #93c5fd; }
+    .btn-secondary:hover {
+      background: rgba(125, 211, 252, 0.12);
+      border-color: rgba(125, 211, 252, 0.45);
+    }
+    .btn-secondary:focus-visible {
+      outline: 3px solid #7dd3fc;
+      outline-offset: 3px;
+    }
 
-    @media (max-width: 400px) {
-      .card { padding: 24px 16px 32px; }
-      h1 { font-size: 1.28rem; }
+    @media (max-width: 480px) {
+      .card {
+        padding: 26px 18px 32px;
+        border-radius: 20px;
+      }
+      h1 { font-size: 1.35rem; }
+      .color-grid { gap: 8px; }
+      .swatch { width: 34px; height: 34px; }
+      .custom-color-wrap, .custom-swatch { width: 34px; height: 34px; }
     }
   </style>
   <script src="assets/vendor/firebase-compat.min.js"></script>
   <script>
-    firebase.initializeApp({
-      apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
-      authDomain: "steamaqaurium.firebaseapp.com",
-      databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
-      projectId: "steamaqaurium",
-      storageBucket: "steamaqaurium.firebasestorage.app",
-      messagingSenderId: "966555196100",
-      appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
-    });
-    window.__db = firebase.database();
+    try {
+      if (window.firebase) {
+        firebase.initializeApp({
+          apiKey: "AIzaSyD5_i08If4CWXvTzr3nhdh3rQiZHybSDsU",
+          authDomain: "steamaqaurium.firebaseapp.com",
+          databaseURL: "https://steamaqaurium-default-rtdb.firebaseio.com",
+          projectId: "steamaqaurium",
+          storageBucket: "steamaqaurium.firebasestorage.app",
+          messagingSenderId: "966555196100",
+          appId: "1:966555196100:web:e0243f586e9cf14f9f4791"
+        });
+        window.__db = firebase.database();
+      }
+    } catch (err) {
+      console.warn("Firebase initialization deferred:", err);
+      window.__db = null;
+    }
   </script>
 <script src="assets/js/vr-mode.js" defer></script>
 </head>
 <body>
-<style>.skip-link{position:absolute;left:-9999px}.skip-link:focus{position:fixed;left:1rem;top:1rem;z-index:9999;background:#fff;color:#111;padding:0.6rem 1rem;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.25);text-decoration:none;font-weight:600}</style>
 <a class="skip-link" href="#main-content">Skip to content</a>
 
 <header class="site-header">
@@ -308,7 +817,7 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="steam-lessons.html">Lessons</a></li>
         <li><a href="paths.html">Paths</a></li>
-        <li><a href="showcase.html" aria-current="page">Showcase</a></li>
+        <li><a href="showcase.html">Showcase</a></li>
         <li><a href="applications.html">Apps</a></li>
         <li><a href="library.html">Library</a></li>
         <li><a href="about.html">About</a></li>
@@ -317,161 +826,231 @@
   </div>
 </header>
 
-<div class="top-nav" style="display:flex;gap:10px;">
+<nav class="top-nav" aria-label="Breadcrumb">
   <a class="back-link" href="student-fishtank.html">🐠 ← Back to Tank</a>
   <a class="back-link" href="index.html">🏠 Home</a>
-</div>
+</nav>
 
-<div class="card">
-  <h1 id="main-content">Add Your Fish! 🐠</h1>
-  <p class="subtitle">Design your fish and add it to the class tank</p>
+<main class="card" id="main-content">
+  <h1>Add Your Creature! 🐠</h1>
+  <p class="subtitle">Design your creature and add it to the live class tank</p>
 
-  <!-- Fish preview -->
-  <div class="fish-preview">
-    <div class="fish-swim">
-      <svg id="fish-svg" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" width="210" height="122">
-        <polygon id="fp-tail" points="20,35 2,13 2,57" opacity="0.85"/>
-        <ellipse id="fp-body" cx="62" cy="35" rx="40" ry="23"/>
-        <polygon id="fp-dfin" points="46,12 68,12 60,23" opacity="0.72"/>
-        <ellipse id="fp-pfin" cx="56" cy="48" rx="13" ry="6" opacity="0.65" transform="rotate(18 56 48)"/>
-        <circle cx="90" cy="29" r="5.5" fill="white"/>
-        <circle cx="91.5" cy="29" r="2.8" fill="#111"/>
-        <ellipse cx="66" cy="43" rx="18" ry="7" fill="white" opacity="0.12"/>
-      </svg>
+  <!-- Creature preview -->
+  <div class="preview-stage" aria-label="Live creature preview">
+    <div class="preview-bubble-bg" aria-hidden="true"></div>
+    <div class="preview-name-badge" id="preview-name-badge">Your Creature</div>
+    <div class="creature-viewport">
+      <div class="creature-scaler" id="creature-scaler">
+        <!-- 1. Swimmer Fish SVG -->
+        <svg id="preview-svg-fish" class="creature-svg swim-anim-fish active" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <polygon class="creature-tint-accent" points="20,35 2,13 2,57" opacity="0.85"/>
+          <ellipse class="creature-tint-body" cx="62" cy="35" rx="40" ry="23"/>
+          <polygon class="creature-tint-accent" points="46,12 68,12 60,23" opacity="0.75"/>
+          <ellipse class="creature-tint-accent" cx="56" cy="48" rx="13" ry="6" opacity="0.7" transform="rotate(18 56 48)"/>
+          <circle cx="90" cy="29" r="5.5" fill="#ffffff"/>
+          <circle cx="91.5" cy="29" r="2.8" fill="#0f172a"/>
+          <ellipse cx="66" cy="43" rx="18" ry="7" fill="#ffffff" opacity="0.16"/>
+        </svg>
+
+        <!-- 2. Bottom Feeder Crab SVG -->
+        <svg id="preview-svg-bottom" class="creature-svg swim-anim-bottom" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Legs -->
+          <path class="creature-tint-stroke" d="M34,44 Q20,54 16,66 M42,48 Q32,58 30,68 M78,48 Q88,58 90,68 M86,44 Q100,54 104,66" fill="none" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- Arms and Claws -->
+          <path class="creature-tint-accent" d="M36,36 Q20,24 16,14 Q24,12 30,22 Z" opacity="0.9"/>
+          <path class="creature-tint-accent" d="M16,14 Q8,8 14,2 Q22,8 24,14 Z" opacity="0.95"/>
+          <path class="creature-tint-accent" d="M84,36 Q100,24 104,14 Q96,12 90,22 Z" opacity="0.9"/>
+          <path class="creature-tint-accent" d="M104,14 Q112,8 106,2 Q98,8 96,14 Z" opacity="0.95"/>
+          <!-- Body Shell -->
+          <ellipse class="creature-tint-body" cx="60" cy="42" rx="34" ry="21"/>
+          <!-- Eyestalks -->
+          <rect x="47" y="16" width="4" height="14" rx="2" fill="#ffffff" opacity="0.9"/>
+          <circle cx="49" cy="16" r="4.5" fill="#ffffff"/>
+          <circle cx="49" cy="16" r="2.3" fill="#0f172a"/>
+          <rect x="69" y="16" width="4" height="14" rx="2" fill="#ffffff" opacity="0.9"/>
+          <circle cx="71" cy="16" r="4.5" fill="#ffffff"/>
+          <circle cx="71" cy="16" r="2.3" fill="#0f172a"/>
+          <!-- Shell highlight -->
+          <ellipse cx="60" cy="38" rx="24" ry="10" fill="#ffffff" opacity="0.18"/>
+        </svg>
+
+        <!-- 3. Wall Crawler Snail SVG -->
+        <svg id="preview-svg-wall" class="creature-svg swim-anim-wall" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Foot / Body -->
+          <path class="creature-tint-accent" d="M12,56 C28,52 46,55 76,55 C92,55 106,52 108,46 C109,40 102,36 94,36 C88,36 84,40 76,42 C60,42 40,40 24,46 C14,50 8,56 12,56 Z" opacity="0.92"/>
+          <!-- Eyestalks -->
+          <path d="M96,36 Q100,20 105,14" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="105" cy="14" r="3" fill="#ffffff"/>
+          <circle cx="105" cy="14" r="1.5" fill="#0f172a"/>
+          <path d="M92,36 Q93,22 95,16" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="95" cy="16" r="3" fill="#ffffff"/>
+          <circle cx="95" cy="16" r="1.5" fill="#0f172a"/>
+          <!-- Spiral Shell -->
+          <circle class="creature-tint-body" cx="52" cy="34" r="24"/>
+          <path d="M52,34 A16,16 0 1,0 68,34 A10,10 0 1,0 58,34 A4,4 0 1,0 54,34" fill="none" stroke="#ffffff" stroke-width="2.4" opacity="0.45" stroke-linecap="round"/>
+          <ellipse cx="50" cy="24" rx="12" ry="5" fill="#ffffff" opacity="0.18"/>
+        </svg>
+
+        <!-- 4. Eel SVG -->
+        <svg id="preview-svg-eel" class="creature-svg swim-anim-eel" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Dorsal ribbon fin -->
+          <path class="creature-tint-accent" d="M12,42 Q30,26 50,42 T88,42 T112,34 Q90,18 70,25 T28,26 Z" opacity="0.65"/>
+          <!-- Sinuous Body -->
+          <path class="creature-tint-body" d="M8,42 Q28,24 50,42 T90,42 T114,34 Q108,28 98,30 Q78,42 58,30 T18,36 Q10,40 8,42 Z"/>
+          <!-- Snout & Eye -->
+          <circle cx="108" cy="32" r="3.5" fill="#ffffff"/>
+          <circle cx="109" cy="32" r="1.8" fill="#0f172a"/>
+          <ellipse cx="60" cy="33" rx="16" ry="3" fill="#ffffff" opacity="0.18" transform="rotate(-6 60 33)"/>
+        </svg>
+
+        <!-- 5. Jellyfish SVG -->
+        <svg id="preview-svg-jelly" class="creature-svg swim-anim-jelly" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Tentacles -->
+          <path class="creature-tint-stroke" d="M46,40 Q40,54 48,68 M53,42 Q49,56 54,69 M60,43 Q62,56 59,69 M67,42 Q71,56 66,69 M74,40 Q80,54 72,68" fill="none" stroke-width="2.2" stroke-linecap="round" opacity="0.75"/>
+          <!-- Inner bell structure -->
+          <ellipse class="creature-tint-accent" cx="60" cy="32" rx="16" ry="10" opacity="0.5"/>
+          <!-- Main Bell Dome -->
+          <path class="creature-tint-body" d="M34,40 C34,15 86,15 86,40 C78,44 72,39 60,42 C48,39 42,44 34,40 Z" opacity="0.88"/>
+          <ellipse cx="60" cy="22" rx="14" ry="6" fill="#ffffff" opacity="0.22"/>
+        </svg>
+      </div>
     </div>
   </div>
 
-  <!-- Form -->
+  <!-- Form Area -->
   <div id="form-area">
     <div class="field">
-      <label for="fish-name">Your Fish's Name</label>
+      <label class="field-label" for="fish-name">Your Creature's Name</label>
       <input type="text" id="fish-name" maxlength="24"
-             placeholder="e.g. Bubbles, Nemo, Sparkle…" autocomplete="off" />
-      <div class="error-msg" id="name-error"></div>
+             placeholder="e.g. Bubbles, Nemo, Sparkle…"
+             autocomplete="off" aria-describedby="name-error" />
+      <div class="error-msg" id="name-error" role="alert" aria-live="polite"></div>
     </div>
 
     <div class="field">
-      <label>Pick a Color</label>
-      <div class="color-grid" id="color-grid"></div>
+      <span class="field-label" id="color-label">Pick a Color</span>
+      <div class="color-grid" id="color-grid" role="radiogroup" aria-labelledby="color-label"></div>
     </div>
 
     <div class="field">
-      <label>Fish Size</label>
-      <div class="size-options">
-        <div class="size-opt active" data-size="0.75" onclick="selectSize(this)">
-          <span class="size-emoji">🐟</span>
+      <span class="field-label" id="size-label">Creature Size</span>
+      <div class="size-options" id="size-options" role="radiogroup" aria-labelledby="size-label">
+        <button type="button" class="size-opt" role="radio" aria-checked="false" data-size="0.75" onclick="selectSize(this)">
+          <span class="size-emoji" aria-hidden="true">🐟</span>
           <span class="size-label">Small</span>
-        </div>
-        <div class="size-opt" data-size="1.0" onclick="selectSize(this)">
-          <span class="size-emoji">🐠</span>
+        </button>
+        <button type="button" class="size-opt active" role="radio" aria-checked="true" data-size="1.0" onclick="selectSize(this)">
+          <span class="size-emoji" aria-hidden="true">🐠</span>
           <span class="size-label">Medium</span>
-        </div>
-        <div class="size-opt" data-size="1.3" onclick="selectSize(this)">
-          <span class="size-emoji">🐡</span>
+        </button>
+        <button type="button" class="size-opt" role="radio" aria-checked="false" data-size="1.3" onclick="selectSize(this)">
+          <span class="size-emoji" aria-hidden="true">🐡</span>
           <span class="size-label">Large</span>
-        </div>
+        </button>
       </div>
     </div>
 
     <div class="field">
-      <label>Creature Type</label>
-      <div class="role-options">
-        <div class="role-opt active" data-role="fish" onclick="selectRole(this)">
-          <span class="role-opt-emoji">🐟</span>
+      <span class="field-label" id="role-label">Creature Type</span>
+      <div class="role-options" id="role-options" role="radiogroup" aria-labelledby="role-label">
+        <button type="button" class="role-opt active" role="radio" aria-checked="true" data-role="fish" onclick="selectRole(this)">
+          <span class="role-opt-emoji" aria-hidden="true">🐟</span>
           <div class="role-opt-info">
             <span class="role-opt-label">Fish — Swimmer</span>
-            <span class="role-opt-desc">Swims freely through the water</span>
+            <span class="role-opt-desc">Swims freely through the open water</span>
           </div>
-        </div>
-        <div class="role-opt" data-role="bottom" onclick="selectRole(this)">
-          <span class="role-opt-emoji">🦀</span>
+        </button>
+        <button type="button" class="role-opt" role="radio" aria-checked="false" data-role="bottom" onclick="selectRole(this)">
+          <span class="role-opt-emoji" aria-hidden="true">🦀</span>
           <div class="role-opt-info">
             <span class="role-opt-label">Bottom Feeder</span>
             <span class="role-opt-desc">Scuttles along the sandy floor (crab, shrimp, lobster…)</span>
           </div>
-        </div>
-        <div class="role-opt" data-role="wall" onclick="selectRole(this)">
-          <span class="role-opt-emoji">🐌</span>
+        </button>
+        <button type="button" class="role-opt" role="radio" aria-checked="false" data-role="wall" onclick="selectRole(this)">
+          <span class="role-opt-emoji" aria-hidden="true">🐌</span>
           <div class="role-opt-info">
             <span class="role-opt-label">Wall Crawler</span>
-            <span class="role-opt-desc">Clings to the tank glass and slowly slides along it</span>
+            <span class="role-opt-desc">Clings to the aquarium glass and slowly climbs along it</span>
           </div>
-        </div>
-        <div class="role-opt" data-role="eel" onclick="selectRole(this)">
-          <span class="role-opt-emoji">🐍</span>
+        </button>
+        <button type="button" class="role-opt" role="radio" aria-checked="false" data-role="eel" onclick="selectRole(this)">
+          <span class="role-opt-emoji" aria-hidden="true">🐍</span>
           <div class="role-opt-info">
             <span class="role-opt-label">Eel</span>
-            <span class="role-opt-desc">Slithers near the bottom with a sinuous, wave-like body</span>
+            <span class="role-opt-desc">Slithers near the tank floor with a sinuous, wave-like body</span>
           </div>
-        </div>
-        <div class="role-opt" data-role="jelly" onclick="selectRole(this)">
-          <span class="role-opt-emoji">🪼</span>
+        </button>
+        <button type="button" class="role-opt" role="radio" aria-checked="false" data-role="jelly" onclick="selectRole(this)">
+          <span class="role-opt-emoji" aria-hidden="true">🪼</span>
           <div class="role-opt-info">
             <span class="role-opt-label">Jellyfish</span>
-            <span class="role-opt-desc">Drifts through the upper water with a pulsing bell and trailing tentacles</span>
+            <span class="role-opt-desc">Drifts gracefully with a pulsing bell and trailing tentacles</span>
           </div>
-        </div>
+        </button>
       </div>
     </div>
 
+    <!-- 3D Model Upload -->
     <details id="stl-section">
       <summary>TinkerCAD STL / Sketchfab GLB (optional)</summary>
       <div class="field">
-        <label for="stl-file">Upload Your STL or GLB File</label>
+        <label class="field-label" for="stl-file">Upload Your 3D File</label>
         <div class="file-drop" id="file-drop">
-          <input type="file" id="stl-file" accept=".stl,.glb" />
-          <span class="file-drop-icon">📁</span>
-          <span class="file-drop-text">Click to choose your .STL or .GLB file</span>
+          <input type="file" id="stl-file" accept=".stl,.glb" aria-label="Upload 3D model in STL or GLB format" />
+          <span class="file-drop-icon" aria-hidden="true">📁</span>
+          <span class="file-drop-text">Click or drag a .STL or .GLB file here</span>
           <span class="file-drop-hint">STL max 500 KB · GLB max 2 MB</span>
         </div>
         <div class="file-chosen" id="file-chosen">
-          ✅ <span class="file-chosen-name" id="file-name"></span>
+          <span aria-hidden="true">✅</span>
+          <span class="file-chosen-name" id="file-name"></span>
           <button class="file-clear-btn" type="button" onclick="clearSTL()">✕ Remove</button>
         </div>
-        <div class="error-msg" id="stl-error"></div>
+        <div class="error-msg" id="stl-error" role="alert" aria-live="polite"></div>
         <div class="stl-steps">
           <strong>TinkerCAD (.STL):</strong> Open your design → <strong>Export</strong> → choose <strong>.STL</strong> → upload it here<br><br>
           <strong>Sketchfab (.GLB):</strong> Find a model on <strong>sketchfab.com</strong> → <strong>Download</strong> → choose <strong>GLB</strong> → upload it here
         </div>
 
-        <!-- 3-D preview + dot placement (shown after file loads) -->
+        <!-- 3D preview + dot placement -->
         <div id="stl-preview-section">
           <div id="stl-canvas-wrap">
-            <canvas id="stl-preview-canvas"></canvas>
-            <div id="dot-guide" class="dot-guide dot-guide-head">🔴 Click your fish's HEAD on the model above</div>
+            <canvas id="stl-preview-canvas" role="img" aria-label="3D model orientation preview"></canvas>
+            <div id="dot-guide" class="dot-guide dot-guide-head" aria-live="polite">🔴 Click your fish's HEAD on the model above</div>
           </div>
           <div id="dot-controls">
-            <button id="dot-btn-head"  class="dot-btn dot-btn-head">🔴 Head</button>
-            <button id="dot-btn-tail"  class="dot-btn dot-btn-tail">🔵 Tail</button>
-            <button id="dot-btn-back"  class="dot-btn dot-btn-back">🔺 Back</button>
-            <button id="dot-btn-fin"   class="dot-btn dot-btn-fin">🟡 Fins</button>
-            <button id="dot-reset-btn" class="dot-btn dot-btn-reset">↺ Reset</button>
+            <button id="dot-btn-head"  class="dot-btn dot-btn-head active" type="button">🔴 Head</button>
+            <button id="dot-btn-tail"  class="dot-btn dot-btn-tail" type="button">🔵 Tail</button>
+            <button id="dot-btn-back"  class="dot-btn dot-btn-back" type="button">🔺 Back</button>
+            <button id="dot-btn-fin"   class="dot-btn dot-btn-fin" type="button">🟡 Fins</button>
+            <button id="dot-reset-btn" class="dot-btn dot-btn-reset" type="button">↺ Reset</button>
           </div>
-          <div id="dot-status">
+          <div id="dot-status" aria-label="Dot calibration status">
             <span class="dot-stat" id="dot-stat-head">🔴 Head</span>
             <span class="dot-stat" id="dot-stat-tail">🔵 Tail</span>
             <span class="dot-stat" id="dot-stat-back">🔺 Back</span>
             <span class="dot-stat" id="dot-stat-fin">🟡 Fins</span>
           </div>
-          <p class="preview-tip">Drag to rotate · Scroll to zoom · Place all dots, then scroll down to submit</p>
+          <p class="preview-tip">Drag to rotate · Scroll to zoom · Place all calibration dots, then submit</p>
         </div>
       </div>
     </details>
 
-    <button class="submit-btn" onclick="submitFish()">🐠 Add My Fish to the Tank!</button>
+    <button class="submit-btn" type="button" id="submit-btn" onclick="submitFish()">🐠 Add My Creature to the Tank!</button>
   </div>
 
   <!-- Success state -->
-  <div id="success">
+  <div id="success" role="status" aria-live="polite">
     <span class="success-fish" id="success-emoji">🐠</span>
     <div class="success-msg" id="success-name"></div>
     <div class="success-sub">is now swimming in the class tank!</div>
     <div class="success-actions">
       <a class="btn-primary" href="student-fishtank.html">🐠 See the Tank!</a>
-      <button class="btn-secondary" onclick="addAnother()">+ Add Another Fish</button>
+      <button class="btn-secondary" type="button" onclick="addAnother()">+ Add Another Creature</button>
     </div>
   </div>
-</div>
+</main>
 
 <script>
 const PRESETS = [
@@ -490,18 +1069,33 @@ const PRESETS = [
 ];
 
 let selectedColor = PRESETS[0].hex;
-let selectedSize = 0.75;
+let selectedSize = 1.0;
 let selectedRole = 'fish';
 
-// Build color swatches
+// Build color swatches with keyboard navigation
 const grid = document.getElementById('color-grid');
+const nameInput = document.getElementById('fish-name');
+const nameBadge = document.getElementById('preview-name-badge');
+const creatureScaler = document.getElementById('creature-scaler');
+
+nameInput.addEventListener('input', () => {
+  const val = nameInput.value.trim();
+  nameBadge.textContent = val || 'Your Creature';
+});
+
 PRESETS.forEach((c, i) => {
-  const el = document.createElement('div');
-  el.className = 'swatch' + (i === 0 ? ' active' : '');
-  el.style.background = c.hex;
-  el.title = c.name;
-  el.onclick = () => selectColor(c.hex, el);
-  grid.appendChild(el);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'swatch' + (i === 0 ? ' active' : '');
+  btn.setAttribute('role', 'radio');
+  btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+  btn.setAttribute('aria-label', `Color ${c.name}`);
+  btn.style.background = c.hex;
+  btn.style.setProperty('--swatch-color', c.hex);
+  btn.title = c.name;
+  btn.onclick = () => selectColor(c.hex, btn);
+  btn.addEventListener('keydown', e => handleRadioNav(e, grid, '.swatch'));
+  grid.appendChild(btn);
 });
 
 // Custom color picker
@@ -511,47 +1105,95 @@ wrap.title = 'Custom color';
 const customSwatch = document.createElement('div');
 customSwatch.className = 'custom-swatch';
 const colorInput = document.createElement('input');
-colorInput.setAttribute('aria-label', 'Choose a custom fish color');
+colorInput.setAttribute('aria-label', 'Choose a custom creature color');
 colorInput.type = 'color';
 colorInput.value = selectedColor;
 colorInput.addEventListener('input', e => {
   selectedColor = e.target.value;
-  updatePreview(selectedColor);
-  grid.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+  updatePreviewColor(selectedColor);
+  grid.querySelectorAll('.swatch').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-checked', 'false');
+  });
 });
 wrap.appendChild(customSwatch);
 wrap.appendChild(colorInput);
 grid.appendChild(wrap);
 
-function updatePreview(hex) {
-  ['fp-body', 'fp-tail', 'fp-dfin', 'fp-pfin'].forEach(id => {
-    document.getElementById(id).setAttribute('fill', hex);
-  });
+function updatePreviewColor(hex) {
+  document.documentElement.style.setProperty('--creature-color', hex);
 }
-updatePreview(selectedColor);
+updatePreviewColor(selectedColor);
 
 function selectColor(hex, el) {
   selectedColor = hex;
-  updatePreview(hex);
+  updatePreviewColor(hex);
   colorInput.value = hex;
-  grid.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-  if (el) el.classList.add('active');
+  grid.querySelectorAll('.swatch').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-checked', 'false');
+  });
+  if (el) {
+    el.classList.add('active');
+    el.setAttribute('aria-checked', 'true');
+    el.focus();
+  }
 }
 
 function selectSize(el) {
-  document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.size-opt').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-checked', 'false');
+  });
   el.classList.add('active');
+  el.setAttribute('aria-checked', 'true');
   selectedSize = parseFloat(el.dataset.size);
+  creatureScaler.style.transform = `scale(${selectedSize})`;
 }
 
 function selectRole(el) {
-  document.querySelectorAll('.role-opt').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.role-opt').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-checked', 'false');
+  });
   el.classList.add('active');
+  el.setAttribute('aria-checked', 'true');
   selectedRole = el.dataset.role;
+
+  // Switch visible preview SVG
+  document.querySelectorAll('.creature-svg').forEach(svg => svg.classList.remove('active'));
+  const targetSvg = document.getElementById(`preview-svg-${selectedRole}`);
+  if (targetSvg) targetSvg.classList.add('active');
 }
 
-// Also allow pressing Enter in name field to submit
-document.getElementById('fish-name').addEventListener('keydown', e => {
+// Arrow key navigation for radio groups
+function handleRadioNav(e, container, selector) {
+  const items = Array.from(container.querySelectorAll(selector));
+  const currentIndex = items.indexOf(document.activeElement);
+  if (currentIndex === -1) return;
+
+  let nextIndex = currentIndex;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    nextIndex = (currentIndex + 1) % items.length;
+    e.preventDefault();
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    nextIndex = (currentIndex - 1 + items.length) % items.length;
+    e.preventDefault();
+  } else {
+    return;
+  }
+  items[nextIndex].click();
+}
+
+document.getElementById('size-options').addEventListener('keydown', e => {
+  handleRadioNav(e, document.getElementById('size-options'), '.size-opt');
+});
+document.getElementById('role-options').addEventListener('keydown', e => {
+  handleRadioNav(e, document.getElementById('role-options'), '.role-opt');
+});
+
+// Pressing Enter in name field triggers submission
+nameInput.addEventListener('keydown', e => {
   if (e.key === 'Enter') submitFish();
 });
 
@@ -573,7 +1215,7 @@ fileInput.addEventListener('change', e => {
   const isGLB = file.name.toLowerCase().endsWith('.glb');
   const maxSize = isGLB ? 2 * 1024 * 1024 : 500 * 1024;
   if (file.size > maxSize) {
-    stlError.textContent = `File too large (max ${isGLB ? '2 MB' : '500 KB'}). Try a smaller model.`;
+    stlError.textContent = `File is too large (max ${isGLB ? '2 MB' : '500 KB'}). Try a smaller model.`;
     stlError.classList.add('show');
     fileInput.value = '';
     return;
@@ -583,7 +1225,8 @@ fileInput.addEventListener('change', e => {
   reader.onload = ev => {
     stlDataURL = ev.target.result;
     modelFileType = isGLB ? 'glb' : 'stl';
-    fileNameEl.textContent = file.name;
+    const sizeKb = Math.round(file.size / 1024);
+    fileNameEl.textContent = `${file.name} (${sizeKb} KB)`;
     fileDrop.style.display = 'none';
     fileChosen.classList.add('show');
     document.dispatchEvent(new CustomEvent('model-loaded', { detail: { dataURL: stlDataURL, fileType: modelFileType } }));
@@ -609,7 +1252,7 @@ function clearSTL() {
 async function submitFish() {
   const nameEl = document.getElementById('fish-name');
   const nameErr = document.getElementById('name-error');
-  const submitBtn = document.querySelector('.submit-btn');
+  const submitBtn = document.getElementById('submit-btn');
   const name = nameEl.value.trim();
 
   nameErr.classList.remove('show');
@@ -617,7 +1260,7 @@ async function submitFish() {
   nameEl.style.borderColor = '';
 
   if (!name) {
-    nameErr.textContent = 'Please give your fish a name!';
+    nameErr.textContent = 'Please give your creature a name!';
     nameErr.classList.add('show');
     nameEl.focus();
     return;
@@ -627,62 +1270,100 @@ async function submitFish() {
   submitBtn.textContent = '⏳ Checking…';
 
   try {
-    // Duplicate check against live Firebase data
-    const snap = await window.__db.ref('fish').once('value');
-    let dup = null;
-    if (snap.exists()) {
-      snap.forEach(child => {
-        const val = child.val();
-        if (val.name.toLowerCase() === name.toLowerCase()) dup = val;
-      });
+    const fishData = {
+      name,
+      color: selectedColor,
+      size: selectedSize,
+      role: selectedRole,
+      createdAt: Date.now()
+    };
+    if (stlDataURL) {
+      fishData.model = stlDataURL;
+      fishData.modelType = modelFileType;
+    }
+    if (stlDataURL && window.stlDotData) {
+      fishData.dots = window.stlDotData;
     }
 
-    if (dup) {
-      nameErr.textContent = `A fish named "${dup.name}" is already in the tank. Try a different name!`;
-      nameErr.classList.add('show');
-      nameEl.style.borderColor = 'rgba(239,68,68,0.6)';
-      nameEl.focus();
-      submitBtn.disabled = false;
-      submitBtn.textContent = '🐠 Add My Fish to the Tank!';
-      return;
+    if (window.__db) {
+      const snap = await window.__db.ref('fish').once('value');
+      let dup = null;
+      if (snap.exists()) {
+        snap.forEach(child => {
+          const val = child.val();
+          if (val && val.name && val.name.toLowerCase() === name.toLowerCase()) dup = val;
+        });
+      }
+
+      if (dup) {
+        nameErr.textContent = `A creature named "${dup.name}" is already in the tank. Try a different name!`;
+        nameErr.classList.add('show');
+        nameEl.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+        nameEl.focus();
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🐠 Add My Creature to the Tank!';
+        return;
+      }
+
+      submitBtn.textContent = '🐠 Adding to tank…';
+      await window.__db.ref('fish').push(fishData);
+    } else {
+      // Local storage fallback for offline / disconnected classrooms
+      try {
+        const localList = JSON.parse(localStorage.getItem('classroom_tank_fish') || '[]');
+        if (localList.some(f => f.name.toLowerCase() === name.toLowerCase())) {
+          nameErr.textContent = `A creature named "${name}" is already saved. Try a different name!`;
+          nameErr.classList.add('show');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🐠 Add My Creature to the Tank!';
+          return;
+        }
+        localList.push(fishData);
+        localStorage.setItem('classroom_tank_fish', JSON.stringify(localList));
+      } catch (storageErr) {
+        console.warn('Local storage fallback error:', storageErr);
+      }
     }
 
-    submitBtn.textContent = '🐠 Adding to tank…';
-
-    const fish = { name, color: selectedColor, size: selectedSize, role: selectedRole };
-    if (stlDataURL) { fish.model = stlDataURL; fish.modelType = modelFileType; }
-    if (stlDataURL && window.stlDotData) fish.dots = window.stlDotData;
-
-    await window.__db.ref('fish').push(fish);
-
-    const emojis = ['🐠', '🐟', '🐡', '🦈', '🐙', '🐬'];
-    document.getElementById('success-emoji').textContent =
-      emojis[Math.abs(name.charCodeAt(0)) % emojis.length];
+    const roleEmojiMap = {
+      fish: '🐠',
+      bottom: '🦀',
+      wall: '🐌',
+      eel: '🐍',
+      jelly: '🪼'
+    };
+    const emoji = roleEmojiMap[selectedRole] || '🐠';
+    document.getElementById('success-emoji').textContent = emoji;
     document.getElementById('success-name').textContent = name;
     document.getElementById('form-area').classList.add('hidden');
     document.getElementById('success').classList.add('show');
   } catch (err) {
-    nameErr.textContent = 'Connection error — check your internet and try again.';
+    console.error('Submit error:', err);
+    nameErr.textContent = 'Connection error — check your network connection and try again.';
     nameErr.classList.add('show');
     submitBtn.disabled = false;
-    submitBtn.textContent = '🐠 Add My Fish to the Tank!';
+    submitBtn.textContent = '🐠 Add My Creature to the Tank!';
   }
 }
 
 function addAnother() {
-  document.getElementById('fish-name').value = '';
+  const nameEl = document.getElementById('fish-name');
+  nameEl.value = '';
+  nameBadge.textContent = 'Your Creature';
   document.getElementById('name-error').classList.remove('show');
   document.getElementById('form-area').classList.remove('hidden');
   document.getElementById('success').classList.remove('show');
   clearSTL();
-  document.getElementById('fish-name').focus();
-  document.querySelectorAll('.size-opt').forEach(s => s.classList.remove('active'));
-  document.querySelector('[data-size="1.0"]').classList.add('active');
-  selectedSize = 1.0;
-  selectedRole = 'fish';
-  document.querySelectorAll('.role-opt').forEach(s => s.classList.remove('active'));
-  document.querySelector('[data-role="fish"]').classList.add('active');
 
+  // Reset defaults
+  selectColor(PRESETS[0].hex, grid.querySelector('.swatch'));
+  selectSize(document.querySelector('[data-size="1.0"]'));
+  selectRole(document.querySelector('[data-role="fish"]'));
+
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = '🐠 Add My Creature to the Tank!';
+  nameEl.focus();
 }
 </script>
 
