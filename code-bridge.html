@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Bridge · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Prepare small AI coding requests, review complete-file responses, and keep test checkpoints alongside VS Code. Browser-local project tools with no AI API calls.">
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+  <link rel="stylesheet" href="assets/css/classroom-home.css">
+  <link rel="stylesheet" href="assets/css/code-bridge.css">
+  <script src="assets/js/theme-registry.js"></script>
+  <script src="assets/js/theme-lighting.js"></script>
+</head>
+<body class="code-bridge-page">
+  <a class="skip-link" href="#main-content">Skip to Code Bridge</a>
+  <header class="site-header"><div class="nav-wrap">
+    <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+    <nav class="site-nav" aria-label="Primary"><ul>
+      <li><a href="steam-lessons.html">Lessons</a></li><li><a href="applications.html">Apps</a></li>
+      <li><a href="lessons/computer-science/computer-science-pathway.html">Coding pathway</a></li>
+    </ul></nav>
+  </div></header>
+  <main id="main-content" class="cb-shell">
+    <header class="cb-heading">
+      <div><h1>Code Bridge</h1><p>Bring your code to an AI chat. Bring back a change you understand.</p></div>
+      <a class="cb-guide" href="lessons/computer-science/foundations/ai-coding-workflow.html">Learn the workflow</a>
+    </header>
+    <section class="cb-start" aria-labelledby="start-title">
+      <div class="cb-start-project">
+        <h2 id="start-title">Start with a project</h2>
+        <p id="start-help">Choose the folder you use in VS Code. Code Bridge reads its source files so you can include the right code in your request.</p>
+        <div class="cb-open-bar" aria-label="Project controls">
+          <button id="open-folder" class="cb-primary" type="button">Open project folder</button>
+          <button id="choose-source" type="button">Choose source files</button><input id="source-files" type="file" multiple hidden aria-label="Choose source files">
+          <input id="folder-files" type="file" webkitdirectory multiple hidden aria-label="Choose project folder">
+        </div>
+      </div>
+      <div id="practice-start" class="cb-start-practice">
+        <h2>New here? Try a small bug.</h2>
+        <p>A jumping game, a ready-made task, and a sample answer. No AI login needed to practice.</p>
+        <button id="load-demo" type="button">Try the jump bug</button>
+      </div>
+      <div class="cb-session-tools">
+        <button id="open-session" type="button">Open saved session</button><input id="session-file" type="file" accept=".json,application/json" hidden aria-label="Open session">
+        <button id="save-session" type="button" disabled>Save session</button>
+        <span id="session-hint">A session keeps your loaded code, task, and test notes in a file.</span>
+      </div>
+    </section>
+    <details class="cb-how" id="workflow-help" open>
+      <summary>How Code Bridge works</summary>
+      <ol class="cb-workflow-map">
+        <li><strong>Prepare a request here</strong><span>Select files and describe one change. Copy the request into your teacher-approved AI chat.</span></li>
+        <li><strong>Bring the answer back</strong><span>Paste the AI’s answer here. Read the changes, approve each file, then save or download them.</span></li>
+        <li><strong>Test in VS Code</strong><span>Run your project and check what happened. Record a checkpoint: a note of your test and result.</span></li>
+      </ol>
+    </details>
+    <p class="cb-local-note">Your files stay on this device. You choose what to copy into your AI chat. Code Bridge does not connect to AI or run your project.</p>
+    <p id="cb-status" class="cb-status" role="status" aria-live="polite">Choose your project above, or try the jump bug for a guided practice.</p>
+    <noscript><p>Code Bridge needs JavaScript to read selected files and prepare requests. Your source stays on your device.</p></noscript>
+    <div id="workspace" class="cb-workspace" hidden>
+      <aside class="cb-files" aria-labelledby="files-title">
+        <details id="file-browser" open><summary class="cb-files-heading"><span id="files-title">Project files</span><span id="file-count">0 loaded</span></summary>
+        <p id="project-name">No project open</p>
+        <label for="file-search">Find a file</label><input id="file-search" type="search" placeholder="player.js" autocomplete="off">
+        <div class="cb-file-actions"><button id="select-none" type="button">Clear selection</button><button id="reload-folder" type="button" disabled>Reload folder</button></div>
+        <p class="cb-help">Check the files the AI needs to see. Include related files that import or call the code you want to change.</p>
+        <p id="selection-count" class="cb-selection-count" aria-live="polite">0 selected for your request</p>
+        <div id="file-list"><p>Your eligible source files will appear here.</p></div>
+        <details id="source-preview"><summary>Read a loaded file</summary><p id="preview-path">Choose Read beside a file.</p><pre id="preview-source" tabindex="0"></pre></details>
+        <details><summary>File limits &amp; skipped files</summary><p>Images and other binary files, hidden files, dependency and build folders, lock files, minified scripts, files named for credentials, and files over 512 KB. The limit is 400 source files and 8 MB total. Check selected code for private information before copying.</p></details>
+        <div id="practice-guide" class="cb-practice-guide" hidden><strong>Practice: reproduce the bug</strong><p>Download the project, unzip it, and open <code>index.html</code> with VS Code Live Server. Jump twice before landing. Can you spot the problem?</p></div>
+        <button id="download-source" type="button" disabled>Download loaded source ZIP</button>
+        <p class="cb-help">Loaded text files only; images and other skipped assets are not included.</p>
+        </details>
+      </aside>
+      <div class="cb-desk">
+        <nav class="cb-steps" aria-label="Coding workflow">
+          <button type="button" aria-label="1. Prepare request" data-step="prepare" aria-pressed="true" aria-controls="panel-prepare">1. Prepare request<span>Choose files &amp; write the task</span></button>
+          <button type="button" aria-label="2. Review answer" data-step="review" aria-pressed="false" aria-controls="panel-review">2. Review answer<span>Read &amp; approve changes</span></button>
+          <button type="button" aria-label="3. Test &amp; checkpoint" data-step="checkpoint" aria-pressed="false" aria-controls="panel-checkpoint">3. Test &amp; checkpoint<span>Run in VS Code &amp; keep notes</span></button>
+        </nav>
+        <section id="panel-prepare" class="cb-panel" aria-labelledby="prepare-title">
+          <h2 id="prepare-title" tabindex="-1">What do you want to change?</h2>
+          <p id="prepare-guidance" class="cb-guidance">Select the files the AI needs, then write one goal and a test.</p>
+          <label for="brief">What does your project do? <span class="cb-optional">Optional</span></label><textarea id="brief" rows="3" maxlength="20000" placeholder="What does this project do? What must keep working?"></textarea>
+          <label for="goal">What should change? <span class="cb-required">Required</span></label><textarea id="goal" aria-required="true" rows="2" maxlength="20000" placeholder="Stop the player jumping a second time in midair."></textarea>
+          <div class="cb-two-fields">
+            <div><label for="behavior">What happens now? <span class="cb-optional">Optional</span></label><textarea id="behavior" rows="3" maxlength="20000" placeholder="Pressing Space repeatedly makes the player fly."></textarea></div>
+            <div><label for="test">How will you test it? <span class="cb-required">Required</span></label><textarea id="test" aria-required="true" rows="3" maxlength="20000" placeholder="Jump, press Space again in midair, land, then jump again."></textarea></div>
+          </div>
+          <div class="cb-request-settings">
+            <p id="budget-count">0 selected files. Nothing is sent automatically.</p>
+            <details id="request-size-settings"><summary>Request size settings</summary>
+              <label for="budget">Maximum request length</label><select id="budget"><option value="12000">12,000 characters · small</option><option value="24000">24,000 characters · medium</option><option value="48000">48,000 characters · larger</option></select>
+              <p class="cb-help">Includes instructions, the file list, notes, and selected code. Nothing is shortened to fit. Token counts are estimates; AI services count differently.</p>
+            </details>
+          </div>
+          <div class="cb-actions"><button id="prepare-packet" class="cb-primary" type="button">Prepare request</button></div>
+          <section id="request-output" class="cb-request-output" aria-labelledby="request-ready-title" hidden>
+            <h3 id="request-ready-title" tabindex="-1">Your request is ready</h3>
+            <p>Read it below, then copy it into your teacher-approved Google AI chat. The request asks for complete files in the format Code Bridge needs.</p>
+            <label for="packet">Request preview</label><textarea id="packet" class="cb-code" rows="7" readonly></textarea>
+            <div class="cb-actions"><button id="copy-packet" class="cb-primary" type="button" disabled>Copy request</button><button id="download-packet" type="button" disabled>Download request</button></div>
+            <div class="cb-next"><p>Once the AI has answered, bring its response back here.</p><button type="button" data-go-step="review">Continue to review answer</button></div>
+          </section>
+        </section>
+        <section id="panel-review" class="cb-panel" aria-labelledby="review-title" hidden>
+          <h2 id="review-title" tabindex="-1">Review complete files before replacing anything</h2>
+          <p id="review-guidance" class="cb-guidance"></p>
+          <div id="review-blocked" class="cb-empty-state" hidden><p>You need a prepared request to compare the AI’s answer with your original code.</p><button type="button" data-go-step="prepare">Go to prepare request</button></div>
+          <details class="cb-format-help"><summary>What should the AI’s answer look like?</summary><p>The request already asks for this format: a filename heading, then a code block with the entire file. If the AI asks a question, answer it in the chat first.</p><pre>### FILE: src/player.js
+```js
+// Complete file contents here
+```</pre></details>
+          <label for="response">Paste the AI response</label><textarea id="response" class="cb-code" rows="10" maxlength="2097152" placeholder="Paste the complete response, including filename headings and code fences."></textarea>
+          <div class="cb-actions"><button id="import-response" class="cb-primary" type="button">Review response</button><button id="sample-answer" type="button" hidden>Use practice answer</button></div>
+          <p id="review-summary">Prepare a request first so the answer can be checked against its original files.</p>
+          <div id="change-list"></div>
+          <div id="save-controls" class="cb-save-controls" hidden>
+            <h3>Apply the files you approved</h3><p id="approval-count" aria-live="polite">0 files approved</p>
+            <button id="export-changes" type="button" disabled>Download approved changes + backups</button>
+            <button id="write-folder" class="cb-primary" type="button" disabled>Save approved files to folder</button>
+            <p id="save-help" class="cb-help">Folder saving is available after opening a folder in a supported browser. Downloads work without folder write access.</p>
+            <p class="cb-help">ZIP exports have <code>changes/</code> and <code>backup/</code> folders. Copy files inside <code>changes/</code> into the matching paths in your VS Code project. Then reload the folder here. An export does not mean you applied or tested the change.</p>
+            <div class="cb-next"><p>After applying the changes, run your project in VS Code.</p><button type="button" data-go-step="checkpoint">Continue to test &amp; checkpoint</button></div>
+          </div>
+        </section>
+        <section id="panel-checkpoint" class="cb-panel" aria-labelledby="checkpoint-title" hidden>
+          <h2 id="checkpoint-title" tabindex="-1">Did the change work?</h2>
+          <p>A checkpoint is your record of what you tested and what happened. Run the project in VS Code using your usual setup or Live Server.</p>
+          <div class="cb-test-plan"><strong>Your test plan</strong><p id="current-test">Write a success test in Prepare request.</p><p class="cb-help">Also check one thing that worked before the change.</p></div>
+          <label for="test-result">Test result</label><select id="test-result"><option value="not-tested">Not tested yet</option><option value="passed">Passed my tests</option><option value="failed">Failed / needs another change</option></select>
+          <label for="explanation">What changed, and what did you observe?</label><textarea id="explanation" rows="4" maxlength="20000" placeholder="Name a changed function, explain why it matters, and record the test steps and actual result."></textarea>
+          <label for="next-task">Next small task or remaining problem</label><textarea id="next-task" rows="2" maxlength="20000"></textarea>
+          <div class="cb-actions"><button id="save-checkpoint" class="cb-primary" type="button">Record checkpoint</button><button id="download-notes" type="button" disabled>Download project notes</button></div>
+          <p class="cb-help">Save a session before leaving to keep loaded source, your brief, task, and checkpoints. Sessions do not retain folder write permission or a pending AI response. After reopening a session, use Refresh source to choose the same project folder and keep your notes while loading the latest code.</p>
+          <h3>Checkpoint history</h3><p id="checkpoint-empty" class="cb-help">No checkpoints yet. Record your test above, even if the change did not work.</p><ol id="checkpoint-list" class="cb-checkpoints"></ol>
+          <div class="cb-next"><p>Ready for another change? Refresh source to load your latest code, then prepare a new request.</p><button type="button" data-go-step="prepare">Return to prepare request</button></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script src="assets/vendor/jszip.min.js"></script>
+  <script type="module" src="assets/js/code-bridge/app.mjs"></script>
+  <script src="assets/js/nav-mobile.js"></script>
+</body>
+</html>
