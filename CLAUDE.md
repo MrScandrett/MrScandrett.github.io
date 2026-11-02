@@ -608,6 +608,26 @@ use the first-added git date; student projects use manifest `date_added`.
 Generate locally with full git history after committing new lesson files.
 Routine maintenance and site-wide edits do not need curated entries.
 
+## Fake Book: "Listen to me play" + MIDI export
+
+Two features modelled on what browser notation editors (e.g. MuseEncore) offer. They are original code:
+MuseEncore is GPL-3.0, so copy ideas, never its source.
+
+- `assets/js/lessons/fake-book-pitch.js` (pure; `node --test tests/fake-book-playalong.test.mjs`): `detect()`
+  is the McLeod NSDF pitch detector, `createScorer()` grades notes on the AudioContext clock, and
+  `createListener()` is the mic (analysis only, never routed to the speakers; nothing is recorded or sent).
+  In `fake-book.js` the hook is in `fire()`'s `mel` case: in **Band only / Trade fours** the band skips the
+  student's notes, and that same branch now calls `scorer.expect(...)`. Note heads get `fb-grade-hit|near|miss`.
+  Grading is octave-forgiving on purpose (mixed voices and transposing instruments), skips the first
+  ~180 ms of each note, and shifts windows by `ctx.outputLatency`. Echo cancellation is on and noise
+  suppression/auto-gain off (they smear pitch). On iOS the audio session switches to `play-and-record`
+  while listening (`ensureAudio` respects `listening`).
+- `assets/js/lessons/fake-book-export.js`: `fromQueue()` + `buildMidi()` write a type-1 .mid. `exportMidi()`
+  in `fake-book.js` runs the real scheduler (`appendChorus(0)` into a throwaway `P`, mode forced to `all`)
+  so the file is what you heard: style, swing (`sw` is passed as `warp`), tempo, key, bass, drums, chord
+  names as markers. Anything new the scheduler queues is exported by adding a `kind` case to `fromQueue()`.
+- Not done yet: MusicXML export, mic-to-notation entry, and a small optional soundfont.
+
 ## Sheet music that exists only as a scan
 
 When a public-domain piece has no LilyPond/MusicXML source (early jazz and ragtime: Morton isn't on
