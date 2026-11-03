@@ -960,7 +960,12 @@ body.fb-focused .fb-sheet-card { margin-top: .3rem; }
 @media print {
   body.fb-printing > *:not(.fb-print-root) { display: none !important; }
   body.fb-printing .fb-print-root { display: block !important; color: #111; font-family: "DM Sans", sans-serif; }
-  .fb-print-page { break-after: page; break-inside: avoid; width: 100%; }
+  /* Each section is exactly one sheet tall (vh is the page area in print) and the score shrinks to fit what's left
+     under the title, so a different paper size, margin or print scale than printPages() assumed can't push the
+     music onto a second sheet or slice a system at the page edge. */
+  .fb-print-page { break-after: page; break-inside: avoid; width: 100%; height: calc(100vh - 2px); max-height: calc(100vh - 2px); overflow: hidden; display: flex; flex-direction: column; }
+  .fb-print-page > .fb-print-score { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+  .fb-print-page > .fb-print-title, .fb-print-page > .fb-print-run, .fb-print-page > .fb-print-foot { flex: 0 0 auto; }
   .fb-print-page:last-child { break-after: auto; }
   .fb-print-title { display: grid; grid-template-columns: 1fr auto; gap: 1px 14px; align-items: baseline; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1.5px solid #111; }
   .fb-print-title h1 { grid-column: 1; margin: 0; font: 700 22pt/1.1 Fraunces, Georgia, serif; color: #111; }
@@ -972,7 +977,7 @@ body.fb-focused .fb-sheet-card { margin-top: .3rem; }
   .fb-print-pg { grid-column: 2; grid-row: 1; font-size: 9pt; color: #444; text-align: right; }
   .fb-print-run { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 3px; margin-bottom: 8px; border-bottom: 1px solid #999; font-size: 9.5pt; color: #333; }
   /* lesson-print.css caps svg at 5.9in tall, which shrinks a full-page slice and centres it. */
-  .fb-print-score > svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: none !important; overflow: hidden; }
+  .fb-print-score > svg { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; max-height: 100% !important; overflow: hidden; }
   .fb-print-foot { margin-top: 8px; padding-top: 4px; border-top: 1px solid #aaa; font-size: 8pt; line-height: 1.35; color: #444; }
 }
 
