@@ -2078,7 +2078,7 @@
       try { next = new AC({ latencyHint: 'playback' }); } catch (e) { next = new AC(); }
     }
     // 'playback' session: the iPad's silent switch must not mute the band.
-    try { var session = navigator.audioSession; if (session && session.type !== 'playback') session.type = 'playback'; } catch (e) { /* read-only in some builds */ }
+    try { var session = navigator.audioSession, want = listening ? 'play-and-record' : 'playback'; if (session && session.type !== want) session.type = want; } catch (e) { /* read-only in some builds */ }
     if (next !== ctx) {
       ctx = next; master = null; bus = {};
       var wasRunning = ctx.state === 'running';
@@ -2462,6 +2462,7 @@
       var gain = ctx.createGain(); gain.connect(lanes.piano); P.scoreLanes[part.id] = gain;
     });
     updateScoreGains();
+    startScoring();
     // count-in bar, then (for tunes with a pickup) a bar of clicks that ends with the pickup notes
     for (var b = noClick ? P.bodyStart : 0; b < P.bodyStart; b++) {
       P.queue.push({ b: b, kind: 'click', level: b % M === 0 ? 2 : 1 });
@@ -2549,7 +2550,7 @@
       if (inPickup ? !pi.pickup : (e.start < tuneOff - EPS || e.start >= tuneOff + pi.len - EPS)) return;
       var bar = inPickup ? 0 : Math.floor(e.start / M + EPS) + 1;
       add.push({ b: g(e.start), kind: 'ui', ui: 'note', idx: idx });
-      if (e.p) add.push({ b: g(e.start), kind: 'mel', m: e.p.midi, dur: e.dur, bar: bar });
+      if (e.p) add.push({ b: g(e.start), kind: 'mel', m: e.p.midi, dur: e.dur, bar: bar, idx: idx });
     });
     for (var bar = r.from; bar <= r.to; bar++) {
       var b0 = g((bar - 1) * M);
@@ -2632,7 +2633,11 @@
         voicePiano(P.scoreLanes[e.part], t, timeAt(e.b + e.dur) - t, e.m + shift, 0.32); break;
       }
       case 'mel':
-        if (opts.mode === 'band' || opts.mode === 'click' || yours(e.bar, P.range.from)) return;
+        if (opts.mode === 'band' || opts.mode === 'click' || yours(e.bar, P.range.from)) {
+          // The student's notes: the band stays silent here, and the listener grades what the mic hears.
+          if (scorer && opts.mode !== 'click') scorer.expect({ t0: timeAt(e.b), t1: timeAt(e.b + e.dur), midi: e.m, bar: e.bar, idx: e.idx });
+          return;
+        }
         voiceLead(L.melody, t, timeAt(e.b + e.dur) - t, e.m, 0.5); break;
       case 'pno': {
         var end = timeAt(e.b + e.dur);
@@ -2659,6 +2664,7 @@
   }
   function stop() {
     if (!P) return;
+    finishScoring();
     clearInterval(P.timer); cancelAnimationFrame(P.raf); clearTimeout(P.uiTimer);
     var t = ctx.currentTime;
     Object.keys(P.lanes).forEach(function (k) {
@@ -2672,6 +2678,128 @@
     scoreNav.setCurrent(-1);
     beatDots(-1);
     banner('');
+  }
+
+  /* ================================================================ listen to me play */
+  // The student's notes are the ones the band leaves silent (Band only / Trade fours). The mic hears them,
+  // fake-book-pitch.js grades each against the melody, and the note head on the sheet turns green / amber / red.
+  var FP = window.FakeBookPitch, FX = window.FakeBookExport;
+  var listener = null, scorer = null, listening = false, lastListenOk = null, liveStamp = 0;
+  var LISTEN_READY = 'Mic on. Press Play and play the melody; the band is silent where you play. Any octave counts. Sound stays on this device.';
+  var LISTEN_WAIT = 'Mic on. Set Play to “Band only” or “Trade fours” to be graded.';
+
+  function listenAllowed() { return opts.mode === 'band' || opts.mode === 'trade'; }
+  function listenStatus(msg, bad) {
+    var s = el('[data-fb-listen-status]'); if (!s) return;
+    s.textContent = msg; s.classList.toggle('is-bad', !!bad); s.hidden = !msg;
+  }
+  function liveText(msg) { var l = el('[data-fb-listen-live]'); if (l) l.textContent = msg; }
+  function syncListen() {
+    var box = el('[data-fb-listen]'); if (!box) return;
+    box.closest('label').hidden = !FP;
+    var ok = listenAllowed();
+    if (ok !== lastListenOk) { lastListenOk = ok; if (listening && !P) listenStatus(ok ? LISTEN_READY : LISTEN_WAIT); }
+  }
+  function setSessionType(type) { try { var s = navigator.audioSession; if (s && s.type !== type) s.type = type; } catch (e) { /* not supported */ } }
+  function setListening(on) {
+    var box = el('[data-fb-listen]');
+    if (!on) {
+      listening = false; scorer = null;
+      if (listener) listener.stop();
+      listener = null; clearGrades(); liveText(''); listenStatus('');
+      setSessionType('playback');
+      return;
+    }
+    if (!FP || !ensureAudio()) { box.checked = false; listenStatus('This browser cannot listen from here.', true); return; }
+    listenStatus('Asking for the microphone…');
+    setSessionType('play-and-record');   // iOS: capture needs the record-capable audio session
+    listener = FP.createListener(ctx, onMicFrame);
+    listener.start().then(function () {
+      listening = true; lastListenOk = listenAllowed();
+      listenStatus(lastListenOk ? LISTEN_READY : LISTEN_WAIT);
+      try { if (ctx.state !== 'running') ctx.resume(); } catch (e) { /* user gesture will resume */ }
+    }, function (err) {
+      listening = false; listener = null; box.checked = false; setSessionType('playback');
+      listenStatus(err && err.name === 'NotAllowedError'
+        ? 'The microphone is blocked. Allow it from the address bar, then tick the box again.'
+        : err && err.name === 'NotFoundError' ? 'No microphone found.' : 'Could not open the microphone.', true);
+    });
+  }
+  function onMicFrame(f) {
+    if (scorer) { scorer.feed(f); scorer.poll(ctx.currentTime).forEach(paintGrade); }
+    var now = performance.now();
+    if (now - liveStamp < 90) return;
+    liveStamp = now;
+    if (f.midi == null) { liveText('🎤 …'); return; }
+    var c = Math.round((f.midi - Math.round(f.midi)) * 100);
+    liveText('🎤 ' + FP.nameOf(f.midi) + ' ' + (c > 0 ? '+' : '') + c + '¢');
+  }
+  function startScoring() {
+    scorer = null;
+    if (!listening || !listener || !listenAllowed()) return;
+    clearGrades();
+    scorer = FP.createScorer({ latency: ctx.outputLatency || 0 });
+    listenStatus('Listening… play the melody with the band.');
+  }
+  function paintGrade(r) {
+    if (r.note.idx == null) return;
+    var cls = 'fb-grade-' + (r.grade === 'silent' ? 'miss' : r.grade);
+    sheetEl.querySelectorAll('.fb-n[data-idx="' + r.note.idx + '"]').forEach(function (n) {
+      n.classList.remove('fb-grade-hit', 'fb-grade-near', 'fb-grade-miss');
+      n.classList.add(cls);
+    });
+  }
+  function clearGrades() {
+    sheetEl.querySelectorAll('.fb-n.fb-grade-hit, .fb-n.fb-grade-near, .fb-n.fb-grade-miss').forEach(function (n) {
+      n.classList.remove('fb-grade-hit', 'fb-grade-near', 'fb-grade-miss');
+    });
+  }
+  function finishScoring() {
+    if (!scorer) return;
+    var s = scorer; scorer = null;
+    var sum = s.finish(ctx.currentTime);
+    if (!sum.total) { listenStatus('Nothing was graded yet. Play along for at least a bar.'); return; }
+    if (sum.silent === sum.total) { listenStatus('I could not hear you. Move closer to the mic, turn it up, or use headphones for the band.', true); return; }
+    var msg = 'You hit ' + sum.hits + ' of ' + sum.total + ' notes' + (sum.near ? ' (+' + sum.near + ' close)' : '') + ': ' + sum.pct + '%.';
+    if (sum.tendency === 'in tune') msg += ' Nicely in tune.';
+    else if (sum.tendency) msg += ' You tended to be ' + sum.tendency + ' (' + (sum.avgCents > 0 ? '+' : '') + sum.avgCents + '¢).';
+    var key = STORE + ':playalong:' + (tune.raw.title || '');
+    try {
+      var prev = Number(localStorage.getItem(key));
+      if (!prev) msg += ' First score saved.';
+      else if (sum.pct > prev) msg += ' New personal best! (was ' + prev + '%)';
+      else msg += ' Best: ' + prev + '%.';
+      if (!prev || sum.pct > prev) localStorage.setItem(key, String(sum.pct));
+    } catch (e) { /* private mode: skip the best */ }
+    listenStatus(msg);
+  }
+  window.addEventListener('pagehide', function () { if (listener) listener.stop(); });
+
+  /* ================================================================ export */
+  // Runs the player's own scheduler over the whole tune (no audio) and writes the queue as a .mid, so the file
+  // is exactly the band you heard: style, swing, tempo, key, bass line and drums.
+  function exportMidi() {
+    if (!tune || !view || !FX) return;
+    var saved = P, savedMode = opts.mode, bytes = null, tracks = [];
+    try {
+      if (!scoreTiming()) opts.mode = 'all';                   // melody + whole band, whatever practice mode is on screen
+      var r = { from: 1, to: tune.bars }, len = passLen(r), pick = tune.pickup > 0 ? tune.pickup : 0;
+      P = { queue: [], qi: 0, range: r, first: r, chorusLen: len, firstLen: len, k: 0, bodyStart: pick, lanes: {}, scoreLanes: {} };
+      appendChorus(0);
+      var shift = tune.raw.score ? shiftBetween(tune.key, view.concertKey).semis : 0;
+      tracks = FX.fromQueue(P.queue, { lead: opts.lead, shift: shift, parts: tune.raw.score ? tune.raw.score.parts : [] });
+      var markers = view.concertChords.map(function (c) { return { b: Math.max(0, c.start + pick), text: chordName(c) }; });
+      if (tracks.length) bytes = FX.buildMidi({ title: tune.raw.title, tempo: opts.tempo, meter: tune.meter, warp: sw, markers: markers, tracks: tracks });
+    } finally { P = saved; opts.mode = savedMode; }
+    var live = el('[data-fb-live]');
+    if (!bytes) { banner('Nothing to export for this tune yet.'); return; }
+    var name = (tune.raw.title || 'tune').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() + '.mid';
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' })); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    var msg = 'Saved ' + name + ': ' + tracks.map(function (t) { return t.name.toLowerCase(); }).join(', ') + ' at ' + opts.tempo + ' BPM. Open it in GarageBand, MuseScore, BandLab or Soundtrap.';
+    banner(msg); if (live) live.textContent = msg;
   }
 
   /* ================================================================ UI */
@@ -3138,6 +3266,7 @@
     root.querySelectorAll('[data-fb-click-pattern]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-fb-click-pattern') === opts.click)); });
     var clickBtn = root.querySelector('[data-fb-click-pattern="' + opts.click + '"]'), clickCur = el('[data-fb-click-current]');
     if (clickCur) clickCur.textContent = CLICK_NAMES[opts.click] || (clickBtn ? clickBtn.textContent : 'Every beat');
+    syncListen();
     var ct = el('[data-fb-click-toggle]'); if (ct) { ct.setAttribute('aria-pressed', String(opts.click !== 'none')); ct.classList.toggle('is-off', opts.click === 'none'); }
     var hasChords = !!(tune.raw && typeof tune.raw.chords === 'string' ? tune.raw.chords.trim() : (Array.isArray(tune.chords) ? tune.chords.length : (typeof tune.chords === 'string' && tune.chords.trim())));
     el('[data-fb-mode] option[value="score"]').disabled = !tune.raw.score;
@@ -4838,6 +4967,7 @@
       else if (t.matches('[data-fb-mode], [data-fb-quick-mode]')) { opts.mode = t.value; syncControls(); refresh(); paintLoop(); save(); respin(); }
       else if (t.matches('[data-fb-click]')) { opts.click = t.value; syncControls(); save(); respin(); }
       else if (t.matches('[data-fb-lead]')) { opts.lead = t.value; save(); }
+      else if (t.matches('[data-fb-listen]')) { setListening(t.checked); }
       else if (t.matches('[data-fb-loop]')) { opts.loop = t.checked; save(); if (scoreTiming()) respin(); }
       else if (t.matches('[data-fb-follow], [data-fb-follow-sync]')) {
         opts.follow = t.checked;
@@ -4982,6 +5112,7 @@
         syncControls(); save(); respin(); return;
       }
       if (t.closest('[data-fb-play]')) { if (P) stop(); else play(); return; }
+      if (t.closest('[data-fb-export-midi]')) { exportMidi(); return; }
       if (t.closest('[data-fb-chordplay]')) { playActiveChord(); return; }
       if (t.closest('[data-fb-arpplay]')) { playActiveArpeggio(); return; }
       if (t.closest('[data-fb-progression]')) { playProgression(); return; }
