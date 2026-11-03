@@ -2099,6 +2099,7 @@
         c.removeAttribute('width'); c.removeAttribute('height');
         c.setAttribute('viewBox', '0 ' + r[0].toFixed(1) + ' ' + W + ' ' + (r[1] - r[0]).toFixed(1));
         c.setAttribute('focusable', 'false');
+        c.setAttribute('preserveAspectRatio', 'xMinYMin meet');
         // Click targets and playback highlights are screen-only.
         Array.prototype.forEach.call(c.querySelectorAll('.fb-bar, .fb-tn-hit, .fb-tab-hand, .fb-tab-pin'), function (node) { node.remove(); });
         Array.prototype.forEach.call(c.querySelectorAll('.is-sel, .is-now'), function (node) { node.classList.remove('is-sel', 'is-now'); });
