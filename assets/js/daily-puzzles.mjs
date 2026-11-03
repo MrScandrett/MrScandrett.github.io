@@ -60,6 +60,80 @@ function longDate(key) {
   return parseDayKey(key).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+// Fixed, trusted icon markup for the game switcher (never user text).
+const ICONS = {
+  crossword: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1.4"/><path d="M3.9 3.9h5.1v5.1H3.9zM15 15h5.1v5.1H15zM9 9h6v6H9z" fill="currentColor"/></svg>',
+  sudoku: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="12" y="16.1" text-anchor="middle" font-size="9" font-weight="700" font-family="IBM Plex Sans, system-ui, sans-serif" fill="currentColor">7</text></svg>',
+  'daily-double': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.6h6.3L9.6 22l9.9-12.4h-6.6z" fill="currentColor"/></svg>',
+  chess: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11.5v-1.8c0-4.3-1.2-8-3.3-10.6l.9-3.1-2.8 1.5C11.7 5.2 9.6 6 8.2 7.7L5.4 11c-.6.8-.4 1.9.4 2.4l.7.4c.7.4 1.6.3 2.1-.3l1.3-1.4c.4 1.5-.4 3.1-1.8 4.5C7.2 17.5 7 18.8 7 20.5z" fill="currentColor"/><circle cx="10.3" cy="9.3" r="1" fill="var(--dp-icon-eye, #fff)"/></svg>'
+};
+const icon = (name) => { const s = el('span', { class: 'dp-ico', 'aria-hidden': 'true' }); s.innerHTML = ICONS[name]; return s; };
+
+// A slim bar under each game's meta row; `set(done, total)` updates it.
+function progressBar(label) {
+  const fill = el('i');
+  const node = el('div', { class: 'dp-progress', role: 'progressbar', 'aria-label': label, 'aria-valuemin': '0' }, fill);
+  return {
+    node,
+    set(done, total) {
+      node.setAttribute('aria-valuemax', String(total));
+      node.setAttribute('aria-valuenow', String(done));
+      fill.style.setProperty('--p', total ? (done / total).toFixed(4) : 0);
+    }
+  };
+}
+
+// Status line with a tone: '' (info), 'good', 'bad'.
+function sayTo(node, msg, tone = '') {
+  node.textContent = msg;
+  node.dataset.tone = msg ? tone : '';
+}
+
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// One-shot confetti over the widget when a puzzle is solved. Removes itself after ~2 s.
+function celebrate(host) {
+  if (!host || reducedMotion()) return;
+  const box = host.getBoundingClientRect();
+  if (!box.width) return;
+  const canvas = el('canvas', { class: 'dp-confetti', 'aria-hidden': 'true' });
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.round(box.width * dpr); canvas.height = Math.round(box.height * dpr);
+  host.append(canvas);
+  const ctx = canvas.getContext('2d');
+  const accent = getComputedStyle(host).getPropertyValue('--dp-accent').trim() || '#0071e3';
+  const colors = [accent, '#f59e0b', '#10b981', '#ec4899', '#38bdf8', '#a855f7'];
+  const bits = Array.from({ length: 90 }, (_, i) => ({
+    x: box.width * (0.2 + Math.random() * 0.6), y: box.height * 0.32,
+    vx: (Math.random() - 0.5) * 520, vy: -260 - Math.random() * 420,
+    w: 5 + Math.random() * 6, h: 3 + Math.random() * 5,
+    a: Math.random() * Math.PI, va: (Math.random() - 0.5) * 14,
+    c: colors[i % colors.length]
+  }));
+  let last = performance.now(); const end = last + 2000;
+  const frame = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, box.width, box.height);
+    ctx.globalAlpha = Math.max(0, Math.min(1, (end - now) / 600));
+    for (const b of bits) {
+      b.vy += 900 * dt; b.vx *= 0.985; b.x += b.vx * dt; b.y += b.vy * dt; b.a += b.va * dt;
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
+      ctx.fillStyle = b.c; ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h * Math.abs(Math.cos(b.a * 1.7)) + 1);
+      ctx.restore();
+    }
+    if (now < end && canvas.isConnected) requestAnimationFrame(frame); else canvas.remove();
+  };
+  requestAnimationFrame(frame);
+}
+
+// Re-trigger a CSS animation class on a node (letter/digit pop, solve cascade).
+function replay(node, cls) {
+  node.classList.remove(cls);
+  void node.offsetWidth;
+  node.classList.add(cls);
+}
+
 // ── the widget ───────────────────────────────────────────────────────────
 function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
@@ -96,33 +170,24 @@ function mount(root, bank, doubleBank, chessBank) {
 
   // chrome: date nav + tabs + streak
   const dateLabel = el('strong', { class: 'dp-date', 'aria-live': 'polite' });
-  const prevBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--icon', 'aria-label': 'Previous day', text: '‹' });
-  const nextBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--icon', 'aria-label': 'Next day', text: '›' });
+  const prevBtn = el('button', { type: 'button', class: 'dp-daybtn', 'aria-label': 'Previous day', text: '‹' });
+  const nextBtn = el('button', { type: 'button', class: 'dp-daybtn', 'aria-label': 'Next day', text: '›' });
   const todayBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text', text: 'Today' });
   const streakEl = el('span', { class: 'dp-streak', hidden: true });
-  const tabCross = el('button', { type: 'button', role: 'tab', id: 'dp-tab-crossword', class: 'dp-tab', 'aria-controls': 'dp-panel' },
+  const makeTab = (id, full, short, sub) => el('button', { type: 'button', role: 'tab', id: `dp-tab-${id}`, class: `dp-tab dp-tab--${id}`, 'aria-controls': 'dp-panel' },
+    el('span', { class: 'dp-tab-icon' }, icon(id), el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' })),
     el('span', { class: 'dp-tab-text' },
-      el('span', { class: 'dp-tab-full', text: '🧩 Mini Crossword' }),
-      el('span', { class: 'dp-tab-short', text: '🧩 Mini' })),
-    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
-  const tabSudoku = el('button', { type: 'button', role: 'tab', id: 'dp-tab-sudoku', class: 'dp-tab', 'aria-controls': 'dp-panel' },
-    el('span', { class: 'dp-tab-text' },
-      el('span', { class: 'dp-tab-full', text: '🔢 Sudoku' }),
-      el('span', { class: 'dp-tab-short', text: '🔢 Sudoku' })),
-    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
-  const tabDouble = el('button', { type: 'button', role: 'tab', id: 'dp-tab-daily-double', class: 'dp-tab', 'aria-controls': 'dp-panel' },
-    el('span', { class: 'dp-tab-text' },
-      el('span', { class: 'dp-tab-full', text: '⚡ Daily Double' }),
-      el('span', { class: 'dp-tab-short', text: '⚡ Double' })),
-    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
-  const tabChess = el('button', { type: 'button', role: 'tab', id: 'dp-tab-chess', class: 'dp-tab', 'aria-controls': 'dp-panel' },
-    el('span', { class: 'dp-tab-text' },
-      el('span', { class: 'dp-tab-full', text: '♟ Chess Quest' }),
-      el('span', { class: 'dp-tab-short', text: '♟ Chess Quest' })),
-    el('i', { class: 'dp-tick', 'aria-hidden': 'true', text: '✓' }));
+      el('span', { class: 'dp-tab-full', text: full }),
+      el('span', { class: 'dp-tab-short', text: short }),
+      el('small', { class: 'dp-tab-sub', text: sub })));
+  const tabCross = makeTab('crossword', 'Mini Crossword', 'Mini', 'Word grid');
+  const tabSudoku = makeTab('sudoku', 'Sudoku', 'Sudoku', '9 × 9');
+  const tabDouble = makeTab('daily-double', 'Daily Double', 'Double', 'STEAM trivia');
+  const tabChess = makeTab('chess', 'Chess Quest', 'Chess', 'Find the mate');
   const bar = el('div', { class: 'dp-bar' },
     el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess),
-    el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' }, prevBtn, dateLabel, nextBtn, todayBtn, streakEl));
+    el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' },
+      el('div', { class: 'dp-daypick' }, prevBtn, dateLabel, nextBtn), todayBtn, streakEl));
   const panel = el('div', { class: 'dp-panel', id: 'dp-panel', role: 'tabpanel' });
   app.replaceChildren(bar, panel);
 
@@ -162,6 +227,7 @@ function mount(root, bank, doubleBank, chessBank) {
         : state.tab === 'daily-double'
           ? buildDailyDouble(panel, p.dd, dayState(state.key), persist, refreshChrome)
           : buildChess(panel, p.ch, dayState(state.key), persist, refreshChrome);
+    if (!reducedMotion()) replay(panel, 'is-enter');
   }
 
   const goDay = (key) => { state.key = key; show(); };
@@ -231,15 +297,16 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
     }
   }
 
+  const clueChip = el('span', { class: 'dp-cluechip' });
   const clueText = el('p', { class: 'dp-cluetext', 'aria-live': 'polite' });
   const prevClue = el('button', { type: 'button', class: 'dp-cluenav', 'aria-label': 'Previous clue', text: '‹' });
   const nextClue = el('button', { type: 'button', class: 'dp-cluenav', 'aria-label': 'Next clue', text: '›' });
-  const clueBar = el('div', { class: 'dp-cluebar' }, prevClue, clueText, nextClue);
+  const clueBar = el('div', { class: 'dp-cluebar' }, prevClue, clueChip, clueText, nextClue);
   const status = el('p', { class: 'dp-status', role: 'status' });
   const lists = { across: el('ol', { class: 'dp-clues' }), down: el('ol', { class: 'dp-clues' }) };
   const clueBtn = new Map();
   for (const e of cw.entries) {
-    const b = el('button', { type: 'button', class: 'dp-clue' }, el('b', { text: e.num }), el('span', { text: ` ${e.clue} (${e.len})` }));
+    const b = el('button', { type: 'button', class: 'dp-clue' }, el('b', { text: e.num }), el('span', { text: e.clue }), el('small', { text: e.len }));
     b.addEventListener('click', () => {
       view.dir = e.dir;
       const empty = entryCells(e).find(([r, c]) => !st.l[cellKey(r, c)]);
@@ -254,13 +321,14 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
 
   const btn = (label, fn, cls = '') => { const b = el('button', { type: 'button', class: `dp-btn dp-btn--text ${cls}`, text: label }); b.addEventListener('click', fn); return b; };
   const tools = el('div', { class: 'dp-tools' },
-    btn('Check', check), btn('Reveal word', revealWord), btn('Reveal all', revealAll), btn('Clear', clearAll));
+    btn('✓ Check', check, 'dp-btn--primary'), btn('Reveal word', revealWord), btn('Reveal all', revealAll), btn('Clear', clearAll));
 
   // Phone layout: slim top bar (timer, clue list, tools), grid, clue bar, on-screen keys.
   const timerEl = el('span', { class: 'dp-timer', 'aria-label': 'Time' });
   const cluesBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text dp-xonly-small', text: '☰ Clues', 'aria-expanded': 'false' });
   const menuBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text dp-xonly-small', text: '⋯ Tools', 'aria-expanded': 'false' });
-  const xtop = el('div', { class: 'dp-xtop' }, timerEl, el('span', { class: 'dp-xtop-gap' }), cluesBtn, menuBtn);
+  const prog = progressBar('Letters filled in');
+  const xtop = el('div', { class: 'dp-xtop' }, timerEl, prog.node, cluesBtn, menuBtn);
   const keys = el('div', { class: 'dp-keys', role: 'group', 'aria-label': 'On-screen keyboard' });
   for (const row of ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM⌫']) {
     keys.append(el('div', { class: 'dp-keyrow' }, ...[...row].map((ch) => {
@@ -290,15 +358,23 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   prevClue.addEventListener('click', () => { jumpEntry(-1); paint(); });
   nextClue.addEventListener('click', () => { jumpEntry(1); paint(); });
 
-  function say(msg) { status.textContent = msg; }
+  const say = (msg, tone) => sayTo(status, msg, tone);
+  let painted = false;
 
   function paint() {
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    timerEl.textContent = fmtTime(st.secs);
     const entry = current();
     const inEntry = new Set(entry ? entryCells(entry).map(([r, c]) => cellKey(r, c)) : []);
+    const crossing = entryAt(view.r, view.c, view.dir === 'across' ? 'down' : 'across');
+    let filled = 0;
     for (const [k, node] of cells) {
       const r = Math.floor(k / width), c = k % width;
-      node.querySelector('.dp-xch').textContent = st.l[k];
+      const ch = node.querySelector('.dp-xch');
+      if (ch.textContent !== st.l[k]) {
+        ch.textContent = st.l[k];
+        if (painted && st.l[k]) replay(ch, 'is-pop');
+      }
+      if (st.l[k]) filled++;
       node.classList.toggle('is-sel', r === view.r && c === view.c);
       node.classList.toggle('is-word', inEntry.has(k));
       node.classList.toggle('is-wrong', wrong.has(k));
@@ -306,13 +382,14 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
       node.setAttribute('aria-selected', String(r === view.r && c === view.c));
       node.setAttribute('aria-label', `Row ${r + 1}, column ${c + 1}${st.l[k] ? `, ${st.l[k]}` : ', empty'}`);
     }
+    prog.set(filled, total);
     for (const [e, b] of clueBtn) {
       b.classList.toggle('is-active', e === entry);
+      b.classList.toggle('is-cross', e === crossing);
       b.classList.toggle('is-filled', entryCells(e).every(([r, c]) => st.l[cellKey(r, c)]));
     }
-    clueText.replaceChildren(entry
-      ? el('strong', { text: `${entry.num}${entry.dir === 'across' ? 'A' : 'D'}` })
-      : '', entry ? ` ${entry.clue} (${entry.len})` : '');
+    clueChip.replaceChildren(entry ? `${entry.num}` : '', el('small', { text: entry ? entry.dir : '' }));
+    clueText.replaceChildren(entry ? entry.clue : '', entry ? el('small', { text: ` (${entry.len})` }) : '');
     const li = clueBtn.get(entry) && clueBtn.get(entry).parentElement;
     if (li && li.parentElement.scrollHeight > li.parentElement.clientHeight) {
       li.parentElement.scrollTop = li.offsetTop - li.parentElement.clientHeight / 3; // keep the active clue in view without scrolling the page
@@ -324,7 +401,12 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
     for (let r = 0; r < height; r++) for (let c = 0; c < width; c++) if (isLetter(r, c) && st.l[cellKey(r, c)] !== cw.grid[r][c]) return;
     st.done = true;
     persist(); paint(); onChange();
-    say(st.gaveUp ? 'Every answer is filled in. Try tomorrow’s on your own!' : '🎉 Solved! Every answer is right.');
+    say(st.gaveUp ? 'Every answer is filled in. Try tomorrow’s on your own!' : `🎉 Solved in ${fmtTime(st.secs)}! Every answer is right.`, st.gaveUp ? '' : 'good');
+    if (!st.gaveUp) {
+      for (const [k, node] of cells) node.style.setProperty('--d', `${(Math.floor(k / width) + (k % width)) * 45}ms`);
+      replay(gridEl, 'is-cascade');
+      celebrate(panel.closest('.home-puzzles'));
+    }
   }
 
   function setLetter(r, c, ch) {
@@ -386,8 +468,8 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
     }
     paint();
     say(!filled ? 'Nothing to check yet. Fill in a few letters first.'
-      : bad ? `${bad} letter${bad === 1 ? ' is' : 's are'} off. They’re outlined in red.`
-        : filled === total ? '' : 'Everything so far is right. Keep going!');
+      : bad ? `${bad} letter${bad === 1 ? ' is' : 's are'} off. They’re marked in red.`
+        : filled === total ? '' : 'Everything so far is right. Keep going!', bad ? 'bad' : filled ? 'good' : '');
     finishIfSolved();
   }
 
@@ -450,13 +532,14 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   input.addEventListener('blur', () => gridEl.classList.remove('has-focus'));
 
   paint();
-  if (st.done) say(st.gaveUp ? 'Every answer is filled in. Try tomorrow’s on your own!' : '🎉 Solved! Every answer is right.');
+  painted = true;
+  if (st.done) say(st.gaveUp ? 'Every answer is filled in. Try tomorrow’s on your own!' : `🎉 Solved in ${fmtTime(st.secs)}! Every answer is right.`, st.gaveUp ? '' : 'good');
 
   let lastSave = 0;
   const tick = setInterval(() => {
     if (st.done || document.hidden || !gridEl.isConnected) return;
     st.secs++;
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    timerEl.textContent = fmtTime(st.secs);
     if (st.secs - lastSave >= 5) { lastSave = st.secs; persist(); }
   }, 1000);
   return () => { clearInterval(tick); persist(); };
@@ -493,17 +576,23 @@ function buildSudoku(panel, su, saved, persist, onChange) {
     pad.append(b);
     return b;
   });
-  const pencilBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text', 'aria-pressed': 'false', text: '✎ Notes' });
+  const pencilBtn = el('button', { type: 'button', class: 'dp-btn dp-btn--text dp-btn--toggle', 'aria-pressed': 'false' },
+    el('span', { text: '✎ Notes' }), el('i', { class: 'dp-switch', 'aria-hidden': 'true' }));
   pencilBtn.addEventListener('click', () => { view.pencil = !view.pencil; paint(); });
   const btn = (label, fn) => { const b = el('button', { type: 'button', class: 'dp-btn dp-btn--text', text: label }); b.addEventListener('click', fn); return b; };
-  const tools = el('div', { class: 'dp-tools' }, pencilBtn, btn('⌫ Erase', erase), btn('Hint', hint), btn('Check', check), btn('Restart', restart));
+  const tools = el('div', { class: 'dp-tools' }, pencilBtn, btn('⌫ Erase', erase), btn('💡 Hint', hint), btn('✓ Check', check), btn('Restart', restart));
+  const prog = progressBar('Cells filled in');
+  const open = su.puzzle.filter((d) => !d).length;
 
   panel.replaceChildren(el('div', { class: 'dp-body dp-body--sudoku' },
     el('div', { class: 'dp-swrap' },
-      el('div', { class: 'dp-smeta' }, el('span', { class: 'dp-level', text: `${su.level} · ${su.givens} given` }), timerEl),
-      gridEl, status),
+      el('div', { class: 'dp-smeta' }, el('span', { class: `dp-level dp-level--${su.level.toLowerCase()}`, text: su.level }), prog.node, timerEl),
+      el('div', { class: 'dp-sframe' }, gridEl), status),
     el('div', { class: 'dp-sside' }, pad, tools,
       el('p', { class: 'dp-hint-text', text: 'Fill every row, column and 3×3 box with 1–9, no repeats. Repeats glow red as you play.' }))));
+
+  let painted = false;
+  const shown = new Array(81).fill(0);
 
   function paint() {
     const grid = merged();
@@ -514,12 +603,15 @@ function buildSudoku(panel, su, saved, persist, onChange) {
     cellEls.forEach((node, i) => {
       const inner = node.firstChild;
       const v = grid[i];
-      if (v) { inner.className = 'dp-sin dp-sval'; inner.textContent = v; }
-      else {
+      if (v) {
+        inner.className = 'dp-sin dp-sval'; inner.textContent = v;
+        if (painted && shown[i] !== v) replay(inner, 'is-pop');
+      } else {
         const mask = st.notes[i] | 0;
         inner.className = 'dp-sin dp-snotes';
-        inner.replaceChildren(...DIGITS.map((d) => el('i', { text: mask & (1 << d) ? d : '' })));
+        inner.replaceChildren(...DIGITS.map((d) => el('i', { class: selVal === d && mask & (1 << d) ? 'is-match' : null, text: mask & (1 << d) ? d : '' })));
       }
+      shown[i] = v;
       node.classList.toggle('is-given', given(i));
       node.classList.toggle('is-sel', i === sel);
       node.classList.toggle('is-peer', i !== sel && PEERS[sel].includes(i));
@@ -534,21 +626,29 @@ function buildSudoku(panel, su, saved, persist, onChange) {
     padBtns.forEach((b, k) => {
       const left = 9 - counts[k + 1];
       b.disabled = left <= 0 || st.done;
-      b.lastChild.textContent = left > 0 ? left : '';
+      b.classList.toggle('is-complete', left <= 0);
+      b.classList.toggle('is-current', !!selVal && selVal === k + 1);
+      b.lastChild.textContent = left > 0 ? left : '✓';
     });
+    prog.set(st.g.filter((d, i) => d && !given(i)).length, open);
     pencilBtn.setAttribute('aria-pressed', String(view.pencil));
     pencilBtn.classList.toggle('is-on', view.pencil);
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    gridEl.classList.toggle('is-pencil', view.pencil);
+    timerEl.textContent = fmtTime(st.secs);
   }
 
-  function say(msg) { status.textContent = msg; }
+  const say = (msg, tone) => sayTo(status, msg, tone);
+  const solvedMsg = () => `🎉 Solved in ${fmtTime(st.secs)}${st.hints ? ` with ${st.hints} hint${st.hints === 1 ? '' : 's'}` : ''}!`;
 
   function afterChange() {
     const grid = merged();
     if (!st.done && grid.every((d, i) => d === su.solution[i])) {
       st.done = true;
-      say(`🎉 Solved in ${fmtTime(st.secs)}${st.hints ? ` with ${st.hints} hint${st.hints === 1 ? '' : 's'}` : ''}!`);
+      say(solvedMsg(), 'good');
       onChange();
+      cellEls.forEach((node, i) => node.style.setProperty('--d', `${(Math.floor(i / 9) + (i % 9)) * 35}ms`));
+      replay(gridEl, 'is-cascade');
+      celebrate(panel.closest('.home-puzzles'));
     }
     persist(); paint();
   }
@@ -586,6 +686,7 @@ function buildSudoku(panel, su, saved, persist, onChange) {
     st.g[i] = su.solution[i]; delete st.notes[i]; wrong.delete(i); st.hints++;
     for (const j of PEERS[i]) if (st.notes[j]) st.notes[j] &= ~(1 << su.solution[i]);
     say('Hint used: that cell is filled in for you.'); afterChange();
+    replay(cellEls[i], 'is-hinted');
   }
 
   function check() {
@@ -593,8 +694,8 @@ function buildSudoku(panel, su, saved, persist, onChange) {
     let filled = 0;
     st.g.forEach((d, i) => { if (d) { filled++; if (d !== su.solution[i]) wrong.add(i); } });
     say(!filled ? 'Nothing to check yet. Place a few digits first.'
-      : wrong.size ? `${wrong.size} cell${wrong.size === 1 ? ' is' : 's are'} off. They’re outlined in red.`
-        : 'Every digit you’ve placed is right. Nice work!');
+      : wrong.size ? `${wrong.size} cell${wrong.size === 1 ? ' is' : 's are'} off. They’re marked in red.`
+        : 'Every digit you’ve placed is right. Nice work!', wrong.size ? 'bad' : filled ? 'good' : '');
     paint();
   }
 
@@ -625,12 +726,13 @@ function buildSudoku(panel, su, saved, persist, onChange) {
   const tick = setInterval(() => {
     if (st.done || document.hidden || !gridEl.isConnected) return;
     st.secs++;
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    timerEl.textContent = fmtTime(st.secs);
     if (st.secs - lastSave >= 5) { lastSave = st.secs; persist(); }
   }, 1000);
 
   paint();
-  if (st.done) say(`🎉 Solved in ${fmtTime(st.secs)}${st.hints ? ` with ${st.hints} hint${st.hints === 1 ? '' : 's'}` : ''}!`);
+  painted = true;
+  if (st.done) say(solvedMsg(), 'good');
   return () => { clearInterval(tick); persist(); };
 }
 
@@ -723,10 +825,13 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
 
   const OPT_LETTERS = ['A', 'B', 'C', 'D'];
 
-  const scoreEl = el('span', { class: 'dp-dscore' });
+  const scoreEl = el('strong', { class: 'dp-dscore-val' });
   const progEl = el('span', { class: 'dp-dprog' });
   const timerEl = el('span', { class: 'dp-timer', 'aria-label': 'Time' });
-  const metaBar = el('div', { class: 'dp-dmeta' }, scoreEl, progEl, timerEl);
+  const prog = progressBar('Tiles answered');
+  const metaBar = el('div', { class: 'dp-dmeta' },
+    el('span', { class: 'dp-dscore' }, el('small', { text: 'Bank' }), scoreEl),
+    el('span', { class: 'dp-dprogwrap' }, progEl, prog.node), timerEl);
 
   const gridEl = el('div', { class: 'dp-dgrid', role: 'grid', 'aria-label': '5 by 5 STEAM Jeopardy board. Arrow keys move; Enter or Space opens tile.' });
   const cellNodes = new Map(); // `${c},${r}` -> node
@@ -797,12 +902,12 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
   const status = el('p', { class: 'dp-status', role: 'status' });
   const tools = el('div', { class: 'dp-tools' }, soundBtn, restartBtn);
 
-  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, gridEl, openClueBtn, tools, status);
+  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, el('div', { class: 'dp-dboard' }, gridEl), openClueBtn, tools, status);
   const sideConsole = el('div', { class: 'dp-dside' });
   const body = el('div', { class: 'dp-body dp-body--double' }, leftWrap, sideConsole);
   panel.replaceChildren(body);
 
-  function say(msg) { status.textContent = msg; }
+  const say = (msg, tone) => sayTo(status, msg, tone);
 
   function openClue() {
     body.classList.add('show-clue');
@@ -836,10 +941,11 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
   }
 
   function paintGrid() {
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    timerEl.textContent = fmtTime(st.secs);
     const answeredCount = Object.keys(st.answers).length;
-    scoreEl.textContent = `💰 Bank: $${st.score.toLocaleString()}`;
-    progEl.textContent = `${answeredCount} / 25 tiles`;
+    scoreEl.textContent = `$${st.score.toLocaleString()}`;
+    progEl.textContent = `${answeredCount}/25`;
+    prog.set(answeredCount, 25);
 
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
@@ -858,11 +964,10 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
 
         const valSpan = node.querySelector('.dp-dcell-val');
         if (ans) {
-          if (tile.isTripleDouble) {
-            valSpan.textContent = ans.correct ? `⚡ $${ans.points}` : '✗ $0';
-          } else {
-            valSpan.textContent = ans.correct ? `✓ $${tile.value}` : '✗ $0';
-          }
+          valSpan.replaceChildren(
+            el('b', { class: 'dp-dcell-mark', 'aria-hidden': 'true', text: ans.correct ? (tile.isTripleDouble ? '⚡' : '✓') : '✗' }),
+            el('small', { text: ans.correct ? `+$${ans.points.toLocaleString()}` : '$0' }));
+          node.setAttribute('aria-label', `${tile.category} for $${tile.value}, ${ans.correct ? 'answered correctly' : 'missed'}`);
         } else {
           valSpan.textContent = `$${tile.value}`;
         }
@@ -1006,7 +1111,7 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
         'data-opt': optIdx,
         'aria-label': `Option ${OPT_LETTERS[optIdx]}: ${choiceText}`
       },
-        el('span', { class: 'dp-m-badge', text: `${OPT_LETTERS[optIdx]}:` }),
+        el('span', { class: 'dp-m-badge', text: OPT_LETTERS[optIdx] }),
         el('span', { class: 'dp-m-text', text: choiceText })
       );
 
@@ -1080,9 +1185,10 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
       const allDone = (Object.keys(st.answers).length === 25);
       if (allDone) {
         st.done = true;
-        say(`🎉 Board Cleared! Final Score: $${st.score.toLocaleString()}!`);
+        say(`🎉 Board Cleared! Final Score: $${st.score.toLocaleString()}!`, 'good');
+        celebrate(panel.closest('.home-puzzles'));
       } else {
-        say(isCorrect ? `Correct! +$${pointsWon.toLocaleString()}` : `Incorrect. The correct answer was ${tile.answer}.`);
+        say(isCorrect ? `Correct! +$${pointsWon.toLocaleString()}` : `Incorrect. The correct answer was ${tile.answer}.`, isCorrect ? 'good' : 'bad');
       }
 
       playSound(tile.isTripleDouble ? 'triple-double' : (isCorrect ? 'correct' : 'wrong'));
@@ -1134,7 +1240,7 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
   const tick = setInterval(() => {
     if (st.done || document.hidden || !gridEl.isConnected) return;
     st.secs++;
-    timerEl.textContent = `⏱ ${fmtTime(st.secs)}`;
+    timerEl.textContent = fmtTime(st.secs);
     if (st.secs - lastSave >= 5) { lastSave = st.secs; persist(); }
   }, 1000);
 
@@ -1165,27 +1271,31 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
   }
   let selected = null;
   let hintSquare = null;
-  const title = el('h4', { class: 'dp-chess-title', text: `White to move · Mate in ${puzzle.mate}` });
+  const turnEl = el('span', { class: 'dp-chess-turn' });
+  const title = el('h4', { class: 'dp-chess-title' }, turnEl, el('span', { class: 'dp-chess-mate', text: `Mate in ${puzzle.mate}` }));
   const instruction = el('p', { class: 'dp-chess-instruction', text: 'Select a white piece, then its destination. Find the checkmate.' });
   const board = el('div', { class: 'dp-chess-board', role: 'grid', 'aria-label': `Chess board, white at the bottom. Mate in ${puzzle.mate}.` });
   const status = el('p', { class: 'dp-status dp-chess-status', role: 'status', 'aria-live': 'polite' });
-  const movesPlayed = el('p', { class: 'dp-chess-moves', 'aria-label': 'Moves played' });
-  const hint = el('button', { type: 'button', class: 'dp-btn', text: 'Hint' });
+  const movesPlayed = el('ol', { class: 'dp-chess-moves', 'aria-label': 'Moves played' });
+  const hint = el('button', { type: 'button', class: 'dp-btn', text: '💡 Hint' });
   const reveal = el('button', { type: 'button', class: 'dp-btn', text: 'Show solution' });
-  const restart = el('button', { type: 'button', class: 'dp-btn', text: 'Try again' });
+  const restart = el('button', { type: 'button', class: 'dp-btn dp-btn--primary', text: '↺ Try again' });
   const tools = el('div', { class: 'dp-tools' }, hint, reveal, restart);
   const body = el('div', { class: 'dp-body dp-body--chess' },
-    el('div', { class: 'dp-chess-main' }, title, instruction, board),
-    el('div', { class: 'dp-chess-side' }, status, movesPlayed, tools,
+    el('div', { class: 'dp-chess-main' }, el('div', { class: 'dp-chess-frame' }, board)),
+    el('div', { class: 'dp-chess-side' }, title, instruction, status, movesPlayed, tools,
       el('p', { class: 'dp-chess-note', text: 'Only legal moves are accepted. In a two-move puzzle, Black replies automatically after your first move.' })));
   panel.replaceChildren(body);
 
   function paint() {
     board.replaceChildren();
-    const history = game.history();
-    movesPlayed.textContent = history.length
-      ? history.map((san, i) => `${i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ''}${san}`).join(' ')
-      : '';
+    const history = game.history({ verbose: true });
+    const lastMove = history[history.length - 1];
+    movesPlayed.replaceChildren(...history.map((m, i) => el('li', { class: m.color === 'w' ? 'is-white' : 'is-black' },
+      i % 2 === 0 ? el('small', { text: `${Math.floor(i / 2) + 1}.` }) : null, m.san)));
+    movesPlayed.hidden = !history.length;
+    turnEl.className = `dp-chess-turn is-${game.turn()}`;
+    turnEl.textContent = st.done ? 'Checkmate' : game.turn() === 'w' ? 'White to move' : 'Black to move';
     const legal = selected ? game.moves({ square: selected, verbose: true }).map((move) => move.to) : [];
     for (let rank = 8; rank >= 1; rank--) {
       for (const file of 'abcdefgh') {
@@ -1193,7 +1303,7 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
         const piece = game.get(square);
         const button = el('button', {
           type: 'button', role: 'gridcell',
-          class: `dp-chess-square ${((file.charCodeAt(0) - 97 + rank) % 2) ? 'is-light' : 'is-dark'}${piece ? ' has-piece' : ''}${square === selected ? ' is-selected' : ''}${legal.includes(square) ? ' is-target' : ''}${square === hintSquare ? ' is-hint' : ''}`,
+          class: `dp-chess-square ${((file.charCodeAt(0) - 97 + rank) % 2) ? 'is-light' : 'is-dark'}${piece ? ' has-piece' : ''}${square === selected ? ' is-selected' : ''}${legal.includes(square) ? ' is-target' : ''}${square === hintSquare ? ' is-hint' : ''}${lastMove && (square === lastMove.from || square === lastMove.to) ? ' is-last' : ''}${st.done && !st.gaveUp && piece?.type === 'k' && piece.color === 'b' ? ' is-mated' : ''}`,
           'aria-label': `${square}, ${piece ? `${piece.color === 'w' ? 'white' : 'black'} ${CHESS_NAMES[piece.type]}` : 'empty'}${legal.includes(square) ? ', legal destination' : ''}`,
           'aria-pressed': square === selected ? 'true' : 'false',
           'data-square': square
@@ -1207,7 +1317,8 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
     hint.disabled = st.done;
     reveal.disabled = st.done;
     restart.hidden = !st.done && st.moves.length === 0;
-    if (st.done) status.textContent = st.gaveUp ? 'Solution shown. Try another day for a fresh position.' : 'Checkmate! Puzzle solved.';
+    status.dataset.tone = st.done && !st.gaveUp ? 'good' : '';
+    if (st.done) status.textContent = st.gaveUp ? 'Solution shown. Try another day for a fresh position.' : '🎉 Checkmate! Puzzle solved.';
     else if (st.moves.length === 2) status.textContent = 'Black has replied. Find the final checkmating move.';
     else if (!status.textContent) status.textContent = 'White to move. Find the winning move.';
   }
@@ -1217,8 +1328,10 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
     st.moves.push(played.lan);
     selected = null;
     hintSquare = null;
-    if (game.isCheckmate()) st.done = true;
-    else if (puzzle.mate === 2 && st.moves.length === 1) {
+    if (game.isCheckmate()) {
+      st.done = true;
+      if (!st.gaveUp) celebrate(panel.closest('.home-puzzles'));
+    } else if (puzzle.mate === 2 && st.moves.length === 1) {
       const [defense] = Object.entries(puzzle.lines).sort((a, b) => a[1].length - b[1].length || a[0].localeCompare(b[0]))[0];
       game.move(defense);
       st.moves.push(defense);
@@ -1241,9 +1354,9 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
     }
     if (!selected) return;
     const move = game.moves({ square: selected, verbose: true }).find((candidate) => candidate.to === square && (!candidate.promotion || candidate.promotion === 'q'));
-    if (!move) { status.textContent = 'That is not a legal move from the selected square.'; return; }
+    if (!move) { sayTo(status, 'That is not a legal move from the selected square.', 'bad'); return; }
     if ((st.moves.length === 0 && move.lan !== puzzle.first) || (st.moves.length === 2 && !puzzle.lines[st.moves[1]].includes(move.lan))) {
-      status.textContent = 'Legal move, but it does not force the required checkmate. Try again.';
+      sayTo(status, 'Legal move, but it does not force the required checkmate. Try again.', 'bad');
       return;
     }
     play(move);
