@@ -5,6 +5,7 @@ let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch {}
 let tracks = [];
 let selected = saved.track || 'satie-1';
+let noise = typeof saved.noise === 'string' ? saved.noise : null;
 let volume = Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume)) : 0.5;
 let host;
 try { if (parent !== window && parent.SiteMusic?.isHost) host = parent.SiteMusic; } catch {}
@@ -17,14 +18,18 @@ function open({ play = false, track, time = 0 } = {}) {
   }
   const url = new URL('listen.html', base);
   url.searchParams.set('browse', location.pathname + location.search + location.hash);
-  url.searchParams.set('track', track || selected);
+  // Leave the recording unnamed when the player's last source was a noise generator, so it resumes that.
+  const chosen = track || selected;
+  if (track || !noise) url.searchParams.set('track', chosen);
   if (play) url.searchParams.set('play', '1');
   if (time) url.searchParams.set('time', String(time));
-  try { localStorage.setItem(storageKey, JSON.stringify({ ...saved, track: track || selected, volume })); } catch {}
+  try { localStorage.setItem(storageKey, JSON.stringify({ ...saved, track: chosen, volume })); } catch {}
   location.assign(url);
 }
 function snapshot() {
-  return host ? host.snapshot() : { track: tracks.find(t => t.id === selected), playing: false, volume };
+  // Same shape as the player's noiseTrack(), without loading noise-colors.mjs on every page.
+  const generator = noise && { id: `noise-${noise}`, title: `${noise[0].toUpperCase()}${noise.slice(1)} noise`, composer: 'Noise generator', noise: true };
+  return host ? host.snapshot() : { track: generator || tracks.find(t => t.id === selected), playing: false, volume };
 }
 function notify() { window.dispatchEvent(new CustomEvent('site-music-change', { detail: snapshot() })); }
 export const SiteMusic = host || {
@@ -41,6 +46,7 @@ function move(direction) {
   if (!tracks.length) return;
   const index = tracks.findIndex(t => t.id === selected);
   selected = tracks[(index + direction + tracks.length) % tracks.length].id;
+  noise = null;
   notify();
 }
 

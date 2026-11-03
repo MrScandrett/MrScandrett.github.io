@@ -159,6 +159,43 @@ try {
   assert(await page.evaluate(() => document.querySelector('audio').paused));
   console.log('PASS catalog, playback, continuous navigation, fish controls, lesson handoff, search, seeking, fallback, and preferences');
 
+  console.log('Checking noise generators…');
+  // Each colour is computed live and handed to the same <audio> element; measure what it receives.
+  const noiseLevel = () => page.evaluate(async () => {
+    const ctx = new AudioContext(), analyser = ctx.createAnalyser();
+    analyser.fftSize = 8192;
+    ctx.createMediaStreamSource(document.querySelector('audio').srcObject).connect(analyser);
+    await ctx.resume();
+    await new Promise(resolve => setTimeout(resolve, 700));
+    const wave = new Float32Array(analyser.fftSize), spectrum = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatTimeDomainData(wave); analyser.getFloatFrequencyData(spectrum);
+    const bin = hz => Math.round(hz / ctx.sampleRate * analyser.fftSize);
+    const band = (lo, hi) => { let sum = 0; for (let k = bin(lo); k < bin(hi); k++) sum += 10 ** (spectrum[k] / 10); return 10 * Math.log10(sum / (bin(hi) - bin(lo))); };
+    await ctx.close();
+    return { rms: Math.sqrt(wave.reduce((sum, v) => sum + v * v, 0) / wave.length), tilt: (band(4000, 8000) - band(250, 500)) / 4 };
+  });
+  for (const [id, slope] of [['white', 0], ['pink', -3], ['brown', -6], ['blue', 3], ['violet', 6]]) {
+    await page.locator(`.music-noise-color[data-noise="${id}"]`).click();
+    await page.waitForFunction(() => !document.querySelector('audio').paused);
+    const { rms, tilt } = await noiseLevel();
+    assert(rms > .02 && Math.abs(tilt - slope) < 1.5, `${id} noise: RMS ${rms.toFixed(3)}, ${tilt.toFixed(1)} dB/octave`);
+    assert.equal(await page.locator(`.music-noise-color[data-noise="${id}"]`).getAttribute('aria-pressed'), 'true');
+  }
+  assert.equal(await page.locator('#music-duration').textContent(), '∞');
+  assert(await page.locator('#music-seek').isDisabled());
+  assert(await page.locator('#recording-source').isHidden());
+  await page.locator('#music-next').click();
+  assert.equal(await page.evaluate(() => window.SiteMusic.snapshot().track.id), 'noise-white', 'Next steps through the noise colours');
+  await page.reload();
+  await page.locator('.music-track').first().waitFor();
+  assert.equal(await page.locator('#playing-title').textContent(), 'White noise', 'The player comes back to the last noise generator');
+  assert(await page.evaluate(() => document.querySelector('audio').paused));
+  await page.locator('.music-track').first().click();
+  await page.waitForFunction(() => !document.querySelector('audio').srcObject && !document.querySelector('audio').paused);
+  assert(await page.locator('#recording-source').isVisible());
+  assert.equal(await page.locator('.music-noise-color[aria-pressed="true"]').count(), 0);
+  console.log('PASS five noise colours at their slopes, noise next/resume, and switching back to recordings');
+
   for (const viewport of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 844, height: 390 }]) {
     await page.setViewportSize(viewport);
     await page.evaluate(() => window.SiteMusic.expand(true));

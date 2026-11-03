@@ -1,3 +1,5 @@
+import { NOISE_COLORS, noiseTrack } from './noise-colors.mjs';
+
 const base = new URL('../../', import.meta.url);
 const shellURL = new URL('listen.html', base);
 const params = new URL(location.href).searchParams;
@@ -11,6 +13,9 @@ let tracks = [], composers = [], index = 0, shuffle = saved.shuffle === true;
 let repeat = ['one', 'all'].includes(saved.repeatMode) ? saved.repeatMode : saved.repeat === true ? 'all' : 'off';
 let dockSize = saved.dockSize === 'tiny' ? 'tiny' : 'compact';
 let fallback = false, pendingTime = 0, playRequest = 0, lastSave = 0;
+// A noise colour id while a generator, not a recording, is the source. index keeps the last recording.
+let noise = null, noiseEngine = null;
+const canMakeNoise = 'AudioWorkletNode' in window && 'MediaStreamAudioDestinationNode' in window && isSecureContext;
 let browseURL = safeBrowse(params.get('browse'));
 
 function safeBrowse(value) {
@@ -34,9 +39,11 @@ function setButton(button, label, path) {
   button.querySelector('path').setAttribute('d', path);
 }
 function save() {
-  try { localStorage.setItem(storageKey, JSON.stringify({ track: current()?.id, time: audio.currentTime || pendingTime, volume: audio.volume, shuffle, repeat: repeat !== 'off', repeatMode: repeat, dockSize })); } catch {}
+  const time = noise ? saved.time : audio.currentTime || pendingTime;
+  try { localStorage.setItem(storageKey, JSON.stringify({ track: current()?.id, time, noise, volume: audio.volume, shuffle, repeat: repeat !== 'off', repeatMode: repeat, dockSize })); } catch {}
+  saved.time = time;
 }
-function snapshot() { return { track: current(), playing: !audio.paused, volume: audio.volume }; }
+function snapshot() { return { track: noise ? noiseTrack(noise) : current(), playing: !audio.paused, volume: audio.volume }; }
 function update() {
   const playing = !audio.paused;
   $('site-player').dataset.playing = String(playing);
@@ -53,12 +60,13 @@ function update() {
   loopBadge.hidden = repeat === 'off';
   loopBadge.textContent = repeat === 'one' ? '1' : 'all';
   $('music-feature-state').textContent = !current() ? 'Ready to play' : playing ? 'Now playing' : audio.currentTime > 0 ? 'Paused' : 'Up next';
+  document.querySelectorAll('.music-noise-color').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.noise === noise)));
   $('music-mute').setAttribute('aria-pressed', String(audio.muted));
   $('music-mute').setAttribute('aria-label', audio.muted ? 'Unmute' : 'Mute');
   $('music-mute').title = audio.muted ? 'Unmute' : 'Mute';
   $('player-volume').style.setProperty('--music-progress', `${audio.muted ? 0 : audio.volume * 100}%`);
   $('music-repeat-description').textContent = `Loop: ${repeat === 'one' ? 'this recording' : repeat === 'all' ? 'all recordings' : 'off'}`;
-  document.querySelectorAll('.music-track').forEach(button => button.setAttribute('aria-current', String(button.dataset.track === current()?.id)));
+  document.querySelectorAll('.music-track').forEach(button => button.setAttribute('aria-current', String(!noise && button.dataset.track === current()?.id)));
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
   window.dispatchEvent(new CustomEvent('site-music-change', { detail: snapshot() }));
   save();
@@ -77,10 +85,14 @@ function expand(value, focus = false) {
   if (focus) (value ? $('music-search') : $('music-library-toggle')).focus();
 }
 async function play() {
-  if (!current()) return;
+  if (!current() && !noise) return;
   const request = ++playRequest;
-  status('Loading recording…');
+  status(noise ? '' : 'Loading recording…');
   try {
+    if (noise) {
+      const stream = noiseStream();
+      if (audio.srcObject !== stream) audio.srcObject = stream;
+    }
     // paused flips as soon as play() is called; show it now rather than when the play event arrives.
     const starting = audio.play();
     update();
@@ -99,26 +111,47 @@ async function play() {
   }
 }
 function pause() { ++playRequest; audio.pause(); status(''); update(); }
-function select(id, start = true, time = 0) {
-  const next = tracks.findIndex(track => track.id === id);
-  if (next < 0) return;
-  ++playRequest;
-  audio.pause();
-  index = next; fallback = false; pendingTime = Math.max(0, Number(time) || 0);
-  const track = current();
-  audio.src = track.src;
-  $('playing-title').textContent = track.title;
-  $('playing-composer').textContent = track.composer;
-  $('feature-title').textContent = track.title;
-  $('feature-composer').textContent = track.composer;
-  $('music-art').textContent = $('music-art-large').textContent = monogram(track.composer);
-  $('site-player').style.setProperty('--music-hue', hueFor(track.composer));
-  document.querySelector('.music-now').title = `${track.title} — ${track.composer}`;
+// Noise is computed by an AudioWorklet and handed to the same <audio> element as a live stream,
+// so play/pause, volume, mute and the lock-screen controls work exactly as they do for recordings.
+function noiseStream() {
+  if (!noiseEngine) {
+    const ctx = new AudioContext();
+    noiseEngine = { ctx, dest: ctx.createMediaStreamDestination(), node: null, color: null,
+      ready: ctx.audioWorklet.addModule(new URL('noise-generator.worklet.js', import.meta.url)) };
+  }
+  const engine = noiseEngine;
+  engine.ctx.resume();
+  if (engine.color !== noise) {
+    const color = engine.color = noise;
+    engine.ready.then(() => {
+      if (engine.color !== color) return;
+      engine.node?.disconnect();
+      engine.node = new AudioWorkletNode(engine.ctx, 'noise-generator', { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { color } });
+      engine.node.connect(engine.dest);
+    }).catch(() => { status('This browser could not start the noise generator. Choose a recording instead.'); pause(); });
+  }
+  return engine.dest.stream;
+}
+function stopNoise() {
+  noise = null;
+  if (!noiseEngine) return;
+  noiseEngine.node?.disconnect();
+  noiseEngine.node = noiseEngine.color = null;
+  noiseEngine.ctx.suspend();
+}
+function show({ title, composer, art, hue, detail, credit, source, lesson, album }) {
+  $('playing-title').textContent = $('feature-title').textContent = title;
+  $('playing-composer').textContent = $('feature-composer').textContent = composer;
+  $('music-art').textContent = $('music-art-large').textContent = art;
+  $('site-player').style.setProperty('--music-hue', hue);
+  document.querySelector('.music-now').title = `${title} — ${composer}`;
   measureMarquee();
-  $('playing-detail').textContent = track.detail;
-  $('playing-credit').textContent = track.credit;
-  $('recording-source').href = track.source;
-  $('recording-lesson').href = new URL(track.lesson, base);
+  $('playing-detail').textContent = detail;
+  $('playing-credit').textContent = credit;
+  $('recording-source').hidden = !source;
+  $('recording-lesson').hidden = !lesson;
+  if (source) $('recording-source').href = source;
+  if (lesson) $('recording-lesson').href = new URL(lesson, base);
   $('music-seek').disabled = true;
   $('music-seek').value = '0';
   $('music-seek').setAttribute('aria-valuetext', '0:00 of 0:00');
@@ -126,11 +159,40 @@ function select(id, start = true, time = 0) {
   $('music-seek').style.setProperty('--music-buffered', '0%');
   $('music-elapsed').textContent = '0:00';
   $('music-duration').textContent = '0:00';
-  if ('mediaSession' in navigator && 'MediaMetadata' in window) navigator.mediaSession.metadata = new MediaMetadata({ title: track.title, artist: track.composer, album: 'ClassroomOS recordings' });
+  if ('mediaSession' in navigator && 'MediaMetadata' in window) navigator.mediaSession.metadata = new MediaMetadata({ title, artist: composer, album });
+}
+function select(id, start = true, time = 0) {
+  const next = tracks.findIndex(track => track.id === id);
+  if (next < 0) return;
+  ++playRequest;
+  audio.pause();
+  if (noise) { stopNoise(); audio.srcObject = null; }
+  index = next; fallback = false; pendingTime = Math.max(0, Number(time) || 0);
+  const track = current();
+  audio.src = track.src;
+  show({ ...track, art: monogram(track.composer), hue: hueFor(track.composer), album: 'ClassroomOS recordings' });
+  status(''); update();
+  if (start) play();
+}
+function selectNoise(id, start = true) {
+  const color = NOISE_COLORS.find(c => c.id === id);
+  if (!color || !canMakeNoise) return;
+  ++playRequest;
+  audio.pause();
+  noise = color.id; pendingTime = 0;
+  if (!audio.srcObject) { audio.removeAttribute('src'); audio.load(); }
+  show({ title: color.name, composer: 'Noise generator', art: '≋', hue: color.hue, detail: `${color.slope} · ${color.about}`,
+    credit: 'Generated live in your browser: nothing to download, and it never loops.', album: 'ClassroomOS noise generators' });
+  $('music-duration').textContent = '∞';
   status(''); update();
   if (start) play();
 }
 function step(direction, start = !audio.paused) {
+  if (noise) {
+    const at = NOISE_COLORS.findIndex(c => c.id === noise);
+    selectNoise(NOISE_COLORS[(at + direction + NOISE_COLORS.length) % NOISE_COLORS.length].id, start);
+    return;
+  }
   if (!tracks.length) return;
   let next = (index + direction + tracks.length) % tracks.length;
   if (shuffle && tracks.length > 1) next = (index + 1 + Math.floor(Math.random() * (tracks.length - 1))) % tracks.length;
@@ -193,7 +255,7 @@ $('music-exit').addEventListener('click', () => { pause(); save(); });
 $('recording-lesson').addEventListener('click', event => { event.preventDefault(); frame.src = $('recording-lesson').href; expand(false); });
 $('music-play').addEventListener('click', toggle);
 $('music-next').addEventListener('click', () => step(1));
-$('music-previous').addEventListener('click', () => { if (audio.currentTime > 3) audio.currentTime = 0; else step(-1); });
+$('music-previous').addEventListener('click', () => { if (!noise && audio.currentTime > 3) audio.currentTime = 0; else step(-1); });
 $('music-library-toggle').addEventListener('click', () => expand($('music-library').hidden, true));
 $('music-expand').addEventListener('click', () => {
   dockSize = $('site-player').classList.contains('is-tiny') ? 'compact' : 'tiny';
@@ -221,7 +283,7 @@ function format(seconds) { return Number.isFinite(seconds) ? `${Math.floor(secon
 audio.addEventListener('loadedmetadata', () => {
   if (pendingTime && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(pendingTime, Math.max(0, audio.duration - 0.1)); pendingTime = 0; }
   $('music-seek').disabled = !Number.isFinite(audio.duration);
-  $('music-duration').textContent = format(audio.duration);
+  if (!noise) $('music-duration').textContent = format(audio.duration);
 });
 audio.addEventListener('timeupdate', () => {
   $('music-elapsed').textContent = format(audio.currentTime);
@@ -231,12 +293,14 @@ audio.addEventListener('timeupdate', () => {
   if (Date.now() - lastSave > 5000) { save(); lastSave = Date.now(); }
 });
 for (const name of ['play', 'pause']) audio.addEventListener(name, update);
+// A paused generator would otherwise keep computing samples nobody hears.
+audio.addEventListener('pause', () => { if (noise && audio.paused) noiseEngine?.ctx.suspend(); });
 audio.addEventListener('progress', () => {
   const { buffered, duration } = audio;
   if (buffered.length && duration) $('music-seek').style.setProperty('--music-buffered', `${buffered.end(buffered.length - 1) / duration * 100}%`);
 });
 audio.addEventListener('playing', () => status(''));
-audio.addEventListener('waiting', () => status('Buffering recording…'));
+audio.addEventListener('waiting', () => { if (!noise) status('Buffering recording…'); });
 audio.addEventListener('ended', () => {
   if (index === tracks.length - 1 && repeat !== 'all' && !shuffle) { status('End of the library. Choose a recording or turn on Loop all.'); update(); }
   else step(1, true);
@@ -283,6 +347,22 @@ function renderTracks() {
     group.append(heading, items); return group;
   }));
 }
+function renderNoise() {
+  $('music-noise-list').replaceChildren(...NOISE_COLORS.map(color => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'music-noise-color'; button.dataset.noise = color.id;
+    button.style.setProperty('--noise-swatch', color.swatch);
+    button.setAttribute('aria-pressed', String(color.id === noise));
+    button.title = color.about;
+    const swatch = document.createElement('span'); swatch.className = 'noise-swatch'; swatch.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('strong'); name.textContent = color.name.replace(' noise', '');
+    const slope = document.createElement('small'); slope.textContent = color.slope;
+    button.setAttribute('aria-label', `${color.name}, ${color.slope}`);
+    button.append(swatch, name, slope);
+    button.addEventListener('click', () => { if (color.id === noise && audio.srcObject) toggle(); else selectNoise(color.id); });
+    return button;
+  }));
+}
 $('music-search').addEventListener('input', renderTracks);
 $('music-composer').addEventListener('change', renderTracks);
 if ('mediaSession' in navigator) {
@@ -291,6 +371,7 @@ if ('mediaSession' in navigator) {
 }
 expand(params.get('play') !== '1');
 for (const id of ['music-play', 'music-next', 'music-previous']) $(id).disabled = true;
+if (canMakeNoise) renderNoise(); else document.querySelector('.music-noise').hidden = true;
 try {
   const response = await fetch(new URL('data/recording-library.json', base));
   if (!response.ok) throw new Error('Library request failed');
@@ -306,8 +387,10 @@ try {
   const requested = params.get('track') || saved.track || 'satie-1';
   const initial = tracks.find(t => t.id === requested) || tracks[0];
   const time = params.has('time') ? Number(params.get('time')) : initial.id === saved.track ? saved.time : 0;
-  select(initial.id, params.get('play') === '1', time);
+  select(initial.id, params.get('play') === '1' && !(saved.noise && !params.has('track')), time);
   renderTracks();
+  // The last source was a noise generator: come back to it, unless a page asked for a recording.
+  if (saved.noise && !params.has('track')) selectNoise(saved.noise, params.get('play') === '1');
   for (const id of ['music-play', 'music-next', 'music-previous']) $(id).disabled = false;
 } catch {
   status('The recording library could not load. Reload this page to try again.'); expand(true);

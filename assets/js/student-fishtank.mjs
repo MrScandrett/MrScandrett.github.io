@@ -1282,7 +1282,7 @@ function updateMusicUI() {
   button.classList.toggle('on', playing);
   document.getElementById('mpulse').classList.toggle('on', playing);
   document.getElementById('music-title').textContent = track?.title || 'Classroom recordings';
-  document.getElementById('music-sub').textContent = track ? `${track.composer} · real recording` : '41 real recordings · website player';
+  document.getElementById('music-sub').textContent = track ? `${track.composer} · ${track.noise ? 'made live' : 'real recording'}` : '41 real recordings · website player';
   document.getElementById('music-vol').value = String(volume);
 }
 window.toggleMusic = () => SiteMusic.toggle();
