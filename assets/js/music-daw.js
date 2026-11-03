@@ -2513,7 +2513,7 @@
     if (!visible || !track) return;
     if (canvas !== eqCanvas) { eqCanvas = canvas; eqView = ChannelEQ.view(canvas); }
     analysingEQ = processor || null;
-    eqView.draw(processor, ProjectModel.normalizeStrip(track.strip), eqDisplay);
+    eqView.draw(processor, ProjectModel.normalizeStrip(track.strip), eqDisplay, rect);
   }
   function eqPanelHtml(strip) {
     const L = ProjectModel.STRIP_LIMITS;
@@ -3093,8 +3093,9 @@
   }
 
   function updateLcd() {
-    R.pos.textContent = formatPos(ui.playhead);
-    R.time.textContent = formatTime(ui.playhead * spb());
+    const position = formatPos(ui.playhead), time = formatTime(ui.playhead * spb());
+    if (R.pos.textContent !== position) R.pos.textContent = position;
+    if (R.time.textContent !== time) R.time.textContent = time;
   }
 
   function updateTransportUi() {
@@ -4501,6 +4502,15 @@
 
   // ── Animation: playhead, meters ──────────────────────────────────────────
   const stripData = new Float32Array(512);
+  let micMeterData;
+  let nextPlayheadFrame = 0, nextMeterFrame = 0;
+
+  // Carry the scheduled deadline forward to avoid dropping to half speed
+  // when the display's frame interval jitters around the target interval.
+  function nextVisualFrame(now, deadline, fps) {
+    const interval = 1000 / fps;
+    return deadline + interval > now ? deadline + interval : now + interval;
+  }
 
   // Channel console meters: post-fader LED ladder, plus SIG / PEAK lamps on the preamp.
   const LADDER_DB = [-48, -42, -36, -30, -24, -20, -16, -12, -9, -6, -4, -2, -1, 0];
@@ -4559,8 +4569,11 @@
     if (out) out.textContent = ll > 1e-9 && rr > 1e-9 ? (lr / Math.sqrt(ll * rr)).toFixed(2) : '—';
   }
 
-  function frame() {
-    if (transport.playing && audio.ctx) {
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (document.hidden) return;
+    if (transport.playing && audio.ctx && now + 0.5 >= nextPlayheadFrame) {
+      nextPlayheadFrame = nextVisualFrame(now, nextPlayheadFrame, 60);
       const beat = beatAt(audio.ctx.currentTime - (audio.ctx.outputLatency || 0));
       ui.playhead = beat;
       updateLcd();
@@ -4578,14 +4591,17 @@
         drawRuler();
       }
     }
+    // Meter and analyser work should not scale with a 120 Hz display.
+    if (now + 0.5 < nextMeterFrame) return;
+    nextMeterFrame = nextVisualFrame(now, nextMeterFrame, 30);
     if (audio.meter) {
       audio.meter.getFloatTimeDomainData(audio.meterData);
       let peak = 0;
       for (let i = 0; i < audio.meterData.length; i++) peak = Math.max(peak, Math.abs(audio.meterData[i]));
       R.meter.style.transform = `scaleX(${Math.min(1, peak)})`;
       R.meter.classList.toggle('is-hot', peak > 0.98);
-      if (ui.tab === 'mix') drawAnalysis();
       if (ui.tab === 'mix') {
+        drawAnalysis();
         R.mixer.querySelectorAll('[data-strip-meter]').forEach((el) => {
           const id = el.dataset.stripMeter;
           let level = peak;
@@ -4603,7 +4619,7 @@
       }
     }
     if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
-    if (!document.hidden && (ui.tab === 'tools' || ui.tab === 'fx')) {
+    if (ui.tab === 'tools' || ui.tab === 'fx') {
       const track = ui.tab === 'fx' ? findTrack(effectsTrack) : channelTarget();
       window.MusicLabCompressor?.draw(ui.tab === 'fx' ? $('effects') : $('tools'), track, audio.mix?.strips.get(track?.id)?.effects);
     }
@@ -4612,7 +4628,8 @@
       const el = root.querySelector('[data-ref="mic"]');
       const inputMeter = $('input-meter');
       if (el || inputMeter) {
-        const d = new Float32Array(mic.analyser.fftSize);
+        if (micMeterData?.length !== mic.analyser.fftSize) micMeterData = new Float32Array(mic.analyser.fftSize);
+        const d = micMeterData;
         mic.analyser.getFloatTimeDomainData(d);
         let peak = 0;
         for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
@@ -4622,7 +4639,6 @@
         $('input-level')?.setAttribute('aria-valuenow', String(Math.round(level * 100)));
       }
     }
-    requestAnimationFrame(frame);
   }
 
   // ── Public API (used by music-lab.js) ────────────────────────────────────

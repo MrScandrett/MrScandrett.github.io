@@ -81,18 +81,21 @@
   }
 
   // One visible channel, one FFT pair. Drawing is driven by the studio's frame loop.
-  let previewProcessor = null;
+  let previewProcessor = null, previewStrip = '';
   function view(canvas) {
     const g = canvas.getContext('2d'), N = 256, frequencies = new Float32Array(N), curve = new Float32Array(N);
-    let signature = '', last = 0, held = null, lastProcessor = null;
+    let staticFrame = '', last = 0, held = null, lastProcessor = null;
     const peaks = new Float32Array(N).fill(-100);
     const values = new Float32Array(N).fill(-100);
-    function draw(processor, strip, options = {}, time = performance.now()) {
-      const rect = canvas.getBoundingClientRect();
+    function draw(processor, strip, options = {}, rect = canvas.getBoundingClientRect()) {
       if (!rect.width || !rect.height || document.hidden || rect.bottom < 0 || rect.top > innerHeight) return;
-      if (time - last < 33) return;
-      const dt = Math.min(1, (time - last) / 1000); last = time;
       const dpr = Math.min(devicePixelRatio || 1, 2), W = rect.width, H = rect.height;
+      const stripKey = processor ? '' : JSON.stringify(strip);
+      const frameKey = processor ? '' : `${W}:${H}:${dpr}:${stripKey}`;
+      if (frameKey && frameKey === staticFrame) return;
+      staticFrame = frameKey;
+      const time = performance.now();
+      const dt = Math.min(1, (time - last) / 1000); last = time;
       if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       const left = 32, right = W - 30, top = 22, bottom = H - 24, width = right - left, height = bottom - top;
@@ -148,12 +151,14 @@
       for (let i = 0; i < N; i++) frequencies[i] = 20 * Math.exp(i / (N - 1) * logRange);
       let eq = processor;
       if (!eq) {
-        if (!previewProcessor) previewProcessor = create(new OfflineAudioContext(1, 1, 48000));
-        const sig = JSON.stringify(strip);
-        if (sig !== signature) { previewProcessor.apply(strip, 0, true); signature = sig; }
-        eq = previewProcessor;
+        const Offline = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
+        if (Offline) {
+          if (!previewProcessor) previewProcessor = create(new Offline(1, 1, 48000));
+          if (stripKey !== previewStrip) { previewProcessor.apply(strip, 0, true); previewStrip = stripKey; }
+          eq = previewProcessor;
+        }
       }
-      eq.response(frequencies, curve);
+      if (eq) eq.response(frequencies, curve); else curve.fill(0);
       g.beginPath(); g.strokeStyle = '#f5c46a'; g.lineWidth = 2;
       for (let i = 0; i < N; i++) { const x = left + i / (N - 1) * width, y = yCurve(curve[i]); if (i) g.lineTo(x, y); else g.moveTo(x, y); }
       g.stroke();

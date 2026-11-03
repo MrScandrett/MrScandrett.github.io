@@ -200,10 +200,12 @@
       if (next === cur && s.scale !== 'lin') next = fromPos(pos + (e.key.includes('Up') || e.key.includes('Right') ? 1 : -1) * unit, s);
       commitValue(el, next, false);
     });
-    // Wheel adjusts only a focused control, so the page still scrolls normally.
+    // Only vertical scrolling on an active control adjusts its value.
+    // Trackpad pinch can arrive as Ctrl+wheel and must reach browser zoom.
     container.addEventListener('wheel', e => {
+      if (!e.cancelable || e.ctrlKey || e.metaKey || !e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const el = e.target.closest('[data-ctl]');
-      if (!el || document.activeElement !== el) return;
+      if (!el || document.activeElement !== el || el.getAttribute('aria-disabled') === 'true') return;
       e.preventDefault();
       const s = specOf(el), pos = toPos(valueOf(el), s);
       commitValue(el, fromPos(pos + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 0.005 : 0.02), s), false);
