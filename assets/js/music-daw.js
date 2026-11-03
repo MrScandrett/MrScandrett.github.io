@@ -47,6 +47,9 @@
   // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a
   // compact track header whose volume/pan/instrument controls live in the Mix tab.
   const COARSE = window.matchMedia('(pointer: coarse)').matches;
+  let trackDensity = 'compact';
+  try { trackDensity = localStorage.getItem('music-lab-track-density') || 'compact'; } catch (_) { /* storage unavailable */ }
+  if (!['compact', 'detailed', 'fit'].includes(trackDensity)) trackDensity = 'compact';
   let TRACK_H = COARSE ? 142 : 110;
   let HEAD_W = 200;
   let compactHeads = false;
@@ -155,6 +158,7 @@
   function ctx() {
     if (!audio.ctx) {
       audio.ctx = AudioRuntime.createContext(window.MusicLabAudio);
+      window.MusicLabCompressor?.prepare(audio.ctx);
       const out = AudioRuntime.outputFor(audio.ctx, window.MusicLabAudio);
       audio.mix = createMixer(audio.ctx, out);
       audio.meter = audio.ctx.createAnalyser();
@@ -1407,6 +1411,7 @@
     const sr = audio.ctx ? audio.ctx.sampleRate : 44100;
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
+    if (tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass))) await window.MusicLabCompressor?.prepare(oc);
     const mix = createMixer(oc, oc.destination);
     mix.syncReturns(project.returns || [], tracks);
     tracks.forEach((t) => {
@@ -1634,7 +1639,7 @@
         <button type="button" class="daw-btn daw-play" data-act="play" aria-label="Play" title="Play / pause (Space)">▶</button>
         <button type="button" class="daw-btn" data-act="stop" aria-label="Stop" title="Stop (press twice to go back to the start)">⏹</button>
         <button type="button" class="daw-btn daw-rec" data-act="record" aria-label="Record" title="Record on the armed track">⏺</button>
-        <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶</button>
+        <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶ <span>Expand</span></button>
       </div>
       <div class="daw-lcd" aria-live="off">
         <span class="daw-lcd-pos" data-ref="pos">1.1.1</span>
@@ -1773,6 +1778,23 @@
   views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
   commandStrip.append(views);
   if (!quConsole) {
+    const layoutTools = document.createElement('div');
+    layoutTools.className = 'daw-group daw-layout-tools';
+    layoutTools.setAttribute('role', 'group');
+    layoutTools.setAttribute('aria-label', 'Timeline layout');
+    layoutTools.innerHTML = `<label class="daw-field">Rows <select data-track-density aria-label="Track row size"><option value="compact">Compact</option><option value="detailed">Detailed</option><option value="fit">Fit rows</option></select></label>
+      <button type="button" class="daw-btn" data-act="fit-song" title="Fit the whole song into the timeline width">Fit song</button>`;
+    layoutTools.querySelector('select').value = trackDensity;
+    layoutTools.append(root.querySelector('[data-act="zoom-out"]'), root.querySelector('[data-act="zoom-in"]'));
+    root.querySelector('.daw-lcd').before(layoutTools);
+    layoutTools.querySelector('select').addEventListener('change', event => {
+      trackDensity = event.target.value;
+      try { localStorage.setItem('music-lab-track-density', trackDensity); } catch (_) { /* storage unavailable */ }
+      renderTracks();
+      status(trackDensity === 'fit' ? 'Track rows fit the available height. Larger sessions scroll to keep labels readable.' : `${trackDensity === 'compact' ? 'Compact' : 'Detailed'} track rows.`);
+    });
+  }
+  if (!quConsole) {
     const quickStart = document.createElement('section');
     quickStart.className = 'daw-quick-start';
     quickStart.setAttribute('aria-label', 'Play an instrument');
@@ -1780,7 +1802,7 @@
       <label class="daw-field">Sound <select data-quick-sound aria-label="New instrument sound">${instrumentOptions('piano')}</select></label>
       <button type="button" class="daw-btn daw-quick-add" data-act="play-instrument" aria-describedby="daw-quick-help">Add &amp; play</button>
       <button type="button" class="daw-btn" data-act="connect-midi" aria-describedby="daw-midi-status">Connect MIDI keyboard</button></div>
-      <p id="daw-quick-help">Play on screen or with A–K. For a USB keyboard, connect MIDI and allow browser access.</p>
+      <details class="daw-playing-help"><summary>Playing help</summary><p id="daw-quick-help">Play on screen or with A–K. For a USB keyboard, connect MIDI and allow browser access.</p></details>
       <p id="daw-midi-status" data-midi-status role="status" aria-live="polite" aria-atomic="true"></p>`;
     commandStrip.prepend(quickStart);
   }
@@ -1963,7 +1985,10 @@
     const w = R.scroll.clientWidth || root.clientWidth || 800;
     compactHeads = w < 560;
     HEAD_W = compactHeads ? 92 : 210;
-    TRACK_H = compactHeads ? 64 : (COARSE ? 122 : 96);
+    const minimum = compactHeads || COARSE ? 64 : trackDensity === 'fit' ? 32 : 56;
+    TRACK_H = quConsole || trackDensity === 'detailed' ? (compactHeads ? 64 : (COARSE ? 122 : 96))
+      : trackDensity === 'fit' ? clamp(Math.floor((R.scroll.clientHeight - 30) / Math.max(1, project.tracks.length + 1)), minimum, COARSE ? 122 : 96)
+      : minimum;
     KEYS_W = compactHeads ? 52 : 80;
   }
 
@@ -1994,6 +2019,7 @@
     measureLayout();
     setTimelineVars();
     root.classList.toggle('is-compact', compactHeads);
+    root.classList.toggle('has-dense-rows', !quConsole && TRACK_H < (COARSE ? 122 : 96));
     const rows = project.tracks.map((t, i) => trackRowHtml(t, i)).join('');
     R.tracks.innerHTML = `
       <div class="daw-corner"><span>${project.tracks.length} track${project.tracks.length === 1 ? '' : 's'}</span><output data-time-cursor aria-label="Timeline cursor"></output></div>
@@ -2533,9 +2559,10 @@
       const d = registry[e.type];
       if (!d) return `<li class="mc-insert is-missing"><div class="mc-insert-head"><strong>Missing plugin: ${esc(e.type)}</strong><span class="mc-chip">safely bypassed</span></div></li>`;
       const params = window.AudioEffects.parameters(e.type, e.params);
-      return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-insert="${i}">
+      return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-insert="${i}" data-effect-type="${esc(e.type)}">
         <div class="mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
           ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
+        ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
         <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
     }).join('');
     return `${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Add a compressor to even out loud and soft notes, or an echo for space.</p>'}
@@ -2682,6 +2709,7 @@
   }
   $('tools').addEventListener('click', async e => {
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
+    if (applyCompressorPreset(b, t, $('tools'))) return;
     if (b.hasAttribute('data-eq-freeze')) { eqDisplay.freeze = !eqDisplay.freeze; b.setAttribute('aria-pressed', String(eqDisplay.freeze)); b.textContent = eqDisplay.freeze ? 'Resume display' : 'Freeze display'; return; }
     if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
     if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx'); return; }
@@ -2815,6 +2843,17 @@
     catch (error) { vstState.message = `Could not open plugin: ${error.message}`; }
     renderEffects();
   }
+  function applyCompressorPreset(button, track, host) {
+    const preset = window.MusicLabCompressor?.presets[button.dataset.compressorPreset];
+    if (!preset) return false;
+    const index = Number(button.closest('[data-compressor-index]').dataset.compressorIndex);
+    const effect = track.effects?.[index];
+    if (effect?.type !== 'punch-compressor') return false;
+    effect.params = { ...preset.params };
+    commit();
+    host.querySelector(`[data-compressor-index="${index}"] [data-compressor-preset="${button.dataset.compressorPreset}"]`)?.focus({ preventScroll: true });
+    return true;
+  }
   function renderEffects() {
     const host = $('effects'), registry = window.AudioEffects.registry;
     const track = findTrack(effectsTrack) || findTrack(ui.selTrack) || project.tracks[0];
@@ -2828,7 +2867,7 @@
         const d = registry[e.type];
         if (!d) return `<li class="is-missing" data-fx-index="${i}"><div class="daw-group"><strong>Missing plugin: ${esc(e.type)}</strong><span class="daw-plugin-badge">Safely bypassed</span><button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove missing plugin ${esc(e.type)}">Remove</button></div><p class="daw-note">The song data is preserved. Reinstall the locally approved plugin to recover its settings.</p></li>`;
         const params = window.AudioEffects.parameters(e.type, e.params);
-        return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-fx-index="${i}"><div class="daw-group mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
+        return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-fx-index="${i}" data-effect-type="${esc(e.type)}"><div class="daw-group mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
           ${d.format === 'browser' ? `<span class="daw-plugin-badge">Browser plugin · ${esc(d.cpu)} CPU · offline ready</span>` : '<span class="daw-plugin-badge">Built in</span>'}
           <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
           <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
@@ -2836,6 +2875,7 @@
           <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
           ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn ${esc(d.name)}</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
+          ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
           <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
   }
@@ -2844,6 +2884,7 @@
     if (b.hasAttribute('data-vst-connect')) { connectVst(); return; }
     if (b.dataset.vstLaunch) { launchVst(b.dataset.vstLaunch); return; }
     if (!track) return;
+    if (applyCompressorPreset(b, track, $('effects'))) return;
     if (b.dataset.vstLink) {
       const plugin = vstState.plugins.find(item => item.id === b.dataset.vstLink);
       if (plugin) {
@@ -2884,13 +2925,21 @@
     commit(); $('effects').querySelector(`[data-fx-index="${i}"] ${selector}`)?.focus();
   });
 
+  function clipInk(color) {
+    if (!/^#[\da-f]{6}$/i.test(color)) return '#1f211e';
+    const rgb = color.slice(1).match(/../g).map(v => parseInt(v, 16) / 255)
+      .map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+    return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722 > .179 ? '#10120f' : '#ffffff';
+  }
+
   function trackRowHtml(t, i) {
     const sel = t.id === ui.selTrack ? ' is-selected' : '';
     const instrument = t.kind === 'instrument'
       ? hasInstrumentExperience(t) ? `<select data-tr="instrument" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-mini" data-tr="tools" aria-label="Add instrument experience">＋</button>'
       : '<span class="daw-tag">Audio</span>';
     const clips = t.clips.map((c) => clipHtml(t, c)).join('');
-    const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color}">${clips}${automationHtml(t)}</div>`;
+    const lane = `<div class="daw-lane${sel}${t.mute || !audible(t) ? ' is-silent' : ''}" data-lane="${t.id}" data-kind="${t.kind}" style="--tc:${t.color};--clip-ink:${clipInk(t.color)}">${clips}${automationHtml(t)}</div>`;
+    const swatch = quConsole ? '' : `<input type="color" class="daw-track-color" data-tr="color" value="${esc(t.color)}" aria-label="Color for ${esc(t.name)}" title="Color for ${esc(t.name)}">`;
     if (compactHeads) {
       const flags = [t.mute && 'M', t.solo && 'S', t.armed && '●'].filter(Boolean).join(' ');
       return `
@@ -2899,12 +2948,21 @@
           <span class="daw-th-label">${esc(t.name)}</span>
           <span class="daw-th-sub">${t.kind === 'instrument' ? hasInstrumentExperience(t) ? INSTRUMENTS[t.instrument] : 'No sound' : '🎙 Audio'}</span>
           ${flags ? `<span class="daw-th-flags" aria-hidden="true">${flags}</span>` : ''}
-        </button>
+        </button>${swatch}
+      </div>${lane}`;
+    }
+    if (!quConsole && TRACK_H < 56) {
+      return `<div class="daw-th is-overview${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
+        ${swatch}<input class="daw-th-name" data-tr="name" value="${esc(t.name)}" maxlength="40" aria-label="Track ${i + 1} name">
+        <button type="button" class="daw-mini" data-tr="mute" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}" title="Mute">M</button>
+        <button type="button" class="daw-mini" data-tr="solo" aria-label="Solo ${esc(t.name)}" aria-pressed="${t.solo}" title="Solo">S</button>
+        <button type="button" class="daw-mini daw-arm" data-tr="arm" aria-label="Arm ${esc(t.name)} for recording" aria-pressed="${t.armed}" title="Arm for recording">●</button>
       </div>${lane}`;
     }
     return `
       <div class="daw-th${sel}${t.armed ? ' is-armed' : ''}" data-track="${t.id}" style="--tc:${t.color}">
         <div class="daw-th-row">
+          ${swatch}
           <input class="daw-th-name" data-tr="name" value="${esc(t.name)}" maxlength="40" aria-label="Track ${i + 1} name">
           <button type="button" class="daw-mini daw-del" data-tr="delete" aria-label="Delete ${esc(t.name)}" title="Delete track">✕</button>
         </div>
@@ -2957,7 +3015,7 @@
     const w = Math.min(fullW, 4000), h = TRACK_H - 22;
     const g = fitCanvas(canvas, w, h);
     canvas.style.width = fullW + 'px';
-    g.fillStyle = 'rgba(10, 14, 24, 0.82)';
+    g.fillStyle = clip.type === 'midi' ? clipInk(found.track.color) : 'rgba(10, 14, 24, 0.82)';
     if (clip.type === 'midi') {
       const notes = clip.notes.filter((n) => n.start < clip.length);
       if (!notes.length) return;
@@ -3009,7 +3067,7 @@
       g.font = '700 10px system-ui, sans-serif'; g.textBaseline = 'top'; g.fillText(m.name, x + 4, 1);
     });
     const first = Math.floor(sl / ppb), last = Math.ceil((sl + view) / ppb);
-    const barEvery = ppb * bar < 40 ? (ppb * bar < 20 ? 4 : 2) : 1;
+    const barEvery = Math.max(1, 2 ** Math.ceil(Math.log2(48 / (ppb * bar))));
     g.font = '600 11px "IBM Plex Mono", ui-monospace, monospace';
     g.textBaseline = 'middle';
     for (let b = Math.max(0, first - (first % 1)); b <= last; b++) {
@@ -3739,6 +3797,7 @@
   let pinchTl = null, pinchFrame = 0;
   R.scroll.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 2) return;
+    fitSongWidth = false;
     cancelClipDrag();
     laneTap = null;
     const [a, b] = e.touches, rect = R.scroll.getBoundingClientRect();
@@ -3757,7 +3816,7 @@
     const midX = (a.clientX + b.clientX) / 2 - pinchTl.left - HEAD_W, midY = (a.clientY + b.clientY) / 2;
     cancelAnimationFrame(pinchFrame);
     pinchFrame = requestAnimationFrame(() => {
-      ui.pxPerBeat = clamp(pinchTl.ppb * dist / pinchTl.dist, 4, 200);
+      ui.pxPerBeat = clamp(pinchTl.ppb * dist / pinchTl.dist, .25, 200);
       relayoutTimeline();
       R.scroll.scrollLeft = pinchTl.beat * ui.pxPerBeat - midX;
       R.scroll.scrollTop = pinchTl.top - (midY - pinchTl.midY);
@@ -3918,8 +3977,11 @@
     const track = findTrack(head.dataset.track);
     if (!track) return;
     if (el.dataset.tr === 'name') track.name = el.value.trim().slice(0, 40) || track.name;
+    if (el.dataset.tr === 'color' && /^#[\da-f]{6}$/i.test(el.value)) track.color = el.value;
     if (el.dataset.tr === 'instrument') { if (transport.recording || finishingTake) { renderTracks(); return; } silenceLive(); track.instrument = el.value; syncInstrumentExperience(track); }
+    const refocus = el.dataset.tr;
     commit();
+    if (refocus === 'color') R.tracks.querySelector(`[data-track="${track.id}"] [data-tr="color"]`)?.focus({ preventScroll: true });
   });
 
   // ── Toolbar actions ──────────────────────────────────────────────────────
@@ -3944,7 +4006,7 @@
     if (!btn || btn.disabled) return;
     closeMenus();
     const act = btn.dataset.act;
-    if ((transport.recording || finishingTake) && !['play','stop','record','studio','metronome','zoom-in','zoom-out'].includes(act)) { status('Finish the take before editing the arrangement.'); return; }
+    if ((transport.recording || finishingTake) && !['play','stop','record','studio','metronome','zoom-in','zoom-out','fit-song'].includes(act)) { status('Finish the take before editing the arrangement.'); return; }
     switch (act) {
       case 'channel-tools': setTab('tools'); break;
       case 'home': if (!transport.recording) setPlayhead(0); break;
@@ -4110,6 +4172,7 @@
       case 'redo': redo(); break;
       case 'zoom-in': zoom(1.4); break;
       case 'zoom-out': zoom(1 / 1.4); break;
+      case 'fit-song': fitSong(); break;
       case 'split': splitClip(); break;
       case 'duplicate': duplicateClip(); break;
       case 'delete-clip': deleteClip(); break;
@@ -4219,11 +4282,24 @@
   });
 
   function zoom(f) {
+    fitSongWidth = false;
     const centreBeat = (R.scroll.scrollLeft + (R.scroll.clientWidth - HEAD_W) / 2) / ui.pxPerBeat;
-    ui.pxPerBeat = clamp(ui.pxPerBeat * f, 4, 200);
+    ui.pxPerBeat = clamp(ui.pxPerBeat * f, .25, 200);
     renderTracks();
     R.scroll.scrollLeft = centreBeat * ui.pxPerBeat - (R.scroll.clientWidth - HEAD_W) / 2;
     drawRuler();
+  }
+
+  let fitSongWidth = false;
+  function fitSong(announce = true) {
+    measureLayout();
+    const end = Math.max(songEnd(), project.loop.on ? project.loop.end : 0, barBeats() * 4);
+    const beats = Math.ceil(end / barBeats()) * barBeats();
+    ui.pxPerBeat = clamp((R.scroll.clientWidth - HEAD_W - 24) / beats, 0.25, 200);
+    fitSongWidth = true;
+    R.scroll.scrollLeft = 0;
+    renderTracks();
+    if (announce) status('Song fitted to the timeline width. Use + or − to zoom.');
   }
 
   R.bpm.addEventListener('change', () => {
@@ -4297,6 +4373,17 @@
       drawRoll();
     });
   });
+  // Native vertical resizing and fullscreen/view changes also resize the grid.
+  // Observe the viewport only; rebuilding its contents must not trigger a loop.
+  let timelineResizeFrame = 0;
+  const timelineObserver = new ResizeObserver(() => {
+    cancelAnimationFrame(timelineResizeFrame);
+    timelineResizeFrame = requestAnimationFrame(() => {
+      if (!R.scroll.clientWidth || !R.scroll.clientHeight) return;
+      if (fitSongWidth) fitSong(false); else renderTracks();
+    });
+  });
+  if (!quConsole) timelineObserver.observe(R.scroll);
 
   // ── Full-screen studio ───────────────────────────────────────────────────
   // CSS pins the studio over the page (works on iPhone, which has no element
@@ -4312,6 +4399,7 @@
     document.documentElement.classList.toggle('daw-studio-open', on);
     root.querySelector('[data-act="studio"]').setAttribute('aria-pressed', String(on));
     root.querySelector('[data-act="studio"]').setAttribute('aria-label', on ? 'Leave full-screen studio' : 'Full-screen studio');
+    root.querySelector('[data-act="studio"] span').textContent = on ? 'Exit' : 'Expand';
     const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
     if (on && !fsEl) {
       const req = pillar.requestFullscreen || pillar.webkitRequestFullscreen;
@@ -4515,6 +4603,10 @@
       }
     }
     if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
+    if (!document.hidden && (ui.tab === 'tools' || ui.tab === 'fx')) {
+      const track = ui.tab === 'fx' ? findTrack(effectsTrack) : channelTarget();
+      window.MusicLabCompressor?.draw(ui.tab === 'fx' ? $('effects') : $('tools'), track, audio.mix?.strips.get(track?.id)?.effects);
+    }
     drawChannelEQ();
     if (mic.analyser) {
       const el = root.querySelector('[data-ref="mic"]');

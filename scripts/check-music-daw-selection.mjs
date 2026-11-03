@@ -37,6 +37,8 @@ try {
   assert.equal(song.tracks.length, 1);
   assert.ok(Math.abs(song.tracks[0].notes[0].start - 0.7) < 0.03, 'Ctrl-click places a note between grid lines');
 
+  if (await fileTools.getAttribute('open') !== null) await fileTools.locator('summary').click();
+  await page.locator('[data-ruler] canvas').scrollIntoViewIfNeeded();
   const ruler = await page.locator('[data-ruler] canvas').boundingBox();
   await page.mouse.move(ruler.x + 65, ruler.y + 12);
   await page.mouse.down();
