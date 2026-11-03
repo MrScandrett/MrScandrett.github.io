@@ -749,10 +749,6 @@ html.daw-studio-open, html.daw-studio-open body { overflow: hidden; overscroll-b
 @media(max-width:720px) {
  .daw-command-strip { gap:3px; }
  .daw-command-strip > details summary { font-size:.72rem; padding:10px 6px; }
- .daw-command-strip .daw-region summary { font-size:0; }
- .daw-command-strip .daw-region summary::after { content:'Loop / seek'; font-size:.72rem; }
- .daw-command-strip .daw-file-tools summary { font-size:0; }
- .daw-command-strip .daw-file-tools summary::after { content:'Project'; font-size:.72rem; }
  .daw-views { width:100%; margin:0; }
  .daw-views .daw-btn { flex:1; }
  .pillar-daw.is-studio .daw { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto minmax(110px,.8fr) minmax(0,1.2fr) auto; gap:4px; }
@@ -773,10 +769,6 @@ html.daw-studio-open, html.daw-studio-open body { overflow: hidden; overscroll-b
  .pillar-daw.is-studio .daw .daw-scroll, .pillar-daw.is-studio .daw .daw-dock { grid-row:2; }
  .pillar-daw.is-studio .daw-command-strip > details > :not(summary) { left:auto; right:0; width:min(560px,90vw); max-height:70vh; }
  .pillar-daw.is-studio .daw-command-strip > details summary { font-size:.72rem; padding:10px 6px; }
- .pillar-daw.is-studio .daw-command-strip .daw-region summary,
- .pillar-daw.is-studio .daw-command-strip .daw-file-tools summary { font-size:0; }
- .pillar-daw.is-studio .daw-command-strip .daw-region summary::after { content:'Loop / seek'; font-size:.72rem; }
- .pillar-daw.is-studio .daw-command-strip .daw-file-tools summary::after { content:'Project'; font-size:.72rem; }
  .pillar-daw.is-studio .daw-views { margin-left:0; }
  .daw-keys { height:150px; }
 }
@@ -810,11 +802,10 @@ html.daw-studio-open, html.daw-studio-open body { overflow: hidden; overscroll-b
 .daw.is-compact .daw-hint { position: sticky; left: calc(var(--daw-head) + .6rem); display: block; width: min(15rem, calc(100vw - var(--daw-head) - 3rem)); white-space: normal; line-height: 1.35; }
 
 @media (max-width: 720px) {
-  /* One row: ⚙ · Loop · Project · view switcher; the switcher wraps below only if it must. */
+  /* Let the view switcher wrap below the command buttons on narrow screens. */
   .daw-command-strip .daw-settings > summary { font-size: 0; }
   .daw-command-strip .daw-settings > summary::after { content: '⚙'; content: '⚙' / 'Settings'; font-size: 1.05rem; }
-  .daw-command-strip .daw-region summary::after { content: 'Loop'; content: 'Loop' / 'Loop and seek'; }
-  .daw-views { width: auto; flex: 1 1 14rem; min-width: 14rem; margin: 0; }
+  .daw-views { width: auto; flex: 1 1 14rem; min-width: min(100%, 14rem); margin: 0; }
   .daw-views .daw-btn { flex: 1; min-width: 0; padding: 6px 2px; font-size: .72rem; letter-spacing: 0; }
   .daw-command-strip > details summary { padding-inline: 8px; }
 }
@@ -1128,4 +1119,51 @@ body.theme-music-lab .pillar-daw-lede { flex: 1 1 30rem; font-size: .75rem; line
   #trackStudio .daw-layout-tools select, #trackStudio .daw-quick-start .daw-btn, #trackStudio .daw-quick-start select, .daw-playing-help summary { min-height: 44px; }
   .daw.has-dense-rows .daw-th:not(.is-compact) .daw-mini { height: 28px; width: 28px; }
   .daw .daw-track-color { min-height: 28px; width: 28px; }
+}
+
+/* Give every command disclosure a single scrollable surface. */
+.daw-region-body { display: grid; gap: .4rem; }
+.daw-command-strip > details:not([open]) > :not(summary) { display: none; }
+.daw-command-strip .daw-files .daw-menu-wrap:has([aria-expanded="true"]) { flex: 1 0 100%; min-width: 0; }
+.daw-command-strip .daw-files .daw-menu {
+  position: static;
+  min-width: 0;
+  max-width: none;
+  margin-top: .25rem;
+  box-shadow: none;
+}
+.daw-command-strip .daw-files .daw-menu button { overflow-wrap: anywhere; }
+.daw-command-strip .daw-region > summary,
+.daw-command-strip .daw-file-tools > summary { font-size: .78rem; }
+.daw-command-strip .daw-region > summary::after,
+
+/* Keep transport and commands full width, including short landscape windows. */
+.pillar-daw.is-studio #trackStudio:not(.qu-console) {
+  grid-template-rows: auto auto minmax(140px, 1fr) auto auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.pillar-daw.is-studio #trackStudio:not(.qu-console) > :is(.daw-transport, .daw-command-strip, .daw-ready) {
+  grid-column: 1 / -1;
+}
+.pillar-daw.is-studio #trackStudio:not(.qu-console) > .daw-command-strip { grid-row: 2; }
+.pillar-daw.is-studio #trackStudio:not(.qu-console) > :is(.daw-scroll, .daw-dock) { grid-row: 3; }
+.pillar-daw.is-studio #trackStudio:not(.qu-console) .daw-command-strip > details > :not(summary) {
+  left: 0;
+  right: 0;
+  width: auto;
+  max-height: min(50vh, 400px);
+  max-height: min(50dvh, 400px);
+}
+.pillar-daw.is-studio #trackStudio:not(.qu-console) .daw-settings-body .daw-quick-start { display: flex; }
+@media (max-width: 720px) and (min-height: 501px), (max-width: 599px) {
+  .pillar-daw.is-studio #trackStudio:not(.qu-console)[data-view="split"] {
+    grid-template-rows: auto auto minmax(100px, .8fr) minmax(130px, 1.2fr) auto auto;
+  }
+  .pillar-daw.is-studio #trackStudio:not(.qu-console)[data-view="split"] > .daw-dock { grid-row: 4; }
+}
+@media (min-width: 600px) and (max-width: 720px) and (max-height: 500px) {
+  .pillar-daw.is-studio #trackStudio:not(.qu-console) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pillar-daw.is-studio #trackStudio:not(.qu-console) > .daw-dock { grid-column: 2; }
+  .pillar-daw.is-studio #trackStudio:not(.qu-console)[data-view="instrument"] > .daw-dock { grid-column: 1 / -1; }
 }

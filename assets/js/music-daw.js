@@ -1155,8 +1155,7 @@
     ui.selTrack = track.id; ui.selClip = null; ui.playTrack = track.id;
     ui.tab = 'play';
     if (root.dataset.view === 'tracks' || window.matchMedia('(max-width: 720px)').matches) {
-      root.dataset.view = window.matchMedia('(max-width: 720px)').matches ? 'instrument' : 'split';
-      root.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === root.dataset.view)));
+      showPanelView();
     }
     armForPlay(track);
     commit();
@@ -1666,7 +1665,7 @@
       <button type="button" class="daw-btn daw-toggle" data-act="monitor" aria-pressed="false" disabled>Hear mic</button>
       <span class="daw-input-help">For one microphone, choose its input number. Stereo preserves two distinct inputs. Use headphones when hearing your mic.</span>
     </div>
-    <details class="daw-region"><summary>Loop region + seek</summary><div class="daw-bar" aria-label="Loop and navigation">
+    <details class="daw-region"><summary>Loop &amp; seek</summary><div class="daw-region-body"><div class="daw-bar" aria-label="Loop and navigation">
       <label class="daw-field">Position (beat)<input type="number" data-position min="1" step="0.25" value="1"></label>
       <label class="daw-field">Loop from (beat)<input type="number" data-loop-bound="start" min="1" step="0.25" value="1"></label>
       <label class="daw-field">Loop to (beat)<input type="number" data-loop-bound="end" min="1.25" step="0.25" value="17"></label>
@@ -1675,9 +1674,9 @@
     <div class="daw-bar daw-markers" aria-label="Song sections">
       <button type="button" class="daw-btn" data-act="add-marker" title="Mark a section (verse, chorus…) at the playhead">＋ Marker at playhead</button>
       <div class="daw-marker-list" data-marker-list></div>
-    </div></details>
+    </div></div></details>
     <details class="daw-file-tools" open>
-    <summary>Track &amp; project tools</summary>
+    <summary>Tracks &amp; files</summary>
     <div class="daw-bar daw-files" role="toolbar" aria-label="Tracks and files">
       <div class="daw-group">
         <div class="daw-menu-wrap">
@@ -1775,7 +1774,7 @@
   commandStrip.append(audioHealth);
   const views = document.createElement('div'); views.className = 'daw-views';
   views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
-  views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
+  views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Panels'}</button>`).join('');
   commandStrip.append(views);
   if (!quConsole) {
     const layoutTools = document.createElement('div');
@@ -1794,8 +1793,9 @@
       status(trackDensity === 'fit' ? 'Track rows fit the available height. Larger sessions scroll to keep labels readable.' : `${trackDensity === 'compact' ? 'Compact' : 'Detailed'} track rows.`);
     });
   }
+  let quickStart;
   if (!quConsole) {
-    const quickStart = document.createElement('section');
+    quickStart = document.createElement('section');
     quickStart.className = 'daw-quick-start';
     quickStart.setAttribute('aria-label', 'Play an instrument');
     quickStart.innerHTML = `<div class="daw-quick-actions"><strong>Play an instrument</strong>
@@ -1818,15 +1818,25 @@
     views.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === 'instrument')));
     root.querySelector('.daw-workflow').innerHTML = '<strong>Qu-7 / Music Lab</strong><span>Record & arrange in Tracks · Mix on the console · Shape the selected channel · Save scenes & export</span>';
   }
+  function setWorkspaceView(view) {
+    root.dataset.view = view;
+    views.querySelectorAll('[data-view]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.view === view));
+    });
+  }
+  function showPanelView() {
+    setWorkspaceView(matchMedia('(max-width: 720px)').matches ? 'instrument' : 'split');
+  }
   views.addEventListener('click', event => {
     const button = event.target.closest('[data-view]'); if (!button) return;
-    silenceLive(); root.dataset.view = button.dataset.view;
-    views.querySelectorAll('button').forEach(node => node.setAttribute('aria-pressed', String(node===button)));
+    silenceLive();
+    setWorkspaceView(button.dataset.view);
     requestAnimationFrame(() => { renderTracks(); if(ui.tab==='edit') {sizeRoll();drawRoll();} });
   });
-  commandStrip.querySelectorAll('details').forEach(details => details.addEventListener('toggle', () => {
+  commandStrip.querySelectorAll(':scope > details').forEach(details => details.addEventListener('toggle', () => {
+    if (details === fileTools && !details.open) closeMenus();
     if(details.open) {
-      commandStrip.querySelectorAll('details').forEach(other => {if(other!==details)other.open=false;});
+      commandStrip.querySelectorAll(':scope > details').forEach(other => {if(other!==details)other.open=false;});
       if (details === audioHealth) refreshAudioHealth();
     }
   }));
@@ -2602,7 +2612,7 @@
     const registry = window.AudioEffects.registry, total = (track.effects || []).length;
     const list = (track.effects || []).map((e, i) => {
       const d = registry[e.type];
-      if (!d) return `<li class="mc-insert is-missing"><div class="mc-insert-head"><strong>Missing plugin: ${esc(e.type)}</strong><span class="mc-chip">safely bypassed</span></div></li>`;
+      if (!d) return `<li class="mc-insert is-missing" data-insert="${i}"><div class="mc-insert-head"><strong>Missing plugin: ${esc(e.type)}</strong><span class="mc-chip">safely bypassed</span></div></li>`;
       const params = window.AudioEffects.parameters(e.type, e.params);
       return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-insert="${i}" data-effect-type="${esc(e.type)}">
         <div class="mc-insert-head">${gripHtml(d.name)}<span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
@@ -2612,8 +2622,8 @@
         <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
     }).join('');
     return `${fxPickerHtml(track, 'mk-btn mk-btn-primary', 'data-ch-fx-add-picked')}
-      ${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Pick a compressor to even out loud and soft notes, or an echo for space.</p>'}
-      <p class="mc-hint">Signal runs top to bottom: drag <b>⠿</b> or use ▲▼ to reorder. Desktop plugins open in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Knobs apply when you let go.</p>`;
+      ${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Add a compressor to even out loud and soft notes, or add delay for an echo.</p>'}
+      <p class="mc-hint">Signal flows from top to bottom. Drag <b>⠿</b> or use the arrow buttons to reorder effects. Desktop plugins open in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Knobs apply when you let go.</p>`;
   }
   function flowHtml(track, strip) {
     const registry = window.AudioEffects.registry, live = (track.effects || []).filter(e => !e.bypass && registry[e.type]).length;
@@ -2644,8 +2654,8 @@
          <div class="mc-knobs">${MK.knob({ key: 'trim', label: 'Input trim', short: 'Trim', min: L.trim[0], max: L.trim[1], step: .5, def: 0, value: strip.trim, fmt: 'db', bipolar: true, size: 'lg', attrs: 'data-scope="strip"' })}</div>
          <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="phase"', on: strip.phase, tone: 'amber', text: 'ø <small>Polarity</small>', label: 'Polarity flip', title: 'Flip the waveform upside down. Fixes two mics cancelling each other.' })}${MK.sw({ attrs: 'data-ch-switch="hpf"', on: strip.hpf, tone: 'amber', text: 'Low-cut <small>80 Hz</small>', label: 'Low-cut filter 80 hertz', title: 'High-pass filter: removes rumble and thumps below 80 Hz' })}</div>`),
       sec('eq', 2, 'Equalizer · spectrum', 'Shape this channel, then switch EQ out to compare. The spectrum shows the signal before the inserts and fader.', eqPanelHtml(strip)),
-      sec('inserts', 3, 'Inserts', 'Processors wired in series, top to bottom. Compressors even out loud and soft notes; echo adds space. The IN switch bypasses a unit, like on a hardware rack.', insertsHtml(track)),
-      sec('output', 4, 'Output · Fader', 'The fader sets the level sent to the master bus, the pan knob places it left to right. Mute silences it; Solo isolates it. Keep peaks out of the red.',
+      sec('inserts', 3, 'Inserts', 'Effects process the signal in order. Turn off an effect’s IN switch to bypass it.', insertsHtml(track)),
+      sec('output', 4, 'Output · Fader', 'The fader sets the level sent to the master bus. Pan places the sound between the left and right speakers. Mute silences the channel. Solo lets you hear it in isolation.',
         `<div class="mc-out-grid">
           <div class="mc-knobs">${MK.knob({ key: 'pan', label: 'Pan', short: 'Pan', min: -1, max: 1, step: .05, def: 0, value: track.pan, fmt: 'pan', bipolar: true, attrs: 'data-scope="mix"' })}</div>
           <div class="mc-switches mc-switches-col">${MK.sw({ attrs: 'data-ch-switch="mute"', on: track.mute, tone: 'amber', text: 'Mute', label: `Mute ${track.name}` })}${MK.sw({ attrs: 'data-ch-switch="solo"', on: track.solo, tone: 'yellow', text: 'Solo', label: `Solo ${track.name}` })}${MK.sw({ attrs: 'data-channel-arm', on: track.armed, tone: 'red', text: 'Rec <small>Arm</small>', label: track.armed ? 'Disarm recording' : 'Arm recording', title: noSound ? 'Choose a sound first' : 'Arm this channel, then press ⏺ to record' })}</div>
@@ -2758,7 +2768,7 @@
     if (applyCompressorPreset(b, t, $('tools'))) return;
     if (b.hasAttribute('data-eq-freeze')) { eqDisplay.freeze = !eqDisplay.freeze; b.setAttribute('aria-pressed', String(eqDisplay.freeze)); b.textContent = eqDisplay.freeze ? 'Resume display' : 'Freeze display'; return; }
     if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
-    if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx'); return; }
+    if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx', true); return; }
     if (b.hasAttribute('data-open-catalog')) { const d=$('tools').querySelector('.daw-experience-catalog');if(d){d.open=true;d.scrollIntoView({block:'start'});d.querySelector('[data-tool-add]:not(:disabled)')?.focus({preventScroll:true});}return; }
     if (b.dataset.chSwitch) {
       const key=b.dataset.chSwitch;
@@ -2782,7 +2792,7 @@
     if (b.dataset.arrangeEdit) { select(t.id,b.dataset.arrangeEdit); renderEditor();setTab('edit');return; }
     if (b.hasAttribute('data-channel-arm')) { await setArmed(t,!t.armed); return; }
     if (b.hasAttribute('data-channel-delete')) { deleteTrack(t.id); return; }
-    if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen); return; }
+    if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen, true); return; }
     if (transport.recording || finishingTake) { status('Finish the take before editing channel tools.'); return; }
     if (b.dataset.channelPreset === 'save') {
       download(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,strip:t.strip,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`, 'application/json');
@@ -4044,7 +4054,9 @@
   });
 
   // ── Toolbar actions ──────────────────────────────────────────────────────
-  function closeMenus() {
+  function closeMenus(restoreFocus = false) {
+    const trigger = root.querySelector('[data-menu][aria-expanded="true"]');
+    if (restoreFocus) trigger?.focus({ preventScroll: true });
     root.querySelectorAll('[data-menu-panel]').forEach((m) => { m.hidden = true; });
     root.querySelectorAll('[data-menu]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
   }
@@ -4063,7 +4075,7 @@
     const btn = e.target.closest('[data-act]');
     if (!e.target.closest('.daw-menu')) closeMenus();
     if (!btn || btn.disabled) return;
-    closeMenus();
+    closeMenus(!!btn.closest('.daw-menu'));
     const act = btn.dataset.act;
     if ((transport.recording || finishingTake) && !['play','stop','record','studio','metronome','zoom-in','zoom-out','fit-song'].includes(act)) { status('Finish the take before editing the arrangement.'); return; }
     switch (act) {
@@ -4200,17 +4212,32 @@
         break;
       }
       case 'clip-mute': { const sel = selected(); if (sel) { sel.clip.muted = !sel.clip.muted; commit(); } break; }
-      case 'play-instrument': prepareInstrument(root.querySelector('[data-quick-sound]').value); break;
+      case 'play-instrument':
+        if (prepareInstrument(root.querySelector('[data-quick-sound]').value)) {
+          transportSettings.open = false;
+          root.querySelector('[data-tab="play"]').focus();
+        }
+        break;
       case 'connect-midi': connectMidiKeyboard(); break;
-      case 'add-instrument': prepareInstrument(btn.dataset.instrument); break;
+      case 'add-instrument':
+        if (prepareInstrument(btn.dataset.instrument)) {
+          fileTools.open = false;
+          root.querySelector('[data-tab="play"]').focus();
+        }
+        break;
       case 'quick-instrument': prepareInstrument('piano'); break;
       case 'add-audio': addTrack('audio'); commit(); break;
       case 'new-clip': {
         const track = findTrack(ui.selTrack) || project.tracks.find(t => t.kind === 'instrument');
         if (!track || track.kind !== 'instrument') { status('Select an instrument track to add a note clip.'); break; }
         const clip = newMidiClip(track, floorTo(ui.playhead, barBeats()), barBeats());
-        select(track.id, clip.id); ui.tab = 'edit'; commit();
-        status('Note clip added. Tap the piano-roll grid to add notes.');
+        select(track.id, clip.id);
+        if (root.dataset.view === 'tracks') showPanelView();
+        ui.tab = 'edit';
+        fileTools.open = false;
+        commit();
+        root.querySelector('[data-tab="edit"]').focus();
+        status('Note clip added. Select a spot on the piano roll to add a note.');
         break;
       }
       case 'import': R.file.value = ''; R.file.click(); break;
@@ -4453,7 +4480,12 @@
   function studioOn() { return pillar.classList.contains('is-studio'); }
   function toggleStudio() {
     const on = !studioOn();
-    if (on) { root.querySelector('.daw-region').open=false;fileTools.open=false; }
+    commandStrip.querySelectorAll(':scope > details[open]').forEach(details => { details.open = false; });
+    closeMenus();
+    if (quickStart) {
+      if (on) transportSettings.lastElementChild.prepend(quickStart);
+      else commandStrip.prepend(quickStart);
+    }
     pillar.classList.toggle('is-studio', on);
     document.documentElement.classList.toggle('daw-studio-open', on);
     root.querySelector('[data-act="studio"]').setAttribute('aria-pressed', String(on));
@@ -4510,15 +4542,22 @@
   // letter keys, which stay free for the QWERTY piano.
   root.addEventListener('keydown', (e) => {
     const t = e.target;
-    const typing = t.matches('input[type="text"], input[type="number"], textarea, select');
+    const typing = t.matches('input:not([type]), input[type="text"], input[type="number"], textarea, select, [contenteditable="true"]');
     const mod = e.ctrlKey || e.metaKey;
     if (e.key === 'Escape') {
-      if (root.querySelector('.daw-menu:not([hidden])')) closeMenus();
-      else if (studioOn()) toggleStudio();
+      const disclosure = t.closest('.daw-command-strip > details[open]');
+      if (root.querySelector('.daw-menu:not([hidden])')) closeMenus(true);
+      else if (disclosure) {
+        disclosure.open = false;
+        disclosure.querySelector('summary').focus();
+      } else if (studioOn()) {
+        toggleStudio();
+        root.querySelector('[data-act="studio"]').focus({ preventScroll: true });
+      }
       return;
     }
     if (typing) return;
-    if (e.code === 'Space' && !t.matches('button, input')) {
+    if (e.code === 'Space' && !t.closest('button, input, summary, a, [role="slider"]')) {
       e.preventDefault(); e.stopPropagation(); togglePlay(); return;
     }
     if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.stopPropagation(); e.shiftKey ? redo() : undo(); return; }
