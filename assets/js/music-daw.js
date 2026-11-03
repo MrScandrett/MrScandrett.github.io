@@ -19,6 +19,7 @@
 
   const IO = window.DawIO;
   const ProjectModel = window.MusicDawProject;
+  const ChannelEQ = window.MusicDawEQ;
   const Stretch = window.MusicDawStretch;
   const Loudness = window.MusicDawLoudness;
   const Core = window.MusicDawCore;
@@ -27,7 +28,7 @@
   const PluginHost = window.MusicDawPlugins;
   const diagnostics = window.MusicDawDiagnostics?.create();
   const root = document.getElementById('trackStudio');
-  if (!root || !IO || !ProjectModel || !Core || !AudioRuntime || !RenderEngine || !PluginHost) return;
+  if (!root || !IO || !ChannelEQ || !ProjectModel || !Core || !AudioRuntime || !RenderEngine || !PluginHost) return;
 
   const quConsole = root.dataset.console === 'qu7';
   if (quConsole) root.classList.add('qu-console');
@@ -247,23 +248,20 @@
       let s = strips.get(track.id);
       if (!s) {
         const gain = c.createGain(), pan = c.createStereoPanner();
-        // Console front end, in the order a real strip does it:
-        // trim → polarity → low-cut → EQ (low shelf, mid bell, high shelf) → inserts → fader → pan.
+        // Preamp → low-cut → hardware-inspired EQ → inserts → fader / pan.
         const input = c.createGain(), phase = c.createGain(), hpf = c.createBiquadFilter();
-        const lo = c.createBiquadFilter(), mid = c.createBiquadFilter(), hi = c.createBiquadFilter();
         const inserts = c.createGain(), preMeter = c.createAnalyser();
         hpf.type = 'highpass'; hpf.Q.value = 0.707;
-        lo.type = 'lowshelf'; lo.frequency.value = 100;
-        mid.type = 'peaking'; mid.Q.value = 1;
-        hi.type = 'highshelf'; hi.frequency.value = 8000;
-        input.connect(phase); phase.connect(hpf); hpf.connect(lo); lo.connect(mid); mid.connect(hi); hi.connect(inserts);
+        input.connect(phase); phase.connect(hpf);
+        const eq = ChannelEQ.create(c, hpf);
+        eq.output.connect(inserts);
         const muteGain = c.createGain();
         gain.connect(muteGain); muteGain.connect(pan); pan.connect(master);
         // Post-fader, post-pan sends to the two return buses.
         const sends = returns.map(r => { const g = c.createGain(); g.gain.value = 0; pan.connect(g); g.connect(r.input); return g; });
-        s = { input, gain, muteGain, pan, phase, hpf, lo, mid, hi, inserts, preMeter, sends, effects: [], signature: null, meter: null };
+        s = { input, gain, muteGain, pan, phase, hpf, eq, inserts, preMeter, sends, effects: [], signature: null, meter: null };
         if (!(c instanceof OfflineAudioContext)) {
-          preMeter.fftSize = 512; hi.connect(preMeter);
+          preMeter.fftSize = 512; eq.output.connect(preMeter);
           s.meter = c.createAnalyser();
           s.meter.fftSize = 512;
           pan.connect(s.meter);
@@ -292,9 +290,7 @@
     set(s.input.gain, Math.pow(10, v.trim / 20));
     set(s.phase.gain, v.phase ? -1 : 1);
     set(s.hpf.frequency, v.hpf ? 80 : 10);
-    const eq = v.eqOn;
-    set(s.lo.gain, eq ? v.lo : 0); set(s.mid.gain, eq ? v.mid : 0); set(s.hi.gain, eq ? v.hi : 0);
-    set(s.mid.frequency, v.midF);
+    s.eq.apply(v, now, instant);
   }
 
   function applyMix() {
@@ -1144,6 +1140,35 @@
     ui.selTrack = track.id;
     return track;
   }
+
+  // Set up the sound and input together so first-time players need no rack or arm step.
+  function prepareInstrument(instrument, track) {
+    if (transport.recording || finishingTake) { status('Finish the take before setting up an instrument.'); return null; }
+    const source = document.activeElement;
+    ctx(); // Unlock audio during the click/keypress, before the MIDI permission prompt.
+    track ||= addTrack('instrument', instrument);
+    if (!hasInstrumentExperience(track)) { track.instrument = instrument; syncInstrumentExperience(track, true); }
+    ui.selTrack = track.id; ui.selClip = null; ui.playTrack = track.id;
+    ui.tab = 'play';
+    if (root.dataset.view === 'tracks' || window.matchMedia('(max-width: 720px)').matches) {
+      root.dataset.view = window.matchMedia('(max-width: 720px)').matches ? 'instrument' : 'split';
+      root.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === root.dataset.view)));
+    }
+    armForPlay(track);
+    commit();
+    if (source && (!source.isConnected || source.closest('[hidden]'))) root.querySelector('[data-tab="play"]').focus({ preventScroll: true });
+    status(`“${track.name}” is ready to play. Use the on-screen instrument or computer keys A–K. Press Record when you want to keep a take.`);
+    return track;
+  }
+
+  async function connectMidiKeyboard(track) {
+    if (transport.recording || finishingTake) { status('Finish the take before connecting a keyboard.'); return; }
+    const selectedTrack = track || findTrack(ui.selTrack);
+    const instrument = root.querySelector('[data-quick-sound]')?.value || 'piano';
+    if (!prepareInstrument(instrument, selectedTrack?.kind === 'instrument' ? selectedTrack : null)) return;
+    try { await window.MusicLabMidi.connect(); }
+    catch (error) { status(error.message); }
+  }
   function deleteTrack(id) {
     const t = findTrack(id);
     if (!t) return;
@@ -1747,6 +1772,18 @@
   views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
   views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Instrument'}</button>`).join('');
   commandStrip.append(views);
+  if (!quConsole) {
+    const quickStart = document.createElement('section');
+    quickStart.className = 'daw-quick-start';
+    quickStart.setAttribute('aria-label', 'Play an instrument');
+    quickStart.innerHTML = `<div class="daw-quick-actions"><strong>Play an instrument</strong>
+      <label class="daw-field">Sound <select data-quick-sound aria-label="New instrument sound">${instrumentOptions('piano')}</select></label>
+      <button type="button" class="daw-btn daw-quick-add" data-act="play-instrument" aria-describedby="daw-quick-help">Add &amp; play</button>
+      <button type="button" class="daw-btn" data-act="connect-midi" aria-describedby="daw-midi-status">Connect MIDI keyboard</button></div>
+      <p id="daw-quick-help">Play on screen or with A–K. For a USB keyboard, connect MIDI and allow browser access.</p>
+      <p id="daw-midi-status" data-midi-status role="status" aria-live="polite" aria-atomic="true"></p>`;
+    commandStrip.prepend(quickStart);
+  }
   // Phones: M / S / ● for the selected track in one row of full-size targets.
   const selBar = document.createElement('div');
   selBar.className = 'daw-selbar';
@@ -1782,7 +1819,28 @@
 
   function status(msg) { R.status.textContent = msg || ''; }
 
+  let midiConnection = null;
+  function updateMidiUi() {
+    const output = root.querySelector('[data-midi-status]');
+    if (!output || !midiConnection) return;
+    const state = midiConnection, track = armedTrack();
+    const target = track?.kind === 'instrument' && hasInstrumentExperience(track) ? ` Playing “${track.name}”${track.name === INSTRUMENTS[track.instrument] ? '' : ` (${INSTRUMENTS[track.instrument]})`}.` : ' Choose Connect MIDI keyboard to ready an instrument.';
+    const message = state.error || (state.connecting ? 'Waiting for MIDI access. Allow access if your browser asks.'
+      : !state.supported ? 'MIDI devices are unavailable in this browser. Add & play works with on-screen keys and computer keys.'
+      : state.inputs.length ? `Connected: ${state.inputs.join(' · ')}.${target}`
+      : state.enabled ? 'MIDI access is on. Plug in and turn on your USB keyboard; it will connect automatically.'
+      : 'USB keyboard? Connect MIDI keyboard to start.');
+    if (output.textContent !== message) output.textContent = message;
+    const button = root.querySelector('[data-act="connect-midi"]');
+    button.textContent = state.connecting ? 'Connecting…' : state.inputs.length ? 'Use MIDI keyboard' : 'Connect MIDI keyboard';
+    button.disabled = state.connecting || transport.recording || finishingTake;
+    root.querySelector('[data-act="play-instrument"]').disabled = transport.recording || finishingTake;
+    root.querySelector('[data-quick-sound]').disabled = transport.recording || finishingTake;
+  }
+  window.MusicLabMidi?.subscribe(state => { midiConnection = state; updateMidiUi(); });
+
   function updateInputUi() {
+    updateMidiUi();
     const track = armedTrack();
     const name = $('input-name'), state = $('input-state'), button = root.querySelector('[data-act="monitor"]'), channel = $('input-channel');
     if (!name || !state || !button) return;
@@ -2363,8 +2421,8 @@
   function stopExperiences() { mountedExperiences.forEach(module => module.stop()); }
   function disposeExperiences() { mountedExperiences.forEach(module => module.dispose()); mountedExperiences = []; }
   function hasInstrumentExperience(track) { return track?.kind === 'instrument' && (track.tools || []).some(id => window.MusicChannelExperiences.registry[id]?.role === 'instrument'); }
-  function syncInstrumentExperience(track) {
-    if (!hasInstrumentExperience(track)) return;
+  function syncInstrumentExperience(track, create = false) {
+    if (!create && !hasInstrumentExperience(track)) return;
     const id=track.instrument==='drums'?'drumkit':track.instrument==='pluck'?'guitar':track.instrument==='synth'?'synthlab':'keyboard';
     track.tools=track.tools.filter(key=>window.MusicChannelExperiences.registry[key]?.role!=='instrument');track.tools.push(id);
   }
@@ -2417,6 +2475,53 @@
   const MK = window.MusicDawControls;
   const FLOW_LESSONS = { input: 'lessons/technical-elements/audio-engineering/live-audio-signal-chain.html', eq: 'lessons/technical-elements/audio-engineering/eq-problem-frequency.html', inserts: 'lessons/technical-elements/audio-engineering/audio-compression.html', output: 'lessons/technical-elements/audio-engineering/audio-mixer-signal-flow.html' };
   const decimalsOf = step => (String(step).split('.')[1] || '').length;
+  const eqDisplay = { source: 'both', smoothing: .75, peaks: true, freeze: false };
+  let eqCanvas = null, eqView = null, analysingEQ = null;
+  function drawChannelEQ() {
+    const canvas = ui.tab === 'tools' && !document.hidden ? $('tools').querySelector('[data-channel-spectrum]') : null;
+    const track = canvas && channelTarget();
+    const rect = canvas?.getBoundingClientRect();
+    const visible = rect?.width && rect.bottom >= 0 && rect.top <= innerHeight;
+    const processor = visible && track && audio.mix?.strips.get(track.id)?.eq;
+    if (analysingEQ && analysingEQ !== processor) { analysingEQ.releaseAnalysis(); analysingEQ = null; }
+    if (!visible || !track) return;
+    if (canvas !== eqCanvas) { eqCanvas = canvas; eqView = ChannelEQ.view(canvas); }
+    analysingEQ = processor || null;
+    eqView.draw(processor, ProjectModel.normalizeStrip(track.strip), eqDisplay);
+  }
+  function eqPanelHtml(strip) {
+    const L = ProjectModel.STRIP_LIMITS;
+    const knob = (key, label, short, def, fmt = 'db') => MK.knob({ key, label, short, min: L[key][0], max: L[key][1], step: fmt === 'hz' ? 0 : fmt === 'db' ? .5 : .1, def, value: strip[key], fmt, scale: fmt === 'hz' ? 'log' : 'lin', bipolar: fmt === 'db', size: 'sm', attrs: 'data-scope="strip"' });
+    const band = (name, color, knobs) => `<fieldset class="mc-eq-band" style="--band-color:${color}"><legend>${name}</legend><div class="mc-knobs">${knobs}</div></fieldset>`;
+    const p = ChannelEQ.presets[strip.eqPreset];
+    return `<div class="mc-eq-patch">
+      <label>Sound preset<select data-eq-preset><option value="custom" disabled ${strip.eqPreset === 'custom' ? 'selected' : ''}>Custom · edited</option>${Object.entries(ChannelEQ.presets).map(([id, preset]) => `<option value="${id}" ${strip.eqPreset === id ? 'selected' : ''}>${esc(preset.name)}</option>`).join('')}</select></label>
+      <label>Rack faceplate<select data-eq-style>${[['studio', 'Studio metal'], ['amber', 'Amber Analog · wood & charcoal'], ['crystal', 'Crystal FM · teal & membrane'], ['slate', 'Slate Console · console grey']].map(([id, name]) => `<option value="${id}" ${strip.eqStyle === id ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select></label>
+    </div>
+    <p class="mc-hint mc-eq-description">${esc(p?.note || 'Your own tone settings. Choose a sound preset for a new starting point, or keep shaping each band.')}</p>
+    <figure class="mc-eq-screen">
+      <canvas data-channel-spectrum role="img" aria-label="Channel frequency analyser, 20 Hz to 20 kHz. Input and output spectrum use the left dBFS scale; EQ response uses the right plus or minus 18 dB scale. ${strip.eqOn ? 'EQ in circuit.' : 'EQ bypassed.'}"></canvas>
+      <figcaption><span class="mc-trace-input">Input</span><span class="mc-trace-output">Output</span><span class="mc-trace-curve">EQ curve (right scale)</span><span class="mc-trace-peaks">Peak hold</span></figcaption>
+    </figure>
+    <div class="mc-eq-display">
+      <label>Trace<select data-eq-display="source"><option value="both" ${eqDisplay.source === 'both' ? 'selected' : ''}>Input + output</option><option value="input" ${eqDisplay.source === 'input' ? 'selected' : ''}>Input</option><option value="output" ${eqDisplay.source === 'output' ? 'selected' : ''}>Output</option></select></label>
+      <label>Response<select data-eq-display="smoothing">${[[.3, 'Fast'], [.75, 'Smooth'], [.92, 'Slow']].map(([v, label]) => `<option value="${v}" ${eqDisplay.smoothing === v ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+      <label><input type="checkbox" data-eq-display="peaks" ${eqDisplay.peaks ? 'checked' : ''}>Peak hold</label>
+      <button type="button" class="mk-btn" data-eq-freeze aria-pressed="${eqDisplay.freeze}">${eqDisplay.freeze ? 'Resume display' : 'Freeze display'}</button>
+    </div>
+    <div class="mc-eq-bands">
+      ${band('Low shelf', '#efb477', knob('lo', 'Low shelf gain', 'Gain', 0) + knob('loF', 'Low shelf frequency', 'Freq', 100, 'hz'))}
+      ${band('Low mid', '#83c69c', knob('mid', 'Mid bell gain', 'Gain', 0) + knob('midF', 'Mid frequency', 'Freq', 1000, 'hz') + knob('midQ', 'Low mid bandwidth Q', 'Q', 1, ''))}
+      ${band('High mid', '#85c9e1', knob('upper', 'High mid gain', 'Gain', 0) + knob('upperF', 'High mid frequency', 'Freq', 3000, 'hz') + knob('upperQ', 'High mid bandwidth Q', 'Q', 1, ''))}
+      ${band('High shelf', '#d8b0e8', knob('hi', 'High shelf gain', 'Gain', 0) + knob('hiF', 'High shelf frequency', 'Freq', 8000, 'hz'))}
+    </div>
+    <div class="mc-eq-filter">
+      ${MK.sw({ attrs: 'data-ch-switch="lowpass"', on: strip.lowpass, tone: 'amber', text: 'Low-pass <small>24 dB/oct</small>', label: 'Resonant low-pass filter in circuit' })}
+      <div class="mc-knobs">${knob('cutoff', 'Low-pass cutoff frequency', 'Cutoff', 20000, 'hz')}${knob('resonance', 'Low-pass resonance emphasis', 'Emphasis', .707, '')}</div>
+      <p class="mc-hint">Lower Cutoff for a darker tone. Emphasis lifts the edge of the filter.</p>
+    </div>
+    <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="eqOn"', on: strip.eqOn, tone: 'green', text: 'EQ <small>In</small>', label: 'EQ in circuit', title: 'Bypass all four bands and the resonant filter to compare' })}</div>`;
+  }
   function insertKnob(effectIndex, definition, control, params) {
     const log = control.min > 0 && control.max / control.min >= 50;
     return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
@@ -2439,7 +2544,7 @@
   }
   function flowHtml(track, strip) {
     const registry = window.AudioEffects.registry, live = (track.effects || []).filter(e => !e.bypass && registry[e.type]).length;
-    const eqOn = strip.eqOn && (strip.lo || strip.mid || strip.hi);
+    const eqOn = strip.eqOn && (strip.lo || strip.mid || strip.upper || strip.hi || strip.lowpass);
     const sourceName = track.kind === 'audio' ? 'Mic / file' : 'Instrument', sourceNote = track.kind === 'audio' ? 'analog in' : (hasInstrumentExperience(track) ? INSTRUMENTS[track.instrument] : 'pick a sound');
     const stages = [
       { name: sourceName, note: sourceNote, on: track.kind === 'audio' || hasInstrumentExperience(track) },
@@ -2465,12 +2570,7 @@
         `<div class="mc-leds" role="group" aria-label="Input level lamps"><span class="mc-led" data-led="sig"><i></i>SIG</span><span class="mc-led mc-led-red" data-led="peak"><i></i>PEAK</span></div>
          <div class="mc-knobs">${MK.knob({ key: 'trim', label: 'Input trim', short: 'Trim', min: L.trim[0], max: L.trim[1], step: .5, def: 0, value: strip.trim, fmt: 'db', bipolar: true, size: 'lg', attrs: 'data-scope="strip"' })}</div>
          <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="phase"', on: strip.phase, tone: 'amber', text: 'ø <small>Polarity</small>', label: 'Polarity flip', title: 'Flip the waveform upside down. Fixes two mics cancelling each other.' })}${MK.sw({ attrs: 'data-ch-switch="hpf"', on: strip.hpf, tone: 'amber', text: 'Low-cut <small>80 Hz</small>', label: 'Low-cut filter 80 hertz', title: 'High-pass filter: removes rumble and thumps below 80 Hz' })}</div>`),
-      sec('eq', 2, 'Equalizer', 'Tone controls. Shelves lift or cut everything above or below their corner; the mid bell sweeps to any pitch you choose. Try cutting before you boost.',
-        `<div class="mc-knobs mc-knobs-eq">${MK.knob({ key: 'hi', label: 'High shelf gain, 8 kilohertz', short: 'High 8k', min: L.hi[0], max: L.hi[1], step: .5, def: 0, value: strip.hi, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}
-          ${MK.knob({ key: 'mid', label: 'Mid bell gain', short: 'Mid', min: L.mid[0], max: L.mid[1], step: .5, def: 0, value: strip.mid, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}
-          ${MK.knob({ key: 'midF', label: 'Mid frequency', short: 'Mid freq', min: L.midF[0], max: L.midF[1], step: 0, def: 1000, value: strip.midF, scale: 'log', fmt: 'hz', attrs: 'data-scope="strip"' })}
-          ${MK.knob({ key: 'lo', label: 'Low shelf gain, 100 hertz', short: 'Low 100', min: L.lo[0], max: L.lo[1], step: .5, def: 0, value: strip.lo, fmt: 'db', bipolar: true, attrs: 'data-scope="strip"' })}</div>
-         <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="eqOn"', on: strip.eqOn, tone: 'green', text: 'EQ <small>In</small>', label: 'EQ in circuit', title: 'Switch the whole EQ in or out to hear what it is doing' })}</div>`),
+      sec('eq', 2, 'Equalizer · spectrum', 'Shape this channel, then switch EQ out to compare. The spectrum shows the signal before the inserts and fader.', eqPanelHtml(strip)),
       sec('inserts', 3, 'Inserts', 'Processors wired in series, top to bottom. Compressors even out loud and soft notes; echo adds space. The IN switch bypasses a unit, like on a hardware rack.', insertsHtml(track)),
       sec('output', 4, 'Output · Fader', 'The fader sets the level sent to the master bus, the pan knob places it left to right. Mute silences it; Solo isolates it. Keep peaks out of the red.',
         `<div class="mc-out-grid">
@@ -2478,7 +2578,7 @@
           <div class="mc-switches mc-switches-col">${MK.sw({ attrs: 'data-ch-switch="mute"', on: track.mute, tone: 'amber', text: 'Mute', label: `Mute ${track.name}` })}${MK.sw({ attrs: 'data-ch-switch="solo"', on: track.solo, tone: 'yellow', text: 'Solo', label: `Solo ${track.name}` })}${MK.sw({ attrs: 'data-channel-arm', on: track.armed, tone: 'red', text: 'Rec <small>Arm</small>', label: track.armed ? 'Disarm recording' : 'Arm recording', title: noSound ? 'Choose a sound first' : 'Arm this channel, then press ⏺ to record' })}</div>
           ${MK.fader({ key: 'volume', label: 'Channel fader', min: 0, max: 1.2, def: 1, value: track.volume, scale: 'fader', fmt: 'gain', meter: track.id, attrs: 'data-scope="mix"' })}</div>`)
     ].join('');
-    return `<div class="mc" style="--tc:${track.color}">
+    return `<div class="mc" data-hardware="${strip.eqStyle}" style="--tc:${track.color}">
       <div class="mc-head"><i class="mc-swatch" aria-hidden="true"></i>
         <div class="mc-id"><input class="mc-name" data-channel-name value="${esc(track.name)}" maxlength="40" aria-label="Channel name"><span class="mc-sub">${sub} · ${clipCount} clip${clipCount === 1 ? '' : 's'}</span></div>
         <label class="mc-pick"><span>Channel</span><select data-channel aria-label="Channel rack">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
@@ -2500,7 +2600,17 @@
   }
   function setConsoleValue(t, el, value) {
     const key = el.dataset.key, scope = el.dataset.scope;
-    if (scope === 'strip') { t.strip = ProjectModel.normalizeStrip(t.strip); t.strip[key] = value; applyMix(); }
+    if (scope === 'strip') {
+      t.strip = ProjectModel.normalizeStrip(t.strip); t.strip[key] = value;
+      if (key !== 'trim') {
+        t.strip.eqPreset = 'custom';
+        const preset = $('tools').querySelector('[data-eq-preset]');
+        if (preset) preset.value = 'custom';
+        const description = $('tools').querySelector('.mc-eq-description');
+        if (description) description.textContent = 'Your own tone settings. Choose a sound preset for a new starting point, or keep shaping each band.';
+      }
+      applyMix();
+    }
     else if (scope === 'mix') { t[key] = value; applyMix(); }
     else if (scope === 'fx') { const i = Number(el.dataset.fxI), e = (t.effects || [])[i]; if (e) { e.params = { ...e.params, [key]: value }; updateLiveInsert(t, i); } }
     else if (scope === 'fxwet') { const i = Number(el.dataset.fxI), e = (t.effects || [])[i]; if (e) { e.wet = value; updateLiveInsert(t, i); } }
@@ -2551,6 +2661,7 @@
       const id=element.dataset.experience;
       const module=window.MusicChannelExperiences.mount(element,track,id,{
         instruments:Object.entries(INSTRUMENTS),
+        connectMidi(){ return connectMidiKeyboard(track); },
         begin(){ if(transport.recording && transport.take?.track!==track.id){status('Finish the take before playing another channel.');return false;} armForPlay(track);return track.armed; },
         noteOn, noteOff, canConfigure(){return !transport.recording&&!finishingTake;},
         sound(value){ if(transport.recording||finishingTake)return;silenceLive();track.instrument=value;syncInstrumentExperience(track);commit();restartIfPlaying(); },
@@ -2571,12 +2682,14 @@
   }
   $('tools').addEventListener('click', async e => {
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
+    if (b.hasAttribute('data-eq-freeze')) { eqDisplay.freeze = !eqDisplay.freeze; b.setAttribute('aria-pressed', String(eqDisplay.freeze)); b.textContent = eqDisplay.freeze ? 'Resume display' : 'Freeze display'; return; }
     if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
     if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx'); return; }
     if (b.hasAttribute('data-open-catalog')) { const d=$('tools').querySelector('.daw-experience-catalog');if(d){d.open=true;d.scrollIntoView({block:'start'});d.querySelector('[data-tool-add]:not(:disabled)')?.focus({preventScroll:true});}return; }
     if (b.dataset.chSwitch) {
       const key=b.dataset.chSwitch;
       if (key==='mute'||key==='solo') t[key]=!t[key]; else { t.strip=ProjectModel.normalizeStrip(t.strip); t.strip[key]=!t.strip[key]; }
+      if (key === 'lowpass') t.strip.eqPreset = 'custom';
       commit(); $('tools').querySelector(`[data-ch-switch="${key}"]`)?.focus({preventScroll:true}); return;
     }
     if (b.dataset.chFxBypass!==undefined) { const i=Number(b.dataset.chFxBypass), e=(t.effects||[])[i]; if(e){e.bypass=!e.bypass;commit();$('tools').querySelector(`[data-ch-fx-bypass="${i}"]`)?.focus({preventScroll:true});} return; }
@@ -2587,7 +2700,7 @@
     if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen); return; }
     if (transport.recording || finishingTake) { status('Finish the take before editing channel tools.'); return; }
     if (b.dataset.channelPreset === 'save') {
-      download(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`, 'application/json');
+      download(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,strip:t.strip,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`, 'application/json');
       status('Saved channel sound, tools and inserts. Load this preset on a compatible channel in another song.'); return;
     }
     if (b.dataset.channelPreset === 'load') { presetTrack=t.id; presetInput.value='';presetInput.click();return; }
@@ -2610,6 +2723,14 @@
   });
   $('tools').addEventListener('change', e => {
     const el=e.target,t=channelTarget(); if(!t)return;
+    if (el.dataset.eqDisplay) { const key = el.dataset.eqDisplay; eqDisplay[key] = key === 'peaks' ? el.checked : key === 'smoothing' ? Number(el.value) : el.value; return; }
+    if (el.hasAttribute('data-eq-preset')) {
+      if (!ChannelEQ.presets[el.value]) return;
+      t.strip = ProjectModel.normalizeStrip(ChannelEQ.preset(ProjectModel.normalizeStrip(t.strip), el.value));
+      commit(); $('tools').querySelector('[data-eq-preset]')?.focus({preventScroll:true});
+      status(`Applied ${ChannelEQ.presets[el.value].name} to “${t.name}”. Adjust the knobs or switch EQ out to compare.`); return;
+    }
+    if (el.hasAttribute('data-eq-style')) { t.strip = { ...ProjectModel.normalizeStrip(t.strip), eqStyle: el.value }; commit(); $('tools').querySelector('[data-eq-style]')?.focus({preventScroll:true}); return; }
     if(el.hasAttribute('data-channel-name')) { t.name=el.value.trim().slice(0,40)||t.name; commit(); return; }
     if(el.hasAttribute('data-channel')) { ui.selTrack=el.value; ui.selClip=null; renderDock(); $('tools').querySelector('[data-channel]').focus(); return; }
     if(el.hasAttribute('data-arrange-clip')) { select(t.id,el.value||null);renderChannel();$('tools').querySelector('[data-arrange-clip]').focus();return; }
@@ -2638,6 +2759,7 @@
       if(!Array.isArray(data.effects)||data.effects.length>8||data.effects.some(e=>!window.AudioEffects.registry[e.type]))throw new Error('Unsupported effects.');
       silenceLive();
       t.instrument=t.kind==='instrument'?data.instrument:null;
+      if (data.strip) t.strip = ProjectModel.normalizeStrip(data.strip);
       t.effects=data.effects.map(e=>({type:e.type,params:window.AudioEffects.parameters(e.type,e.params||{}),bypass:!!e.bypass,wet:clamp(e.wet??1,0,1)}));
       t.experienceState=data.experienceState&&typeof data.experienceState==='object'?data.experienceState:{};
       t.drumState=data.drumState&&typeof data.drumState==='object'?data.drumState:null;
@@ -2702,11 +2824,11 @@
       <p class="daw-note">Sound flows through this rack from top to bottom, then volume and pan. Browser plugins are lightweight and included in playback and exports. The optional desktop companion can discover and open installed VST3 plugins in Carla.</p>
       <div class="daw-group"><label class="daw-field"><span>Channel</span><select data-fx-channel aria-label="Effects channel">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
       ${Object.entries(registry).map(([type, d]) => `<button type="button" class="daw-btn" data-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>Add ${esc(d.name)}${d.format === 'browser' ? ' plugin' : ''}</button>`).join('')}</div>
-      <ol class="daw-fx-list">${(track.effects || []).map((e, i, all) => {
+      <ol class="daw-fx-list mc mc-rack" data-hardware="${ProjectModel.normalizeStrip(track.strip).eqStyle}">${(track.effects || []).map((e, i, all) => {
         const d = registry[e.type];
         if (!d) return `<li class="is-missing" data-fx-index="${i}"><div class="daw-group"><strong>Missing plugin: ${esc(e.type)}</strong><span class="daw-plugin-badge">Safely bypassed</span><button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove missing plugin ${esc(e.type)}">Remove</button></div><p class="daw-note">The song data is preserved. Reinstall the locally approved plugin to recover its settings.</p></li>`;
         const params = window.AudioEffects.parameters(e.type, e.params);
-        return `<li data-fx-index="${i}"><div class="daw-group"><strong>${esc(d.name)}</strong>
+        return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-fx-index="${i}"><div class="daw-group mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
           ${d.format === 'browser' ? `<span class="daw-plugin-badge">Browser plugin · ${esc(d.cpu)} CPU · offline ready</span>` : '<span class="daw-plugin-badge">Built in</span>'}
           <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
           <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
@@ -3957,8 +4079,10 @@
         break;
       }
       case 'clip-mute': { const sel = selected(); if (sel) { sel.clip.muted = !sel.clip.muted; commit(); } break; }
-      case 'add-instrument': addTrack('instrument', btn.dataset.instrument); commit(); break;
-      case 'quick-instrument': addTrack('instrument', 'piano'); commit(); break;
+      case 'play-instrument': prepareInstrument(root.querySelector('[data-quick-sound]').value); break;
+      case 'connect-midi': connectMidiKeyboard(); break;
+      case 'add-instrument': prepareInstrument(btn.dataset.instrument); break;
+      case 'quick-instrument': prepareInstrument('piano'); break;
       case 'add-audio': addTrack('audio'); commit(); break;
       case 'new-clip': {
         const track = findTrack(ui.selTrack) || project.tracks.find(t => t.kind === 'instrument');
@@ -4391,6 +4515,7 @@
       }
     }
     if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
+    drawChannelEQ();
     if (mic.analyser) {
       const el = root.querySelector('[data-ref="mic"]');
       const inputMeter = $('input-meter');
@@ -4474,7 +4599,7 @@
     render();
     refreshAudioHealth();
     if (shared) { status(`Opened the shared song “${project.name}”. It is now saved in this browser; Undo returns to your previous song.`); scheduleSave(); requestAnimationFrame(frame); return; }
-    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Track Studio: choose a channel, add an instrument experience, arm ●, then record ⏺. Audio channels use microphone or imported files.');
+    status(restored ? `Welcome back — “${project.name}” was restored from this browser.` : 'Choose Add & play to start an instrument, or Connect MIDI keyboard for your USB keyboard. Press Record when you are ready to keep a take.');
     requestAnimationFrame(frame);
   })();
 })();

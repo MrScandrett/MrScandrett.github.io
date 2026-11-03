@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const Controls = require('../assets/js/music-daw-controls.js');
 const Project = require('../assets/js/music-daw-project.js');
+const EQ = require('../assets/js/music-daw-eq.js');
 
 const fader = { min: 0, max: 1.2, scale: 'fader' };
 
@@ -59,7 +60,7 @@ test('knob and fader markup are accessible sliders with spoken values', () => {
 
 test('channel strip settings default flat, migrate on old songs, and clamp', () => {
   const fresh = Project.makeTrack('audio', 'Vox');
-  assert.deepEqual(fresh.strip, { trim: 0, phase: false, hpf: false, eqOn: true, lo: 0, mid: 0, midF: 1000, hi: 0 });
+  assert.deepEqual(fresh.strip, { trim: 0, phase: false, hpf: false, ...EQ.defaults, eqStyle: 'studio', eqPreset: 'flat' });
   const migrated = Project.migrate({ version: 2, tracks: [{ id: 'a', kind: 'audio', name: 'Old' }] });
   assert.deepEqual(migrated.tracks[0].strip, fresh.strip, 'songs saved before the strip existed load flat');
   const wild = Project.normalizeStrip({ trim: 99, lo: -99, midF: 10, hi: 'x', phase: 1, eqOn: false });
@@ -67,4 +68,36 @@ test('channel strip settings default flat, migrate on old songs, and clamp', () 
   assert.equal(wild.phase, true); assert.equal(wild.eqOn, false);
   const round = Project.parse(Project.stringify({ ...Project.create(), tracks: [{ ...fresh, strip: { ...fresh.strip, hpf: true, mid: 4.5 } }] }));
   assert.equal(round.tracks[0].strip.hpf, true); assert.equal(round.tracks[0].strip.mid, 4.5);
+});
+
+test('hardware EQ presets preserve the preamp and survive project files', () => {
+  for (const [id, preset] of Object.entries(EQ.presets)) {
+    const source = { ...Project.makeStrip(), trim: -4, phase: true, hpf: true };
+    const strip = Project.normalizeStrip(EQ.preset(source, id));
+    assert.equal(strip.trim, -4); assert.equal(strip.phase, true); assert.equal(strip.hpf, true);
+    assert.equal(strip.eqStyle, preset.style); assert.equal(strip.eqPreset, id);
+    const project = Project.create(); project.tracks[0].strip = strip;
+    assert.deepEqual(Project.parse(Project.stringify(project)).tracks[0].strip, strip);
+    assert.equal(source.eqPreset, 'flat', 'applying a patch does not mutate the old strip');
+  }
+  const strip = Project.normalizeStrip({ upper: 100, upperF: -1, midQ: 100, cutoff: 90000, resonance: 99, eqStyle: '<script>', eqPreset: 'unknown' });
+  assert.equal(strip.upper, 15); assert.equal(strip.upperF, 600); assert.equal(strip.midQ, 8);
+  assert.equal(strip.cutoff, 20000); assert.equal(strip.resonance, 6); assert.equal(strip.eqStyle, 'studio');
+});
+
+test('saved EQ presets migrate to descriptive names without changing sound or faceplates', () => {
+  for (const [oldStyle, style, patches] of [
+    ['minimoog', 'amber', ['warm', 'open']],
+    ['dx7', 'crystal', ['tines', 'glass']],
+    ['ssl', 'slate', ['presence', 'punch']],
+  ]) {
+    for (const patch of patches) {
+      const current = { ...EQ.preset(Project.makeStrip(), `${style}-${patch}`), trim: -3, mid: 2.5 };
+      const legacy = { ...current, eqStyle: oldStyle, eqPreset: `${oldStyle}-${patch}` };
+      const project = Project.create(); project.tracks[0].strip = legacy;
+      assert.deepEqual(Project.parse(Project.stringify(project)).tracks[0].strip, current);
+      assert.deepEqual(Project.normalizeStrip(legacy), current, 'channel preset imports migrate too');
+      assert.equal(legacy.eqStyle, oldStyle, 'migration leaves the source file intact');
+    }
+  }
 });

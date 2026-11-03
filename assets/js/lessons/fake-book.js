@@ -171,8 +171,11 @@
   function functionName(c, key, style) {
     var nash = style === 'nashville', g = degreeOf(c.root, key, nash), q = c.q;
     var tail = (nash ? FN_NASH : FN_ROMAN)[q];
-    if (tail === undefined) tail = Q[q] ? Q[q].sym : q;
-    var head = nash ? String(g.n) : (FN_LOW[q] ? NUMERALS[g.n].toLowerCase() : NUMERALS[g.n]);
+    if (tail === undefined) {
+      tail = Q[q] ? Q[q].sym : q;
+      if (!nash) tail = tail.replace(/^m(?!aj)/, '');
+    }
+    var head = nash ? String(g.n) : ((FN_LOW[q] || (Q[q] && Q[q].lo.some(function (d, i) { return d === 2 && Q[q].iv[i] === 3; }))) ? NUMERALS[g.n].toLowerCase() : NUMERALS[g.n]);
     var out = accMark(g.a) + head + tail;
     if (c.bass) { var b = degreeOf(c.bass, key, nash); out += '/' + accMark(b.a) + b.n; }
     return out;
@@ -190,25 +193,64 @@
     return chords[0] || null;
   }
 
+  // Keep the chord's actual degrees, including extensions and alterations. A printed
+  // 7b9 must never sound as an unaltered 7, nor may a ninth be silently discarded.
   function mapQuality(rawQ) {
-    var q = (rawQ || '').trim();
-    if (!q) return '';
-    if (/^h|^-7b5|^m7b5/i.test(q)) return 'm7b5';
-    if (/^o7|^dim7/i.test(q)) return 'dim7';
-    if (/^o|^dim/i.test(q)) return 'dim';
-    if (/^\+|^aug/i.test(q)) return 'aug';
-    if (/sus2/i.test(q)) return 'sus2';
-    if (/sus/i.test(q)) return /^(?:7|9|11|13)/.test(q) ? '7sus4' : 'sus4';     // 7sus, 9sus, 13sus, 7b9sus keep the ♭7
-    if (/^-(?:6|69)|^m6/i.test(q)) return 'm6';
-    if (/^(?:-|m(?:in)?)\(?(?:\^|maj|M[79])/.test(q)) return 'mmaj7';           // m(maj7), mM7, iReal -^7
-    // Before the minor test: "maj7" also starts with an m. Capital M7 is major, m7 is minor.
-    if (/^\^|^maj/i.test(q) || /^M(?:7|9|13)/.test(q)) return 'maj7';
-    // Minor: only a 7th or an extension that implies one (9, 11, 13) adds the ♭7; madd9, m♭6, m(♯5) stay triads.
-    if (/^(?:-|m)/.test(q)) return /^(?:-|m(?:in)?)\(?(?:7|9|11|13)/.test(q) ? 'm7' : 'm';
-    if (/^6/i.test(q)) return '6';
-    if (/^9/i.test(q)) return '9';
-    if (/^7|^11|^13|^alt/i.test(q)) return '7';
-    return '';
+    var q = (rawQ || '').trim().replace(/♭/g, 'b').replace(/♯/g, '#')
+      .replace(/[(),\s]/g, '').replace(/^[Δ^]$/, 'maj7').replace(/^[Δ^]/, 'maj').replace(/^M(?=\d|$)/, 'maj')
+      .replace(/^-/, 'm').replace(/^min/, 'm').replace(/^m(?:M|\^)/, 'mmaj')
+      .replace(/^[°o]/, 'dim').replace(/^[øh](?:7)?/, 'm7b5').replace(/^\+/, 'aug');
+    if (q === 'maj') q = '';
+    q = q.replace(/sus(?![24])/g, 'sus4');
+    if (Object.prototype.hasOwnProperty.call(Q, q)) return q;
+    if (q === 'alt') q = '7alt';
+    var match = /^(mmaj|maj|dim|aug|m)?(13|11|9|7|6|5)?/.exec(q);
+    var prefix = match[1] || '', number = Number(match[2] || 0), tail = q.slice(match[0].length);
+    var degrees = [{ d: 1, iv: 0 }, { d: 3, iv: prefix === 'm' || prefix === 'mmaj' || prefix === 'dim' ? 3 : 4 },
+      { d: 5, iv: prefix === 'dim' ? 6 : prefix === 'aug' ? 8 : 7 }];
+    if (number === 5 && !prefix) degrees.splice(1, 1);
+    if (number === 6) degrees.push({ d: 6, iv: 9 });
+    if (number >= 7) degrees.push({ d: 7, iv: prefix === 'maj' || prefix === 'mmaj' ? 11 : prefix === 'dim' ? 9 : 10 });
+    if (number >= 9) degrees.push({ d: 9, iv: 14 });
+    if (number === 11) {
+      degrees.push({ d: 11, iv: 17 });
+      // A plain dominant 11 is conventionally a suspended sound. Keep its 11;
+      // omit the major third rather than automatically sharpening the melody.
+      if (!prefix) degrees = degrees.filter(function (x) { return x.d !== 3; });
+    }
+    // 13 does not require the natural 11: adding it against a major third is
+    // an avoid-note clash. Explicit add11 / maj11 remains an authored choice.
+    if (number === 13) degrees.push({ d: 13, iv: 21 });
+    var natural = { 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 10, 9: 14, 11: 17, 13: 21 };
+    while (tail) {
+      var token = /^(sus[24]?|alt|(?:add|no)?[b#]?(?:13|11|9|[2-7]))/.exec(tail);
+      if (!token) throw new Error('Unsupported chord quality “' + rawQ + '”. Use an explicit chord symbol such as m7, maj9 or 7b9.');
+      var term = token[0]; tail = tail.slice(term.length);
+      if (/^sus/.test(term)) {
+        degrees = degrees.filter(function (x) { return x.d !== 3; });
+        degrees.push({ d: term === 'sus2' ? 2 : 4, iv: term === 'sus2' ? 2 : 5 });
+      } else if (term === 'alt') {
+        // "alt" gives a choice of altered dominant tensions, not a demand to
+        // sound the entire altered scale. Use b9 + b13, with 3 and b7 intact.
+        degrees = [{ d: 1, iv: 0 }, { d: 3, iv: 4 }, { d: 7, iv: 10 }, { d: 9, iv: 13 }, { d: 13, iv: 20 }];
+      } else {
+        var d = Number(/\d+/.exec(term)[0]);
+        if (/^no/.test(term)) degrees = degrees.filter(function (x) { return x.d !== d; });
+        else {
+          var al = term.indexOf('b') >= 0 ? -1 : term.indexOf('#') >= 0 ? 1 : 0;
+          degrees = degrees.filter(function (x) {
+            return x.d !== d || (d === 9 && al !== 0 && x.iv !== natural[d] && x.iv !== natural[d] + al);
+          });
+          degrees.push({ d: d, iv: natural[d] + al });
+        }
+      }
+    }
+    degrees.sort(function (a, b) { return a.iv - b.iv; });
+    // A degree such as add13 can double a sixth. Keep one voice per pitch class.
+    degrees = degrees.filter(function (x, i, all) { return !all.slice(i + 1).some(function (y) { return mod(y.iv - x.iv, 12) === 0; }); });
+    Q[q] = { iv: degrees.map(function (x) { return x.iv; }), lo: degrees.map(function (x) { return x.d - 1; }),
+      sym: q, name: q + ' chord' };
+    return q;
   }
 
   function formatDisplayQuality(rawQ) {
@@ -279,12 +321,13 @@
         var m = CHORD_RE.exec(tok);
         if (!m) throw new Error(raw.id + ': bad chord "' + tok + '"');
         var beats = m[6] ? Number(m[6]) : null;
+        if (beats !== null && (!Number.isFinite(beats) || beats <= 0)) throw new Error(raw.id + ': chord durations must be positive');
         if (beats) fixed += beats; else free++;
         var q = mapQuality(m[3]);
         var display = formatDisplayQuality(m[3]);
-        var bass = m[4] ? { l: LETTERS.indexOf(m[4]), a: m[5] === '#' ? 1 : m[5] === 'b' ? -1 : 0 } : null;
+        var bass = m[4] ? { l: LETTERS.indexOf(m[4]), a: m[5] ? (m[5][0] === '#' ? m[5].length : -m[5].length) : 0 } : null;
         parsed.push({
-          root: { l: LETTERS.indexOf(m[1]), a: m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0 },
+          root: { l: LETTERS.indexOf(m[1]), a: m[2] ? (m[2][0] === '#' ? m[2].length : -m[2].length) : 0 },
           q: q,
           display: display,
           bass: bass,
@@ -292,7 +335,9 @@
         });
       });
       var sb = t.scoreBars && t.scoreBars.filter(function (b) { return b.bar === bi + 1; })[0];
-      var pos = sb ? sb.start : bi * t.M, share = free ? ((sb ? sb.len : t.M) - fixed) / free : 0;
+      var barLen = sb ? sb.len : t.M;
+      if (fixed > barLen + EPS || (!free && !near(fixed, barLen)) || (free && fixed >= barLen - EPS)) throw new Error(raw.id + ': chord durations must fill bar ' + (bi + 1));
+      var pos = sb ? sb.start : bi * t.M, share = free ? (barLen - fixed) / free : 0;
       parsed.forEach(function (c) {
         var d = c.beats || share;
         chords.push({ start: pos, dur: d, root: c.root, q: c.q, display: c.display, bass: c.bass, bar: bi + 1 });
@@ -490,7 +535,7 @@
     common: { label: 'Hold common tones', term: 'voice leading', tip: 'Favors keeping shared notes in the same octave, then minimizes movement. Suggested piano voicings; slash-chord bass is played separately.' },
     shellSmooth: { label: 'Smooth shells', term: 'shell voicing', tip: 'Connects root, 3rd and the upper color tone (usually the 7th) with small steps. Triads keep all three tones.' },
     open: { label: 'Open / drop 2', tip: 'Lowers the second-highest tone an octave, then connects these wider piano voicings with small steps. Check the stretch before playing.' },
-    shell: { label: 'Shell', term: 'shell voicing', tip: 'Just the root, 3rd and 7th: the three notes that say what kind of chord it is. Bebop pianists comped like this.' }
+    shell: { label: 'Shell', term: 'shell voicing', tip: 'Root, 3rd and 7th for seventh chords; a 6th for sixth chords. Triads keep their tones, and suspended chords keep the suspension instead of a 3rd.' }
   };
   function rootPosition(c) {
     var pc = mod(NAT[c.root.l] + c.root.a, 12), base = 48 + pc;
@@ -500,7 +545,7 @@
   }
   function rotate(notes, k) {
     var n = notes.slice();
-    for (var i = 0; i < k; i++) { var low = n.shift(); n.push(low + 12); }
+    for (var i = 0; i < k; i++) { var low = n.shift(); n.push(low + 12); n.sort(function (a, b) { return a - b; }); }
     return n;
   }
   function recenter(n, target) {
@@ -527,24 +572,67 @@
     }
     return cost;
   }
+  function shellNotes(c) {
+    var rp = rootPosition(c), lo = Q[c.q].lo;
+    var middle = lo.indexOf(2);
+    if (middle < 0) middle = lo.indexOf(1);
+    if (middle < 0) middle = lo.indexOf(3);
+    if (middle < 0) middle = lo.indexOf(10);
+    var top = lo.indexOf(6);
+    if (top < 0) top = lo.indexOf(5);
+    if (top < 0) top = lo.indexOf(4);
+    return rp.filter(function (_, i) { return i === 0 || i === middle || i === top; });
+  }
+  // Conservative keyboard register policy, not a universal orchestral LIL chart:
+  // keep seconds at F3 or above and thirds at C3 or above. The bass is separate.
+  function clearLowIntervals(notes) {
+    for (var i = 0; i < notes.length; i++) for (var j = i + 1; j < notes.length; j++) {
+      var gap = notes[j] - notes[i];
+      if (gap > 0 && ((gap <= 2 && notes[i] < 53) || (gap <= 4 && notes[i] < 48))) return false;
+    }
+    return true;
+  }
+  function raisePianoRegister(notes) {
+    while (notes[0] < 55 || !clearLowIntervals(notes)) notes = notes.map(function (m) { return m + 12; });
+    return notes;
+  }
+  function clearPianoSpacing(notes, c) {
+    if (!clearLowIntervals(notes)) return false;
+    var rootPC = mod(NAT[c.root.l] + c.root.a, 12), iv = Q[c.q].iv;
+    for (var i = 0; i < notes.length; i++) for (var j = i + 1; j < notes.length; j++) {
+      var gap = notes[j] - notes[i];
+      if (gap >= 13 && mod(gap, 12) === 1) {
+        // An explicitly requested b9 is intentional; an inversion that puts
+        // a root a minor ninth above a major seventh is avoidable.
+        if (!(mod(notes[i], 12) === rootPC && mod(notes[j] - rootPC, 12) === 1 && iv.indexOf(13) >= 0)) return false;
+      }
+    }
+    return true;
+  }
   function voiceCandidates(c, mode) {
-    var rp = rootPosition(c), iv = Q[c.q].iv;
-    if (mode === 'shellSmooth') rp = [rp[0], rp[0] + iv[1], rp[0] + (iv.length >= 4 ? iv[3] : iv[2])];
+    var rp = rootPosition(c);
+    if (mode === 'shellSmooth') rp = shellNotes(c);
+    // Mechanical drop voicings start from close position, including extended
+    // chords whose symbol formula spans more than an octave.
+    rp = rp.map(function (m) { return rp[0] + mod(m - rp[0], 12); }).sort(function (a, b) { return a - b; });
     var candidates = [], seen = {};
     for (var k = 0; k < rp.length; k++) for (var o = -24; o <= 24; o += 12) {
       var notes = rotate(rp, k).map(function (x) { return x + o; }).sort(function (a, b) { return a - b; });
-      if (mode === 'open' && notes.length >= 3) {
+      if (mode === 'open' && notes.length >= 2) {
         notes[notes.length - 2] -= 12;
         notes.sort(function (a, b) { return a - b; });
       }
-      if (notes[0] < 48 || notes[notes.length - 1] > 84) continue;
+      // Bass runs C2–G3. A G3 piano floor also prevents low clusters
+      // between the two lanes, including chromatic walking approaches.
+      if (notes[0] < 55 || notes[notes.length - 1] > 84 || !clearPianoSpacing(notes, c)) continue;
       var key = notes.join(',');
       if (seen[key]) continue;
       seen[key] = true;
       var mean = notes.reduce(function (a, b) { return a + b; }, 0) / notes.length;
       candidates.push({ notes: notes, register: Math.abs(mean - 62) * .12 });
     }
-    return candidates.length ? candidates : [{ notes: recenter(rp, 62), register: 0 }];
+    if (!candidates.length) throw new Error('No clear piano voicing for ' + c.q);
+    return candidates;
   }
   function voiceChords(chords, mode) {
     if (!chords.length) return [];
@@ -575,11 +663,10 @@
     return chords.map(function (c) {
       var rp = rootPosition(c);
       if (mode === 'shell') {
-        var iv = Q[c.q].iv, top = iv.length >= 4 ? iv[3] : iv[2];
-        return [rp[0], rp[0] + iv[1], rp[0] + top];
+        return raisePianoRegister(shellNotes(c));
       }
       var kk = (VOICING[mode] && VOICING[mode].k) || 0;
-      return recenter(rotate(rp, kk % rp.length), 61);
+      return raisePianoRegister(recenter(rotate(rp, kk % rp.length), 61));
     });
   }
   // Named by interval, not position: a sus chord's second tone is a 2nd or 4th, not a 3rd; dim7's 9 semitones is its 7th.
@@ -587,7 +674,8 @@
   function describeVoicing(c, notes) {
     var tones = chordTones(c), low = mod(notes[0], 12);
     var idx = tones.findIndex(function (t) { return t.pc === low; }), iv = Q[c.q].iv[idx];
-    var name = iv === 9 && c.q === 'dim7' ? '7th' : BOTTOM_NAMES[iv] || '';
+    var degree = idx >= 0 ? Q[c.q].lo[idx] + 1 : 0;
+    var name = degree ? (degree === 1 ? 'root' : degree === 2 ? '2nd' : degree === 3 ? '3rd' : degree + 'th') : BOTTOM_NAMES[iv] || '';
     if (c.bass) {
       var bName = LETTERS[c.bass.l] + ACC[c.bass.a];
       name = bName + ' in bass (' + name + ')';
@@ -1016,9 +1104,12 @@
   // Triplet lengths (1/3, 2/3, 4/3 of a beat) can't be built from plain note values.
   function isTriplet(d) { return near(mod(d * 3 + EPS, 1), EPS) && !near(mod(d * 4 + EPS, 1), EPS); }
   function fits(p, d, M, rest) {
+    // Expose the middle of 4/4. Aligned whole and dotted-half notes are
+    // conventional exceptions; a note starting on beat 2 must be tied at 3.
+    if (M === 4 && p < 2 - EPS && p + d > 2 + EPS && !(p < EPS && (d === 4 || d === 3))) return false;
     if (d === 4) return M === 4 && p < EPS;
-    if (d === 3) return !rest && onBeat(p);
-    if (d === 2) return onBeat(p) && (!rest || M !== 4 || p < EPS || near(p, 2));
+    if (d === 3) return !rest && onBeat(p) && (M !== 4 || p < EPS);
+    if (d === 2) return onBeat(p) && (M !== 4 || p < EPS || near(p, 2));
     if (d === 1.5) return onBeat(p);
     if (d === 1) return onBeat(p) || (!rest && near(mod(p, 1), 0.5) && (M !== 4 || p + 1 <= 2 + EPS || p >= 2 - EPS) && M !== 3);
     if (d === 0.75) return onBeat(p);
@@ -1068,7 +1159,7 @@
           });
           return;
         }
-        var parts = decompose(it.rel + b.off, it.len, !it.p, b.len);
+        var parts = decompose(it.rel + b.off, it.len, !it.p, b.i === 0 ? t.M : b.len);
         parts.forEach(function (pt, k) {
           b.pieces.push({ rest: !it.p, rel: pt.rel - b.off, beat: pt.rel, d: pt.d, idx: it.idx, p: it.p,
             tie: !!it.p && (k < parts.length - 1 || it.cont), tieFrom: !!it.p && (k > 0 || it.from) });
@@ -2353,6 +2444,7 @@
     var rootPc = function (c) { return mod(NAT[c.root.l] + c.root.a, 12); };
     var bassPc = function (c) { var b = c.bass || c.root; return mod(NAT[b.l] + b.a, 12); };
     var tones = function (c) { return Q[c.q].iv.map(function (iv) { return mod(rootPc(c) + iv, 12); }); };
+    var fifth = function (c) { var i = Q[c.q].lo.indexOf(4); return i < 0 ? bassPc(c) : tones(c)[i]; };
     var bass = function (t, pc, dur, vel) { var m = nearestBass(pc, prevBass); prevBass = m; evs.push({ t: t, kind: 'bass', m: m, dur: dur, vel: vel }); };
     var comp = function (t, dur, vel) { var ci = cIndex(t); evs.push({ t: t, kind: 'pno', ms: voicings[ci], dur: dur, vel: vel, ci: ci }); };
     var drumSet = style === 'ballad' ? (M === 3 ? 'ballad3' : 'ballad4') : style;
@@ -2385,23 +2477,37 @@
         var cj = chords[cIndex(b0)];
         bass(b0, bassPc(cj), 1.35, 0.8);
         var cj2 = chords[cIndex(b0 + 1.5)];
-        bass(b0 + 1.5, near(cj2.start, b0) && !cj2.bass ? tones(cj2)[2] : bassPc(cj2), 1.35, 0.62);
+        bass(b0 + 1.5, near(cj2.start, b0) && !cj2.bass ? fifth(cj2) : bassPc(cj2), 1.35, 0.62);
       } else if (style === 'twobeat') {
-        [0, 2].forEach(function (p) { var c = chords[cIndex(b0 + p)]; bass(b0 + p, p && near(c.start, b0) && !c.bass ? tones(c)[2] : bassPc(c), 1.8, 0.8); });
+        [0, 2].forEach(function (p) { var c = chords[cIndex(b0 + p)]; bass(b0 + p, p && near(c.start, b0) && !c.bass ? fifth(c) : bassPc(c), 1.8, 0.8); });
       } else if (style === 'rock') {
         for (var e8 = 0; e8 < M * 2; e8++) { var c8 = chords[cIndex(b0 + e8 / 2)]; bass(b0 + e8 / 2, bassPc(c8), 0.45, e8 % 2 ? 0.55 : 0.75); }
       } else if (style === 'bossa') {
-        [[0, 1.4, 0], [1.5, 0.45, 2], [2, 1.4, 2], [3.5, 0.45, 0]].forEach(function (s) { var c = chords[cIndex(b0 + s[0])]; bass(b0 + s[0], s[2] && !c.bass ? tones(c)[2] : bassPc(c), s[1], 0.75); });
+        [[0, 1.4, 0], [1.5, 0.45, 2], [2, 1.4, 2], [3.5, 0.45, 0]].forEach(function (s) { var c = chords[cIndex(b0 + s[0])]; bass(b0 + s[0], s[2] && !c.bass ? fifth(c) : bassPc(c), s[1], 0.75); });
       } else if (style === 'waltz') {
-        var cw = chords[cIndex(b0)]; bass(b0, (bar - fromBar) % 2 && !cw.bass ? tones(cw)[2] : bassPc(cw), 0.9, 0.8);
+        var cw = chords[cIndex(b0)]; bass(b0, (bar - fromBar) % 2 && !cw.bass ? fifth(cw) : bassPc(cw), 0.9, 0.8);
       } else if (style === 'ballad') {
-        chords.forEach(function (c) { if (c.start >= b0 - EPS && c.start < b0 + M - EPS) { bass(c.start, bassPc(c), Math.min(c.dur, M) - 0.1, 0.7); if (c.dur >= 4 - EPS && !c.bass) bass(c.start + 2, tones(c)[2], 1.9, 0.55); } });
+        chords.forEach(function (c) { if (c.start >= b0 - EPS && c.start < b0 + M - EPS) { bass(c.start, bassPc(c), Math.min(c.dur, M) - 0.1, 0.7); if (c.dur >= 4 - EPS && !c.bass) bass(c.start + 2, fifth(c), 1.9, 0.55); } });
       }
 
       if (style === 'bossa') BOSSA_RIM[(bar - 1) % 2].forEach(function (p) { comp(b0 + p, 0.45, 0.5); });
       else if (style === 'ballad') chords.forEach(function (c) { if (c.start >= b0 - EPS && c.start < b0 + M - EPS) comp(c.start, c.dur - 0.05, 0.5); });
       else (COMP[style] || []).forEach(function (h) { if (h[0] < M - EPS) comp(b0 + h[0], h[1], 0.55); });
     }
+    var lo = (fromBar - 1) * M, hi = toBar * M;
+    chords.forEach(function (c) {
+      if (c.start < lo - EPS || c.start >= hi - EPS) return;
+      if (!evs.some(function (e) { return e.kind === 'pno' && near(e.t, c.start); })) comp(c.start, Math.min(.75, c.dur * .9), .5);
+      if (!evs.some(function (e) { return e.kind === 'bass' && near(e.t, c.start); })) {
+        evs.push({ t: c.start, kind: 'bass', m: nearestBass(bassPc(c), 43), dur: Math.min(.9, c.dur * .9), vel: .7 });
+      }
+    });
+    evs.forEach(function (e) {
+      if (e.kind !== 'pno' && e.kind !== 'bass') return;
+      var ci = cIndex(e.t), c = chords[ci];
+      var end = Math.min(hi, c.start + c.dur, chords[ci + 1] ? chords[ci + 1].start : hi);
+      e.dur = Math.min(e.dur, Math.max(0, end - e.t));
+    });
     return evs;
   }
 
@@ -3000,6 +3106,9 @@
   }
 
   function addImports(newTunes, msg) {
+    // Reject unsupported symbols before a playlist is saved, even when its first
+    // song is valid and an unsupported chord occurs in a later song.
+    newTunes.forEach(function (raw) { parseTune(raw); });
     importedTunes = importedTunes.concat(newTunes);
     var saved = saveImports();
     tunes = defaultTunes.concat(importedTunes);
@@ -3121,9 +3230,17 @@
   function selectTune(id, reset) {
     var raw = tunes.filter(function (x) { return x.id === id; })[0] || tunes[0];
     if (!raw) return;
+    var parsed;
+    try { parsed = parseTune(raw); } catch (err) {
+      // Older saved imports may contain qualities that used to be silently
+      // simplified. Keep the rest of the library usable and explain the symbol.
+      if (!tune && raw.id !== tunes[0].id) selectTune(tunes[0].id, true);
+      importFeedback('Could not open “' + raw.title + '”: ' + err.message, true);
+      return;
+    }
     var was = !!P;
     stop();
-    tune = parseTune(raw); startBar = 0;
+    tune = parsed; startBar = 0;
     scorePractice = {};
     if (reset) { opts.mode = raw.score ? 'score' : 'all'; opts.sheetView = raw.score && raw.score.musicxml ? 'arrangement' : 'lead'; }
     if (reset && raw.guitarPro) { opts.guitarVoice = 'smooth'; opts.voicing = 'smooth'; }

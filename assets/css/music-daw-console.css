@@ -123,6 +123,52 @@
 .mk-sw-green { --lamp: var(--mc-green); } .mk-sw-red { --lamp: var(--mc-red); } .mk-sw-yellow { --lamp: var(--mc-yellow); } .mk-sw-amber { --lamp: var(--mc-amber); }
 .mc-insert-head .mk-sw { min-width: 4.4rem; min-height: 44px; }
 
+/* Shared rack materials. Presets select a faceplate; manual styling never alters audio. */
+.mc[data-hardware] { --rack-accent: #f5c46a; --rack-edge: #555e65; }
+.mc[data-hardware="amber"] { --mc-panel: #252422; --mc-panel-2: #34322d; --mc-line: #615b50; --rack-accent: #f3c584; --rack-edge: #8c6240; }
+.mc[data-hardware="crystal"] { --mc-panel: #303333; --mc-panel-2: #414642; --mc-line: #65716a; --rack-accent: #8de2cd; --rack-edge: #468d83; }
+.mc[data-hardware="slate"] { --mc-panel: #343b40; --mc-panel-2: #485158; --mc-line: #6b7780; --rack-accent: #9fd8ee; --rack-edge: #82909a; }
+.mc[data-hardware] .mc-sec, .mc[data-hardware] .mc-insert { border-radius: 5px; border-inline: 5px solid var(--rack-edge); }
+.mc[data-hardware] .mc-sec > header::after, .mc[data-hardware] .mc-insert-head::after { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #9ba0a1 42%, #1b2022 43% 56%, #777f83 57%); box-shadow: 0 1px 2px #000; }
+.mc[data-hardware] .mc-insert { background: linear-gradient(180deg, var(--mc-panel-2), var(--mc-panel)); box-shadow: inset 0 1px #ffffff18, 0 3px 4px #0005; }
+.mc[data-hardware] .mc-insert .mk { --mk-arc: var(--rack-accent); }
+.mc[data-hardware="amber"] .mc-sec, .mc[data-hardware="amber"] .mc-insert { border-inline-width: 8px; }
+.mc[data-hardware="crystal"] .mk-cap-top { fill: #8a9690; }
+.mc[data-hardware="crystal"] .mk-btn, .mc[data-hardware="crystal"] .mk-sw { border-radius: 3px; border-bottom-width: 4px; }
+.mc[data-hardware="slate"] .mk-cap-top { fill: #aab5bf; }
+.mc-rack { --daw-text: var(--mc-text); --daw-muted: var(--mc-muted); --daw-line: var(--mc-line); --daw-panel: var(--mc-well); --daw-panel-2: var(--mc-panel-2); --daw-accent: var(--rack-accent); list-style: none; padding: 0; }
+.mc-rack .mc-insert { padding: .8rem; }
+.mc-rack .mc-insert-head { flex-wrap: wrap; }
+.mc-rack .mc-insert.is-bypassed .daw-fx-controls { opacity: .65; }
+.mc-rack [data-fx-action="bypass"]::before { content: ''; display: inline-block; width: 9px; height: 9px; margin-right: .4rem; border-radius: 50%; background: var(--mc-green); box-shadow: 0 0 5px var(--mc-green); }
+.mc-rack [data-fx-action="bypass"][aria-pressed="true"]::before { background: #20292a; box-shadow: none; border: 1px solid var(--mc-muted); }
+.mc[data-hardware] .mc-s-eq { container-type: inline-size; }
+@media (min-width: 640px) { .mc-strip { grid-template-areas: "eq eq" "input output" "inserts inserts"; } }
+@media (min-width: 1000px) { .mc-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); grid-template-areas: "eq eq eq" "input inserts output"; } }
+.mc-eq-patch { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: .6rem; }
+.mc-eq-patch label, .mc-eq-display label { display: grid; gap: .25rem; min-width: 0; font-size: .75rem; color: var(--mc-label); }
+.daw .mc-eq-patch select, .daw .mc-eq-display select { width: 100%; min-width: 0; min-height: 44px; padding: .35rem; color: var(--mc-text); background: var(--mc-well); border: 1px solid var(--mc-line); border-radius: 4px; font: inherit; }
+.daw .mc-eq-patch select:focus-visible, .daw .mc-eq-display select:focus-visible, .daw .mc-eq-display input:focus-visible { outline: 3px solid var(--mc-focus); outline-offset: 2px; }
+.mc-eq-screen { margin: 0; padding: 6px; background: #080e10; border: 2px solid #5b676b; border-bottom-color: #7d878a; border-radius: 5px; box-shadow: inset 0 3px 8px #000b; }
+.mc-eq-screen canvas { display: block; width: 100%; height: 220px; }
+.mc-eq-screen figcaption { display: flex; flex-wrap: wrap; gap: .3rem .9rem; padding: .35rem .4rem .1rem; color: #c6d5d7; font-size: .7rem; }
+.mc-eq-screen figcaption span::before { content: ''; display: inline-block; width: .85rem; height: 2px; margin-right: .3rem; vertical-align: middle; background: var(--trace); }
+.mc-trace-input { --trace: #9eafb7; } .mc-trace-output { --trace: #69d4da; } .mc-trace-curve { --trace: #f5c46a; } .mc-trace-peaks { --trace: #bba9ec; }
+.mc-eq-display { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: end; }
+.mc-eq-display label:has(input) { display: flex; align-items: center; gap: .4rem; min-height: 44px; }
+.mc-eq-display input { width: 18px; height: 18px; accent-color: var(--rack-accent); }
+.mc-eq-display .mk-btn { margin-left: auto; }
+.mc-eq-display .mk-btn[aria-pressed="true"] { border-color: var(--rack-accent); color: var(--rack-accent); }
+.mc-eq-bands { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; }
+.mc-eq-band { min-width: 0; margin: .3rem 0 0; padding: .65rem .3rem; border: 1px solid var(--mc-line); border-top: 3px solid var(--band-color); border-radius: 3px; background: #0002; }
+.mc-eq-band legend { color: var(--band-color); padding: 0 .4rem; font-size: .8rem; font-weight: 700; }
+.mc-eq-band .mk { --mk-arc: var(--band-color); }
+.mc-eq-band .mc-knobs { gap: .65rem .25rem; }
+.mc-eq-filter { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .65rem; border: 1px solid var(--mc-line); background: #0002; }
+.mc-eq-filter .mc-hint { flex: 1 1 10rem; max-width: 26rem; }
+@container (max-width: 620px) { .mc-eq-bands { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 380px) { .mc-eq-patch { grid-template-columns: minmax(0, 1fr); } .mc-eq-screen canvas { height: 190px; } .mc-eq-display .mk-btn { margin-left: 0; } }
+
 /* ── Fader ────────────────────────────────────────────────────────────── */
 .mc-out-grid { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "pan fader" "sw fader"; gap: .8rem 1rem; align-items: start; justify-items: center; }
 .mc-out-grid > .mc-knobs { grid-area: pan; } .mc-out-grid > .mc-switches { grid-area: sw; } .mc-out-grid > .mk-fader { grid-area: fader; justify-self: center; }

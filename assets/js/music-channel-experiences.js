@@ -113,6 +113,7 @@
     function midiControls() {
       const row = el('div', '', host, 'daw-group');
       button('Connect MIDI keyboard', async () => {
+        if (api.connectMidi) { await api.connectMidi(); return; }
         try { const inputs = await window.MusicLabMidi.connect(); if (!disposed) output.textContent = inputs.length ? inputs.join(' · ') + ' → armed channel' : 'MIDI enabled. Connect a keyboard to play the armed channel.'; }
         catch (error) { if (!disposed) output.textContent = error.message; }
       }, row);

@@ -10,7 +10,7 @@ require('../assets/js/lessons/fake-book-gtp.js');
 const legacyFixture = require('./fixtures/scores/legacy-gtp-fixture.cjs');
 const mapQuality = (() => {
   const src = fs.readFileSync(new URL('../assets/js/lessons/fake-book.js', import.meta.url), 'utf8');
-  return new Function(src.slice(src.indexOf('  function mapQuality'), src.indexOf('  function formatDisplayQuality')) + 'return mapQuality;')();
+  return new Function('function mod(n,m){return ((n%m)+m)%m;}\n' + src.slice(src.indexOf('  var Q ='), src.indexOf('  function chordTones')) + src.slice(src.indexOf('  function mapQuality'), src.indexOf('  function formatDisplayQuality')) + 'return mapQuality;')();
 })();
 const bytes = name => fs.readFileSync(new URL('./fixtures/scores/guitar-pro/' + name, import.meta.url));
 
@@ -121,11 +121,11 @@ test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and play
     ['Dsus2', 'Dsus2', 'sus2'],
     ['C7sus4', 'C7sus4', '7sus4'],
     ['G7sus', 'G7sus4', '7sus4'],
-    ['C9sus4', 'C9sus4', '7sus4'],
-    ['Cadd9', 'Cadd9', ''],               // no flat seventh
-    ['C2', 'Cadd9', ''],
-    ['Am(add9)', 'Amadd9', 'm'],
-    ['Amadd9', 'Amadd9', 'm'],
+    ['C9sus4', 'C9sus4', '9sus4'],
+    ['Cadd9', 'Cadd9', 'add9'],               // no flat seventh
+    ['C2', 'Cadd9', 'add9'],
+    ['Am(add9)', 'Amadd9', 'madd9'],
+    ['Amadd9', 'Amadd9', 'madd9'],
     ['C(maj7)', 'Cmaj7', 'maj7'],
     ['CM7', 'Cmaj7', 'maj7'],
     ['CΔ', 'Cmaj7', 'maj7'],
@@ -138,31 +138,31 @@ test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and play
     ['F#ø7', 'F#m7b5', 'm7b5'],
     ['Eø', 'Em7b5', 'm7b5'],
     ['C°7', 'Cdim7', 'dim7'],
-    ['G7#9', 'G7#9', '7'],
-    ['C7b9#11', 'C7b9#11', '7'],
-    ['Cmaj7(#5)', 'Cmaj7#5', 'maj7'],
-    ['C6/9', 'C6add9', '6'],
-    ['Cm6/9', 'Cm6add9', 'm6'],
-    ['Caug7', 'Caug7', 'aug'],
-    ['C+7', 'Caug7', 'aug'],
-    ['Fmaj13', 'Fmaj13', 'maj7'],
-    ['Dm11', 'Dm11', 'm7'],
+    ['G7#9', 'G7#9', '7#9'],
+    ['C7b9#11', 'C7b9#11', '7b9#11'],
+    ['Cmaj7(#5)', 'Cmaj7#5', 'maj7#5'],
+    ['C6/9', 'C6add9', '6add9'],
+    ['Cm6/9', 'Cm6add9', 'm6add9'],
+    ['Caug7', 'Caug7', 'aug7'],
+    ['C+7', 'Caug7', 'aug7'],
+    ['Fmaj13', 'Fmaj13', 'maj13'],
+    ['Dm11', 'Dm11', 'm11'],
     // Guitar Pro's own naming: 7M = maj7, a sign after a degree alters it, a slash before a number is an extension.
     ['A7M', 'Amaj7', 'maj7'],
-    ['D7M9', 'Dmaj9', 'maj7'],
+    ['D7M9', 'Dmaj9', 'maj9'],
     ['Am7M', 'Am(maj7)', 'mmaj7'],
-    ['Gb7/5-', 'Gb7b5', '7'],
-    ['Ab7/5+', 'Ab7#5', '7'],
+    ['Gb7/5-', 'Gb7b5', '7b5'],
+    ['Ab7/5+', 'Ab7#5', '7#5'],
     ['Am7/5-', 'Am7b5', 'm7b5'],
-    ['A9-', 'A7b9', '7'],
-    ['Am6-', 'Amb6', 'm'],
-    ['Gm4', 'Gmadd4', 'm'],
+    ['A9-', 'A7b9', '7b9'],
+    ['Am6-', 'Amb6', 'mb6'],
+    ['Gm4', 'Gmadd4', 'madd4'],
     ['E/5+', 'Eaug', 'aug'],
-    ['Bm7/11', 'Bm7add11', 'm7'],
-    ['F7M9/5-', 'Fmaj9b5', 'maj7'],
-    ['Amadd13-', 'Amaddb13', 'm'],
-    ['Amaj6/9', 'A6add9', '6'],
-    ['Bb(add#4)/A', 'Bbadd#4/A', ''],
+    ['Bm7/11', 'Bm7add11', 'm7add11'],
+    ['F7M9/5-', 'Fmaj9b5', 'maj9b5'],
+    ['Amadd13-', 'Amaddb13', 'maddb13'],
+    ['Amaj6/9', 'A6add9', '6add9'],
+    ['Bb(add#4)/A', 'Bbadd#4/A', 'add#4'],
     ['F#7 (C7)', 'F#7', '7'],                  // the alternate name in parentheses is dropped
     ['C#\u00c2\u00b0', 'C#dim', 'dim'],        // "°" stored as UTF-8 and read as Latin-1
     ['D4', 'Dsus4', 'sus4']
@@ -179,10 +179,10 @@ test('chordXML keeps Guitar Pro chord qualities intact through MusicXML and play
 });
 
 test('chord qualities from iReal and typed charts map to the playable chord', () => {
-  const cases = { 'sus': 'sus4', 'sus2': 'sus2', '7sus': '7sus4', '9sus': '7sus4', '13sus': '7sus4', '7b9sus': '7sus4',
-    '-^7': 'mmaj7', '-^9': 'mmaj7', 'mM7': 'mmaj7', 'm(maj7)': 'mmaj7', 'mmaj7': 'mmaj7', '-add9': 'm', 'madd9': 'm',
+  const cases = { 'sus': 'sus4', 'sus2': 'sus2', '7sus': '7sus4', '9sus': '9sus4', '13sus': '13sus4', '7b9sus': '7b9sus4',
+    '-^7': 'mmaj7', '-^9': 'mmaj9', 'mM7': 'mmaj7', 'm(maj7)': 'mmaj7', 'mmaj7': 'mmaj7', '-add9': 'madd9', 'madd9': 'madd9',
     'maj7': 'maj7', '^7': 'maj7', 'm7': 'm7', '-7': 'm7', 'm7b5': 'm7b5', '7': '7', '': '',
-    'm9': 'm7', '-11': 'm7', 'mb6': 'm', '-b6': 'm', 'm(#5)': 'm', 'M': '' };
+    'm9': 'm9', '-11': 'm11', 'mb6': 'mb6', '-b6': 'mb6', 'm(#5)': 'm#5', 'M': '' };
   for (const [q, plays] of Object.entries(cases)) assert.equal(mapQuality(q), plays, q);
 });
 

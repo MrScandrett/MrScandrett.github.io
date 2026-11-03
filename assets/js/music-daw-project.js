@@ -17,13 +17,22 @@
   function id() { return Math.random().toString(36).slice(2, 10); }
 
   // The channel strip's analog-style front end: preamp trim (dB), polarity flip,
-  // 80 Hz low-cut, then a 3-band EQ (shelves ±15 dB, sweepable mid) before inserts.
-  const STRIP_LIMITS = { trim: [-20, 20], lo: [-15, 15], mid: [-15, 15], midF: [200, 5000], hi: [-15, 15] };
-  function makeStrip() { return { trim: 0, phase: false, hpf: false, eqOn: true, lo: 0, mid: 0, midF: 1000, hi: 0 }; }
+  // 80 Hz low-cut, then four-band EQ and an optional resonant low-pass before inserts.
+  const STRIP_LIMITS = { trim: [-20, 20], lo: [-15, 15], loF: [30, 450], mid: [-15, 15], midF: [200, 5000], midQ: [.3, 8], upper: [-15, 15], upperF: [600, 12000], upperQ: [.3, 8], hi: [-15, 15], hiF: [1500, 18000], cutoff: [40, 20000], resonance: [.3, 6] };
+  function makeStrip() { return { trim: 0, phase: false, hpf: false, eqOn: true, lo: 0, loF: 100, mid: 0, midF: 1000, midQ: 1, upper: 0, upperF: 3000, upperQ: 1, hi: 0, hiF: 8000, lowpass: false, cutoff: 20000, resonance: .707, eqStyle: 'studio', eqPreset: 'flat' }; }
   function normalizeStrip(value) {
     const v = object(value), base = makeStrip();
     for (const key of Object.keys(STRIP_LIMITS)) base[key] = clamp(v[key], STRIP_LIMITS[key][0], STRIP_LIMITS[key][1], base[key]);
     base.phase = !!v.phase; base.hpf = !!v.hpf; base.eqOn = v.eqOn !== false;
+    base.lowpass = !!v.lowpass;
+    // Migrate earlier saved labels without changing their sound or faceplate.
+    const legacyStyles = { minimoog: 'amber', dx7: 'crystal', ssl: 'slate' };
+    const legacyPresets = { 'minimoog-warm': 'amber-warm', 'minimoog-open': 'amber-open', 'dx7-tines': 'crystal-tines', 'dx7-glass': 'crystal-glass', 'ssl-presence': 'slate-presence', 'ssl-punch': 'slate-punch' };
+    const style = Object.hasOwn(legacyStyles, v.eqStyle) ? legacyStyles[v.eqStyle] : v.eqStyle;
+    const preset = Object.hasOwn(legacyPresets, v.eqPreset) ? legacyPresets[v.eqPreset] : v.eqPreset;
+    base.eqStyle = ['studio', 'amber', 'crystal', 'slate'].includes(style) ? style : 'studio';
+    const presets = ['flat', 'amber-warm', 'amber-open', 'crystal-tines', 'crystal-glass', 'slate-presence', 'slate-punch', 'custom'];
+    base.eqPreset = presets.includes(preset) ? preset : (base.lo || base.mid || base.upper || base.hi || base.lowpass ? 'custom' : 'flat');
     return base;
   }
 
