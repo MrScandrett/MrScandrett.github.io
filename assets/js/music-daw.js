@@ -159,6 +159,7 @@
     if (!audio.ctx) {
       audio.ctx = AudioRuntime.createContext(window.MusicLabAudio);
       window.MusicLabCompressor?.prepare(audio.ctx);
+      window.MusicLabReverb?.prepare(audio.ctx);
       const out = AudioRuntime.outputFor(audio.ctx, window.MusicLabAudio);
       audio.mix = createMixer(audio.ctx, out);
       audio.meter = audio.ctx.createAnalyser();
@@ -1411,6 +1412,7 @@
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
     if (tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass))) await window.MusicLabCompressor?.prepare(oc);
+    if (tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
     const mix = createMixer(oc, oc.destination);
     mix.syncReturns(project.returns || [], tracks);
     tracks.forEach((t) => {
@@ -2558,13 +2560,19 @@
       <p class="mc-hint">Lower Cutoff for a darker tone. Emphasis lifts the edge of the filter.</p>
     </div>`;
   }
+  // Teaching panels that sit above an insert's knobs (compressor curve, reverb decay screen).
+  function insertPanelHtml(effect, params, index) {
+    if (effect.type === 'punch-compressor') return window.MusicLabCompressor.panel(params, index, effect.bypass);
+    if (effect.type === 'studio-reverb') return window.MusicLabReverb.panel(params, index, effect.bypass);
+    return '';
+  }
   function insertKnob(effectIndex, definition, control, params) {
-    const log = control.min > 0 && control.max / control.min >= 50;
-    return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
-      scale: log ? 'log' : 'lin', fmt: control.unit === 'Hz' ? 'hz' : '', unit: control.unit === 'value' ? '' : control.unit, digits: decimalsOf(control.step), size: 'sm', attrs: `data-scope="fx" data-fx-i="${effectIndex}"` });
+    const log = control.scale ? control.scale === 'log' : control.min > 0 && control.max / control.min >= 50;
+    return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.short || control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
+      scale: log ? 'log' : 'lin', fmt: control.fmt || (control.unit === 'Hz' ? 'hz' : ''), unit: control.unit === 'value' ? '' : control.unit, digits: decimalsOf(control.step), size: 'sm', attrs: `data-scope="fx" data-fx-i="${effectIndex}"` });
   }
   // Compact effect picker + reorder helpers, shared by the channel console and the FX rack.
-  const FX_GROUPS = [['Dynamics', ['compressor', 'punch-compressor', 'limiter']], ['Tone', ['eq', 'distortion', 'browser-tape-color']], ['Space & motion', ['delay', 'reverb', 'chorus', 'browser-pulse-tremolo']]];
+  const FX_GROUPS = [['Dynamics', ['compressor', 'punch-compressor', 'limiter']], ['Tone', ['eq', 'distortion', 'browser-tape-color']], ['Space & motion', ['reverb', 'studio-reverb', 'delay', 'chorus', 'browser-pulse-tremolo']]];
   let lastFxPick = '';
   function fxPickerHtml(track, btnClass, addAttr) {
     const registry = window.AudioEffects.registry, count = (track.effects || []).length, full = count >= 8, seen = new Set();
@@ -2618,7 +2626,7 @@
         <div class="mc-insert-head">${gripHtml(d.name)}<span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
           <span class="mc-mv"><button type="button" class="mc-mvbtn" data-ch-fx-move="-1" aria-label="Move ${esc(d.name)} earlier" title="Earlier in the chain" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="mc-mvbtn" data-ch-fx-move="1" aria-label="Move ${esc(d.name)} later" title="Later in the chain" ${i === total - 1 ? 'disabled' : ''}>▼</button><button type="button" class="mc-mvbtn mc-mvbtn-x" data-ch-fx-remove aria-label="Remove ${esc(d.name)}" title="Remove">✕</button></span>
           ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
-        ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
+        ${insertPanelHtml(e, params, i)}
         <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
     }).join('');
     return `${fxPickerHtml(track, 'mk-btn mk-btn-primary', 'data-ch-fx-add-picked')}
@@ -2765,7 +2773,7 @@
   }
   $('tools').addEventListener('click', async e => {
     const b=e.target.closest('button'), t=channelTarget(); if (!b||b.disabled||!t) return;
-    if (applyCompressorPreset(b, t, $('tools'))) return;
+    if (applyCompressorPreset(b, t, $('tools')) || applyReverbPreset(b, t, $('tools'))) return;
     if (b.hasAttribute('data-eq-freeze')) { eqDisplay.freeze = !eqDisplay.freeze; b.setAttribute('aria-pressed', String(eqDisplay.freeze)); b.textContent = eqDisplay.freeze ? 'Resume display' : 'Freeze display'; return; }
     if (b.dataset.flowJump) { const target=$('tools').querySelector(`[data-mc-section="${b.dataset.flowJump}"]`);target?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});target?.querySelector('h4')?.focus({preventScroll:true});return; }
     if (b.hasAttribute('data-ch-open-fx')) { effectsTrack=t.id; setTab('fx', true); return; }
@@ -2921,6 +2929,17 @@
     host.querySelector(`[data-compressor-index="${index}"] [data-compressor-preset="${button.dataset.compressorPreset}"]`)?.focus({ preventScroll: true });
     return true;
   }
+  function applyReverbPreset(button, track, host) {
+    const preset = window.MusicLabReverb?.presets[button.dataset.reverbPreset];
+    if (!preset) return false;
+    const index = Number(button.closest('[data-reverb-index]').dataset.reverbIndex);
+    const effect = track.effects?.[index];
+    if (effect?.type !== 'studio-reverb') return false;
+    effect.params = { ...preset.params };
+    commit();
+    host.querySelector(`[data-reverb-index="${index}"] [data-reverb-preset="${button.dataset.reverbPreset}"]`)?.focus({ preventScroll: true });
+    return true;
+  }
   function renderEffects() {
     const host = $('effects'), registry = window.AudioEffects.registry;
     const track = findTrack(effectsTrack) || findTrack(ui.selTrack) || project.tracks[0];
@@ -2940,7 +2959,7 @@
           <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
           ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
-          ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
+          ${insertPanelHtml(e, params, i)}
           <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
   }
@@ -2949,7 +2968,7 @@
     if (b.hasAttribute('data-vst-connect')) { connectVst(); return; }
     if (b.dataset.vstLaunch) { launchVst(b.dataset.vstLaunch); return; }
     if (!track) return;
-    if (applyCompressorPreset(b, track, $('effects'))) return;
+    if (applyCompressorPreset(b, track, $('effects')) || applyReverbPreset(b, track, $('effects'))) return;
     if (b.dataset.vstLink) {
       const plugin = vstState.plugins.find(item => item.id === b.dataset.vstLink);
       if (plugin) {
@@ -4718,7 +4737,9 @@
     if (ui.tab === 'tools' && audio.mix) updateConsoleMeters();
     if (ui.tab === 'tools' || ui.tab === 'fx') {
       const track = ui.tab === 'fx' ? findTrack(effectsTrack) : channelTarget();
-      window.MusicLabCompressor?.draw(ui.tab === 'fx' ? $('effects') : $('tools'), track, audio.mix?.strips.get(track?.id)?.effects);
+      const host = ui.tab === 'fx' ? $('effects') : $('tools'), instances = audio.mix?.strips.get(track?.id)?.effects;
+      window.MusicLabCompressor?.draw(host, track, instances);
+      window.MusicLabReverb?.draw(host, track, instances);
     }
     drawChannelEQ();
     if (mic.analyser) {

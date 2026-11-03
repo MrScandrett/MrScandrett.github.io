@@ -59,7 +59,7 @@
   }
 
   // Two shared return buses (aux sends): every track can feed them, so one reverb serves the whole song.
-  const RETURN_TYPES = ['reverb', 'delay', 'chorus'];
+  const RETURN_TYPES = ['reverb', 'studio-reverb', 'delay', 'chorus'];
   function defaultReturns() {
     return [{ id: 'A', name: 'Reverb', type: 'reverb', volume: 0.8 }, { id: 'B', name: 'Echo', type: 'delay', volume: 0.8 }];
   }
