@@ -2542,32 +2542,78 @@
       ${band('High shelf', '#d8b0e8', knob('hi', 'High shelf gain', 'Gain', 0) + knob('hiF', 'High shelf frequency', 'Freq', 8000, 'hz'))}
     </div>
     <div class="mc-eq-filter">
+      <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="eqOn"', on: strip.eqOn, tone: 'green', text: 'EQ <small>In</small>', label: 'EQ in circuit', title: 'Bypass all four bands and the resonant filter to compare' })}</div>
       ${MK.sw({ attrs: 'data-ch-switch="lowpass"', on: strip.lowpass, tone: 'amber', text: 'Low-pass <small>24 dB/oct</small>', label: 'Resonant low-pass filter in circuit' })}
       <div class="mc-knobs">${knob('cutoff', 'Low-pass cutoff frequency', 'Cutoff', 20000, 'hz')}${knob('resonance', 'Low-pass resonance emphasis', 'Emphasis', .707, '')}</div>
       <p class="mc-hint">Lower Cutoff for a darker tone. Emphasis lifts the edge of the filter.</p>
-    </div>
-    <div class="mc-switches">${MK.sw({ attrs: 'data-ch-switch="eqOn"', on: strip.eqOn, tone: 'green', text: 'EQ <small>In</small>', label: 'EQ in circuit', title: 'Bypass all four bands and the resonant filter to compare' })}</div>`;
+    </div>`;
   }
   function insertKnob(effectIndex, definition, control, params) {
     const log = control.min > 0 && control.max / control.min >= 50;
     return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
       scale: log ? 'log' : 'lin', fmt: control.unit === 'Hz' ? 'hz' : '', unit: control.unit === 'value' ? '' : control.unit, digits: decimalsOf(control.step), size: 'sm', attrs: `data-scope="fx" data-fx-i="${effectIndex}"` });
   }
+  // Compact effect picker + reorder helpers, shared by the channel console and the FX rack.
+  const FX_GROUPS = [['Dynamics', ['compressor', 'punch-compressor', 'limiter']], ['Tone', ['eq', 'distortion', 'browser-tape-color']], ['Space & motion', ['delay', 'reverb', 'chorus', 'browser-pulse-tremolo']]];
+  let lastFxPick = '';
+  function fxPickerHtml(track, btnClass, addAttr) {
+    const registry = window.AudioEffects.registry, count = (track.effects || []).length, full = count >= 8, seen = new Set();
+    const groups = FX_GROUPS.map(([label, types]) => { const ok = types.filter(t => registry[t]); ok.forEach(t => seen.add(t)); return [label, ok]; });
+    const rest = Object.keys(registry).filter(t => !seen.has(t));
+    if (rest.length) groups.push(['More', rest]);
+    return `<div class="mc-fxpick" data-fx-picker>
+      <select data-fx-pick aria-label="Effect to add to ${esc(track.name)}" ${full ? 'disabled' : ''}>${groups.filter(g => g[1].length).map(([label, types]) => `<optgroup label="${label}">${types.map(t => `<option value="${t}" ${t === lastFxPick ? 'selected' : ''}>${esc(registry[t].name)}</option>`).join('')}</optgroup>`).join('')}</select>
+      <button type="button" class="${btnClass}" ${addAttr} ${full ? 'disabled' : ''}>＋ Add</button>
+      <span class="mc-fxcount" aria-label="${count} of 8 insert slots used">${count}/8</span></div>`;
+  }
+  function moveEffect(track, from, to) {
+    const list = track.effects || [];
+    if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return false;
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    return true;
+  }
+  const gripHtml = name => `<span class="mc-grip" data-fx-grip role="img" aria-label="Drag ${esc(name)} to reorder" title="Drag to reorder">⠿</span>`;
+  // Pointer-driven drag handle: works with mouse, pen and touch. The ▲▼ buttons stay for keyboards.
+  function enableFxSorting(host, itemSel, getTrack, indexOf) {
+    host.addEventListener('pointerdown', e => {
+      const grip = e.target.closest('[data-fx-grip]'); if (!grip || e.button > 0) return;
+      const item = grip.closest(itemSel), list = item?.parentElement, track = getTrack();
+      if (!item || !list || !track) return;
+      e.preventDefault();
+      const items = [...list.children].filter(n => n.matches(itemSel)), others = items.filter(n => n !== item), from = items.indexOf(item), startY = e.clientY;
+      let to = from;
+      item.classList.add('is-dragging'); list.classList.add('is-sorting');
+      try { grip.setPointerCapture(e.pointerId); } catch {}
+      const mark = () => { items.forEach(n => n.classList.remove('drop-before', 'drop-after')); if (to < others.length) others[to].classList.add('drop-before'); else others.at(-1)?.classList.add('drop-after'); };
+      const move = ev => {
+        item.style.transform = `translateY(${ev.clientY - startY}px)`;
+        to = others.filter(n => { const r = n.getBoundingClientRect(); return ev.clientY > r.top + r.height / 2; }).length;
+        mark();
+      };
+      const done = ev => {
+        grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', done); grip.removeEventListener('pointercancel', done);
+        items.forEach(n => n.classList.remove('drop-before', 'drop-after', 'is-dragging')); item.style.transform = ''; list.classList.remove('is-sorting');
+        if (ev.type === 'pointerup' && moveEffect(track, indexOf(item), to)) commit();
+      };
+      grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', done); grip.addEventListener('pointercancel', done);
+    });
+  }
   function insertsHtml(track) {
-    const registry = window.AudioEffects.registry;
+    const registry = window.AudioEffects.registry, total = (track.effects || []).length;
     const list = (track.effects || []).map((e, i) => {
       const d = registry[e.type];
       if (!d) return `<li class="mc-insert is-missing"><div class="mc-insert-head"><strong>Missing plugin: ${esc(e.type)}</strong><span class="mc-chip">safely bypassed</span></div></li>`;
       const params = window.AudioEffects.parameters(e.type, e.params);
       return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-insert="${i}" data-effect-type="${esc(e.type)}">
-        <div class="mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
+        <div class="mc-insert-head">${gripHtml(d.name)}<span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
+          <span class="mc-mv"><button type="button" class="mc-mvbtn" data-ch-fx-move="-1" aria-label="Move ${esc(d.name)} earlier" title="Earlier in the chain" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="mc-mvbtn" data-ch-fx-move="1" aria-label="Move ${esc(d.name)} later" title="Later in the chain" ${i === total - 1 ? 'disabled' : ''}>▼</button><button type="button" class="mc-mvbtn mc-mvbtn-x" data-ch-fx-remove aria-label="Remove ${esc(d.name)}" title="Remove">✕</button></span>
           ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
         ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
         <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
     }).join('');
-    return `${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Add a compressor to even out loud and soft notes, or an echo for space.</p>'}
-      <div class="mc-add">${Object.entries(registry).slice(0, 12).map(([type, d]) => `<button type="button" class="mk-btn" data-ch-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>+ ${esc(d.name)}</button>`).join('')}</div>
-      <p class="mc-hint">Inserts run top to bottom. Reorder, remove and open desktop plugins in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Insert knobs change the sound when you let go.</p>`;
+    return `${fxPickerHtml(track, 'mk-btn mk-btn-primary', 'data-ch-fx-add-picked')}
+      ${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Nothing is processing this signal. Pick a compressor to even out loud and soft notes, or an echo for space.</p>'}
+      <p class="mc-hint">Signal runs top to bottom: drag <b>⠿</b> or use ▲▼ to reorder. Desktop plugins open in the <button type="button" class="mc-link" data-ch-open-fx>FX rack</button>. Knobs apply when you let go.</p>`;
   }
   function flowHtml(track, strip) {
     const registry = window.AudioEffects.registry, live = (track.effects || []).filter(e => !e.bypass && registry[e.type]).length;
@@ -2721,6 +2767,17 @@
       commit(); $('tools').querySelector(`[data-ch-switch="${key}"]`)?.focus({preventScroll:true}); return;
     }
     if (b.dataset.chFxBypass!==undefined) { const i=Number(b.dataset.chFxBypass), e=(t.effects||[])[i]; if(e){e.bypass=!e.bypass;commit();$('tools').querySelector(`[data-ch-fx-bypass="${i}"]`)?.focus({preventScroll:true});} return; }
+    if (b.dataset.chFxMove) {
+      const li = b.closest('[data-insert]'), i = Number(li?.dataset.insert), dir = Number(b.dataset.chFxMove);
+      if (moveEffect(t, i, i + dir)) { commit(); const nl = $('tools').querySelector(`[data-insert="${i + dir}"]`); (nl?.querySelector(`[data-ch-fx-move="${dir}"]:not(:disabled)`) || nl?.querySelector('[data-ch-fx-move]:not(:disabled)'))?.focus({ preventScroll: true }); }
+      return;
+    }
+    if (b.hasAttribute('data-ch-fx-remove')) { const i = Number(b.closest('[data-insert]')?.dataset.insert); if (t.effects?.[i]) { t.effects.splice(i, 1); commit(); $('tools').querySelector('[data-fx-pick]')?.focus({ preventScroll: true }); } return; }
+    if (b.hasAttribute('data-ch-fx-add-picked')) {
+      const type = b.closest('[data-fx-picker]').querySelector('select').value; lastFxPick = type; t.effects ||= [];
+      if (t.effects.length < 8 && window.AudioEffects.registry[type]) { t.effects.push({ type, params: window.AudioEffects.parameters(type), bypass: false, wet: 1 }); commit(); $('tools').querySelector('[data-fx-pick]')?.focus({ preventScroll: true }); }
+      return;
+    }
     if (b.dataset.chFxAdd) { t.effects ||= []; if(t.effects.length<8){t.effects.push({type:b.dataset.chFxAdd,params:window.AudioEffects.parameters(b.dataset.chFxAdd),bypass:false,wet:1});commit();$('tools').querySelector(`[data-ch-fx-add="${b.dataset.chFxAdd}"]`)?.focus({preventScroll:true});} return; }
     if (b.dataset.arrangeEdit) { select(t.id,b.dataset.arrangeEdit); renderEditor();setTab('edit');return; }
     if (b.hasAttribute('data-channel-arm')) { await setArmed(t,!t.armed); return; }
@@ -2861,19 +2918,17 @@
     effectsTrack = track.id;
     host.innerHTML = `<h3>Plugins + effects</h3>
       <p class="daw-note">Sound flows through this rack from top to bottom, then volume and pan. Browser plugins are lightweight and included in playback and exports. The optional desktop companion can discover and open installed VST3 plugins in Carla.</p>
-      <div class="daw-group"><label class="daw-field"><span>Channel</span><select data-fx-channel aria-label="Effects channel">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
-      ${Object.entries(registry).map(([type, d]) => `<button type="button" class="daw-btn" data-fx-add="${type}" ${(track.effects || []).length >= 8 ? 'disabled' : ''}>Add ${esc(d.name)}${d.format === 'browser' ? ' plugin' : ''}</button>`).join('')}</div>
+      <div class="daw-group daw-fx-bar"><label class="daw-field"><span>Channel</span><select data-fx-channel aria-label="Effects channel">${project.tracks.map(t => `<option value="${t.id}" ${t === track ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label>
+      ${fxPickerHtml(track, 'daw-btn daw-fx-addbtn', 'data-fx-add-picked')}</div>
       <ol class="daw-fx-list mc mc-rack" data-hardware="${ProjectModel.normalizeStrip(track.strip).eqStyle}">${(track.effects || []).map((e, i, all) => {
         const d = registry[e.type];
         if (!d) return `<li class="is-missing" data-fx-index="${i}"><div class="daw-group"><strong>Missing plugin: ${esc(e.type)}</strong><span class="daw-plugin-badge">Safely bypassed</span><button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove missing plugin ${esc(e.type)}">Remove</button></div><p class="daw-note">The song data is preserved. Reinstall the locally approved plugin to recover its settings.</p></li>`;
         const params = window.AudioEffects.parameters(e.type, e.params);
-        return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-fx-index="${i}" data-effect-type="${esc(e.type)}"><div class="daw-group mc-insert-head"><span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
-          ${d.format === 'browser' ? `<span class="daw-plugin-badge">Browser plugin · ${esc(d.cpu)} CPU · offline ready</span>` : '<span class="daw-plugin-badge">Built in</span>'}
+        return `<li class="mc-insert${e.bypass ? ' is-bypassed' : ''}" data-fx-index="${i}" data-effect-type="${esc(e.type)}"><div class="daw-group mc-insert-head">${gripHtml(d.name)}<span class="mc-slot-no" aria-hidden="true">${i + 1}</span><strong>${esc(d.name)}</strong>
+          <span class="daw-plugin-badge" title="${d.format === 'browser' ? `Browser plugin · ${esc(d.cpu)} CPU · offline ready` : 'Built in'}">${d.format === 'browser' ? 'Browser' : 'Built in'}</span>
+          <span class="mc-mv"><button type="button" class="daw-btn mc-mvbtn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" title="Earlier in the chain" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="daw-btn mc-mvbtn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" title="Later in the chain" ${i === all.length - 1 ? 'disabled' : ''}>▼</button><button type="button" class="daw-btn mc-mvbtn mc-mvbtn-x" data-fx-action="remove" aria-label="Remove ${esc(d.name)}" title="Remove">✕</button></span>
           <button type="button" class="daw-btn" data-fx-action="bypass" aria-pressed="${!!e.bypass}">Bypass</button>
-          <button type="button" class="daw-btn" data-fx-action="up" aria-label="Move ${esc(d.name)} earlier" ${i === 0 ? 'disabled' : ''}>Earlier</button>
-          <button type="button" class="daw-btn" data-fx-action="down" aria-label="Move ${esc(d.name)} later" ${i === all.length - 1 ? 'disabled' : ''}>Later</button>
-          <button type="button" class="daw-btn" data-fx-action="remove" aria-label="Remove ${esc(d.name)}">Remove</button>
-          ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn ${esc(d.name)}</a>` : ''}</div>
+          ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
           ${e.type === 'punch-compressor' ? window.MusicLabCompressor.panel(params, i, e.bypass) : ''}
           <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
@@ -2902,18 +2957,21 @@
       else { plugin.state ||= {}; plugin.state.bypass = !plugin.state.bypass; }
       commit(); return;
     }
-    const focus = b.dataset.fxAdd ? '[data-fx-add="' + b.dataset.fxAdd + '"]' : '[data-fx-channel]';
-    track.effects ||= [];
-    if (b.dataset.fxAdd && track.effects.length < 8) track.effects.push({ type: b.dataset.fxAdd, params: window.AudioEffects.parameters(b.dataset.fxAdd), bypass: false, wet: 1 });
+    const picked = b.hasAttribute('data-fx-add-picked') ? b.closest('[data-fx-picker]').querySelector('select').value : null;
+    if (picked) lastFxPick = picked;
+    const addType = picked || b.dataset.fxAdd, focus = addType ? '[data-fx-pick]' : '[data-fx-channel]';
+    track.effects ||= []; let refocus = '';
+    if (addType && track.effects.length < 8 && window.AudioEffects.registry[addType]) track.effects.push({ type: addType, params: window.AudioEffects.parameters(addType), bypass: false, wet: 1 });
     else if (b.dataset.fxAction) {
       const i = Number(b.closest('[data-fx-index]').dataset.fxIndex), action = b.dataset.fxAction;
       if (action === 'remove') track.effects.splice(i, 1);
       if (action === 'bypass') track.effects[i].bypass = !track.effects[i].bypass;
-      const j = action === 'up' ? i - 1 : action === 'down' ? i + 1 : i;
-      if (j >= 0 && j < track.effects.length) [track.effects[i], track.effects[j]] = [track.effects[j], track.effects[i]];
+      if (action === 'up' || action === 'down') { const j = action === 'up' ? i - 1 : i + 1; if (moveEffect(track, i, j)) refocus = `[data-fx-index="${j}"] [data-fx-action="${action}"]:not(:disabled), [data-fx-index="${j}"] [data-fx-action="${action === 'up' ? 'down' : 'up'}"]:not(:disabled)`; }
     }
-    commit(); $('effects').querySelector(focus)?.focus();
+    commit(); $('effects').querySelector(refocus || focus)?.focus();
   });
+  enableFxSorting($('tools'), '.mc-insert[data-insert]', channelTarget, li => Number(li.dataset.insert));
+  enableFxSorting($('effects'), 'li[data-fx-index]', () => findTrack(effectsTrack), li => Number(li.dataset.fxIndex));
   $('effects').addEventListener('change', e => {
     const el = e.target;
     if (el.matches('[data-fx-channel]')) { effectsTrack = el.value; renderEffects(); $('effects').querySelector('[data-fx-channel]').focus(); return; }
