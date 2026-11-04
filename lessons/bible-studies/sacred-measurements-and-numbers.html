@@ -101,7 +101,7 @@
       font: inherit; font-size: .9rem; font-weight: 600; padding: .45rem .95rem; border-radius: 999px; cursor: pointer;
       border: 1px solid #e2d7bd; background: #fff; color: #2c2418;
     }
-    .sm-tab[aria-selected="true"] { background: #7a5a1f; border-color: #7a5a1f; color: #fff; }
+    .sm-tab[aria-pressed="true"] { background: #7a5a1f; border-color: #7a5a1f; color: #fff; }
     .sm-tab:focus-visible { outline: 3px solid #c2952f; outline-offset: 2px; }
     .sm-paper { background: #fffdf6; border: 1px solid #e6d9b8; border-radius: 12px; padding: .5rem; }
     .sm-paper svg { display: block; width: 100%; height: auto; }
@@ -170,9 +170,19 @@
       .sm-converter { position: static; box-shadow: none; }
       .sm-table-wrap { overflow: visible; }
     }
+    .sm-workshop { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem; }
+    .sm-workshop label { display:grid;gap:.5rem;font-weight:700; }
+    .sm-workshop input,.sm-workshop select { width:100%;box-sizing:border-box;font:inherit;padding:.7rem;border:1px solid #7a5a1f;border-radius:8px;background:#fff;color:#2c2418; }
+    .sm-paper { margin:1rem 0; }
+    .sm-paper svg[hidden] { display:none; }
+    .sm-paper figcaption { padding:.75rem;font-size:.95rem;line-height:1.6;color:#4a3418; }
+    summary { cursor:pointer;font-weight:700;padding:.6rem 0; }
+    :focus-visible { outline:3px solid #7a5a1f;outline-offset:3px; }
+    @media(max-width:640px) { .sm-converter { position:static; } .sm-seg { flex-wrap:wrap;border-radius:12px; } }
   </style>
 </head>
 <body class="sm-page">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <div class="ll-viewport">
 
   <header class="site-header">
@@ -212,8 +222,20 @@
         <li><a href="#numbers">Biblical numbers</a></li>
         <li><a href="#gematria">Gematria lab</a></li>
         <li><a href="#care">Reading with care</a></li>
+        <li><a href="#model-lab">Model lab</a></li>
         <li><a href="#quiz">Quiz</a></li>
       </ul>
+
+      <section class="sm-section" aria-labelledby="route-title">
+        <h2 id="route-title">Read it. Measure it. Explain it.</h2>
+        <p>By the end, you can convert cubits with a stated assumption, build a scale model, and distinguish a measurement in the text from a reconstruction or interpretation.</p>
+        <ol class="sm-plan">
+          <li><strong>Measure · 10 minutes.</strong> Measure your forearm, choose a cubit, and compare the two arks.</li>
+          <li><strong>Build · 15 minutes.</strong> Explore the plans, then use the model lab to size a paper model.</li>
+          <li><strong>Interpret · 10 minutes.</strong> Explore a number, read its passage, and explain what evidence supports your reading.</li>
+        </ol>
+        <p><strong>Keep three labels in your notes:</strong> <em>Text</em> (dimensions actually stated), <em>Model</em> (a reconstruction using assumptions), and <em>Interpretation</em> (an explanation of meaning). They answer different questions.</p>
+      </section>
 
       <!-- ── Live converter ───────────────────────────── -->
       <div class="sm-converter" id="converter" role="group" aria-labelledby="conv-h">
@@ -333,17 +355,19 @@
         </ul>
 
         <h3>To scale: pick a view</h3>
-        <div class="sm-tabs" role="tablist" aria-label="Scale views">
-          <button class="sm-tab" role="tab" aria-selected="true" data-scene="tent" type="button">Inside the tent</button>
-          <button class="sm-tab" role="tab" aria-selected="false" data-scene="court" type="button">The court</button>
-          <button class="sm-tab" role="tab" aria-selected="false" data-scene="temple" type="button">Solomon's Temple</button>
-          <button class="sm-tab" role="tab" aria-selected="false" data-scene="compare" type="button">Everything at once</button>
+        <div class="sm-tabs" role="group" aria-label="Scale views">
+          <button class="sm-tab" aria-pressed="true" data-scene="tent" type="button">Inside the tent</button>
+          <button class="sm-tab" aria-pressed="false" data-scene="court" type="button">The court</button>
+          <button class="sm-tab" aria-pressed="false" data-scene="temple" type="button">Solomon's Temple</button>
+          <button class="sm-tab" aria-pressed="false" data-scene="compare" type="button">Everything at once</button>
         </div>
-        <div class="sm-paper" data-night-keep>
-          <svg id="sceneSvg" role="img" aria-labelledby="sceneTitle sceneDesc" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet">
+        <figure class="sm-paper" data-night-keep data-zoomable>
+          <img id="sceneImage" alt="" style="display:block;width:100%;height:auto" />
+          <svg hidden xmlns="http://www.w3.org/2000/svg" id="sceneSvg" role="img" aria-labelledby="sceneTitle sceneDesc" viewBox="0 0 900 400" preserveAspectRatio="xMidYMid meet">
             <title id="sceneTitle">Scale plan</title><desc id="sceneDesc"></desc>
           </svg>
-        </div>
+          <figcaption id="sceneCaption"></figcaption>
+        </figure>
         <ul class="sm-legend" id="sceneLegend"></ul>
         <p class="sm-scene-note" id="sceneNote"></p>
 
@@ -422,9 +446,9 @@
 
       <!-- ── 6. Two cubes ───────────────────────────── -->
       <section class="sm-section" id="cubes">
-        <h2>The only two cubes in the Bible</h2>
+        <h2>Two explicitly measured cubes in Scripture</h2>
         <span class="sm-ref">1 Kings 6:20 · Revelation 21:15–22</span>
-        <p>Almost every sacred measurement is a rectangle. Exactly two things in Scripture are <em>perfect cubes</em>:</p>
+        <p>Almost every sacred measurement is a rectangle. Two passages explicitly describe equal length, width, and height:</p>
         <ol>
           <li><strong>The Holy of Holies</strong> — 20 × 20 × 20 cubits in Solomon's Temple (1 Kgs 6:20), the room where God's presence dwelt over the Ark.</li>
           <li><strong>The New Jerusalem</strong> — "the length and the breadth and the height of it are equal" (Rev 21:16).</li>
@@ -520,6 +544,19 @@
       </section>
 
       <!-- ── 11. Quiz ───────────────────────────── -->
+      <section class="sm-section" id="model-lab">
+        <h2>Scale-model workshop</h2>
+        <p>Predict first: if you double the model scale, what happens to length, floor area, and volume? Then change the scale below. These are rectangular bounding boxes, not estimates of usable interior space.</p>
+        <div class="sm-workshop">
+          <label>Object <select id="modelObject"><option value="ark">Noah’s Ark · 300 × 50 × 30</option><option value="chest">Ark of the Covenant · 2.5 × 1.5 × 1.5</option><option value="tent">Tabernacle tent · reconstructed 30 × 10 × 10</option><option value="room">Solomon’s Holy of Holies · 20 × 20 × 20</option></select></label>
+          <label>Model centimetres per cubit <input id="modelScale" type="number" min="0.1" max="10" step="0.1" value="1" aria-describedby="scaleHelp"></label>
+        </div>
+        <p id="scaleHelp">Choose 0.1–10 cm per cubit. At 1 cm per cubit, a 20-cubit side becomes 20 cm. This paper scale is independent of your selected historical cubit.</p>
+        <p id="modelResult" class="closer-look" role="status"></p>
+        <details><summary>Reveal the scaling rule</summary><p>Double every length: floor area grows by 2² = 4 and volume by 2³ = 8. Changing your assumed historical cubit also changes reconstructed area and volume by these powers; the proportions in cubits stay the same.</p></details>
+        <h3>Exit ticket</h3><p>Choose a dimension. Record its passage, its value in cubits, your chosen cubit in centimetres, and the multiplication that converts it. Finish with one sentence explaining what the text states and what your model assumes.</p>
+      </section>
+
       <section class="sm-section" id="quiz">
         <h2>Check your measure</h2>
         <p class="sm-score" id="quizScore" aria-live="polite">Score: 0 / 8</p>
@@ -584,7 +621,7 @@
       });
       var cm = cubitCm();
       document.getElementById('convRead').textContent =
-        '1 cubit = ' + cm.toFixed(1) + ' cm = ' + (cm / 2.54).toFixed(1) + ' in  ·  1 handbreadth = ' + (cm / 6).toFixed(1) + ' cm' +
+        '1 cubit = ' + cm.toFixed(1) + ' cm = ' + (cm / 2.54).toFixed(1) + ' in  ·  1 handbreadth = ' + (cm / (state.system === 'royal' ? 7 : 6)).toFixed(1) + ' cm' +
         (state.system === 'royal' ? '  (7 handbreadths)' : '  (6 handbreadths)');
       noahFigures();
       drawScene(currentScene);
@@ -758,11 +795,17 @@
         li.appendChild(sw); li.appendChild(txt); lg.appendChild(li);
       }
       document.getElementById('sceneNote').textContent = s.note;
+      var copy = svg.cloneNode(true); copy.removeAttribute('hidden');
+      copy.setAttribute('width', W); copy.setAttribute('height', H);
+      var image = document.getElementById('sceneImage');
+      image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(copy));
+      image.alt = s.title + '. ' + document.getElementById('sceneDesc').textContent;
+      document.getElementById('sceneCaption').textContent = s.title + ' — ' + s.note + ' Original classroom diagram based on the cited passages. Select to enlarge.';
     }
 
     document.querySelectorAll('.sm-tab').forEach(function (b) {
       b.addEventListener('click', function () {
-        document.querySelectorAll('.sm-tab').forEach(function (x) { x.setAttribute('aria-selected', String(x === b)); });
+        document.querySelectorAll('.sm-tab').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
         currentScene = b.getAttribute('data-scene');
         drawScene(currentScene);
       });
@@ -852,10 +895,10 @@
       { q: "What are the stated dimensions of Noah's Ark (Gen 6:15)?", o: ['100 × 50 × 20 cubits', '300 × 50 × 30 cubits', '120 × 120 × 120 cubits', '500 × 100 × 50 cubits'], a: 1, why: 'Three hundred by fifty by thirty cubits — a 6 : 1 hull. The cube-shaped boat belongs to the Babylonian Gilgamesh story.' },
       { q: 'How big is the Ark of the Covenant (Ex 25:10)?', o: ['2½ × 1½ × 1½ cubits', '5 × 5 × 3 cubits', '10 × 10 × 10 cubits', '20 × 10 cubits'], a: 0, why: '2½ by 1½ by 1½. (5 × 5 × 3 is the altar of burnt offering; 10 × 10 × 10 is the Tabernacle\'s Most Holy Place.)' },
       { q: 'The Tabernacle\'s court measured…', o: ['50 × 25 cubits', '100 × 50 cubits', '300 × 50 cubits', '60 × 20 cubits'], a: 1, why: 'A rectangle 100 cubits long and 50 wide, fenced by 60 pillars (Ex 27:9–18).' },
-      { q: "Solomon's Holy of Holies was…", o: ['A 20 × 20 × 20 cube', '10 × 20 × 30', '40 × 20 × 30', '12 × 12 × 12'], a: 0, why: '1 Kings 6:20 — a perfect 20-cubit cube. Only one other cube appears in the Bible: the New Jerusalem.' },
+      { q: "Solomon's Holy of Holies was…", o: ['A 20 × 20 × 20 cube', '10 × 20 × 30', '40 × 20 × 30', '12 × 12 × 12'], a: 0, why: '1 Kings 6:20 — a perfect 20-cubit cube. Revelation 21:16 also explicitly gives equal length, width, and height for the New Jerusalem.' },
       { q: 'Which is the other perfect cube in Scripture?', o: ['The Ark of the Covenant', 'Nebuchadnezzar\'s statue', 'The New Jerusalem (Rev 21:16)', 'The Bronze Sea'], a: 2, why: '"The length and the breadth and the height of it are equal." John\'s picture: the whole city is the Holy of Holies.' },
       { q: 'What do the common and royal cubits differ by?', o: ['6 vs. 7 handbreadths', '4 vs. 5 spans', 'Wood vs. stone rods', 'Nothing — it\'s the same unit'], a: 0, why: 'The common cubit is 6 handbreadths (~17.5 in); the royal (Ezekiel\'s) cubit is 7 (~20.6 in).' },
-      { q: 'Why does Matthew group Jesus\' ancestors in three sets of 14?', o: ['Because there were exactly 42 generations', 'To signal "son of David" — the Hebrew name David adds to 14', 'It\'s a transcription error', 'Because Luke does it too'], a: 1, why: 'Matthew skips some names to make the pattern work and points to it in 1:17; the letters of David (4 + 6 + 4) total 14.' },
+      { q: 'Which proposed explanation connects Matthew\'s groups of 14 with David?', o: ['Because there were exactly 42 generations', 'The Hebrew name David adds to 14, suggesting a Davidic pattern', 'It\'s a transcription error', 'Because Luke does it too'], a: 1, why: 'Matthew explicitly highlights fourteen in 1:17. A common interpretation connects this with David (4 + 6 + 4 = 14); Matthew does not explicitly explain the number that way.' },
       { q: 'A good rule for reading biblical numbers is…', o: ['Every number hides a code about our future', 'Ask what the number does in the story, and check whether the author points to it', 'Ignore numbers: they\'re only decoration', 'Add up any verse until you find a pattern'], a: 1, why: 'Look at genre and at what the author highlights. Pattern isn\'t proof; Jesus warns that no one knows the day or hour (Matt 24:36).' }
     ];
     var quizBox = document.getElementById('quizBox'), scoreEl = document.getElementById('quizScore'), score = 0, answered = 0;
@@ -883,6 +926,20 @@
     });
     scoreEl.textContent = 'Score: 0 / ' + QUIZ.length;
 
+    var modelSizes = { ark: [300,50,30], chest: [2.5,1.5,1.5], tent: [30,10,10], room: [20,20,20] };
+    function updateModel() {
+      var input = document.getElementById('modelScale'), scale = input.valueAsNumber;
+      var out = document.getElementById('modelResult');
+      if (!Number.isFinite(scale) || scale < 0.1 || scale > 10) {
+        out.textContent = 'Enter a scale between 0.1 and 10 cm per cubit.'; return;
+      }
+      var d = modelSizes[document.getElementById('modelObject').value];
+      var n = function (v) { return Number(v.toFixed(3)).toLocaleString(); };
+      out.textContent = 'Cut a footprint ' + n(d[0]*scale) + ' × ' + n(d[1]*scale) + ' cm; height ' + n(d[2]*scale) + ' cm. Floor area: ' + n(d[0]*d[1]*scale*scale) + ' cm². Bounding-box volume: ' + n(d[0]*d[1]*d[2]*scale*scale*scale) + ' cm³.';
+    }
+    document.getElementById('modelObject').addEventListener('change', updateModel);
+    document.getElementById('modelScale').addEventListener('input', updateModel);
+    updateModel();
     renderAll();
   })();
   </script>
