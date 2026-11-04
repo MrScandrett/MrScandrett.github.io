@@ -1,134 +1,57 @@
-// Håkon Wium Lie: The Cascade & Specificity Lab
+// The preview uses real author CSS in an isolated document. User origin is
+// explicitly modeled: page scripts cannot install a browser user stylesheet.
 (() => {
-  const container = document.getElementById('hwl-cascade-lab');
-  if (!container) return;
-
-  const buttons = container.querySelectorAll('.hwl-btn');
-  const stack = document.getElementById('hwl-rule-stack');
-  const target = document.getElementById('hwl-target-element');
-  const expl = document.getElementById('hwl-explanation');
-
-  const SCENARIOS = {
-    defaults: {
-      desc: 'Browser Default vs Author CSS: The author defines a blue background and rounded corners, overriding default grey user-agent styling.',
-      targetClass: 'scenario-author',
-      inlineStyle: '',
-      rules: [
-        {
-          source: 'User-Agent (Browser Default)',
-          spec: '(0, 0, 1)',
-          code: 'div { background: #e2e8f0; color: #000; border-radius: 0px; }',
-          status: 'overridden'
-        },
-        {
-          source: 'Author Stylesheet (Element)',
-          spec: '(0, 0, 1) [Order of Appearance]',
-          code: 'div { background: #dbeafe; color: #1e3a8a; border-radius: 12px; }',
-          status: 'winning'
-        }
-      ]
-    },
-    specificity: {
-      desc: 'Element vs Class vs ID: Even if the element selector appears last in the stylesheet, the ID selector (#featured) wins because ID has higher specificity than classes or element tags.',
-      targetClass: 'scenario-id',
-      inlineStyle: '',
-      rules: [
-        {
-          source: 'Element Selector: p',
-          spec: '(0, 0, 1)',
-          code: 'p { color: #64748b; font-size: 14px; }',
-          status: 'overridden'
-        },
-        {
-          source: 'Class Selector: .announcement',
-          spec: '(0, 1, 0)',
-          code: '.announcement { color: #2563eb; font-weight: bold; }',
-          status: 'overridden'
-        },
-        {
-          source: 'ID Selector: #special-notice',
-          spec: '(1, 0, 0)',
-          code: '#special-notice { color: #b91c1c; font-size: 18px; border: 2px solid #b91c1c; }',
-          status: 'winning'
-        }
-      ]
-    },
-    userprefs: {
-      desc: "User / Reader Style Preference: Lie's original insight was that the reader should have say over the presentation. High-contrast reader mode overrides decorative background colors for accessibility.",
-      targetClass: 'scenario-user',
-      inlineStyle: '',
-      rules: [
-        {
-          source: 'Author Stylesheet (Aesthetic)',
-          spec: '(0, 1, 0)',
-          code: '.card { background: #ede9fe; color: #6d28d9; }',
-          status: 'overridden'
-        },
-        {
-          source: 'User Accessibility Preference (High Contrast Mode)',
-          spec: 'User Setting [Overrides Author]',
-          code: '@media (prefers-contrast: more) { background: #000000; color: #ffff00; }',
-          status: 'winning'
-        }
-      ]
-    },
-    important: {
-      desc: '!important Declaration: In CSS Level 1, Lie added !important so critical rules could bypass normal specificity. If an author uses !important, it overrides normal selectors.',
-      targetClass: 'scenario-important',
-      inlineStyle: '',
-      rules: [
-        {
-          source: 'ID Selector (#headline)',
-          spec: '(1, 0, 0)',
-          code: '#headline { color: #0f172a; }',
-          status: 'overridden'
-        },
-        {
-          source: 'Utility Class with !important',
-          spec: '(0, 1, 0) + !important',
-          code: '.text-emerald { color: #059669 !important; font-weight: 800; }',
-          status: 'winning'
-        }
-      ]
-    }
+  const lab = document.getElementById('hwl-cascade-lab');
+  if (!lab) return;
+  const get = id => document.getElementById(`hwl-${id}`);
+  const scenarios = {
+    order: { question: 'Both selectors have specificity (0, 1, 0). Which color wins?', why: 'Blue wins: these normal author declarations have equal specificity, so the later one wins.', rules: [ ['.announcement', '#9f1239', 'Earlier author rule'], ['.announcement', '#1e40af', 'Later author rule'] ] },
+    specificity: { question: 'The class rule comes last. Can it beat an ID?', why: 'Rose wins: the ID (1, 0, 0) beats the class (0, 1, 0). Source order breaks ties; it does not outweigh specificity.', rules: [ ['#notice', '#9f1239', 'ID · (1, 0, 0)'], ['.announcement', '#1e40af', 'Class · (0, 1, 0)'] ] },
+    important: { question: 'Does a normal ID declaration beat an important class declaration?', why: 'Green wins: importance is considered before specificity. Avoid using !important as a routine fix; understand the conflict first.', rules: [ ['#notice', '#9f1239', 'Normal author declaration'], ['.announcement', '#166534', 'Important author declaration', true] ] },
+    reader: { question: 'Both declarations are important. Which origin takes priority?', why: 'Yellow wins: important user declarations take priority over important author declarations. This models a user stylesheet; prefers-contrast alone does not create user-origin CSS or automatically override an author rule.', rules: [ ['#notice', '#9f1239', 'Author origin · important', true], ['.announcement', '#ffff00', 'User origin · important (modeled)', true] ] }
   };
-
-  function applyScenario(key) {
-    const sc = SCENARIOS[key];
-    if (!sc) return;
-
-    buttons.forEach(btn => {
-      const active = btn.getAttribute('data-scenario') === key;
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-
-    stack.innerHTML = sc.rules.map(r => `
-      <div class="hwl-rule-item ${r.status}">
-        <span class="hwl-rule-source">${r.source} · Specificity: ${r.spec}</span>
-        <code>${r.code}</code>
-      </div>
-    `).join('');
-
-    target.className = 'hwl-target-element ' + sc.targetClass;
-    if (key === 'defaults') {
-      target.style = 'background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd; border-radius: 12px;';
-    } else if (key === 'specificity') {
-      target.style = 'background: #fef2f2; color: #b91c1c; font-size: 16px; border: 2px solid #b91c1c; border-radius: 8px;';
-    } else if (key === 'userprefs') {
-      target.style = 'background: #000000; color: #ffff00; font-size: 16px; border: 2px solid #ffffff; border-radius: 4px;';
-    } else if (key === 'important') {
-      target.style = 'background: #ecfdf5; color: #059669; font-weight: 800; border: 1px solid #10b981; border-radius: 8px;';
-    }
-
-    expl.textContent = sc.desc;
+  let key = 'order';
+  let enabled = [true, true];
+  let revealed = false;
+  function render() {
+    const sc = scenarios[key];
+    const indexes = enabled.flatMap((on, i) => on ? [i] : []);
+    const winner = indexes.length === 2 ? (key === 'specificity' ? 0 : 1) : indexes[0];
+    get('rule-stack').replaceChildren(...sc.rules.map((rule, i) => {
+      const item = document.createElement('label');
+      item.className = 'hwl-rule-item';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox'; checkbox.checked = enabled[i];
+      checkbox.setAttribute('aria-label', `Enable ${rule[2]}`);
+      checkbox.addEventListener('change', () => { enabled[i] = checkbox.checked; render(); get('rule-stack').querySelectorAll('input')[i].focus(); });
+      const title = document.createElement('span'); title.className = 'hwl-rule-source';
+      title.textContent = rule[2] + (revealed ? (!enabled[i] ? ' · Disabled' : i === winner ? ' · Winning color' : ' · Overridden color') : '');
+      const code = document.createElement('code'); code.textContent = `${rule[0]} { color: ${rule[1]}${rule[3] ? ' !important' : ''}; }`;
+      item.append(checkbox, title, code);
+      return item;
+    }));
+    // For reader mode, supply the origin winner as an author declaration in
+    // isolation. The UI clearly labels this one case as a model, not native origin.
+    const css = key === 'reader'
+      ? (winner === undefined ? '' : `#notice { color: ${sc.rules[winner][1]} !important; }`)
+      : sc.rules.filter((_, i) => enabled[i]).map(r => `${r[0]} {color:${r[1]}${r[3] ? ' !important' : ''}}`).join('\n');
+    get('preview').srcdoc = `<!doctype html><html lang="en"><meta charset="utf-8"><style>body{margin:0;padding:32px 20px;background:${key === 'reader' && winner === 1 ? '#111827' : '#ffffff'};color:${'#111827'};font:700 24px/1.5 system-ui}p{margin:0}${css}</style><p id="notice" class="announcement">The web is for everyone.</p></html>`;
+    get('question').textContent = sc.question;
+    get('result').hidden = !revealed;
+    get('curtain').hidden = revealed;
+    get('reveal').hidden = revealed;
+    get('explanation').textContent = revealed ? (enabled.every(Boolean) ? sc.why : indexes.length ? 'With only one matching color declaration enabled, it wins. Re-enable the other rule to compare them.' : 'No example color declarations remain. The paragraph inherits the preview’s base text color.') : '';
   }
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const scenario = btn.getAttribute('data-scenario');
-      applyScenario(scenario);
-    });
+  get('preview').addEventListener('load', () => {
+    const frame = get('preview');
+    const paragraph = frame.contentDocument?.getElementById('notice');
+    if (paragraph) get('computed').textContent = `Computed color: ${frame.contentWindow.getComputedStyle(paragraph).color}${key === 'reader' ? ' · modeled user origin' : ''}`;
   });
-
-  applyScenario('defaults');
+  lab.querySelectorAll('[data-scenario]').forEach(button => button.addEventListener('click', () => {
+    key = button.dataset.scenario; enabled = [true, true]; revealed = false;
+    lab.querySelectorAll('[data-scenario]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    render();
+  }));
+  get('reveal').addEventListener('click', () => { revealed = true; render(); });
+  render();
 })();
