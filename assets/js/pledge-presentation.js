@@ -14,6 +14,7 @@
   const motion = document.getElementById('btnMotion');
   const fullscreen = document.getElementById('btnFullscreen');
   const presentation = document.getElementById('presentation');
+  stage.tabIndex = 0;
   const audio = document.getElementById('patrioticAudio');
   const audioStatus = document.getElementById('audioStatus');
   const volume = document.getElementById('volumeControl');
@@ -26,6 +27,47 @@
   ];
   // Give the longer opening passage more time; total presentation is 28 seconds.
   const ends = [9, 16, 22, 28];
+  const pace = document.getElementById('presentationPace');
+  const passageButtons = [...document.querySelectorAll('[data-passage]')];
+  const previous = document.getElementById('btnPrevious');
+  const next = document.getElementById('btnNext');
+  const isManual = () => pace.value === 'manual';
+  function updateControls() {
+    passageButtons.forEach((button, index) => {
+      if (index === passage) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
+    previous.disabled = passage <= 0;
+    next.disabled = stage.dataset.crawl === 'finished';
+    next.textContent = passage === 3 ? 'Finish presentation →' : 'Next passage →';
+    progressBar.setAttribute('aria-valuetext', passage < 0 ? 'Ready' : `Passage ${passage + 1} of 4`);
+  }
+  function finish() {
+    stage.dataset.crawl = 'finished';
+    setProgress(100);
+    status.textContent = 'Presentation complete. Take a moment to reflect.';
+    play.disabled = false;
+    play.textContent = 'Present again';
+    pause.disabled = true;
+    pause.textContent = 'Pause';
+    audio.pause();
+    loop.pause();
+    updateControls();
+  }
+  function goToPassage(index) {
+    elapsed = index === 0 ? 0 : ends[index - 1];
+    passage = -1;
+    start();
+    setProgress(elapsed / 28 * 100);
+  }
+  passageButtons.forEach((button, index) => button.addEventListener('click', () => goToPassage(index)));
+  previous.addEventListener('click', () => goToPassage(Math.max(0, passage - 1)));
+  next.addEventListener('click', () => passage === 3 ? finish() : goToPassage(passage + 1));
+  pace.addEventListener('change', () => {
+    if (passage >= 0 && stage.dataset.crawl !== 'finished') {
+      status.textContent = `${stage.dataset.crawl === 'paused' ? 'Paused · ' : ''}Passage ${passage + 1} of 4${isManual() ? ' · Advance when ready' : ''}`;
+    }
+  });
   let elapsed = 0;
   let passage = -1;
   let loop;
@@ -64,14 +106,15 @@
     text.classList.remove('passage-enter');
     void text.offsetWidth;
     text.classList.add('passage-enter');
-    status.textContent = `Passage ${index + 1} of ${passages.length}`;
+    status.textContent = `Passage ${index + 1} of ${passages.length}${isManual() ? ' · Advance when ready' : ''}`;
+    updateControls();
   }
   function setProgress(value) {
     progress.style.width = `${value}%`;
     progressBar.setAttribute('aria-valuenow', String(Math.round(value)));
   }
   function start(reset = false) {
-    if (reset || stage.dataset.crawl === 'finished') {
+    if (reset || (stage.dataset.crawl === 'finished' && passage !== -1)) {
       elapsed = 0;
       passage = -1;
       audio.currentTime = 0;
@@ -79,26 +122,24 @@
     }
     stage.dataset.crawl = 'playing';
     updatePassage();
-    status.textContent = `Passage ${passage + 1} of ${passages.length}`;
+    status.textContent = `Passage ${passage + 1} of ${passages.length}${isManual() ? ' · Advance when ready' : ''}`;
+    play.textContent = 'Start presentation';
+    updateControls();
     play.disabled = true;
     pause.disabled = false;
     pause.textContent = 'Pause';
     loop.resume();
+    stage.focus({ preventScroll: true });
     playMusic();
   }
   loop = SimKit.loop(dt => {
     if (stage.dataset.crawl !== 'playing') return;
-    elapsed = Math.min(28, elapsed + dt);
+    if (isManual()) return;
+    elapsed = Math.min(28, elapsed + dt / Number(pace.value));
     setProgress(elapsed / 28 * 100);
     if (elapsed < 28) updatePassage();
     else {
-      stage.dataset.crawl = 'finished';
-      status.textContent = 'Presentation complete. Take a moment to reflect.';
-      play.disabled = false;
-      pause.disabled = true;
-      pause.textContent = 'Pause';
-      audio.pause();
-      loop.pause();
+      finish();
     }
   }, { el: stage, maxDt: .25 });
   loop.pause();
@@ -179,6 +220,19 @@
   });
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented) return;
+    const focused = document.activeElement;
+    const editing = focused?.matches('input, select, textarea, [contenteditable]');
+    if (presentation.contains(focused) && !editing && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (event.key === 'ArrowRight' && !next.disabled) next.click();
+        if (event.key === 'ArrowLeft' && !previous.disabled) previous.click();
+      } else if (event.code === 'Space' && !focused.matches('button, a, summary')) {
+        event.preventDefault();
+        if (stage.dataset.crawl === 'playing' || stage.dataset.crawl === 'paused') pause.click();
+        else start();
+      }
+    }
     if (event.key === 'Escape' && presentation.classList.contains('presentation-expanded')) {
       setExpanded(false);
       fullscreen.focus();
