@@ -16,6 +16,7 @@ import { MissionTracker } from './missions.mjs';
 import { renderPanels, renderLayers, renderOptions, renderStatus, PANEL_TABS } from './panels.mjs';
 import * as dialogs from './dialogs.mjs';
 import { ICONS, icon } from './icons.mjs';
+import { ToolWheel } from './wheel.mjs';
 import { watchLayout, setMaximized, showPanels, wireMenubarKeys, wireLongPress, wireGestures, wireTouchGuard } from './adaptive.mjs';
 
 const OPT_KEY = 'classroomos:layerlab:opts:v1';
@@ -129,6 +130,7 @@ export class Studio {
     };
     this.el.panels = $('.lls-panels');
     this.el.veil = $('.lls-veil');
+    this.wheel = new ToolWheel(this);
     this.wireChrome();
     this.wireCanvas();
     this.wireKeys();
@@ -302,6 +304,7 @@ export class Studio {
     this.el.overlay.style.cursor = this.tool.cursor === 'none' ? 'none' : this.tool.cursor || 'default';
     renderOptions(this);
     renderStatus(this);
+    this.wheel?.sync();
     this.drawOverlay();
   }
 
@@ -325,6 +328,7 @@ export class Studio {
     this.el.bg.style.background = this.colors.bg;
     this.el.fg.title = `Foreground ${this.colors.fg} (click to change)`;
     this.el.bg.title = `Background ${this.colors.bg}`;
+    this.wheel?.colors();
   }
 
   /* ── documents & view ───────────────────────────────────────────────── */
@@ -384,10 +388,15 @@ export class Studio {
     if (!this.doc) return;
     const vp = this.el.viewport.getBoundingClientRect();
     const pad = Math.min(vp.width, vp.height) < 500 ? 16 : 40;
-    const z = Math.min((vp.width - pad) / this.doc.width, (vp.height - pad) / this.doc.height, 4);
+    // Floating chrome (full-screen phone layout) covers part of the canvas: frame the art in what is left.
+    const { top = 0, bottom = 0, left = 0 } = this.fitInset || {};
+    const z = Math.min((vp.width - left - pad) / this.doc.width, (vp.height - top - bottom - pad) / this.doc.height, 4);
     this.setZoom(z > 0 ? z : 1);
     const v = this.view;
+    v.panX = left + (vp.width - left - this.doc.width * v.zoom) / 2;
+    v.panY = top + (vp.height - top - bottom - this.doc.height * v.zoom) / 2;
     v.fitted = { zoom: v.zoom, panX: v.panX, panY: v.panY };
+    this.redraw();
   }
 
   /** Show the panels ('layers' or 'panels' picks the page on a phone's sheet), or hide them with false. */

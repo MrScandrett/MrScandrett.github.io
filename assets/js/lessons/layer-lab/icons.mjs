@@ -43,6 +43,8 @@ export const ICONS = {
   layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
   download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
   text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/>',
 };
 
 export function icon(name, cls = '') {

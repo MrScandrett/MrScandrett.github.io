@@ -156,3 +156,13 @@ test('alpha bounds and mask expand/contract', () => {
   const grown = px.expandMask(m, W, H, 1).filter(Boolean).length, shrunk = px.expandMask(m, W, H, -1).filter(Boolean).length;
   assert.ok(grown > 16 && shrunk < 16, `${grown} ${shrunk}`);
 });
+
+test('tool wheel: every toolbox tool is on the wheel exactly once, in a filter category', async () => {
+  const { TOOLBOX, TOOLS } = await import('../assets/js/lessons/layer-lab/tools.mjs');
+  const { CATEGORIES } = await import('../assets/js/lessons/layer-lab/wheel.mjs');
+  const wheel = Object.values(CATEGORIES).flat();
+  const toolbox = TOOLBOX.flat();
+  assert.equal(new Set(wheel).size, wheel.length, 'a tool is listed in two categories');
+  assert.deepEqual([...wheel].sort(), [...toolbox].sort());
+  for (const id of wheel) assert.ok(TOOLS[id], `${id} has no tool`);
+});

@@ -462,9 +462,99 @@ html.lls-has-maximized, html.lls-has-maximized body { overflow: hidden !importan
   .lls-anchor label { width: 44px; height: 44px; }
 }
 
+/* ── Tool wheel (phones; wheel.mjs). data-wheel="x" runs along the bottom, "y" down the left. ── */
+.lls { --wt-w: 64px; --wt-h: 68px; --glass: rgba(27, 29, 35, .74); --glass-line: rgba(255, 255, 255, .14); }
+.lls[data-short] { --wt-w: 60px; --wt-h: 60px; }
+.lls-dock { display: none; grid-area: tools; min-width: 0; min-height: 0; }
+.lls[data-wheel] .lls-toolbox { display: none; }
+.lls[data-wheel] .lls-dock { display: grid; position: relative; background: var(--ui-1); border-top: 1px solid #000000; z-index: 21; }
+.lls[data-wheel=x] .lls-dock { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto auto; grid-template-areas: "filters filters filters" "search search search" "colors wheel layers"; padding: 0 0 4px; }
+.lls-wd-filters { grid-area: filters; display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px 2px; scrollbar-width: none; }
+.lls-wd-filters::-webkit-scrollbar { display: none; }
+.lls-wd-chip { flex: none; min-height: 34px; padding: 4px 14px; border-radius: 999px; background: var(--ui-3); border: 1px solid transparent; color: var(--ui-text); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+.lls-wd-chip[aria-pressed=true] { background: var(--ui-accent); color: var(--ui-accent-ink); }
+.lls-wd-chip .lls-ico { width: 18px; height: 18px; }
+.lls-wd-search { grid-area: search; margin: 6px 10px 0; min-height: 38px; border-radius: 999px; border: 1px solid var(--ui-4); background: var(--ui-0); padding: 0 14px; font-size: 16px; }
+.lls-wd-search[hidden] { display: none; }
+.lls-wd-pill { grid-area: pill; display: none; position: relative; place-items: center; min-width: 40px; min-height: 40px; margin: 4px; border-radius: 12px; background: var(--ui-3); border: 0; color: var(--ui-text); }
+.lls-wd-pill i { display: none; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-accent); }
+.lls-wd-pill.active i { display: block; }
+.lls-wd-colors { grid-area: colors; position: relative; width: 58px; height: 52px; margin: 0 2px 0 6px; align-self: center; }
+.lls-wd-fg, .lls-wd-bg { position: absolute; width: 28px; height: 28px; padding: 0; border: 2px solid #ffffff; border-radius: 8px; box-shadow: 0 0 0 1px #000000; }
+.lls-wd-fg { left: 4px; top: 4px; z-index: 2; }
+.lls-wd-bg { left: 18px; top: 18px; }
+.lls-wd-swap { position: absolute; right: 0; top: -2px; width: 24px; height: 24px; background: none; border: 0; padding: 0; color: var(--ui-text); font-size: 15px; display: grid; place-items: center; }
+.lls-wd-layers { grid-area: layers; display: grid; justify-items: center; gap: 1px; align-self: center; min-width: 58px; min-height: 52px; margin: 0 6px 0 2px; padding: 4px 6px; background: transparent; border: 0; border-radius: 12px; color: var(--ui-text); font-size: 11px; }
+.lls-wd-layers.on { color: #93c5fd; background: var(--ui-3); }
+.lls-wd-wheel { grid-area: wheel; position: relative; min-width: 0; height: calc(var(--wt-h) + 18px); }
+.lls-wd-track {
+  display: flex; gap: 4px; height: 100%; align-items: center; padding-inline: var(--wd-pad, 0px);
+  overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior: contain; scrollbar-width: none; perspective: 520px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+}
+.lls-wd-track::-webkit-scrollbar { display: none; }
+.lls-wt { flex: none; width: var(--wt-w); height: var(--wt-h); scroll-snap-align: center; display: grid; place-items: center; align-content: center; gap: 3px; padding: 0; border-radius: 16px; background: var(--ui-2); border: 1px solid var(--ui-4); color: var(--ui-text); font-size: 10px; letter-spacing: 0; font-weight: 600; will-change: transform; }
+.lls-wt .lls-ico { width: 26px; height: 26px; }
+.lls-wt span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; }
+.lls-wt.on { background: var(--ui-accent); color: var(--ui-accent-ink); border-color: #93c5fd; }
+.lls-wd-none { margin: 0 auto; color: var(--ui-dim); white-space: nowrap; }
+.lls-wd-lens { position: absolute; left: 50%; top: 50%; width: calc(var(--wt-w) + 14px); height: calc(var(--wt-h) + 12px); transform: translate(-50%, -50%); border-radius: 20px; border: 2px dashed rgba(147, 197, 253, .7); pointer-events: none; transition: border-color .15s, box-shadow .15s; }
+.lls-wd-armed .lls-wd-lens { border-style: solid; border-color: #93c5fd; box-shadow: 0 0 14px rgba(59, 130, 246, .55); }
+
+.lls.lls[data-wheel=y] .lls-main { grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "tools center"; }
+.lls[data-wheel=y] .lls-dock { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto minmax(0, 1fr); grid-template-areas: "pill colors" "search search" "wheel wheel"; border-top: 0; border-right: 1px solid #000000; }
+.lls[data-wheel=y] .lls-wd-filters, .lls[data-wheel=y] .lls-wd-layers, .lls[data-wheel=y] .lls-wd-swap, .lls[data-wheel=y] .lls-wd-search { display: none; }
+.lls[data-wheel=y] .lls-wd-pill { display: grid; }
+.lls[data-wheel=y] .lls-wd-colors { width: 44px; height: 44px; margin: 4px; justify-self: center; }
+.lls[data-wheel=y] .lls-wd-fg, .lls[data-wheel=y] .lls-wd-bg { width: 24px; height: 24px; }
+.lls[data-wheel=y] .lls-wd-bg { left: 16px; top: 16px; }
+.lls[data-wheel=y] .lls-wd-wheel { height: auto; }
+.lls[data-wheel=y] .lls-wd-track {
+  flex-direction: column; justify-content: flex-start; padding-inline: 0; padding-block: var(--wd-pad, 0px); overflow-x: hidden; overflow-y: auto;
+  scroll-snap-type: y mandatory; perspective: 520px;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+}
+.lls[data-wheel=y] .lls-wt { margin-inline: auto; }
+.lls[data-wheel=y] .lls-wd-lens { width: calc(var(--wt-w) + 12px); height: calc(var(--wt-h) + 12px); }
+.lls[data-wheel=y] .lls-toast { bottom: 40px; }
+
+/* Full screen on a phone: the canvas runs edge to edge and the controls float over it as frosted glass. */
+.lls-maximized { height: var(--lls-vh, 100vh); height: var(--lls-vh, 100dvh); overscroll-behavior: none; }
+.lls-maximized:fullscreen { height: 100%; }
+html.lls-has-maximized { overscroll-behavior: none; }
+.lls-maximized[data-wheel] { --safe-t: env(safe-area-inset-top, 0px); --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); grid-template-rows: minmax(0, 1fr); background: #23262e; }
+.lls-maximized[data-wheel] :is(.lls-status, .lls-tabs) { display: none; }
+.lls-maximized[data-wheel] .lls-main { grid-row: 1; grid-template-rows: minmax(0, 1fr); }
+.lls-maximized[data-wheel] .lls-center { grid-template-rows: minmax(0, 1fr); }
+.lls-maximized[data-wheel] :is(.lls-menubar, .lls-options, .lls-dock) {
+  background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--glass-line); box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+}
+.lls-maximized[data-wheel] .lls-menubar { position: absolute; z-index: 24; top: calc(var(--safe-t) + 8px); left: calc(var(--safe-l) + 8px); right: calc(var(--safe-r) + 8px); border-radius: 999px; min-height: 48px; padding: 0 8px; flex-wrap: nowrap; }
+.lls-maximized[data-wheel] .lls-menubar > button { background: transparent; }
+.lls-maximized[data-wheel] .lls-menubar > button:active, .lls-maximized[data-wheel] .lls-menubar > button[aria-expanded=true] { background: rgba(255, 255, 255, .14); }
+.lls-maximized[data-wheel] .lls-options { position: absolute; z-index: 23; top: calc(var(--safe-t) + 8px + var(--lls-bar, 48px) + 6px); left: calc(var(--safe-l) + 8px); right: calc(var(--safe-r) + 8px); border-radius: 20px; min-height: 46px; padding: 4px 12px; }
+.lls-maximized[data-wheel] .lls-dock { position: absolute; border-radius: 26px; z-index: 22; padding-inline: 2px; }
+.lls-maximized[data-wheel=x] .lls-dock { left: 8px; right: 8px; bottom: 8px; }
+.lls-maximized[data-wheel=y] .lls-dock { left: 8px; top: var(--lls-top, 120px); bottom: 8px; width: 84px; padding: 0 0 4px; }
+.lls.lls-maximized[data-wheel=y] .lls-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "center"; }
+.lls-maximized[data-wheel] .lls-wt { background: rgba(43, 46, 54, .78); }
+.lls-maximized[data-wheel] .lls-wt.on { background: var(--ui-accent); }
+.lls-maximized[data-wheel] .lls-wd-chip:not([aria-pressed=true]), .lls-maximized[data-wheel] .lls-wd-pill { background: rgba(255, 255, 255, .12); }
+.lls-maximized[data-wheel] .lls-wd-search { background: rgba(0, 0, 0, .35); }
+.lls-maximized[data-wheel] .lls-wd-layers.on { background: rgba(255, 255, 255, .14); }
+.lls-maximized[data-wheel] .lls-viewport { background: #1b1d23; }
+.lls-maximized[data-wheel] .lls-panels { background: rgba(35, 38, 46, .9); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.lls-maximized[data-wheel] :is(.lls-phead, .lls-ptabs, .lls-ptabs button, .lls-lfoot, .lls-sheet-x) { background: transparent; }
+.lls-maximized[data-wheel=x] .lls-toast { bottom: 150px; }
+.lls-maximized[data-wheel=y] .lls-toast { bottom: 24px; }
+.lls-maximized[data-wheel] .lls-menu-pop { z-index: 40; }
+@media (prefers-reduced-motion: reduce) { .lls-wd-lens { transition: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .lls { --glass: rgba(27, 29, 35, .96); } }
+
 /* Windows High Contrast / forced colors: keep the "this one is on" states visible. */
 @media (forced-colors: active) {
-  .lls-tool.on, .lls-seg button[aria-pressed=true], .lls-ptabs button.on, .lls-lrow.on, .lls-hist button.on, .lls-dock-layers.on { outline: 3px solid Highlight; outline-offset: -3px; }
+  .lls-tool.on, .lls-seg button[aria-pressed=true], .lls-ptabs button.on, .lls-lrow.on, .lls-hist button.on, .lls-dock-layers.on, .lls-wt.on, .lls-wd-chip[aria-pressed=true], .lls-wd-layers.on { outline: 3px solid Highlight; outline-offset: -3px; }
   .lls-swatch { forced-color-adjust: none; }
   .lls-view, .lls-overlay, .lls-thumb { forced-color-adjust: none; }
 }

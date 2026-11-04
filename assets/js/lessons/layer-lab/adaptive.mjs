@@ -31,10 +31,17 @@ export function watchLayout(s) {
     const { width: w, height: h } = r.getBoundingClientRect();
     if (!w) return;
     const layout = w < COMPACT_W ? 'compact' : w < WIDE_W ? 'medium' : 'wide';
-    const panels = layout === 'compact' ? 'sheet' : w >= DOCK_W && h >= DOCK_H ? 'dock' : 'drawer';
-    if (r.dataset.layout !== layout) r.dataset.layout = layout;
     const short = h < SHORT_H;
+    const panels = layout === 'compact' ? 'sheet' : w >= DOCK_W && h >= DOCK_H && !short ? 'dock' : 'drawer';
+    if (r.dataset.layout !== layout) r.dataset.layout = layout;
     r.toggleAttribute('data-short', short);
+    // Phones get the tool wheel: along the bottom in portrait, down the left side when the screen is short.
+    const wheel = layout === 'compact' || short ? (short ? 'y' : 'x') : '';
+    if ((r.dataset.wheel || '') !== wheel) {
+      if (wheel) r.dataset.wheel = wheel; else delete r.dataset.wheel;
+      s.wheel?.setAxis(wheel || null);
+      frameChrome(s);
+    }
     // Paged: the panels show one page at a time with Layers as a tab (no room to stack them).
     const paged = panels === 'sheet' || (panels === 'drawer' && short);
     if (paged !== !!s.sheetMode) { s.sheetMode = paged; r.toggleAttribute('data-paged', paged); s.refreshPanels?.(); }
@@ -70,9 +77,10 @@ function applyPanels(s) {
   s.el.panels.dataset.view = s.sheetView;
   s.el.panels.inert = !shown;
   for (const b of s.root.querySelectorAll('.lls-panels-btn')) { b.setAttribute('aria-expanded', String(shown)); b.setAttribute('aria-pressed', String(shown)); }
-  const dl = s.root.querySelector('.lls-dock-layers');
-  dl?.setAttribute('aria-expanded', String(shown && s.sheetView === 'layers'));
-  dl?.classList.toggle('on', shown && s.sheetView === 'layers');
+  for (const dl of s.root.querySelectorAll('.lls-dock-layers, .lls-wd-layers')) {
+    dl.setAttribute('aria-expanded', String(shown && s.sheetView === 'layers'));
+    dl.classList.toggle('on', shown && s.sheetView === 'layers');
+  }
   if (s.doc !== undefined) s.refreshPanels();
 }
 
@@ -84,6 +92,7 @@ export function setMaximized(s, on) {
   const r = s.root;
   if (!!s.maximized === on) return;
   s.maximized = on;
+  if (on) s.scrollBack = { x: window.scrollX, y: window.scrollY };
   r.classList.toggle('lls-maximized', on);
   document.documentElement.classList.toggle('lls-has-maximized', on);
   lift(r, on);
@@ -99,7 +108,13 @@ export function setMaximized(s, on) {
     };
     document.addEventListener('fullscreenchange', sync);
     document.addEventListener('webkitfullscreenchange', sync);
+    // Turning the phone, or a browser bar sliding away, changes the visible size: follow it.
+    const resize = () => { syncViewport(s); requestAnimationFrame(() => { s.wheel?.measure(); frameChrome(s); if (s.doc && s.isFitted()) s.fit(); }); };
+    window.visualViewport?.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => { resize(); setTimeout(resize, 250); setTimeout(resize, 600); });
+    s.viewportSync = resize;
   }
+  syncViewport(s);
   if (on) {
     s.engaged = true;
     // On phones and tablets the browser's own bars eat a third of the screen, so ask for real full
@@ -112,7 +127,32 @@ export function setMaximized(s, on) {
     try { const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document); p?.catch?.(() => {}); } catch { /* ignore */ }
   }
   s.updateTouchGuard?.();
-  requestAnimationFrame(() => s.fit());
+  frameChrome(s);
+  requestAnimationFrame(() => { s.wheel?.measure(); frameChrome(s); s.fit(); });
+  if (!on && s.scrollBack) { const { x, y } = s.scrollBack; requestAnimationFrame(() => window.scrollTo(x, y)); }
+}
+
+/* iOS Safari has no element full screen, so the editor fills the *visible* viewport itself; its height
+ * follows visualViewport (dynamic toolbars, rotation) instead of a one-off 100vh. */
+function syncViewport(s) {
+  const r = s.root, vv = window.visualViewport;
+  if (s.maximized && vv && Math.abs(vv.scale - 1) < 0.01) r.style.setProperty('--lls-vh', `${Math.round(vv.height)}px`);
+  else r.style.removeProperty('--lls-vh');
+}
+
+/* Full-screen phones float the menu bar, options and wheel over the canvas like frosted glass, so the art is
+ * framed by their measured height rather than the whole viewport. */
+export function frameChrome(s) {
+  const r = s.root;
+  if (!s.maximized || !r.dataset.wheel) { s.fitInset = null; r.style.removeProperty('--lls-bar'); r.style.removeProperty('--lls-top'); return; }
+  const bar = r.querySelector('.lls-menubar'), opts = r.querySelector('.lls-options'), dock = r.querySelector('.lls-dock');
+  r.style.setProperty('--lls-bar', `${bar.offsetHeight}px`);
+  const mainTop = r.querySelector('.lls-main').getBoundingClientRect().top;
+  const chrome = Math.max(bar.getBoundingClientRect().bottom, opts.getBoundingClientRect().bottom) - mainTop + 6;
+  r.style.setProperty('--lls-top', `${Math.round(chrome + 2)}px`);
+  const d = dock.getBoundingClientRect(), vp = s.el.viewport.getBoundingClientRect();
+  // Portrait: the wheel sits under the art. Landscape: it is a column on the left.
+  s.fitInset = r.dataset.wheel === 'x' ? { top: chrome, bottom: Math.max(0, vp.bottom - d.top + 6), left: 0 } : { top: chrome, bottom: 0, left: Math.max(0, d.right - vp.left + 6) };
 }
 
 /* Lesson layouts give <main> a z-index (and sometimes a transform), which traps a position:fixed
