@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" aria-label="Diagram of software polygon rasterization and Z-buffering: 3D vertices are projected to 2D triangles, scanlines interpolate pixels horizontally between edges, and a depth buffer resolves occlusion.">
+  <!-- Background -->
+  <rect width="1000" height="560" fill="#f8fafc"/>
+  <rect width="1000" height="8" fill="#10b981"/>
+
+  <!-- Title & Lede -->
+  <text x="40" y="46" font-family="system-ui, -apple-system, sans-serif" font-size="25" font-weight="800" fill="#0f172a">Software Rasterization: From Wireframes to Solid Pixels</text>
+  <text x="40" y="74" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#475569">How software draws solid 3D faces without a GPU: triangle decomposition, scanline filling, and the Z-buffer.</text>
+
+  <!-- 3 Pipeline Step Boxes -->
+  <!-- Step 1: Vertices to Triangles -->
+  <g>
+    <rect x="50" y="110" width="280" height="300" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="50" y="110" width="280" height="38" rx="10" fill="#ecfdf5"/>
+    <text x="65" y="135" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#059669">1 · Triangle Projection</text>
+
+    <!-- Wireframe triangle with vertices -->
+    <polygon points="190,180 90,340 290,340" fill="none" stroke="#059669" stroke-width="2.5"/>
+    <circle cx="190" cy="180" r="7" fill="#059669"/>
+    <circle cx="90" cy="340" r="7" fill="#059669"/>
+    <circle cx="290" cy="340" r="7" fill="#059669"/>
+    <text x="190" y="170" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">V0 (x0, y0, z0)</text>
+    <text x="80" y="365" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#0f172a">V1 (x1, y1, z1)</text>
+    <text x="290" y="365" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">V2 (x2, y2, z2)</text>
+    <text x="190" y="280" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#64748b" text-anchor="middle">Every 3D mesh face is</text>
+    <text x="190" y="300" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#64748b" text-anchor="middle">split into flat triangles</text>
+  </g>
+
+  <!-- Step 2: Scanline Filling -->
+  <g>
+    <rect x="360" y="110" width="280" height="300" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="360" y="110" width="280" height="38" rx="10" fill="#eff6ff"/>
+    <text x="375" y="135" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#2563eb">2 · Scanline Interpolation</text>
+
+    <!-- Scanline filled triangle -->
+    <polygon points="500,180 400,340 600,340" fill="rgba(37, 99, 235, 0.08)" stroke="#2563eb" stroke-width="1.5"/>
+    <!-- Scanlines -->
+    <g stroke="#3b82f6" stroke-width="2">
+      <line x1="480" y1="212" x2="520" y2="212"/>
+      <line x1="460" y1="244" x2="540" y2="244"/>
+      <line x1="440" y1="276" x2="560" y2="276"/>
+      <line x1="420" y1="308" x2="580" y2="308"/>
+    </g>
+    <!-- Highlighted Active Scanline -->
+    <line x1="430" y1="292" x2="570" y2="292" stroke="#ef4444" stroke-width="4"/>
+    <circle cx="430" cy="292" r="5" fill="#ef4444"/>
+    <circle cx="570" cy="292" r="5" fill="#ef4444"/>
+    <text x="500" y="275" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#ef4444" text-anchor="middle">Left X → Right X</text>
+    <text x="500" y="375" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#64748b" text-anchor="middle">Horizontal spans drawn line by line</text>
+    <text x="500" y="393" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#64748b" text-anchor="middle">interpolating color and depth Z</text>
+  </g>
+
+  <!-- Step 3: Z-Buffer Depth Test -->
+  <g>
+    <rect x="670" y="110" width="280" height="300" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="670" y="110" width="280" height="38" rx="10" fill="#fdf2f8"/>
+    <text x="685" y="135" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#db2777">3 · The Z-Buffer Test</text>
+
+    <!-- Two overlapping triangles -->
+    <!-- Far blue triangle -->
+    <polygon points="760,200 700,340 850,340" fill="#93c5fd" stroke="#3b82f6" stroke-width="2"/>
+    <text x="735" y="280" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#1e3a8a">Z = 15</text>
+
+    <!-- Near pink triangle in front -->
+    <polygon points="830,170 780,310 920,310" fill="rgba(244, 114, 182, 0.9)" stroke="#db2777" stroke-width="2"/>
+    <text x="860" y="250" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#831843">Z = 6</text>
+
+    <text x="810" y="365" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#db2777" text-anchor="middle">if (newZ &lt; zBuffer[x, y])</text>
+    <text x="810" y="385" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#0f172a" text-anchor="middle">Write pixel &amp; update depth</text>
+  </g>
+
+  <!-- Bottom Summary Note -->
+  <rect x="50" y="435" width="900" height="90" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="75" y="465" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#0f172a">Why the Z-Buffer Beat the Painter's Algorithm:</text>
+  <text x="75" y="490" font-family="system-ui, sans-serif" font-size="13" font-weight="500" fill="#475569">The Painter's Algorithm sorts whole polygons back-to-front, but fails when triangles intersect or wrap around each other.</text>
+  <text x="75" y="510" font-family="system-ui, sans-serif" font-size="13" font-weight="500" fill="#475569">A Z-buffer checks depth per single pixel — resolving any overlap order perfectly in 1 pass.</text>
+</svg>

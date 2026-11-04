@@ -447,7 +447,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 71 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 73 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -489,34 +489,35 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-25** — Alan Turing and The Turing Test
 - **CSC-26** — AI Origins: ELIZA Chatbot
 - **CSC-27** — Rule Engine Expert System
-- **CSC-28** — Perceptron Lab
-- **CSC-29** — Chess: Origins and How to Play
-- **CSC-30** — 1v1 Game AI: Minimax
-- **CSC-31** — AI Chess Through History
-- **CSC-32** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-28** — 20Q Mind Reader & Information Theory
+- **CSC-29** — Perceptron Lab
+- **CSC-30** — Chess: Origins and How to Play
+- **CSC-31** — 1v1 Game AI: Minimax
+- **CSC-32** — AI Chess Through History
+- **CSC-33** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-33** — Grace Hopper
-- **CSC-34** — Margaret Hamilton: Software for the Moon
-- **CSC-35** — Steve Jobs
+- **CSC-34** — Grace Hopper
+- **CSC-35** — Margaret Hamilton: Software for the Moon
+- **CSC-36** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-36** — How the Web Works
-- **CSC-37** — Build Your Own Web — Web Design Pathway
-- **CSC-38** — Set Up Your First Site
-- **CSC-39** — Give the Page Meaning with HTML
-- **CSC-40** — Design with CSS
-- **CSC-41** — Make It Respond with JavaScript
-- **CSC-42** — Test, Debug, and Include Everyone
-- **CSC-43** — Website Project Studios
-- **CSC-44** — Web Studio — Draw, Blocks and Code
-- **CSC-45** — The Flash Era: What Happened to Browser Games
-- **CSC-46** — Build a Home for Interactive Work
-- **CSC-47** — Publish and Maintain Your Website
-- **CSC-48** — Tim Berners-Lee and the First Website
-- **CSC-49** — Extend into WebXR
+- **CSC-37** — How the Web Works
+- **CSC-38** — Build Your Own Web — Web Design Pathway
+- **CSC-39** — Set Up Your First Site
+- **CSC-40** — Give the Page Meaning with HTML
+- **CSC-41** — Design with CSS
+- **CSC-42** — Make It Respond with JavaScript
+- **CSC-43** — Test, Debug, and Include Everyone
+- **CSC-44** — Website Project Studios
+- **CSC-45** — Web Studio — Draw, Blocks and Code
+- **CSC-46** — The Flash Era: What Happened to Browser Games
+- **CSC-47** — Build a Home for Interactive Work
+- **CSC-48** — Publish and Maintain Your Website
+- **CSC-49** — Tim Berners-Lee and the First Website
+- **CSC-50** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -525,34 +526,35 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **GAM-01** — What Makes a Game?
 - **GAM-02** — VS Code for Game Dev
 - **GAM-03** — From Scratch: Build a Browser Game
-- **GAM-04** — Inside Classic Snake: How the Game Works
-- **GAM-05** — 2D Game Engines: Kaplay & Phaser
-- **GAM-06** — Tool Rosetta: One Idea, Every Engine & 3D App
-- **GAM-07** — Rosetta 2D: Our Own Game Engine
-- **GAM-08** — Python & Pygame: The Game Loop
+- **GAM-04** — 3D from Scratch: Projection, Raycasting & Render Engines
+- **GAM-05** — Inside Classic Snake: How the Game Works
+- **GAM-06** — 2D Game Engines: Kaplay & Phaser
+- **GAM-07** — Tool Rosetta: One Idea, Every Engine & 3D App
+- **GAM-08** — Rosetta 2D: Our Own Game Engine
+- **GAM-09** — Python & Pygame: The Game Loop
 
 ### Build a Classic
 
-- **GAM-09** — Trail Game Builder: Make Your Own Oregon Trail
-- **GAM-10** — Lemonade Tycoon Builder: Make Your Own Business Game
-- **GAM-11** — Text Adventure Builder: Make Your Own Zork
-- **GAM-12** — Roguelike Builder: Make Your Own Rogue
+- **GAM-10** — Trail Game Builder: Make Your Own Oregon Trail
+- **GAM-11** — Lemonade Tycoon Builder: Make Your Own Business Game
+- **GAM-12** — Text Adventure Builder: Make Your Own Zork
+- **GAM-13** — Roguelike Builder: Make Your Own Rogue
 
 ### Game Jam Project
 
-- **GAM-13** — Game Jam Week: From Idea to Demo
+- **GAM-14** — Game Jam Week: From Idea to Demo
 
 ### Godot Engine Pathway
 
-- **GAM-14** — Godot Game Developer Pathway
-- **GAM-15** — Godot Basics: Your First 3D Room
-- **GAM-16** — GDScript Fundamentals
-- **GAM-17** — Player Controller & Camera
-- **GAM-18** — Collectibles, Signals & UI
-- **GAM-19** — Enemies & Simple AI
-- **GAM-20** — Animation & Game Feel
-- **GAM-21** — Levels & Game State
-- **GAM-22** — Export, Test & Publish
+- **GAM-15** — Godot Game Developer Pathway
+- **GAM-16** — Godot Basics: Your First 3D Room
+- **GAM-17** — GDScript Fundamentals
+- **GAM-18** — Player Controller & Camera
+- **GAM-19** — Collectibles, Signals & UI
+- **GAM-20** — Enemies & Simple AI
+- **GAM-21** — Animation & Game Feel
+- **GAM-22** — Levels & Game State
+- **GAM-23** — Export, Test & Publish
 
 # Volume VI — Visual Design, Communication & Human Systems
 

@@ -1,0 +1,559 @@
+/**
+ * Styles for "3D from Scratch: Projection, Raycasting & Render Engines"
+ * Mr. Scandrett's ClassroomOS
+ */
+
+:root {
+  --engine-acc: #0284c7;
+  --engine-acc-soft: rgba(2, 132, 199, 0.1);
+  --engine-acc-border: rgba(2, 132, 199, 0.3);
+}
+
+.fs-page {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1rem 0 3rem;
+}
+
+/* Studio Wrapper (Creation App) */
+.engine-studio {
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--line, #d2d2d7);
+  border-radius: 20px;
+  padding: 1.4rem clamp(1rem, 3vw, 1.8rem);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow, 0 12px 34px rgba(0, 0, 0, 0.06));
+}
+
+.engine-studio-header {
+  margin-bottom: 1.2rem;
+}
+
+.engine-studio-kicker {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--engine-acc);
+  margin: 0 0 0.25rem;
+}
+
+.engine-studio-header h2 {
+  font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.02em;
+}
+
+.engine-studio-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary, #475569);
+  max-width: 72ch;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* Tab Navigation Bar */
+.engine-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--line, #e2e8f0);
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.2rem;
+}
+
+.engine-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.15s ease;
+}
+
+.engine-tab-btn:hover {
+  color: var(--text, #0f172a);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.engine-tab-btn.active,
+.engine-tab-btn[aria-selected="true"] {
+  color: var(--engine-acc);
+  border-bottom-color: var(--engine-acc);
+  background: var(--engine-acc-soft);
+}
+
+/* Panels */
+.engine-panel {
+  display: block;
+}
+
+.engine-panel[hidden] {
+  display: none;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Canvas Stages */
+.stage-wrap {
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #1e293b;
+  position: relative;
+}
+
+.stage-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.stage-caption {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  padding: 0.4rem 0.8rem;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Controls Grid */
+.controls-card {
+  background: var(--surface-0, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.controls-card h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.8rem;
+  color: var(--text, #0f172a);
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.control-label-wrap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, #475569);
+}
+
+.control-val {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  color: var(--engine-acc);
+}
+
+.control-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--engine-acc);
+  cursor: pointer;
+}
+
+.control-row select {
+  font-size: 0.84rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--line, #cbd5e1);
+  background: var(--white, #fff);
+  color: var(--text, #0f172a);
+}
+
+/* Math Inspector Box */
+.math-inspector {
+  margin-top: 1rem;
+  background: #020617;
+  border: 1.5px solid #1e293b;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  color: #f8fafc;
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+}
+
+.math-inspector h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #38bdf8;
+  font-family: system-ui, sans-serif;
+}
+
+.math-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #1e293b;
+}
+
+.math-item:last-child {
+  border-bottom: none;
+}
+
+.math-item span {
+  color: #94a3b8;
+}
+
+.math-item strong {
+  color: #facc15;
+}
+
+/* Split View for Raycasting */
+.ray-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  background: #020617;
+  padding: 0.8rem;
+  border-radius: 12px;
+}
+
+@media (max-width: 600px) {
+  .ray-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ray-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ray-box span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 0.4rem;
+}
+
+.ray-box canvas {
+  width: 100%;
+  max-width: 256px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+/* D-Pad Buttons for Raycaster */
+.dpad-grid {
+  display: grid;
+  grid-template-columns: 44px 44px 44px;
+  gap: 4px;
+  justify-content: center;
+  margin: 0.6rem 0;
+}
+
+.dpad-btn {
+  height: 38px;
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 6px;
+  background: var(--surface-panel, #ffffff);
+  color: var(--text, #0f172a);
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dpad-btn:hover {
+  background: var(--engine-acc-soft);
+  border-color: var(--engine-acc);
+  color: var(--engine-acc);
+}
+
+/* Hero Section */
+.fl-hero {
+  margin-bottom: 1.5rem;
+}
+
+.fl-hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  letter-spacing: -0.02em;
+  margin: 0.4rem 0 0.6rem;
+  line-height: 1.15;
+}
+
+.fl-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #64748b);
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.fl-hero-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.fl-lede {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #334155);
+  max-width: 72ch;
+  margin: 0;
+}
+
+/* Content Cards */
+.fl-card {
+  background: var(--surface-panel, #ffffff);
+  border: 1px solid var(--line, #d2d2d7);
+  border-left: 4px solid var(--card-accent, var(--engine-acc));
+  border-radius: 16px;
+  padding: 1.4rem clamp(1rem, 3vw, 1.8rem);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow, 0 10px 30px rgba(0, 0, 0, 0.05));
+}
+
+.fl-card h2 {
+  font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+  margin: 0 0 0.7rem;
+  letter-spacing: -0.02em;
+}
+
+.fl-card h3 {
+  font-size: 1.05rem;
+  margin: 1.2rem 0 0.4rem;
+}
+
+.fl-card p {
+  font-size: 0.92rem;
+  line-height: 1.68;
+  color: var(--text-secondary, #334155);
+  margin: 0 0 0.8rem;
+}
+
+.fl-card p:last-child {
+  margin-bottom: 0;
+}
+
+/* Figures */
+.fl-card figure {
+  margin: 1.2rem 0;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface-0, #f8fafc);
+}
+
+.fl-card figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fl-card figcaption {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary, #64748b);
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid var(--line, #e2e8f0);
+  background: var(--surface-panel, #ffffff);
+}
+
+/* Code & Formula Displays */
+.formula-block {
+  background: #0f172a;
+  border-left: 3.5px solid #38bdf8;
+  border-radius: 8px;
+  padding: 0.85rem 1.1rem;
+  margin: 0.9rem 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #f8fafc;
+  overflow-x: auto;
+}
+
+.formula-block code {
+  color: #38bdf8;
+}
+
+.scratch-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.scratch-card {
+  border: 1.5px solid rgba(255, 171, 25, 0.4);
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(255, 191, 0, 0.05);
+}
+
+.scratch-card h4 {
+  margin: 0 0 0.5rem;
+  color: #d97706;
+  font-size: 0.92rem;
+}
+
+.scratch-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.sb-block {
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  color: #fff;
+}
+
+.sb-pen { background: #0fbd8c; }
+.sb-motion { background: #4c97ff; }
+.sb-control { background: #ffab19; }
+.sb-operators { background: #59c059; }
+.sb-variables { background: #ff8c1a; }
+
+/* Comparison Table */
+.engine-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+}
+
+.engine-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  text-align: left;
+}
+
+.engine-table th {
+  background: var(--surface-0, #f8fafc);
+  padding: 0.65rem 0.85rem;
+  border-bottom: 2px solid var(--line, #cbd5e1);
+  font-weight: 700;
+  color: var(--text, #0f172a);
+}
+
+.engine-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  color: var(--text-secondary, #334155);
+}
+
+.engine-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Quiz Section */
+.quiz-box {
+  background: var(--surface-0, #f8fafc);
+  border: 1.5px solid var(--line, #cbd5e1);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+
+.quiz-prompt {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text, #0f172a);
+  margin-bottom: 0.9rem;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.quiz-opt-btn {
+  text-align: left;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid var(--line, #cbd5e1);
+  border-radius: 8px;
+  background: var(--surface-panel, #ffffff);
+  color: var(--text, #0f172a);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quiz-opt-btn:hover:not(:disabled) {
+  border-color: var(--engine-acc);
+  background: var(--engine-acc-soft);
+}
+
+.quiz-opt-btn.correct {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  color: #065f46;
+}
+
+.quiz-opt-btn.wrong {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+}
+
+.quiz-feedback {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 0.6rem;
+  min-height: 1.4rem;
+}
+
+.quiz-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary, #64748b);
+}
+
+.quiz-next {
+  background: var(--engine-acc);
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}

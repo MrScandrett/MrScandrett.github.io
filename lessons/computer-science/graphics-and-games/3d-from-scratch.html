@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D from Scratch: Projection, Raycasting &amp; Render Engines · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Discover how flat 2D screens create 3D depth: perspective division math, wireframes, DDA raycasting, Mode 7 floors, software rasterization with Z-buffers, and raytracing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/3d-from-scratch.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="fs-page">
+
+        <!-- 1. CREATION SOFTWARE FIRST INSIDE MAIN -->
+        <div class="creation-app" data-creation-app aria-label="Creation workspace">
+          <section class="engine-studio" id="engine-studio" aria-label="3D Engine Explorer Studio">
+            <div class="engine-studio-header">
+              <p class="engine-studio-kicker">Interactive Studio · Pure 2D Canvas Math · Zero 3D Libraries</p>
+              <h2>The 3D Engine Explorer</h2>
+              <p class="engine-studio-desc">Interact with the core algorithms that trick human eyes into seeing 3D space on a flat glass screen. Switch between perspective wireframes, Wolfenstein 2D raycasting, SNES Mode 7 ground planes, and mathematical raytracing.</p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="engine-tabs" role="tablist" aria-label="Engine modes">
+              <button type="button" class="engine-tab-btn active" role="tab" id="tab-btn-proj" data-engine-tab="projection" aria-selected="true" aria-controls="panel-projection">1 · 3D Projection &amp; Wireframe</button>
+              <button type="button" class="engine-tab-btn" role="tab" id="tab-btn-ray" data-engine-tab="raycasting" aria-selected="false" aria-controls="panel-raycasting">2 · Wolfenstein 2D Raycaster</button>
+              <button type="button" class="engine-tab-btn" role="tab" id="tab-btn-m7" data-engine-tab="mode7" aria-selected="false" aria-controls="panel-mode7">3 · Mode 7 Perspective Ground</button>
+              <button type="button" class="engine-tab-btn" role="tab" id="tab-btn-rt" data-engine-tab="raytracer" aria-selected="false" aria-controls="panel-raytracer">4 · Software Raytracer</button>
+            </div>
+
+            <!-- Panel 1: Projection -->
+            <div class="engine-panel active" id="panel-projection" role="tabpanel" aria-labelledby="tab-btn-proj">
+              <div class="panel-grid">
+                <div class="stage-wrap">
+                  <canvas id="proj-canvas" width="540" height="360" role="img" aria-label="3D wireframe object projected onto 2D canvas. Drag on canvas to orbit camera."></canvas>
+                  <div class="stage-caption">
+                    <span>Drag canvas to orbit camera (Yaw &amp; Pitch)</span>
+                    <span>Vertex V0 highlighted in red</span>
+                  </div>
+                </div>
+
+                <div class="controls-card">
+                  <h3>Camera &amp; Math Controls</h3>
+
+                  <div class="control-row">
+                    <label for="proj-model" class="control-label-wrap">Model</label>
+                    <select id="proj-model">
+                      <option value="cube">Cube (8 vertices, 12 edges)</option>
+                      <option value="pyramid">Pyramid (5 vertices, 8 edges)</option>
+                      <option value="diamond">Octahedron Diamond (6 vertices, 12 edges)</option>
+                    </select>
+                  </div>
+
+                  <div class="control-row">
+                    <label for="proj-mode" class="control-label-wrap">Projection Mode</label>
+                    <select id="proj-mode">
+                      <option value="perspective">Perspective (x' = X × FOV / Z)</option>
+                      <option value="parallel">Parallel / Axonometric (no foreshortening)</option>
+                    </select>
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="proj-fov">Field of View (FOV)</label>
+                      <span class="control-val" id="val-proj-fov">260</span>
+                    </div>
+                    <input type="range" id="proj-fov" min="100" max="500" value="260" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="proj-dist">Camera Distance (Z)</label>
+                      <span class="control-val" id="val-proj-dist">4.5</span>
+                    </div>
+                    <input type="range" id="proj-dist" min="2" max="10" step="0.1" value="4.5" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="proj-yaw">Yaw Rotation</label>
+                      <span class="control-val" id="val-proj-yaw">35°</span>
+                    </div>
+                    <input type="range" id="proj-yaw" min="0" max="360" value="35" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="proj-pitch">Pitch Elevation</label>
+                      <span class="control-val" id="val-proj-pitch">20°</span>
+                    </div>
+                    <input type="range" id="proj-pitch" min="-60" max="60" value="20" />
+                  </div>
+
+                  <!-- Math Breakdown -->
+                  <div class="math-inspector">
+                    <h4>Live Vertex V0 Math</h4>
+                    <div class="math-item"><span>World Point (X,Y,Z):</span> <strong id="math-world">(-1, -1, -1)</strong></div>
+                    <div class="math-item"><span>Camera Depth (ΔZ):</span> <strong id="math-rel">ΔZ = 4.50</strong></div>
+                    <div class="math-item"><span>Rotated Vector:</span> <strong id="math-rot">(0.00, 0.00, 0.00)</strong></div>
+                    <div class="math-item"><span>Screen Coordinate:</span> <strong id="math-screen">(0, 0)</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 2: Raycasting -->
+            <div class="engine-panel" id="panel-raycasting" role="tabpanel" aria-labelledby="tab-btn-ray" hidden>
+              <div class="panel-grid">
+                <div class="ray-split">
+                  <div class="ray-box">
+                    <span>2D Overhead Map (DDA Rays)</span>
+                    <canvas id="ray-map-canvas" width="256" height="256" role="img" aria-label="Top-down 2D maze map showing casting rays. Click to reposition player."></canvas>
+                  </div>
+                  <div class="ray-box">
+                    <span>First-Person 3D View (Vertical Slices)</span>
+                    <canvas id="ray-view-canvas" width="320" height="240" role="img" aria-label="First-person 3D view rendered from raycasting column heights."></canvas>
+                  </div>
+                </div>
+
+                <div class="controls-card">
+                  <h3>Raycaster Controls</h3>
+                  <p style="font-size:0.8rem;color:var(--text-secondary,#64748b);margin-top:0;">Walk through the maze using <strong>W A S D</strong> or the directional arrows below.</p>
+
+                  <div class="dpad-grid" aria-label="Player movement">
+                    <span></span><button type="button" class="dpad-btn" data-ray-move="forward" aria-label="Forward">▲</button><span></span>
+                    <button type="button" class="dpad-btn" data-ray-move="left" aria-label="Turn left">◀</button>
+                    <button type="button" class="dpad-btn" data-ray-move="backward" aria-label="Backward">▼</button>
+                    <button type="button" class="dpad-btn" data-ray-move="right" aria-label="Turn right">▶</button>
+                  </div>
+
+                  <div class="control-row">
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.84rem;font-weight:700;cursor:pointer;">
+                      <input type="checkbox" id="ray-fisheye" checked />
+                      Enable Fisheye Cosine Correction
+                    </label>
+                    <span style="font-size:0.75rem;color:var(--text-secondary,#64748b);">Uncheck to see raw Euclidean distances curve flat walls into a fishbowl!</span>
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="ray-res">Ray Count (Columns)</label>
+                      <span class="control-val" id="val-ray-res">80</span>
+                    </div>
+                    <input type="range" id="ray-res" min="16" max="160" step="4" value="80" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="ray-fov">Field of View (FOV)</label>
+                      <span class="control-val" id="val-ray-fov">60°</span>
+                    </div>
+                    <input type="range" id="ray-fov" min="30" max="90" value="60" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 3: Mode 7 -->
+            <div class="engine-panel" id="panel-mode7" role="tabpanel" aria-labelledby="tab-btn-m7" hidden>
+              <div class="panel-grid">
+                <div class="stage-wrap">
+                  <canvas id="mode7-canvas" width="360" height="240" role="img" aria-label="Mode 7 affine ground plane rendering from horizontal scanlines."></canvas>
+                  <div class="stage-caption">
+                    <span>Horizontal scanlines sampled below the purple horizon line</span>
+                    <span>Continuous affine texture mapping</span>
+                  </div>
+                </div>
+
+                <div class="controls-card">
+                  <h3>Mode 7 Horizon &amp; Ground Controls</h3>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="m7-heading">Steering / Heading Angle</label>
+                    </div>
+                    <input type="range" id="m7-heading" min="-90" max="90" value="0" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="m7-speed">Forward Speed</label>
+                    </div>
+                    <input type="range" id="m7-speed" min="0" max="100" value="30" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="m7-height">Camera Elevation (Height)</label>
+                    </div>
+                    <input type="range" id="m7-height" min="10" max="90" value="35" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="m7-horizon">Horizon Line Y</label>
+                    </div>
+                    <input type="range" id="m7-horizon" min="40" max="140" value="85" />
+                  </div>
+
+                  <div class="formula-block" style="margin-top:0.8rem;">
+                    <code>Scanline Ground Distance: Z = (Height × Dist) / (y - HorizonY)</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 4: Raytracer -->
+            <div class="engine-panel" id="panel-raytracer" role="tabpanel" aria-labelledby="tab-btn-rt" hidden>
+              <div class="panel-grid">
+                <div class="stage-wrap">
+                  <canvas id="rt-canvas" width="100" height="75" style="image-rendering:pixelated;" role="img" aria-label="Software raytracer rendering a reflective sphere, shadow ray, and checkerboard floor in pure JavaScript."></canvas>
+                  <div class="stage-caption">
+                    <span>Software Raytracer running on CPU in JavaScript</span>
+                    <span>Sharp shadows &amp; specular reflection</span>
+                  </div>
+                </div>
+
+                <div class="controls-card">
+                  <h3>Raytracer Optics Controls</h3>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="rt-light">Light Position (X)</label>
+                    </div>
+                    <input type="range" id="rt-light" min="-4" max="4" step="0.2" value="1.8" />
+                  </div>
+
+                  <div class="control-row">
+                    <div class="control-label-wrap">
+                      <label for="rt-refl">Sphere Reflectivity (Specular)</label>
+                    </div>
+                    <input type="range" id="rt-refl" min="0" max="90" value="45" />
+                  </div>
+
+                  <div class="control-row">
+                    <label for="rt-res" class="control-label-wrap">Rendering Resolution</label>
+                    <select id="rt-res">
+                      <option value="80">Fast (80 × 60 pixels)</option>
+                      <option value="120">Balanced (120 × 90 pixels)</option>
+                      <option value="160">Detailed (160 × 120 pixels)</option>
+                    </select>
+                  </div>
+
+                  <div class="formula-block" style="margin-top:0.8rem;">
+                    <code>Shadow Ray: blocked by sphere ⇒ 0 diffuse light (hard shadow)</code><br />
+                    <code>Reflection Ray: R = D - 2(D · N)N ⇒ samples floor colors</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </section>
+        </div>
+
+        <!-- 2. HERO SECTION -->
+        <nav class="ll-breadcrumb" aria-label="Breadcrumb">
+          <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../../../steam-lessons.html">Lessons</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <a href="../computer-science-pathway.html">Computer Science</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
+          <span class="ll-crumb-current" aria-current="page">3D from Scratch</span>
+        </nav>
+
+        <section class="hero fl-hero">
+          <p class="eyebrow">Computer Science · Graphics &amp; Game Development · Math Algorithms</p>
+          <h1>3D from Scratch: Projection, Raycasting &amp; Render Engines</h1>
+          <div class="fl-hero-meta">
+            <span>Perspective Division</span><span class="dot"></span>
+            <span>Rotation Matrices</span><span class="dot"></span>
+            <span>DDA Raycasting</span><span class="dot"></span>
+            <span>Mode 7 Scanlines</span><span class="dot"></span>
+            <span>Z-Buffer Rasterization</span><span class="dot"></span>
+            <span>Software Raytracing</span>
+          </div>
+          <p class="fl-lede">Every computer monitor, phone screen, and VR display in the world is completely flat: a two-dimensional grid of glowing pixels. There is no physical depth behind the glass. In this lesson, we break down the mathematical formulas and graphics algorithms that trick our brains into experiencing three-dimensional space—from retro wireframes and Wolfenstein-style raycasters to SNES Mode 7 and modern raytracers.</p>
+        </section>
+
+        <!-- 3. LESSON NAVIGATION -->
+        <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#sec-illusion">The 2D Illusion</a>
+          <a href="#sec-projection">Perspective Division</a>
+          <a href="#sec-parallel">Parallel &amp; 2.5D</a>
+          <a href="#sec-raster">Software Rasterization</a>
+          <a href="#sec-raycast">2D Raycasting (Wolfenstein)</a>
+          <a href="#sec-mode7">Mode 7 Ground Planes</a>
+          <a href="#sec-raytrace">Raytracing &amp; Optics</a>
+          <a href="#sec-scratch">Scratch &amp; TurboWarp</a>
+          <a href="#sec-quiz">Practice Quiz</a>
+        </nav>
+
+        <!-- SECTION 1: THE ILLUSION -->
+        <section class="fl-card" id="sec-illusion" style="--card-accent:#0284c7;">
+          <h2>1 · The Grand Illusion: How 2D Screens Fake Depth</h2>
+          <p>When you sit in front of a monitor playing a 3D game, your eyes are not taking in light from a three-dimensional world. Your eyes are focusing on a flat sheet of glass less than two feet from your face. The 3D world you experience is entirely an <strong>optical illusion</strong> constructed by your brain from visual depth cues:</p>
+          <ul>
+            <li><strong>Linear Perspective:</strong> Parallel lines converge toward a single vanishing point as they recede into the distance.</li>
+            <li><strong>Relative Size:</strong> Identical objects cover fewer pixels on screen the farther away they are.</li>
+            <li><strong>Occlusion:</strong> Opaque objects in front hide objects behind them.</li>
+            <li><strong>Motion Parallax:</strong> Objects closer to you move across your field of view faster than distant mountains or clouds.</li>
+          </ul>
+
+          <h3>The Spectrum of 3D in Game History</h3>
+          <p>Over the last 40 years, game developers and graphics programmers invented several clever ways to produce these depth cues. We can categorize them into three major families:</p>
+
+          <div class="engine-table-wrap">
+            <table class="engine-table">
+              <thead>
+                <tr>
+                  <th scope="col">Technique Family</th>
+                  <th scope="col">How It Works</th>
+                  <th scope="col">Underlying Math</th>
+                  <th scope="col">Classic Examples</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Static Illusions</strong></td>
+                  <td>Pre-rendered 2D art arranged with fixed perspective angles or depth scaling.</td>
+                  <td>None (drawn by artists). Sprites are stacked like Lego blocks or scaled over a painted room backdrop.</td>
+                  <td><em>Diablo</em> (isometric tiles), <em>Five Nights at Freddy's</em> (1-point room images with interactive sprites).</td>
+                </tr>
+                <tr>
+                  <td><strong>Pseudo-3D (2D Geometry)</strong></td>
+                  <td>The game world is strictly 2D in memory, but rendered using perspective projection tricks on screen slices.</td>
+                  <td>Grid DDA raycasting (vertical wall stripes) or affine horizon scanlines (horizontal ground strips).</td>
+                  <td><em>Wolfenstein 3D</em>, <em>Doom</em>, <em>F-Zero</em> (Mode 7), <em>OutRun</em> (scaling road sprites).</td>
+                </tr>
+                <tr>
+                  <td><strong>True 3D Pipelines</strong></td>
+                  <td>Objects exist as full 3D coordinates $(X, Y, Z)$ and are mathematically transformed onto the 2D display.</td>
+                  <td>Matrix transformations, perspective division, polygon scanline rasterization, or ray-surface optical simulation.</td>
+                  <td><em>Battlezone</em> (wireframe), <em>Star Fox</em>, <em>Quake</em> (software rasterizer), modern Unreal/Godot engines.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SECTION 2: PERSPECTIVE PROJECTION -->
+        <section class="fl-card" id="sec-projection" style="--card-accent:#2563eb;">
+          <h2>2 · First Principles: The Mathematics of Perspective Projection</h2>
+          <p>Suppose you have a point in 3D space: $(X, Y, Z)$. The monitor only has two axes: horizontal pixels $(x')$ and vertical pixels $(y')$. How do you turn three numbers into two?</p>
+          <p>The answer is <strong>Thales' Intercept Theorem (Similar Triangles)</strong>. Imagine an eye or camera sitting at the origin $(0, 0, 0)$ looking straight down the $+Z$ axis. A transparent projection screen sits in front of the camera at a distance $d$ (which represents your <strong>Field of View</strong> or focal length).</p>
+
+          <figure data-zoomable data-lightbox-group="3d-scratch-figs">
+            <img src="../../../assets/images/lessons/3d-from-scratch/perspective-projection.svg" alt="Diagram of 3D perspective projection using similar triangles: a camera at the origin looks toward a 3D point P(X,Y,Z). The light ray pierces the 2D projection screen at distance d (FOV), yielding screen coordinate x' = X * (d / Z)." width="1000" height="560" loading="lazy" />
+            <figcaption><strong>Figure 1 · The geometry of perspective division.</strong> The right triangle formed by the eye, the screen, and the screen point $(x', y')$ is similar to the larger triangle formed by the eye, the world depth $Z$, and the world point $(X, Y)$. Dividing by $Z$ is the universal rule of 3D graphics.</figcaption>
+          </figure>
+
+          <div class="formula-block">
+            <strong>The Core Perspective Projection Formulas:</strong><br />
+            <code>DrawX = (PointX - CameraX) × (FOV / (PointZ - CameraZ)) + CenterX</code><br />
+            <code>DrawY = (PointY - CameraY) × (FOV / (PointZ - CameraZ)) + CenterY</code>
+          </div>
+
+          <p>Notice what happens as depth $Z$ increases:</p>
+          <ul>
+            <li>When $Z$ is small (close to the camera), the denominator $(PointZ - CameraZ)$ is small, so the scaling factor is large—the point is pushed far outward toward the screen edge.</li>
+            <li>When $Z$ is large (far away), the denominator is huge, so the scaling factor approaches zero—the point is pulled tight toward the screen's vanishing point $(CenterX, CenterY)$.</li>
+          </ul>
+
+          <h3>Camera Rotation: Rotating the World Around You</h3>
+          <p>When you look around in a 3D game, your camera does not physically rotate your computer screen. Instead, the game rotates <strong>every object in the world around the camera</strong> in the opposite direction! To rotate a 3D point by angle $\theta$ around the vertical axis (Yaw):</p>
+          <div class="formula-block">
+            <code>X_rotated = X × cos(θ) - Z × sin(θ)</code><br />
+            <code>Z_rotated = X × sin(θ) + Z × cos(θ)</code>
+          </div>
+          <p>Once you transform the $(X, Y, Z)$ vertices of a 3D shape, you can connect them with 2D lines to create a <strong>wireframe</strong> (the technique used by early arcade machines like <em>Battlezone</em> and <em>Asteroids</em>), or draw 2D sprites at the projected coordinates scaled inversely with depth ($1/Z$).</p>
+        </section>
+
+        <!-- SECTION 3: PARALLEL & 2.5D -->
+        <section class="fl-card" id="sec-parallel" style="--card-accent:#059669;">
+          <h2>3 · Parallel, Axonometric &amp; 2.5D Projections</h2>
+          <p>What if you <em>don't</em> divide by depth $Z$? That is <strong>parallel projection</strong> (also called orthographic or axonometric projection). In a parallel projection, rays of sight do not converge on a single camera point—they travel perfectly parallel to each other.</p>
+
+          <div class="formula-block">
+            <strong>Parallel / Axonometric Projection Formula:</strong><br />
+            <code>DrawX = (PointX - CameraX) + CenterX</code><br />
+            <code>DrawY = (PointY - CameraY) + ((PointZ - CameraZ) / DepthFactor) + CenterY</code>
+          </div>
+
+          <p>Because there is no division by $Z$:</p>
+          <ul>
+            <li><strong>Parallel lines never meet:</strong> Edges that are parallel in 3D space remain strictly parallel on your 2D screen.</li>
+            <li><strong>Zero perspective foreshortening:</strong> A cube that is 100 meters away looks the exact same size as a cube 1 meter away.</li>
+            <li><strong>The Depth Factor:</strong> Controls how much the $Z$ axis tilts the screen vertically. A factor of 2 creates a standard isometric or dimetric slant.</li>
+          </ul>
+
+          <div class="ll-accordion-group">
+            <details class="ll-accordion">
+              <summary>What does "2.5D" really mean?</summary>
+              <div class="ll-accordion-body">
+                <p>The term "2.5D" is used in two different ways across gaming:</p>
+                <ol>
+                  <li><strong>3D Math without Full Camera Freedom:</strong> A game whose engine calculates full 3D coordinates $(X, Y, Z)$, but locks the camera to a fixed parallel or side-scrolling perspective (e.g. <em>Super Mario 3D Land</em> or <em>Diablo</em>).</li>
+                  <li><strong>2D Graphics Faking 3D:</strong> A 2D sprite engine that uses a "height" variable (like $Z$) or skews the screen by 10–15 degrees to fake turning without true rotational matrices.</li>
+                </ol>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- SECTION 4: SOFTWARE RASTERIZATION -->
+        <section class="fl-card" id="sec-raster" style="--card-accent:#10b981;">
+          <h2>4 · Software Rasterization: Drawing Solid Triangles Without a GPU</h2>
+          <p>Wireframes show the edges of an object, but what if you want solid, opaque surfaces? That requires <strong>rasterization</strong>—converting continuous geometric shapes into discrete screen pixels.</p>
+
+          <figure data-zoomable data-lightbox-group="3d-scratch-figs">
+            <img src="../../../assets/images/lessons/3d-from-scratch/software-rasterization.svg" alt="Diagram of software polygon rasterization and Z-buffering: 3D vertices are projected to 2D triangles, scanlines interpolate pixels horizontally between edges, and a depth buffer resolves occlusion." width="1000" height="560" loading="lazy" />
+            <figcaption><strong>Figure 2 · The software rasterization pipeline.</strong> Every solid 3D face is split into triangles. The software interpolates horizontal spans line by line (scanlines) and tests each pixel against the depth Z-buffer.</figcaption>
+          </figure>
+
+          <h3>The Rasterization Pipeline in Four Steps:</h3>
+          <ol>
+            <li><strong>Triangulation:</strong> Every complex polygon (quads, pentagons, n-gons) is divided into triangles $(V_0, V_1, V_2)$. Triangles are always flat (planar) and mathematically easy to fill.</li>
+            <li><strong>Backface Culling:</strong> Calculate the triangle's normal vector. If it faces away from the camera, skip it immediately—there is no need to draw faces on the back of an opaque solid!</li>
+            <li><strong>Scanline Interpolation:</strong> Sort the triangle's three vertices from top to bottom ($y_0 \le y_1 \le y_2$). For each horizontal row $y$, find the left edge $x_{left}$ and right edge $x_{right}$, then draw a horizontal line of pixels between them.</li>
+            <li><strong>The Z-Buffer (Depth Buffer):</strong> What happens when two triangles overlap? Early games used the <em>Painter's Algorithm</em> (sorting whole polygons back-to-front), but it failed when triangles intersected or wrapped around each other. Modern software uses a <strong>Z-Buffer</strong>: a 2D memory array that remembers the closest depth $Z$ drawn at every single pixel $(x, y)$. If the new pixel is closer ($Z_{new} < Z_{buffer}[x, y]$), it writes the color and updates the depth; if it is farther behind, it is discarded.</li>
+          </ol>
+        </section>
+
+        <!-- SECTION 5: 2D RAYCASTING -->
+        <section class="fl-card" id="sec-raycast" style="--card-accent:#0284c7;">
+          <h2>5 · Pseudo-3D &amp; 2D Raycasting: The Wolfenstein 3D Revolution</h2>
+          <p>In 1992, John Carmack realized that running a full 3D polygon rasterizer on a 1990s 386 PC was too slow for fast action. He pioneered <strong>2D Raycasting</strong> in <em>Wolfenstein 3D</em>. The brilliant insight was: <strong>the entire world is just a flat 2D overhead tile map</strong>, but the player sees a convincing first-person 3D dungeon!</p>
+
+          <figure data-zoomable data-lightbox-group="3d-scratch-figs">
+            <img src="../../../assets/images/lessons/3d-from-scratch/raycasting-dda.svg" alt="Diagram comparing top-down 2D grid raycasting with first-person 3D column rendering, illustrating ray casting, grid DDA stepping, and the cosine fisheye correction." width="1000" height="560" loading="lazy" />
+            <figcaption><strong>Figure 3 · How 2D raycasting builds 3D vistas.</strong> For each column on the screen, a ray is cast across the 2D grid. When it strikes a wall, its distance determines the height of a single vertical wall slice on screen.</figcaption>
+          </figure>
+
+          <h3>The Raycasting Loop:</h3>
+          <p>If your screen is 320 pixels wide, you cast 320 rays across the player's field of view:</p>
+          <ol>
+            <li><strong>Cast a ray</strong> from player $(px, py)$ at angle $\theta$.</li>
+            <li><strong>DDA Algorithm (Digital Differential Analyzer):</strong> Instead of marching forward in tiny steps (which is slow and can slip through wall corners), DDA steps from grid boundary to grid boundary along the $X$ and $Y$ tile lines. It reaches the wall in just a few mathematical steps.</li>
+            <li><strong>Measure distance $d$</strong> to the solid wall tile.</li>
+            <li><strong>Fisheye Correction:</strong> Raw Euclidean distance creates curved, fishbowl distortion at the screen edges because rays at the edge travel farther than rays in the center. Multiply distance by $\cos(\text{rayAngle} - \text{playerAngle})$ to find the true perpendicular distance to the projection plane.</li>
+            <li><strong>Draw a vertical wall column:</strong> $\text{ColumnHeight} = \frac{\text{TileSize} \times \text{DistanceToPlane}}{d_{\perp}}$.</li>
+          </ol>
+
+          <h3>The 5 Flavors of Raycasting:</h3>
+          <div class="scratch-blocks-grid">
+            <article class="scratch-card">
+              <h4>1 · Grid DDA</h4>
+              <p>Classic 90-degree tile grid walls. Fastest possible calculation; used in <em>Wolfenstein 3D</em>.</p>
+            </article>
+            <article class="scratch-card">
+              <h4>2 · Raylisting</h4>
+              <p>Stores multiple wall intersections in lists. Allows stepped heights, windows, and transparent fences (popularized in Scratch by Griffpatch's 3D maze).</p>
+            </article>
+            <article class="scratch-card">
+              <h4>3 · Iterative Vector Stepping</h4>
+              <p>Advances a point forward by a small step vector. Easy to write in Scratch motion blocks, but slow and prone to corner clipping.</p>
+            </article>
+            <article class="scratch-card">
+              <h4>4 · Signed Distance Fields (SDF)</h4>
+              <p>Uses mathematical distance equations to take giant safe steps toward surfaces without checking every tile (sphere tracing).</p>
+            </article>
+            <article class="scratch-card">
+              <h4>5 · Line Segment Intersection</h4>
+              <p>Walls are arbitrary 2D line segments rather than grid squares. Enables non-grid layouts, angled corridors, diagonal slopes, and dynamic moving doors.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- SECTION 6: MODE 7 -->
+        <section class="fl-card" id="sec-mode7" style="--card-accent:#8b5cf6;">
+          <h2>6 · Mode 7: Affine Horizon &amp; Ground Plane Mapping</h2>
+          <p>In 1990, Nintendo launched the Super Nintendo Entertainment System (SNES) featuring <strong>Mode 7</strong>. While standard raycasters draw <em>vertical wall slices</em> from left to right, Mode 7 draws <em>horizontal ground scanlines</em> from the horizon downward!</p>
+
+          <figure data-zoomable data-lightbox-group="3d-scratch-figs">
+            <img src="../../../assets/images/lessons/3d-from-scratch/mode7-scanlines.svg" alt="Diagram showing Mode 7 affine floor rendering: horizontal scanlines drawn from the horizon to the bottom of the screen calculate ground distance Z and sample (U,V) texture coordinates." width="1000" height="560" loading="lazy" />
+            <figcaption><strong>Figure 4 · Mode 7 scanline perspective.</strong> Each horizontal line on the screen represents a constant physical distance $Z$ in front of the camera. The hardware scales and rotates a single 2D background tilemap to draw the track.</figcaption>
+          </figure>
+
+          <h3>The Math of Mode 7 Scanlines:</h3>
+          <p>For every horizontal row $y$ beneath the horizon line:</p>
+          <div class="formula-block">
+            <code>GroundDistance Z = (CameraHeight × ProjectionDistance) / (ScanlineY - HorizonY)</code>
+          </div>
+          <p>As you approach the horizon ($ScanlineY \to HorizonY$), the denominator approaches zero, so $Z$ approaches infinity. At the very bottom of the screen, $Z$ is tiny, so ground features look huge. By sweeping across each scanline and rotating by the player's steering angle, games like <em>Super Mario Kart</em>, <em>F-Zero</em>, and <em>Pilotwings</em> achieved rotating 3D race tracks on 16-bit hardware.</p>
+        </section>
+
+        <!-- SECTION 7: RAYTRACING -->
+        <section class="fl-card" id="sec-raytrace" style="--card-accent:#6366f1;">
+          <h2>7 · Software Raytracing: Simulating the Physical Behavior of Light</h2>
+          <p>Rasterization and Raycasting are shortcuts: they transform geometry forward onto screen pixels. <strong>Raytracing</strong> does the exact opposite: it simulates how light physically travels through the universe, but in reverse!</p>
+
+          <figure data-zoomable data-lightbox-group="3d-scratch-figs">
+            <img src="../../../assets/images/lessons/3d-from-scratch/raytracing-optics.svg" alt="Diagram of software raytracing optics: camera rays pass through screen pixels to hit 3D spheres, casting shadow rays toward lights and specular reflection rays into the scene." width="1000" height="560" loading="lazy" />
+            <figcaption><strong>Figure 5 · Reverse optical ray paths.</strong> The eye shoots a primary ray through each pixel. If it hits an object, it casts a shadow ray toward the light source and a reflection ray into the scene.</figcaption>
+          </figure>
+
+          <h3>Why We Trace Light in Reverse:</h3>
+          <p>In the real world, the sun emits trillions of photons every second. Less than 0.0001% of those photons ever strike your eye pupil. Simulating real light forward from the source would waste 99.999% of computer time calculating light that nobody ever sees. Raytracing shoots rays <strong>backward from the eye through each screen pixel</strong>—guaranteeing that every ray computed directly contributes to the picture.</p>
+
+          <h3>Optical Effects That Come "For Free" in Raytracing:</h3>
+          <ul>
+            <li><strong>Shadow Rays:</strong> From the point of intersection, shoot a secondary ray directly toward each light source. If any object blocks the path, the pixel is in shadow. No shadow maps or faked shaders required!</li>
+            <li><strong>Specular Reflections:</strong> Using the surface normal vector $\vec{N}$, calculate the reflection bounce vector: $\vec{R} = \vec{D} - 2(\vec{D} \cdot \vec{N})\vec{N}$. Cast a bounce ray to see what the mirror reflects, and blend that color into the pixel.</li>
+            <li><strong>Ambient Occlusion:</strong> Points tucked inside corners or crevices receive fewer ambient light bounces, naturally creating smooth, realistic contact shadows (like Minecraft smooth lighting).</li>
+          </ul>
+        </section>
+
+        <!-- SECTION 8: SCRATCH & TURBOWARP -->
+        <section class="fl-card" id="sec-scratch" style="--card-accent:#d97706;">
+          <h2>8 · Building 3D Engines in Block Environments (Scratch &amp; TurboWarp)</h2>
+          <p>Can you build these engines in block-coding environments like Scratch? <strong>Absolutely.</strong> Thousands of students and passionate creators have built wireframe viewers, 3D mazes, and software rasterizers directly in Scratch using its <strong>Pen extension</strong>.</p>
+
+          <div class="scratch-blocks-grid">
+            <div class="scratch-card">
+              <h4>Scratch Wireframe Loop</h4>
+              <div class="scratch-stack">
+                <span class="sb-block sb-pen">erase all</span>
+                <span class="sb-block sb-control">repeat (length of [edges v])</span>
+                <span class="sb-block sb-operators" style="margin-left:1rem;">set [x1 v] to ((x * FOV) / z)</span>
+                <span class="sb-block sb-pen" style="margin-left:1rem;">pen up</span>
+                <span class="sb-block sb-motion" style="margin-left:1rem;">go to x: (x1) y: (y1)</span>
+                <span class="sb-block sb-pen" style="margin-left:1rem;">pen down</span>
+                <span class="sb-block sb-motion" style="margin-left:1rem;">go to x: (x2) y: (y2)</span>
+              </div>
+            </div>
+
+            <div class="scratch-card">
+              <h4>Why TurboWarp is Essential</h4>
+              <p>Scratch runs as an interpreted loop, capped at 30 frames per second. A raycaster casting 80 rays per frame performs thousands of trigonometric calculations. <strong>TurboWarp</strong> compiles Scratch blocks directly into optimized JavaScript machine code, unlocking 60+ FPS and custom screen resolutions without changing the underlying block logic.</p>
+            </div>
+          </div>
+
+          <h3>The Secret of 90s Hybrid Engines:</h3>
+          <p>Early 3D masterpieces (like <em>Doom</em>, <em>Duke Nukem 3D</em>, and original PlayStation titles) rarely relied on just one technique. They combined them:</p>
+          <ul>
+            <li><strong>Line-segment raycasting</strong> for dynamic rooms and angled walls.</li>
+            <li><strong>Mode 7 style scanlines</strong> for textured floors and ceilings.</li>
+            <li><strong>Scaled billboard 2D sprites</strong> or low-poly <strong>software rasterized models</strong> for enemies and items.</li>
+          </ul>
+          <p>By blending these approaches, developers squeezed rich, fluid pseudo-3D worlds out of hardware with less computing power than a modern digital watch.</p>
+        </section>
+
+        <!-- SECTION 9: PRACTICE QUIZ -->
+        <section class="fl-card" id="sec-quiz" style="--card-accent:#10b981;">
+          <h2>9 · Check Your Understanding</h2>
+          <p>Test your grasp of perspective division, raycasting geometry, and rendering pipelines.</p>
+
+          <div class="quiz-box" data-3d-quiz>
+            <div class="quiz-prompt" aria-live="polite">Loading question...</div>
+            <div class="quiz-options"></div>
+            <div class="quiz-feedback" aria-live="polite"></div>
+            <div class="quiz-score"></div>
+            <button type="button" class="quiz-next" hidden>Next Question →</button>
+
+            <script type="application/json">
+              [
+                {
+                  "prompt": "Why does perspective projection divide the world coordinates (X, Y) by depth Z?",
+                  "opts": [
+                    "Similar triangles prove that as distance Z increases, the image size on the screen plane shrinks toward the vanishing point.",
+                    "Dividing by Z rotates the camera by 90 degrees.",
+                    "Z is the screen width, so dividing normalizes coordinates to pixels.",
+                    "Computers cannot multiply 3D numbers, so they use division as a shortcut."
+                  ],
+                  "answer": 0,
+                  "why": "From similar triangles, x'/d = X/Z, meaning x' = X * (d / Z). Depth Z acts as the divisor, pulling distant objects toward the screen center."
+                },
+                {
+                  "prompt": "In a 2D raycaster (like Wolfenstein 3D), what happens if you do NOT apply the cosine fisheye correction?",
+                  "opts": [
+                    "The walls disappear completely.",
+                    "Flat, straight walls look curved and bulge outward like a fishbowl.",
+                    "The ceiling turns into a floor.",
+                    "The player's speed drops to zero."
+                  ],
+                  "answer": 1,
+                  "why": "Rays cast toward screen edges travel along the hypotenuse, making them longer than perpendicular rays. Without multiplying by cos(rayAngle - playerAngle), straight walls bow outward."
+                },
+                {
+                  "prompt": "What major advantage did the per-pixel Z-Buffer have over the older Painter's Algorithm?",
+                  "opts": [
+                    "The Z-buffer is drawn with physical oil paint.",
+                    "The Z-buffer tests depth pixel-by-pixel, resolving intersecting and overlapping polygons without sorting.",
+                    "The Z-buffer eliminates the need for camera rotation matrices.",
+                    "The Z-buffer only works in 2D platformer games."
+                  ],
+                  "answer": 1,
+                  "why": "The Painter's Algorithm sorts whole polygons back-to-front, which fails when triangles pierce each other or wrap circularly. The Z-buffer checks depth per single pixel."
+                },
+                {
+                  "prompt": "How does Mode 7 (SNES) differ in drawing strategy from a standard Wolfenstein raycaster?",
+                  "opts": [
+                    "Mode 7 draws horizontal ground scanlines from the horizon down; raycasters draw vertical wall slices.",
+                    "Mode 7 uses 3D voxels instead of 2D backgrounds.",
+                    "Mode 7 requires glasses with red and cyan lenses.",
+                    "Mode 7 only draws sound waves."
+                  ],
+                  "answer": 0,
+                  "why": "Wolfenstein raycasting sweeps vertically column-by-column to draw walls. Mode 7 sweeps horizontally row-by-row to draw affine perspective ground planes."
+                },
+                {
+                  "prompt": "Why do computer raytracers shoot rays backward from the eye/camera into the scene instead of forward from the light bulb?",
+                  "opts": [
+                    "Backward rays are twice as fast as light.",
+                    "Real light naturally travels backward through glass.",
+                    "Simulating trillions of photons from light bulbs wastes 99.999% of time computing rays that never enter the eye.",
+                    "Light sources have negative coordinates in 3D files."
+                  ],
+                  "answer": 2,
+                  "why": "Tracing backward from pixels guarantees that every ray calculated directly determines the color of a visible screen pixel."
+                }
+              ]
+            </script>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/creation-app.js"></script>
+<script src="../../../assets/js/lessons/3d-from-scratch-lab.js"></script>
+</body>
+</html>

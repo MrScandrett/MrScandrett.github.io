@@ -41,6 +41,7 @@
         ['algorithms-and-ai/turing-test', 'Turing Test', 'Separate human-like conversation from evidence of understanding or capability.', 'What evidence would change your judgment about a machine?'],
         ['algorithms-and-ai/ai-eliza', 'ELIZA chatbot', 'Identify the pattern rules that can make a conversation feel responsive.', 'Why do people supply meaning that the program never represented?'],
         ['algorithms-and-ai/expert-system', 'Expert systems', 'Follow explainable if–then rules from evidence to a recommendation.', 'When are transparent rules better than learned patterns?'],
+        ['algorithms-and-ai/twenty-questions-information-theory', '20Q & Information Theory', 'Use Shannon entropy and binary decision trees to measure information and eliminate uncertainty in 20 questions.', 'How can 20 yes/no questions isolate one item out of a million choices?'],
         ['algorithms-and-ai/perceptron-lab', 'Perceptron lab', 'Train a linear classifier and explain both its decision boundary and its limits.', 'What kind of pattern can one straight boundary never learn?'],
         ['algorithms-and-ai/chess-origins-how-to-play', 'Chess foundations', 'Use legal moves, position, and consequences to reason about a game state.', 'What information must an AI representation preserve?'],
         ['algorithms-and-ai/minimax-1v1', 'Minimax & Alpha-Beta', 'Trace alternating choices through a game tree and justify a best move.', 'How does an opponent’s best reply change your own choice?'],

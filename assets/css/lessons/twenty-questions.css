@@ -1,0 +1,1040 @@
+/* ==========================================================================
+   20Q Mind Reader & Information Theory Lab Styles
+   Classroom-friendly Akinator / 20Q Clone with Live Entropy Telemetry
+   ========================================================================== */
+
+/* Universal visually hidden screen reader utility */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+:root {
+  --tq-orb-bg: radial-gradient(circle at 50% 15%, #2563eb 0%, #1e3a8a 45%, #0f172a 90%);
+  --tq-orb-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 8px rgba(0, 0, 0, 0.5);
+  --tq-bezel-border: #334155;
+  --tq-lcd-bg: #0b2314;
+  --tq-lcd-text: #22c55e;
+  --tq-lcd-text-dim: #15803d;
+  --tq-lcd-glow: 0 0 10px rgba(34, 197, 94, 0.5);
+  --tq-lcd-grid: rgba(0, 0, 0, 0.25);
+}
+
+[data-lighting="night"] {
+  --tq-orb-bg: radial-gradient(circle at 50% 15%, #3730a3 0%, #1e1b4b 50%, #09090b 95%);
+  --tq-orb-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -3px 8px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="vaporwave"] {
+  --tq-orb-bg: radial-gradient(circle at 50% 15%, #ec4899 0%, #7e22ce 55%, #18052e 95%);
+  --tq-lcd-bg: #1f0730;
+  --tq-lcd-text: #38bdf8;
+  --tq-lcd-text-dim: #1e40af;
+  --tq-lcd-glow: 0 0 14px rgba(56, 189, 248, 0.55);
+}
+
+[data-theme="bark"] {
+  --tq-orb-bg: radial-gradient(circle at 50% 15%, #b45309 0%, #78350f 55%, #291507 95%);
+  --tq-lcd-bg: #291e0a;
+  --tq-lcd-text: #fde047;
+  --tq-lcd-text-dim: #854d0e;
+  --tq-lcd-glow: 0 0 12px rgba(253, 224, 71, 0.4);
+}
+
+/* ── Container & Shell ─────────────────────────────────────────────────────── */
+.tq-app-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.tq-app-card {
+  background: var(--glass-fill-strong, #ffffff);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+  border-radius: 24px;
+  padding: 1.75rem;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-lighting="night"] .tq-app-card,
+[data-theme="vaporwave"] .tq-app-card,
+[data-theme="bark"] .tq-app-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* ── App Top Bar & Mode Toggles ───────────────────────────────────────────── */
+.tq-app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  margin-bottom: 1.5rem;
+}
+
+.tq-app-title-group h1,
+.tq-app-title-group h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tq-app-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--accent, #2563eb);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.tq-header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.tq-btn-toggle {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.12));
+  color: var(--text, #1e293b);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.18s ease;
+}
+
+.tq-btn-toggle:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.tq-btn-toggle.is-active {
+  background: var(--accent, #2563eb);
+  border-color: var(--accent, #2563eb);
+  color: #ffffff;
+}
+
+[data-lighting="night"] .tq-btn-toggle,
+[data-theme="vaporwave"] .tq-btn-toggle,
+[data-theme="bark"] .tq-btn-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+/* ── Main Dual Stage Layout ───────────────────────────────────────────────── */
+.tq-stage-grid {
+  display: grid;
+  grid-template-columns: minmax(340px, 460px) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+  transition: all 0.3s ease;
+}
+
+.tq-stage-grid.is-toy-mode {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.tq-stage-grid.is-toy-mode .tq-orb-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  .tq-stage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── The 20Q Handheld Console Chassis ─────────────────────────────────────── */
+.tq-orb-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.tq-orb {
+  width: 100%;
+  max-width: 460px;
+  min-height: 520px;
+  background: var(--tq-orb-bg);
+  border-radius: 40px;
+  box-shadow: var(--tq-orb-shadow);
+  padding: 1.5rem 1.4rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: relative;
+  border: 3px solid rgba(255, 255, 255, 0.22);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tq-orb::before {
+  content: "";
+  position: absolute;
+  top: 2%;
+  left: 10%;
+  width: 80%;
+  height: 14%;
+  background: radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 75%);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.tq-orb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.4rem;
+  margin-bottom: 0.2rem;
+}
+
+.tq-orb-badge {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tq-orb-badge::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.tq-speaker-grille {
+  display: flex;
+  gap: 4px;
+}
+
+.tq-speaker-grille span {
+  width: 5px;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ── The Retro Dot-Matrix LCD ─────────────────────────────────────────────── */
+.tq-lcd-bezel {
+  background: #090e17;
+  border: 2px solid #334155;
+  border-radius: 16px;
+  padding: 0.75rem;
+  box-shadow: inset 0 3px 12px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.tq-lcd-bezel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 50%);
+  pointer-events: none;
+}
+
+.tq-lcd-screen {
+  background: var(--tq-lcd-bg);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  min-height: 185px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.55rem;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
+  position: relative;
+  font-family: "IBM Plex Mono", "Roboto Mono", "Courier New", monospace;
+  color: var(--tq-lcd-text);
+  text-shadow: var(--tq-lcd-glow);
+  background-image: 
+    linear-gradient(var(--tq-lcd-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--tq-lcd-grid) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+.tq-lcd-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--tq-lcd-text-dim);
+  border-bottom: 1px dashed var(--tq-lcd-text-dim);
+  padding-bottom: 0.35rem;
+}
+
+.tq-lcd-q-badge {
+  color: var(--tq-lcd-text);
+  font-weight: 800;
+}
+
+.tq-lcd-mascot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.tq-lcd-face {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--tq-lcd-text-dim);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  display: inline-block;
+  user-select: none;
+}
+
+.tq-lcd-status-msg {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tq-lcd-text);
+}
+
+.tq-lcd-message-box {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+.tq-lcd-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.38;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.tq-lcd-subtext {
+  font-size: 0.76rem;
+  color: var(--tq-lcd-text-dim);
+  margin: 0;
+  text-align: center;
+}
+
+.tq-lcd-entropy-bar-wrap {
+  margin-top: 0.2rem;
+}
+
+.tq-lcd-entropy-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--tq-lcd-text-dim);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.05em;
+}
+
+.tq-lcd-meter-track {
+  height: 7px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--tq-lcd-text-dim);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tq-lcd-meter-fill {
+  height: 100%;
+  background: var(--tq-lcd-text);
+  box-shadow: var(--tq-lcd-glow);
+  width: 100%;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Tactile Console Buttons ──────────────────────────────────────────────── */
+.tq-controls-cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.tq-primary-btn-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.tq-orb-btn {
+  appearance: none;
+  border: none;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.92rem;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 0.6rem;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  position: relative;
+  transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.08s ease;
+  user-select: none;
+}
+
+.tq-orb-btn:active,
+.tq-orb-btn.is-pressed {
+  transform: translateY(3px) !important;
+}
+
+.tq-orb-btn kbd {
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.85;
+  font-family: "IBM Plex Mono", monospace;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.tq-btn-yes {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 0 #047857, 0 6px 14px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.tq-btn-yes:hover { filter: brightness(1.1); }
+.tq-btn-yes:active,
+.tq-btn-yes.is-pressed {
+  box-shadow: 0 1px 0 #047857, 0 2px 5px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.tq-btn-no {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 0 #b91c1c, 0 6px 14px rgba(220, 38, 38, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.tq-btn-no:hover { filter: brightness(1.1); }
+.tq-btn-no:active,
+.tq-btn-no.is-pressed {
+  box-shadow: 0 1px 0 #b91c1c, 0 2px 5px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.tq-secondary-btn-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+}
+
+.tq-orb-btn-sm {
+  font-size: 0.76rem;
+  padding: 0.65rem 0.35rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.tq-btn-prob {
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 0 #1e40af, 0 4px 10px rgba(37, 99, 235, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.tq-btn-prob:hover { filter: brightness(1.1); }
+.tq-btn-prob:active,
+.tq-btn-prob.is-pressed {
+  box-shadow: 0 1px 0 #1e40af, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tq-btn-rarely {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 0 #b45309, 0 4px 10px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.tq-btn-rarely:hover { filter: brightness(1.1); }
+.tq-btn-rarely:active,
+.tq-btn-rarely.is-pressed {
+  box-shadow: 0 1px 0 #b45309, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tq-btn-unsure {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+  color: #ffffff;
+  box-shadow: 0 3px 0 #334155, 0 4px 10px rgba(71, 85, 105, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.tq-btn-unsure:hover { filter: brightness(1.1); }
+.tq-btn-unsure:active,
+.tq-btn-unsure.is-pressed {
+  box-shadow: 0 1px 0 #334155, 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Utility Dock Tray ────────────────────────────────────────────────────── */
+.tq-utility-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.6rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  gap: 0.5rem;
+}
+
+.tq-btn-util {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+  font-size: 0.74rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tq-btn-util:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.tq-btn-util:active:not(:disabled),
+.tq-btn-util.is-pressed {
+  transform: translateY(1px);
+}
+
+.tq-btn-util:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Telemetry & AI Information Theory Dashboard ──────────────────────────── */
+.tq-dashboard-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.tq-dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.15rem;
+}
+
+.tq-panel {
+  background: var(--glass-fill, rgba(255, 255, 255, 0.75));
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+[data-lighting="night"] .tq-panel,
+[data-theme="vaporwave"] .tq-panel,
+[data-theme="bark"] .tq-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.tq-panel-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tq-panel-title strong {
+  color: var(--text, #0f172a);
+}
+
+.tq-panel-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+  margin: 0 0 0.85rem;
+  line-height: 1.45;
+}
+
+/* Stat Grid */
+.tq-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.tq-stat-box {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+  border-radius: 12px;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+[data-lighting="night"] .tq-stat-box,
+[data-theme="vaporwave"] .tq-stat-box,
+[data-theme="bark"] .tq-stat-box {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tq-stat-val {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--accent, #2563eb);
+  line-height: 1.1;
+  margin-bottom: 0.2rem;
+}
+
+.tq-stat-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Information Gain Split Analyzer */
+.tq-ig-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tq-ig-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.06));
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.tq-ig-item.is-chosen {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.12);
+}
+
+.tq-ig-q-text {
+  font-weight: 600;
+  color: var(--text, #1e293b);
+  line-height: 1.35;
+}
+
+.tq-ig-item.is-chosen .tq-ig-q-text {
+  color: var(--accent, #2563eb);
+  font-weight: 700;
+}
+
+.tq-ig-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tq-ig-pill {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.14);
+  color: var(--accent, #2563eb);
+  white-space: nowrap;
+}
+
+.tq-ig-chosen-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: var(--accent, #2563eb);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+/* Candidate Leaderboard */
+.tq-candidate-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tq-cand-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 52px;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 500px) {
+  .tq-cand-row {
+    grid-template-columns: 100px 1fr 45px;
+  }
+}
+
+.tq-cand-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text, #0f172a);
+}
+
+.tq-cand-track {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+[data-lighting="night"] .tq-cand-track,
+[data-theme="vaporwave"] .tq-cand-track,
+[data-theme="bark"] .tq-cand-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tq-cand-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tq-cand-pct {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-muted, #64748b);
+}
+
+/* ── Guess Reveal Modal / State ───────────────────────────────────────────── */
+.tq-reveal-banner {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 18px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  animation: tqPulseGlow 2.5s infinite alternate;
+}
+
+@keyframes tqPulseGlow {
+  0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+  100% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
+}
+
+.tq-reveal-title {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  color: #38bdf8;
+  margin-bottom: 0.3rem;
+}
+
+.tq-reveal-target {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.tq-reveal-desc {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.45;
+  max-width: 380px;
+  margin: 0 auto 1.15rem;
+}
+
+.tq-reveal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tq-btn-correct {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 800;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #047857, 0 6px 14px rgba(5, 150, 105, 0.4);
+  transition: all 0.12s ease;
+}
+
+.tq-btn-correct:hover {
+  filter: brightness(1.1);
+}
+
+.tq-btn-correct:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #047857;
+}
+
+.tq-btn-wrong {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 800;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #b91c1c, 0 6px 14px rgba(220, 38, 38, 0.4);
+  transition: all 0.12s ease;
+}
+
+.tq-btn-wrong:hover {
+  filter: brightness(1.1);
+}
+
+.tq-btn-wrong:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #b91c1c;
+}
+
+/* ── "Teach the AI" Drawer / Form ─────────────────────────────────────────── */
+.tq-teach-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 18px;
+  padding: 1.25rem;
+  margin-top: 0.5rem;
+  color: #ffffff;
+  backdrop-filter: blur(12px);
+}
+
+.tq-teach-box h4 {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  color: #38bdf8;
+  text-align: center;
+}
+
+.tq-teach-desc {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 0.85rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.tq-teach-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tq-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tq-form-field label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.tq-form-field input,
+.tq-form-field select {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+}
+
+.tq-form-field input:focus,
+.tq-form-field select:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+/* ── Interactive Theory Widgets ───────────────────────────────────────────── */
+.tq-entropy-interactive {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 768px) {
+  .tq-entropy-interactive {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tq-slider-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tq-slider-track {
+  width: 100%;
+}
+
+.tq-curve-canvas {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  background: #0f172a;
+}
+
+/* ── Educational Decision Tree Graph ──────────────────────────────────────── */
+.tq-tree-diagram {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.tq-tree-diagram svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* History / Decision Trail */
+.tq-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
+.tq-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line, rgba(0, 0, 0, 0.04));
+}
+
+.tq-ans-pill {
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.tq-ans-yes { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+.tq-ans-no { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+.tq-ans-prob { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+.tq-ans-rarely { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+.tq-ans-unsure { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+
+/* ── Accessible Math & Formula Typography ─────────────────────────────────── */
+.tq-math {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  font-style: normal;
+  padding: 0.05rem 0.25rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-lighting="night"] .tq-math,
+[data-theme="vaporwave"] .tq-math,
+[data-theme="bark"] .tq-math {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tq-formula {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

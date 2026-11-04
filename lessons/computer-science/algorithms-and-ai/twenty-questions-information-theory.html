@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>20Q Mind Reader &amp; Information Theory · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="A classroom-friendly Akinator and 20Q clone exploring Claude Shannon's Information Theory, entropy, binary decision trees, and Bayesian machine reasoning." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/twenty-questions.css" />
+  <style>
+    .ll-viewport {
+      --ll-panel-w: 320px;
+      --ll-accent: #2563eb;
+      --ll-tab-active: #2563eb;
+      --ll-tab-active-bg: rgba(37, 99, 235, 0.12);
+    }
+    .tq-math-display {
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.95rem;
+      overflow-x: auto;
+      text-align: center;
+    }
+    [data-lighting="night"] .tq-math-display,
+    [data-theme="vaporwave"] .tq-math-display,
+    [data-theme="bark"] .tq-math-display {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .tq-concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .tq-concept-card {
+      background: var(--glass-fill, rgba(255, 255, 255, 0.7));
+      border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+      border-radius: 16px;
+      padding: 1.25rem;
+    }
+    [data-lighting="night"] .tq-concept-card,
+    [data-theme="vaporwave"] .tq-concept-card,
+    [data-theme="bark"] .tq-concept-card {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .tq-concept-card h4 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      color: var(--accent, #2563eb);
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <div class="ll-viewport">
+    <header class="site-header">
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="ll-stage">
+      <div class="ll-sim">
+        <main id="main-content">
+
+          <!-- ═════════════════════════════════════════════════════════════════
+               1. THE WORKING APP / INTERACTIVE 20Q ORACLE (PLACED FIRST)
+               ═════════════════════════════════════════════════════════════════ -->
+          <section class="tq-app-container" aria-label="Interactive 20Q Mind Reader Application">
+            <article class="tq-app-card" id="tq-app-card">
+              
+              <!-- App Top Bar -->
+              <div class="tq-app-header">
+                <div class="tq-app-title-group">
+                  <span class="tq-app-badge">AI Origins · Interactive Lab 12</span>
+                  <h1 class="tq-app-title"><span>🔮</span> The 20Q Mind Reader</h1>
+                </div>
+
+                <div class="tq-header-controls">
+                  <button type="button" id="tq-toggle-mode" class="tq-btn-toggle is-active" aria-pressed="true">
+                    🔬 AI Inspector Mode
+                  </button>
+                  <button type="button" id="tq-toggle-backlight" class="tq-btn-toggle" aria-label="Change LCD Backlight Color">
+                    💡 Backlight
+                  </button>
+                  <button type="button" id="tq-toggle-sound" class="tq-btn-toggle" aria-label="Toggle retro synthesizer sound effects">
+                    🔊 Sound: On
+                  </button>
+                </div>
+              </div>
+
+              <!-- Main Stage Dual View: Handheld Orb + Real-time Information Theory HUD -->
+              <div class="tq-stage-grid" id="tq-stage-grid">
+                
+                <!-- ── The Physical 20Q Handheld Toy Orb ──────────────────────── -->
+                <div class="tq-orb-wrapper">
+                  <div class="tq-orb">
+                    
+                    <!-- Orb Head Branding -->
+                    <div class="tq-orb-header">
+                      <span class="tq-orb-badge">20Q · ARTIFICIAL NEURAL ORB</span>
+                      <div class="tq-speaker-grille" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                      </div>
+                    </div>
+
+                    <!-- Retro Dot-Matrix LCD Display Screen -->
+                    <div class="tq-lcd-bezel">
+                      <div class="tq-lcd-screen" id="tq-lcd-screen" role="region" aria-label="20Q LCD Screen">
+                        
+                        <!-- Top Telemetry Line -->
+                        <div class="tq-lcd-topline">
+                          <span id="tq-lcd-qnum" class="tq-lcd-q-badge">Q: 01/20</span>
+                          <span id="tq-lcd-entropy-val">H: 6.78 BITS</span>
+                        </div>
+
+                        <!-- Animated Mascot & Status -->
+                        <div class="tq-lcd-mascot-row">
+                          <span id="tq-lcd-face" class="tq-lcd-face" aria-hidden="true">( • _ • )</span>
+                          <span id="tq-lcd-status-msg" class="tq-lcd-status-msg">PROBING CLUES</span>
+                        </div>
+
+                        <!-- Question / Guess Text Area -->
+                        <div class="tq-lcd-message-box">
+                          <p id="tq-lcd-text" class="tq-lcd-text">Think of any animal, scientist, tool, or wonder. Press any button to start!</p>
+                        </div>
+                        <p id="tq-lcd-subtext" class="tq-lcd-subtext">Shannon Split: +1.00 bit expected Information Gain</p>
+
+                        <!-- Live Entropy Bar on LCD -->
+                        <div class="tq-lcd-entropy-bar-wrap">
+                          <div class="tq-lcd-entropy-label">
+                            <span>UNCERTAINTY</span>
+                            <span>ZERO BITS (CERTAIN)</span>
+                          </div>
+                          <div class="tq-lcd-meter-track">
+                            <div id="tq-lcd-meter-fill" class="tq-lcd-meter-fill"></div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div><!-- /.tq-lcd-bezel -->
+
+                    <!-- Screen reader live region -->
+                    <div id="tq-status-live" class="sr-only" aria-live="polite"></div>
+
+                    <!-- Physical Tactile Buttons on Handheld Orb -->
+                    <div class="tq-controls-cluster" id="tq-controls-cluster">
+                      
+                      <!-- Primary Binary Split Buttons -->
+                      <div class="tq-primary-btn-row">
+                        <button type="button" id="tq-btn-yes" class="tq-orb-btn tq-btn-yes">
+                          <span>YES</span>
+                          <kbd>Key 1 or Y</kbd>
+                        </button>
+                        <button type="button" id="tq-btn-no" class="tq-orb-btn tq-btn-no">
+                          <span>NO</span>
+                          <kbd>Key 2 or N</kbd>
+                        </button>
+                      </div>
+
+                      <!-- Fuzzy Bayesian Answer Buttons -->
+                      <div class="tq-secondary-btn-row">
+                        <button type="button" id="tq-btn-prob" class="tq-orb-btn tq-orb-btn-sm tq-btn-prob">
+                          <span>PROBABLY</span>
+                          <kbd>Key 3 or P</kbd>
+                        </button>
+                        <button type="button" id="tq-btn-rarely" class="tq-orb-btn tq-orb-btn-sm tq-btn-rarely">
+                          <span>RARELY</span>
+                          <kbd>Key 4 or R</kbd>
+                        </button>
+                        <button type="button" id="tq-btn-unsure" class="tq-orb-btn tq-orb-btn-sm tq-btn-unsure">
+                          <span>NOT SURE</span>
+                          <kbd>Key 5 or U</kbd>
+                        </button>
+                      </div>
+
+                      <!-- Orb Utility Row -->
+                      <div class="tq-utility-row">
+                        <button type="button" id="tq-btn-undo" class="tq-btn-util" title="Undo your last response">
+                          <span>↩</span> Undo (Z)
+                        </button>
+                        <button type="button" id="tq-btn-guess-now" class="tq-btn-util" title="Force AI to make its best guess immediately">
+                          <span>💡</span> Guess Now
+                        </button>
+                        <button type="button" id="tq-btn-reset" class="tq-btn-util" title="Start a fresh 20Q game">
+                          <span>🔄</span> Reset (Esc)
+                        </button>
+                      </div>
+
+                    </div><!-- /.tq-controls-cluster -->
+
+                    <!-- Guess Reveal Banner (When AI is ready to make a guess) -->
+                    <div id="tq-reveal-banner" class="tq-reveal-banner" hidden>
+                      <p class="tq-reveal-title">I am ready to guess!</p>
+                      <h3 id="tq-reveal-target" class="tq-reveal-target">Albert Einstein</h3>
+                      <p id="tq-reveal-desc" class="tq-reveal-desc">Theoretical physicist who transformed our understanding of space, time, gravity, and E=mc².</p>
+                      
+                      <div class="tq-reveal-actions">
+                        <button type="button" id="tq-btn-guess-correct" class="tq-btn-correct">
+                          ✓ YES! THAT'S IT!
+                        </button>
+                        <button type="button" id="tq-btn-guess-wrong" class="tq-btn-wrong">
+                          ✗ NO, WRONG GUESS!
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- "Teach the Oracle" Drawer (When player outsmarts the AI) -->
+                    <div id="tq-teach-box" class="tq-teach-box" hidden>
+                      <h4>🎓 Teach the AI a New Entity!</h4>
+                      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">
+                        You beat the Oracle! Teach it what you were thinking of and what question distinguishes it from its guess.
+                      </p>
+                      <form id="tq-teach-form" class="tq-teach-form">
+                        <div class="tq-form-field">
+                          <label for="tq-teach-name">What were you thinking of?</label>
+                          <input type="text" id="tq-teach-name" placeholder="e.g. Sea Otter, Leonardo da Vinci, Seismograph..." required />
+                        </div>
+                        <div class="tq-form-field">
+                          <label for="tq-teach-category">Category</label>
+                          <select id="tq-teach-category">
+                            <option value="Animals">Animals</option>
+                            <option value="Thinkers">Thinkers &amp; Scientists</option>
+                            <option value="Technology">Technology &amp; Inventions</option>
+                            <option value="Cosmos">Cosmos &amp; Space</option>
+                            <option value="Geology">Earth &amp; Geology</option>
+                            <option value="Objects">Everyday Objects &amp; Music</option>
+                          </select>
+                        </div>
+                        <div class="tq-form-field">
+                          <label for="tq-teach-question">What question separates your item from my guess?</label>
+                          <input type="text" id="tq-teach-question" placeholder="e.g. Does it crack clam shells on its belly?" required />
+                        </div>
+                        <div class="tq-form-field">
+                          <label for="tq-teach-answer">For your item, the answer to this question is:</label>
+                          <select id="tq-teach-answer">
+                            <option value="yes">YES</option>
+                            <option value="no">NO</option>
+                          </select>
+                        </div>
+                        <button type="submit" class="tq-btn-correct" style="margin-top:0.5rem;">Save &amp; Teach Knowledge Base</button>
+                      </form>
+                    </div>
+
+                  </div><!-- /.tq-orb -->
+                </div><!-- /.tq-orb-wrapper -->
+
+                <!-- ── Live Information Theory Telemetry Dashboard ───────────── -->
+                <div class="tq-dashboard-wrapper" id="tq-dashboard-side">
+                  
+                  <!-- Shannon Metrics Stat Grid -->
+                  <div class="tq-panel">
+                    <div class="tq-panel-title">
+                      <span>Shannon Telemetry</span>
+                      <strong>Bits &amp; Entropy</strong>
+                    </div>
+                    <div class="tq-stat-grid">
+                      <div class="tq-stat-box">
+                        <div id="tq-stat-entropy" class="tq-stat-val">6.78</div>
+                        <div class="tq-stat-lbl">Entropy (H)</div>
+                      </div>
+                      <div class="tq-stat-box">
+                        <div id="tq-stat-candidates" class="tq-stat-val">110</div>
+                        <div class="tq-stat-lbl">Live Candidates</div>
+                      </div>
+                      <div class="tq-stat-box">
+                        <div id="tq-stat-bits-removed" class="tq-stat-val">0.00</div>
+                        <div class="tq-stat-lbl">Bits Removed</div>
+                      </div>
+                      <div class="tq-stat-box">
+                        <div id="tq-stat-efficiency" class="tq-stat-val">0.98</div>
+                        <div class="tq-stat-lbl">Info Gain / Q</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Middle Row: Split Analyzer & Candidate Distribution -->
+                  <div class="tq-dashboard-row">
+                    <!-- Information Gain Question Decision Radar -->
+                    <div class="tq-panel">
+                      <div class="tq-panel-title">
+                        <span>Claude Shannon's Optimal Split</span>
+                        <strong>Top Information Gain (IG)</strong>
+                      </div>
+                      <p class="tq-panel-desc">
+                        The AI evaluates every remaining question and chooses the one that maximizes Information Gain (<span class="tq-math"><em>IG</em> = <em>H</em><sub>before</sub> − <em>H</em><sub>after</sub></span>), cutting uncertainty in half.
+                      </p>
+                      <div id="tq-ig-list" class="tq-ig-list">
+                        <!-- Populated dynamically by engine -->
+                      </div>
+                    </div>
+
+                    <!-- Real-time Bayesian Belief Distribution Leaderboard -->
+                    <div class="tq-panel">
+                      <div class="tq-panel-title">
+                        <span>Bayesian Belief Distribution</span>
+                        <strong>Top Candidates</strong>
+                      </div>
+                      <p class="tq-panel-desc">
+                        Candidate probabilities updated continuously after every clue using Bayes' Theorem.
+                      </p>
+                      <div id="tq-candidate-bars" class="tq-candidate-bars">
+                        <!-- Populated dynamically by engine -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Question History / Decision Path -->
+                  <div class="tq-panel">
+                    <div class="tq-panel-title">
+                      <span>Decision Tree Path</span>
+                      <strong>Past Clues</strong>
+                    </div>
+                    <div id="tq-history-list" class="tq-history-list">
+                      <p style="font-size:0.75rem;color:var(--text-muted);">No questions asked yet. Think of an animal, thinker, or invention and press a button!</p>
+                    </div>
+                  </div>
+
+                </div><!-- /.tq-dashboard-wrapper -->
+
+              </div><!-- /.tq-stage-grid -->
+
+            </article>
+          </section>
+
+          <!-- ═════════════════════════════════════════════════════════════════
+               2. THE LESSON: INFORMATION THEORY & MACHINE REASONING
+               ═════════════════════════════════════════════════════════════════ -->
+
+          <section class="section">
+            <div class="section-head">
+              <p class="eyebrow">The Mathematical Secret Behind the Game</p>
+              <h2>The 20-Question Mind Reader: Claude Shannon, Information Theory &amp; AI</h2>
+              <p>How 20 simple yes/no questions can pinpoint 1 in a million possibilities — and how modern AI uses entropy to make optimal decisions.</p>
+            </div>
+
+            <!-- Historical Overview Card -->
+            <article class="card">
+              <h3>1. The 1988 Handheld Miracle: Robin Burgener's 20Q</h3>
+              <p>
+                In 1988, inventor <strong>Robin Burgener</strong> designed a tiny computer program running on a four-bit microcontroller that played the traditional game of Twenty Questions. By the early 2000s, it was manufactured as the iconic spherical handheld toy <strong>20Q</strong> by Radica Games. Millions of players around the world were shocked: they could think of something completely obscure — like a <em>platypus</em>, a <em>telescope</em>, or a <em>stapler</em> — and within 20 questions, the palm-sized plastic orb would reveal their exact thought on its retro liquid-crystal display.
+              </p>
+              <p>
+                Later, web algorithms like <strong>Akinator</strong> expanded this concept to millions of fictional and real characters. But neither 20Q nor Akinator possesses supernatural intuition. Instead, they exploit one of the most profound mathematical breakthroughs of the 20th century: <strong>Claude Shannon’s Mathematical Theory of Communication</strong>, published at Bell Laboratories in 1948.
+              </p>
+            </article>
+          </section>
+
+          <!-- Shannon Photo & Concept of the Bit -->
+          <section class="section">
+            <div class="columns">
+              <article class="card">
+                <h3>2. Claude Shannon and the Birth of the &ldquo;Bit&rdquo; (1948)</h3>
+                <p>
+                  Before 1948, the word <em>information</em> was vague. People spoke of messages having meaning, wisdom, or noise, but there was no mathematical scale to measure how much information a message actually contained.
+                </p>
+                <p>
+                  Claude Shannon realized that information is fundamentally about <strong>surprise</strong> and <strong>uncertainty reduction</strong>:
+                </p>
+                <ul>
+                  <li>If someone tells you, <em>&ldquo;The Sun will rise in the East tomorrow morning,&rdquo;</em> they have told you something with near 100% probability. You learned virtually nothing new: <strong>zero surprise = zero information</strong>.</li>
+                  <li>If someone flips a fair coin under a cup and tells you, <em>&ldquo;It landed on Heads,&rdquo;</em> you were completely undecided between two equally likely outcomes (50/50). Learning the result gives you exactly <strong>one unit of information</strong>.</li>
+                </ul>
+                <p>
+                  Shannon, collaborating with statistician John Tukey, gave this fundamental unit a name: the <strong>binary digit</strong>, or <strong>bit</strong>. One bit is the amount of information required to choose between two equally likely alternatives.
+                </p>
+              </article>
+
+              <figure data-zoomable data-lightbox-group="information-theory" class="card" data-full="https://commons.wikimedia.org/wiki/Special:FilePath/Claude_Shannon.jpg?width=1600">
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Claude_Shannon.jpg?width=600" alt="Claude Shannon, father of Information Theory, at Bell Laboratories" loading="lazy" width="600" height="450" style="border-radius:12px;width:100%;height:auto;object-fit:cover;">
+                <figcaption>
+                  <strong>Claude Shannon: Father of Information Theory (1916–2001)</strong>
+                  Claude Shannon at Bell Laboratories. His 1948 paper <em>A Mathematical Theory of Communication</em> proved that all communication and decision-making can be quantified in discrete bits.
+                  <span class="credit" data-no-glossary>Bell Laboratories / MIT / Wikimedia Commons · Public domain · <a href="https://commons.wikimedia.org/wiki/File:Claude_Shannon.jpg">source</a></span>
+                </figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <!-- The Power of Binary Splitting & 2^20 -->
+          <section class="section">
+            <article class="card">
+              <div class="section-head">
+                <p class="eyebrow">Exponential Scaling</p>
+                <h3>3. Why 20 Questions? The Power of 2<sup>20</sup></h3>
+                <p>Most people are amazed that 20 questions is enough to guess virtually anything. But the math of binary branching explains why:</p>
+              </div>
+
+              <div class="tq-math-display">
+                <span class="tq-formula">2<sup>20</sup> = 2 × 2 × 2 × … × 2 = 1,048,576</span>
+              </div>
+
+              <p>
+                Every time a question splits the remaining possibilities in half, the search space shrinks exponentially:
+              </p>
+
+              <!-- Interactive Exponential Universe Widget -->
+              <div style="background:rgba(0,0,0,0.02);border:1px solid var(--line);border-radius:16px;padding:1.25rem;margin:1.25rem 0;">
+                <label for="tq-bits-slider" style="font-weight:700;font-size:0.88rem;display:flex;justify-content:space-between;align-items:center;">
+                  <span>Number of Yes/No Questions (<em>N</em> bits):</span>
+                  <span style="font-family:monospace;font-size:1.1rem;color:var(--accent);" id="tq-bits-val">20</span>
+                </label>
+                <input id="tq-bits-slider" type="range" min="1" max="20" value="20" style="width:100%;margin:0.75rem 0;" />
+                
+                <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.85rem;">
+                  <div>Distinguishable Items (2<sup><em>N</em></sup>): <strong id="tq-total-states" style="font-size:1.2rem;font-family:monospace;color:var(--accent);">1,048,576</strong></div>
+                  <div style="color:var(--text-muted);font-style:italic;" id="tq-metaphor-text">Over a million distinct items!</div>
+                </div>
+              </div>
+
+              <p>
+                With just 10 questions, an ideal split separates 2<sup>10</sup> = 1,024 possibilities. With 20 questions, you can theoretically pinpoint <strong>one specific object out of over one million possibilities</strong>!
+              </p>
+            </article>
+          </section>
+
+          <!-- Shannon Entropy Formula & Interactive Curve -->
+          <section class="section">
+            <article class="card">
+              <div class="section-head">
+                <p class="eyebrow">The Formula</p>
+                <h3>4. Shannon Entropy: Measuring Uncertainty in Bits</h3>
+                <p>How do we mathematically measure the uncertainty of a system when candidates aren't all equally likely?</p>
+              </div>
+
+              <p>
+                Shannon defined the <strong>Information Entropy</strong> <em>H</em>(<em>X</em>) of a probability distribution <em>P</em> = {<em>p</em><sub>1</sub>, <em>p</em><sub>2</sub>, …, <em>p</em><sub><em>n</em></sub>} as:
+              </p>
+
+              <div class="tq-math-display">
+                <span class="tq-formula"><em>H</em>(<em>X</em>) = − ∑ <em>p</em><sub><em>i</em></sub> log<sub>2</sub>(<em>p</em><sub><em>i</em></sub>)</span>
+              </div>
+
+              <div class="tq-concept-grid">
+                <div class="tq-concept-card">
+                  <h4><em>p</em><sub><em>i</em></sub> (Probability)</h4>
+                  <p>The current belief or likelihood that item <em>i</em> is the one the user has in mind. The sum of all <em>p</em><sub><em>i</em></sub> always equals 1.0.</p>
+                </div>
+                <div class="tq-concept-card">
+                  <h4>log<sub>2</sub>(<em>p</em><sub><em>i</em></sub>) (Bits)</h4>
+                  <p>Logarithm base 2 converts probabilities into bits. Because <em>p</em><sub><em>i</em></sub> ≤ 1, log<sub>2</sub>(<em>p</em><sub><em>i</em></sub>) is negative, so the leading minus sign makes entropy positive.</p>
+                </div>
+                <div class="tq-concept-card">
+                  <h4><em>H</em>(<em>X</em>) (Total Entropy)</h4>
+                  <p>The weighted average number of bits of surprise remaining. When <em>H</em> = 0, certainty is 100% — we know the answer!</p>
+                </div>
+              </div>
+
+              <!-- Interactive Shannon Curve Widget -->
+              <h4>Interactive Experiment: The Shannon Entropy Curve for a Binary Decision</h4>
+              <p style="font-size:0.85rem;color:var(--text-muted);">
+                Drag the probability slider <em>p</em> below to see how uncertainty changes. Notice that entropy reaches its maximum value of exactly <strong>1.000 bit</strong> when <em>p</em> = 0.50 (a pure 50/50 question)!
+              </p>
+
+              <div class="tq-entropy-interactive">
+                <div class="tq-slider-control">
+                  <label for="tq-shannon-slider" style="font-weight:700;font-size:0.85rem;display:flex;justify-content:space-between;">
+                    <span>Probability of &ldquo;YES&rdquo; (<em>p</em>):</span>
+                    <span id="tq-shannon-pval" style="font-family:monospace;color:var(--accent);">0.50</span>
+                  </label>
+                  <input id="tq-shannon-slider" class="tq-slider-track" type="range" min="0" max="1" step="0.01" value="0.5" />
+                  
+                  <div style="background:rgba(0,0,0,0.03);padding:0.75rem;border-radius:10px;font-size:0.85rem;">
+                    <div>Remaining Uncertainty: <strong id="tq-shannon-hval" style="font-family:monospace;color:var(--accent);">1.000</strong> bits</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">
+                      Formula: <em>H</em> = −<em>p</em> log<sub>2</sub>(<em>p</em>) − (1−<em>p</em>) log<sub>2</sub>(1−<em>p</em>)
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <canvas id="tq-entropy-canvas" class="tq-curve-canvas"></canvas>
+                </div>
+              </div>
+
+              <div class="ll-info" style="margin-top:1rem;">
+                <strong>Why the peak at 50/50?</strong>
+                If an answer is guaranteed to be Yes (<em>p</em> = 1.0) or No (<em>p</em> = 0.0), asking the question gives you <strong>zero new information</strong>. The question that teaches the AI the most is always the one that divides the remaining candidates in half!
+              </div>
+            </article>
+          </section>
+
+          <!-- Information Gain & Decision Trees -->
+          <section class="section">
+            <article class="card">
+              <div class="section-head">
+                <p class="eyebrow">The AI Algorithm</p>
+                <h3>5. How Decision Trees &amp; Machine Learning Pick the Perfect Split</h3>
+                <p>How the 20Q engine and machine learning algorithms decide what to ask next.</p>
+              </div>
+
+              <p>
+                When a machine learning algorithm builds a decision tree (such as <strong>ID3</strong>, <strong>C4.5</strong>, <strong>CART</strong>, or <strong>Random Forests</strong>), it doesn't choose questions at random. It calculates the <strong>Information Gain (<em>IG</em>)</strong> for every candidate question:
+              </p>
+
+              <div class="tq-math-display">
+                <span class="tq-formula"><em>IG</em>(<em>Q</em>) = <em>H</em><sub>current</sub> − [ <em>P</em>(Yes) · <em>H</em>(<em>X</em> | Yes) + <em>P</em>(No) · <em>H</em>(<em>X</em> | No) ]</span>
+              </div>
+
+              <p>
+                The question with the highest <em>IG</em> is the one chosen. In our 20Q engine:
+              </p>
+              <ol class="rhythm">
+                <li><span>1</span><strong>Evaluate Candidates:</strong> For all 52 questions not yet asked, calculate what the entropy would be if the user said &ldquo;Yes&rdquo; versus &ldquo;No&rdquo;.</li>
+                <li><span>2</span><strong>Maximize Gain:</strong> Pick the question that brings the remaining entropy closest to zero the fastest.</li>
+                <li><span>3</span><strong>Bayesian Update:</strong> When the user responds, multiply each candidate's likelihood by their probability and re-normalize the distribution.</li>
+              </ol>
+
+              <!-- Decision Tree SVG Diagram -->
+              <div class="tq-tree-diagram">
+                <h4 style="margin-top:0;font-size:0.9rem;text-transform:uppercase;color:var(--text-muted);text-align:center;">
+                  A Binary Decision Tree Splitting 2<sup>3</sup> = 8 Outcomes with 3 Bits
+                </h4>
+                <svg viewBox="0 0 600 240" width="100%" height="240" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Root Node -->
+                  <circle cx="300" cy="30" r="20" fill="#3b82f6" />
+                  <text x="300" y="35" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Q1</text>
+                  
+                  <!-- Layer 1 Lines -->
+                  <line x1="300" y1="50" x2="160" y2="90" stroke="var(--line, #94a3b8)" stroke-width="2" />
+                  <line x1="300" y1="50" x2="440" y2="90" stroke="var(--line, #94a3b8)" stroke-width="2" />
+                  <text x="220" y="65" fill="#22c55e" font-size="10" font-weight="700">YES</text>
+                  <text x="380" y="65" fill="#ef4444" font-size="10" font-weight="700">NO</text>
+
+                  <!-- Layer 1 Nodes -->
+                  <circle cx="160" cy="100" r="18" fill="#6366f1" />
+                  <text x="160" y="104" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="700">Q2</text>
+                  <circle cx="440" cy="100" r="18" fill="#6366f1" />
+                  <text x="440" y="104" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="700">Q3</text>
+
+                  <!-- Layer 2 Lines -->
+                  <line x1="160" y1="118" x2="80" y2="160" stroke="var(--line, #94a3b8)" stroke-width="2" />
+                  <line x1="160" y1="118" x2="240" y2="160" stroke="var(--line, #94a3b8)" stroke-width="2" />
+                  <line x1="440" y1="118" x2="360" y2="160" stroke="var(--line, #94a3b8)" stroke-width="2" />
+                  <line x1="440" y1="118" x2="520" y2="160" stroke="var(--line, #94a3b8)" stroke-width="2" />
+
+                  <!-- Layer 2 Nodes -->
+                  <circle cx="80" cy="170" r="15" fill="#8b5cf6" />
+                  <circle cx="240" cy="170" r="15" fill="#8b5cf6" />
+                  <circle cx="360" cy="170" r="15" fill="#8b5cf6" />
+                  <circle cx="520" cy="170" r="15" fill="#8b5cf6" />
+
+                  <!-- Leaves (8 distinct candidates) -->
+                  <text x="80" y="215" text-anchor="middle" fill="var(--text, #1e293b)" font-size="9" font-weight="700">Elephant</text>
+                  <text x="240" y="215" text-anchor="middle" fill="var(--text, #1e293b)" font-size="9" font-weight="700">Eagle</text>
+                  <text x="360" y="215" text-anchor="middle" fill="var(--text, #1e293b)" font-size="9" font-weight="700">Telescope</text>
+                  <text x="520" y="215" text-anchor="middle" fill="var(--text, #1e293b)" font-size="9" font-weight="700">Pyramids</text>
+                </svg>
+              </div>
+            </article>
+          </section>
+
+          <!-- From 20Q to Modern AI (LLMs, Cross-Entropy) -->
+          <section class="section">
+            <article class="card">
+              <div class="section-head">
+                <p class="eyebrow">Connection to Modern AI</p>
+                <h3>6. How Large Language Models (ChatGPT, Gemini, Claude) Use Information Theory</h3>
+                <p>Information theory is not just for 20 Questions — it is the exact mathematical foundation used to train modern frontier AI.</p>
+              </div>
+
+              <div class="tq-concept-grid">
+                <div class="tq-concept-card">
+                  <h4>Cross-Entropy Loss (<em>L</em>)</h4>
+                  <p>When training an LLM, the loss function is <strong>Cross-Entropy</strong>. It measures how many unnecessary bits of surprise the model suffered when trying to guess the next word of human text. Lower entropy means better language understanding.</p>
+                </div>
+                <div class="tq-concept-card">
+                  <h4>Perplexity (2<sup><em>H</em></sup>)</h4>
+                  <p>In AI research papers, model accuracy is reported in <strong>Perplexity</strong>, defined as 2<sup><em>H</em></sup>. A perplexity of 16 means the language model is as confused as someone making a blind choice between 16 equally likely words.</p>
+                </div>
+                <div class="tq-concept-card">
+                  <h4>Temperature &amp; Entropy</h4>
+                  <p>When you set an AI's temperature to 0.0, it always chooses the token with lowest entropy (most predictable). Higher temperature increases the entropy, making responses more creative and varied.</p>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <!-- Challenge Cards -->
+          <section class="section">
+            <div class="section-head">
+              <h2>Classroom Challenge Cards</h2>
+              <p>Test the boundaries of Information Theory with these hands-on lab missions.</p>
+            </div>
+            <div class="columns">
+              <article class="card">
+                <h3>Lab Missions</h3>
+                <ul class="rhythm">
+                  <li><span>Mission 1</span><strong>The 10-Question Speedrun:</strong> Think of a widely known mammal (e.g. <em>Lion</em> or <em>Elephant</em>). Can the AI guess it in under 10 questions? Observe how many bits of entropy were removed per question.</li>
+                  <li><span>Mission 2</span><strong>The Obscure Test:</strong> Think of an unusual science invention or astronomical concept (e.g. <em>Microscope</em>, <em>International Space Station</em>, or <em>Black Hole</em>). Watch which question acts as the decisive filter.</li>
+                  <li><span>Mission 3</span><strong>Noise &amp; Fault Tolerance:</strong> Answer one question with &ldquo;Probably Not&rdquo; even when it is true. Observe how Bayesian inference recovers from human error without getting stuck!</li>
+                </ul>
+              </article>
+              <article class="card">
+                <h3>Information Theory Investigations</h3>
+                <ul class="rhythm">
+                  <li><span>Mission 4</span><strong>The Entropy Tracker:</strong> Record the entropy <em>H</em> after Question 1, Question 5, and Question 10 in your lab notebook. Graph the curve of decay.</li>
+                  <li><span>Mission 5</span><strong>Beat the Oracle:</strong> Think of an entity that is not in the database. When the Oracle gives up, use the &ldquo;Teach the AI&rdquo; form to add it and its distinguishing question.</li>
+                  <li><span>Mission 6</span><strong>The Perfect 50/50 Question:</strong> If you had to divide your entire classroom in half with a single question, what question would you ask to maximize Shannon Information Gain?</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <!-- Reflection & Teacher Notes -->
+          <section class="section">
+            <div class="section-head">
+              <h2>Reflection + Teacher Notes</h2>
+              <p>Prompts for class discussion, STEAM notebooks, and lesson worksheets.</p>
+            </div>
+            <div class="columns">
+              <article class="card">
+                <h3>Reflection Prompts</h3>
+                <ul class="rhythm">
+                  <li><span>Prompt 1</span><strong>Why is a question with a 50/50 answer more valuable to an AI than a question with a 99/1 answer?</strong></li>
+                  <li><span>Prompt 2</span><strong>What does it mean for an AI to &ldquo;learn&rdquo; from feedback when a player teaches it a new item?</strong></li>
+                  <li><span>Prompt 3</span><strong>How does Claude Shannon's concept of a &ldquo;bit&rdquo; connect phone communication, computer memory, and twenty questions?</strong></li>
+                </ul>
+              </article>
+              <article class="card">
+                <h3>Teacher Moves</h3>
+                <ul class="rhythm">
+                  <li><span>Vocabulary</span><strong>Bit, Entropy (<em>H</em>), Information Gain (<em>IG</em>), Bayesian Inference, Prior Distribution, Decision Tree, Cross-Entropy.</strong></li>
+                  <li><span>Classroom Game</span><strong>Have two students play Twenty Questions aloud. After each question, ask the class: &ldquo;Did that cut the possibilities in half, or was it a wasted question?&rdquo;</strong></li>
+                  <li><span>Worksheet</span><strong>Print this lesson for student notebooks using the print button below.</strong></li>
+                </ul>
+                <div style="margin-top:1rem;display:flex;gap:0.75rem;align-items:center;">
+                  <button id="tq-print" type="button" class="tq-btn-toggle" style="background:var(--accent);color:#fff;border:none;">Print-Friendly Worksheet</button>
+                  <span data-print-ink-toggle></span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+        </main>
+      </div><!-- /.ll-sim -->
+
+      <!-- ═════════════════════════════════════════════════════════════════════
+           SIDEBAR PANEL (COLLAPSIBLE HUD & THEORY REFERENCE)
+           ═════════════════════════════════════════════════════════════════════ -->
+      <aside class="ll-sidebar" aria-label="Lesson controls and reference">
+        <div class="ll-tabs" role="tablist">
+          <button class="ll-tab is-active" data-pane="tq-guide" role="tab" aria-selected="true">Guide</button>
+          <button class="ll-tab" data-pane="tq-formulas" role="tab" aria-selected="false">Formulas</button>
+          <button class="ll-tab" data-pane="tq-history" role="tab" aria-selected="false">History</button>
+        </div>
+
+        <div class="ll-panes">
+          <!-- Guide Tab -->
+          <div class="ll-pane is-active" id="tq-guide">
+            <div class="ll-info">
+              <strong>How 20Q Works</strong>
+              Every question is chosen to maximize Claude Shannon's Information Gain, halving the remaining possibilities each turn.
+            </div>
+            <div class="ll-info">
+              <strong>Bayesian Probability</strong>
+              Answers update candidate likelihoods gradually. Even if you answer &ldquo;Not Sure&rdquo; or make a mistake, the engine avoids hard dead-ends.
+            </div>
+            <div class="ll-info">
+              <strong>Early Guessing</strong>
+              If top candidate confidence exceeds 75% or entropy drops below 0.4 bits, the Oracle triggers an early guess before question 20!
+            </div>
+          </div>
+
+          <!-- Formulas Tab -->
+          <div class="ll-pane" id="tq-formulas">
+            <span class="ll-label">Shannon Entropy</span>
+            <div class="ll-info">
+              <em>H</em>(<em>X</em>) = − ∑ <em>p</em><sub><em>i</em></sub> log<sub>2</sub>(<em>p</em><sub><em>i</em></sub>)<br/>
+              Measures remaining uncertainty in bits.
+            </div>
+            <span class="ll-label">Information Gain</span>
+            <div class="ll-info">
+              <em>IG</em> = <em>H</em><sub>before</sub> − <em>H</em><sub>after</sub><br/>
+              The bits of uncertainty eliminated by an answer.
+            </div>
+            <span class="ll-label">Exponential Halving</span>
+            <div class="ll-info">
+              2<sup>20</sup> = 1,048,576<br/>
+              20 binary decisions can isolate 1 in a million choices.
+            </div>
+          </div>
+
+          <!-- History Tab -->
+          <div class="ll-pane" id="tq-history">
+            <div class="ll-info">
+              <strong>1948</strong>
+              Claude Shannon publishes <em>A Mathematical Theory of Communication</em> at Bell Labs, establishing the &ldquo;bit&rdquo;.
+            </div>
+            <div class="ll-info">
+              <strong>1988</strong>
+              Robin Burgener programs the original 20Q neural net artificial intelligence.
+            </div>
+            <div class="ll-info">
+              <strong>2004</strong>
+              Radica Games releases the handheld 20Q toy orb, selling tens of millions worldwide.
+            </div>
+            <div class="ll-info">
+              <strong>2007</strong>
+              Akinator web genie launches, scaling Bayesian twenty questions to global pop culture.
+            </div>
+            <div class="ll-info">
+              <strong>Present</strong>
+              Modern LLMs (Gemini, Claude, GPT) use Cross-Entropy loss from Shannon's theory to master human language.
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <button class="ll-open-btn" aria-label="Open panel">
+        <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
+      </button>
+
+    </div><!-- /.ll-stage -->
+
+    <footer class="site-footer">
+      <p><a href="../../../steam-lessons.html">Back to Lessons</a></p>
+    </footer>
+
+  </div><!-- /.ll-viewport -->
+
+  <!-- Standard Scripts -->
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <!-- 20Q Game & Theory Engine Script -->
+  <script src="../../../assets/js/lessons/twenty-questions-engine.js"></script>
+</body>
+</html>

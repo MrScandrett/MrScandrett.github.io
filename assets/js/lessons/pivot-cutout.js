@@ -46,30 +46,152 @@
   function open(onCreate,stage){
     stage=stage||{width:690,height:420};
     var dlg=document.createElement('dialog');dlg.className='piv-cutout-dialog';dlg.setAttribute('aria-labelledby','piv-cutout-title');
-    dlg.innerHTML=`<form method="dialog"><header><h2 id="piv-cutout-title">Drawing puppet studio</h2><button value="cancel" class="piv-btn" aria-label="Close drawing puppet studio">×</button></header>
-      <div class="piv-cutout-body"><p>Photograph a drawing or choose an image. Cut out the torso, head, and limbs as separate pieces, then connect them with bones. Each piece moves like a paper puppet; it does not bend like skin. Photos stay on this device.</p>
-      <div class="piv-cutout-actions"><button type="button" class="piv-btn" data-action="camera">Take photo</button><button type="button" class="piv-btn" data-action="photo">Choose drawing</button><button type="button" class="piv-btn" data-action="rotate" disabled>Rotate photo 90°</button></div>
-      <input type="file" accept="image/*" capture="environment" data-camera hidden><input type="file" accept="image/*" data-photo hidden>
-      <p role="status" data-status>Use even lighting and photograph directly above the paper. If HEIC cannot open, choose a JPEG or PNG copy.</p>
-      <div data-work hidden>
-      <div class="piv-cutout-fields"><label>Part name <input data-name maxlength="40" value="Torso"></label><label>Connect to <select data-parent><option value="-1">Puppet origin</option></select></label><label><input type="checkbox" data-auto checked> Remove paper automatically</label><label>Background tolerance <input data-tolerance type="range" min="0" max="150" value="40"></label></div>
-      <div class="piv-cutout-actions"><button type="button" class="piv-btn" data-action="polygon">Trace outline</button><button type="button" class="piv-btn" data-action="undo">Undo point</button><button type="button" class="piv-btn" data-action="whole">Auto cutout / whole image</button><button type="button" class="piv-btn" data-action="joints">Place pivot &amp; bone tip</button><button type="button" class="piv-btn" data-action="reset-joints">Reset joints</button></div>
-      <div class="piv-cutout-actions" role="group" aria-label="Joint placement"><button type="button" class="piv-btn" data-action="pivot">Place / move pivot</button><button type="button" class="piv-btn" data-action="tip">Place / move bone tip</button><button type="button" class="piv-btn" data-action="snap">Use parent’s bone tip as pivot</button></div>
-      <fieldset class="piv-cutout-coordinates"><legend>Precise joint positions (image pixels)</legend><label>Pivot X <input type="number" min="0" step="1" data-coordinate="pivot-x"></label><label>Pivot Y <input type="number" min="0" step="1" data-coordinate="pivot-y"></label><label>Bone tip X <input type="number" min="0" step="1" data-coordinate="tip-x"></label><label>Bone tip Y <input type="number" min="0" step="1" data-coordinate="tip-y"></label></fieldset>
-      <label class="piv-cutout-zoom">Drawing zoom <input data-zoom type="range" min="100" max="300" step="25" value="100"> <output data-zoom-value>100%</output></label><button type="button" class="piv-btn" data-action="cancel-edit" hidden>Cancel part changes</button>
-      <p data-readout role="status" aria-live="polite"></p>
-      <p data-instruction id="piv-cutout-instruction">Trace around one part by tapping its outline. Then choose Place pivot &amp; bone tip and tap its rotation joint followed by the end of the bone.</p>
-      <div class="piv-cutout-grid"><div><div class="piv-cutout-viewport"><canvas data-source width="600" height="400" tabindex="0" aria-describedby="piv-cutout-instruction" role="application" aria-label="Drawing selection. Tap to add outline points or place joints; arrow keys move crosshair and Enter places a point."></canvas></div><p>Drag a joint handle to adjust it. Keyboard: arrows move the crosshair, Shift moves 10 pixels, Enter or Space places a point. Choose a joint button to reposition that joint.</p></div><div><canvas data-preview width="300" height="300" aria-label="Cutout part preview on checkerboard"></canvas><p>Preview retains original colors. Automatic removal clears edge-connected paper; adjust tolerance or trace a tighter outline for busy backgrounds.</p><details data-rig-preview hidden open><summary>Assembled puppet (rest pose)</summary><canvas data-puppet aria-label="Assembled cutout puppet preview"></canvas></details></div></div>
-      <div class="piv-cutout-actions"><button type="button" class="piv-btn piv-btn--accent" data-action="add">Add part to rig</button><button type="button" class="piv-btn" data-action="remove">Remove last part</button></div>
-      <ol data-parts></ol><p>Start with the torso, then add the head and limbs. Choose a parent to make each part follow it. Send back / Bring forward changes how parts overlap without changing their joints. You place the joints yourself; automatic cutout does not identify body parts.</p>
-      </div></div><footer><button value="create" class="piv-btn piv-btn--accent" disabled>Add puppet to animation</button><button value="cancel" class="piv-btn">Cancel</button></footer></form>`;
+    dlg.innerHTML=`<form method="dialog" class="piv-cutout-form">
+      <header class="piv-cutout-header">
+        <div class="piv-cutout-header-info">
+          <h2 id="piv-cutout-title">Drawing puppet studio</h2>
+          <span class="piv-cutout-badge" data-part-count>0 parts</span>
+        </div>
+        <button value="cancel" class="piv-btn piv-btn--close" aria-label="Close drawing puppet studio" title="Close (Escape)">×</button>
+      </header>
+      <div class="piv-cutout-body">
+        <div class="piv-cutout-intro" data-intro>
+          <div class="piv-cutout-intro-card">
+            <div class="piv-cutout-intro-icon" aria-hidden="true">✂️</div>
+            <h3>Turn drawings into movable puppets</h3>
+            <p>Photograph a drawing or pick an image. Cut out parts (torso, head, arms, legs), connect them with bones, and animate them like paper cutouts. Everything stays safe on this device.</p>
+            <div class="piv-cutout-intro-actions">
+              <button type="button" class="piv-btn piv-btn--accent piv-btn--lg" data-action="camera">📷 Take photo</button>
+              <button type="button" class="piv-btn piv-btn--lg" data-action="photo">🖼️ Choose drawing</button>
+            </div>
+            <p class="piv-cutout-drop-hint">Or drag and drop an image file here, or paste from clipboard (Ctrl+V / ⌘V)</p>
+            <div class="piv-cutout-tips">
+              <strong>Tips for classroom success:</strong>
+              <ul>
+                <li>Draw with dark pen, marker, or pencil on clean white paper.</li>
+                <li>Photograph flat from directly above under bright, even lighting.</li>
+                <li>Keep limbs slightly spaced out on paper for easier cutout tracing.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <input type="file" accept="image/*" capture="environment" data-camera hidden>
+        <input type="file" accept="image/*" data-photo hidden>
+        <div data-work hidden class="piv-cutout-work">
+          <div class="piv-cutout-toolbar">
+            <div class="piv-cutout-toolgroup" role="group" aria-label="Workflow tools">
+              <button type="button" class="piv-btn" data-action="polygon" aria-pressed="true" title="Trace outline around body part (1)"><span class="piv-icon" aria-hidden="true">✏️</span> Trace outline</button>
+              <button type="button" class="piv-btn" data-action="undo" title="Undo last outline point (Ctrl+Z or Z)"><span class="piv-icon" aria-hidden="true">↩</span> Undo point</button>
+              <button type="button" class="piv-btn" data-action="joints" title="Place rotation pivot and bone tip (2)"><span class="piv-icon" aria-hidden="true">🦴</span> Place pivot &amp; bone tip</button>
+              <button type="button" class="piv-btn" data-action="whole" title="Cut out entire drawing or auto selection (3)"><span class="piv-icon" aria-hidden="true">⚡</span> Auto cutout / whole image</button>
+              <button type="button" class="piv-btn" data-action="reset-joints" title="Reset joint handles"><span class="piv-icon" aria-hidden="true">🔄</span> Reset joints</button>
+            </div>
+            <div class="piv-cutout-toolgroup piv-joints-subgroup" role="group" aria-label="Joint placement">
+              <button type="button" class="piv-btn" data-action="pivot" title="Place or move rotation pivot"><span class="piv-dot piv-dot--pivot" aria-hidden="true"></span> Place / move pivot</button>
+              <button type="button" class="piv-btn" data-action="tip" title="Place or move bone tip"><span class="piv-dot piv-dot--tip" aria-hidden="true"></span> Place / move bone tip</button>
+              <button type="button" class="piv-btn" data-action="snap" title="Connect pivot directly to parent limb bone tip">Use parent’s bone tip as pivot</button>
+            </div>
+            <div class="piv-cutout-toolgroup piv-view-subgroup" role="group" aria-label="Zoom and drawing controls">
+              <button type="button" class="piv-btn piv-btn--icon" data-zoom-btn="out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+              <label class="piv-cutout-zoom" title="Drawing zoom level">Drawing zoom <input data-zoom type="range" min="100" max="300" step="25" value="100"> <output data-zoom-value>100%</output></label>
+              <button type="button" class="piv-btn piv-btn--icon" data-zoom-btn="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+              <button type="button" class="piv-btn piv-btn--icon" data-zoom-btn="reset" aria-label="Reset zoom to 100%" title="Reset zoom (0)">100%</button>
+              <button type="button" class="piv-btn" data-action="rotate" disabled title="Rotate photo 90 degrees clockwise">Rotate photo 90°</button>
+              <button type="button" class="piv-btn" data-action="change-photo" title="Choose another photo">Change photo</button>
+            </div>
+          </div>
+          <div class="piv-cutout-grid">
+            <div class="piv-cutout-stage-col">
+              <div class="piv-cutout-viewport" tabindex="0">
+                <canvas data-source width="600" height="400" tabindex="0" aria-describedby="piv-cutout-instruction" role="application" aria-label="Drawing selection. Tap to add outline points or place joints; arrow keys move crosshair and Enter places a point."></canvas>
+              </div>
+              <div class="piv-cutout-guidance">
+                <p data-instruction id="piv-cutout-instruction" class="piv-cutout-instruction">Trace around one part by tapping its outline. Then choose Place pivot &amp; bone tip and tap its rotation joint followed by the end of the bone.</p>
+                <div class="piv-cutout-status-bar">
+                  <p role="status" data-status class="piv-cutout-status">Use even lighting and photograph directly above the paper. If HEIC cannot open, choose a JPEG or PNG copy.</p>
+                  <p data-readout role="status" aria-live="polite" class="piv-cutout-readout"></p>
+                </div>
+                <p class="piv-cutout-shortcuts-hint">Drag a joint handle to adjust it. Keyboard: arrows move crosshair, Shift moves 10px, Enter/Space places point, Z undos point. Desktop: Space+drag pans.</p>
+              </div>
+            </div>
+            <div class="piv-cutout-sidebar">
+              <div class="piv-cutout-card piv-card--part">
+                <h4 class="piv-card-title">Part Setup</h4>
+                <div class="piv-cutout-fields">
+                  <label>Part name <input data-name maxlength="40" value="Torso"></label>
+                  <div class="piv-preset-chips" role="group" aria-label="Quick limb presets">
+                    <button type="button" class="piv-chip" data-preset="Torso">Torso</button>
+                    <button type="button" class="piv-chip" data-preset="Head">Head</button>
+                    <button type="button" class="piv-chip" data-preset="Left Arm">L Arm</button>
+                    <button type="button" class="piv-chip" data-preset="Right Arm">R Arm</button>
+                    <button type="button" class="piv-chip" data-preset="Left Leg">L Leg</button>
+                    <button type="button" class="piv-chip" data-preset="Right Leg">R Leg</button>
+                  </div>
+                  <label>Connect to <select data-parent><option value="-1">Puppet origin</option></select></label>
+                </div>
+                <div class="piv-cutout-actions piv-part-primary-actions">
+                  <button type="button" class="piv-btn piv-btn--accent piv-btn--lg" data-action="add">Add part to rig</button>
+                  <button type="button" class="piv-btn" data-action="cancel-edit" hidden>Cancel part changes</button>
+                </div>
+              </div>
+              <div class="piv-cutout-card piv-card--cutout">
+                <h4 class="piv-card-title">Paper Removal</h4>
+                <div class="piv-cutout-fields">
+                  <label class="piv-checkbox-label"><input type="checkbox" data-auto checked> Remove paper automatically</label>
+                  <label>Background tolerance <span class="piv-val-pill" data-tolerance-val>40</span><input data-tolerance type="range" min="0" max="150" value="40"></label>
+                </div>
+              </div>
+              <div class="piv-cutout-card piv-card--previews">
+                <h4 class="piv-card-title">Preview</h4>
+                <div class="piv-preview-box">
+                  <canvas data-preview width="300" height="300" aria-label="Cutout part preview on checkerboard"></canvas>
+                  <p class="piv-preview-note">Preview retains original colors. Automatic removal clears edge-connected paper; adjust tolerance or trace a tighter outline for busy backgrounds.</p>
+                </div>
+                <details data-rig-preview hidden open class="piv-rig-preview-details">
+                  <summary>Assembled puppet (rest pose)</summary>
+                  <canvas data-puppet aria-label="Assembled cutout puppet preview"></canvas>
+                </details>
+              </div>
+              <div class="piv-cutout-card piv-card--parts">
+                <div class="piv-card-header">
+                  <h4 class="piv-card-title">Puppet Rig Parts</h4>
+                  <button type="button" class="piv-btn piv-btn--sm" data-action="remove">Remove last part</button>
+                </div>
+                <ol data-parts class="piv-parts-list"></ol>
+                <p class="piv-parts-hint">Start with the torso, then add the head and limbs. Choose a parent to make each part follow it. Send back / Bring forward changes how parts overlap without changing their joints. You place the joints yourself; automatic cutout does not identify body parts.</p>
+              </div>
+              <details open class="piv-cutout-card piv-card--coords">
+                <summary>Precise joint positions (image pixels)</summary>
+                <fieldset class="piv-cutout-coordinates">
+                  <legend>Precise joint positions (image pixels)</legend>
+                  <label>Pivot X <input type="number" min="0" step="1" data-coordinate="pivot-x"></label>
+                  <label>Pivot Y <input type="number" min="0" step="1" data-coordinate="pivot-y"></label>
+                  <label>Bone tip X <input type="number" min="0" step="1" data-coordinate="tip-x"></label>
+                  <label>Bone tip Y <input type="number" min="0" step="1" data-coordinate="tip-y"></label>
+                </fieldset>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="piv-cutout-footer">
+        <div class="piv-footer-summary" data-footer-summary>Puppet: 0 parts</div>
+        <div class="piv-footer-actions">
+          <button value="cancel" class="piv-btn">Cancel</button>
+          <button value="create" class="piv-btn piv-btn--accent" disabled>Add puppet to animation</button>
+        </div>
+      </footer>
+    </form>`;
     document.body.appendChild(dlg);
     var q=function(sel){return dlg.querySelector(sel);},canvas=q('[data-source]'),preview=q('[data-preview]');
     var photo=null,points=[],pivot=null,tip=null,parts=[],paintOrder=[],mode='polygon',alive=true,token=0,partCanvas=null,clean=null,cursor={x:100,y:100},editing=-1,dragging=null;
     function status(t){q('[data-status]').textContent=t;}
     function setMode(next){
       mode=next;
-      ['polygon','joints','pivot','tip'].forEach(function(key){q('[data-action='+key+']').setAttribute('aria-pressed',String(mode===key));});
+      dlg.dataset.mode=mode;
+      ['polygon','joints','pivot','tip'].forEach(function(key){
+        var b=q('[data-action='+key+']');if(b)b.setAttribute('aria-pressed',String(mode===key));
+      });
       q('[data-instruction]').textContent=editing>=0?'Editing '+parts[editing].name+'. Adjust joints and parent, then Save part changes.':mode==='polygon'?'Step 1: Trace around one body part. Then choose Place pivot & bone tip.':mode==='pivot'?'Place the rotation pivot. Tap, drag its handle, or enter coordinates.':mode==='tip'?'Place the bone tip at the end of this body part.':'Step 2: Place the rotation pivot first, then the bone tip. Drag either handle to correct it.';
     }
     function syncJoints(){
@@ -86,12 +208,57 @@
       if(!photo)return;
       syncJoints();setMode(mode);
       var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(photo,0,0);
-      var handle=12*canvas.width/Math.max(1,canvas.getBoundingClientRect().width);
-      ctx.lineWidth=2;ctx.strokeStyle='#2563eb';ctx.fillStyle='rgba(37,99,235,.16)';
-      if(points.length){ctx.beginPath();points.forEach(function(p,i){ctx[i?'lineTo':'moveTo'](p.x,p.y);});if(points.length>=3){ctx.closePath();ctx.fill();}ctx.stroke();points.forEach(function(p){ctx.beginPath();ctx.arc(p.x,p.y,4,0,7);ctx.fillStyle='#2563eb';ctx.fill();});}
-      parts.forEach(function(p){ctx.beginPath();ctx.moveTo(p.pivot.x,p.pivot.y);ctx.lineTo(p.tip.x,p.tip.y);ctx.strokeStyle='#059669';ctx.stroke();});
-      if(pivot){ctx.strokeStyle='#c2410c';ctx.beginPath();ctx.arc(pivot.x,pivot.y,handle,0,7);ctx.stroke();if(tip){ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();ctx.beginPath();ctx.arc(tip.x,tip.y,handle,0,7);ctx.stroke();}ctx.font='bold '+Math.max(14,handle)+'px sans-serif';ctx.fillStyle='#111827';ctx.fillText('Pivot',pivot.x+handle+3,pivot.y);if(tip)ctx.fillText('Tip',tip.x+handle+3,tip.y);}
-      ctx.strokeStyle='#111827';ctx.beginPath();ctx.moveTo(cursor.x-7,cursor.y);ctx.lineTo(cursor.x+7,cursor.y);ctx.moveTo(cursor.x,cursor.y-7);ctx.lineTo(cursor.x,cursor.y+7);ctx.stroke();
+      var r=canvas.getBoundingClientRect(),scaleRatio=canvas.width/Math.max(1,r.width);
+      var handle=Math.max(14*scaleRatio,10);
+      if(points.length){
+        ctx.lineWidth=4*scaleRatio;ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.beginPath();
+        points.forEach(function(p,i){ctx[i?'lineTo':'moveTo'](p.x,p.y);});
+        if(points.length>=3)ctx.closePath();ctx.stroke();
+        ctx.lineWidth=2*scaleRatio;ctx.strokeStyle='#2563eb';ctx.fillStyle='rgba(37,99,235,.18)';ctx.beginPath();
+        points.forEach(function(p,i){ctx[i?'lineTo':'moveTo'](p.x,p.y);});
+        if(points.length>=3){ctx.closePath();ctx.fill();}ctx.stroke();
+        points.forEach(function(p){
+          ctx.beginPath();ctx.arc(p.x,p.y,5*scaleRatio,0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();
+          ctx.beginPath();ctx.arc(p.x,p.y,3.5*scaleRatio,0,Math.PI*2);ctx.fillStyle='#2563eb';ctx.fill();
+        });
+      }
+      parts.forEach(function(p){
+        ctx.beginPath();ctx.moveTo(p.pivot.x,p.pivot.y);ctx.lineTo(p.tip.x,p.tip.y);
+        ctx.lineWidth=4*scaleRatio;ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.stroke();
+        ctx.beginPath();ctx.moveTo(p.pivot.x,p.pivot.y);ctx.lineTo(p.tip.x,p.tip.y);
+        ctx.lineWidth=2.5*scaleRatio;ctx.strokeStyle='#059669';ctx.stroke();
+      });
+      if(pivot){
+        if(tip){
+          ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(tip.x,tip.y);
+          ctx.lineWidth=4*scaleRatio;ctx.strokeStyle='rgba(255,255,255,0.95)';ctx.stroke();
+          ctx.beginPath();ctx.moveTo(pivot.x,pivot.y);ctx.lineTo(tip.x,tip.y);
+          ctx.lineWidth=2.5*scaleRatio;ctx.strokeStyle='#ea580c';
+          ctx.setLineDash([6*scaleRatio,4*scaleRatio]);ctx.stroke();ctx.setLineDash([]);
+        }
+        function drawJointBadge(pt,color,label){
+          ctx.beginPath();ctx.arc(pt.x,pt.y,handle+3*scaleRatio,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fill();
+          ctx.beginPath();ctx.arc(pt.x,pt.y,handle+1.5*scaleRatio,0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();
+          ctx.beginPath();ctx.arc(pt.x,pt.y,handle,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+          ctx.beginPath();ctx.arc(pt.x,pt.y,Math.max(3*scaleRatio,handle*0.3),0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();
+          var fontSize=Math.max(13*scaleRatio,11);
+          ctx.font='bold '+fontSize+'px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          var tm=ctx.measureText(label),bx=pt.x+handle+4*scaleRatio,by=pt.y-fontSize*0.4,bw=tm.width+8*scaleRatio,bh=fontSize+6*scaleRatio;
+          ctx.fillStyle='rgba(15,23,42,0.85)';
+          if(ctx.roundRect){ctx.beginPath();ctx.roundRect(bx,by-2*scaleRatio,bw,bh,4*scaleRatio);ctx.fill();}
+          else ctx.fillRect(bx,by-2*scaleRatio,bw,bh);
+          ctx.fillStyle='#ffffff';ctx.fillText(label,bx+4*scaleRatio,by+fontSize*0.7);
+        }
+        drawJointBadge(pivot,'#ea580c','Pivot');
+        if(tip)drawJointBadge(tip,'#059669','Tip');
+      }
+      var chLen=8*scaleRatio;
+      ctx.lineWidth=3.5*scaleRatio;ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.beginPath();
+      ctx.moveTo(cursor.x-chLen,cursor.y);ctx.lineTo(cursor.x+chLen,cursor.y);
+      ctx.moveTo(cursor.x,cursor.y-chLen);ctx.lineTo(cursor.x,cursor.y+chLen);ctx.stroke();
+      ctx.lineWidth=1.5*scaleRatio;ctx.strokeStyle='#0f172a';ctx.beginPath();
+      ctx.moveTo(cursor.x-chLen,cursor.y);ctx.lineTo(cursor.x+chLen,cursor.y);
+      ctx.moveTo(cursor.x,cursor.y-chLen);ctx.lineTo(cursor.x,cursor.y+chLen);ctx.stroke();
       partCanvas=cv(photo.width,photo.height);var px=partCanvas.getContext('2d');
       if(points.length>=3){px.beginPath();points.forEach(function(p,i){px[i?'lineTo':'moveTo'](p.x,p.y);});px.closePath();px.clip();}
       if(editing>=0){var savedPart=parts[editing];px.drawImage(savedPart.cutout,savedPart.cropX,savedPart.cropY);}else px.drawImage(clean,0,0);if(points.length>0&&points.length<3)px.clearRect(0,0,partCanvas.width,partCanvas.height);
@@ -106,11 +273,13 @@
       var id=++token,url=URL.createObjectURL(file);status('Opening drawing…');
       try{var img=new Image();img.src=url;await img.decode();if(!alive||id!==token)return;
         var scale=Math.min(1,1000/Math.max(img.naturalWidth,img.naturalHeight));photo=cv(Math.max(1,Math.round(img.naturalWidth*scale)),Math.max(1,Math.round(img.naturalHeight*scale)));photo.getContext('2d').drawImage(img,0,0,photo.width,photo.height);
-        canvas.width=photo.width;canvas.height=photo.height;points=[];pivot=tip=null;cursor={x:photo.width/2,y:photo.height/2};mode='polygon';q('[data-work]').hidden=false;updateClean();render();q('[data-action=rotate]').disabled=false;
+        canvas.width=photo.width;canvas.height=photo.height;points=[];pivot=tip=null;cursor={x:photo.width/2,y:photo.height/2};mode='polygon';
+        q('[data-intro]').hidden=true;q('[data-work]').hidden=false;updateClean();render();q('[data-action=rotate]').disabled=false;
         status('Trace a part, or choose Auto cutout for the whole drawing. Then place its pivot and bone tip.');
       }catch(e){if(alive)status('Cannot open that photo. Try a JPEG or PNG copy.');}finally{URL.revokeObjectURL(url);}
     }
     ['camera','photo'].forEach(function(kind){q('[data-action='+kind+']').onclick=function(){q('[data-'+kind+']').click();};q('[data-'+kind+']').onchange=function(e){load(e.target.files[0]);e.target.value='';};});
+    var changeBtn=q('[data-action=change-photo]');if(changeBtn)changeBtn.onclick=function(){if(parts.length)return status('Remove rig parts before switching to a new photo.');q('[data-photo]').click();};
     function place(p){
       cursor={x:p.x,y:p.y};
       if(mode==='polygon')points.push(p);
@@ -119,8 +288,20 @@
       render();
     }
     function pointerPoint(e){var r=canvas.getBoundingClientRect();return {x:Math.max(0,Math.min(photo.width,(e.clientX-r.left)*canvas.width/r.width)),y:Math.max(0,Math.min(photo.height,(e.clientY-r.top)*canvas.height/r.height))};}
+    var activePointers=new Map(),pinchDistStart=0,pinchZoomStart=100;
     canvas.onpointerdown=function(e){
-      if(!photo)return;e.preventDefault();canvas.focus();var p=pointerPoint(e),r=canvas.getBoundingClientRect(),radius=18*canvas.width/r.width;
+      if(!photo)return;
+      activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(activePointers.size===2){
+        var pts=Array.from(activePointers.values());
+        pinchDistStart=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+        pinchZoomStart=+q('[data-zoom]').value;
+        return;
+      }
+      e.preventDefault();canvas.focus();
+      var p=pointerPoint(e),r=canvas.getBoundingClientRect();
+      var touchBonus=(e.pointerType==='touch'||e.pointerType==='pen')?16:0;
+      var radius=(18+touchBonus)*canvas.width/r.width;
       if(mode!=='polygon'&&!(mode==='tip'&&!tip)&&!(mode==='pivot'&&!pivot)){
         var candidates=[['pivot',pivot],['tip',tip]].filter(function(entry){return entry[1]&&Math.hypot(entry[1].x-p.x,entry[1].y-p.y)<=radius;});
         candidates.sort(function(a,b){return Math.hypot(a[1].x-p.x,a[1].y-p.y)-Math.hypot(b[1].x-p.x,b[1].y-p.y)||(a[0]===mode?-1:b[0]===mode?1:0);});
@@ -128,8 +309,19 @@
       }
       place(p);
     };
-    canvas.onpointermove=function(e){if(!dragging)return;var p=pointerPoint(e);cursor=p;if(dragging==='pivot')pivot=p;else tip=p;render();};
-    canvas.onpointerup=canvas.onpointercancel=function(){if(dragging){dragging=null;status('Joint moved. Check the preview, then save this part.');}};
+    canvas.onpointermove=function(e){
+      if(activePointers.has(e.pointerId))activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(activePointers.size===2&&pinchDistStart>0){
+        var pts=Array.from(activePointers.values()),d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+        setZoom(pinchZoomStart*(d/pinchDistStart));return;
+      }
+      if(!dragging)return;var p=pointerPoint(e);cursor=p;if(dragging==='pivot')pivot=p;else tip=p;render();
+    };
+    function clearPointer(e){
+      activePointers.delete(e.pointerId);if(activePointers.size<2)pinchDistStart=0;
+      if(dragging){dragging=null;status('Joint moved. Check the preview, then save this part.');}
+    }
+    canvas.onpointerup=canvas.onpointercancel=clearPointer;
     canvas.onkeydown=function(e){
       if(!photo)return;var delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
       if(delta){e.preventDefault();var step=e.shiftKey?10:1;cursor={x:Math.max(0,Math.min(photo.width,cursor.x+delta[0]*step)),y:Math.max(0,Math.min(photo.height,cursor.y+delta[1]*step))};q('[data-readout]').textContent='Crosshair X '+Math.round(cursor.x)+', Y '+Math.round(cursor.y);render();}
@@ -150,20 +342,85 @@
       parts.forEach(function(p,i){
         if(editing<0||i<editing)parent.add(new Option((i+1)+'. '+p.name,String(i)));
         var li=document.createElement('li');li.className='piv-cutout-part';
-        var label=document.createElement('span');label.textContent=p.name+' → '+(p.parent<0?'origin':parts[p.parent].name)+' · layer '+(paintOrder.indexOf(i)+1);li.appendChild(label);
-        var edit=document.createElement('button');edit.type='button';edit.className='piv-btn';edit.textContent='Edit joints';edit.disabled=editing>=0;edit.setAttribute('aria-label','Edit joints: '+p.name);
-        edit.onclick=function(){editing=i;points=[];pivot={x:p.pivot.x,y:p.pivot.y};tip={x:p.tip.x,y:p.tip.y};q('[data-name]').value=p.name;setMode('pivot');list();q('[data-parent]').value=String(p.parent);render();canvas.focus();status('Editing '+p.name+'. Save part changes to keep the new joints.');};li.appendChild(edit);
+        var info=document.createElement('div');info.className='piv-part-info';
+        var label=document.createElement('span');label.className='piv-part-label';label.textContent=p.name+' → '+(p.parent<0?'origin':parts[p.parent].name)+' · layer '+(paintOrder.indexOf(i)+1);info.appendChild(label);li.appendChild(info);
+        var btnGroup=document.createElement('div');btnGroup.className='piv-part-btns';
+        var edit=document.createElement('button');edit.type='button';edit.className='piv-btn piv-btn--sm';edit.textContent='Edit joints';edit.disabled=editing>=0;edit.setAttribute('aria-label','Edit joints: '+p.name);
+        edit.onclick=function(){editing=i;points=[];pivot={x:p.pivot.x,y:p.pivot.y};tip={x:p.tip.x,y:p.tip.y};q('[data-name]').value=p.name;setMode('pivot');list();q('[data-parent]').value=String(p.parent);render();canvas.focus();status('Editing '+p.name+'. Save part changes to keep the new joints.');};btnGroup.appendChild(edit);
         [[-1,'Send back'],[1,'Bring forward']].forEach(function(entry){
-          var button=document.createElement('button');button.type='button';button.className='piv-btn';button.textContent=entry[1];button.setAttribute('aria-label',entry[1]+': '+p.name);
+          var button=document.createElement('button');button.type='button';button.className='piv-btn piv-btn--sm';button.textContent=entry[1];button.setAttribute('aria-label',entry[1]+': '+p.name);
           var pos=paintOrder.indexOf(i),next=pos+entry[0];button.disabled=next<0||next>=paintOrder.length;
-          button.onclick=function(){var other=paintOrder[next];paintOrder[next]=i;paintOrder[pos]=other;list();render();};li.appendChild(button);
-        });q('[data-parts]').appendChild(li);
+          button.onclick=function(){var other=paintOrder[next];paintOrder[next]=i;paintOrder[pos]=other;list();render();};btnGroup.appendChild(button);
+        });li.appendChild(btnGroup);q('[data-parts]').appendChild(li);
       });
       parent.value=old;if(parent.selectedIndex<0)parent.value='-1';q('[value=create]').disabled=!parts.length||editing>=0;
+      var countBadge=q('[data-part-count]');if(countBadge)countBadge.textContent=parts.length+(parts.length===1?' part':' parts');
+      var footerSum=q('[data-footer-summary]');if(footerSum){
+        footerSum.textContent=parts.length===0?'Puppet: 0 parts':parts.length+(parts.length===1?' part':' parts')+' connected in puppet'+(editing>=0?' (editing...)':'');
+      }
     }
-    q('[data-zoom]').oninput=function(e){canvas.style.width=e.target.value+'%';q('[data-zoom-value]').textContent=e.target.value+'%';render();};
+    function setZoom(val){
+      var clamped=Math.min(300,Math.max(100,Math.round(val/25)*25));
+      q('[data-zoom]').value=clamped;canvas.style.width=clamped+'%';q('[data-zoom-value]').textContent=clamped+'%';render();
+    }
+    q('[data-zoom]').oninput=function(e){setZoom(+e.target.value);};
+    ['in','out','reset'].forEach(function(action){
+      var btn=q('[data-zoom-btn='+action+']');if(btn){
+        btn.onclick=function(){
+          var cur=+q('[data-zoom]').value;
+          if(action==='in')setZoom(cur+25);else if(action==='out')setZoom(cur-25);else setZoom(100);
+        };
+      }
+    });
+    var viewport=q('.piv-cutout-viewport'),isSpaceDown=false,panAnchor=null;
+    dlg.addEventListener('keydown',function(e){
+      if(e.code==='Space'&&(e.target===canvas||e.target===viewport)){isSpaceDown=true;viewport.style.cursor='grab';}
+    });
+    dlg.addEventListener('keyup',function(e){if(e.code==='Space'){isSpaceDown=false;viewport.style.cursor='';}});
+    viewport.addEventListener('mousedown',function(e){
+      if(isSpaceDown||e.button===1){panAnchor={x:e.clientX,y:e.clientY,scrollX:viewport.scrollLeft,scrollY:viewport.scrollTop};viewport.style.cursor='grabbing';e.preventDefault();}
+    });
+    window.addEventListener('mousemove',function(e){
+      if(panAnchor){viewport.scrollLeft=panAnchor.scrollX-(e.clientX-panAnchor.x);viewport.scrollTop=panAnchor.scrollY-(e.clientY-panAnchor.y);}
+    });
+    window.addEventListener('mouseup',function(){if(panAnchor){panAnchor=null;viewport.style.cursor=isSpaceDown?'grab':'';}});
+    viewport.addEventListener('wheel',function(e){
+      if(e.ctrlKey||e.metaKey){e.preventDefault();var cur=+q('[data-zoom]').value;setZoom(cur+(e.deltaY<0?25:-25));}
+    },{passive:false});
+    dlg.querySelectorAll('[data-preset]').forEach(function(btn){
+      btn.onclick=function(){
+        var preset=btn.getAttribute('data-preset');q('[data-name]').value=preset;
+        var parentSel=q('[data-parent]');
+        if(preset==='Torso')parentSel.value='-1';
+        else if(parts.length>0){
+          var torsoIdx=parts.findIndex(function(p){return /torso/i.test(p.name);});
+          if(torsoIdx>=0)parentSel.value=String(torsoIdx);else parentSel.value='0';
+        }
+        syncJoints();status('Preset chosen: '+preset+(parentSel.value>=0?' (connects to '+parts[+parentSel.value].name+')':''));
+      };
+    });
+    dlg.addEventListener('dragover',function(e){e.preventDefault();dlg.classList.add('is-dragover');});
+    dlg.addEventListener('dragleave',function(e){if(!dlg.contains(e.relatedTarget))dlg.classList.remove('is-dragover');});
+    dlg.addEventListener('drop',function(e){e.preventDefault();dlg.classList.remove('is-dragover');var file=e.dataTransfer?.files?.[0];if(file&&file.type.startsWith('image/'))load(file);});
+    dlg.addEventListener('paste',function(e){
+      var items=e.clipboardData?.items;if(!items)return;
+      for(var i=0;i<items.length;i++){if(items[i].type.startsWith('image/')){var file=items[i].getAsFile();if(file){load(file);e.preventDefault();break;}}}
+    });
+    dlg.addEventListener('keydown',function(e){
+      if(e.target.matches('input[type="text"], input[type="number"], input:not([type]), select'))return;
+      if((e.key==='z'||e.key==='Z')&&(e.ctrlKey||e.metaKey||!e.shiftKey)){e.preventDefault();q('[data-action=undo]').click();}
+      else if(e.key==='1'){e.preventDefault();q('[data-action=polygon]').click();}
+      else if(e.key==='2'){e.preventDefault();q('[data-action=joints]').click();}
+      else if(e.key==='3'){e.preventDefault();q('[data-action=whole]').click();}
+      else if(e.key==='+'||e.key==='='){e.preventDefault();setZoom(+q('[data-zoom]').value+25);}
+      else if(e.key==='-'){e.preventDefault();setZoom(+q('[data-zoom]').value-25);}
+      else if(e.key==='0'){e.preventDefault();setZoom(100);}
+    });
     q('[data-action=cancel-edit]').onclick=function(){editing=-1;points=[];pivot=tip=null;mode='polygon';list();q('[data-name]').value='Part '+(parts.length+1);render();status('Part changes canceled. Saved joints are unchanged.');};
-    q('[data-auto]').onchange=q('[data-tolerance]').oninput=function(){updateClean();render();};
+    q('[data-auto]').onchange=function(){updateClean();render();};
+    q('[data-tolerance]').oninput=function(e){
+      var out=q('[data-tolerance-val]');if(out)out.textContent=e.target.value;updateClean();render();
+    };
     q('[data-action=polygon]').onclick=function(){if(editing>=0)return status('Save this part’s joint changes before tracing another part.');setMode('polygon');status('Tap points around one body part. Use Undo point to correct its outline.');};
     q('[data-action=undo]').onclick=function(){points.pop();render();};
     q('[data-action=whole]').onclick=function(){if(editing>=0)return status('Save this part’s joint changes before selecting a new cutout.');points=[];pivot=tip=null;q('[data-auto]').checked=true;mode='joints';updateClean();render();status('Automatic cutout selected. Tap the pivot, then the bone tip. Use Trace outline for separate limbs.');};
