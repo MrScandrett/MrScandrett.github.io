@@ -322,7 +322,7 @@
     var c = el('canvas'); c.width = 64; c.height = 48; c.className = 'px-canvas-plain'; c.style.maxWidth = '320px';
     c.setAttribute('role', 'img'); c.setAttribute('aria-label', 'The selected tile repeated in a grid to reveal seams');
     right.appendChild(c);
-    right.appendChild(el('p', 'px-note', 'If you can see a grid of squares, the left/right or top/bottom edges do not match. Copy the left column’s colours onto the right column (and top onto bottom) until the seams vanish.'));
+    right.appendChild(el('p', 'px-note', 'Look for unwanted lines where copies meet. Dirt should repeat in every direction; grass has an intentional top edge, so check its left/right joins. Matching opposite edge colours can help, but also check that the pattern flows across the join.'));
     var rules = el('p', 'px-readout'); right.appendChild(rules);
     function seam(frame) {
       var art = store.load(); var f = frame || art.tiles[key].px; var ctx = c.getContext('2d');
