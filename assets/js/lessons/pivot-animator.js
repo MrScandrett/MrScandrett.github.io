@@ -740,6 +740,7 @@
         if (document.activeElement !== input) input.value = entry[1];
       });
       document.getElementById("piv-stage-size").textContent = (state.doc.width || STAGE_W) + " × " + (state.doc.height || STAGE_H);
+      root.style.setProperty("--piv-aspect", (state.doc.width || STAGE_W) + " / " + (state.doc.height || STAGE_H));
       document.querySelectorAll("#piv-swatches [data-rgb]").forEach(function (swatch) {
         var active = swatch.dataset.rgb === (fig.color || []).join(",");
         swatch.classList.toggle("is-active", active);
@@ -831,14 +832,14 @@
       };
     }
 
-    function hitTestHandles(pt) {
+    function hitTestHandles(pt, touch) {
       var fr = currentFrame();
 
       // Respect the scene's paint order when figures overlap.
       for (var oi = fr.order.length - 1; oi >= 0; oi--) {
         var fi = fr.order[oi];
         var best = null;
-        var bestDist = Math.max(18, 12 / stageView.scale); // Keep handles usable on small screens.
+        var bestDist = Math.max(18, (touch ? 24 : 12) / stageView.scale); // Fingers need a bigger target than a mouse.
         var fig = fr.figures[fi];
         var dOrigin = Math.hypot(pt.x - fig.x, pt.y - fig.y);
         if (dOrigin <= bestDist) {
@@ -864,7 +865,7 @@
       }
       canvas.focus({ preventScroll: true });
       var pt = getStageCoords(e);
-      var hit = hitTestHandles(pt);
+      var hit = hitTestHandles(pt, e.pointerType === "touch");
       if (hit) {
         state.selectedFigIndex = hit.figIndex;
         state.selectedSegIndex = hit.segIndex;
@@ -1471,12 +1472,54 @@
       e.currentTarget.setAttribute("aria-pressed", String(state.showGrid));
       renderStage();
     });
-    onClick("piv-btn-focus", function (e) {
-      var expanded = root.classList.toggle("is-expanded");
-      e.currentTarget.textContent = expanded ? "Exit expanded view" : "Expand workspace";
-      e.currentTarget.setAttribute("aria-pressed", String(expanded));
+    // Full screen: a fixed overlay (iPhone Safari has no element fullscreen). Phones get an app
+    // layout (tabbed dock in portrait, side rail in landscape); everything stays reachable.
+    var fullBtn = document.getElementById("piv-btn-focus");
+    var fullBtn2 = document.getElementById("piv-btn-stage-full");
+    var fullLabel = document.getElementById("piv-focus-label");
+    var viewportMeta = document.querySelector('meta[name="viewport"]');
+    var viewportOriginal = viewportMeta ? viewportMeta.getAttribute("content") : null;
+    var fullHistory = false;
+    function setFull(on, fromPop) {
+      on = !!on;
+      if (on === root.classList.contains("is-expanded")) return;
+      stopPlayback();
+      root.classList.toggle("is-expanded", on);
+      document.documentElement.classList.toggle("piv-full-lock", on);
+      [fullBtn, fullBtn2].forEach(function (b) { if (b) b.setAttribute("aria-pressed", String(on)); });
+      if (fullBtn) fullBtn.setAttribute("title", (on ? "Exit full screen" : "Full screen") + " (F)");
+      if (fullBtn2) fullBtn2.setAttribute("aria-label", on ? "Exit full screen" : "Full screen");
+      if (fullLabel) fullLabel.textContent = on ? "Exit full screen" : "Full screen";
+      var icon = fullBtn && fullBtn.querySelector(".piv-full-icon");
+      if (icon) icon.textContent = on ? "✕" : "⛶";
+      // Let the stage reach under the notch in landscape; the shell pads itself with env() insets.
+      if (viewportMeta && viewportOriginal) {
+        viewportMeta.setAttribute("content", on && viewportOriginal.indexOf("viewport-fit") < 0 ? viewportOriginal + ", viewport-fit=cover" : viewportOriginal);
+      }
+      // Swipe-back / Back button leaves full screen instead of leaving the lesson.
+      try {
+        if (on && !fromPop) { history.pushState({ pivFull: 1 }, "", location.href); fullHistory = true; }
+        else if (!on && !fromPop && fullHistory) { fullHistory = false; history.back(); }
+        else if (!on) fullHistory = false;
+      } catch (err) { fullHistory = false; }
       sizing.resize();
-    });
+      if (on) { try { (fullBtn2 && getComputedStyle(root).position === "fixed" ? canvas : root).focus({ preventScroll: true }); } catch (err) {} }
+      else { try { (fullBtn2 || fullBtn).focus({ preventScroll: true }); } catch (err) {} }
+      showToast(on ? "Full screen. Use the tabs below for Frames, Figure, Scene and File." : "Back to the lesson page.");
+    }
+    function toggleFull() { setFull(!root.classList.contains("is-expanded")); }
+    onClick("piv-btn-focus", toggleFull);
+    onClick("piv-btn-stage-full", toggleFull);
+    window.addEventListener("popstate", function () { if (root.classList.contains("is-expanded")) { fullHistory = false; setFull(false, true); } });
+    window.addEventListener("orientationchange", function () { setTimeout(function () { if (sizing) sizing.resize(); }, 250); });
+    // Bottom dock tabs (visible only in phone full screen).
+    var tabButtons = Array.prototype.slice.call(root.querySelectorAll("[data-piv-tab]"));
+    function setTab(name) {
+      root.setAttribute("data-tab", name);
+      tabButtons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-piv-tab") === name)); });
+    }
+    tabButtons.forEach(function (b) { b.addEventListener("click", function () { setTab(b.getAttribute("data-piv-tab")); }); });
+    setTab("frames");
     onClick("piv-view-animate", function () { setView(false); });
     onClick("piv-view-learn", function () { setView(true); });
     document.addEventListener("click", function (e) {
@@ -1528,7 +1571,7 @@
       syncAll();
     });
     window.addEventListener("keydown", function (e) {
-      if (e.code === "Escape" && root.classList.contains("is-expanded")) { document.getElementById("piv-btn-focus").click(); return; }
+      if (e.code === "Escape" && root.classList.contains("is-expanded")) { setFull(false); return; }
       var active = document.activeElement;
       if (active && (active.matches("input, textarea, select") || active.isContentEditable)) return;
       if (document.getElementById("piv-sec-studio").hidden) return;
@@ -1555,6 +1598,7 @@
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.code === "Space" && (!active || active.tagName !== "BUTTON")) { e.preventDefault(); elPlayBtn.click(); }
       if (e.code === "KeyN") { e.preventDefault(); stopPlayback(); addNextFrame(); }
+      if (e.code === "KeyF" && !e.shiftKey) { e.preventDefault(); toggleFull(); }
       if (e.code.indexOf("Arrow") === 0 && active === canvas) {
         e.preventDefault(); stopPlayback();
         var fig = selectedFigure(); if (!fig) return;

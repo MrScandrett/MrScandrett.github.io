@@ -276,6 +276,31 @@ try {
       await page.screenshot({ path: '/tmp/pivot-mobile-timing.png', fullPage: true });
     }
   }
+  // Phone full screen: covers the viewport (above the site header), tabbed dock, Back exits, both orientations.
+  for (const [width, height] of [[390, 664], [750, 340]]) {
+    await page.setViewportSize({ width, height });
+    await page.locator('#piv-btn-stage-full').scrollIntoViewIfNeeded();
+    await page.locator('#piv-btn-stage-full').click();
+    const shell = await page.locator('#piv-studio-root').boundingBox();
+    assert.deepEqual([shell.x, shell.y, shell.width, shell.height], [0, 0, width, height], `Full screen fills ${width}x${height}`);
+    const covered = await page.evaluate(() => { const root = document.getElementById('piv-studio-root'); for (let x = 2; x < innerWidth; x += 40) for (let y = 2; y < innerHeight; y += 40) { const e = document.elementFromPoint(x, y); if (e && !root.contains(e)) return e.className || e.tagName; } return null; });
+    assert.equal(covered, null, `Nothing from the site chrome sits over full screen at ${width}x${height} (${covered})`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    const visibleDock = () => page.evaluate(() => ['.piv-timeline', '.piv-rig-panel', '.piv-tool-panel', '.piv-topbar'].filter(s => getComputedStyle(document.querySelector(s)).display !== 'none'));
+    assert.deepEqual(await visibleDock(), ['.piv-timeline']);
+    for (const [tab, sel] of [['figure', '.piv-rig-panel'], ['scene', '.piv-tool-panel'], ['file', '.piv-topbar'], ['frames', '.piv-timeline']]) {
+      await page.locator(`[data-piv-tab="${tab}"]`).click();
+      assert.deepEqual(await visibleDock(), [sel], `${tab} tab shows only its panel`);
+      assert.equal(await page.locator(`[data-piv-tab="${tab}"]`).getAttribute('aria-pressed'), 'true');
+    }
+    for (const id of ['#piv-btn-play', '#piv-btn-undo', '#piv-btn-focus', '#piv-btn-grid']) assert.ok((await page.locator(id).boundingBox()).height >= 40, `${id} is a touch-sized target`);
+    const canvasBox = await page.locator('#piv-stage-canvas').boundingBox();
+    assert.ok(canvasBox.height + canvasBox.y <= height && canvasBox.width > 200, 'Stage fits inside the screen');
+    await page.goBack();
+    await page.waitForFunction(() => !document.getElementById('piv-studio-root').classList.contains('is-expanded'));
+    assert.ok(page.url().includes('pivot-stick-animator'), 'Back leaves full screen, not the lesson');
+    assert.equal(await page.evaluate(() => document.documentElement.classList.contains('piv-full-lock')), false);
+  }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.evaluate(() => document.documentElement.dataset.lighting = 'night');
   await page.locator('#piv-stage-canvas').scrollIntoViewIfNeeded();
