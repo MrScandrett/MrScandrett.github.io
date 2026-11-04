@@ -8725,16 +8725,383 @@ html body .cos-hero-grid .updates-card.home-widget[data-updates-panel] .updates-
 }
 
 /* Explore: native disclosures keep the growing studio collection navigable. */
-.explore-intro { max-width: 68ch; margin: 0 0 1.25rem; }
-.explore-folders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
-.explore-folder { min-width: 0; border: 1px solid var(--border, currentColor); border-radius: 16px; background: var(--bg); color: var(--text); }
-.explore-folder > summary { cursor: pointer; padding: 1.1rem; font-weight: 700; font-size: 1.05rem; overflow-wrap: anywhere; }
-.explore-folder > summary > span:first-of-type { margin-right: .4rem; }
-.explore-folder-count { display: inline-block; margin-left: .6rem; font-size: .8rem; font-weight: 400; }
-.explore-folder > p { margin: 0; padding: 0 1.1rem .6rem; }
-.explore-folder > ul { list-style: none; padding: 0 1.1rem 1rem; margin: 0; display: grid; gap: .35rem; }
-.explore-folder li a { display: block; padding: .65rem .75rem; border-radius: 8px; color: inherit; text-underline-offset: .2em; overflow-wrap: anywhere; }
-.explore-folder li a:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
-.explore-folder > summary:focus-visible, .explore-folder li a:focus-visible { outline: 3px solid var(--accent, currentColor); outline-offset: 3px; }
-.explore-destinations-title { margin: 1.75rem 0 1rem; }
-@media (max-width: 640px) { .explore-folders { grid-template-columns: 1fr; } }
+.explore-header-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.explore-intro {
+  max-width: 72ch;
+  margin: 0 0 1.5rem;
+  color: var(--text-muted, var(--muted));
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.explore-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.explore-toggle-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted, var(--muted));
+  background: color-mix(in srgb, var(--surface-0, #fff) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.12)) 80%, transparent);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.explore-toggle-all-btn:hover {
+  color: var(--text-primary, var(--text));
+  background: color-mix(in srgb, var(--theme-accent, #0071e3) 10%, var(--surface-0, #fff));
+  border-color: color-mix(in srgb, var(--theme-accent, #0071e3) 30%, transparent);
+}
+
+.explore-toggle-all-btn:focus-visible {
+  outline: 2px solid var(--theme-accent, #0071e3);
+  outline-offset: 2px;
+}
+
+.explore-folders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.explore-folder {
+  position: relative;
+  min-width: 0;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.10)) 85%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated, #fff) 88%, transparent);
+  box-shadow:
+    0 4px 18px -2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.22s ease,
+    background 0.2s ease;
+}
+
+.explore-folder:hover {
+  border-color: color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.22)) 100%, transparent);
+}
+
+.explore-folder[open] {
+  border-color: color-mix(in srgb, var(--folder-tint, var(--theme-accent, #0071e3)) 40%, var(--cos-card-border, rgba(0, 0, 0, 0.14)));
+  box-shadow:
+    0 8px 26px -4px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.explore-folder-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background 0.18s ease;
+}
+
+.explore-folder-summary::-webkit-details-marker {
+  display: none;
+}
+
+.explore-folder-summary:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.explore-folder-summary:focus-visible {
+  outline: 3px solid var(--theme-accent, #0071e3);
+  outline-offset: -2px;
+}
+
+.explore-folder-header {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.explore-folder-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--folder-tint, var(--theme-accent, #0071e3)) 13%, var(--surface-0, #fff));
+  border: 1px solid color-mix(in srgb, var(--folder-tint, var(--theme-accent, #0071e3)) 26%, transparent);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.explore-folder-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.explore-folder-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, var(--text));
+  line-height: 1.25;
+}
+
+.explore-folder-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted, var(--muted));
+  line-height: 1.35;
+}
+
+.explore-folder-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.explore-folder-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, var(--muted));
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  white-space: nowrap;
+}
+
+.explore-folder-chevron {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted, var(--muted));
+  background: color-mix(in srgb, var(--surface-0, #fff) 65%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.12)) 60%, transparent);
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.explore-folder-chevron svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+.explore-folder[open] .explore-folder-chevron {
+  transform: rotate(180deg);
+  background: color-mix(in srgb, var(--theme-accent, #0071e3) 14%, var(--surface-0, #fff));
+  color: var(--theme-accent, #0071e3);
+  border-color: color-mix(in srgb, var(--theme-accent, #0071e3) 30%, transparent);
+}
+
+.explore-folder-content {
+  border-top: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.08)) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-0, #fff) 30%, transparent);
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.explore-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 0.55rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.explore-tools-grid li {
+  margin: 0;
+  padding: 0;
+}
+
+.explore-tool-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-elevated, #fff) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cos-card-border, rgba(0, 0, 0, 0.10)) 65%, transparent);
+  color: var(--text-primary, var(--text));
+  text-decoration: none;
+  font-size: 0.91rem;
+  font-weight: 550;
+  line-height: 1.3;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+.explore-tool-name {
+  overflow-wrap: anywhere;
+}
+
+.explore-tool-link:hover {
+  background: color-mix(in srgb, var(--theme-accent, #0071e3) 10%, var(--surface-elevated, #fff));
+  border-color: color-mix(in srgb, var(--theme-accent, #0071e3) 38%, transparent);
+  color: var(--text-strong, var(--text));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.explore-tool-link:focus-visible {
+  outline: 2px solid var(--theme-accent, #0071e3);
+  outline-offset: 2px;
+}
+
+.explore-tool-arrow {
+  color: var(--text-muted, var(--muted));
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.55;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease, color 0.18s ease;
+}
+
+.explore-tool-link:hover .explore-tool-arrow {
+  transform: translateX(3px);
+  opacity: 1;
+  color: var(--theme-accent, #0071e3);
+}
+
+/* Category Accent Tints */
+.explore-folder[data-category="2d-art"] { --folder-tint: #ec4899; }
+.explore-folder[data-category="3d-modeling"] { --folder-tint: #0284c7; }
+.explore-folder[data-category="3d-studios"] { --folder-tint: #f59e0b; }
+.explore-folder[data-category="coding"] { --folder-tint: #10b981; }
+.explore-folder[data-category="music"] { --folder-tint: #8b5cf6; }
+.explore-folder[data-category="engineering"] { --folder-tint: #3b82f6; }
+
+/* Classroom Hubs / Secondary destinations section spacing */
+.explore-hubs-heading {
+  margin-top: 2.6rem;
+  margin-bottom: 1.15rem;
+}
+
+.explore-destinations-title {
+  margin: 0;
+}
+
+/* Dark mode and theme overrides */
+html[data-lighting="night"] .explore-folder,
+html[data-theme="cobblestone"] .explore-folder,
+html[data-theme="bark"] .explore-folder,
+html[data-theme="vaporwave"] .explore-folder,
+html[data-theme="mandelbrot"] .explore-folder,
+html[data-theme="lavalamp"] .explore-folder {
+  background: color-mix(in srgb, var(--surface-0, #141416) 82%, transparent);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-lighting="night"] .explore-folder-icon,
+html[data-theme="cobblestone"] .explore-folder-icon,
+html[data-theme="bark"] .explore-folder-icon,
+html[data-theme="vaporwave"] .explore-folder-icon,
+html[data-theme="mandelbrot"] .explore-folder-icon,
+html[data-theme="lavalamp"] .explore-folder-icon {
+  background: color-mix(in srgb, var(--folder-tint, var(--theme-accent, #0071e3)) 20%, rgba(255, 255, 255, 0.06));
+  border-color: color-mix(in srgb, var(--folder-tint, var(--theme-accent, #0071e3)) 35%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html[data-lighting="night"] .explore-tool-link,
+html[data-theme="cobblestone"] .explore-tool-link,
+html[data-theme="bark"] .explore-tool-link,
+html[data-theme="vaporwave"] .explore-tool-link,
+html[data-theme="mandelbrot"] .explore-tool-link,
+html[data-theme="lavalamp"] .explore-tool-link {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+html[data-lighting="night"] .explore-tool-link:hover,
+html[data-theme="cobblestone"] .explore-tool-link:hover,
+html[data-theme="bark"] .explore-tool-link:hover,
+html[data-theme="vaporwave"] .explore-tool-link:hover,
+html[data-theme="mandelbrot"] .explore-tool-link:hover,
+html[data-theme="lavalamp"] .explore-tool-link:hover {
+  background: color-mix(in srgb, var(--theme-accent, #0071e3) 22%, rgba(255, 255, 255, 0.08));
+  border-color: color-mix(in srgb, var(--theme-accent, #0071e3) 50%, transparent);
+}
+
+html[data-lighting="night"] .explore-folder-chevron,
+html[data-theme="cobblestone"] .explore-folder-chevron,
+html[data-theme="bark"] .explore-folder-chevron,
+html[data-theme="vaporwave"] .explore-folder-chevron,
+html[data-theme="mandelbrot"] .explore-folder-chevron,
+html[data-theme="lavalamp"] .explore-folder-chevron {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+html[data-lighting="night"] .explore-toggle-all-btn,
+html[data-theme="cobblestone"] .explore-toggle-all-btn,
+html[data-theme="bark"] .explore-toggle-all-btn,
+html[data-theme="vaporwave"] .explore-toggle-all-btn,
+html[data-theme="mandelbrot"] .explore-toggle-all-btn,
+html[data-theme="lavalamp"] .explore-toggle-all-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Responsive queries */
+@media (max-width: 960px) {
+  .explore-folders {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .explore-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .explore-folder-summary {
+    padding: 0.95rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .explore-folder-meta {
+    margin-left: auto;
+  }
+  .explore-tools-grid {
+    grid-template-columns: 1fr;
+    padding: 0.85rem;
+  }
+}

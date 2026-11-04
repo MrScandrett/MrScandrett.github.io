@@ -94,3 +94,19 @@
       });
     }
 
+    // ── Studio folder expand / collapse all controls ────────────────
+    const expandAllBtn = document.getElementById("explore-expand-all");
+    const collapseAllBtn = document.getElementById("explore-collapse-all");
+    if (expandAllBtn && collapseAllBtn) {
+      expandAllBtn.addEventListener("click", function () {
+        document.querySelectorAll(".explore-folder").forEach(function (folder) {
+          folder.open = true;
+        });
+      });
+      collapseAllBtn.addEventListener("click", function () {
+        document.querySelectorAll(".explore-folder").forEach(function (folder) {
+          folder.open = false;
+        });
+      });
+    }
+
