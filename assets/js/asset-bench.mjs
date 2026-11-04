@@ -1,3 +1,4 @@
+import { uvLayoutSvg } from './design3d/uv-layout.mjs';
 // Asset Bench: open a student's model or texture from ANY app, check it against the
 // Game Asset Studio brief, polish it with one-click fixes, and download a clean file.
 //
@@ -41,6 +42,8 @@ export function getBrief() {
   const b = { ...DEFAULT_BRIEF, ...saved };
   return { ...b, module: +b.module || 4, texel: +b.texel || 512, texture: +b.texture || 1024, propTris: +b.propTris || 2000, charTris: +b.charTris || 5000, palette: (b.palette || DEFAULT_BRIEF.palette).slice(0, 3) };
 }
+
+export async function saveAssetToShelf(name,blob,kind='model'){ await shelf.put(name,blob,kind); }
 
 let threePromise;
 function loadThree() {
@@ -247,6 +250,12 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
       <ol class="ab-checks" data-checks></ol>
       <details class="ab-names"><summary>Rename parts, materials and clips</summary><div data-names></div></details>
       <div class="ab-export">
+        <h4>UV layout</h4>
+        <label>Mesh to inspect <select data-uv-mesh></select></label>
+        <div data-uv-preview style="max-width:320px;aspect-ratio:1;background:white;overflow:hidden"></div>
+        <p class="ab-note" data-uv-note></p>
+        <button class="ab-btn alt" data-export="uv">Download UV layout .svg</button>
+        <p class="ab-note">The layout shows triangle edges in the 0–1 tile. It does not detect overlapping islands or unwrap seams. Quick box projection is for repeating textures and may overlap; hand-unwrap a character before painting unique details.</p>
         <h4>Export</h4>
         <label>File name <input data-outname value="${esc(fileBase)}" maxlength="48" spellcheck="false"></label>
         <div class="ab-export-row">
@@ -400,7 +409,20 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
   const stats = () => analyzeModel(THREE, model, clips, brief, mode, sourceFormat);
   const ctx = { THREE, model, clips, brief, mode, frame, restoreMaterials, originals };
 
+  const uvMeshes=()=>{const meshes=[];model.traverse(o=>{if(o.isMesh)meshes.push(o);});return meshes;};
+  const renderUV=()=>{
+    const mesh=uvMeshes()[Number(q('[data-uv-mesh]').value)];
+    const layout=mesh?uvLayoutSvg(mesh.geometry):null;
+    q('[data-uv-preview]').innerHTML=layout?layout.svg.replace('width="1024" height="1024"','width="100%" height="100%"'):'';
+    q('[data-uv-note]').textContent=layout?`${fmt(layout.triangles,0)} triangles. ${layout.outside} UV corners outside the 0–1 tile (clipped in this preview). Check islands and padding in your UV editor.`:'This mesh has no UV map. Use Quick box-project UVs under Checks for a tiling test, or unwrap in Blender for painting.';
+    q('[data-export="uv"]').disabled=!layout;
+  };
+  q('[data-uv-mesh]').addEventListener('change',renderUV);
   const renderAll = () => {
+    const selected=q('[data-uv-mesh]').value;
+    q('[data-uv-mesh]').innerHTML=uvMeshes().map((m,i)=>`<option value="${i}">${esc(m.name||'Mesh '+(i+1))}</option>`).join('');
+    if(selected)q('[data-uv-mesh]').value=selected;
+    renderUV();
     const s = stats();
     const checks = buildChecks(s, ctx);
     q('[data-summary]').innerHTML = `
@@ -496,6 +518,9 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
         grid.visible = false;
         renderer.render(scene, camera);
         canvas.toBlob((blob) => { download(blob, `${name}_snapshot.png`); human.visible = q('[data-human]').checked; grid.visible = q('[data-grid]').checked; }, 'image/png');
+      } else if (kind === 'uv') {
+        const layout=uvLayoutSvg(uvMeshes()[Number(q('[data-uv-mesh]').value)].geometry);
+        if(layout){download(new Blob([layout.svg],{type:'image/svg+xml'}),`${name}_mesh${Number(q('[data-uv-mesh]').value)+1}_uv.svg`);say('UV layout downloaded at 1024 × 1024. Use as a painting guide; keep the GLB for geometry, rig and motion.','ok');}
       } else if (kind === 'report') {
         download(new Blob([reportText(name, state.lastStats, state.lastChecks, brief, mode)], { type: 'text/plain' }), `${name}_bench_report.txt`);
       }
@@ -948,7 +973,9 @@ function boxProjectUV(THREE, mesh, brief) {
     }
   }
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  const previous=mesh.geometry;
   mesh.geometry = g;
+  previous.dispose();
 }
 
 function scaleUVs(meshes, f) {

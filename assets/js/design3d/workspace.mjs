@@ -1,3 +1,4 @@
+import { setupCharacterExport } from './character-export.mjs';
 import { setupRigStudio } from './rig-studio.mjs';
 import { setupMaterialStudio } from './material-studio.mjs';
 import { setupCharacterPanels } from './character-panels.mjs';
@@ -82,6 +83,7 @@ async function mount(host){
  window.ToolRosetta?.init();
  host.closest("main")?.querySelector(".d3-original-reference")?.addEventListener("toggle",()=>window.dispatchEvent(new Event("resize")));
  const $=s=>host.querySelector(s),say=s=>{$('[data-status]').textContent=s;};
+ if(mode==='character')setupCharacterExport({host,id,getState:()=>state,getThree:()=>three?.THREE,say,onExport:()=>{state.exported=true;persist();}});
  let inspection='shaded',hairRunning=false;
  if(mode==='character')setupCharacterPanels(host,id,style=>{inspection=style;if(group)applyInspection();dirty=true;say(style==='silhouette'?'Silhouette view: look for readable large shapes.':style==='wireframe'?'Wireframe view: inspect the study mesh. Rebuild topology before rigging.':'Shaded view restored.');});
  if(mode==='character'){
