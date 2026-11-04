@@ -35,13 +35,21 @@
     clearBtn.addEventListener('click', function () { undo.push(frame); frame = new Array(N * N + 1).join('0'); render(); opts.onChange(frame, true); });
     tools.appendChild(mirrorBtn); tools.appendChild(undoBtn); tools.appendChild(clearBtn);
     box.appendChild(tools);
-    var sw = el('div', 'px-swatches'); sw.setAttribute('role', 'group'); sw.setAttribute('aria-label', 'Palette');
+    var sw = el('div', 'px-swatches' + (opts.colorSelector ? ' px-swatches-large' : '')); sw.setAttribute('role', 'group'); sw.setAttribute('aria-label', 'Palette');
     var swatchButtons = [];
     var colorName = el('p', 'px-note');
     function paintSwatches() {
       var pal = store.load().palette;
-      swatchButtons.forEach(function (b, i) { if (i) b.style.background = pal[i]; b.setAttribute('aria-pressed', String(i === color)); });
-      colorName.textContent = 'Colour ' + color.toString(16) + ' · ' + PC.PALETTE_NAMES[color];
+      swatchButtons.forEach(function (b, i) { if (i) b.style.background = pal[i]; b.title = b.getAttribute('aria-label').split(' · ')[0] + (i ? ' · ' + pal[i] : ''); b.setAttribute('aria-pressed', String(i === color)); });
+      colorName.textContent = color === 0 ? 'Transparent · erases pixels' : 'Colour ' + color.toString(16).toUpperCase() + ' · ' + pal[color].toUpperCase();
+      if (opts.colorSelector) {
+        selectedPreview.style.background = color ? pal[color] : '';
+        selectedPreview.classList.toggle('is-clear', color === 0);
+        customColor.disabled = hexColor.disabled = applyColor.disabled = color === 0;
+        customColor.value = color ? pal[color] : '#000000';
+        hexColor.value = color ? pal[color].toUpperCase() : '';
+        hexColor.setCustomValidity('');
+      }
     }
     for (var i = 0; i < 16; i++) (function (i) {
       var b = el('button', 'px-swatch' + (i ? '' : ' is-clear')); b.type = 'button';
@@ -49,7 +57,39 @@
       b.addEventListener('click', function () { color = i; if (tool === 'eraser' || tool === 'picker') toolButtons.pencil.click(); paintSwatches(); });
       swatchButtons.push(b); sw.appendChild(b);
     }(i));
-    box.appendChild(sw); box.appendChild(colorName);
+    if (opts.colorSelector) {
+      var selector = el('section', 'px-color-selector'); selector.setAttribute('aria-label', 'Tile colours');
+      var selectedRow = el('div', 'px-selected-color');
+      var selectedPreview = el('span', 'px-color-preview'); selectedPreview.setAttribute('aria-hidden', 'true');
+      colorName.setAttribute('aria-live', 'polite');
+      selectedRow.appendChild(selectedPreview); selectedRow.appendChild(colorName);
+      selector.appendChild(selectedRow); selector.appendChild(sw);
+      var customRow = el('div', 'px-color-custom');
+      var pickerLabel = el('label', null, 'Custom colour ');
+      var customColor = el('input'); customColor.type = 'color'; pickerLabel.appendChild(customColor);
+      var hexLabel = el('label', null, 'Hex code ');
+      var hexColor = el('input'); hexColor.type = 'text'; hexColor.placeholder = '#RRGGBB'; hexColor.maxLength = 7; hexColor.spellcheck = false;
+      hexLabel.appendChild(hexColor);
+      var applyColor = el('button', null, 'Apply colour'); applyColor.type = 'button';
+      customColor.addEventListener('input', function () { hexColor.value = customColor.value.toUpperCase(); hexColor.setCustomValidity(''); });
+      hexColor.addEventListener('input', function () {
+        hexColor.setCustomValidity('');
+        if (/^#?[0-9a-f]{6}$/i.test(hexColor.value)) customColor.value = '#' + hexColor.value.replace('#', '');
+      });
+      applyColor.addEventListener('click', function () {
+        if (!color) return;
+        if (!/^#?[0-9a-f]{6}$/i.test(hexColor.value)) {
+          hexColor.setCustomValidity('Enter a six-digit hex colour, such as #55AA77.'); hexColor.reportValidity(); return;
+        }
+        var value = '#' + hexColor.value.replace('#', '').toLowerCase();
+        store.update(function (art) { art.palette[color] = value; });
+        paintSwatches(); render(); if (opts.onPaletteChange) opts.onPaletteChange();
+      });
+      customRow.appendChild(pickerLabel); customRow.appendChild(hexLabel); customRow.appendChild(applyColor);
+      selector.appendChild(customRow);
+      selector.appendChild(el('p', 'px-note', 'Choose a swatch to paint. Apply colour changes that palette slot everywhere, including saved tiles and sprites. Use Pick colour to sample your tile.'));
+      box.appendChild(selector);
+    } else { box.appendChild(sw); box.appendChild(colorName); }
     host.appendChild(box);
     var ctx = canvas.getContext('2d');
 
@@ -274,7 +314,8 @@
     var grid = el('div', 'px-editor'); host.appendChild(grid);
     var left = el('div'), right = el('div'); grid.appendChild(left); grid.appendChild(right);
     var editor = PixelEditor(left, {
-      value: store.load().tiles[key].px, label: 'Tile editor',
+      value: store.load().tiles[key].px, label: 'Tile editor', colorSelector: true,
+      onPaletteChange: function () { seam(); },
       onChange: function (frame, final) { seam(frame); if (final) store.update(function (a) { a.tiles[key].px = frame; }); }
     });
     right.appendChild(el('h3', null, 'Seam test: the tile repeated 4 × 3'));
