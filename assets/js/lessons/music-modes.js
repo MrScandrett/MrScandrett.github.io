@@ -140,9 +140,11 @@
     if (r === 0) return '±0¢';
     return (r > 0 ? '+' : '−') + Math.abs(r) + '¢';
   }
-  /* Spell a scale on a white-key tonic with one letter per degree. */
-  function spell(tonicMidi, steps) {
-    var li = LETTER_PC.indexOf(pc(tonicMidi));
+  /* Spell each scale degree with its own letter, including chromatic tonics. */
+  function spell(tonicMidi, steps, tonicName) {
+    var root = tonicName || ['C','D♭','D','E♭','E','F','F♯','G','A♭','A','B♭','B'][pc(tonicMidi)];
+    var li = LETTERS.indexOf(root[0]);
+    if (li < 0) li = 0;
     return steps.map(function (s, i) {
       var letter = LETTERS[(li + i) % 7];
       var natural = LETTER_PC[(li + i) % 7];
@@ -580,21 +582,30 @@
   function initModern() {
     var host = $('#modernLab'); if (!host) return;
     var kb = new Keyboard($('#modernKb'), { low: 60, high: 84, label: 'Keyboard showing the selected modern mode' });
-    var mode = 'Dorian';
+    var params = new URLSearchParams(window.location.search);
+    var requestedMode = params.get('mode');
+    var mode = Object.prototype.hasOwnProperty.call(MODES, requestedMode) ? requestedMode : 'Dorian';
+    var requestedTonic = Number(params.get('tonic'));
+    if (params.has('tonic') && Number.isInteger(requestedTonic) && requestedTonic >= 60 && requestedTonic <= 71) $('#modernTonic').value = String(requestedTonic);
     var ladder = $('#modernLadder');
     ladder.innerHTML = LADDER.map(function (m, i) {
       return '<button type="button" class="mm-rung" data-mode="' + m + '" aria-pressed="' + (m === mode) + '" style="--rung:' + i + (i >= 4 ? ';color:#fff' : '') + '"><span>' + m + '</span><small>' + MODES[m].charLabel + '</small></button>';
     }).join('');
+    function modernSpell(t, steps) {
+      var spelling = params.get('spelling');
+      if (!/^[A-G][♯♭]?$/.test(spelling || '')) spelling = null;
+      return spell(t, steps, t === requestedTonic ? spelling : null);
+    }
     function tonic() { return +$('#modernTonic').value; }
     function render() {
       setPressed(ladder, 'data-mode', mode);
-      var t = tonic(), M = MODES[mode], ms = modeMidis(mode, t), names = spell(t, M.steps.concat([12]));
+      var t = tonic(), M = MODES[mode], ms = modeMidis(mode, t), names = modernSpell(t, M.steps.concat([12]));
       kb.clear();
       ms.forEach(function (m, i) { kb.mark(m, i === 0 || i === 7 ? 'is-final' : (i === M.char ? 'is-char' : 'is-modern'), String(i + 1)); });
       var li = LADDER.indexOf(mode), prev = li > 0 ? LADDER[li - 1] : null, changed = '';
       if (prev) {
         var a = MODES[prev].steps, b = M.steps;
-        for (var d = 0; d < 7; d++) if (a[d] !== b[d]) changed = spell(t, a)[d] + ' → ' + names[d];
+        for (var d = 0; d < 7; d++) if (a[d] !== b[d]) changed = modernSpell(t, a)[d] + ' → ' + names[d];
       }
       $('#modernCard').innerHTML = '<h4>' + names[0] + ' ' + mode + '</h4><p class="mm-notes">' + names.map(function (n, i) { return i === M.char ? '<mark>' + n + '</mark>' : n; }).join(' ') + '</p>' +
         '<p><b>Formula:</b> <code>' + M.formula + '</code>. <b>Characteristic note:</b> ' + M.charLabel + '.' + (prev ? ' <b>One step darker than ' + prev + ':</b> ' + changed + '.' : ' <b>Brightest mode.</b> Every other mode is reached by lowering notes.') + '</p>' +
@@ -621,7 +632,7 @@
       withDrone(function () {
         playSeq(seq.map(function (m) { return { freq: etFreq(m), key: m }; }), { step: 0.42, onNote: function (i, n) { kb.flash(n.key); }, onDone: Sound.droneStop });
       });
-      status('modernStatus', 'Listen for <b>' + spell(t, M.steps)[M.char] + '</b> (' + M.charLabel + ') against the drone.');
+      status('modernStatus', 'Listen for <b>' + modernSpell(t, M.steps)[M.char] + '</b> (' + M.charLabel + ') against the drone.');
     });
     $('#modernTour').addEventListener('click', function () {
       Sound.stopAll();

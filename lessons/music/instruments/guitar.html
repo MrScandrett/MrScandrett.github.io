@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="../../../assets/css/lessons/music-route.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/instrument-practice.css" />
 <link rel="stylesheet" href="../../../assets/css/creation-app.css">
+<link rel="stylesheet" href="../../../assets/css/lessons/guitar-workspace.css">
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -51,7 +52,16 @@
     <div class="ll-stage">
       <div class="ll-sim">
         <main id="main-content" class="gtr-shell">
-<div class="creation-app" data-creation-app aria-label="Creation workspace">
+<div class="creation-app guitar-workspace" id="guitarWorkspace" data-creation-app data-mode="hybrid" aria-label="Guitar chord and scale workspace">
+  <header class="guitar-workspace-header">
+    <h2>Guitar lab</h2>
+    <div class="gc-builder-controls" role="group" aria-label="Workspace mode">
+      <button type="button" class="gc-btn" data-guitar-mode="chord" aria-pressed="false" aria-controls="builder">Chord mode</button>
+      <button type="button" class="gc-btn" data-guitar-mode="scale" aria-pressed="false" aria-controls="scales">Scale mode</button>
+      <button type="button" class="gc-btn gc-btn-primary" data-guitar-mode="hybrid" aria-pressed="true" aria-controls="builder scales">Hybrid mode</button>
+    </div>
+    <p id="guitarModeStatus" role="status">Hybrid: build a chord and explore a scale together. Compare their notes, then strum a chord and play a melody.</p>
+  </header>
 <div class="gc-display-bar" id="gcDisplayBar">
             <div class="gc-builder-controls"><a href="#reading">Notation help</a><a href="#progressions">Arrange &amp; listen</a><button type="button" class="gc-btn" id="studioStop" title="Shortcut: Esc">■ Stop all audio <kbd>Esc</kbd></button><label for="studioVolume">Volume</label><input id="studioVolume" type="range" min="0" max="100" value="45" /><label for="studioSize">Diagram size</label><select id="studioSize"><option value="normal">Comfortable</option><option value="large">Large / classroom</option></select></div>
             <p class="studio-key"><strong>Fret</strong> = where you press · <strong>Finger 1–4</strong> = what you press with · <strong>R, ♭3, 5…</strong> = the note’s job. <strong class="gc-x">×</strong> = skip / mute; open = play without fretting.</p>
@@ -61,13 +71,11 @@
             </div>
             <p class="gc-color-legend" id="gcColorLegend"></p>
           </div>
+<div class="guitar-workspace-panels">
 <section class="lesson-section" data-route-label="Chord builder" id="builder" data-stage="build">
             <div class="section-label"><span aria-hidden="true">★</span><p>Builder</p></div>
             <div class="section-content">
-              <p class="section-kicker">Place your own notes</p>
-              <h2>Click frets. We'll tell you what chord you made.</h2>
-              <p>Click any fret on a string to place a note there — you'll hear a synthesized pluck at that pitch. Click a string's label at the far left to toggle it between <strong>open</strong> (green dot) and <strong>muted</strong> (×). The lowest sounding pitch is the bass. If it is a chord tone other than the root, you have an <strong>inversion</strong>, such as C/E. A slash chord can also have a non-chord tone in the bass. Once you've placed some notes, use the playback buttons to hear the whole chord strummed or broken into an arpeggio.</p>
-
+              <h2>Chord constructor</h2>
               <div class="gc-builder-wrap">
                 <div class="gc-builder-controls">
                   <button type="button" class="gc-btn" id="gcClearBuilder">Clear fretboard</button>
@@ -92,9 +100,54 @@
                 <p id="gcBuilderNotes"></p>
                 <div class="gc-builder-result" id="gcBuilderResult"></div>
               </div>
+              <details class="guitar-tool-guide"><summary>How to use the chord constructor</summary>
+              <p class="section-kicker">Place your own notes</p>
+              <h2>Click frets. We'll tell you what chord you made.</h2>
+              <p>Click any fret on a string to place a note there — you'll hear a synthesized pluck at that pitch. Click a string's label at the far left to toggle it between <strong>open</strong> (green dot) and <strong>muted</strong> (×). The lowest sounding pitch is the bass. If it is a chord tone other than the root, you have an <strong>inversion</strong>, such as C/E. A slash chord can also have a non-chord tone in the bass. Once you've placed some notes, use the playback buttons to hear the whole chord strummed or broken into an arpeggio.</p>
+
               <p class="micro-task"><strong>Try it:</strong> place open E (string 6), fret 2 on A, fret 2 on D, fret 1 on G, open B, open e — that's E major (or press <strong>E</strong> under “Start from”). Now lower the G-string note to open: which note changed, and what chord is it now? For F♯ major, move every note up two frets, including the open strings: 2–4–4–3–2–2. Finger 1 barres fret 2; fingers 3, 4 and 2 fret A4, D4 and G3. Try the open Em shape first if a barre is not comfortable.</p>
+              </details>
             </div>
           </section>
+<section class="lesson-section" data-route-label="Scales and modes" id="scales" data-stage="build">
+            <div class="section-label"><span>07</span><p>Scales &amp; modes</p></div>
+            <div class="section-content">
+              <h2>Scale instructor</h2>
+              <div class="gc-enc-wrap">
+                <div class="gt-picker-grid">
+                  <div class="gt-span-2"><p class="gc-kicker-label">Root note</p><div class="gc-pick-row" id="gcScaleRootPicker"></div></div>
+                  <div><label class="gc-kicker-label" for="gcScaleTypePicker">Scale / mode</label><select id="gcScaleTypePicker" class="gt-select gt-select-wide"></select></div>
+                  <div><p class="gc-kicker-label">View</p><div class="gc-pick-row" id="gcScaleViewPicker"></div></div>
+                </div>
+                <div class="gc-scale-position-controls" id="gcScalePositionControls">
+                  <label for="gcScaleFretInput">Position starts at fret</label>
+                  <input type="number" id="gcScaleFretInput" min="0" max="15" step="1" value="0" />
+                  <span class="gc-hint">0 = open position</span>
+                  <button type="button" class="gc-btn" id="gcScaleAddLeft">← Add position to the left</button>
+                  <button type="button" class="gc-btn" id="gcScaleAddRight">Add position to the right →</button>
+                </div>
+                <div class="gc-enc-grid">
+                  <div id="gcScaleBoard"></div>
+                  <div class="gc-enc-meta" id="gcScaleMeta"></div>
+                </div>
+                <div class="gc-builder-controls" style="margin-top:.9rem;">
+                  <button type="button" class="gc-btn gc-btn-primary" id="gcScalePlayUp">▶ Play ascending</button>
+                  <button type="button" class="gc-btn" id="gcScalePlayDown">Play descending</button>
+                  <button type="button" class="gc-btn" id="gcScalePlayUpDown">Play up &amp; down</button>
+                  <span class="gt-divider" aria-hidden="true"></span>
+                  <button type="button" class="gc-btn" id="gcAddScaleToPractice">+ Add to practice list</button>
+                </div>
+              </div>
+              <details class="guitar-tool-guide"><summary>How to use the scale instructor</summary>
+              <p class="section-kicker">The palette chords are picked from</p>
+              <h2>A scale is a chord's whole family of notes.</h2>
+              <p>A scale supplies notes for melodies and harmony. Start with major or minor pentatonic, one small position at a time. A mode is more than a starting note: its tonic must sound like home. D Dorian shares C major’s notes, but centers D. Compare modes on the <em>same</em> root to hear their different intervals.</p><p>Major and minor pentatonic scales have no half-steps; the blues scale adds a chromatic passing tone and does have half-steps. The library includes all seven major-scale modes plus common pentatonic, blues, harmonic minor and jazz melodic minor scales. The one-octave tab below gives you a concrete route for every selection.</p>
+              <p class="micro-task"><strong>Try it:</strong> pick D, then flip between Ionian and Dorian. Two notes change (F♯ → F and C♯ → C) — but the Dorian version instantly sounds moodier even though the root and the other five notes stayed put. Switch the view to <strong>Single position</strong> and set the fret to 0 to isolate the open-position box, then use <strong>Add position to the right</strong> to see how it connects to the next box up the neck.</p>
+              </details>
+            </div>
+          </section>
+</div>
+</div>
 <section class="lesson-section" data-route-label="Progressions" id="progressions" data-stage="play" data-stage-summary="Turn chord shapes into a progression you can play and arrange."><div class="section-label"><span aria-hidden="true">★</span><p>Progressions</p></div><div class="section-content">
             <h2>Turn shapes into a piece of music.</h2>
             <p>In major keys, the triads are <strong>I · ii · iii · IV · V · vi · vii°</strong>. Capitals mean major; lowercase means minor; ° means diminished. I is home, IV and ii often lead away, and V often leads back. These are useful tendencies, not rules every song must follow.</p>
@@ -105,7 +158,6 @@
             <p class="micro-task"><strong>Arrange with your hands:</strong> retain a shared finger where comfortable, move the other notes the shortest practical distance, and slow the tempo before a difficult change. A mathematically short path is not always the most comfortable one. Compare two grips for the same chord in your progression.</p>
             <details><summary>Sources and scope</summary><p>Standard six-string tuning, equal temperament, no capo. Fingering is a suggestion; generated grips are screened for a four-fret window and at most four finger groups. This cannot certify comfort for every hand or instrument. Audio is synthesized, not a recorded performance.</p><ul><li><a href="https://www.justinguitar.com/guitar-lessons/how-to-read-guitar-tab-b1-405">JustinGuitar: reading tablature</a></li><li><a href="https://viva.pressbooks.pub/openmusictheory/chapter/triads/">Open Music Theory: triads</a></li><li><a href="https://viva.pressbooks.pub/openmusictheory/chapter/diatonic-modes/">Open Music Theory: modes</a></li><li><a href="https://drop2.studio/drop-2-voicings/">Drop2: close and drop voicings</a></li></ul></details>
           </div></section>
-</div>
 
 
           <section class="gtr-hero">
@@ -319,40 +371,7 @@
               <p class="arp-hint">Theory reference: <a href="https://musictheory.pugetsound.edu/mt21c/DiatonicChordsInMajor.html" target="_blank" rel="noopener">Music Theory for the 21st-Century Classroom: diatonic chords in major</a>. This workbench focuses on major keys; minor-key harmony has a different chord family.</p>
             </div>
           </section>
-<section class="lesson-section" data-route-label="Scales and modes" id="scales" data-stage="build">
-            <div class="section-label"><span>07</span><p>Scales &amp; modes</p></div>
-            <div class="section-content">
-              <p class="section-kicker">The palette chords are picked from</p>
-              <h2>A scale is a chord's whole family of notes.</h2>
-              <p>A scale supplies notes for melodies and harmony. Start with major or minor pentatonic, one small position at a time. A mode is more than a starting note: its tonic must sound like home. D Dorian shares C major’s notes, but centers D. Compare modes on the <em>same</em> root to hear their different intervals.</p><p>Major and minor pentatonic scales have no half-steps; the blues scale adds a chromatic passing tone and does have half-steps. The library includes all seven major-scale modes plus common pentatonic, blues, harmonic minor and jazz melodic minor scales. The one-octave tab below gives you a concrete route for every selection.</p>
-              <div class="gc-enc-wrap">
-                <div class="gt-picker-grid">
-                  <div class="gt-span-2"><p class="gc-kicker-label">Root note</p><div class="gc-pick-row" id="gcScaleRootPicker"></div></div>
-                  <div><label class="gc-kicker-label" for="gcScaleTypePicker">Scale / mode</label><select id="gcScaleTypePicker" class="gt-select gt-select-wide"></select></div>
-                  <div><p class="gc-kicker-label">View</p><div class="gc-pick-row" id="gcScaleViewPicker"></div></div>
-                </div>
-                <div class="gc-scale-position-controls" id="gcScalePositionControls">
-                  <label for="gcScaleFretInput">Position starts at fret</label>
-                  <input type="number" id="gcScaleFretInput" min="0" max="15" step="1" value="0" />
-                  <span class="gc-hint">0 = open position</span>
-                  <button type="button" class="gc-btn" id="gcScaleAddLeft">← Add position to the left</button>
-                  <button type="button" class="gc-btn" id="gcScaleAddRight">Add position to the right →</button>
-                </div>
-                <div class="gc-enc-grid">
-                  <div id="gcScaleBoard"></div>
-                  <div class="gc-enc-meta" id="gcScaleMeta"></div>
-                </div>
-                <div class="gc-builder-controls" style="margin-top:.9rem;">
-                  <button type="button" class="gc-btn gc-btn-primary" id="gcScalePlayUp">▶ Play ascending</button>
-                  <button type="button" class="gc-btn" id="gcScalePlayDown">Play descending</button>
-                  <button type="button" class="gc-btn" id="gcScalePlayUpDown">Play up &amp; down</button>
-                  <span class="gt-divider" aria-hidden="true"></span>
-                  <button type="button" class="gc-btn" id="gcAddScaleToPractice">+ Add to practice list</button>
-                </div>
-              </div>
-              <p class="micro-task"><strong>Try it:</strong> pick D, then flip between Ionian and Dorian. Two notes change (F♯ → F and C♯ → C) — but the Dorian version instantly sounds moodier even though the root and the other five notes stayed put. Switch the view to <strong>Single position</strong> and set the fret to 0 to isolate the open-position box, then use <strong>Add position to the right</strong> to see how it connects to the next box up the neck.</p>
-            </div>
-          </section>
+
 <section class="lesson-section" data-route-label="Voicings" id="voicings" data-stage="build"><div class="section-label"><span>08</span><p>Voicings</p></div><div class="section-content">
             <h2>Same harmony. Different arrangement.</h2>
             <p><strong>Inversion</strong> tells you which chord tone is lowest. <strong>Voicing</strong> tells you the register, spacing, order and doubling of all the notes. C–E–G and C–G–E are both root position if C is lowest. Triads have three bass positions; seventh chords have four.</p>
@@ -621,5 +640,6 @@
   <script src="../../../assets/js/lessons/performer-guide.js"></script>
   <script src="../../../assets/js/lessons/triad-assistant.js"></script>
 <script src="../../../assets/js/creation-app.js"></script>
+<script src="../../../assets/js/lessons/guitar-workspace.js"></script>
 </body>
 </html>
