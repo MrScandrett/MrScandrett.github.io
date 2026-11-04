@@ -16,14 +16,16 @@
     mozart: 'In 1787, aged 16, Beethoven travelled to Vienna hoping to study with Mozart, but was called home within weeks because his mother was dying.',
     beethoven: 'Chopin was 17 when Beethoven died in Vienna in 1827. Two years later he gave his own first concerts in that same city.',
     chopin: 'Chopin’s 24 Preludes give each short piece one mood; Tchaikovsky’s Album for the Young (1878) is also 24 short piano pieces, each one scene, written for children learning to play.',
-    tchaikovsky: 'At 18, Debussy became house pianist to Nadezhda von Meck, Tchaikovsky’s patron, and she sent Tchaikovsky one of Debussy’s first piano pieces to look at.',
+    'francisco-tarrega': 'Tárrega arranged music for guitar; Debussy explored new colors at the piano and in the orchestra. Compare how each instrument can suggest several musical voices.',
+    tchaikovsky: 'Tchaikovsky and Tárrega wrote in the Romantic era. Compare the expressive possibilities of an orchestra with those of a solo guitar.',
     debussy: 'Debussy and Satie were friends from about 1891, and in 1897 Debussy orchestrated two of Satie’s Gymnopédies.',
     satie: 'Across the Atlantic, Scott Joplin, born about two years after Satie, was making ragtime America’s popular music. Satie later wrote a ragtime into his 1917 ballet Parade.',
     joplin: 'Jelly Roll Morton grew up with ragtime in New Orleans. In his 1938 Library of Congress sessions he played Joplin’s Maple Leaf Rag as written, then again turned into jazz.',
     morton: 'Morton was publishing jazz on paper by 1915. In the same years in New York, a teenage George Gershwin was a Tin Pan Alley song plugger, playing new sheet music for customers.',
     gershwin: 'Gershwin took jazz into the concert hall with Rhapsody in Blue in 1924. Duke Ellington, a year younger, did it his own way with Black, Brown and Beige at Carnegie Hall in 1943.',
     'duke-ellington': 'Ellington and Louis Armstrong rose in the same years and finally recorded a whole album of Ellington’s tunes together in 1961.',
-    'louis-armstrong': 'Armstrong’s records of the 1920s made the improvised solo the centre of jazz. In the 1940s Charlie Parker’s bebop gave solos new speed and new harmonies.'
+    'louis-armstrong': 'Armstrong’s phrasing influenced jazz around the world. In France, Reinhardt developed a distinctive guitar voice with the Quintette du Hot Club de France.',
+    'django-reinhardt': 'Reinhardt and Parker both built inventive solos around changing harmony. Compare the string-band swing sound with Parker’s bebop lines.'
   };
   // After the last composer the route leads back out of the chapter.
   var END = {

@@ -106,6 +106,7 @@
       #lab-config { max-height: none; }
     }
   </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/trail-studio.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -167,24 +168,37 @@
         </section>
 
         <!-- 2. Play + edit -->
-        <section class="cl-card" id="lab">
-          <span class="step-tag">TRY IT FIRST</span>
-          <h2>2 · The Trail Lab: play it, then break it</h2>
-          <p>This is the finished engine. Everything about the game, including its story, items, events, landmarks and balance numbers, lives in the <strong>config</strong> on the left. Pick a preset, press <strong>Run my game</strong>, and play a few days. Then change something small (the party names, the title, one event) and run it again. You are already designing.</p>
-          <div class="row">
+        <section class="cl-card studio-open" id="lab" aria-label="Trail Game Studio">
+          <header class="studio-header">
+            <div><span class="studio-eyebrow">CLASSROOMOS / GAME DESIGN</span><h2>Trail Game Studio</h2></div>
+            <div class="studio-actions">
+              <button type="button" class="btn ghost" id="studio-lesson">Read lesson</button>
+              <button type="button" class="btn ghost" id="studio-fullscreen">Fullscreen</button>
+              <button type="button" class="btn" id="studio-open" hidden>Open studio</button>
+            </div>
+          </header>
+          <span class="step-tag studio-intro">TRY IT FIRST</span>
+          <h2 class="studio-intro">2 · The Trail Lab: play it, then break it</h2>
+          <p class="studio-intro">This is the finished engine. Everything about the game, including its story, items, events, landmarks and balance numbers, lives in the <strong>config</strong> on the left. Pick a preset, press <strong>Run my game</strong>, and play a few days. Then change something small (the party names, the title, one event) and run it again. You are already designing.</p>
+          <div class="row studio-toolbar">
             <label for="lab-preset">Start from</label>
             <select id="lab-preset" aria-label="Preset game"></select>
             <button class="btn" id="lab-run" type="button">▶ Run my game</button>
             <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
-            <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+            <button class="btn ghost" id="lab-download" type="button">↓ Export game</button>
           </div>
           <div class="lab-grid">
-            <div>
+            <div class="studio-editor">
+              <div class="studio-pane-title"><strong>01 / Design</strong><span>game.config.json</span></div>
               <label for="lab-config" class="sr-only" style="position:absolute;left:-9999px;">Game config</label>
               <textarea id="lab-config" spellcheck="false" aria-describedby="lab-status"></textarea>
               <p id="lab-status" role="status" aria-live="polite"></p>
             </div>
-            <div id="lab-game" data-night-keep data-memory-ignore aria-label="Trail game"></div>
+            <div class="studio-preview">
+              <div class="studio-pane-title"><strong>02 / Playtest</strong><span>Live game preview</span></div>
+              <div id="lab-game" data-night-keep data-memory-ignore aria-label="Trail game"></div>
+              <p class="studio-hint">Change the config, then Run to restart with your changes. ⌘ / Ctrl + Enter to run.</p>
+            </div>
           </div>
           <div class="callout">
             <strong>Reading the config.</strong> It is JSON: names in quotes, numbers without, lists in <code>[ ]</code>, objects in <code>{ }</code>. Click <em>Run</em> and an error message will tell you which line is broken (usually a missing comma). Things to try:
@@ -323,7 +337,7 @@
         <section class="cl-card" id="art">
           <span class="step-tag">YOUR ART</span>
           <h2>6 · Art guide: what you need to draw</h2>
-          <p>The Trail Lab uses emoji (🐂 🍖 🛞) as stand-ins so the game works on day one. A finished game replaces them with <strong>your own art</strong>. Before you open a drawing tool, make a list. Most of the pictures a trail game needs are the same, whatever your world looks like, so here is the whole shopping list.</p>
+          <p>The Trail Lab uses original pixel-style scenes so the game works on day one. Change <code>"visual"</code> to <code>"prairie"</code>, <code>"desert"</code>, <code>"space"</code>, or <code>"ocean"</code> to switch its scenery. A finished game replaces them with <strong>your own art</strong>. Before you open a drawing tool, make a list. Most of the pictures a trail game needs are the same, whatever your world looks like, so here is the whole shopping list.</p>
           <p><strong>Draw in this order:</strong> every <span class="art-tag must">Must</span> first (the game can ship with only those), then <span class="art-tag">Should</span>, then <span class="art-tag">Bonus</span>. A finished game with a dozen pictures beats an unfinished one with thirty.</p>
 
           <div class="art-grid">
@@ -375,7 +389,7 @@ vehicleArt: "art/wagon.png",
 resources: {
   food: { label: "Food", icon: "art/icon-food.png", start: 250 }
 }</pre></div>
-          <p>Then, in your own <code>trail.html</code>, show the picture when the player arrives. (The Trail Lab above still draws emoji; it doesn't read these art fields.)</p>
+          <p>Then, in your own <code>trail.html</code>, show the picture when the player arrives. (The Trail Lab above draws its own pixel scenery; it doesn't read these art fields.)</p>
           <div class="code-block"><pre>&lt;img id="scene" alt="" width="480" height="270"&gt;
 
 function arrive(landmark) {
@@ -680,7 +694,7 @@ say("Your journey begins!");
 draw();
 `;
 window.TRAIL_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Trail Game</title>\n</head>\n<body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <p id="status"></p>\n  <p id="party"></p>\n  <pre id="log" style="background:#f4ecd8; color:#2b1d12; padding:1rem; height:14rem; overflow:auto; white-space:pre-wrap;"></pre>\n  <div id="choices"></div>\n  <p><button id="go">Travel one day</button> <button id="rest">Rest one day</button></p>\n\n<script>\n';
-window.TRAIL_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+window.TRAIL_MINI_TAIL = '</' + 'script>\n<' + '/body>\n</html>\n';
 </script>
 
 <script>
@@ -767,7 +781,53 @@ function TrailEngine(root, cfg) {
       '.tr-shop{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.25rem 0;border-bottom:1px dotted #c9a56a}',
       '.tr-bar{position:relative;height:22px;background:#e5d3ae;border-radius:11px;margin:.6rem 0;overflow:hidden}.tr-zone{position:absolute;left:42%;width:16%;top:0;bottom:0;background:#86efac}.tr-mark{position:absolute;top:0;bottom:0;width:6px;background:#7c2d12;left:0}'
     ].join('');
+    st.textContent += '\n.tr.tr-retro{--ink:#e5e8c8;--frame:#879970;background:#111c19;color:var(--ink);border:3px double var(--frame);border-radius:0;padding:1rem;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color-scheme:dark}\n.tr-retro[data-visual=space]{--ink:#dce8f3;--frame:#849cb9;background:#111827}.tr-retro[data-visual=desert]{--ink:#f4dfb1;--frame:#b69b72;background:#241f22}.tr-retro[data-visual=ocean]{--ink:#bce8dc;--frame:#6ea99f;background:#102126}\n.tr.tr-retro h3{color:var(--ink);font:inherit;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.tr-retro .tr-top{padding:0 0 .7rem;border-bottom:1px solid var(--frame)}\n.tr-scene{margin-top:.8rem;border:1px solid var(--frame);background:#101a32}.tr-scene svg{display:block;width:100%;height:auto;image-rendering:pixelated}.tr-scene-caption{padding:.45rem 0;color:var(--ink);font-size:.65rem;letter-spacing:.06em;border-bottom:1px solid var(--frame)}\n.tr.tr-retro .tr-track{height:18px;margin:.6rem .4rem .5rem;border-color:var(--frame)}.tr.tr-retro .tr-car{font-size:15px;color:var(--ink);bottom:0}.tr-retro .tr-dot{width:6px;height:6px;bottom:-5px;border-radius:0;background:var(--frame)}.tr-retro .tr-dot.done{background:#8bd18b}.tr-retro .tr-dot.river{background:#7db5e1}.tr-retro .tr-dot.shop{background:#e3c981}\n.tr-retro .tr-next{color:var(--ink);font-size:.72rem;padding:.2rem 0 .6rem}.tr-retro .tr-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;border-top:1px solid var(--frame);border-bottom:1px solid var(--frame)}\n.tr-retro .tr-chip{border:0;border-radius:0;background:transparent;padding:.45rem .3rem;color:var(--ink);font-size:.75rem;font-weight:400}.tr-retro .tr-party{margin-top:.6rem}.tr-retro .tr-p{border:1px solid #58675c;border-radius:0;background:transparent;color:var(--ink);padding:.4rem;font-size:.7rem}.tr-retro .tr-hp{border-radius:0;background:#34433c;height:4px}.tr-retro .tr-hp i{background:#a7c286}\n.tr.tr-retro .tr-ctl label{color:var(--ink)}.tr.tr-retro select{background:#182820;color:var(--ink);border:1px solid var(--frame);border-radius:0;font-family:inherit}.tr.tr-retro button,.tr.tr-retro button.alt{border:1px solid var(--frame);border-radius:0;background:transparent;color:var(--ink);font-family:inherit;font-size:.75rem;box-shadow:none}.tr.tr-retro button:hover:not(:disabled){background:var(--ink);color:#14221b}.tr.tr-retro button:focus-visible,.tr.tr-retro select:focus-visible{outline-color:#f8da8b}\n.tr.tr-retro .tr-log{height:8rem;background:#0b1411;color:var(--ink);border:1px solid var(--frame);border-radius:0;padding:.6rem;font:inherit;font-size:.72rem}.tr-retro .tr-log .good{color:#b4df9d}.tr-retro .tr-log .bad{color:#ffb2a0}\n.tr.tr-retro .tr-modal{border-radius:0;background:#07110cce}.tr.tr-retro .tr-box{background:#14231d;border:3px double var(--frame);border-radius:0;color:var(--ink);font-family:inherit}.tr.tr-retro .tr-box h4,.tr.tr-retro .tr-box p{color:var(--ink);font-family:inherit}.tr-retro .tr-shop{border-color:var(--frame)}.tr-retro .tr-bar{border-radius:0}\n';
     document.head.appendChild(st);
+  }
+
+  // Original, code-drawn pixel scenery travels with exported games.
+  var visual = C.visual || ({ '🚀': 'space', '🐪': 'desert', '🛟': 'ocean' }[C.vehicle]) || 'prairie';
+  if (['prairie', 'space', 'desert', 'ocean'].indexOf(visual) < 0) visual = 'prairie';
+  function scene() {
+    var palettes = {
+      prairie: ['#93c9d0', '#f9edbc', '#728e79', '#344d3c', '#b6a36b'],
+      desert: ['#182a4a', '#ffe2a3', '#b68a63', '#795c4b', '#d5ac73'],
+      space: ['#101a32', '#f5dba3', '#764d56', '#452f44', '#b57761'],
+      ocean: ['#102d48', '#98e3db', '#20516a', '#123e51', '#326673']
+    };
+    var c = palettes[visual], parts = [];
+    function rect(x,y,w,h,color) { parts.push('<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+color+'"/>'); }
+    rect(0,0,480,180,c[0]);
+    if (visual === 'space' || visual === 'desert' || visual === 'ocean') {
+      for (var i=0;i<38;i++) rect((i*71+17)%480,(i*29+9)%105,i%4===0?2:1,1,c[1]);
+    }
+    rect(386,19,22,22,c[1]); rect(382,23,30,14,c[1]);
+    parts.push('<path fill="'+c[2]+'" d="M0 119V99H22V89H44V75H62V62H77V75H94V91H112V102H138V89H154V71H172V53H188V70H207V91H231V107H270V96H290V81H309V68H325V84H346V101H375V88H395V77H415V94H437V108H480V180H0Z"/>');
+    parts.push('<path fill="'+c[3]+'" d="M0 128V118H36V111H74V121H117V115H162V126H202V117H244V109H291V120H339V113H383V125H431V117H480V180H0Z"/>');
+    rect(0,143,480,37,c[4]);
+    var offset = Math.floor(S.miles * 2) % 48;
+    for (var j=0;j<13;j++) { rect(j*48-offset,158+(j%3)*6,14,2,c[3]); rect(j*43-offset,147+(j%2)*4,3,2,c[1]); }
+    if (visual === 'prairie') {
+      // Covered wagon, spoke wheels, and two oxen.
+      rect(164,111,66,25,'#70442d'); rect(160,109,76,5,'#c59c5a');
+      rect(168,83,58,29,'#f9edca');rect(176,76,42,7,'#f9edca');rect(184,72,26,4,'#f9edca');
+      [179,202,222].forEach(function(x){rect(x,84,2,25,'#bcaa83');});
+      [177,219].forEach(function(x){rect(x-8,130,16,16,'#282a28');rect(x-4,134,8,8,'#c59c5a');rect(x-1,131,2,14,'#70442d');rect(x-7,137,14,2,'#70442d');});
+      rect(234,128,35,3,'#70442d');
+      [268,310].forEach(function(x){rect(x,117,30,16,'#e6d4ac');rect(x+26,112,12,15,'#e6d4ac');rect(x+29,108,3,7,'#593e31');rect(x+36,109,3,6,'#593e31');rect(x+3,132,4,13,'#70442d');rect(x+23,132,4,13,'#70442d');rect(x+34,116,2,2,'#282a28');});
+      for(var t=0;t<2;t++){var x=t*440+12-offset;rect(x,119,4,25,'#344d3c');parts.push('<path fill="#344d3c" d="M'+(x-9)+' 131h22l-11-24z"/>');}
+    } else if (visual === 'desert') {
+      [175,240,305].forEach(function(x){rect(x,118,37,16,'#d6b17b');rect(x+7,111,15,10,'#d6b17b');rect(x+32,101,7,23,'#d6b17b');rect(x+34,99,14,8,'#d6b17b');rect(x+4,133,4,14,'#d6b17b');rect(x+28,133,4,14,'#d6b17b');rect(x+8,118,19,10,'#a34d40');rect(x+42,102,2,2,'#182a4a');});
+      rect(209,126,31,1,c[1]);rect(274,126,31,1,c[1]);
+    } else if (visual === 'space') {
+      rect(175,82,92,26,'#d7dfdc');rect(185,76,60,38,'#d7dfdc');rect(250,87,27,16,'#f5dba3');rect(205,83,16,14,'#447d92');rect(209,86,8,7,'#93c9d0');rect(180,69,25,7,'#a8524c');rect(180,114,25,7,'#a8524c');rect(162,86,13,18,'#a8524c');rect(145-(S.day%3)*4,90,17,10,'#efb65c');rect(136-(S.day%3)*4,93,9,4,'#f9edbc');
+    } else {
+      rect(174,84,113,35,'#ddb756');rect(182,77,94,49,'#ddb756');rect(196,65,28,12,'#ddb756');rect(206,55,7,12,'#ddb756');rect(206,53,22,5,'#ddb756');[202,230,258].forEach(function(x){rect(x,91,16,16,'#102d48');rect(x+3,94,10,10,'#98e3db');});rect(164,87,10,28,'#98a5a4');rect(155,99,9,4,'#98a5a4');
+      for(var b=0;b<5;b++) rect(144-b*19,90-((S.day*3+b*13)%45),3,3,'#98e3db');
+      [40,94,375,430].forEach(function(x){rect(x,137,4,15,c[1]);rect(x-5,130,4,13,c[1]);rect(x+5,126,4,17,c[1]);});
+    }
+    el.scene.innerHTML = '<svg viewBox="0 0 480 180" role="img" aria-label="'+({prairie:'A covered wagon and oxen crossing the prairie',desert:'A camel caravan crossing the desert',space:'A spacecraft approaching Mars',ocean:'A submarine exploring the deep sea'}[visual])+'" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">'+parts.join('')+'</svg>';
+    el.sceneCaption.textContent = (S.over ? 'JOURNEY ENDED' : 'ON THE TRAIL') + ' / ' + (C.start || 'Departure') + ' → ' + (C.goalName || 'Destination');
   }
 
   // ---- state ----
@@ -796,11 +856,13 @@ function TrailEngine(root, cfg) {
   var el = {};
   function build() {
     root.replaceChildren();
-    var box = h('div', 'tr'); root.appendChild(box); el.box = box;
+    var box = h('div', 'tr tr-retro'); box.dataset.visual = visual; root.appendChild(box); el.box = box;
     var top = h('div', 'tr-top'); top.appendChild(h('h3', null, C.title)); el.day = h('span'); top.appendChild(el.day); box.appendChild(top);
+    el.scene = h('div', 'tr-scene'); box.appendChild(el.scene);
+    el.sceneCaption = h('div', 'tr-scene-caption'); box.appendChild(el.sceneCaption);
     el.track = h('div', 'tr-track'); box.appendChild(el.track);
     LM.forEach(function (l) { var d = h('span', 'tr-dot ' + (l.type || '')); d.style.left = (l.at / C.goalMiles * 100) + '%'; d.title = l.name + ' (' + l.at + ' ' + unit + ')'; l._dot = d; el.track.appendChild(d); });
-    el.car = h('span', 'tr-car', C.vehicle || '🛻'); el.track.appendChild(el.car);
+    el.car = h('span', 'tr-car', '▼'); el.track.appendChild(el.car);
     el.next = h('div', 'tr-next'); box.appendChild(el.next);
     el.res = h('div', 'tr-res'); box.appendChild(el.res);
     el.party = h('div', 'tr-party'); box.appendChild(el.party);
@@ -822,6 +884,7 @@ function TrailEngine(root, cfg) {
   }
   function draw() {
     if (destroyed) return;
+    scene();
     el.day.textContent = 'Day ' + S.day + (deadline < 9999 ? ' of ' + deadline : '');
     el.car.style.left = Math.min(100, S.miles / C.goalMiles * 100) + '%';
     LM.forEach(function (l, i) { l._dot.classList.toggle('done', i < S.idx); });
@@ -829,7 +892,7 @@ function TrailEngine(root, cfg) {
     el.next.textContent = Math.round(S.miles) + ' of ' + C.goalMiles + ' ' + unit + '.  ' +
       (nx ? 'Next: ' + nx.name + ' in ' + Math.max(0, Math.round(nx.at - S.miles)) + '.' : 'Next: ' + (C.goalName || 'the finish') + ' in ' + Math.max(0, Math.round(C.goalMiles - S.miles)) + '.');
     el.res.replaceChildren();
-    rkeys.forEach(function (k) { el.res.appendChild(h('span', 'tr-chip', (R[k].icon || '') + ' ' + R[k].label + ': ' + fmt(S.res[k]))); });
+    rkeys.forEach(function (k) { el.res.appendChild(h('span', 'tr-chip', R[k].label + ': ' + fmt(S.res[k]))); });
     el.party.replaceChildren();
     C.party.forEach(function (n, i) {
       var p = h('div', 'tr-p' + (S.hp[i] <= 0 ? ' dead' : '')); p.appendChild(h('div', null, (S.hp[i] <= 0 ? '🪦 ' : '') + n + ' · ' + S.hp[i]));
@@ -937,7 +1000,7 @@ function TrailEngine(root, cfg) {
       m.body.appendChild(h('p', null, (R.money.icon || '') + ' ' + R.money.label + ': ' + fmt(S.res.money)));
       sellable.forEach(function (k) {
         var lot = R[k].lot || 1, cost = r1(R[k].price * lot * markup);
-        var row = h('div', 'tr-shop'); row.appendChild(h('span', null, (R[k].icon || '') + ' ' + R[k].label + ': ' + fmt(S.res[k])));
+        var row = h('div', 'tr-shop'); row.appendChild(h('span', null, R[k].label + ': ' + fmt(S.res[k])));
         var b = h('button', 'alt', 'Buy ' + lot + ' · ' + cost); b.type = 'button'; b.disabled = S.res.money < cost;
         b.onclick = function () { S.res.money = r1(S.res.money - cost); S.res[k] = r1(S.res[k] + lot); paint(); draw(); S.modal = true; };
         row.appendChild(b); m.body.appendChild(row);
@@ -1014,7 +1077,7 @@ function TrailEngine(root, cfg) {
    ═════════════════════════════════════════════════════════════ */
 var TRAIL_PRESETS = {
   oregon: { label: 'The Oregon Trail, 1848', config: {
-    title: 'The Oregon Trail, 1848', start: 'Independence, Missouri', goalName: 'Oregon City', unit: 'miles', goalMiles: 2000, deadline: 190, vehicle: '🐂',
+    title: 'The Oregon Trail, 1848', visual: 'prairie', start: 'Independence, Missouri', goalName: 'Oregon City', unit: 'miles', goalMiles: 2000, deadline: 190, vehicle: '🐂',
     party: ['Ana', 'Ben', 'Cy', 'Dee', 'Eli'], eventChance: 0.4,
     resources: {
       food: { label: 'Food (lbs)', icon: '🍖', start: 300, price: 0.2, lot: 50 },
@@ -1045,7 +1108,7 @@ var TRAIL_PRESETS = {
       { at: 1700, name: 'Blue Mountains', type: 'info', text: 'Steep, forested and slow. Rest if anyone is weak.' }
     ] } },
   mars: { label: 'Mission to Mars', config: {
-    title: 'Mission to Mars', start: 'Earth orbit', goalName: 'Jezero Crater', unit: 'million km', goalMiles: 180, deadline: 260, vehicle: '🚀',
+    title: 'Mission to Mars', visual: 'space', start: 'Earth orbit', goalName: 'Jezero Crater', unit: 'million km', goalMiles: 180, deadline: 260, vehicle: '🚀',
     party: ['Cmdr Rivera', 'Dr. Okafor', 'Eng. Lin', 'Pilot Haas'], eventChance: 0.45,
     paces: [{ label: 'Coast', miles: 1, cost: 0 }, { label: 'Burn', miles: 1.4, cost: 2 }, { label: 'Overburn', miles: 1.9, cost: 5 }],
     rations: [{ label: 'Full air flow', per: 1.5, health: 2 }, { label: 'Reduced', per: 1.1, health: 0 }, { label: 'Emergency', per: 0.8, health: -3 }],
@@ -1071,7 +1134,7 @@ var TRAIL_PRESETS = {
       { at: 150, name: 'Phobos relay', type: 'shop', markup: 1.8, text: 'A tiny station that charges a lot.' }
     ] } },
   silk: { label: 'Silk Road Caravan', config: {
-    title: 'Silk Road Caravan', start: 'Chang’an', goalName: 'Baghdad', unit: 'miles', goalMiles: 2400, deadline: 240, vehicle: '🐪',
+    title: 'Silk Road Caravan', visual: 'desert', start: 'Chang’an', goalName: 'Baghdad', unit: 'miles', goalMiles: 2400, deadline: 240, vehicle: '🐪',
     party: ['Marco', 'Layla', 'Tariq', 'Mei'], eventChance: 0.4,
     words: { ford: 'Cross at dawn', float: 'Follow the guide', ferry: 'Hire a desert guide', wait: 'Wait out the heat' },
     resources: {
@@ -1096,7 +1159,7 @@ var TRAIL_PRESETS = {
       { at: 1900, name: 'Samarkand', type: 'shop', markup: 1.2, text: 'Blue-tiled domes and paper from the East.' }
     ] } },
   sub: { label: 'Deep-Sea Descent', config: {
-    title: 'Deep-Sea Descent', start: 'the surface ship', goalName: 'the ocean floor', unit: 'meters', goalMiles: 3000, deadline: 62, vehicle: '🛟',
+    title: 'Deep-Sea Descent', visual: 'ocean', start: 'the surface ship', goalName: 'the ocean floor', unit: 'meters', goalMiles: 3000, deadline: 62, vehicle: '🛟',
     party: ['Pilot Reyes', 'Dr. Ito', 'Tech Moana'], eventChance: 0.5,
     paces: [{ label: 'Gentle', miles: 60, cost: 0 }, { label: 'Standard', miles: 90, cost: 2 }, { label: 'Fast', miles: 130, cost: 5 }],
     rations: [{ label: 'Full oxygen', per: 1, health: 2 }, { label: 'Thrifty', per: 0.75, health: 0 }, { label: 'Minimum', per: 0.5, health: -3 }],
@@ -1173,7 +1236,7 @@ var TRAIL_PRESETS = {
     var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
     var title = String(cfg.title).replace(/[<>&"]/g, '');
     var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#2b1d12;">\n<div id="game" style="max-width:860px;margin:0 auto;"></div>\n<script>\n' +
-      TrailEngine.toString() + '\nvar CONFIG = ' + json + ';\nTrailEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</body>\n</html>\n';
+      TrailEngine.toString() + '\nvar CONFIG = ' + json + ';\nTrailEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n<' + '/body>\n</html>\n';
     download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
     status.className = 'ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
   });
@@ -1203,6 +1266,7 @@ var TRAIL_PRESETS = {
   $('dice-roll').addEventListener('click', roll); roll();
 })();
 </script>
+<script src="../../../assets/js/lessons/trail-studio.js"></script>
 <script src="../../../assets/js/reveal.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>

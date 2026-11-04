@@ -36,7 +36,8 @@
     ] },
     { id: 'romantic', label: 'Romantic', composers: [
       { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin', name: 'Frédéric Chopin', dates: '1810–1849' },
-      { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky', name: 'Pyotr Ilyich Tchaikovsky', dates: '1840–1893' }
+      { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky', name: 'Pyotr Ilyich Tchaikovsky', dates: '1840–1893' },
+      { file: 'lessons/music/pioneers/francisco-tarrega.html', label: 'Tárrega', name: 'Francisco Tárrega', dates: '1852–1909' }
     ] },
     { id: 'modern', label: 'Modern', composers: [
       { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy', name: 'Claude Debussy', dates: '1862–1918' },
@@ -48,6 +49,7 @@
       { file: 'lessons/music/pioneers/gershwin.html', label: 'Gershwin', name: 'George Gershwin', dates: '1898–1937' },
       { file: 'lessons/music/pioneers/duke-ellington.html', label: 'Ellington', name: 'Duke Ellington', dates: '1899–1974' },
       { file: 'lessons/music/pioneers/louis-armstrong.html', label: 'Armstrong', name: 'Louis Armstrong', dates: '1901–1971' },
+      { file: 'lessons/music/pioneers/django-reinhardt.html', label: 'Reinhardt', name: 'Django Reinhardt', dates: '1910–1953' },
       { file: 'lessons/music/pioneers/charlie-parker.html', label: 'Parker', name: 'Charlie Parker', dates: '1920–1955' }
     ] }
   ];

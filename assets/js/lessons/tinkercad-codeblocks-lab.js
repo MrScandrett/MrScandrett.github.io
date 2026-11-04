@@ -1,4 +1,5 @@
 /* Checked, print-flat nested rings. No hidden mesh nudges or skipped rings. */
+import { createRingStudio } from './codeblocks-studio.mjs';
 import { PRESETS, rings, checks, recipe, stl } from './codeblocks-rings.mjs';
 (function () {
   'use strict';
@@ -13,11 +14,13 @@ import { PRESETS, rings, checks, recipe, stl } from './codeblocks-rings.mjs';
   var program = document.getElementById('cb-program');
   var readout = document.getElementById('cb-readout');
   function params() { var p = {}; ids.forEach(k => { p[k] = +inputs[k].value; }); return p; }
+  var studio = createRingStudio(params);
   var view = SimKit.canvas2d(canvas, { height: 340, onResize: function () { render(); } });
 
   function render() {
     if (!view) return;
     var p = params(), list = rings(p);
+    studio.rebuild(p);
     if (checks(p).some(c => !c.ok)) {
       ctxInvalid(); updateText(p, list); return;
     }
@@ -100,9 +103,9 @@ import { PRESETS, rings, checks, recipe, stl } from './codeblocks-rings.mjs';
     var p = params(); if (checks(p).some(c => !c.ok)) return;
     download(recipe(p), 'text/plain', 'tinkercad-ring-block-checklist.txt');
   });
-  function preset(name) { ids.forEach(k => { inputs[k].value = PRESETS[name][k]; }); render(); }
+  function preset(name) { ids.forEach(k => { inputs[k].value = PRESETS[name][k]; }); document.querySelectorAll('[data-cb-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cbPreset === name))); render(); }
   document.querySelectorAll('[data-cb-preset]').forEach(button => button.addEventListener('click', () => preset(button.dataset.cbPreset)));
   document.getElementById('cb-reset').addEventListener('click', () => preset('quiet'));
   ids.forEach(k => inputs[k].addEventListener('input', render));
-  render();
+  preset('quiet');
 })();

@@ -28,7 +28,24 @@
     .cb-table th, .cb-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line, #d2d2d7); }
     .cb-diagram { display: block; width: 100%; max-width: 640px; height: auto; margin: 0.4rem auto 0; }
     @media (max-width: 720px) { .cb-lab-grid { grid-template-columns: minmax(0, 1fr); } }
+    .cb-toolbar, .cb-viewbar, .cb-code-heading { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; }
+    .cb-toolbar { margin-bottom:1rem; } .cb-toolbar strong { font-size:1.2rem; } .cb-toolbar span, .cb-code-heading span { display:block; font-size:.8rem; opacity:.8; }
+    .cb-studio button { min-height:38px; cursor:pointer; padding:.45rem .75rem; border:1px solid var(--line,#aaa); border-radius:8px; background:var(--bg,#fff); color:var(--text,#182a32); font:600 .82rem system-ui; }
+    .cb-studio button[aria-pressed="true"] { background:#0e7490; color:white; border-color:#0e7490; }
+    .cb-lab-grid { grid-template-columns:minmax(280px, .9fr) minmax(0,1.4fr); align-items:stretch; }
+    .cb-code { grid-column:1; grid-row:1; padding:.8rem; border:1px solid var(--line,#ccc); border-radius:12px; background:var(--bg,#fff); }
+    .cb-workplane { grid-column:2; grid-row:1; min-width:0; } .cb-viewbar { justify-content:flex-start; margin:.5rem 0; }
+    .cb-code-heading { margin-bottom:.7rem; } .cb-code .cb-program { border:0; padding:0; font-size:.78rem; gap:.45rem; }
+    .cb-code .cb-block { padding:.55rem .65rem; border-radius:5px 10px 10px 5px; box-shadow:inset 0 -2px #0002; }
+    #cb-3d { height:420px; background:#eaf2f5; } .cb-studio canvas[hidden] { display:none; }
+    .cb-view-hint, #cb-execution { font-size:.8rem; margin:.6rem 0; }
+    .cb-studio .fl-lab-controls { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding-top:1rem; border-top:1px solid var(--line,#ccc); }
+    .cb-studio .fl-lab-controls .fl-lab-buttons { grid-column:1/-1; }
+    .cb-studio.cb-expanded { position:fixed; inset:0; z-index:11000; overflow:auto; padding:1.5rem; background:var(--bg,#fff); border-radius:0; }
+    .cb-expanded #cb-3d { height: min(58vh,650px); }
+    @media(max-width:780px) { .cb-lab-grid { grid-template-columns:minmax(0,1fr); } .cb-workplane { grid-column:1; grid-row:1; } .cb-code { grid-row:2; } .cb-studio .fl-lab-controls { grid-template-columns:repeat(2,minmax(0,1fr)); } #cb-3d { height:320px; } }
   </style>
+<link rel="stylesheet" href="../../../assets/css/lessons/codeblocks-play.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -55,6 +72,23 @@
     <div class="ll-sim">
       <main id="main-content" class="fl-page">
 
+        <section class="fl-card" id="cb-play" style="--card-accent:#7c3aed">
+          <h1>Codeblocks studio</h1>
+          <p>Pick a seed, change its rules, then add your own operators. Each program line makes a shape or changes the settings for the shapes below it. The whole program repeats with <code>i</code> starting at 0.</p>
+          <div class="xp-studio" id="xp-studio" data-memory-ignore>
+            <div class="cb-toolbar"><div class="cb-viewbar" id="xp-presets"></div><button type="button" id="xp-expand" aria-pressed="false">Expand creative studio</button></div>
+            <div class="xp-grid">
+              <aside class="xp-palette" aria-label="Operator palette"><h3>Operators</h3><p>Click to insert at the cursor.</p><div id="xp-operators"></div></aside>
+              <div class="xp-editor"><label for="xp-code"><strong>Your program</strong></label><textarea id="xp-code" spellcheck="false" aria-describedby="xp-syntax"></textarea><div class="cb-viewbar"><button type="button" id="xp-run">Run program</button><button type="button" id="xp-step">Step repeat</button><button type="button" id="xp-save">Save program</button><label class="xp-load">Open program<input type="file" id="xp-load" accept=".json,application/json"></label></div><p id="xp-status" role="status"></p></div>
+              <div class="xp-preview"><div class="cb-viewbar"><button type="button" id="xp-fit">Fit design</button><button type="button" id="xp-top">Top</button><button type="button" id="xp-perspective">Perspective</button></div><canvas id="xp-canvas" tabindex="0" aria-label="Your programmed 3D design. Drag to orbit; scroll to zoom."></canvas><p>Drag to orbit · scroll to zoom · grid = 10 mm</p></div>
+            </div>
+            <div class="xp-parameters" id="xp-parameters"></div>
+            <details id="xp-syntax"><summary>How the language works · operator reference</summary><p><code>box x y z width depth height tilt orbit lean hue</code> creates a box. Use <code>sphere</code> for an ellipsoid or <code>cylinder</code> for a cylinder. Positions and dimensions are millimeters; angles are degrees; hue is a color angle (0 red, 120 green, 240 blue). Z points up. <strong>Orbit</strong> turns both the shape and its position around the vertical axis.</p><p><code>move x y z</code>, <code>rotate x y z</code>, <code>scale x y z</code>, and <code>color hue</code> set transformations for subsequent shapes, until replaced. These settings reset at each repeat. Rotate changes local orientation; orbit in a shape line turns its placement around the origin. Each shape is scaled, rotated locally, orbited, then moved.</p><p>Use <code>i count twist rise radius size</code> and arithmetic <code>+ - * / ( )</code> in any value. Keep each expression together without spaces: <code>i*rise</code> or <code>(radius+size)/2</code>. Create a named value with <code>let angle i*twist</code>, then use <code>angle</code> in shape values. <code>change angle 5</code> adds 5 to it. Named values reset each repeat. Lines starting with # are comments. Repeat count comes from the control below; Step repeat reveals one loop at a time. This language is local to this studio and cannot be pasted into Tinkercad.</p></details>
+            <p class="fl-callout">Try a mutation: set twist to 137.5°, make rise negative, swap a box for a sphere, or add a second shape. Intersections and floating parts are allowed here. This studio explores geometry; use a CAD tool and slicer to prepare a printable solid. Save your program to keep it or share it.</p>
+          </div>
+        </section>
+
+
         <nav class="ll-breadcrumb" aria-label="Breadcrumb">
           <a href="../../../index.html">Home</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
           <a href="../3d-design.html">3D Design</a><span class="ll-crumb-sep" aria-hidden="true">/</span>
@@ -65,20 +99,21 @@
         <!-- Hero -->
         <section class="hero fl-hero">
           <p class="eyebrow">3D Design · Parametric CAD · Coding</p>
-          <h1>Tinkercad Codeblocks: Printable Ring Fidgets</h1>
+          <h2>Lesson · Imagine, Program, Make</h2>
           <div class="fl-hero-meta">
             <span>Variables</span><span class="dot"></span>
             <span>Loops</span><span class="dot"></span>
             <span>Extrude</span><span class="dot"></span>
             <span>Print-flat Fidgets</span>
           </div>
-          <p class="fl-lede">Build a set of loose, nested rings you can slide, turn, lift, and rearrange with your fingers. One recipe drives the preview, the print checks, and the STL. Rebuild the same geometry in Tinkercad Codeblocks using the exact block order below. These are <strong>separate tactile rings, not captive bearings</strong>: they lift apart after printing.</p>
+          <p class="fl-lede">Start with an idea: a spiraling sculpture, a strange building, a flower, or something nobody has named yet. Compose shapes and transformations, use a loop to grow your design, and change its rules live. The experimental studio uses a small classroom language; rebuild your favorite ideas with Tinkercad’s blocks. Then try the checked ring-printing challenge below.</p>
         </section>
 
         <nav class="ll-lesson-steps" aria-label="Lesson sections">
+          <a href="#cb-play">Creative Studio</a>
           <a href="#cb-why">Why Code?</a>
           <a href="#cb-ideas">Three Ideas</a>
-          <a href="#cb-lab">Fidget Lab</a>
+          <a href="#cb-lab">Print Challenge</a>
           <a href="#cb-build">Build It</a>
           <a href="#cb-pi">Print Checklist</a>
           <a href="#fl-sec-practice">Practice</a>
@@ -107,17 +142,18 @@
         <!-- Ring Stack Lab -->
         <section class="fl-card" id="cb-lab" style="--card-accent:#0e7490;">
           <h2>Fidget Lab · nested rings</h2>
-          <p>Choose a starting recipe, then adjust the dimensions. All rings sit on the bed at z = 0, with straight vertical walls and open space between them. The preview is a diagram, not a motion or slicer simulation.</p>
+          <p>Choose a starting recipe, then adjust the dimensions. All rings sit on the bed at z = 0, with straight vertical walls and open space between them. Orbit the 3D model to inspect the walls, or use the top view to check the gaps. This is a geometry preview, not a motion or slicer simulation.</p>
           <div class="fl-callout a1"><strong>Import or transcribe?</strong> Download STL for a slicer or <strong>Tinkercad → 3D Designs → Import</strong> (millimeters, 100% scale). That imports a mesh, not code. For editable <strong>Codeblocks</strong>, manually drag the blocks in the recipe below. The text download is a transcription checklist; it is not an importable Codeblocks file or pasteable program.</div>
-          <div class="fl-lab" data-memory-ignore>
+          <div class="fl-lab cb-studio" id="cb-studio" data-memory-ignore>
+            <div class="cb-toolbar"><div><strong>Codeblocks studio</strong><span>Change a number. Watch the loop rebuild.</span></div><button type="button" id="cb-focus" aria-pressed="false">Expand studio</button></div>
             <div class="fl-lab-buttons">
               <button type="button" data-cb-preset="quiet">Quiet rings · 3 pieces</button>
               <button type="button" data-cb-preset="pocket">Pocket rings · 4 pieces</button>
               <button type="button" data-cb-preset="test">Clearance test · 2 pieces</button>
             </div>
             <div class="cb-lab-grid">
-              <div class="fl-lab-stage"><canvas id="cb-canvas" role="img" aria-label="Top view of separate nested rings on the print bed"></canvas></div>
-              <div class="cb-program" id="cb-program" aria-label="Codeblocks transcription recipe"></div>
+              <div class="cb-workplane"><div class="cb-viewbar" role="group" aria-label="Preview controls"><button type="button" id="cb-view-3d" aria-pressed="true">3D view</button><button type="button" id="cb-view-top" aria-pressed="false">Top view</button><button type="button" id="cb-home">Fit model</button></div><div class="fl-lab-stage"><canvas id="cb-3d" tabindex="0" aria-label="3D nested ring model. Drag to orbit; scroll to zoom. Use Fit model to reset."></canvas><canvas id="cb-canvas" hidden role="img" aria-label="Top view of separate nested rings on the print bed"></canvas></div><p class="cb-view-hint">Drag to orbit · scroll to zoom · grid squares = 10 mm</p></div>
+              <div class="cb-code"><div class="cb-code-heading"><strong>01 / Block recipe</strong><span>Read from top to bottom</span></div><div class="cb-program" id="cb-program" aria-label="Codeblocks transcription recipe"></div><div class="cb-viewbar"><button type="button" id="cb-step">Step ring</button><button type="button" id="cb-run">Build all rings</button></div><p id="cb-execution" role="status"></p></div>
             </div>
             <div class="fl-lab-controls">
               <label>Ring count: <output id="cb-n-out" for="cb-n">3</output><input type="range" id="cb-n" min="2" max="6" step="1" value="3" /></label>
@@ -288,5 +324,6 @@
 <script src="../../../assets/js/design3d-route.js"></script>
 <script src="../../../assets/js/sim-kit.js"></script>
 <script type="module" src="../../../assets/js/lessons/tinkercad-codeblocks-lab.js"></script>
+<script type="module" src="../../../assets/js/lessons/codeblocks-play.mjs"></script>
 </body>
 </html>
