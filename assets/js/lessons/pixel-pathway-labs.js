@@ -289,6 +289,70 @@
       var t = art.tiles[key];
       rules.textContent = 'tiles["' + key + '"] = {\n  name: "' + t.name + '",\n  solid: ' + !!t.solid + ', oneWay: ' + !!t.oneWay + ', hazard: ' + !!t.hazard + '\n}\n// the art can change; these collision rules stay with the tile ID';
     }
+    var importer = el('section'); host.appendChild(importer);
+    importer.appendChild(el('h3', null, 'Import a tileset image'));
+    importer.appendChild(el('p', 'px-note', 'Open an entire PNG, GIF, JPEG or WebP sheet, set its grid, then choose a tile to copy into the selected game tile above. Imported tiles become 16 × 16 pixels in the game’s 15-colour palette. Collision rules stay with the selected game tile. The full sheet stays available here until you leave or reload this page.'));
+    var fileLabel = el('label', null, 'Tileset image '), file = el('input');
+    file.type = 'file'; file.accept = 'image/png,image/gif,image/jpeg,image/webp'; fileLabel.appendChild(file); importer.appendChild(fileLabel);
+    var controls = el('div', 'px-btn-row'); importer.appendChild(controls);
+    function number(label, value, min, max) {
+      var wrap = el('label', null, label + ' '), input = el('input'); input.type = 'number'; input.value = value; input.min = min; input.max = max; input.step = 1; input.style.width = '5em';
+      wrap.appendChild(input); controls.appendChild(wrap); input.addEventListener('input', refresh); return input;
+    }
+    var size = number('Tile size', 16, 1, 256), gap = number('Spacing', 0, 0, 256), marginX = number('Left margin', 0, 0, 4096), marginY = number('Top margin', 0, 0, 4096);
+    var column = number('Column (from 1)', 1, 1, 4096), row = number('Row (from 1)', 1, 1, 4096);
+    var scroll = el('div'); scroll.style.cssText = 'overflow:auto;max-height:480px;max-width:100%'; importer.appendChild(scroll);
+    var sheet = el('canvas'); sheet.hidden = true; sheet.style.cssText = 'display:block;max-width:none;image-rendering:pixelated;cursor:crosshair'; scroll.appendChild(sheet);
+    sheet.setAttribute('role', 'img'); sheet.setAttribute('aria-label', 'Imported tileset grid. Click a tile, or use the column and row controls below the file picker.');
+    var status = el('p', 'px-note'); status.setAttribute('aria-live', 'polite'); importer.appendChild(status);
+    var apply = el('button', null, 'Copy selected tile into game'); apply.type = 'button'; apply.disabled = true; importer.appendChild(apply);
+    var image = null, selection = null, request = 0;
+    function refresh() {
+      apply.disabled = true; selection = null;
+      if (!image) return;
+      var inputs = [size, gap, marginX, marginY, column, row];
+      if (inputs.some(function (n) { return !n.checkValidity() || n.value === ''; })) { status.textContent = 'Enter whole numbers within the grid controls’ limits.'; return; }
+      var n = +size.value, step = n + +gap.value, x = +marginX.value + (+column.value - 1) * step, y = +marginY.value + (+row.value - 1) * step;
+      var ctx = sheet.getContext('2d'); sheet.width = image.width; sheet.height = image.height; sheet.hidden = false; ctx.drawImage(image, 0, 0);
+      ctx.strokeStyle = 'rgba(255,0,180,.65)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var gx = +marginX.value; gx <= image.width; gx += step) { ctx.moveTo(gx + .5, +marginY.value); ctx.lineTo(gx + .5, image.height); }
+      for (var gy = +marginY.value; gy <= image.height; gy += step) { ctx.moveTo(+marginX.value, gy + .5); ctx.lineTo(image.width, gy + .5); }
+      ctx.stroke();
+      if (x + n > image.width || y + n > image.height) { status.textContent = 'This selection extends beyond the image. Adjust the grid or choose another tile.'; return; }
+      selection = { x: x, y: y, size: n }; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, n - 2, n - 2);
+      apply.disabled = false; status.textContent = image.width + ' × ' + image.height + ' image · selected column ' + column.value + ', row ' + row.value + '. Choose a game tile above, then copy.';
+    }
+    file.addEventListener('change', function () {
+      var selected = file.files[0], token = ++request; image = null; sheet.hidden = true; apply.disabled = true;
+      if (!selected) return;
+      if (selected.size > 20 * 1024 * 1024) { status.textContent = 'Choose an image smaller than 20 MB.'; return; }
+      var url = URL.createObjectURL(selected), img = new Image(); status.textContent = 'Opening tileset…';
+      img.onload = function () { URL.revokeObjectURL(url); if (token !== request) return; if (img.width > 4096 || img.height > 4096) { status.textContent = 'Choose a sheet no larger than 4096 × 4096 pixels.'; return; } image = img; column.value = row.value = 1; refresh(); };
+      img.onerror = function () { URL.revokeObjectURL(url); if (token === request) status.textContent = 'Could not open this image. Try a PNG, GIF, JPEG or WebP file.'; }; img.src = url;
+    });
+    sheet.addEventListener('click', function (event) {
+      if (!image || !size.checkValidity() || !gap.checkValidity()) return;
+      var bounds = sheet.getBoundingClientRect(), step = +size.value + +gap.value;
+      var x = (event.clientX - bounds.left) * sheet.width / bounds.width - +marginX.value, y = (event.clientY - bounds.top) * sheet.height / bounds.height - +marginY.value;
+      if (x < 0 || y < 0 || x % step >= +size.value || y % step >= +size.value) return;
+      column.value = Math.floor(x / step) + 1; row.value = Math.floor(y / step) + 1; refresh();
+    });
+    apply.addEventListener('click', function () {
+      if (!selection || !image) return;
+      var tile = el('canvas'); tile.width = tile.height = 16; var ctx = tile.getContext('2d'); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(image, selection.x, selection.y, selection.size, selection.size, 0, 0, 16, 16);
+      var pixels = ctx.getImageData(0, 0, 16, 16).data, palette = store.load().palette.slice(1).map(function (hex) { return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; }), frame = '';
+      for (var i = 0; i < pixels.length; i += 4) {
+        if (pixels[i + 3] < 128) { frame += '0'; continue; }
+        var best = 0, distance = Infinity;
+        palette.forEach(function (rgb, index) { var d = Math.pow(rgb[0] - pixels[i], 2) + Math.pow(rgb[1] - pixels[i + 1], 2) + Math.pow(rgb[2] - pixels[i + 2], 2); if (d < distance) { distance = d; best = index + 1; } }); frame += best.toString(16);
+      }
+      store.update(function (art) { art.tiles[key].px = frame; }); editor.setValue(frame); seam(); status.textContent = 'Copied into ' + key + ' · ' + store.load().tiles[key].name + '. Saved in this browser and ready in the map and game.';
+    });
+    var downloads = el('div', 'px-btn-row'); importer.appendChild(downloads);
+    [['Download tileset PNG', function () { downloadCanvas(PC.sheetCanvas(PC.TILE_KEYS.map(function (k) { return store.load().tiles[k].px; }), store.load().palette, 1), 'my-tileset.png'); }],
+     ['Download my art.js', function () { PC.download('art.js', store.exportJS(), 'text/javascript'); }]].forEach(function (item) { var b = el('button', null, item[0]); b.type = 'button'; b.addEventListener('click', item[1]); downloads.appendChild(b); });
     seam();
   }
 

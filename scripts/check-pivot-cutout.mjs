@@ -15,13 +15,41 @@ try{
  await page.goto(base+'/lessons/2d-design/pivot-stick-animator.html');await page.locator('.piv-frame-thumb').first().waitFor();await page.locator('#piv-btn-new').click();
  await page.locator('#piv-btn-import-drawing').click();await upload();
  await page.locator('[data-action=whole]').click();await at(110,180);await at(110,100);await page.locator('[data-action=add]').click();assert.equal(await page.locator('[data-parts] li').count(),1,await page.locator('[data-status]').textContent());
- await page.locator('[data-action=remove]').click();
+ await page.locator('[data-action=remove]').click();await page.locator('[data-name]').fill('Torso');
  await page.locator('[data-action=polygon]').click();
  for(const [x,y] of [[80,70],[135,70],[135,200],[80,200]])await at(x,y);
  await page.locator('[data-action=reset-joints]').click();await at(110,180);await at(110,100);await page.locator('[data-action=add]').click();
  await page.locator('[data-name]').fill('Arm');
  for(const [x,y] of [[138,100],[162,100],[190,180],[160,190]])await at(x,y);
  await page.locator('[data-action=joints]').click();await at(145,115);await at(175,175);await page.locator('[data-action=add]').click();
+ // Correct a saved part without cutting out its artwork again.
+ await page.getByRole('button',{name:'Edit joints: Arm',exact:true}).click();
+ assert.ok(await page.locator('[value=create]').isDisabled());
+ assert.equal(await page.locator('[data-parent] option').count(),2,'Only earlier parts can be parents');
+ await page.locator('[data-action=snap]').click();
+ assert.equal(await page.locator('[data-coordinate=pivot-x]').inputValue(),'110');
+ assert.equal(await page.locator('[data-coordinate=pivot-y]').inputValue(),'100');
+ await page.locator('[data-coordinate=pivot-x]').fill('145');await page.locator('[data-coordinate=pivot-x]').press('Tab');
+ await page.locator('[data-coordinate=pivot-y]').fill('115');await page.locator('[data-coordinate=pivot-y]').press('Tab');
+ await page.locator('[data-zoom]').fill('200');
+ assert.equal(await page.locator('[data-zoom-value]').textContent(),'200%');
+ await page.locator('[data-action=tip]').click();
+ await page.locator('[data-source]').scrollIntoViewIfNeeded();
+ let box=await page.locator('[data-source]').boundingBox();
+ // Keep the selected handle in view even when the zoomed drawing scrolls.
+ await page.locator('.piv-cutout-viewport').evaluate(el=>{el.scrollTop=1000;el.scrollLeft=1000;});
+ box=await page.locator('[data-source]').boundingBox();
+ await page.mouse.move(box.x+175/200*box.width,box.y+175/300*box.height);await page.mouse.down();
+ await page.mouse.move(box.x+180/200*box.width,box.y+180/300*box.height,{steps:4});await page.mouse.up();
+ assert.equal(await page.locator('[data-coordinate=tip-x]').inputValue(),'180','Zoomed handle dragging moves the tip');
+ await page.locator('[data-action=add]').click();
+ assert.equal(await page.locator('[data-parts] li').count(),2,'Editing replaces the part');
+ await page.getByRole('button',{name:'Edit joints: Torso',exact:true}).click();
+ await page.locator('[data-coordinate=pivot-x]').fill('90');await page.locator('[data-coordinate=pivot-x]').press('Tab');
+ await page.locator('[data-action=cancel-edit]').click();
+ await page.getByRole('button',{name:'Edit joints: Torso',exact:true}).click();
+ assert.equal(await page.locator('[data-coordinate=pivot-x]').inputValue(),'110','Cancel preserves saved joints');
+ await page.locator('[data-action=cancel-edit]').click();
  assert.equal(await page.locator('[data-parts] li').count(),2);await page.getByRole('button',{name:'Send back: Arm',exact:true}).click();await page.locator('[value=create]').click();
  let project=await read(),frame=project.doc.frames[0],fig=frame.figures.at(-1),type=project.doc.types[fig.type];
  assert.equal(type.segments.length,2);assert.deepEqual(type.order,[1,0]);assert.equal(type.segments[1].parent,1);assert.ok(type.segments.every(s=>s.artwork.src.startsWith('data:image/png;base64,')));
@@ -49,5 +77,5 @@ try{
    if(width===390)await page.screenshot({path:'/tmp/pivot-cutout-mobile.png'});
    await page.keyboard.press('Escape');
  }
- assert.deepEqual(errors,[]);console.log('Cutout checks passed: automatic/manual selection, parented two-part puppet, rotation, mirrored frame cloning, image-inclusive sprites, project transfer/reload, and 320/390px keyboard workflow.');
+ assert.deepEqual(errors,[]);console.log('Cutout checks passed: automatic/manual selection, parented two-part puppet, precise joint coordinates, parent snapping, zoomed dragging, joint editing/cancel, rotation, mirrored frame cloning, image-inclusive sprites, project transfer/reload, and 320/390px keyboard workflow.');
 }finally{await browser.close();}
