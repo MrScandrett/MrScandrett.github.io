@@ -211,6 +211,9 @@
   function createMixer(c, dest) {
     const master = c.createGain();
     master.gain.value = project.masterVolume;
+    const monitor = c.createGain(), monitorNormal = c.createGain();
+    monitorNormal.gain.value = (project.patchConnections || []).some(e => e.to === 'monitor') ? 0 : 1;
+    master.connect(monitorNormal); monitorNormal.connect(monitor);
     const glue = c.createDynamicsCompressor();
     glue.threshold.value = -8; glue.knee.value = 8; glue.ratio.value = 4;
     glue.attack.value = 0.004; glue.release.value = 0.2;
@@ -225,19 +228,19 @@
       on = !!on;
       if (on === low) return;
       low = on;
-      master.disconnect(); glue.disconnect(); clip.disconnect();
-      if (on) { master.connect(clip); clip.connect(dest); }
-      else { master.connect(glue); glue.connect(dest); }
+      monitor.disconnect(); glue.disconnect(); clip.disconnect();
+      if (on) { monitor.connect(clip); clip.connect(dest); }
+      else { monitor.connect(glue); glue.connect(dest); }
     }
     setLowLatency(false);
     // Return buses: input → one effect (fully wet) → return fader → master.
-    const returns = [0, 1].map(() => ({ input: c.createGain(), out: c.createGain(), fx: null, type: null }));
-    returns.forEach(r => r.out.connect(master));
+    const returns = [0, 1].map(() => ({ input: c.createGain(), out: c.createGain(), fx: null, type: null, normal: c.createGain() }));
+    returns.forEach((r,i) => { r.normal.gain.value = (project.patchConnections || []).some(e => e.from === 'return'+i) ? 0 : 1; r.out.connect(r.normal); r.normal.connect(master); });
     // A return's effect is only built once some track sends to it (a reverb costs CPU even when silent).
     function syncReturns(list, tracks) {
       list.forEach((ret, i) => {
         const r = returns[i], def = window.AudioEffects.registry[ret.type];
-        const used = (tracks || []).some((t) => (t.sends?.[i] || 0) > 0);
+        const used = (tracks || []).some((t) => (t.sends?.[i] || 0) > 0) || (project.patchConnections || []).some(e => e.to === 'aux'+i);
         const sig = used ? ret.type + JSON.stringify(ret.params || {}) : null;
         if (!used && r.fx) { r.input.disconnect(); r.fx.dispose(); r.fx = null; r.type = null; }
         if (def && sig && sig !== r.type) {
@@ -259,12 +262,17 @@
         hpf.type = 'highpass'; hpf.Q.value = 0.707;
         input.connect(phase); phase.connect(hpf);
         const eq = ChannelEQ.create(c, hpf);
-        eq.output.connect(inserts);
+        const insertNormal = c.createGain();
+        insertNormal.gain.value = (project.patchConnections || []).some(e => e.to === track.id+'@return') ? 0 : 1;
+        eq.output.connect(insertNormal); insertNormal.connect(inserts);
         const muteGain = c.createGain();
-        gain.connect(muteGain); muteGain.connect(pan); pan.connect(master);
+        gain.connect(muteGain); muteGain.connect(pan);
+        const direct = c.createGain();
+        direct.gain.value = track.patchMain === false ? 0 : 1;
+        pan.connect(direct); direct.connect(master);
         // Post-fader, post-pan sends to the two return buses.
         const sends = returns.map(r => { const g = c.createGain(); g.gain.value = 0; pan.connect(g); g.connect(r.input); return g; });
-        s = { input, gain, muteGain, pan, phase, hpf, eq, inserts, preMeter, sends, effects: [], signature: null, meter: null };
+        s = { insertNormal, direct, input, gain, muteGain, pan, phase, hpf, eq, inserts, preMeter, sends, effects: [], signature: null, meter: null };
         if (!(c instanceof OfflineAudioContext)) {
           preMeter.fftSize = 512; eq.output.connect(preMeter);
           s.meter = c.createAnalyser();
@@ -277,15 +285,19 @@
       const signature = JSON.stringify(track.effects || []);
       if (signature !== s.signature) {
         s.inserts.disconnect(); s.effects.forEach(e => e.dispose());
-        const chain = PluginHost.createChain(c, s.inserts, track.effects, window.AudioEffects.registry, window.AudioEffects.parameters);
-        s.effects = chain.instances;
+        const chain = PluginHost.createChain(c, s.inserts, track.effects, window.AudioEffects.registry, window.AudioEffects.parameters, {isPatched:index => (project.patchConnections || []).some(e => e.to === track.id+'@fx'+index+'-in')});
+        s.effects = chain.instances; s.effectPorts = chain.ports;
         chain.output.connect(s.gain); s.signature = signature;
         chain.missing.forEach(type => diagnostics?.record('plugin-missing', 'warning', { type, trackId: track.id }));
         chain.failed.forEach(failure => diagnostics?.record('plugin-failed', 'warning', { ...failure, trackId: track.id }));
       }
+      s.direct.gain.setTargetAtTime(track.patchMain === false ? 0 : 1, c.currentTime, 0.015);
       return s;
     }
-    return { master, strip, strips, setLowLatency, returns, syncReturns };
+    const patchRack = window.MusicPatchRouting?.create(c, { master, monitor, monitorNormal, returns, strip,
+      registry:window.AudioEffects.registry, parameters:window.AudioEffects.parameters,
+      report:message => diagnostics?.record('patch-routing','warning',{message}) });
+    return { master, strip, strips, setLowLatency, returns, syncReturns, patchRack };
   }
 
   // Push a channel's strip settings (trim, ø, low-cut, EQ) onto its audio nodes.
@@ -304,6 +316,7 @@
     audio.mix.master.gain.setTargetAtTime(project.masterVolume, now, 0.02);
     audio.mix.setLowLatency(project.audioSettings?.latencyMode === 'low');
     audio.mix.syncReturns(project.returns || [], project.tracks);
+    audio.mix.patchRack?.sync(project);
     project.tracks.forEach((t) => {
       const s = audio.mix.strip(t);
       s.sends.forEach((g, i) => g.gain.setTargetAtTime(t.sends?.[i] || 0, now, 0.02));
@@ -403,11 +416,11 @@
         // Clip envelope in clip time: fade in, hold, fade out (a 6 ms minimum stops clicks at cuts).
         const len = clip.duration, pos0 = into - clip.offset, pos1 = pos0 + dur, click = Math.min(0.006, dur / 4);
         const fi = Math.max(click, Math.min(len / 2, Number(clip.fadeIn) || 0)), fo = Math.max(click, Math.min(len / 2, Number(clip.fadeOut) || 0));
-        const env = (x) => level * Math.max(0, Math.min(1, x / fi, (len - x) / fo));
+        const envelope = (x) => level * Math.max(0, Math.min(1, x / fi, (len - x) / fo));
         g.gain.setValueAtTime(0, when);
-        g.gain.linearRampToValueAtTime(env(pos0 + click), when + click);
-        [fi, len - fo].forEach((x) => { if (x > pos0 + click && x < pos1 - click) g.gain.linearRampToValueAtTime(env(x), when + (x - pos0)); });
-        g.gain.linearRampToValueAtTime(env(pos1 - click), when + dur - click);
+        g.gain.linearRampToValueAtTime(envelope(pos0 + click), when + click);
+        [fi, len - fo].forEach((x) => { if (x > pos0 + click && x < pos1 - click) g.gain.linearRampToValueAtTime(envelope(x), when + (x - pos0)); });
+        g.gain.linearRampToValueAtTime(envelope(pos1 - click), when + dur - click);
         g.gain.linearRampToValueAtTime(0, when + dur);
         src.connect(g); g.connect(env.destFor(track));
         src.start(when, into, dur);
@@ -599,7 +612,7 @@
   // ── Recording ────────────────────────────────────────────────────────────
   function armedTrack() { return project.tracks.find((t) => t.armed) || null; }
 
-  let armRequest = 0, recordPending = false, finishingTake = false;
+  let armRequest = 0, armPending = null, recordPending = false, finishingTake = false;
   function silenceLive() {
     if (audio.ctx) monitorVoices.forEach(v => v.kill(audio.ctx.currentTime));
     monitorVoices.clear(); live.clear(); sustained.clear(); controller.sustain = false;
@@ -612,6 +625,13 @@
   }
   async function beginRecording() {
     if (transport.recording) { pause(); return; }
+    if (armPending) {
+      // Record may be pressed while permission or the worklet is still loading.
+      // Let that arm operation finish before starting another one.
+      const request = armRequest;
+      await armPending;
+      if (request !== armRequest || !armedTrack()) return;
+    }
     let track = armedTrack();
     if (!track) {
       track = (ui.tab === 'play' && playTarget()) || findTrack(ui.selTrack) || project.tracks.find((t) => t.kind === 'instrument');
@@ -727,7 +747,15 @@
     refreshAudioHealth();
   }
 
-  async function setArmed(track, on) {
+  function setArmed(track, on) {
+    const pending = prepareArmedTrack(track, on).finally(() => {
+      if (armPending === pending) armPending = null;
+    });
+    armPending = pending;
+    return pending;
+  }
+
+  async function prepareArmedTrack(track, on) {
     if (transport.recording || finishingTake) { status('Finish the current take before changing the armed channel.'); return; }
     if (on && track.kind === 'instrument' && !hasInstrumentExperience(track)) { status('Add an instrument experience to this channel before arming it.'); return; }
     const request = ++armRequest;
@@ -739,6 +767,7 @@
       if (!ok) on = false;
     }
     track.armed = on;
+    window.dispatchEvent(new Event('music-patch-update'));
     if (!project.tracks.some((t) => t.armed && t.kind === 'audio')) releaseMic();
     else connectMicMonitor();
     setAudioSession();
@@ -747,8 +776,10 @@
     updateInputUi();
     if (on) {
       status(track.kind === 'audio'
-        ? `“${track.name}” is armed. Press ⏺ to record from the microphone (headphones stop the speakers bleeding in).`
+        ? `“${track.name}” is armed. Press Record in the master transport to begin. The channel’s Arm button only arms or disarms it.`
         : `“${track.name}” is armed: the keyboard, QWERTY keys and MIDI now play its ${INSTRUMENTS[track.instrument]}. Press ⏺ to record.`);
+    } else if (!on && track.kind === 'audio') {
+      status(`“${track.name}” is not armed. Arm prepares the microphone; Record in the master transport begins a take.`);
     }
   }
 
@@ -980,6 +1011,10 @@
   // ── History + autosave ───────────────────────────────────────────────────
   function snapshot() { return ProjectModel.stringify(project); }
   function commit() {
+    if (window.MusicPatchRouting && project.patchConnections?.length) {
+      const {outputs,inputs} = window.MusicPatchRouting.ports(project.tracks,Object.keys(window.AudioEffects.registry));
+      project.patchConnections = project.patchConnections.filter(e => outputs.has(e.from) && inputs.has(e.to));
+    }
     const now = snapshot();
     if (now === history.last) { render(); return; }
     history.undo.push(history.last);
@@ -1179,6 +1214,7 @@
     if (transport.recording || finishingTake) { status('Finish the take before deleting a channel.'); return; }
     if (t.clips.length && !confirm(`Delete “${t.name}” and its ${t.clips.length} clip${t.clips.length === 1 ? '' : 's'}? (Undo can bring it back.)`)) return;
     project.tracks = project.tracks.filter((x) => x.id !== id);
+    project.patchConnections = (project.patchConnections || []).filter(e => ![e.from,e.to].some(port => port === id || port.startsWith(id+'@')));
     if (ui.selTrack === id) ui.selTrack = null;
     if (ui.selClip && !findClip(ui.selClip)) ui.selClip = null;
     if (t.armed) releaseMic();
@@ -1411,17 +1447,18 @@
     const sr = audio.ctx ? audio.ctx.sampleRate : 44100;
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
-    if (tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass))) await window.MusicLabCompressor?.prepare(oc);
-    if (tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
+    if ((project.patchConnections || []).some(e => e.from === 'fx:punch-compressor' || e.to === 'fx:punch-compressor') || project.tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass))) await window.MusicLabCompressor?.prepare(oc);
+    if (project.tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
     const mix = createMixer(oc, oc.destination);
-    mix.syncReturns(project.returns || [], tracks);
-    tracks.forEach((t) => {
+    mix.syncReturns(project.returns || [], project.tracks);
+    project.tracks.forEach((t) => {
       const s = mix.strip(t);
       s.sends.forEach((g, i) => { g.gain.value = t.sends?.[i] || 0; });
       s.muteGain.gain.value = useMix && !audible(t) ? 0 : 1;
       s.gain.gain.value = t.volume;
       s.pan.pan.value = t.pan;
     });
+    mix.patchRack?.sync(project);
     const env = {
       c: oc, offline: true, segEnd: toBeat,
       timeOf: (beat) => (beat - fromBeat) * spb(),
@@ -1431,6 +1468,7 @@
     scheduleNotes(env, fromBeat, toBeat, tracks);
     scheduleAudio(env, fromBeat, toBeat, tracks);
     const rendered = await oc.startRendering();
+    mix.patchRack?.dispose();
     return RenderEngine.trimTail(rendered, (toBeat - fromBeat) * spb());
   }
   function exportRange() {
@@ -1639,7 +1677,7 @@
         <button type="button" class="daw-btn" data-act="home" aria-label="Back to start" title="Back to start (Home)">⏮</button>
         <button type="button" class="daw-btn daw-play" data-act="play" aria-label="Play" title="Play / pause (Space)">▶</button>
         <button type="button" class="daw-btn" data-act="stop" aria-label="Stop" title="Stop (press twice to go back to the start)">⏹</button>
-        <button type="button" class="daw-btn daw-rec" data-act="record" aria-label="Record" title="Record on the armed track">⏺</button>
+        <button type="button" class="daw-btn daw-rec" data-act="record" aria-label="Record" title="Start recording on the armed track">⏺ Record</button>
         <button type="button" class="daw-btn daw-toggle daw-studio-btn" data-act="studio" aria-pressed="false" aria-label="Full-screen studio" title="Full-screen studio: fill the screen with the tracks and panels">⛶ <span>Expand</span></button>
       </div>
       <div class="daw-lcd" aria-live="off">
@@ -1776,7 +1814,7 @@
   commandStrip.append(audioHealth);
   const views = document.createElement('div'); views.className = 'daw-views';
   views.setAttribute('role', 'group'); views.setAttribute('aria-label', 'Workspace view');
-  views.innerHTML = ['tracks','split','instrument'].map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='split'?'Split':'Panels'}</button>`).join('');
+  views.innerHTML = (quConsole ? ['tracks','split','instrument'] : ['tracks','channels','split','instrument']).map(view => `<button type="button" class="daw-btn" data-view="${view}" aria-pressed="${view==='split'}">${view==='tracks'?'Tracks':view==='channels'?'Channels':view==='split'?'Split':'Panels'}</button>`).join('');
   commandStrip.append(views);
   if (!quConsole) {
     const layoutTools = document.createElement('div');
@@ -1822,6 +1860,7 @@
   }
   function setWorkspaceView(view) {
     root.dataset.view = view;
+    if (view === 'channels') setTab('mix');
     views.querySelectorAll('[data-view]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.view === view));
     });
@@ -1879,7 +1918,7 @@
     const name = $('input-name'), state = $('input-state'), button = root.querySelector('[data-act="monitor"]'), channel = $('input-channel');
     if (!name || !state || !button) return;
     name.textContent = track ? track.name : 'Input';
-    state.textContent = track?.kind === 'audio' ? (mic.node ? 'Microphone ready · level is live' : 'Opening microphone…')
+    state.textContent = track?.kind === 'audio' ? (transport.recording ? 'Recording audio · press Stop in the master transport to keep the take' : mic.node ? 'Microphone ready · press Record in the master transport' : 'Opening microphone…')
       : track?.kind === 'instrument' ? 'Instrument ready · play before recording' : 'Arm a track to play or record';
     $('input-level').hidden = track?.kind !== 'audio';
     channel.parentElement.hidden = track?.kind !== 'audio';
@@ -1977,6 +2016,7 @@
   });
 
   function render() {
+    window.dispatchEvent(new Event('music-patch-update'));
     renderMarkers();
     R.bpm.value = project.bpm;
     R.sig.value = project.sig.join('/');
@@ -2131,6 +2171,7 @@
   // ── DOM: dock (Edit / Play / Mix / FX tabs) ─────────────────────────────
   function setTab(id, focus) {
     if (!DOCK_TABS.some(([t]) => t === id)) return;
+    if (root.dataset.view === 'channels' && id !== 'mix') setWorkspaceView('instrument');
     const changed = ui.tab !== id;
     if (changed) silenceLive();
     ui.tab = id;
@@ -2340,7 +2381,7 @@
   }
   function renderMixer() {
     keepFocus(R.mixer, () => {
-      R.mixer.innerHTML = `${quConsole ? `<div class="qu-bank" role="group" aria-label="Fader assignment"><strong>FADERS →</strong><button type="button" class="daw-btn" data-act="qu-soundcheck">＋ Soundcheck band</button>${[['main','Main LR'],['0','FX A sends'],['1','FX B sends']].map(([id,name]) => `<button type="button" class="daw-btn" data-qu-bank="${id}" aria-pressed="${ui.mixBank === id}">${name}</button>`).join('')}<span>FX sends are post-fader effects buses, not separate monitor outputs.</span></div>` : ''}<div class="daw-strips">${project.tracks.map((t) => `
+      R.mixer.innerHTML = `${root.dataset.view === 'channels' ? '<div class="daw-console-toolbar"><strong>Channel desk</strong><span>Arm a channel, then use Record in the master transport. All clips play in their arrangement positions.</span><button type="button" class="daw-btn" data-act="quick-instrument">＋ Instrument</button><button type="button" class="daw-btn" data-act="add-audio">＋ Audio</button></div>' : ''}${quConsole ? `<div class="qu-bank" role="group" aria-label="Fader assignment"><strong>FADERS →</strong><button type="button" class="daw-btn" data-act="qu-soundcheck">＋ Soundcheck band</button>${[['main','Main LR'],['0','FX A sends'],['1','FX B sends']].map(([id,name]) => `<button type="button" class="daw-btn" data-qu-bank="${id}" aria-pressed="${ui.mixBank === id}">${name}</button>`).join('')}<span>FX sends are post-fader effects buses, not separate monitor outputs.</span></div>` : ''}<div class="daw-strips">${project.tracks.map((t) => `
         <div class="daw-strip${t.id === ui.selTrack ? ' is-selected' : ''}" data-strip="${t.id}" style="--tc:${t.color}">
           <div class="daw-strip-head">
             <input class="daw-th-name" data-mx="name" data-focus="${t.id}-name" value="${esc(t.name)}" maxlength="40" aria-label="${esc(t.name)} name">
@@ -2348,6 +2389,7 @@
               ? hasInstrumentExperience(t) ? `<select data-mx="instrument" data-focus="${t.id}-inst" aria-label="${esc(t.name)} instrument">${instrumentOptions(t.instrument)}</select>` : '<button type="button" class="daw-btn" data-mx="tools">Add instrument experience</button>'
               : '<span class="daw-tag">🎙 Audio</span>'}
           </div>
+          ${root.dataset.view === 'channels' ? `<div class="daw-channel-clips" aria-label="${esc(t.name)} recorded clips"><span class="daw-console-label">${t.clips.length} clip${t.clips.length === 1 ? '' : 's'}</span>${t.clips.length ? t.clips.map(c => `<button type="button" class="daw-console-clip${c.muted ? ' is-muted' : ''}" data-mx="clip" data-console-clip="${c.id}" title="Edit ${esc(c.name)}">${c.type === 'audio' ? '≋' : '♫'} ${esc(c.name)}</button>`).join('') : '<span class="daw-console-empty">Arm this channel,<br>then press Record.</span>'}</div><button type="button" class="daw-btn daw-console-detail" data-mx="tools">Channel / EQ</button>` : ''}
           ${quConsole ? `<button type="button" class="daw-btn qu-sel" data-mx="select" aria-label="Select ${esc(t.name)} channel" aria-pressed="${t.id === ui.selTrack}">SEL · Channel</button><button type="button" class="daw-btn qu-safe" data-mx="safe" aria-label="Scene safe ${esc(t.name)}" aria-pressed="${!!t.mixSafe}">SAFE</button>` : ''}
           <div class="daw-strip-btns">
             <button type="button" class="daw-mini" data-mx="mute" data-focus="${t.id}-m" aria-label="Mute ${esc(t.name)}" aria-pressed="${t.mute}">M</button>
@@ -2356,7 +2398,7 @@
             <button type="button" class="daw-btn daw-fx-btn" data-mx="fx" data-focus="${t.id}-fx" aria-label="Effects on ${esc(t.name)}">FX${(t.effects || []).length ? ' ' + t.effects.length : ''}</button>
             <button type="button" class="daw-mini daw-del" data-mx="delete" data-focus="${t.id}-del" aria-label="Delete ${esc(t.name)}">✕</button>
           </div>
-          ${quConsole ? consoleFader(t) : `<label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>`}
+          ${quConsole ? consoleFader(t) : `<label class="daw-strip-fader daw-console-volume"><span>Vol</span><input type="range" data-mx="volume" data-focus="${t.id}-vol" min="0" max="1.2" step="0.01" value="${t.volume}" aria-label="${esc(t.name)} volume"><output>${toDb(t.volume)} dB</output></label>`}
           <label class="daw-strip-fader"><span>Pan</span><input type="range" data-mx="pan" data-focus="${t.id}-pan" min="-1" max="1" step="0.05" value="${t.pan}" aria-label="${esc(t.name)} pan"><output>${panLabel(t.pan)}</output></label>
           ${(project.returns || []).map((r, i) => `<label class="daw-strip-fader"><span>${esc(r.id)}</span><input type="range" data-mx="send" data-send="${i}" data-focus="${t.id}-send${i}" min="0" max="1" step="0.01" value="${t.sends?.[i] || 0}" aria-label="${esc(t.name)} send to ${esc(r.name)}"><output>${Math.round((t.sends?.[i] || 0) * 100)}%</output></label>`).join('')}
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="${t.id}"></i></span>
@@ -2365,11 +2407,11 @@
           <div class="daw-strip-head"><input class="daw-th-name" data-rt="name" data-focus="ret${i}-name" value="${esc(r.name)}" maxlength="24" aria-label="Return ${esc(r.id)} name">
             <select data-rt="type" data-focus="ret${i}-type" aria-label="Return ${esc(r.id)} effect">${ProjectModel.RETURN_TYPES.map(type => `<option value="${type}"${type === r.type ? ' selected' : ''}>${esc(window.AudioEffects.registry[type]?.name || type)}</option>`).join('')}</select></div>
           <span class="daw-tag">Return ${esc(r.id)} · tracks feed it with their ${esc(r.id)} send</span>
-          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-rt="volume" data-focus="ret${i}-vol" min="0" max="1.2" step="0.01" value="${r.volume}" aria-label="Return ${esc(r.id)} volume"><output>${toDb(r.volume)} dB</output></label>
+          <label class="daw-strip-fader daw-console-volume"><span>Vol</span><input type="range" data-rt="volume" data-focus="ret${i}-vol" min="0" max="1.2" step="0.01" value="${r.volume}" aria-label="Return ${esc(r.id)} volume"><output>${toDb(r.volume)} dB</output></label>
         </div>`).join('')}
         <div class="daw-strip daw-strip-master">
           <div class="daw-strip-head"><strong>Master</strong><span class="daw-tag">Everything you hear and export</span></div>
-          <label class="daw-strip-fader"><span>Vol</span><input type="range" data-mx="master" data-focus="master" min="0" max="1.2" step="0.01" value="${project.masterVolume}" aria-label="Master volume"><output>${toDb(project.masterVolume)} dB</output></label>
+          <label class="daw-strip-fader daw-console-volume"><span>Vol</span><input type="range" data-mx="master" data-focus="master" min="0" max="1.2" step="0.01" value="${project.masterVolume}" aria-label="Master volume"><output>${toDb(project.masterVolume)} dB</output></label>
           <span class="daw-meter daw-strip-meter" aria-hidden="true"><i data-strip-meter="master"></i></span>
         </div>
       </div>
@@ -2393,6 +2435,7 @@
     const track = strip && findTrack(strip.dataset.strip);
     if (!b || !track) return;
     const what = b.dataset.mx;
+    if (what === 'clip') { const clip = track.clips.find(c => c.id === b.dataset.consoleClip); if (clip) { select(track.id, clip.id); setPlayhead(clip.start); setTab('edit'); } return; }
     if (what === 'select') { ui.selTrack = track.id; setTab('tools'); }
     else if (what === 'safe') { track.mixSafe = !track.mixSafe; commit(); }
     else if (what === 'mute' || what === 'solo') { track[what] = !track[what]; commit(); }
@@ -2911,7 +2954,7 @@
       vstState.connected = true; vstState.message = `Found ${vstState.plugins.length} approved VST3 plugin${vstState.plugins.length === 1 ? '' : 's'}.`;
     } catch (error) {
       vstState.connected = false; vstState.plugins = []; vstState.readiness = null; vstState.message = `Could not connect: ${error.message}`;
-    } finally { vstState.busy = false; renderEffects(); }
+    } finally { vstState.busy = false; renderEffects(); window.dispatchEvent(new Event('music-patch-update')); }
   }
   async function launchVst(id) {
     try { const result = await vstBridge.launch(id); vstState.message = `Opened ${result.plugin?.name || 'the plugin'} in Carla.`; }
@@ -4495,6 +4538,101 @@
   // fullscreen); where the Fullscreen API exists (iPad, desktop) it also hides
   // the browser's toolbars.
   const pillar = root.closest('.pillar-daw') || root;
+  // Border handles stay outside the scrolling panels so they remain reachable.
+  if (!quConsole) {
+    const dock = root.querySelector('.daw-dock');
+    const handles = ['tracks', 'panels', 'split'].map(kind => {
+      const handle = document.createElement('div');
+      handle.className = 'daw-resize-border';
+      handle.dataset.resize = kind;
+      handle.tabIndex = 0;
+      handle.setAttribute('role', 'separator');
+      handle.setAttribute('aria-label', kind === 'split' ? 'Resize split width' : `Resize ${kind} height`);
+      handle.title = 'Drag to resize · arrow keys to adjust · double-click to reset';
+      root.append(handle);
+      return handle;
+    });
+    let borderFrame = 0;
+    function positionBorders() {
+      const box = root.getBoundingClientRect(), tracks = R.scroll.getBoundingClientRect(), panels = dock.getBoundingClientRect();
+      const visibleTracks = !!R.scroll.clientHeight, visiblePanels = !!dock.clientHeight;
+      const sideBySide = visibleTracks && visiblePanels && panels.left >= tracks.right - 2;
+      handles.forEach(handle => {
+        const kind = handle.dataset.resize, horizontal = kind === 'split';
+        handle.hidden = horizontal ? !sideBySide : kind === 'tracks' ? !visibleTracks : !visiblePanels;
+        if (handle.hidden) return;
+        const target = kind === 'panels' ? panels : tracks;
+        handle.setAttribute('aria-orientation', horizontal ? 'vertical' : 'horizontal');
+        handle.setAttribute('aria-valuenow', Math.round(horizontal ? tracks.width : target.height));
+        Object.assign(handle.style, {
+          left: `${(horizontal ? tracks.right : target.left) - box.left + root.scrollLeft - (horizontal ? 5 : 0)}px`,
+          top: `${(horizontal ? tracks.top : target.bottom) - box.top + root.scrollTop - (horizontal ? 0 : 5)}px`,
+          width: horizontal ? '10px' : `${target.width}px`,
+          height: horizontal ? `${tracks.height}px` : '10px',
+          cursor: horizontal ? 'col-resize' : 'row-resize',
+        });
+      });
+    }
+    function queueBorders() {
+      cancelAnimationFrame(borderFrame);
+      borderFrame = requestAnimationFrame(positionBorders);
+    }
+    function resizePanel(kind, amount) {
+      const target = kind === 'panels' ? dock : R.scroll;
+      if (kind === 'split') {
+        const total = root.clientWidth;
+        const width = clamp(R.scroll.getBoundingClientRect().width + amount, Math.min(220, total * .3), total - Math.min(280, total * .3));
+        root.style.gridTemplateColumns = `minmax(0, ${width}px) minmax(0, 1fr)`;
+      } else if (pillar.classList.contains('is-studio')) {
+        const rows = getComputedStyle(root).gridTemplateRows.split(' ');
+        const row = Number(getComputedStyle(target).gridRowStart) - 1;
+        if (row >= 0 && row < rows.length) rows[row] = `${clamp(target.clientHeight + amount, 120, innerHeight * .75)}px`;
+        root.style.gridTemplateRows = rows.join(' ');
+      } else {
+        target.style.height = `${clamp(target.clientHeight + amount, 140, innerHeight * .85)}px`;
+        target.classList.add('has-custom-height');
+      }
+      queueBorders();
+    }
+    handles.forEach(handle => {
+      const kind = handle.dataset.resize;
+      handle.addEventListener('pointerdown', event => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        let last = kind === 'split' ? event.clientX : event.clientY;
+        const move = e => {
+          const next = kind === 'split' ? e.clientX : e.clientY;
+          resizePanel(kind, next - last); last = next;
+        };
+        const finish = () => { handle.removeEventListener('pointermove', move); handle.removeEventListener('lostpointercapture', finish); root.classList.remove('is-resizing-panels'); };
+        root.classList.add('is-resizing-panels');
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('lostpointercapture', finish);
+      });
+      handle.addEventListener('keydown', event => {
+        const delta = kind === 'split' ? { ArrowLeft: -20, ArrowRight: 20 } : { ArrowUp: -20, ArrowDown: 20 };
+        if (delta[event.key]) { event.preventDefault(); resizePanel(kind, delta[event.key]); }
+      });
+      handle.addEventListener('dblclick', () => {
+        root.style.removeProperty(kind === 'split' ? 'grid-template-columns' : 'grid-template-rows');
+        const target = kind === 'panels' ? dock : R.scroll;
+        target.style.removeProperty('height'); target.classList.remove('has-custom-height'); queueBorders();
+      });
+    });
+    const borderObserver = new ResizeObserver(queueBorders);
+    [root, R.scroll, dock].forEach(element => borderObserver.observe(element));
+    new MutationObserver(() => {
+      root.style.removeProperty('grid-template-columns');
+      root.style.removeProperty('grid-template-rows');
+      queueBorders();
+    }).observe(root, { attributes: true, attributeFilter: ['data-view'] });
+    const resetPanelGrid = () => {
+      root.style.removeProperty('grid-template-columns'); root.style.removeProperty('grid-template-rows'); queueBorders();
+    };
+    new MutationObserver(resetPanelGrid).observe(pillar, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', resetPanelGrid);
+  }
   let realFullscreen = false;
   function studioOn() { return pillar.classList.contains('is-studio'); }
   function toggleStudio() {
@@ -4797,7 +4935,44 @@
   });
   window.addEventListener('pagehide', () => { runSave(); });
 
-  window.MusicDaw = { noteOn, noteOff, controlChange, pitchBend, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
+  window.MusicDaw = { patchState() {
+      return { tracks: project.tracks.map(t => ({ id: t.id, name: t.name, kind: t.kind, armed: t.armed, ready: hasInstrumentExperience(t), main: t.patchMain !== false, sends: [...(t.sends || [0, 0])],
+        instrument: INSTRUMENTS[t.instrument] || 'Audio recorder', tools:[...(t.tools || [])], inserts:(t.effects || []).map((e,index) => ({index,type:e.type,name:window.AudioEffects.registry[e.type]?.name || e.type,bypass:!!e.bypass})), native:(t.pluginChain || []).filter(p => p.format === 'native' || p.format === 'wam').map(p => ({name:p.name,format:p.format})) })),
+        returns: (project.returns || []).map(r => r.name), connections:project.patchConnections || [],
+        devices:Object.entries(window.AudioEffects.registry).map(([type,def]) => ({type,name:def.name,controls:def.controls,params:window.AudioEffects.parameters(type,project.patchParameters?.[type])})),
+        native:vstState.plugins.map(p => ({name:p.name,format:p.format})),
+        routingError:window.MusicPatchRouting?.validate(project.patchConnections || [],project.tracks,Object.keys(window.AudioEffects.registry)) || '' };
+    },
+    patchParameter(type,key,value) {
+      if (transport.recording || finishingTake) return 'Stop recording before changing rack settings.';
+      const def = window.AudioEffects.registry[type]; if (!def?.controls.some(c => c.key === key)) return 'Unknown processor control.';
+      project.patchParameters ||= {}; project.patchParameters[type] = window.AudioEffects.parameters(type,{...project.patchParameters[type],[key]:Number(value)});
+      commit(); return def.name + ' updated.';
+    },
+    patch(source, destination, connected) {
+      if (transport.recording || finishingTake) return 'Stop recording before changing patches.';
+      const connections = project.patchConnections || [];
+      const t = findTrack(source === 'midi' ? destination : source);
+      if (source !== 'midi' && !(t && ['main','aux0','aux1'].includes(destination))) {
+        const next = connections.filter(e => (e.from !== source || e.to !== destination) && !(connected && e.to === destination && !['main','aux0','aux1'].includes(destination) && !destination.endsWith('@input')));
+        if (connected) next.push({from:source,to:destination});
+        const error = window.MusicPatchRouting.validate(next,project.tracks,Object.keys(window.AudioEffects.registry));
+        if (error) return error;
+        project.patchConnections = next; commit(); return connected ? 'Cable connected. Processor and insert routes are live.' : 'Cable unplugged. Normalled paths restore automatically.';
+      }
+      if (!t) return 'That channel is no longer available.';
+      if (source === 'midi') {
+        if (t.kind !== 'instrument' || !hasInstrumentExperience(t)) return 'Add an instrument experience to this channel first.';
+        silenceLive(); setArmed(t, connected); return connected ? 'MIDI patched to ' + t.name + '. Channel armed; Record starts a take.' : 'MIDI unplugged. Channel disarmed.';
+      }
+      const proposed = project.tracks.map(track => track === t ? { ...track, patchMain:destination === 'main' ? connected : track.patchMain, sends:destination.startsWith('aux') ? [0,1].map(i => destination === 'aux'+i ? (connected ? .25 : 0) : track.sends?.[i] || 0) : track.sends } : track);
+      const error = window.MusicPatchRouting.validate(connections,proposed,Object.keys(window.AudioEffects.registry));
+      if (error) return error;
+      if (destination === 'main') t.patchMain = connected;
+      else if (destination === 'aux0' || destination === 'aux1') { t.sends ||= [0, 0]; t.sends[Number(destination.slice(-1))] = connected ? 0.25 : 0; }
+      else return 'Incompatible patch: choose an audio input.';
+      commit(); return connected ? 'Audio patched. New effects sends start at 25%; adjust them in the mixer.' : 'Audio cable removed.';
+    }, noteOn, noteOff, controlChange, pitchBend, drumPad, addDrumPattern, allNotesOff(){stopExperiences();silenceLive();}, keyboardBase(){const t=armedTrack();return (Number(t?.experienceState?.keyboard?.octave??4)+1)*12;} };
 
   // iOS only lets audio start inside a touch, so wake (or create) the shared
   // context on the first touch in the studio, before any button handler runs.

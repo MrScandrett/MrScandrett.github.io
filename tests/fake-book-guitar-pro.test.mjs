@@ -198,3 +198,37 @@ test('guitarpro6-notes.gpx infers playable chords, eighth-note changes, and vali
   tokens.forEach(tok => assert.ok(CHORD_RE.test(tok), `valid chord token: ${tok}`));
 });
 
+
+test('French ensemble selects solo guitar and keeps rehearsal markers through repeats', async () => {
+  const source = importer.ScoreLoader.loadAlphaTex(`
+\\title "Ensemble study"
+.
+\\track "Guitare rythmique" "guitar"
+c3 e3 g3 c4 | c3 e3 g3 c4
+\\track "Guitare Solo" "guitar"
+e4 f4 g4 a4 | g4 f4 e4 d4
+\\track "Basse" "guitar"
+c2 c2 g2 g2 | c2 c2 g2 g2
+`);
+  source.masterBars[0].section = { marker: 'A', text: 'Theme & variations' };
+  source.masterBars[0].isRepeatStart = true;
+  source.masterBars[1].repeatCount = 2;
+  source.masterBars[1].section = { marker: '', text: 'Solo' };
+  const song = await GP.parseFile(new exporter.Gp7Exporter().export(source), MX);
+  assert.equal(song.melody.split(' | ')[0], 'E4q F4q G4q A4q');
+  assert.equal(song.score.parts.length, 3);
+  assert.deepEqual(song.sectionsByBar, { 1: 'A · Theme & variations', 2: 'Solo', 3: 'A · Theme & variations', 4: 'Solo' });
+  assert.equal(song.score.bars[2].section, 'A · Theme & variations');
+});
+
+test('an accompaniment track is not preferred to an unlabelled guitar', async () => {
+  const source = importer.ScoreLoader.loadAlphaTex(`
+.
+\\track "Accompagnement" "guitar"
+c2 c2 g2 g2
+\\track "Instrument 2" "guitar"
+e4 f4 g4 a4
+`);
+  const song = await GP.parseFile(new exporter.Gp7Exporter().export(source), MX);
+  assert.equal(song.melody, 'E4q F4q G4q A4q');
+});

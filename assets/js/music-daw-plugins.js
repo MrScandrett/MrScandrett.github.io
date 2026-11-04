@@ -44,8 +44,8 @@
     } };
   }
 
-  function createChain(context, input, inserts, registry, parameterReader) {
-    const active = [], missing = [], failed = [];
+  function createChain(context, input, inserts, registry, parameterReader, options = {}) {
+    const active = [], missing = [], failed = [], ports = [];
     let tail = input;
     (inserts || []).forEach((insert, index) => {
       const definition = registry?.[insert.type];
@@ -54,19 +54,26 @@
       try {
         const params = parameterReader ? parameterReader(insert.type, insert.params) : insert.params || {};
         const instance = definition.create(context, params);
-        const source = tail, amount = clamp01(insert.wet);
+        let source = tail;
+        const normal = context.createGain?.(), port = context.createGain?.();
+        if (normal && port) {
+          normal.gain.value = options.isPatched?.(index) ? 0 : 1;
+          source.connect(normal); normal.connect(port); source = port;
+        }
+        const amount = clamp01(insert.wet);
         source.connect(instance.input);
         const mixed = createWetDry(context, source, instance, amount);
         instance.insertIndex = index;
         instance.setWet = mixed.setWet;
         const dispose = instance.dispose;
-        instance.dispose = () => { mixed.nodes.forEach(node => node.disconnect?.()); dispose?.call(instance); };
+        instance.dispose = () => { mixed.nodes.forEach(node => node.disconnect?.()); normal?.disconnect?.(); port?.disconnect?.(); dispose?.call(instance); };
+        if (port) ports.push({index,input:port,output:mixed.output,normal});
         tail = mixed.output; active.push(instance);
       } catch (error) {
         failed.push({ type: insert.type, message: error?.message || String(error) });
       }
     });
-    return { output: tail, instances: active, missing, failed, dispose() { active.forEach(instance => instance.dispose?.()); } };
+    return { output: tail, instances: active, ports, missing, failed, dispose() { active.forEach(instance => instance.dispose?.()); } };
   }
   return { createChain, loadWam, localModuleUrl };
 }));

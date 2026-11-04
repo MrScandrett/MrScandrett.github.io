@@ -2411,6 +2411,7 @@
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       score: song.score,
       guitarPro: song.guitarPro,
+      sectionsByBar: song.sectionsByBar,
       imported: true,
       about: song.bars + ' bars from a ' + format + ' score' + (song.unrolled ? ', with its repeats played out in order' : '') + '. ' + song.warnings.join(' '),
       source: 'Imported ' + format + ' score (kept in this browser only).'

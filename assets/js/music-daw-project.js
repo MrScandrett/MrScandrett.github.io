@@ -120,6 +120,7 @@
     next.color = typeof source.color === 'string' ? source.color : next.color;
     next.volume = clamp(source.volume, 0, 1.2, 0.8);
     next.pan = clamp(source.pan, -1, 1, 0);
+    next.patchMain = source.patchMain !== false;
     next.mixSafe = !!source.mixSafe;
     next.mute = !!source.mute; next.solo = !!source.solo; next.armed = false;
     next.strip = normalizeStrip(source.strip);
@@ -148,6 +149,11 @@
     base.bpm = clamp(source.bpm, 40, 240, base.bpm);
     base.sig = Array.isArray(source.sig) && source.sig.length === 2 ? [finite(source.sig[0], 4), finite(source.sig[1], 4)] : base.sig;
     base.masterVolume = clamp(source.masterVolume, 0, 1.2, base.masterVolume);
+    base.patchConnections = (Array.isArray(source.patchConnections) ? source.patchConnections : []).slice(0, 512)
+      .filter(e => e && typeof e.from === 'string' && typeof e.to === 'string')
+      .map(e => ({from:e.from.slice(0,160),to:e.to.slice(0,160)}))
+      .filter((e,i,all) => all.findIndex(p => p.from === e.from && p.to === e.to) === i);
+    base.patchParameters = clone(object(source.patchParameters));
     base.punch = !!source.punch;
     base.exportNormalize = !!source.exportNormalize;
     base.mixSnapshots = (Array.isArray(source.mixSnapshots) ? source.mixSnapshots : []).slice(0, 6).map(m => ({

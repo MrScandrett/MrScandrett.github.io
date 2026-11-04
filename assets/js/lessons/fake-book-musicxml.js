@@ -275,6 +275,8 @@
           if (tok) harms.push({ t: cur + num(c, 'offset', 0) / divisions, tok: tok });
         } else if (c.name === 'direction') {
           kids(c, 'direction-type').forEach(function (dt) {
+            var rehearsal = kids(dt, 'rehearsal').map(function (r) { return r.text.trim(); }).filter(Boolean).join(' · ');
+            if (rehearsal) info.section = info.section ? info.section + ' · ' + rehearsal : rehearsal;
             if (kid(dt, 'segno')) info.segno = true;
             if (kid(dt, 'coda')) info.coda = true;
             var met = kid(dt, 'metronome');
@@ -700,7 +702,7 @@
           if (tail && !tail.rest && tail.tie && tail.e >= lenU && nextEv && !nextEv.rest && nextEv.s === startU + lenU && nextEv.midi === tail.midi && !/~$/.test(barStr)) barStr += '~';
           melodyBars.push(barStr);
           if (!(k === 0 && pickupU)) scoreChords.push(buildChords(harms.filter(function (h) { return h.u >= startU && h.u < startU + lenU; }).map(function (h) { return { u: h.u - startU, tok: h.tok }; }), 0, lenU, 1, carryIn)[0]);
-          scoreBars.push({ number: m.number, start: scoreTime, len: len, meter: m.meter, bar: k + 1 - (pickupU ? 1 : 0) });
+          scoreBars.push({ number: m.number, start: scoreTime, len: len, meter: m.meter, bar: k + 1 - (pickupU ? 1 : 0), section: m.section || undefined });
           scoreTime += len;
         });
         nBars = order.length - (pickupU ? 1 : 0);
@@ -871,6 +873,7 @@
         hasChords: hasChords,
         chordsWorkedOut: !hasChords && !!H,
         keyChanges: keyChanges,
+        sectionsByBar: scoreMode ? scoreBars.reduce(function (sections, b) { if (b.section) sections[b.bar] = b.section; return sections; }, {}) : undefined,
         unrolled: order.length !== R.measures.length,
         staves: extra,
         fromBar: R.measures[order[0]].number, toBar: R.measures[order[order.length - 1]].number,

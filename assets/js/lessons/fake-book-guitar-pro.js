@@ -79,21 +79,23 @@
     return '<harmony>' + rootXML(match[1], match[2], 'root') + '<kind text="' + escape(label) + '">' + kind + '</kind>' +
       (match[4] ? rootXML(match[4], match[5], 'bass') : '') + degrees.join('') + offsetXML + '</harmony>';
   }
-  // The tune is the first part named for a voice or lead instrument, else the first with a voice, wind, brass,
-  // violin or lead-synth sound, else the first track. Files often list piano or guitar ahead of the vocal line.
-  var MELODY_NAME = /vocal|voice|vox|melod|\blead\b|sing|soprano|\balto\b|tenor|sax|trumpet|cornet|flugel|flute|clarinet|oboe|violin|harmonica|whistle/i;
+  // Prefer a named voice/lead/solo, then a lead sound, then a sounding non-accompaniment part.
+  // Files often list rhythm guitar or bass ahead of the melody (including French track names).
+  var MELODY_NAME = /vocal|voice|vox|melod|\blead\b|\bsolo\b|sing|soprano|\balto\b|tenor|sax|trumpet|cornet|flugel|flute|clarinet|oboe|violin|harmonica|whistle/i;
   var MELODY_PROGRAMS = [40, 52, 53, 54, 56, 57, 59, 64, 65, 66, 68, 71, 72, 73, 74, 75, 78, 79, 80, 81];
   function melodyPart(parts) {
     function find(test) {
       for (var i = 0; i < parts.length; i++) {
         var name = parts[i].track.name || '';
         var sounds = parts[i].staff.bars.some(function (bar) { return bar.voices.some(function (v) { return v.beats.some(function (b) { return b.notes.length > 0; }); }); });
-        if (sounds && !/bass|drum|perc|rhythm/i.test(name) && test(parts[i], name)) return i;
+        var program = parts[i].track.playbackInfo && parts[i].track.playbackInfo.program;
+        if (sounds && !/bass|basse|drum|batterie|perc|rhythm|rythm|accomp/i.test(name) && !(program >= 32 && program <= 39) && test(parts[i], name)) return i;
       }
       return -1;
     }
     var i = find(function (p, name) { return MELODY_NAME.test(name); });
     if (i < 0) i = find(function (p) { return MELODY_PROGRAMS.indexOf(p.track.playbackInfo && p.track.playbackInfo.program) >= 0; });
+    if (i < 0) i = find(function () { return true; });
     return Math.max(0, i);
   }
   // Every pitched staff becomes one MusicXML part, P0, P1… in track order.
@@ -162,6 +164,10 @@
         }
         xml += '</attributes>';
         if (mi === 0) xml += '<direction><sound tempo="' + (score.tempo > 0 ? score.tempo : 120) + '"/></direction>';
+        if (master.section) {
+          var section = [master.section.marker, master.section.text].filter(Boolean).join(' · ');
+          if (section) xml += '<direction><direction-type><rehearsal>' + escape(section) + '</rehearsal></direction-type></direction>';
+        }
         if (master.isRepeatStart) xml += '<barline location="left"><repeat direction="forward"/></barline>';
         var endings = [];
         for (var e = 0; e < 8; e++) if (master.alternateEndings & (1 << e)) endings.push(e + 1);

@@ -22,8 +22,14 @@ It converts into MusicXML for the existing Fake Book score player, arrangement
 view, part mute/solo and practice controls. Playback uses synthesized piano.
 
 The lead sheet's melody comes from the first track named for a voice or lead
-instrument (Vocals, Lead, Sax, Trumpet…), else the first with a voice, wind,
-brass, violin or lead-synth sound, else the first track. In chord-melody parts
+instrument (Vocals, Lead, Solo, Sax, Trumpet…), else the first with a voice, wind,
+brass, violin or lead-synth sound, else the first sounding non-accompaniment track (falling back to the first track).
+Rhythm/accompaniment names, including French “rythmique,” and bass instruments
+are excluded from the lead search. Rehearsal markers and section names survive
+import and repeats, and label the lead sheet. Re-import previously saved scores
+to apply these improvements.
+
+In chord-melody parts
 (solo guitar), lone bass notes more than an octave below the melody on both
 sides are left out of the melody; they still play in the score and bass staff.
 
