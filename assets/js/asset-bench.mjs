@@ -238,13 +238,15 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
           <button data-view="faces" aria-pressed="false">Face direction</button>
           <button data-view="wire" aria-pressed="false">Wireframe</button>
         </div>
-        <label class="ab-toggle"><input type="checkbox" data-human checked> 1.75 m person</label>
+        <button class="ab-btn small alt" data-frame>Fit model</button>
+        <label class="ab-toggle"><input type="checkbox" data-human> 1.75 m person</label>
         <label class="ab-toggle"><input type="checkbox" data-grid checked> ${brief.module} m grid</label>
       </div>
       <div class="ab-clips" data-clips hidden></div>
       <p class="ab-legend" data-legend></p>
     </div>
     <div class="ab-side">
+      <label class="ab-asset-type">Check as <select data-asset-type><option value="auto">Auto detect</option><option value="character">Character</option><option value="prop">Prop / environment</option></select></label>
       <div class="ab-summary" data-summary></div>
       <h4>Checks <small data-score></small></h4>
       <ol class="ab-checks" data-checks></ol>
@@ -294,6 +296,7 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
 
   const human = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 1.31, 6, 16), new THREE.MeshLambertMaterial({ color: '#8fb4c6', transparent: true, opacity: 0.55 }));
   human.name = '__bench_human';
+  human.visible = false;
   helpers.add(human);
   let grid;
   const buildGrid = (span) => {
@@ -408,6 +411,9 @@ async function modelWorkspace({ files, main, sample, mode, say }) {
   // --- analysis
   const stats = () => analyzeModel(THREE, model, clips, brief, mode, sourceFormat);
   const ctx = { THREE, model, clips, brief, mode, frame, restoreMaterials, originals };
+
+  q('[data-frame]').addEventListener('click', frame);
+  q('[data-asset-type]').addEventListener('change', () => { ctx.assetType = q('[data-asset-type]').value; renderAll(); });
 
   const uvMeshes=()=>{const meshes=[];model.traverse(o=>{if(o.isMesh)meshes.push(o);});return meshes;};
   const renderUV=()=>{
@@ -738,7 +744,7 @@ function buildChecks(s, ctx) {
   const { THREE, model, clips, brief, mode } = ctx;
   const checks = [];
   const add = (c) => checks.push(c);
-  const charLike = mode === 'rig' || mode === 'anim' || s.skinned.length > 0;
+  const charLike = ctx.assetType === 'character' || (ctx.assetType !== 'prop' && (mode === 'rig' || mode === 'anim' || s.skinned.length > 0 || /character|humanoid|avatar/i.test(model.name)));
   const budget = charLike ? brief.charTris : mode === 'kit' ? brief.propTris * 2 : brief.propTris;
   const budgetName = charLike ? 'character budget' : mode === 'kit' ? 'kit-piece budget (2× prop budget)' : 'prop budget';
 

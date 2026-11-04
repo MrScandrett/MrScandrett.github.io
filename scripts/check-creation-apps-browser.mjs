@@ -32,13 +32,32 @@ try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await page.addInitScript(() => Object.defineProperty(document, 'fullscreenEnabled', { get: () => false }));
   await page.goto(new URL('lessons/2d-design/vector-drawing-studio.html', base).href);
-  await page.locator('.creation-app-fullscreen').click();
+  await page.evaluate(() => window.scrollTo(0, 160));
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+  await page.locator('.creation-app-fullscreen').focus();
+  await page.keyboard.press('f');
   await page.locator('.creation-app-expanded').waitFor();
+  const mobileLayout = await page.locator('.creation-app-expanded').evaluate(app => {
+    const rect = app.getBoundingClientRect();
+    const button = app.querySelector('.creation-app-fullscreen');
+    return rect.width <= innerWidth + 1 && rect.height <= innerHeight + 1 &&
+      button.getBoundingClientRect().height >= 44 && document.activeElement === button;
+  });
+  if (!mobileLayout) failures.push('Mobile fullscreen must fit the viewport and focus a touch-sized exit button.');
+  await page.keyboard.press('Shift+Tab');
+  if (!await page.evaluate(() => document.querySelector('.creation-app-expanded').contains(document.activeElement))) failures.push('Keyboard focus escaped the mobile workspace.');
   await page.locator('.creation-app-fullscreen').click();
   if (await page.locator('.creation-app-expanded').count()) failures.push('Mobile fallback failed to exit with its button.');
   await page.locator('.creation-app-fullscreen').click();
   await page.keyboard.press('Escape');
   if (await page.locator('.creation-app-expanded').count()) failures.push('Mobile fallback failed to exit with Escape.');
+  if (!await page.locator('.creation-app-fullscreen').evaluate(button => document.activeElement === button)) failures.push('Fullscreen did not restore keyboard focus.');
+  if (Math.abs(await page.evaluate(() => window.scrollY) - scrollBefore) > 1) failures.push('Fullscreen did not restore the lesson scroll position.');
+  await page.setViewportSize({ width: 844, height: 390 });
+  await page.locator('.creation-app-fullscreen').click();
+  const landscape = await page.locator('.creation-app-expanded').boundingBox();
+  if (landscape.height > 391 || landscape.width > 845) failures.push('Landscape fullscreen exceeds the viewport.');
+  await page.keyboard.press('Escape');
   await page.close();
 } finally { await browser.close(); }
 if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; }
