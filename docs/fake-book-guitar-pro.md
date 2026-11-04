@@ -1,5 +1,36 @@
 # Fake Book Guitar Pro imports
 
+## Original score player
+
+GP3–8 imports now also open a separate alphaTab original-score player above the
+lead sheet. It reads the original bytes, rather than the simplified MusicXML
+conversion, and supplies synchronized staff/tab, click-to-seek, drag selection,
+selection/whole-song looping, speed, metronome, track visibility, mute, solo and
+volume. Playback uses the locally bundled Sonivox synthesizer soundfont, including
+percussion and the file's instrument programs and tempo changes. Lyrics, chord
+diagrams, section markers, tuning, capo and techniques use alphaTab's native
+support. This is a read-only score and practice player: note editing, custom sound
+banks, scale-shape exploration and a separate pan control are not implemented.
+Original pan settings are used by the synthesizer. It does not reproduce Guitar
+Pro's proprietary RSE audio.
+
+Successful lead-sheet imports retain the original bytes (base64) in the existing
+browser import store and restore the player when the tune is reopened. Removing
+the imported tune removes those bytes too. Older imports need re-importing. If
+lead-sheet conversion rejects a score (including percussion-only scores), the
+original player can still play it for this session, but it is not saved in Your
+imports. Its status reports native loading errors separately. The original player
+and lead-sheet player stop each other before playback; switching songs destroys
+the old original player and its workers.
+
+The full renderer, workers, font and soundfont are vendored by the existing
+`build:guitar-pro-reader` command and loaded only for original-score playback.
+Original player code is `assets/js/lessons/fake-book-gp-player.js`. Browser check:
+start `node serve-local.js`, then run `node scripts/check-fake-book-gp-player.mjs`
+(with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` if needed).
+
+## Simplified lead-sheet conversion
+
 The file picker and connected Google Drive import accept:
 
 | Version | Filename | Reader |

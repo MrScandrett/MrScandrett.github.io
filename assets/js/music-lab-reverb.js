@@ -112,6 +112,7 @@
     const early = p.early > 0 ? `<path class="mr-early" d="M${X(p.predelay / 1000 + .005)} ${Y(-3)}V${Y(-14)} M${X(p.predelay / 1000 + .02)} ${Y(-6)}V${Y(-20)} M${X(p.predelay / 1000 + .035)} ${Y(-9)}V${Y(-24)} M${X(p.predelay / 1000 + .05)} ${Y(-12)}V${Y(-28)}"/>` : '';
     const active = activePreset(p);
     return `<div class="mr-panel" data-reverb-index="${index}">
+      <div class="mr-rack-title"><span>MUSIC LAB · DIGITAL SERIES</span><strong>STUDIO REVERB</strong><span>SR / 2016 · STEREO</span></div>
       <div class="mr-screen"><div class="mr-readout" aria-live="off"><span class="mr-program">${active ? presets[active].name : 'Custom'}</span><span class="mr-time">RT60 <b>${seconds(t.mid)}</b> s</span></div>
         <svg viewBox="0 0 220 148" role="img" aria-label="Decay of the reverb tail from zero to minus 60 decibels. Midrange reverb time ${seconds(t.mid)} seconds, bass ${seconds(t.low)} seconds, treble ${seconds(t.high)} seconds. Pre-delay ${p.predelay} milliseconds.">
           <path class="mr-grid" d="M34 12V120H210 M34 48H210 M34 84H210"/>
@@ -119,10 +120,10 @@
           <text x="2" y="16">0 dB</text><text x="2" y="52">−20</text><text x="2" y="88">−40</text><text x="2" y="124">−60</text>${ticks}</svg>
         <div class="mr-key"><span class="mr-k-low">Bass ${seconds(t.low)} s</span><span class="mr-k-mid">Mid ${seconds(t.mid)} s</span><span class="mr-k-high">Treble ${seconds(t.high)} s</span></div>
         <div class="mr-meter"><span>Reverb tail</span><meter min="-60" max="0" value="-60" aria-label="Studio Reverb tail level in decibels"></meter><output>−∞ dB</output><small data-reverb-mode>${bypass ? 'Bypassed' : 'Play this channel to meter'}</small></div></div>
-      <div class="mr-guide"><p><strong>Choose a space, then shape it.</strong> The buttons are starting points; every knob stays live.</p>
+      <div class="mr-guide"><div class="mr-section-label">PROCESSOR CONTROL</div><p class="mr-instruction">SELECT PROGRAM / ADJUST PARAMETERS</p>
         <div class="mr-presets" role="group" aria-label="Studio Reverb starting points">${Object.entries(presets).map(([id, preset]) => `<button type="button" class="mk-btn" data-reverb-preset="${id}" aria-pressed="${id === active}">${preset.name}</button>`).join('')}</div>
-        <p><b>Decay</b> is how long the tail takes to fall 60 dB. <b>Damping</b> makes the treble die first, like soft walls and air. <b>Size</b> spaces the echoes. <b>Pre-delay</b> keeps the dry sound clear before the room answers. <b>Low cut</b> and <b>High cut</b> keep the reverb from muddying the bass or hissing on top.</p>
-        <p>Tip: for a send-style reverb, put it on a Return bus at 100% level, or keep Level near 20–30% as an insert on a vocal or snare.</p></div></div>`;
+        <details class="mr-help"><summary>Parameter guide / signal flow</summary><p><b>Decay</b> is how long the tail takes to fall 60 dB. <b>Damping</b> makes the treble die first, like soft walls and air. <b>Size</b> spaces the echoes. <b>Pre-delay</b> keeps the dry sound clear before the room answers. <b>Low cut</b> and <b>High cut</b> keep the reverb from muddying the bass or hissing on top.</p>
+        <p>Tip: for a send-style reverb, put it on a Return bus at 100% level, or keep Level near 20–30% as an insert on a vocal or snare.</p></details><div class="mr-brand"><strong>Music Lab</strong><span>SIGNAL PROCESSOR<br>ALGORITHMIC REVERBERATION</span><i class="mr-power" aria-hidden="true"></i><span>${bypass ? 'BYPASSED' : 'IN CIRCUIT'}</span></div></div></div>`;
   }
   function draw(host, track, instances) {
     host.querySelectorAll('[data-reverb-index]').forEach(el => {

@@ -9,8 +9,30 @@
   const control = (key, label, min, max, step, value, unit) => ({ key, label, min, max, step, value, unit });
   registry.eq = {
     name: 'Parametric EQ', lesson: 'eq-problem-frequency.html',
-    controls: [control('frequency', 'Frequency', 20, 20000, 1, 1000, 'Hz'), control('gain', 'Gain', -18, 18, .5, 0, 'dB'), control('Q', 'Q', .3, 12, .1, 1, '')],
-    create(c, p) { const n = eqNode(c); for (const k of ['frequency', 'gain', 'Q']) n[k].value = p[k]; return { input: n, output: n, update(next) { for (const k of ['frequency', 'gain', 'Q']) n[k].setTargetAtTime(next[k], c.currentTime, .01); }, dispose: () => n.disconnect() }; }
+    // The center band's original keys keep saved single-band inserts compatible.
+    controls: [
+      control('lowFrequency', 'LF shelf frequency', 20, 500, 1, 80, 'Hz'), control('lowGain', 'LF shelf gain', -18, 18, .5, 0, 'dB'),
+      control('lowMidFrequency', 'Low mid frequency', 40, 2000, 1, 250, 'Hz'), control('lowMidGain', 'Low mid gain', -18, 18, .5, 0, 'dB'), control('lowMidQ', 'Low mid Q', .3, 12, .1, 1, ''),
+      control('frequency', 'Mid frequency', 20, 20000, 1, 1000, 'Hz'), control('gain', 'Mid gain', -18, 18, .5, 0, 'dB'), control('Q', 'Mid Q', .3, 12, .1, 1, ''),
+      control('highMidFrequency', 'High mid frequency', 500, 16000, 1, 3200, 'Hz'), control('highMidGain', 'High mid gain', -18, 18, .5, 0, 'dB'), control('highMidQ', 'High mid Q', .3, 12, .1, 1, ''),
+      control('highFrequency', 'HF shelf frequency', 1000, 20000, 1, 10000, 'Hz'), control('highGain', 'HF shelf gain', -18, 18, .5, 0, 'dB')
+    ],
+    create(c, p) {
+      const bands = [['lowshelf', 'lowFrequency', 'lowGain'], ['peaking', 'lowMidFrequency', 'lowMidGain', 'lowMidQ'], ['peaking', 'frequency', 'gain', 'Q'], ['peaking', 'highMidFrequency', 'highMidGain', 'highMidQ'], ['highshelf', 'highFrequency', 'highGain']];
+      const nodes = bands.map(([type]) => eqNode(c, type));
+      nodes.forEach((node, i) => { if (i) nodes[i - 1].connect(node); });
+      function apply(values, immediate) {
+        const next = parameters('eq', values);
+        bands.forEach(([, f, g, q], i) => {
+          for (const [key, value] of [['frequency', next[f]], ['gain', next[g]], ['Q', q ? next[q] : .707]]) {
+            if (immediate) nodes[i][key].value = value;
+            else nodes[i][key].setTargetAtTime(value, c.currentTime, .01);
+          }
+        });
+      }
+      apply(p, true);
+      return { input: nodes[0], output: nodes[4], update(next) { apply(next, false); }, dispose() { nodes.forEach(n => n.disconnect()); } };
+    }
   };
   registry.compressor = {
     name: 'Compressor', lesson: 'audio-compression.html',

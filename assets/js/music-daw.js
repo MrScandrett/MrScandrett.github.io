@@ -2611,8 +2611,38 @@
   }
   function insertKnob(effectIndex, definition, control, params) {
     const log = control.scale ? control.scale === 'log' : control.min > 0 && control.max / control.min >= 50;
+    if (definition === window.AudioEffects.registry['studio-reverb']) return `<div class="mr-fader"><span>${control.short || control.label}</span>${MK.fader({ key: control.key, label: `Studio Reverb ${control.label}`, min: control.min, max: control.max, step: control.step, def: control.value, value: params[control.key], scale: log ? 'log' : 'lin', fmt: control.fmt || (control.unit === 'Hz' ? 'hz' : ''), unit: control.unit, digits: decimalsOf(control.step), attrs: `data-scope="fx" data-fx-i="${effectIndex}"` })}</div>`;
     return MK.knob({ key: control.key, label: `${definition.name} ${control.label}`, short: control.short || control.label, min: control.min, max: control.max, step: log ? 0 : control.step, def: control.value, value: params[control.key],
       scale: log ? 'log' : 'lin', fmt: control.fmt || (control.unit === 'Hz' ? 'hz' : ''), unit: control.unit === 'value' ? '' : control.unit, digits: decimalsOf(control.step), size: 'sm', attrs: `data-scope="fx" data-fx-i="${effectIndex}"` });
+  }
+  function eqFaceHtml(effect, params, index, rack = false) {
+    const definition = window.AudioEffects.registry.eq;
+    const knob = (key, short) => {
+      const c = definition.controls.find(item => item.key === key);
+      if (!rack) return insertKnob(index, definition, { ...c, short }, params);
+      return MK.knob({ key, label: c.label, short, min: c.min, max: c.max, step: c.step, def: c.value, value: params[key], scale: c.unit === 'Hz' ? 'log' : 'lin', fmt: c.unit === 'Hz' ? 'hz' : '', unit: c.unit, digits: decimalsOf(c.step), size: 'sm', attrs: `data-fx-param="${key}"` });
+    };
+    const bands = [['LF SHELF', 'blue', 'lowGain', 'lowFrequency'], ['LOW MID', 'green', 'lowMidGain', 'lowMidFrequency', 'lowMidQ'], ['MID', 'yellow', 'gain', 'frequency', 'Q'], ['HIGH MID', 'red', 'highMidGain', 'highMidFrequency', 'highMidQ'], ['HF SHELF', 'blue', 'highGain', 'highFrequency']];
+    return `<div class="mc-parametric-face"><div class="mc-parametric-title"><span>MUSIC LAB · ANALOG SERIES</span><strong>PARAMETRIC EQUALIZER</strong><span>PE–5 · STEREO LINK</span></div><div class="mc-parametric-bands">${bands.map(([name, color, gain, frequency, q]) => `<section class="mc-parametric-band" data-cap="${color}" aria-label="${name}"><h4>${name}</h4><span class="mc-parametric-scale" aria-hidden="true">−18 · 0 · +18</span>${knob(gain, 'Level')}${knob(frequency, 'Corner freq')}${q ? knob(q, 'Q / bandwidth') : '<span class="mc-parametric-shelf">SHELVING<br>────╱────</span>'}</section>`).join('')}</div><div class="mc-parametric-footer"><span>5 BANDS · SERIAL FILTERS</span><span>BOOST / CUT · dB &nbsp; FREQUENCY · Hz</span></div></div>`;
+  }
+  // A dedicated chorus faceplate; all four controls retain the existing audio routing.
+  function chorusFaceHtml(effect, params, index, rack = false) {
+    const definition = window.AudioEffects.registry.chorus;
+    const control = (key, short) => {
+      const c = definition.controls.find(item => item.key === key);
+      if (rack) return `<label class="daw-field"><span>${short}</span><input type="number" data-fx-param="${key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[key]}" aria-label="Chorus ${short}"><small>${c.unit || '0–1'}</small></label>`;
+      return insertKnob(index, definition, { ...c, short }, params);
+    };
+    const mix = rack
+      ? `<label class="daw-field"><span>Rack mix</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((effect.wet ?? 1) * 100)}" aria-label="Chorus rack mix percent"><small>%</small></label>`
+      : MK.knob({ key: 'wet', label: 'Chorus rack mix', short: 'Rack mix', min: 0, max: 1, step: .01, def: 1, value: effect.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${index}"` });
+    const bank = (title, subtitle, contents) => `<div class="mc-chorus-bank"><h4><i aria-hidden="true"></i>${title}</h4><div class="mc-knobs">${contents}</div><span class="mc-chorus-legend">${subtitle}</span></div>`;
+    return `<div class="mc-chorus-face">
+      <div class="mc-chorus-brand"><span>MUSIC LAB <small>ANALOG SERIES</small></span><strong>CHORUS <small>CH–01 · MODULATION UNIT</small></strong></div>
+      <div class="mc-chorus-banks">${bank('CHORUS', 'MODULATION DEPTH', control('depth', 'Intensity'))}${bank('MOTION', 'SWEEP SPEED', control('rate', 'Rate'))}${bank('BALANCE', 'DRY ↔ CHORUS', control('wet', 'Chorus level'))}${bank('OUTPUT', 'INSERT BLEND', mix)}</div>
+      <div class="mc-chorus-patch" aria-hidden="true"><span><i></i> INPUT</span><b>DIRECT + MODULATED SIGNAL</b><span>OUTPUT <i></i></span></div>
+      <p class="mc-chorus-note">Intensity widens the pitch movement. Rate sets its speed. Blend in the chorus for a thicker, shimmering sound.</p>
+    </div>`;
   }
   // Compact effect picker + reorder helpers, shared by the channel console and the FX rack.
   const FX_GROUPS = [['Dynamics', ['compressor', 'punch-compressor', 'limiter']], ['Tone', ['eq', 'distortion', 'browser-tape-color']], ['Space & motion', ['reverb', 'studio-reverb', 'delay', 'chorus', 'browser-pulse-tremolo']]];
@@ -2670,7 +2700,7 @@
           <span class="mc-mv"><button type="button" class="mc-mvbtn" data-ch-fx-move="-1" aria-label="Move ${esc(d.name)} earlier" title="Earlier in the chain" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="mc-mvbtn" data-ch-fx-move="1" aria-label="Move ${esc(d.name)} later" title="Later in the chain" ${i === total - 1 ? 'disabled' : ''}>▼</button><button type="button" class="mc-mvbtn mc-mvbtn-x" data-ch-fx-remove aria-label="Remove ${esc(d.name)}" title="Remove">✕</button></span>
           ${MK.sw({ attrs: `data-ch-fx-bypass="${i}"`, on: !e.bypass, tone: 'green', text: 'IN', label: `${d.name} in circuit`, title: 'In circuit (lit) or bypassed (dark), like the bypass switch on a hardware unit' })}</div>
         ${insertPanelHtml(e, params, i)}
-        <div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div></li>`;
+        ${e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i) : `<div class="mc-knobs">${d.controls.map(c => insertKnob(i, d, c, params)).join('')}${MK.knob({ key: 'wet', label: `${d.name} wet mix`, short: 'Mix', min: 0, max: 1, step: .01, def: 1, value: e.wet ?? 1, fmt: 'pct', size: 'sm', attrs: `data-scope="fxwet" data-fx-i="${i}"` })}</div>`}</li>`;
     }).join('');
     return `${fxPickerHtml(track, 'mk-btn mk-btn-primary', 'data-ch-fx-add-picked')}
       ${list ? `<ol class="mc-inserts">${list}</ol>` : '<p class="mc-empty"><strong>Straight wire.</strong> Add a compressor to even out loud and soft notes, or add delay for an echo.</p>'}
@@ -3003,8 +3033,9 @@
           ${d.lesson ? `<a href="${siteURL(`lessons/technical-elements/audio-engineering/${d.lesson}`)}">Learn</a>` : ''}</div>
           ${d.description ? `<p class="daw-plugin-description">${esc(d.description)}</p>` : ''}
           ${insertPanelHtml(e, params, i)}
-          <div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div></li>`;
+          ${e.type === 'eq' ? eqFaceHtml(e, params, i) : e.type === 'chorus' ? chorusFaceHtml(e, params, i, true) : `<div class="daw-fx-controls"><label class="daw-field"><span>Rack mix (%)</span><input type="number" data-fx-wet min="0" max="100" step="1" value="${Math.round((e.wet ?? 1) * 100)}" aria-label="Insert ${i + 1} wet mix percent"></label>${d.controls.map(c => `<label class="daw-field"><span>${c.label} (${c.unit || 'value'})</span><input type="number" data-fx-param="${c.key}" min="${c.min}" max="${c.max}" step="${c.step}" value="${params[c.key]}" aria-label="Insert ${i + 1} ${c.label}"></label>`).join('')}</div>`}</li>`;
       }).join('')}</ol>${(track.effects || []).length ? '' : '<p class="daw-note">No inserts: this channel is unprocessed. Add an EQ or compressor above.</p>'}${vstPanel(track)}`;
+    MK.init(host);
   }
   $('effects').addEventListener('click', e => {
     const b = e.target.closest('button'), track = findTrack(effectsTrack); if (!b || b.disabled) return;
@@ -3041,6 +3072,10 @@
       if (action === 'up' || action === 'down') { const j = action === 'up' ? i - 1 : i + 1; if (moveEffect(track, i, j)) refocus = `[data-fx-index="${j}"] [data-fx-action="${action}"]:not(:disabled), [data-fx-index="${j}"] [data-fx-action="${action === 'up' ? 'down' : 'up'}"]:not(:disabled)`; }
     }
     commit(); $('effects').querySelector(refocus || focus)?.focus();
+  });
+  MK.mount($('effects'), {
+    onInput(key, value, el) { const track = findTrack(effectsTrack); if (track) setConsoleValue(track, el, value); },
+    onCommit(key, value, el) { const track = findTrack(effectsTrack); if (track) { setConsoleValue(track, el, value); commit(); } },
   });
   enableFxSorting($('tools'), '.mc-insert[data-insert]', channelTarget, li => Number(li.dataset.insert));
   enableFxSorting($('effects'), 'li[data-fx-index]', () => findTrack(effectsTrack), li => Number(li.dataset.fxIndex));

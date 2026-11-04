@@ -14,5 +14,8 @@ Fake Book adapter is `assets/js/lessons/fake-book-guitar-pro.js`.
 No upstream source files have been modified.
 
 The bundle retains upstream copyright and integrated-library notices.
-Only the decoder is invoked: no alphaTab fonts, soundfonts, player, workers,
-or rendering assets are needed.
+The decoder is used for the simplified lead sheet. Original-score playback also
+uses the unmodified full renderer, core, worker and worklet modules, Bravura font
+(SIL Open Font License; see font/Bravura-OFL.txt), and Sonivox soundfont
+(Apache 2.0; see soundfont/LICENSE). The renderer/synthesizer integration is
+assets/js/lessons/fake-book-gp-player.js. All resources are served locally.

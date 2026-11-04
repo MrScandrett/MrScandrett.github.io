@@ -1,0 +1,45 @@
+// Run with serve-local.js running; optionally set FAKE_BOOK_BASE_URL and browser override.
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+import { importer, exporter } from '../node_modules/@coderline/alphatab/dist/alphaTab.core.mjs';
+import { findChromium } from '../lib/find-chromium.mjs';
+const executablePath = findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']);
+if (!executablePath) throw new Error('Set PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH to an installed Chromium browser.');
+const browser = await chromium.launch({ executablePath, headless: true });
+try {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto((process.env.FAKE_BOOK_BASE_URL || 'http://127.0.0.1:8080') + '/lessons/music/theory/fake-book.html');
+  await page.waitForFunction(() => window.FakeBook && document.querySelector('#fakebook.is-ready'));
+  const score = importer.ScoreLoader.loadAlphaTex('\\title "Practice duet" . \\track "Lead" "guitar" 0.1.4 1.1.4 3.1.4 0.1.4 | 0.1.1 \\track "Bass" "guitar" 0.6.1 | 3.6.1');
+  const buffer = Buffer.from(new exporter.Gp7Exporter().export(score));
+  await page.locator('[data-fb-import-file]').setInputFiles({ name: 'practice.gp', mimeType: 'application/octet-stream', buffer });
+  await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.ready);
+  assert.equal(await page.locator('.fb-gp-track').count(), 2);
+  await page.locator('[data-gp-play]').click();
+  await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.tick > 100);
+  assert.equal(await page.evaluate(() => window.FakeBook.state().playing), false);
+  await page.locator('[data-gp-stop]').click();
+  await page.locator('[data-gp-speed]').selectOption('0.5');
+  await page.locator('[data-gp-loop]').check();
+  await page.locator('[data-gp-click]').check();
+  assert.deepEqual(await page.evaluate(() => { const s = window.FakeBookGPPlayer.state(); return [s.playing, s.speed, s.loop, s.metronome]; }), [false, .5, true, 1]);
+  await page.locator('.fb-gp-track').first().getByLabel('Solo', { exact: true }).check();
+  await page.locator('.fb-gp-track').last().getByLabel('Mute', { exact: true }).check();
+  await page.locator('[data-gp-show]').last().uncheck();
+  await page.locator('[data-gp-notation]').selectOption('Tab');
+  await page.waitForFunction(() => document.querySelector('[data-gp-score]').children.length > 0);
+  const saved = await page.evaluate(() => window.FakeBook.savedImports());
+  assert.ok(saved.some(t => t.guitarPro?.original), 'original bytes saved with imported tune');
+  await page.reload();
+  await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.ready);
+  assert.equal(await page.locator('.fb-gp-track').count(), 2, 'saved original restored after reload');
+  await page.locator('[data-fb-import-file]').setInputFiles(new URL('../tests/fixtures/scores/guitar-pro/guitarpro6-notes.gpx', import.meta.url).pathname);
+  await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.ready && document.querySelectorAll('.fb-gp-track').length === 1);
+  await page.locator('[data-gp-play]').click();
+  await page.waitForFunction(() => window.FakeBookGPPlayer.state()?.tick > 100);
+  await page.locator('[data-gp-stop]').click();
+  assert.deepEqual(errors, []);
+  console.log('Guitar Pro browser checks passed: multitrack import, rendering, playback, mixer controls, practice controls, persistence and GPX playback.');
+} finally { await browser.close(); }

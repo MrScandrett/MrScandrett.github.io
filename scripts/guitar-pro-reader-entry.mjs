@@ -1,4 +1,4 @@
-// alphaTab is used only for decoding; Fake Book keeps its own renderer and player.
+// Decoder-only entry for the simplified lead sheet; original playback loads the full renderer separately.
 import { importer, Settings, Logger, LogLevel } from '../node_modules/@coderline/alphatab/dist/alphaTab.core.mjs';
 export function readScore(bytes) {
   const settings = new Settings();

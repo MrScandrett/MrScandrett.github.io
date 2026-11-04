@@ -2541,6 +2541,7 @@
 
   var startPending = false;
   function play(immediate) {
+    if (window.FakeBookGPPlayer) window.FakeBookGPPlayer.pause();
     if (!ensureAudio()) return;
     // iOS resumes a suspended context asynchronously; anchoring to its frozen clock would make the first notes late (and dropped).
     if (ctx.state !== 'running') {
@@ -3127,7 +3128,7 @@
   }
 
   var MX = window.FakeBookMusicXML;
-  function importMusicXML(promise, fileName) {
+  function importMusicXML(promise, fileName, originalGP) {
     if (!MX) { importFeedback('The MusicXML reader is not available. Please refresh the page.', true); return; }
     importFeedback('Reading the score…', false);
     promise.then(function (songs) {
@@ -3152,7 +3153,7 @@
         '. The fake book plays one time signature per song.' + (notes.length ? ' ' + notes.join(' ') : ''));
     }).catch(function (err) {
       console.error('[fake-book] MusicXML import error:', err);
-      importFeedback('Could not import that score: ' + err.message, true);
+      importFeedback('Could not create a lead sheet: ' + err.message + (originalGP ? '. The original Guitar Pro player can still open this file above; this file has not been saved to Your imports.' : ''), true);
     });
   }
   // What a file really is, from its first bytes. iPad and cloud pickers hand over renamed or extension-less files
@@ -3183,7 +3184,21 @@
     var gpReader = window.FakeBookGuitarPro || (/\.gtp$/i.test(file.name) ? window.FakeBookGTP : null);
     if (!gpReader || !MX) { importFeedback('The Guitar Pro reader is not available. Please refresh the page.', true); return; }
     if (file.size > 8 * 1024 * 1024) { importFeedback('Guitar Pro files must be smaller than 8 MB.', true); return; }
-    importMusicXML(file.arrayBuffer().then(function (buf) { return gpReader.parseFile(new Uint8Array(buf), MX); }), file.name);
+    importMusicXML(file.arrayBuffer().then(function (buf) {
+      var bytes = new Uint8Array(buf), player = window.FakeBookGPPlayer;
+      var original = player ? player.encode(bytes) : null;
+      // Open the original even if the simplified lead-sheet conversion cannot represent it.
+      if (player && !/\.gtp$/i.test(file.name)) player.open(bytes, file.name, original);
+      return gpReader.parseFile(bytes, MX).then(function (songs) {
+        [].concat(songs).forEach(function (song) {
+          if (song.guitarPro && original) {
+            song.guitarPro.original = original;
+            song.guitarPro.fileName = file.name;
+          }
+        });
+        return songs;
+      });
+    }), file.name, true);
   }
   function importScoreOrChart(file) {
     file.arrayBuffer().then(function (buf) {
@@ -3243,6 +3258,7 @@
     var was = !!P;
     stop();
     tune = parsed; startBar = 0;
+    if (window.FakeBookGPPlayer) window.FakeBookGPPlayer.select(raw);
     scorePractice = {};
     if (reset) { opts.mode = raw.score ? 'score' : 'all'; opts.sheetView = raw.score && raw.score.musicxml ? 'arrangement' : 'lead'; }
     if (reset && raw.guitarPro) { opts.guitarVoice = 'smooth'; opts.voicing = 'smooth'; }
@@ -5609,6 +5625,7 @@
 
   // Exposed for tests and for other lessons that want to reuse the tune engine.
   window.FakeBook = {
+    stop: stop,
     // Read-only lesson adapter: use the same parser, spelling and labels as the sheet.
     lessonLibrary: function () { return tunes.map(function (raw) { return { id: raw.id, title: raw.title, key: raw.key, mode: raw.mode }; }); },
     lessonChart: function (id, targetKey) {
