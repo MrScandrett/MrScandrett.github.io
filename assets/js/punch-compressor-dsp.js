@@ -6,8 +6,8 @@
   root.PunchCompressorDSP = api;
 }(globalThis, function () {
   'use strict';
-  const defaults = { threshold: -24, ratio: 4, output: 0, knee: 0 };
-  const limits = { threshold: [-60, 0], ratio: [1, 20], output: [-12, 12], knee: [0, 12] };
+  const defaults = { threshold: -24, ratio: 4, output: 0, knee: 0, sidechain: 20 };
+  const limits = { threshold: [-60, 0], ratio: [1, 20], output: [-12, 12], knee: [0, 12], sidechain: [20, 500] };
   function normalize(values = {}) {
     return Object.fromEntries(Object.entries(defaults).map(([key, fallback]) => {
       const value = Number(values[key]), [min, max] = limits[key];
@@ -22,6 +22,7 @@
   class Processor {
     constructor(sampleRate) {
       this.sampleRate = sampleRate;
+      this.detectorState = [];
       this.power = 0;
       this.reduction = 0;
       this.outputDb = 0;
@@ -30,11 +31,16 @@
     }
     process(input, output, p) {
       const frames = output[0]?.length || 0;
+      const hp = Math.exp(-2 * Math.PI * (p.sidechain ?? 20) / this.sampleRate);
       for (let i = 0; i < frames; i++) {
         // One detector for all channels preserves the stereo image. Opposite
         // polarity channels cannot cancel in this power measurement.
         let power = 0;
-        for (const channel of input) power = Math.max(power, (channel[i] || 0) ** 2);
+        for (let ch = 0; ch < input.length; ch++) {
+          const state = this.detectorState[ch] ||= { x: 0, y: 0 }, x = input[ch][i] || 0;
+          const y = hp * (state.y + x - state.x); state.x = x; state.y = y;
+          power = Math.max(power, y * y);
+        }
         this.power = this.detector * this.power + (1 - this.detector) * power;
         const level = 10 * Math.log10(Math.max(1e-12, this.power));
         const target = reduction(level, p);

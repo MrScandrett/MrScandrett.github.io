@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { findChromium } from '../lib/find-chromium.mjs';
 
 const base = process.env.PIVOT_BASE_URL || 'http://127.0.0.1:8080';
-const browser = await chromium.launch({ executablePath: findChromium(), headless: true });
+const browser = await chromium.launch({ executablePath: findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']), headless: true });
 const errors = [];
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 page.on('pageerror', error => errors.push(error.message));

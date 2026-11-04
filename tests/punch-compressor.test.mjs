@@ -49,5 +49,13 @@ test('silence stays finite and releases; parameter bounds reject corrupt values'
   processor.process([silence], [output], p);
   assert.ok(processor.reduction < .001);
   assert.ok(output.every(v => v === 0));
-  assert.deepEqual(normalize({ threshold: -Infinity, ratio: 100, knee: -8, output: 'bad' }), { threshold: -24, ratio: 20, output: 0, knee: 0 });
+  assert.deepEqual(normalize({ threshold: -Infinity, ratio: 100, knee: -8, output: 'bad' }), { threshold: -24, ratio: 20, output: 0, knee: 0, sidechain: 20 });
+});
+
+test('detector low cut reduces bass pumping without filtering the audio path', () => {
+  const bass = Float32Array.from({ length: sr }, (_, i) => .5 * Math.sin(2 * Math.PI * 60 * i / sr));
+  const a = render([bass], { sidechain: 20 }), b = render([bass], { sidechain: 300 });
+  assert.ok(b.processor.reduction < a.processor.reduction - 6);
+  const unity = render([bass], { sidechain: 500, ratio: 1 });
+  assert.deepEqual(unity.output[0], bass);
 });

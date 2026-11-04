@@ -65,6 +65,7 @@
     name: 'Punch Compressor', lesson: 'audio-compression.html',
     description: 'RMS-style compression with automatic attack and release. Hard knee adds punch; a wider knee eases into compression. An original educational design, not a calibrated hardware emulation.',
     controls: [
+      { key: 'sidechain', label: 'Detector low cut', min: 20, max: 500, step: 1, value: 20, unit: 'Hz' },
       { key: 'threshold', label: 'Threshold', min: -60, max: 0, step: 1, value: -24, unit: 'dBFS' },
       { key: 'ratio', label: 'Ratio', min: 1, max: 20, step: .5, value: 4, unit: ':1' },
       { key: 'output', label: 'Output gain', min: -12, max: 12, step: .5, value: 0, unit: 'dB' },
@@ -86,7 +87,7 @@
         <div class="mc-punch-meter"><span>Gain reduction</span><meter min="0" max="36" value="0" aria-label="Punch Compressor gain reduction in decibels"></meter><output>0.0 dB</output><small data-compressor-mode>${bypass ? 'Bypassed' : 'Play this channel to meter'}</small></div></div>
       <div class="mc-punch-guide"><p><strong>Control the punch.</strong> Lower Threshold until the loudest notes show 3–6 dB of reduction. Compare with Bypass, then match the listening level with Output gain.</p>
         <div class="mc-punch-presets" role="group" aria-label="Punch Compressor starting points">${Object.entries(presets).map(([id, preset]) => `<button type="button" class="mk-btn" data-compressor-preset="${id}">${preset.name}</button>`).join('')}</div>
-        <p>Knee 0 = hard edge. Try 6 dB for a softer transition. Attack and release follow the signal automatically. This controls dynamics; it does not guarantee a peak ceiling.</p></div></div>`;
+        <p>Knee 0 = hard edge. Try 6 dB for a softer transition. Attack and release follow the signal automatically. Detector low cut reduces bass-driven pumping without filtering the audible signal (custom DSP mode only). This controls dynamics; it does not guarantee a peak ceiling.</p></div></div>`;
   }
   function draw(host, track, instances) {
     host.querySelectorAll('[data-compressor-index]').forEach(panel => {

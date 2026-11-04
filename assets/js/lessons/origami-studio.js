@@ -1,232 +1,91 @@
-/* Paper study: clip at a crease, then lift and rotate the moving polygons in 3D. */
-(() => {
-  'use strict';
-  const svg = document.getElementById('og-fold-svg');
-  if (!svg) return;
-  const $ = (id) => document.getElementById(id);
-  const side = 300;
-  const square = [{ x: 0, y: 0 }, { x: side, y: 0 }, { x: side, y: side }, { x: 0, y: side }];
-  const patterns = {
-    diagonal: [{ name: 'Match opposite corners', a: [0, 0], b: [300, 300], direction: 'valley' }],
-    book: [{ name: 'Match left and right edges', a: [150, 0], b: [150, 300], direction: 'valley' }],
-    dart: [
-      { name: 'Mark the center line from top to bottom', a: [150, 0], b: [150, 300], direction: 'valley' },
-      { name: 'Unfold; draw from top center to left middle', a: [150, 0], b: [0, 150], direction: 'valley', unfold: true },
-      { name: 'Draw from right middle to top center', a: [300, 150], b: [150, 0], direction: 'valley' },
-      { name: 'Fold in half: draw from bottom center to top center', a: [150, 300], b: [150, 0], direction: 'valley' }
-    ],
-    waterbomb: [
-      { name: 'First diagonal: match opposite corners', a: [0, 0], b: [300, 300], direction: 'valley' },
-      { name: 'Unfold and crease the other diagonal', a: [300, 0], b: [0, 300], direction: 'valley', unfold: true },
-      { name: 'Unfold, turn over, and crease across the middle', a: [0, 150], b: [300, 150], direction: 'mountain', unfold: true }
-    ],
-    crane: [
-      { name: 'Crane start: crease one diagonal', a: [0, 0], b: [300, 300], direction: 'valley' },
-      { name: 'Unfold and crease the second diagonal', a: [300, 0], b: [0, 300], direction: 'valley', unfold: true },
-      { name: 'Turn over; fold across the middle', a: [0, 150], b: [300, 150], direction: 'mountain', unfold: true },
-      { name: 'Unfold; fold the other middle line', a: [150, 0], b: [150, 300], direction: 'mountain', unfold: true }
-    ]
-  };
-  let layers = [{ points: square, face: 0 }];
-  let history = [];
-  let creases = [];
-  let pending = null;
-  let progress = 0;
-  let dragStart = null;
-  let dragEnd = null;
-  let frame = 0;
-  let playing = false;
-  let cameraAngle = true;
-  let cameraYaw = -.24;
-  let challengeStep = 0;
-  let demo = false;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const cross = (p, a, b) => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
-  const point = (v) => ({ x: v[0], y: v[1] });
-  const clean = (poly) => poly.filter((p, i) => i === 0 || Math.hypot(p.x - poly[i - 1].x, p.y - poly[i - 1].y) > .01);
-  function clip(poly, a, b, keepPositive) {
-    const out = [];
-    poly.forEach((p, i) => {
-      const q = poly[(i + 1) % poly.length];
-      const d1 = cross(p, a, b) * (keepPositive ? 1 : -1);
-      const d2 = cross(q, a, b) * (keepPositive ? 1 : -1);
-      if (d1 >= -.0001) out.push(p);
-      if ((d1 < -.0001 && d2 > .0001) || (d1 > .0001 && d2 < -.0001)) {
-        const t = d1 / (d1 - d2);
-        out.push({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t });
-      }
-    });
-    return clean(out);
-  }
-  function reflect(p, a, b, amount, direction) {
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const k = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy);
-    const x = a.x + k * dx, y = a.y + k * dy;
-    const cosine = Math.cos(Math.PI * amount);
-    const sine = Math.sin(Math.PI * amount) * (direction === 'mountain' ? -1 : 1);
-    return { x: x + (p.x - x) * cosine, y: y + (p.y - y) * cosine, z: Math.hypot(p.x - x, p.y - y) * sine };
-  }
-  function folded(source, fold, amount) {
-    const still = [], moved = [];
-    const positive = fold.direction === 'valley';
-    source.forEach((layer) => {
-      const fixed = clip(layer.points, fold.a, fold.b, !positive);
-      const moving = clip(layer.points, fold.a, fold.b, positive);
-      if (fixed.length >= 3) still.push({ points: fixed, face: layer.face });
-      if (moving.length >= 3) moved.push({ points: moving.map((p) => reflect(p, fold.a, fold.b, amount, fold.direction)), face: amount === 1 ? 1 - layer.face : layer.face });
-    });
-    return [...still, ...moved];
-  }
-  const fmt = (n) => Number(n.toFixed(1));
-  function project(p, layer = 0) {
-    const dx = p.x - 150, dy = p.y - 150;
-    const z = (p.z || 0) + layer * 2.4;
-    if (!cameraAngle) return { x: 250 + dx, y: 206 + dy - z * .12 };
-    const yaw = cameraYaw, tilt = .45;
-    const x = dx * Math.cos(yaw) + z * Math.sin(yaw);
-    const depth = -dx * Math.sin(yaw) + z * Math.cos(yaw);
-    return { x: 250 + x, y: 206 + dy * Math.cos(tilt) - depth * Math.sin(tilt) };
-  }
-  function unproject(event) {
-    const p = svg.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
-    const local = p.matrixTransform(svg.getScreenCTM().inverse());
-    if (!cameraAngle) return { x: local.x - 100, y: local.y - 56 };
-    const dx = (local.x - 250) / Math.cos(cameraYaw);
-    const dy = (local.y - 206 - dx * Math.sin(cameraYaw) * Math.sin(.45)) / Math.cos(.45);
-    return { x: dx + 150, y: dy + 150 };
-  }
-  function render() {
-    const visible = pending ? folded(layers, pending, progress) : layers;
-    const polys = visible.map((layer, i) => `<polygon points="${layer.points.map((p) => { const q = project(p, i); return `${fmt(q.x)},${fmt(q.y)}`; }).join(' ')}" fill="${layer.face ? 'url(#paper-reverse)' : 'url(#paper-front)'}" stroke="#6c432e" stroke-width="2" filter="url(#paper-shadow)"/>`).join('');
-    const lines = creases.map((fold) => { const a = project(fold.a, visible.length), b = project(fold.b, visible.length); return `<line x1="${fmt(a.x)}" y1="${fmt(a.y)}" x2="${fmt(b.x)}" y2="${fmt(b.y)}" stroke="${fold.direction === 'mountain' ? '#b04745' : '#286b80'}" stroke-width="2" stroke-dasharray="7 5" opacity=".8"/>`; }).join('');
-    const active = pending || (dragStart && dragEnd ? { a: dragStart, b: dragEnd } : null);
-    const a = active ? project(active.a, visible.length + 1) : null, b = active ? project(active.b, visible.length + 1) : null;
-    const guide = active ? `<line x1="${fmt(a.x)}" y1="${fmt(a.y)}" x2="${fmt(b.x)}" y2="${fmt(b.y)}" stroke="#f6e7a4" stroke-width="5" stroke-dasharray="8 5"/>` : '';
-    svg.innerHTML = `<defs><linearGradient id="paper-front" x2=".8" y2="1"><stop stop-color="#f6c17a"/><stop offset="1" stop-color="#d68259"/></linearGradient><linearGradient id="paper-reverse" x2=".6" y2="1"><stop stop-color="#fff9e8"/><stop offset="1" stop-color="#ddd2b9"/></linearGradient><filter id="paper-shadow" x="-20%" y="-30%" width="150%" height="170%"><feDropShadow dx="1" dy="9" stdDeviation="7" flood-color="#102a2b" flood-opacity=".32"/></filter></defs><rect width="500" height="430" fill="#183b3b"/><path d="M0 350 Q250 275 500 350V430H0Z" fill="#1e4846"/><ellipse cx="250" cy="332" rx="180" ry="31" fill="#0b2a2d" opacity=".55"/><g stroke="#55817a" stroke-width="1" opacity=".45"><path d="M0 370H500M0 405H500M70 0V430M430 0V430"/></g><text x="24" y="37" fill="#e9e2c9" font-size="16" font-weight="700">${cameraAngle ? '3D WORKBENCH' : 'TOP VIEW'}</text><text x="24" y="406" fill="#c6dbd3" font-size="13">15 cm paper · drag to place a crease</text>${polys}${lines}${guide}`;
-    const points = visible.flatMap((l) => l.points);
-    const w = points.length ? (Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x))) / 20 : 0;
-    const h = points.length ? (Math.max(...points.map((p) => p.y)) - Math.min(...points.map((p) => p.y))) / 20 : 0;
-    $('og-fold-span').textContent = `${w.toFixed(1)} × ${h.toFixed(1)} cm`;
-    $('og-fold-count').textContent = String(creases.length);
-    $('og-fold-length').textContent = creases.length ? `${(Math.hypot(creases.at(-1).b.x - creases.at(-1).a.x, creases.at(-1).b.y - creases.at(-1).a.y) / 20).toFixed(1)} cm` : '—';
-    $('og-fold-progress').value = String(Math.round(progress * 100));
-    $('og-fold-undo').disabled = !history.length && !pending;
-    const mission = $('og-fold-mission');
-    const pattern = patterns[$('og-fold-pattern').value];
-    if (mission) mission.textContent = demo ? 'Watching the fold sequence' : pattern ? `${Math.min(challengeStep, pattern.length)} / ${pattern.length} folds matched` : `${creases.length} fold${creases.length === 1 ? '' : 's'} in free study`;
-  }
-  function status(message) { $('og-fold-status').textContent = message; }
-  function stop() { playing = false; demo = false; cancelAnimationFrame(frame); $('og-fold-play').textContent = 'Watch sequence'; }
-  function reset(message = 'New sheet ready. Drag across it to place a crease.') {
-    stop(); layers = [{ points: square, face: 0 }]; history = []; creases = []; pending = null; progress = 0; challengeStep = 0; demo = false;
-    $('og-fold-instruction').textContent = 'Choose a preset crease or drag on the sheet.';
-    status(message); render();
-  }
-  function commit() {
-    if (!pending) return;
-    history.push({ layers, creases: [...creases], challengeStep });
-    layers = folded(layers, pending, 1);
-    creases.push(pending);
-    const pattern = patterns[$('og-fold-pattern').value];
-    let matched = false;
-    if (pattern && !demo && challengeStep < pattern.length) {
-      const target = pattern[challengeStep];
-      const sameLine = (p, q) => Math.hypot(p.x - q[0], p.y - q[1]) < 26;
-      if (pending.direction === target.direction && sameLine(pending.a, target.a) && sameLine(pending.b, target.b)) {
-        matched = true;
-        challengeStep++;
-        $('og-fold-instruction').textContent = challengeStep === pattern.length ? 'Challenge complete. Compare your model with real paper.' : `Next: ${pattern[challengeStep].name}`;
-      }
-    }
-    status(pattern && !demo ? matched ? 'Crease matched. Check the next instruction.' : 'Crease made, but it does not match the next challenge step. Undo and try again.' : `${pending.name || 'Custom crease'} complete. Compare the shape with a real sheet.`);
-    pending = null; progress = 0; render();
-  }
-  function begin(fold) {
-    stop(); pending = fold; progress = 0;
-    $('og-fold-instruction').textContent = fold.name || 'Custom crease: compare the folded span and crease length.';
-    status(`Ready to fold: ${fold.name || 'custom crease'}. Move the progress slider to inspect the motion.`);
-    render();
-  }
-  function animate(done) {
-    const start = performance.now(), initial = progress;
-    function tick(now) {
-      progress = Math.min(1, initial + (1 - initial) * (now - start) / (reducedMotion.matches ? 1 : 700));
-      render();
-      if (progress < 1) frame = requestAnimationFrame(tick);
-      else { commit(); if (done) done(); }
-    }
-    frame = requestAnimationFrame(tick);
-  }
-  const presets = {
-    horizontal: [[0, 150], [300, 150]], vertical: [[150, 0], [150, 300]],
-    diagonal: [[0, 0], [300, 300]], 'other-diagonal': [[300, 0], [0, 300]]
-  };
-  document.querySelectorAll('[data-fold-preset]').forEach((button) => button.addEventListener('click', () => {
-    const [a, b] = presets[button.dataset.foldPreset];
-    begin({ a: point(a), b: point(b), direction: $('og-fold-direction').value, name: `${button.textContent.trim()} fold` });
-    animate();
-  }));
-  $('og-fold-progress').addEventListener('input', (event) => {
-    if (!pending) return;
-    stop(); progress = Number(event.target.value) / 100;
-    if (progress === 1) commit(); else render();
-  });
-  $('og-fold-undo').addEventListener('click', () => {
-    stop(); if (pending) { pending = null; progress = 0; }
-    else if (history.length) { const previous = history.pop(); layers = previous.layers; creases = previous.creases; challengeStep = previous.challengeStep; }
-    status('Previous fold restored.'); render();
-  });
-  $('og-fold-reset').addEventListener('click', () => reset());
-  $('og-fold-view').addEventListener('click', () => { cameraAngle = !cameraAngle; $('og-fold-view').textContent = cameraAngle ? 'Top view' : '3D view'; render(); });
-  $('og-fold-turn-left').addEventListener('click', () => { cameraAngle = true; cameraYaw = Math.max(-.7, cameraYaw - .16); $('og-fold-view').textContent = 'Top view'; render(); });
-  $('og-fold-turn-right').addEventListener('click', () => { cameraAngle = true; cameraYaw = Math.min(.7, cameraYaw + .16); $('og-fold-view').textContent = 'Top view'; render(); });
-  $('og-fold-unfold').addEventListener('click', () => { stop(); layers = [{ points: square, face: 0 }]; pending = null; progress = 0; status('Sheet unfolded. Creases remain for the next fold.'); render(); });
-  $('og-fold-pattern').addEventListener('change', () => reset('Pattern selected. Press Play pattern to watch its folds.'));
-  $('og-fold-play').addEventListener('click', () => {
-    if (playing) { stop(); status('Playback paused.'); render(); return; }
-    const pattern = patterns[$('og-fold-pattern').value];
-    if (!pattern) { status('Choose a guided pattern to play.'); return; }
-    reset('Playing guided pattern.'); playing = true; demo = true; $('og-fold-play').textContent = 'Pause';
-    let index = 0;
-    function next() {
-      if (!playing) return;
-      if (index >= pattern.length) { stop(); status('Pattern complete. Reset the sheet and try to match the folds yourself.'); render(); return; }
-      const step = pattern[index++];
-      if (step.unfold) { layers = [{ points: square, face: 0 }]; history = []; }
-      pending = { ...step, a: point(step.a), b: point(step.b) }; progress = 0;
-      $('og-fold-instruction').textContent = `${index} / ${pattern.length}: ${step.name}`;
-      render(); animateGuide(next);
-    }
-    function animateGuide(done) {
-      const start = performance.now();
-      function tick(now) {
-        if (!playing) return;
-        progress = Math.min(1, (now - start) / (reducedMotion.matches ? 1 : 900)); render();
-        if (progress < 1) frame = requestAnimationFrame(tick);
-        else { commit(); frame = requestAnimationFrame(done); }
-      }
-      frame = requestAnimationFrame(tick);
-    }
-    next();
-  });
-  function sheetPoint(event) { const p = unproject(event); return { x: Math.max(0, Math.min(300, p.x)), y: Math.max(0, Math.min(300, p.y)) }; }
-  svg.addEventListener('pointerdown', (event) => {
-    const p = sheetPoint(event);
-    if (p.x <= 0 || p.x >= 300 || p.y <= 0 || p.y >= 300) return;
-    event.preventDefault();
-    stop(); svg.setPointerCapture(event.pointerId); dragStart = p; dragEnd = p; render();
-  });
-  svg.addEventListener('pointermove', (event) => { if (dragStart) { dragEnd = sheetPoint(event); render(); } });
-  svg.addEventListener('pointerup', (event) => {
-    if (!dragStart) return;
-    dragEnd = sheetPoint(event);
-    const a = dragStart, b = dragEnd; dragStart = dragEnd = null;
-    if (Math.hypot(b.x - a.x, b.y - a.y) < 45) { status('Drag farther across the sheet to make a crease.'); render(); return; }
-    begin({ a, b, direction: $('og-fold-direction').value, name: 'Custom crease' });
-  });
-  svg.addEventListener('keydown', (event) => {
-    const key = { h: 'horizontal', v: 'vertical', d: 'diagonal' }[event.key.toLowerCase()];
-    if (key) { event.preventDefault(); document.querySelector(`[data-fold-preset="${key}"]`).click(); }
-  });
-  reset();
-})();
+import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
+import { createScene } from '../sim-kit-three.mjs';
+import { sheet, foldPanels, commit, validFold, cross } from './origami/paper.mjs';
+const $=id=>document.getElementById(`og-${id}`), canvas=$('paper-canvas');
+const KEY='origami-paper-studio-v2';
+let setup;
+try { setup=createScene(canvas,{THREE,clearColor:0x173c3b,preserveDrawingBuffer:true}); }
+catch { $('fold-status').textContent='3D graphics are unavailable. Enable WebGL and reload to use Paper Studio.'; }
+if(setup) {
+const {scene,camera,renderer,syncSize}=setup;
+camera.up.set(0,0,1); camera.position.set(0,-.01,29); camera.lookAt(0,0,0);
+const controls=new OrbitControls(camera,canvas); controls.enableRotate=false; controls.enablePan=false; controls.minDistance=12; controls.maxDistance=65; controls.target.set(0,0,0);
+scene.add(new THREE.HemisphereLight(0xffffff,0x54736c,2.5));
+const light=new THREE.DirectionalLight(0xfff4de,3);light.position.set(-8,-10,20);scene.add(light);
+const grid=new THREE.GridHelper(50,40,0x416963,0x294e49);grid.rotation.x=Math.PI/2;grid.position.z=-.65;scene.add(grid);
+const group=new THREE.Group();scene.add(group);
+let steps=[],cursor=0,panels=sheet(),pending=null,angle=0,side=1,top=true,animation=null,recipeStep=0,drag=null;
+const recipes={book:[{a:[0,-7.5],b:[0,7.5],side:1,name:'Match the left edge to the right edge.'}],kite:[{a:[7.5,7.5],b:[-7.5,1.2867965644],side:-1,name:'Bring the top edge onto the diagonal center line.'},{a:[7.5,7.5],b:[1.2867965644,-7.5],side:1,name:'Bring the right edge onto the same center line.'}],accordion:[{a:[-3.75,-7.5],b:[-3.75,7.5],side:1,name:'Fold the left quarter to the first interior grid line.'},{a:[0,-7.5],b:[0,7.5],side:1,name:'Fold the stack across the middle.'},{a:[3.75,-7.5],b:[3.75,7.5],side:1,name:'Fold the stack at the last quarter line.'}]};
+const status=t=>$('fold-status').textContent=t;
+function stop(){animation=null;$('replay').textContent='▶ Replay my folds';$('preview').textContent='▶ Preview fold';}
+function apply(source,f,a=180,flat=false){
+  if(f.layers!=='top') return flat?commit(source,f):foldPanels(source,f,a);
+  const rest=source.slice(0,-1),last=source.slice(-1);
+  return [...rest,...(flat?commit(last,f):foldPanels(last,f,a))];
+}
+function rebuild(){panels=sheet();for(const f of steps.slice(0,cursor))panels=apply(panels,f,180,true);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({version:2,steps,cursor,color:$('color').value}));$('saved').textContent='Saved on this device';}catch{$('saved').textContent='Use Save project to keep your work';}}
+function clearGroup(){for(const child of [...group.children]){group.remove(child);child.geometry?.dispose();child.material?.dispose();}}
+function draw(){
+ clearGroup();
+ const visible=pending?apply(panels,pending,angle):panels;
+ visible.forEach((p,i)=>{
+   const positions=[];
+   for(let j=1;j<p.points.length-1;j++) for(const k of [0,j,j+1]) {const v=p.points[k];positions.push(v[0],v[1],(v[2]||0)+i*.018);}
+   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
+   // Two coincident single-sided surfaces preserve front/reverse identity as a panel turns.
+   for(const face of [0,1]){const mat=new THREE.MeshStandardMaterial({color:face===0?$('color').value:'#fff5dc',roughness:.94,side:face===0?THREE.FrontSide:THREE.BackSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});group.add(new THREE.Mesh(geometry.clone(),mat));}
+   geometry.dispose();
+   const edgePoints=p.points.map(v=>new THREE.Vector3(v[0],v[1],(v[2]||0)+i*.018));edgePoints.push(edgePoints[0]);
+   group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(edgePoints),new THREE.LineBasicMaterial({color:p.moving?0xffdf82:0x6f533e})));
+ });
+ if(pending){const a=pending.a,b=pending.b,dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(cx-dx/l*15,cy-dy/l*15,.4),new THREE.Vector3(cx+dx/l*15,cy+dy/l*15,.4)]),new THREE.LineDashedMaterial({color:0x8ee9e0,dashSize:.35,gapSize:.2}));line.computeLineDistances();group.add(line);
+ const dot=new THREE.Mesh(new THREE.SphereGeometry(.18,12,8),new THREE.MeshBasicMaterial({color:0xffdf82}));dot.position.set(cx-dy/l*pending.side*2,cy+dx/l*pending.side*2,.5);group.add(dot);
+ }
+ $('angle').value=angle;$('angle-value').textContent=`${Math.round(angle)}°`;$('count').textContent=cursor;$('panels').textContent=visible.length;
+ $('commit').disabled=!pending;$('preview').disabled=!pending;$('cancel').disabled=!pending;$('angle').disabled=!pending;$('undo').disabled=!cursor&&!pending;$('redo').disabled=cursor>=steps.length;
+ $('timeline').max=steps.length;$('timeline').value=cursor;
+ $('history').replaceChildren(...steps.map((f,i)=>{const li=document.createElement('li'),b=document.createElement('button');b.type='button';b.textContent=`${String(i+1).padStart(2,'0')} · ${f.name || 'Custom crease'} · ${f.direction}`;b.setAttribute('aria-current',i===cursor-1?'step':'false');b.onclick=()=>seek(i+1);li.append(b);return li;}));
+}
+function seek(n){stop();cursor=n;pending=null;angle=0;rebuild();draw();save();status(`Showing ${cursor} of ${steps.length} kept folds. Undo and redo or scrub to rehearse.`);}
+function begin(f){stop();if(steps.length>=80&&cursor>=80){status('This sheet has 80 folds. Save it and start a new sheet.');return;}
+ f={direction:$('direction').value,layers:$('layers').value,side,...f};const source=f.layers==='top'?panels.slice(-1):panels;
+ if(!validFold(source,f)){status('That crease misses the selected paper or lies on its edge. Place it through the paper.');return;}
+ pending=f;angle=0;draw();status('Crease ready. Move the angle slider, preview the motion, then crease & keep.');$('real-help').textContent=`${f.name || 'Custom fold'}. Move the marked side ${f.direction==='valley'?'toward you':'away from you'}. Check alignment before pressing the crease.`;
+}
+function keep(){if(!pending)return;stop();steps=steps.slice(0,cursor);steps.push({...pending});cursor++;pending=null;angle=0;rebuild();draw();save();status('Fold kept. Place another crease or replay your steps with real paper.');}
+function view(isTop){top=isTop;controls.enableRotate=!top;camera.position.set(...(top?[0,-.01,29]:[14,-19,22]));controls.target.set(0,0,0);controls.update();$('view-label').textContent=top?'TOP VIEW':'ORBIT VIEW';$('top').setAttribute('aria-pressed',top);$('orbit').setAttribute('aria-pressed',!top);}
+$('top').onclick=()=>view(true);$('orbit').onclick=()=>view(false);$('fit').onclick=()=>view(top);
+$('new').onclick=()=>{stop();steps=[];cursor=0;recipeStep=0;pending=null;angle=0;panels=sheet();draw();save();status('Fresh 15 cm sheet ready.');};
+$('undo').onclick=()=>{if(pending){stop();pending=null;angle=0;draw();}else seek(Math.max(0,cursor-1));};$('redo').onclick=()=>seek(Math.min(steps.length,cursor+1));
+$('angle').oninput=()=>{stop();if(top)view(false);angle=Number($('angle').value);draw();};$('commit').onclick=keep;$('cancel').onclick=()=>{stop();pending=null;angle=0;draw();};
+$('preview').onclick=()=>{if(animation){stop();return;}if(!pending)return;if(top)view(false);angle=0;animation={type:'fold',start:performance.now()};$('preview').textContent='Pause preview';};
+$('direction').onchange=()=>{if(pending){stop();pending.direction=$('direction').value;draw();}};$('layers').onchange=()=>{if(pending)begin({...pending,layers:$('layers').value});};
+$('side').onclick=()=>{side*=-1;if(pending){stop();pending.side*=-1;draw();}status('Moving side switched. Look for the gold marker.');};
+$('color').oninput=()=>{draw();save();};
+const preset={horizontal:[[-7.5,0],[7.5,0]],vertical:[[0,-7.5],[0,7.5]],diagonal:[[-7.5,-7.5],[7.5,7.5]],other:[[-7.5,7.5],[7.5,-7.5]]};
+for(const b of document.querySelectorAll('[data-crease]'))b.onclick=()=>{const [a,c]=preset[b.dataset.crease];begin({a,b:c,name:b.textContent});};
+$('rotation').oninput=()=>$('rotation-value').textContent=`${$('rotation').value}°`;
+$('place').onclick=()=>{const t=Number($('rotation').value)*Math.PI/180,o=Number($('offset').value);if(!Number.isFinite(o)||Math.abs(o)>10){status('Choose an offset between −10 and 10 cm.');return;}const x=-Math.sin(t)*o,y=Math.cos(t)*o;begin({a:[x-Math.cos(t)*15,y-Math.sin(t)*15],b:[x+Math.cos(t)*15,y+Math.sin(t)*15],name:`${$('rotation').value}° crease at ${o} cm`});};
+const ray=new THREE.Raycaster(),plane=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+function point(e){const r=canvas.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);const p=new THREE.Vector3();if(!ray.ray.intersectPlane(plane,p))return null;const snap=$('snap').checked?3.75:0;return [p.x,p.y].map(v=>snap?Math.round(v/snap)*snap:v);}
+canvas.onpointerdown=e=>{if(!top||e.button!==0)return;drag=point(e);canvas.setPointerCapture(e.pointerId);};
+canvas.onpointermove=e=>{if(!drag)return;const b=point(e);if(b&&Math.hypot(b[0]-drag[0],b[1]-drag[1])>.2){pending={a:drag,b,side,direction:$('direction').value,layers:$('layers').value,name:'Hand-placed crease'};angle=0;draw();}};
+canvas.onpointerup=e=>{if(!drag)return;const a=drag,b=point(e);drag=null;pending=null;if(b)begin({a,b,name:'Hand-placed crease'});};canvas.onpointercancel=()=>{drag=null;pending=null;draw();};
+$('recipe').onchange=()=>{recipeStep=0;$('new').click();$('recipe-help').textContent=$('recipe').value==='free'?'Draw your own crease or use the precise controls.':'Load one step, preview it, and keep it before loading the next.';};
+$('next').onclick=()=>{if(pending){status('Keep or cancel the current preview first.');return;}const recipe=recipes[$('recipe').value];if(!recipe){status('Choose a recipe to load a guided fold.');return;}if(recipeStep>=recipe.length){status('Recipe complete. Inspect the shape in orbit view, then make it in paper.');return;}const f=recipe[recipeStep];begin({...f,direction:'valley',layers:'all'});if(pending){recipeStep++;$('recipe-help').textContent=`${recipeStep} / ${recipe.length}: ${f.name}`;}};
+$('timeline').oninput=()=>seek(Number($('timeline').value));
+$('replay').onclick=()=>{if(animation){stop();return;}if(!steps.length){status('Keep at least one fold to replay it.');return;}view(false);cursor=0;panels=sheet();pending=steps[0];angle=0;animation={type:'replay',start:performance.now()};$('replay').textContent='Pause replay';status('Follow each movement with your real sheet. Pause whenever you need.');draw();};
+function download(name,data,type){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('save').onclick=()=>download('origami-project.json',JSON.stringify({version:2,steps,cursor,color:$('color').value},null,2),'application/json');
+function load(data){if(data.version!==2||!Array.isArray(data.steps)||data.steps.length>80)throw Error('Invalid project');let check=sheet();for(const f of data.steps){if(!['valley','mountain'].includes(f.direction)||![1,-1].includes(f.side)||!['all','top'].includes(f.layers)||![f.a,f.b].every(p=>Array.isArray(p)&&p.length===2&&p.every(v=>Number.isFinite(v)&&Math.abs(v)<=100))||!validFold(f.layers==='top'?check.slice(-1):check,f)||check.length>4000)throw Error('Invalid fold');check=apply(check,f,180,true);}stop();steps=data.steps.map(f=>({...f,name:String(f.name||'Custom crease').slice(0,150)}));cursor=Number.isInteger(data.cursor)?Math.max(0,Math.min(steps.length,data.cursor)):steps.length;if(/^#[0-9a-f]{6}$/i.test(data.color))$('color').value=data.color;pending=null;angle=0;rebuild();draw();save();}
+$('open').onclick=()=>$('file').click();$('file').onchange=async()=>{try{const file=$('file').files[0];if(!file)return;if(file.size>200000)throw Error();load(JSON.parse(await file.text()));status('Project opened. Scrub the history to rehearse.');}catch{status('Could not open this project. Choose a Paper Studio project JSON file.');}$('file').value='';};
+$('export').onclick=()=>download('origami-fold-guide.txt',`PAPER STUDIO · 15 × 15 cm\nColored side up. Coordinates in cm from sheet center; +x right, +y up.\nStraight crease lines extend through the paper.\n\n${steps.slice(0,cursor).map((f,i)=>`${i+1}. ${f.name}\n   Line: (${f.a.map(v=>v.toFixed(2))}) to (${f.b.map(v=>v.toFixed(2))}).\n   ${f.direction}, ${f.layers==='top'?'top panel':'whole stack'}, moving side ${f.side===1?'left':'right'} when looking from first point to second. Fold 180°.\n`).join('\n')}\nCheck layers and alignment with real paper. Rigid-panel preview does not check collisions.`, 'text/plain');
+$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('fold-studio').requestFullscreen();}catch{status('Full screen is unavailable in this browser.');}};
+document.addEventListener('fullscreenchange',()=>$('fullscreen').textContent=document.fullscreenElement?'Exit expanded view':'Expand studio');
+canvas.addEventListener('keydown',e=>{if(e.key==='Escape')$('cancel').click();if(e.key==='Enter')keep();});
+try{const saved=localStorage.getItem(KEY);if(saved)load(JSON.parse(saved));}catch{status('Start a fresh sheet; the saved project could not be restored.');}
+view(true);draw();
+SimKit.loop((dt,now)=>{syncSize();controls.update();if(animation){const progress=Math.max(0,Math.min(1,(now-animation.start)/Number($('speed').value)));angle=progress*180;draw();if(progress>=1){if(animation.type==='replay'){cursor++;panels=apply(panels,pending,180,true);if(cursor<steps.length){pending=steps[cursor];animation.start=now+500;angle=0;}else{pending=null;angle=0;stop();save();status('Replay complete. Your fold history is ready to rehearse again.');}draw();}else stop();}else if(progress<0){angle=0;draw();}}renderer.render(scene,camera);});
+}

@@ -39,6 +39,14 @@
     let current = defaults, analysis = null;
     function apply(value, now = c.currentTime, instant = false) {
       current = { ...defaults, ...value };
+      // Keep imported/corrupt settings from poisoning the live and offline graph.
+      for (const key of Object.keys(defaults)) {
+        if (typeof defaults[key] !== 'number') continue;
+        const number = Number(current[key]);
+        const range = ['lo', 'mid', 'upper', 'hi'].includes(key) ? [-18, 18]
+          : key.endsWith('Q') ? [.3, 12] : key === 'resonance' ? [.1, 12] : [20, c.sampleRate * .49];
+        current[key] = Number.isFinite(number) ? Math.max(range[0], Math.min(range[1], number)) : defaults[key];
+      }
       const v = current, set = (p, x) => instant ? (p.value = x) : p.setTargetAtTime(x, now, .015);
       for (const [node, gain, freq, q] of [[lo, v.lo, v.loF], [mid, v.mid, v.midF, v.midQ], [upper, v.upper, v.upperF, v.upperQ], [hi, v.hi, v.hiF]]) {
         set(node.gain, gain); set(node.frequency, Math.min(freq, c.sampleRate * .49)); if (q) set(node.Q, q);

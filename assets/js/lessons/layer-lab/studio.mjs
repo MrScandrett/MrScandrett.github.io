@@ -15,6 +15,7 @@ import { buildPoster, buildBeach } from './samples.mjs';
 import { MissionTracker } from './missions.mjs';
 import { renderPanels, renderLayers, renderOptions, renderStatus, PANEL_TABS } from './panels.mjs';
 import * as dialogs from './dialogs.mjs';
+import { scanDrawing, exportDrawingSVG } from './scan.mjs';
 import { ICONS, icon } from './icons.mjs';
 import { ToolWheel } from './wheel.mjs';
 import { watchLayout, setMaximized, showPanels, wireMenubarKeys, wireLongPress, wireGestures, wireTouchGuard } from './adaptive.mjs';
@@ -777,9 +778,9 @@ export class Studio {
     return {
       File: [
         ['New…', 'new', S('Mod+Alt+N')], ['Open from computer…', 'open', S('Mod+O')], ['Open from Workshop Drive', 'files', S('Shift+Mod+O')],
-        ['Place image as layer…', 'place'], ['Sample files', 'files'], '-',
+        ['Scan a Drawing…', 'scanDrawing'], ['Place image as layer…', 'place'], ['Sample files', 'files'], '-',
         ['Save project to Drive', 'save', S('Mod+S')], ['Export As…', 'export', S('Shift+Mod+E')], ['Quick export PNG', 'quickPng'], '-',
-        ['Close document', 'close'],
+        ['Export selected ink layer as SVG outlines', 'drawingSVG'], ['Close document', 'close'],
       ],
       Edit: [
         ['Undo', 'undo', S('Mod+Z')], ['Redo', 'redo', S('Shift+Mod+Z')], '-',
@@ -916,10 +917,12 @@ export class Studio {
   async run(cmd, arg) {
     if (cmd.includes(':')) [cmd, arg] = cmd.split(':');
     const d = this.doc;
-    const always = ['new', 'open', 'files', 'maximize', 'shortcuts', 'about', 'missions', 'sample', 'place', 'togglePanels', 'showLayers', 'tip'];
+    const always = ['new', 'scanDrawing', 'open', 'files', 'maximize', 'shortcuts', 'about', 'missions', 'sample', 'place', 'togglePanels', 'showLayers', 'tip'];
     if (!always.includes(cmd) && !this.needDoc()) return;
     switch (cmd) {
       case 'new': return dialogs.newDoc(this);
+      case 'scanDrawing': return scanDrawing(this);
+      case 'drawingSVG': return exportDrawingSVG(this);
       case 'open': this.fileMode = 'open'; return this.el.file.click();
       case 'place': this.fileMode = 'place'; return this.el.file.click();
       case 'files': this.panelTab = 'files'; return this.showPanels('panels');

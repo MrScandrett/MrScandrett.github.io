@@ -20,7 +20,9 @@
     const input = context.createGain(), output = context.createGain();
     // Compatibility path: dry + a ConvolverNode loaded with this reverb's own impulse response.
     function convolverPath() {
+      irKey = ""; clearTimeout(irTimer);
       const dry = context.createGain(), wet = context.createGain(), conv = context.createConvolver(), merge = context.createGain();
+      conv.normalize = false;
       input.connect(dry); dry.connect(merge);
       input.connect(conv); conv.connect(wet); wet.connect(merge);
       const handle = { dry, wet, conv, merge, connect: target => merge.connect(target), disconnectAll() { [dry, wet, conv, merge].forEach(n => n.disconnect()); } };

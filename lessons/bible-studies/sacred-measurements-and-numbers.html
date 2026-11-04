@@ -196,6 +196,7 @@
     .sm-photo a { color: #684713; }
     @media (max-width: 700px) { .sm-photo { grid-template-columns: 1fr; } .sm-photo img { height: 260px; } }
   </style>
+  <link rel="stylesheet" href="../../assets/css/lessons/sacred-measurements.css" />
 </head>
 <body class="sm-page">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -219,15 +220,22 @@
   </header>
   <div class="ll-stage">
   <div class="ll-sim">
-    <main id="main-content" class="cl-page">
+    <main id="main-content" class="cl-page" tabindex="-1">
 
-      <div class="sm-hero">
+      <header class="sm-hero">
+        <p class="sm-eyebrow">Bible studies · Measurement, architecture &amp; meaning</p>
         <h1>Sacred Measurements &amp; Numbers</h1>
         <p class="cl-lede">Scripture does not wave its hands about God's buildings. It gives a <em>tape measure</em>: 300 × 50 × 30 for a boat, 2½ × 1½ × 1½ for a chest, a 20-cubit cube for the holiest room on earth, and a city measured by an angel. This lesson reads those numbers closely, builds them to scale, and asks the hard question: what do the numbers <em>do</em>?</p>
+        <p class="sm-meta">35-minute exploration · 3 hands-on labs · 8 review questions</p>
         <span class="verse-ref">Genesis 6 · Exodus 25–27; 36–38 · 1 Kings 6–7 · Ezekiel 40–47 · Revelation 21</span>
-      </div>
+      </header>
 
-      <ul class="sm-jump" aria-label="Jump to a section">
+      <nav class="sm-contents" aria-label="Lesson sections">
+        <details open>
+          <summary>In this lesson <span class="sm-contents-hint">Choose a section</span></summary>
+          <ul class="sm-jump">
+        <li><a href="#route-title">Start here</a></li>
+        <li><a href="#converter">Measuring stick</a></li>
         <li><a href="#cubit">The cubit</a></li>
         <li><a href="#noah">Noah's Ark</a></li>
         <li><a href="#covenant-ark">Ark of the Covenant</a></li>
@@ -240,8 +248,13 @@
         <li><a href="#care">Reading with care</a></li>
         <li><a href="#model-lab">Model lab</a></li>
         <li><a href="#quiz">Quiz</a></li>
-      </ul>
+        <li><a href="#activities">Class activities</a></li>
+          </ul>
+        </details>
+        <a class="sm-top" href="#main-content">↑ Back to lesson top</a>
+      </nav>
 
+      <div class="sm-content">
       <section class="sm-section" aria-labelledby="route-title">
         <h2 id="route-title">Read it. Measure it. Explain it.</h2>
         <p>By the end, you can convert cubits with a stated assumption, build a scale model, and distinguish a measurement in the text from a reconstruction or interpretation.</p>
@@ -608,6 +621,7 @@
         <p class="sm-credit">Scripture quotations in this lesson are from the King James Version (public domain). Cubit evidence: the Siloam (Hezekiah's Tunnel) inscription, the Egyptian royal cubit rods in museum collections, and the standard handbreadth divisions given in Ezekiel 40:5. All conversions are approximate; scholars disagree about the cubit in particular passages.</p>
       </section>
 
+      </div><!-- /.sm-content -->
     </main>
   </div><!-- /.ll-sim -->
   </div><!-- /.ll-stage -->
@@ -936,7 +950,8 @@
     var quizBox = document.getElementById('quizBox'), scoreEl = document.getElementById('quizScore'), score = 0, answered = 0;
     QUIZ.forEach(function (item, qi) {
       var wrap = document.createElement('div'); wrap.className = 'sm-q';
-      wrap.innerHTML = '<p class="q">' + (qi + 1) + '. ' + item.q + '</p><div class="sm-opts"></div><p class="sm-why" hidden></p>';
+      wrap.setAttribute('role', 'group'); wrap.setAttribute('aria-labelledby', 'question-' + qi);
+      wrap.innerHTML = '<p class="q" id="question-' + qi + '">' + (qi + 1) + '. ' + item.q + '</p><div class="sm-opts"></div><p class="sm-why" tabindex="-1" hidden></p>';
       var opts = wrap.querySelector('.sm-opts'), why = wrap.querySelector('.sm-why');
       item.o.forEach(function (text, oi) {
         var b = document.createElement('button'); b.type = 'button'; b.className = 'sm-opt'; b.textContent = text;
@@ -949,7 +964,8 @@
             else if (x === b) x.classList.add('wrong');
           });
           if (oi === item.a) score++;
-          why.hidden = false; why.textContent = (oi === item.a ? '✓ ' : '✗ ') + item.why;
+          why.hidden = false; why.textContent = (oi === item.a ? 'Correct. ' : 'Not quite. Correct answer: ' + item.o[item.a] + '. ') + item.why;
+          why.focus();
           scoreEl.textContent = 'Score: ' + score + ' / ' + QUIZ.length + (answered === QUIZ.length ? (score === QUIZ.length ? ' — perfect measure!' : ' — done. Revisit the sections above for the ones you missed.') : '');
         });
         opts.appendChild(b);
@@ -973,6 +989,43 @@
     document.getElementById('modelScale').addEventListener('input', updateModel);
     updateModel();
     renderAll();
+
+    var scrollArea = document.querySelector('.ll-sim');
+    var sectionLinks = Array.from(document.querySelectorAll('.sm-jump a[href^="#"]'));
+    var destinations = sectionLinks.map(function (link) {
+      var target = document.querySelector(link.getAttribute('href'));
+      if (target) target.setAttribute('tabindex', '-1');
+      link.addEventListener('click', function () {
+        if (target) target.focus({ preventScroll: true });
+      });
+      return target;
+    });
+    document.querySelector('.sm-top').addEventListener('click', function () {
+      document.getElementById('main-content').focus({ preventScroll: true });
+    });
+    document.querySelectorAll('.sm-table-wrap').forEach(function (tableWrap) {
+      tableWrap.setAttribute('tabindex', '0');
+      tableWrap.setAttribute('role', 'region');
+      var section = tableWrap.closest('section');
+      tableWrap.setAttribute('aria-label', (section ? section.querySelector('h2').textContent : 'Measurements') + ' table');
+    });
+    var pending = false;
+    function markSection() {
+      pending = false;
+      var edge = scrollArea.getBoundingClientRect().top + 100;
+      var active = 0;
+      destinations.forEach(function (target, index) {
+        if (target && target.getBoundingClientRect().top <= edge) active = index;
+      });
+      sectionLinks.forEach(function (link, index) {
+        if (index === active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    }
+    scrollArea.addEventListener('scroll', function () {
+      if (!pending) { pending = true; requestAnimationFrame(markSection); }
+    }, { passive: true });
+    markSection();
   })();
   </script>
   <script src="../../assets/js/photo-lightbox.js"></script>

@@ -99,6 +99,7 @@
           id: f.id,
           type: f.type,
           scale: f.scale,
+          mirrored: !!f.mirrored,
           color: f.color ? f.color.slice() : null,
           angles: new Float64Array(f.angles),
           x: f.x,
@@ -238,30 +239,7 @@
 
   // Compute segment start/end coordinates for a single figure
   function computeFigureJoints(doc, fig) {
-    var type = doc.types[fig.type] || doc.types[0];
-    var segs = type.segments;
-    var scale = fig.scale || 1;
-    var startX = new Float64Array(segs.length);
-    var startY = new Float64Array(segs.length);
-    var endX = new Float64Array(segs.length);
-    var endY = new Float64Array(segs.length);
-
-    for (var s = 0; s < segs.length; s++) {
-      var p = segs[s].parent;
-      var sx = fig.x;
-      var sy = fig.y;
-      if (p > 0 && p - 1 < segs.length) {
-        sx = endX[p - 1];
-        sy = endY[p - 1];
-      }
-      var ang = s < fig.angles.length ? fig.angles[s] : segs[s].restAngle;
-      var len = segs[s].length * scale;
-      startX[s] = sx;
-      startY[s] = sy;
-      endX[s] = sx + len * Math.cos(ang);
-      endY[s] = sy + len * Math.sin(ang);
-    }
-    return { type: type, segs: segs, startX: startX, startY: startY, endX: endX, endY: endY };
+    return Piv.figureJoints(doc,fig);
   }
 
   // Find all descendant segment indices of segment `segIdx`
@@ -350,7 +328,7 @@
         localStorage.setItem(storageKey, value);
         label.textContent = "Saved on this device";
       } catch (err) {
-        label.textContent = "Local save unavailable — use Save .piv";
+        label.textContent = "Local save unavailable — use Save drawing project";
       }
     }
     function commitChange() {
@@ -502,6 +480,22 @@
       return fig;
     }
 
+    var artworkImages = new Map();
+    function resolveArtwork(src) {
+      var image=artworkImages.get(src);
+      if (!image) {
+        image=new Image(); artworkImages.set(src,image);
+        image.onload=function(){ filmstripDirty=true; renderStage(); };
+        image.src=src;
+      }
+      return image.complete && image.naturalWidth ? image : null;
+    }
+    async function preloadArtwork() {
+      var sources=new Set();
+      state.doc.types.forEach(function(t){t.segments.forEach(function(seg){if(seg.artwork)sources.add(seg.artwork.src);});});
+      await Promise.all(Array.from(sources).map(async function(src){resolveArtwork(src);await artworkImages.get(src).decode();}));
+    }
+
     // Draw a translucent ghost frame for Onion Skinning
     function paintPose(frameIdx, tintRgba) {
       if (frameIdx < 0 || frameIdx >= state.doc.frames.length) return;
@@ -511,7 +505,9 @@
       ctx.lineJoin = "round";
       for (var i = 0; i < ops.length; i++) {
         var op = ops[i];
-        if (op.kind === "line") {
+        if (op.kind === "image") {
+          Piv.drawImageOp(ctx,op,resolveArtwork(op.src),tintRgba ? 0.22 : 1);
+        } else if (op.kind === "line") {
           ctx.strokeStyle = tintRgba || op.color;
           ctx.lineWidth = op.width;
           ctx.beginPath();
@@ -769,7 +765,8 @@
         var seg = type.segments[i];
         var label = type.builtIn && BUILTIN_SEG_NAMES[i]
           ? BUILTIN_SEG_NAMES[i].replace(/^\d+ · /, "").split(" (")[0]
-          : "Bone " + (i + 1);
+          : (seg.name || "Bone " + (i + 1));
+        label=String(label).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[c];});
         var parentTag = seg.parent === 0 ? "root" : "←P" + (seg.parent - 1);
         var cls = "piv-tree-item" + (i === state.selectedSegIndex ? " is-selected" : "");
         html +=
@@ -989,6 +986,7 @@
           return {
             id: nf.id,
             type: nf.type,
+            mirrored: !!pf.mirrored,
             scale: pf.scale + (nf.scale - pf.scale) * t,
             color: pf.color && nf.color ? pf.color.map(function (c, i) { return Math.round(c + (nf.color[i] - c) * t); }) : pf.color,
             angles: angles,
@@ -1203,6 +1201,7 @@
     onClick("piv-btn-flip", function () {
       var fig = selectedFigure();
       if (!fig) return;
+      fig.mirrored = !fig.mirrored;
       for (var i = 0; i < fig.angles.length; i++) {
         fig.angles[i] = normAngle(Math.PI - fig.angles[i]);
       }
@@ -1221,7 +1220,7 @@
       if (type.builtIn) {
         fig.angles = makeStandingAngles();
       } else {
-        for (var i = 0; i < fig.angles.length; i++) fig.angles[i] = 0;
+        for (var i = 0; i < fig.angles.length; i++) fig.angles[i] = fig.mirrored ? Math.PI-type.segments[i].restAngle : type.segments[i].restAngle;
       }
       syncAll();
       showToast("Reset figure to neutral standing pose.");
@@ -1239,6 +1238,24 @@
       state.selectedFigIndex = Math.max(0, state.selectedFigIndex - 1);
       syncAll();
       showToast("Removed selected figure from frame.");
+    });
+
+    onClick("piv-btn-import-drawing", function(){
+      stopPlayback();
+      window.PivotCutout.open(function(puppet){
+        var typeIndex=state.doc.types.length; state.doc.types.push(puppet.type);
+        var fr=currentFrame();
+        fr.figures.push({id:nextFigureId(),type:typeIndex,scale:1,color:null,
+          angles:new Float64Array(puppet.type.segments.map(function(seg){return seg.restAngle;})),
+          x:puppet.x,y:puppet.y});
+        fr.order.push(fr.figures.length-1);state.selectedFigIndex=fr.figures.length-1;state.selectedSegIndex=0;
+        syncAll();showToast("Drawing puppet added. Drag its joints and add frames. Save drawing project to keep the artwork.");
+      },{width:state.doc.width||STAGE_W,height:state.doc.height||STAGE_H});
+    });
+    onClick("piv-btn-save-project",function(){
+      var a=document.createElement('a'),url=URL.createObjectURL(new Blob([snapshot()],{type:'application/json'}));
+      a.href=url;a.download=(elName.value.trim()||'drawing-animation').replace(/[^a-z0-9_-]+/gi,'-')+'.pivot.json';a.click();setTimeout(function(){URL.revokeObjectURL(url);},4000);
+      showToast("Saved editable drawing project. Transfer this file to continue on another device.");
     });
 
     // Custom Segment Builder button (adds a custom bone attached to the selected segment)
@@ -1385,6 +1402,15 @@
         if (!file) return;
         var request = ++loadRequest;
         elFileInput.value = "";
+        if (/\.pivot\.json$/i.test(file.name)) {
+          if(file.size>40000000){showToast('This drawing project is too large (40 MB maximum).');return;}
+          file.text().then(function(value){
+            if(request!==loadRequest)return;
+            var parsed=JSON.parse(value); window.PivotCutout.validateProject(parsed);
+            stopPlayback(); clearFrameClipboard(); restoreSnapshot(value); syncAll(); showToast("Opened drawing project with artwork and rig.");
+          }).catch(function(err){showToast("Could not open drawing project: "+err.message);});
+          return;
+        }
         file.arrayBuffer().then(function (buf) {
           return Piv.decodePiv(new Uint8Array(buf));
         }).then(function (doc) {
@@ -1405,6 +1431,9 @@
 
     // Export binary .piv file
     onClick("piv-btn-save-piv", function () {
+      if (state.doc.types.some(function(t){return t.segments.some(function(seg){return seg.artwork;});})) {
+        showToast("Use Save drawing project to keep your artwork and rig. .piv does not preserve cutout drawings."); return;
+      }
       var fileName = (elName.value.trim() || "my-stick-animation").replace(/[^a-z0-9_-]+/gi, "-") + ".piv";
       Piv.encodePiv(state.doc).then(function (bytes) {
         var blob = new Blob([bytes], { type: "application/octet-stream" });
@@ -1421,7 +1450,8 @@
     });
 
     // Export a PNG sprite sheet; wrap long animations to fit browser canvas limits. (ready for 2D Game Dev pathway)
-    onClick("piv-btn-export-spritesheet", function () {
+    onClick("piv-btn-export-spritesheet", async function () {
+      try { await preloadArtwork(); } catch { return showToast("An artwork image could not load. Reopen your project and try again."); }
       var count = state.doc.frames.length;
       var cellW = 230;
       var cellH = 140;
@@ -1437,7 +1467,7 @@
         sctx.translate((i % columns) * cellW, Math.floor(i / columns) * cellH);
         sctx.beginPath(); sctx.rect(0, 0, cellW, cellH); sctx.clip();
         sctx.scale(scaleX, scaleY);
-        Piv.drawFrame(sctx, state.doc, i, { background: null });
+        Piv.drawFrame(sctx, state.doc, i, { background: null, resolveImage: resolveArtwork });
         sctx.restore();
       }
       sheet.toBlob(function (blob) {
@@ -1571,6 +1601,7 @@
       syncAll();
     });
     window.addEventListener("keydown", function (e) {
+      if (document.querySelector("dialog[open]")) return;
       if (e.code === "Escape" && root.classList.contains("is-expanded")) { setFull(false); return; }
       var active = document.activeElement;
       if (active && (active.matches("input, textarea, select") || active.isContentEditable)) return;
