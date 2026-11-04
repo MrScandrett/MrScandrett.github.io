@@ -14,7 +14,7 @@
   function PixelEditor(host, opts) {
     var N = 16, CELL = 24;
     var frame = opts.value; var color = 1; var tool = 'pencil'; var mirror = false;
-    var undo = []; var drawing = false; var cursor = { x: 8, y: 8 };
+    var undo = []; var drawing = false; var cursor = { x: 8, y: 8 }; var lastCell = null;
     var box = el('div', 'px-canvas-wrap');
     var canvas = el('canvas', 'px-grid'); canvas.width = N * CELL; canvas.height = N * CELL; canvas.tabIndex = 0;
     canvas.setAttribute('role', 'img');
@@ -131,18 +131,23 @@
     }
     function cellFrom(e) {
       var r = canvas.getBoundingClientRect();
-      return { x: Math.floor((e.clientX - r.left) / r.width * N), y: Math.floor((e.clientY - r.top) / r.height * N) };
+      return { x: Math.max(0, Math.min(N - 1, Math.floor((e.clientX - r.left - canvas.clientLeft) / canvas.clientWidth * N))), y: Math.max(0, Math.min(N - 1, Math.floor((e.clientY - r.top - canvas.clientTop) / canvas.clientHeight * N))) };
     }
     canvas.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0 || drawing) return;
+      if (tool === 'picker') { e.preventDefault(); var sample = cellFrom(e); apply(sample.x, sample.y); render(); return; }
       e.preventDefault(); canvas.setPointerCapture(e.pointerId); drawing = true; undo.push(frame); if (undo.length > 60) undo.shift();
-      var c = cellFrom(e); cursor = c; apply(c.x, c.y); render(); opts.onChange(frame, false);
+      var c = cellFrom(e); cursor = c; lastCell = c; apply(c.x, c.y); render(); opts.onChange(frame, false);
     });
     canvas.addEventListener('pointermove', function (e) {
       if (!drawing || tool === 'fill' || tool === 'picker') return;
-      var c = cellFrom(e); apply(c.x, c.y); render(); opts.onChange(frame, false);
+      var c = cellFrom(e), dx = c.x - lastCell.x, dy = c.y - lastCell.y, steps = Math.max(Math.abs(dx), Math.abs(dy));
+      for (var i = 1; i <= steps; i++) apply(Math.round(lastCell.x + dx * i / steps), Math.round(lastCell.y + dy * i / steps));
+      lastCell = c; cursor = c; render(); opts.onChange(frame, false);
     });
     function end() { if (drawing) { drawing = false; opts.onChange(frame, true); } }
     canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    canvas.addEventListener('lostpointercapture', end);
     canvas.addEventListener('keydown', function (e) {
       var moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       if (moves[e.key]) { e.preventDefault(); cursor.x = Math.max(0, Math.min(N - 1, cursor.x + moves[e.key][0])); cursor.y = Math.max(0, Math.min(N - 1, cursor.y + moves[e.key][1])); render(); return; }
@@ -156,7 +161,7 @@
     canvas.addEventListener('focus', render); canvas.addEventListener('blur', render);
     paintSwatches(); render();
     return {
-      setValue: function (f) { frame = f; undo = []; render(); },
+      setValue: function (f) { frame = f; undo = []; paintSwatches(); render(); },
       get value() { return frame; },
       render: function () { paintSwatches(); render(); }
     };
@@ -343,7 +348,7 @@
     var size = number('Tile size', 16, 1, 256), gap = number('Spacing', 0, 0, 256), marginX = number('Left margin', 0, 0, 4096), marginY = number('Top margin', 0, 0, 4096);
     var column = number('Column (from 1)', 1, 1, 4096), row = number('Row (from 1)', 1, 1, 4096);
     var scroll = el('div'); scroll.style.cssText = 'overflow:auto;max-height:480px;max-width:100%'; importer.appendChild(scroll);
-    var sheet = el('canvas'); sheet.hidden = true; sheet.style.cssText = 'display:block;max-width:none;image-rendering:pixelated;cursor:crosshair'; scroll.appendChild(sheet);
+    var sheet = el('canvas'); sheet.hidden = true; sheet.style.cssText = 'max-width:none;image-rendering:pixelated;cursor:crosshair'; scroll.appendChild(sheet);
     sheet.setAttribute('role', 'img'); sheet.setAttribute('aria-label', 'Imported tileset grid. Click a tile, or use the column and row controls below the file picker.');
     var status = el('p', 'px-note'); status.setAttribute('aria-live', 'polite'); importer.appendChild(status);
     var apply = el('button', null, 'Copy selected tile into game'); apply.type = 'button'; apply.disabled = true; importer.appendChild(apply);
@@ -394,6 +399,11 @@
     var downloads = el('div', 'px-btn-row'); importer.appendChild(downloads);
     [['Download tileset PNG', function () { downloadCanvas(PC.sheetCanvas(PC.TILE_KEYS.map(function (k) { return store.load().tiles[k].px; }), store.load().palette, 1), 'my-tileset.png'); }],
      ['Download my art.js', function () { PC.download('art.js', store.exportJS(), 'text/javascript'); }]].forEach(function (item) { var b = el('button', null, item[0]); b.type = 'button'; b.addEventListener('click', item[1]); downloads.appendChild(b); });
+    store.subscribe(function (art) {
+      if (editor.value !== art.tiles[key].px) editor.setValue(art.tiles[key].px);
+      else editor.render();
+      seam();
+    });
     seam();
   }
 
