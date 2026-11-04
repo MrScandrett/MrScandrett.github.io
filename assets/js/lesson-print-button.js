@@ -84,6 +84,23 @@
     document.head.appendChild(timeline);
   }
 
+  // Shared family-tree engine (family-tree.js): any nested list marked data-family-tree.
+  function loadFamilyTree() {
+    if (window.ClassroomOSFamilyTree || document.querySelector('script[src$="/family-tree.js"]') ||
+      !document.querySelector('[data-family-tree]')) return;
+    var tree = document.createElement('script');
+    tree.src = script && script.src ? new URL('family-tree.js', script.src).href : '/assets/js/family-tree.js';
+    tree.defer = true;
+    document.head.appendChild(tree);
+    // Cards open their photo in the lightbox, so make sure it is on the page.
+    if (!window.PhotoLightbox && !document.querySelector('script[src$="/photo-lightbox.js"]')) {
+      var lb = document.createElement('script');
+      lb.src = script && script.src ? new URL('photo-lightbox.js', script.src).href : '/assets/js/photo-lightbox.js';
+      lb.defer = true;
+      document.head.appendChild(lb);
+    }
+  }
+
   // ⛶ Fill the screen on each sim, for the projector (sim-present.js).
   function loadSimPresent() {
     if (window.ClassroomOSPresent || document.querySelector('script[data-sim-present="true"]') ||
@@ -212,6 +229,8 @@
   whenIdle(loadSimPresent);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadTimeline);
   else loadTimeline();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadFamilyTree);
+  else loadFamilyTree();
   // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
   // placed after this script, with its own data-glossary-src) wins over the
   // shared default glossary.

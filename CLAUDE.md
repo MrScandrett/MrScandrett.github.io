@@ -296,6 +296,37 @@ show only this lesson's evidence. `npm test` fails if the page is stale, a date 
 matches nothing, or a lesson link or image is missing. When a new lesson teaches a true turning
 point, add one milestone for it.
 
+## Lesson rule: branching lineages go through the Family Tree engine
+
+A timeline is one line of events; when the story *branches* (who descended from whom, which line
+led to which, where two lines merge, which links are guesses) use `assets/js/family-tree.js` +
+`assets/css/components/family-tree.css`, not a hand-built tree. Generations run down the page
+(or sideways), so depth reads as time and position as kinship. Showcases: `lessons/bible-studies/
+genesis-10-table-of-nations.html` (the seventy clans) and the hominin tree in
+`lessons/earth-science/pleistocene-epoch.html#human-tree`.
+
+- Write a nested list: `<ul data-family-tree data-tree-title="…"><li data-group="Shem">…<ul>children</ul></li></ul>`.
+  Everything in an `<li>` except its nested list is the card's detail text; the list stays the content
+  (print, screen readers, no-JS, List view). lesson-print-button.js loads the engine (and the photo
+  lightbox) whenever a page has `[data-family-tree]`.
+- Per item: `data-label` (short card title; else the first `<strong>`), `data-when`, `data-group` (inherited
+  by children; becomes colour chips) + `data-color`, `data-partner` (+ `data-partner-mark="="` for "often
+  treated as the same species"), `data-link="uncertain"` (dotted line and "?"), `data-also-from="id1 id2"`
+  (dashed extra lines: a second parent, interbreeding, a merging lineage), `data-here` ("You are here"),
+  `data-collapsed`, `id` (only needed as a `data-also-from` target). The first `<img>`/`<figure>` becomes a
+  card thumbnail and a click-to-enlarge photo in the detail panel.
+- Per tree: `data-tree-title`, `data-tree-flow="down|right"` (first visit; the reader's choice is remembered
+  site-wide), `data-tree-view`, `data-tree-generations="Step"` (row word; `off` hides rows), `data-tree-search`.
+- Students get Tree (pan, Ctrl+wheel/+/− zoom, fold branches, ⛶ full screen, arrows along kin, F) and List
+  views; pressing a card lights its lineage and lists ancestors and children. Print always uses the list.
+- Layout is a tidy tree (`layout()` in family-tree.js, pure: per-generation outlines so short branches tuck
+  in beside deep ones). Cards are tints of `currentColor`, so dark themes need no contrast-guard help.
+  Cards are fixed-size: keep labels short and put the teaching in the detail text.
+- Only use it for real descent or branching. A plain sequence is a timeline.
+- From JS: `ClassroomOSFamilyTree.create(host, { title, flow, roots: [{ label, text|html, when, group, partner,
+  link, also, here, children }] })`. Tests: `node --test tests/family-tree.test.mjs` (layout invariants, and
+  every lesson tree must have unique ids, resolvable `data-also-from`, and short labels).
+
 ## Dark themes: lessons match the theme automatically
 
 Night, Lava Lamp, Mandelbrot, Vaporwave and Bark all set `html[data-lighting="night"]`. Lessons that hard-code light
