@@ -25,7 +25,25 @@
     var controls = document.querySelectorAll('#hoku-sec-lab button, #hoku-sec-lab input, .hoku-layer-item');
     var layers = { sky: true, fuji: true, wave_deep: true, wave_mid: true, boats: true, foam: true, keyblock: true, cartouche: true };
     var keys = Object.keys(layers), masks = {}, image, paper = '#eaddba';
-    var x = 0, y = 0, angle = 0, tone = 60, rubbing = false, barenX = 0, barenY = 0;
+    var x = 0, y = 0, angle = 0, tone = 60, strength = 100, rubbing = false, rubProgress = 1;
+    var sliderInk = document.getElementById('ink-strength');
+    var impression = document.createElement('canvas'), impressionCtx = impression.getContext('2d');
+    var transfer = document.createElement('canvas'), transferCtx = transfer.getContext('2d');
+    var lastStrength = null, paperRGB;
+    function applyInkStrength() {
+      // Approximate transparent ink transmission against warm paper. Preserve
+      // the photographed paper grain and all source linework; 100% is untouched.
+      if (strength === 100 || lastStrength === strength) return;
+      lastStrength = strength;
+      var pixels = impressionCtx.getImageData(0, 0, impression.width, impression.height);
+      for (var i = 0; i < pixels.data.length; i += 4) {
+        for (var c = 0; c < 3; c++) {
+          var value = pixels.data[i+c], white = paperRGB[c];
+          if (value < white) pixels.data[i+c] = white * Math.pow(value / white, strength / 100);
+        }
+      }
+      if (strength !== 100) impressionCtx.putImageData(pixels, 0, 0);
+    }
     var sliderX = document.getElementById('kento-x'), sliderY = document.getElementById('kento-y');
     var sliderAngle = document.getElementById('kento-angle'), sliderTone = document.getElementById('bokashi-slider');
     var rub = document.getElementById('btn-rub-baren');
@@ -73,7 +91,7 @@
         var mask = document.createElement('canvas'); mask.width = w; mask.height = h;
         mask.getContext('2d').putImageData(data[key], 0, 0); masks[key] = mask;
       });
-      var sample = sc.getImageData(2, 2, 1, 1).data; paper = 'rgb(' + sample[0] + ',' + sample[1] + ',' + sample[2] + ')';
+      var sample = sc.getImageData(2, 2, 1, 1).data; paperRGB = [sample[0], sample[1], sample[2]]; paper = 'rgb(' + sample[0] + ',' + sample[1] + ',' + sample[2] + ')';
     }
     function render() {
       if (!image) return;
@@ -96,20 +114,38 @@
           ctx.drawImage(masks[key], 0, 0); ctx.restore();
         });
       }
+      // Process a complete source-based impression, then reveal it in broad,
+      // overlapping passes. No floating tool is drawn on the front of the print.
+      impression.width = w; impression.height = h;
+      impressionCtx.drawImage(canvas, 0, 0); lastStrength = null; applyInkStrength();
+      ctx.fillStyle = paper; ctx.fillRect(0, 0, w, h);
       if (rubbing) {
-        ctx.save(); ctx.fillStyle = 'rgba(139,90,43,.35)'; ctx.strokeStyle = '#503617'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(barenX, barenY, 50, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.arc(barenX, barenY, 30, 0, 2 * Math.PI); ctx.stroke(); ctx.restore();
-      }
+        transfer.width = w; transfer.height = h;
+        transferCtx.drawImage(impression, 0, 0);
+        transferCtx.globalCompositeOperation = 'destination-in';
+        var rows = 7, rowHeight = h / rows, completed = rubProgress * rows;
+        transferCtx.fillStyle = '#000';
+        transferCtx.beginPath();
+        for (var row = 0; row < rows; row++) {
+          var coverage = Math.max(0, Math.min(1, completed - row));
+          if (!coverage) continue;
+          var extent = (w + rowHeight) * coverage;
+          transferCtx.rect(row % 2 ? w - extent : 0, row * rowHeight, extent, rowHeight + 1);
+        }
+        transferCtx.fill();
+        transferCtx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(transfer, 0, 0);
+      } else ctx.drawImage(impression, 0, 0);
     }
     function update() {
-      x = Number(sliderX.value); y = Number(sliderY.value); angle = Number(sliderAngle.value); tone = Number(sliderTone.value);
+      x = Number(sliderX.value); y = Number(sliderY.value); angle = Number(sliderAngle.value); tone = Number(sliderTone.value); strength = Number(sliderInk.value);
+      document.getElementById('val-ink-strength').textContent = strength + '%' + (strength === 100 ? ' · reference' : strength < 100 ? ' · lighter' : ' · deeper');
       document.getElementById('val-kento-x').textContent = x.toFixed(1) + ' units';
       document.getElementById('val-kento-y').textContent = y.toFixed(1) + ' units';
       document.getElementById('val-kento-angle').textContent = angle.toFixed(1) + '°';
       document.getElementById('val-bokashi').textContent = tone === 60 ? 'Reference tone' : (tone < 60 ? 'Lighter' : 'Darker');
       var missing = keys.filter(function (key) { return !layers[key]; }).length;
-      feedback.textContent = (x || y || angle ? 'Misaligned: the digital color regions have shifted against the fixed dark marks and pale paper.' : 'Aligned: digital regions share the reference position.') + (missing ? ' ' + missing + ' region(s) hidden.' : '') + (!missing && !x && !y && !angle && tone === 60 ? ' Showing the unaltered Met reproduction.' : ' This is an edited teaching view.');
+      feedback.textContent = (x || y || angle ? 'Misaligned: the digital color regions have shifted against the fixed dark marks and pale paper.' : 'Aligned: digital regions share the reference position.') + (missing ? ' ' + missing + ' region(s) hidden.' : '') + (!missing && !x && !y && !angle && tone === 60 && strength === 100 ? ' Showing the unaltered Met reproduction.' : ' This is an edited teaching view.');
       render();
     }
     toggleButtons.forEach(function (button) {
@@ -119,24 +155,23 @@
         var key = button.dataset.layer; layers[key] = !layers[key]; button.classList.toggle('active', layers[key]); button.setAttribute('aria-pressed', String(layers[key])); update();
       });
     });
-    [sliderX, sliderY, sliderAngle, sliderTone].forEach(function (slider) { slider.addEventListener('input', update); });
+    [sliderX, sliderY, sliderAngle, sliderTone, sliderInk].forEach(function (slider) { slider.addEventListener('input', update); });
     document.getElementById('btn-reset-kento').addEventListener('click', function () { sliderX.value = sliderY.value = sliderAngle.value = 0; update(); });
     document.getElementById('btn-slip-kento').addEventListener('click', function () { sliderX.value = 7; sliderY.value = -4; sliderAngle.value = 1.8; update(); });
     document.getElementById('btn-original-print').addEventListener('click', function () {
-      sliderX.value = sliderY.value = sliderAngle.value = 0; sliderTone.value = 60;
+      sliderX.value = sliderY.value = sliderAngle.value = 0; sliderTone.value = 60; sliderInk.value = 100;
       keys.forEach(function (key) { layers[key] = true; });
       toggleButtons.forEach(function (button) { button.classList.add('active'); button.setAttribute('aria-pressed', 'true'); }); update();
     });
     rub.addEventListener('click', function () {
       if (!image || rubbing) return;
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { feedback.textContent = 'Baren demonstration complete: the printer rubs the back of the sheet. This overlay shows movement only.'; return; }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { feedback.textContent = 'Baren demonstration complete: the printer rubs the back of the sheet. The digital reveal suggests overlapping passes; real printers rub the back of damp paper.'; return; }
       rubbing = true; rub.disabled = true;
       var start = performance.now();
       function frame(time) {
-        var progress = Math.min(1, (time - start) / 900), radius = 220 * (1 - progress * .5);
-        barenX = canvas.width/2 + Math.cos(progress * Math.PI * 6) * radius;
-        barenY = canvas.height/2 + Math.sin(progress * Math.PI * 6) * radius;
-        if (progress === 1) { rubbing = false; rub.disabled = false; feedback.textContent = 'Baren demonstration complete: the printer rubs the back of the sheet. This overlay shows movement only.'; }
+        var progress = Math.min(1, (time - start) / 2400);
+        rubProgress = progress;
+        if (progress === 1) { rubbing = false; rub.disabled = false; feedback.textContent = 'Baren demonstration complete: the printer rubs the back of the sheet. The digital reveal suggests overlapping passes; real printers rub the back of damp paper.'; }
         render(); if (progress < 1) requestAnimationFrame(frame);
       }
       requestAnimationFrame(frame);
@@ -189,14 +224,18 @@
   function initRyakugaStudio() {
     var canvas = document.getElementById('ryakuga-canvas'); if (!canvas) return;
     var ctx = canvas.getContext('2d'), subject = 'bird', images;
+    var finished = document.createElement('canvas'); finished.width = canvas.width; finished.height = canvas.height;
+    var finishedCtx = finished.getContext('2d');
     var slider = document.getElementById('ryakuga-blend'), buttons = document.querySelectorAll('.ryakuga-subject-btn');
     var feedback = document.getElementById('drawing-feedback');
     function render() {
       if (!images) return;
       var amount = Number(slider.value), pair = images[subject];
       ctx.fillStyle = '#e6d3b4'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.save(); ctx.globalAlpha = 1 - amount; fitImage(ctx, pair[0], canvas.width, canvas.height); ctx.restore();
-      ctx.save(); ctx.globalAlpha = amount; fitImage(ctx, pair[1], canvas.width, canvas.height); ctx.restore();
+      fitImage(ctx, pair[0], canvas.width, canvas.height);
+      finishedCtx.fillStyle = '#e6d3b4'; finishedCtx.fillRect(0, 0, finished.width, finished.height);
+      fitImage(finishedCtx, pair[1], finished.width, finished.height);
+      ctx.save(); ctx.globalAlpha = amount; ctx.drawImage(finished, 0, 0); ctx.restore();
       document.getElementById('val-ryakuga-blend').textContent = Math.round(amount * 100) + '% finished drawing';
       feedback.textContent = (amount === 0 ? 'Original printed construction guide.' : amount === 1 ? 'Original finished drawing.' : 'Crossfade between two separate original illustrations.') + ' Detail crops from the BnF scan, image ' + (subject === 'bird' ? '15' : '31') + ' of 54. This is a comparison, not a recording of brushstrokes.';
     }

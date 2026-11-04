@@ -88,7 +88,7 @@ export function buildDesign(THREE, state, texture) {
  } else if(mode==='sculpt'){
   const geo=new THREE.PlaneGeometry(4,4,48,48);geo.rotateX(-Math.PI/2);const positions=geo.attributes.position;
   for(let i=0;i<positions.count;i++)positions.setY(i,.45+.18*Math.cos(positions.getX(i))*Math.cos(positions.getZ(i)));
-  for(const stroke of state.strokes){const old=Array.from({length:positions.count},(_,i)=>positions.getY(i));for(let i=0;i<positions.count;i++){const d=Math.hypot(positions.getX(i)-stroke.x,positions.getZ(i)-stroke.z)/stroke.radius;if(d>=1)continue;const fall=(1-d)**2;let y=old[i];if(stroke.type==='smooth'){const row=Math.floor(i/49),col=i%49;const neighbors=[col>0?i-1:i,col<48?i+1:i,row>0?i-49:i,row<48?i+49:i];y+=((neighbors.reduce((sum,j)=>sum+old[j],0)/4)-y)*fall*.8;}else y+=(stroke.type==='lower'?-1:1)*stroke.strength*fall;positions.setY(i,y);}}
+  for(const stroke of state.strokes){const old=Array.from({length:positions.count},(_,i)=>positions.getY(i));for(let i=0;i<positions.count;i++){const d=Math.hypot(positions.getX(i)-stroke.x,positions.getZ(i)-stroke.z)/stroke.radius;if(d>=1)continue;const fall=(1-d)**2;let y=old[i];if(stroke.type==='smooth'){const row=Math.floor(i/49),col=i%49;const neighbors=[col>0?i-1:i,col<48?i+1:i,row>0?i-49:i,row<48?i+49:i];y+=((neighbors.reduce((sum,j)=>sum+old[j],0)/4)-y)*fall*.8*(stroke.strength/.3);}else y+=(stroke.type==='lower'?-1:1)*stroke.strength*fall;positions.setY(i,y);}}
   geo.computeVertexNormals();const m=mesh(geo);m.material.side=THREE.DoubleSide;
  } else if(mode==='props'){
   const shape=new THREE.Shape();const w=p.width/2,h=p.height/2;shape.moveTo(-w,-h);shape.lineTo(w,-h);shape.lineTo(w,h);shape.lineTo(-w,h);shape.closePath();const geo=new THREE.ExtrudeGeometry(shape,{depth:.5,bevelEnabled:p.bevel>0,bevelSize:p.bevel,bevelThickness:p.bevel,bevelSegments:3,steps:1});geo.translate(0,0,-.25);mesh(geo,0,p.handle+p.height/2);box(.25,p.handle,.3,0,p.handle/2,0,state.secondary);
@@ -106,11 +106,12 @@ export function buildDesign(THREE, state, texture) {
  } else if(['composite','texture','uv'].includes(mode)){
   const m=box(2,2,2);if(['texture','uv'].includes(mode))m.material=checker();
  } else if(['rig','animation'].includes(mode)){
-  const joint=p.joint??1.5,blend=p.blend??.6,geo=new THREE.CylinderGeometry(.45,.45,3,16,24);geo.translate(0,1.5,0);
-  const idx=[],weights=[];for(let i=0;i<geo.attributes.position.count;i++){const y=geo.attributes.position.getY(i),w=Math.max(0,Math.min(1,(y-joint)/blend+.5));idx.push(0,1,0,0);weights.push(1-w,w,0,0);}
+  const joint=p.joint??1.5,blend=p.blend??.6,geo=new THREE.CylinderGeometry(p.radius??.45,p.radius??.45,3,16,Math.round(p.segments??24));geo.translate(0,1.5,0);
+  const idx=[],weights=[],colors=[];for(let i=0;i<geo.attributes.position.count;i++){const y=geo.attributes.position.getY(i),t=Math.max(0,Math.min(1,(y-joint)/blend+.5)),w=p.smooth===1?t*t*(3-2*t):t;const c=new THREE.Color('#4f8ef0').lerp(new THREE.Color('#e15a4a'),w);colors.push(c.r,c.g,c.b);idx.push(0,1,0,0);weights.push(1-w,w,0,0);}
   geo.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(idx,4));geo.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
-  const root=new THREE.Bone(),child=new THREE.Bone();root.add(child);child.position.y=joint;
-  const m=new THREE.SkinnedMesh(geo,mat());m.add(root);m.bind(new THREE.Skeleton([root,child]));child.rotation.z=(p.angle||0)*Math.PI/180;group.add(m);group.add(new THREE.SkeletonHelper(m));group.userData.joint=child;
+  if(p.weights===1)geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  const root=new THREE.Bone(),child=new THREE.Bone();root.name='LimbRoot';child.name='BendJoint';root.add(child);child.position.y=joint;
+  const material=mat();material.vertexColors=p.weights===1;const m=new THREE.SkinnedMesh(geo,material);m.name='FlexibleLimb';m.add(root);m.bind(new THREE.Skeleton([root,child]));child.rotation.z=(p.angle||0)*Math.PI/180;group.add(m);group.add(new THREE.SkeletonHelper(m));group.userData.joint=child;
  } else if(mode==='print'){
   const bracket=new THREE.Group();group.add(bracket);
   const shape=new THREE.Shape();[[-7.5,0],[7.5,0],[7.5,4],[-3.5,4],[-3.5,p.height],[-7.5,p.height]].forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();const geo=new THREE.ExtrudeGeometry(shape,{depth:p.width,bevelEnabled:false});geo.translate(0,0,-p.width/2);geo.rotateY(Math.PI/2);const solid=mesh(geo);bracket.add(solid);bracket.rotation.x=p.angle*Math.PI/180;

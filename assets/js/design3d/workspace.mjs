@@ -1,3 +1,5 @@
+import { setupRigStudio } from './rig-studio.mjs';
+import { setupMaterialStudio } from './material-studio.mjs';
 import { setupCharacterPanels } from './character-panels.mjs';
 import { WORKSHOPS, freshState, validateState, keyAngle, checkState } from './workshops.mjs';
 import { buildDesign, disposeDesign, snapshotDesign, toObj, toPrintSpace } from './geometry.mjs';
@@ -34,7 +36,7 @@ for(const host of document.querySelectorAll('[data-design3d-workshop]'))mount(ho
 async function mount(host){
  const mode=host.dataset.design3dWorkshop,def=WORKSHOPS[mode];if(!def)return;
  const id='d3w-'+(++sequence),store='classroomos:design3d:'+mode;
- let state=freshState(mode),undo=[],redo=[],playing=false,dirty=true,level='guided',brush='raise',group,texture,three,sceneKit,controls,loop,visible=true,pointerStroke=false,lastStroke=0,baseline;
+ let state=freshState(mode),undo=[],redo=[],playing=false,dirty=true,level='guided',brush='raise',group,texture,three,sceneKit,controls,loop,visible=true,pointerStroke=false,lastStroke=0,baseline,gestureStarted=false,brushRing;
  try{
   const saved=localStorage.getItem(store);
   if(saved){const candidate=validateState(JSON.parse(saved));if(candidate.mode===mode)state=candidate;}
@@ -62,13 +64,14 @@ async function mount(host){
  ${mode==='furniture'?`<section class="d3w-character-cast d3w-furniture-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a furniture form</h2><p>Use these as design seeds. Every dimension, detail and color remains editable.</p></div><div class="d3w-presets">${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}
  ${mode==='materials'?`<section class="d3w-character-cast d3w-material-bench" aria-labelledby="${id}-bench"><div><h2 id="${id}-bench">Start with a material hypothesis</h2><p>Apply a swatch, then change one property. The sphere shows highlight width; the beveled block shows edge response.</p></div><div class="d3w-presets">${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}
  <div class="d3w-layout"><div class="d3w-stage"><div class="d3w-view"><canvas tabindex="0" aria-label="Editable 3D scene. Drag to orbit; use view buttons or arrow keys. In sculpt mode, turn on Brush mode to edit the mesh." data-canvas></canvas><p class="d3w-unit">${['print','clearance'].includes(mode)?'Coordinates in millimeters':'Y up · starter-scene units · not a manufacturing specification'}</p></div>
+ ${mode==='sculpt'?'<div class="d3w-toolbar" role="group" aria-label="Quick sculpt tools"><button type="button" data-sculpt-tool="raise" aria-pressed="true">Raise</button><button type="button" data-sculpt-tool="lower" aria-pressed="false">Lower</button><button type="button" data-sculpt-tool="smooth" aria-pressed="false">Smooth</button><span>Choose a brush, then drag · Shift: smooth · Ctrl: reverse · Undo: one drag</span></div>':''}
  <div class="d3w-toolbar" role="group" aria-label="Camera views"><button type="button" data-view="perspective">Perspective</button><button type="button" data-view="front">Front</button><button type="button" data-view="side">Side</button><button type="button" data-view="top">Top</button><button type="button" data-zoom="in">Zoom in</button><button type="button" data-zoom="out">Zoom out</button><button type="button" data-fit>Fit model</button></div>
  <p class="d3w-help">X runs across · Y is up · Z is depth. Drag to orbit · right-drag to pan · pinch or use Zoom · keyboard arrows orbit, +/− zoom. Numeric controls work without dragging.</p><p data-description class="d3w-description"></p>
  ${mode==='navigate'?`<div class="d3w-missions"><p><strong>Camera practice mission</strong></p><ul data-missions><li data-m="orbit">○ Orbit the view to inspect the stepped silhouette</li><li data-m="views">○ Inspect Front, Side and Top views</li><li data-m="zoom">○ Zoom in or out to examine detail</li><li data-m="fit">○ Use Fit model or view buttons</li><li data-m="proportions">○ Adjust dimensions to set your proportions</li></ul></div>`:''}
  <ol class="d3w-guide">${def.steps.map(s=>'<li>'+escape(s)+'</li>').join('')}</ol>
  <div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="capture">Capture image</button>${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>
  <p role="status" data-status>Loading the editable scene…</p></div>
- <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label><input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"></div>`).join('')}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${['texture','procedural','modular','furniture','character'].includes(mode)?`<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">`:''}${mode==='composite'?`<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">`:''}</fieldset>
+ <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label><input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"></div>`).join('')}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${['texture','procedural','modular','furniture','character'].includes(mode)?`<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">`:''}${['composite','materials'].includes(mode)?`<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">`:''}</fieldset>
  ${mode==='boolean'?'<button type="button" data-action="cut" aria-pressed="false">Apply Difference</button>':''}
  ${mode==='modular'?'<button type="button" data-action="snap">Snap wall to grid</button>':''}
  ${mode==='sculpt'?'<fieldset><legend>Sculpt tools</legend><label>Brush operation <select data-brush><option value="raise">Raise</option><option value="lower">Lower</option><option value="smooth">Smooth</option></select></label><button type="button" data-action="brushmode" aria-pressed="false">Brush mode: off</button><button type="button" data-action="stroke">Apply brush at numeric position</button><p>In Brush mode, drag on the mesh. Turn it off to orbit. Numeric X/Z and Apply brush offer the same operation without a pointer.</p></fieldset>':''}
@@ -127,6 +130,7 @@ async function mount(host){
   }
  }
  function refresh(){updateFields();
+ if(mode==='materials')for(const b of host.querySelectorAll('[data-material-preset]')){const p=MATERIAL_PRESETS[b.dataset.materialPreset];b.setAttribute('aria-pressed',String(state.color===p.color&&Object.entries(p.params).every(([k,v])=>state.params[k]===v)));}
  if(mode==='character')for(const button of host.querySelectorAll('[data-character-preset]')){const preset=CHARACTER_PRESETS[button.dataset.characterPreset];button.setAttribute('aria-pressed',String(Object.entries(preset.params).every(([key,value])=>state.params[key]===value)&&state.color===preset.color&&state.secondary===preset.secondary));}if(three&&sceneKit)rebuild();dirty=true;host.dataset.revision=String(undo.length);host.dataset.mode=mode;
  const cut=$('[data-action="cut"]');if(cut){cut.textContent=state.cut?'Remove Difference':'Apply Difference';cut.setAttribute('aria-pressed',String(state.cut));}
  const play=$('[data-action="play"]');if(play){play.textContent=playing?'Pause my action':'Play my action';play.setAttribute('aria-pressed',String(playing));}
@@ -149,8 +153,17 @@ async function mount(host){
  $('[data-reflection]').addEventListener('input',e=>{state.reflection=e.target.value;persist();});
  $("[data-app]").value=state.app||'';
  $('[data-app]').addEventListener('input',e=>{state.app=e.target.value.slice(0,100);persist();});
- $('[data-brush]')?.addEventListener('change',e=>{brush=e.target.value;});
- function stroke(x=state.params.brushX,z=state.params.brushZ){edit(()=>{state.strokes.push({type:brush,x,z,radius:state.params.radius,strength:state.params.strength});if(state.strokes.length>400)state.strokes.shift();state.edits=[...new Set([...state.edits,'strength'])];});say(`${brush} stroke applied to mesh vertices. Undo restores the previous surface.`);}
+ function chooseBrush(value){brush=value;const select=$('[data-brush]');if(select)select.value=value;for(const b of host.querySelectorAll('[data-sculpt-tool]'))b.setAttribute('aria-pressed',String(b.dataset.sculptTool===value));}
+ $('[data-brush]')?.addEventListener('change',e=>chooseBrush(e.target.value));
+ for(const b of host.querySelectorAll('[data-sculpt-tool]'))b.addEventListener('click',()=>{chooseBrush(b.dataset.sculptTool);if(!pointerStroke)actions.brushmode();say(`${brush} brush ready. Drag on the surface; hold Shift to smooth.`);});
+ function stroke(x=state.params.brushX,z=state.params.brushZ,type=brush,gesture=false){
+ if(state.strokes.length>=400){say('This surface has reached 400 brush samples. Save or export your work, or undo a stroke before continuing.');return;}
+ if(!gesture||!gestureStarted)checkpoint();
+ if(gesture)gestureStarted=true;
+ state.strokes.push({type,x,z,radius:state.params.radius,strength:state.params.strength});
+ state.edits=[...new Set([...state.edits,'strength'])];state.saved=false;state.captured=false;state.exported=false;persist();refresh();
+ say(`${type} applied · ${state.strokes.length}/400 brush samples. Undo restores the whole drag.`);
+ }
  const actions={
  undo(){if(undo.length){redo.push(clone(state));state=undo.pop();playing=false;persist();refresh();say('Previous design restored.');}},
  redo(){if(redo.length){undo.push(clone(state));state=redo.pop();persist();refresh();say('Design change restored.');}},
@@ -158,7 +171,7 @@ async function mount(host){
  cut(){edit(()=>{state.cut=!state.cut;});say('Through-cut difference updated. Inspect the opening.');},
  snap(){edit(()=>{state.params.offset=Math.round(state.params.offset/state.params.module)*state.params.module;state.snapped=true;state.edits=[...new Set([...state.edits,'offset'])];});say('Wall snapped to the nearest grid module.');},
  stroke(){stroke();},
- brushmode(){pointerStroke=!pointerStroke;if(controls)controls.enabled=!pointerStroke;const b=$('[data-action="brushmode"]');b.setAttribute('aria-pressed',String(pointerStroke));b.textContent='Brush mode: '+(pointerStroke?'on':'off');say(pointerStroke?'Drag on the surface to sculpt. Numeric brush controls also work.':'Camera orbit restored.');},
+ brushmode(){pointerStroke=!pointerStroke;if(controls)controls.enabled=!pointerStroke;if(brushRing)brushRing.visible=false;dirty=true;canvas.style.cursor=pointerStroke?'crosshair':'grab';const b=$('[data-action="brushmode"]');b.setAttribute('aria-pressed',String(pointerStroke));b.textContent='Brush mode: '+(pointerStroke?'on':'off');say(pointerStroke?'Drag on the surface to sculpt. Numeric brush controls also work.':'Camera orbit restored.');},
  key(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);state.keys.push({time:state.params.time,angle:state.params.angle});state.keys.sort((a,b)=>a.time-b.time);state.edits=[...new Set([...state.edits,'angle'])];});say('Your pose is keyed at the selected time.');},
  'remove-key'(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);});say('Keyframe removed at the selected time.');},
  play(){if(state.keys.length<2){say('Add at least two keyframes before playing.');return;}playing=!playing;state.played=true;persist();const b=$('[data-action="play"]');b.textContent=playing?'Pause my action':'Play my action';b.setAttribute('aria-pressed',String(playing));say(playing?'Playing only the keyframes you authored.':'Playback paused.');},
@@ -190,40 +203,64 @@ async function mount(host){
  function checkerTexture(){const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');for(let y=0;y<8;y++)for(let x=0;x<8;x++){ctx.fillStyle=(x+y)%2?state.color:state.secondary;ctx.fillRect(x*32,y*32,32,32);}const t=new three.THREE.CanvasTexture(canvas);t.colorSpace=three.THREE.SRGBColorSpace;t.wrapS=t.wrapT=three.THREE.RepeatWrapping;t.repeat.set(state.params.repeat??1,state.params.repeat??1);return t;}
  function downloadTexture(){texture.image.toBlob(blob=>{if(blob){download(blob,'checker-texture.png');state.exported=true;persist();say('Base tile exported. Repeat count is a material setting in the destination app.');}},'image/png');}
  function rebuild(){if(group){sceneKit.scene.remove(group);disposeDesign(group);}texture?.dispose();texture=checkerTexture();group=buildDesign(three.THREE,state,texture);sceneKit.scene.add(group);if(mode==='character')applyInspection();sceneKit.renderer.setClearColor(state.background);sceneKit.renderer.toneMappingExposure=state.params.exposure??1;
- const angle=(state.params.light??45)*Math.PI/180;sceneKit.light.position.set(Math.cos(angle)*8,state.params.lightHeight??8,Math.sin(angle)*8);sceneKit.light.intensity=state.params.intensity??2;if(sceneKit.fill)sceneKit.fill.intensity=state.params.fill??.7;dirty=true;}
- function fit(){if(!group)return;sceneKit.syncSize();const bounds=new three.THREE.Box3().setFromObject(group),size=bounds.getSize(new three.THREE.Vector3()),center=bounds.getCenter(new three.THREE.Vector3()),radius=mode==='character'?Math.max(size.y/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)),size.x/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)*sceneKit.camera.aspect))*1.32:Math.max(size.length()/2,1)/Math.sin(sceneKit.camera.fov*Math.PI/360)/Math.min(1,sceneKit.camera.aspect)*1.25;controls.target.copy(center);sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...(mode==='character'?[.55,.32,1]:[1,.7,1])).normalize().multiplyScalar(radius));sceneKit.camera.far=Math.max(1000,radius*20);sceneKit.camera.updateProjectionMatrix();controls.update();dirty=true;baseline=radius;state.fitted=true;updateMissions();}
+ const angle=(state.params.light??45)*Math.PI/180;sceneKit.light.position.set(Math.cos(angle)*8,state.params.lightHeight??8,Math.sin(angle)*8);sceneKit.light.intensity=state.params.intensity??2;if(sceneKit.fill)sceneKit.fill.intensity=state.params.fill??.7;if(mode==='materials'){sceneKit.world.intensity=state.params.ambient;sceneKit.rim.intensity=state.params.rim;}dirty=true;}
+ function fit(){if(!group)return;sceneKit.syncSize();const bounds=new three.THREE.Box3().setFromObject(group),size=bounds.getSize(new three.THREE.Vector3()),center=bounds.getCenter(new three.THREE.Vector3()),radius=mode==='character'?Math.max(size.y/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)),size.x/(2*Math.tan(sceneKit.camera.fov*Math.PI/360)*sceneKit.camera.aspect))*1.32:Math.max(size.length()/2,1)/Math.sin(sceneKit.camera.fov*Math.PI/360)/Math.min(1,sceneKit.camera.aspect)*(mode==='materials'?.85:1.25);controls.target.copy(center);sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...(mode==='character'?[.55,.32,1]:[1,.7,1])).normalize().multiplyScalar(radius));sceneKit.camera.far=Math.max(1000,radius*20);sceneKit.camera.updateProjectionMatrix();controls.update();dirty=true;baseline=radius;state.fitted=true;updateMissions();}
  function view(name){if(!controls)return;const center=controls.target,radius=baseline||8,vectors={front:[0,.001,1],side:[1,.001,0],top:[0,1,.001],perspective:[1,.7,1]};sceneKit.camera.position.copy(center).add(new three.THREE.Vector3(...vectors[name]).normalize().multiplyScalar(radius));controls.update();state.views=[...new Set([...state.views,name])];persist();dirty=true;updateMissions();say(name+' view. Object dimensions have not changed.');for(const b of host.querySelectorAll('[data-view]'))b.setAttribute('aria-pressed',String(b.dataset.view===name));}
  for(const b of host.querySelectorAll('[data-view]'))b.addEventListener('click',()=>view(b.dataset.view));
  for(const b of host.querySelectorAll('[data-zoom]'))b.addEventListener('click',()=>{if(!controls)return;sceneKit.camera.position.sub(controls.target).multiplyScalar(b.dataset.zoom==='in'?.8:1.25).add(controls.target);controls.update();state.zoomed=true;updateMissions();dirty=true;});
  $('[data-fit]').addEventListener('click',fit);
  const canvas=$('[data-canvas]');canvas.addEventListener('keydown',e=>{if(!controls)return;const a=sceneKit.camera.position.clone().sub(controls.target),spherical=new three.THREE.Spherical().setFromVector3(a);const keys=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='];if(!keys.includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')spherical.theta-=.15;if(e.key==='ArrowRight')spherical.theta+=.15;if(e.key==='ArrowUp')spherical.phi=Math.max(.05,spherical.phi-.15);if(e.key==='ArrowDown')spherical.phi=Math.min(Math.PI-.05,spherical.phi+.15);if(['+','='].includes(e.key)){spherical.radius*=.9;state.zoomed=true;}if(e.key==='-'){spherical.radius*=1.1;state.zoomed=true;}sceneKit.camera.position.setFromSpherical(spherical).add(controls.target);controls.update();dirty=true;state.orbited=true;updateMissions();});
- function pointerSculpt(e){if(!pointerStroke||!group||mode!=='sculpt')return;const r=canvas.getBoundingClientRect(),ray=new three.THREE.Raycaster();ray.setFromCamera(new three.THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),sceneKit.camera);const hit=ray.intersectObject(group,true)[0];if(hit&&performance.now()-lastStroke>80){lastStroke=performance.now();stroke(hit.point.x,hit.point.z);}}
- let down=false;canvas.addEventListener('pointerdown',e=>{down=true;if(pointerStroke){canvas.setPointerCapture(e.pointerId);pointerSculpt(e);}});canvas.addEventListener('pointermove',e=>{if(down)pointerSculpt(e);});canvas.addEventListener('pointerup',()=>{down=false;});canvas.addEventListener('pointercancel',()=>{down=false;});
+ function pointerSculpt(e,apply=false){
+ if(!pointerStroke||!group||mode!=='sculpt')return;
+ const r=canvas.getBoundingClientRect(),ray=new three.THREE.Raycaster();
+ ray.setFromCamera(new three.THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),sceneKit.camera);
+ const hit=ray.intersectObject(group,true)[0];
+ if(brushRing){brushRing.visible=!!hit;if(hit){brushRing.position.copy(hit.point);brushRing.position.y+=.025;brushRing.scale.setScalar(state.params.radius);}dirty=true;}
+ if(hit&&apply&&(lastStroke===0||performance.now()-lastStroke>80)){
+ lastStroke=performance.now();const type=e.shiftKey?'smooth':e.ctrlKey?(brush==='raise'?'lower':brush==='lower'?'raise':brush):brush;
+ stroke(hit.point.x,hit.point.z,type,true);
+ }
+ }
+ let down=false,activePointer=null;
+ canvas.addEventListener('pointerdown',e=>{if(e.button!==0||!pointerStroke||activePointer!==null)return;down=true;activePointer=e.pointerId;gestureStarted=false;lastStroke=0;canvas.setPointerCapture(e.pointerId);pointerSculpt(e,true);});
+ canvas.addEventListener('pointermove',e=>{if(activePointer===null||e.pointerId===activePointer)pointerSculpt(e,down);});
+ function endStroke(e){if(e.pointerId!==activePointer)return;down=false;activePointer=null;gestureStarted=false;lastStroke=0;}
+ canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);canvas.addEventListener('lostpointercapture',endStroke);
+ canvas.addEventListener('pointerleave',()=>{if(brushRing){brushRing.visible=false;dirty=true;}});
  function render(){if(!sceneKit)return;sceneKit.syncSize();sceneKit.renderer.render(sceneKit.scene,sceneKit.camera);dirty=false;}
  guide();refresh();
  try{
  three=await import(new URL('assets/vendor/three-bundle.min.js',ROOT));const {THREE,OrbitControls}=three;
  sceneKit=createScene(canvas,{THREE,fov:40,far:1000,clearColor:state.background});sceneKit.renderer.toneMapping=THREE.ACESFilmicToneMapping;sceneKit.renderer.outputColorSpace=THREE.SRGBColorSpace;
- sceneKit.scene.add(new THREE.HemisphereLight(0xffffff,0x30343d,2));sceneKit.light=new THREE.DirectionalLight(0xffffff,2);sceneKit.scene.add(sceneKit.light);
- if(mode==='materials'){sceneKit.fill=new THREE.DirectionalLight(0x9bc7e8,.7);sceneKit.fill.position.set(-6,3,-4);sceneKit.scene.add(sceneKit.fill);}
+ sceneKit.world=new THREE.HemisphereLight(0xffffff,0x30343d,2);sceneKit.scene.add(sceneKit.world);sceneKit.light=new THREE.DirectionalLight(0xffffff,2);sceneKit.scene.add(sceneKit.light);
+ if(mode==='materials'){sceneKit.rim=new THREE.DirectionalLight(0xffdcc0,1.2);sceneKit.rim.position.set(-3,5,-5);sceneKit.scene.add(sceneKit.rim);
+ // Broad studio reflection cards make metallic surfaces readable without external assets.
+ const studio=new THREE.Scene();studio.background=new THREE.Color('#333b48');for(const [x,y,z,w,h,power] of [[-4,3,0,3,6,5],[4,4,2,2,5,4],[0,7,0,6,3,3]]){const card=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(power,power,power),side:THREE.DoubleSide}));card.position.set(x,y,z);card.lookAt(0,1,0);studio.add(card);}const pmrem=new THREE.PMREMGenerator(sceneKit.renderer);sceneKit.studioEnvironment=pmrem.fromScene(studio,.08);sceneKit.scene.environment=sceneKit.studioEnvironment.texture;studio.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});pmrem.dispose();
+ sceneKit.fill=new THREE.DirectionalLight(0x9bc7e8,.7);sceneKit.fill.position.set(-6,3,-4);sceneKit.scene.add(sceneKit.fill);}
  if(mode==='character'){
   const rim=new THREE.DirectionalLight(0x5ac8b2,2.2);rim.position.set(-4,5,-5);sceneKit.scene.add(rim);
   const fill=new THREE.DirectionalLight(0xffd3a1,1.4);fill.position.set(4,3,3);sceneKit.scene.add(fill);
   const platform=new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.3,.08,48),new THREE.MeshStandardMaterial({color:0x172630,roughness:.72,metalness:.18}));platform.position.y=-.06;sceneKit.scene.add(platform);
  }
- const grid=new THREE.GridHelper(['print','clearance'].includes(mode)?120:20,20,0x71808e,0x4d5a66);sceneKit.scene.add(grid);
+ const grid=new THREE.GridHelper(['print','clearance'].includes(mode)?120:20,20,0x71808e,0x4d5a66);sceneKit.scene.add(grid);if(mode==='materials')grid.visible=false;
  controls=new OrbitControls(sceneKit.camera,canvas);controls.enableDamping=false;
  controls.addEventListener('change',()=>{dirty=true;if(!state.orbited){state.orbited=true;persist();updateMissions();}});
  canvas.addEventListener('wheel',()=>{state.zoomed=true;updateMissions();},{passive:true});
  canvas.addEventListener('pointerdown',e=>{if(controls&&three){if(state.scheme==='blender')controls.mouseButtons.MIDDLE=e.shiftKey?three.THREE.MOUSE.PAN:three.THREE.MOUSE.ROTATE;else if(state.scheme==='fusion')controls.mouseButtons.MIDDLE=e.shiftKey?three.THREE.MOUSE.ROTATE:three.THREE.MOUSE.PAN;}});
  applyScheme(state.scheme||'tinkercad');
- const axes=new THREE.AxesHelper(['print','clearance'].includes(mode)?12:2);sceneKit.scene.add(axes);
+ const axes=new THREE.AxesHelper(['print','clearance'].includes(mode)?12:2);sceneKit.scene.add(axes);if(mode==='materials')axes.visible=false;
+ if(mode==='sculpt'){
+ const points=Array.from({length:65},(_,i)=>new THREE.Vector3(Math.cos(i/64*Math.PI*2),0,Math.sin(i/64*Math.PI*2)));
+ brushRing=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xffe2a8,depthTest:false,transparent:true,opacity:.95}));brushRing.visible=false;brushRing.renderOrder=10;sceneKit.scene.add(brushRing);
+ }
  rebuild();fit();refresh();
  const observer=new ResizeObserver(()=>{dirty=true;});observer.observe(canvas);
  const intersection=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible)dirty=true;});intersection.observe(host);
  let elapsed=0;loop=window.SimKit.loop((dt,time)=>{if(!visible)return;if(hairRunning&&group?.userData.hairSimulation){group.userData.hairSimulation.update(dt);dirty=true;}if(playing&&group.userData.joint){elapsed+=(dt||0);const t=(elapsed/(state.params.duration||2))%1;group.userData.joint.rotation.z=keyAngle(state.keys,t)*Math.PI/180;dirty=true;}if(dirty)render();},{el:host});
+ if(mode==='rig')setupRigStudio({host,edit,getState:()=>state,say,THREE});
+ if(mode==='materials')setupMaterialStudio({host,id,edit,getState:()=>state,say,render,sceneKit,controls});
  host.dataset.ready='true';say('Scene ready. Make a design choice, inspect it, then test your technique.');
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();playing=false;host.dataset.ready='false';host.dataset.check='revise';$('[data-completion]').textContent='';say('The 3D context was lost. Save your project, reload, or continue in your chosen app.');});
- window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();disposeDesign(group);texture.dispose();sceneKit.dispose();},{once:true});
+ window.addEventListener('pagehide',event=>{if(event.persisted)return;loop?.stop?.();observer.disconnect();intersection.disconnect();controls.dispose();brushRing?.geometry.dispose();brushRing?.material.dispose();disposeDesign(group);texture.dispose();sceneKit.studioEnvironment?.dispose();sceneKit.dispose();},{once:true});
  }catch(error){host.dataset.ready='false';canvas.hidden=true;const fallback=document.createElement('p');fallback.className='d3w-fallback';fallback.textContent='Interactive 3D is unavailable in this browser. The technique steps, numeric design plan, Tool Rosetta and project saving remain available. Complete the model in your chosen app and test it there.';$('.d3w-view').append(fallback);say('3D unavailable. Use the external-app workflow below.');console.warn('3D workshop fallback:',error.message);}
 }

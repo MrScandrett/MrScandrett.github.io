@@ -1,0 +1,27 @@
+import { chromium } from 'playwright';
+import { findChromium } from '../../lib/find-chromium.mjs';
+const browser=await chromium.launch({executablePath:findChromium() || chromium.executablePath(),headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:5501/lessons/3d-design/game-asset-studio/game-asset-character-rigging.html');
+await page.waitForSelector('[data-design3d-workshop][data-ready="true"]');
+await page.locator('[data-param="blend"]').fill('0.8');await page.locator('[data-param="blend"]').dispatchEvent('input');
+await page.locator('[data-rig-pose="70"]').click();
+const [download]=await Promise.all([page.waitForEvent('download'),page.locator('[data-rig-glb]').click()]);await download.saveAs('output/rigging-qa/limb.glb');
+const result=await page.evaluate(async()=>{
+ const {THREE,GLTFLoader}=await import('/assets/vendor/three-bundle.min.js');
+ const {freshState}=await import('/assets/js/design3d/workshops.mjs');
+ const {buildRigExport}=await import('/assets/js/design3d/rig-studio.mjs');
+ const {GLTFExporter}=await import('/assets/vendor/three-extras.min.js');
+ const s=freshState('rig');s.params.angle=70;const {rig,clip}=buildRigExport(THREE,s);
+ const binary=await new GLTFExporter().parseAsync(rig,{binary:true,animations:[clip]});
+ const gltf=await new GLTFLoader().parseAsync(binary,'');let mesh;gltf.scene.traverse(o=>{if(o.isSkinnedMesh)mesh=o;});
+ gltf.scene.updateMatrixWorld(true);mesh.skeleton.update();const before=mesh.getVertexPosition(0,new THREE.Vector3()).clone();
+ const mixer=new THREE.AnimationMixer(gltf.scene);mixer.clipAction(gltf.animations[0]).play();mixer.update(1);gltf.scene.updateMatrixWorld(true);mesh.skeleton.update();
+ const movement=before.distanceTo(mesh.getVertexPosition(0,new THREE.Vector3()));
+ return {bones:mesh.skeleton.bones.map(b=>b.name),clips:gltf.animations.map(a=>a.name),movement,bytes:binary.byteLength};
+});
+await page.screenshot({path:'output/rigging-qa/desktop.png'});
+await page.setViewportSize({width:390,height:844});
+const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+console.log(JSON.stringify({result,overflow,errors}));await browser.close();
+if(result.bones.length!==2||result.movement<.1||errors.length||overflow)process.exitCode=1;

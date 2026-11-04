@@ -50,6 +50,14 @@ Project metadata (display name, student, tags, thumbnail) comes from
 
 ## Checks
 
+- Creation software belongs first inside the lesson's `<main>`, before introductions,
+  history, instructions, and curriculum navigation. Keep the working app visible and
+  usable without opening a disclosure. Put lesson/reference material below it.
+  Register new creation-tool lesson pages in `data/creation-app-pages.json` and run
+  `npm run check:creation-apps`; shared 3D and web-block studios are discovered automatically.
+  Include `assets/css/creation-app.css` and `assets/js/creation-app.js` (with paths
+  adjusted for depth) so every creation workspace has Full screen / Exit full screen.
+
 - `npm run check:integrity` — local references and asset signatures
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci

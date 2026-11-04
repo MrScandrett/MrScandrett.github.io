@@ -36,9 +36,10 @@ body.theme-eliza1966 .site-header { background: #f8fafcf5; border-color: #d1dbe4
 .flag-scene-caption { position: absolute; bottom: 1.5rem; left: 0; right: 0; text-align: center; font-size: .78rem; letter-spacing: .025em; color: #344e63; }
 .pledge-reading { display: flex; flex-direction: column; position: relative; padding: clamp(1.4rem, 3vw, 2.8rem); color: #f7f8fa; background: linear-gradient(145deg, #223c57, #172c43); border-left: 1px solid #ffffff29; }
 .stage-heading { margin: 0; font-family: var(--font-sans); font-size: .9rem; line-height: 1.5; font-weight: 500; color: #cedbe7; }
-.pledge-words { display: flex; align-items: center; flex: 1; padding: 1.8rem 0; }
-.pledge-crawl { margin: 0; font-family: var(--pledge-serif); font-size: clamp(1.8rem, 3vw, 2.9rem); font-weight: 400; line-height: 1.38; letter-spacing: -.015em; color: #fff; text-wrap: pretty; }
-.pledge-crawl.passage-enter { animation: passage-reveal .45s ease both; }
+.pledge-words { position: relative; flex: 1 1 0; min-height: 150px; overflow: hidden; margin: 1.2rem 0; padding: 0; }
+.pledge-crawl { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; margin: 0; font-family: var(--pledge-serif); font-size: clamp(1.8rem, 3vw, 2.9rem); font-weight: 400; line-height: 1.2; letter-spacing: -.015em; color: #fff; text-wrap: pretty; }
+.pledge-crawl > span { display: block; margin-bottom: 0; }
+.pledge-crawl > span:last-child { margin-bottom: 0; }
 @keyframes passage-reveal { from { opacity: 0; } to { opacity: 1; } }
 .pledge-ready { margin: 0 0 .85rem; min-height: 1.5em; color: #d1deea; font-size: .82rem; line-height: 1.5; }
 .pledge-progress { height: 2px; width: 100%; background: #ffffff29; }
@@ -77,7 +78,7 @@ body.theme-eliza1966 .site-header { background: #f8fafcf5; border-color: #d1dbe4
   .flag-scene-caption { bottom: 1rem; font-size: .72rem; }
   .pledge-reading { padding: 1.4rem; border-left: 0; border-top: 1px solid #ffffff29; }
   .pledge-words { padding: 1.4rem 0; }
-  .pledge-crawl { font-size: clamp(1.6rem, 6.5vw, 2.1rem); line-height: 1.4; }
+  .pledge-crawl { font-size: clamp(1.6rem, 6.5vw, 2.1rem); line-height: 1.2; }
   .eliza-app:is(:fullscreen, .presentation-expanded) .flag-stage { grid-template-rows: minmax(170px, 42%) minmax(210px, 1fr); }
 }
 @media (max-height: 500px) and (orientation: landscape) {
@@ -224,7 +225,7 @@ body:has(.presentation-expanded) .site-header { display: none; }
   .eliza-app:is(:fullscreen, .presentation-expanded) .pledge-ready { font-size: .75rem; margin-bottom: .5rem; }
 }
 
-/* Optional NPS view shares the projection with the stationary pledge passages. */
+/* Optional NPS view shares the projection with the rising pledge. */
 .pledge-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin: 0 0 1rem; color: #344b62; }
 .pledge-view-controls label { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-size: .88rem; min-width: 0; }
 .pledge-view-controls select { min-height: 44px; max-width: 100%; min-width: 0; padding: .5rem; border: 1px solid #aebdcb; border-radius: 5px; background: #fff; color: #263f5c; font: inherit; }
@@ -297,3 +298,49 @@ body:has(.presentation-expanded) .site-header { display: none; }
   .eliza-app:is(:fullscreen, .presentation-expanded) .passage-step-controls { margin-bottom:.4rem; }
 }
 @media print { .presentation-setup { display:none; } }
+
+/* Module directory: short summaries lead to focused chapter pages. */
+.module-chapters { scroll-margin-top: 5rem; }
+.module-chapters > h3 { margin: 2rem 0 1rem; font-family: var(--pledge-serif); font-size: 1.5rem; }
+.chapter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
+.chapter-card { display: flex; flex-direction: column; gap: .65rem; padding: 1.25rem; border: 1px solid #cbd5df; border-radius: 8px; background: #fff; color: #20344b; text-decoration: none; }
+.chapter-card:hover { border-color: #304f70; background: #f6f9fc; }
+.chapter-card h4 { margin: 0; font-size: 1.1rem; line-height: 1.4; }
+.chapter-card p { margin: 0; font-size: .9rem; line-height: 1.6; color: #526478; }
+.chapter-card > span { margin-top: auto; padding-top: .5rem; font-size: .85rem; font-weight: 600; color: #304f70; }
+.chapter-pagination { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin: 2rem 0 3rem; padding-top: 1.25rem; border-top: 1px solid #cbd5df; }
+@media (max-width: 900px) { .chapter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) { .chapter-grid { grid-template-columns: 1fr; } }
+
+/* Match the lesson library: chapter panels with numbered lesson indexes. */
+#chapters.module-chapters { padding: 0; overflow: hidden; border: 1px solid #414575; border-radius: 14px; background: #171831; color: #f1f2ff; }
+.history-module-banner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.6rem; background: linear-gradient(120deg, #252951, #242339); border-bottom: 1px solid #414575; }
+.history-module-banner h2 { color: #fff; margin: .3rem 0 .5rem; font-family: var(--font-sans); font-size: clamp(1.4rem, 2.4vw, 2rem); }
+.history-module-banner p { margin: 0; color: #c3c8e3; }
+.history-module-banner .history-eyebrow { color: #b4c7ff; }
+.history-module-banner > span { flex-shrink: 0; padding: .4rem .7rem; border: 1px solid #626598; border-radius: 30px; font-size: .8rem; color: #e0e2ff; }
+.history-module-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem; }
+.history-module-toolbar p { margin: 0; color: #c3c8e3; font-size: .9rem; }
+.history-module-toolbar [role="group"] { display: flex; gap: .3rem; }
+.history-module-toolbar button { border: 1px solid #626598; border-radius: 24px; background: transparent; color: #e5e7ff; padding: .5rem 1rem; font: inherit; cursor: pointer; }
+.history-module-toolbar button[aria-pressed="true"] { background: #dce7ff; color: #1d3051; border-color: #dce7ff; }
+.history-chapter-shortcuts { display: flex; flex-wrap: wrap; gap: .45rem; padding: 0 1rem 1rem; }
+.history-chapter-shortcuts a { color: #cdd5ff; border: 1px solid #414575; border-radius: 5px; padding: .35rem .6rem; font-size: .78rem; text-decoration: none; }
+.history-chapter-index { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; gap: .8rem; padding: 0 1rem 1rem; }
+.history-chapter { min-width: 0; border: 1px solid #414575; border-radius: 12px; background: #1d1e3c; overflow: hidden; scroll-margin-top: 6rem; }
+.history-chapter header { padding: .8rem; border-bottom: 1px solid #414575; }
+.history-chapter h3 { margin: 0 0 .4rem; font: 700 .88rem/1.5 var(--font-sans); text-transform: uppercase; letter-spacing: .04em; color: #cdd0ff; }
+.history-chapter h3 span { display: inline-block; padding: .1rem .35rem; margin-right: .3rem; background: #414575; border-radius: 4px; font-size: .68rem; white-space: nowrap; }
+.history-chapter header p { margin: 0; color: #b8bdd9; font-size: .8rem; line-height: 1.5; }
+.history-chapter ol { margin: 0; padding: .5rem .65rem .65rem 2rem; }
+.history-chapter li { padding: .3rem 0; color: #b9c1ef; font-size: .85rem; }
+.history-chapter li a { display: block; color: #f1f2ff; text-decoration: none; line-height: 1.5; padding: .1rem; }
+.history-chapter li a:hover { color: #b4d7ff; text-decoration: underline; }
+.history-chapter li strong { font-weight: 600; }
+.history-chapter li small { display: none; }
+#chapters[data-view="cards"] .history-chapter-index { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#chapters[data-view="cards"] .history-chapter li { padding: .65rem .25rem; }
+#chapters[data-view="cards"] .history-chapter li + li { border-top: 1px solid #414575; }
+#chapters[data-view="cards"] .history-chapter li small { display: block; margin-top: .35rem; color: #b8bdd9; font-size: .85rem; }
+@media (max-width: 1000px) { .history-chapter-index { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 580px) { .history-module-banner { flex-direction: column; align-items: flex-start; padding: 1.2rem; } .history-chapter-index, #chapters[data-view="cards"] .history-chapter-index { grid-template-columns: 1fr; } .history-module-toolbar { flex-wrap: wrap; } }

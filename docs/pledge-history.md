@@ -84,3 +84,13 @@ provider page. The old CamStreamer Frying Pan flag listing was not admitted:
 [the station operator](https://fpsls.com/stay) says no camera currently operates
 there, despite old listings describing it as live. No accounts, paid services,
 stream extraction, proxying, or archived footage presented as live are involved.
+
+## Module chapters
+
+The pledge page is now the American History module home. It keeps the flag
+presentation and daily history reader, followed by a compact chapter directory.
+The illustrated era sections, art gallery, presidents gallery, and people pathway
+live in standalone pages under `lessons/american-history/`, alongside lessons on
+the pledge and national symbols and on states. Chapter pages include return and
+previous/next navigation. Historical captions, image credits, and lightbox markup
+are retained. Presidents data loads only on the presidents lesson.

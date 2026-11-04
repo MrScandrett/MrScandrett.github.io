@@ -2012,6 +2012,13 @@
     '<div class="bpl-practice">' + checkMarkup() + reflectMarkup() + '</div>' +
     '<nav class="bpl-nav" aria-label="Bible pathway lesson navigation">' + link(lessons[index - 1], 'prev') + '<a class="bpl-hub" href="bible-foundations-pathway.html">Pathway hub</a>' + link(lessons[index + 1], 'next') + '</nav>';
 
+  // Optional page-owned genealogy, placed beside the Scripture reading.
+  var familyTemplate = document.querySelector('template[data-bible-family-tree]');
+  if (familyTemplate) {
+    main.querySelector('.bpl-reader').after(familyTemplate.content.cloneNode(true));
+    if (window.ClassroomOSFamilyTree) window.ClassroomOSFamilyTree.scan(main);
+  }
+
   var lensButtons = Array.prototype.slice.call(main.querySelectorAll('.bpl-lens'));
   var workspace = main.querySelector('.bpl-workspace');
   function selectLens(i) {

@@ -7,8 +7,30 @@
   const hold = document.getElementById('hold');
   let round = 0, yours = 0, theirs = 0, previous = 'help';
   const labels = { help: 'Help', hold: 'Hold back' };
+  function updateDisplay(action, other) {
+    document.getElementById('your-total').textContent = yours;
+    document.getElementById('partner-total').textContent = theirs;
+    document.getElementById('shared-total').textContent = yours + theirs;
+    document.querySelectorAll('.gt-rounds span').forEach((dot, index) => {
+      dot.toggleAttribute('data-played', index < round);
+    });
+    document.querySelector('.gt-rounds').setAttribute('aria-label', `${round} of 8 rounds completed`);
+    const insight = document.getElementById('game-insight');
+    if (!round) {
+      insight.textContent = 'Make your first move. Watch how today’s choice changes your partner’s next response.';
+      return;
+    }
+    const outcomes = {
+      'help-help': 'Mutual help: 6 shared points. Both players benefit together.',
+      'help-hold': 'You helped; your partner held back. The 5 shared points went to your partner.',
+      'hold-help': 'You held back; your partner helped. You gained 5, but the shared total is lower than mutual help.',
+      'hold-hold': 'Both held back: just 2 shared points. Individually safe can be collectively costly.'
+    };
+    insight.textContent = outcomes[`${action}-${other}`] + (round === 8 ? ` Experiment total: ${yours + theirs}; eight rounds of mutual help would total 48.` : partner.value === 'mirror' ? ` Next round, the reciprocator will ${labels[action].toLowerCase()}.` : '');
+  }
   function reset() {
     round = yours = theirs = 0; previous = 'help';
+    updateDisplay();
     history.replaceChildren(); help.disabled = hold.disabled = false;
     status.textContent = 'Round 0 of 8. Your score: 0. Partner’s score: 0.';
   }
@@ -22,6 +44,7 @@
       const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
     });
     history.append(row);
+    updateDisplay(action, other);
     status.textContent = `Round ${round} of 8. You: ${labels[action]}. Partner: ${labels[other]}. Your score: ${yours}. Partner’s score: ${theirs}.` + (round === 8 ? ' Experiment complete. Reset to compare another strategy.' : '');
     help.disabled = hold.disabled = round === 8;
   }
@@ -66,4 +89,20 @@
     document.getElementById('protected-value').value = '';
     feedback.textContent = 'Choose an approach, then reveal the points.';
   });
+})();
+
+// Fix one player's choice so the comparison changes only one variable at a time.
+(() => {
+  const buttons = document.querySelectorAll('[data-partner]');
+  function show(choice) {
+    buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.partner === choice)));
+    document.querySelectorAll('.gt-payoffs tbody tr').forEach(row => {
+      [...row.querySelectorAll('td')].forEach((cell, index) => cell.classList.toggle('gt-selected', index === (choice === 'help' ? 0 : 1)));
+    });
+    document.getElementById('best-response').textContent = choice === 'help'
+      ? 'Compare your points: help earns 3; hold back earns 5. Your best response is hold back.'
+      : 'Compare your points: help earns 0; hold back earns 1. Your best response is still hold back. That is why it is strictly dominant in this one-round model.';
+  }
+  buttons.forEach(button => button.addEventListener('click', () => show(button.dataset.partner)));
+  show('help');
 })();

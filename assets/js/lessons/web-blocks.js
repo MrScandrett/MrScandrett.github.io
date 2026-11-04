@@ -23,6 +23,7 @@
     return lab;
   }
   start.addEventListener('click', () => open().catch(() => {}));
+  if (section.closest('[data-creation-app]')) open().catch(() => {});
   // Only actual code examples; directory trees, commands and planning prompts remain prose.
   let number = 0;
   document.querySelectorAll('pre').forEach(pre => {

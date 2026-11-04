@@ -1,4 +1,4 @@
-/* Measured passages keep the flag unobscured and the words stationary. */
+/* A continuous rising pledge, with classroom pause and pace controls. */
 (() => {
   'use strict';
   const stage = document.getElementById('pledgeStage');
@@ -25,8 +25,26 @@
     'one Nation under God, indivisible,',
     'with liberty and justice for all.'
   ];
-  // Give the longer opening passage more time; total presentation is 28 seconds.
-  const ends = [9, 16, 22, 28];
+  text.replaceChildren(...passages.map(words => {
+    const block = document.createElement('span');
+    block.textContent = words;
+    return block;
+  }));
+  const readingWindow = text.parentElement;
+  function positionText() {
+    const height = readingWindow.clientHeight;
+    const startY = height * .25;
+    const endY = height * .75 - text.offsetHeight;
+    const fraction = elapsed / 16;
+    const selected = text.children[Math.max(0, passage)];
+    const y = isManual() || reducedMotion.matches
+      ? height * .25 - selected.offsetTop
+      : startY + (endY - startY) * fraction;
+    text.style.transform = `translateY(${y}px)`;
+  }
+  new ResizeObserver(positionText).observe(readingWindow);
+  // Give the longer opening passage more time; total presentation is 16 seconds.
+  const ends = [5.1, 9.1, 12.6, 16];
   const pace = document.getElementById('presentationPace');
   const passageButtons = [...document.querySelectorAll('[data-passage]')];
   const previous = document.getElementById('btnPrevious');
@@ -58,12 +76,13 @@
     elapsed = index === 0 ? 0 : ends[index - 1];
     passage = -1;
     start();
-    setProgress(elapsed / 28 * 100);
+    setProgress(elapsed / 16 * 100);
   }
   passageButtons.forEach((button, index) => button.addEventListener('click', () => goToPassage(index)));
   previous.addEventListener('click', () => goToPassage(Math.max(0, passage - 1)));
   next.addEventListener('click', () => passage === 3 ? finish() : goToPassage(passage + 1));
   pace.addEventListener('change', () => {
+    positionText();
     if (passage >= 0 && stage.dataset.crawl !== 'finished') {
       status.textContent = `${stage.dataset.crawl === 'paused' ? 'Paused · ' : ''}Passage ${passage + 1} of 4${isManual() ? ' · Advance when ready' : ''}`;
     }
@@ -102,14 +121,12 @@
     const index = Math.min(ends.findIndex(end => elapsed < end), passages.length - 1);
     if (index < 0 || index === passage) return;
     passage = index;
-    text.textContent = passages[index];
-    text.classList.remove('passage-enter');
-    void text.offsetWidth;
-    text.classList.add('passage-enter');
+    positionText();
     status.textContent = `Passage ${index + 1} of ${passages.length}${isManual() ? ' · Advance when ready' : ''}`;
     updateControls();
   }
   function setProgress(value) {
+    positionText();
     progress.style.width = `${value}%`;
     progressBar.setAttribute('aria-valuenow', String(Math.round(value)));
   }
@@ -122,6 +139,7 @@
     }
     stage.dataset.crawl = 'playing';
     updatePassage();
+    positionText();
     status.textContent = `Passage ${passage + 1} of ${passages.length}${isManual() ? ' · Advance when ready' : ''}`;
     play.textContent = 'Start presentation';
     updateControls();
@@ -134,10 +152,10 @@
   }
   loop = SimKit.loop(dt => {
     if (stage.dataset.crawl !== 'playing') return;
-    if (isManual()) return;
-    elapsed = Math.min(28, elapsed + dt / Number(pace.value));
-    setProgress(elapsed / 28 * 100);
-    if (elapsed < 28) updatePassage();
+    if (isManual() || reducedMotion.matches) return;
+    elapsed = Math.min(16, elapsed + dt / Number(pace.value));
+    setProgress(elapsed / 16 * 100);
+    if (elapsed < 16) updatePassage();
     else {
       finish();
     }

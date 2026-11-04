@@ -26,9 +26,44 @@
   function path() { const p=platforms[$('os').value]; return p.home+(cwd.length?(win()?'\\':'/')+cwd.join(win()?'\\':'/'):''); }
   function prompt() { return win()?`PS ${path()}> `:`student:${path()}$ `; }
   function write(s) { $('terminal-output').textContent += s+'\n'; $('terminal-output').scrollTop=$('terminal-output').scrollHeight; }
+  const steps = [
+    ['documents','Enter Documents','cd Documents'],
+    ['create','Create PracticeLab',()=>win()?'New-Item -ItemType Directory PracticeLab':'mkdir PracticeLab'],
+    ['enter','Enter PracticeLab','cd PracticeLab'],
+    ['file','Create notes.txt',()=>win()?'New-Item -ItemType File notes.txt':'touch notes.txt'],
+    ['list','List and find notes.txt',()=>win()?'Get-ChildItem':'ls'],
+    ['return','Return to Documents','cd ..']
+  ];
+  function renderPractice() {
+    $('current-path').textContent=path();
+    const next=steps.find(([key])=>!completed.has(key));
+    $('mission-steps').replaceChildren(...steps.map(([key,label])=>{
+      const li=document.createElement('li');li.textContent=label+(completed.has(key)?' ✓':'');
+      li.dataset.complete=String(completed.has(key));
+      if(next&&next[0]===key)li.setAttribute('aria-current','step');return li;
+    }));
+    const tree=[];
+    function branch(dir,indent) {
+      const name=dir?dir.split('/').pop():platforms[$('os').value].home;
+      tree.push(indent+name+'/'+(cwd.join('/')===dir?' ●':''));
+      [...dirs,...files].filter(item=>item&&item!==dir&&item.split('/').slice(0,-1).join('/')===dir).sort().forEach(item=>{
+        if(dirs.has(item))branch(item,indent+'  ');else tree.push(indent+'  '+item.split('/').pop());
+      });
+    }
+    branch('','');$('practice-tree').textContent=tree.join('\n');
+    $('mission-hint').textContent='';
+    $('terminal-status').textContent=completed.size===6?'6 / 6 — Mission complete! Explain how your location changed to a partner.':`${completed.size} / 6 mission steps complete.`;
+  }
+  $('show-hint').addEventListener('click',()=>{
+    const next=steps.find(([key])=>!completed.has(key));
+    if(!next){$('mission-hint').textContent='All done! Use the folder tree to explain your journey.';return;}
+    const expected={documents:'',create:'Documents',enter:'Documents',file:'Documents/PracticeLab',list:'Documents/PracticeLab',return:'Documents/PracticeLab'}[next[0]];
+    if(cwd.join('/')!==expected){$('mission-hint').textContent='You took a detour. Use cd .. to go up, or '+(win()?'cd $HOME':'cd ~')+' to return home, then enter the folders shown in the tree. Your next step needs '+(expected||'your home folder')+'.';return;}
+    $('mission-hint').textContent='Try: '+(typeof next[2]==='function'?next[2]():next[2])+'. Predict what will change before pressing Enter.';
+  });
   function reset() {
     cwd=[]; dirs=new Set(['','Documents']);files=new Set();completed=new Set();history=[];historyIndex=0;
-    $('terminal-output').textContent='Practice session. No commands reach your computer.\n';$('terminal-status').textContent='0 / 6 mission steps complete.';$('command').value='';
+    $('terminal-output').textContent='Practice session. No commands reach your computer.\n';$('terminal-status').textContent='0 / 6 mission steps complete.';$('command').value='';renderPractice();
   }
   function buildPrompt() { $('ai-prompt').value=`I am a beginner using ${platforms[$('os').value].name}. My goal: ${$('goal').value.trim() || 'organize my practice files'}. I am working in a new empty folder I own; ask me to confirm its path first. Give one command at a time. Explain every argument and option, expected output, affected paths, and whether it writes, overwrites or deletes. Start with a read-only check. Use no administrator access, downloads, recursive deletion or force flags. Show how I can verify the result in my file manager. If you are unsure about my shell or file locations, ask rather than guess.`; }
   function update() {
@@ -76,7 +111,7 @@
     if((cmd==='clear'&&!win()||cmd==='Clear-Host'&&win())&&args.length===0){$('terminal-output').textContent='';return 'Display cleared; practice files are unchanged.';}
     return 'Not supported here. Use the selected reference’s navigation and creation commands. Copy, rename, reading, help, absolute paths and deletion are outside this small simulator.';
   }
-  $('terminal-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('command').value.trim();if(!raw)return;history.push(raw);historyIndex=history.length;write(prompt()+raw);write(run(raw));$('command').value='';$('terminal-status').textContent=completed.size===6?'6 / 6 — Mission complete! Explain how your location changed to a partner.':`${completed.size} / 6 mission steps complete.`;});
+  $('terminal-form').addEventListener('submit',e=>{e.preventDefault();const raw=$('command').value.trim();if(!raw)return;history.push(raw);historyIndex=history.length;write(prompt()+raw);write(run(raw));$('command').value='';renderPractice();});
   $('command').addEventListener('keydown',e=>{if(e.key==='ArrowUp'&&history.length){e.preventDefault();historyIndex=Math.max(0,historyIndex-1);e.target.value=history[historyIndex];}if(e.key==='ArrowDown'){e.preventDefault();historyIndex=Math.min(history.length,historyIndex+1);e.target.value=history[historyIndex]||'';}});
   $('os').addEventListener('change',update);$('reset-terminal').addEventListener('click',reset);$('build-prompt').addEventListener('click',buildPrompt);
   $('quiz').addEventListener('submit',e=>{e.preventDefault();const data=new FormData(e.target);const explanations=['cd .. moves to the parent.','Match the shell and verify effects.','A new extension does not convert data.','Check location, targets and effects first.'];let score=0;const feedback=[];['a','b','b','a'].forEach((answer,i)=>{if(data.get('q'+(i+1))===answer)score++;else feedback.push(`${i+1}: ${explanations[i]}`);});$('quiz-result').textContent=`${score} / 4. `+(score===4?'Ready for your partner demonstration.':feedback.join(' '));});

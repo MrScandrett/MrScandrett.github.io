@@ -134,13 +134,14 @@
     host.append(nav);
     const workshop = document.querySelector('[data-design3d-workshop]');
     const handoff = workshop && handoffs[workshop.dataset.design3dWorkshop];
-    if (handoff && host.nextElementSibling === workshop) {
+    if (handoff && (host.nextElementSibling === workshop || host.hasAttribute('data-project-after'))) {
       const section = document.createElement('section');
       section.className = 'd3-project-bridge';
       section.setAttribute('aria-label', 'Desk helper project connection');
       const listItems = handoff.actions.map(action => `<li>${action}</li>`).join('');
       section.innerHTML = `<div class="d3-project-bridge-head"><p>${handoff.label}</p><h2>Try the skill, then apply it</h2></div><div class="d3-project-bridge-body"><div><h3>Design question</h3><p>${handoff.question}</p><ol>${listItems}</ol></div><div class="d3-project-evidence"><h3>Keep as evidence</h3><p>${handoff.evidence}</p><p>The workshop sample is practice. Keep building your own helper in <a href="${new URL('workbench.html?new=product', root)}">Workbench</a>, physical materials, or your modeling app.</p></div></div><nav aria-label="Project steps"><a href="${new URL(home + '#first-project', root)}">First project</a><a href="${new URL('lessons/3d-design/' + handoff.next, root)}">${handoff.nextLabel}</a></nav>`;
-      workshop.before(section);
+      if (host.hasAttribute('data-project-after')) host.after(section);
+      else workshop.before(section);
     }
     const ref = references[location.pathname.split('/').pop()];
     if (ref || host.dataset.design3dRoute === 'reference') {
