@@ -11,8 +11,8 @@
   if (!root) return;
 
   var script = document.currentScript;
-  var dataUrl = new URL('../data/presidents.json', script ? script.src : location.href).href;
-  var imgBase = new URL('../assets/images/presidents/', script ? script.src : location.href).href;
+  var dataUrl = new URL('../../data/presidents.json', script ? script.src : location.href).href;
+  var imgBase = new URL('../images/presidents/', script ? script.src : location.href).href;
 
   var grid = root.querySelector('#hp-grid');
   var layer = document.getElementById('hall-layer') || root;
@@ -382,7 +382,7 @@
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
-  });
+  }, true);   // capture: see the lightbox as open before its own Escape closes it
   modeSel.addEventListener('change', applyMode);
   eraBtns.forEach(function (b) { b.addEventListener('click', function () { applyEra(b.dataset.hpEra); }); });
 
