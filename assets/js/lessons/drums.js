@@ -956,7 +956,7 @@
       var icon = htmlEl('span', 'dr-chapter-emoji', chapterIcons[section.id] || '🎵', button);
       icon.setAttribute('aria-hidden', 'true');
       var copy = htmlEl('span', 'dr-chapter-copy', null, button);
-      htmlEl('span', 'dr-chapter-kicker', 'Chapter ' + number + ' · ' + category, copy);
+      htmlEl('span', 'dr-chapter-kicker', (/^\d+$/.test(number) ? 'Chapter ' + number : 'Studio') + ' · ' + category, copy);
       htmlEl('span', 'dr-chapter-title', title, copy);
       htmlEl('span', 'dr-chapter-action', 'Expand chapter', button);
       section.classList.add('dr-chapter', 'is-collapsed');
