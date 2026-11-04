@@ -56,6 +56,15 @@ export function watchLayout(s) {
   };
   // Deferred a frame: changing data-layout resizes the editor, which would re-enter the observer.
   new ResizeObserver(() => { if (!frame) frame = requestAnimationFrame(apply); }).observe(r);
+  // A phone turned sideways has ~300px of height: the page chrome alone would eat it, so fill the screen
+  // (no user gesture here, so this is the CSS fill, not browser full screen) when the editor is on screen.
+  if (coarse.matches && typeof matchMedia === 'function') {
+    const sideways = matchMedia('(orientation: landscape) and (max-height: 560px)');
+    // Remember whether it was on screen *before* the turn: the reflow can scroll it away.
+    let seen = false;
+    new IntersectionObserver((es) => { seen = es[es.length - 1].isIntersecting; }, { threshold: 0.25 }).observe(r);
+    sideways.addEventListener?.('change', (e) => { if (e.matches && r.isConnected && !s.maximized && seen) setMaximized(s, true); });
+  }
   apply();
 }
 
