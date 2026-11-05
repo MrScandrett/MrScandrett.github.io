@@ -11,6 +11,7 @@ const storageKey = 'classroomos-music-v1';
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey)) || {}; } catch {}
 let tracks = [], composers = [], index = 0, shuffle = saved.shuffle === true;
+let loadingLibrary = false;
 let repeat = ['one', 'all'].includes(saved.repeatMode) ? saved.repeatMode : saved.repeat === true ? 'all' : 'off';
 let dockSize = saved.dockSize === 'tiny' ? 'tiny' : 'compact';
 let sources = [], sourceIndex = 0, wantsPlayback = false;
@@ -41,33 +42,35 @@ function setButton(button, label, path) {
   button.querySelector('path').setAttribute('d', path);
 }
 function save() {
+  if (!current()) return;
   const time = noise ? saved.time : audio.currentTime || pendingTime;
-  try { localStorage.setItem(storageKey, JSON.stringify({ track: current()?.id, time, noise, volume: audio.volume, shuffle, repeat: repeat !== 'off', repeatMode: repeat, dockSize })); } catch {}
+  try { localStorage.setItem(storageKey, JSON.stringify({ track: current().id, time, noise, volume: audio.volume, muted: audio.muted, shuffle, repeat: repeat !== 'off', repeatMode: repeat, dockSize })); } catch {}
   saved.time = time;
 }
 function snapshot() { return { track: noise ? noiseTrack(noise) : current(), playing: !audio.paused, volume: audio.volume }; }
 function update() {
   const playing = !audio.paused;
+  for (const id of ['music-play', 'music-next', 'music-previous']) $(id).disabled = !current() && !noise;
   $('site-player').dataset.playing = String(playing);
   $('music-play').querySelector('path').setAttribute('d', playing ? 'M8 5v14M16 5v14' : 'm8 5 11 7-11 7Z');
   $('music-play').setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
   $('music-play').title = playing ? 'Pause music' : 'Play music';
   $('music-shuffle').setAttribute('aria-pressed', String(shuffle));
   $('music-repeat').setAttribute('aria-pressed', String(repeat !== 'off'));
-  audio.loop = repeat === 'one';
-  const loopLabel = repeat === 'off' ? 'Loop off. Click to loop this recording.' : repeat === 'one' ? 'Loop this recording. Click to loop all recordings.' : 'Loop all recordings. Click to turn looping off.';
-  $('music-repeat').setAttribute('aria-label', loopLabel);
+  $('music-shuffle').disabled = $('music-repeat').disabled = !current() || !!noise;
+  audio.loop = !noise && repeat === 'one';
+  const loopLabel = noise ? 'Noise plays continuously' : `Loop: ${repeat === 'one' ? 'this recording' : repeat === 'all' ? 'all recordings' : 'off'}`;
   $('music-repeat').title = loopLabel;
   const loopBadge = $('music-repeat').querySelector('.music-loop-mode');
-  loopBadge.hidden = repeat === 'off';
+  loopBadge.hidden = !!noise || repeat === 'off';
   loopBadge.textContent = repeat === 'one' ? '1' : 'all';
-  $('music-feature-state').textContent = !current() ? 'Ready to play' : playing ? 'Now playing' : audio.currentTime > 0 ? 'Paused' : 'Up next';
+  $('music-feature-state').textContent = playing ? 'Now playing' : audio.currentTime > 0 ? 'Paused' : 'Ready to play';
   document.querySelectorAll('.music-noise-color').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.noise === noise)));
   $('music-mute').setAttribute('aria-pressed', String(audio.muted));
-  $('music-mute').setAttribute('aria-label', audio.muted ? 'Unmute' : 'Mute');
   $('music-mute').title = audio.muted ? 'Unmute' : 'Mute';
-  $('player-volume').style.setProperty('--music-progress', `${audio.muted ? 0 : audio.volume * 100}%`);
-  $('music-repeat-description').textContent = `Loop: ${repeat === 'one' ? 'this recording' : repeat === 'all' ? 'all recordings' : 'off'}`;
+  $('player-volume').setAttribute('aria-valuetext', `${Math.round(audio.volume * 100)} percent`);
+  $('player-volume').style.setProperty('--music-progress', `${audio.volume * 100}%`);
+  $('music-repeat-description').textContent = loopLabel;
   document.querySelectorAll('.music-track').forEach(button => button.setAttribute('aria-current', String(!noise && button.dataset.track === current()?.id)));
   if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
   window.dispatchEvent(new CustomEvent('site-music-change', { detail: snapshot() }));
@@ -78,31 +81,34 @@ function classroomRecording() {
   return alternatives.find(track => track.id === defaultTrack) || alternatives[0];
 }
 function status(message, offerClassroom = false) {
+  if ($('music-announcement').textContent !== message) $('music-announcement').textContent = message;
   $('music-status').textContent = message;
   const copy = offerClassroom && classroomRecording();
   $('music-classroom-copy').hidden = !copy;
 }
 function expand(value, focus = false) {
+  const focusInLibrary = $('music-library').contains(document.activeElement);
   $('music-library').hidden = !value;
+  $('site-player').classList.toggle('has-library', value);
   $('music-library-toggle').setAttribute('aria-expanded', String(value));
   const tiny = !value && dockSize === 'tiny';
   $('site-player').classList.toggle('is-tiny', tiny);
-  $('music-expand').setAttribute('aria-expanded', String(!tiny));
   setButton($('music-expand'), tiny ? 'Restore compact player' : 'Collapse to single row', tiny ? icons.grow : icons.shrink);
   $('music-library-toggle').setAttribute('aria-label', value ? 'Minimize music library' : 'Expand music library');
   $('music-library-toggle').title = value ? 'Minimize music library' : 'Expand music library';
   if (!value) maximize(false);
-  if (focus) (value ? $('music-search') : $('music-library-toggle')).focus();
+  if (value && focus) $('music-library-title').focus();
+  if (!value && (focus || focusInLibrary)) $('music-library-toggle').focus();
 }
 async function play() {
   if (!current() && !noise) return;
   const request = ++playRequest;
   wantsPlayback = true;
-  status(noise ? '' : 'Loading recording…');
+  status(noise ? 'Starting noise generator…' : 'Loading recording…');
   try {
+    let noiseReady;
     if (noise) {
-      const stream = noiseStream();
-      if (audio.srcObject !== stream) audio.srcObject = stream;
+      noiseReady = prepareNoise();
     } else if (audio.error) {
       // A fresh Play tap retries the preferred source after a network or decode failure.
       pendingTime = audio.currentTime || pendingTime;
@@ -112,17 +118,25 @@ async function play() {
     // paused flips as soon as play() is called; show it now rather than when the play event arrives.
     const starting = audio.play();
     update();
-    await starting;
+    await Promise.all([starting, noiseReady]);
     if (request === playRequest) status('');
   } catch (error) {
-    if (request !== playRequest || error.name === 'AbortError') return;
+    if (request !== playRequest) return;
     if (error.name === 'NotAllowedError') {
       wantsPlayback = false;
       status('Tap Play to start listening on this device.');
       expand(true);
+    } else if (noise) {
+      pause();
+      const engine = noiseEngine;
+      noiseEngine = null;
+      audio.srcObject = null;
+      engine?.ctx.close().catch(() => {});
+      status('The noise generator could not start. Tap Play to retry or choose a recording.');
+      expand(true);
     } else if (!audio.error) {
       wantsPlayback = false;
-      status('This recording could not start. Tap Play to retry or choose another recording.', !noise);
+      status('This recording could not start. Tap Play to retry or choose another recording.', true);
       expand(true);
     }
     update();
@@ -131,31 +145,30 @@ async function play() {
 function pause() { ++playRequest; wantsPlayback = false; audio.pause(); status(''); update(); }
 // Noise is computed by an AudioWorklet and handed to the same <audio> element as a live stream,
 // so play/pause, volume, mute and the lock-screen controls work exactly as they do for recordings.
-function noiseStream() {
+function prepareNoise() {
   if (!noiseEngine) {
     const ctx = new AudioContext();
     noiseEngine = { ctx, dest: ctx.createMediaStreamDestination(), node: null, color: null,
       ready: ctx.audioWorklet.addModule(new URL('noise-generator.worklet.js', import.meta.url)) };
   }
   const engine = noiseEngine;
-  engine.ctx.resume();
-  if (engine.color !== noise) {
-    const color = engine.color = noise;
-    engine.ready.then(() => {
-      if (engine.color !== color) return;
-      engine.node?.disconnect();
-      engine.node = new AudioWorkletNode(engine.ctx, 'noise-generator', { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { color } });
-      engine.node.connect(engine.dest);
-    }).catch(() => { status('This browser could not start the noise generator. Choose a recording instead.'); pause(); });
-  }
-  return engine.dest.stream;
+  const color = noise;
+  const ready = Promise.all([engine.ready, engine.ctx.resume()]).then(() => {
+    if (noiseEngine !== engine || noise !== color || !wantsPlayback || engine.color === color) return;
+    engine.node?.disconnect();
+    engine.node = new AudioWorkletNode(engine.ctx, 'noise-generator', { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { color } });
+    engine.node.connect(engine.dest);
+    engine.color = color;
+  });
+  if (audio.srcObject !== engine.dest.stream) audio.srcObject = engine.dest.stream;
+  return ready;
 }
 function stopNoise() {
   noise = null;
   if (!noiseEngine) return;
   noiseEngine.node?.disconnect();
   noiseEngine.node = noiseEngine.color = null;
-  noiseEngine.ctx.suspend();
+  noiseEngine.ctx.suspend().catch(() => {});
 }
 function show({ title, composer, art, hue, detail, credit, source, lesson, album }) {
   $('playing-title').textContent = $('feature-title').textContent = title;
@@ -163,7 +176,6 @@ function show({ title, composer, art, hue, detail, credit, source, lesson, album
   $('music-art').textContent = $('music-art-large').textContent = art;
   $('site-player').style.setProperty('--music-hue', hue);
   document.querySelector('.music-now').title = `${title} — ${composer}`;
-  measureMarquee();
   $('playing-detail').textContent = detail;
   $('playing-credit').textContent = credit;
   $('recording-source').hidden = !source;
@@ -185,7 +197,9 @@ function select(id, start = true, time = 0) {
   ++playRequest;
   audio.pause();
   if (noise) { stopNoise(); audio.srcObject = null; }
-  index = next; wantsPlayback = false; pendingTime = Math.max(0, Number(time) || 0);
+  index = next; wantsPlayback = false;
+  const position = Number(time);
+  pendingTime = Number.isFinite(position) ? Math.max(0, position) : 0;
   const track = current();
   sources = [track.classroomCopy && new URL(track.classroomCopy, base).href, track.src, track.fallback].filter(Boolean);
   sourceIndex = 0;
@@ -221,20 +235,11 @@ function step(direction, start = !audio.paused) {
 }
 function toggle() { if (audio.paused) play(); else pause(); }
 function setVolume(value) {
+  audio.muted = false;
   audio.volume = Math.min(1, Math.max(0, Number(value) || 0));
   $('player-volume').value = String(audio.volume);
   update();
 }
-function measureMarquee() {
-  const viewport = document.querySelector('.music-marquee');
-  const text = document.querySelector('.music-marquee-text');
-  const distance = Math.max(0, text.scrollWidth - viewport.clientWidth);
-  viewport.classList.toggle('is-overflowing', distance > 1);
-  viewport.style.setProperty('--marquee-distance', `${distance}px`);
-  viewport.style.setProperty('--marquee-duration', `${Math.max(12, distance / 24)}s`);
-}
-if ('ResizeObserver' in window) new ResizeObserver(measureMarquee).observe(document.querySelector('.music-marquee'));
-else addEventListener('resize', measureMarquee);
 function syncVRControls() {
   try { $('site-player').classList.toggle('has-vr-controls', !!frame.contentWindow.ClassroomOSVR?.enabled()); } catch {}
 }
@@ -250,7 +255,7 @@ function syncNavigation() {
   try { document.title = `${frame.contentDocument.title} · Music`; } catch {}
   $('music-exit').href = url;
 }
-window.SiteMusic = { isHost: true, snapshot, toggle, pause, select, setVolume, expand, syncNavigation, open: () => expand(true), previous: () => step(-1), next: () => step(1) };
+window.SiteMusic = { isHost: true, snapshot, toggle, pause, select, setVolume, expand, syncNavigation, open: () => expand(true, true), previous: () => step(-1), next: () => step(1) };
 frame.addEventListener('load', () => {
   syncNavigation();
   syncVRControls();
@@ -273,8 +278,16 @@ frame.addEventListener('load', () => {
 });
 frame.src = browseURL.href;
 $('music-exit').href = browseURL;
-$('music-exit').addEventListener('click', () => { pause(); save(); });
-$('recording-lesson').addEventListener('click', event => { event.preventDefault(); frame.src = $('recording-lesson').href; expand(false); });
+$('music-exit').addEventListener('click', event => {
+  if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) pause();
+});
+$('recording-lesson').addEventListener('click', event => {
+  if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  frame.src = event.currentTarget.href;
+  expand(false);
+  frame.focus();
+});
 $('music-play').addEventListener('click', toggle);
 $('music-classroom-copy').addEventListener('click', () => {
   const track = classroomRecording();
@@ -293,42 +306,64 @@ $('music-expand').addEventListener('click', () => {
 $('music-minimize').addEventListener('click', () => expand(false, true));
 function maximize(active) {
   $('site-player').classList.toggle('is-maximized', active);
+  frame.inert = active;
   $('music-maximize').setAttribute('aria-pressed', String(active));
-  setButton($('music-maximize'), active ? 'Restore size' : 'Maximize', active ? icons.restore : icons.maximize);
-  // The maximized shelf scrolls on its own, so bring the current recording into view there.
-  if (active) document.querySelector('.music-track[aria-current="true"]')?.scrollIntoView({ block: 'center' });
+  $('music-maximize').title = active ? 'Restore library size' : 'Maximize library';
+  $('music-maximize').querySelector('path').setAttribute('d', active ? icons.restore : icons.maximize);
 }
 $('music-maximize').addEventListener('click', () => maximize(!$('site-player').classList.contains('is-maximized')));
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('music-library').hidden) expand(false, true); });
+$('site-player').addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.key !== 'Escape' || $('music-library').hidden) return;
+  if (event.target === $('music-search') && event.target.value) {
+    event.preventDefault();
+    event.target.value = '';
+    renderTracks();
+    return;
+  }
+  expand(false, true);
+});
 $('music-shuffle').addEventListener('click', () => { shuffle = !shuffle; update(); });
 $('music-repeat').addEventListener('click', () => { repeat = repeat === 'off' ? 'one' : repeat === 'one' ? 'all' : 'off'; update(); });
-$('player-volume').addEventListener('input', event => { audio.muted = false; setVolume(event.target.value); });
+$('player-volume').addEventListener('input', event => setVolume(event.target.value));
 $('music-mute').addEventListener('click', () => { audio.muted = !audio.muted; update(); });
 $('music-seek').addEventListener('input', event => {
-  if (Number.isFinite(audio.duration)) audio.currentTime = Number(event.target.value) / 100 * audio.duration;
+  if (event.target.disabled) return;
+  audio.currentTime = Number(event.target.value) / 100 * audio.duration;
+  updateTimeline();
 });
 function format(seconds) { return Number.isFinite(seconds) ? `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}` : '0:00'; }
-audio.addEventListener('loadedmetadata', () => {
-  if (pendingTime && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(pendingTime, Math.max(0, audio.duration - 0.1)); pendingTime = 0; }
-  $('music-seek').disabled = !Number.isFinite(audio.duration);
-  if (!noise) $('music-duration').textContent = format(audio.duration);
-});
-audio.addEventListener('timeupdate', () => {
+function updateTimeline() {
+  const seek = $('music-seek');
+  const seekable = !noise && Number.isFinite(audio.duration) && audio.duration > 0;
+  seek.disabled = !seekable;
+  $('music-duration').textContent = noise ? '∞' : format(audio.duration);
   $('music-elapsed').textContent = format(audio.currentTime);
-  if (audio.duration) $('music-seek').value = String(audio.currentTime / audio.duration * 100);
-  $('music-seek').style.setProperty('--music-progress', `${$('music-seek').value}%`);
-  $('music-seek').setAttribute('aria-valuetext', `${format(audio.currentTime)} of ${format(audio.duration)}`);
+  seek.value = seekable ? String(audio.currentTime / audio.duration * 100) : '0';
+  seek.style.setProperty('--music-progress', `${seek.value}%`);
+  seek.setAttribute('aria-valuetext', `${format(audio.currentTime)} of ${format(audio.duration)}`);
+}
+audio.addEventListener('loadedmetadata', () => {
+  if (!noise && pendingTime && Number.isFinite(audio.duration)) {
+    audio.currentTime = Math.min(pendingTime, Math.max(0, audio.duration - 0.1));
+    pendingTime = 0;
+  }
+  updateTimeline();
+});
+audio.addEventListener('durationchange', updateTimeline);
+audio.addEventListener('emptied', () => $('music-seek').style.setProperty('--music-buffered', '0%'));
+audio.addEventListener('timeupdate', () => {
+  updateTimeline();
   if (Date.now() - lastSave > 5000) { save(); lastSave = Date.now(); }
 });
 for (const name of ['play', 'pause']) audio.addEventListener(name, update);
 // A paused generator would otherwise keep computing samples nobody hears.
-audio.addEventListener('pause', () => { if (noise && audio.paused) noiseEngine?.ctx.suspend(); });
+audio.addEventListener('pause', () => { if (noise && audio.paused) noiseEngine?.ctx.suspend().catch(() => {}); });
 audio.addEventListener('progress', () => {
   const { buffered, duration } = audio;
   if (buffered.length && duration) $('music-seek').style.setProperty('--music-buffered', `${buffered.end(buffered.length - 1) / duration * 100}%`);
 });
-audio.addEventListener('playing', () => status(''));
-audio.addEventListener('waiting', () => { if (!noise) status('Buffering recording…'); });
+audio.addEventListener('playing', () => { if (!noise && wantsPlayback) status(''); });
+audio.addEventListener('waiting', () => { if (!noise && wantsPlayback) status('Buffering recording…'); });
 audio.addEventListener('ended', () => {
   if (index === tracks.length - 1 && repeat !== 'all' && !shuffle) { status('End of the library. Choose a recording or turn on Loop all.'); update(); }
   else step(1, true);
@@ -348,9 +383,13 @@ audio.addEventListener('error', () => {
 });
 addEventListener('pagehide', save);
 function renderTracks() {
-  const query = $('music-search').value.trim().toLocaleLowerCase();
+  const terms = searchable($('music-search').value).trim().split(/\s+/);
   const composer = $('music-composer').value;
-  const visible = tracks.filter(track => (!composer || track.composer === composer) && `${track.title} ${track.composer} ${track.detail} ${track.credit}`.toLocaleLowerCase().includes(query));
+  const visible = tracks.filter(track => {
+    if (composer && track.composer !== composer) return false;
+    const text = searchable(`${track.title} ${track.composer} ${track.detail} ${track.credit}`);
+    return terms.every(term => text.includes(term));
+  });
   $('music-count').textContent = `${visible.length} of ${tracks.length} recordings${!visible.length ? '. Try another search.' : ''}`;
   const groups = new Map();
   for (const track of visible) groups.set(track.composer, [...groups.get(track.composer) || [], track]);
@@ -366,7 +405,7 @@ function renderTracks() {
     items.append(...list.map(track => {
       const li = document.createElement('li'); const button = document.createElement('button');
       button.type = 'button'; button.className = 'music-track'; button.dataset.track = track.id;
-      button.setAttribute('aria-current', String(track.id === current()?.id));
+      button.setAttribute('aria-current', String(!noise && track.id === current()?.id));
       const mark = document.createElement('span'); mark.className = 'track-mark'; mark.setAttribute('aria-hidden', 'true');
       const number = document.createElement('span'); number.className = 'track-number'; number.textContent = String(tracks.filter(t => t.composer === name).indexOf(track) + 1);
       const bars = document.createElement('span'); bars.className = 'track-bars'; bars.append(...[0, 1, 2].map(() => document.createElement('i')));
@@ -375,12 +414,13 @@ function renderTracks() {
       title.textContent = track.title;
       detail.textContent = (track.detail || track.composer) + (track.classroomCopy ? ' · Classroom copy' : '');
       text.append(title, detail); button.append(mark, text);
-      button.addEventListener('click', () => { if (track.id === current()?.id && audio.src) toggle(); else select(track.id); });
+      button.addEventListener('click', () => { if (!noise && track.id === current()?.id) toggle(); else select(track.id); });
       li.append(button); return li;
     }));
     group.append(heading, items); return group;
   }));
 }
+function searchable(text) { return text.normalize('NFD').replace(/\p{Mark}/gu, '').toLocaleLowerCase(); }
 function renderNoise() {
   $('music-noise-list').replaceChildren(...NOISE_COLORS.map(color => {
     const button = document.createElement('button');
@@ -404,31 +444,50 @@ if ('mediaSession' in navigator) {
   for (const [action, handler] of Object.entries(actions)) { try { navigator.mediaSession.setActionHandler(action, handler); } catch {} }
 }
 expand(params.get('play') !== '1');
-for (const id of ['music-play', 'music-next', 'music-previous']) $(id).disabled = true;
+audio.volume = Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume)) : 0.5;
+audio.muted = saved.muted === true;
+$('player-volume').value = String(audio.volume);
 if (canMakeNoise) renderNoise(); else document.querySelector('.music-noise').hidden = true;
 async function loadLibrary() {
+  if (loadingLibrary) return;
+  loadingLibrary = true;
+  status('Loading recording library…');
   try {
     const response = await fetch(new URL('data/recording-library.json', base));
     if (!response.ok) throw new Error('Library request failed');
-    tracks = (await response.json()).tracks;
-    if (!tracks?.length) throw new Error('Empty recording library');
+    const library = (await response.json()).tracks;
+    if (!Array.isArray(library) || !library.length) throw new Error('Empty recording library');
+    const activeNoise = noise;
+    tracks = library;
     composers = [...new Set(tracks.map(t => t.composer))];
     for (const composer of composers) {
       const option = document.createElement('option'); option.value = option.textContent = composer; $('music-composer').append(option);
     }
     $('library-description').textContent = `${tracks.length} recordings by ${composers.length} composers. Keep exploring the site while you listen.`;
-    audio.volume = Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume)) : 0.5;
-    $('player-volume').value = String(audio.volume);
     const requested = params.get('track') || saved.track || defaultTrack;
     const initial = tracks.find(t => t.id === requested) || tracks[0];
     const time = params.has('time') ? Number(params.get('time')) : initial.id === saved.track ? saved.time : 0;
-    select(initial.id, params.get('play') === '1' && !(saved.noise && !params.has('track')), time);
+    const start = params.get('play') === '1';
+    const restoreNoise = canMakeNoise && !params.has('track') && noiseTrack(saved.noise);
+    if (activeNoise || restoreNoise) {
+      index = tracks.indexOf(initial);
+      saved.time = time;
+      if (activeNoise) { status(''); update(); }
+      else selectNoise(saved.noise, start);
+    } else {
+      select(initial.id, start, time);
+    }
     renderTracks();
-    // The last source was a noise generator: come back to it, unless a page asked for a recording.
-    if (saved.noise && !params.has('track')) selectNoise(saved.noise, params.get('play') === '1');
-    for (const id of ['music-play', 'music-next', 'music-previous']) $(id).disabled = false;
+    if (document.activeElement === $('music-retry-library')) $('music-library-title').focus();
+    $('music-retry-library').hidden = true;
   } catch {
-    status('The recording library could not load. Reload this page to try again.'); expand(true);
+    status('The recording library could not load.');
+    $('music-retry-library').hidden = false;
+    expand(true);
+  } finally {
+    loadingLibrary = false;
   }
 }
+$('music-retry-library').addEventListener('click', loadLibrary);
+update();
 loadLibrary();

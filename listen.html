@@ -10,16 +10,16 @@
   <script type="module" src="assets/js/site-music-player.mjs"></script>
 </head>
 <body class="listening-shell">
-  <a class="music-skip" href="#music-play">Skip to music controls</a>
+  <a class="music-skip" href="#music-expand">Skip to music controls</a>
   <iframe id="music-browser" title="Explore ClassroomOS" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe>
   <section id="site-player" class="site-player" aria-label="Website music player">
     <div id="music-dock" class="music-dock">
       <span class="music-art" aria-hidden="true"><span id="music-art"></span></span>
       <div class="music-now">
-        <div class="music-marquee" tabindex="0"><span class="music-marquee-text"><strong id="playing-title">Classroom recordings</strong></span></div>
+        <strong id="playing-title">Classroom recordings</strong>
         <span id="playing-composer">Choose a recording to begin.</span>
       </div>
-      <button id="music-expand" type="button" aria-label="Collapse to single row" title="Collapse to single row" aria-controls="music-dock" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+      <button id="music-expand" type="button" aria-label="Collapse to single row" title="Collapse to single row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
       <button id="music-library-toggle" type="button" aria-label="Expand music library" title="Expand music library" aria-controls="music-library" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h12M3 12h12M3 18h7m8-6v8m0 0-3-3m3 3 3-3"/></svg></button>
       <div class="music-timeline"><span id="music-elapsed">0:00</span><input id="music-seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Recording position" disabled><span id="music-duration">0:00</span></div>
       <div class="music-transport">
@@ -27,15 +27,16 @@
         <button id="music-previous" type="button" aria-label="Previous recording" title="Previous recording"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M19 5 8 12l11 7Z"/></svg></button>
         <button id="music-play" class="music-primary" type="button" aria-label="Play music" title="Play music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg></button>
         <button id="music-next" type="button" aria-label="Next recording" title="Next recording"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14M5 5l11 7-11 7Z"/></svg></button>
-        <button id="music-repeat" type="button" aria-label="Loop off. Click to loop this recording." title="Loop off. Click to loop this recording." aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10V8a3 3 0 0 1 3-3h13m-4-4 4 4-4 4M20 14v2a3 3 0 0 1-3 3H4m4-4-4 4 4 4"/></svg><span class="music-loop-mode" aria-hidden="true" hidden></span></button>
+        <button id="music-repeat" type="button" aria-label="Cycle loop mode" aria-describedby="music-repeat-description" title="Loop off" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10V8a3 3 0 0 1 3-3h13m-4-4 4 4-4 4M20 14v2a3 3 0 0 1-3 3H4m4-4-4 4 4 4"/></svg><span class="music-loop-mode" aria-hidden="true" hidden></span></button>
       </div>
     </div>
-    <div id="music-library" class="music-library" hidden>
+    <p id="music-announcement" class="music-announcement" role="status"></p>
+    <div id="music-library" class="music-library" role="region" aria-labelledby="music-library-title" hidden>
       <div class="music-side">
         <div class="music-library-heading">
-          <div><p class="music-eyebrow">ClassroomOS radio</p><h1>Your listening room</h1></div>
+          <div><p class="music-eyebrow">ClassroomOS radio</p><h1 id="music-library-title" tabindex="-1">Your listening room</h1></div>
           <div class="music-window-controls">
-            <button id="music-maximize" type="button" aria-label="Maximize" title="Maximize" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+            <button id="music-maximize" type="button" aria-label="Maximize library" title="Maximize library" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
             <button id="music-minimize" type="button" aria-label="Minimize music player" title="Minimize music player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
           </div>
         </div>
@@ -56,10 +57,10 @@
             <label for="player-volume">Volume</label><input id="player-volume" type="range" min="0" max="1" step="0.01" value="0.5">
           </div>
         </div>
-        <p id="music-status" role="status"></p>
+        <p id="music-status" aria-hidden="true"></p>
         <button id="music-classroom-copy" type="button" hidden>Play a classroom recording</button>
+        <button id="music-retry-library" type="button" hidden>Retry loading recordings</button>
         <div class="music-side-footer">
-          <p class="music-footnote">Each performance keeps its own credit and license. Most recordings stream from Wikimedia Commons. Tracks marked “Classroom copy” play directly from ClassroomOS.</p>
           <a id="music-exit" class="music-exit">Leave listening mode</a>
         </div>
       </div>
@@ -72,8 +73,9 @@
           <label class="music-search"><span>Search recordings</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 5 5"/></svg><input id="music-search" type="search" placeholder="Title, composer, instrument…"></label>
           <label><span>Composer</span><select id="music-composer"><option value="">All composers</option></select></label>
         </div>
-        <p id="music-count"></p>
-        <ol id="music-tracks" class="music-tracks" aria-label="Recording library"></ol>
+        <p id="music-count" role="status"></p>
+        <ol id="music-tracks" class="music-tracks" role="list" aria-label="Recording library"></ol>
+        <p class="music-footnote">Each performance keeps its own credit and license. Most recordings stream from Wikimedia Commons. Tracks marked “Classroom copy” play directly from ClassroomOS.</p>
       </div>
     </div>
     <audio id="site-music-audio" preload="none"></audio>

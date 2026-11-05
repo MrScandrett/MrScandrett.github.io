@@ -44,7 +44,7 @@ css.rel = 'stylesheet'; css.href = new URL('assets/css/site-music.css', base);
 document.head.append(css);
 function move(direction) {
   if (!tracks.length) return;
-  const index = tracks.findIndex(t => t.id === selected);
+  const index = Math.max(0, tracks.findIndex(t => t.id === selected));
   selected = tracks[(index + direction + tracks.length) % tracks.length].id;
   noise = null;
   notify();
@@ -53,7 +53,12 @@ function move(direction) {
 if (host) {
   const forward = () => notify();
   parent.addEventListener('site-music-change', forward);
-  window.addEventListener('pagehide', () => parent.removeEventListener('site-music-change', forward), { once: true });
+  window.addEventListener('pagehide', () => parent.removeEventListener('site-music-change', forward));
+  window.addEventListener('pageshow', event => {
+    if (!event.persisted) return;
+    parent.addEventListener('site-music-change', forward);
+    forward();
+  });
   // Lesson recordings take the foreground when the visitor explicitly starts one.
   document.addEventListener('play', event => { if (event.target.matches('audio, video')) host.pause(); }, true);
   const sync = () => host.syncNavigation();

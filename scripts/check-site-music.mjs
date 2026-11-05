@@ -68,11 +68,8 @@ try {
   await page.locator('#music-shuffle').click();
   await page.locator('#music-seek').evaluate(el => { el.value = '25'; el.dispatchEvent(new Event('input', { bubbles: true })); });
   await page.waitForFunction(() => document.querySelector('audio').currentTime >= 22);
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  assert.equal(await page.locator('.music-marquee-text').evaluate(el => getComputedStyle(el).animationName), 'music-marquee');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  assert.equal(await page.locator('.music-marquee-text').evaluate(el => getComputedStyle(el).animationName), 'none');
-  console.log('PASS compact player, visible controls/timeline, minimized seeking/shuffle, and reduced-motion marquee');
+  assert.match(await page.locator('#music-seek').getAttribute('aria-valuetext'), /^0:2\d of 1:30$/);
+  console.log('PASS compact player, visible controls/timeline, and minimized seeking/shuffle');
   await page.locator('#music-expand').click();
   assert(await page.locator('#site-player').evaluate(el => el.classList.contains('is-tiny')));
   assert((await page.locator('#site-player').boundingBox()).height <= 48, 'Single-row player must stay tiny');
@@ -119,7 +116,8 @@ try {
   assert(await page.evaluate(time => !document.querySelector('audio').paused && document.querySelector('audio').currentTime >= time, timeBefore));
   // Navigate again to a deep lesson with full page scripts, then use its own audio.
   await page.locator('#music-library-toggle').click();
-  await page.locator('#recording-lesson').click();
+  await page.locator('#recording-lesson').press('Enter');
+  assert(await page.locator('#music-browser').evaluate(el => el === document.activeElement), 'Composer navigation must leave focus in the browsing frame');
   await page.waitForFunction(() => document.querySelector('iframe').contentWindow.location.pathname.includes('/lessons/music/pioneers/'));
   assert(await page.evaluate(element => element === document.querySelector('audio'), identity));
   const lesson = page.frameLocator('#music-browser');
@@ -153,16 +151,32 @@ try {
   await page.evaluate(() => window.SiteMusic.select('satie-1', false));
   await page.locator('#music-shuffle').click();
   await page.locator('#music-repeat').click();
+  await page.locator('#music-mute').click();
   await page.reload();
   await page.locator('.music-track').first().waitFor();
   assert.equal(await page.locator('#music-shuffle').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#music-repeat').getAttribute('aria-pressed'), 'true');
   assert(await page.evaluate(() => document.querySelector('audio').loop), 'Loop mode must survive reloads');
   assert.equal(await page.evaluate(() => document.querySelector('audio').volume), .2);
+  assert.equal(await page.locator('#music-mute').getAttribute('aria-pressed'), 'true');
+  await page.locator('#player-volume').fill('0.3');
+  assert.equal(await page.locator('#music-mute').getAttribute('aria-pressed'), 'false');
   assert(await page.evaluate(() => document.querySelector('audio').paused));
   console.log('PASS catalog, playback, continuous navigation, fish controls, lesson handoff, search, seeking, fallback, and preferences');
 
   console.log('Checking noise generators…');
+  // Worklet module requests do not pass through Playwright's page routing.
+  await page.evaluate(() => {
+    const addModule = AudioWorklet.prototype.addModule;
+    AudioWorklet.prototype.addModule = () => {
+      AudioWorklet.prototype.addModule = addModule;
+      return Promise.reject(new DOMException('Test worklet failure', 'AbortError'));
+    };
+  });
+  await page.locator('.music-noise-color[data-noise="white"]').click();
+  await page.getByRole('status').filter({ hasText: 'The noise generator could not start.' }).waitFor();
+  assert(await page.evaluate(() => document.querySelector('audio').paused));
+  await page.locator('#music-play').click();
   // Each colour is computed live and handed to the same <audio> element; measure what it receives.
   const noiseLevel = () => page.evaluate(async () => {
     const ctx = new AudioContext(), analyser = ctx.createAnalyser();
@@ -178,14 +192,17 @@ try {
     return { rms: Math.sqrt(wave.reduce((sum, v) => sum + v * v, 0) / wave.length), tilt: (band(4000, 8000) - band(250, 500)) / 4 };
   });
   for (const [id, slope] of [['white', 0], ['pink', -3], ['brown', -6], ['blue', 3], ['violet', 6]]) {
-    await page.locator(`.music-noise-color[data-noise="${id}"]`).click();
+    if (id !== 'white') await page.locator(`.music-noise-color[data-noise="${id}"]`).click();
     await page.waitForFunction(() => !document.querySelector('audio').paused);
+    await page.waitForFunction(() => document.querySelector('#music-status').textContent === '');
     const { rms, tilt } = await noiseLevel();
     assert(rms > .02 && Math.abs(tilt - slope) < 1.5, `${id} noise: RMS ${rms.toFixed(3)}, ${tilt.toFixed(1)} dB/octave`);
     assert.equal(await page.locator(`.music-noise-color[data-noise="${id}"]`).getAttribute('aria-pressed'), 'true');
   }
   assert.equal(await page.locator('#music-duration').textContent(), '∞');
   assert(await page.locator('#music-seek').isDisabled());
+  assert(await page.locator('#music-repeat').isDisabled());
+  assert(await page.locator('#music-shuffle').isDisabled());
   assert(await page.locator('#recording-source').isHidden());
   await page.locator('#music-next').click();
   assert.equal(await page.evaluate(() => window.SiteMusic.snapshot().track.id), 'noise-white', 'Next steps through the noise colours');
@@ -193,7 +210,10 @@ try {
   await page.locator('.music-track').first().waitFor();
   assert.equal(await page.locator('#playing-title').textContent(), 'White noise', 'The player comes back to the last noise generator');
   assert(await page.evaluate(() => document.querySelector('audio').paused));
-  await page.locator('.music-track').first().click();
+  await page.locator('#music-search').fill('satie gymnopedie');
+  assert.equal(await page.locator('.music-track').count(), 2);
+  assert.equal(await page.locator('.music-track[aria-current="true"]').count(), 0);
+  await page.locator('.music-track[data-track="satie-1"]').click();
   await page.waitForFunction(() => !document.querySelector('audio').srcObject && !document.querySelector('audio').paused);
   assert(await page.locator('#recording-source').isVisible());
   assert.equal(await page.locator('.music-noise-color[aria-pressed="true"]').count(), 0);
@@ -212,6 +232,11 @@ try {
     }
     await page.locator('#music-library-toggle').focus();
     await page.keyboard.press('Enter');
+    assert(await page.locator('#music-library-title').evaluate(el => el === document.activeElement));
+    await page.locator('#music-search').fill('cello');
+    await page.locator('#music-search').press('Escape');
+    assert.equal(await page.locator('#music-search').inputValue(), '');
+    assert(await page.locator('#music-library').isVisible());
     await page.keyboard.press('Escape');
     assert(await page.locator('#music-library-toggle').evaluate(el => el === document.activeElement));
     await page.locator('#music-expand').click();
@@ -224,6 +249,18 @@ try {
     await page.locator('#music-expand').click();
   }
   console.log('PASS phone, narrow phone, landscape, and keyboard controls');
+
+  let failCatalog = true;
+  await context.route('**/data/recording-library.json', route => failCatalog ? route.abort() : route.continue());
+  await page.reload();
+  await page.getByRole('status').filter({ hasText: 'The recording library could not load.' }).waitFor();
+  const retry = page.getByRole('button', { name: 'Retry loading recordings' });
+  failCatalog = false;
+  await retry.press('Enter');
+  await page.locator('.music-track').first().waitFor();
+  assert(await retry.isHidden());
+  assert(await page.locator('#music-library-title').evaluate(el => el === document.activeElement));
+  console.log('PASS catalog retry with keyboard focus and live status');
   await context.close();
   // Enter listening mode from the aquarium's own Play button.
   const entryContext = await browser.newContext({ reducedMotion: 'reduce' });
@@ -244,7 +281,7 @@ try {
   const board = await classroom.newPage();
   board.on('pageerror', error => errors.push(error.message));
   await board.goto(`${base}/listen.html?browse=about.html&play=1`);
-  await board.getByText('Tap Play to start listening on this device.').waitFor();
+  await board.getByRole('status').filter({ hasText: 'Tap Play to start listening on this device.' }).waitFor();
   await board.locator('#music-play').tap();
   const playsCopy = file => board.waitForFunction(name => {
     const audio = document.querySelector('audio');

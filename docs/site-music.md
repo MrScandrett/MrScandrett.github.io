@@ -21,11 +21,12 @@ Dock and library share one dark palette. Each composer gets a monogram cover who
 hue (`--music-hue`, spread by the golden angle in library order) also tints the
 accent: the play button, progress, and the current track. The library opens on a
 Now Playing card (credit, source, loop state, mute + volume) above the recordings,
-grouped by composer; pressing the current recording pauses or resumes it. Maximized
-on a wide screen, the card and the shelf sit side by side and the shelf scrolls to
-the current recording. Keep `backdrop-filter` on `.music-dock`, not `.site-player`:
-on the wrapper it becomes the containing block for the maximized library's
-`position: fixed` and collapses it into the dock.
+grouped by composer. Pressing the current recording pauses or resumes it. Search
+matches words in any order and ignores accents. Maximized on a wide screen, the
+card and the shelf sit side by side. The library toggle moves keyboard focus to
+the heading. Escape clears an active search first, then closes the library and
+returns focus to the toggle. Apply `backdrop-filter` to `.music-dock` so the maximized
+library stays fixed to the viewport.
 
 The recording library is generated from the composer lessons' `option[data-src]`
 metadata. Edit those lesson sources, then run `npm run build:recordings`.

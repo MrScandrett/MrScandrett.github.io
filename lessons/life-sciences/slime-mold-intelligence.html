@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Slime Molds: Swarm Intelligence Without a Brain · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Life Sciences Lesson 05 — explore the biology, life cycle, and ecology of Physarum polycephalum, then grow a live swarm-intelligence simulation inspired by the Tokyo rail experiment." />
+  <meta name="description" content="Grow a subway network, reroute around a closure, and program and test logic circuits with a browser-based slime mold model." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../assets/css/slime-mold-studio.css" />
   <style>
     .ll-viewport {
       --ll-panel-w: 280px;
@@ -65,7 +67,7 @@
       color: #a06a0e;
     }
 
-    .slime-hero h1 {
+    .slime-hero h2 {
       margin: 0;
       font-size: clamp(1.9rem, 3.6vw, 2.9rem);
       line-height: 1.08;
@@ -406,6 +408,94 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="slime-page">
+<section class="creation-app physarum-studio" data-creation-app aria-labelledby="physarum-title">
+  <div class="physarum-workbench">
+    <header class="physarum-header">
+      <h1 id="physarum-title">Slime Mold Studio</h1>
+      <nav class="physarum-modes" aria-label="Studio modes">
+        <button type="button" data-slime-mode="rail" aria-pressed="true" aria-controls="physarum-rail">Subway map</button>
+        <button type="button" data-slime-mode="logic" aria-pressed="false" aria-controls="physarum-logic">Logic bench</button>
+      </nav>
+    </header>
+
+    <div class="physarum-grid">
+      <div class="physarum-view">
+        <p id="physarum-instruction" class="physarum-instruction">Drop food at all three stations to grow a subway map.</p>
+        <div class="physarum-board" id="physarum-board">
+          <canvas id="physarum-canvas" role="img" aria-label="Subway map with three stations and two bypass junctions. Results are listed beside the map."></canvas>
+          <div id="physarum-stations" class="physarum-stations">
+            <button type="button" data-station="0" style="--x:16.1%;--y:51.4%" aria-pressed="false">Harbor</button>
+            <button type="button" data-station="1" style="--x:49.2%;--y:23.6%" aria-pressed="false">Central</button>
+            <button type="button" data-station="2" style="--x:84.7%;--y:51.4%" aria-pressed="false">Market</button>
+          </div>
+        </div>
+        <div class="physarum-key" aria-label="Map key">
+          <span><i class="physarum-key-line"></i> Reinforced</span>
+          <span><i class="physarum-key-line physarum-key-thin"></i> Possible</span>
+          <span><i class="physarum-key-line physarum-key-closed"></i> Blocked</span>
+        </div>
+      </div>
+
+      <section id="physarum-rail" class="physarum-panel" aria-labelledby="physarum-rail-title">
+        <h2 id="physarum-rail-title">Grow a subway map</h2>
+        <p id="physarum-rail-status" class="physarum-status" role="status">0 of 3 stations fed.</p>
+        <div class="physarum-actions">
+          <button type="button" id="physarum-grow" class="physarum-primary" disabled>Grow network</button>
+          <button type="button" id="physarum-reset-rail">Reset map</button>
+        </div>
+        <div id="physarum-closure" hidden>
+          <label for="physarum-close-edge">Route to close</label>
+          <select id="physarum-close-edge"></select>
+          <button type="button" id="physarum-regrow" class="physarum-primary">Close route and regrow</button>
+          <dl class="physarum-stats">
+            <div><dt>Original network</dt><dd id="physarum-original"></dd></div>
+            <div><dt>After closure</dt><dd id="physarum-after">Awaiting a closure</dd></div>
+          </dl>
+          <p id="physarum-routes" class="physarum-note"></p>
+        </div>
+      </section>
+
+      <section id="physarum-logic" class="physarum-panel" aria-labelledby="physarum-logic-title" hidden>
+        <h2 id="physarum-logic-title">Program a slime circuit</h2>
+        <label for="physarum-mission">Exercise</label>
+        <select id="physarum-mission">
+          <option value="and">Two-key lock (AND)</option>
+          <option value="or">Backup power (OR)</option>
+          <option value="xor">Signal conflict (XOR)</option>
+          <option value="custom">Write your own rule</option>
+        </select>
+        <p id="physarum-brief">A and B are keys. Open the lock only when both keys are turned.</p>
+        <fieldset id="physarum-gates" class="physarum-gates">
+          <legend>When each track opens</legend>
+        </fieldset>
+        <p class="physarum-note">Tracks in series must both open. Either parallel branch can reach the output.</p>
+        <table class="physarum-truth">
+          <caption class="physarum-sr-only">Truth table. A and B are input switches. One means on.</caption>
+          <thead><tr><th scope="col">A</th><th scope="col">B</th><th scope="col">Target</th><th scope="col">Output</th><th scope="col">Test</th></tr></thead>
+          <tbody id="physarum-rows"></tbody>
+        </table>
+        <div class="physarum-actions">
+          <button type="button" id="physarum-test-all" class="physarum-primary">Test all inputs</button>
+          <button type="button" id="physarum-reset-logic">Reset circuit</button>
+        </div>
+        <p id="physarum-logic-status" class="physarum-status" role="status">Set the tracks, then test your circuit.</p>
+        <a class="physarum-map-link" href="#physarum-board">View circuit map</a>
+      </section>
+    </div>
+    <noscript><p>Enable JavaScript to run the slime mold studio.</p></noscript>
+
+    <details id="physarum-tokyo" class="physarum-tokyo" hidden>
+      <summary>How did real slime mold compare with Tokyo’s trains?</summary>
+      <p>Researchers placed oat flakes at 36 locations representing Tokyo and nearby cities. They compared the resulting slime network with the region’s rail system on three measures: how much track it used, how efficiently it linked stations, and how well it survived route failures. Your map is a smaller experiment about that last trade-off. How much extra track did your detour need?</p>
+      <p><a href="https://pubmed.ncbi.nlm.nih.gov/20093467/">Read the 2010 Tokyo rail study</a></p>
+    </details>
+    <details class="physarum-model">
+      <summary>How the model works</summary>
+      <p>This is bio-inspired AI. The model passes simulated flow between nodes. Tubes carrying more flow thicken, and lightly used tubes fade. The logic bench adds switches to the same network. If a reinforced path reaches the output pad, the circuit reads 1. The simulation runs in your browser.</p>
+      <p><a href="https://pubmed.ncbi.nlm.nih.gov/17069858/">Read the Physarum transport model paper</a></p>
+    </details>
+  </div>
+</section>
 <!-- ════════════════════════════════════════════════════════════
      SECTION 1 — HERO
      ════════════════════════════════════════════════════════════ -->
@@ -414,7 +504,7 @@
   <div class="slime-hero">
     <div class="slime-card">
       <p class="slime-eyebrow">Life Sciences · Lesson 05</p>
-      <h1>Slime Molds: Swarm Intelligence Without a Brain</h1>
+      <h2>Slime Molds: Swarm Intelligence Without a Brain</h2>
       <p class="slime-lede">
         <em>Physarum polycephalum</em> — the "many-headed slime" — is a single cell
         you can see with the naked eye. It has no brain, no neurons, and no central
@@ -423,6 +513,13 @@
         molds are living proof that intelligent behavior can emerge from simple
         local rules, repeated everywhere at once.
       </p>
+      <nav aria-label="Slime mold field notes">
+        <ul class="slime-idlist">
+          <li><a href="#slime-life-cycle">Life cycle</a></li>
+          <li><a href="#slime-research">Research and experiments</a></li>
+          <li><a href="#slime-particle-lab">Free-grow particle sandbox</a></li>
+        </ul>
+      </nav>
     </div>
 
     <div class="slime-card">
@@ -442,7 +539,7 @@
      ════════════════════════════════════════════════════════════ -->
 
   <div class="slime-card">
-    <h2 class="slime-h2">Biology &amp; Life Cycle</h2>
+    <h2 class="slime-h2" id="slime-life-cycle">Biology &amp; Life Cycle</h2>
     <p class="slime-p">
       A slime mold spends most of its life as a single wandering cell, but it gets
       there through a strange five-stage cycle that alternates between many tiny
@@ -586,7 +683,7 @@
      ════════════════════════════════════════════════════════════ -->
 
   <div class="slime-card">
-    <h2 class="slime-h2">How Scientists Study Slime Molds</h2>
+    <h2 class="slime-h2" id="slime-research">How Scientists Study Slime Molds</h2>
     <div class="slime-study-grid">
       <div class="slime-study-card">
         <span class="tag">2000 · Nature</span>
@@ -635,47 +732,46 @@
      SECTION 6 — INTERACTIVE SIMULATION
      ════════════════════════════════════════════════════════════ -->
 
-  <div class="slime-card">
-    <h2 class="slime-h2">Lab: Grow Your Own Swarm Network</h2>
+  <details class="slime-card" id="slime-particle-lab">
+    <summary><strong>Free-grow particle sandbox</strong></summary>
     <p class="slime-p">
-      This simulation models thousands of tiny "agents" using the same rule real
-      Physarum tubes follow: sense three points ahead, steer toward whichever
+      This simulation models thousands of tiny "agents" using a local rule inspired by
+      Physarum: sense three points ahead, steer toward whichever
       carries the strongest trail, then lay down more trail behind you. No agent
       knows the big picture — the network below emerges purely from that local
       rule, repeated thousands of times a second.
     </p>
     <div class="slime-sim-layout">
       <div class="slime-canvas-wrap">
-        <canvas id="slimeCanvas" width="760" height="440"></canvas>
+        <canvas id="slimeCanvas" width="760" height="440" role="img" aria-label="Particle trails and food sources. Use Scatter Food to place food without a pointer."></canvas>
         <span class="slime-canvas-hint">Click the canvas to drop a food source</span>
       </div>
       <div class="slime-controls">
         <div class="slime-control-group">
-          <label>Population <span id="popVal">1500</span></label>
+          <label for="popSlider">Population <span id="popVal">1500</span></label>
           <input type="range" id="popSlider" min="300" max="4000" step="100" value="1500" />
         </div>
         <div class="slime-control-group">
-          <label>Sensor Angle <span id="sensorVal">25°</span></label>
+          <label for="sensorSlider">Sensor Angle <span id="sensorVal">25°</span></label>
           <input type="range" id="sensorSlider" min="10" max="60" step="1" value="25" />
         </div>
         <div class="slime-control-group">
-          <label>Trail Persistence <span id="decayVal">0.94</span></label>
+          <label for="decaySlider">Trail Persistence <span id="decayVal">0.94</span></label>
           <input type="range" id="decaySlider" min="85" max="99" step="1" value="94" />
         </div>
         <button class="slime-btn primary" id="playPauseBtn">Pause</button>
         <button class="slime-btn" id="scatterFoodBtn">Scatter Food</button>
-        <button class="slime-btn" id="railPresetBtn">Recreate a Rail Network</button>
+        <button class="slime-btn" id="railPresetBtn">Place a station cluster</button>
         <button class="slime-btn" id="clearFoodBtn">Clear Food</button>
         <button class="slime-btn" id="resetSimBtn">Reset Simulation</button>
         <div class="slime-legend">
           <strong>Reading the map:</strong> dark = unexplored, amber = a reinforced
           tube, bright gold = a heavily-used route. Gold dots are food sources —
-          the closer the layout resembles the "Recreate a Rail Network" preset,
-          the closer this is to the actual 2010 Tokyo-area experiment.
+          the station preset places a cluster of food sources for the agents to explore.
         </div>
       </div>
     </div>
-  </div>
+  </details>
 
 <!-- ════════════════════════════════════════════════════════════
      SECTION 7 — REFLECTION
@@ -693,9 +789,14 @@
 
 </div><!-- /.slime-shell -->
 
+<script src="../../assets/js/sim-kit.js"></script>
+<script src="../../assets/js/creation-app.js"></script>
+<script type="module" src="../../assets/js/lessons/slime-mold-studio.mjs"></script>
 <script>
-(function () {
+document.getElementById('slime-particle-lab').addEventListener('toggle', function initializeParticles() {
   'use strict';
+  if (!this.open) return;
+  this.removeEventListener('toggle', initializeParticles);
 
   var canvas = document.getElementById('slimeCanvas');
   var ctx = canvas.getContext('2d');
@@ -722,7 +823,9 @@
 
   var sensorAngle = 25 * Math.PI / 180;
   var decayFactor = 0.94;
-  var running = true;
+  var running = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var playButton = document.getElementById('playPauseBtn');
+  playButton.textContent = running ? 'Pause' : 'Play';
 
   var trail = new Float32Array(GRID_W * GRID_H);
   var trailNext = new Float32Array(GRID_W * GRID_H);
@@ -865,15 +968,6 @@
     }
   }
 
-  function loop() {
-    if (running) {
-      stepAgents();
-      diffuseTrail();
-      renderTrail();
-    }
-    requestAnimationFrame(loop);
-  }
-
   function addFood(px, py) {
     var gx = Math.floor(px / GRID_SCALE);
     var gy = Math.floor(py / GRID_SCALE);
@@ -907,9 +1001,11 @@
     document.getElementById('decayVal').textContent = decayFactor.toFixed(2);
   });
 
-  document.getElementById('playPauseBtn').addEventListener('click', function (e) {
+  playButton.addEventListener('click', function () {
     running = !running;
-    e.target.textContent = running ? 'Pause' : 'Play';
+    playButton.textContent = running ? 'Pause' : 'Play';
+    if (running) loop.resume();
+    else loop.pause();
   });
 
   document.getElementById('scatterFoodBtn').addEventListener('click', function () {
@@ -947,12 +1043,18 @@
     var n = agents.length;
     agents = [];
     setPopulation(n);
-    running = true;
-    document.getElementById('playPauseBtn').textContent = 'Pause';
+    renderTrail();
+    if (!running && !matchMedia('(prefers-reduced-motion: reduce)').matches) playButton.click();
   });
 
-  requestAnimationFrame(loop);
-}());
+  renderTrail();
+  var loop = SimKit.loop(function () {
+    stepAgents();
+    diffuseTrail();
+    renderTrail();
+  }, { el: canvas });
+  if (!running) loop.pause();
+});
 </script>
 <script src="../../assets/js/canvas-bg.js"></script>
 
@@ -964,6 +1066,5 @@
 <script src="../../assets/js/lesson-print-button.js"></script>
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
-<script src="../../assets/js/lessons/life-sciences-route.js"></script>
 </body>
 </html>
