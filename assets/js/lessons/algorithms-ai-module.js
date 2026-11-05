@@ -160,7 +160,12 @@
   const hero = main.querySelector(':scope > .hero, :scope > .ll-hero, :scope > .ch-hero, :scope > .tt-hero, :scope > .perceptron-hero, :scope > .cl-hero, :scope > .pf-hero, :scope > .al-hero, :scope > .fl-hero, :scope > .as-hero, :scope > .pn-hero, :scope > .cgi-hero, :scope > .r2-hero, :scope > .tr-hero, :scope > .snake-hero, :scope > .sp-hero, :scope > .web-hero, :scope > header')
     || main.querySelector('.hero, .ll-hero, .ch-hero, .tt-hero, .perceptron-hero, .cl-hero, .pf-hero, .al-hero, .fl-hero, .as-hero, .pn-hero, .cgi-hero, .r2-hero, .tr-hero, .snake-hero, .sp-hero, .web-hero, header');
   const host = hero?.parentElement || main;
-  if (hero) {
+  const workspace = main.querySelector(':scope > [data-creation-app]');
+  if (workspace) {
+    workspace.insertAdjacentElement('afterend', spine);
+    spine.insertAdjacentElement('afterend', mission);
+    mission.open = false;
+  } else if (hero) {
     host.insertBefore(spine, hero);
     hero.insertAdjacentElement('afterend', mission);
   } else {

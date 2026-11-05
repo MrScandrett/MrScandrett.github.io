@@ -7,7 +7,7 @@
   'use strict';
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 1. KNOWLEDGE BASE: 100+ Balanced STEAM Entities & 52 Diagnostic Questions
+  // 1. CURATED KNOWLEDGE BASE AND DIAGNOSTIC QUESTIONS
   // ═══════════════════════════════════════════════════════════════════════════
 
   const QUESTIONS = [
@@ -65,7 +65,7 @@
     { id: 'q_sharp_edge', text: 'Does it have sharp metal blades for cutting or slicing?', category: 'everyday' }
   ];
 
-  // Curated 110 entities across 7 domains with rich diagnostic feature signatures
+  // Curated STEAM entities with diagnostic feature signatures
   const CORE_ENTITIES = [
     // ── ANIMALS ──
     {
@@ -483,7 +483,7 @@
     {
       id: 'saguaro_cactus', name: 'Saguaro Cactus', category: 'Food & Plants',
       desc: 'A desert icon with spine-armored branches that stores tons of water through scorching heat.',
-      traits: { q_alive: 1, q_plant_flora: 1, q_plant_flora: 1, q_extreme_heat_fire: 1, q_edible: 0, q_animal: 0 }
+      traits: { q_alive: 1, q_plant_flora: 1, q_extreme_heat_fire: 1, q_edible: 0, q_animal: 0 }
     },
     {
       id: 'sunflower', name: 'Sunflower', category: 'Food & Plants',
@@ -497,6 +497,126 @@
     }
   ];
 
+  // Familiar fictional characters add a character-guessing route to the classroom game.
+  const CHARACTERS = [
+    ['harry_potter', 'Harry Potter', 'A young wizard with a lightning-shaped scar.', 'magic glasses school'],
+    ['hermione', 'Hermione Granger', 'A resourceful witch and friend of Harry Potter.', 'magic school female'],
+    ['gandalf', 'Gandalf', 'The wizard who helps guide the Fellowship of the Ring.', 'magic beard'],
+    ['frodo', 'Frodo Baggins', 'A hobbit entrusted with carrying the One Ring.', 'ring'],
+    ['sherlock', 'Sherlock Holmes', 'A fictional detective known for observation and deduction.', 'detective'],
+    ['superman', 'Superman', 'A superhero from Krypton who can fly.', 'hero flight cape alien'],
+    ['batman', 'Batman', 'Gotham City’s detective and superhero.', 'hero cape detective'],
+    ['spider_man', 'Spider-Man', 'A superhero who climbs walls and swings on webs.', 'hero webs'],
+    ['wonder_woman', 'Wonder Woman', 'An Amazon superhero with a lasso of truth.', 'hero female'],
+    ['darth_vader', 'Darth Vader', 'A masked Star Wars character with a red lightsaber.', 'space mask sword'],
+    ['yoda', 'Yoda', 'A small green Jedi teacher from Star Wars.', 'space alien sword green'],
+    ['luke_skywalker', 'Luke Skywalker', 'A Jedi hero from Star Wars.', 'space sword hero'],
+    ['mario', 'Mario', 'A video-game plumber who adventures through the Mushroom Kingdom.', 'game mustache'],
+    ['luigi', 'Luigi', 'Mario’s green-clad brother, known for haunted-house adventures.', 'game mustache green'],
+    ['sonic', 'Sonic the Hedgehog', 'A blue video-game hedgehog with super speed.', 'game animal speed'],
+    ['pikachu', 'Pikachu', 'A yellow Pokémon known for electric attacks.', 'game animal electric'],
+    ['elsa', 'Elsa', 'The queen in Frozen with powers over ice and snow.', 'magic female ice'],
+    ['woody', 'Woody', 'The cowboy toy in Toy Story.', 'toy cowboy'],
+    ['buzz', 'Buzz Lightyear', 'The space-ranger toy in Toy Story.', 'toy space'],
+    ['sponge_bob', 'SpongeBob SquarePants', 'A yellow cartoon sponge who lives in Bikini Bottom.', 'water animal']
+  ];
+  QUESTIONS.push({ id: 'q_fictional', text: 'Is it a fictional character?', category: 'characters' });
+  const CHARACTER_FEATURES = {
+    magic: 'Does this character use magic?', glasses: 'Does this character famously wear glasses?',
+    school: 'Does this character attend Hogwarts?', female: 'Is this character female?',
+    beard: 'Does this character have a long beard?', ring: 'Is this character on a quest involving a powerful ring?',
+    detective: 'Is this character known for solving mysteries?', hero: 'Is this character known as a hero or superhero?',
+    flight: 'Can this character fly using their own powers?', cape: 'Does this character usually wear a cape?',
+    alien: 'Is this character from another planet?', webs: 'Does this character use spider webs?',
+    space: 'Is this character associated with outer-space adventures?', mask: 'Does this character famously wear a full-face mask?',
+    sword: 'Does this character use a lightsaber?', green: 'Is this character green or usually dressed in green?',
+    game: 'Is this character especially known from video games?', mustache: 'Does this character have a mustache?',
+    animal: 'Is this character an animal or animal-like creature?', speed: 'Is this character famous for super speed?',
+    electric: 'Does this character use electric attacks?', ice: 'Does this character control ice and snow?',
+    toy: 'Is this character a toy that comes to life?', cowboy: 'Does this character dress as a cowboy?',
+    water: 'Does this character live underwater?'
+  };
+  Object.entries(CHARACTER_FEATURES).forEach(([id, text]) => {
+    QUESTIONS.push({ id: 'q_character_' + id, text, category: 'characters' });
+    CORE_ENTITIES.forEach(e => { e.traits['q_character_' + id] = 0; });
+  });
+  CORE_ENTITIES.forEach(e => { e.traits.q_fictional = 0; });
+  CHARACTERS.forEach(([id, name, desc, features]) => {
+    const tags = new Set(features.split(' '));
+    const traits = Object.fromEntries(QUESTIONS.map(q => [q.id, 0.5]));
+    traits.q_fictional = 1;
+    Object.keys(CHARACTER_FEATURES).forEach(f => { traits['q_character_' + f] = tags.has(f) ? 1 : 0; });
+    CORE_ENTITIES.push({ id, name, desc, category: 'Characters', traits });
+  });
+
+  // Curated follow-ups separate lookalikes after broad category questions.
+  const FOLLOW_UPS = [
+    ['underwater_vehicle', 'Is it a vehicle designed to travel underwater?', 'submarine'],
+    ['jet_passengers', 'Is it a winged aircraft used for passenger flights?', 'airplane'],
+    ['storage_power', 'Is its main purpose storing electrical energy?', 'battery'],
+    ['sky_glow', 'Is it a colorful glow in the polar night sky?', 'aurora_borealis'],
+    ['river_canyon', 'Is it a deep canyon carved by a river?', 'grand_canyon'],
+    ['torch_statue', 'Is it a statue holding a torch?', 'statue_of_liberty'],
+    ['arena', 'Was it built as an ancient Roman arena?', 'colosseum'],
+    ['long_wall', 'Is it a long defensive wall in China?', 'great_wall_of_china'],
+    ['graphite', 'Does it write using a graphite core?', 'pencil'],
+    ['carry_bag', 'Is it a bag worn on your back?', 'backpack'],
+    ['mane', 'Is it famous for having a mane?', 'lion'],
+    ['canine', 'Is it a canine, such as a dog or wolf?', 'dog wolf'],
+    ['pouch', 'Does it carry its young in a pouch?', 'kangaroo'],
+    ['trunk', 'Does it have a long trunk?', 'elephant'],
+    ['tentacles', 'Does it have tentacles?', 'giant_squid'],
+    ['color_change', 'Is it famous for changing the color of its skin?', 'chameleon'],
+    ['nocturnal', 'Is it usually active at night?', 'bat owl'],
+    ['bamboo', 'Is bamboo its main food?', 'giant_panda'],
+    ['long_neck', 'Is it famous for its unusually long neck?', 'giraffe'],
+    ['relativity', 'Is this person famous for the theory of relativity?', 'albert_einstein'],
+    ['gravity', 'Is this person associated with gravity and laws of motion?', 'isaac_newton albert_einstein'],
+    ['radioactivity', 'Is this person famous for research into radioactivity?', 'marie_curie'],
+    ['computing', 'Is this person associated with computing, programming, or information theory?', 'ada_lovelace alan_turing claude_shannon'],
+    ['bits', 'Did this person develop the mathematical theory of information and bits?', 'claude_shannon'],
+    ['codebreaking', 'Is this person famous for wartime codebreaking?', 'alan_turing'],
+    ['electricity', 'Is this person famous for electrical inventions?', 'nikola_tesla thomas_edison'],
+    ['ac', 'Is this person particularly associated with alternating-current power?', 'nikola_tesla'],
+    ['evolution', 'Did this person develop the theory of evolution by natural selection?', 'charles_darwin'],
+    ['plays', 'Is this person famous for writing plays such as Hamlet?', 'william_shakespeare'],
+    ['composer', 'Is this person famous for composing classical music?', 'mozart'],
+    ['president', 'Was this person a president of the United States?', 'abraham_lincoln george_washington'],
+    ['first_president', 'Was this person the first president of the United States?', 'george_washington'],
+    ['bus', 'Is this person remembered for refusing to give up a bus seat?', 'rosa_parks'],
+    ['pilot', 'Is this person famous for pioneering airplane flights?', 'amelia_earhart'],
+    ['jupiter', 'Is this person famous for telescopic observations of Jupiter’s moons?', 'galileo_galilei'],
+    ['tiny', 'Is it used to magnify things too small to see with the naked eye?', 'microscope'],
+    ['keyboard', 'Does it usually have a keyboard?', 'laptop_computer grand_piano'],
+    ['solar', 'Does it convert sunlight into electricity?', 'solar_panel'],
+    ['time', 'Is its main purpose telling the time?', 'wristwatch'],
+    ['rain', 'Is it used to shelter you from rain?', 'umbrella'],
+    ['rings', 'Is it a planet famous for its rings?', 'planet_saturn'],
+    ['earth_orbit', 'Does it orbit Earth?', 'the_moon international_space_station'],
+    ['cocoa', 'Is it made from cacao beans?', 'chocolate'],
+    ['petals', 'Does it have large yellow flower petals?', 'sunflower'],
+    ['spines', 'Is it a desert plant with spines?', 'saguaro_cactus']
+  ];
+  FOLLOW_UPS.forEach(([id, text, members]) => {
+    const qId = `q_detail_${id}`;
+    QUESTIONS.push({ id: qId, text, category: 'detail' });
+    const yes = new Set(members.split(' '));
+    CORE_ENTITIES.forEach(e => { e.traits[qId] = yes.has(e.id) ? 1 : 0; });
+  });
+  // Complete broad taxonomy; leave genuinely unspecified physical traits uncertain.
+  const TAXONOMY = ['q_animal', 'q_human', 'q_plant_flora', 'q_invention',
+    'q_space_object', 'q_geological_wonder', 'q_landmark_monument', 'q_edible',
+    'q_vehicle', 'q_music_instrument', 'q_string_instrument', 'q_optical_instrument', 'q_spacecraft'];
+  CORE_ENTITIES.forEach(e => {
+    TAXONOMY.forEach(q => { if (!(q in e.traits)) e.traits[q] = 0; });
+    if (e.traits.q_animal) {
+      ['q_mammal', 'q_bird', 'q_reptile_amphibian', 'q_insect_bug', 'q_extinct',
+        'q_domestic_pet', 'q_venomous'].forEach(q => { if (!(q in e.traits)) e.traits[q] = 0; });
+    }
+  });
+  const escapeHTML = value => String(value).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. INFORMATION THEORY & BAYESIAN INFERENCE ENGINE
   // ═══════════════════════════════════════════════════════════════════════════
@@ -508,14 +628,14 @@
     }
 
     loadEntities() {
-      const entities = [...CORE_ENTITIES];
+      const entities = CORE_ENTITIES.map(e => ({ ...e, traits: { ...e.traits } }));
       try {
         const stored = localStorage.getItem(this.customEntitiesKey);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
             parsed.forEach(p => {
-              if (p && p.name && !entities.some(e => e.id === p.id)) {
+              if (p && typeof p.name === 'string' && p.traits && typeof p.traits === 'object' && !entities.some(e => e.id === p.id)) {
                 entities.push(p);
               }
             });
@@ -530,6 +650,16 @@
     reset() {
       this.entities = this.loadEntities();
       this.questions = [...QUESTIONS];
+      this.rejectedIds = new Set();
+      this.lastRejectedGuess = null;
+      try {
+        const learned = JSON.parse(localStorage.getItem(this.customEntitiesKey + '_questions') || '[]');
+        if (Array.isArray(learned)) learned.forEach(q => {
+          if (q && typeof q.id === 'string' && typeof q.text === 'string' && !this.questions.some(x => x.id === q.id)) this.questions.push(q);
+        });
+        const corrections = JSON.parse(localStorage.getItem(this.customEntitiesKey + '_corrections') || '{}');
+        this.entities.forEach(e => Object.assign(e.traits, corrections[e.id] || {}));
+      } catch (_) { /* Storage may be unavailable. */ }
       this.questionCount = 0;
       this.maxQuestions = 20;
       this.askedQuestions = []; // Array of { qId, answer, entropyBefore, entropyAfter, ig }
@@ -562,7 +692,8 @@
 
     getEntityTraitProb(entity, questionId) {
       if (entity.traits && entity.traits[questionId] !== undefined) {
-        return entity.traits[questionId];
+        const value = entity.traits[questionId];
+        return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.5;
       }
       return 0.5; // Unknown trait defaults to balanced prior
     }
@@ -577,7 +708,7 @@
 
       for (let i = 0; i < n; i++) {
         const pE = this.beliefs[i];
-        const pTrait = this.getEntityTraitProb(this.entities[i], qId);
+        const pTrait = 0.055 + 0.89 * this.getEntityTraitProb(this.entities[i], qId);
         pYes += pE * pTrait;
       }
 
@@ -589,7 +720,7 @@
       const probsYes = new Float64Array(n);
       for (let i = 0; i < n; i++) {
         const pE = this.beliefs[i];
-        const pTrait = this.getEntityTraitProb(this.entities[i], qId);
+        const pTrait = 0.055 + 0.89 * this.getEntityTraitProb(this.entities[i], qId);
         probsYes[i] = (pE * pTrait) / pYes;
       }
       const hYes = this.computeEntropy(probsYes);
@@ -598,7 +729,7 @@
       const probsNo = new Float64Array(n);
       for (let i = 0; i < n; i++) {
         const pE = this.beliefs[i];
-        const pTrait = this.getEntityTraitProb(this.entities[i], qId);
+        const pTrait = 0.055 + 0.89 * this.getEntityTraitProb(this.entities[i], qId);
         probsNo[i] = (pE * (1.0 - pTrait)) / pNo;
       }
       const hNo = this.computeEntropy(probsNo);
@@ -619,13 +750,14 @@
      * Get candidate questions ranked by Shannon Information Gain
      */
     rankQuestions(limit = 5) {
+      if (this.questionCache?.beliefs === this.beliefs && this.questionCache.count === this.questionCount) return this.questionCache.ranked.slice(0, limit);
       const askedSet = new Set(this.askedQuestions.map(a => a.qId));
       const scored = [];
 
       for (const q of this.questions) {
         if (!askedSet.has(q.id)) {
           const evalResult = this.evaluateQuestionInformationGain(q.id);
-          scored.push({
+          if (evalResult.informationGain > 0.0001) scored.push({
             question: q,
             ...evalResult
           });
@@ -634,6 +766,7 @@
 
       // Sort descending by Information Gain
       scored.sort((a, b) => b.informationGain - a.informationGain);
+      this.questionCache = { beliefs: this.beliefs, count: this.questionCount, ranked: scored };
       return scored.slice(0, limit);
     }
 
@@ -643,9 +776,12 @@
      * @param {'yes'|'no'|'probably'|'rarely'|'unsure'} answer
      */
     recordAnswer(qId, answer) {
+      if (this.isGameOver || this.isGuessing || !this.questions.some(q => q.id === qId) ||
+          this.askedQuestions.some(q => q.qId === qId) || !['yes', 'no', 'probably', 'rarely', 'unsure'].includes(answer)) return;
       // Save state for Undo
       this.undoStack.push({
         beliefs: new Float64Array(this.beliefs),
+        rejectedIds: new Set(this.rejectedIds),
         questionCount: this.questionCount,
         askedQuestions: [...this.askedQuestions],
         currentEntropy: this.currentEntropy,
@@ -714,6 +850,7 @@
       if (this.undoStack.length === 0) return false;
       const prev = this.undoStack.pop();
       this.beliefs = prev.beliefs;
+      this.rejectedIds = prev.rejectedIds;
       this.questionCount = prev.questionCount;
       this.askedQuestions = prev.askedQuestions;
       this.currentEntropy = prev.currentEntropy;
@@ -726,6 +863,7 @@
     getTopCandidates(limit = 5) {
       const candidates = [];
       for (let i = 0; i < this.entities.length; i++) {
+        if (this.rejectedIds.has(this.entities[i].id)) continue;
         candidates.push({
           entity: this.entities[i],
           probability: this.beliefs[i]
@@ -749,7 +887,7 @@
         topP >= 0.78 ||
         (topP >= 0.62 && runnerUpP <= 0.14) ||
         this.currentEntropy <= 0.40 ||
-        this.questionCount >= this.maxQuestions
+        this.questionCount >= this.maxQuestions || this.rankQuestions(1).length === 0
       ) {
         this.isGuessing = true;
         this.currentGuess = top[0].entity;
@@ -758,10 +896,13 @@
 
     rejectCurrentGuess() {
       if (!this.currentGuess) return;
+      this.questionCache = null;
+      this.lastRejectedGuess = this.currentGuess;
+      this.rejectedIds.add(this.currentGuess.id);
       // Drastically lower the rejected guess's probability
       const guessIndex = this.entities.findIndex(e => e.id === this.currentGuess.id);
       if (guessIndex >= 0) {
-        this.beliefs[guessIndex] *= 0.005;
+        this.beliefs[guessIndex] = 0;
 
         // Renormalize
         let sum = 0;
@@ -775,13 +916,13 @@
       this.currentGuess = null;
       this.currentEntropy = this.computeEntropy(this.beliefs);
 
-      if (this.questionCount >= this.maxQuestions) {
+      if (this.questionCount >= this.maxQuestions || this.getTopCandidates(1).length === 0) {
         this.isGameOver = true;
       }
     }
 
     teachEntity(name, category, distinguishingQ, userAnsIsYes) {
-      const newId = 'custom_' + Date.now();
+      const newId = 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const newQId = 'q_custom_' + Date.now();
 
       // Register new question
@@ -798,15 +939,16 @@
         name: name.trim(),
         category: category || 'Custom',
         desc: `Added by student in lab. Distinguishing clue: "${distinguishingQ}"`,
-        traits: {}
+        traits: Object.fromEntries(this.askedQuestions.filter(r => r.answer !== 'unsure').map(r =>
+          [r.qId, ({ yes: 1, no: 0, probably: 0.78, rarely: 0.22 })[r.answer]]))
       };
 
       // Set trait for the new question
       newEntity.traits[newQId] = userAnsIsYes ? 1.0 : 0.0;
 
       // If we had a guess that was wrong, set opposite on that guess
-      if (this.currentGuess && this.currentGuess.traits) {
-        this.currentGuess.traits[newQId] = userAnsIsYes ? 0.0 : 1.0;
+      if (this.lastRejectedGuess?.traits) {
+        this.lastRejectedGuess.traits[newQId] = userAnsIsYes ? 0.0 : 1.0;
       }
 
       this.entities.push(newEntity);
@@ -816,6 +958,10 @@
         const stored = JSON.parse(localStorage.getItem(this.customEntitiesKey) || '[]');
         stored.push(newEntity);
         localStorage.setItem(this.customEntitiesKey, JSON.stringify(stored));
+        localStorage.setItem(this.customEntitiesKey + '_questions', JSON.stringify(this.questions.filter(q => q.category === 'custom')));
+        const corrections = Object.fromEntries(this.entities.filter(e => !e.id.startsWith('custom_')).map(e =>
+          [e.id, Object.fromEntries(Object.entries(e.traits).filter(([q]) => q.startsWith('q_custom_')))]));
+        localStorage.setItem(this.customEntitiesKey + '_corrections', JSON.stringify(corrections));
       } catch (e) {
         console.warn('Could not persist new entity:', e);
       }
@@ -979,6 +1125,17 @@
       // Utilities
       this.btnUndo?.addEventListener('click', () => this.handleUndo());
       this.btnReset?.addEventListener('click', () => this.handleReset());
+      document.getElementById('tq-btn-new-game')?.addEventListener('click', () => this.handleReset());
+      document.getElementById('tq-btn-stumped')?.addEventListener('click', () => {
+        clearTimeout(this.pendingAnswer);
+        this.pendingAnswer = null;
+        this.engine.lastRejectedGuess = this.engine.currentGuess || this.engine.getTopCandidates(1)[0]?.entity;
+        this.engine.isGameOver = true;
+        this.engine.isGuessing = false;
+        this.controlsCluster.hidden = true;
+        this.renderStumpedState();
+        this.inputTeachName?.focus();
+      });
       this.btnGuessNow?.addEventListener('click', () => this.handleForceGuess());
 
       // Guess feedback buttons
@@ -998,7 +1155,7 @@
 
       // Global Keyboard Shortcuts
       window.addEventListener('keydown', (e) => {
-        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+        if (e.defaultPrevented || (e.key === 'Escape' && (document.fullscreenElement || document.querySelector('.creation-app-expanded'))) || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
 
         const flashBtn = (btn) => {
           if (!btn) return;
@@ -1018,7 +1175,7 @@
     }
 
     handleAnswer(answer) {
-      if (this.engine.isGameOver || this.engine.isGuessing) return;
+      if (this.pendingAnswer || this.engine.isGameOver || this.engine.isGuessing) return;
 
       const ranked = this.engine.rankQuestions(1);
       if (ranked.length === 0) {
@@ -1031,9 +1188,10 @@
       const qId = ranked[0].question.id;
       this.synth.beepClick();
       this.lcdFace.textContent = '( > _ < )'; // brief thinking squint
-      this.lcdStatusMsg.textContent = 'UPDATING NEURAL PRIOR...';
+      this.lcdStatusMsg.textContent = 'WEIGHING YOUR CLUE...';
 
-      setTimeout(() => {
+      this.pendingAnswer = setTimeout(() => {
+        this.pendingAnswer = null;
         this.engine.recordAnswer(qId, answer);
         this.synth.beepCompute();
         this.render();
@@ -1041,6 +1199,8 @@
     }
 
     handleUndo() {
+      clearTimeout(this.pendingAnswer);
+      this.pendingAnswer = null;
       if (this.engine.undo()) {
         this.synth.beepClick();
         this.render();
@@ -1048,12 +1208,16 @@
     }
 
     handleReset() {
+      this.restartButton?.remove();
+      clearTimeout(this.pendingAnswer);
+      this.pendingAnswer = null;
       this.synth.beepClick();
       this.engine.reset();
       this.render();
     }
 
     handleForceGuess() {
+      if (this.pendingAnswer || this.engine.isGuessing || this.engine.isGameOver) return;
       const top = this.engine.getTopCandidates(1);
       if (top.length > 0) {
         this.engine.isGuessing = true;
@@ -1074,7 +1238,7 @@
       this.synth.soundStumped();
       this.engine.rejectCurrentGuess();
 
-      if (this.engine.questionCount < this.engine.maxQuestions) {
+      if (!this.engine.isGameOver && this.engine.questionCount < this.engine.maxQuestions) {
         // Can keep asking!
         this.render();
       } else {
@@ -1094,10 +1258,11 @@
 
       this.engine.teachEntity(name, cat, q, ansIsYes);
       this.synth.fanfareVictory();
-      alert(`Learned! The 20Q Oracle now knows "${name}" and the distinguishing question.`);
+
       this.teachForm?.reset();
       this.teachBox.hidden = true;
       this.handleReset();
+      this.statusLive.textContent = `Learned ${name}. Your new item and clue are saved in this browser when storage is available. A new game is ready.`;
     }
 
     toggleViewMode() {
@@ -1223,7 +1388,7 @@
 
       // Telemetry Stats
       if (this.statEntropy) this.statEntropy.textContent = `${currentH.toFixed(2)}`;
-      const activeCandidates = this.engine.beliefs.filter(p => p > 0.01).length;
+      const activeCandidates = this.engine.beliefs.filter(p => p >= 0.1 / this.engine.entities.length).length;
       if (this.statCandidates) this.statCandidates.textContent = `${activeCandidates}`;
       const bitsRemoved = Math.max(0, initialH - currentH);
       if (this.statBitsRemoved) this.statBitsRemoved.textContent = `${bitsRemoved.toFixed(2)}`;
@@ -1257,7 +1422,7 @@
         const row = document.createElement('div');
         row.className = `tq-ig-item ${idx === 0 ? 'is-chosen' : ''}`;
         row.innerHTML = `
-          <div class="tq-ig-q-text">${idx === 0 ? '★ ' : ''}${item.question.text}</div>
+          <div class="tq-ig-q-text">${idx === 0 ? '★ ' : ''}${escapeHTML(item.question.text)}</div>
           <div class="tq-ig-meta">
             ${idx === 0 ? '<span class="tq-ig-chosen-badge">Best Split</span>' : ''}
             <span class="tq-ig-pill" title="Information Gain = Shannon entropy reduction">+${item.informationGain.toFixed(2)} bits</span>
@@ -1273,6 +1438,7 @@
       this.candidateBars.innerHTML = '';
 
       const categoryIcons = {
+        'Characters': '🎭',
         'Animals': '🐾',
         'Thinkers': '💡',
         'Technology': '⚙️',
@@ -1288,7 +1454,7 @@
         const row = document.createElement('div');
         row.className = 'tq-cand-row';
         row.innerHTML = `
-          <div class="tq-cand-name" title="${cand.entity.name} (${cand.entity.category})">${icon} ${cand.entity.name}</div>
+          <div class="tq-cand-name" title="${escapeHTML(cand.entity.name)} (${escapeHTML(cand.entity.category)})">${icon} ${escapeHTML(cand.entity.name)}</div>
           <div class="tq-cand-track">
             <div class="tq-cand-fill" style="width: ${pct}%"></div>
           </div>
@@ -1314,7 +1480,7 @@
         item.className = 'tq-history-item';
         const qText = qMap.get(record.qId) || 'Question';
         item.innerHTML = `
-          <div><strong>Q${idx + 1}:</strong> ${qText}</div>
+          <div><strong>Q${idx + 1}:</strong> ${escapeHTML(qText)}</div>
           <span class="tq-ans-pill tq-ans-${record.answer}">${record.answer.toUpperCase()}</span>
         `;
         this.historyList.appendChild(item);
@@ -1329,6 +1495,19 @@
       if (this.lcdFace) this.lcdFace.textContent = '( ^ ▽ ^ )';
       if (this.revealBanner) this.revealBanner.hidden = true;
       if (this.controlsCluster) this.controlsCluster.hidden = true;
+      this.showRestart();
+    }
+
+    showRestart() {
+      if (this.restartButton) this.restartButton.remove();
+      const button = document.createElement('button');
+      this.restartButton = button;
+      button.type = 'button';
+      button.className = 'tq-btn-correct';
+      button.textContent = 'Play again';
+      button.addEventListener('click', () => { button.remove(); this.handleReset(); });
+      this.lcdScreen.appendChild(button);
+      button.focus();
     }
 
     renderStumpedState() {
@@ -1337,6 +1516,7 @@
       if (this.lcdFace) this.lcdFace.textContent = '( × _ × )';
       if (this.revealBanner) this.revealBanner.hidden = true;
       if (this.teachBox) this.teachBox.hidden = false;
+      this.showRestart();
     }
 
     // ── Interactive Shannon Entropy Curve Math Widget for the Lesson ──
