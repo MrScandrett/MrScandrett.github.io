@@ -466,6 +466,10 @@
         scroll.appendChild(sheet(data, inst, level, reader, accent));
       }
       render();
+      // The First Sound panel asks the same question; keep this page in step with its answer.
+      document.addEventListener('instrument-level', function (e) {
+        if (data.levels.some(function (l) { return l.id === e.detail; })) { level = e.detail; render(); }
+      });
       print.disabled = printAll.disabled = false;
 
       var printRoot = el('div', 'pgd-print-root', null, document.body);

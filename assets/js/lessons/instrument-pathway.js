@@ -75,7 +75,17 @@
     return n;
   }
   function membersOf(stage) { return Array.prototype.slice.call(document.querySelectorAll('[data-stage="' + stage + '"]')); }
-  function entryOf(stage) { return membersOf(stage)[0] || null; }
+  // A stage's signpost goes in the lesson, not the studio at the top of the page, whose signposts are
+  // hidden. A stage that only exists in the studio keeps its hidden signpost; see visible() below.
+  function inStudio(node) { return !!node.closest('[data-creation-app]'); }
+  function entryOf(stage) {
+    var all = membersOf(stage);
+    return all.filter(function (n) { return !inStudio(n); })[0] || all[0] || null;
+  }
+  function summaryOf(stage) {
+    var withOne = membersOf(stage).filter(function (n) { return n.hasAttribute('data-stage-summary'); })[0];
+    return withOne ? withOne.getAttribute('data-stage-summary') : '';
+  }
   function labelOf(node) {
     var h = node.querySelector('h2');
     return node.getAttribute('data-stage-label') || node.getAttribute('data-route-label') || (h ? h.textContent.trim() : node.id);
@@ -140,13 +150,12 @@
   el('p', 'ip-lede', 'Each stage means the same thing on piano, guitar, violin, saxophone and drums, so this route is the map for your next instrument too.', more);
   var rows = el('ol', 'ip-rows', null, more);
   stages.forEach(function (s) {
-    var entry = entryOf(s.id);
     var li = el('li', 'ip-row', null, rows);
     var copy = el('div', null, null, li);
     var t = el('p', 'ip-row-title', null, copy);
     el('b', null, (STAGES.indexOf(s) + 1) + '. ' + s.name, t);
     t.appendChild(document.createTextNode(' — ' + s.goal));
-    var here = entry.getAttribute('data-stage-summary');
+    var here = summaryOf(s.id);
     if (here) el('p', 'ip-here', 'On ' + me.name.toLowerCase() + ': ' + here, copy);
     var links = el('p', 'ip-sections', null, copy);
     membersOf(s.id).forEach(function (m, i) {
@@ -264,7 +273,11 @@
   }, true);
   // Sims, scores and videos above a signpost finish laying out after the page loads and push it
   // down, so keep it in place for a moment unless the student has started scrolling.
-  function settle(target) {
+  function visible(target) {
+    return target.getClientRects().length ? target : target.nextElementSibling || target;
+  }
+  function settle(sign) {
+    var target = visible(sign);
     var stop = false, until = Date.now() + 2500;
     function quit() { stop = true; }
     ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(function (t) { window.addEventListener(t, quit, { once: true, passive: true }); });
