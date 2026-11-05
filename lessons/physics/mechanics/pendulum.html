@@ -111,6 +111,11 @@
       0%,100% { opacity:0.5; transform:scale(0.9); }
       50% { opacity:1; transform:scale(1.05); }
     }
+    .pd-gallery { display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin:1rem 0; }
+    .pd-gallery figure { margin:0;border:1px solid var(--line,#d2d2d7);border-radius:12px;overflow:hidden; }
+    .pd-gallery img { width:100%;height:190px;object-fit:cover;display:block; }
+    .pd-gallery figcaption { font-size:0.77rem;line-height:1.5;padding:0.6rem 0.7rem; }
+    .pd-gallery figcaption small { display:block;color: var(--text-muted, #64748b);margin-top:0.3rem; }
     .pd-apps { display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin:0.8rem 0; }
     .pd-app  { border:1px solid var(--line,#d2d2d7);border-radius:12px;padding:0.8rem; }
     .pd-app-icon { font-size:1.5rem;margin-bottom:0.3rem; }
@@ -132,6 +137,16 @@
     .diff-easy { background:rgba(52,199,89,0.15);color:#248a3d;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
     .diff-mid  { background:rgba(255,149,0,0.15);color:#c07000;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
     .diff-hard { background:rgba(255,59,48,0.12);color:#c0392b;border-radius:5px;padding:0.1rem 0.4rem;font-size:0.72rem;font-weight:700;margin-right:0.4rem; }
+    .fc-shell { border:1px solid rgba(148,163,184,0.2);border-radius:20px;overflow:hidden;margin:0.9rem 0;background:#0b1020;color:#e2e8f0; }
+    .fc-shell canvas { display:block;width:100%;height:min(70vh,600px);touch-action:none; }
+    .fc-controls { display:flex;flex-wrap:wrap;gap:0.6rem 1rem;align-items:center;padding:0.7rem 0.9rem;border-top:1px solid rgba(148,163,184,0.2); }
+    .fc-controls label { font-size:0.8rem;display:flex;align-items:center;gap:0.4rem; }
+    .fc-controls button,.fc-controls select { background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:8px;padding:0.35rem 0.75rem;font-size:0.82rem;cursor:pointer; }
+    .fc-controls button:hover { background:#334155; }
+    .fc-read { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.5rem;padding:0.7rem 0.9rem;border-top:1px solid rgba(148,163,184,0.2);font-size:0.8rem; }
+    .fc-read span { display:block;color:#94a3b8;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em; }
+    .fc-read strong { font-size:0.95rem; }
+    .fc-note { font-size:0.78rem;padding:0 0.9rem 0.8rem;color:#94a3b8;line-height:1.5; }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -177,13 +192,13 @@
   <figcaption>Portrait of Galileo Galilei</figcaption>
 </figure>
             </div>
-            <p><strong>Galileo Galilei (1564–1642)</strong> reportedly observed a chandelier swinging in the Cathedral of Pisa and noticed something remarkable: regardless of how wide the swing, it seemed to take the same time to complete each oscillation. He tested this using his own pulse as a timer. This property — constant period for small angles — led to the development of pendulum clocks, which were the world's most accurate timekeepers for nearly 300 years.</p>
+            <p><strong>Galileo Galilei (1564–1642)</strong> reportedly (the story is a legend) observed a chandelier swinging in the Cathedral of Pisa and noticed something remarkable: whether the swing was wide or narrow, each oscillation seemed to take about the same time. He tested this using his own pulse as a timer. This is nearly true for small swings (under about 15°) — the period grows slightly at wider angles, about 4% longer at 45° and 18% longer at 90°. That near-constant period led to the development of pendulum clocks, which were the world's most accurate timekeepers for nearly 300 years.</p>
           </div>
         </section>
 
         <section class="pd-card" style="--card-accent:#ff9f0a;">
           <h2>The Period Formula</h2>
-          <p>For small angles, the period T of a simple pendulum depends only on its <strong>length</strong> and gravitational acceleration — not on the mass of the bob or the amplitude:</p>
+          <p>For small angles (under about 15°), the period T of a simple pendulum depends only on its <strong>length</strong> and gravitational acceleration — not on the mass of the bob, and almost not at all on the amplitude. At wider angles the true period is longer than this formula predicts (the sim's Period readout accounts for that):</p>
           <div class="pd-formula-box" role="img" aria-label="T equals 2 pi times square root of L over g">
             <span class="pd-formula-sym">T = 2π √(L / g)</span>
             <div class="pd-formula-vars">
@@ -239,13 +254,101 @@
           <p class="pd-lab-note">Without friction, PE + KE stays nearly constant. Add drag and the missing mechanical energy reappears in the orange heat bar.</p>
         </section>
 
+        <section class="pd-card" style="--card-accent:#ff375f;">
+          <h2>How Small Is "Small"? Amplitude Explorer</h2>
+          <p>The formula T = 2π√(L/g) is an approximation. Slide the release angle and compare it with the exact period, which uses the complete elliptic integral: T = T₀ · (2/π) K(sin(θ₀/2)).</p>
+          <div class="pd-slider-row">
+            <label for="pd-amp-slider">Release angle <output id="pd-amp-val">30°</output></label>
+            <input type="range" class="nl-slider" id="pd-amp-slider" min="1" max="170" value="30" style="width:100%;" />
+          </div>
+          <div class="pd-lab-caption" aria-live="polite">
+            <div class="pd-lab-stat"><span>Small-angle T₀</span><strong id="pd-amp-t0">2.01 s</strong></div>
+            <div class="pd-lab-stat"><span>Exact T</span><strong id="pd-amp-t">2.01 s</strong></div>
+            <div class="pd-lab-stat"><span>Error of formula</span><strong id="pd-amp-err">0%</strong></div>
+          </div>
+          <div class="pd-callout orange" id="pd-amp-verdict">Under 15° the formula is within about 0.5% — Galileo's "isochronism" holds.</div>
+          <p style="font-size:0.84rem;">Uses L = 1.00 m and g = 9.81 m/s². The error depends only on the angle, not on L or g.</p>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#30b0c7;">
+          <h2>Predict, Then Test: Scaling the Period</h2>
+          <p>Because T ∝ √L, changing the length by a factor changes the period by only the <em>square root</em> of that factor. Predict first, then check in the lab above.</p>
+          <ul style="font-size:0.88rem;line-height:1.7;color:var(--text-secondary,#3f4f65);">
+            <li><strong>4× longer string</strong> → period doubles (√4 = 2).</li>
+            <li><strong>Moon gravity (g ≈ 1.62)</strong> → period ≈ 2.46× longer than on Earth (√(9.81/1.62)).</li>
+            <li><strong>Double the mass</strong> → no change in period.</li>
+            <li><strong>Seconds pendulum</strong>: T = 2 s needs L ≈ 0.99 m on Earth.</li>
+          </ul>
+          <div class="pd-callout orange"><strong>Try it:</strong> Set the length to 0.50 m, note the Period readout, then set 2.00 m. The ratio should be 2.00. Then switch to the Moon and check the 2.46× prediction.</div>
+          <h3>Going further: the Foucault pendulum</h3>
+          <p>In 1851 Léon Foucault hung a 67 m pendulum in the Panthéon in Paris. Its swing plane slowly rotated — direct visible evidence that the Earth spins beneath it. At the poles it completes a full turn in one day; at Paris latitude (≈49°) it takes about 32 hours.</p>
+        </section>
+
+        <section class="pd-card" style="--card-accent:#af52de;">
+          <h2 id="foucault-3d">The Foucault Pendulum: Proof the Earth Rotates</h2>
+          <ul>
+            <li><strong>The Foucault pendulum:</strong> a heavy pendulum that swings freely in a constant plane.</li>
+            <li><strong>The Earth's rotation:</strong> while the pendulum keeps swinging in the same direction, the Earth slowly rotates beneath it.</li>
+            <li><strong>Knocking over the dominoes:</strong> a small pointer at the bottom of the pendulum swings back and forth. Because the Earth's rotation gradually shifts the apparent path of the swing, the pointer eventually grazes and knocks over the dominoes set up in a circle around it, one by one over several hours.</li>
+          </ul>
+          <div class="fc-shell" id="foucaultSim">
+            <canvas aria-label="3D Foucault pendulum above a circle of dominoes. Drag to orbit, scroll or pinch to zoom, right-drag (or Shift-drag, two-finger drag, arrow keys, or the Drag button) to pan." role="img"></canvas>
+            <div class="fc-controls">
+              <button type="button" id="fcPlay" aria-pressed="false">Pause</button>
+              <button type="button" id="fcReset">Reset</button>
+              <button type="button" id="fcTop">Top view</button>
+              <button type="button" id="fcSide">Side view</button>
+              <button type="button" id="fcPan" aria-pressed="false">Drag: Orbit</button>
+              <label>Latitude <input type="range" id="fcLat" min="-90" max="90" step="1" value="45"> <output id="fcLatOut" for="fcLat">45° N</output></label>
+              <label>Time-lapse <select id="fcSpeed">
+                <option value="300">5 min of Earth time per second</option>
+                <option value="600">10 min per second</option>
+                <option value="900" selected>15 min per second</option>
+                <option value="1800">30 min per second</option>
+              </select></label>
+            </div>
+            <div class="fc-read" aria-live="off">
+              <div><span>Earth time elapsed</span><strong id="fcClock">0 h 00 min</strong></div>
+              <div><span>Swing plane has turned</span><strong id="fcPlane">0.0°</strong></div>
+              <div><span>Dominoes down</span><strong id="fcDown">0 / 24</strong></div>
+              <div><span>At this latitude</span><strong id="fcPeriod"></strong></div>
+            </div>
+            <p class="fc-note">Drag to orbit, scroll or pinch to zoom, right-drag (or Shift-drag, two-finger drag, arrow keys, or the Drag button) to pan. The pendulum is released once and never pushed again; the rotating Earth (the floor and the dominoes) is sped up so hours pass in seconds. Try the Top view, then drag latitude to 0° (equator) and 90° (pole).</p>
+          </div>
+
+          <div class="pd-callout orange"><strong>Why it matters:</strong> it is a classic physics museum demonstration that visually proves the rotation of the Earth.</div>
+          <p><small>Sources: <a href="https://en.wikipedia.org/wiki/Foucault_pendulum" target="_blank" rel="noopener">Wikipedia</a>, <a href="https://www.facebook.com/IndianaMuseum/videos/what-does-the-foucault-pendulum-prove-come-find-out-during-our-1-pm-chat-about-t/2439315079478928/" target="_blank" rel="noopener">Indiana Museum</a>, <a href="https://gregfjohnson.com/foucault/" target="_blank" rel="noopener">Greg F. Johnson</a>.</small></p>
+        </section>
+
         <section class="pd-card" style="--card-accent:#34c759;">
           <h2>Real-World Applications</h2>
           <div class="pd-apps">
             <div class="pd-app"><div class="pd-app-icon">🕰️</div><strong>Pendulum Clocks</strong><small>Invented by Christiaan Huygens in 1656. Each swing of a calibrated pendulum moves the clock mechanism by one precise increment.</small></div>
-            <div class="pd-app"><div class="pd-app-icon">🌍</div><strong>Measuring g</strong><small>Scientists measured gravitational acceleration at different latitudes by timing pendulums. Faster period = stronger gravity = slightly flattened Earth.</small></div>
+            <div class="pd-app"><div class="pd-app-icon">🌍</div><strong>Measuring g</strong><small>Scientists measured gravitational acceleration at different latitudes by timing pendulums. Shorter period = stronger gravity = slightly flattened Earth.</small></div>
             <div class="pd-app"><div class="pd-app-icon">🏗️</div><strong>Tuned Mass Dampers</strong><small>Skyscrapers like Taipei 101 use giant suspended pendulums to counteract wind oscillations and prevent swaying in typhoons.</small></div>
             <div class="pd-app"><div class="pd-app-icon">🔬</div><strong>Seismometers</strong><small>Pendulums detect ground motion. When the Earth shakes, the bob lags behind the frame, recording the motion of earthquakes.</small></div>
+          </div>
+          <div class="pd-gallery">
+              <figure data-zoomable>
+                <img data-lightbox-group="pendulum" src="../../../assets/lessons/pendulum/huygens.jpg" alt="Portrait of Christiaan Huygens" loading="lazy">
+                <figcaption>Christiaan Huygens (1629–1695) turned Galileo's observation into the pendulum clock in 1656, cutting clock error from about 15 minutes a day to about 15 seconds.<small>Caspar Netscher, 1671. Public domain, via Wikimedia Commons.</small></figcaption>
+              </figure>
+              <figure data-zoomable>
+                <img data-lightbox-group="pendulum" src="../../../assets/lessons/pendulum/huygens-clock.png" alt="Huygens's first pendulum clock, front view" loading="lazy">
+                <figcaption>Huygens's first pendulum clock: a swinging pendulum regulates the gears, so the clock's rate depends on the pendulum's length.<small>Public domain, via Wikimedia Commons.</small></figcaption>
+              </figure>
+              <figure data-zoomable>
+                <img data-lightbox-group="pendulum" src="../../../assets/lessons/pendulum/longcase.jpg" alt="Antique longcase pendulum clock" loading="lazy">
+                <figcaption>A longcase (grandfather) clock. Its long pendulum swings with a period of about 2 seconds, one tick per half swing.<small>Photo: Christoph Braun, CC0, via Wikimedia Commons.</small></figcaption>
+              </figure>
+              <figure data-zoomable>
+                <img data-lightbox-group="pendulum" src="../../../assets/lessons/pendulum/foucault.jpg" alt="Foucault pendulum at the Panthéon in Paris" loading="lazy">
+                <figcaption>Foucault's pendulum in the Panthéon, Paris. Its swing plane slowly rotates, which shows that the Earth turns beneath it.<small>Photo: Rsk6400, CC BY-SA 3.0, via Wikimedia Commons.</small></figcaption>
+              </figure>
+              <figure data-zoomable>
+                <img data-lightbox-group="pendulum" src="../../../assets/lessons/pendulum/taipei101.jpg" alt="Tuned mass damper in Taipei 101" loading="lazy">
+                <figcaption>Taipei 101's 660-tonne tuned mass damper is a giant pendulum that swings against the building's sway.<small>Photo: Armand du Plessis, CC BY 3.0, via Wikimedia Commons.</small></figcaption>
+              </figure>
           </div>
         </section>
 
@@ -901,9 +1004,29 @@
   };
 })();
 </script>
+<script>
+(function(){
+  var sl=document.getElementById('pd-amp-slider'); if(!sl) return;
+  var g=9.81,L=1,T0=2*Math.PI*Math.sqrt(L/g);
+  function exact(deg){var k=Math.sin(deg*Math.PI/360),a=1,b=Math.sqrt(1-k*k);for(var i=0;i<8;i++){var n=(a+b)/2;b=Math.sqrt(a*b);a=n;}return T0/a;}
+  function upd(){
+    var d=+sl.value,T=exact(d),e=(T/T0-1)*100;
+    document.getElementById('pd-amp-val').textContent=d+'°';
+    document.getElementById('pd-amp-t0').textContent=T0.toFixed(3)+' s';
+    document.getElementById('pd-amp-t').textContent=T.toFixed(3)+' s';
+    document.getElementById('pd-amp-err').textContent='+'+e.toFixed(1)+'% longer';
+    document.getElementById('pd-amp-verdict').textContent=
+      d<=15?'Under 15° the formula is within about 1% — Galileo\u2019s near-constant period holds.':
+      d<=45?'Noticeable now: the real swing is slower than the simple formula predicts.':
+      'Large swing: the simple formula underestimates the period substantially. Use the exact expression.';
+  }
+  sl.addEventListener('input',upd); upd();
+})();
+</script>
 <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
+<script type="module" src="../../../assets/js/foucault-sim.mjs?v=2"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
 </body>
 </html>

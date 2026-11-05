@@ -222,3 +222,13 @@ These images appear as small lesson tile thumbnails — transformative, non-comm
 ---
 
 *Last updated: 2026-06-02 — MrScandrett.github.io*
+
+## Pendulum lesson (`assets/lessons/pendulum/`)
+
+| File | Credit | License | Source |
+|---|---|---|---|
+| huygens.jpg | Caspar Netscher, 1671 | Public domain | https://commons.wikimedia.org/wiki/File:Caspar_Netscher_-_Christiaan_Huygens,_the_astronomer,_1671.jpg |
+| huygens-clock.png | Christiaan Huygens | Public domain | https://commons.wikimedia.org/wiki/File:Huygens_first_pendulum_clock.png |
+| longcase.jpg | Christoph Braun | CC0 | https://commons.wikimedia.org/wiki/File:Pendulum_clock_by_Jacob_Kock,_antique_furniture_photography,_IMG_0931_edit.jpg |
+| foucault.jpg | Rsk6400 | CC BY-SA 3.0 | https://commons.wikimedia.org/wiki/File:Foucault_pendulum_pantheon_paris_2006.jpg |
+| taipei101.jpg | Armand du Plessis | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Taipei_101_Tuned_Mass_Damper_2010.jpg |
