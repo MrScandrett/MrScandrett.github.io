@@ -272,6 +272,20 @@ async function pruneImageOriginals() {
 
 // Point <img src>/data-full at the WebP, and lazy-load images after the first two on the page
 // (those are usually the logo and the hero, which should load straight away).
+function stripLocalOnlyLinks(html) {
+  // OSeditor stays in the source home page for localhost, but dist has no such page.
+  const item = html.match(/<li>\s*<a [^>]*href="OSeditor\.html"[\s\S]*?<\/li>\s*/);
+  if (!item) return html;
+  // The tool list's heading counts its links, so it drops by one too.
+  const counts = [...html.slice(0, item.index).matchAll(/(explore-folder-count">)(\d+)( tools?)/g)];
+  const count = counts.at(-1);
+  const head = count
+    ? html.slice(0, count.index) + count[1] + (Number(count[2]) - 1) + count[3]
+      + html.slice(count.index + count[0].length, item.index)
+    : html.slice(0, item.index);
+  return head + html.slice(item.index + item[0].length);
+}
+
 function rewriteImages(html, file) {
   const dir = path.posix.dirname(path.relative(DIST, file).split(path.sep).join("/"));
   html = html.replace(/\b(src|data-full)="([^"?#:]+\.(?:png|jpe?g))"/gi, (match, attr, url) => {
@@ -291,7 +305,7 @@ async function minifyHtmlFiles() {
   let before = 0;
   let after = 0;
   for (const file of htmlFiles) {
-    const source = rewriteImages(await readFile(file, "utf8"), file);
+    const source = rewriteImages(stripLocalOnlyLinks(await readFile(file, "utf8")), file);
     before += Buffer.byteLength(source);
     try {
       const result = await minifyHtml(source, {

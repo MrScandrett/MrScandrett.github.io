@@ -1,4 +1,4 @@
-import { access, readdir, stat } from "node:fs/promises";
+import { access, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,11 +64,14 @@ const leaked = [];
 for (const relativePath of FORBIDDEN) {
   if (await exists(relativePath)) leaked.push(relativePath);
 }
+// A private page is missing from dist, so a link to it is a dead end for visitors.
+const homeLinksPrivate = (await readFile(path.join(DIST, "index.html"), "utf8")).includes('href="OSeditor.html"');
 const bytes = await directorySize(DIST);
 const sizeMiB = bytes / 1024 / 1024;
 const oversizedThumbs = await oversizedThumbnails();
 
-if (missing.length || leaked.length || bytes > MAX_BYTES || oversizedThumbs.length) {
+if (missing.length || leaked.length || homeLinksPrivate || bytes > MAX_BYTES || oversizedThumbs.length) {
+  if (homeLinksPrivate) console.error("dist/index.html links to OSeditor.html, which is not published.");
   if (missing.length) console.error(`Missing required public files: ${missing.join(", ")}`);
   if (leaked.length) console.error(`Private build/source paths leaked into dist: ${leaked.join(", ")}`);
   if (bytes > MAX_BYTES) console.error(`dist is ${sizeMiB.toFixed(1)} MiB; budget is ${MAX_BYTES / 1024 / 1024} MiB.`);
