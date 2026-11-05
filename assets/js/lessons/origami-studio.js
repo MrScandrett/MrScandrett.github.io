@@ -1,6 +1,6 @@
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
-import { sheet, foldPanels, commit, validFold, cross } from './origami/paper.mjs';
+import { sheet, foldPanels, commit, validFold } from './origami/paper.mjs';
 const $=id=>document.getElementById(`og-${id}`), canvas=$('paper-canvas');
 const KEY='origami-paper-studio-v2';
 let setup;
@@ -14,7 +14,7 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x54736c,2.5));
 const light=new THREE.DirectionalLight(0xfff4de,3);light.position.set(-8,-10,20);scene.add(light);
 const grid=new THREE.GridHelper(50,40,0x416963,0x294e49);grid.rotation.x=Math.PI/2;grid.position.z=-.65;scene.add(grid);
 const group=new THREE.Group();scene.add(group);
-let steps=[],cursor=0,panels=sheet(),pending=null,angle=0,side=1,top=true,animation=null,recipeStep=0,drag=null;
+let steps=[],cursor=0,panels=sheet(),pending=null,angle=0,side=1,top=true,animation=null,drag=null;
 const recipes={book:[{a:[0,-7.5],b:[0,7.5],side:1,name:'Match the left edge to the right edge.'}],kite:[{a:[7.5,7.5],b:[-7.5,1.2867965644],side:-1,name:'Bring the top edge onto the diagonal center line.'},{a:[7.5,7.5],b:[1.2867965644,-7.5],side:1,name:'Bring the right edge onto the same center line.'}],accordion:[{a:[-3.75,-7.5],b:[-3.75,7.5],side:1,name:'Fold the left quarter to the first interior grid line.'},{a:[0,-7.5],b:[0,7.5],side:1,name:'Fold the stack across the middle.'},{a:[3.75,-7.5],b:[3.75,7.5],side:1,name:'Fold the stack at the last quarter line.'}]};
 const status=t=>$('fold-status').textContent=t;
 function stop(){animation=null;$('replay').textContent='▶ Replay my folds';$('preview').textContent='▶ Preview fold';}
@@ -34,7 +34,7 @@ function draw(){
    for(let j=1;j<p.points.length-1;j++) for(const k of [0,j,j+1]) {const v=p.points[k];positions.push(v[0],v[1],(v[2]||0)+i*.018);}
    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();
    // Two coincident single-sided surfaces preserve front/reverse identity as a panel turns.
-   for(const face of [0,1]){const mat=new THREE.MeshStandardMaterial({color:face===0?$('color').value:'#fff5dc',roughness:.94,side:face===0?THREE.FrontSide:THREE.BackSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});group.add(new THREE.Mesh(geometry.clone(),mat));}
+   for(const face of [0,1]){const mat=new THREE.MeshStandardMaterial({color:face===p.face?$('color').value:'#fff5dc',roughness:.94,side:face===0?THREE.FrontSide:THREE.BackSide,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});group.add(new THREE.Mesh(geometry.clone(),mat));}
    geometry.dispose();
    const edgePoints=p.points.map(v=>new THREE.Vector3(v[0],v[1],(v[2]||0)+i*.018));edgePoints.push(edgePoints[0]);
    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(edgePoints),new THREE.LineBasicMaterial({color:p.moving?0xffdf82:0x6f533e})));
@@ -57,7 +57,7 @@ function begin(f){stop();if(steps.length>=80&&cursor>=80){status('This sheet has
 function keep(){if(!pending)return;stop();steps=steps.slice(0,cursor);steps.push({...pending});cursor++;pending=null;angle=0;rebuild();draw();save();status('Fold kept. Place another crease or replay your steps with real paper.');}
 function view(isTop){top=isTop;controls.enableRotate=!top;camera.position.set(...(top?[0,-.01,29]:[14,-19,22]));controls.target.set(0,0,0);controls.update();$('view-label').textContent=top?'TOP VIEW':'ORBIT VIEW';$('top').setAttribute('aria-pressed',top);$('orbit').setAttribute('aria-pressed',!top);}
 $('top').onclick=()=>view(true);$('orbit').onclick=()=>view(false);$('fit').onclick=()=>view(top);
-$('new').onclick=()=>{stop();steps=[];cursor=0;recipeStep=0;pending=null;angle=0;panels=sheet();draw();save();status('Fresh 15 cm sheet ready.');};
+$('new').onclick=()=>{stop();steps=[];cursor=0;pending=null;angle=0;panels=sheet();draw();save();status('Fresh 15 cm sheet ready.');};
 $('undo').onclick=()=>{if(pending){stop();pending=null;angle=0;draw();}else seek(Math.max(0,cursor-1));};$('redo').onclick=()=>seek(Math.min(steps.length,cursor+1));
 $('angle').oninput=()=>{stop();if(top)view(false);angle=Number($('angle').value);draw();};$('commit').onclick=keep;$('cancel').onclick=()=>{stop();pending=null;angle=0;draw();};
 $('preview').onclick=()=>{if(animation){stop();return;}if(!pending)return;if(top)view(false);angle=0;animation={type:'fold',start:performance.now()};$('preview').textContent='Pause preview';};
@@ -73,11 +73,26 @@ function point(e){const r=canvas.getBoundingClientRect();ray.setFromCamera(new T
 canvas.onpointerdown=e=>{if(!top||e.button!==0)return;drag=point(e);canvas.setPointerCapture(e.pointerId);};
 canvas.onpointermove=e=>{if(!drag)return;const b=point(e);if(b&&Math.hypot(b[0]-drag[0],b[1]-drag[1])>.2){pending={a:drag,b,side,direction:$('direction').value,layers:$('layers').value,name:'Hand-placed crease'};angle=0;draw();}};
 canvas.onpointerup=e=>{if(!drag)return;const a=drag,b=point(e);drag=null;pending=null;if(b)begin({a,b,name:'Hand-placed crease'});};canvas.onpointercancel=()=>{drag=null;pending=null;draw();};
-$('recipe').onchange=()=>{recipeStep=0;$('new').click();$('recipe-help').textContent=$('recipe').value==='free'?'Draw your own crease or use the precise controls.':'Load one step, preview it, and keep it before loading the next.';};
-$('next').onclick=()=>{if(pending){status('Keep or cancel the current preview first.');return;}const recipe=recipes[$('recipe').value];if(!recipe){status('Choose a recipe to load a guided fold.');return;}if(recipeStep>=recipe.length){status('Recipe complete. Inspect the shape in orbit view, then make it in paper.');return;}const f=recipe[recipeStep];begin({...f,direction:'valley',layers:'all'});if(pending){recipeStep++;$('recipe-help').textContent=`${recipeStep} / ${recipe.length}: ${f.name}`;}};
+$('recipe').onchange=()=>{$('new').click();$('recipe-help').textContent=$('recipe').value==='free'?'Draw your own crease or use the precise controls.':'Load one step, preview it, and keep it before loading the next.';};
+$('next').onclick=()=>{if(pending){status('Keep or cancel the current preview first.');return;}const recipe=recipes[$('recipe').value];if(!recipe){status('Choose a recipe to load a guided fold.');return;}if(cursor>=recipe.length){status('Recipe complete. Inspect the shape in orbit view, then make it in paper.');return;}const f=recipe[cursor];begin({...f,direction:'valley',layers:'all'});if(pending){$('recipe-help').textContent=`${cursor+1} / ${recipe.length}: ${f.name}`;}};
 $('timeline').oninput=()=>seek(Number($('timeline').value));
 $('replay').onclick=()=>{if(animation){stop();return;}if(!steps.length){status('Keep at least one fold to replay it.');return;}view(false);cursor=0;panels=sheet();pending=steps[0];angle=0;animation={type:'replay',start:performance.now()};$('replay').textContent='Pause replay';status('Follow each movement with your real sheet. Pause whenever you need.');draw();};
 function download(name,data,type){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+let printKernel;
+$('stl').onclick=async()=>{
+ stop();
+ const pose=(pending?apply(panels,pending,angle):panels).map(p=>({...p,points:p.points.map(v=>[...v])}));
+ const options={size:Number($('print-size').value),thickness:Number($('print-thickness').value)};
+ $('stl').disabled=true;status('Building a solid STL…');
+ try {
+   const {printablePaper}=await import('./origami/print.mjs');
+   if(!printKernel){const {default:Module}=await import('../../vendor/manifold/manifold.js');printKernel=await Module();printKernel.setup();}
+   const result=printablePaper(printKernel,pose,options);
+   download('origami-sculpture.stl',result.buffer,'model/stl');
+   status(`STL exported in mm: ${result.size.map(v=>v.toFixed(1)).join(' × ')}. Shell ${options.thickness} mm. ${result.components>1?`${result.components} separate solids; check connections in your slicer. `:''}Check supports and bed fit in your slicer.`);
+ }catch(error){status(`STL export failed: ${error.message}`);}
+ finally{$('stl').disabled=false;}
+};
 $('save').onclick=()=>download('origami-project.json',JSON.stringify({version:2,steps,cursor,color:$('color').value},null,2),'application/json');
 function load(data){if(data.version!==2||!Array.isArray(data.steps)||data.steps.length>80)throw Error('Invalid project');let check=sheet();for(const f of data.steps){if(!['valley','mountain'].includes(f.direction)||![1,-1].includes(f.side)||!['all','top'].includes(f.layers)||![f.a,f.b].every(p=>Array.isArray(p)&&p.length===2&&p.every(v=>Number.isFinite(v)&&Math.abs(v)<=100))||!validFold(f.layers==='top'?check.slice(-1):check,f)||check.length>4000)throw Error('Invalid fold');check=apply(check,f,180,true);}stop();steps=data.steps.map(f=>({...f,name:String(f.name||'Custom crease').slice(0,150)}));cursor=Number.isInteger(data.cursor)?Math.max(0,Math.min(steps.length,data.cursor)):steps.length;if(/^#[0-9a-f]{6}$/i.test(data.color))$('color').value=data.color;pending=null;angle=0;rebuild();draw();save();}
 $('open').onclick=()=>$('file').click();$('file').onchange=async()=>{try{const file=$('file').files[0];if(!file)return;if(file.size>200000)throw Error();load(JSON.parse(await file.text()));status('Project opened. Scrub the history to rehearse.');}catch{status('Could not open this project. Choose a Paper Studio project JSON file.');}$('file').value='';};

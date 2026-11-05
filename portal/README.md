@@ -36,7 +36,7 @@ cd /Users/evanscandrett/Documents/GitHubTutorialSTEAM
 export GITHUB_OWNER="MrScandrett"
 export REPO_PREFIX="student-showcase-"
 export PORT="8787"
-export ADMIN_PASSWORD="CHAMPIONS4CHRIST"  # optional — this is the default if unset
+export ADMIN_PASSWORD="choose-your-own"  # optional — without it, each run prints a new password
 
 node /Users/evanscandrett/Documents/GitHubTutorialSTEAM/portal/server.js
 ```
@@ -59,8 +59,8 @@ Open:
 - `POST /live/remove` unpublish a project (deletes its source, rebuilds, commits + pushes)
   **(password-protected)**
 
-The teacher password is `CHAMPIONS4CHRIST` by default — set `ADMIN_PASSWORD` to change it. Sign-in
-uses a session cookie scoped to the portal (not the main site); it resets whenever the portal
+There is no default teacher password. Set `ADMIN_PASSWORD`, or use the random one the portal prints
+when it starts. Eight wrong passwords lock that device out for 15 minutes. Sign-in uses a session cookie scoped to the portal (not the main site); it resets whenever the portal
 process restarts.
 
 ## Browsing the public showcase by cohort

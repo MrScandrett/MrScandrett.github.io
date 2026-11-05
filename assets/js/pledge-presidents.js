@@ -25,6 +25,9 @@
   var modeSel = root.querySelector('#hp-mode');
   var eraBtns = Array.prototype.slice.call(root.querySelectorAll('[data-hp-era]'));
 
+  var search = root.querySelector('#hp-search');
+  var onlyEra = root.querySelector('#hp-only');
+  var activeEra = 'all';
   var presidents = [];
   var byId = {};
   var cards = {};
@@ -117,6 +120,8 @@
       var li = document.createElement('li');
       li.className = 'hp-item';
       li.dataset.id = p.id;
+      li.style.setProperty('--hp-number', '"' + p.n + '"');
+      li.value = p.n;
       var era = Object.keys(ERAS).filter(function (k) { var y = +p.start.slice(0, 4); return y >= ERAS[k][0] && y < ERAS[k][1]; })[0] || 'modern';
       li.dataset.era = era;
       var b = document.createElement('button');
@@ -156,14 +161,26 @@
   }
 
   function applyEra(era) {
+    activeEra = era;
+    hidePeek();
     eraBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.hpEra === era)); });
-    var n = 0;
-    Array.prototype.forEach.call(grid.children, function (li) {
+    var query = search ? search.value.trim().toLowerCase() : '';
+    var year = /^\d{4}$/.test(query) ? Number(query) : null;
+    var shown = 0, highlighted = 0;
+    presidents.forEach(function (p) {
+      var li = cards[p.id].parentNode;
       var on = era === 'all' || li.dataset.era === era;
+      var match = !query || (year !== null
+        ? year >= Number(p.start.slice(0, 4)) && year <= Number((p.end || String(new Date().getFullYear())).slice(0, 4))
+        : (p.name + ' ' + p.short + ' ' + p.party).toLowerCase().includes(query));
+      li.hidden = !match || (!!onlyEra && onlyEra.checked && !on);
       li.classList.toggle('hp-dim', !on);
-      if (on) n++;
+      if (!li.hidden) { shown++; if (on) highlighted++; }
     });
-    status.textContent = era === 'all' ? '' : n + ' presidencies highlighted.';
+    status.textContent = shown + ' of ' + presidents.length + ' presidencies shown' +
+      (era !== 'all' ? '; ' + highlighted + ' in the selected era.' : '.');
+    var empty = root.querySelector('#hp-empty');
+    if (empty) empty.hidden = shown !== 0;
   }
 
   /* ---------- peek (hover / focus glimpse) ---------- */
@@ -384,6 +401,13 @@
     }
   }, true);   // capture: see the lightbox as open before its own Escape closes it
   modeSel.addEventListener('change', applyMode);
+  if (search) search.addEventListener('input', function () { applyEra(activeEra); });
+  if (onlyEra) onlyEra.addEventListener('change', function () { applyEra(activeEra); });
+  var reset = root.querySelector('#hp-reset');
+  if (reset) reset.addEventListener('click', function () {
+    search.value = ''; onlyEra.checked = false; modeSel.value = 'years';
+    applyMode(); applyEra('all'); search.focus();
+  });
   eraBtns.forEach(function (b) { b.addEventListener('click', function () { applyEra(b.dataset.hpEra); }); });
 
   /* ---------- go ---------- */
@@ -391,6 +415,7 @@
     presidents = data.presidents;
     presidents.forEach(function (p) { byId[p.id] = p; });
     buildGrid();
+    applyEra(activeEra);
     var m = /^#president-([a-z-0-9]+)$/.exec(location.hash);
     if (m && byId[m[1]]) openProfile(byId[m[1]], cards[m[1]]);
   }).catch(function () {

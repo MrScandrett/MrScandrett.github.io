@@ -4,6 +4,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { passwordMatches } = require("./portal/safety");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 8080);
@@ -13,6 +14,34 @@ const maxSaveBytes = 2 * 1024 * 1024;
 const editableExtension = /\.(html|css|js|mjs|json|md)$/i;
 const imageExtension = /\.(png|jpe?g|gif|svg|webp|avif)$/i;
 const ignoredEditorDirectories = new Set(["node_modules", ".git", "apps", "dist", ".vscode"]);
+const loopbackOnly = /^(?:127\.|localhost$|::1$)/i.test(host);
+const loopbackNames = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const loopbackOrigin = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i;
+
+// Git internals, dotfiles, and students' unreviewed uploads: never served, listed or saved.
+function isPrivatePath(relativePath) {
+  const parts = relativePath.toLowerCase().split(/[\\/]/).filter(Boolean);
+  if (parts.some((part) => part.startsWith(".") && part !== ".well-known")) return true;
+  return parts[0] === "portal" && ["pending", "uploads", "work"].includes(parts[1]);
+}
+
+// A web page can point a hostname of its own at 127.0.0.1 (DNS rebinding) to read this server as
+// if it were same-origin. The Host header gives that away. Bind HOST to a LAN address to serve others.
+function hostAllowed(hostHeader) {
+  return !loopbackOnly || loopbackNames.has(String(hostHeader || "").replace(/:\d+$/, "").toLowerCase());
+}
+
+// Local tools on other ports may read the site. So may "null": OSeditor and the lesson previews run
+// in sandboxed frames, which have no origin of their own. Other websites get no CORS grant.
+function corsHeadersFor(origin) {
+  if (origin !== "null" && !loopbackOrigin.test(origin || "")) return { Vary: "Origin" };
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Range",
+    Vary: "Origin",
+  };
+}
 
 function findFiles(dir, pattern) {
   let results = [];
@@ -21,7 +50,7 @@ function findFiles(dir, pattern) {
     list.forEach((entry) => {
       const file = entry.name;
       const absolutePath = path.join(dir, file);
-      if (entry.isSymbolicLink()) return;
+      if (entry.isSymbolicLink() || isPrivatePath(path.relative(root, absolutePath))) return;
       if (entry.isDirectory()) {
         if (!ignoredEditorDirectories.has(file)) {
           results = results.concat(findFiles(absolutePath, pattern));
@@ -52,12 +81,13 @@ const mime = {
 
 http
   .createServer((req, res) => {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, Range",
-      "Access-Control-Allow-Private-Network": "true",
-    };
+    if (!hostAllowed(req.headers.host)) {
+      res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Forbidden host");
+      return;
+    }
+
+    const corsHeaders = corsHeadersFor(req.headers.origin);
 
     if (req.method === "OPTIONS") {
       res.writeHead(204, corsHeaders);
@@ -65,7 +95,17 @@ http
       return;
     }
 
-    const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+    let urlPath;
+    try {
+      urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
+    } catch {
+      urlPath = "\0";
+    }
+    if (urlPath.includes("\0")) {
+      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Bad request");
+      return;
+    }
     const normalized = path.normalize(urlPath).replace(/^([.][.][/\\])+/, "");
     let filePath = path.join(root, normalized);
     if (urlPath === "/") filePath = path.join(root, "index.html");
@@ -144,7 +184,7 @@ http
         if (tooLarge) return;
         try {
           const data = JSON.parse(body);
-          if (typeof data.password !== "string" || data.password !== editorPassword) {
+          if (typeof data.password !== "string" || !passwordMatches(data.password, editorPassword)) {
             res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
             res.end("Forbidden: Incorrect Password");
             return;
@@ -175,7 +215,7 @@ http
           }
 
           const relativeParts = path.relative(root, realTarget).split(path.sep);
-          if (relativeParts.some((part) => ignoredEditorDirectories.has(part))) {
+          if (relativeParts.some((part) => ignoredEditorDirectories.has(part)) || isPrivatePath(path.relative(root, realTarget))) {
             res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
             res.end("This generated or private path is read-only");
             return;
@@ -226,7 +266,7 @@ http
         if (tooLarge) return;
         let data;
         try { data = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { return sendJson(400, { error: "Invalid request." }); }
-        if (typeof data.password !== "string" || data.password !== editorPassword) return sendJson(403, { error: "Incorrect password." });
+        if (typeof data.password !== "string" || !passwordMatches(data.password, editorPassword)) return sendJson(403, { error: "Incorrect password." });
         if (urlPath === "/api/build-app") {
           if (typeof data.slug !== "string" || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(data.slug)) return sendJson(400, { error: "Invalid project slug." });
           const { spawn } = require("child_process");
@@ -261,7 +301,7 @@ http
       return;
     }
 
-    if (!filePath.startsWith(root)) {
+    if (!filePath.startsWith(root) || isPrivatePath(path.relative(root, filePath))) {
       res.writeHead(403, corsHeaders);
       res.end("Forbidden");
       return;
@@ -290,7 +330,7 @@ http
 
       const ext = path.extname(filePath).toLowerCase();
       res.writeHead(200, { ...corsHeaders, "Content-Type": mime[ext] || "application/octet-stream" });
-      fs.createReadStream(filePath).pipe(res);
+      fs.createReadStream(filePath).on("error", () => res.destroy()).pipe(res);
     });
   })
   .listen(port, host, () => {

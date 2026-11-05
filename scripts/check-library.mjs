@@ -102,14 +102,14 @@ const tokens = (s) =>
     .map((t) => (t.length > 4 ? t.replace(/s$/, "") : t));
 
 function titleMatch(expected, found) {
-  const want = tokens(expected.split(/[:;]/)[0]);
+  const want = tokens(expected.split(/[:;(]/)[0]);
   const have = new Set(tokens(found));
   if (!want.length) return 1;
   return want.filter((t) => have.has(t)).length / want.length;
 }
 
 const surname = (author) => {
-  const name = author.split(/\s+—\s+|,\s*edited/)[0].trim();
+  const name = author.split(/\s+—\s+|,\s*edited|\s*·\s*/)[0].trim();
   const parts = tokens(name);
   return parts[parts.length - 1] || "";
 };
@@ -172,6 +172,8 @@ function rightsFor(book, url) {
   if (host === "www.galactanet.com") return { rights: "In copyright, author-hosted for free reading", publicDomain: false };
   if (book.room === "manuals") return { rights: "Official documentation (link out)", publicDomain: false };
   if (host === "intra.engr.ucr.edu") return { rights: "Course handout, licence unverified", publicDomain: false };
+  if (host === "archive.org")
+    return { rights: "In copyright translation; digital library loan via Internet Archive", publicDomain: false };
   return { rights: "—", publicDomain: false };
 }
 

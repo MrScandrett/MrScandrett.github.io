@@ -140,7 +140,7 @@
 
   // When lessons move folders (assets/js/lesson-moves.js), re-key this browser's history,
   // favorites and saved answers to the new paths, once per version of that map.
-  var MOVES_VERSION = 3; // keep equal to ClassroomOSLessonMoves.version
+  var MOVES_VERSION = 5; // keep equal to ClassroomOSLessonMoves.version
 
   function migrateMoves() {
     var data = load();

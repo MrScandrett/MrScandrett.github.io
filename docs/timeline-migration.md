@@ -30,11 +30,11 @@ its now-unused timeline CSS) is housekeeping: do it when you are editing that pa
 | Explicit `data-timeline` | lessons/cosmology/pioneers/tycho-brahe.html | ul.tb-timeline 12/12 dates parse |
 | Explicit `data-timeline` | lessons/cosmology/universe-expansion.html | ol.ue-timeline 9/9 dates parse |
 | Explicit `data-timeline` | lessons/cosmology/uraniborg.html | ul.ur-timeline 8/8 dates parse |
-| Explicit `data-timeline` | lessons/language-literature/dante-inferno.html | ol.x-timeline 7/7 dates parse |
-| Explicit `data-timeline` | lessons/language-literature/dylan-thomas-poetry.html | ol.x-timeline 7/7 dates parse |
-| Explicit `data-timeline` | lessons/language-literature/milton-paradise-lost.html | ol.x-timeline 8/8 dates parse |
-| Explicit `data-timeline` | lessons/language-literature/pilgrims-progress.html | ol.x-timeline 8/8 dates parse |
-| Explicit `data-timeline` | lessons/language-literature/tolkien-worldbuilding.html | ol.x-timeline 9/9 dates parse |
+| Explicit `data-timeline` | lessons/language-literature/books/dante-inferno.html | ol.x-timeline 7/7 dates parse |
+| Explicit `data-timeline` | lessons/language-literature/pioneers/dylan-thomas-poetry.html | ol.x-timeline 7/7 dates parse |
+| Explicit `data-timeline` | lessons/language-literature/books/milton-paradise-lost.html | ol.x-timeline 8/8 dates parse |
+| Explicit `data-timeline` | lessons/language-literature/books/pilgrims-progress.html | ol.x-timeline 8/8 dates parse |
+| Explicit `data-timeline` | lessons/language-literature/pioneers/tolkien-worldbuilding.html | ol.x-timeline 9/9 dates parse |
 | Explicit `data-timeline` | lessons/physics/pioneers/albert-einstein.html | ol.ae-timeline 8/8 dates parse |
 | Explicit `data-timeline` | lessons/physics/pioneers/james-clerk-maxwell.html | ol.jcm-timeline 12/12 dates parse |
 | Explicit `data-timeline` | lessons/physics/pioneers/marie-curie.html | ol.mc-timeline 11/11 dates parse |
@@ -51,7 +51,7 @@ its now-unused timeline CSS) is housekeeping: do it when you are editing that pa
 | Engine via auto-upgrade | lessons/humanities/frankfurt-school-culture-industry.html | ol.fs-timeline 17/17 dates parse |
 | Engine via auto-upgrade | lessons/humanities/quadrivium.html | ol.fl-timeline 7/7 dates parse |
 | Engine via auto-upgrade | lessons/language-literature/tower-babel-library-internet.html | ul.atlas-timeline 8/8 dates parse |
-| Engine via auto-upgrade | lessons/language-literature/william-blake-songs.html | ol.bk-timeline 11/11 dates parse |
+| Engine via auto-upgrade | lessons/language-literature/books/william-blake-songs.html | ol.bk-timeline 11/11 dates parse |
 | Engine via auto-upgrade | lessons/life-sciences/kpg-extinction.html | ol.kpg-timeline: Before 66 Ma → impact → weeks → years (relative steps; engine spaces evenly) |
 | Engine via auto-upgrade | lessons/life-sciences/pioneers/alexander-von-humboldt.html | ol.hv-timeline 10/10 dates parse |
 | Engine via auto-upgrade | lessons/mathematics/advanced-and-calculus/eulers-number.html | ul.en-timeline 5/5 dates parse |

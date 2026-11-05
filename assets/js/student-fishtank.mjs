@@ -1667,6 +1667,10 @@ function loadModel(loader, url) {
 }
 
 const desiredFish = new Map();
+// fish-upload.html stores models as data URLs (2 MB files at most, ~2.7M characters in base64).
+// Anything else would make every visitor's browser fetch whatever address the record names.
+const MAX_MODEL_CHARS = 3_000_000;
+const safeModel = model => typeof model === 'string' && model.length <= MAX_MODEL_CHARS && /^data:[^,]*;base64,/.test(model) ? model : null;
 function normalizeFish(data) {
   return {
     id: String(data.id),
@@ -1674,7 +1678,7 @@ function normalizeFish(data) {
     color: /^#[\da-f]{6}$/i.test(data.color) ? data.color : '#4FC3F7',
     size: clamp(Number(data.size) || 1, .35, 2),
     role: Object.hasOwn(ROLE_DETAILS, data.role) ? data.role : 'fish',
-    model: typeof data.model === 'string' ? data.model : null,
+    model: safeModel(data.model),
     modelType: data.modelType === 'glb' ? 'glb' : 'stl',
     dots: data.dots || null,
   };

@@ -151,10 +151,13 @@
     const PROPERTY_SOURCE_URL = 'https://raw.githubusercontent.com/Bowserinator/Periodic-Table-JSON/master/PeriodicTableJSON.json';
     const PROPERTY_CACHE_KEY = 'classroomos-periodic-ref-v1';
     const HEATMAPS = {
-      none: { label: 'Category', tint: 'rgba(0,113,227,0.12)' },
-      density: { label: 'Density', tint: 'hsla(205, 100%, 52%, VAR)' },
-      electronegativity: { label: 'Electronegativity', tint: 'hsla(286, 92%, 58%, VAR)' },
-      rarity: { label: 'Rarity', tint: 'hsla(44, 100%, 52%, VAR)' }
+      none: { label: 'Category', tint: 'rgba(0,113,227,0.12)', unit: '' },
+      density: { label: 'Density', tint: 'hsla(205, 100%, 52%, VAR)', unit: 'g/cm³' },
+      electronegativity: { label: 'Electronegativity', tint: 'hsla(286, 92%, 58%, VAR)', unit: '' },
+      melt: { label: 'Melting point', tint: 'hsla(18, 95%, 52%, VAR)', unit: 'K' },
+      boil: { label: 'Boiling point', tint: 'hsla(340, 90%, 52%, VAR)', unit: 'K' },
+      mass: { label: 'Atomic mass', tint: 'hsla(160, 85%, 40%, VAR)', unit: 'amu' },
+      rarity: { label: 'Rarity', tint: 'hsla(44, 100%, 52%, VAR)', unit: '%' }
     };
     const COMMANDS = [
       { label: 'batteries', note: 'Lithium, cobalt, nickel, and manganese power modern battery chemistry.', symbols: ['Li', 'Co', 'Ni', 'Mn', 'C'] },
@@ -276,7 +279,17 @@
     const tempInput = document.getElementById('pt-temp');
     const tempReadout = document.getElementById('pt-temp-readout');
     const tempStateReadout = document.getElementById('pt-temp-state-readout');
+    const tempEquiv = document.getElementById('pt-temp-equiv');
+    const tempChips = Array.from(document.querySelectorAll('.pt-temp-chip'));
     const heatmapWrap = document.getElementById('pt-heatmap');
+    const heatLegend = document.getElementById('pt-heat-legend');
+    const heatBar = document.getElementById('pt-heat-bar');
+    const heatMin = document.getElementById('pt-heat-min');
+    const heatMid = document.getElementById('pt-heat-mid');
+    const heatMax = document.getElementById('pt-heat-max');
+    const lensBanner = document.getElementById('pt-lens-banner');
+    const lensTitle = document.getElementById('pt-lens-title');
+    const lensReset = document.getElementById('pt-lens-reset');
     const searchInput = document.getElementById('pt-search');
     const dataNote = document.getElementById('pt-data-note');
     const commandStatus = document.getElementById('pt-command-status');
@@ -288,18 +301,28 @@
     const commandList = document.getElementById('pt-command-list');
     const detailPanel = document.getElementById('el-panel');
     const atomModelButtons = Array.from(document.querySelectorAll('[data-atom-model]'));
+    const epPrev = document.getElementById('ep-prev');
+    const epNext = document.getElementById('ep-next');
+    const epCompareBtn = document.getElementById('ep-compare-btn');
+    const epCompareTray = document.getElementById('ep-compare-tray');
+    const epCompareSelect = document.getElementById('ep-compare-select');
+    const epCompareClose = document.getElementById('ep-compare-close');
 
     const BASE_ELEMENTS = EL.map(([number, symbol, name, mass, cat, shells, col, row, description]) => ({ number, symbol, name, mass, cat, shells, col, row, description }));
 
     let propertyRefBySymbol = {};
     let elements = [];
     let selectedSymbol = null;
+    let compareSymbol = null;
+    let compareMode = false;
     let activeCat = 'all';
     let isolatedCat = null;
     let searchQ = '';
     let activeHeatmap = 'none';
     let currentTemp = Number(tempInput.value || 295);
     let commandMatches = new Set();
+    let commandSelectedIndex = -1;
+    let lastRenderedCommandItems = [];
     let atomModel = 'bohr';
     let patternFilter = null;
 
@@ -451,6 +474,9 @@
     function getHeatmapValue(element) {
       if (activeHeatmap === 'density') return element.density;
       if (activeHeatmap === 'electronegativity') return element.electronegativity;
+      if (activeHeatmap === 'melt') return element.melt;
+      if (activeHeatmap === 'boil') return element.boil;
+      if (activeHeatmap === 'mass') return Number(element.mass);
       if (activeHeatmap === 'rarity') return element.rarity;
       return null;
     }
@@ -459,10 +485,11 @@
       if (activeHeatmap === 'none') return 0;
       const values = elements.map(getHeatmapValue).filter((value) => Number.isFinite(value));
       if (!values.length) return 0;
+      const min = Math.min.apply(null, values);
       const max = Math.max.apply(null, values);
       const value = getHeatmapValue(element);
-      if (!Number.isFinite(value) || max <= 0) return 0;
-      return Math.pow(value / max, 0.72);
+      if (!Number.isFinite(value) || max <= min) return 0;
+      return Math.pow((value - min) / (max - min), 0.72);
     }
 
     function getCellBackground(element, state) {
@@ -540,8 +567,45 @@
         btn.className = 'pt-heat-btn';
         btn.textContent = meta.label;
         btn.classList.toggle('is-active', activeHeatmap === key);
-        btn.addEventListener('click', () => { activeHeatmap = key; renderAll(); });
+        btn.setAttribute('aria-pressed', activeHeatmap === key ? 'true' : 'false');
+        btn.addEventListener('click', () => {
+          activeHeatmap = activeHeatmap === key ? 'none' : key;
+          renderAll();
+        });
         heatmapWrap.appendChild(btn);
+      });
+
+      if (activeHeatmap !== 'none' && HEATMAPS[activeHeatmap]) {
+        const meta = HEATMAPS[activeHeatmap];
+        const values = elements.map(getHeatmapValue).filter((v) => Number.isFinite(v));
+        if (values.length) {
+          const min = Math.min.apply(null, values);
+          const max = Math.max.apply(null, values);
+          const mid = (min + max) / 2;
+          const unit = meta.unit ? ' ' + meta.unit : '';
+          const fmt = (v) => v >= 100 ? Math.round(v) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+          if (heatLegend) {
+            heatLegend.hidden = false;
+            if (heatMin) heatMin.textContent = fmt(min) + unit;
+            if (heatMid) heatMid.textContent = fmt(mid) + unit;
+            if (heatMax) heatMax.textContent = fmt(max) + unit;
+            if (heatBar) heatBar.style.background = 'linear-gradient(90deg, ' + meta.tint.replace('VAR', '0.12') + ', ' + meta.tint.replace('VAR', '0.88') + ')';
+          }
+          if (lensBanner) {
+            lensBanner.hidden = false;
+            if (lensTitle) lensTitle.textContent = 'Property Lens: ' + meta.label + (meta.unit ? ' (' + meta.unit + ')' : '');
+          }
+        }
+      } else {
+        if (heatLegend) heatLegend.hidden = true;
+        if (lensBanner) lensBanner.hidden = true;
+      }
+    }
+
+    if (lensReset) {
+      lensReset.addEventListener('click', () => {
+        activeHeatmap = 'none';
+        renderAll();
       });
     }
 
@@ -569,19 +633,46 @@
         cell.className = 'el';
         cell.dataset.z = String(element.number);
         cell.dataset.cat = element.cat;
+        cell.dataset.col = String(element.col);
+        cell.dataset.row = String(element.row);
         cell.style.gridColumn = element.col;
         cell.style.gridRow = element.row;
         cell.style.background = getCellBackground(element, state);
         cell.style.color = state === 'gas' ? '#446072' : color;
         cell.style.borderColor = state === 'liquid' ? 'rgba(59,130,246,0.32)' : rgba(color, 0.34);
         cell.classList.toggle('el-selected', selectedSymbol === element.symbol);
+        cell.classList.toggle('el-compare-selected', compareMode && compareSymbol === element.symbol);
         cell.classList.toggle('el-dimmed', !matchesFilters(element));
         cell.classList.toggle('el-isolated-out', !!isolatedCat && element.cat !== isolatedCat);
         cell.classList.toggle('el-command-match', commandMatches.has(element.symbol));
         cell.setAttribute('aria-label', element.name + ', element ' + element.number + ', ' + getStateLabel(state) + ' at ' + currentTemp + ' Kelvin');
-        cell.innerHTML = '<span class="el-num">' + element.number + '</span>' + '<span class="el-sym">' + element.symbol + '</span>' + '<span class="el-name">' + element.name + '</span>' + '<span class="el-phase">' + getStateLabel(state) + '</span>' + '<span class="el-mass">' + element.mass + '</span>';
-        cell.title = element.name;
+
+        let bottomValHtml = '<span class="el-mass">' + element.mass + '</span>';
+        if (activeHeatmap === 'electronegativity') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + (Number.isFinite(element.electronegativity) ? element.electronegativity.toFixed(2) : '—') + '</span>';
+        } else if (activeHeatmap === 'density') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + (Number.isFinite(element.density) ? element.density.toFixed(2) : '—') + '</span>';
+        } else if (activeHeatmap === 'melt') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + (Number.isFinite(element.melt) ? Math.round(element.melt) + ' K' : '—') + '</span>';
+        } else if (activeHeatmap === 'boil') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + (Number.isFinite(element.boil) ? Math.round(element.boil) + ' K' : '—') + '</span>';
+        } else if (activeHeatmap === 'mass') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + element.mass + '</span>';
+        } else if (activeHeatmap === 'rarity') {
+          bottomValHtml = '<span class="el-mass is-property-value">' + Math.round(element.rarity * 100) + '%</span>';
+        }
+
+        cell.innerHTML = '<span class="el-num">' + element.number + '</span>' + '<span class="el-sym">' + element.symbol + '</span>' + '<span class="el-name">' + element.name + '</span>' + '<span class="el-phase">' + getStateLabel(state) + '</span>' + bottomValHtml;
+        cell.title = element.name + ' (' + element.symbol + ', Z=' + element.number + ')';
         cell.addEventListener('click', () => {
+          if (compareMode && selectedSymbol && selectedSymbol !== element.symbol) {
+            compareSymbol = element.symbol;
+            if (epCompareSelect) epCompareSelect.value = element.symbol;
+            renderGrid();
+            const curr = elements.find((e) => e.symbol === selectedSymbol);
+            if (curr) renderStats(curr);
+            return;
+          }
           showElement(element, false);
           const fresh = grid.querySelector('.el[data-z="' + element.number + '"]');
           if (fresh) fresh.focus({ preventScroll: true });
@@ -589,6 +680,74 @@
         grid.appendChild(cell);
       });
     }
+
+    grid.addEventListener('keydown', (event) => {
+      const target = event.target.closest('.el');
+      if (!target) return;
+      const currentZ = Number(target.dataset.z);
+      const currentEl = elements.find((e) => e.number === currentZ);
+      if (!currentEl) return;
+
+      let nextEl = null;
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        const rowNext = elements.filter((e) => e.row === currentEl.row && e.col > currentEl.col).sort((a, b) => a.col - b.col);
+        nextEl = rowNext[0] || elements.find((e) => e.number === currentZ + 1);
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        const rowPrev = elements.filter((e) => e.row === currentEl.row && e.col < currentEl.col).sort((a, b) => b.col - a.col);
+        nextEl = rowPrev[0] || elements.find((e) => e.number === currentZ - 1);
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const colDown = elements.filter((e) => e.col === currentEl.col && e.row > currentEl.row).sort((a, b) => a.row - b.row);
+        nextEl = colDown[0];
+        if (!nextEl) {
+          const candidates = elements.filter((e) => e.row > currentEl.row);
+          if (candidates.length) {
+            nextEl = candidates.reduce((best, cur) => {
+              const dCur = Math.abs(cur.col - currentEl.col) + (cur.row - currentEl.row) * 2;
+              const dBest = Math.abs(best.col - currentEl.col) + (best.row - currentEl.row) * 2;
+              return dCur < dBest ? cur : best;
+            });
+          }
+        }
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const colUp = elements.filter((e) => e.col === currentEl.col && e.row < currentEl.row).sort((a, b) => b.row - a.row);
+        nextEl = colUp[0];
+        if (!nextEl) {
+          const candidates = elements.filter((e) => e.row < currentEl.row);
+          if (candidates.length) {
+            nextEl = candidates.reduce((best, cur) => {
+              const dCur = Math.abs(cur.col - currentEl.col) + (currentEl.row - cur.row) * 2;
+              const dBest = Math.abs(best.col - currentEl.col) + (currentEl.row - best.row) * 2;
+              return dCur < dBest ? cur : best;
+            });
+          }
+        }
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        const rowEls = elements.filter((e) => e.row === currentEl.row).sort((a, b) => a.col - b.col);
+        nextEl = rowEls[0];
+      } else if (event.key === 'End') {
+        event.preventDefault();
+        const rowEls = elements.filter((e) => e.row === currentEl.row).sort((a, b) => b.col - a.col);
+        nextEl = rowEls[0];
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        showElement(currentEl, true);
+        return;
+      }
+
+      if (nextEl) {
+        showElement(nextEl, false);
+        const fresh = grid.querySelector('.el[data-z="' + nextEl.number + '"]');
+        if (fresh) {
+          fresh.focus({ preventScroll: true });
+        }
+      }
+    });
 
     function buildBohr(shells, color, electronegativity) {
       const cx = 140;
@@ -731,7 +890,35 @@
         { label: 'Electron shells', value: element.shells.join(' · '), sub: element.electronConfig || 'Shell population model' },
         { label: 'Appearance', value: element.appearance ? element.appearance.split(',')[0] : 'Reference lesson note', sub: 'Observed under ordinary lab conditions.' }
       ];
-      document.getElementById('ep-stats').innerHTML = stats.map((stat) => '<div class="ep-stat"><span class="ep-stat-label">' + stat.label + '</span><span class="ep-stat-value">' + stat.value + '</span><span class="ep-stat-sub">' + stat.sub + '</span></div>').join('');
+
+      let html = stats.map((stat) => '<div class="ep-stat"><span class="ep-stat-label">' + stat.label + '</span><span class="ep-stat-value">' + stat.value + '</span><span class="ep-stat-sub">' + stat.sub + '</span></div>').join('');
+
+      if (compareMode && compareSymbol) {
+        const other = elements.find((e) => e.symbol === compareSymbol);
+        if (other) {
+          const otherState = getState(other, currentTemp);
+          const compRows = [
+            ['Element', element.name + ' (' + element.symbol + ')', other.name + ' (' + other.symbol + ')'],
+            ['Protons (Z)', element.number, other.number],
+            ['Category', CATS[element.cat].label, CATS[other.cat].label],
+            ['State (' + currentTemp + ' K)', getStateLabel(state), getStateLabel(otherState)],
+            ['Atomic mass', element.mass + ' amu', other.mass + ' amu'],
+            ['Electronegativity', formatValue(element.electronegativity, '', 2), formatValue(other.electronegativity, '', 2)],
+            ['Density', formatValue(element.density, ' g/cm³', 2), formatValue(other.density, ' g/cm³', 2)],
+            ['Melting point', formatValue(element.melt, ' K', 0), formatValue(other.melt, ' K', 0)],
+            ['Boiling point', formatValue(element.boil, ' K', 0), formatValue(other.boil, ' K', 0)],
+            ['Electron shells', element.shells.join(' · '), other.shells.join(' · ')],
+            ['Crystal', element.crystal.label, other.crystal.label]
+          ];
+          html += '<div class="ep-compare-table-wrap"><table class="ep-compare-table" aria-label="Side-by-side element comparison">'
+            + '<thead><tr><th>Property</th><th>' + element.symbol + ' · ' + element.name + '</th><th>' + other.symbol + ' · ' + other.name + '</th></tr></thead>'
+            + '<tbody>'
+            + compRows.map(([prop, valA, valB]) => '<tr><td class="ep-compare-prop">' + prop + '</td><td class="ep-compare-val-a">' + valA + '</td><td class="ep-compare-val-b">' + valB + '</td></tr>').join('')
+            + '</tbody></table></div>';
+        }
+      }
+
+      document.getElementById('ep-stats').innerHTML = html;
     }
 
     function renderUsage(element) {
@@ -835,7 +1022,18 @@
     function renderGallery(element) {
       const host = document.getElementById('ep-gallery');
       const items = (window.ELEMENT_IMAGES || {})[element.symbol] || [];
-      if (!items.length) { host.hidden = true; host.innerHTML = ''; return; }
+      if (!items.length) {
+        host.hidden = false;
+        host.innerHTML = '<h3 class="ep-gallery-title">Photos and pictures</h3>'
+          + '<div class="ep-empty-card">'
+          + '<span class="ep-empty-icon">📷</span>'
+          + '<p><strong>No verified photographic sample on file for ' + element.name + '.</strong></p>'
+          + '<p>' + (element.number >= 93
+              ? 'Transuranic and superheavy elements are synthetic—created inside particle accelerators and nuclear reactors only atoms at a time. Many decay in fractions of a second, making direct macro photography impossible.'
+              : 'Elemental ' + element.name + ' is either short-lived, extremely reactive, or typically observed only as compounds or spectroscopic signatures under laboratory conditions.')
+          + '</p></div>';
+        return;
+      }
       const kinds = { real: 'What it looks like', name: 'Behind the name' };
       const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
       host.hidden = false;
@@ -966,6 +1164,30 @@
       document.getElementById('ep-state').textContent = getStateLabel(state) + ' at ' + currentTemp + ' K';
       document.getElementById('ep-config').textContent = element.electronConfig || element.shells.map((count, index) => 'Shell ' + (index + 1) + ': ' + count + 'e⁻').join(' · ');
       document.getElementById('ep-desc').textContent = element.summary || element.description;
+
+      if (epPrev && epNext) {
+        const prevEl = elements.find((e) => e.number === element.number - 1);
+        const nextEl = elements.find((e) => e.number === element.number + 1);
+        if (prevEl) {
+          epPrev.disabled = false;
+          epPrev.textContent = '← ' + prevEl.symbol + ' (' + prevEl.number + ')';
+          epPrev.title = 'Previous element: ' + prevEl.name + ' (' + prevEl.number + ')';
+        } else {
+          epPrev.disabled = true;
+          epPrev.textContent = '← Prev';
+          epPrev.title = 'First element';
+        }
+        if (nextEl) {
+          epNext.disabled = false;
+          epNext.textContent = nextEl.symbol + ' (' + nextEl.number + ') →';
+          epNext.title = 'Next element: ' + nextEl.name + ' (' + nextEl.number + ')';
+        } else {
+          epNext.disabled = true;
+          epNext.textContent = 'Next →';
+          epNext.title = 'Last element';
+        }
+      }
+
       renderStats(element);
       renderUsage(element);
       renderStory(element);
@@ -989,17 +1211,107 @@
 
     function renderTemperatureReadout() {
       tempReadout.textContent = currentTemp + ' K';
+      tempInput.value = String(currentTemp);
       tempStateReadout.textContent = getStateSubtitle();
+
+      if (tempEquiv) {
+        const c = Math.round(currentTemp - 273.15);
+        const f = Math.round((currentTemp - 273.15) * 9 / 5 + 32);
+        tempEquiv.textContent = c + ' °C · ' + f + ' °F';
+      }
+
+      tempChips.forEach((chip) => {
+        const target = Number(chip.dataset.temp);
+        chip.classList.toggle('is-active', Math.abs(currentTemp - target) <= 1);
+      });
+    }
+
+    tempChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        currentTemp = Number(chip.dataset.temp);
+        renderTemperatureReadout();
+        renderGrid();
+        if (selectedSymbol) {
+          const el = elements.find((e) => e.symbol === selectedSymbol);
+          if (el) showElement(el, false);
+        }
+      });
+    });
+
+    function updateCommandSelection() {
+      const domItems = commandList.querySelectorAll('.pt-command-item');
+      domItems.forEach((btn, idx) => {
+        const isSel = idx === commandSelectedIndex;
+        btn.classList.toggle('is-focused', isSel);
+        if (isSel) {
+          btn.scrollIntoView({ block: 'nearest' });
+        }
+      });
     }
 
     function renderCommandList(filter) {
       const needle = String(filter || '').trim().toLowerCase();
-      const items = COMMANDS.filter((command) => !needle || command.label.includes(needle) || command.note.toLowerCase().includes(needle));
+      let items = [];
+
+      if (needle) {
+        const exactSym = elements.find((e) => e.symbol.toLowerCase() === needle);
+        const exactNum = elements.find((e) => String(e.number) === needle);
+        const nameStarts = elements.filter((e) => e.name.toLowerCase().startsWith(needle) && e !== exactSym && e !== exactNum);
+        const symStarts = elements.filter((e) => e.symbol.toLowerCase().startsWith(needle) && e !== exactSym && !nameStarts.includes(e));
+        const nameIncludes = elements.filter((e) => e.name.toLowerCase().includes(needle) && e !== exactSym && !nameStarts.includes(e) && !symStarts.includes(e));
+
+        const matchedElements = [exactSym, exactNum, ...nameStarts, ...symStarts, ...nameIncludes].filter(Boolean).slice(0, 6);
+        matchedElements.forEach((el) => {
+          items.push({
+            type: 'element',
+            symbol: el.symbol,
+            title: el.name + ' (' + el.symbol + ', Z=' + el.number + ')',
+            subtitle: CATS[el.cat].label + ' · ' + el.mass + ' amu · ' + getStateLabel(getState(el, currentTemp)),
+            color: CATS[el.cat].color
+          });
+        });
+
+        Object.entries(CATS).forEach(([k, catMeta]) => {
+          if (catMeta.label.toLowerCase().includes(needle) || k === needle) {
+            items.push({
+              type: 'category',
+              cat: k,
+              title: 'Filter: ' + catMeta.label,
+              subtitle: 'Highlight all ' + catMeta.label + ' elements on the table',
+              color: catMeta.color
+            });
+          }
+        });
+      }
+
+      const matchedCmds = COMMANDS.filter((cmd) => !needle || cmd.label.includes(needle) || cmd.note.toLowerCase().includes(needle));
+      matchedCmds.forEach((cmd) => {
+        items.push({
+          type: 'topic',
+          command: cmd.label,
+          title: cmd.label,
+          subtitle: cmd.note,
+          color: '#0071e3'
+        });
+      });
+
+      lastRenderedCommandItems = items;
+      commandSelectedIndex = items.length ? 0 : -1;
+
       if (!items.length) {
-        commandList.innerHTML = '<div class="pt-command-empty">No command found yet. Try batteries, balloons, chips, or fireworks.</div>';
+        commandList.innerHTML = '<div class="pt-command-empty">No results found for “' + needle + '”. Try an element name, symbol (Fe), atomic number (26), or topic (batteries, chips).</div>';
         return;
       }
-      commandList.innerHTML = items.map((command) => '<button class="pt-command-item" type="button" data-command="' + command.label + '"><strong>' + command.label + '</strong><small>' + command.note + '</small></button>').join('');
+
+      commandList.innerHTML = items.map((item, idx) => {
+        if (item.type === 'element') {
+          return '<button class="pt-command-item is-element' + (idx === 0 ? ' is-focused' : '') + '" type="button" data-cmd-idx="' + idx + '">'
+            + '<span class="pt-cmd-badge" style="background:' + item.color + '">' + item.symbol + '</span>'
+            + '<div><strong>' + item.title + '</strong><small>' + item.subtitle + '</small></div></button>';
+        }
+        return '<button class="pt-command-item' + (idx === 0 ? ' is-focused' : '') + '" type="button" data-cmd-idx="' + idx + '">'
+          + '<strong>' + (item.type === 'category' ? '🏷️ ' : '🔬 ') + item.title + '</strong><small>' + item.subtitle + '</small></button>';
+      }).join('');
     }
 
     function openCommandPalette() {
@@ -1013,6 +1325,24 @@
     function closeCommandPalette() {
       commandRoot.classList.remove('is-open');
       commandRoot.setAttribute('aria-hidden', 'true');
+    }
+
+    function executeCommandItem(item) {
+      if (!item) return;
+      closeCommandPalette();
+      if (item.type === 'element') {
+        const el = elements.find((e) => e.symbol === item.symbol);
+        if (el) {
+          showElement(el, true);
+          const fresh = grid.querySelector('.el[data-z="' + el.number + '"]');
+          if (fresh) fresh.focus({ preventScroll: true });
+        }
+      } else if (item.type === 'category') {
+        activeCat = item.cat;
+        renderAll();
+      } else if (item.type === 'topic') {
+        applyCommand(item.command);
+      }
     }
 
     function applyCommand(label) {
@@ -1045,11 +1375,120 @@
         b.addEventListener('click', () => {
           detailPanel.dataset.tabActive = key;
           bar.querySelectorAll('.ep-tab-btn').forEach((x) => x.setAttribute('aria-selected', x === b ? 'true' : 'false'));
+          b.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         });
         bar.appendChild(b);
       });
+      bar.addEventListener('keydown', (event) => {
+        const buttons = Array.from(bar.querySelectorAll('.ep-tab-btn'));
+        const index = buttons.indexOf(document.activeElement);
+        if (index === -1) return;
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          const next = buttons[(index + 1) % buttons.length];
+          next.focus();
+          next.click();
+        } else if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          const prev = buttons[(index - 1 + buttons.length) % buttons.length];
+          prev.focus();
+          prev.click();
+        } else if (event.key === 'Home') {
+          event.preventDefault();
+          buttons[0].focus();
+          buttons[0].click();
+        } else if (event.key === 'End') {
+          event.preventDefault();
+          buttons[buttons.length - 1].focus();
+          buttons[buttons.length - 1].click();
+        }
+      });
       detailPanel.insertBefore(bar, detailPanel.firstChild);
     })();
+
+    function initCompareMode() {
+      if (!epCompareSelect) return;
+      epCompareSelect.innerHTML = '<option value="">Choose an element to compare…</option>'
+        + elements.map((e) => '<option value="' + e.symbol + '">' + e.number + '. ' + e.name + ' (' + e.symbol + ')</option>').join('');
+
+      if (epCompareBtn) {
+        epCompareBtn.addEventListener('click', () => {
+          compareMode = !compareMode;
+          epCompareBtn.classList.toggle('is-active', compareMode);
+          epCompareBtn.setAttribute('aria-expanded', compareMode ? 'true' : 'false');
+          if (epCompareTray) epCompareTray.hidden = !compareMode;
+          if (compareMode && !compareSymbol && selectedSymbol) {
+            const cur = elements.find((e) => e.symbol === selectedSymbol);
+            const partner = elements.find((e) => e.col === cur.col && e.number !== cur.number)
+              || elements.find((e) => e.number === (cur.number === 118 ? 1 : cur.number + 1));
+            if (partner) {
+              compareSymbol = partner.symbol;
+              epCompareSelect.value = partner.symbol;
+            }
+          }
+          renderGrid();
+          if (selectedSymbol) {
+            const cur = elements.find((e) => e.symbol === selectedSymbol);
+            if (cur) renderStats(cur);
+          }
+        });
+      }
+
+      epCompareSelect.addEventListener('change', (event) => {
+        compareSymbol = event.target.value || null;
+        renderGrid();
+        if (selectedSymbol) {
+          const cur = elements.find((e) => e.symbol === selectedSymbol);
+          if (cur) renderStats(cur);
+        }
+      });
+
+      if (epCompareClose) {
+        epCompareClose.addEventListener('click', () => {
+          compareMode = false;
+          compareSymbol = null;
+          if (epCompareBtn) {
+            epCompareBtn.classList.remove('is-active');
+            epCompareBtn.setAttribute('aria-expanded', 'false');
+          }
+          if (epCompareTray) epCompareTray.hidden = true;
+          renderGrid();
+          if (selectedSymbol) {
+            const cur = elements.find((e) => e.symbol === selectedSymbol);
+            if (cur) renderStats(cur);
+          }
+        });
+      }
+    }
+
+    if (epPrev) {
+      epPrev.addEventListener('click', () => {
+        const curr = elements.find((e) => e.symbol === selectedSymbol);
+        if (curr && curr.number > 1) {
+          const prev = elements.find((e) => e.number === curr.number - 1);
+          if (prev) {
+            showElement(prev, false);
+            const fresh = grid.querySelector('.el[data-z="' + prev.number + '"]');
+            if (fresh) fresh.focus({ preventScroll: true });
+          }
+        }
+      });
+    }
+
+    if (epNext) {
+      epNext.addEventListener('click', () => {
+        const curr = elements.find((e) => e.symbol === selectedSymbol);
+        if (curr && curr.number < 118) {
+          const next = elements.find((e) => e.number === curr.number + 1);
+          if (next) {
+            showElement(next, false);
+            const fresh = grid.querySelector('.el[data-z="' + next.number + '"]');
+            if (fresh) fresh.focus({ preventScroll: true });
+          }
+        }
+      });
+    }
+
     function ensureDefaultSelection() {
       if (dashQuery.matches && !selectedSymbol && elements.length) showElement(elements.find((e) => e.symbol === 'Fe') || elements[0], false);
     }
@@ -1075,6 +1514,22 @@
       renderGrid();
     });
 
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const firstMatch = elements.find(matchesFilters);
+        if (firstMatch) {
+          showElement(firstMatch, true);
+          const fresh = grid.querySelector('.el[data-z="' + firstMatch.number + '"]');
+          if (fresh) fresh.focus({ preventScroll: true });
+        }
+      } else if (event.key === 'Escape') {
+        searchInput.value = '';
+        searchQ = '';
+        renderGrid();
+      }
+    });
+
     tempInput.addEventListener('input', (event) => {
       currentTemp = Number(event.target.value);
       renderTemperatureReadout();
@@ -1097,20 +1552,35 @@
       });
     });
 
-    document.getElementById('ep-close').addEventListener('click', closePanel);
+    const epCloseBtn = document.getElementById('ep-close');
+    if (epCloseBtn) epCloseBtn.addEventListener('click', closePanel);
     commandOpen.addEventListener('click', openCommandPalette);
     commandClose.addEventListener('click', closeCommandPalette);
     commandBackdrop.addEventListener('click', closeCommandPalette);
     commandInput.addEventListener('input', (event) => renderCommandList(event.target.value));
     commandInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        const first = commandList.querySelector('[data-command]');
-        if (first) applyCommand(first.dataset.command);
+      if (!lastRenderedCommandItems.length) return;
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        commandSelectedIndex = (commandSelectedIndex + 1) % lastRenderedCommandItems.length;
+        updateCommandSelection();
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        commandSelectedIndex = (commandSelectedIndex - 1 + lastRenderedCommandItems.length) % lastRenderedCommandItems.length;
+        updateCommandSelection();
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (commandSelectedIndex >= 0 && commandSelectedIndex < lastRenderedCommandItems.length) {
+          executeCommandItem(lastRenderedCommandItems[commandSelectedIndex]);
+        }
       }
     });
     commandList.addEventListener('click', (event) => {
-      const btn = event.target.closest('[data-command]');
-      if (btn) applyCommand(btn.dataset.command);
+      const btn = event.target.closest('[data-cmd-idx]');
+      if (btn) {
+        const idx = Number(btn.dataset.cmdIdx);
+        if (lastRenderedCommandItems[idx]) executeCommandItem(lastRenderedCommandItems[idx]);
+      }
     });
 
     document.addEventListener('keydown', (event) => {
@@ -1122,10 +1592,25 @@
       if (event.key === 'Escape') {
         if (commandRoot.classList.contains('is-open')) closeCommandPalette();
         else if (selectedSymbol) closePanel();
+        return;
+      }
+      const tag = (event.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (event.key === '[' || event.key === ']') {
+        event.preventDefault();
+        const curr = elements.find((e) => e.symbol === selectedSymbol) || elements[0];
+        const nextZ = event.key === ']' ? curr.number + 1 : curr.number - 1;
+        const targetEl = elements.find((e) => e.number === nextZ);
+        if (targetEl) {
+          showElement(targetEl, false);
+          const fresh = grid.querySelector('.el[data-z="' + targetEl.number + '"]');
+          if (fresh) fresh.focus({ preventScroll: true });
+        }
       }
     });
 
     rebuildElements();
+    initCompareMode();
     renderAll();
     loadReferenceData();
   })();

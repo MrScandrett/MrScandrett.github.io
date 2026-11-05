@@ -246,7 +246,12 @@
     </section>
     <p class="pt-table-note">Swipe sideways to explore the full table.</p>
     <div class="pt-wrap">
-      <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements"></div>
+      <div class="pt-lens-banner" id="pt-lens-banner" hidden>
+        <span class="pt-lens-title" id="pt-lens-title">Property Lens</span>
+        <div class="pt-lens-scale-inline" id="pt-lens-scale-inline" aria-hidden="true"></div>
+        <button type="button" class="pt-lens-reset" id="pt-lens-reset" aria-label="Reset property lens to category view">✕ Reset to category</button>
+      </div>
+      <div class="pt-grid" id="pt-grid" role="grid" aria-label="Periodic table of elements" tabindex="0"></div>
       <div class="pt-legend" id="pt-legend" aria-label="Element category legend"></div>
     </div>
 
@@ -300,12 +305,24 @@
               <span><strong id="ep-mass"></strong> amu</span>
             </div>
           </div>
+          <div class="ep-nav" aria-label="Element navigation">
+            <button class="ep-nav-btn" id="ep-prev" type="button" aria-label="Previous element">← Prev</button>
+            <button class="ep-nav-btn" id="ep-next" type="button" aria-label="Next element">Next →</button>
+          </div>
           <button class="ep-close" id="ep-close" aria-label="Close element panel">✕ Close</button>
         </div>
         <div class="ep-pill-row" data-fixed="1">
           <span class="ep-badge" id="ep-badge"></span>
           <span class="ep-state" id="ep-state"></span>
           <span class="ep-crystal-tag" id="ep-crystal-tag"></span>
+          <button class="ep-compare-btn" id="ep-compare-btn" type="button" aria-expanded="false" title="Compare this element with another">⇄ Compare</button>
+        </div>
+        <div class="ep-compare-tray" id="ep-compare-tray" hidden>
+          <div class="ep-compare-tray-inner">
+            <label for="ep-compare-select" class="ep-compare-label">Compare with:</label>
+            <select id="ep-compare-select" class="ep-compare-select" aria-label="Select element to compare side-by-side"></select>
+            <button class="ep-compare-close" id="ep-compare-close" type="button" aria-label="Close element comparison">✕</button>
+          </div>
         </div>
         <div class="ep-stat-grid" id="ep-stats" data-tab="stats"></div>
         <div class="ep-config" id="ep-config" data-tab="stats"></div>
@@ -350,7 +367,10 @@
         <span class="ll-label">State of Matter</span>
         <div class="pt-temp-card">
           <div class="pt-temp-head">
-            <strong class="pt-temp-readout" id="pt-temp-readout">295 K</strong>
+            <div>
+              <strong class="pt-temp-readout" id="pt-temp-readout">295 K</strong>
+              <span class="pt-temp-equiv" id="pt-temp-equiv">22 °C · 71 °F</span>
+            </div>
             <span class="pt-temp-state" id="pt-temp-state-readout">Room temperature</span>
           </div>
           <input class="pt-temp-slider" id="pt-temp" type="range" min="0" max="4000" step="1" value="295" aria-label="Set global temperature in Kelvin" />
@@ -361,10 +381,26 @@
             <span>Forge</span>
             <span>4000 K</span>
           </div>
+          <div class="pt-temp-presets" role="group" aria-label="Temperature presets">
+            <button type="button" class="pt-temp-chip" data-temp="0">0 K <small>Abs Zero</small></button>
+            <button type="button" class="pt-temp-chip" data-temp="77">77 K <small>Liq N₂</small></button>
+            <button type="button" class="pt-temp-chip" data-temp="273">273 K <small>Ice</small></button>
+            <button type="button" class="pt-temp-chip is-active" data-temp="295">295 K <small>Room</small></button>
+            <button type="button" class="pt-temp-chip" data-temp="373">373 K <small>Boil H₂O</small></button>
+            <button type="button" class="pt-temp-chip" data-temp="1800">1800 K <small>Forge</small></button>
+          </div>
         </div>
         <hr class="ll-hr" />
         <span class="ll-label">Property Lens</span>
         <div class="pt-heatmap-row" id="pt-heatmap" aria-label="Highlight table by property"></div>
+        <div class="pt-heat-legend" id="pt-heat-legend" hidden>
+          <div class="pt-heat-bar" id="pt-heat-bar" aria-hidden="true"></div>
+          <div class="pt-heat-labels">
+            <span id="pt-heat-min">Low</span>
+            <span id="pt-heat-mid"></span>
+            <span id="pt-heat-max">High</span>
+          </div>
+        </div>
         <hr class="ll-hr" />
         <span class="ll-label">Discovery Commands</span>
         <button class="pt-command-btn" id="pt-command-open" type="button">Open command palette</button>
@@ -424,7 +460,7 @@
     <div class="pt-command-backdrop" id="pt-command-backdrop"></div>
     <div class="pt-command-dialog" role="dialog" aria-modal="true" aria-labelledby="pt-command-input">
       <div class="pt-command-head">
-        <input class="pt-command-input" id="pt-command-input" type="text" placeholder="Search commands like batteries, balloons, chips…" />
+        <input class="pt-command-input" id="pt-command-input" type="text" placeholder="Search element name, symbol (Fe), number (26), or topic (batteries, chips)…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="pt-command-list" />
         <button class="pt-command-close" id="pt-command-close" type="button">Close</button>
       </div>
       <div class="pt-command-list" id="pt-command-list"></div>

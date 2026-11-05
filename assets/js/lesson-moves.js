@@ -96,7 +96,21 @@
     "lessons/technical-elements/sheet-music-trainer": "lessons/music/sheet-music-trainer",
     "lessons/technical-elements/violin-fingerboard": "lessons/music/violin-fingerboard",
     "lessons/music/piano-chords": "lessons/music/piano",
-    "lessons/music/guitar-chords": "lessons/music/guitar"
+    "lessons/music/guitar-chords": "lessons/music/guitar",
+    "lessons/language-literature/arnaut-daniel": "lessons/language-literature/pioneers/arnaut-daniel",
+    "lessons/language-literature/dylan-thomas-poetry": "lessons/language-literature/pioneers/dylan-thomas-poetry",
+    "lessons/language-literature/edgar-allan-poe": "lessons/language-literature/pioneers/edgar-allan-poe",
+    "lessons/language-literature/jules-verne": "lessons/language-literature/pioneers/jules-verne",
+    "lessons/language-literature/mark-twain": "lessons/language-literature/pioneers/mark-twain",
+    "lessons/language-literature/natsume-soseki": "lessons/language-literature/pioneers/natsume-soseki",
+    "lessons/language-literature/william-shakespeare": "lessons/language-literature/pioneers/william-shakespeare",
+    "lessons/language-literature/tolkien-worldbuilding": "lessons/language-literature/pioneers/tolkien-worldbuilding",
+    "lessons/language-literature/dante-inferno": "lessons/language-literature/books/dante-inferno",
+    "lessons/language-literature/milton-paradise-lost": "lessons/language-literature/books/milton-paradise-lost",
+    "lessons/language-literature/pilgrims-progress": "lessons/language-literature/books/pilgrims-progress",
+    "lessons/language-literature/wizard-of-oz": "lessons/language-literature/books/wizard-of-oz",
+    "lessons/language-literature/platos-allegory-cave": "lessons/language-literature/books/platos-allegory-cave",
+    "lessons/language-literature/william-blake-songs": "lessons/language-literature/books/william-blake-songs"
   };
   // Site path ("lessons/music/bach.html") → where it lives now, or null if it never moved.
   function resolve(path) {
@@ -110,5 +124,5 @@
     }
     return moved ? p : null;
   }
-  root.ClassroomOSLessonMoves = { version: 4, resolve: resolve };
+  root.ClassroomOSLessonMoves = { version: 5, resolve: resolve };
 }(typeof window !== 'undefined' ? window : globalThis));

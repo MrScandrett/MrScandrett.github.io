@@ -6,6 +6,13 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
+const {
+  resolveAdminPassword,
+  passwordMatches,
+  createLoginThrottle,
+  safeNextPath,
+  extractZip,
+} = require("./safety");
 
 const PORT = Number(process.env.PORT || "8787");
 const ROOT_DIR = path.resolve(__dirname, "..");
@@ -106,7 +113,10 @@ function stripCommonTopFolder(relativePaths) {
   return relativePaths.map((p) => p.split("/").slice(1).join("/"));
 }
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "CHAMPIONS4CHRIST";
+// Never give this a default: the repository is public, so a password written here is known to everyone.
+const ADMIN_AUTH = resolveAdminPassword(process.env.ADMIN_PASSWORD);
+const ADMIN_PASSWORD = ADMIN_AUTH.password;
+const loginThrottle = createLoginThrottle();
 const ADMIN_SESSION_COOKIE = "portal_admin";
 const ADMIN_GATED_PATHS = ["/dashboard", "/review", "/upload", "/upload-model", "/pending-file/", "/live"];
 const adminSessions = new Set();
@@ -175,7 +185,11 @@ function escapeHtml(value) {
 }
 
 function sendHtml(res, statusCode, html) {
-  res.writeHead(statusCode, { "Content-Type": "text/html; charset=utf-8" });
+  res.writeHead(statusCode, {
+    "Content-Type": "text/html; charset=utf-8",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+  });
   res.end(html);
 }
 
@@ -420,7 +434,8 @@ function regenerateRemixZips(manifest, notes) {
     const outputDir = path.join(ROOT_DIR, "apps", entry.slug);
     if (!fs.existsSync(sourcePath) || !fs.existsSync(outputDir)) continue;
     const zipDest = path.join(outputDir, "remix-download.zip");
-    const zipResult = spawnSync("zip", ["-r", "-X", "-q", zipDest, "."], { cwd: sourcePath, encoding: "utf8" });
+    // -y stores a symbolic link as a link. Without it zip copies in whatever file the link points at.
+    const zipResult = spawnSync("zip", ["-r", "-y", "-X", "-q", zipDest, "."], { cwd: sourcePath, encoding: "utf8" });
     if (zipResult.status === 0) {
       entry.remixZip = `./apps/${entry.slug}/remix-download.zip`;
     } else {
@@ -604,7 +619,7 @@ function renderResult(title, lines, links) {
 }
 
 function renderAdminLogin(nextUrl, error) {
-  const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/review";
+  const safeNext = safeNextPath(nextUrl);
   return pageShell(
     "Teacher Sign-In",
     `<section class="panel">
@@ -624,17 +639,26 @@ function renderAdminLogin(nextUrl, error) {
 async function handleAdminLoginPost(req, res) {
   const fields = await readUrlEncodedFields(req, 4096);
   const password = String(fields.password || "");
-  const next = String(fields.next || "/review");
+  const next = safeNextPath(fields.next);
+  const address = normalizeRemoteAddress(req.socket && req.socket.remoteAddress);
 
-  if (password !== ADMIN_PASSWORD) {
+  if (loginThrottle.isLocked(address)) {
+    sendHtml(res, 429, renderAdminLogin(next, "Too many incorrect passwords. Wait 15 minutes and try again."));
+    return;
+  }
+
+  if (!passwordMatches(password, ADMIN_PASSWORD)) {
+    loginThrottle.recordFailure(address);
     sendHtml(res, 401, renderAdminLogin(next, "Incorrect password. Try again."));
     return;
   }
 
+  loginThrottle.clear(address);
+
   const token = crypto.randomBytes(24).toString("hex");
   adminSessions.add(token);
   res.writeHead(302, {
-    Location: next.startsWith("/") ? next : "/review",
+    Location: next,
     "Set-Cookie": `${ADMIN_SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Strict`,
   });
   res.end();
@@ -1255,10 +1279,7 @@ async function handleUpload(req, res) {
     fs.mkdirSync(extractDir, { recursive: true });
     fs.writeFileSync(zipPath, zipFile.data);
 
-    const unzip = spawnSync("unzip", ["-o", zipPath, "-d", extractDir], { encoding: "utf8" });
-    if (unzip.status !== 0) {
-      throw new Error(`Failed to unzip project: ${(unzip.stderr || unzip.stdout || "").trim()}`);
-    }
+    extractZip(zipPath, extractDir);
 
     const scan = findProjectRoot(extractDir);
     const publishResult = runPublish(scan.projectRoot, {
@@ -1536,7 +1557,10 @@ function servePendingFile(req, res) {
     return true;
   }
   const ext = path.extname(filename).toLowerCase();
-  res.writeHead(200, { "Content-Type": PENDING_FILE_MIME_TYPES[ext] || "application/octet-stream" });
+  res.writeHead(200, {
+    "Content-Type": PENDING_FILE_MIME_TYPES[ext] || "application/octet-stream",
+    "X-Content-Type-Options": "nosniff",
+  });
   fs.createReadStream(filePath).pipe(res);
   return true;
 }
@@ -1566,10 +1590,7 @@ async function placeGameFiles(meta, pendingDir, projectDir) {
     const extractDir = path.join(WORK_DIR, `student-${Date.now()}`);
     fs.mkdirSync(extractDir, { recursive: true });
     try {
-      const unzip = spawnSync("unzip", ["-o", srcPath, "-d", extractDir], { encoding: "utf8" });
-      if (unzip.status !== 0) {
-        throw new Error(`Failed to unzip project: ${(unzip.stderr || unzip.stdout || "").trim()}`);
-      }
+      extractZip(srcPath, extractDir);
       const scan = findProjectRoot(extractDir);
       copyDirRecursiveSync(scan.projectRoot, projectDir);
     } finally {
@@ -2013,4 +2034,6 @@ server.listen(PORT, PORTAL_HOST, () => {
   console.log("Open dashboard: /dashboard");
   console.log(`GitHub owner target: ${GITHUB_OWNER}`);
   console.log(`Portal access mode: ${ACCESS_MODE}`);
+  if (ADMIN_AUTH.retired) console.log("ADMIN_PASSWORD is set to the old public default, so it was ignored. Choose a new one.");
+  if (ADMIN_AUTH.generated) console.log(`Teacher password for this run: ${ADMIN_PASSWORD} (set ADMIN_PASSWORD to choose your own)`);
 });
