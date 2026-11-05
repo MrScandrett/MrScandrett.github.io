@@ -106,15 +106,135 @@ function artwork(p, schematic){
  if(p.type==='led')return leads+'<circle class="cp-light-halo" r="42" fill="#ffb331" opacity="0"/><path class="cp-led-lens" d="M-22 21V-4a22 22 0 0 1 44 0V21Z" fill="#a82927" stroke="#6d2423" stroke-width="2"/><path d="M-17-4q0-15 15-15" fill="none" stroke="#fff" opacity=".55" stroke-width="5" stroke-linecap="round"/><path d="M-24 21H24" stroke="#60201f" stroke-width="6"/><path d="M13 5v12" stroke="#edb5a3" stroke-width="4"/>';
  return leads+'<circle class="cp-light-halo" r="44" fill="#ffd15a" opacity="0"/><circle class="cp-lamp-glass" cy="-7" r="25" fill="#dce9e9" stroke="#81949b" stroke-width="2"/><path d="M-12 29V1l8-6 8 12 8-12 8 6v28" fill="none" stroke="#a57f3c" stroke-width="2"/><path d="M-15 18H15V34H-15Z" fill="#89969f" stroke="#536472" stroke-width="2"/><path d="M-15 22H15M-15 28H15" stroke="#cad3d7" stroke-width="2"/><path d="M-18-12q0-12 12-14" fill="none" stroke="#fff" stroke-width="4"/>';
 }
+const circuitFormat = 'classroomos-circuit';
+const circuitVersion = 1;
+const builderParts = ['source', 'resistor', 'load', 'switch', 'led', 'diode'];
+const partLimit = 40;
+const wireLimit = 100;
+
+function readCircuit(data) {
+  if (!Array.isArray(data?.parts) || !Array.isArray(data.wires) ||
+      data.parts.length > partLimit || data.wires.length > wireLimit) {
+    throw new Error('Expected a board with up to 40 components and 100 wires.');
+  }
+
+  const partIds = new Set();
+  const wireIds = new Set();
+  let nextId = 1;
+  let supplies = 0;
+
+  function readId(id, pattern, used) {
+    if (typeof id !== 'string' || !pattern.test(id) || used.has(id)) return false;
+    const number = Number(id.slice(1));
+    if (!Number.isSafeInteger(number) || number >= Number.MAX_SAFE_INTEGER - 1000) return false;
+    used.add(id);
+    nextId = Math.max(nextId, number + 1);
+    return true;
+  }
+
+  const parts = data.parts.map(part => {
+    if (!part || !builderParts.includes(part.type) || !readId(part.id, /^p\d+$/, partIds) ||
+        !Number.isFinite(part.x) || !Number.isFinite(part.y) ||
+        part.x < 70 || part.x > 830 || part.y < 75 || part.y > 445 ||
+        !Number.isFinite(part.value) || part.value < 0 || part.value > 1000000 ||
+        (part.closed !== undefined && typeof part.closed !== 'boolean') ||
+        (part.vertical !== undefined && typeof part.vertical !== 'boolean')) {
+      throw new Error('A component has an invalid ID, position, value, or orientation.');
+    }
+    if (part.type === 'source') {
+      if (++supplies > 1) throw new Error('The DC board supports one supply.');
+      if (part.value < 1 || part.value > 24) throw new Error('Supply voltage must be between 1 and 24 V.');
+    }
+    if (['resistor', 'load'].includes(part.type) && part.value < 1) {
+      throw new Error('Resistance must be at least 1 Ω.');
+    }
+    const { id, type, x, y, value } = part;
+    return { id, type, x, y, value, closed: part.closed === true, vertical: part.vertical === true };
+  });
+
+  const isTerminal = terminal => typeof terminal === 'string' && /^p\d+:[01]$/.test(terminal) &&
+    partIds.has(terminal.slice(0, -2));
+  const connections = new Set();
+  const wires = data.wires.map(wire => {
+    if (!wire || !readId(wire.id, /^w\d+$/, wireIds) ||
+        !isTerminal(wire.a) || !isTerminal(wire.b) || wire.a === wire.b) {
+      throw new Error('A wire has an invalid ID or terminal.');
+    }
+    const connection = [wire.a, wire.b].sort().join('|');
+    if (connections.has(connection)) throw new Error('Two wires connect the same terminals.');
+    connections.add(connection);
+    const { id, a, b, color, bend } = wire;
+    const result = { id, a, b };
+    if (typeof color === 'string' && /^#[0-9a-f]{6}$/i.test(color)) result.color = color;
+    if (Number.isFinite(bend) && bend >= 40 && bend <= 860) result.bend = bend;
+    return result;
+  });
+  return { parts, wires, nextId };
+}
+
 class CircuitPlayground extends HTMLElement {
  connectedCallback(){
   if(this.dataset.ready)return;this.dataset.ready='1';this.profile=this.dataset.profile||'ohms';this.lesson=profiles[this.profile]||profiles.ohms;this.classList.add('cp-playground','cp-builder');this.parts=[];this.wires=[];this.nextId=1;this.history=[];this.running=false;this.selected=null;this.pending=null;this.probes=[];this.mode='wire';this.mission=0;this.schematic=false;this.wireColor='#257ab5';
-  this.innerHTML='<div class="cp-head"><div><h2>Electronics Playground</h2><p>Place components, connect their terminals, then start the simulation. Readings follow your actual wiring.</p></div><span class="cp-badge">DC circuit builder</span></div><div class="cp-builder-toolbar"><button data-action="run">Start simulation</button><button data-action="reset">Reload example</button><button data-action="clear">Clear board</button><button data-action="undo">Undo</button><button data-action="save">Save circuit</button><button data-action="load">Load saved</button></div><div class="cp-builder-mission"><label>Lesson example <select data-example aria-label="Lesson example">'+this.lesson.missions.map(function(m,i){return '<option value="'+i+'">'+esc(m.label)+'</option>';}).join('')+'</select></label><p data-mission></p></div><div class="cp-tray" aria-label="Add a component">'+['source','resistor','load','switch','led','diode'].map(function(type){return '<button class="cp-part" data-add="'+type+'"><svg viewBox="-75 -45 150 90" aria-hidden="true">'+artwork({type:type,value:330,closed:true},false)+'</svg><span>+ '+esc(specs[type][0])+'</span></button>';}).join('')+'</div><div class="cp-builder-tools"><button data-mode="wire" aria-pressed="true">Wire terminals</button><button data-mode="probe" aria-pressed="false">Voltage probes</button><button data-action="view" aria-pressed="false">Schematic view</button><label class="cp-wire-color">Jumper <select data-wire-color aria-label="Jumper wire color"><option value="#257ab5">Blue</option><option value="#c53c35">Red</option><option value="#293746">Black</option><option value="#298258">Green</option><option value="#bc8617">Yellow</option></select></label><span>Connect: click two terminals. Move: drag a component. Select a wire to delete it. Arrow keys move a focused component.</span></div><div class="cp-builder-layout"><div class="cp-builder-board"><svg viewBox="0 0 900 520" aria-label="Circuit construction board"><g data-wires></g><g data-parts></g><g data-probes></g></svg></div><aside class="cp-builder-inspector"><h3>Component inspector</h3><div data-inspector>Select a component to edit its value or connections.</div><div class="cp-meter"><strong data-total>Simulation stopped</strong><p data-probe-reading>Choose Voltage probes, then two terminals.</p></div></aside></div><p class="cp-builder-status" role="status" data-status></p><details class="cp-builder-model"><summary>What this simulation models</summary><p>DC steady state with one supply (0.5 Ω internal resistance), resistors, fixed-resistance lamps, ideal switches and wires. LED forward drop: 2 V; diode: 0.7 V; both add 10 Ω when conducting. Reverse breakdown, heating and damage are not simulated. Wires join only at terminals; crossing lines do not create a connection. Switch current is not measured directly; select a series component instead.</p><p>For AC, capacitors, transistors and oscilloscopes, use CircuitJS below. Physical breadboard holes, solder quality and Arduino code are not modeled here.</p></details><details class="cp-advanced"><summary>AC and advanced components · CircuitJS / PhET</summary><p>Build and simulate advanced circuits in CircuitJS, or explore basic circuits in PhET. These are separate workspaces; the circuit above is not transferred.</p><p><a href="'+CIRCUITJS+'" target="_blank" rel="noopener noreferrer">Open CircuitJS ↗</a> · <a href="'+PHET+'" target="_blank" rel="noopener noreferrer">Open PhET ↗</a></p><div class="cp-advanced-frame"><iframe title="CircuitJS advanced circuit simulator" data-src="'+CIRCUITJS+'" loading="lazy" allowfullscreen></iframe><div class="cp-credit">CircuitJS1 · Paul Falstad / Iain Sharp · <a href="https://github.com/sharpie7/circuitjs1" target="_blank" rel="noopener noreferrer">Source and license</a></div></div></details>';
+  const projectControls = `
+    <div class="cp-builder-project" role="group" aria-label="Circuit project">
+      <div class="cp-builder-toolbar">
+        <button type="button" data-action="download">Download circuit file</button>
+        <button type="button" data-action="open">Open circuit file</button>
+        <button type="button" data-action="save">Save in browser</button>
+        <button type="button" data-action="load">Load browser save</button>
+        <input type="file" data-circuit-file accept=".json,application/json" aria-label="Open circuit project file" hidden>
+      </div>
+      <p class="cp-project-status" role="status" data-project-status>Download an editable circuit to reopen here, in another Electronics Playground lesson, or on another device.</p>
+    </div>`;
+  this.innerHTML='<div class="cp-head"><div><h2>Electronics Playground</h2><p>Place components, connect their terminals, then start the simulation. Readings follow your actual wiring.</p></div><span class="cp-badge">DC circuit builder</span></div><div class="cp-builder-toolbar"><button data-action="run">Start simulation</button><button data-action="reset">Reload example</button><button data-action="clear">Clear board</button><button data-action="undo">Undo</button></div>'+projectControls+'<div class="cp-builder-mission"><label>Lesson example <select data-example aria-label="Lesson example">'+this.lesson.missions.map(function(m,i){return '<option value="'+i+'">'+esc(m.label)+'</option>';}).join('')+'</select></label><p data-mission></p></div><div class="cp-tray" aria-label="Add a component">'+builderParts.map(function(type){return '<button class="cp-part" data-add="'+type+'"><svg viewBox="-75 -45 150 90" aria-hidden="true">'+artwork({type:type,value:330,closed:true},false)+'</svg><span>+ '+esc(specs[type][0])+'</span></button>';}).join('')+'</div><div class="cp-builder-tools"><button data-mode="wire" aria-pressed="true">Wire terminals</button><button data-mode="probe" aria-pressed="false">Voltage probes</button><button data-action="view" aria-pressed="false">Schematic view</button><label class="cp-wire-color">Jumper <select data-wire-color aria-label="Jumper wire color"><option value="#257ab5">Blue</option><option value="#c53c35">Red</option><option value="#293746">Black</option><option value="#298258">Green</option><option value="#bc8617">Yellow</option></select></label><span>Connect: click two terminals. Move: drag a component. Select a wire to delete it. Arrow keys move a focused component.</span></div><div class="cp-builder-layout"><div class="cp-builder-board"><svg viewBox="0 0 900 520" aria-label="Circuit construction board"><g data-wires></g><g data-parts></g><g data-probes></g></svg></div><aside class="cp-builder-inspector"><h3>Component inspector</h3><div data-inspector>Select a component to edit its value or connections.</div><div class="cp-meter"><strong data-total>Simulation stopped</strong><p data-probe-reading>Choose Voltage probes, then two terminals.</p></div></aside></div><p class="cp-builder-status" role="status" data-status></p><details class="cp-builder-model"><summary>What this simulation models</summary><p>DC steady state with one supply (0.5 Ω internal resistance), resistors, fixed-resistance lamps, ideal switches and wires. LED forward drop: 2 V; diode: 0.7 V; both add 10 Ω when conducting. Reverse breakdown, heating and damage are not simulated. Wires join only at terminals; crossing lines do not create a connection. Switch current is not measured directly; select a series component instead.</p><p>For AC, capacitors, transistors and oscilloscopes, use CircuitJS below. Physical breadboard holes, solder quality and Arduino code are not modeled here.</p></details><details class="cp-advanced"><summary>AC and advanced components · CircuitJS / PhET</summary><p>Build and simulate advanced circuits in CircuitJS, or explore basic circuits in PhET. These are separate workspaces; the circuit above is not transferred.</p><p><a href="'+CIRCUITJS+'" target="_blank" rel="noopener noreferrer">Open CircuitJS ↗</a> · <a href="'+PHET+'" target="_blank" rel="noopener noreferrer">Open PhET ↗</a></p><div class="cp-advanced-frame"><iframe title="CircuitJS advanced circuit simulator" data-src="'+CIRCUITJS+'" loading="lazy" allowfullscreen></iframe><div class="cp-credit">CircuitJS1 · Paul Falstad / Iain Sharp · <a href="https://github.com/sharpie7/circuitjs1" target="_blank" rel="noopener noreferrer">Source and license</a></div></div></details>';
   this.svg=this.querySelector('.cp-builder-board > svg');this.bind();this.example(0);
  }
  notify(text){this.querySelector('[data-status]').textContent=text;}
- snapshot(){return JSON.stringify({parts:this.parts,wires:this.wires,nextId:this.nextId});}
- remember(){this.history.push(this.snapshot());if(this.history.length>50)this.history.shift();}
+ circuitState(){return {parts:this.parts,wires:this.wires,nextId:this.nextId};}
+ snapshot(){return JSON.stringify(this.circuitState());}
+ remember(snapshot=this.snapshot()){this.history.push(snapshot);if(this.history.length>50)this.history.shift();}
+ notifyProject(message) {
+  this.querySelector('[data-project-status]').textContent = message;
+ }
+ downloadCircuit() {
+  const project = { format: circuitFormat, version: circuitVersion, circuit: this.circuitState() };
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'electronics-' + this.profile + '.circuit.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  this.notifyProject('Editable circuit downloaded.');
+ }
+ async openCircuit(file) {
+  const request = this.fileRequest = {};
+  const previous = this.snapshot();
+  try {
+    if (file.size > 128_000) throw new Error('Choose a circuit project under 128 KB.');
+    const project = JSON.parse(await file.text());
+    if (this.fileRequest !== request) return;
+    if (project?.format !== circuitFormat || project.version !== circuitVersion) {
+      throw new Error('Choose a supported Electronics Playground circuit file.');
+    }
+    const circuit = readCircuit(project.circuit);
+    if (this.snapshot() !== previous) {
+      this.notifyProject('The board changed while the file was opening. Open the file again to replace it.');
+      return;
+    }
+    this.replaceCircuit(circuit, previous, 'Circuit opened.');
+  } catch (error) {
+    if (this.fileRequest !== request) return;
+    const reason = error instanceof SyntaxError ? 'Choose a valid Electronics Playground JSON file.' : error.message;
+    this.notifyProject('Could not open the file. ' + reason);
+  }
+ }
+ replaceCircuit(circuit, previous, message) {
+  this.remember(previous);
+  this.applyCircuit(circuit);
+  this.render();
+  this.notifyProject(message + ' Start simulation when ready. Undo restores your previous board.');
+ }
  stop(){this.running=false;this.querySelector('[data-action="run"]').textContent='Start simulation';}
  add(type,x,y,value){var part={id:'p'+this.nextId++,type:type,x:x,y:y,value:value||({source:9,resistor:330,load:100}[type]||0),closed:true,vertical:false};this.parts.push(part);return part;}
  example(i){this.remember();this.stop();this.mission=i;this.parts=[];this.wires=[];this.nextId=1;this.selected=null;this.pending=null;this.probes=[];var m=this.lesson.missions[i],c=m.circuit;this.querySelector('[data-example]').value=i;this.querySelector('[data-mission]').textContent=m.summary+' Predict: '+m.predict+(c.allowShort?' Build the fault by wiring across a load; select that wire and delete it to repair the circuit.':'');
@@ -127,7 +247,16 @@ class CircuitPlayground extends HTMLElement {
   this.render();this.notify('Example loaded. Change the wiring or values, then start simulation.');
  }
  terminal(key){var fields=key.split(':'),p=this.parts.find(p=>p.id===fields[0]);if(!p)return null;var side=fields[1]==='0'?-1:1;return {x:p.x+(p.vertical?0:side*65),y:p.y+(p.vertical?side*65:0)};}
- restore(raw){var data=JSON.parse(raw);if(!Array.isArray(data.parts)||!Array.isArray(data.wires)||data.parts.length>40||data.wires.length>100)throw Error('Invalid circuit');var ids=new Set();data.parts.forEach(p=>{if(!['source','resistor','load','switch','led','diode'].includes(p.type)||!/^p\d+$/.test(p.id)||ids.has(p.id)||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<70||p.x>830||p.y<75||p.y>445||!Number.isFinite(p.value)||p.value<0||p.value>1000000)throw Error('Invalid component');if(p.type==='source'&&(p.value<1||p.value>24))throw Error('Invalid voltage');if(['load','resistor'].includes(p.type)&&p.value<1)throw Error('Invalid resistance');ids.add(p.id);});if(data.parts.filter(p=>p.type==='source').length>1)throw Error('Only one supply supported');data.wires.forEach(w=>{if(!/^w\d+$/.test(w.id)||![w.a,w.b].every(t=>/^p\d+:[01]$/.test(t)&&ids.has(t.split(':')[0])))throw Error('Invalid wire');});this.parts=data.parts;this.wires=data.wires;this.nextId=Math.max(1,...data.parts.concat(data.wires).map(p=>Number(p.id.slice(1))+1));this.pending=null;this.probes=[];this.selected=null;this.stop();}
+ applyCircuit(circuit) {
+  this.parts = circuit.parts;
+  this.wires = circuit.wires;
+  this.nextId = circuit.nextId;
+  this.pending = null;
+  this.probes = [];
+  this.selected = null;
+  this.stop();
+ }
+ restore(raw){this.applyCircuit(readCircuit(JSON.parse(raw)));}
  render(){
   var result=this.running?simulate(this.parts,this.wires):{values:{},nodes:{}};this.result=result;
   this.svg.classList.toggle('is-schematic',this.schematic);
@@ -142,9 +271,9 @@ class CircuitPlayground extends HTMLElement {
   }else if(w)inspector.innerHTML='<strong>Wire '+w.id+'</strong><p>'+esc(w.a)+' ↔ '+esc(w.b)+'</p><label>Wire route <input data-bend type="range" min="40" max="860" step="10" value="'+(Number.isFinite(w.bend)?w.bend:450)+'"></label><p>Move the route sideways; use Jumper to change its color. Crossings do not connect.</p><button data-action="delete">Delete wire</button>';else inspector.textContent='Select a component to edit its value or connections.';
   this.querySelector('[data-action="undo"]').disabled=!this.history.length;
  }
- connect(t){if(this.wires.length>=100&&this.mode==='wire'){this.notify('Board limit: 100 wires.');return;}if(this.mode==='probe'){if(this.probes.length===2)this.probes=[];this.probes.push(t);this.render();this.notify(this.probes.length===1?'Red probe placed. Choose the black probe terminal.':'Probes placed. Start simulation to read voltage.');return;}if(!this.pending){this.pending=t;this.render();this.notify('First terminal selected. Choose a second terminal; Escape cancels.');return;}if(this.pending===t){this.pending=null;this.render();return;}if(this.wires.some(w=>(w.a===this.pending&&w.b===t)||(w.b===this.pending&&w.a===t))){this.notify('Those terminals are already connected.');return;}this.remember();this.wires.push({id:'w'+this.nextId++,a:this.pending,b:t,color:this.wireColor});this.pending=null;this.render();this.notify('Wire connected.');}
+ connect(t){if(this.wires.length>=wireLimit&&this.mode==='wire'){this.notify('Board limit: 100 wires.');return;}if(this.mode==='probe'){if(this.probes.length===2)this.probes=[];this.probes.push(t);this.render();this.notify(this.probes.length===1?'Red probe placed. Choose the black probe terminal.':'Probes placed. Start simulation to read voltage.');return;}if(!this.pending){this.pending=t;this.render();this.notify('First terminal selected. Choose a second terminal; Escape cancels.');return;}if(this.pending===t){this.pending=null;this.render();return;}if(this.wires.some(w=>(w.a===this.pending&&w.b===t)||(w.b===this.pending&&w.a===t))){this.notify('Those terminals are already connected.');return;}this.remember();this.wires.push({id:'w'+this.nextId++,a:this.pending,b:t,color:this.wireColor});this.pending=null;this.render();this.notify('Wire connected.');}
  bind(){
-  this.addEventListener('click',event=>{var t=event.target.closest('[data-terminal]');if(t){this.connect(t.dataset.terminal);return;}var p=event.target.closest('[data-part]'),w=event.target.closest('[data-wire]');if(p||w){this.selected=p?p.dataset.part:w.dataset.wire;this.render();return;}var add=event.target.closest('[data-add]');if(add){var type=add.dataset.add;if(this.parts.length>=40){this.notify('Board limit: 40 components.');return;}if(type==='source'&&this.parts.some(p=>p.type==='source')){this.notify('This DC bench supports one supply. Select it to edit the voltage.');return;}this.remember();this.selected=this.add(type,220+(this.parts.length%4)*170,180+(Math.floor(this.parts.length/4)%2)*180).id;this.render();this.notify('Component added. Wire its two terminals.');return;}var mode=event.target.closest('[data-mode]');if(mode){this.mode=mode.dataset.mode;this.pending=null;this.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));this.notify(this.mode==='probe'?'Choose red then black probe terminals.':'Choose two terminals to connect a wire.');this.render();return;}var button=event.target.closest('[data-action]');if(!button)return;var action=button.dataset.action,picked=this.parts.find(p=>p.id===this.selected);
+  this.addEventListener('click',event=>{var t=event.target.closest('[data-terminal]');if(t){this.connect(t.dataset.terminal);return;}var p=event.target.closest('[data-part]'),w=event.target.closest('[data-wire]');if(p||w){this.selected=p?p.dataset.part:w.dataset.wire;this.render();return;}var add=event.target.closest('[data-add]');if(add){var type=add.dataset.add;if(this.parts.length>=partLimit){this.notify('Board limit: 40 components.');return;}if(type==='source'&&this.parts.some(p=>p.type==='source')){this.notify('This DC bench supports one supply. Select it to edit the voltage.');return;}this.remember();this.selected=this.add(type,220+(this.parts.length%4)*170,180+(Math.floor(this.parts.length/4)%2)*180).id;this.render();this.notify('Component added. Wire its two terminals.');return;}var mode=event.target.closest('[data-mode]');if(mode){this.mode=mode.dataset.mode;this.pending=null;this.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===mode)));this.notify(this.mode==='probe'?'Choose red then black probe terminals.':'Choose two terminals to connect a wire.');this.render();return;}var button=event.target.closest('[data-action]');if(!button)return;var action=button.dataset.action,picked=this.parts.find(p=>p.id===this.selected);
    if(action==='view'){this.schematic=!this.schematic;button.setAttribute('aria-pressed',String(this.schematic));button.textContent=this.schematic?'Physical view':'Schematic view';this.render();}
    if(action==='run'){this.running=!this.running;button.textContent=this.running?'Stop simulation':'Start simulation';this.render();this.notify(this.running?'Simulation running. Values update as you edit.':'Simulation stopped.');}
    if(action==='reset')this.example(this.mission);
@@ -153,15 +282,40 @@ class CircuitPlayground extends HTMLElement {
    if(action==='rotate'&&picked){this.remember();picked.vertical=!picked.vertical;this.render();}
    if(action==='switch'&&picked){this.remember();picked.closed=!picked.closed;this.render();}
    if(action==='delete'){this.remember();if(picked){this.parts=this.parts.filter(p=>p!==picked);this.wires=this.wires.filter(w=>![w.a,w.b].some(t=>t.split(':')[0]===picked.id));this.probes=this.probes.filter(t=>t.split(':')[0]!==picked.id);this.pending=null;}else this.wires=this.wires.filter(w=>w.id!==this.selected);this.selected=null;this.render();this.notify('Selection deleted.');}
-   if(action==='save'){try{localStorage.setItem('classroomos:circuit-builder:'+this.profile,this.snapshot());this.notify('Circuit saved in this browser.');}catch(e){this.notify('Browser storage is unavailable.');}}
-   if(action==='load'){try{var raw=localStorage.getItem('classroomos:circuit-builder:'+this.profile);if(!raw){this.notify('No saved circuit for this lesson.');return;}var previous=this.snapshot();this.restore(raw);this.history.push(previous);this.render();this.notify('Saved circuit loaded. Start simulation when ready.');}catch(e){this.notify('The saved circuit could not be loaded.');}}
+   if(action==='download') this.downloadCircuit();
+   if(action==='open') this.querySelector('[data-circuit-file]').click();
+   if(action==='save'){
+    try {
+      localStorage.setItem('classroomos:circuit-builder:'+this.profile,this.snapshot());
+      this.notifyProject('Circuit saved in this browser for this lesson.');
+    } catch {
+      this.notifyProject('Browser storage is unavailable. Download a circuit file to keep your work.');
+    }
+   }
+   if(action==='load'){
+    try {
+      const raw = localStorage.getItem('classroomos:circuit-builder:' + this.profile);
+      if (!raw) {
+        this.notifyProject('No browser save for this lesson.');
+        return;
+      }
+      this.replaceCircuit(readCircuit(JSON.parse(raw)), this.snapshot(), 'Browser save loaded.');
+    } catch {
+      this.notifyProject('The browser save could not be loaded.');
+    }
+   }
+  });
+  this.querySelector('[data-circuit-file]').addEventListener('change', event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (file) this.openCircuit(file);
   });
   this.addEventListener('change',event=>{if(event.target.matches('[data-bend]')){var selectedWire=this.wires.find(w=>w.id===this.selected);if(selectedWire){this.remember();selectedWire.bend=Number(event.target.value);this.render();}}if(event.target.matches('[data-wire-color]')){this.wireColor=event.target.value;var wire=this.wires.find(w=>w.id===this.selected);if(wire){this.remember();wire.color=this.wireColor;this.render();}}if(event.target.matches('[data-example]'))this.example(+event.target.value);if(event.target.matches('[data-value]')){var p=this.parts.find(p=>p.id===this.selected),value=Number(event.target.value);if(!Number.isFinite(value)||value<1||value>(p.type==='source'?24:1000000)){this.notify('Enter a value from 1 to '+(p.type==='source'?24:1000000)+'.');event.target.value=p.value;return;}this.remember();p.value=value;this.render();}});
   this.svg.addEventListener('keydown',event=>{if(event.key==='Escape'){this.pending=null;this.render();this.notify('Connection canceled.');return;}var target=event.target.closest('[data-part],[data-terminal],[data-wire]');if(target&&target.hasAttribute('data-part')&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();var id=target.dataset.part,p=this.parts.find(p=>p.id===id);this.remember();p.x=Math.max(70,Math.min(830,p.x+(event.key==='ArrowLeft'?-10:event.key==='ArrowRight'?10:0)));p.y=Math.max(80,Math.min(440,p.y+(event.key==='ArrowUp'?-10:event.key==='ArrowDown'?10:0)));this.render();this.svg.querySelector('[data-part="'+id+'"]').focus();return;}if(target&&(event.key==='Enter'||event.key===' ')){event.preventDefault();var kind=target.hasAttribute('data-terminal')?'data-terminal':target.hasAttribute('data-part')?'data-part':'data-wire',id=target.getAttribute(kind);target.dispatchEvent(new MouseEvent('click',{bubbles:true}));var replacement=this.svg.querySelector('['+kind+'="'+id+'"]');if(replacement)replacement.focus();}});
   var drag=null;
   this.svg.addEventListener('pointerdown',event=>{var target=event.target.closest('[data-part]');if(!target||event.button!==0)return;var p=this.parts.find(p=>p.id===target.dataset.part);drag={p:p,x:event.clientX,y:event.clientY,px:p.x,py:p.y,snapshot:this.snapshot(),moved:false};this.svg.setPointerCapture(event.pointerId);});
   this.svg.addEventListener('pointermove',event=>{if(!drag)return;var rect=this.svg.getBoundingClientRect(),scale=Math.min(rect.width/900,rect.height/520),dx=(event.clientX-drag.x)/scale,dy=(event.clientY-drag.y)/scale;if(Math.abs(dx)+Math.abs(dy)<5&&!drag.moved)return;drag.moved=true;drag.p.x=Math.round(Math.max(70,Math.min(830,drag.px+dx))/10)*10;drag.p.y=Math.round(Math.max(80,Math.min(440,drag.py+dy))/10)*10;this.render();});
-  this.svg.addEventListener('pointerup',()=>{if(drag){if(drag.moved)this.history.push(drag.snapshot);this.selected=drag.p.id;this.render();if(drag.moved)this.notify('Component moved; wires stay connected.');}drag=null;});this.svg.addEventListener('pointercancel',()=>{drag=null;});
+  this.svg.addEventListener('pointerup',()=>{if(drag){if(drag.moved)this.remember(drag.snapshot);this.selected=drag.p.id;this.render();if(drag.moved)this.notify('Component moved; wires stay connected.');}drag=null;});this.svg.addEventListener('pointercancel',()=>{drag=null;});
   this.querySelector('.cp-advanced').addEventListener('toggle',function(){if(this.open){var frame=this.querySelector('iframe');if(!frame.getAttribute('src'))frame.src=frame.dataset.src;}});
  }
 }

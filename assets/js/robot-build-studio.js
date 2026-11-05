@@ -1227,10 +1227,8 @@
   }
 
   /* ── MISSION 08: BUILD RECORD & LIVE SPEC TABLE ────────────────── */
-  function updateSpecTable() {
-    const tbody = $('#rb-spec-body');
-    if (!tbody) return;
-    const rows = [
+  function specRows() {
+    return [
       [
         '01 · Chassis',
         `${state.chassis.l} × ${state.chassis.w} mm, ${state.chassis.clear} mm clearance`,
@@ -1268,7 +1266,12 @@
       ]
     ];
 
-    tbody.innerHTML = rows
+  }
+
+  function updateSpecTable() {
+    const tbody = $('#rb-spec-body');
+    if (!tbody) return;
+    tbody.innerHTML = specRows()
       .map(
         ([sub, spec, status]) =>
           `<tr><td><strong>${sub}</strong></td><td>${spec}</td><td>${status}</td></tr>`
@@ -1283,10 +1286,9 @@
 
     $('#rb-summary').textContent =
       `${name} (${state.chassis.l} × ${state.chassis.w} mm footprint, ${state.chassis.clear} mm clearance) was designed to ${job}. ` +
-      `We arranged the chassis so the wheels, battery, controller, sensors, and ${state.effector.type} end-effector (${state.effector.reach} mm reach, ${state.effector.jaw} mm opening) could be mounted securely and serviced. ` +
-      `Our drivetrain uses a ${state.gears.ratio.toFixed(2)}:1 gear ratio (${state.gears.driver}T driving ${state.gears.driven}T) and a servo load moment of ${state.servo.momentNm.toFixed(3)} N·m. ` +
-      `During staged integration (${state.integration.done}/${state.integration.total} gates verified) and three-trial testing (${state.effector.passes}/3 passed), we recorded what happened instead of changing several variables at once. ` +
-      `If we built another version, we would ${change}.`;
+      `The design uses a ${state.effector.type} end-effector (${state.effector.reach} mm reach, ${state.effector.jaw} mm opening) and a ${state.gears.ratio.toFixed(2)}:1 gear ratio (${state.gears.driver}T driving ${state.gears.driven}T). ` +
+      `The estimated servo load moment is ${state.servo.momentNm.toFixed(3)} N·m. The build checklist has ${state.integration.done}/${state.integration.total} gates marked and the model predicts ${state.effector.passes}/3 successful trials. ` +
+      `For the next revision, we would ${change}.`;
 
     updateSpecTable();
   }
@@ -1340,11 +1342,183 @@
     'robot-change': documentBuild
   };
 
-  $$('[data-rb]').forEach((el) => {
-    const fn = handlers[el.dataset.rb];
-    if (!fn) return;
-    el.addEventListener('input', fn);
-    el.addEventListener('change', fn);
+  const projectFields = $$('[data-rb]').filter(el => Object.hasOwn(handlers, el.dataset.rb));
+  const projectGates = $$('[data-build-gate]');
+  const jointOptions = $$('[data-joint]');
+  const storageKey = 'classroomos:robot-build:v1';
+  const projectFormat = 'classroomos-robot-build';
+  const projectStatus = $('#rb-project-status');
+  const restoreButton = $('#rb-restore-project');
+  let previousProject = null;
+  let revision = 0;
+
+  function readBuild() {
+    return {
+      format: projectFormat,
+      version: 1,
+      fields: Object.fromEntries(projectFields.map(el => [el.dataset.rb, el.value])),
+      joint: jointOptions.find(el => el.getAttribute('aria-pressed') === 'true').dataset.joint,
+      gates: Object.fromEntries(projectGates.map(el => [el.dataset.buildGate, el.checked]))
+    };
+  }
+
+  function validateBuild(project) {
+    if (project?.format !== projectFormat || project.version !== 1 ||
+        !jointOptions.some(el => el.dataset.joint === project.joint)) {
+      throw new Error('Invalid build project');
+    }
+    for (const el of projectFields) {
+      const value = project.fields?.[el.dataset.rb];
+      if (typeof value !== 'string') throw new Error('Missing build setting');
+      if (el.type === 'range') {
+        const number = Number(value);
+        const steps = (number - Number(el.min)) / Number(el.step || 1);
+        if (!value.trim() || !Number.isFinite(number) || number < Number(el.min) ||
+            number > Number(el.max) || Math.abs(steps - Math.round(steps)) > 1e-8) {
+          throw new Error('Invalid build measurement');
+        }
+      } else if (el.tagName === 'SELECT') {
+        if (![...el.options].some(option => option.value === value)) throw new Error('Invalid build option');
+      } else if (value.length > el.maxLength || (el.type === 'text' && /[\r\n]/.test(value))) {
+        throw new Error('Invalid build note');
+      }
+    }
+    if (projectGates.some(el => typeof project.gates?.[el.dataset.buildGate] !== 'boolean')) {
+      throw new Error('Invalid checklist');
+    }
+    return project;
+  }
+
+  function renderBuild() {
+    chassis();
+    printPlan();
+    joints();
+    gears();
+    servo();
+    integration();
+    effector();
+    documentBuild();
+  }
+
+  function applyBuild(project) {
+    for (const el of projectFields) el.value = project.fields[el.dataset.rb];
+    for (const el of projectGates) el.checked = project.gates[el.dataset.buildGate];
+    for (const el of jointOptions) el.setAttribute('aria-pressed', String(el.dataset.joint === project.joint));
+    renderBuild();
+  }
+
+  function announce(message) {
+    if (projectStatus.textContent !== message) projectStatus.textContent = message;
+  }
+
+  function saveDraft(message = 'Draft saved in this browser.') {
+    revision++;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(readBuild()));
+      announce(message);
+    } catch {
+      announce('Browser autosave is unavailable. Save a project file to keep your build.');
+    }
+  }
+
+  function replaceBuild(project, message) {
+    previousProject = readBuild();
+    restoreButton.hidden = false;
+    applyBuild(project);
+    saveDraft(message);
+  }
+
+  function downloadBuild(data, suffix, type) {
+    const name = $('[data-rb="robot-name"]').value.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').slice(0, 60).replace(/^-|-$/g, '') || 'robot-build';
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name + suffix;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadRecord() {
+    documentBuild();
+    const specs = specRows().map(([subsystem, settings, result]) => subsystem + ' · ' + settings + ' · ' + result);
+    const checklist = projectGates.map(el =>
+      (el.checked ? '[x] ' : '[ ] ') + el.labels[0].textContent.trim()
+    );
+    const trials = state.effector.results.map((result, index) =>
+      'Trial ' + (index + 1) + ' · ' + (result.ok ? 'Pass' : 'Revise') + ' · ' + result.why
+    );
+    const record = [
+      ($('[data-rb="robot-name"]').value.trim() || 'Robot build') + ' · Build record',
+      '',
+      'Task',
+      $('[data-rb="robot-job"]').value.trim() || 'No task entered.',
+      '',
+      'Revision note',
+      $('[data-rb="robot-change"]').value.trim() || 'No revision entered.',
+      '',
+      'Engineering summary draft',
+      $('#rb-summary').textContent,
+      '',
+      'Configured specifications and model results',
+      ...specs,
+      '',
+      'Bring-up checklist',
+      ...checklist,
+      '',
+      'End-effector simulation',
+      ...trials,
+      '',
+      'Simulation results are predictions. Record physical test evidence separately.',
+      ''
+    ].join('\n');
+    downloadBuild(record, '-build-record.txt', 'text/plain;charset=utf-8');
+    announce('Build record downloaded.');
+  }
+
+  const starter = readBuild();
+  $('#rb-new-project').addEventListener('click', () => {
+    const fields = { ...starter.fields, 'robot-name': '', 'robot-job': '', 'robot-change': '' };
+    const gates = Object.fromEntries(projectGates.map(el => [el.dataset.buildGate, false]));
+    replaceBuild({ ...starter, fields, gates }, 'New build ready. Restore draft brings back the previous build.');
+  });
+  $('#rb-save-project').addEventListener('click', () => {
+    downloadBuild(JSON.stringify(readBuild(), null, 2), '.robot-build.json', 'application/json');
+    announce('Editable build project downloaded.');
+  });
+  $('#rb-export-record').addEventListener('click', downloadRecord);
+  restoreButton.addEventListener('click', () => replaceBuild(previousProject, 'Previous build restored.'));
+
+  const projectFile = $('#rb-project-file');
+  let openRequest = 0;
+  $('#rb-open-project').addEventListener('click', () => projectFile.click());
+  projectFile.addEventListener('change', async () => {
+    const file = projectFile.files[0];
+    projectFile.value = '';
+    if (!file) return;
+    const startedAt = revision;
+    const request = ++openRequest;
+    try {
+      if (file.size > 64_000) throw new Error('Build project too large');
+      const project = validateBuild(JSON.parse(await file.text()));
+      if (request !== openRequest) return;
+      if (startedAt !== revision) {
+        announce('The build changed while the file was opening. Open it again to replace the draft.');
+        return;
+      }
+      replaceBuild(project, 'Build opened. Restore draft brings back the previous build.');
+    } catch {
+      if (request === openRequest) announce('Could not open that file. Choose a valid Robot Build Studio project.');
+    }
+  });
+
+  projectFields.forEach(el => {
+    const update = () => {
+      handlers[el.dataset.rb]();
+      saveDraft();
+    };
+    el.addEventListener('input', update);
+    el.addEventListener('change', update);
   });
 
   $$('[data-joint]').forEach((b) =>
@@ -1352,6 +1526,7 @@
       $$('[data-joint]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
       b.setAttribute('aria-pressed', 'true');
       joints();
+      saveDraft();
     })
   );
 
@@ -1371,6 +1546,7 @@
         if (input) input.value = v;
       });
       chassis();
+      saveDraft();
     });
   });
 
@@ -1389,6 +1565,7 @@
         if (input) input.value = v;
       });
       printPlan();
+      saveDraft();
     });
   });
 
@@ -1406,6 +1583,7 @@
       $('[data-rb="driver"]').value = p.driver;
       $('[data-rb="driven"]').value = p.driven;
       gears();
+      saveDraft();
     });
   });
 
@@ -1416,6 +1594,7 @@
       if (angleInput) {
         angleInput.value = btn.dataset.servoPose;
         servo();
+        saveDraft();
       }
     });
   });
@@ -1428,18 +1607,20 @@
     });
   }
 
-  $$('#rb-integration input').forEach((x) => x.addEventListener('change', integration));
+  projectGates.forEach(el => el.addEventListener('change', () => {
+    integration();
+    saveDraft();
+  }));
   $('#rb-make-summary').addEventListener('click', documentBuild);
 
-  // Initial render
-  chassis();
-  printPlan();
-  joints();
-  gears();
-  servo();
-  integration();
-  effector();
-  documentBuild();
+  let initialBuild = starter;
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) initialBuild = validateBuild(JSON.parse(saved));
+  } catch {
+    announce('The browser draft could not be loaded. You can open a saved build project.');
+  }
+  applyBuild(initialBuild);
   initQuiz();
 
   // Gentle animation loop for the meshing gear train (Mission 04)

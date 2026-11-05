@@ -27,6 +27,7 @@ const errors = [];
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   let failMP3 = false, failAll = false;
+  await context.route('**/assets/audio/classroom-radio/*.mp3', serveAudio);
   await context.route(/https:\/\/upload\.wikimedia\.org\/.*\.(?:mp3|ogg|flac)(?:\?.*)?$/, route => {
     if (failAll || (failMP3 && route.request().url().endsWith('.mp3'))) return route.fulfill({ status: 404, body: '' });
     return serveAudio(route);
@@ -147,6 +148,8 @@ try {
   await page.evaluate(() => window.SiteMusic.select('bach-2', true));
   await page.waitForFunction(() => document.querySelector('#music-status').textContent.includes('unavailable'));
   failAll = false; failMP3 = false;
+  await page.locator('#music-play').click();
+  await page.waitForFunction(() => document.querySelector('audio').currentTime > .1);
   await page.evaluate(() => window.SiteMusic.select('satie-1', false));
   await page.locator('#music-shuffle').click();
   await page.locator('#music-repeat').click();
@@ -225,6 +228,7 @@ try {
   // Enter listening mode from the aquarium's own Play button.
   const entryContext = await browser.newContext({ reducedMotion: 'reduce' });
   await entryContext.route(/https:\/\/upload\.wikimedia\.org\/.*\.(?:mp3|ogg|flac)$/, serveAudio);
+  await entryContext.route('**/assets/audio/classroom-radio/*.mp3', serveAudio);
   const entry = await entryContext.newPage();
   await entry.goto(`${base}/student-fishtank.html?preview=1`);
   await entry.waitForFunction(() => window.SiteMusic?.snapshot().track);
@@ -233,5 +237,26 @@ try {
   await entry.waitForFunction(() => document.querySelector('audio') && !document.querySelector('audio').paused && document.querySelector('audio').currentTime > .1);
   console.log('PASS aquarium opens the shared player and starts a recording');
   await entryContext.close();
+
+  const classroom = await browser.newContext({ viewport: { width: 1920, height: 1080 }, hasTouch: true });
+  await classroom.addInitScript(() => { delete window.ResizeObserver; });
+  await classroom.route('https://upload.wikimedia.org/**', route => route.fulfill({ status: 429, body: '' }));
+  const board = await classroom.newPage();
+  board.on('pageerror', error => errors.push(error.message));
+  await board.goto(`${base}/listen.html?browse=about.html&play=1`);
+  await board.getByText('Tap Play to start listening on this device.').waitFor();
+  await board.locator('#music-play').tap();
+  const playsCopy = file => board.waitForFunction(name => {
+    const audio = document.querySelector('audio');
+    return audio.currentSrc === new URL(name, location.href).href && audio.currentTime > .15;
+  }, `assets/audio/classroom-radio/${file}.mp3`);
+  await playsCopy('satie-gymnopedie-1');
+  await board.locator('.music-track[data-track="bach-3"]').tap();
+  await playsCopy('bach-air');
+  await board.locator('.music-track[data-track="bach-2"]').tap();
+  await board.locator('#music-classroom-copy').tap();
+  await playsCopy('satie-gymnopedie-1');
+  console.log('PASS autoplay recovery and real classroom recordings with Wikimedia rate-limited');
+  await classroom.close();
   assert.deepEqual(errors, [], 'Browser errors');
 } finally { await browser.close(); }

@@ -10,7 +10,32 @@
     }
     var dCtx = drawCanvas.getContext('2d');
     var pCtx = physCanvas.getContext('2d');
-    var DPR  = window.devicePixelRatio || 1;
+    var DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var boardSize = null;
+
+    function fitCanvas(canvas, ctx) {
+      var available = canvas.parentElement.clientWidth;
+      if (!available) return false;
+      if (!boardSize) {
+        boardSize = { width: Math.max(240, Math.min(1440, available)), height: innerWidth <= 560 ? 320 : 480 };
+      }
+      var scale = Math.min(1, available / boardSize.width);
+      canvas.style.width = boardSize.width * scale + 'px';
+      canvas.style.height = boardSize.height * scale + 'px';
+      canvas.width = Math.round(boardSize.width * DPR);
+      canvas.height = Math.round(boardSize.height * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      return true;
+    }
+
+    function canvasPoint(canvas, event) {
+      var rect = canvas.getBoundingClientRect();
+      var source = event.touches ? event.touches[0] : event;
+      return {
+        x: Math.max(0, Math.min(boardSize.width, (source.clientX - rect.left) * boardSize.width / rect.width)),
+        y: Math.max(0, Math.min(boardSize.height, (source.clientY - rect.top) * boardSize.height / rect.height))
+      };
+    }
     var missions = [
       'Build a machine from three shapes, then make it move.',
       'Can two different masses fall at the same rate? Build a test.',
@@ -68,22 +93,11 @@
     }
 
     function resizeD() {
-      var w = drawCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
-      drawCanvas.width  = Math.round(w * DPR);
-      drawCanvas.height = Math.round(h * DPR);
-      drawCanvas.style.height = h + 'px';
-      dCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
-      redrawD();
-    }
-
-    function dPos(e) {
-      var r = drawCanvas.getBoundingClientRect();
-      var src = e.touches ? e.touches[0] : e;
-      return { x: src.clientX - r.left, y: src.clientY - r.top };
+      if (fitCanvas(drawCanvas, dCtx)) redrawD();
     }
 
     function redrawD() {
-      var w = drawCanvas.offsetWidth, h = drawCanvas.offsetHeight;
+      var w = boardSize.width, h = boardSize.height;
       dCtx.clearRect(0, 0, w, h);
       drawGrid(dCtx, w, h);
       strokes.forEach(paintStroke);
@@ -124,7 +138,7 @@
 
     function dDown(e) {
       e.preventDefault();
-      var p = dPos(e); drawing = true; shapeStart = p;
+      var p = canvasPoint(drawCanvas, e); drawing = true; shapeStart = p;
       updateDrawUi();
       if (drawTool === 'pencil' || drawTool === 'eraser') {
         curStroke = { type: drawTool, color: drawColor, size: drawTool === 'eraser' ? drawSize * 4 : drawSize, pts: [p] };
@@ -144,7 +158,7 @@
     function dMove(e) {
       if (!drawing || drawTool === 'ruler') return;
       e.preventDefault();
-      var p = dPos(e);
+      var p = canvasPoint(drawCanvas, e);
       if (drawTool === 'pencil' || drawTool === 'eraser') {
         curStroke.pts.push(p);
       } else {
@@ -191,7 +205,7 @@
     function launchDrawing() {
       var artwork = strokes.filter(function (s) { return s.type !== 'eraser' && s.type !== 'ruler'; }).slice(-18);
       if (!artwork.length) return;
-      var sourceW = Math.max(drawCanvas.offsetWidth,1), sourceH = Math.max(drawCanvas.offsetHeight,1);
+      var sourceW = boardSize.width, sourceH = boardSize.height;
       document.getElementById('ptab-phys').click();
       var sx = PW()/sourceW, sy = PH()/sourceH;
       artwork.forEach(function (s, index) {
@@ -220,6 +234,9 @@
     drawCanvas.addEventListener('touchstart', dDown, { passive: false });
     drawCanvas.addEventListener('touchmove', dMove, { passive: false });
     drawCanvas.addEventListener('touchend', dUp);
+    drawCanvas.addEventListener('touchcancel', function () {
+      drawing = false; curStroke = null; redrawD(); updateDrawUi();
+    });
 
     document.querySelectorAll('#ppanel-draw .ptool[data-tool]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -257,7 +274,9 @@
     // ══════════════════════════════════════════════════════
     var PPM = 80;
     var G   = 9.8 * PPM;
-    var gravDir = { x: 0, y: 1 };
+    var gravityDirections = { down:{x:0,y:1}, up:{x:0,y:-1}, left:{x:-1,y:0}, right:{x:1,y:0}, none:{x:0,y:0} };
+    var gravity = 'down';
+    var gravDir = gravityDirections[gravity];
     var windForce = 0;
     var bounceScale = 0.72;
     var showVectors = false;
@@ -271,15 +290,11 @@
     var ci = 0;
 
     function resizeP() {
-      var w = physCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
-      physCanvas.width  = Math.round(w * DPR);
-      physCanvas.height = Math.round(h * DPR);
-      physCanvas.style.height = h + 'px';
-      pCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      if (fitCanvas(physCanvas, pCtx)) drawObjs();
     }
 
-    function PW() { return physCanvas.offsetWidth; }
-    function PH() { return physCanvas.offsetHeight; }
+    function PW() { return boardSize.width; }
+    function PH() { return boardSize.height; }
 
     function spawnObj(x, y, vx, vy, options) {
       if (objs.length >= 25) objs.shift();
@@ -305,20 +320,14 @@
       return x >= o.x - o.w/2 && x <= o.x + o.w/2 && y >= o.y - o.h/2 && y <= o.y + o.h/2;
     }
 
-    function pPos(e) {
-      var r = physCanvas.getBoundingClientRect();
-      var src = e.touches ? e.touches[0] : e;
-      return { x: src.clientX - r.left, y: src.clientY - r.top };
-    }
-
     physCanvas.addEventListener('mousedown', function (e) {
-      var p = pPos(e);
+      var p = canvasPoint(physCanvas, e);
       dragObj = objs.slice().reverse().find(function (o) { return hit(o, p.x, p.y); }) || null;
       if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; dragObj.omega = 0; }
       prevP = p; prevPT = performance.now();
     });
     physCanvas.addEventListener('mousemove', function (e) {
-      var p = pPos(e), now = performance.now(), dt = (now - prevPT) / 1000;
+      var p = canvasPoint(physCanvas, e), now = performance.now(), dt = (now - prevPT) / 1000;
       if (dragObj) {
         if (prevP && dt > 0) { throwVx = (p.x - prevP.x) / Math.max(dt, 0.008); throwVy = (p.y - prevP.y) / Math.max(dt, 0.008); }
         dragObj.x = p.x + dragOx; dragObj.y = p.y + dragOy;
@@ -327,24 +336,28 @@
     });
     physCanvas.addEventListener('mouseup', function (e) {
       if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj.omega = throwVx * 0.02; dragObj = null; throwVx = throwVy = 0; }
-      else { var p = pPos(e); if (prevP && Math.hypot(p.x - prevP.x, p.y - prevP.y) < 6) spawnObj(p.x, p.y); }
+      else { var p = canvasPoint(physCanvas, e); if (prevP && Math.hypot(p.x - prevP.x, p.y - prevP.y) < 6) spawnObj(p.x, p.y); }
     });
     physCanvas.addEventListener('touchstart', function (e) {
       e.preventDefault();
-      var p = pPos(e);
+      var p = canvasPoint(physCanvas, e);
       dragObj = objs.slice().reverse().find(function (o) { return hit(o, p.x, p.y); }) || null;
       if (dragObj) { dragOx = dragObj.x - p.x; dragOy = dragObj.y - p.y; dragObj.vx = dragObj.vy = 0; dragObj.omega = 0; }
       prevP = p; prevPT = performance.now();
     }, { passive: false });
     physCanvas.addEventListener('touchmove', function (e) {
       e.preventDefault();
-      var p = pPos(e), now = performance.now(), dt = (now - prevPT) / 1000;
+      var p = canvasPoint(physCanvas, e), now = performance.now(), dt = (now - prevPT) / 1000;
       if (dragObj) { throwVx = (p.x-(prevP?prevP.x:p.x))/Math.max(dt,0.008); throwVy = (p.y-(prevP?prevP.y:p.y))/Math.max(dt,0.008); dragObj.x = p.x+dragOx; dragObj.y = p.y+dragOy; }
       prevP = p; prevPT = now;
     }, { passive: false });
     physCanvas.addEventListener('touchend', function (e) {
       if (dragObj) { dragObj.vx = throwVx; dragObj.vy = throwVy; dragObj.omega = throwVx * 0.02; dragObj = null; throwVx = throwVy = 0; }
       else if (prevP) spawnObj(prevP.x, prevP.y);
+    });
+
+    physCanvas.addEventListener('touchcancel', function () {
+      dragObj = null; prevP = null; throwVx = throwVy = 0;
     });
 
     function collCC(a, b) {
@@ -547,7 +560,8 @@
       var energy=document.getElementById('pphys-energy');
       if (count) count.textContent=objs.length+' '+(objs.length===1?'body':'bodies');
       if (energy) energy.textContent=totalEnergy.toFixed(1)+' J';
-      if (ro) ro.textContent = physPaused ? 'Experiment paused' : (liveMsg || (objs.length ? 'Drag a body to add force' : 'Click or tap to spawn'));
+      var message = physPaused ? 'Experiment paused' : (liveMsg || (objs.length ? 'Drag a body to add force' : 'Click or tap to spawn'));
+      if (ro && ro.textContent !== message) ro.textContent = message;
     }
 
     function loop(ts) {
@@ -573,8 +587,8 @@
       btn.addEventListener('click', function () {
         document.querySelectorAll('#ppanel-phys .ptool-grav').forEach(function (b) { b.classList.remove('is-active'); });
         btn.classList.add('is-active');
-        var dirs = { down:{x:0,y:1}, up:{x:0,y:-1}, left:{x:-1,y:0}, right:{x:1,y:0}, none:{x:0,y:0} };
-        gravDir = dirs[btn.dataset.grav] || {x:0,y:1};
+        gravity = btn.dataset.grav;
+        gravDir = gravityDirections[gravity];
       });
     });
 
@@ -603,7 +617,7 @@
     document.getElementById('pphys-pause') && document.getElementById('pphys-pause').addEventListener('click', function () { setPaused(!physPaused); });
     document.getElementById('pphys-demo') && document.getElementById('pphys-demo').addEventListener('click', function () {
       objs=[]; physPaused=false;
-      gravDir={x:0,y:1};
+      gravity='down'; gravDir=gravityDirections[gravity];
       document.querySelectorAll('#ppanel-phys .ptool-grav').forEach(function (b) { b.classList.toggle('is-active',b.dataset.grav==='down'); });
       var gap=PW()/4;
       spawnObj(gap,78,0,0,{type:'ball',r:12,color:'#38bdf8'});
@@ -637,9 +651,10 @@
     // ══════════════════════════════════════════════════════
     var riderCanvas = document.getElementById('prider-canvas');
     var rCtx = riderCanvas ? riderCanvas.getContext('2d') : null;
+    var riderProject;
     if (riderCanvas && rCtx) {
       var rTool = 'track';
-      var rHistory = [], rOldW = 0, rOldH = 0, rPointer = null;
+      var rHistory = [], rPointer = null, rBeforeEdit = null, rEdited = false;
       var rStrokes = [];       // { type:'track'|'accel', pts:[{x,y}] }
       var curRStroke = null, rDrawing = false;
       var rSegs = [];          // flattened { x1,y1,x2,y2, type }
@@ -653,32 +668,10 @@
       var riderCoach = document.getElementById('prider-coach');
 
       function resizeR() {
-        var w = riderCanvas.offsetWidth, h = window.innerWidth <= 560 ? 320 : 480;
-        if (!w) return;
-        if (rOldW && (w !== rOldW || h !== rOldH)) {
-          var sx = w/rOldW, sy = h/rOldH;
-          rStrokes.forEach(function(s) { s.pts.forEach(function(p) { p.x *= sx; p.y *= sy; }); });
-          startPts.forEach(function(p) { p.x *= sx; p.y *= sy; });
-          rHistory.forEach(function(state) {
-            state.strokes.forEach(function(s) { s.pts.forEach(function(p) { p.x *= sx; p.y *= sy; }); });
-            state.starts.forEach(function(p) { p.x *= sx; p.y *= sy; });
-          });
-          resetRide(); rebuildSegs();
-        }
-        rOldW = w; rOldH = h;
-        riderCanvas.width  = Math.round(w * DPR);
-        riderCanvas.height = Math.round(h * DPR);
-        riderCanvas.style.height = h + 'px';
-        rCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
-        drawRider();
+        if (fitCanvas(riderCanvas, rCtx)) drawRider();
       }
-      function RW() { return riderCanvas.offsetWidth; }
-      function RH() { return riderCanvas.offsetHeight; }
-      function rPos(e) {
-        var r = riderCanvas.getBoundingClientRect();
-        var src = e.touches ? e.touches[0] : e;
-        return { x: src.clientX - r.left, y: src.clientY - r.top };
-      }
+      function RW() { return boardSize.width; }
+      function RH() { return boardSize.height; }
 
       function rebuildSegs() {
         rSegs = [];
@@ -692,12 +685,20 @@
       function updateRiderUi() {
         var hasCourse = rStrokes.length > 0 || startPts.length > 0;
         if (riderCoach) riderCoach.classList.toggle('is-hidden', hasCourse || rDrawing);
+        document.getElementById('prider-clear').disabled = !hasCourse;
+        document.getElementById('prider-undo').disabled = !rHistory.length;
+        setRiderRunLabel();
       }
 
-      function rememberCourse() {
-        rHistory.push(JSON.parse(JSON.stringify({strokes:rStrokes, starts:startPts})));
+      function courseState() {
+        return { strokes: rStrokes, starts: startPts };
+      }
+
+      function rememberCourse(before = structuredClone(courseState())) {
+        rHistory.push(before);
         if (rHistory.length > 40) rHistory.shift();
       }
+
       function resetRide() {
         riderRunning = false; riders = []; bestSpeed = 0; riderLiveMsg = '';
         setRiderRunLabel();
@@ -708,8 +709,10 @@
         if (e.button !== 0 || rPointer !== null) return;
         e.preventDefault();
         rPointer = e.pointerId; riderCanvas.setPointerCapture(rPointer);
-        rememberCourse(); resetRide();
-        var p = rPos(e);
+        rBeforeEdit = structuredClone(courseState());
+        rEdited = false;
+        resetRide();
+        var p = canvasPoint(riderCanvas, e);
         if (rTool === 'track' || rTool === 'accel') {
           rDrawing = true;
           curRStroke = { type: rTool, pts: [p] };
@@ -719,23 +722,30 @@
           eraseNear(p);
         } else if (rTool === 'start') {
           var near = startPts.findIndex(function (sp) { return Math.hypot(sp.x - p.x, sp.y - p.y) < 20; });
-          if (near >= 0) startPts.splice(near, 1);
-          else if (startPts.length < 6) startPts.push(p);
+          if (near >= 0) { startPts.splice(near, 1); rEdited = true; }
+          else if (startPts.length < 6) { startPts.push(p); rEdited = true; }
+          else riderLiveMsg = 'Six starts placed. Tap a marker to remove it.';
           drawRider(); updateRiderUi();
         }
       }
       function rMove(e) {
         if (!rDrawing || e.pointerId !== rPointer) return;
         e.preventDefault();
-        var p = rPos(e);
+        var p = canvasPoint(riderCanvas, e);
         if (rTool === 'track' || rTool === 'accel') { var last = curRStroke.pts[curRStroke.pts.length-1]; if (Math.hypot(p.x-last.x,p.y-last.y) >= 2) curRStroke.pts.push(p); drawRider(); }
         else if (rTool === 'erase') eraseNear(p);
       }
-      function rUp() {
+      function rUp(event) {
+        if (rPointer === null || (event && event.pointerId !== rPointer)) return;
         rPointer = null;
-        if (!rDrawing) return;
         rDrawing = false;
-        if (curRStroke && curRStroke.pts.length > 1) { rStrokes.push(curRStroke); rebuildSegs(); }
+        if (curRStroke && curRStroke.pts.length > 1) {
+          rStrokes.push(curRStroke);
+          rebuildSegs();
+          rEdited = true;
+        }
+        if (rEdited) rememberCourse(rBeforeEdit);
+        rBeforeEdit = null;
         curRStroke = null;
         drawRider(); updateRiderUi();
       }
@@ -744,7 +754,7 @@
         rStrokes = rStrokes.filter(function (s) {
           return !s.pts.some(function (pt, i) { var next = s.pts[i+1] || pt; var cp = closestOnSeg(p.x,p.y,pt.x,pt.y,next.x,next.y); return Math.hypot(cp.x-p.x,cp.y-p.y) < 20; });
         });
-        if (rStrokes.length !== before) { rebuildSegs(); drawRider(); updateRiderUi(); }
+        if (rStrokes.length !== before) { rEdited = true; rebuildSegs(); drawRider(); updateRiderUi(); }
       }
 
       riderCanvas.addEventListener('pointerdown', rDown);
@@ -753,19 +763,35 @@
       riderCanvas.addEventListener('pointercancel', rUp);
       riderCanvas.addEventListener('lostpointercapture', rUp);
 
-      document.querySelectorAll('#ppanel-rider .ptool[data-rtool]').forEach(function (btn) {
-        btn.setAttribute('aria-pressed', btn.dataset.rtool === rTool ? 'true' : 'false');
+      var riderToolHints = {
+        track: 'Drag to draw a downhill track. Place a start above it or use the marked default start.',
+        accel: 'Draw a gold boost line over or near the track. Riders gain speed when they pass close to it.',
+        erase: 'Drag across a line to erase that whole stroke. Use Undo edit to bring it back.',
+        start: 'Tap above the track to place a start. Tap a marker again to remove it. You can place up to six.'
+      };
+
+      function selectRiderTool(tool) {
+        rTool = tool;
+        document.querySelectorAll('#ppanel-rider [data-rtool]').forEach(function (button) {
+          var active = button.dataset.rtool === tool;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+        document.getElementById('prider-help').textContent = riderToolHints[tool];
+      }
+
+      document.querySelectorAll('#ppanel-rider [data-rtool]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           rUp();
-          document.querySelectorAll('#ppanel-rider .ptool[data-rtool]').forEach(function (b) { b.classList.remove('is-active'); b.setAttribute('aria-pressed','false'); });
-          btn.classList.add('is-active'); btn.setAttribute('aria-pressed','true'); rTool = btn.dataset.rtool;
+          selectRiderTool(btn.dataset.rtool);
         });
       });
       document.getElementById('prider-undo') && document.getElementById('prider-undo').addEventListener('click', function () {
+        rUp();
         if (rHistory.length) { var state = rHistory.pop(); rStrokes = state.strokes; startPts = state.starts; resetRide(); rebuildSegs(); drawRider(); updateRiderUi(); }
       });
       document.getElementById('prider-clear') && document.getElementById('prider-clear').addEventListener('click', function () {
-        rememberCourse(); resetRide();
+        rUp(); rememberCourse(); resetRide();
         rStrokes = []; rSegs = []; startPts = []; riders = []; riderRunning = false; riderLiveMsg = '';
         setRiderRunLabel();
         drawRider(); updateRiderUi();
@@ -793,8 +819,13 @@
         return { x: x1+dx*t, y: y1+dy*t };
       }
 
+      function courseStarts() {
+        if (startPts.length) return startPts;
+        return rSegs.length ? [{ x: 40, y: 40 }] : [];
+      }
+
       function spawnRiders() {
-        var pts = startPts.length ? startPts : [{ x: 40, y: 40 }];
+        var pts = courseStarts();
         riders = pts.map(function (pt, i) {
           return { x: pt.x, y: pt.y, vx: 0, vy: 0, r: 11, color: RIDER_COLORS[i % RIDER_COLORS.length], angle: 0, trail: [], offCourse: false, lastBoost: 0 };
         });
@@ -878,13 +909,13 @@
         rStrokes.forEach(paintRStroke);
         if (curRStroke) paintRStroke(curRStroke);
 
-        startPts.forEach(function (pt, i) {
+        courseStarts().forEach(function (pt, i) {
           rCtx.save();
           rCtx.fillStyle = RIDER_COLORS[i % RIDER_COLORS.length];
           rCtx.beginPath(); rCtx.arc(pt.x, pt.y, 7, 0, Math.PI*2); rCtx.fill();
           rCtx.strokeStyle = 'rgba(255,255,255,0.9)'; rCtx.lineWidth = 2; rCtx.stroke();
           rCtx.fillStyle = '#24364b'; rCtx.font = 'bold 9px monospace'; rCtx.textAlign = 'center';
-          rCtx.fillText('S'+(i+1), pt.x, pt.y-12);
+          rCtx.fillText(startPts.length ? 'S'+(i+1) : 'Default start', pt.x, pt.y-12);
           rCtx.restore();
         });
 
@@ -917,9 +948,14 @@
         var best = document.getElementById('prider-best');
         var ro = document.getElementById('prider-readout');
         var onCourse = riders.filter(function (rd) { return !rd.offCourse; }).length;
-        if (count) count.textContent = (riderRunning ? onCourse : startPts.length) + ' ' + (riderRunning ? 'racing' : 'riders');
+        if (count) {
+          var riderCount = riders.length ? onCourse : courseStarts().length;
+          count.textContent = riderCount + (riderRunning ? ' racing' : riderCount === 1 ? ' rider' : ' riders');
+        }
         if (best) best.textContent = 'best ' + bestSpeed.toFixed(1) + ' m/s';
-        var message = riderLiveMsg || (riderRunning ? 'Racing — watch the slope accelerate each sled' : (startPts.length ? 'Ready — press Run' : 'Draw a course, then drop a start point'));
+        var message = riderLiveMsg || (riderRunning ? 'Ride in progress.' :
+          !rSegs.length ? 'Draw a track or load the sample to start a ride.' :
+          startPts.length ? 'Course ready. Choose Start ride.' : 'Course ready. The marked default start will be used.');
         if (ro && ro.textContent !== message) ro.textContent = message;
       }
       function paintRStroke(s) {
@@ -945,7 +981,7 @@
           var steps = Math.max(3, Math.ceil(maxV*dt/4));
           for (var s = 0; s < steps; s++) stepRiders(dt/steps, ts);
           if (riders.length && riders.every(function(rd) { return rd.offCourse; })) {
-            riderRunning = false; riderLiveMsg = 'Ride complete — press Replay or edit your track.'; setRiderRunLabel();
+            riderRunning = false; riderLiveMsg = 'Ride complete. Replay the ride or edit your course.'; setRiderRunLabel();
           }
         }
         drawRider();
@@ -956,13 +992,18 @@
 
       function setRiderRunLabel() {
         var btn = document.getElementById('prider-run');
-        if (btn) { btn.textContent = riderRunning ? '⏸ Pause' : (riders.length && riders.every(function(rd) { return rd.offCourse; }) ? '▶ Replay' : (riders.length ? '▶ Resume' : '▶ Run')); btn.setAttribute('aria-pressed',String(riderRunning)); }
+        btn.disabled = !rSegs.length || rDrawing;
+        btn.textContent = riderRunning ? 'Pause ride' :
+          !riders.length ? 'Start ride' :
+          riders.every(function (rider) { return rider.offCourse; }) ? 'Replay ride' : 'Resume ride';
+        document.getElementById('prider-reset').disabled = !riders.length;
       }
       document.getElementById('prider-run') && document.getElementById('prider-run').addEventListener('click', function () {
         if (!rSegs.length) { riderLiveMsg = 'Draw a track or load the starter course first.'; drawRider(); return; }
         if (!riders.length || riders.every(function(rd) { return rd.offCourse; })) spawnRiders();
         riderRunning = !riderRunning;
-        riderLiveMsg = riderRunning ? '' : 'Paused — press Resume to continue.';
+        riderLiveMsg = riderRunning ? '' : 'Ride paused. Choose Resume ride to continue.';
+        drawRider();
         setRiderRunLabel();
       });
       document.getElementById('prider-reset') && document.getElementById('prider-reset').addEventListener('click', function () {
@@ -972,7 +1013,7 @@
       });
 
       document.getElementById('prider-demo').addEventListener('click', function() {
-        rememberCourse(); resetRide();
+        rUp(); rememberCourse(); resetRide();
         var w = RW(), h = RH(), pts = [];
         for (var i=0; i<=100; i++) {
           var t=i/100;
@@ -982,7 +1023,181 @@
         startPts = [{x:pts[2].x,y:pts[2].y-32}];
         rebuildSegs(); updateRiderUi(); drawRider();
       });
+      riderProject = {
+        capture: function () { return { ...courseState(), tool: rTool }; },
+        apply: function (course) {
+          rPointer = null; rBeforeEdit = null; rDrawing = false; curRStroke = null;
+          rHistory = [];
+          rStrokes = course.strokes; startPts = course.starts;
+          rebuildSegs(); resetRide(); selectRiderTool(course.tool); updateRiderUi();
+        }
+      };
+      updateRiderUi();
     }
+
+    // A project stores the editable board, not animation history.
+    const projectFormat = 'classroomos-physics-board';
+    const projectLimit = 5_000_000;
+    const projectFile = document.getElementById('sandbox-project-file');
+    const projectStatus = document.getElementById('sandbox-project-status');
+    const restoreBoard = document.getElementById('sandbox-restore');
+    let previousBoard = null;
+    let openRequest = 0;
+
+    function captureBoard() {
+      return structuredClone({
+        format: projectFormat,
+        version: 1,
+        board: boardSize,
+        mode: sandboxPanel.querySelector('.phys-tab.is-active').id.slice('ptab-'.length),
+        drawing: {
+          strokes, tool: drawTool, color: drawColor, fillColor: drawFillColor, size: drawSize, fill: drawFill
+        },
+        physics: {
+          bodies: objs.map(({ trail, ...body }) => ({ ...body, angle: body.angle % (2 * Math.PI) })),
+          tool: physMode, gravity, wind: windForce / 3, bounce: Math.round(bounceScale * 100),
+          vectors: showVectors, trails: showTrails
+        },
+        course: riderProject.capture()
+      });
+    }
+
+    function readBoard(project) {
+      const between = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
+      const hex = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+      const boolean = value => typeof value === 'boolean';
+      const drawTools = ['pencil', 'line', 'rect', 'circle', 'ruler', 'eraser'];
+      const bodyTypes = ['ball', 'box', 'tri'];
+      const courseTools = ['track', 'accel', 'erase', 'start'];
+      if (project?.format !== projectFormat || project.version !== 1 ||
+          !['draw', 'phys', 'rider'].includes(project.mode) ||
+          !Number.isInteger(project.board?.width) || !between(project.board.width, 240, 1440) ||
+          ![320, 480].includes(project.board?.height)) {
+        throw new Error('Choose a supported Physics & Drawing Board project.');
+      }
+      const { drawing, physics, course } = project;
+      const { width, height } = project.board;
+      const point = p => p && between(p.x, 0, width) && between(p.y, 0, height);
+      const points = (list, min) => Array.isArray(list) && list.length >= min && list.every(point);
+      const diagonal = Math.hypot(width, height);
+
+      if (!drawing || !Array.isArray(drawing.strokes) || !drawTools.includes(drawing.tool) ||
+          !hex(drawing.color) || !hex(drawing.fillColor) || !between(drawing.size, 1, 24) || !boolean(drawing.fill) ||
+          !drawing.strokes.every(stroke => {
+            if (!stroke || !drawTools.includes(stroke.type) || !hex(stroke.color) ||
+                !between(stroke.size, 1, stroke.type === 'eraser' ? 96 : 24)) return false;
+            if (['pencil', 'eraser'].includes(stroke.type)) return points(stroke.pts, 1);
+            if (stroke.type === 'rect') {
+              return hex(stroke.fillColor) && boolean(stroke.fill) && point(stroke) &&
+                point({ x: stroke.x + stroke.w, y: stroke.y + stroke.h }) &&
+                between(stroke.w, -width, width) && between(stroke.h, -height, height);
+            }
+            if (stroke.type === 'circle') {
+              return hex(stroke.fillColor) && boolean(stroke.fill) &&
+                point({ x: stroke.cx, y: stroke.cy }) && between(stroke.r, 0, diagonal);
+            }
+            return point({ x: stroke.x1, y: stroke.y1 }) && point({ x: stroke.x2, y: stroke.y2 }) &&
+              (stroke.type !== 'ruler' || between(stroke.dist, 0, Math.ceil(diagonal)));
+          })) {
+        throw new Error('The project contains invalid drawing data.');
+      }
+
+      if (!physics || !bodyTypes.includes(physics.tool) || !Object.hasOwn(gravityDirections, physics.gravity) ||
+          !between(physics.wind, -100, 100) || !between(physics.bounce, 0, 100) ||
+          !boolean(physics.vectors) || !boolean(physics.trails) ||
+          !Array.isArray(physics.bodies) || physics.bodies.length > 25 ||
+          !physics.bodies.every(body => body && bodyTypes.includes(body.type) && hex(body.color) &&
+            between(body.x, -200, width + 200) && between(body.y, -200, height + 200) &&
+            ['vx', 'vy', 'angle', 'omega'].every(key => between(body[key], -1e6, 1e6)) &&
+            between(body.mass, 0.01, 100) && between(body.e, 0, 1) &&
+            (body.type === 'box' ? between(body.w, 1, 90) && between(body.h, 1, 70) : between(body.r, 1, 42)))) {
+        throw new Error('The project contains an invalid physics scene.');
+      }
+
+      if (!course || !courseTools.includes(course.tool) || !points(course.starts, 0) || course.starts.length > 6 ||
+          !Array.isArray(course.strokes) || !course.strokes.every(stroke =>
+            stroke && ['track', 'accel'].includes(stroke.type) && points(stroke.pts, 2))) {
+        throw new Error('The project contains an invalid Line Rider course.');
+      }
+      return project;
+    }
+
+    function applyBoard(project) {
+      const { drawing: sketch, physics: scene } = project;
+      boardSize = project.board;
+      drawing = false; curStroke = null; shapeStart = null; rulerPts = [];
+      strokes = sketch.strokes;
+      drawColor = sketch.color; drawFillColor = sketch.fillColor; drawSize = sketch.size; drawFill = sketch.fill;
+      document.getElementById('pdraw-color').value = drawColor;
+      document.getElementById('pdraw-fillcolor').value = drawFillColor;
+      document.getElementById('pdraw-size').value = drawSize;
+      document.getElementById('pdraw-fill').checked = drawFill;
+      document.getElementById('pdraw-ruler-bar').hidden = true;
+      sandboxPanel.querySelector('[data-tool="' + sketch.tool + '"]').click();
+      updateDrawUi();
+
+      dragObj = null; prevP = null; throwVx = throwVy = 0; liveMsg = '';
+      objs = scene.bodies.map(body => ({ ...body, trail: [] }));
+      sandboxPanel.querySelector('[data-spawn="' + scene.tool + '"]').click();
+      sandboxPanel.querySelector('[data-grav="' + scene.gravity + '"]').click();
+      bounceScale = scene.bounce / 100; windForce = scene.wind * 3;
+      showVectors = scene.vectors; showTrails = scene.trails;
+      document.getElementById('pphys-bounce').value = scene.bounce;
+      document.getElementById('pphys-wind').value = scene.wind;
+      document.getElementById('pphys-vectors').checked = showVectors;
+      document.getElementById('pphys-trails').checked = showTrails;
+      document.getElementById('pphys-coach').classList.toggle('is-hidden', objs.length > 0);
+      setPaused(true);
+
+      riderProject.apply(project.course);
+      document.getElementById('ptab-' + project.mode).click();
+    }
+
+    function replaceBoard(project, message) {
+      const previous = captureBoard();
+      applyBoard(project);
+      previousBoard = previous;
+      restoreBoard.hidden = false;
+      projectStatus.textContent = message;
+    }
+
+    document.getElementById('sandbox-save').addEventListener('click', function () {
+      const blob = new Blob([JSON.stringify(captureBoard())], { type: 'application/json' });
+      if (blob.size > projectLimit) {
+        projectStatus.textContent = 'This project is over 5 MB. Remove some drawing or course strokes before saving.';
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'physics-drawing-board.sandbox.json';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      projectStatus.textContent = 'Board project downloaded. Physics scenes reopen paused.';
+    });
+    document.getElementById('sandbox-open').addEventListener('click', () => projectFile.click());
+    projectFile.addEventListener('change', async function () {
+      const file = projectFile.files[0];
+      projectFile.value = '';
+      if (!file) return;
+      const request = ++openRequest;
+      try {
+        if (file.size > projectLimit) throw new Error('Choose a board project under 5 MB.');
+        const project = readBoard(JSON.parse(await file.text()));
+        if (request === openRequest) {
+          replaceBoard(project, 'Board opened. Physics is paused and the course is ready for a new ride.');
+        }
+      } catch (error) {
+        if (request === openRequest) {
+          projectStatus.textContent = 'Could not open the project. ' +
+            (error instanceof SyntaxError ? 'Choose a valid board JSON file.' : error.message);
+        }
+      }
+    });
+    restoreBoard.addEventListener('click', function () {
+      openRequest++;
+      replaceBoard(previousBoard, 'Previous board restored.');
+    });
 
     function resizeActive() {
       if (sandboxPanel.hidden || document.hidden) return;

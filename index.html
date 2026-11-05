@@ -949,6 +949,15 @@
           </div>
           <span class="phys-lab-status"><span class="phys-status-light" aria-hidden="true"></span> Lab online</span>
         </div>
+        <div class="phys-project">
+          <div class="phys-project-actions" role="group" aria-label="Board project controls">
+            <button class="ptool ptool-wide" id="sandbox-save" type="button">Save board project</button>
+            <button class="ptool ptool-wide" id="sandbox-open" type="button">Open board project</button>
+            <button class="ptool ptool-wide" id="sandbox-restore" type="button" hidden>Restore previous board</button>
+            <input type="file" id="sandbox-project-file" accept=".json,application/json" aria-label="Open board project file" hidden>
+          </div>
+          <p id="sandbox-project-status" role="status">A project file keeps your drawing, physics scene, and Line Rider course editable.</p>
+        </div>
         <div class="phys-mission" aria-live="polite">
           <span class="phys-mission-icon" aria-hidden="true">💡</span>
           <div>
@@ -1058,25 +1067,36 @@
 
         <!-- Line Rider panel -->
         <div class="phys-panel" id="ppanel-rider" role="tabpanel" aria-labelledby="ptab-rider">
-          <p class="rider-help" id="prider-help">Sketch a downhill track, place a start above it, then press Run. Gold boost tracks add speed. Try the starter course to get moving.</p>
-          <div class="phys-toolbar" role="toolbar" aria-label="Line Rider tools">
-            <button class="ptool ptool-wide is-active" data-rtool="track" title="Draw track (T)" type="button">✏️ Track</button>
-            <button class="ptool ptool-wide" data-rtool="accel" title="Boost line — speeds up any rider that crosses it (A)" type="button">⚡ Boost</button>
-            <button class="ptool ptool-wide" data-rtool="erase" title="Erase track (E)" type="button">⌫ Erase</button>
-            <button class="ptool ptool-wide" data-rtool="start" title="Place a rider start point (S)" type="button">🛷 Start</button>
-            <span class="ptool-sep" aria-hidden="true"></span>
-            <button class="ptool" id="prider-undo" title="Undo course edit (Ctrl+Z)" aria-label="Undo course edit" type="button">↩</button>
-            <button class="ptool ptool-clear" id="prider-clear" aria-label="Clear course" title="Clear course" type="button">🗑️</button>
-            <span class="ptool-sep" aria-hidden="true"></span>
-            <button class="ptool ptool-wide" id="prider-demo" type="button">〰 Starter course</button>
-            <button class="ptool ptool-wide" id="prider-run" title="Start the race" type="button">▶ Run</button>
-            <button class="ptool ptool-wide" id="prider-reset" title="Send riders back to their start points" type="button">↺ Reset</button>
+          <div class="rider-controls">
+            <div class="rider-control-group">
+              <p>Build the course</p>
+              <div class="rider-button-row" role="group" aria-label="Course editing tools">
+                <button class="ptool ptool-wide is-active" data-rtool="track" type="button" aria-pressed="true" title="Draw track (T)">Draw track</button>
+                <button class="ptool ptool-wide" data-rtool="accel" type="button" aria-pressed="false" title="Draw boost line (A)">Draw boost</button>
+                <button class="ptool ptool-wide" data-rtool="erase" type="button" aria-pressed="false" title="Erase track stroke (E)">Erase stroke</button>
+                <button class="ptool ptool-wide" data-rtool="start" type="button" aria-pressed="false" title="Place rider start (S)">Place start</button>
+              </div>
+              <p class="rider-help" id="prider-help" aria-live="polite">Drag to draw a downhill track. Place a start above it or use the marked default start.</p>
+              <div class="rider-button-row" role="group" aria-label="Course actions">
+                <button class="ptool ptool-wide" id="prider-undo" type="button" title="Undo course edit (Ctrl+Z)" disabled>Undo edit</button>
+                <button class="ptool ptool-wide" id="prider-demo" type="button" title="Replace the course with a sample. Undo edit restores your course.">Load sample</button>
+                <button class="ptool ptool-wide" id="prider-clear" type="button" title="Remove all track strokes and start markers" disabled>Clear course</button>
+              </div>
+            </div>
+            <div class="rider-control-group">
+              <p>Ride controls</p>
+              <div class="rider-button-row" role="group" aria-label="Ride playback">
+                <button class="ptool ptool-wide" id="prider-run" type="button" title="Start, pause or resume the ride (Space)" disabled>Start ride</button>
+                <button class="ptool ptool-wide" id="prider-reset" type="button" disabled>Reset ride</button>
+              </div>
+              <p class="rider-help">Reset ride keeps the course and clears the current run.</p>
+            </div>
           </div>
           <div class="phys-canvas-wrap">
             <canvas id="prider-canvas" class="phys-canvas" aria-describedby="prider-help" aria-label="Line Rider course — draw a track, place start points, then run the race"></canvas>
             <div class="phys-canvas-coach" id="prider-coach" aria-hidden="true">
               <span>Draw a course, drop a start point</span>
-              <small>Then hit Run and watch gravity do the rest</small>
+              <small>Then choose Start ride</small>
             </div>
           </div>
           <div class="phys-info-bar">

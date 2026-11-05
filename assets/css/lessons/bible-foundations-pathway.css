@@ -49,6 +49,7 @@
   --bfp-wash-1: rgba(125, 40, 67, 0.04);
   --bfp-wash-2: rgba(142, 101, 22, 0.05);
 
+  width: 100%;
   padding: clamp(1rem, 3vw, 2.2rem);
   color: var(--bfp-ink);
   font-family: var(--font-sans, system-ui, sans-serif);
@@ -320,8 +321,8 @@ html[data-classroom-presentation] .bfp-page {
   --bfp-subcard-border: var(--border-strong, #8a8a90);
 }
 
-/* Ambient Stage Background integration */
-.ll-sim:has(.bfp-page) {
+/* Pathway background */
+.bfp-page {
   background:
     radial-gradient(1200px 800px at 15% 0%, var(--bfp-wash-1), transparent 60%),
     radial-gradient(1000px 700px at 85% 20%, var(--bfp-wash-2), transparent 55%),
@@ -583,21 +584,19 @@ html[data-classroom-presentation] .bfp-page {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   6. Sticky Wayfinding Bar ("You are here")
+   6. Pathway section navigation
    ═══════════════════════════════════════════════════════════ */
 
-.bfp-page [id] {
-  scroll-margin-top: 4.8rem;
+.bfp-document {
+  scroll-padding-block-start: 4.75rem;
 }
 
-.ll-sim:has(.bfp-page) {
-  scroll-behavior: auto;
+.bfp-document body.theme-steam .site-header {
+  position: relative;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ll-sim:has(.bfp-page) {
-    scroll-behavior: smooth;
-  }
+.bfp-document .skip-link:focus {
+  z-index: 10031;
 }
 
 .bfp-signs {
@@ -606,68 +605,88 @@ html[data-classroom-presentation] .bfp-page {
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  margin: 0.85rem auto 0;
-  padding: 0.45rem 0.75rem;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 auto 1rem;
+  padding: 0.2rem 0.4rem;
   border: 1px solid var(--bfp-card-border);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--bfp-card-bg) 88%, var(--bg, #f5f5f7) 12%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border-radius: 12px;
+  background: var(--bfp-subcard-bg);
   box-shadow: var(--bfp-card-shadow);
 }
 
-.bfp-here {
-  flex: none;
-  color: var(--bfp-muted);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.bfp-here b {
-  display: block;
-  color: var(--bfp-wine);
-  font-size: 0.84rem;
-  letter-spacing: 0;
-  text-transform: none;
-  font-weight: 800;
+.bfp-jump:not([open]) > ul {
+  display: none;
 }
 
 .bfp-signs ul {
-  display: flex;
-  gap: 0.3rem;
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.25rem;
+  width: min(27rem, 100%);
+  max-height: min(24rem, 65dvh);
+  overflow-y: auto;
   margin: 0;
-  padding: 0;
-  overflow-x: auto;
+  padding: 0.4rem;
+  border: 1px solid var(--bfp-card-border);
+  border-radius: 12px;
+  background: var(--bfp-subcard-bg);
+  box-shadow: var(--bfp-card-shadow);
   list-style: none;
+}
+
+.bfp-page .bfp-signs :is(a, summary),
+.bfp-reader-col summary,
+.bfp-lesson-details summary {
+  min-height: 44px;
+  align-content: center;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  color: var(--bfp-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .bfp-signs a {
   display: block;
-  padding: 0.45rem 0.8rem;
-  border-radius: 10px;
-  color: var(--bfp-ink);
-  font-size: 0.82rem;
-  font-weight: 700;
   text-decoration: none;
-  white-space: nowrap;
-  transition: all 0.16s ease;
 }
 
-.bfp-signs a:hover,
-.bfp-signs a:focus-visible {
+.bfp-signs summary,
+.bfp-reader-col summary,
+.bfp-lesson-details summary {
+  cursor: pointer;
+}
+
+.bfp-page .bfp-signs :is(a, summary):hover,
+.bfp-reader-col summary:hover,
+.bfp-lesson-details summary:hover {
   background: var(--bfp-wine-soft);
   color: var(--bfp-wine);
-  outline: 2px solid var(--focus-ring, var(--bfp-wine));
-  outline-offset: -2px;
 }
 
-.bfp-signs a.is-current {
+.bfp-page .bfp-signs a[aria-current="location"] {
   background: var(--bfp-wine);
   color: var(--bfp-wine-contrast);
-  box-shadow: 0 2px 8px var(--bfp-wine-glow);
+}
+
+.bfp-page :is(.bfp-signs a, summary, .bfp-bk-row a, .bfp-dir-stage a):focus-visible {
+  outline: 2px solid var(--bfp-wine);
+  outline-offset: 2px;
+}
+
+@media (max-height: 320px), (max-width: 299px) {
+  .bfp-document {
+    scroll-padding-block-start: 0.75rem;
+  }
+
+  .bfp-signs {
+    position: relative;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -748,7 +767,7 @@ html[data-classroom-presentation] .bfp-page {
 .bfp-find {
   display: grid;
   gap: 0.3rem;
-  min-width: min(100%, 22rem);
+  width: min(100%, 22rem);
   color: var(--bfp-muted);
   font-size: 0.72rem;
   font-weight: 800;
@@ -763,7 +782,7 @@ html[data-classroom-presentation] .bfp-page {
   background: var(--bfp-subcard-bg);
   color: var(--bfp-ink);
   font: inherit;
-  font-size: 0.94rem;
+  font-size: 1rem;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -892,7 +911,8 @@ html[data-classroom-presentation] .bfp-page {
 }
 
 .bfp-board-status {
-  margin: 1.1rem 0 0;
+  margin: 0 0 0.85rem;
+  overflow-wrap: anywhere;
   color: var(--bfp-muted);
   font-size: 0.84rem;
 }
@@ -954,21 +974,27 @@ html[data-classroom-presentation] .bfp-page {
   margin-top: 0.85rem;
 }
 
-.bfp-reader-col h3 {
-  margin: 0 0 0.35rem;
+.bfp-reader-col {
+  align-self: start;
+  padding: 0.25rem;
+  border: 1px solid var(--bfp-card-border);
+  border-radius: 12px;
+  background: var(--bfp-subcard-bg);
+}
+
+.bfp-reader-col summary span {
+  margin-inline-start: 0.3rem;
   color: var(--bfp-muted);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.82rem;
+  font-weight: 500;
 }
 
 .bfp-bk-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.12rem 0.18rem;
-  margin: 0.2rem 0 0.5rem;
+  gap: 0.3rem;
+  margin: 0.4rem 0.4rem 0.65rem;
   line-height: 1.55;
 }
 
@@ -986,7 +1012,9 @@ html[data-classroom-presentation] .bfp-page {
 }
 
 .bfp-bk-row a {
-  padding: 0.12rem 0.42rem;
+  min-height: 36px;
+  align-content: center;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--bfp-card-border);
   border-radius: 6px;
   background: var(--bfp-subcard-bg);
@@ -1001,8 +1029,6 @@ html[data-classroom-presentation] .bfp-page {
   background: var(--bfp-gold-soft);
   border-color: var(--bfp-gold);
   color: var(--bfp-ink-strong);
-  outline: none;
-  transform: translateY(-1px);
 }
 
 .bfp-reader-info {
@@ -1065,24 +1091,16 @@ html[data-classroom-presentation] .bfp-page {
   line-height: 1.65;
 }
 
-.bfp-spine-scroll {
-  overflow-x: auto;
+.bfp-spine-panel {
   padding: 2.8rem clamp(1rem, 3vw, 2.2rem) 1.4rem;
   background: #172430;
   border-bottom: 1px solid var(--bfp-card-border);
-  scrollbar-color: #e8c77f #172430;
-}
-
-.bfp-spine-scroll:focus-visible {
-  outline: 3px solid #e8c77f;
-  outline-offset: -3px;
 }
 
 .bfp-spine {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(9, minmax(6.4rem, 1fr));
-  min-width: 58rem;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1412,6 +1430,15 @@ html[data-classroom-presentation] .bfp-page {
   box-shadow: 0 2px 8px var(--bfp-wine-glow);
 }
 
+.bfp-lesson-details > summary {
+  border: 1px solid var(--bfp-card-border);
+  background: var(--bfp-subcard-bg);
+}
+
+.bfp-lesson-details .bfp-filters {
+  margin-top: 0.75rem;
+}
+
 .bfp-foundation-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1536,10 +1563,9 @@ html[data-classroom-presentation] .bfp-page {
 }
 
 .bfp-filter-status {
-  margin: 0.9rem 0 0;
+  margin: 0.65rem 0;
   color: var(--bfp-muted);
   font-size: 0.78rem;
-  text-align: right;
 }
 
 .bfp-foundation.is-planned {
@@ -1713,6 +1739,21 @@ html[data-classroom-presentation] .bfp-page {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .bfp-spine {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 1.65rem;
+  }
+
+  .bfp-spine::before {
+    display: none;
+  }
+
+  .bfp-spine li:first-child::before,
+  .bfp-spine-fulcrum::before {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
   .bfp-spine-reading {
     grid-template-columns: 1fr;
   }
@@ -1748,14 +1789,6 @@ html[data-classroom-presentation] .bfp-page {
 
   .bfp-hero {
     padding: 1.6rem 1.2rem;
-  }
-
-  .bfp-signs {
-    gap: 0.5rem;
-  }
-
-  .bfp-here {
-    display: none;
   }
 
   .bfp-desk-grid {
@@ -1820,9 +1853,7 @@ html[data-classroom-presentation] .bfp-page {
   .bfp-open-lesson,
   .bfp-go a,
   .bfp-meta span,
-  .bfp-bk-row a,
-  .bfp-show-lessons,
-  .bfp-signs a {
+  .bfp-show-lessons {
     transition: none !important;
     transform: none !important;
   }
@@ -1910,7 +1941,16 @@ html[data-classroom-presentation] .bfp-page {
     box-shadow: none;
   }
 
-  .bfp-spine-scroll {
+  .bfp-lesson-details > summary {
+    display: none;
+  }
+
+  :is(.bfp-reader-col, .bfp-lesson-details)::details-content {
+    content-visibility: visible;
+    block-size: auto;
+  }
+
+  .bfp-spine-panel {
     background: #fff;
     color: #111;
   }

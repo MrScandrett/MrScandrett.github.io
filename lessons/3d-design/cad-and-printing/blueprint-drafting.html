@@ -61,11 +61,22 @@
             <h1 id="studio-title">Blueprint Drafting Studio</h1>
           </div>
           <p id="bp-instructions">
-            Design a desk organizer within 120 mm wide × 90 mm deep × 80 mm high. Start with its front outline, then describe the same object in top and right views.
+            Draw an object from the front, top, and right. Try the desk organizer exercise or start your own project, then export a sheet with all three views.
           </p>
         </div>
         <div class="bp-app" data-blueprint-app aria-label="Blueprint drafting workspace">
-          <div class="bp-command-bar"><div><span class="bp-studio-badge">DRAFTING / A-01</span><strong>Desk organizer</strong><span>All dimensions in millimeters</span></div><button type="button" data-action="fullscreen">⛶ Enter fullscreen</button></div>
+          <div class="bp-command-bar"><div><span class="bp-studio-badge">DRAFTING / A-01</span><strong>Project workspace</strong></div><button type="button" data-action="fullscreen">⛶ Enter fullscreen</button></div>
+          <div class="bp-project-bar">
+            <label class="bp-project-name">Drawing title <input data-project-title type="text" maxlength="36" value="Desk organizer" /></label>
+            <label>Guide <select data-project-guide><option value="desk">Desk organizer exercise</option><option value="custom">My own object</option></select></label>
+            <div class="bp-project-actions">
+              <button type="button" data-action="new">New drawing</button>
+              <button type="button" data-action="open">Open project</button>
+              <button type="button" data-action="save">Save project</button>
+              <input type="file" data-project-file accept=".json,application/json" aria-label="Open blueprint project file" hidden />
+            </div>
+            <p class="bp-project-status" data-project-status role="status"></p>
+          </div>
           <div class="bp-toolbar" role="toolbar" aria-label="Drafting tools">
             <div class="bp-tool-group" aria-label="Drawing tools">
               <button type="button" data-tool="select" aria-pressed="true">
@@ -93,7 +104,7 @@
               ><button type="button" data-action="redo">Redo</button><button type="button" data-action="delete">Delete selected</button><button type="button" data-action="clear">Clear view</button>
             </div>
           </div>
-          <div class="bp-context-bar"><label>Snap <select data-snap><option value="20">10 mm</option><option value="10">5 mm</option><option value="2">1 mm</option></select></label><span>Drag to draw · Shift: horizontal / vertical · Esc: cancel</span><label>Zoom <select data-zoom><option value="1">Fit sheet</option><option value="1.5">150%</option><option value="2">200%</option></select></label></div>
+          <div class="bp-context-bar"><label>Snap <select data-snap><option value="20">10 mm</option><option value="10">5 mm</option><option value="2">1 mm</option></select></label><span>Drag to draw or move a selected shape · Shift: horizontal / vertical · Esc: cancel</span><label>Zoom <select data-zoom><option value="1">Fit sheet</option><option value="1.5">150%</option><option value="2">200%</option></select></label></div>
           <div class="bp-workspace">
             <div class="bp-sheet-wrap">
               <div
@@ -173,7 +184,7 @@
                   <path
                     d="M505 410H790V490H505zM505 442h285M650 442v48M730 442v48"
                   />
-                  <text x="516" y="432">DESK ORGANIZER</text>
+                  <text x="516" y="432" data-sheet-name>Desk organizer</text>
                   <text x="516" y="463">DRAWN BY: DESIGNER</text>
                   <text x="662" y="463">UNITS</text>
                   <text x="662" y="482">mm</text>
@@ -188,6 +199,21 @@
             <aside class="bp-inspector" aria-label="Draft review">
               <div class="bp-readout">
                 <span>Cursor</span><strong data-cursor>0, 0 mm</strong>
+              </div>
+              <div class="bp-shape-editor">
+                <label for="bp-shape-choice">Edit shape in this view</label>
+                <select id="bp-shape-choice" data-shape-choice><option value="">Select a shape</option></select>
+                <form data-shape-edit hidden>
+                  <p>Enter coordinates in mm from the sheet’s upper-left corner.</p>
+                  <div class="bp-coordinates">
+                    <label>Start X <input name="x1" type="number" min="0" max="400" step="0.5" required /></label>
+                    <label>Start Y <input name="y1" type="number" min="0" max="250" step="0.5" required /></label>
+                    <label>End X <input name="x2" type="number" min="0" max="400" step="0.5" required /></label>
+                    <label>End Y <input name="y2" type="number" min="0" max="250" step="0.5" required /></label>
+                  </div>
+                  <button type="submit">Apply coordinates</button>
+                  <p data-shape-status role="status"></p>
+                </form>
               </div>
               <div class="bp-coach"><p class="bp-section-code">NEXT DESIGN MOVE</p><h3 data-coach-title>01 / Establish the silhouette</h3><p data-coach>Draw a 120 × 80 mm front rectangle: 12 grid squares across and 8 down. Start near the upper left, leaving space for dimensions.</p><p data-view-guide>Front shows width × height. Top shares its width; right shares its height.</p></div>
               <h3>Drafting progress <span data-progress>0 / 4</span></h3>
@@ -220,11 +246,10 @@
                   describe size and location</label
                 >
               </div>
-              <button type="button" class="bp-export" data-action="export">
-                Download current view as SVG
-              </button>
+              <button type="button" class="bp-export" data-action="export-sheet">Download all views as SVG</button>
+              <button type="button" class="bp-export bp-export-secondary" data-action="export">Download current view as SVG</button>
               <p class="bp-save-note">
-                Your draft saves automatically on this device.
+                The board keeps one draft in this browser. Save a project file to keep editing it later. Use SVG to share the drawing.
               </p>
             </aside>
           </div>

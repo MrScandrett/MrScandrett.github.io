@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { load } from 'cheerio';
 
 const root = new URL('../', import.meta.url);
+// Match the credited source so rearranging lesson options can't assign the wrong audio.
+const classroomCopies = new Map([
+  ['https://commons.wikimedia.org/wiki/File:Gymnopedie_No._1..ogg', 'assets/audio/classroom-radio/satie-gymnopedie-1.mp3'],
+  ['https://commons.wikimedia.org/wiki/File:Air_-_Air_Force_Strings_-_United_States_Air_Force_Band.mp3', 'assets/audio/classroom-radio/bach-air.mp3'],
+]);
+
 export async function collectRecordings() {
   const tracks = [];
   const seen = new Set();
@@ -19,13 +25,16 @@ export async function collectRecordings() {
       seen.add(src);
       // The source Ogg/FLAC is useful when Commons hasn't generated an MP3 rendition.
       const original = src.replace('/commons/transcoded/', '/commons/').replace(/\/(?:[^/]+)\.(?:mp3|ogg)$/, '');
+      const source = option.attr('data-source') || '';
+      const classroomCopy = classroomCopies.get(source);
       tracks.push({
         id: `${file.replace('.html', '')}-${index + 1}`, composer,
         title: option.text().trim().replaceAll('&amp;', '&'),
         detail: option.attr('data-detail') || '',
         credit: option.attr('data-credit') || '',
-        source: option.attr('data-source') || '', lesson,
+        source, lesson,
         src, ...(original !== src && src.includes('/transcoded/') ? { fallback: original } : {}),
+        ...(classroomCopy ? { classroomCopy } : {}),
       });
     });
   }
