@@ -265,3 +265,72 @@ test('daily chess is deterministic and rotates through the bank', () => {
   }
 });
 
+
+// ── Daily Sokoban ──────────────────────────────────────────────────────────
+import * as Soko from '../assets/js/daily-sokoban-core.mjs';
+
+const SOKO_DATES = [...DATES, ...Array.from({ length: 14 }, (_, i) => shiftDayKey('2026-11-01', i))];
+
+test('daily sokoban is deterministic, differs by day, and starts unsolved', () => {
+  const ids = new Set();
+  for (const key of SOKO_DATES) {
+    const a = Soko.makeSokoban(key), b = Soko.makeSokoban(key);
+    assert.deepEqual(a.rows, b.rows, key);
+    assert.equal(a.solution, b.solution, key);
+    ids.add(a.id);
+    assert.equal(a.boxes.length, a.board.goals.length, `${key}: one goal per crate`);
+    assert.ok(a.boxes.every((c) => !a.board.goal[c]), `${key}: no crate starts on a goal`);
+    assert.ok(a.board.grid[a.player] === Soko.FLOOR && !a.boxes.includes(a.player), `${key}: worker on free floor`);
+  }
+  assert.equal(ids.size, SOKO_DATES.length, 'every day gets its own warehouse');
+});
+
+test('daily sokoban solution solves the level in exactly par pushes, and par is optimal', () => {
+  for (const key of SOKO_DATES) {
+    const p = Soko.makeSokoban(key);
+    const end = Soko.replay(p.board, p.boxes, p.player, p.solution);
+    assert.ok(end, `${key}: the stored solution replays legally`);
+    assert.ok(Soko.isSolved(p.board, end.boxes), `${key}: and solves it`);
+    assert.equal(end.pushes, p.par, key);
+    assert.equal(p.parMoves, p.solution.length, key);
+    // An independent forward search must not find a shorter push count.
+    const fwd = Soko.solve(p.board, p.boxes, p.player, { cap: 200000 });
+    assert.ok(fwd != null, `${key}: the forward solver finds a solution`);
+    assert.equal(Soko.replay(p.board, p.boxes, p.player, fwd).pushes, p.par, `${key}: par is the fewest pushes`);
+  }
+});
+
+test('daily sokoban difficulty follows the week (gentle Monday, hard Saturday)', () => {
+  // 2026-11-02 is a Monday; 2026-11-07 a Saturday.
+  for (let w = 0; w < 4; w++) {
+    const mon = Soko.makeSokoban(shiftDayKey('2026-11-02', 7 * w));
+    const sat = Soko.makeSokoban(shiftDayKey('2026-11-07', 7 * w));
+    assert.equal(mon.level, 'Easy');
+    assert.equal(sat.level, 'Hard');
+    assert.ok(mon.boxes.length < sat.boxes.length);
+    assert.ok(mon.par >= 8 && sat.par >= 20, `par ${mon.par} / ${sat.par}`);
+  }
+});
+
+test('sokoban rules: one crate at a time, no pulling, walls stop you, stuck positions have no solution', () => {
+  const { board, boxes, player } = Soko.fromRows([
+    '#######',
+    '#@$$-.#',
+    '#----.#',
+    '#######'
+  ]);
+  assert.equal(Soko.step(board, boxes, player, 'r'), null, 'two crates in a row cannot be pushed');
+  assert.equal(Soko.step(board, boxes, player, 'u'), null, 'walls block');
+  const down = Soko.step(board, boxes, player, 'd');
+  assert.equal(down.pushed, -1);
+  assert.deepEqual(down.boxes, boxes);
+  assert.equal(Soko.replay(board, boxes, player, 'R'), null, 'a push that cannot happen is illegal');
+  assert.equal(Soko.replay(board, boxes, player, 'dR'), null, 'a walk recorded as a push is illegal');
+  assert.deepEqual(Soko.toRows(board, boxes, player), ['#######', '#@$$-.#', '#----.#', '#######']);
+
+  const stuck = Soko.fromRows(['#####', '#$-.#', '#-@-#', '#####']);
+  assert.equal(Soko.solve(stuck.board, stuck.boxes, stuck.player), null, 'a cornered crate is a dead end');
+  const easy = Soko.fromRows(['######', '#@$-.#', '######']);
+  assert.equal(Soko.solve(easy.board, easy.boxes, easy.player), 'RR');
+  assert.equal(Soko.walkPath(easy.board, easy.boxes, easy.player, 4), null, 'crates block walking');
+});

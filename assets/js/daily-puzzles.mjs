@@ -1,5 +1,6 @@
-// Home-page daily puzzles (#home-puzzles): crossword, sudoku, Daily Double, and chess,
-// new every day, generated in the browser from the date (see daily-puzzles-core.mjs).
+// Home-page daily puzzles (#home-puzzles): crossword, sudoku, Daily Double, chess, and
+// Sokoban, new every day, generated in the browser from the date (see daily-puzzles-core.mjs
+// and daily-sokoban-core.mjs).
 // Progress lives in one localStorage key; nothing leaves the browser.
 
 import {
@@ -7,6 +8,7 @@ import {
   makeDailyDouble, makeDailyChess, STEAM_CATEGORIES, DOUBLE_JEOPARDY_VALUES
 } from './daily-puzzles-core.mjs';
 import { Chess } from '../vendor/chess.min.mjs';
+import * as Soko from './daily-sokoban-core.mjs';
 
 const STORE_KEY = 'classroomos:puzzles:v1';
 const CONTENT_VERSION = 2;
@@ -65,6 +67,7 @@ const ICONS = {
   crossword: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1.4"/><path d="M3.9 3.9h5.1v5.1H3.9zM15 15h5.1v5.1H15zM9 9h6v6H9z" fill="currentColor"/></svg>',
   sudoku: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="12" y="16.1" text-anchor="middle" font-size="9" font-weight="700" font-family="IBM Plex Sans, system-ui, sans-serif" fill="currentColor">7</text></svg>',
   'daily-double': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.6h6.3L9.6 22l9.9-12.4h-6.6z" fill="currentColor"/></svg>',
+  sokoban: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.8 4.8l14.4 14.4M19.2 4.8 4.8 19.2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9.5h16M4 14.5h16" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>',
   chess: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11.5v-1.8c0-4.3-1.2-8-3.3-10.6l.9-3.1-2.8 1.5C11.7 5.2 9.6 6 8.2 7.7L5.4 11c-.6.8-.4 1.9.4 2.4l.7.4c.7.4 1.6.3 2.1-.3l1.3-1.4c.4 1.5-.4 3.1-1.8 4.5C7.2 17.5 7 18.8 7 20.5z" fill="currentColor"/><circle cx="10.3" cy="9.3" r="1" fill="var(--dp-icon-eye, #fff)"/></svg>'
 };
 const icon = (name) => { const s = el('span', { class: 'dp-ico', 'aria-hidden': 'true' }); s.innerHTML = ICONS[name]; return s; };
@@ -139,7 +142,7 @@ function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
   const store = loadStore();
   const today = dayKey(new Date());
-  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess'];
+  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess', 'sokoban'];
   const state = { key: today, tab: validTabs.includes(store.tab) ? store.tab : 'crossword' };
   const cache = new Map();
 
@@ -152,7 +155,10 @@ function mount(root, bank, doubleBank, chessBank) {
         cw: makeCrossword(key, bank),
         su: makeSudoku(key),
         dd: makeDailyDouble(key, doubleBank),
-        ch: makeDailyChess(key, chessBank)
+        ch: makeDailyChess(key, chessBank),
+        // The warehouse search is the slowest generator (up to ~150 ms on a Saturday), so it
+        // only runs when someone opens the Sokoban tab.
+        get sk() { return (this._sk ||= Soko.makeSokoban(key)); }
       });
     }
     return cache.get(key);
@@ -161,7 +167,7 @@ function mount(root, bank, doubleBank, chessBank) {
   const isDone = (key, which) => !!(store.days[key] && store.days[key][which] && store.days[key][which].done);
   // A day counts toward the streak when a puzzle was solved without "Reveal all".
   const counts = (key, which) => isDone(key, which) && !store.days[key][which].gaveUp;
-  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess');
+  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess') || counts(key, 'soko');
   function streak() {
     let n = 0, k = played(today) ? today : shiftDayKey(today, -1);
     while (played(k)) { n++; k = shiftDayKey(k, -1); }
@@ -184,8 +190,9 @@ function mount(root, bank, doubleBank, chessBank) {
   const tabSudoku = makeTab('sudoku', 'Sudoku', 'Sudoku', '9 × 9');
   const tabDouble = makeTab('daily-double', 'Daily Double', 'Double', 'STEAM trivia');
   const tabChess = makeTab('chess', 'Chess Quest', 'Chess', 'Find the mate');
+  const tabSoko = makeTab('sokoban', 'Sokoban', 'Sokoban', 'Push the crates');
   const bar = el('div', { class: 'dp-bar' },
-    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess),
+    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess, tabSoko),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' },
       el('div', { class: 'dp-daypick' }, prevBtn, dateLabel, nextBtn), todayBtn, streakEl));
   const panel = el('div', { class: 'dp-panel', id: 'dp-panel', role: 'tabpanel' });
@@ -205,14 +212,17 @@ function mount(root, bank, doubleBank, chessBank) {
     tabSudoku.setAttribute('aria-selected', String(state.tab === 'sudoku'));
     tabDouble.setAttribute('aria-selected', String(state.tab === 'daily-double'));
     tabChess.setAttribute('aria-selected', String(state.tab === 'chess'));
+    tabSoko.setAttribute('aria-selected', String(state.tab === 'sokoban'));
     tabCross.tabIndex = state.tab === 'crossword' ? 0 : -1;
     tabSudoku.tabIndex = state.tab === 'sudoku' ? 0 : -1;
     tabDouble.tabIndex = state.tab === 'daily-double' ? 0 : -1;
     tabChess.tabIndex = state.tab === 'chess' ? 0 : -1;
+    tabSoko.tabIndex = state.tab === 'sokoban' ? 0 : -1;
     tabCross.classList.toggle('is-done', isDone(state.key, 'cross'));
     tabSudoku.classList.toggle('is-done', isDone(state.key, 'sudoku'));
     tabDouble.classList.toggle('is-done', isDone(state.key, 'double'));
     tabChess.classList.toggle('is-done', isDone(state.key, 'chess'));
+    tabSoko.classList.toggle('is-done', isDone(state.key, 'soko'));
     panel.setAttribute('aria-labelledby', `dp-tab-${state.tab}`);
   }
 
@@ -226,7 +236,9 @@ function mount(root, bank, doubleBank, chessBank) {
         ? buildSudoku(panel, p.su, dayState(state.key), persist, refreshChrome)
         : state.tab === 'daily-double'
           ? buildDailyDouble(panel, p.dd, dayState(state.key), persist, refreshChrome)
-          : buildChess(panel, p.ch, dayState(state.key), persist, refreshChrome);
+          : state.tab === 'chess'
+            ? buildChess(panel, p.ch, dayState(state.key), persist, refreshChrome)
+            : buildSokoban(panel, p.sk, dayState(state.key), persist, refreshChrome);
     if (!reducedMotion()) replay(panel, 'is-enter');
   }
 
@@ -235,7 +247,7 @@ function mount(root, bank, doubleBank, chessBank) {
   nextBtn.addEventListener('click', () => goDay(shiftDayKey(state.key, 1)));
   todayBtn.addEventListener('click', () => goDay(today));
 
-  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess };
+  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko };
   const setTab = (tab, focus) => {
     state.tab = tab; store.tab = tab; persist(); show();
     if (focus && tabButtons[tab]) tabButtons[tab].focus();
@@ -244,6 +256,7 @@ function mount(root, bank, doubleBank, chessBank) {
   tabSudoku.addEventListener('click', () => setTab('sudoku'));
   tabDouble.addEventListener('click', () => setTab('daily-double'));
   tabChess.addEventListener('click', () => setTab('chess'));
+  tabSoko.addEventListener('click', () => setTab('sokoban'));
 
   bar.querySelector('[role="tablist"]').addEventListener('keydown', (ev) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
@@ -265,7 +278,7 @@ function mount(root, bank, doubleBank, chessBank) {
   let staged = false;
   document.addEventListener('creation-app-resize', () => {
     const now = root.matches(':fullscreen, .creation-app-expanded');
-    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square')?.focus({ preventScroll: true });
+    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board')?.focus({ preventScroll: true });
     staged = now;
   });
   root.addEventListener('keydown', (ev) => {
@@ -1408,6 +1421,272 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
   });
   paint();
   return () => persist();
+}
+
+// ── sokoban ──────────────────────────────────────────────────────────────
+const SOKO_KEYS = {
+  ArrowLeft: 'l', ArrowUp: 'u', ArrowRight: 'r', ArrowDown: 'd',
+  a: 'l', w: 'u', d: 'r', s: 'd', A: 'l', W: 'u', D: 'r', S: 'd'
+};
+const SOKO_ARROWS = { l: '←', u: '↑', r: '→', d: '↓' };
+const SOKO_WORDS = { l: 'left', u: 'up', r: 'right', d: 'down' };
+
+function buildSokoban(panel, pz, saved, persist, onChange) {
+  const { board } = pz;
+  const total = pz.boxes.length;
+  const st = saved.soko && saved.soko.id === pz.id
+    ? saved.soko : (saved.soko = { id: pz.id, moves: '', done: false, gaveUp: false, best: null });
+  // A saved line that no longer replays (the generator changed) starts the day over.
+  let pos = Soko.replay(board, pz.boxes, pz.player, st.moves);
+  if (!pos) { st.moves = ''; pos = Soko.replay(board, pz.boxes, pz.player, ''); }
+  let { boxes, player } = pos;
+  let face = 'd';
+  let hint = null;        // { stand, crate, dir } for the next push of a solution
+  let timer = 0;          // queued walk / solution playback
+  let queue = '';
+  let playing = false;    // the par solution is being shown
+
+  const xy = (c) => [c % board.w, Math.floor(c / board.w)];
+  const home = () => boxes.filter((b) => board.goal[b]).length;
+  const pushesOf = (lurd) => (lurd.match(/[LURD]/g) || []).length;
+
+  // ── DOM ──
+  const tiles = el('div', { class: 'dp-soko-tiles', 'aria-hidden': 'true' });
+  for (let c = 0; c < board.grid.length; c++) {
+    const t = board.grid[c];
+    tiles.append(el('div', {
+      class: `dp-soko-tile ${t === Soko.WALL ? 'is-wall' : t === Soko.VOID ? 'is-void' : 'is-floor'}${board.goal[c] ? ' is-goal' : ''}`,
+      'data-cell': String(c)
+    }));
+  }
+  const crateEls = pz.boxes.map(() => el('div', { class: 'dp-soko-piece dp-soko-crate', 'aria-hidden': 'true' }));
+  const workerEl = el('div', { class: 'dp-soko-piece dp-soko-worker', 'aria-hidden': 'true' });
+  const boardEl = el('div', {
+    class: 'dp-soko-board', tabindex: '0', role: 'application',
+    'aria-roledescription': 'Sokoban board',
+    'aria-label': `Sokoban warehouse, ${board.w} by ${board.h}. Push all ${total} crates onto the goals. Arrow keys or W A S D move, Z undoes.`
+  }, tiles, ...crateEls, workerEl);
+  boardEl.style.setProperty('--n', board.w);
+  boardEl.style.setProperty('--m', board.h);
+
+  const levelEl = el('span', { class: 'dp-soko-level', text: pz.level });
+  const title = el('h4', { class: 'dp-soko-title' }, el('span', { text: 'Warehouse' }), levelEl);
+  const instruction = el('p', { class: 'dp-soko-instruction', text: `Push every crate onto a goal. You can push one crate at a time, and never pull, so a crate in a corner is stuck there.` });
+  const movesEl = el('strong'), pushesEl = el('strong'), homeEl = el('strong'), parEl = el('strong', { text: String(pz.par) });
+  const stat = (label, val) => el('div', { class: 'dp-soko-stat' }, val, el('small', { text: label }));
+  const stats = el('div', { class: 'dp-soko-stats' }, stat('moves', movesEl), stat('pushes', pushesEl), stat('par pushes', parEl), stat('crates home', homeEl));
+  const progress = progressBar('Crates on goals');
+  const status = el('p', { class: 'dp-status dp-soko-status', role: 'status', 'aria-live': 'polite' });
+  // Short labels take over on the narrowest phones (CSS), with the full words as the name.
+  const toolBtn = (long, short, title) => el('button', { type: 'button', class: 'dp-btn', title, 'aria-label': long.replace(/^\W+/u, '') },
+    el('span', { class: 'dp-soko-long', text: long }), el('span', { class: 'dp-soko-short', 'aria-hidden': 'true', text: short }));
+  const undoBtn = toolBtn('↶ Undo', '↶ Undo', 'Undo (Z)');
+  const restartBtn = toolBtn('↺ Restart', '↺ Reset');
+  const hintBtn = toolBtn('💡 Hint', '💡 Hint');
+  const solveBtn = toolBtn('Show solution', 'Solve');
+  const setSolveLabel = (text, short) => {
+    solveBtn.firstChild.textContent = text; solveBtn.lastChild.textContent = short; solveBtn.setAttribute('aria-label', text.replace(/^\W+/u, ''));
+  };
+  const tools = el('div', { class: 'dp-tools' }, undoBtn, restartBtn, hintBtn, solveBtn);
+  const padBtn = (dir) => el('button', { type: 'button', class: `dp-soko-padbtn is-${dir}`, 'data-dir': dir, 'aria-label': `Move ${SOKO_WORDS[dir]}`, text: SOKO_ARROWS[dir] });
+  const pad = el('div', { class: 'dp-soko-pad', role: 'group', 'aria-label': 'Move' }, padBtn('u'), padBtn('l'), padBtn('d'), padBtn('r'));
+  const note = el('p', { class: 'dp-soko-note', text: 'Tap a square to walk there, or tap a crate beside you to push it. Every level is built backwards from the solved position, so it always has a solution, and par is the fewest pushes possible.' });
+  const body = el('div', { class: 'dp-body dp-body--soko' },
+    el('div', { class: 'dp-soko-main' }, el('div', { class: 'dp-soko-frame', 'data-night-keep': '' }, boardEl)),
+    el('div', { class: 'dp-soko-side' }, title, instruction, stats, progress.node, status, pad, tools, note));
+  body.style.setProperty('--n', board.w);
+  body.style.setProperty('--m', board.h);
+  panel.replaceChildren(body);
+
+  const place = (node, c) => { const [x, y] = xy(c); node.style.setProperty('--x', x); node.style.setProperty('--y', y); };
+
+  function paint() {
+    boxes.forEach((b, k) => {
+      place(crateEls[k], b);
+      crateEls[k].classList.toggle('is-home', !!board.goal[b]);
+      crateEls[k].classList.toggle('is-hint', !!hint && hint.crate === b);
+      if (hint && hint.crate === b) crateEls[k].dataset.arrow = SOKO_ARROWS[hint.dir]; else delete crateEls[k].dataset.arrow;
+    });
+    place(workerEl, player);
+    workerEl.dataset.face = face;
+    for (const t of tiles.children) t.classList.toggle('is-stand', !!hint && hint.stand === Number(t.dataset.cell));
+    const n = home();
+    movesEl.textContent = String(st.moves.length);
+    pushesEl.textContent = String(pushesOf(st.moves));
+    homeEl.textContent = `${n}/${total}`;
+    progress.set(n, total);
+    boardEl.classList.toggle('is-solved', Soko.isSolved(board, boxes));
+    const busy = !!timer;
+    undoBtn.disabled = busy || !st.moves.length;
+    restartBtn.disabled = busy || (!st.moves.length && !st.gaveUp);
+    hintBtn.disabled = busy || Soko.isSolved(board, boxes);
+    if (playing) setSolveLabel('⏭ Skip to end', '⏭ Skip'); else setSolveLabel('Show solution', 'Solve');
+    solveBtn.disabled = !busy && Soko.isSolved(board, boxes);
+  }
+
+  function finish() {
+    const pushes = pushesOf(st.moves);
+    const firstSolve = !st.done;
+    st.done = true;
+    if (playing || st.gaveUp) {
+      playing = false;
+      sayTo(status, `That's the par solution: ${pz.par} pushes, ${st.moves.length} moves. Restart to try it yourself.`);
+    } else {
+      if (!st.best || pushes < st.best.pushes || (pushes === st.best.pushes && st.moves.length < st.best.moves)) st.best = { pushes, moves: st.moves.length };
+      sayTo(status, pushes <= pz.par
+        ? `🎉 All crates home in ${st.moves.length} moves and ${pushes} pushes. ⭐ That's par: no solution uses fewer pushes.`
+        : `🎉 All crates home in ${st.moves.length} moves and ${pushes} pushes. Par is ${pz.par} pushes. Restart to chase it.`, 'good');
+      if (firstSolve || pushes <= pz.par) celebrate(panel.closest('.home-puzzles'));
+      if (!reducedMotion()) replay(boardEl, 'is-cascade');
+    }
+    persist();
+    onChange();
+  }
+
+  // One step; returns false when blocked. `record` is false while replaying a saved line.
+  function move(dir) {
+    if (Soko.isSolved(board, boxes)) return false;
+    face = dir;
+    const next = Soko.step(board, boxes, player, dir);
+    if (!next) { replay(workerEl, 'is-bump'); paint(); return false; }
+    const pushed = next.pushed >= 0;
+    st.moves += pushed ? dir.toUpperCase() : dir;
+    boxes = next.boxes; player = next.player;
+    hint = null;
+    if (pushed) {
+      const b = boxes[next.pushed];
+      if (board.goal[b]) {
+        replay(crateEls[next.pushed], 'is-landed');
+        if (!Soko.isSolved(board, boxes)) sayTo(status, `Crate on a goal: ${home()} of ${total} home.`);
+      } else if (status.dataset.tone !== 'bad') sayTo(status, '');
+    }
+    paint();
+    if (Soko.isSolved(board, boxes)) finish();
+    else persist();
+    return true;
+  }
+
+  function stopQueue() { clearTimeout(timer); timer = 0; queue = ''; }
+  function runQueue(lurd, { pace = 70, pushPace = 130 } = {}) {
+    stopQueue();
+    queue = lurd;
+    const tick = () => {
+      if (!queue) { timer = 0; paint(); return; }
+      const ch = queue[0];
+      queue = queue.slice(1);
+      if (!move(ch.toLowerCase())) { stopQueue(); paint(); return; }
+      timer = setTimeout(tick, reducedMotion() ? 0 : ch === ch.toUpperCase() ? pushPace : pace);
+    };
+    timer = setTimeout(tick, 0);
+    paint();
+  }
+
+  function rebuild() {
+    const p = Soko.replay(board, pz.boxes, pz.player, st.moves);
+    boxes = p.boxes; player = p.player;
+    hint = null;
+  }
+
+  function undo() {
+    if (!st.moves.length || timer) return;
+    const last = st.moves[st.moves.length - 1];
+    st.moves = st.moves.slice(0, -1);
+    rebuild();
+    face = last.toLowerCase();
+    sayTo(status, last === last.toUpperCase() ? 'Undid a push.' : '');
+    persist();
+    paint();
+  }
+
+  function restart() {
+    stopQueue();
+    playing = false;
+    st.moves = '';
+    if (st.gaveUp) { st.gaveUp = false; st.done = false; }
+    rebuild();
+    face = 'd';
+    sayTo(status, st.done ? `Solved already. Best: ${st.best.pushes} pushes. Par is ${pz.par}.` : '');
+    persist();
+    onChange();
+    paint();
+  }
+
+  // ── input ──
+  body.addEventListener('keydown', (ev) => {
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.target.closest('[role="tablist"]')) return;
+    const dir = SOKO_KEYS[ev.key];
+    if (dir) {
+      ev.preventDefault();
+      if (!timer) move(dir);
+    } else if (['z', 'Z', 'u', 'U', 'Backspace'].includes(ev.key)) {
+      ev.preventDefault();
+      undo();
+    }
+  });
+  pad.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-dir]');
+    if (b && !timer) move(b.dataset.dir);
+  });
+  boardEl.addEventListener('click', (ev) => {
+    if (timer) return;
+    const r = boardEl.getBoundingClientRect(); // zoom-safe (sim-present)
+    const x = Math.floor(((ev.clientX - r.left) / r.width) * board.w);
+    const y = Math.floor(((ev.clientY - r.top) / r.height) * board.h);
+    if (x < 0 || y < 0 || x >= board.w || y >= board.h) return;
+    const c = y * board.w + x;
+    const [px, py] = xy(player);
+    if (Math.abs(px - x) + Math.abs(py - y) === 1) { move(x < px ? 'l' : x > px ? 'r' : y < py ? 'u' : 'd'); return; }
+    if (boxes.includes(c)) { sayTo(status, 'Stand right beside a crate, then tap it to push it away from you.'); return; }
+    if (board.grid[c] !== Soko.FLOOR) return;
+    const path = Soko.walkPath(board, boxes, player, c);
+    if (path) runQueue(path, { pace: 45 });
+    else sayTo(status, 'Crates block the way there.', 'bad');
+  });
+
+  undoBtn.addEventListener('click', undo);
+  restartBtn.addEventListener('click', restart);
+  hintBtn.addEventListener('click', () => {
+    const line = Soko.solve(board, boxes, player);
+    if (line == null) {
+      sayTo(status, 'Stuck: from here at least one crate can never reach a goal. Undo a few moves or restart.', 'bad');
+      return;
+    }
+    const i = line.search(/[LURD]/);
+    const dir = line[i].toLowerCase();
+    // Walk the hint's path silently to find where the worker stands for the push.
+    const at = Soko.replay(board, boxes, player, line.slice(0, i));
+    const crate = Soko.step(board, at.boxes, at.player, dir).player;
+    hint = { stand: at.player, crate, dir };
+    const left = pushesOf(line);
+    sayTo(status, `${at.player === player ? 'From where you stand' : 'Walk to the glowing square, then'} push that crate ${SOKO_WORDS[dir]}. ${left} push${left === 1 ? '' : 'es'} to go from here.`);
+    paint();
+  });
+  solveBtn.addEventListener('click', () => {
+    if (playing) { // skip to the end
+      stopQueue();
+      st.moves = pz.solution;
+      rebuild();
+      paint();
+      finish();
+      return;
+    }
+    stopQueue();
+    playing = true;
+    if (!st.done) st.gaveUp = true; // a day already solved fairly keeps its credit
+    st.moves = '';
+    rebuild();
+    sayTo(status, `Playing the par solution: ${pz.par} pushes.`);
+    onChange();
+    runQueue(pz.solution, { pace: 55, pushPace: 120 });
+  });
+
+  if (Soko.isSolved(board, boxes)) {
+    sayTo(status, st.gaveUp ? 'Solution shown. Restart to try it yourself.' : `Solved in ${st.moves.length} moves and ${pushesOf(st.moves)} pushes. Par is ${pz.par}.`, st.gaveUp ? '' : 'good');
+  } else if (st.done && st.best) {
+    sayTo(status, `Solved already. Best: ${st.best.pushes} pushes. Par is ${pz.par}.`);
+  }
+  paint();
+  return () => { stopQueue(); persist(); };
 }
 
 // ── boot ─────────────────────────────────────────────────────────────────

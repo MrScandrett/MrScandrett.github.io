@@ -2,7 +2,8 @@
    from the .home-widget--schedule theme rules (same trick as the class calendar);
    everything here mixes the theme's text color so it reads in light, dark and night.
    Each game sits on a raised "paper" board (--dp-paper = the theme's elevated surface);
-   the Daily Double board and the chess board are props and keep their own colors. */
+   the Daily Double board, the chess board and the Sokoban warehouse are props and keep
+   their own colors. */
 
 .home-puzzles {
   --dp-ink: var(--text-main, #17233a);
@@ -1069,14 +1070,198 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 .dp-chess-moves li.is-black { background: color-mix(in srgb, var(--dp-ink) 85%, transparent); color: var(--dp-paper); border-color: transparent; }
 .dp-chess-note { padding-top: 0.7rem; border-top: 1px solid var(--dp-line); font-size: 0.8rem; }
 
+/* ── daily sokoban ──────────────────────────────────── */
+/* The warehouse is a prop like the chess board: its own colors in every theme. Tiles are a
+   static grid; the worker and crates sit on top and slide by --x/--y (one cell = 100% of a piece). */
+.dp-tab--sokoban .dp-tab-icon { --g1: #c0843d; --g2: #7c4a1c; }
+.dp-body--soko { grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); }
+.dp-soko-main { min-width: 0; }
+
+.dp-soko-frame {
+  width: min(100%, 30rem, calc(30rem * var(--n) / var(--m)));
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 16px;
+  background: radial-gradient(120% 100% at 30% 0%, #33414d 0%, #1b232b 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 16px 30px -16px rgba(10, 16, 24, 0.8);
+}
+#home-puzzles .dp-soko-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--n) / var(--m);
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: 6px;
+}
+.dp-soko-tiles { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); width: 100%; height: 100%; }
+.dp-soko-tile { position: relative; min-width: 0; }
+.dp-soko-tile.is-floor {
+  background: #e7dcc4;
+  box-shadow: inset 0 0 0 0.5px rgba(120, 96, 60, 0.28);
+}
+.dp-soko-tile.is-wall {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.22) 0 0) 0 50% / 100% 1.5px no-repeat,
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 0) 50% 0 / 1.5px 50% no-repeat,
+    linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 0) 15% 100% / 1.5px 50% no-repeat,
+    linear-gradient(160deg, #8a6a52, #6a4e3b);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+.dp-soko-tile.is-goal::after {
+  content: '';
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  border: 3px solid #d97706;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.55) 0 35%, transparent 40%);
+}
+.dp-soko-tile.is-stand { background-color: #fde68a; box-shadow: inset 0 0 0 3px #f59e0b; }
+
+.dp-soko-piece {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% / var(--n));
+  height: calc(100% / var(--m));
+  transform: translate(calc(var(--x, 0) * 100%), calc(var(--y, 0) * 100%));
+  pointer-events: none;
+}
+.dp-soko-crate::before {
+  content: '';
+  position: absolute;
+  inset: 7%;
+  border-radius: 9%;
+  border: 2px solid #5b3714;
+  background:
+    linear-gradient(45deg, transparent 44%, #8a5a26 44% 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #8a5a26 44% 56%, transparent 56%),
+    linear-gradient(160deg, #e2a865, #b87a3b);
+  box-shadow: inset 0 0 0 3px rgba(91, 55, 20, 0.45), 0 3px 4px rgba(0, 0, 0, 0.3);
+}
+.dp-soko-crate.is-home::before {
+  border-color: #065f46;
+  background:
+    linear-gradient(45deg, transparent 44%, #047857 44% 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, #047857 44% 56%, transparent 56%),
+    linear-gradient(160deg, #6ee7b7, #10b981);
+  box-shadow: inset 0 0 0 3px rgba(6, 95, 70, 0.4), 0 0 12px rgba(16, 185, 129, 0.65);
+}
+.dp-soko-crate.is-hint::before { outline: 3px solid #f59e0b; outline-offset: 1px; }
+.dp-soko-crate[data-arrow]::after {
+  content: attr(data-arrow);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.4em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* The worker: a round robot whose eyes look the way it last moved. */
+.dp-soko-worker { z-index: 1; }
+.dp-soko-worker::before {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #93c5fd, #2563eb 60%, #1e3a8a);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+.dp-soko-worker::after {
+  --ex: 0%; --ey: 8%;
+  content: '';
+  position: absolute;
+  inset: 34% 30%;
+  translate: var(--ex) var(--ey);
+  background:
+    radial-gradient(circle, #fff 0 42%, transparent 46%) 0 50% / 40% 100% no-repeat,
+    radial-gradient(circle, #fff 0 42%, transparent 46%) 100% 50% / 40% 100% no-repeat;
+}
+.dp-soko-worker[data-face="l"]::after { --ex: -14%; --ey: 0%; }
+.dp-soko-worker[data-face="r"]::after { --ex: 14%; --ey: 0%; }
+.dp-soko-worker[data-face="u"]::after { --ex: 0%; --ey: -14%; }
+
+.dp-soko-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem;
+  border: 1px solid var(--dp-line);
+  border-radius: 18px;
+  background: var(--dp-paper);
+  box-shadow: var(--dp-raise);
+}
+.dp-soko-title { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0; font-size: 1.05rem; }
+.dp-soko-level {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #c0843d 20%, transparent);
+  border: 1px solid color-mix(in srgb, #c0843d 50%, transparent);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.dp-soko-instruction, .dp-soko-note { margin: 0; color: var(--dp-muted); font-size: 0.88rem; line-height: 1.45; }
+.dp-soko-note { padding-top: 0.7rem; border-top: 1px solid var(--dp-line); font-size: 0.8rem; }
+.dp-soko-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+.dp-soko-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.4rem 0.2rem;
+  border-radius: 12px;
+  background: var(--dp-tile);
+  text-align: center;
+}
+.dp-soko-stat strong { font-size: 1.15rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.dp-soko-stat small { font-size: 0.68rem; color: var(--dp-muted); line-height: 1.2; }
+.dp-soko-side .dp-progress { flex: none; }
+.dp-soko-side .dp-status { order: 0; margin: 0; }
+.dp-soko-side .dp-status:empty { display: none; }
+.dp-soko-side .dp-tools { margin: 0; }
+.dp-soko-short { display: none; }
+@media (max-width: 380px) {
+  .dp-soko-side .dp-soko-long { display: none; }
+  .dp-soko-side .dp-soko-short { display: inline; }
+}
+
+/* A D-pad for touch screens; a keyboard has arrows, and a tap on the board works everywhere. */
+.dp-soko-pad {
+  display: none;
+  grid-template-columns: repeat(3, 3.2rem);
+  grid-template-areas: ". u ." "l d r";
+  gap: 0.3rem;
+  justify-content: center;
+}
+.dp-soko-padbtn {
+  min-height: 3rem;
+  border: 1px solid var(--dp-line);
+  border-radius: 12px;
+  background: var(--dp-paper);
+  box-shadow: var(--dp-key-edge);
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dp-soko-padbtn:active { transform: translateY(1px); box-shadow: none; }
+.dp-soko-padbtn.is-u { grid-area: u; }
+.dp-soko-padbtn.is-l { grid-area: l; }
+.dp-soko-padbtn.is-d { grid-area: d; }
+.dp-soko-padbtn.is-r { grid-area: r; }
+@media (pointer: coarse) { .dp-soko-pad { display: grid; } }
+
 /* ── small screens ──────────────────────────────────── */
 @media (max-width: 860px) {
-  .dp-body--cross, .dp-body--sudoku, .dp-body--double, .dp-body--chess { grid-template-columns: minmax(0, 1fr); }
+  .dp-body--cross, .dp-body--sudoku, .dp-body--double, .dp-body--chess, .dp-body--soko { grid-template-columns: minmax(0, 1fr); }
   .dp-clues { max-height: 14rem; }
   .dp-pad { max-width: none; }
   .dp-donly-small { display: inline-flex; }
   .dp-dback-btn { display: inline-flex; }
-  .dp-chess-frame { margin-inline: auto; }
+  .dp-chess-frame, .dp-soko-frame { margin-inline: auto; }
 
   /* Daily Double: the board and the clue are separate screens */
   .dp-body--double:not(.show-clue) .dp-dside { display: none; }
@@ -1102,7 +1287,7 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
 
 @media (max-width: 520px) {
   .dp-bar { gap: 0.55rem; margin-bottom: 0.75rem; }
-  .dp-tabs { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .dp-tabs { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .dp-tab {
     flex-direction: column;
     justify-content: center;
@@ -1147,7 +1332,7 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
   .dp-td-wagers { gap: 0.35rem; }
   #home-puzzles .dp-td-wbtn { padding: 0.45rem 0.75rem; font-size: 0.8rem; }
 
-  .dp-chess-side { padding: 0.9rem; gap: 0.6rem; }
+  .dp-chess-side, .dp-soko-side { padding: 0.9rem; gap: 0.6rem; }
 }
 
 /* ── phone / tablet crossword: top bar, big grid, clue bar, on-screen keys ── */
@@ -1371,10 +1556,35 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside .dp-hint-text { display: none; }
 }
 
+/* Sokoban upright (the complement of side by side below): the warehouse, at its own shape,
+   takes every bit of height the compact panel at the bottom leaves. */
+@media (max-width: 599px), (max-width: 860px) and (orientation: portrait) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--soko { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; height: 100%; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-main { flex: 1 1 0; min-height: 0; container-type: size; display: grid; place-items: center; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-frame { width: min(100cqw, calc((100cqh - 20px) * var(--n) / var(--m) + 20px)); margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side { flex: none; }
+}
+/* The compact panel (upright, and phones held sideways): counters, then pad and tools in one row. */
+@media (max-width: 599px), (max-width: 860px) and (orientation: portrait), (max-height: 500px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side { flex-flow: row wrap; align-items: center; align-content: center; gap: 0.45rem 0.5rem; padding: 0.55rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-soko-title, .dp-soko-instruction, .dp-soko-note) { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-soko-stats, .dp-soko-side .dp-progress, .dp-soko-side .dp-status) { flex: 1 0 100%; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-stats { gap: 0.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-stat { padding: 0.2rem 0.1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-stat strong { font-size: 1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-stat small { font-size: 0.62rem; white-space: nowrap; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side .dp-status { padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-pad { grid-template-columns: repeat(3, 2.6rem); gap: 0.25rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-padbtn { min-height: 2.5rem; font-size: 1.1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side .dp-tools { flex: 1 1 6rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side .dp-tools .dp-btn { min-width: 0; min-height: 2.5rem; padding-inline: 0.3rem; font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; }
+}
+
 /* Room for side by side: a wide display, or a phone or tablet held sideways. */
 @media (min-width: 861px), (min-width: 600px) and (orientation: landscape) {
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--sudoku,
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--chess {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--chess,
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--soko {
     grid-template-columns: var(--dp-edge) minmax(14rem, 30rem);
     gap: 0 clamp(1rem, 3cqw, 3rem);
     justify-content: center;
@@ -1402,6 +1612,17 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-title { font-size: 1.3rem; }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-instruction { font-size: 1.05rem; }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-side .dp-status { font-size: 1.05rem; }
+
+  /* Sokoban side by side: the board is as big as the screen allows at its own aspect ratio. */
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--soko {
+    --dp-edge: min(calc((100cqh - 20px) * var(--n) / var(--m) + 20px), 100cqw - 19rem);
+    align-items: center;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-frame { width: 100%; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-side { max-height: 100cqh; box-sizing: border-box; overflow: auto; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-title { font-size: 1.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-soko-instruction, .dp-soko-side .dp-status) { font-size: 1.05rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-soko-crate[data-arrow]::after { font-size: 2.2em; }
 
   /* Crossword on a touch screen held sideways: grid on the left, keys on the right.
      Landscape only: a 12.9" iPad upright is 1024px wide but should stack like the others. */
@@ -1496,7 +1717,7 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
     gap: 0.45rem 0.6rem;
     padding-inline: max(0.6rem, env(safe-area-inset-left, 0px)) max(0.6rem, env(safe-area-inset-right, 0px));
   }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { justify-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { justify-self: stretch; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab { min-width: 0; }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-nav { padding: 0; min-width: 0; }
 }
@@ -1549,7 +1770,14 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
 
 /* Phones: every row counts, and the streak is on the home page anyway. */
 @media (max-width: 520px) {
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-streak, .dp-chess-note) { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-streak, .dp-chess-note, .dp-soko-note, .dp-soko-instruction) { display: none; }
+  /* Five tabs across a phone: a small icon over the label, about as tall as the old one-row
+     tab so the crossword grid keeps its room. */
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab { flex-direction: column; justify-content: center; gap: 0.05rem; min-height: 0; padding: 0.15rem 0.1rem; text-align: center; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-icon { width: 1.15rem; height: 1.15rem; border-radius: 5px; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-ico svg { width: 0.8rem; height: 0.8rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tick { top: -3px; right: -7px; width: 0.75rem; height: 0.75rem; border-width: 1px; font-size: 0.45rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-short { max-width: 100%; font-size: 0.68rem; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ── motion ─────────────────────────────────────────── */
@@ -1561,6 +1789,8 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   100% { transform: scale(1); }
 }
 @keyframes dpHint { 0% { background-color: color-mix(in srgb, #f59e0b 55%, transparent); } 100% { background-color: transparent; } }
+@keyframes dpBump { 0%, 100% { transform: none; } 40% { transform: scale(0.88); } }
+@keyframes dpGlowOutline { from { outline-color: #f59e0b; } to { outline-color: #fde68a; } }
 @keyframes dpGlow { from { box-shadow: inset 0 0 0 3px #e08a00; } to { box-shadow: inset 0 0 0 5px #fbbf24; } }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1570,6 +1800,11 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   .dp-xgrid.is-cascade .dp-xcell, .dp-sgrid.is-cascade .dp-scell { animation: dpWave 0.55s ease-out var(--d, 0ms) both; }
   .dp-sgrid.is-cascade .dp-scell { z-index: 1; }
   .dp-scell.is-hinted { animation: dpHint 0.9s ease-out; }
+  .dp-soko-piece { transition: transform 0.09s ease-out; }
+  .dp-soko-worker.is-bump::before { animation: dpBump 0.18s ease-out; }
+  .dp-soko-crate.is-landed::before { animation: dpPop 0.3s ease-out; }
+  .dp-soko-board.is-cascade .dp-soko-crate::before { animation: dpPop 0.5s ease-out; }
+  .dp-soko-crate.is-hint::before { animation: dpGlowOutline 0.9s ease-in-out infinite alternate; }
 }
 
 @media (prefers-reduced-motion: reduce) {

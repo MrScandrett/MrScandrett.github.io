@@ -389,10 +389,10 @@ else is a marker with a category (holiday, birthday, history, science & sky):
 - **Closures:** add `{ "from": "YYYY-MM-DD", "to": "YYYY-MM-DD", "label": "…" }` to `noClass`
   and Mon/Wed/Fri inside the range render as "No class". It ships empty; nothing is invented.
 
-## Daily puzzles (mini crossword + sudoku + daily double)
+## Daily puzzles (mini crossword + sudoku + daily double + chess + Sokoban)
 
 `#home-puzzles` on `index.html` (Today tab, under the verse of the day) is a new crossword, sudoku,
-and Daily Double every day, generated in the browser from the date: no server, no stored puzzles,
+Daily Double, chess puzzle and Sokoban every day, generated in the browser from the date: no server, no stored puzzles,
 and every student sees the same ones. It reuses the `.home-widget--schedule` surface like the class calendar,
 so all themes style it.
 
@@ -403,6 +403,12 @@ so all themes style it.
   `makeDailyDouble(key, bank)` builds a 5×5 STEAM Jeopardy spoof board (Science, Technology, Engineering,
   Art, Math across $400–$2000 Double Jeopardy values = 25 tiles) with 2 secret "TRIPLE DOUBLE to the power of π"
   wager tiles per day.
+- `assets/js/daily-sokoban-core.mjs`: pure Sokoban generator + solver. `makeSokoban(key)` carves a warehouse,
+  sets crates on random goals and *pulls* them away with a BFS over (crates, worker region) states; the deepest
+  start becomes the level, so it is solvable by construction and `par` (BFS depth) is the exact fewest pushes.
+  Crates and room size by weekday (Monday 2 crates, Saturday 4). `solve()` is a forward push-BFS with dead-square
+  pruning (the Hint button; `null` = stuck). It is the slowest generator (Saturday up to ~150 ms), so the UI only
+  builds it when the Sokoban tab opens. Moves save as a LURD string (upper case = push) and replay on load.
 - `assets/js/daily-puzzles.mjs` (UI) + `assets/css/daily-puzzles.css` (`dp-*`): tabs, ‹ › day nav (30 days
   back), pencil notes, hints, Check, Reveal, streak. Daily Double uses a "Who Wants to Be a Millionaire"
   multiple-choice console (A/B/C/D) with suspense animations, synth audio, explanations, and links to real STEAM lessons.
