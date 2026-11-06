@@ -41,11 +41,17 @@
   }
   /* color(srgb r g b) and rgb() both parse; values may be 0–1 or 0–255. */
   function norm(c) { return c && Math.max(c[0], c[1], c[2]) <= 1 ? [c[0] * 255, c[1] * 255, c[2] * 255] : c; }
+  var styleCache = null;
+  function styleFor(el) {
+    if (!styleCache) return getComputedStyle(el);
+    if (!styleCache.has(el)) styleCache.set(el, getComputedStyle(el));
+    return styleCache.get(el);
+  }
   function standsOut(el, cs) {
     if (cs.backgroundImage !== "none") return true;
     var own = norm(rgb(cs.backgroundColor));
     for (var p = el.parentElement; p; p = p.parentElement) {
-      var pcs = getComputedStyle(p);
+      var pcs = styleFor(p);
       if (pcs.backgroundImage !== "none" && p !== document.body && p !== document.documentElement) return true;
       if (alpha(pcs.backgroundColor) > 0.5) {
         var back = norm(rgb(pcs.backgroundColor));
@@ -74,7 +80,7 @@
     if (tag === "INPUT") return FIELD_TYPES.test(el.type || "text") ? "field" : null;
     if (tag === "SELECT" || tag === "TEXTAREA") return "field";
 
-    var cs = getComputedStyle(el);
+    var cs = styleFor(el);
     if (cs.display === "none" || cs.display === "contents" || cs.visibility === "hidden") return null;
     // Words inside a sentence (glossary terms, inline links) stay text, never become boxes.
     if (cs.display === "inline") return null;
@@ -107,10 +113,12 @@
     for (var i = 0; i < all.length; i++) list.push(all[i]);
     // Read everything first, then write, so styles are computed once.
     var marks = [];
+    styleCache = new WeakMap();
     for (var j = 0; j < list.length; j++) {
       var kind = classify(list[j]);
       if (kind) marks.push([list[j], kind]);
     }
+    styleCache = null;
     for (var k = 0; k < marks.length; k++) marks[k][0].setAttribute(ATTR, marks[k][1]);
   }
 

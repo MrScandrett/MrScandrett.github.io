@@ -1767,6 +1767,7 @@
   }
 
   function stop() {
+    if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
     lavaLast = null; lavaAccumulator = 0; lastPaced = 0;
     if (lavaRenderer) lavaRenderer.pause();
     if (mandelRenderer) mandelRenderer.pause();
@@ -1807,7 +1808,8 @@
 
   function canAnimate() {
     return currentBg !== 'none' && !document.hidden && !reducedMotionOverride() &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      !(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
   }
 
   function scheduleIdle() {
@@ -1843,13 +1845,10 @@
     bindTextureScrollSync();
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function () { start(bgForTheme(currentTheme())); });
 
-    // Skip if user prefers reduced motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     // Skip on weak hardware (Chromebooks, older tablets)
     if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return;
 
-    if (!mount()) return;
-
+    // Mount lazily in start(), after motion and visibility checks.
     var stored = bgForTheme(currentTheme());
     if (stored && stored !== 'none' && !reducedMotionOverride()) start(stored);
 
@@ -1880,22 +1879,28 @@
     });
 
     // Repaint on resize
+    var resizeFrame = null;
     window.addEventListener('resize', function () {
-      resize();
-      if (currentBg === 'mesh')      { blobs  = null; makeBlobs();     }
-      if (currentBg === 'particles') { pts    = null; makeParticles(); }
-      if (currentBg === 'petals')    { petals = null; makePetals();    }
-      if (currentBg === 'hive')      { bees   = null; makeHive();      }
-      if (currentBg === 'goldfish')  { goldfishSchool = null; goldfishRipples = null; goldfishBubbles = null; makeGoldfish(); }
-      if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
-      if (currentBg === 'lavalamp' && lavaBlobs) {
-        lavaBlobs.forEach(function (b) { b.x *= w / (b._width || w); b.y *= h / (b._height || h); b._width = w; b._height = h; });
-      }
-    });
+      if (!canvas || resizeFrame !== null) return;
+      resizeFrame = requestAnimationFrame(function () {
+        resizeFrame = null;
+        resize();
+        if (currentBg === 'mesh')      { blobs  = null; makeBlobs();     }
+        if (currentBg === 'particles') { pts    = null; makeParticles(); }
+        if (currentBg === 'petals')    { petals = null; makePetals();    }
+        if (currentBg === 'hive')      { bees   = null; makeHive();      }
+        if (currentBg === 'goldfish')  { goldfishSchool = null; goldfishRipples = null; goldfishBubbles = null; makeGoldfish(); }
+        if (currentBg === 'mandelbrot') { mandel = null; makeMandelbrot(); }
+        if (currentBg === 'lavalamp' && lavaBlobs) {
+          lavaBlobs.forEach(function (b) { b.x *= w / (b._width || w); b.y *= h / (b._height || h); b._width = w; b._height = h; });
+        }
+      });
+    }, { passive: true });
 
     // Pause when tab is backgrounded (battery / CPU)
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) stop();
+      else if (!canvas && canAnimate()) start(currentBg);
       else if (canAnimate()) { stop(); idle = false; lastInput = Date.now(); scheduleIdle(); raf = requestAnimationFrame(tick); }
     });
 

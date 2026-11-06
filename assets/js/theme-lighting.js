@@ -121,6 +121,12 @@
       return theme;
     }
 
+    // Periodic and cross-tab syncs need no DOM writes when identity and mode agree.
+    var html = document.documentElement;
+    if (currentTheme === theme && html.dataset.theme === theme &&
+        html.dataset.themeMode === getMode() && document.body.dataset.theme === theme &&
+        document.body.dataset.themeMode === getMode()) return theme;
+
     var doDomUpdate = function () {
       isApplyingTheme = true;
       var lighting = getLightingForTheme(theme);

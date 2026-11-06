@@ -71,3 +71,13 @@ have loaded, then switch the skin attribute and styles together. Loaded sheets
 are reused. A request version prevents late loads from overriding a newer pick.
 `npm run check:skin-switching` verifies this frame by frame with deliberately
 slow, out-of-order stylesheet responses and checks reload persistence.
+
+## Runtime work
+
+Unchanged theme synchronizations skip DOM writes and lighting-change events.
+Skin surface discovery caches computed styles for each scan, including shared
+ancestors, then drops the cache before applying surface tags. Background resize
+work is coalesced into one animation frame; stopping animation also clears its
+idle timer. Decorative canvases mount only when animation is allowed, while
+motion-preference listeners remain available when the page starts with reduced
+motion enabled.
