@@ -540,6 +540,14 @@
   window.ClassroomOSContrastGuard = { run: schedule, runNow: run };
   ensureContrastOverrides();
   window.addEventListener("classroomos:lightingchange", schedule);
+  // Skin stylesheets commit asynchronously, after the theme event. Recheck
+  // once their new surfaces are painted, including reverse-video controls.
+  window.addEventListener("classroomos:skinchange", schedule);
+  ["pointerover", "pointerout", "focusin", "focusout"].forEach(function (type) {
+    document.addEventListener(type, function (event) {
+      if (event.target.closest && event.target.closest("button, [role='button'], [role='tab'], [data-skin-surface='control']")) schedule();
+    });
+  });
   window.addEventListener("load", schedule);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
 
