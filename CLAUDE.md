@@ -413,6 +413,9 @@ so all themes style it.
   one row of chrome (`[data-dp-app]` and `.dp-bar` become `display: contents`), `.dp-panel` is a size container the boards
   fit with `cq*` units, and `html:has(...)` scales the root font so every rem grows on a projector. Game layouts branch on
   width, `pointer: coarse` and `max-height: 500px` (phone held sideways). The game takes focus on entry; F toggles from inside a game.
+  On touch screens held upright the crossword's grid card (and Sudoku's board) is a size container that takes whatever height the top row,
+  clue bar and keys leave, so it fits by construction (no rem budgets); sideways touch screens put the keys beside it.
+  `npm run test:daily-puzzles:browser` (against `serve-local.js`, `PUZZLES_URL=`) checks phones, iPads, Split View and Slide Over.
 - Tests: `node --test tests/daily-puzzles.test.mjs` (unique sudoku solutions, crossword runs, daily double bank hygiene,
   deterministic boards, 2 triple doubles per day).
 

@@ -1170,22 +1170,6 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
   .dp-clue { padding: 0.6rem 0.55rem 0.6rem 0.4rem; font-size: 0.95rem; }
 }
 
-/* Full screen on a phone: reclaim the title block and size the grid to the height
-   left over, so the clue bar and keyboard stay on screen without scrolling. */
-@media (max-width: 860px), (pointer: coarse) {
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) > .home-widget-schedule-header { display: none; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) > [data-dp-app] { padding-bottom: 0.5rem; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-bar { margin-bottom: 0.5rem; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid {
-    /* ~25rem = toolbar, tabs, day nav, timer row, clue bar, 3 key rows, padding */
-    --cell: min(2.75rem, calc(100cqw / var(--n)), calc((100dvh - 25rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) / var(--m)));
-  }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xframe { padding-block: 0.35rem; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { margin-top: 0.45rem; min-height: 2.6rem; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keys { margin-top: 0.45rem; gap: 0.25rem; }
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-key { min-height: 2.6rem; }
-}
-
 .dp-keyrow { display: flex; justify-content: center; gap: 0.3rem; }
 .dp-keyrow:nth-child(2) { padding-inline: 4.5%; }
 .dp-key {
@@ -1302,11 +1286,89 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
 #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-frame { width: min(100%, max(20rem, 100cqh - 19rem)); }
 #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-chess-rank, .dp-chess-file) { font-size: clamp(0.62rem, 1.7cqmin, 1rem); }
 
-/* Crossword on a touch screen: grid, clue and keys on one screen. */
+/* Crossword on a touch screen held upright (phones, iPads, iPad split view): grid, clue
+   bar and keys on one screen at every size. The top row, clue bar and keys take their own
+   height; the grid card takes what is left and is a size container, so the cells are
+   measured from the room actually there instead of a rem budget that drifts as the
+   chrome changes. Keys grow with the screen: thumb-sized on a phone, bigger on an iPad. */
 @media (max-width: 860px), (pointer: coarse) {
-  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid {
-    --cell: min(100cqw / var(--n), max(1.6rem, (100cqh - 20rem) / var(--m)));
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) { height: 100%; align-items: stretch; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) .dp-xwrap { height: 100%; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) .dp-xframe {
+    flex: 1 1 0;
+    min-height: 0;
+    container-type: size;
+    display: grid;
+    place-content: center;
+    padding: clamp(0.4rem, 2vw, 1.1rem);
   }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) .dp-xgrid {
+    --cell: min(100cqw / var(--n), 100cqh / var(--m));
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xtop { margin-bottom: 0.45rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { margin-top: 0.45rem; min-height: 2.6rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keys { margin-top: 0.45rem; gap: clamp(0.25rem, 0.8cqh, 0.5rem); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keyrow { gap: clamp(0.25rem, 0.8cqw, 0.5rem); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-key {
+    /* Height is min-height alone: the shared button padding would otherwise add ~1.2rem. */
+    padding: 0;
+    line-height: 1;
+    min-height: clamp(2.4rem, 6cqh, 4rem);
+    font-size: clamp(1.05rem, 2.6cqh, 1.6rem);
+  }
+}
+
+/* Phones (and the narrowest iPad split view): every row of chrome is a row the grid
+   doesn't get. Tabs sit icon-beside-label on one short row instead of stacked. */
+@media (max-width: 520px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) { row-gap: 0.4rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab {
+    flex-direction: row;
+    min-height: 0;
+    padding: 0.25rem 0.2rem;
+    gap: 0.3rem;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-icon { width: 1.5rem; height: 1.5rem; border-radius: 8px; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-icon .dp-ico svg { width: 1rem; height: 1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-short { font-size: 0.7rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tick { top: -4px; right: -5px; width: 0.85rem; height: 0.85rem; font-size: 0.5rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-daybtn { width: 1.9rem; height: 1.9rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen { min-height: 2.3rem; width: 2.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xtop .dp-btn { min-height: 2.1rem; }
+}
+
+/* Short phones (iPhone SE, 8, mini, 13/14 with browser bars): tighter clue bar and keys,
+   still above the ~36px tap target. */
+@media (max-width: 520px) and (max-height: 760px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xtop { margin-bottom: 0.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { margin-top: 0.3rem; min-height: 2.3rem; padding: 0.2rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluechip { min-width: 2.3rem; min-height: 2rem; font-size: 0.95rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluetext { padding-block: 0.1rem; font-size: 0.9rem; line-height: 1.2; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluenav { min-width: 1.9rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keys { margin-top: 0.3rem; gap: 0.25rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-key { min-height: 2.25rem; font-size: 1rem; }
+}
+
+/* Sudoku upright (phones, iPad mini/10.2" portrait, Split View): exactly where the side-by-side
+   layout below does not apply. Pad and tools take their own height and the board gets the
+   rest, as a size container, instead of sizing to the width and pushing the tools off screen. */
+@media (max-width: 599px), (max-width: 860px) and (orientation: portrait) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--sudoku {
+    height: 100%;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap { container-type: normal; display: flex; flex-direction: column; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sframe { flex: 1 1 0; min-height: 0; container-type: size; display: grid; place-items: center; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sgrid { width: min(100cqw, 100cqh); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sval { font-size: 6.2cqmin; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-snotes i { font-size: 2.4cqmin; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap .dp-status { margin-top: 0.4rem; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap .dp-status:empty { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside .dp-tools { margin-top: 0.5rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-padbtn { padding: 0; line-height: 1; min-height: clamp(2.6rem, 6cqh, 4rem); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside .dp-hint-text { display: none; }
 }
 
 /* Room for side by side: a wide display, or a phone or tablet held sideways. */
@@ -1341,8 +1403,9 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-instruction { font-size: 1.05rem; }
   #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-side .dp-status { font-size: 1.05rem; }
 
-  /* Crossword on a touch screen held sideways: grid on the left, keys on the right. */
-  @media (pointer: coarse) {
+  /* Crossword on a touch screen held sideways: grid on the left, keys on the right.
+     Landscape only: a 12.9" iPad upright is 1024px wide but should stack like the others. */
+  @media (pointer: coarse) and (orientation: landscape) {
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross { height: 100%; align-items: stretch; }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross.show-clues { height: auto; }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) .dp-xwrap {
@@ -1359,6 +1422,8 @@ html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { grid-area: bar; margin-top: 0; }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xwrap .dp-status { grid-area: status; }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keys { grid-area: keys; align-self: end; }
+    /* The keys have the whole right column below the clue; let them use it on an iPad. */
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-key { min-height: clamp(2.4rem, 9cqh, 4.2rem); font-size: clamp(1.05rem, 3.4cqh, 1.6rem); }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xframe { grid-area: frame; container-type: size; display: grid; align-content: center; min-height: 0; }
     #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid { --cell: min(100cqw / var(--n), 100cqh / var(--m)); }
   }
