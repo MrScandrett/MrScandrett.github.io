@@ -321,7 +321,14 @@
       '.nav-settings-pane .nav-theme-grid .nav-theme-label strong { font-size: 0.78rem; }' +
       '.nav-settings-pane .nav-canvas-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }' +
       '.nav-settings-pane .nav-canvas-grid .nav-theme-chip { min-height: 0; padding: 0.6rem 0.6rem; gap: 0.5rem; border-radius: 14px; grid-template-columns: auto 1fr; }' +
-      '@media (max-width: 420px) { .nav-settings-pane .nav-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nav-settings-pane .nav-canvas-grid { grid-template-columns: 1fr; } }';
+      '.nav-settings-pane .nav-skin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }' +
+      '.nav-settings-pane .nav-skin-grid .nav-theme-chip { min-height: 0; padding: 0.55rem; gap: 0.55rem; border-radius: 14px; grid-template-columns: auto minmax(0, 1fr); align-items: center; }' +
+      '.nav-skin-grid .nav-theme-label small { display: block; }' +
+      '.nav-skin-sample { display: grid; place-items: center; width: 3.4rem; height: 2.6rem; padding: 0.3rem; border: var(--s-border) color-mix(in srgb, currentColor 55%, transparent); border-radius: var(--s-radius); box-shadow: var(--s-shadow) color-mix(in srgb, currentColor 45%, transparent); background: color-mix(in srgb, currentColor 6%, transparent); font-family: var(--s-font); }' +
+      '.nav-skin-sample-btn { padding: 0.08rem 0.4rem; border: 1.5px solid currentColor; border-radius: var(--s-control); font-size: 0.66rem; font-weight: 700; line-height: 1.3; white-space: nowrap; }' +
+      '.nav-skin-source { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin: 0 0 0.6rem; font-size: 0.78rem; opacity: 0.92; }' +
+      '.nav-skin-follow { padding: 0.2rem 0.6rem; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }' +
+      '@media (max-width: 420px) { .nav-settings-pane .nav-theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nav-settings-pane .nav-canvas-grid, .nav-settings-pane .nav-skin-grid { grid-template-columns: 1fr; } }';
     document.head.appendChild(st);
   }
   injectSettingsTabStyles();
@@ -396,7 +403,8 @@
   }
 
   function canvasBgForTheme(theme) {
-    return readCanvasPrefs()[theme] || CANVAS_THEME_DEFAULT[theme] || "particles";
+    var fromTheme = typeof themeRegistry.getDefaultBackground === "function" ? themeRegistry.getDefaultBackground(theme) : CANVAS_THEME_DEFAULT[theme];
+    return readCanvasPrefs()[theme] || fromTheme || "particles";
   }
 
   function getRootPrefix() {
@@ -852,6 +860,7 @@
         "</div>" +
         '<div class="nav-settings-tabs" role="tablist" aria-label="Settings sections">' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-theme" data-tab="theme" aria-controls="' + panelId + '-pane-theme" aria-selected="true">Theme</button>' +
+          '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-skin" data-tab="skin" aria-controls="' + panelId + '-pane-skin" aria-selected="false" tabindex="-1">Skin</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-background" data-tab="background" aria-controls="' + panelId + '-pane-background" aria-selected="false" tabindex="-1">Background</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-access" data-tab="access" aria-controls="' + panelId + '-pane-access" aria-selected="false" tabindex="-1">Access</button>' +
           '<button type="button" role="tab" class="nav-settings-tab" id="' + panelId + '-tab-mine" data-tab="mine" aria-controls="' + panelId + '-pane-mine" aria-selected="false" tabindex="-1">My Stuff</button>' +
@@ -886,6 +895,17 @@
             '<button type="button" class="nav-theme-filter-pill" data-tone-filter="dark" aria-pressed="false">&#9789; Dark</button>' +
           '</div>' +
           '<div class="nav-theme-grid" role="group" aria-label="Choose a theme"></div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="nav-settings-pane" role="tabpanel" data-pane="skin" id="' + panelId + '-pane-skin" aria-labelledby="' + panelId + '-tab-skin" hidden>' +
+        '<div class="nav-settings-section">' +
+          '<p class="nav-settings-eyebrow">Skin</p>' +
+          '<p class="nav-settings-note">The shape of the interface: corners, borders, buttons and fonts. Colors still come from your theme.</p>' +
+          '<div class="nav-skin-source" role="status" aria-live="polite">' +
+            '<span class="nav-skin-source-text"></span>' +
+            '<button type="button" class="nav-skin-follow" hidden>&#8634; Match theme</button>' +
+          '</div>' +
+          '<div class="nav-skin-grid" role="group" aria-label="Choose a skin"></div>' +
         '</div>' +
         '</div>' +
         '<div class="nav-settings-pane" role="tabpanel" data-pane="background" id="' + panelId + '-pane-background" aria-labelledby="' + panelId + '-tab-background" hidden>' +
@@ -1091,6 +1111,10 @@
       canvasGrid.appendChild(btn);
     });
 
+    // Skin chips are built when the Skin tab first opens (see selectSettingsTab),
+    // so pages in the default skin never fetch skin-registry.js.
+    if (document.documentElement.getAttribute("data-skin") && document.documentElement.getAttribute("data-skin") !== "glass") withSkins(buildSkinUi);
+
     var presentationControl = settingsContainer.querySelector(".nav-presentation-checkbox");
     function syncPresentationControl() {
       presentationControl.checked = Boolean(themeRegistry.isPresentation && themeRegistry.isPresentation());
@@ -1129,6 +1153,7 @@
       });
       tabPanes.forEach(function (pane) { pane.hidden = pane.getAttribute("data-pane") !== name; });
       writeStorage(TAB_KEY, name);
+      if (name === "skin") withSkins(buildSkinUi);
       if (name === "editor" && editorLink) refreshEditorLink();
     }
     var editorLink = settingsContainer.querySelector(".nav-editor-link");
@@ -1359,6 +1384,84 @@
       chip.setAttribute("aria-pressed", isActive ? "true" : "false");
       chip.classList.toggle("is-active", isActive);
     });
+  }
+
+  /* Skin layer (Theme → Skin → Background). skin-registry.js is injected by
+   * theme-registry.js and may arrive after this script, so wait for it. */
+  function withSkins(fn) {
+    if (isThemeIndependent) return;
+    if (window.ClassroomOSSkins && window.ClassroomOSSkins.set) { fn(window.ClassroomOSSkins); return; }
+    var script = document.querySelector("script[data-classroomos-skins]");
+    if (!script) {
+      script = document.createElement("script");
+      script.src = rootPrefix + "assets/js/skin-registry.js";
+      script.dataset.classroomosSkins = "true";
+      document.head.appendChild(script);
+    }
+    script.addEventListener("load", function () { if (window.ClassroomOSSkins) fn(window.ClassroomOSSkins); }, { once: true });
+  }
+
+  function buildSkinUi(skins) {
+    if (!settingsContainer) return;
+    var grid = settingsContainer.querySelector(".nav-skin-grid");
+    if (!grid || grid.childElementCount) return;
+    skins.SKINS.forEach(function (skin) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nav-theme-chip nav-skin-chip";
+      btn.setAttribute("data-skin-option", skin.id);
+      btn.setAttribute("aria-pressed", "false");
+      btn.setAttribute("aria-label", skin.label + " skin \u2014 " + skin.detail);
+      btn.setAttribute("title", skin.detail);
+      var pv = skin.preview || {};
+      btn.innerHTML =
+        '<span class="nav-skin-sample" aria-hidden="true"><span class="nav-skin-sample-btn">Start</span></span>' +
+        '<span class="nav-theme-label"><strong>' + skin.label + '</strong><small>' + skin.era + '</small></span>' +
+        '<span class="nav-theme-selected" aria-hidden="true">\u2713</span>';
+      var sample = btn.querySelector(".nav-skin-sample");
+      sample.style.setProperty("--s-radius", pv.radius || "12px");
+      sample.style.setProperty("--s-control", pv.control || "999px");
+      sample.style.setProperty("--s-border", pv.border || "1px solid");
+      sample.style.setProperty("--s-shadow", pv.shadow || "none");
+      sample.style.setProperty("--s-font", pv.font || "inherit");
+      btn.addEventListener("click", function () {
+        cosTransition();
+        skins.set(skin.id);
+        syncSkinUi();
+      });
+      grid.appendChild(btn);
+    });
+    var follow = settingsContainer.querySelector(".nav-skin-follow");
+    follow.addEventListener("click", function () { skins.follow(); syncSkinUi(); });
+    window.addEventListener(skins.CHANGE_EVENT, syncSkinUi);
+    window.addEventListener(LIGHTING_EVENT, function () { setTimeout(syncSkinUi, 0); });
+    syncSkinUi();
+  }
+
+  function syncSkinUi() {
+    var skins = window.ClassroomOSSkins;
+    if (!settingsContainer || !skins || !skins.current) return;
+    var current = skins.current();
+    var pinned = skins.pinned();
+    var themeId = document.documentElement.dataset.theme || "day";
+    var themeLabel = themeRegistry.getLabel ? themeRegistry.getLabel(themeId) : themeId;
+    var suggested = skins.themeDefault(themeId);
+    settingsContainer.querySelectorAll(".nav-skin-chip").forEach(function (chip) {
+      var on = chip.getAttribute("data-skin-option") === current;
+      chip.setAttribute("aria-pressed", on ? "true" : "false");
+      chip.classList.toggle("is-active", on);
+    });
+    var text = settingsContainer.querySelector(".nav-skin-source-text");
+    var follow = settingsContainer.querySelector(".nav-skin-follow");
+    if (!text || !follow) return;
+    if (pinned) {
+      text.textContent = "Kept on " + skins.get(current).label + " for every theme.";
+      follow.hidden = false;
+      follow.textContent = "\u21BA Match theme (" + skins.get(suggested).label + ")";
+    } else {
+      text.textContent = "Following your theme: " + themeLabel + " \u2192 " + skins.get(current).label + ".";
+      follow.hidden = true;
+    }
   }
 
   function ensureCanvasBackgroundEngine() {

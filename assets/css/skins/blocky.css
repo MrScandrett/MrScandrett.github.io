@@ -1,0 +1,105 @@
+/* Blocky skin — 1980s–90s pixel art, drawn from scratch.
+ * Shape: notched stair-step borders (four hard box-shadows, no blur), a light
+ * top-left / dark bottom-right bevel, buttons that sink 4px when pressed, and a
+ * pixel font on headings only so long lesson text stays readable.
+ * Colors come from the theme; this file only mixes its tokens. */
+
+@font-face {
+  font-family: "Pixelify Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../fonts/pixelify-sans-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Pixelify Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../../fonts/pixelify-sans-latin-700-normal.woff2") format("woff2");
+}
+
+html[data-skin="blocky"] {
+  --skin-radius-sm: 0;
+  --skin-radius-md: 0;
+  --skin-radius-lg: 0;
+  --skin-px: 4px;
+  --skin-edge: color-mix(in srgb, var(--text) 82%, transparent);
+  --skin-hi: color-mix(in srgb, white 45%, transparent);
+  --skin-lo: color-mix(in srgb, black 22%, transparent);
+  /* Notched outline: four offset copies leave the corner pixel empty. */
+  --skin-notch:
+    0 calc(var(--skin-px) * -1) 0 0 var(--skin-edge),
+    0 var(--skin-px) 0 0 var(--skin-edge),
+    calc(var(--skin-px) * -1) 0 0 0 var(--skin-edge),
+    var(--skin-px) 0 0 0 var(--skin-edge);
+  --skin-bevel:
+    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-hi),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-lo);
+  --skin-bevel-in:
+    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-lo),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-hi);
+  --skin-shadow: var(--skin-notch);
+  --skin-font-ui: "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, sans-serif;
+  --skin-font-display: "Pixelify Sans", "Classroom Chicago", "Chicago", monospace;
+}
+
+html[data-skin="blocky"] body :not(img, svg, svg *, canvas, video, iframe):not(:is([data-skin-keep], [data-score], .fb-shell, .tl, .ft) *) {
+  border-radius: 0 !important;
+}
+
+/* Chrome */
+html[data-skin="blocky"] body .site-header {
+  border-bottom: 0 !important;
+  box-shadow: 0 var(--skin-px) 0 0 var(--skin-edge), inset 0 calc(var(--skin-px) * -1) 0 0 var(--skin-lo) !important;
+}
+html[data-skin="blocky"] body .nav-settings-panel {
+  border: 0 !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel), 8px 8px 0 0 var(--skin-lo) !important;
+}
+
+/* Panels: notched pixel frame plus a bevel. Margins make room for the outside pixels. */
+html[data-skin="blocky"] body [data-skin-surface="panel"] {
+  border-color: transparent !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel) !important;
+}
+
+/* Controls: raised blocks that sink when pressed. Steps, never easing. */
+html[data-skin="blocky"] body [data-skin-surface="control"] {
+  border-color: transparent !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel) !important;
+  transition: none !important;
+  font-family: var(--skin-font-ui);
+}
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):active,
+html[data-skin="blocky"] body [data-skin-surface="control"]:is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+  box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
+}
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):active {
+  translate: 0 var(--skin-px);
+}
+
+html[data-skin="blocky"] body [data-skin-surface="field"] {
+  border-color: transparent !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
+}
+
+html[data-skin="blocky"] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--skin-px) solid var(--accent) !important;
+  outline-offset: calc(var(--skin-px) * 2);
+}
+
+/* Pixel headings with a one-step drop shadow. Body text keeps its readable font. */
+html[data-skin="blocky"] body :is(main, .home-widget, .nav-settings-panel) :is(h1, h2, h3) {
+  font-family: var(--skin-font-display) !important;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 3px 3px 0 color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+html[data-skin="blocky"] body input[type="range"] {
+  accent-color: var(--accent);
+}

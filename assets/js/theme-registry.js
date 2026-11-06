@@ -37,7 +37,14 @@
     mandelbrot: ["#05010f", "#140a24", "#f5eefc", "#ff8c00", "#1a0a00"],
     lavalamp: ["#0a0103", "#160206", "#fff0f3", "#ff2a4d", "#0d0003"]
   };
+  /* Theme → Skin → Background: each theme suggests a skin and a background.
+   * A visitor's pinned choice wins (skin-registry.js, canvas-bg.js). */
+  var DEFAULT_SKIN = { goldfish: "underwater" };
+  var DEFAULT_BACKGROUND = { sakura: "petals", topaz: "hive", goldfish: "goldfish", mandelbrot: "mandelbrot", lavalamp: "lavalamp" };
+
   THEMES.forEach(function (theme) {
+    theme.defaultSkin = DEFAULT_SKIN[theme.id] || "glass";
+    theme.defaultBackground = DEFAULT_BACKGROUND[theme.id] || "particles";
     theme.preview = PREVIEWS[theme.id];
     theme.family = ["vaporwave", "mandelbrot", "lavalamp"].indexOf(theme.id) >= 0 ? "expressive" : "quiet";
   });
@@ -121,6 +128,51 @@
     document.head.appendChild(link);
   }
 
+  /* First skin apply, synchronously in <head>, so the page never paints in the
+   * wrong skin. skin-registry.js (loaded right after) owns the full logic and
+   * corrects anything this fast path got wrong. */
+  function bootSkin() {
+    var html = document.documentElement;
+    if (html.dataset.themeScope === "independent") return;
+    var source = document.currentScript;
+    if (!source || !source.src) return;
+    var pinned = null, theme = "day";
+    try {
+      pinned = root.localStorage.getItem("classroomos-skin");
+      if (root.localStorage.getItem("classroomos-lighting-mode") === "manual") theme = normalize(root.localStorage.getItem("classroomos-lighting-phase"));
+    } catch (_) {}
+    var id = pinned && /^[a-z][a-z0-9-]*$/.test(pinned) ? pinned : get(theme).defaultSkin;
+    html.setAttribute("data-skin", id);
+    if (id !== "glass") {
+      ["skin-core", id].forEach(function (name) {
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.media = "screen";
+        link.href = new URL("../css/skins/" + name + ".css", source.src).href;
+        link.setAttribute(name === "skin-core" ? "data-classroomos-skin-core" : "data-classroomos-skin", "");
+        document.head.appendChild(link);
+      });
+    }
+    // The full skin API is only fetched when a skin is in play, so Liquid Glass
+    // pages pay no extra request. nav-mobile.js loads it when the Skin tab opens.
+    var registryUrl = new URL("skin-registry.js", source.src).href;
+    function loadSkinRegistry() {
+      if (document.querySelector("script[data-classroomos-skins]")) return;
+      var script = document.createElement("script");
+      script.src = registryUrl;
+      script.dataset.classroomosSkins = "true";
+      document.head.appendChild(script);
+    }
+    if (pinned || id !== "glass") { loadSkinRegistry(); return; }
+    if (typeof MutationObserver !== "function") return;
+    var watcher = new MutationObserver(function () {
+      if (get(html.dataset.theme).defaultSkin === "glass") return;
+      watcher.disconnect();
+      loadSkinRegistry();
+    });
+    watcher.observe(html, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
   var api = {
     THEMES: THEMES,
     IDS: ids,
@@ -132,6 +184,8 @@
     getAccentRGB: getAccentRGB,
     getSwatch: getSwatch,
     getMandelSwatch: getMandelSwatch,
+    getDefaultSkin: function (id) { return get(id).defaultSkin; },
+    getDefaultBackground: function (id) { return get(id).defaultBackground; },
     isPresentation: function () { return !!root.document && document.documentElement.hasAttribute("data-classroom-presentation"); },
     setPresentation: setPresentation,
     isDark: isDark
@@ -150,6 +204,7 @@
     }
     syncPresentation();
     loadSurfaces();
+    bootSkin();
     root.addEventListener("storage", function (event) {
       if (event.key === PRESENTATION_KEY || event.key === null) syncPresentation();
     });

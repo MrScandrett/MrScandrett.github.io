@@ -352,6 +352,25 @@ and counts low-contrast text and bright panels, excluding the shared header. Use
 `--save-baseline` / `--check` (data/night-audit-baseline.json), and `--out=report.json` for per-element detail.
 Measure after settling: the guard throttles itself on heavy pages, so the default wait is 2.8s.
 
+## Theme → Skin → Background
+
+Three independent layers. A **theme** (`theme-registry.js`) sets colors and suggests a `defaultSkin` and
+`defaultBackground`; a **skin** (`assets/js/skin-registry.js`) sets shape only: corners, borders, shadows,
+glass, UI/heading fonts, press and hover feel; a **background** (`canvas-bg.js`) draws behind the page. A
+visitor's pinned skin (`classroomos-skin`) survives theme changes; "Match theme" un-pins it.
+
+- Liquid Glass (`glass`) is the default and adds no CSS or JS. `theme-registry.js` sets `html[data-skin]`
+  in `<head>` (no flash) and only fetches `skin-registry.js`, `skins/skin-core.css` + `skins/<id>.css`
+  (media="screen", so print is untouched) and `skin-surfaces.js` while another skin is in play.
+- `skin-surfaces.js` tags what *looks* like a panel / control / field (`data-skin-surface`) so skins reach
+  lessons without knowing their classes. Put `data-skin-keep` on anything that must keep its own look.
+- Rules (`node --test tests/skins.test.mjs`): no color literals in skin CSS (mix `var(--text)`,
+  `var(--accent)`, white/black/transparent); the logo `.brand` is always Classroom Chicago (`--font-logo`),
+  only `skin-core.css` touches it; animations sit inside `prefers-reduced-motion: no-preference` *and*
+  `:not([data-skin-motion="still"])`; fonts self-hosted. Reading text keeps a readable font: pixel and
+  handwriting faces go on headings and buttons only, never lesson body text.
+- Add a skin: a registry entry (with `preview` for the settings chip) + `assets/css/skins/<id>.css`.
+
 ## Home-page class calendar
 
 `#home-calendar` on `index.html` is a month calendar driven by `assets/js/home-calendar.mjs`

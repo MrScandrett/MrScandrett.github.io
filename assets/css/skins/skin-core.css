@@ -1,0 +1,58 @@
+/* skin-core.css — shared plumbing for every skin except Liquid Glass.
+ *
+ * Loaded (media="screen") by theme-registry.js / skin-registry.js only while a
+ * skin with its own CSS is chosen, right before assets/css/skins/<id>.css.
+ *
+ * A skin file sets the --skin-* tokens below and adds its signature rules.
+ * The rules here map those tokens onto the site's existing radius / shadow /
+ * font tokens, so anything already built on var(--radius-*) or var(--font-*)
+ * follows the skin for free.
+ *
+ * Rules every skin follows (tests/skins.test.mjs checks the first three):
+ *  - No color literals (#hex, rgb(), hsl()). Mix the theme's tokens instead:
+ *    color-mix(in srgb, var(--text) 40%, transparent).
+ *  - Never restyle the logo font: .brand is always Classroom Chicago.
+ *  - Wrap motion in the --skin-motion gate (see @media blocks below).
+ *  - Opt-outs win: [data-skin-keep], notation ([data-score], .fb-shell),
+ *    the Timeline / Family Tree engines and media keep their own look.
+ */
+
+html[data-skin]:not([data-skin="glass"]) {
+  --radius: var(--skin-radius-lg, 26px);
+  --radius-sm: var(--skin-radius-sm, 10px);
+  --radius-md: var(--skin-radius-md, 14px);
+  --radius-lg: var(--skin-radius-lg, 26px);
+  --lp-card-radius: var(--skin-radius-lg, 24px);
+  --shadow: var(--skin-shadow, 0 12px 34px color-mix(in srgb, black 8%, transparent));
+  --shadow-1: var(--skin-shadow, 0 12px 34px color-mix(in srgb, black 8%, transparent));
+  --font-sans: var(--skin-font-ui, "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-display: var(--skin-font-display, "IBM Plex Sans", "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --skin-line: color-mix(in srgb, var(--text) 32%, transparent);
+  --skin-line-strong: color-mix(in srgb, var(--text) 70%, transparent);
+  --skin-light: color-mix(in srgb, white 55%, transparent);
+  --skin-dark: color-mix(in srgb, black 30%, transparent);
+}
+/* Some pages redefine the font tokens on <body> (Liquid Woodland home); the skin's win there too. */
+html[data-skin]:not([data-skin="glass"]) body {
+  --font-sans: var(--skin-font-ui, "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-display: var(--skin-font-display, "IBM Plex Sans", "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+}
+
+/* The logo is the one fixed point: Classroom Chicago in every skin. */
+html[data-skin] body .brand,
+html[data-skin] body .brand * {
+  font-family: var(--font-logo, "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, sans-serif) !important;
+  letter-spacing: -0.025em !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+}
+
+html[data-skin]:not([data-skin="glass"]) body {
+  font-family: var(--skin-font-body, var(--font-sans));
+}
+
+/* Skins are opaque by default: glass blur belongs to Liquid Glass. */
+html[data-skin]:not([data-skin="glass"]) body :is(.site-header, .nav-settings-panel, .home-widget, .ll-panel) {
+  -webkit-backdrop-filter: var(--skin-blur, none);
+  backdrop-filter: var(--skin-blur, none);
+}

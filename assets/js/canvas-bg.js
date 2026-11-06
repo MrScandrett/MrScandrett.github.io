@@ -87,7 +87,9 @@
   }
 
   function bgForTheme(theme) {
-    return readPrefs()[theme] || THEME_DEFAULT_BG[theme] || 'particles';
+    var reg = window.ClassroomOSThemeRegistry;
+    var fromTheme = reg && typeof reg.getDefaultBackground === 'function' ? reg.getDefaultBackground(theme) : THEME_DEFAULT_BG[theme];
+    return readPrefs()[theme] || fromTheme || 'particles';
   }
 
   /* Site-level "Reduce motion" toggle in the settings panel — independent
