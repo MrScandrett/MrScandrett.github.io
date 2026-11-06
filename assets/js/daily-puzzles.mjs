@@ -258,6 +258,22 @@ function mount(root, bank, doubleBank, chessBank) {
   });
 
   show();
+
+  // Full screen (creation-app.js): the game takes the keyboard on the way in, and F works
+  // from inside a game, where creation-app.js leaves keys alone. The crossword's input
+  // keeps F as a letter.
+  let staged = false;
+  document.addEventListener('creation-app-resize', () => {
+    const now = root.matches(':fullscreen, .creation-app-expanded');
+    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square')?.focus({ preventScroll: true });
+    staged = now;
+  });
+  root.addEventListener('keydown', (ev) => {
+    if (ev.key.toLowerCase() !== 'f' || ev.ctrlKey || ev.metaKey || ev.altKey || ev.defaultPrevented) return;
+    if (ev.target.closest('input, textarea, select')) return;
+    ev.preventDefault();
+    root.querySelector('.creation-app-fullscreen')?.click();
+  });
   root.classList.add('is-ready');
 }
 

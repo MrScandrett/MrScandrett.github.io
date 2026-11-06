@@ -51,24 +51,6 @@ html[data-theme="cobblestone"] .home-puzzles { --dp-on-accent: #1a1406; }
   margin-bottom: 0.75rem;
 }
 
-#home-puzzles:is(:fullscreen, .creation-app-expanded) {
-  display: block;
-  background: var(--dp-paper);
-  color: var(--dp-ink);
-}
-
-#home-puzzles:is(:fullscreen, .creation-app-expanded) > :is(.home-widget-schedule-header, [data-dp-app]) {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding-inline: clamp(0.75rem, 3vw, 2rem);
-}
-
-#home-puzzles:is(:fullscreen, .creation-app-expanded) > [data-dp-app] {
-  padding-bottom: 2rem;
-}
-
 html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="true"], [aria-selected="true"]) {
   outline: none; /* global aria-pressed outline would ring every selected control */
 }
@@ -1230,6 +1212,279 @@ html[data-theme] body .home-puzzles :is(button, [role="tab"]):is([aria-pressed="
   .dp-xframe { padding: 0.45rem; border-radius: 14px; }
   .dp-status:not(:empty) { margin-inline: 0.3rem; padding-inline: 0.75rem; }
   .dp-chess-side .dp-status:not(:empty) { margin-inline: 0; }
+}
+
+/* ── full screen: the puzzles become the whole display ───
+   One row of chrome, then a panel the boards size themselves to (the panel is a size
+   container, so 100cqh is the room actually left). The root font follows the screen, so
+   every rem here grows for a projector and comes back when full screen ends. */
+html:has(#home-puzzles:is(:fullscreen, .creation-app-expanded)) {
+  font-size: clamp(100%, min(1.9vh, 1.05vw), 200%);
+}
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "title tabs nav exit" "panel panel panel panel";
+  gap: 0.7rem 1rem;
+  overflow: hidden;
+  transform: none; /* .home-widget lifts 2px on hover, which would bare the page below */
+  transition: none;
+  padding: max(0.7rem, env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-right, 0px))
+    max(0.9rem, env(safe-area-inset-bottom, 0px)) max(1.25rem, env(safe-area-inset-left, 0px));
+  /* A faint step down from --dp-paper so each game's board reads as raised. */
+  background-color: var(--bg, #fff);
+  background-image: linear-gradient(color-mix(in srgb, var(--dp-ink) 4%, var(--dp-paper)), color-mix(in srgb, var(--dp-ink) 4%, var(--dp-paper)));
+  color: var(--dp-ink);
+}
+/* vr-mode.js moves its pill into the full-screen element, bottom left. */
+#home-puzzles:is(:fullscreen, .creation-app-expanded):has(> .vr-menu) { padding-bottom: 4.5rem; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) > [data-dp-app],
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-bar { display: contents; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) > .home-widget-schedule-header {
+  grid-area: title;
+  align-self: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .home-widget-eyebrow { display: none; }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .home-widget-title { margin: 0; font-size: 1.2rem; white-space: nowrap; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { grid-area: tabs; justify-self: start; align-self: center; }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-nav { grid-area: nav; align-self: center; flex-wrap: nowrap; }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar {
+  grid-area: exit;
+  position: static;
+  align-self: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border: 1px solid var(--dp-line);
+  border-radius: 999px;
+  background: var(--dp-paper);
+  box-shadow: var(--dp-key-edge);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen:hover { border-color: var(--dp-accent); }
+
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-panel {
+  grid-area: panel;
+  container-type: size;
+  min-height: 0;
+  padding: 0.35rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Daily Double: the board takes all the height it is given, at every width. */
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--double { height: 100%; align-items: stretch; }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap { height: 100%; min-height: 0; }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dboard { flex: 1 1 0; min-height: 0; display: flex; }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dgrid { grid-template-rows: auto repeat(5, minmax(0, 1fr)); }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dcell { aspect-ratio: auto; min-height: 0; font-size: clamp(1rem, 4.6cqmin, 2.4rem); }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap .dp-status:empty { display: none; }
+/* Right-aligned, clear of the VR pill. */
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap .dp-tools { justify-content: flex-end; margin-top: 0.6rem; }
+
+/* Chess stacked over its notes: as big as the notes leave room for. */
+#home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-frame { width: min(100%, max(20rem, 100cqh - 19rem)); }
+#home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-chess-rank, .dp-chess-file) { font-size: clamp(0.62rem, 1.7cqmin, 1rem); }
+
+/* Crossword on a touch screen: grid, clue and keys on one screen. */
+@media (max-width: 860px), (pointer: coarse) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid {
+    --cell: min(100cqw / var(--n), max(1.6rem, (100cqh - 20rem) / var(--m)));
+  }
+}
+
+/* Room for side by side: a wide display, or a phone or tablet held sideways. */
+@media (min-width: 861px), (min-width: 600px) and (orientation: landscape) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--sudoku,
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--chess {
+    grid-template-columns: var(--dp-edge) minmax(14rem, 30rem);
+    gap: 0 clamp(1rem, 3cqw, 3rem);
+    justify-content: center;
+    height: 100%;
+  }
+
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--sudoku { --dp-edge: min(100cqh - 2.6rem, 100cqw - 17rem); align-items: stretch; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap { container-type: normal; display: flex; flex-direction: column; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sframe { flex: 1 1 0; min-height: 0; container-type: size; display: grid; place-items: center; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sgrid { width: min(100cqw, 100cqh); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sval { font-size: 6.2cqmin; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-snotes i { font-size: 2.4cqmin; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap .dp-status { margin-top: 0.4rem; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-swrap .dp-status:empty { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside { justify-content: safe center; min-height: 0; overflow: auto; }
+  /* A calculator-style pad: bigger targets than the row of nine. */
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; max-width: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-padbtn { min-height: clamp(2.4rem, 15cqh, 6rem); font-size: 1.9rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-padbtn small { font-size: 0.7rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-hint-text { max-width: none; }
+
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--chess { --dp-edge: min(100cqh, 100cqw - 17rem); align-items: center; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-frame { width: 100%; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-side { max-height: 100cqh; box-sizing: border-box; overflow: auto; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-title { font-size: 1.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-instruction { font-size: 1.05rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-chess-side .dp-status { font-size: 1.05rem; }
+
+  /* Crossword on a touch screen held sideways: grid on the left, keys on the right. */
+  @media (pointer: coarse) {
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross { height: 100%; align-items: stretch; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross.show-clues { height: auto; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross:not(.show-clues) .dp-xwrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto auto auto minmax(0, 1fr);
+      grid-template-areas: "top top" "tools tools" "frame bar" "frame status" "frame keys";
+      gap: 0 1rem;
+      height: 100%;
+      min-height: 0;
+    }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xtop { grid-area: top; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xwrap .dp-tools { grid-area: tools; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { grid-area: bar; margin-top: 0; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xwrap .dp-status { grid-area: status; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-keys { grid-area: keys; align-self: end; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xframe { grid-area: frame; container-type: size; display: grid; align-content: center; min-height: 0; }
+    #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid { --cell: min(100cqw / var(--n), 100cqh / var(--m)); }
+  }
+}
+
+@media (min-width: 861px) {
+  /* Daily Double: the clue is the show, so it gets the other half of the screen. */
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--double {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 0 1.5rem;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dside { min-height: 0; padding: 6px; overflow: auto; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-dcard, .dp-td-stage) { flex: 1 0 auto; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-td-stage { justify-content: center; gap: 1.2rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-td-banner { font-size: 1.4rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-td-formula { font-size: 1.15rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-td-stage > p { font-size: 1.2rem; line-height: 1.4; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-td-wbtn { padding: 0.7rem 1.2rem; font-size: 1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-m-question {
+    flex: 1 1 auto;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-m-opt { min-height: 4rem; font-size: 1.1rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-m-badge { width: 2.1rem; height: 2.1rem; font-size: 1.05rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-m-feedback { font-size: 1.05rem; }
+}
+
+/* Crossword with a keyboard: grid on the left, every clue and the tools on the right. */
+@media (min-width: 861px) and (not (pointer: coarse)) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross {
+    grid-template-columns: minmax(0, 1.25fr) minmax(19rem, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "top clues" "bar clues" "frame clues" "status tools";
+    gap: 0.55rem 2rem;
+    height: 100%;
+    align-items: stretch;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xwrap { display: contents; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xtop { grid-area: top; margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluebar { grid-area: bar; margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluetext { font-size: 1.2rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xframe { grid-area: frame; container-type: size; display: grid; align-content: center; min-height: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xgrid { --cell: min(100cqw / var(--n), 100cqh / var(--m)); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-body--cross .dp-status { grid-area: status; align-self: center; margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-xwrap .dp-tools { grid-area: tools; justify-content: flex-end; margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-cluecols { grid-area: clues; min-height: 0; overflow: auto; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-clues { max-height: none; overflow: visible; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-clue { font-size: 1.1rem; }
+}
+
+/* One row gets tight as the screen narrows: the title goes first, then the long tab labels. */
+@media (max-width: 1600px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "tabs nav exit" "panel panel panel"; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) > .home-widget-schedule-header { display: none; }
+}
+@media (max-width: 1400px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-full, #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-sub { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-short { display: block; font-size: 0.9rem; }
+}
+
+/* Too narrow for one row: tabs on top, day and exit under them. */
+@media (max-width: 1100px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: "tabs tabs" "nav exit" "panel panel";
+    gap: 0.45rem 0.6rem;
+    padding-inline: max(0.6rem, env(safe-area-inset-left, 0px)) max(0.6rem, env(safe-area-inset-right, 0px));
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tabs { justify-self: stretch; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab { min-width: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-nav { padding: 0; min-width: 0; }
+}
+
+/* A short screen (phone held sideways): back to one row, tabs as short labels. */
+@media (max-height: 500px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "tabs nav exit" "panel panel panel";
+    padding-block: max(0.3rem, env(safe-area-inset-top, 0px)) max(0.3rem, env(safe-area-inset-bottom, 0px));
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab { min-height: 2.4rem; padding: 0.2rem 0.4rem 0.2rem 0.2rem; gap: 0.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-icon { width: 1.8rem; height: 1.8rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-full,
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-sub { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-tab-short { display: block; font-size: 0.74rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-streak { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-hint-text, .dp-padbtn small, .dp-dhead-icon) { display: none; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-padbtn { font-size: 1.3rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside .dp-tools { margin-top: 0.5rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-sside .dp-btn { flex: 0 1 auto; padding-inline: 0.6rem; }
+
+  /* Daily Double: the buttons move beside the board, which keeps the height. */
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 11rem;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "meta meta" "board clue" "board tools" "board status";
+    gap: 0.3rem 0.6rem;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dmeta { grid-area: meta; margin: 0; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dboard { grid-area: board; padding: 4px; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dopen-clue { grid-area: clue; height: 100%; margin: 0; padding: 0.3rem 0.5rem; white-space: normal; line-height: 1.25; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap .dp-tools { grid-area: tools; margin: 0; gap: 0.25rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap .dp-tools .dp-btn { flex: 1 1 100%; min-height: 1.9rem; font-size: 0.78rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dwrap .dp-status { grid-area: status; margin: 0; font-size: 0.75rem; }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .dp-dhead { padding: 0.15rem; margin-bottom: 0; }
+}
+
+/* On a phone the exit control is just the ✕; the label stays as its accessible name. */
+@media (max-width: 860px), (max-height: 500px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen {
+    width: 2.75rem;
+    padding: 0;
+    font-size: 0;
+  }
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen::before { content: '✕'; font-size: 1.1rem; }
+}
+
+/* Phones: every row counts, and the streak is on the home page anyway. */
+@media (max-width: 520px) {
+  #home-puzzles:is(:fullscreen, .creation-app-expanded) :is(.dp-streak, .dp-chess-note) { display: none; }
 }
 
 /* ── motion ─────────────────────────────────────────── */

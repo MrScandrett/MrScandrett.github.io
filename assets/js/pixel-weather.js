@@ -1,0 +1,250 @@
+/* PixelWeather: the home weather card's pixel art (pure; no DOM, returns SVG strings).
+   icon(kind) draws a 16x16 weather icon, moon(phase) a true moon phase, digits(text) big 5x7
+   numerals. Two-frame icons hold their frames in .px-a / .px-b; CSS flips between them. */
+(function (root) {
+  'use strict';
+
+  const COLORS = {
+    W: '#ffffff', L: '#c9d6ff', B: '#7f93d9', D: '#46549e',
+    Y: '#ffe14d', O: '#ff9d1c', R: '#e8452c', C: '#7cf2ff', P: '#2f7bff',
+    M: '#b89cff', K: '#141a5c', G: '#f4f6ff', N: '#2a3aa8', T: '#ff5c7a'
+  };
+
+  const CLOUD = [
+    '................',
+    '................',
+    '................',
+    '................',
+    '......LWWL......',
+    '....LWWWWWWL....',
+    '...LWWWWWWWWLL..',
+    '..LWWWWWWWWWWWL.',
+    '.LWWWWWWWWWWWWWL',
+    '.WWWWWWWWWWWWWWW',
+    '.LLLLLLLLLLLLLLB',
+    '..BBBBBBBBBBBBB.'
+  ];
+  const GREY_CLOUD = CLOUD.map((row) => row.replace(/W/g, 'L').replace(/L(?=[^L]*$)/, 'L')
+    .replace(/B/g, 'D'));
+  const LOW_CLOUD = ['', '', ''].concat(CLOUD.slice(0, 12));
+
+  const TEE = [
+    '................',
+    '................',
+    '....XXX..XXX....',
+    '..XXXXXXXXXXXX..',
+    '.XXXXXXXXXXXXXX.',
+    '.XXXXXXXXXXXXXX.',
+    '..XX.XXXXXX.XX..',
+    '.....XXXXXX.....',
+    '.....XXXXXX.....',
+    '.....XXXXXX.....',
+    '.....XXXXXX.....',
+    '.....XXXXXX.....',
+    '.....XXXXXX.....',
+    '................'
+  ];
+  const JACKET = [
+    '................',
+    '.....XX..XX.....',
+    '....XXXWWXXX....',
+    '...XXXXWWXXXX...',
+    '..XXXXXWWXXXXX..',
+    '..XXXXXWWXXXXX..',
+    '..XX.XXWWXX.XX..',
+    '..XX.XXWWXX.XX..',
+    '..XX.XXWWXX.XX..',
+    '..XX.XXWWXX.XX..',
+    '..WW.XXWWXX.WW..',
+    '.....XXWWXX.....',
+    '.....XXWWXX.....',
+    '................'
+  ];
+
+  function grid() { return Array.from({ length: 16 }, () => Array(16).fill('.')); }
+
+  function paint(g, rows, map) {
+    rows.forEach((row, y) => {
+      for (let x = 0; x < row.length; x += 1) {
+        let c = row[x];
+        if (map && map[c]) c = map[c];
+        if (c !== '.' && g[y]) g[y][x] = c;
+      }
+    });
+    return g;
+  }
+
+  function dots(g, list, color) {
+    list.forEach(([x, y]) => { if (g[y] && x >= 0 && x < 16) g[y][x] = color; });
+    return g;
+  }
+
+  // A shaded disc: lit toward the top left, orange toward the bottom right.
+  function sunDisc(g, cx, cy, r) {
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        const dx = x - cx, dy = y - cy;
+        if (dx * dx + dy * dy <= r * r) g[y][x] = dx + dy > r * 0.7 ? 'O' : 'Y';
+      }
+    }
+    return g;
+  }
+
+  function sunRays(g, cx, cy, frame) {
+    const a = [[0, -7], [0, -6], [0, 6], [0, 7], [-7, 0], [-6, 0], [6, 0], [7, 0]];
+    const b = [[-5, -5], [-4, -4], [5, 5], [4, 4], [-5, 5], [-4, 4], [5, -5], [4, -4]];
+    return dots(g, (frame ? b : a).map(([x, y]) => [cx + x, cy + y]), 'Y');
+  }
+
+  function crescent(g, cx, cy, r) {
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        const inMoon = (x - cx) ** 2 + (y - cy) ** 2 <= r * r;
+        const inBite = (x - cx - 3) ** 2 + (y - cy + 1) ** 2 <= (r - 1) ** 2;
+        if (inMoon && !inBite) g[y][x] = y > cy + 2 ? 'O' : 'Y';
+      }
+    }
+    return g;
+  }
+
+  function horizonSun(g, sky) {
+    for (let y = 4; y < 11; y += 1) {
+      for (let x = 2; x < 14; x += 1) {
+        if ((x - 7.5) ** 2 + (y - 10.5) ** 2 <= 22) g[y][x] = y < 9 ? 'Y' : 'O';
+      }
+    }
+    dots(g, [[7, 1], [8, 1], [7, 2], [8, 2], [1, 6], [2, 7], [14, 6], [13, 7], [3, 3], [12, 3]], 'Y');
+    for (let x = 0; x < 16; x += 1) { g[11][x] = sky; if (x % 3) g[13][x] = 'O'; if (x % 5 > 1) g[15][x] = 'D'; }
+    return g;
+  }
+
+  const KINDS = {
+    sun: (f) => sunRays(sunDisc(grid(), 7.5, 7.5, 4.3), 7.5 | 0, 7, f),
+    'mostly-sun': (f) => paint(sunRays(sunDisc(grid(), 6, 6, 3.6), 6, 6, f), LOW_CLOUD.map((r, i) => (i < 7 ? '' : r))),
+    'partly-cloudy': (f) => paint(sunRays(sunDisc(grid(), 6, 5, 3.6), 6, 5, f), LOW_CLOUD),
+    cloud: () => paint(paint(grid(), GREY_CLOUD.map((r) => r.slice(3) + '...')), LOW_CLOUD),
+    fog: (f) => {
+      const g = paint(grid(), GREY_CLOUD.slice(3, 10));
+      const lines = f ? [[1, 9, 10], [4, 11, 11], [0, 13, 9]] : [[3, 9, 11], [1, 11, 10], [3, 13, 11]];
+      lines.forEach(([x, y, n]) => { for (let i = 0; i < n; i += 1) g[y][x + i] = i % 4 === 3 ? 'B' : 'L'; });
+      return g;
+    },
+    rain: (f) => dots(paint(grid(), GREY_CLOUD.slice(2)), f
+      ? [[3, 11], [3, 12], [7, 13], [7, 14], [11, 11], [11, 12], [14, 13]]
+      : [[3, 13], [3, 14], [7, 11], [7, 12], [11, 13], [11, 14], [14, 11]], 'C'),
+    snow: (f) => dots(paint(grid(), GREY_CLOUD.slice(2)), f
+      ? [[3, 11], [7, 13], [11, 11], [14, 14], [1, 14]]
+      : [[3, 13], [7, 11], [11, 14], [14, 12], [5, 14]], 'W'),
+    storm: (f) => {
+      const g = paint(grid(), GREY_CLOUD.slice(2).map((r) => r.replace(/[LW]/g, 'B')));
+      dots(g, f ? [[3, 12], [3, 13], [13, 12], [13, 13]] : [[4, 11], [12, 14], [12, 13]], 'C');
+      return dots(g, [[9, 9], [8, 10], [7, 11], [6, 12], [7, 12], [8, 12], [7, 13], [6, 14], [5, 15]], f ? 'Y' : 'W');
+    },
+    moon: (f) => dots(crescent(grid(), 7, 8, 6), f ? [[12, 3], [14, 8], [10, 1]] : [[13, 5], [11, 10], [14, 1]], 'W'),
+    sunrise: () => horizonSun(grid(), 'R'),
+    sunset: () => horizonSun(grid(), 'M'),
+    tee: () => paint(grid(), TEE, { X: 'C' }),
+    jacket: () => paint(grid(), JACKET, { X: 'O' }),
+    coat: () => paint(grid(), JACKET, { X: 'M' })
+  };
+
+  const ANIMATED = new Set(['sun', 'mostly-sun', 'partly-cloudy', 'fog', 'rain', 'snow', 'storm', 'moon']);
+
+  // One path per colour, one horizontal run per subpath: far fewer nodes than a rect per pixel.
+  function runs(g) {
+    const byColor = {};
+    g.forEach((row, y) => {
+      for (let x = 0; x < row.length;) {
+        const c = row[x];
+        let end = x + 1;
+        while (end < row.length && row[end] === c) end += 1;
+        if (c !== '.') byColor[c] = (byColor[c] || '') + `M${x} ${y}h${end - x}v1h-${end - x}z`;
+        x = end;
+      }
+    });
+    return Object.keys(byColor).map((c) => `<path fill="${COLORS[c]}" d="${byColor[c]}"/>`).join('');
+  }
+
+  function wrap(body, w, h, cls) {
+    return `<svg class="px ${cls}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}</svg>`;
+  }
+
+  function icon(kind) {
+    const draw = KINDS[kind] || KINDS.cloud;
+    const body = ANIMATED.has(kind)
+      ? `<g class="px-a">${runs(draw(0))}</g><g class="px-b">${runs(draw(1))}</g>`
+      : runs(draw(0));
+    return wrap(body, 16, 16, 'px-icon');
+  }
+
+  // phase: 0 new, .25 first quarter, .5 full, .75 last quarter (northern hemisphere view).
+  function moon(phase) {
+    const p = ((phase % 1) + 1) % 1;
+    const c = Math.cos(2 * Math.PI * p);
+    const g = grid();
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        const dx = x - 7.5, dy = y - 7.5;
+        if (dx * dx + dy * dy > 56.25) continue;
+        const half = Math.sqrt(56.25 - dy * dy);
+        const lit = p < 0.5 ? dx > half * c : dx < -half * c;
+        const crater = (x * 7 + y * 13) % 11 === 0;
+        g[y][x] = lit ? (crater ? 'L' : 'G') : 'N';
+      }
+    }
+    return wrap(runs(g), 16, 16, 'px-icon px-moon');
+  }
+
+  const GLYPHS = {
+    0: ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    1: ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    2: ['01110', '10001', '00001', '00110', '01000', '10000', '11111'],
+    3: ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+    4: ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    5: ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+    6: ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    7: ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    8: ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    9: ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+    '-': ['000', '000', '000', '111', '000', '000', '000'],
+    ':': ['0', '1', '1', '0', '1', '1', '0'],
+    '°': ['111', '101', '111', '000', '000', '000', '000']
+  };
+
+  // Rows step from white to gold like a limited broadcast palette; `flat` keeps one colour
+  // and `bold` doubles each stroke for the big temperature.
+  const BANDS = ['#ffffff', '#ffffff', '#fff6c8', '#ffec8a', '#ffe14d', '#ffc933', '#ffae1f'];
+
+  function digits(text, options) {
+    const flat = options && options.flat;
+    const bold = options && options.bold ? 1 : 0;
+    const shadow = !(options && options.shadow === false);
+    const dark = [];
+    let x = 0;
+    const bands = Array(7).fill('');
+    String(text).split('').forEach((ch) => {
+      const glyph = GLYPHS[ch];
+      if (!glyph) { x += 3; return; }
+      const stroke = ch === '°' ? 0 : bold;
+      glyph.forEach((row, y) => {
+        for (let i = 0; i < row.length; i += 1) {
+          if (row[i] === '1') {
+            bands[y] += `M${x + i} ${y}h${1 + stroke}v1h-${1 + stroke}z`;
+            dark.push(`M${x + i + 1} ${y + 1}h${1 + stroke}v1h-${1 + stroke}z`);
+          }
+        }
+      });
+      x += glyph[0].length + 1 + stroke;
+    });
+    const width = Math.max(1, x - 1 + (shadow ? 1 : 0));
+    const height = 7 + (shadow ? 1 : 0);
+    const back = shadow ? `<path fill="#05072e" d="${dark.join('')}"/>` : '';
+    const front = flat
+      ? `<path fill="currentColor" d="${bands.join('')}"/>`
+      : bands.map((d, y) => (d ? `<path fill="${BANDS[y]}" d="${d}"/>` : '')).join('');
+    return wrap(back + front, width, height, 'px-digits');
+  }
+
+  const api = { icon, moon, digits, kinds: Object.keys(KINDS) };
+  root.PixelWeather = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);

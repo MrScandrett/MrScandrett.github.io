@@ -80,6 +80,7 @@
       button.dataset.themeArea = theme;
       button.dataset.originalCount = count;
       button.dataset.originalSubtitle = subtitle;
+      button.title = subtitle; // the atlas rows hide the description; hover still gives it
       button.style.setProperty("--module-color", moduleColors[theme] || "var(--accent)");
       button.innerHTML = '<span class="catalog-module-icon" aria-hidden="true">' + icon + '</span>' +
         '<span class="catalog-module-copy"><strong>' + title + '</strong><span class="catalog-module-sub">' + subtitle + '</span>' +
@@ -206,6 +207,9 @@
     if (directoryDescription) directoryDescription.textContent = selectedGrade === "k2" ?
       "Choose a subject to open its K–2 lessons." :
       "Subjects are grouped into six connected volumes. Choose one shelf and its lesson sequence opens in place.";
+    // All subjects at once is a one-screen atlas of compact rows. One volume, or
+    // K-2 with its large print, has the room for the full description cards.
+    directory.classList.toggle("is-atlas", selectedVolume === "all" && selectedGrade !== "k2");
     var visibleButtons = 0;
     directory.querySelectorAll(".catalog-module-button").forEach(function (button) {
       var row = button.closest(".catalog-volume-row");

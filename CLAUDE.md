@@ -409,6 +409,10 @@ so all themes style it.
   Progress is one localStorage key (`classroomos:puzzles:v1`, 60 days kept); solving any puzzle counts toward the streak.
 - **Banks:** `data/crossword-bank.json` (crossword vocab) and `data/daily-double-bank.json` (100 curated STEAM
   questions linked to lessons).
+- Full screen (the shared `creation-app.js` control) is its own layout, in the "full screen" block of `daily-puzzles.css`:
+  one row of chrome (`[data-dp-app]` and `.dp-bar` become `display: contents`), `.dp-panel` is a size container the boards
+  fit with `cq*` units, and `html:has(...)` scales the root font so every rem grows on a projector. Game layouts branch on
+  width, `pointer: coarse` and `max-height: 500px` (phone held sideways). The game takes focus on entry; F toggles from inside a game.
 - Tests: `node --test tests/daily-puzzles.test.mjs` (unique sudoku solutions, crossword runs, daily double bank hygiene,
   deterministic boards, 2 triple doubles per day).
 

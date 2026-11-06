@@ -12,7 +12,7 @@
   <meta property="og:url" content="https://mrscandrett.github.io/" />
   <link rel="preload" href="assets/fonts/chicago.woff" as="font" type="font/woff" crossorigin />
   <link rel="stylesheet" href="assets/css/classroom-home.css?v=20261027-fit4" />
-  <link rel="stylesheet" href="assets/css/pages/index.css?v=20261104-explore-v2" />
+  <link rel="stylesheet" href="assets/css/pages/index.css?v=20261105-explore-v3" />
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/liquid-woodland.css?v=20261027-fit4" />
   <link rel="stylesheet" href="assets/css/pages/votd.css" />
@@ -288,13 +288,16 @@
           </div>
         </div>
 
-        <div class="home-widget home-widget--weather" aria-label="Outdoor Readiness">
-          <div class="home-weather-shell" id="home-weather-shell" data-weather-status="loading" data-pager data-pager-mq="(max-width: 560px), (min-width: 1101px)">
-            <div class="weather-header" data-page="1" data-page-label="Now">
-              <span class="home-weather-station-wrap">Outdoor Readiness · <span class="home-weather-station" id="home-weather-station">LW_FL_32750</span></span>
-              <span class="home-weather-city" id="home-weather-city">LONGWOOD, FL</span>
+        <div class="home-widget home-widget--weather" aria-label="Outdoor Readiness" data-night-keep>
+          <div class="home-weather-shell" id="home-weather-shell" data-weather-status="loading" data-sky="day" data-pager data-pager-mq="(max-width: 560px), (min-width: 1101px)">
+            <div class="weather-header">
+              <div class="wx-masthead">
+                <span class="home-weather-city" id="home-weather-city">LONGWOOD, FL</span>
+                <span class="home-weather-station-wrap">Outdoor readiness <span class="home-weather-station" id="home-weather-station">LW_FL_32750</span></span>
+              </div>
+              <div class="wx-clock" aria-hidden="true"><span class="wx-clock-time" id="home-weather-clock"></span><span class="wx-clock-date" id="home-weather-date"></span></div>
             </div>
-            <p class="weather-learning-invite" data-page="1"><span aria-hidden="true">↗</span> Hover or tap a panel to investigate the reading.</p>
+            <p class="weather-learning-invite" data-page="1" data-page-label="Now"><span aria-hidden="true">↗</span> Hover or tap a panel to investigate the reading.</p>
             <div class="home-weather-dashboard" data-page="1">
               <div class="weather-primary weather-learning-panel" data-weather-topic="temperature">
                 <div class="weather-current-reading">
@@ -302,7 +305,7 @@
                     <p class="home-weather-temp" id="home-weather-temp">--°</p>
                     <p class="home-weather-feels" id="home-weather-feels">FEELS LIKE --°</p>
                   </div>
-                  <span class="home-weather-current-icon" id="home-weather-current-icon" aria-hidden="true">🌤️</span>
+                  <span class="home-weather-current-icon" id="home-weather-current-icon" aria-hidden="true"></span>
                 </div>
                 <div class="weather-current-action-row">
                   <p class="home-weather-condition" id="home-weather-condition">Loading conditions</p>
@@ -321,18 +324,22 @@
                 <div class="telemetry-stat weather-learning-panel" id="home-weather-wind-card" data-weather-topic="wind">
                   <span class="stat-label">Wind</span>
                   <span class="stat-value" id="home-weather-wind">-- MPH</span>
+                  <span class="wx-meter" id="home-weather-wind-meter" aria-hidden="true"></span>
                 </div>
                 <div class="telemetry-stat weather-learning-panel" id="home-weather-uv-card" data-weather-topic="uv">
                   <span class="stat-label">UV</span>
                   <span class="stat-value" id="home-weather-uv">--</span>
+                  <span class="wx-meter" id="home-weather-uv-meter" aria-hidden="true"></span>
                 </div>
                 <div class="telemetry-stat weather-learning-panel" id="home-weather-pollen-card" data-weather-topic="pollen">
                   <span class="stat-label">Pollen</span>
                   <span class="stat-value" id="home-weather-pollen">--</span>
+                  <span class="wx-meter" id="home-weather-pollen-meter" aria-hidden="true"></span>
                 </div>
                 <div class="telemetry-stat weather-learning-panel" id="home-weather-humidity-card" data-weather-topic="humidity">
                   <span class="stat-label">Humidity</span>
                   <span class="stat-value" id="home-weather-humidity">--%</span>
+                  <span class="wx-meter" id="home-weather-humidity-meter" aria-hidden="true"></span>
                 </div>
               </div>
             </div>
@@ -394,6 +401,12 @@
               <a href="lessons/earth-science/water-cycle.html" class="weather-lesson-link">Water Cycle</a>
               <a href="lessons/earth-science/rainbows.html" class="weather-lesson-link">Rainbows &amp; Light</a>
             </div>
+            <div class="wx-crawl" id="home-weather-crawl" hidden>
+              <span class="wx-crawl-tag" aria-hidden="true">Forecast</span>
+              <div class="wx-crawl-window" aria-hidden="true"><p class="wx-crawl-text" id="home-weather-crawl-text"></p></div>
+              <button type="button" class="wx-crawl-toggle" id="home-weather-crawl-toggle" aria-pressed="false" aria-label="Pause the forecast crawl" title="Pause the forecast crawl"><span aria-hidden="true"></span></button>
+            </div>
+            <div class="wx-static" aria-hidden="true"></div>
           </div>
         </div>
 
@@ -619,217 +632,161 @@
 
     <div class="home-tab-panel" id="tabpanel-explore" aria-labelledby="hometab-explore" role="tabpanel" tabindex="0" hidden>
     <section class="launch-grid-section" aria-labelledby="launch-grid-title">
-      <div class="explore-header-row">
-        <div class="section-heading">
-          <p class="home-widget-eyebrow">Major Destinations</p>
-          <h2 id="launch-grid-title">Creation tools &amp; studios</h2>
-        </div>
-        <div class="explore-controls" role="group" aria-label="Studio folder controls">
-          <button type="button" class="explore-toggle-all-btn" id="explore-expand-all">
-            <span aria-hidden="true">＋</span> Expand all
-          </button>
-          <button type="button" class="explore-toggle-all-btn" id="explore-collapse-all">
-            <span aria-hidden="true">−</span> Collapse all
-          </button>
-        </div>
+      <div class="section-heading explore-heading">
+        <p class="home-widget-eyebrow">Major Destinations</p>
+        <h2 id="launch-grid-title">Creation tools &amp; studios</h2>
       </div>
-      <p class="explore-intro">Make something here in your browser. Open a studio folder to find a creation suite, simulator, or in-lesson workspace.</p>
-      <div class="explore-folders">
-        <details class="explore-folder" data-category="2d-art">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+      <p class="explore-intro">Search for what you want to make, or pick a group to see its tools.</p>
+      <form class="explore-search" id="explore-search" role="search" hidden>
+        <label class="explore-search-label" for="explore-search-input">Find a tool</label>
+        <div class="explore-search-field">
+          <svg class="explore-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="M13 13l4.5 4.5" /></svg>
+          <input class="explore-search-input" id="explore-search-input" type="search" placeholder="Try sprite or 3D print" autocomplete="off" spellcheck="false" enterkeyhint="go" aria-describedby="explore-status" />
+        </div>
+        <p class="explore-status" id="explore-status" role="status"></p>
+      </form>
+      <div class="explore-browser" id="explore-browser">
+        <div class="explore-rail" id="explore-rail" role="group" aria-label="Tool groups" hidden></div>
+        <div class="explore-folders">
+          <section class="explore-folder explore-picked" id="explore-picked" aria-labelledby="explore-picked-title" hidden>
+            <header class="explore-folder-head">
+              <span class="explore-folder-icon" id="explore-picked-icon" aria-hidden="true"></span>
+              <div class="explore-folder-text">
+                <h3 class="explore-folder-title" id="explore-picked-title"></h3>
+                <p class="explore-folder-desc" id="explore-picked-desc"></p>
+              </div>
+            </header>
+            <ul class="explore-tools-grid" id="explore-picked-list"></ul>
+            <div class="explore-empty" id="explore-empty" hidden>
+              <p id="explore-empty-text"></p>
+              <button type="button" class="explore-empty-btn" id="explore-empty-clear">Clear search</button>
+            </div>
+          </section>
+          <section class="explore-folder" data-category="2d-art" aria-labelledby="explore-title-2d-art">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">🎨</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">2D Art &amp; Animation</span>
-                <span class="explore-folder-desc">Draw, edit images, arrange layouts, and animate.</span>
+                <h3 class="explore-folder-title" id="explore-title-2d-art">2D Art &amp; Animation</h3>
+                <p class="explore-folder-desc">Draw, edit images, arrange layouts, and animate.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">8 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="lessons/2d-design/vector-drawing-studio.html"><span class="explore-tool-name">Vector Drawing Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/2d-design/photo-editing-workshop.html"><span class="explore-tool-name">Photo Shop Clone · Layer Lab</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/2d-design/pivot-stick-animator.html"><span class="explore-tool-name">Stick Figure Animator</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/2d-design/composition-layout-studio.html"><span class="explore-tool-name">Composition &amp; Layout Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/design/typography-hierarchy-studio.html"><span class="explore-tool-name">Typography Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/2d-design/2d-game-dev/pixel-art-sprites.html"><span class="explore-tool-name">Pixel Art &amp; Sprites</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="apps/simple-paint-studio/"><span class="explore-tool-name">Simple Paint Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/design/origami.html"><span class="explore-tool-name">Origami Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="lessons/2d-design/vector-drawing-studio.html" data-keywords="logo illustrator svg bezier path icon" data-tool-main><span class="explore-tool-icon" aria-hidden="true">✒️</span><span class="explore-tool-text"><span class="explore-tool-name">Vector Drawing Studio</span><span class="explore-tool-desc">Draw shapes and curves, then build an emblem.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/2d-design/photo-editing-workshop.html" data-keywords="photoshop photo shop clone picture image retouch" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🖼️</span><span class="explore-tool-text"><span class="explore-tool-name">Layer Lab Photo Editor</span><span class="explore-tool-desc">Edit photos with layers, masks and blend modes.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/2d-design/pivot-stick-animator.html" data-keywords="pivot rig keyframe cartoon"><span class="explore-tool-icon" aria-hidden="true">🏃</span><span class="explore-tool-text"><span class="explore-tool-name">Stick Figure Animator</span><span class="explore-tool-desc">Pose stick figures and animate them frame by frame.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/2d-design/composition-layout-studio.html" data-keywords="poster flyer design canva balance"><span class="explore-tool-icon" aria-hidden="true">📐</span><span class="explore-tool-text"><span class="explore-tool-name">Composition &amp; Layout Studio</span><span class="explore-tool-desc">Arrange a page so people read it in the right order.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/design/typography-hierarchy-studio.html" data-keywords="font text lettering hierarchy poster"><span class="explore-tool-icon" aria-hidden="true">🔤</span><span class="explore-tool-text"><span class="explore-tool-name">Typography Studio</span><span class="explore-tool-desc">Set type with clear size, weight and spacing.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/2d-design/2d-game-dev/pixel-art-sprites.html" data-keywords="sprite piskel aseprite retro game character"><span class="explore-tool-icon" aria-hidden="true">👾</span><span class="explore-tool-text"><span class="explore-tool-name">Pixel Art &amp; Sprites</span><span class="explore-tool-desc">Draw game characters and animate their actions.</span></span></a></li>
+              <li><a class="explore-tool-link" href="apps/simple-paint-studio/" data-keywords="draw sketch mspaint brush"><span class="explore-tool-icon" aria-hidden="true">🖌️</span><span class="explore-tool-text"><span class="explore-tool-name">Simple Paint Studio</span><span class="explore-tool-desc">Paint freely on a blank canvas.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/design/origami.html" data-keywords="paper crane fold math"><span class="explore-tool-icon" aria-hidden="true">🦢</span><span class="explore-tool-text"><span class="explore-tool-name">Origami Studio</span><span class="explore-tool-desc">Fold paper models step by step.</span></span></a></li>
             </ul>
-          </div>
-        </details>
-
-        <details class="explore-folder" data-category="3d-modeling">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+          </section>
+          <section class="explore-folder" data-category="3d-modeling" aria-labelledby="explore-title-3d-modeling">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">🧊</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">3D Modeling &amp; Fabrication</span>
-                <span class="explore-folder-desc">Build models, sculpt surfaces, and prepare printable parts.</span>
+                <h3 class="explore-folder-title" id="explore-title-3d-modeling">3D Modeling &amp; Fabrication</h3>
+                <p class="explore-folder-desc">Build models, sculpt surfaces, and prepare printable parts.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">11 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="workbench.html"><span class="explore-tool-name">3D Workshop</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="forge.html"><span class="explore-tool-name">3D Forge</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/sculpture/marble-sculpture.html"><span class="explore-tool-name">Marble Sculptor</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/blueprint-drafting.html"><span class="explore-tool-name">Blueprint Drafting</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/tinkercad-codeblocks.html"><span class="explore-tool-name">Codeblocks Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-interface-basics.html"><span class="explore-tool-name">Arrange a display</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-sculpting.html"><span class="explore-tool-name">Sculpt a surface</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-windows-doors.html"><span class="explore-tool-name">Cut an opening</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/3d-printing.html"><span class="explore-tool-name">Plan a printable orientation</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/cad-camera-controls.html"><span class="explore-tool-name">Navigate and inspect</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/print-fidgets.html"><span class="explore-tool-name">Design a moving fit</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="workbench.html" data-keywords="3d workshop tinkercad cad stl print model architecture building glb" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🛠️</span><span class="explore-tool-text"><span class="explore-tool-name">Workbench</span><span class="explore-tool-desc">Build anything in 3D from shapes and holes.</span></span></a></li>
+              <li><a class="explore-tool-link" href="forge.html" data-keywords="3d forge parametric gear case name tag fidget stl print" data-tool-main><span class="explore-tool-icon" aria-hidden="true">⚙️</span><span class="explore-tool-text"><span class="explore-tool-name">Forge</span><span class="explore-tool-desc">Set a few numbers and get a printable part.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/sculpture/marble-sculpture.html" data-keywords="sculpture statue chisel stone likeness stl" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🗿</span><span class="explore-tool-text"><span class="explore-tool-name">Marble Sculptor</span><span class="explore-tool-desc">Carve a statue from a virtual block of marble.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/blueprint-drafting.html" data-keywords="floor plan architecture cad technical drawing"><span class="explore-tool-icon" aria-hidden="true">📏</span><span class="explore-tool-text"><span class="explore-tool-name">Blueprint Drafting</span><span class="explore-tool-desc">Draw plans to scale, like an architect.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/tinkercad-codeblocks.html" data-keywords="tinkercad block code fidget ring stl print"><span class="explore-tool-icon" aria-hidden="true">🧩</span><span class="explore-tool-text"><span class="explore-tool-name">Codeblocks Studio</span><span class="explore-tool-desc">Plan printable fidgets as Tinkercad Codeblocks recipes.</span><span class="explore-tool-needs">Finishes in Tinkercad</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-interface-basics.html" data-keywords="translate rotate scale blender basics"><span class="explore-tool-icon" aria-hidden="true">📦</span><span class="explore-tool-text"><span class="explore-tool-name">Arrange a display</span><span class="explore-tool-desc">Move, rotate and scale a block on the floor.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-sculpting.html" data-keywords="brush mesh blender terrain displacement"><span class="explore-tool-icon" aria-hidden="true">🏔️</span><span class="explore-tool-text"><span class="explore-tool-name">Sculpt a surface</span><span class="explore-tool-desc">Push ridges and valleys into a real mesh.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-windows-doors.html" data-keywords="boolean difference hole blender"><span class="explore-tool-icon" aria-hidden="true">🚪</span><span class="explore-tool-text"><span class="explore-tool-name">Cut an opening</span><span class="explore-tool-desc">Cut a door or window into a wall.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/3d-printing.html" data-keywords="3d print slicer supports bed"><span class="explore-tool-icon" aria-hidden="true">🖨️</span><span class="explore-tool-text"><span class="explore-tool-name">Plan a printable orientation</span><span class="explore-tool-desc">Rotate a part so it prints well on the bed.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/cad-camera-controls.html" data-keywords="camera orbit pan zoom view"><span class="explore-tool-icon" aria-hidden="true">🎥</span><span class="explore-tool-text"><span class="explore-tool-name">Navigate and inspect</span><span class="explore-tool-desc">Learn to orbit and view an object from every side.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/cad-and-printing/print-fidgets.html" data-keywords="fidget clearance axle ring print tolerance"><span class="explore-tool-icon" aria-hidden="true">🌀</span><span class="explore-tool-text"><span class="explore-tool-name">Design a moving fit</span><span class="explore-tool-desc">Set the gap so printed parts can spin.</span></span></a></li>
             </ul>
-          </div>
-        </details>
-
-        <details class="explore-folder" data-category="3d-studios">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+          </section>
+          <section class="explore-folder" data-category="3d-studios" aria-labelledby="explore-title-3d-studios">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">🪑</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">3D Studios &amp; Game Assets</span>
-                <span class="explore-folder-desc">Model characters, create textures, rig, animate, and render.</span>
+                <h3 class="explore-folder-title" id="explore-title-3d-studios">3D Studios &amp; Game Assets</h3>
+                <p class="explore-folder-desc">Model characters, create textures, rig, animate, and render.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">11 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-character-modeling.html"><span class="explore-tool-name">Character Creator</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-furniture-design.html"><span class="explore-tool-name">Furniture Form Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-textures.html"><span class="explore-tool-name">Texture Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-character-rigging.html"><span class="explore-tool-name">Character Rigging</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-character-animation.html"><span class="explore-tool-name">Character Animation</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-uv-export.html"><span class="explore-tool-name">UV &amp; Export Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-compositing.html"><span class="explore-tool-name">Compose a finished image</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-environments.html"><span class="explore-tool-name">Assemble a room kit</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-geometry-nodes.html"><span class="explore-tool-name">Build a repeatable design</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-materials-render.html"><span class="explore-tool-name">Light and present your model</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-props-tools.html"><span class="explore-tool-name">Finish a hard-surface prop</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-character-modeling.html" data-keywords="avatar person body face hair outfit glb game blender"><span class="explore-tool-icon" aria-hidden="true">🧑‍🎨</span><span class="explore-tool-text"><span class="explore-tool-name">Character Creator</span><span class="explore-tool-desc">Design a 3D character and export it.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-furniture-design.html" data-keywords="chair table proportion blender"><span class="explore-tool-icon" aria-hidden="true">🪑</span><span class="explore-tool-text"><span class="explore-tool-name">Furniture Form Studio</span><span class="explore-tool-desc">Design chairs, stools, benches and lounges.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-textures.html" data-keywords="material tile seamless pattern"><span class="explore-tool-icon" aria-hidden="true">🧱</span><span class="explore-tool-text"><span class="explore-tool-name">Texture Studio</span><span class="explore-tool-desc">Design a surface pattern that repeats cleanly.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-character-rigging.html" data-keywords="rig bones skin weights skeleton"><span class="explore-tool-icon" aria-hidden="true">🦴</span><span class="explore-tool-text"><span class="explore-tool-name">Character Rigging</span><span class="explore-tool-desc">Add joints so a mesh can bend.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-character-animation.html" data-keywords="walk cycle loop keyframe timeline"><span class="explore-tool-icon" aria-hidden="true">🕺</span><span class="explore-tool-text"><span class="explore-tool-name">Character Animation</span><span class="explore-tool-desc">Pose keyframes and play a looping action.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/game-asset-studio/game-asset-uv-export.html" data-keywords="uv unwrap glb export asset bench"><span class="explore-tool-icon" aria-hidden="true">🗺️</span><span class="explore-tool-text"><span class="explore-tool-name">UV &amp; Export Studio</span><span class="explore-tool-desc">Map a texture to a model and check the files.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-compositing.html" data-keywords="render exposure background blender"><span class="explore-tool-icon" aria-hidden="true">🌅</span><span class="explore-tool-text"><span class="explore-tool-name">Compose a finished image</span><span class="explore-tool-desc">Set your 3D design against a background.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-environments.html" data-keywords="level modular grid snapping environment blender"><span class="explore-tool-icon" aria-hidden="true">🏠</span><span class="explore-tool-text"><span class="explore-tool-name">Assemble a room kit</span><span class="explore-tool-desc">Snap repeating tiles into a room.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-geometry-nodes.html" data-keywords="procedural geometry nodes pattern blender"><span class="explore-tool-icon" aria-hidden="true">🔁</span><span class="explore-tool-text"><span class="explore-tool-name">Build a repeatable design</span><span class="explore-tool-desc">Use one rule to set count, spacing and height.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-materials-render.html" data-keywords="render material lighting blender"><span class="explore-tool-icon" aria-hidden="true">💡</span><span class="explore-tool-text"><span class="explore-tool-name">Light and present your model</span><span class="explore-tool-desc">Choose a surface and light for your model.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/3d-design/blender/blender-props-tools.html" data-keywords="bevel prop weapon hammer blender"><span class="explore-tool-icon" aria-hidden="true">🔨</span><span class="explore-tool-text"><span class="explore-tool-name">Finish a hard-surface prop</span><span class="explore-tool-desc">Design a tool with clean beveled edges.</span></span></a></li>
             </ul>
-          </div>
-        </details>
-
-        <details class="explore-folder" data-category="coding">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+          </section>
+          <section class="explore-folder" data-category="coding" aria-labelledby="explore-title-coding">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">⌨️</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">Coding, Websites &amp; Games</span>
-                <span class="explore-folder-desc">Create websites, program games, and explore software.</span>
+                <h3 class="explore-folder-title" id="explore-title-coding">Coding, Websites &amp; Games</h3>
+                <p class="explore-folder-desc">Create websites, program games, and explore software.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">10 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="lessons/web-design/web-studio.html"><span class="explore-tool-name">Web Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/web-design/web-project-studio.html"><span class="explore-tool-name">Website Project Studios</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/web-design/web-creative-lab.html"><span class="explore-tool-name">Web Creative Lab</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/web-design/web-first-site.html"><span class="explore-tool-name">First Website Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/computer-science/graphics-and-games/rosetta-2d.html"><span class="explore-tool-name">Rosetta 2D Game Engine</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/computer-science/graphics-and-games/tool-rosetta.html"><span class="explore-tool-name">Tool Rosetta</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/godot/godot-basics.html"><span class="explore-tool-name">Godot Game Workshop</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="code-bridge.html"><span class="explore-tool-name">Code Bridge</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="OSeditor.html"><span class="explore-tool-name">OSeditor</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/computer-science/foundations/operating-systems-and-terminal.html"><span class="explore-tool-name">Operating Systems &amp; Terminal</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="lessons/web-design/web-studio.html" data-keywords="website html css page class site publish" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🌐</span><span class="explore-tool-text"><span class="explore-tool-name">Web Studio</span><span class="explore-tool-desc">Build a website by drawing, blocks or code.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/web-design/web-project-studio.html" data-keywords="website template starter html css javascript business"><span class="explore-tool-icon" aria-hidden="true">🗂️</span><span class="explore-tool-text"><span class="explore-tool-name">Website Project Studios</span><span class="explore-tool-desc">Download a starter pack for a portfolio, store or wiki.</span><span class="explore-tool-needs">Works with VS Code</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/web-design/web-creative-lab.html" data-keywords="canvas animation javascript website interactive"><span class="explore-tool-icon" aria-hidden="true">✨</span><span class="explore-tool-text"><span class="explore-tool-name">Web Creative Lab</span><span class="explore-tool-desc">Animate on a canvas and embed your work on a site.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/web-design/web-first-site.html" data-keywords="website beginner html css javascript vscode"><span class="explore-tool-icon" aria-hidden="true">🐣</span><span class="explore-tool-text"><span class="explore-tool-name">First Website Studio</span><span class="explore-tool-desc">Make your first site from three linked files.</span><span class="explore-tool-needs">Needs VS Code</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/computer-science/graphics-and-games/rosetta-2d.html" data-keywords="game engine javascript platformer code" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🎮</span><span class="explore-tool-text"><span class="explore-tool-name">Rosetta 2D Game Engine</span><span class="explore-tool-desc">Program 2D games in the class’s own engine.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/computer-science/graphics-and-games/tool-rosetta.html" data-keywords="compare unity unreal gamemaker phaser blender translate reference"><span class="explore-tool-icon" aria-hidden="true">🔀</span><span class="explore-tool-text"><span class="explore-tool-name">Tool Rosetta</span><span class="explore-tool-desc">See how one idea works in every engine and 3D app.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/godot/godot-basics.html" data-keywords="game engine gdscript 3d nodes scenes"><span class="explore-tool-icon" aria-hidden="true">🤖</span><span class="explore-tool-text"><span class="explore-tool-name">Godot Game Workshop</span><span class="explore-tool-desc">Build a small controllable 3D room in Godot.</span><span class="explore-tool-needs">Needs Godot</span></span></a></li>
+              <li><a class="explore-tool-link" href="code-bridge.html" data-keywords="ai assistant prompt checkpoint code"><span class="explore-tool-icon" aria-hidden="true">🌉</span><span class="explore-tool-text"><span class="explore-tool-name">Code Bridge</span><span class="explore-tool-desc">Prepare AI coding requests and review the replies.</span><span class="explore-tool-needs">Works with VS Code</span></span></a></li>
+              <li><a class="explore-tool-link" href="OSeditor.html" data-keywords="teacher admin import submission publish"><span class="explore-tool-icon" aria-hidden="true">📝</span><span class="explore-tool-text"><span class="explore-tool-name">OSeditor</span><span class="explore-tool-desc">Edit site pages and publish student work.</span><span class="explore-tool-needs">Teacher only, on the local server</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/computer-science/foundations/operating-systems-and-terminal.html" data-keywords="command line shell linux mac windows bash"><span class="explore-tool-icon" aria-hidden="true">💻</span><span class="explore-tool-text"><span class="explore-tool-name">Operating Systems &amp; Terminal</span><span class="explore-tool-desc">Practice files and commands in a safe terminal.</span></span></a></li>
             </ul>
-          </div>
-        </details>
-
-        <details class="explore-folder" data-category="music">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+          </section>
+          <section class="explore-folder" data-category="music" aria-labelledby="explore-title-music">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">🎹</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">Music &amp; Sound</span>
-                <span class="explore-folder-desc">Compose, sequence, and play virtual instruments.</span>
+                <h3 class="explore-folder-title" id="explore-title-music">Music &amp; Sound</h3>
+                <p class="explore-folder-desc">Compose, sequence, and play virtual instruments.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">6 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="music-lab.html"><span class="explore-tool-name">Music Lab &amp; Recording Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/music/instruments/piano.html"><span class="explore-tool-name">Piano</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/music/instruments/drums.html"><span class="explore-tool-name">Drum Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/music/instruments/guitar.html"><span class="explore-tool-name">Guitar</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/music/instruments/violin-fingerboard.html"><span class="explore-tool-name">Violin Fingerboard</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/music/instruments/saxophone.html"><span class="explore-tool-name">Saxophone</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="music-lab.html" data-keywords="daw garageband midi audio compose beat multitrack piano roll wav" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🎚️</span><span class="explore-tool-text"><span class="explore-tool-name">Music Lab &amp; Recording Studio</span><span class="explore-tool-desc">Record tracks and mix a song.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/music/instruments/piano.html" data-keywords="keys chords triads keyboard"><span class="explore-tool-icon" aria-hidden="true">🎹</span><span class="explore-tool-text"><span class="explore-tool-name">Piano</span><span class="explore-tool-desc">Learn the keyboard and build chords.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/music/instruments/drums.html" data-keywords="beat rhythm rudiments percussion"><span class="explore-tool-icon" aria-hidden="true">🥁</span><span class="explore-tool-text"><span class="explore-tool-name">Drum Studio</span><span class="explore-tool-desc">Read drum notation and play beats and fills.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/music/instruments/guitar.html" data-keywords="strings chords electric acoustic"><span class="explore-tool-icon" aria-hidden="true">🎸</span><span class="explore-tool-text"><span class="explore-tool-name">Guitar</span><span class="explore-tool-desc">Map frets and play chords.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/music/instruments/violin-fingerboard.html" data-keywords="strings bow fiddle tuning fifths"><span class="explore-tool-icon" aria-hidden="true">🎻</span><span class="explore-tool-text"><span class="explore-tool-name">Violin Fingerboard</span><span class="explore-tool-desc">Explore the strings and find every note.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/music/instruments/saxophone.html" data-keywords="sax reed jazz melody woodwind"><span class="explore-tool-icon" aria-hidden="true">🎷</span><span class="explore-tool-text"><span class="explore-tool-name">Saxophone</span><span class="explore-tool-desc">Learn fingerings and compose a phrase.</span></span></a></li>
             </ul>
-          </div>
-        </details>
-
-        <details class="explore-folder" data-category="engineering">
-          <summary class="explore-folder-summary">
-            <div class="explore-folder-header">
+          </section>
+          <section class="explore-folder" data-category="engineering" aria-labelledby="explore-title-engineering">
+            <header class="explore-folder-head">
               <span class="explore-folder-icon" aria-hidden="true">🤖</span>
               <div class="explore-folder-text">
-                <span class="explore-folder-title">Engineering &amp; Invention</span>
-                <span class="explore-folder-desc">Design robots, build circuits, and test ideas.</span>
+                <h3 class="explore-folder-title" id="explore-title-engineering">Engineering &amp; Invention</h3>
+                <p class="explore-folder-desc">Design robots, build circuits, and test ideas.</p>
               </div>
-            </div>
-            <div class="explore-folder-meta">
               <span class="explore-folder-count">6 tools</span>
-              <span class="explore-folder-chevron" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 7.5L10 12.5L15 7.5" />
-                </svg>
-              </span>
-            </div>
-          </summary>
-          <div class="explore-folder-content">
+            </header>
             <ul class="explore-tools-grid">
-              <li><a class="explore-tool-link" href="lessons/engineering/robotics/robot-build-studio.html"><span class="explore-tool-name">Robot Build Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/engineering/robotics/robot-car-pilot.html"><span class="explore-tool-name">Robot Car Pilot</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/engineering/mechanical-and-civil-design/engineering-design-process-studio.html"><span class="explore-tool-name">Engineering Design Studio</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/engineering/arduino-and-electronics/electronic-schematics.html"><span class="explore-tool-name">Electronic Schematics</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="lessons/engineering/arduino-and-electronics/breadboard-basics.html"><span class="explore-tool-name">Breadboard Lab</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
-              <li><a class="explore-tool-link" href="index.html#sandbox"><span class="explore-tool-name">Physics &amp; Drawing Board</span><span class="explore-tool-arrow" aria-hidden="true">→</span></a></li>
+              <li><a class="explore-tool-link" href="lessons/engineering/robotics/robot-build-studio.html" data-keywords="robotics fabricate assemble arduino"><span class="explore-tool-icon" aria-hidden="true">🦾</span><span class="explore-tool-text"><span class="explore-tool-name">Robot Build Studio</span><span class="explore-tool-desc">Design, build and test a robot over eight missions.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/engineering/robotics/robot-car-pilot.html" data-keywords="elegoo bluetooth wifi joystick drive sensors camera" data-tool-main><span class="explore-tool-icon" aria-hidden="true">🏎️</span><span class="explore-tool-text"><span class="explore-tool-name">Robot Car Pilot</span><span class="explore-tool-desc">Drive the class robot car, or try the simulator.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/engineering/mechanical-and-civil-design/engineering-design-process-studio.html" data-keywords="design process prototype constraints iterate"><span class="explore-tool-icon" aria-hidden="true">🚁</span><span class="explore-tool-text"><span class="explore-tool-name">Engineering Design Studio</span><span class="explore-tool-desc">Take a rescue drone from brief to tested design.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/engineering/arduino-and-electronics/electronic-schematics.html" data-keywords="circuit symbols diagram arduino wiring"><span class="explore-tool-icon" aria-hidden="true">📟</span><span class="explore-tool-text"><span class="explore-tool-name">Electronic Schematics</span><span class="explore-tool-desc">Read and draw circuit diagrams.</span></span></a></li>
+              <li><a class="explore-tool-link" href="lessons/engineering/arduino-and-electronics/breadboard-basics.html" data-keywords="circuit arduino wires resistor led prototype"><span class="explore-tool-icon" aria-hidden="true">🔌</span><span class="explore-tool-text"><span class="explore-tool-name">Breadboard Lab</span><span class="explore-tool-desc">Wire and debug circuits on a virtual breadboard.</span></span></a></li>
+              <li><a class="explore-tool-link" href="index.html#sandbox" data-keywords="sandbox gravity simulation whiteboard draw"><span class="explore-tool-icon" aria-hidden="true">🧪</span><span class="explore-tool-text"><span class="explore-tool-name">Physics &amp; Drawing Board</span><span class="explore-tool-desc">Sketch freely and test things with physics.</span></span></a></li>
             </ul>
-          </div>
-        </details>
+          </section>
+        </div>
       </div>
       <div class="section-heading explore-hubs-heading">
         <p class="home-widget-eyebrow">Classroom Hubs</p>
@@ -1130,9 +1087,11 @@
   <script src="assets/js/pages/index-updates.js" defer></script>
   <script data-home-src="assets/js/storm-engine.js" data-home-widget="#home-weather-shell" defer></script>
   <script data-home-src="assets/js/pages/index-live-sky.js" data-home-widget="#home-weather-shell" defer></script>
+  <script data-home-src="assets/js/pixel-weather.js" data-home-widget="#home-weather-shell" defer></script>
   <script data-home-src="assets/js/pages/index-home-widgets.js" data-home-widget="#home-weather-shell" defer></script>
   <script data-home-src="assets/js/pages/index-video.js" data-home-widget=".home-widget--vod" defer></script>
   <script src="assets/js/visitor-memory.js" defer></script>
+  <script src="assets/js/pages/index-studio-picker.js" defer></script>
   <!-- =====================================================
        WORD OF THE DAY
        ===================================================== -->

@@ -28,7 +28,18 @@
         windCard: document.getElementById('home-weather-wind-card'),
         humidityCard: document.getElementById('home-weather-humidity-card'),
         uvCard: document.getElementById('home-weather-uv-card'),
-        pollenCard: document.getElementById('home-weather-pollen-card')
+        pollenCard: document.getElementById('home-weather-pollen-card'),
+        clock: document.getElementById('home-weather-clock'),
+        date: document.getElementById('home-weather-date'),
+        crawl: document.getElementById('home-weather-crawl'),
+        crawlText: document.getElementById('home-weather-crawl-text'),
+        crawlToggle: document.getElementById('home-weather-crawl-toggle'),
+        meters: {
+          wind: document.getElementById('home-weather-wind-meter'),
+          uv: document.getElementById('home-weather-uv-meter'),
+          pollen: document.getElementById('home-weather-pollen-meter'),
+          humidity: document.getElementById('home-weather-humidity-meter')
+        }
       };
 
       const WEATHER_LESSONS = {
@@ -410,8 +421,8 @@
         weatherEls.status.textContent = data.status;
         weatherEls.shell.dataset.weatherStatus = data.status.includes('WATCH') ? 'watch' : (data.status.includes('ADVISORY') ? 'advisory' : 'nominal');
         weatherEls.condition.textContent = data.condition.toUpperCase();
-        weatherEls.currentIcon.textContent = data.currentIcon;
-        weatherEls.temp.textContent = `${Math.round(data.temperature)}°`;
+        weatherEls.currentIcon.innerHTML = pixelIcon(data.currentIcon);
+        setBigTemperature(`${Math.round(data.temperature)}°`);
         weatherEls.feels.textContent = `FEELS LIKE ${Math.round(data.feelsLike)}°`;
         weatherEls.min.textContent = `${Math.round(data.min)}°`;
         weatherEls.max.textContent = `${Math.round(data.max)}°`;
@@ -422,18 +433,127 @@
         weatherEls.pollen.textContent = data.pollen.display;
         weatherEls.uvCard.classList.toggle('telemetry-stat--alert', data.uvAlert);
         weatherEls.pollenCard.classList.toggle('telemetry-stat--alert', data.pollenAlert);
+        setMeter('wind', data.wind / 40);
+        setMeter('uv', (data.uv != null ? data.uv : parseFloat(data.uvLabel)) / 11);
+        setMeter('pollen', data.pollen.score / 3);
+        setMeter('humidity', data.humidity / 100);
+        weatherEls.shell.dataset.sky = skyMood(data);
         weatherEls.forecast.innerHTML = data.forecast.map((day) => `
           <div class="forecast-slot">
             <span class="forecast-day">${day.label}</span>
-            <span class="forecast-icon" aria-hidden="true">${day.icon}</span>
+            <span class="forecast-icon" aria-hidden="true">${pixelIcon(day.icon)}</span>
             <span class="forecast-temp">${Math.round(day.max)}°</span>
+            ${day.min != null ? `<span class="forecast-low">${Math.round(day.min)}°</span>` : ''}
           </div>
         `).join('');
         weatherEls.solar.innerHTML = buildSolarSection(data);
         weatherEls.clothing.innerHTML = buildClothingAdvice(data);
         weatherEls.precipChart.innerHTML = buildPrecipChart(data.precipData, data.forecast);
         hydrateWeatherLearningPanels();
+        setCrawl(data);
+        tuneIn();
       }
+
+      // ── Retro broadcast dressing: pixel art, meters, sky, clock, crawl, static ──
+      const PIXEL_KINDS = {
+        '☀️': 'sun', '🌤️': 'mostly-sun', '⛅': 'partly-cloudy', '☁️': 'cloud', '🌫️': 'fog',
+        '🌧️': 'rain', '❄️': 'snow', '⛈️': 'storm', '🌙': 'moon'
+      };
+
+      function pixelIcon(emoji) {
+        return window.PixelWeather.icon(PIXEL_KINDS[emoji] || 'cloud');
+      }
+
+      function setBigTemperature(text) {
+        weatherEls.temp.innerHTML = `<span class="wx-sr">${text}</span>${window.PixelWeather.digits(text, { bold: true })}`;
+      }
+
+      const METER_SEGMENTS = 10;
+
+      function setMeter(name, fraction) {
+        const lit = fraction > 0 ? Math.max(1, Math.min(METER_SEGMENTS, Math.round(fraction * METER_SEGMENTS))) : 0;
+        weatherEls.meters[name].innerHTML = Array.from({ length: METER_SEGMENTS }, (_, i) => `<i${i < lit ? ' class="on"' : ''}></i>`).join('');
+      }
+
+      // The band of sky behind the panels follows the real sun and the current conditions.
+      function skyMood({ currentIcon, sunrise, sunset }) {
+        const now = Date.now();
+        const twilight = 45 * 60 * 1000;
+        if (currentIcon === '⛈️') return 'storm';
+        if (sunrise && sunset) {
+          if (Math.abs(now - sunrise) < twilight || Math.abs(now - sunset) < twilight) return 'dusk';
+          if (now < sunrise || now > sunset) return 'night';
+        }
+        return ['🌧️', '☁️', '🌫️', '❄️'].includes(currentIcon) ? 'grey' : 'day';
+      }
+
+      // One field rule a day from the lessons above, so the crawl teaches as well as reports.
+      function crawlFieldRule() {
+        const lessons = Object.values(WEATHER_LESSONS);
+        const day = Math.floor(Date.now() / 86400000);
+        return lessons[day % lessons.length].takeaway;
+      }
+
+      function setCrawl(data) {
+        const moon = getMoonPhase(new Date());
+        const tomorrow = data.forecast[1];
+        const items = [
+          `Today: high ${Math.round(data.max)}, low ${Math.round(data.min)}, ${data.rainChance}% chance of rain`,
+          tomorrow ? `${tomorrow.label} high ${Math.round(tomorrow.max)}` : '',
+          data.sunrise && data.sunset ? `Sunrise ${formatClockInZone(data.sunrise, data.utcOffsetSeconds)}, sunset ${formatClockInZone(data.sunset, data.utcOffsetSeconds)}` : '',
+          `${moon.name}, ${moon.illumination}% lit`,
+          `Field rule: ${crawlFieldRule()}`
+        ].filter(Boolean);
+        weatherEls.crawlText.innerHTML = items.map((item) => `<span>${item}</span>`).join('');
+        weatherEls.crawl.hidden = false;
+        // A steady reading speed however long today's text is.
+        weatherEls.crawlText.style.setProperty('--wx-crawl-s', `${Math.max(30, Math.round(weatherEls.crawlText.scrollWidth / 70))}s`);
+      }
+
+      weatherEls.crawlToggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const paused = weatherEls.crawl.classList.toggle('is-paused');
+        const label = paused ? 'Play the forecast crawl' : 'Pause the forecast crawl';
+        weatherEls.crawlToggle.setAttribute('aria-pressed', paused ? 'true' : 'false');
+        weatherEls.crawlToggle.setAttribute('aria-label', label);
+        weatherEls.crawlToggle.title = label;
+      });
+
+      function tuneIn() {
+        weatherEls.shell.classList.remove('is-tuning');
+        void weatherEls.shell.offsetWidth; // restart the burst if one is already running
+        weatherEls.shell.classList.add('is-tuning');
+      }
+
+      weatherEls.shell.addEventListener('animationend', (event) => {
+        if (event.target.classList.contains('wx-static')) weatherEls.shell.classList.remove('is-tuning');
+      });
+
+      weatherEls.shell.addEventListener('click', (event) => {
+        if (event.target.closest('.wp-pill')) tuneIn();
+      });
+
+      let weatherOnScreen = true;
+
+      function tickClock() {
+        if (document.hidden || !weatherOnScreen) return;
+        const now = new Date();
+        const hours = now.getHours();
+        const pad = (n) => String(n).padStart(2, '0');
+        weatherEls.clock.innerHTML = `${window.PixelWeather.digits(`${hours % 12 || 12}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`, { flat: true, shadow: false })}<b>${hours >= 12 ? 'PM' : 'AM'}</b>`;
+        weatherEls.date.textContent = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+
+      // Nothing on the set moves while the card is out of sight.
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => {
+          weatherOnScreen = entry.isIntersecting;
+          weatherEls.shell.classList.toggle('is-offscreen', !weatherOnScreen);
+          if (weatherOnScreen) tickClock();
+        }, { rootMargin: '200px' }).observe(weatherEls.shell);
+      }
+      setInterval(tickClock, 1000);
+      tickClock();
 
       function weatherLabelFromCode(code) {
         const map = {
@@ -471,7 +591,9 @@
 
       function weatherIconFromCode(code) {
         if (code === 0) return '☀️';
-        if (code <= 3) return '⛅';
+        if (code === 1) return '🌤️';
+        if (code === 2) return '⛅';
+        if (code === 3) return '☁️';
         if (code >= 45 && code <= 48) return '🌫️';
         if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '🌧️';
         if (code >= 71 && code <= 86) return '❄️';
@@ -518,28 +640,29 @@
 
       function buildClothingAdvice({ temperature, rainChance, uvAlert, wind }) {
         const temp = Math.round(temperature);
-        let emoji, mainText;
+        const { icon } = window.PixelWeather;
+        let art, mainText;
         if (temp >= 95) {
-          emoji = '🥵'; mainText = `It's blazing at ${temp}° — wear light, loose clothing. Light colors reflect heat!`;
+          art = icon('sun'); mainText = `It's blazing at ${temp}° — wear light, loose clothing. Light colors reflect heat!`;
         } else if (temp >= 85) {
-          emoji = '☀️'; mainText = `Hot day at ${temp}°! T-shirt and shorts weather — stay cool and hydrated.`;
+          art = icon('sun'); mainText = `Hot day at ${temp}°! T-shirt and shorts weather — stay cool and hydrated.`;
         } else if (temp >= 75) {
-          emoji = '😎'; mainText = `Warm and comfortable at ${temp}°. Light clothes like a tee and jeans work great.`;
+          art = icon('tee'); mainText = `Warm and comfortable at ${temp}°. Light clothes like a tee and jeans work great.`;
         } else if (temp >= 65) {
-          emoji = '🌤️'; mainText = `Mild at ${temp}°. A light layer or long sleeves — perfect for time outside.`;
+          art = icon('jacket'); mainText = `Mild at ${temp}°. A light layer or long sleeves — perfect for time outside.`;
         } else if (temp >= 50) {
-          emoji = '🍂'; mainText = `Cool at ${temp}°. Grab a hoodie or light jacket before heading out!`;
+          art = icon('jacket'); mainText = `Cool at ${temp}°. Grab a hoodie or light jacket before heading out!`;
         } else if (temp >= 32) {
-          emoji = '🧥'; mainText = `Cold at ${temp}°! Bundle up with a coat, scarf, and warm layers.`;
+          art = icon('coat'); mainText = `Cold at ${temp}°! Bundle up with a coat, scarf, and warm layers.`;
         } else {
-          emoji = '🥶'; mainText = `Freezing at ${temp}°! Heavy coat, hat, gloves, and warm boots — all of it.`;
+          art = icon('snow'); mainText = `Freezing at ${temp}°! Heavy coat, hat, gloves, and warm boots — all of it.`;
         }
         const tips = [];
-        if (rainChance >= 60) tips.push('☂️ Bring a raincoat or umbrella');
-        else if (rainChance >= 35) tips.push('🌂 Light rain chance — maybe pack an umbrella');
-        if (uvAlert) tips.push('🕶️ High UV — sunscreen and sunglasses');
-        if (wind >= 20) tips.push('💨 Windy out there — a wind-resistant jacket helps');
-        return `<span class="clothing-emoji" aria-hidden="true">${emoji}</span><div class="clothing-body"><p class="clothing-main">${mainText}</p>${tips.length ? `<p class="clothing-tips">${tips.join(' &nbsp;·&nbsp; ')}</p>` : ''}</div>`;
+        if (rainChance >= 60) tips.push('Bring a raincoat or umbrella');
+        else if (rainChance >= 35) tips.push('Light rain chance — maybe pack an umbrella');
+        if (uvAlert) tips.push('High UV — sunscreen and sunglasses');
+        if (wind >= 20) tips.push('Windy out there — a wind-resistant jacket helps');
+        return `<span class="clothing-emoji" aria-hidden="true">${art}</span><div class="clothing-body"><p class="clothing-main">${mainText}</p>${tips.length ? `<p class="clothing-tips">${tips.join(' &nbsp;·&nbsp; ')}</p>` : ''}</div>`;
       }
 
       function windDirectionLabel(degrees) {
@@ -562,7 +685,7 @@
         else if (phase < 22.15) { name = 'Waning Gibbous';  emoji = '🌖'; }
         else if (phase < 23.99) { name = 'Last Quarter';    emoji = '🌗'; }
         else                    { name = 'Waning Crescent'; emoji = '🌘'; }
-        return { name, emoji, illumination };
+        return { name, emoji, illumination, phase: phase / synodicMonth };
       }
 
       function buildSolarSection({ sunrise, sunset, utcOffsetSeconds }) {
@@ -582,19 +705,19 @@
           progress = 100;
         }
         const markerHTML = isDaytime
-          ? `<div class="solar-sun-marker" style="left:${progress}%" aria-hidden="true">☀️</div>`
+          ? `<div class="solar-sun-marker" style="left:${progress}%" aria-hidden="true">${window.PixelWeather.icon('sun')}</div>`
           : '';
         return `
           <div class="solar-times">
-            <span class="solar-endpoint"><span class="solar-icon" aria-hidden="true">🌅</span><span class="solar-time">${riseStr}</span></span>
+            <span class="solar-endpoint"><span class="solar-icon" aria-hidden="true">${window.PixelWeather.icon('sunrise')}</span><span class="solar-time">${riseStr}</span></span>
             <div class="solar-track" role="progressbar" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100" aria-label="Daylight progress ${progress}%">
               <div class="solar-fill" style="width:${progress}%"></div>
               ${markerHTML}
             </div>
-            <span class="solar-endpoint solar-endpoint--right"><span class="solar-time">${setStr}</span><span class="solar-icon" aria-hidden="true">🌇</span></span>
+            <span class="solar-endpoint solar-endpoint--right"><span class="solar-time">${setStr}</span><span class="solar-icon" aria-hidden="true">${window.PixelWeather.icon('sunset')}</span></span>
           </div>
           <div class="solar-moon">
-            <span class="moon-emoji" aria-hidden="true">${moon.emoji}</span>
+            <span class="moon-emoji" aria-hidden="true">${window.PixelWeather.moon(moon.phase)}</span>
             <span class="moon-name">${moon.name}</span>
             <span class="moon-illum">${moon.illumination}% lit</span>
           </div>`;
@@ -708,6 +831,7 @@
           wind: current.wind_speed_10m || 0,
           windDirection: current.wind_direction_10m != null ? current.wind_direction_10m : null,
           humidity: current.relative_humidity_2m || 0,
+          uv,
           uvLabel: `${uv.toFixed(1)} ${getUvCategory(uv)}`,
           uvAlert: uv >= 6,
           pollen,
@@ -717,7 +841,8 @@
           forecast: daily.time.slice(0, 5).map((dateString, index) => ({
             label: formatForecastLabel(dateString),
             icon: weatherIconFromCode(daily.weather_code ? daily.weather_code[index] : 0),
-            max: daily.temperature_2m_max[index]
+            max: daily.temperature_2m_max[index],
+            min: daily.temperature_2m_min[index]
           })),
           rainChance,
           precipData: (daily.precipitation_probability_max || []).slice(0, 5).map(v => Number(v) || 0),
@@ -765,8 +890,8 @@
         // clear message instead of a grid of dashes.
         weatherEls.shell.dataset.weatherStatus = 'unavailable';
         weatherEls.condition.textContent = 'WEATHER UNAVAILABLE';
-        weatherEls.currentIcon.textContent = '—';
-        weatherEls.temp.textContent = `${dash}°`;
+        weatherEls.currentIcon.innerHTML = window.PixelWeather.icon('cloud');
+        setBigTemperature(`${dash}°`);
         weatherEls.feels.textContent = `FEELS LIKE ${dash}°`;
         weatherEls.min.textContent = `${dash}°`;
         weatherEls.max.textContent = `${dash}°`;
@@ -776,10 +901,12 @@
         weatherEls.pollen.textContent = dash;
         weatherEls.uvCard.classList.remove('telemetry-stat--alert');
         weatherEls.pollenCard.classList.remove('telemetry-stat--alert');
+        Object.keys(weatherEls.meters).forEach((name) => setMeter(name, 0));
+        weatherEls.crawl.hidden = true;
         weatherEls.forecast.innerHTML = '';
         weatherEls.solar.innerHTML = '';
         weatherEls.precipChart.innerHTML = '';
-        weatherEls.clothing.innerHTML = '<span class="clothing-emoji" aria-hidden="true">📡</span><div class="clothing-body"><p class="clothing-main">Couldn’t reach the weather service. Looking outside is a great backup!</p><p class="clothing-tips"><button type="button" class="weather-retry">Try again</button></p></div>';
+        weatherEls.clothing.innerHTML = '<span class="clothing-emoji" aria-hidden="true">' + window.PixelWeather.icon('cloud') + '</span><div class="clothing-body"><p class="clothing-main">Couldn’t reach the weather service. Looking outside is a great backup!</p><p class="clothing-tips"><button type="button" class="weather-retry">Try again</button></p></div>';
         hydrateWeatherLearningPanels();
       }
 

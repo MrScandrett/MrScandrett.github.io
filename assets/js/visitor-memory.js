@@ -1059,7 +1059,7 @@
       });
     }, isOpen('likes', sectionDefault(snap.likes))));
 
-    sections.push(profileSection('plays', 'Recently played', 'Games and projects you launch from the Showcase.', snap.plays, function (p) {
+    sections.push(profileSection('plays', 'Recently played', 'Games, projects and studio tools you open.', snap.plays, function (p) {
       return row({
         title: p.t, href: p.url || siteHref('showcase.html'), thumb: p.thumb,
         meta: join(p.by, ago(p.at), p.n > 1 ? 'played ' + p.n + ' times' : ''),
