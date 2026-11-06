@@ -1,8 +1,5 @@
-/* Notebook skin — an engineering notebook on the desk.
- * Shape: faint graph paper inside panels (a grid needs no line-height match,
- * unlike ruled lines), a strip of tape on cards, hand-drawn wobbly button
- * outlines (uneven elliptical radii), handwritten headings, wavy underlines.
- * Colors come from the theme; this file only mixes its tokens. */
+/* Notebook skin — pen-drawn frames, handwritten controls and pencil hatching.
+ * Theme tokens supply the ink and paper, including in dark themes. */
 
 @font-face {
   font-family: "Patrick Hand";
@@ -17,72 +14,80 @@ html[data-skin="notebook"] {
   --skin-radius-md: 3px;
   --skin-radius-lg: 4px;
   --skin-shadow: 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent), 0 10px 14px -12px color-mix(in srgb, var(--text) 45%, transparent);
-  /* UI and reading text keep the default fonts; handwriting is for headings and buttons. */
+  /* Keep reading text clear; use handwriting for the interface. */
+  --skin-font-ui: var(--skin-hand);
   --skin-hand: "Patrick Hand", "Comic Sans MS", cursive;
   --skin-font-display: var(--skin-hand);
-  --skin-grid: color-mix(in srgb, var(--accent) 12%, transparent);
-  --skin-grid-size: 1.25rem;
-  --skin-tape: color-mix(in srgb, color-mix(in srgb, var(--accent) 30%, white) 62%, transparent);
+  --skin-ink: color-mix(in srgb, var(--text) 88%, transparent);
+  --skin-paper: var(--bg);
+  --skin-hatch: repeating-linear-gradient(125deg, transparent 0 3px, color-mix(in srgb, var(--text) 42%, transparent) 3px 4px, transparent 4px 6px);
   --skin-sketch: 255px 15px 225px 15px / 15px 225px 15px 255px;
   --skin-sketch-alt: 15px 225px 15px 255px / 255px 15px 225px 15px;
 }
+/* Drawn frames stay upright so dense workspaces remain easy to use. */
 html[data-skin="notebook"] body .site-header {
-  box-shadow: 0 2px 0 color-mix(in srgb, var(--text) 10%, transparent) !important;
-  border-bottom: 2px solid color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  background: var(--skin-paper) !important;
+  border-bottom: 2px solid var(--skin-ink) !important;
+  box-shadow: 0 3px 0 -1px color-mix(in srgb, var(--text) 30%, transparent) !important;
 }
 html[data-skin="notebook"] body .site-nav a {
   font-family: var(--skin-hand);
-  font-size: 1.08em;
+  font-size: 1.12em;
 }
-
-/* Panels: graph paper with a strip of tape at the top centre. */
-html[data-skin="notebook"] body [data-skin-surface="panel"] {
-  border: 1px solid color-mix(in srgb, var(--text) 16%, transparent) !important;
-  border-radius: var(--skin-radius-lg) !important;
-  box-shadow: var(--skin-shadow) !important;
-  background-image:
-    linear-gradient(var(--skin-tape), var(--skin-tape)),
-    linear-gradient(var(--skin-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--skin-grid) 1px, transparent 1px) !important;
-  background-size: 4.5rem 0.95rem, var(--skin-grid-size) var(--skin-grid-size), var(--skin-grid-size) var(--skin-grid-size) !important;
-  background-position: 50% 0, -1px -1px, -1px -1px !important;
-  background-repeat: no-repeat, repeat, repeat !important;
+html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  border: 2px solid var(--skin-ink) !important;
+  border-radius: var(--skin-sketch) !important;
+  background-color: var(--skin-paper) !important;
+  background-image: var(--skin-hatch) !important;
+  background-size: 100% 5px !important;
+  background-position: left bottom !important;
+  background-repeat: no-repeat !important;
+  box-shadow: 2px 3px 0 -1px color-mix(in srgb, var(--text) 45%, transparent) !important;
 }
-/* Nested boxes are just paper; one strip of tape per card. */
-html[data-skin="notebook"] body [data-skin-surface="panel"] [data-skin-surface="panel"] {
+html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):nth-child(even) {
+  border-radius: var(--skin-sketch-alt) !important;
+}
+html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   background-image: none !important;
   box-shadow: none !important;
-  border-style: dashed !important;
+  border-width: 1px !important;
 }
-/* Cards pinned at slightly different angles — home page only, never around a sim. */
-html[data-skin="notebook"] body :is(.home-launch-card, .updates-entry):nth-child(odd) { rotate: -0.6deg; }
-html[data-skin="notebook"] body :is(.home-launch-card, .updates-entry):nth-child(even) { rotate: 0.5deg; }
 
 /* Controls: hand-drawn outlines that wobble the other way when hovered. */
-html[data-skin="notebook"] body [data-skin-surface="control"] {
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   font-family: var(--skin-hand);
   font-size: max(1em, 0.95rem);
-  border: 2px solid color-mix(in srgb, var(--text) 72%, transparent) !important;
+  color: var(--text) !important;
+  background-color: var(--skin-paper) !important;
+  background-image: var(--skin-hatch) !important;
+  background-size: 100% 4px !important;
+  background-position: left bottom !important;
+  background-repeat: no-repeat !important;
+  border: 2px solid var(--skin-ink) !important;
   border-radius: var(--skin-sketch) !important;
   box-shadow: 2px 3px 0 -1px color-mix(in srgb, var(--text) 30%, transparent) !important;
 }
-html[data-skin="notebook"] body [data-skin-surface="control"]:not(:disabled):hover {
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
   border-radius: var(--skin-sketch-alt) !important;
 }
-html[data-skin="notebook"] body [data-skin-surface="control"]:not(:disabled):active {
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
   box-shadow: none !important;
   translate: 1px 2px;
 }
-html[data-skin="notebook"] body [data-skin-surface="control"]:is([aria-pressed="true"], [aria-selected="true"], .is-active) {
-  background-image: linear-gradient(transparent 55%, color-mix(in srgb, var(--accent) 30%, transparent) 55% 88%, transparent 88%) !important;
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+  background-color: color-mix(in srgb, var(--accent) 18%, var(--bg)) !important;
+  border-style: double !important;
+  border-width: 3px !important;
 }
 
-html[data-skin="notebook"] body [data-skin-surface="field"] {
-  border: 0 !important;
-  border-bottom: 2px solid color-mix(in srgb, var(--text) 55%, transparent) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  background-color: transparent;
+html[data-skin="notebook"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  font-family: var(--skin-hand);
+  font-size: max(1em, 1rem);
+  color: var(--text);
+  border: 2px solid var(--skin-ink) !important;
+  border-radius: 9px 5px 10px 4px / 4px 10px 5px 9px !important;
+  box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--text) 16%, transparent) !important;
+  background-color: var(--skin-paper) !important;
 }
 
 html[data-skin="notebook"] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -91,7 +96,7 @@ html[data-skin="notebook"] body :is(button, a, input, select, textarea, summary,
   border-radius: var(--skin-sketch);
 }
 
-/* Handwritten headings; h2s get a wavy pencil underline. */
+/* Handwritten headings and a restrained pencil underline. */
 html[data-skin="notebook"] body :is(main, .home-widget, .nav-settings-panel) :is(h1, h2, h3) {
   font-family: var(--skin-font-display) !important;
   font-weight: 400;
@@ -99,10 +104,16 @@ html[data-skin="notebook"] body :is(main, .home-widget, .nav-settings-panel) :is
 }
 html[data-skin="notebook"] body main h1 { font-size: max(1em, 2.2rem); }
 html[data-skin="notebook"] body main h2 {
-  text-decoration: underline wavy color-mix(in srgb, var(--accent) 55%, transparent);
+  text-decoration: underline solid color-mix(in srgb, var(--text) 55%, transparent);
   text-decoration-thickness: 2px;
   text-underline-offset: 0.28em;
 }
 html[data-skin="notebook"] ::selection {
   background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+/* The launch card normally uses white lettering over a colored fill. */
+html[data-skin="notebook"] body .home-start-class,
+html[data-skin="notebook"] body .home-start-class :is(.home-launch-title, .home-launch-desc, .home-start-class-action, .home-start-class-icon) {
+  color: var(--text) !important;
 }

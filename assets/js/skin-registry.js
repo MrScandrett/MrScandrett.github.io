@@ -22,6 +22,7 @@
  * plumbing). Links are media="screen", so printing always uses the default.
  */
 (function (root) {
+  if (root.ClassroomOSSkins && root.ClassroomOSSkins.apply) return;
   var SKINS = [
     {
       id: "glass",
@@ -35,17 +36,17 @@
     {
       id: "terminal",
       label: "Terminal",
-      detail: "Monospace text, square double-line frames and [ bracket ] buttons.",
+      detail: "CRT scanlines, glowing corner frames and reverse-video terminal controls.",
       era: "Command line, 1970s–80s",
       icon: ">_",
       css: true,
-      preview: { radius: "0", control: "0", border: "3px double", shadow: "none", font: "\"JetBrains Mono\", ui-monospace, monospace" }
+      preview: { radius: "0", control: "0", border: "1px solid", shadow: "inset 0 0 12px -6px", font: "\"JetBrains Mono\", ui-monospace, monospace" }
     },
     {
       id: "blocky",
       label: "Blocky",
-      detail: "Stair-step pixel edges and chunky buttons that press down.",
-      era: "Pixel art, 1980s–90s",
+      detail: "Silver inventory panels, inset slots and beveled stone buttons.",
+      era: "Voxel game menus, 2010s",
       icon: "▦",
       css: true,
       preview: { radius: "0", control: "0", border: "3px solid", shadow: "3px 3px 0 0", font: "\"Pixelify Sans\", \"Classroom Chicago\", monospace" }
@@ -53,7 +54,7 @@
     {
       id: "notebook",
       label: "Notebook",
-      detail: "Graph paper, taped cards, sketchy buttons and handwritten headings.",
+      detail: "Pen-drawn frames, pencil-hatched buttons and handwritten controls.",
       era: "Skeuomorphism, 2000s",
       icon: "✎",
       css: true,
@@ -62,8 +63,8 @@
     {
       id: "underwater",
       label: "Underwater",
-      detail: "Bubble-round panels that bob gently and ripple when pressed.",
-      era: "Organic UI",
+      detail: "Luminous glass, pearly reflections and glossy water-clear controls.",
+      era: "Frutiger Aero, 2000s",
       icon: "◍",
       css: true,
       preview: { radius: "22px", control: "999px", border: "1px solid", shadow: "inset 0 -8px 14px -10px", font: "Lexend, inherit" }
@@ -139,18 +140,39 @@
     else html.removeAttribute("data-skin-motion");
   }
 
-  function setLink(attr, href) {
-    var link = doc.querySelector("link[" + attr + "]");
-    if (!href) { if (link) link.remove(); return; }
-    if (link && link.href === href) return;
+  var sheets = {};
+  function prepareSheet(href) {
+    if (sheets[href]) return sheets[href];
+    var link = Array.prototype.find.call(doc.querySelectorAll('link[rel="stylesheet"]'), function (item) { return item.href === href; });
     if (!link) {
       link = doc.createElement("link");
       link.rel = "stylesheet";
-      link.media = "screen";
-      link.setAttribute(attr, "");
-      doc.head.appendChild(link);
+      link.media = "not all";
+      link.href = href;
     }
-    link.href = href;
+    var ready = link.sheet ? Promise.resolve(link) : new Promise(function (resolve, reject) {
+      link.addEventListener("load", function () { resolve(link); }, { once: true });
+      link.addEventListener("error", function () {
+        delete sheets[href];
+        link.remove();
+        reject(new Error("Skin stylesheet could not load: " + href));
+      }, { once: true });
+    });
+    sheets[href] = ready;
+    if (!link.isConnected) doc.head.appendChild(link);
+    return ready;
+  }
+
+  function activateSheet(attr, link) {
+    var previous = doc.querySelector("link[" + attr + "]");
+    if (previous && previous !== link) {
+      previous.media = "not all";
+      previous.removeAttribute(attr);
+    }
+    if (link) {
+      link.setAttribute(attr, "");
+      link.media = "screen";
+    }
   }
 
   function loadSurfaces() {
@@ -163,28 +185,45 @@
   }
 
   var applied = html.getAttribute("data-skin");
+  var appliedPinned = html.getAttribute("data-skin-source") === "pinned";
+  var requestVersion = 0;
   function apply() {
+    var version = ++requestVersion;
     if (independent()) {
       html.removeAttribute("data-skin");
-      setLink("data-classroomos-skin-core", null);
-      setLink("data-classroomos-skin", null);
+      html.removeAttribute("data-skin-source");
+      applied = null;
+      appliedPinned = false;
+      activateSheet("data-classroomos-skin-core", null);
+      activateSheet("data-classroomos-skin", null);
       return null;
     }
     var pinned = readPinned();
     var id = resolve(currentTheme(), pinned);
     var skin = get(id);
     var base = skinsBase();
-    html.setAttribute("data-skin", id);
-    html.setAttribute("data-skin-source", pinned ? "pinned" : "theme");
-    setLink("data-classroomos-skin-core", skin.css ? base + "skin-core.css" : null);
-    setLink("data-classroomos-skin", skin.css ? base + id + ".css" : null);
-    syncMotion();
-    if (skin.css) loadSurfaces();
-    if (id !== applied) {
-      var previous = applied;
-      applied = id;
-      root.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { skin: id, previous: previous, pinned: !!pinned } }));
+    function commit(links) {
+      // A later click always wins, even when an earlier stylesheet loads last.
+      if (version !== requestVersion) return;
+      activateSheet("data-classroomos-skin-core", links && links[0]);
+      activateSheet("data-classroomos-skin", links && links[1]);
+      if (html.getAttribute("data-skin") !== id) html.setAttribute("data-skin", id);
+      html.setAttribute("data-skin-source", pinned ? "pinned" : "theme");
+      syncMotion();
+      if (skin.css) loadSurfaces();
+      if (id !== applied || !!pinned !== appliedPinned) {
+        var previous = applied;
+        applied = id;
+        appliedPinned = !!pinned;
+        root.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { skin: id, previous: previous, pinned: !!pinned } }));
+      }
     }
+    // Keep the current skin intact until BOTH replacement sheets are ready.
+    if (skin.css) {
+      Promise.all([prepareSheet(base + "skin-core.css"), prepareSheet(base + id + ".css")]).then(commit).catch(function () {
+        // Leave the working skin visible on a failed request; retry on next pick.
+      });
+    } else commit(null);
     return id;
   }
 

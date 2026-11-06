@@ -43,3 +43,31 @@ Printing restores the normal root font size.
   presentation persistence/restoration, page errors, and horizontal overflow.
   Screenshots go to `/tmp/classroomos-theme-qa` by default.
 - Override `THEME_QA_URL` or `THEME_QA_OUTPUT` for another server or artifact folder.
+
+## Skin compatibility
+
+Skins provide shape and material independently of theme and background. Terminal
+uses square CRT frames, Blocky uses beveled inventory slots, Notebook uses
+hand-drawn borders, and Underwater uses rounded reflective panes. Keep previews,
+notation, media, and custom components out of surface styling with
+`data-skin-keep` on the component container. This also excludes the container
+itself, even if it was tagged before the opt-out was added.
+
+Surface discovery batches overlapping subtrees and suspends observation in
+Liquid Glass and independent pages. It resumes when a custom skin is selected;
+resize and theme changes retry previously rejected elements. Reduced transparency
+and classroom presentation suppress material blur; reduced motion stops the
+Terminal cursor and Underwater control movement.
+
+Run `npm run check:skin-experience` with the local server on port 8080 to exercise
+all 12 themes × 5 skins × 9 backgrounds at desktop and phone widths. It also
+checks settings accessibility, component opt-outs, discovery suspension/resumption,
+reduced transparency, and real Cuneiform, Newton, and Fake Book controls.
+Screenshots are saved to `/tmp/classroomos-skin-qa`; `THEME_QA_URL` and
+`THEME_QA_OUTPUT` override the defaults.
+
+Skin changes keep the previous stylesheet active until both replacement sheets
+have loaded, then switch the skin attribute and styles together. Loaded sheets
+are reused. A request version prevents late loads from overriding a newer pick.
+`npm run check:skin-switching` verifies this frame by frame with deliberately
+slow, out-of-order stylesheet responses and checks reload persistence.

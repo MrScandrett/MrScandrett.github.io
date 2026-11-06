@@ -114,15 +114,27 @@
     for (var k = 0; k < marks.length; k++) marks[k][0].setAttribute(ATTR, marks[k][1]);
   }
 
+  function active() {
+    var html = document.documentElement;
+    return html.dataset.skin && html.dataset.skin !== "glass" &&
+      !html.matches("[data-theme-scope='independent']") &&
+      !document.body.matches("[data-theme-scope='independent']");
+  }
+
   var pending = [];
   var queued = false;
   function flush() {
     queued = false;
     var batch = pending;
     pending = [];
+    if (!active()) return;
     for (var i = 0; i < batch.length; i++) if (batch[i].isConnected) scan(batch[i]);
   }
   function queue(el) {
+    if (!active() || !el || el.nodeType !== 1) return;
+    // A queued ancestor already covers this subtree. Drop queued descendants.
+    for (var i = 0; i < pending.length; i++) if (pending[i].contains(el)) return;
+    pending = pending.filter(function (item) { return !el.contains(item); });
     pending.push(el);
     if (queued) return;
     queued = true;
@@ -136,9 +148,29 @@
     }
   });
 
-  function start() {
+  function sync() {
+    observer.disconnect();
+    pending = [];
+    if (!active()) return;
+    // Theme/viewport changes may make previously rejected boxes into surfaces.
+    rejected = typeof WeakSet === "function" ? new WeakSet() : null;
     queue(document.body);
     observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function start() {
+    sync();
+    new MutationObserver(sync).observe(document.documentElement, {
+      attributes: true, attributeFilter: ["data-skin", "data-theme", "data-theme-scope"]
+    });
+    new MutationObserver(sync).observe(document.body, {
+      attributes: true, attributeFilter: ["data-theme-scope"]
+    });
+    var resizeTimer = 0;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(sync, 180);
+    });
     // Late layout (fonts, lazy panels, tabs revealed) can turn a 0-size box into a panel.
     window.addEventListener("load", function () { queue(document.body); }, { once: true });
     // Tabs, <details> and "show more" reveal boxes that were display:none at first.

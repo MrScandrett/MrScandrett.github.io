@@ -1,7 +1,6 @@
-/* Terminal skin — a 1970s–80s command line.
- * Shape: square everything, double-line frames (the ═ of box-drawing
- * characters), [ bracket ] buttons, inverted hover, a blinking block cursor.
- * Colors come from the theme; this file only mixes its tokens. */
+/* Terminal skin — CRT phosphor, scanlines and instrument-panel frames.
+ * Every tint follows the active theme; no fixed green palette.
+ * Surface-local effects leave media and the page background unobscured. */
 
 @font-face {
   font-family: "JetBrains Mono";
@@ -19,17 +18,31 @@ html[data-skin="terminal"] {
   --skin-font-ui: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --skin-font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --skin-font-body: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
-  --skin-frame: 3px double var(--skin-line-strong);
+  --skin-frame: 1px solid var(--skin-line-strong);
+  --skin-phosphor: var(--text);
+  --skin-glow: color-mix(in srgb, var(--accent) 24%, transparent);
+  --skin-scanlines: repeating-linear-gradient(180deg,
+    transparent 0 2px, color-mix(in srgb, var(--text) 5%, transparent) 2px 3px);
+  --skin-corners:
+    linear-gradient(var(--accent), var(--accent)) left top / 20px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left top / 2px 16px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right top / 20px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right top / 2px 16px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 20px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 2px 16px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 20px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 2px 16px no-repeat;
 }
 
 /* Square corners everywhere except media and the opt-outs. */
-html[data-skin="terminal"] body :not(img, svg, svg *, canvas, video, iframe):not(:is([data-skin-keep], [data-score], .fb-shell, .tl, .ft) *) {
+html[data-skin="terminal"] body :not(img, svg, svg *, canvas, video, iframe):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border-radius: 0 !important;
 }
 
 html[data-skin="terminal"] body {
   caret-color: var(--accent);
   font-variant-ligatures: none;
+  text-shadow: 0 0 9px var(--skin-glow);
 }
 html[data-skin="terminal"] ::selection {
   background: var(--text);
@@ -38,7 +51,7 @@ html[data-skin="terminal"] ::selection {
 
 /* Chrome */
 html[data-skin="terminal"] body .site-header {
-  background: var(--bg) !important;
+  background: var(--skin-scanlines), color-mix(in srgb, var(--bg) 94%, transparent) !important;
   border-bottom: var(--skin-frame) !important;
   box-shadow: none !important;
 }
@@ -57,35 +70,48 @@ html[data-skin="terminal"] body .site-nav a:is(:hover, [aria-current="page"], .a
 html[data-skin="terminal"] body .nav-settings-panel {
   border: var(--skin-frame) !important;
   box-shadow: none !important;
-  background: var(--bg) !important;
+  background: var(--skin-scanlines), color-mix(in srgb, var(--bg) 94%, transparent) !important;
 }
 
-/* Panels: a double-line frame, flat, no glow. */
-html[data-skin="terminal"] body [data-skin-surface="panel"] {
+/* Local scanlines and illuminated corner brackets keep the background visible. */
+html[data-skin="terminal"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border: var(--skin-frame) !important;
-  box-shadow: none !important;
+  background-color: color-mix(in srgb, var(--bg) 92%, transparent) !important;
+  background-image: var(--skin-corners), var(--skin-scanlines) !important;
+  box-shadow: inset 0 0 28px color-mix(in srgb, var(--accent) 5%, transparent),
+    0 0 12px color-mix(in srgb, var(--accent) 8%, transparent) !important;
 }
 
 /* Controls: transparent with a hairline; hover and pressed invert like a cursor block. */
-html[data-skin="terminal"] body [data-skin-surface="control"] {
+html[data-skin="terminal"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   font-family: var(--skin-font-ui);
-  box-shadow: none !important;
+  background: color-mix(in srgb, var(--bg) 88%, transparent) !important;
+  border: 1px solid var(--skin-line-strong) !important;
+  color: var(--skin-phosphor) !important;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+  font-weight: 650;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 20%, transparent) !important;
   transition: none !important;
 }
-html[data-skin="terminal"] body [data-skin-surface="control"]:not(:disabled):is(:hover, :focus-visible) {
+html[data-skin="terminal"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible) {
   background: var(--text) !important;
   color: var(--bg) !important;
   border-color: var(--text) !important;
 }
-html[data-skin="terminal"] body [data-skin-surface="control"]:is([aria-pressed="true"], [aria-selected="true"], .is-active) {
-  outline: 1px solid var(--accent);
+html[data-skin="terminal"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  border-color: var(--text) !important;
+  text-shadow: none;
+  outline: 1px solid var(--bg);
   outline-offset: -4px;
 }
 /* Text buttons get brackets: [ Start ]. Icon-only buttons stay as they are. */
 html[data-skin="terminal"] body :is(.btn, .button, .lesson-btn, .sim-btn, .nav-mode-pill, .nav-settings-tab, button.ll-tab)::before { content: "[ " / ""; }
 html[data-skin="terminal"] body :is(.btn, .button, .lesson-btn, .sim-btn, .nav-mode-pill, .nav-settings-tab, button.ll-tab)::after { content: " ]" / ""; }
 
-html[data-skin="terminal"] body [data-skin-surface="field"] {
+html[data-skin="terminal"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   font-family: var(--skin-font-ui);
   border: 1px solid var(--skin-line-strong) !important;
   box-shadow: none !important;
@@ -99,7 +125,9 @@ html[data-skin="terminal"] body :is(button, a, input, select, textarea, summary,
 /* Headings read like prompts. */
 html[data-skin="terminal"] body main :is(h1, h2, h3) {
   font-family: var(--skin-font-display) !important;
-  letter-spacing: -0.01em;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px var(--skin-glow);
 }
 html[data-skin="terminal"] body main h2:not([class])::before {
   content: "## " / "";
@@ -132,4 +160,31 @@ html[data-skin="terminal"] body main h1:not([class])::after {
 html[data-skin="terminal"] body {
   scrollbar-width: thin;
   scrollbar-color: var(--skin-line-strong) transparent;
+}
+
+/* A solid status strip, like the reverse-video header on a text terminal. */
+html[data-skin="terminal"] body :is(.nav-settings-tab, .nav-mode-pill)[aria-selected="true"],
+html[data-skin="terminal"] body .site-nav a[aria-current="page"] {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  text-shadow: none;
+}
+html[data-skin="terminal"] body .site-nav a[aria-current="page"]::before {
+  color: inherit;
+}
+html[data-skin="terminal"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background: color-mix(in srgb, var(--bg) 96%, transparent) !important;
+  color: var(--text) !important;
+  border-bottom: 2px solid var(--skin-line-strong) !important;
+}
+@media (forced-colors: active) {
+  html[data-skin="terminal"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+    background-image: none !important;
+    box-shadow: none !important;
+  }
+}
+/* Existing call-to-action labels sometimes carry their own light text. */
+html[data-skin="terminal"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) :is(span, strong, small, b) {
+  color: inherit !important;
+  text-shadow: inherit;
 }

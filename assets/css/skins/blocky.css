@@ -1,8 +1,7 @@
-/* Blocky skin — 1980s–90s pixel art, drawn from scratch.
- * Shape: notched stair-step borders (four hard box-shadows, no blur), a light
- * top-left / dark bottom-right bevel, buttons that sink 4px when pressed, and a
- * pixel font on headings only so long lesson text stays readable.
- * Colors come from the theme; this file only mixes its tokens. */
+/* Blocky skin — inventory panels and stone menu buttons.
+ * Opaque neutral surfaces, hard pixel frames, raised controls and inset slots.
+ * White/black mixes keep this skin compatible with every theme palette.
+ * Pixel UI text is self-hosted; long reading text keeps the classroom font. */
 
 @font-face {
   font-family: "Pixelify Sans";
@@ -24,9 +23,13 @@ html[data-skin="blocky"] {
   --skin-radius-md: 0;
   --skin-radius-lg: 0;
   --skin-px: 4px;
-  --skin-edge: color-mix(in srgb, var(--text) 82%, transparent);
-  --skin-hi: color-mix(in srgb, white 45%, transparent);
-  --skin-lo: color-mix(in srgb, black 22%, transparent);
+  --skin-edge: color-mix(in srgb, black 94%, white);
+  --skin-panel: color-mix(in srgb, white 78%, black);
+  --skin-slot: color-mix(in srgb, white 55%, black);
+  --skin-button: color-mix(in srgb, white 46%, black);
+  --skin-ink: color-mix(in srgb, black 85%, white);
+  --skin-hi: color-mix(in srgb, white 92%, black);
+  --skin-lo: color-mix(in srgb, black 64%, white);
   /* Notched outline: four offset copies leave the corner pixel empty. */
   --skin-notch:
     0 calc(var(--skin-px) * -1) 0 0 var(--skin-edge),
@@ -40,16 +43,20 @@ html[data-skin="blocky"] {
     inset var(--skin-px) var(--skin-px) 0 0 var(--skin-lo),
     inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-hi);
   --skin-shadow: var(--skin-notch);
-  --skin-font-ui: "Classroom Chicago", "Chicago", "ChicagoFLF", "Charcoal", system-ui, sans-serif;
+  --skin-font-ui: "Pixelify Sans", "Classroom Chicago", monospace;
+  --skin-font-body: "Classroom Chicago", "Chicago", system-ui, sans-serif;
   --skin-font-display: "Pixelify Sans", "Classroom Chicago", "Chicago", monospace;
 }
 
-html[data-skin="blocky"] body :not(img, svg, svg *, canvas, video, iframe):not(:is([data-skin-keep], [data-score], .fb-shell, .tl, .ft) *) {
+html[data-skin="blocky"] body :not(img, svg, svg *, canvas, video, iframe):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border-radius: 0 !important;
 }
 
 /* Chrome */
 html[data-skin="blocky"] body .site-header {
+  background: var(--skin-panel) !important;
+  color: var(--skin-ink) !important;
+  --text: var(--skin-ink);
   border-bottom: 0 !important;
   box-shadow: 0 var(--skin-px) 0 0 var(--skin-edge), inset 0 calc(var(--skin-px) * -1) 0 0 var(--skin-lo) !important;
 }
@@ -58,31 +65,58 @@ html[data-skin="blocky"] body .nav-settings-panel {
   box-shadow: var(--skin-notch), var(--skin-bevel), 8px 8px 0 0 var(--skin-lo) !important;
 }
 
-/* Panels: notched pixel frame plus a bevel. Margins make room for the outside pixels. */
-html[data-skin="blocky"] body [data-skin-surface="panel"] {
+/* Inventory frame: opaque silver, bright upper lip and a dark lower edge.
+ * Local text tokens keep nested captions readable even with a dark theme. */
+html[data-skin="blocky"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  --text: var(--skin-ink);
+  --muted: color-mix(in srgb, black 70%, white);
+  background: var(--skin-panel) !important;
+  color: var(--skin-ink) !important;
   border-color: transparent !important;
   box-shadow: var(--skin-notch), var(--skin-bevel) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* Controls: raised blocks that sink when pressed. Steps, never easing. */
-html[data-skin="blocky"] body [data-skin-surface="control"] {
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background: var(--skin-button) !important;
+  color: white !important;
   border-color: transparent !important;
-  box-shadow: var(--skin-notch), var(--skin-bevel) !important;
+  box-shadow: var(--skin-notch),
+    inset 3px 3px 0 color-mix(in srgb, white 40%, transparent),
+    inset -3px -3px 0 color-mix(in srgb, black 45%, transparent) !important;
+  text-shadow: 2px 2px 0 color-mix(in srgb, black 70%, transparent);
+  font-weight: 400;
+  letter-spacing: 0.02em;
   transition: none !important;
   font-family: var(--skin-font-ui);
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):hover {
-  filter: brightness(1.08);
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
+  background: color-mix(in srgb, white 37%, black) !important;
+  outline: 2px solid var(--skin-hi);
+  outline-offset: -6px;
+  filter: none;
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):active,
-html[data-skin="blocky"] body [data-skin-surface="control"]:is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active,
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+  background: color-mix(in srgb, white 32%, black) !important;
   box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:disabled):active {
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
   translate: 0 var(--skin-px);
 }
 
-html[data-skin="blocky"] body [data-skin-surface="field"] {
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):disabled {
+  color: color-mix(in srgb, white 72%, black) !important;
+  text-shadow: none;
+  opacity: 0.7;
+}
+
+html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background: var(--skin-slot) !important;
+  color: black !important;
+  caret-color: black;
   border-color: transparent !important;
   box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
 }
@@ -97,9 +131,21 @@ html[data-skin="blocky"] body :is(main, .home-widget, .nav-settings-panel) :is(h
   font-family: var(--skin-font-display) !important;
   font-weight: 700;
   letter-spacing: 0.01em;
-  text-shadow: 3px 3px 0 color-mix(in srgb, var(--text) 18%, transparent);
+  text-shadow: none;
 }
 
 html[data-skin="blocky"] body input[type="range"] {
   accent-color: var(--accent);
+}
+
+/* Settings use the same inventory frame, including before surface tagging. */
+html[data-skin="blocky"] body .nav-settings-panel {
+  --text: var(--skin-ink);
+  --muted: color-mix(in srgb, black 70%, white);
+  background: var(--skin-panel) !important;
+  color: var(--skin-ink) !important;
+}
+html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *))::placeholder {
+  color: color-mix(in srgb, black 80%, white);
+  opacity: 1;
 }
