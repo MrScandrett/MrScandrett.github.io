@@ -136,6 +136,10 @@ committed file may change** (the build regenerates `apps/` and generated data su
 `data/module-glossaries.json`; commit what `npm run build` produces), `npm run quality`, `npm test`,
 `npm run build:dist` (fails if any page's HTML can't be parsed for minifying: write a bare `<` in text,
 e.g. `\(x < 0\)`, as `&lt;`), `check:dist`, and `audit:perf -- --check`.
+In parallel, its `a11y` job (`.github/workflows/a11y.yml`, a reusable workflow) runs `npm run a11y`, and
+the deploy waits for it too: a page with more issues of a rule than `data/a11y-baseline.json` allows fails it.
+The baseline is a ratchet. Fix the page, never raise the baseline; after fixes, refresh it with
+`npm run a11y:update-baseline` (a full run against `npx serve . --listen 8080`) and check the diff only shrinks.
 
 - `npm test` — every `tests/*.test.mjs`: no hand-started server needed, must stay green.
 - `npm run test:browser` — `tests/browser/*.test.mjs`, which drive heavy lesson sims in Chromium against
@@ -143,7 +147,8 @@ e.g. `\(x < 0\)`, as `&lt;`), `check:dist`, and `audit:perf -- --check`.
   they are timing-sensitive on shared runners. A new test that needs the dev server goes here.
 - `npm run check:integrity` — local references and asset signatures
 - `npm run check:themes` — theme contrast
-- `npm run a11y` — pa11y-ci
+- `npm run a11y` — pa11y against `data/a11y-baseline.json` (blocks deploys; `npm run a11y:page -- <fragment>`
+  audits matching pages with no baseline)
 
 ## Lesson rule: every photo must open in the lightbox
 
