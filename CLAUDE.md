@@ -131,6 +131,16 @@ Saved links, bookmarks and students' saved work point at old URLs, so moving a l
 
 ## Checks
 
+Deploy (`.github/workflows/deploy.yml`) blocks on all of these, in order: the showcase build, then **no
+committed file may change** (the build regenerates `apps/` and generated data such as
+`data/module-glossaries.json`; commit what `npm run build` produces), `npm run quality`, `npm test`,
+`npm run build:dist` (fails if any page's HTML can't be parsed for minifying: write a bare `<` in text,
+e.g. `\(x < 0\)`, as `&lt;`), `check:dist`, and `audit:perf -- --check`.
+
+- `npm test` — every `tests/*.test.mjs`: no hand-started server needed, must stay green.
+- `npm run test:browser` — `tests/browser/*.test.mjs`, which drive heavy lesson sims in Chromium against
+  `serve-local.js` on :8080 (started for you if it isn't running), one file at a time. Not run on deploy:
+  they are timing-sensitive on shared runners. A new test that needs the dev server goes here.
 - `npm run check:integrity` — local references and asset signatures
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci

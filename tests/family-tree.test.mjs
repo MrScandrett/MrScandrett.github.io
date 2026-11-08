@@ -178,5 +178,13 @@ test('lesson family trees are well-formed: unique ids, resolvable data-also-from
   };
   walk(new URL('../lessons', import.meta.url).pathname);
   assert.ok(found.length >= 2, 'expected the Genesis 10 and Pleistocene trees');
-  assert.ok(found.every((f) => f.nodes >= 5));
+  // Every tree must parse into real descent: at least one parent → child link. Small, deliberately
+  // selected lines are fine (joshua-to-david.html traces Boaz → Obed → Jesse → David from Ruth 4).
+  for (const f of found) assert.ok(f.nodes >= 2 && f.depth >= 2, `${f.p}: parsed as ${f.nodes} card(s) in ${f.depth} generation(s)`);
+  // The two showcase trees are large; if either parses small, the parser or the page broke.
+  for (const showcase of ['bible-studies/genesis-10-table-of-nations.html', 'earth-science/pleistocene-epoch.html']) {
+    const tree = found.find((f) => f.p.endsWith(showcase));
+    assert.ok(tree, `${showcase}: family tree not found`);
+    assert.ok(tree.nodes >= 20, `${showcase}: only ${tree.nodes} cards parsed`);
+  }
 });

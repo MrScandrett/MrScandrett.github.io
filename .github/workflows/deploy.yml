@@ -47,8 +47,18 @@ jobs:
       - name: Rebuild showcase from canonical student sources
         run: npm run build -- --strict
 
-      - name: Verify generated showcase output is committed and reproducible
-        run: git diff --exit-code -- apps
+      # The build regenerates apps/ and generated data (its prebuild hook rewrites
+      # data/module-glossaries.json). If anything differs from the commit, the repo is stale
+      # and the site would ship files nobody reviewed. This runs before `quality`, whose
+      # --check steps would otherwise only see the freshly rebuilt copies.
+      - name: Verify generated output is committed and reproducible
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "The build changed committed files. Run 'npm run build' locally and commit the result:"
+            git status --short
+            git diff --stat
+            exit 1
+          fi
 
       - name: Start site for interactive checks
         run: |
@@ -64,6 +74,12 @@ jobs:
 
       - name: Run release quality checks
         run: npm run quality
+
+      # Every test that needs no hand-started server (tests/*.test.mjs). A red test blocks the
+      # deploy. Browser tests in tests/browser/ drive heavy sims and are timing-sensitive on
+      # shared runners; run them locally with `npm run test:browser`.
+      - name: Run unit tests
+        run: npm test
 
       - name: Build minified dist/
         run: npm run build:dist
