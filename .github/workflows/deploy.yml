@@ -98,9 +98,18 @@ jobs:
         with:
           path: dist
 
+  # pa11y (.github/workflows/a11y.yml) runs beside the build, not after it, so it adds no time
+  # unless it is the slower of the two. A page with more issues of a rule than
+  # data/a11y-baseline.json allows fails it, and the deploy waits for both.
+  a11y:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    uses: ./.github/workflows/a11y.yml
+    permissions:
+      contents: read
+
   deploy:
     if: github.event_name != 'pull_request'
-    needs: build
+    needs: [build, a11y]
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -1,10 +1,10 @@
 name: Accessibility Audit
 
+# Runs as a job of "Deploy GitHub Pages" (deploy.yml), which waits for it: a page that gets worse
+# than data/a11y-baseline.json blocks the deploy, and the same job is the check on pull requests.
+# workflow_dispatch runs it on its own.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -22,6 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
