@@ -1,7 +1,17 @@
-/* Blocky skin — inventory panels and stone menu buttons.
- * Opaque neutral surfaces, hard pixel frames, raised controls and inset slots.
- * White/black mixes keep this skin compatible with every theme palette.
- * Pixel UI text is self-hosted; long reading text keeps the classroom font. */
+/* Blocky skin — a classic voxel-game menu.
+ *
+ * Four materials, all theme-independent greys so every palette reads the same:
+ *   panel   silver inventory (white lip top-left, dark lip bottom-right, black notched frame)
+ *   control stone button (dithered grey, light/dark bevel, white label with a hard drop shadow;
+ *           hover tints toward the theme accent, press sinks one step)
+ *   tile    inventory slot (a button that holds a layout: calendar days, card buttons;
+ *           sunk bevel, dark ink, hover lightens like a highlighted slot)
+ *   field   black text box with a grey hairline that turns white on focus
+ * Sliders are a dark slot with a stone block for a thumb.
+ *
+ * contrast-guard.js leaves [data-skin-surface] alone under this skin, so dark themes
+ * keep the silver material instead of re-toning it under the skin's dark ink.
+ * Pixel type goes on labels and headings; reading text keeps the classroom font. */
 
 @font-face {
   font-family: "Pixelify Sans";
@@ -22,26 +32,55 @@ html[data-skin="blocky"] {
   --skin-radius-sm: 0;
   --skin-radius-md: 0;
   --skin-radius-lg: 0;
-  --skin-px: 4px;
-  --skin-edge: color-mix(in srgb, black 94%, white);
+  --skin-px: 3px;
+  --skin-edge: black;
+
+  /* Inventory */
   --skin-panel: color-mix(in srgb, white 78%, black);
+  --skin-panel-hi: white;
+  --skin-panel-lo: color-mix(in srgb, white 33%, black);
+  --skin-ink: color-mix(in srgb, white 25%, black);
+  --skin-ink-muted: color-mix(in srgb, white 30%, black);
+
+  /* Slots */
   --skin-slot: color-mix(in srgb, white 55%, black);
-  --skin-button: color-mix(in srgb, white 46%, black);
-  --skin-ink: color-mix(in srgb, black 85%, white);
-  --skin-hi: color-mix(in srgb, white 92%, black);
-  --skin-lo: color-mix(in srgb, black 64%, white);
-  /* Notched outline: four offset copies leave the corner pixel empty. */
+  --skin-slot-hover: color-mix(in srgb, white 74%, black);
+  --skin-slot-lo: color-mix(in srgb, white 22%, black);
+  --skin-slot-ink: color-mix(in srgb, white 9%, black);
+
+  /* Stone buttons: white labels stay above 4.5:1 on every face below. */
+  --skin-button: color-mix(in srgb, white 44%, black);
+  --skin-button-hi: color-mix(in srgb, white 67%, black);
+  --skin-button-lo: color-mix(in srgb, white 30%, black);
+  --skin-button-hover: color-mix(in srgb, var(--accent) 25%, color-mix(in srgb, white 30%, black));
+  --skin-button-down: color-mix(in srgb, white 34%, black);
+  --skin-button-off: color-mix(in srgb, white 20%, black);
+  --skin-label-shadow: color-mix(in srgb, white 24%, black);
+  /* Stone grain: three checkers of coprime periods interfere into an irregular speckle. */
+  --skin-stone:
+    repeating-conic-gradient(color-mix(in srgb, black 5%, transparent) 0 25%, transparent 0 50%) 0 0 / 6px 6px,
+    repeating-conic-gradient(color-mix(in srgb, white 5%, transparent) 0 25%, transparent 0 50%) 3px 0 / 10px 14px,
+    repeating-conic-gradient(color-mix(in srgb, black 5%, transparent) 0 25%, transparent 0 50%) 0 3px / 22px 18px;
+
+  /* Text boxes */
+  --skin-field: black;
+  --skin-field-line: color-mix(in srgb, white 63%, black);
+
+  /* Notched outline: four offset copies leave each corner pixel empty. */
   --skin-notch:
     0 calc(var(--skin-px) * -1) 0 0 var(--skin-edge),
     0 var(--skin-px) 0 0 var(--skin-edge),
     calc(var(--skin-px) * -1) 0 0 0 var(--skin-edge),
     var(--skin-px) 0 0 0 var(--skin-edge);
   --skin-bevel:
-    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-hi),
-    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-lo);
+    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-panel-hi),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-panel-lo);
+  --skin-bevel-button:
+    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-button-hi),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-button-lo);
   --skin-bevel-in:
-    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-lo),
-    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 var(--skin-hi);
+    inset var(--skin-px) var(--skin-px) 0 0 var(--skin-slot-lo),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 white;
   --skin-shadow: var(--skin-notch);
   --skin-font-ui: "Pixelify Sans", "Classroom Chicago", monospace;
   --skin-font-body: "Classroom Chicago", "Chicago", system-ui, sans-serif;
@@ -52,24 +91,37 @@ html[data-skin="blocky"] body :not(img, svg, svg *, canvas, video, iframe):not(:
   border-radius: 0 !important;
 }
 
-/* Chrome */
+/* ── Chrome ─────────────────────────────────────────────────────────────── */
 html[data-skin="blocky"] body .site-header {
+  --text: var(--skin-ink);
   background: var(--skin-panel) !important;
   color: var(--skin-ink) !important;
-  --text: var(--skin-ink);
   border-bottom: 0 !important;
-  box-shadow: 0 var(--skin-px) 0 0 var(--skin-edge), inset 0 calc(var(--skin-px) * -1) 0 0 var(--skin-lo) !important;
+  box-shadow:
+    0 var(--skin-px) 0 0 var(--skin-edge),
+    inset 0 var(--skin-px) 0 0 var(--skin-panel-hi),
+    inset 0 calc(var(--skin-px) * -1) 0 0 var(--skin-panel-lo) !important;
+}
+/* Liquid Glass tints the header through pseudo-element layers; silver is opaque. */
+html[data-skin="blocky"] body .site-header::before,
+html[data-skin="blocky"] body .site-header::after {
+  display: none !important;
 }
 html[data-skin="blocky"] body .nav-settings-panel {
+  --text: var(--skin-ink);
+  --muted: var(--skin-ink-muted);
+  background: var(--skin-panel) !important;
+  color: var(--skin-ink) !important;
   border: 0 !important;
-  box-shadow: var(--skin-notch), var(--skin-bevel), 8px 8px 0 0 var(--skin-lo) !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel), 6px 6px 0 var(--skin-px) color-mix(in srgb, black 45%, transparent) !important;
 }
 
-/* Inventory frame: opaque silver, bright upper lip and a dark lower edge.
- * Local text tokens keep nested captions readable even with a dark theme. */
+/* ── Panel: the inventory window ───────────────────────────────────────────
+ * Local text tokens keep nested captions readable in every theme. */
 html[data-skin="blocky"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   --text: var(--skin-ink);
-  --muted: color-mix(in srgb, black 70%, white);
+  --muted: var(--skin-ink-muted);
+  --border: color-mix(in srgb, black 40%, transparent);
   background: var(--skin-panel) !important;
   color: var(--skin-ink) !important;
   border-color: transparent !important;
@@ -77,75 +129,172 @@ html[data-skin="blocky"] body [data-skin-surface="panel"]:not(:where([data-skin-
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-
-/* Controls: raised blocks that sink when pressed. Steps, never easing. */
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
-  background: var(--skin-button) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: var(--skin-notch),
-    inset 3px 3px 0 color-mix(in srgb, white 40%, transparent),
-    inset -3px -3px 0 color-mix(in srgb, black 45%, transparent) !important;
-  text-shadow: 2px 2px 0 color-mix(in srgb, black 70%, transparent);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  transition: none !important;
-  font-family: var(--skin-font-ui);
+/* A panel inside a panel is a recessed section, the way an inventory nests its grids. */
+html[data-skin="blocky"] body [data-skin-surface="panel"] [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background: color-mix(in srgb, white 71%, black) !important;
+  box-shadow: var(--skin-bevel-in) !important;
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
-  background: color-mix(in srgb, white 37%, black) !important;
-  outline: 2px solid var(--skin-hi);
-  outline-offset: -6px;
+/* Headings on silver use the inventory's flat dark-grey title ink, no glow. */
+html[data-skin="blocky"] body :is([data-skin-surface="panel"], .nav-settings-panel, .site-header) :is(h1, h2, h3, h4):not(:where([data-skin-keep], [data-skin-keep] *, [data-skin-surface="control"] *)) {
+  color: var(--skin-ink) !important;
+  -webkit-text-fill-color: currentColor;
+  background-image: none;
+  text-shadow: none !important;
+}
+
+/* ── Control: stone button ──────────────────────────────────────────────── */
+html[data-skin="blocky"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  --text: white;
+  --muted: white;
+  background: var(--skin-stone), var(--skin-button) !important;
+  color: white !important;
+  -webkit-text-fill-color: currentColor;
+  border-color: transparent !important;
+  box-shadow: var(--skin-notch), var(--skin-bevel-button) !important;
+  text-shadow: 2px 2px 0 var(--skin-label-shadow);
+  font-family: var(--skin-font-ui);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  transition: none !important;
+}
+html[data-skin="blocky"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible) {
+  background: var(--skin-stone), var(--skin-button-hover) !important;
+  box-shadow: var(--skin-notch),
+    inset var(--skin-px) var(--skin-px) 0 0 color-mix(in srgb, white 70%, transparent),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 color-mix(in srgb, black 45%, transparent) !important;
   filter: none;
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active,
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], .is-active) {
-  background: color-mix(in srgb, white 32%, black) !important;
-  box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
+/* Pressed or selected: the block sinks into its slot. */
+html[data-skin="blocky"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active,
+html[data-skin="blocky"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-active, .active) {
+  background: var(--skin-stone), var(--skin-button-down) !important;
+  box-shadow: var(--skin-notch),
+    inset var(--skin-px) var(--skin-px) 0 0 color-mix(in srgb, black 50%, transparent),
+    inset calc(var(--skin-px) * -1) calc(var(--skin-px) * -1) 0 0 color-mix(in srgb, white 30%, transparent) !important;
 }
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
+html[data-skin="blocky"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
   translate: 0 var(--skin-px);
 }
-
-html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):disabled {
-  color: color-mix(in srgb, white 72%, black) !important;
+/* Disabled: the flat dark slab with grey lettering. */
+html[data-skin="blocky"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is(:disabled, [aria-disabled="true"]) {
+  background: var(--skin-button-off) !important;
+  color: color-mix(in srgb, white 63%, black) !important;
+  box-shadow: var(--skin-notch) !important;
   text-shadow: none;
-  opacity: 0.7;
+  opacity: 1;
 }
 
-html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+/* ── Tile: inventory slot ───────────────────────────────────────────────── */
+html[data-skin="blocky"] body [data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  --text: var(--skin-slot-ink);
+  --muted: var(--skin-slot-ink);
   background: var(--skin-slot) !important;
-  color: black !important;
-  caret-color: black;
+  color: var(--skin-slot-ink) !important;
+  -webkit-text-fill-color: currentColor;
   border-color: transparent !important;
-  box-shadow: var(--skin-notch), var(--skin-bevel-in) !important;
+  box-shadow: var(--skin-bevel-in) !important;
+  text-shadow: none;
+  transition: none !important;
+}
+html[data-skin="blocky"] body [data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
+  background: var(--skin-slot-hover) !important;
+}
+/* Selected slot: the hotbar's white frame. */
+html[data-skin="blocky"] body [data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], .is-active, .is-selected, [aria-selected="true"] > *) {
+  box-shadow: inset 0 0 0 var(--skin-px) white, inset 0 0 0 calc(var(--skin-px) + 2px) black, var(--skin-bevel-in) !important;
 }
 
+/* ── Field: black text box ──────────────────────────────────────────────── */
+html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background: var(--skin-field) !important;
+  color: white !important;
+  -webkit-text-fill-color: currentColor;
+  caret-color: white;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px var(--skin-field-line) !important;
+  color-scheme: dark;
+}
+html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):focus {
+  box-shadow: 0 0 0 2px white !important;
+  outline: none !important;
+}
+html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *))::placeholder {
+  color: color-mix(in srgb, white 52%, black);
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+}
+
+/* ── Slider: dark slot track, stone-block thumb ─────────────────────────── */
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *)) {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  accent-color: var(--accent);
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *))::-webkit-slider-runnable-track {
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--skin-stone), color-mix(in srgb, white 14%, black);
+  box-shadow: inset 0 0 0 2px black, inset 4px 4px 0 0 color-mix(in srgb, black 40%, transparent);
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *))::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--skin-stone), var(--skin-button-hi);
+  box-shadow: inset 0 0 0 2px black, inset 4px 4px 0 0 color-mix(in srgb, white 45%, transparent), inset -4px -4px 0 0 color-mix(in srgb, black 35%, transparent);
+  cursor: grab;
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *))::-moz-range-track {
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--skin-stone), color-mix(in srgb, white 14%, black);
+  box-shadow: inset 0 0 0 2px black, inset 4px 4px 0 0 color-mix(in srgb, black 40%, transparent);
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *))::-moz-range-progress {
+  height: 20px;
+  background: transparent;
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *))::-moz-range-thumb {
+  width: 12px;
+  height: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--skin-stone), var(--skin-button-hi);
+  box-shadow: inset 0 0 0 2px black, inset 4px 4px 0 0 color-mix(in srgb, white 45%, transparent), inset -4px -4px 0 0 color-mix(in srgb, black 35%, transparent);
+  cursor: grab;
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *)):is(:hover, :focus-visible)::-webkit-slider-thumb {
+  background: var(--skin-stone), color-mix(in srgb, white 82%, black);
+}
+html[data-skin="blocky"] body input[type="range"]:not([orient="vertical"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"]) *)):is(:hover, :focus-visible)::-moz-range-thumb {
+  background: var(--skin-stone), color-mix(in srgb, white 82%, black);
+}
+
+html[data-skin="blocky"] body :is(input[type="checkbox"], input[type="radio"], progress, meter) {
+  accent-color: var(--accent);
+}
+
+/* ── Focus and type ─────────────────────────────────────────────────────── */
 html[data-skin="blocky"] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: var(--skin-px) solid var(--accent) !important;
+  outline: var(--skin-px) solid white !important;
   outline-offset: calc(var(--skin-px) * 2);
+  box-shadow: 0 0 0 calc(var(--skin-px) * 3) black;
+}
+html[data-skin="blocky"] body [data-skin-surface]:focus-visible {
+  outline-offset: calc(var(--skin-px) * 2) !important;
 }
 
-/* Pixel headings with a one-step drop shadow. Body text keeps its readable font. */
+/* Pixel headings. Body text keeps its readable font. */
 html[data-skin="blocky"] body :is(main, .home-widget, .nav-settings-panel) :is(h1, h2, h3) {
   font-family: var(--skin-font-display) !important;
   font-weight: 700;
   letter-spacing: 0.01em;
   text-shadow: none;
-}
-
-html[data-skin="blocky"] body input[type="range"] {
-  accent-color: var(--accent);
-}
-
-/* Settings use the same inventory frame, including before surface tagging. */
-html[data-skin="blocky"] body .nav-settings-panel {
-  --text: var(--skin-ink);
-  --muted: color-mix(in srgb, black 70%, white);
-  background: var(--skin-panel) !important;
-  color: var(--skin-ink) !important;
-}
-html[data-skin="blocky"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *))::placeholder {
-  color: color-mix(in srgb, black 80%, white);
-  opacity: 1;
 }

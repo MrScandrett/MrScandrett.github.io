@@ -7,6 +7,8 @@
  *   data-skin-surface="panel"    a filled or outlined box with rounded corners or a shadow
  *   data-skin-surface="control"  a button, tab or button-like link
  *   data-skin-surface="field"    a text input, select or textarea
+ *   data-skin-shape="tile"       on a control: a button holding a layout of its own
+ *                                (a calendar day, a card that is a button), not a label
  *
  * Skin CSS styles those tags. Tags describe the page's own structure, not the
  * skin, so they are made once per element and survive skin switches; nothing
@@ -106,6 +108,20 @@
     return "panel";
   }
 
+  // A button whose contents are laid out (two or more boxed parts, a grid cell, a tall card)
+  // is a tile, not a label: skins that draw labelled buttons can draw these as slots instead.
+  function isTile(el) {
+    if (el.closest("[role='gridcell'], td")) return true;
+    if (el.getBoundingClientRect().height > 72) return true;
+    var boxed = 0;
+    for (var c = el.firstElementChild; c; c = c.nextElementSibling) {
+      if (/^(SVG|IMG|I)$/i.test(c.tagName)) continue;
+      var d = styleFor(c).display;
+      if (d !== "inline" && d !== "contents" && d !== "none" && ++boxed >= 2) return true;
+    }
+    return false;
+  }
+
   function scan(root) {
     if (!root || root.nodeType !== 1) return;
     var list = [root];
@@ -116,10 +132,13 @@
     styleCache = new WeakMap();
     for (var j = 0; j < list.length; j++) {
       var kind = classify(list[j]);
-      if (kind) marks.push([list[j], kind]);
+      if (kind) marks.push([list[j], kind, kind === "control" && isTile(list[j])]);
     }
     styleCache = null;
-    for (var k = 0; k < marks.length; k++) marks[k][0].setAttribute(ATTR, marks[k][1]);
+    for (var k = 0; k < marks.length; k++) {
+      marks[k][0].setAttribute(ATTR, marks[k][1]);
+      if (marks[k][2]) marks[k][0].setAttribute("data-skin-shape", "tile");
+    }
   }
 
   function active() {

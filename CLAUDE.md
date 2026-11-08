@@ -392,6 +392,9 @@ visitor's pinned skin (`classroomos-skin`) survives theme changes; "Match theme"
   (media="screen", so print is untouched) and `skin-surfaces.js` while another skin is in play.
 - `skin-surfaces.js` tags what *looks* like a panel / control / field (`data-skin-surface`) so skins reach
   lessons without knowing their classes. Put `data-skin-keep` on anything that must keep its own look.
+  A button holding a layout of its own (a calendar day, a card that is a button) also gets
+  `data-skin-shape="tile"`, so a skin can draw it as a slot rather than a labelled button. Blocky's materials are
+  theme-independent greys, so contrast-guard.js never re-tones its surfaces or header in dark themes.
 - Rules (`node --test tests/skins.test.mjs`): no color literals in skin CSS (mix `var(--text)`,
   `var(--accent)`, white/black/transparent); the logo `.brand` is always Classroom Chicago (`--font-logo`),
   only `skin-core.css` touches it; animations sit inside `prefers-reduced-motion: no-preference` *and*

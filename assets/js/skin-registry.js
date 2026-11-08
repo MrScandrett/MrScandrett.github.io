@@ -45,7 +45,7 @@
     {
       id: "blocky",
       label: "Blocky",
-      detail: "Silver inventory panels, inset slots and beveled stone buttons.",
+      detail: "Silver inventory windows, stone buttons, item slots and black text boxes.",
       era: "Voxel game menus, 2010s",
       icon: "▦",
       css: true,

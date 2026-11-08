@@ -201,7 +201,9 @@
   // marked data-night-keep are left alone, and media sitting on a panel we darkened keeps the light backing
   // it was drawn for (a transparent diagram with dark linework must not end up on a dark panel).
   var SURFACE_MIN_LUMINANCE = 0.45;
-  var SURFACE_KEEP = "[data-night-keep], [data-score], .fb-shell, .as-page";
+  // Blocky draws its own theme-independent material (silver panels, stone buttons); re-toning them would
+  // leave dark panels with the skin's dark ink on them.
+  var SURFACE_KEEP = "[data-night-keep], [data-score], .fb-shell, .as-page, html[data-skin='blocky'] :is([data-skin-surface], .site-header, .nav-settings-panel)";
   var SURFACE_SKIP_TAGS = /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|VIDEO|IFRAME|OBJECT|EMBED|MODEL-VIEWER|HEAD|OPTION|OPTGROUP)$/i;
   var SURFACE_MEDIA = /^(IMG|SVG|CANVAS)$/i;
   var SURFACE_CONTROLS = /^(BUTTON|INPUT|SELECT|TEXTAREA|SUMMARY)$/i;
@@ -592,7 +594,8 @@
       }
     }).observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class", "hidden", "aria-hidden", "disabled", "value"],
+      // data-skin-surface: skin tags land after paint and change which surfaces the guard may touch.
+      attributeFilter: ["class", "hidden", "aria-hidden", "disabled", "value", "data-skin-surface"],
       characterData: true,
       childList: true,
       subtree: true
