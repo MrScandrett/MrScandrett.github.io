@@ -24,6 +24,11 @@
     .cmp-quiz input { width: 7rem; min-height: 40px; padding: .4rem .6rem; color: var(--te-text); background: #0c1119; border: 1px solid var(--te-line); border-radius: 9px; font: inherit; }
     .cmp-challenge { border-top: 1px solid rgba(255,255,255,.08); padding-top: .8rem; margin-top: .8rem; }
     .cmp-challenge:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+    .cmp-more { margin-top: 1.1rem !important; }
+    .cmp-parallel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .5rem 1rem; align-items: start; margin-top: .9rem; }
+    .cmp-parallel .cmp-legend, .cmp-parallel .te-readout { grid-column: 1 / -1; }
+    .cmp-pc-svg { width: 100%; height: auto; border-radius: 12px; background: #0c1119; border: 1px solid rgba(255,255,255,.08); }
+    @media (max-width: 760px) { .cmp-parallel { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 760px) { .cmp-views { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -84,8 +89,8 @@
           <div class="te-readout" id="readout" aria-live="polite"></div>
         </section>
 
-        <section class="te-card">
-          <h2>2. The six controls</h2>
+        <section class="te-card" id="controls-reference">
+          <h2>2. The six controls, and the rest of the front panel</h2>
           <div class="cmp-types">
             <div class="te-brief"><h3><span data-glossary="compressor threshold">Threshold</span></h3><p>The level where compression starts. Sound below the threshold passes through unchanged. Lower the threshold and more of the sound gets compressed.</p></div>
             <div class="te-brief"><h3><span data-glossary="compression ratio">Ratio</span></h3><p>How strongly the compressor turns down sound above the threshold. At 4:1, a signal 8 dB over the threshold comes out only 2 dB over. At 1:1 nothing changes.</p></div>
@@ -93,6 +98,15 @@
             <div class="te-brief"><h3><span data-glossary="attack time">Attack</span></h3><p>How quickly the compressor reacts once the sound crosses the threshold. A slow attack lets the first hit of a drum through before it clamps down, which keeps the punch.</p></div>
             <div class="te-brief"><h3><span data-glossary="release time">Release</span></h3><p>How quickly the compressor lets go once the sound drops back down. Too fast and it can flutter or distort. Too slow and it's still turning down the next quiet note.</p></div>
             <div class="te-brief"><h3><span data-glossary="makeup gain">Makeup gain</span></h3><p>Compression makes the loud parts quieter, so the whole track ends up quieter. Makeup gain turns everything back up afterward. Always compare at equal loudness: louder almost always sounds "better" at first.</p></div>
+          </div>
+          <h3 class="cmp-more">More controls you'll meet on real compressors</h3>
+          <div class="cmp-types">
+            <div class="te-brief"><h3>Input &amp; output (fixed threshold)</h3><p>Many classic units (the 1176, and the LA-2A's Peak Reduction) have <em>no</em> threshold knob. The threshold is fixed, so turning up the <strong>input</strong> pushes more of the signal over it, and the <strong>output</strong> knob is the makeup gain.</p></div>
+            <div class="te-brief"><h3>Sidechain filter (SC HPF)</h3><p>A high-pass filter on what the compressor <em>listens</em> to, not on what you hear. It stops a big kick or bass note from pumping the whole mix bus.</p></div>
+            <div class="te-brief"><h3>Mix (wet/dry)</h3><p>Blends the compressed signal with the untouched one inside the box. That's parallel compression in one knob (see section 7).</p></div>
+            <div class="te-brief"><h3>Detection: peak or RMS</h3><p>Peak detection reacts to every spike (catches drums). RMS reacts to the average loudness, more like your ear does (smooth on vocals and buses).</p></div>
+            <div class="te-brief"><h3>Stereo link</h3><p>On a stereo compressor, both sides turn down together. Unlinked, a loud hit on the left pulls the image to the right.</p></div>
+            <div class="te-brief"><h3>Gain-reduction meter</h3><p>The most important "control" is the needle. Read it on every phrase: 3–6 dB on the loud parts is a lot more than it sounds.</p></div>
           </div>
         </section>
 
@@ -141,8 +155,39 @@
           </div>
         </section>
 
+        <section class="te-card" id="level-matching">
+          <h2>6. Level matching: EQs and compressors</h2>
+          <p>Your ears have a bias: <strong>louder sounds better.</strong> Even 1 dB louder reads as "fuller, clearer, more exciting." Boost an EQ or add makeup gain and the processed version almost always wins a quick A/B because it's louder, not because it's better. <strong>Level matching</strong> means setting the processed signal to the <em>same perceived loudness</em> as the original before you compare.</p>
+          <div class="cmp-types">
+            <div class="te-brief"><h3>Compressors</h3><p>Set makeup gain so that bypass on and off are equally loud. Compare a few times with your eyes closed (or have a partner flip the bypass). If you can't tell which is which, the compressor isn't doing anything you need.</p></div>
+            <div class="te-brief"><h3>EQs</h3><p>A boost raises the level, a cut lowers it. Use the EQ's output gain to match, then A/B. A good habit: cut more than you boost, so you don't fool yourself with loudness.</p></div>
+            <div class="te-brief"><h3>Use the meters, then your ears</h3><p>Match peaks or loudness (LUFS) on the meter first, then fine-tune by ear, because a compressed signal can have lower peaks and still sound louder.</p></div>
+            <div class="te-brief"><h3>Why it matters downstream</h3><p>An unmatched plug-in changes the level into everything after it in the chain (the next compressor's threshold, the bus, the print). Matched processors keep your gain staging the same as it was.</p></div>
+          </div>
+          <p class="te-source-note">Try it: in the workbench above, set a 4:1 compressor, then raise makeup gain until <strong>Bypass</strong> on and off sound equally loud. Now judge whether the compression actually helped.</p>
+        </section>
+
+        <section class="te-card" id="serial-parallel">
+          <h2>7. Serial and parallel processing</h2>
+          <p><strong>Serial</strong> processing runs a signal through processors one after another, so each one hears the result of the one before. <strong>Parallel</strong> processing splits the signal, processes one copy, and blends it back with the untouched original.</p>
+          <div class="cmp-types">
+            <div class="te-brief"><h3>Serial: order matters</h3><p>EQ → compressor: cut the boomy low end <em>first</em> so the compressor doesn't react to it. Compressor → EQ: brighten after, so the compressor doesn't clamp on the boost. Two gentle compressors in series (say 3 dB each) often sound more natural than one working hard for 6 dB.</p></div>
+            <div class="te-brief"><h3>Parallel: keep the punch, add the body</h3><p>New York compression: send the drums to a bus, compress that copy <em>hard</em>, and tuck it under the dry drums. The dry copy keeps the transients; the squashed copy lifts the quiet detail and room. Reverb and delay on FX sends are parallel processing too.</p></div>
+          </div>
+          <div class="cmp-parallel" data-parallel-compression data-memory-ignore>
+            <svg viewBox="0 0 420 300" role="img" aria-labelledby="pc-title" class="cmp-pc-svg"><title id="pc-title">Transfer curves for the dry signal, the hard-compressed copy, and the parallel blend</title></svg>
+            <div class="te-controls">
+              <div class="te-control"><label for="pc-wet">Compressed copy level (its makeup gain) <output id="pc-wet-out"></output></label><input id="pc-wet" type="range" min="-20" max="24" step="1" value="10" /></div>
+              <div class="te-control"><label for="pc-threshold">Copy's threshold <output id="pc-threshold-out"></output></label><input id="pc-threshold" type="range" min="-50" max="-10" step="1" value="-40" /></div>
+              <div class="te-control"><label for="pc-ratio">Copy's ratio <output id="pc-ratio-out"></output></label><input id="pc-ratio" type="range" min="2" max="20" step="1" value="10" /></div>
+            </div>
+            <div class="cmp-legend"><span><i style="background:#6f7f8f"></i>Dry (1:1)</span><span><i style="background:#ff766c"></i>Hard-compressed copy</span><span><i style="background:#59c8d8"></i>Blend (what you hear)</span></div>
+            <div class="te-readout" id="pc-readout" aria-live="polite"></div>
+          </div>
+        </section>
+
         <section class="te-card">
-          <h2>6. Meet the hardware</h2>
+          <h2>8. Meet the hardware</h2>
           <p>The compressor in this lab is software, but its controls come from boxes like these. Match each photo to a row of <em>Kinds of compressors</em>: which one is optical, and which is FET? Click a photo to enlarge it.</p>
           <div class="pg-grid">
             <figure class="pg-card" data-zoomable data-lightbox-group="audio-compression">
@@ -392,6 +437,8 @@
     newQ();update();
   })();
   </script>
+  <script src="../../../assets/js/lessons/studio-signal.js"></script>
+  <script src="../../../assets/js/lessons/parallel-compression.js"></script>
   <script src="../../../assets/js/site-glossary.js"></script>
   <script src="../../../assets/js/photo-lightbox.js"></script>
   <script src="../../../assets/js/lesson-print-button.js"></script>
