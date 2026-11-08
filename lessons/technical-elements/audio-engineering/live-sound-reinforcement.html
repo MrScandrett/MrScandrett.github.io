@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Sound Reinforcement: Feedback, the PA &amp; Show Day · Technical Elements</title>
+  <meta name="description" content="Run a live PA like a professional: decibels and the inverse square law, gain before feedback, ringing out a system with a graphic EQ, loudspeakers and beaming, amplifier loads and speaker cable, delay speakers, ground loops and hearing safety, and the show-day workflow from load-in to debrief." />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/technical-elements.css" />
+  <link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css" />
+  <link rel="stylesheet" href="../../../assets/css/lessons/live-sound.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print" />
+</head>
+<body class="te-page">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <nav class="te-topbar">
+    <a href="../technical-elements.html">← Technical Elements Hub</a>
+    <span>Live Sound · Feedback, the PA &amp; Show Day</span>
+    <a href="wireless-mic-rf-coordination.html">Next: Wireless &amp; RF →</a>
+  </nav>
+
+  <main class="te-shell">
+    <header class="te-hero">
+      <div class="te-kicker">Decibels · Inverse square · Gain before feedback · Ringing out · Loudspeakers · Amps · Delays · Hum · Show day</div>
+      <h1>Live Sound Reinforcement: Feedback, the PA &amp; Show Day</h1>
+      <p>Sound <em>reinforcement</em> means making a real performance louder and clearer for a crowd, while the performance is still happening. Recording can fix things later. Live sound can't: the mic, the speakers and the audience share one room, and the loudspeaker's sound comes right back into the microphone. Every topic in this lesson comes back to that loop: how loud the PA must be, how loud it <em>can</em> be before it howls, and how to run a show so nothing goes wrong in front of an audience.</p>
+      <div class="te-meta"><span class="te-chip">Grades 8–12</span><span class="te-chip">Two or three class periods</span><span class="te-chip">Seven interactive labs</span><span class="te-chip">Calculator permitted</span></div>
+    </header>
+
+    <div class="te-grid">
+      <div class="te-stack">
+
+        <section class="te-card" id="decibel">
+          <h2>1. The decibel: the PA's currency</h2>
+          <p>Ears hear loudness on a ratio scale, not a straight-line one. Going from one singer to two doesn't sound twice as loud, and neither does doubling the amplifier. The <strong>decibel</strong> (dB) is a logarithm of a ratio, so it matches how we hear. You only need four facts to run a PA:</p>
+          <div class="ls-rules">
+            <div><b>+3 dB</b><span>Double the <em>power</em>. Two equal, unrelated sources (two singers), or twice the amplifier watts.</span></div>
+            <div><b>+6 dB</b><span>Double the <em>pressure</em> (or voltage). The same signal from two speakers, in phase, at a seat equally far from both. Also: half the distance to a point source.</span></div>
+            <div><b>+10 dB</b><span>Ten times the power, and about <em>twice as loud</em> to a listener. To sound twice as loud, you need 10× the watts.</span></div>
+            <div><b>1 dB</b><span>About the smallest change most people notice in a mix. A fader move of 1–2 dB is a real move.</span></div>
+          </div>
+          <code class="te-formula">dB = 10·log₁₀(P₂ / P₁)   for power      dB = 20·log₁₀(p₂ / p₁)   for pressure or voltage</code>
+          <p>There are many "dB"s. <strong>dB SPL</strong> is sound pressure in the air (0 dB SPL is the faintest sound a young ear can hear, 20 µPa). <strong>dBu</strong> and <strong>dBV</strong> are voltages in cables, and <strong>dBFS</strong> is level inside a digital desk. A meter reading only makes sense if you know which one it is.</p>
+
+          <h3 class="ls-sub">Lab: add the sources</h3>
+          <div class="te-controls ls-two">
+            <div class="te-control"><label for="ds-count">How many sources <output id="ds-count-out"></output></label><input id="ds-count" type="range" min="1" max="8" step="1" value="2" /></div>
+            <div class="te-control"><label for="ds-level">Each one alone <output id="ds-level-out"></output></label><input id="ds-level" type="range" min="70" max="110" step="1" value="94" /></div>
+          </div>
+          <div class="ls-seg" role="group" aria-label="How the sources relate">
+            <button class="te-button" type="button" data-ds-mode="uncorrelated" aria-pressed="true">Different sources (singers)</button>
+            <button class="te-button" type="button" data-ds-mode="coherent" aria-pressed="false">Same signal, in phase (speakers)</button>
+            <button class="te-button" type="button" data-ds-mode="polarity" aria-pressed="false">Same signal, half flipped in polarity</button>
+          </div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Total level</span><strong id="ds-total">—</strong></div>
+            <div class="te-stat"><span>Gain over one source</span><strong id="ds-gain">—</strong></div>
+            <div class="te-stat"><span>Sounds about</span><strong id="ds-loud">—</strong></div>
+          </div>
+          <div class="te-readout" id="ds-readout" aria-live="polite"></div>
+        </section>
+
+        <section class="te-card" id="inverse-square">
+          <h2>2. The inverse square law: the back row problem</h2>
+          <p>Sound from a small speaker spreads out like a growing balloon. At twice the distance, the same energy covers four times the area, so the level drops by <strong>6 dB for every doubling of distance</strong>. That is the <strong>inverse square law</strong>, and it is why the front row is always louder than the back. A tall <strong>line array</strong> spreads more like a cylinder in its near field, losing closer to 3 dB per doubling, which is why big venues hang them.</p>
+          <code class="te-formula">SPL at a seat = sensitivity (dB, 1 W at 1 m) + 10·log₁₀(watts) − 20·log₁₀(distance in m)</code>
+          <p>A speaker's <strong>sensitivity</strong> is the SPL it makes from 1 watt, measured 1 metre away. Turn the watts up 10× and you gain only 10 dB. Move the listener from 1 m to 32 m (five doublings) and you lose 30 dB. Distance always wins, so the cheapest way to cover the back is to <em>raise the speaker</em> and aim it there.</p>
+
+          <h3 class="ls-sub">Lab: cover the audience</h3>
+          <div class="ls-hall" aria-hidden="false">
+            <svg id="cov-svg" viewBox="0 0 640 240" role="img" aria-label="Side view of a hall: a loudspeaker on the left, rows of listeners to the right, each row coloured by how loud it is"></svg>
+          </div>
+          <div class="te-controls ls-two">
+            <div class="te-control"><label for="cov-sens">Speaker sensitivity (1 W / 1 m) <output id="cov-sens-out"></output></label><input id="cov-sens" type="range" min="88" max="104" step="1" value="97" /></div>
+            <div class="te-control"><label for="cov-watts">Amplifier power <output id="cov-watts-out"></output></label><input id="cov-watts" type="range" min="0" max="7" step="1" value="3" aria-describedby="cov-watts-help" /><small id="cov-watts-help" class="ls-help">10 W to 2,000 W, in steps</small></div>
+            <div class="te-control"><label for="cov-height">Speaker height above ears <output id="cov-height-out"></output></label><input id="cov-height" type="range" min="0.3" max="8" step="0.1" value="0.6" /></div>
+            <div class="te-control"><label for="cov-back">Distance to the back row <output id="cov-back-out"></output></label><input id="cov-back" type="range" min="8" max="45" step="1" value="24" /></div>
+          </div>
+          <div class="ls-seg" role="group" aria-label="Speaker type">
+            <button class="te-button" type="button" data-cov-source="point" aria-pressed="true">Point source (one box)</button>
+            <button class="te-button" type="button" data-cov-source="line" aria-pressed="false">Line array (near field)</button>
+          </div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Front row</span><strong id="cov-front">—</strong></div>
+            <div class="te-stat"><span>Back row</span><strong id="cov-backspl">—</strong></div>
+            <div class="te-stat"><span>Front-to-back spread</span><strong id="cov-spread">—</strong></div>
+          </div>
+          <div class="te-readout" id="cov-readout" aria-live="polite"></div>
+          <p class="ls-note"><strong>Target:</strong> speech needs about 85 dB SPL at the back row and a music show 95–100 dB, with every seat within about <strong>6 dB</strong> of every other. Real rooms add reflected sound on top, so the back row is a little louder than this free-air model says (see <a href="room-acoustics.html">Room Acoustics</a>).</p>
+        </section>
+
+        <section class="te-card" id="feedback">
+          <h2>3. Feedback and gain before feedback</h2>
+          <p><strong>Feedback</strong> is a loop: the mic hears the speaker, the console sends that back to the speaker louder, the mic hears it again, and so on. If the sound comes back around the loop <em>at least as loud as it left</em> (a loop gain of 0 dB or more) at any one frequency, that frequency grows every trip until it howls. It's always one frequency first, the one where the speaker, the room and the mic all happen to peak together.</p>
+          <div class="ls-loop" aria-label="The feedback loop">
+            <span>Mic</span><i>→</i><span>Console gain</span><i>→</i><span>Amp</span><i>→</i><span>Speaker</span><i>→</i><span>Air &amp; room</span><i>↺</i>
+          </div>
+          <p>So how loud can the PA get? Acoustician Don Davis gave the answer as two numbers. <strong>NAG</strong> (needed acoustic gain) is how much the PA must lift the talker so the farthest listener hears them as if they were close. <strong>PAG</strong> (potential acoustic gain) is how much the room geometry <em>allows</em> before feedback. If PAG ≥ NAG, the show works.</p>
+          <code class="te-formula">PAG = 20log D1 − 20log D2 + 20log D0 − 20log Ds − 10log NOM − 6 dB<br />NAG = 20log D0 − 20log EAD</code>
+          <div class="ls-terms">
+            <div><b>Ds</b> talker → mic</div><div><b>D0</b> talker → farthest listener</div>
+            <div><b>D1</b> mic → nearest speaker</div><div><b>D2</b> speaker → farthest listener</div>
+            <div><b>EAD</b> how close the listener should <em>seem</em> to the talker</div><div><b>NOM</b> number of open mics; <b>6 dB</b> is a safety margin</div>
+          </div>
+
+          <h3 class="ls-sub">Lab: will this show work?</h3>
+          <div class="ls-pag">
+            <div class="te-controls">
+              <div class="te-control"><label for="pag-ds">Ds: mouth to mic <output id="pag-ds-out"></output></label><input id="pag-ds" type="range" min="0.03" max="1.5" step="0.01" value="0.3" /></div>
+              <div class="te-control"><label for="pag-d1">D1: mic to nearest speaker <output id="pag-d1-out"></output></label><input id="pag-d1" type="range" min="0.5" max="12" step="0.1" value="2" /></div>
+              <div class="te-control"><label for="pag-d0">D0: talker to back row <output id="pag-d0-out"></output></label><input id="pag-d0" type="range" min="4" max="45" step="0.5" value="20" /></div>
+              <div class="te-control"><label for="pag-d2">D2: speaker to back row <output id="pag-d2-out"></output></label><input id="pag-d2" type="range" min="4" max="45" step="0.5" value="18" /></div>
+              <div class="te-control"><label for="pag-ead">EAD: should sound as if from <output id="pag-ead-out"></output></label><input id="pag-ead" type="range" min="0.5" max="8" step="0.1" value="2" /></div>
+              <div class="te-control"><label for="pag-nom">NOM: open microphones <output id="pag-nom-out"></output></label><input id="pag-nom" type="range" min="1" max="16" step="1" value="4" /></div>
+              <div class="te-control"><label for="pag-pattern">Microphone pattern</label><select id="pag-pattern"><option value="omni">Omnidirectional (the textbook case)</option><option value="cardioid" selected>Cardioid</option><option value="supercardioid">Supercardioid</option><option value="hypercardioid">Hypercardioid</option></select></div>
+              <div class="te-control"><label for="pag-angle">Nearest speaker is this far off the mic's axis <output id="pag-angle-out"></output></label><input id="pag-angle" type="range" min="0" max="180" step="5" value="90" /></div>
+            </div>
+            <figure class="ls-polar" data-present="off">
+              <svg id="pag-polar" viewBox="-110 -110 220 220" role="img" aria-label="Polar plot of the microphone's pickup with the speaker's position marked"></svg>
+              <figcaption>Top = where the mic points (the singer). The red dot is the nearest speaker.</figcaption>
+            </figure>
+          </div>
+          <div class="ls-meter" aria-hidden="true"><div class="ls-meter-bar"><i id="pag-bar-pag"></i><i id="pag-bar-nag"></i></div><div class="ls-meter-key"><span><i class="k-pag"></i>PAG (allowed)</span><span><i class="k-nag"></i>NAG (needed)</span></div></div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>PAG</span><strong id="pag-pag">—</strong></div>
+            <div class="te-stat"><span>NAG</span><strong id="pag-nag">—</strong></div>
+            <div class="te-stat"><span>Margin</span><strong id="pag-margin">—</strong></div>
+          </div>
+          <div class="te-readout" id="pag-readout" aria-live="polite"></div>
+          <p class="ls-note"><strong>The rules hiding in the equation:</strong> halve the mouth-to-mic distance and you gain <strong>6 dB</strong> (the biggest, cheapest fix). Double the open mics and you lose <strong>3 dB</strong>, so mute every mic that isn't in use. Keep the speakers <strong>in front of</strong> the mics (D1 big), and put each wedge in its mic's <strong>null</strong>: behind a cardioid (180°), about 126° off a supercardioid. EQ can't beat geometry; it only trims the peaks after the geometry is right.</p>
+        </section>
+
+        <section class="te-card" id="ring-out">
+          <h2>4. Ringing out the system</h2>
+          <p>Before anyone arrives, engineers <strong>ring out</strong> the PA: put the mics where they'll be used, slowly raise the gain until the system just starts to ring, find that frequency, cut it a little with a narrow EQ band, and repeat. Each cut buys a few dB at <em>that</em> frequency only, until the next peak rings. After four to six cuts the gains get small and the PA starts to sound hollow, so stop. Ring out each monitor mix the same way, on its own.</p>
+          <div class="ls-ring" data-memory-ignore>
+            <div class="te-canvas-wrap ls-ring-wrap" id="ring-stage"><canvas id="ring-canvas" width="900" height="380" role="img" aria-label="Loop gain of the PA against frequency. Where the curve crosses the 0 dB line, the system rings."></canvas>
+              <div class="ls-ring-banner" id="ring-banner" hidden>RINGING</div>
+            </div>
+            <div class="te-control ls-master"><label for="ring-master">System gain (master fader) <output id="ring-master-out"></output></label><input id="ring-master" type="range" min="-6" max="18" step="0.5" value="0" /></div>
+            <p class="ls-help" id="ring-geq-help">31-band graphic EQ: press a band to cut it 3 dB (press again to cut deeper, up to 12 dB).</p>
+            <div class="ls-geq" id="ring-geq" role="group" aria-describedby="ring-geq-help"></div>
+            <div class="te-button-row">
+              <button class="te-button" type="button" id="ring-undo">Undo last cut</button>
+              <button class="te-button" type="button" id="ring-flat">Flatten EQ</button>
+              <button class="te-button" type="button" id="ring-new">New room</button>
+              <button class="te-button" type="button" id="ring-sound" aria-pressed="false">🔊 Hear the ring</button>
+              <button class="te-button" type="button" id="ring-ear" aria-pressed="false">👂 Ear training: hide the curve</button>
+            </div>
+          </div>
+          <div class="te-stat-grid ls-stats4">
+            <div class="te-stat"><span>Rings at</span><strong id="ring-at">—</strong></div>
+            <div class="te-stat"><span>Gain before feedback</span><strong id="ring-gbf">—</strong></div>
+            <div class="te-stat"><span>Earned by EQ</span><strong id="ring-earned">—</strong></div>
+            <div class="te-stat"><span>PA tone</span><strong id="ring-tone">—</strong></div>
+          </div>
+          <div class="te-readout" id="ring-readout" aria-live="polite"></div>
+          <p class="ls-note"><strong>In the real room:</strong> keep the level reasonable and your hand on the master. Ring out with the mics in their show positions and the wedges where they'll sit. Use the narrowest cut that works (a parametric with high Q beats a graphic), and write the frequencies down: rooms repeat themselves, and the same frequency will try to ring again during the show. The <a href="eq-problem-frequency.html">EQ lesson</a> covers the sweep-and-cut method.</p>
+        </section>
+
+        <section class="te-card" id="loudspeakers">
+          <h2>5. Loudspeakers: drivers, crossovers and beaming</h2>
+          <p>A loudspeaker <strong>driver</strong> is a microphone run backwards. Current from the amplifier flows through a coil of wire sitting in a magnet's gap; the coil is pushed in and out, and it drags the cone with it. A moving coil in a magnet also <em>generates</em> a voltage (the <strong>back EMF</strong>) that fights the amplifier, which is why a speaker's impedance changes with frequency.</p>
+          <div class="ls-cards">
+            <div class="te-brief"><h3>Woofer and subwoofer</h3><p>Big, heavy cones (10–21 inch) that move a lot of air for low notes. Subs handle roughly 30–100 Hz and sit on the floor, where the boundary adds bass for free.</p></div>
+            <div class="te-brief"><h3>Compression driver + horn</h3><p>A small, stiff diaphragm feeding a horn throat. Very efficient for mids and highs, and the horn's shape sets the <strong>coverage angle</strong> (for example 90° wide × 50° tall).</p></div>
+            <div class="te-brief"><h3>Crossover</h3><p>A filter that sends lows to the woofer and highs to the horn. A high note can't move a heavy cone fast enough, and a low note would rip a tweeter apart, so each driver gets only its own job.</p></div>
+            <div class="te-brief"><h3>Passive vs active</h3><p>A <strong>passive</strong> box hides its crossover inside and needs an external amp. An <strong>active</strong> (powered) box has the amp, crossover, EQ and limiter built in and needs only a line-level signal plus mains power. Most school PAs are active.</p></div>
+          </div>
+          <h3 class="ls-sub">Why one driver can't do it all: beaming</h3>
+          <p>A driver sends sound evenly in all directions only while the wavelength is <em>bigger</em> than the cone. Once the wavelength is shorter than the cone's diameter, the sound squeezes into a narrow beam straight ahead, and listeners off to the side lose the highs. That is <strong>high-frequency beaming</strong>, and it's why every crossover hands the highs to a smaller driver.</p>
+          <div class="te-controls ls-two">
+            <div class="te-control"><label for="beam-size">Driver diameter</label><select id="beam-size"><option value="1">1-inch (tweeter / compression driver exit)</option><option value="2">2-inch (large compression driver)</option><option value="6.5">6.5-inch (mid / small monitor)</option><option value="8">8-inch</option><option value="10">10-inch</option><option value="12" selected>12-inch (typical PA woofer)</option><option value="15">15-inch</option><option value="18">18-inch (subwoofer)</option></select></div>
+            <div class="te-control"><label for="beam-freq">Test frequency <output id="beam-freq-out"></output></label><input id="beam-freq" type="range" min="0" max="1" step="0.005" value="0.6" /></div>
+          </div>
+          <div class="ls-beam"><svg id="beam-svg" viewBox="0 0 640 170" role="img" aria-label="A driver seen from the side with the wavelength of the test frequency drawn to the same scale, and its coverage pattern"></svg></div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Wavelength</span><strong id="beam-lambda">—</strong></div>
+            <div class="te-stat"><span>Starts to beam above</span><strong id="beam-limit">—</strong></div>
+            <div class="te-stat"><span>Coverage</span><strong id="beam-cov">—</strong></div>
+          </div>
+          <div class="te-readout" id="beam-readout" aria-live="polite"></div>
+          <h3 class="ls-sub">Reading a spec sheet</h3>
+          <div class="ls-specs">
+            <div><b>Frequency response</b><span>The range it plays within ±3 dB (for example 55 Hz–19 kHz). A wide range with a big tolerance (±10 dB) means little.</span></div>
+            <div><b>Sensitivity</b><span>dB SPL from 1 W at 1 m. Every +3 dB of sensitivity is like doubling your amplifier.</span></div>
+            <div><b>Max SPL</b><span>The loudest it can play (usually peak, at 1 m). Subtract the inverse square loss to the back row.</span></div>
+            <div><b>Coverage angle</b><span>Horizontal × vertical, measured where the level is 6 dB below on-axis. Aim the box so the audience fits inside it.</span></div>
+            <div><b>Nominal impedance</b><span>4, 8 or 16 Ω. Sets how hard it loads the amplifier (section 6).</span></div>
+            <div><b>Power handling</b><span>Continuous (AES) is the honest number; "program" is about 2×, "peak" 4×. <strong>Power compression</strong>: a hot voice coil gains resistance, so a speaker played flat-out for an hour can lose several dB.</span></div>
+          </div>
+        </section>
+
+        <section class="te-card" id="amplifiers">
+          <h2>6. Amplifiers, impedance and speaker cable</h2>
+          <p>A power amplifier is a <strong>voltage</strong> source: it pushes a voltage, and the speaker's <strong>impedance</strong> (its resistance to AC, in ohms Ω) decides how much current flows. Lower impedance, more current, more power, and more heat in the amp. Hang two 8 Ω boxes on one channel in parallel and the amp sees 4 Ω; four of them is 2 Ω, which most amps can't survive.</p>
+          <code class="te-formula">Parallel: Z = Z₁ / n      Series: Z = n · Z₁      Power: P = V² / Z</code>
+          <div class="ls-amp">
+            <div class="te-controls">
+              <div class="te-control"><label for="amp-rated">Amplifier: watts per channel into 8 Ω</label><select id="amp-rated"><option value="250">250 W</option><option value="500" selected>500 W</option><option value="1000">1,000 W</option></select></div>
+              <div class="te-control"><label for="amp-min">Lowest load the amp is rated for</label><select id="amp-min"><option value="4" selected>4 Ω</option><option value="2">2 Ω</option></select></div>
+              <div class="te-control"><label for="amp-n">Speaker cabinets on this channel <output id="amp-n-out"></output></label><input id="amp-n" type="range" min="1" max="4" step="1" value="2" /></div>
+              <div class="te-control"><label for="amp-z">Each cabinet's impedance</label><select id="amp-z"><option value="4">4 Ω</option><option value="8" selected>8 Ω</option><option value="16">16 Ω</option></select></div>
+            </div>
+            <div class="te-controls">
+              <div class="ls-seg" role="group" aria-label="Wiring"><button class="te-button" type="button" data-amp-wiring="parallel" aria-pressed="true">Parallel (daisy-chained)</button><button class="te-button" type="button" data-amp-wiring="series" aria-pressed="false">Series</button></div>
+              <label class="ls-check"><input type="checkbox" id="amp-bridge" /> Bridge mode (both channels drive one load)</label>
+              <div class="te-control"><label for="amp-awg">Speaker cable gauge</label><select id="amp-awg"><option value="12">12 AWG (thick)</option><option value="14" selected>14 AWG</option><option value="16">16 AWG</option><option value="18">18 AWG (thin)</option></select></div>
+              <div class="te-control"><label for="amp-len">Cable length, amp to speakers <output id="amp-len-out"></output></label><input id="amp-len" type="range" min="2" max="60" step="1" value="15" /></div>
+            </div>
+          </div>
+          <div class="te-stat-grid ls-stats4">
+            <div class="te-stat"><span>Load on the amp</span><strong id="amp-load">—</strong></div>
+            <div class="te-stat"><span>Power delivered</span><strong id="amp-watts">—</strong></div>
+            <div class="te-stat"><span>Lost in the cable</span><strong id="amp-loss">—</strong></div>
+            <div class="te-stat"><span>Damping factor at speaker</span><strong id="amp-df">—</strong></div>
+          </div>
+          <div class="te-readout" id="amp-readout" aria-live="polite"></div>
+          <div class="ls-cards">
+            <div class="te-brief"><h3>Headroom, not just watts</h3><p>Give a speaker an amp rated about 1.5–2× its continuous power, and use it with headroom. An amp driven into <strong>clipping</strong> squares off the wave and pours high-frequency energy into the horn, so a <em>small</em> amp that clips kills more tweeters than a big one that doesn't.</p></div>
+            <div class="te-brief"><h3>Bridge mode</h3><p>The two channels push the same signal in opposite polarity on either side of one speaker: twice the voltage, four times the power into the same load. But each side now sees <strong>half</strong> the load, so bridge only into 8 Ω on a 4 Ω-rated amp.</p></div>
+            <div class="te-brief"><h3>Damping factor</h3><p>Load impedance ÷ the amp's output impedance. A high number lets the amp grip the cone and stop it after a kick drum. Long, thin speaker cable adds resistance in series and throws most of it away.</p></div>
+            <div class="te-brief"><h3>Amplifier classes</h3><p>Class AB amps are heavy and run warm. Class D amps switch their transistors fully on and off: about 90% efficient, light enough for a powered speaker. Their protection circuits (clip limiters, thermal, DC and short protection) are why a modern amp mutes instead of dying.</p></div>
+          </div>
+          <p class="ls-note"><strong>Never use an instrument (guitar) cable for a speaker.</strong> It's thin, shielded wire made for millivolts; at speaker currents it heats up and starves the speaker. Speaker cable is two thick conductors, usually on <strong>Speakon</strong> connectors, which lock and can't be touched while live.</p>
+        </section>
+
+        <section class="te-card" id="placement">
+          <h2>7. Where the speakers go, and delay speakers</h2>
+          <div class="ls-cards">
+            <div class="te-brief"><h3>Mains in front of the mics</h3><p>Front-of-house (FOH) speakers go <em>downstage</em> of every microphone, so the mics are behind the speakers' coverage. This makes D1 big and the PAG high.</p></div>
+            <div class="te-brief"><h3>Up and aimed</h3><p>Raise the mains above the audience's heads (on stands or flown) and aim the top of the box at the back third of the room. Heads absorb sound, and height evens out the front-to-back spread (section 2).</p></div>
+            <div class="te-brief"><h3>Monitors in the nulls</h3><p>Wedges sit where each mic is deaf: behind a cardioid, at the 126° sides of a supercardioid. <strong>In-ear monitors</strong> remove the wedge from the loop entirely.</p></div>
+            <div class="te-brief"><h3>Fills and delays</h3><p>Front fills cover the first rows under the mains; under-balcony and back-of-hall speakers cover where the mains can't reach. Those must be <strong>delayed</strong>.</p></div>
+          </div>
+          <h3 class="ls-sub">Lab: time-align a delay speaker</h3>
+          <p>Sound travels about 343 m/s, so it takes roughly 3 ms per metre. Electricity is instant. A delay speaker halfway down the hall plays <em>before</em> the mains' sound gets there, and your ears follow the first arrival, so the voice seems to come from the ceiling. Delay it by the travel time from the mains, then add about 10 ms more. Thanks to the <strong>precedence (Haas) effect</strong>, the ear locks onto the mains (which now arrive first) while the delay speaker quietly adds level. Go too late (much over 30 ms) and it becomes an echo.</p>
+          <div class="te-controls ls-two">
+            <div class="te-control"><label for="dly-dist">Mains to delay speaker <output id="dly-dist-out"></output></label><input id="dly-dist" type="range" min="4" max="80" step="0.5" value="25" /></div>
+            <div class="te-control"><label for="dly-temp">Air temperature <output id="dly-temp-out"></output></label><input id="dly-temp" type="range" min="0" max="40" step="1" value="20" /></div>
+            <div class="te-control"><label for="dly-haas">Precedence offset <output id="dly-haas-out"></output></label><input id="dly-haas" type="range" min="0" max="40" step="1" value="10" /></div>
+          </div>
+          <div class="ls-timeline"><svg id="dly-svg" viewBox="0 0 640 120" role="img" aria-label="Arrival times at a listener under the delay speaker: the mains, then the delay speaker"></svg></div>
+          <div class="te-stat-grid">
+            <div class="te-stat"><span>Speed of sound</span><strong id="dly-c">—</strong></div>
+            <div class="te-stat"><span>Travel time</span><strong id="dly-travel">—</strong></div>
+            <div class="te-stat"><span>Set the delay to</span><strong id="dly-set">—</strong></div>
+          </div>
+          <div class="te-readout" id="dly-readout" aria-live="polite"></div>
+          <div class="pg-grid">
+            <figure class="pg-card" data-zoomable data-lightbox-group="live-sound">
+              <img src="../../../assets/images/lessons/live-audio-signal-chain/line-array.jpg" alt="A tall column of loudspeaker boxes hanging in a gentle curve inside a church" loading="lazy" />
+              <figcaption><strong>A flown line array</strong><span>Each box in the curve aims at a different depth of the room: the top boxes reach the back, the bottom ones the front. Hanging it high keeps the front-to-back spread small and the mics behind the speakers.</span>
+                <span class="pg-credit" data-no-glossary>Epolk · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Line_array_speakers.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+            </figure>
+            <figure class="pg-card" data-zoomable data-lightbox-group="live-sound">
+              <img src="../../../assets/images/lessons/live-audio-signal-chain/monitor-mixing-position.jpg" alt="A monitor engineer's position beside a stage, with a digital console and screens glowing in the dark" loading="lazy" />
+              <figcaption><strong>The monitor position</strong><span>On bigger shows a second engineer stands side-stage and builds every wedge and in-ear mix, ringing out each one on its own. Monitors are where feedback most often starts.</span>
+                <span class="pg-credit" data-no-glossary>Sonicvibesolutions · CC BY 4.0 · <a href="https://commons.wikimedia.org/wiki/File:Monitor_Mixing_Setup.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="te-card" id="hum-safety">
+          <h2>8. Hum, ground loops and safety</h2>
+          <p>A steady 60 Hz hum (50 Hz in Europe) with buzzy harmonics is almost always a <strong>ground loop</strong>. Two pieces of gear plugged into different outlets each connect to safety ground, and the audio cable's shield connects them to each other. That makes a loop of wire. Tiny differences in ground voltage between the outlets push current around it, and that current flows through the shield, right where your audio lives.</p>
+          <div class="ls-cards">
+            <div class="te-brief"><h3>Balanced lines</h3><p>Two copies of the signal in opposite polarity plus a shield. Noise lands on both wires equally and cancels at the input. Use XLR or TRS balanced cables for every long run.</p></div>
+            <div class="te-brief"><h3>Ground lift on a DI</h3><p>A DI box's <strong>ground lift</strong> switch breaks the shield (audio ground) between stage and console, breaking the loop without touching safety.</p></div>
+            <div class="te-brief"><h3>One power source</h3><p>Power the console, processors and amps from the same circuit (or a properly installed distro), so their grounds sit at the same voltage.</p></div>
+            <div class="te-brief"><h3>Never lift safety ground</h3><p>Never break the earth pin, never use a "cheater" adapter. That ground is what trips the breaker if a fault makes a chassis live. Audio problems never justify removing it.</p></div>
+          </div>
+          <div class="pg-grid ls-one">
+            <figure class="pg-card" data-zoomable data-lightbox-group="live-sound">
+              <img src="../../../assets/images/lessons/live-audio-signal-chain/di-box.jpg" alt="A black two-channel DI box with input and output jacks and small switches" loading="lazy" />
+              <figcaption><strong>A DI box and its ground-lift switch</strong><span>It turns a keyboard's unbalanced output into a balanced mic-level signal for the snake. The small lift switch breaks the audio ground between stage and console: the first thing to try when a keyboard channel hums.</span>
+                <span class="pg-credit" data-no-glossary>Ashley Pomeroy · CC BY-SA 3.0 · <a href="https://commons.wikimedia.org/wiki/File:DI_Box_8121.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+            </figure>
+          </div>
+
+          <h3 class="ls-sub">Lab: hum hunt</h3>
+          <div class="ls-quiz" data-memory-ignore>
+            <fieldset class="ls-q" data-answer="b"><legend>The keyboard channel hums. The keyboard is plugged into a wall outlet on stage; the console is powered from the booth. What do you try first?</legend>
+              <button type="button" data-choice="a">Cut 60 Hz with the channel EQ</button><button type="button" data-choice="b">Press the ground-lift switch on the keyboard's DI box</button><button type="button" data-choice="c">Break off the plug's earth pin</button>
+              <p class="ls-why" hidden>The loop runs through the DI's shield. Lifting it breaks the loop safely. EQ only hides the 60 Hz (the buzz has harmonics all the way up), and the earth pin is never touched.</p></fieldset>
+            <fieldset class="ls-q" data-answer="c"><legend>A guitar amp buzzes only when its 15 m unbalanced instrument cable runs past the lighting dimmers. Best fix?</legend>
+              <button type="button" data-choice="a">Turn the amp's treble down</button><button type="button" data-choice="b">Use a longer instrument cable around the dimmers</button><button type="button" data-choice="c">Keep the guitar cable short: DI near the player, then a balanced line down the snake</button>
+              <p class="ls-why" hidden>Unbalanced cables have no way to cancel induced noise. Keep them short and convert to balanced early. Cross power and audio cables at right angles, never in parallel.</p></fieldset>
+            <fieldset class="ls-q" data-answer="a"><legend>Every channel hums, even with the faders down, and the hum goes away when the amp rack's power comes from the same distro as the console. What was it?</legend>
+              <button type="button" data-choice="a">A ground loop between two power circuits</button><button type="button" data-choice="b">A faulty microphone</button><button type="button" data-choice="c">Too much phantom power</button>
+              <p class="ls-why" hidden>Hum on every channel with faders down lives after the faders: in the mix bus, the amps or the power. Common power fixed it, so the grounds were at different voltages.</p></fieldset>
+          </div>
+          <p class="ls-score" id="hum-score" aria-live="polite"></p>
+
+          <h3 class="ls-sub">Lab: how long is safe?</h3>
+          <p>Your ears are the one piece of gear you can't replace. NIOSH sets 85 dBA for 8 hours as the limit, and every +3 dB halves the safe time. A loud rock show at FOH can run 100 dBA or more. Wear earplugs when the show is loud, and mix at a level the audience needs, not the loudest the PA can do.</p>
+          <div class="te-control"><label for="ear-db">Average level <output id="ear-db-out"></output></label><input id="ear-db" type="range" min="80" max="115" step="1" value="97" /></div>
+          <div class="te-readout" id="ear-readout" aria-live="polite"></div>
+          <ul class="ls-safety">
+            <li><strong>Power:</strong> use GFCI protection outdoors and near water, don't overload one circuit (count the amps' current draw), and keep the cable run inspected and taped or covered where people walk.</li>
+            <li><strong>Rigging and stands:</strong> stands on level ground with legs fully spread, safety chains on anything flown, and nothing hung over the audience without a qualified rigger.</li>
+            <li><strong>Phantom power and mutes:</strong> mute the channel before plugging or switching +48 V, and turn the amps down before patching anything, to save the speakers from a loud pop.</li>
+          </ul>
+        </section>
+
+        <section class="te-card" id="show-day">
+          <h2>9. Show day: from load-in to debrief</h2>
+          <p>Professionals say the show is won before doors open. Here is the order a live crew works in. Put it in order first, then read why each step sits where it does.</p>
+          <div class="ls-order" data-memory-ignore>
+            <div class="ls-order-pool" id="order-pool" role="group" aria-label="Steps to put in order"></div>
+            <ol class="ls-order-list" id="order-list" aria-label="Your order"></ol>
+            <div class="te-button-row"><button class="te-button" type="button" id="order-undo">Undo</button><button class="te-button" type="button" id="order-reset">Start over</button><button class="te-button" type="button" id="order-show">Show me the order</button></div>
+            <div class="te-readout" id="order-readout" aria-live="polite">Press the steps in the order you'd do them.</div>
+          </div>
+          <div class="ls-phases">
+            <div class="te-brief"><h3>Before: preparation and the briefing</h3><p>Visit the venue, draw the stage plot and input list, pack spares (cables, batteries, fuses, gaff tape). At the <strong>technical briefing</strong> everyone learns the running order, cues, who wears which mic, and who to tell when something fails.</p></div>
+            <div class="te-brief"><h3>Hookup and power-up</h3><p>Place the gear, run the snake and power, then connect. Power up from the source end: console and processors first, <strong>amplifiers and powered speakers last</strong>, with their levels down. Power down in reverse: <strong>amps first</strong>. That way no switch-on thump ever reaches a live speaker.</p></div>
+            <div class="te-brief"><h3>Line check</h3><p>Check every input before anyone performs: scratch or talk into each mic, confirm it arrives on the right channel, the right monitor and with the right polarity. Fix it now, when it's quiet.</p></div>
+            <div class="te-brief"><h3>Ring out, then sound check</h3><p>Ring out FOH and each monitor mix (section 4). Then the sound check: each performer alone (set gain, EQ, dynamics), then monitors, then everyone together to build the mix. Save a scene.</p></div>
+            <div class="te-brief"><h3>The show</h3><p>Stay alert: watch the stage, follow the script, and have the next cue's mic up just before it's needed. Mute mics as soon as they're done (every open mic costs gain before feedback). Refine the mix as the room fills: bodies absorb sound, so it gets drier and quieter. <strong>Take notes</strong> on what went wrong.</p></div>
+            <div class="te-brief"><h3>After: teardown and debrief</h3><p>Amps down and off first, then the rest. Coil cables over-under so they don't kink, count and secure the gear, and lock up wireless packs. At the <strong>debrief</strong>, go through your notes while they're fresh, so next show starts better.</p></div>
+          </div>
+        </section>
+
+        <section class="te-card" id="check">
+          <h2>10. Show-day check</h2>
+          <div class="ls-quiz" data-memory-ignore>
+            <fieldset class="ls-q" data-answer="c"><legend>The back row needs 6 dB more. The speaker is 16 m from them. Without changing the amp, how much closer must a speaker be?</legend>
+              <button type="button" data-choice="a">2 m closer</button><button type="button" data-choice="b">4 m closer</button><button type="button" data-choice="c">Half the distance: 8 m away</button>
+              <p class="ls-why" hidden>Inverse square law: halving the distance to a point source gains 6 dB. That's why delay and fill speakers exist.</p></fieldset>
+            <fieldset class="ls-q" data-answer="b"><legend>The pastor's lavalier keeps feeding back. Which change buys the most gain before feedback?</legend>
+              <button type="button" data-choice="a">Turn up the master and add EQ</button><button type="button" data-choice="b">Move the mic from the belt to the chest, closer to the mouth</button><button type="button" data-choice="c">Open the choir mics too, so the sound is fuller</button>
+              <p class="ls-why" hidden>Halving the mouth-to-mic distance is +6 dB of gain before feedback. Opening more mics does the opposite: −3 dB every time you double them.</p></fieldset>
+            <fieldset class="ls-q" data-answer="a"><legend>A singer uses a supercardioid mic. Where does the wedge go?</legend>
+              <button type="button" data-choice="a">About 126° off-axis, at either side of the back</button><button type="button" data-choice="b">Directly behind the mic, at 180°</button><button type="button" data-choice="c">Straight in front, so the singer hears best</button>
+              <p class="ls-why" hidden>A supercardioid's nulls are near 126°; directly behind it has a small rear lobe that picks up. (A cardioid's null <em>is</em> at 180°.) Many singers use two wedges angled in from the sides for this reason.</p></fieldset>
+            <fieldset class="ls-q" data-answer="b"><legend>You hang a third 8 Ω cabinet on an amp channel already running two (in parallel). The amp is rated down to 4 Ω. What happens?</legend>
+              <button type="button" data-choice="a">Nothing: 8 Ω each is fine</button><button type="button" data-choice="b">The amp sees 2.7 Ω, below its rating, and may overheat or shut down</button><button type="button" data-choice="c">The amp sees 24 Ω and gets quieter</button>
+              <p class="ls-why" hidden>Parallel loads divide: 8 ÷ 3 ≈ 2.7 Ω. Use another amp channel, or a 2 Ω-rated amp.</p></fieldset>
+            <fieldset class="ls-q" data-answer="c"><legend>A delay speaker is 34 m from the mains on a 20 °C evening. What delay do you dial in?</legend>
+              <button type="button" data-choice="a">0 ms: speakers are electronic, so they're already in time</button><button type="button" data-choice="b">About 34 ms</button><button type="button" data-choice="c">About 110 ms (99 ms of travel + ~10 ms)</button>
+              <p class="ls-why" hidden>34 m ÷ 343 m/s ≈ 99 ms, plus about 10 ms so the mains arrive first and the image stays on stage.</p></fieldset>
+            <fieldset class="ls-q" data-answer="a"><legend>The show's over. What do you switch off first?</legend>
+              <button type="button" data-choice="a">The amplifiers and powered speakers</button><button type="button" data-choice="b">The console</button><button type="button" data-choice="c">The wireless receivers</button>
+              <p class="ls-why" hidden>Amps last on, first off. Turn the console off while the amps are live and its shutdown thump goes straight to the speakers.</p></fieldset>
+          </div>
+          <p class="ls-score" id="check-score" aria-live="polite"></p>
+        </section>
+
+      </div>
+
+      <aside class="te-stack">
+        <section class="te-card">
+          <h2>Numbers to know by heart</h2>
+          <div class="te-brief"><h3>+3 dB</h3><p>Twice the power (two singers, twice the watts).</p></div>
+          <div class="te-brief"><h3>+6 dB</h3><p>Twice the pressure, or half the distance to the speaker.</p></div>
+          <div class="te-brief"><h3>+10 dB</h3><p>Sounds about twice as loud: 10× the power.</p></div>
+          <div class="te-brief"><h3>−3 dB</h3><p>Every time you double the open mics.</p></div>
+          <div class="te-brief"><h3>~3 ms per metre</h3><p>Sound at 343 m/s (20 °C).</p></div>
+          <div class="te-brief"><h3>85 dBA / 8 h</h3><p>Hearing limit; half the time for every +3 dB.</p></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Words to own</h2>
+          <div class="te-brief"><h3>Sound reinforcement</h3><p>Making a live performance louder and clearer for an audience in the same room.</p></div>
+          <div class="te-brief"><h3>Gain before feedback</h3><p>How much the PA can be turned up before the loop starts to ring.</p></div>
+          <div class="te-brief"><h3>Ring out</h3><p>Finding and notching the frequencies that feed back first, before the show.</p></div>
+          <div class="te-brief"><h3>Beaming</h3><p>A driver narrowing its coverage once the wavelength is shorter than the cone.</p></div>
+          <div class="te-brief"><h3>Impedance</h3><p>A speaker's opposition to AC, in ohms. Lower means more current from the amp.</p></div>
+          <div class="te-brief"><h3>Precedence (Haas) effect</h3><p>We hear a sound as coming from wherever it arrives first.</p></div>
+          <div class="te-brief"><h3>Ground loop</h3><p>Two ground paths between devices, which make hum.</p></div>
+        </section>
+
+        <section class="te-card">
+          <h2>Before doors open</h2>
+          <ul class="ls-checklist">
+            <li>Every input line-checked, right channel, right polarity</li>
+            <li>FOH and every monitor mix rung out; frequencies written down</li>
+            <li>Mains in front of the mics, aimed at the back third</li>
+            <li>Delays timed and checked by walking the room</li>
+            <li>No hum with every fader up and nobody playing</li>
+            <li>Spare batteries in every wireless pack, plus spares</li>
+            <li>Scene saved; cue sheet and notes on the desk</li>
+            <li>Earplugs in your pocket</li>
+          </ul>
+        </section>
+
+        <section class="te-card">
+          <h2>Where this fits</h2>
+          <p>Signal flow and gain staging are in <a href="live-audio-signal-chain.html">Live Audio Signal Chain</a>; mic patterns and the 3:1 rule in <a href="microphone-polar-patterns.html">Microphone Polar Patterns</a>; RT60 and room modes in <a href="room-acoustics.html">Room Acoustics</a>; notching in <a href="eq-problem-frequency.html">EQ</a>; aux mixes in the <a href="audio-mixer-signal-flow.html">Analog Mixer Lab</a>; and the radio side of wireless mics in <a href="wireless-mic-rf-coordination.html">Wireless &amp; RF</a>.</p>
+        </section>
+      </aside>
+    </div>
+    <div class="te-footer-nav"><a href="live-audio-signal-chain.html">← Live Audio Signal Chain</a><a href="wireless-mic-rf-coordination.html">Wireless &amp; RF Coordination →</a></div>
+  </main>
+
+  <script src="../../../assets/js/lessons/live-sound.js"></script>
+  <script src="../../../assets/js/lessons/live-sound-lab.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+</body>
+</html>
