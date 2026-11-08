@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { findChromium } from '../lib/find-chromium.mjs';
+import { findChromium } from '../../lib/find-chromium.mjs';
 
 const url = 'http://127.0.0.1:8080/lessons/life-sciences/crispr-synthetic-biology.html';
 

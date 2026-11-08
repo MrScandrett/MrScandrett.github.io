@@ -304,6 +304,7 @@ async function minifyHtmlFiles() {
   const htmlFiles = await walk(DIST, ".html");
   let before = 0;
   let after = 0;
+  const failed = [];
   for (const file of htmlFiles) {
     const source = rewriteImages(stripLocalOnlyLinks(await readFile(file, "utf8")), file);
     before += Buffer.byteLength(source);
@@ -319,11 +320,16 @@ async function minifyHtmlFiles() {
       await writeFile(file, result, "utf8");
       after += Buffer.byteLength(result);
     } catch (error) {
-      console.warn(`  HTML minify skipped for ${path.relative(DIST, file)}: ${error.message.split("\n")[0]}`);
+      failed.push(`  ${path.relative(DIST, file)}: ${error.message.split("\n")[0].slice(0, 160)}`);
       after += Buffer.byteLength(source);
     }
   }
   console.log(`HTML: ${htmlFiles.length} files, ${(before / 1024).toFixed(0)}KB -> ${(after / 1024).toFixed(0)}KB`);
+  // A page the minifier can't parse is one browsers are guessing at too. The usual cause is a
+  // bare "<" in text, e.g. maths like \(x < 0\): write it as &lt; (the page reads the same).
+  if (failed.length) {
+    throw new Error(`HTML minify failed for ${failed.length} file(s); write a bare "<" in text as &lt;\n${failed.join("\n")}`);
+  }
 }
 
 // Data files (glossary, score library, lesson catalog) were shipped pretty-printed;

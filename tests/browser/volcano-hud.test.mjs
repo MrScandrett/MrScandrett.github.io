@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { findChromium } from '../lib/find-chromium.mjs';
+import { findChromium } from '../../lib/find-chromium.mjs';
 
 const url = 'http://127.0.0.1:8080/lessons/earth-science/volcano-simulator.html';
 const scratchDir = '/home/evanscandrett/.gemini/antigravity/brain/12c7dc81-26ff-45e6-a46c-b68e2bd66a7b/scratch';
