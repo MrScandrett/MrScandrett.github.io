@@ -84,35 +84,17 @@ export function projectAction(project) {
   return { label: "Open project", icon: "→" };
 }
 
-// Hearts and "recently played" are handled by visitor-memory.js (on-device only).
-// Showcase pages already load it via nav-mobile.js; this covers any page that doesn't.
-function ensureVisitorMemory() {
-  if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
-  const script = document.createElement("script");
-  script.src = new URL("./visitor-memory.js", import.meta.url).href;
-  script.defer = true;
-  script.dataset.visitorMemory = "true";
-  document.head.appendChild(script);
-}
-
-// VR headset mode (vr-mode.js); nav-mobile.js loads it too, this covers pages without it.
-// Fetched only when it will switch on (same test as vr-mode.js and nav-mobile.js).
-function vrModeWanted() {
-  const ua = navigator.userAgent || "";
-  let pref = null;
-  try { pref = localStorage.getItem("classroomos-vr-mode"); } catch { /* private mode */ }
-  return pref === "on" || /[?&]vr=/.test(location.search) ||
-    /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
-    (/Macintosh/.test(ua) && "xr" in navigator && navigator.maxTouchPoints > 0);
-}
-
-function ensureVrMode() {
-  if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]') || !vrModeWanted()) return;
-  const script = document.createElement("script");
-  script.src = new URL("./vr-mode.js", import.meta.url).href;
-  script.defer = true;
-  script.dataset.vrModeScript = "true";
-  document.head.appendChild(script);
+// Hearts and "recently played" are handled by visitor-memory.js (on-device only), and headsets
+// get vr-mode.js. Both are listed in page-modules.js (host "showcase"). nav-mobile.js has
+// normally defined it by the time a like button is built; pages without it import it here.
+let pageHelpersBooted = false;
+function ensurePageHelpers() {
+  if (pageHelpersBooted) return;
+  pageHelpersBooted = true;
+  const base = import.meta.url;
+  const boot = () => window.ClassroomOSPageModules.boot("showcase", base);
+  if (window.ClassroomOSPageModules) boot();
+  else import("./page-modules.js").then(boot, () => { pageHelpersBooted = false; });
 }
 
 function memoryAttrs(node, project) {
@@ -123,8 +105,7 @@ function memoryAttrs(node, project) {
 }
 
 export function createLikeButton(project, { label = false } = {}) {
-  ensureVisitorMemory();
-  ensureVrMode();
+  ensurePageHelpers();
   const button = document.createElement("button");
   button.type = "button";
   button.dataset.memoryLike = "project";

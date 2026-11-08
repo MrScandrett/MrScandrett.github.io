@@ -4,114 +4,6 @@
   var script = document.currentScript;
   var styleId = 'lesson-print-button-styles';
 
-  function ensureContrastGuard() {
-    if (window.ClassroomOSContrastGuard || document.querySelector('script[data-classroomos-contrast-guard="true"]')) return;
-    var guard = document.createElement('script');
-    guard.src = script && script.src ? new URL('contrast-guard.js', script.src).href : '/assets/js/contrast-guard.js';
-    guard.defer = true;
-    guard.dataset.classroomosContrastGuard = 'true';
-    document.head.appendChild(guard);
-  }
-
-  function loadRelatedLinks() {
-    if (document.querySelector('script[data-lesson-related="true"]')) return;
-    var related = document.createElement('script');
-    related.src = script && script.src ? new URL('lesson-related.js', script.src).href : '/assets/js/lesson-related.js';
-    related.defer = true;
-    related.dataset.lessonRelated = 'true';
-    document.head.appendChild(related);
-  }
-
-  function loadExhibitLinks() {
-    if (document.querySelector('script[data-lesson-exhibits="true"]')) return;
-    var exhibits = document.createElement('script');
-    exhibits.src = script && script.src ? new URL('lesson-exhibits.js', script.src).href : '/assets/js/lesson-exhibits.js';
-    exhibits.defer = true;
-    exhibits.dataset.lessonExhibits = 'true';
-    document.head.appendChild(exhibits);
-  }
-
-  function loadSiteGlossary() {
-    if (window.ClassroomOSGlossary
-      || document.querySelector('script[data-classroomos-glossary="true"]')
-      || document.querySelector('script[src*="site-glossary.js"]')) return;
-    var glossary = document.createElement('script');
-    glossary.src = script && script.src ? new URL('site-glossary.js', script.src).href : '/assets/js/site-glossary.js';
-    glossary.defer = true;
-    glossary.dataset.classroomosGlossary = 'true';
-    document.head.appendChild(glossary);
-  }
-
-  // Heart, Save answers and lesson history (see visitor-memory.js). Many lessons have
-  // no site nav, so nav-mobile.js can't be relied on to load it here.
-  function loadVisitorMemory() {
-    if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
-    var memory = document.createElement('script');
-    memory.src = script && script.src ? new URL('visitor-memory.js', script.src).href : '/assets/js/visitor-memory.js';
-    memory.defer = true;
-    memory.dataset.visitorMemory = 'true';
-    document.head.appendChild(memory);
-  }
-
-  // Same headset test as vr-mode.js. On a laptop with the default "auto" the module only
-  // installs a disabled stub, so it isn't worth fetching unless it will switch on.
-  function vrModeWanted() {
-    var ua = navigator.userAgent || '';
-    var pref = null;
-    try { pref = localStorage.getItem('classroomos-vr-mode'); } catch (e) { /* private mode */ }
-    return pref === 'on' || /[?&]vr=/.test(location.search) ||
-      /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
-      (/Macintosh/.test(ua) && 'xr' in navigator && navigator.maxTouchPoints > 0);
-  }
-
-  // VR headset mode (vr-mode.js): lessons are where students use the sims from a headset.
-  function loadVrMode() {
-    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]') || !vrModeWanted()) return;
-    var vr = document.createElement('script');
-    vr.src = script && script.src ? new URL('vr-mode.js', script.src).href : '/assets/js/vr-mode.js';
-    vr.defer = true;
-    vr.dataset.vrModeScript = 'true';
-    document.head.appendChild(vr);
-  }
-
-  // Shared timeline engine (timeline.js): any lesson list marked data-timeline.
-  function loadTimeline() {
-    if (window.ClassroomOSTimeline || document.querySelector('script[src$="/timeline.js"]') ||
-      !document.querySelector('[data-timeline], ol[class*="timeline"], ul[class*="timeline"], div[class*="timeline"]')) return;
-    var timeline = document.createElement('script');
-    timeline.src = script && script.src ? new URL('timeline.js', script.src).href : '/assets/js/timeline.js';
-    timeline.defer = true;
-    document.head.appendChild(timeline);
-  }
-
-  // Shared family-tree engine (family-tree.js): any nested list marked data-family-tree.
-  function loadFamilyTree() {
-    if (window.ClassroomOSFamilyTree || document.querySelector('script[src$="/family-tree.js"]') ||
-      !document.querySelector('[data-family-tree]')) return;
-    var tree = document.createElement('script');
-    tree.src = script && script.src ? new URL('family-tree.js', script.src).href : '/assets/js/family-tree.js';
-    tree.defer = true;
-    document.head.appendChild(tree);
-    // Cards open their photo in the lightbox, so make sure it is on the page.
-    if (!window.PhotoLightbox && !document.querySelector('script[src$="/photo-lightbox.js"]')) {
-      var lb = document.createElement('script');
-      lb.src = script && script.src ? new URL('photo-lightbox.js', script.src).href : '/assets/js/photo-lightbox.js';
-      lb.defer = true;
-      document.head.appendChild(lb);
-    }
-  }
-
-  // ⛶ Fill the screen on each sim, for the projector (sim-present.js).
-  function loadSimPresent() {
-    if (window.ClassroomOSPresent || document.querySelector('script[data-sim-present="true"]') ||
-      !document.querySelector('canvas, svg, model-viewer, [data-present]')) return;
-    var present = document.createElement('script');
-    present.src = script && script.src ? new URL('sim-present.js', script.src).href : '/assets/js/sim-present.js';
-    present.defer = true;
-    present.dataset.simPresent = 'true';
-    document.head.appendChild(present);
-  }
-
   function cleanText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 220);
   }
@@ -200,45 +92,22 @@
     stylesheet.href = new URL('../css/components/lesson-print-button.css', script.src).href;
     document.head.appendChild(stylesheet);
   }
-  // Related links and exhibits sit at the end of the lesson, so they wait until the
-  // lesson's own scripts and sims have loaded and the browser is idle.
-  function whenIdle(fn) {
-    function schedule() {
-      if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2500 });
-      else setTimeout(fn, 300);
+  // Helper scripts (contrast guard, My Stuff, glossary, timeline and family-tree engines,
+  // projector button, VR, service worker) are listed in page-modules.js, host "lesson".
+  // build-dist.mjs inlines that file above this one, so production makes no extra request.
+  function withPageModules(fn) {
+    if (window.ClassroomOSPageModules) { fn(window.ClassroomOSPageModules); return; }
+    var core = document.querySelector('script[data-page-modules-core="true"]');
+    if (!core) {
+      core = document.createElement('script');
+      core.src = script && script.src ? new URL('page-modules.js', script.src).href : '/assets/js/page-modules.js';
+      core.dataset.pageModulesCore = 'true';
+      document.head.appendChild(core);
     }
-    if (document.readyState === 'complete') schedule();
-    else window.addEventListener('load', schedule, { once: true });
+    core.addEventListener('load', function () { fn(window.ClassroomOSPageModules); }, { once: true });
   }
 
-  // Asset cache for repeat visits (dist/sw.js); same rule as nav-mobile.js, which many lessons don't load.
-  function registerServiceWorker() {
-    if (!('serviceWorker' in navigator) || window.__classroomosSwRegistered || !script || !script.src) return;
-    if (location.protocol !== 'https:' && !/[?&]sw=on\b/.test(location.search)) return;
-    window.__classroomosSwRegistered = true;
-    var root = new URL('../../', script.src);
-    navigator.serviceWorker.register(new URL('sw.js', root).href, { scope: root.pathname }).catch(function () { /* not published here */ });
-  }
-
-  ensureContrastGuard();
-  loadVisitorMemory();
-  whenIdle(registerServiceWorker);
-  whenIdle(loadRelatedLinks);
-  whenIdle(loadExhibitLinks);
-  whenIdle(loadVrMode);
-  whenIdle(loadSimPresent);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadTimeline);
-  else loadTimeline();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadFamilyTree);
-  else loadFamilyTree();
-  // Wait for parsing to finish so a lesson's own site-glossary.js tag (often
-  // placed after this script, with its own data-glossary-src) wins over the
-  // shared default glossary.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadSiteGlossary, { once: true });
-  } else {
-    loadSiteGlossary();
-  }
+  withPageModules(function (modules) { modules.boot('lesson', script && script.src); });
 
   /* Save ink: an optional print setting, off by default and remembered per browser.
      While it is on, <html data-print-ink="save"> switches on the print-only rules in

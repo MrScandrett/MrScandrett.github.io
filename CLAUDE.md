@@ -110,6 +110,19 @@ Saved links, bookmarks and students' saved work point at old URLs, so moving a l
   their own. Tests: `tests/sim-kit-raf.test.mjs`, `tests/classroom-animations.test.mjs`.
 - The animated site background (`canvas-bg.js`) draws t-driven looks at 30 fps and freezes after 60 s
   without input; keep new background looks cheap (batch canvas paths, no per-item `stroke()`).
+- **Helper scripts load from one table.** `assets/js/page-modules.js` lists every helper a page pulls in on
+  its own (contrast guard, My Stuff, glossary, timeline/family-tree engines, ⛶ present, VR, service worker),
+  with when (`now` / `parsed` / `idle`), what the page must contain, and why. lesson-print-button.js
+  (host `lesson`), nav-mobile.js (`site`) and ui.js (`showcase`) only call `boot(host, base)`. Add a helper
+  there, never as another `createElement('script')` in a host; `tests/page-modules.test.mjs` fails if a
+  host loads one itself. `build:dist` inlines the table into both script hosts, so it costs no request.
+- **Lesson code goes in `assets/js/lessons/`, not inline.** An inline `<script>` over 300 lines can't be
+  cached, shared or tested. `npm run check:inline-scripts` (in `quality` and `npm test`) freezes the 94
+  existing ones in `docs/inline-script-baseline.json`: they may shrink, never grow, and new ones fail.
+  After moving one out, run it with `--save-baseline`. Put the maths in its own DOM-free file with a test:
+  `graph-expr.js` (graphing calculator's parser, `tests/graph-expr.test.mjs`) and `fourier-kit.js`
+  (`tests/fourier-kit.test.mjs`) are the worked examples. Check the move by comparing canvas screenshots
+  before and after; both of those pages came out pixel-identical.
 - Fonts are self-hosted (`assets/fonts/`). Don't add Google Fonts / CDN font `@import`s to shared CSS.
 - Homepage JS lives in `assets/js/pages/index-*.js` (deferred), not inline. The featured video is picked
   from `data/video-library.json` and plays in `watch.html`; don't point it at `assets/videos/*.mp4` files

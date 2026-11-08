@@ -1848,106 +1848,27 @@
   }
 }());
 
-// Optional helpers (command palette, glossary, VR mode, My Stuff) aren't needed for first
-// paint or first input, so fetch them once the page has loaded and the browser is idle.
-function classroomOSWhenIdle(fn) {
-  function schedule() {
-    if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2500 });
-    else setTimeout(fn, 300);
+// Helper scripts (command palette, contrast guard, glossary, VR mode, service worker, My Stuff)
+// are listed in page-modules.js, host "site". build-dist.mjs inlines that file above this one,
+// so production makes no extra request; the dev server fetches it.
+(function () {
+  var base = document.currentScript && document.currentScript.src;
+  function withPageModules(fn) {
+    if (window.ClassroomOSPageModules) { fn(window.ClassroomOSPageModules); return; }
+    var core = document.querySelector('script[data-page-modules-core="true"]');
+    if (!core) {
+      core = document.createElement('script');
+      core.src = base ? new URL('page-modules.js', base).href : '/assets/js/page-modules.js';
+      core.dataset.pageModulesCore = 'true';
+      document.head.appendChild(core);
+    }
+    core.addEventListener('load', function () { fn(window.ClassroomOSPageModules); }, { once: true });
   }
-  if (document.readyState === 'complete') schedule();
-  else window.addEventListener('load', schedule, { once: true });
-}
-
-// ── Command Palette (Cmd+K / Ctrl+K global search) ──────────────────
-(function () {
-  var s = document.createElement('script');
-  var baseScript = document.currentScript && document.currentScript.src;
-  s.src = baseScript ? new URL('command-palette.js', baseScript).href : '/assets/js/command-palette.js';
-  s.defer = true;
-  classroomOSWhenIdle(function () { document.head.appendChild(s); });
-}());
-
-// Keep legacy lesson colors readable when the global theme changes.
-(function () {
-  if (window.ClassroomOSContrastGuard || document.querySelector('script[data-classroomos-contrast-guard="true"]')) return;
-  var s = document.createElement('script');
-  var baseScript = document.currentScript && document.currentScript.src;
-  s.src = baseScript ? new URL('contrast-guard.js', baseScript).href : '/assets/js/contrast-guard.js';
-  s.defer = true;
-  s.dataset.classroomosContrastGuard = 'true';
-  document.head.appendChild(s);
-}());
-
-// Add the shared, classroom-friendly glossary to every page using the site shell.
-// Waits for parsing to finish so a page's own site-glossary.js tag (with its own
-// data-glossary-src) wins over the shared default glossary.
-(function () {
-  var baseScript = document.currentScript && document.currentScript.src;
-  function load() {
-    if (window.ClassroomOSGlossary
-      || document.querySelector('script[data-classroomos-glossary="true"]')
-      || document.querySelector('script[src*="site-glossary.js"]')) return;
-    var s = document.createElement('script');
-    s.src = baseScript ? new URL('site-glossary.js', baseScript).href : '/assets/js/site-glossary.js';
-    s.defer = true;
-    s.dataset.classroomosGlossary = 'true';
-    document.head.appendChild(s);
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { classroomOSWhenIdle(load); }, { once: true });
-  else classroomOSWhenIdle(load);
-}());
-
-// VR headset mode (vr-mode.js): bigger targets, laser hover rings, full view, on-screen keys.
-// Fetched only for a headset, a saved "on", or ?vr= (see vrModeWanted in lesson-print-button.js).
-(function () {
-  var baseScript = document.currentScript && document.currentScript.src;
-  function load() {
-    if (window.ClassroomOSVR || document.querySelector('script[data-vr-mode-script="true"]')) return;
-    var s = document.createElement('script');
-    s.src = baseScript ? new URL('vr-mode.js', baseScript).href : '/assets/js/vr-mode.js';
-    s.defer = true;
-    s.dataset.vrModeScript = 'true';
-    document.head.appendChild(s);
-  }
-  function wanted() {
-    var ua = navigator.userAgent || '';
-    var pref = null;
-    try { pref = localStorage.getItem('classroomos-vr-mode'); } catch (e) { /* private mode */ }
-    return pref === 'on' || /[?&]vr=/.test(location.search) ||
-      /OculusBrowser|\bQuest\b|PicoBrowser|\bPico\b|Wolvic|Firefox Reality|MagicLeap|\bVR Safari\b/i.test(ua) ||
-      (/Macintosh/.test(ua) && 'xr' in navigator && navigator.maxTouchPoints > 0);
-  }
-  window.ClassroomOSLoadVrMode = load;
-  if (wanted()) classroomOSWhenIdle(load);
-}());
-
-// Asset cache for repeat visits (dist/sw.js, built from scripts/sw-template.js). Service workers
-// need a secure context, so this is the published site; ?sw=on tries it on localhost.
-(function () {
-  if (!('serviceWorker' in navigator) || window.__classroomosSwRegistered) return;
-  if (location.protocol !== 'https:' && !/[?&]sw=on\b/.test(location.search)) return;
-  var src = document.currentScript && document.currentScript.src;
-  if (!src) return;
-  window.__classroomosSwRegistered = true;
-  var root = new URL('../../', src);
-  classroomOSWhenIdle(function () {
-    navigator.serviceWorker.register(new URL('sw.js', root).href, { scope: root.pathname }).catch(function () { /* not published here */ });
-  });
-}());
-
-// On-device memory for returning visitors: the My Stuff tab, hearts, lesson history.
-(function () {
-  if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
-  var s = document.createElement('script');
-  var baseScript = document.currentScript && document.currentScript.src;
-  s.src = baseScript ? new URL('visitor-memory.js', baseScript).href : '/assets/js/visitor-memory.js';
-  s.defer = true;
-  s.dataset.visitorMemory = 'true';
-  classroomOSWhenIdle(function () {
-    if (window.ClassroomOSMemory || document.querySelector('script[data-visitor-memory="true"]')) return;
-    document.head.appendChild(s);
-  });
+  // Settings → Access → VR mode: On loads it right away, even on a laptop.
+  window.ClassroomOSLoadVrMode = function () {
+    withPageModules(function (modules) { modules.load('vr-mode', base); });
+  };
+  withPageModules(function (modules) { modules.boot('site', base); });
 }());
 
 // Phones: tuck the sticky site header away while reading (scroll down) and bring it back on any

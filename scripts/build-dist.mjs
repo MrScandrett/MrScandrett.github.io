@@ -419,10 +419,28 @@ async function writeServiceWorker() {
   console.log(`Service worker: ${count} cacheable files, sw.js ${(result.code.length / 1024).toFixed(0)}KB`);
 }
 
+// page-modules.js is the table of helper scripts that lesson-print-button.js and nav-mobile.js
+// load. In dev each host fetches it; here it is prepended to both so production makes no extra
+// request (its own guard makes the second copy a no-op). The file itself still ships for ui.js.
+const PAGE_MODULE_HOSTS = ["assets/js/lesson-print-button.js", "assets/js/nav-mobile.js"];
+
+async function inlinePageModules() {
+  const core = await readFile(path.join(DIST, "assets/js/page-modules.js"), "utf8");
+  for (const rel of PAGE_MODULE_HOSTS) {
+    const file = path.join(DIST, rel);
+    const host = await readFile(file, "utf8");
+    // Hosts read document.currentScript at the top of their own IIFE, which still works:
+    // it is the same <script> element, whatever code runs before it.
+    await writeFile(file, `${core}\n${host}`, "utf8");
+  }
+  console.log(`Page modules: inlined into ${PAGE_MODULE_HOSTS.length} loaders`);
+}
+
 async function main() {
   console.log("Copying site into dist/ ...");
   await copySite();
   await minifyCssFiles();
+  await inlinePageModules();
   await minifyJsFiles();
   await minifyJsonFiles();
   await optimizeImages();
