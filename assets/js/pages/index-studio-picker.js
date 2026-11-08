@@ -12,6 +12,7 @@
   var status = document.getElementById("explore-status");
   var rail = document.getElementById("explore-rail");
   var picked = document.getElementById("explore-picked");
+  var go = document.getElementById("explore-search-go");
   if (!browser || !form || !input || !status || !rail || !picked) return;
 
   var pickedIcon = document.getElementById("explore-picked-icon");
@@ -195,6 +196,8 @@
     pickedDesc.hidden = false;
     if (input.value.trim()) showSearch(input.value);
     else showGroup(current);
+    // Open does what Enter does, so it's live only while there is a top result to open.
+    if (go) go.disabled = !topResult;
   }
 
   function railButton(id, icon, label, count) {

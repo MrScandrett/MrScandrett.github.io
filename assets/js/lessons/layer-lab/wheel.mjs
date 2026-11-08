@@ -43,7 +43,7 @@ export class ToolWheel {
     dock.innerHTML = `
       <div class="lls-wd-filters" role="toolbar" aria-label="Filter tools"></div>
       <input class="lls-wd-search" type="search" placeholder="Find a tool…" aria-label="Find a tool" autocomplete="off" hidden>
-      <button type="button" class="lls-wd-pill" aria-haspopup="menu" aria-expanded="false">${icon('filter')}<i aria-hidden="true"></i></button>
+      <button type="button" class="lls-wd-pill" aria-haspopup="menu" aria-expanded="false" aria-label="Filter tools">${icon('filter')}<i aria-hidden="true"></i></button>
       <div class="lls-wd-colors">
         <button type="button" class="lls-wd-fg" aria-label="Foreground color"></button>
         <button type="button" class="lls-wd-bg" aria-label="Background color"></button>
@@ -61,6 +61,7 @@ export class ToolWheel {
     this.wire();
     this.renderFilters();
     this.render();
+    this.syncPill();
   }
 
   wire() {
