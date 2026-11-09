@@ -1,5 +1,18 @@
-/* Notebook skin — pen-drawn frames, handwritten controls and pencil hatching.
- * Theme tokens supply the ink and paper, including in dark themes. */
+/* Notebook skin — the site as a spiral-bound sketchbook.
+ *
+ *   page      ruled paper with a double margin line, laid over the background
+ *             art (which shows through faintly, like a drawing under tracing paper)
+ *   header    the spiral binding: wire coils straddle its bottom edge
+ *   panels    pages taped in: a pen frame traced twice, pencil hatching along
+ *             the bottom, a strip of tape on the top-level ones
+ *   controls  pen outlines; hovering shades them in with pencil and the line
+ *             "boils" (cartoon line jitter); pressing stamps them flat
+ *   headings  handwritten, h1 swiped with highlighter, h2 underlined with a
+ *             squiggle of pen
+ *
+ * Theme tokens supply the ink and paper, so it is a white notebook in light
+ * themes and a black sketchbook in dark ones. Reading text keeps its own font;
+ * handwriting is for the interface and headings only. */
 
 @font-face {
   font-family: "Patrick Hand";
@@ -19,21 +32,86 @@ html[data-skin="notebook"] {
   --skin-hand: "Patrick Hand", "Comic Sans MS", cursive;
   --skin-font-display: var(--skin-hand);
   --skin-ink: color-mix(in srgb, var(--text) 88%, transparent);
+  --skin-ink-soft: color-mix(in srgb, var(--text) 28%, transparent);
   --skin-paper: var(--bg);
   --skin-hatch: repeating-linear-gradient(125deg, transparent 0 3px, color-mix(in srgb, var(--text) 42%, transparent) 3px 4px, transparent 4px 6px);
+  /* Lighter pencil shading that fills a control on hover; labels stay readable on it. */
+  --skin-shade: repeating-linear-gradient(125deg, transparent 0 4px, color-mix(in srgb, var(--text) 13%, transparent) 4px 5px);
   --skin-sketch: 255px 15px 225px 15px / 15px 225px 15px 255px;
   --skin-sketch-alt: 15px 225px 15px 255px / 255px 15px 225px 15px;
+  --skin-sketch-3: 225px 12px 255px 18px / 18px 255px 12px 225px;
+
+  /* Paper: blue-ish rules (accent pulled toward the ink) and a red-ish margin (accent). */
+  --nb-rule: 30px;
+  --nb-rule-ink: color-mix(in srgb, color-mix(in srgb, var(--accent) 55%, var(--text)) 13%, transparent);
+  --nb-margin: clamp(10px, 5vw, 76px);
+  --nb-margin-ink: color-mix(in srgb, var(--accent) 34%, transparent);
+  --nb-highlight: color-mix(in srgb, var(--accent) 30%, transparent);
+  --nb-tape: color-mix(in srgb, color-mix(in srgb, var(--accent) 35%, var(--text)) 16%, transparent);
+  --nb-coil: color-mix(in srgb, var(--text) 62%, transparent);
+  --nb-hole: color-mix(in srgb, black 55%, transparent);
+  caret-color: var(--accent);
 }
-/* Drawn frames stay upright so dense workspaces remain easy to use. */
+html[data-skin="notebook"][data-lighting="night"] {
+  --nb-rule-ink: color-mix(in srgb, color-mix(in srgb, var(--accent) 60%, var(--text)) 11%, transparent);
+  --nb-highlight: color-mix(in srgb, var(--accent) 38%, transparent);
+  --nb-hole: color-mix(in srgb, black 80%, transparent);
+}
+
+/* ── The page: ruled paper ──────────────────────────────────────────
+ * Fixed and behind everything (z-index -1), so lessons scroll across one sheet.
+ * Vaporwave draws its own sun on body's pseudo-elements; it keeps them. */
+html[data-skin="notebook"]:not([data-theme="vaporwave"]) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg,
+      transparent calc(var(--nb-margin) - 1px),
+      var(--nb-margin-ink) calc(var(--nb-margin) - 1px) var(--nb-margin),
+      transparent var(--nb-margin) calc(var(--nb-margin) + 3px),
+      var(--nb-margin-ink) calc(var(--nb-margin) + 3px) calc(var(--nb-margin) + 4px),
+      transparent calc(var(--nb-margin) + 4px)),
+    repeating-linear-gradient(180deg,
+      transparent 0 calc(var(--nb-rule) - 1px),
+      var(--nb-rule-ink) calc(var(--nb-rule) - 1px) var(--nb-rule));
+  background-position: 0 0, 0 calc(var(--nb-rule) * 2.5);
+}
+
+/* ── Header: the spiral binding ─────────────────────────────────────
+ * Each coil is a wire loop over the edge with its punched hole beneath. */
 html[data-skin="notebook"] body .site-header {
-  background: var(--skin-paper) !important;
+  background-color: var(--skin-paper) !important;
+  background-image:
+    radial-gradient(circle at 50% calc(100% - 7px), var(--nb-hole) 0 3px, transparent 3.5px),
+    radial-gradient(ellipse 5px 9px at 50% 100%, transparent 0 4px, var(--nb-coil) 4.5px 6px, transparent 6.5px) !important;
+  background-size: 26px 16px, 26px 16px !important;
+  background-position: 13px 100%, 9px 100% !important;
+  background-repeat: repeat-x !important;
   border-bottom: 2px solid var(--skin-ink) !important;
   box-shadow: 0 3px 0 -1px color-mix(in srgb, var(--text) 30%, transparent) !important;
+  padding-bottom: max(14px, var(--nb-header-pad, 0px));
+}
+/* Liquid Glass tints the header through pseudo-element layers; paper is opaque. */
+html[data-skin="notebook"] body .site-header::before,
+html[data-skin="notebook"] body .site-header::after {
+  display: none !important;
 }
 html[data-skin="notebook"] body .site-nav a {
   font-family: var(--skin-hand);
   font-size: 1.12em;
 }
+html[data-skin="notebook"] body .site-nav a:is(:hover, [aria-current="page"]) {
+  text-decoration: underline wavy color-mix(in srgb, var(--accent) 75%, var(--text));
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.3em;
+}
+
+/* ── Panels: pages taped into the book ──────────────────────────────
+ * The frame is traced twice: the border, plus a stray second stroke that
+ * overshoots top-left (the light shadow) and a pencil smudge bottom-right. */
 html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border: 2px solid var(--skin-ink) !important;
   border-radius: var(--skin-sketch) !important;
@@ -42,40 +120,75 @@ html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-ski
   background-size: 100% 5px !important;
   background-position: left bottom !important;
   background-repeat: no-repeat !important;
-  box-shadow: 2px 3px 0 -1px color-mix(in srgb, var(--text) 45%, transparent) !important;
+  box-shadow:
+    -2px -1px 0 -1px var(--skin-ink-soft),
+    2px 3px 0 -1px color-mix(in srgb, var(--text) 45%, transparent) !important;
 }
 html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):nth-child(even) {
   border-radius: var(--skin-sketch-alt) !important;
 }
+html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):nth-child(3n) {
+  border-radius: var(--skin-sketch-3) !important;
+}
+/* Top-level pages get a strip of tape; where it sits varies so a grid reads as a scrapbook. */
+html[data-skin="notebook"] body :not([data-skin-surface="panel"]) > [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:where([data-skin-surface="panel"] *)) {
+  background-image:
+    linear-gradient(var(--nb-tape), var(--nb-tape)),
+    linear-gradient(90deg, transparent 0 3px, color-mix(in srgb, var(--text) 10%, transparent) 3px 4px, transparent 4px 64px, color-mix(in srgb, var(--text) 10%, transparent) 64px 65px, transparent 65px),
+    var(--skin-hatch) !important;
+  background-size: 68px 14px, 68px 14px, 100% 5px !important;
+  background-position: 50% 0, 50% 0, left bottom !important;
+  background-repeat: no-repeat !important;
+}
+html[data-skin="notebook"] body :not([data-skin-surface="panel"]) > [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:where([data-skin-surface="panel"] *)):nth-child(even) {
+  background-position: 22% 0, 22% 0, left bottom !important;
+}
+html[data-skin="notebook"] body :not([data-skin-surface="panel"]) > [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:where([data-skin-surface="panel"] *)):nth-child(3n) {
+  background-position: 80% 0, 80% 0, left bottom !important;
+}
+/* Pages inside pages are notes on the sheet: one light stroke, no tape. */
 html[data-skin="notebook"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   background-image: none !important;
   box-shadow: none !important;
   border-width: 1px !important;
 }
 
-/* Controls: hand-drawn outlines that wobble the other way when hovered. */
+/* ── Controls: pen outlines you shade in ─────────────────────────── */
 html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   font-family: var(--skin-hand);
   font-size: max(1em, 0.95rem);
   color: var(--text) !important;
   background-color: var(--skin-paper) !important;
-  background-image: var(--skin-hatch) !important;
-  background-size: 100% 4px !important;
-  background-position: left bottom !important;
+  background-image: var(--skin-shade), var(--skin-hatch) !important;
+  background-size: 100% 0%, 100% 4px !important;
+  background-position: left bottom, left bottom !important;
   background-repeat: no-repeat !important;
   border: 2px solid var(--skin-ink) !important;
-  border-radius: var(--skin-sketch) !important;
-  box-shadow: 2px 3px 0 -1px color-mix(in srgb, var(--text) 30%, transparent) !important;
+  border-radius: var(--nb-shape, var(--skin-sketch)) !important;
+  box-shadow:
+    -1px -1px 0 -1px var(--skin-ink-soft),
+    2px 3px 0 -1px color-mix(in srgb, var(--text) 30%, transparent) !important;
+}
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):nth-child(even) {
+  --nb-shape: var(--skin-sketch-alt);
 }
 html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
-  border-radius: var(--skin-sketch-alt) !important;
+  --nb-shape: var(--skin-sketch-alt);
+  background-size: 100% 100%, 100% 4px !important;
+}
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):nth-child(even):not(:disabled, [aria-disabled="true"]):hover {
+  --nb-shape: var(--skin-sketch);
 }
 html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
   box-shadow: none !important;
   translate: 1px 2px;
 }
-html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], .is-active) {
+html[data-skin="notebook"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], .is-active) {
   background-color: color-mix(in srgb, var(--accent) 18%, var(--bg)) !important;
+  background-image:
+    linear-gradient(176deg, transparent 18%, var(--nb-highlight) 22% 78%, transparent 82%),
+    var(--skin-hatch) !important;
+  background-size: 100% 100%, 100% 4px !important;
   border-style: double !important;
   border-width: 3px !important;
 }
@@ -89,25 +202,70 @@ html[data-skin="notebook"] body [data-skin-surface="field"]:not(:where([data-ski
   box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--text) 16%, transparent) !important;
   background-color: var(--skin-paper) !important;
 }
-
-html[data-skin="notebook"] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 3px;
-  border-radius: var(--skin-sketch);
+/* Writing in a field: the line under it turns to ink. */
+html[data-skin="notebook"] body [data-skin-surface="field"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):focus {
+  box-shadow:
+    inset 1px 1px 0 color-mix(in srgb, var(--text) 16%, transparent),
+    inset 0 -3px 0 -1px var(--nb-highlight) !important;
 }
 
-/* Handwritten headings and a restrained pencil underline. */
+/* Focus: circled in pen. */
+html[data-skin="notebook"] body :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px dashed var(--accent) !important;
+  outline-offset: 4px;
+  border-radius: var(--skin-sketch-alt);
+}
+
+/* ── Headings: handwriting, highlighter and a pen squiggle ───────── */
 html[data-skin="notebook"] body :is(main, .home-widget, .nav-settings-panel) :is(h1, h2, h3) {
   font-family: var(--skin-font-display) !important;
   font-weight: 400;
   letter-spacing: 0.01em;
 }
-html[data-skin="notebook"] body main h1 { font-size: max(1em, 2.2rem); }
+html[data-skin="notebook"] body main h1 {
+  font-size: max(1em, 2.2rem);
+  text-decoration: underline solid var(--nb-highlight);
+  text-decoration-thickness: 0.42em;
+  text-underline-offset: -0.22em;
+  text-decoration-skip-ink: none;
+}
 html[data-skin="notebook"] body main h2 {
-  text-decoration: underline solid color-mix(in srgb, var(--text) 55%, transparent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.28em;
+  text-decoration: underline wavy color-mix(in srgb, var(--accent) 70%, var(--text));
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.3em;
+  text-decoration-skip-ink: none;
 }
 html[data-skin="notebook"] ::selection {
-  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: var(--nb-highlight);
+}
+
+/* ── Motion: the line boils and the pencil shades in ───────────────
+ * Hand-drawn animation redraws each frame a little differently; a hovered
+ * control does the same at about 8 drawings a second. Hover only, so nothing
+ * moves on its own. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-skin="notebook"]:not([data-skin-motion="still"]) body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+    transition: background-size 0.22s steps(4), translate 0.06s;
+  }
+  html[data-skin="notebook"]:not([data-skin-motion="still"]) body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
+    animation: skin-notebook-boil 0.375s steps(1) infinite;
+  }
+  html[data-skin="notebook"]:not([data-skin-motion="still"]) body .site-nav a:hover {
+    animation: skin-notebook-wiggle 0.375s steps(1) infinite;
+  }
+}
+@keyframes skin-notebook-boil {
+  0% { --nb-shape: var(--skin-sketch-alt); }
+  33% { --nb-shape: var(--skin-sketch-3); }
+  66% { --nb-shape: var(--skin-sketch); }
+}
+@keyframes skin-notebook-wiggle {
+  0% { rotate: -0.6deg; }
+  33% { rotate: 0.4deg; }
+  66% { rotate: 0deg; }
+}
+
+/* Presenting: a projector washes out fine lines, and the paper only distracts. */
+html[data-skin="notebook"][data-classroom-presentation] body::after {
+  display: none;
 }
