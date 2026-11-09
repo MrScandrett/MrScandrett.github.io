@@ -98,6 +98,10 @@
     }
     if (tag === "A" && (filled || outlined) && rect.height >= 24 && rect.height <= 64 && rect.width <= 420) return "control";
 
+    // Anything inside a button or link is part of that control (a shimmer layer, an icon well),
+    // never a panel of its own: styling it as one draws a box inside the button.
+    if (el.parentElement && el.parentElement.closest("button, a[href], [role='button'], [role='tab']")) return null;
+
     // Corners and shadows are what skins change, so they can't be the test.
     // A panel is an outlined box, or a filled one that stands out from what's behind it.
     if (!(outlined || (filled && standsOut(el, cs)))) return null;
@@ -122,6 +126,14 @@
     return false;
   }
 
+  var shaped = typeof WeakSet === "function" ? new WeakSet() : null;
+  function presetControl(el) {
+    if (el.getAttribute(ATTR) !== "control" || el.hasAttribute("data-skin-shape") || !shaped || shaped.has(el)) return false;
+    if (!el.getClientRects().length) return false;
+    shaped.add(el);
+    return true;
+  }
+
   function scan(root) {
     if (!root || root.nodeType !== 1) return;
     var list = [root];
@@ -133,6 +145,8 @@
     for (var j = 0; j < list.length; j++) {
       var kind = classify(list[j]);
       if (kind) marks.push([list[j], kind, kind === "control" && isTile(list[j])]);
+      // Controls tagged in the page's own markup still need their shape read once.
+      else if (presetControl(list[j]) && isTile(list[j])) list[j].setAttribute("data-skin-shape", "tile");
     }
     styleCache = null;
     for (var k = 0; k < marks.length; k++) {

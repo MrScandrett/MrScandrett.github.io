@@ -63,7 +63,7 @@
     {
       id: "underwater",
       label: "Underwater",
-      detail: "Luminous glass, pearly reflections and glossy water-clear controls.",
+      detail: "Wet gel buttons, glass panes with a pearly rim, caustic glow and rising bubbles.",
       era: "Frutiger Aero, 2000s",
       icon: "◍",
       css: true,
