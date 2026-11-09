@@ -3618,6 +3618,20 @@ summary:focus-visible,
     height: 1.7rem;
   }
 
+  /* The brand is a flex child of a wrapping row: it must get only the space the tools leave
+     (basis 0), or its text width is reserved first and the hamburger drops to a second row. */
+  html body .site-header .brand > .brand-text,
+  html body .site-header .brand > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html body .site-header .nav-wrap > :not(.brand, .site-nav) {
+    flex-shrink: 0;
+  }
+
   html body .site-header .nav-wrap .nav-settings-toggle,
   html body .site-header .nav-wrap .nav-search-btn {
     min-width: 2.25rem !important;
@@ -3657,11 +3671,19 @@ summary:focus-visible,
   }
 }
 
+/* Phones: drop "Mr. Scandrett's" so "ClassroomOS" shows whole instead of ellipsizing
+   (the brand keeps the full name in its aria-label). */
+@media (max-width: 560px) {
+  html body .site-header .brand .home-brand-prefix {
+    display: none;
+  }
+}
+
 /* Very narrow: the logo is the home link; the full name no longer fits beside the tools. */
 @media (max-width: 480px) {
   html body .site-header .brand {
     font-size: 0;
-    flex: 1 1 auto;
+    flex: 1 1 0;
   }
 }
 
