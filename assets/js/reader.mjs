@@ -1114,6 +1114,60 @@ async function hasDrm(zip) {
   return methods.some((m) => !/idpf\.org\/2008\/embedding|ns\.adobe\.com\/pdf\/enc#RC/.test(m.getAttribute("Algorithm") || ""));
 }
 
+/* Kid-friendly wording for books read in class. Old translations and period novels use words that
+   now read as swearing or as slurs; swap them for plain wording. Applies to every Gutenberg book
+   (matched by ebook id, whichever edition was downloaded); uploaded files are never touched.
+   Capitalisation of the original is kept. Mild oaths ("hell", "damn") and theological uses are
+   left alone on purpose. */
+const matchCase = (m, to) =>
+  m.length > 1 && m === m.toUpperCase() ? to.toUpperCase() : /^[A-Z]/.test(m) ? to[0].toUpperCase() + to.slice(1) : to;
+const swap = (re, to) => [re, (m) => matchCase(m, to)];
+// "ass" is only swapped when it stands alone (not "ass-ass-ass-inated"); fixes "an ass" → "a donkey".
+const DONKEY = [
+  [/\b([Aa])n (ass|Ass|ASS)(?![\w-])/g, (m, a, w) => `${a} ${matchCase(w, "donkey")}`],
+  [/(?<![\w-])asses(?![\w-])/gi, (m) => matchCase(m, "donkeys")],
+  [/(?<![\w-])ass(?![\w-])/gi, (m) => matchCase(m, "donkey")],
+];
+const ROOSTER_NEAR = /crow|crew|chicken|ostrich|nest|black cocks|\bhens?\b|fowl|poultry|fight|spur|pheasant|turkey|bird|farm|yard|perch|wattle|comb\b|roost|second cock|dunghill|feather|plucked|Cock\b.*\bFox|Falcon/i;
+const ROOSTER_NEVER = /^(?:-and-bull|[- ]a-doodle|[- ]robin)|stop-?$/i;
+const COCKS_ALWAYS = [swap(/\bgame-?cocks\b/gi, "game roosters"), swap(/\bgame-?cock\b/gi, "game rooster"), swap(/\bcocks\b/gi, "roosters"), swap(/\bcock\b/gi, "rooster")];
+// Elsewhere "cock" can mean a valve or a hat brim, so only swap it where birds are clearly meant.
+const COCKS_NEAR_BIRDS = [[/\bcocks?\b/gi, (m, ...r) => {
+  const text = r[r.length - 1], at = r[r.length - 2];
+  const near = text.slice(Math.max(0, at - 120), at + m.length + 120);
+  const before = text.slice(Math.max(0, at - 5), at), after = text.slice(at + m.length, at + m.length + 12);
+  if (!ROOSTER_NEAR.test(near) || ROOSTER_NEVER.test(after) || /stop-?$/i.test(before)) return m;
+  return matchCase(m, /s$/i.test(m) ? "roosters" : "rooster");
+}]];
+const DOG = [swap(/\bbitches\b/gi, "female dogs"), swap(/\bbitch\b/gi, "female dog")];
+const BAD_WOMAN = [swap(/\bwhores\b/gi, "disreputable women"), swap(/\bwhore\b/gi, "disreputable woman"), swap(/\bsluts\b/gi, "disreputable women"), swap(/\bslut\b/gi, "disreputable woman")];
+const GLOBAL_RULES = [
+  [/\b([Aa]) (nigger)/g, (m, a) => `${a}n n-word`],
+  [/\bnigger\w*/gi, () => "n-word"],
+  swap(/\bdarkies\b/gi, "Black people"), swap(/\bdark(?:y|ey)s?\b/gi, "Black person"),
+  swap(/\bchinamen\b/gi, "Chinese men"), swap(/\bchinaman\b/gi, "Chinese man"),
+  swap(/\bcoolies\b/gi, "laborers"), swap(/\bcoolie\b/gi, "laborer"),
+  swap(/\bsquaws\b/gi, "Native women"), swap(/\bsquaw\b/gi, "Native woman"),
+  swap(/\bhalf-?breeds\b/gi, "mixed-heritage people"), swap(/\bhalf-?breed\b/gi, "mixed-heritage person"),
+  swap(/\bhottentots?\b/gi, "Khoikhoi"),
+  ...DONKEY, ...DOG, ...BAD_WOMAN,
+];
+const ALWAYS_ROOSTER = new Set(["21", "38025"]); // fable books: every "cock" is a rooster
+const BOOK_RULES = {
+  "21": COCKS_ALWAYS,     // Aesop's Fables
+  "38025": COCKS_ALWAYS,  // Tolstoy's Fables for Children
+  "2600": [swap(/\bbastards\b/gi, "scoundrels"), swap(/\bbastard\b(?!\.)/gi, "scoundrel")], // War and Peace
+  "8868": [swap(/\bbastards\b/gi, "scoundrels"), swap(/\bbastard\b/gi, "scoundrel")],       // Botchan
+  "86": [swap(/\bbastard(?= justice)/gi, "false")],
+};
+const softenFor = (source) => {
+  const direct = String(source?.url || "").match(/gutenberg\.org\/cache\/epub\/(\d+)\//);
+  const id = String(gutenbergIdFromUrl(source?.home || "") || (direct && direct[1]) || "");
+  if (!id) return (t) => t;
+  const rules = [...GLOBAL_RULES, ...(BOOK_RULES[id] || []), ...(ALWAYS_ROOSTER.has(id) ? [] : COCKS_NEAR_BIRDS)];
+  return (t) => rules.reduce((acc, [re, to]) => acc.replace(re, to), t);
+};
+
 async function openEpub(bytes, source, entry) {
   setLoading("Opening the book…", 1);
   const zip = await window.JSZip.loadAsync(bytes);
@@ -1223,10 +1277,11 @@ async function openEpub(bytes, source, entry) {
   const bodyOf = (doc) => doc.body || doc.getElementsByTagName("body")[0] || doc.documentElement;
 
   /* Rebuild a chapter element-by-element from the allow-list above. */
+  const soften = softenFor(entry?.home ? entry : source);
   async function sanitize(node, out, chapterPath) {
     for (const child of node.childNodes) {
       if (child.nodeType === 3) {
-        out.appendChild(document.createTextNode(child.data));
+        out.appendChild(document.createTextNode(soften(child.data)));
         continue;
       }
       if (child.nodeType !== 1) continue;
