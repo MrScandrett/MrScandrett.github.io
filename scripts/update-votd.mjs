@@ -22,7 +22,7 @@ async function main() {
   const payload = {
     fetchedAt:   new Date().toISOString(),
     source:      "https://www.bible.com/verse-of-the-day",
-    sourceLabel: `YouVersion · ${version}`,
+    sourceLabel: `Our Manna · ${version}`,
     reference:   `${details.reference} (${version})`,
     text:        details.text.trim(),
     deeplink:    "https://www.bible.com/verse-of-the-day",
