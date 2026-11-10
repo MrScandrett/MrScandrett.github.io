@@ -12,7 +12,7 @@ try {
   await page.goto('http://localhost:8080/music-lab.html', { waitUntil: 'domcontentloaded' });
   const rack = page.locator('#trackStudio'); await rack.locator('[data-channel]').waitFor();
   const reveal=async sel=>{const d=rack.locator(sel).first();if(await d.getAttribute('open')===null)await d.locator(':scope > summary').click();};const conceal=async sel=>{const d=rack.locator(sel).first();if(await d.getAttribute('open')!==null)await d.locator(':scope > summary').click();};
-  const addTool=async id=>{const catalog=rack.locator('.daw-experience-catalog');if(await catalog.getAttribute('open')===null)await catalog.locator('summary').click();await rack.locator(`[data-tool-add="${id}"]`).click();};
+  const addTool=async id=>{if(!(await rack.locator('[data-ref="tools"]').isVisible()))await rack.locator('[data-tab="tools"]').click();const catalog=rack.locator('.daw-experience-catalog');if(await catalog.getAttribute('open')===null)await catalog.locator('summary').click();await rack.locator(`[data-tool-add="${id}"]`).click();};
   assert.equal(await page.locator('.pillar-theory, .pillar-science, .pillar-studio, #seqGrid, #labHud').count(), 0);
   assert.equal(await rack.locator('[data-experience]').count(), 0);
   assert.equal(await page.evaluate(() => window.MusicDaw.noteOn(60, .8)), false);
@@ -56,6 +56,11 @@ try {
   await addTool('drumkit');
   await rack.locator('[aria-label="Overall drumkit"]').selectOption('electronic');
   await rack.locator('.drum-studio [aria-label="Tune"]').evaluate(node=>{node.value='9';node.dispatchEvent(new Event('input',{bubbles:true}));node.dispatchEvent(new Event('change',{bubbles:true}));});
+  await rack.locator('[aria-label="Edit lane"]').selectOption('snare');
+  assert.equal(await rack.locator('[aria-label="Edit lane"]').inputValue(), 'snare');
+  await rack.locator('.drum-studio [aria-label="Tune"]').evaluate(node=>{node.value='5';node.dispatchEvent(new Event('input',{bubbles:true}));node.dispatchEvent(new Event('change',{bubbles:true}));});
+  assert.equal(await rack.locator('[aria-label="Edit lane"]').inputValue(), 'snare');
+  await rack.locator('[aria-label="Edit lane"]').selectOption('kick');
   await addTool('rhythm');
   await rack.locator('[data-step="0"][data-step-pitch="36"]').click();
   await rack.locator('[data-channel-arm]').click();
@@ -66,7 +71,7 @@ try {
   const saving = page.waitForEvent('download'); await reveal('.daw-channel-options');await rack.locator('[data-channel-preset="save"]').click();
   const preset = await saving; await preset.saveAs('/tmp/channel-experience-preset.json');
   const json = JSON.parse(await readFile('/tmp/channel-experience-preset.json', 'utf8'));
-  assert.equal(json.drumState.kit, 'electronic'); assert.equal(json.drumState.lanes.kick.tune, 9);
+  assert.equal(json.drumState.kit, 'electronic'); assert.equal(json.drumState.lanes.kick.tune, 9); assert.equal(json.drumState.lanes.snare.tune, 5);
   await rack.locator('[data-act="quick-instrument"]').click();
   await addTool('drumkit');
   assert.equal(await rack.locator('[aria-label="Overall drumkit"]').inputValue(), 'studio');

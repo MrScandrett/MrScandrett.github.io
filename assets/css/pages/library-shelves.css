@@ -12,8 +12,8 @@
 .lib-personal-open strong { font-size: 1rem; line-height: 1.4; overflow-wrap: anywhere; }
 .lib-personal-author, .lib-personal-progress { color: var(--library-muted); font-size: .8rem; line-height: 1.4; }
 .lib-personal-open progress { width: 100%; height: 5px; accent-color: var(--library-gold); }
-.lib-save-book, .lib-shelf-action { color: var(--library-ink); background: #ffffff0a; border: 1px solid var(--library-line); border-radius: 5px; min-height: 44px; padding: .5rem .7rem; font: inherit; font-size: .85rem; cursor: pointer; margin-top: .7rem; }
-.lib-save-book { width: 100%; color: #fff3d8; background: #302419; }
+.lib-save-book, .lib-shelf-action { color: var(--library-ink); background: color-mix(in srgb, var(--lib-ink) 6%, transparent); border: 1px solid var(--library-line); border-radius: 5px; min-height: 44px; padding: .5rem .7rem; font: inherit; font-size: .85rem; cursor: pointer; margin-top: .7rem; }
+.lib-save-book { width: 100%; color: var(--lib-ink); background: var(--lib-surface-card); }
 .lib-save-book[aria-pressed="true"] { border-color: var(--library-gold); }
 .lib-personal a:focus-visible, .lib-personal button:focus-visible, .lib-save-book:focus-visible { outline: 3px solid var(--library-gold); outline-offset: 4px; }
 .lib-shelf-empty { color: var(--library-muted); font-size: .95rem; line-height: 1.6; }
@@ -25,16 +25,16 @@ body.library-page { overflow-x: clip; }
 .book:not(:hover):not(:focus-within) .book-popup[aria-hidden="true"] { display: none; }
 
 /* Keep the reading path ahead of discovery on every screen size. */
-.lib-reading-path { margin: 1.5rem auto; max-width: 1160px; padding: clamp(1rem, 3vw, 2rem); border: 1px solid var(--library-line); border-radius: 16px; background: #24180f; color: #fff3df; }
+.lib-reading-path { margin: 1.5rem auto; max-width: 1160px; padding: clamp(1rem, 3vw, 2rem); border: 1px solid var(--library-line); border-radius: 16px; background: var(--lib-surface); color: var(--lib-ink); }
 .lib-reading-path h2 { margin-top: 0; font-size: clamp(1.3rem, 3vw, 1.8rem); }
 .lib-reading-path p { max-width: 80ch; line-height: 1.65; }
 .lib-reading-path .lib-grade-options { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1rem 0 1.4rem; }
 .lib-reading-path button, .lib-reading-path select { min-height: 48px; font: inherit; }
-.lib-reading-path .lib-grade-options button { border: 1px solid #bc9965; border-radius: 8px; padding: .65rem 1rem; background: #302419; color: #fff3df; }
-.lib-reading-path .lib-grade-options button[aria-pressed="true"] { background: #f4d39b; color: #24180f; border-color: #f4d39b; box-shadow: inset 0 -4px #805019; font-weight: 700; }
+.lib-reading-path .lib-grade-options button { border: 1px solid var(--lib-border-strong); border-radius: 8px; padding: .65rem 1rem; background: var(--lib-surface-card); color: var(--lib-ink); }
+.lib-reading-path .lib-grade-options button[aria-pressed="true"] { background: var(--lib-gold-bright); color: var(--lib-btn-primary-ink); border-color: var(--lib-gold-bright); box-shadow: inset 0 -4px var(--lib-gold); font-weight: 700; }
 .lib-reading-path label { display: block; font-weight: 700; margin-bottom: .5rem; }
-.lib-reading-path select { width: 100%; max-width: 36rem; padding: .7rem; color: #fff3df; background: #302419; border: 1px solid #bc9965; border-radius: 6px; }
-.lib-reading-path :focus-visible { outline: 3px solid #f4c778; outline-offset: 4px; }
+.lib-reading-path select { width: 100%; max-width: 36rem; padding: .7rem; color: var(--lib-ink); background: var(--lib-surface-card); border: 1px solid var(--lib-border-strong); border-radius: 6px; }
+.lib-reading-path :focus-visible { outline: 3px solid var(--lib-gold); outline-offset: 4px; }
 .lib-reading-path #libGradeStatus { font-weight: 700; }
 @media (max-width: 700px) { .lib-reading-path { margin: 1rem .75rem; } .lib-reading-path .lib-grade-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 #readingPathTitle, .lib-reading-path { scroll-margin-top: 90px; }
@@ -42,14 +42,34 @@ body.library-page { overflow-x: clip; }
 
 /* Cover-first catalog: quiet surfaces, dense shelves, persistent orientation. */
 html body.library-catalog {
-  --lib-bg: #141b22; --lib-bg-alt: #10161c; --lib-surface: #1b252e;
-  --lib-surface-card: #202c36; --lib-surface-elevated: #24333e;
-  --lib-border: #3c4b57; --lib-border-strong: #718491;
-  --lib-ink: #e8eef2; --lib-muted: #bfccd4; --lib-faint: #b1c1cb;
-  --lib-gold: #78d6b0; --lib-gold-bright: #a0e7cc;
-  --lib-gold-soft: #78d6b018; --lib-gold-border: #78d6b060;
-  --lib-btn-primary-bg: #78d6b0; --lib-btn-primary-ink: #10251d;
-  background: #141b22 !important; font-family: system-ui, sans-serif !important;
+  /* Every value derives from the active theme (data-theme), so switching theme,
+     skin or background re-tints the library live. Only tokens from main.css /
+     classroom-home.css are read; nothing here is a fixed palette. */
+  --lib-bg: var(--surface-page, var(--bg));
+  --lib-bg-alt: color-mix(in srgb, var(--lib-bg) 92%, var(--lib-ink));
+  --lib-surface: var(--surface-panel, color-mix(in srgb, var(--lib-bg) 90%, var(--lib-ink)));
+  --lib-surface-card: var(--surface-panel-alt, color-mix(in srgb, var(--lib-bg) 86%, var(--lib-ink)));
+  --lib-surface-elevated: var(--surface-elevated, color-mix(in srgb, var(--lib-bg) 80%, var(--lib-ink)));
+  --lib-surface-hover: color-mix(in srgb, var(--lib-surface-elevated) 88%, var(--lib-gold));
+  --lib-border: var(--border-default, color-mix(in srgb, var(--lib-ink) 24%, transparent));
+  --lib-border-strong: var(--border-strong, color-mix(in srgb, var(--lib-ink) 50%, transparent));
+  --lib-ink: var(--text-primary, var(--text));
+  --lib-ink-heading: var(--lib-ink);
+  --lib-muted: color-mix(in srgb, var(--lib-ink) 82%, var(--lib-bg));
+  --lib-faint: color-mix(in srgb, var(--lib-ink) 70%, var(--lib-bg));
+  --lib-gold: var(--accent);
+  --lib-gold-bright: var(--accent-hover, var(--accent));
+  --lib-gold-soft: color-mix(in srgb, var(--lib-gold) 16%, transparent);
+  --lib-gold-border: color-mix(in srgb, var(--lib-gold) 45%, transparent);
+  --lib-btn-primary-bg: var(--lib-gold);
+  --lib-btn-primary-ink: var(--text-on-accent, var(--accent-contrast, #fff));
+  --lib-header-bg: var(--header-bg, var(--lib-surface));
+  --lib-header-border: var(--header-border, var(--lib-border));
+  --lib-radius-sm: var(--radius-sm, 4px);
+  background: var(--page-wash, none), var(--lib-bg) !important;
+  color: var(--lib-ink);
+  font-family: var(--font-sans, system-ui, sans-serif) !important;
+  transition: background-color .35s ease, color .35s ease;
 }
 body.library-catalog::before, .library-catalog .library-scene, .library-catalog .library-dust,
 .library-catalog .library-hero-guide, .library-catalog .library-hero-actions,
@@ -71,21 +91,21 @@ body.library-catalog .recipe-catalog-hero h1 { font: 600 clamp(2rem, 4vw, 3rem)/
 .library-catalog .lib-reading-path h2 { font: 600 1rem system-ui, sans-serif; margin: 0 0 10px; }
 .library-catalog .lib-reading-path p { font: 400 .78rem/1.55 system-ui, sans-serif; color: var(--lib-muted); }
 .library-catalog .lib-reading-path .lib-grade-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 16px 0; }
-.library-catalog .lib-reading-path .lib-grade-options button { font: 500 .8rem/1.3 system-ui, sans-serif; background: #202c36; color: var(--lib-ink); border: 1px solid var(--lib-border); border-radius: 4px; padding: 8px; min-height: 44px; }
-.library-catalog .lib-reading-path .lib-grade-options button[aria-pressed="true"] { background: #78d6b0; color: #10251d; border-color: #78d6b0; box-shadow: none; }
+.library-catalog .lib-reading-path .lib-grade-options button { font: 500 .8rem/1.3 system-ui, sans-serif; background: var(--lib-surface-card); color: var(--lib-ink); border: 1px solid var(--lib-border); border-radius: var(--lib-radius-sm); padding: 8px; min-height: 44px; }
+.library-catalog .lib-reading-path .lib-grade-options button[aria-pressed="true"] { background: var(--lib-gold); color: var(--lib-btn-primary-ink); border-color: var(--lib-gold); box-shadow: none; }
 .library-catalog .lib-reading-path label { font: 600 .8rem system-ui, sans-serif; }
-.library-catalog select { min-height: 44px; max-width: 100%; border: 1px solid var(--lib-border); border-radius: 4px; background: #202c36; color: var(--lib-ink); padding: 8px; font: 400 .8rem system-ui, sans-serif; }
+.library-catalog select { min-height: 44px; max-width: 100%; border: 1px solid var(--lib-border); border-radius: var(--lib-radius-sm); background: var(--lib-surface-card); color: var(--lib-ink); padding: 8px; font: 400 .8rem system-ui, sans-serif; }
 .library-catalog .lib-reading-path #libGradeStatus { color: var(--lib-gold); }
-.library-catalog #libBrowseReading { font: 600 .8rem system-ui, sans-serif; background: #263d36; color: #a0e7cc; border: 1px solid #527769; box-shadow: none; border-radius: 4px; padding: 10px; width: 100%; }
+.library-catalog #libBrowseReading { font: 600 .8rem system-ui, sans-serif; background: var(--lib-gold-soft); color: var(--lib-gold-bright); border: 1px solid var(--lib-gold-border); box-shadow: none; border-radius: var(--lib-radius-sm); padding: 10px; width: 100%; }
 .library-catalog .lib-entry-grid, .library-catalog .lib-entry-grid.is-compact { display: grid; grid-template-columns: 1fr; position: static; padding: 0; gap: 4px; background: none; border: 0; box-shadow: none; }
 .library-catalog .lib-entry-card, .library-catalog .lib-entry-grid.is-compact .lib-entry-card { min-height: 48px; padding: 10px 12px; background: none; border: 0; border-left: 3px solid transparent; border-radius: 0; box-shadow: none; text-align: left; transform: none; }
-.library-catalog .lib-entry-card.is-active { background: #24333e; border-left-color: var(--lib-gold); }
+.library-catalog .lib-entry-card.is-active { background: var(--lib-surface-elevated); border-left-color: var(--lib-gold); }
 .library-catalog .entry-topline, .library-catalog .entry-purpose, .library-catalog .entry-desc, .library-catalog .entry-count { display: none !important; }
 .library-catalog .entry-heading { font: 500 .85rem/1.4 system-ui, sans-serif !important; color: var(--lib-ink); margin: 0; }
 .library-catalog .lib-entry-section, .library-catalog .lib-anchor, #catalogPersonal { grid-column: 2; min-width: 0; margin: 0; padding: 0; }
 .library-catalog .library-directory-head h2 { font: 600 1.2rem Georgia, serif; margin: 0; }
 .library-catalog .library-directory-head p { font: 400 .8rem/1.5 system-ui, sans-serif; color: var(--lib-muted); max-width: 50ch; }
-.library-catalog .lib-search-bar { margin: 16px 0; background: #202c36; border: 1px solid var(--lib-border); border-radius: 5px; box-shadow: none; }
+.library-catalog .lib-search-bar { margin: 16px 0; background: var(--lib-surface-card); border: 1px solid var(--lib-border); border-radius: 5px; box-shadow: none; }
 .library-catalog .lib-search-input { font: 400 .95rem system-ui, sans-serif; color: var(--lib-ink); }
 .library-catalog .lib-tools { border-bottom: 1px solid var(--lib-border); padding-bottom: 16px; gap: 14px; flex-wrap: wrap; }
 .catalog-sort { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--lib-muted); }
@@ -96,18 +116,18 @@ body.library-catalog .recipe-catalog-hero h1 { font: 600 clamp(2rem, 4vw, 3rem)/
 .library-catalog .family-reading-note, .library-catalog .steam-insight-box { display: none; }
 body.library-catalog.lib-covers .bookcase { padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
 body.library-catalog.lib-covers .shelf-row { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 24px 18px; }
-body.library-catalog.lib-covers .book-cover { border-radius: 3px; box-shadow: 0 3px 8px #0006; border: 1px solid #ffffff28; }
+body.library-catalog.lib-covers .book-cover { border-radius: 3px; box-shadow: 0 3px 8px #0006; border: 1px solid color-mix(in srgb, var(--lib-ink) 16%, transparent); }
 body.library-catalog.lib-covers .book:hover .book-cover { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--lib-gold); }
 .library-catalog .book-caption strong { font: 600 .8rem/1.35 system-ui, sans-serif; }
 .library-catalog .book-caption span { font: 400 .72rem/1.5 system-ui, sans-serif; }
 .catalog-save { display: none; }
-body.library-catalog.lib-covers .catalog-save { display: block; width: 100%; min-height: 44px; margin-top: 8px; padding: 6px; border: 1px solid #527769; border-radius: 4px; background: #263d36; color: #a0e7cc; font: 600 .73rem system-ui, sans-serif; cursor: pointer; }
-body.library-catalog .catalog-save[aria-pressed="true"] { background: #78d6b0; color: #10251d; }
-.library-catalog .book-popup, body.library-catalog.lib-covers .book-popup { background: #24333e; color: var(--lib-ink); border-color: var(--lib-border); }
+body.library-catalog.lib-covers .catalog-save { display: block; width: 100%; min-height: 44px; margin-top: 8px; padding: 6px; border: 1px solid var(--lib-gold-border); border-radius: var(--lib-radius-sm); background: var(--lib-gold-soft); color: var(--lib-gold-bright); font: 600 .73rem system-ui, sans-serif; cursor: pointer; }
+body.library-catalog .catalog-save[aria-pressed="true"] { background: var(--lib-gold); color: var(--lib-btn-primary-ink); }
+.library-catalog .book-popup, body.library-catalog.lib-covers .book-popup { background: var(--lib-surface-elevated); color: var(--lib-ink); border-color: var(--lib-border); }
 .library-catalog.catalog-personal-view .lib-entry-section, .library-catalog.catalog-personal-view .lib-anchor { display: none !important; }
 .library-catalog .lib-personal { margin: 0; }
 .library-catalog .lib-personal h3 { font-size: 1.4rem; }
-.library-catalog :is(button, a, select):focus-visible { outline: 3px solid #78d6b0 !important; outline-offset: 3px; }
+.library-catalog :is(button, a, select):focus-visible { outline: 3px solid var(--lib-gold) !important; outline-offset: 3px; }
 @media(max-width: 800px) {
   body.library-catalog #main-content { grid-template-columns: minmax(0, 1fr); padding: 16px; gap: 0; }
   .catalog-sidebar { grid-column: 1; grid-row: auto; margin-bottom: 24px; }
@@ -121,15 +141,15 @@ body.library-catalog .catalog-save[aria-pressed="true"] { background: #78d6b0; c
 }
 body.library-catalog #main-content :is(p, span, button, input, select, label, h2, h3, a, strong) { font-family: system-ui, sans-serif !important; letter-spacing: normal; }
 body.library-catalog #main-content .bct-title, body.library-catalog #main-content .bct-author { font-family: Georgia, serif !important; }
-body.library-catalog .site-header { background: #10171f !important; border-bottom: 1px solid #3c4b57 !important; box-shadow: none !important; backdrop-filter: none !important; }
-body.library-catalog .site-header :is(a, button) { color: #e8eef2 !important; }
+body.library-catalog .site-header { background: var(--lib-header-bg) !important; border-bottom: 1px solid var(--lib-header-border) !important; box-shadow: none !important; backdrop-filter: none !important; }
+body.library-catalog .site-header :is(a, button) { color: var(--lib-ink) !important; }
 body.library-catalog .lib-room-header { border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
-body.library-catalog.lib-covers .shelf-label { background: none !important; border: 0; box-shadow: none; padding: 0; color: #bfccd4; font-weight: 600; letter-spacing: .04em; }
-body.library-catalog.lib-covers .shelf-board { border-color: #3c4b57; }
+body.library-catalog.lib-covers .shelf-label { background: none !important; border: 0; box-shadow: none; padding: 0; color: var(--lib-muted); font-weight: 600; letter-spacing: .04em; }
+body.library-catalog.lib-covers .shelf-board { border-color: var(--lib-border); }
 html body.library-catalog #main-content > .recipe-catalog-hero { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 8px 0 20px !important; background: transparent !important; background-image: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
 html body.library-catalog #main-content > .recipe-catalog-hero::before, html body.library-catalog #main-content > .recipe-catalog-hero::after { display: none !important; }
-html body.library-catalog .site-header, html body.library-catalog .site-header .nav-wrap { background: #10171f !important; background-image: none !important; box-shadow: none !important; border-radius: 0 !important; backdrop-filter: none !important; }
-html body.library-catalog .lib-tools { padding: 0 0 14px !important; background: none !important; border: 0 !important; border-bottom: 1px solid #3c4b57 !important; border-radius: 0 !important; box-shadow: none !important; }
+html body.library-catalog .site-header, html body.library-catalog .site-header .nav-wrap { background: var(--lib-header-bg) !important; background-image: none !important; box-shadow: none !important; border-radius: 0 !important; backdrop-filter: none !important; }
+html body.library-catalog .lib-tools { padding: 0 0 14px !important; background: none !important; border: 0 !important; border-bottom: 1px solid var(--lib-header-border) !important; border-radius: 0 !important; box-shadow: none !important; }
 .library-catalog .library-directory-head { display: block; }
 .library-catalog .library-directory-head p { margin: 8px 0; max-width: none; }
 .library-catalog .lib-room-header > p { display: none; }
@@ -177,14 +197,14 @@ body.library-catalog .catalog-like[aria-pressed="true"] { color: var(--lib-gold)
 
 /* The catalog keeps its own control styling instead of stacking a global skin
    over the cover grid; the site navigation retains the user's chosen skin. */
-html body.library-catalog #main-content { background: #141b22; }
+html body.library-catalog #main-content { background: transparent; }
 body.library-catalog.lib-covers .book-caption { grid-template-rows: 2.7em 1.5em 1.5em; }
 body.library-catalog.lib-covers .book-caption strong { line-height: 1.35; }
 body.library-catalog.lib-covers .book-caption span { min-width: 0; }
 html body.library-catalog #main-content .lib-search-input { background: transparent; border: 0; border-radius: 0; box-shadow: none; min-width: 0; }
 html body.library-catalog #main-content .lib-search-input:focus { outline: 2px solid var(--lib-gold); outline-offset: -2px; }
-html body.library-catalog .lib-view-toggle button { border-radius: 4px; padding: 8px 12px; min-height: 44px; box-shadow: none; }
-html body.library-catalog .lib-view-toggle button[aria-pressed="true"] { background: #78d6b0; color: #10251d; }
+html body.library-catalog .lib-view-toggle button { border-radius: var(--lib-radius-sm); padding: 8px 12px; min-height: 44px; box-shadow: none; }
+html body.library-catalog .lib-view-toggle button[aria-pressed="true"] { background: var(--lib-gold); color: var(--lib-btn-primary-ink); }
 html body.library-catalog .catalog-tabs button { border-radius: 0; box-shadow: none; }
 html body.library-catalog #libReadingDemand { width: 100%; font-size: .78rem; }
 @media(max-width: 480px) {
@@ -196,15 +216,30 @@ body.library-catalog.lib-covers .book-caption strong { display: -webkit-box; -we
 /* A single header surface; suppress the shared glass reflection layers here. */
 html body.library-catalog > .site-header::before,
 html body.library-catalog > .site-header::after { display: none !important; }
-html body.library-catalog > .site-header { width: 100%; background: #10171f !important; border-bottom: 1px solid #3c4b57 !important; box-shadow: none !important; }
+html body.library-catalog > .site-header { width: 100%; background: var(--lib-header-bg) !important; border-bottom: 1px solid var(--lib-header-border) !important; box-shadow: none !important; }
 html body.library-catalog > .site-header .nav-wrap { box-sizing: border-box; width: 100%; max-width: 1360px; margin-inline: auto; padding-inline: 32px; border: 0 !important; background: transparent !important; gap: 16px; }
 html body.library-catalog > .site-header :is(button, .site-nav a) { background-image: none !important; box-shadow: none; border-radius: 5px; }
 html body.library-catalog > .site-header .nav-dd-trigger { min-width: 24px; width: 24px; padding: 0; border: 0; background: transparent; }
 html body.library-catalog > .site-header .nav-settings-toggle { white-space: nowrap; }
-html body.library-catalog > .site-header .site-nav a[aria-current="page"] { border-radius: 4px; }
+html body.library-catalog > .site-header .site-nav a[aria-current="page"] { border-radius: var(--lib-radius-sm); }
 @media(max-width: 800px) {
   html body.library-catalog > .site-header .nav-wrap { padding-inline: 16px; gap: 8px; }
-  html body.library-catalog > .site-header .site-nav { background: #1b252e !important; border-color: #3c4b57 !important; }
+  html body.library-catalog > .site-header .site-nav { background: var(--lib-surface) !important; border-color: var(--lib-border) !important; }
 }
-html[data-site-theme] body.library-catalog > header.site-header { background: #10171f !important; border-bottom: 1px solid #3c4b57 !important; }
+html[data-site-theme] body.library-catalog > header.site-header { background: var(--lib-header-bg) !important; border-bottom: 1px solid var(--lib-header-border) !important; }
 html body.library-catalog > .site-header .nav-dd-trigger { min-height: 44px; }
+
+/* Theme bridge, part 2: surfaces that used fixed wood-room colors. */
+body.library-catalog .shelf-label { text-shadow: none; color: var(--lib-muted); }
+body.library-catalog .lib-seg button { background: var(--lib-surface-card); border-color: var(--lib-border); }
+body.library-catalog .lib-seg button:hover { background: var(--lib-surface-hover); border-color: var(--lib-gold); }
+body.library-catalog .lib-seg button[aria-pressed="true"] { background: var(--lib-gold); color: var(--lib-btn-primary-ink); border-color: var(--lib-gold); box-shadow: none; }
+body.library-catalog #libGradeStatus,
+body.library-catalog .lib-reading-path p strong { color: var(--lib-ink); }
+body.library-catalog .lib-reading-path #libGradeStatus { color: var(--lib-gold); }
+/* The decorative backdrop (canvas background, page wash) is the theme's, so
+   crossfade it instead of snapping when the theme or background changes. */
+body.library-catalog #site-canvas-bg { transition: opacity .5s ease; }
+@media (prefers-reduced-motion: reduce) {
+  html body.library-catalog { transition: none; }
+}

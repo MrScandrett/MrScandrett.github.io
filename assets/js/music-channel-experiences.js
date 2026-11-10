@@ -155,11 +155,12 @@
       noteController(pads);
       const studio = el('div', '', host);
       const editor = window.DrumStudio.mount(studio, ['kick', 'snare', 'hat', 'ohat', 'crash', 'ride', 'tomHi', 'tomMid', 'tomLo', 'clap', 'rim', 'perc'], (name, options) => api.drum(name, options), {
-        persist: false, state: track.drumState,
+        persist: false, state: track.drumState, selected: state.lane,
+        onSelect(lane) { state.lane = lane; api.store(); },
         onChange(value) { track.drumState = value; api.store(); }
       });
       track.drumState = editor.state(); api.store();
-      on(studio, 'change', () => api.changed()); midiControls();
+      on(studio, 'change', event => { if (event.target.getAttribute('aria-label') !== 'Edit lane') api.changed(); }); midiControls();
     }
     function synthlab() {
       state.wave ??= 'sawtooth'; state.attack ??= .008; state.decay ??= .3; state.sustain ??= .7; state.release ??= .16;

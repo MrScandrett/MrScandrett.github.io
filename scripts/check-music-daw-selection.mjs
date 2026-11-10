@@ -37,6 +37,13 @@ try {
   assert.equal(song.tracks.length, 1);
   assert.ok(Math.abs(song.tracks[0].notes[0].start - 0.7) < 0.03, 'Ctrl-click places a note between grid lines');
 
+  // Adding a second note selects index 1; Undo removes it and must prune selNotes so Quantize/Velocity never crash.
+  await page.mouse.click(x + 60, y);
+  await page.keyboard.press('Control+z');
+  await page.locator('[data-act="quantize"]').click();
+  await page.locator('[data-ed="velocity"]').fill('0.75');
+  await page.locator('[data-ed="velocity"]').dispatchEvent('input');
+
   if (await fileTools.getAttribute('open') !== null) await fileTools.locator('summary').click();
   await page.locator('[data-ruler] canvas').scrollIntoViewIfNeeded();
   const ruler = await page.locator('[data-ruler] canvas').boundingBox();
