@@ -54,7 +54,7 @@
     {
       id: "notebook",
       label: "Notebook",
-      detail: "Pen-drawn frames, pencil-hatched buttons and handwritten controls.",
+      detail: "A spiral-bound sketchbook: ruled paper, taped-in pages, highlighter and ink that wiggles when you touch it.",
       era: "Skeuomorphism, 2000s",
       icon: "✎",
       css: true,
