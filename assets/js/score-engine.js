@@ -1125,8 +1125,15 @@
       comp.threshold.value = -14; comp.ratio.value = 3;
       audio.out = audio.ctx.createGain();
       audio.out.gain.value = 0.9;
-      audio.out.connect(comp); comp.connect(kit ? kit.output() : audio.ctx.destination);
-      if (kit) kit.onStop(function () { players.forEach(function (p) { if (p.playing) p.pause(); }); });
+      audio.out.connect(comp);
+      if (audio.ctx.createDelay) [.023, .047, .079].forEach(function (delayTime, i) {
+        var delay = audio.ctx.createDelay(.1), tone = audio.ctx.createBiquadFilter(), level = audio.ctx.createGain();
+        delay.delayTime.value = delayTime; tone.type = 'lowpass'; tone.frequency.value = 4300 - i * 800;
+        level.gain.value = [.07, .045, .025][i];
+        audio.out.connect(delay); delay.connect(tone); tone.connect(level); level.connect(comp);
+      });
+      comp.connect(kit ? kit.output() : audio.ctx.destination);
+      if (kit) kit.onStop(function () { players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });
     }
     if (kit) kit.resume();
     else if (audio.ctx.state === 'suspended') audio.ctx.resume();
@@ -1150,6 +1157,7 @@
     this.rate = 1; this.pos = 0; this.playing = false; this.voices = new Set();
     this.mutes = model.staves.map(function () { return false; });
     this.instrument = sc.instrument || 'piano';
+    this.loadToken = 0; this.loading = false; this.samples = true; this.destroyed = false;
     this.loop = false;
     this.range = null;   // { from, to } in performance beats while a loop range is set
   }
@@ -1158,9 +1166,9 @@
   };
   Player.prototype.qpm = function () { return this.baseQpm * this.rate; };
   Player.prototype.play = function () {
-    if (this.playing) return;
+    if (this.playing || this.destroyed) return;
     var self = this;
-    players.forEach(function (p) { if (p !== self && p.playing) p.pause(); });
+    players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
     var c = context();
     var span = this.span();
     if (this.pos >= span.to - EPS || this.pos < span.from - EPS) this.pos = span.from;
@@ -1175,6 +1183,28 @@
     this.schedule();
     this.frame();
     this.ui.update();
+  };
+  Player.prototype.requestPlay = async function () {
+    if (this.destroyed || this.loading || this.playing) return;
+    var self = this, token = ++this.loadToken, c = context();
+    players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
+    // Resume synchronously with the gesture, then load only the roots used by this score.
+    this.loading = true; this.ui.update();
+    var report = { loaded: 0, failed: 0 };
+    if (this.samples && root.MusicSynth.prepare) {
+      var grouped = new Map();
+      this.notes.forEach(function (n) {
+        if (self.mutes[n.staff]) return;
+        var instrument = self.instOverride ? self.instrument : (self.model.staves[n.staff].instrument || self.instrument);
+        if (!grouped.has(instrument)) grouped.set(instrument, new Set());
+        grouped.get(instrument).add(n.midi + (Number(self.model.score.playbackTranspose) || 0));
+      });
+      report = await root.MusicSynth.prepare(c, Array.from(grouped, function (pair) { return { instrument: pair[0], pitches: Array.from(pair[1]) }; }));
+    }
+    if (this.destroyed || token !== this.loadToken) return;
+    this.loading = false;
+    if (this.ui.soundStatus) this.ui.soundStatus(report);
+    this.play();
   };
   Player.prototype.beatAt = function (time) { return this.b0 + (time - this.t0) * this.qpm() / 60; };
   Player.prototype.timeOf = function (beat) { return this.t0 + (beat - this.b0) * 60 / this.qpm(); };
@@ -1198,7 +1228,7 @@
         this.voices.forEach(function (voice) { if (!oldest || voice.scoreEnd < oldest.scoreEnd) oldest = voice; });
         oldest.kill(c.currentTime); this.voices.delete(oldest);
       }
-      var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi, n.vel, t, function (voice) { self.voices.delete(voice); });
+      var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples });
       v.scoreEnd = release;
       v.release(Math.max(t + 0.01, release));
       this.voices.add(v);
@@ -1219,6 +1249,7 @@
     this.halt();
   };
   Player.prototype.halt = function () {
+    this.loadToken++; this.loading = false;
     this.playing = false;
     clearInterval(this.timer);
     cancelAnimationFrame(this.raf);
@@ -1279,7 +1310,7 @@
   }
 
   // ── Figure UI ─────────────────────────────────────────────────────────────
-  var LABELS = { piano: 'Piano', strings: 'Strings', organ: 'Organ', ePiano: 'Celesta-ish (e-piano)', pluck: 'Harpsichord-ish (pluck)', synth: 'Synth', pad: 'Warm pad', bass: 'Bass' };
+  var LABELS = { piano: 'Piano', strings: 'Strings', organ: 'Organ', ePiano: 'Electric piano', pluck: 'Classical guitar', synth: 'Synth', pad: 'Warm pad', bass: 'Electric bass' };
 
   function el(tag, attrs, text) {
     var e = document.createElement(tag);
@@ -1387,7 +1418,10 @@
     root.print();
   }
 
+  function samplerAssetBase() { return scriptUrl || location.href; }
+
   function render(fig, score) {
+    if (fig.scorePlayer && fig.scorePlayer.destroy) fig.scorePlayer.destroy();
     var model;
     try {
       model = prepare(score);
@@ -1431,6 +1465,15 @@
     inst.appendChild(auto);
     root.MusicSynth.instruments.forEach(function (k) { inst.appendChild(el('option', { value: k }, LABELS[k] || (root.MusicSynth.labels && root.MusicSynth.labels[k]) || k)); });
     instLbl.appendChild(inst);
+    var qualityLabel = el('label', {});
+    qualityLabel.appendChild(el('span', {}, 'Playback'));
+    var quality = el('select', { 'aria-label': 'Playback sound quality' });
+    quality.appendChild(el('option', { value: 'sampled' }, 'Recorded instruments'));
+    quality.appendChild(el('option', { value: 'synth' }, 'Lightweight synthesis'));
+    qualityLabel.appendChild(quality); settingsBar.appendChild(qualityLabel);
+    var sampleCredit = el('p', { class: 'se-sample-credit' });
+    sampleCredit.appendChild(el('a', { href: new URL('../audio/instruments/README.md', samplerAssetBase()).href, target: '_blank', rel: 'noopener' }, 'Instrument recordings · sources & licenses'));
+    settingsBar.appendChild(sampleCredit);
     var loopLbl = el('label', { class: 'se-check' });
     var loop = el('input', { type: 'checkbox' });
     var loopText = document.createTextNode(' Loop');
@@ -1674,8 +1717,11 @@
     }
 
     player.ui = {
+      soundStatus: function (report) {
+        status.textContent = !player.samples ? 'Lightweight synthesized playback.' : report.failed ? 'Some recordings are unavailable; synthesis fills the missing notes.' : 'Recorded instrument playback; synthesis covers unsupported sounds and out-of-range notes.';
+      },
       update: function () {
-        playBtn.textContent = player.playing ? '❚❚ Pause' : '▶ Play';
+        playBtn.textContent = player.loading ? 'Cancel loading' : player.playing ? '❚❚ Pause' : '▶ Play';
         playBtn.setAttribute('aria-pressed', player.playing ? 'true' : 'false');
         fig.classList.toggle('se-playing', player.playing);
         status.setAttribute('aria-live', player.playing ? 'off' : 'polite');
@@ -1744,7 +1790,7 @@
       if (was) player.play();
     });
     updateTimeline(0);
-    function togglePlay() { if (player.playing) player.pause(); else player.play(); }
+    function togglePlay() { if (player.loading) player.stop(); else if (player.playing) player.pause(); else player.requestPlay(); }
     playBtn.addEventListener('click', togglePlay);
     fig.addEventListener('keydown', function (event) {
       if (event.code !== 'Space' || event.ctrlKey || event.metaKey || event.altKey ||
@@ -1762,9 +1808,13 @@
       updateTimeline(player.pos);
     });
     inst.addEventListener('change', function () {
-      var was = player.playing; if (was) player.pause();
+      var was = player.playing; player.halt();
       player.instOverride = !!inst.value; player.instrument = inst.value || score.instrument || 'piano';
-      if (was) player.play();
+      if (was) player.requestPlay();
+    });
+    quality.addEventListener('change', function () {
+      var was = player.playing; player.halt(); player.samples = quality.value === 'sampled';
+      if (was) player.requestPlay();
     });
     loop.addEventListener('change', function () { player.loop = loop.checked; navigation.refresh(); });
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
@@ -1777,13 +1827,14 @@
       if (document.fullscreenElement === fig) document.exitFullscreen();
       else if (fig.requestFullscreen) fig.requestFullscreen().catch(function () {});
     });
-    document.addEventListener('fullscreenchange', function () {
+    function fullscreenChanged() {
       var isFull = document.fullscreenElement === fig;
       full.textContent = isFull ? 'Exit full screen' : 'Full screen';
       full.setAttribute('aria-pressed', String(isFull));
       full.setAttribute('aria-label', isFull ? 'Exit full screen' : 'Show the score full screen');
       layout = null; requestAnimationFrame(draw);
-    });
+    }
+    document.addEventListener('fullscreenchange', fullscreenChanged);
 
     // Click a note: hear it, and start playback from there next time.
     svgWrap.addEventListener('click', function (e) {
@@ -1798,7 +1849,7 @@
       if (!ev) return;
       var c = context(), st = model.staves[ev.staff];
       if (!player.playing && ev.kind === 'note') ev.pitches.forEach(function (p) {
-        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
+        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi + (Number(score.playbackTranspose) || 0), 0.75, c.currentTime, null, { samples: player.samples }).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
       navigation.select(measureAt(ev.abs));
@@ -1816,7 +1867,7 @@
       noteListToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       noteListToggle.textContent = open ? 'Hide note list' : 'Show note list';
     });
-    root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
+    var offPreferences = root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
     updatePreferenceButtons();
 
     draw();
@@ -1830,8 +1881,17 @@
     });
     var drawFrame = 0;
     function queueDraw() { if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; draw(); }); }
-    if (root.ResizeObserver) new ResizeObserver(queueDraw).observe(paper);
+    var observer;
+    if (root.ResizeObserver) { observer = new ResizeObserver(queueDraw); observer.observe(paper); }
     else root.addEventListener('resize', draw);
+    player.destroy = function () {
+      player.stop(); player.destroyed = true;
+      if (observer) observer.disconnect(); else root.removeEventListener('resize', draw);
+      document.removeEventListener('fullscreenchange', fullscreenChanged);
+      if (offPreferences) offPreferences();
+      cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
+      if (fig.scorePlayer === player) delete fig.scorePlayer;
+    };
     return player;
   }
 
@@ -2065,6 +2125,8 @@
   root.ScoreEngine = { previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });
+    root.addEventListener('pagehide', function () { players.forEach(function (p) { p.halt(); }); });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
   }

@@ -365,13 +365,14 @@
     ];
 
     async function loadLessons() {
-      const [data, images] = await Promise.all(
-        ['data/lessons.json', 'data/path-lesson-images.json'].map(async (url) => {
+      const [data, images, covers] = await Promise.all(
+        ['data/lessons.json', 'data/path-art.json', 'data/path-cover-images.json'].map(async (url) => {
           const res = await fetch(url, { cache: 'no-store' });
           if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
           return res.json();
         })
       );
+      PATHS.forEach(path => { path.cover = covers[path.id]; });
       const map = {};
       for (const l of data.lessons) map[l.id] = { ...l, preview: images[l.id] };
       return map;
@@ -385,6 +386,7 @@
       if (lesson && lesson.preview) {
         const img = document.createElement('img');
         img.className = 'path-step-image';
+        if (lesson.preview.kind === 'diagram') img.classList.add('is-diagram');
         img.src = lesson.preview.src;
         img.alt = lesson.preview.alt;
         img.width = 640;
@@ -456,7 +458,18 @@
       const iconEl = document.createElement('div');
       iconEl.className = 'path-icon';
       iconEl.setAttribute('aria-hidden', 'true');
-      iconEl.textContent = path.icon;
+      if (path.cover) {
+        const cover = document.createElement('img');
+        cover.src = path.cover.src;
+        cover.alt = '';
+        cover.width = 480;
+        cover.height = 320;
+        cover.loading = 'lazy';
+        cover.decoding = 'async';
+        iconEl.appendChild(cover);
+      } else {
+        iconEl.textContent = path.icon;
+      }
 
       const metaEl = document.createElement('div');
       metaEl.className = 'path-meta';
@@ -513,6 +526,28 @@
 
       section.appendChild(header);
       section.appendChild(rail);
+
+      const credited = new Map();
+      [path.cover, ...path.sequence.map(id => lessonMap[id]?.preview)].filter(Boolean).forEach(image => {
+        if (image.creditUrl) credited.set(image.src, image);
+      });
+      if (credited.size) {
+        const credits = document.createElement('details');
+        credits.className = 'path-art-credits';
+        const summary = document.createElement('summary');
+        summary.textContent = 'About the images & source credits';
+        credits.appendChild(summary);
+        for (const image of credited.values()) {
+          const line = document.createElement('p');
+          line.textContent = image.credit || image.alt;
+          const source = document.createElement('a');
+          source.href = image.creditUrl;
+          source.textContent = ' View image sources and licensing in the lesson →';
+          line.appendChild(source);
+          credits.appendChild(line);
+        }
+        section.appendChild(credits);
+      }
 
       if (path.outcomes) {
         const label = document.createElement('h3');

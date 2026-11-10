@@ -47,6 +47,7 @@
     const run = generation;
     try {
       await AudioKit.resume();
+      await MusicSynth.prepare(AudioKit.context(),[{instrument:'pluck',pitches:events().map(e=>e.pitch)}]);
       if (run !== generation) return;
       const start = AudioKit.now() + .06, beat = 60 / Number(tempo.value);
       events().forEach(e => {
