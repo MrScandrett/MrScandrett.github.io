@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 454 public lessons and classifies 16 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 484 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -257,7 +257,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 113 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 120 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -355,25 +355,27 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 ### Audio, Acoustics & Signal Flow
 
-- **TEC-02** — Microphone Polar Pattern Lab
-- **TEC-03** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
-- **TEC-04** — Wireless Mics & RF Coordination — _also indexed in Engineering Systems & Electronics_
-- **TEC-05** — Running the Allen & Heath Qu-7 — _also indexed in Engineering Systems & Electronics_
-- **TEC-06** — EQ: Find the Problem Frequency
-- **TEC-07** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
-- **TEC-08** — Room Acoustics & Reverb Lab
-- **TEC-09** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
-- **TEC-10** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
+- **TEC-02** — Live Audio Signal Chain — _also indexed in Engineering Systems & Electronics_
+- **TEC-03** — Microphone Polar Pattern Lab
+- **TEC-04** — Room Acoustics & Reverb Lab
+- **TEC-05** — EQ: Find the Problem Frequency
+- **TEC-06** — Audio Compression: Taming Dynamics — _also indexed in Engineering Systems & Electronics_
+- **TEC-07** — Analog Mixer Lab: Patch, Gain & FX Bus — _also indexed in Engineering Systems & Electronics_
+- **TEC-08** — The Recording Session: Console, Cues & the Print
+- **TEC-09** — Running the Allen & Heath Qu-7 — _also indexed in Engineering Systems & Electronics_
+- **TEC-10** — Live Sound Reinforcement: Feedback, the PA & Show Day
+- **TEC-11** — Cymatics: The Geometry of Sound — _also indexed in Physics & Physical Systems, Music: Theory, Instruments & Sound_
+- **TEC-12** — Wireless Mics & RF Coordination — _also indexed in Engineering Systems & Electronics_
 
 ### Stage & Visual Production Systems
 
-- **TEC-11** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-12** — Camera Exposure Triangle
-- **TEC-13** — White Balance & Color Temperature
-- **TEC-14** — Projection & Throw-Ratio Lab
-- **TEC-15** — Theatre Cue Sheets
-- **TEC-16** — Stage Plotting
-- **TEC-17** — Jim Henson
+- **TEC-13** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
+- **TEC-14** — Camera Exposure Triangle
+- **TEC-15** — White Balance & Color Temperature
+- **TEC-16** — Projection & Throw-Ratio Lab
+- **TEC-17** — Theatre Cue Sheets
+- **TEC-18** — Stage Plotting
+- **TEC-19** — Jim Henson
 
 ## 2D Design (D2D)
 
@@ -388,19 +390,30 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **D2D-04** — Katsushika Hokusai
 - **D2D-05** — Walt Disney
 
+### Draw It · Vector Drawing, Composition & Poster Design
+
+- **D2D-06** — Vector Drawing Studio
+- **D2D-07** — Composition & Layout Studio
+- **D2D-08** — Poster Design Project
+
+### Studios · Raster Editing & Stick-Figure Animation
+
+- **D2D-09** — Photo Editing Workshop
+- **D2D-10** — Pivot Stick Figure Studio: 2D Rigging & Keyframes
+
 ### Make It Play · 2D Game Developer Pathway
 
-- **D2D-06** — 2D Game Developer Pathway
-- **D2D-07** — Pixel Art & Sprites
-- **D2D-08** — Sprite Sheets & Animation
-- **D2D-09** — Tilesets & Tilemaps
-- **D2D-10** — Game Loop & Rendering
-- **D2D-11** — Movement & Jump Feel
-- **D2D-12** — Collision & Response
-- **D2D-13** — Cameras, Layers & Parallax
-- **D2D-14** — Animation State Machines
-- **D2D-15** — Level Design & Game Feel
-- **D2D-16** — Menus, Saving & Shipping
+- **D2D-11** — 2D Game Developer Pathway
+- **D2D-12** — Pixel Art & Sprites
+- **D2D-13** — Sprite Sheets & Animation
+- **D2D-14** — Tilesets & Tilemaps
+- **D2D-15** — Game Loop & Rendering
+- **D2D-16** — Movement & Jump Feel
+- **D2D-17** — Collision & Response
+- **D2D-18** — Cameras, Layers & Parallax
+- **D2D-19** — Animation State Machines
+- **D2D-20** — Level Design & Game Feel
+- **D2D-21** — Menus, Saving & Shipping
 
 ## 3D Design (D3D)
 
@@ -447,7 +460,7 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 
 # Volume V — Computer Science, AI & Interactive Media
 
-Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 73 lessons
+Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087f8c` · 77 lessons
 
 ## Computer Science & Artificial Intelligence (CSC)
 
@@ -462,62 +475,66 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-07** — Before Computers: Myths, Logic, and AI Imagination
 - **CSC-08** — Build Your Student Page
 - **CSC-09** — GitHub — From Idea to Shared Prototype
-- **CSC-10** — Ethical Hacking & Cyber Safety
-- **CSC-11** — Blocks World Parser
-- **CSC-12** — N-gram Text Predictor
-- **CSC-13** — Python Foundations — _also indexed in Game Design & Development_
-- **CSC-14** — AI Hacking: When Agents Cross the Line
+- **CSC-10** — Code with AI: Small Tasks, Current Files & Real Tests — _also indexed in Game Design & Development_
+- **CSC-11** — Ethical Hacking & Cyber Safety
+- **CSC-12** — Blocks World Parser
+- **CSC-13** — N-gram Text Predictor
+- **CSC-14** — Python Foundations — _also indexed in Game Design & Development_
+- **CSC-15** — AI Hacking: When Agents Cross the Line
 
 ### Algorithms, Structures & Search
 
-- **CSC-15** — Sorting Algorithms
-- **CSC-16** — State Machines
-- **CSC-17** — A* Pathfinding Agent
-- **CSC-18** — Minimum Spanning Tree
-- **CSC-19** — Cryptography & The Enigma
+- **CSC-16** — Sorting Algorithms
+- **CSC-17** — State Machines
+- **CSC-18** — A* Pathfinding Agent
+- **CSC-19** — Minimum Spanning Tree
+- **CSC-20** — Cryptography & The Enigma
 
 ### Simulation & Generative Systems
 
-- **CSC-20** — Life Lab: The Game of Life
-- **CSC-21** — Perlin Noise
-- **CSC-22** — The Demoscene
-- **CSC-23** — CGI Water: From Physics to Pixels
-- **CSC-24** — Liquid Engine Benchmark
+- **CSC-21** — Life Lab: The Game of Life
+- **CSC-22** — Perlin Noise
+- **CSC-23** — The Demoscene
+- **CSC-24** — CGI Water: From Physics to Pixels
+- **CSC-25** — Liquid Engine Benchmark
 
 ### Artificial Intelligence & Machine Reasoning
 
-- **CSC-25** — Alan Turing and The Turing Test
-- **CSC-26** — AI Origins: ELIZA Chatbot
-- **CSC-27** — Rule Engine Expert System
-- **CSC-28** — 20Q Mind Reader & Information Theory
-- **CSC-29** — Perceptron Lab
-- **CSC-30** — Chess: Origins and How to Play
-- **CSC-31** — 1v1 Game AI: Minimax
-- **CSC-32** — Chess: Play & Practice · ChessOS
-- **CSC-33** — Deep Blue to AlphaGo: The Go Challenge
+- **CSC-26** — Alan Turing and The Turing Test
+- **CSC-27** — AI Origins: ELIZA Chatbot
+- **CSC-28** — Rule Engine Expert System
+- **CSC-29** — 20Q Mind Reader & Information Theory
+- **CSC-30** — Perceptron Lab
+- **CSC-31** — Chess: Origins and How to Play
+- **CSC-32** — 1v1 Game AI: Minimax
+- **CSC-33** — Chess: Play & Practice · ChessOS
+- **CSC-34** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing
 
-- **CSC-34** — Grace Hopper
-- **CSC-35** — Margaret Hamilton: Software for the Moon
-- **CSC-36** — Steve Jobs
+- **CSC-35** — Grace Hopper
+- **CSC-36** — Margaret Hamilton: Software for the Moon
+- **CSC-37** — Steve Jobs
 
 ### Build Your Own Web Pathway
 
-- **CSC-37** — How the Web Works
-- **CSC-38** — Build Your Own Web — Web Design Pathway
-- **CSC-39** — Set Up Your First Site
-- **CSC-40** — Give the Page Meaning with HTML
-- **CSC-41** — Design with CSS
-- **CSC-42** — Make It Respond with JavaScript
-- **CSC-43** — Test, Debug, and Include Everyone
-- **CSC-44** — Website Project Studios
-- **CSC-45** — Web Studio — Draw, Blocks and Code
-- **CSC-46** — The Flash Era: What Happened to Browser Games
-- **CSC-47** — Build a Home for Interactive Work
-- **CSC-48** — Publish and Maintain Your Website
-- **CSC-49** — Tim Berners-Lee and the First Website
-- **CSC-50** — Extend into WebXR
+- **CSC-38** — How the Web Works
+- **CSC-39** — Build Your Own Web — Web Design Pathway
+- **CSC-40** — Set Up Your First Site
+- **CSC-41** — Give the Page Meaning with HTML
+- **CSC-42** — Design with CSS
+- **CSC-43** — Make It Respond with JavaScript
+- **CSC-44** — Test, Debug, and Include Everyone
+- **CSC-45** — Website Project Studios
+- **CSC-46** — Web Studio — Draw, Blocks and Code
+- **CSC-47** — The Flash Era: What Happened to Browser Games
+- **CSC-48** — Build a Home for Interactive Work
+- **CSC-49** — Publish and Maintain Your Website
+- **CSC-50** — Tim Berners-Lee and the First Website
+- **CSC-51** — Marc Andreessen and the Dawn of the Visual Web
+- **CSC-52** — Håkon Wium Lie and Cascading Style Sheets
+- **CSC-53** — Brendan Eich and the Creation of JavaScript
+- **CSC-54** — Extend into WebXR
 
 ## Game Design & Development (GAM)
 
@@ -558,7 +575,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 
 # Volume VI — Visual Design, Communication & Human Systems
 
-Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 115 lessons
+Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3782f` · 132 lessons
 
 ## Visual Art & Design (DES)
 
@@ -566,19 +583,18 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 
 - **DES-01** — Visual Art & Design Pathway
 - **DES-02** — Seeing Light Lab
-- **DES-03** — Color Theory Lab
+- **DES-03** — Color Theory Lab — _also indexed in 2D Design_
 - **DES-04** — Dadaism
-- **DES-05** — Typography Hierarchy Studio
+- **DES-05** — Typography Hierarchy Studio — _also indexed in 2D Design_
 - **DES-06** — Virtual Reality Museum
 - **DES-07** — Origami: History, Mathematics & Library of Creations
 - **DES-08** — Optical Illusions Lab
-- **DES-09** — Photo Editing Workshop
 
 ### People Who Changed Visual Art
 
-- **DES-10** — Charles & Ray Eames
-- **DES-11** — Nam June Paik
-- **DES-12** — Antoni Gaudí
+- **DES-09** — Charles & Ray Eames
+- **DES-10** — Nam June Paik
+- **DES-11** — Antoni Gaudí
 
 ## Music: Theory, Instruments & Sound (MUS)
 
@@ -604,14 +620,23 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **MUS-15** — Ludwig van Beethoven
 - **MUS-16** — Frédéric Chopin
 - **MUS-17** — Pyotr Ilyich Tchaikovsky
-- **MUS-18** — Claude Debussy
-- **MUS-19** — Erik Satie
-- **MUS-20** — Scott Joplin
-- **MUS-21** — Jelly Roll Morton
-- **MUS-22** — George Gershwin
-- **MUS-23** — Duke Ellington
-- **MUS-24** — Louis Armstrong
-- **MUS-25** — Charlie Parker
+- **MUS-18** — Francisco Tárrega
+- **MUS-19** — Franz Liszt
+- **MUS-20** — Sergei Rachmaninoff
+- **MUS-21** — Robert Schumann
+- **MUS-22** — Franz Schubert
+- **MUS-23** — Johannes Brahms
+- **MUS-24** — Claude Debussy
+- **MUS-25** — Erik Satie
+- **MUS-26** — Maurice Ravel
+- **MUS-27** — Alexander Scriabin
+- **MUS-28** — Scott Joplin
+- **MUS-29** — Jelly Roll Morton
+- **MUS-30** — George Gershwin
+- **MUS-31** — Duke Ellington
+- **MUS-32** — Louis Armstrong
+- **MUS-33** — Django Reinhardt
+- **MUS-34** — Charlie Parker
 
 ## Language, Media & Critical Thinking (LAN)
 
@@ -633,16 +658,20 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **LAN-14** — William Shakespeare: Words Made for the Stage
 - **LAN-15** — William Blake: Songs of Innocence and of Experience
 - **LAN-16** — Arnaut Daniel: The Sestina Workshop
-- **LAN-17** — Dylan Thomas: An Annotated Reading Compendium
-- **LAN-18** — Dante’s Inferno: A Journey Through the Nine Circles
-- **LAN-19** — John Milton’s Paradise Lost
-- **LAN-20** — John Bunyan’s The Pilgrim’s Progress
-- **LAN-21** — Edgar Allan Poe: Sound, Suspense & the Uncertain Narrator
-- **LAN-22** — Horror in Literature
-- **LAN-23** — L. Frank Baum’s The Wonderful Wizard of Oz
-- **LAN-24** — Tolkien and the Art of Worldbuilding
-- **LAN-25** — Learning Egyptian Hieroglyphs
-- **LAN-26** — Learning Cuneiform
+- **LAN-17** — Omar Khayyam: The Tentmaker of Science & the Rubáiyát
+- **LAN-18** — Dylan Thomas: An Annotated Reading Compendium
+- **LAN-19** — Dante’s Inferno: A Journey Through the Nine Circles
+- **LAN-20** — John Milton’s Paradise Lost
+- **LAN-21** — John Bunyan’s The Pilgrim’s Progress
+- **LAN-22** — Edgar Allan Poe: Sound, Suspense & the Uncertain Narrator
+- **LAN-23** — Horror in Literature
+- **LAN-24** — L. Frank Baum’s The Wonderful Wizard of Oz
+- **LAN-25** — Tolkien and the Art of Worldbuilding
+- **LAN-26** — Natsume Sōseki: The Modern Heart, Language & Solitude
+- **LAN-27** — Jules Verne: The Architecture of Wonder, Prophecy & Modern Science
+- **LAN-28** — Mark Twain: The Vernacular Voice, Moral Conscience & the River
+- **LAN-29** — Learning Egyptian Hieroglyphs
+- **LAN-30** — Learning Cuneiform
 
 ## History, Economics & Social Systems (SYS)
 
@@ -655,28 +684,32 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **SYS-05** — From Rocket Clubs to STEAM
 - **SYS-06** — Leonardo da Vinci — _also indexed in Engineering Systems & Electronics_
 - **SYS-07** — The History of Medicine
-- **SYS-08** — Lewis & Clark: Knowledge on the Trail
+- **SYS-08** — Marco Polo: The Silk Road & the Great Khan
 - **SYS-09** — Magellan & Elcano: A World of Water
-- **SYS-10** — The Panama Canal — Engineering Two Oceans
-- **SYS-11** — Gold Rush: Fortune & Fool’s Gold
+- **SYS-10** — Lewis & Clark: Knowledge on the Trail
+- **SYS-11** — David Livingstone: Rivers, Quinine & the Zambezi
+- **SYS-12** — Amelia Earhart: The Equator Flight & Radio Line
+- **SYS-13** — The Panama Canal — Engineering Two Oceans
+- **SYS-14** — Gold Rush: Fortune & Fool’s Gold
 
 ### Institutions, Markets & Shared Resources
 
-- **SYS-12** — The History of Copyright Law
-- **SYS-13** — Tragedy of the Commons
-- **SYS-14** — Stock Exchange Simulator
+- **SYS-15** — The History of Copyright Law
+- **SYS-16** — Game Theory in Real Life
+- **SYS-17** — Tragedy of the Commons
+- **SYS-18** — Stock Exchange Simulator
 
 ### Modern Human Systems
 
-- **SYS-15** — Social Media Algorithms
-- **SYS-16** — The Frankfurt School & the Culture Industry
-- **SYS-17** — The 10-80-10 Productivity Process
-- **SYS-18** — The Psychology of Polymaths
-- **SYS-19** — The Nobel Prize — Ideas That Changed the World
+- **SYS-19** — Social Media Algorithms
+- **SYS-20** — The Frankfurt School & the Culture Industry
+- **SYS-21** — The 10-80-10 Productivity Process
+- **SYS-22** — The Psychology of Polymaths
+- **SYS-23** — The Nobel Prize — Ideas That Changed the World
 
 ### 50 States: Land, Water & People
 
-- **SYS-20** — Florida: Land, Water & People
+- **SYS-24** — Florida: Land, Water & People
 
 ## Bible Story, Theology & Christian Formation (BIB)
 
@@ -693,27 +726,28 @@ Theme: **Arts, Communication & Society** · Accent: `#8a3f55` · Secondary: `#a3
 - **BIB-09** — Numbers: Wilderness, Trust & a New Generation
 - **BIB-10** — Deuteronomy: Remember, Love & Choose Life
 - **BIB-11** — The Temple & God's Presence
-- **BIB-12** — Kingdoms, Prophets & Exile
-- **BIB-13** — Joshua to David: Land, Judges & Kings
-- **BIB-14** — The Feasts of Israel
-- **BIB-15** — Elijah: Prophet of the Living God
-- **BIB-16** — Isaiah: Holiness, Justice & Hope
-- **BIB-17** — Jeremiah: Courage, Covenant & Exile
-- **BIB-18** — Ezekiel: God’s Presence & a People Renewed
-- **BIB-19** — Lamentations: Grief, Prayer & Persistent Hope
-- **BIB-20** — Daniel: Faithfulness in Exile
-- **BIB-21** — The World of Jesus
-- **BIB-22** — Jesus’ Ministry: The Kingdom Arrives
-- **BIB-23** — Jesus' Parables Lab
-- **BIB-24** — Holy Week: The Final Days of Jesus
-- **BIB-25** — Acts: Jerusalem to the Nations
-- **BIB-26** — Paul's Missionary Journeys
-- **BIB-27** — The Epistles: Gospel Communities in Practice
-- **BIB-28** — Job: Suffering, Wisdom & Faithful Speech
-- **BIB-29** — Proverbs: Depth, Beauty & Context
-- **BIB-30** — Psalms: Learning to Pray the Whole Life
-- **BIB-31** — Revelation: Witness, Worship & New Creation
-- **BIB-32** — The Sermon on the Mount
+- **BIB-12** — Sacred Measurements & Numbers
+- **BIB-13** — Kingdoms, Prophets & Exile
+- **BIB-14** — Joshua to David: Land, Judges & Kings
+- **BIB-15** — The Feasts of Israel
+- **BIB-16** — Elijah: Prophet of the Living God
+- **BIB-17** — Isaiah: Holiness, Justice & Hope
+- **BIB-18** — Jeremiah: Courage, Covenant & Exile
+- **BIB-19** — Ezekiel: God’s Presence & a People Renewed
+- **BIB-20** — Lamentations: Grief, Prayer & Persistent Hope
+- **BIB-21** — Daniel: Faithfulness in Exile
+- **BIB-22** — The World of Jesus
+- **BIB-23** — Jesus’ Ministry: The Kingdom Arrives
+- **BIB-24** — Jesus' Parables Lab
+- **BIB-25** — Holy Week: The Final Days of Jesus
+- **BIB-26** — Acts: Jerusalem to the Nations
+- **BIB-27** — Paul's Missionary Journeys
+- **BIB-28** — The Epistles: Gospel Communities in Practice
+- **BIB-29** — Job: Suffering, Wisdom & Faithful Speech
+- **BIB-30** — Proverbs: Depth, Beauty & Context
+- **BIB-31** — Psalms: Learning to Pray the Whole Life
+- **BIB-32** — Revelation: Witness, Worship & New Creation
+- **BIB-33** — The Sermon on the Mount
 
 # Supporting Pages
 
@@ -735,3 +769,4 @@ These pages remain attached to their parent lesson or module and do not become d
 - `lessons/computer-science/graphics-and-games/game-tutorials/shooter.html` — project-tutorial; module-appendix; parent: `lessons/computer-science/graphics-and-games/2d-game-engines.html`
 - `lessons/computer-science/index.html` — directory-index; module-appendix; parent: `lessons/computer-science/computer-science-pathway.html`
 - `lessons/design/index.html` — directory-index; module-appendix; parent: `lessons/design/design-pathway.html`
+- `lessons/web-design/web-vscode-guide.html` — project-tutorial; parent-appendix; parent: `lessons/web-design/web-design-pathway.html`
