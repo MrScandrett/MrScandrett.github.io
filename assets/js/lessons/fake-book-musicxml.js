@@ -328,6 +328,30 @@
           if (kid(c, 'unpitched')) ev.pitched = false;
           var tech = kid(kid(c, 'notations'), 'technical');
           if (tech && kid(tech, 'fret') && kid(tech, 'string')) { ev.string = num(tech, 'string', 0); ev.fret = num(tech, 'fret', 0); }
+          var lyr = null;
+          var notations = kid(c, 'notations');
+          var slurs = notations ? kids(notations, 'slur') : [];
+          ev.slurStart = slurs.some(function (s) { return s.attrs.type === 'start'; });
+          ev.slurStop = slurs.some(function (s) { return s.attrs.type === 'stop'; });
+          kids(c, 'lyric').forEach(function (ly) {
+            var vnum = String(ly.attrs.number || ly.attrs.name || '1').trim() || '1';
+            var texts = kids(ly, 'text').map(function (t) { return (t.text || '').trim().replace(/^[-_\s]+|[-_\s]+$/g, '').replace(/\s+/g, '\u203F').replace(/\|/g, '/'); }).filter(Boolean);
+            var syls = kids(ly, 'syllabic').map(function (s) { return (s.text || '').trim().toLowerCase(); });
+            var lastSyl = syls[syls.length - 1] || '';
+            var ext = !!kid(ly, 'extend');
+            if (texts.length) {
+              var word = texts.join('\u203F').replace(/[-_\s]+$/g, '');
+              if (word === '_' || word === '*') word = '\u203F';
+              if (word) {
+                if (!lyr) lyr = {};
+                lyr[vnum] = { text: word, hyphen: lastSyl === 'begin' || lastSyl === 'middle', extend: ext };
+              }
+            } else if (ext) {
+              if (!lyr) lyr = {};
+              lyr[vnum] = { extend: true };
+            }
+          });
+          if (lyr) ev.lyrics = lyr;
           notes.push(ev);
         }
       });
@@ -443,7 +467,7 @@
     });
     return kept;
   }
-  function buildMelody(events, pickupU, barU) {
+  function buildMelody(events, pickupU, barU, tokEvents) {
     // events: [{s, e, midi, step, alter, octave, tie}] in units, sorted; null pitch = rest
     var ev = [];
     events.forEach(function (x) {
@@ -473,8 +497,8 @@
         var tieOut = !x.rest && x.tie && next && !next.rest && next.midi === x.midi && next.s === x.e;
         toks.forEach(function (d, di) {
           var tied = !lastPiece || di < toks.length - 1 || tieOut;
-          if (x.rest) cur.push('r' + d);
-          else cur.push(x.step + ACC_TOKEN[x.alter] + x.octave + d + (tied ? '~' : ''));
+          if (x.rest) { cur.push('r' + d); if (tokEvents) tokEvents.push(null); }
+          else { cur.push(x.step + ACC_TOKEN[x.alter] + x.octave + d + (tied ? '~' : '')); if (tokEvents) tokEvents.push(x); }
         });
         s = segEnd;
         if (s === barEnd) { bars.push(cur.join(' ')); cur = []; barEnd += barU; }
@@ -482,6 +506,50 @@
     });
     if (cur.length) bars.push(cur.join(' '));
     return bars;
+  }
+
+  function buildLyrics(melodyBars, tokEvents) {
+    var verseKeys = {};
+    tokEvents.forEach(function (x) {
+      if (x && x.lyrics) Object.keys(x.lyrics).forEach(function (k) { verseKeys[k] = true; });
+    });
+    var keys = Object.keys(verseKeys).sort(function (a, b) { return (+a) - (+b) || a.localeCompare(b); });
+    if (!keys.length) return undefined;
+    var NOTE_RE = /^([A-G](?:##|bb|#|b)?\d)[whqes]3?\.*(~)?$/;
+    var sungByBar = [], src = 0, prevTie = false, prevPitch = null;
+    melodyBars.forEach(function (g) {
+      var barSung = [];
+      g.trim().split(/\s+/).filter(Boolean).forEach(function (tok) {
+        var nm = NOTE_RE.exec(tok);
+        var rest = !nm, pitch = nm ? nm[1] : null, tie = !!(nm && nm[2]);
+        var tieFrom = prevTie && !rest && pitch === prevPitch;
+        if (!rest && !tieFrom) barSung.push(src);
+        prevTie = tie; prevPitch = rest ? null : pitch; src++;
+      });
+      sungByBar.push(barSung);
+    });
+    var verses = [];
+    keys.forEach(function (vnum) {
+      var hasSyl = false, inWord = false, slurOpen = false, realCount = 0;
+      var barTexts = sungByBar.map(function (barSung) {
+        return barSung.map(function (sIdx) {
+          var x = tokEvents[sIdx], ly = x && x.lyrics && x.lyrics[vnum];
+          if (x && x.slurStart) slurOpen = true;
+          if (ly && ly.text) {
+            hasSyl = true; inWord = !!ly.hyphen; realCount++;
+            if (x && x.slurStop && !x.slurStart) slurOpen = false;
+            return ly.text + (ly.hyphen ? '-' : '');
+          }
+          var isMelisma = hasSyl && ((ly && ly.extend) || inWord || slurOpen || (x && x.slurStop));
+          if (x && x.slurStop) slurOpen = false;
+          if (isMelisma) return '_';
+          hasSyl = false; inWord = false;
+          return '*';
+        }).join(' ');
+      });
+      if (realCount > 0) verses.push({ mark: vnum, text: barTexts.join(' | ') });
+    });
+    return verses.length ? { credit: 'Imported from MusicXML score', verses: verses } : undefined;
   }
 
   function buildChords(harms, pickupU, barU, nBars, carryIn) {
@@ -663,10 +731,13 @@
               var o = byOnset[key];
               if (n.pitched) o.count = (o.count || 0) + 1;
               if (n.pitched && (!o.midi || n.midi > o.midi)) { o.midi = n.midi; o.step = n.step; o.alter = n.alter; o.octave = n.octave; o.rest = false; o.tie = n.tieStart; }
+              if (n.lyrics) o.lyrics = Object.assign(o.lyrics || {}, n.lyrics);
+              if (n.slurStart) o.slurStart = true;
+              if (n.slurStop) o.slurStop = true;
               o.e = Math.max(o.e, e);
               return;
             }
-            var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart, count: 1 } : { s: s, e: e, rest: true };
+            var ev = n.pitched ? { s: s, e: e, midi: n.midi, step: n.step, alter: n.alter, octave: n.octave, tie: n.tieStart, count: 1, lyrics: n.lyrics || null, slurStart: !!n.slurStart, slurStop: !!n.slurStop } : { s: s, e: e, rest: true };
             byOnset[key] = ev; events.push(ev);
           });
           m.harms.forEach(function (h) { harms.push({ u: snapped(h.t), tok: h.tok }); });
@@ -686,17 +757,24 @@
       var pickupU = snap(pickup || 0);
       if (pickupU === 1) pickupU = 0;
       var barU = outM * U;
-      var melodyBars = buildMelody(events, pickupU, barU);
+      var tokEvents = [];
+      var melodyBars = buildMelody(events, pickupU, barU, tokEvents);
       var nBars = melodyBars.length - (pickupU ? 1 : 0);
       if (!scoreMode && nBars > MAX_BARS) throw new Error('That song plays out to ' + nBars + ' bars; the fake book holds up to ' + MAX_BARS + '.');
       var scoreBars = [], scoreParts = [], scoreNotes = [], scoreTime = -(pickup || 0);
       if (scoreMode) {
-        melodyBars = []; var scoreChords = [];
+        melodyBars = []; tokEvents = []; var scoreChords = [];
         order.forEach(function (mi, k) {
           var m = R.measures[mi], len = (k + 1 < starts.length ? starts[k + 1] : t0) - starts[k];
           var startU = snap(starts[k]), lenU = snap(len);
           var es = events.filter(function (e) { return e.s >= startU && e.s < startU + lenU; }).map(function (e) { return Object.assign({}, e, { s: e.s - startU, e: Math.min(e.e - startU, lenU) }); });
-          var barStr = buildMelody(es, 0, lenU)[0] || split(lenU).map(function (d) { return 'r' + d; }).join(' ');
+          var barTokEvents = [];
+          var barStr = buildMelody(es, 0, lenU, barTokEvents)[0];
+          if (!barStr) {
+            var rToks = split(lenU);
+            barStr = rToks.map(function (d) { barTokEvents.push(null); return 'r' + d; }).join(' ');
+          }
+          tokEvents.push.apply(tokEvents, barTokEvents);
           // Built one bar at a time, so a note tied into the next bar can't see its partner: add the ~ here.
           var tail = es[es.length - 1], nextEv = events.filter(function (e) { return e.s >= startU + lenU; })[0];
           if (tail && !tail.rest && tail.tie && tail.e >= lenU && nextEv && !nextEv.rest && nextEv.s === startU + lenU && nextEv.midi === tail.midi && !/~$/.test(barStr)) barStr += '~';
@@ -859,6 +937,7 @@
       if (!hasChords && (!H || (scoreMode && !scoreBars.every(function (b) { return b.bar === 0 || b.len === outM; })))) warnings.push('The file has no chord symbols, so every bar shows the home chord as a placeholder.');
       var lastTok = (chordBars.filter(Boolean).pop() || '').split(' ').pop().split(':')[0] || carryIn;
 
+      var importedLyrics = buildLyrics(melodyBars, tokEvents);
       if (scoreMode) warnings.push('Written pitched voices play on synthesized piano. Grace notes, unpitched percussion, dynamics, ornaments and tempo changes are not performed.');
       return {
         score: scoreMode ? { parts: scoreParts, notes: scoreNotes, bars: scoreBars, musicxml: text } : undefined,
@@ -867,6 +946,7 @@
         pickup: scoreMode ? (pickup || 0) : pickupU / U,
         melody: melodyBars.join(' | '),
         chords: filled.join(' | '),
+        lyrics: importedLyrics,
         bars: nBars,
         tempo: R.tempo ? Math.round(R.tempo) : null,
         style: R.styleWords,

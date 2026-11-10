@@ -1596,7 +1596,8 @@ async function openEpub(bytes, source, entry) {
         }
         let text = "";
         let occ = 0;
-        for (const data of sourceText(bodyOf(await chapterDoc(spine[i].path)))) {
+        for (const raw of sourceText(bodyOf(await chapterDoc(spine[i].path)))) {
+          const data = soften(raw); // search the softened wording the reader sees, and never show the original in snippets
           re.lastIndex = 0;
           for (let m = re.exec(data); m; m = re.exec(data)) {
             if (!m[0]) { re.lastIndex++; continue; }

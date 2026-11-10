@@ -379,6 +379,7 @@
     // Key changes worked out from the notes; labelled on the sheet in whatever key it's shown in.
     t.baseSections = raw.sectionsByBar || {};
     t.keyChanges = (raw.keyChanges || []).map(function (k) { return { bar: k.bar, key: parseKey(k.key, k.minor) }; });
+    t.lyrics = typeof window !== 'undefined' && window.FakeBookLyrics ? window.FakeBookLyrics.forTune(raw) : null;
     return t;
   }
 
@@ -740,7 +741,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead', beatCounts: 'off', chordLabels: 'letters',
-    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, posInst: 'guitar',
+    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, showLyrics: true, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, pianoShapes: {}, saxShapes: {},
@@ -999,6 +1000,9 @@
   function posOn() { return !!opts.showPos && opts.posInst !== 'piano' && !tune.chordsOnly && opts.sheetView !== 'drums'; }
   // Tab is on by default for imported songs (where it was asked for) and off for the built-in lead sheets.
   function tabOn() { return opts.showTab === null || opts.showTab === undefined ? !!(tune && tune.raw.imported) : !!opts.showTab; }
+  // Lyrics: sung words aligned to each melody note under the staff.
+  function hasLyrics() { return !!(tune && tune.lyrics && tune.lyrics.verses && tune.lyrics.verses.length && !tune.chordsOnly); }
+  function lyricsOn() { return opts.showLyrics !== false && hasLyrics() && opts.sheetView !== 'drums' && opts.sheetView !== 'arrangement'; }
 
   // Tab for a song that came without any: the guitar part's own notes, or else an arrangement of the
   // melody (Tab style: melody alone, over a bass line, or chord melody), fingered by FakeBookTab
@@ -1500,6 +1504,17 @@
     var nameHead = function (p, cx, cy, base, ks) { return MN.namedHead(p, cx, cy, base, ks, S, 'fb-nhead'); };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;
     var stepOf = function (p) { return p.dia - C.bottom; };
+    var showLyrics = lyricsOn(), verses = showLyrics ? t.lyrics.verses : [];
+    var firstIdxForSrc = {}, firstVerseSrc = [];
+    if (showLyrics) {
+      view.written.forEach(function (e, idx) {
+        if (e.src >= 0 && firstIdxForSrc[e.src] === undefined) firstIdxForSrc[e.src] = idx;
+      });
+      verses.forEach(function (v, vi) {
+        var keys = Object.keys(v.bySrc).map(Number).filter(function (k) { return v.bySrc[k] && v.bySrc[k].text; }).sort(function (a, b) { return a - b; });
+        firstVerseSrc[vi] = keys.length ? keys[0] : -1;
+      });
+    }
     // Measure: which notes need an accidental, and how much room each piece wants
     // (longer notes get more space, but not proportionally more, as engravers do).
     bars.forEach(function (b) {
@@ -1511,7 +1526,21 @@
           pc.acc = !pc.tieFrom && cur !== pc.p.a;
           mem[mk] = pc.p.a;
         }
-        pc.nw = S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (pc.acc ? 1.3 * S : 0);
+        var lyrW = 0;
+        if (showLyrics && pc.p && !pc.tieFrom) {
+          var lsrc = view.written[pc.idx] ? view.written[pc.idx].src : -1;
+          if (pc.idx === firstIdxForSrc[lsrc]) {
+            verses.forEach(function (v, vi) {
+              var syl = v.bySrc[lsrc];
+              if (syl && syl.text) {
+                var pref = verses.length > 1 && lsrc === firstVerseSrc[vi] ? (v.mark + '. ').length : 0;
+                var w = ((syl.text.length + pref) * 0.68 + (syl.hyphen ? 0.75 : 0.45)) * S;
+                if (w > lyrW) lyrW = w;
+              }
+            });
+          }
+        }
+        pc.nw = Math.max(S * (1.5 + 2.1 * Math.sqrt(pc.whole ? 1 : pc.d)) + (pc.acc ? 1.3 * S : 0), lyrW);
         pc.cum = total; total += pc.nw;
       });
       b.natural = Math.max(b.i === 0 ? 4 * S : 9 * S, padL + total + padR);
@@ -1604,7 +1633,9 @@
       var secH = t.hasSections ? 1.6 * S : 0;
       var staffTop = y + 3.6 * S + secH + noteTop, staffBot = staffTop + 4 * S;
       var chordBase = staffTop - noteTop - 1.4 * S;
-      var rowsBottom = staffBot + noteBot + 1.4 * S, bassTop = 0, bassBot = 0, tabTop = 0;
+      var lyricRowH = 1.65 * S, lyricTop = staffBot + noteBot + (namesUnder ? 3.8 : 2.2) * S;
+      var lyricH = showLyrics ? verses.length * lyricRowH + 0.4 * S : 0;
+      var rowsBottom = staffBot + noteBot + (namesUnder && !showLyrics ? 2.6 : 1.4) * S + lyricH, bassTop = 0, bassBot = 0, tabTop = 0;
       if (showBass) {
         var btop = 8, bbot = 0, bchord = 0;
         sys.forEach(function (b) {
@@ -1614,22 +1645,22 @@
             bchord = Math.max(bchord, bassEvents[pc.idx].ps.length);
           });
         });
-        bassTop = staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + Math.max(0, btop - 8) * half;
+        bassTop = staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + lyricH + Math.max(0, btop - 8) * half;
         bassBot = bassTop + 4 * S;
         rowsBottom = bassBot - bbot * half + 1.2 * S + (namesUnder ? (bchord + 0.4) * 1.25 * S : 0);
       }
       if (showTab) {
-        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S) + tabOctRow;
+        tabTop = (showBass ? rowsBottom + 0.8 * S : staffBot + noteBot + (namesUnder ? 3.8 : 2.4) * S + lyricH) + tabOctRow;
         rowsBottom = tabTop + (tabLines - 1) * tabGap + (tabPick ? 2.2 : 1.2) * S;      // room for the hand positions
       }
       var helpTop = 0, helpH = 0;
       var POSH = showPos ? window.FakeBookPosition.height(view.pos.inst, S) : 0, posTop = 0;
       if (showPos) {
-        posTop = (showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + 0.4 * S;
+        posTop = (showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + lyricH) + 0.4 * S;
         rowsBottom = posTop + POSH + 0.6 * S;
       }
       if (shapesRowOn() || (showPos && opts.showAnalysis)) {
-        helpTop = (showPos || showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S) + S;
+        helpTop = (showPos || showTab || showBass ? rowsBottom : staffBot + noteBot + (namesUnder ? 3.6 : 2.2) * S + lyricH) + S;
         helpH = (shapesRowOn() ? shapeSize().rowH * S : 0) + (showPos && opts.showAnalysis ? 13 * S : 0);
         rowsBottom = helpTop + helpH;
       }
@@ -1857,10 +1888,65 @@
           else out.push(line(ex, sp[0], ex, sp[1], Math.max(1, S * 0.12)));
         });
         b.staffTop = staffTop;
+        b.placedBar = placedBar;
       });
+      if (showLyrics) {
+        var sysNotes = [];
+        sys.forEach(function (b) { (b.placedBar || []).forEach(function (n) { sysNotes.push(n); }); });
+        verses.forEach(function (v, vi) {
+          var vy = lyricTop + vi * lyricRowH, items = [];
+          sysNotes.forEach(function (n) {
+            if (n.pc.tieFrom) return;
+            var ev = view.written[n.pc.idx], src = ev ? ev.src : -1;
+            if (src < 0 || n.pc.idx !== firstIdxForSrc[src]) return;
+            var syl = v.bySrc[src];
+            if (!syl || !syl.text) return;
+            var prefix = verses.length > 1 && src === firstVerseSrc[vi] ? (v.mark + '. ') : '';
+            var fullText = prefix + syl.text;
+            var halfW = Math.max(0.45, fullText.length * 0.34) * S;
+            var srcSet = [src].concat(syl.extendsTo || []);
+            var spanNotes = sysNotes.filter(function (m) {
+              var mev = view.written[m.pc.idx];
+              return mev && srcSet.indexOf(mev.src) >= 0;
+            });
+            var lyrIdxs = [];
+            view.written.forEach(function (wev, widx) { if (srcSet.indexOf(wev.src) >= 0) lyrIdxs.push(widx); });
+            items.push({
+              n: n, src: src, syl: syl, prefix: prefix, halfW: halfW,
+              x: Math.max(sys[0].x + 0.45 * S + halfW, n.x),
+              lastN: spanNotes[spanNotes.length - 1] || n,
+              spanCount: spanNotes.length,
+              lyrIdxs: lyrIdxs
+            });
+          });
+          for (var ii = 1; ii < items.length; ii++) {
+            var prevIt = items[ii - 1], curIt = items[ii];
+            var minGap = (prevIt.syl.hyphen ? 0.55 : 0.2) * S;
+            var wantX = prevIt.x + prevIt.halfW + minGap + curIt.halfW;
+            if (curIt.x < wantX) curIt.x = Math.min(curIt.n.x + 0.8 * S, wantX);
+          }
+          items.forEach(function (it, idx) {
+            var nextIt = items[idx + 1];
+            var gLyr = ['<g class="fb-lyr" data-idx="' + it.n.pc.idx + '" data-lyr-idx="' + it.lyrIdxs.join(' ') + '" data-verse="' + MN.escape(v.mark) + '">'];
+            gLyr.push('<text class="fb-lyric" x="' + it.x.toFixed(1) + '" y="' + vy.toFixed(1) + '" font-size="' + (1.18 * S).toFixed(1) + '" text-anchor="middle">' +
+              (it.prefix ? '<tspan class="fb-lyric-num">' + MN.escape(it.prefix) + '</tspan>' : '') +
+              MN.escape(it.syl.text) + '</text>');
+            if (it.syl.hyphen) {
+              var hmx = nextIt ? (it.x + it.halfW + nextIt.x - nextIt.halfW) / 2 : Math.min(bx - 0.45 * S, it.x + it.halfW + 0.65 * S);
+              gLyr.push('<text class="fb-lyric-hyph" x="' + hmx.toFixed(1) + '" y="' + vy.toFixed(1) + '" font-size="' + (1.12 * S).toFixed(1) + '" text-anchor="middle">-</text>');
+            } else if (it.spanCount > 1 || (it.syl.extendsTo && it.syl.extendsTo.length)) {
+              var ex1 = it.x + it.halfW + 0.22 * S, ex2 = it.lastN.x + it.lastN.hw / 2;
+              if (nextIt) ex2 = Math.min(ex2, nextIt.x - nextIt.halfW - 0.25 * S);
+              if (ex2 > ex1 + 0.35 * S) gLyr.push(line(ex1, vy, ex2, vy, (0.11 * S).toFixed(2), 'fb-lyric-ext'));
+            }
+            gLyr.push('</g>');
+            out.push(gLyr.join(''));
+          });
+        });
+      }
       out.push('</g>');
       sys.endX = bx; sys.startX = header;
-      y = opts.beatCounts !== 'off' ? rowsBottom + 3 * S : (showBass || showTab || showPos || shapesRowOn() ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + 1.4 * S);
+      y = opts.beatCounts !== 'off' ? rowsBottom + 3 * S : (showBass || showTab || showPos || shapesRowOn() ? rowsBottom + 1.4 * S : staffBot + noteBot + (namesUnder ? 3.4 : 1.8) * S + lyricH + 1.4 * S);
 
       // One bar of a staff line that sits on the melody's time grid: the bass-clef staff, or the second right-hand voice
       // on the treble staff (cfg.up false: stems down). Notes and chords at the melody's x for the same beat.
@@ -2459,6 +2545,7 @@
       chords: song.chords,
       bars: song.bars,
       staves: song.staves && (song.staves.bass || song.staves.tab || song.staves.gtr || song.staves.voice2) ? song.staves : undefined,
+      lyrics: song.lyrics || undefined,
       keyChanges: song.keyChanges && song.keyChanges.length ? song.keyChanges : undefined,
       score: song.score,
       guitarPro: song.guitarPro,
@@ -3003,13 +3090,16 @@
       [['.fb-n', view.concert], ['.fb-sx:not(.fb-sxb)', view.concert], ['.fb-sxb', view.bass || []], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
         lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
           nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
-          if (lane[0] === '.fb-n' && melodyView) melodyView.setCursor(i);
+          if (lane[0] === '.fb-n') {
+            nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-lyr[data-lyr-idx~="' + i + '"]')));
+            if (melodyView) melodyView.setCursor(i);
+          }
         } });
       });
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
     } else if (e.ui === 'note') {
       nowEls.forEach(function (n) { n.classList.remove('is-now'); });
-      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx:not(.fb-sxb)[data-idx="' + e.idx + '"]'));
+      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx:not(.fb-sxb)[data-idx="' + e.idx + '"], .fb-lyr[data-lyr-idx~="' + e.idx + '"]'));
       nowEls.forEach(function (n) { n.classList.add('is-now'); });
       if (melodyView) melodyView.setCursor(e.idx);
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
@@ -3081,7 +3171,8 @@
   function libMatches(raw) {
     if (libLevel && raw.level !== libLevel) return false;
     if (!libQuery) return true;
-    var hay = [raw.title, raw.composer, raw.style, raw.category, raw.level, raw.key].join(' ').toLowerCase();
+    var lyr = raw.lyrics && raw.lyrics.verses ? 'lyrics vocal ' + raw.lyrics.verses.map(function (v) { return (v.text || '').replace(/-\s*/g, ''); }).join(' ') : '';
+    var hay = [raw.title, raw.composer, raw.style, raw.category, raw.level, raw.key, lyr].join(' ').toLowerCase();
     return libQuery.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
   }
   function tuneItem(raw) {
@@ -3089,7 +3180,7 @@
       '<button type="button" class="fb-tune" data-tune="' + raw.id + '" aria-pressed="' + (raw.id === (tune ? tune.id : opts.tune) ? 'true' : 'false') + '">' +
       '<strong>' + MN.escape(raw.title) + '</strong>' +
       '<small>' + MN.escape(raw.composer) + '</small>' +
-      '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em><em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
+      '<span class="fb-tune-tags"><em>' + (raw.chordsOnly ? 'Chords only' : 'Melody + chords') + '</em>' + (raw.lyrics ? '<em>Lyrics</em>' : '') + '<em>' + MN.escape(raw.style) + '</em><em>' + MN.escape(raw.key.replace('b', '♭').replace('#', '♯') + (raw.mode === 'minor' ? ' minor' : '')) + '</em><em>' + raw.meter.join('/') + '</em><em>' + MN.escape(raw.level) + '</em></span></button>' +
       '</div>';
   }
   function renderLibrary() {
@@ -3344,7 +3435,7 @@
     el('[data-fb-meta]').textContent = raw.composer + (raw.year ? ' · ' + raw.year : '');
     el('[data-fb-about]').textContent = raw.about;
     renderLiner(raw.liner);
-    el('[data-fb-source]').textContent = raw.source;
+    el('[data-fb-source]').textContent = raw.source + (tune.lyrics && tune.lyrics.credit ? ' Lyrics: ' + tune.lyrics.credit : '');
     el('[data-fb-live]').textContent = raw.title + ' loaded.';
     if (history.replaceState && (!location.hash || /tune=/.test(location.hash))) history.replaceState(null, '', '#tune=' + raw.id);
     if (was) play();
@@ -3423,6 +3514,12 @@
     el('[data-fb-analysis]').checked = !!opts.showAnalysis;
     el('[data-fb-analysis-note]').hidden = !opts.showAnalysis;
     var nsel = el('[data-fb-name-style]'); nsel.value = opts.nameStyle === 'under' ? 'under' : 'notes'; nsel.disabled = !opts.names;
+    root.querySelectorAll('[data-fb-has="lyrics"]').forEach(function (n) {
+      n.hidden = !hasLyrics() || opts.sheetView === 'drums' || opts.sheetView === 'arrangement';
+    });
+    root.querySelectorAll('[data-fb-show-lyrics]').forEach(function (control) {
+      control.checked = opts.showLyrics !== false;
+    });
     // Bass clef / tab switches: only for a song whose score came with those staves.
     // Bass clef: only when the score had a bass line. Tab: always (worked out when the file had none).
     var stv = el('[data-fb-staff-toggles]'), hasB = !!tune.staves.bass;
@@ -3661,11 +3758,13 @@
   var melodyView = window.FakeBookMelody ? window.FakeBookMelody.create(el('[data-fb-melody-view]')) : null;
   function feedMelodyView() {
     if (!melodyView) return;
-    var M = tune.M;
+    var M = tune.M, v1 = hasLyrics() ? tune.lyrics.verses[0].bySrc : null;
     melodyView.setMelody(tune.chordsOnly ? [] : view.concert.map(function (e) {
       var bar = e.start < 0 ? 0 : Math.floor(e.start / M + EPS) + 1;
-      return e.p ? { start: e.start, dur: e.dur, bar: bar, midi: e.p.midi, dia: e.p.dia, name: noteName(e.p) }
-        : { start: e.start, dur: e.dur, bar: bar, rest: true };
+      if (!e.p) return { start: e.start, dur: e.dur, bar: bar, rest: true };
+      var syl = v1 && v1[e.src];
+      var lyr = syl ? (syl.extend ? '—' : syl.text + (syl.hyphen ? '-' : '')) : '';
+      return { start: e.start, dur: e.dur, bar: bar, midi: e.p.midi, dia: e.p.dia, name: noteName(e.p), lyric: lyr };
     }));
   }
 
@@ -5149,6 +5248,7 @@
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
       else if (t.matches('[data-fb-analysis]')) { opts.showAnalysis = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
+      else if (t.matches('[data-fb-show-lyrics]')) { opts.showLyrics = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-chord-labels]')) { opts.chordLabels = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-name-style]')) { opts.nameStyle = t.value; renderSheet(); save(); }

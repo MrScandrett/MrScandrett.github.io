@@ -25,7 +25,7 @@
     {name:'Locrian',formula:'1 ♭2 ♭3 4 ♭5 ♭6 ♭7',detail:'The lowered fifth gives its tonic triad a diminished, unsettled quality.'}
   ];
   let activeMode=0;
-  let customJourney=[0,5,3,4], masterGain;
+  let customJourney=[0,5,3,4];
   const pattern=()=>document.getElementById('progression').value==='custom'?customJourney:patterns[document.getElementById('progression').value];
   const pitch=note=>({C:0,D:2,E:4,F:5,G:7,A:9,B:11}[note[0]]+(note.includes('♯')?1:note.includes('♭')?-1:0)+12)%12;
   let selected=0, useFlatSix=false, context, voices=[], timers=[], generation=0;
@@ -91,7 +91,7 @@
   }
   function stop(announce=true){
     generation++;timers.forEach(clearTimeout);timers=[];
-    voices.forEach(v=>{try{v.stop();}catch{}});voices=[];
+    voices.forEach(v=>{try{v.kill(context.currentTime);}catch{}});voices=[];
     document.querySelectorAll('.is-playing').forEach(el=>el.classList.remove('is-playing'));
     if(announce)status.textContent='Stopped. Pick a note or try another key.';
   }
@@ -150,19 +150,20 @@
   async function sound(events,label){
     stop(false);const token=generation;
     try{
-      if(!context){context=new (window.AudioContext||window.webkitAudioContext)();masterGain=context.createGain();masterGain.connect(context.destination);}
-      masterGain.gain.value=Number(document.getElementById('fifths-volume').value)/100;await context.resume();if(token!==generation)return;
-      const startTime=context.currentTime+.04;
+      context=AudioKit.context();if(!context)throw new Error('No audio');
+      AudioKit.setVolume(Number(document.getElementById('fifths-volume').value)/100);await AudioKit.resume();
+      const instrument=document.getElementById('fifths-instrument').value;
+      status.textContent='Loading '+instrument+' samples…';
+      await MusicSynth.prepare(context,[{instrument,pitches:[...new Set(events.flatMap(e=>e[1]))]}]);
+      if(token!==generation)return;
+      const startTime=context.currentTime+.06;
       events.forEach(([offset,notes,length,elements=[]])=>{
-        notes.forEach(midi=>{
-          const osc=context.createOscillator(),gain=context.createGain(),start=startTime+offset;
-          osc.type='triangle';osc.frequency.value=440*2**((midi-69)/12);
-          gain.gain.setValueAtTime(0,start);gain.gain.linearRampToValueAtTime(.2/notes.length,start+.015);gain.gain.exponentialRampToValueAtTime(.0001,start+length);
-          osc.connect(gain).connect(masterGain);osc.start(start);osc.stop(start+length+.02);voices.push(osc);
-          osc.onended=()=>{osc.disconnect();gain.disconnect();voices=voices.filter(v=>v!==osc);};
+        notes.forEach((midi,n)=>{
+          const voice=AudioKit.note({instrument,midi,velocity:notes.length>1?.62:.8,at:startTime+offset+(notes.length>1?n*.012:0),duration:length});
+          if(voice)voices.push(voice);
         });
-        timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.add('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.add('is-playing');});},(offset+.04)*1000));
-        timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.remove('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.remove('is-playing');});},(offset+length+.04)*1000));
+        timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.add('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.add('is-playing');});},(offset+.1)*1000));
+        timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.remove('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.remove('is-playing');});},(offset+length+.1)*1000));
       });
       const end=Math.max(...events.map(e=>e[0]+e[2]));timers.push(setTimeout(()=>{if(token===generation)status.textContent='Your turn. Change the key or try another sound.';},(end+.1)*1000));
       status.textContent='Playing: '+label;
@@ -251,7 +252,7 @@
     renderChords();renderComposer();if(!customJourney.length)document.querySelector('#chord-bank button').focus();document.getElementById('composer-status').textContent=customJourney.length?`${customJourney.length} of 8 steps. Ready to play.`:'Journey cleared. Choose a chord above.';
   }));
   document.getElementById('fifths-tempo').addEventListener('input',e=>{document.getElementById('tempo-value').value=e.target.value+' BPM';stop(false);status.textContent='Tempo changed. Press Play to hear the new speed.';});
-  document.getElementById('fifths-volume').addEventListener('input',e=>{if(masterGain)masterGain.gain.setTargetAtTime(Number(e.target.value)/100,context.currentTime,.02);});
+  document.getElementById('fifths-volume').addEventListener('input',e=>AudioKit.setVolume(Number(e.target.value)/100));
   circle.addEventListener('keydown',e=>{
     if(!['ArrowRight','ArrowLeft','ArrowUp','ArrowDown','Home','End'].includes(e.key)||e.altKey||e.ctrlKey||e.metaKey)return;
     e.preventDefault();select(e.key==='Home'?0:e.key==='End'?11:selected+(e.key==='ArrowRight'||e.key==='ArrowDown'?1:-1),true);buttons[selected].focus();

@@ -14,30 +14,10 @@ document.addEventListener('DOMContentLoaded', function () {
   var PHRASE = [0, 4, 7, 12, 7, 4, 0];
   var STEP = 0.32;
 
-  function volume() {
-    var slider = document.getElementById('pcVolume');
-    return slider ? Number(slider.value) / 100 : 0.75;
-  }
-
-  /* A quill pluck: a bright sawtooth whose filter closes fast, at one fixed
-     level no matter which note it is. */
+  /* A quill pluck: sampled harp/plucked string at one fixed level no matter
+     which note it is. */
   function pluck(freq, delay) {
-    var ctx = PA.getContext();
-    if (!ctx) return;
-    var t = ctx.currentTime + delay;
-    var osc = ctx.createOscillator();
-    var filter = ctx.createBiquadFilter();
-    var gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.value = freq;
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(freq * 9, t);
-    filter.frequency.exponentialRampToValueAtTime(freq * 2, t + 0.5);
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.linearRampToValueAtTime(0.13 * volume(), t + 0.004);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-    osc.start(t); osc.stop(t + 0.95);
+    PA.tone(freq, { instrument: 'harp', delay: delay, duration: 0.9, gain: 0.22 });
   }
 
   pluckBtn.addEventListener('click', function () {

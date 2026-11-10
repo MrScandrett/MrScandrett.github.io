@@ -13,89 +13,88 @@
 
   /* ---------------------------------------------------------------- audio */
   var Sound = (function () {
-    var ctx = null, out = null, volume = 0.7, drone = null;
-    var live = new Set(), timers = new Set();
+    var volume = 0.7, drone = null, generation = 0;
+    var live = new Set(), timers = new Set(), prepared = {};
     function get() {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      if (!ctx) {
-        try { ctx = new AC({ latencyHint: 'playback' }); } catch (e) { ctx = new AC(); }
-        out = ctx.createGain();
-        out.gain.value = volume;
-        var comp = ctx.createDynamicsCompressor();
-        out.connect(comp);
-        comp.connect(ctx.destination);
-      }
-      if (ctx.state === 'suspended') ctx.resume();
-      return ctx;
+      if (!window.AudioKit || !window.MusicSynth) return null;
+      var c = window.AudioKit.context();
+      if (c) window.AudioKit.setVolume(volume);
+      return c;
     }
-    function track(o) { live.add(o); o.onended = function () { live.delete(o); }; }
-    /* Struck-string tone: a few sine partials under one fast-attack decay. */
-    var PARTIALS = [[1, 1], [2, 0.42], [3, 0.2], [4, 0.1], [5, 0.05], [6, 0.03]];
-    function tone(freq, opt) {
+    function currentInstrument() {
+      var sel = document.getElementById('mmInstrument');
+      return sel && sel.value ? sel.value : 'piano';
+    }
+    function warm(c, inst) {
+      if (!window.MusicSynth || !window.MusicSynth.prepare) return Promise.resolve();
+      if (!prepared[inst]) {
+        prepared[inst] = window.MusicSynth.prepare(c, [
+          { instrument: inst, pitches: [45, 51, 57, 63, 69, 75, 81] },
+          { instrument: 'organ', pitches: [36, 42, 48, 54, 60, 66, 72] }
+        ]);
+      }
+      return prepared[inst];
+    }
+    function track(v) { if (v) live.add(v); }
+    async function tone(freq, opt) {
       opt = opt || {};
       var c = get(); if (!c || !freq) return;
-      var t = c.currentTime + 0.03 + (opt.at || 0);
+      var token = generation, inst = opt.instrument || currentInstrument();
+      await warm(c, inst);
+      if (token !== generation) return;
       var dur = opt.dur || 1.3, peak = opt.gain != null ? opt.gain : 0.24;
-      var env = c.createGain();
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(peak, t + 0.01);
-      env.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.3);
-      env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      var lp = c.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = Math.min(9000, freq * 7 + 1200);
-      env.connect(lp); lp.connect(out);
-      PARTIALS.forEach(function (p) {
-        var o = c.createOscillator(), g = c.createGain();
-        o.frequency.value = freq * p[0];
-        g.gain.value = p[1];
-        o.connect(g); g.connect(env);
-        o.start(t); o.stop(t + dur + 0.05); track(o);
+      var vel = Math.max(0.15, Math.min(1, peak / 0.3));
+      var v = window.AudioKit.note({
+        instrument: inst,
+        hz: freq,
+        delay: opt.at || 0,
+        duration: dur,
+        velocity: vel,
+        onEnded: function (voice) { live.delete(voice); }
       });
+      track(v);
     }
-    /* Steady organ-like tone: no decay, so beating between two notes is audible. */
-    function hold(freq, opt) {
+    /* Steady organ tone: sustained so beating between two close pitches is audible. */
+    async function hold(freq, opt) {
       opt = opt || {};
-      var c = get(); if (!c) return;
-      var t = c.currentTime + 0.03 + (opt.at || 0), dur = opt.dur || 3;
-      var env = c.createGain(), peak = opt.gain || 0.12;
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(peak, t + 0.08);
-      env.gain.setValueAtTime(peak, t + dur - 0.25);
-      env.gain.linearRampToValueAtTime(0.0001, t + dur);
-      var lp = c.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 3200;
-      env.connect(lp); lp.connect(out);
-      var o = c.createOscillator();
-      o.type = 'sawtooth'; o.frequency.value = freq;
-      o.connect(env); o.start(t); o.stop(t + dur + 0.05); track(o);
-    }
-    function droneStart(freq) {
-      droneStop();
-      var c = get(); if (!c) return;
-      var t = c.currentTime, env = c.createGain();
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(0.07, t + 0.4);
-      var lp = c.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 900;
-      env.connect(lp); lp.connect(out);
-      var oscs = [[freq / 2, 'sawtooth'], [freq, 'triangle'], [freq * 1.5 / 2, 'triangle']].map(function (d, i) {
-        var o = c.createOscillator(), g = c.createGain();
-        o.type = d[1]; o.frequency.value = d[0];
-        g.gain.value = i === 2 ? 0.35 : 1;
-        o.connect(g); g.connect(env); o.start(t);
-        return o;
+      var c = get(); if (!c || !freq) return;
+      var token = generation;
+      await warm(c, 'organ');
+      if (token !== generation) return;
+      var dur = opt.dur || 3;
+      var v = window.AudioKit.note({
+        instrument: 'organ',
+        hz: freq,
+        delay: opt.at || 0,
+        duration: dur,
+        velocity: 0.62,
+        onEnded: function (voice) { live.delete(voice); }
       });
-      drone = { env: env, oscs: oscs };
+      track(v);
+    }
+    async function droneStart(freq) {
+      droneStop();
+      var c = get(); if (!c || !freq) return;
+      var token = generation;
+      await warm(c, 'organ');
+      if (token !== generation) return;
+      droneStop();
+      var voices = [[freq / 2, 0.36], [freq, 0.32], [freq * 0.75, 0.22]].map(function (d) {
+        return window.AudioKit.note({
+          instrument: 'organ',
+          hz: d[0],
+          duration: null,
+          velocity: d[1],
+          settings: { attack: 0.25, release: 0.3 }
+        });
+      }).filter(Boolean);
+      drone = { voices: voices };
     }
     function droneStop() {
-      if (!drone || !ctx) { drone = null; return; }
-      var t = ctx.currentTime, d = drone;
-      d.env.gain.cancelScheduledValues(t);
-      d.env.gain.setValueAtTime(d.env.gain.value, t);
-      d.env.gain.linearRampToValueAtTime(0.0001, t + 0.25);
-      d.oscs.forEach(function (o) { try { o.stop(t + 0.3); } catch (e) { /* stopped */ } });
+      if (!drone) return;
+      var c = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
+      var t = c ? c.currentTime : 0, d = drone;
+      d.voices.forEach(function (v) { try { v.release(t); } catch (e) { /* stopped */ } });
       drone = null;
     }
     function later(fn, ms) {
@@ -104,13 +103,16 @@
       return id;
     }
     function stopAll() {
-      live.forEach(function (o) { try { o.stop(); } catch (e) { /* stopped */ } });
+      generation++;
+      var c = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
+      var t = c ? c.currentTime : 0;
+      live.forEach(function (v) { try { v.kill(t); } catch (e) { /* stopped */ } });
       live.clear();
       timers.forEach(clearTimeout); timers.clear();
       droneStop();
       document.dispatchEvent(new CustomEvent('mm:stop'));
     }
-    function setVolume(v) { volume = v; if (out) out.gain.value = v; }
+    function setVolume(v) { volume = v; if (window.AudioKit) window.AudioKit.setVolume(v); }
     return { tone: tone, hold: hold, droneStart: droneStart, droneStop: droneStop, later: later, stopAll: stopAll, setVolume: setVolume, available: function () { return !!(window.AudioContext || window.webkitAudioContext); } };
   })();
 
