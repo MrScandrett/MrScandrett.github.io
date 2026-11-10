@@ -1,0 +1,59 @@
+/* Equal, useful columns; sizing follows the widget's available width. */
+.cos-home .today-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.cos-home .today-grid > .home-widget {
+  position: relative; min-width: 0; width: 100%; box-sizing: border-box;
+  grid-column: auto; container-type: inline-size;
+}
+.cos-home .today-grid > .home-widget[data-widget-size="wide"] { grid-column: 1 / -1; }
+.widget-layout-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:.6rem; margin:0 0 1rem; color:var(--text-primary); }
+.widget-layout-toolbar p { flex-basis:100%; font-size:.85rem; margin:0; }
+.widget-layout-toolbar button, .widget-card-controls button, .widget-card-controls select, .widget-expanded-close {
+  font: 600 .8rem Arial,sans-serif; color:var(--text-primary); background:var(--surface-panel);
+  border:1px solid var(--line); border-radius:8px; padding:.5rem .65rem; min-height:36px; cursor:pointer;
+}
+.widget-layout-toolbar [hidden] { display:none; }
+.widget-layout-status { font-size:.8rem; }
+.widget-card-controls { position:absolute; top:.35rem; right:.35rem; z-index:5; display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; padding:0; color:var(--text-primary); }
+.widget-card-controls .widget-edit-control { display:none; }
+.widgets-editing .widget-card-controls .widget-edit-control { display:inline-flex; align-items:center; gap:.3rem; font: .75rem Arial,sans-serif; }
+.widget-card-controls .widget-expand {
+  margin-left:auto; width:28px; height:28px; min-height:28px;
+  padding:0; font:20px/1 Arial,sans-serif; border-radius:6px;
+  opacity:.65;
+}
+.widget-card-controls .widget-expand:is(:hover, :focus-visible) { opacity:1; }
+.widgets-editing .widget-card-controls { position:relative; top:auto; right:auto; padding:.35rem .5rem .5rem; }
+.widget-drag-handle { cursor:grab !important; }
+.widgets-editing .today-grid > .home-widget { outline:2px dashed var(--text-secondary); outline-offset:3px; }
+.widget-drop-target { outline:4px solid var(--text-primary) !important; }
+/* Keep the scripture readable as the card changes width, rather than using the window width. */
+body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .bible-page { padding:1.6rem; }
+body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .votd-verse {
+  font-size:clamp(1.15rem, 4.5cqi, 1.65rem); line-height:1.45;
+}
+body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .wp-page { gap:0; }
+body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .wp-pill { color:var(--scroll-ink); }
+body.theme-liquid-woodland.theme-home .cos-home .home-widget--votd.verse-reader .votd-context { margin-bottom:.7rem; }
+.cos-home .today-grid > [data-widget-size="compact"] { max-height:min(620px, 85svh); overflow:auto; }
+.cos-home .today-grid > [data-widget-size="standard"],
+.cos-home .today-grid > [data-widget-size="wide"] { max-height:85svh; overflow:auto; }
+/* Large creation workspaces have their own fullscreen mode; the dashboard remains a glance. */
+.widget-expanded { width:min(1100px, 94vw); max-width:94vw; max-height:92svh; box-sizing:border-box; padding:1rem; border:1px solid var(--line); border-radius:16px; background:var(--bg); color:var(--text-primary); }
+.widget-expanded::backdrop { background:rgb(0 0 0 / .65); }
+.widget-expanded-close { display:block; margin:0 0 .75rem auto; }
+.widget-is-expanded { width:100%; max-height:none !important; container-type:inline-size; }
+.widget-is-expanded .widget-card-controls { display:none; }
+@media (max-width:900px) {
+  .cos-home .today-grid { grid-template-columns:minmax(0,1fr); }
+  .cos-home .today-grid > .home-widget { grid-column:1 / -1; }
+}
+@media (min-width:1100px) {
+  .cos-home .today-grid:has(> [data-widget-size="compact"]) { grid-template-columns:repeat(6,minmax(0,1fr)); }
+  .cos-home .today-grid:has(> [data-widget-size="compact"]) > [data-widget-size="compact"] { grid-column:span 2; }
+  .cos-home .today-grid:has(> [data-widget-size="compact"]) > [data-widget-size="standard"] { grid-column:span 3; }
+  .cos-home .today-grid:has(> [data-widget-size="compact"]) > [data-widget-size="wide"] { grid-column:1 / -1; }
+}
+@media print { .widget-layout-toolbar, .widget-card-controls { display:none; } .cos-home .today-grid > .home-widget { max-height:none !important; overflow:visible !important; } }

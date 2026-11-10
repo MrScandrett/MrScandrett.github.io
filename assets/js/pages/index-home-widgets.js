@@ -465,7 +465,7 @@
       }
 
       function setBigTemperature(text) {
-        weatherEls.temp.innerHTML = `<span class="wx-sr">${text}</span>${window.PixelWeather.digits(text, { bold: true })}`;
+        weatherEls.temp.innerHTML = `<span class="wx-sr">${text}</span>${window.PixelWeather.digits(text, { flat: true, bold: true })}`;
       }
 
       const METER_SEGMENTS = 10;
