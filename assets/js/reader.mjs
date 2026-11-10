@@ -1115,57 +1115,80 @@ async function hasDrm(zip) {
 }
 
 /* Kid-friendly wording for books read in class. Old translations and period novels use words that
-   now read as swearing or as slurs; swap them for plain wording. Applies to every Gutenberg book
-   (matched by ebook id, whichever edition was downloaded); uploaded files are never touched.
-   Capitalisation of the original is kept. Mild oaths ("hell", "damn") and theological uses are
-   left alone on purpose. */
+   now read as swearing or as slurs; they are swapped for plain wording as a chapter is built.
+   Applies to every Gutenberg book (matched by ebook id, whichever edition was downloaded); uploaded
+   files are never touched. The patterns are stored ROT13-encoded so this file does not spell the
+   words out. Capitalisation (and a/an) of the original is kept. */
+const rot = (s) => s.replace(/[a-z]/gi, (c) => String.fromCharCode((c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
 const matchCase = (m, to) =>
   m.length > 1 && m === m.toUpperCase() ? to.toUpperCase() : /^[A-Z]/.test(m) ? to[0].toUpperCase() + to.slice(1) : to;
-const swap = (re, to) => [re, (m) => matchCase(m, to)];
-// "ass" is only swapped when it stands alone (not "ass-ass-ass-inated"); fixes "an ass" → "a donkey".
-const DONKEY = [
-  [/\b([Aa])n (ass|Ass|ASS)(?![\w-])/g, (m, a, w) => `${a} ${matchCase(w, "donkey")}`],
-  [/(?<![\w-])asses(?![\w-])/gi, (m) => matchCase(m, "donkeys")],
-  [/(?<![\w-])ass(?![\w-])/gi, (m) => matchCase(m, "donkey")],
+// [rot13 pattern, replacement, flags, scope]. scope: none = every book; "fable" = fable books;
+// "birds" = other books, only where a bird is clearly meant; "scoundrel"/"falsebook" = named books.
+const SOFTEN_ROWS = [
+  ["avttre\\j*", "n-word", "gi", null],
+  ["qnexvrf", "Black people", "gi", null],
+  ["qnex(?:l|rl)f?", "Black person", "gi", null],
+  ["puvanzra", "Chinese men", "gi", null],
+  ["puvanzna", "Chinese man", "gi", null],
+  ["pbbyvrf", "laborers", "gi", null],
+  ["pbbyvr", "laborer", "gi", null],
+  ["fdhnjf", "Native women", "gi", null],
+  ["fdhnj", "Native woman", "gi", null],
+  ["unys-?oerrqf", "mixed-heritage people", "gi", null],
+  ["unys-?oerrq", "mixed-heritage person", "gi", null],
+  ["ubggragbgf?", "Khoikhoi", "gi", null],
+  ["(?<![\\j-])nffrf(?![\\j-])", "donkeys", "gi", null],
+  ["(?<![\\j-])nff(?![\\j-])", "donkey", "gi", null],
+  ["ovgpurf", "female dogs", "gi", null],
+  ["ovgpu", "female dog", "gi", null],
+  ["juberf", "disreputable women", "gi", null],
+  ["juber", "disreputable woman", "gi", null],
+  ["fyhgf", "disreputable women", "gi", null],
+  ["fyhg", "disreputable woman", "gi", null],
+  ["tnzr-?pbpxf", "game roosters", "gi", "fable"],
+  ["tnzr-?pbpx", "game rooster", "gi", "fable"],
+  ["pbpxf", "roosters", "gi", "fable"],
+  ["pbpx", "rooster", "gi", "fable"],
+  ["pbpxf", "roosters", "gi", "birds"],
+  ["pbpx", "rooster", "gi", "birds"],
+  ["onfgneqf", "scoundrels", "gi", "scoundrel"],
+  ["onfgneq(?!\\.)", "scoundrel", "gi", "scoundrel"],
+  ["onfgneq(?= whfgvpr)", "false", "gi", "falsebook"],
 ];
-const ROOSTER_NEAR = /crow|crew|chicken|ostrich|nest|black cocks|\bhens?\b|fowl|poultry|fight|spur|pheasant|turkey|bird|farm|yard|perch|wattle|comb\b|roost|second cock|dunghill|feather|plucked|Cock\b.*\bFox|Falcon/i;
-const ROOSTER_NEVER = /^(?:-and-bull|[- ]a-doodle|[- ]robin)|stop-?$/i;
-const COCKS_ALWAYS = [swap(/\bgame-?cocks\b/gi, "game roosters"), swap(/\bgame-?cock\b/gi, "game rooster"), swap(/\bcocks\b/gi, "roosters"), swap(/\bcock\b/gi, "rooster")];
-// Elsewhere "cock" can mean a valve or a hat brim, so only swap it where birds are clearly meant.
-const COCKS_NEAR_BIRDS = [[/\bcocks?\b/gi, (m, ...r) => {
-  const text = r[r.length - 1], at = r[r.length - 2];
-  const near = text.slice(Math.max(0, at - 120), at + m.length + 120);
-  const before = text.slice(Math.max(0, at - 5), at), after = text.slice(at + m.length, at + m.length + 12);
-  if (!ROOSTER_NEAR.test(near) || ROOSTER_NEVER.test(after) || /stop-?$/i.test(before)) return m;
-  return matchCase(m, /s$/i.test(m) ? "roosters" : "rooster");
-}]];
-const DOG = [swap(/\bbitches\b/gi, "female dogs"), swap(/\bbitch\b/gi, "female dog")];
-const BAD_WOMAN = [swap(/\bwhores\b/gi, "disreputable women"), swap(/\bwhore\b/gi, "disreputable woman"), swap(/\bsluts\b/gi, "disreputable women"), swap(/\bslut\b/gi, "disreputable woman")];
-const GLOBAL_RULES = [
-  [/\b([Aa]) (nigger)/g, (m, a) => `${a}n n-word`],
-  [/\bnigger\w*/gi, () => "n-word"],
-  swap(/\bdarkies\b/gi, "Black people"), swap(/\bdark(?:y|ey)s?\b/gi, "Black person"),
-  swap(/\bchinamen\b/gi, "Chinese men"), swap(/\bchinaman\b/gi, "Chinese man"),
-  swap(/\bcoolies\b/gi, "laborers"), swap(/\bcoolie\b/gi, "laborer"),
-  swap(/\bsquaws\b/gi, "Native women"), swap(/\bsquaw\b/gi, "Native woman"),
-  swap(/\bhalf-?breeds\b/gi, "mixed-heritage people"), swap(/\bhalf-?breed\b/gi, "mixed-heritage person"),
-  swap(/\bhottentots?\b/gi, "Khoikhoi"),
-  ...DONKEY, ...DOG, ...BAD_WOMAN,
-];
-const ALWAYS_ROOSTER = new Set(["21", "38025"]); // fable books: every "cock" is a rooster
-const BOOK_RULES = {
-  "21": COCKS_ALWAYS,     // Aesop's Fables
-  "38025": COCKS_ALWAYS,  // Tolstoy's Fables for Children
-  "2600": [swap(/\bbastards\b/gi, "scoundrels"), swap(/\bbastard\b(?!\.)/gi, "scoundrel")], // War and Peace
-  "8868": [swap(/\bbastards\b/gi, "scoundrels"), swap(/\bbastard\b/gi, "scoundrel")],       // Botchan
-  "86": [swap(/\bbastard(?= justice)/gi, "false")],
+const SCOPES = {
+  fable: new Set(["21", "38025"]),
+  scoundrel: new Set(["2600", "8868"]),
+  falsebook: new Set(["86"]),
 };
+const BIRD_NEAR = new RegExp(`crow|crew|chicken|ostrich|nest|\\bhens?\\b|fowl|poultry|fight|spur|pheasant|turkey|bird|farm|yard|perch|wattle|comb\\b|roost|dunghill|feather|plucked|Falcon|${rot("oynpx pbpxf")}|${rot("frpbaq pbpx")}`, "i");
+const BIRD_NOT = /^(?:-and-bull|[- ]a-doodle|[- ]robin)/i;
+function compileSoften(id) {
+  const rules = [];
+  for (const [enc, to, flags, scope] of SOFTEN_ROWS) {
+    if (scope === "birds" ? SCOPES.fable.has(id) : scope && !SCOPES[scope]?.has(id)) continue;
+    const src = rot(enc);
+    const pick = (m, text, at) => {
+      if (scope !== "birds") return matchCase(m, to);
+      const near = text.slice(Math.max(0, at - 120), at + m.length + 120);
+      const before = text.slice(Math.max(0, at - 5), at), after = text.slice(at + m.length, at + m.length + 12);
+      return BIRD_NEAR.test(near) && !BIRD_NOT.test(after) && !/stop-?$/i.test(before) ? matchCase(m, to) : m;
+    };
+    if (scope !== "birds") { // "an X" → "a Y" when the swap changes the article
+      rules.push([new RegExp(`\\b(an?) (${src})\\b`, flags), (m, art, w) => {
+        const out = matchCase(w, to);
+        return matchCase(art, /^(?:[aeiou]|n-)/i.test(out) ? "an" : "a") + " " + out;
+      }]);
+    }
+    rules.push([new RegExp(`\\b(?:${src})\\b`, flags), (m, ...rest) => pick(m, rest[rest.length - 1], rest[rest.length - 2])]);
+  }
+  return rules;
+}
 const softenFor = (source) => {
   const direct = String(source?.url || "").match(/gutenberg\.org\/cache\/epub\/(\d+)\//);
   const id = String(gutenbergIdFromUrl(source?.home || "") || (direct && direct[1]) || "");
   if (!id) return (t) => t;
-  const rules = [...GLOBAL_RULES, ...(BOOK_RULES[id] || []), ...(ALWAYS_ROOSTER.has(id) ? [] : COCKS_NEAR_BIRDS)];
-  return (t) => rules.reduce((acc, [re, to]) => acc.replace(re, to), t);
+  const rules = compileSoften(id);
+  return (t) => rules.reduce((acc, [re, fn]) => acc.replace(re, fn), t);
 };
 
 async function openEpub(bytes, source, entry) {
