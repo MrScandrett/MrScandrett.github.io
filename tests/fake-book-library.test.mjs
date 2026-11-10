@@ -50,3 +50,23 @@ test('But Not for Me phrase peaks match the concert F score', () => {
   const measures = bars(byId['but-not-for-me'].melody);
   for (const bar of [11, 25, 27]) assert.equal(measures[bar].at(-1), 'F5q', `bar ${bar}`);
 });
+
+// Landmarks from the linked melody staves, in the library's concert keys.
+// These catch pitch/form errors that a meter-only check cannot detect.
+test('seasonal melodies retain the source phrases and distinct cadences', () => {
+  assert.equal(bars(byId['deck-the-halls'].melody)[10].join(' '), 'E4e F#4e G4q A4e B4e C5q');
+  assert.equal(byId['first-noel'].bars, 24);
+  assert.equal(bars(byId['first-noel'].melody)[2].join(' '), 'G4h A4e B4e');
+  assert.equal(bars(byId['first-noel'].melody).at(-1).join(' '), 'E4h rq');
+  const nicholas = bars(byId['jolly-old-saint-nicholas'].melody);
+  assert.equal(nicholas[4].join(' '), 'A3q A3q A3q A3q');
+  assert.equal(nicholas[7].join(' '), 'D4w');
+  assert.equal(nicholas.at(-1).join(' '), 'C4w');
+  const manger = bars(byId['away-in-a-manger'].melody);
+  assert.equal(manger[1].join(' '), 'C5q. Bb4e A4q');
+  assert.equal(manger[6].join(' '), 'C4q G4q E4q');
+  assert.equal(byId['o-christmas-tree'].bars, 12);
+  assert.equal(bars(byId['o-christmas-tree'].melody)[1].join(' '), 'F4e. F4s F4q. G4e');
+  assert.equal(bars(byId['we-wish-you-a-merry-christmas'].melody)[13].join(' '), 'E4q D4e D4e C4e C4e');
+  assert.equal(bars(byId['up-on-the-housetop'].melody)[8].join(' '), 'G4q G4q B4h');
+});

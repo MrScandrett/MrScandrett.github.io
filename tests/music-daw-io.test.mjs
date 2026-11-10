@@ -76,3 +76,15 @@ test('WAV encoder writes a valid 16-bit stereo header and clips samples', () => 
 test('WAV metadata reader rejects unrelated files', () => {
   assert.equal(DawIO.readWavInfo(new TextEncoder().encode('not wave audio')), null);
 });
+
+
+test('sampled orchestral presets keep their instruments through MIDI export and import', () => {
+  const instruments = ['violin', 'viola', 'cello', 'contrabass', 'harp', 'trumpet', 'horn', 'sax', 'oboe', 'bassoon', 'clarinet', 'flute', 'xylophone'];
+  // Separate files avoid MIDI's sixteen-channel limit and isolate each program change.
+  for (const instrument of instruments) {
+    const parsed = DawIO.parseMidi(DawIO.writeMidi({ bpm: 120, timeSig: [4, 4], tracks: [
+      { name: instrument, instrument, notes: [{ pitch: 60, start: 0, duration: 1, velocity: .8 }] },
+    ] }));
+    assert.equal(parsed.tracks[0].instrument, instrument);
+  }
+});

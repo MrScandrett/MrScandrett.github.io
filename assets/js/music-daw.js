@@ -41,7 +41,9 @@
   const INSTRUMENTS = {
     piano: 'Grand Piano', ePiano: 'Electric Piano', organ: 'Organ', pluck: 'Guitar Pluck',
     bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead',
-    violin: 'Violin', sax: 'Saxophone', flute: 'Flute', drums: 'Drum Kit',
+    violin: 'Violin', viola: 'Viola', cello: 'Cello', contrabass: 'Double Bass',
+    sax: 'Saxophone', flute: 'Flute', oboe: 'Oboe', clarinet: 'Clarinet', bassoon: 'Bassoon',
+    horn: 'French Horn', trumpet: 'Trumpet', harp: 'Harp', xylophone: 'Xylophone', drums: 'Drum Kit',
   };
   const COLORS = ProjectModel.COLORS;
   // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a
@@ -155,6 +157,12 @@
   }
 
   // ── Audio context + mixer ────────────────────────────────────────────────
+  // Load only after an audio gesture; oscillator voices cover loading or unavailable recordings.
+  function prepareSamples(c, tracks) {
+    return window.MusicSynth.prepare(c, tracks.filter(t => t.kind === 'instrument' && t.instrument !== 'drums')
+      .map(t => ({ instrument: t.instrument })));
+  }
+
   function ctx() {
     if (!audio.ctx) {
       audio.ctx = AudioRuntime.createContext(window.MusicLabAudio);
@@ -176,6 +184,7 @@
       diagnostics?.record('audio-context-created', 'notice', AudioRuntime.facts(audio.ctx));
       queueMicrotask(() => refreshAudioHealth());
       applyMix();
+      void prepareSamples(audio.ctx, project.tracks);
     }
     setAudioSession();
     if (audio.ctx.state !== 'running') audio.ctx.resume();
@@ -482,6 +491,7 @@
   function play(fromBeat) {
     const c = ctx();
     stopSounds();
+    void prepareSamples(c, project.tracks);
     let start = fromBeat === undefined ? ui.playhead : fromBeat;
     if (loopActive() && (start >= project.loop.end || start < project.loop.start - 1e-9)) start = project.loop.start;
     const seg = { beat: start, time: c.currentTime + 0.08, end: loopActive() ? project.loop.end : Infinity };
@@ -766,6 +776,7 @@
       if (request !== armRequest || !findTrack(track.id)) { if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic(); return; }
       if (!ok) on = false;
     }
+    if (on && track.kind === 'instrument') void prepareSamples(ctx(), [track]);
     track.armed = on;
     window.dispatchEvent(new Event('music-patch-update'));
     if (!project.tracks.some((t) => t.armed && t.kind === 'audio')) releaseMic();
@@ -1450,6 +1461,7 @@
     const sr = audio.ctx ? audio.ctx.sampleRate : 44100;
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
+    await prepareSamples(oc, tracks);
     if ((project.patchConnections || []).some(e => e.from === 'fx:punch-compressor' || e.to === 'fx:punch-compressor') || project.tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass)) || (project.returns || []).some(r => r.type === 'punch-compressor')) await window.MusicLabCompressor?.prepare(oc);
     if ((project.patchConnections || []).some(e => e.from === 'fx:studio-reverb' || e.to === 'fx:studio-reverb') || project.tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
     const mix = createMixer(oc, oc.destination);
@@ -2238,6 +2250,7 @@
   // under the fingers that are pressing it.
   function armForPlay(track) {
     if (track.armed || !hasInstrumentExperience(track)) return;
+    void prepareSamples(ctx(), [track]);
     if (transport.recording || finishingTake) return;
     ++armRequest;
     silenceLive();
@@ -2508,6 +2521,7 @@
   function hasInstrumentExperience(track) { return track?.kind === 'instrument' && (track.tools || []).some(id => window.MusicChannelExperiences.registry[id]?.role === 'instrument'); }
   function syncInstrumentExperience(track, create = false) {
     if (!create && !hasInstrumentExperience(track)) return;
+    if (audio.ctx) void prepareSamples(audio.ctx, [track]);
     const id=track.instrument==='drums'?'drumkit':track.instrument==='pluck'?'guitar':track.instrument==='synth'?'synthlab':'keyboard';
     track.tools=track.tools.filter(key=>window.MusicChannelExperiences.registry[key]?.role!=='instrument');track.tools.push(id);
   }
