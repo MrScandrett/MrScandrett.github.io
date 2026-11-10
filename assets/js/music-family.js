@@ -1,6 +1,5 @@
 /* music-family.js — one shared "music" navigation strip for every music page.
- * Instruments & theory live together on the left; the science of sound stays
- * with the science lessons and is linked on the right.
+ * Theory, composers, and sound science each get an aligned navigation row.
  * Add or rename a page here and every music page updates.
  */
 (function () {
@@ -35,13 +34,20 @@
       { file: 'lessons/music/pioneers/beethoven.html', label: 'Beethoven', name: 'Ludwig van Beethoven', dates: '1770–1827' }
     ] },
     { id: 'romantic', label: 'Romantic', composers: [
+      { file: 'lessons/music/pioneers/schubert.html', label: 'Schubert', name: 'Franz Schubert', dates: '1797–1828' },
       { file: 'lessons/music/pioneers/chopin.html', label: 'Chopin', name: 'Frédéric Chopin', dates: '1810–1849' },
+      { file: 'lessons/music/pioneers/schumann.html', label: 'Schumann', name: 'Robert Schumann', dates: '1810–1856' },
+      { file: 'lessons/music/pioneers/liszt.html', label: 'Liszt', name: 'Franz Liszt', dates: '1811–1886' },
+      { file: 'lessons/music/pioneers/brahms.html', label: 'Brahms', name: 'Johannes Brahms', dates: '1833–1897' },
       { file: 'lessons/music/pioneers/tchaikovsky.html', label: 'Tchaikovsky', name: 'Pyotr Ilyich Tchaikovsky', dates: '1840–1893' },
-      { file: 'lessons/music/pioneers/francisco-tarrega.html', label: 'Tárrega', name: 'Francisco Tárrega', dates: '1852–1909' }
+      { file: 'lessons/music/pioneers/francisco-tarrega.html', label: 'Tárrega', name: 'Francisco Tárrega', dates: '1852–1909' },
+      { file: 'lessons/music/pioneers/rachmaninoff.html', label: 'Rachmaninoff', name: 'Sergei Rachmaninoff', dates: '1873–1943' }
     ] },
     { id: 'modern', label: 'Modern', composers: [
       { file: 'lessons/music/pioneers/debussy.html', label: 'Debussy', name: 'Claude Debussy', dates: '1862–1918' },
-      { file: 'lessons/music/pioneers/satie.html', label: 'Satie', name: 'Erik Satie', dates: '1866–1925' }
+      { file: 'lessons/music/pioneers/satie.html', label: 'Satie', name: 'Erik Satie', dates: '1866–1925' },
+      { file: 'lessons/music/pioneers/scriabin.html', label: 'Scriabin', name: 'Alexander Scriabin', dates: '1872–1915' },
+      { file: 'lessons/music/pioneers/ravel.html', label: 'Ravel', name: 'Maurice Ravel', dates: '1875–1937' }
     ] },
     { id: 'jazz', label: 'American roots & jazz', short: 'Roots & jazz', tiny: 'Jazz', composers: [
       { file: 'lessons/music/pioneers/joplin.html', label: 'Joplin', name: 'Scott Joplin', dates: 'c. 1868–1917' },
@@ -77,13 +83,16 @@
     t.className = 'mf-title';
     t.textContent = title;
     g.appendChild(t);
+    var links = document.createElement('div');
+    links.className = 'mf-links';
     items.forEach(function (it) {
       var a = document.createElement('a');
       a.href = base + it.file;
       a.textContent = it.label;
       if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
-      g.appendChild(a);
+      links.appendChild(a);
     });
+    g.appendChild(links);
     return g;
   }
 
@@ -157,23 +166,26 @@
     var css = document.createElement('style');
     css.textContent =
       '.music-family{display:block;padding:.45rem clamp(1rem,4vw,2.5rem);background:#241a14;border-bottom:1px solid rgba(255,255,255,.12);font:600 .76rem "DM Sans",system-ui,sans-serif;position:relative;z-index:29;flex-shrink:0}' +
-      '.music-family .mf-body{display:flex;flex-wrap:wrap;gap:.3rem 1.6rem;align-items:center;justify-content:center}' +
+      '.music-family .mf-body{display:grid;gap:.35rem;max-width:1440px;margin:0 auto}' +
       '.music-family .mf-fold>summary{display:none;list-style:none;cursor:pointer;color:#ffe9d6;font-weight:700;padding:.1rem 0}' +
       '.music-family .mf-fold>summary::-webkit-details-marker{display:none}' +
       '.music-family .mf-fold>summary:focus-visible{outline:none;box-shadow:0 0 0 2px #ffd166;border-radius:6px}' +
       '@media (max-width:720px){' +
         '.music-family{padding:.3rem .85rem}' +
         '.music-family .mf-fold>summary{display:block}' +
-        '.music-family .mf-body{justify-content:flex-start;padding:.4rem 0 .2rem;gap:.35rem .9rem}' +
+        '.music-family .mf-body{padding:.4rem 0 .2rem;gap:.65rem}' +
+        '.music-family .mf-body .mf-group{grid-template-columns:minmax(0,1fr);gap:.25rem}' +
       '}' +
-      '.music-family .mf-group{display:flex;flex-wrap:wrap;gap:.15rem .2rem;align-items:center}' +
-      '.music-family .mf-title{margin-right:.4rem;color:#ffb98a;font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
-      '.music-family a,body.theme-liquid-woodland .music-family a{padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;text-decoration:none}' +
+      '.music-family .mf-group{display:grid;grid-template-columns:13rem minmax(0,1fr);gap:.25rem .75rem;align-items:start}' +
+      '.music-family .mf-group+.mf-group{border-top:1px solid rgba(255,233,214,.12);padding-top:.35rem}' +
+      '.music-family .mf-links{display:flex;flex-wrap:wrap;gap:.15rem .2rem;min-width:0}' +
+      '.music-family .mf-title{padding:.4rem 0;line-height:1.5;color:#ffb98a;font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
+      '.music-family a,body.theme-liquid-woodland .music-family a{display:inline-flex;align-items:center;min-height:2rem;box-sizing:border-box;line-height:1.5;padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;text-decoration:none}' +
       '.music-family a:hover,.music-family a:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none}' +
       '.music-family a:focus-visible{box-shadow:0 0 0 2px #ffd166}' +
       '.music-family a[aria-current="page"],body.theme-liquid-woodland .music-family a[aria-current="page"]{background:#ffd9bd;color:#241a14}' +
-      '.music-family .mf-menu{position:relative}' +
-      '.music-family .mf-menu summary{list-style:none;cursor:pointer;padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;border:1px solid rgba(255,233,214,.35)}' +
+      '.music-family .mf-menu{position:relative;justify-self:start;min-width:0;max-width:100%}' +
+      '.music-family .mf-menu summary{box-sizing:border-box;min-height:2rem;line-height:1.5;list-style:none;cursor:pointer;padding:.3rem .6rem;border-radius:999px;color:#ffe9d6;border:1px solid rgba(255,233,214,.35)}' +
       '.music-family .mf-menu summary::-webkit-details-marker{display:none}' +
       '.music-family .mf-menu summary:hover,.music-family .mf-menu summary:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none;box-shadow:0 0 0 2px #ffd166}' +
       '.music-family .mf-menu summary[aria-current="page"]{background:#ffd9bd;color:#241a14;border-color:#ffd9bd}' +

@@ -687,10 +687,55 @@
     }) };
   }
 
+  // Rebuild suggestions from the source progression on every refresh; never accumulate changes.
+  function permuteChords(chords, key, settings) {
+    var tonic = keyPc(key);
+    var out = [];
+    chords.forEach(function (original, i) {
+      var c = Object.assign({}, original), next = chords[i + 1];
+      var pc = mod(NAT[c.root.l] + c.root.a, 12);
+      if (settings.theorySevenths) {
+        if (c.q === '') c.q = !key.minor && mod(pc - tonic, 12) === 7 ? '7' : 'maj7';
+        else if (c.q === 'm') c.q = 'm7';
+        else if (c.q === 'dim') c.q = 'm7b5';
+      }
+      if (settings.theoryNinths && c.q === '7') c.q = '9';
+      // A dominant falling a fifth may be replaced by a dominant a tritone away.
+      if (settings.theoryTritone && next && (c.q === '7' || c.q === '9') &&
+          mod(pc - NAT[next.root.l] - next.root.a, 12) === 7 && !c.bass) {
+        var sub = respell(60 + mod(pc + 6, 12), keySig(key) <= 0);
+        c.root = { l: sub.l, a: sub.a };
+      }
+      if (c.q !== original.q || c.root !== original.root) c.display = null;
+      // Split the preceding chord's time into ii–V, resolving at the next original onset.
+      if (settings.theoryApproach && next && c.dur >= 2 && !c.bass &&
+          (next.q === '' || next.q === 'maj7' || next.q === 'm' || next.q === 'm7') &&
+          (c.root.l !== next.root.l || c.root.a !== next.root.a)) {
+        var target = NAT[next.root.l] + next.root.a;
+        var minor = next.q === 'm' || next.q === 'm7';
+        [ [2, minor ? 'm7b5' : 'm7'], [7, settings.theoryNinths ? '9' : '7'] ].forEach(function (spec, j) {
+          var r = respell(60 + mod(target + spec[0], 12), keySig(key) <= 0);
+          if (j && settings.theoryTritone) r = respell(60 + mod(target + 1, 12), true);
+          out.push(Object.assign({}, c, { start: c.start + j * c.dur / 2, dur: c.dur / 2,
+            root: { l: r.l, a: r.a }, q: spec[1], display: null, bass: null }));
+        });
+      } else out.push(c);
+    });
+    return out;
+  }
+  function intervalVoice(events, key, interval) {
+    var steps = interval === 'thirds' ? -2 : -5;
+    return events.map(function (e) {
+      var p = e.p ? pitch(e.p.dia + steps, keyAcc(keySig(key), mod(e.p.l + steps, 7))) : null;
+      return { start: e.start, dur: e.dur, p: p, ps: p ? [p] : [] };
+    });
+  }
+
   /* ================================================================ state */
   var DEFAULTS = {
     tune: 'twinkle', key: null, instr: 'concert', octave: 0, names: false, nameStyle: 'notes', zoom: 1,
     melody: 'original', rhythm: 'written', voicing: 'smooth',
+    theorySevenths: false, theoryNinths: false, theoryApproach: false, theoryTritone: false, theoryInterval: 'off',
     style: null, feel: null, tempo: null, mode: 'all', click: 'all', loop: true,
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
@@ -823,7 +868,7 @@
     var octaveLimited = !!ins.range && wK !== wWant, octaveOut = 0;
     if (ins.range) wOut.forEach(function (e) { if (e.p && (e.p.midi < ins.range[0] || e.p.midi > ins.range[1])) octaveOut++; });
     function moveChords(sh, flat) {
-      return t.chords.map(function (c) {
+      return permuteChords(t.chords, t.key, opts).map(function (c) {
         var r = shiftPitch(pitch(c.root.l + 28, c.root.a), sh.letters, sh.semis, flat);
         if (Math.abs(r.a) > 1) r = respell(r.midi, flat);
         var bass = null;
@@ -890,6 +935,11 @@
       var ps = e.ps.map(function (p) { var q = shiftPitch(p, ws.letters, ws.semis, wFlat); return octaveShift ? pitch(q.dia + 7 * octaveShift, q.a) : q; });
       return { start: e.start, dur: e.dur, ps: ps, p: ps[0] };
     });
+    view.harmony = null;
+    if (opts.theoryInterval === 'thirds' || opts.theoryInterval === 'sixths') {
+      view.voice2 = intervalVoice(wOut, writtenKey, opts.theoryInterval);
+      view.harmony = intervalVoice(cOut, concertKey, opts.theoryInterval);
+    }
     // Key-change tags, spelled in the key the sheet is written in.
     if (t.keyChanges.length) {
       var secs = Object.assign({}, t.baseSections);
@@ -2659,7 +2709,10 @@
       if (inPickup ? !pi.pickup : (e.start < tuneOff - EPS || e.start >= tuneOff + pi.len - EPS)) return;
       var bar = inPickup ? 0 : Math.floor(e.start / M + EPS) + 1;
       add.push({ b: g(e.start), kind: 'ui', ui: 'note', idx: idx });
-      if (e.p) add.push({ b: g(e.start), kind: 'mel', m: e.p.midi, dur: e.dur, bar: bar, idx: idx });
+      if (e.p) {
+        add.push({ b: g(e.start), kind: 'mel', m: e.p.midi, dur: e.dur, bar: bar, idx: idx });
+        if (view.harmony && view.harmony[idx].p) add.push({ b: g(e.start), kind: 'harmony', m: view.harmony[idx].p.midi, dur: e.dur, bar: bar });
+      }
     });
     for (var bar = r.from; bar <= r.to; bar++) {
       var b0 = g((bar - 1) * M);
@@ -2735,12 +2788,16 @@
   function fire(e) {
     var t = Math.max(ctx.currentTime, timeAt(e.b)), L = P.lanes;
     // A note that missed its slot by more than LATE_DROP would land on top of the next ones; skip it instead of bunching.
-    if (ctx.currentTime - timeAt(e.b) > LATE_DROP && (e.kind === 'mel' || e.kind === 'pno' || e.kind === 'bass' || e.kind === 'drum' || e.kind === 'click' || e.kind === 'score')) return;
+    if (ctx.currentTime - timeAt(e.b) > LATE_DROP && (e.kind === 'mel' || e.kind === 'harmony' || e.kind === 'pno' || e.kind === 'bass' || e.kind === 'drum' || e.kind === 'click' || e.kind === 'score')) return;
     switch (e.kind) {
       case 'score': {
         var shift = shiftBetween(tune.key, view.concertKey).semis;
         voicePiano(P.scoreLanes[e.part], t, timeAt(e.b + e.dur) - t, e.m + shift, 0.32); break;
       }
+      case 'harmony':
+        if (opts.mode !== 'band' && opts.mode !== 'click' && !yours(e.bar, P.range.from))
+          voiceLead(L.melody, t, timeAt(e.b + e.dur) - t, e.m, 0.3);
+        break;
       case 'mel':
         if (opts.mode === 'band' || opts.mode === 'click' || yours(e.bar, P.range.from)) {
           // The student's notes: the band stays silent here, and the listener grades what the mic hears.
@@ -3582,6 +3639,10 @@
   }
 
   function refresh() {
+    root.querySelectorAll('[data-fb-theory]').forEach(function (input) {
+      var value = opts[input.getAttribute('data-fb-theory')];
+      if (input.type === 'checkbox') input.checked = !!value; else input.value = value;
+    });
     computeView();
     syncTabTools();
     feedMelodyView();
@@ -5064,6 +5125,13 @@
         scorePractice[id] = scorePractice[id] || {}; scorePractice[id][soloControl ? 'solo' : 'mute'] = t.checked; updateScoreGains();
       }
       else if (n === 'fb-melody') { opts.melody = t.value; refresh(); respin(); }
+      else if (t.matches('[data-fb-theory]')) {
+        opts[t.getAttribute('data-fb-theory')] = t.type === 'checkbox' ? t.checked : t.value;
+        // Use the generated band and lead sheet so the selected changes are visible and audible.
+        if (opts.mode === 'score') opts.mode = 'all';
+        if (opts.sheetView === 'arrangement' || opts.sheetView === 'drums') opts.sheetView = 'lead';
+        syncControls(); refresh(); respin();
+      }
       else if (n === 'fb-rhythm') { opts.rhythm = t.value; refresh(); respin(); }
       else if (n === 'fb-voicing' || t.matches('[data-fb-notation-voicing]')) { opts.voicing = t.value; view.voicings = voiceChords(view.concertChords, opts.voicing); applyPianoShapes(); syncControls(); showChord(true); renderSheet(); renderBarPop(); save(); respin(); }
       else if (n === 'fb-barclick') { opts.barClick = t.value; if (t.value !== 'shapes') hideBarPop(); save(); }
@@ -5256,7 +5324,7 @@
         reanchor(function () { opts.tempo = v; }); if (P) P.spb = 60 / v;
         el('[data-fb-tempo]').value = v; el('[data-fb-tempo-num]').value = v; save(); return;
       }
-      if (t.closest('[data-fb-reset]')) { opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); respin(); return; }
+      if (t.closest('[data-fb-reset]')) { opts.theorySevenths = opts.theoryNinths = opts.theoryApproach = opts.theoryTritone = false; opts.theoryInterval = 'off'; opts.melody = 'original'; opts.rhythm = 'written'; opts.key = tune.raw.key; opts.octave = 0; syncControls(); refresh(); respin(); return; }
       var step = t.closest('[data-fb-chord-step]');
       if (step) { stepChord(Number(step.getAttribute('data-fb-chord-step'))); return; }
       var chip = t.closest('[data-strip-ci]');

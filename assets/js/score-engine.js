@@ -547,6 +547,8 @@
     var h = S / 2;
     decideStems(model);
     var bars = layoutBars(model, S, readableSize);
+    var tabConfig = model.score.tablature;
+    var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0))) : null;
     function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
     var grand = model.staves.length === 2 && model.score.grand !== false;
     var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
@@ -679,6 +681,9 @@
         top = bottom + below + (si < model.staves.length - 1 ? (grand ? 1.2 : 3.4) * S : 0);
       });
       var sysTop = bottoms[0] - 8 * h, sysBottom = bottoms[bottoms.length - 1];
+      var staffInkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h;
+      var tabTop = staffInkBottom + 4.2 * S, tabGap = 1.65 * S;
+      if (tabBars) sysBottom = tabTop + (tabConfig.tuning.length - 1) * tabGap;
       var aboveY = sysTop - Math.max(0, ext[0].hi - 9) * h - 1.4 * S;
       var x0 = left, x1 = left + sys.header + sys.bars.reduce(function (s, bi) { return s + bars[bi].width * stretch; }, 0);
       if (!last || stretch > 1) x1 = Math.min(x1, width - 1.5 * S);
@@ -707,6 +712,15 @@
       out.push('<line x1="' + x0 + '" x2="' + x0 + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW + '"/>');
       if (sIndex === 0 && model.score.tempoText) {
         out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (aboveY - (hasAbove ? 2.4 * S : 0)) + '" font-size="' + (1.45 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
+      }
+      if (tabBars) {
+        out.push('<g class="se-tablature" aria-label="Guitar tablature">');
+        out.push('<text x="' + x0 + '" y="' + (tabTop - 1.3 * S) + '" font-size="' + S + '">' + M.escape(tabConfig.label || 'TAB') + '</text>');
+        tabConfig.tuning.forEach(function (_, string) {
+          var ty = tabTop + string * tabGap;
+          out.push('<line class="se-line" x1="' + x0 + '" x2="' + x1 + '" y1="' + ty + '" y2="' + ty + '" stroke="currentColor" stroke-width="' + lineW + '"/>');
+        });
+        out.push('<text x="' + (x0 + S) + '" y="' + (tabTop + 3 * tabGap) + '" font-size="' + (1.3 * S) + '">TAB</text></g>');
       }
       var firstBarNo = barNumber(model, sys.bars[0]);
       if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[0].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
@@ -774,6 +788,23 @@
           barModel.beams.forEach(function (g) { out.push(drawBeam(g, S)); });
           barModel.events.forEach(function (ev) { if (ev.tupletStart) tupletDraws.push(ev.tupletStart); });
         });
+        if (tabBars) {
+          tabBars[bi].forEach(function (group) {
+            var col = bar.cols.find(function (c) { return Math.abs(c.t - group.start) < EPS; });
+            group.notes.forEach(function (note) {
+              var event = allEvents.find(function (ev) { return ev.bar === bi && Math.abs(ev.start - group.start) < EPS && ev.kind === 'note' && ev.pitches.some(function (p) { return p.midi + (tabConfig.pitchShift || 0) === note.midi; }); });
+              if (!event || !col) return;
+              var tx = col.px + 0.65 * S, ty = tabTop + Math.max(0, note.string) * tabGap;
+              var label = note.string < 0 ? '×' : String(note.fret), tw = Math.max(1.25, label.length * 0.85) * S;
+              out.push('<g class="se-tab-note" data-i="' + event.i + '"><title>' + M.escape(note.string < 0 ? 'No available string' : 'String ' + (note.string + 1) + ', fret ' + note.fret + (note.tied ? ', held' : '')) + '</title>');
+              out.push('<rect class="se-tab-bg" x="' + (tx - tw / 2) + '" y="' + (ty - 0.8 * S) + '" width="' + tw + '" height="' + (1.6 * S) + '" rx="' + (0.2 * S) + '"/>');
+              out.push('<text x="' + tx + '" y="' + (ty + 0.48 * S) + '" font-size="' + (1.35 * S) + '" text-anchor="middle">' + label + '</text>');
+              if (note.tied) out.push('<path d="M ' + (tx - 0.65 * S) + ' ' + (ty + 0.8 * S) + ' q ' + (0.65 * S) + ' ' + S + ' ' + (1.3 * S) + ' 0" fill="none" stroke="currentColor"/>');
+              out.push('</g>');
+            });
+          });
+          out.push('<line x1="' + (bx0 + bw) + '" x2="' + (bx0 + bw) + '" y1="' + tabTop + '" y2="' + sysBottom + '" stroke="currentColor" stroke-width="' + lineW + '"/>');
+        }
         var xe = bx0 + bw;
         var final = bi === model.count - 1;
         // An excerpt that stops mid-piece ("ending": "open") ends on a plain barline.
@@ -793,7 +824,7 @@
         bx0 = xe;
       });
       out.push('</g>');
-      var inkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
+      var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
       hl.push({ index: sIndex, top: y, bottom: inkBottom, cols: sysCols });
       y = inkBottom + 1.2 * S;
     });
@@ -1527,7 +1558,7 @@
     var player = new Player(fig, model);
     players.push(player);
     fig.scorePlayer = player;
-    var layout = null, eventsByBar = [], eventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
+    var layout = null, eventsByBar = [], eventNodes = [], tabEventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
     function paperWidth() {
       return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
@@ -1698,6 +1729,8 @@
       cursorEl = svgWrap.querySelector('.se-cursor');
       eventNodes = [];
       svgWrap.querySelectorAll('.se-ev').forEach(function (node) { eventNodes[+node.getAttribute('data-i')] = node; });
+      tabEventNodes = [];
+      svgWrap.querySelectorAll('.se-tab-note').forEach(function (node) { var i = +node.getAttribute('data-i'); (tabEventNodes[i] = tabEventNodes[i] || []).push(node); });
       cursorColumns = [];
       layout.systems.forEach(function (system) {
         system.cols.slice(0, -1).forEach(function (col, i) { cursorColumns.push({ a: col, b: system.cols[i + 1], sys: system }); });
@@ -1737,8 +1770,8 @@
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
         var ids = new Set(on.map(function (e) { return e.i; }));
-        lit.forEach(function (i) { if (!ids.has(i) && eventNodes[i]) eventNodes[i].classList.remove('is-on'); });
-        ids.forEach(function (i) { if (!lit.has(i) && eventNodes[i]) eventNodes[i].classList.add('is-on'); });
+        lit.forEach(function (i) { if (!ids.has(i)) { if (eventNodes[i]) eventNodes[i].classList.remove('is-on'); (tabEventNodes[i] || []).forEach(function (n) { n.classList.remove('is-on'); }); } });
+        ids.forEach(function (i) { if (!lit.has(i)) { if (eventNodes[i]) eventNodes[i].classList.add('is-on'); (tabEventNodes[i] || []).forEach(function (n) { n.classList.add('is-on'); }); } });
         lit = ids;
         if (beat >= 0) {
           var barText = 'Bar ' + barNumber(model, Math.max(0, measure)) + ' / ' + barNumber(model, model.count - 1);
@@ -1838,7 +1871,7 @@
 
     // Click a note: hear it, and start playback from there next time.
     svgWrap.addEventListener('click', function (e) {
-      var g = e.target.closest && e.target.closest('.se-ev');
+      var g = e.target.closest && e.target.closest('.se-ev, .se-tab-note');
       if (!g || !layout) return;
       var ev = layout.events[+g.getAttribute('data-i')];
       if (!ev || ev.kind !== 'note') return;

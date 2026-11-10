@@ -29,20 +29,33 @@
   }
   function tablature(score) {
     const model = ScoreEngine.prepare(score); ScoreEngine.analyse(model);
-    const tuning = mode.value === 'bass' ? [43,38,33,28] : [64,59,55,50,45,40];
-    const names = mode.value === 'bass' ? ['G','D','A','E'] : ['e','B','G','D','A','E'];
-    const heading = document.createElement('h3'); heading.textContent = 'Pitch-preserving tablature · standard tuning'; tab.append(heading);
-    const explanation = document.createElement('p'); explanation.textContent = 'Read durations and rests in the staff above. Each column below is one note attack; tied continuations are omitted. “×” means outside frets 0–19: change the concert octave. String 1 is the highest string.'; tab.append(explanation);
-    const rows = model.staves[0].bars.map((bar, index) => {
-      const lines = tuning.map(() => []);
-      bar.events.filter(e => e.kind === 'note').forEach(e => e.pitches.filter(p => !p.tiedFrom).forEach(p => {
-        const choices = tuning.map((open, string) => ({ string, fret: p.midi - open })).filter(p => p.fret >= 0 && p.fret <= 19).sort((a,b) => a.fret - b.fret);
-        const best = choices[0];
-        lines.forEach((row, string) => row.push(best ? (best.string === string ? String(best.fret).padStart(2,'-') : '--') : '××'));
+    const bass = mode.value === 'bass', dropD = !bass && work.value === 'tarrega-capricho-arabe';
+    const tuning = bass ? [43,38,33,28] : [64,59,55,50,45,dropD ? 38 : 40];
+    const names = bass ? ['G','D','A','E'] : ['e','B','G','D','A',dropD ? 'D' : 'E'];
+    const heading = document.createElement('h3'); heading.textContent = bass ? 'Bass tablature' : 'Guitar tablature'; tab.append(heading);
+    const explanation = document.createElement('p'); explanation.textContent = (dropD ? 'Drop D tuning · lower string 6 from E to D (D–A–D–G–B–e). ' : 'Standard tuning (E–A–D–G–B–e). ') + 'Highest string at the top. Notes aligned vertically sound together. Numbers are frets; 0 is an open string. Horizontal spacing follows the beat; faint guides mark beats. A curved mark means hold the tied note. Suggested fingerings preserve pitch and held strings; review stretches with your teacher. Choose Original scoring for ornaments and exact rhythmic notation. × marks a note that could not be assigned a free string.'; tab.append(explanation);
+    const bars = GuitarTablature.finger(model,tuning);
+    const grid = document.createElement('div'); grid.className = 'bv-tab-grid'; tab.append(grid);
+    const ns = 'http://www.w3.org/2000/svg';
+    function shape(parent,name,attrs,text) {const el=document.createElementNS(ns,name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(text!=null)el.textContent=text;parent.append(el);return el;}
+    bars.forEach((groups,index)=>{
+      const meta=model.barMeta[index], len=model.staves[0].bars[index].length;
+      const times=[...new Set([0,...groups.map(g=>g.start),len])].sort((a,b)=>a-b);
+      let x=42;const points=new Map();times.forEach((t,i)=>{if(i)x+=Math.max(29,(t-times[i-1])*46);points.set(t,x);});
+      const width=x+24,height=names.length*22+70;
+      const card=document.createElement('section');card.className='bv-tab-measure';grid.append(card);
+      const label=document.createElement('h4');label.textContent='Bar '+ScoreEngine.barNumber(model,index)+(meta.repStart?' · repeat from here':'')+(meta.repEnd?' · repeat':'')+(meta.fine?' · Fine':'')+(meta.dc?' · D.C. al Fine':'');card.append(label);
+      const svg=shape(card,'svg',{viewBox:`0 0 ${width} ${height}`,width,height,role:'img','aria-label':label.textContent+'; '+groups.map(g=>g.notes.map(n=>n.string<0?'unassigned note':`string ${n.string+1} fret ${n.fret}${n.tied?' held':''}`).join(', ')).join('; ')});
+      function at(t){let i=times.findIndex(v=>v>=t);if(i<=0)return 42;const a=times[i-1],b=times[i];return points.get(a)+(points.get(b)-points.get(a))*(t-a)/(b-a);}
+      for(let beat=0;beat<len-1e-6;beat+=4/meta.ts.den){const bx=at(beat);shape(svg,'line',{x1:bx,y1:27,x2:bx,y2:height-32,class:'bv-tab-beat'});shape(svg,'text',{x:bx,y:17,class:'bv-tab-count'},Math.round(beat*meta.ts.den/4)+1);}
+      names.forEach((name,string)=>{const y=37+string*22;shape(svg,'text',{x:13,y:y+5,class:'bv-tab-string'},name);shape(svg,'line',{x1:32,y1:y,x2:width-12,y2:y,class:'bv-tab-line'});});
+      groups.forEach(g=>g.notes.forEach(n=>{
+        const nx=points.get(g.start),ny=n.string<0?height-12:37+n.string*22;
+        shape(svg,'rect',{x:nx-11,y:ny-10,width:22,height:20,rx:4,class:'bv-tab-number-bg'});
+        shape(svg,'text',{x:nx,y:ny+5,class:'bv-tab-fret'},n.string<0?'×':n.fret);
+        if(n.tied)shape(svg,'path',{d:`M ${nx-10} ${ny+10} q 10 9 20 0`,class:'bv-tab-tie'});
       }));
-      return 'Bar ' + ScoreEngine.barNumber(model,index) + '\n' + lines.map((row,i) => names[i] + ' |' + row.join('-') + '|').join('\n');
     });
-    const pre = document.createElement('pre'); pre.textContent = rows.join('\n\n'); tab.append(pre);
   }
   function chordStudy() {
     const chords = ['D','A','D','A','D','A','D','D','A','D','A','A','D','A','D','D'];
@@ -56,12 +69,15 @@
   function update() {
     if (!library) return;
     if (player) player.destroy(); player = null;
+    host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
-    const src = source(), m = mode.value, isolated = !['original','piano','chords'].includes(m);
+    const src = source(), m = mode.value, fullGuitar = composer === 'francisco-tarrega' && m === 'guitar', isolated = !fullGuitar && !['original','piano','chords'].includes(m);
     staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
     octave.disabled = !isolated;
-    let result = ComposerArrangement.arrange(src,{mode:m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
-    if (m === 'original' || m === 'chords') {
+    let result = ComposerArrangement.arrange(src,{mode:fullGuitar ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
+    if (fullGuitar) {
+      message = 'Complete guitar tablature with melody, inner voices and bass preserved. Standard notation and tablature share each line of the player. Frets align directly beneath their notes; playback follows both together.';
+    } else if (m === 'original' || m === 'chords') {
       message = 'Source scoring preserved. Recorded instruments load when you press Play; unsupported sounds use synthesis. Use the part controls to isolate voices.';
     } else if (m === 'piano') {
       message = src.staves.length <= 2 ? 'Source notes played on piano. Review hand division and register before performing.' : 'Two-part piano study: selected upper voice and a source bass. Inner voices are omitted; redistribute large stretches before performing.';
@@ -73,10 +89,21 @@
     const chordOption = [...mode.options].find(o => o.value === 'chords');
     chordOption.disabled = work.value !== 'beethoven-ode-to-joy';
     result.subtitle = mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (result.playbackTranspose ? ' · written saxophone pitch' : '');
+    if (fullGuitar) {
+      // Guitar notation reads one octave above sounding pitch.
+      result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
+      result.playbackTranspose = -12;
+      result.tablature = { pitchShift: -12, tuning: [64,59,55,50,45,work.value === 'tarrega-capricho-arabe' ? 38 : 40], label: work.value === 'tarrega-capricho-arabe' ? 'Drop D · D–A–D–G–B–e' : 'Standard · E–A–D–G–B–e' };
+    }
     current = result; note.textContent = message;
     try {
       player = ScoreEngine.render(host,result);
-      if (m === 'guitar' || m === 'bass') tablature(result);
+      if (!fullGuitar && (m === 'guitar' || m === 'bass')) {
+        tablature(result);
+        const paper = host.querySelector('.se-paper');
+        paper.parentElement.insertBefore(tab,paper);
+
+      }
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();
         else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';
@@ -125,6 +152,7 @@
     library = data; allowed = index[composer].scores;
     options(work,allowed.map(id => [id,data.scores[id].title]));
     if (composer === 'beethoven') work.value = 'beethoven-ode-to-joy';
+    if (composer === 'francisco-tarrega') mode.value = 'guitar';
     fillStaves(); update();
   }).catch(error => { note.textContent = 'Unable to open the studio: ' + error.message + '. Reload to try again.'; });
 })();
