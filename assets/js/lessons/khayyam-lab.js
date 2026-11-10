@@ -110,7 +110,7 @@
         }
         ctx.stroke();
         ctx.fillStyle = col.lapis; ctx.font = '600 13px "DM Sans", sans-serif';
-        ctx.fillText('parabola  x² = ' + K.round(a, 2) + '·y', X(-lim) + 4, Y(y1) + 16);
+        ctx.fillText('parabola  x² = ' + K.round(a, 2) + '·y', Math.max(8, X(-lim) + 4), Y(y1) + 16);
       }
       if (state.step >= 2) {
         ctx.strokeStyle = col.pom; ctx.lineWidth = 2.5;
