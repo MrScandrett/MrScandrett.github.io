@@ -18,6 +18,7 @@
  */
 
 import { SHAPES, shapeById } from './shapes.mjs';
+import { ASSET_ID, placedVertices } from './assets.mjs';
 
 export const FORMAT = 'classroomos-workbench';
 export const VERSION = 1;
@@ -76,6 +77,7 @@ export function resolveParams(shape, given = {}, preset = 'print') {
     if (spec.type === 'select') v = spec.options.some((o) => o.value === v) ? v : base[spec.id];
     else if (spec.type === 'toggle') v = typeof v === 'boolean' ? v : base[spec.id];
     else if (spec.type === 'text') v = typeof v === 'string' ? v.slice(0, spec.maxLength ?? 24) : base[spec.id];
+    else if (spec.type === 'asset') v = typeof v === 'string' && ASSET_ID.test(v) ? v : '';
     else if (spec.type === 'points') {
       const lim = spec.max * f;
       v = Array.isArray(v) && v.length >= 2 && v.length <= 64 && v.every((p) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite))
@@ -294,11 +296,34 @@ export function decompose(m, pivot = [0, 0, 0]) {
 export function createShapeCache() { return new Map(); }
 const CACHE_LIMIT = 240;
 
-/* The shape centred on its bounding box, as cached mesh data. */
-function shapeData(ctx, cache, node) {
+/* An imported model's geometry depends on its asset and the project's units
+   as well as its params. */
+function cacheKey(ctx, node) {
   const key = `${node.shape}|${JSON.stringify(node.params)}`;
+  if (node.shape !== 'mesh') return key;
+  return `${key}|${ctx.toMm || 1}|${ctx.assets?.get(node.params.asset)?.solid}`;
+}
+
+const soupBox = (p) => {
+  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < p.length; i += 3) for (let k = 0; k < 3; k++) { const v = p[i + k]; if (v < min[k]) min[k] = v; if (v > max[k]) max[k] = v; }
+  return { min, max };
+};
+
+/* The shape centred on its bounding box, as cached mesh data. An imported
+   model that is not a closed solid comes back as `display` data: triangles to
+   draw, with no Manifold behind them. */
+function shapeData(ctx, cache, node) {
+  const key = cacheKey(ctx, node);
   let hit = cache.get(key);
   if (hit) { cache.delete(key); cache.set(key, hit); return hit; }
+  const asset = node.shape === 'mesh' ? ctx.assets?.get(node.params.asset) : null;
+  if (asset && asset.solid === false) {
+    const { vertices, size } = placedVertices(asset, node.params.units, ctx.toMm);
+    hit = { display: true, size, soup: soupOf({ numProp: 3, vertProperties: vertices, triVerts: asset.triangles }) };
+    cache.set(key, hit);
+    return hit;
+  }
   const shape = shapeById(node.shape);
   const m = shape.build(ctx, node.params);
   const status = m.status();
@@ -315,12 +340,12 @@ function shapeData(ctx, cache, node) {
 
 /* Size of a shape node's bounding box before its own transform. */
 export function shapeSize(ctx, node, opts = {}) {
-  return shapeData({ ...ctx, noise: opts.noise }, opts.cache || createShapeCache(), node).size;
+  return shapeData({ ...ctx, noise: opts.noise, assets: opts.assets, toMm: opts.toMm }, opts.cache || createShapeCache(), node).size;
 }
 
 /* The shape's triangles, centred, before its own transform (library pictures). */
 export function shapeSoup(ctx, node, opts = {}) {
-  return shapeData({ ...ctx, noise: opts.noise }, opts.cache || createShapeCache(), node).soup;
+  return shapeData({ ...ctx, noise: opts.noise, assets: opts.assets, toMm: opts.toMm }, opts.cache || createShapeCache(), node).soup;
 }
 
 function soupOf({ numProp, vertProperties: v, triVerts: t }) {
@@ -340,11 +365,12 @@ const growBounds = (acc, b) => (!b ? acc : !acc ? { min: [...b.min], max: [...b.
 function evaluator(ctx, opts) {
   const { Manifold: M } = ctx;
   const cache = opts.cache || createShapeCache();
-  const sctx = { ...ctx, noise: opts.noise };
+  const sctx = { ...ctx, noise: opts.noise, assets: opts.assets, toMm: opts.toMm };
   const errors = [];
   const leaf = (node, world) => {
     try {
       const data = shapeData(sctx, cache, node);
+      if (data.display) return { data, manifold: null, box: soupBox(transformPositions(world, data.soup)) };
       const m = ctx.track(new M(new ctx.Mesh({ numProp: data.numProp, vertProperties: data.vertProperties, triVerts: data.triVerts })));
       return { data, manifold: m.transform(Array.from(world)) };
     } catch (error) {
@@ -363,6 +389,11 @@ function evaluator(ctx, opts) {
     }
     const built = leaf(node, world);
     if (!built) return;
+    if (!built.manifold) {
+      if (cutters.some((c) => overlaps(built.box, c.box))) errors.push({ id: node.id, message: 'Holes can’t cut this imported model: it isn’t a closed solid. It is shown as it is.' });
+      out.push({ node, world, manifold: null, cut: false, data: built.data, box: built.box });
+      return;
+    }
     let m = built.manifold, cut = false;
     const box = m.boundingBox();
     for (const c of cutters) if (overlaps(box, c.box)) { m = m.subtract(c.manifold); cut = true; }
@@ -370,8 +401,10 @@ function evaluator(ctx, opts) {
     out.push({ node, world, manifold: m, cut, data: built.data });
   }
   function cutterOf(node, parentWorld) {
-    const parts = [];
-    solids(node, parentWorld, [], parts);
+    const all = [];
+    solids(node, parentWorld, [], all);
+    for (const p of all) if (!p.manifold) errors.push({ id: p.node.id, message: 'This imported model isn’t a closed solid, so it can’t be a hole.' });
+    const parts = all.filter((p) => p.manifold);
     if (!parts.length) return null;
     const manifold = parts.length === 1 ? parts[0].manifold : M.union(parts.map((p) => p.manifold));
     return { manifold, box: manifold.boundingBox() };
@@ -382,14 +415,17 @@ function evaluator(ctx, opts) {
     const manifold = own.length === 1 ? own[0].manifold : M.union(own.map((c) => c.manifold));
     return [...cutters, { manifold, box: manifold.boundingBox() }];
   }
-  return { solids, withHoles, leaf, errors, cache };
+  return { solids, withHoles, leaf, errors, cache, sctx };
 }
+
+/* Shapes and groups need the project's units for imported models. */
+const withUnits = (project, opts) => ({ ...opts, toMm: (PRESETS[project.preset] || PRESETS.print).toMm });
 
 /* What the page draws: each solid with its cuts, in its own local frame (so
    animation can move it), each hole as a see-through ghost, and the world
    bounds of every node (`bounds` counts holes, `solid` leaves them out). */
 export function evaluate(ctx, project, opts = {}) {
-  const ev = evaluator(ctx, opts);
+  const ev = evaluator(ctx, withUnits(project, opts));
   const pieces = [], ghosts = [], bounds = {}, solid = {};
   const rootScope = ev.withHoles(project.objects, IDENTITY, []);
   // returns [bounds including holes, bounds of solids only]
@@ -412,7 +448,7 @@ export function evaluate(ctx, project, opts = {}) {
       const built = ev.leaf(node, world);
       if (!built) return [null, null];
       ghosts.push({ id: node.id, local: built.data.soup, world });
-      bounds[node.id] = solid[node.id] = built.manifold.boundingBox();
+      bounds[node.id] = solid[node.id] = built.manifold ? built.manifold.boundingBox() : built.box;
       return [bounds[node.id], null];
     }
     const out = [];
@@ -420,8 +456,8 @@ export function evaluate(ctx, project, opts = {}) {
     if (!out.length) return [null, null];
     const [p] = out;
     const local = p.cut ? manifoldSoup(p.manifold.transform(Array.from(invert(world)))) : p.data.soup;
-    pieces.push({ id: node.id, local, world, cut: p.cut });
-    bounds[node.id] = solid[node.id] = p.manifold.boundingBox();
+    pieces.push({ id: node.id, local, world, cut: p.cut, display: !p.manifold });
+    bounds[node.id] = solid[node.id] = p.manifold ? p.manifold.boundingBox() : p.box;
     return [bounds[node.id], bounds[node.id]];
   }
   let all = null, solidAll = null;
@@ -431,7 +467,7 @@ export function evaluate(ctx, project, opts = {}) {
     solidAll = growBounds(solidAll, sb);
   }
   const sizes = {};
-  walk(project.objects, (n) => { if (n.type === 'shape') { const hit = ev.cache.get(`${n.shape}|${JSON.stringify(n.params)}`); if (hit) sizes[n.id] = hit.size; } });
+  walk(project.objects, (n) => { if (n.type === 'shape') { const hit = ev.cache.get(cacheKey(ev.sctx, n)); if (hit) sizes[n.id] = hit.size; } });
   return { pieces, ghosts, bounds, solid, all, solidAll: solidAll || all, sizes, errors: ev.errors };
 }
 
@@ -439,7 +475,7 @@ export function evaluate(ctx, project, opts = {}) {
    the project's print scale. For engine.run. */
 export function printBodies(ctx, project, opts = {}) {
   const { Manifold: M } = ctx;
-  const ev = evaluator(ctx, opts);
+  const ev = evaluator(ctx, withUnits(project, opts));
   const preset = PRESETS[project.preset] || PRESETS.print;
   const k = preset.toMm / (project.print?.printScale || preset.printScale || 1);
   const rootScope = ev.withHoles(project.objects, IDENTITY, []);
@@ -447,8 +483,10 @@ export function printBodies(ctx, project, opts = {}) {
   const names = new Map();
   for (const node of project.objects) {
     if (node.hole) continue;
-    const parts = [];
-    ev.solids(node, IDENTITY, rootScope, parts);
+    const found = [];
+    ev.solids(node, IDENTITY, rootScope, found);
+    for (const p of found) if (!p.manifold) ev.errors.push({ id: p.node.id, message: `“${p.node.name}” is left out of the print: it isn’t a closed solid. Fix it in the app it came from, or send the original file straight to the slicer, which can often repair it.` });
+    const parts = found.filter((p) => p.manifold);
     if (!parts.length) continue;
     let manifold = parts.length === 1 ? parts[0].manifold : M.union(parts.map((p) => p.manifold));
     if (k !== 1) manifold = manifold.scale([k, k, k]);

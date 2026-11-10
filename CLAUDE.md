@@ -648,6 +648,20 @@ sorts by support volume + a wobble penalty for small contact + height. It does n
 the page says so. `?model=<same-site path>` opens a model by link, `?sample` the tilted L-bracket.
 Tests: `node --test tests/print-orient.test.mjs`.
 
+**Imported models in Workbench** are assets (`assets/js/workbench/assets.mjs`): welded corners + triangles in the file's
+own units, id = a hash of the geometry, plus name/source/licence. A node is `{ shape: 'mesh', params: { asset, units } }`
+(the `IMPORTED` shape in shapes.mjs, kept out of `SHAPES` so the library and shape tests ignore it). The project tree,
+undo log and localStorage autosave hold only the id; the page keeps assets in a Map and IndexedDB (`asset-store.mjs`),
+and Save a copy writes the ones it uses into an `assets` section (base64, checked against the id on open). Pass
+`{ assets, toMm }` in the evaluator opts. A model Manifold can't close (`checkSolid`) is **display-only**: drawn and
+exported for games, never cut, never a hole, left out of the print with a reason. Limits: 100k triangles per import,
+250k per project. Tests: `node --test tests/workbench-import.test.mjs`.
+
+**Hand-off** (`assets/js/handoff.mjs`) passes one file between tools through IndexedDB (10-minute slot):
+`sendAndOpen(url, { bytes, filename, from })` from a click, and the receiving page checks `arrivedByHandoff()` then
+`takeFile()`. Forge, Workbench and Marble Studio send to Print Prep; Print Prep sends to Workbench. Use it rather than
+a query string or localStorage for anything bigger than a few KB.
+
 ## Marble Studio (sculpture lesson)
 
 `lessons/3d-design/sculpture/marble-sculpture.html` ("In the Likeness") carves a 40 × 56 × 36 cm marble block.

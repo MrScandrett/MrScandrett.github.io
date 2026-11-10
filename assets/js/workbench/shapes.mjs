@@ -18,6 +18,8 @@
  * the centre in X/Y (a 7-tooth gear spins about its axle, not its box).
  */
 
+import { placedVertices } from './assets.mjs';
+
 import { spurGearOutline, textOutline } from '../forge/outlines.mjs';
 
 const TAU = Math.PI * 2;
@@ -934,4 +936,32 @@ const sketches = [
 
 export const SHAPES = [...basics, ...architecture, ...mechanisms, ...game, ...sketches];
 export const SHAPE_GROUPS = [BASIC, ARCH, MECH, GAME, SKETCH];
-export const shapeById = (id) => SHAPES.find((s) => s.id === id);
+
+/* A model imported from another app (assets.mjs). It is not in the library:
+   it arrives through Import, and its geometry lives in ctx.assets, keyed by
+   the asset id. Units are the file's own, chosen on import and changeable,
+   because STL and OBJ never say what their numbers mean. A model that is not
+   a closed solid never reaches build(): the evaluator shows it as display-only. */
+export const IMPORTED = {
+  id: 'mesh', name: 'Imported model', group: 'Imported', kind: 'object', imported: true,
+  blurb: 'A model brought in from another app. Move, turn, scale, group and animate it like any shape.',
+  params: [
+    { id: 'asset', label: 'Model', type: 'asset', default: '' },
+    { id: 'units', label: 'File units', type: 'select', default: 'mm', options: [
+      { value: 'mm', label: 'Millimetres' }, { value: 'cm', label: 'Centimetres' }, { value: 'in', label: 'Inches' }, { value: 'ft', label: 'Feet' }, { value: 'm', label: 'Metres' }] },
+  ],
+  build({ Manifold: M, Mesh, track, assets, toMm }, p) {
+    const asset = assets?.get(p.asset);
+    if (!asset) throw new Error('This imported model’s data is missing from this browser. Open the .workbench.json file it was saved in, or import the model again.');
+    const { vertices } = placedVertices(asset, p.units, toMm);
+    const mesh = new Mesh({ numProp: 3, vertProperties: vertices, triVerts: asset.triangles });
+    mesh.merge();
+    try {
+      return track(new M(mesh));
+    } catch {
+      throw new Error('This imported model is not a closed solid, so holes cannot cut it.');
+    }
+  },
+};
+
+export const shapeById = (id) => (id === IMPORTED.id ? IMPORTED : SHAPES.find((s) => s.id === id));

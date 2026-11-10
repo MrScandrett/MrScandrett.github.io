@@ -6,11 +6,19 @@
  * project model and evaluation live in model.mjs (tested under node), and
  * this file wires them to the page. Work autosaves in this browser under one
  * localStorage key, and saves out as a .workbench.json file.
+ *
+ * Imported models (STL, OBJ, 3MF) are assets (assets.mjs): the project points
+ * at them by id, the page keeps them in `assets` and IndexedDB, and a saved
+ * .workbench.json carries the ones it uses.
  */
 
 import ManifoldModule from '../../vendor/manifold/manifold.js';
 import { concat, createEngine } from '../forge/engine.mjs';
-import { bounds as soupBounds, prepareForPrint, writeBinaryStl, writeObj } from '../fab-io.mjs';
+import { bounds as soupBounds, prepareForPrint, write3mf, writeBinaryStl, writeObj } from '../fab-io.mjs';
+import { UNIT_NAMES, readMesh } from '../mesh-import.mjs';
+import { arrivedByHandoff, sendAndOpen, takeFile } from '../handoff.mjs';
+import { MAX_PROJECT_TRIANGLES, assetIds, checkSolid, decodeAssets, encodeAssets, makeAsset, projectTriangles } from './assets.mjs';
+import { getAssets, pruneAssets, putAsset } from './asset-store.mjs';
 import { SHAPES, SHAPE_GROUPS, shapeById } from './shapes.mjs';
 import * as W from './model.mjs';
 import { BLANKS, REALMS, TEMPLATES, finishTemplate, templateById } from './templates.mjs';
@@ -60,6 +68,8 @@ let printResult = null;
 let colorTurn = 0;
 const cache = W.createShapeCache();
 const noise = window.SimKit?.noise;
+const assets = new Map();
+const wopts = () => ({ cache, noise, assets, toMm: preset().toMm });
 const undoLog = { past: [], future: [], now: JSON.stringify(project) };
 
 function loadProject() {
@@ -136,7 +146,7 @@ function rebuild() {
   building = true;
   const started = performance.now();
   try {
-    result = engine.scoped((ctx) => W.evaluate(ctx, project, { cache, noise }));
+    result = engine.scoped((ctx) => W.evaluate(ctx, project, wopts()));
   } catch (error) {
     console.error(error);
     result = { pieces: [], ghosts: [], bounds: {}, solid: {}, sizes: {}, errors: [{ id: null, message: error.message }] };
@@ -263,7 +273,7 @@ function onPick(leafId, { shift }) {
 function nextColor() { const c = PALETTE[colorTurn % 6][0]; colorTurn++; return c; }
 
 function shapeSize(node) {
-  try { return engine ? engine.scoped((ctx) => W.shapeSize(ctx, node, { cache, noise })) : [0, 0, 0]; } catch { return [0, 0, 0]; }
+  try { return engine ? engine.scoped((ctx) => W.shapeSize(ctx, node, wopts())) : [0, 0, 0]; } catch { return [0, 0, 0]; }
 }
 
 function addShape(shapeId, at) {
@@ -659,6 +669,7 @@ function paramControl(node, shape, spec) {
     return h('div', { class: 'wb-field' }, h('label', { for: id, class: 'wb-label', text: spec.label }),
       h('input', { type: 'text', id, value, maxlength: String(spec.maxLength || 24), oninput: (e) => { node.params[spec.id] = e.target.value; changed(); }, onchange: commit }));
   }
+  if (spec.type === 'asset') return assetInfo(value);
   if (spec.type === 'points') {
     return h('div', { class: 'wb-field' }, h('span', { class: 'wb-label', text: spec.label }),
       h('button', { type: 'button', class: 'wb-primary-soft', onclick: () => editSketch(node, shape, spec) }, `Edit the ${spec.label.toLowerCase()} (${value.length} points)`),
@@ -669,6 +680,107 @@ function paramControl(node, shape, spec) {
     min: lim.min, max: lim.max, step: spec.len ? lim.step : spec.step, unit: spec.unit || (spec.len ? units() : ''), help: spec.help,
     onInput: (v) => { node.params[spec.id] = v; changed(); }, onCommit: commit,
   });
+}
+
+/* An imported model's facts, and where it came from: a remix should credit
+   its maker, and the licence says whether remixing is allowed at all. */
+function assetInfo(id) {
+  const a = assets.get(id);
+  if (!a) return h('p', { class: 'wb-error', text: 'This model’s data is missing from this browser. Open the .workbench.json it was saved in, or import the model again.' });
+  const src = fieldId(), lic = fieldId();
+  const edit = (key, max) => (e) => { a[key] = e.target.value.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max); putAsset(a).catch(() => {}); };
+  return h('div', { class: 'wb-field wb-asset' },
+    h('p', { class: a.solid ? 'wb-help' : 'wb-error', text: `${(a.triangles.length / 3).toLocaleString()} triangles. ${a.solid ? 'A closed solid: holes can cut it, it can be a hole, and it prints.' : 'Display only: it isn’t a closed solid, so it can’t be cut, be a hole, or print. You can still move, animate and export it for games.'}` }),
+    h('label', { for: src, class: 'wb-label', text: 'Where it came from' }),
+    h('input', { type: 'text', id: src, value: a.source, maxlength: '200', placeholder: 'A link, or “my own scan”', onchange: edit('source', 200) }),
+    h('label', { for: lic, class: 'wb-label', text: 'Licence' }),
+    h('input', { type: 'text', id: lic, value: a.license, maxlength: '80', list: 'wb-licences', placeholder: 'e.g. CC BY 4.0', onchange: edit('license', 80) }),
+    h('datalist', { id: 'wb-licences' }, ...['My own work', 'CC0 (public domain)', 'CC BY 4.0', 'CC BY-SA 4.0', 'CC BY-NC 4.0', 'CC BY-NC-SA 4.0', 'Standard Digital File License'].map((v) => h('option', { value: v }))),
+    h('p', { class: 'wb-help', text: 'Remixing someone else’s model? Credit them. BY means give credit, SA means share your remix the same way, NC means no selling it.' }));
+}
+
+/* ── importing models ─────────────────────────────────────────────────── */
+
+function adoptAssets(incoming) {
+  for (const [id, a] of incoming) {
+    const known = assets.get(id);
+    if (known) { if (!known.source && a.source) known.source = a.source; if (!known.license && a.license) known.license = a.license; continue; }
+    if (a.solid !== true && engine) a.solid = engine.scoped((ctx) => checkSolid(ctx, a));
+    assets.set(id, a);
+    putAsset(a).catch(() => {});
+  }
+}
+
+async function restoreAssets() {
+  const ids = assetIds(project);
+  try {
+    for (const [id, a] of await getAssets(ids)) assets.set(id, a);
+    pruneAssets(ids).catch(() => {});
+  } catch { /* no IndexedDB: imported models live until the tab closes; Save a copy keeps them */ }
+  for (const a of assets.values()) if (a.solid !== true && a.solid !== false) a.solid = engine.scoped((ctx) => checkSolid(ctx, a));
+}
+
+async function importModel(bytes, filename, { at, source = '' } = {}) {
+  if (!engine) { say('The geometry engine is still starting. Try again in a moment.'); return; }
+  if (W.countNodes(project.objects) >= W.MAX_NODES) { say(`A project holds up to ${W.MAX_NODES} shapes.`); return; }
+  say(`Reading ${filename}…`);
+  let read, asset;
+  try {
+    read = await readMesh(bytes, filename);
+    asset = makeAsset(read.positions, { name: filename.replace(/\.[^.]+$/, ''), source });
+  } catch (error) { say(error.message || `${filename} could not be read.`); return; }
+  const known = assets.get(asset.id);
+  if (known) asset = known;
+  else {
+    const total = projectTriangles(project, assets) + asset.triangles.length / 3;
+    if (total > MAX_PROJECT_TRIANGLES) { say(`That would make ${total.toLocaleString()} triangles of imported models in this project; the limit is ${MAX_PROJECT_TRIANGLES.toLocaleString()} so Workbench stays quick. Simplify the model first.`); return; }
+    asset.solid = engine.scoped((ctx) => checkSolid(ctx, asset));
+    assets.set(asset.id, asset);
+    putAsset(asset).catch(() => say('Imported, but this browser could not store the model. Use Save a copy to keep it.'));
+  }
+  const unit = ['mm', 'cm', 'in', 'ft', 'm'].includes(read.units.unit) ? read.units.unit : 'mm';
+  const node = W.newShapeNode(project, 'mesh', { color: nextColor(), params: { asset: asset.id, units: unit } });
+  node.name = asset.name.slice(0, 40) || 'Imported model';
+  const [x, y] = at || view?.target() || [0, 0];
+  const size = shapeSize(node);
+  node.pos = [snapValue(x), snapValue(y), W.nice(size[2] / 2)];
+  project.objects.push(node);
+  if (mode !== 'build') setMode('build');
+  commit();
+  dirty = true;
+  rebuild();
+  view?.frame(result?.solidAll);
+  select([node.id]);
+  showMobilePanel('properties');
+  const u = units();
+  const dims = size.map((v) => fmt(v, 3)).join(' × ');
+  say(`Imported ${node.name}: ${dims} ${u}, read as ${UNIT_NAMES[unit]}${read.units.certain ? '' : ' (a guess: wrong size? change File units in Properties)'}. ${asset.solid ? 'It is a closed solid, so holes can cut it and it prints.' : 'It isn’t a closed solid, so it is display-only: no holes and no printing, but you can move, animate and export it.'}${read.warnings.length ? ' ' + read.warnings.join(' ') : ''}`);
+}
+
+async function importFiles(files, at) {
+  for (const file of [...files].slice(0, 4)) {
+    if (/\.json$/i.test(file.name)) { await openProject(file); return; }
+    await importModel(new Uint8Array(await file.arrayBuffer()), file.name, { at });
+  }
+}
+
+async function receiveHandoff() {
+  try {
+    const file = await takeFile();
+    if (!file) { say('Nothing was waiting to open here (hand-offs last ten minutes). Use Import to bring in the file.'); return; }
+    await importModel(file.bytes, file.filename, { source: file.from ? `Made in ${file.from}` : '' });
+  } catch (error) { say(error.message); }
+}
+
+async function sendToPrintPrep() {
+  const r = runPrint();
+  if (!r?.bodies.length) { say(r?.error || 'Nothing to print yet.'); return; }
+  const bytes = write3mf(r.bodies.map((b) => ({ name: b.name, positions: b.positions })), { title: project.name || 'Workbench model', application: 'ClassroomOS Workbench' });
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(project)); } catch { /* the autosave timer will retry */ }
+  try {
+    await sendAndOpen('print-prep.html', { bytes, filename: `${slug()}.3mf`, from: 'Workbench' });
+    say('Opened in Print Prep, where you can pick which side goes down.');
+  } catch (error) { say(error.message); }
 }
 
 /* Changing a shape's height grows it upward, as if it stood on the floor. */
@@ -868,12 +980,16 @@ function runPrint() {
   const part = {
     params: [],
     build: (ctx) => {
-      const { bodies } = W.printBodies(ctx, project, { cache, noise });
+      const { bodies, errors } = W.printBodies(ctx, project, wopts());
+      printErrors = errors.filter((e) => /left out of the print/.test(e.message));
+      if (!bodies.length && printErrors.length) throw new Error(printErrors[0].message);
       if (!bodies.length) throw new Error('There is nothing solid to print yet. Holes on their own print nothing.');
       return { bodies, layout: project.print.arrange === 'apart' ? 'apart' : 'nested' };
     },
   };
+  let printErrors = [];
   printResult = engine.run(part, {});
+  if (!printResult.error) for (const e of printErrors) printResult.verdicts.unshift({ tone: 'warn', tag: 'NOT PRINTED', text: e.message });
   renderPrintReport();
   if (el.printView.checked) showPrintView();
   return printResult;
@@ -969,13 +1085,18 @@ function exportPng() {
 }
 
 function saveProject() {
-  download(JSON.stringify({ ...project, savedAt: new Date().toISOString() }, null, 1), `${slug()}.workbench.json`, 'application/json');
+  const used = assetIds(project);
+  const body = { ...project, ...(used.size ? { assets: encodeAssets(assets, used) } : {}), savedAt: new Date().toISOString() };
+  download(JSON.stringify(body, null, used.size ? 0 : 1), `${slug()}.workbench.json`, 'application/json');
   say(`Saved ${slug()}.workbench.json — open it here any time to keep working.`);
 }
 
 async function openProject(file) {
   try {
-    const next = W.validateProject(JSON.parse(await file.text()));
+    const raw = JSON.parse(await file.text());
+    const incoming = decodeAssets(raw.assets);
+    const next = W.validateProject(raw);
+    adoptAssets(incoming);
     project = next;
     selection = [];
     el.multi.checked = false;
@@ -1075,7 +1196,7 @@ function renderThumbnails() {
     if (!id) return;
     try {
       const node = W.newShapeNode(W.freshProject('print'), id);
-      const url = maker.render(engine.scoped((ctx) => W.shapeSoup(ctx, node, { cache, noise })));
+      const url = maker.render(engine.scoped((ctx) => W.shapeSoup(ctx, node, wopts())));
       thumbs.set(id, url);
       el.shapes.querySelectorAll(`img[data-thumb="${id}"]`).forEach((img) => { img.src = url; });
     } catch { /* a shape without a picture still works */ }
@@ -1165,6 +1286,9 @@ function wire() {
   el.obj.addEventListener('click', exportObj);
   el.png.addEventListener('click', exportPng);
   el.save.addEventListener('click', saveProject);
+  $('wb-import').addEventListener('click', () => $('wb-import-file').click());
+  $('wb-import-file').addEventListener('change', (e) => { const files = [...e.target.files]; e.target.value = ''; importFiles(files); });
+  $('wb-send-print').addEventListener('click', sendToPrintPrep);
   el.open.addEventListener('click', () => el.openFile.click());
   el.openFile.addEventListener('change', () => { const f = el.openFile.files[0]; if (f) openProject(f); el.openFile.value = ''; });
   document.addEventListener('keydown', onKey);
@@ -1240,6 +1364,7 @@ async function start() {
       onPick, onGizmoChange,
       onGizmoEnd: () => { commit(); refreshTransformFields(); if (mode === 'animate') renderAnimatePanel(); },
       onDropShape: (id, at) => addShape(id, at),
+      onDropFiles: (files, at) => importFiles(files, at),
     });
     view.onFrame = tick;
     view.setWorkplane(project.preset);
@@ -1259,10 +1384,12 @@ async function start() {
     el.status.textContent = 'The geometry engine could not start in this browser.';
     return;
   }
+  await restoreAssets();
   dirty = true;
   rebuild();
   view?.frame(result?.solidAll);
-  if (!openFromLink() && project.objects.length) say('Your last design is ready. Select a part to continue.');
+  if (arrivedByHandoff()) receiveHandoff();
+  else if (!openFromLink() && project.objects.length) say('Your last design is ready. Select a part to continue.');
   refreshTools();
   renderThumbnails();
 }

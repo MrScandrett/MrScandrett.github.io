@@ -7,6 +7,7 @@ import { THREE, OrbitControls } from '../vendor/three-bundle.min.js';
 import { createScene } from './sim-kit-three.mjs';
 import { DEFAULT_PRINTER, edgeReport, write3mf, writeBinaryStl } from './fab-io.mjs';
 import { UNIT_NAMES, readMesh, toMillimetres } from './mesh-import.mjs';
+import { arrivedByHandoff, sendAndOpen, takeFile } from './handoff.mjs';
 import { IDENTITY, analyze, axisRotation, coplanarMask, layFlat, multiply, orient, partVolume, rankOrientations, samplePart, tidy } from './print-orient.mjs';
 
 const $ = (id) => document.getElementById(id);
@@ -15,7 +16,7 @@ const el = {
   input: $('pp-file-input'), open: $('pp-open'), open2: $('pp-open-2'), sample: $('pp-sample'), undo: $('pp-undo'), redo: $('pp-redo'), fit: $('pp-fit'),
   units: $('pp-units'), scale: $('pp-scale'), unitsNote: $('pp-units-note'), size: $('pp-size'), partInfo: $('pp-part-info'),
   best: $('pp-best'), options: $('pp-options'), step: $('pp-step'), reset: $('pp-reset'), angle: $('pp-angle'), angleOut: $('pp-angle-out'),
-  verdicts: $('pp-verdicts'), stl: $('pp-dl-stl'), stlTop: $('pp-dl-stl-top'), threemf: $('pp-dl-3mf'), pick: $('pp-pick'),
+  verdicts: $('pp-verdicts'), stl: $('pp-dl-stl'), stlTop: $('pp-dl-stl-top'), threemf: $('pp-dl-3mf'), workbench: $('pp-to-workbench'), pick: $('pp-pick'),
   help: $('pp-help'), helpDialog: $('pp-help-dialog'), helpClose: $('pp-help-close'), toast: $('pp-toast'),
 };
 
@@ -100,7 +101,7 @@ function update({ frame = false } = {}) {
   markOptions();
   el.undo.disabled = !undoStack.length;
   el.redo.disabled = !redoStack.length;
-  [el.stl, el.stlTop, el.threemf].forEach((b) => { b.disabled = false; });
+  [el.stl, el.stlTop, el.threemf, el.workbench].forEach((b) => { b.disabled = false; });
   cancelAnimationFrame(pending);
 }
 
@@ -370,11 +371,24 @@ function exportStl() {
   toast(`STL downloaded: ${el.size.textContent}. Open it in your slicer.`);
 }
 
-function export3mf() {
-  if (!placed) return;
-  const bodies = model.parts.length > 1
+function partBodies() {
+  return model.parts.length > 1
     ? model.parts.map((p) => ({ name: p.name, positions: placed.subarray(p.start * 9, (p.start + p.count) * 9) }))
     : [{ name: el.title.textContent || baseName(), positions: placed }];
+}
+
+/* The part as it now sits, into Workbench as an imported model to remix. */
+async function openInWorkbench() {
+  if (!placed) return;
+  try {
+    await sendAndOpen('workbench.html', { bytes: write3mf(partBodies(), { title: el.title.textContent, application: 'ClassroomOS Print Prep' }), filename: `${baseName()}.3mf`, from: 'Print Prep' });
+    toast('Opened in Workbench as an imported model.');
+  } catch (error) { toast(error.message); }
+}
+
+function export3mf() {
+  if (!placed) return;
+  const bodies = partBodies();
   download(`${baseName()}-print.3mf`, write3mf(bodies, { title: el.title.textContent, application: 'ClassroomOS Print Prep' }), 'model/3mf');
   toast(`3MF downloaded, in millimetres${bodies.length > 1 ? `, with ${bodies.length} separate parts` : ''}.`);
 }
@@ -423,6 +437,7 @@ document.querySelectorAll('[data-camera]').forEach((b) => b.addEventListener('cl
 el.stl.addEventListener('click', exportStl);
 el.stlTop.addEventListener('click', exportStl);
 el.threemf.addEventListener('click', export3mf);
+el.workbench.addEventListener('click', openInWorkbench);
 el.help.addEventListener('click', () => el.helpDialog.showModal());
 el.helpClose.addEventListener('click', () => el.helpDialog.close());
 
@@ -449,7 +464,13 @@ frameView('iso');
 
 // ?model=assets/models/x.stl opens a file from this site (lessons link to their own examples); ?sample opens the bracket.
 const params = new URLSearchParams(location.search);
-if (params.has('model')) {
+if (arrivedByHandoff()) {
+  say('Opening the model you sent…');
+  takeFile().then((file) => {
+    if (file) openBytes(file.bytes, file.filename);
+    else say('Nothing was waiting to open (hand-offs last ten minutes). Use Open model.', true);
+  }).catch((error) => say(error.message, true));
+} else if (params.has('model')) {
   try {
     const url = new URL(params.get('model'), location.href);
     if (url.origin !== location.origin) throw new Error('Print Prep only opens models from this site by link. Download it and use Open.');

@@ -5,6 +5,7 @@
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import * as M from './marble-core.mjs';
 import { ACCEPT as MESH_ACCEPT, readMesh } from '../mesh-import.mjs';
+import { sendAndOpen } from '../handoff.mjs';
 
 const SAVE_KEY = 'classroomos:marble-studio:v1';
 const SOUND_KEY = 'classroomos:marble-studio:sound';
@@ -463,10 +464,11 @@ class Studio {
     for (const v of [60, 80, 100, 150]) this.heightSel.append(el('option', { value: v, selected: v === this.heightMm }, v + ' mm tall'));
     this.stlBtn = el('button', { type: 'button', class: 'ms-btn ms-primary', onclick: () => this.exportSculpture('stl') }, 'Download STL');
     this.objBtn = el('button', { type: 'button', class: 'ms-btn', onclick: () => this.exportSculpture('obj') }, 'Download OBJ');
+    this.prepBtn = el('button', { type: 'button', class: 'ms-btn', onclick: () => this.sendToPrintPrep() }, 'Send to Print Prep');
     const exports = el('section', { class: 'ms-panel ms-export', 'aria-label': 'Export sculpture' },
       el('h3', {}, 'Export your sculpture'),
       el('label', { class: 'ms-field' }, el('span', {}, 'Height'), this.heightSel),
-      el('div', { class: 'ms-row' }, this.stlBtn, this.objBtn),
+      el('div', { class: 'ms-row' }, this.stlBtn, this.objBtn, this.prepBtn),
       el('p', { class: 'ms-note' }, 'STL for 3D printing · OBJ for your 3D projects. Both export your current carving in millimetres, Z-up, with its bottom at zero.'),
       el('p', { class: 'ms-note' }, 'Shape only: marble veins, polish effects and the stand are not included. Check size, thin parts and supports in your slicer; set OBJ import units to millimetres.'),
       this.exportStatus = el('p', { class: 'ms-note', role: 'status', 'aria-live': 'polite' }));
@@ -1487,6 +1489,19 @@ class Studio {
   }
 
   exportStl() { this.exportSculpture('stl'); }
+
+  /* The carving as it stands, into Print Prep to choose which way up it prints. */
+  async sendToPrintPrep() {
+    this.stopAuto();
+    try {
+      const data = M.exportSTL(this.stone, { heightMm: this.heightMm });
+      await sendAndOpen(new URL('../../../print-prep.html', location.href).href, { bytes: new Uint8Array(data), filename: `my-sculpture-${this.heightMm}mm.stl`, from: 'Marble Studio' });
+      this.say('Opened in Print Prep.');
+    } catch (err) {
+      this.exportStatus.textContent = err.message;
+      this.say(err.message);
+    }
+  }
 
   photograph() {
     const ring = this.ring.visible, tool = this.toolHolder.visible;
