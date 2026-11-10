@@ -6,9 +6,12 @@
  * The anatomy of each material:
  *   gel     (short controls)  capsule; a bright gloss over the top half that stops
  *                             at a horizon, the accent glowing up from below
- *   tile    (card buttons)    the same gel on a rounded rectangle, gloss softer
+ *   tile    (card buttons)    glass over the tile's own colour (a STEAM day stays
+ *                             blue); a chosen tile lights an accent ring
  *   glass   (panels)          rim light, soft top sheen, a diagonal glint,
  *                             accent caustic in the far corner
+ *   recess  (panel in a panel) a hairline and a faint sheen, so frames never stack;
+ *                             a liner (fills its pane) shows only its own paper
  *   well    (fields)          sunk into the glass, bottom rim catches the light
  *
  * Contrast: the gloss is white, so it is strong on light themes and held back on
@@ -70,16 +73,20 @@ html[data-skin="underwater"] {
     linear-gradient(180deg,
       color-mix(in srgb, var(--accent) 26%, transparent),
       color-mix(in srgb, var(--accent) 40%, transparent));
+  /* Glass laid over a tile's own colour: gloss across the top, light pooling below. */
   --aero-tile:
     linear-gradient(180deg,
-      color-mix(in srgb, white var(--aero-sheen), transparent) 0%,
-      color-mix(in srgb, white calc(var(--aero-sheen) / 4), transparent) 40%,
-      transparent 42%),
-    radial-gradient(ellipse 70% 80% at 85% 120%,
-      color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+      color-mix(in srgb, white calc(var(--aero-sheen) / 1.4), transparent) 0%,
+      color-mix(in srgb, white calc(var(--aero-sheen) / 6), transparent) 46%,
+      transparent 48%),
+    radial-gradient(ellipse 70% 90% at 50% 125%,
+      color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+  /* A recess in the glass: a box inside a pane. */
+  --aero-recess:
     linear-gradient(180deg,
-      color-mix(in srgb, var(--accent) var(--aero-tint), transparent),
-      color-mix(in srgb, var(--accent) var(--aero-tint-low), transparent));
+      color-mix(in srgb, white calc(var(--aero-sheen) / 3), transparent),
+      transparent 56px);
+  --aero-pill: 22px;
   --aero-glass:
     linear-gradient(180deg,
       color-mix(in srgb, white calc(var(--aero-sheen) / 2), transparent),
@@ -158,6 +165,9 @@ html[data-skin="underwater"] body :is(.site-header, .nav-settings-panel, .home-w
 }
 
 /* ── Glass panels ────────────────────────────────────────────────── */
+/* One pane of glass per level. The outer pane carries the rim, sheen and caustic;
+ * a box inside it is a recess in the same glass (hairline, faint sheen, no drop
+ * shadow), so a widget never stacks two or three bright frames inside each other. */
 html[data-skin="underwater"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border-radius: var(--skin-radius-lg) !important;
   background-image: var(--aero-glass) !important;
@@ -166,9 +176,21 @@ html[data-skin="underwater"] body [data-skin-surface="panel"]:not(:where([data-s
 }
 html[data-skin="underwater"] body [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) [data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   border-radius: var(--skin-radius-md) !important;
+  border-color: color-mix(in srgb, var(--aero-edge) 42%, transparent) !important;
+  background-image: var(--aero-recess) !important;
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white calc(var(--aero-rim) / 1.4), transparent),
-    0 6px 16px -12px var(--aero-depth) !important;
+    inset 0 1px 0 color-mix(in srgb, white calc(var(--aero-rim) / 2.2), transparent),
+    inset 0 -10px 18px -16px var(--aero-depth) !important;
+}
+/* A liner fills the pane around it (a widget's inner card): no frame of its own, just
+ * its paper. A wrapper (a liner holding a liner) disappears, leaving one frame. */
+html[data-skin="underwater"] body [data-skin-surface="panel"]:is([data-skin-shape="liner"], [data-skin-shape="wrap"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  border-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html[data-skin="underwater"] body [data-skin-surface="panel"][data-skin-shape="wrap"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  background-color: transparent !important;
 }
 /* Page-level panes get bubbles rising in the corner. */
 html[data-skin="underwater"] body :is(.home-widget, .ll-panel)[data-skin-surface="panel"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
@@ -176,32 +198,51 @@ html[data-skin="underwater"] body :is(.home-widget, .ll-panel)[data-skin-surface
 }
 
 /* ── Gel controls ────────────────────────────────────────────────── */
-html[data-skin="underwater"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+/* Labelled buttons become gel capsules. The radius is fixed rather than 999px so a
+ * label that wraps to two lines reads as a rounded gel lozenge, not a blob. */
+html[data-skin="underwater"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   background-color: var(--bg) !important;
   color: var(--text) !important;
   background-image: var(--aero-gel) !important;
   border-color: var(--aero-edge) !important;
-  border-radius: 999px !important;
+  border-radius: var(--aero-pill) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white var(--aero-rim), transparent),
     inset 0 0 0 1px color-mix(in srgb, white calc(var(--aero-rim) / 3), transparent),
     inset 0 -2px 4px color-mix(in srgb, var(--accent) 22%, transparent),
     0 2px 5px -1px color-mix(in srgb, black 22%, transparent) !important;
+}
+html[data-skin="underwater"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
   transition: transform 220ms var(--skin-ease), box-shadow 220ms ease-out, background-color 200ms ease !important;
 }
+/* Tiles (calendar days, puzzle tabs, card buttons) mean something by their colour:
+ * a STEAM day is blue, a holiday red. They keep their own fill, ink and border and
+ * get the glass laid over the top, never a repaint. Grid cells keep their corners. */
 html[data-skin="underwater"] body [data-skin-surface="control"][data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
-  border-radius: var(--skin-radius-lg) !important;
   background-image: var(--aero-tile) !important;
-  box-shadow: var(--skin-shadow) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white var(--aero-rim), transparent),
+    inset 0 -12px 18px -14px var(--aero-depth),
+    0 6px 14px -10px var(--aero-depth) !important;
 }
-html[data-skin="underwater"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-active, .active),
-html[data-skin="underwater"] body [data-skin-surface="control"][data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-active, .active) {
+html[data-skin="underwater"] body [data-skin-surface="control"][data-skin-shape="tile"]:not(:where([role="gridcell"], [role="gridcell"] *, td *)):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)) {
+  border-radius: var(--skin-radius-md) !important;
+}
+html[data-skin="underwater"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-active, .active) {
   background-image: var(--aero-gel-lit) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white var(--aero-rim), transparent),
     inset 0 -3px 8px color-mix(in srgb, var(--accent) 40%, transparent),
     0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
     0 0 16px -3px color-mix(in srgb, var(--accent) 70%, transparent) !important;
+}
+/* A chosen tile keeps its colour and lights a ring around it. */
+html[data-skin="underwater"] body [data-skin-surface="control"][data-skin-shape="tile"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):is([aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"], .is-active, .active, .is-selected) {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white var(--aero-rim), transparent),
+    inset 0 -12px 18px -12px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 0 1.5px color-mix(in srgb, var(--accent) 75%, transparent),
+    0 0 18px -4px color-mix(in srgb, var(--accent) 75%, transparent) !important;
 }
 /* Hover: the gel lights from inside rather than jumping. */
 html[data-skin="underwater"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):hover {
@@ -212,9 +253,11 @@ html[data-skin="underwater"] body [data-skin-surface="control"]:not(:where([data
     0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
     0 6px 18px -6px color-mix(in srgb, var(--accent) 70%, transparent) !important;
 }
+html[data-skin="underwater"] body [data-skin-surface="control"]:not([data-skin-shape="tile"]):not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
+  background-image: var(--aero-gel-lit) !important;
+}
 html[data-skin="underwater"] body [data-skin-surface="control"]:not(:where([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample, :is([data-skin-keep], [data-score], .fb-shell, .tl, .ft, [data-theme-scope="independent"], .nav-theme-preview, .nav-skin-sample) *)):not(:disabled, [aria-disabled="true"]):active {
   transform: translateY(1px);
-  background-image: var(--aero-gel-lit) !important;
   box-shadow:
     inset 0 2px 6px color-mix(in srgb, black 25%, transparent),
     0 0 0 3px color-mix(in srgb, var(--accent) 26%, transparent) !important;

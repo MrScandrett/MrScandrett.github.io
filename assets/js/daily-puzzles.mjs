@@ -369,7 +369,7 @@ function buildCrossword(panel, cw, saved, persist, onChange) {
   }
 
   const body = el('div', { class: 'dp-body dp-body--cross' },
-    el('div', { class: 'dp-xwrap' }, xtop, tools, clueBar, el('div', { class: 'dp-xframe' }, gridEl, input), status, keys),
+    el('div', { class: 'dp-xwrap' }, xtop, tools, clueBar, el('div', { class: 'dp-xframe', 'data-skin-keep': '' }, gridEl, input), status, keys),
     el('div', { class: 'dp-cluecols' },
       el('section', {}, el('h4', { text: 'Across' }), lists.across),
       el('section', {}, el('h4', { text: 'Down' }), lists.down)));
@@ -587,7 +587,7 @@ function buildSudoku(panel, su, saved, persist, onChange) {
   const value = (i) => su.puzzle[i] || st.g[i];
   const merged = () => Array.from({ length: 81 }, (_, i) => value(i));
 
-  const gridEl = el('div', { class: 'dp-sgrid', role: 'grid', 'aria-label': 'Sudoku grid. Arrow keys move; type 1 to 9; N toggles pencil notes.' });
+  const gridEl = el('div', { class: 'dp-sgrid', 'data-skin-keep': '', role: 'grid', 'aria-label': 'Sudoku grid. Arrow keys move; type 1 to 9; N toggles pencil notes.' });
   const cellEls = [];
   for (let i = 0; i < 81; i++) {
     const r = Math.floor(i / 9), c = i % 9;
@@ -931,7 +931,7 @@ function buildDailyDouble(panel, dd, saved, persist, onChange) {
   const status = el('p', { class: 'dp-status', role: 'status' });
   const tools = el('div', { class: 'dp-tools' }, soundBtn, restartBtn);
 
-  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, el('div', { class: 'dp-dboard' }, gridEl), openClueBtn, tools, status);
+  const leftWrap = el('div', { class: 'dp-dwrap' }, metaBar, el('div', { class: 'dp-dboard', 'data-skin-keep': '' }, gridEl), openClueBtn, tools, status);
   const sideConsole = el('div', { class: 'dp-dside' });
   const body = el('div', { class: 'dp-body dp-body--double' }, leftWrap, sideConsole);
   panel.replaceChildren(body);
@@ -1311,7 +1311,7 @@ function buildChess(panel, puzzle, saved, persist, onChange) {
   const restart = el('button', { type: 'button', class: 'dp-btn dp-btn--primary', text: '↺ Try again' });
   const tools = el('div', { class: 'dp-tools' }, hint, reveal, restart);
   const body = el('div', { class: 'dp-body dp-body--chess' },
-    el('div', { class: 'dp-chess-main' }, el('div', { class: 'dp-chess-frame' }, board)),
+    el('div', { class: 'dp-chess-main' }, el('div', { class: 'dp-chess-frame', 'data-skin-keep': '' }, board)),
     el('div', { class: 'dp-chess-side' }, title, instruction, status, movesPlayed, tools,
       el('p', { class: 'dp-chess-note', text: 'Only legal moves are accepted. In a two-move puzzle, Black replies automatically after your first move.' })));
   panel.replaceChildren(body);
@@ -1492,7 +1492,7 @@ function buildSokoban(panel, pz, saved, persist, onChange) {
   const pad = el('div', { class: 'dp-soko-pad', role: 'group', 'aria-label': 'Move' }, padBtn('u'), padBtn('l'), padBtn('d'), padBtn('r'));
   const note = el('p', { class: 'dp-soko-note', text: 'Tap a square to walk there, or tap a crate beside you to push it. Every level is built backwards from the solved position, so it always has a solution, and par is the fewest pushes possible.' });
   const body = el('div', { class: 'dp-body dp-body--soko' },
-    el('div', { class: 'dp-soko-main' }, el('div', { class: 'dp-soko-frame', 'data-night-keep': '' }, boardEl)),
+    el('div', { class: 'dp-soko-main' }, el('div', { class: 'dp-soko-frame', 'data-night-keep': '', 'data-skin-keep': '' }, boardEl)),
     el('div', { class: 'dp-soko-side' }, title, instruction, stats, progress.node, status, pad, tools, note));
   body.style.setProperty('--n', board.w);
   body.style.setProperty('--m', board.h);
