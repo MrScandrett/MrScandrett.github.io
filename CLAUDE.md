@@ -632,6 +632,9 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
 
 ## Mesh import + Print Prep
 
+The plan for what's left (Blueprint Drafting DXF + "Build it in Workbench", workshop "Open in Workbench"
+buttons, a mesh simplifier) is in `docs/3d-tools-next.md`. Read it before picking up 3D import/export work.
+
 **One importer for every tool.** `assets/js/mesh-import.mjs` (pure, async) reads STL (binary and ASCII, multi-solid),
 OBJ (polygons, negative indices; Y up → Z up) and 3MF (ZIP with deflate via `DecompressionStream`, declared units,
 components, build transforms, Bambu/Prusa `p:path` object files, support objects skipped). `readMesh(buffer, name)`
