@@ -1,5 +1,14 @@
 (function(){'use strict';
 const app=document.querySelector('[data-blueprint-app]');if(!app)return;
+// The format code (dxf.mjs) and the tool hand-off are modules; load them now
+// so "Build it in Workbench" can open its tab straight from the click.
+const scriptUrl = document.currentScript?.src || new URL('../../../assets/js/lessons/blueprint-drafting.js', location.href).href;
+const modules = { dxf: null, handoff: null };
+const loading = Promise.all([
+  import(new URL('../dxf.mjs', scriptUrl).href).then(m => { modules.dxf = m; }),
+  import(new URL('../handoff.mjs', scriptUrl).href).then(m => { modules.handoff = m; })
+]);
+loading.catch(() => {});
 const svg=app.querySelector('[data-sheet]'),drawing=app.querySelector('[data-drawing]'),preview=app.querySelector('[data-preview]'),status=app.querySelector('[data-status]'),cursor=app.querySelector('[data-cursor]'),lineType=app.querySelector('[data-line-type]');
 const NS = 'http://www.w3.org/2000/svg';
 const storageKey = 'classroomos-blueprint-v1';
@@ -13,7 +22,7 @@ const shapeChoice = app.querySelector('[data-shape-choice]');
 const shapeEdit = app.querySelector('[data-shape-edit]');
 const shapeStatus = app.querySelector('[data-shape-status]');
 const deleteButton = app.querySelector('[data-action="delete"]');
-let tool = 'select', view = 'front', gesture = null, selected = null;
+let tool = 'select', view = 'front', gesture = null, selected = null, viewsReady = false;
 const undoStack = [], redoStack = [];
 
 function makeProject(title, guide, drawings = {}) {
@@ -144,7 +153,8 @@ function render(index = null) {
 }
 function review(){
  const all=Object.values(project.views),flat=all.flat(),geometry=flat.filter(x=>x.kind!=='dimension');
- setCheck('views',all.every(a=>a.some(x=>x.kind!=='dimension')));
+ viewsReady=all.every(a=>a.some(x=>x.kind!=='dimension'));
+ setCheck('views',viewsReady);
  setCheck('dimensions',all.every(a=>a.some(x=>x.kind==='dimension')));
  setCheck('line',geometry.some(x=>x.type==='hidden'||x.type==='center'));
  setCheck('fit',geometry.length>0&&flat.every(x=>Math.min(x.x1,x.x2)>=20&&Math.max(x.x1,x.x2)<=780&&Math.min(x.y1,x.y2)>=60&&Math.max(x.y1,x.y2)<=480&&!(Math.max(x.x1,x.x2)>495&&Math.max(x.y1,x.y2)>400)));
@@ -422,6 +432,85 @@ function exportDrawing(allViews) {
     new XMLSerializer().serializeToString(output), 'image/svg+xml');
   status.textContent = allViews ? 'Three-view SVG sheet downloaded.' : 'Current view SVG downloaded.';
 }
+
+async function dxfModule() {
+  if (!modules.dxf) await loading;
+  return modules.dxf;
+}
+
+app.querySelector('[data-action="export-dxf"]').addEventListener('click', async () => {
+  try {
+    const { toDxf } = await dxfModule();
+    download('.dxf', toDxf(project), 'image/vnd.dxf');
+    status.textContent = 'DXF downloaded: millimetres, three views laid out third-angle, layers OUTLINE, HIDDEN, CENTER and DIMENSIONS.';
+  } catch {
+    status.textContent = 'The DXF writer could not load. Check the connection and try again.';
+  }
+});
+
+const dxfFile = app.querySelector('[data-dxf-file]');
+app.querySelector('[data-action="import-dxf"]').addEventListener('click', () => dxfFile.click());
+dxfFile.addEventListener('change', async () => {
+  const file = dxfFile.files[0];
+  dxfFile.value = '';
+  if (!file) return;
+  const previous = JSON.stringify(project);
+  const into = view;
+  try {
+    if (file.size > 5_000_000) throw new Error('That DXF is over 5 MB. Export only the part you need.');
+    const { fromDxf } = await dxfModule();
+    const read = fromDxf(await file.text());
+    if (JSON.stringify(project) !== previous) {
+      projectStatus.textContent = 'The drawing changed while the file was opening. Import it again.';
+      return;
+    }
+    const units = read.units.certain ? ' (' + read.units.name + ')' : '';
+    const notes = read.notes.length ? ' ' + read.notes.join(' ') : '';
+    if (read.views) {
+      const next = readProject({ ...project, title: read.title || project.title, views: read.views });
+      const count = Object.values(next.views).reduce((n, list) => n + list.length, 0);
+      replaceProject(next, 'Imported ' + count + ' shapes into the front, top and right views' + units + '. Undo restores the previous drawing.' + notes);
+      viewTabs[0].click();
+    } else {
+      const next = readProject({ ...project, views: { ...project.views, [into]: [...project.views[into], ...read.shapes] } });
+      replaceProject(next, 'Imported ' + read.shapes.length + ' shapes into the ' + into + ' view' + units + '. Undo removes them.' + notes);
+    }
+  } catch (error) {
+    projectStatus.textContent = error?.name === 'DxfError' || /DXF/.test(error?.message || '')
+      ? error.message
+      : 'Could not import that file. Choose an ASCII DXF drawing under 5 MB.';
+  }
+});
+
+const buildStatus = app.querySelector('[data-build-status]');
+app.querySelector('[data-action="build-workbench"]').addEventListener('click', async () => {
+  // the lesson's own first check, then the sizes the three views share
+  if (!viewsReady) {
+    buildStatus.textContent = 'Not yet: Workbench needs object geometry in all three views (the first drafting check). Draw the front, top and right views first.';
+    return;
+  }
+  if (!modules.dxf || !modules.handoff) {
+    buildStatus.textContent = 'Getting ready…';
+    try { await loading; } catch { buildStatus.textContent = 'The hand-off could not load. Check the connection and try again.'; return; }
+  }
+  const made = modules.dxf.workbenchSvg(project);
+  if (made.error) {
+    buildStatus.textContent = 'Not yet: ' + made.error;
+    return;
+  }
+  const { width, depth, height } = made.size;
+  try {
+    await modules.handoff.sendAndOpen(new URL('../../../workbench.html', scriptUrl).href, {
+      bytes: new TextEncoder().encode(made.svg),
+      filename: made.filename,
+      from: 'Blueprint Drafting'
+    });
+    buildStatus.textContent = 'Opened in Workbench: the top view’s outline (' + width + ' × ' + depth + ' mm) pulled up ' + height + ' mm, the front view’s height. Cut the pockets and slots there with Holes.' +
+      (made.openLines ? ' ' + made.openLines + ' top-view line' + (made.openLines === 1 ? ' doesn’t' : 's don’t') + ' close a loop, so ' + (made.openLines === 1 ? 'it was' : 'they were') + ' left out.' : '');
+  } catch (error) {
+    buildStatus.textContent = error?.message || 'The model could not be passed to Workbench.';
+  }
+});
 
 app.querySelector('[data-action="export"]').addEventListener('click', () => exportDrawing(false));
 app.querySelector('[data-action="export-sheet"]').addEventListener('click', () => exportDrawing(true));

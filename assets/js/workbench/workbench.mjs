@@ -765,20 +765,20 @@ async function importModel(bytes, filename, { at, source = '' } = {}) {
 /* An SVG drawing becomes outlines (svg-outline.mjs) pulled up by Height.
    Width starts at the drawing's real size when the file states one, and at a
    sensible 60 mm when it is only pixels and comes out huge or tiny. */
-async function importSvg(text, filename, { at } = {}) {
+async function importSvg(text, filename, { at, heightMm = 0, source = '' } = {}) {
   if (!engine) { say('The geometry engine is still starting. Try again in a moment.'); return; }
   if (W.countNodes(project.objects) >= W.MAX_NODES) { say(`A project holds up to ${W.MAX_NODES} shapes.`); return; }
   let parsed, asset;
   try {
     parsed = parseSvg(text);
-    asset = makeOutlineAsset(parsed, { name: filename.replace(/\.[^.]+$/, '') });
+    asset = makeOutlineAsset(parsed, { name: filename.replace(/\.[^.]+$/, ''), source });
   } catch (error) { say(error.message || `${filename} could not be read.`); return; }
   asset = assets.get(asset.id) || asset;
   assets.set(asset.id, asset);
   putAsset(asset).catch(() => say('Imported, but this browser could not store the drawing. Use Save a copy to keep it.'));
   let widthMm = asset.size[0], resized = false;
   if (!parsed.units.certain && (widthMm > 200 || widthMm < 5)) { widthMm = 60; resized = true; }
-  const node = W.newShapeNode(project, 'svg', { color: nextColor(), params: { asset: asset.id, w: W.nice(widthMm / preset().toMm), h: W.nice(3 / preset().toMm) } });
+  const node = W.newShapeNode(project, 'svg', { color: nextColor(), params: { asset: asset.id, w: W.nice(widthMm / preset().toMm), h: W.nice((heightMm > 0 ? heightMm : 3) / preset().toMm) } });
   node.name = asset.name.slice(0, 40) || 'SVG drawing';
   const [x, y] = at || view?.target() || [0, 0];
   const size = shapeSize(node);
@@ -807,7 +807,15 @@ async function receiveHandoff() {
   try {
     const file = await takeFile();
     if (!file) { say('Nothing was waiting to open here (hand-offs last ten minutes). Use Import to bring in the file.'); return; }
-    await importModel(file.bytes, file.filename, { source: file.from ? `Made in ${file.from}` : '' });
+    const source = file.from ? `Made in ${file.from}` : '';
+    if (/\.svg$/i.test(file.filename)) {
+      // a drawing (Blueprint Drafting's top view): its root may say how tall to pull it up
+      const text = new TextDecoder().decode(file.bytes);
+      const tall = Number(/<svg\b[^>]*\bdata-workbench-height="([\d.]+)"/i.exec(text)?.[1]);
+      await importSvg(text, file.filename, { source, heightMm: Number.isFinite(tall) && tall > 0 && tall <= 2000 ? tall : 0 });
+      return;
+    }
+    await importModel(file.bytes, file.filename, { source });
   } catch (error) { say(error.message); }
 }
 

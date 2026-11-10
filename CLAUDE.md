@@ -632,7 +632,7 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
 
 ## Mesh import + Print Prep
 
-The plan for what's left (Blueprint Drafting DXF + "Build it in Workbench", workshop "Open in Workbench"
+The plan for what's left (workshop "Open in Workbench"
 buttons, a mesh simplifier) is in `docs/3d-tools-next.md`. Read it before picking up 3D import/export work.
 
 **One importer for every tool.** `assets/js/mesh-import.mjs` (pure, async) reads STL (binary and ASCII, multi-solid),
@@ -670,9 +670,14 @@ result is an outline asset (`kind: 'outline'` in assets.mjs, id = hash of its ca
 so letters keep their holes); Hole engraves it. Tests: `node --test tests/svg-outline.test.mjs`, and the SVG cases in
 `tests/workbench-import.test.mjs`.
 
+**DXF in Blueprint Drafting.** `assets/js/dxf.mjs` (pure) writes the drafting board as ASCII R12 in mm (third-angle
+sheet, layers OUTLINE/HIDDEN/CENTER/DIMENSIONS) and reads DXF back (lines, polylines, arcs/circles as segments, one level
+of blocks; skipped entity types are reported by name). `workbenchSvg(project)` is "Build it in Workbench": refused with a
+reason unless the three views agree on width, height and depth. Tests: `node --test tests/dxf.test.mjs`.
+
 **Hand-off** (`assets/js/handoff.mjs`) passes one file between tools through IndexedDB (10-minute slot):
 `sendAndOpen(url, { bytes, filename, from })` from a click, and the receiving page checks `arrivedByHandoff()` then
-`takeFile()`. Forge, Workbench and Marble Studio send to Print Prep; Print Prep sends to Workbench. Use it rather than
+`takeFile()`. Forge, Workbench and Marble Studio send to Print Prep; Print Prep and Blueprint Drafting send to Workbench (a `.svg` hand-off goes to `importSvg`, extruded to the root's `data-workbench-height` mm). Use it rather than
 a query string or localStorage for anything bigger than a few KB.
 
 ## Marble Studio (sculpture lesson)

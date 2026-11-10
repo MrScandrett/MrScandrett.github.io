@@ -15,42 +15,22 @@ CLAUDE.md under **Mesh import + Print Prep**; this file is the plan for what is 
 4. **Hand-off** `assets/js/handoff.mjs`: Forge / Workbench / Marble → Print Prep, Print Prep → Workbench.
 5. **Workbench imports SVG** (`assets/js/svg-outline.mjs`): filled outlines, holes kept, extruded by the
    `svg` shape; Hole engraves.
+6. **Blueprint Drafting: DXF out, DXF in, "Build it in Workbench"** (`assets/js/dxf.mjs`, pure;
+   `tests/dxf.test.mjs`). Export is ASCII R12 in mm (`$INSUNITS` 4), layers OUTLINE / HIDDEN (DASHED) / CENTER /
+   DIMENSIONS, rects as closed POLYLINE, dimensions as LINE + TEXT, views third-angle at fixed panel offsets
+   (`LAYOUT`), so our own files come back shape for shape. Import reads LINE, LWPOLYLINE (bulges), POLYLINE/VERTEX,
+   CIRCLE/ARC (segments), mirrored OCS, one level of INSERT; skipped types are reported by name and count; units
+   from `$INSUNITS` (missing → mm, said). A foreign file is split into views when its clusters form third-angle
+   L-shapes *and* share sizes (top width = front width, right height = front height); otherwise it is centred in
+   the current view, refused if bigger than the board at 1:1. "Build it in Workbench" needs the page's "views"
+   check plus `viewsAgree()` (width / height / depth within 1 mm), sends the top view's closed outlines (object
+   rects + closed loops of object lines, each its own path, unioned in Workbench, so pockets don't punch through)
+   as `<name>-top.svg` with `data-workbench-height` = front height; `receiveHandoff()` routes `.svg` to
+   `importSvg`. Pockets and slots are left for Holes in Workbench (the message says so).
 
 ## Next, in order
 
-### 1. Blueprint Drafting: DXF out, DXF in, "Build it in Workbench"
-
-Files: `lessons/3d-design/cad-and-printing/blueprint-drafting.html`, `assets/js/lessons/blueprint-drafting.js`.
-
-What the drafting data looks like today: `project = { version: 1, title, guide, views: { front, top, right } }`;
-each view is a list of `{ kind: 'line'|'rect'|'dimension', type: 'object'|'hidden'|'center', x1, y1, x2, y2 }`
-in SVG units, **2 units = 1 mm** (the dimension label is `Math.round(length / 2)` mm), y down. Export today is
-only SVG (one view or a three-view sheet) plus a `.blueprint.json` project.
-
-- Put the format code in a new pure module (e.g. `assets/js/dxf.mjs`) with tests; keep the page script thin
-  (CLAUDE.md: lesson code in `assets/js/lessons/`, maths in a DOM-free file with a test).
-- **DXF export**: ASCII R12 (AC1009) is what laser cutters, LibreCAD, FreeCAD, Fusion and Onshape all take.
-  `$INSUNITS = 4` (mm). Lines as `LINE`, rectangles as closed `POLYLINE`/`VERTEX`/`SEQEND` (R12 has no
-  LWPOLYLINE). Layers `OUTLINE`, `HIDDEN` (linetype `DASHED`, define it in the LTYPE table), `CENTER`
-  (`CENTER` linetype), `DIMENSIONS`. Dimensions as a `LINE` + `TEXT` ("40 mm"), not real DIMENSION entities
-  (their block structure isn't worth it here). Flip y (DXF y is up). Lay the three views out third-angle
-  (top above front, right to the right of front) with a gap, so the file opens as a proper sheet.
-- **DXF import**: read `LINE`, `LWPOLYLINE`, `POLYLINE`/`VERTEX`, `CIRCLE`/`ARC` (as line segments; the
-  drafting tool has no circle), and unpack `INSERT` blocks one level. Report what was skipped by name and count
-  ("3 SPLINE, 1 HATCH skipped") rather than dropping it silently. Units from `$INSUNITS` (missing → mm, say so).
-  Place into the current view, or split by position if the file is a three-view sheet. Respect the existing
-  validator (`readProject` / `shapeKinds`) and its size limits.
-- **"Build it in Workbench"**: take the closed outline of the **top** view (union of its object-type rects /
-  closed line loops), extrude by the **front** view's height, and send it with the hand-off:
-  build an SVG string of the outline and send it as a `.svg` file (Workbench already imports SVG through
-  `importFiles` → `importSvg`), or extend `receiveHandoff()` in `assets/js/workbench/workbench.mjs` to accept
-  an `.svg` filename (today it calls `importModel`, which only reads meshes; route `.svg` to `importSvg`).
-  Gate it on the lesson's own "views agree" check (`setCheck('views', …)` in blueprint-drafting.js) and say
-  why when it is refused.
-- Tests: round trip (export → import gives the same shapes), a hand-written LibreCAD-style DXF imports,
-  units conversion, refused-when-views-disagree.
-
-### 2. Lesson workshops: "Open in Workbench"
+### 1. Lesson workshops: "Open in Workbench"
 
 Files: `assets/js/design3d/workspace.mjs` (the shared workshop runner), `assets/js/design3d/workshops.mjs`
 (`WORKSHOPS`, `PAGE_MODES`). Pages: Arrange a display (`lessons/3d-design/blender/blender-interface-basics.html`),
