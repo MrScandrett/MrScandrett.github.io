@@ -12,6 +12,16 @@ const FOLDER_GROUPS = {
   steam: ["steam-software", "steam-sims", "steam-arcade", "steam-vr"]
 };
 
+const FOLDER_SUMMARIES = {
+  coding: "Build with blocks or write your first code.", games: "Create worlds, characters, and rules.",
+  robotics: "Bring code to circuits and robots.", design3d: "Model an idea. Make it real.",
+  art: "Draw, design, and tell a visual story.", music: "Make a melody. Find your rhythm.",
+  storytelling: "Write stories that move and respond.", math: "Discover patterns and explore numbers.",
+  science: "Experiment, observe, and ask why.", research: "Follow a question. Discover something new.",
+  immersive: "Explore beyond the screen.", ai: "Explore AI with care and curiosity.",
+  cybersecurity: "Practice being a safer digital citizen.", steam: "Explore creative tools and virtual worlds."
+};
+
 const FOLDER_DETAILS = {
   storytelling: { label: "Stories & Animation", symbol: "📖", color: "#b76b94" },
   math: { label: "Math & Patterns", symbol: "📐", color: "#36a69c" },
@@ -173,6 +183,7 @@ function renderFolders(folderIds) {
     button.className = "folder-button";
     button.type = "button";
     button.dataset.folder = folderId;
+    button.style.setProperty("--folder-color", details.color);
     button.setAttribute("aria-label", `${details.label} folder, ${folderTools.length} apps`);
 
     const shape = document.createElement("span");
@@ -186,7 +197,7 @@ function renderFolders(folderIds) {
     const pages = Math.ceil(folderTools.length / 3);
     track.style.setProperty("--preview-pages", pages);
     track.style.setProperty("--preview-duration", `${pages * 24}s`);
-    track.style.setProperty("--preview-delay", `${-(stableHash(folderId) % (pages * 24))}s`);
+    track.style.setProperty("--preview-delay", "0s");
     // Two identical sequences make the conveyor loop without a visible jump.
     for (let copy = 0; copy < 2; copy++) {
       for (let page = 0; page < pages; page++) {
@@ -208,8 +219,15 @@ function renderFolders(folderIds) {
     label.textContent = details.label;
     const count = document.createElement("span");
     count.className = "folder-count";
-    count.textContent = `${folderTools.length} apps`;
-    button.append(shape, label, count);
+    count.textContent = `${folderTools.length} ${folderTools.length === 1 ? "app" : "apps"}`;
+    const description = document.createElement("span");
+    description.className = "folder-summary";
+    description.textContent = FOLDER_SUMMARIES[folderId] || categoryMeta[folderId]?.description || "Choose a tool and start creating.";
+    const action = document.createElement("span");
+    action.className = "folder-action";
+    action.textContent = "Explore folder →";
+    action.setAttribute("aria-hidden", "true");
+    button.append(shape, label, description, count, action);
     elements.folderGrid.append(button);
   });
   document.getElementById("folders-empty").hidden = elements.folderGrid.childElementCount > 0;

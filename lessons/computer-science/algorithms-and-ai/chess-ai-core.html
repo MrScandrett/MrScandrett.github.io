@@ -3,21 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ChronoChess 3D · Mr. Scandrett's ClassroomOS</title>
+  <title>Chess: Play &amp; Practice · ChessOS · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Play ChronoChess 3D against historical AI styles from 1951 to today in an interactive Three.js arena by Mr. Scandrett." />
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "../../../assets/js/three/three.module.min.js",
-        "three/addons/": "../../../assets/js/three/addons/"
-      }
-    }
-  </script>
+  <meta name="description" content="Play chess in ChessOS: practice legal moves, challenge computer opponents, explore strategy, and review your game on interactive 2D and 3D boards." />
+
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/chess-ai-core.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/algorithms-ai-module.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
   <style>
     .ll-viewport {
       --ll-panel-w: 320px;
@@ -423,6 +417,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/chess-arena.css" />
 </head>
 <body class="chess-timeline-page" data-chess-theme="deepblue1997" data-chess-era="deepblue1997">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -446,26 +441,17 @@
   </header>
 
   <div class="ll-stage">
-    <div class="ll-sim" id="main-content">
+    <main class="ll-sim" id="main-content">
 
-      <div class="ll-hero">
-        <div class="chess-academic-seal" aria-label="Scholars' Chess Society, established 1951">
-          <span class="chess-academic-seal-piece" aria-hidden="true">♜</span>
-          <span>Scholars' Chess Society</span>
-          <small>Est. MCMLI</small>
-        </div>
-        <p class="eyebrow">The Society presents · A game by Mr. Scandrett</p>
-        <h1>ChronoChess 3D</h1>
-        <div class="chess-academic-rule" aria-hidden="true"><span>♞</span></div>
-        <p>Challenge four generations of chess intelligence on an interactive 3D board, from Turing's hand-built logic to modern positional engines.</p>
-      </div>
-
+      <div class="chess-workspace creation-app" data-creation-app data-present="off" tabindex="-1" aria-label="ChessOS game workspace">
+      <div class="chess-arena">
       <section class="section" id="chess-live">
         <div class="section-head">
-          <h2>Choose an era. Enter the arena.</h2>
-          <p>Play as White on a full 8×8 board, then switch opponents to feel how search depth and evaluation changed across computing history.</p>
+          <p class="eyebrow">PLAY • EXPLORE • MASTER</p><h1>ChessOS <span>Play &amp; Practice</span></h1>
+          <p>Your move. Take on four eras of chess intelligence. Choose a piece, then a highlighted square.</p>
         </div>
         <article class="card chess-lab" id="chess-lab" data-model-theme="deepblue1997">
+          <div class="chess-player chess-player-opponent"><span class="chess-avatar" aria-hidden="true">♚</span><div><strong id="chess-opponent-name">Deep Blue Style</strong><span>Computer · Black pieces</span></div><span class="chess-player-badge">AI</span></div>
           <div class="chess-board-wrap">
             <div class="chess-board-stage">
               <div class="chess-advantage" aria-hidden="true">
@@ -483,24 +469,82 @@
                     <span>Drag to orbit</span><span>Scroll to zoom</span><span>Click to move</span>
                   </div>
                   <div class="chess-3d-toolbar" aria-label="3D board view controls">
-                    <button type="button" id="chess-camera-home" title="Reset camera">Home view</button>
+                    <button type="button" id="chess-camera-home" title="Perspective table view">Table view</button>
+                    <button type="button" id="chess-camera-overhead" title="View the board from above">Overhead</button>
                     <button type="button" id="chess-camera-flip" title="View from Black's side">Flip board</button>
                   </div>
                 </div>
-                <div class="chess-board chess-board-accessible" id="chess-board" role="grid" aria-label="8 by 8 chess board"></div>
+                <div class="chess-board chess-board-accessible" id="chess-board" data-contrast-guard-skip role="grid" aria-label="8 by 8 chess board"></div>
                 <svg class="chess-ghost-layer" id="chess-ghost-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
               </div>
             </div>
           </div>
+          <div class="chess-player chess-player-human"><span class="chess-avatar" aria-hidden="true">♔</span><div><strong>You</strong><span>White pieces</span></div><p class="chess-status" id="chess-status" aria-live="polite"></p></div>
           <div class="chess-board-caption">
             <div class="chess-advantage-labels">
               <span>White Pressure</span>
               <strong id="advantage-text">0.0</strong>
               <span>Black Pressure</span>
             </div>
-            <p id="chess-board-description"><strong>3D analysis board:</strong> warm squares show Black's influence. Drag to orbit, scroll or pinch to zoom, and use the view buttons to reset or flip the table.</p>
+            <p id="chess-board-description"><strong>3D analysis board:</strong> drag to orbit · scroll to zoom · select a piece to move.</p>
           </div>
-          <p class="chess-status" id="chess-status" aria-live="polite"></p>
+
+          <div class="chess-model-note" id="chess-model-note" aria-live="polite"></div>
+
+        </article>
+      </section>
+
+      </div>
+    <aside class="ll-panel" aria-hidden="false">
+      <div class="ll-panel-head">
+        <div class="ll-tabs">
+          <button class="ll-tab" aria-selected="true" data-pane="chess-params">Play</button>
+          <button class="ll-tab" aria-selected="false" data-pane="chess-moves">Moves</button>
+          <button class="ll-tab" aria-selected="false" data-pane="chess-guide">Learn</button>
+        </div>
+
+      </div>
+      <div class="ll-panel-body">
+
+        <div class="ll-pane ll-active" id="chess-params">
+          <span class="ll-label" id="chess-view-label">Board view</span>
+          <div class="ll-param chess-view-switch" role="group" aria-labelledby="chess-view-label">
+            <button type="button" class="chess-view-option" data-chess-view-option="3d" aria-pressed="true">3D Table</button>
+            <button type="button" class="chess-view-option" data-chess-view-option="2d" aria-pressed="false">2D Classic</button>
+          </div>
+
+          <label class="chess-overlay-toggle"><input type="checkbox" id="chess-influence" /> Show engine influence</label>
+          <hr class="ll-hr" />
+
+          <label class="ll-label" for="chess-model">Opponent</label>
+          <div class="ll-param">
+            <select id="chess-model" class="chess-control-select">
+              <option value="turochamp1951">Turochamp (1948, real rules)</option>
+              <option value="machack1967">Mac Hack VI Style (1967)</option>
+              <option value="deepblue1997" selected>Deep Blue Style (1997)</option>
+              <option value="modern2020s">Modern Engine Style (2020s)</option>
+            </select>
+          </div>
+
+          <label class="ll-label" for="chess-depth">Search strength</label>
+          <div class="ll-param">
+            <select id="chess-depth" class="chess-control-select">
+              <option value="1">1 (Fastest)</option>
+              <option value="2" selected>2 (Balanced)</option>
+              <option value="3">3 (Deeper Search)</option>
+            </select>
+          </div>
+
+          <hr class="ll-hr" />
+
+          <div class="ll-param">
+            <button type="button" id="chess-reset" class="chess-control-btn">New game</button>
+          </div>
+
+          <div class="chess-game-actions"><button type="button" id="chess-undo" class="chess-control-btn">Undo turn</button><button type="button" id="chess-export" class="chess-control-btn">Export PGN</button></div>
+          <p class="chess-control-help">Takebacks restore your previous turn, including the AI reply.</p>
+          <hr class="ll-hr" />
+
           <section class="chess-blunder-meter" id="chess-blunder-meter" data-grade="idle" aria-labelledby="chess-blunder-heading">
             <div class="chess-blunder-head">
               <div>
@@ -510,10 +554,10 @@
               <span class="chess-blunder-count" id="chess-blunder-count">0 blunders</span>
             </div>
             <div class="chess-blunder-track" role="meter" aria-label="Move quality loss" aria-valuemin="0" aria-valuemax="250" aria-valuenow="0" aria-valuetext="No move analyzed yet">
-              <span class="chess-blunder-zone is-excellent">Excellent</span>
-              <span class="chess-blunder-zone is-inaccuracy">Inaccuracy</span>
-              <span class="chess-blunder-zone is-mistake">Mistake</span>
-              <span class="chess-blunder-zone is-blunder">Blunder</span>
+              <span class="chess-blunder-zone is-excellent" aria-hidden="true"></span>
+              <span class="chess-blunder-zone is-inaccuracy" aria-hidden="true"></span>
+              <span class="chess-blunder-zone is-mistake" aria-hidden="true"></span>
+              <span class="chess-blunder-zone is-blunder" aria-hidden="true"></span>
               <i class="chess-blunder-marker" aria-hidden="true"></i>
             </div>
             <div class="chess-blunder-foot" aria-live="polite">
@@ -521,10 +565,70 @@
               <strong id="chess-blunder-loss">—</strong>
             </div>
           </section>
-          <div class="chess-model-note" id="chess-model-note" aria-live="polite"></div>
-          <ol class="chess-log" id="chess-log"></ol>
-        </article>
-      </section>
+          <hr class="ll-hr" />
+
+
+        </div><!-- /#chess-params -->
+
+        <div class="ll-pane" id="chess-moves"><h2 class="chess-pane-heading">Game history</h2><p class="chess-control-help">Latest moves appear first. Export PGN to save or analyze your game.</p><ol class="chess-log" id="chess-log" aria-label="Game history"></ol></div>
+        <div class="ll-pane" id="chess-guide">
+          <div class="ll-info">
+            <strong>How This Version Works</strong>
+            Standard 8×8 setup. Win by checkmate (or draw by stalemate). Each model era changes search depth, style, and consistency. Castling, en passant, and automatic queen promotion are supported. Historical opponents are educational approximations. Change opponent to start a new game.
+          </div>
+          <div class="chess-heuristic-stack">
+            <div class="chess-advantage-readout">
+              <span>Board Eval</span>
+              <strong id="chess-eval-label">Balanced</strong>
+            </div>
+            <div class="chess-heuristic-card" id="heuristic-hud"></div>
+            <div class="chess-radar-wrap">
+              <svg class="chess-radar" id="chess-radar" viewBox="0 0 220 220" role="img" aria-label="Heuristic radar graph"></svg>
+            </div>
+            <div class="chess-era-note" id="chess-era-note"></div>
+          </div>
+
+
+          <div class="ll-info">
+            <strong>Turochamp (1948) — real rules</strong>
+            Alan Turing and David Champernowne's &ldquo;paper machine.&rdquo; This mode runs the rules Turing published in 1953: look at every move and every reply, keep following captures until the position is quiet, score by material ratio (P=1, N=3, B=3.5, R=5, Q=10), and break ties with his position-play points for mobility, piece safety, king safety, pawn advances, and checks. Turing had no computer that could run it, so in 1952 he played it by hand against Alick Glennie, taking about half an hour per move. The depth setting does not change it.
+          </div>
+          <div class="ll-info">
+            <strong>Mac Hack VI Style (1967)</strong>
+            Richard Greenblatt's program, the first to play in a human tournament. This mode is an approximation: the lab's shared alpha-beta engine with material-first settings, not Greenblatt's actual code.
+          </div>
+          <div class="ll-info">
+            <strong>Deep Blue Style (1997)</strong>
+            IBM's landmark system that defeated Kasparov. Evaluated ~200 million positions per second using custom hardware and alpha-beta pruning. This mode imitates its style with the lab's small alpha-beta engine; the real Deep Blue searched millions of times more positions.
+          </div>
+          <div class="ll-info">
+            <strong>Modern Engine Style (2020s)</strong>
+            Real modern engines combine neural-network evaluation with MCTS (Leela Chess Zero) or alpha-beta (Stockfish NNUE). This mode has no neural network: it is the lab's alpha-beta engine tuned toward positional play, to suggest the style.
+          </div>
+          <div class="ll-info">
+            <strong>What to Watch For</strong>
+            Switch eras mid-session and compare how quickly the AI develops pieces, how aggressively it attacks, and how often it misses tactics at depth 1 vs depth 3.
+          </div>
+          <div class="ll-info">
+            <strong>Scholars' Review</strong>
+            After every White move, the blunder meter compares your choice with the engine's preferred continuation. Evaluation loss is shown in pawn units: lower is better.
+          </div>
+        </div><!-- /#chess-guide -->
+
+      </div>
+    </aside>
+      </div>
+      <div class="ll-hero">
+        <div class="chess-academic-seal" aria-label="Scholars' Chess Society, established 1951">
+          <span class="chess-academic-seal-piece" aria-hidden="true">♜</span>
+          <span>Scholars' Chess Society</span>
+          <small>Est. MCMLI</small>
+        </div>
+        <p class="eyebrow">The Society presents · A game by Mr. Scandrett</p>
+        <h1>Chess: Play &amp; Practice</h1>
+        <div class="chess-academic-rule" aria-hidden="true"><span>♞</span></div>
+        <p>Play chess, build your strategy, and learn from every move. Choose a 2D or 3D board, challenge a computer opponent, take back a turn, and review or export your game. Explore the history of chess AI below.</p>
+      </div>
 
       <!-- ── Worked Example Card ───────────────────────────── -->
       <section class="section" id="chess-worked-example">
@@ -638,7 +742,7 @@
         <div class="tile-grid">
         <a class="tile tile-hero" href="#" aria-disabled="true" onclick="event.preventDefault();">
             <span class="tile-kicker">Starter Kit</span>
-            <strong>AI Chess Through History starter workspace</strong>
+            <strong>ChessOS play and practice workspace</strong>
             <small>Play at least three games with different model eras and depth settings.<br />In your reflection, cite one specific move where model behavior diverged.</small>
           </a>
 
@@ -659,115 +763,20 @@
       <footer class="site-footer">
         <p><a href="../../../steam-lessons.html">Back to Lessons</a></p>
       </footer>
-    </div><!-- /.ll-sim -->
+    </main><!-- /.ll-sim -->
 
-    <aside class="ll-panel" aria-hidden="false">
-      <div class="ll-panel-head">
-        <div class="ll-tabs">
-          <button class="ll-tab" aria-selected="true" data-pane="chess-params">Controls</button>
-          <button class="ll-tab" aria-selected="false" data-pane="chess-guide">Guide</button>
-        </div>
-        <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
-      </div>
-      <div class="ll-panel-body">
 
-        <div class="ll-pane ll-active" id="chess-params">
-          <span class="ll-label" id="chess-view-label">Board Presentation</span>
-          <div class="ll-param chess-view-switch" role="group" aria-labelledby="chess-view-label">
-            <button type="button" class="chess-view-option" data-chess-view-option="3d" aria-pressed="true">3D Table</button>
-            <button type="button" class="chess-view-option" data-chess-view-option="2d" aria-pressed="false">2D Classic</button>
-          </div>
 
-          <hr class="ll-hr" />
 
-          <label class="ll-label" for="chess-model">AI Model Era</label>
-          <div class="ll-param">
-            <select id="chess-model" class="chess-control-select">
-              <option value="turochamp1951">Turochamp (1948, real rules)</option>
-              <option value="machack1967">Mac Hack VI Style (1967)</option>
-              <option value="deepblue1997" selected>Deep Blue Style (1997)</option>
-              <option value="modern2020s">Modern Engine Style (2020s)</option>
-            </select>
-          </div>
-
-          <label class="ll-label" for="chess-depth">AI Search Depth</label>
-          <div class="ll-param">
-            <select id="chess-depth" class="chess-control-select">
-              <option value="1">1 (Fastest)</option>
-              <option value="2" selected>2 (Balanced)</option>
-              <option value="3">3 (Deeper Search)</option>
-            </select>
-          </div>
-
-          <hr class="ll-hr" />
-
-          <div class="ll-param">
-            <button type="button" id="chess-reset" class="chess-control-btn">Reset Game</button>
-          </div>
-
-          <hr class="ll-hr" />
-
-          <div class="chess-heuristic-stack">
-            <div class="chess-advantage-readout">
-              <span>Board Eval</span>
-              <strong id="chess-eval-label">Balanced</strong>
-            </div>
-            <div class="chess-heuristic-card" id="heuristic-hud"></div>
-            <div class="chess-radar-wrap">
-              <svg class="chess-radar" id="chess-radar" viewBox="0 0 220 220" role="img" aria-label="Heuristic radar graph"></svg>
-            </div>
-            <div class="chess-era-note" id="chess-era-note"></div>
-          </div>
-
-          <hr class="ll-hr" />
-
-          <div class="ll-info">
-            <strong>How This Version Works</strong>
-            Standard 8×8 setup. Win by checkmate (or draw by stalemate). Each model era changes search depth, style, and consistency. No castling or en passant in this classroom build.
-          </div>
-        </div><!-- /#chess-params -->
-
-        <div class="ll-pane" id="chess-guide">
-          <div class="ll-info">
-            <strong>Turochamp (1948) — real rules</strong>
-            Alan Turing and David Champernowne's &ldquo;paper machine.&rdquo; This mode runs the rules Turing published in 1953: look at every move and every reply, keep following captures until the position is quiet, score by material ratio (P=1, N=3, B=3.5, R=5, Q=10), and break ties with his position-play points for mobility, piece safety, king safety, pawn advances, and checks. Turing had no computer that could run it, so in 1952 he played it by hand against Alick Glennie, taking about half an hour per move. The depth setting does not change it.
-          </div>
-          <div class="ll-info">
-            <strong>Mac Hack VI Style (1967)</strong>
-            Richard Greenblatt's program, the first to play in a human tournament. This mode is an approximation: the lab's shared alpha-beta engine with material-first settings, not Greenblatt's actual code.
-          </div>
-          <div class="ll-info">
-            <strong>Deep Blue Style (1997)</strong>
-            IBM's landmark system that defeated Kasparov. Evaluated ~200 million positions per second using custom hardware and alpha-beta pruning. This mode imitates its style with the lab's small alpha-beta engine; the real Deep Blue searched millions of times more positions.
-          </div>
-          <div class="ll-info">
-            <strong>Modern Engine Style (2020s)</strong>
-            Real modern engines combine neural-network evaluation with MCTS (Leela Chess Zero) or alpha-beta (Stockfish NNUE). This mode has no neural network: it is the lab's alpha-beta engine tuned toward positional play, to suggest the style.
-          </div>
-          <div class="ll-info">
-            <strong>What to Watch For</strong>
-            Switch eras mid-session and compare how quickly the AI develops pieces, how aggressively it attacks, and how often it misses tactics at depth 1 vs depth 3.
-          </div>
-          <div class="ll-info">
-            <strong>Scholars' Review</strong>
-            After every White move, the blunder meter compares your choice with the engine's preferred continuation. Evaluation loss is shown in pawn units: lower is better.
-          </div>
-        </div><!-- /#chess-guide -->
-
-      </div>
-    </aside>
-
-    <button class="ll-open-btn" aria-label="Open panel">
-      <span class="ll-open-dot"></span><span class="ll-open-dot"></span><span class="ll-open-dot"></span>
-    </button>
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+  <script src="../../../assets/js/sim-kit.js"></script>
   <script type="module" src="../../../assets/js/lessons/chess-ai-core.js"></script>
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
-  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/lessons/algorithms-ai-module.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>

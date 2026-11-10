@@ -182,3 +182,89 @@ test('render writes a pixel per cell; encode/decode round-trips', () => {
   assert.throws(() => decode(createWorld(10, 10), saved), /does not match/);
   assert.throws(() => decode(v, { width: 32, height: 16, cells: 'zz?*2' }), /damaged/);
 });
+
+test('sealed diagonal corners do not leak grains or fluids', () => {
+  for (const t of [E.SAND, E.WATER, E.OIL, E.LAVA]) {
+    const w = createWorld(3, 3, 21);
+    w.type.fill(E.WALL);
+    put(w, 1, 1, t); put(w, 2, 2, E.EMPTY);
+    run(w, 30);
+    assert.equal(at(w, 1, 1), t);
+    assert.equal(at(w, 2, 2), E.EMPTY);
+  }
+});
+
+test('salt dissolves into existing water without creating extra liquid', () => {
+  const w = createWorld(3, 4, 22);
+  w.type.fill(E.WALL);
+  put(w, 1, 1, E.WATER); put(w, 1, 2, E.SALT);
+  run(w, 100);
+  assert.equal(tally(w, E.SALTWATER), 1);
+  assert.equal(tally(w, E.WATER), 0);
+  assert.equal(tally(w, E.SALT), 0);
+});
+
+test('boiling brine leaves both steam and salt; salt water also extinguishes burning wood', () => {
+  const w = createWorld(3, 4, 23);
+  w.type.fill(E.WALL);
+  put(w, 1, 1, E.FIRE, 30); put(w, 1, 2, E.SALTWATER);
+  step(w);
+  assert.equal(tally(w, E.STEAM), 1);
+  assert.equal(tally(w, E.SALT), 1);
+  assert.equal(tally(w, E.FIRE), 0);
+
+  const v = createWorld(3, 4, 24);
+  v.type.fill(E.WALL);
+  put(v, 1, 1, E.WOOD, 100); put(v, 1, 2, E.SALTWATER);
+  step(v);
+  assert.equal(v.life[4], 0, 'brine douses the wood even without room to boil');
+  assert.equal(tally(v, E.SALTWATER), 1);
+});
+
+test('ice has a finite freezing budget, preserved by saving', () => {
+  const w = createWorld(10, 10, 25);
+  w.type.fill(E.WATER); put(w, 5, 5, E.ICE, 3);
+  const saved = encode(w), copy = createWorld(10, 10, 26);
+  decode(copy, saved);
+  assert.equal(copy.life[55], 3);
+  run(w, 5000);
+  assert.ok(tally(w, E.ICE) <= 4, 'cold is transferred rather than multiplied');
+});
+
+test('walls shield material behind them from explosions', () => {
+  const w = createWorld(12, 12, 27);
+  for (let y = 0; y < 12; y++) put(w, 6, y, E.WALL);
+  put(w, 7, 5, E.WOOD); put(w, 8, 5, E.GUNPOWDER);
+  explode(w, 4, 5, 5);
+  assert.equal(at(w, 7, 5), E.WOOD);
+  assert.equal(at(w, 8, 5), E.GUNPOWDER);
+  assert.equal(w.life[5 * w.W + 8], 0);
+});
+
+test('large gunpowder charges use delayed fuses without recursive detonation', () => {
+  const w = createWorld(80, 40, 28);
+  w.type.fill(E.GUNPOWDER);
+  put(w, 40, 20, E.SPARK, 24);
+  run(w, 60);
+  assert.ok(found(w, 'boom'));
+  assert.ok(tally(w, E.GUNPOWDER) < 100);
+});
+
+test('salt deices without manufacturing a second water particle', () => {
+  const w = createWorld(3, 4, 29);
+  w.type.fill(E.WALL);
+  put(w, 1, 1, E.ICE, 12); put(w, 1, 2, E.SALT);
+  run(w, 1000);
+  assert.equal(tally(w, E.SALTWATER), 1);
+  assert.equal(tally(w, E.WATER), 0);
+  assert.equal(tally(w, E.ICE), 0);
+});
+
+test('a torch heats water directly even when no flame fits in the container', () => {
+  const w = createWorld(3, 4, 30);
+  w.type.fill(E.WALL);
+  put(w, 1, 2, E.TORCH); put(w, 1, 1, E.WATER);
+  run(w, 30);
+  assert.equal(tally(w, E.STEAM), 1);
+  assert.ok(found(w, 'boil'));
+});

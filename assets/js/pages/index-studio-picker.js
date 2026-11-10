@@ -74,6 +74,7 @@
       id: folder.dataset.category,
       icon: text(folder, ".explore-folder-icon"),
       label: text(folder, ".explore-folder-title"),
+      goal: ({"2d-art": "Draw & animate", "3d-modeling": "Model & 3D print", "3d-studios": "Create characters & worlds", "coding": "Code websites & games", "music": "Make music", "engineering": "Build & invent"})[folder.dataset.category],
       count: items.length,
       folder: folder,
     });
@@ -167,7 +168,7 @@
     status.textContent = "";
     empty.hidden = true;
     if (id === "main") {
-      showPicked("⭐", "Main apps", "The big studios most projects start in.", mainTools());
+      showPicked("⭐", "Start here", "A few versatile studios to get your next project going.", mainTools());
     } else if (id === "recent") {
       showPicked("🕘", "Recent", "The tools you opened last on this device.", recent);
     } else {
@@ -207,6 +208,7 @@
     button.dataset.group = id;
     if (id !== "main" && id !== "recent") button.dataset.category = id;
     button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-controls", "explore-folders");
 
     var iconNode = document.createElement("span");
     iconNode.className = "explore-rail-icon";
@@ -232,11 +234,11 @@
       : null;
     var focusedGroup = focused ? focused.dataset.group : "";
     rail.textContent = "";
-    rail.appendChild(railButton("main", "⭐", "Main apps", mainTools().length));
+    rail.appendChild(railButton("main", "⭐", "Start here", mainTools().length));
     var recentCount = recentTools().length;
     if (recentCount) rail.appendChild(railButton("recent", "🕘", "Recent", recentCount));
     groups.forEach(function (group) {
-      rail.appendChild(railButton(group.id, group.icon, group.label, group.count));
+      rail.appendChild(railButton(group.id, group.icon, group.goal || group.label, group.count));
     });
     if (focusedGroup) {
       var again = rail.querySelector('[data-group="' + focusedGroup + '"]');

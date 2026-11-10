@@ -311,6 +311,10 @@
     var t = item.title.toLowerCase();
     var d = item.description.toLowerCase();
     var k = (item.keywords || []).join(' ').toLowerCase();
+    // Direct names and title prefixes outrank incidental mentions of a topic.
+    if (t === q) return 10;
+    if (t.startsWith(q) && /[\s:·—–-]/.test(t.charAt(q.length))) return 8;
+    if (t.startsWith(q)) return 7;
     if (t.includes(q)) return 3;
     if (k.includes(q)) return 2;
     if (d.includes(q)) return 1;
@@ -354,14 +358,6 @@
   }
 
   // ── Render ───────────────────────────────────────────────────────
-  var CATEGORY_ORDER = [
-    'Pages', 'Mathematics', 'Physics', 'Chemistry',
-    'Life Sciences', 'Earth Science', 'Cosmology',
-    'Engineering', 'Computer Science',
-    'Applied Physics & Material Science',
-    'Visual Perception & Design', 'Complex Systems & Humanities'
-  ];
-
   function renderDefaults() {
     // Show pages + a few top lessons
     var pages = index.filter(function (i) { return i.category === 'Pages'; });
@@ -387,32 +383,10 @@
       return;
     }
 
-    // Group by category
-    var groups = {};
-    var order = [];
-    items.forEach(function (item) {
-      var cat = item.category;
-      if (!groups[cat]) {
-        groups[cat] = [];
-        order.push(cat);
-      }
-      groups[cat].push(item);
-    });
-
-    // Sort groups by canonical order
-    order.sort(function (a, b) {
-      var ai = CATEGORY_ORDER.indexOf(a);
-      var bi = CATEGORY_ORDER.indexOf(b);
-      if (ai === -1) ai = 99;
-      if (bi === -1) bi = 99;
-      return ai - bi;
-    });
-
-    var html = '';
-    order.forEach(function (cat) {
-      html += '<div class="cp-group-label">' + escHtml(cat) + '</div>';
-      groups[cat].forEach(function (item) { html += renderItem(item, q); });
-    });
+    // Keep the relevance order from search; subject grouping previously moved
+    // keyword-only matches above direct title matches in another subject.
+    var html = '<div class="cp-group-label">Best matches</div>';
+    items.forEach(function (item) { html += renderItem(item, q); });
 
     resultsEl.innerHTML = html;
     activeIdx = -1;

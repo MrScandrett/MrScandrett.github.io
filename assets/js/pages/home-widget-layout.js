@@ -4,6 +4,12 @@
   const panel = document.querySelector('#tabpanel-today');
   if (!panel) return;
   const grids = [...panel.querySelectorAll('.today-grid')];
+  // Promote discovery cards before collecting widgets so render() cannot leave
+  // their wrapper stranded ahead of the reordered cards. Each gets the same
+  // sizing, ordering, persistence, and expand controls as the other widgets.
+  grids.forEach(grid => grid.querySelectorAll(':scope > .daily-discovery-stack').forEach(stack => {
+    stack.replaceWith(...stack.children);
+  }));
   const cards = grids.flatMap(grid => [...grid.children].filter(el => el.classList.contains('home-widget')));
   const key = 'steam-home-widgets-v1';
   const defaults = cards.map((card, index) => ({
