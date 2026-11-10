@@ -36,22 +36,6 @@
         y: Math.max(0, Math.min(boardSize.height, (source.clientY - rect.top) * boardSize.height / rect.height))
       };
     }
-    var missions = [
-      'Build a machine from three shapes, then make it move.',
-      'Can two different masses fall at the same rate? Build a test.',
-      'Create the longest-lasting bounce without turning gravity off.',
-      'Draw a creature, bring it to life, and send it sideways.',
-      'Make two objects collide while their velocity vectors are visible.',
-      'Invent a shape that behaves differently when gravity points up.'
-    ];
-    var missionIndex = 0;
-    var missionText = document.getElementById('phys-mission-text');
-    var missionRefresh = document.getElementById('phys-mission-refresh');
-    if (missionRefresh) missionRefresh.addEventListener('click', function () {
-      missionIndex = (missionIndex + 1 + Math.floor(Math.random() * (missions.length - 1))) % missions.length;
-      if (missionText) missionText.textContent = missions[missionIndex];
-    });
-
     // ── Tab switching ──────────────────────────────────────
     document.querySelectorAll('.phys-tab').forEach(function (tab) {
       tab.addEventListener('click', function () {
@@ -225,7 +209,6 @@
         spawnObj(Math.max(12,Math.min(PW()-12,cx)),Math.max(12,Math.min(PH()-12,cy)),(index-artwork.length/2)*7,-30-index*3,opts);
       });
       liveMsg = artwork.length+' sketch '+(artwork.length===1?'body':'bodies')+' entered the simulation';
-      if (missionText) missionText.textContent = 'Experiment: change gravity and discover what your drawing does next.';
     }
 
     drawCanvas.addEventListener('mousedown', dDown);
@@ -625,7 +608,6 @@
       spawnObj(gap*2,68,0,0,{type:'ball',r:22,color:'#f59e0b'});
       spawnObj(gap*3,56,0,0,{type:'ball',r:34,color:'#8b5cf6'});
       liveMsg='Galileo drop: different masses, same acceleration';
-      if (missionText) missionText.textContent='Observe: do the three masses reach the floor at the same time?';
       setPaused(false);
     });
     document.getElementById('pphys-burst') && document.getElementById('pphys-burst').addEventListener('click', function () {
@@ -1065,6 +1047,11 @@
     const projectLimit = 5_000_000;
     const projectFile = document.getElementById('sandbox-project-file');
     const projectStatus = document.getElementById('sandbox-project-status');
+    // Phones hide the standing explanation; a real status message (data-said) always shows.
+    function setProjectStatus(message) {
+      projectStatus.dataset.said = '';
+      projectStatus.textContent = message;
+    }
     const restoreBoard = document.getElementById('sandbox-restore');
     let previousBoard = null;
     let openRequest = 0;
@@ -1188,13 +1175,13 @@
       applyBoard(project);
       previousBoard = previous;
       restoreBoard.hidden = false;
-      projectStatus.textContent = message;
+      setProjectStatus(message);
     }
 
     document.getElementById('sandbox-save').addEventListener('click', function () {
       const blob = new Blob([JSON.stringify(captureBoard())], { type: 'application/json' });
       if (blob.size > projectLimit) {
-        projectStatus.textContent = 'This project is over 5 MB. Remove some drawing or course strokes before saving.';
+        setProjectStatus('This project is over 5 MB. Remove some drawing or course strokes before saving.');
         return;
       }
       const url = URL.createObjectURL(blob);
@@ -1203,7 +1190,7 @@
       link.download = 'physics-drawing-board.sandbox.json';
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      projectStatus.textContent = 'Board project downloaded. Physics scenes reopen paused.';
+      setProjectStatus('Board project downloaded. Physics scenes reopen paused.');
     });
     document.getElementById('sandbox-open').addEventListener('click', () => projectFile.click());
     projectFile.addEventListener('change', async function () {
@@ -1223,8 +1210,8 @@
         }
       } catch (error) {
         if (request === openRequest) {
-          projectStatus.textContent = 'Could not open the project. ' +
-            (error instanceof SyntaxError ? 'Choose a valid board JSON file.' : error.message);
+          setProjectStatus('Could not open the project. ' +
+            (error instanceof SyntaxError ? 'Choose a valid board JSON file.' : error.message));
         }
       }
     });
