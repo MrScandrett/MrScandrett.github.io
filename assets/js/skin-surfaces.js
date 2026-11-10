@@ -9,6 +9,8 @@
  *   data-skin-surface="field"    a text input, select or textarea
  *   data-skin-shape="tile"       on a control: a button holding a layout of its own
  *                                (a calendar day, a card that is a button), not a label
+ *   data-skin-shape="liner"      on a panel: it fills the panel around it (within 16px),
+ *                                so a skin can skip its frame; "wrap" when it only holds a liner
  *
  * Skin CSS styles those tags. Tags describe the page's own structure, not the
  * skin, so they are made once per element and survive skin switches; nothing
@@ -120,6 +122,10 @@
     var boxed = 0;
     for (var c = el.firstElementChild; c; c = c.nextElementSibling) {
       if (/^(SVG|IMG|I)$/i.test(c.tagName)) continue;
+      // Icons (aria-hidden) and screen-reader-only text decorate a label; they don't make it a layout.
+      if (c.getAttribute("aria-hidden") === "true") continue;
+      var cr = c.getBoundingClientRect();
+      if (cr.width <= 1 || cr.height <= 1) continue;
       var d = styleFor(c).display;
       if (d !== "inline" && d !== "contents" && d !== "none" && ++boxed >= 2) return true;
     }
@@ -153,6 +159,23 @@
       marks[k][0].setAttribute(ATTR, marks[k][1]);
       if (marks[k][2]) marks[k][0].setAttribute("data-skin-shape", "tile");
     }
+    // Document order: a parent panel is shaped before the panels inside it.
+    for (var m = 0; m < marks.length; m++) if (marks[m][1] === "panel") lineUp(marks[m][0]);
+  }
+
+  // A panel that fills the panel around it (a widget's inner card, a pager page) is a
+  // liner, not a new pane: drawing it would stack frames inside frames. A liner that
+  // holds another liner is only a wrapper. Skins may draw one frame for the whole stack.
+  var LINER_GAP = 16;
+  function lineUp(panel) {
+    if (panel.hasAttribute("data-skin-shape")) return;
+    var parent = panel.parentElement && panel.parentElement.closest("[" + ATTR + "='panel']");
+    if (!parent) return;
+    var a = panel.getBoundingClientRect(), b = parent.getBoundingClientRect();
+    var left = a.left - b.left, right = b.right - a.right;
+    if (left < 0 || right < 0 || left > LINER_GAP || right > LINER_GAP || a.height < b.height * 0.6) return;
+    panel.setAttribute("data-skin-shape", "liner");
+    if (parent.getAttribute("data-skin-shape") === "liner") parent.setAttribute("data-skin-shape", "wrap");
   }
 
   function active() {
