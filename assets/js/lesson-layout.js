@@ -415,8 +415,15 @@
     }
   }
 
+  /* A panel marked data-ll-panel-static is a permanent column of the page's own layout
+     (e.g. a game's controls): it starts open, has no close button, and never collapses. */
+  function isStaticPanel(panel) {
+    return panel.hasAttribute('data-ll-panel-static');
+  }
+
   function setPanel(panel, open) {
     if (!panel) return;
+    if (!open && isStaticPanel(panel)) return;
 
     if (!open) {
       var active = document.activeElement;
@@ -473,16 +480,15 @@
   function initPanel() {
     /* Always start collapsed — panel opens on user demand */
     document.querySelectorAll('.ll-panel').forEach(function (panel) {
-      panel.dataset.llCollapsed = 'true';
-      panel.setAttribute('aria-hidden', window.innerWidth <= 680 ? 'false' : 'true');
-    });
-
-    document.querySelectorAll('.ll-panel').forEach(function (panel) {
-      setPanelInteractivity(panel, false);
+      var open = isStaticPanel(panel);
+      panel.dataset.llCollapsed = open ? 'false' : 'true';
+      panel.setAttribute('aria-hidden', open || window.innerWidth <= 680 ? 'false' : 'true');
+      setPanelInteractivity(panel, open);
     });
 
     /* Ensure every panel has a close button (static HTML panels may not) */
     document.querySelectorAll('.ll-panel').forEach(function (panel) {
+      if (isStaticPanel(panel)) return;
       if (panel.querySelector('.ll-panel-close')) return;
       var inner = panel.querySelector('.ll-panel-inner') || panel;
       var btn = document.createElement('button');
