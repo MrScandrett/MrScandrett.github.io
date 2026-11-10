@@ -16,6 +16,9 @@
  *   prepareForPrint(positions, { yUp }) → the four steps above in order
  *   writeBinaryStl(positions, header) → ArrayBuffer (binary STL)
  *   readBinaryStl(buffer)      → soup
+ *   write3mf(bodies, opts)     → Uint8Array (.3mf: millimetres, Z up, one object per body)
+ *
+ * Reading STL, OBJ and 3MF from other apps lives in mesh-import.mjs.
  *
  * Printers are listed in PRINTERS so a lesson can name the school's machine
  * rather than hard-coding numbers.
@@ -337,4 +340,109 @@ export function writeObj(bodies, { comment = 'ClassroomOS Forge' } = {}) {
     base += verts.length;
   }
   return lines.join('\n') + '\n';
+}
+
+/* ── 3MF ──────────────────────────────────────────────────────────────────
+   3MF is what slicers (Bambu Studio, PrusaSlicer, Cura, MakerBot Print) prefer
+   to STL: it records its units, keeps parts as named objects, and shares
+   corners instead of repeating them. It is a ZIP of three XML files; these are
+   stored uncompressed, which every reader accepts. Bodies are
+   { name, positions (Z-up mm soup) }. */
+
+let crcTable = null;
+function crc32(bytes) {
+  if (!crcTable) {
+    crcTable = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crcTable[n] = c >>> 0;
+    }
+  }
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+export function writeZip(files) {
+  const enc = new TextEncoder();
+  const entries = files.map(({ name, data }) => ({ name: enc.encode(name), data: typeof data === 'string' ? enc.encode(data) : data }));
+  let size = 22;
+  for (const e of entries) size += 30 + e.name.length + e.data.length + 46 + e.name.length;
+  const out = new Uint8Array(size);
+  const view = new DataView(out.buffer);
+  let o = 0;
+  const central = [];
+  for (const e of entries) {
+    const crc = crc32(e.data);
+    central.push({ ...e, crc, offset: o });
+    view.setUint32(o, 0x04034b50, true); view.setUint16(o + 4, 20, true); view.setUint16(o + 6, 0x0800, true);
+    view.setUint16(o + 8, 0, true); view.setUint32(o + 10, 0x00210000, true); // stored; 1980-01-01 00:00
+    view.setUint32(o + 14, crc, true); view.setUint32(o + 18, e.data.length, true); view.setUint32(o + 22, e.data.length, true);
+    view.setUint16(o + 26, e.name.length, true); view.setUint16(o + 28, 0, true);
+    out.set(e.name, o + 30); out.set(e.data, o + 30 + e.name.length);
+    o += 30 + e.name.length + e.data.length;
+  }
+  const cdStart = o;
+  for (const e of central) {
+    view.setUint32(o, 0x02014b50, true); view.setUint16(o + 4, 20, true); view.setUint16(o + 6, 20, true); view.setUint16(o + 8, 0x0800, true);
+    view.setUint16(o + 10, 0, true); view.setUint32(o + 12, 0x00210000, true);
+    view.setUint32(o + 16, e.crc, true); view.setUint32(o + 20, e.data.length, true); view.setUint32(o + 24, e.data.length, true);
+    view.setUint16(o + 28, e.name.length, true); // extra, comment, disk, attributes: 0
+    view.setUint32(o + 42, e.offset, true);
+    out.set(e.name, o + 46);
+    o += 46 + e.name.length;
+  }
+  view.setUint32(o, 0x06054b50, true);
+  view.setUint16(o + 8, central.length, true); view.setUint16(o + 10, central.length, true);
+  view.setUint32(o + 12, o - cdStart, true); view.setUint32(o + 16, cdStart, true);
+  return out;
+}
+
+const xmlText = (s) => String(s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const num = (v) => { const r = Math.round(v * 1e5) / 1e5; return Object.is(r, -0) ? '0' : String(r); };
+
+export function write3mf(bodies, { title = 'ClassroomOS model', application = 'ClassroomOS' } = {}) {
+  const objects = [];
+  const items = [];
+  bodies.forEach((body, b) => {
+    const p = body.positions;
+    triangleCount(p);
+    const ids = new Map();
+    const verts = [];
+    const tris = [];
+    for (let i = 0; i < p.length; i += 9) {
+      const f = [];
+      for (let c = 0; c < 3; c++) {
+        const x = num(p[i + c * 3]), y = num(p[i + c * 3 + 1]), z = num(p[i + c * 3 + 2]);
+        const k = `${x} ${y} ${z}`;
+        let id = ids.get(k);
+        if (id === undefined) { id = verts.length; ids.set(k, id); verts.push(`<vertex x="${x}" y="${y}" z="${z}"/>`); }
+        f.push(id);
+      }
+      if (f[0] !== f[1] && f[1] !== f[2] && f[0] !== f[2]) tris.push(`<triangle v1="${f[0]}" v2="${f[1]}" v3="${f[2]}"/>`);
+    }
+    const id = b + 1;
+    objects.push(`<object id="${id}" name="${xmlText(body.name || `Part ${id}`)}" type="model"><mesh><vertices>${verts.join('')}</vertices><triangles>${tris.join('')}</triangles></mesh></object>`);
+    items.push(`<item objectid="${id}"/>`);
+  });
+  const model = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">
+<metadata name="Title">${xmlText(title)}</metadata>
+<metadata name="Application">${xmlText(application)}</metadata>
+<resources>${objects.join('\n')}</resources>
+<build>${items.join('')}</build>
+</model>
+`;
+  const types = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>
+`;
+  const rels = `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>
+`;
+  return writeZip([
+    { name: '[Content_Types].xml', data: types },
+    { name: '_rels/.rels', data: rels },
+    { name: '3D/3dmodel.model', data: model },
+  ]);
 }

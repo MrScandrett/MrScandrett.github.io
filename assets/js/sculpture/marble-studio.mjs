@@ -4,6 +4,7 @@
 // wires up the controls. Used by lessons/3d-design/sculpture/marble-sculpture.html.
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import * as M from './marble-core.mjs';
+import { ACCEPT as MESH_ACCEPT, readMesh } from '../mesh-import.mjs';
 
 const SAVE_KEY = 'classroomos:marble-studio:v1';
 const SOUND_KEY = 'classroomos:marble-studio:sound';
@@ -367,7 +368,7 @@ class Studio {
       for (const [v, t] of opts) s.append(el('option', { value: v, selected: v === value }, t));
       return el('label', { class: 'ms-field' }, el('span', {}, label), s);
     };
-    const subjectOpts = [['none', 'Free carve (no maquette)'], ...M.REFERENCES.map(r => ['preset:' + r.id, 'Maquette: ' + r.label]), ['draw', 'Draw my own on the block…'], ['stl', 'Use my 3D model (STL)…']];
+    const subjectOpts = [['none', 'Free carve (no maquette)'], ...M.REFERENCES.map(r => ['preset:' + r.id, 'Maquette: ' + r.label]), ['draw', 'Draw my own on the block…'], ['stl', 'Use my 3D model (STL, OBJ, 3MF)…']];
     this.subjectSel = sel('ms-subject', 'Subject', subjectOpts, 'none', e => this.onSubject(e.target.value)).querySelector('select');
     const toggle = (key, label, title) => el('button', { type: 'button', class: 'ms-toggle', 'aria-pressed': 'false', title, 'data-view': key, onclick: () => this.setView(key, !this.view[key]) }, label);
     this.toggles = {
@@ -473,7 +474,7 @@ class Studio {
     for (const [v, t] of [['fast', 'Fast (7 mm grains)'], ['standard', 'Standard (5 mm)'], ['fine', 'Fine (4 mm)']]) this.qualitySel.append(el('option', { value: v, selected: v === this.quality }, t));
     this.rulesBox = el('input', { type: 'checkbox', onchange: e => this.setStoneRules(e.target.checked) });
     this.fileIn = el('input', { type: 'file', accept: '.json,.marble.json,application/json', hidden: true, onchange: e => this.openFile(e.target.files[0]) });
-    this.stlIn = el('input', { type: 'file', accept: '.stl,model/stl', hidden: true, onchange: e => this.loadStl(e.target.files[0]) });
+    this.stlIn = el('input', { type: 'file', accept: MESH_ACCEPT, hidden: true, onchange: e => this.loadStl(e.target.files[0]) });
     const make = el('section', { class: 'ms-panel', 'aria-label': 'Save and settings' },
       el('h3', {}, 'Save, photograph, settings'),
       el('div', { class: 'ms-row' },
@@ -877,7 +878,8 @@ class Studio {
     this.stlIn.value = '';
     if (!file) return;
     try {
-      const tris = M.parseSTL(await file.arrayBuffer());
+      // the shared importer reads STL, OBJ and 3MF, and always hands back Z up
+      const tris = (await readMesh(await file.arrayBuffer(), file.name)).positions;
       this.lastStl = { tris, name: file.name };
       this.applyStl(up);
     } catch (err) {

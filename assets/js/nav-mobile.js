@@ -562,7 +562,7 @@
         targetFile = "showcase.html";
       } else if (currentPath.indexOf("library") !== -1 || currentPath.indexOf("reader") !== -1 || currentPath.indexOf("bible") !== -1 || currentPath.indexOf("watch") !== -1) {
         targetFile = "library.html";
-      } else if (currentPath.indexOf("applications") !== -1 || currentPath.indexOf("forge") !== -1 || currentPath.indexOf("music-lab") !== -1) {
+      } else if (currentPath.indexOf("applications") !== -1 || currentPath.indexOf("forge") !== -1 || currentPath.indexOf("print-prep") !== -1 || currentPath.indexOf("music-lab") !== -1) {
         targetFile = "applications.html";
       } else if (currentPath.indexOf("paths") !== -1) {
         targetFile = "paths.html";
@@ -1589,6 +1589,7 @@
         { label: "🎛️ Music Lab (DAW)", href: "/music-lab.html" },
         { label: "🧱 3D Workbench",    href: "/workbench.html" },
         { label: "⚙️ Forge Fab Studio", href: "/forge.html" },
+        { label: "🖨️ Print Prep",       href: "/print-prep.html" },
         { divider: true },
         { label: "🧩 Scratch",         href: "https://scratch.mit.edu/", external: true },
         { label: "📝 VS Code",         href: "https://vscode.dev/",     external: true },

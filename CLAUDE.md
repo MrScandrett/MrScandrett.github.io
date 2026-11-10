@@ -630,6 +630,24 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
     must build, round-trip and fit the printer at its print scale). When you add a shape or template,
     the test covers it automatically.
 
+## Mesh import + Print Prep
+
+**One importer for every tool.** `assets/js/mesh-import.mjs` (pure, async) reads STL (binary and ASCII, multi-solid),
+OBJ (polygons, negative indices; Y up → Z up) and 3MF (ZIP with deflate via `DecompressionStream`, declared units,
+components, build transforms, Bambu/Prusa `p:path` object files, support objects skipped). `readMesh(buffer, name)`
+returns Z-up soup in the file's own units plus `units: { unit, certain, reason }` (STL/OBJ units are guessed from size;
+our own OBJ export says "units: metres"); `toMillimetres()` converts. Don't write another STL parser in a tool: import
+this (Marble Studio already does). Writers stay in `fab-io.mjs`, which now also has `write3mf(bodies)` (stored ZIP,
+millimetres, one object per body). Tests: `node --test tests/mesh-import.test.mjs`.
+
+**Print Prep** (`print-prep.html`, `assets/js/print-prep.mjs`) opens any of those, ranks orientations, lays a clicked
+face flat, fixes units/scale, and exports STL or 3MF. The maths is `assets/js/print-orient.mjs` (pure): `analyze()`
+gives bed contact, overhangs (Forge's `overhangs()`, so bridges match Forge) and a support-volume estimate from a grid
+of vertical columns down to the nearest upward surface; `rankOrientations()` tries each large flat face down and
+sorts by support volume + a wobble penalty for small contact + height. It does not judge strength (layer direction);
+the page says so. `?model=<same-site path>` opens a model by link, `?sample` the tilted L-bracket.
+Tests: `node --test tests/print-orient.test.mjs`.
+
 ## Marble Studio (sculpture lesson)
 
 `lessons/3d-design/sculpture/marble-sculpture.html` ("In the Likeness") carves a 40 × 56 × 36 cm marble block.
