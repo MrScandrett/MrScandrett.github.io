@@ -9,8 +9,11 @@
   'use strict';
 
   var CONSTELLATIONS = 'cosmology/constellations.html';
+  var KHAYYAM = 'language-literature/pioneers/omar-khayyam.html';
 
   var LINKS = {
+    'language-literature/pioneers/arnaut-daniel.html': [[KHAYYAM, 'Omar Khayyam & the Rubáiyát', 'Another poem built on a rule: the AABA rubāʿī, read in three layers from the Persian to FitzGerald, plus a quatrain forge.']],
+    'mathematics/algebra/completing-the-square.html': [[KHAYYAM, 'Omar Khayyam: Cubics by Conics', 'Al-Khwarizmi completed the square with geometry; two centuries later Khayyam solved cubics where a parabola meets a circle.']],
     'cosmology/apollo-moon-landing.html': [['computer-science/pioneers/margaret-hamilton.html', 'Margaret Hamilton: Software for the Moon', 'Investigate Apollo guidance software and compare overload recovery policies in a computer workload lab.']],
     'computer-science/pioneers/grace-hopper.html': [['computer-science/pioneers/margaret-hamilton.html', 'Margaret Hamilton: Software for the Moon', 'Continue from programming languages to dependable real-time flight software.']],
     'cosmology/pioneers/tycho-brahe.html': [[CONSTELLATIONS, 'Constellations: Cassiopeia and SN 1572', 'Find Cassiopeia on the star map, see where Tycho’s “new star” blazed in 1572, and read about the supernova remnant it left behind.']],
@@ -34,6 +37,7 @@
       ['humanities/quadrivium.html', 'The Medieval Quadrivium', 'Explore how arithmetic, geometry, music, and astronomy were taught as four branches of number.']
     ],
     'mathematics/foundations/clocks-and-time.html': [
+      [KHAYYAM, 'Omar Khayyam: A Calendar That Beats Yours', 'Race the Julian, Gregorian and Jalali calendars and find the leap rule 8/33 hiding in a continued fraction.'],
       ['cosmology/heliocentrism.html', 'Heliocentrism — The Sun at the Center', 'Connect sundials, solar days, and orbital periods to our changing model of the Solar System.'],
       ['physics/mechanics/pendulum.html', 'The Pendulum Lab', 'Discover why Galileo and Huygens used pendulum period to build the first accurate mechanical clocks.']
     ],
