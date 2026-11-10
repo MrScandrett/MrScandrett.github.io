@@ -9,8 +9,9 @@ import { extrude } from '../assets/js/print-orient.mjs';
 import * as W from '../assets/js/workbench/model.mjs';
 import { shapeById } from '../assets/js/workbench/shapes.mjs';
 import {
-  MAX_IMPORT_TRIANGLES, assetIds, checkSolid, decodeAssets, encodeAssets, hashGeometry, makeAsset, projectTriangles, weld,
+  MAX_IMPORT_TRIANGLES, assetIds, checkSolid, decodeAssets, encodeAssets, hashGeometry, makeAsset, makeOutlineAsset, projectTriangles, weld,
 } from '../assets/js/workbench/assets.mjs';
+import { parseSvg } from '../assets/js/svg-outline.mjs';
 
 const font = JSON.parse(fs.readFileSync('assets/vendor/fonts/droid-sans-bold.typeface.json', 'utf8'));
 const engine = await createEngine(Module, { font });
@@ -160,4 +161,66 @@ test('files from every format import into Workbench the same way', async () => {
   }
   assert.equal(shapeById('mesh').imported, true);
   assert.deepEqual(W.resolveParams(shapeById('mesh'), { asset: '<script>', units: 'parsecs' }), { asset: '', units: 'mm' });
+});
+
+/* ── SVG drawings ─────────────────────────────────────────────────────── */
+
+const ringSvg = (rule = 'evenodd') => `<svg xmlns="http://www.w3.org/2000/svg" width="40mm" height="40mm" viewBox="0 0 40 40"><path fill-rule="${rule}" d="M0 0H40V40H0Z M10 10H30V30H10Z"/></svg>`;
+function drawing(preset, svg, params = {}) {
+  const asset = makeOutlineAsset(parseSvg(svg), { name: 'Ring' });
+  const assets = new Map([[asset.id, asset]]);
+  const project = W.freshProject(preset);
+  const node = W.newShapeNode(project, 'svg', { params: { asset: asset.id, ...params } });
+  project.objects.push(node);
+  const opts = { cache: W.createShapeCache(), assets };
+  const print = () => engine.run({ params: [], build: (ctx) => ({ bodies: W.printBodies(ctx, project, opts).bodies, layout: 'nested' }) }, {});
+  return { asset, assets, project, node, opts, print };
+}
+
+test('an SVG ring extrudes with its hole, at the drawing’s width and the chosen height', () => {
+  const t = drawing('print', ringSvg(), { w: 40, h: 3 });
+  const p = t.print();
+  assert.equal(p.error, undefined, p.error);
+  assert.ok(near(p.bodies[0].volume, (1600 - 400) * 3), `volume ${p.bodies[0].volume}`);
+  assert.ok(edgeReport(p.bodies[0].positions).watertight);
+  // width scales evenly: 80 mm wide is four times the area
+  const big = drawing('print', ringSvg(), { w: 80, h: 3 }).print();
+  assert.ok(near(big.bodies[0].volume, (1600 - 400) * 4 * 3));
+  // the same drawing with nonzero and both rings wound the same way fills the hole, as SVG would
+  const filled = drawing('print', ringSvg('nonzero'), { w: 40, h: 3 }).print();
+  assert.ok(near(filled.bodies[0].volume, 1600 * 3));
+});
+
+test('an SVG set to Hole engraves into the part under it', () => {
+  const t = drawing('print', ringSvg(), { w: 40, h: 2 });
+  t.node.hole = true;
+  t.node.pos = [0, 0, 5];                       // spans z 4–6
+  const plate = W.newShapeNode(t.project, 'box', { params: { w: 60, d: 60, h: 5 } });
+  plate.pos = [0, 0, 2.5];                      // spans z 0–5
+  t.project.objects.push(plate);
+  const p = t.print();
+  assert.ok(near(p.bodies[0].volume, 60 * 60 * 5 - (1600 - 400) * 1), `volume ${p.bodies[0].volume}`);
+});
+
+test('drawings save inside the project file, and a tampered drawing is refused', () => {
+  const t = drawing('print', ringSvg(), { w: 40 });
+  assert.deepEqual([...assetIds(t.project)], [t.asset.id]);
+  const saved = JSON.parse(JSON.stringify({ ...t.project, assets: encodeAssets(t.assets, assetIds(t.project)) }));
+  const back = decodeAssets(saved.assets).get(t.asset.id);
+  assert.equal(back.kind, 'outline');
+  assert.deepEqual(back.shapes, t.asset.shapes);
+  assert.deepEqual(back.size, [40, 40]);
+  const tampered = structuredClone(saved.assets);
+  tampered[t.asset.id].shapes[0].contours[0][0] = 99;
+  assert.throws(() => decodeAssets(tampered), /id does not match/);
+  const flipped = structuredClone(saved.assets);
+  flipped[t.asset.id].shapes[0].rule = 'nonzero';
+  assert.throws(() => decodeAssets(flipped), /id does not match/);
+});
+
+test('a drawing in a metre project keeps its real size', () => {
+  const t = drawing('building', ringSvg(), { w: 0.04, h: 0.003 });
+  const r = engine.scoped((ctx) => W.evaluate(ctx, t.project, t.opts));
+  assert.deepEqual(r.errors, []);
+  assert.ok(near(r.sizes[t.node.id][0], 0.04) && near(r.sizes[t.node.id][2], 0.003));
 });

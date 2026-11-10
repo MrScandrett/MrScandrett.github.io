@@ -33,8 +33,7 @@ function tx(mode, fn) {
 }
 
 export function putAsset(asset) {
-  const { id, name, source, license, solid, vertices, triangles } = asset;
-  return tx('readwrite', (s) => s.put({ id, name, source, license, solid, vertices, triangles, at: Date.now() }));
+  return tx('readwrite', (s) => s.put({ ...asset, at: Date.now() }));
 }
 
 export async function getAssets(ids) {

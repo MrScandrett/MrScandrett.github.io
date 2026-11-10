@@ -10,6 +10,11 @@
  * The id is a hash of the geometry, so the same file imported twice is one
  * asset, and an id in a project always means exactly that shape.
  *
+ * A second kind, `kind: 'outline'`, holds a 2D drawing from an SVG
+ * (svg-outline.mjs): filled outlines in millimetres, centred, with a fill rule
+ * per path. Its node is `{ shape: 'svg', params: { asset, w, h } }` and it is
+ * always a solid (it is extruded, never imported as triangles).
+ *
  * Pure: no DOM, no WebAssembly (checkSolid takes the engine's ctx).
  */
 
@@ -51,8 +56,17 @@ export function weld(soup) {
 
 /* cyrb53 over the raw bytes: fast, stable, plenty for telling models apart. */
 export function hashGeometry(vertices, triangles) {
+  return hashBytes([vertices, triangles]);
+}
+
+/* An outline's id hashes its canonical JSON (rules, then every coordinate). */
+export function hashOutline(shapes) {
+  return hashBytes([new TextEncoder().encode(JSON.stringify(shapes.map((sh) => [sh.rule, sh.contours])))]);
+}
+
+function hashBytes(arrays) {
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-  for (const arr of [vertices, triangles]) {
+  for (const arr of arrays) {
     const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
     for (let i = 0; i < bytes.length; i++) {
       h1 = Math.imul(h1 ^ bytes[i], 2654435761);
@@ -74,6 +88,22 @@ export function makeAsset(soup, { name = 'Imported model', source = '', license 
   if (count > MAX_IMPORT_TRIANGLES) throw new Error(`That model has ${count.toLocaleString()} triangles; Workbench takes up to ${MAX_IMPORT_TRIANGLES.toLocaleString()}. Simplify it first (Blender: Decimate modifier; Meshmixer: Reduce).`);
   return { id: hashGeometry(vertices, triangles), name: cleanText(name, 60) || 'Imported model', source: cleanText(source, 200), license: cleanText(license, 80), solid: null, vertices, triangles };
 }
+
+/* parseSvg()'s result → an outline asset. */
+export function makeOutlineAsset(parsed, { name = 'Drawing', source = '', license = '' } = {}) {
+  const shapes = parsed.shapes.map((sh) => ({ rule: sh.rule === 'evenodd' ? 'evenodd' : 'nonzero', contours: sh.contours.map((c) => [...c]) }));
+  return { id: hashOutline(shapes), kind: 'outline', name: cleanText(name, 60) || 'Drawing', source: cleanText(source, 200), license: cleanText(license, 80), solid: true, shapes, size: outlineSize(shapes) };
+}
+
+function outlineSize(shapes) {
+  const lo = [Infinity, Infinity], hi = [-Infinity, -Infinity];
+  for (const sh of shapes) for (const c of sh.contours) for (let j = 0; j < c.length; j += 2) {
+    for (let q = 0; q < 2; q++) { if (c[j + q] < lo[q]) lo[q] = c[j + q]; if (c[j + q] > hi[q]) hi[q] = c[j + q]; }
+  }
+  return [hi[0] - lo[0], hi[1] - lo[1]];
+}
+
+export const MAX_OUTLINE_POINTS = 20_000;
 
 /* Can Manifold treat it as a solid (closed, every edge shared by two faces)?
    Run inside engine.scoped. Mesh.merge() first welds corners that sit a hair
@@ -108,7 +138,7 @@ export function assetIds(project) {
   const visit = (nodes) => {
     for (const node of nodes) {
       if (node.type === 'group') visit(node.children);
-      else if (node.shape === 'mesh' && node.params?.asset) ids.add(node.params.asset);
+      else if ((node.shape === 'mesh' || node.shape === 'svg') && node.params?.asset) ids.add(node.params.asset);
     }
   };
   visit(project.objects);
@@ -138,6 +168,7 @@ export function encodeAssets(assets, ids) {
   for (const id of ids) {
     const a = assets.get(id);
     if (!a) continue;
+    if (a.kind === 'outline') { out[id] = { kind: 'outline', name: a.name, source: a.source, license: a.license, shapes: a.shapes }; continue; }
     out[id] = { name: a.name, source: a.source, license: a.license, solid: a.solid === true, encoding: 'base64-le', vertices: toBase64(a.vertices), triangles: toBase64(a.triangles) };
   }
   return out;
@@ -154,6 +185,22 @@ export function decodeAssets(raw) {
   for (const [id, a] of Object.entries(raw)) {
     const fail = (why) => { throw new Error(`The imported model “${cleanText(a?.name, 40) || id}” in this file is damaged (${why}).`); };
     if (!ASSET_ID.test(id) || !a || typeof a !== 'object') fail('bad id');
+    if (a.kind === 'outline') {
+      if (!Array.isArray(a.shapes) || !a.shapes.length) fail('no outlines');
+      let points = 0;
+      const shapes = a.shapes.map((sh) => {
+        if (!sh || !Array.isArray(sh.contours) || !sh.contours.length) fail('an empty outline');
+        return { rule: sh.rule === 'evenodd' ? 'evenodd' : 'nonzero', contours: sh.contours.map((c) => {
+          if (!Array.isArray(c) || c.length < 6 || c.length % 2 || !c.every((v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) < 1e6)) fail('an outline with bad points');
+          points += c.length / 2;
+          return [...c];
+        }) };
+      });
+      if (points > MAX_OUTLINE_POINTS) fail('too many points');
+      if (hashOutline(shapes) !== id || shapes.some((sh, k) => sh.rule !== a.shapes[k].rule)) fail('its id does not match its shape');
+      out.set(id, { id, kind: 'outline', name: cleanText(a.name, 60) || 'Drawing', source: cleanText(a.source, 200), license: cleanText(a.license, 80), solid: true, shapes, size: outlineSize(shapes) });
+      continue;
+    }
     let vertices, triangles;
     try { vertices = fromBase64(String(a.vertices), Float32Array); triangles = fromBase64(String(a.triangles), Uint32Array); } catch { fail('unreadable data'); }
     if (vertices.length % 3 || triangles.length % 3 || !triangles.length) fail('wrong length');

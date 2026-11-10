@@ -964,4 +964,32 @@ export const IMPORTED = {
   },
 };
 
-export const shapeById = (id) => (id === IMPORTED.id ? IMPORTED : SHAPES.find((s) => s.id === id));
+/* A drawing from an SVG file (svg-outline.mjs), extruded. Its outlines live in
+   ctx.assets as millimetres at the drawing's own size; Width scales them
+   evenly. Set it to Hole to engrave a logo into another part. */
+export const IMPORTED_SVG = {
+  // 'handheld' scales least in metre projects, so a 40 mm logo stays 40 mm in an architecture or game project
+  id: 'svg', name: 'SVG drawing', group: 'Imported', kind: 'handheld', imported: true,
+  blurb: 'A drawing brought in from an SVG, pulled up into a solid. Make it a Hole to engrave it, or keep it solid for a badge or a cookie-cutter shape.',
+  params: [
+    { id: 'asset', label: 'Drawing', type: 'asset', default: '' },
+    len('w', 'Width', 0.5, 2000, 0.5, 40, { help: 'Depth changes with it, so the drawing keeps its shape.' }),
+    len('h', 'Height', 0.1, 200, 0.1, 3),
+  ],
+  build({ CrossSection: CS, track, assets }, p) {
+    const a = assets?.get(p.asset);
+    if (!a || a.kind !== 'outline') throw new Error('This drawing’s data is missing from this browser. Open the .workbench.json file it was saved in, or import the SVG again.');
+    const k = p.w / (a.size[0] || 1);
+    const sections = a.shapes.map((sh) => track(new CS(sh.contours.map((c) => {
+      const ring = [];
+      for (let j = 0; j < c.length; j += 2) ring.push([c[j] * k, c[j + 1] * k]);
+      return ring;
+    }), sh.rule === 'evenodd' ? 'EvenOdd' : 'NonZero')));
+    const section = sections.length === 1 ? sections[0] : CS.union(sections);
+    if (section.isEmpty()) throw new Error('This drawing has no filled area to pull up.');
+    return section.extrude(p.h);
+  },
+};
+
+const IMPORTED_SHAPES = { [IMPORTED.id]: IMPORTED, [IMPORTED_SVG.id]: IMPORTED_SVG };
+export const shapeById = (id) => IMPORTED_SHAPES[id] || SHAPES.find((s) => s.id === id);

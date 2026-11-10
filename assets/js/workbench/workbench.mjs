@@ -9,7 +9,8 @@
  *
  * Imported models (STL, OBJ, 3MF) are assets (assets.mjs): the project points
  * at them by id, the page keeps them in `assets` and IndexedDB, and a saved
- * .workbench.json carries the ones it uses.
+ * .workbench.json carries the ones it uses. SVG drawings are outline assets,
+ * extruded by the `svg` shape.
  */
 
 import ManifoldModule from '../../vendor/manifold/manifold.js';
@@ -17,7 +18,8 @@ import { concat, createEngine } from '../forge/engine.mjs';
 import { bounds as soupBounds, prepareForPrint, write3mf, writeBinaryStl, writeObj } from '../fab-io.mjs';
 import { UNIT_NAMES, readMesh } from '../mesh-import.mjs';
 import { arrivedByHandoff, sendAndOpen, takeFile } from '../handoff.mjs';
-import { MAX_PROJECT_TRIANGLES, assetIds, checkSolid, decodeAssets, encodeAssets, makeAsset, projectTriangles } from './assets.mjs';
+import { MAX_PROJECT_TRIANGLES, assetIds, checkSolid, decodeAssets, encodeAssets, makeAsset, makeOutlineAsset, projectTriangles } from './assets.mjs';
+import { parseSvg } from '../svg-outline.mjs';
 import { getAssets, pruneAssets, putAsset } from './asset-store.mjs';
 import { SHAPES, SHAPE_GROUPS, shapeById } from './shapes.mjs';
 import * as W from './model.mjs';
@@ -689,10 +691,13 @@ function assetInfo(id) {
   if (!a) return h('p', { class: 'wb-error', text: 'This model’s data is missing from this browser. Open the .workbench.json it was saved in, or import the model again.' });
   const src = fieldId(), lic = fieldId();
   const edit = (key, max) => (e) => { a[key] = e.target.value.replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max); putAsset(a).catch(() => {}); };
+  const facts = a.kind === 'outline'
+    ? h('p', { class: 'wb-help', text: `${a.shapes.reduce((n, sh) => n + sh.contours.length, 0).toLocaleString()} outlines from an SVG, ${fmt(a.size[0], 3)} × ${fmt(a.size[1], 3)} mm as drawn. Set it to Hole to engrave it into another part.` })
+    : h('p', { class: a.solid ? 'wb-help' : 'wb-error', text: `${(a.triangles.length / 3).toLocaleString()} triangles. ${a.solid ? 'A closed solid: holes can cut it, it can be a hole, and it prints.' : 'Display only: it isn’t a closed solid, so it can’t be cut, be a hole, or print. You can still move, animate and export it for games.'}` });
   return h('div', { class: 'wb-field wb-asset' },
-    h('p', { class: a.solid ? 'wb-help' : 'wb-error', text: `${(a.triangles.length / 3).toLocaleString()} triangles. ${a.solid ? 'A closed solid: holes can cut it, it can be a hole, and it prints.' : 'Display only: it isn’t a closed solid, so it can’t be cut, be a hole, or print. You can still move, animate and export it for games.'}` }),
+    facts,
     h('label', { for: src, class: 'wb-label', text: 'Where it came from' }),
-    h('input', { type: 'text', id: src, value: a.source, maxlength: '200', placeholder: 'A link, or “my own scan”', onchange: edit('source', 200) }),
+    h('input', { type: 'text', id: src, value: a.source, maxlength: '200', placeholder: a.kind === 'outline' ? 'A link, or “my own drawing”' : 'A link, or “my own scan”', onchange: edit('source', 200) }),
     h('label', { for: lic, class: 'wb-label', text: 'Licence' }),
     h('input', { type: 'text', id: lic, value: a.license, maxlength: '80', list: 'wb-licences', placeholder: 'e.g. CC BY 4.0', onchange: edit('license', 80) }),
     h('datalist', { id: 'wb-licences' }, ...['My own work', 'CC0 (public domain)', 'CC BY 4.0', 'CC BY-SA 4.0', 'CC BY-NC 4.0', 'CC BY-NC-SA 4.0', 'Standard Digital File License'].map((v) => h('option', { value: v }))),
@@ -757,9 +762,43 @@ async function importModel(bytes, filename, { at, source = '' } = {}) {
   say(`Imported ${node.name}: ${dims} ${u}, read as ${UNIT_NAMES[unit]}${read.units.certain ? '' : ' (a guess: wrong size? change File units in Properties)'}. ${asset.solid ? 'It is a closed solid, so holes can cut it and it prints.' : 'It isn’t a closed solid, so it is display-only: no holes and no printing, but you can move, animate and export it.'}${read.warnings.length ? ' ' + read.warnings.join(' ') : ''}`);
 }
 
+/* An SVG drawing becomes outlines (svg-outline.mjs) pulled up by Height.
+   Width starts at the drawing's real size when the file states one, and at a
+   sensible 60 mm when it is only pixels and comes out huge or tiny. */
+async function importSvg(text, filename, { at } = {}) {
+  if (!engine) { say('The geometry engine is still starting. Try again in a moment.'); return; }
+  if (W.countNodes(project.objects) >= W.MAX_NODES) { say(`A project holds up to ${W.MAX_NODES} shapes.`); return; }
+  let parsed, asset;
+  try {
+    parsed = parseSvg(text);
+    asset = makeOutlineAsset(parsed, { name: filename.replace(/\.[^.]+$/, '') });
+  } catch (error) { say(error.message || `${filename} could not be read.`); return; }
+  asset = assets.get(asset.id) || asset;
+  assets.set(asset.id, asset);
+  putAsset(asset).catch(() => say('Imported, but this browser could not store the drawing. Use Save a copy to keep it.'));
+  let widthMm = asset.size[0], resized = false;
+  if (!parsed.units.certain && (widthMm > 200 || widthMm < 5)) { widthMm = 60; resized = true; }
+  const node = W.newShapeNode(project, 'svg', { color: nextColor(), params: { asset: asset.id, w: W.nice(widthMm / preset().toMm), h: W.nice(3 / preset().toMm) } });
+  node.name = asset.name.slice(0, 40) || 'SVG drawing';
+  const [x, y] = at || view?.target() || [0, 0];
+  const size = shapeSize(node);
+  node.pos = [snapValue(x), snapValue(y), W.nice(size[2] / 2)];
+  project.objects.push(node);
+  if (mode !== 'build') setMode('build');
+  commit();
+  dirty = true;
+  rebuild();
+  view?.frame(result?.solidAll);
+  select([node.id]);
+  showMobilePanel('properties');
+  const u = units();
+  say(`Imported ${node.name}: ${fmt(size[0], 3)} × ${fmt(size[1], 3)} ${u}, ${fmt(size[2], 3)} ${u} tall. ${resized ? 'It had no real size, so it starts 60 mm wide. ' : parsed.units.certain ? '' : 'Its size was read at 96 pixels to the inch. '}Change Width and Height in Properties, or make it a Hole to engrave it.${parsed.warnings.length ? ' ' + parsed.warnings.join(' ') : ''}`);
+}
+
 async function importFiles(files, at) {
   for (const file of [...files].slice(0, 4)) {
     if (/\.json$/i.test(file.name)) { await openProject(file); return; }
+    if (/\.svg$/i.test(file.name) || file.type === 'image/svg+xml') { await importSvg(await file.text(), file.name, { at }); continue; }
     await importModel(new Uint8Array(await file.arrayBuffer()), file.name, { at });
   }
 }

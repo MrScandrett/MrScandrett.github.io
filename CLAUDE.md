@@ -657,6 +657,16 @@ and Save a copy writes the ones it uses into an `assets` section (base64, checke
 exported for games, never cut, never a hole, left out of the print with a reason. Limits: 100k triangles per import,
 250k per project. Tests: `node --test tests/workbench-import.test.mjs`.
 
+**SVG drawings in Workbench.** `assets/js/svg-outline.mjs` (pure; its own tokenizer, so nothing in the file runs or
+loads) turns an SVG into filled outlines in millimetres: every path command incl. arcs, rect/circle/ellipse/polygon,
+nested transforms, fill / fill-rule / display from attributes, `style=""` and simple `<style>` rules, units from
+width/height + viewBox (px read at 96 dpi and flagged as a guess), y flipped, centred, simplified (RDP) to a point
+budget. Text, stroke-only lines, images and `<use>` clones are skipped with a warning naming the Inkscape fix. The
+result is an outline asset (`kind: 'outline'` in assets.mjs, id = hash of its canonical JSON) extruded by the
+`IMPORTED_SVG` shape (`{ shape: 'svg', params: { asset, w, h } }`, Manifold CrossSection per path with its fill rule,
+so letters keep their holes); Hole engraves it. Tests: `node --test tests/svg-outline.test.mjs`, and the SVG cases in
+`tests/workbench-import.test.mjs`.
+
 **Hand-off** (`assets/js/handoff.mjs`) passes one file between tools through IndexedDB (10-minute slot):
 `sendAndOpen(url, { bytes, filename, from })` from a click, and the receiving page checks `arrivedByHandoff()` then
 `takeFile()`. Forge, Workbench and Marble Studio send to Print Prep; Print Prep sends to Workbench. Use it rather than
