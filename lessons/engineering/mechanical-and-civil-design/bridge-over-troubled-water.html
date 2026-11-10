@@ -2096,7 +2096,7 @@
         <div class="bridge-workbench" data-present>
           <ol class="bridge-mission-progress" aria-label="Mission progress">
             <li class="bridge-mission-step is-active" data-mission-step="road"><span>1</span><div><strong>Connect the road</strong><small>Make a driveable path</small></div></li>
-            <li class="bridge-mission-step" data-mission-step="triangles"><span>2</span><div><strong>Build triangles</strong><small>Add at least four</small></div></li>
+            <li class="bridge-mission-step" data-mission-step="triangles"><span>2</span><div><strong>Build triangles</strong><small>Four that carry load</small></div></li>
             <li class="bridge-mission-step" data-mission-step="test"><span>3</span><div><strong>Stress-test</strong><small>Watch force and sag</small></div></li>
             <li class="bridge-mission-step" data-mission-step="deliver"><span>4</span><div><strong>Reach the clinic</strong><small>Pass within budget</small></div></li>
           </ol>
@@ -2556,7 +2556,7 @@
             <section class="bridge-status" id="bridge-status-card" aria-live="polite">
               <div class="bridge-readiness" aria-label="Design readiness checklist">
                 <div class="bridge-ready-item" id="bridge-ready-road">Road connected</div>
-                <div class="bridge-ready-item" id="bridge-ready-triangles">4+ triangles</div>
+                <div class="bridge-ready-item" id="bridge-ready-triangles">4 bracing triangles</div>
                 <div class="bridge-ready-item" id="bridge-ready-budget">Within budget</div>
                 <div class="bridge-ready-item" id="bridge-ready-tested">Test completed</div>
               </div>
@@ -2624,6 +2624,8 @@
                 <li>Click one joint, then another, to place a member. The second joint stays selected so you can keep building.</li>
                 <li>Use Move to drag free joints and flatten the deck before you test.</li>
                 <li>Use Delete to remove one member or a non-anchor joint.</li>
+                <li>Members have a longest length: road 4.4 m (one deck panel), wood 4.9 m, steel 6.7 m. Longer gaps need a joint in between.</li>
+                <li>A triangle counts when it touches the road and isn't flat. After the test, the lab tells you which ones actually carried load.</li>
               </ul>
               <p class="bridge-meter-note"><strong>Road</strong> carries the ambulance. <strong>Wood</strong> is cheaper and works well in short triangles. <strong>Steel</strong> costs more but holds longer spans and bottom chords more effectively.</p>
             </section>
@@ -2837,54 +2839,18 @@
 
   <script src="../../../assets/js/theme-registry.js"></script>
   <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lessons/bridge-lab-core.js"></script>
   <script>
     (function () {
-      const TARGET_LOAD = 105;
-      const AMBULANCE_WEIGHT = 64;
-      const LEVEL_BUDGET = 4800;
-      const LEFT_ANCHOR_ID = 0;
-      const RIGHT_ANCHOR_ID = 4;
-      const DECK_Y = 172;
-      const BUILD_ZONE = {
-        left: 170,
-        right: 610,
-        top: 100,
-        bottom: 280
-      };
-      const GRID = {
-        x: 55,
-        y: 36
-      };
-      const METERS_PER_PIXEL = 16 / (BUILD_ZONE.right - BUILD_ZONE.left);
-      const ROAD_FAILURE_SAG = 20;
-      const ROAD_FAILURE_SLOPE = 0.18;
-      const VERLET_DAMPING = 0.92;
-
-      const MATERIALS = {
-        road: {
-          label: 'Road',
-          cost: 120,
-          stiffness: 0.24,
-          breakStrain: 0.035,
-          width: 12,
-          color: '#1b2734'
-        },
-        wood: {
-          label: 'Wood',
-          cost: 55,
-          stiffness: 0.18,
-          breakStrain: 0.08,
-          width: 8,
-          color: 'url(#bridgeWoodStroke)'
-        },
-        steel: {
-          label: 'Steel',
-          cost: 90,
-          stiffness: 0.26,
-          breakStrain: 0.11,
-          width: 8,
-          color: 'url(#bridgeSteelStroke)'
-        }
+      // Physics, grading and constants live in assets/js/lessons/bridge-lab-core.js (tested).
+      const Core = window.BridgeLabCore;
+      const { TARGET_LOAD, AMBULANCE_WEIGHT, LEVEL_BUDGET, LEFT_ANCHOR_ID, RIGHT_ANCHOR_ID, DECK_Y, BUILD_ZONE, GRID,
+        ROAD_FAILURE_SAG, ROAD_FAILURE_SLOPE, VERLET_DAMPING, MATERIALS, REQUIRED_TRIANGLES,
+        nodeMapFrom, distance, clamp, computeCost, findRoadPath, locateVehicle } = Core;
+      const FAILURE_MESSAGES = {
+        strain: 'One or more members stretched too far. Shorten the longest panel or swap a critical brace to steel.',
+        sag: 'The road sagged too much. Add lower joints and triangles under the longest road panels.',
+        slope: 'The road became too steep for the ambulance. Pull the deck flatter with deeper support triangles.'
       };
 
       const TOOL_HINTS = {
@@ -2957,6 +2923,7 @@
       const readyBudgetEl = document.getElementById('bridge-ready-budget');
       const readyTestedEl = document.getElementById('bridge-ready-tested');
       const missionSteps = document.querySelectorAll('[data-mission-step]');
+      const triangleStepNote = document.querySelector('[data-mission-step="triangles"] small');
       const quizScoreEl = document.getElementById('bridge-quiz-score');
 
       let bridgeState = createStarterState();
@@ -2971,6 +2938,7 @@
       let attempts = 0;
       let lastScore = null;
       let bestScore = readBestScore();
+      let editNotice = '';
       const quizResults = new Map();
 
       function readBestScore() {
@@ -3005,9 +2973,18 @@
         undoButton.disabled = false;
       }
 
+      // Keep an undo step only when the edit changed something (tapping a joint used to add one).
+      function commitIfChanged(before) {
+        if (JSON.stringify(before) === JSON.stringify(cloneBridgeState(bridgeState))) return;
+        history.push(before);
+        if (history.length > 30) history.shift();
+        undoButton.disabled = false;
+      }
+
       function undoLastChange() {
         if (!history.length || testState.running) return;
         bridgeState = history.pop();
+        editNotice = '';
         selectedNodeId = null;
         lastScore = null;
         clearTestState();
@@ -3117,24 +3094,14 @@
             right: 0
           },
           elapsedMs: 0,
-          failureFeedbackPlayed: false
+          failureFeedbackPlayed: false,
+          run: null,
+          tickBudget: 0
         };
-      }
-
-      function nodeMapFrom(nodes) {
-        return new Map(nodes.map((node) => [node.id, node]));
       }
 
       function nodeById(nodes, id) {
         return nodes.find((node) => node.id === id) || null;
-      }
-
-      function distance(a, b) {
-        return Math.hypot(b.x - a.x, b.y - a.y);
-      }
-
-      function clamp(min, value, max) {
-        return Math.max(min, Math.min(value, max));
       }
 
       function isBuildTool(tool) {
@@ -3183,6 +3150,7 @@
       function loadState(factory) {
         rememberState();
         bridgeState = factory();
+        editNotice = '';
         selectedNodeId = null;
         dragState = null;
         suppressClick = false;
@@ -3194,172 +3162,8 @@
         updateDashboard();
       }
 
-      function computeCost(state) {
-        const nodes = nodeMapFrom(state.nodes);
-        return state.members.reduce((total, member) => {
-          return total + (distance(nodes.get(member.a), nodes.get(member.b)) * METERS_PER_PIXEL * MATERIALS[member.type].cost);
-        }, 0);
-      }
-
-      function findRoadPath(state, workingNodes) {
-        const nodes = workingNodes || state.nodes;
-        const lookup = nodeMapFrom(nodes);
-        const adjacency = new Map(state.nodes.map((node) => [node.id, []]));
-
-        state.members.forEach((member) => {
-          if (member.type !== 'road') {
-            return;
-          }
-
-          const a = lookup.get(member.a);
-          const b = lookup.get(member.b);
-
-          if (!a || !b) {
-            return;
-          }
-
-          const weight = distance(a, b);
-          adjacency.get(member.a).push({ to: member.b, weight });
-          adjacency.get(member.b).push({ to: member.a, weight });
-        });
-
-        const distances = new Map(state.nodes.map((node) => [node.id, Infinity]));
-        const previous = new Map();
-        const queue = state.nodes.map((node) => node.id);
-        distances.set(LEFT_ANCHOR_ID, 0);
-
-        while (queue.length) {
-          queue.sort((a, b) => distances.get(a) - distances.get(b));
-          const current = queue.shift();
-
-          if (current === RIGHT_ANCHOR_ID) {
-            break;
-          }
-
-          adjacency.get(current).forEach((edge) => {
-            const nextDistance = distances.get(current) + edge.weight;
-            if (nextDistance < distances.get(edge.to)) {
-              distances.set(edge.to, nextDistance);
-              previous.set(edge.to, current);
-            }
-          });
-        }
-
-        if (!previous.has(RIGHT_ANCHOR_ID)) {
-          return null;
-        }
-
-        const path = [RIGHT_ANCHOR_ID];
-        let cursor = RIGHT_ANCHOR_ID;
-
-        while (cursor !== LEFT_ANCHOR_ID) {
-          cursor = previous.get(cursor);
-          if (cursor == null) {
-            return null;
-          }
-          path.unshift(cursor);
-        }
-
-        return path;
-      }
-
-      function locateVehicle(path, nodes, progress) {
-        if (!path || path.length < 2) {
-          return null;
-        }
-
-        const lookup = nodeMapFrom(nodes);
-        const segments = [];
-        let totalLength = 0;
-
-        for (let index = 0; index < path.length - 1; index += 1) {
-          const a = lookup.get(path[index]);
-          const b = lookup.get(path[index + 1]);
-          const length = distance(a, b);
-          segments.push({ a, b, length });
-          totalLength += length;
-        }
-
-        if (totalLength === 0) {
-          return null;
-        }
-
-        let travel = clamp(0, progress, 1) * totalLength;
-
-        for (let index = 0; index < segments.length; index += 1) {
-          const segment = segments[index];
-          if (travel <= segment.length || index === segments.length - 1) {
-            const t = segment.length === 0 ? 0 : travel / segment.length;
-            const x = segment.a.x + ((segment.b.x - segment.a.x) * t);
-            const y = segment.a.y + ((segment.b.y - segment.a.y) * t);
-
-            return {
-              x,
-              y,
-              angle: Math.atan2(segment.b.y - segment.a.y, segment.b.x - segment.a.x),
-              a: segment.a.id,
-              b: segment.b.id,
-              t
-            };
-          }
-
-          travel -= segment.length;
-        }
-
-        return null;
-      }
-
-      function createSimulationNodes(state) {
-        return state.nodes.map((node) => {
-          return {
-            id: node.id,
-            x: node.x,
-            y: node.y,
-            homeX: node.x,
-            homeY: node.y,
-            prevX: node.x,
-            prevY: node.y,
-            fixed: node.fixed
-          };
-        });
-      }
-
-      function roadNodeSet(state) {
-        const nodes = new Set();
-        state.members.forEach((member) => {
-          if (member.type === 'road') {
-            nodes.add(member.a);
-            nodes.add(member.b);
-          }
-        });
-        return nodes;
-      }
-
-      function stressSample(member, lookup) {
-        const a = lookup.get(member.a);
-        const b = lookup.get(member.b);
-        const currentLength = distance(a, b);
-        const delta = currentLength - member.restLength;
-        const strain = Math.abs(delta) / Math.max(member.restLength, 1);
-
-        return {
-          currentLength,
-          delta,
-          strain,
-          ratio: strain / MATERIALS[member.type].breakStrain,
-          mode: delta >= 0 ? 'tension' : 'compression'
-        };
-      }
-
       function computeMemberStress(displayNodes) {
-        const lookup = nodeMapFrom(displayNodes);
-        const stress = new Map();
-
-        bridgeState.members.forEach((member) => {
-          stress.set(member.id, stressSample(member, lookup));
-        });
-
-        return stress;
+        return Core.computeMemberStress(bridgeState, displayNodes);
       }
 
       function ratiosFromStress(stressMap) {
@@ -3368,87 +3172,6 @@
           ratios.set(memberId, entry.ratio);
         });
         return ratios;
-      }
-
-      function countTriangles(state) {
-        const connections = new Set();
-        state.members.forEach((member) => {
-          connections.add(Math.min(member.a, member.b) + ':' + Math.max(member.a, member.b));
-        });
-        let total = 0;
-        const ids = state.nodes.map((node) => node.id);
-        for (let a = 0; a < ids.length - 2; a += 1) {
-          for (let b = a + 1; b < ids.length - 1; b += 1) {
-            for (let c = b + 1; c < ids.length; c += 1) {
-              const ab = ids[a] + ':' + ids[b];
-              const ac = ids[a] + ':' + ids[c];
-              const bc = ids[b] + ':' + ids[c];
-              if (connections.has(ab) && connections.has(ac) && connections.has(bc)) total += 1;
-            }
-          }
-        }
-        return total;
-      }
-
-      function calculateScore() {
-        const costRatio = computeCost(bridgeState) / LEVEL_BUDGET;
-        const risk = Math.max(testState.maxStrain, testState.maxSag / ROAD_FAILURE_SAG, testState.maxSlope / ROAD_FAILURE_SLOPE);
-        return Math.max(100, Math.round(1000 - (costRatio * 360) - (Math.min(1, risk) * 360)));
-      }
-
-      function measureBridge(displayNodes, path) {
-        const lookup = nodeMapFrom(displayNodes);
-        let maxStrain = 0;
-        let maxSag = 0;
-        let maxSlope = 0;
-
-        bridgeState.members.forEach((member) => {
-          maxStrain = Math.max(maxStrain, stressSample(member, lookup).ratio);
-        });
-
-        if (path) {
-          for (let index = 1; index < path.length - 1; index += 1) {
-            const node = lookup.get(path[index]);
-            maxSag = Math.max(maxSag, Math.max(0, node.y - DECK_Y));
-          }
-
-          for (let index = 0; index < path.length - 1; index += 1) {
-            const a = lookup.get(path[index]);
-            const b = lookup.get(path[index + 1]);
-            const dx = b.x - a.x;
-            const slope = dx === 0 ? 1 : Math.abs((b.y - a.y) / dx);
-            maxSlope = Math.max(maxSlope, slope);
-          }
-        }
-
-        return {
-          maxStrain,
-          maxSag,
-          maxSlope
-        };
-      }
-
-      function failureMessage(metrics) {
-        const reasons = [
-          {
-            key: 'strain',
-            value: metrics.maxStrain,
-            message: 'One or more members stretched too far. Shorten the longest panel or swap a critical brace to steel.'
-          },
-          {
-            key: 'sag',
-            value: metrics.maxSag / ROAD_FAILURE_SAG,
-            message: 'The road sagged too much. Add lower joints and triangles under the longest road panels.'
-          },
-          {
-            key: 'slope',
-            value: metrics.maxSlope / ROAD_FAILURE_SLOPE,
-            message: 'The road became too steep for the ambulance. Pull the deck flatter with deeper support triangles.'
-          }
-        ];
-
-        reasons.sort((a, b) => b.value - a.value);
-        return reasons[0].message;
       }
 
       function stressStyle(member, stress) {
@@ -3667,14 +3390,10 @@
         testState.reactionForces = testState.path
           ? computeReactionForces(testState.path, testState.simNodes || bridgeState.nodes, testState.progress)
           : { left: 0, right: 0 };
-        if (result === 'pass') {
-          lastScore = calculateScore();
-          if (bestScore == null || lastScore > bestScore) {
-            bestScore = lastScore;
-            saveBestScore(bestScore);
-          }
-        } else {
-          lastScore = null;
+        lastScore = result === 'pass' && testState.run ? Core.calculateScore(bridgeState, testState.run) : null;
+        if (lastScore != null && (bestScore == null || lastScore > bestScore)) {
+          bestScore = lastScore;
+          saveBestScore(bestScore);
         }
         ambulance.classList.remove('bridge-amb-running');
         replayBtn.style.display = '';
@@ -3702,8 +3421,9 @@
         selectedNodeId = null;
         testState = createEmptyTestState();
         testState.running = true;
+        testState.run = Core.createCrossing(bridgeState);
         testState.path = path;
-        testState.simNodes = createSimulationNodes(bridgeState);
+        testState.simNodes = testState.run.simNodes;
         testState.memberStress = computeMemberStress(testState.simNodes);
         testState.memberRatios = ratiosFromStress(testState.memberStress);
         testState.reactionForces = computeReactionForces(path, testState.simNodes, 0);
@@ -3714,12 +3434,23 @@
 
         let lastTimestamp = performance.now();
 
+        function syncFromRun() {
+          const run = testState.run;
+          testState.progress = run.progress;
+          testState.maxStrain = run.maxStrain;
+          testState.maxSag = run.maxSag;
+          testState.maxSlope = run.maxSlope;
+          testState.memberStress = computeMemberStress(testState.simNodes);
+          testState.memberRatios = ratiosFromStress(testState.memberStress);
+          testState.reactionForces = computeReactionForces(testState.path, testState.simNodes, testState.progress);
+        }
+
         function tick(timestamp) {
           if (!testState.running) {
             return;
           }
 
-          /* ── Collapse animation ─────────────────────────── */
+          /* ── Collapse animation (visual only: the result is already decided) ── */
           if (testState.collapsing) {
             testState.collapseFrames += 1;
             testState.simNodes.forEach(function (node) {
@@ -3742,92 +3473,27 @@
             return;
           }
 
-          const frameScale = Math.min((timestamp - lastTimestamp) / 16.6667, 2);
-          testState.elapsedMs += Math.max(0, timestamp - lastTimestamp);
+          // Fixed physics ticks: one tick per 60 Hz frame at 1×, whatever the screen's refresh
+          // rate. Speed changes how many ticks are shown per frame, never the physics, so ½×,
+          // 1× and 2× (and 60 Hz vs 120 Hz screens) reach the same verdict.
+          const elapsed = Math.max(0, timestamp - lastTimestamp);
+          testState.elapsedMs += elapsed;
           lastTimestamp = timestamp;
-          const movingRoadNodes = roadNodeSet(bridgeState);
-          const vehicle = locateVehicle(testState.path, testState.simNodes, testState.progress);
-
-          for (let step = 0; step < 6; step += 1) {
-            const loads = new Map(testState.simNodes.map((node) => [node.id, movingRoadNodes.has(node.id) ? 0.5 : 0.08]));
-
-            if (vehicle) {
-              const designLoadScale = TARGET_LOAD / 105;
-              loads.set(vehicle.a, loads.get(vehicle.a) + (10 * designLoadScale * (1 - vehicle.t)));
-              loads.set(vehicle.b, loads.get(vehicle.b) + (10 * designLoadScale * vehicle.t));
-            }
-
-            testState.simNodes.forEach((node) => {
-              if (node.fixed) {
-                node.x = node.homeX;
-                node.y = node.homeY;
-                node.prevX = node.homeX;
-                node.prevY = node.homeY;
-                return;
-              }
-
-              const vx = (node.x - node.prevX) * VERLET_DAMPING;
-              const vy = (node.y - node.prevY) * VERLET_DAMPING;
-
-              node.prevX = node.x;
-              node.prevY = node.y;
-              node.x = clamp(BUILD_ZONE.left, node.x + vx, BUILD_ZONE.right);
-              node.y = clamp(BUILD_ZONE.top, node.y + vy + (loads.get(node.id) * 0.055), BUILD_ZONE.bottom + 28);
-            });
-
-            for (let iteration = 0; iteration < 8; iteration += 1) {
-              const lookup = nodeMapFrom(testState.simNodes);
-              bridgeState.members.forEach((member) => {
-                const a = lookup.get(member.a);
-                const b = lookup.get(member.b);
-                const dx = b.x - a.x;
-                const dy = b.y - a.y;
-                const length = Math.hypot(dx, dy) || 1;
-                const difference = (length - member.restLength) / length;
-                const factor = difference * MATERIALS[member.type].stiffness;
-
-                if (a.fixed && b.fixed) {
-                  return;
-                }
-
-                if (a.fixed) {
-                  b.x -= dx * factor;
-                  b.y -= dy * factor;
-                  return;
-                }
-
-                if (b.fixed) {
-                  a.x += dx * factor;
-                  a.y += dy * factor;
-                  return;
-                }
-
-                a.x += dx * factor * 0.5;
-                a.y += dy * factor * 0.5;
-                b.x -= dx * factor * 0.5;
-                b.y -= dy * factor * 0.5;
-              });
-            }
+          testState.tickBudget = Math.min(testState.tickBudget + (elapsed / 16.6667) * testSpeed, 4);
+          const run = testState.run;
+          while (testState.tickBudget >= 1 && run.status === 'running') {
+            Core.advanceCrossing(bridgeState, run);
+            testState.tickBudget -= 1;
           }
-
-          testState.progress = Math.min(1, testState.progress + (0.0035 * frameScale * testSpeed));
-          testState.memberStress = computeMemberStress(testState.simNodes);
-          testState.memberRatios = ratiosFromStress(testState.memberStress);
-          testState.reactionForces = computeReactionForces(testState.path, testState.simNodes, testState.progress);
-
-          const metrics = measureBridge(testState.simNodes, testState.path);
-          testState.maxStrain = Math.max(testState.maxStrain, metrics.maxStrain);
-          testState.maxSag = Math.max(testState.maxSag, metrics.maxSag);
-          testState.maxSlope = Math.max(testState.maxSlope, metrics.maxSlope);
+          syncFromRun();
           testState.vehicleLabel = Math.round(testState.progress * 100) + '% across';
-
           render();
           updateDashboard();
 
-          if (metrics.maxStrain > 1 || metrics.maxSag > ROAD_FAILURE_SAG || metrics.maxSlope > ROAD_FAILURE_SLOPE) {
+          if (run.status === 'fail') {
             testState.collapsing = true;
             testState.collapseFrames = 0;
-            testState.collapseMessage = failureMessage(metrics);
+            testState.collapseMessage = FAILURE_MESSAGES[run.reason];
             if (!testState.failureFeedbackPlayed) {
               triggerFailureFeedback();
               testState.failureFeedbackPlayed = true;
@@ -3839,7 +3505,7 @@
             return;
           }
 
-          if (testState.progress >= 1) {
+          if (run.status === 'arrived') {
             if (computeCost(bridgeState) > LEVEL_BUDGET) {
               finishTest('warn', 'The ambulance made it, but the design missed the budget target. Remove extras or replace some steel with wood.');
             } else {
@@ -3917,8 +3583,16 @@
 
       function connectNodes(a, b, type) {
         if (a === b) {
-          return;
+          return false;
         }
+        const span = distance(nodeById(bridgeState.nodes, a), nodeById(bridgeState.nodes, b));
+        if (Core.memberTooLong(type, span)) {
+          editNotice = MATERIALS[type].label + ' members can be at most ' + Core.toMeters(MATERIALS[type].maxLength).toFixed(1) +
+            ' m; that gap is ' + Core.toMeters(span).toFixed(1) + ' m. Add a joint in between' +
+            (type !== 'steel' && !Core.memberTooLong('steel', span) ? ', or use steel, which spans further.' : '.');
+          return false;
+        }
+        editNotice = '';
 
         const existing = memberBetween(bridgeState, a, b);
 
@@ -3937,6 +3611,7 @@
         }
 
         selectedNodeId = b;
+        return true;
       }
 
       function setTool(tool) {
@@ -3961,8 +3636,8 @@
           return;
         }
 
+        const before = cloneBridgeState(bridgeState);
         if (selectedTool === 'delete') {
-          if (!node.fixed) rememberState();
           removeNode(nodeId);
         } else if (selectedTool === 'move') {
           selectedNodeId = nodeId;
@@ -3972,11 +3647,11 @@
           } else if (selectedNodeId === nodeId) {
             selectedNodeId = null;
           } else {
-            rememberState();
             connectNodes(selectedNodeId, nodeId, selectedTool);
           }
         }
 
+        commitIfChanged(before);
         render();
         updateDashboard();
       }
@@ -4009,9 +3684,8 @@
         }
 
         clearTestState();
-        rememberState();
-        const snapped = snapPoint(point);
-        const node = addNode(snapped);
+        const before = cloneBridgeState(bridgeState);
+        const node = addNode(snapPoint(point));
 
         if (selectedNodeId != null && selectedNodeId !== node.id) {
           connectNodes(selectedNodeId, node.id, selectedTool);
@@ -4019,8 +3693,19 @@
           selectedNodeId = node.id;
         }
 
+        commitIfChanged(before);
         render();
         updateDashboard();
+      }
+
+      function loadReport(bracing, loaded, peaks) {
+        if (!loaded) return '';
+        const idle = Core.idleMembers(bridgeState, peaks);
+        const idleCost = idle.reduce((sum, member) => sum + Core.memberCost(bridgeState, member), 0);
+        let text = loaded.length + ' of your ' + bracing.length + ' triangles carried load.';
+        if (loaded.length < REQUIRED_TRIANGLES) text += ' Move triangles to where the ambulance pushes: under or over the road panels.';
+        if (idle.length) text += ' ' + idle.length + ' member' + (idle.length === 1 ? '' : 's') + ' did almost nothing (' + formatCurrency(idleCost) + ' you could trim).';
+        return text;
       }
 
       function updateDashboard() {
@@ -4028,7 +3713,11 @@
         const budgetDelta = LEVEL_BUDGET - cost;
         const budgetRatio = cost / LEVEL_BUDGET;
         const path = findRoadPath(bridgeState, bridgeState.nodes);
-        const triangleCount = countTriangles(bridgeState);
+        const bracing = Core.bracingTriangles(bridgeState);
+        const peaks = testState.finished && testState.run ? testState.run.peakRatios : null;
+        const loaded = peaks ? Core.loadedTriangles(bracing, peaks) : null;
+        const triangleCount = loaded ? loaded.length : bracing.length;
+        const trianglesDone = triangleCount >= REQUIRED_TRIANGLES;
         const tested = testState.running || testState.finished;
         const riskValue = tested
           ? Math.max(testState.maxStrain, testState.maxSag / ROAD_FAILURE_SAG, testState.maxSlope / ROAD_FAILURE_SLOPE)
@@ -4055,29 +3744,33 @@
         bestScoreEl.textContent = bestScore == null ? '—' : bestScore.toLocaleString();
         attemptsEl.textContent = String(attempts);
         readyRoadEl.classList.toggle('is-ready', Boolean(path));
-        readyTrianglesEl.classList.toggle('is-ready', triangleCount >= 4);
-        readyTrianglesEl.textContent = Math.min(triangleCount, 4) + '/4 triangles';
+        readyTrianglesEl.classList.toggle('is-ready', trianglesDone);
+        readyTrianglesEl.textContent = Math.min(triangleCount, REQUIRED_TRIANGLES) + '/' + REQUIRED_TRIANGLES +
+          (loaded ? ' triangles carried load' : ' bracing triangles');
+        triangleStepNote.textContent = !bracing.length
+          ? 'Four that carry load'
+          : loaded
+            ? loaded.length + ' of ' + bracing.length + ' carried load'
+            : bracing.length + (bracing.length < REQUIRED_TRIANGLES ? ' of ' + REQUIRED_TRIANGLES : '') + ' touch the road';
         readyBudgetEl.classList.toggle('is-ready', budgetDelta >= 0);
         readyTestedEl.classList.toggle('is-ready', testState.finished);
         undoButton.disabled = history.length === 0 || testState.running;
 
-        const missionState = testState.finished && testState.result === 'pass'
-          ? 'deliver'
-          : testState.running || testState.finished
-            ? 'test'
-            : triangleCount >= 4 && path
-              ? 'test'
-              : path
-                ? 'triangles'
-                : 'road';
+        // Each step is done on its own terms; the active one is the first that isn't.
+        const stepDone = {
+          road: Boolean(path),
+          triangles: trianglesDone,
+          test: testState.finished,
+          deliver: testState.finished && testState.result === 'pass'
+        };
         const order = ['road', 'triangles', 'test', 'deliver'];
-        const activeIndex = order.indexOf(missionState);
+        const activeKey = order.find((key) => !stepDone[key]);
         missionSteps.forEach((step) => {
-          const stepIndex = order.indexOf(step.dataset.missionStep);
-          step.classList.toggle('is-active', stepIndex === activeIndex);
-          step.classList.toggle('is-complete', stepIndex < activeIndex || (missionState === 'deliver' && stepIndex === activeIndex));
+          const key = step.dataset.missionStep;
+          step.classList.toggle('is-active', key === activeKey);
+          step.classList.toggle('is-complete', stepDone[key]);
           const badge = step.querySelector('span');
-          badge.textContent = step.classList.contains('is-complete') ? '✓' : String(stepIndex + 1);
+          badge.textContent = stepDone[key] ? '✓' : String(order.indexOf(key) + 1);
         });
         toolCopy.textContent = TOOL_HINTS[selectedTool].copy;
         toolLabel.textContent = TOOL_HINTS[selectedTool].label;
@@ -4092,18 +3785,22 @@
         } else if (testState.finished && testState.result === 'pass') {
           statusPill.textContent = 'Clinic reached';
           statusCard.classList.add('bridge-status-pass');
-          verdictEl.textContent = testState.message;
+          verdictEl.textContent = testState.message + ' ' + loadReport(bracing, loaded, peaks);
           stageNote.textContent = 'This design kept the deck nearly level. Notice how the reaction arrows balance out once the load reaches the clinic bank.';
         } else if (testState.finished && testState.result === 'warn') {
           statusPill.textContent = 'Over budget';
           statusCard.classList.add('bridge-status-warn');
-          verdictEl.textContent = testState.message;
+          verdictEl.textContent = testState.message + ' ' + loadReport(bracing, loaded, peaks);
           stageNote.textContent = 'The bridge works, but it costs too much. Keep the efficient load path, then trim expensive members that are not carrying much stress.';
         } else if (testState.finished && testState.result === 'fail') {
           statusPill.textContent = 'Bridge failed';
           statusCard.classList.add('bridge-status-fail');
           verdictEl.textContent = testState.message;
           stageNote.textContent = testState.message;
+        } else if (editNotice) {
+          statusPill.textContent = 'Edit mode';
+          verdictEl.textContent = editNotice;
+          stageNote.textContent = editNotice;
         } else if (!path) {
           statusPill.textContent = 'Edit mode';
           verdictEl.textContent = 'Build one continuous road from the start bank to the clinic bank before you test.';
@@ -4114,7 +3811,9 @@
           stageNote.textContent = 'The deck is connected, but the cost target is blown. Remove unused members and keep only the triangles that carry load.';
         } else {
           statusPill.textContent = 'Edit mode';
-          verdictEl.textContent = 'Road connected. Add triangles under the deck and run the ambulance test.';
+          verdictEl.textContent = bracing.length >= REQUIRED_TRIANGLES
+            ? 'Road connected and braced. Run the ambulance test to see which triangles actually carry load.'
+            : 'Road connected. Add triangles that touch the road (three joints in a line don\'t count), then run the ambulance test.';
           stageNote.textContent = 'The starter road is only the beginning. The strongest student designs make deep triangles below the longest panels.';
         }
       }
@@ -4139,12 +3838,12 @@
         }
 
         clearTestState();
-        rememberState();
         selectedNodeId = nodeId;
         dragState = {
           pointerId: event.pointerId,
           nodeId,
-          moved: false
+          moved: false,
+          before: cloneBridgeState(bridgeState)
         };
         suppressClick = false;
         svg.setPointerCapture(event.pointerId);
@@ -4170,10 +3869,27 @@
           return;
         }
 
-        if (Math.abs(node.x - point.x) > 0.5 || Math.abs(node.y - point.y) > 0.5) {
-          dragState.moved = true;
-          suppressClick = true;
+        if (Math.abs(node.x - point.x) < 0.5 && Math.abs(node.y - point.y) < 0.5) {
+          return;
         }
+        const overlong = bridgeState.members.find((member) => {
+          if (member.a !== node.id && member.b !== node.id) return false;
+          const other = nodeById(bridgeState.nodes, member.a === node.id ? member.b : member.a);
+          return Core.memberTooLong(member.type, distance(point, other));
+        });
+        if (overlong) {
+          editNotice = 'That would stretch a ' + MATERIALS[overlong.type].label.toLowerCase() + ' member past its ' +
+            Core.toMeters(MATERIALS[overlong.type].maxLength).toFixed(1) + ' m limit.';
+          updateDashboard();
+          return;
+        }
+        editNotice = '';
+        if (!dragState.moved) {
+          history.push(dragState.before);
+          if (history.length > 30) history.shift();
+        }
+        dragState.moved = true;
+        suppressClick = true;
 
         node.x = point.x;
         node.y = point.y;
@@ -4280,13 +3996,14 @@
               feedback.textContent = 'Not quite. ' + explanation;
             }
             const correctCount = Array.from(quizResults.values()).filter(Boolean).length;
-            quizScoreEl.textContent = correctCount + ' of 4 correct';
+            quizScoreEl.textContent = correctCount + ' of ' + document.querySelectorAll('.bridge-question').length + ' correct';
           });
         });
       });
 
       document.addEventListener('keydown', function (event) {
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        const typing = event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]');
+        if (!typing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
           event.preventDefault();
           undoLastChange();
         }
