@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Unit Factory · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
-  <meta name="description" content="Run a 3D conveyor-belt factory: transform 10 kg weights into playful unit sculptures, then explore real conversions and measurement families." />
+  <meta name="description" content="Explore a 3D unit factory like an adventure game: transform 10 kg weights into unit sculptures, convert them for real with factor-label chains, and bridge mass to volume and weight with density and gravity." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/unit-factory.css" />
@@ -59,6 +59,9 @@
       gap: 0.5rem;
       margin-bottom: 0.85rem;
     }
+    .uf-btn-panel { flex: 1; padding: 0.5rem 0.6rem; border-radius: 8px; background: #006b99; color: #fff; font-size: 0.8rem; font-weight: 700; border: none; cursor: pointer; }
+    .uf-btn-panel.uf-btn-go { background: #b82e37; }
+    .uf-btn-panel:disabled { opacity: .5; cursor: not-allowed; }
   </style>
 </head>
 <body class="uf-page theme-liquid-woodland theme-steam">
@@ -104,15 +107,43 @@
     </section>
 
     <section class="uf-factory" aria-labelledby="factory-title">
-      <div class="uf-factory-heading"><h2 id="factory-title">Your production line</h2><span id="counter">0 / 28 units discovered</span></div>
-      <div class="uf-viewport"><canvas id="factory-canvas" aria-label="3D factory with a conveyor belt, incoming 10 kilogram weights, and a transformation machine"></canvas><div class="uf-scene-note">Input → machine → output<br>Illustrations are not to scale</div><p id="fallback" hidden>The 3D view is unavailable on this device. The controls, discoveries, and lesson still work.</p></div>
-      <div class="uf-console">
-        <div class="uf-control"><label for="mode">Machine mode</label><select id="mode"><option value="fantasy">Imagination: keep the number 10</option><option value="real">Real conversion: keep the mass</option></select><label for="recipe">Unit selection</label><select id="recipe"><option value="manual">I choose</option><option value="cycle">Automatic: next undiscovered</option><option value="random">Automatic: surprise me</option></select></div>
-        <div class="uf-control"><label for="unit">Output unit</label><select id="unit"></select><p id="unit-hint"></p><label class="uf-check"><input id="auto" type="checkbox"> Run conveyor + machine automatically</label></div>
-        <div class="uf-actions"><button id="lever" class="uf-lever"><svg class="uf-lever-art" viewBox="0 0 60 72" aria-hidden="true"><rect class="uf-lever-plate" x="16" y="56" width="28" height="12" rx="3"/><circle class="uf-lever-pivot" cx="30" cy="60" r="4"/><g class="uf-lever-arm"><line class="uf-lever-rod" x1="30" y1="60" x2="30" y2="16"/><circle class="uf-lever-knob" cx="30" cy="12" r="8"/></g></svg><span>Pull lever<small>Bring the next weight in</small></span></button><button id="transform" class="uf-transform" disabled>Transform<small>Run the machine</small></button></div>
-      </div>
-      <div class="uf-readout" aria-live="polite" aria-atomic="true"><strong id="status">Pull the lever to load your first 10 kg weight.</strong><p id="explanation">Imagination mode changes what the object represents. Kilograms cannot actually be converted directly into volts, litres, or inches.</p></div>
-      <div class="uf-utility"><label class="uf-check"><input id="motion" type="checkbox"> Reduce motion</label><button id="reset">Reset factory</button><button id="download">Download discoveries</button></div>
+      <div class="uf-factory-heading"><h2 id="factory-title">The factory floor</h2><span id="counter">0 / 30 units discovered</span></div>
+      <figure class="uf-game" data-present data-memory-ignore>
+        <canvas id="factory-canvas" aria-label="A 3D factory room. A conveyor carries 10 kilogram weights into a stamping machine. On the back wall: a mode breaker, a shelf of material samples and a shelf of planets. Use the buttons below the scene to do everything the room can do."></canvas>
+        <p id="fallback" hidden>The 3D room is unavailable on this device. The buttons below still run the factory.</p>
+        <div class="uf-hud-top">
+          <button type="button" class="uf-chip" id="open-quests" aria-haspopup="dialog"><span aria-hidden="true">📜</span> Work orders <b id="quest-count">0/6</b></button>
+          <span class="uf-chip uf-chip-mode" id="mode-badge">Imagination</span>
+          <span class="uf-chip" id="bridge-count" title="Materials and worlds tried">Bridges 0/17</span>
+          <button type="button" class="uf-chip uf-chip-icon" id="open-settings" aria-haspopup="dialog" aria-label="Factory settings">⚙</button>
+        </div>
+        <div id="uf-tip" class="uf-tip" hidden></div>
+        <div id="uf-menu" class="uf-menu" role="dialog" aria-modal="false" aria-labelledby="uf-menu-title" hidden>
+          <div class="uf-menu-head"><h3 id="uf-menu-title"></h3><button type="button" class="uf-menu-close" aria-label="Close">✕</button></div>
+          <p class="uf-menu-lede" id="uf-menu-lede"></p>
+          <div class="uf-menu-body" id="uf-menu-body"></div>
+        </div>
+        <div class="uf-dialogue">
+          <div class="uf-portrait" aria-hidden="true">
+            <svg viewBox="0 0 80 80"><rect x="37" y="2" width="6" height="12" rx="3" fill="#5c7186"/><circle cx="40" cy="4" r="4" fill="#ffce52"/><rect x="8" y="12" width="64" height="56" rx="14" fill="#2466b0"/><circle cx="40" cy="38" r="20" fill="#f9fcff"/><path d="M24 38a16 16 0 0 1 32 0" fill="none" stroke="#c8d6e2" stroke-width="3"/><g class="uf-needle"><line x1="40" y1="38" x2="40" y2="23" stroke="#b82e37" stroke-width="3" stroke-linecap="round"/></g><circle cx="40" cy="38" r="3.5" fill="#173451"/><rect x="26" y="60" width="28" height="4" rx="2" fill="#173451" opacity=".5"/><rect x="2" y="30" width="7" height="18" rx="3" fill="#5c7186"/><rect x="71" y="30" width="7" height="18" rx="3" fill="#5c7186"/></svg>
+            <span>Gauge</span>
+          </div>
+          <div class="uf-speech">
+            <p class="uf-say-title" id="status" aria-live="polite">Pull the lever to load your first 10 kg weight.</p>
+            <p class="uf-say" id="explanation">Welcome to the floor. I'm Gauge, the foreman. Every crate that comes in is the same 10 kg weight. Click things in the room, or use the buttons.</p>
+            <div id="chain" class="uf-chain" hidden></div>
+          </div>
+          <div class="uf-verbs" role="toolbar" aria-label="Factory actions">
+            <button type="button" class="uf-verb uf-verb-lever" id="lever"><span aria-hidden="true">⤵</span> Pull lever</button>
+            <button type="button" class="uf-verb" id="pick-mode" aria-haspopup="dialog">Mode: <b id="mode-name">Imagination</b></button>
+            <button type="button" class="uf-verb" id="pick-bridge" aria-haspopup="dialog" hidden><span><span id="bridge-kind">Material</span>:</span> <b id="bridge-name">Water</b></button>
+            <button type="button" class="uf-verb" id="pick-unit" aria-haspopup="dialog">Make: <b id="unit-name">V</b></button>
+            <label class="uf-verb uf-predict" id="predict-row" hidden>Predict <input id="predict" type="text" inputmode="decimal" autocomplete="off" placeholder="?" size="7"></label>
+            <button type="button" class="uf-verb uf-verb-go" id="transform" disabled>Transform ▶</button>
+          </div>
+        </div>
+        <div class="uf-inventory" id="inventory" aria-label="Units discovered"></div>
+      </figure>
     </section>
 
     <section class="uf-learn">
@@ -121,15 +152,17 @@
         <h2>A number needs a unit.</h2>
         <p><strong>10 kg</strong> tells you a mass. <strong>10 L</strong> tells you a volume. <strong>10 in</strong> tells you a length. Those are different kinds of measurement, even though the number is the same.</p>
         <p>In <strong>imagination mode</strong>, the machine invents a new object. In <strong>real conversion mode</strong>, it keeps the same mass and changes only its description: 10 kg = 10,000 g. The weight must not shrink!</p>
-        <p>To connect mass and volume, you need another fact: <strong>density</strong>. About 10 kg of water occupies 10 L near room temperature; 10 kg of iron occupies much less space. That is a material relationship, not a universal kg-to-L conversion.</p>
+        <p>To connect mass and volume, you need another fact: <strong>density</strong>. About 10 kg of water occupies 10 L near room temperature; 10 kg of iron occupies much less space. That is a material relationship, not a universal kg-to-L conversion. Mass and <strong>weight</strong> are linked the same way: by the gravity where you stand.</p>
+        <p>The machine shows its working as a <strong>factor-label chain</strong>: 10 kg × (1,000 g / 1 kg) = 10,000 g. Each fraction equals 1, so it changes the number but not the amount, and every unit on a top cancels the same unit on a bottom.</p>
       </div>
       <div class="uf-missions">
         <h2>Factory fieldwork</h2>
         <ol>
           <li>Make 10 V, 10 L, and 10 in. What kind of measurement does each describe?</li>
-          <li>Compare 10 mm, 10 cm, and 10 in. Predict which is longest before transforming.</li>
-          <li>Switch to real conversion. Try g and lb. Does the mass or the number change?</li>
-          <li>Find two units that describe electricity but measure different quantities.</li>
+          <li>Flip the breaker to <em>Same mass</em>. Try g and lb. Does the balance tip? Which units cancel in the chain?</li>
+          <li>Predict before you transform. If you are off by 1,000×, which prefix tripped you up?</li>
+          <li>Take the gold, water and cork crates off the shelf. Which 10 kg cube is biggest, and why?</li>
+          <li>Weigh 10 kg on the Moon and on Jupiter. The weight looks the same size. What changed?</li>
         </ol>
         <fieldset>
           <legend>Quick check: 10 kg becomes how many grams?</legend>
@@ -161,28 +194,18 @@
     <div class="ll-panel-body">
       <div class="ll-pane ll-active" id="uf-controls">
         <span class="ll-label">Measurement Families</span>
-        <div class="uf-panel-grid" role="group" aria-label="Unit Families">
-          <button type="button" class="uf-panel-preset" data-unit="g">
-            Mass &amp; Weight
-            <small>kg · g · mg · lb · oz</small>
-          </button>
-          <button type="button" class="uf-panel-preset" data-unit="m">
-            Length &amp; Distance
-            <small>m · cm · mm · km · in · ft</small>
-          </button>
-          <button type="button" class="uf-panel-preset" data-unit="L">
-            Volume &amp; Capacity
-            <small>L · mL · gal · qt · pt</small>
-          </button>
-          <button type="button" class="uf-panel-preset" data-unit="V">
-            Energy &amp; Power
-            <small>V · A · W · J · N</small>
-          </button>
+        <div class="uf-panel-grid" role="group" aria-label="Unit families and bridges">
+          <button type="button" class="uf-panel-preset" data-unit="g">Mass<small>Same mass · g mg lb oz t</small></button>
+          <button type="button" class="uf-panel-preset" data-unit="m" data-mode="fantasy">Length<small>mm · cm · in · ft · m · km</small></button>
+          <button type="button" class="uf-panel-preset" data-unit="L" data-mode="fantasy">Volume<small>L · mL · cm³ · m³</small></button>
+          <button type="button" class="uf-panel-preset" data-unit="V" data-mode="fantasy">Electricity<small>V · A · Ω · W · J</small></button>
+          <button type="button" class="uf-panel-preset" data-unit="L" data-mode="density">Density bridge<small>kg → L for one material</small></button>
+          <button type="button" class="uf-panel-preset" data-unit="N" data-mode="gravity">Gravity bridge<small>kg → N on one world</small></button>
         </div>
 
         <div class="uf-panel-actions">
-          <button type="button" class="uf-btn-panel" id="uf-panel-lever" style="flex:1; padding:0.5rem 0.6rem; border-radius:8px; background:#006b99; color:#fff; font-size:0.8rem; font-weight:700; border:none; cursor:pointer;">Pull Lever</button>
-          <button type="button" class="uf-btn-panel" id="uf-panel-transform" style="flex:1; padding:0.5rem 0.6rem; border-radius:8px; background:#334155; color:#fff; font-size:0.8rem; font-weight:700; border:none; cursor:pointer;">Transform</button>
+          <button type="button" class="uf-btn-panel" id="uf-panel-lever">Pull lever</button>
+          <button type="button" class="uf-btn-panel uf-btn-go" id="uf-panel-transform">Transform</button>
         </div>
 
         <hr class="ll-hr">
@@ -190,15 +213,19 @@
         <div class="ll-readouts">
           <div class="ll-readout">
             <span class="ll-readout-lbl">Discovered</span>
-            <span class="ll-readout-val" id="uf-p-count">0 / 28</span>
+            <span class="ll-readout-val" id="uf-p-count">0 / 30</span>
+          </div>
+          <div class="ll-readout">
+            <span class="ll-readout-lbl">Bridges</span>
+            <span class="ll-readout-val" id="uf-p-bridges">0 / 17</span>
           </div>
           <div class="ll-readout">
             <span class="ll-readout-lbl">Mode</span>
-            <span class="ll-readout-val" id="uf-p-mode">Fantasy</span>
+            <span class="ll-readout-val" id="uf-p-mode">Imagination</span>
           </div>
           <div class="ll-readout">
             <span class="ll-readout-lbl">Active Unit</span>
-            <span class="ll-readout-val" id="uf-p-unit">kg</span>
+            <span class="ll-readout-val" id="uf-p-unit">V</span>
           </div>
         </div>
       </div>
@@ -240,42 +267,5 @@
 <script src="../../../assets/js/classroom-animations.js"></script>
 <script src="../../../assets/js/lesson-layout.js"></script>
 <script src="../../../assets/js/math-pathway-nav.js"></script>
-<script>
-(function() {
-  const pLever = document.getElementById('uf-panel-lever');
-  if (pLever) pLever.addEventListener('click', () => {
-    const l = document.getElementById('lever');
-    if (l) l.click();
-  });
-  const pTransform = document.getElementById('uf-panel-transform');
-  if (pTransform) pTransform.addEventListener('click', () => {
-    const t = document.getElementById('transform');
-    if (t && !t.disabled) t.click();
-  });
-  document.querySelectorAll('.uf-panel-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const u = btn.getAttribute('data-unit');
-      const sel = document.getElementById('unit');
-      if (sel) {
-        sel.value = u;
-        sel.dispatchEvent(new Event('change'));
-      }
-    });
-  });
-  const counterEl = document.getElementById('counter');
-  const pCount = document.getElementById('uf-p-count');
-  const pUnit = document.getElementById('uf-p-unit');
-  const selUnit = document.getElementById('unit');
-  if (counterEl && pCount) {
-    const obs = new MutationObserver(() => {
-      pCount.textContent = counterEl.textContent.replace(' units discovered', '');
-    });
-    obs.observe(counterEl, { childList: true, characterData: true, subtree: true });
-  }
-  if (selUnit && pUnit) {
-    selUnit.addEventListener('change', () => { pUnit.textContent = selUnit.value; });
-  }
-})();
-</script>
 <script src="../../../assets/js/lesson-print-button.js"></script>
 </body></html>
