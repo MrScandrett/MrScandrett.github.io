@@ -14,7 +14,7 @@ test('all 19 composer workspaces have valid, attributed scores and arrangements'
     for(const id of entry.scores) {
       const source=library[id], before=JSON.stringify(source);
       assert.ok(source.source.license && source.source.full,id);
-      for(const mode of ['original','piano','melody','alto','tenor','guitar','bass']) {
+      for(const mode of ['original','piano','melody','violin','alto','tenor','guitar','bass']) {
         const score=arrange(source,{mode,staff:0,voice:0,octave:0,id:composer});
         const {m}=notes(score);assert.ok(m.count>0,`${id}/${mode}`);
         const svg=engine.engrave(m,320);assert.ok(!/NaN|undefined/.test(svg.svg),`${id}/${mode}: narrow engraving`);
@@ -50,6 +50,27 @@ test('all source voices can be extracted without losing their road map',()=>{
     source.staves.forEach((st,staff)=>(st.voices||[st]).forEach((_,voice)=> {
       const {m}=notes(arrange(source,{mode:'melody',staff,voice,octave:12}));
       assert.deepEqual(m.order,reference.order,`${id} staff ${staff} voice ${voice}`);
+    }));
+  }
+});
+test('violin parts fit the instrument and keep the source rhythm and pitch classes',()=>{
+  const {VIOLIN_LOW,VIOLIN_HIGH}=globalThis.ComposerArrangement;
+  for(const [composer,entry] of Object.entries(catalog)) for(const id of entry.scores) {
+    const source=library[id];
+    source.staves.forEach((st,staff)=>(st.voices||[st]).forEach((_,voice)=>{
+      for(const octave of [-12,0,12]) {
+        const concert=notes(arrange(source,{mode:'melody',staff,voice,octave})).notes;
+        const score=arrange(source,{mode:'violin',staff,voice,octave,id:composer}), violin=notes(score).notes;
+        const where=`${id} staff ${staff} voice ${voice} octave ${octave}`;
+        assert.equal(score.instrument,'violin',where);assert.equal(score.staves.length,1,where);
+        assert.equal(violin.length,concert.length,where);
+        violin.forEach((n,i)=>{
+          assert.ok(n.midi>=VIOLIN_LOW,`${where}: ${n.midi} below the G string`);
+          assert.ok(n.midi<=VIOLIN_HIGH||concert[i].midi>VIOLIN_HIGH,`${where}: ${n.midi} above E7`);
+          assert.equal(((n.midi-concert[i].midi)%12+12)%12,0,`${where}: pitch class`);
+          assert.equal(n.start,concert[i].start,`${where}: onset`);assert.equal(n.dur,concert[i].dur,`${where}: duration`);
+        });
+      }
     }));
   }
 });

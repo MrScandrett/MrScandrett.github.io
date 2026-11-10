@@ -11,6 +11,26 @@
       return pitches[target]+(delta<0?'b'.repeat(-delta):'#'.repeat(delta))+octave;
     }).replace(/@K:(-?\d+)/g,(_,k)=>'@K:'+shiftKey(k,fifths));
   }
+  const PITCH=/([A-G])([#bn]*)(-?\d+)/g;
+  function midiOf(letter,accidental,register){return (+register+1)*12+natural[pitches.indexOf(letter)]+[...accidental].reduce((s,a)=>s+(a==='#'?1:a==='b'?-1:0),0);}
+  /* Violin: G3 (open G string) up to E7. A line that mostly sits low moves up by whole
+     octaves, so the melody keeps its shape; a few stray low notes don't move the piece
+     (each octave of shift must save more than ~5% of the notes), they are lifted one by one. */
+  const VIOLIN_LOW=55, VIOLIN_HIGH=100;
+  function fitViolin(text) {
+    const midis=[];text.replace(PITCH,(t,l,a,r)=>{midis.push(midiOf(l,a,r));return t;});
+    if(!midis.length)return {notes:text,shift:0,raised:0};
+    const hi=Math.max(...midis), perOctave=Math.max(2,midis.length*0.05);let shift=0,best=Infinity;
+    for(const s of [0,12,24,36]) {
+      if(s&&hi+s>VIOLIN_HIGH)continue;
+      const cost=midis.filter(m=>m+s<VIOLIN_LOW).length+s/12*perOctave;
+      if(cost<best){best=cost;shift=s;}
+    }
+    if(shift)text=transpose(text,shift,shift/12*7,0);
+    let raised=0;
+    text=text.replace(PITCH,(token,l,a,r)=>{let m=midiOf(l,a,r),up=0;while(m+up<VIOLIN_LOW)up+=12;if(!up)return token;raised++;return transpose(token,up,up/12*7,0);});
+    return {notes:text,shift,raised};
+  }
   function line(src,index,voice,lowest) {
     const st=src.staves[index];if(!st)throw new Error('Choose a source staff.');
     const selected=st.voices?st.voices[voice]:st;if(!selected)throw new Error('Choose a source voice.');
@@ -42,8 +62,13 @@
     if(m==='alto'){chromatic+=9;diatonic+=5;fifths=3;result.playbackTranspose=-9;}
     if(m==='tenor'){chromatic+=14;diatonic+=8;fifths=2;result.playbackTranspose=-14;}
     result.staves[0].notes=transpose(result.staves[0].notes,chromatic,diatonic,fifths);
+    if(m==='violin'){
+      const fit=fitViolin(result.staves[0].notes);result.staves[0].notes=fit.notes;
+      if(!/violin/i.test(result.staves[0].label))result.staves[0].label='Violin · '+result.staves[0].label;
+      Object.defineProperty(result,'violinFit',{value:{shift:fit.shift,raised:fit.raised},enumerable:false});
+    }
     result.key=shiftKey(src.key||0,fifths);delete result.keyName;
-    result.instrument=/alto|tenor/.test(m)?'sax':m==='guitar'?'pluck':bass?'bass':'flute';return result;
+    result.instrument=/alto|tenor/.test(m)?'sax':m==='guitar'?'pluck':m==='violin'?'violin':bass?'bass':'flute';return result;
   }
-  root.ComposerArrangement={arrange,line,transpose,shiftKey};
+  root.ComposerArrangement={arrange,line,transpose,shiftKey,fitViolin,VIOLIN_LOW,VIOLIN_HIGH};
 })(typeof window!=='undefined'?window:globalThis);

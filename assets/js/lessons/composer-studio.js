@@ -84,6 +84,13 @@
     } else {
       message = 'Extracted ' + result.staves[0].label + ', voice ' + (+voice.value + 1) + '. Chords become ' + (m === 'bass' ? 'their lowest' : 'their highest') + ' note; this is a source line, not an automatic melody analysis.';
       if (m === 'alto' || m === 'tenor') message += ' Written ' + (m === 'alto' ? 'E♭ alto' : 'B♭ tenor') + ' part; audio sounds at concert pitch. Check register and breathing.';
+      if (m === 'violin') {
+        const fit = result.violinFit || { shift: 0, raised: 0 };
+        message += ' Violin part at concert pitch, kept between the open G string (G3) and E7.';
+        if (fit.shift) message += ' Moved ' + (fit.shift > 0 ? 'up ' : 'down ') + (Math.abs(fit.shift) / 12 === 1 ? 'one octave' : Math.abs(fit.shift) / 12 + ' octaves') + ' to fit the instrument.';
+        if (fit.raised) message += ' ' + fit.raised + (fit.raised === 1 ? ' note sat' : ' notes sat') + ' below the G string and ' + (fit.raised === 1 ? 'was' : 'were') + ' lifted an octave; check ' + (fit.raised === 1 ? 'that leap.' : 'those leaps.');
+        message += ' Bowings and fingerings are yours to mark.';
+      }
     }
     if (src.composer === 'ClassroomOS teaching materials') message += ' Original classroom study, not a composition by the featured musician.';
     const chordOption = [...mode.options].find(o => o.value === 'chords');
