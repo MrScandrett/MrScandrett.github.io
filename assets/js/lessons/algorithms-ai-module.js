@@ -45,7 +45,7 @@
         ['algorithms-and-ai/perceptron-lab', 'Perceptron lab', 'Train a linear classifier and explain both its decision boundary and its limits.', 'What kind of pattern can one straight boundary never learn?'],
         ['algorithms-and-ai/chess-origins-how-to-play', 'Chess foundations', 'Use legal moves, position, and consequences to reason about a game state.', 'What information must an AI representation preserve?'],
         ['algorithms-and-ai/minimax-1v1', 'Minimax & Alpha-Beta', 'Trace alternating choices through a game tree and justify a best move.', 'How does an opponent’s best reply change your own choice?'],
-        ['algorithms-and-ai/chess-ai-core', 'Chess AI history', 'Compare evaluation and search styles across generations of chess programs.', 'What makes a position score useful when the game is not finished?'],
+        ['algorithms-and-ai/chess-ai-core', 'Chess: Play & Practice · ChessOS', 'Play chess, practice strategy, and compare computer opponents.', 'What makes a position score useful when the game is not finished?'],
         ['algorithms-and-ai/go-ai', 'Go & Monte Carlo search', 'Use repeated simulations to estimate which move is most promising.', 'Why can sampling beat exhaustive search in a huge possibility space?']
       ]
     },

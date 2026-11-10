@@ -1,3 +1,4 @@
+import { Chess } from "../../vendor/chess.min.mjs";
 import { ChessBoard3D } from "./chess-3d-board.js";
 
 const boardElement = document.getElementById("chess-board");
@@ -250,6 +251,10 @@ const ROOK_DIRS = [
 
 const QUEEN_DIRS = [...BISHOP_DIRS, ...ROOK_DIRS];
 
+const turnHistory = [];
+const gameRecord = new Chess();
+const undoButton = document.getElementById("chess-undo");
+
 const state = {
   board: [],
   turn: "W",
@@ -278,7 +283,7 @@ const state = {
 };
 
 try {
-  if (localStorage.getItem("chronochess-view") === "2d") state.viewMode = "2d";
+  if ((localStorage.getItem("chessos-view") || localStorage.getItem("chronochess-view")) === "2d") state.viewMode = "2d";
 } catch (_) {
   // Storage can be unavailable in privacy-restricted classroom browsers.
 }
@@ -339,12 +344,12 @@ function setViewMode(mode, persist = true) {
   board3dStage.setAttribute("aria-hidden", String(!is3d));
   board3dCanvas.tabIndex = is3d ? 0 : -1;
   boardDescription.innerHTML = is3d
-    ? "<strong>3D analysis board:</strong> warm squares show Black's influence. Drag to orbit, scroll or pinch to zoom, and use the view buttons to reset or flip the table."
-    : "<strong>2D classical board:</strong> select a piece, then choose a highlighted square. Coordinate labels and Black's pressure remain visible.";
+    ? "Drag to orbit · full screen to zoom · click a piece, then a highlighted square."
+    : "Select a piece, then a highlighted square · use arrow keys to navigate the board.";
 
   if (persist) {
     try {
-      localStorage.setItem("chronochess-view", state.viewMode);
+      localStorage.setItem("chessos-view", state.viewMode);
     } catch (_) {
       // The selection still works for this session if storage is blocked.
     }
@@ -894,7 +899,7 @@ function squareCenter(index) {
 }
 
 function renderGhostLines() {
-  const size = boardElement.clientWidth || 0;
+  const size = document.getElementById("chess-influence").checked ? boardElement.clientWidth : 0;
   if (!size) {
     ghostLayer.innerHTML = "";
     return;
@@ -1391,7 +1396,7 @@ function notation(move, movingPiece) {
 
 function pushLog(text) {
   state.log.unshift(text);
-  if (state.log.length > 28) state.log.length = 28;
+
 }
 
 function renderLog() {
@@ -1456,7 +1461,8 @@ function renderBoard() {
   ensureBoardButtons();
 
   const checkSquare = state.inCheckColor ? findKing(state.board, state.inCheckColor) : -1;
-  const controlHeatmap = computeControlHeatmap(state.board, state.aiColor, activeModel());
+  const showInfluence = document.getElementById("chess-influence").checked;
+  const controlHeatmap = showInfluence ? computeControlHeatmap(state.board, state.aiColor, activeModel()) : new Array(64).fill(0);
 
   for (let i = 0; i < state.board.length; i += 1) {
     const row = rowOf(i);
@@ -1467,6 +1473,8 @@ function renderBoard() {
     button.className = `chess-square ${(row + col) % 2 === 0 ? "light" : "dark"}`;
     button.style.setProperty("--control-alpha", (controlHeatmap[i] * 0.42).toFixed(3));
 
+    button.setAttribute("aria-selected", String(state.selected === i));
+    if (state.lastMove && (state.lastMove.from === i || state.lastMove.to === i)) button.classList.add("last-move");
     if (state.selected === i) button.classList.add("selected");
     if (state.legalTargets.includes(i)) button.classList.add("target");
     if (checkSquare === i) button.classList.add("in-check");
@@ -1484,6 +1492,7 @@ function renderBoard() {
 
   }
 
+  undoButton.disabled = turnHistory.length === 0;
   depthSelect.disabled = state.aiThinking;
   modelSelect.disabled = state.aiThinking;
   labElement.classList.toggle("is-thinking", state.aiThinking);
@@ -1501,11 +1510,12 @@ function renderBoard() {
       targets: state.legalTargets,
       checkSquare,
       heatmap: controlHeatmap,
-      previews: state.aiPreviewMoves,
+      previews: showInfluence ? state.aiPreviewMoves : [],
       lastMove: state.lastMove,
       theme: activeModel().eraSkin || state.aiModelId
     });
   }
+  document.getElementById("chess-opponent-name").textContent = activeModel().label;
   statusElement.textContent = statusText();
   renderLog();
 }
@@ -1519,6 +1529,7 @@ function updateGameStatus() {
 
 function performMove(move, actorLabel) {
   const movingPiece = state.board[move.from];
+  gameRecord.move({ from: toCoord(move.from), to: toCoord(move.to), promotion: "q" });
   state.board = applyMove(state.board, move);
   state.lastMove = { from: move.from, to: move.to };
   pushLog(`${actorLabel}: ${notation(move, movingPiece)}`);
@@ -1604,6 +1615,7 @@ function onSquareClick(index) {
   const move = options.find((candidate) => candidate.from === state.selected && candidate.to === index);
   if (!move) return;
 
+  turnHistory.push({ board: copyBoard(state.board), log: [...state.log], lastMove: state.lastMove, blunder: { ...state.blunder }, blunderCount: state.blunderCount, recordLength: gameRecord.history().length });
   const boardBefore = copyBoard(state.board);
   const reviewProfile = activeModel();
   const reviewGeneration = ++state.blunderGeneration;
@@ -1656,6 +1668,8 @@ function freshBoard() {
 }
 
 function resetGame() {
+  turnHistory.length = 0;
+  gameRecord.reset();
   const model = activeModel();
   state.board = freshBoard();
   state.turn = "W";
@@ -1720,6 +1734,7 @@ board3d = new ChessBoard3D({
   onSquareClick
 });
 cameraHomeButton.addEventListener("click", () => board3d.home());
+document.getElementById("chess-camera-overhead").addEventListener("click", () => board3d.overhead());
 cameraFlipButton.addEventListener("click", () => board3d.flip());
 viewButtons.forEach((button) => {
   button.addEventListener("click", () => setViewMode(button.dataset.chessViewOption));
@@ -1728,3 +1743,33 @@ viewButtons.forEach((button) => {
 setViewMode(state.viewMode, false);
 syncModelSelection(false);
 resetGame();
+
+undoButton.addEventListener("click", () => {
+  const previous = turnHistory.pop();
+  if (!previous) return;
+  state.aiGeneration += 1;
+  state.blunderGeneration += 1;
+  while (gameRecord.history().length > previous.recordLength) gameRecord.undo();
+  Object.assign(state, previous, { turn: "W", selected: null, legalTargets: [], aiThinking: false, aiPreviewMoves: [], winner: null });
+  updateGameStatus();
+  renderBoard();
+  renderBlunderMeter();
+});
+document.getElementById("chess-export").addEventListener("click", () => {
+  gameRecord.header("Event", "ChessOS practice game", "White", "Player", "Black", activeModel().label, "Result", state.winner === "W" ? "1-0" : state.winner === "B" ? "0-1" : state.winner === "D" ? "1/2-1/2" : "*");
+  const url = URL.createObjectURL(new Blob([gameRecord.pgn()], { type: "application/x-chess-pgn" }));
+  const link = document.createElement("a");
+  link.href = url; link.download = "chessos.pgn"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+document.querySelectorAll(".ll-tab").forEach(button => button.addEventListener("click", () => {
+  document.querySelectorAll(".ll-tab").forEach(tab => tab.setAttribute("aria-selected", String(tab === button)));
+  document.querySelectorAll(".ll-pane").forEach(pane => pane.classList.toggle("ll-active", pane.id === button.dataset.pane));
+}));
+boardElement.addEventListener("keydown", event => {
+  const index = Number(event.target.dataset.index);
+  const offset = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 8, ArrowUp: -8 }[event.key];
+  if (offset && Number.isInteger(index)) { event.preventDefault(); boardButtons[Math.max(0, Math.min(63, index + offset))].focus(); }
+});
+
+document.getElementById("chess-influence").addEventListener("change", renderBoard);

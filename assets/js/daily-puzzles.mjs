@@ -1567,7 +1567,7 @@ function buildSokoban(panel, pz, saved, persist, onChange) {
   }
 
   function stopQueue() { clearTimeout(timer); timer = 0; queue = ''; }
-  function runQueue(lurd, { pace = 70, pushPace = 130 } = {}) {
+  function runQueue(lurd, { pace = 170, pushPace = 210 } = {}) {
     stopQueue();
     queue = lurd;
     const tick = () => {

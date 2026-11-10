@@ -288,6 +288,21 @@ $('recording-lesson').addEventListener('click', event => {
   expand(false);
   frame.focus();
 });
+document.querySelectorAll('[data-music-path]').forEach(button => {
+  button.addEventListener('click', () => {
+    const path = button.dataset.musicPath;
+    if (path === 'music-search' || path === 'music-noise-heading') {
+      const recordings = path === 'music-search';
+      $('music-recordings-panel').hidden = !recordings;
+      $('music-focus-panel').hidden = recordings;
+      document.querySelector('[data-music-path="music-search"]').setAttribute('aria-pressed', String(recordings));
+      $('music-noise-path').setAttribute('aria-pressed', String(!recordings));
+    }
+    const target = $(button.dataset.musicPath);
+    target.scrollIntoView({ block: 'start', behavior: 'instant' });
+    target.focus({ preventScroll: true });
+  });
+});
 $('music-play').addEventListener('click', toggle);
 $('music-classroom-copy').addEventListener('click', () => {
   const track = classroomRecording();
@@ -447,7 +462,7 @@ expand(params.get('play') !== '1');
 audio.volume = Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume)) : 0.5;
 audio.muted = saved.muted === true;
 $('player-volume').value = String(audio.volume);
-if (canMakeNoise) renderNoise(); else document.querySelector('.music-noise').hidden = true;
+if (canMakeNoise) renderNoise(); else { document.querySelector('.music-noise').hidden = true; $('music-noise-path').hidden = true; }
 async function loadLibrary() {
   if (loadingLibrary) return;
   loadingLibrary = true;
@@ -463,7 +478,7 @@ async function loadLibrary() {
     for (const composer of composers) {
       const option = document.createElement('option'); option.value = option.textContent = composer; $('music-composer').append(option);
     }
-    $('library-description').textContent = `${tracks.length} recordings by ${composers.length} composers. Keep exploring the site while you listen.`;
+    $('library-description').textContent = `${tracks.length} recordings by ${composers.length} composers. Ready when you are.`;
     const requested = params.get('track') || saved.track || defaultTrack;
     const initial = tracks.find(t => t.id === requested) || tracks[0];
     const time = params.has('time') ? Number(params.get('time')) : initial.id === saved.track ? saved.time : 0;

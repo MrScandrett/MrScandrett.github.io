@@ -1,5 +1,4 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { THREE, OrbitControls } from "../../vendor/three-bundle.min.js";
 
 const BOARD_SIZE = 8;
 const HALF = (BOARD_SIZE - 1) / 2;
@@ -11,11 +10,11 @@ const THEMES = {
   },
   deepblue1997: {
     world: 0x071a16, fog: 0x071a16, light: 0xe6dcc5, dark: 0x315747,
-    edge: 0x422a1c, white: 0xf4ead4, black: 0x172c26, accent: 0xc7a55b, danger: 0x7f2938
+    edge: 0x422a1c, white: 0xf4ead4, black: 0x20252d, accent: 0xc7a55b, danger: 0x7f2938
   },
   modern2020s: {
     world: 0x081c18, fog: 0x081c18, light: 0xeee6d3, dark: 0x244c40,
-    edge: 0x3c271b, white: 0xf7eedb, black: 0x142a24, accent: 0xd0ae62, danger: 0x8a2e40
+    edge: 0x3c271b, white: 0xf7eedb, black: 0x202630, accent: 0xd0ae62, danger: 0x8a2e40
   }
 };
 
@@ -28,81 +27,112 @@ function webglAvailable() {
   }
 }
 
+// Slender Staunton silhouettes with turned collars and a shared weighted foot.
 function profileForPiece(type) {
-  switch (type) {
-    case "P": return [[0, 0], [.34, 0], [.39, .12], [.3, .2], [.21, .54], [.3, .62], [.29, .75], [.18, .82], [.22, .96], [0, 1.02]];
-    case "R": return [[0, 0], [.42, 0], [.46, .12], [.34, .2], [.29, .72], [.39, .79], [.42, .98], [.3, 1.05], [0, 1.05]];
-    case "B": return [[0, 0], [.41, 0], [.45, .12], [.32, .2], [.21, .62], [.31, .73], [.25, .88], [.16, 1.12], [0, 1.22]];
-    case "Q": return [[0, 0], [.45, 0], [.48, .12], [.34, .2], [.25, .78], [.36, .89], [.3, 1.05], [.4, 1.2], [.24, 1.34], [0, 1.39]];
-    case "K": return [[0, 0], [.46, 0], [.49, .12], [.35, .2], [.26, .78], [.36, .9], [.3, 1.1], [.26, 1.24], [0, 1.3]];
-    default: return [[0, 0], [.42, 0], [.46, .12], [.32, .2], [.22, .72], [.3, .82], [0, .9]];
-  }
+  const foot = [[0,0],[.29,0],[.35,.025],[.37,.065],[.37,.10],[.35,.14],[.30,.17],[.29,.20],[.28,.23],[.24,.25]];
+  const stems = {
+    P: [[.21,.29],[.16,.35],[.12,.47],[.12,.52],[.20,.55],[.21,.59],[.17,.63],[0,.64]],
+    R: [[.23,.29],[.19,.40],[.18,.67],[.24,.72],[.28,.75],[.28,.80],[.27,.86],[.30,.89],[.30,1.02],[.23,1.02],[.23,.92],[0,.92]],
+    B: [[.21,.30],[.15,.48],[.12,.72],[.17,.79],[.24,.82],[.24,.87],[.16,.91],[0,.92]],
+    Q: [[.22,.30],[.16,.53],[.12,.84],[.17,.94],[.25,.98],[.25,1.03],[.17,1.07],[.22,1.16],[.27,1.23],[.27,1.28],[0,1.28]],
+    K: [[.22,.30],[.16,.54],[.13,.90],[.17,1.01],[.25,1.05],[.25,1.10],[.18,1.14],[.20,1.23],[.19,1.29],[0,1.29]],
+    N: [[.23,.29],[.23,.37],[.27,.40],[.27,.44],[.22,.48],[0,.48]]
+  };
+  return [...foot,...stems[type]];
 }
 
 function lathePiece(type, material) {
-  const points = profileForPiece(type).map(([x, y]) => new THREE.Vector2(x, y));
   const root = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.LatheGeometry(points, 28), material);
-  body.castShadow = true;
-  body.receiveShadow = true;
-  root.add(body);
-
-  if (type === "P") {
-    const head = new THREE.Mesh(new THREE.SphereGeometry(.23, 22, 16), material);
-    head.position.y = 1.02;
-    head.castShadow = true;
-    root.add(head);
-  } else if (type === "R") {
-    for (let i = 0; i < 4; i += 1) {
-      const merlon = new THREE.Mesh(new THREE.BoxGeometry(.2, .19, .2), material);
-      const angle = i * Math.PI / 2 + Math.PI / 4;
-      merlon.position.set(Math.cos(angle) * .25, 1.12, Math.sin(angle) * .25);
-      merlon.rotation.y = -angle;
-      merlon.castShadow = true;
-      root.add(merlon);
+  const add = (geometry, x=0, y=0, z=0, mat=material) => {
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.position.set(x,y,z);
+    mesh.castShadow = mesh.receiveShadow = true;
+    root.add(mesh);
+    return mesh;
+  };
+  add(new THREE.LatheGeometry(profileForPiece(type).map(([x,y])=>new THREE.Vector2(x,y)),64));
+  if (type === "P") add(new THREE.SphereGeometry(.185,32,24),0,.76);
+  if (type === "R") {
+    for(let i=0;i<6;i++) {
+      const angle=i*Math.PI/3;
+      const tooth=add(new THREE.BoxGeometry(.15,.16,.15),Math.cos(angle)*.25,1.08,Math.sin(angle)*.25);
+      tooth.rotation.y=-angle;
     }
-  } else if (type === "B") {
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(.2, 20, 14), material);
-    crown.scale.y = 1.35;
-    crown.position.y = 1.2;
-    crown.castShadow = true;
-    root.add(crown);
-  } else if (type === "Q") {
-    for (let i = 0; i < 6; i += 1) {
-      const jewel = new THREE.Mesh(new THREE.SphereGeometry(.075, 12, 8), material);
-      const angle = i * Math.PI / 3;
-      jewel.position.set(Math.cos(angle) * .3, 1.4, Math.sin(angle) * .3);
-      jewel.castShadow = true;
-      root.add(jewel);
-    }
-  } else if (type === "K") {
-    const vertical = new THREE.Mesh(new THREE.BoxGeometry(.09, .42, .09), material);
-    const horizontal = new THREE.Mesh(new THREE.BoxGeometry(.3, .09, .09), material);
-    vertical.position.y = 1.48;
-    horizontal.position.y = 1.5;
-    vertical.castShadow = horizontal.castShadow = true;
-    root.add(vertical, horizontal);
-  } else if (type === "N") {
-    const neck = new THREE.Mesh(new THREE.CapsuleGeometry(.22, .55, 6, 12), material);
-    neck.position.set(0, 1.02, .06);
-    neck.rotation.z = -.2;
-    neck.castShadow = true;
-    const muzzle = new THREE.Mesh(new THREE.CapsuleGeometry(.16, .32, 5, 10), material);
-    muzzle.rotation.x = Math.PI / 2.25;
-    muzzle.position.set(0, 1.34, -.16);
-    muzzle.castShadow = true;
-    const ears = [-1, 1].map((side) => {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(.075, .25, 8), material);
-      ear.position.set(side * .11, 1.58, .02);
-      ear.rotation.z = side * -.12;
-      ear.castShadow = true;
-      return ear;
-    });
-    root.add(neck, muzzle, ...ears);
   }
-
-  root.scale.setScalar(.72);
+  if (type === "B") {
+    // A pointed mitre rather than a second pawn sphere.
+    const points=[[0,.90],[.10,.92],[.19,1.02],[.20,1.10],[.17,1.18],[.11,1.26],[.035,1.36],[0,1.38]];
+    add(new THREE.LatheGeometry(points.map(([x,y])=>new THREE.Vector2(x,y)),48));
+    add(new THREE.SphereGeometry(.045,20,16),0,1.39);
+    const groove=add(new THREE.BoxGeometry(.027,.25,.018),.035,1.15,-.178,
+      new THREE.MeshStandardMaterial({color:0x3a3830,roughness:.8}));
+    groove.rotation.z=-.45;
+  }
+  if (type === "Q") {
+    for(let i=0;i<8;i++) {
+      const angle=i*Math.PI/4;
+      const prong=add(new THREE.ConeGeometry(.055,.23,16),Math.cos(angle)*.23,1.35,Math.sin(angle)*.23);
+      prong.rotation.z=-Math.cos(angle)*.35;
+      prong.rotation.x=Math.sin(angle)*.35;
+      add(new THREE.SphereGeometry(.046,16,12),Math.cos(angle)*.265,1.46,Math.sin(angle)*.265);
+    }
+    add(new THREE.SphereGeometry(.075,24,16),0,1.39);
+  }
+  if(type === "K") {
+    const cross=new THREE.Shape();
+    cross.moveTo(-.045,0);cross.lineTo(.045,0);cross.lineTo(.045,.18);cross.lineTo(.17,.18);
+    cross.lineTo(.17,.27);cross.lineTo(.045,.27);cross.lineTo(.045,.40);cross.lineTo(-.045,.40);
+    cross.lineTo(-.045,.27);cross.lineTo(-.17,.27);cross.lineTo(-.17,.18);cross.lineTo(-.045,.18);cross.closePath();
+    add(new THREE.ExtrudeGeometry(cross,{depth:.07,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:3,steps:1}),0,1.26,-.035);
+  }
+  if(type === "N") {
+    // Beveled horse profile with a swept neck, muzzle, mane and ears.
+    const horse=new THREE.Shape();
+    horse.moveTo(-.20,.43);horse.bezierCurveTo(-.28,.65,-.27,.95,-.13,1.19);
+    horse.lineTo(-.18,1.48);horse.lineTo(-.045,1.40);horse.lineTo(.045,1.47);
+    horse.lineTo(.13,1.28);horse.bezierCurveTo(.22,1.25,.29,1.13,.39,1.04);
+    horse.lineTo(.34,.91);horse.lineTo(.15,.92);horse.lineTo(.05,1.01);
+    horse.bezierCurveTo(-.04,.86,.16,.66,.23,.44);horse.closePath();
+    const head=add(new THREE.ExtrudeGeometry(horse,{depth:.19,bevelEnabled:true,bevelSegments:4,bevelSize:.045,bevelThickness:.045,curveSegments:24,steps:1}));
+    head.rotation.y=Math.PI/2;head.position.x=-.095;
+    const eyeMaterial=new THREE.MeshStandardMaterial({color:material.color.getHex()===0xf4ead4?0x38332b:0xaaa69b,roughness:.3});
+    for(const side of [-1,1]) add(new THREE.SphereGeometry(.026,16,12),side*.145,1.23,-.09,eyeMaterial);
+  }
+  root.scale.setScalar(.82);
   return root;
+}
+
+// Broad studio softboxes create continuous highlights on both ivory and ebony.
+function studioEnvironment(renderer) {
+  const studio = new THREE.Scene();
+  studio.background = new THREE.Color(0x6e7780);
+  const panel = (color,intensity,x,y,z,w,h) => {
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(intensity),side:THREE.DoubleSide}));
+    mesh.position.set(x,y,z);mesh.lookAt(0,0,0);studio.add(mesh);
+  };
+  panel(0xfff2da,5,-4,6,3,5,7);
+  panel(0xddeaff,4,5,3,-3,3,6);
+  panel(0xffffff,2,0,8,0,6,4);
+  const generator=new THREE.PMREMGenerator(renderer);
+  const environment=generator.fromScene(studio,.08);
+  generator.dispose();
+  studio.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});
+  return environment;
+}
+
+function walnutTexture() {
+  const canvas=document.createElement("canvas");canvas.width=canvas.height=512;
+  const ctx=canvas.getContext("2d");
+  const pixels=ctx.createImageData(512,512);
+  for(let y=0;y<512;y++)for(let x=0;x<512;x++) {
+    const grain=Math.sin(y*.24+Math.sin(x*.012)*2)+.4*Math.sin(y*1.5+x*.015);
+    const n=grain*5;const k=(y*512+x)*4;
+    pixels.data[k]=69+n;pixels.data[k+1]=46+n*.7;pixels.data[k+2]=32+n*.4;pixels.data[k+3]=255;
+  }
+  ctx.putImageData(pixels,0,0);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  texture.anisotropy=8;
+  return texture;
 }
 
 function squarePosition(index) {
@@ -159,6 +189,16 @@ export class ChessBoard3D {
 
     this.initScene();
     this.bindInput();
+    const syncInteraction = () => {
+      if (!this.available) return;
+      const workspace = this.host.closest("[data-creation-app]");
+      const expanded = document.fullscreenElement === workspace || workspace?.classList.contains("creation-app-expanded");
+      this.controls.enableZoom = Boolean(expanded);
+      this.canvas.style.touchAction = expanded ? "none" : "pan-y";
+    };
+    document.addEventListener("fullscreenchange", syncInteraction);
+    document.addEventListener("creation-app-resize", syncInteraction);
+    syncInteraction();
     requestAnimationFrame(() => {
       loading.hidden = true;
       host.classList.add("is-ready");
@@ -170,51 +210,82 @@ export class ChessBoard3D {
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(this.theme.world);
-    this.scene.fog = new THREE.FogExp2(this.theme.fog, .022);
-    this.camera = new THREE.PerspectiveCamera(39, 1, .1, 80);
-    this.camera.position.set(0, 8.4, 10.2);
+    this.scene.environment = studioEnvironment(this.renderer).texture;
+    this.scene.environmentIntensity = .65;
+    this.camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
+    this.camera.position.set(4.4, 13.8, 17.6);
 
     this.controls = new OrbitControls(this.camera, this.canvas);
-    this.controls.target.set(0, .35, 0);
+    this.controls.target.set(0, .2, 0);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = .065;
     this.controls.enablePan = false;
+    this.controls.minZoom = .65;
+    this.controls.maxZoom = 1.7;
     this.controls.minDistance = 7.5;
-    this.controls.maxDistance = 17;
-    this.controls.minPolarAngle = .48;
+    this.controls.maxDistance = 30;
+    this.controls.minPolarAngle = .08;
     this.controls.maxPolarAngle = 1.24;
 
-    this.scene.add(new THREE.HemisphereLight(0xfff1d2, 0x07130f, 1.45));
-    this.keyLight = new THREE.DirectionalLight(0xffe9c2, 3.2);
+    this.scene.add(new THREE.HemisphereLight(0xfff1d2, 0x606a7b, .65));
+    this.keyLight = new THREE.DirectionalLight(0xffeedb, 2.2);
     this.keyLight.position.set(-5, 11, 7);
     this.keyLight.castShadow = true;
     this.keyLight.shadow.mapSize.set(2048, 2048);
     this.keyLight.shadow.camera.left = this.keyLight.shadow.camera.bottom = -7;
     this.keyLight.shadow.camera.right = this.keyLight.shadow.camera.top = 7;
+    this.keyLight.shadow.normalBias = .025;
+    this.keyLight.shadow.bias = -.00015;
+    this.keyLight.shadow.radius = 4;
     this.scene.add(this.keyLight);
+    const fillLight = new THREE.DirectionalLight(0xd9e9ff, 1.2);
+    fillLight.position.set(3, 7, -6);
+    this.scene.add(fillLight);
     this.rimLight = new THREE.PointLight(this.theme.accent, 18, 24, 2);
     this.rimLight.position.set(5, 5, -5);
     this.scene.add(this.rimLight);
 
     this.boardRoot = new THREE.Group();
-    const plinthMat = new THREE.MeshStandardMaterial({ color: this.theme.edge, roughness: .38, metalness: .14 });
+    const plinthMat = new THREE.MeshStandardMaterial({ map: walnutTexture(), roughness: .32, metalness: 0 });
     this.plinthMaterial = plinthMat;
-    this.trimMaterial = new THREE.MeshStandardMaterial({ color: this.theme.accent, roughness: .26, metalness: .72 });
-    const trim = new THREE.Mesh(new THREE.BoxGeometry(9.32, .12, 9.32), this.trimMaterial);
-    trim.position.y = -.16;
+    this.trimMaterial = new THREE.MeshStandardMaterial({ color: this.theme.accent, roughness: .35, metalness: .65 });
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(8.84, .035, 8.84), this.trimMaterial);
+    trim.position.y = -.24;
     trim.castShadow = true;
     this.boardRoot.add(trim);
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(9.15, .42, 9.15), plinthMat);
-    plinth.position.y = -.31;
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(8.95, .28, 8.95), plinthMat);
+    plinth.position.y = -.10;
     plinth.receiveShadow = true;
     plinth.castShadow = true;
     this.boardRoot.add(plinth);
+
+    // Coordinates are part of the board, so they orbit and flip with the table.
+    for (let i = 0; i < 8; i += 1) {
+      for (const [label, x, z] of [["abcdefgh"[i], i - HALF, 4.22], [String(8 - i), -4.22, i - HALF]]) {
+        const stamp = document.createElement("canvas");
+        stamp.width = stamp.height = 128;
+        const context = stamp.getContext("2d");
+        context.font = "600 86px sans-serif";
+        context.fillStyle = "#eee7d0";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(label, 64, 64);
+        const texture = new THREE.CanvasTexture(stamp);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
+        const marker = new THREE.Mesh(new THREE.PlaneGeometry(.23, .23), material);
+        marker.rotation.x = -Math.PI / 2;
+        marker.position.set(x, .048, z);
+        this.boardRoot.add(marker);
+      }
+    }
+
 
     const squareGeometry = new THREE.BoxGeometry(.985, .16, .985);
     for (let index = 0; index < 64; index += 1) {
@@ -223,7 +294,7 @@ export class ChessBoard3D {
       const col = index % 8;
       const material = new THREE.MeshStandardMaterial({
         color: (row + col) % 2 === 0 ? this.theme.light : this.theme.dark,
-        roughness: .66,
+        roughness: .32,
         metalness: .03,
         emissive: 0x000000
       });
@@ -236,23 +307,23 @@ export class ChessBoard3D {
     }
 
     const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(15, 72),
-      new THREE.MeshStandardMaterial({ color: 0x061510, roughness: .94, metalness: .04 })
+      new THREE.PlaneGeometry(200, 200),
+      new THREE.MeshStandardMaterial({ color: 0x061510, roughness: .94, metalness: 0, envMapIntensity: .12 })
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -.54;
     floor.receiveShadow = true;
     this.scene.add(floor, this.boardRoot, this.pieceRoot, this.effectRoot);
 
-    this.whiteMaterial = new THREE.MeshPhysicalMaterial({ color: this.theme.white, roughness: .2, metalness: .3, clearcoat: .75, clearcoatRoughness: .18 });
-    this.blackMaterial = new THREE.MeshPhysicalMaterial({ color: this.theme.black, roughness: .24, metalness: .52, clearcoat: .62, clearcoatRoughness: .22 });
+    this.whiteMaterial = new THREE.MeshPhysicalMaterial({ color: this.theme.white, roughness: .25, metalness: 0, clearcoat: .65, clearcoatRoughness: .24, envMapIntensity: .8 });
+    this.blackMaterial = new THREE.MeshPhysicalMaterial({ color: this.theme.black, roughness: .28, metalness: .02, clearcoat: .8, clearcoatRoughness: .20, envMapIntensity: 1.2 });
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.clock = new THREE.Clock();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(this.host);
-    this.animate();
+    this.loop = window.SimKit.loop(this.animate);
   }
 
   bindInput() {
@@ -281,7 +352,7 @@ export class ChessBoard3D {
     this.theme = THEMES[normalized];
     this.scene.background.set(this.theme.world);
     this.scene.fog.color.set(this.theme.fog);
-    this.plinthMaterial.color.set(this.theme.edge);
+    this.plinthMaterial.color.set(0xffffff);
     this.trimMaterial.color.set(this.theme.accent);
     this.rimLight.color.set(this.theme.accent);
     this.whiteMaterial.color.set(this.theme.white);
@@ -295,7 +366,7 @@ export class ChessBoard3D {
     model.userData.piece = piece;
     model.userData.squareIndex = index;
     model.traverse((child) => { child.userData.squareIndex = index; });
-    if (piece[1] === "N") model.rotation.y = piece[0] === "W" ? 0 : Math.PI;
+    if (piece[1] === "N") model.rotation.y = piece[0] === "W" ? -.42 : Math.PI - .42;
     this.pieceRoot.add(model);
     this.pieceMeshes.set(index, model);
     return model;
@@ -411,19 +482,28 @@ export class ChessBoard3D {
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(16)) / this.camera.aspect));
     this.camera.updateProjectionMatrix();
   }
 
   home() {
     if (!this.available) return;
     this.flipped = false;
-    this.moveCameraTo(new THREE.Vector3(0, 8.4, 10.2));
+    this.camera.zoom = 1;
+    this.camera.updateProjectionMatrix();
+    this.moveCameraTo(new THREE.Vector3(4.4, 13.8, 17.6));
+  }
+
+  overhead() {
+    if (!this.available) return;
+    this.flipped = false;
+    this.moveCameraTo(new THREE.Vector3(0, 22, 2.7));
   }
 
   flip() {
     if (!this.available) return;
     this.flipped = !this.flipped;
-    this.moveCameraTo(new THREE.Vector3(0, 8.4, this.flipped ? -10.2 : 10.2));
+    this.moveCameraTo(new THREE.Vector3(this.flipped ? -4.4 : 4.4, 13.8, this.flipped ? -17.6 : 17.6));
   }
 
   moveCameraTo(destination) {
@@ -438,12 +518,12 @@ export class ChessBoard3D {
 
   animate = () => {
     if (!this.available) return;
-    requestAnimationFrame(this.animate);
+
     const time = this.clock.getElapsedTime();
     const now = performance.now();
 
     if (this.cameraTween) {
-      const progress = Math.min(1, (now - this.cameraTween.startedAt) / this.cameraTween.duration);
+      const progress = Math.min(1, (now - this.cameraTween.startedAt) / Math.max(1, this.cameraTween.duration));
       this.camera.position.lerpVectors(this.cameraTween.from, this.cameraTween.to, easeInOutCubic(progress));
       this.camera.lookAt(this.controls.target);
       if (progress >= 1) {
@@ -458,10 +538,10 @@ export class ChessBoard3D {
     [...this.pieceRoot.children].forEach((piece) => {
       const movement = this.pieceAnimations.get(piece);
       if (movement) {
-        const progress = Math.min(1, (now - movement.startedAt) / movement.duration);
+        const progress = Math.min(1, (now - movement.startedAt) / Math.max(1, movement.duration));
         const eased = easeInOutCubic(progress);
         if (movement.kind === "capture") {
-          piece.scale.setScalar(.72 * (1 - eased));
+          piece.scale.setScalar(.82 * (1 - eased));
           piece.position.y = .1 - eased * .12;
           if (progress >= 1) {
             this.pieceAnimations.delete(piece);

@@ -637,6 +637,22 @@
     var riderProject;
     if (riderCanvas && rCtx) {
       var rTool = 'track';
+      var rRedo = [], camera = { x:0, y:0, zoom:1 }, panAt = null;
+      var rideTime = 0, lap = 1;
+      function rPoint(e) { var p = canvasPoint(riderCanvas,e); return {x:p.x/camera.zoom+camera.x,y:p.y/camera.zoom+camera.y}; }
+      function snapEndpoint(p) {
+        var nearest=p, distance=12/camera.zoom;
+        rStrokes.forEach(function(s){[s.pts[0],s.pts[s.pts.length-1]].forEach(function(q){var d=Math.hypot(q.x-p.x,q.y-p.y);if(d<distance){nearest={x:q.x,y:q.y};distance=d;}});});return nearest;
+      }
+      function ghostPoints() {
+        var kind = document.getElementById('prider-lesson').value, pts=[];
+        for(var i=0;i<=120;i++) { var t=i/120, y=kind==='slope' ? .25+.42*t : kind==='valley' ? .27+.44*Math.sin(t*Math.PI) : .26+.35*t+.12*Math.sin(t*Math.PI*2);
+          if(kind==='jump' && t>.46 && t<.59) continue;
+          pts.push({x:RW()*(.08+.84*t),y:RH()*y}); }
+        return pts;
+      }
+      function ghostStrokes() { var pts=ghostPoints(), groups=[[]]; pts.forEach(function(p,i){ if(i && p.x-pts[i-1].x>RW()*.03) groups.push([]); groups[groups.length-1].push(p); }); return groups.map(function(pts){return {type:'track',pts:pts};}); }
+
       var rHistory = [], rPointer = null, rBeforeEdit = null, rEdited = false;
       var rStrokes = [];       // { type:'track'|'accel', pts:[{x,y}] }
       var curRStroke = null, rDrawing = false;
@@ -651,7 +667,7 @@
       var riderCoach = document.getElementById('prider-coach');
 
       function resizeR() {
-        if (fitCanvas(riderCanvas, rCtx)) drawRider();
+        if (fitCanvas(riderCanvas, rCtx)) { riderCanvas.style.width='100%'; riderCanvas.style.height=''; drawRider(); }
       }
       function RW() { return boardSize.width; }
       function RH() { return boardSize.height; }
@@ -667,9 +683,10 @@
 
       function updateRiderUi() {
         var hasCourse = rStrokes.length > 0 || startPts.length > 0;
-        if (riderCoach) riderCoach.classList.toggle('is-hidden', hasCourse || rDrawing);
+        if (riderCoach) riderCoach.classList.toggle('is-hidden', hasCourse || rDrawing || document.getElementById('prider-ghost').checked);
         document.getElementById('prider-clear').disabled = !hasCourse;
         document.getElementById('prider-undo').disabled = !rHistory.length;
+        document.getElementById('prider-redo').disabled = !rRedo.length;
         setRiderRunLabel();
       }
 
@@ -678,12 +695,12 @@
       }
 
       function rememberCourse(before = structuredClone(courseState())) {
-        rHistory.push(before);
+        rRedo = []; rHistory.push(before);
         if (rHistory.length > 40) rHistory.shift();
       }
 
       function resetRide() {
-        riderRunning = false; riders = []; bestSpeed = 0; riderLiveMsg = '';
+        riderRunning = false; riders = []; bestSpeed = 0; rideTime = 0; lap = 1; riderLiveMsg = '';
         setRiderRunLabel();
       }
 
@@ -692,13 +709,14 @@
         if (e.button !== 0 || rPointer !== null) return;
         e.preventDefault();
         rPointer = e.pointerId; riderCanvas.setPointerCapture(rPointer);
+        if(rTool === 'pan') { panAt = {p:canvasPoint(riderCanvas,e),x:camera.x,y:camera.y}; return; }
         rBeforeEdit = structuredClone(courseState());
         rEdited = false;
         resetRide();
-        var p = canvasPoint(riderCanvas, e);
-        if (rTool === 'track' || rTool === 'accel') {
+        var p = rPoint(e);
+        if (rTool === 'track' || rTool === 'accel' || rTool === 'line') {
           rDrawing = true;
-          curRStroke = { type: rTool, pts: [p] };
+          curRStroke = { type: rTool === 'line' ? 'track' : rTool, pts: [snapEndpoint(p)] };
           updateRiderUi();
         } else if (rTool === 'erase') {
           rDrawing = true;
@@ -712,17 +730,21 @@
         }
       }
       function rMove(e) {
-        if (!rDrawing || e.pointerId !== rPointer) return;
+        if(e.pointerId !== rPointer) return;
+        if(panAt) { var screen=canvasPoint(riderCanvas,e); camera.x=panAt.x+(panAt.p.x-screen.x)/camera.zoom; camera.y=panAt.y+(panAt.p.y-screen.y)/camera.zoom; drawRider(); return; }
+        if (!rDrawing) return;
         e.preventDefault();
-        var p = canvasPoint(riderCanvas, e);
-        if (rTool === 'track' || rTool === 'accel') { var last = curRStroke.pts[curRStroke.pts.length-1]; if (Math.hypot(p.x-last.x,p.y-last.y) >= 2) curRStroke.pts.push(p); drawRider(); }
+        var p = rPoint(e);
+        if (rTool === 'track' || rTool === 'accel' || rTool === 'line') { var last = curRStroke.pts[curRStroke.pts.length-1]; if(rTool==='line') curRStroke.pts=[curRStroke.pts[0],p]; else if (Math.hypot(p.x-last.x,p.y-last.y) >= 2) curRStroke.pts.push(p); drawRider(); }
         else if (rTool === 'erase') eraseNear(p);
       }
       function rUp(event) {
         if (rPointer === null || (event && event.pointerId !== rPointer)) return;
         rPointer = null;
+        if(panAt) { panAt=null; return; }
         rDrawing = false;
         if (curRStroke && curRStroke.pts.length > 1) {
+          curRStroke.pts[curRStroke.pts.length-1] = snapEndpoint(curRStroke.pts[curRStroke.pts.length-1]);
           rStrokes.push(curRStroke);
           rebuildSegs();
           rEdited = true;
@@ -747,6 +769,8 @@
       riderCanvas.addEventListener('lostpointercapture', rUp);
 
       var riderToolHints = {
+        line: 'Drag between two points for a straight track. Connect lines to build ramps.',
+        pan: 'Drag to explore the course. Scroll to zoom; Home view returns to the start.',
         track: 'Drag to draw a downhill track. Place a start above it or use the marked default start.',
         accel: 'Draw a gold boost line over or near the track. Riders gain speed when they pass close to it.',
         erase: 'Drag across a line to erase that whole stroke. Use Undo edit to bring it back.',
@@ -771,7 +795,7 @@
       });
       document.getElementById('prider-undo') && document.getElementById('prider-undo').addEventListener('click', function () {
         rUp();
-        if (rHistory.length) { var state = rHistory.pop(); rStrokes = state.strokes; startPts = state.starts; resetRide(); rebuildSegs(); drawRider(); updateRiderUi(); }
+        if (rHistory.length) { rRedo.push(structuredClone(courseState())); var state = rHistory.pop(); rStrokes = state.strokes; startPts = state.starts; resetRide(); rebuildSegs(); drawRider(); updateRiderUi(); }
       });
       document.getElementById('prider-clear') && document.getElementById('prider-clear').addEventListener('click', function () {
         rUp(); rememberCourse(); resetRide();
@@ -786,7 +810,7 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); document.getElementById('prider-undo').click(); return; }
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.code === 'Space' && e.target.tagName !== 'BUTTON') { e.preventDefault(); document.getElementById('prider-run').click(); return; }
-        var map = { t: 'track', a: 'accel', e: 'erase', s: 'start' };
+        var map = { l:'line', h:'pan', t: 'track', a: 'accel', e: 'erase', s: 'start' };
         var t = map[e.key.toLowerCase()];
         if (t) { var btn = document.querySelector('#ppanel-rider .ptool[data-rtool="'+t+'"]'); if (btn) btn.click(); }
       });
@@ -804,13 +828,14 @@
 
       function courseStarts() {
         if (startPts.length) return startPts;
-        return rSegs.length ? [{ x: 40, y: 40 }] : [];
+        var first = rStrokes[0] && rStrokes[0].pts[0];
+        return first ? [{ x: first.x, y: first.y - 32 }] : [];
       }
 
       function spawnRiders() {
         var pts = courseStarts();
         riders = pts.map(function (pt, i) {
-          return { x: pt.x, y: pt.y, vx: 0, vy: 0, r: 11, color: RIDER_COLORS[i % RIDER_COLORS.length], angle: 0, trail: [], offCourse: false, lastBoost: 0 };
+          return { x: pt.x, y: pt.y, vx: 35, vy: 0, r: 11, color: RIDER_COLORS[i % RIDER_COLORS.length], angle: 0, trail: [], offCourse: false, lastBoost: 0 };
         });
         bestSpeed = 0;
         var coach = document.getElementById('prider-coach'); if (coach) coach.classList.add('is-hidden');
@@ -846,7 +871,7 @@
           // picking one consistent contact per step fixes that.
           var nearest = null, nearestD = Infinity, nearestCp = null;
           rSegs.forEach(function (seg) {
-            if (seg.type === 'accel') return;
+            // Boost strokes are rideable too.
             var cp = closestOnSeg(rd.x, rd.y, seg.x1, seg.y1, seg.x2, seg.y2);
             var d = Math.hypot(rd.x-cp.x, rd.y-cp.y);
             if (d < nearestD) { nearestD = d; nearest = seg; nearestCp = cp; }
@@ -868,7 +893,8 @@
 
           var v = Math.hypot(rd.vx, rd.vy) / PPM;
           if (v > bestSpeed) bestSpeed = v;
-          if (rd.y > RH()+220 || rd.x < -220 || rd.x > RW()+220) rd.offCourse = true;
+          var bottom = rSegs.reduce(function(v,s){return Math.max(v,s.y1,s.y2);},RH());
+          if (rd.y > bottom+500 || Math.abs(rd.x)>100000 || rideTime>90) rd.offCourse = true;
         });
         for (var i = 0; i < riders.length; i++) for (var j = i+1; j < riders.length; j++) {
           var a = riders[i], b = riders[j];
@@ -889,6 +915,12 @@
         rCtx.clearRect(0, 0, W, H);
         drawGrid(rCtx, W, H);
 
+        rCtx.save(); rCtx.scale(camera.zoom,camera.zoom); rCtx.translate(-camera.x,-camera.y);
+        if(document.getElementById('prider-ghost').checked) {
+          rCtx.save(); rCtx.globalAlpha=.45; rCtx.strokeStyle='#2563eb'; rCtx.lineWidth=7; rCtx.setLineDash([12,9]);
+          ghostStrokes().forEach(function(s){rCtx.beginPath(); s.pts.forEach(function(p,i){i?rCtx.lineTo(p.x,p.y):rCtx.moveTo(p.x,p.y);});rCtx.stroke();});
+          var gp=ghostPoints()[0]; rCtx.setLineDash([]); rCtx.fillStyle='#155e75'; rCtx.font='16px sans-serif'; rCtx.fillText('Start above here → trace the blue guide',gp.x,gp.y-35); rCtx.restore();
+        }
         rStrokes.forEach(paintRStroke);
         if (curRStroke) paintRStroke(curRStroke);
 
@@ -927,6 +959,7 @@
           rCtx.restore();
         });
 
+        rCtx.restore();
         var count = document.getElementById('prider-count');
         var best = document.getElementById('prider-best');
         var ro = document.getElementById('prider-readout');
@@ -936,7 +969,7 @@
           count.textContent = riderCount + (riderRunning ? ' racing' : riderCount === 1 ? ' rider' : ' riders');
         }
         if (best) best.textContent = 'best ' + bestSpeed.toFixed(1) + ' m/s';
-        var message = riderLiveMsg || (riderRunning ? 'Ride in progress.' :
+        var message = riderLiveMsg || (riderRunning ? 'Run '+lap+' · '+rideTime.toFixed(1)+' s' :
           !rSegs.length ? 'Draw a track or load the sample to start a ride.' :
           startPts.length ? 'Course ready. Choose Start ride.' : 'Course ready. The marked default start will be used.');
         if (ro && ro.textContent !== message) ro.textContent = message;
@@ -960,13 +993,16 @@
         if (!riderLastT) riderLastT = ts;
         var dt = Math.min((ts-riderLastT)/1000, 0.05); riderLastT = ts;
         if (riderRunning && !document.hidden && !document.getElementById('tabpanel-sandbox').hidden) {
+          dt *= Number(document.getElementById('prider-speed').value); rideTime += dt;
           var maxV = riders.reduce(function(v,rd) { return Math.max(v,Math.hypot(rd.vx,rd.vy)); },0);
           var steps = Math.max(3, Math.ceil(maxV*dt/4));
           for (var s = 0; s < steps; s++) stepRiders(dt/steps, ts);
           if (riders.length && riders.every(function(rd) { return rd.offCourse; })) {
-            riderRunning = false; riderLiveMsg = 'Ride complete. Replay the ride or edit your course.'; setRiderRunLabel();
+            if(document.getElementById('prider-repeat').checked) { spawnRiders(); rideTime=0; lap++; }
+            else { riderRunning = false; riderLiveMsg = 'Ride complete. Replay or extend your course.'; } setRiderRunLabel();
           }
         }
+        if(riderRunning && document.getElementById('prider-follow').checked && riders[0]) { camera.x += (riders[0].x-RW()*.35/camera.zoom-camera.x)*.09; camera.y += (riders[0].y-RH()*.4/camera.zoom-camera.y)*.09; }
         drawRider();
         riderRafId = requestAnimationFrame(riderLoop);
       }
@@ -997,20 +1033,22 @@
 
       document.getElementById('prider-demo').addEventListener('click', function() {
         rUp(); rememberCourse(); resetRide();
-        var w = RW(), h = RH(), pts = [];
-        for (var i=0; i<=100; i++) {
-          var t=i/100;
-          pts.push({x:w*(.07+.86*t), y:h*(.28+.42*Math.sin(t*Math.PI*.85))});
-        }
-        rStrokes = [{type:'track',pts:pts}];
-        startPts = [{x:pts[2].x,y:pts[2].y-32}];
+        rStrokes = ghostStrokes(); var first=rStrokes[0].pts[0];
+        startPts = [{x:first.x,y:first.y-32}]; camera={x:0,y:0,zoom:1};
         rebuildSegs(); updateRiderUi(); drawRider();
       });
+      document.getElementById('prider-redo').addEventListener('click',function(){rUp();if(!rRedo.length)return;rHistory.push(structuredClone(courseState()));var state=rRedo.pop();rStrokes=state.strokes;startPts=state.starts;resetRide();rebuildSegs();updateRiderUi();drawRider();});
+      document.getElementById('prider-home').addEventListener('click',function(){camera={x:0,y:0,zoom:1};drawRider();});
+      document.getElementById('prider-ghost').addEventListener('change',function(){updateRiderUi();drawRider();});
+      document.getElementById('prider-lesson').addEventListener('change',function(){document.getElementById('prider-ghost').checked=true;updateRiderUi();drawRider();});
+      riderCanvas.addEventListener('wheel',function(e){e.preventDefault();var before=rPoint(e);camera.zoom=Math.max(.2,Math.min(4,camera.zoom*Math.exp(-e.deltaY*.001)));var after=rPoint(e);camera.x+=before.x-after.x;camera.y+=before.y-after.y;drawRider();},{passive:false});
+      document.getElementById('prider-fullscreen').addEventListener('click',async function(){try {if(document.fullscreenElement) await document.exitFullscreen();else await document.getElementById('ppanel-rider').requestFullscreen();}catch(e){riderLiveMsg='Full screen is unavailable in this browser.';drawRider();}});
+      document.addEventListener('fullscreenchange',function(){document.getElementById('prider-fullscreen').textContent=document.fullscreenElement?'Exit full screen':'Full screen';resizeR();});
       riderProject = {
         capture: function () { return { ...courseState(), tool: rTool }; },
         apply: function (course) {
           rPointer = null; rBeforeEdit = null; rDrawing = false; curRStroke = null;
-          rHistory = [];
+          rHistory = []; rRedo = []; camera={x:0,y:0,zoom:1};
           rStrokes = course.strokes; startPts = course.starts;
           rebuildSegs(); resetRide(); selectRiderTool(course.tool); updateRiderUi();
         }
@@ -1081,7 +1119,7 @@
       const boolean = value => typeof value === 'boolean';
       const drawTools = ['pencil', 'line', 'rect', 'circle', 'ruler', 'eraser'];
       const bodyTypes = ['ball', 'box', 'tri'];
-      const courseTools = ['track', 'accel', 'erase', 'start'];
+      const courseTools = ['track', 'accel', 'erase', 'start', 'line', 'pan'];
       if (project?.format !== projectFormat || project.version !== 1 ||
           !['draw', 'phys', 'rider', 'powder'].includes(project.mode) ||
           !Number.isInteger(project.board?.width) || !between(project.board.width, 240, 1440) ||
@@ -1127,9 +1165,10 @@
         throw new Error('The project contains an invalid physics scene.');
       }
 
-      if (!course || !courseTools.includes(course.tool) || !points(course.starts, 0) || course.starts.length > 6 ||
+      const coursePoints = (list, min) => Array.isArray(list) && list.length >= min && list.every(p => p && between(p.x, -100000, 100000) && between(p.y, -100000, 100000));
+      if (!course || !courseTools.includes(course.tool) || !coursePoints(course.starts, 0) || course.starts.length > 6 ||
           !Array.isArray(course.strokes) || !course.strokes.every(stroke =>
-            stroke && ['track', 'accel'].includes(stroke.type) && points(stroke.pts, 2))) {
+            stroke && ['track', 'accel'].includes(stroke.type) && coursePoints(stroke.pts, 2))) {
         throw new Error('The project contains an invalid Line Rider course.');
       }
       if (project.powder !== undefined && (!project.powder || typeof project.powder.grid?.cells !== 'string')) {

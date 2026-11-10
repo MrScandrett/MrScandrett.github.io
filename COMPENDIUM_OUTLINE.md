@@ -493,7 +493,7 @@ Theme: **Computing & Digital Creation** · Accent: `#7046b3` · Secondary: `#087
 - **CSC-29** — Perceptron Lab
 - **CSC-30** — Chess: Origins and How to Play
 - **CSC-31** — 1v1 Game AI: Minimax
-- **CSC-32** — AI Chess Through History
+- **CSC-32** — Chess: Play & Practice · ChessOS
 - **CSC-33** — Deep Blue to AlphaGo: The Go Challenge
 
 ### People Who Changed Computing

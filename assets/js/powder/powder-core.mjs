@@ -42,7 +42,7 @@ export const ELEMENTS = [
   { id: E.SEED, key: 'seed', name: 'Seed', kind: POWDER, density: 1.2, color: [204, 170, 90], vary: 20, group: 'powder',
     hint: 'Drop on dirt and add water: it sprouts and grows a stem.' },
   { id: E.ICE, key: 'ice', name: 'Ice', kind: STATIC, color: [170, 220, 250], vary: 14, group: 'solid',
-    hint: 'Slowly freezes the water it touches. Heat or salt melts it.' },
+    hint: 'Chills nearby water with a limited cold reserve. Heat or salt melts it.' },
   { id: E.LAVA, key: 'lava', name: 'Lava', kind: LIQUID, density: 2.5, color: [240, 80, 20], vary: 30, group: 'liquid',
     hint: 'Molten rock above 700 °C. Water cools it into stone; it melts sand into glass.' },
   { id: E.STONE, key: 'stone', name: 'Stone', kind: POWDER, density: 2.4, color: [104, 100, 100], vary: 18, group: 'powder',
@@ -68,7 +68,7 @@ export const ELEMENTS = [
   { id: E.CLONE, key: 'clone', name: 'Clone', kind: STATIC, color: [210, 200, 60], vary: 8, group: 'machine',
     hint: 'Copies the first material that touches it, forever. A tap, a spring, a volcano.' },
   { id: E.POWER, key: 'power', name: 'Battery', kind: STATIC, color: [230, 70, 90], vary: 8, group: 'machine',
-    hint: 'Sends a pulse of current into touching metal or water every half second.' }
+    hint: 'Sends a pulse into touching conductors every half second; salt water carries it best.' }
 ];
 
 export const REACTIONS = [
@@ -143,6 +143,7 @@ export function defaultLife(w, t) {
   if (t === E.STEAM) return 140 + (r * 110) | 0;
   if (t === E.SMOKE) return 40 + (r * 70) | 0;
   if (t === E.SPARK) return 24;
+  if (t === E.ICE) return 12;
   return 0;
 }
 
@@ -172,7 +173,12 @@ function sinksInto(m, t) {
 }
 function moveTo(w, i, x, y, test) {
   const j = idx(w, x, y);
-  if (j < 0 || !test(w.type[i], w.type[j])) return false;
+  if (j < 0 || w.stamp[j] === w.tick || !test(w.type[i], w.type[j])) return false;
+  // A diagonal must have an open route around the corner.
+  const ox = i % w.W, oy = (i / w.W) | 0;
+  if (x !== ox && y !== oy &&
+      !test(w.type[i], w.type[oy * w.W + x]) &&
+      !test(w.type[i], w.type[y * w.W + ox])) return false;
   swap(w, i, j);
   return true;
 }
@@ -201,7 +207,10 @@ function liquid(w, x, y, i, spread) {
       const below = idx(w, x + dir * s, y + 1);
       if (below >= 0 && sinksInto(w.type[i], w.type[below])) break;
     }
-    if (far) { swap(w, i, y * w.W + x + dir * far); return; }
+    if (far) {
+      const target = y * w.W + x + dir * far;
+      if (w.stamp[target] !== w.tick) { swap(w, i, target); return; }
+    }
   }
 }
 
@@ -213,6 +222,17 @@ function gas(w, x, y, i, upChance) {
   moveTo(w, i, x + (w.rand() < 0.5 ? -1 : 1), y, isEmpty);
 }
 
+// Walls and machine casings shield cells behind them from a blast.
+const BLASTPROOF = new Set([E.WALL, E.METAL, E.CLONE, E.POWER, E.TORCH]);
+function shielded(w, cx, cy, dx, dy) {
+  const n = Math.max(Math.abs(dx), Math.abs(dy));
+  for (let s = 1; s < n; s++) {
+    const j = idx(w, cx + Math.round(dx * s / n), cy + Math.round(dy * s / n));
+    if (j >= 0 && BLASTPROOF.has(w.type[j])) return true;
+  }
+  return false;
+}
+
 export function explode(w, cx, cy, r) {
   w.found[R.boom] = 1;
   for (let dy = -r; dy <= r; dy++) {
@@ -221,8 +241,8 @@ export function explode(w, cx, cy, r) {
       const j = idx(w, cx + dx, cy + dy);
       if (j < 0) continue;
       const t = w.type[j];
-      if (t === E.WALL || t === E.METAL || t === E.CLONE || t === E.POWER || t === E.TORCH) continue;
-      if (t === E.GUNPOWDER && (dx || dy)) { w.life[j] = 1; continue; } // fuse: goes off next frame
+      if (BLASTPROOF.has(t) || shielded(w, cx, cy, dx, dy)) continue;
+      if (t === E.GUNPOWDER && (dx || dy)) { if (!w.life[j]) { w.life[j] = 1; w.stamp[j] = w.tick; } continue; } // fuse: goes off next frame
       if (w.rand() < 0.85) set(w, j, E.FIRE, 8 + (w.rand() * 22) | 0);
       else set(w, j, E.SMOKE, defaultLife(w, E.SMOKE));
     }
@@ -236,9 +256,16 @@ function ignite(w, j, electric) {
   if (!chance) return false;
   if (t === E.GUNPOWDER) {
     if (electric) w.found[R.shock] = 1;
-    explode(w, j % w.W, (j / w.W) | 0, 4);
+    // Queue the fuse; never recurse through a large powder pile.
+    if (!w.life[j]) { w.life[j] = 1; w.stamp[j] = w.tick; }
     return true;
   }
+  // Ordinary fuel needs access to air; gunpowder carries its own oxidiser.
+  let air = false;
+  forNeighbours(w, j % w.W, (j / w.W) | 0, (_, n) => {
+    if (n === E.EMPTY || KIND[n] === GAS) air = true;
+  });
+  if (!air) return false;
   if (w.rand() >= (electric ? Math.max(chance, 0.3) : chance)) return false;
   if (electric) w.found[R.shock] = 1;
   if (t === E.WOOD) { if (!w.life[j]) { w.life[j] = 90 + (w.rand() * 120) | 0; w.found[R.burn] = 1; } }
@@ -252,7 +279,14 @@ function ignite(w, j, electric) {
 function forNeighbours(w, x, y, fn) {
   for (let k = 0; k < 8; k++) {
     const j = idx(w, x + NB8[k][0], y + NB8[k][1]);
-    if (j >= 0 && fn(j, w.type[j]) === false) return;
+    if (j >= 0) {
+      const [dx, dy] = NB8[k];
+      if (dx && dy && KIND[w.type[y * w.W + x + dx]] === STATIC &&
+          w.type[y * w.W + x + dx] !== E.EMPTY &&
+          KIND[w.type[(y + dy) * w.W + x]] === STATIC &&
+          w.type[(y + dy) * w.W + x] !== E.EMPTY) continue;
+      if (fn(j, w.type[j]) === false) return;
+    }
   }
 }
 function randomNeighbour(w, x, y) {
@@ -327,7 +361,10 @@ UPDATE[E.WATER] = (w, x, y, i) => {
   const j = randomNeighbour(w, x, y);
   if (j >= 0) {
     const t = w.type[j];
-    if (t === E.SALT) { set(w, j, E.SALTWATER); w.found[R.dissolve] = 1; }
+    if (t === E.SALT) {
+      set(w, j, E.EMPTY); set(w, i, E.SALTWATER);
+      w.found[R.dissolve] = 1; return;
+    }
     else if (t === E.DIRT && w.rand() < 0.15) { set(w, j, E.MUD); set(w, i, E.EMPTY); w.found[R.mud] = 1; return; }
   }
   liquid(w, x, y, i, 5);
@@ -351,13 +388,25 @@ UPDATE[E.ACID] = (w, x, y, i) => {
   liquid(w, x, y, i, 3);
 };
 
+function deposit(w, x, y, t) {
+  let placed = false;
+  forNeighbours(w, x, y, (j, n) => {
+    if (n === E.EMPTY) { set(w, j, t, defaultLife(w, t)); placed = true; return false; }
+  });
+  return placed;
+}
+const depositSalt = (w, x, y) => deposit(w, x, y, E.SALT);
+const depositSteam = (w, x, y) => deposit(w, x, y, E.STEAM);
+
 UPDATE[E.LAVA] = (w, x, y, i) => {
   let cooled = false;
   forNeighbours(w, x, y, (j, t) => {
     if (t === E.WATER || t === E.SALTWATER) {
-      set(w, j, t === E.SALTWATER && w.rand() < 0.5 ? E.SALT : E.STEAM, defaultLife(w, E.STEAM));
+      if (t === E.SALTWATER && !depositSalt(w, x, y)) return;
+      set(w, j, E.STEAM, defaultLife(w, E.STEAM));
       set(w, i, E.STONE);
-      w.found[t === E.WATER ? R.quench : R.evaporate] = 1;
+      w.found[R.quench] = 1;
+      if (t === E.SALTWATER) w.found[R.evaporate] = 1;
       if (t === E.WATER) w.found[R.boil] = 1;
       cooled = true;
       return false;
@@ -376,9 +425,11 @@ UPDATE[E.FIRE] = (w, x, y, i) => {
   let out = false, fuel = false;
   forNeighbours(w, x, y, (j, t) => {
     if (t === E.WATER || t === E.SALTWATER) {
-      if (t === E.SALTWATER && w.rand() < 0.5) { set(w, j, E.SALT); w.found[R.evaporate] = 1; }
-      else { set(w, j, E.STEAM, defaultLife(w, E.STEAM)); w.found[R.boil] = 1; }
-      set(w, i, E.SMOKE, defaultLife(w, E.SMOKE));
+      set(w, j, E.STEAM, defaultLife(w, E.STEAM));
+      w.found[R.boil] = 1;
+      // The extinguished flame provides room for the dissolved salt residue.
+      set(w, i, t === E.SALTWATER ? E.SALT : E.SMOKE, defaultLife(w, E.SMOKE));
+      if (t === E.SALTWATER) w.found[R.evaporate] = 1;
       out = true;
       return false;
     }
@@ -400,6 +451,9 @@ UPDATE[E.SMOKE] = (w, x, y, i) => {
 };
 
 UPDATE[E.STEAM] = (w, x, y, i) => {
+  let heated = false;
+  forNeighbours(w, x, y, j => { if (hot(w, j)) heated = true; });
+  if (heated) w.life[i] = Math.max(w.life[i], 140);
   const life = w.life[i];
   if (life <= 1) {
     if (w.rand() < 0.03) { set(w, i, E.WATER); w.found[R.rain] = 1; return; }
@@ -412,7 +466,14 @@ UPDATE[E.WOOD] = (w, x, y, i) => {
   if (!burn) return;
   let doused = false;
   forNeighbours(w, x, y, (j, t) => {
-    if (t === E.WATER) { set(w, j, E.STEAM, defaultLife(w, E.STEAM)); doused = true; return false; }
+    if (t === E.WATER || t === E.SALTWATER) {
+      if (t === E.SALTWATER) {
+        if (!depositSteam(w, x, y)) { doused = true; return false; }
+        w.found[R.evaporate] = 1;
+      }
+      set(w, j, t === E.SALTWATER ? E.SALT : E.STEAM, defaultLife(w, E.STEAM));
+      doused = true; return false;
+    }
     if (t === E.EMPTY && w.rand() < 0.08) set(w, j, E.FIRE, 8 + (w.rand() * 14) | 0);
     else if (FLAM[t]) ignite(w, j, false);
   });
@@ -427,8 +488,13 @@ UPDATE[E.ICE] = (w, x, y, i) => {
   const t = w.type[j];
   if (hot(w, j) && w.rand() < 0.3) { set(w, i, E.WATER); w.found[R.melt] = 1; }
   else if (t === E.STEAM && w.rand() < 0.1) { set(w, j, E.WATER); w.found[R.rain] = 1; }
-  else if (t === E.SALT && w.rand() < 0.08) { set(w, i, E.WATER); set(w, j, E.SALTWATER); w.found[R.deice] = 1; }
-  else if (t === E.WATER && w.rand() < 0.02) { set(w, j, E.ICE); w.found[R.freeze] = 1; }
+  else if (t === E.SALT && w.rand() < 0.08) { set(w, i, E.SALTWATER); set(w, j, E.EMPTY); w.found[R.deice] = 1; }
+  else if (t === E.SALTWATER && w.rand() < 0.08) { set(w, i, E.WATER); w.found[R.deice] = 1; }
+  else if (t === E.WATER && w.life[i] > 0 && w.rand() < 0.02) {
+    // Transfer, rather than duplicate, the remaining cold reserve.
+    const cold = w.life[i] - 1;
+    w.life[i] = 0; set(w, j, E.ICE, cold); w.found[R.freeze] = 1;
+  }
 };
 
 UPDATE[E.METAL] = (w, x, y, i) => { if (w.charge[i] === 1) electricEffects(w, x, y); };
@@ -436,8 +502,14 @@ UPDATE[E.METAL] = (w, x, y, i) => { if (w.charge[i] === 1) electricEffects(w, x,
 UPDATE[E.TORCH] = (w, x, y, i) => {
   if (w.rand() > 0.6) return;
   const j = idx(w, x + ((w.rand() * 3) | 0) - 1, y - 1);
-  if (j >= 0 && w.type[j] === E.EMPTY) set(w, j, E.FIRE, 8 + (w.rand() * 18) | 0);
-  else if (j >= 0) ignite(w, j, false);
+  if (j < 0) return;
+  const t = w.type[j];
+  if (t === E.EMPTY) set(w, j, E.FIRE, 8 + (w.rand() * 18) | 0);
+  else if (t === E.WATER) { set(w, j, E.STEAM, defaultLife(w, E.STEAM)); w.found[R.boil] = 1; }
+  else if (t === E.SALTWATER && depositSteam(w, x, y)) { set(w, j, E.SALT); w.found[R.evaporate] = 1; }
+  else if (t === E.ICE) { set(w, j, E.WATER); w.found[R.melt] = 1; }
+  else if (t === E.MUD) { set(w, j, E.DIRT); w.found[R.dry] = 1; }
+  else ignite(w, j, false);
 };
 
 UPDATE[E.CLONE] = (w, x, y, i) => {
@@ -606,10 +678,10 @@ export function render(w, out) {
 }
 
 // Save format: run-length "type[.life]*count" tokens in base 36. Life is kept
-// only where it is state worth saving (a clone's source, a growing stem).
+// only where it is state worth saving (clone source, growth, remaining cold).
 export function encode(w) {
   const { type, life } = w;
-  const keep = t => t === E.CLONE || t === E.PLANT;
+  const keep = t => t === E.CLONE || t === E.PLANT || t === E.ICE;
   const parts = [];
   let i = 0;
   while (i < type.length) {

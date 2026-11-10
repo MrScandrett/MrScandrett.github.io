@@ -1,3 +1,5 @@
+import { LENSES, calendarDate, julianDate, christianSeason, solarTerm, skyReading } from './calendar-explorer.mjs';
+
 // Home-page class calendar: Mon/Wed/Fri classes, holidays, and lesson anniversaries.
 // Pure date logic is exported for tests/home-calendar.test.mjs; the DOM part only
 // runs when #home-calendar exists. Curated entries live in data/calendar-events.json.
@@ -206,10 +208,30 @@ function el(tag, cls, text) {
   return n;
 }
 
+// Seasonal editorial choices from the site's existing lesson galleries.
+const VG = 'assets/images/vincent-van-gogh-history/';
+const HOK = 'assets/images/lessons/hokusai/';
+const vgLesson = 'lessons/2d-design/pioneers/vincent-van-gogh.html';
+const hokLesson = 'lessons/2d-design/pioneers/katsushika-hokusai.html';
+const monthlyArt = [
+  [VG + 'starry-night.webp', 'Starry Night over the Rhône', 'Clear blue nights and the quiet promise of a new year.', 'Vincent van Gogh · 1888 · Public domain · Wikimedia Commons', vgLesson],
+  [VG + 'bedroom-in-arles.webp', 'The Bedroom', 'A warm room and a restful palette for the quieter days of winter.', 'Vincent van Gogh · 1888 · Public domain · Wikimedia Commons', vgLesson],
+  [HOK + 'ryakuga-birds.webp', 'Bird studies', 'Watch for birds as the days lengthen and spring approaches.', 'Katsushika Hokusai · 1812 · Public domain · BnF / Wikimedia Commons', hokLesson],
+  [VG + 'irises.webp', 'Irises', 'Fresh green leaves and violet blossoms welcome spring.', 'Vincent van Gogh · 1889 · Public domain · Wikimedia Commons', vgLesson],
+  [HOK + 'bird-ink.webp', 'Bird study in ink', 'A moment to notice the movement and life around us.', 'Katsushika Hokusai · 1812 · Public domain · BnF / Wikimedia Commons', hokLesson],
+  [HOK + 'great-wave.webp', 'Under the Wave off Kanagawa', 'Ocean blues and moving water for the beginning of summer.', 'Katsushika Hokusai · Public domain · Met Open Access CC0', hokLesson],
+  [VG + 'wheatfield-with-crows.webp', 'Wheatfield with Crows', 'Golden fields beneath a wide summer sky.', 'Vincent van Gogh · 1890 · Public domain · Wikimedia Commons', vgLesson],
+  [VG + 'sunflowers.webp', 'Sunflowers', 'Late summer in a vase: warm ochre, gold, and yellow.', 'Vincent van Gogh · 1888 · Public domain · Wikimedia Commons', vgLesson],
+  [HOK + 'red-fuji.webp', 'Fine Wind, Clear Morning (Red Fuji)', 'Rust-red slopes and clear air echo the turn toward autumn.', 'Katsushika Hokusai · Public domain · Met Open Access CC0', hokLesson],
+  [VG + 'cafe-terrace-at-night.webp', 'Café Terrace at Night', 'Golden lamplight and deep blue evenings as the days grow shorter.', 'Vincent van Gogh · 1888 · Public domain · Wikimedia Commons', vgLesson],
+  [VG + 'potato-eaters.webp', 'The Potato Eaters', 'Earth tones and a shared table invite gratitude and togetherness.', 'Vincent van Gogh · 1885 · Public domain · Wikimedia Commons', vgLesson],
+  [VG + 'starry-night.webp', 'Starry Night over the Rhône', 'Golden lights shine across the water in the long nights of December.', 'Vincent van Gogh · 1888 · Public domain · Wikimedia Commons', vgLesson],
+];
+
 function mount(root, data) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const state = { mode: 'week', view: new Date(today.getFullYear(), today.getMonth(), 1), sel: today, off: new Set() };
+  const state = { lens: 'gregorian', mode: 'week', view: new Date(today.getFullYear(), today.getMonth(), 1), sel: today, off: new Set() };
 
   const grid = root.querySelector('[data-hcal-grid]');
   const monthLabel = root.querySelector('[data-hcal-month]');
@@ -223,6 +245,54 @@ function mount(root, data) {
     c.append(el('i', 'hcal-dot'), el('span', 'hcal-chip-text', item.title));
     if (item.milestone) c.classList.add('is-milestone');
     return c;
+  }
+
+  function alternate(date, compact = false) {
+    if (state.lens === 'christian') return christianSeason(date, easter).name;
+    if (state.lens === 'julian') return julianDate(date, compact);
+    if (state.lens === 'sky') { const sky = skyReading(date); return `${sky.icon} ${sky.name}`; }
+    if (state.lens === 'gregorian') return '';
+    return calendarDate(date, state.lens, compact);
+  }
+
+  function renderComparison() {
+    const panel = root.querySelector('[data-hcal-comparison]');
+    const lens = LENSES[state.lens];
+    const explanationOpen = panel.querySelector('.hcal-explanation')?.open || false;
+    panel.hidden = !lens;
+    panel.replaceChildren();
+    root.querySelector('[data-hcal-lens-label]').textContent = `· ${lens?.label || 'Gregorian'}`;
+    if (!lens) return;
+    panel.append(el('p', 'hcal-comparison-date', fullDate(state.sel)));
+    const heading = el('h4', 'hcal-comparison-title', `${lens.label} · ${alternate(state.sel)}`);
+    if (state.lens === 'christian') {
+      const season = christianSeason(state.sel, easter);
+      heading.dataset.seasonColor = season.color;
+      panel.append(heading, el('p', null, `Seasonal color: ${season.color}. Western Christian overview.`));
+      const year = state.sel.getFullYear();
+      const christmas = new Date(year, 11, 25);
+      const advent = new Date(year, 11, 25 - (christmas.getDay() || 7) - 21);
+      const e = easter(year);
+      const feasts = [{name: 'Epiphany', date: new Date(year, 0, 6)}, {name: 'Easter', date: e}, {name: 'Pentecost', date: new Date(year, e.getMonth(), e.getDate() + 49)}, {name: 'Advent begins', date: advent}, {name: 'Christmas', date: christmas}];
+      panel.append(el('p', null, feasts.map(f => `${f.name}: ${f.date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}`).join(' · ')));
+    } else {
+      panel.append(heading);
+    }
+    if (state.lens === 'chinese') panel.append(el('p', null, `Approximate solar term: ${solarTerm(state.sel)}`));
+    if (state.lens === 'hebrew') panel.append(el('p', null, 'Daytime date shown · begins at sunset the preceding evening.'));
+    if (state.lens === 'sky') {
+      const sky = skyReading(state.sel);
+      panel.append(el('p', null, `Approx. ${sky.illumination}% illuminated · estimated daylight in Longwood, FL: ${sky.daylight}`));
+      const next = [...seasonMoments(state.sel.getFullYear()), ...seasonMoments(state.sel.getFullYear() + 1)].find(s => s.date > new Date(state.sel.getFullYear(), state.sel.getMonth(), state.sel.getDate(), 12));
+      if (next) panel.append(el('p', null, `Next seasonal marker: ${next.name} · ${next.date.toLocaleDateString(undefined, {month: 'long', day: 'numeric', year: 'numeric'})}`));
+    }
+    const explanation = el('details', 'hcal-explanation');
+    explanation.open = explanationOpen;
+    explanation.append(el('summary', null, state.lens === 'sky' ? 'How these estimates work' : 'How this calendar counts time'), el('p', null, lens.explanation));
+    const lesson = el('a', null, 'Explore the lesson →'); lesson.href = lens.lesson;
+    const source = el('a', null, 'Calendar reference ↗'); source.href = lens.source;
+    explanation.append(lesson, document.createTextNode(' · '), source);
+    panel.append(explanation);
   }
 
   function renderGrid() {
@@ -243,6 +313,19 @@ function mount(root, data) {
       weeks = Math.ceil((lead + new Date(y, m0 + 1, 0).getDate()) / 7);
       monthLabel.textContent = `${MONTHS[m0]} ${y}`;
     }
+    const artMonth = week ? state.sel.getMonth() : m0;
+    const artYear = week ? state.sel.getFullYear() : y;
+    const [src, title, caption, credit, lesson] = monthlyArt[artMonth];
+    root.querySelector('[data-hcal-print-month]').textContent = MONTHS[artMonth];
+    root.querySelector('[data-hcal-print-year]').textContent = artYear;
+    root.querySelector('[data-hcal-art-label]').textContent = `${MONTHS[artMonth]} · ${title}`;
+    const image = root.querySelector('[data-hcal-art-image]');
+    if (image.getAttribute('src') !== src) image.src = src;
+    image.alt = `${title}. ${caption}`;
+    root.querySelector('[data-hcal-art-title]').textContent = title;
+    root.querySelector('[data-hcal-art-caption]').textContent = caption;
+    root.querySelector('[data-hcal-art-credit]').textContent = credit;
+    root.querySelector('[data-hcal-art-link]').href = lesson;
     grid.textContent = '';
     const selInView = week || (state.sel.getFullYear() === y && state.sel.getMonth() === m0);
     for (let w = 0; w < weeks; w++) {
@@ -275,6 +358,8 @@ function mount(root, data) {
         if (week) top.append(el('span', 'hcal-dow', WEEKDAYS[date.getDay()].slice(0, 3)));
         top.append(el('span', 'hcal-num', String(date.getDate())));
         btn.append(top);
+        const alt = alternate(date, true);
+        if (alt) btn.append(el('span', 'hcal-alternate', alt));
         if (cls) {
           const label = closed ? 'No class' : (week ? cls.label : cls.short);
           btn.append(el('span', 'hcal-class', label));
@@ -286,11 +371,16 @@ function mount(root, data) {
             btn.append(chips);
           }
         } else if (items.length) {
+          const labels = el('span', 'hcal-month-events');
+          items.slice(0, 2).forEach((i) => labels.append(chip(i)));
+          if (items.length > 2) labels.append(el('span', 'hcal-more', `+${items.length - 2} more`));
+          btn.append(labels);
           const dots = el('span', 'hcal-dots');
           items.slice(0, 4).forEach((i) => dots.append(el('i', `hcal-dot hcal-dot--${i.cat}`)));
           btn.append(dots);
         }
         const bits = [fullDate(date)];
+        if (alt) bits.push(`${LENSES[state.lens].label}: ${alt}`);
         if (cls) bits.push(closed ? `${cls.label}, no class: ${closed.label}` : cls.label);
         if (items.length) bits.push(items.map((i) => i.title).join('; '));
         btn.setAttribute('aria-label', bits.join('. '));
@@ -373,6 +463,7 @@ function mount(root, data) {
 
   function renderAll(focusDate) {
     renderGrid();
+    renderComparison();
     renderDetail();
     renderUpcoming();
     if (focusDate) {
@@ -441,6 +532,14 @@ function mount(root, data) {
       const on = b.getAttribute('aria-pressed') !== 'true';
       b.setAttribute('aria-pressed', String(on));
       if (on) state.off.delete(cat); else state.off.add(cat);
+      renderAll();
+    });
+  });
+
+  root.querySelectorAll('[data-hcal-lens]').forEach(button => {
+    button.addEventListener('click', () => {
+      state.lens = button.dataset.hcalLens;
+      root.querySelectorAll('[data-hcal-lens]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
       renderAll();
     });
   });

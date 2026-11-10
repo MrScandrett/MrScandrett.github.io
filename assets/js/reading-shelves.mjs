@@ -1,6 +1,7 @@
 // Shared, device-local reading history. Existing reader:pos keys remain authoritative.
 const HISTORY = 'library:reading-history';
 const WANT = 'library:want-to-read';
+const LIKED = 'library:liked';
 const FINISHED = 'library:finished';
 function read(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }
 function write(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } }
@@ -31,6 +32,8 @@ export function initReadingShelves({ readerBooks, goToReader }) {
   };
   request.onerror = () => {};
   let want = read(WANT, []);
+  let liked = read(LIKED, []);
+  if (!Array.isArray(liked)) liked = [];
   let finished = read(FINISHED, []);
   if (!Array.isArray(want)) want = [];
   if (!Array.isArray(finished)) finished = [];
@@ -45,6 +48,13 @@ export function initReadingShelves({ readerBooks, goToReader }) {
     if (!commit(WANT, next)) return;
     want = next;
     announce(want.includes(key) ? 'Added to Want to Read.' : 'Removed from Want to Read.');
+    render();
+  }
+  function toggleLike(key) {
+    const next = liked.includes(key) ? liked.filter(x => x !== key) : [...liked, key];
+    if (!commit(LIKED, next)) return;
+    liked = next;
+    announce(liked.includes(key) ? 'Added to Liked books.' : 'Removed from Liked books.');
     render();
   }
   function setFinished(key, on) {
@@ -64,6 +74,19 @@ export function initReadingShelves({ readerBooks, goToReader }) {
     button.tabIndex = entry.book.classList.contains('is-active') || document.body.classList.contains('lib-list') ? 0 : -1;
     button.addEventListener('click', e => { e.stopPropagation(); saveWant(entry.key); });
     entry.book.querySelector('.book-popup').append(button);
+    const quick = document.createElement('button');
+    quick.type = 'button'; quick.className = 'catalog-save'; quick.dataset.wantKey = entry.key;
+    quick.setAttribute('aria-label', 'Want to Read: ' + entry.title);
+    quick.addEventListener('click', e => { e.stopPropagation(); saveWant(entry.key); });
+    entry.book.append(quick);
+    for (const popup of [false, true]) {
+      const like = document.createElement('button');
+      like.type = 'button'; like.className = popup ? 'lib-save-book' : 'catalog-like';
+      like.dataset.likeKey = entry.key;
+      if (popup) like.tabIndex = button.tabIndex;
+      like.addEventListener('click', e => { e.stopPropagation(); toggleLike(entry.key); });
+      (popup ? entry.book.querySelector('.book-popup') : entry.book).append(like);
+    }
   });
   function position(key) { const pos = read('reader:pos:' + key, null); return pos && Number.isFinite(pos.p) ? pos : null; }
   function url(entry) { return entry.key.startsWith('local:') ? 'reader.html?' + new URLSearchParams({ file: entry.key.slice(6) }) : readerBooks[entry.key] ? 'reader.html?' + new URLSearchParams({ src: entry.key }) : entry.key; }
@@ -79,16 +102,16 @@ export function initReadingShelves({ readerBooks, goToReader }) {
     const progress = document.createElement('span'); progress.className = 'lib-personal-progress';
     const pos = position(entry.key);
     const pct = pos ? Math.min(100, Math.max(0, Math.round(pos.p * 100))) : 0;
-    progress.textContent = shelf === 'finished' ? 'Finished' : shelf === 'want' ? 'On your reading list' : [pos?.label || entry.label, pct + '% read'].filter(Boolean).join(' · ');
+    progress.textContent = shelf === 'liked' ? 'Liked by you' : shelf === 'finished' ? 'Finished' : shelf === 'want' ? 'On your reading list' : [pos?.label || entry.label, pct + '% read'].filter(Boolean).join(' · ');
     a.append(cover, title, author, progress);
     if (pos && shelf === 'reading') { const meter = document.createElement('progress'); meter.max = 100; meter.value = pct; meter.setAttribute('aria-label', 'Reading progress'); a.append(meter); }
     a.addEventListener('click', e => {
       if (entry.link && readerBooks[entry.key] && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) { e.preventDefault(); goToReader(a.href, entry.link); }
     });
     const action = document.createElement('button'); action.type = 'button'; action.className = 'lib-shelf-action';
-    action.textContent = shelf === 'want' ? 'Remove from list' : shelf === 'finished' ? 'Move to reading' : 'Mark finished';
+    action.textContent = shelf === 'liked' ? 'Remove like' : shelf === 'want' ? 'Remove from list' : shelf === 'finished' ? 'Move to reading' : 'Mark finished';
     action.setAttribute('aria-label', action.textContent + ': ' + entry.title);
-    action.addEventListener('click', () => shelf === 'want' ? saveWant(entry.key) : setFinished(entry.key, shelf !== 'finished'));
+    action.addEventListener('click', () => shelf === 'liked' ? toggleLike(entry.key) : shelf === 'want' ? saveWant(entry.key) : setFinished(entry.key, shelf !== 'finished'));
     action.dataset.bookKey = entry.key; action.dataset.shelf = shelf;
     li.append(a, action); return li;
   }
@@ -97,20 +120,33 @@ export function initReadingShelves({ readerBooks, goToReader }) {
     const history = read(HISTORY, {});
     const entries = new Map([...books, ...localBooks]);
     Object.entries(history).forEach(([key, item]) => { if (entries.has(key)) entries.set(key, { ...entries.get(key), ...item }); });
-    const started = [...entries.values()].filter(entry => position(entry.key));
+    const permitted = entry => entry.book ? !entry.book.classList.contains('is-grade-hidden') : document.documentElement.dataset.libraryGrade === 'all';
+    const started = [...entries.values()].filter(entry => permitted(entry) && position(entry.key));
     started.sort((a, b) => (position(b.key)?.at || 0) - (position(a.key)?.at || 0));
     const isFinished = entry => finished.includes(entry.key) || (position(entry.key)?.p >= .99 && !read('library:read-again', []).includes(entry.key));
     const shelves = {
+      liked: liked.map(key => entries.get(key)).filter(entry => entry && permitted(entry)),
       reading: started.filter(entry => !isFinished(entry)),
-      want: want.map(key => entries.get(key)).filter(Boolean),
-      finished: [...entries.values()].filter(isFinished)
+      want: want.map(key => entries.get(key)).filter(entry => entry && permitted(entry)),
+      finished: [...entries.values()].filter(entry => permitted(entry) && isFinished(entry))
     };
     for (const [name, items] of Object.entries(shelves)) {
       const list = document.getElementById('libShelf-' + name);
       list.replaceChildren(...items.map(entry => card(entry, name)));
       document.getElementById('libShelfEmpty-' + name).hidden = items.length > 0;
       document.getElementById('libShelfCount-' + name).textContent = String(items.length);
+      document.getElementById('libProfile-' + name).textContent = String(items.length);
     }
+    const last = started.map(entry => position(entry.key)?.at).filter(at => typeof at === 'number' && Number.isFinite(at) && at > 0).sort((a, b) => b - a)[0];
+    document.getElementById('libProfileActivity').textContent = last
+      ? 'Last read in this path: ' + new Date(last).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) + '. Progress comes from the built-in reader.'
+      : 'No recorded reading activity in this path yet. Open a book in the built-in reader to track your place.';
+    document.querySelectorAll('[data-like-key]').forEach(button => {
+      const on = liked.includes(button.dataset.likeKey);
+      button.textContent = on ? '♥ Liked' : '♡ Like';
+      button.setAttribute('aria-pressed', String(on));
+      button.setAttribute('aria-label', (on ? 'Unlike: ' : 'Like: ') + books.get(button.dataset.likeKey).title);
+    });
     if (focused) {
       const target = [...document.querySelectorAll('.lib-shelf-action')].find(b => b.dataset.bookKey === focused.key && b.dataset.shelf === focused.shelf) || document.getElementById('libShelfTitle-' + focused.shelf);
       target.tabIndex = target.tagName === 'BUTTON' ? 0 : -1;
@@ -118,12 +154,18 @@ export function initReadingShelves({ readerBooks, goToReader }) {
     }
     document.querySelectorAll('[data-want-key]').forEach(button => {
       const saved = want.includes(button.dataset.wantKey);
-      button.textContent = saved ? 'Saved to Want to Read' : 'Want to Read';
+      button.textContent = saved ? '✓ Saved' : '+ Want to Read';
+      button.setAttribute('aria-label', (saved ? 'Remove from Want to Read: ' : 'Want to Read: ') + books.get(button.dataset.wantKey).title);
       button.setAttribute('aria-pressed', String(saved));
     });
   }
   render();
   fetch('data/book-covers.json').then(r => r.ok ? r.json() : {}).then(data => { covers = data.covers || {}; render(); }).catch(() => {});
+  document.addEventListener('library:path-change', render);
   addEventListener('pageshow', render);
-  addEventListener('storage', e => { if (e.key?.startsWith('library:') || e.key?.startsWith('reader:pos:')) { want = read(WANT, []); finished = read(FINISHED, []); render(); } });
+  addEventListener('storage', e => { if (e.key?.startsWith('library:') || e.key?.startsWith('reader:pos:')) { want = read(WANT, []); finished = read(FINISHED, []); liked = read(LIKED, []);
+    if (!Array.isArray(want)) want = [];
+    if (!Array.isArray(finished)) finished = [];
+    if (!Array.isArray(liked)) liked = [];
+    render(); } });
 }
