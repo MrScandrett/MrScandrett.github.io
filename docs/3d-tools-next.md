@@ -15,6 +15,9 @@ CLAUDE.md under **Mesh import + Print Prep**; this file is the plan for what is 
 4. **Hand-off** `assets/js/handoff.mjs`: Forge / Workbench / Marble → Print Prep, Print Prep → Workbench.
 5. **Workbench imports SVG** (`assets/js/svg-outline.mjs`): filled outlines, holes kept, extruded by the
    `svg` shape; Hole engraves.
+6. **Lesson workshops → Workbench**: every `data-design3d-workshop` has **Open in Workbench** (the same mm,
+   Z-up STL as Export STL, via `sendAndOpen`); Sculpt also has **Send to Print Prep**. Workshop units are
+   small (the Arrange block arrives as 8 × 8 × 3 mm; the sculpt surface is open, so it is display-only).
 
 ## Next, in order
 
@@ -49,21 +52,6 @@ only SVG (one view or a three-view sheet) plus a `.blueprint.json` project.
   why when it is refused.
 - Tests: round trip (export → import gives the same shapes), a hand-written LibreCAD-style DXF imports,
   units conversion, refused-when-views-disagree.
-
-### 2. Lesson workshops: "Open in Workbench"
-
-Files: `assets/js/design3d/workspace.mjs` (the shared workshop runner), `assets/js/design3d/workshops.mjs`
-(`WORKSHOPS`, `PAGE_MODES`). Pages: Arrange a display (`lessons/3d-design/blender/blender-interface-basics.html`),
-Cut an opening (`…/blender-windows-doors.html`), Sculpt a surface (`…/blender-sculpting.html`), and the other
-`data-design3d-workshop` lessons.
-
-- The workshop already builds a mesh (`designSnapshot()`, `toPrintSpace()` + `writeBinaryStl` for its STL
-  export). Add an **Open in Workbench** button next to Export that sends that STL through
-  `sendAndOpen('…/workbench.html', { bytes, filename, from: '<workshop title>' })` (path relative to the
-  lesson's depth). For Sculpt also offer **Print Prep**.
-- Don't build importers into the workshops: they are lessons; Workbench is the tool.
-- Check in a browser that the new tab opens and the model arrives (see how the earlier hand-offs were tested:
-  wait for `page.waitForURL(/workbench/)` before reading the page, the tab starts on about:blank).
 
 ### Later (not started)
 
