@@ -60,7 +60,8 @@
         tab.classList.add('is-active'); tab.setAttribute('aria-selected', 'true');
         var panel = document.getElementById(tab.getAttribute('aria-controls'));
         if (panel) panel.classList.add('is-active');
-        stopPhys(); stopRider();
+        stopPhys(); stopRider(); if (powder) powder.stop();
+        if (tab.id === 'ptab-powder') loadPowder().then(function () { resizeActive(); syncSandbox(); }, function () {});
         resizeActive();
         syncSandbox();
       });
@@ -1035,6 +1036,30 @@
       updateRiderUi();
     }
 
+    // ══════════════════════════════════════════════════════
+    // POWDER MODE — falling-sand chemistry, loaded on first use
+    // ══════════════════════════════════════════════════════
+    var powder = null, powderLoading = null;
+    var powderStatus = document.getElementById('ppowder-hint');
+    function loadPowder() {
+      if (!powderLoading) {
+        powderLoading = import(new URL('assets/js/powder/powder-lab.mjs', document.baseURI).href).then(function (mod) {
+          powder = mod.mount(document.getElementById('ppanel-powder'), {
+            board: function () { return boardSize; },
+            fit: fitCanvas,
+            point: canvasPoint,
+            canAnimate: function () { return canAnimate('powder'); }
+          });
+          return powder;
+        }, function (error) {
+          powderLoading = null;
+          if (powderStatus) powderStatus.textContent = 'Powder Lab could not load. Check your connection and try again.';
+          throw error;
+        });
+      }
+      return powderLoading;
+    }
+
     // A project stores the editable board, not animation history.
     const projectFormat = 'classroomos-physics-board';
     const projectLimit = 5_000_000;
@@ -1058,7 +1083,8 @@
           tool: physMode, gravity, wind: windForce / 3, bounce: Math.round(bounceScale * 100),
           vectors: showVectors, trails: showTrails
         },
-        course: riderProject.capture()
+        course: riderProject.capture(),
+        ...(powder && boardSize ? { powder: powder.capture() } : {})
       });
     }
 
@@ -1070,7 +1096,7 @@
       const bodyTypes = ['ball', 'box', 'tri'];
       const courseTools = ['track', 'accel', 'erase', 'start'];
       if (project?.format !== projectFormat || project.version !== 1 ||
-          !['draw', 'phys', 'rider'].includes(project.mode) ||
+          !['draw', 'phys', 'rider', 'powder'].includes(project.mode) ||
           !Number.isInteger(project.board?.width) || !between(project.board.width, 240, 1440) ||
           ![320, 480].includes(project.board?.height)) {
         throw new Error('Choose a supported Physics & Drawing Board project.');
@@ -1119,6 +1145,9 @@
             stroke && ['track', 'accel'].includes(stroke.type) && points(stroke.pts, 2))) {
         throw new Error('The project contains an invalid Line Rider course.');
       }
+      if (project.powder !== undefined && (!project.powder || typeof project.powder.grid?.cells !== 'string')) {
+        throw new Error('The project contains an invalid powder world.');
+      }
       return project;
     }
 
@@ -1150,6 +1179,7 @@
       setPaused(true);
 
       riderProject.apply(project.course);
+      if (powder) powder.apply(project.powder || null);
       document.getElementById('ptab-' + project.mode).click();
     }
 
@@ -1184,6 +1214,10 @@
       try {
         if (file.size > projectLimit) throw new Error('Choose a board project under 5 MB.');
         const project = readBoard(JSON.parse(await file.text()));
+        // The powder world is checked by its own module, loaded only when a file has one.
+        if (project.powder && !(await loadPowder()).validate(project.powder, project.board)) {
+          throw new Error('The project contains an invalid powder world.');
+        }
         if (request === openRequest) {
           replaceBoard(project, 'Board opened. Physics is paused and the course is ready for a new ride.');
         }
@@ -1203,6 +1237,7 @@
       if (sandboxPanel.hidden || document.hidden) return;
       if (document.getElementById('ppanel-draw').classList.contains('is-active')) resizeD();
       else if (document.getElementById('ppanel-rider') && document.getElementById('ppanel-rider').classList.contains('is-active')) resizeR();
+      else if (document.getElementById('ppanel-powder').classList.contains('is-active')) { if (powder) powder.resize(); }
       else resizeP();
     }
     function syncSandbox() {
@@ -1210,11 +1245,12 @@
       sandboxNearScreen = rect.width > 0 && rect.height > 0 && rect.bottom > -200 && rect.top < innerHeight + 200;
       if (canAnimate('phys')) startPhys(); else stopPhys();
       if (canAnimate('rider')) startRider(); else stopRider();
+      if (powder) { if (canAnimate('powder')) powder.start(); else powder.stop(); }
     }
     window.addEventListener('resize', function () { resizeActive(); syncSandbox(); });
     document.addEventListener('home-tabchange', function () { resizeActive(); syncSandbox(); });
     document.addEventListener('visibilitychange', syncSandbox);
-    window.addEventListener('pagehide', function () { stopPhys(); stopRider(); });
+    window.addEventListener('pagehide', function () { stopPhys(); stopRider(); if (powder) powder.stop(); });
     window.addEventListener('pageshow', syncSandbox);
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(syncSandbox, { rootMargin: '200px' }).observe(sandboxPanel);

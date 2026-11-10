@@ -1,0 +1,644 @@
+// Powder Lab core: a falling-sand cellular automaton. Pure (no DOM), seeded, and
+// deterministic, so every reaction is testable in Node. One cell = one particle.
+//
+// Per cell: type (element id), life (timer / growth budget / clone source),
+// shade (colour jitter), charge (0 idle, 1 head, 2-3 refractory: electricity).
+// Movement scans bottom-up; `stamp` stops a particle moving twice in one frame.
+
+export const E = Object.freeze({
+  EMPTY: 0, WALL: 1, SAND: 2, DIRT: 3, WATER: 4, OIL: 5, FIRE: 6, SMOKE: 7, STEAM: 8,
+  WOOD: 9, PLANT: 10, SEED: 11, ICE: 12, LAVA: 13, STONE: 14, GLASS: 15, GUNPOWDER: 16,
+  METAL: 17, SPARK: 18, SALT: 19, SALTWATER: 20, ACID: 21, MUD: 22, TORCH: 23,
+  CLONE: 24, POWER: 25
+});
+
+const STATIC = 0, POWDER = 1, LIQUID = 2, GAS = 3, ENERGY = 4;
+export const KINDS = Object.freeze({ STATIC, POWDER, LIQUID, GAS, ENERGY });
+
+// group drives the palette; hint is the science one-liner shown when it's picked.
+export const ELEMENTS = [
+  { id: E.EMPTY, key: 'erase', name: 'Erase', kind: STATIC, color: [12, 13, 20], group: 'tool',
+    hint: 'Wipes away anything, even walls.' },
+  { id: E.WALL, key: 'wall', name: 'Wall', kind: STATIC, color: [128, 128, 138], vary: 6, group: 'solid',
+    hint: 'Unbreakable. Build containers, ramps and pipes.' },
+  { id: E.SAND, key: 'sand', name: 'Sand', kind: POWDER, density: 1.6, color: [226, 196, 120], vary: 22, group: 'powder',
+    hint: 'Piles at its angle of repose. Lava or lightning fuses it into glass.' },
+  { id: E.DIRT, key: 'dirt', name: 'Dirt', kind: POWDER, density: 1.4, color: [120, 82, 48], vary: 22, group: 'powder',
+    hint: 'Soaks up water into mud. Seeds sprout in it.' },
+  { id: E.WATER, key: 'water', name: 'Water', kind: LIQUID, density: 1.0, color: [52, 112, 230], vary: 14, group: 'liquid',
+    hint: 'Finds its own level. Puts out fire, boils to steam, quenches lava into stone.' },
+  { id: E.OIL, key: 'oil', name: 'Oil', kind: LIQUID, density: 0.8, color: [92, 64, 30], vary: 10, group: 'liquid',
+    hint: 'Less dense than water, so it floats on it. Very flammable.' },
+  { id: E.FIRE, key: 'fire', name: 'Fire', kind: GAS, density: 0.05, color: [255, 140, 30], group: 'energy',
+    hint: 'Combustion needs fuel, heat and oxygen. Water takes the heat away.' },
+  { id: E.SMOKE, key: 'smoke', name: 'Smoke', kind: GAS, density: 0.1, color: [90, 90, 96], vary: 18, group: 'gas',
+    hint: 'Hot, light gas from burning. It rises, cools and thins out.' },
+  { id: E.STEAM, key: 'steam', name: 'Steam', kind: GAS, density: 0.2, color: [196, 206, 222], vary: 18, group: 'gas',
+    hint: 'Water as a gas. It rises, cools and condenses back into rain.' },
+  { id: E.WOOD, key: 'wood', name: 'Wood', kind: STATIC, color: [138, 92, 50], vary: 16, group: 'solid',
+    hint: 'A solid fuel: once lit it burns slowly and drops embers.' },
+  { id: E.PLANT, key: 'plant', name: 'Plant', kind: STATIC, color: [52, 168, 72], vary: 26, group: 'solid',
+    hint: 'Drinks neighbouring water and grows into it. Burns.' },
+  { id: E.SEED, key: 'seed', name: 'Seed', kind: POWDER, density: 1.2, color: [204, 170, 90], vary: 20, group: 'powder',
+    hint: 'Drop on dirt and add water: it sprouts and grows a stem.' },
+  { id: E.ICE, key: 'ice', name: 'Ice', kind: STATIC, color: [170, 220, 250], vary: 14, group: 'solid',
+    hint: 'Slowly freezes the water it touches. Heat or salt melts it.' },
+  { id: E.LAVA, key: 'lava', name: 'Lava', kind: LIQUID, density: 2.5, color: [240, 80, 20], vary: 30, group: 'liquid',
+    hint: 'Molten rock above 700 °C. Water cools it into stone; it melts sand into glass.' },
+  { id: E.STONE, key: 'stone', name: 'Stone', kind: POWDER, density: 2.4, color: [104, 100, 100], vary: 18, group: 'powder',
+    hint: 'Heavy rubble. Lava turns into this when water cools it.' },
+  { id: E.GLASS, key: 'glass', name: 'Glass', kind: STATIC, color: [176, 214, 220], vary: 10, group: 'solid',
+    hint: 'Melted, cooled sand. Acid cannot eat it, so it makes a safe jar.' },
+  { id: E.GUNPOWDER, key: 'gunpowder', name: 'Gunpowder', kind: POWDER, density: 1.3, color: [64, 64, 70], vary: 16, group: 'powder',
+    hint: 'Fuel and oxidiser mixed together: one spark and it all goes at once.' },
+  { id: E.METAL, key: 'metal', name: 'Metal', kind: STATIC, color: [150, 160, 176], vary: 10, group: 'solid',
+    hint: 'Conducts electricity. Touch it with a spark or a battery to send a pulse.' },
+  { id: E.SPARK, key: 'spark', name: 'Spark', kind: ENERGY, color: [255, 250, 160], group: 'energy',
+    hint: 'Electricity. It runs through metal and salt water and lights what it touches.' },
+  { id: E.SALT, key: 'salt', name: 'Salt', kind: POWDER, density: 1.5, color: [236, 236, 240], vary: 12, group: 'powder',
+    hint: 'Dissolves into salt water and melts ice (why roads get salted).' },
+  { id: E.SALTWATER, key: 'saltwater', name: 'Salt water', kind: LIQUID, density: 1.1, color: [64, 140, 206], vary: 14, group: 'liquid',
+    hint: 'Dissolved ions carry current, so it conducts far better than pure water.' },
+  { id: E.ACID, key: 'acid', name: 'Acid', kind: LIQUID, density: 1.05, color: [150, 240, 60], vary: 20, group: 'liquid',
+    hint: 'Eats almost anything and is used up doing it. Glass holds it safely.' },
+  { id: E.MUD, key: 'mud', name: 'Mud', kind: POWDER, density: 1.7, color: [88, 60, 38], vary: 14, group: 'powder',
+    hint: 'Wet dirt: slumps slowly. Heat dries it back into dirt.' },
+  { id: E.TORCH, key: 'torch', name: 'Torch', kind: STATIC, color: [255, 190, 70], vary: 10, group: 'machine',
+    hint: 'Burns forever. Put it under things to heat them.' },
+  { id: E.CLONE, key: 'clone', name: 'Clone', kind: STATIC, color: [210, 200, 60], vary: 8, group: 'machine',
+    hint: 'Copies the first material that touches it, forever. A tap, a spring, a volcano.' },
+  { id: E.POWER, key: 'power', name: 'Battery', kind: STATIC, color: [230, 70, 90], vary: 8, group: 'machine',
+    hint: 'Sends a pulse of current into touching metal or water every half second.' }
+];
+
+export const REACTIONS = [
+  { key: 'quench', label: 'Lava + water → stone + steam' },
+  { key: 'boil', label: 'Fire + water → steam' },
+  { key: 'burn', label: 'Fire + wood → embers' },
+  { key: 'oilfire', label: 'Fire + oil → blaze' },
+  { key: 'boom', label: 'Gunpowder explodes' },
+  { key: 'melt', label: 'Heat + ice → water' },
+  { key: 'freeze', label: 'Ice + water → ice' },
+  { key: 'rain', label: 'Steam condenses to rain' },
+  { key: 'dissolve', label: 'Salt + water → salt water' },
+  { key: 'mud', label: 'Dirt + water → mud' },
+  { key: 'sprout', label: 'Seed + dirt + water → plant' },
+  { key: 'grow', label: 'Plant + water → more plant' },
+  { key: 'glass', label: 'Sand + lava → glass' },
+  { key: 'fulgurite', label: 'Spark + sand → glass (fulgurite)' },
+  { key: 'circuit', label: 'Current flows through metal' },
+  { key: 'brine', label: 'Current flows through salt water' },
+  { key: 'corrode', label: 'Acid dissolves a solid' },
+  { key: 'dry', label: 'Heat + mud → dirt' },
+  { key: 'evaporate', label: 'Heat + salt water → salt + steam' },
+  { key: 'deice', label: 'Salt + ice → water' },
+  { key: 'shock', label: 'Electricity sets something alight' }
+];
+const R = Object.fromEntries(REACTIONS.map((r, i) => [r.key, i]));
+
+const N = ELEMENTS.length;
+const KIND = new Uint8Array(N), DENS = new Float32Array(N);
+ELEMENTS.forEach(el => { KIND[el.id] = el.kind; DENS[el.id] = el.density || 0; });
+DENS[E.SPARK] = 9;
+// Chance per frame that a burning neighbour lights it.
+const FLAM = new Float32Array(N);
+FLAM[E.WOOD] = 0.1; FLAM[E.OIL] = 0.35; FLAM[E.PLANT] = 0.12; FLAM[E.SEED] = 0.15; FLAM[E.GUNPOWDER] = 1;
+// Chance per frame that an idle conductor beside a pulse picks it up.
+const COND = new Float32Array(N);
+COND[E.METAL] = 1; COND[E.SALTWATER] = 0.95; COND[E.WATER] = 0.3;
+// What acid can't eat.
+const ACIDPROOF = new Uint8Array(N);
+[E.EMPTY, E.WALL, E.GLASS, E.ACID, E.CLONE, E.POWER, E.FIRE, E.SMOKE, E.STEAM, E.SPARK].forEach(t => { ACIDPROOF[t] = 1; });
+
+const NB8 = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function createWorld(width, height, seed = 1) {
+  const size = width * height;
+  return {
+    W: width, H: height, frame: 0, tick: 0,
+    type: new Uint8Array(size), life: new Uint8Array(size), shade: new Uint8Array(size),
+    charge: new Uint8Array(size), next: new Uint8Array(size), stamp: new Uint8Array(size),
+    found: new Uint8Array(REACTIONS.length), rand: mulberry32(seed)
+  };
+}
+
+export function clear(w) {
+  w.type.fill(0); w.life.fill(0); w.charge.fill(0); w.next.fill(0); w.stamp.fill(0);
+}
+
+export function defaultLife(w, t) {
+  const r = w.rand();
+  if (t === E.FIRE) return 12 + (r * 26) | 0;
+  if (t === E.STEAM) return 140 + (r * 110) | 0;
+  if (t === E.SMOKE) return 40 + (r * 70) | 0;
+  if (t === E.SPARK) return 24;
+  return 0;
+}
+
+function set(w, i, t, life = 0) {
+  w.type[i] = t; w.life[i] = life; w.shade[i] = (w.rand() * 256) | 0;
+  w.charge[i] = 0; w.stamp[i] = w.tick;
+}
+function swap(w, i, j) {
+  const { type, life, shade, charge } = w;
+  let s = type[i]; type[i] = type[j]; type[j] = s;
+  s = life[i]; life[i] = life[j]; life[j] = s;
+  s = shade[i]; shade[i] = shade[j]; shade[j] = s;
+  s = charge[i]; charge[i] = charge[j]; charge[j] = s;
+  w.stamp[i] = w.tick; w.stamp[j] = w.tick;
+}
+function idx(w, x, y) { return x < 0 || y < 0 || x >= w.W || y >= w.H ? -1 : y * w.W + x; }
+function hot(w, j) {
+  const t = w.type[j];
+  return t === E.FIRE || t === E.LAVA || t === E.TORCH || (t === E.WOOD && w.life[j] > 0);
+}
+
+// Can mover m drop into a cell holding t (empty, or a lighter fluid)?
+function sinksInto(m, t) {
+  if (t === E.EMPTY) return true;
+  const k = KIND[t];
+  return (k === LIQUID || k === GAS) && DENS[t] < DENS[m];
+}
+function moveTo(w, i, x, y, test) {
+  const j = idx(w, x, y);
+  if (j < 0 || !test(w.type[i], w.type[j])) return false;
+  swap(w, i, j);
+  return true;
+}
+const rises = (m, t) => t === E.EMPTY || KIND[t] === LIQUID || (KIND[t] === GAS && t !== m && DENS[t] > DENS[m]);
+const isEmpty = (m, t) => t === E.EMPTY;
+
+function powder(w, x, y, i) {
+  if (moveTo(w, i, x, y + 1, sinksInto)) return true;
+  const d = w.rand() < 0.5 ? -1 : 1;
+  return moveTo(w, i, x + d, y + 1, sinksInto) || moveTo(w, i, x - d, y + 1, sinksInto);
+}
+
+function liquid(w, x, y, i, spread) {
+  if (moveTo(w, i, x, y + 1, sinksInto)) return;
+  const d = w.rand() < 0.5 ? -1 : 1;
+  if (moveTo(w, i, x + d, y + 1, sinksInto) || moveTo(w, i, x - d, y + 1, sinksInto)) return;
+  for (const dir of [d, -d]) {
+    let far = 0;
+    for (let s = 1; s <= spread; s++) {
+      const j = idx(w, x + dir * s, y);
+      if (j < 0) break;
+      const t = w.type[j];
+      if (t !== E.EMPTY && KIND[t] !== GAS) break;
+      far = s;
+      // Stop at a ledge so a sheet of water pours over it.
+      const below = idx(w, x + dir * s, y + 1);
+      if (below >= 0 && sinksInto(w.type[i], w.type[below])) break;
+    }
+    if (far) { swap(w, i, y * w.W + x + dir * far); return; }
+  }
+}
+
+function gas(w, x, y, i, upChance) {
+  if (w.rand() < upChance) {
+    const dx = ((w.rand() * 3) | 0) - 1;
+    if (moveTo(w, i, x + dx, y - 1, rises) || moveTo(w, i, x, y - 1, rises)) return;
+  }
+  moveTo(w, i, x + (w.rand() < 0.5 ? -1 : 1), y, isEmpty);
+}
+
+export function explode(w, cx, cy, r) {
+  w.found[R.boom] = 1;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r) continue;
+      const j = idx(w, cx + dx, cy + dy);
+      if (j < 0) continue;
+      const t = w.type[j];
+      if (t === E.WALL || t === E.METAL || t === E.CLONE || t === E.POWER || t === E.TORCH) continue;
+      if (t === E.GUNPOWDER && (dx || dy)) { w.life[j] = 1; continue; } // fuse: goes off next frame
+      if (w.rand() < 0.85) set(w, j, E.FIRE, 8 + (w.rand() * 22) | 0);
+      else set(w, j, E.SMOKE, defaultLife(w, E.SMOKE));
+    }
+  }
+}
+
+// Something hot (or a live pulse) touches cell j. Returns true if it caught.
+function ignite(w, j, electric) {
+  const t = w.type[j];
+  const chance = FLAM[t];
+  if (!chance) return false;
+  if (t === E.GUNPOWDER) {
+    if (electric) w.found[R.shock] = 1;
+    explode(w, j % w.W, (j / w.W) | 0, 4);
+    return true;
+  }
+  if (w.rand() >= (electric ? Math.max(chance, 0.3) : chance)) return false;
+  if (electric) w.found[R.shock] = 1;
+  if (t === E.WOOD) { if (!w.life[j]) { w.life[j] = 90 + (w.rand() * 120) | 0; w.found[R.burn] = 1; } }
+  else {
+    if (t === E.OIL) w.found[R.oilfire] = 1;
+    set(w, j, E.FIRE, t === E.OIL ? 30 + (w.rand() * 30) | 0 : defaultLife(w, E.FIRE));
+  }
+  return true;
+}
+
+function forNeighbours(w, x, y, fn) {
+  for (let k = 0; k < 8; k++) {
+    const j = idx(w, x + NB8[k][0], y + NB8[k][1]);
+    if (j >= 0 && fn(j, w.type[j]) === false) return;
+  }
+}
+function randomNeighbour(w, x, y) {
+  const o = NB8[(w.rand() * 8) | 0];
+  return idx(w, x + o[0], y + o[1]);
+}
+
+function electricEffects(w, x, y) {
+  forNeighbours(w, x, y, (j, t) => {
+    if (t === E.SAND && w.rand() < 0.02) { set(w, j, E.GLASS); w.found[R.fulgurite] = 1; }
+    else if (FLAM[t]) ignite(w, j, true);
+  });
+}
+
+const UPDATE = [];
+UPDATE[E.SAND] = UPDATE[E.DIRT] = UPDATE[E.STONE] = UPDATE[E.SALT] = (w, x, y, i) => powder(w, x, y, i);
+
+UPDATE[E.GUNPOWDER] = (w, x, y, i) => {
+  if (w.life[i]) { explode(w, x, y, 4); return; }
+  powder(w, x, y, i);
+};
+
+UPDATE[E.MUD] = (w, x, y, i) => {
+  if (w.rand() < 0.08) {
+    const j = randomNeighbour(w, x, y);
+    if (j >= 0 && hot(w, j)) { set(w, i, E.DIRT); w.found[R.dry] = 1; return; }
+  }
+  if (w.rand() < 0.35) powder(w, x, y, i);
+};
+
+UPDATE[E.SEED] = (w, x, y, i) => {
+  if (powder(w, x, y, i)) return;
+  const below = idx(w, x, y + 1);
+  const ground = below >= 0 ? w.type[below] : E.WALL;
+  if (ground !== E.DIRT && ground !== E.MUD) return;
+  let water = -1;
+  forNeighbours(w, x, y, (j, t) => { if (t === E.WATER) { water = j; return false; } });
+  if (ground === E.MUD || water >= 0) {
+    if (water >= 0) set(w, water, E.EMPTY);
+    else set(w, below, E.DIRT);
+    set(w, i, E.PLANT, 14 + (w.rand() * 26) | 0);
+    w.found[R.sprout] = 1;
+  }
+};
+
+UPDATE[E.PLANT] = (w, x, y, i) => {
+  const budget = w.life[i];
+  if (budget) {
+    if (w.rand() > 0.18) return;
+    const dx = w.rand() < 0.6 ? 0 : (w.rand() < 0.5 ? -1 : 1);
+    const j = idx(w, x + dx, y - 1);
+    if (j >= 0 && (w.type[j] === E.EMPTY || w.type[j] === E.WATER)) {
+      set(w, j, E.PLANT, budget - 1);
+      if (budget === 1) { // leaves at the top of the stem
+        for (let k = 0; k < 8; k++) {
+          const leaf = idx(w, x + ((w.rand() * 7) | 0) - 3, y - 1 - ((w.rand() * 4) | 0));
+          if (leaf >= 0 && w.type[leaf] === E.EMPTY) set(w, leaf, E.PLANT);
+        }
+      }
+    }
+    w.life[i] = 0;
+    return;
+  }
+  if (w.rand() < 0.05) {
+    const j = randomNeighbour(w, x, y);
+    if (j >= 0 && w.type[j] === E.WATER) { set(w, j, E.PLANT); w.found[R.grow] = 1; }
+  }
+};
+
+UPDATE[E.WATER] = (w, x, y, i) => {
+  if (w.charge[i] === 1) electricEffects(w, x, y);
+  const j = randomNeighbour(w, x, y);
+  if (j >= 0) {
+    const t = w.type[j];
+    if (t === E.SALT) { set(w, j, E.SALTWATER); w.found[R.dissolve] = 1; }
+    else if (t === E.DIRT && w.rand() < 0.15) { set(w, j, E.MUD); set(w, i, E.EMPTY); w.found[R.mud] = 1; return; }
+  }
+  liquid(w, x, y, i, 5);
+};
+
+UPDATE[E.SALTWATER] = (w, x, y, i) => {
+  if (w.charge[i] === 1) electricEffects(w, x, y);
+  liquid(w, x, y, i, 4);
+};
+
+UPDATE[E.OIL] = (w, x, y, i) => liquid(w, x, y, i, 3);
+
+UPDATE[E.ACID] = (w, x, y, i) => {
+  const j = randomNeighbour(w, x, y);
+  if (j >= 0 && !ACIDPROOF[w.type[j]] && w.rand() < 0.2) {
+    const solid = KIND[w.type[j]] !== LIQUID;
+    set(w, j, w.rand() < 0.25 ? E.SMOKE : E.EMPTY, defaultLife(w, E.SMOKE));
+    if (solid) w.found[R.corrode] = 1;
+    if (w.rand() < 0.3) { set(w, i, E.EMPTY); return; }
+  }
+  liquid(w, x, y, i, 3);
+};
+
+UPDATE[E.LAVA] = (w, x, y, i) => {
+  let cooled = false;
+  forNeighbours(w, x, y, (j, t) => {
+    if (t === E.WATER || t === E.SALTWATER) {
+      set(w, j, t === E.SALTWATER && w.rand() < 0.5 ? E.SALT : E.STEAM, defaultLife(w, E.STEAM));
+      set(w, i, E.STONE);
+      w.found[t === E.WATER ? R.quench : R.evaporate] = 1;
+      if (t === E.WATER) w.found[R.boil] = 1;
+      cooled = true;
+      return false;
+    }
+    if (t === E.ICE) { set(w, j, E.WATER); w.found[R.melt] = 1; }
+    else if (t === E.SAND && w.rand() < 0.012) { set(w, j, E.GLASS); w.found[R.glass] = 1; }
+    else if (FLAM[t]) ignite(w, j, false);
+  });
+  if (cooled) return;
+  const up = idx(w, x, y - 1);
+  if (up >= 0 && w.type[up] === E.EMPTY && w.rand() < 0.004) set(w, up, E.FIRE, 6 + (w.rand() * 8) | 0);
+  if (w.rand() < 0.45) liquid(w, x, y, i, 1);
+};
+
+UPDATE[E.FIRE] = (w, x, y, i) => {
+  let out = false, fuel = false;
+  forNeighbours(w, x, y, (j, t) => {
+    if (t === E.WATER || t === E.SALTWATER) {
+      if (t === E.SALTWATER && w.rand() < 0.5) { set(w, j, E.SALT); w.found[R.evaporate] = 1; }
+      else { set(w, j, E.STEAM, defaultLife(w, E.STEAM)); w.found[R.boil] = 1; }
+      set(w, i, E.SMOKE, defaultLife(w, E.SMOKE));
+      out = true;
+      return false;
+    }
+    if (FLAM[t]) { fuel = true; ignite(w, j, false); }
+  });
+  if (out || w.type[i] !== E.FIRE) return;
+  const life = w.life[i];
+  if (life <= 1) { set(w, i, w.rand() < 0.35 ? E.SMOKE : E.EMPTY, defaultLife(w, E.SMOKE)); return; }
+  w.life[i] = life - 1;
+  // A flame clings to its fuel; a free one drifts up.
+  if (!fuel || w.rand() < 0.15) gas(w, x, y, i, 0.65);
+};
+
+UPDATE[E.SMOKE] = (w, x, y, i) => {
+  const life = w.life[i];
+  if (life <= 1) { set(w, i, E.EMPTY); return; }
+  w.life[i] = life - 1;
+  gas(w, x, y, i, 0.7);
+};
+
+UPDATE[E.STEAM] = (w, x, y, i) => {
+  const life = w.life[i];
+  if (life <= 1) {
+    if (w.rand() < 0.03) { set(w, i, E.WATER); w.found[R.rain] = 1; return; }
+  } else w.life[i] = life - 1;
+  gas(w, x, y, i, 0.75);
+};
+
+UPDATE[E.WOOD] = (w, x, y, i) => {
+  const burn = w.life[i];
+  if (!burn) return;
+  let doused = false;
+  forNeighbours(w, x, y, (j, t) => {
+    if (t === E.WATER) { set(w, j, E.STEAM, defaultLife(w, E.STEAM)); doused = true; return false; }
+    if (t === E.EMPTY && w.rand() < 0.08) set(w, j, E.FIRE, 8 + (w.rand() * 14) | 0);
+    else if (FLAM[t]) ignite(w, j, false);
+  });
+  if (doused) { w.life[i] = 0; w.found[R.boil] = 1; return; }
+  if (burn <= 1) set(w, i, w.rand() < 0.5 ? E.FIRE : E.SMOKE, defaultLife(w, E.SMOKE));
+  else w.life[i] = burn - 1;
+};
+
+UPDATE[E.ICE] = (w, x, y, i) => {
+  const j = randomNeighbour(w, x, y);
+  if (j < 0) return;
+  const t = w.type[j];
+  if (hot(w, j) && w.rand() < 0.3) { set(w, i, E.WATER); w.found[R.melt] = 1; }
+  else if (t === E.STEAM && w.rand() < 0.1) { set(w, j, E.WATER); w.found[R.rain] = 1; }
+  else if (t === E.SALT && w.rand() < 0.08) { set(w, i, E.WATER); set(w, j, E.SALTWATER); w.found[R.deice] = 1; }
+  else if (t === E.WATER && w.rand() < 0.02) { set(w, j, E.ICE); w.found[R.freeze] = 1; }
+};
+
+UPDATE[E.METAL] = (w, x, y, i) => { if (w.charge[i] === 1) electricEffects(w, x, y); };
+
+UPDATE[E.TORCH] = (w, x, y, i) => {
+  if (w.rand() > 0.6) return;
+  const j = idx(w, x + ((w.rand() * 3) | 0) - 1, y - 1);
+  if (j >= 0 && w.type[j] === E.EMPTY) set(w, j, E.FIRE, 8 + (w.rand() * 18) | 0);
+  else if (j >= 0) ignite(w, j, false);
+};
+
+UPDATE[E.CLONE] = (w, x, y, i) => {
+  const source = w.life[i];
+  if (!source) {
+    forNeighbours(w, x, y, (j, t) => {
+      if (t !== E.EMPTY && t !== E.CLONE && t !== E.WALL && t !== E.POWER) { w.life[i] = t; return false; }
+    });
+    return;
+  }
+  const j = randomNeighbour(w, x, y);
+  if (j >= 0 && w.type[j] === E.EMPTY && w.rand() < 0.5) set(w, j, source, defaultLife(w, source));
+};
+
+UPDATE[E.POWER] = (w, x, y, i) => {
+  if ((w.frame + i) % 30) return;
+  forNeighbours(w, x, y, (j, t) => { if (COND[t] && !w.charge[j]) w.charge[j] = 1; });
+};
+
+UPDATE[E.SPARK] = (w, x, y, i) => {
+  let spent = false;
+  forNeighbours(w, x, y, (j, t) => {
+    if (COND[t]) { if (!w.charge[j]) w.charge[j] = 1; spent = true; return false; }
+    if (t === E.SAND && w.rand() < 0.3) { set(w, j, E.GLASS); w.found[R.fulgurite] = 1; spent = true; }
+    else if (FLAM[t] && ignite(w, j, true)) spent = true;
+  });
+  const life = w.life[i];
+  if (spent || life <= 1) { set(w, i, E.EMPTY); return; }
+  w.life[i] = life - 1;
+  // A bolt falls fast and jitters sideways.
+  let cx = x, cy = y, at = i;
+  for (let s = 0; s < 3; s++) {
+    const nx = cx + ((w.rand() * 3) | 0) - 1;
+    const j = idx(w, nx, cy + 1);
+    if (j < 0 || w.type[j] !== E.EMPTY) break;
+    swap(w, at, j); at = j; cx = nx; cy++;
+  }
+};
+
+// Electricity: head → refractory → refractory → idle, so pulses travel as a
+// wave instead of sloshing back. Double-buffered, so it moves one cell a frame.
+function updateCharge(w) {
+  const { W, H, type, charge: C, next: Nx, found } = w;
+  for (let y = 0, i = 0; y < H; y++) {
+    for (let x = 0; x < W; x++, i++) {
+      const t = type[i];
+      const cond = COND[t];
+      const c = C[i];
+      if (!cond) { Nx[i] = 0; continue; }
+      if (c === 1) Nx[i] = 2;
+      else if (c === 2) Nx[i] = 3;
+      else if (c === 3) Nx[i] = 0;
+      else if ((x > 0 && C[i - 1] === 1) || (x < W - 1 && C[i + 1] === 1) ||
+               (y > 0 && C[i - W] === 1) || (y < H - 1 && C[i + W] === 1)) {
+        if (cond >= 1 || w.rand() < cond) {
+          Nx[i] = 1;
+          if (t === E.METAL) found[R.circuit] = 1;
+          else if (t === E.SALTWATER) found[R.brine] = 1;
+        } else Nx[i] = 0;
+      } else Nx[i] = 0;
+    }
+  }
+  w.charge = Nx; w.next = C;
+}
+
+export function step(w) {
+  w.frame++;
+  w.tick = w.tick >= 255 ? 1 : w.tick + 1;
+  if (w.tick === 1) w.stamp.fill(0);
+  updateCharge(w);
+  const { W, H, type, stamp } = w;
+  for (let y = H - 1; y >= 0; y--) {
+    const flip = w.rand() < 0.5;
+    for (let k = 0; k < W; k++) {
+      const x = flip ? W - 1 - k : k;
+      const i = y * W + x;
+      const t = type[i];
+      if (t === E.EMPTY || t === E.WALL || t === E.GLASS || stamp[i] === w.tick) continue;
+      const fn = UPDATE[t];
+      if (fn) fn(w, x, y, i);
+    }
+  }
+}
+
+// Brush: fills a disc. Loose materials are sprinkled so they pour naturally;
+// only empty cells are filled (Erase and Spark are the exceptions).
+export function paint(w, cx, cy, r, t) {
+  const kind = KIND[t];
+  const density = t === E.SPARK ? 0.06 : kind === POWDER || kind === LIQUID ? 0.5 : kind === GAS ? 0.4 : 1;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r + r) continue;
+      const j = idx(w, cx + dx, cy + dy);
+      if (j < 0) continue;
+      const here = w.type[j];
+      if (t === E.EMPTY) { set(w, j, E.EMPTY); continue; }
+      if (t === E.SPARK && COND[here]) { if (!w.charge[j]) w.charge[j] = 1; continue; }
+      if (here !== E.EMPTY || (density < 1 && w.rand() > density)) continue;
+      set(w, j, t, defaultLife(w, t));
+    }
+  }
+}
+
+// Wind brush: shove loose particles in the brush up to `strength` cells along (dx, dy).
+export function blow(w, cx, cy, r, dx, dy, strength = 3) {
+  const len = Math.hypot(dx, dy);
+  if (!len) return;
+  const ux = dx / len, uy = dy / len;
+  const cells = [];
+  for (let oy = -r; oy <= r; oy++) {
+    for (let ox = -r; ox <= r; ox++) {
+      if (ox * ox + oy * oy > r * r + r) continue;
+      const j = idx(w, cx + ox, cy + oy);
+      if (j >= 0 && w.type[j] !== E.EMPTY && KIND[w.type[j]] !== STATIC) cells.push([cx + ox, cy + oy, ox * ux + oy * uy]);
+    }
+  }
+  cells.sort((a, b) => b[2] - a[2]); // leading edge first so particles don't block each other
+  for (const [x, y] of cells) {
+    let at = idx(w, x, y);
+    for (let s = 1; s <= strength; s++) {
+      const j = idx(w, x + Math.round(ux * s), y + Math.round(uy * s));
+      if (j < 0 || j === at) continue;
+      if (w.type[j] !== E.EMPTY) break;
+      swap(w, at, j); at = j;
+    }
+  }
+}
+
+export function count(w) {
+  let n = 0;
+  for (let i = 0; i < w.type.length; i++) if (w.type[i] !== E.EMPTY && w.type[i] !== E.WALL) n++;
+  return n;
+}
+
+// Colours ----------------------------------------------------------------
+const pack = (r, g, b) => (255 << 24) | (b << 16) | (g << 8) | r; // little-endian RGBA
+const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+const LUT = new Uint32Array(N * 16);
+ELEMENTS.forEach(el => {
+  for (let s = 0; s < 16; s++) {
+    const v = ((s / 15) - 0.5) * 2 * (el.vary || 0);
+    LUT[el.id * 16 + s] = pack(clamp(el.color[0] + v), clamp(el.color[1] + v), clamp(el.color[2] + v));
+  }
+});
+const FIRE_LUT = new Uint32Array(64);
+for (let l = 0; l < 64; l++) {
+  const t = Math.min(1, l / 30);
+  FIRE_LUT[l] = pack(255, clamp(60 + 190 * t), clamp(10 + 120 * t * t));
+}
+const HEAD = pack(255, 255, 210), TAIL = pack(110, 190, 255), EMBER = pack(255, 120, 40);
+
+// Writes one pixel per cell into a Uint32Array view of ImageData.
+export function render(w, out) {
+  const { type, life, shade, charge, frame } = w;
+  for (let i = 0; i < type.length; i++) {
+    const t = type[i];
+    const c = charge[i];
+    if (c === 1) out[i] = HEAD;
+    else if (c === 2) out[i] = TAIL;
+    else if (t === E.FIRE) out[i] = FIRE_LUT[Math.min(63, life[i] + (shade[i] & 7))];
+    else if (t === E.LAVA) out[i] = LUT[t * 16 + (((shade[i] >> 4) + (frame >> 2)) & 15)];
+    else if (t === E.WOOD && life[i]) out[i] = (shade[i] + frame) & 4 ? EMBER : LUT[t * 16 + (shade[i] >> 4)];
+    else if (t === E.SPARK) out[i] = HEAD;
+    else out[i] = LUT[t * 16 + (t ? shade[i] >> 4 : 0)];
+  }
+}
+
+// Save format: run-length "type[.life]*count" tokens in base 36. Life is kept
+// only where it is state worth saving (a clone's source, a growing stem).
+export function encode(w) {
+  const { type, life } = w;
+  const keep = t => t === E.CLONE || t === E.PLANT;
+  const parts = [];
+  let i = 0;
+  while (i < type.length) {
+    const t = type[i], l = keep(t) ? life[i] : 0;
+    let n = 1;
+    while (i + n < type.length && type[i + n] === t && (keep(t) ? life[i + n] : 0) === l) n++;
+    parts.push(t.toString(36) + (l ? '.' + l.toString(36) : '') + (n > 1 ? '*' + n.toString(36) : ''));
+    i += n;
+  }
+  return { width: w.W, height: w.H, cells: parts.join(',') };
+}
+
+export function decode(w, data) {
+  if (!data || data.width !== w.W || data.height !== w.H || typeof data.cells !== 'string') {
+    throw new Error('Powder grid does not match this board.');
+  }
+  const size = w.W * w.H;
+  const type = new Uint8Array(size), life = new Uint8Array(size);
+  let i = 0;
+  for (const token of data.cells.split(',')) {
+    const m = /^([0-9a-z]+)(?:\.([0-9a-z]+))?(?:\*([0-9a-z]+))?$/.exec(token);
+    if (!m) throw new Error('Powder grid is damaged.');
+    const t = parseInt(m[1], 36), l = m[2] ? parseInt(m[2], 36) : 0, n = m[3] ? parseInt(m[3], 36) : 1;
+    if (t >= N || l > 255 || n < 1 || i + n > size) throw new Error('Powder grid is damaged.');
+    type.fill(t, i, i + n); life.fill(l, i, i + n);
+    i += n;
+  }
+  if (i !== size) throw new Error('Powder grid is damaged.');
+  clear(w);
+  w.type.set(type); w.life.set(life);
+  for (let k = 0; k < size; k++) w.shade[k] = (w.rand() * 256) | 0;
+}
