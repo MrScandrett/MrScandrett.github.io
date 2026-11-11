@@ -548,7 +548,7 @@
     decideStems(model);
     var bars = layoutBars(model, S, readableSize);
     var tabConfig = model.score.tablature;
-    var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0))) : null;
+    var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0, tabConfig))) : null;
     function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
     var grand = model.staves.length === 2 && model.score.grand !== false;
     var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
@@ -714,7 +714,7 @@
         out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (aboveY - (hasAbove ? 2.4 * S : 0)) + '" font-size="' + (1.45 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
       }
       if (tabBars) {
-        out.push('<g class="se-tablature" aria-label="Guitar tablature">');
+        out.push('<g class="se-tablature" aria-label="' + (tabConfig.tuning.length === 4 ? 'Bass tablature' : 'Guitar tablature') + '">');
         out.push('<text x="' + x0 + '" y="' + (tabTop - 1.3 * S) + '" font-size="' + S + '">' + M.escape(tabConfig.label || 'TAB') + '</text>');
         tabConfig.tuning.forEach(function (_, string) {
           var ty = tabTop + string * tabGap;

@@ -11,22 +11,17 @@ try {
     const page = await browser.newPage({ viewport, reducedMotion: 'reduce' });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.addInitScript(() => {
-      window.chordTestSounds = [];
-      const Audio = window.AudioContext || window.webkitAudioContext;
-      if (!Audio) return;
-      const create = Audio.prototype.createOscillator;
-      Audio.prototype.createOscillator = function () {
-        const oscillator = create.call(this), start = oscillator.start.bind(oscillator);
-        oscillator.start = (...args) => {
-          window.chordTestSounds.push({ frequency: oscillator.frequency.value, state: this.state });
-          return start(...args);
-        };
-        return oscillator;
-      };
-    });
     await page.goto(new URL('lessons/music/theory/chord-progressions.html', origin).href);
     await page.waitForFunction(() => !document.querySelector('#cp-lab-controls').disabled);
+    // Observe scheduled notes for sampled and synthesized instruments alike.
+    await page.evaluate(() => {
+      window.chordTestSounds = [];
+      const note = AudioKit.note.bind(AudioKit);
+      AudioKit.note = options => {
+        window.chordTestSounds.push({ frequency: 440 * 2 ** ((options.midi - 69) / 12) });
+        return note(options);
+      };
+    });
     for (const [kind, expectedCount] of [['library', 13], ['lab', 12]]) {
       const count = await page.locator(`#cp-${kind}-select option`).count();
       assert.equal(count, expectedCount);
@@ -41,7 +36,7 @@ try {
           await cards.nth(j).press('Enter');
           assert.equal(await cards.nth(j).getAttribute('aria-pressed'), 'true');
           assert.ok((await page.locator(`#cp-${kind}-inspect h4`).innerText()).startsWith(`Bar ${j + 1} ·`));
-          assert.ok(await page.evaluate(n => window.chordTestSounds.length >= n + 4, before), 'Chord must create bass and harmony voices');
+          await page.waitForFunction(n => window.chordTestSounds.length >= n + 4, before);
           assert.ok(await cards.nth(j).evaluate(node => node === document.activeElement), 'Inspecting a chord keeps keyboard focus');
           cardsChecked++;
         }
@@ -63,6 +58,7 @@ try {
     await page.selectOption('#cp-lab-select', '3'); // D7 → G in C
     await page.locator('#cp-lab-trail button').nth(1).click();
     assert.match(await page.locator('#cp-lab-inspect').innerText(), /D – F♯ – A – C/);
+    await page.waitForFunction(() => window.chordTestSounds.slice(-5).some(s => Math.round(69 + 12 * Math.log2(s.frequency / 440)) % 12 === 6));
     const pitches = await page.evaluate(() => window.chordTestSounds.slice(-5).map(s => Math.round(69 + 12 * Math.log2(s.frequency / 440)) % 12));
     assert.deepEqual([...new Set(pitches)].sort((a,b) => a-b), [0,2,6,9], 'D7 audio must contain D F♯ A C');
     await page.locator('#cp-lab-answer summary').click();

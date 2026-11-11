@@ -48,6 +48,12 @@
   function arrange(src,settings) {
     const m=settings.mode||'original', selected=+settings.staff||0, voice=+settings.voice||0;
     const result=JSON.parse(JSON.stringify(src));result.id=(settings.id||'composer')+'-arrangement';
+    if (m==='guitar' && src.guitarArrangement) {
+      Object.assign(result,JSON.parse(JSON.stringify(src.guitarArrangement)));
+      delete result.guitarArrangement;
+      result.source.label += ' · classroom solo-guitar adaptation; register and inner voices edited';
+      return result;
+    }
     if (m==='original'||m==='chords') return result;
     if(m==='piano') {
       if(src.staves.length>2) {

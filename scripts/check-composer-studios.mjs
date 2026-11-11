@@ -23,7 +23,18 @@ try {
       for(const mode of ['original','piano','alto','tenor','guitar','bass']) {
         await page.selectOption('#bv-mode',mode);
         assert.equal(await page.locator('#bv-score .se-error').count(),0,`${id}/${mode}`);
-        assert.ok(await page.locator('#bv-score svg').count(),`${id}/${mode}: engraved score`);checked++;
+        assert.ok(await page.locator('#bv-score svg').count(),`${id}/${mode}: engraved score`);
+        if (mode === 'guitar' || mode === 'bass') {
+          assert.ok(await page.locator('#bv-score .se-tablature').count(),`${id}/${mode}: tab integrated with notation`);
+          assert.ok(await page.locator('#bv-score .se-tab-note').count(),`${id}/${mode}: aligned fret numbers`);
+          assert.equal(await page.locator('.bv-tab-grid').count(),0,`${id}/${mode}: no separate measure cards`);
+          const expectedStrings = mode === 'bass' ? 4 : 6;
+          assert.equal(await page.locator('#bv-score .se-tablature').first().locator('line').count(),expectedStrings,`${id}/${mode}: string count`);
+          assert.ok(await page.locator('#bv-score .se-tab-note').first().evaluate(el =>
+            !!el.closest('svg').querySelector('.se-ev[data-i="' + el.dataset.i + '"]')
+          ),`${id}/${mode}: fret linked to playable note`);
+        }
+        checked++;
       }
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${composer}: mobile overflow`);

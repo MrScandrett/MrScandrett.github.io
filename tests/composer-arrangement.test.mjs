@@ -74,3 +74,57 @@ test('violin parts fit the instrument and keep the source rhythm and pitch class
     }));
   }
 });
+
+test('Sugar Plum solo guitar preserves melody rhythm and fits bass/harmony on held strings',()=>{
+  require('../assets/js/guitar-tablature.js');
+  const src=library['tchaikovsky-sugar-plum'], before=JSON.stringify(src);
+  const score=arrange(src,{mode:'guitar',staff:1,voice:0,octave:12});
+  const {m}=notes(score), original=notes(src).m;
+  assert.equal(m.count,28);
+  assert.equal(score.sections[0].label,'Intro');
+  assert.equal(score.sections[1].bar,5);
+  assert.equal(score.keyName,'E minor');
+  assert.equal(score.time,'4/4');
+  assert.equal(m.staves.length,1);
+  assert.equal(m.staves[0].voices.length,2);
+  for(let bi=0;bi<m.count;bi++) {
+    const upper=m.staves[0].bars[bi].events.filter(e=>e.kind==='note' && e.voice===0);
+    const source=original.staves[0].bars[bi].events.filter(e=>e.kind==='note');
+    assert.equal(upper.length,source.length,`bar ${bi+1}: every melody attack`);
+    upper.forEach((e,i)=>{
+      assert.equal(e.start,source[i].start*2);
+      assert.equal(e.dur,source[i].dur*2);
+      assert.equal(e.pitches.at(-1).midi%12,source[i].pitches.at(-1).midi%12,`bar ${bi+1}: melody pitch class`);
+    });
+  }
+  for(let bi=0;bi<4;bi++) {
+    const bass=m.staves[0].bars[bi].events.filter(e=>e.kind==='note'&&e.voice===1);
+    assert.deepEqual(bass.map(e=>[e.start,e.pitches[0].midi]),[[0,40],[2,40]],'intro low E pulse');
+  }
+  const tuning=[64,59,55,50,45,40];
+  const tabs=GuitarTablature.finger(m,tuning,0,score.tablature);
+  let held=[], total=0, chords=0;
+  tabs.forEach((bar,bi)=>bar.forEach(g=>{
+    const now=m.barStart[bi]+g.start;
+    held=held.filter(n=>n.end>now+1e-6 && !g.notes.some(fresh=>fresh.midi===n.midi));
+    g.notes.forEach(n=>{
+      assert.ok(n.string>=0,`bar ${bi+1}: no unassigned notes`);
+      assert.equal(tuning[n.string]+n.fret,n.midi);
+      assert.ok(n.fret<=7);
+      held.push({...n,end:now+n.dur});total++;
+    });
+    assert.equal(new Set(held.map(n=>n.string)).size,held.length,'distinct strings, including sustained notes');
+    const frets=held.filter(n=>n.fret>0).map(n=>n.fret);
+    assert.ok(frets.length<=4);
+    if(frets.length)assert.ok(Math.max(...frets)-Math.min(...frets)<=4);
+    if(g.notes.length>=2)chords++;
+  }));
+  assert.ok(total>200,'melody, harmony and selective bass retained');
+  assert.ok(chords>40,'paired harmony throughout the excerpt');
+  assert.equal(JSON.stringify(src),before);
+  // Written guitar notation must sound and finger identically one octave lower.
+  score.staves[0].voices.forEach(v=>{v.notes=ComposerArrangement.transpose(v.notes,12,7,0);});
+  score.playbackTranspose=-12;
+  const written=notes(score).m;
+  assert.deepEqual(GuitarTablature.finger(written,tuning,-12,score.tablature),tabs);
+});

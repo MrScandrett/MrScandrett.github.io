@@ -69,3 +69,22 @@ The complete Sugar Plum Fairy and Waltz MusicXML files produce warnings in
 `musicxml2ly` outside these passages. They have not been imported as complete
 interactive arrangements. Expanding them requires resolving those conversions
 and checking the additional measures independently.
+
+### Sugar Plum Fairy: solo guitar adaptation
+
+The `guitarArrangement` on `tchaikovsky-sugar-plum` in `data/score-library.json`
+is a separate classroom adaptation of piano source bars 1–28. The four-bar introduction alternates
+open low E bass notes with offbeat chords; the theme enters in bar 5. The original
+piano score remains available. This version follows the lighter texture of the
+user's reference: the original E minor, melody dyads and selective bass in low positions.
+It is not a transcription of that edition. Note values are doubled into 4/4;
+the half-note tempo of 70 preserves the source's timing. High phrases move down
+by octaves; dense chords lose inner tones. Melody attack times, relative rhythm
+and pitch classes are preserved in the original key.
+
+Standard tuning, frets 0–7, at most four fretted notes and a four-fret difference
+including sustained notes screen the grips. Staccato releases at half duration,
+matching playback. A new attack can reuse its pitch's string. These constraints
+apply only to this arrangement and do not certify comfort for every player.
+The arrangement test checks the intro, melody, held strings, range, harmony,
+source immutability and written/sounding octave agreement.

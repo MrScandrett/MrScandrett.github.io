@@ -15,6 +15,7 @@
       return chart.chords.filter(function (c) { return c.bar === i + 1; }).map(function (c) { return c[system]; }).join(' ');
     });
   }
+  var diagramDegree = 0, diagramCache = {};
   var voices = [], loopTimer, loopIndex = 0, loop = [0, 4, 5, 3], soundToken = 0;
   var offsets = [0, 2, 4, 5, 7, 9, 11], numerals = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
   var jobs = ['Home', 'Away', 'Color', 'Away', 'Pull', 'Color', 'Pull'];
@@ -27,12 +28,12 @@
       return letters[letter] + (accidental < 0 ? 'b' : accidental > 0 ? '#' : '') + qualities[i];
     });
   }
-  async function sound(notes, duration) {
+  async function sound(notes, duration, instrumentOverride) {
     if (!window.AudioKit || !window.MusicSynth) { $('loop-status').textContent = 'Audio is unavailable in this browser.'; return; }
     var ctx = window.AudioKit.context();
     if (!ctx) { $('loop-status').textContent = 'Audio is unavailable in this browser.'; return; }
     var token = ++soundToken;
-    var instrument = $('instrument') ? $('instrument').value : 'piano';
+    var instrument = instrumentOverride || ($('instrument') ? $('instrument').value : 'piano');
     await window.AudioKit.resume().catch(function () { $('loop-status').textContent = 'Tap Play again to enable sound.'; });
     await window.MusicSynth.prepare(ctx, [{ instrument: instrument, pitches: notes }]);
     if (token !== soundToken) return;
@@ -47,6 +48,105 @@
       });
       if (voice) voices.push(voice);
     });
+  }
+  var guitarTuning = [40, 45, 50, 55, 59, 64];
+  function mod12(n) { return (n % 12 + 12) % 12; }
+  function pretty(name) { return name.replace(/b/g, '♭').replace(/#/g, '♯'); }
+  function chordDiagramData(name) {
+    if (diagramCache[name]) return diagramCache[name];
+    var parsed = engine.parseTune({ id: 'diagram', key: 'C', mode: 'major', meter: [4,4], melody: 'rw', chords: name.replace(/♭/g, 'b').replace(/♯/g, '#') }).chords[0];
+    var tones = engine.chordTones(parsed), root = tones[0].pc;
+    var names = tones.map(function (t) { return 'CDEFGAB'[t.l] + (t.a < 0 ? '♭'.repeat(-t.a) : '♯'.repeat(t.a)); });
+    var intervals = tones.map(function (t) { return mod12(t.pc - root); });
+    var bass = parsed.bass ? mod12([0,2,4,5,7,9,11][parsed.bass.l] + parsed.bass.a) : root;
+    if (!intervals.some(function (iv) { return mod12(root + iv) === bass; })) intervals.push(mod12(bass - root));
+    var GT = $('player').contentWindow.GuitarTheory;
+    var grips = GT ? GT.findVoicings(root, { suffix: 'progression:' + intervals.join(','), intervals: intervals }, intervals.indexOf(mod12(bass - root))) : [];
+    // Favor familiar open shapes when their pitches and bass match exactly.
+    var open = GT && GT.OPEN_SHAPES[name.replace(/♭/g, 'b').replace(/♯/g, '#')];
+    if (open) {
+      var openNotes = open.flatMap(function (f, i) { return typeof f === 'number' ? [guitarTuning[i] + f] : []; });
+      if (mod12(Math.min.apply(null, openNotes)) === bass && intervals.every(function (iv) { return openNotes.some(function (n) { return mod12(n) === mod12(root + iv); }); }) && openNotes.every(function (n) { return intervals.indexOf(mod12(n - root)) >= 0; })) grips = [open];
+    } else if (grips.length) {
+      grips = grips.slice().sort(function (a, b) {
+        function cost(grip) { var f = grip.filter(function (n) { return typeof n === 'number' && n > 0; }); return (f.length ? Math.max.apply(null, f) * 3 + Math.max.apply(null, f) - Math.min.apply(null, f) : 0) + grip.filter(function (n) { return typeof n !== 'number'; }).length; }
+        return cost(a) - cost(b);
+      });
+    }
+    var piano = engine.voiceChords([parsed], 'root')[0];
+    if (parsed.bass) {
+      var low = Math.min.apply(null, piano), bassMidi = Math.floor(low / 12) * 12 + bass;
+      if (bassMidi > low) bassMidi -= 12;
+      piano = Array.from(new Set(piano.concat(bassMidi))).sort(function (a, b) { return a - b; });
+      if (!tones.some(function (t) { return t.pc === bass; })) {
+        tones.push({ l: parsed.bass.l, a: parsed.bass.a, pc: bass });
+        names.push('CDEFGAB'[parsed.bass.l] + (parsed.bass.a < 0 ? '♭'.repeat(-parsed.bass.a) : '♯'.repeat(parsed.bass.a)));
+      }
+    }
+    return (diagramCache[name] = { root: root, tones: tones, names: names, frets: grips[0] || null, piano: piano });
+  }
+  function drawChordDiagrams(host, name, pianoNotes, context) {
+    var data = chordDiagramData(name), notes = pianoNotes || data.piano;
+    host.replaceChildren(); host.classList.add('cp-diagram-panel'); host.dataset.chord = name;
+    host.append(textNode(host.closest('.cp-inspect') ? 'h5' : 'h3', pretty(name) + ' · see how to play it'));
+    host.append(textNode('p', context + ' · Chord tones: ' + data.names.join(' – '), 'cp-diagram-summary'));
+    var grid = textNode('div', '', 'cp-instrument-diagrams'); host.append(grid);
+    var ns = 'http://www.w3.org/2000/svg';
+    function svg(tag, attrs, parent, text) {
+      var el = document.createElementNS(ns, tag);
+      Object.keys(attrs).forEach(function (key) { el.setAttribute(key, attrs[key]); });
+      if (text != null) el.textContent = text; parent.append(el); return el;
+    }
+    function card(title) { var article = textNode('article', '', 'cp-instrument-card'); article.append(textNode(host.closest('.cp-inspect') ? 'h6' : 'h4', title)); grid.append(article); return article; }
+    function hear(article, label, pitches, instrument) {
+      var button = textNode('button', '▶ Hear ' + label); button.type = 'button';
+      button.setAttribute('aria-label', 'Hear ' + pretty(name) + ' on ' + label);
+      button.addEventListener('click', function () { stopLoop(); sound(pitches, 1.3, instrument); }); article.append(button);
+    }
+    var pianoCard = card('Piano'), piano = svg('svg', { viewBox: '0 0 420 160', role: 'img', class: 'cp-piano-diagram' }, pianoCard);
+    svg('title', {}, piano, pretty(name) + ' piano voicing: ' + notes.map(function (m) { var t = data.tones.find(function (t) { return t.pc === mod12(m); }); return t ? data.names[data.tones.indexOf(t)] : 'bass'; }).join(', '));
+    var start = Math.floor(Math.min.apply(null, notes) / 12) * 12;
+    var end = Math.max(start + 12, Math.ceil(Math.max.apply(null, notes) / 12) * 12), whites = [];
+    for (var m = start; m <= end; m++) if ([0,2,4,5,7,9,11].indexOf(mod12(m)) >= 0) whites.push(m);
+    var width = 420 / whites.length;
+    function pianoKey(midi, x, w, h, black) {
+      var active = notes.indexOf(midi) >= 0;
+      svg('rect', { x: x, y: 1, width: w, height: h, rx: 2, fill: active ? '#ceef9c' : black ? '#182c43' : '#fffdf7', stroke: '#182c43', 'data-midi': midi, 'data-active': active }, piano);
+      if (active) {
+        var i = data.tones.findIndex(function (t) { return t.pc === mod12(midi); });
+        svg('text', { x: x + w / 2, y: h - 18, 'text-anchor': 'middle', fill: '#182c43', 'font-size': black ? 11 : 13 }, piano, i < 0 ? '' : data.names[i]);
+        if (mod12(midi) === data.root) svg('text', { x: x + w / 2, y: h - 4, 'text-anchor': 'middle', fill: '#182c43', 'font-size': 10 }, piano, 'R');
+      }
+    }
+    whites.forEach(function (m, i) { pianoKey(m, i * width, width, 156, false); });
+    whites.forEach(function (m, i) { if ([0,2,5,7,9].indexOf(mod12(m)) >= 0 && m < end) pianoKey(m + 1, (i + 1) * width - width * .31, width * .62, 96, true); });
+    pianoCard.append(textNode('p', 'Colored keys sound together. R = root. This shows the harmony voices; progression playback may add a lower root bass.'));
+    hear(pianoCard, 'piano', notes, 'piano');
+    var guitarCard = card('Guitar · standard tuning'), frets = data.frets;
+    if (!frets) { guitarCard.append(textNode('p', 'No complete, playable guitar grip was found for this chord. Try its tones individually on piano.')); return; }
+    var guitar = svg('svg', { viewBox: '0 0 240 240', role: 'img', class: 'cp-guitar-diagram' }, guitarCard);
+    svg('title', {}, guitar, pretty(name) + ' guitar, low E to high e: ' + frets.map(function (f) { return typeof f !== 'number' ? 'muted' : f ? 'fret ' + f : 'open'; }).join(', '));
+    var positive = frets.filter(function (f) { return typeof f === 'number' && f > 0; });
+    var first = positive.length ? Math.max(1, Math.min.apply(null, positive)) : 1;
+    for (var f = 0; f <= 4; f++) svg('line', { x1: 45, x2: 195, y1: 50 + f * 36, y2: 50 + f * 36, stroke: '#182c43', 'stroke-width': f === 0 && first === 1 ? 5 : 1 }, guitar);
+    svg('text', { x: 8, y: 76, fill: '#182c43', 'font-size': 13 }, guitar, first + 'fr');
+    frets.forEach(function (f, i) {
+      var x = 45 + i * 30;
+      svg('line', { x1: x, x2: x, y1: 50, y2: 194, stroke: '#182c43', 'data-string': i, 'data-fret': typeof f === 'number' ? f : 'x' }, guitar);
+      svg('text', { x: x, y: 32, 'text-anchor': 'middle', fill: '#182c43', 'font-size': 18 }, guitar, typeof f !== 'number' ? '×' : f === 0 ? '○' : '');
+      if (typeof f === 'number' && f > 0) {
+        svg('circle', { cx: x, cy: 50 + (f - first + .5) * 36, r: 11, fill: '#182c43' }, guitar);
+        if (mod12(guitarTuning[i] + f) === data.root) svg('text', { x: x, y: 54 + (f - first + .5) * 36, 'text-anchor': 'middle', fill: '#fffdf7', 'font-size': 11 }, guitar, 'R');
+      }
+      svg('text', { x: x, y: 220, 'text-anchor': 'middle', fill: '#182c43', 'font-size': 13 }, guitar, ['E','A','D','G','B','e'][i]);
+    });
+    guitarCard.append(textNode('p', 'Frets, low → high: ' + frets.map(function (f) { return typeof f === 'number' ? f : '×'; }).join(' · ') + '.'));
+    guitarCard.append(textNode('p', 'One suggested voicing. ○ open · × mute · R root. Dots mark frets; matching frets may need a barre.'));
+    hear(guitarCard, 'guitar', frets.flatMap(function (f, i) { return typeof f === 'number' ? [guitarTuning[i] + f] : []; }), 'pluck');
+  }
+  function showLoopDiagram(degree) {
+    diagramDegree = degree;
+    drawChordDiagrams($('loop-diagrams'), scale()[degree], loopNotes(degree), numerals[degree] + ' in ' + pretty($('loop-key').value) + ' major');
   }
   function loopNotes(index) {
     var names = scale(), parsed = engine.parseTune({ id: 'chord-playground', key: $('loop-key').value, mode: 'major', meter: [4, 4], melody: 'rw', chords: names[index] });
@@ -76,17 +176,18 @@
       button.setAttribute('aria-label', name + ', ' + numerals[index] + ', ' + jobs[index] + '. Hear and add to loop.');
       button.addEventListener('click', function () {
         if (loop.length >= 16) { $('loop-status').textContent = 'Your loop has 16 chords. Undo or clear to make room.'; return; }
-        stopLoop(); loop.push(index); sound(loopNotes(index), 0.8); renderLoop();
+        stopLoop(); diagramDegree = index; loop.push(index); sound(loopNotes(index), 0.8); renderLoop();
         $('loop-status').textContent = 'Added ' + name + ' · ' + numerals[index] + '. ' + loop.length + ' chords in your loop.';
       }); $('palette').appendChild(button);
     });
     loop.forEach(function (degree, index) {
       var button = chip(degree, names[degree]); button.disabled = !engine;
       button.setAttribute('aria-label', 'Position ' + (index + 1) + ': ' + names[degree] + '. Tap to hear.');
-      button.addEventListener('click', function () { stopLoop(); sound(loopNotes(degree), 1); }); $('loop').appendChild(button);
+      button.addEventListener('click', function () { stopLoop(); showLoopDiagram(degree); sound(loopNotes(degree), 1); }); $('loop').appendChild(button);
     });
     if (!loop.length) $('loop').textContent = 'Your stage is empty. Tap a chord above to start.';
     $('loop-play').disabled = !engine || !loop.length;
+    if (engine) showLoopDiagram(diagramDegree);
   }
   $('loop-play').addEventListener('click', function () {
     stopLoop(); if (!engine || !loop.length) return; loopIndex = 0;
@@ -94,7 +195,7 @@
     function step() {
       var seconds = 240 / Number($('loop-tempo').value), degree = loop[loopIndex];
       $('loop').querySelectorAll('button').forEach(function (node, i) { node.classList.toggle('cp-playing', i === loopIndex); });
-      sound(loopNotes(degree), seconds * 0.9);
+      showLoopDiagram(degree); sound(loopNotes(degree), seconds * 0.9);
       $('loop-status').textContent = 'Chord ' + (loopIndex + 1) + ' of ' + loop.length + ': ' + scale()[degree] + ' · ' + numerals[degree] + ' · ' + jobs[degree];
       loopIndex = (loopIndex + 1) % loop.length; loopTimer = setTimeout(step, seconds * 1000);
     } step();
@@ -189,6 +290,8 @@
     box.append(textNode('p', 'Chord tones: ' + event.tones.join(' – ') + '. ' + (event.note || 'Listen to how this chord connects to its neighbors.')));
     var labels = textNode('p', 'Local key: ' + event.key + '. Nashville (major-scale reference on ' + event.nashKey.replace(/m$/, '') + '): ', 'cp-small');
     var nashville = document.createElement('span'); displayLabel(nashville, event.nashville); labels.append(nashville, '. Functional analysis: ' + event.roman + '.'); box.append(labels);
+    var diagrams = textNode('div', '', 'cp-diagram-panel'); box.append(diagrams);
+    drawChordDiagrams(diagrams, event.chord, event.notes.slice(1), event.roman + ' · Local key: ' + event.key);
     if (announce) $(kind + '-status').textContent = 'Bar ' + (index + 1) + ' of ' + state.events.length + ': ' + event.chord + ' · ' + event.roman + '. ' + event.note;
   }
   function renderStudy(kind) {
@@ -272,7 +375,7 @@
         var main = document.createElement('strong'); displayLabel(main, c[$('system').value]);
         var sub = document.createElement('span'); sub.textContent = c.letters + ' · ' + c.beats + ' beats';
         button.append(main, sub); button.setAttribute('aria-label', c.letters + ', ' + c.roman + ', Nashville ' + c.nashville + ', ' + c.beats + ' quarter-note beats. Hear chord.');
-        button.addEventListener('click', function () { stopLoop(); sound(c.notes, 1); }); track.appendChild(button);
+        button.addEventListener('click', function () { stopLoop(); drawChordDiagrams($('song-diagrams'), c.letters, null, 'Bar ' + c.bar + ' · ' + c.roman + ' in ' + chart.key); sound(c.notes, 1); }); track.appendChild(button);
       }); group.appendChild(track); $('song-trail').appendChild(group);
     }
   }
@@ -296,6 +399,7 @@
       $('rows').appendChild(row);
     }
     songTrail();
+    if (chart.chords.length) drawChordDiagrams($('song-diagrams'), chart.chords[0].letters, null, 'Bar 1 · ' + chart.chords[0].roman + ' in ' + chart.key);
     $('open').href = 'fake-book.html#tune=' + encodeURIComponent($('song').value);
   }
   function selectSong() {

@@ -56,36 +56,6 @@
     if (violin >= 0) staff.value = violin;
     fillVoices();
   }
-  function tablature(score) {
-    const model = ScoreEngine.prepare(score); ScoreEngine.analyse(model);
-    const bass = mode.value === 'bass', dropD = !bass && work.value === 'tarrega-capricho-arabe';
-    const tuning = bass ? [43,38,33,28] : [64,59,55,50,45,dropD ? 38 : 40];
-    const names = bass ? ['G','D','A','E'] : ['e','B','G','D','A',dropD ? 'D' : 'E'];
-    const heading = document.createElement('h3'); heading.textContent = bass ? 'Bass tablature' : 'Guitar tablature'; tab.append(heading);
-    const explanation = document.createElement('p'); explanation.textContent = (dropD ? 'Drop D tuning · lower string 6 from E to D (D–A–D–G–B–e). ' : 'Standard tuning (E–A–D–G–B–e). ') + 'Highest string at the top. Notes aligned vertically sound together. Numbers are frets; 0 is an open string. Horizontal spacing follows the beat; faint guides mark beats. A curved mark means hold the tied note. Suggested fingerings preserve pitch and held strings; review stretches with your teacher. Choose Original scoring for ornaments and exact rhythmic notation. × marks a note that could not be assigned a free string.'; tab.append(explanation);
-    const bars = GuitarTablature.finger(model,tuning);
-    const grid = document.createElement('div'); grid.className = 'bv-tab-grid'; tab.append(grid);
-    const ns = 'http://www.w3.org/2000/svg';
-    function shape(parent,name,attrs,text) {const el=document.createElementNS(ns,name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(text!=null)el.textContent=text;parent.append(el);return el;}
-    bars.forEach((groups,index)=>{
-      const meta=model.barMeta[index], len=model.staves[0].bars[index].length;
-      const times=[...new Set([0,...groups.map(g=>g.start),len])].sort((a,b)=>a-b);
-      let x=42;const points=new Map();times.forEach((t,i)=>{if(i)x+=Math.max(29,(t-times[i-1])*46);points.set(t,x);});
-      const width=x+24,height=names.length*22+70;
-      const card=document.createElement('section');card.className='bv-tab-measure';grid.append(card);
-      const label=document.createElement('h4');label.textContent='Bar '+ScoreEngine.barNumber(model,index)+(meta.repStart?' · repeat from here':'')+(meta.repEnd?' · repeat':'')+(meta.fine?' · Fine':'')+(meta.dc?' · D.C. al Fine':'');card.append(label);
-      const svg=shape(card,'svg',{viewBox:`0 0 ${width} ${height}`,width,height,role:'img','aria-label':label.textContent+'; '+groups.map(g=>g.notes.map(n=>n.string<0?'unassigned note':`string ${n.string+1} fret ${n.fret}${n.tied?' held':''}`).join(', ')).join('; ')});
-      function at(t){let i=times.findIndex(v=>v>=t);if(i<=0)return 42;const a=times[i-1],b=times[i];return points.get(a)+(points.get(b)-points.get(a))*(t-a)/(b-a);}
-      for(let beat=0;beat<len-1e-6;beat+=4/meta.ts.den){const bx=at(beat);shape(svg,'line',{x1:bx,y1:27,x2:bx,y2:height-32,class:'bv-tab-beat'});shape(svg,'text',{x:bx,y:17,class:'bv-tab-count'},Math.round(beat*meta.ts.den/4)+1);}
-      names.forEach((name,string)=>{const y=37+string*22;shape(svg,'text',{x:13,y:y+5,class:'bv-tab-string'},name);shape(svg,'line',{x1:32,y1:y,x2:width-12,y2:y,class:'bv-tab-line'});});
-      groups.forEach(g=>g.notes.forEach(n=>{
-        const nx=points.get(g.start),ny=n.string<0?height-12:37+n.string*22;
-        shape(svg,'rect',{x:nx-11,y:ny-10,width:22,height:20,rx:4,class:'bv-tab-number-bg'});
-        shape(svg,'text',{x:nx,y:ny+5,class:'bv-tab-fret'},n.string<0?'×':n.fret);
-        if(n.tied)shape(svg,'path',{d:`M ${nx-10} ${ny+10} q 10 9 20 0`,class:'bv-tab-tie'});
-      }));
-    });
-  }
   function chordStudy() {
     const chords = ['D','A','D','A','D','A','D','D','A','D','A','A','D','A','D','D'];
     const shapes = { D: 'xx0232', A: 'x02220' };
@@ -100,14 +70,14 @@
     if (player) player.destroy(); player = null;
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
-    const src = source(), m = mode.value, fullGuitar = composer === 'francisco-tarrega' && m === 'guitar', isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    const src = source(), m = mode.value, fullGuitar = m === 'guitar' && (composer === 'francisco-tarrega' || !!src.guitarArrangement), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
     violinControls.hidden = m !== 'melody';
     violinPosition.disabled = !violinShow.checked;
     staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
     octave.disabled = !isolated;
-    let result = ComposerArrangement.arrange(src,{mode:fullGuitar ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
+    let result = ComposerArrangement.arrange(src,{mode:fullGuitar && !src.guitarArrangement ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
     if (fullGuitar) {
-      message = 'Complete guitar tablature with melody, inner voices and bass preserved. Standard notation and tablature share each line of the player. Frets align directly beneath their notes; playback follows both together.';
+      message = src.guitarArrangement ? src.guitarArrangement.arrangementNote + ' Notation, tablature and playback follow both voices together.' : 'Complete guitar tablature with melody, inner voices and bass preserved. Standard notation and tablature share each line of the player. Frets align directly beneath their notes; playback follows both together.';
     } else if (m === 'original' || m === 'chords') {
       message = 'Source scoring preserved. Recorded instruments load when you press Play; unsupported sounds use synthesis. Use the part controls to isolate voices.';
     } else if (m === 'piano') {
@@ -126,22 +96,30 @@
     if (src.composer === 'ClassroomOS teaching materials') message += ' Original classroom study, not a composition by the featured musician.';
     const chordOption = [...mode.options].find(o => o.value === 'chords');
     chordOption.disabled = work.value !== 'beethoven-ode-to-joy';
-    result.subtitle = mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (result.playbackTranspose ? ' · written saxophone pitch' : '');
+    mode.querySelector('option[value="guitar"]').textContent = src.guitarArrangement ? 'Guitar · solo arrangement with bass and harmony' : composer === 'francisco-tarrega' ? 'Guitar · complete tablature' : 'Guitar · melody tablature';
+    result.subtitle = src.guitarArrangement && m === 'guitar' ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (result.playbackTranspose ? ' · written saxophone pitch' : '');
     if (fullGuitar) {
       // Guitar notation reads one octave above sounding pitch.
       result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
       result.playbackTranspose = -12;
-      result.tablature = { pitchShift: -12, tuning: [64,59,55,50,45,work.value === 'tarrega-capricho-arabe' ? 38 : 40], label: work.value === 'tarrega-capricho-arabe' ? 'Drop D · D–A–D–G–B–e' : 'Standard · E–A–D–G–B–e' };
+      result.tablature = { ...result.tablature, pitchShift: -12, tuning: [64,59,55,50,45,work.value === 'tarrega-capricho-arabe' ? 38 : 40], label: work.value === 'tarrega-capricho-arabe' ? 'Drop D · D–A–D–G–B–e' : 'Standard · E–A–D–G–B–e' };
+    }
+    if (!fullGuitar && (m === 'guitar' || m === 'bass')) {
+      const bass = m === 'bass';
+      // Extracted lines are in concert pitch. Guitar and bass notation both
+      // read an octave higher; keep playback and fret assignment sounding as before.
+      result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
+      result.playbackTranspose = -12;
+      result.tablature = {
+        pitchShift: -12,
+        tuning: bass ? [43,38,33,28] : [64,59,55,50,45,40],
+        label: bass ? 'Bass · G–D–A–E (high to low)' : 'Guitar · e–B–G–D–A–E (high to low)'
+      };
+      message += ' Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review; this selected voice is not a complete solo arrangement.';
     }
     current = result; note.textContent = message;
     try {
       player = ScoreEngine.render(host,result);
-      if (!fullGuitar && (m === 'guitar' || m === 'bass')) {
-        tablature(result);
-        const paper = host.querySelector('.se-paper');
-        paper.parentElement.insertBefore(tab,paper);
-
-      }
       if (m === 'melody' && violinShow.checked) violinGuide(result);
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();
