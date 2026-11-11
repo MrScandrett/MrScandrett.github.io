@@ -141,6 +141,13 @@ the deploy waits for it too: a page with more issues of a rule than `data/a11y-b
 The baseline is a ratchet. Fix the page, never raise the baseline; after fixes, refresh it with
 `npm run a11y:update-baseline` (a full run against `npx serve . --listen 8080`) and check the diff only shrinks.
 
+**Generated files are synced by a pre-commit hook.** `.githooks/pre-commit` runs `npm run sync:generated`
+(`scripts/sync-generated.mjs`: lesson catalog → compendium → outline → module glossaries → recent updates) and
+adds what changed to the commit, so a lesson and its generated files land together. `npm install` turns it on
+(`git config core.hooksPath .githooks`). No hook (a fresh clone, a tool that commits with `--no-verify`)?
+Run `npm run sync:generated` before committing. A new lesson gets today's first-added date while it is still
+uncommitted, so it no longer needs a second "regenerate updates" commit.
+
 - `npm test` — every `tests/*.test.mjs`: no hand-started server needed, must stay green.
 - `npm run test:browser` — `tests/browser/*.test.mjs`, which drive heavy lesson sims in Chromium against
   `serve-local.js` on :8080 (started for you if it isn't running), one file at a time. Not run on deploy:

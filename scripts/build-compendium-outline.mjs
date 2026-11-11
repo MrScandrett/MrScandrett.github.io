@@ -118,6 +118,11 @@ const index = {
 };
 
 if (!checkOnly) {
+  // Keep the old timestamp when nothing else changed, so a rerun leaves the file byte-identical.
+  try {
+    const previous = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "compendium-index.draft.json"), "utf8"));
+    if (JSON.stringify({ ...previous, generatedAt: "" }) === JSON.stringify({ ...index, generatedAt: "" })) index.generatedAt = previous.generatedAt;
+  } catch {}
   fs.writeFileSync(path.join(ROOT, "data", "compendium-index.draft.json"), `${JSON.stringify(index, null, 2)}\n`);
   fs.writeFileSync(path.join(ROOT, "COMPENDIUM_OUTLINE.md"), buildMarkdown(plan, index));
 }

@@ -40,8 +40,14 @@ export async function collectEntries({ check = false } = {}) {
       const earlier = previous[url] && firstAdded(previous[url], seen);
       return earlier || added[url] || pathAdded[url];
     };
+    // A lesson that isn't committed yet is being added now: its first commit will carry
+    // today's date, so the new lesson and its generated entry can go in the same commit.
+    const pending = await run('git', ['status', '--porcelain', '--untracked-files=all', '--', 'lessons'], { cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    const uncommitted = new Set(pending.stdout.split('\n').filter(line => /^(\?\?|A.|.A) /.test(line)).map(line => line.slice(3).replace(/^"|"$/g, '')));
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     for (const lesson of lessons) {
-      if (!cache[lesson.url]) cache[lesson.url] = firstAdded(lesson.url);
+      if (!cache[lesson.url]) cache[lesson.url] = firstAdded(lesson.url) || (uncommitted.has(lesson.url) ? today : undefined);
     }
   }
   for (const lesson of lessons) {

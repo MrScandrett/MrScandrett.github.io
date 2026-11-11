@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 486 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 487 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -257,7 +257,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 121 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 122 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -295,29 +295,30 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 - **ENG-24** — PID Control & Feedback Loops
 - **ENG-25** — Robot Build Studio
 - **ENG-26** — Pilot the ELEGOO Robot Car
-- **ENG-27** — Sensor Fusion: Gyro + Accelerometer
-- **ENG-28** — Where Am I? Robot Mapping & Localization
-- **ENG-29** — Beyond A*: Motion Planning Lab
-- **ENG-30** — Reach, Grab, Place: Robot Arms
-- **ENG-31** — Robot Reinforcement Learning: Q-Learning Lab
-- **ENG-32** — Maglev Train Engineering
-- **ENG-33** — Bug Bots: Genghis & the Insect Robots
-- **ENG-34** — Engineering Design Process Studio
+- **ENG-27** — NXT Robot Lab
+- **ENG-28** — Sensor Fusion: Gyro + Accelerometer
+- **ENG-29** — Where Am I? Robot Mapping & Localization
+- **ENG-30** — Beyond A*: Motion Planning Lab
+- **ENG-31** — Reach, Grab, Place: Robot Arms
+- **ENG-32** — Robot Reinforcement Learning: Q-Learning Lab
+- **ENG-33** — Maglev Train Engineering
+- **ENG-34** — Bug Bots: Genghis & the Insect Robots
+- **ENG-35** — Engineering Design Process Studio
 
 ### Structural Design Projects
 
-- **ENG-35** — Bridge Over Troubled Water
-- **ENG-36** — Engineering an Immersive Sphere
-- **ENG-37** — Biomimicry: Engineering Nature's Genius
+- **ENG-36** — Bridge Over Troubled Water
+- **ENG-37** — Engineering an Immersive Sphere
+- **ENG-38** — Biomimicry: Engineering Nature's Genius
 
 ### People Who Changed Engineering
 
-- **ENG-38** — Emily Roebling
-- **ENG-39** — Gustave Eiffel
-- **ENG-40** — Henry Ford — _also indexed in Design, Materials & Fabrication_
-- **ENG-41** — Rube Goldberg Machine Lab
-- **ENG-42** — Siege Engines: Physics You Can Launch
-- **ENG-43** — Hedy Lamarr
+- **ENG-39** — Emily Roebling
+- **ENG-40** — Gustave Eiffel
+- **ENG-41** — Henry Ford — _also indexed in Design, Materials & Fabrication_
+- **ENG-42** — Rube Goldberg Machine Lab
+- **ENG-43** — Siege Engines: Physics You Can Launch
+- **ENG-44** — Hedy Lamarr
 
 ## Design, Materials & Fabrication (FAB)
 

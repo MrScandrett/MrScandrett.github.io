@@ -118,3 +118,10 @@ and `npm run a11y` work without pinning a build number; override with
 scripts should launch with `executablePath: findChromium()` the same way.
 Driving the real page is the only reliable check for canvas games; a blank canvas
 and a game with no render loop look identical to static inspection.
+
+**Generated files are synced by a pre-commit hook.** `.githooks/pre-commit` runs `npm run sync:generated`
+(`scripts/sync-generated.mjs`: lesson catalog → compendium → outline → module glossaries → recent updates) and
+adds what changed to the commit, so a lesson and its generated files land together. `npm install` turns it on
+(`git config core.hooksPath .githooks`). No hook (a fresh clone, a tool that commits with `--no-verify`)?
+Run `npm run sync:generated` before committing. A new lesson gets today's first-added date while it is still
+uncommitted, so it no longer needs a second "regenerate updates" commit.
