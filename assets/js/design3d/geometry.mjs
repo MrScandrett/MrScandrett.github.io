@@ -1,3 +1,5 @@
+import { addHeroEquipment } from './hero-detail.mjs';
+import { buildStyledCharacter } from './character-styles.mjs';
 import { createDynamicHair } from './hair-physics.mjs';
 import { humanoidLayout, humanoidPrims, bodyField, headField, facialFeatures } from './humanoid.mjs';
 import { meshField } from './body-field.mjs';
@@ -59,6 +61,8 @@ export function buildDesign(THREE, state, texture) {
  } else if(mode==='modular'){
   for(let x=0;x<p.columns;x++)for(let z=0;z<p.rows;z++)box(p.module,.12,p.module,(x-(p.columns-1)/2)*p.module,.06,(z-(p.rows-1)/2)*p.module,(x+z)%2?state.secondary:state.color);
   for(let x=0;x<p.columns;x++)box(p.module,p.height,.15,(x-(p.columns-1)/2)*p.module+p.offset,p.height/2,-p.rows*p.module/2+.075);
+ } else if(mode==='character' && p.artStyle>0 && p.artStyle<4){
+  buildStyledCharacter(THREE,group,p,state);
  } else if(mode==='character'){
   // The humanoid template: one smooth, closed body (see humanoid.mjs / body-field.mjs) plus eyes, brows and mouth laid on it.
   const paint=hex=>{const c=new THREE.Color(hex);return [c.r,c.g,c.b];};
@@ -83,6 +87,7 @@ export function buildDesign(THREE, state, texture) {
   }
   mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(features.mouth.map(v=>new THREE.Vector3(...v))),24,.0075*layout.H,8,false),0,0,0,shade(state.color,.4));
   if(p.hairPhysics&&p.hair>0)group.userData.hairSimulation=createDynamicHair(THREE,group,layout,p,colors.hair);
+  if(p.artStyle===4)addHeroEquipment(THREE,group,p,layout,state.secondary);
   group.scale.setScalar(p.height/5.2);
   group.userData.characterHeight=layout.headY+layout.H*(Math.round(p.hairStyle)===4&&p.hair>0?.95:.58);
  } else if(mode==='sculpt'){

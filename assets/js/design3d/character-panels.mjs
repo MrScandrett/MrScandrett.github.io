@@ -2,6 +2,7 @@
 export function setupCharacterPanels(host, id, onInspection) {
  const fieldset = host.querySelector('.d3w-controls > fieldset');
  const groups = [
+  ['style', 'Style', ['artStyle','ears','muzzle','tail']],
   ['body', 'Body', ['height','shoulders','torso','waist','leg','arm','head']],
   ['face', 'Face', ['jaw','eyes','brows','nose','mouth']],
   ['hair', 'Hair', ['hair','hairStyle','hairPhysics','hairStiffness','hairDamping','hairWind']],
@@ -17,13 +18,20 @@ export function setupCharacterPanels(host, id, onInspection) {
   const panel = document.createElement('section');
   panel.id = `${id}-panel-${key}`;
   panel.className = 'character-panel';
-  panel.hidden = key !== 'body';
+  panel.hidden = key !== 'style';
   const heading = document.createElement('h3');
   heading.id = panel.id + '-title';
   heading.textContent = label === 'Body' ? 'Body and proportions' : label;
   panel.setAttribute('aria-labelledby', heading.id);
   panel.append(heading);
   for (const name of fields) panel.append(host.querySelector(`[data-param="${name}"]`).closest('.d3w-field'));
+  if (key === 'style') {
+   const input=panel.querySelector('[data-param="artStyle"]'),select=document.createElement('select');
+   select.id=input.id;select.dataset.param='artStyle';
+   select.innerHTML=['Rounded humanoid','Blocky character','3D stick figure','Anthropomorphic mascot','Sculpted game hero'].map((label,i)=>`<option value="${i}">${label}</option>`).join('');
+   select.value=input.value;input.replaceWith(select);panel.querySelector('[data-slider="artStyle"]').hidden=true;
+   const note=document.createElement('p');note.textContent='Switch shape language while keeping your proportions and colors. Ears, muzzle and tail apply to mascots. Hair and costume detail controls apply to rounded humanoids; the other styles use simplified forms. Mascot tails and ears remain rigid in the starter rig.';panel.append(note);
+  }
   if (key === 'color') for (const input of [...fieldset.querySelectorAll('[data-color]')]) {
    panel.append(fieldset.querySelector(`label[for="${input.id}"]`), input);
   }
