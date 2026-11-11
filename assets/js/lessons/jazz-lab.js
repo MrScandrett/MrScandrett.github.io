@@ -6,7 +6,7 @@
   const status = document.getElementById('jazzStatus'), list = document.getElementById('jazzNotes');
   let voices = [], timer, generation = 0;
   // Shared MusicSynth voices (via AudioKit) so these phrases sound like every other music lesson.
-  const INSTRUMENT = { 'louis-armstrong': 'synth', 'duke-ellington': 'piano', 'charlie-parker': 'sax' };
+  const INSTRUMENT = { 'louis-armstrong': 'trumpet', 'duke-ellington': 'piano', 'charlie-parker': 'sax' };
   const instrumentFor = (voice) => voice === 'Low answer' ? 'bass' : (INSTRUMENT[root.dataset.jazz] || 'piano');
   const names = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','B♭','B'];
   function events() {
@@ -30,7 +30,9 @@
     try {
       const ctx = window.AudioKit && window.MusicSynth ? AudioKit.context() : null;
       if (!ctx) throw new Error('Audio unavailable');
-      await AudioKit.resume(); if(run!==generation)return;
+      await AudioKit.resume();
+      await MusicSynth.prepare(ctx, [...new Set(events().map(e=>instrumentFor(e.voice)))].map(instrument=>({instrument,pitches:events().filter(e=>instrumentFor(e.voice)===instrument).map(e=>e.pitch)})));
+      if(run!==generation)return;
       const beat=60/Number(tempo.value), start=ctx.currentTime+.06;
       events().forEach(e=>{
         const voice=AudioKit.note({ instrument: instrumentFor(e.voice), midi: e.pitch, velocity: .7, at: start+e.beat*beat, duration: e.duration*beat });

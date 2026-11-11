@@ -16,6 +16,9 @@
 (function (root) {
 'use strict';
 
+const samplerURL = typeof document !== 'undefined' && document.currentScript ? new URL('music-sampler.js', document.currentScript.src).href : null;
+let samplerLoading;
+let sampleMode = true;
 const midiHz = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 // Piano: a fundamental plus a handful of decreasingly loud sine harmonics under a
@@ -264,8 +267,37 @@ const SYNTHS = {
   },
 };
 
+// Distinct low-cost fallbacks remain available when recordings are disabled or unavailable.
+const windProfiles = {
+  oboe: ['sawtooth', .025, 1700, .23], clarinet: ['square', .035, 2000, .22],
+  bassoon: ['sawtooth', .04, 1100, .25], horn: ['triangle', .045, 1500, .32],
+  trumpet: ['sawtooth', .018, 3200, .22], viola: ['sawtooth', .07, 2400, .22],
+  cello: ['sawtooth', .065, 1800, .24], contrabass: ['sawtooth', .07, 1100, .28],
+  harp: ['triangle', .003, 4200, .3], xylophone: ['sine', .002, 6000, .4]
+};
+Object.entries(windProfiles).forEach(([name,[type,a,cutoff,gain]]) => {
+  SYNTHS[name] = {a,d:.7,s: /harp|xylophone/.test(name) ? 0 : .7,r:.14,gain,
+    voice(c,f,v,t,out) { return [osc(c,type,f,t,lowpass(c,out,cutoff+v*1200,.7))]; }};
+});
+SYNTHS.timpani = { a:.003,d:.8,s:0,r:.15,gain:.45,
+  voice(c,f,v,t,out) { const o=osc(c,'sine',f,t,out);o.frequency.setValueAtTime(f*1.12,t);o.frequency.exponentialRampToValueAtTime(f,t+.06);return [o]; } };
+async function prepare(c, requests) {
+  if (!sampleMode || !samplerURL) return { loaded:0,failed:0,synthetic:true };
+  try {
+    if (!root.MusicSampler) {
+      if (!samplerLoading) samplerLoading = new Promise((resolve,reject) => {
+        const script=document.createElement('script');script.src=samplerURL;
+        script.onload=resolve;script.onerror=()=>{samplerLoading=null;script.remove();reject(new Error('Sampler unavailable'));};document.head.append(script);
+      });
+      await samplerLoading;
+    }
+    return await root.MusicSampler.prepare(c,requests);
+  } catch (_) { return {loaded:0,failed:1}; }
+}
+
 const LABELS = {
   piano: 'Piano', ePiano: 'Electric piano', organ: 'Organ', pluck: 'Guitar pluck', bass: 'Bass',
+  oboe: 'Oboe', clarinet: 'Clarinet', bassoon: 'Bassoon', horn: 'French horn', trumpet: 'Trumpet', viola: 'Viola section', cello: 'Cello', contrabass: 'Double bass', harp: 'Harp', xylophone: 'Xylophone', timpani: 'Timpani',
   strings: 'Strings', pad: 'Warm pad', synth: 'Synth lead', violin: 'Violin', sax: 'Saxophone', flute: 'Flute',
 };
 
@@ -279,6 +311,10 @@ function envLevel(voice, time) {
 // Starts a pitched note at time t; call voice.release(time) to end it.
 // onEnded(voice) runs once the released note has fully faded and disconnected.
 function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
+  if (sampleMode && settings.samples !== false && settings.oscToVca !== false && settings.vcaToChannel !== false && root.MusicSampler) {
+    const sampled = root.MusicSampler.startVoice(c,out,instrument,pitch,vel,t,onEnded,settings);
+    if (sampled) return sampled;
+  }
   const base = SYNTHS[instrument] || SYNTHS.piano;
   const value=(key,fallback,min,max)=>Number.isFinite(Number(settings[key]))?Math.max(min,Math.min(max,Number(settings[key]))):fallback;
   const def={...base,a:value('attack',base.a,.002,3),d:value('decay',base.d,.02,4),s:value('sustain',base.s,0,1),r:value('release',base.r,.02,5)};
@@ -325,5 +361,5 @@ function startVoice(c, out, instrument, pitch, vel, t, onEnded, settings = {}) {
   return voice;
 }
 
-root.MusicSynth = { instruments: Object.keys(SYNTHS), labels: LABELS, startVoice, midiHz, pianoSources, pluckBuffer };
+root.MusicSynth = { prepare, setSampleMode(value) { sampleMode = !!value; }, get sampleMode() { return sampleMode; }, instruments: Object.keys(SYNTHS), labels: LABELS, startVoice, midiHz, pianoSources, pluckBuffer };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -630,6 +630,56 @@ uses `new Manifold(...)` must pass it to `ctx.track`).
     must build, round-trip and fit the printer at its print scale). When you add a shape or template,
     the test covers it automatically.
 
+## Mesh import + Print Prep
+
+The plan for what's left (a mesh simplifier, SVG text,
+a Print Prep layer-direction hint) is in `docs/3d-tools-next.md`. Read it before picking up 3D import/export work.
+
+**One importer for every tool.** `assets/js/mesh-import.mjs` (pure, async) reads STL (binary and ASCII, multi-solid),
+OBJ (polygons, negative indices; Y up → Z up) and 3MF (ZIP with deflate via `DecompressionStream`, declared units,
+components, build transforms, Bambu/Prusa `p:path` object files, support objects skipped). `readMesh(buffer, name)`
+returns Z-up soup in the file's own units plus `units: { unit, certain, reason }` (STL/OBJ units are guessed from size;
+our own OBJ export says "units: metres"); `toMillimetres()` converts. Don't write another STL parser in a tool: import
+this (Marble Studio already does). Writers stay in `fab-io.mjs`, which now also has `write3mf(bodies)` (stored ZIP,
+millimetres, one object per body). Tests: `node --test tests/mesh-import.test.mjs`.
+
+**Print Prep** (`print-prep.html`, `assets/js/print-prep.mjs`) opens any of those, ranks orientations, lays a clicked
+face flat, fixes units/scale, and exports STL or 3MF. The maths is `assets/js/print-orient.mjs` (pure): `analyze()`
+gives bed contact, overhangs (Forge's `overhangs()`, so bridges match Forge) and a support-volume estimate from a grid
+of vertical columns down to the nearest upward surface; `rankOrientations()` tries each large flat face down and
+sorts by support volume + a wobble penalty for small contact + height. It does not judge strength (layer direction);
+the page says so. `?model=<same-site path>` opens a model by link, `?sample` the tilted L-bracket.
+Tests: `node --test tests/print-orient.test.mjs`.
+
+**Imported models in Workbench** are assets (`assets/js/workbench/assets.mjs`): welded corners + triangles in the file's
+own units, id = a hash of the geometry, plus name/source/licence. A node is `{ shape: 'mesh', params: { asset, units } }`
+(the `IMPORTED` shape in shapes.mjs, kept out of `SHAPES` so the library and shape tests ignore it). The project tree,
+undo log and localStorage autosave hold only the id; the page keeps assets in a Map and IndexedDB (`asset-store.mjs`),
+and Save a copy writes the ones it uses into an `assets` section (base64, checked against the id on open). Pass
+`{ assets, toMm }` in the evaluator opts. A model Manifold can't close (`checkSolid`) is **display-only**: drawn and
+exported for games, never cut, never a hole, left out of the print with a reason. Limits: 100k triangles per import,
+250k per project. Tests: `node --test tests/workbench-import.test.mjs`.
+
+**SVG drawings in Workbench.** `assets/js/svg-outline.mjs` (pure; its own tokenizer, so nothing in the file runs or
+loads) turns an SVG into filled outlines in millimetres: every path command incl. arcs, rect/circle/ellipse/polygon,
+nested transforms, fill / fill-rule / display from attributes, `style=""` and simple `<style>` rules, units from
+width/height + viewBox (px read at 96 dpi and flagged as a guess), y flipped, centred, simplified (RDP) to a point
+budget. Text, stroke-only lines, images and `<use>` clones are skipped with a warning naming the Inkscape fix. The
+result is an outline asset (`kind: 'outline'` in assets.mjs, id = hash of its canonical JSON) extruded by the
+`IMPORTED_SVG` shape (`{ shape: 'svg', params: { asset, w, h } }`, Manifold CrossSection per path with its fill rule,
+so letters keep their holes); Hole engraves it. Tests: `node --test tests/svg-outline.test.mjs`, and the SVG cases in
+`tests/workbench-import.test.mjs`.
+
+**DXF in Blueprint Drafting.** `assets/js/dxf.mjs` (pure) writes the drafting board as ASCII R12 in mm (third-angle
+sheet, layers OUTLINE/HIDDEN/CENTER/DIMENSIONS) and reads DXF back (lines, polylines, arcs/circles as segments, one level
+of blocks; skipped entity types are reported by name). `workbenchSvg(project)` is "Build it in Workbench": refused with a
+reason unless the three views agree on width, height and depth. Tests: `node --test tests/dxf.test.mjs`.
+
+**Hand-off** (`assets/js/handoff.mjs`) passes one file between tools through IndexedDB (10-minute slot):
+`sendAndOpen(url, { bytes, filename, from })` from a click, and the receiving page checks `arrivedByHandoff()` then
+`takeFile()`. Forge, Workbench and Marble Studio send to Print Prep; Print Prep and Blueprint Drafting send to Workbench (a `.svg` hand-off goes to `importSvg`, extruded to the root's `data-workbench-height` mm). Use it rather than
+a query string or localStorage for anything bigger than a few KB.
+
 ## Marble Studio (sculpture lesson)
 
 `lessons/3d-design/sculpture/marble-sculpture.html` ("In the Likeness") carves a 40 × 56 × 36 cm marble block.

@@ -53,7 +53,7 @@ function studioEnvironment(renderer) {
   return env;
 }
 
-export function createView(canvas, { onPick, onGizmoChange, onGizmoEnd, onDropShape }) {
+export function createView(canvas, { onPick, onGizmoChange, onGizmoEnd, onDropShape, onDropFiles }) {
   const { scene, camera, renderer, syncSize } = createScene(canvas, { THREE, fov: 35, near: 0.01, far: 100000, clearColor: STAGE, maxDpr: 2 });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   camera.up.set(0, 0, 1);
@@ -273,8 +273,12 @@ export function createView(canvas, { onPick, onGizmoChange, onGizmoEnd, onDropSh
     if (moved > 5 || gizmo.dragging || gizmo.axis) return;
     onPick?.(pick(e), { shift: e.shiftKey || e.metaKey || e.ctrlKey });
   });
-  canvas.addEventListener('dragover', (e) => { if (e.dataTransfer?.types.includes('text/x-workbench-shape')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } });
+  canvas.addEventListener('dragover', (e) => {
+    const types = e.dataTransfer?.types || [];
+    if (types.includes('text/x-workbench-shape') || (onDropFiles && types.includes('Files'))) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+  });
   canvas.addEventListener('drop', (e) => {
+    if (onDropFiles && e.dataTransfer?.files?.length) { e.preventDefault(); onDropFiles(e.dataTransfer.files, floorPoint(e)); return; }
     const id = e.dataTransfer?.getData('text/x-workbench-shape');
     if (!id) return;
     e.preventDefault();

@@ -29,7 +29,8 @@
   // Every event of the melody, numbered as fake-book.js numbers them: { src, sung, group }.
   function melodyEvents(melody) {
     var events = [], tieOpen = null;
-    String(melody || '').split('|').map(function (s) { return s.trim(); }).filter(Boolean).forEach(function (g, gi) {
+    var groups = String(melody || '').split('|').map(function (s) { return s.trim(); }).filter(Boolean);
+    groups.forEach(function (g, gi) {
       g.split(/\s+/).forEach(function (tok) {
         var m = NOTE_RE.exec(tok), midi = null, tie = false;
         if (m) { midi = 12 * (Number(m[3]) + 1) + NAT[m[1]] + ACC[m[2] || '']; tie = !!m[7]; }
@@ -40,6 +41,7 @@
         else if (!tie) tieOpen = null;
       });
     });
+    events.bars = groups.length;
     return events;
   }
 
@@ -60,9 +62,9 @@
   // Lines up one verse with the melody. Returns { bySrc: { src: syllable }, errors: [] }, where a syllable is
   // { text, hyphen } on the note that starts it or { extend: true } on a note that carries it on.
   function alignVerse(events, text) {
-    var groups = [], errors = [], bySrc = {};
+    var groups = [], errors = [], bySrc = {}, lastSyl = null;
     events.forEach(function (e) { if (e.sung) (groups[e.group] = groups[e.group] || []).push(e); });
-    var nGroups = events.length ? events[events.length - 1].group + 1 : 0;
+    var nGroups = events.bars !== undefined ? events.bars : (events.length ? events[events.length - 1].group + 1 : 0);
     var bars = verseBars(text);
     if (bars.length !== nGroups) errors.push('has ' + bars.length + ' bars of words for ' + nGroups + ' bars of melody');
     bars.forEach(function (toks, gi) {
@@ -70,9 +72,19 @@
       if (!toks.length) return;
       if (toks.length !== notes.length) { errors.push('bar ' + gi + ' (counting the first written bar as 0): ' + toks.length + ' syllables for ' + notes.length + ' notes'); return; }
       toks.forEach(function (tk, k) {
-        if (tk.skip) return;
-        if (tk.extend && !Object.keys(bySrc).length) errors.push('bar ' + gi + ': "_" with no syllable before it');
-        bySrc[notes[k].src] = tk;
+        var src = notes[k].src;
+        if (tk.skip) { lastSyl = null; return; }
+        if (tk.extend) {
+          if (!lastSyl) errors.push('bar ' + gi + ': "_" with no syllable before it');
+          else {
+            if (!lastSyl.extendsTo) lastSyl.extendsTo = [];
+            lastSyl.extendsTo.push(src);
+          }
+          bySrc[src] = { extend: true, from: lastSyl ? lastSyl.src : -1 };
+          return;
+        }
+        lastSyl = { text: tk.text, hyphen: tk.hyphen, src: src, extendsTo: null };
+        bySrc[src] = lastSyl;
       });
     });
     return { bySrc: bySrc, errors: errors };
@@ -87,7 +99,7 @@
       a.errors.forEach(function (e) { errors.push((raw.id || 'tune') + ' verse ' + (v.mark || i + 1) + ' ' + e); });
       return { mark: v.mark || String(i + 1), label: v.label || '', bySrc: a.bySrc };
     });
-    return { verses: verses, credit: raw.lyrics.credit || '', errors: errors };
+    return { verses: verses, credit: raw.lyrics.credit || '', year: raw.lyrics.year || null, errors: errors };
   }
 
   return { melodyEvents: melodyEvents, verseBars: verseBars, alignVerse: alignVerse, forTune: forTune };

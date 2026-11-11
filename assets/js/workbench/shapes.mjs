@@ -18,6 +18,8 @@
  * the centre in X/Y (a 7-tooth gear spins about its axle, not its box).
  */
 
+import { placedVertices } from './assets.mjs';
+
 import { spurGearOutline, textOutline } from '../forge/outlines.mjs';
 
 const TAU = Math.PI * 2;
@@ -934,4 +936,60 @@ const sketches = [
 
 export const SHAPES = [...basics, ...architecture, ...mechanisms, ...game, ...sketches];
 export const SHAPE_GROUPS = [BASIC, ARCH, MECH, GAME, SKETCH];
-export const shapeById = (id) => SHAPES.find((s) => s.id === id);
+
+/* A model imported from another app (assets.mjs). It is not in the library:
+   it arrives through Import, and its geometry lives in ctx.assets, keyed by
+   the asset id. Units are the file's own, chosen on import and changeable,
+   because STL and OBJ never say what their numbers mean. A model that is not
+   a closed solid never reaches build(): the evaluator shows it as display-only. */
+export const IMPORTED = {
+  id: 'mesh', name: 'Imported model', group: 'Imported', kind: 'object', imported: true,
+  blurb: 'A model brought in from another app. Move, turn, scale, group and animate it like any shape.',
+  params: [
+    { id: 'asset', label: 'Model', type: 'asset', default: '' },
+    { id: 'units', label: 'File units', type: 'select', default: 'mm', options: [
+      { value: 'mm', label: 'Millimetres' }, { value: 'cm', label: 'Centimetres' }, { value: 'in', label: 'Inches' }, { value: 'ft', label: 'Feet' }, { value: 'm', label: 'Metres' }] },
+  ],
+  build({ Manifold: M, Mesh, track, assets, toMm }, p) {
+    const asset = assets?.get(p.asset);
+    if (!asset) throw new Error('This imported model’s data is missing from this browser. Open the .workbench.json file it was saved in, or import the model again.');
+    const { vertices } = placedVertices(asset, p.units, toMm);
+    const mesh = new Mesh({ numProp: 3, vertProperties: vertices, triVerts: asset.triangles });
+    mesh.merge();
+    try {
+      return track(new M(mesh));
+    } catch {
+      throw new Error('This imported model is not a closed solid, so holes cannot cut it.');
+    }
+  },
+};
+
+/* A drawing from an SVG file (svg-outline.mjs), extruded. Its outlines live in
+   ctx.assets as millimetres at the drawing's own size; Width scales them
+   evenly. Set it to Hole to engrave a logo into another part. */
+export const IMPORTED_SVG = {
+  // 'handheld' scales least in metre projects, so a 40 mm logo stays 40 mm in an architecture or game project
+  id: 'svg', name: 'SVG drawing', group: 'Imported', kind: 'handheld', imported: true,
+  blurb: 'A drawing brought in from an SVG, pulled up into a solid. Make it a Hole to engrave it, or keep it solid for a badge or a cookie-cutter shape.',
+  params: [
+    { id: 'asset', label: 'Drawing', type: 'asset', default: '' },
+    len('w', 'Width', 0.5, 2000, 0.5, 40, { help: 'Depth changes with it, so the drawing keeps its shape.' }),
+    len('h', 'Height', 0.1, 200, 0.1, 3),
+  ],
+  build({ CrossSection: CS, track, assets }, p) {
+    const a = assets?.get(p.asset);
+    if (!a || a.kind !== 'outline') throw new Error('This drawing’s data is missing from this browser. Open the .workbench.json file it was saved in, or import the SVG again.');
+    const k = p.w / (a.size[0] || 1);
+    const sections = a.shapes.map((sh) => track(new CS(sh.contours.map((c) => {
+      const ring = [];
+      for (let j = 0; j < c.length; j += 2) ring.push([c[j] * k, c[j + 1] * k]);
+      return ring;
+    }), sh.rule === 'evenodd' ? 'EvenOdd' : 'NonZero')));
+    const section = sections.length === 1 ? sections[0] : CS.union(sections);
+    if (section.isEmpty()) throw new Error('This drawing has no filled area to pull up.');
+    return section.extrude(p.h);
+  },
+};
+
+const IMPORTED_SHAPES = { [IMPORTED.id]: IMPORTED, [IMPORTED_SVG.id]: IMPORTED_SVG };
+export const shapeById = (id) => IMPORTED_SHAPES[id] || SHAPES.find((s) => s.id === id);

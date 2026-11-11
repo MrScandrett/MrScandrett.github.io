@@ -15,7 +15,7 @@
       return chart.chords.filter(function (c) { return c.bar === i + 1; }).map(function (c) { return c[system]; }).join(' ');
     });
   }
-  var audio, voices = [], loopTimer, loopIndex = 0, loop = [0, 4, 5, 3];
+  var voices = [], loopTimer, loopIndex = 0, loop = [0, 4, 5, 3], soundToken = 0;
   var offsets = [0, 2, 4, 5, 7, 9, 11], numerals = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
   var jobs = ['Home', 'Away', 'Color', 'Away', 'Pull', 'Color', 'Pull'];
   var qualities = ['', 'm', 'm', '', '', 'm', 'dim'];
@@ -27,21 +27,25 @@
       return letters[letter] + (accidental < 0 ? 'b' : accidental > 0 ? '#' : '') + qualities[i];
     });
   }
-  function sound(notes, duration) {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) { $('loop-status').textContent = 'Audio is unavailable in this browser.'; return; }
-    if (!audio) audio = new AC();
-    audio.resume().catch(function () { $('loop-status').textContent = 'Tap Play again to enable sound.'; });
-    var now = audio.currentTime;
-    voices = voices.filter(function (voice) { return voice.end > now; });
-    notes.forEach(function (midi) {
-      var oscillator = audio.createOscillator(), gain = audio.createGain();
-      oscillator.type = 'triangle'; oscillator.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
-      gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.075, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-      oscillator.connect(gain); gain.connect(audio.destination); oscillator.start(); oscillator.stop(now + duration + 0.03);
-      oscillator.onended = function () { oscillator.disconnect(); gain.disconnect(); };
-      voices.push({ oscillator: oscillator, end: now + duration + 0.03 });
+  async function sound(notes, duration) {
+    if (!window.AudioKit || !window.MusicSynth) { $('loop-status').textContent = 'Audio is unavailable in this browser.'; return; }
+    var ctx = window.AudioKit.context();
+    if (!ctx) { $('loop-status').textContent = 'Audio is unavailable in this browser.'; return; }
+    var token = ++soundToken;
+    var instrument = $('instrument') ? $('instrument').value : 'piano';
+    await window.AudioKit.resume().catch(function () { $('loop-status').textContent = 'Tap Play again to enable sound.'; });
+    await window.MusicSynth.prepare(ctx, [{ instrument: instrument, pitches: notes }]);
+    if (token !== soundToken) return;
+    var start = ctx.currentTime + 0.03;
+    notes.forEach(function (midi, i) {
+      var voice = window.AudioKit.note({
+        instrument: instrument,
+        midi: midi,
+        velocity: notes.length > 1 ? 0.62 : 0.8,
+        at: start + (notes.length > 1 ? i * 0.012 : 0),
+        duration: duration
+      });
+      if (voice) voices.push(voice);
     });
   }
   function loopNotes(index) {
@@ -49,8 +53,11 @@
     return engine.voiceChords(parsed.chords, 'smooth')[0];
   }
   function stopLoop() {
+    soundToken++;
     clearTimeout(loopTimer); loopTimer = null;
-    voices.forEach(function (voice) { try { voice.oscillator.stop(); } catch (_) {} }); voices = [];
+    var ctx = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
+    var now = ctx ? ctx.currentTime : 0;
+    voices.forEach(function (voice) { try { voice.kill(now); } catch (_) {} }); voices = [];
     document.querySelectorAll('.cp-playing').forEach(function (node) { node.classList.remove('cp-playing'); });
     ['library','lab'].forEach(function (kind) { $(kind + '-play').textContent = '▶ Play example'; $(kind + '-play').setAttribute('aria-pressed', 'false'); });
     $('loop-play').textContent = '▶ Play loop'; $('loop-play').setAttribute('aria-pressed', 'false');

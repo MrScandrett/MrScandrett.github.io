@@ -17,7 +17,7 @@
   }
   function mount(host, lanes, preview, config) {
     config = config || {};
-    var state = { kit: 'studio', lanes: {} }, selected = lanes[0];
+    var state = { kit: 'studio', lanes: {} }, selected = lanes.includes(config.selected) ? config.selected : lanes[0];
     try {
       var saved = config.state || (config.persist === false ? null : JSON.parse(localStorage.getItem(key)));
       if (saved && E.kits[saved.kit]) {
@@ -50,6 +50,7 @@
     var kit = select('Overall drumkit', Object.keys(E.kits).map(function (id) { return [id, E.kits[id].name]; }), top);
     kit.value = state.kit;
     var lane = select('Edit lane', lanes.map(function (id) { return [id, E.samples[E.aliases[id] || id][0]]; }), top);
+    lane.value = selected;
     var sound = select('Sample', Object.keys(E.samples).map(function (id) { return [id, E.samples[id][0]]; }), top);
     var audition = el('button', '▶ Audition lane', top); audition.type = 'button';
     var reset = el('button', 'Reset lane', top); reset.type = 'button';
@@ -69,7 +70,7 @@
       status.textContent = E.kits[state.kit].name + ' · ' + E.samples[o.sample][0] + ' on ' + selected + '. Sound settings save automatically.';
     }
     kit.addEventListener('change', function () { state.kit = kit.value; state.lanes = {}; lanes.forEach(options); save(); render(); });
-    lane.addEventListener('change', function () { selected = lane.value; render(); });
+    lane.addEventListener('change', function () { selected = lane.value; if (config.onSelect) config.onSelect(selected); render(); });
     sound.addEventListener('change', function () { options(selected).sample = sound.value; save(); render(); preview(selected, options(selected)); });
     audition.addEventListener('click', function () { preview(selected, options(selected)); });
     reset.addEventListener('click', function () { state.lanes[E.aliases[selected] || selected] = defaults(state.kit, selected); save(); render(); });

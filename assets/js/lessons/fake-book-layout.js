@@ -163,8 +163,8 @@
     var key = chosen('[data-fb-key]').replace(/\s*\(.*\)$/, '');
     var instr = root.querySelector('[data-fb-instr]');
     setVal('key', key + (instr && instr.value !== 'concert' ? ' · ' + chosen('[data-fb-instr]').split(/[,(]/)[0].trim() : ''));
-    var shows = [['[data-fb-show-tab]', 'Tab'], ['.fb-sheet-pane [data-fb-names]', 'Names'], ['.fb-sheet-pane [data-fb-show-shapes]', 'Shapes'], ['[data-fb-show-pos]', 'Fingers'], ['[data-fb-show-sax]', 'Sax']]
-      .filter(function (p) { var c = root.querySelector(p[0]); return c && c.checked; }).map(function (p) { return p[1]; });
+    var shows = [['.fb-sheet-pane [data-fb-show-lyrics]', 'Lyrics'], ['[data-fb-show-tab]', 'Tab'], ['.fb-sheet-pane [data-fb-names]', 'Names'], ['.fb-sheet-pane [data-fb-show-shapes]', 'Shapes'], ['[data-fb-show-pos]', 'Fingers'], ['[data-fb-show-sax]', 'Sax']]
+      .filter(function (p) { var c = root.querySelector(p[0]); return c && c.checked && !c.closest('[hidden]'); }).map(function (p) { return p[1]; });
     var counts = root.querySelector('[data-fb-beat-counts]');
     if (counts && counts.value !== 'off') shows.push('Counts');
     setVal('sheet', shows.length ? shows.join(' · ') : 'Notes only');

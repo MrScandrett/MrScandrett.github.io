@@ -36,6 +36,10 @@ try {
         if (await spotlight.count()) await spotlight.click();
         const figure = page.locator('figure[data-score]').first();
         await figure.locator('.se-note-list-toggle').waitFor({ state: 'attached' });
+        const settings = figure.locator('details.se-settings');
+        if (await settings.count() && await settings.getAttribute('open') === null) {
+          await settings.locator(':scope > summary').click();
+        }
         await figure.locator('.se-note-list-toggle').click();
         await page.evaluate(() => window.MusicNotation.setPreferences({ pitchNames: true, noteColors: true }));
         await page.waitForTimeout(100);

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Print Prep · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg" />
+  <meta name="description" content="Print Prep: open an STL, OBJ or 3MF from any 3D app, find the side that needs the least support, lay any face flat on the bed, fix its units, and download a print-ready STL or 3MF." />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="assets/css/print-prep.css" />
+  <script src="assets/js/theme-registry.js"></script>
+  <script src="assets/js/theme-lighting.js"></script>
+  <link rel="stylesheet" href="assets/css/creation-app.css">
+</head>
+<body class="theme-print-prep">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="steam-lessons.html">Lessons</a></li>
+          <li><a href="paths.html">Paths</a></li>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="applications.html">Apps</a></li>
+          <li><a href="library.html">Library</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main data-creation-app id="main-content" class="pp">
+    <header class="pp-toolbar">
+      <div class="pp-app-title"><span class="pp-mark" aria-hidden="true">P</span><div><h1>Print Prep</h1><span>Open · orient · export</span></div></div>
+      <p class="pp-file" id="pp-file">No model open</p>
+      <div class="pp-history" role="group" aria-label="Edit history"><button type="button" id="pp-undo" title="Undo (Ctrl/⌘ Z)" aria-label="Undo" disabled>↶</button><button type="button" id="pp-redo" title="Redo (Ctrl/⌘ Shift Z)" aria-label="Redo" disabled>↷</button></div>
+      <div class="pp-file-tools"><button type="button" id="pp-open">Open model…</button><button type="button" id="pp-help" aria-label="How to use Print Prep" title="How to use Print Prep">?</button><button type="button" class="pp-primary" id="pp-dl-stl-top" disabled>Download STL</button></div>
+      <input type="file" id="pp-file-input" accept=".stl,.obj,.3mf,model/stl,model/obj,model/3mf" aria-label="Open an STL, OBJ or 3MF file" hidden />
+    </header>
+
+    <div class="pp-layout">
+      <section class="pp-stage" aria-label="Print bed">
+        <div class="pp-stage-bar"><div><span class="pp-eyebrow">On the print bed</span><h2 id="pp-title" class="pp-title">Open a model to start</h2></div><button type="button" id="pp-fit" title="Fit the part in view (F)">Fit view</button></div>
+        <div class="pp-canvas-wrap" id="pp-drop">
+          <canvas id="pp-canvas" tabindex="0" role="img" aria-label="3D preview of the print bed. No model is open." aria-describedby="pp-orbit-help"></canvas>
+          <p class="pp-status" id="pp-status" role="status" hidden></p>
+          <p class="pp-nogl" id="pp-nogl" hidden>This browser cannot start WebGL. You can still open a model, find its best side, rotate it and download it.</p>
+          <div class="pp-empty" id="pp-empty">
+            <p class="pp-empty-title">Drop an STL, OBJ or 3MF here</p>
+            <p>From Tinkercad, Blender, Fusion, Onshape, Thingiverse, a 3D scan, or any app in this site.</p>
+            <div class="pp-empty-actions"><button type="button" class="pp-primary" id="pp-open-2">Open a model…</button><button type="button" id="pp-sample">Try the sample bracket</button></div>
+          </div>
+          <div class="pp-view-tools" role="group" aria-label="Camera views"><button type="button" data-camera="iso" aria-pressed="true">3D</button><button type="button" data-camera="top" aria-pressed="false">Top</button><button type="button" data-camera="front" aria-pressed="false">Front</button><button type="button" data-camera="side" aria-pressed="false">Side</button><button type="button" data-camera="under" aria-pressed="false">Under</button></div>
+          <p class="pp-legend" aria-hidden="true"><span class="sw sw-overhang"></span>Needs support <span class="sw sw-bridge"></span>Bridge <span class="sw sw-contact"></span>On the bed</p>
+        </div>
+        <div class="pp-stage-bottom"><p id="pp-orbit-help">Click a face to put it on the bed · Drag to orbit · Scroll to zoom · Right-drag to pan</p><label class="pp-switch"><input type="checkbox" id="pp-pick" checked /> <span>Click a face to lay it flat</span></label></div>
+      </section>
+
+      <aside class="pp-panel" aria-label="Print settings">
+        <section class="pp-section" aria-labelledby="pp-h-part">
+          <h2 id="pp-h-part"><span aria-hidden="true">1</span> Your part</h2>
+          <p class="pp-help" id="pp-part-info">Nothing open yet.</p>
+          <div class="pp-row">
+            <div class="pp-field"><label for="pp-units">File units</label><select id="pp-units" disabled><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="in">Inches</option><option value="m">Metres</option></select></div>
+            <div class="pp-field"><label for="pp-scale">Scale (%)</label><input type="number" id="pp-scale" min="1" max="10000" step="1" value="100" inputmode="decimal" disabled /></div>
+          </div>
+          <p class="pp-help" id="pp-units-note"></p>
+          <p class="pp-size" id="pp-size"></p>
+        </section>
+
+        <section class="pp-section" aria-labelledby="pp-h-orient">
+          <h2 id="pp-h-orient"><span aria-hidden="true">2</span> Which way up?</h2>
+          <button type="button" class="pp-primary pp-wide" id="pp-best" disabled>Find the best side</button>
+          <ol class="pp-options" id="pp-options" aria-live="polite"></ol>
+          <div class="pp-rotate" role="group" aria-labelledby="pp-rotate-label">
+            <div class="pp-rotate-top"><span id="pp-rotate-label">Turn by</span><select id="pp-step" aria-label="Turn step"><option value="90">90°</option><option value="45">45°</option><option value="15">15°</option><option value="5">5°</option></select></div>
+            <div class="pp-rotate-grid">
+              <button type="button" data-rotate="x" data-dir="-1" aria-label="Tip toward you" title="Tip toward you (about X)" disabled>X ↶</button>
+              <button type="button" data-rotate="x" data-dir="1" aria-label="Tip away from you" title="Tip away (about X)" disabled>X ↷</button>
+              <button type="button" data-rotate="y" data-dir="-1" aria-label="Roll left" title="Roll left (about Y)" disabled>Y ↶</button>
+              <button type="button" data-rotate="y" data-dir="1" aria-label="Roll right" title="Roll right (about Y)" disabled>Y ↷</button>
+              <button type="button" data-rotate="z" data-dir="1" aria-label="Spin on the bed counter-clockwise" title="Spin on the bed (about Z)" disabled>Z ↶</button>
+              <button type="button" data-rotate="z" data-dir="-1" aria-label="Spin on the bed clockwise" title="Spin on the bed (about Z)" disabled>Z ↷</button>
+            </div>
+            <button type="button" id="pp-reset" class="pp-wide" disabled>Back to how it arrived</button>
+          </div>
+          <div class="pp-field"><div class="pp-field-top"><label for="pp-angle">Steepest overhang your printer holds</label><output id="pp-angle-out" for="pp-angle">45°</output></div><input type="range" id="pp-angle" min="30" max="65" step="5" value="45" /><p class="pp-help">45° is safe for PLA. Faces flatter than this, facing down, need support.</p></div>
+        </section>
+
+        <section class="pp-section" aria-labelledby="pp-h-checks">
+          <h2 id="pp-h-checks"><span aria-hidden="true">3</span> Checks</h2>
+          <ul class="pp-verdicts" id="pp-verdicts" aria-live="polite"><li class="pp-muted">Open a model to check it.</li></ul>
+        </section>
+
+        <section class="pp-section" aria-labelledby="pp-h-export">
+          <h2 id="pp-h-export"><span aria-hidden="true">4</span> Take it to the slicer</h2>
+          <div class="pp-export"><button type="button" class="pp-primary" id="pp-dl-stl" disabled>Download STL</button><button type="button" id="pp-dl-3mf" disabled>Download 3MF</button><button type="button" id="pp-to-workbench" disabled>Open in Workbench</button></div>
+          <p class="pp-help"><strong>Open in Workbench</strong> brings the part in as a model you can cut holes in, add to and remix.</p>
+          <p class="pp-help">Both are in millimetres, Z up, sitting on the bed the way you set it. <strong>3MF</strong> keeps units and separate parts, and Bambu Studio, PrusaSlicer, Cura and MakerBot Print all open it. <strong>STL</strong> opens everywhere.</p>
+        </section>
+      </aside>
+    </div>
+    <footer class="pp-footer"><span>MakerBot Sketch Large · 260 × 160 × 230 mm · sizes in mm</span><span><a href="lessons/3d-design/cad-and-printing/3d-printing.html">Lesson: plan a printable orientation</a> · <a href="forge.html">Forge</a> · <a href="workbench.html">Workbench</a></span></footer>
+    <p id="pp-toast" class="pp-toast" role="status" hidden></p>
+    <dialog id="pp-help-dialog" aria-labelledby="pp-help-title"><div class="pp-dialog-heading"><h2 id="pp-help-title">Getting a part ready to print</h2><button type="button" id="pp-help-close" aria-label="Close help">×</button></div><ol><li><strong>Open your model.</strong> STL, OBJ or 3MF, from any app. Check the size: if a 40 mm part shows as 0.04 mm, the file was saved in metres; change <em>File units</em>.</li><li><strong>Find the best side.</strong> Print Prep tries every big flat face down and ranks them by how much support plastic they need, how firmly they sit on the bed, and how tall they print. Or click any face to put it on the bed yourself.</li><li><strong>Think about strength.</strong> Layers pull apart most easily, so a hook or bracket printed standing up can snap along its layers. The side with the least support is not always the strongest.</li><li><strong>Download and slice.</strong> 3MF keeps the units. Turn supports on in the slicer only if Checks says the part needs them.</li></ol><p class="pp-help">Shortcuts: Ctrl/⌘ Z undo · Ctrl/⌘ Shift Z redo · Ctrl/⌘ O open · F fit view. Your file never leaves this computer.</p></dialog>
+    <noscript><p>Print Prep needs JavaScript to read and turn your model. Enable JavaScript and reload this page.</p></noscript>
+  </main>
+
+  <script src="assets/js/sim-kit.js"></script>
+  <script type="module" src="assets/js/print-prep.mjs"></script>
+  <script src="assets/js/nav-mobile.js"></script>
+  <script src="assets/js/creation-app.js"></script>
+</body>
+</html>

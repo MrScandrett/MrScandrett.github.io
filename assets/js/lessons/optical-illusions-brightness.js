@@ -226,11 +226,11 @@
 
   OI.add({
     id: 'strawberries', sec: 'color', kind: 'svg', w: 600, h: 400, states: 2,
-    title: 'Red strawberries (that are not red)',
-    q: 'What color are these strawberries? Decide before you look closely at the pixels.',
-    a: 'Every strawberry body is plain gray, with red, green and blue all equal to 140. Everything around them is cyan, and your brain corrects for it and reads the gray as reddish.',
-    credit: 'After Akiyoshi Kitaoka\'s red-less strawberries, 2017 (redrawn for this lesson)',
-    why: '<p>This is <span data-glossary="color constancy">color constancy</span> working together with color contrast. When a whole scene is cyan, your brain guesses the light is cyan and discounts it, adding red back to every surface. A truly gray strawberry has relatively <em>more</em> red than its cyan surroundings, so after the correction it reads as reddish. How red it looks varies from person to person and screen to screen; Kitaoka\'s original photo, where a real scene is filtered cyan, gives a stronger effect. To stop it, look at one berry through a small hole in a sheet of paper: the red drains away.</p>',
+    title: 'Gray strawberries on cyan (a color-context model)',
+    q: 'Do the gray strawberry shapes look slightly pink against the cyan? Compare your impression with the original photograph linked above; this simplified drawing may produce a much weaker effect.',
+    a: 'The flat body fill is neutral gray: RGB 140, 140, 140. The seeds and leaves use other colors. The two swatches show the body color outside the cyan surroundings; whether it looks pink in context varies.',
+    credit: 'Simplified color-context model inspired by Akiyoshi Kitaoka\'s strawberry photographs (2017); not a copy of the original',
+    why: '<p>Colors can look different depending on their surroundings. A neutral gray surrounded by cyan may appear warmer or pinkish by contrast, but this simple illustration is not a validated reproduction of Kitaoka’s photographic illusion. His image has a rich scene with many shades and a cyan cast; memory, context and visual processing may all influence what someone sees. The RGB values include a red channel: “no red pixels” means the pixels are not red in hue, not that their red channel is zero.</p>',
     draw: function (st) {
       var s = S.rect(0, 0, 600, 400, '#9bd9df');
       // leaves/stems in teal, berries in pure gray
@@ -309,17 +309,17 @@
     q: 'Look at the middle of the picture, not at any one disc. Do the discs turn in different directions?',
     a: 'Nothing moves. The picture is a still image of rings of dark and light steps. Stare straight at a single disc and it slows or stops.',
     credit: 'Principle by Akiyoshi Kitaoka (2003); original rendering for this lesson',
-    why: '<p>Each ring repeats black, dark blue, white, yellow. The leading explanation is that dark and light steps are processed at slightly different speeds, so every step edge leaves a tiny motion signal pointing the same way around the ring. Because the signals all agree, they add up. Alternate rings run the sequence backward, so neighboring rings seem to turn opposite ways. Your fast eye movements (saccades and blinks) restart the effect, which is why blinking makes it jump.</p>',
+    why: '<p>Each ring repeats black, dark blue, white, yellow. The leading explanation is that dark and light steps are processed at slightly different speeds, so every step edge leaves a tiny motion signal pointing the same way around the ring. Because the signals all agree, they add up. The sequence reverses between neighboring discs, which can make them seem to turn in opposite directions. Your fast eye movements (saccades and blinks) restart the effect, which is why blinking makes it jump.</p>',
     draw: function (ctx, w, h) {
       ctx.fillStyle = '#e9e1c4'; ctx.fillRect(0, 0, w, h);
       var cols = ['#000000', '#1d4ed8', '#ffffff', '#facc15'];
       var discs = [[110, 110], [320, 110], [530, 110], [215, 310], [425, 310]];
-      discs.forEach(function (d) {
+      discs.forEach(function (d, discIndex) {
         var ring, k;
         for (ring = 0; ring < 4; ring++) {
           var r0 = 14 + ring * 21, r1 = r0 + 21, m = 6 + 2 * ring, n = 4 * m;
           for (k = 0; k < n; k++) {
-            var idx = (ring % 2 === 0) ? k % 4 : (4 - (k % 4)) % 4;
+            var idx = (discIndex % 2 === 0) ? k % 4 : (4 - (k % 4)) % 4;
             ctx.fillStyle = cols[idx];
             ctx.beginPath();
             ctx.arc(d[0], d[1], r1, k * 2 * Math.PI / n, (k + 1) * 2 * Math.PI / n);

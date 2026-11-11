@@ -85,6 +85,24 @@ for (const file of walk(ROOT)) {
   }
 }
 
+// Workspaces render from a shared index rather than static data-score figures.
+const workspaces = JSON.parse(readFileSync(join(ROOT, 'data/composer-workspaces.json'), 'utf8'));
+for (const name of readdirSync(join(ROOT, 'lessons/music/pioneers'))) {
+  if (name.endsWith('.html') && !workspaces[name.slice(0,-5)]) errors.push(`Composer lesson ${name} needs a shared workspace entry`);
+}
+for (const [composer, workspace] of Object.entries(workspaces)) {
+  const file = `lessons/music/pioneers/${composer}.html`;
+  const html = readFileSync(join(ROOT, file), 'utf8');
+  if (!workspace.scores.length) errors.push(`${file}: no workspace scores`);
+  for (const id of workspace.scores) {
+    if (!lib.scores[id]) errors.push(`${file}: unknown workspace score ${id}`);
+    else lessonStandard(file, id, lib.scores[id]);
+  }
+  for (const script of ['music-notation.js','music-synth.js','score-navigation.js','score-engine.js','composer-arrangement.js','composer-studio.js']) {
+    if (!html.includes(script)) errors.push(`${file}: workspace does not load ${script}`);
+  }
+}
+
 if (errors.length) {
   console.error(`Scores: ${errors.length} problem(s)\n  ` + errors.join('\n  '));
   process.exit(1);

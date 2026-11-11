@@ -9,7 +9,12 @@ import { join, basename, delimiter } from 'node:path';
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.MUSIC_LAB_VST_PORT || 4777);
 const TOKEN = process.env.MUSIC_LAB_VST_TOKEN || randomBytes(12).toString('base64url');
-const ROOTS = (process.env.MUSIC_LAB_VST_DIRS || [join(homedir(), '.vst3'), '/usr/local/lib/vst3', '/usr/lib/vst3'].join(':')).split(':').filter(Boolean);
+const DEFAULT_VST_DIRS = process.platform === 'darwin'
+  ? [join(homedir(), 'Library/Audio/Plug-Ins/VST3'), '/Library/Audio/Plug-Ins/VST3', join(homedir(), '.vst3')]
+  : process.platform === 'win32'
+    ? [join(process.env.COMMONPROGRAMFILES || 'C:\\Program Files\\Common Files', 'VST3')]
+    : [join(homedir(), '.vst3'), '/usr/local/lib/vst3', '/usr/lib/vst3'];
+const ROOTS = (process.env.MUSIC_LAB_VST_DIRS ? process.env.MUSIC_LAB_VST_DIRS.split(delimiter) : DEFAULT_VST_DIRS).filter(Boolean);
 const ORIGINS = new Set((process.env.MUSIC_LAB_VST_ORIGINS || 'http://localhost:8080,http://127.0.0.1:8080,https://mrscandrett.github.io').split(','));
 const SAFE_MODE = process.env.MUSIC_LAB_VST_SAFE_MODE === '1';
 const CAPABILITIES = { discovery: true, nativeWindow: !SAFE_MODE, projectIdentity: true, audioRouting: false, automation: false, offlineRender: false, latencyReport: false, safeMode: SAFE_MODE };

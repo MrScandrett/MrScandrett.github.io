@@ -9,7 +9,8 @@
 import ManifoldModule from '../../vendor/manifold/manifold.js';
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import { createScene } from '../sim-kit-three.mjs';
-import { DEFAULT_PRINTER, bounds, placeOnBed, prepareForPrint, writeBinaryStl, writeGlb, writeObj } from '../fab-io.mjs';
+import { DEFAULT_PRINTER, bounds, placeOnBed, prepareForPrint, write3mf, writeBinaryStl, writeGlb, writeObj } from '../fab-io.mjs';
+import { sendAndOpen } from '../handoff.mjs';
 import { DEFAULT_SETTINGS, concat, createEngine, resolveParams } from './engine.mjs';
 import { PARTS, PART_GROUPS, partById } from './parts.mjs';
 
@@ -30,7 +31,7 @@ const el = {
   stats: $('forge-stats'), verdicts: $('forge-verdicts'), status: $('forge-status'), canvas: $('forge-canvas'),
   nogl: $('forge-nogl'), name: $('forge-project-name'), clearance: $('forge-clearance'), clearanceOut: $('forge-clearance-out'),
   layer: $('forge-layer'), colors: $('forge-colors'), showOverhangs: $('forge-show-overhangs'), resetView: $('forge-reset-view'),
-  stl: $('forge-dl-stl'), partStls: $('forge-dl-parts'), glb: $('forge-dl-glb'), obj: $('forge-dl-obj'), save: $('forge-save'), open: $('forge-open'),
+  stl: $('forge-dl-stl'), partStls: $('forge-dl-parts'), sendPrint: $('forge-send-print'), glb: $('forge-dl-glb'), obj: $('forge-dl-obj'), save: $('forge-save'), open: $('forge-open'),
   openFile: $('forge-open-file'), note: $('forge-export-note'),
   search: $('forge-search'), undo: $('forge-undo'), redo: $('forge-redo'), saved: $('forge-save-status'),
   summary: $('forge-check-summary'), checkLabel: $('forge-check-label'), checkCount: $('forge-check-count'),
@@ -443,7 +444,7 @@ function frame(name = 'iso') {
 let pending = 0;
 function schedule() {
   clearTimeout(pending);
-  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = true; });
+  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = true; });
   el.readiness.textContent = 'Updating your model…';
   el.checkLabel.textContent = 'Updating print checks…';
   el.status.textContent = 'Updating model…';
@@ -463,7 +464,7 @@ function rebuild() {
   el.status.textContent = result.error ? 'This design could not be built.' : `Built in ${ms} ms`;
   el.status.hidden = !result.error;
   const disabled = Boolean(result.error) || !result.bodies.length;
-  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = disabled; });
+  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = disabled; });
   el.partStls.hidden = result.bodies.length < 2;
   const summary = result.verdicts.map((v) => `${v.tag}: ${v.text}`).join(' ');
   el.canvas.setAttribute('aria-label', `${part.name} on the print bed. ${summary}`);
@@ -559,6 +560,15 @@ function exportObj() {
   if (!result?.bodies.length) return;
   download(writeObj(gameBodies(), { comment: `${slug()} — ClassroomOS Forge` }), `${slug()}.obj`, 'text/plain');
   notify(`Saved ${slug()}.obj (metres, Y-up).`);
+}
+
+/* The part (every body of it) into Print Prep, as a 3MF so the parts stay separate. */
+async function sendToPrintPrep() {
+  if (!result?.bodies.length) return;
+  try {
+    await sendAndOpen('print-prep.html', { bytes: write3mf(result.bodies.map((b) => ({ name: b.name, positions: b.positions })), { title: state.name || currentPart().name, application: 'ClassroomOS Forge' }), filename: `${slug()}.3mf`, from: 'Forge' });
+    notify('Opened in Print Prep.');
+  } catch (error) { notify(error.message); }
 }
 
 function saveProject() {
@@ -668,10 +678,11 @@ async function start() {
   el.partStls.addEventListener('click', exportPartStls);
   el.glb.addEventListener('click', exportGlb);
   el.obj.addEventListener('click', exportObj);
+  el.sendPrint.addEventListener('click', sendToPrintPrep);
   el.save.addEventListener('click', saveProject);
   el.open.addEventListener('click', () => el.openFile.click());
   el.openFile.addEventListener('change', () => { const f = el.openFile.files[0]; if (f) openProject(f); el.openFile.value = ''; });
-  [el.stl, el.glb, el.obj, el.partStls].forEach((b) => { b.disabled = true; });
+  [el.stl, el.glb, el.obj, el.partStls, el.sendPrint].forEach((b) => { b.disabled = true; });
   setupView();
   try {
     const font = await fetch(new URL('../../vendor/fonts/droid-sans-bold.typeface.json', import.meta.url)).then((r) => r.json());

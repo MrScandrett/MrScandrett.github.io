@@ -4,6 +4,8 @@
 // wires up the controls. Used by lessons/3d-design/sculpture/marble-sculpture.html.
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
 import * as M from './marble-core.mjs';
+import { ACCEPT as MESH_ACCEPT, readMesh } from '../mesh-import.mjs';
+import { sendAndOpen } from '../handoff.mjs';
 
 const SAVE_KEY = 'classroomos:marble-studio:v1';
 const SOUND_KEY = 'classroomos:marble-studio:sound';
@@ -367,7 +369,7 @@ class Studio {
       for (const [v, t] of opts) s.append(el('option', { value: v, selected: v === value }, t));
       return el('label', { class: 'ms-field' }, el('span', {}, label), s);
     };
-    const subjectOpts = [['none', 'Free carve (no maquette)'], ...M.REFERENCES.map(r => ['preset:' + r.id, 'Maquette: ' + r.label]), ['draw', 'Draw my own on the block…'], ['stl', 'Use my 3D model (STL)…']];
+    const subjectOpts = [['none', 'Free carve (no maquette)'], ...M.REFERENCES.map(r => ['preset:' + r.id, 'Maquette: ' + r.label]), ['draw', 'Draw my own on the block…'], ['stl', 'Use my 3D model (STL, OBJ, 3MF)…']];
     this.subjectSel = sel('ms-subject', 'Subject', subjectOpts, 'none', e => this.onSubject(e.target.value)).querySelector('select');
     const toggle = (key, label, title) => el('button', { type: 'button', class: 'ms-toggle', 'aria-pressed': 'false', title, 'data-view': key, onclick: () => this.setView(key, !this.view[key]) }, label);
     this.toggles = {
@@ -462,10 +464,11 @@ class Studio {
     for (const v of [60, 80, 100, 150]) this.heightSel.append(el('option', { value: v, selected: v === this.heightMm }, v + ' mm tall'));
     this.stlBtn = el('button', { type: 'button', class: 'ms-btn ms-primary', onclick: () => this.exportSculpture('stl') }, 'Download STL');
     this.objBtn = el('button', { type: 'button', class: 'ms-btn', onclick: () => this.exportSculpture('obj') }, 'Download OBJ');
+    this.prepBtn = el('button', { type: 'button', class: 'ms-btn', onclick: () => this.sendToPrintPrep() }, 'Send to Print Prep');
     const exports = el('section', { class: 'ms-panel ms-export', 'aria-label': 'Export sculpture' },
       el('h3', {}, 'Export your sculpture'),
       el('label', { class: 'ms-field' }, el('span', {}, 'Height'), this.heightSel),
-      el('div', { class: 'ms-row' }, this.stlBtn, this.objBtn),
+      el('div', { class: 'ms-row' }, this.stlBtn, this.objBtn, this.prepBtn),
       el('p', { class: 'ms-note' }, 'STL for 3D printing · OBJ for your 3D projects. Both export your current carving in millimetres, Z-up, with its bottom at zero.'),
       el('p', { class: 'ms-note' }, 'Shape only: marble veins, polish effects and the stand are not included. Check size, thin parts and supports in your slicer; set OBJ import units to millimetres.'),
       this.exportStatus = el('p', { class: 'ms-note', role: 'status', 'aria-live': 'polite' }));
@@ -473,7 +476,7 @@ class Studio {
     for (const [v, t] of [['fast', 'Fast (7 mm grains)'], ['standard', 'Standard (5 mm)'], ['fine', 'Fine (4 mm)']]) this.qualitySel.append(el('option', { value: v, selected: v === this.quality }, t));
     this.rulesBox = el('input', { type: 'checkbox', onchange: e => this.setStoneRules(e.target.checked) });
     this.fileIn = el('input', { type: 'file', accept: '.json,.marble.json,application/json', hidden: true, onchange: e => this.openFile(e.target.files[0]) });
-    this.stlIn = el('input', { type: 'file', accept: '.stl,model/stl', hidden: true, onchange: e => this.loadStl(e.target.files[0]) });
+    this.stlIn = el('input', { type: 'file', accept: MESH_ACCEPT, hidden: true, onchange: e => this.loadStl(e.target.files[0]) });
     const make = el('section', { class: 'ms-panel', 'aria-label': 'Save and settings' },
       el('h3', {}, 'Save, photograph, settings'),
       el('div', { class: 'ms-row' },
@@ -877,7 +880,8 @@ class Studio {
     this.stlIn.value = '';
     if (!file) return;
     try {
-      const tris = M.parseSTL(await file.arrayBuffer());
+      // the shared importer reads STL, OBJ and 3MF, and always hands back Z up
+      const tris = (await readMesh(await file.arrayBuffer(), file.name)).positions;
       this.lastStl = { tris, name: file.name };
       this.applyStl(up);
     } catch (err) {
@@ -1485,6 +1489,19 @@ class Studio {
   }
 
   exportStl() { this.exportSculpture('stl'); }
+
+  /* The carving as it stands, into Print Prep to choose which way up it prints. */
+  async sendToPrintPrep() {
+    this.stopAuto();
+    try {
+      const data = M.exportSTL(this.stone, { heightMm: this.heightMm });
+      await sendAndOpen(new URL('../../../print-prep.html', location.href).href, { bytes: new Uint8Array(data), filename: `my-sculpture-${this.heightMm}mm.stl`, from: 'Marble Studio' });
+      this.say('Opened in Print Prep.');
+    } catch (err) {
+      this.exportStatus.textContent = err.message;
+      this.say(err.message);
+    }
+  }
 
   photograph() {
     const ring = this.ring.visible, tool = this.toolHolder.visible;

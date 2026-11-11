@@ -8,7 +8,11 @@ const errors = [];
 const listed = new Set(pages.map(page => page.file));
 for (const { file, selector } of pages) {
   const $ = load(fs.readFileSync(path.join(root, file), 'utf8'));
-  const first = $('main').first().children().first();
+  const opening = $('main').first().children().first();
+  // Composer lessons introduce the person briefly before the sheet-music workspace.
+  const composerIntro = opening.is('[data-composer-intro]') && opening.next().is('[data-composer-studio]');
+  const first = composerIntro ? opening.next() : opening;
+  if (composerIntro && (!opening.find('h1').length || !opening.find('figure[data-zoomable] img').length || !opening.find('.fl-lede').length)) errors.push(`${file}: include the composer name, portrait and brief biography.`);
   if (!first.is('[data-creation-app]') || !first.find(selector).length) errors.push(`${file}: put the application first inside main.`);
   if (first.parents('details:not([open]), [hidden]').length) errors.push(`${file}: the application starts hidden.`);
   if ($('[data-creation-app]').length !== 1) errors.push(`${file}: expected one application entry point.`);
@@ -29,4 +33,4 @@ scan('lessons');
 if (errors.length) {
   console.error(errors.join('\n'));
   process.exitCode = 1;
-} else console.log(`Creation apps check passed: ${pages.length} lesson pages put the application first.`);
+} else console.log(`Creation apps check passed: ${pages.length} lesson pages prioritize the application (after a brief introduction on composer pages).`);

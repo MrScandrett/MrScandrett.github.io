@@ -41,7 +41,9 @@
   const INSTRUMENTS = {
     piano: 'Grand Piano', ePiano: 'Electric Piano', organ: 'Organ', pluck: 'Guitar Pluck',
     bass: 'Bass', strings: 'Strings', pad: 'Warm Pad', synth: 'Synth Lead',
-    violin: 'Violin', sax: 'Saxophone', flute: 'Flute', drums: 'Drum Kit',
+    violin: 'Violin', viola: 'Viola', cello: 'Cello', contrabass: 'Double Bass',
+    sax: 'Saxophone', flute: 'Flute', oboe: 'Oboe', clarinet: 'Clarinet', bassoon: 'Bassoon',
+    horn: 'French Horn', trumpet: 'Trumpet', harp: 'Harp', xylophone: 'Xylophone', drums: 'Drum Kit',
   };
   const COLORS = ProjectModel.COLORS;
   // Touch screens (iPhone, iPad) get bigger targets everywhere, and phones get a
@@ -155,6 +157,12 @@
   }
 
   // ── Audio context + mixer ────────────────────────────────────────────────
+  // Load only after an audio gesture; oscillator voices cover loading or unavailable recordings.
+  function prepareSamples(c, tracks) {
+    return window.MusicSynth.prepare(c, tracks.filter(t => t.kind === 'instrument' && t.instrument !== 'drums')
+      .map(t => ({ instrument: t.instrument })));
+  }
+
   function ctx() {
     if (!audio.ctx) {
       audio.ctx = AudioRuntime.createContext(window.MusicLabAudio);
@@ -176,6 +184,7 @@
       diagnostics?.record('audio-context-created', 'notice', AudioRuntime.facts(audio.ctx));
       queueMicrotask(() => refreshAudioHealth());
       applyMix();
+      void prepareSamples(audio.ctx, project.tracks);
     }
     setAudioSession();
     if (audio.ctx.state !== 'running') audio.ctx.resume();
@@ -482,6 +491,7 @@
   function play(fromBeat) {
     const c = ctx();
     stopSounds();
+    void prepareSamples(c, project.tracks);
     let start = fromBeat === undefined ? ui.playhead : fromBeat;
     if (loopActive() && (start >= project.loop.end || start < project.loop.start - 1e-9)) start = project.loop.start;
     const seg = { beat: start, time: c.currentTime + 0.08, end: loopActive() ? project.loop.end : Infinity };
@@ -766,6 +776,7 @@
       if (request !== armRequest || !findTrack(track.id)) { if (!armedTrack() || armedTrack().kind !== 'audio') releaseMic(); return; }
       if (!ok) on = false;
     }
+    if (on && track.kind === 'instrument') void prepareSamples(ctx(), [track]);
     track.armed = on;
     window.dispatchEvent(new Event('music-patch-update'));
     if (!project.tracks.some((t) => t.armed && t.kind === 'audio')) releaseMic();
@@ -1029,7 +1040,9 @@
     project = ProjectModel.parse(json);
     ui.timeSelection = null;
     history.last = snapshot();
-    if (!findClip(ui.selClip)) { ui.selClip = null; ui.selNotes.clear(); }
+    const sel = findClip(ui.selClip);
+    if (!sel) { ui.selClip = null; ui.selNotes.clear(); }
+    else ui.selNotes.forEach((i) => { if (!sel.clip.notes?.[i]) ui.selNotes.delete(i); });
     if (!findTrack(ui.selTrack)) ui.selTrack = null;
     render();
     applyMix();
@@ -1253,6 +1266,7 @@
       right.notes = clip.notes.filter((n) => n.start >= cut).map((n) => ({ ...n, start: n.start - cut }));
       clip.notes = clip.notes.filter((n) => n.start < cut).map((n) => ({ ...n, duration: Math.min(n.duration, cut - n.start) }));
       clip.length = cut;
+      ui.selNotes.clear();
     }
     track.clips.push(right);
     commit();
@@ -1447,11 +1461,13 @@
     const sr = audio.ctx ? audio.ctx.sampleRate : 44100;
     const seconds = (toBeat - fromBeat) * spb() + 2.5;
     const oc = RenderEngine.createContext(2, seconds * sr, sr);
-    if ((project.patchConnections || []).some(e => e.from === 'fx:punch-compressor' || e.to === 'fx:punch-compressor') || project.tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass))) await window.MusicLabCompressor?.prepare(oc);
-    if (project.tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
+    await prepareSamples(oc, tracks);
+    if ((project.patchConnections || []).some(e => e.from === 'fx:punch-compressor' || e.to === 'fx:punch-compressor') || project.tracks.some(t => t.effects?.some(e => e.type === 'punch-compressor' && !e.bypass)) || (project.returns || []).some(r => r.type === 'punch-compressor')) await window.MusicLabCompressor?.prepare(oc);
+    if ((project.patchConnections || []).some(e => e.from === 'fx:studio-reverb' || e.to === 'fx:studio-reverb') || project.tracks.some(t => t.effects?.some(e => e.type === 'studio-reverb' && !e.bypass)) || (project.returns || []).some(r => r.type === 'studio-reverb')) await window.MusicLabReverb?.prepare(oc);
     const mix = createMixer(oc, oc.destination);
-    mix.syncReturns(project.returns || [], project.tracks);
-    project.tracks.forEach((t) => {
+    const renderTracks = project.tracks.map((t) => tracks.find((x) => x.id === t.id) || (useMix ? t : { ...t, sends: [0, 0] }));
+    mix.syncReturns(project.returns || [], renderTracks);
+    renderTracks.forEach((t) => {
       const s = mix.strip(t);
       s.sends.forEach((g, i) => { g.gain.value = t.sends?.[i] || 0; });
       s.muteGain.gain.value = useMix && !audible(t) ? 0 : 1;
@@ -2234,6 +2250,7 @@
   // under the fingers that are pressing it.
   function armForPlay(track) {
     if (track.armed || !hasInstrumentExperience(track)) return;
+    void prepareSamples(ctx(), [track]);
     if (transport.recording || finishingTake) return;
     ++armRequest;
     silenceLive();
@@ -2504,6 +2521,7 @@
   function hasInstrumentExperience(track) { return track?.kind === 'instrument' && (track.tools || []).some(id => window.MusicChannelExperiences.registry[id]?.role === 'instrument'); }
   function syncInstrumentExperience(track, create = false) {
     if (!create && !hasInstrumentExperience(track)) return;
+    if (audio.ctx) void prepareSamples(audio.ctx, [track]);
     const id=track.instrument==='drums'?'drumkit':track.instrument==='pluck'?'guitar':track.instrument==='synth'?'synthlab':'keyboard';
     track.tools=track.tools.filter(key=>window.MusicChannelExperiences.registry[key]?.role!=='instrument');track.tools.push(id);
   }
@@ -2876,7 +2894,7 @@
     if (b.dataset.channelOpen) { if(b.dataset.channelOpen==='play')armForPlay(t);ui.playTrack=t.id; effectsTrack=t.id; setTab(b.dataset.channelOpen, true); return; }
     if (transport.recording || finishingTake) { status('Finish the take before editing channel tools.'); return; }
     if (b.dataset.channelPreset === 'save') {
-      download(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,strip:t.strip,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`, 'application/json');
+      saveBlob(new Blob([JSON.stringify({format:'MusicLabChannel',version:1,kind:t.kind,strip:t.strip,instrument:t.instrument,tools:t.tools||[],effects:t.effects||[],experienceState:t.experienceState||{},drumState:t.drumState||null},null,2)],{type:'application/json'}), `${fileSafe(t.name)}.mlchannel.json`);
       status('Saved channel sound, tools and inserts. Load this preset on a compatible channel in another song.'); return;
     }
     if (b.dataset.channelPreset === 'load') { presetTrack=t.id; presetInput.value='';presetInput.click();return; }
@@ -2888,11 +2906,11 @@
     }
     else if (b.dataset.toolRemove) { if(CHANNEL_TOOLS[b.dataset.toolRemove]?.role==='instrument'){silenceLive();t.armed=false;}t.tools=t.tools.filter(id => id!==b.dataset.toolRemove); }
     else if (b.hasAttribute('data-note-add')) { const c=ensureChannelClip(t); c.notes.push({pitch:60,start:0,duration:1,velocity:.8}); }
-    else if (b.hasAttribute('data-note-remove')) channelClip(t)?.notes.splice(Number(b.dataset.noteRemove),1);
+    else if (b.hasAttribute('data-note-remove')) { channelClip(t)?.notes.splice(Number(b.dataset.noteRemove),1); ui.selNotes.clear(); }
     else if (b.hasAttribute('data-step')) {
       const c=ensureChannelClip(t), pitch=Number(b.dataset.stepPitch), start=Number(b.dataset.step)/4;
       const i=c.notes.findIndex(n => n.pitch===pitch&&Math.abs(n.start-start)<.01);
-      if(i>=0)c.notes.splice(i,1);else c.notes.push({pitch,start,duration:.25,velocity:.8});
+      if(i>=0){c.notes.splice(i,1);ui.selNotes.clear();}else c.notes.push({pitch,start,duration:.25,velocity:.8});
     } else return;
     const selector=b.hasAttribute('data-step')?`[data-step="${b.dataset.step}"][data-step-pitch="${b.dataset.stepPitch}"]`:b.dataset.toolAdd?`[data-tool-remove="${b.dataset.toolAdd}"]`:'[data-channel]';
     commit(); restartIfPlaying(); $('tools').querySelector(selector)?.focus({preventScroll:!b.dataset.toolAdd});
@@ -3682,8 +3700,8 @@
       } else if (drag.mode === 'resize') {
         const fine = e.ctrlKey || e.metaKey;
         const dBeat = fine ? h.beat - drag.beat : snapTo(h.beat - drag.beat, grid);
-        ui.selNotes.forEach((i) => { clip.notes[i].duration = Math.max(fine ? 0.05 : grid, drag.orig[i].duration + dBeat); });
-        ui.noteLen = clip.notes[drag.note].duration;
+        ui.selNotes.forEach((i) => { if (clip.notes[i] && drag.orig[i]) clip.notes[i].duration = Math.max(fine ? 0.05 : grid, drag.orig[i].duration + dBeat); });
+        if (clip.notes[drag.note]) ui.noteLen = clip.notes[drag.note].duration;
         drag.moved = true;
       } else {
         const dBeat = e.ctrlKey || e.metaKey ? h.beat - drag.beat : snapTo(h.beat - drag.beat, grid);
@@ -3691,13 +3709,15 @@
         if (dBeat || dRow) drag.moved = true;
         let pitchChanged = false;
         ui.selNotes.forEach((i) => {
-          const o = drag.orig[i], r = clamp(roll.rows.indexOf(o.pitch) + dRow, 0, roll.rows.length - 1);
+          const o = drag.orig[i];
+          if (!o || !clip.notes[i]) return;
+          const r = clamp(roll.rows.indexOf(o.pitch) + dRow, 0, roll.rows.length - 1);
           const pitch = roll.rows[r];
           if (clip.notes[i].pitch !== pitch && i === drag.note) pitchChanged = true;
           clip.notes[i].pitch = pitch;
           clip.notes[i].start = Math.max(0, o.start + dBeat);
         });
-        if (pitchChanged) previewNote(roll.track, clip.notes[drag.note].pitch, clip.notes[drag.note].velocity);
+        if (pitchChanged && clip.notes[drag.note]) previewNote(roll.track, clip.notes[drag.note].pitch, clip.notes[drag.note].velocity);
       }
       drawRoll();
     });
@@ -3774,7 +3794,7 @@
     const sel = selected();
     if (!sel || sel.clip.type !== 'midi') return;
     const idx = ui.selNotes.size ? Array.from(ui.selNotes) : sel.clip.notes.map((_, i) => i);
-    idx.forEach((i) => fn(sel.clip.notes[i], sel.clip));
+    idx.forEach((i) => { if (sel.clip.notes[i]) fn(sel.clip.notes[i], sel.clip); });
     sortNotes(sel.clip);
     commitKeepRoll();
   }
@@ -4538,7 +4558,7 @@
     if (el.dataset.ed === 'velocity') {
       const v = Number(el.value);
       const idx = ui.selNotes.size ? Array.from(ui.selNotes) : sel.clip.notes.map((_, i) => i);
-      idx.forEach((i) => { sel.clip.notes[i].velocity = v; });
+      idx.forEach((i) => { if (sel.clip.notes[i]) sel.clip.notes[i].velocity = v; });
       drawRoll();
     }
   });

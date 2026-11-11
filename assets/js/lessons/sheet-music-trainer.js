@@ -316,7 +316,7 @@
   var state = {
     level: 0, drill: 'note-id', ex: null, answered: false,
     placed: [], acc: 0, sel: { q: null, n: null }, keySel: { t: 'sharp', n: 0 },
-    clef: 'mix', colors: true, solfege: true, sound: true,
+    clef: 'mix', colors: true, solfege: true, sound: true, instrument: 'auto',
     session: { c: 0, t: 0, streak: 0 }, hint: false, ghostStep: null, cursorStep: null, nudged: {},
     guided: false, guidedStep: 0, guidedTopic: 'note', mistakes: [], retryEx: null
   };
@@ -342,60 +342,32 @@
   /* ================================================================
      4. Audio
      ================================================================ */
-  var AC = null, audioBus = null, activeVoices = [], audioTimers = [], playbackId = 0;
-  var IOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var audioPrimed = false;
+  var activeVoices = [], audioTimers = [], playbackId = 0, preparedInstruments = {};
   function audio() {
-    if (!AC) {
-      var Ctor = window.AudioContext || window.webkitAudioContext;
-      if (Ctor) {
-        /* 'playback' = bigger hardware buffers. A drill note is not latency-critical, and iPad Safari
-           crackles on older iPads at its low-latency default. */
-        try { AC = new Ctor({ latencyHint: 'playback' }); } catch (e) { try { AC = new Ctor(); } catch (e2) { AC = null; } }
-        try { var session = navigator.audioSession; if (session && session.type !== 'playback') session.type = 'playback'; } catch (e) { /* read-only in some builds */ }
-      }
+    if (!window.AudioKit || !window.MusicSynth) return null;
+    var c = window.AudioKit.context();
+    if (c) warmInstrument(c, state.instrument === 'auto' ? (state.level === 0 ? 'xylophone' : 'piano') : state.instrument);
+    return c;
+  }
+  function warmInstrument(c, inst) {
+    if (!window.MusicSynth || !window.MusicSynth.prepare) return Promise.resolve();
+    if (!preparedInstruments[inst]) {
+      preparedInstruments[inst] = window.MusicSynth.prepare(c, [
+        { instrument: inst, pitches: [36, 45, 51, 57, 63, 69, 75, 81, 87] }
+      ]);
     }
-    if (AC && !audioBus) {
-      /* A shared limiter keeps stacked chords and quick taps from clipping the
-         small Web Audio buffers used by older iPads. */
-      var limiter = AC.createDynamicsCompressor();
-      var output = AC.createGain();
-      limiter.threshold.value = -12;
-      limiter.knee.value = 6;
-      limiter.ratio.value = 12;
-      limiter.attack.value = 0.003;
-      limiter.release.value = 0.16;
-      output.gain.value = 0.72;
-      limiter.connect(output);
-      output.connect(AC.destination);
-      audioBus = limiter;
-    }
-    if (AC && AC.state !== 'running' && AC.state !== 'closed') { try { var rp = AC.resume(); if (rp && rp.catch) rp.catch(function () { /* next tap retries */ }); } catch (e) { /* retry on next tap */ } }
-    /* Older iOS only truly unlocks after a buffer plays inside a user gesture. */
-    if (AC && !audioPrimed) {
-      audioPrimed = true;
-      try { var p = AC.createBufferSource(); p.buffer = AC.createBuffer(1, 1, AC.sampleRate); p.connect(AC.destination); p.start(0); } catch (e) { /* best effort */ }
-    }
-    return AC;
+    return preparedInstruments[inst];
   }
   function stopPlayback() {
     playbackId += 1;
     audioTimers.forEach(function (timer) { clearTimeout(timer); });
     audioTimers = [];
-    if (!AC) { activeVoices = []; return playbackId; }
-    var now = AC.currentTime;
+    var c = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
+    var now = c ? c.currentTime : 0;
     var voices = activeVoices;
     activeVoices = [];
     voices.forEach(function (voice) {
-      try {
-        var level = voice.gain.gain.value; /* pin the current level first so cutting mid-ramp doesn't click */
-        voice.gain.gain.cancelScheduledValues(now);
-        voice.gain.gain.setValueAtTime(level, now);
-        voice.gain.gain.setTargetAtTime(0, now, 0.008);
-      } catch (e) { /* voice may already have ended */ }
-      voice.oscillators.forEach(function (oscillator) {
-        try { oscillator.stop(now + 0.045); } catch (e) { /* already stopped */ }
-      });
+      try { voice.kill(now); } catch (e) { /* already stopped */ }
     });
     return playbackId;
   }
@@ -406,43 +378,30 @@
     }, delay);
     audioTimers.push(timer);
   }
-  function tone(m, when, dur, vol, bell) {
+  async function tone(m, when, dur, vol, bell) {
     var c = audio();
     if (!c || !state.sound) return;
-    /* A short lead keeps the first note from starting while the hardware is still waking up (a pop on iPad). */
-    var f = 440 * Math.pow(2, (m - 69) / 12), t0 = c.currentTime + (c.state === 'running' ? 0.02 : 0.12) + when;
-    var master = c.createGain();
-    var releaseEnd = t0 + dur + 0.035;
-    master.gain.setValueAtTime(0, t0);
-    master.gain.linearRampToValueAtTime(vol, t0 + 0.018);
-    master.gain.setValueAtTime(vol, Math.max(t0 + 0.018, t0 + dur - 0.045));
-    master.gain.linearRampToValueAtTime(0, releaseEnd);
-    master.connect(audioBus);
-    var parts = bell ? [[1, 1], [2.76, 0.42], [5.4, 0.2], [8.93, 0.08]] : [[1, 1], [2, 0.38], [3, 0.18], [4, 0.07]];
-    var voice = { gain: master, oscillators: [] };
-    activeVoices.push(voice);
-    var remaining = parts.length;
-    parts.forEach(function (p) {
-      var o = c.createOscillator(), g = c.createGain();
-      voice.oscillators.push(o);
-      o.type = 'sine'; o.frequency.setValueAtTime(f * p[0], t0); g.gain.value = p[1] * 0.42;
-      o.connect(g); g.connect(master); o.start(t0); o.stop(releaseEnd + 0.01);
-      o.onended = function () {
-        o.disconnect(); g.disconnect();
-        remaining -= 1;
-        if (!remaining) {
-          master.disconnect();
-          activeVoices = activeVoices.filter(function (item) { return item !== voice; });
-        }
-      };
+    var id = playbackId;
+    var inst = state.instrument === 'auto' ? (bell ? 'xylophone' : 'piano') : state.instrument;
+    await warmInstrument(c, inst);
+    if (id !== playbackId || !state.sound) return;
+    var vel = Math.max(0.18, Math.min(1, (vol || 0.2) / 0.28));
+    var voice = window.AudioKit.note({
+      instrument: inst,
+      midi: m,
+      delay: when || 0,
+      duration: dur || 1,
+      velocity: vel,
+      onEnded: function (v) { activeVoices = activeVoices.filter(function (item) { return item !== v; }); }
     });
+    if (voice) activeVoices.push(voice);
   }
   function scheduleNotes(notes, mode) {
     if (!state.sound || !notes || !notes.length) return;
     var bell = state.level === 0;
     var vol = 0.3 / Math.sqrt(mode === 'stack' ? notes.length : 1.6);
     if (mode === 'stack') {
-      notes.forEach(function (n) { tone(midi(n), 0, 1.6, vol, bell); });
+      notes.forEach(function (n, i) { tone(midi(n), i * 0.012, 1.6, vol, bell); });
     } else {
       var gap = notes.length > 9 ? 0.2 : 0.38;
       notes.forEach(function (n, i) { tone(midi(n), i * gap, bell ? 1.3 : 0.9, vol, bell); });
@@ -1209,6 +1168,13 @@
     h += toggle('colors', 'Bell colors', state.colors);
     if (state.level <= 4) h += toggle('solfege', 'Solfege', state.solfege);
     h += toggle('sound', 'Sound', state.sound);
+    if (state.sound) {
+      h += '<select class="stb-chip" data-instrument aria-label="Instrument sound">';
+      [['auto', 'Auto'], ['piano', 'Piano'], ['xylophone', 'Bells'], ['organ', 'Organ'], ['harp', 'Harp'], ['pluck', 'Guitar'], ['strings', 'Strings'], ['flute', 'Flute']].forEach(function (pair) {
+        h += '<option value="' + pair[0] + '"' + (state.instrument === pair[0] ? ' selected' : '') + '>' + pair[1] + '</option>';
+      });
+      h += '</select>';
+    }
     h += '</div>';
     el.tools.innerHTML = h;
   }
@@ -1598,6 +1564,10 @@
       audioReady = true; audio();
       state.guided = false; state.drill = id; renderDrills(); renderGuided(); newQuestion();
       if (window.innerWidth < 900) el.card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    el.tools.addEventListener('change', function (e) {
+      var sel = e.target.closest('[data-instrument]');
+      if (sel) { state.instrument = sel.value; audioReady = true; audio(); playEx(); }
     });
     el.tools.addEventListener('click', function (e) {
       var c = e.target.closest('[data-clef]'), t = e.target.closest('[data-toggle]');

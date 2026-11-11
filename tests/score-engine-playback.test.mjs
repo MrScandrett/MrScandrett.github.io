@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 require('../assets/js/music-notation.js');
 const source = readFileSync(new URL('../assets/js/score-engine.js', import.meta.url), 'utf8');
 
-function fixture(score) {
+function fixture(score, prepare) {
   const calls = [], killed = [];
   let context;
   class AudioContext {
@@ -17,8 +17,8 @@ function fixture(score) {
   }
   const root = vm.createContext({
     MusicNotation: globalThis.MusicNotation, AudioContext,
-    MusicSynth: { startVoice(c, out, instrument, midi, velocity, time, ended) {
-      const voice = { midi, time, release(at) { this.releaseAt = at; }, kill(at) { killed.push(this); ended(this); } };
+    MusicSynth: { prepare, startVoice(c, out, instrument, midi, velocity, time, ended) {
+      const voice = { instrument, midi, time, release(at) { this.releaseAt = at; }, kill(at) { killed.push(this); ended(this); } };
       calls.push(voice); return voice;
     } },
     setInterval() { return 1; }, clearInterval() {}, requestAnimationFrame() { return 1; }, cancelAnimationFrame() {}
@@ -74,4 +74,26 @@ test('repeat mapping resolves performance boundaries after binary indexing', () 
     assert.equal(engine.writtenBeat(model, model.perfStart[i]), model.barStart[model.order[i]]);
     assert.equal(engine.writtenBeat(model, model.perfStart[i] + .5), model.barStart[model.order[i]] + .5);
   }
+});
+
+
+test('written saxophone parts schedule concert pitch with the requested instrument', () => {
+  const {player,calls}=fixture({playbackTranspose:-9,instrument:'sax',staves:[{notes:'A5/1'}]});
+  player.play();assert.equal(calls[0].midi,72);assert.equal(calls[0].instrument,'sax');player.stop();
+});
+
+test('Stop cancels a pending sample load without a delayed restart', async () => {
+  let resolve;
+  const {player,calls}=fixture({staves:[{notes:'C4/1'}]},()=>new Promise(r=>{resolve=r;}));
+  const request=player.requestPlay();assert.equal(player.loading,true);assert.equal(calls.length,0);
+  player.stop();resolve({loaded:1,failed:0});await request;
+  assert.equal(player.playing,false);assert.equal(player.loading,false);assert.equal(calls.length,0);
+});
+
+test('sample preparation requests sounding pitches and the individual source instruments', async () => {
+  let requests;
+  const {player,calls}=fixture({playbackTranspose:-14,staves:[{instrument:'sax',notes:'C6/1'},{instrument:'cello',notes:'C4/1'}]},async(c,r)=>{requests=r;return {loaded:2,failed:0};});
+  await player.requestPlay();assert.equal(requests[0].instrument,'sax');assert.equal(requests[0].pitches[0],70);
+  assert.equal(requests[1].instrument,'cello');assert.equal(requests[1].pitches[0],46);
+  assert.equal(calls.length,2);player.stop();
 });

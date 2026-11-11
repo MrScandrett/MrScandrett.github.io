@@ -252,56 +252,69 @@
   };
 })();
 
-/* piano-chords.js — piano tone for the lesson widgets. The partials come from the
-   site's shared piano voice (MusicSynth.pianoSources in music-synth.js): a
-   fundamental plus a handful of decreasingly-loud sine harmonics, the struck
-   string's bright attack, rather than guitar's Karplus-Strong noise-ring model.
-   This file only adds the envelope, so callers can choose a note's length, and
-   sends it through AudioKit's shared context and limiter (audio-kit.js). */
+/* piano-chords.js — piano tone for the lesson widgets. Uses the site's shared
+   sampled instrument engine (AudioKit + MusicSynth in audio-kit.js / music-synth.js),
+   preloading the multisample piano and harp banks and falling back to synthetic
+   harmonics if samples cannot load. */
 (function () {
   'use strict';
 
-  var volume = 0.75, activeOscillators = new Set();
+  var volume = 0.75, activeVoices = new Set(), generation = 0, warmPromise = null;
   function getContext() {
-    return window.AudioKit && window.MusicSynth ? window.AudioKit.context() : null;
+    var ctx = window.AudioKit && window.MusicSynth ? window.AudioKit.context() : null;
+    if (ctx && !warmPromise && window.MusicSynth.prepare) {
+      warmPromise = window.MusicSynth.prepare(ctx, [
+        { instrument: 'piano', pitches: [36, 45, 51, 57, 63, 69, 75, 81, 87] },
+        { instrument: 'harp', pitches: [55, 59, 65, 72, 79] }
+      ]);
+    }
+    return ctx;
   }
 
-  function setVolume(v) { volume = v; }
+  function setVolume(v) {
+    volume = v;
+    if (window.AudioKit) window.AudioKit.setVolume(v);
+  }
   function stop() {
-    activeOscillators.forEach(function (o) { try { o.stop(); } catch (e) { /* already stopped */ } });
-    activeOscillators.clear();
+    generation++;
+    var ctx = window.AudioKit && window.AudioKit.peek ? window.AudioKit.peek() : null;
+    var now = ctx ? ctx.currentTime : 0;
+    activeVoices.forEach(function (v) { try { v.kill(now); } catch (e) { /* already stopped */ } });
+    activeVoices.clear();
   }
   if (window.AudioKit) window.AudioKit.onStop(stop);
 
-  /* A struck piano string rings continuously from the moment of the hammer
-     strike (no separate sustain plateau like an organ), so a single
-     fast-attack, slow-decay envelope covers the whole note. */
-  function tone(freq, opts) {
+  /* Plays a sampled piano (or specified instrument) voice through AudioKit. */
+  async function tone(freq, opts) {
     opts = opts || {};
     var audioCtx = getContext();
     if (!audioCtx || !freq) return;
-    var now = audioCtx.currentTime + (opts.delay || 0);
+    var token = generation;
+    var inst = opts.instrument || 'piano';
+    if (warmPromise) {
+      await warmPromise;
+      if (token !== generation) return;
+    }
     var duration = opts.duration || 2.4;
-    var peak = (opts.gain != null ? opts.gain : 0.28) * volume;
-
-    var master = audioCtx.createGain();
-    master.gain.setValueAtTime(0.0001, now);
-    master.gain.linearRampToValueAtTime(peak, now + 0.008);
-    master.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    master.connect(window.AudioKit.output());
-
-    var shared = window.MusicSynth.pianoSources(audioCtx, master, freq, now);
-    shared.sources.forEach(function (osc) { activeOscillators.add(osc); osc.stop(now + duration + 0.05); });
-    shared.sources[0].onended = function () {
-      shared.sources.forEach(function (osc) { activeOscillators.delete(osc); });
-      shared.disconnect(); master.disconnect();
-    };
+    var vel = Math.max(0.1, Math.min(1, ((opts.gain != null ? opts.gain : 0.28) / 0.35) * volume));
+    var voice = window.AudioKit.note({
+      instrument: inst,
+      hz: freq,
+      velocity: vel,
+      delay: opts.delay || 0,
+      duration: duration,
+      onEnded: function (v) { activeVoices.delete(v); }
+    });
+    if (voice) activeVoices.add(voice);
   }
 
-  /* All notes struck together — a "block" chord. */
+  /* All notes struck together — a "block" chord, with a subtle strum spread. */
   function block(freqs, opts) {
     opts = opts || {};
-    freqs.forEach(function (f) { tone(f, { delay: opts.delay || 0, duration: opts.duration, gain: opts.gain }); });
+    var baseDelay = opts.delay || 0;
+    freqs.forEach(function (f, i) {
+      tone(f, { delay: baseDelay + (freqs.length > 1 ? i * 0.012 : 0), duration: opts.duration, gain: opts.gain, instrument: opts.instrument });
+    });
   }
 
   /* Notes one at a time, evenly spaced — a "broken" chord, or a scale run. */
@@ -309,7 +322,7 @@
     opts = opts || {};
     var interval = opts.interval != null ? opts.interval : 0.26;
     freqs.forEach(function (f, i) {
-      tone(f, { delay: i * interval, duration: opts.duration || interval * 2.6, gain: opts.gain });
+      tone(f, { delay: i * interval, duration: opts.duration || interval * 2.6, gain: opts.gain, instrument: opts.instrument });
     });
   }
 

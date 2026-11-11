@@ -462,7 +462,7 @@
         q('[data-mv-how]').textContent = nextK >= 0 ? 'Next: ' + noteLabel(nextK) + ' · ' + describe(nextK) : 'End of the tune';
       } else {
         q('[data-mv-note]').textContent = noteLabel(curK);
-        q('[data-mv-how]').textContent = describe(curK);
+        q('[data-mv-how]').textContent = describe(curK) + (events[idx].lyric ? ' · “' + events[idx].lyric + '”' : '');
       }
       var focusK = curK >= 0 ? curK : nextK;
       var surf = q('[data-mv-surface]');
@@ -472,16 +472,17 @@
         : prefs.inst === 'violin' ? drawViolin(focusK, curK, nextK, barKs) : drawPiano(focusK, curK, nextK, barKs);
 
       q('[data-mv-strip]').innerHTML = barKs.map(function (k) {
-        var n = plan[k], ei = noteIdx[k];
+        var n = plan[k], ei = noteIdx[k], ev = events[ei];
         var sub = !n ? 'out of range' : prefs.inst === 'guitar'
           ? (STRING_TAGS[n.s] + ' string · ' + (n.f === 0 ? 'open' : 'fret ' + n.f))
           : prefs.inst === 'violin' ? (V_NAMES[n.s] + ' string · ' + (n.off === 0 ? 'open' : 'finger ' + n.finger + (n.place ? ' ' + n.place : '')))
           : 'finger ' + n.finger;
         var fin = n && prefs.inst === 'guitar' && n.f > 0 ? '<small>finger ' + n.finger + '</small>' : '';
+        var lyr = ev && ev.lyric ? '<span class="fb-mv-lyric">' + esc(ev.lyric) + '</span>' : '';
         return '<li><button type="button" class="fb-mv-chip' + (k === curK ? ' is-now' : '') + (n && n.shift ? ' is-shift' : '') +
           '" data-mv-idx="' + ei + '"' + (k === curK ? ' aria-current="true"' : '') + '>' +
           (n && n.shift ? '<em>' + (prefs.inst === 'piano' ? 'move' : 'shift') + '</em>' : '') +
-          '<b>' + esc(noteLabel(k)) + '</b><small>' + esc(sub) + '</small>' + fin + '</button></li>';
+          '<b>' + esc(noteLabel(k)) + '</b>' + lyr + '<small>' + esc(sub) + '</small>' + fin + '</button></li>';
       }).join('');
 
       msg.textContent = tipText(bar);

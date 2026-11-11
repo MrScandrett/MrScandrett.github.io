@@ -188,19 +188,18 @@
     q: 'The gray mortar lines between the rows of tiles: are they parallel, or do they slope?',
     a: 'Every mortar line is perfectly horizontal and parallel. The red lines lie on top of them.',
     credit: 'Richard Gregory and Priscilla Heard, 1979, from a tiled café in Bristol',
-    why: '<p>Where the black and white tiles meet along the mortar, the cell patterns in your retina create small local tilt signals that are consistent along each line but alternate from one line to the next. Your brain adds the small tilts up into one large slope. Spotting a tiled pattern like this on the front of a real café in Bristol is how the illusion got its name.</p>',
+    why: '<p>Half-tile offsets and thin, mid-gray mortar create local contrast patterns along each horizontal line. The apparent tilt depends on the mortar and tile arrangement; researchers have proposed several explanations for how visual processing combines these cues. Spotting a tiled pattern like this on the front of a real café in Bristol is how the illusion got its name.</p>',
     draw: function (st) {
-      var s = '', row, col, tile = 44, rh = 30, gap = 4;
-      for (row = 0; row < 10; row++) {
-        var y = 8 + row * (rh + gap), off = (row % 2) * (tile / 2);
+      var s = '', row, col, tile = 40, rh = 40, gap = 3;
+      for (row = 0; row < 9; row++) {
+        var y = 0 + row * (rh + gap), off = (row % 2) * (tile / 2);
         for (col = -1; col < 16; col++) {
           var x = col * tile - off + 0;
           s += S.rect(x, y, tile - 0, rh, (col % 2 === 0) ? '#111' : '#fff');
         }
       }
-      for (row = 0; row <= 10; row++) s += S.line(0, 8 + row * (rh + gap) - gap / 2, 640, 8 + row * (rh + gap) - gap / 2, '#94a3b8', gap);
-      // white tiles on a white page: keep an outline so rows stay readable
-      if (st) for (row = 0; row <= 10; row++) { var yy = 8 + row * (rh + gap) - gap / 2; s += S.line(0, yy, 640, yy, G, 2); }
+      for (row = 1; row < 9; row++) s += S.line(0, row * (rh + gap) - gap / 2, 640, row * (rh + gap) - gap / 2, '#888888', gap);
+      if (st) for (row = 1; row < 9; row++) { var yy = row * (rh + gap) - gap / 2; s += S.line(0, yy, 640, yy, G, 2); }
       return s;
     }
   });

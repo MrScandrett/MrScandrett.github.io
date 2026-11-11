@@ -1114,6 +1114,83 @@ async function hasDrm(zip) {
   return methods.some((m) => !/idpf\.org\/2008\/embedding|ns\.adobe\.com\/pdf\/enc#RC/.test(m.getAttribute("Algorithm") || ""));
 }
 
+/* Kid-friendly wording for books read in class. Old translations and period novels use words that
+   now read as swearing or as slurs; they are swapped for plain wording as a chapter is built.
+   Applies to every Gutenberg book (matched by ebook id, whichever edition was downloaded); uploaded
+   files are never touched. The patterns are stored ROT13-encoded so this file does not spell the
+   words out. Capitalisation (and a/an) of the original is kept. */
+const rot = (s) => s.replace(/[a-z]/gi, (c) => String.fromCharCode((c <= "Z" ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
+const matchCase = (m, to) =>
+  m.length > 1 && m === m.toUpperCase() ? to.toUpperCase() : /^[A-Z]/.test(m) ? to[0].toUpperCase() + to.slice(1) : to;
+// [rot13 pattern, replacement, flags, scope]. scope: none = every book; "fable" = fable books;
+// "birds" = other books, only where a bird is clearly meant; "scoundrel"/"falsebook" = named books.
+const SOFTEN_ROWS = [
+  ["avttre\\j*", "n-word", "gi", null],
+  ["qnexvrf", "Black people", "gi", null],
+  ["qnex(?:l|rl)f?", "Black person", "gi", null],
+  ["puvanzra", "Chinese men", "gi", null],
+  ["puvanzna", "Chinese man", "gi", null],
+  ["pbbyvrf", "laborers", "gi", null],
+  ["pbbyvr", "laborer", "gi", null],
+  ["fdhnjf", "Native women", "gi", null],
+  ["fdhnj", "Native woman", "gi", null],
+  ["unys-?oerrqf", "mixed-heritage people", "gi", null],
+  ["unys-?oerrq", "mixed-heritage person", "gi", null],
+  ["ubggragbgf?", "Khoikhoi", "gi", null],
+  ["(?<![\\j-])nffrf(?![\\j-])", "donkeys", "gi", null],
+  ["(?<![\\j-])nff(?![\\j-])", "donkey", "gi", null],
+  ["ovgpurf", "female dogs", "gi", null],
+  ["ovgpu", "female dog", "gi", null],
+  ["juberf", "disreputable women", "gi", null],
+  ["juber", "disreputable woman", "gi", null],
+  ["fyhgf", "disreputable women", "gi", null],
+  ["fyhg", "disreputable woman", "gi", null],
+  ["tnzr-?pbpxf", "game roosters", "gi", "fable"],
+  ["tnzr-?pbpx", "game rooster", "gi", "fable"],
+  ["pbpxf", "roosters", "gi", "fable"],
+  ["pbpx", "rooster", "gi", "fable"],
+  ["pbpxf", "roosters", "gi", "birds"],
+  ["pbpx", "rooster", "gi", "birds"],
+  ["onfgneqf", "scoundrels", "gi", "scoundrel"],
+  ["onfgneq(?!\\.)", "scoundrel", "gi", "scoundrel"],
+  ["onfgneq(?= whfgvpr)", "false", "gi", "falsebook"],
+];
+const SCOPES = {
+  fable: new Set(["21", "38025"]),
+  scoundrel: new Set(["2600", "8868"]),
+  falsebook: new Set(["86"]),
+};
+const BIRD_NEAR = new RegExp(`crow|crew|chicken|ostrich|nest|\\bhens?\\b|fowl|poultry|fight|spur|pheasant|turkey|bird|farm|yard|perch|wattle|comb\\b|roost|dunghill|feather|plucked|Falcon|${rot("oynpx pbpxf")}|${rot("frpbaq pbpx")}`, "i");
+const BIRD_NOT = /^(?:-and-bull|[- ]a-doodle|[- ]robin)/i;
+function compileSoften(id) {
+  const rules = [];
+  for (const [enc, to, flags, scope] of SOFTEN_ROWS) {
+    if (scope === "birds" ? SCOPES.fable.has(id) : scope && !SCOPES[scope]?.has(id)) continue;
+    const src = rot(enc);
+    const pick = (m, text, at) => {
+      if (scope !== "birds") return matchCase(m, to);
+      const near = text.slice(Math.max(0, at - 120), at + m.length + 120);
+      const before = text.slice(Math.max(0, at - 5), at), after = text.slice(at + m.length, at + m.length + 12);
+      return BIRD_NEAR.test(near) && !BIRD_NOT.test(after) && !/stop-?$/i.test(before) ? matchCase(m, to) : m;
+    };
+    if (scope !== "birds") { // "an X" → "a Y" when the swap changes the article
+      rules.push([new RegExp(`\\b(an?) (${src})\\b`, flags), (m, art, w) => {
+        const out = matchCase(w, to);
+        return matchCase(art, /^(?:[aeiou]|n-)/i.test(out) ? "an" : "a") + " " + out;
+      }]);
+    }
+    rules.push([new RegExp(`\\b(?:${src})\\b`, flags), (m, ...rest) => pick(m, rest[rest.length - 1], rest[rest.length - 2])]);
+  }
+  return rules;
+}
+const softenFor = (source) => {
+  const direct = String(source?.url || "").match(/gutenberg\.org\/cache\/epub\/(\d+)\//);
+  const id = String(gutenbergIdFromUrl(source?.home || "") || (direct && direct[1]) || "");
+  if (!id) return (t) => t;
+  const rules = compileSoften(id);
+  return (t) => rules.reduce((acc, [re, fn]) => acc.replace(re, fn), t);
+};
+
 async function openEpub(bytes, source, entry) {
   setLoading("Opening the book…", 1);
   const zip = await window.JSZip.loadAsync(bytes);
@@ -1223,10 +1300,11 @@ async function openEpub(bytes, source, entry) {
   const bodyOf = (doc) => doc.body || doc.getElementsByTagName("body")[0] || doc.documentElement;
 
   /* Rebuild a chapter element-by-element from the allow-list above. */
+  const soften = softenFor(entry?.home ? entry : source);
   async function sanitize(node, out, chapterPath) {
     for (const child of node.childNodes) {
       if (child.nodeType === 3) {
-        out.appendChild(document.createTextNode(child.data));
+        out.appendChild(document.createTextNode(soften(child.data)));
         continue;
       }
       if (child.nodeType !== 1) continue;
@@ -1518,7 +1596,8 @@ async function openEpub(bytes, source, entry) {
         }
         let text = "";
         let occ = 0;
-        for (const data of sourceText(bodyOf(await chapterDoc(spine[i].path)))) {
+        for (const raw of sourceText(bodyOf(await chapterDoc(spine[i].path)))) {
+          const data = soften(raw); // search the softened wording the reader sees, and never show the original in snippets
           re.lastIndex = 0;
           for (let m = re.exec(data); m; m = re.exec(data)) {
             if (!m[0]) { re.lastIndex++; continue; }

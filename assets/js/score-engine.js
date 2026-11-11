@@ -547,6 +547,8 @@
     var h = S / 2;
     decideStems(model);
     var bars = layoutBars(model, S, readableSize);
+    var tabConfig = model.score.tablature;
+    var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0))) : null;
     function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
     var grand = model.staves.length === 2 && model.score.grand !== false;
     var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
@@ -679,6 +681,9 @@
         top = bottom + below + (si < model.staves.length - 1 ? (grand ? 1.2 : 3.4) * S : 0);
       });
       var sysTop = bottoms[0] - 8 * h, sysBottom = bottoms[bottoms.length - 1];
+      var staffInkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h;
+      var tabTop = staffInkBottom + 4.2 * S, tabGap = 1.65 * S;
+      if (tabBars) sysBottom = tabTop + (tabConfig.tuning.length - 1) * tabGap;
       var aboveY = sysTop - Math.max(0, ext[0].hi - 9) * h - 1.4 * S;
       var x0 = left, x1 = left + sys.header + sys.bars.reduce(function (s, bi) { return s + bars[bi].width * stretch; }, 0);
       if (!last || stretch > 1) x1 = Math.min(x1, width - 1.5 * S);
@@ -707,6 +712,15 @@
       out.push('<line x1="' + x0 + '" x2="' + x0 + '" y1="' + sysTop + '" y2="' + sysBottom + '" stroke="' + ink + '" stroke-width="' + lineW + '"/>');
       if (sIndex === 0 && model.score.tempoText) {
         out.push('<text class="se-tempo" x="' + (x0 + 3.6 * S) + '" y="' + (aboveY - (hasAbove ? 2.4 * S : 0)) + '" font-size="' + (1.45 * S) + '">' + M.escape(model.score.tempoText) + '</text>');
+      }
+      if (tabBars) {
+        out.push('<g class="se-tablature" aria-label="Guitar tablature">');
+        out.push('<text x="' + x0 + '" y="' + (tabTop - 1.3 * S) + '" font-size="' + S + '">' + M.escape(tabConfig.label || 'TAB') + '</text>');
+        tabConfig.tuning.forEach(function (_, string) {
+          var ty = tabTop + string * tabGap;
+          out.push('<line class="se-line" x1="' + x0 + '" x2="' + x1 + '" y1="' + ty + '" y2="' + ty + '" stroke="currentColor" stroke-width="' + lineW + '"/>');
+        });
+        out.push('<text x="' + (x0 + S) + '" y="' + (tabTop + 3 * tabGap) + '" font-size="' + (1.3 * S) + '">TAB</text></g>');
       }
       var firstBarNo = barNumber(model, sys.bars[0]);
       if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[0].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
@@ -774,6 +788,23 @@
           barModel.beams.forEach(function (g) { out.push(drawBeam(g, S)); });
           barModel.events.forEach(function (ev) { if (ev.tupletStart) tupletDraws.push(ev.tupletStart); });
         });
+        if (tabBars) {
+          tabBars[bi].forEach(function (group) {
+            var col = bar.cols.find(function (c) { return Math.abs(c.t - group.start) < EPS; });
+            group.notes.forEach(function (note) {
+              var event = allEvents.find(function (ev) { return ev.bar === bi && Math.abs(ev.start - group.start) < EPS && ev.kind === 'note' && ev.pitches.some(function (p) { return p.midi + (tabConfig.pitchShift || 0) === note.midi; }); });
+              if (!event || !col) return;
+              var tx = col.px + 0.65 * S, ty = tabTop + Math.max(0, note.string) * tabGap;
+              var label = note.string < 0 ? '×' : String(note.fret), tw = Math.max(1.25, label.length * 0.85) * S;
+              out.push('<g class="se-tab-note" data-i="' + event.i + '"><title>' + M.escape(note.string < 0 ? 'No available string' : 'String ' + (note.string + 1) + ', fret ' + note.fret + (note.tied ? ', held' : '')) + '</title>');
+              out.push('<rect class="se-tab-bg" x="' + (tx - tw / 2) + '" y="' + (ty - 0.8 * S) + '" width="' + tw + '" height="' + (1.6 * S) + '" rx="' + (0.2 * S) + '"/>');
+              out.push('<text x="' + tx + '" y="' + (ty + 0.48 * S) + '" font-size="' + (1.35 * S) + '" text-anchor="middle">' + label + '</text>');
+              if (note.tied) out.push('<path d="M ' + (tx - 0.65 * S) + ' ' + (ty + 0.8 * S) + ' q ' + (0.65 * S) + ' ' + S + ' ' + (1.3 * S) + ' 0" fill="none" stroke="currentColor"/>');
+              out.push('</g>');
+            });
+          });
+          out.push('<line x1="' + (bx0 + bw) + '" x2="' + (bx0 + bw) + '" y1="' + tabTop + '" y2="' + sysBottom + '" stroke="currentColor" stroke-width="' + lineW + '"/>');
+        }
         var xe = bx0 + bw;
         var final = bi === model.count - 1;
         // An excerpt that stops mid-piece ("ending": "open") ends on a plain barline.
@@ -793,7 +824,7 @@
         bx0 = xe;
       });
       out.push('</g>');
-      var inkBottom = sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
+      var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
       hl.push({ index: sIndex, top: y, bottom: inkBottom, cols: sysCols });
       y = inkBottom + 1.2 * S;
     });
@@ -1125,8 +1156,15 @@
       comp.threshold.value = -14; comp.ratio.value = 3;
       audio.out = audio.ctx.createGain();
       audio.out.gain.value = 0.9;
-      audio.out.connect(comp); comp.connect(kit ? kit.output() : audio.ctx.destination);
-      if (kit) kit.onStop(function () { players.forEach(function (p) { if (p.playing) p.pause(); }); });
+      audio.out.connect(comp);
+      if (audio.ctx.createDelay) [.023, .047, .079].forEach(function (delayTime, i) {
+        var delay = audio.ctx.createDelay(.1), tone = audio.ctx.createBiquadFilter(), level = audio.ctx.createGain();
+        delay.delayTime.value = delayTime; tone.type = 'lowpass'; tone.frequency.value = 4300 - i * 800;
+        level.gain.value = [.07, .045, .025][i];
+        audio.out.connect(delay); delay.connect(tone); tone.connect(level); level.connect(comp);
+      });
+      comp.connect(kit ? kit.output() : audio.ctx.destination);
+      if (kit) kit.onStop(function () { players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });
     }
     if (kit) kit.resume();
     else if (audio.ctx.state === 'suspended') audio.ctx.resume();
@@ -1150,6 +1188,7 @@
     this.rate = 1; this.pos = 0; this.playing = false; this.voices = new Set();
     this.mutes = model.staves.map(function () { return false; });
     this.instrument = sc.instrument || 'piano';
+    this.loadToken = 0; this.loading = false; this.samples = true; this.destroyed = false;
     this.loop = false;
     this.range = null;   // { from, to } in performance beats while a loop range is set
   }
@@ -1158,9 +1197,9 @@
   };
   Player.prototype.qpm = function () { return this.baseQpm * this.rate; };
   Player.prototype.play = function () {
-    if (this.playing) return;
+    if (this.playing || this.destroyed) return;
     var self = this;
-    players.forEach(function (p) { if (p !== self && p.playing) p.pause(); });
+    players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
     var c = context();
     var span = this.span();
     if (this.pos >= span.to - EPS || this.pos < span.from - EPS) this.pos = span.from;
@@ -1175,6 +1214,28 @@
     this.schedule();
     this.frame();
     this.ui.update();
+  };
+  Player.prototype.requestPlay = async function () {
+    if (this.destroyed || this.loading || this.playing) return;
+    var self = this, token = ++this.loadToken, c = context();
+    players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
+    // Resume synchronously with the gesture, then load only the roots used by this score.
+    this.loading = true; this.ui.update();
+    var report = { loaded: 0, failed: 0 };
+    if (this.samples && root.MusicSynth.prepare) {
+      var grouped = new Map();
+      this.notes.forEach(function (n) {
+        if (self.mutes[n.staff]) return;
+        var instrument = self.instOverride ? self.instrument : (self.model.staves[n.staff].instrument || self.instrument);
+        if (!grouped.has(instrument)) grouped.set(instrument, new Set());
+        grouped.get(instrument).add(n.midi + (Number(self.model.score.playbackTranspose) || 0));
+      });
+      report = await root.MusicSynth.prepare(c, Array.from(grouped, function (pair) { return { instrument: pair[0], pitches: Array.from(pair[1]) }; }));
+    }
+    if (this.destroyed || token !== this.loadToken) return;
+    this.loading = false;
+    if (this.ui.soundStatus) this.ui.soundStatus(report);
+    this.play();
   };
   Player.prototype.beatAt = function (time) { return this.b0 + (time - this.t0) * this.qpm() / 60; };
   Player.prototype.timeOf = function (beat) { return this.t0 + (beat - this.b0) * 60 / this.qpm(); };
@@ -1198,7 +1259,7 @@
         this.voices.forEach(function (voice) { if (!oldest || voice.scoreEnd < oldest.scoreEnd) oldest = voice; });
         oldest.kill(c.currentTime); this.voices.delete(oldest);
       }
-      var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi, n.vel, t, function (voice) { self.voices.delete(voice); });
+      var v = root.MusicSynth.startVoice(c, audio.out, inst, n.midi + (Number(this.model.score.playbackTranspose) || 0), n.vel, t, function (voice) { self.voices.delete(voice); }, { samples: this.samples });
       v.scoreEnd = release;
       v.release(Math.max(t + 0.01, release));
       this.voices.add(v);
@@ -1219,6 +1280,7 @@
     this.halt();
   };
   Player.prototype.halt = function () {
+    this.loadToken++; this.loading = false;
     this.playing = false;
     clearInterval(this.timer);
     cancelAnimationFrame(this.raf);
@@ -1279,7 +1341,7 @@
   }
 
   // ── Figure UI ─────────────────────────────────────────────────────────────
-  var LABELS = { piano: 'Piano', strings: 'Strings', organ: 'Organ', ePiano: 'Celesta-ish (e-piano)', pluck: 'Harpsichord-ish (pluck)', synth: 'Synth', pad: 'Warm pad', bass: 'Bass' };
+  var LABELS = { piano: 'Piano', strings: 'Strings', organ: 'Organ', ePiano: 'Electric piano', pluck: 'Classical guitar', synth: 'Synth', pad: 'Warm pad', bass: 'Electric bass' };
 
   function el(tag, attrs, text) {
     var e = document.createElement(tag);
@@ -1387,7 +1449,10 @@
     root.print();
   }
 
+  function samplerAssetBase() { return scriptUrl || location.href; }
+
   function render(fig, score) {
+    if (fig.scorePlayer && fig.scorePlayer.destroy) fig.scorePlayer.destroy();
     var model;
     try {
       model = prepare(score);
@@ -1414,7 +1479,10 @@
     var toolbar = el('div', { class: 'se-toolbar' });
     var bar = el('div', { class: 'se-controls', role: 'group', 'aria-label': 'Score player' });
     var settings = el('details', { class: 'se-settings' });
-    settings.appendChild(el('summary', {}, 'Sound, display & print'));
+    var settingsSummary = el('summary', { title: 'Sound, display & print' });
+    settingsSummary.appendChild(el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '⚙'));
+    settingsSummary.appendChild(el('span', { class: 'se-label' }, 'Sound, display & print'));
+    settings.appendChild(settingsSummary);
     var settingsBar = el('div', { class: 'se-options se-controls', role: 'group', 'aria-label': 'Sound and notation options' });
     settings.appendChild(settingsBar);
     var playBtn = el('button', { type: 'button', class: 'se-play', 'aria-pressed': 'false' }, '▶ Play');
@@ -1431,6 +1499,15 @@
     inst.appendChild(auto);
     root.MusicSynth.instruments.forEach(function (k) { inst.appendChild(el('option', { value: k }, LABELS[k] || (root.MusicSynth.labels && root.MusicSynth.labels[k]) || k)); });
     instLbl.appendChild(inst);
+    var qualityLabel = el('label', {});
+    qualityLabel.appendChild(el('span', {}, 'Playback'));
+    var quality = el('select', { 'aria-label': 'Playback sound quality' });
+    quality.appendChild(el('option', { value: 'sampled' }, 'Recorded instruments'));
+    quality.appendChild(el('option', { value: 'synth' }, 'Lightweight synthesis'));
+    qualityLabel.appendChild(quality); settingsBar.appendChild(qualityLabel);
+    var sampleCredit = el('p', { class: 'se-sample-credit' });
+    sampleCredit.appendChild(el('a', { href: new URL('../audio/instruments/README.md', samplerAssetBase()).href, target: '_blank', rel: 'noopener' }, 'Instrument recordings · sources & licenses'));
+    settingsBar.appendChild(sampleCredit);
     var loopLbl = el('label', { class: 'se-check' });
     var loop = el('input', { type: 'checkbox' });
     var loopText = document.createTextNode(' Loop');
@@ -1447,9 +1524,15 @@
         settingsBar.appendChild(l); muteBoxes.push(cb);
       });
     }
-    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false' }, 'Full screen');
+    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false', title: 'Full screen' });
+    var fullIcon = el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '⛶');
+    var fullText = el('span', { class: 'se-label' }, 'Full screen');
+    full.append(fullIcon, fullText);
+    // Fewer controls: keeps Play, the bar readout and the timeline, and gives the rest of the pane to the score.
+    var more = el('button', { type: 'button', class: 'se-more', 'aria-expanded': 'true', 'aria-label': 'Hide extra controls', title: 'Fewer controls, more score' }, '▴');
     var position = el('output', { class: 'se-position', 'aria-live': 'off' }, 'Bar ' + barNumber(model, 0));
     bar.appendChild(position);
+    bar.appendChild(more);
     bar.appendChild(full);
     var timeline = el('div', { class: 'se-timeline' });
     var elapsed = el('output', { 'aria-live': 'off' }, '0:00');
@@ -1463,7 +1546,10 @@
     var cap = fig.querySelector('figcaption');
     fig.insertBefore(head, cap);
     fig.insertBefore(workspace, cap);
-    workspace.append(toolbar, paper);
+    // Drag the grip (or use the arrow keys on it) to make the score pane taller or shorter.
+    var grip = el('div', { class: 'se-resize', role: 'separator', tabindex: '0', 'aria-orientation': 'horizontal',
+      'aria-label': 'Resize the score pane. Up and down arrows change its height; double-click or Home resets it.', title: 'Drag to resize · double-click to reset' });
+    workspace.append(toolbar, paper, grip);
     toolbar.append(bar, timeline, settings);
     fig.insertBefore(status, cap);
     fig.insertBefore(help, cap);
@@ -1484,7 +1570,7 @@
     var player = new Player(fig, model);
     players.push(player);
     fig.scorePlayer = player;
-    var layout = null, eventsByBar = [], eventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
+    var layout = null, eventsByBar = [], eventNodes = [], tabEventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
     function paperWidth() {
       return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
     }
@@ -1546,7 +1632,7 @@
       fitLabel: 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
       zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
         set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
-      fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
+      fitRoom: function () { return (paper.clientHeight || root.innerHeight * 0.65) - 8; }
     });
     toolbar.insertBefore(navigation.el, settings);
     if (guide.length) {
@@ -1655,6 +1741,8 @@
       cursorEl = svgWrap.querySelector('.se-cursor');
       eventNodes = [];
       svgWrap.querySelectorAll('.se-ev').forEach(function (node) { eventNodes[+node.getAttribute('data-i')] = node; });
+      tabEventNodes = [];
+      svgWrap.querySelectorAll('.se-tab-note').forEach(function (node) { var i = +node.getAttribute('data-i'); (tabEventNodes[i] = tabEventNodes[i] || []).push(node); });
       cursorColumns = [];
       layout.systems.forEach(function (system) {
         system.cols.slice(0, -1).forEach(function (col, i) { cursorColumns.push({ a: col, b: system.cols[i + 1], sys: system }); });
@@ -1674,8 +1762,11 @@
     }
 
     player.ui = {
+      soundStatus: function (report) {
+        status.textContent = !player.samples ? 'Lightweight synthesized playback.' : report.failed ? 'Some recordings are unavailable; synthesis fills the missing notes.' : 'Recorded instrument playback; synthesis covers unsupported sounds and out-of-range notes.';
+      },
       update: function () {
-        playBtn.textContent = player.playing ? '❚❚ Pause' : '▶ Play';
+        playBtn.textContent = player.loading ? 'Cancel loading' : player.playing ? '❚❚ Pause' : '▶ Play';
         playBtn.setAttribute('aria-pressed', player.playing ? 'true' : 'false');
         fig.classList.toggle('se-playing', player.playing);
         status.setAttribute('aria-live', player.playing ? 'off' : 'polite');
@@ -1691,8 +1782,8 @@
           return ev.kind === 'note' && !player.mutes[ev.staff] && ev.abs <= beat + EPS && beat < ev.abs + ev.dur - EPS;
         });
         var ids = new Set(on.map(function (e) { return e.i; }));
-        lit.forEach(function (i) { if (!ids.has(i) && eventNodes[i]) eventNodes[i].classList.remove('is-on'); });
-        ids.forEach(function (i) { if (!lit.has(i) && eventNodes[i]) eventNodes[i].classList.add('is-on'); });
+        lit.forEach(function (i) { if (!ids.has(i)) { if (eventNodes[i]) eventNodes[i].classList.remove('is-on'); (tabEventNodes[i] || []).forEach(function (n) { n.classList.remove('is-on'); }); } });
+        ids.forEach(function (i) { if (!lit.has(i)) { if (eventNodes[i]) eventNodes[i].classList.add('is-on'); (tabEventNodes[i] || []).forEach(function (n) { n.classList.add('is-on'); }); } });
         lit = ids;
         if (beat >= 0) {
           var barText = 'Bar ' + barNumber(model, Math.max(0, measure)) + ' / ' + barNumber(model, model.count - 1);
@@ -1744,7 +1835,7 @@
       if (was) player.play();
     });
     updateTimeline(0);
-    function togglePlay() { if (player.playing) player.pause(); else player.play(); }
+    function togglePlay() { if (player.loading) player.stop(); else if (player.playing) player.pause(); else player.requestPlay(); }
     playBtn.addEventListener('click', togglePlay);
     fig.addEventListener('keydown', function (event) {
       if (event.code !== 'Space' || event.ctrlKey || event.metaKey || event.altKey ||
@@ -1762,9 +1853,13 @@
       updateTimeline(player.pos);
     });
     inst.addEventListener('change', function () {
-      var was = player.playing; if (was) player.pause();
+      var was = player.playing; player.halt();
       player.instOverride = !!inst.value; player.instrument = inst.value || score.instrument || 'piano';
-      if (was) player.play();
+      if (was) player.requestPlay();
+    });
+    quality.addEventListener('change', function () {
+      var was = player.playing; player.halt(); player.samples = quality.value === 'sampled';
+      if (was) player.requestPlay();
     });
     loop.addEventListener('change', function () { player.loop = loop.checked; navigation.refresh(); });
     clearLoop.addEventListener('click', function () { clearLoopRange(); status.textContent = 'Loop range cleared.'; });
@@ -1773,21 +1868,109 @@
       player.mutes[i] = !cb.checked;
       if (was) player.play();
     }); });
+    // Full screen uses the Fullscreen API where it exists. iPhone Safari has none for elements (and embedded
+    // browsers may refuse it), so the figure becomes a fixed overlay that fills the screen instead.
+    var expanded = false;
+    function isFull() { return expanded || document.fullscreenElement === fig; }
+    function setExpanded(on) {
+      expanded = on;
+      fig.classList.toggle('se-expanded', on);
+      document.documentElement.classList.toggle('se-expanded-lock', on);
+      // The top layer escapes lesson wrappers whose transforms or containment would trap position: fixed.
+      if (on && fig.showPopover) {
+        fig.setAttribute('popover', 'manual');
+        try { fig.showPopover(); } catch (err) { fig.removeAttribute('popover'); }
+      } else if (!on && fig.hasAttribute('popover')) {
+        try { fig.hidePopover(); } catch (err) { /* already closed */ }
+        fig.removeAttribute('popover');
+      }
+      fullscreenChanged();
+    }
     full.addEventListener('click', function () {
-      if (document.fullscreenElement === fig) document.exitFullscreen();
-      else if (fig.requestFullscreen) fig.requestFullscreen().catch(function () {});
+      if (expanded) { setExpanded(false); return; }
+      if (document.fullscreenElement === fig) { document.exitFullscreen().catch(function () {}); return; }
+      if (fig.requestFullscreen && document.fullscreenEnabled) fig.requestFullscreen().catch(function () { setExpanded(true); });
+      else setExpanded(true);
     });
-    document.addEventListener('fullscreenchange', function () {
-      var isFull = document.fullscreenElement === fig;
-      full.textContent = isFull ? 'Exit full screen' : 'Full screen';
-      full.setAttribute('aria-pressed', String(isFull));
-      full.setAttribute('aria-label', isFull ? 'Exit full screen' : 'Show the score full screen');
+    function fullscreenChanged() {
+      var on = isFull();
+      fullText.textContent = on ? 'Exit full screen' : 'Full screen';
+      fullIcon.textContent = on ? '✕' : '⛶';
+      full.title = on ? 'Exit full screen (Esc)' : 'Full screen';
+      full.setAttribute('aria-pressed', String(on));
+      full.setAttribute('aria-label', on ? 'Exit full screen' : 'Show the score full screen');
       layout = null; requestAnimationFrame(draw);
+    }
+    document.addEventListener('fullscreenchange', fullscreenChanged);
+    function onKey(e) {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (settings.open && settings.contains(e.target)) { e.preventDefault(); settings.open = false; settingsSummary.focus(); return; }
+      // preventDefault also tells creation-app.js to leave its own expanded workspace alone.
+      if (expanded) { e.preventDefault(); setExpanded(false); full.focus({ preventScroll: true }); }
+    }
+    document.addEventListener('keydown', onKey);
+    // The options open as a panel over the score, so close it when the reader goes back to the music.
+    function onOutside(e) { if (settings.open && !settings.contains(e.target)) settings.open = false; }
+    document.addEventListener('pointerdown', onOutside);
+
+    var COMPACT_KEY = 'classroomos:score-compact';
+    function setCompact(on, save) {
+      workspace.classList.toggle('se-compact', on);
+      more.textContent = on ? '▾' : '▴';
+      more.setAttribute('aria-expanded', String(!on));
+      more.setAttribute('aria-label', on ? 'Show all controls' : 'Hide extra controls');
+      more.title = on ? 'Show all controls' : 'Fewer controls, more score';
+      if (on) settings.open = false;
+      if (save) try { root.localStorage.setItem(COMPACT_KEY, on ? '1' : '0'); } catch (err) { /* private mode */ }
+    }
+    more.addEventListener('click', function () { setCompact(!workspace.classList.contains('se-compact'), true); });
+    try { if (root.localStorage.getItem(COMPACT_KEY) === '1') setCompact(true); } catch (err) { /* private mode */ }
+
+    var HEIGHT_KEY = 'classroomos:score-pane-height';
+    function paneMax() { return Math.max(320, Math.round((root.visualViewport ? root.visualViewport.height : root.innerHeight) - 16)); }
+    function setPaneHeight(px, save) {
+      if (px == null) {
+        workspace.style.removeProperty('height'); workspace.style.removeProperty('min-height');
+        grip.removeAttribute('aria-valuenow');
+        if (save) try { root.localStorage.removeItem(HEIGHT_KEY); } catch (err) { /* private mode */ }
+        return;
+      }
+      px = Math.round(Math.max(240, Math.min(paneMax(), px)));
+      workspace.style.height = px + 'px'; workspace.style.minHeight = '0';
+      grip.setAttribute('aria-valuemin', '240'); grip.setAttribute('aria-valuemax', String(paneMax())); grip.setAttribute('aria-valuenow', String(px));
+      if (save) try { root.localStorage.setItem(HEIGHT_KEY, String(px)); } catch (err) { /* private mode */ }
+    }
+    try { var savedHeight = +root.localStorage.getItem(HEIGHT_KEY); if (savedHeight > 0) setPaneHeight(savedHeight); } catch (err) { /* private mode */ }
+    var dragFrom = null;
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      e.preventDefault();
+      dragFrom = { y: e.clientY, h: workspace.getBoundingClientRect().height };
+      grip.setPointerCapture(e.pointerId);
+      workspace.classList.add('se-resizing');
+    });
+    grip.addEventListener('pointermove', function (e) { if (dragFrom) setPaneHeight(dragFrom.h + e.clientY - dragFrom.y); });
+    function endDrag() {
+      if (!dragFrom) return;
+      dragFrom = null; workspace.classList.remove('se-resizing');
+      setPaneHeight(workspace.getBoundingClientRect().height, true);
+    }
+    grip.addEventListener('pointerup', endDrag);
+    grip.addEventListener('pointercancel', endDrag);
+    grip.addEventListener('dblclick', function () { setPaneHeight(null, true); });
+    grip.addEventListener('keydown', function (e) {
+      var h = workspace.getBoundingClientRect().height;
+      if (e.key === 'ArrowUp') setPaneHeight(h - 40, true);
+      else if (e.key === 'ArrowDown') setPaneHeight(h + 40, true);
+      else if (e.key === 'End') setPaneHeight(paneMax(), true);
+      else if (e.key === 'Home') setPaneHeight(null, true);
+      else return;
+      e.preventDefault();
     });
 
     // Click a note: hear it, and start playback from there next time.
     svgWrap.addEventListener('click', function (e) {
-      var g = e.target.closest && e.target.closest('.se-ev');
+      var g = e.target.closest && e.target.closest('.se-ev, .se-tab-note');
       if (!g || !layout) return;
       var ev = layout.events[+g.getAttribute('data-i')];
       if (!ev || ev.kind !== 'note') return;
@@ -1798,7 +1981,7 @@
       if (!ev) return;
       var c = context(), st = model.staves[ev.staff];
       if (!player.playing && ev.kind === 'note') ev.pitches.forEach(function (p) {
-        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi, 0.75, c.currentTime).release(c.currentTime + 0.6);
+        root.MusicSynth.startVoice(c, audio.out, player.instOverride ? player.instrument : (st.instrument || player.instrument), p.midi + (Number(score.playbackTranspose) || 0), 0.75, c.currentTime, null, { samples: player.samples }).release(c.currentTime + 0.6);
       });
       player.seek(ev.abs);
       navigation.select(measureAt(ev.abs));
@@ -1816,7 +1999,7 @@
       noteListToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
       noteListToggle.textContent = open ? 'Hide note list' : 'Show note list';
     });
-    root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
+    var offPreferences = root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
     updatePreferenceButtons();
 
     draw();
@@ -1830,8 +2013,20 @@
     });
     var drawFrame = 0;
     function queueDraw() { if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; draw(); }); }
-    if (root.ResizeObserver) new ResizeObserver(queueDraw).observe(paper);
+    var observer;
+    if (root.ResizeObserver) { observer = new ResizeObserver(queueDraw); observer.observe(paper); }
     else root.addEventListener('resize', draw);
+    player.destroy = function () {
+      player.stop(); player.destroyed = true;
+      if (observer) observer.disconnect(); else root.removeEventListener('resize', draw);
+      document.removeEventListener('fullscreenchange', fullscreenChanged);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onOutside);
+      if (expanded) { expanded = false; fig.classList.remove('se-expanded'); document.documentElement.classList.remove('se-expanded-lock'); if (fig.hasAttribute('popover')) { try { fig.hidePopover(); } catch (err) { /* closed */ } fig.removeAttribute('popover'); } }
+      if (offPreferences) offPreferences();
+      cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
+      if (fig.scorePlayer === player) delete fig.scorePlayer;
+    };
     return player;
   }
 
@@ -2065,6 +2260,8 @@
   root.ScoreEngine = { previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });
+    root.addEventListener('pagehide', function () { players.forEach(function (p) { p.halt(); }); });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
     else boot();
   }

@@ -18,10 +18,12 @@
   // ── General MIDI ─────────────────────────────────────────────────────────
   // The studio has a handful of built-in instruments; GM programs map onto them
   // on import, and each instrument exports as one representative GM program.
-  var INSTRUMENT_PROGRAM = { piano: 0, ePiano: 4, organ: 16, pluck: 24, bass: 33, strings: 48, synth: 80, pad: 89, drums: 0 };
+  var INSTRUMENT_PROGRAM = { piano: 0, ePiano: 4, organ: 16, pluck: 24, bass: 33, strings: 48, synth: 80, pad: 89, drums: 0, violin: 40, viola: 41, cello: 42, contrabass: 43, harp: 46, trumpet: 56, horn: 60, sax: 65, oboe: 68, bassoon: 70, clarinet: 71, flute: 73, xylophone: 13 };
 
   function instrumentForProgram(program) {
     var p = program | 0;
+    var exact = { 13: 'xylophone', 40: 'violin', 41: 'viola', 42: 'cello', 43: 'contrabass', 46: 'harp', 56: 'trumpet', 60: 'horn', 64: 'sax', 65: 'sax', 66: 'sax', 67: 'sax', 68: 'oboe', 70: 'bassoon', 71: 'clarinet', 73: 'flute' };
+    if (exact[p]) return exact[p];
     if (p === 4 || p === 5) return 'ePiano';
     if (p < 8) return 'piano';
     if (p < 16) return 'ePiano';      // chromatic percussion: bells, mallets
