@@ -1,9 +1,9 @@
 import {checkProgram} from './program.mjs';
 // NXC export requires the free NBC/NXC compiler. This is source, never a disguised .rxe.
 export function toNxc(input){
- const p=checkProgram(input);let index=0;const vars=new Set();
+ const p=checkProgram(input);let index=0;const vars=new Set(),arithmeticWrappers=[];
  function expr(e){if(e.kind==='number')return String(e.value);if(e.kind==='variable'){vars.add(e.name);return 'v_'+e.name;}if(e.kind==='sensor'){if(e.name.startsWith('encoder'))return `MotorRotationCount(OUT_${e.name.at(-1)})`;const port=p.sensors[e.name];if(!port)throw Error(e.name+' sensor is absent.');return e.name==='ultrasonic'?`SensorUS(IN_${port})`:`Sensor(IN_${port})`;}
-  const a=expr(e.left),b=expr(e.right);if(e.op==='/')return `labDiv(${a}, ${b})`;if(e.op==='%')return `labMod(${a}, ${b})`;return `(${a} ${{'and':'&&','or':'||','==':'==','!=':'!='}[e.op]||e.op} ${b})`;}
+  const a=expr(e.left),b=expr(e.right);if(e.op==='/'||e.op==='%'){const base=e.op==='/'?'labDiv':'labMod',name=base+'Expr'+index++;arithmeticWrappers.push(`float ${name}(float x,float y){ return ${base}(x,y); }`);return `${name}(${a}, ${b})`;}return `(${a} ${{'and':'&&','or':'||','==':'==','!=':'!='}[e.op]||e.op} ${b})`;}
  function block(list,depth=1){const pad='  '.repeat(depth);return list.map(s=>{const n=index++;switch(s.type){
   case 'drive':return `${pad}labMove(OUT_B, ${expr(s.left)}, OUT_C, ${expr(s.right)}, ${expr(s.degrees)});`;
   case 'motor':return `${pad}labMove(OUT_${'ABC'[s.port]}, ${expr(s.power)}, OUT_${'ABC'[s.port]}, 0, ${expr(s.degrees)});`;
@@ -28,6 +28,7 @@ int labClamp(float v,int lo,int hi){ int r=v; if(v-r>=0.5)r++; if(v-r< -0.5)r--;
 float labValue(float v){ if(abs(v)>1000000){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } return v; }
 float labDiv(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } return labValue(a/b); }
 float labMod(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } int q=a/b; return labValue(a-q*b); }
+${arithmeticWrappers.join("\n")}
 void labMove(byte a,int pa,byte b,int pb,int amount){
   int degrees=labClamp(amount,1,720); pa=labClamp(pa,-60,60); pb=labClamp(pb,-60,60);
   int fastest=labMax(abs(pa),abs(pb)); fastest=labMax(1,fastest);

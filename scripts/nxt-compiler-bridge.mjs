@@ -20,7 +20,9 @@ export async function compileProgram(program,compile){
 }
 export async function testCompiler(compile,{all=false}={}){
  const tone={version:2,sensors:{touch:0,sound:0,light:0,ultrasonic:0,touch2:0},steps:[{type:'tone',frequency:{kind:'number',value:440},ms:{kind:'number',value:100}}]};
- await compileProgram(tone,compile);if(all)for(const key of Object.keys(projects)){try{await compileProgram(starterProgram(key),compile);console.log('Compiled starter: '+key);}catch(e){throw Error(key+': '+e.message);}}
+ await compileProgram(tone,compile);
+ if(all){const n=value=>({kind:'number',value}),div=(left,right)=>({kind:'binary',op:'/',left,right});await compileProgram({...tone,steps:[{type:'tone',frequency:div(div(n(1760),n(2)),n(2)),ms:n(100)}]},compile);console.log('Compiled nested arithmetic fixture.');}
+ if(all)for(const key of Object.keys(projects)){try{await compileProgram(starterProgram(key),compile);console.log('Compiled starter: '+key);}catch(e){throw Error(key+': '+e.message);}}
 }
 export function createCompilerServer({compiler=process.env.NXT_NBC||'nbc',origins=['http://127.0.0.1:8080','http://localhost:8080','https://mrscandrett.github.io'],compile=compilerRunner(compiler)}={}){
  let busy=false,health=null,healthPromise=null,checkedAt=0;
