@@ -4,13 +4,21 @@ $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $runtime = Join-Path $root 'runtime'
 New-Item -ItemType Directory -Force -Path $runtime | Out-Null
-function Get-VerifiedArchive([string]$Url, [string]$Destination, [string]$ExpectedHash) {
-  if (!(Test-Path $Destination) -or (Get-FileHash -Algorithm SHA256 $Destination).Hash.ToLowerInvariant() -ne $ExpectedHash.ToLowerInvariant()) {
-    Write-Host "Downloading $Url"
-    Invoke-WebRequest -UseBasicParsing -Uri $Url -OutFile $Destination -TimeoutSec 120
+function Get-VerifiedArchive([string[]]$Urls, [string]$Destination, [string]$ExpectedHash) {
+  if ((Test-Path $Destination) -and (Get-FileHash -Algorithm SHA256 $Destination).Hash.ToLowerInvariant() -eq $ExpectedHash.ToLowerInvariant()) { return }
+  $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+  foreach ($url in $Urls) {
+    try {
+      Write-Host "Downloading $url"
+      if ($curl) { & $curl.Source --fail --silent --show-error --location --connect-timeout 15 --max-time 120 --output $Destination $url; if ($LASTEXITCODE -ne 0) { throw 'Download failed.' } }
+      else { Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $Destination -TimeoutSec 120 }
+      $actual = (Get-FileHash -Algorithm SHA256 $Destination).Hash.ToLowerInvariant()
+      if ($actual -eq $ExpectedHash.ToLowerInvariant()) { return }
+      Write-Host "This mirror returned an unexpected file ($(Get-Item $Destination | Select-Object -ExpandProperty Length) bytes, SHA-256 $actual); it will not be executed."
+    } catch { Write-Host ('Download attempt failed: ' + $_.Exception.Message) }
+    if (Test-Path $Destination) { Remove-Item $Destination -Force }
   }
-  $actual = (Get-FileHash -Algorithm SHA256 $Destination).Hash.ToLowerInvariant()
-  if ($actual -ne $ExpectedHash.ToLowerInvariant()) { Remove-Item $Destination -Force; throw 'Download checksum mismatch. The file was not executed. Try again or ask IT to check the download.' }
+  throw 'No download source returned the verified archive. The file was not executed. Check the internet connection or ask IT to allow the publisher downloads.'
 }
 Write-Host 'This companion uses portable tools inside its own folder. No Git, npm install, admin setup, USB driver change, or firmware update is performed.'
 if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { throw 'This automatic package targets Windows x64. On Windows ARM, ask IT to provide compatible Node.js and NBC/NXC, then use the repository companion.' }
@@ -46,7 +54,7 @@ if (!$nbc) {
   if (!(Test-Path $nbc) -or (Get-FileHash -Algorithm SHA256 $nbc).Hash.ToLowerInvariant() -ne $expectedExe) {
     Write-Host 'Preparing the official NBC/NXC 1.2.1 r4 Windows compiler (SHA-256 verified).'
     $archive = Join-Path $runtime 'nbc-download.zip'
-    Get-VerifiedArchive 'https://downloads.sourceforge.net/project/bricxcc/NBC_NXC/NBC%20release%201.2.1%20r4/nbc-1.2.1.r4.zip' $archive '963f50d431308b64e36f4251d26fdf43690aa8a436a2d2a5a2db6325af985c51'
+    Get-VerifiedArchive @('https://downloads.sourceforge.net/project/bricxcc/NBC_NXC/NBC%20release%201.2.1%20r4/nbc-1.2.1.r4.zip', 'https://netix.dl.sourceforge.net/project/bricxcc/NBC_NXC/NBC%20release%201.2.1%20r4/nbc-1.2.1.r4.zip', 'https://phoenixnap.dl.sourceforge.net/project/bricxcc/NBC_NXC/NBC%20release%201.2.1%20r4/nbc-1.2.1.r4.zip') $archive '963f50d431308b64e36f4251d26fdf43690aa8a436a2d2a5a2db6325af985c51'
     $folder = Join-Path $runtime 'nbc'
     if (Test-Path $folder) { Remove-Item $folder -Recurse -Force }
     Expand-Archive -LiteralPath $archive -DestinationPath $folder
