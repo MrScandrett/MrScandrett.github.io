@@ -51,7 +51,7 @@ ${setup}
   Wait(300);
 ${body}
   OffEx(OUT_ABC,RESET_NONE);
-  stop labWatchdog;
+  StopAllTasks();
 }
 `;
 }
