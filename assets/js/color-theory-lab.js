@@ -10,6 +10,84 @@
     s /= 100; v /= 100;
     return [5, 3, 1].map(n => { const k = (n + h / 60) % 6; return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255); });
   }
+  let paints = [];
+  const paintButtons = [...document.querySelectorAll('[data-paint]')];
+  function updatePaint() {
+    ['paint-one', 'paint-two'].forEach((id, i) => {
+      $(id).style.background = paints[i] || '';
+      $(id).innerHTML = paints[i] ? '' : `<span>${i + 1}</span>`;
+    });
+    $('paint-result').style.background = '';
+    $('paint-result').innerHTML = '<span>?</span>';
+    $('paint-result').classList.remove('mixed');
+    $('mix-paint').disabled = paints.length < 2;
+    $('mix-status').textContent = paints.length === 0 ? 'Choose your first color to get started.' : paints.length === 1 ? 'Nice choice! Pick one more color.' : 'What do you predict? Mix them to find out.';
+  }
+  paintButtons.forEach(button => button.addEventListener('click', () => {
+    if (paints.length === 2) paints = [];
+    paints.push(button.dataset.paint); updatePaint();
+  }));
+  $('random-paint').addEventListener('click', () => {
+    paints = Array.from({ length: 2 }, () => paintButtons[Math.floor(Math.random() * paintButtons.length)].dataset.paint); updatePaint();
+  });
+  $('reset-paint').addEventListener('click', () => { paints = []; updatePaint(); });
+  $('mix-paint').addEventListener('click', () => {
+    if (paints.length < 2) return;
+    const a = unhex(paints[0]), b = unhex(paints[1]);
+    const result = hex(a.map((v, i) => (v + b[i]) / 2));
+    $('paint-result').style.background = result;
+    $('paint-result').innerHTML = '';
+    $('paint-result').classList.remove('mixed'); void $('paint-result').offsetWidth; $('paint-result').classList.add('mixed');
+    $('mix-status').textContent = `${paints[0]} + ${paints[1]} = ${result}. What would you name your new color?`;
+  });
+  // CIELAB (D65) to sRGB. Out-of-gamut values are flagged before clipping.
+  function labToRgb(l, a, b) {
+    const fy = (l + 16) / 116, fx = fy + a / 500, fz = fy - b / 200;
+    const inverse = t => t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27);
+    const x = .95047 * inverse(fx), y = inverse(fy), z = 1.08883 * inverse(fz);
+    const linear = [3.2404542*x - 1.5371385*y - .4985314*z, -.969266*x + 1.8760108*y + .041556*z, .0556434*x - .2040259*y + 1.0572252*z];
+    const gamut = linear.every(c => c >= -0.00001 && c <= 1.00001);
+    return { gamut, rgb: linear.map(c => Math.round(255 * Math.max(0, Math.min(1, c <= .0031308 ? 12.92*c : 1.055*Math.pow(c, 1/2.4)-.055)))) };
+  }
+  const labCanvas = $('lab-map'), labContext = labCanvas.getContext('2d');
+  let drawnLightness = null;
+  function renderLab() {
+    const l = Number($('lab-lightness').value), a = Number($('lab-a').value), b = Number($('lab-b').value);
+    ['lightness', 'a', 'b'].forEach(id => { $('lab-' + id + '-out').value = $('lab-' + id).value; });
+    if (drawnLightness !== l) {
+      const image = labContext.createImageData(labCanvas.width, labCanvas.height);
+      for (let y = 0; y < labCanvas.height; y++) for (let x = 0; x < labCanvas.width; x++) {
+        const color = labToRgb(l, x / (labCanvas.width - 1) * 200 - 100, 100 - y / (labCanvas.height - 1) * 200);
+        const i = (y * labCanvas.width + x) * 4;
+        const shade = !color.gamut && (x + y) % 12 < 4 ? .65 : 1;
+        color.rgb.forEach ( (v, channel) => { image.data[i + channel] = v * shade; }); image.data[i + 3] = 255;
+      }
+      labContext.putImageData(image, 0, 0); drawnLightness = l;
+    } else {
+      // Redraw the cached slice to erase the previous selection marker.
+      labContext.putImageData(labContext._slice, 0, 0);
+    }
+    if (!labContext._slice || labContext._sliceL !== l) { labContext._slice = labContext.getImageData(0, 0, labCanvas.width, labCanvas.height); labContext._sliceL = l; }
+    const x = (a + 100) / 200 * (labCanvas.width - 1), y = (100 - b) / 200 * (labCanvas.height - 1);
+    labContext.beginPath(); labContext.arc(x, y, 8, 0, Math.PI * 2); labContext.strokeStyle = '#fff'; labContext.lineWidth = 5; labContext.stroke(); labContext.strokeStyle = '#111'; labContext.lineWidth = 2; labContext.stroke();
+    const result = labToRgb(l, a, b), color = hex(result.rgb);
+    $('lab-sample').style.background = color; $('lab-sample').style.color = luminance(result.rgb) > .3 ? '#111' : '#fff'; $('lab-hex').textContent = color;
+    $('lab-status').textContent = result.gamut ? `L* ${l}, a* ${a}, b* ${b} is within the sRGB display range.` : `L* ${l}, a* ${a}, b* ${b} is outside sRGB. The sample is clipped to the nearest channel limits.`;
+  }
+  ['lightness', 'a', 'b'].forEach(id => $('lab-' + id).addEventListener('input', renderLab));
+  function chooseLabPoint(event) {
+    const rect = labCanvas.getBoundingClientRect();
+    $('lab-a').value = Math.round(Math.max(-100, Math.min(100, (event.clientX - rect.left) / rect.width * 200 - 100)));
+    $('lab-b').value = Math.round(Math.max(-100, Math.min(100, 100 - (event.clientY - rect.top) / rect.height * 200))); renderLab();
+  }
+  labCanvas.addEventListener('pointerdown', event => { labCanvas.setPointerCapture(event.pointerId); chooseLabPoint(event); });
+  labCanvas.addEventListener('pointermove', event => { if (labCanvas.hasPointerCapture(event.pointerId)) chooseLabPoint(event); });
+  labCanvas.addEventListener('keydown', event => {
+    const directions = { ArrowLeft: ['lab-a', -1], ArrowRight: ['lab-a', 1], ArrowUp: ['lab-b', 1], ArrowDown: ['lab-b', -1] };
+    if (!directions[event.key]) return; event.preventDefault(); const [id, direction] = directions[event.key]; $(id).value = Number($(id).value) + direction * (event.shiftKey ? 10 : 1); renderLab();
+  });
+  $('lab-neutral').addEventListener('click', () => { $('lab-a').value = 0; $('lab-b').value = 0; renderLab(); });
+  renderLab();
   $('reveal').addEventListener('click', () => {
     const connected = $('reveal').getAttribute('aria-pressed') !== 'true';
     $('reveal').setAttribute('aria-pressed', String(connected));
@@ -69,8 +147,22 @@
     }));
     $('wheel').setAttribute('aria-label', `RGB hue wheel. ${schemes[key].note} Swatch hues: ${palette.map(c => c.h + ' degrees').join(', ')}.`);
     swatches($('swatches'), palette);
+    const scene = $('mood-scene');
+    [0, 1, 2].forEach(i => scene.style.setProperty('--scene-' + i, palette[i % palette.length].hex));
   }
   ['hue', 'sat', 'val', 'harmony'].forEach(id => $(id).addEventListener('input', renderPalette));
+  const moods = {
+    sunny: { h: 38, s: 78, v: 96, harmony: 'analogous', prompt: 'Sunny & playful: warm neighboring hues can feel energetic. What else does this scene suggest to you?' },
+    calm: { h: 190, s: 42, v: 88, harmony: 'analogous', prompt: 'Calm & airy: softer neighboring blues and greens create a quiet starting point. Does it feel calm to you?' },
+    bold: { h: 285, s: 85, v: 90, harmony: 'complementary', prompt: 'Bold & electric: opposing hues create a strong contrast. Where does your eye go first?' },
+    cozy: { h: 22, s: 65, v: 72, harmony: 'split', prompt: 'Cozy & earthy: muted warm color and cooler partners suggest a different atmosphere. What story could happen here?' }
+  };
+  document.querySelectorAll('[data-mood]').forEach(button => button.addEventListener('click', () => {
+    const mood = moods[button.dataset.mood];
+    $('hue').value = mood.h; $('sat').value = mood.s; $('val').value = mood.v; $('harmony').value = mood.harmony;
+    $('mood-prompt').textContent = mood.prompt;
+    renderPalette();
+  }));
   $('save-palette').addEventListener('click', () => {
     saved = { colors: palette.map(c => ({ ...c })), scheme: $('harmony').selectedOptions[0].textContent, s: $('sat').value, v: $('val').value };
     swatches($('saved-swatches'), saved.colors);

@@ -30,6 +30,8 @@
     'cornsweet': 'https://michaelbach.de/ot/lum-cobc/',
     'kanizsa': 'https://michaelbach.de/ot/cog-Kanizsa/',
     'ponzo': 'https://commons.wikimedia.org/wiki/File:Ponzo_illusion.svg',
+    'cafe-wall': 'https://michaelbach.de/ot/ang-cafewall/',
+    'strawberries': 'https://www.psy.ritsumei.ac.jp/akitaoka/strawberries-color-constancy2017e.pdf',
     'checker-shadow': 'https://persci.mit.edu/gallery/checkershadow',
     'rotating-snakes': 'https://www.ritsumei.ac.jp/~akitaoka/index-e.html'
   };
@@ -308,6 +310,34 @@
       }
       counts[def.sec] = (counts[def.sec] || 0) + (def.count || 1);
     });
+    // A compact index makes the long collection navigable without hiding any demos.
+    var finder = document.querySelector('.oi-finder');
+    var search = document.getElementById('oi-search');
+    var results = document.getElementById('oi-search-results');
+    var status = document.getElementById('oi-search-status');
+    if (finder && search && results && status) {
+      var entries = order.filter(function (def) { return !def.bare && document.getElementById('oi-' + def.id); }).map(function (def) {
+        var section = document.querySelector('[data-oi-gallery="' + def.sec + '"]').closest('section');
+        var heading = section && section.querySelector('h2');
+        return { id: def.id, title: plain(def.title), section: heading ? heading.textContent : def.sec,
+          terms: (plain(def.title) + ' ' + plain(def.q || '') + ' ' + def.sec + ' ' + (heading ? heading.textContent : '')).toLowerCase() };
+      });
+      function updateIndex() {
+        var query = search.value.trim().toLowerCase();
+        var words = query.split(/\s+/).filter(Boolean);
+        var matches = entries.filter(function (entry) { return words.every(function (word) { return entry.terms.indexOf(word) !== -1; }); });
+        results.textContent = '';
+        matches.forEach(function (entry) {
+          var li = document.createElement('li'), link = document.createElement('a'), label = document.createElement('span');
+          link.href = '#oi-' + entry.id; link.textContent = entry.title;
+          label.textContent = entry.section; link.appendChild(label); li.appendChild(link); results.appendChild(li);
+        });
+        status.textContent = matches.length + (matches.length === 1 ? ' activity' : ' activities') + (query ? ' found.' : ' to explore.');
+      }
+      search.addEventListener('input', updateIndex);
+      document.getElementById('oi-search-clear').addEventListener('click', function () { search.value = ''; updateIndex(); search.focus(); });
+      updateIndex(); finder.hidden = false;
+    }
     document.querySelectorAll('.oi-total').forEach(function (e) { e.textContent = n; });
     OI.total = n;
     document.documentElement.setAttribute('data-oi-ready', String(n));

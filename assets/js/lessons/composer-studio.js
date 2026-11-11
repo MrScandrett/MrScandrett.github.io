@@ -10,6 +10,35 @@
   const host = $('score'), tab = $('tab'), note = $('note');
   const script = document.currentScript.src;
   let library, player, current;
+  const violinControls = document.createElement('div');
+  violinControls.className = 'bv-fields bv-violin-controls';
+  violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
+  workspace.querySelector('.bv-fields').after(violinControls);
+  const violinShow = $('violin-show'), violinPosition = $('violin-position');
+  const violinPrefs = {};
+  function rememberViolin() { violinPrefs[work.value] = { show: violinShow.checked, position: violinPosition.value }; }
+  function restoreViolin() { const p = violinPrefs[work.value] || {}; violinShow.checked = !!p.show; violinPosition.value = p.position || 'auto'; }
+  function violinGuide(score) {
+    const model = ScoreEngine.prepare(score), bars = model.staves[0].bars;
+    const events = bars.flatMap((bar, bi) => bar.events.filter(e => e.kind === 'note').map(e => ({ bar: bi, pitch: e.pitches[e.pitches.length - 1] })));
+    const midis = events.map(e => e.pitch.midi);
+    const fixed = violinPosition.value === 'auto' ? null : Number(violinPosition.value);
+    const route = fixed ? midis.map(m => FakeBookMelody.violinInPosition(m, fixed)) : FakeBookMelody.violinRoute(midis, 'auto');
+    const heading = document.createElement('h3'); heading.textContent = 'Violin positions · selected voice'; tab.append(heading);
+    const explanation = document.createElement('p'); explanation.textContent = 'Read the notes in score order. 0 means an open string; low and high describe finger placement. Automatic suggests shifts; × means the note is outside the selected position or supported range. Grace notes and ornaments are not included. These are suggestions to review with your teacher.'; tab.append(explanation);
+    const grid = document.createElement('div'); grid.className = 'bv-violin-grid'; tab.append(grid);
+    bars.forEach((bar, bi) => {
+      const card = document.createElement('section'); card.className = 'bv-violin-bar';
+      const title = document.createElement('h4'); title.textContent = 'Bar ' + ScoreEngine.barNumber(model, bi); card.append(title);
+      const line = document.createElement('p');
+      const items = events.map((event, i) => ({ event, spot: route[i] })).filter(x => x.event.bar === bi);
+      line.textContent = items.length ? items.map(({event, spot}) => {
+        const m = event.pitch.midi, pitch = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'][m % 12] + (Math.floor(m / 12) - 1);
+        return pitch + ': ' + (spot ? ['G','D','A','E'][spot.s] + ' string, ' + (spot.finger ? (spot.place ? spot.place + ' ' : '') + 'finger ' + spot.finger : 'open') + ', position ' + spot.pos + (spot.shift ? ' (shift)' : '') : '×');
+      }).join(' · ') : 'Rest';
+      card.append(line); grid.append(card);
+    });
+  }
   function options(select, entries) {
     select.replaceChildren(...entries.map(([value, label]) => {
       const option = document.createElement('option'); option.value = value; option.textContent = label; return option;
@@ -72,6 +101,8 @@
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
     const src = source(), m = mode.value, fullGuitar = composer === 'francisco-tarrega' && m === 'guitar', isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    violinControls.hidden = m !== 'melody';
+    violinPosition.disabled = !violinShow.checked;
     staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
     octave.disabled = !isolated;
     let result = ComposerArrangement.arrange(src,{mode:fullGuitar ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
@@ -111,6 +142,7 @@
         paper.parentElement.insertBefore(tab,paper);
 
       }
+      if (m === 'melody' && violinShow.checked) violinGuide(result);
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();
         else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';
@@ -118,7 +150,8 @@
       if (!player) throw new Error('The score could not be prepared.');
     } catch (error) { note.textContent = 'This arrangement could not be displayed: ' + error.message; }
   }
-  work.addEventListener('change',() => { if (mode.value === 'chords' && work.value !== 'beethoven-ode-to-joy') mode.value = 'original'; fillStaves(); update(); });
+  work.addEventListener('change',() => { if (mode.value === 'chords' && work.value !== 'beethoven-ode-to-joy') mode.value = 'original'; fillStaves(); restoreViolin(); update(); });
+  [violinShow, violinPosition].forEach(control => control.addEventListener('change', () => { rememberViolin(); update(); }));
   staff.addEventListener('change',() => { fillVoices(); update(); });
   [mode,voice,octave].forEach(select => select.addEventListener('change',update));
   $('print').addEventListener('click',() => {
@@ -131,7 +164,7 @@
     window.print();
   });
   $('save').addEventListener('click',() => {
-    const data = { format: 'composer-study-1', composer, work: work.value, mode: mode.value, staff: staff.value, voice: voice.value, octave: octave.value };
+    const data = { format: 'composer-study-1', composer, work: work.value, mode: mode.value, staff: staff.value, voice: voice.value, octave: octave.value, violin: { show: violinShow.checked, position: violinPosition.value } };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link = document.createElement('a'); link.href = url; link.download = work.value + '-arrangement.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   });
@@ -147,7 +180,8 @@
       if (!valid(staff,data.staff)) throw new Error('Unknown source staff.');
       staff.value = data.staff; fillVoices();
       if (!valid(voice,data.voice)) throw new Error('Unknown source voice.');
-      voice.value = data.voice; mode.value = data.mode; octave.value = data.octave; update();
+      voice.value = data.voice; mode.value = data.mode; octave.value = data.octave;
+      const v = data.violin || {}; violinShow.checked = v.show === true; violinPosition.value = valid(violinPosition, v.position) ? v.position : 'auto'; rememberViolin(); update();
     } catch (error) { note.textContent = error.message; }
     event.target.value = '';
   });
