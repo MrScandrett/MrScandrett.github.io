@@ -1,0 +1,31 @@
+name: NXT Windows compiler
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/nxt/**'
+      - 'scripts/nxt-compiler-bridge.mjs'
+      - 'scripts/build-nxt-companion.mjs'
+      - 'scripts/nxt-windows/**'
+      - '.github/workflows/nxt-windows.yml'
+jobs:
+  compiler:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/build-nxt-companion.mjs
+      - name: Extract the exact classroom download
+        shell: pwsh
+        run: Expand-Archive -LiteralPath downloads/nxt-compiler-windows.zip -DestinationPath '${{ runner.temp }}/nxt companion test'
+      - name: Verify portable setup and compile every starter with real Windows NBC
+        shell: pwsh
+        run: '& "${{ runner.temp }}/nxt companion test/NXT-Compiler-Windows/Start-NXT-Compiler.ps1" -CheckOnly -PortableNode'

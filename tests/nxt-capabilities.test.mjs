@@ -68,3 +68,23 @@ test('phone relay requires its private session link and relays only bounded dire
   r=await fetch(base+'/command'+query,{method:'POST',body:JSON.stringify({action:'stop'})});assert.equal(r.status,200);
  }finally{await reader?.cancel();relay.close();}
 });
+test('compiler health compiles a real probe and never claims an absent compiler is ready',async()=>{
+ const missing=createCompilerServer({compile:async()=>{throw Object.assign(Error('not installed'),{code:'ENOENT'});}});missing.listen(0,'127.0.0.1');await once(missing,'listening');
+ try{const r=await fetch('http://127.0.0.1:'+missing.address().port+'/health');const result=await r.json();assert.equal(result.ready,false);assert.equal(result.compilerReady,false);assert.match(result.message,/compiler not found/);}finally{missing.close();}
+ let calls=0;const valid=createCompilerServer({compile:async(source,output)=>{calls++;assert.match(await readFile(source,'utf8'),/PlayTone/);await writeFile(output,Buffer.from('MindstormsNXT-probe'));}});valid.listen(0,'127.0.0.1');await once(valid,'listening');
+ try{const base='http://127.0.0.1:'+valid.address().port;assert.equal((await(await fetch(base+'/health')).json()).compilerReady,true);await fetch(base+'/health');assert.equal(calls,1);}finally{valid.close();}
+});
+test('browser diagnostics distinguish blocked helper, missing compiler, old helper and ready state',async()=>{
+ const {probeCompiler}=await import('../assets/js/nxt/compiler-client.mjs');
+ assert.equal((await probeCompiler(async()=>{throw Error('network blocked');})).state,'unreachable');
+ const response=data=>async()=>({ok:true,json:async()=>data});
+ assert.equal((await probeCompiler(response({service:'NXT local compiler',ready:true}))).state,'outdated');
+ assert.equal((await probeCompiler(response({service:'NXT local compiler',protocol:1,compilerReady:false,message:'missing'}))).state,'compiler-missing');
+ assert.equal((await probeCompiler(response({service:'NXT local compiler',protocol:1,compilerReady:true,busy:false}))).state,'ready');
+});
+test('downloaded Windows companion includes its bridge dependencies and checksum-verified portable setup',async()=>{
+ const {default:JSZip}=await import('jszip');const zip=await JSZip.loadAsync(await readFile(new URL('../downloads/nxt-compiler-windows.zip',import.meta.url)));
+ for(const name of ['nxt-compiler.mjs','Start-NXT-Compiler.cmd','Start-NXT-Compiler.ps1','README.txt'])assert(zip.file('NXT-Compiler-Windows/'+name));
+ const bundle=await zip.file('NXT-Compiler-Windows/nxt-compiler.mjs').async('string');assert.match(bundle,/function toNxc/);assert.match(bundle,/function checkProgram/);assert.doesNotMatch(bundle,/from ['"]\.\.\//);
+ const setup=await zip.file('NXT-Compiler-Windows/Start-NXT-Compiler.ps1').async('string');assert.match(setup,/Get-FileHash -Algorithm SHA256/);assert.match(setup,/--self-test/);assert.match(setup,/https:\/\/nodejs.org/);assert.match(setup,/963f50d431308b64/);
+});

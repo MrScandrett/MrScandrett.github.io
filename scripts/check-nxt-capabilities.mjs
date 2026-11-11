@@ -19,6 +19,19 @@ try{
  // Explicit loop timeout, followed by STOP while waiting.
  await page.selectOption('#project-starter','target');await page.click('#load-project');await page.click('#run');await page.click('#stop');assert.match(await page.locator('#progress').innerText(),/Stopped/);
  await page.getByRole('button',{name:'Full screen',exact:true}).click();await page.waitForFunction(()=>!!document.fullscreenElement);assert.equal(await page.evaluate(()=>document.querySelector('[data-creation-app]').scrollHeight<=innerHeight),true);await page.getByRole('button',{name:'Exit full screen',exact:true}).click();
+
+ // The compiler button diagnoses local setup and only downloads verified executable bytes.
+ let helper='blocked';
+ await page.route('http://127.0.0.1:8791/**',async route=>{
+  if(helper==='blocked')return route.abort();
+  if(route.request().url().endsWith('/health'))return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({service:'NXT local compiler',protocol:1,compilerReady:helper==='ready',busy:false,message:'NBC/NXC compiler not found.'})});
+  return route.fulfill({status:200,contentType:'application/octet-stream',body:Buffer.from('MindstormsNXT-test-output')});
+ });
+ await page.click('#check-compiler');await page.waitForFunction(()=>document.querySelector('#compiler-state').dataset.state==='unreachable');assert.equal(await page.locator('#compiler-setup').evaluate(el=>el.open),true);
+ helper='missing';await page.click('#check-compiler');await page.waitForFunction(()=>document.querySelector('#compiler-state').dataset.state==='compiler-missing');
+ helper='ready';await page.click('#check-compiler');await page.waitForFunction(()=>document.querySelector('#compiler-state').dataset.state==='ready');
+ const compiled=page.waitForEvent('download');await page.click('#compile-program');assert.equal((await compiled).suggestedFilename(),'myrobot.rxe');
+ const companion=page.waitForEvent('download');await page.getByRole('link',{name:'Download Windows compiler companion (.zip)',exact:true}).click();assert.equal((await companion).suggestedFilename(),'nxt-compiler-windows.zip');
  await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
- assert.deepEqual(errors,[]);console.log('Capabilities browser passed: all project block roundtrips, NXC export, encoder calculation, notebook/CSV, music condition, STOP, fullscreen and mobile.');
+ assert.deepEqual(errors,[]);console.log('Capabilities browser passed: all project block roundtrips, NXC export, encoder calculation, notebook/CSV, music condition, STOP, compiler diagnostics/downloads, fullscreen and mobile.');
 }finally{await b.close();}

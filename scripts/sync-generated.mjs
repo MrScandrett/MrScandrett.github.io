@@ -26,6 +26,7 @@ const CHECK = process.argv.includes('--check');
 
 // Order matters: the catalog first, then what reads the catalog.
 const STEPS = [
+  ['NXT Windows companion', 'scripts/build-nxt-companion.mjs'],
   ['lesson catalog (search index, a11y list)', 'scripts/sync-lessons.mjs', '--fix'],
   ['lessons compendium', 'scripts/sync-steam-lessons-compendium.mjs'],
   ['compendium outline', 'scripts/build-compendium-outline.mjs'],

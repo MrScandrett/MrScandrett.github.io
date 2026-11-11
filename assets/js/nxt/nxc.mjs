@@ -22,14 +22,16 @@ export function toNxc(input){
  const body=block(p.steps);
  const setup=Object.entries(p.sensors).filter(([,port])=>port).map(([kind,port])=>`  ${kind==='ultrasonic'?'SetSensorUltrasonic':kind==='light'?'SetSensorLight':kind==='sound'?'SetSensorSound':'SetSensorTouch'}(IN_${port}${kind==='sound'?',false':''});`).join('\n');
  return `// NXT Robot Lab — stock firmware 1.28+; compile with NBC/NXC, then send the .rxe.\n// Browser sensor samples display on the brick LCD in standalone mode; CSV stays browser-only.\n// Keep an adult at the power button. Test each mechanism with wheels lifted.\n${[...vars].map(v=>'float v_'+v+'=0;').join('\n')}\n
-int labClamp(float v,int lo,int hi){ int r=v; if(v-r>=0.5)r++; if(v-r< -0.5)r--; return max(lo,min(hi,r)); }
+int labMin(int a,int b){ if(a<b)return a; return b; }
+int labMax(int a,int b){ if(a>b)return a; return b; }
+int labClamp(float v,int lo,int hi){ int r=v; if(v-r>=0.5)r++; if(v-r< -0.5)r--; return labMax(lo,labMin(hi,r)); }
 float labValue(float v){ if(abs(v)>1000000){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } return v; }
 float labDiv(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } return labValue(a/b); }
 float labMod(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } int q=a/b; return labValue(a-q*b); }
 void labMove(byte a,int pa,byte b,int pb,int amount){
   int degrees=labClamp(amount,1,720); pa=labClamp(pa,-60,60); pb=labClamp(pb,-60,60);
-  int fastest=max(1,max(abs(pa),abs(pb)));
-  int targetA=max(1,labClamp(degrees*1.0*abs(pa)/fastest,1,720)); int targetB=max(1,labClamp(degrees*1.0*abs(pb)/fastest,1,720));
+  int fastest=labMax(1,labMax(abs(pa),abs(pb)));
+  int targetA=labMax(1,labClamp(degrees*1.0*abs(pa)/fastest,1,720)); int targetB=labMax(1,labClamp(degrees*1.0*abs(pb)/fastest,1,720));
   long startA=MotorRotationCount(a); long startB=MotorRotationCount(b); long begin=CurrentTick();
   OnFwdEx(a,pa,RESET_NONE); if(b!=a) OnFwdEx(b,pb,RESET_NONE);
   bool doneA=(pa==0); bool doneB=(pb==0 || a==b);
