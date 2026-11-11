@@ -30,7 +30,7 @@ float labDiv(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks
 float labMod(float a,float b){ if(b==0){ OffEx(OUT_ABC,RESET_NONE); StopAllTasks(); } int q=a/b; return labValue(a-q*b); }
 void labMove(byte a,int pa,byte b,int pb,int amount){
   int degrees=labClamp(amount,1,720); pa=labClamp(pa,-60,60); pb=labClamp(pb,-60,60);
-  int fastest=labMax(1,labMax(abs(pa),abs(pb)));
+  int fastest=labMax(abs(pa),abs(pb)); fastest=labMax(1,fastest);
   int targetA=labMax(1,labClamp(degrees*1.0*abs(pa)/fastest,1,720)); int targetB=labMax(1,labClamp(degrees*1.0*abs(pb)/fastest,1,720));
   long startA=MotorRotationCount(a); long startB=MotorRotationCount(b); long begin=CurrentTick();
   OnFwdEx(a,pa,RESET_NONE); if(b!=a) OnFwdEx(b,pb,RESET_NONE);
