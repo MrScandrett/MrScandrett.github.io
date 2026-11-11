@@ -25,6 +25,7 @@
     {name:'Locrian',formula:'1 ♭2 ♭3 4 ♭5 ♭6 ♭7',detail:'The lowered fifth gives its tonic triad a diminished, unsettled quality.'}
   ];
   let activeMode=0;
+  let diagramDegree=0;
   let customJourney=[0,5,3,4];
   const pattern=()=>document.getElementById('progression').value==='custom'?customJourney:patterns[document.getElementById('progression').value];
   const pitch=note=>({C:0,D:2,E:4,F:5,G:7,A:9,B:11}[note[0]]+(note.includes('♯')?1:note.includes('♭')?-1:0)+12)%12;
@@ -100,15 +101,74 @@
     const semitones=degree===6?[0,3,6]:[0,degree===1||degree===2||degree===5?3:4,7];
     return {name:notes[degree]+(degree===6?'dim':degree===1||degree===2||degree===5?'m':''),midi:semitones.map(n=>root+major[degree]+n)};
   }
+  // Frets run from low E to high e. Prefer familiar open shapes; otherwise
+  // transpose E/A barre shapes, or the movable A-string diminished triad.
+  const guitarTuning=[40,45,50,55,59,64];
+  const openShapes={
+    '0:major':[-1,3,2,0,1,0], '2:major':[-1,-1,0,2,3,2],
+    '4:major':[0,2,2,1,0,0], '5:major':[1,3,3,2,1,1],
+    '7:major':[3,2,0,0,0,3], '9:major':[-1,0,2,2,2,0],
+    '2:minor':[-1,-1,0,2,3,1], '4:minor':[0,2,2,0,0,0],
+    '9:minor':[-1,0,2,2,1,0]
+  };
+  function guitarShape(degree){
+    const root=chord(degree).midi[0]%12,quality=degree===6?'dim':[1,2,5].includes(degree)?'minor':'major';
+    if(openShapes[root+':'+quality])return openShapes[root+':'+quality];
+    const a=(root-9+12)%12,e=(root-4+12)%12;
+    if(quality==='dim')return [-1,a,a+1,a+2,a+1,-1];
+    return e<=a?[e,e+2,e+2,e+(quality==='minor'?0:1),e,e]:[-1,a,a+2,a+2,a+(quality==='minor'?1:2),a];
+  }
+  function renderChordDiagrams(){
+    const degree=diagramDegree,c=chord(degree),scale=current()[3].split(' '),names=[0,2,4].map(n=>scale[(degree+n)%7]);
+    const chooser=document.getElementById('diagram-chord');chooser.replaceChildren();
+    degrees.forEach((d,i)=>{const option=document.createElement('option');option.value=i;option.textContent=d+' · '+chord(i).name;chooser.append(option);});chooser.value=degree;
+    document.getElementById('diagram-summary').textContent=`${c.name} · ${degrees[degree]} in ${current()[0]} major · ${names.join(' – ')}`;
+    const piano=document.getElementById('chord-piano');piano.replaceChildren();
+    const pianoTitle=svg('title',{},piano);pianoTitle.textContent=`${c.name} piano: ${names.join(', ')}; root position, colored keys sound together.`;
+    const start=12*Math.floor(c.midi[0]/12),white=[0,2,4,5,7,9,11],whiteMidi=[];
+    for(let midi=start;midi<=start+24;midi++)if(white.includes(midi%12))whiteMidi.push(midi);
+    const width=420/whiteMidi.length;
+    function key(midi,x,w,h,black){
+      const index=c.midi.indexOf(midi),active=index>=0;
+      svg('rect',{x,y:1,width:w,height:h,rx:2,fill:active?'#ceef9c':black?'#182c43':'#fffdf7',stroke:'#182c43','stroke-width':1},piano);
+      if(active){
+        const label=svg('text',{x:x+w/2,y:h-20,'text-anchor':'middle',fill:'#182c43','font-size':black?11:13,'font-weight':700},piano);label.textContent=names[index];
+        const role=svg('text',{x:x+w/2,y:h-5,'text-anchor':'middle',fill:'#182c43','font-size':10},piano);role.textContent=index===0?'R':index===1?'3':'5';
+      }
+    }
+    whiteMidi.forEach((m,i)=>key(m,i*width,width,156,false));
+    whiteMidi.forEach((m,i)=>{if([0,2,5,7,9].includes(m%12)&&m<start+24)key(m+1,(i+1)*width-width*.31,width*.62,96,true);});
+    const frets=guitarShape(degree),positive=frets.filter(f=>f>0),first=Math.min(...positive)>1?Math.min(...positive):1;
+    const guitar=document.getElementById('chord-guitar');guitar.replaceChildren();
+    const fretText=frets.map(f=>f<0?'×':f).join(' · ');
+    const guitarTitle=svg('title',{},guitar);guitarTitle.textContent=`${c.name} guitar, low E to high e: ${frets.map(f=>f<0?'muted':f===0?'open':'fret '+f).join(', ')}.`;
+    for(let f=0;f<=4;f++)svg('line',{x1:45,x2:195,y1:50+f*36,y2:50+f*36,stroke:'#182c43','stroke-width':f===0&&first===1?5:1},guitar);
+    const fretLabel=svg('text',{x:10,y:75,fill:'#182c43','font-size':13},guitar);fretLabel.textContent=first+'fr';
+    frets.forEach((f,i)=>{
+      const x=45+i*30;
+      svg('line',{x1:x,x2:x,y1:50,y2:194,stroke:'#182c43'},guitar);
+      const marker=svg('text',{x,y:32,'text-anchor':'middle',fill:'#182c43','font-size':18},guitar);marker.textContent=f<0?'×':f===0?'○':'';
+      if(f>0){
+        svg('circle',{cx:x,cy:50+(f-first+.5)*36,r:11,fill:'#182c43'},guitar);
+        const dot=svg('text',{x,y:54+(f-first+.5)*36,'text-anchor':'middle',fill:'#fffdf7','font-size':11},guitar);dot.textContent=(guitarTuning[i]+f)%12===c.midi[0]%12?'R':'';
+      }
+      const label=svg('text',{x,y:220,'text-anchor':'middle',fill:'#182c43','font-size':13},guitar);label.textContent=['E','A','D','G','B','e'][i];
+    });
+    document.getElementById('guitar-frets').textContent='Frets, low → high: '+fretText+'. R = root.';
+  }
+  function showChord(degree){diagramDegree=degree;renderChordDiagrams();}
+  document.getElementById('diagram-chord').addEventListener('change',e=>{stop(false);showChord(Number(e.target.value));});
+  document.getElementById('hear-piano-chord').addEventListener('click',()=>sound([[0,chord(diagramDegree).midi,1]],chord(diagramDegree).name+' on piano','piano'));
+  document.getElementById('hear-guitar-chord').addEventListener('click',()=>sound([[0,guitarShape(diagramDegree).flatMap((f,i)=>f<0?[]:[guitarTuning[i]+f]),1.5]],chord(diagramDegree).name+' on guitar','pluck'));
   function renderChords(){
     const journey=pattern();
     const path=document.getElementById('chord-path');path.replaceChildren();
     journey.forEach((degree,i)=>{
-      const c=chord(degree),button=document.createElement('button');button.type='button';button.className='chord-pad';
+      const c=chord(degree),button=document.createElement('button');button.type='button';button.className='chord-pad';button.dataset.degree=degree;
       button.style.setProperty('--pad-color',degree===0?'var(--home)':degree===3?'var(--away)':degree===4?'var(--pull)':'#e5d6f7');
       button.innerHTML=`<strong>${c.name}</strong><span>${degrees[degree]} · ${degree===0?'home':degree===3?'explore':degree===4?'pull':degree===6?'diminished':'minor'}</span>`;
       button.setAttribute('aria-label',`Play ${c.name}, chord ${i+1}`);
-      button.addEventListener('click',()=>sound([[0,c.midi,.7,[button]]],`${c.name} chord`));path.append(button);
+      button.addEventListener('click',()=>{showChord(degree);sound([[0,c.midi,.7,[button]]],`${c.name} chord`);});path.append(button);
     });
     document.getElementById('progression-hint').textContent=document.getElementById('progression').value==='custom'?'Your composition. Change keys to hear it transposed.':hints[document.getElementById('progression').value];
     if(!journey.length)path.textContent='Add chords in the builder below to start your journey.';
@@ -142,17 +202,17 @@
       button.innerHTML=`${note}<span>${isNew?'new':i===7?'home':i+1}</span>`;button.setAttribute('aria-label',`Play ${note}, ${i===7?'octave': 'degree '+(i+1)}`);
       button.addEventListener('click',()=>sound([[0,[60+current()[4]+major[i]],.45,[button]]],`${note} · ${i===0||i===7?'home note':'scale degree '+(i+1)}`));palette.append(button);
     });
-    renderChords();renderComposer();renderModes();
+    renderChords();renderComposer();renderModes();renderChordDiagrams();
     if(previous!==selected){const changes=notes.filter(n=>!old.some(o=>pitch(o)===pitch(n)));const removed=old.filter(n=>!notes.some(o=>pitch(o)===pitch(n)));document.getElementById('move-insight').textContent=`${oldName} → ${name}: ${changes.length===1?'six notes stay. '+removed[0]+' becomes '+changes[0]+'.': 'New palette: '+changes.join(', ')+'.'} Try the same chord journey here.`;}
     status.textContent=`${name} major is ready. Tap a note or play a chord journey.`;
     if(audition&&document.getElementById('tap-sound').checked)sound([[0,chord(0).midi,.6,[buttons[selected]]]],`${name} major · home chord`);
   }
-  async function sound(events,label){
+  async function sound(events,label,instrumentOverride){
     stop(false);const token=generation;
     try{
       context=AudioKit.context();if(!context)throw new Error('No audio');
       AudioKit.setVolume(Number(document.getElementById('fifths-volume').value)/100);await AudioKit.resume();
-      const instrument=document.getElementById('fifths-instrument').value;
+      const instrument=instrumentOverride||document.getElementById('fifths-instrument').value;
       status.textContent='Loading '+instrument+' samples…';
       await MusicSynth.prepare(context,[{instrument,pitches:[...new Set(events.flatMap(e=>e[1]))]}]);
       if(token!==generation)return;
@@ -162,7 +222,7 @@
           const voice=AudioKit.note({instrument,midi,velocity:notes.length>1?.62:.8,at:startTime+offset+(notes.length>1?n*.012:0),duration:length});
           if(voice)voices.push(voice);
         });
-        timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.add('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.add('is-playing');});},(offset+.1)*1000));
+        timers.push(setTimeout(()=>{if(token===generation){const pad=elements.find(e=>e?.dataset.degree!==undefined);if(pad)showChord(Number(pad.dataset.degree));}if(token===generation)elements.forEach(e=>{e.classList.add('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.add('is-playing');});},(offset+.1)*1000));
         timers.push(setTimeout(()=>{if(token===generation)elements.forEach(e=>{e.classList.remove('is-playing');if(e.classList.contains('wheel-key'))diagram.querySelector(`[data-sector="${buttons.indexOf(e)}"]`).classList.remove('is-playing');});},(offset+length+.1)*1000));
       });
       const end=Math.max(...events.map(e=>e[0]+e[2]));timers.push(setTimeout(()=>{if(token===generation)status.textContent='Your turn. Change the key or try another sound.';},(end+.1)*1000));
@@ -228,7 +288,7 @@
       button.setAttribute('aria-label',`Add ${c.name}, ${degree}, to your journey`);
       button.disabled=customJourney.length>=8;
       button.addEventListener('click',()=>{
-        stop(false);customJourney.push(i);document.getElementById('progression').value='custom';renderChords();renderComposer();
+        stop(false);showChord(i);customJourney.push(i);document.getElementById('progression').value='custom';renderChords();renderComposer();
         document.getElementById('composer-status').textContent=`Added ${c.name}. ${customJourney.length} of 8 steps.`;
         (customJourney.length===8?document.getElementById('undo-chord'):document.querySelectorAll('#chord-bank button')[i]).focus();
         sound([[0,c.midi,.6]],`Added ${c.name}`);
@@ -237,9 +297,10 @@
     const list=document.getElementById('custom-journey');list.replaceChildren();
     customJourney.forEach((d,i)=>{
       const item=document.createElement('li'),button=document.createElement('button');button.type='button';
+      button.dataset.degree=d;
       button.innerHTML=`<small>${i+1}</small><strong>${chord(d).name}</strong><span>${degrees[d]}</span>`;
       button.setAttribute('aria-label',`Hear step ${i+1}: ${chord(d).name}`);
-      button.addEventListener('click',()=>sound([[0,chord(d).midi,.7,[button]]],`Step ${i+1}: ${chord(d).name}`));item.append(button);list.append(item);
+      button.addEventListener('click',()=>{showChord(d);sound([[0,chord(d).midi,.7,[button]]],`Step ${i+1}: ${chord(d).name}`);});item.append(button);list.append(item);
     });
     if(!customJourney.length){const item=document.createElement('li');item.className='journey-empty';item.textContent='Your next song starts with one chord. Choose one above.';list.append(item);}
     document.getElementById('undo-chord').disabled=!customJourney.length;
