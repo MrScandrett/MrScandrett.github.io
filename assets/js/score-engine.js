@@ -1479,7 +1479,10 @@
     var toolbar = el('div', { class: 'se-toolbar' });
     var bar = el('div', { class: 'se-controls', role: 'group', 'aria-label': 'Score player' });
     var settings = el('details', { class: 'se-settings' });
-    settings.appendChild(el('summary', {}, 'Sound, display & print'));
+    var settingsSummary = el('summary', { title: 'Sound, display & print' });
+    settingsSummary.appendChild(el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '⚙'));
+    settingsSummary.appendChild(el('span', { class: 'se-label' }, 'Sound, display & print'));
+    settings.appendChild(settingsSummary);
     var settingsBar = el('div', { class: 'se-options se-controls', role: 'group', 'aria-label': 'Sound and notation options' });
     settings.appendChild(settingsBar);
     var playBtn = el('button', { type: 'button', class: 'se-play', 'aria-pressed': 'false' }, '▶ Play');
@@ -1521,9 +1524,15 @@
         settingsBar.appendChild(l); muteBoxes.push(cb);
       });
     }
-    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false' }, 'Full screen');
+    var full = el('button', { type: 'button', class: 'se-full', 'aria-label': 'Show the score full screen', 'aria-pressed': 'false', title: 'Full screen' });
+    var fullIcon = el('span', { class: 'se-icon', 'aria-hidden': 'true' }, '⛶');
+    var fullText = el('span', { class: 'se-label' }, 'Full screen');
+    full.append(fullIcon, fullText);
+    // Fewer controls: keeps Play, the bar readout and the timeline, and gives the rest of the pane to the score.
+    var more = el('button', { type: 'button', class: 'se-more', 'aria-expanded': 'true', 'aria-label': 'Hide extra controls', title: 'Fewer controls, more score' }, '▴');
     var position = el('output', { class: 'se-position', 'aria-live': 'off' }, 'Bar ' + barNumber(model, 0));
     bar.appendChild(position);
+    bar.appendChild(more);
     bar.appendChild(full);
     var timeline = el('div', { class: 'se-timeline' });
     var elapsed = el('output', { 'aria-live': 'off' }, '0:00');
@@ -1537,7 +1546,10 @@
     var cap = fig.querySelector('figcaption');
     fig.insertBefore(head, cap);
     fig.insertBefore(workspace, cap);
-    workspace.append(toolbar, paper);
+    // Drag the grip (or use the arrow keys on it) to make the score pane taller or shorter.
+    var grip = el('div', { class: 'se-resize', role: 'separator', tabindex: '0', 'aria-orientation': 'horizontal',
+      'aria-label': 'Resize the score pane. Up and down arrows change its height; double-click or Home resets it.', title: 'Drag to resize · double-click to reset' });
+    workspace.append(toolbar, paper, grip);
     toolbar.append(bar, timeline, settings);
     fig.insertBefore(status, cap);
     fig.insertBefore(help, cap);
@@ -1620,7 +1632,7 @@
       fitLabel: 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
       zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
         set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
-      fitRoom: function () { return (parseFloat(getComputedStyle(paper).maxHeight) || root.innerHeight * 0.65) - 8; }
+      fitRoom: function () { return (paper.clientHeight || root.innerHeight * 0.65) - 8; }
     });
     toolbar.insertBefore(navigation.el, settings);
     if (guide.length) {
@@ -1856,18 +1868,105 @@
       player.mutes[i] = !cb.checked;
       if (was) player.play();
     }); });
+    // Full screen uses the Fullscreen API where it exists. iPhone Safari has none for elements (and embedded
+    // browsers may refuse it), so the figure becomes a fixed overlay that fills the screen instead.
+    var expanded = false;
+    function isFull() { return expanded || document.fullscreenElement === fig; }
+    function setExpanded(on) {
+      expanded = on;
+      fig.classList.toggle('se-expanded', on);
+      document.documentElement.classList.toggle('se-expanded-lock', on);
+      // The top layer escapes lesson wrappers whose transforms or containment would trap position: fixed.
+      if (on && fig.showPopover) {
+        fig.setAttribute('popover', 'manual');
+        try { fig.showPopover(); } catch (err) { fig.removeAttribute('popover'); }
+      } else if (!on && fig.hasAttribute('popover')) {
+        try { fig.hidePopover(); } catch (err) { /* already closed */ }
+        fig.removeAttribute('popover');
+      }
+      fullscreenChanged();
+    }
     full.addEventListener('click', function () {
-      if (document.fullscreenElement === fig) document.exitFullscreen();
-      else if (fig.requestFullscreen) fig.requestFullscreen().catch(function () {});
+      if (expanded) { setExpanded(false); return; }
+      if (document.fullscreenElement === fig) { document.exitFullscreen().catch(function () {}); return; }
+      if (fig.requestFullscreen && document.fullscreenEnabled) fig.requestFullscreen().catch(function () { setExpanded(true); });
+      else setExpanded(true);
     });
     function fullscreenChanged() {
-      var isFull = document.fullscreenElement === fig;
-      full.textContent = isFull ? 'Exit full screen' : 'Full screen';
-      full.setAttribute('aria-pressed', String(isFull));
-      full.setAttribute('aria-label', isFull ? 'Exit full screen' : 'Show the score full screen');
+      var on = isFull();
+      fullText.textContent = on ? 'Exit full screen' : 'Full screen';
+      fullIcon.textContent = on ? '✕' : '⛶';
+      full.title = on ? 'Exit full screen (Esc)' : 'Full screen';
+      full.setAttribute('aria-pressed', String(on));
+      full.setAttribute('aria-label', on ? 'Exit full screen' : 'Show the score full screen');
       layout = null; requestAnimationFrame(draw);
     }
     document.addEventListener('fullscreenchange', fullscreenChanged);
+    function onKey(e) {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if (settings.open && settings.contains(e.target)) { e.preventDefault(); settings.open = false; settingsSummary.focus(); return; }
+      // preventDefault also tells creation-app.js to leave its own expanded workspace alone.
+      if (expanded) { e.preventDefault(); setExpanded(false); full.focus({ preventScroll: true }); }
+    }
+    document.addEventListener('keydown', onKey);
+    // The options open as a panel over the score, so close it when the reader goes back to the music.
+    function onOutside(e) { if (settings.open && !settings.contains(e.target)) settings.open = false; }
+    document.addEventListener('pointerdown', onOutside);
+
+    var COMPACT_KEY = 'classroomos:score-compact';
+    function setCompact(on, save) {
+      workspace.classList.toggle('se-compact', on);
+      more.textContent = on ? '▾' : '▴';
+      more.setAttribute('aria-expanded', String(!on));
+      more.setAttribute('aria-label', on ? 'Show all controls' : 'Hide extra controls');
+      more.title = on ? 'Show all controls' : 'Fewer controls, more score';
+      if (on) settings.open = false;
+      if (save) try { root.localStorage.setItem(COMPACT_KEY, on ? '1' : '0'); } catch (err) { /* private mode */ }
+    }
+    more.addEventListener('click', function () { setCompact(!workspace.classList.contains('se-compact'), true); });
+    try { if (root.localStorage.getItem(COMPACT_KEY) === '1') setCompact(true); } catch (err) { /* private mode */ }
+
+    var HEIGHT_KEY = 'classroomos:score-pane-height';
+    function paneMax() { return Math.max(320, Math.round((root.visualViewport ? root.visualViewport.height : root.innerHeight) - 16)); }
+    function setPaneHeight(px, save) {
+      if (px == null) {
+        workspace.style.removeProperty('height'); workspace.style.removeProperty('min-height');
+        grip.removeAttribute('aria-valuenow');
+        if (save) try { root.localStorage.removeItem(HEIGHT_KEY); } catch (err) { /* private mode */ }
+        return;
+      }
+      px = Math.round(Math.max(240, Math.min(paneMax(), px)));
+      workspace.style.height = px + 'px'; workspace.style.minHeight = '0';
+      grip.setAttribute('aria-valuemin', '240'); grip.setAttribute('aria-valuemax', String(paneMax())); grip.setAttribute('aria-valuenow', String(px));
+      if (save) try { root.localStorage.setItem(HEIGHT_KEY, String(px)); } catch (err) { /* private mode */ }
+    }
+    try { var savedHeight = +root.localStorage.getItem(HEIGHT_KEY); if (savedHeight > 0) setPaneHeight(savedHeight); } catch (err) { /* private mode */ }
+    var dragFrom = null;
+    grip.addEventListener('pointerdown', function (e) {
+      if (e.button > 0) return;
+      e.preventDefault();
+      dragFrom = { y: e.clientY, h: workspace.getBoundingClientRect().height };
+      grip.setPointerCapture(e.pointerId);
+      workspace.classList.add('se-resizing');
+    });
+    grip.addEventListener('pointermove', function (e) { if (dragFrom) setPaneHeight(dragFrom.h + e.clientY - dragFrom.y); });
+    function endDrag() {
+      if (!dragFrom) return;
+      dragFrom = null; workspace.classList.remove('se-resizing');
+      setPaneHeight(workspace.getBoundingClientRect().height, true);
+    }
+    grip.addEventListener('pointerup', endDrag);
+    grip.addEventListener('pointercancel', endDrag);
+    grip.addEventListener('dblclick', function () { setPaneHeight(null, true); });
+    grip.addEventListener('keydown', function (e) {
+      var h = workspace.getBoundingClientRect().height;
+      if (e.key === 'ArrowUp') setPaneHeight(h - 40, true);
+      else if (e.key === 'ArrowDown') setPaneHeight(h + 40, true);
+      else if (e.key === 'End') setPaneHeight(paneMax(), true);
+      else if (e.key === 'Home') setPaneHeight(null, true);
+      else return;
+      e.preventDefault();
+    });
 
     // Click a note: hear it, and start playback from there next time.
     svgWrap.addEventListener('click', function (e) {
@@ -1921,6 +2020,9 @@
       player.stop(); player.destroyed = true;
       if (observer) observer.disconnect(); else root.removeEventListener('resize', draw);
       document.removeEventListener('fullscreenchange', fullscreenChanged);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onOutside);
+      if (expanded) { expanded = false; fig.classList.remove('se-expanded'); document.documentElement.classList.remove('se-expanded-lock'); if (fig.hasAttribute('popover')) { try { fig.hidePopover(); } catch (err) { /* closed */ } fig.removeAttribute('popover'); } }
       if (offPreferences) offPreferences();
       cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
       if (fig.scorePlayer === player) delete fig.scorePlayer;

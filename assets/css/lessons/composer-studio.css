@@ -88,6 +88,7 @@
 
 /* Keep the arrangement controls close to the score on small screens. */
 @media screen and (max-width: 640px) {
+  .fl-page .bv-studio.fl-card { padding: .8rem .6rem; }
   .bv-studio > .eyebrow { margin: .35rem 0; }
   .bv-studio > h2 { margin: .25rem 0; }
   .bv-studio > h2 + p { margin: .35rem 0; line-height: 1.4; }
@@ -101,4 +102,35 @@
   .bv-open { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; width: 100%; padding: .4rem .6rem; font-size: .85rem; line-height: 1.25; }
   .bv-open input { max-width: 100%; }
   .bv-studio #bv-score { margin-block: .7rem; }
+}
+
+/* Studio full screen: the arrangement pickers share the top row with the exit button and the score fills the
+   rest of the screen. Teaching text, notes and file actions stay on the page. */
+.bv-studio:is(:fullscreen, .creation-app-expanded) {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr) auto;
+  align-items: start; gap: .4rem .5rem; overflow: hidden;
+  padding: max(.4rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) max(.4rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left));
+}
+.bv-studio:is(:fullscreen, .creation-app-expanded) > :not(.creation-app-toolbar, .bv-fields, #bv-score, #bv-tab) { display: none; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > .creation-app-toolbar { grid-column: 2; grid-row: 1; position: static; padding: 0; min-height: 0; border: 0; background: none; align-self: end; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen { min-height: 40px; padding: .45rem .8rem; font-size: .85rem; white-space: nowrap; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > .bv-fields {
+  grid-column: 1; grid-row: 1; display: flex; gap: .5rem; margin: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+}
+.bv-studio:is(:fullscreen, .creation-app-expanded) > .bv-fields label { flex: 0 0 auto; width: clamp(8.5rem, 22vw, 15rem); gap: .15rem; font-size: .72rem; line-height: 1.2; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > .bv-fields select { min-height: 40px; padding: .3rem .45rem; font-size: .9rem; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > #bv-score { grid-column: 1 / -1; grid-row: 2; align-self: stretch; min-height: 0; margin: 0; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > #bv-tab:not(:empty) { grid-column: 1 / -1; grid-row: 3; max-height: 30vh; overflow: auto; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) > #bv-score:not(:empty) { display: flex; flex-direction: column; gap: .3rem; padding: .4rem; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-head { flex: 0 0 auto; margin: 0; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-titles { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-titles strong { font-size: 1rem; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-titles span { display: none; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-workspace { flex: 1 1 auto; height: auto !important; min-height: 0 !important; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score :is(.se-resize, .se-help, .se-source, .se-guide, .se-note-list, figcaption) { display: none; }
+.bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score .se-status { margin: 0; }
+@media (max-width: 640px) {
+  .bv-studio:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen { font-size: 0; padding: 0; width: 40px; }
+  .bv-studio:is(:fullscreen, .creation-app-expanded) .creation-app-fullscreen::before { content: "✕"; font-size: 1.1rem; }
+  .bv-studio:is(:fullscreen, .creation-app-expanded) #bv-score:not(:empty) { padding: .25rem; }
 }

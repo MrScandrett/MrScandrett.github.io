@@ -153,28 +153,108 @@
 .se-toolbar .score-nav { --sn-bg: #fff; --sn-ink: #1e3045; --sn-accent: #245c97; --sn-h: 36px; --sn-map-h: 30px; gap: .3rem; padding: .35rem 0; font: inherit; }
 .se-toolbar .score-nav .sn-btn { font-size: .75rem; }
 .se-toolbar .score-nav .sn-mini { min-width: 32px; }
-.se-settings { border-top: 1px solid #cdd5df; padding-top: .25rem; }
-.se-settings > summary { cursor: pointer; width: fit-content; padding: .2rem 0; font-weight: 600; }
-.se-settings .se-options { max-height: 155px; overflow: auto; padding: .4rem 0 .2rem; }
+.se-settings > summary { cursor: pointer; }
 .se-workspace > .se-paper { flex: 1 1 auto; min-height: 0; max-height: none; width: 100%; scrollbar-gutter: stable; overflow: auto; overscroll-behavior: contain; }
 .se-svg { min-width: 0; }
 .se-workspace .se-score { max-width: none; }
 .se-status:empty { display: none; }
-.se-figure:fullscreen { display: flex; flex-direction: column; padding: .75rem; box-sizing: border-box; }
-.se-figure:fullscreen .se-head { flex: 0 0 auto; }
-.se-figure:fullscreen .se-titles strong { font-size: 1.15rem; }
-.se-figure:fullscreen .se-workspace { flex: 1; height: auto; min-height: 0; }
 .se-figure:fullscreen .se-paper { max-height: none; }
-.se-figure:fullscreen :is(.se-help, .se-source, .se-guide, figcaption) { display: none; }
+/* One flowing toolbar. The control groups dissolve (display: contents) so every control is a flex item that
+   can be ordered into a few dense rows: transport, timeline, measure map, then speed / zoom / follow / options.
+   The options panel drops down over the score instead of pushing it off screen. */
+.se-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; }
+.se-toolbar > .se-controls, .se-toolbar > .score-nav { display: contents; }
+.se-toolbar .se-play { order: 1; }
+.se-toolbar .se-stop { order: 2; }
+.se-toolbar .se-check { order: 3; }
+.se-toolbar .se-clear-loop { order: 4; }
+.se-toolbar .se-tempo-ctl { order: 5; }
+.se-toolbar .se-position { order: 6; margin-left: auto; }
+.se-toolbar .se-more { order: 7; }
+.se-toolbar .se-controls .se-full { order: 8; margin-left: 0; }
+.se-toolbar > .se-timeline { order: 10; flex: 1 1 100%; margin: 0; }
+.se-toolbar .sn-goto { order: 20; }
+.se-toolbar [data-sn-step="-1"] { order: 21; }
+.se-toolbar .score-nav .sn-map { order: 22; flex: 1 1 8rem; min-width: 6rem; }
+.se-toolbar [data-sn-step="1"] { order: 23; }
+.se-toolbar .sn-zoom { order: 24; }
+.se-toolbar .sn-follow { order: 25; }
+.se-toolbar .sn-resume { order: 26; }
+.se-toolbar .sn-status { order: 27; }
+.se-toolbar > .se-settings { order: 28; border: 0; padding: 0; }
+.se-toolbar :is(.se-full, .se-more, .se-settings > summary) { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; }
+.se-toolbar .se-more { min-width: 36px; padding-inline: .4rem; }
+.se-icon { font-size: 1rem; line-height: 1; }
+.se-settings > summary { list-style: none; min-height: 36px; box-sizing: border-box; padding: .3rem .65rem; border: 1px solid #c9bfae; border-radius: 6px; background: #fff; color: var(--se-ink); font: 600 .8rem/1.2 system-ui, sans-serif; }
+.se-settings > summary::-webkit-details-marker { display: none; }
+.se-settings[open] > summary { background: #e3ecf6; border-color: #245c97; }
+.se-settings .se-options {
+  position: absolute; z-index: 6; top: calc(100% + 4px); right: .5rem;
+  width: min(26rem, calc(100% - 1rem)); max-height: min(22rem, 55vh); box-sizing: border-box;
+  padding: .6rem .7rem; overflow: auto; overscroll-behavior: contain;
+  border: 1px solid #bac4d0; border-radius: 8px; background: #fff; color: var(--se-ink);
+  box-shadow: 0 10px 28px rgba(15, 30, 50, .22);
+}
+.se-workspace.se-compact .se-toolbar :is(.sn-goto, .sn-mini, .sn-map, .sn-zoom, .sn-follow, .se-settings, .se-tempo-ctl) { display: none; }
+
+/* Drag grip under the pane: resize the score area (height is remembered). */
+.se-resize { flex: 0 0 auto; height: 14px; display: grid; place-items: center; background: var(--se-chrome); border-top: 1px solid #bac4d0; cursor: ns-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
+.se-resize::before { content: ""; width: 44px; height: 4px; border-radius: 4px; background: #8a97a8; }
+.se-resize:hover::before, .se-resizing .se-resize::before { background: #245c97; }
+.se-resize:focus-visible { outline: 3px solid #245c97; outline-offset: -3px; }
+.se-resizing { user-select: none; -webkit-user-select: none; }
+
+/* Full screen: the score pane takes every pixel the toolbar leaves. .se-expanded is the overlay used where
+   the Fullscreen API is missing (iPhone) or refused. */
+html.se-expanded-lock, html.se-expanded-lock body { overflow: hidden; }
+.se-figure.se-expanded, .se-figure.se-expanded:popover-open {
+  position: fixed; inset: 0; z-index: 2147483000; margin: 0; border: 0; border-radius: 0; box-sizing: border-box;
+  width: 100vw; height: 100vh; height: 100dvh; max-width: none;
+  padding: max(.4rem, env(safe-area-inset-top)) max(.4rem, env(safe-area-inset-right)) max(.4rem, env(safe-area-inset-bottom)) max(.4rem, env(safe-area-inset-left));
+  overflow: hidden; overscroll-behavior: contain; background: var(--se-paper); color: var(--se-ink);
+}
+.se-figure.se-expanded::backdrop { background: var(--se-paper); }
+.se-figure:is(:fullscreen, .se-expanded) { display: flex; flex-direction: column; gap: .35rem; }
+.se-figure:fullscreen { padding: .5rem; }
+.se-figure:is(:fullscreen, .se-expanded) .se-head { flex: 0 0 auto; margin: 0; }
+.se-figure:is(:fullscreen, .se-expanded) .se-titles { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.se-figure:is(:fullscreen, .se-expanded) .se-titles strong { font-size: 1.05rem; }
+.se-figure:is(:fullscreen, .se-expanded) .se-titles span { display: none; }
+.se-figure:is(:fullscreen, .se-expanded) .se-workspace { flex: 1 1 auto; height: auto !important; min-height: 0 !important; }
+.se-figure:is(:fullscreen, .se-expanded) .se-resize { display: none; }
+.se-figure:is(:fullscreen, .se-expanded) :is(.se-help, .se-source, .se-guide, .se-note-list, figcaption) { display: none; }
+.se-figure:is(:fullscreen, .se-expanded) .se-status { flex: 0 0 auto; margin: 0; }
+
+.se-workspace { container: se-ws / inline-size; }
 @media (max-width: 640px) {
-  .se-figure { padding: .45rem; }
-  .se-toolbar { padding: .4rem; }
-  .se-toolbar .se-controls { gap: .3rem .45rem; }
-  .se-toolbar .se-controls .se-full { padding-inline: .4rem; }
-  .se-toolbar .se-tempo-ctl { order: 2; }
-  .se-toolbar .se-position { order: 3; margin-left: auto; }
-  .se-toolbar .score-nav .sn-map { flex-basis: 100%; }
-  .se-workspace { height: calc(100dvh - 160px); min-height: min(460px, calc(100dvh - 80px)); }
+  .se-figure { padding: .35rem; }
+  .se-workspace { height: calc(100dvh - 120px); min-height: min(420px, calc(100dvh - 80px)); }
+  .se-resize { height: 18px; }
+}
+/* Narrow panes (phones, split screens): icon buttons, the bar readout drops (the measure box shows it),
+   and speed / zoom / follow share the last row. */
+@container se-ws (max-width: 560px) {
+  .se-toolbar { padding: .4rem; gap: .3rem; }
+  .se-toolbar .se-position { display: none; }
+  .se-toolbar :is(.se-full, .se-settings > summary) .se-label { display: none; }
+  .se-toolbar .se-controls button, .se-settings > summary { min-height: 34px; }
+  .se-toolbar .se-controls :is(.se-full, .se-more, .se-stop), .se-settings > summary { min-width: 34px; padding-inline: .35rem; }
+  .se-toolbar .se-controls .se-play { min-width: 0; padding-inline: .6rem; }
+  .se-toolbar > .se-settings { order: 6; margin-left: auto; }
+  .se-toolbar .se-clear-loop { order: 40; }
+  .se-toolbar .score-nav { --sn-h: 34px; --sn-map-h: 30px; }
+  .se-toolbar .sn-goto input { width: 2.8rem; }
+  .se-toolbar .score-nav .sn-map { order: 22; flex: 1 1 calc(100% - 8.5rem); min-width: 5rem; }
+  .se-toolbar .se-tempo-ctl { order: 30; gap: .2rem; }
+  .se-toolbar .se-tempo-ctl > span { display: none; }
+  .se-toolbar .se-tempo-ctl input[type="range"] { width: 3.4rem; }
+  .se-toolbar .se-tempo-ctl output, .se-toolbar .sn-zoom output { min-width: 2.2rem; font-size: .7rem; }
+  .se-toolbar .sn-zoom { order: 31; gap: .15rem; }
+  .se-toolbar .sn-follow { order: 32; margin-left: auto; }
+  .se-toolbar .score-nav .sn-btn { padding-inline: .4rem; font-size: .72rem; }
+}
+@container se-ws (max-width: 340px) {
+  .se-toolbar .sn-zoom output { display: none; }
 }
 @media print {
   .se-toolbar { display: none !important; }
@@ -188,24 +268,6 @@
   .se-print-score-header strong { flex: 1; min-width: 0; line-height: 1.15; }
   .se-print-score-header span { flex-shrink: 0; }
   .se-print-score-pages .se-finger-number { fill: #69172a; stroke: #fff; stroke-width: .42em; }
-}
-@media screen and (max-width: 640px) {
-  .se-toolbar > .se-controls { display: grid; grid-template-columns: auto auto 1fr auto; }
-  .se-toolbar > .se-controls .se-play { grid-column: 1; grid-row: 1; }
-  .se-toolbar > .se-controls .se-stop { grid-column: 2; grid-row: 1; }
-  .se-toolbar > .se-controls .se-check { grid-column: 3; grid-row: 1; }
-  .se-toolbar > .se-controls .se-full { grid-column: 4; grid-row: 1; max-width: 4.5rem; font-size: .7rem; }
-  .se-toolbar > .se-controls .se-tempo-ctl { grid-column: 1 / 4; grid-row: 2; }
-  .se-toolbar > .se-controls .se-position { grid-column: 4; grid-row: 2; font-size: .65rem; }
-  .se-toolbar > .se-controls .se-clear-loop { grid-column: 1 / 4; grid-row: 3; }
-  .se-toolbar .score-nav { display: grid; grid-template-columns: auto auto 1fr auto; }
-  .se-toolbar .score-nav .sn-goto { grid-column: 1; grid-row: 1; }
-  .se-toolbar .score-nav [data-sn-step="-1"] { grid-column: 2; grid-row: 1; }
-  .se-toolbar .score-nav [data-sn-step="1"] { grid-column: 4; grid-row: 1; }
-  .se-toolbar .score-nav .sn-map { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
-  .se-toolbar .score-nav .sn-zoom { grid-column: 1 / 4; grid-row: 3; }
-  .se-toolbar .score-nav .sn-follow { grid-column: 4; grid-row: 3; padding-inline: .35rem; }
-  .se-toolbar .score-nav .sn-resume { grid-column: 1 / -1; }
 }
 
 /* Paired notation/TAB systems use the same note columns, cursor and player. */
