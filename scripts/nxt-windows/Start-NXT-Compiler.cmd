@@ -2,7 +2,7 @@
 setlocal
 cd /d "%~dp0"
 echo NXT Compiler Companion - Windows setup and launch
-powershell.exe -NoLogo -NoProfile -File "%~dp0Start-NXT-Compiler.ps1"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy RemoteSigned -File "%~dp0Start-NXT-Compiler.ps1"
 if errorlevel 1 (
   echo.
   echo Setup did not finish. Read the message above.
