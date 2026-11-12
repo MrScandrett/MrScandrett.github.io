@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Logarithm Explorer: Powers &amp; Scales · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Unpack logarithms as the question 'What power gets us there?' Switch linear scales to log scales, measure sound in decibels, compare earthquake energy on the Richter scale, and explore pH." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #c84b0a; --tan: #16a34a; }
+:where(html[data-lighting="night"]) .tc-page { --cos: #f46c26; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-page { --cos: #ea580c; } }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 280px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv canvas { display: block; touch-action: none; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+    .machine-display { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: center; padding: 1.2rem; border-radius: 14px; background: color-mix(in srgb, var(--accent, #2563eb) 6%, var(--white, #fff)); border: 1px solid var(--line, #d2d2d7); margin: 0.8rem 0; font-family: "IBM Plex Mono", monospace; }
+    .machine-box { padding: 0.6rem 1rem; border-radius: 10px; background: var(--white, #fff); border: 1.5px solid var(--line, #d2d2d7); text-align: center; }
+    .machine-box small { display: block; font-size: 0.7rem; color: var(--text-muted, #64748b); text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem; }
+    .machine-box span { font-size: 1.35rem; font-weight: 850; color: var(--text-main, #1d1d1f); }
+    .machine-arrow { font-size: 1.5rem; color: var(--card-accent, #2563eb); font-weight: 900; }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; font-size: 0.86rem; }
+    .tc-practice-item input { width: 6rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { min-width: 8rem; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+
+    [data-lighting="night"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .machine-display { background: rgba(255,255,255,0.05); }
+    [data-lighting="night"] .machine-box { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); }
+    [data-lighting="night"] .machine-box span, [data-lighting="night"] .tc-controls label, [data-lighting="night"] .tc-read strong,
+    [data-lighting="night"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-card p, [data-lighting="night"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no { color: #fbbf24; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Exponential Inverses &amp; Orders of Magnitude</p>
+          <h1>Logarithm Explorer: Powers &amp; Scales</h1>
+          <div class="tc-meta">
+            <span>The inverse exponent</span><span class="dot"></span>
+            <span>Decibels &amp; hearing</span><span class="dot"></span>
+            <span>Richter magnitude</span><span class="dot"></span>
+            <span>pH acidity</span><span class="dot"></span>
+            <span>Slide rules</span>
+          </div>
+          <p class="tc-lede">An exponent asks: <em>“If I start with 10 and multiply 3 times, what do I get?”</em> ($10^3 = 1000$). A logarithm asks the exact inverse: <strong>“What power of 10 gets me to 1,000?”</strong> ($\log_{10}(1000) = 3$). Logarithms compress gargantuan ranges of reality—from atoms to galaxies—into readable, human-scale rulers.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>State the equivalence: $\log_b(x) = y \iff b^y = x$ for positive base $b \neq 1$.</li>
+            <li>Understand why linear rulers collapse wide dynamic ranges while logarithmic scales distribute orders of magnitude evenly.</li>
+            <li>Explain why a +10 dB increase sounds twice as loud and represents $10\times$ more sound intensity.</li>
+            <li>Use the product property $\log(a \cdot b) = \log(a) + \log(b)$ to see how slide rules turned multiplication into addition.</li>
+          </ul>
+          <p>Prerequisites: <a href="exponent-explorer.html">Exponent Explorer</a> and <a href="../foundations/proportional-reasoning.html">Proportional Reasoning</a>. Next: <a href="../advanced-and-calculus/eulers-number.html">How e Was Discovered</a>.</p>
+        </section>
+
+        <!-- Lab 1: The Logarithm Machine -->
+        <section class="tc-card" id="log-machine-lab" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · The Inverse Power Machine</h2>
+          <p>Choose a base (10 for scientific notation, 2 for computing and music octaves, or $e \approx 2.718$ for natural calculus growth). Adjust the target value $x$ to see what power $y$ is needed to produce it.</p>
+
+          <div class="tc-btns" id="base-btns" role="group" aria-label="Select base">
+            <button type="button" class="tc-btn primary" data-b="10">Base 10 (log₁₀ · Decibels / Science)</button>
+            <button type="button" class="tc-btn" data-b="2">Base 2 (log₂ · Bits / Octaves)</button>
+            <button type="button" class="tc-btn" data-b="2.71828">Base e (ln · Natural growth)</button>
+          </div>
+
+          <div class="machine-display">
+            <div class="machine-box">
+              <small>Base b</small>
+              <span id="mach-b">10</span>
+            </div>
+            <div class="machine-arrow">^ ? =</div>
+            <div class="machine-box">
+              <small>Target Value x</small>
+              <span id="mach-x">100.0</span>
+            </div>
+            <div class="machine-arrow">⟹ log_b(x) =</div>
+            <div class="machine-box" style="border-color:#2563eb; background:rgba(37,99,235,0.08);">
+              <small style="color:#2563eb;">Power (Exponent y)</small>
+              <span id="mach-y" style="color:#2563eb;">2.000</span>
+            </div>
+          </div>
+
+          <div class="tc-controls">
+            <label>Value x (logarithmic slider): <input id="mach-slider" type="range" min="-1" max="4" step="0.02" value="2" /> <span id="mach-slider-val" class="tc-mono">x = 100</span></label>
+          </div>
+
+          <div class="tc-cv" id="curve-box"><canvas id="curve-canvas" aria-label="Graph of logarithm function"></canvas></div>
+          <p class="tc-mono" id="curve-note" style="text-align:center; font-size:0.85rem; color:var(--text-muted);"></p>
+        </section>
+
+        <!-- Lab 2: Linear Scale vs. Log Scale -->
+        <section class="tc-card" id="scales-lab" style="--card-accent:#c84b0a;">
+          <h2>Lab 2 · Why We Need Logarithmic Scales</h2>
+          <p>Imagine trying to show the mass or size of things in the universe on a standard linear ruler. If the ruler goes from $1\text{ mm}$ to $1\text{ km}$, a grain of pollen, a human, and an elephant all get squashed into the very first millimeter at 0!</p>
+          <div class="tc-cv" id="ruler-box" style="height:320px;"><canvas id="ruler-canvas" aria-label="Comparison of linear and logarithmic scales"></canvas></div>
+          <p>On the <strong>Linear Ruler</strong>, 99.9% of all everyday items are jammed against the left edge. On the <strong>Logarithmic Ruler</strong>, each tick mark represents <em>multiplying by 10</em> ($10^0, 10^1, 10^2, 10^3 \dots$), allowing every scale of reality to have its own visible neighborhood.</p>
+        </section>
+
+        <!-- Lab 3: Real World Log Scales -->
+        <section class="tc-card" id="apps-lab" style="--card-accent:#12843c;">
+          <h2>Lab 3 · Real-World Logarithmic Scales</h2>
+          <p>Nature often operates logarithmically because human sensory systems (ears, eyes) compress huge physical ranges to prevent overload.</p>
+
+          <div class="tc-btns" id="app-tabs" role="group" aria-label="Applications">
+            <button type="button" class="tc-btn primary" data-app="sound">Sound &amp; Decibels (dB)</button>
+            <button type="button" class="tc-btn" data-app="quake">Earthquake Richter Scale</button>
+            <button type="button" class="tc-btn" data-app="ph">Chemistry pH Scale</button>
+          </div>
+
+          <div id="app-content-box" style="margin-top:0.8rem;">
+            <div id="app-sound-view">
+              <p>Sound decibels follow $dB = 10 \log_{10}(I / I_0)$. An increase of <strong>+10 dB</strong> means the sound wave has <strong>10 times more power</strong>, and sounds roughly twice as loud to human ears.</p>
+              <div class="tc-controls">
+                <label>Sound source:
+                  <select id="sound-sel" style="padding:0.3rem 0.5rem; border-radius:8px; border:1px solid var(--line); font:inherit;">
+                    <option value="0">Threshold of hearing (0 dB · 1×)</option>
+                    <option value="30">Rustling leaves / Whisper (30 dB · 1,000×)</option>
+                    <option value="60" selected>Normal conversation (60 dB · 1,000,000×)</option>
+                    <option value="85">City traffic / Lawn mower (85 dB · 316,000,000×)</option>
+                    <option value="110">Rock concert / Siren (110 dB · 100,000,000,000×)</option>
+                    <option value="140">Jet takeoff close up (140 dB · 100,000,000,000,000×)</option>
+                  </select>
+                </label>
+              </div>
+              <div class="tc-read">
+                <div>Decibels<strong id="snd-db">60 dB</strong></div>
+                <div>Relative Energy<strong id="snd-nrg">1,000,000×</strong></div>
+                <div>Hearing Safety<strong id="snd-safe" style="color:#15803d;">Safe indefinitely</strong></div>
+              </div>
+            </div>
+
+            <div id="app-quake-view" hidden>
+              <p>Every whole number step on the earthquake moment magnitude scale corresponds to $10^{1.5} \approx \mathbf{31.6\times}$ more energy released. A magnitude 7 earthquake is not "a little stronger" than a magnitude 5—it releases <strong>1,000 times</strong> more seismic energy!</p>
+              <div class="tc-controls">
+                <label>Magnitude: <input id="quake-slider" type="range" min="3" max="9" step="0.5" value="6" style="--card-accent:#ea580c;" /> <span id="quake-val" class="tc-mono">M 6.0</span></label>
+              </div>
+              <div class="tc-read">
+                <div>Magnitude<strong id="qk-mag">6.0</strong></div>
+                <div>Energy relative to M3.0<strong id="qk-nrg">31,623×</strong></div>
+                <div>TNT Equivalent<strong id="qk-tnt">15,000 tons</strong></div>
+              </div>
+            </div>
+
+            <div id="app-ph-view" hidden>
+              <p>The pH scale measures hydrogen ion concentration $[H^+]$ via $pH = -\log_{10}[H^+]$. Because of the negative sign, <strong>lower pH means more acidic</strong>. Lemon juice (pH 2) has $100,000\times$ more free hydrogen ions than pure water (pH 7)!</p>
+              <div class="tc-controls">
+                <label>Substance:
+                  <select id="ph-sel" style="padding:0.3rem 0.5rem; border-radius:8px; border:1px solid var(--line); font:inherit;">
+                    <option value="1">Battery acid (pH 1.0 · Highly acidic)</option>
+                    <option value="2">Lemon juice / Stomach acid (pH 2.0)</option>
+                    <option value="5">Black coffee (pH 5.0)</option>
+                    <option value="7" selected>Pure water / Blood (pH 7.0 · Neutral)</option>
+                    <option value="9">Baking soda (pH 9.0 · Basic)</option>
+                    <option value="12">Bleach / Ammonia (pH 12.0 · Strongly basic)</option>
+                  </select>
+                </label>
+              </div>
+              <div class="tc-read">
+                <div>pH Value<strong id="ph-val-read">7.0</strong></div>
+                <div>Relative Acidity to Water<strong id="ph-acid-read">1× (Neutral)</strong></div>
+                <div>Classification<strong id="ph-type-read" style="color:#15803d;">Neutral</strong></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lab 4: The Slide Rule Secret -->
+        <section class="tc-card" id="slide-rule-lab" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · The Slide Rule Secret: Multiplying by Adding</h2>
+          <p>Before pocket calculators, engineers designed the Apollo moon missions with <strong>slide rules</strong>. The secret? The fundamental logarithm identity:</p>
+          <p class="tc-mono" style="text-align:center; font-size:1.15rem; font-weight:800; color:var(--text-main);">log(A × B) = log(A) + log(B)</p>
+          <p>Because physical distances on a log ruler are proportional to logarithms, sliding a physical ruler by distance $\log(B)$ adds the lengths together—reading out the multiplication product directly!</p>
+        </section>
+
+        <!-- Practice Section -->
+        <section class="tc-card" style="--card-accent:#2563eb;">
+          <h2>Check Your Understanding</h2>
+          <div class="tc-practice-item" data-answer="3" data-hint="What power of 10 gives 1,000? 10^3 = 1000.">
+            <p>Evaluate: $\log_{10}(1000)$.</p>
+            <input type="text" placeholder="e.g. 3" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="5" data-hint="What power of 2 gives 32? 2^5 = 32.">
+            <p>Evaluate: $\log_{2}(32)$.</p>
+            <input type="text" placeholder="e.g. 5" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="100" data-hint="Difference of 20 dB = 10^(20/10) = 10^2 = 100 times.">
+            <p>A 70 dB vacuum cleaner has how many times more sound energy than a 50 dB conversation?</p>
+            <input type="text" placeholder="e.g. 100" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="0" data-hint="Any positive base raised to power 0 equals 1 (b^0 = 1).">
+            <p>What is $\log_{10}(1)$?</p>
+            <input type="text" placeholder="e.g. 0" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    function $(id) { return document.getElementById(id); }
+    function col() { return SimKit.theme.colors(); }
+    function mk(id, boxId, draw) { return SimKit.canvas2d($(id), { box: $(boxId), onResize: function () { draw(); } }); }
+
+    /* ── Lab 1: Inverse Power Machine ── */
+    var curBase = 10;
+    var machB = $("mach-b"), machX = $("mach-x"), machY = $("mach-y");
+    var machSlider = $("mach-slider"), machSliderVal = $("mach-slider-val");
+    var curveCanvas = $("curve-canvas"), curveNote = $("curve-note");
+
+    function updateMachine() {
+      // slider exponent power in [-1, 4]
+      var p = parseFloat(machSlider.value);
+      var x = Math.pow(10, p);
+      if (curBase === 2) {
+        x = Math.pow(2, p);
+      } else if (Math.abs(curBase - 2.71828) < 0.01) {
+        x = Math.exp(p);
+      }
+
+      machB.textContent = curBase === 2.71828 ? "e" : curBase;
+      machX.textContent = x < 1 ? x.toFixed(2) : x < 100 ? x.toFixed(1) : Math.round(x);
+      machSliderVal.textContent = "x = " + machX.textContent;
+
+      var y = Math.log(x) / Math.log(curBase);
+      machY.textContent = y.toFixed(3);
+
+      drawCurve(x, y);
+    }
+
+    function drawCurve(activeX, activeY) {
+      var c = col();
+      var ctx = curveCanvas.getContext("2d");
+      var w = curveCanvas.width, h = curveCanvas.height;
+      if (!ctx || w === 0) return;
+      ctx.clearRect(0, 0, w, h);
+
+      var pad = 40;
+      var ox = pad + 30; // origin x
+      var oy = h - pad; // origin y
+
+      var xMax = curBase === 10 ? 100 : curBase === 2 ? 16 : 20;
+      var yMax = Math.log(xMax) / Math.log(curBase) + 0.5;
+
+      var scaleX = (w - ox - pad) / xMax;
+      var scaleY = (oy - pad) / yMax;
+
+      // Axes
+      ctx.strokeStyle = c.textMuted;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ox, pad); ctx.lineTo(ox, oy); ctx.lineTo(w - pad, oy);
+      ctx.stroke();
+
+      // Axis labels
+      ctx.font = "600 11px 'IBM Plex Mono', monospace";
+      ctx.fillStyle = c.textMuted;
+      ctx.textAlign = "center";
+      ctx.fillText("x", w - pad + 15, oy + 4);
+      ctx.fillText("y = log_b(x)", ox, pad - 12);
+
+      // Ticks
+      ctx.fillText("1", ox + 1 * scaleX, oy + 16);
+      ctx.fillText(curBase === 2.71828 ? "e" : curBase, ox + curBase * scaleX, oy + 16);
+
+      // Plot curve y = log_b(x)
+      ctx.beginPath();
+      ctx.strokeStyle = c.accent;
+      ctx.lineWidth = 2.5;
+      var steps = 150;
+      for (var i = 1; i <= steps; i++) {
+        var xVal = (i / steps) * xMax;
+        var yVal = Math.log(xVal) / Math.log(curBase);
+        var cx = ox + xVal * scaleX;
+        var cy = oy - yVal * scaleY;
+        if (i === 1) ctx.moveTo(cx, cy);
+        else ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+
+      // Active point
+      if (activeX <= xMax) {
+        var px = ox + activeX * scaleX;
+        var py = oy - activeY * scaleY;
+
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = "#ea580c";
+        ctx.beginPath();
+        ctx.moveTo(px, oy); ctx.lineTo(px, py); ctx.lineTo(ox, py);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.fillStyle = "#ea580c";
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      curveNote.textContent = "Passes through (1, 0) and (" + (curBase === 2.71828 ? "e ≈ 2.72" : curBase) + ", 1). Vertical asymptote at x = 0.";
+    }
+
+    mk("curve-canvas", "curve-box", function () { updateMachine(); });
+    machSlider.addEventListener("input", updateMachine);
+
+    document.querySelectorAll("#base-btns button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#base-btns button").forEach(function (b) { b.classList.remove("primary"); });
+        btn.classList.add("primary");
+        curBase = parseFloat(btn.dataset.b);
+        updateMachine();
+      });
+    });
+
+    /* ── Lab 2: Linear vs. Log Scales Ruler ── */
+    var rulerCanvas = $("ruler-canvas");
+    var items = [
+      { name: "Bacterium", size: 0.000002, label: "2 μm (10⁻⁶ m)" },
+      { name: "Pollen Grain", size: 0.00005, label: "50 μm (10⁻⁴ m)" },
+      { name: "Coin / Ant", size: 0.02, label: "2 cm (10⁻² m)" },
+      { name: "Human", size: 1.7, label: "1.7 m (10⁰ m)" },
+      { name: "Blue Whale", size: 30, label: "30 m (10¹ m)" },
+      { name: "Eiffel Tower", size: 330, label: "330 m (10² m)" },
+      { name: "Mt. Everest", size: 8848, label: "8.8 km (10⁴ m)" }
+    ];
+
+    function drawRulers() {
+      var c = col();
+      var ctx = rulerCanvas.getContext("2d");
+      var w = rulerCanvas.width, h = rulerCanvas.height;
+      if (!ctx || w === 0) return;
+      ctx.clearRect(0, 0, w, h);
+
+      var pad = 40;
+      var rw = w - pad * 2;
+
+      // Ruler 1: Linear Scale (0 to 10,000 meters)
+      var y1 = 65;
+      ctx.fillStyle = c.text;
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("1. Linear Ruler (0 to 10,000 meters)", pad, y1 - 25);
+
+      ctx.beginPath();
+      ctx.strokeStyle = c.textMuted;
+      ctx.lineWidth = 3;
+      ctx.moveTo(pad, y1); ctx.lineTo(w - pad, y1);
+      ctx.stroke();
+
+      // Linear ticks
+      ctx.font = "10px 'IBM Plex Mono', monospace";
+      ctx.textAlign = "center";
+      for (var lt = 0; lt <= 10000; lt += 2500) {
+        var lx = pad + (lt / 10000) * rw;
+        ctx.beginPath(); ctx.moveTo(lx, y1 - 8); ctx.lineTo(lx, y1 + 8); ctx.stroke();
+        ctx.fillText(lt + " m", lx, y1 + 22);
+      }
+
+      // Plot items on Linear scale
+      items.forEach(function (it) {
+        var lx = pad + Math.min(1, it.size / 10000) * rw;
+        ctx.beginPath();
+        ctx.fillStyle = it.size > 500 ? "#15803d" : "#dc2626";
+        ctx.arc(lx, y1, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.fillStyle = "#dc2626";
+      ctx.font = "italic 11px sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText("← All 5 smaller items clumped at 0 m!", pad + 10, y1 - 10);
+
+      // Ruler 2: Logarithmic Ruler (10^-6 to 10^5 meters)
+      var y2 = 210;
+      ctx.fillStyle = c.text;
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("2. Logarithmic Ruler (Powers of 10: 10⁻⁶ m to 10⁵ m)", pad, y2 - 40);
+
+      ctx.beginPath();
+      ctx.strokeStyle = c.accent;
+      ctx.lineWidth = 3;
+      ctx.moveTo(pad, y2); ctx.lineTo(w - pad, y2);
+      ctx.stroke();
+
+      var minExp = -6, maxExp = 5;
+      var rangeExp = maxExp - minExp;
+
+      // Log ticks
+      for (var e = minExp; e <= maxExp; e++) {
+        var logX = pad + ((e - minExp) / rangeExp) * rw;
+        ctx.beginPath(); ctx.strokeStyle = c.textMuted; ctx.moveTo(logX, y2 - 8); ctx.lineTo(logX, y2 + 8); ctx.stroke();
+        ctx.fillStyle = c.textMuted;
+        ctx.fillText("10" + (e === 0 ? "⁰" : e === 1 ? "¹" : e === 2 ? "²" : e === 3 ? "³" : e === 4 ? "⁴" : e === 5 ? "⁵" : e === -2 ? "⁻²" : e === -4 ? "⁻⁴" : "⁻⁶"), logX, y2 + 22);
+      }
+
+      // Plot items on Log scale
+      items.forEach(function (it, idx) {
+        var valExp = Math.log10(it.size);
+        var logX = pad + ((valExp - minExp) / rangeExp) * rw;
+
+        ctx.beginPath();
+        ctx.fillStyle = "#2563eb";
+        ctx.arc(logX, y2, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+
+        ctx.fillStyle = c.text;
+        ctx.font = "600 10px sans-serif";
+        ctx.textAlign = "center";
+        var labelY = (idx % 2 === 0) ? y2 - 20 : y2 - 8;
+        ctx.fillText(it.name, logX, labelY);
+      });
+    }
+
+    mk("ruler-canvas", "ruler-box", drawRulers);
+
+    /* ── Lab 3: Real World Log Scales ── */
+    var sndSel = $("sound-sel"), sndDb = $("snd-db"), sndNrg = $("snd-nrg"), sndSafe = $("snd-safe");
+    sndSel.addEventListener("change", function () {
+      var val = parseInt(sndSel.value, 10);
+      sndDb.textContent = val + " dB";
+      var mult = Math.pow(10, val / 10);
+      sndNrg.textContent = mult >= 1e9 ? (mult / 1e9).toFixed(0) + " Billion×" : mult >= 1e6 ? (mult / 1e6).toFixed(0) + " Million×" : mult.toLocaleString() + "×";
+      if (val >= 110) {
+        sndSafe.textContent = "Hearing damage in seconds"; sndSafe.style.color = "#dc2626";
+      } else if (val >= 85) {
+        sndSafe.textContent = "Harmful after 8+ hours"; sndSafe.style.color = "#ea580c";
+      } else {
+        sndSafe.textContent = "Safe indefinitely"; sndSafe.style.color = "#15803d";
+      }
+    });
+
+    var qkSlider = $("quake-slider"), qkMag = $("qk-mag"), qkNrg = $("qk-nrg"), qkTnt = $("qk-tnt");
+    qkSlider.addEventListener("input", function () {
+      var m = parseFloat(qkSlider.value);
+      $("quake-val").textContent = "M " + m.toFixed(1);
+      qkMag.textContent = m.toFixed(1);
+      var factor = Math.pow(10, 1.5 * (m - 3));
+      qkNrg.textContent = factor >= 1e6 ? (factor / 1e6).toFixed(1) + " Million×" : Math.round(factor).toLocaleString() + "×";
+      var tntTons = Math.pow(10, 1.5 * m - 4.8);
+      qkTnt.textContent = tntTons >= 1e6 ? (tntTons / 1e6).toFixed(1) + " Megatons" : Math.round(tntTons).toLocaleString() + " tons";
+    });
+
+    var phSel = $("ph-sel"), phValRead = $("ph-val-read"), phAcidRead = $("ph-acid-read"), phTypeRead = $("ph-type-read");
+    phSel.addEventListener("change", function () {
+      var ph = parseInt(phSel.value, 10);
+      phValRead.textContent = ph.toFixed(1);
+      var diff = 7 - ph;
+      if (diff > 0) {
+        var rel = Math.pow(10, diff);
+        phAcidRead.textContent = rel.toLocaleString() + "× more acidic than water";
+        phTypeRead.textContent = "Acidic"; phTypeRead.style.color = "#ea580c";
+      } else if (diff < 0) {
+        var relB = Math.pow(10, -diff);
+        phAcidRead.textContent = relB.toLocaleString() + "× more basic than water";
+        phTypeRead.textContent = "Basic / Alkaline"; phTypeRead.style.color = "#2563eb";
+      } else {
+        phAcidRead.textContent = "1× (Baseline)";
+        phTypeRead.textContent = "Neutral"; phTypeRead.style.color = "#15803d";
+      }
+    });
+
+    // App tabs
+    document.querySelectorAll("#app-tabs button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("#app-tabs button").forEach(function (b) { b.classList.remove("primary"); });
+        btn.classList.add("primary");
+        var app = btn.dataset.app;
+        $("app-sound-view").hidden = (app !== "sound");
+        $("app-quake-view").hidden = (app !== "quake");
+        $("app-ph-view").hidden = (app !== "ph");
+      });
+    });
+
+    SimKit.theme.onChange(function () {
+      updateMachine();
+      drawRulers();
+    });
+
+    /* ── Practice check ── */
+    document.querySelectorAll(".tc-practice-item").forEach(function (item) {
+      var input = item.querySelector("input"), fb = item.querySelector(".fb");
+      function check() {
+        var v = parseFloat(input.value.trim());
+        if (isNaN(v)) { fb.textContent = "Enter a number."; fb.className = "fb no"; return; }
+        var target = parseFloat(item.dataset.answer);
+        var ok = Math.abs(v - target) <= 0.05;
+        fb.textContent = ok ? "✔ Correct!" : "Not quite. Hint: " + item.dataset.hint;
+        fb.className = "fb " + (ok ? "ok" : "no");
+      }
+      item.querySelector("button").addEventListener("click", check);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") check(); });
+    });
+
+    updateMachine();
+    drawRulers();
+  })();
+  </script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-reset.js" data-groups='[["mach-slider"],["quake-slider"]]'></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

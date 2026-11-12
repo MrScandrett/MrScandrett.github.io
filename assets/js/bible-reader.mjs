@@ -1,4 +1,4 @@
-// The Bible reader (bible.html): all 66 books in three public-domain translations,
+// The Bible reader (bible.html): all 66 books in four public-domain translations,
 // chapter-by-chapter progress, a daily reading streak, and the homepage's verse of the day.
 //
 // Text: assets/data/bible/ (npm run build:bible). Progress stays in this browser:
@@ -40,6 +40,7 @@ function load() {
 
 let state = load();
 let meta = null;      // books.json
+let bookWiki = {};    // book-wiki.json
 let books = [];
 const bySlug = new Map();
 const aliases = new Map();
@@ -370,22 +371,60 @@ function tile(b) {
       done && !finished ? meter(done / total, `${b.name} progress`) : null));
 }
 
-/* Book: intro, progress, and every chapter as a numbered square. */
+/* Book: biographical wiki entry, visual artifacts, progress, and every chapter as a numbered square. */
 function renderBook(b) {
   const read = readSet(b.slug);
   const total = b.verses.length;
   const firstUnread = b.verses.findIndex((_, i) => !read.has(i + 1)) + 1;
   const start = firstUnread || 1;
   const label = !read.size ? `Start ${b.name} 1` : firstUnread ? `Continue at chapter ${firstUnread}` : "Read again from chapter 1";
+  const info = bookWiki[b.slug] || {};
 
-  setView(b.name,
-    h("nav", { class: "bb-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: `${PAGE}#/` }, "‹ All books")),
-    h("header", { class: "bb-book-head", "data-cat": b.cat },
+  const metaPills = [];
+  if (info.author) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Author: " }), info.author));
+  if (info.date) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Date: " }), info.date));
+  if (info.place) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Origin: " }), info.place));
+  if (info.audience) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Audience: " }), info.audience));
+
+  const themes = Array.isArray(info.themes) && info.themes.length
+    ? h("div", { class: "bb-book-themes" },
+        h("span", { class: "bb-themes-label", text: "Themes: " }),
+        ...info.themes.map((t) => h("span", { class: "bb-theme-tag", text: t })))
+    : null;
+
+  const visuals = Array.isArray(info.images) && info.images.length
+    ? h("aside", { class: "bb-book-visuals", "aria-label": `${b.name} visual artifacts` },
+        info.images.slice(0, 2).map((img, idx) =>
+          h("figure", {
+            class: "bb-book-fig",
+            "data-zoomable": "",
+            "data-lightbox-group": `book-${b.slug}`,
+            "data-full": img.full || img.src
+          },
+            h("img", {
+              src: img.src,
+              alt: img.alt || img.title || `${b.name} illustration`,
+              loading: idx === 0 ? "eager" : "lazy"
+            }),
+            h("figcaption", null,
+              img.title ? h("strong", { class: "bb-fig-title", text: img.title }) : null,
+              h("span", { class: "bb-fig-desc", text: (img.title ? " " : "") + (img.caption || "") }),
+              img.credit ? h("span", { class: "bb-fig-credit", text: ` · ${img.credit}` }) : null
+            )
+          )
+        )
+      )
+    : null;
+
+  const mainCol = h("div", { class: "bb-book-main" },
+    h("div", { class: "bb-book-header-group" },
       h("p", { class: "bb-kicker", text: `${b.t === "OT" ? "Old" : "New"} Testament · ${b.cat}` }),
       h("h1", { text: b.name }),
-      h("p", { class: "bb-about", text: b.about }),
-      h("p", { class: "bb-fine", text: `${read.size} of ${plural(total, "chapter")} read` }),
-      meter(read.size / total, `${b.name} progress`),
+      metaPills.length ? h("div", { class: "bb-book-meta" }, ...metaPills) : null,
+      h("p", { class: "bb-book-summary", text: info.summary || b.about }),
+      themes
+    ),
+    h("div", { class: "bb-book-status" },
       h("div", { class: "bb-actions" },
         h("a", { class: "bb-btn bb-primary", href: readHref(b.slug, start) }, label),
         read.size ? h("button", { type: "button", class: "bb-btn", onclick: () => {
@@ -394,18 +433,40 @@ function renderBook(b) {
           save();
           renderBook(b);
           announce(`Progress in ${b.name} cleared.`);
-        } }, "Clear progress") : null)),
-    h("h2", { class: "bb-sub", text: "Chapters" }),
-    h("ol", { class: "bb-chapters" }, b.verses.map((count, i) => {
-      const ch = i + 1;
-      const done = read.has(ch);
-      return h("li", null, h("a", {
-        class: "bb-ch" + (done ? " is-read" : "") + (state.last?.slug === b.slug && state.last.ch === ch ? " is-last" : ""),
-        href: readHref(b.slug, ch),
-        "aria-label": `Chapter ${ch}${done ? ", read" : ""}`,
-        title: `${count} verses`,
-      }, String(ch)));
-    })));
+        } }, "Clear progress") : null
+      ),
+      h("div", { class: "bb-progress-box" },
+        h("p", { class: "bb-fine", text: `${read.size} of ${plural(total, "chapter")} read` }),
+        meter(read.size / total, `${b.name} progress`)
+      )
+    )
+  );
+
+  const grid = h("div", { class: `bb-book-grid${visuals ? " has-visuals" : ""}` },
+    mainCol,
+    visuals
+  );
+
+  setView(b.name,
+    h("nav", { class: "bb-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: `${PAGE}#/` }, "‹ All books")),
+    h("header", { class: "bb-book-head", "data-cat": b.cat }, grid),
+    h("section", { class: "bb-chapters-sec" },
+      h("div", { class: "bb-chapters-head" },
+        h("h2", { class: "bb-sub", text: "Chapters" }),
+        h("span", { class: "bb-fine", text: `${plural(total, "chapter")} · Select a chapter to read` })
+      ),
+      h("ol", { class: "bb-chapters" }, b.verses.map((count, i) => {
+        const ch = i + 1;
+        const done = read.has(ch);
+        return h("li", null, h("a", {
+          class: "bb-ch" + (done ? " is-read" : "") + (state.last?.slug === b.slug && state.last.ch === ch ? " is-last" : ""),
+          href: readHref(b.slug, ch),
+          "aria-label": `Chapter ${ch}${done ? ", read" : ""}`,
+          title: `${count} verses`,
+        }, String(ch)));
+      }))
+    )
+  );
   focusHeading();
 }
 
@@ -937,6 +998,12 @@ async function start() {
   } catch {
     main.replaceChildren(h("p", { class: "bb-error", text: "The Bible couldn't load. Check your connection and reload the page." }));
     return;
+  }
+  try {
+    const wikiRes = await fetch(DATA + "book-wiki.json");
+    if (wikiRes.ok) bookWiki = await wikiRes.json();
+  } catch {
+    bookWiki = {};
   }
   books = meta.books;
   books.forEach((b) => bySlug.set(b.slug, b));

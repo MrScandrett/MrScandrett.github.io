@@ -61,6 +61,36 @@
 :root[data-bible-face="literata"] { --bb-face: "Reader Literata", Georgia, serif; }
 :root[data-bible-face="atkinson"] { --bb-face: "Reader Atkinson", sans-serif; }
 :root[data-bible-face="lexend"] { --bb-face: "Reader Lexend", sans-serif; }
+:root[data-bible-face="uncial"] {
+  --bb-face: "Reader Uncial", "Uncial Antiqua", fantasy, cursive, serif;
+}
+:root[data-bible-face="gothic"] {
+  --bb-face: "Reader Gothic", "MedievalSharp", "UnifrakturMaguntia", serif;
+}
+:root[data-bible-face="koine"] {
+  --bb-face: "Reader Cinzel", "Reader Caudex", "Cinzel", "Caudex", "Palatino Linotype", serif;
+}
+:root[data-bible-face="koine"] .bb-preview,
+:root[data-bible-face="koine"] .bb-text {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+}
+:root[data-bible-face="koine"] .bb-chap-head h1 {
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+}
+:root[data-bible-face="fell"] {
+  --bb-face: "Reader Fell", "IM Fell English", "Caslon", Georgia, serif;
+}
+
+/* Scribe & manuscript initial accent */
+:root[data-bible-face="uncial"] .bb-verses > .bb-v:first-child .bb-vt::first-letter,
+:root[data-bible-face="gothic"] .bb-verses > .bb-v:first-child .bb-vt::first-letter,
+:root[data-bible-face="fell"] .bb-verses > .bb-v:first-child .bb-vt::first-letter {
+  font-size: 1.35em;
+  font-weight: 700;
+  color: var(--bb-accent);
+}
 
 :root[data-highlight="gold"] {
   --bb-select: var(--bb-select-gold);
@@ -413,26 +443,287 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round
 .bb-credit { margin-top: 2.5rem; color: var(--bb-muted); font-size: 0.85rem; text-align: center; }
 
 /* ── Book ────────────────────────────────────────────────────────── */
-.bb-crumbs { font-size: 0.95rem; margin: 0 0 0.75rem; }
-.bb-crumbs a { text-decoration: none; font-weight: 600; }
+html[data-view="book"] .bb-main {
+  padding-top: 0.65rem;
+  padding-bottom: 2rem;
+}
+
+.bb-crumbs { font-size: 0.92rem; margin: 0 0 0.5rem; }
+.bb-crumbs a { text-decoration: none; font-weight: 600; color: var(--bb-accent); }
+.bb-crumbs a:hover { text-decoration: underline; }
+
 .bb-book-head {
-  position: relative; padding: 1.25rem 1.35rem 1.25rem 1.75rem;
-  background: var(--bb-page); border: 1px solid var(--bb-line); border-radius: 18px; box-shadow: var(--bb-shadow);
-  overflow: hidden; max-width: 44rem;
+  position: relative;
+  padding: 0.95rem 1.25rem 0.95rem 1.65rem;
+  background: var(--bb-page);
+  border: 1px solid var(--bb-line);
+  border-radius: 18px;
+  box-shadow: var(--bb-shadow);
+  overflow: hidden;
+  max-width: 100%;
 }
-.bb-book-head::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 8px; background: var(--cat); }
-.bb-book-head h1 { margin: 0; font-family: var(--bb-face); font-size: clamp(2rem, 5vw, 2.6rem); }
-.bb-about { font-family: var(--bb-face); font-size: 1.15rem; margin: 0.5rem 0 0.75rem; }
-.bb-sub { font-size: 1rem; margin: 1.75rem 0 0.6rem; }
-.bb-chapters { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(3.1rem, 1fr)); gap: 0.45rem; }
+.bb-book-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 8px;
+  background: var(--cat, var(--bb-accent));
+}
+
+.bb-book-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+@media (min-width: 860px) {
+  .bb-book-grid.has-visuals {
+    display: grid;
+    grid-template-columns: minmax(0, 1.52fr) minmax(270px, 320px);
+    gap: 1.35rem;
+    align-items: stretch;
+  }
+}
+
+.bb-book-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.bb-book-header-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bb-book-head h1 {
+  margin: 0.05rem 0 0.35rem;
+  font-family: var(--bb-face);
+  font-size: clamp(1.75rem, 3.5vw, 2.2rem);
+  line-height: 1.15;
+  color: var(--bb-text);
+}
+
+.bb-book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.45rem;
+  margin: 0 0 0.5rem;
+  padding: 0;
+}
+
+.bb-pill {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 0.77rem;
+  line-height: 1.3;
+  padding: 0.16rem 0.5rem;
+  border-radius: 6px;
+  background: var(--bb-hover);
+  border: 1px solid var(--bb-line);
+  color: var(--bb-text);
+}
+.bb-pill strong {
+  font-weight: 700;
+  color: var(--bb-accent);
+  margin-right: 0.22rem;
+}
+
+.bb-book-summary {
+  font-family: var(--bb-face);
+  font-size: 0.94rem;
+  line-height: 1.46;
+  margin: 0 0 0.5rem;
+  color: var(--bb-text);
+  text-wrap: pretty;
+}
+
+.bb-book-themes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0 0 0.2rem;
+  font-size: 0.76rem;
+}
+.bb-themes-label {
+  font-weight: 700;
+  color: var(--bb-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 0.15rem;
+}
+.bb-theme-tag {
+  display: inline-block;
+  padding: 0.12rem 0.44rem;
+  border-radius: 999px;
+  background: var(--bb-accent-soft);
+  color: var(--bb-accent);
+  font-weight: 600;
+  font-size: 0.73rem;
+}
+
+.bb-book-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem 1.1rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--bb-line);
+  margin-top: auto;
+}
+.bb-book-status .bb-actions {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bb-progress-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  min-width: 130px;
+}
+@media (max-width: 600px) {
+  .bb-progress-box {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+.bb-progress-box .bb-fine {
+  margin: 0;
+  font-size: 0.78rem;
+}
+.bb-progress-box .bb-meter {
+  width: 100%;
+  max-width: 10rem;
+  height: 5px;
+}
+
+/* ── Book Visuals (Pictures with captions on right) ── */
+.bb-book-visuals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  justify-content: center;
+}
+@media (max-width: 859px) {
+  .bb-book-visuals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+.bb-book-fig {
+  margin: 0;
+  padding: 0.38rem;
+  background: var(--bb-bg);
+  border: 1px solid var(--bb-line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.bb-book-fig:hover {
+  border-color: var(--bb-accent);
+  box-shadow: var(--bb-shadow);
+  transform: translateY(-1px);
+}
+.bb-book-fig img {
+  width: 100%;
+  height: 98px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  background: var(--bb-line);
+  cursor: zoom-in;
+}
+.bb-book-visuals:has(.bb-book-fig:only-child) .bb-book-fig img {
+  height: 160px;
+}
+.bb-book-fig figcaption {
+  font-size: 0.72rem;
+  line-height: 1.32;
+  color: var(--bb-muted);
+  padding: 0.08rem 0.15rem 0.12rem;
+}
+.bb-fig-title {
+  font-weight: 700;
+  color: var(--bb-text);
+}
+.bb-fig-desc {
+  color: var(--bb-text);
+}
+.bb-fig-credit {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--bb-muted);
+  margin-top: 0.12rem;
+  font-style: italic;
+}
+
+/* ── Chapters Section ── */
+.bb-chapters-sec {
+  margin-top: 0.85rem;
+}
+.bb-chapters-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+.bb-chapters-head .bb-sub {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.bb-chapters-head .bb-fine {
+  margin: 0;
+}
+.bb-chapters {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.65rem, 1fr));
+  gap: 0.35rem;
+}
 .bb-ch {
-  display: grid; place-items: center; aspect-ratio: 1; min-height: 2.9rem;
-  border: 1px solid var(--bb-line); border-radius: 10px; background: var(--bb-page);
-  color: var(--bb-text); text-decoration: none; font-weight: 600; font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-height: 2.55rem;
+  border: 1px solid var(--bb-line);
+  border-radius: 9px;
+  background: var(--bb-page);
+  color: var(--bb-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.bb-ch:hover { border-color: var(--bb-accent); }
-.bb-ch.is-read { background: var(--bb-accent); border-color: var(--bb-accent); color: var(--bb-accent-text); }
-.bb-ch.is-last { box-shadow: 0 0 0 2px var(--bb-bg), 0 0 0 4px var(--bb-accent); }
+.bb-ch:hover {
+  border-color: var(--bb-accent);
+  background: var(--bb-hover);
+}
+.bb-ch.is-read {
+  background: var(--bb-accent);
+  border-color: var(--bb-accent);
+  color: var(--bb-accent-text);
+}
+.bb-ch.is-last {
+  box-shadow: 0 0 0 2px var(--bb-bg), 0 0 0 4px var(--bb-accent);
+}
 
 /* ── Chapter ─────────────────────────────────────────────────────── */
 .bb-chap-head, .bb-text, .bb-chap-foot { max-width: 40rem; margin-inline: auto; }
@@ -949,7 +1240,17 @@ html[data-focus="on"] .bb-text { border-color: transparent; box-shadow: none; ba
 /* Polish after first visual pass */
 .bb-display { bottom: auto; top: 4rem; max-height: calc(100vh - 5rem); }
 .bb-display .bb-seg.bb-face-options { flex-wrap: wrap; border-radius: 14px; max-width: none; }
-.bb-display .bb-face-options button { flex: 1 1 30%; min-width: 0; padding-inline: 0.3rem; }
+.bb-display .bb-face-options button { flex: 1 1 calc(20% - 4px); min-width: 4.2rem; padding-inline: 0.3rem; font-size: 0.85rem; }
+.bb-display .bb-face-options button[data-face="serif"] { font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+.bb-display .bb-face-options button[data-face="sans"] { font-family: var(--bb-ui); }
+.bb-display .bb-face-options button[data-face="chicago"] { font-family: "Classroom Chicago", sans-serif; font-size: 0.8rem; }
+.bb-display .bb-face-options button[data-face="literata"] { font-family: "Reader Literata", Georgia, serif; }
+.bb-display .bb-face-options button[data-face="atkinson"] { font-family: "Reader Atkinson", sans-serif; }
+.bb-display .bb-face-options button[data-face="lexend"] { font-family: "Reader Lexend", sans-serif; }
+.bb-display .bb-face-options button[data-face="uncial"] { font-family: "Reader Uncial", "Uncial Antiqua", serif; }
+.bb-display .bb-face-options button[data-face="gothic"] { font-family: "Reader Gothic", "MedievalSharp", serif; }
+.bb-display .bb-face-options button[data-face="koine"] { font-family: "Reader Cinzel", "Reader Caudex", serif; font-variant: small-caps; letter-spacing: 0.03em; }
+.bb-display .bb-face-options button[data-face="fell"] { font-family: "Reader Fell", "IM Fell English", Georgia, serif; }
 .bb-display .bb-seg:not(.bb-face-options) button { min-width: 0; padding-inline: 0.3rem; }
 @media (max-width: 720px) {
   .bb-bar { gap: 0.4rem; }

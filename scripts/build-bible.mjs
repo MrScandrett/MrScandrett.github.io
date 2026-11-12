@@ -9,6 +9,7 @@
 //   BSB  Berean Standard Bible — dedicated to the public domain, April 30, 2023
 //   KJV  King James Version (1769 Oxford text)
 //   ASV  American Standard Version (1901)
+//   GEN  Geneva Bible (1599 edition, original Early Modern English spelling)
 //
 // Writes:
 //   assets/data/bible/books.json        canon, categories, verse counts, one-line intros
@@ -27,6 +28,7 @@ const TRANSLATIONS = [
   { code: "bsb", file: "BSB", label: "BSB", name: "Berean Standard Bible", year: 2023, note: "Modern English. Dedicated to the public domain in 2023." },
   { code: "kjv", file: "KJV", label: "KJV", name: "King James Version", year: 1769, note: "The classic English Bible (1611, in the 1769 Oxford text). Public domain." },
   { code: "asv", file: "ASV", label: "ASV", name: "American Standard Version", year: 1901, note: "A literal American revision of the KJV. Public domain." },
+  { code: "gen", file: "Geneva1599", label: "GEN", name: "Geneva Bible", year: 1599, note: "The Bible of the Protestant Reformation, with original 1599 Early Modern English spelling. Public domain." },
 ];
 
 // [name, slug, short, testament, category, aliases, one-line intro]
@@ -110,6 +112,8 @@ const CLEAN = {
   kjv: (s) => s.replace(/–/g, "-").replace(/\[([^\]]*)\]/g, "$1"),
   // Psalms have an unbalanced "[Selah" / "[Higgaion. Selah"; other brackets are the ASV's own.
   asv: (s) => s.replace(/\[(?=(?:Higgaion\. )?Selah)/g, ""),
+  // Geneva 1599 preserves original Early Modern English spelling verbatim.
+  gen: (s) => s,
 };
 
 async function loadSource(file) {

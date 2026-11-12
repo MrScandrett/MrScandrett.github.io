@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Smart Blackboard: Construction &amp; Deconstruction Studio · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Inspired by AI smart blackboards: draw rough sketches to generate clean interactive geometry, deconstruct 2D triangles with altitudes and unknowns, unfold 3D solids and irregular prisms into flat nets, slice cones and spheres into 2D cross sections, and analyze conjoined composite surface areas." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #10b981; --ll-tab-active: #10b981; --ll-tab-active-bg: rgba(16,185,129,0.12); }
+    .tc-page { padding-bottom: 3.5rem; }
+
+    /* Blackboard Canvas & Workspace */
+    .bb-workspace { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(330px, 1.25fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 980px) { .bb-workspace { grid-template-columns: 1fr; } }
+
+    .bb-board-frame { position: relative; border-radius: 16px; border: 10px solid #2e1d11; background: #132a21; box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 14px 38px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column; min-height: 580px; }
+    .bb-board-frame::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.04) 0%, transparent 70%); pointer-events: none; z-index: 1; }
+
+    .bb-toolbar { position: relative; z-index: 10; display: flex; flex-wrap: wrap; gap: 0.35rem 0.55rem; align-items: center; padding: 0.6rem 0.8rem; background: rgba(10, 22, 17, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .bb-tool-btn { padding: 0.35rem 0.6rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #ecfdf5; font: 600 0.78rem system-ui, sans-serif; cursor: pointer; transition: 0.15s ease; display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
+    .bb-tool-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); }
+    .bb-tool-btn.active { background: #10b981; border-color: #10b981; color: #022c22; font-weight: 750; box-shadow: 0 0 12px rgba(16,185,129,0.4); }
+    .bb-color-dot { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,0.6); cursor: pointer; display: inline-block; }
+    .bb-tool-btn:focus-visible, .bb-color-dot:focus-visible, .bb-voice-btn:focus-visible, .air-pip-mode-btn:focus-visible, .air-pip-close:focus-visible, #chalk-canvas:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+    .bb-tool-btn[aria-pressed="true"] { border-color: #34d399; }
+    .bb-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .bb-dims { border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 0.4rem 0.6rem; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .bb-dims legend { font: 700 0.74rem system-ui, sans-serif; padding: 0 0.3rem; }
+    .bb-dims label { display: flex; flex-direction: column; font: 600 0.74rem system-ui, sans-serif; gap: 0.15rem; }
+    .bb-dims input[type="number"] { width: 5.2rem; min-height: 2rem; }
+    .bb-dims-msg { font: 600 0.74rem system-ui, sans-serif; color: #fb7185; min-height: 1.1em; margin: 0; }
+    .bb-gesture-legend { font: 0.8rem/1.5 system-ui, sans-serif; border: 1px solid rgba(100,116,139,0.35); border-radius: 10px; padding: 0.5rem 0.7rem; }
+    .bb-gesture-legend summary { cursor: pointer; font-weight: 700; }
+    .bb-gesture-legend summary:focus-visible { outline: 3px solid #facc15; outline-offset: 2px; }
+    .bb-gesture-legend ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+    .bb-gesture-toggle { display: flex; gap: 0.4rem; align-items: flex-start; margin-top: 0.4rem; }
+    @media (prefers-reduced-motion: reduce) { .bb-tool-btn, .ai-toast, .bb-voice-btn, .air-pinch-bar, .air-pip-dot { transition: none !important; animation: none !important; } }
+    .bb-color-dot.active { outline: 2px solid #fff; outline-offset: 1px; }
+
+    .bb-stage-wrap { position: relative; flex: 1; min-height: 520px; width: 100%; }
+    .bb-canvas-layer { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+    #three-canvas { z-index: 2; }
+    #chalk-canvas { z-index: 3; cursor: crosshair; }
+    #air-cursor-canvas { z-index: 4; pointer-events: none; }
+
+    /* Air Chalk & Camera Hand Tracking Styles */
+    .bb-tool-btn.air-active {
+      background: #059669;
+      border-color: #34d399;
+      color: #fff;
+      font-weight: 750;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.55);
+      animation: airPulse 2s infinite ease-in-out;
+    }
+    @keyframes airPulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(52, 211, 153, 0.4); }
+      50% { box-shadow: 0 0 16px rgba(52, 211, 153, 0.85); }
+    }
+
+    .air-pip-widget {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      width: 196px;
+      background: rgba(10, 22, 17, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(52, 211, 153, 0.4);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .air-pip-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.35rem 0.55rem;
+      background: rgba(0, 0, 0, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.72rem;
+      color: #ecfdf5;
+    }
+    .air-pip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 6px #10b981;
+    }
+    .air-pip-title {
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .air-pip-mode-btn {
+      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #a7f3d0;
+      font: 600 0.65rem system-ui, sans-serif;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .air-pip-mode-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .air-pip-close {
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0 0.2rem;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .air-pip-close:hover {
+      color: #f87171;
+    }
+    .air-pip-view {
+      position: relative;
+      width: 100%;
+      height: 140px;
+      background: #02120b;
+      overflow: hidden;
+    }
+    #air-pip-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .air-pip-overlay {
+      position: absolute;
+      bottom: 5px;
+      left: 6px;
+      right: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .air-pip-status {
+      font: 700 0.66rem system-ui, sans-serif;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #6ee7b7;
+      border: 1px solid rgba(110, 231, 183, 0.3);
+      backdrop-filter: blur(4px);
+    }
+    .air-pinch-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      position: relative;
+    }
+    .air-pinch-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #facc15);
+      transition: width 0.05s linear;
+    }
+    .air-pinch-bar.active {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    /* AI Toast Notification */
+    .ai-toast { position: absolute; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 25; padding: 0.4rem 0.9rem; border-radius: 999px; background: rgba(16,185,129,0.92); color: #022c22; font: 750 0.82rem system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.4); pointer-events: none; transition: opacity 0.3s, transform 0.3s; opacity: 0; }
+    .ai-toast.show { opacity: 1; transform: translateX(-50%) translateY(5px); }
+
+    /* AI Tutor / Inspector Sidebar */
+    .bb-inspector { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-radius: 16px; padding: 1.1rem 1.3rem; display: flex; flex-direction: column; gap: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+    .bb-insp-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line, #d2d2d7); padding-bottom: 0.6rem; }
+    .bb-insp-head h3 { margin: 0; font-size: 1.05rem; color: var(--text-main, #1d1d1f); display: flex; align-items: center; gap: 0.4rem; }
+    .bb-badge { font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 999px; background: rgba(16,185,129,0.15); color: #047857; text-transform: uppercase; }
+
+    .bb-metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .bb-metric { padding: 0.5rem 0.7rem; border-radius: 10px; background: color-mix(in srgb, var(--accent, #10b981) 6%, var(--white, #fff)); border: 1px solid var(--line, #d2d2d7); }
+    .bb-metric small { display: block; font-size: 0.68rem; color: var(--text-muted, #64748b); text-transform: uppercase; font-weight: 700; margin-bottom: 0.15rem; }
+    .bb-metric strong { display: block; font-size: 0.95rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", monospace; }
+
+    /* Deconstruction & Sub-Controls */
+    .bb-deconstruct-ctrls { padding: 0.75rem; border-radius: 12px; border: 1px solid var(--line, #d2d2d7); background: color-mix(in srgb, var(--accent, #10b981) 4%, var(--white, #fff)); display: flex; flex-direction: column; gap: 0.55rem; font-size: 0.82rem; }
+    .bb-deconstruct-ctrls label { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--text-main, #1d1d1f); }
+    .bb-deconstruct-ctrls input[type=range] { width: 100%; accent-color: #10b981; }
+    .bb-deconstruct-ctrls select { width: 100%; padding: 0.35rem 0.5rem; border-radius: 8px; border: 1px solid var(--line, #d2d2d7); background: var(--white, #fff); color: var(--text-main, #1d1d1f); font: 600 0.8rem system-ui, sans-serif; }
+
+    .bb-step-card { padding: 0.8rem; border-radius: 12px; background: rgba(100,116,139,0.06); border-left: 3px solid #10b981; font-size: 0.82rem; line-height: 1.55; color: var(--text-secondary, #3f4f65); }
+    .bb-step-card strong { color: var(--text-main, #1d1d1f); }
+
+    .bb-voice-btn { padding: 0.6rem 1rem; border-radius: 10px; border: 0; background: #10b981; color: #022c22; font: 750 0.86rem system-ui, sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: 0.15s ease; box-shadow: 0 4px 14px rgba(16,185,129,0.3); }
+    .bb-voice-btn:hover { background: #059669; color: #fff; }
+
+    [data-lighting="night"] .bb-inspector { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .bb-metric { background: rgba(255,255,255,0.06); }
+    [data-lighting="night"] .bb-insp-head h3, [data-lighting="night"] .bb-metric strong, [data-lighting="night"] .bb-deconstruct-ctrls label { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .bb-step-card { background: rgba(255,255,255,0.06); }
+    [data-lighting="night"] .bb-deconstruct-ctrls { background: rgba(255,255,255,0.05); }
+    [data-lighting="night"] .bb-deconstruct-ctrls select { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255,255,255,0.15); }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #10b981); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.8rem 0 0.35rem; font-size: 1.02rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card a { color: #059669; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+    [data-lighting="night"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-card p, [data-lighting="night"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-card a { color: #34d399; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+
+        <!-- ══ CREATION APP: AI SMART BLACKBOARD WORKSPACE ═══════════════ -->
+        <section class="creation-app" data-creation-app id="smart-blackboard-app">
+          <div id="blackboard-stage" class="bb-workspace">
+
+            <!-- Blackboard Frame with Multi-Layer Canvas -->
+            <div class="bb-board-frame">
+              <!-- Toolbar -->
+              <div class="bb-toolbar" role="toolbar" aria-label="Smart Blackboard Controls">
+                <!-- Modes -->
+                <button type="button" class="bb-tool-btn active" id="btn-mode-draw" aria-pressed="true" title="Draw freehand shapes; AI snaps to clean geometry"><span aria-hidden="true">🖊️</span> AI Sketch</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-triangle" aria-pressed="false" title="Dynamic 2D Triangle & Unknowns"><span aria-hidden="true">📐</span> Triangle</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-circle" aria-pressed="false" title="Dynamic Circle with Radians"><span aria-hidden="true">⭕</span> Circle</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-cube" aria-pressed="false" title="3D Rotatable Cube & Net"><span aria-hidden="true">🧊</span> Cube</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-cyl" aria-pressed="false" title="3D Cylinder & Lateral Unroll"><span aria-hidden="true">🥫</span> Cylinder</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-cone" aria-pressed="false" title="3D Cone: 2D Sector Net & Slices"><span aria-hidden="true">🍦</span> Cone</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-sphere" aria-pressed="false" title="3D Sphere: Cavalieri Slices & Archimedes Net"><span aria-hidden="true">🔮</span> Sphere</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-prism" aria-pressed="false" title="Irregular Polygonal Prism & Ribbon Net"><span aria-hidden="true">⬡</span> Prism</button>
+                <button type="button" class="bb-tool-btn" id="btn-mode-3d-conjoined" aria-pressed="false" title="Conjoined Composite Solids: Cylinder + Cone"><span aria-hidden="true">🚀</span> Conjoined</button>
+
+                <div style="flex:1;"></div>
+
+                <!-- Chalk Color Palette -->
+                <button type="button" class="bb-color-dot active" data-color="#f8fafc" style="background:#f8fafc;" aria-label="White Chalk" aria-pressed="true" title="White Chalk"></button>
+                <button type="button" class="bb-color-dot" data-color="#38bdf8" style="background:#38bdf8;" aria-label="Cyan Chalk" aria-pressed="false" title="Cyan Chalk"></button>
+                <button type="button" class="bb-color-dot" data-color="#facc15" style="background:#facc15;" aria-label="Yellow Chalk" aria-pressed="false" title="Yellow Chalk"></button>
+                <button type="button" class="bb-color-dot" data-color="#fb7185" style="background:#fb7185;" aria-label="Coral Chalk" aria-pressed="false" title="Coral Chalk"></button>
+                <button type="button" class="bb-color-dot" data-color="#4ade80" style="background:#4ade80;" aria-label="Emerald Chalk" aria-pressed="false" title="Emerald Chalk"></button>
+
+                <button type="button" class="bb-tool-btn" id="btn-undo" title="Undo last change (Ctrl+Z, or thumbs-down in Air Chalk)" aria-label="Undo last change" style="margin-left:0.4rem;"><span aria-hidden="true">↩️</span> Undo</button>
+                <button type="button" class="bb-tool-btn" id="btn-clear" title="Clear Blackboard" style="margin-left:0.4rem;"><span aria-hidden="true">🧹</span> Clear</button>
+                <button type="button" class="bb-tool-btn" id="btn-air-chalk" aria-pressed="false" title="Toggle camera and hand gesture Air Drawing" aria-label="Toggle camera and hand gesture Air Chalk" style="margin-left:0.4rem; border-color:rgba(52,211,153,0.45);"><span aria-hidden="true">📹</span> Air Chalk</button>
+              </div>
+
+              <!-- Canvas Staging Area -->
+              <div class="bb-stage-wrap" id="stage-wrap">
+                <div class="ai-toast" id="ai-toast">✨ AI Recognized: Triangle</div>
+                <!-- 3D Three.js Canvas Layer -->
+                <canvas id="three-canvas" class="bb-canvas-layer" role="img" aria-label="3D model view. Use the sliders and the measurements panel to explore this solid."></canvas>
+                <!-- 2D Interactive Chalkboard Canvas Layer -->
+                <canvas id="chalk-canvas" class="bb-canvas-layer" tabindex="0" role="application" aria-roledescription="geometry blackboard" aria-label="Interactive math blackboard. Draw rough shapes or drag geometric points." aria-describedby="bb-kbd-help"></canvas>
+                <p id="bb-kbd-help" class="bb-sr-only">Keyboard: in Triangle mode press A, B or C (or 1, 2, 3) to select a vertex, then arrow keys to move it by 5 pixels; hold Shift for 20, Alt for 1. In Circle mode, Left and Down arrows shrink the radius and Right and Up arrows grow it. You can also type exact sizes in the fields beside the board.</p>
+                <div id="bb-live" class="bb-sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+                <!-- Real-Time Air Chalk Cursor & Gesture Feedback Layer -->
+                <canvas id="air-cursor-canvas" class="bb-canvas-layer" aria-hidden="true"></canvas>
+
+                <!-- Picture-in-Picture Vision Box -->
+                <div class="air-pip-widget" id="air-pip" style="display:none;" role="group" aria-label="Camera Hand Tracking Preview">
+                  <div class="air-pip-header">
+                    <div style="display:flex; align-items:center; gap:0.35rem;">
+                      <span class="air-pip-dot"></span>
+                      <span class="air-pip-title">Air Vision</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.3rem;">
+                      <button type="button" class="air-pip-mode-btn" id="btn-air-mode-toggle" aria-label="Switch gesture mode: Auto (Pinch or Point), Pinch Hold, Index Point, or Pinch Tap" title="Cycle Gesture Mode: Auto (Pinch or Point) · Pinch Hold · Index Point · Pinch Tap">Auto</button>
+                      <button type="button" class="air-pip-close" id="btn-air-close" aria-label="Close Air Chalk camera" title="Turn off camera">✕</button>
+                    </div>
+                  </div>
+                  <div class="air-pip-view">
+                    <video id="air-video" playsinline muted autoplay style="display:none;"></video>
+                    <canvas id="air-pip-canvas" width="180" height="135" aria-hidden="true"></canvas>
+                    <div class="air-pip-overlay">
+                      <span class="air-pip-status" id="air-status" role="status">Searching hand...</span>
+                    </div>
+                  </div>
+                  <div class="air-pinch-bar-wrap" title="Pinch Distance: Thumb & Index together triggers pen">
+                    <div class="air-pinch-bar" id="air-pinch-meter"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Live Analysis & Tutor Inspector -->
+            <aside class="bb-inspector" aria-label="AI Live Mathematical Analysis">
+              <div class="bb-insp-head">
+                <h3 id="entity-title">📐 Interactive Geometry</h3>
+                <span class="bb-badge" id="entity-badge">2D Euclidean</span>
+              </div>
+
+              <!-- Live Measurements Grid -->
+              <div class="bb-metrics-grid">
+                <div class="bb-metric">
+                  <small id="lbl-m1">Perimeter</small>
+                  <strong id="val-m1">12.00 cm</strong>
+                </div>
+                <div class="bb-metric">
+                  <small id="lbl-m2">Area</small>
+                  <strong id="val-m2">6.00 cm²</strong>
+                </div>
+                <div class="bb-metric">
+                  <small id="lbl-m3">Angle A / Radius</small>
+                  <strong id="val-m3">53.1°</strong>
+                </div>
+                <div class="bb-metric">
+                  <small id="lbl-m4">Angle B / Angle C</small>
+                  <strong id="val-m4">36.9° · 90.0°</strong>
+                </div>
+              </div>
+
+              <!-- 2D Triangle Altitude & Unknown Controls -->
+              <div class="bb-deconstruct-ctrls" id="circle-ctrls" style="display:none;">
+                <label for="in-radius"><span>Radius r (cm)</span>
+                  <input type="number" id="in-radius" min="0.8" max="12" step="0.1" inputmode="decimal" /></label>
+              </div>
+
+              <div class="bb-deconstruct-ctrls" id="triangle-ctrls" style="display:none;">
+                <fieldset class="bb-dims" id="tri-dims"><legend>Type exact side lengths (cm)</legend>
+                  <label for="in-side-a">a (BC)<input type="number" id="in-side-a" min="0.5" max="14" step="0.1" inputmode="decimal" /></label>
+                  <label for="in-side-b">b (AC)<input type="number" id="in-side-b" min="0.5" max="14" step="0.1" inputmode="decimal" /></label>
+                  <label for="in-side-c">c (AB)<input type="number" id="in-side-c" min="0.5" max="14" step="0.1" inputmode="decimal" /></label>
+                  <p class="bb-dims-msg" id="dims-msg" role="alert"></p>
+                </fieldset>
+                <label>
+                  <span>📐 Drop Altitude (h ⊥ base c)</span>
+                  <input type="checkbox" id="chk-altitude" style="width:auto; accent-color:#10b981;" />
+                </label>
+                <label style="flex-direction:column; align-items:flex-start; gap:0.25rem;">
+                  <span>❓ Solve Unknown Variable:</span>
+                  <select id="sel-unknown">
+                    <option value="none">None (Full Measurements)</option>
+                    <option value="side-c">Unknown Side c (x)</option>
+                    <option value="angle-b">Unknown Angle B (θ)</option>
+                    <option value="altitude-h">Unknown Altitude (h)</option>
+                  </select>
+                </label>
+              </div>
+
+              <!-- Interactive Deconstruction Controls (Dynamically shown) -->
+              <div class="bb-deconstruct-ctrls" id="deconstruct-panel">
+                <div id="wrap-unfold">
+                  <label for="unfold-slider">
+                    <span>✂️ Deconstruction: Unfold Net</span>
+                    <span id="unfold-pct" class="tc-mono" style="color:#10b981;">0%</span>
+                  </label>
+                  <input id="unfold-slider" type="range" min="0" max="100" step="1" value="0" aria-label="Unfold 3D shape into 2D net" />
+                </div>
+
+                <div id="wrap-slice" style="margin-top:0.3rem;">
+                  <label for="slice-slider">
+                    <span>🔪 Slicing Plane (Cross-Section)</span>
+                    <span id="slice-h" class="tc-mono" style="color:#10b981;">Mid</span>
+                  </label>
+                  <input id="slice-slider" type="range" min="-100" max="100" step="1" value="0" aria-label="Adjust cross section slicing plane height" />
+                </div>
+
+                <div id="wrap-joint" style="display:none; margin-top:0.3rem;">
+                  <label for="joint-slider">
+                    <span>💥 Separate Conjoined Joint:</span>
+                    <span id="joint-pct" class="tc-mono" style="color:#f43f5e;">0%</span>
+                  </label>
+                  <input id="joint-slider" type="range" min="0" max="100" step="1" value="0" aria-label="Separate conjoined solids to reveal hidden interface" />
+                  <small style="color:#f43f5e; font-weight:700; display:block; margin-top:0.15rem;">Hidden Internal Joint (-2·A_joint) disappears from exposed Surface Area!</small>
+                </div>
+              </div>
+
+              <!-- Step-by-Step AI Analytical Proof Card -->
+              <div class="bb-step-card" id="ai-step-card">
+                <strong>Step-by-Step AI Proof:</strong>
+                <p id="ai-step-text" style="margin:0.35rem 0 0;">Draw any rough circle, triangle, or box on the board with your finger or stylus. The AI classifier will recognize the geometry, compute the exact Euclidean parameters, and construct a live manipulable model.</p>
+              </div>
+
+              <!-- Virtual Voice Tutor Button -->
+              <button type="button" class="bb-voice-btn" id="btn-voice-tutor">
+                <span>🔊 AI Tutor: Read Step-by-Step Explanation</span>
+              </button>
+
+              <details class="bb-gesture-legend" id="gesture-legend">
+                <summary>Air Chalk gestures &amp; shortcuts</summary>
+                <label class="bb-gesture-toggle"><input type="checkbox" id="chk-air-commands" checked /> Enable gesture commands (hold the pose about 0.7 s, a ring fills to confirm)</label>
+                <ul>
+                  <li><strong>☝️ Point</strong> or <strong>🤏 pinch</strong>: draw, drag a vertex or handle, orbit a 3D solid</li>
+                  <li><strong>✌️ Peace</strong>: laser pointer (pen up)</li>
+                  <li><strong>✊ Fist</strong>: pause the pen</li>
+                  <li><strong>👉 / 👈 Swipe open hand</strong>: next / previous tool</li>
+                  <li><strong>👍 Thumbs up</strong> (hold): read the explanation aloud</li>
+                  <li><strong>👎 Thumbs down</strong> (hold): undo</li>
+                  <li><strong>🤟 Three fingers</strong> (hold): cycle the unknown in Triangle mode, or unfold/fold a 3D net</li>
+                  <li><strong>Keyboard</strong>: arrows move the selected vertex, A/B/C pick it, Ctrl+Z undoes</li>
+                </ul>
+              </details>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ══ LESSON CONTENT & CURRICULAR CONTEXT ═══════════════════════ -->
+        <section class="tc-card">
+          <h2>About AI Smart Blackboards (Tongchuang &amp; iFlytek)</h2>
+          <p>In modern Chinese smart classrooms, AI blackboards (such as iFlytek's Tongchuang platform) replace static chalk with dynamic intelligence. When an instructor sketches a rough triangle or draws a 3D prism, computer vision neural networks classify the stroke sequence, snap it into clean Euclidean geometry, and immediately compute interior angles, side lengths, and area.</p>
+          <p>More importantly, the software introduces <strong>bidirectional construction and deconstruction</strong>: teachers don't just show static 3D solids; they smoothly unfold 3D polyhedra into flat 2D nets to reveal where surface area formulas come from, or slice cones and spheres with interactive cutting planes to bring cross-sections and Cavalieri's principle to life.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Real-Time Air Chalk: Computer Vision &amp; Spatial Gestures</h2>
+          <p>Clicking <strong>📹 Air Chalk</strong> activates your webcam and launches client-side 3D hand tracking powered by Google MediaPipe. The vision model calculates the 3D coordinates $(x, y, z)$ of 21 skeletal landmarks on your hand in real time:</p>
+          <ul>
+            <li><strong>Pinch Detection (Pen Down):</strong> The Euclidean distance between your <em>Thumb Tip</em> (Landmark 4) and <em>Index Fingertip</em> (Landmark 8) is continuously measured and normalized against your hand scale. Bringing your thumb and pointer finger together activates <strong>Chalk Down</strong> mode.</li>
+            <li><strong>Spatial Movement &amp; Smoothing:</strong> The midpoint of your pinch maps directly across the blackboard canvas in mirrored selfie space. An adaptive velocity filter removes natural hand tremors while preserving responsive stroke paths.</li>
+            <li><strong>Shape Snapping on Release:</strong> When you open your fingers (lifting the pen), the blackboard's geometric classifier analyzes the stroke path, automatically snapping rough air circles and triangles into Euclidean geometry.</li>
+            <li><strong>3D Spatial Manipulation:</strong> When viewing 3D solids (Cubes, Cylinders, Cones, Spheres), pinching in the air lets you tumble and rotate the 3D model, while depth movement ($z$-axis) can smoothly unfold 2D nets or drive Cavalieri slicing planes!</li>
+          </ul>
+        </section>
+
+        <section class="tc-card">
+          <h2>How This Works With ClassroomOS Geometry Lessons</h2>
+          <p>This Smart Blackboard serves as the interactive capstone connecting key geometry and trigonometry lessons across the curriculum:</p>
+          <ul>
+            <li><strong><a href="pythagoras.html">Pythagoras &amp; Triangles (MAT-02)</a>:</strong> Provides the fundamental right-triangle relationship $a^2 + b^2 = c^2$ used in altitude deconstruction, cone slant height $L = \sqrt{r^2 + h^2}$, and spherical cross-section radii $r(y) = \sqrt{R^2 - y^2}$.</li>
+            <li><strong><a href="soh-cah-toa.html">SOH-CAH-TOA Trigonometry (MAT-03)</a>:</strong> Supplies sine, cosine, and tangent ratios to solve for unknown angles $\theta$ and missing sides $x$ in decomposed triangles and conical sectors.</li>
+            <li><strong><a href="pi.html">Pi &amp; Circles (MAT-01)</a>:</strong> Explains circle circumference $C = 2\pi r$, area $A = \pi r^2$, and cylinder volume, directly proving why a cylinder net's rectangular width is $2\pi r$ and why a cone unrolls into a sector of arc length $2\pi r$.</li>
+            <li><strong><a href="../foundations/area-perimeter-playground.html">Area &amp; Perimeter Playground (MAT-13)</a>:</strong> Establishes the 2D polygon decomposition methods used here to calculate the base perimeter and area of irregular prisms.</li>
+            <li><strong><a href="unit-circle-waves.html">The Unit Circle &amp; Waves (MAT-04)</a>:</strong> Connects radian arc length $s = r\theta$ to the cone sector unrolling angle $\theta = 360^\circ \times (r / L)$.</li>
+            <li><strong><a href="../advanced-and-calculus/area-under-a-curve.html">Area Under a Curve &amp; Accumulation (MAT-19)</a>:</strong> Demonstrates Cavalieri's principle and Riemann disc integration: slicing a sphere into horizontal discs of area $A(y) = \pi(R^2 - y^2)$ accumulating to $V = \frac{4}{3}\pi R^3$.</li>
+            <li><strong><a href="../../3d-design/cad-and-printing/blueprint-drafting.html">Blueprint Drafting &amp; Sheet Metal Nets (3D-07)</a>:</strong> Connects theoretical 2D nets to real-world CAD flat patterns, fold lines, and sheet-metal manufacturing.</li>
+          </ul>
+        </section>
+
+        <section class="tc-card">
+          <h2>5 Core Geometric Deconstructions</h2>
+          <ol>
+            <li><strong>Triangles with Unknowns:</strong> Dropping an altitude $h \perp c$ divides any scalene triangle into two adjacent right triangles $\Delta ACD$ and $\Delta BCD$. Using the Pythagorean theorem and trigonometry, students can isolate and solve for any unknown side $x$, angle $\theta$, or height $h$.</li>
+            <li><strong>Turning a Cone into Flat 2D Slices &amp; Sector Net:</strong>
+              <ul>
+                <li><em>2D Slicing:</em> Horizontal planes reveal circular discs whose radius tapers linearly $r(y) = r(1 - y/h)$. Tilted cuts produce ellipses, parabolas, and hyperbolas.</li>
+                <li><em>2D Sector Net:</em> Slitting the lateral wall along slant height $L = \sqrt{r^2 + h^2}$ unfolds into a circular sector of radius $L$ with central angle $\theta = 360^\circ \times \frac{r}{L}$ and arc length $2\pi r$, plus the base circular disc of radius $r$.</li>
+              </ul>
+            </li>
+            <li><strong>Spheres &amp; Cavalieri Cross-Sections:</strong> A horizontal slice at height $y$ yields a disc of radius $r = \sqrt{R^2 - y^2}$. Archimedes proved the sphere's surface area equals exactly 4 great circles ($4\pi R^2$), matching the lateral surface of its circumscribing cylinder.</li>
+            <li><strong>Irregular Prisms:</strong> An irregular polygonal base with side lengths $s_1, \dots, s_n$ unfolds into its top and bottom base polygons plus a continuous rectangular accordion ribbon of total length $P = \sum s_i$ and height $h$, proving $SA = 2B + P \cdot h$.</li>
+            <li><strong>Conjoined Surface Areas (Composite Solids):</strong> When a cylinder and cone are conjoined (such as a rocket or silo), the touching circular face is hidden inside. The exposed surface area is $SA_{\text{total}} = SA_{\text{cyl}} + SA_{\text{cone}} - 2 \cdot A_{\text{joint}}$.</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script type="module" src="../../../assets/js/lessons/smart-blackboard.js"></script>
+  <script src="../../../assets/js/creation-app.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

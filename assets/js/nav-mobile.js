@@ -1,5 +1,8 @@
 /* nav-mobile.js — shared nav controls + universal lighting settings */
 (function () {
+  var navCurrentScript = document.currentScript || document.querySelector('script[src*="nav-mobile.js"]');
+  var navScriptBase = navCurrentScript ? navCurrentScript.src : '/assets/js/nav-mobile.js';
+
   // Restore before shared chrome is constructed; OS preferences remain authoritative.
   var GLASS_PREF = "classroomos-reduce-transparency";
   try {
@@ -245,7 +248,8 @@
       /* Keep shared chrome readable across page styles, laptop widths and zoom. */
       'html body .site-header .nav-wrap { column-gap: clamp(0.4rem, 0.8vw, 1rem); }' +
       'html body .site-header .brand { gap: 0.35rem; }' +
-      '@media (min-width: 1281px) { html body .site-header .site-nav { flex: 1 0 auto; } html body .site-header .nav-wrap > :is(.nav-search, .nav-music, .nav-settings) { flex-shrink: 0; } }' +
+      '@media (min-width: 1281px) { html body .site-header .site-nav { flex: 1 0 auto; } html body .site-header .nav-wrap > :is(.nav-search, .nav-music, .nav-whiteboard, .nav-settings) { flex-shrink: 0; } }' +
+      '@media (max-width: 900px) { .nav-whiteboard-text, .nav-whiteboard-btn .nav-search-kbd { display: none; } }' +
       '@media (min-width: 1281px) and (max-width: 1700px) { html body .site-header .home-brand-prefix { display: none; } }' +
       'html body .nav-settings-panel { position: fixed !important; top: var(--nav-settings-top, 4rem) !important; right: var(--nav-settings-right, 1rem) !important; left: auto !important; bottom: auto !important; width: min(480px, calc(100vw - 1.5rem)) !important; max-height: var(--nav-settings-max-height, calc(100dvh - 5rem)) !important; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }' +
       '.nav-settings-panel[hidden] { display: none !important; }' +
@@ -649,6 +653,85 @@
     }
   });
   nav.parentNode.appendChild(musicContainer);
+
+  /* AI Smart Blackboard: only available in Mathematics and Physics lessons, never interrupts music */
+  function isMathOrPhysicsLesson() {
+    var p = (location.pathname || '').toLowerCase();
+    if (/(^|\/)lessons\/(mathematics|physics|applied-physics-materials)\//.test(p)) {
+      return true;
+    }
+    var mod = (document.body && document.body.dataset && document.body.dataset.module) || '';
+    return /math|physic/i.test(mod);
+  }
+
+  if (isMathOrPhysicsLesson()) {
+    var whiteboardContainer = document.createElement("div");
+    whiteboardContainer.className = "nav-whiteboard";
+    whiteboardContainer.innerHTML =
+      '<button type="button" class="nav-search-btn nav-whiteboard-btn" aria-label="Open AI Smart Blackboard (Shift+W)" title="AI Smart Blackboard (⇧W)">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="m8 12 3 3 5-5"/>' +
+        '</svg>' +
+        '<span class="nav-whiteboard-text">Board</span>' +
+        '<kbd class="nav-search-kbd" aria-hidden="true">⇧W</kbd>' +
+      '</button>';
+
+    function ensureSmartWhiteboard(cb) {
+      if (window.SmartBlackboardDock) {
+        if (cb) cb(window.SmartBlackboardDock);
+        return;
+      }
+      // Inject CSS
+      if (!document.getElementById("smart-whiteboard-dock-css")) {
+        var css = document.createElement("link");
+        css.id = "smart-whiteboard-dock-css";
+        css.rel = "stylesheet";
+        css.href = navScriptBase ? new URL("../css/components/smart-whiteboard-dock.css", navScriptBase).href : "/assets/css/components/smart-whiteboard-dock.css";
+        document.head.appendChild(css);
+      }
+      // Inject JS
+      var wbScript = document.querySelector('script[data-smart-whiteboard="true"]');
+      if (!wbScript) {
+        wbScript = document.createElement("script");
+        wbScript.src = navScriptBase ? new URL("smart-whiteboard-dock.js", navScriptBase).href : "/assets/js/smart-whiteboard-dock.js";
+        wbScript.dataset.smartWhiteboard = "true";
+        document.head.appendChild(wbScript);
+      }
+      wbScript.addEventListener("load", function () {
+        if (cb && window.SmartBlackboardDock) cb(window.SmartBlackboardDock);
+      }, { once: true });
+    }
+
+    whiteboardContainer.querySelector(".nav-whiteboard-btn").addEventListener("click", function () {
+      ensureSmartWhiteboard(function (dock) { dock.toggle(); });
+    });
+    nav.parentNode.appendChild(whiteboardContainer);
+
+    // Global Shift+W shortcut (only active on math/physics lessons)
+    window.addEventListener("keydown", function (e) {
+      if ((e.key === "W" || e.key === "w") && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        var tag = (e.target && e.target.tagName) || "";
+        if (!/INPUT|TEXTAREA|SELECT/.test(tag)) {
+          e.preventDefault();
+          ensureSmartWhiteboard(function (dock) { dock.toggle(); });
+        }
+      }
+    });
+
+    // Pre-load launcher or open state
+    try {
+      var savedWb = JSON.parse(localStorage.getItem("classroomos-smart-wb-state"));
+      if (savedWb && savedWb.isOpen) {
+        ensureSmartWhiteboard(function (dock) { dock.open(); });
+      } else {
+        if ("requestIdleCallback" in window) {
+          requestIdleCallback(function () { ensureSmartWhiteboard(); });
+        } else {
+          setTimeout(function () { ensureSmartWhiteboard(); }, 1200);
+        }
+      }
+    } catch (_) {}
+  }
 
   function readStorage(key) {
     try {

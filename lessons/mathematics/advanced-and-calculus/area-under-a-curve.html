@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Area Under a Curve: Accumulation &amp; Integrals · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Slice curves into rectangles and watch Riemann sums converge on the exact area. Bridge velocity into distance, see how accumulation creates integrals, and explore the Fundamental Theorem of Calculus." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #c84b0a; --tan: #16a34a; }
+:where(html[data-lighting="night"]) .tc-page { --cos: #f46c26; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-page { --cos: #ea580c; } }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 340px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv canvas { display: block; touch-action: none; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(240px, 60vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; font-size: 0.86rem; }
+    .tc-practice-item input { width: 6rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { min-width: 8rem; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+
+    [data-lighting="night"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-lighting="night"] .tc-read strong,
+    [data-lighting="night"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .tc-card p, [data-lighting="night"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no { color: #fbbf24; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Accumulation &amp; Integral Calculus</p>
+          <h1>Area Under a Curve: Accumulation &amp; Integrals</h1>
+          <div class="tc-meta">
+            <span>Riemann sums</span><span class="dot"></span>
+            <span>Rectangles to infinity</span><span class="dot"></span>
+            <span>The definite integral</span><span class="dot"></span>
+            <span>Fundamental theorem</span><span class="dot"></span>
+            <span>Speed to distance</span>
+          </div>
+          <p class="tc-lede">Finding the area of a rectangle is simple: width times height. But what if the top edge is curved and constantly changing height? In <a href="slope-of-a-curve.html">Slope of a Curve</a>, we zoomed in to find instantaneous change. Here we do the reverse: we slice curved shapes into hundreds of ultra-thin strips and add them together. This is <strong>integration</strong>.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Approximate the area under any continuous curve using Left, Right, Midpoint, and Trapezoidal Riemann sums.</li>
+            <li>Observe how increasing the number of partitions $N$ eliminates estimation error as $N \to \infty$.</li>
+            <li>Define the definite integral $\int_a^b f(x)\,dx$ as the infinite sum of infinitesimal rectangular strips.</li>
+            <li>Discover the Fundamental Theorem of Calculus: the slope of the accumulation function equals the original curve.</li>
+          </ul>
+          <p>Prerequisites: <a href="slope-of-a-curve.html">Slope of a Curve</a> and <a href="../algebra/linear-equations-slope.html">Linear Equations &amp; Slope</a>. Next: <a href="time-derivatives-snap-crackle-pop.html">Snap, Crackle, Pop: Time Derivatives</a> and <a href="minecraft-calculus-terrain.html">Minecraft Calculus</a>.</p>
+        </section>
+
+        <!-- Lab 1: Riemann Sum Slicer -->
+        <section class="tc-card" id="riemann-lab" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · The Riemann Sum Slicer</h2>
+          <p>Choose a curve below. Use the slider to increase the number of rectangular slices $N$ from 1 to 100. Watch how the jagged rectangle tops mold themselves against the smooth curve, driving the calculation error toward zero.</p>
+
+          <div class="tc-btns" id="fn-btns" role="group" aria-label="Choose curve">
+            <button type="button" class="tc-btn primary" data-fn="parabola">f(x) = x² [0 to 3]</button>
+            <button type="button" class="tc-btn" data-fn="dome">f(x) = 4 - x² [0 to 2]</button>
+            <button type="button" class="tc-btn" data-fn="wave">f(x) = sin(x) + 1.2 [0 to π]</button>
+            <button type="button" class="tc-btn" data-fn="exp">f(x) = e^(0.5x) [0 to 3]</button>
+          </div>
+
+          <div class="tc-btns" id="method-btns" role="group" aria-label="Riemann method" style="margin-top:0.4rem;">
+            <button type="button" class="tc-btn primary" data-m="left">Left Sum</button>
+            <button type="button" class="tc-btn" data-m="right">Right Sum</button>
+            <button type="button" class="tc-btn" data-m="mid">Midpoint Sum</button>
+            <button type="button" class="tc-btn" data-m="trap">Trapezoid Rule</button>
+          </div>
+
+          <div class="tc-cv" id="rm-box"><canvas id="rm-canvas" aria-label="Riemann sum rectangle slicing simulation"></canvas></div>
+
+          <div class="tc-controls">
+            <label>Number of slices N: <input id="rm-n" type="range" min="1" max="100" step="1" value="6" /> <span id="rm-nv" class="tc-mono">N = 6 slices</span></label>
+          </div>
+
+          <div class="tc-read">
+            <div>Riemann Sum Approximation<strong id="read-approx">6.88</strong></div>
+            <div>Exact Integral ∫ f(x) dx<strong id="read-exact">9.00</strong></div>
+            <div>Difference (Error)<strong id="read-err">2.12 (23.6%)</strong></div>
+            <div>Slice Width Δx<strong id="read-dx">0.50</strong></div>
+          </div>
+        </section>
+
+        <!-- Lab 2: The Accumulation Function -->
+        <section class="tc-card" id="accum-lab" style="--card-accent:#c84b0a;">
+          <h2>Lab 2 · The Accumulation Function F(x) = ∫ₐˣ f(t) dt</h2>
+          <p>Instead of calculating a single fixed area, what if we treat the upper bound $x$ as a moving slider? As you drag $x$ across the top graph, the <span style="color:#2563eb; font-weight:700;">shaded area</span> grows. The bottom graph tracks that total area as a new function: <strong>the accumulation function $F(x)$</strong>.</p>
+
+          <div class="tc-cv" id="acc-box" style="height:400px;"><canvas id="acc-canvas" aria-label="Stacked graphs showing function above its accumulation function"></canvas></div>
+
+          <div class="tc-controls">
+            <label>Upper Limit x: <input id="acc-x" type="range" min="0" max="3" step="0.05" value="1.5" style="--card-accent:#ea580c;" /> <span id="acc-xv" class="tc-mono">x = 1.50</span></label>
+          </div>
+
+          <div class="tc-read">
+            <div>Curve Height f(x)<strong id="acc-height">2.25</strong></div>
+            <div>Accumulated Area F(x)<strong id="acc-area">1.13</strong></div>
+            <div>Slope of F(x)<strong id="acc-slope" style="color:#ea580c;">2.25</strong></div>
+          </div>
+          <p><strong>Look closely at the numbers above!</strong> The slope of the accumulation curve $F'(x)$ is <em>identical</em> to the height of the original curve $f(x)$! This is the grand discovery of calculus.</p>
+        </section>
+
+        <!-- Lab 3: Fundamental Theorem -->
+        <section class="tc-card" id="ftc-lab" style="--card-accent:#12843c;">
+          <h2>Lab 3 · The Fundamental Theorem of Calculus (FTC)</h2>
+          <p>For centuries, the problem of finding tangents (slopes) and the problem of finding quadrature (areas) were studied as completely unrelated branches of geometry. Isaac Newton and Gottfried Wilhelm Leibniz independently proved that <strong>they are exact inverse operations</strong>:</p>
+          <p class="tc-mono" style="text-align:center; font-size:1.15rem; font-weight:800; color:var(--text-main); margin:0.8rem 0;">
+            d/dx [ ∫ₐˣ f(t) dt ] = f(x)
+          </p>
+          <p>If you add a sliver of width $dx$ to your accumulated area, the extra area added is just a tiny rectangle of height $f(x)$ and width $dx$: $dA \approx f(x) \cdot dx$. Dividing both sides by $dx$ gives $dA/dx = f(x)$. Differentiating an integral hands you right back the original function!</p>
+        </section>
+
+        <!-- Lab 4: Speedometer to Odometer -->
+        <section class="tc-card" id="odometer-lab" style="--card-accent:#7c3aed;">
+          <h2>Lab 4 · Physical Application: Speedometer to Odometer</h2>
+          <p>Your car’s speedometer measures instantaneous velocity $v(t)$ (derivative of position). Your odometer measures total distance traveled $s$ (integral of velocity):</p>
+          <p class="tc-mono" style="text-align:center; font-size:1.05rem; font-weight:700;">
+            Total Distance = ∫₀ᵀ v(t) dt = Area under the Velocity Curve
+          </p>
+          <p>If you drive at 60 mph for 2 hours, the area of the rectangle is $60 \times 2 = 120\text{ miles}$. Even when your speed accelerates and slows down over a twisty mountain road, the area under the speedometer's graph gives the exact odometer reading.</p>
+        </section>
+
+        <!-- Practice Section -->
+        <section class="tc-card" style="--card-accent:#2563eb;">
+          <h2>Check Your Understanding</h2>
+          <div class="tc-practice-item" data-answer="16" data-hint="The curve f(x) = 4 is a horizontal line. The area from 0 to 4 is a rectangle of width 4 and height 4: 4 × 4 = 16.">
+            <p>Compute the exact area under the constant function $f(x) = 4$ from $x = 0$ to $x = 4$.</p>
+            <input type="text" placeholder="e.g. 16" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="9" data-hint="The integral of x^2 from 0 to 3 is [x^3 / 3] from 0 to 3 = 27 / 3 = 9.">
+            <p>What is the exact integral $\int_0^3 x^2\,dx$?</p>
+            <input type="text" placeholder="e.g. 9" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="75" data-hint="Area of a triangle: 1/2 × base × height = 1/2 × 5 × 30 = 75 meters.">
+            <p>A cyclist accelerates linearly from $0\text{ m/s}$ to $30\text{ m/s}$ over $5\text{ seconds}$. How many meters do they travel? (Area under triangle)</p>
+            <input type="text" placeholder="e.g. 75" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/area-under-a-curve.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-reset.js" data-groups='[["rm-n"],["acc-x"]]'></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>

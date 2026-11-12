@@ -23,12 +23,13 @@ teaches. They are listed by how badly they block later lessons.
 | # | Gap | Where the jump is | Proposed lesson |
 |---|-----|-------------------|-----------------|
 | 6 | **Spread and the normal curve** (BUILT: `how-spread-out.html`, Level 3 after Mean, Median & Mode) | Mean/Median/Mode goes straight to Pachinko (binomial). No range, IQR, or standard deviation. | *How Spread Out?* (after Mean, Median & Mode): box plots and standard deviation on the draggable dot plot. Then Pachinko's bell curve makes sense. |
-| 7 | **Decimals, percent, and fractions as one number** | Lives only inside the foundations lab. Proportional Reasoning uses percent change heavily. | *One Number, Three Costumes*: a number line that switches between fraction, decimal, and percent. |
+| 7 | **Decimals, percent, and fractions as one number** (BUILT: `fractions-decimals-percents.html`, Level 2 after Fraction Sense Lab) | Lives only inside the foundations lab. Proportional Reasoning uses percent change heavily. | *One Number, Three Costumes*: a number line that switches between fraction, decimal, and percent. |
 | 8 | **Angles and volume** | Geometry Studio is one section of the lab. Area & Perimeter has no 3D follow-up. | *Angle Explorer*, *Volume Builder* (stacking cubes). |
 | 9 | **Similarity and transformations** | Pythagoras and Proportional Reasoning both use similar figures, but no lesson covers reflection, rotation, or dilation. | *Transformations Studio* (after Pi & Circles). |
 | 10 | **Introduction to proof and logic** | Level 4 promises "the beginning of formal proof." Only Rubik's Cube touches it, as enrichment. | *Prove It: Odd + Odd* (before Completing the Square), using visual and dot-pattern proofs. |
-| 11 | **Vectors and matrices** | Level 5 blurb promises them. No lesson exists. | *Vectors & Motion* (after Unit Circle & Waves). Ties to Physics. |
-| 12 | **Level 3 to Level 4 leap** | Slope leads to Completing the Square. No inequalities, no exponent rules. | Covered by #2, #4, and #5. |
+| 11 | **Vectors and matrices** (BUILT: `matrix-transformations.html`, Level 4 after Unit Circle & Waves) | Level 5 blurb promises them. No lesson exists. | *Matrix Transformations & Linear Algebra*: interactive basis vectors i-hat/j-hat, determinant area scaling, and graphics transforms. |
+| 12 | **Logarithms & continuous scales** (BUILT: `logarithm-scale-explorer.html`, Level 3 after Exponent Explorer) | Exponents leap to Euler's number e without logs. | *Logarithm Explorer: Powers & Scales*: log machine, decibel/Richter/pH scales, slide rule. |
+| 13 | **Accumulation & Integrals** (BUILT: `area-under-a-curve.html`, Level 5 after Slope of a Curve) | Derivatives leap to terrain gradients without integration. | *Area Under a Curve*: Riemann sums, accumulation function, Fundamental Theorem of Calculus. |
 
 ## Suggested build order
 

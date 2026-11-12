@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 488 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 493 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -15,7 +15,7 @@ This metadata-only draft organizes 488 public lessons and classifies 17 supporti
 
 # Volume I — Mathematical Thinking, Measurement & Astronomy
 
-Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 59 lessons
+Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 64 lessons
 
 ## Mathematics & Quantitative Reasoning (MAT)
 
@@ -30,39 +30,44 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 59 lesson
 - **MAT-07** — Division: Think in Groups
 - **MAT-08** — PEMDAS & Order of Operations
 - **MAT-09** — Proportional Reasoning
+- **MAT-10** — Fractions, Decimals & Percents
 
 ### Geometry, Graphs & Spatial Reasoning
 
-- **MAT-10** — Area & Perimeter Playground
-- **MAT-11** — Pythagoras & Triangles
-- **MAT-12** — Pi & Circles
-- **MAT-13** — SOH-CAH-TOA
-- **MAT-14** — Linear Equations & Slope
-- **MAT-15** — Where Lines Meet
-- **MAT-16** — Graphing Calculator
-- **MAT-17** — Slope of a Curve
-- **MAT-18** — Snap, Crackle, Pop: The Ladder of Time Derivatives
-- **MAT-19** — Minecraft Calculus: Terrain & Water Flow
-- **MAT-20** — The Math of the Rubik's Cube
+- **MAT-11** — Area & Perimeter Playground
+- **MAT-12** — Pythagoras & Triangles
+- **MAT-13** — Pi & Circles
+- **MAT-14** — SOH-CAH-TOA
+- **MAT-15** — Linear Equations & Slope
+- **MAT-16** — Where Lines Meet
+- **MAT-17** — Graphing Calculator
+- **MAT-18** — Slope of a Curve
+- **MAT-19** — Area Under a Curve: Accumulation & Integrals
+- **MAT-20** — Snap, Crackle, Pop: The Ladder of Time Derivatives
+- **MAT-21** — Minecraft Calculus: Terrain & Water Flow
+- **MAT-22** — The Math of the Rubik's Cube
+- **MAT-23** — Matrix Transformations & Linear Algebra
+- **MAT-24** — AI Smart Blackboard: Construction & Deconstruction Studio
 
 ### Chance, Patterns & Sequences
 
-- **MAT-21** — Mean, Median & Mode
-- **MAT-22** — How Spread Out?
-- **MAT-23** — Probability Simulator
-- **MAT-24** — Galton Board & Pachinko Lab
-- **MAT-25** — Fibonacci Sequence
+- **MAT-25** — Mean, Median & Mode
+- **MAT-26** — How Spread Out?
+- **MAT-27** — Probability Simulator
+- **MAT-28** — Galton Board & Pachinko Lab
+- **MAT-29** — Fibonacci Sequence
 
 ### Advanced Patterns & Open Questions
 
-- **MAT-26** — Exponent Explorer
-- **MAT-27** — Algebra Tiles: Factoring
-- **MAT-28** — Completing the Square
-- **MAT-29** — The Unit Circle & Waves
-- **MAT-30** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
-- **MAT-31** — How 𝑒 Was Discovered
-- **MAT-32** — Riemann Hypothesis
-- **MAT-33** — The Equations Iceberg
+- **MAT-30** — Exponent Explorer
+- **MAT-31** — Logarithm Explorer: Powers & Scales
+- **MAT-32** — Algebra Tiles: Factoring
+- **MAT-33** — Completing the Square
+- **MAT-34** — The Unit Circle & Waves
+- **MAT-35** — Fourier Series & Transform — _also indexed in Audio, Lighting & Production Technology_
+- **MAT-36** — How 𝑒 Was Discovered
+- **MAT-37** — Riemann Hypothesis
+- **MAT-38** — The Equations Iceberg
 
 ## Astronomy & Space Science (COS)
 

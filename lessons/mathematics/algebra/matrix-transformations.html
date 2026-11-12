@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Matrix Transformations &amp; Linear Algebra · Mr. Scandrett's ClassroomOS</title>
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <meta name="description" content="Watch a 2D coordinate grid bend, rotate, stretch, and shear as you drag basis vectors i-hat and j-hat. Connect 2x2 matrices to determinants, area distortion, and computer graphics." />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <style>
+    .ll-viewport { --ll-panel-w: 304px; --ll-accent: #2563eb; --ll-tab-active: #2563eb; --ll-tab-active-bg: rgba(37,99,235,0.12); }
+    .tc-page { padding-bottom: 3.5rem; --sin: #2563eb; --cos: #c84b0a; --tan: #16a34a; }
+:where(html[data-lighting="night"]) .tc-page { --cos: #f46c26; }
+@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .tc-page { --cos: #ea580c; } }
+    .tc-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
+    .tc-hero h1 { max-width: 28ch; margin: 0; font-size: clamp(1.55rem, 3.5vw, 2.35rem); }
+    .tc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.55rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
+    .tc-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.45; }
+    .tc-lede { max-width: 70ch; margin: 0.7rem 0 0; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
+
+    .tc-card { background: var(--white, #fff); border: 1px solid var(--line, #d2d2d7); border-left: 3.5px solid var(--card-accent, #2563eb); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .tc-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
+    .tc-card h3 { margin: 0.95rem 0 0.35rem; font-size: 1rem; }
+    .tc-card p, .tc-card li { color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .tc-card p { margin: 0 0 0.62rem; }
+    .tc-card p:last-child { margin-bottom: 0; }
+    .tc-mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+
+    .tc-canvases { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.8rem; margin: 0.8rem 0; }
+    .tc-cv { position: relative; height: 380px; border: 1px solid var(--line, #d2d2d7); border-radius: 12px; overflow: hidden; }
+    .tc-cv canvas { display: block; touch-action: none; cursor: crosshair; }
+
+    .tc-controls { display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem; align-items: center; margin: 0.5rem 0; }
+    .tc-controls label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-main, #1d1d1f); }
+    .tc-controls input[type=range] { width: min(200px, 50vw); accent-color: var(--card-accent, #2563eb); }
+    .tc-btns { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; }
+    .tc-btn { padding: 0.32rem 0.7rem; border: 1px solid var(--line, #d2d2d7); border-radius: 999px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+    .tc-btn:hover, .tc-btn:focus-visible { border-color: var(--card-accent, #2563eb); }
+    .tc-btn.primary { background: var(--card-accent, #2563eb); border-color: var(--card-accent, #2563eb); color: #fff; }
+
+    /* Matrix Bracket UI */
+    .matrix-box-wrap { display: flex; flex-wrap: wrap; gap: 1.2rem; align-items: center; margin: 0.8rem 0; }
+    .matrix-bracket { display: inline-flex; align-items: center; position: relative; padding: 0.4rem 0.7rem; border: 2.5px solid var(--text-main, #1d1d1f); border-top-width: 0; border-bottom-width: 0; border-radius: 8px; font-family: "IBM Plex Mono", monospace; }
+    .matrix-bracket::before, .matrix-bracket::after { content: ""; position: absolute; left: 0; right: 0; height: 3px; background: var(--text-main, #1d1d1f); }
+    .matrix-bracket::before { top: 0; }
+    .matrix-bracket::after { bottom: 0; }
+    .matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 0.8rem; text-align: center; }
+    .matrix-grid input { width: 3.5rem; padding: 0.25rem 0.4rem; text-align: center; font-weight: 700; border-radius: 6px; border: 1px solid var(--line, #d2d2d7); background: transparent; color: var(--text-main, #1d1d1f); font-family: inherit; }
+
+    .tc-read { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin: 0.6rem 0; }
+    .tc-read div { padding: 0.5rem 0.65rem; border: 1px solid var(--line, #d2d2d7); border-radius: 10px; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+    .tc-read strong { display: block; margin-top: 0.1rem; font-size: 1rem; color: var(--text-main, #1d1d1f); font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+    .tc-practice-item { display: grid; grid-template-columns: 1fr auto auto; gap: 0.6rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--line, #d2d2d7); }
+    .tc-practice-item:last-child { border-bottom: 0; }
+    .tc-practice-item p { margin: 0; font-size: 0.86rem; }
+    .tc-practice-item input { width: 6rem; padding: 0.3rem 0.45rem; border: 1px solid var(--line, #d2d2d7); border-radius: 8px; background: transparent; color: var(--text-main, #1d1d1f); font: inherit; }
+    .tc-practice-item .fb { min-width: 8rem; font-size: 0.8rem; font-weight: 700; }
+    .tc-practice-item .fb.ok { color: #15803d; }
+    .tc-practice-item .fb.no { color: #b45309; }
+
+    [data-lighting="night"] .tc-card { background: var(--white, #2c2c2e); }
+    [data-lighting="night"] .tc-controls label, [data-lighting="night"] .tc-read strong,
+    [data-lighting="night"] .matrix-grid input, [data-lighting="night"] .tc-practice-item input { color: rgba(245,245,247,0.92); }
+    [data-lighting="night"] .matrix-bracket { border-color: rgba(245,245,247,0.9); }
+    [data-lighting="night"] .matrix-bracket::before, [data-lighting="night"] .matrix-bracket::after { background: rgba(245,245,247,0.9); }
+    [data-lighting="night"] .tc-card p, [data-lighting="night"] .tc-card li { color: rgba(245,245,247,0.72); }
+    [data-lighting="night"] .tc-practice-item .fb.ok { color: #4ade80; }
+    [data-lighting="night"] .tc-practice-item .fb.no { color: #fbbf24; }
+  </style>
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="tc-page">
+        <section class="hero tc-hero">
+          <p class="eyebrow">Mathematics · Linear Algebra &amp; Transformations</p>
+          <h1>Matrix Transformations &amp; Linear Algebra</h1>
+          <div class="tc-meta">
+            <span>Basis vectors</span><span class="dot"></span>
+            <span>2×2 matrices</span><span class="dot"></span>
+            <span>Determinant &amp; area</span><span class="dot"></span>
+            <span>Rotation &amp; shear</span><span class="dot"></span>
+            <span>Computer graphics</span>
+          </div>
+          <p class="tc-lede">A matrix isn't just a spreadsheet grid of numbers. Geometrically, a $2\times 2$ matrix tells you where the two foundational unit arrows—<strong>i-hat</strong> and <strong>j-hat</strong>—land after you stretch, rotate, or bend 2D space. Every 3D video game engine, robotic arm, and CSS animation runs on this exact geometry.</p>
+        </section>
+
+        <section class="tc-card">
+          <h2>Learning Targets</h2>
+          <ul>
+            <li>Trace where basis vectors $\hat{i} = [1, 0]^T$ and $\hat{j} = [0, 1]^T$ land to visualize any linear transformation.</li>
+            <li>Connect the four numbers in $\begin{bmatrix} a & b \\ c & d \end{bmatrix}$ directly to the coordinates of the transformed basis vectors.</li>
+            <li>Interpret the determinant $\det(A) = ad - bc$ as the factor by which area scales (and notice when orientation flips).</li>
+            <li>Recognize standard transformation matrices: identity, rotations, uniform scaling, reflections, and shears.</li>
+          </ul>
+          <p>Prerequisites: <a href="../geometry-and-trigonometry/unit-circle-waves.html">The Unit Circle &amp; Waves</a> and <a href="../geometry-and-trigonometry/pythagoras.html">Pythagoras &amp; Triangles</a>. Next: <a href="algebra-tiles-factoring.html">Algebra Tiles: Factoring</a> and Computer Graphics.</p>
+        </section>
+
+        <!-- Lab 1: Interactive Matrix Transformer -->
+        <section class="tc-card" id="matrix-grid-lab" style="--card-accent:#2563eb;">
+          <h2>Lab 1 · The Grid Transformer</h2>
+          <p>The coordinate grid starts with standard axes. The <span style="color:#2563eb; font-weight:700;">blue vector</span> is $\hat{i}$ (first column) and the <span style="color:#ea580c; font-weight:700;">orange vector</span> is $\hat{j}$ (second column). <strong>Click and drag</strong> their arrow heads on the grid, or type values into the matrix brackets below.</p>
+
+          <div class="matrix-box-wrap">
+            <div>
+              <span style="font-weight:700; font-size:0.85rem; margin-right:0.6rem;">Transformation Matrix A =</span>
+              <div class="matrix-bracket">
+                <div class="matrix-grid">
+                  <input id="mat-a" type="number" step="0.1" value="1.0" aria-label="Matrix a, x-coord of i-hat" />
+                  <input id="mat-b" type="number" step="0.1" value="0.0" aria-label="Matrix b, x-coord of j-hat" />
+                  <input id="mat-c" type="number" step="0.1" value="0.0" aria-label="Matrix c, y-coord of i-hat" />
+                  <input id="mat-d" type="number" step="0.1" value="1.0" aria-label="Matrix d, y-coord of j-hat" />
+                </div>
+              </div>
+            </div>
+
+            <div class="tc-btns" role="group" aria-label="Preset transformations">
+              <button type="button" class="tc-btn primary" id="btn-ident">Identity</button>
+              <button type="button" class="tc-btn" id="btn-rot90">Rotate 90°</button>
+              <button type="button" class="tc-btn" id="btn-rot45">Rotate 45°</button>
+              <button type="button" class="tc-btn" id="btn-shear">Shear X</button>
+              <button type="button" class="tc-btn" id="btn-scale2">Scale ×2</button>
+              <button type="button" class="tc-btn" id="btn-reflx">Reflect X</button>
+              <button type="button" class="tc-btn" id="btn-flatten">Singular (det = 0)</button>
+            </div>
+          </div>
+
+          <div class="tc-cv" id="mat-box"><canvas id="mat-canvas" aria-label="Interactive 2D linear transformation coordinate plane"></canvas></div>
+
+          <div class="tc-read">
+            <div>i-hat lands at<strong id="read-i" style="color:#2563eb;">(1.00, 0.00)</strong></div>
+            <div>j-hat lands at<strong id="read-j" style="color:#ea580c;">(0.00, 1.00)</strong></div>
+            <div>Determinant det(A)<strong id="read-det">1.00</strong></div>
+            <div>Orientation<strong id="read-orient">Standard</strong></div>
+          </div>
+        </section>
+
+        <!-- Lab 2: Shape Transformer & Graphics -->
+        <section class="tc-card" id="shape-lab" style="--card-accent:#c84b0a;">
+          <h2>Lab 2 · Transforming Shapes in Computer Graphics</h2>
+          <p>Every sprite in a 2D game or polygon in 3D CAD is simply a list of coordinate points $(x, y)$. When you transform a model, the GPU calculates $\begin{bmatrix} a & b \\ c & d \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} ax + by \\ cx + dy \end{bmatrix}$ for every single point.</p>
+          <div class="tc-controls">
+            <label>Shape to transform:
+              <select id="shape-sel" style="padding:0.3rem 0.5rem; border-radius:8px; border:1px solid var(--line); font:inherit;">
+                <option value="square" selected>Unit Square (Area = 1)</option>
+                <option value="f-glyph">Letter "F" (Asymmetry test)</option>
+                <option value="circle">Unit Circle (Circle to Ellipse)</option>
+              </select>
+            </label>
+            <label><input type="checkbox" id="chk-grid" checked /> Show warped grid lines</label>
+          </div>
+          <p><strong>Notice the Parallelogram:</strong> The unit square originally has area 1.0. When transformed, it becomes a parallelogram whose area is exactly equal to $|\det(A)|$! If the determinant is negative, the shape has been flipped through a mirror (chirality reversal).</p>
+        </section>
+
+        <!-- Lab 3: The Determinant & Inverses -->
+        <section class="tc-card" id="inverse-lab" style="--card-accent:#12843c;">
+          <h2>Lab 3 · Inverses: Can You Rewind Time?</h2>
+          <p>If $\det(A) \neq 0$, the transformation preserves 2D space without completely flattening it. That means an <strong>inverse matrix $A^{-1}$</strong> exists that can undo the transformation exactly.</p>
+          <div class="matrix-box-wrap">
+            <div>
+              <span style="font-weight:700; font-size:0.85rem; margin-right:0.6rem;">Inverse Matrix A⁻¹ =</span>
+              <div class="matrix-bracket">
+                <div class="matrix-grid">
+                  <span id="inv-a" class="tc-mono" style="padding:0.25rem;">1.00</span>
+                  <span id="inv-b" class="tc-mono" style="padding:0.25rem;">0.00</span>
+                  <span id="inv-c" class="tc-mono" style="padding:0.25rem;">0.00</span>
+                  <span id="inv-d" class="tc-mono" style="padding:0.25rem;">1.00</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="tc-btn primary" id="btn-apply-inv">Apply A⁻¹ to Reset</button>
+          </div>
+          <p id="inv-status-note" class="tc-mono" style="font-size:0.88rem; color:var(--text-secondary);"></p>
+        </section>
+
+        <!-- Practice Section -->
+        <section class="tc-card" style="--card-accent:#7c3aed;">
+          <h2>Check Your Understanding</h2>
+          <div class="tc-practice-item" data-answer="10" data-hint="det = ad - bc = (4)(3) - (1)(2) = 12 - 2.">
+            <p>Compute the determinant of $\begin{bmatrix} 4 & 1 \\ 2 & 3 \end{bmatrix}$.</p>
+            <input type="text" placeholder="e.g. 10" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="0" data-hint="A singular matrix squashes 2D space down into 1D, so its area multiplier (determinant) is 0.">
+            <p>What is the determinant of a matrix that flattens all of 2D space into a single straight line?</p>
+            <input type="text" placeholder="e.g. 0" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+          <div class="tc-practice-item" data-answer="6" data-hint="det = (3)(2) - (0)(0) = 6. Area scales by |det|: 1 × 6 = 6.">
+            <p>If matrix $A = \begin{bmatrix} 3 & 0 \\ 0 & 2 \end{bmatrix}$ transforms a unit square of area 1, what is the new area?</p>
+            <input type="text" placeholder="e.g. 6" />
+            <button type="button" class="tc-btn primary">Check</button>
+            <span class="fb"></span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+  <script src="../../../assets/js/sim-kit.js"></script>
+  <script src="../../../assets/js/lessons/matrix-transformations.js"></script>
+  <script src="../../../assets/js/classroom-animations.js"></script>
+  <script src="../../../assets/js/lesson-layout.js"></script>
+  <script src="../../../assets/js/math-pathway-nav.js"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/sim-reset.js" data-groups='[["mat-a","mat-b","mat-c","mat-d"]]'></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
