@@ -128,3 +128,66 @@
 .piano-lesson .pc-piece-controls input[type="range"] { width: 140px !important; }
 .piano-lesson .pc-display-bar .pc-hint { font-weight: 400; }
 .piano-lesson .pc-display-bar .pc-builder-controls { gap: .65rem; }
+/* Piano teaching routes and self-contained printable technique sheets. */
+.piano-lesson .pno-development { margin: 1.5rem 0; padding: clamp(1rem, 3vw, 2rem); border: 1px solid #c9d2d6; border-top: 4px solid #245f78; border-radius: 6px; background: #fff; scroll-margin-top: 12rem; }
+.piano-lesson .pno-development > h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; }
+.piano-lesson .pno-route-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin: 1.25rem 0; }
+.piano-lesson .pno-route-grid article { padding: 1.1rem; background: #f1f4f5; border: 1px solid #c9d2d6; border-radius: 5px; }
+.piano-lesson .pno-route-grid h3 { margin-top: 0; font-size: 1.1rem; }
+.piano-lesson .pno-route-grid p { font-size: .95rem; line-height: 1.6; }
+.piano-lesson .pno-route-grid a { display: inline-block; padding: .6rem 0; color: #174b63; font-weight: 600; }
+.pno-sheet-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.pno-sheet-controls select { max-width: 100%; min-height: 44px; font: inherit; background: #fff; color: #202629; }
+#pnoSheetPreview { margin-top: 1.5rem; }
+.pno-sheet { box-sizing: border-box; max-width: 7.3in; padding: .18in; margin: auto; background: #fff; color: #111; border: 1px solid #aaa; font: 10pt/1.25 Arial,sans-serif; }
+.pno-sheet * { box-sizing: border-box; color: inherit; }
+.pno-sheet h3 { font: bold 20pt/1.1 Arial,sans-serif !important; margin: .06in 0; }
+.pno-sheet h4 { font: bold 11pt/1.2 Arial,sans-serif !important; margin: .07in 0 .03in; }
+.pno-sheet p { font: inherit !important; margin: .05in 0; }
+.pno-sheet-task { border-top: 1px solid #888; break-inside: avoid; }
+.pno-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; font: 9pt Arial,sans-serif; }
+.pno-sheet :is(th,td) { border: 1px solid #aaa; padding: .025in 0; text-align: center; }
+.pno-sheet caption { font-size: 8pt; text-align: left; }
+.pno-sheet-staff svg { display: block; width: 100%; height: .85in; min-width: 0; }
+.pno-sheet .pc-staff-line,.pno-sheet .pc-staff-ledger { stroke: #444; }
+.pno-sheet .pc-note-label { fill: #111; }
+.pno-sheet-credit { font-size: 8pt !important; }
+#pnoSheetPrintRoot { display: none; }
+@media (max-width: 650px) { .piano-lesson .pno-route-grid { grid-template-columns: 1fr; } .pno-sheet { padding: .1in; } }
+@media print {
+  @page piano-sheet { size: auto; margin: .4in; }
+  body.pno-printing-sheets { margin: 0 !important; padding: 0 !important; background: white !important; }
+  body.pno-printing-sheets > *:not(#pnoSheetPrintRoot) { display: none !important; }
+  body.pno-printing-sheets #pnoSheetPrintRoot { display: block !important; }
+  #pnoSheetPrintRoot .pno-sheet { page: piano-sheet; max-width: none; border: 0; padding: 0; break-after: page; break-inside: avoid; }
+  #pnoSheetPrintRoot .pno-sheet:last-child { break-after: auto; }
+}
+/* Preserve compact score dimensions against the shared full-lesson print rules. */
+.pno-sheet-staff svg { height: .85in !important; max-height: .85in !important; }
+@media print {
+  #pnoSheetPrintRoot .pno-sheet :is(p,td,th,caption) { font-family: Arial,sans-serif !important; }
+  #pnoSheetPrintRoot .pno-sheet table :is(td,th) { padding: .025in 0 !important; }
+}
+@media print {
+  #pnoSheetPrintRoot .pno-sheet { font-size: 9pt; line-height: 1.18; }
+  #pnoSheetPrintRoot .pno-sheet p { margin: .035in 0; }
+  #pnoSheetPrintRoot .pno-sheet-staff svg { height: .65in !important; max-height: .65in !important; }
+}
+
+/* Keep the piano's essential controls and print preview usable at phone widths. */
+.piano-lesson .iw-essential-controls { margin: .5rem; flex-wrap: wrap; }
+.piano-lesson .iw-essential-controls input[type="range"] { width: 8rem; }
+.piano-lesson .pc-key:focus-visible { outline: 3px solid var(--accent, #0066cc); outline-offset: -4px; z-index: 3; }
+@media screen {
+  .piano-lesson .pgd, .piano-lesson .pgd-preview { min-width: 0; max-width: 100%; }
+  .piano-lesson .pgd-scroll { contain: inline-size; max-width: 100%; box-sizing: border-box; }
+}
+@media screen {
+  /* Closed details must not contribute the paper-width sheet to page overflow. */
+  .piano-lesson .pgd-preview:not([open]) > .pgd-scroll { display: none; }
+}
+
+@media screen {
+  .piano-lesson #pnoSheetPreview { max-width: 100%; overflow-x: auto; }
+  .piano-lesson #pnoSheetPreview:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+}

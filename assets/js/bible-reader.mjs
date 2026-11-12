@@ -249,8 +249,9 @@ function renderHome() {
 
   setView("The Bible",
     h("section", { class: "bb-hello" },
-      h("p", { class: "bb-date", text: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) }),
-      h("h1", { text: hello })),
+      h("p", { class: "bb-date", text: new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) }),
+      h("h1", { text: hello }),
+      h("p", { class: "bb-hello-sub", text: "Welcome to Scripture reading in ClassroomOS · 66 books, 4 translations, and personal reading progress." })),
     h("div", { class: "bb-home-grid" }, votd, continueCard()),
     statsRow(),
     gotoForm(),
@@ -274,19 +275,23 @@ async function fillVotd(card) {
   const reference = data?.reference || "John 3:16 (NIV)";
   const ref = parseRef(reference.replace(/\s*\(.*\)\s*$/, ""));
   const listen = window.speechSynthesis
-    ? h("button", { type: "button", class: "bb-btn", onclick: () => {
+    ? h("button", { type: "button", class: "bb-btn bb-btn-listen", onclick: () => {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(Object.assign(new SpeechSynthesisUtterance(`${text} ${reference.replace(/\s*\(.*\)$/, "")}`), { rate: 0.9 }));
-      } }, "▶ Listen")
+      } },
+        h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", class: "bb-icon" }, h("polygon", { points: "5 3 19 12 5 21 5 3" })),
+        h("span", { text: "Listen" }))
     : null;
   card.replaceChildren(
-    h("p", { class: "bb-kicker", text: "Verse of the Day" }),
-    h("blockquote", { class: "bb-votd-text" }, h("p", { text })),
-    h("p", { class: "bb-votd-ref", text: reference }),
+    h("div", { class: "bb-votd-header" },
+      h("span", { class: "bb-votd-badge", text: "✨ Verse of the Day" }),
+      h("span", { class: "bb-votd-ref-pill", text: reference })
+    ),
+    h("blockquote", { class: "bb-votd-text" }, h("p", { text: `“${text}”` })),
     h("div", { class: "bb-actions" },
-      ref?.ch ? h("a", { class: "bb-btn bb-primary", href: readHref(ref.book.slug, ref.ch, ref.v1, ref.v2) }, `Read ${ref.book.name} ${ref.ch}`) : null,
+      ref?.ch ? h("a", { class: "bb-btn bb-primary", href: readHref(ref.book.slug, ref.ch, ref.v1, ref.v2) }, `Read ${ref.book.name} ${ref.ch} →`) : null,
       listen),
-    h("p", { class: "bb-fine", text: data?.sourceLabel ? `${data.sourceLabel} · the same verse as the ClassroomOS home page` : "" }));
+    h("p", { class: "bb-fine", text: data?.sourceLabel ? `${data.sourceLabel} · Verse shared with the ClassroomOS home page` : "" }));
 }
 
 function nextPlace() {
@@ -303,33 +308,53 @@ function continueCard() {
       h("p", { class: "bb-kicker", text: "Start reading" }),
       h("h2", { text: "Where would you like to begin?" }),
       h("ul", { class: "bb-starts" },
-        [["genesis", 1, "In the beginning: creation"], ["mark", 1, "The shortest Gospel"], ["psalms", 23, "The Lord is my shepherd"], ["proverbs", 1, "Short sayings of wisdom"]]
-          .map(([slug, ch, note]) => h("li", null, h("a", { href: readHref(slug, ch) }, h("strong", { text: `${bySlug.get(slug).name} ${ch}` }), h("span", { text: note }))))));
+        [["genesis", 1, "Creation, fall & Abraham's call", "Law"],
+         ["mark", 1, "The earliest, fast-moving Gospel", "Gospels"],
+         ["psalms", 23, "The Lord is my shepherd", "Poetry & Wisdom"],
+         ["proverbs", 1, "Foundations of divine wisdom", "Poetry & Wisdom"]]
+          .map(([slug, ch, note, cat]) => h("li", null,
+            h("a", { href: readHref(slug, ch), "data-cat": cat, class: "bb-start-tile" },
+              h("div", { class: "bb-start-info" },
+                h("strong", { text: `${bySlug.get(slug).name} ${ch}` }),
+                h("span", { class: "bb-start-note", text: note })
+              ),
+              h("span", { class: "bb-start-cat", text: cat })
+            )))));
   }
   const done = readSet(place.book.slug).size;
   const total = place.book.verses.length;
+  const pct = Math.round((done / total) * 100);
   return h("article", { class: "bb-card bb-continue" },
     h("p", { class: "bb-kicker", text: "Continue reading" }),
     h("h2", { text: `${place.book.name} ${place.ch}` }),
-    h("p", { class: "bb-fine", text: `${done} of ${plural(total, "chapter")} in ${place.book.name} read` }),
+    h("p", { class: "bb-fine", text: `${done} of ${plural(total, "chapter")} read in ${place.book.name} (${pct}%)` }),
     meter(done / total, `${place.book.name} progress`),
     h("div", { class: "bb-actions" },
-      h("a", { class: "bb-btn bb-primary", href: readHref(place.book.slug, place.ch) }, "Continue →"),
+      h("a", { class: "bb-btn bb-primary", href: readHref(place.book.slug, place.ch) }, "Continue Reading →"),
       h("a", { class: "bb-btn", href: `${PAGE}#/book/${place.book.slug}` }, "All chapters")));
 }
 
 function statsRow() {
   const n = chaptersRead();
   const s = streak();
-  const tile = (value, label, extra) => h("div", { class: "bb-stat" }, h("strong", { text: value }), h("span", { text: label }), extra);
-  return h("section", { class: "bb-stats", "aria-label": "Your reading" },
-    tile(n.toLocaleString(), `of ${TOTAL.toLocaleString()} chapters read`, meter(n / TOTAL, "Whole Bible progress")),
-    tile(String(booksFinished()), `of ${books.length} books finished`),
-    tile(String(s), s === 1 ? "day in a row" : "days in a row"));
+  const pct = ((n / TOTAL) * 100).toFixed(1);
+  const finishedCount = booksFinished();
+  
+  const tile = (val, label, extra, kicker) => h("div", { class: "bb-stat" },
+    kicker ? h("span", { class: "bb-stat-kicker", text: kicker }) : null,
+    h("strong", { text: val }),
+    h("span", { class: "bb-stat-label", text: label }),
+    extra);
+
+  return h("section", { class: "bb-stats", "aria-label": "Your reading statistics" },
+    tile(n.toLocaleString(), `of ${TOTAL.toLocaleString()} chapters read (${pct}%)`, meter(n / TOTAL, "Whole Bible progress"), "Progress"),
+    tile(String(finishedCount), `of ${books.length} books completed`, meter(finishedCount / books.length, "Books completed progress"), "Canon"),
+    tile(s > 0 ? `🔥 ${s}` : "0", s === 1 ? "day reading streak" : "days reading streak",
+      h("p", { class: "bb-fine bb-streak-sub", text: s > 0 ? "Daily reading habit active!" : "Read a chapter today to build streak" }), "Habit"));
 }
 
 function gotoForm() {
-  const input = h("input", { type: "search", id: "bbGoto", placeholder: "John 3:16, Psalm 23, Genesis…", autocomplete: "off", enterkeyhint: "go", "aria-describedby": "bbGotoMsg" });
+  const input = h("input", { type: "search", id: "bbGoto", placeholder: "Jump to passage (e.g. John 3:16, Romans 8, Psalm 23)…", autocomplete: "off", enterkeyhint: "go", "aria-describedby": "bbGotoMsg" });
   const msg = h("p", { class: "bb-fine", id: "bbGotoMsg", "aria-live": "polite" });
   const list = h("datalist", { id: "bbBooksList" }, books.map((b) => h("option", { value: b.name })));
   input.setAttribute("list", "bbBooksList");
@@ -340,7 +365,13 @@ function gotoForm() {
       location.hash = ref.ch ? readHref(ref.book.slug, ref.ch, ref.v1, ref.v2).split("#")[1] : `/book/${ref.book.slug}`;
     } },
     h("label", { for: "bbGoto", text: "Go to a passage" }),
-    h("div", { class: "bb-goto-row" }, input, h("button", { type: "submit", class: "bb-btn bb-primary" }, "Go")),
+    h("div", { class: "bb-goto-row" },
+      h("div", { class: "bb-goto-input-wrap" },
+        h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", class: "bb-goto-icon" },
+          h("circle", { cx: "11", cy: "11", r: "8" }),
+          h("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" })),
+        input),
+      h("button", { type: "submit", class: "bb-btn bb-primary" }, "Go →")),
     list, msg);
 }
 
@@ -349,13 +380,24 @@ function shelf(testament, title) {
   const cats = [...new Set(list.map((b) => b.cat))];
   const done = list.reduce((n, b) => n + readSet(b.slug).size, 0);
   const total = list.reduce((n, b) => n + b.verses.length, 0);
+  const pct = Math.round((done / total) * 100);
   return h("section", { class: "bb-shelf", id: `bb-${testament.toLowerCase()}`, "aria-labelledby": `bb-${testament}-h` },
     h("div", { class: "bb-shelf-head" },
-      h("h2", { id: `bb-${testament}-h`, text: title }),
-      h("span", { class: "bb-fine", text: `${list.length} books · ${done} of ${total} chapters read` }),
-      meter(done / total, `${title} progress`)),
+      h("div", { class: "bb-shelf-title-wrap" },
+        h("h2", { id: `bb-${testament}-h`, text: title }),
+        h("span", { class: "bb-shelf-badge", text: `${list.length} books` })
+      ),
+      h("div", { class: "bb-shelf-meta" },
+        h("span", { class: "bb-fine", text: `${done} of ${total} chapters read (${pct}%)` }),
+        meter(done / total, `${title} progress`)
+      )
+    ),
     cats.map((cat) => h("div", { class: "bb-cat", "data-cat": cat },
-      h("h3", { text: cat }),
+      h("div", { class: "bb-cat-head" },
+        h("span", { class: "bb-cat-dot" }),
+        h("h3", { text: cat }),
+        h("span", { class: "bb-cat-count", text: `${list.filter((b) => b.cat === cat).length} books` })
+      ),
       h("ul", { class: "bb-tiles" }, list.filter((b) => b.cat === cat).map(tile)))));
 }
 
@@ -364,11 +406,22 @@ function tile(b) {
   const total = b.verses.length;
   const finished = done >= total;
   return h("li", null,
-    h("a", { class: "bb-tile" + (finished ? " is-done" : done ? " is-started" : ""), href: `${PAGE}#/book/${b.slug}`, "data-cat": b.cat,
-        "aria-label": `${b.name}, ${plural(total, "chapter")}${finished ? ", finished" : done ? `, ${done} read` : ""}` },
-      h("span", { class: "bb-tile-name", text: b.name }),
-      h("span", { class: "bb-tile-meta", text: finished ? "✓ Finished" : done ? `${done} / ${total}` : plural(total, "chapter") }),
-      done && !finished ? meter(done / total, `${b.name} progress`) : null));
+    h("a", {
+      class: "bb-tile" + (finished ? " is-done" : done ? " is-started" : ""),
+      href: `${PAGE}#/book/${b.slug}`,
+      "data-cat": b.cat,
+      "aria-label": `${b.name}, ${plural(total, "chapter")}${finished ? ", finished" : done ? `, ${done} read` : ""}`
+    },
+      h("div", { class: "bb-tile-top" },
+        h("span", { class: "bb-tile-name", text: b.name }),
+        finished
+          ? h("span", { class: "bb-tile-badge is-done", text: "✓ Done" })
+          : done
+          ? h("span", { class: "bb-tile-badge is-started", text: `${done}/${total}` })
+          : h("span", { class: "bb-tile-badge", text: `${total} ch` })
+      ),
+      done && !finished ? meter(done / total, `${b.name} progress`) : null
+    ));
 }
 
 /* Book: biographical wiki entry, visual artifacts, progress, and every chapter as a numbered square. */
@@ -381,10 +434,22 @@ function renderBook(b) {
   const info = bookWiki[b.slug] || {};
 
   const metaPills = [];
-  if (info.author) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Author: " }), info.author));
-  if (info.date) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Date: " }), info.date));
-  if (info.place) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Origin: " }), info.place));
-  if (info.audience) metaPills.push(h("span", { class: "bb-pill" }, h("strong", { text: "Audience: " }), info.audience));
+  if (info.author) metaPills.push(h("span", { class: "bb-pill" }, h("span", { class: "bb-pill-icon", "aria-hidden": "true", text: "✍️" }), h("strong", { text: "Author: " }), info.author));
+  if (info.date) metaPills.push(h("span", { class: "bb-pill" }, h("span", { class: "bb-pill-icon", "aria-hidden": "true", text: "📅" }), h("strong", { text: "Date: " }), info.date));
+  if (info.place) metaPills.push(h("span", { class: "bb-pill" }, h("span", { class: "bb-pill-icon", "aria-hidden": "true", text: "📍" }), h("strong", { text: "Origin: " }), info.place));
+  if (info.audience) metaPills.push(h("span", { class: "bb-pill" }, h("span", { class: "bb-pill-icon", "aria-hidden": "true", text: "👥" }), h("strong", { text: "Audience: " }), info.audience));
+
+  const keyVerse = info.keyVerse?.text
+    ? h("div", { class: "bb-book-keyverse" },
+        h("div", { class: "bb-keyverse-header" },
+          h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", class: "bb-keyverse-icon" },
+            h("path", { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" })),
+          h("span", { class: "bb-keyverse-title", text: "Key Verse" }),
+          h("span", { class: "bb-keyverse-ref", text: info.keyVerse.ref })
+        ),
+        h("blockquote", null, h("p", { text: `“${info.keyVerse.text}”` }))
+      )
+    : null;
 
   const themes = Array.isArray(info.themes) && info.themes.length
     ? h("div", { class: "bb-book-themes" },
@@ -401,11 +466,13 @@ function renderBook(b) {
             "data-lightbox-group": `book-${b.slug}`,
             "data-full": img.full || img.src
           },
-            h("img", {
-              src: img.src,
-              alt: img.alt || img.title || `${b.name} illustration`,
-              loading: idx === 0 ? "eager" : "lazy"
-            }),
+            h("div", { class: "bb-fig-img-wrap" },
+              h("img", {
+                src: img.src,
+                alt: img.alt || img.title || `${b.name} illustration`,
+                loading: idx === 0 ? "eager" : "lazy"
+              }),
+              h("span", { class: "bb-fig-zoom-badge", "aria-hidden": "true", text: "🔍 Enlarge" })),
             h("figcaption", null,
               img.title ? h("strong", { class: "bb-fig-title", text: img.title }) : null,
               h("span", { class: "bb-fig-desc", text: (img.title ? " " : "") + (img.caption || "") }),
@@ -422,6 +489,7 @@ function renderBook(b) {
       h("h1", { text: b.name }),
       metaPills.length ? h("div", { class: "bb-book-meta" }, ...metaPills) : null,
       h("p", { class: "bb-book-summary", text: info.summary || b.about }),
+      keyVerse,
       themes
     ),
     h("div", { class: "bb-book-status" },
@@ -436,7 +504,7 @@ function renderBook(b) {
         } }, "Clear progress") : null
       ),
       h("div", { class: "bb-progress-box" },
-        h("p", { class: "bb-fine", text: `${read.size} of ${plural(total, "chapter")} read` }),
+        h("p", { class: "bb-fine", text: `${read.size} of ${plural(total, "chapter")} read (${Math.round((read.size / total) * 100)}%)` }),
         meter(read.size / total, `${b.name} progress`)
       )
     )
@@ -448,7 +516,8 @@ function renderBook(b) {
   );
 
   setView(b.name,
-    h("nav", { class: "bb-crumbs", "aria-label": "Breadcrumb" }, h("a", { href: `${PAGE}#/` }, "‹ All books")),
+    h("nav", { class: "bb-crumbs", "aria-label": "Breadcrumb" },
+      h("a", { href: `${PAGE}#/` }, "‹ All books")),
     h("header", { class: "bb-book-head", "data-cat": b.cat }, grid),
     h("section", { class: "bb-chapters-sec" },
       h("div", { class: "bb-chapters-head" },
@@ -463,7 +532,7 @@ function renderBook(b) {
           href: readHref(b.slug, ch),
           "aria-label": `Chapter ${ch}${done ? ", read" : ""}`,
           title: `${count} verses`,
-        }, String(ch)));
+        }, done ? h("span", { class: "bb-ch-done-icon", "aria-hidden": "true", text: "✓" }) : null, String(ch)));
       }))
     )
   );
@@ -493,8 +562,17 @@ async function renderChapter(b, ch, v1, v2, keepVerse) {
   const text = h("div", { class: "bb-text", lang: "en" },
     h("div", { class: "bb-skel", role: "status", "aria-label": `Loading ${b.name} ${ch}` }, ...[0, 1, 2, 3, 4, 5, 6].map(() => h("span"))));
   const listen = window.speechSynthesis
-    ? h("button", { type: "button", class: "bb-btn", id: "bbListen", "aria-pressed": "false", onclick: (e) => speakVerses([...text.querySelectorAll(".bb-v")], e.currentTarget) },
-        h("span", { "aria-hidden": "true", text: "▶ " }), "Listen")
+    ? h("button", {
+        type: "button",
+        class: "bb-btn bb-btn-listen",
+        id: "bbListen",
+        "aria-pressed": "false",
+        title: `Listen to ${b.name} ${ch}`,
+        onclick: (e) => speakVerses([...text.querySelectorAll(".bb-v")], e.currentTarget)
+      },
+        h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", class: "bb-icon" },
+          h("polygon", { points: "5 3 19 12 5 21 5 3" })),
+        h("span", { class: "bb-listen-text", text: "Listen" }))
     : null;
   const mark = h("button", { type: "button", class: "bb-mark", "aria-pressed": String(isRead(b.slug, ch)), onclick: () => {
       const on = !isRead(b.slug, ch);
@@ -506,19 +584,36 @@ async function renderChapter(b, ch, v1, v2, keepVerse) {
   syncMark(mark, isRead(b.slug, ch));
 
   const navLink = (place, dir) => place
-    ? h("a", { class: "bb-btn bb-step", href: readHref(place.book.slug, place.ch), rel: dir > 0 ? "next" : "prev",
+    ? h("a", { class: `bb-btn bb-step ${dir > 0 ? "bb-step-next" : "bb-step-prev"}`, href: readHref(place.book.slug, place.ch), rel: dir > 0 ? "next" : "prev",
         onclick: dir > 0 ? () => setRead(b.slug, ch, true) : null },
-        dir < 0 ? `‹ ${place.book.name} ${place.ch}` : `${place.book.name} ${place.ch} ›`)
+        dir < 0
+          ? [h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("polyline", { points: "15 18 9 12 15 6" })), h("span", { text: `${place.book.name} ${place.ch}` })]
+          : [h("span", { text: `${place.book.name} ${place.ch}` }), h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("polyline", { points: "9 18 15 12 9 6" }))])
     : h("span");
 
   setView(`${b.name} ${ch}`,
     h("nav", { class: "bb-crumbs", "aria-label": "Breadcrumb" },
-      h("a", { href: `${PAGE}#/` }, "Books"), h("span", { "aria-hidden": "true", text: " / " }),
-      h("a", { href: `${PAGE}#/book/${b.slug}` }, b.name)),
-    h("header", { class: "bb-chap-head" },
-      h("h1", null, h("span", { class: "bb-chap-book", text: b.name }), " ", h("span", { class: "bb-chap-num", text: String(ch) })),
+      h("a", { href: `${PAGE}#/` }, "All Books"),
+      h("span", { class: "bb-crumb-sep", "aria-hidden": "true", text: " › " }),
+      h("a", { href: `${PAGE}#/book/${b.slug}` }, b.name),
+      h("span", { class: "bb-crumb-sep", "aria-hidden": "true", text: " › " }),
+      h("span", { class: "bb-crumb-current", text: `Chapter ${ch}` })),
+    h("header", { class: "bb-chap-head", "data-cat": b.cat },
+      h("div", { class: "bb-chap-intro" },
+        h("span", { class: "bb-chap-badge", "data-cat": b.cat, text: `${b.t === "OT" ? "Old Testament" : "New Testament"} · ${b.cat}` }),
+        h("h1", { class: "bb-chap-title" },
+          h("span", { class: "bb-chap-book", text: b.name }),
+          h("span", { class: "bb-chap-divider", "aria-hidden": "true", text: "·" }),
+          h("span", { class: "bb-chap-num", text: `Chapter ${ch}` })
+        )
+      ),
       h("div", { class: "bb-actions" },
-        h("a", { class: "bb-btn", href: `${PAGE}#/book/${b.slug}`, title: "Choose a chapter" }, `Chapters (${b.verses.length})`),
+        h("a", { class: "bb-btn", href: `${PAGE}#/book/${b.slug}`, title: `All chapters in ${b.name}` },
+          h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("path", { d: "M4 6h16M4 12h16M4 18h7" })),
+          `Chapters (${b.verses.length})`),
+        h("a", { class: "bb-btn bb-btn-ghost", href: `${PAGE}#/book/${b.slug}`, title: `About the book of ${b.name}` },
+          h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("circle", { cx: "12", cy: "12", r: "10" }), h("line", { x1: "12", y1: "16", x2: "12", y2: "12" }), h("line", { x1: "12", y1: "8", x2: "12.01", y2: "8" })),
+          "Book Info"),
         listen)),
     text,
     h("footer", { class: "bb-chap-foot" },
@@ -832,6 +927,8 @@ function initDisplay() {
   const btn = document.getElementById("bbDisplayBtn");
   const sizeOut = document.getElementById("bbSizeOut");
   const slider = document.getElementById("bbSizeRange");
+  const decBtn = document.getElementById("bbSizeDec");
+  const incBtn = document.getElementById("bbSizeInc");
   const focusBtn = document.getElementById("bbFocusBtn");
   let size = Math.min(200, Math.max(80, Number(store.get("bible:size")) || 100));
   let lh = store.get("bible:lh") || "1.75";
@@ -867,6 +964,8 @@ function initDisplay() {
     paint();
   });
   slider.addEventListener("input", () => { applySize(Number(slider.value)); paint(); });
+  decBtn?.addEventListener("click", () => { applySize(size - 5); paint(); });
+  incBtn?.addEventListener("click", () => { applySize(size + 5); paint(); });
   document.addEventListener("click", (e) => {
     if (!panel.hidden && !e.target.closest("#bbDisplay, #bbDisplayBtn")) closePanel();
   });
@@ -918,9 +1017,20 @@ function paintPager(b, ch, prev, next) {
   const link = (place, dir) => place
     ? h("a", { class: `bb-pg ${dir > 0 ? "bb-pg-next" : "bb-pg-prev"}`, href: readHref(place.book.slug, place.ch), rel: dir > 0 ? "next" : "prev",
         title: `${place.book.name} ${place.ch}`, "aria-label": `${dir > 0 ? "Next" : "Previous"} chapter, ${place.book.name} ${place.ch}`,
-        onclick: dir > 0 ? () => setRead(b.slug, ch, true) : null }, dir < 0 ? "‹ Prev" : "Next ›")
+        onclick: dir > 0 ? () => setRead(b.slug, ch, true) : null },
+        dir < 0
+          ? [h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("polyline", { points: "15 18 9 12 15 6" })), h("span", { text: "Prev" })]
+          : [h("span", { text: "Next" }), h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("polyline", { points: "9 18 15 12 9 6" }))])
     : h("span", { class: "bb-pg bb-pg-off", "aria-hidden": "true" });
-  pager.replaceChildren(link(prev, -1), h("span", { class: "bb-pg-ref", text: `${b.name} ${ch}` }), link(next, 1));
+
+  const centerBtn = h("button", {
+    type: "button",
+    class: "bb-pg-ref",
+    title: "Change book or chapter",
+    onclick: openPicker
+  }, `${b.name} ${ch}`);
+
+  pager.replaceChildren(link(prev, -1), centerBtn, link(next, 1));
   paintProgress();
 }
 
@@ -934,7 +1044,31 @@ function paintProgress() {
   const p = (window.innerHeight - r.top) / Math.max(r.height, 1);
   progressBar.style.width = `${Math.round(Math.min(1, Math.max(0, p)) * 100)}%`;
 }
-window.addEventListener("scroll", () => { if (!progressQueued) { progressQueued = true; requestAnimationFrame(paintProgress); } }, { passive: true });
+
+let lastScrollY = 0;
+let scrollTicking = false;
+window.addEventListener("scroll", () => {
+  if (!scrollTicking) {
+    window.requestAnimationFrame(() => {
+      paintProgress();
+      if (root.dataset.view === "read") {
+        const curY = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight;
+        const winHeight = window.innerHeight;
+        const nearBottom = curY + winHeight >= docHeight - 160;
+        if (curY > lastScrollY + 45 && curY > 150 && !nearBottom) {
+          pager.classList.add("is-tucked");
+        } else if (curY < lastScrollY - 20 || curY < 100 || nearBottom) {
+          pager.classList.remove("is-tucked");
+        }
+        lastScrollY = curY;
+      }
+      scrollTicking = false;
+    });
+    scrollTicking = true;
+  }
+}, { passive: true });
+
 if (window.ResizeObserver) new ResizeObserver(paintProgress).observe(main);
 
 const picker = document.getElementById("bbPicker");
@@ -944,14 +1078,81 @@ const pickMsg = document.getElementById("bbPickMsg");
 const pickInput = document.getElementById("bbPickInput");
 let pickT = "OT";
 
-function pickBooks() {
+function pickBooks(filterList) {
   pickTabs.hidden = false;
-  pickTabs.querySelectorAll("[data-t]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.t === pickT)));
-  pickBody.replaceChildren(h("ul", { class: "bb-pick-books" }, books.filter((b) => b.t === pickT).map((b) => {
+  const otCount = books.filter((b) => b.t === "OT").length;
+  const ntCount = books.filter((b) => b.t === "NT").length;
+  pickTabs.querySelectorAll("[data-t]").forEach((b) => {
+    const isOT = b.dataset.t === "OT";
+    b.setAttribute("aria-pressed", String(b.dataset.t === pickT));
+    b.textContent = isOT ? `Old Testament (${otCount})` : `New Testament (${ntCount})`;
+  });
+  const list = filterList || books.filter((b) => b.t === pickT);
+  pickBody.replaceChildren(h("ul", { class: "bb-pick-books" }, list.map((b) => {
     const done = readSet(b.slug).size;
     return h("li", null, h("button", { type: "button", class: "bb-pick-book", "data-cat": b.cat, onclick: () => pickChapters(b) },
-      h("span", { text: b.name }), h("small", { text: done ? `${done}/${b.verses.length}` : String(b.verses.length) })));
+      h("span", { class: "bb-pick-name", text: b.name }),
+      h("small", { class: "bb-pick-badge", text: done ? `${done}/${b.verses.length}` : `${b.verses.length} ch` })));
   })));
+}
+
+function handlePickFilter() {
+  const raw = pickInput.value.trim();
+  const q = norm(raw);
+  if (!q) {
+    pickMsg.textContent = "";
+    if (currentRead && pickTabs.hidden) pickChapters(currentRead.book);
+    else pickBooks();
+    return;
+  }
+  pickTabs.hidden = true;
+  const ref = parseRef(raw);
+  const hits = books.filter((b) => {
+    return norm(b.name).includes(q) ||
+           norm(b.short).includes(q) ||
+           norm(b.slug).includes(q) ||
+           b.aliases.some((a) => norm(a).includes(q));
+  });
+
+  const nodes = [];
+  if (ref && ref.ch) {
+    nodes.push(h("div", { class: "bb-pick-direct" },
+      h("button", {
+        type: "button",
+        class: "bb-btn bb-primary bb-pick-jump",
+        onclick: () => {
+          picker.close();
+          location.hash = readHref(ref.book.slug, ref.ch, ref.v1, ref.v2).split("#")[1];
+        }
+      },
+        h("span", { text: `Go directly to ${ref.book.name} ${ref.ch}${ref.v1 ? ":" + ref.v1 + (ref.v2 ? "–" + ref.v2 : "") : ""}` }),
+        h("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, h("polyline", { points: "9 18 15 12 9 6" }))
+      )
+    ));
+  }
+
+  if (hits.length === 0 && (!ref || !ref.ch)) {
+    pickBody.replaceChildren(h("p", { class: "bb-fine bb-pick-empty", text: `No books found matching "${raw}". Try a book name like Genesis, John 3:16, or Ps 23.` }));
+    return;
+  }
+
+  const bookList = h("ul", { class: "bb-pick-books bb-pick-books--search" }, hits.map((b) => {
+    const done = readSet(b.slug).size;
+    return h("li", null, h("button", {
+      type: "button",
+      class: "bb-pick-book",
+      "data-cat": b.cat,
+      onclick: () => pickChapters(b)
+    },
+      h("span", { class: "bb-pick-info" },
+        h("span", { class: "bb-pick-name", text: b.name }),
+        h("span", { class: "bb-pick-testament", text: `${b.t === "OT" ? "Old Testament" : "New Testament"} · ${b.cat}` })
+      ),
+      h("small", { class: "bb-pick-badge", text: done ? `${done}/${b.verses.length}` : `${b.verses.length} ch` })
+    ));
+  }));
+
+  pickBody.replaceChildren(...nodes, bookList);
 }
 
 function pickChapters(b) {
@@ -981,6 +1182,7 @@ pickTabs.addEventListener("click", (e) => {
   const b = e.target.closest("[data-t]");
   if (b) { pickT = b.dataset.t; pickBooks(); }
 });
+pickInput.addEventListener("input", handlePickFilter);
 document.getElementById("bbPickSearch").addEventListener("submit", (e) => {
   e.preventDefault();
   const ref = parseRef(pickInput.value);

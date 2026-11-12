@@ -352,7 +352,7 @@
       tip: 'Compare with the basic beat: only one extra kick note, but the whole groove changes character.' },
     { name: 'Four on the floor (disco / dance)', desc: 'Kick on every beat, open hi-hat on every “&”, snare on 2 and 4. It is the pulse of dance music.', tempo: 120,
       tracks: { ohat: '--x---x---x---x-', snare: '----x-------x---', kick: 'x---x---x---x---' },
-      tip: 'The open hi-hat rings out, then the next kick hit “chokes” it, like a real hi-hat pedal closing.' },
+      tip: 'The open hi-hat rings out, then playback shortens it on the next beat. On a real kit, close it with your hi-hat foot; the kick pedal does not close the hats.' },
     { name: 'Half-time feel', desc: 'The snare waits until beat 3, so a busy hi-hat sounds slow and heavy. The tempo is the same, but it feels half as fast.', tempo: 96,
       tracks: { hat: 'x-x-x-x-x-x-x-x-', snare: '--------x-------', kick: 'x-----x---------' },
       tip: 'Hi-hat pattern unchanged, yet the missing snare on beat 2 changes the whole feel.' },
@@ -651,7 +651,8 @@
       var sheetLink = htmlEl('a', 'dr-sheet-link', 'Go to the sheet ↓', tools); sheetLink.href = '#drSheet'; sheetLink.hidden = true;
       htmlEl('span', 'dr-grid-hint', 'Click a square to cycle: off → normal → accent (>) → ghost (quiet) → off.', tools);
       var table = htmlEl('div', 'dr-grid-table', null, grid);
-      table.setAttribute('role', 'group'); table.setAttribute('aria-label', 'Sixteen-step drum grid');
+      table.setAttribute('role', 'group'); table.setAttribute('aria-label', 'Sixteen-step drum grid; scroll horizontally to reach all beats');
+      table.tabIndex = 0;
       var cellEls = {};
       var loadedName = '';
       var sheetTitle = function (store) { return loadedName ? loadedName : 'Groove ' + (store.sheet().patterns.length + 1); };
@@ -715,6 +716,7 @@
         flashButton(sheetBtn, store.persistent ? '✓ Added (' + sh.patterns.length + ' on ' + (sh.student ? sh.student + '’s' : 'the') + ' sheet)' : 'Could not save: this browser blocks storage');
         sheetLink.hidden = false;
         window.dispatchEvent(new Event('groove-sheet-changed'));
+        if (store.persistent) window.dispatchEvent(new Event('groove-sheet-added'));
       });
       // "Load in builder" on a sheet card sends the groove back up here to edit.
       window.addEventListener('groove-sheet-load', function (e) {
@@ -1593,7 +1595,7 @@
 
     Array.prototype.forEach.call(pads, function (pad) { pad.addEventListener('click', function () { play(pad.getAttribute('data-drum'), true); }); });
     document.addEventListener('keydown', function (e) {
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable || !root.contains(e.target) || !e.target.getClientRects().length) return;
       var inst = keyMap[e.key.toLowerCase()];
       if (inst) { e.preventDefault(); play(inst, true); }
     });

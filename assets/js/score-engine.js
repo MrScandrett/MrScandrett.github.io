@@ -364,7 +364,6 @@
       var vel = DYN_VEL.mf;
       order.forEach(function (bi, pos) {
         var off = perfStart[pos] - model.barStart[bi];
-        var nextBar = order[pos + 1];
         st.bars[bi].events.forEach(function (ev) {
           if (ev.dyn) vel = DYN_VEL[ev.dyn];
           if (ev.kind !== 'note') return;
@@ -377,10 +376,13 @@
           ev.pitches.forEach(function (p) {
             // A tie carried in from the bar written before only counts if that bar was just played.
             if (p.tiedFrom && (p.tiedFromBar === ev.bar || pos === 0 || order[pos - 1] === p.tiedFromBar)) return;
-            var dur = ev.dur, cur = ev;
+            var dur = ev.dur, cur = ev, tiePos = pos;
             while (cur.tie && cur.tieTo && cur.tieTo.pitches.some(function (q) { return q.midi === p.midi; })) {
               var target = cur.tieTo;
-              if (target.bar !== cur.bar && target.bar !== nextBar && target.bar !== bi) break;
+              if (target.bar !== cur.bar) {
+                if (order[tiePos + 1] !== target.bar) break;
+                tiePos++;
+              }
               cur = target; dur += cur.dur;
             }
             // Staccato changes the release, not the written rhythm. If a tied

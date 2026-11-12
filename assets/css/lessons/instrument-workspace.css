@@ -113,3 +113,48 @@
   .instrument-workspace .vln-board-outer { height: 590px; }
   .instrument-workspace .vln-live-score { width: 100%; }
 }
+
+/* Keep drum steps large enough to tap; only the grid scrolls on narrow screens. */
+.instrument-workspace .dr-grid-table { max-width: 100%; overflow-x: auto; }
+.instrument-workspace .dr-grid-table:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) {
+  .instrument-workspace .dr-grid-row { grid-template-columns: 76px repeat(16, 44px); min-width: 828px; gap: 3px; }
+  .instrument-workspace .dr-cell { height: 44px; min-height: 44px; }
+  .instrument-workspace .dr-lane-name { position: sticky; left: 0; z-index: 2; background: var(--dr-paper, #fff); }
+}
+
+/* Common, readable navigation for touch, keyboard and enlarged text. */
+.iw-guide { margin: .5rem .75rem; font-size: 1rem; line-height: 1.5; }
+.iw-navigation { align-items: center; min-width: 0; }
+.iw-navigation label { flex: 1 1 12rem; flex-wrap: wrap; font-size: 1rem; }
+.iw-navigation select { flex: 1; width: 12rem; }
+.iw-navigation button, .iw-lesson-link { min-height: 44px; font-size: 1rem; }
+.iw-lesson-link { display: inline-flex; align-items: center; padding: .3rem .5rem; }
+.instrument-workspace :is(button, select, input, a, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--text); outline-offset: 3px;
+}
+.instrument-workspace :is(button, select, input, a, summary, [tabindex]) { scroll-margin-block: 9rem 3rem; }
+@media (max-width: 600px) {
+  .instrument-workspace #sxFingeringStudio > .sx-workbench { grid-template-columns: minmax(0, 1fr); }
+  .instrument-workspace .sx-key-legend { font-size: 1rem; }
+  .instrument-workspace .vln-score-help { display: block; font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .instrument-workspace *, .instrument-workspace *::before, .instrument-workspace *::after {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  .instrument-workspace button { border: 1px solid ButtonText; }
+  .instrument-workspace .is-next { outline: 3px solid Highlight; }
+}
+@media print { .iw-guide { display: none; } }
+.iw-navigation .iw-status { position: absolute !important; width: 1px !important; height: 1px !important; overflow: hidden !important; clip-path: inset(50%) !important; white-space: nowrap !important; }
+@media (max-width: 600px) {
+  .instrument-workspace > .creation-app-toolbar { position: relative; top: 0; }
+  .iw-navigation { flex-basis: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .iw-navigation label { grid-column: 1 / -1; }
+  .iw-navigation select { width: 100%; }
+}
+/* Sound presets also appear in the lesson's reference controls. */
+body:has(.instrument-workspace) main select { max-width: 100%; min-width: 0; }

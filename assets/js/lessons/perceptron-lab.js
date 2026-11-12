@@ -322,7 +322,7 @@ function updateControlClasses() {
 }
 
 function applyCompactPanels() {
-  const isCompact = compactLayoutMedia.matches;
+  const isCompact = true;
 
   for (const button of compactPanelButtons) {
     const active = button.dataset.compactPanel === state.compactPanel;
@@ -1126,3 +1126,11 @@ applyCompactPanels();
 renderAll({ save: false });
 setLiveStatus("Starter mission: choose AND, click Reset, then click Train Burst (5).");
 saveState();
+
+// Reserve exactly the space occupied by the site navigation on this device.
+const siteHeader = document.querySelector('.perceptron-software .site-header');
+if (siteHeader) {
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--perceptron-header-height', `${siteHeader.getBoundingClientRect().height}px`);
+  }).observe(siteHeader);
+}

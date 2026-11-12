@@ -82,6 +82,20 @@ test('staccato releases early while keeping written beats, chords and ties intac
   assert.equal(m.total, 12);
 });
 
+test('sustained notes follow ties across more than two performed bars', () => {
+  const m = model({ time: '4/4', staves: [{ notes: 'Bb4/1~ | Bb4/1~ | Bb4/2. Ab4/4' }] });
+  assert.deepEqual(engine.playList(m).map(({ start, dur, midi }) => [start, dur, midi]), [
+    [0, 11, 70], [11, 1, 68]
+  ]);
+});
+
+test('long ties stop when playback jumps away from the written continuation', () => {
+  const m = model({ time: '4/4', staves: [{ notes: 'C5/1~ | C5/1~ | C5/1' }] });
+  m.order = [0, 1, 0, 1, 2];
+  m.perfStart = [0, 4, 8, 12, 16];
+  assert.deepEqual(engine.playList(m).map(({ start, dur }) => [start, dur]), [[0, 8], [8, 12]]);
+});
+
 test('every complete composer score is long, sourced and guided', () => {
   const complete = Object.entries(library).filter(([, s]) => s.complete);
   assert.ok(complete.length >= 14);

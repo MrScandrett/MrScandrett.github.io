@@ -203,8 +203,12 @@
       '.music-family .mf-menu-era:first-child{padding-top:.15rem}';
     document.head.appendChild(css);
 
+    // Viewport lessons scroll inside .ll-sim. Keep the hub in that same flow
+    // so it scrolls away with the lesson instead of reserving a permanent row.
+    var lessonScroller = document.querySelector('.ll-viewport .ll-stage .ll-sim');
     var anchor = document.querySelector('.ll-topbar, .pno-topbar, .gtr-topbar, .vln-topbar, header.site-header, header');
-    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(nav, anchor.nextSibling);
+    if (lessonScroller) lessonScroller.insertBefore(nav, lessonScroller.firstChild);
+    else if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(nav, anchor.nextSibling);
     else document.body.insertBefore(nav, document.body.firstChild);
   }
 

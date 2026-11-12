@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.appendChild(fw);
       }
       if (interactive) {
+        btn.setAttribute('aria-pressed', String(!!active[k.absIndex]));
         btn.addEventListener('click', function () { onToggle(k.absIndex); });
       } else if (playable && active[k.absIndex]) {
         btn.addEventListener('click', function () {
@@ -433,6 +434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.appendChild(fb);
       }
       if (interactive) {
+        btn.setAttribute('aria-pressed', String(!!active[k.absIndex]));
         btn.addEventListener('click', function (e) { e.stopPropagation(); onToggle(k.absIndex); });
       } else if (playable && active[k.absIndex]) {
         btn.addEventListener('click', function (e) {
@@ -525,6 +527,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function renderBuilder() {
     if (!builderBoard) return;
+    var focusedLabel = builderBoard.contains(document.activeElement) ? document.activeElement.getAttribute('aria-label') : null;
     var sortedIndices = Object.keys(builderActive).map(Number).sort(function (a, b) { return a - b; });
     var detection = PT.detectChords(sortedIndices);
     var qualityMap = (detection.matches && detection.matches.length)
@@ -544,6 +547,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
     updateBuilderResult();
+    if (focusedLabel) {
+      var focusedKey = Array.from(builderBoard.querySelectorAll('button')).find(function (key) { return key.getAttribute('aria-label').split(',')[0] === focusedLabel.split(',')[0]; });
+      if (focusedKey) focusedKey.focus({ preventScroll: true });
+    }
   }
 
   function updateBuilderResult() {
@@ -1022,7 +1029,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function studioStop() {
     window.dispatchEvent(new Event('piano-studio-stop'));
     studioTimers.forEach(clearTimeout); studioTimers = [];
-    if (window.PianoAudio) window.PianoAudio.stop();
+    if (window.AudioKit) window.AudioKit.stopAll();
+    else if (window.PianoAudio) window.PianoAudio.stop();
     document.querySelectorAll('.studio-playing').forEach(function (el) { el.classList.remove('studio-playing'); });
     if (typeof stopProgression === 'function') stopProgression();
   }

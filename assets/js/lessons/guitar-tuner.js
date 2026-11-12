@@ -174,6 +174,7 @@
     }
   });
   select.addEventListener('change', function () { clearReading(); syncTarget(); });
+  window.AudioKit?.onStop(function () { if (active) stop(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && active) stop(); });
   var view;
   // Activity navigation is installed after this script; observe its wrapper once ready.

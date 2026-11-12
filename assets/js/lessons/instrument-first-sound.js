@@ -235,8 +235,8 @@
     var name = note.label || note.id;
     b.setAttribute('aria-label', note.say ? note.label + ': ' + note.say : name.replace('#', ' sharp'));
     noteButtons[note.id] = b;
-    b.addEventListener('pointerdown', function () { press(note); });
-    b.addEventListener('click', function (e) { if (e.detail === 0) press(note); });   // keyboard
+    // Native click supports touch, pointer cancellation, keyboard and assistive technology.
+    b.addEventListener('click', function () { press(note); });
     return b;
   }
   function letterTag(parent, letter) {
@@ -360,7 +360,7 @@
     button('fs-action', '🎵 Strum all six', actions).addEventListener('click', function () {
       cancelDemo();
       kit.notes.slice().reverse().forEach(function (n, i) {
-        setTimeout(function () { strike(n); flash(n); }, i * 45);
+        demoTimers.push(setTimeout(function () { strike(n); flash(n); }, i * 45));
       });
     });
   }
@@ -368,7 +368,7 @@
   againBtn.addEventListener('click', restart);
   var freeBtn = button('fs-action', 'Free play', actions);
   freeBtn.addEventListener('click', function () { cancelDemo(); mode = 'free'; paint(); });
-  if (window.AudioKit && window.AudioKit.onStop) window.AudioKit.onStop(cancelDemo);
+  if (window.AudioKit && window.AudioKit.onStop) window.AudioKit.onStop(function () { cancelDemo(); paint(); });
 
   var done = el('a', 'fs-next', null, stage);
 
