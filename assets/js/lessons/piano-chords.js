@@ -1622,6 +1622,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // and explicitly cancel an earlier accidental at the same written pitch.
       if(pitch.a || spelled.slice(0,i).some(function(prev){return prev.l===pitch.l && prev.o===pitch.o && prev.a;})) svg += MN.accidental(pitch.a,x-26,y,space);
       svg += '<g class="mn-note">' + MN.note(x,y,space,n.dur||1,!!n.dotted,step<4,'',step%2===0) + '</g>';
+      if (/^[1-5]$/.test(String(n.finger || ''))) svg += '<text class="pc-note-label pc-fingering" x="' + x + '" y="' + (height-30) + '">' + n.finger + '</text>';
       if(opts.showLabels) svg += '<text class="pc-note-label" x="' + x + '" y="' + (height-10) + '">' + MN.escape(n.spelling || PT.noteLabel(n.absIndex)) + '</text>';
       svg += '</g>';
     });

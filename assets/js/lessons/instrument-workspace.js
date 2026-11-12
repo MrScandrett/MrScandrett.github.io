@@ -100,10 +100,11 @@
   page('Sound & display', [settings]);
   const homework = app.querySelector('.dr-sheet-wrap');
   if (homework) app.append(homework);
+  page('Chord library', [app.querySelector('.guitar-library')]);
   const sections = [...app.querySelectorAll(':scope > section, .guitar-workspace-panels > section')];
   sections.forEach(section => {
     const label = section.dataset.routeLabel || section.dataset.stageLabel || (section.classList.contains('vln-main') ? 'Fingerboard' : 'Play instrument');
-    const copy = [...section.querySelectorAll(':scope > p:not([role]), :scope > .section-content > p')];
+    const copy = section.id === 'guitarTechnique' ? [] : [...section.querySelectorAll(':scope > p:not([role]), :scope > .section-content > p')];
     if (!isPiano && copy.length && !section.querySelector('.dr-player[data-set="builder"]')) {
       const help = document.createElement('section');
       const heading = document.createElement('h2');
@@ -180,6 +181,11 @@
   }, true);
   document.getElementById('musicSection')?.addEventListener('change', event => reveal(event.target.value), true);
   window.addEventListener('hashchange', () => reveal(location.hash));
+  document.addEventListener('guitar-reveal', event => {
+    const target = document.getElementById(event.detail);
+    const item = pages.find(item => item.panel.contains(target));
+    if (item?.panel.hidden) show(item.panel);
+  });
   reveal(location.hash);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !event.target.closest('dialog, [role="dialog"]')) window.AudioKit?.stopAll();

@@ -12,6 +12,7 @@ test('guitar workspace preserves editing focus, reveals loaded grips, and stops 
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(url);
+    await page.locator('.iw-navigation select').selectOption({ label: 'Chord builder' });
     const cell = page.locator('#gcBuilderBoard [data-string="E6"] button').nth(2);
     await cell.focus();
     await page.keyboard.press('Enter');
@@ -21,7 +22,7 @@ test('guitar workspace preserves editing focus, reveals loaded grips, and stops 
     assert.equal(await cell.getAttribute('aria-pressed'), 'false');
     assert.equal(await page.locator('#gcScaleRootPicker .is-active').getAttribute('aria-pressed'), 'true');
 
-    await page.locator('[data-guitar-mode="scale"]').click();
+    await page.locator('.iw-navigation select').selectOption({ label: 'Scales and modes' });
     assert.equal(await page.locator('#builder').isVisible(), false);
     // Find an actual library grip above the builder's original nine-fret limit.
     const highGrip = await page.evaluate(() => {
@@ -46,7 +47,7 @@ test('guitar workspace preserves editing focus, reveals loaded grips, and stops 
 
     await page.locator('#studioPlay').evaluate(el => el.click());
     assert.match(await page.locator('#studioPlay').textContent(), /Stop progression/);
-    await page.locator('[data-guitar-mode="hybrid"]').evaluate(el => el.click());
+    await page.locator('.iw-navigation select').selectOption({ label: 'Scales and modes' });
     await page.locator('#studioScaleRoute button').first().evaluate(el => el.click());
     assert.equal(await page.locator('#studioPlay').textContent(), 'Play progression');
     await page.setViewportSize({ width: 390, height: 844 });

@@ -222,6 +222,16 @@
       });
       return { clef: st.clef || 'treble', clefAt: clefAt, label: st.label || '', instrument: st.instrument || null, bars: bars, voices: voices };
     });
+    // Optional practice annotations, in written note-event order per staff.
+    staves.forEach(function (st, si) {
+      var fingers = (score.fingerings || [])[si] || [], index = 0;
+      st.bars.forEach(function (bar) { bar.events.forEach(function (ev) {
+        if (ev.kind === 'note') {
+          var value = String(fingers[index++] || '');
+          if (/^[1-5](?:\/[1-5]){0,4}$/.test(value)) ev.fingering = value;
+        }
+      }); });
+    });
     var count = staves[0].bars.length;
     staves.forEach(function (st, si) {
       if (st.bars.length !== count) fail(id + ', staff ' + (si + 1), 'has ' + st.bars.length + ' bars but staff 1 has ' + count);
@@ -1026,6 +1036,7 @@
       var cx0 = ev.x - ((ev.accW || 0) + graceUnits(ev) + 2.2) * S + 0.1 * S;
       out += '<g class="se-clef-change">' + M.glyph(ev.clefChange, cx0, b - M.clefs[ev.clefChange].anchor * h, 2 * h * 0.72) + '</g>';
     }
+    if (ev.fingering) out += '<text class="se-fingering" x="' + ev.x + '" y="' + (b + 3 * S) + '" font-size="' + S + '" text-anchor="middle">' + ev.fingering + '</text>';
     if (ev.graces) out += drawGraces(ev, clef, b, S, h);
     if (ev.hidden) { ev.headX = ev.x; ev.headY = b - 4 * h; return out + '</g>'; }
     if (ev.kind === 'rest') {

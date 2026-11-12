@@ -119,3 +119,57 @@ test('the full built-in library parses and original melody pitches survive voici
   }
   assert.deepEqual(warnings,[]);
 });
+
+test('minor cadences keep V dominant and use b9 before i, with correctly spelled ii and substitute roots', () => {
+  const t = ctx.parseTune({...template,key:'C',mode:'minor',melody:'C5w | C5w',chords:'G | Cm'});
+  const settings = {theorySevenths:true,theoryNinths:true};
+  const out = ctx.permuteChords(t.chords,t.key,settings);
+  assert.equal(ctx.chordName(out[0]),'G7b9');
+  const approach = ctx.permuteChords(t.chords,t.key,{...settings,theoryApproach:true});
+  assert.equal(approach.map(ctx.chordName).join(','),'Dø7,G7b9,Cm7');
+  const sub = ctx.permuteChords(t.chords,t.key,{...settings,theoryApproach:true,theoryTritone:true});
+  assert.equal(sub.map(ctx.chordName).join(','),'Dø7,D♭9,Cm7');
+  const sharp = ctx.parseTune({...template,key:'E',melody:'E5w | E5w',chords:'B7 | E'});
+  const names = ctx.permuteChords(sharp.chords,sharp.key,{theoryApproach:true}).map(ctx.chordName);
+  assert.equal(names.join(','),'F♯m7,B7,E');
+});
+
+test('all harmony option combinations retain timeline, source melody and legal voicings across the library', () => {
+  const {tunes} = JSON.parse(readFileSync(new URL('../data/fake-book.json',import.meta.url),'utf8'));
+  const flags = ['theorySevenths','theoryNinths','theoryApproach','theoryTritone'];
+  for (const raw of tunes) {
+    const t = ctx.parseTune(raw), before = JSON.stringify(t);
+    for (let mask=0; mask<16; mask++) {
+      const settings = Object.fromEntries(flags.map((flag,i)=>[flag,!!(mask & (1<<i))]));
+      const out = ctx.permuteChords(t.chords,t.key,settings);
+      assert.equal(out.reduce((n,c)=>n+c.dur,0),t.chords.reduce((n,c)=>n+c.dur,0),raw.id);
+      out.forEach((c,i)=>{
+        assert.ok(c.dur>0 && ctx.Q[c.q],`${raw.id}/${mask}`);
+        if (i) assert.ok(Math.abs(out[i-1].start+out[i-1].dur-c.start)<1e-6,raw.id);
+        assert.ok(ctx.chordTones(c).every(tone=>Math.abs(tone.a)<=2),raw.id);
+      });
+      const voiced = ctx.voiceChords(out,'smooth');
+      voiced.forEach((notes,i)=>assert.ok(ctx.clearPianoSpacing(notes,out[i]),raw.id));
+      assert.equal(JSON.stringify(t),before,raw.id);
+    }
+  }
+});
+
+test('mini piano labels and accessible names preserve flats and theoretical white-key accidentals', () => {
+  ctx.MN.escape = s=>String(s);
+  ctx.pianoPitchPalette = ()=>({defs:'',style:()=>''});
+  vm.runInContext(source.slice(source.indexOf('  function roleOf'),source.indexOf('  function diagramPianoNotes')),ctx);
+  const c = {root:{l:1,a:-1},q:ctx.mapQuality('9')};
+  const svg = ctx.miniPiano([59,61,63,65,68],1,c);
+  for (const name of ['C♭','D♭','E♭','F','A♭']) assert.ok(svg.includes(name),name);
+  assert.ok(!svg.includes('C♯') && !svg.includes('G♯'));
+  assert.equal(ctx.noteName(ctx.chordPitch(c,59)),'C♭');
+  assert.equal(ctx.chordPitch(c,59).o,4,'Cb4 sounds B3');
+});
+
+ test('adding sevenths recognizes secondary dominants and spells tritone substitutions relative to the resolution', () => {
+  const t = ctx.parseTune({...template,melody:'C5w | C5w',chords:'E | Am'});
+  assert.equal(ctx.chordName(ctx.permuteChords(t.chords,t.key,{theorySevenths:true})[0]),'E7');
+  const sharp = ctx.parseTune({...template,key:'D',melody:'D5w | D5w',chords:'A7 | D'});
+  assert.equal(ctx.chordName(ctx.permuteChords(sharp.chords,sharp.key,{theoryTritone:true})[0]),'E♭7');
+});

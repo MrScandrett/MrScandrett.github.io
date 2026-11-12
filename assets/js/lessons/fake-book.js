@@ -144,6 +144,12 @@
     var r = pitch(c.root.l, c.root.a), q = Q[c.q];
     return q.iv.map(function (iv, i) { var p = spellAt(r.dia + q.lo[i], r.midi + iv); return { l: p.l, a: p.a, pc: mod(p.midi, 12) }; });
   }
+  // Preserve harmonic spelling (Db9 = Db F Ab Cb Eb), including on physical keys.
+  function chordPitch(c, midi) {
+    var tone = chordTones(c).find(function (t) { return t.pc === mod(midi, 12); });
+    if (!tone) return respell(midi);
+    return pitch((Math.round((midi - NAT[tone.l] - tone.a) / 12) - 1) * 7 + tone.l, tone.a);
+  }
   function chordName(c) {
     var sym = c.display !== undefined && c.display !== null ? c.display : (Q[c.q] ? Q[c.q].sym : c.q);
     var name = LETTERS[c.root.l] + ACC[c.root.a] + sym;
@@ -696,29 +702,41 @@
       var c = Object.assign({}, original), next = chords[i + 1];
       var pc = mod(NAT[c.root.l] + c.root.a, 12);
       if (settings.theorySevenths) {
-        if (c.q === '') c.q = !key.minor && mod(pc - tonic, 12) === 7 ? '7' : 'maj7';
+        if (c.q === '') {
+          // V is dominant in both modes; a major bVII in minor also takes a minor seventh.
+          var degree = mod(pc - tonic, 12);
+          var resolvesFifth = next && ['', 'maj7', 'm', 'm7'].indexOf(next.q) >= 0 &&
+            mod(pc - NAT[next.root.l] - next.root.a, 12) === 7;
+          c.q = degree === 7 || resolvesFifth || (key.minor && degree === 10) ? '7' : 'maj7';
+        }
         else if (c.q === 'm') c.q = 'm7';
         else if (c.q === 'dim') c.q = 'm7b5';
       }
-      if (settings.theoryNinths && c.q === '7') c.q = '9';
       // A dominant falling a fifth may be replaced by a dominant a tritone away.
       if (settings.theoryTritone && next && (c.q === '7' || c.q === '9') &&
           mod(pc - NAT[next.root.l] - next.root.a, 12) === 7 && !c.bass) {
-        var sub = respell(60 + mod(pc + 6, 12), keySig(key) <= 0);
+        var sub = spellAt(next.root.l + 1, NAT[next.root.l] + next.root.a + 13);
         c.root = { l: sub.l, a: sub.a };
+      }
+      if (settings.theoryNinths && c.q === '7') {
+        var minorTarget = next && (next.q === 'm' || next.q === 'm7') &&
+          mod(NAT[c.root.l] + c.root.a - NAT[next.root.l] - next.root.a, 12) === 7;
+        c.q = minorTarget ? mapQuality('7b9') : '9';
       }
       if (c.q !== original.q || c.root !== original.root) c.display = null;
       // Split the preceding chord's time into ii–V, resolving at the next original onset.
       if (settings.theoryApproach && next && c.dur >= 2 && !c.bass &&
           (next.q === '' || next.q === 'maj7' || next.q === 'm' || next.q === 'm7') &&
           (c.root.l !== next.root.l || c.root.a !== next.root.a)) {
-        var target = NAT[next.root.l] + next.root.a;
         var minor = next.q === 'm' || next.q === 'm7';
         [ [2, minor ? 'm7b5' : 'm7'], [7, settings.theoryNinths ? '9' : '7'] ].forEach(function (spec, j) {
-          var r = respell(60 + mod(target + spec[0], 12), keySig(key) <= 0);
-          if (j && settings.theoryTritone) r = respell(60 + mod(target + 1, 12), true);
+          var r = spellAt(next.root.l + (j ? 4 : 1), NAT[next.root.l] + next.root.a + 12 + spec[0]);
+          if (j && settings.theoryTritone) r = spellAt(next.root.l + 1, NAT[next.root.l] + next.root.a + 13);
+          // A natural ninth over V in minor raises the target's sixth degree.
+          // Use the conventional b9 here; a tritone substitute retains its own natural 9.
+          var quality = j && minor && settings.theoryNinths && !settings.theoryTritone ? mapQuality('7b9') : spec[1];
           out.push(Object.assign({}, c, { start: c.start + j * c.dur / 2, dur: c.dur / 2,
-            root: { l: r.l, a: r.a }, q: spec[1], display: null, bass: null }));
+            root: { l: r.l, a: r.a }, q: quality, display: null, bass: null }));
         });
       } else out.push(c);
     });
@@ -3778,8 +3796,8 @@
     var defs = '<defs>' + NAME_COLORS.map(function (color, i) {
       return '<pattern id="' + prefix + i + '" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="' + color + '"/><path d="M-2 2L2-2M0 8L8 0M6 10L10 6" stroke="#ffffff" stroke-opacity=".6" stroke-width="2"/></pattern>';
     }).join('') + '</defs>';
-    return { prefix: prefix, defs: defs, style: function (m) {
-      var pitch = respell(m);
+    return { prefix: prefix, defs: defs, style: function (m, spelled) {
+      var pitch = spelled || respell(m);
       return ' style="fill:' + (pitch.a ? 'url(#' + prefix + pitch.l + ')' : NAME_COLORS[pitch.l]) + '"';
     } };
   }
@@ -3798,7 +3816,7 @@
       var roleCls = info ? (info.role === 'root' ? ' on-root' : info.role === 'third' ? ' on-third' : info.role === 'fifth' ? ' on-fifth' : info.role === 'seventh' ? ' on-seventh' : ' on') : '';
 
       if (!isB) {
-        var keyHtml = '<rect x="' + x + '" y="0" width="' + wW + '" height="100" rx="3" class="fb-wk' + roleCls + '"' + (info ? palette.style(m) : '') + ' data-midi="' + m + '"/>';
+        var keyHtml = '<rect x="' + x + '" y="0" width="' + wW + '" height="100" rx="3" class="fb-wk' + roleCls + '"' + (info ? palette.style(m, info.pitch) : '') + ' data-midi="' + m + '"/>';
         if (info) {
           keyHtml += '<text x="' + (x + wW / 2) + '" y="76" class="fb-key-lbl" data-contrast-guard-skip>' + MN.escape(info.label) + '</text>';
           if (info.finger) keyHtml += '<text x="' + (x + wW / 2) + '" y="92" class="fb-key-finger">' + info.finger + '</text>';
@@ -3808,7 +3826,7 @@
         whites.push(keyHtml);
         x += wW;
       } else {
-        var bHtml = '<rect x="' + (x - 6.5) + '" y="0" width="13" height="62" rx="2" class="fb-bk' + roleCls + '"' + (info ? palette.style(m) : '') + ' data-midi="' + m + '"/>';
+        var bHtml = '<rect x="' + (x - 6.5) + '" y="0" width="13" height="62" rx="2" class="fb-bk' + roleCls + '"' + (info ? palette.style(m, info.pitch) : '') + ' data-midi="' + m + '"/>';
         if (info) {
           bHtml += '<text x="' + x + '" y="52" class="fb-key-lbl" data-contrast-guard-skip font-size="7.5">' + MN.escape(info.label) + '</text>';
         }
@@ -3946,7 +3964,8 @@
   }
   // The keys under a chord, cut to the notes it uses (plus a white key either side, and at least eight white keys)
   // so the keyboard is as narrow as it can be and every key can be drawn large enough to read.
-  function miniPiano(notes, rootPC) {
+  function miniPiano(notes, rootPC, chord) {
+    var spelled = function (m) { return chord ? chordPitch(chord, m) : respell(m); };
     var palette = pianoPitchPalette();
     var isBlack = function (m) { return [1, 3, 6, 8, 10].indexOf(mod(m, 12)) >= 0; };
     var lo = Math.min.apply(null, notes), hi = Math.max.apply(null, notes), nWhite = 0, grow = 0;
@@ -3965,12 +3984,12 @@
       var pc = mod(m, 12), isB = [1, 3, 6, 8, 10].indexOf(pc) >= 0, on = notes.indexOf(m) >= 0;
       var cls = on ? ' on-' + roleOf(mod(m - rootPC, 12)) : '';
       if (cls === ' on-other') cls = ' on';
-      var lbl = on ? '<text x="' + (isB ? x : x + wW / 2) + '" y="' + (isB ? 40 : 60) + '" class="fb-key-lbl" font-size="' + (isB ? 6 : 7) + '" data-contrast-guard-skip>' + MN.escape(noteName(respell(m))) + '</text>' : '';
-      if (!isB) { whites.push('<rect x="' + x + '" y="0" width="' + wW + '" height="70" rx="2" class="fb-wk' + cls + '"' + (on ? palette.style(m) : '') + '/>' + lbl); x += wW; }
-      else blacks.push('<rect x="' + (x - 4.5) + '" y="0" width="9" height="44" rx="1.5" class="fb-bk' + cls + '"' + (on ? palette.style(m) : '') + '/>' + lbl);
+      var lbl = on ? '<text x="' + (isB ? x : x + wW / 2) + '" y="' + (isB ? 40 : 60) + '" class="fb-key-lbl" font-size="' + (isB ? 6 : 7) + '" data-contrast-guard-skip>' + MN.escape(noteName(spelled(m))) + '</text>' : '';
+      if (!isB) { whites.push('<rect x="' + x + '" y="0" width="' + wW + '" height="70" rx="2" class="fb-wk' + cls + '"' + (on ? palette.style(m, spelled(m)) : '') + '/>' + lbl); x += wW; }
+      else blacks.push('<rect x="' + (x - 4.5) + '" y="0" width="9" height="44" rx="1.5" class="fb-bk' + cls + '"' + (on ? palette.style(m, spelled(m)) : '') + '/>' + lbl);
     }
     return '<svg class="fb-mini-keys" viewBox="0 0 ' + x + ' 72" role="img" aria-label="Piano keys: ' +
-      notes.map(function (m) { return noteName(respell(m)); }).join(' ') + '; striped keys are accidentals">' + palette.defs + whites.join('') + blacks.join('') + '</svg>';
+      notes.map(function (m) { return noteName(spelled(m)); }).join(' ') + '; striped keys are accidentals">' + palette.defs + whites.join('') + blacks.join('') + '</svg>';
   }
   function diagramPianoNotes(c, ci) {
     if (pianoShapeIndex(c)) return view.voicings[ci] || rootPosition(c);
@@ -4256,11 +4275,11 @@
   function sizeMeasureDiagrams(S) {
     var rows = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-row'));
     if (!rows.length) return;
-    var cap = shapeSize().cap * S, LABEL = 1.7 * S, chordRows = [];
+    var cap = shapeSize().cap * S, LABEL = 2.6 * S, chordRows = [];
     // The scale a row's diagrams reach in `tiers` stacked lines: each line holds every tiers-th chord,
     // so a busy bar trades height it isn't using for width.
     var fit = function (row, tiers) {
-      var cell = row._W / Math.ceil(row._n / tiers), tall = row._H / tiers - LABEL, s = Infinity;
+      var cell = row._W / Math.ceil(row._n / tiers), tall = row._H / tiers - (row.classList.contains('is-sax') ? 1.7 * S : LABEL), s = Infinity;
       row._boxes.forEach(function (box) { s = Math.min(s, cell / box.width, tall / box.height, cap / box.height); });
       return s;
     };
@@ -4377,22 +4396,12 @@
       chordPCs = chordPCs.concat(Q[c.q].iv.map(function (iv) { return mod(pc + iv, 12); }));
       if (c.bass) chordPCs.push(mod(NAT[c.bass.l] + c.bass.a, 12));
       if (!opts.measureShapes || opts.saxFingers) return;
-      var diagram = opts.posInst === 'piano' ? miniPiano(diagramPianoNotes(c, ci), pc) : opts.posInst === 'violin' ? (window.FakeBookViolin ? window.FakeBookViolin.mini(pc, window.FakeBookViolin.toneMap(Q[c.q].iv)) : null) : miniGuitar(pc, chordTypeOf(c), ci);
+      var diagram = opts.posInst === 'piano' ? miniPiano(diagramPianoNotes(c, ci), pc, c) : opts.posInst === 'violin' ? (window.FakeBookViolin ? window.FakeBookViolin.mini(pc, window.FakeBookViolin.toneMap(Q[c.q].iv)) : null) : miniGuitar(pc, chordTypeOf(c), ci);
       var notes = opts.posInst === 'piano' ? diagramPianoNotes(c, ci) : [];
       if (opts.posInst === 'guitar') {
         var grip = guitarShapeFor(pc, chordTypeOf(c), ci);
         if (grip) notes = grip.frets.map(function (f, st) { return typeof f === 'number' ? [40,45,50,55,59,64][st] + f : null; }).filter(function (m) { return m !== null; }).sort(function (a,b) { return a-b; });
       }
-      var expectedBass = c.bass ? mod(NAT[c.bass.l] + c.bass.a, 12) : pc;
-      var label = '';
-      if (notes.length && mod(notes[0],12) !== expectedBass) {
-        var bassTone = chordTones(c).find(function (tone) { return tone.pc === mod(notes[0],12); });
-        var bassLabel = bassTone ? LETTERS[bassTone.l] + ACC[bassTone.a] : noteName(respell(notes[0]));
-        label = chordName(c).split('/')[0] + (mod(notes[0],12) === pc ? ' · root bass' : '/' + bassLabel);
-      }
-      if (opts.engineMode === 'triads' && Q[c.q].iv.length > 3) label = (label || chordName(c)) + ' · triad only';
-      if (label && opts.instr !== 'concert' && opts.instr !== 'bass') label += ' (concert)';
-      if (info.held && !label) label = 'Held from previous bar';
       var sx = !info.held && chordSymbolX[ci] !== undefined ? chordSymbolX[ci] - (b.x + S / 2) : 0;
       var shapeLabel = chordName(c) + ', ' + opts.posInst + ' chord shape';
       if (opts.posInst === 'piano') shapeLabel += ', ' + ['suggested voicing', 'root position', '1st inversion', '2nd inversion', '3rd inversion'][pianoShapeIndex(c)];
@@ -4400,7 +4409,13 @@
         var shownGrip = guitarShapeFor(pc, chordTypeOf(c), ci);
         if (shownGrip) shapeLabel += ', frets low to high ' + SO.describe(shownGrip.frets);
       }
-      html.push('<div class="fb-measure-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '" role="button" tabindex="0" aria-describedby="fb-shape-hint" aria-keyshortcuts="ArrowLeft ArrowRight" aria-label="' + MN.escape(shapeLabel + '. Open alternatives.') + '">' + (label ? '<strong title="' + MN.escape(label) + '">' + MN.escape(label) + '</strong>' : '') + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
+      var beat = 1 + (info.held ? 0 : c.start - b.start);
+      var beatText = 'Beat ' + Number(beat.toFixed(3));
+      var timing = info.held ? 'Held from bar ' + c.bar : beatText;
+      if (opts.posInst === 'piano' && notes.length) timing += ' · low ' + noteName(chordPitch(c, notes[0]));
+      if (opts.engineMode === 'triads' && Q[c.q].iv.length > 3) timing += ' · triad only';
+      var heading = chordName(c) + (opts.instr !== 'concert' && opts.instr !== 'bass' ? ' (concert)' : '');
+      html.push('<div class="fb-measure-shape fb-chord-shape" data-fb-shape-ci="' + ci + '" data-x="' + sx.toFixed(1) + '" role="button" tabindex="0" aria-describedby="fb-shape-hint" aria-keyshortcuts="ArrowLeft ArrowRight" aria-label="' + MN.escape('Change ' + (ci + 1) + ', bar ' + b.i + ', ' + timing + ', ' + shapeLabel + '. Open alternatives.') + '"><strong title="' + MN.escape('Change ' + (ci + 1) + ' · ' + heading + ' · ' + timing) + '"><span class="fb-change-number">' + (ci + 1) + '</span> ' + MN.escape(heading) + '</strong><span class="fb-shape-timing">' + MN.escape(timing) + '</span>' + (diagram || '<p>No supported shape for this chord.</p>') + '</div>');
     });
     if (opts.saxFingers && window.FakeBookSax) html = [saxRow(b, S, notes || [])];
     else if (opts.measureShapes && !info.idx.length) html.push('<p>No chord symbols in this measure.</p>');
@@ -4670,8 +4685,8 @@
       return '<button type="button" class="fb-barpop-card" data-chg-ci="' + ci + '" aria-label="Play ' + MN.escape(name) + '">' +
         '<strong>' + MN.escape(name) + '</strong>' +
         (written ? '<em>your chart: ' + MN.escape(chordName(view.writtenChords[ci])) + '</em>' : '') +
-        (piano ? miniPiano(notes, rootPC) : violin ? window.FakeBookViolin.mini(rootPC, window.FakeBookViolin.toneMap(violinTones(c, chordTypeOf(c), 'voicings').intervals)) : miniGuitar(rootPC, chordTypeOf(c), ci)) +
-        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(respell(m)); }).join(' ') : violin ? Q[c.q].name + ' · first-position tones' : Q[c.q].name + guitarFormLabel(rootPC, c, ci)) + '</small></button>';
+        (piano ? miniPiano(notes, rootPC, c) : violin ? window.FakeBookViolin.mini(rootPC, window.FakeBookViolin.toneMap(violinTones(c, chordTypeOf(c), 'voicings').intervals)) : miniGuitar(rootPC, chordTypeOf(c), ci)) +
+        '<small>' + MN.escape(piano ? notes.map(function (m) { return noteName(chordPitch(c, m)); }).join(' ') : violin ? Q[c.q].name + ' · first-position tones' : Q[c.q].name + guitarFormLabel(rootPC, c, ci)) + '</small></button>';
     }).join('');
     el('[data-fb-barpop-note]').textContent = info.held ? 'No new chord here: the chord from bar ' + view.concertChords[info.idx[0]].bar + ' keeps ringing.' :
       (written ? 'Shapes are in concert pitch, as a piano or guitar plays them. ' : '') + 'Click a shape to hear it.' +
@@ -4862,7 +4877,7 @@
           var iv = mod(m - rootPC, 12);
           var lbl = PT ? PT.intervalLabel(iv, true) : (iv === 0 ? 'R' : String(iv));
           var role = iv === 0 ? 'root' : (iv === 4 || iv === 3) ? 'third' : iv === 7 ? 'fifth' : (iv === 10 || iv === 11) ? 'seventh' : 'other';
-          meta[m] = { label: lbl, role: role, finger: (PT && PT.typicalFingering(rootPC, cType, 0, 'rh')[notes.indexOf(m)]) || '' };
+          meta[m] = { label: lbl, role: role, pitch: chordPitch(c, m), finger: (PT && PT.typicalFingering(rootPC, cType, 0, 'rh')[notes.indexOf(m)]) || '' };
         });
         drawPianoVisualizer(notes, meta);
       } else {

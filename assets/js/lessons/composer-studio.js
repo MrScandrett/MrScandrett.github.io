@@ -15,6 +15,35 @@
   violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
   workspace.querySelector('.bv-fields').after(violinControls);
   const violinShow = $('violin-show'), violinPosition = $('violin-position');
+  const pianoControls = document.createElement('div');
+  pianoControls.className = 'bv-fields';
+  pianoControls.innerHTML = '<label><input type="checkbox" id="bv-piano-show"> Show piano finger numbers</label><p>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = little finger. Enter one number per written note event, skipping rests. Use – to leave a note blank and / for chord fingers, lowest pitch first (for example 1/3/5). Numbers appear below the staff and in print. Choose fingerings with your teacher.</p><div id="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p>';
+  violinControls.after(pianoControls);
+  const pianoShow = $('piano-show'), pianoInputs = $('piano-inputs');
+  const pianoPrefs = {};
+  const pianoKey = () => [work.value, mode.value, staff.value, voice.value, octave.value].join(':');
+  function pianoGuide(score) {
+    const prefs = pianoPrefs[pianoKey()] || { show: false, values: [] };
+    pianoShow.checked = prefs.show;
+    pianoInputs.replaceChildren();
+    const model = ScoreEngine.prepare(score);
+    model.staves.forEach((st, i) => {
+      const label = document.createElement('label');
+      label.textContent = (st.label || 'Staff ' + (i + 1)) + ' · ' + st.bars.flatMap(b => b.events).filter(e => e.kind === 'note').length + ' note events ';
+      const input = document.createElement('textarea'); input.rows = 2; input.value = prefs.values[i] || '';
+      input.dataset.staff = i; label.append(input); pianoInputs.append(label);
+    });
+    const values = prefs.values.map(value => value.trim().split(/\s+/).filter(Boolean));
+    const invalid = values.flat().some(value => !/^(?:[1-5](?:\/[1-5]){0,4}|[-–])$/.test(value));
+    $('piano-status').textContent = invalid ? 'Use fingers 1–5, / between chord fingers, and – for blanks. Invalid entries are left blank.' : '';
+    if (prefs.show) score.fingerings = values;
+  }
+  function rememberPiano() {
+    pianoPrefs[pianoKey()] = { show: pianoShow.checked, values: [...pianoInputs.querySelectorAll('textarea')].map(input => input.value) };
+    update();
+  }
+  pianoShow.addEventListener('change', rememberPiano);
+  pianoInputs.addEventListener('change', rememberPiano);
   const violinPrefs = {};
   function rememberViolin() { violinPrefs[work.value] = { show: violinShow.checked, position: violinPosition.value }; }
   function restoreViolin() { const p = violinPrefs[work.value] || {}; violinShow.checked = !!p.show; violinPosition.value = p.position || 'auto'; }
@@ -71,6 +100,7 @@
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
     const src = source(), m = mode.value, fullGuitar = m === 'guitar' && (composer === 'francisco-tarrega' || !!src.guitarArrangement), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    pianoControls.hidden = m !== 'piano';
     violinControls.hidden = !['melody','violin'].includes(m);
     violinPosition.disabled = !violinShow.checked;
     staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
@@ -119,6 +149,7 @@
       };
       message += ' Notation reads one octave above sounding pitch. Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review; this selected voice is not a complete solo arrangement.';
     }
+    if (m === 'piano') pianoGuide(result);
     current = result; note.textContent = message;
     try {
       player = ScoreEngine.render(host,result);
@@ -144,7 +175,7 @@
     window.print();
   });
   $('save').addEventListener('click',() => {
-    const data = { format: 'composer-study-1', composer, work: work.value, mode: mode.value, staff: staff.value, voice: voice.value, octave: octave.value, violin: { show: violinShow.checked, position: violinPosition.value } };
+    const data = { format: 'composer-study-1', composer, work: work.value, mode: mode.value, staff: staff.value, voice: voice.value, octave: octave.value, violin: { show: violinShow.checked, position: violinPosition.value }, piano: pianoPrefs[pianoKey()] };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link = document.createElement('a'); link.href = url; link.download = work.value + '-arrangement.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   });
@@ -161,6 +192,7 @@
       staff.value = data.staff; fillVoices();
       if (!valid(voice,data.voice)) throw new Error('Unknown source voice.');
       voice.value = data.voice; mode.value = data.mode; octave.value = data.octave;
+      if (data.piano && Array.isArray(data.piano.values)) pianoPrefs[pianoKey()] = { show: data.piano.show === true, values: data.piano.values.map(v => String(v).slice(0, 5000)) };
       const v = data.violin || {}; violinShow.checked = v.show === true; violinPosition.value = valid(violinPosition, v.position) ? v.position : 'auto'; rememberViolin(); update();
     } catch (error) { note.textContent = error.message; }
     event.target.value = '';

@@ -1481,14 +1481,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var host=document.getElementById('studioScaleRoute');
     if(!host) { host=document.createElement('div'); host.id='studioScaleRoute'; scaleBoard.parentElement.parentElement.appendChild(host); }
     var route=makeScaleRoute(scaleCurrentRoot,scaleCurrentType);
+    var handStart=1;
+    route.forEach(function(n) {
+      if(n.fret===0) { n.finger=0; return; }
+      if(n.fret<handStart || n.fret>handStart+3) handStart=n.fret;
+      n.finger=n.fret-handStart+1;
+    });
     host.replaceChildren();
     var h=document.createElement('h3'); h.textContent='Play this one-octave route'; host.appendChild(h);
     var p=document.createElement('p'); p.textContent='One note per click or playback step, ending on the tonic. This route is independent of the map window above. Numbers are frets. Shift your hand when needed; use finger 1 for a new position, then fingers 2–4 for the next three frets.'; host.appendChild(p);
     var pre=document.createElement('pre'); pre.className='studio-tab';
     pre.textContent=[5,4,3,2,1,0].map(function(string) { return GT.TUNING[string].label+' |'+route.map(function(n) { return n.string===string ? String(n.fret).padStart(2,'-')+'--' : '----'; }).join('')+'|'; }).join('\n');
+    pre.textContent+='\nFinger |'+route.map(function(n) { return String(n.finger).padStart(2,' ')+'  '; }).join('')+'|';
     host.appendChild(pre);
     var row=document.createElement('div'); row.className='gc-pick-row';
-    route.forEach(function(n,i) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=(i+1)+'. String '+(6-n.string)+', fret '+n.fret; b.onclick=function() { studioStop(); window.GuitarAudio.pluck(GT.noteFreq(n.string,n.fret)); }; row.appendChild(b); });
+    route.forEach(function(n,i) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=(i+1)+'. String '+(6-n.string)+', fret '+n.fret+', '+(n.finger ? 'finger '+n.finger : 'open'); b.onclick=function() { studioStop(); window.GuitarAudio.pluck(GT.noteFreq(n.string,n.fret)); }; row.appendChild(b); });
     host.appendChild(row);
   }
 
