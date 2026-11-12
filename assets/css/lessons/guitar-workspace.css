@@ -21,11 +21,84 @@
 .guitar-technique, .guitar-workspace > .guitar-library { margin: 1rem; padding: 1rem; border: 1px solid var(--border, currentColor); border-radius: .75rem; min-width: 0; }
 .guitar-technique h2 { margin-top: 0; }
 .tech-tab-wrap { max-width: 100%; overflow-x: auto; margin: 1rem 0; }
-.tech-tab { border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: .9rem; }
-.tech-tab caption { text-align: left; font-family: 'DM Sans', sans-serif; padding-bottom: .75rem; }
-.tech-tab th[scope="row"] { position: sticky; left: 0; background: var(--bg); text-align: left; white-space: nowrap; z-index: 1; }
-.tech-tab td, .tech-tab th { min-width: 2.5rem; padding: .4rem; text-align: center; border-bottom: 1px solid var(--border, currentColor); }
-.tech-tab .is-current { background: var(--text); color: var(--bg); font-weight: 700; }
 .guitar-library-presets { margin-bottom: 1rem; }
 .guitar-technique .studio-controls > label { min-width: 0; max-width: 100%; }
 .guitar-technique select { max-width: 100%; }
+/* Engraved staff and TAB share note columns and a high-contrast paper surface. */
+.guitar-score { max-height: 660px; overflow: auto; max-width: 100%; background: #fffdf7; color: #171510; border: 1px solid #9d9588; border-radius: .6rem; padding: .6rem; scrollbar-gutter: stable; }
+.gs-system-wrap { min-width: 560px; margin-bottom: .25rem; }
+.gs-system-wrap:last-child { margin-bottom: 0; }
+.gs-system { width: 100%; display: block; color: #171510; overflow: visible; font: 14px 'DM Sans', sans-serif; }
+.gs-system line { stroke: currentColor; stroke-width: 1; }
+.gs-system .gs-staff { stroke: #777166; stroke-width: .8; }
+.gs-system .gs-ledger { stroke-width: 1.2; }
+.gs-system .gs-bar { stroke-width: 1.4; }
+.gs-system .gs-stem { stroke-width: 1.5; }
+.gs-system .gs-beam { stroke-width: 5; }
+.gs-system text { fill: currentColor; }
+.gs-time, .gs-tab-clef { font-size: 25px; font-weight: 700; }
+.gs-finger { font-size: 15px; font-weight: 700; }
+.gs-fret { font: 700 18px 'JetBrains Mono', monospace; }
+.gs-fret-bg { fill: #fffdf7; }
+.gs-string, .gs-pitch, .gs-measure, .gs-row-label, .gs-count { font-size: 13px; }
+.gs-hit { fill: transparent; }
+.gs-note { cursor: pointer; outline: none; }
+.gs-note:hover .gs-hit, .gs-note:focus-visible .gs-hit { fill: #e4eaf4; stroke: #264678; stroke-width: 1; }
+.gs-note.is-current .gs-hit { fill: #ffdf8a; stroke: #74501a; stroke-width: 1.5; }
+.gs-note.is-current .gs-fret-bg { fill: #ffdf8a; }
+.guitar-score-key { font-size: .9rem; }
+@media print {
+  .guitar-score { max-height: none; overflow: visible; border: 0; padding: 0; }
+  .gs-system-wrap { min-width: 0; break-inside: avoid; }
+  .gs-note.is-current .gs-hit { fill: transparent; stroke: none; }
+}
+/* Practice view: the notation owns the screen; guidance stays in the footer. */
+#guitarWorkspace[data-score-view="true"] > .iw-guide { display: none; }
+#guitarTechnique .tech-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#guitarTechnique { display: flex; flex-direction: column; gap: .4rem; border: 0; }
+.tech-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+.tech-toolbar label { display: flex; align-items: center; gap: .3rem; margin: 0; font-size: .8rem; font-weight: 600; }
+.tech-toolbar label:first-child { flex: 1 1 16rem; }
+.tech-toolbar select { flex: 1; min-width: 0; }
+#guitarTechnique .tech-toolbar :is(select,input,button) { min-height: 40px; height: 40px; padding: .25rem .5rem; margin: 0; font: inherit; font-size: .85rem; }
+#guitarTechnique .tech-toolbar input { width: 4rem; }
+#guitarTechnique #techTab { margin: 0; height: clamp(320px, calc(100dvh - 230px), 850px); max-height: none; box-sizing: border-box; flex: 1 1 auto; min-height: 0; }
+#guitarTechnique .gs-system-wrap { min-width: 0; }
+#guitarTechnique .gs-system { height: auto; max-height: none; }
+#guitarTechnique .tech-footer { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .2rem .75rem; font-size: .8rem; }
+#guitarTechnique #techStatus { margin: 0; line-height: 1.3; }
+.tech-options summary { cursor: pointer; padding: .3rem 0; font-weight: 600; }
+.tech-options[open] { flex: 1 1 100%; }
+.tech-options-body { max-height: 30dvh; overflow: auto; padding: .4rem; }
+.tech-options-body p { font-size: .85rem; margin: .4rem 0; }
+#guitarWorkspace[data-score-view="true"]:is(:fullscreen,.creation-app-expanded) { overflow: hidden; }
+#guitarWorkspace[data-score-view="true"]:is(:fullscreen,.creation-app-expanded) > .iw-panel:not([hidden]) { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#guitarWorkspace[data-score-view="true"]:is(:fullscreen,.creation-app-expanded) #guitarTechnique { flex: 1; min-height: 0; }
+#guitarWorkspace[data-score-view="true"]:is(:fullscreen,.creation-app-expanded) #techTab { height: 0; }
+@media (max-width: 600px) {
+  #guitarWorkspace[data-score-view="true"] .iw-lesson-link { display: none; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation { display: flex; flex-wrap: nowrap; flex-basis: auto; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation label { flex-wrap: nowrap; font-size: .8rem; flex-basis: 0; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation button { font-size: .8rem; }
+  #guitarWorkspace[data-score-view="true"] .creation-app-fullscreen { padding: .3rem; font-size: .75rem; }
+  .tech-toolbar label:first-child { flex-basis: 100%; }
+  #guitarTechnique .tech-toolbar :is(button,input) { font-size: .75rem; }
+}
+@media print {
+  #guitarTechnique :is(.tech-toolbar,.tech-footer) { display: none; }
+  #guitarTechnique #techTab { height: auto; overflow: visible; }
+  #guitarTechnique .gs-system { height: auto; max-height: none; }
+}
+#guitarTechnique > .music-section-navigation { display: none; }
+#guitarTechnique .tech-toolbar select { width: 0; }
+@media (max-width: 600px) {
+  #guitarWorkspace[data-score-view="true"] > .creation-app-toolbar { flex-wrap: nowrap; gap: .25rem; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation label { font-size: 0; gap: 0; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation select { font-size: .75rem; width: 0; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation button { font-size: 0; padding: .25rem; }
+  #guitarWorkspace[data-score-view="true"] .iw-navigation button::after { content: 'Stop'; font-size: .75rem; }
+  #guitarWorkspace[data-score-view="true"] .creation-app-fullscreen { flex: 0 0 70px; line-height: 1.1; }
+  #guitarTechnique .tech-toolbar { gap: .25rem; }
+  #guitarTechnique .tech-toolbar :is(button,input) { font-size: .7rem; padding-inline: .35rem; }
+  #guitarTechnique .tech-toolbar input { width: 3rem; }
+}

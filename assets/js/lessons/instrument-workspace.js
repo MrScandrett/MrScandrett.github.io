@@ -22,6 +22,7 @@
   const stop = document.createElement('button');
   stop.type = 'button';
   stop.textContent = 'Stop sound';
+  stop.setAttribute('aria-label', 'Stop sound');
   stop.addEventListener('click', () => window.AudioKit?.stopAll());
   nav.append(stop);
   const guide = document.createElement('p');
@@ -70,6 +71,7 @@
     pages.push({ panel, button });
   }
   function show(panel) {
+    app.dataset.scoreView = String(!!panel.querySelector('#guitarTechnique'));
     const previous = pages.find(item => !item.panel.hidden);
     if (previous && previous.panel !== panel) window.AudioKit?.stopAll();
     const focusWasHidden = previous && previous.panel !== panel && previous.panel.contains(document.activeElement);

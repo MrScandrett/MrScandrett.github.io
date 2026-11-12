@@ -19,7 +19,7 @@ const STAGING = path.join(os.tmpdir(), `mrscandrett-dist-${Date.now()}`);
 const EXCLUDE_DIRS = new Set([
   "node_modules", ".git", ".github", "dist", "screenshots", "test-results",
   "tmp", ".claude", ".vscode", "student-projects", "student-projects-review",
-  "portal", "scripts",
+  "portal", "scripts", "output", "tests", "reports",
 ]);
 
 // The repository root also contains authoring tools and internal documentation.

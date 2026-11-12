@@ -878,6 +878,15 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   applyHighlight();
 
+  window.addEventListener('violin-technique-note', function (event) {
+    stopPlayback();
+    if (board.span !== VT.FIRST_SPAN) {
+      board.setSpan(VT.FIRST_SPAN);
+      spanBtns.forEach(function (b) { var active = b.dataset.vlnSpan === 'first'; b.classList.toggle('is-active', active); b.setAttribute('aria-pressed', String(active)); });
+    }
+    board.setStep(event.detail.label, event.detail.offset);
+  });
+  window.addEventListener('violin-technique-stop', function () { board.clearStep(); });
   window.addEventListener('violin-triad-start', function () { stopPlayback(); });
   window.addEventListener('violin-triad-stop', function () { board.clearStep(); });
   window.addEventListener('violin-triad-note', function (event) {

@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id);
   const GT = window.GuitarTheory;
   if (!$('guitarTechnique') || !GT) return;
-  let notes = [], cursor = 0, timer = null, playing = false;
+  let notes = [], cursor = 0, timer = null, restTimer = null, playing = false, score = null;
   const opens = [40, 45, 50, 55, 59, 64];
   const clamp = (id, min, max) => {
     const value = Math.max(min, Math.min(max, Number($(id).value) || min));
@@ -12,10 +12,10 @@
     return value;
   };
   function stop() {
-    clearTimeout(timer); timer = null; playing = false; cursor = 0;
+    clearTimeout(timer); clearTimeout(restTimer); timer = null; playing = false; cursor = 0;
     $('techPlay').textContent = '▶ Play exercise';
     $('techStatus').textContent = 'Ready. Start again from note 1.';
-    document.querySelectorAll('#techTab .is-current').forEach(el => el.classList.remove('is-current'));
+    score?.highlight(-1, false);
   }
   window.addEventListener('guitar-studio-stop', stop);
   window.AudioKit?.onStop(stop);
@@ -59,26 +59,23 @@
     }
     if ($('techDirection').value === 'down') notes.reverse();
     if ($('techDirection').value === 'both') notes = notes.concat(notes.slice(0, -1).reverse());
-    const table = document.createElement('table'); table.className = 'tech-tab';
-    const caption = table.createCaption(); caption.textContent = 'Exercise tablature · high e on top · one column per note';
-    const rows = [['Note', (n, i) => i + 1], ...[5,4,3,2,1,0].map(s => [`${GT.TUNING[s].label} (${6-s})`, n => n.string === s ? n.fret : '—']), ['Finger', n => n.finger], ['Pick', (n, i) => i % 2 ? '↑' : '↓']];
-    rows.forEach(([label, value]) => {
-      const tr = table.insertRow(), th = document.createElement('th'); th.scope = 'row'; th.textContent = label; tr.append(th);
-      notes.forEach((n, i) => {
-        const td = document.createElement(label === 'Note' ? 'th' : 'td');
-        if (label === 'Note') td.scope = 'col';
-        td.textContent = value(n, i); td.dataset.note = i; tr.append(td);
-      });
+    const root = [...$('gcScaleRootPicker').children].findIndex(b => b.classList.contains('is-active'));
+    score = window.GuitarScore.render($('techTab'), notes, {
+      title: $('techActivity').selectedOptions[0].textContent,
+      subdivision: $('techSubdivision').value,
+      root: scalePattern ? root : null,
+      scale: scalePattern ? GT.SCALE_TYPES.find(s => s.key === $('gcScaleTypePicker').value) : null,
+      preferFlat: $('techDirection').value === 'down',
+      onSelect: index => { silence(); cursor = index; sound(); }
     });
-    $('techTab').replaceChildren(table);
   }
+
   function sound() {
     const n = notes[cursor];
     if (!n) return;
-    document.querySelectorAll('#techTab [data-note]').forEach(el => el.classList.toggle('is-current', Number(el.dataset.note) === cursor));
+    score?.highlight(cursor);
     window.GuitarAudio.pluck(GT.noteFreq(n.string, n.fret), { duration: .65 });
     $('techStatus').textContent = `Note ${cursor + 1} of ${notes.length} · string ${6 - n.string} · fret ${n.fret} · finger ${n.finger} · pick ${cursor % 2 ? '↑' : '↓'}`;
-    $('techTab .is-current')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     cursor++;
   }
   function tick() {
@@ -88,12 +85,19 @@
       else { playing = false; $('techPlay').textContent = '▶ Play exercise'; $('techStatus').textContent += ' · Complete.'; return; }
     }
     sound();
-    timer = setTimeout(tick, 60000 / clamp('techTempo', 30, 160) / Number($('techSubdivision').value));
+    const subdivision = Number($('techSubdivision').value);
+    const stepMs = 60000 / clamp('techTempo', 30, 160) / subdivision;
+    const rests = cursor === notes.length ? (4 * subdivision - notes.length % (4 * subdivision)) % (4 * subdivision) : 0;
+    if (rests) restTimer = setTimeout(() => {
+      score?.highlight(-1, false);
+      $('techStatus').textContent = `Rest for ${rests / subdivision} beat(s) to finish the measure.`;
+    }, stepMs);
+    timer = setTimeout(tick, stepMs * (1 + rests));
   }
   $('techPlay').onclick = () => { silence(); playing = true; $('techPlay').textContent = 'Playing…'; tick(); };
   $('techStep').onclick = () => { const next = cursor % notes.length; silence(); cursor = next; sound(); };
   $('techStop').onclick = silence;
-  ['techActivity', 'techFret', 'techDirection'].forEach(id => $(id).addEventListener('change', render));
+  ['techActivity', 'techFret', 'techDirection', 'techSubdivision'].forEach(id => $(id).addEventListener('change', render));
   $('gcScaleRootPicker').addEventListener('click', render);
   $('gcScaleTypePicker').addEventListener('change', render);
   render();

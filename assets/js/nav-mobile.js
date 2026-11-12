@@ -676,11 +676,13 @@
         '<kbd class="nav-search-kbd" aria-hidden="true">⇧W</kbd>' +
       '</button>';
 
+    var wbWaiters = [];
     function ensureSmartWhiteboard(cb) {
       if (window.SmartBlackboardDock) {
-        if (cb) cb(window.SmartBlackboardDock);
+        if (cb) cb(window.SmartBlackboardDock, false);
         return;
       }
+      if (cb) wbWaiters.push(cb);
       // Inject CSS
       if (!document.getElementById("smart-whiteboard-dock-css")) {
         var css = document.createElement("link");
@@ -695,40 +697,46 @@
         wbScript = document.createElement("script");
         wbScript.src = navScriptBase ? new URL("smart-whiteboard-dock.js", navScriptBase).href : "/assets/js/smart-whiteboard-dock.js";
         wbScript.dataset.smartWhiteboard = "true";
+        wbScript.addEventListener("load", function () {
+          var pending = wbWaiters.splice(0, wbWaiters.length);
+          if (!window.SmartBlackboardDock) return;
+          for (var i = 0; i < pending.length; i++) {
+            pending[i](window.SmartBlackboardDock, true);
+          }
+        }, { once: true });
         document.head.appendChild(wbScript);
       }
-      wbScript.addEventListener("load", function () {
-        if (cb && window.SmartBlackboardDock) cb(window.SmartBlackboardDock);
-      }, { once: true });
+    }
+    window.ClassroomOSEnsureSmartWhiteboard = ensureSmartWhiteboard;
+
+    function openOrToggleWhiteboard() {
+      ensureSmartWhiteboard(function (dock, loadedNow) {
+        if (loadedNow) dock.open();
+        else dock.toggle();
+      });
     }
 
-    whiteboardContainer.querySelector(".nav-whiteboard-btn").addEventListener("click", function () {
-      ensureSmartWhiteboard(function (dock) { dock.toggle(); });
-    });
+    whiteboardContainer.querySelector(".nav-whiteboard-btn").addEventListener("click", openOrToggleWhiteboard);
     nav.parentNode.appendChild(whiteboardContainer);
 
-    // Global Shift+W shortcut (only active on math/physics lessons)
+    // Global Shift+W shortcut (only active on math/physics/chemistry lessons;
+    // once smart-whiteboard-dock.js is loaded, its own keydown handler takes over).
     window.addEventListener("keydown", function (e) {
+      if (window.SmartBlackboardDock) return;
       if ((e.key === "W" || e.key === "w") && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
         var tag = (e.target && e.target.tagName) || "";
         if (!/INPUT|TEXTAREA|SELECT/.test(tag)) {
           e.preventDefault();
-          ensureSmartWhiteboard(function (dock) { dock.toggle(); });
+          openOrToggleWhiteboard();
         }
       }
     });
 
-    // Pre-load launcher or open state
+    // Restore open state only if the user left the board open; otherwise lazy-load on demand.
     try {
       var savedWb = JSON.parse(localStorage.getItem("classroomos-smart-wb-state"));
       if (savedWb && savedWb.isOpen) {
         ensureSmartWhiteboard(function (dock) { dock.open(); });
-      } else {
-        if ("requestIdleCallback" in window) {
-          requestIdleCallback(function () { ensureSmartWhiteboard(); });
-        } else {
-          setTimeout(function () { ensureSmartWhiteboard(); }, 1200);
-        }
       }
     } catch (_) {}
   }

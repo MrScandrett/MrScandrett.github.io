@@ -355,7 +355,7 @@ function playProgression(list, label) {
 }
 
 /* build it */
-const build = { target: null, picked: new Set(), streak: 0, solved: 0, hint: 0 };
+const build = { target: null, picked: new Set(), streak: 0, solved: 0, hint: 0, credited: false };
 const BUILD_TYPES = ['drop2', 'drop3', 'drop24'];
 function newChallenge() {
   const rootPc = Math.floor(Math.random() * 12);
@@ -363,7 +363,7 @@ function newChallenge() {
   const type = BUILD_TYPES[Math.floor(Math.random() * 3)];
   const bass = Math.floor(Math.random() * 4);
   build.target = buildVoicing({ rootPc, quality, type, bass });
-  build.picked.clear(); build.hint = 0;
+  build.picked.clear(); build.hint = 0; build.credited = false;
   const t = build.target;
   $('#buildPrompt').innerHTML = `Build <b>${t.symbol}</b> as a <b>${VOICING_TYPES[type].label}</b> voicing with the <b>${ORDINAL[t.bass]}</b> on the bottom.`;
   $('#buildFeedback').textContent = 'Press keys to choose four notes, then Check. Any octave is fine; the spacing is what counts.';
@@ -479,6 +479,19 @@ function init() {
   // 04 guitar
   $$('#gType button').forEach((b) => b.addEventListener('click', () => { gState.type = b.dataset.type; gState.set = 0; renderGuitar(); }));
 
+  $$('[data-guitar-study]').forEach((button) => button.addEventListener('click', () => {
+    const study = [
+      { rootPc: 2, quality: 'm7', bass: 1 },
+      { rootPc: 7, quality: 'dom7', bass: 3 },
+      { rootPc: 0, quality: 'maj7', bass: 1 }
+    ][Number(button.dataset.guitarStudy)];
+    state.rootPc = study.rootPc; state.quality = study.quality;
+    $('#dvRoot').value = study.rootPc; $('#dvQuality').value = study.quality;
+    Object.assign(gState, { type: 'drop2', set: 2, bass: study.bass });
+    Sound.stopAll(); renderAll();
+    $('#guitar').scrollIntoView({ block: 'start' });
+  }));
+
   // 05 voice leading
   const progSel = $('#vlProg'), keySel = $('#vlKey'), typeSel = $('#vlType');
   Object.values(PROGRESSIONS).forEach((p) => progSel.add(new Option(p.label, p.id)));
@@ -497,7 +510,7 @@ function init() {
     const fb = $('#buildFeedback');
     fb.className = 'dv-status ' + (r.ok ? 'is-ok' : 'is-no');
     if (r.ok) {
-      build.solved++; build.streak++;
+      if (!build.credited) { build.solved++; build.streak++; build.credited = true; }
       fb.textContent = `${r.message} ${build.target.symbol}: ${listNotes(build.target)}. You moved only the voice the rule names.`;
       build.hint = 2; renderBuild();
       Sound.stopAll(); Sound.chord([...build.picked].sort((a, b) => a - b));

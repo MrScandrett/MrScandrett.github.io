@@ -1434,22 +1434,27 @@
 
   // Pop dock button
   if (bbPopDockBtn) {
+    function openActiveFigureInDock(dock) {
+      dock.open();
+      if (!bbActiveFigure) return;
+      if (bbActiveFigure.type === 'rect') {
+        dock.loadRectangle(Math.round(bbActiveFigure.w / 28) || 6, Math.round(bbActiveFigure.h / 28) || 4);
+      } else if (bbActiveFigure.type === 'para') {
+        dock.loadParallelogram(Math.round(bbActiveFigure.w / 28) || 7, Math.round(bbActiveFigure.h / 28) || 4, Math.round(bbActiveFigure.s / 28) || 2);
+      } else if (bbActiveFigure.type === 'tri') {
+        dock.loadTriangle(Math.round(bbActiveFigure.w / 28) || 8, Math.round(bbActiveFigure.h / 28) || 5);
+      } else if (bbActiveFigure.type === 'samep') {
+        dock.loadSameP16();
+      } else if (bbActiveFigure.type === 'poly') {
+        dock.loadPolyomino(bbActiveFigure.cells || []);
+      }
+    }
+
     bbPopDockBtn.addEventListener('click', function () {
       if (window.SmartBlackboardDock) {
-        window.SmartBlackboardDock.open();
-        if (bbActiveFigure) {
-          if (bbActiveFigure.type === 'rect') {
-            window.SmartBlackboardDock.loadRectangle(Math.round(bbActiveFigure.w / 28) || 6, Math.round(bbActiveFigure.h / 28) || 4);
-          } else if (bbActiveFigure.type === 'para') {
-            window.SmartBlackboardDock.loadParallelogram(Math.round(bbActiveFigure.w / 28) || 7, Math.round(bbActiveFigure.h / 28) || 4, Math.round(bbActiveFigure.s / 28) || 2);
-          } else if (bbActiveFigure.type === 'tri') {
-            window.SmartBlackboardDock.loadTriangle(Math.round(bbActiveFigure.w / 28) || 8, Math.round(bbActiveFigure.h / 28) || 5);
-          } else if (bbActiveFigure.type === 'samep') {
-            window.SmartBlackboardDock.loadSameP16();
-          } else if (bbActiveFigure.type === 'poly') {
-            window.SmartBlackboardDock.loadPolyomino(bbActiveFigure.cells || []);
-          }
-        }
+        openActiveFigureInDock(window.SmartBlackboardDock);
+      } else if (window.ClassroomOSEnsureSmartWhiteboard) {
+        window.ClassroomOSEnsureSmartWhiteboard(openActiveFigureInDock);
       } else {
         var wbBtn = document.querySelector('.nav-whiteboard-btn');
         if (wbBtn) wbBtn.click();
