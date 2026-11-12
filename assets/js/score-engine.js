@@ -1457,9 +1457,24 @@
     return true;
   }
 
-  function printScorePages(score) {
-    if (!preparePrintScorePages(score)) return;
+  function printScorePages(score, options) {
+    if (!preparePrintScorePages(score, options)) return;
     root.print();
+  }
+
+  // Piano scores get a "Finger numbers" toggle from score-fingering.js, fetched on first use.
+  var fingeringLoad = null;
+  function withFingering(use) {
+    if (typeof document === 'undefined') return;
+    if (root.ScoreFingering) { use(root.ScoreFingering); return; }
+    if (!fingeringLoad) fingeringLoad = new Promise(function (resolve) {
+      var tag = document.createElement('script');
+      tag.src = new URL('score-fingering.js', scriptUrl || location.href).href;
+      tag.onload = function () { resolve(root.ScoreFingering); };
+      tag.onerror = function () { resolve(null); };
+      document.head.appendChild(tag);
+    });
+    fingeringLoad.then(function (F) { if (F) use(F); });
   }
 
   function samplerAssetBase() { return scriptUrl || location.href; }
@@ -1689,7 +1704,7 @@
     printButton.setAttribute('aria-label', 'Print a paginated score of ' + (score.title || 'this piece'));
     // Mozart's Rondo has its own print edition with an optional fingering overlay.
     if (score.id !== 'mozart-turkish-march') {
-      printButton.addEventListener('click', function () { printScorePages(score); });
+      printButton.addEventListener('click', function () { printScorePages(score, fig.scoreFingeringPrint ? fig.scoreFingeringPrint() : null); });
     }
 
     function updatePreferenceButtons() {
@@ -2022,6 +2037,7 @@
     draw();
     settingsBar.appendChild(pitchToggle); settingsBar.appendChild(colorToggle); settingsBar.appendChild(noteListToggle);
     if (score.id !== 'mozart-turkish-march') settingsBar.appendChild(printButton);
+    withFingering(function (F) { F.install(fig, score, settingsBar); });
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
