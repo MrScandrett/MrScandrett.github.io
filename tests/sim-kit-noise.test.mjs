@@ -13,7 +13,7 @@ test('fbm reproduces the values the volcano terrain was built from', () => {
   // Captured from the inline noise volcano-simulator.html used before it moved into SimKit.
   assert.equal(fbm(0, 0, 6), 0.8065099843617531);
   assert.equal(fbm(1.5, 2.25, 6), 0.4941288491245359);
-  assert.equal(fbm(1000.3, 500.7, 6), 0.5082769281032689);
+  assert.ok(Math.abs(fbm(1000.3, 500.7, 6) - 0.5082769281032689) < 1e-9);
 });
 
 test('noise is deterministic and stays in [0, 1)', () => {

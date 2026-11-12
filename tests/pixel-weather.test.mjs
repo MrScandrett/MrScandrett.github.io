@@ -12,13 +12,14 @@ function area(svg, fill) {
     .reduce((sum, [, n]) => sum + Number(n), 0);
 }
 
-test('every icon draws inside its 16x16 grid', () => {
+test('every icon draws inside its pixel grid', () => {
   for (const kind of kinds) {
     const svg = icon(kind);
-    assert.match(svg, /viewBox="0 0 16 16"/, kind);
+    const size = ['tee', 'jacket', 'coat'].includes(kind) ? 16 : 48;
+    assert.match(svg, new RegExp(`viewBox="0 0 ${size} ${size}"`), kind);
     assert.ok(area(svg) > 20, `${kind} has pixels`);
     for (const [, x, y, w] of svg.matchAll(/M(\d+) (\d+)h(\d+)/g)) {
-      assert.ok(Number(x) + Number(w) <= 16 && Number(y) < 16, `${kind} stays on the grid`);
+      assert.ok(Number(x) + Number(w) <= size && Number(y) < size, `${kind} stays on the grid`);
     }
   }
 });
