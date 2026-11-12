@@ -1,0 +1,743 @@
+/* ═════════════════════════════════════════════════════════════════════════════
+   Roguelike Dungeon Studio · Procedural Engine & Workstation
+   ClassroomOS · Computer Science: Graphics & Game Development
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.roguelike-creation-wrap {
+  width: 100%;
+  margin: -1.2rem 0 1.8rem 0;
+  box-sizing: border-box;
+}
+
+.roguelike-creation-wrap .creation-app-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.15rem 0.2rem;
+  min-height: auto;
+  background: transparent;
+  border-bottom: none;
+  margin-bottom: 0.25rem;
+}
+
+.roguelike-creation-wrap .creation-app-fullscreen {
+  min-height: 30px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--surface-1, #1e1b18);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--text, #fff);
+  cursor: pointer;
+}
+
+/* Master studio workstation container */
+.rg-studio {
+  --rg-bg: #0d0b09;
+  --rg-panel: #16130f;
+  --rg-panel-hover: #221e18;
+  --rg-border: rgba(255, 255, 255, 0.12);
+  --rg-border-strong: rgba(255, 255, 255, 0.24);
+  --rg-text: #f5f5f7;
+  --rg-muted: #a39582;
+  --rg-acc: #7c3aed;
+  --rg-acc-gold: #ffd98a;
+  --rg-good: #22c55e;
+  --rg-bad: #ef4444;
+  --rg-info: #38bdf8;
+
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  /* Encapsulate fit-to-screen inside the initial viewport */
+  height: calc(100dvh - 128px);
+  min-height: 520px;
+  max-height: 820px;
+  background: var(--rg-bg);
+  color: var(--rg-text);
+  border: 1px solid var(--rg-border);
+  border-radius: 16px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+
+[data-creation-app]:fullscreen .rg-studio,
+[data-creation-app].creation-app-expanded .rg-studio {
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+}
+
+/* ── Top Ribbon Toolbar ─────────────────────────────────────────────────── */
+.rg-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  padding: 0.45rem 0.85rem;
+  background: #14110d;
+  border-bottom: 1px solid var(--rg-border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.rg-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rg-badge {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.rg-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.rg-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rg-subtitle {
+  font-size: 0.66rem;
+  color: var(--rg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* Nav mode switch pills */
+.rg-modes {
+  display: inline-flex;
+  background: #090806;
+  border: 1px solid var(--rg-border);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.rg-mode-btn {
+  background: transparent;
+  color: var(--rg-muted);
+  border: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rg-mode-btn:hover {
+  color: #fff;
+}
+
+.rg-mode-btn[aria-pressed="true"] {
+  background: #2a2218;
+  color: var(--rg-acc-gold);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.rg-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.rg-select {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: #1e1913;
+  color: var(--rg-text);
+  border: 1px solid var(--rg-border);
+  border-radius: 7px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.rg-select:focus-visible,
+.rg-btn:focus-visible,
+.rg-mode-btn:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 1px;
+}
+
+.rg-btn {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid var(--rg-border);
+  background: #1e1913;
+  color: var(--rg-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.rg-btn:hover:not(:disabled) {
+  background: #2a231b;
+  border-color: var(--rg-border-strong);
+}
+
+.rg-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.rg-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rg-btn.primary {
+  background: #7c3aed;
+  border-color: #a78bfa;
+  color: #ffffff;
+}
+
+.rg-btn.primary:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.rg-btn.gold {
+  background: #d97706;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.rg-btn.gold:hover:not(:disabled) {
+  background: #b45309;
+}
+
+/* ── Main Workspace Body ─────────────────────────────────────────────────── */
+.rg-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left: Playfield Stage */
+.rg-stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--rg-border);
+  background: #090807;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Stage HUD Bar */
+.rg-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(18, 15, 12, 0.95);
+  border-bottom: 1px solid var(--rg-border);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.rg-hud-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.rg-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #1b1712;
+  border: 1px solid var(--rg-border);
+  border-radius: 6px;
+  padding: 0.18rem 0.45rem;
+  font-weight: 600;
+  font-size: 0.74rem;
+}
+
+.rg-hud-pill strong {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: var(--rg-acc-gold);
+}
+
+.rg-hud-pill.hp strong {
+  color: #4ade80;
+}
+
+.rg-hud-pill.hp.low strong {
+  color: #f87171;
+}
+
+.rg-hp-track {
+  width: 60px;
+  height: 6px;
+  background: #2a2218;
+  border-radius: 999px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 0.2rem;
+}
+
+.rg-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: #22c55e;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.rg-hp-fill.warn {
+  background: #f59e0b;
+}
+
+.rg-hp-fill.danger {
+  background: #ef4444;
+}
+
+.rg-hud-seed {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--rg-muted);
+  font-size: 0.72rem;
+}
+
+/* Canvas Viewport Wrap */
+.rg-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: #050403;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rg-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.rg-canvas:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: -2px;
+}
+
+/* Overlay Tickers on Canvas */
+.rg-canvas-overlay {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.rg-msg-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(13, 11, 9, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.01em;
+  max-width: 70%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.rg-msg-pill.danger {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.rg-msg-pill.win {
+  border-color: #22c55e;
+  color: #86efac;
+}
+
+.rg-coord-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(13, 11, 9, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--rg-muted);
+}
+
+/* Floating Terminal View (Alternative ASCII mode) */
+.rg-terminal-view {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0.6rem;
+  overflow: auto;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.15;
+  white-space: pre;
+  color: #cbb693;
+  background: #070605;
+  box-sizing: border-box;
+  display: none;
+}
+
+.rg-terminal-view.active {
+  display: block;
+}
+
+/* Bottom Control Dock */
+.rg-dock {
+  padding: 0.4rem 0.8rem 0.45rem;
+  background: #14110d;
+  border-top: 1px solid var(--rg-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.rg-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 2rem);
+  grid-template-rows: repeat(3, 1.8rem);
+  gap: 2px;
+}
+
+.rg-dpad-btn {
+  background: #1e1913;
+  color: #e2d7c5;
+  border: 1px solid var(--rg-border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.rg-dpad-btn:hover {
+  background: #2d261e;
+  border-color: var(--rg-border-strong);
+}
+
+.rg-dpad-btn:active {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.rg-dock-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.rg-dock-btn {
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.32rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--rg-border);
+  background: #1e1913;
+  color: #f5f5f7;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.rg-dock-btn:hover:not(:disabled) {
+  background: #2a231b;
+  border-color: var(--rg-border-strong);
+}
+
+.rg-dock-btn.potion {
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+
+.rg-dock-btn.stairs {
+  border-color: #f59e0b;
+  color: #fde68a;
+}
+
+.rg-dock-hint {
+  font-size: 0.7rem;
+  color: var(--rg-muted);
+}
+
+/* ── Right: Tabbed Engine Deck ───────────────────────────────────────────── */
+.rg-deck {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--rg-panel);
+  overflow: hidden;
+}
+
+.rg-deck-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.rg-card {
+  background: #100e0b;
+  border: 1px solid var(--rg-border);
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rg-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.2rem;
+}
+
+.rg-card-head span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rg-acc-gold);
+}
+
+.rg-card-head b {
+  font-size: 0.72rem;
+  color: var(--rg-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Combat & Event Log */
+.rg-log-box {
+  background: #080706;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.5rem;
+  height: 140px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rg-log-entry {
+  color: #d6cbba;
+}
+
+.rg-log-entry.hit {
+  color: #f87171;
+}
+
+.rg-log-entry.kill {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.rg-log-entry.item {
+  color: #fbbf24;
+}
+
+.rg-log-entry.stairs {
+  color: #38bdf8;
+}
+
+.rg-log-entry.info {
+  color: #a39582;
+}
+
+/* Minimap Radar */
+.rg-radar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: #080706;
+  border: 1px solid var(--rg-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.rg-radar-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+
+.rg-radar-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  width: 100%;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.rg-radar-meta div {
+  background: #17130e;
+  border-radius: 4px;
+  padding: 0.25rem 0.35rem;
+}
+
+.rg-radar-meta b {
+  display: block;
+  color: var(--rg-acc-gold);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Config IDE Area */
+.rg-config-area {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 200px;
+  flex: 1;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  background: #070605;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.6rem;
+  resize: vertical;
+  tab-size: 2;
+}
+
+.rg-config-area:focus {
+  outline: 2px solid #8b5cf6;
+  border-color: transparent;
+}
+
+.rg-config-status {
+  font-size: 0.74rem;
+  min-height: 1.4em;
+  font-weight: 600;
+  margin: 0.2rem 0;
+}
+
+.rg-config-status.ok {
+  color: #4ade80;
+}
+
+.rg-config-status.bad {
+  color: #f87171;
+}
+
+/* Bestiary & Dice Math */
+.rg-bestiary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.45rem;
+}
+
+.rg-monster-card {
+  background: #17130e;
+  border: 1px solid var(--rg-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.72rem;
+}
+
+.rg-monster-card b {
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.rg-monster-stats {
+  color: var(--rg-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .rg-studio {
+    height: auto;
+    max-height: none;
+  }
+  .rg-body {
+    grid-template-columns: 1fr;
+  }
+  .rg-stage {
+    border-right: none;
+    border-bottom: 1px solid var(--rg-border);
+    height: 380px;
+  }
+  .rg-deck {
+    height: 380px;
+  }
+}

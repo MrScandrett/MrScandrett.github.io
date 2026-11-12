@@ -654,14 +654,14 @@
   });
   nav.parentNode.appendChild(musicContainer);
 
-  /* AI Smart Blackboard: only available in Mathematics and Physics lessons, never interrupts music */
+  /* AI Smart Blackboard: only available in Mathematics, Physics and Chemistry lessons, never interrupts music */
   function isMathOrPhysicsLesson() {
     var p = (location.pathname || '').toLowerCase();
-    if (/(^|\/)lessons\/(mathematics|physics|applied-physics-materials)\//.test(p)) {
+    if (/(^|\/)lessons\/(mathematics|physics|applied-physics-materials|chemistry)\//.test(p)) {
       return true;
     }
     var mod = (document.body && document.body.dataset && document.body.dataset.module) || '';
-    return /math|physic/i.test(mod);
+    return /math|physic|chem/i.test(mod);
   }
 
   if (isMathOrPhysicsLesson()) {

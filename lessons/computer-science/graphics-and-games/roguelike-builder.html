@@ -7,6 +7,8 @@
   <meta name="description" content="Build a roguelike in about 150 lines of JavaScript: a seeded random number generator, Rogue's 3 × 3 rooms and tunnels, a turn-based loop and monsters that chase. Check the generator with flood fill, balance fights with dice math, walk your dungeon in 3D in our Crawlspace showcase game, and design a spin-off." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/roguelike-studio.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -172,6 +174,9 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+        <div class="creation-app roguelike-creation-wrap" data-creation-app aria-label="Roguelike Studio">
+          <section id="roguelike-engine-app" data-night-keep aria-label="Roguelike Dungeon Studio & Engine"></section>
+        </div>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
@@ -219,6 +224,7 @@
             <button class="btn" id="lab-run" type="button">▶ Run my dungeon</button>
             <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
             <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+            <a class="btn ghost" href="#roguelike-engine-app">▲ Open in Studio</a>
           </div>
           <div id="lab-game" data-night-keep data-memory-ignore aria-label="Roguelike game"></div>
           <div class="to3d">
@@ -679,8 +685,10 @@
   </div><!-- /.ll-stage -->
 </div><!-- /.ll-viewport -->
 
+<script src="../../../assets/js/sim-kit.js"></script>
 <script src="../../../assets/js/rogue-dungeon.js"></script>
 <script src="../../../assets/js/rogue-lab.js"></script>
+<script src="../../../assets/js/roguelike-studio.js"></script>
 
 <!-- ─────────────────────────────────────────────────────────────
      The student's build-along program. Steps 1–8 above are sliced out of
@@ -893,8 +901,8 @@ document.addEventListener("keydown", e => {
 });
 newGame();
 `;
-window.ROGUE_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Roguelike</title>\n</head>\n<body style="background:#111; color:#ddd; font-family: system-ui, sans-serif; margin: 2rem;">\n  <h1>My Roguelike</h1>\n  <pre id="map" style="font: 16px/1.1 monospace; color:#cbb693;"></pre>\n  <pre id="status" style="font: 15px/1.4 monospace; white-space: pre-wrap;"></pre>\n  <p>Arrow keys or h j k l (y u b n for diagonals) to move. Walk into a monster to fight it.\n     Press &gt; on the stairs to go down. R starts again after you die.</p>\n\n<script>\n';
-window.ROGUE_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+window.ROGUE_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Roguelike</title>\n</head>\n<' + 'body style="background:#111; color:#ddd; font-family: system-ui, sans-serif; margin: 2rem;">\n  <h1>My Roguelike</h1>\n  <pre id="map" style="font: 16px/1.1 monospace; color:#cbb693;"></pre>\n  <pre id="status" style="font: 15px/1.4 monospace; white-space: pre-wrap;"></pre>\n  <p>Arrow keys or h j k l (y u b n for diagonals) to move. Walk into a monster to fight it.\n     Press &gt; on the stairs to go down. R starts again after you die.</p>\n\n<' + 'script>\n';
+window.ROGUE_MINI_TAIL = '</' + 'script>\n</' + 'body>\n</' + 'html>\n';
 </script>
 
 <script>
@@ -1068,6 +1076,9 @@ window.ROGUE_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
       status.className = 'lab-status ok'; status.textContent = 'Running “' + (cfg.title || 'My Roguelike') + '”. Click the map, then use the arrow keys.';
       update3d(game.state());
       fightOptions();
+      if (window._rogueStudioInstance) {
+        window._rogueStudioInstance.applyConfig(cfg);
+      }
     } catch (e) { status.className = 'lab-status bad'; status.textContent = e.message; }
   }
   function loadPreset() { ta.value = pretty(PRESETS[sel.value].config); run(); }
@@ -1079,8 +1090,8 @@ window.ROGUE_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
     try { RogueEngine(null, cfg); } catch (e) { status.className = 'lab-status bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
     var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
     var title = String(cfg.title || 'My Roguelike').replace(/[<>&"]/g, '');
-    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#070605;">\n<div id="game" style="max-width:980px;margin:0 auto;"></div>\n<script>\n' +
-      'var RogueDungeon = (' + D.factory.toString() + ')();\n' + RogueEngine.toString() + '\nvar CONFIG = ' + json + ';\nRogueEngine(document.getElementById("game"), CONFIG).focus();\n<' + '/script>\n</body>\n</html>\n';
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<' + 'body style="margin:0;padding:1rem;background:#070605;">\n<div id="game" style="max-width:980px;margin:0 auto;"></div>\n<' + 'script>\n' +
+      'var RogueDungeon = (' + D.factory.toString() + ')();\n' + RogueEngine.toString() + '\nvar CONFIG = ' + json + ';\nRogueEngine(document.getElementById("game"), CONFIG).focus();\n<' + '/script>\n</' + 'body>\n</' + 'html>\n';
     download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
     status.className = 'lab-status ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
   });
@@ -1255,8 +1266,12 @@ window.ROGUE_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
   loadPreset();
   showSeed();
   showSeedGrid();
+  if (window.RoguelikeStudio && $('roguelike-engine-app') && !window._rogueStudioInstance) {
+    window._rogueStudioInstance = window.RoguelikeStudio.mount($('roguelike-engine-app'), PRESETS.crawlspace.config);
+  }
 })();
 </script>
+<script src="../../../assets/js/creation-app.js"></script>
 <script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/reveal.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>

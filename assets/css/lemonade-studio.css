@@ -1,0 +1,909 @@
+/* ═════════════════════════════════════════════════════════════════════════════
+   Lemonade Tycoon Studio · Business Simulation Engine & Workstation
+   ClassroomOS · Computer Science: Graphics & Game Development
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+.lemonade-creation-wrap {
+  width: 100%;
+  margin: -1.2rem 0 1.8rem 0;
+  box-sizing: border-box;
+}
+
+.lemonade-creation-wrap .creation-app-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.15rem 0.2rem;
+  min-height: auto;
+  background: transparent;
+  border-bottom: none;
+  margin-bottom: 0.25rem;
+}
+
+.lemonade-creation-wrap .creation-app-fullscreen {
+  min-height: 30px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--surface-1, #1e1b18);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--text, #fff);
+  cursor: pointer;
+}
+
+/* Master studio workspace container */
+.lm-studio {
+  --lm-bg: #141312;
+  --lm-panel: #1d1b19;
+  --lm-panel-hover: #262320;
+  --lm-border: rgba(255, 255, 255, 0.12);
+  --lm-border-strong: rgba(255, 255, 255, 0.22);
+  --lm-text: #f5f5f7;
+  --lm-muted: #a19f9d;
+  --lm-acc: #f59e0b;
+  --lm-acc-glow: rgba(245, 158, 11, 0.25);
+  --lm-good: #22c55e;
+  --lm-bad: #ef4444;
+  --lm-info: #38bdf8;
+
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  /* Encapsulate fit-to-screen inside the initial viewport */
+  height: calc(100dvh - 128px);
+  min-height: 520px;
+  max-height: 800px;
+  background: var(--lm-bg);
+  color: var(--lm-text);
+  border: 1px solid var(--lm-border);
+  border-radius: 16px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+
+[data-creation-app]:fullscreen .lm-studio,
+[data-creation-app].creation-app-expanded .lm-studio {
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+}
+
+/* ── Top Ribbon / App Toolbar ────────────────────────────────────────────── */
+.lm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.7rem;
+  padding: 0.45rem 0.85rem;
+  background: #191816;
+  border-bottom: 1px solid var(--lm-border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.lm-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.lm-badge {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.lm-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.lm-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lm-subtitle {
+  font-size: 0.66rem;
+  color: var(--lm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/* Nav mode switch pills */
+.lm-modes {
+  display: inline-flex;
+  background: #11100f;
+  border: 1px solid var(--lm-border);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.lm-mode-btn {
+  background: transparent;
+  color: var(--lm-muted);
+  border: none;
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lm-mode-btn:hover {
+  color: #fff;
+}
+
+.lm-mode-btn[aria-pressed="true"] {
+  background: #2c2824;
+  color: #fbbf24;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.lm-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.lm-select {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: #242220;
+  color: var(--lm-text);
+  border: 1px solid var(--lm-border);
+  border-radius: 7px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.lm-select:focus-visible,
+.lm-btn:focus-visible,
+.lm-mode-btn:focus-visible,
+.lm-inp:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+.lm-btn {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  border-radius: 7px;
+  border: 1px solid var(--lm-border);
+  background: #242220;
+  color: var(--lm-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+
+.lm-btn:hover:not(:disabled) {
+  background: #2f2b27;
+  border-color: var(--lm-border-strong);
+}
+
+.lm-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.lm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lm-btn.primary {
+  background: #d97706;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.lm-btn.primary:hover:not(:disabled) {
+  background: #b45309;
+}
+
+/* ── Main Workspace Body ─────────────────────────────────────────────────── */
+.lm-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left: Simulation Canvas Stage & Day Controls */
+.lm-stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--lm-border);
+  background: #11100f;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Stage HUD Bar */
+.lm-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(22, 20, 18, 0.95);
+  border-bottom: 1px solid var(--lm-border);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.lm-hud-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.lm-hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #1f1d1b;
+  border: 1px solid var(--lm-border);
+  border-radius: 6px;
+  padding: 0.18rem 0.45rem;
+  font-weight: 600;
+  font-size: 0.76rem;
+}
+
+.lm-hud-pill strong {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  color: #fbbf24;
+}
+
+.lm-hud-pill.cash strong {
+  color: #4ade80;
+}
+
+.lm-hud-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--lm-muted);
+}
+
+.lm-progress-bar {
+  width: 80px;
+  height: 7px;
+  background: #2a2724;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lm-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  transition: width 0.35s ease;
+}
+
+/* Canvas Viewport Wrap */
+.lm-canvas-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: #09090b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lm-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  touch-action: none;
+}
+
+/* Overlay day ticker / notification on canvas */
+.lm-canvas-overlay {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.lm-time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(15, 14, 13, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.lm-forecast-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(15, 14, 13, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fde68a;
+}
+
+/* Bottom Control Desk (Player inputs) */
+.lm-desk {
+  padding: 0.45rem 0.8rem 0.5rem;
+  background: #191816;
+  border-top: 1px solid var(--lm-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.lm-desk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(130px, auto);
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.lm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lm-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--lm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.lm-label span {
+  font-size: 0.7rem;
+  color: #fbbf24;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.lm-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.lm-inp {
+  font: inherit;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--lm-border);
+  border-radius: 6px;
+  background: #11100f;
+  color: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lm-desk-act {
+  display: flex;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+
+.lm-act-btn {
+  flex: 1;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.38rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.3);
+  transition: all 0.15s ease;
+  min-height: 34px;
+}
+
+.lm-act-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(217, 119, 6, 0.4);
+}
+
+.lm-act-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.lm-act-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none;
+}
+
+.lm-desk-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--lm-muted);
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.lm-meta-pill {
+  color: #cbd5e1;
+}
+
+.lm-meta-pill b {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.lm-status-msg {
+  min-height: 1.1em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #f87171;
+}
+
+/* ── Right Column: Tabbed Inspector & Telemetry Deck ─────────────────────── */
+.lm-deck {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--lm-panel);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.lm-panel-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+/* Cards inside the Deck */
+.lm-card {
+  background: #171513;
+  border: 1px solid var(--lm-border);
+  border-radius: 11px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--lm-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.3rem;
+}
+
+.lm-card-head b {
+  color: #fbbf24;
+}
+
+.lm-news-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 7px;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #fef08a;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+/* Daily Financial Ledger */
+.lm-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.lm-ledger-table tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lm-ledger-table tr:last-child {
+  border-bottom: none;
+}
+
+.lm-ledger-table td {
+  padding: 0.24rem 0;
+  color: #d1d5db;
+}
+
+.lm-ledger-table td:last-child {
+  text-align: right;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+}
+
+.lm-ledger-table tr.total td {
+  padding-top: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-top: 1px dashed var(--lm-border-strong);
+}
+
+.val-good { color: #4ade80 !important; }
+.val-bad { color: #f87171 !important; }
+
+/* Interactive Profit Curve Chart */
+.lm-chart-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lm-svg-chart {
+  width: 100%;
+  height: 115px;
+  background: #11100f;
+  border: 1px solid var(--lm-border);
+  border-radius: 7px;
+  display: block;
+}
+
+.lm-chart-caption {
+  font-size: 0.7rem;
+  color: var(--lm-muted);
+  line-height: 1.35;
+}
+
+/* Multi-Day Performance Trend */
+.lm-history-chart {
+  width: 100%;
+  height: 105px;
+  background: #11100f;
+  border: 1px solid var(--lm-border);
+  border-radius: 7px;
+  display: block;
+}
+
+/* Customer Conversion Breakdown Bar */
+.lm-conv-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 5px;
+  overflow: hidden;
+  width: 100%;
+  background: #27272a;
+}
+
+.lm-conv-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.lm-conv-seg.bought { background: #22c55e; }
+.lm-conv-seg.priced-out { background: #f59e0b; }
+.lm-conv-seg.stockout { background: #ef4444; }
+
+.lm-conv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--lm-muted);
+  margin-top: 0.2rem;
+}
+
+.lm-conv-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 0.2rem;
+}
+
+/* Upgrades Catalog */
+.lm-upgrades-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.lm-upgrade-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #191816;
+  border: 1px solid var(--lm-border);
+  border-radius: 9px;
+  padding: 0.5rem 0.7rem;
+  transition: border-color 0.15s;
+}
+
+.lm-upgrade-card:hover {
+  border-color: var(--lm-border-strong);
+}
+
+.lm-upgrade-card.owned {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.lm-upgrade-info h4 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lm-upgrade-info p {
+  margin: 0.12rem 0 0;
+  font-size: 0.7rem;
+  color: var(--lm-muted);
+  line-height: 1.35;
+}
+
+/* Activity Log */
+.lm-log-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 130px;
+}
+
+.lm-log-box {
+  background: #11100f;
+  border: 1px solid var(--lm-border);
+  border-radius: 7px;
+  padding: 0.35rem 0.55rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: #94a3b8;
+  height: 90px;
+  overflow-y: auto;
+}
+
+.lm-log-line {
+  padding: 1px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.lm-log-line.good { color: #86efac; }
+.lm-log-line.bad { color: #fca5a5; }
+
+/* Config Code Editor Tab */
+.lm-editor-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.lm-config-area {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+  background: #0f172a;
+  color: #f1f5f9;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 0.65rem;
+  resize: vertical;
+  min-height: 220px;
+  flex: 1;
+  tab-size: 2;
+}
+
+.lm-config-status {
+  font-size: 0.74rem;
+  font-weight: 600;
+  min-height: 1.2em;
+  padding: 0.15rem 0;
+}
+
+.lm-config-status.ok { color: #4ade80; }
+.lm-config-status.bad { color: #f87171; }
+
+/* End Season Modal */
+.lm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 9, 8, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.lm-modal-box {
+  background: #1c1a17;
+  border: 2px solid var(--lm-acc);
+  border-radius: 14px;
+  padding: 1.25rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: lmModalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lmModalPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.lm-modal-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.lm-modal-box h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.lm-modal-box p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #d1d5db;
+  line-height: 1.55;
+}
+
+.lm-modal-stats {
+  background: #121110;
+  border: 1px solid var(--lm-border);
+  border-radius: 9px;
+  padding: 0.55rem 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  text-align: left;
+  font-size: 0.76rem;
+}
+
+.lm-modal-stats span {
+  color: var(--lm-muted);
+}
+
+.lm-modal-stats b {
+  color: #fff;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ── Responsive Behavior ─────────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .lm-studio {
+    height: auto;
+    min-height: 680px;
+    max-height: none;
+  }
+  .lm-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lm-stage {
+    border-right: none;
+    border-bottom: 1px solid var(--lm-border);
+    height: 440px;
+  }
+  .lm-desk-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lm-desk-act {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .lm-bar {
+    padding: 0.35rem 0.55rem;
+  }
+  .lm-stage {
+    height: 350px;
+  }
+  .lm-desk-grid {
+    grid-template-columns: 1fr;
+  }
+  .lm-hud-metrics {
+    gap: 0.35rem;
+  }
+  .lm-hud-pill {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lm-studio * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media print {
+  .lemonade-creation-wrap {
+    display: none;
+  }
+}

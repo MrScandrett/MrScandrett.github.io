@@ -5,18 +5,27 @@
  * net deconstruction and cross-section slicing, Cartesian coordinate graphing,
  * symbolic algebra solving, counter clustering, and automated Common Core explanations.
  *
+ * It also reads handwriting (the ✍️ Write tool), takes typed or spoken commands (the Ask box),
+ * balances chemical equations, cuts solids at any angle, looks up lessons / glossary terms /
+ * quiz questions, and records the lesson with class notes. That thinking lives in three
+ * DOM-free files under smart-board/ (tests: tests/smart-board.test.mjs); see section 11b.
+ *
  * Automatically detects the active lesson's mathematical context to bias recognition.
  */
 (function () {
   'use strict';
 
+  // Captured now: document.currentScript is only set while this file first runs.
+  var SCRIPT_SRC = (document.currentScript && document.currentScript.src) || '';
+  var SITE_ROOT = SCRIPT_SRC ? new URL('../../', SCRIPT_SRC).href : '';
+
   function isMathOrPhysicsLesson() {
     var p = (location.pathname || '').toLowerCase();
-    if (/(^|\/)lessons\/(mathematics|physics|applied-physics-materials)\//.test(p)) {
+    if (/(^|\/)lessons\/(mathematics|physics|applied-physics-materials|chemistry)\//.test(p)) {
       return true;
     }
     var mod = (document.body && document.body.dataset && document.body.dataset.module) || '';
-    return /math|physic/i.test(mod);
+    return /math|physic|chem/i.test(mod);
   }
 
   if (!isMathOrPhysicsLesson()) return;
@@ -32,6 +41,35 @@
     var h1 = (document.querySelector('h1') ? document.querySelector('h1').textContent : '').toLowerCase();
     var combined = path + ' ' + title + ' ' + h1;
 
+    if (/(^|\/)lessons\/chemistry\//.test(path)) {
+      return {
+        domain: 'chemistry',
+        label: 'Chemistry Board',
+        badge: '⚗️ Chemistry',
+        chips: [
+          { label: '⚗️ Balance H₂ + O₂', action: 'ask:H2 + O2 = H2O' },
+          { label: '🔥 Burn propane', action: 'ask:C3H8 + O2 = CO2 + H2O' },
+          { label: '✍️ Watch it write', action: 'write:2H2+O2=2H2O' },
+          { label: '❓ Quiz me', action: 'ask:quiz me' }
+        ]
+      };
+    }
+
+    if (/area-perimeter|polyomino|isoperimetric|boundary-highlighter/.test(combined) || (/area/.test(combined) && /perimeter/.test(combined))) {
+      return {
+        domain: 'area_perimeter',
+        label: 'Area & Perimeter Studio',
+        badge: '📏 Area & Perimeter',
+        chips: [
+          { label: '🔲 Rectangle (A=ℓ·w, P=2(ℓ+w))', action: 'area_rect' },
+          { label: '▱ Parallelogram (A=b·h, Slant c)', action: 'area_para' },
+          { label: '🔺 Triangle (A=½b·h)', action: 'triangle' },
+          { label: '🎯 Same Perimeter P=16 Proof', action: 'same_p16' },
+          { label: '▦ Polyomino Grid', action: 'area_poly' },
+          { label: '🔘 Counters', action: 'counter' }
+        ]
+      };
+    }
     if (/geometry|trigonometry|pythagor|soh-cah-toa|triangle|circle|polygon|angle|euclid|unit-circle/.test(combined)) {
       return {
         domain: 'geometry',
@@ -152,13 +190,19 @@
     redoStack: [],
     triData: null,
     circData: null,
+    rectData: null,
+    paraData: null,
+    polyData: null,
     graphEq: 'y = x^2 - 4',
     graphScale: 30,
     graphOrigin: { x: 0, y: 0 },
     threeRotation: { rx: 0.5, ry: 0.7 },
     unfoldPct: 0,
     sliceY: 0,
-    explodeJoint: 0
+    explodeJoint: 0,
+    slice: { tilt: 0, spin: 0, offset: 0 }, // the cutting plane (see BoardMath.sliceSolid)
+    surface: null,                          // { fn, text } for z = f(x, y)
+    inkAnswer: null                         // { x, y, text } chalked under a handwritten line
   };
 
   function loadState() {
@@ -237,11 +281,13 @@
         ctxInfo.chips.map(function (c) {
           return '<button type="button" class="smart-wb-chip" data-action="' + c.action + '">' + c.label + '</button>';
         }).join('') +
+        '<button type="button" class="smart-wb-chip" data-action="ask:help">💡 What can it do?</button>' +
       '</div>' +
       '<div class="smart-wb-body">' +
         '<div class="smart-wb-toolbar" role="toolbar" aria-label="Blackboard Tools">' +
           '<div class="smart-wb-tool-group">' +
             '<button type="button" class="smart-wb-tool active" data-tool="pen" title="Draw chalk lines with auto-recognition">🖊️ Pen</button>' +
+            '<button type="button" class="smart-wb-tool" data-tool="write" title="Write an equation by hand, then pause: the board reads it, graphs it, solves it or balances it">✍️ Write</button>' +
             '<button type="button" class="smart-wb-tool" data-tool="counter" title="Stamp tactile counters for counting & arithmetic">🔘 Counters</button>' +
             '<button type="button" class="smart-wb-tool" data-tool="eraser" title="Erase strokes or counters">🧹 Eraser</button>' +
           '</div>' +
@@ -255,8 +301,24 @@
             '<button type="button" class="smart-wb-tool" data-action="clear" title="Clear blackboard">🗑️ Clear</button>' +
             '<button type="button" class="smart-wb-tool" data-action="insert" title="Transcribe math solution into active page">📝 Insert</button>' +
             '<button type="button" class="smart-wb-tool" data-action="voice" title="Read explanation aloud">🔊 Voice</button>' +
+            '<button type="button" class="smart-wb-tool" data-action="record" title="Record the board (and your voice) to a video file on this computer">⏺ Rec</button>' +
+            '<button type="button" class="smart-wb-tool" data-action="summary" title="Class notes: everything put on the board this session">📋 Notes</button>' +
           '</div>' +
         '</div>' +
+        '<form class="smart-wb-ask" autocomplete="off">' +
+          '<button type="button" class="smart-wb-tutor" title="Board helper: press to hear the explanation read aloud" aria-label="Read the explanation aloud">' +
+            '<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">' +
+              '<rect x="5" y="8" width="22" height="18" rx="6" fill="currentColor" opacity="0.18"/>' +
+              '<rect x="5" y="8" width="22" height="18" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>' +
+              '<path d="M16 8V4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="3.4" r="1.6" fill="currentColor"/>' +
+              '<circle cx="11.5" cy="15" r="1.9" fill="currentColor"/><circle cx="20.5" cy="15" r="1.9" fill="currentColor"/>' +
+              '<rect class="smart-wb-tutor-mouth" x="12" y="20" width="8" height="2" rx="1" fill="currentColor"/>' +
+            '</svg>' +
+          '</button>' +
+          '<input type="text" class="smart-wb-input smart-wb-ask-in" aria-label="Ask the board" placeholder="Ask the board: graph y = x^2 - 4 · slice the cube into a hexagon · quiz me on gravity" />' +
+          '<button type="submit" class="smart-wb-btn">Go</button>' +
+          '<button type="button" class="smart-wb-btn smart-wb-mic" aria-pressed="false" aria-label="Voice command" title="Say a command">🎤</button>' +
+        '</form>' +
         '<div class="smart-wb-stage">' +
           '<canvas class="smart-wb-canvas" aria-label="Interactive Blackboard Stage"></canvas>' +
           '<canvas class="smart-wb-overlay-3d" aria-label="3D Rotatable Solid Stage"></canvas>' +
@@ -286,6 +348,7 @@
     setup3DInteraction();
     setupToolbar();
     setupChips();
+    setupAsk();
   }
 
   /* ── 4. Window Interaction (Drag, Resize, Docking) ── */
@@ -466,6 +529,24 @@
         }
       }
 
+      if (state.curMode === 'area_rect' && state.rectData) {
+        var rd = state.rectData;
+        if (Math.hypot(rd.x + rd.w - p.x, rd.y + rd.h - p.y) < 26) {
+          draggingPoint = { target: 'rect_br', startW: rd.w, startH: rd.h, startX: p.x, startY: p.y };
+          try { chalkCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+          return;
+        }
+      }
+
+      if (state.curMode === 'area_para' && state.paraData) {
+        var pd = state.paraData;
+        if (Math.hypot(pd.x + pd.s + pd.b - p.x, pd.y - pd.h - p.y) < 26) {
+          draggingPoint = { target: 'para_tr', startB: pd.b, startH: pd.h, startS: pd.s, startX: p.x, startY: p.y };
+          try { chalkCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+          return;
+        }
+      }
+
       isDrawing = true;
       currentStroke = [p];
       try { chalkCanvas.setPointerCapture(e.pointerId); } catch (_) {}
@@ -474,6 +555,20 @@
     chalkCanvas.addEventListener('pointermove', function (e) {
       var p = getPos(e);
       if (draggingPoint) {
+        if (draggingPoint.target === 'rect_br') {
+          state.rectData.w = Math.max(60, Math.min(500, draggingPoint.startW + (p.x - draggingPoint.startX)));
+          state.rectData.h = Math.max(40, Math.min(350, draggingPoint.startH + (p.y - draggingPoint.startY)));
+          updateAreaRectAnalysis();
+          redraw();
+          return;
+        }
+        if (draggingPoint.target === 'para_tr') {
+          state.paraData.s = Math.max(-120, Math.min(160, draggingPoint.startS + (p.x - draggingPoint.startX)));
+          state.paraData.h = Math.max(40, Math.min(240, draggingPoint.startH - (p.y - draggingPoint.startY)));
+          updateAreaParaAnalysis();
+          redraw();
+          return;
+        }
         draggingPoint.x = p.x;
         draggingPoint.y = p.y;
         updateTriangleAnalysis();
@@ -495,6 +590,14 @@
       if (!isDrawing) return;
       isDrawing = false;
       try { chalkCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+
+      if (state.curTool === 'write') {
+        // Handwriting: keep every stroke (a decimal point is one dot) and read the line after a pause.
+        addInkStroke(currentStroke);
+        currentStroke = [];
+        redraw();
+        return;
+      }
 
       if (currentStroke.length > 2) {
         state.strokes.push({ tool: state.curTool, pts: currentStroke, color: state.chalkColor });
@@ -573,6 +676,15 @@
             { x: corners[1].x, y: corners[1].y, label: 'B' },
             { x: corners[2].x, y: corners[2].y, label: 'C' }
           ]
+        };
+      }
+      if (corners.length === 4) {
+        return {
+          type: 'area_rect',
+          x: minX,
+          y: minY,
+          w: Math.max(50, w),
+          h: Math.max(40, h)
         };
       }
     }
@@ -726,9 +838,21 @@
     } else if (rec.type === '3d_cube') {
       switchTo3DMode('3d_cube');
       setDetectBanner('✨ AI Recognized: 3D Box / Cube with Net Unfolding');
+    } else if (rec.type === 'area_rect') {
+      state.curMode = 'area_rect';
+      state.rectData = { x: rec.x, y: rec.y, w: rec.w, h: rec.h };
+      updateAreaRectAnalysis();
+      var scale = 30;
+      var lU = Math.round((rec.w / scale) * 10) / 10;
+      var wU = Math.round((rec.h / scale) * 10) / 10;
+      setDetectBanner('✨ AI Recognized: Rectangle (' + lU + ' × ' + wU + ') → Area: ' + (lU * wU).toFixed(1) + ' sq units | Perimeter: ' + (2 * (lU + wU)).toFixed(1) + ' units');
+      openPanel('area_rect');
     } else if (rec.type === 'operator_plus') {
       setDetectBanner('✨ AI Recognized: Plus Operator (+) for Counter Addition');
       triggerRecognition();
+    }
+    if (rec.type !== 'operator_plus' && rec.type !== 'graph' && detectBanner) {
+      logEvent('shape', detectBanner.textContent.replace(/^✨ AI Recognized: /, ''));
     }
     redraw();
   }
@@ -778,6 +902,94 @@
       '<div class="smart-wb-math-result">' +
         'Area = ½·b·h = ' + an.area.toFixed(1) + ' px² | Altitude h ⊥ c = ' + an.h.toFixed(1) + ' px ' +
         (an.isRight ? '⭐ Right Triangle: a² + b² = c² verified!' : '') +
+      '</div>';
+  }
+
+  function updateAreaRectAnalysis() {
+    if (!state.rectData) return;
+    if (subPanel && !subPanel.hidden && state.curMode === 'area_rect') {
+      updateAreaRectPanel();
+    }
+  }
+
+  function updateAreaRectPanel() {
+    if (!state.rectData) return;
+    var r = state.rectData;
+    var scale = 30;
+    var lU = Math.max(1, Math.round((r.w / scale) * 10) / 10);
+    var wU = Math.max(1, Math.round((r.h / scale) * 10) / 10);
+    var area = (lU * wU).toFixed(1);
+    var perim = (2 * (lU + wU)).toFixed(1);
+    var diag = Math.hypot(lU, wU).toFixed(2);
+    subContent.innerHTML =
+      '<div class="smart-wb-panel-row">' +
+        '<strong>Rectangle Dimensions:</strong>' +
+        '<span>Length ℓ = ' + lU + ' u | Width w = ' + wU + ' u | Diagonal d = ' + diag + ' u</span>' +
+      '</div>' +
+      '<div class="smart-wb-math-result">' +
+        'Area A = ℓ × w = ' + lU + ' × ' + wU + ' = ' + area + ' sq units | ' +
+        'Perimeter P = 2(ℓ + w) = 2(' + lU + ' + ' + wU + ') = ' + perim + ' units ' +
+        '<span style="opacity:0.85;font-size:0.82rem;">(Drag bottom-right handle on board to resize)</span>' +
+      '</div>';
+  }
+
+  function updateAreaParaAnalysis() {
+    if (!state.paraData) return;
+    if (subPanel && !subPanel.hidden && state.curMode === 'area_para') {
+      updateAreaParaPanel();
+    }
+  }
+
+  function updateAreaParaPanel() {
+    if (!state.paraData) return;
+    var p = state.paraData;
+    var scale = 28;
+    var bU = Math.max(1, Math.round((p.b / scale) * 10) / 10);
+    var hU = Math.max(1, Math.round((p.h / scale) * 10) / 10);
+    var sU = Math.round((p.s / scale) * 10) / 10;
+    var slantC = Math.sqrt(hU * hU + sU * sU).toFixed(2);
+    var area = (bU * hU).toFixed(1);
+    var perim = (2 * (bU + Number(slantC))).toFixed(1);
+    subContent.innerHTML =
+      '<div class="smart-wb-panel-row">' +
+        '<strong>Parallelogram &amp; Shear Analysis:</strong>' +
+        '<span>Base b = ' + bU + ' u | Height h = ' + hU + ' u | Slanted side c = ' + slantC + ' u</span>' +
+      '</div>' +
+      '<div class="smart-wb-math-result">' +
+        'Area A = b × h = ' + bU + ' × ' + hU + ' = ' + area + ' sq units | ' +
+        'Perimeter P = 2(b + c) = ' + perim + ' units ' +
+        '<span style="color:#facc15;">⭐ Accuracy Alert: Only perpendicular altitude h measures area; slanted side c is for perimeter!</span>' +
+      '</div>';
+  }
+
+  function updateAreaPolyPanel() {
+    if (!state.polyData || !state.polyData.cells) return;
+    var cells = state.polyData.cells;
+    var count = cells.length;
+    var cellSet = {};
+    cells.forEach(function (c) { cellSet[c[0] + ',' + c[1]] = true; });
+    var perimeter = 0;
+    var sharedHalf = 0;
+    cells.forEach(function (c) {
+      var r = c[0], col = c[1];
+      var open = 0;
+      if (!cellSet[(r - 1) + ',' + col]) open++; else sharedHalf++;
+      if (!cellSet[(r + 1) + ',' + col]) open++; else sharedHalf++;
+      if (!cellSet[r + ',' + (col - 1)]) open++; else sharedHalf++;
+      if (!cellSet[r + ',' + (col + 1)]) open++; else sharedHalf++;
+      perimeter += open;
+    });
+    var sharedPairs = sharedHalf / 2;
+    var compactness = perimeter > 0 ? (16 * count / (perimeter * perimeter)).toFixed(2) : 0;
+    subContent.innerHTML =
+      '<div class="smart-wb-panel-row">' +
+        '<strong>Polyomino Boundary Breakdown:</strong>' +
+        '<span>Cells = ' + count + ' sq units | Outer Perimeter = ' + perimeter + ' units</span>' +
+        '<span>Shared Internal Edges = ' + sharedPairs + ' pairs | Compactness = ' + compactness + '</span>' +
+      '</div>' +
+      '<div class="smart-wb-math-result">' +
+        'Area = ' + count + ' sq units · Perimeter = ' + perimeter + ' units. ' +
+        'Internal seams (' + sharedPairs + ' pairs) do not count toward outer perimeter fence!' +
       '</div>';
   }
 
@@ -856,14 +1068,18 @@
     if (state.curMode === '3d_cube') {
       render3DCube(threeCtx, project, state.unfoldPct);
     } else if (state.curMode === '3d_cylinder') {
-      render3DCylinder(threeCtx, project, state.sliceY);
+      render3DCylinder(threeCtx, project, null);
     } else if (state.curMode === '3d_cone') {
       render3DCone(threeCtx, project, state.unfoldPct);
     } else if (state.curMode === '3d_sphere') {
-      render3DSphere(threeCtx, project, state.sliceY);
+      render3DSphere(threeCtx, project, null);
     } else if (state.curMode === '3d_composite') {
       render3DComposite(threeCtx, project, state.explodeJoint);
+    } else if (state.curMode === '3d_surface') {
+      render3DSurface(threeCtx, project);
     }
+    // The cutting plane's cross-section, at any angle (cube, cylinder, cone, sphere).
+    renderSection(threeCtx, project);
   }
 
   function render3DCube(ctx, proj, unfold) {
@@ -898,7 +1114,7 @@
   }
 
   function render3DCylinder(ctx, proj, sliceY) {
-    var R = 65, H = 130;
+    var R = 70, H = 140; // radius 2, height 4 board units (35 px each), as in BoardMath.SOLIDS
     var steps = 24;
     ctx.strokeStyle = '#38bdf8';
 
@@ -919,6 +1135,8 @@
     ctx.beginPath(); ctx.moveTo(pL1.px, pL1.py); ctx.lineTo(pL2.px, pL2.py); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(pR1.px, pR1.py); ctx.lineTo(pR2.px, pR2.py); ctx.stroke();
 
+    if (sliceY == null) return; // the cross-section is drawn by renderSection()
+
     // Slicing disc at sliceY
     var sy = (sliceY - 0.5) * H;
     ctx.fillStyle = 'rgba(250, 204, 21, 0.35)';
@@ -935,7 +1153,7 @@
   }
 
   function render3DCone(ctx, proj, unfold) {
-    var R = 70, H = 130;
+    var R = 70, H = 140;
     var steps = 24;
     ctx.strokeStyle = '#38bdf8';
 
@@ -970,7 +1188,7 @@
   }
 
   function render3DSphere(ctx, proj, sliceY) {
-    var R = 75;
+    var R = 70;
     var steps = 32;
     ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
 
@@ -999,6 +1217,7 @@
     }
     ctx.stroke();
     ctx.lineWidth = 2;
+    if (sliceY == null) return; // the cross-section is drawn by renderSection()
 
     // Cavalieri Slicing Disc at sliceY (-R to R)
     var ySlice = (sliceY - 0.5) * 2 * R * 0.9;
@@ -1067,48 +1286,68 @@
     ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
 
-    // Plot function y = f(x)
-    var fn = parseFunction(state.graphEq);
-    if (!fn) return;
+    // Numbers along the axes
+    if (scale >= 18) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      var every = scale >= 26 ? 1 : 2;
+      for (var nx = Math.ceil(-cx / scale); nx * scale + cx < w; nx++) {
+        if (nx !== 0 && nx % every === 0) ctx.fillText(String(nx), cx + nx * scale, cy + 4);
+      }
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (var ny = Math.ceil((cy - h) / scale); cy - ny * scale > 0; ny++) {
+        if (ny !== 0 && ny % every === 0) ctx.fillText(String(ny), cx - 5, cy - ny * scale);
+      }
+    }
+
+    // Plot the curve: y = f(x), or every (x, y) that satisfies an equation in both
+    var g = currentGraph();
+    if (!g) return;
 
     ctx.strokeStyle = '#38bdf8';
     ctx.lineWidth = 2.5;
+    if (g.kind === 'implicit') {
+      renderImplicit(ctx, g.fn, w, h, cx, cy, scale);
+      return;
+    }
     ctx.beginPath();
     var first = true;
+    var lastPy = 0;
     for (var px = 0; px <= w; px += 2) {
-      var mathX = (px - cx) / scale;
-      try {
-        var mathY = fn(mathX);
-        if (typeof mathY === 'number' && !isNaN(mathY) && Math.abs(mathY) < 100) {
-          var py = cy - mathY * scale;
-          if (first) { ctx.moveTo(px, py); first = false; }
-          else { ctx.lineTo(px, py); }
-        } else {
-          first = true;
-        }
-      } catch (_) { first = true; }
+      var mathY = g.fn((px - cx) / scale, 0);
+      if (typeof mathY === 'number' && isFinite(mathY) && Math.abs(mathY) < 1e4) {
+        var py = cy - mathY * scale;
+        // A jump taller than the board is an asymptote (tan x, 1/x), not a line to draw.
+        if (first || Math.abs(py - lastPy) > h) { ctx.moveTo(px, py); first = false; }
+        else { ctx.lineTo(px, py); }
+        lastPy = py;
+      } else {
+        first = true;
+      }
     }
     ctx.stroke();
-  }
 
-  function parseFunction(eqStr) {
-    try {
-      var body = eqStr.replace(/^y\s*=\s*/i, '').trim();
-      body = body
-        .replace(/\^/g, '**')
-        .replace(/sin\(/g, 'Math.sin(')
-        .replace(/cos\(/g, 'Math.cos(')
-        .replace(/tan\(/g, 'Math.tan(')
-        .replace(/sqrt\(/g, 'Math.sqrt(')
-        .replace(/abs\(/g, 'Math.abs(')
-        .replace(/exp\(/g, 'Math.exp(')
-        .replace(/log\(/g, 'Math.log(')
-        .replace(/pi/gi, 'Math.PI')
-        .replace(/e\b/gi, 'Math.E');
-      return new Function('x', 'return ' + body + ';');
-    } catch (_) {
-      return null;
+    // Label what matters: where it crosses the axes and where it turns
+    function mark(mx, my, label, colour) {
+      var sx = cx + mx * scale, sy = cy - my * scale;
+      if (sx < 4 || sx > w - 4 || sy < 30 || sy > h - 4) return;
+      ctx.fillStyle = colour;
+      ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(label, sx + 7, sy - 4);
     }
+    var an = g.analysis;
+    an.roots.slice(0, 12).forEach(function (r) { mark(r, 0, '(' + r + ', 0)', '#facc15'); });
+    if (an.yIntercept != null && an.roots.indexOf(0) < 0) mark(0, an.yIntercept, '(0, ' + an.yIntercept + ')', '#4ade80');
+    an.turning.forEach(function (t) {
+      if (t.x === 0 && an.yIntercept === t.y) return;
+      mark(t.x, t.y, '(' + t.x + ', ' + t.y + ')', '#f472b6');
+    });
   }
 
   /* ── 9. Arithmetic & 2D Clustering ── */
@@ -1261,6 +1500,35 @@
     if (state.curMode === 'circle' && state.circData) {
       renderCircleOverlay(chalkCtx, state.circData);
     }
+
+    // Rectangle overlay
+    if (state.curMode === 'area_rect' && state.rectData) {
+      renderAreaRectOverlay(chalkCtx, state.rectData);
+    }
+
+    // Parallelogram overlay
+    if (state.curMode === 'area_para' && state.paraData) {
+      renderAreaParaOverlay(chalkCtx, state.paraData);
+    }
+
+    // Same P=16 overlay
+    if (state.curMode === 'same_p16') {
+      renderSameP16Overlay(chalkCtx, w, h);
+    }
+
+    // Polyomino overlay
+    if (state.curMode === 'area_poly' && state.polyData) {
+      renderAreaPolyOverlay(chalkCtx, state.polyData);
+    }
+
+    // The answer to a handwritten line, chalked underneath it
+    if (state.inkAnswer && state.curMode !== 'graph') {
+      chalkCtx.fillStyle = '#facc15';
+      chalkCtx.font = 'bold 20px system-ui, sans-serif';
+      chalkCtx.textAlign = 'left';
+      chalkCtx.textBaseline = 'top';
+      chalkCtx.fillText(state.inkAnswer.text, Math.max(8, state.inkAnswer.x), Math.min(h - 28, state.inkAnswer.y));
+    }
   }
 
   function renderTriangleOverlay(ctx, tri) {
@@ -1321,13 +1589,248 @@
     ctx.fillText('r=' + circ.r, circ.cx + circ.r / 2, circ.cy - 6);
   }
 
+  function renderAreaRectOverlay(ctx, r) {
+    var scale = 30;
+    var x = r.x, y = r.y, w = r.w, h = r.h;
+    var lU = Math.max(1, Math.round((w / scale) * 10) / 10);
+    var wU = Math.max(1, Math.round((h / scale) * 10) / 10);
+
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+    ctx.fillRect(x, y, w, h);
+
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
+    ctx.lineWidth = 1;
+    for (var gx = x + scale; gx < x + w - 2; gx += scale) {
+      ctx.beginPath(); ctx.moveTo(gx, y); ctx.lineTo(gx, y + h); ctx.stroke();
+    }
+    for (var gy = y + scale; gy < y + h - 2; gy += scale) {
+      ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy); ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('ℓ = ' + lU, x + w / 2, y - 6);
+    ctx.textBaseline = 'top';
+    ctx.fillText('ℓ = ' + lU, x + w / 2, y + h + 6);
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('w = ' + wU, x - 8, y + h / 2);
+    ctx.textAlign = 'left';
+    ctx.fillText('w = ' + wU, x + w + 8, y + h / 2);
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 14px system-ui';
+    ctx.fillText('Area = ' + (lU * wU).toFixed(1) + ' sq units', x + w / 2, y + h / 2 - 8);
+    ctx.font = '12px system-ui';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillText('P = 2(' + lU + ' + ' + wU + ') = ' + (2 * (lU + wU)).toFixed(1), x + w / 2, y + h / 2 + 12);
+
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(x + w, y + h, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function renderAreaParaOverlay(ctx, p) {
+    var scale = 28;
+    var x = p.x, y = p.y, b = p.b, h = p.h, s = p.s;
+    var bU = Math.max(1, Math.round((b / scale) * 10) / 10);
+    var hU = Math.max(1, Math.round((h / scale) * 10) / 10);
+    var sU = Math.round((s / scale) * 10) / 10;
+    var slantC = Math.sqrt(hU * hU + sU * sU).toFixed(2);
+
+    var x0 = x, y0 = y;
+    var x1 = x + b, y1 = y;
+    var x2 = x + b + s, y2 = y - h;
+    var x3 = x + s, y3 = y - h;
+
+    ctx.fillStyle = 'rgba(13, 148, 136, 0.18)';
+    ctx.beginPath();
+    ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.lineTo(x3, y3);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#0d9488';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x3, y0);
+    ctx.lineTo(x3, y3);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    var sz = 8;
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x3, y0 - sz, sz, sz);
+
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(' h = ' + hU + ' (altitude)', x3 + 10, y0 - h / 2);
+
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Base b = ' + bU, x0 + b / 2, y0 + 16);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText('c = ' + slantC, (x1 + x2) / 2 + 14, (y1 + y2) / 2);
+
+    ctx.strokeStyle = '#ea580c';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x1, y0);
+    ctx.lineTo(x1, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(x2, y2, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function renderSameP16Overlay(ctx, w, h) {
+    var u = 22;
+    var topY = 60;
+    var sqX = 40;
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('Compact: 4×4 Square', sqX, topY - 14);
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText('Perimeter = 16 units | Area = 16 sq units', sqX, topY + 4 * u + 20);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px system-ui';
+    ctx.fillText('Shared inner seams: 24 pairs (fuses area inside)', sqX, topY + 4 * u + 38);
+
+    for (var r = 0; r < 4; r++) {
+      for (var c = 0; c < 4; c++) {
+        var cx = sqX + c * u, cy = topY + r * u;
+        ctx.fillStyle = 'rgba(234, 88, 12, 0.4)';
+        ctx.fillRect(cx, cy, u, u);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx, cy, u, u);
+      }
+    }
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 3.5;
+    ctx.strokeRect(sqX, topY, 4 * u, 4 * u);
+
+    var stX = sqX + 4 * u + 50;
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('Stretched: 1×7 Strip', stX, topY - 14);
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText('Perimeter = 16 units | Area = 7 sq units', stX, topY + 4 * u + 20);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px system-ui';
+    ctx.fillText('Shared inner seams: only 6 pairs (wastes fence outside)', stX, topY + 4 * u + 38);
+
+    for (var sc = 0; sc < 7; sc++) {
+      var scx = stX + sc * u, scy = topY + 1.5 * u;
+      ctx.fillStyle = 'rgba(14, 165, 233, 0.4)';
+      ctx.fillRect(scx, scy, u, u);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(scx, scy, u, u);
+    }
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 3.5;
+    ctx.strokeRect(stX, topY + 1.5 * u, 7 * u, u);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 12px system-ui';
+    ctx.fillText('⭐ Proof: Compact square holds 2.3× area of strip with the same 16-unit fence!', sqX, topY + 4 * u + 65);
+  }
+
+  function renderAreaPolyOverlay(ctx, poly) {
+    if (!poly || !poly.cells) return;
+    var cells = poly.cells;
+    var u = 24;
+    var offsetX = 60, offsetY = 50;
+    var cellSet = {};
+    cells.forEach(function (c) { cellSet[c[0] + ',' + c[1]] = true; });
+
+    cells.forEach(function (c) {
+      var r = c[0], col = c[1];
+      var px = offsetX + col * u, py = offsetY + r * u;
+      ctx.fillStyle = 'rgba(234, 88, 12, 0.75)';
+      ctx.fillRect(px, py, u, u);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, py, u, u);
+
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3.5;
+      if (!cellSet[(r - 1) + ',' + col]) {
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + u, py); ctx.stroke();
+      }
+      if (!cellSet[(r + 1) + ',' + col]) {
+        ctx.beginPath(); ctx.moveTo(px, py + u); ctx.lineTo(px + u, py + u); ctx.stroke();
+      }
+      if (!cellSet[r + ',' + (col - 1)]) {
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + u); ctx.stroke();
+      }
+      if (!cellSet[r + ',' + (col + 1)]) {
+        ctx.beginPath(); ctx.moveTo(px + u, py); ctx.lineTo(px + u, py + u); ctx.stroke();
+      }
+    });
+  }
+
   /* ── 11. Sub-Panels & Tools ── */
+  var panelKind = '';
+
   function openPanel(kind) {
     if (!subPanel) return;
     subPanel.hidden = false;
+    panelKind = kind;
 
     if (kind === 'triangle') {
       updateTrianglePanel();
+    } else if (kind === 'area_rect') {
+      updateAreaRectPanel();
+    } else if (kind === 'area_para') {
+      updateAreaParaPanel();
+    } else if (kind === 'same_p16') {
+      subContent.innerHTML =
+        '<div class="smart-wb-panel-row">' +
+          '<strong>Same Perimeter (P = 16) Proof:</strong>' +
+          '<span>Square (4×4): Area = 16, Shared Inner Edges = 24 pairs</span>' +
+          '<span>Strip (1×7): Area = 7, Shared Inner Edges = 6 pairs</span>' +
+        '</div>' +
+        '<div class="smart-wb-math-result">' +
+          '⭐ Isoperimetric Theorem: For fixed boundary fence P, compact shapes minimize exposed surface and maximize internal area!' +
+        '</div>';
+    } else if (kind === 'area_poly') {
+      updateAreaPolyPanel();
     } else if (kind === 'circle') {
       var c = state.circData;
       subContent.innerHTML =
@@ -1343,128 +1846,172 @@
       subContent.innerHTML =
         '<div class="smart-wb-panel-row">' +
           '<strong>Function:</strong>' +
-          '<input type="text" class="smart-wb-input" id="swb-graph-in" value="' + state.graphEq + '" />' +
+          '<input type="text" class="smart-wb-input" id="swb-graph-in" aria-label="Equation to graph" value="' + esc(state.graphEq) + '" />' +
           '<button type="button" class="smart-wb-btn" id="swb-graph-btn">Plot</button>' +
         '</div>' +
         '<div class="smart-wb-math-result" id="swb-graph-res">' +
-          'Roots: x = -2, 2 | y-intercept: (0, -4) | Vertex: (0, -4)' +
+          esc(brainReady() ? graphFacts(currentGraph()) : 'Working it out…') +
         '</div>';
 
-      dockEl.querySelector('#swb-graph-btn').addEventListener('click', function () {
-        state.graphEq = dockEl.querySelector('#swb-graph-in').value;
-        redraw();
-      });
+      var graphIn = dockEl.querySelector('#swb-graph-in');
+      var plot = function () { runMath(graphIn.value, { source: 'typed' }); };
+      dockEl.querySelector('#swb-graph-btn').addEventListener('click', plot);
+      graphIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); plot(); } });
     } else if (kind === '3d') {
-      var solidName = state.curMode.replace('3d_', '').toUpperCase();
-      subContent.innerHTML =
-        '<div class="smart-wb-panel-row">' +
-          '<strong>' + solidName + ' Deconstruction:</strong>' +
-          '<label style="display:flex;align-items:center;gap:6px;flex:1;">Net Unfold:' +
-            '<input type="range" class="smart-wb-range" id="swb-unfold-rng" min="0" max="1" step="0.01" value="' + state.unfoldPct + '"/>' +
-          '</label>' +
-          '<label style="display:flex;align-items:center;gap:6px;flex:1;">Slice Plane:' +
-            '<input type="range" class="smart-wb-range" id="swb-slice-rng" min="0" max="1" step="0.01" value="' + state.sliceY + '"/>' +
-          '</label>' +
-        '</div>' +
-        '<div class="smart-wb-math-result">' +
-          'Surface Area Net Deconstruction & Cross-Section Slices active. Drag 3D view to rotate.' +
+      var key = state.curMode.replace('3d_', '');
+      var presets = SLICE_PRESETS[key];
+      var picks = [['cube', 'Cube'], ['cylinder', 'Cylinder'], ['cone', 'Cone'], ['sphere', 'Sphere'], ['composite', 'Cone on a cylinder']];
+      var html =
+        '<div class="smart-wb-panel-row smart-wb-wrap">' +
+          '<strong>Solid:</strong>' +
+          picks.map(function (p) {
+            return '<button type="button" class="smart-wb-chip' + (p[0] === key ? ' is-on' : '') + '" data-solid="' + p[0] + '">' + p[1] + '</button>';
+          }).join('') +
         '</div>';
+      function slider(label, field, min, max, step, value, unit) {
+        return '<label class="smart-wb-slider">' + label +
+          '<input type="range" class="smart-wb-range" data-field="' + field + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + value + '"/>' +
+          '<output>' + num(value, 2) + unit + '</output></label>';
+      }
+      if (key === 'surface') {
+        html += '<div class="smart-wb-math-result" id="swb-slice-res">' + esc(state.surface ? state.surface.text : '') +
+          ' for x and y from −3 to 3. Colour shows height: blue is low, red is high. Drag the picture to turn it.</div>';
+      } else if (presets) {
+        html +=
+          '<div class="smart-wb-panel-row smart-wb-wrap">' +
+            '<strong>Cut it into a:</strong>' +
+            presets.map(function (p, i) { return '<button type="button" class="smart-wb-chip" data-cut="' + i + '">' + p[0] + '</button>'; }).join('') +
+          '</div>' +
+          '<div class="smart-wb-panel-row smart-wb-wrap">' +
+            slider('Tilt', 'tilt', 0, 90, 1, state.slice.tilt, '°') +
+            slider('Turn', 'spin', 0, 180, 1, state.slice.spin, '°') +
+            slider('Slide', 'offset', -1, 1, 0.02, state.slice.offset, '') +
+            (key === 'cube' || key === 'cone' ? slider('Unfold', 'unfold', 0, 1, 0.01, state.unfoldPct, '') : '') +
+          '</div>' +
+          '<div class="smart-wb-math-result" id="swb-slice-res">Cross-section: working it out…</div>';
+      } else {
+        html +=
+          '<div class="smart-wb-panel-row smart-wb-wrap">' + slider('Pull apart', 'explode', 0, 1, 0.01, state.explodeJoint, '') + '</div>' +
+          '<div class="smart-wb-math-result">A cone on a cylinder: pull them apart to see the hidden circle where they join. Drag the picture to turn it.</div>';
+      }
+      subContent.innerHTML = readRow() + html;
+      wireReadRow();
 
-      dockEl.querySelector('#swb-unfold-rng').addEventListener('input', function (e) {
-        state.unfoldPct = parseFloat(e.target.value);
-        render3D();
+      subContent.querySelectorAll('[data-solid]').forEach(function (btn) {
+        btn.addEventListener('click', function () { switchTo3DMode('3d_' + btn.dataset.solid); });
       });
-      dockEl.querySelector('#swb-slice-rng').addEventListener('input', function (e) {
-        state.sliceY = parseFloat(e.target.value);
-        render3D();
+      subContent.querySelectorAll('[data-cut]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var p = presets[+btn.dataset.cut];
+          state.slice = { tilt: p[1], spin: p[2], offset: p[3] };
+          openPanel('3d');
+          render3D();
+        });
+      });
+      subContent.querySelectorAll('[data-field]').forEach(function (input) {
+        input.addEventListener('input', function () {
+          var v = parseFloat(input.value);
+          var field = input.dataset.field;
+          if (field === 'unfold') state.unfoldPct = v;
+          else if (field === 'explode') state.explodeJoint = v;
+          else state.slice[field] = v;
+          input.nextElementSibling.textContent = num(v, 2) + (field === 'tilt' || field === 'spin' ? '°' : '');
+          render3D();
+        });
       });
     } else if (kind === 'solve') {
-      subContent.innerHTML =
-        '<div class="smart-wb-panel-row">' +
-          '<strong>Solve:</strong>' +
-          '<input type="text" class="smart-wb-input" id="swb-solve-in" placeholder="e.g. 2x + 5 = 15 or 3/4 + 5/8" />' +
-          '<button type="button" class="smart-wb-btn" id="swb-solve-btn">Solve</button>' +
-        '</div>' +
+      subContent.innerHTML = solveRow('') +
         '<div class="smart-wb-math-result" id="swb-solve-res">' +
-          'Type any arithmetic, fraction, or algebraic equation to solve step-by-step.' +
+          'Type arithmetic, fractions, an equation in x, or a chemical equation to balance.' +
         '</div>';
-
-      dockEl.querySelector('#swb-solve-btn').addEventListener('click', solveProblem);
+      wireSolveRow();
     }
+  }
+
+  function solveRow(value) {
+    return '<div class="smart-wb-panel-row">' +
+        '<strong>Solve:</strong>' +
+        '<input type="text" class="smart-wb-input" id="swb-solve-in" aria-label="Problem to solve" value="' + esc(value) + '" placeholder="e.g. 2x + 5 = 15, 3/4 + 5/8 or H2 + O2 = H2O" />' +
+        '<button type="button" class="smart-wb-btn" id="swb-solve-btn">Solve</button>' +
+      '</div>';
+  }
+
+  function wireSolveRow() {
+    var input = dockEl.querySelector('#swb-solve-in');
+    if (!input) return;
+    dockEl.querySelector('#swb-solve-btn').addEventListener('click', solveProblem);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); solveProblem(); } });
   }
 
   function solveProblem() {
     var val = (dockEl.querySelector('#swb-solve-in').value || '').trim();
-    var resEl = dockEl.querySelector('#swb-solve-res');
     if (!val) return;
+    runMath(val, { source: 'solver' });
+  }
 
-    // Linear equation solver ax + b = c
-    var linMatch = val.match(/^([+-]?\d*)x\s*([+-]\s*\d+)?\s*=\s*([+-]?\d+)$/i);
-    if (linMatch) {
-      var a = linMatch[1] === '' || linMatch[1] === '+' ? 1 : (linMatch[1] === '-' ? -1 : parseFloat(linMatch[1]));
-      var b = linMatch[2] ? parseFloat(linMatch[2].replace(/\s+/g, '')) : 0;
-      var c = parseFloat(linMatch[3]);
-      var x = (c - b) / a;
-      resEl.textContent = 'Step 1: Subtract ' + b + ' → ' + a + 'x = ' + (c - b) + '\nStep 2: Divide by ' + a + ' → x = ' + x;
-      return;
-    }
+  function selectTool(tool) {
+    state.curTool = tool;
+    dockEl.querySelectorAll('[data-tool]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tool === tool);
+    });
 
-    // Arithmetic evaluate
-    try {
-      var clean = val.replace(/\^/g, '**').replace(/sqrt\(/g, 'Math.sqrt(');
-      var ans = Function('return ' + clean + ';')();
-      resEl.textContent = 'Result: ' + val + ' = ' + ans;
-    } catch (_) {
-      resEl.textContent = 'Could not parse: ' + val + '. Try e.g. "3x + 4 = 19" or "sqrt(144) + 5"';
+    if (tool === 'shape') {
+      switchTo3DMode('3d_cube');
+    } else if (tool === 'graph') {
+      exit3DMode();
+      state.curMode = 'graph';
+      openPanel('graph');
+      redraw();
+    } else if (tool === 'solve') {
+      exit3DMode();
+      openPanel('solve');
+    } else {
+      exit3DMode();
+      if (tool === 'write') {
+        loadBrain();
+        setDetectBanner('✍️ Write an equation in print, like y = x² − 4 or 2x + 5 = 15, then pause');
+      }
     }
+  }
+
+  function clearBoard() {
+    resetInk();
+    lastRead = null;
+    state.strokes = [];
+    state.counters = [];
+    state.triData = null;
+    state.circData = null;
+    state.inkAnswer = null;
+    state.curMode = 'draw';
+    exit3DMode();
+    if (subPanel) subPanel.hidden = true;
+    setDetectBanner('🧹 Blackboard cleared');
+    redraw();
+  }
+
+  function undoLast() {
+    if (state.strokes.length) {
+      var gone = state.strokes.pop();
+      var at = ink.records.indexOf(gone);
+      if (at >= 0) { ink.records.splice(at, 1); ink.strokes.splice(at, 1); state.inkAnswer = null; }
+    } else if (state.counters.length) state.counters.pop();
+    redraw();
   }
 
   function setupToolbar() {
     dockEl.querySelector('.smart-wb-toolbar').addEventListener('click', function (e) {
       var toolBtn = e.target.closest('[data-tool]');
-      if (toolBtn) {
-        state.curTool = toolBtn.dataset.tool;
-        dockEl.querySelectorAll('[data-tool]').forEach(function (b) {
-          b.classList.toggle('active', b === toolBtn);
-        });
-
-        if (state.curTool === 'shape') {
-          switchTo3DMode('3d_cube');
-        } else if (state.curTool === 'graph') {
-          exit3DMode();
-          state.curMode = 'graph';
-          openPanel('graph');
-          redraw();
-        } else if (state.curTool === 'solve') {
-          exit3DMode();
-          openPanel('solve');
-        } else {
-          exit3DMode();
-        }
-      }
+      if (toolBtn) selectTool(toolBtn.dataset.tool);
 
       var actionBtn = e.target.closest('[data-action]');
       if (actionBtn) {
         var act = actionBtn.dataset.action;
-        if (act === 'clear') {
-          state.strokes = [];
-          state.counters = [];
-          state.triData = null;
-          state.circData = null;
-          state.curMode = 'draw';
-          exit3DMode();
-          if (subPanel) subPanel.hidden = true;
-          setDetectBanner('🧹 Blackboard cleared');
-          redraw();
-        } else if (act === 'undo') {
-          if (state.strokes.length) state.strokes.pop();
-          else if (state.counters.length) state.counters.pop();
-          redraw();
-        } else if (act === 'insert') {
-          insertSolutionIntoPage();
-        } else if (act === 'voice') {
-          speakExplanation();
-        }
+        if (act === 'clear') clearBoard();
+        else if (act === 'undo') undoLast();
+        else if (act === 'insert') insertSolutionIntoPage();
+        else if (act === 'voice') speakExplanation();
+        else if (act === 'record') { if (rec) stopRecording(); else openRecordPanel(); }
+        else if (act === 'summary') showSummary();
       }
     });
   }
@@ -1473,9 +2020,17 @@
     dockEl.querySelector('.smart-wb-chips').addEventListener('click', function (e) {
       var chip = e.target.closest('.smart-wb-chip');
       if (!chip) return;
-      var act = chip.dataset.action;
+      runChip(chip.dataset.action);
+    });
+  }
 
-      if (act === 'triangle') {
+  function runChip(act) {
+    {
+      if (act.indexOf('ask:') === 0) {
+        handleCommand(act.slice(4), 'typed');
+      } else if (act.indexOf('write:') === 0) {
+        writeDemo(act.slice(6));
+      } else if (act === 'triangle') {
         state.curMode = 'triangle';
         state.triData = {
           pts: [
@@ -1488,11 +2043,61 @@
         updateTriangleAnalysis();
         openPanel('triangle');
         redraw();
+      } else if (act === 'area_rect') {
+        state.curMode = 'area_rect';
+        state.rectData = { x: 140, y: 100, w: 240, h: 160 };
+        exit3DMode();
+        updateAreaRectAnalysis();
+        openPanel('area_rect');
+        setDetectBanner('✨ Loaded Rectangle: ℓ = 8, w = 5.3 → Area = 42.7 sq units | Perimeter = 26.7 units');
+        redraw();
+      } else if (act === 'area_para') {
+        state.curMode = 'area_para';
+        state.paraData = { x: 110, y: 220, b: 200, h: 112, s: 56 };
+        exit3DMode();
+        updateAreaParaAnalysis();
+        openPanel('area_para');
+        setDetectBanner('✨ Loaded Parallelogram: b = 7.1, h = 4.0 → Area = 28.4 sq units | Slant c = 4.5');
+        redraw();
+      } else if (act === 'same_p16') {
+        state.curMode = 'same_p16';
+        exit3DMode();
+        openPanel('same_p16');
+        setDetectBanner('✨ Same Perimeter (P = 16) Comparison: Compact 4×4 (A=16) vs Stretched 1×7 (A=7)');
+        redraw();
+      } else if (act === 'area_poly') {
+        state.curMode = 'area_poly';
+        exit3DMode();
+        state.polyData = {
+          cells: [
+            [2, 3], [2, 4], [2, 5],
+            [3, 3], [3, 4], [3, 5],
+            [4, 3], [4, 4]
+          ],
+          size: 10
+        };
+        openPanel('area_poly');
+        setDetectBanner('✨ Polyomino: 8 squares · Exterior perimeter highlighted in glowing yellow');
+        redraw();
       } else if (act === 'circle') {
         state.curMode = 'circle';
         state.circData = { cx: 250, cy: 160, r: 80 };
         exit3DMode();
         openPanel('circle');
+        redraw();
+      } else if (act === 'tangent') {
+        state.curMode = 'graph';
+        state.graphEq = 'y = x^2';
+        exit3DMode();
+        openPanel('graph');
+        setDetectBanner('⚡ Tangent dy/dx: Parabola y = x² · Tangent slope at x₀ is f\'(x₀) = 2x₀');
+        redraw();
+      } else if (act === 'integral') {
+        state.curMode = 'graph';
+        state.graphEq = 'y = x^2';
+        exit3DMode();
+        openPanel('graph');
+        setDetectBanner('∫ Area Under Curve: Accumulating Riemann slices ∫ x² dx = ⅓ x³');
         redraw();
       } else if (act === 'graph' || act === 'axes') {
         state.curMode = 'graph';
@@ -1523,7 +2128,7 @@
         exit3DMode();
         openPanel('solve');
       }
-    });
+    }
   }
 
   function insertSolutionIntoPage() {
@@ -1548,12 +2153,877 @@
   }
 
   function speakExplanation() {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    var text = (detectBanner ? detectBanner.textContent : 'AI Blackboard').replace(/[✨📐📦📈🧮🔘📝]/g, '');
+    if (!('speechSynthesis' in window)) {
+      setDetectBanner('🔊 This browser cannot read aloud.');
+      return;
+    }
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    var text = detectBanner ? detectBanner.textContent : 'AI Blackboard';
+    var result = subPanel && !subPanel.hidden ? subContent.querySelector('.smart-wb-math-result') : null;
+    if (result && result.textContent.trim()) text += '. ' + result.textContent;
+    text = text.replace(/→/g, ' gives ')
+      .replace(/[\u2190-\u21FF\u2300-\u23FF\u2600-\u27BF\uFE0F]|[\uD83C-\uDBFF][\uDC00-\uDFFF]/g, ' ')
+      .replace(/\s+/g, ' ');
     var utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1.0;
+    utter.onend = utter.onerror = function () { setSpeaking(false); };
+    setSpeaking(true);
     window.speechSynthesis.speak(utter);
+  }
+
+  /* ── 11b. The board's brain: handwriting, commands, voice, lookup, recording, notes ──
+   * The thinking lives in three DOM-free files under smart-board/ (board-math.js,
+   * ink-recognizer.js, board-assist.js); this section is the wiring. Everything runs in the
+   * browser. The only thing that can leave it is voice input, which uses the browser's own
+   * speech service and is off until the teacher turns it on. */
+  var brainState = 'idle';
+  var brainWaiters = [];
+
+  function brainReady() {
+    return !!(window.BoardMath && window.InkRecognizer && window.BoardAssist);
+  }
+
+  function loadBrain(cb) {
+    if (brainReady()) { brainState = 'ready'; if (cb) cb(); return; }
+    if (cb) brainWaiters.push(cb);
+    if (brainState === 'loading') return;
+    brainState = 'loading';
+    var names = ['board-math.js', 'ink-recognizer.js', 'board-assist.js'];
+    var left = names.length;
+    names.forEach(function (name) {
+      var s = document.createElement('script');
+      s.src = SCRIPT_SRC ? new URL('smart-board/' + name, SCRIPT_SRC).href : '/assets/js/smart-board/' + name;
+      s.onload = function () {
+        if (--left > 0) return;
+        brainState = 'ready';
+        var waiting = brainWaiters;
+        brainWaiters = [];
+        waiting.forEach(function (fn) { fn(); });
+        if (state.curMode.indexOf('3d') === 0) render3D(); else redraw();
+        if (panelKind === 'graph' && subPanel && !subPanel.hidden) openPanel('graph');
+      };
+      s.onerror = function () {
+        brainState = 'failed';
+        setDetectBanner('The board could not load its maths helpers. Check the connection, then reopen the board.');
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function esc(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function num(v, places) {
+    var p = Math.pow(10, places == null ? 2 : places);
+    return String(Math.round(v * p) / p);
+  }
+
+  /* Session log: what the class summary and the recording are built from. */
+  var events = [];
+  var sessionStart = 0;
+  var snapshotTimer = null;
+
+  function logEvent(kind, text, detail) {
+    if (!sessionStart) sessionStart = Date.now();
+    var last = events[events.length - 1];
+    var ev;
+    if (last && last.kind === kind && last.text === text) { ev = last; ev.detail = detail; }
+    else { ev = { t: Date.now() - sessionStart, kind: kind, text: text, detail: detail || '' }; events.push(ev); }
+    if (kind === 'said' || kind === 'lookup') return;
+    if (snapshotTimer) clearTimeout(snapshotTimer);
+    snapshotTimer = setTimeout(function () {
+      var withPictures = events.filter(function (e) { return e.image; }).length;
+      if (withPictures >= 16 && !ev.image) return;
+      try { ev.image = snapshot(420); } catch (_) {}
+    }, 180);
+  }
+
+  function paintComposite(ctx, w, h, withBanner) {
+    ctx.fillStyle = '#0f141c';
+    ctx.fillRect(0, 0, w, h);
+    var src = threeCanvas.classList.contains('active') ? threeCanvas : chalkCanvas;
+    if (src.width && src.height) ctx.drawImage(src, 0, 0, w, h);
+    if (!withBanner || !detectBanner) return;
+    var size = Math.max(11, Math.round(w / 52));
+    ctx.fillStyle = 'rgba(18, 24, 34, 0.9)';
+    ctx.fillRect(0, 0, w, size * 2.1);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '600 ' + size + 'px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(detectBanner.textContent, size * 0.8, size * 1.05, w - size * 1.6);
+  }
+
+  function snapshot(width) {
+    var stage = dockEl.querySelector('.smart-wb-stage');
+    var ratio = stage.clientHeight / Math.max(1, stage.clientWidth);
+    var c = document.createElement('canvas');
+    c.width = width;
+    c.height = Math.max(120, Math.round(width * ratio));
+    paintComposite(c.getContext('2d'), c.width, c.height, true);
+    return c.toDataURL('image/jpeg', 0.62);
+  }
+
+  /* ── Maths from a line of text (typed, spoken or handwritten) ── */
+  var lastRead = null; // { text, source: 'ink' } while the panel should offer a correction box
+  var graphCache = { src: null, res: null };
+
+  function currentGraph() {
+    if (!window.BoardMath) return null;
+    if (graphCache.src !== state.graphEq) {
+      graphCache = { src: state.graphEq, res: window.BoardMath.interpret(state.graphEq) };
+    }
+    var r = graphCache.res;
+    return r && (r.kind === 'graph' || r.kind === 'implicit') ? r : null;
+  }
+
+  function graphFacts(res) {
+    if (!res) return 'That is not something the board can graph yet. Try y = x^2 - 4, y = sin(x) or x^2 + y^2 = 25.';
+    if (res.kind === 'implicit') return 'Every point (x, y) that makes ' + res.text + ' true.';
+    var a = res.analysis, bits = [];
+    var roots = a.roots.filter(function (r) { return Math.abs(r) <= 12; });
+    bits.push(roots.length ? 'Crosses the x-axis at x = ' + roots.slice(0, 6).join(', ') + (roots.length > 6 ? ', …' : '') : 'Never crosses the x-axis here');
+    if (a.yIntercept != null) bits.push('y-intercept (0, ' + a.yIntercept + ')');
+    a.turning.filter(function (t) { return Math.abs(t.x) <= 12; }).slice(0, 3).forEach(function (t) {
+      bits.push((t.kind === 'min' ? 'Lowest' : 'Highest') + ' turning point (' + t.x + ', ' + t.y + ')');
+    });
+    return bits.join(' | ');
+  }
+
+  function readRow() {
+    if (!lastRead || lastRead.source !== 'ink') return '';
+    return '<div class="smart-wb-panel-row">' +
+        '<strong>I read:</strong>' +
+        '<input type="text" class="smart-wb-input" id="swb-read-in" aria-label="What the board read from your handwriting" value="' + esc(lastRead.text) + '" />' +
+        '<button type="button" class="smart-wb-btn" id="swb-read-btn">Use this</button>' +
+      '</div>';
+  }
+
+  function wireReadRow() {
+    var btn = dockEl.querySelector('#swb-read-btn');
+    var input = dockEl.querySelector('#swb-read-in');
+    if (!btn || !input) return;
+    function go() { runMath(input.value, { source: 'ink', corrected: true }); }
+    btn.addEventListener('click', go);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+  }
+
+  function showResult(html, fromSolver) {
+    if (!subPanel) return;
+    subPanel.hidden = false;
+    var typed = fromSolver && dockEl.querySelector('#swb-solve-in');
+    subContent.innerHTML = (typed ? solveRow(typed.value) : readRow()) + html;
+    if (typed) wireSolveRow(); else { wireReadRow(); panelKind = 'result'; }
+  }
+
+  function inkToAnswer(answer) {
+    if (ink.box && ink.records.length) state.inkAnswer = { x: ink.box.minX, y: ink.box.maxY + 30, text: answer };
+  }
+
+  function consumeInk() {
+    state.strokes = state.strokes.filter(function (s) { return ink.records.indexOf(s) < 0; });
+    resetInk();
+  }
+
+  function runMath(text, opts) {
+    opts = opts || {};
+    if (!brainReady()) { loadBrain(function () { runMath(text, opts); }); return; }
+    var res = window.BoardMath.interpret(text);
+    var fromInk = opts.source === 'ink';
+    if (!fromInk) lastRead = null;
+    var prefix = fromInk ? '✍️ Read “' + text + '” → ' : '✨ ';
+    var keep = opts.source === 'solver';
+
+    if (res.kind === 'graph' || res.kind === 'implicit') {
+      if (fromInk) consumeInk();
+      state.curMode = 'graph';
+      state.graphEq = res.text;
+      exit3DMode();
+      state.curMode = 'graph';
+      openPanel('graph');
+      setDetectBanner(prefix + 'Graph of ' + res.text);
+      logEvent('graph', res.text, graphFacts(res));
+      redraw();
+      return res;
+    }
+    if (res.kind === 'surface') {
+      if (fromInk) consumeInk();
+      state.surface = { fn: res.fn, text: res.text };
+      switchTo3DMode('3d_surface');
+      setDetectBanner(prefix + '3D surface ' + res.text + ' · drag to rotate');
+      logEvent('graph', res.text, 'a 3D surface');
+      return res;
+    }
+    exit3DMode();
+    if (res.kind === 'solve') {
+      var ans = res.roots.length ? 'x = ' + res.roots.join(' or x = ') : 'no real solution';
+      setDetectBanner(prefix + res.equation + '  →  ' + ans);
+      showResult('<div class="smart-wb-math-result"><strong>' + esc(res.equation) + '</strong><br>' +
+        res.steps.map(function (st, i) { return 'Step ' + (i + 1) + ': ' + esc(st); }).join('<br>') + '</div>', keep);
+      if (fromInk) inkToAnswer(ans);
+      logEvent('solve', res.equation, ans);
+    } else if (res.kind === 'arithmetic') {
+      var val = res.fraction && res.fraction !== String(res.value) ? res.fraction + ' = ' + res.value : String(res.value);
+      setDetectBanner(prefix + res.text + ' = ' + val);
+      showResult('<div class="smart-wb-math-result">' + esc(res.text) + ' = <strong>' + esc(val) + '</strong></div>', keep);
+      if (fromInk) inkToAnswer('= ' + val);
+      logEvent('solve', res.text, '= ' + val);
+    } else if (res.kind === 'check') {
+      var verdict = res.isTrue ? 'True: both sides are ' + res.left : 'Not true: the left side is ' + res.left + ', the right side is ' + res.right;
+      setDetectBanner(prefix + res.text + ' · ' + verdict);
+      showResult('<div class="smart-wb-math-result">' + esc(res.text) + '<br><strong>' + esc(verdict) + '</strong></div>', keep);
+      if (fromInk) inkToAnswer(res.isTrue ? '✓ true' : '✗ ' + res.left + ' ≠ ' + res.right);
+      logEvent('solve', res.text, verdict);
+    } else if (res.kind === 'chem') {
+      if (res.ok) {
+        setDetectBanner(prefix + 'Balanced: ' + res.balanced);
+        showResult('<div class="smart-wb-math-result"><strong>' + esc(res.balanced) + '</strong><br>' +
+          'Atoms on each side: ' + res.atoms.map(function (a) { return esc(a.el) + ' ' + a.left + ' = ' + a.right; }).join(' · ') + '</div>', keep);
+        if (fromInk) inkToAnswer(res.balanced);
+        logEvent('chem', res.balanced, res.atoms.map(function (a) { return a.el + ' ' + a.left; }).join(', ') + ' atoms each side');
+      } else {
+        setDetectBanner(prefix + 'That equation cannot be balanced as written');
+        showResult('<div class="smart-wb-math-result">' + esc(res.reason) + '</div>', keep);
+      }
+    } else {
+      setDetectBanner(fromInk ? '✍️ I read “' + text + '” but could not make maths of it. Fix it below, or write it again.' : 'The board could not read “' + text + '”. Type help for examples.');
+      if (fromInk) { lastRead = { text: text, source: 'ink' }; showResult(''); }
+    }
+    redraw();
+    return res;
+  }
+
+  /* ── Handwriting (the ✍️ Write tool) ── */
+  var ink = { strokes: [], records: [], box: null, timer: null };
+
+  function resetInk() {
+    if (ink.timer) clearTimeout(ink.timer);
+    ink = { strokes: [], records: [], box: null, timer: null };
+  }
+
+  function strokeBox(pts) {
+    var b = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    pts.forEach(function (p) {
+      b.minX = Math.min(b.minX, p.x); b.maxX = Math.max(b.maxX, p.x);
+      b.minY = Math.min(b.minY, p.y); b.maxY = Math.max(b.maxY, p.y);
+    });
+    return b;
+  }
+
+  function addInkStroke(pts) {
+    var box = strokeBox(pts);
+    if (ink.box) {
+      // A stroke well above or below the line being written starts a new line.
+      var lineH = Math.max(ink.box.maxY - ink.box.minY, 30);
+      var mid = (box.minY + box.maxY) / 2;
+      if (mid < ink.box.minY - lineH * 0.9 || mid > ink.box.maxY + lineH * 0.9) {
+        resetInk();
+        state.inkAnswer = null;
+      }
+    }
+    var record = { tool: 'write', pts: pts, color: state.chalkColor };
+    state.strokes.push(record);
+    ink.strokes.push(pts);
+    ink.records.push(record);
+    ink.box = ink.box ? {
+      minX: Math.min(ink.box.minX, box.minX), minY: Math.min(ink.box.minY, box.minY),
+      maxX: Math.max(ink.box.maxX, box.maxX), maxY: Math.max(ink.box.maxY, box.maxY)
+    } : box;
+    if (ink.timer) clearTimeout(ink.timer);
+    ink.timer = setTimeout(readInk, 950);
+  }
+
+  function readInk() {
+    ink.timer = null;
+    if (!ink.strokes.length) return;
+    if (!brainReady()) { loadBrain(readInk); return; }
+    var read = window.InkRecognizer.readLine(ink.strokes);
+    var meaning = read.text ? window.BoardMath.interpret(read.text) : { kind: 'unknown' };
+    if (read.confidence >= 0.4 && meaning.kind !== 'unknown') {
+      lastRead = { text: read.text, source: 'ink' };
+      runMath(read.text, { source: 'ink' });
+      return;
+    }
+    platformHandwriting(function (words) {
+      if (words) {
+        lastRead = { text: words, source: 'ink' };
+        handleCommand(words, 'ink');
+      } else {
+        runMath(read.text, { source: 'ink' });
+      }
+    });
+  }
+
+  // Chromebooks and some other Chrome builds ship an on-device handwriting recogniser that
+  // reads whole words. When the built-in template matcher can't read a line, ask it.
+  function platformHandwriting(done) {
+    if (!navigator.createHandwritingRecognizer || typeof window.HandwritingStroke !== 'function') { done(''); return; }
+    try {
+      navigator.createHandwritingRecognizer({ languages: ['en'] }).then(function (hw) {
+        var drawing = hw.startDrawing({ recognitionType: 'text', alternatives: 1 });
+        ink.strokes.forEach(function (pts) {
+          var st = new window.HandwritingStroke();
+          pts.forEach(function (p, i) { st.addPoint({ x: p.x, y: p.y, t: i * 8 }); });
+          drawing.addStroke(st);
+        });
+        return drawing.getPrediction().then(function (preds) {
+          try { drawing.clear(); hw.finish(); } catch (_) {}
+          done(preds && preds[0] && preds[0].text ? preds[0].text : '');
+        });
+      }).catch(function () { done(''); });
+    } catch (_) { done(''); }
+  }
+
+  var demoTimer = null;
+
+  /** Writes `text` on the board in the built-in hand, then reads it like any handwriting. */
+  function writeDemo(text) {
+    if (!brainReady()) { loadBrain(function () { writeDemo(text); }); return; }
+    if (demoTimer) { clearInterval(demoTimer); demoTimer = null; }
+    selectTool('write');
+    resetInk();
+    state.inkAnswer = null;
+    state.strokes = state.strokes.filter(function (s) { return s.tool !== 'write'; });
+    var stage = dockEl.querySelector('.smart-wb-stage');
+    var size = Math.max(34, Math.min(58, stage.clientWidth / (text.length * 0.62 + 2)));
+    var strokes = window.InkRecognizer.sample(text, { x: 36, y: Math.max(70, stage.clientHeight * 0.3), size: size, jitter: 1.1, seed: Date.now() % 9973 });
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setDetectBanner('✍️ Writing ' + text + ' …');
+    if (still) {
+      strokes.forEach(addInkStroke);
+      redraw();
+      return;
+    }
+    var si = 0, pi = 0;
+    demoTimer = setInterval(function () {
+      if (si >= strokes.length) { clearInterval(demoTimer); demoTimer = null; currentStroke = []; redraw(); return; }
+      pi += 3;
+      currentStroke = strokes[si].slice(0, pi);
+      if (pi >= strokes[si].length) { addInkStroke(strokes[si]); currentStroke = []; si++; pi = 0; }
+      redraw();
+    }, 16);
+  }
+
+  /* ── Cross-sections ── */
+  var SLICE_PRESETS = {
+    cube: [['Square', 0, 0, 0], ['Rectangle', 45, 0, 0], ['Triangle', 54.74, 45, 0.6], ['Hexagon', 54.74, 45, 0]],
+    cylinder: [['Circle', 0, 0, 0], ['Ellipse', 35, 0, 0], ['Rectangle', 90, 0, 0]],
+    cone: [['Circle', 0, 0, 0], ['Ellipse', 35, 0, 0], ['Parabola', 63.43, 0, 0], ['Hyperbola', 80, 0, 0.3], ['Triangle', 90, 0, 0]],
+    sphere: [['Great circle', 0, 0, 0], ['Small circle', 0, 0, 0.6]]
+  };
+  var UNIT_PX = 35; // one board unit in the 3D view
+
+  function solidKey() {
+    var key = state.curMode.replace('3d_', '');
+    return SLICE_PRESETS[key] ? key : null;
+  }
+
+  function renderSection(ctx, proj) {
+    var key = solidKey();
+    if (!key || !window.BoardMath) return;
+    var sec = window.BoardMath.sliceSolid(key, state.slice);
+    if (sec && sec.points.length >= 3) {
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.36)';
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      sec.points.forEach(function (p, i) {
+        var q = proj(p[0] * UNIT_PX, p[1] * UNIT_PX, p[2] * UNIT_PX);
+        if (i === 0) ctx.moveTo(q.px, q.py); else ctx.lineTo(q.px, q.py);
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      if (key === 'cube') {
+        ctx.fillStyle = '#facc15';
+        sec.points.forEach(function (p) {
+          var q = proj(p[0] * UNIT_PX, p[1] * UNIT_PX, p[2] * UNIT_PX);
+          ctx.beginPath(); ctx.arc(q.px, q.py, 3.5, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+      ctx.lineWidth = 2;
+    }
+    var out = dockEl.querySelector('#swb-slice-res');
+    if (out && sec) {
+      var label = window.BoardMath.SOLIDS[key].label;
+      var facts = sec.area > 0
+        ? sec.shape + ' · area ' + num(sec.area) + ' sq units · ' + (sec.radius != null ? 'circumference ' : 'perimeter ') + num(sec.perimeter) + ' units'
+        : sec.shape;
+      out.textContent = 'Cross-section: ' + facts;
+      setDetectBanner('🔪 ' + label + ' cut at ' + num(state.slice.tilt, 1) + '° → ' + facts);
+      logEvent('solid', label + ' cross-section', facts);
+    }
+  }
+
+  function render3DSurface(ctx, proj) {
+    var s = state.surface;
+    if (!s) return;
+    var n = 22, R = 3, S = 27, zCap = 4.5, zScale = S * 0.8;
+    var grid = [], lo = Infinity, hi = -Infinity, i, j;
+    for (i = 0; i <= n; i++) {
+      grid.push([]);
+      for (j = 0; j <= n; j++) {
+        var x = -R + 2 * R * i / n, y = -R + 2 * R * j / n;
+        var z = s.fn(x, y);
+        if (!isFinite(z)) { grid[i].push(null); continue; }
+        var zc = Math.max(-zCap, Math.min(zCap, z));
+        var p = proj(x * S, zc * zScale, y * S);
+        p.z = zc; p.cut = zc !== z;
+        lo = Math.min(lo, zc); hi = Math.max(hi, zc);
+        grid[i].push(p);
+      }
+    }
+    // Axes
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.font = 'bold 12px system-ui';
+    [['x', R * S * 1.25, 0, 0], ['z', 0, zCap * zScale, 0], ['y', 0, 0, R * S * 1.25]].forEach(function (ax) {
+      var a = proj(-ax[1], -ax[2], -ax[3]), b = proj(ax[1], ax[2], ax[3]);
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+      ctx.fillText(ax[0], b.px + 5, b.py);
+    });
+    ctx.lineWidth = 1.5;
+    function seg(a, b) {
+      if (!a || !b || (a.cut && b.cut)) return;
+      var t = hi > lo ? ((a.z + b.z) / 2 - lo) / (hi - lo) : 0.5;
+      ctx.strokeStyle = 'hsl(' + Math.round(205 - 165 * t) + ', 90%, 62%)';
+      ctx.beginPath(); ctx.moveTo(a.px, a.py); ctx.lineTo(b.px, b.py); ctx.stroke();
+    }
+    for (i = 0; i <= n; i++) for (j = 0; j <= n; j++) {
+      if (i < n) seg(grid[i][j], grid[i + 1][j]);
+      if (j < n) seg(grid[i][j], grid[i][j + 1]);
+    }
+  }
+
+  function renderImplicit(ctx, fn, w, h, cx, cy, scale) {
+    var step = 5;
+    var cols = Math.ceil(w / step) + 1, rows = Math.ceil(h / step) + 1;
+    var prev = null;
+    ctx.beginPath();
+    for (var r = 0; r < rows; r++) {
+      var row = new Float64Array(cols);
+      for (var c = 0; c < cols; c++) row[c] = fn((c * step - cx) / scale, (cy - r * step) / scale);
+      if (prev) {
+        for (var k = 0; k < cols - 1; k++) {
+          var a = prev[k], b = prev[k + 1], d = row[k], e = row[k + 1];
+          if (!isFinite(a + b + d + e)) continue;
+          var pts = [];
+          var x0 = k * step, y0 = (r - 1) * step;
+          if ((a < 0) !== (b < 0)) pts.push([x0 + step * a / (a - b), y0]);
+          if ((d < 0) !== (e < 0)) pts.push([x0 + step * d / (d - e), y0 + step]);
+          if ((a < 0) !== (d < 0)) pts.push([x0, y0 + step * a / (a - d)]);
+          if ((b < 0) !== (e < 0)) pts.push([x0 + step, y0 + step * b / (b - e)]);
+          for (var q = 0; q + 1 < pts.length; q += 2) { ctx.moveTo(pts[q][0], pts[q][1]); ctx.lineTo(pts[q + 1][0], pts[q + 1][1]); }
+        }
+      }
+      prev = row;
+    }
+    ctx.stroke();
+  }
+
+  /* ── Commands: the Ask box and the microphone ── */
+  var dataCache = {};
+
+  function loadData(name, cb) {
+    if (dataCache[name]) { cb(dataCache[name]); return; }
+    var url = SITE_ROOT ? new URL('data/' + name + '.json', SITE_ROOT).href : '/data/' + name + '.json';
+    fetch(url).then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (json) { dataCache[name] = json; cb(json); })
+      .catch(function () { setDetectBanner('The board could not load that part of the site. Check the connection.'); });
+  }
+
+  function siteHref(path) {
+    return SITE_ROOT ? new URL(path, SITE_ROOT).href : '/' + path;
+  }
+
+  function showLessons(query, opts) {
+    loadData('lessons', function (catalog) {
+      var hits = window.BoardAssist.searchLessons(catalog.lessons || [], query, 5);
+      if (!hits.length) {
+        setDetectBanner(opts && opts.guessed ? 'The board did not understand “' + query + '”. Type help for what it can do.' : 'No lesson found for “' + query + '”.');
+        return;
+      }
+      exitSolidKeepPanel();
+      setDetectBanner('📚 ' + hits.length + ' lesson' + (hits.length > 1 ? 's' : '') + ' on “' + query + '”');
+      showResult('<div class="smart-wb-lookup"><strong>Lessons on “' + esc(query) + '”</strong><ul>' +
+        hits.map(function (l) {
+          return '<li><a href="' + esc(siteHref(l.url)) + '" target="_blank" rel="noopener">' + esc(l.title) + '</a>' +
+            '<span> · ' + esc(l.primaryModule || '') + '</span><br><small>' + esc((l.summary || '').slice(0, 150)) + '</small></li>';
+        }).join('') + '</ul></div>');
+      logEvent('lookup', 'Lessons on “' + query + '”', hits.map(function (l) { return l.title; }).join('; '));
+    });
+  }
+
+  function showDefinition(term) {
+    loadData('glossary', function (glossary) {
+      var found = window.BoardAssist.findTerm(glossary.terms || glossary, term);
+      if (!found) { showLessons(term, { guessed: false }); return; }
+      exitSolidKeepPanel();
+      setDetectBanner('📖 ' + found.term + ': ' + found.definition);
+      showResult('<div class="smart-wb-math-result"><strong>' + esc(found.term) + '</strong><br>' + esc(found.definition) + '</div>');
+      logEvent('lookup', 'What is ' + found.term + '?', found.definition);
+    });
+  }
+
+  var quizCount = 0;
+
+  function showQuiz(topic) {
+    loadData('daily-double-bank', function (bank) {
+      var seed = Math.floor(Date.now() / 1000) + quizCount++ * 7;
+      var q = window.BoardAssist.pickQuiz(bank.questions || [], topic, seed);
+      if (!q) { setDetectBanner('No quiz question about “' + topic + '” yet. Try: quiz me on gravity, fractions, circuits …'); return; }
+      exitSolidKeepPanel();
+      var choices = q.choices.slice();
+      for (var i = choices.length - 1; i > 0; i--) {
+        seed = (seed * 1103515245 + 12345) % 2147483648;
+        var j = seed % (i + 1);
+        var tmp = choices[i]; choices[i] = choices[j]; choices[j] = tmp;
+      }
+      setDetectBanner('❓ Quiz' + (topic ? ' on ' + topic : '') + ': ' + q.clue);
+      showResult('<div class="smart-wb-quiz"><strong>' + esc(q.category || 'Quiz') + ':</strong> ' + esc(q.clue) +
+        '<div class="smart-wb-quiz-choices">' + choices.map(function (c, n) {
+          return '<button type="button" class="smart-wb-btn smart-wb-choice" data-choice="' + esc(c) + '">' + 'ABCD'.charAt(n) + '. ' + esc(c) + '</button>';
+        }).join('') + '</div><div class="smart-wb-math-result" id="swb-quiz-res" hidden></div></div>');
+      var box = subContent.querySelector('.smart-wb-quiz-choices');
+      box.addEventListener('click', function (e) {
+        var btn = e.target.closest('.smart-wb-choice');
+        if (!btn || box.dataset.done) return;
+        box.dataset.done = '1';
+        var right = btn.dataset.choice === q.answer;
+        box.querySelectorAll('.smart-wb-choice').forEach(function (b) {
+          b.disabled = true;
+          if (b.dataset.choice === q.answer) b.classList.add('is-right');
+          else if (b === btn) b.classList.add('is-wrong');
+        });
+        var res = subContent.querySelector('#swb-quiz-res');
+        res.hidden = false;
+        res.innerHTML = (right ? '✓ Correct. ' : '✗ The answer is ' + esc(q.answer) + '. ') + esc(q.explanation || '') +
+          (q.lesson ? ' <a href="' + esc(siteHref(q.lesson)) + '" target="_blank" rel="noopener">Lesson: ' + esc(q.lessonTitle || 'open') + '</a>' : '') +
+          ' <button type="button" class="smart-wb-btn" id="swb-quiz-next">Another question</button>';
+        res.querySelector('#swb-quiz-next').addEventListener('click', function () { showQuiz(topic); });
+        logEvent('lookup', 'Quiz: ' + q.clue, 'Answer: ' + q.answer + (right ? ' (answered correctly)' : ' (missed)'));
+      });
+    });
+  }
+
+  function showHelp() {
+    exitSolidKeepPanel();
+    setDetectBanner('💡 Type or say any of these. With ✍️ Write, write an equation and pause.');
+    showResult('<div class="smart-wb-lookup"><strong>The board understands:</strong><ul>' +
+      window.BoardAssist.HELP.map(function (line) {
+        return '<li>' + line.split('·').map(function (ex) {
+          return '<button type="button" class="smart-wb-chip" data-ask="' + esc(ex.trim()) + '">' + esc(ex.trim()) + '</button>';
+        }).join(' ') + '</li>';
+      }).join('') +
+      '<li><button type="button" class="smart-wb-chip" data-write="y=x^2-4">✍️ Watch it write y = x² − 4</button> ' +
+      '<button type="button" class="smart-wb-chip" data-write="2H2+O2=2H2O">✍️ Watch it write 2H₂ + O₂ = 2H₂O</button></li>' +
+      '</ul><small>Handwriting reads printed digits, x y, + − = ( ) / and, for chemistry, H C N O. Type anything else.</small></div>');
+  }
+
+  // Leave a 3D solid for the flat board without closing the panel the caller is about to fill.
+  function exitSolidKeepPanel() {
+    if (state.curMode.indexOf('3d') === 0) exit3DMode();
+  }
+
+  function ensureSolid(solid) {
+    var want = solid ? '3d_' + solid : (solidKey() ? state.curMode : '3d_cube');
+    if (state.curMode !== want) switchTo3DMode(want);
+  }
+
+  function handleCommand(text, source) {
+    if (!brainReady()) { loadBrain(function () { handleCommand(text, source); }); return; }
+    var cmd = window.BoardAssist.parseCommand(text);
+    if (cmd.action === 'none') return;
+    if (source === 'voice') logEvent('said', text);
+    switch (cmd.action) {
+      case 'math': runMath(cmd.text, { source: source === 'ink' ? 'ink' : source }); break;
+      case 'solid':
+        switchTo3DMode('3d_' + cmd.solid);
+        setDetectBanner('📦 ' + window.BoardMath.SOLIDS[cmd.solid].label + ' · drag to rotate, use the sliders to cut it');
+        logEvent('solid', window.BoardMath.SOLIDS[cmd.solid].label, 'shown in 3D');
+        break;
+      case 'slice':
+        ensureSolid(cmd.solid);
+        if (typeof cmd.tilt === 'number') state.slice.tilt = Math.max(0, Math.min(90, cmd.tilt));
+        if (typeof cmd.spin === 'number') state.slice.spin = cmd.spin;
+        if (typeof cmd.offset === 'number') state.slice.offset = cmd.offset;
+        openPanel('3d');
+        render3D();
+        break;
+      case 'unfold':
+        ensureSolid(cmd.solid);
+        state.unfoldPct = cmd.amount;
+        openPanel('3d');
+        render3D();
+        setDetectBanner(cmd.amount ? '📦 Unfolded into its net' : '📦 Folded back up');
+        break;
+      case 'rotate':
+        ensureSolid(cmd.solid);
+        state.threeRotation.ry += cmd.dir * cmd.degrees * Math.PI / 180;
+        render3D();
+        break;
+      case 'shape': runChip(cmd.shape); break;
+      case 'clear': clearBoard(); break;
+      case 'undo': undoLast(); break;
+      case 'lesson': showLessons(cmd.query, cmd); break;
+      case 'define': showDefinition(cmd.term); break;
+      case 'quiz': showQuiz(cmd.topic); break;
+      case 'record': if (cmd.on) openRecordPanel(); else stopRecording(); break;
+      case 'summary': showSummary(); break;
+      case 'speak': speakExplanation(); break;
+      case 'hush': if ('speechSynthesis' in window) window.speechSynthesis.cancel(); setSpeaking(false); break;
+      case 'help': showHelp(); break;
+    }
+  }
+
+  var VOICE_KEY = 'classroomos-smart-wb-voice';
+  var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var listening = null;
+
+  function setMicLive(on) {
+    var btn = dockEl.querySelector('.smart-wb-mic');
+    if (!btn) return;
+    btn.classList.toggle('is-live', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
+  function toggleMic() {
+    if (!SpeechRec) {
+      setDetectBanner('🎤 This browser has no speech recognition. Type the same commands in the Ask box.');
+      return;
+    }
+    if (listening) { listening.stop(); return; }
+    var agreed = false;
+    try { agreed = localStorage.getItem(VOICE_KEY) === 'ok'; } catch (_) {}
+    if (agreed) { startListening(); return; }
+    showResult('<div class="smart-wb-lookup"><strong>Turn on voice commands?</strong><br>' +
+      'The board uses this browser\'s own speech recognition. In Chrome, Edge and Safari that can send the sound of your voice to the browser maker (Google, Microsoft or Apple) to be turned into text. ' +
+      'Nothing is sent to or stored by this site, and the microphone is only on while the 🎤 button is lit.' +
+      '<div class="smart-wb-panel-row" style="margin-top:6px;">' +
+        '<button type="button" class="smart-wb-btn" id="swb-voice-yes">Turn on voice</button>' +
+        '<button type="button" class="smart-wb-btn" id="swb-voice-no">Not now</button>' +
+      '</div></div>');
+    subContent.querySelector('#swb-voice-yes').addEventListener('click', function () {
+      try { localStorage.setItem(VOICE_KEY, 'ok'); } catch (_) {}
+      subPanel.hidden = true;
+      startListening();
+    });
+    subContent.querySelector('#swb-voice-no').addEventListener('click', function () { subPanel.hidden = true; });
+  }
+
+  function startListening() {
+    var input = dockEl.querySelector('.smart-wb-ask-in');
+    var rec;
+    try { rec = new SpeechRec(); } catch (_) { setDetectBanner('🎤 Speech recognition is not available here.'); return; }
+    rec.lang = document.documentElement.lang || 'en-US';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onresult = function (e) {
+      var heard = '', final = false;
+      for (var i = 0; i < e.results.length; i++) {
+        heard += e.results[i][0].transcript;
+        if (e.results[i].isFinal) final = true;
+      }
+      input.value = heard.trim();
+      if (final && input.value) { handleCommand(input.value, 'voice'); }
+    };
+    rec.onerror = function (e) {
+      setDetectBanner(e.error === 'not-allowed' || e.error === 'service-not-allowed'
+        ? '🎤 The microphone was not allowed. Allow it in the address bar, or type instead.'
+        : '🎤 Did not catch that. Press the microphone and try again, or type it.');
+    };
+    rec.onend = function () { listening = null; setMicLive(false); };
+    try { rec.start(); } catch (_) { return; }
+    listening = rec;
+    setMicLive(true);
+    setDetectBanner('🎤 Listening… say “graph y equals x squared”, “slice the cone at 60 degrees”, “quiz me on gravity”');
+  }
+
+  function setupAsk() {
+    var form = dockEl.querySelector('.smart-wb-ask');
+    var input = dockEl.querySelector('.smart-wb-ask-in');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = input.value.trim();
+      if (!text) { showHelpWhenReady(); return; }
+      handleCommand(text, 'typed');
+      input.select();
+    });
+    dockEl.querySelector('.smart-wb-mic').addEventListener('click', toggleMic);
+    if (!SpeechRec) dockEl.querySelector('.smart-wb-mic').title = 'Voice commands need a browser with speech recognition (Chrome, Edge or Safari)';
+    dockEl.querySelector('.smart-wb-tutor').addEventListener('click', speakExplanation);
+    // Example chips inside the panel (help screen) run through the same door as typing.
+    subPanel.addEventListener('click', function (e) {
+      var ask = e.target.closest('[data-ask]');
+      if (ask) { input.value = ask.dataset.ask; handleCommand(ask.dataset.ask, 'typed'); return; }
+      var write = e.target.closest('[data-write]');
+      if (write) writeDemo(write.dataset.write);
+    });
+  }
+
+  function showHelpWhenReady() {
+    if (brainReady()) showHelp(); else loadBrain(showHelp);
+  }
+
+  /* ── Recording and class notes ── */
+  var rec = null;
+  var lastRecordingUrl = null;
+
+  function recButton() { return dockEl.querySelector('[data-action="record"]'); }
+
+  function updateRecButton() {
+    var btn = recButton();
+    if (!btn) return;
+    btn.classList.toggle('is-recording', !!rec);
+    btn.textContent = rec ? '⏹ ' + window.BoardAssist.clock(Date.now() - rec.started) : '⏺ Rec';
+    btn.title = rec ? 'Stop recording' : 'Record the board (and your voice) to a video file on this computer';
+  }
+
+  function openRecordPanel() {
+    if (rec) return;
+    if (!window.MediaRecorder || !chalkCanvas.captureStream) {
+      setDetectBanner('⏺ This browser cannot record the board. Class notes still work: press 📋 Notes.');
+      return;
+    }
+    showResult('<div class="smart-wb-lookup"><strong>Record this lesson</strong><br>' +
+      'Makes a video of the board on this computer. Nothing is uploaded; you choose where to save it when you stop.' +
+      '<div class="smart-wb-panel-row" style="margin-top:6px;">' +
+        '<button type="button" class="smart-wb-btn" id="swb-rec-voice">Board + my voice</button>' +
+        '<button type="button" class="smart-wb-btn" id="swb-rec-silent">Board only</button>' +
+      '</div></div>');
+    subContent.querySelector('#swb-rec-voice').addEventListener('click', function () { startRecording(true); });
+    subContent.querySelector('#swb-rec-silent').addEventListener('click', function () { startRecording(false); });
+  }
+
+  function startRecording(withMic) {
+    if (rec) return;
+    var stage = dockEl.querySelector('.smart-wb-stage');
+    var w = Math.max(320, Math.round(stage.clientWidth)), h = Math.max(240, Math.round(stage.clientHeight));
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    function paint() { paintComposite(ctx, w, h, true); }
+    paint();
+    var stream = canvas.captureStream(12);
+
+    function begin(audio) {
+      if (audio) audio.getAudioTracks().forEach(function (t) { stream.addTrack(t); });
+      var type = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].filter(function (t) {
+        return window.MediaRecorder.isTypeSupported(t);
+      })[0];
+      var mr;
+      try { mr = new window.MediaRecorder(stream, type ? { mimeType: type } : undefined); }
+      catch (_) { setDetectBanner('⏺ This browser could not start a recording.'); return; }
+      var chunks = [];
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = function () { finishRecording(new Blob(chunks, { type: mr.mimeType || type || 'video/webm' })); };
+      rec = { mr: mr, audio: audio, stream: stream, started: Date.now(), paint: setInterval(paint, 83), tick: setInterval(updateRecButton, 1000), length: 0 };
+      mr.start(1000);
+      updateRecButton();
+      if (subPanel) subPanel.hidden = true;
+      setDetectBanner('⏺ Recording the board' + (audio ? ' and your voice' : '') + '. Press ⏹ to stop and save.');
+    }
+
+    if (withMic && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(begin, function () {
+        setDetectBanner('⏺ No microphone allowed, so this recording has no sound.');
+        begin(null);
+      });
+    } else begin(null);
+  }
+
+  function stopRecording() {
+    if (!rec) { setDetectBanner('⏺ Nothing is being recorded.'); return; }
+    clearInterval(rec.paint);
+    clearInterval(rec.tick);
+    rec.length = Date.now() - rec.started;
+    try { rec.mr.stop(); } catch (_) {}
+    rec.stream.getTracks().forEach(function (t) { t.stop(); });
+    if (rec.audio) rec.audio.getTracks().forEach(function (t) { t.stop(); });
+  }
+
+  function finishRecording(blob) {
+    var length = rec ? rec.length : 0;
+    rec = null;
+    updateRecButton();
+    if (lastRecordingUrl) URL.revokeObjectURL(lastRecordingUrl);
+    lastRecordingUrl = URL.createObjectURL(blob);
+    var ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
+    var name = 'blackboard-' + new Date().toISOString().slice(0, 10) + '.' + ext;
+    setDetectBanner('⏹ Recording ready: ' + window.BoardAssist.clock(length) + ', ' + num(blob.size / 1048576, 1) + ' MB');
+    showResult('<div class="smart-wb-lookup"><strong>Recording ready</strong> (' + window.BoardAssist.clock(length) + ', ' + num(blob.size / 1048576, 1) + ' MB). It is only in this tab until you save it.' +
+      '<div class="smart-wb-panel-row" style="margin-top:6px;">' +
+        '<a class="smart-wb-btn" href="' + lastRecordingUrl + '" download="' + name + '">⬇ Save video</a>' +
+        '<button type="button" class="smart-wb-btn" data-ask="summary">📋 Class notes</button>' +
+      '</div></div>');
+  }
+
+  function buildSummary() {
+    var heading = document.querySelector('h1');
+    return window.BoardAssist.summarize(events, {
+      title: 'Blackboard notes: ' + ((heading && heading.textContent.trim()) || document.title || 'lesson'),
+      date: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    });
+  }
+
+  function summaryPage(sum) {
+    var css = 'body{font:16px/1.5 system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;color:#1b2430}' +
+      'h1{font-size:1.5rem;margin-bottom:0}h2{font-size:1.1rem;margin-top:1.6rem}.meta{color:#566}' +
+      'figure{margin:1rem 0;break-inside:avoid}img{max-width:100%;border-radius:8px;border:1px solid #ccd}figcaption{font-size:.92rem;color:#334}';
+    var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>' + esc(sum.title) + '</title><style>' + css + '</style></head><body>' +
+      '<h1>' + esc(sum.title) + '</h1><p class="meta">' + esc(sum.date) + ' · ' + esc(sum.duration) + ' · ' + sum.timeline.length + ' steps</p>';
+    sum.sections.forEach(function (sec) {
+      html += '<h2>' + esc(sec.heading) + '</h2><ul>' + sec.items.map(function (it) { return '<li>' + esc(it) + '</li>'; }).join('') + '</ul>';
+    });
+    if (sum.timeline.length) {
+      html += '<h2>Step by step</h2>';
+      sum.timeline.forEach(function (st) {
+        html += st.image
+          ? '<figure><img alt="The board at ' + esc(st.at) + '" src="' + st.image + '"><figcaption><strong>' + esc(st.at) + '</strong> ' + esc(st.text) + '</figcaption></figure>'
+          : '<p><strong>' + esc(st.at) + '</strong> ' + esc(st.text) + '</p>';
+      });
+    }
+    return html + '</body></html>';
+  }
+
+  function showSummary() {
+    if (!brainReady()) { loadBrain(showSummary); return; }
+    var sum = buildSummary();
+    exitSolidKeepPanel();
+    setDetectBanner('📋 Class notes: ' + sum.timeline.length + ' steps so far');
+    showResult('<div class="smart-wb-lookup"><strong>' + esc(sum.title) + '</strong>' +
+      '<pre class="smart-wb-notes">' + esc(sum.text) + '</pre>' +
+      '<div class="smart-wb-panel-row">' +
+        '<button type="button" class="smart-wb-btn" id="swb-notes-copy">Copy</button>' +
+        '<button type="button" class="smart-wb-btn" id="swb-notes-save">⬇ Save as a page (with board pictures)</button>' +
+      '</div></div>');
+    subContent.querySelector('#swb-notes-copy').addEventListener('click', function () {
+      if (navigator.clipboard) navigator.clipboard.writeText(sum.text).then(function () { setDetectBanner('📋 Notes copied'); }, function () {});
+    });
+    subContent.querySelector('#swb-notes-save').addEventListener('click', function () {
+      var blob = new Blob([summaryPage(sum)], { type: 'text/html' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'blackboard-notes-' + new Date().toISOString().slice(0, 10) + '.html';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    });
+  }
+
+  function setSpeaking(on) {
+    var tutor = dockEl && dockEl.querySelector('.smart-wb-tutor');
+    if (tutor) tutor.classList.toggle('is-speaking', on);
   }
 
   /* ── 12. Keyboard Shortcut & Header Button ── */
@@ -1603,6 +3073,7 @@
       state.isOpen = true;
       resizeCanvases();
       saveState();
+      loadBrain();
     },
     close: function () {
       if (!dockEl) return;
@@ -1618,7 +3089,102 @@
         this.open();
       }
     },
-    detectContext: detectContext
+    isOpen: function () {
+      return !!(dockEl && dockEl.classList.contains('is-open'));
+    },
+    detectContext: detectContext,
+    /** Run anything the Ask box accepts: SmartBlackboardDock.ask('graph y = x^2 - 4') */
+    ask: function (text) {
+      this.open();
+      handleCommand(text, 'typed');
+    },
+    /** Write a line on the board in the built-in hand, then read it like handwriting. */
+    write: function (text) {
+      this.open();
+      writeDemo(text);
+    },
+    notes: function () {
+      return brainReady() ? buildSummary() : null;
+    },
+    loadRectangle: function (l, w) {
+      this.open();
+      var scale = 30;
+      state.curMode = 'area_rect';
+      exit3DMode();
+      state.rectData = {
+        x: 100,
+        y: 80,
+        w: Math.round((l || 6) * scale),
+        h: Math.round((w || 4) * scale)
+      };
+      updateAreaRectAnalysis();
+      openPanel('area_rect');
+      setDetectBanner('✨ Loaded Rectangle: ℓ = ' + (l || 6) + ', w = ' + (w || 4) + ' → Area = ' + ((l || 6) * (w || 4)) + ', Perimeter = ' + (2 * ((l || 6) + (w || 4))));
+      redraw();
+    },
+    loadParallelogram: function (b, h, s) {
+      this.open();
+      var scale = 28;
+      state.curMode = 'area_para';
+      exit3DMode();
+      state.paraData = {
+        x: 80,
+        y: 220,
+        b: Math.round((b || 7) * scale),
+        h: Math.round((h || 4) * scale),
+        s: Math.round((typeof s === 'number' ? s : 2) * scale)
+      };
+      updateAreaParaAnalysis();
+      openPanel('area_para');
+      var c = Math.sqrt((h || 4) * (h || 4) + (s || 2) * (s || 2)).toFixed(2);
+      setDetectBanner('✨ Loaded Parallelogram: b = ' + (b || 7) + ', h = ' + (h || 4) + ' → Area = ' + ((b || 7) * (h || 4)) + ' sq units (Slanted c = ' + c + ')');
+      redraw();
+    },
+    loadTriangle: function (b, h) {
+      this.open();
+      var scale = 28;
+      state.curMode = 'triangle';
+      exit3DMode();
+      var basePx = (b || 6) * scale;
+      var hPx = (h || 4) * scale;
+      state.triData = {
+        pts: [
+          { x: 100, y: 220, label: 'A' },
+          { x: 100 + basePx, y: 220, label: 'B' },
+          { x: 100 + basePx * 0.45, y: 220 - hPx, label: 'C' }
+        ]
+      };
+      updateTriangleAnalysis();
+      openPanel('triangle');
+      setDetectBanner('✨ Loaded Triangle: b = ' + (b || 6) + ', h = ' + (h || 4) + ' → Area = ½·b·h = ' + (0.5 * (b || 6) * (h || 4)) + ' sq units');
+      redraw();
+    },
+    loadSameP16: function () {
+      this.open();
+      state.curMode = 'same_p16';
+      exit3DMode();
+      openPanel('same_p16');
+      setDetectBanner('✨ Same Perimeter (P = 16) Comparison: Compact 4×4 (A=16) vs Stretched 1×7 (A=7)');
+      redraw();
+    },
+    loadPolyomino: function (cells, gridSize) {
+      this.open();
+      state.curMode = 'area_poly';
+      exit3DMode();
+      state.polyData = { cells: cells || [], size: gridSize || 10 };
+      openPanel('area_poly');
+      setDetectBanner('✨ Loaded Grid Polyomino: ' + (cells ? cells.length : 0) + ' units → Exterior Perimeter & Shared Seams Analyzed');
+      redraw();
+    },
+    loadCalculusCurve: function (eq, x0, slope, desc) {
+      this.open();
+      state.curMode = 'graph';
+      exit3DMode();
+      if (eq) state.graphEq = eq;
+      openPanel('graph');
+      setDetectBanner(desc || ('✨ Loaded Calculus Curve: ' + (eq || state.graphEq) + (typeof x0 === 'number' ? ' at x₀ = ' + x0 : '')));
+      redraw();
+    }
   };
 
   window.SmartBlackboardDock = SmartBlackboardDock;

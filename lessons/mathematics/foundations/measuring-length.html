@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../../../assets/css/circuit-playground.css" />
   <link rel="stylesheet" href="../../../assets/css/circuit-playground-snap.css" />
   <link rel="stylesheet" href="../../../assets/css/lessons/length-scale-quiz.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
   <style>
     /* The Chicago bitmap webfont ships U+00D7 as a zero-width glyph, so every
        "6.022 × 10²³" on this page rendered as a blank gap. Route just that one
@@ -1067,6 +1068,674 @@
       .ml-problem-input-row { align-items: stretch; }
       .ml-ans-input, .ml-check-btn { width: 100%; }
     }
+
+    /* ══════════════════════════════════════════════════════════
+       CLASSROOMOS MEASUREMENT STUDIO (CREATION APPLICATION)
+       ══════════════════════════════════════════════════════════ */
+    .creation-app {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      min-width: 0;
+    }
+    .creation-app-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: #090e1a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+    .creation-app-fullscreen {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.38rem 0.85rem;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 999px;
+      color: #fcd34d;
+      background: rgba(245, 158, 11, 0.08);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+    }
+    .creation-app-fullscreen:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: #f59e0b;
+      color: #fff;
+    }
+    .creation-app-fullscreen:focus-visible {
+      outline: 2px solid #f59e0b;
+      outline-offset: 2px;
+    }
+
+    /* Studio Viewport Fitting */
+    .ml-studio {
+      width: 100%;
+      height: calc(100vh - 4.25rem);
+      height: calc(100dvh - 4.25rem);
+      min-height: 600px;
+      max-height: 980px;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(245, 158, 11, 0.12), transparent 28rem),
+        radial-gradient(circle at 92% 10%, rgba(59, 130, 246, 0.12), transparent 28rem),
+        linear-gradient(180deg, #090e1d 0%, #050811 100%);
+      border-radius: 12px;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      position: relative;
+      color: #f8fafc;
+      margin-bottom: 2.2rem;
+    }
+    [data-creation-app]:is(:fullscreen, .creation-app-expanded) .ml-studio {
+      height: calc(100vh - 44px);
+      height: calc(100dvh - 44px);
+      max-height: none;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      margin-bottom: 0;
+    }
+    @media (max-width: 900px) {
+      .ml-studio {
+        height: auto;
+        min-height: calc(100dvh - 4.5rem);
+        max-height: none;
+      }
+    }
+
+    /* ── Studio Header Bar ────────────────────────────── */
+    .ml-studio-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0.9rem;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 15, 28, 0.98));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .ml-studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .ml-studio-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(59, 130, 246, 0.25));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fcd34d;
+      flex-shrink: 0;
+    }
+    .ml-studio-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+    .ml-studio-tag {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .ml-studio-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ml-studio-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+    .ml-studio-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.12rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #4ade80;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Studio Navigation Tabs ───────────────────────── */
+    .ml-studio-tabs {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.25rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .ml-studio-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 0.35rem 0.65rem;
+      color: rgba(255, 255, 255, 0.68);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+    .ml-studio-tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .ml-studio-tab.active {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fcd34d;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .ml-studio-tab:focus-visible {
+      outline: 2px solid #f59e0b;
+      outline-offset: 2px;
+    }
+    .ml-tab-icon {
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+    .ml-tab-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .ml-tab-sub {
+      font-size: 0.62rem;
+      font-family: 'IBM Plex Mono', monospace;
+      color: rgba(255, 255, 255, 0.45);
+      white-space: nowrap;
+      display: none;
+    }
+    @media (min-width: 1100px) {
+      .ml-tab-sub { display: inline-block; }
+    }
+
+    /* ── Studio Actions ───────────────────────────────── */
+    .ml-studio-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .ml-studio-dive-btn {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 0.35rem 0.7rem;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .ml-studio-dive-btn:hover {
+      background: rgba(245, 158, 11, 0.18);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+      transform: translateY(-1px);
+    }
+
+    /* ── Studio Stage & Panes ─────────────────────────── */
+    .ml-studio-stage {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .ml-studio-pane {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      padding: 0.85rem 1rem;
+      box-sizing: border-box;
+    }
+    .ml-studio-pane.active {
+      display: flex;
+    }
+    .ml-studio-pane[hidden] {
+      display: none !important;
+    }
+
+    /* Scale pane overrides inside studio */
+    .ml-studio-pane#sec-scale {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0.75rem 1rem;
+    }
+    .ml-studio-pane#sec-scale h2,
+    .ml-studio-pane#sec-scale > p,
+    .ml-studio-pane#sec-scale .ml-scale-badge {
+      display: none;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-toolbar {
+      margin-bottom: 0.5rem;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-slider-wrap {
+      margin-bottom: 0.5rem;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-bar-wrap {
+      height: 24px;
+      margin-bottom: 0.5rem;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-display {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 1.45fr) minmax(280px, 1fr);
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-visual {
+      height: 100%;
+      min-height: 260px;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-panel {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 0.4rem;
+    }
+    .ml-studio-pane#sec-scale .ml-scale-nav {
+      margin-top: 0.25rem;
+    }
+
+    /* Caliper / Ruler Pane */
+    .ml-studio-pane#sec-ruler {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0.75rem 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ml-studio-pane#sec-ruler.active {
+      display: flex;
+    }
+    .ml-studio-pane#sec-ruler h2,
+    .ml-studio-pane#sec-ruler > p {
+      display: none;
+    }
+
+    /* Caliper Stage & Deck */
+    .ml-caliper-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      flex: 1;
+      min-height: 0;
+    }
+    .ml-caliper-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.5rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .ml-caliper-controls {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .ml-caliper-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 0.35rem 0.75rem;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .ml-caliper-btn:hover {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+    }
+    .ml-caliper-btn.active {
+      background: #f59e0b;
+      border-color: #f59e0b;
+      color: #07101c;
+    }
+    .ml-caliper-btn.is-tared {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+    .ml-caliper-lcd {
+      background: #04140b;
+      border: 2px solid #10b981;
+      box-shadow: inset 0 0 14px rgba(16, 185, 129, 0.25), 0 0 10px rgba(16, 185, 129, 0.15);
+      border-radius: 8px;
+      padding: 0.35rem 0.85rem;
+      text-align: right;
+      min-width: 190px;
+    }
+    .ml-lcd-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(52, 211, 153, 0.65);
+    }
+    .ml-lcd-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #34d399;
+      line-height: 1.1;
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+    .ml-lcd-value .ml-lcd-unit {
+      font-size: 0.85rem;
+      color: #6ee7b7;
+      margin-left: 0.2rem;
+    }
+    .ml-lcd-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(52, 211, 153, 0.7);
+      margin-top: 0.1rem;
+    }
+
+    /* Caliper Graphic Canvas / SVG Stage */
+    .ml-caliper-stage-wrap {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), transparent 60%),
+        linear-gradient(180deg, #0b1120 0%, #070b14 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 1rem 0.5rem;
+      overflow-x: auto;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    #ml-caliper-svg {
+      display: block;
+      margin: 0 auto;
+      min-width: 680px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Specimen Bar */
+    .ml-specimen-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .ml-specimen-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .ml-caliper-coach {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+    }
+    .ml-obj-result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.3rem;
+    }
+    .ml-obj-result-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fcd34d;
+    }
+    .ml-obj-result-dim {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.82rem;
+      color: #86efac;
+    }
+    .ml-obj-result-body p {
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.75);
+      margin: 0 0 0.4rem;
+      line-height: 1.5;
+    }
+    .ml-obj-result-coach {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: 0.76rem;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.45;
+    }
+    .coach-tag {
+      font-size: 0.64rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fcd34d;
+      flex-shrink: 0;
+    }
+
+    /* Converter Pane inside studio */
+    .ml-studio-pane#sec-convert {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0.75rem 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ml-studio-pane#sec-convert.active {
+      display: flex;
+    }
+    .ml-studio-pane#sec-convert h2,
+    .ml-studio-pane#sec-convert > p {
+      display: none;
+    }
+    .ml-dim-analysis-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+      margin-top: 0.5rem;
+    }
+    .ml-dim-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #34d399;
+      margin-bottom: 0.3rem;
+    }
+    .ml-dim-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .dim-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.76rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #a7f3d0;
+    }
+    .ml-conv-swap-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #34d399;
+      border-radius: 8px;
+      padding: 0.4rem 0.75rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ml-conv-swap-btn:hover {
+      background: rgba(34, 197, 94, 0.2);
+      transform: scale(1.05);
+    }
+
+    /* Sensors Pane inside studio */
+    .ml-studio-pane#sec-feel {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      margin: 0;
+      padding: 0.75rem 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .ml-studio-pane#sec-feel.active {
+      display: flex;
+    }
+    .ml-studio-pane#sec-feel h2,
+    .ml-studio-pane#sec-feel > p,
+    .ml-studio-pane#sec-feel .mu-badge {
+      display: none;
+    }
+    .mu-kinetic-canvas {
+      width: 100%;
+      height: 120px;
+      border-radius: 8px;
+      background: #040813;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    /* ── Studio Footer ────────────────────────────────── */
+    .ml-studio-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0.9rem;
+      background: rgba(6, 10, 20, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      color: #64748b;
+      position: relative;
+      z-index: 5;
+    }
+    .ml-studio-hotkeys {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+    .ml-studio-hotkeys kbd {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      padding: 0.08rem 0.32rem;
+      font-size: 0.65rem;
+      font-family: 'IBM Plex Mono', monospace;
+      color: #cbd5e1;
+    }
+    .ml-studio-dive-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.95rem;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .ml-studio-dive-pill:hover {
+      background: #f59e0b;
+      color: #07101c;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+    .ml-studio-dive-pill:focus-visible {
+      outline: 2px solid #f59e0b;
+      outline-offset: 2px;
+    }
+    .ml-studio-dive-pill .ml-dive-arrow {
+      transition: transform 0.2s ease;
+    }
+    .ml-studio-dive-pill:hover .ml-dive-arrow {
+      transform: translateY(2px);
+    }
+    .ml-studio-status {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: #64748b;
+    }
+
+    /* Reading Container */
+    .ml-reading-container {
+      width: 100%;
+    }
+    .ml-reading-container section[id] {
+      scroll-margin-top: 5rem;
+    }
+    @media (max-width: 768px) {
+      .ml-studio-bar { flex-wrap: wrap; }
+      .ml-studio-tabs { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
+      .ml-studio-footer { flex-direction: column; text-align: center; gap: 0.4rem; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -1094,78 +1763,65 @@
       <div class="ll-sim">
         <main id="main-content" class="ml-page">
 
-          <!-- ── HERO ─────────────────────────────────── -->
-          <section class="hero ml-hero">
-            <p class="eyebrow">Mathematics · Measurement · Every Unit</p>
-            <h1>Measuring Length — and Everything Else</h1>
-            <div class="ml-hero-meta">
-              <span>Planck to Universe</span>
-              <span class="dot"></span>
-              <span>Ancient Cubits</span>
-              <span class="dot"></span>
-              <span>7 SI Base Units</span>
-              <span class="dot"></span>
-              <span>Temperature · Pressure · Electricity</span>
-              <span class="dot"></span>
-              <span>Light · Sound · Radiation · Data</span>
-            </div>
-            <p class="ml-lede">
-              Length is the most fundamental measurement humans ever made — and we've been arguing
-              about how to do it correctly for at least 5,000 years. From a pharaoh's forearm to
-              a laser bouncing off the moon, this lesson traces every tool and every unit we've
-              invented to answer one deceptively simple question: <em>how long is it?</em>
-            </p>
-            <p class="ml-lede">
-              Then it keeps going. Every other thing we measure — how hot, how heavy, how fast,
-              how loud, how bright, how much voltage, how much radiation, how many bytes — is built
-              from just <strong>seven base units</strong>. Learn those seven and the prefix ladder that
-              stretches them, and you can read any measurement in science.
-            </p>
-            <div class="ml-mission-grid" aria-label="Lesson highlights">
-              <div class="ml-mission-tile">
-                <div class="ml-mission-kicker">Scale Range</div>
-                <div class="ml-mission-value">10<sup>-35</sup> to 10<sup>26</sup> m</div>
-                <div class="ml-mission-note">A logarithmic trip from physics to astronomy.</div>
-              </div>
-              <div class="ml-mission-tile">
-                <div class="ml-mission-kicker">Core Skill</div>
-                <div class="ml-mission-value">Read from zero</div>
-                <div class="ml-mission-note">Align, measure, estimate, and report units clearly.</div>
-              </div>
-              <div class="ml-mission-tile">
-                <div class="ml-mission-kicker">Every Quantity</div>
-                <div class="ml-mission-value">7 base · 22 derived</div>
-                <div class="ml-mission-note">Heat, pressure, current, light, sound, radiation, data.</div>
-              </div>
-              <div class="ml-mission-tile">
-                <div class="ml-mission-kicker">Tools</div>
-                <div class="ml-mission-value">Ruler to laser</div>
-                <div class="ml-mission-note">Choose the instrument that matches the scale.</div>
-              </div>
-            </div>
-          </section>
+          <!-- ── MEASUREMENT STUDIO (CREATION APPLICATION) ── -->
+          <div class="creation-app" data-creation-app id="measurement-studio" aria-label="Universal Measurement Software Studio">
+            <div id="ml-studio-root" class="ml-studio" role="region" aria-label="Universal Measurement Laboratory Workspace">
 
-          <!-- ── SECTION JUMP NAV ────────────────────── -->
-          <nav class="ll-lesson-steps" aria-label="Lesson sections">
-            <a href="#sec-scale">Scale</a>
-            <a href="#sec-history">History</a>
-            <a href="#sec-systems">Systems</a>
-            <a href="#sec-base">Base Units</a>
-            <a href="#sec-prefixes">Prefixes</a>
-            <a href="#sec-derived">Derived</a>
-            <a href="#sec-library">Library</a>
-            <a href="#sec-feel">Feel It</a>
-            <a href="#sec-tools">Instruments</a>
-            <a href="#sec-ruler">Ruler</a>
-            <a href="#sec-convert">Convert</a>
-            <a href="#sec-odd">Odd Scales</a>
-            <a href="#sec-mistakes">Failures</a>
-            <a href="#sec-scale-quiz">Visual Scale Quiz</a>
-            <a href="#sec-practice">Practice</a>
-          </nav>
+              <!-- Studio Control Bar -->
+              <header class="ml-studio-bar" aria-label="Measurement Studio Toolbar">
+                <div class="ml-studio-brand">
+                  <div class="ml-studio-logo" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21.3 8.7 8.7 21.3a3 3 0 0 1-4.2-4.2L17.1 4.5a3 3 0 0 1 4.2 4.2zM14 6l4 4M10 10l2 2M7 13l2 2M4 16l2 2"/>
+                    </svg>
+                  </div>
+                  <div class="ml-studio-meta">
+                    <span class="ml-studio-tag">ClassroomOS · Precision Measurement Lab</span>
+                    <div class="ml-studio-title-row">
+                      <strong class="ml-studio-title">Measurement Lab OS</strong>
+                      <span class="ml-studio-badge" id="ml-studio-cal-badge">SI-2019 Calibrated</span>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- ── SCALE EXPLORER ──────────────────────── -->
-          <section class="ml-scale-lab" id="sec-scale" aria-label="Scale of the universe length explorer">
+                <!-- Studio Workspace Mode Switcher (Tabs) -->
+                <nav class="ml-studio-tabs" role="tablist" aria-label="Measurement Studio Workspaces">
+                  <button type="button" class="ml-studio-tab active" id="tab-btn-scale" role="tab" aria-selected="true" aria-controls="sec-scale" onclick="mlSwitchStudioTab('scale')">
+                    <span class="ml-tab-icon" aria-hidden="true">🌌</span>
+                    <span class="ml-tab-label">Scale of Universe</span>
+                    <span class="ml-tab-sub">10⁻³⁵–10²⁶ m</span>
+                  </button>
+                  <button type="button" class="ml-studio-tab" id="tab-btn-ruler" role="tab" aria-selected="false" aria-controls="sec-ruler" onclick="mlSwitchStudioTab('ruler')">
+                    <span class="ml-tab-icon" aria-hidden="true">📐</span>
+                    <span class="ml-tab-label">Caliper &amp; Ruler</span>
+                    <span class="ml-tab-sub">0.01 mm Vernier</span>
+                  </button>
+                  <button type="button" class="ml-studio-tab" id="tab-btn-convert" role="tab" aria-selected="false" aria-controls="sec-convert" onclick="mlSwitchStudioTab('convert')">
+                    <span class="ml-tab-icon" aria-hidden="true">🔄</span>
+                    <span class="ml-tab-label">Dimensional Converter</span>
+                    <span class="ml-tab-sub">12 SI Quantities</span>
+                  </button>
+                  <button type="button" class="ml-studio-tab" id="tab-btn-sensors" role="tab" aria-selected="false" aria-controls="sec-feel" onclick="mlSwitchStudioTab('sensors')">
+                    <span class="ml-tab-icon" aria-hidden="true">🌡️</span>
+                    <span class="ml-tab-label">Sensors &amp; Physics</span>
+                    <span class="ml-tab-sub">Kinetic · Ohm · Baro</span>
+                  </button>
+                </nav>
+
+                <!-- Studio Right Actions -->
+                <div class="ml-studio-actions">
+                  <a href="#lesson-reading-start" class="ml-studio-dive-btn" aria-label="Jump down to read lesson text">
+                    <span>Read Lesson</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                  </a>
+                </div>
+              </header>
+
+              <!-- Studio Workspaces Stage -->
+              <div class="ml-studio-stage">
+
+                <!-- ── PANE 1: SCALE EXPLORER ──────────────────────── -->
+                <section class="ml-studio-pane active" id="sec-scale" role="tabpanel" aria-labelledby="tab-btn-scale" aria-label="Scale of the universe length explorer">
             <div class="ml-scale-badge">Interactive Scale Explorer</div>
             <h2>From the Planck Length to the Observable Universe</h2>
             <p>Move the instrument through powers of ten and watch the scene, anchors, and math layer shift with it. This is built as a camera through scale, not just a list of facts.</p>
@@ -1351,6 +2007,327 @@
               <button class="ml-scale-nav-btn" id="ml-scale-next" type="button" onclick="mlScaleStep(1)">Larger →</button>
             </div>
           </section>
+
+                <!-- ── PANE 2: PRECISION CALIPER & RULER WORKBENCH ──────────── -->
+                <section class="ml-studio-pane" id="sec-ruler" role="tabpanel" aria-labelledby="tab-btn-ruler" aria-label="Interactive digital caliper and precision ruler" hidden>
+                  <div class="ml-caliper-deck">
+                    <div class="ml-caliper-toolbar">
+                      <div class="ml-caliper-controls">
+                        <button type="button" class="ml-caliper-btn active" id="caliper-unit-mm" onclick="mlCaliperSetUnit('mm')">Metric (mm)</button>
+                        <button type="button" class="ml-caliper-btn" id="caliper-unit-in" onclick="mlCaliperSetUnit('in')">Imperial (in)</button>
+                        <button type="button" class="ml-caliper-btn" id="caliper-tare-btn" onclick="mlCaliperTare()" title="Set current jaw position as relative zero (Tare)">Tare / Zero</button>
+                        <button type="button" class="ml-caliper-btn" id="caliper-reset-btn" onclick="mlCaliperReset()" title="Reset to true mechanical zero">Reset Origin</button>
+                      </div>
+                      <div class="ml-caliper-lcd" id="ml-caliper-lcd" aria-live="polite">
+                        <div class="ml-lcd-label">MEASURED LENGTH &bull; PRECISION CALIPER</div>
+                        <div class="ml-lcd-value" id="ml-lcd-val">190.00 <span class="ml-lcd-unit">mm</span></div>
+                        <div class="ml-lcd-meta" id="ml-lcd-meta">7.480 in (7 31/64") &bull; RES: 0.01 mm / 0.0005 in</div>
+                      </div>
+                    </div>
+
+                    <!-- Interactive Caliper SVG Workbench -->
+                    <div class="ml-caliper-stage-wrap" id="ml-caliper-stage-wrap">
+                      <svg id="ml-caliper-svg" viewBox="0 0 760 170" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive digital vernier caliper">
+                        <defs>
+                          <linearGradient id="calBeamGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#f8fafc"/>
+                            <stop offset="20%" stop-color="#e2e8f0"/>
+                            <stop offset="70%" stop-color="#cbd5e1"/>
+                            <stop offset="100%" stop-color="#94a3b8"/>
+                          </linearGradient>
+                          <linearGradient id="calJawGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="45%" stop-color="#cbd5e1"/>
+                            <stop offset="100%" stop-color="#64748b"/>
+                          </linearGradient>
+                          <linearGradient id="calCarriageGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#334155"/>
+                            <stop offset="15%" stop-color="#1e293b"/>
+                            <stop offset="85%" stop-color="#0f172a"/>
+                            <stop offset="100%" stop-color="#020617"/>
+                          </linearGradient>
+                          <linearGradient id="calLcdGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#022c22"/>
+                            <stop offset="100%" stop-color="#064e3b"/>
+                          </linearGradient>
+                        </defs>
+
+                        <!-- Mounted Specimen Indicator in SVG -->
+                        <g id="ml-caliper-specimen-group">
+                          <rect id="ml-caliper-specimen-svg" x="90" y="68" width="329" height="38" rx="4" fill="rgba(245,158,11,0.22)" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,4"/>
+                          <text id="ml-caliper-specimen-title" x="254" y="92" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="700" fill="#fcd34d">#2 Pencil (190 mm)</text>
+                        </g>
+
+                        <!-- Caliper Main Beam (fixed) -->
+                        <rect x="70" y="55" width="670" height="42" fill="url(#calBeamGrad)" stroke="#475569" stroke-width="1.2"/>
+
+                        <!-- Fixed Reference Jaws (left) -->
+                        <path d="M 70 55 L 70 155 C 70 162 76 166 84 166 L 90 166 L 90 97 L 70 97 Z" fill="url(#calJawGrad)" stroke="#475569" stroke-width="1.2"/>
+                        <path d="M 70 55 L 70 14 C 70 8 76 4 84 4 L 90 4 L 90 55 Z" fill="url(#calJawGrad)" stroke="#475569" stroke-width="1.2"/>
+
+                        <!-- Laser Etched Graduations on Beam -->
+                        <g id="cal-beam-ticks" opacity="0.85">
+                          <line x1="90" y1="55" x2="90" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="90" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">0</text>
+                          <line x1="176.6" y1="55" x2="176.6" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="176.6" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">50</text>
+                          <line x1="263.3" y1="55" x2="263.3" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="263.3" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">100</text>
+                          <line x1="350" y1="55" x2="350" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="350" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">150</text>
+                          <line x1="436.6" y1="55" x2="436.6" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="436.6" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">200</text>
+                          <line x1="523.3" y1="55" x2="523.3" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="523.3" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">250</text>
+                          <line x1="610" y1="55" x2="610" y2="72" stroke="#0f172a" stroke-width="1.5"/>
+                          <text x="610" y="80" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#0f172a">300 mm</text>
+                        </g>
+
+                        <!-- Sliding Carriage Assembly -->
+                        <g id="ml-caliper-slider" transform="translate(329, 0)">
+                          <path d="M 90 97 L 90 166 L 96 166 C 104 166 110 162 110 155 L 110 97 Z" fill="url(#calJawGrad)" stroke="#475569" stroke-width="1.2"/>
+                          <path d="M 90 55 L 90 4 L 96 4 C 104 4 110 8 110 14 L 110 55 Z" fill="url(#calJawGrad)" stroke="#475569" stroke-width="1.2"/>
+                          <rect x="85" y="44" width="115" height="64" rx="6" fill="url(#calCarriageGrad)" stroke="#64748b" stroke-width="1.5"/>
+                          <rect x="94" y="52" width="76" height="32" rx="4" fill="url(#calLcdGrad)" stroke="#059669" stroke-width="1"/>
+                          <text id="ml-caliper-svg-lcd" x="164" y="74" text-anchor="end" font-family="'IBM Plex Mono', monospace" font-size="16" font-weight="700" fill="#34d399">190.00</text>
+                          <text id="ml-caliper-svg-unit" x="166" y="62" font-family="'IBM Plex Mono', monospace" font-size="7" font-weight="700" fill="#6ee7b7">mm</text>
+                          <rect x="188" y="72" width="14" height="24" rx="2" fill="#475569" stroke="#334155" stroke-width="1"/>
+                          <line x1="188" y1="76" x2="202" y2="76" stroke="#94a3b8" stroke-width="1"/>
+                          <line x1="188" y1="80" x2="202" y2="80" stroke="#94a3b8" stroke-width="1"/>
+                          <line x1="188" y1="84" x2="202" y2="84" stroke="#94a3b8" stroke-width="1"/>
+                          <line x1="188" y1="88" x2="202" y2="88" stroke="#94a3b8" stroke-width="1"/>
+                          <line x1="188" y1="92" x2="202" y2="92" stroke="#94a3b8" stroke-width="1"/>
+                        </g>
+                      </svg>
+                    </div>
+
+                    <!-- Traditional Desk Ruler Drawer (Expandable) -->
+                    <details class="ml-desk-ruler-details">
+                      <summary class="ml-desk-ruler-summary">Compare with Traditional Classroom Desk Ruler ▾</summary>
+                      <div class="ml-ruler-toggle" style="margin-top:0.6rem;">
+                        <button class="ml-ruler-tab active" id="ml-tab-cm" type="button" onclick="mlSetUnit('cm')" aria-pressed="true">Centimeters</button>
+                        <button class="ml-ruler-tab" id="ml-tab-in" type="button" onclick="mlSetUnit('in')" aria-pressed="false">Inches</button>
+                      </div>
+                      <div class="ml-ruler-svg-wrap">
+                        <svg id="ml-ruler-svg" viewBox="0 0 640 90" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive ruler">
+                          <rect x="0" y="20" width="640" height="50" rx="4" fill="#d97706"/>
+                          <rect x="0" y="20" width="640" height="48" rx="4" fill="url(#woodGrad)"/>
+                          <defs>
+                            <linearGradient id="woodGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stop-color="#fde68a"/>
+                              <stop offset="30%" stop-color="#fbbf24"/>
+                              <stop offset="100%" stop-color="#d97706"/>
+                            </linearGradient>
+                          </defs>
+                          <g id="ml-ruler-ticks"></g>
+                          <rect id="ml-obj-bar" x="0" y="18" width="0" height="54" rx="3" fill="rgba(239,68,68,0.35)" pointer-events="none"/>
+                          <line id="ml-obj-line-start" x1="0" y1="15" x2="0" y2="72" stroke="#ef4444" stroke-width="2" pointer-events="none"/>
+                          <line id="ml-obj-line-end"   x1="0" y1="15" x2="0" y2="72" stroke="#ef4444" stroke-width="2" pointer-events="none"/>
+                          <text id="ml-obj-dim-label" x="0" y="12" text-anchor="middle" fill="#ef4444" font-size="10" font-family="'IBM Plex Mono',monospace" font-weight="700"></text>
+                        </svg>
+                      </div>
+                    </details>
+
+                    <!-- Specimen Selection Tray -->
+                    <div class="ml-specimen-bar">
+                      <div class="ml-specimen-label">Select Object to Mount &amp; Measure:</div>
+                      <div class="ml-objects-grid" id="ml-objects-grid"></div>
+                    </div>
+
+                    <!-- Measurement Result & Metrology Coach -->
+                    <div class="ml-caliper-coach" id="ml-obj-result"></div>
+                  </div>
+                </section>
+
+                <!-- ── PANE 3: UNIVERSAL CONVERTER ──────────────────────────── -->
+                <section class="ml-studio-pane" id="sec-convert" role="tabpanel" aria-labelledby="tab-btn-convert" aria-label="Universal dimensional unit converter" hidden>
+                  <div class="mu-conv-cats" id="mu-conv-cats" role="group" aria-label="Quantity to convert"></div>
+
+                  <div class="ml-conv-row">
+                    <div class="ml-conv-side">
+                      <input type="number" class="ml-conv-input" id="ml-conv-from-val" value="1" aria-label="Value to convert">
+                      <select class="ml-conv-select" id="ml-conv-from-unit" aria-label="From unit"></select>
+                    </div>
+                    <button type="button" class="ml-conv-swap-btn" id="ml-conv-swap" onclick="mlSwapConvUnits()" title="Swap units (S)">⇄</button>
+                    <div class="ml-conv-side">
+                      <div class="ml-conv-result">
+                        <div class="conv-val" id="ml-conv-result-val">—</div>
+                        <div class="conv-label" id="ml-conv-result-label"></div>
+                      </div>
+                      <select class="ml-conv-select" id="ml-conv-to-unit" aria-label="To unit"></select>
+                    </div>
+                  </div>
+
+                  <!-- Live Dimensional Analysis Card -->
+                  <div class="ml-dim-analysis-card" id="ml-dim-analysis-card">
+                    <div class="ml-dim-title">Dimensional Decomposition &amp; Unit Cancellation</div>
+                    <div class="ml-dim-tags" id="ml-dim-tags">
+                      <span class="dim-tag" id="dim-tag-base">SI Base: metre (m)</span>
+                      <span class="dim-tag" id="dim-tag-dim">Dimension: [L]¹</span>
+                    </div>
+                    <div class="mu-conv-formula" id="mu-conv-formula" aria-live="polite"></div>
+                  </div>
+
+                  <div class="ml-conv-quick" id="mu-conv-quick"></div>
+                </section>
+
+                <!-- ── PANE 4: SENSORS & PHYSICAL PHENOMENA ─────────────────── -->
+                <section class="ml-studio-pane" id="sec-feel" role="tabpanel" aria-labelledby="tab-btn-sensors" aria-label="Interactive physics sensor simulation bench" hidden>
+                  <div class="mu-mini-grid">
+
+                    <!-- Temperature with Kinetic Particle Simulation -->
+                    <div class="mu-mini" style="--mini-accent:#f472b6;">
+                      <h3>🌡️ Temperature — Microscopic Kinetic Motion</h3>
+                      <p>Temperature is the average kinetic energy of vibrating atoms. Watch gas molecules accelerate as temperature climbs from absolute zero to 1200 K.</p>
+                      <canvas id="mu-kinetic-canvas" class="mu-kinetic-canvas" width="340" height="120" role="img" aria-label="Simulation of gas molecules bouncing with speed proportional to temperature"></canvas>
+                      <div class="mu-fig" id="mu-therm-fig" style="--fig-ratio:300/80" role="img" aria-label="Thermometer showing the selected temperature against reference points"></div>
+                      <input type="range" class="mu-slider" id="mu-therm-slider" min="0" max="1200" value="293" step="0.05" aria-label="Temperature in kelvin">
+                      <div class="mu-slider-label"><span>0 K — absolute zero</span><span>1200 K</span></div>
+                      <div class="mu-readout-grid">
+                        <div class="mu-readout"><div class="ro-label">Kelvin</div><div class="ro-val" id="mu-t-k">293 K</div></div>
+                        <div class="mu-readout"><div class="ro-label">Celsius</div><div class="ro-val" id="mu-t-c">19.9 °C</div></div>
+                        <div class="mu-readout"><div class="ro-label">Fahrenheit</div><div class="ro-val" id="mu-t-f">67.7 °F</div></div>
+                        <div class="mu-readout"><div class="ro-label">Rankine</div><div class="ro-val" id="mu-t-r">527 °R</div></div>
+                      </div>
+                      <div class="mu-preset-row">
+                        <button class="mu-preset" type="button" data-temp="0">Absolute zero</button>
+                        <button class="mu-preset" type="button" data-temp="77">Liquid nitrogen</button>
+                        <button class="mu-preset" type="button" data-temp="273.15">Ice melts</button>
+                        <button class="mu-preset" type="button" data-temp="310.15">Human body</button>
+                        <button class="mu-preset" type="button" data-temp="373.15">Water boils</button>
+                        <button class="mu-preset" type="button" data-temp="505">Solder melts</button>
+                        <button class="mu-preset" type="button" data-temp="1200">Lava</button>
+                      </div>
+                      <div class="mu-mini-note" id="mu-t-note">A kelvin and a degree Celsius are exactly the same size — only the zero point moved.</div>
+                    </div>
+
+                    <!-- Electricity -->
+                    <div class="mu-mini" style="--mini-accent:#38bdf8;">
+                      <h3>⚡ Electricity — Volts, Amps, Ohms, Watts</h3>
+                      <p>Voltage is push, resistance opposes flow, current is the charge drifting per second, and power is work delivered.</p>
+                      <div class="mu-fig" id="mu-ohm-fig" style="--fig-ratio:300/130" role="img" aria-label="Circuit diagram: battery, resistor, ammeter and lamp, with charge flowing"></div>
+                      <label class="mu-slider-label" for="mu-ohm-v" style="margin-top:.4rem;"><span>Voltage (V)</span><span id="mu-ohm-v-lbl">12 V</span></label>
+                      <input type="range" class="mu-slider" id="mu-ohm-v" min="1" max="240" value="12" step="1" aria-label="Voltage in volts">
+                      <label class="mu-slider-label" for="mu-ohm-r"><span>Resistance (Ω)</span><span id="mu-ohm-r-lbl">6 Ω</span></label>
+                      <input type="range" class="mu-slider" id="mu-ohm-r" min="1" max="500" value="6" step="1" aria-label="Resistance in ohms">
+                      <div class="mu-readout-grid">
+                        <div class="mu-readout"><div class="ro-label">Current</div><div class="ro-val" id="mu-ohm-i">2 A</div></div>
+                        <div class="mu-readout"><div class="ro-label">Power</div><div class="ro-val" id="mu-ohm-p">24 W</div></div>
+                        <div class="mu-readout"><div class="ro-label">Charge / min</div><div class="ro-val" id="mu-ohm-q">120 C</div></div>
+                        <div class="mu-readout"><div class="ro-label">Energy / hr</div><div class="ro-val" id="mu-ohm-e">24 Wh</div></div>
+                      </div>
+                      <div class="mu-mini-note" id="mu-ohm-note">Ohm's law: one volt across one ohm pushes exactly one ampere.</div>
+                    </div>
+
+                    <!-- Pressure -->
+                    <div class="mu-mini" style="--mini-accent:#34d399;">
+                      <h3>🌊 Pressure — Force Spread Over Area</h3>
+                      <p>1 Pa = 1 N/m². Real applications use kPa, atmospheres, bar, and psi. Move from ocean trenches to stratosphere.</p>
+                      <div class="mu-fig" id="mu-press-fig" style="--fig-ratio:300/130" role="img" aria-label="Cross-section from ocean depth to the upper atmosphere"></div>
+                      <input type="range" class="mu-slider" id="mu-press-slider" min="-1000" max="20000" value="0" step="10" aria-label="Altitude in metres">
+                      <div class="mu-slider-label"><span>1 km underwater</span><span>20 km up</span></div>
+                      <div class="mu-readout-grid">
+                        <div class="mu-readout"><div class="ro-label">Kilopascal</div><div class="ro-val" id="mu-p-kpa">101 kPa</div></div>
+                        <div class="mu-readout"><div class="ro-label">Atmospheres</div><div class="ro-val" id="mu-p-atm">1.00 atm</div></div>
+                        <div class="mu-readout"><div class="ro-label">Bar</div><div class="ro-val" id="mu-p-bar">1.01 bar</div></div>
+                        <div class="mu-readout"><div class="ro-label">psi</div><div class="ro-val" id="mu-p-psi">14.7 psi</div></div>
+                        <div class="mu-readout"><div class="ro-label">mmHg</div><div class="ro-val" id="mu-p-mmhg">760 mmHg</div></div>
+                      </div>
+                      <div class="mu-mini-note" id="mu-p-note">At sea level air presses with ~1 kg/cm². Pressure drops with height, lowering water's boiling point.</div>
+                    </div>
+
+                  </div>
+                </section>
+
+              </div> <!-- /ml-studio-stage -->
+
+              <!-- Studio Footer Bar -->
+              <footer class="ml-studio-footer">
+                <div class="ml-studio-hotkeys">
+                  <span>Shortcuts: <kbd>1</kbd>–<kbd>4</kbd> Switch Workspace &bull; <kbd>&larr;</kbd><kbd>&rarr;</kbd> Nudge Caliper</span>
+                </div>
+                <a href="#lesson-reading-start" class="ml-studio-dive-pill" aria-label="Scroll down to read the full lesson, historical standards, and practice problems">
+                  <span>Scroll down to dive deeper into lesson entries, historical standards &amp; SI field guide</span>
+                  <svg class="ml-dive-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                </a>
+                <div class="ml-studio-status" id="ml-studio-status-text">Ready &bull; 61 Powers of Ten Calibrated</div>
+              </footer>
+
+            </div>
+          </div>
+
+          <!-- ── DEEP DIVE LESSON READING CONTENT ── -->
+          <div id="lesson-reading-start" class="ml-reading-container">
+
+            <!-- ── HERO ─────────────────────────────────── -->
+            <section class="hero ml-hero">
+              <p class="eyebrow">Mathematics · Measurement · Every Unit</p>
+              <h1>Measuring Length — and Everything Else</h1>
+              <div class="ml-hero-meta">
+                <span>Planck to Universe</span>
+                <span class="dot"></span>
+                <span>Ancient Cubits</span>
+                <span class="dot"></span>
+                <span>7 SI Base Units</span>
+                <span class="dot"></span>
+                <span>Temperature · Pressure · Electricity</span>
+                <span class="dot"></span>
+                <span>Light · Sound · Radiation · Data</span>
+              </div>
+              <p class="ml-lede">
+                Length is the most fundamental measurement humans ever made — and we've been arguing
+                about how to do it correctly for at least 5,000 years. From a pharaoh's forearm to
+                a laser bouncing off the moon, this lesson traces every tool and every unit we've
+                invented to answer one deceptively simple question: <em>how long is it?</em>
+              </p>
+              <p class="ml-lede">
+                Then it keeps going. Every other thing we measure — how hot, how heavy, how fast,
+                how loud, how bright, how much voltage, how much radiation, how many bytes — is built
+                from just <strong>seven base units</strong>. Learn those seven and the prefix ladder that
+                stretches them, and you can read any measurement in science.
+              </p>
+              <div class="ml-mission-grid" aria-label="Lesson highlights">
+                <div class="ml-mission-tile">
+                  <div class="ml-mission-kicker">Scale Range</div>
+                  <div class="ml-mission-value">10<sup>-35</sup> to 10<sup>26</sup> m</div>
+                  <div class="ml-mission-note">A logarithmic trip from physics to astronomy.</div>
+                </div>
+                <div class="ml-mission-tile">
+                  <div class="ml-mission-kicker">Core Skill</div>
+                  <div class="ml-mission-value">Read from zero</div>
+                  <div class="ml-mission-note">Align, measure, estimate, and report units clearly.</div>
+                </div>
+                <div class="ml-mission-tile">
+                  <div class="ml-mission-kicker">Every Quantity</div>
+                  <div class="ml-mission-value">7 base · 22 derived</div>
+                  <div class="ml-mission-note">Heat, pressure, current, light, sound, radiation, data.</div>
+                </div>
+                <div class="ml-mission-tile">
+                  <div class="ml-mission-kicker">Tools</div>
+                  <div class="ml-mission-value">Ruler to laser</div>
+                  <div class="ml-mission-note">Choose the instrument that matches the scale.</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ── SECTION JUMP NAV ────────────────────── -->
+            <nav class="ll-lesson-steps" aria-label="Lesson sections">
+              <a href="#sec-scale">Scale Studio</a>
+              <a href="#sec-history">History</a>
+              <a href="#sec-systems">Systems</a>
+              <a href="#sec-base">Base Units</a>
+              <a href="#sec-prefixes">Prefixes</a>
+              <a href="#sec-derived">Derived</a>
+              <a href="#sec-library">Library</a>
+              <a href="#sec-feel">Sensors Lab</a>
+              <a href="#sec-tools">Instruments</a>
+              <a href="#sec-ruler">Caliper &amp; Ruler</a>
+              <a href="#sec-convert">Universal Converter</a>
+              <a href="#sec-odd">Odd Scales</a>
+              <a href="#sec-mistakes">Failures</a>
+              <a href="#sec-scale-quiz">Visual Scale Quiz</a>
+              <a href="#sec-practice">Practice</a>
+            </nav>
 
           <!-- ── ANCIENT HISTORY ─────────────────────── -->
           <section class="ml-card" id="sec-history" style="--card-accent:#f59e0b;">
@@ -1746,79 +2723,37 @@
             <p class="mu-lib-empty" id="mu-lib-empty" hidden>No units match that search. Try "pressure", "light", or "dose".</p>
           </section>
 
-          <!-- ── FEEL THE UNITS (mini labs) ──────────── -->
-          <section class="mu-lab" id="sec-feel" style="--mu-accent:#f472b6;" aria-label="Interactive unit labs for temperature, electricity, and pressure">
-            <div class="mu-badge">Three Interactive Labs</div>
-            <h2>Feel the Units: Heat, Electricity, Pressure</h2>
+          <!-- ── PHYSICAL SENSING & SENSORS COMPANION ──── -->
+          <section class="mu-lab" id="sec-feel-deep" style="--mu-accent:#f472b6;" aria-label="Physical sensing, temperature scales, and instrumentation principles">
+            <div class="mu-badge">Sensory Bench Notes</div>
+            <h2>The Physics of Perception: How We Measure What We Cannot See</h2>
             <p>
-              Reading a table tells you a kelvin exists. Dragging a slider tells you what 300 K feels
-              like on your skin, what happens to current when resistance doubles, and why your ears
-              pop in an elevator. Move each control and watch every unit for that quantity update
-              together — they are all describing the same physical thing.
+              Human skin can tell you that a cup of coffee is hot, but it cannot report whether it is 340 K or 360 K. Your nervous system measures heat flux (the rate of thermal energy transfer into or out of your nerve endings), not temperature itself. That is why metal feels colder than wood at the exact same room temperature: iron conducts heat away from your fingertips 300 times faster than pine.
             </p>
-
-            <div class="mu-mini-grid">
-
-              <!-- Temperature -->
-              <div class="mu-mini" style="--mini-accent:#f472b6;">
-                <h3>🌡️ Temperature — one heat, four scales</h3>
-                <p>Kelvin starts at absolute zero. Celsius starts at water's freezing point. Fahrenheit starts at a 1724 brine mixture. Rankine is Fahrenheit-sized degrees from absolute zero.</p>
-                <div class="mu-fig" id="mu-therm-fig" style="--fig-ratio:300/96" role="img" aria-label="Thermometer showing the selected temperature against reference points"></div>
-                <input type="range" class="mu-slider" id="mu-therm-slider" min="0" max="1200" value="293" step="0.05" aria-label="Temperature in kelvin">
-                <div class="mu-slider-label"><span>0 K — absolute zero</span><span>1200 K</span></div>
-                <div class="mu-readout-grid">
-                  <div class="mu-readout"><div class="ro-label">Kelvin</div><div class="ro-val" id="mu-t-k">293 K</div></div>
-                  <div class="mu-readout"><div class="ro-label">Celsius</div><div class="ro-val" id="mu-t-c">19.9 °C</div></div>
-                  <div class="mu-readout"><div class="ro-label">Fahrenheit</div><div class="ro-val" id="mu-t-f">67.7 °F</div></div>
-                  <div class="mu-readout"><div class="ro-label">Rankine</div><div class="ro-val" id="mu-t-r">527 °R</div></div>
-                </div>
-                <div class="mu-preset-row">
-                  <button class="mu-preset" type="button" data-temp="0">Absolute zero</button>
-                  <button class="mu-preset" type="button" data-temp="77">Liquid nitrogen</button>
-                  <button class="mu-preset" type="button" data-temp="273.15">Ice melts</button>
-                  <button class="mu-preset" type="button" data-temp="310.15">Human body</button>
-                  <button class="mu-preset" type="button" data-temp="373.15">Water boils</button>
-                  <button class="mu-preset" type="button" data-temp="505">Solder melts</button>
-                  <button class="mu-preset" type="button" data-temp="1200">Lava</button>
-                </div>
-                <div class="mu-mini-note" id="mu-t-note">A kelvin and a degree Celsius are exactly the same size — only the zero point moved. That's why you write "a rise of 5 K" and "a rise of 5 °C" interchangeably, but never "5 K" and "5 °C" for the same reading.</div>
+            <div class="ml-cards-grid" style="margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+              <div class="ml-card" style="margin:0;padding:1.25rem;">
+                <h3 style="color:#f472b6;margin-top:0;">🌡️ The Zero Point Problem</h3>
+                <p style="font-size:0.9rem;line-height:1.5;">
+                  Celsius and Fahrenheit define their zeros arbitrarily (freezing brine or freezing pure water at 1 atm). But temperature is physically the average kinetic energy of vibrating atoms: $\langle E_k \rangle = \frac{3}{2} k_B T$. At 0 K, particle motion reaches its quantum ground state. Doubling the temperature from 10 °C (283.15 K) to 20 °C (293.15 K) is only a 3.5% increase in molecular speed, not double!
+                </p>
               </div>
-
-              <!-- Electricity -->
-              <div class="mu-mini" style="--mini-accent:#38bdf8;">
-                <h3>⚡ Electricity — volts, amps, ohms, watts</h3>
-                <p>A real circuit: a battery, a resistor, an ammeter, and a lamp. Voltage is the push, resistance is how hard the path fights back, current is what actually flows, and power is the work it does. (Think of water in a pipe if it helps — pressure, narrowness, flow.)</p>
-                <div class="mu-fig" id="mu-ohm-fig" style="--fig-ratio:300/150" role="img" aria-label="Circuit diagram: battery, resistor, ammeter and lamp, with charge flowing"></div>
-                <label class="mu-slider-label" for="mu-ohm-v" style="margin-top:.5rem;"><span>Voltage (V)</span><span id="mu-ohm-v-lbl">12 V</span></label>
-                <input type="range" class="mu-slider" id="mu-ohm-v" min="1" max="240" value="12" step="1" aria-label="Voltage in volts">
-                <label class="mu-slider-label" for="mu-ohm-r"><span>Resistance (Ω)</span><span id="mu-ohm-r-lbl">6 Ω</span></label>
-                <input type="range" class="mu-slider" id="mu-ohm-r" min="1" max="500" value="6" step="1" aria-label="Resistance in ohms">
-                <div class="mu-readout-grid">
-                  <div class="mu-readout"><div class="ro-label">Current</div><div class="ro-val" id="mu-ohm-i">2 A</div></div>
-                  <div class="mu-readout"><div class="ro-label">Power</div><div class="ro-val" id="mu-ohm-p">24 W</div></div>
-                  <div class="mu-readout"><div class="ro-label">Charge / min</div><div class="ro-val" id="mu-ohm-q">120 C</div></div>
-                  <div class="mu-readout"><div class="ro-label">Energy / hr</div><div class="ro-val" id="mu-ohm-e">24 Wh</div></div>
-                </div>
-                <div class="mu-mini-note" id="mu-ohm-note">Ohm's law: one volt across one ohm pushes exactly one ampere.</div>
+              <div class="ml-card" style="margin:0;padding:1.25rem;">
+                <h3 style="color:#38bdf8;margin-top:0;">⚡ Ohm's Law as Hydraulic Flow</h3>
+                <p style="font-size:0.9rem;line-height:1.5;">
+                  Voltage ($V$) is electrical potential energy per unit charge ($\text{J/C}$). Resistance ($R$) is collision frequency of electrons with the atomic lattice ($\Omega$). Current ($I = V/R$) is the net charge flux ($\text{C/s} = \text{A}$). When you adjust voltage or resistance, power dissipated grows as $P = I^2 R = V^2 / R$.
+                </p>
               </div>
-
-              <!-- Pressure -->
-              <div class="mu-mini" style="--mini-accent:#34d399;">
-                <h3>🌊 Pressure — force spread over area</h3>
-                <p>A pascal is one newton pressed onto one square metre — tiny. Real life uses kilopascals, bars, atmospheres, psi, and millimetres of mercury. Move up a mountain or down into the ocean and watch them all move together.</p>
-                <div class="mu-fig" id="mu-press-fig" style="--fig-ratio:300/150" role="img" aria-label="Cross-section from ocean depth to the upper atmosphere, marking the selected altitude"></div>
-                <input type="range" class="mu-slider" id="mu-press-slider" min="-1000" max="20000" value="0" step="10" aria-label="Altitude in metres, negative values are ocean depth">
-                <div class="mu-slider-label"><span>1 km underwater</span><span>20 km up</span></div>
-                <div class="mu-readout-grid">
-                  <div class="mu-readout"><div class="ro-label">Kilopascal</div><div class="ro-val" id="mu-p-kpa">101 kPa</div></div>
-                  <div class="mu-readout"><div class="ro-label">Atmospheres</div><div class="ro-val" id="mu-p-atm">1.00 atm</div></div>
-                  <div class="mu-readout"><div class="ro-label">Bar</div><div class="ro-val" id="mu-p-bar">1.01 bar</div></div>
-                  <div class="mu-readout"><div class="ro-label">psi</div><div class="ro-val" id="mu-p-psi">14.7 psi</div></div>
-                  <div class="mu-readout"><div class="ro-label">mmHg</div><div class="ro-val" id="mu-p-mmhg">760 mmHg</div></div>
-                </div>
-                <div class="mu-mini-note" id="mu-p-note">At sea level the air pushes on every square centimetre of you with about 1 kg of force. You don't notice because you push back equally.</div>
+              <div class="ml-card" style="margin:0;padding:1.25rem;">
+                <h3 style="color:#34d399;margin-top:0;">🌊 Atmospheric Column Weight</h3>
+                <p style="font-size:0.9rem;line-height:1.5;">
+                  A pascal is 1 newton per square metre ($1\text{ N/m}^2$). At sea level, a 1-metre square column of air stretching to space weighs approximately 101,325 N (about 10.3 metric tons). Because our internal bodily fluids exert the exact same outward pressure, we feel weightless inside this ocean of gas.
+                </p>
               </div>
-
+            </div>
+            <div style="margin-top:1.25rem;text-align:center;">
+              <button type="button" class="btn btn-secondary" onclick="mlSwitchStudioTab('sensors');document.getElementById('measurement-studio').scrollIntoView({behavior:'smooth'});" style="font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;cursor:pointer;">
+                <span>🔬 Open Live Interactive Sensors Bench in Studio ↑</span>
+              </button>
             </div>
           </section>
 
@@ -1930,78 +2865,57 @@
             </div>
           </section>
 
-          <!-- ── HOW TO USE A RULER ──────────────────── -->
-          <section class="ml-ruler-lab" id="sec-ruler" aria-label="Interactive ruler">
-            <h2>Interactive Ruler</h2>
-            <p>Select an object below to see how it measures up. Toggle between inches and centimeters.</p>
-
-            <div class="ml-ruler-toggle">
-              <button class="ml-ruler-tab active" id="ml-tab-cm" type="button" onclick="mlSetUnit('cm')" aria-pressed="true">Centimeters</button>
-              <button class="ml-ruler-tab" id="ml-tab-in" type="button" onclick="mlSetUnit('in')" aria-pressed="false">Inches</button>
-            </div>
+          <!-- ── HOW TO READ A RULER & CALIPER ────────── -->
+          <section class="ml-ruler-lab" id="sec-ruler-guide" aria-label="Ruler and caliper measurement principles">
+            <div class="mu-badge">Metrology Standards</div>
+            <h2>Metrology Rules: Vernier Scales, Parallax, and Significant Digits</h2>
+            <p>
+              Every physical measurement consists of three parts: <strong>the numerical value</strong>, <strong>the unit</strong>, and <strong>the measurement uncertainty</strong>. When measuring with a standard desk ruler or precision vernier caliper, following strict metrological protocol prevents systematic and human reading errors.
+            </p>
 
             <div class="ml-ruler-tips" aria-label="Ruler reading technique">
-              <div class="ml-ruler-tip"><strong>Start at 0.</strong> The edge of a ruler is not always the zero mark.</div>
-              <div class="ml-ruler-tip"><strong>Stay straight.</strong> Tilted rulers make objects look longer or shorter.</div>
-              <div class="ml-ruler-tip"><strong>Name the unit.</strong> A number without cm, in, or m is unfinished data.</div>
+              <div class="ml-ruler-tip"><strong>1. Zero Mark vs. Physical Edge.</strong> Many wooden and plastic rulers have a margin before the 0 line to protect the scale from corner wear. Aligning with the wooden edge introduces systematic offset error.</div>
+              <div class="ml-ruler-tip"><strong>2. Parallax Elimination.</strong> Always view the tick mark perpendicular to the ruler plane. Viewing from an angle makes the object's edge shift against the graduation marks due to the ruler's physical thickness.</div>
+              <div class="ml-ruler-tip"><strong>3. Vernier Coincidence.</strong> A vernier scale divides $n$ main scale units into $n+1$ vernier divisions. The single line that aligns exactly across both scales gives the next decimal digit ($0.02\text{ mm}$ or $0.05\text{ mm}$ resolution).</div>
             </div>
 
-            <!-- SVG Ruler -->
-            <div class="ml-ruler-svg-wrap">
-              <svg id="ml-ruler-svg" viewBox="0 0 640 90" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive ruler">
-                <!-- Ruler body -->
-                <rect x="0" y="20" width="640" height="50" rx="4" fill="#d97706"/>
-                <rect x="0" y="20" width="640" height="48" rx="4" fill="url(#woodGrad)"/>
-                <defs>
-                  <linearGradient id="woodGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#fde68a"/>
-                    <stop offset="30%" stop-color="#fbbf24"/>
-                    <stop offset="100%" stop-color="#d97706"/>
-                  </linearGradient>
-                </defs>
-                <!-- Tick marks and labels drawn by JS -->
-                <g id="ml-ruler-ticks"></g>
-                <!-- Object indicator -->
-                <rect id="ml-obj-bar" x="0" y="18" width="0" height="54" rx="3" fill="rgba(239,68,68,0.35)" pointer-events="none"/>
-                <line id="ml-obj-line-start" x1="0" y1="15" x2="0" y2="72" stroke="#ef4444" stroke-width="2" pointer-events="none"/>
-                <line id="ml-obj-line-end"   x1="0" y1="15" x2="0" y2="72" stroke="#ef4444" stroke-width="2" pointer-events="none"/>
-                <text id="ml-obj-dim-label" x="0" y="12" text-anchor="middle" fill="#ef4444" font-size="10" font-family="'IBM Plex Mono',monospace" font-weight="700"></text>
-              </svg>
-            </div>
-
-            <!-- Objects to measure -->
-            <div class="ml-measure-object-wrap">
-              <h3>What would you like to measure?</h3>
-              <div class="ml-objects-grid" id="ml-objects-grid"></div>
-              <div class="ml-obj-result" id="ml-obj-result" style="display:none;"></div>
+            <div style="margin-top:1.25rem;text-align:center;">
+              <button type="button" class="btn btn-secondary" onclick="mlSwitchStudioTab('ruler');document.getElementById('measurement-studio').scrollIntoView({behavior:'smooth'});" style="font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;cursor:pointer;">
+                <span>📐 Launch Digital Vernier Caliper &amp; Desk Ruler in Studio ↑</span>
+              </button>
             </div>
           </section>
 
-          <!-- ── UNIVERSAL UNIT CONVERTER ───────────── -->
-          <section class="ml-converter-lab" id="sec-convert" aria-label="Universal unit converter">
-            <h2>Universal Unit Converter</h2>
-            <p>Pick a quantity, type a number, choose your units. Length, mass, temperature, pressure, energy, power, speed, data, angle, radiation — all of it, with the exact conversion factor shown so you can check the arithmetic yourself.</p>
+          <!-- ── DIMENSIONAL ANALYSIS & CONVERSIONS ──── -->
+          <section class="ml-converter-lab" id="sec-convert-guide" aria-label="Dimensional analysis and conversion methodology">
+            <div class="mu-badge">Mathematical Foundation</div>
+            <h2>Dimensional Analysis &amp; The Factor-Label Method</h2>
+            <p>
+              Unit conversion is never arbitrary multiplication; it is multiplication by <strong>dimensionless unities</strong> (factors of 1). Because $1\text{ inch} = 2.54\text{ cm}$, the fractions $\frac{2.54\text{ cm}}{1\text{ in}}$ and $\frac{1\text{ in}}{2.54\text{ cm}}$ both equal 1. Multiplying any quantity by 1 preserves physical magnitude while altering the coordinate representation.
+            </p>
 
-            <div class="mu-conv-cats" id="mu-conv-cats" role="group" aria-label="Quantity to convert"></div>
-
-            <div class="ml-conv-row">
-              <div class="ml-conv-side">
-                <input type="number" class="ml-conv-input" id="ml-conv-from-val" value="1" aria-label="Value to convert">
-                <select class="ml-conv-select" id="ml-conv-from-unit" aria-label="From unit"></select>
+            <div class="ml-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-top:1rem;">
+              <div class="ml-card" style="margin:0;padding:1.25rem;">
+                <h3 style="color:#a78bfa;margin-top:0;">Dimensional Homogeneity</h3>
+                <p style="font-size:0.9rem;line-height:1.5;">
+                  You can only add or equate quantities with the same base dimensions: $[L] + [L] = [L]$. Adding length to mass ($[L] + [M]$) is mathematically forbidden. The Fourier principle of dimensional homogeneity guarantees physical validity of formulas like $E = mc^2 \implies [M][L]^2[T]^{-2}$.
+                </p>
               </div>
-              <div class="ml-conv-arrow">→</div>
-              <div class="ml-conv-side">
-                <div class="ml-conv-result">
-                  <div class="conv-val" id="ml-conv-result-val">—</div>
-                  <div class="conv-label" id="ml-conv-result-label"></div>
-                </div>
-                <select class="ml-conv-select" id="ml-conv-to-unit" aria-label="To unit"></select>
+              <div class="ml-card" style="margin:0;padding:1.25rem;">
+                <h3 style="color:#f59e0b;margin-top:0;">Chained Unit Cancellation</h3>
+                <p style="font-size:0.9rem;line-height:1.5;">
+                  To convert $60\text{ mph}$ to $\text{m/s}$:
+                  $$\frac{60\text{ miles}}{1\text{ hr}} \times \frac{1609.344\text{ m}}{1\text{ mile}} \times \frac{1\text{ hr}}{3600\text{ s}} \approx 26.82\text{ m/s}$$
+                  All numerator and denominator units cancel algebraically except the target units.
+                </p>
               </div>
             </div>
 
-            <div class="mu-conv-formula" id="mu-conv-formula" aria-live="polite"></div>
-
-            <div class="ml-conv-quick" id="mu-conv-quick"></div>
+            <div style="margin-top:1.25rem;text-align:center;">
+              <button type="button" class="btn btn-secondary" onclick="mlSwitchStudioTab('convert');document.getElementById('measurement-studio').scrollIntoView({behavior:'smooth'});" style="font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.25rem;cursor:pointer;">
+                <span>⚖️ Open Universal Dimensional Converter in Studio ↑</span>
+              </button>
+            </div>
           </section>
 
           <!-- ── STRANGE SCALES ─────────────────────── -->
@@ -2281,6 +3195,8 @@
             </div>
           </section>
 
+        </div><!-- /#lesson-reading-start -->
+
         </main>
       </div><!-- /.ll-sim -->
 
@@ -2403,6 +3319,83 @@
   <!-- Shared figure library — must load before the lesson scripts below. -->
   <script src="../../../assets/js/lessons/lesson-figures.js"></script>
   <script src="../../../assets/js/sim-kit.js"></script>
+
+  <!-- ── MEASUREMENT STUDIO SUITE MASTER CONTROLLER ── -->
+  <script>
+  (function () {
+    const tabMap = {
+      'scale': { tabId: 'tab-btn-scale', paneId: 'sec-scale', title: 'Scale of the Universe Explorer' },
+      'ruler': { tabId: 'tab-btn-ruler', paneId: 'sec-ruler', title: 'Precision Vernier Caliper & Desk Ruler' },
+      'convert': { tabId: 'tab-btn-convert', paneId: 'sec-convert', title: 'Universal Dimensional Unit Converter' },
+      'sensors': { tabId: 'tab-btn-sensors', paneId: 'sec-feel', title: 'Interactive Physics Sensors & Kinetic Bench' }
+    };
+    const paneToKey = {
+      'sec-scale': 'scale',
+      'sec-ruler': 'ruler',
+      'sec-convert': 'convert',
+      'sec-feel': 'sensors'
+    };
+
+    window.mlSwitchStudioTab = function (key) {
+      if (!tabMap[key]) return;
+      const target = tabMap[key];
+
+      // Update tab buttons
+      document.querySelectorAll('.ml-studio-tab').forEach(btn => {
+        const isCurrent = btn.id === target.tabId;
+        btn.classList.toggle('active', isCurrent);
+        btn.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
+      });
+
+      // Update panes
+      document.querySelectorAll('.ml-studio-pane').forEach(pane => {
+        const isCurrent = pane.id === target.paneId;
+        pane.classList.toggle('active', isCurrent);
+        if (isCurrent) {
+          pane.removeAttribute('hidden');
+        } else {
+          pane.setAttribute('hidden', '');
+        }
+      });
+
+      const statusEl = document.getElementById('ml-studio-status-text');
+      if (statusEl) {
+        statusEl.textContent = `Active Workspace: ${target.title}`;
+      }
+
+      // If switching to sensors, start/wake kinetic sim
+      if (key === 'sensors' && window.mlStartKineticSim) {
+        window.mlStartKineticSim();
+      }
+      // If switching to scale, trigger canvas resize/render
+      if (key === 'scale' && window.mlTriggerScaleResize) {
+        window.mlTriggerScaleResize();
+      }
+    };
+
+    // Keyboard hotkeys 1-4
+    window.addEventListener('keydown', function (e) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === '1') mlSwitchStudioTab('scale');
+      else if (e.key === '2') mlSwitchStudioTab('ruler');
+      else if (e.key === '3') mlSwitchStudioTab('convert');
+      else if (e.key === '4') mlSwitchStudioTab('sensors');
+    });
+
+    // Hash change routing
+    function handleHash() {
+      const hash = window.location.hash.replace('#', '');
+      if (paneToKey[hash]) {
+        mlSwitchStudioTab(paneToKey[hash]);
+      }
+    }
+    window.addEventListener('hashchange', handleHash);
+    if (window.location.hash) {
+      handleHash();
+    }
+  })();
+  </script>
 
   <!-- ── SCALE EXPLORER SCRIPT ──────────────────────── -->
   <script>
@@ -2571,6 +3564,7 @@
       ctx = rCtx; canvasW = w; canvasH = h;
     } });
     function resizeCanvas() { scaleStage.resize(); }
+    window.mlTriggerScaleResize = resizeCanvas;
 
     function drawGrid(time, accent) {
       ctx.save();
@@ -3583,21 +4577,31 @@
   })();
   </script>
 
-  <!-- ── RULER SCRIPT ───────────────────────────────── -->
+  <!-- ── PRECISION CALIPER & DESK RULER SCRIPT ───────── -->
   <script>
   (function () {
-    let currentUnit = 'cm';
+    let currentRulerUnit = 'cm';
+    let caliperUnit = 'mm';
+    let currentCaliperMm = 190.0;
+    let caliperTare = 0;
+
     const RULER_PX = 620; // usable ruler pixels (leaving margin)
     const RULER_OFFSET = 10; // start x
 
     // Objects with real-world lengths in cm
     const objects = [
-      { name: 'Pencil',        cm: 19,   desc: 'A standard #2 pencil is about 19 cm (7.5 in) long.' },
-      { name: 'Sheet of Paper (width)', cm: 21.59, desc: 'US Letter paper is 8.5 inches (21.59 cm) wide.' },
-      { name: 'Dollar Bill',   cm: 15.6, desc: 'US currency is 6.14 inches (15.6 cm) long.' },
-      { name: 'Smartphone',    cm: 15,   desc: 'A typical modern smartphone is about 15 cm (6 in) tall.' },
-      { name: 'Hand span',     cm: 20,   desc: 'The average adult hand span (pinky to thumb stretched) is about 20 cm.' },
-      { name: 'Shoebox length',cm: 30,   desc: 'A men\'s size 10 shoebox is about 30 cm (12 in / 1 foot) long.' },
+      { name: 'Pencil Lead (0.5 mm)',  cm: 0.05,  desc: 'Ultra-thin 0.50 mm graphite lead. Calipers verify precision diameter to prevent jamming inside drafting pencils.' },
+      { name: 'US Dime Thickness',      cm: 0.135, desc: 'A standard clad US dime is exactly 1.35 mm thick.' },
+      { name: 'M5 Washer Thickness',    cm: 0.22,  desc: 'Metric standard mechanical fastener washer: 2.20 mm thick.' },
+      { name: 'AA Battery Diameter',    cm: 1.42,  desc: 'Standard ANSI 15A cylindrical alkaline cell is 14.20 mm wide.' },
+      { name: 'US Quarter Diameter',    cm: 2.426, desc: 'US 25-cent coin diameter: exactly 0.955 in (24.26 mm).' },
+      { name: 'Golf Ball Diameter',     cm: 4.267, desc: 'USGA minimum regulation diameter: 1.680 inches (42.67 mm).' },
+      { name: 'Smartphone Length',      cm: 15.0,  desc: 'A modern pocket smartphone: 150.00 mm (5.91 in).' },
+      { name: '#2 Pencil Length',       cm: 19.0,  desc: 'An unsharpened hexagonal #2 pencil: 190.00 mm (7.48 in).' },
+      { name: 'US Letter Paper Width',  cm: 21.59, desc: 'Standard ANSI A letter width: 8.5 inches (215.9 mm).' },
+      { name: 'Dollar Bill Length',     cm: 15.6,  desc: 'Federal Reserve note length: 6.14 inches (156.0 mm).' },
+      { name: 'Hand span',              cm: 20.0,  desc: 'Average adult hand span (stretched thumb to pinky): ~20 cm.' },
+      { name: 'Shoebox Length',         cm: 30.0,  desc: 'A standard adult shoebox: ~30 cm (12 in / 1 foot).' }
     ];
 
     const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -3609,7 +4613,17 @@
     const dimLbl   = document.getElementById('ml-obj-dim-label');
     const resultEl = document.getElementById('ml-obj-result');
 
-    // Max ruler span in cm (fits 640px at current scale)
+    // Caliper DOM elements
+    const caliperSlider = document.getElementById('ml-caliper-slider');
+    const caliperSpecimenSvg = document.getElementById('ml-caliper-specimen-svg');
+    const caliperSpecimenTitle = document.getElementById('ml-caliper-specimen-title');
+    const caliperSvgLcd = document.getElementById('ml-caliper-svg-lcd');
+    const caliperSvgUnit = document.getElementById('ml-caliper-svg-unit');
+    const caliperDeckLcdVal = document.getElementById('ml-lcd-val');
+    const caliperDeckLcdMeta = document.getElementById('ml-lcd-meta');
+    const caliperUnitMmBtn = document.getElementById('caliper-unit-mm');
+    const caliperUnitInBtn = document.getElementById('caliper-unit-in');
+
     const MAX_CM = 30;
     const MAX_IN = MAX_CM / 2.54;
 
@@ -3617,6 +4631,7 @@
     function pxPerIn() { return RULER_PX / MAX_IN; }
 
     function drawRuler(unit) {
+      if (!tickGroup) return;
       tickGroup.innerHTML = '';
       if (unit === 'cm') {
         const ppc = pxPerCm();
@@ -3651,7 +4666,6 @@
             tickGroup.appendChild(t);
           }
         }
-        // Unit label
         const ul = document.createElementNS(SVG_NS, 'text');
         ul.setAttribute('x', RULER_OFFSET + 2); ul.setAttribute('y', 66);
         ul.setAttribute('font-size', '8'); ul.setAttribute('fill', '#92400e');
@@ -3704,12 +4718,64 @@
 
     let activeObj = null;
 
+    function updateCaliperUI(mm, name, desc) {
+      currentCaliperMm = mm;
+      const netMm = mm - caliperTare;
+      const inVal = netMm / 25.4;
+      // 300 mm maps to 520 px (1.7333 px/mm)
+      const targetX = Math.min(Math.max(mm * 1.7333, 0), 520);
+
+      if (caliperSlider) {
+        caliperSlider.setAttribute('transform', `translate(${targetX}, 0)`);
+      }
+      if (caliperSpecimenSvg) {
+        caliperSpecimenSvg.setAttribute('x', '90');
+        caliperSpecimenSvg.setAttribute('width', Math.max(targetX, 0));
+      }
+      if (caliperSpecimenTitle) {
+        caliperSpecimenTitle.setAttribute('x', 90 + targetX / 2);
+        caliperSpecimenTitle.textContent = `${name || 'Specimen'} (${mm.toFixed(1)} mm)`;
+      }
+
+      const isTare = caliperTare !== 0;
+      const tareTag = isTare ? ' <small style="color:#f59e0b;font-size:0.75rem;">[TARED]</small>' : '';
+
+      if (caliperUnit === 'mm') {
+        const valStr = netMm.toFixed(2);
+        if (caliperSvgLcd) caliperSvgLcd.textContent = valStr;
+        if (caliperSvgUnit) caliperSvgUnit.textContent = 'mm';
+        if (caliperDeckLcdVal) caliperDeckLcdVal.innerHTML = `${valStr} <span class="ml-lcd-unit">mm</span>${tareTag}`;
+        if (caliperDeckLcdMeta) caliperDeckLcdMeta.textContent = `${inVal.toFixed(3)} in • Vernier Resolution: 0.01 mm / 0.0005 in`;
+      } else {
+        const valStr = inVal.toFixed(3);
+        if (caliperSvgLcd) caliperSvgLcd.textContent = valStr;
+        if (caliperSvgUnit) caliperSvgUnit.textContent = 'in';
+        if (caliperDeckLcdVal) caliperDeckLcdVal.innerHTML = `${valStr} <span class="ml-lcd-unit">in</span>${tareTag}`;
+        if (caliperDeckLcdMeta) caliperDeckLcdMeta.textContent = `${netMm.toFixed(2)} mm • Vernier Resolution: 0.0005 in / 0.01 mm`;
+      }
+
+      if (resultEl) {
+        const mainScale = Math.floor(mm);
+        const vernierPart = (mm % 1).toFixed(2).slice(2);
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `
+          <div class="obj-res-main"><strong>${name || 'Selected Specimen'}</strong>: ${mm.toFixed(2)} mm / ${(mm/25.4).toFixed(3)} in</div>
+          <div style="font-size:0.82rem;color:rgba(254,243,199,0.85);margin-top:0.35rem;line-height:1.45;">
+            ${desc || ''}
+          </div>
+          <div style="margin-top:0.5rem;font-size:0.78rem;font-family:'IBM Plex Mono',monospace;color:#34d399;background:rgba(6,78,59,0.35);padding:0.4rem 0.65rem;border-radius:4px;border-left:3px solid #10b981;">
+            Metrology Reading: Main scale = ${mainScale} mm &bull; Vernier coincidence = .${vernierPart} mm &bull; Total = ${mm.toFixed(2)} mm (&plusmn;0.01 mm)
+          </div>
+        `;
+      }
+    }
+
     function showObject(obj) {
       activeObj = obj;
       const cm = obj.cm;
       const inVal = cm / 2.54;
       let startPx, endPx, label;
-      if (currentUnit === 'cm') {
+      if (currentRulerUnit === 'cm') {
         startPx = RULER_OFFSET;
         endPx   = RULER_OFFSET + cm * pxPerCm();
         label   = cm.toFixed(1) + ' cm';
@@ -3718,15 +4784,18 @@
         endPx   = RULER_OFFSET + inVal * pxPerIn();
         label   = inVal.toFixed(2) + ' in';
       }
-      objBar.setAttribute('x', startPx);
-      objBar.setAttribute('width', endPx - startPx);
-      lineS.setAttribute('x1', startPx); lineS.setAttribute('x2', startPx);
-      lineE.setAttribute('x1', endPx);   lineE.setAttribute('x2', endPx);
-      dimLbl.setAttribute('x', (startPx + endPx) / 2);
-      dimLbl.textContent = label;
+      if (objBar) {
+        objBar.setAttribute('x', startPx);
+        objBar.setAttribute('width', Math.max(0, endPx - startPx));
+      }
+      if (lineS) { lineS.setAttribute('x1', startPx); lineS.setAttribute('x2', startPx); }
+      if (lineE) { lineE.setAttribute('x1', endPx);   lineE.setAttribute('x2', endPx); }
+      if (dimLbl) {
+        dimLbl.setAttribute('x', (startPx + endPx) / 2);
+        dimLbl.textContent = label;
+      }
 
-      resultEl.style.display = 'block';
-      resultEl.innerHTML = `<div class="obj-res-main">${obj.name}: ${cm.toFixed(1)} cm / ${inVal.toFixed(2)} in</div><div style="font-size:0.8rem;color:rgba(254,243,199,0.55);margin-top:0.25rem;">${obj.desc}</div>`;
+      updateCaliperUI(cm * 10, obj.name, obj.desc);
 
       document.querySelectorAll('.ml-obj-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.ml-obj-btn').forEach(b => {
@@ -3736,29 +4805,75 @@
 
     // Build object buttons
     const grid = document.getElementById('ml-objects-grid');
-    objects.forEach((obj, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'ml-obj-btn';
-      btn.dataset.idx = i;
-      btn.innerHTML = `<div class="obj-name">${obj.name}</div><div class="obj-size">${obj.cm.toFixed(1)} cm / ${(obj.cm/2.54).toFixed(1)} in</div>`;
-      btn.addEventListener('click', () => showObject(obj));
-      grid.appendChild(btn);
-    });
+    if (grid) {
+      grid.innerHTML = '';
+      objects.forEach((obj, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ml-obj-btn';
+        btn.dataset.idx = i;
+        btn.innerHTML = `<div class="obj-name">${obj.name}</div><div class="obj-size">${(obj.cm * 10).toFixed(1)} mm / ${(obj.cm/2.54).toFixed(2)} in</div>`;
+        btn.addEventListener('click', () => showObject(obj));
+        grid.appendChild(btn);
+      });
+    }
 
     window.mlSetUnit = function (unit) {
-      currentUnit = unit;
+      currentRulerUnit = unit;
       const cmTab = document.getElementById('ml-tab-cm');
       const inTab = document.getElementById('ml-tab-in');
-      cmTab.classList.toggle('active', unit === 'cm');
-      inTab.classList.toggle('active', unit === 'in');
-      cmTab.setAttribute('aria-pressed', unit === 'cm' ? 'true' : 'false');
-      inTab.setAttribute('aria-pressed', unit === 'in' ? 'true' : 'false');
+      if (cmTab) cmTab.classList.toggle('active', unit === 'cm');
+      if (inTab) inTab.classList.toggle('active', unit === 'in');
+      if (cmTab) cmTab.setAttribute('aria-pressed', unit === 'cm' ? 'true' : 'false');
+      if (inTab) inTab.setAttribute('aria-pressed', unit === 'in' ? 'true' : 'false');
       drawRuler(unit);
       if (activeObj) showObject(activeObj);
     };
 
+    window.mlCaliperSetUnit = function (unit) {
+      caliperUnit = unit;
+      if (caliperUnitMmBtn) {
+        caliperUnitMmBtn.classList.toggle('active', unit === 'mm');
+        caliperUnitMmBtn.setAttribute('aria-pressed', unit === 'mm' ? 'true' : 'false');
+      }
+      if (caliperUnitInBtn) {
+        caliperUnitInBtn.classList.toggle('active', unit === 'in');
+        caliperUnitInBtn.setAttribute('aria-pressed', unit === 'in' ? 'true' : 'false');
+      }
+      if (activeObj) {
+        updateCaliperUI(activeObj.cm * 10, activeObj.name, activeObj.desc);
+      }
+    };
+
+    window.mlCaliperTare = function () {
+      caliperTare = currentCaliperMm;
+      if (activeObj) {
+        updateCaliperUI(activeObj.cm * 10, activeObj.name, activeObj.desc);
+      }
+    };
+
+    window.mlCaliperReset = function () {
+      caliperTare = 0;
+      if (activeObj) {
+        updateCaliperUI(activeObj.cm * 10, activeObj.name, activeObj.desc);
+      }
+    };
+
+    // Keyboard nudge (Left / Right) when Caliper is active
+    window.addEventListener('keydown', function (e) {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      const rulerPane = document.getElementById('sec-ruler');
+      if (!rulerPane || rulerPane.hasAttribute('hidden')) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        const delta = (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1.0 : 0.1);
+        const newMm = Math.max(0, Math.min(300, currentCaliperMm + delta));
+        updateCaliperUI(newMm, 'Manual Adjustment', 'Manually adjusted jaw spacing with arrow hotkeys.');
+      }
+    });
+
     drawRuler('cm');
-    showObject(objects[0]);
+    showObject(objects[7]); // Standard #2 pencil (190 mm) initially selected
   })();
   </script>
 
@@ -3771,7 +4886,7 @@
     // carries explicit to/from SI functions instead of a factor.
     const CATEGORIES = {
       length: {
-        label: 'Length', si: 'metre (m)',
+        label: 'Length', si: 'metre (m)', dim: '[L]¹',
         units: {
           nm:  { label: 'Nanometers (nm)',        f: 1e-9 },
           um:  { label: 'Micrometers (µm)',       f: 1e-6 },
@@ -3793,7 +4908,7 @@
         quick: [[1,'m','ft'], [1,'mi','km'], [1,'in','mm'], [1,'au','km'], [1,'ly','km']],
       },
       mass: {
-        label: 'Mass', si: 'kilogram (kg)',
+        label: 'Mass', si: 'kilogram (kg)', dim: '[M]¹',
         units: {
           ug:  { label: 'Micrograms (µg)',    f: 1e-9 },
           mg:  { label: 'Milligrams (mg)',    f: 1e-6 },
@@ -3810,7 +4925,7 @@
         quick: [[1,'kg','lb'], [1,'lb','g'], [1,'oz','g'], [1,'t','lb'], [1,'ct','mg']],
       },
       temperature: {
-        label: 'Temperature', si: 'kelvin (K)', affine: true,
+        label: 'Temperature', si: 'kelvin (K)', affine: true, dim: '[Θ]¹',
         units: {
           K:  { label: 'Kelvin (K)',        to: v => v,                   from: v => v },
           C:  { label: 'Celsius (°C)',      to: v => v + 273.15,          from: v => v - 273.15 },
@@ -3820,7 +4935,7 @@
         quick: [[0,'C','F'], [100,'C','F'], [98.6,'F','C'], [0,'K','C'], [72,'F','C']],
       },
       area: {
-        label: 'Area', si: 'square metre (m²)',
+        label: 'Area', si: 'square metre (m²)', dim: '[L]²',
         units: {
           mm2: { label: 'Square millimeters (mm²)', f: 1e-6 },
           cm2: { label: 'Square centimeters (cm²)', f: 1e-4 },
@@ -3835,7 +4950,7 @@
         quick: [[1,'m2','ft2'], [1,'ac','m2'], [1,'ha','ac'], [1,'km2','mi2']],
       },
       volume: {
-        label: 'Volume', si: 'cubic metre (m³)',
+        label: 'Volume', si: 'cubic metre (m³)', dim: '[L]³',
         units: {
           ml:  { label: 'Milliliters (mL)',      f: 1e-6 },
           l:   { label: 'Liters (L)',            f: 0.001 },
@@ -3854,7 +4969,7 @@
         quick: [[1,'l','gal'], [1,'gal','l'], [1,'cup','ml'], [1,'m3','l'], [1,'floz','ml']],
       },
       speed: {
-        label: 'Speed', si: 'metre per second (m/s)',
+        label: 'Speed', si: 'metre per second (m/s)', dim: '[L]¹[T]⁻¹',
         units: {
           mps:  { label: 'Meters per second (m/s)', f: 1 },
           kph:  { label: 'Kilometers per hour (km/h)', f: 1/3.6 },
@@ -3867,7 +4982,7 @@
         quick: [[1,'mps','kph'], [60,'mph','kph'], [1,'kn','kph'], [1,'mach','mph'], [1,'c','kph']],
       },
       force: {
-        label: 'Force', si: 'newton (N)',
+        label: 'Force', si: 'newton (N)', dim: '[M]¹[L]¹[T]⁻²',
         units: {
           N:   { label: 'Newtons (N)',        f: 1 },
           kN:  { label: 'Kilonewtons (kN)',   f: 1000 },
@@ -3878,7 +4993,7 @@
         quick: [[1,'N','lbf'], [1,'lbf','N'], [1,'kgf','N'], [1,'kN','lbf']],
       },
       pressure: {
-        label: 'Pressure', si: 'pascal (Pa)',
+        label: 'Pressure', si: 'pascal (Pa)', dim: '[M]¹[L]⁻¹[T]⁻²',
         units: {
           Pa:   { label: 'Pascals (Pa)',        f: 1 },
           hPa:  { label: 'Hectopascals (hPa)',  f: 100 },
@@ -3895,7 +5010,7 @@
         quick: [[1,'atm','kPa'], [1,'bar','psi'], [32,'psi','kPa'], [760,'mmHg','atm'], [1,'atm','psi']],
       },
       energy: {
-        label: 'Energy', si: 'joule (J)',
+        label: 'Energy', si: 'joule (J)', dim: '[M]¹[L]²[T]⁻²',
         units: {
           J:    { label: 'Joules (J)',            f: 1 },
           kJ:   { label: 'Kilojoules (kJ)',       f: 1000 },
@@ -3912,7 +5027,7 @@
         quick: [[1,'kcal','kJ'], [1,'kWh','MJ'], [1,'BTU','J'], [2000,'kcal','kWh'], [1,'eV','J']],
       },
       power: {
-        label: 'Power', si: 'watt (W)',
+        label: 'Power', si: 'watt (W)', dim: '[M]¹[L]²[T]⁻³',
         units: {
           mW:   { label: 'Milliwatts (mW)',   f: 0.001 },
           W:    { label: 'Watts (W)',         f: 1 },
@@ -3926,7 +5041,7 @@
         quick: [[1,'hp','kW'], [100,'W','hp'], [1,'MW','hp'], [12000,'BTUh','kW']],
       },
       frequency: {
-        label: 'Frequency', si: 'hertz (Hz)',
+        label: 'Frequency', si: 'hertz (Hz)', dim: '[T]⁻¹',
         units: {
           Hz:  { label: 'Hertz (Hz)',       f: 1 },
           kHz: { label: 'Kilohertz (kHz)',  f: 1000 },
@@ -3939,7 +5054,7 @@
         quick: [[1,'GHz','MHz'], [3000,'rpm','Hz'], [440,'Hz','rpm'], [1,'THz','GHz']],
       },
       charge: {
-        label: 'Charge', si: 'coulomb (C)',
+        label: 'Charge', si: 'coulomb (C)', dim: '[I]¹[T]¹',
         units: {
           C:   { label: 'Coulombs (C)',      f: 1 },
           mC:  { label: 'Millicoulombs (mC)',f: 0.001 },
@@ -3951,7 +5066,7 @@
         quick: [[1,'Ah','C'], [5000,'mAh','C'], [1,'C','e']],
       },
       voltage: {
-        label: 'Voltage', si: 'volt (V)',
+        label: 'Voltage', si: 'volt (V)', dim: '[M]¹[L]²[T]⁻³[I]⁻¹',
         units: {
           uV: { label: 'Microvolts (µV)', f: 1e-6 },
           mV: { label: 'Millivolts (mV)', f: 0.001 },
@@ -3962,7 +5077,7 @@
         quick: [[1,'kV','V'], [1.5,'V','mV'], [230,'V','kV']],
       },
       data: {
-        label: 'Data', si: 'bit (b)',
+        label: 'Data', si: 'bit (b)', dim: 'Dimensionless (Bit)',
         units: {
           b:   { label: 'Bits (b)',        f: 1 },
           B:   { label: 'Bytes (B)',       f: 8 },
@@ -3977,7 +5092,7 @@
         quick: [[1,'GB','MB'], [1,'GiB','GB'], [1,'TB','GiB'], [1,'B','b']],
       },
       angle: {
-        label: 'Angle', si: 'radian (rad)',
+        label: 'Angle', si: 'radian (rad)', dim: 'Dimensionless (rad)',
         units: {
           rad:    { label: 'Radians (rad)',    f: 1 },
           deg:    { label: 'Degrees (°)',      f: Math.PI / 180 },
@@ -3989,7 +5104,7 @@
         quick: [[180,'deg','rad'], [1,'turn','deg'], [1,'deg','arcmin'], [1,'rad','deg']],
       },
       radiation: {
-        label: 'Radiation', si: 'sievert (Sv)',
+        label: 'Radiation', si: 'sievert (Sv)', dim: '[L]²[T]⁻²',
         units: {
           Sv:  { label: 'Sieverts (Sv)',      f: 1 },
           mSv: { label: 'Millisieverts (mSv)',f: 0.001 },
@@ -4003,7 +5118,7 @@
         quick: [[1,'mSv','uSv'], [1,'rem','mSv'], [100,'uSv','mrem']],
       },
       light: {
-        label: 'Light', si: 'lux (lx)',
+        label: 'Light', si: 'lux (lx)', dim: '[L]⁻²[J]¹',
         units: {
           lx:  { label: 'Lux (lx)',              f: 1 },
           klx: { label: 'Kilolux (klx)',         f: 1000 },
@@ -4095,6 +5210,11 @@
       resVal.textContent = fmt(result);
       resLbl.textContent = cat.units[b].label;
 
+      const dimBase = document.getElementById('dim-tag-base');
+      const dimTag  = document.getElementById('dim-tag-dim');
+      if (dimBase) dimBase.textContent = `${cat.label} SI Base: ${cat.si}`;
+      if (dimTag) dimTag.textContent = `Dimension: ${cat.dim || '[Dimensionless]'}`;
+
       if (cat.affine) {
         formula.textContent =
           `${fmt(v)} ${shortLabel(cat, a)} → K → ${shortLabel(cat, b)}   ·   `
@@ -4107,6 +5227,14 @@
           + `both are defined against the SI unit: the ${cat.si}.`;
       }
     }
+
+    window.mlSwapConvUnits = function () {
+      const curFrom = fromUnit.value;
+      const curTo = toUnit.value;
+      fromUnit.value = curTo;
+      toUnit.value = curFrom;
+      convert();
+    };
 
     function selectCategory(key) {
       current = key;
@@ -4479,6 +5607,156 @@
       return Math.round(n * p) / p;
     };
 
+    /* ── 2D Thermal Kinetic Gas Simulation ───────── */
+    (function () {
+      const canvas = document.getElementById('mu-kinetic-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const PARTICLE_COUNT = 32;
+      const particles = [];
+      const W = canvas.width;
+      const H = canvas.height;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const col = i % 8;
+        const row = Math.floor(i / 8);
+        particles.push({
+          x: 20 + col * ((W - 40) / 7),
+          y: 18 + row * ((H - 36) / 3),
+          latticeX: 20 + col * ((W - 40) / 7),
+          latticeY: 18 + row * ((H - 36) / 3),
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          radius: 3.2
+        });
+      }
+
+      let currentTemp = 293;
+      let animId = null;
+
+      window.mlSetKineticTemp = function (t) {
+        currentTemp = Math.max(0, Math.min(1200, t));
+      };
+
+      function renderSim() {
+        const blurAlpha = currentTemp > 450 ? 0.35 : (currentTemp > 100 ? 0.55 : 0.85);
+        ctx.fillStyle = `rgba(15, 23, 42, ${blurAlpha})`;
+        ctx.fillRect(0, 0, W, H);
+
+        // Chamber border
+        ctx.strokeStyle = currentTemp > 500 ? 'rgba(244, 63, 94, 0.45)' : 'rgba(56, 189, 248, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(1, 1, W - 2, H - 2);
+
+        // Lattice lines at cryogenic temperatures
+        if (currentTemp < 80) {
+          const coldAlpha = Math.max(0, (80 - currentTemp) / 80) * 0.45;
+          ctx.strokeStyle = `rgba(147, 197, 253, ${coldAlpha})`;
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([2, 2]);
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            if (i % 8 < 7) {
+              const right = particles[i + 1];
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(right.x, right.y); ctx.stroke();
+            }
+            if (i < 24) {
+              const down = particles[i + 8];
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(down.x, down.y); ctx.stroke();
+            }
+          }
+          ctx.setLineDash([]);
+        }
+
+        const speedScale = currentTemp === 0 ? 0 : Math.sqrt(currentTemp / 293) * 1.5;
+        const kB_eV = 8.617333262e-5;
+        const meanEk_eV = 1.5 * kB_eV * currentTemp;
+
+        let hue, sat, light;
+        if (currentTemp < 77) {
+          hue = 200; sat = 85; light = 70;
+        } else if (currentTemp < 273) {
+          hue = 175; sat = 75; light = 60;
+        } else if (currentTemp < 373) {
+          hue = 145; sat = 80; light = 55;
+        } else if (currentTemp < 600) {
+          hue = 40; sat = 95; light = 55;
+        } else {
+          hue = 345; sat = 100; light = 65;
+        }
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+
+          if (currentTemp === 0) {
+            p.x += (p.latticeX - p.x) * 0.12;
+            p.y += (p.latticeY - p.y) * 0.12;
+            p.vx = 0;
+            p.vy = 0;
+          } else {
+            const norm = Math.hypot(p.vx, p.vy) || 1;
+            p.x += (p.vx / norm) * speedScale;
+            p.y += (p.vy / norm) * speedScale;
+
+            const pad = p.radius + 2;
+            if (p.x <= pad) { p.x = pad; p.vx = Math.abs(p.vx); }
+            if (p.x >= W - pad) { p.x = W - pad; p.vx = -Math.abs(p.vx); }
+            if (p.y <= pad) { p.y = pad; p.vy = Math.abs(p.vy); }
+            if (p.y >= H - pad) { p.y = H - pad; p.vy = -Math.abs(p.vy); }
+
+            if (Math.random() < 0.04) {
+              p.vx += (Math.random() - 0.5) * 0.4;
+              p.vy += (Math.random() - 0.5) * 0.4;
+            }
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
+          ctx.fill();
+
+          if (currentTemp > 450 || currentTemp === 0) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius + 3, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, 0.3)`;
+            ctx.fill();
+          }
+        }
+
+        // Live HUD overlay badge
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.78)';
+        ctx.fillRect(8, 8, 185, 42);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(8, 8, 185, 42);
+
+        ctx.font = '600 10px "IBM Plex Mono", monospace';
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillText(`T = ${currentTemp.toFixed(1)} K`, 14, 21);
+
+        ctx.font = '500 8.5px "IBM Plex Mono", monospace';
+        ctx.fillStyle = currentTemp === 0 ? '#93c5fd' : '#34d399';
+        const vRmsEst = currentTemp === 0 ? 0 : Math.round(Math.sqrt(currentTemp) * 28.5);
+        ctx.fillText(`v_rms ≈ ${vRmsEst} m/s`, 14, 33);
+
+        ctx.fillStyle = '#cbd5e1';
+        const ekText = currentTemp === 0 ? '0.00 eV (Ground State)' : `${(meanEk_eV * 1000).toFixed(1)} meV (3/2 kB T)`;
+        ctx.fillText(`⟨Ek⟩ = ${ekText}`, 14, 43);
+
+        animId = requestAnimationFrame(renderSim);
+      }
+
+      window.mlStartKineticSim = function () {
+        if (!animId) {
+          animId = requestAnimationFrame(renderSim);
+        }
+      };
+
+      mlStartKineticSim();
+    })();
+
     /* ── Temperature ─────────────────────────────── */
     (function () {
       const slider = document.getElementById('mu-therm-slider');
@@ -4520,6 +5798,10 @@
         out.c.textContent = round(c, 1) + ' \u00b0C';
         out.f.textContent = round(c * 9 / 5 + 32, 1) + ' \u00b0F';
         out.r.textContent = round(k * 9 / 5, 1) + ' \u00b0R';
+
+        if (window.mlSetKineticTemp) {
+          window.mlSetKineticTemp(k);
+        }
 
         const frac = Math.max(0, Math.min(1, k / MAX));
         mercury.setAttribute('width', Math.max(3, frac * TUBE_W));
@@ -4715,5 +5997,6 @@
 <script src="../../../assets/js/lesson-print-button.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/creation-app.js"></script>
 </body>
 </html>

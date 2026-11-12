@@ -7,6 +7,8 @@
   <meta name="description" content="Build a lemonade-stand economy game in about 90 lines of JavaScript: supply and demand, a weather forecast you cannot fully trust, random events and upgrades that compound. Then re-skin it into a school store, a food truck or a 3D-print farm." />
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/creation-app.css" />
+  <link rel="stylesheet" href="../../../assets/css/lemonade-studio.css" />
   <style>
     .cl-page { padding-bottom: 0; }
     .ll-viewport { --ll-panel-w: 300px; }
@@ -131,6 +133,9 @@
   <div class="ll-stage">
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
+        <div class="creation-app lemonade-creation-wrap" data-creation-app aria-label="Lemonade Tycoon Studio">
+          <section id="lemonade-engine-app" data-night-keep aria-label="Lemonade Tycoon Simulation Engine"></section>
+        </div>
 
         <section class="hero cl-hero">
           <p class="eyebrow">Game Design &amp; Development · Build a Classic</p>
@@ -177,6 +182,7 @@
             <button class="btn" id="lab-run" type="button">▶ Run my game</button>
             <button class="btn ghost" id="lab-reset" type="button">Reset preset</button>
             <button class="btn ghost" id="lab-download" type="button">⬇ Download as a game file</button>
+            <a class="btn ghost" href="#lemonade-engine-app">▲ Open in Studio</a>
           </div>
           <div class="lab-grid">
             <div>
@@ -611,8 +617,8 @@ say("Your stand is ready!");
 morning();
 draw();
 `;
-window.LEMON_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Lemonade Game</title>\n</head>\n<body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <p id="status"></p>\n  <p id="forecast"></p>\n  <p>\n    <label>Price $ <input id="price" type="number" value="1" min="0.05" step="0.05" style="width:5rem"></label>\n    <label>Cups to make <input id="cups" type="number" value="20" min="0" style="width:5rem"></label>\n    <button id="open">Open the stand</button>\n  </p>\n  <div id="upgrades"></div>\n  <pre id="log" style="background:#fffbe6; color:#3b2f0b; padding:1rem; height:14rem; overflow:auto; white-space:pre-wrap;"></pre>\n\n<script>\n';
-window.LEMON_MINI_TAIL = '</' + 'script>\n</body>\n</html>\n';
+window.LEMON_MINI_HEAD = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>My Lemonade Game</title>\n</head>\n<' + 'body style="font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem;">\n  <h1 id="title"></h1>\n  <p id="status"></p>\n  <p id="forecast"></p>\n  <p>\n    <label>Price $ <input id="price" type="number" value="1" min="0.05" step="0.05" style="width:5rem"></label>\n    <label>Cups to make <input id="cups" type="number" value="20" min="0" style="width:5rem"></label>\n    <button id="open">Open the stand</button>\n  </p>\n  <div id="upgrades"></div>\n  <pre id="log" style="background:#fffbe6; color:#3b2f0b; padding:1rem; height:14rem; overflow:auto; white-space:pre-wrap;"></pre>\n\n<' + 'script>\n';
+window.LEMON_MINI_TAIL = '</' + 'script>\n</' + 'body>\n</' + 'html>\n';
 </script>
 
 <script>
@@ -909,6 +915,9 @@ var LEMON_PRESETS = {
 };
 </script>
 
+<script src="../../../assets/js/sim-kit.js"></script>
+<script src="../../../assets/js/lemonade-studio.js"></script>
+
 <script>
 /* ═════════════════════════════════════════════════════════════
    Lesson page wiring
@@ -949,7 +958,14 @@ var LEMON_PRESETS = {
       var m = /position (\d+)/.exec(e.message), line = m ? ta.value.slice(0, +m[1]).split('\n').length : null;
       status.className = 'bad'; status.textContent = 'JSON problem' + (line ? ' near line ' + line : '') + ': ' + e.message + '. Look for a missing comma or quote.'; return;
     }
-    try { LemonadeEngine(host, cfg); status.className = 'ok'; status.textContent = 'Running “' + cfg.title + '”.'; }
+    try {
+      LemonadeEngine(host, cfg);
+      status.className = 'ok';
+      status.textContent = 'Running “' + cfg.title + '”.';
+      if (window.LemonadeStudio && $('lemonade-engine-app')) {
+        window.LemonadeStudio.mount($('lemonade-engine-app'), cfg);
+      }
+    }
     catch (e) { status.className = 'bad'; status.textContent = e.message; }
   }
   sel.addEventListener('change', loadPreset);
@@ -959,12 +975,15 @@ var LEMON_PRESETS = {
     var cfg; try { cfg = JSON.parse(ta.value); LemonadeEngine(document.createElement('div'), cfg); } catch (e) { status.className = 'bad'; status.textContent = 'Fix the config first: ' + e.message; return; }
     var json = JSON.stringify(cfg, null, 2).replace(/</g, '\\u003c');
     var title = String(cfg.title).replace(/[<>&"]/g, '');
-    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<body style="margin:0;padding:1rem;background:#3b2f0b;">\n<div id="game" style="max-width:700px;margin:0 auto;"></div>\n<script>\n' +
-      LemonadeEngine.toString() + '\nvar CONFIG = ' + json + ';\nLemonadeEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</body>\n</html>\n';
+    var html = '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + title + '</title>\n</head>\n<' + 'body style="margin:0;padding:1rem;background:#3b2f0b;">\n<div id="game" style="max-width:700px;margin:0 auto;"></div>\n<' + 'script>\n' +
+      LemonadeEngine.toString() + '\nvar CONFIG = ' + json + ';\nLemonadeEngine(document.getElementById("game"), CONFIG);\n<' + '/script>\n</' + 'body>\n</' + 'html>\n';
     download(title.replace(/\W+/g, '-').toLowerCase() + '.html', html);
     status.className = 'ok'; status.textContent = 'Saved. Double-click the file to play it, or hand it in.';
   });
   loadPreset();
+  if (window.LemonadeStudio && $('lemonade-engine-app')) {
+    window.LemonadeStudio.mount($('lemonade-engine-app'), LEMON_PRESETS.lemonade.config);
+  }
 
   // pricing calculator + profit curve
   var ids = ['b-cost', 'b-top', 'b-cust', 'b-rent', 'b-ucost', 'b-ubonus', 'b-days'];
@@ -1004,6 +1023,8 @@ var LEMON_PRESETS = {
   $('dice-roll').addEventListener('click', roll); roll();
 })();
 </script>
+<script src="../../../assets/js/creation-app.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
 <script src="../../../assets/js/reveal.js"></script>
 <script src="../../../assets/js/theme-registry.js"></script>
 <script src="../../../assets/js/nav-mobile.js"></script>
