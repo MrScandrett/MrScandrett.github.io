@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" data-glossary-manual>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pinball Construction Set · Mr. Scandrett's ClassroomOS</title>
+  <meta name="description" content="Build your own pinball table from a parts bin, then play it. A modern rebuild of Bill Budge's 1983 classic, with real ball physics, flippers, bumpers, targets, and tables you can save and share as files." />
+  <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+  <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../../assets/css/pinball-studio.css" />
+</head>
+<body class="theme-liquid-woodland theme-steam">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+<div class="ll-viewport">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ll-stage">
+    <div class="ll-sim">
+      <main id="main-content" class="ps-page">
+        <section class="ps-hero">
+          <p class="ps-eyebrow">Game Design &amp; Development · Build it, then play it</p>
+          <h1>Pinball Construction Set</h1>
+          <p class="ps-lede">In 1983 Bill Budge shipped a game where the main event was the <em>building</em>: pick parts from a bin, drop them on a blank table, press play, and your design is a real machine. This is the same idea rebuilt for the browser, with a physics engine small enough to read in one sitting.</p>
+        </section>
+
+        <section class="ps-app" data-pinball-studio data-night-keep data-present aria-label="Pinball Construction Set">
+          <div class="ps-bar">
+            <div class="ps-seg" role="group" aria-label="Mode">
+              <button type="button" data-ps-mode="build" aria-pressed="true">🔧 Build</button>
+              <button type="button" data-ps-mode="play" aria-pressed="false">▶ Play</button>
+            </div>
+            <button type="button" class="ps-name" data-ps-name title="Rename this table">Starter table</button>
+            <span class="ps-grow"></span>
+            <button type="button" data-ps-undo disabled aria-label="Undo">↶ Undo</button>
+            <button type="button" data-ps-redo disabled aria-label="Redo">↷ Redo</button>
+            <button type="button" data-ps-starter>Starter table</button>
+            <button type="button" data-ps-new>Blank table</button>
+            <button type="button" data-ps-import>Open…</button>
+            <button type="button" data-ps-export>Save file</button>
+            <button type="button" data-ps-mute aria-pressed="false">🔊 Sound on</button>
+            <input type="file" data-ps-file accept=".json,application/json" hidden />
+          </div>
+
+          <div class="ps-body">
+            <aside class="ps-side ps-bin" aria-label="Parts bin">
+              <h2>Parts bin</h2>
+              <div class="ps-parts" data-ps-parts></div>
+              <p class="ps-muted" data-ps-count>0 parts</p>
+            </aside>
+
+            <div class="ps-stage">
+              <div class="ps-hud" aria-live="off">
+                <div><span>Score</span><b data-ps-score>0000000</b></div>
+                <div><span>Balls</span><b data-ps-balls>3 ●</b></div>
+                <div><span>Bonus</span><b data-ps-mult>×1</b></div>
+                <div><span>High</span><b data-ps-hi>0000000</b></div>
+              </div>
+              <canvas data-ps-canvas tabindex="0" aria-label="Pinball table. In Build mode, click a part in the bin, then click the table to place it. In Play mode, Z or left arrow works the left flipper, slash or right arrow the right flipper, and Space launches."></canvas>
+              <div class="ps-touch" aria-label="Touch controls">
+                <button type="button" data-ps-hold="left">◀ Left</button>
+                <button type="button" data-ps-hold="plunge">Launch</button>
+                <button type="button" data-ps-hold="right">Right ▶</button>
+              </div>
+              <p class="ps-status" data-ps-status role="status"></p>
+            </div>
+
+            <aside class="ps-side" aria-label="Part inspector">
+              <h2>Inspector</h2>
+              <div data-ps-inspector></div>
+              <details class="ps-keys">
+                <summary>Controls</summary>
+                <p><b>Build:</b> click a part, click the table, drag to size it. Drag handles to reshape. Delete removes, Ctrl+Z undoes.</p>
+                <p><b>Play:</b> Z / ← left flipper · / or → right flipper · hold Space to pull the plunger, release to launch · Esc goes back to Build.</p>
+              </details>
+            </aside>
+          </div>
+        </section>
+
+        <section class="ps-section">
+          <h2>How the machine works</h2>
+          <div class="ps-cards">
+            <article><h3>A table is just data</h3><p>Every part is a few numbers: where it sits, how big it is. Press <b>Save file</b> and you get a small JSON file you can read, edit and hand to a friend. The editor and the game never share anything else.</p></article>
+            <article><h3>Physics in small steps</h3><p>The ball moves 480 tiny steps per second. At 2,000 pixels per second it still travels less than half its own width per step, so it can never skip through a wall. That trick is called <em>substepping</em>.</p></article>
+            <article><h3>Flippers are moving walls</h3><p>A flipper is a tapered rod that swings. When the ball touches it, the game measures how fast <em>that exact spot</em> is moving and adds it to the bounce. Hit near the tip and the ball flies.</p></article>
+            <article><h3>Bumpers cheat on purpose</h3><p>A real bumper has a solenoid that punches the ball. Here a bumper guarantees a minimum outgoing speed. Real rules, plus a little arcade lie.</p></article>
+          </div>
+        </section>
+
+        <section class="ps-section">
+          <h2>Design challenges</h2>
+          <ol class="ps-steps">
+            <li><b>Make it winnable.</b> Add a wall that guides the ball toward the targets. Can a new player light all three?</li>
+            <li><b>Make it fair.</b> Get the ball to drain on purpose only when the player misses. No dead zones where it sits still.</li>
+            <li><b>Make it yours.</b> Rename the table, build a theme (space, jungle, a school day), and swap tables with a classmate.</li>
+            <li><b>Break it.</b> Stack bumpers touching each other. What does the ball do? Why does the physics need a speed limit?</li>
+          </ol>
+        </section>
+
+        <section class="ps-section">
+          <h2>History</h2>
+          <p>Bill Budge, who wrote <em>Raster Blaster</em> for the Apple II, started <em>Pinball Construction Set</em> in 1982 and Electronic Arts published it in 1983. Instead of writing one more pinball game, he wrote a toolkit for building them, and the idea of "play it, then change it" shaped a generation of level editors. This rebuild is original code and art; it borrows the idea, not the pixels.</p>
+        </section>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script src="../../../assets/js/sim-kit.js"></script>
+<script type="module">
+  import { mount } from '../../../assets/js/pinball/pinball-studio.mjs';
+  mount(document.querySelector('[data-pinball-studio]'));
+</script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+</body>
+</html>
