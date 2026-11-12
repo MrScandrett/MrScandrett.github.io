@@ -1,5 +1,5 @@
 /* PixelWeather: the home weather card's pixel art (pure; no DOM, returns SVG strings).
-   icon(kind) draws a 16x16 weather icon, moon(phase) a true moon phase, digits(text) big 5x7
+   icon(kind) draws a 48x48 weather icon, moon(phase) a true moon phase, digits(text) big 5x7
    numerals. Two-frame icons hold their frames in .px-a / .px-b; CSS flips between them. */
 (function (root) {
   'use strict';
@@ -169,30 +169,99 @@
     return `<svg class="px ${cls}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}</svg>`;
   }
 
+  // Draw at the final pixel grid: curves and highlights gain real detail rather
+  // than simply enlarging the original 16-pixel silhouettes.
+  const SIZE = 48;
+  function weatherArt(kind, frame) {
+    const g = Array.from({ length: SIZE }, () => Array(SIZE).fill('.'));
+    const fill = (test, shade) => {
+      for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
+        if (test(x, y)) g[y][x] = typeof shade === 'function' ? shade(x, y) : shade;
+      }
+    };
+    const disc = (cx, cy, r, shade) => fill((x, y) => (x-cx)**2 + (y-cy)**2 <= r*r, shade);
+    const sun = (cx, cy, r) => {
+      fill((x, y) => {
+        const dx=x-cx, dy=y-cy, d=Math.hypot(dx,dy);
+        const angle=Math.atan2(dy,dx) + frame * .12;
+        return d > r+2 && d < r+7 && Math.abs(Math.sin(angle*6)) < .23;
+      }, 'Y');
+      disc(cx,cy,r,(x,y)=> x+y < cx+cy-r*.4 ? 'W' : x+y > cx+cy+r*.5 ? 'O' : 'Y');
+    };
+    const cloud = (cx, cy, dark = false, small = false) => {
+      const k=small ? .78 : 1;
+      const lobes=[[-12,1,7],[-5,-4,10],[6,-2,9],[14,3,6]];
+      fill((x,y)=>lobes.some(([dx,dy,r])=>(x-cx-dx*k)**2+(y-cy-dy*k)**2 <= (r*k)**2),
+        (x,y)=> y>cy+5*k ? (dark?'D':'B') : y>cy+2*k ? (dark?'B':'L') : y<cy-3*k && x<cx+7*k ? (dark?'L':'W') : (dark?'B':'G'));
+    };
+    if (kind==='sun') sun(24,24,11);
+    if (kind==='mostly-sun' || kind==='partly-cloudy') {
+      sun(17,17,9);
+      cloud(27,31,false,kind==='mostly-sun');
+    }
+    if (kind==='cloud') { cloud(20,20,true,true); cloud(25,29); }
+    if (['rain','snow','storm','fog'].includes(kind)) {
+      cloud(24,20,kind!=='snow');
+      if (kind==='fog') {
+        for(let i=0;i<3;i++) fill((x,y)=> y>=33+i*5 && y<=34+i*5 && x>=6+(i%2)*5+frame*2 && x<=39-(i%2)*3, i===1?'B':'L');
+      } else if(kind==='snow') {
+        for(const [cx,cy] of [[10,35],[24,40],[38,34]]) {
+          const yy=cy+frame*2;
+          fill((x,y)=>Math.abs(x-cx)<=3 && Math.abs(y-yy)<=3 && (x===cx || y===yy || Math.abs(x-cx)===Math.abs(y-yy)), 'W');
+        }
+      } else {
+        for(const [cx,cy] of [[9,34],[20,39],[32,34],[41,39]]) {
+          const yy=cy+frame*3;
+          fill((x,y)=> y>=yy-3 && y<=yy+2 && Math.abs(x-cx+(y-yy)*.35)<1.2, 'C');
+        }
+        if(kind==='storm') fill((x,y)=> y>=24 && y<45 && (y<34 ? x>=27-(y-24)*.65 && x<=32-(y-24)*.5 : x>=20 && x<=29-(y-34)*.85), frame?'Y':'W');
+      }
+    }
+    if(kind==='moon') {
+      disc(23,24,17,(x,y)=> y>32?'L':'G');
+      fill((x,y)=>(x-30)**2+(y-18)**2<16**2,'.');
+      for(const [x,y] of [[36,7],[40,25],[31,39]]) {
+        fill((xx,yy)=> (xx===x && Math.abs(yy-y)<=2) || (yy===y && Math.abs(xx-x)<=2), frame?'L':'W');
+      }
+    }
+    if(kind==='sunrise' || kind==='sunset') {
+      sun(24,30,13);
+      fill((x,y)=>y>=31,'.');
+      fill((x,y)=>y===31 || y===32,kind==='sunrise'?'O':'M');
+      for(let i=0;i<3;i++) fill((x,y)=> y===36+i*4 && Math.abs(x-24)<14-i*4, i?'B':'O');
+    }
+    return g;
+  }
+
   function icon(kind) {
-    const draw = KINDS[kind] || KINDS.cloud;
+    kind = KINDS[kind] ? kind : 'cloud';
+    // Clothing remains in its established 16-pixel style.
+    const clothing = ['tee','jacket','coat'].includes(kind);
+    const draw = f => clothing ? KINDS[kind](f) : weatherArt(kind,f);
     const body = ANIMATED.has(kind)
       ? `<g class="px-a">${runs(draw(0))}</g><g class="px-b">${runs(draw(1))}</g>`
       : runs(draw(0));
-    return wrap(body, 16, 16, 'px-icon');
+    return wrap(body, clothing ? 16 : SIZE, clothing ? 16 : SIZE, 'px-icon');
   }
 
-  // phase: 0 new, .25 first quarter, .5 full, .75 last quarter (northern hemisphere view).
+  // phase: 0 new, .25 first quarter, .5 full, .75 last quarter.
   function moon(phase) {
     const p = ((phase % 1) + 1) % 1;
     const c = Math.cos(2 * Math.PI * p);
-    const g = grid();
-    for (let y = 0; y < 16; y += 1) {
-      for (let x = 0; x < 16; x += 1) {
-        const dx = x - 7.5, dy = y - 7.5;
-        if (dx * dx + dy * dy > 56.25) continue;
-        const half = Math.sqrt(56.25 - dy * dy);
-        const lit = p < 0.5 ? dx > half * c : dx < -half * c;
-        const crater = (x * 7 + y * 13) % 11 === 0;
-        g[y][x] = lit ? (crater ? 'L' : 'G') : 'N';
+    const g = Array.from({ length: SIZE }, () => Array(SIZE).fill('.'));
+    const craters = [[17,14,4],[29,20,5],[18,31,5],[31,34,3],[11,23,2]];
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const dx = x - 23.5, dy = y - 23.5, r=21.5;
+        if (dx*dx+dy*dy>r*r) continue;
+        const half = Math.sqrt(r*r-dy*dy);
+        const lit = p < .5 ? dx > half*c : dx < -half*c;
+        const crater = craters.some(([cx,cy,rr])=>(x-cx)**2+(y-cy)**2<rr*rr);
+        const rim = dx*dx+dy*dy>(r-1.5)**2;
+        g[y][x] = lit ? (rim?'B':crater?'L':'G') : (crater?'K':'N');
       }
     }
-    return wrap(runs(g), 16, 16, 'px-icon px-moon');
+    return wrap(runs(g), SIZE, SIZE, 'px-icon px-moon');
   }
 
   const GLYPHS = {

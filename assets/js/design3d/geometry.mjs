@@ -67,11 +67,11 @@ export function buildDesign(THREE, state, texture) {
   // The humanoid template: one smooth, closed body (see humanoid.mjs / body-field.mjs) plus eyes, brows and mouth laid on it.
   const paint=hex=>{const c=new THREE.Color(hex);return [c.r,c.g,c.b];};
   const shade=(hex,k)=>'#'+new THREE.Color(hex).multiplyScalar(k).getHexString();
-  const colors={skin:state.color,cloth:state.secondary,trousers:'#34383b',leather:'#49362d',hair:'#2e231d',lip:'#'+new THREE.Color(state.color).lerp(new THREE.Color('#a03a44'),.55).multiplyScalar(.9).getHexString(),gold:'#c9a24a',metal:'#8d98a3',collar:shade(state.secondary,.78)};
+  const colors={skin:state.color,cloth:state.secondary,trousers:'#34383b',leather:'#49362d',hair:'#2e231d',gold:'#c9a24a',metal:'#8d98a3',collar:shade(state.secondary,.78)};
   // The body and head are meshed separately and remembered, so dragging a body slider doesn't re-sculpt the face (or vice versa).
   const layout=humanoidLayout(p),parts=humanoidPrims(p.hairPhysics?{...p,hair:0}:p,paint,colors),FACE=['jaw','eyes','brows','nose','mouth'],HEAD=['head','leg','torso','jaw','eyes','brows','nose','mouth','hair','hairStyle','hairPhysics'];
   const bodyKey=JSON.stringify([Object.entries(p).filter(([k])=>!FACE.includes(k)&&!['hairStiffness','hairDamping','hairWind'].includes(k)),colors.skin,colors.cloth]);
-  const headKey=JSON.stringify([HEAD.map(k=>p[k]),colors.skin,colors.lip]);
+  const headKey=JSON.stringify([HEAD.map(k=>p[k]),colors.skin]);
   const bodyData=remember('body',bodyKey,()=>meshField(bodyField(parts,layout)));
   const headData=remember('head',headKey,()=>{const field=headField(parts,layout);return {mesh:meshField(field),features:facialFeatures(field,p,layout)};});
   const features=headData.features;
@@ -85,7 +85,7 @@ export function buildDesign(THREE, state, texture) {
    ball(e.r*.52,[ix,e.c[1],iz],'#3a2a20',28,1,.55);ball(e.r*.26,[ix,e.c[1],iz+e.r*.1],'#0b0907',20,1,.5);
    ball(e.r*.13,[ix-e.r*.16,e.c[1]+e.r*.2,iz+e.r*.22],'#ffffff',10);
   }
-  mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(features.mouth.map(v=>new THREE.Vector3(...v))),24,.0075*layout.H,8,false),0,0,0,shade(state.color,.4));
+  mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(features.mouth.map(v=>new THREE.Vector3(...v))),24,.0045*layout.H,8,false),0,0,0,shade(state.color,.65));
   if(p.hairPhysics&&p.hair>0)group.userData.hairSimulation=createDynamicHair(THREE,group,layout,p,colors.hair);
   if(p.artStyle===4)addHeroEquipment(THREE,group,p,layout,state.secondary);
   group.scale.setScalar(p.height/5.2);

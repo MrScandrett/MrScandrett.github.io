@@ -42,6 +42,26 @@
 
   function setText(id, text) { const el = $(id); if (el && el.textContent !== text) el.textContent = text; }
 
+  // Small, local vector sprites stay crisp in the broadcast skin and need no image feed.
+  const spritePaths = {
+    dry: '<circle cx="28" cy="25" r="10" fill="#ffdc55"/><path d="M28 7v5m0 26v5M10 25H5m46 0h-5M12 9l5 5m22 22 5 5M12 41l5-5M39 14l5-5"/>',
+    cloud: '<path d="M12 36a11 11 0 0 1 1-22 15 15 0 0 1 29 4 9 9 0 0 1-1 18Z" fill="#bceaf5"/>',
+    rain: '<path d="M13 30a9 9 0 0 1 1-18 13 13 0 0 1 25 3 8 8 0 0 1 0 16H13" fill="#bceaf5"/><path d="m17 37-3 7m14-7-3 7m14-7-3 7" stroke="#70e6ff"/>',
+    snow: '<path d="M28 7v42M10 17l36 22M10 39l36-22M22 11l6 6 6-6M22 45l6-6 6 6" stroke="#bceaf5"/>',
+    quiet: '<path d="m28 7 17 7v13c0 10-17 19-17 19S11 37 11 27V14Z" fill="#246b88"/><path d="m19 26 6 6 13-14" stroke="#8bf1cd"/>',
+    storm: '<path d="M12 29a8 8 0 0 1 2-16 13 13 0 0 1 25 3 7 7 0 0 1 0 14H12" fill="#bceaf5"/><path d="m29 25-10 14h10l-3 12 15-20H30l6-6" fill="#ffdc55" stroke="#ffdc55"/>',
+    tropics: '<path d="M41 8C17 3 7 25 23 32c13 5 24-12 12-18S10 22 16 37c4 10 17 13 27 7" stroke="#7ce8ed"/><circle cx="28" cy="25" r="4" fill="#ffdc55"/>',
+    unknown: '<circle cx="28" cy="26" r="18" stroke-dasharray="3 6"/><path d="M24 20a5 5 0 1 1 8 4l-4 4m0 7v1"/>'
+  };
+  function sprite(id, kind) {
+    const target = $(id); if (!target) return;
+    const card = target.closest('.ls-card, .ls-brief');
+    let icon = card.querySelector('.ls-sprite');
+    if (!icon) { icon = document.createElement('span'); icon.className = 'ls-sprite'; icon.setAttribute('aria-hidden', 'true'); card.prepend(icon); }
+    icon.dataset.sky = kind;
+    icon.innerHTML = `<svg viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" stroke-linejoin="round">${spritePaths[kind] || spritePaths.unknown}</svg>`;
+  }
+
   // ── render ─────────────────────────────────────────────────────────────────
   function ingredientsNext(h0, h1) {
     const rows = st.atm ? st.atm.ingredients : [], t = Date.now();
@@ -49,7 +69,8 @@
   }
   function renderNowcast() {
     const n = st.atm ? S.analyzeNowcast(st.atm.slots, Date.now()) : null;
-    setText('ls-nowcast', n ? n.headline : st.loc ? 'Unavailable here' : 'Checking…');
+    setText('ls-nowcast', n ? (n.state === 'dry' ? 'Dry · next 2 h' : n.headline) : st.loc ? 'Unavailable here' : 'Checking…');
+    sprite('ls-nowcast', n ? (n.state === 'dry' ? 'dry' : 'rain') : 'unknown');
     const bars = $('ls-bars');
     if (bars) {
       const peak = Math.max(5, n ? n.peakMmHr : 5);
@@ -73,8 +94,10 @@
       sub = onTrack ? `Warned storm ~${Math.round(onTrack.approach.etaMin)} min away` : 'Official NWS alerts for this point';
       hot = (SEV_RANK[top.severity] || 0) >= 3 || /Warning/.test(top.event);
     } else if (onTrack) { value = `Storm ${fmtMi(onTrack.approach.distanceMi)} mi ${S.compass16(onTrack.approach.fromUserDeg)}, ~${Math.round(onTrack.approach.etaMin)} min`; sub = `${onTrack.event} heading this way`; hot = true; }
-    else { value = 'All quiet'; sub = cells.length ? `${cells.length} warned storm${cells.length > 1 ? 's' : ''} nearby, not heading here` : 'No active warnings at this point'; }
+    else if (st.alerts == null || st.warnings == null) { value = 'Alerts unavailable'; sub = 'Could not verify all NWS warning feeds'; }
+    else { value = 'All quiet'; sub = cells.length ? `${cells.length} warned storm${cells.length > 1 ? 's' : ''} nearby, not heading here` : 'No local warnings'; }
     setText('ls-storm', value); setText('ls-storm-sub', sub);
+    sprite('ls-storm', hot || alerts.length ? 'storm' : value === 'All quiet' ? 'quiet' : 'unknown');
     if (card) card.classList.toggle('is-alert', hot);
     return { cells, alerts };
   }
@@ -82,21 +105,23 @@
     const p = st.loc; if (!p) return;
     const spc = st.spc && inConus(p) ? S.outlookAtPoint(st.spc, p.lat, p.lon) : null;
     const next = ingredientsNext(-1, 24), top = next.length ? next.reduce((a, b) => (b.tier > a.tier ? b : a)) : null;
-    setText('ls-outlook', spc ? (spc.rank ? `${spc.label} · ${spc.name}` : 'No storm risk area today') : top ? `Model: ${top.label}` : st.atm === null && st.loc ? 'Checking…' : 'Unavailable here');
-    setText('ls-outlook-sub', top ? `Model ingredients peak at "${top.label}" around ${fmtClock(top.ms)}${spc ? ' · SPC official' : ''}` : '');
+    setText('ls-outlook', spc ? (spc.rank ? `${spc.label} · ${spc.name}` : 'No SPC risk area') : top ? `Model: ${top.label}` : st.atm === null && st.loc ? 'Checking…' : 'Unavailable here');
+    sprite('ls-outlook', spc ? (spc.rank ? 'storm' : 'quiet') : top ? (top.tier ? 'storm' : 'quiet') : 'unknown');
+    setText('ls-outlook-sub', top ? `Model: ${top.label} · ${fmtClock(top.ms)}${spc ? ' · SPC official' : ''}` : '');
   }
   function renderTropics() {
     const p = st.loc; if (!p) return;
+    sprite('ls-tropics', st.storms ? (st.storms.length ? 'tropics' : 'quiet') : 'unknown');
     if (st.storms === null && st.loc && st.tropicsTried) { setText('ls-tropics', 'Feed unavailable'); setText('ls-tropics-sub', 'National Hurricane Center'); return; }
     if (!st.storms) { setText('ls-tropics', 'Checking…'); return; }
-    if (!st.storms.length) { setText('ls-tropics', 'Quiet'); setText('ls-tropics-sub', 'No active storms in the Atlantic or Pacific'); return; }
+    if (!st.storms.length) { setText('ls-tropics', 'Quiet'); setText('ls-tropics-sub', 'Atlantic / Pacific: no active storms'); return; }
     const near = st.storms.map(s => ({ s, d: S.haversineMiles(s.lat, s.lon, p.lat, p.lon) })).sort((a, b) => a.d - b.d)[0];
     setText('ls-tropics', `${S.saffirSimpson(near.s.maxwindKt).short} ${near.s.name} · ${fmtMi(near.d)} mi`);
     setText('ls-tropics-sub', `${st.storms.length} active · ${near.s.maxwindKt} kt · ${S.compass16(S.bearingDeg(p.lat, p.lon, near.s.lat, near.s.lon))} of you`);
   }
   function briefing() {
     if (st.horizon === 'today') {
-      const src = st.today || st.currentWeatherData || window.__homeWeatherData;
+      const src = st.today || st.currentWeatherData;
       if (!src && !st.atm) return null;
       const curData = src ? {
         location: st.loc,
@@ -132,7 +157,17 @@
   function renderBrief() {
     const out = briefing(), safety = $('ls-safety');
     const horizonWord = st.horizon === 'today' ? "today's" : "tomorrow's";
-    setText('ls-brief', out ? out.text : st.loc ? `Loading ${horizonWord} briefing…` : 'Waiting for location…');
+    const src = st.horizon === 'today' ? st.today || st.currentWeatherData : st.tomorrow;
+    const code = src && (st.horizon === 'today' ? src.currentCode ?? src.weatherCode ?? src.code : src.code ?? src.weatherCode);
+    sprite('ls-brief', !src || code == null ? 'unknown' : code >= 95 ? 'storm' : (code >= 71 && code <= 77) || code === 85 || code === 86 ? 'snow' : code >= 51 ? 'rain' : code <= 1 ? 'dry' : 'cloud');
+    const hi = src && (src.hi ?? src.max), lo = src && (src.lo ?? src.min);
+    const compact = src ? [
+      st.horizon === 'today' && (src.temperature ?? src.currentTemp) != null ? `${Math.round(src.temperature ?? src.currentTemp)}° now` : 'Tomorrow',
+      hi != null && lo != null ? `High ${Math.round(hi)}° / low ${Math.round(lo)}°` : '',
+      src.rainChance != null ? `${src.rainChance}% rain` : '',
+      (src.wind ?? src.windSpeed ?? src.gust) != null ? `${Math.round(src.wind ?? src.windSpeed ?? src.gust)} mph ${st.horizon === 'tomorrow' ? 'gusts' : 'wind'}` : ''
+    ].filter(Boolean).join(' · ') : null;
+    setText('ls-brief', compact || (out ? out.text : st.loc ? `Loading ${horizonWord} briefing…` : 'Waiting for location…'));
     if (safety) { safety.hidden = !(out && out.safety); setText('ls-safety', out && out.safety ? out.safety : ''); }
 
     const btnToday = $('ls-btn-today'), btnTomorrow = $('ls-btn-tomorrow');
@@ -182,8 +217,13 @@
     const loc = { lat: Number(l.latitude), lon: Number(l.longitude), label: l.label };
     const same = st.loc && Math.abs(st.loc.lat - loc.lat) < 0.01 && Math.abs(st.loc.lon - loc.lon) < 0.01;
     st.loc = loc;
-    if (same && Date.now() - st.loadedAt < 4 * MIN) return;
-    if (!same) { st.atm = st.meta = st.alerts = st.warnings = st.tomorrow = st.today = null; }
+    if (same && !l.forceRefresh && Date.now() - st.loadedAt < 4 * MIN) return;
+    ++st.token;
+    st.atm = st.meta = st.alerts = st.warnings = st.tomorrow = st.today = st.spc = st.storms = st.currentWeatherData = null;
+    st.tropicsTried = false;
+    st.loadedAt = 0;
+    setText('ls-updated', 'Refreshing…');
+    renderAll();
     ensureVisible(load);
   }
   let visibleOnce = false;

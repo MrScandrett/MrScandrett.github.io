@@ -10,7 +10,7 @@
 .ps-cards h3 { margin: 0 0 .3rem; font-size: 1.02rem; }
 .ps-cards p { margin: 0; font-size: .92rem; line-height: 1.55; }
 
-/* The app is its own dark arcade cabinet in every theme. */
+/* Cabinet layout; live theme and skin overrides are below. */
 .ps-app { --ps-bg: #0b0a22; --ps-panel: #141238; --ps-line: #2c2970; --ps-text: #eceaff; --ps-dim: #9a97cf; --ps-hot: #ff3d9a; --ps-cool: #4cc9f0;
   margin: 0 0 1.4rem; padding: .8rem; border-radius: 20px; background: radial-gradient(120% 90% at 50% 0%, #1d1850, var(--ps-bg)); color: var(--ps-text); border: 1px solid var(--ps-line); box-shadow: 0 20px 60px -20px rgba(70, 40, 200, .5); color-scheme: dark; }
 .ps-app button, .ps-app select { font: inherit; color: inherit; }
@@ -70,3 +70,155 @@
 }
 @media (prefers-reduced-motion: reduce) { .ps-app * { transition: none !important; } }
 @media print { .ps-app { display: none; } }
+
+/* The cabinet follows Theme → Skin → Background just like the page. */
+.ps-app {
+  --ps-bg: var(--bg, #f5f5f7);
+  --ps-panel: color-mix(in srgb, var(--bg) 92%, var(--accent));
+  --ps-line: color-mix(in srgb, var(--text) 24%, var(--bg));
+  --ps-text: var(--text, #1d1d1f);
+  --ps-dim: var(--text-muted, #6e6e73);
+  --ps-hot: var(--accent, #0071e3);
+  --ps-cool: var(--accent-strong, #005ec3);
+  color-scheme: normal;
+  border-radius: var(--skin-radius-lg, 20px);
+  background: color-mix(in srgb, var(--ps-bg) 94%, transparent);
+  box-shadow: var(--skin-shadow, 0 20px 60px -20px color-mix(in srgb, var(--ps-hot) 35%, transparent));
+}
+.ps-app :is(button, .ps-side, .ps-hud div, canvas) { border-radius: var(--skin-radius-sm, 10px); }
+.ps-app :is(button, select) { font-family: var(--skin-font-ui, inherit); }
+.ps-app :is(.ps-side, .ps-hud div) { background: var(--ps-panel); }
+.ps-app .ps-hud b, .ps-app .ps-hud div:nth-child(2) b, .ps-app .ps-hud div:nth-child(3) b { color: var(--ps-cool); text-shadow: none; }
+.ps-app .ps-seg button[aria-pressed="true"] { background: var(--ps-cool) !important; color: var(--accent-contrast, white); }
+.ps-app :is(.ps-bin button[aria-pressed="true"], .ps-touch button:active) { background: color-mix(in srgb, var(--ps-hot) 15%, var(--ps-bg)); border-color: var(--ps-hot); box-shadow: inset 0 0 0 1px var(--ps-hot); }
+.ps-app :is(.ps-bar button, .ps-row button, .ps-bin button):hover:not(:disabled) { background: color-mix(in srgb, var(--ps-hot) 12%, var(--ps-bg)); }
+.ps-app .ps-danger:hover { background: var(--ps-panel) !important; border-color: var(--ps-hot) !important; }
+.ps-app[data-ps-skin="terminal"] .ps-hud b { text-shadow: 0 0 8px var(--ps-hot); }
+.ps-app[data-ps-skin="blocky"] :is(button, .ps-side, .ps-hud div) { border-width: 3px; box-shadow: 3px 3px 0 var(--ps-line); }
+.ps-app[data-ps-skin="notebook"] .ps-side { background: repeating-linear-gradient(transparent 0 27px, var(--ps-line) 28px 29px), var(--ps-panel); }
+.ps-app[data-ps-skin="underwater"] :is(.ps-side, .ps-hud div) { border-radius: 24px; box-shadow: inset 0 2px 8px color-mix(in srgb, var(--ps-hot) 15%, transparent); }
+
+/* Workshop controls stay compact across site skins and touch screens. */
+.ps-app { padding: clamp(.6rem, 1.5vw, 1.1rem); }
+.ps-app, .ps-app * { box-sizing: border-box; }
+.ps-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .3rem .2rem 1rem; }
+.ps-heading h2 { margin: .2rem 0 0; font: 750 clamp(1.25rem, 3vw, 1.7rem)/1.2 system-ui, sans-serif; letter-spacing: -.035em; }
+.ps-save-note { font: 500 .75rem/1.4 system-ui, sans-serif; color: var(--ps-dim); }
+.ps-app .ps-bar { gap: .5rem; padding-bottom: 1rem; }
+.ps-app :is(.ps-bar button, .ps-row button, .ps-bin button, .ps-files summary, .ps-field select) { min-height: 44px; font: 600 .85rem/1.3 system-ui, sans-serif; }
+.ps-app .ps-bar button { padding: .55rem .75rem; }
+.ps-name::after { content: ' ✎'; opacity: .6; }
+.ps-files { position: relative; }
+.ps-files summary { display: flex; align-items: center; padding: .55rem .8rem; border: 1px solid var(--ps-line); border-radius: 10px; cursor: pointer; background: var(--ps-panel); }
+.ps-files summary::after { content: ' ▾'; margin-left: .5rem; }
+.ps-file-actions { position: absolute; right: 0; top: calc(100% + .5rem); z-index: 70; display: grid; gap: .5rem; min-width: 190px; padding: .7rem; background: var(--ps-bg); border: 1px solid var(--ps-line); border-radius: 12px; box-shadow: 0 10px 35px #0003; }
+.ps-app .ps-side { padding: .9rem; }
+.ps-app .ps-bin button { gap: .65rem; }
+.ps-part-icon { width: 26px; height: 26px; flex: none; color: var(--ps-hot); }
+.ps-part-icon svg { display: block; width: 100%; height: 100%; }
+.ps-app .ps-hud, .ps-app .ps-stage canvas { min-width: 0; width: min(100%, 480px); }
+.ps-app .ps-stage canvas { border: 5px solid var(--ps-line); box-shadow: 0 12px 28px #0002, inset 0 0 0 1px var(--ps-hot); }
+.ps-app .ps-hud div { padding: .55rem .5rem; min-width: 0; }
+.ps-app .ps-hud b { font-size: clamp(.8rem, 1.8vw, 1.25rem); }
+.ps-app .ps-hud span { font-family: system-ui, sans-serif; font-size: .6rem; }
+.ps-app .ps-touch { width: min(100%, 480px); position: sticky; bottom: env(safe-area-inset-bottom, 0px); z-index: 5; padding: .45rem 0; background: var(--ps-bg); }
+.ps-app .ps-touch button { min-height: 58px; font: 750 .9rem system-ui, sans-serif; }
+.ps-app .ps-touch button[aria-pressed="true"] { background: var(--ps-cool); color: var(--accent-contrast, white); }
+.ps-app[data-ps-mode="play"] .ps-bin, .ps-app[data-ps-mode="play"] .ps-side:last-child { display: none; }
+.ps-app[data-ps-mode="play"] .ps-body { grid-template-columns: 1fr; }
+.ps-app .ps-status { font-family: system-ui, sans-serif; }
+@media (max-width: 1100px) {
+  .ps-body { grid-template-columns: 150px minmax(0, 1fr); }
+  .ps-stage { grid-column: 2; grid-row: 1 / 3; order: 0; }
+  .ps-bin .ps-parts { grid-template-columns: 1fr; }
+  .ps-side:last-child { grid-column: 1; }
+  .ps-app[data-ps-mode="play"] .ps-stage { grid-column: 1; }
+}
+@media (max-width: 600px) {
+  .ps-page { width: calc(100% - 1rem); }
+  .ps-heading { padding-bottom: .75rem; }
+  .ps-save-note { max-width: 12ch; text-align: right; }
+  .ps-app .ps-bar { gap: .35rem; }
+  .ps-grow { display: none; }
+  .ps-seg { flex: 1; }
+  .ps-seg button { flex: 1; min-width: 64px; }
+  .ps-app .ps-name { max-width: 46%; }
+  .ps-body { grid-template-columns: minmax(0, 1fr); gap: .65rem; }
+  .ps-stage { grid-column: 1; grid-row: auto; }
+  .ps-bin { grid-row: 1; }
+  .ps-app .ps-bin { padding: .6rem; }
+  .ps-bin h2 { display: none; }
+  .ps-bin .ps-parts { display: flex; overflow-x: auto; gap: .4rem; padding: .15rem .15rem .5rem; }
+  .ps-bin .ps-parts button { width: auto; flex: 0 0 auto; padding: .35rem .6rem; }
+  .ps-bin-hint { margin: 0; }
+  .ps-bin [data-ps-count] { display: none; }
+  .ps-app .ps-hud { gap: .25rem; grid-template-columns: 1.6fr 1fr .8fr 1.6fr; }
+  .ps-app .ps-hud b { font-size: clamp(.75rem, 3.2vw, 1.1rem); }
+  .ps-app .ps-stage canvas { border-width: 3px; }
+  .ps-files { margin-left: auto; }
+}
+@media (pointer: coarse) {
+  .ps-field input[type="range"] { min-height: 44px; }
+  .ps-app button { -webkit-touch-callout: none; touch-action: manipulation; }
+  .ps-app .ps-touch button { touch-action: none; }
+}
+.ps-app[data-ps-mode="play"] :is([data-ps-undo], [data-ps-redo], .ps-name) { display: none; }
+.ps-app[data-ps-mode="play"] :is(.ps-hud, .ps-stage canvas) { width: min(100%, 480px, calc((100svh - 320px) * 2 / 3)); }
+@media (max-width: 600px) {
+  .ps-app[data-ps-mode="play"] .ps-bar { display: grid; grid-template-columns: 1fr 1fr; }
+  .ps-app[data-ps-mode="play"] .ps-seg { grid-column: 1 / -1; }
+  .ps-app[data-ps-mode="play"] .ps-files { grid-column: 1 / -1; margin: 0; }
+  .ps-app[data-ps-mode="play"] .ps-files summary { justify-content: center; }
+}
+@media (max-height: 600px) and (min-width: 601px) {
+  .ps-app[data-ps-mode="play"] .ps-heading { display: none; }
+  .ps-app[data-ps-mode="play"] :is(.ps-hud, .ps-stage canvas) { width: min(100%, calc((100svh - 220px) * 2 / 3)); }
+}
+@media (max-width: 600px) {
+  .ps-app[data-ps-mode="play"] :is(.ps-hud, .ps-stage canvas) { width: min(100%, 480px, calc((100svh - 440px) * 2 / 3)); }
+  .ps-app[data-ps-mode="play"] .ps-save-note { display: none; }
+}
+
+/* Fit the entire workshop below the site header, including in full screen.
+   The table slot measures the space left after the HUD and play controls. */
+.ll-sim:has([data-pinball-studio]) { container-type: size; }
+.ps-page > .creation-app {
+  height: calc(100cqh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+.ps-page > .creation-app > .creation-app-toolbar { flex: none; }
+.ps-page > .creation-app > .ps-app {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ps-app .ps-heading, .ps-app .ps-bar { flex: none; }
+.ps-app .ps-body { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+.ps-app .ps-side { min-height: 0; overflow: auto; }
+.ps-app .ps-stage {
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  align-content: stretch;
+}
+.ps-table-slot { width: 100%; min-height: 0; container-type: size; display: grid; place-items: center; }
+.ps-app[data-pinball-studio] .ps-table-slot canvas {
+  width: min(100cqw, calc(100cqh * 2 / 3));
+  height: auto;
+  max-height: 100%;
+  min-width: 0;
+}
+.ps-app .ps-hud { width: min(100%, 480px); }
+.ps-app .ps-touch { position: static; }
+@media (min-width: 601px) and (max-width: 1100px) {
+  .ps-app .ps-body { grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .ps-app .ps-body { grid-template-rows: auto minmax(0, 1fr); }
+  .ps-app .ps-bin-hint, .ps-app .ps-side:last-child { display: none; }
+  .ps-app .ps-stage { grid-row: 2; }
+  .ps-app[data-ps-mode="play"] .ps-body { grid-template-rows: minmax(0, 1fr); }
+  .ps-app[data-ps-mode="play"] .ps-stage { grid-row: 1; }
+}

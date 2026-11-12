@@ -7,8 +7,8 @@ const library=require('../data/score-library.json').scores;
 const catalog=require('../data/composer-workspaces.json');
 const {arrange}=globalThis.ComposerArrangement, engine=globalThis.ScoreEngine;
 function notes(score) {const m=engine.prepare(score);engine.analyse(m);return {m,notes:engine.playList(m)};}
-test('all 19 composer workspaces have valid, attributed scores and arrangements',()=>{
-  assert.equal(Object.keys(catalog).length,19);
+test('all 23 composer workspaces have valid, attributed scores and arrangements',()=>{
+  assert.equal(Object.keys(catalog).length,23);
   for(const [composer,entry] of Object.entries(catalog)) {
     assert.ok(entry.scores.length,composer);
     for(const id of entry.scores) {
@@ -127,4 +127,53 @@ test('Sugar Plum solo guitar preserves melody rhythm and fits bass/harmony on he
   score.playbackTranspose=-12;
   const written=notes(score).m;
   assert.deepEqual(GuitarTablature.finger(written,tuning,-12,score.tablature),tabs);
+});
+
+test('every extracted string part fits its range and preserves source timing and pitch classes',()=>{
+  require('../assets/js/guitar-tablature.js');
+  for(const id of new Set(Object.values(catalog).flatMap(entry=>entry.scores))) {
+    const src=library[id];
+    src.staves.forEach((st,staff)=>(st.voices||[st]).forEach((_,voice)=>{
+      for(const mode of ['violin','guitar','bass']) for(const octave of [-12,0,12]) {
+        if(mode==='guitar'&&src.guitarArrangement)continue;
+        const score=arrange(src,{mode,staff,voice,octave});
+        const reference=arrange(src,{mode:'melody',staff,voice,octave});
+        if(mode==='bass')reference.staves=[{...ComposerArrangement.line(src,staff,voice,true),notes:ComposerArrangement.transpose(ComposerArrangement.line(src,staff,voice,true).notes,octave,octave/12*7,0)}];
+        const source=notes(reference).notes;
+        const part=notes(score), low=mode==='violin'?55:mode==='guitar'?40:28, high=mode==='violin'?100:mode==='guitar'?83:62;
+        assert.equal(part.notes.length,source.length,`${id}/${mode}/${staff}/${voice}/${octave}: attacks`);
+        part.notes.forEach((n,i)=>{
+          const where=`${id}/${mode}/${staff}/${voice}/${octave}`;
+          assert.ok(n.midi>=low&&n.midi<=high,`${where}: range ${n.midi}`);
+          assert.equal(((n.midi-source[i].midi)%12+12)%12,0,`${where}: pitch class`);
+          assert.equal(n.start,source[i].start,`${where}: onset`);
+          assert.equal(n.dur,source[i].dur,`${where}: duration`);
+        });
+        if(mode!=='violin') {
+          const tuning=mode==='guitar'?[64,59,55,50,45,40]:[43,38,33,28];
+          const tabs=GuitarTablature.finger(part.m,tuning);
+          for(const bar of tabs)for(const group of bar)for(const n of group.notes){
+            assert.ok(n.string>=0,`${id}/${mode}: playable fret`);
+            assert.equal(tuning[n.string]+n.fret,n.midi);
+          }
+        }
+      }
+    }));
+  }
+});
+
+test('octave fitting does not convert an extracted octave leap into a tie',()=>{
+  const src={title:'Tie regression',key:0,time:'4/4',staves:[{notes:'(C5 C4)/2~ C5/2'}]};
+  const score=arrange(src,{mode:'bass'}), part=notes(score).notes;
+  assert.equal(part.length,2,'both attacks survive when C4 and C5 fit to the same octave');
+  assert.deepEqual(part.map(n=>[n.start,n.dur]),[[0,2],[2,2]]);
+  const tied={...src,staves:[{notes:'(C5 C4)/2~ C4/2'}]};
+  assert.equal(notes(arrange(tied,{mode:'bass'})).notes.length,1,'a genuine held note stays tied');
+});
+
+test('violin fitting lowers high notes as well as raising low notes',()=>{
+  const fit=ComposerArrangement.fitViolin('G2/4 E8/4 C4/4 C5/4');
+  const part=notes({title:'Wide range',time:'4/4',staves:[{notes:fit.notes}]}).notes;
+  assert.ok(part.every(n=>n.midi>=55&&n.midi<=100));
+  assert.ok(fit.raised>0&&fit.lowered>0);
 });

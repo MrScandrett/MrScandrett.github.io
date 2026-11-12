@@ -13,29 +13,34 @@
   }
   const PITCH=/([A-G])([#bn]*)(-?\d+)/g;
   function midiOf(letter,accidental,register){return (+register+1)*12+natural[pitches.indexOf(letter)]+[...accidental].reduce((s,a)=>s+(a==='#'?1:a==='b'?-1:0),0);}
-  /* Violin: G3 (open G string) up to E7. A line that mostly sits low moves up by whole
-     octaves, so the melody keeps its shape; a few stray low notes don't move the piece
-     (each octave of shift must save more than ~5% of the notes), they are lifted one by one. */
+  // Prefer one octave displacement for the whole phrase. Fold only remaining
+  // outliers, retaining spelling, rhythm and pitch class; report every edit.
   const VIOLIN_LOW=55, VIOLIN_HIGH=100;
-  function fitViolin(text) {
+  function fitRange(text,low,high) {
     const midis=[];text.replace(PITCH,(t,l,a,r)=>{midis.push(midiOf(l,a,r));return t;});
-    if(!midis.length)return {notes:text,shift:0,raised:0};
-    const hi=Math.max(...midis), perOctave=Math.max(2,midis.length*0.05);let shift=0,best=Infinity;
-    for(const s of [0,12,24,36]) {
-      if(s&&hi+s>VIOLIN_HIGH)continue;
-      const cost=midis.filter(m=>m+s<VIOLIN_LOW).length+s/12*perOctave;
+    if(!midis.length)return {notes:text,shift:0,raised:0,lowered:0};
+    const perOctave=Math.max(2,midis.length*0.05);let shift=0,best=Infinity;
+    for(const s of [0,-12,12,-24,24,-36,36,-48,48]) {
+      const cost=midis.filter(m=>m+s<low||m+s>high).length+Math.abs(s)/12*perOctave;
       if(cost<best){best=cost;shift=s;}
     }
     if(shift)text=transpose(text,shift,shift/12*7,0);
-    let raised=0;
-    text=text.replace(PITCH,(token,l,a,r)=>{let m=midiOf(l,a,r),up=0;while(m+up<VIOLIN_LOW)up+=12;if(!up)return token;raised++;return transpose(token,up,up/12*7,0);});
-    return {notes:text,shift,raised};
+    let raised=0,lowered=0;
+    text=text.replace(PITCH,(token,l,a,r)=>{
+      const m=midiOf(l,a,r);let delta=0;
+      while(m+delta<low)delta+=12;
+      while(m+delta>high)delta-=12;
+      if(delta>0)raised++;if(delta<0)lowered++;
+      return delta?transpose(token,delta,delta/12*7,0):token;
+    });
+    return {notes:text,shift,raised,lowered};
   }
+  function fitViolin(text) { return fitRange(text,VIOLIN_LOW,VIOLIN_HIGH); }
   function line(src,index,voice,lowest) {
     const st=src.staves[index];if(!st)throw new Error('Choose a source staff.');
     const selected=st.voices?st.voices[voice]:st;if(!selected)throw new Error('Choose a source voice.');
     const first=src.staves[0], guide=(first.voices?first.voices[0]:first).notes.split('|');
-    const notes=selected.notes.split('|').map((bar,i)=> {
+    let notes=selected.notes.split('|').map((bar,i)=> {
       const reference=guide[i]||'', map=reference.match(marks)||[];
       bar=bar.replace(marks,'').replace(/^\s*:/,'').replace(/:\s*$/,'').trim();
       return (reference.trim().startsWith(':')?': ':'')+map.join(' ')+' '+bar+(reference.trim().endsWith(':')?' :':'');
@@ -43,6 +48,13 @@
       const ps=chord.trim().split(/\s+/).sort((a,b)=>root.MusicNotation.parsePitch(a.replace('n','')).midi-root.MusicNotation.parsePitch(b.replace('n','')).midi);
       return lowest?ps[0]:ps[ps.length-1];
     }).replace(/@C:(treble|bass|alto)/g,'');
+    // Chord extraction can leave a tie aimed at a different selected note.
+    // Remove it before octave fitting could turn that leap into a false tie.
+    const events=[...notes.matchAll(/([A-G][#bn]*-?\d+|r|s|S)\/\d+(?:\.+|\+)?[.~^]*/g)];
+    for(let i=events.length-2;i>=0;i--) {
+      const e=events[i], next=events[i+1];
+      if(e[0].includes('~') && e[1]!==next[1])notes=notes.slice(0,e.index)+e[0].replace('~','')+notes.slice(e.index+e[0].length);
+    }
     return {label:st.label||'Selected voice',clef:lowest?'bass':'treble',notes};
   }
   function arrange(src,settings) {
@@ -68,13 +80,14 @@
     if(m==='alto'){chromatic+=9;diatonic+=5;fifths=3;result.playbackTranspose=-9;}
     if(m==='tenor'){chromatic+=14;diatonic+=8;fifths=2;result.playbackTranspose=-14;}
     result.staves[0].notes=transpose(result.staves[0].notes,chromatic,diatonic,fifths);
-    if(m==='violin'){
-      const fit=fitViolin(result.staves[0].notes);result.staves[0].notes=fit.notes;
-      if(!/violin/i.test(result.staves[0].label))result.staves[0].label='Violin · '+result.staves[0].label;
-      Object.defineProperty(result,'violinFit',{value:{shift:fit.shift,raised:fit.raised},enumerable:false});
+    if(['violin','guitar','bass'].includes(m)){
+      const fit=m==='violin'?fitViolin(result.staves[0].notes):fitRange(result.staves[0].notes,bass?28:40,bass?62:83);result.staves[0].notes=fit.notes;
+      if(m==='violin'&&!/violin/i.test(result.staves[0].label))result.staves[0].label='Violin · '+result.staves[0].label;
+      Object.defineProperty(result,'registerFit',{value:{shift:fit.shift,raised:fit.raised,lowered:fit.lowered},enumerable:false});
+      if(m==='violin')Object.defineProperty(result,'violinFit',{value:result.registerFit,enumerable:false});
     }
     result.key=shiftKey(src.key||0,fifths);delete result.keyName;
     result.instrument=/alto|tenor/.test(m)?'sax':m==='guitar'?'pluck':m==='violin'?'violin':bass?'bass':'flute';return result;
   }
-  root.ComposerArrangement={arrange,line,transpose,shiftKey,fitViolin,VIOLIN_LOW,VIOLIN_HIGH};
+  root.ComposerArrangement={arrange,line,transpose,shiftKey,fitRange,fitViolin,VIOLIN_LOW,VIOLIN_HIGH};
 })(typeof window!=='undefined'?window:globalThis);

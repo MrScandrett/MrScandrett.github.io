@@ -30,7 +30,7 @@ export function setupCharacterPanels(host, id, onInspection) {
    select.id=input.id;select.dataset.param='artStyle';
    select.innerHTML=['Rounded humanoid','Blocky character','3D stick figure','Anthropomorphic mascot','Sculpted game hero'].map((label,i)=>`<option value="${i}">${label}</option>`).join('');
    select.value=input.value;input.replaceWith(select);panel.querySelector('[data-slider="artStyle"]').hidden=true;
-   const note=document.createElement('p');note.textContent='Switch shape language while keeping your proportions and colors. Ears, muzzle and tail apply to mascots. Hair and costume detail controls apply to rounded humanoids; the other styles use simplified forms. Mascot tails and ears remain rigid in the starter rig.';panel.append(note);
+   const note=document.createElement('p');note.textContent='Switch shape language while keeping your proportions and colors. Ears, muzzle and tail apply to mascots. Hair and costume detail controls apply to rounded humanoids and sculpted game heroes; the other styles use simplified forms. Mascot tails and ears remain rigid in the starter rig.';panel.append(note);
   }
   if (key === 'color') for (const input of [...fieldset.querySelectorAll('[data-color]')]) {
    panel.append(fieldset.querySelector(`label[for="${input.id}"]`), input);
@@ -73,4 +73,32 @@ export function setupCharacterPanels(host, id, onInspection) {
   toolbar.append(button);
  }
  host.querySelector('.d3w-view').before(toolbar);
+ // Refresh from project state, including presets, restored saves and undo/redo.
+ return params => {
+  const style = Math.round(params.artStyle), humanoid = style === 0 || style === 4;
+  const mascot = style === 3;
+  for (const name of ['ears','muzzle','tail','jaw','nose','mouth',
+   'hair','hairStyle','hairPhysics','hairStiffness','hairDamping','hairWind','outfit']) {
+   const input = host.querySelector(`[data-param="${name}"]`);
+   const supported = ['ears','muzzle','tail'].includes(name) ? mascot : humanoid;
+   const simulation = ['hairStiffness','hairDamping','hairWind'].includes(name);
+   const visible = supported && (!simulation || Boolean(params.hairPhysics));
+   input.closest('.d3w-field').hidden = !visible;
+   for (const control of input.closest('.d3w-field').querySelectorAll('input, select')) control.disabled = !visible;
+  }
+  for (const key of ['hair','outfit']) {
+   const panel = host.querySelector(`#${id}-panel-${key}`);
+   const button = nav.querySelector(`[aria-controls="${panel.id}"]`);
+   button.hidden = !humanoid;
+   button.disabled = !humanoid;
+   if (!humanoid && !panel.hidden) nav.firstElementChild.click();
+  }
+  for (const button of host.querySelectorAll('[data-hair-motion], [data-hair-gust]')) {
+   button.hidden = !humanoid || !params.hairPhysics;
+   button.disabled = button.hidden;
+  }
+  const skin = host.querySelector('[data-color="color"]');
+  host.querySelector(`label[for="${skin.id}"]`).textContent = mascot ? 'Fur color' : style === 2 ? 'Figure color' : 'Skin tone';
+ };
+
 }

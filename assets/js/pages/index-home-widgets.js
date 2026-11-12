@@ -855,19 +855,23 @@
       // Only use the browser's location when the visitor has already granted it.
       // Asking on every page load interrupts a classroom display, and a prompt
       // nobody answers never settles — the card would sit on "Loading" forever.
-      async function getBrowserLocation() {
-        if (!navigator.geolocation || !navigator.permissions) throw new Error('Geolocation unavailable');
-        const permission = await navigator.permissions.query({ name: 'geolocation' });
-        if (permission.state !== 'granted') throw new Error('Geolocation not granted');
+      async function getBrowserLocation(requestPrecise = false) {
+        if (!navigator.geolocation) throw new Error('Geolocation unavailable');
+        if (!requestPrecise) {
+          if (!navigator.permissions) throw new Error('Geolocation unavailable');
+          const permission = await navigator.permissions.query({ name: 'geolocation' });
+          if (permission.state !== 'granted') throw new Error('Geolocation not granted');
+        }
         return new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(
             (position) => resolve({
-              label: 'YOUR AREA',
+              label: requestPrecise ? 'YOUR PRECISE LOCATION' : 'YOUR AREA',
+              accuracy: position.coords.accuracy,
               latitude: position.coords.latitude,
               longitude: position.coords.longitude
             }),
             reject,
-            { enableHighAccuracy: false, timeout: 5000, maximumAge: 30 * 60 * 1000 }
+            { enableHighAccuracy: requestPrecise, timeout: requestPrecise ? 15000 : 5000, maximumAge: requestPrecise ? 0 : 30 * 60 * 1000 }
           );
         });
       }
@@ -883,8 +887,8 @@
 
       function renderWeatherUnavailable() {
         const dash = '--';
-        weatherEls.city.textContent = DEFAULT_WEATHER.label;
-        weatherEls.station.textContent = DEFAULT_WEATHER.stationId;
+        weatherEls.city.textContent = (selectedWeatherLocation || DEFAULT_WEATHER).label;
+        weatherEls.station.textContent = buildStationId(selectedWeatherLocation || DEFAULT_WEATHER);
         weatherEls.status.textContent = 'STATUS: OFFLINE';
         // Collapses the data-only panels (CSS) so a blocked service shows one
         // clear message instead of a grid of dashes.
@@ -915,21 +919,17 @@
         weatherTimer = setTimeout(() => loadWeather(), delay);
       }
 
-      async function loadWeather() {
+      let selectedWeatherLocation = null;
+      async function loadWeather(requestedLocation = null) {
         if (weatherLoading) return;
         weatherLoading = true;
         try {
           let weather = null;
-          const location = await getBrowserLocation().catch(() => DEFAULT_WEATHER);
+          const location = requestedLocation || selectedWeatherLocation || await getBrowserLocation().catch(() => DEFAULT_WEATHER);
           // Live Sky (index-live-sky.js) follows whichever location the card is showing.
           window.__homeWeatherLocation = location;
           document.dispatchEvent(new CustomEvent('home-weather:location', { detail: location }));
-          try {
-            weather = await fetchWeatherForLocation(location);
-          } catch (error) {
-            if (location === DEFAULT_WEATHER) throw error;
-            weather = await fetchWeatherForLocation(DEFAULT_WEATHER);
-          }
+          weather = await fetchWeatherForLocation(location);
           // Don't rebuild the panels out from under a student reading a field note.
           if (weatherOpenPanel) {
             scheduleWeatherRefresh(30 * 1000);
@@ -943,7 +943,7 @@
           weatherRetryDelay = 30 * 1000;
           scheduleWeatherRefresh(WEATHER_REFRESH_MS);
         } catch (error) {
-          const cached = readWeatherCache();
+          const cached = selectedWeatherLocation ? null : readWeatherCache();
           if (cached) {
             setWeatherCard(cached.data);
             window.__homeWeatherData = cached.data;
@@ -960,6 +960,34 @@
           weatherLoading = false;
         }
       }
+
+      const locateButton = document.getElementById('home-weather-locate');
+      const locationMessage = document.getElementById('home-weather-location-message');
+      locateButton.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        if (weatherLoading) {
+          locationMessage.textContent = 'Weather is updating. Try again in a moment.';
+          return;
+        }
+        locateButton.disabled = true;
+        locationMessage.textContent = 'Finding your location…';
+        try {
+          const location = await getBrowserLocation(true);
+          selectedWeatherLocation = location;
+          location.forceRefresh = true;
+          locationMessage.textContent = `Device location found (within about ${Math.round(location.accuracy || 0)} m). Refreshing weather…`;
+          await loadWeather(location);
+          locationMessage.textContent = ['nominal', 'watch', 'advisory'].includes(weatherEls.shell.dataset.weatherStatus)
+            ? 'Weather refreshed for your device location.'
+            : 'Location selected. Weather may be delayed; checking again automatically.';
+        } catch (error) {
+          locationMessage.textContent = error.code === 1
+            ? 'Location access blocked. Allow location in your browser settings, then try again.'
+            : 'Could not find your location. Check device location services and try again.';
+        } finally {
+          locateButton.disabled = false;
+        }
+      });
 
       weatherEls.shell.addEventListener('click', (event) => {
         if (!event.target.closest('.weather-retry')) return;

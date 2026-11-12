@@ -50,7 +50,7 @@
     return { gamut, rgb: linear.map(c => Math.round(255 * Math.max(0, Math.min(1, c <= .0031308 ? 12.92*c : 1.055*Math.pow(c, 1/2.4)-.055)))) };
   }
   const labCanvas = $('lab-map'), labContext = labCanvas.getContext('2d');
-  let drawnLightness = null;
+  let drawnLightness = null, volumeView = null;
   function renderLab() {
     const l = Number($('lab-lightness').value), a = Number($('lab-a').value), b = Number($('lab-b').value);
     ['lightness', 'a', 'b'].forEach(id => { $('lab-' + id + '-out').value = $('lab-' + id).value; });
@@ -70,6 +70,8 @@
     if (!labContext._slice || labContext._sliceL !== l) { labContext._slice = labContext.getImageData(0, 0, labCanvas.width, labCanvas.height); labContext._sliceL = l; }
     const x = (a + 100) / 200 * (labCanvas.width - 1), y = (100 - b) / 200 * (labCanvas.height - 1);
     labContext.beginPath(); labContext.arc(x, y, 8, 0, Math.PI * 2); labContext.strokeStyle = '#fff'; labContext.lineWidth = 5; labContext.stroke(); labContext.strokeStyle = '#111'; labContext.lineWidth = 2; labContext.stroke();
+    volumeView?.update(l, a, b);
+    $('lab-slice-label').textContent = `SLICE / L* ${l}`;
     const result = labToRgb(l, a, b), color = hex(result.rgb);
     $('lab-sample').style.background = color; $('lab-sample').style.color = luminance(result.rgb) > .3 ? '#111' : '#fff'; $('lab-hex').textContent = color;
     $('lab-status').textContent = result.gamut ? `L* ${l}, a* ${a}, b* ${b} is within the sRGB display range.` : `L* ${l}, a* ${a}, b* ${b} is outside sRGB. The sample is clipped to the nearest channel limits.`;
@@ -88,6 +90,15 @@
   });
   $('lab-neutral').addEventListener('click', () => { $('lab-a').value = 0; $('lab-b').value = 0; renderLab(); });
   renderLab();
+  import('./color-theory-volume.mjs').then(({ createColorVolume }) => {
+    volumeView = createColorVolume(labToRgb);
+    renderLab();
+  }).catch(() => {
+    $('lab-volume').hidden = true;
+    $('lab-volume-fallback').hidden = false;
+    $('lab-turn').disabled = true;
+    $('lab-view-reset').disabled = true;
+  });
   $('reveal').addEventListener('click', () => {
     const connected = $('reveal').getAttribute('aria-pressed') !== 'true';
     $('reveal').setAttribute('aria-pressed', String(connected));

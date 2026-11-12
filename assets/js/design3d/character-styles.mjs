@@ -5,17 +5,23 @@ import { humanoidLayout } from './humanoid.mjs';
 export function buildStyledCharacter(T,group,p,state){
  const L=humanoidLayout(p),{H,hipY,neckY,shoulderY,headY,sH,hipHalf,kneeY}=L;
  const style=Math.round(p.artStyle),block=style===1,stick=style===2,fur=state.color,cloth=state.secondary;
- const add=(geo,pos,color,name)=>{const m=new T.Mesh(geo,new T.MeshPhysicalMaterial({color,roughness:.48,clearcoat:.12,clearcoatRoughness:.35}));m.position.set(...pos);m.name=name;m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
- const ball=(pos,r,color,name,scale=[1,1,1])=>{const m=add(new T.SphereGeometry(r,40,28),pos,color,name);m.scale.set(...scale);return m;};
+ const organic=style===3,bodyPrims=[];
+ const rgb=hex=>{const c=new T.Color(hex);return [c.r,c.g,c.b];};
+ const core=new Set(['Tailored jacket silhouette','Neck','Shoulder','Contoured upper arm','Tapered forearm','Palm','Separated finger','Hip','Shaped thigh','Calf and ankle','Foot','Elbow','Knee','Sleeve cap','Thumb']);
+ const add=(geo,pos,color,name)=>{const clothPart=/jacket|pocket|lapel|Sleeve|arm|thigh|ankle|Knee|Shoulder|Hip/.test(name),eyePart=/Eye|Iris|Pupil|Catchlight/.test(name);const m=new T.Mesh(geo,new T.MeshPhysicalMaterial({color,roughness:eyePart?.22:clothPart?.82:.57,clearcoat:eyePart?.35:.025,clearcoatRoughness:.6,envMapIntensity:eyePart?.8:.45}));m.position.set(...pos);m.name=name;m.castShadow=true;m.receiveShadow=true;if(!(organic&&core.has(name)))group.add(m);else{geo.dispose();m.material.dispose();}return m;};
+ const ball=(pos,r,color,name,scale=[1,1,1])=>{if(organic&&core.has(name))bodyPrims.push({type:'ell',c:pos,r:scale.map(v=>v*r),color:rgb(color),k:name==='Palm'?.035:.055});const m=add(new T.SphereGeometry(r,40,28),pos,color,name);m.scale.set(...scale);return m;};
  const rounded=(w,h,d,r=.06)=>{
   r=Math.min(r,w*.22,h*.22,d*.22);const shape=new T.Shape(),x=w/2-r,y=h/2-r;
   shape.moveTo(-x,-y-r);shape.lineTo(x,-y-r);shape.quadraticCurveTo(x+r,-y-r,x+r,-y);shape.lineTo(x+r,y);shape.quadraticCurveTo(x+r,y+r,x,y+r);shape.lineTo(-x,y+r);shape.quadraticCurveTo(-x-r,y+r,-x-r,y);shape.lineTo(-x-r,-y);shape.quadraticCurveTo(-x-r,-y-r,-x,-y-r);
   const g=new T.ExtrudeGeometry(shape,{depth:d-2*r,bevelEnabled:true,bevelSize:r,bevelThickness:r,bevelSegments:3,curveSegments:8});g.translate(0,0,-d/2+r);g.computeVertexNormals();return g;
  };
  const box=(pos,size,color,name)=>add(rounded(...size),pos,color,name);
- const link=(a,b,r,color,name)=>{const va=new T.Vector3(...a),vb=new T.Vector3(...b),delta=vb.clone().sub(va);const m=add(block?rounded(r*2,delta.length(),r*2,.035):new T.CapsuleGeometry(r,Math.max(.01,delta.length()-r*2),8,24),va.clone().add(vb).multiplyScalar(.5).toArray(),color,name);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());return m;};
+ const link=(a,b,r,color,name)=>{if(organic&&core.has(name))bodyPrims.push({type:'cap',a,b,ra:r,rb:r,color:rgb(color),k:.12});const va=new T.Vector3(...a),vb=new T.Vector3(...b),delta=vb.clone().sub(va);const m=add(block?rounded(r*2,delta.length(),r*2,.035):new T.CapsuleGeometry(r,Math.max(.01,delta.length()-r*2),8,24),va.clone().add(vb).multiplyScalar(.5).toArray(),color,name);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());return m;};
  // Ring-built surfaces give silhouettes deliberate changes of plane and volume.
  const loft=(rings,color,name,segments=40)=>{
+  if(organic&&name==='Tailored jacket silhouette'){
+   for(const [y,rx,ry,rz] of [[hipY+.08,hipHalf*1.04,.23,.28],[hipY+p.torso*.3,sH*.76,p.torso*.25,.30],[hipY+p.torso*.58,sH*.93,p.torso*.25,.37],[shoulderY-.035,sH,.20,.32]])bodyPrims.push({type:'ell',c:[0,y,0],r:[rx,ry,rz],color:rgb(color),k:.16});
+  }
   const vertices=[],indices=[];
   for(const [y,rx,rz,cx=0,cz=0] of rings)for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,y,cz+Math.sin(a)*rz);}
   for(let j=0;j<rings.length-1;j++)for(let i=0;i<segments;i++){const a=j*(segments+1)+i,b=a+segments+1;indices.push(a,b,a+1,b,b+1,a+1);}
@@ -24,6 +30,12 @@ export function buildStyledCharacter(T,group,p,state){
  };
  const tapered=(a,b,radii,color,name)=>{
   const va=new T.Vector3(...a),vb=new T.Vector3(...b),length=va.distanceTo(vb);
+  if(organic&&core.has(name)){
+   // Use one tapered volume per limb; short overlapping capsules make swollen rings.
+   const finger=name==='Separated finger',ra=radii[1][1]*(finger?1:.94),rb=radii.at(-1)[1];
+   const direction=vb.clone().sub(va).normalize();
+   bodyPrims.push({type:'cap',a:va.clone().addScaledVector(direction,ra*.55).toArray(),b:vb.clone().addScaledVector(direction,-rb*.4).toArray(),ra,rb,color:rgb(color),k:finger?.012:.065});
+  }
   const m=loft(radii.map(([t,r])=>[t*length,r,r*.87]),color,name,32);m.position.copy(va);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),vb.sub(va).normalize());return m;
  };
  const curve=(points,r,color,name)=>add(new T.TubeGeometry(new T.CatmullRomCurve3(points.map(v=>new T.Vector3(...v))),32,r,10,false),[0,0,0],color,name);
@@ -48,6 +60,11 @@ export function buildStyledCharacter(T,group,p,state){
    ell(side*.19,.25,.32,.16,.12,.15,fur,.07);
    ell(side*.20,.16,.43,.115,.13,.10,fur,.035,true);
   }
+  for(const side of [-1,1]){
+   // Overlapping tapered masses blend ear roots and cheek tufts into the skull.
+   for(let i=0;i<7;i++){const t=i/6;ell(side*(.34+t*.17),.38+t*p.ears/H,.0,.23*(1-t)+.025,.13,.105*(1-t)+.025,fur,.075);}
+   for(let i=0;i<3;i++)ell(side*(.40+i*.035),-.12-i*.05,.03,.105-i*.025,.075-i*.014,.12-i*.02,fur,.065);
+  }
   ell(0,-.04,.48,.14,.12,.20);ell(0,-.07,.65,.105,.065,.075,'#26313a',.025);
   const data=meshField(buildField(prims,{cell:H*.018,floor:headY-H*.56,tau:.003}));
   const geo=new T.BufferGeometry();for(const [key,values] of [['position',data.positions],['normal',data.normals],['color',data.colors]])geo.setAttribute(key,new T.BufferAttribute(values,3));geo.setIndex(new T.BufferAttribute(data.indices,1));
@@ -66,21 +83,21 @@ export function buildStyledCharacter(T,group,p,state){
   else {
    if(!block){ball(elbow,.155,fur,'Elbow');ball(knee,.18,cloth,'Knee');}
    ball(shoulder,block?.19:.24,cloth,'Sleeve cap');
-   link([wrist[0],wrist[1]+.1,wrist[2]],wrist,block?.16:.175,'#d8b97b','Cuff trim');
+   link([wrist[0],wrist[1]+.1,wrist[2]],wrist,block?.16:.12,'#d8b97b','Cuff trim');
    box([x,.07,.17],[block?.42:.46,.12,.65],'#24303d','Boot sole');
    link([x,.29,.03],[x,.42,.02],block?.18:.19,'#384b5b','Boot collar');
    ball([wrist[0]-side*.11,wrist[1]-.05,wrist[2]+.08],.09,fur,'Thumb');
   }
   const eyeX=side*H*.2,eyeY=headY+H*(style===3?.16:.08),front=block?H*.43:H*(stick?.41:.43),er=H*.065*p.eyes;
-  const eye=ball([eyeX,eyeY,front],er*(style===3?1.55:1.15),'#fff8ed','Eye',[1,1.18,.6]);eye.material.roughness=.16;eye.material.clearcoat=1;
-  if(style===3){const lid=[];for(let i=0;i<=12;i++){const a=i/12*Math.PI;lid.push([eyeX+Math.cos(a)*er*1.55,eyeY+Math.sin(a)*er*1.75,front+.012]);}curve(lid,er*.18,fur,'Upper eyelid rim');}
-  const irisZ=front+er*.73;
-  const iris=ball([eyeX,eyeY,irisZ],er*.72,stick?'#55cbe5':'#628b73','Iris',[1,1,.24]);iris.material.roughness=.2;
+  const eye=ball([eyeX,eyeY,front],er*(style===3?1.35:1.15),'#fff8ed','Eye',[1,1.18,.6]);eye.material.roughness=.16;eye.material.clearcoat=1;
+  if(style===3){const lid=[];for(let i=0;i<=12;i++){const a=i/12*Math.PI;lid.push([eyeX+Math.cos(a)*er*1.35,eyeY+Math.sin(a)*er*1.55,front+.012]);}curve(lid,er*.18,fur,'Upper eyelid rim');}
+  const irisZ=front+er*.98;
+  const iris=ball([eyeX,eyeY,irisZ],er*.68,stick?'#55cbe5':'#628b73','Iris',[1,1,.24]);iris.material.roughness=.2;
   ball([eyeX,eyeY,irisZ+er*.16],er*.36,'#101c26','Pupil',[1,1,.25]);
   ball([eyeX-er*.22,eyeY+er*.3,irisZ+er*.27],er*.18,'#ffffff','Catchlight');
   link([eyeX-side*er*.9,eyeY+er*1.8,front],[eyeX+side*er*.9,eyeY+er*(1.9+(p.brows||0)/30),front-.015],er*.22,stick?'#243b50':'#533b30','Expressive brow');
   if(style===3){
-   earShape(side);earShape(side,true);
+   earShape(side,true);
 
   }
  }
@@ -91,8 +108,8 @@ export function buildStyledCharacter(T,group,p,state){
    box([x,.19,.23],[block?.37:.39,.22,.51],'#415365','Boot upper');
    box([x,.17,.47],[.34,.16,.18],'#71828c','Toe guard');
    for(let i=0;i<3;i++)link([x-.11,.31-i*.025,.13+i*.085],[x+.11,.31-i*.025,.13+i*.085],.014,'#dfd1b1','Boot lace');
-   box([side*sH*.52,hipY+p.torso*.44,block?.35:.37],[.27,.27,.07],cloth,'Raised jacket pocket');
-   box([side*sH*.52,hipY+p.torso*.54,block?.40:.42],[.29,.07,.07],'#324554','Pocket flap');
+   box([side*sH*.46,hipY+p.torso*.44,block?.35:.335],[.27,.27,.07],cloth,'Raised jacket pocket');
+   box([side*sH*.46,hipY+p.torso*.54,block?.40:.37],[.29,.07,.07],'#324554','Pocket flap');
    box([side*(hipHalf+.08),hipY-.12,0],[.20,.32,.28],'#324554','Utility pouch');
    if(block){
     box([side*H*.49,headY-.03,0],[.12,.25,.27],fur,'Angular ear');
@@ -101,7 +118,7 @@ export function buildStyledCharacter(T,group,p,state){
     box([side*sH,shoulderY+.04,.03],[.43,.18,.48],'#324554','Shoulder armor');
     box([x,kneeY,.20],[.29,.33,.09],'#526b7c','Knee plate');
    }else{
-    for(let tuft=0;tuft<3;tuft++){const m=add(new T.ConeGeometry(H*(.10-tuft*.015),H*.28,5),[side*H*(.40+tuft*.025),headY-H*(.12+tuft*.085),H*.12],fur,'Swept cheek fur');m.rotation.z=side*(1.1+tuft*.2);}
+    // Cheek fur is sculpted into the head field above.
     curve([[side*.18,neckY-.08,.20],[side*.3,neckY-.25,.32],[side*.13,neckY-.40,.4]],.035,'#dfd1b1','Folded lapel');
    }
   }else{
@@ -135,8 +152,14 @@ export function buildStyledCharacter(T,group,p,state){
 
   if(p.tail>0){
    const rings=[];for(let i=0;i<=24;i++){const t=i/24,r=.035+Math.sin(Math.PI*t)**.7*.25;rings.push([hipY+t*.75,r,r,Math.sin(t*Math.PI)*.22,-.25-t*p.tail]);}
-   loft(rings.slice(0,19),fur,'Swept bushy tail');loft(rings.slice(18),'#f8e6cd','Tapered ivory tail tip');
+   const tailParts=[];for(let i=0;i<rings.length-1;i++){const a=rings[i],b=rings[i+1];tailParts.push({type:'cap',a:[a[3],a[0],a[4]],b:[b[3],b[0],b[4]],ra:a[1],rb:b[1],color:rgb(i<18?fur:'#f8e6cd'),k:.035});}
+   const data=meshField(buildField(tailParts,{cell:.025,floor:0,tau:.003})),geo=new T.BufferGeometry();for(const [key,values] of [['position',data.positions],['normal',data.normals],['color',data.colors]])geo.setAttribute(key,new T.BufferAttribute(values,3));geo.setIndex(new T.BufferAttribute(data.indices,1));const tail=add(geo,[0,0,0],'#ffffff','Continuous bushy tail');tail.material.vertexColors=true;tail.material.roughness=.8;
   }
  }else box([0,headY-H*.19,H*(block?.435:.435)],[H*.2,.025,.025],'#26313a','Mouth');
+ if(organic){
+  const data=meshField(buildField(bodyPrims,{cell:.033,floor:0,tau:.004}));
+  const geo=new T.BufferGeometry();for(const [key,values] of [['position',data.positions],['normal',data.normals],['color',data.colors]])geo.setAttribute(key,new T.BufferAttribute(values,3));geo.setIndex(new T.BufferAttribute(data.indices,1));
+  const body=add(geo,[0,0,0],'#ffffff','Continuous mascot body');body.material.vertexColors=true;body.material.roughness=.76;
+ }
  group.scale.setScalar(p.height/5.2);group.userData.characterHeight=headY+H*.6+(style===3?p.ears:0);
 }

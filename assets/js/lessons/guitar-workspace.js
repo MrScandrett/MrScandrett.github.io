@@ -34,6 +34,7 @@
     if (link) reveal(link.hash.slice(1));
   }, true);
   document.getElementById('musicSection')?.addEventListener('change', event => reveal(event.target.value), true);
+  document.addEventListener('guitar-reveal', event => reveal(event.detail));
   window.addEventListener('hashchange', () => reveal(location.hash.slice(1)));
   setMode('hybrid');
 })();

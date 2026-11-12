@@ -71,7 +71,7 @@
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
     const src = source(), m = mode.value, fullGuitar = m === 'guitar' && (composer === 'francisco-tarrega' || !!src.guitarArrangement), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
-    violinControls.hidden = m !== 'melody';
+    violinControls.hidden = !['melody','violin'].includes(m);
     violinPosition.disabled = !violinShow.checked;
     staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
     octave.disabled = !isolated;
@@ -86,18 +86,20 @@
       message = 'Extracted ' + result.staves[0].label + ', voice ' + (+voice.value + 1) + '. Chords become ' + (m === 'bass' ? 'their lowest' : 'their highest') + ' note; this is a source line, not an automatic melody analysis.';
       if (m === 'alto' || m === 'tenor') message += ' Written ' + (m === 'alto' ? 'E♭ alto' : 'B♭ tenor') + ' part; audio sounds at concert pitch. Check register and breathing.';
       if (m === 'violin') {
-        const fit = result.violinFit || { shift: 0, raised: 0 };
         message += ' Violin part at concert pitch, kept between the open G string (G3) and E7.';
-        if (fit.shift) message += ' Moved ' + (fit.shift > 0 ? 'up ' : 'down ') + (Math.abs(fit.shift) / 12 === 1 ? 'one octave' : Math.abs(fit.shift) / 12 + ' octaves') + ' to fit the instrument.';
-        if (fit.raised) message += ' ' + fit.raised + (fit.raised === 1 ? ' note sat' : ' notes sat') + ' below the G string and ' + (fit.raised === 1 ? 'was' : 'were') + ' lifted an octave; check ' + (fit.raised === 1 ? 'that leap.' : 'those leaps.');
         message += ' Bowings and fingerings are yours to mark.';
       }
+    }
+    if (result.registerFit) {
+      const fit = result.registerFit;
+      if (fit.shift) message += ' Register moved ' + (fit.shift > 0 ? 'up ' : 'down ') + Math.abs(fit.shift) / 12 + (Math.abs(fit.shift) === 12 ? ' octave' : ' octaves') + ' to fit the instrument.';
+      if (fit.raised || fit.lowered) message += ' Remaining out-of-range notes moved by octaves: ' + fit.raised + ' raised, ' + fit.lowered + ' lowered. Review the altered leaps.';
     }
     if (src.composer === 'ClassroomOS teaching materials') message += ' Original classroom study, not a composition by the featured musician.';
     const chordOption = [...mode.options].find(o => o.value === 'chords');
     chordOption.disabled = work.value !== 'beethoven-ode-to-joy';
     mode.querySelector('option[value="guitar"]').textContent = src.guitarArrangement ? 'Guitar · solo arrangement with bass and harmony' : composer === 'francisco-tarrega' ? 'Guitar · complete tablature' : 'Guitar · melody tablature';
-    result.subtitle = src.guitarArrangement && m === 'guitar' ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (result.playbackTranspose ? ' · written saxophone pitch' : '');
+    result.subtitle = src.guitarArrangement && m === 'guitar' ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (['alto','tenor'].includes(m) ? ' · written saxophone pitch' : '');
     if (fullGuitar) {
       // Guitar notation reads one octave above sounding pitch.
       result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
@@ -115,12 +117,12 @@
         tuning: bass ? [43,38,33,28] : [64,59,55,50,45,40],
         label: bass ? 'Bass · G–D–A–E (high to low)' : 'Guitar · e–B–G–D–A–E (high to low)'
       };
-      message += ' Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review; this selected voice is not a complete solo arrangement.';
+      message += ' Notation reads one octave above sounding pitch. Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review; this selected voice is not a complete solo arrangement.';
     }
     current = result; note.textContent = message;
     try {
       player = ScoreEngine.render(host,result);
-      if (m === 'melody' && violinShow.checked) violinGuide(result);
+      if (['melody','violin'].includes(m) && violinShow.checked) violinGuide(result);
       if (m === 'chords') {
         if (work.value === 'beethoven-ode-to-joy') chordStudy();
         else tab.textContent = 'Prepared chord accompaniment is available for Ode to Joy. Choose that theme to study chord shapes and bass roots; other works retain their source notation.';

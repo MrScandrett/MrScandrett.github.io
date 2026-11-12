@@ -1,5 +1,38 @@
 (() => {
   'use strict';
+  const skyNames = { sunrise: 'Atlantic sunrise', sunshine: 'Peninsula sunshine', thunder: 'Afternoon thunderclouds', rain: 'Rain over the Everglades', sunset: 'Gulf Coast sunset' };
+  const atmosphereToggle = document.getElementById('fl-atmosphere-toggle');
+  const skyLabel = document.getElementById('fl-sky-label');
+  const scenes = [...document.querySelectorAll('[data-fl-scene]')];
+  let atmospherePaused = false;
+  let sceneUpdatePending = false;
+  function updateSky() {
+    sceneUpdatePending = false;
+    if (atmospherePaused) return;
+    const focusLine = window.innerHeight * .45;
+    let active = scenes[0];
+    for (const scene of scenes) {
+      if (scene.getBoundingClientRect().top <= focusLine) active = scene;
+    }
+    const sky = active.dataset.flScene;
+    document.body.dataset.flSky = sky;
+    skyLabel.textContent = skyNames[sky];
+  }
+  window.addEventListener('scroll', () => {
+    if (!sceneUpdatePending) {
+      sceneUpdatePending = true;
+      requestAnimationFrame(updateSky);
+    }
+  }, { passive: true });
+  window.addEventListener('resize', updateSky);
+  atmosphereToggle.addEventListener('click', () => {
+    atmospherePaused = !atmospherePaused;
+    document.body.classList.toggle('fl-atmosphere-paused', atmospherePaused);
+    atmosphereToggle.setAttribute('aria-pressed', String(atmospherePaused));
+    atmosphereToggle.textContent = atmospherePaused ? 'Resume atmosphere' : 'Pause atmosphere';
+    if (!atmospherePaused) updateSky();
+  });
+  updateSky();
   const habitats = {
     wetlands: ['Everglades · A slow-moving wetland', 'Shallow water moves through sawgrass marshes and other habitats. Small changes in elevation change which plants grow. Alligators and wading birds are part of this connected system.', 'Drainage and altered water flow.', 'If less clean water reaches a marsh, what could happen to fish and the birds that eat them?'],
     mangroves: ['Mangroves · Where fresh and salt water meet', 'Salt-tolerant coastal trees grow in tidal water. Their tangled roots shelter young fish, while birds feed and nest nearby.', 'Coastal construction and changes in water quality.', 'How might removing a nursery habitat affect adult fish farther offshore?'],

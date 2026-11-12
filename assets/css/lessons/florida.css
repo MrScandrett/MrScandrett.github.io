@@ -43,3 +43,66 @@
 .fl-person-category { margin-right: 0; }
 @media(max-width:900px) { .fl-artifacts { grid-template-columns: 1fr; } .fl-page .fl-document img { height: auto; max-height: 400px; } }
 @media print { .fl-artifacts { display: block; } .fl-page .fl-document, .fl-page .fl-portrait { break-inside: avoid; } .fl-page .fl-document img, .fl-page .fl-portrait img { height: 170px; } }
+
+/* Florida's changing light lives outside opaque, theme-aware reading surfaces. */
+.florida-lesson{--fl-sky-top:#4a7d9f;--fl-sky-mid:#ecb2a0;--fl-sky-low:#f6d394;--fl-water:#347f89;--fl-sun:#ffe5ac;--fl-cloud-opacity:.45;background:#4a7d9f;isolation:isolate}
+.fl-atmosphere{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:linear-gradient(var(--fl-sky-top),var(--fl-sky-mid) 62%,var(--fl-sky-low) 84%,var(--fl-water));transition:background 1.8s}
+.fl-atmosphere::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#082d401c,transparent 35%,transparent 65%,#082d4026)}
+.fl-sky-glow{position:absolute;width:65vmin;height:65vmin;right:-12vmin;top:12vh;border-radius:50%;background:radial-gradient(circle,var(--fl-sun) 0 13%,color-mix(in srgb,var(--fl-sun) 35%,transparent) 14%,transparent 67%);transition:opacity 2s;animation:fl-breathe 14s ease-in-out infinite alternate}
+.fl-cloud{position:absolute;width:85vw;height:30vh;left:-25vw;top:12%;opacity:var(--fl-cloud-opacity);filter:blur(16px);background:radial-gradient(ellipse at 25% 70%,#fff 0 18%,transparent 40%),radial-gradient(ellipse at 50% 50%,#fff 0 20%,transparent 45%),radial-gradient(ellipse at 75% 75%,#fff 0 14%,transparent 38%);animation:fl-cloud-drift 65s ease-in-out infinite alternate;transition:opacity 2s}
+.fl-cloud-two{top:42%;left:45vw;transform:scale(.8);animation-delay:-30s;animation-duration:85s}
+.fl-horizon{position:absolute;bottom:0;height:19vh;width:100%;background:repeating-linear-gradient(177deg,transparent 0 18px,#fff2 19px 20px,transparent 22px 38px),linear-gradient(transparent,var(--fl-water));opacity:.7;animation:fl-tide 18s ease-in-out infinite alternate}
+.fl-rain{position:absolute;inset:-20%;opacity:0;background:repeating-linear-gradient(105deg,transparent 0 35px,#d8efff45 36px,transparent 37px 65px);background-size:180px 260px;transition:opacity 2s;animation:fl-rainfall 1.5s linear infinite}
+.florida-lesson[data-fl-sky="sunshine"]{--fl-sky-top:#388cbb;--fl-sky-mid:#91ced5;--fl-sky-low:#f5e5ac;--fl-water:#248b93;--fl-sun:#fff2bb;--fl-cloud-opacity:.7}
+.florida-lesson[data-fl-sky="rain"]{--fl-sky-top:#3d6674;--fl-sky-mid:#8baeb0;--fl-sky-low:#b6cabb;--fl-water:#316e70;--fl-cloud-opacity:.5}
+.florida-lesson[data-fl-sky="thunder"]{--fl-sky-top:#232e4a;--fl-sky-mid:#58657d;--fl-sky-low:#9b9baf;--fl-water:#354d65;--fl-cloud-opacity:.22}
+.florida-lesson[data-fl-sky="sunset"]{--fl-sky-top:#514d81;--fl-sky-mid:#d5899c;--fl-sky-low:#ffc18a;--fl-water:#665780;--fl-sun:#ffd3a1;--fl-cloud-opacity:.3}
+[data-fl-sky="rain"] .fl-rain{opacity:.35}[data-fl-sky="thunder"] .fl-rain{opacity:.55}
+[data-fl-sky="rain"] .fl-sky-glow,[data-fl-sky="thunder"] .fl-sky-glow{opacity:0}
+.fl-page{position:relative}.fl-page>nav[aria-label="Breadcrumb"]{background:var(--surface-panel,var(--white));padding:.65rem 1rem;border-radius:10px;width:fit-content}
+.fl-weather-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--surface-panel,var(--white));color:var(--text);border:1px solid var(--line);border-radius:14px;padding:.7rem 1rem;font-size:.8rem}
+.fl-weather-bar p{margin:0;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}.fl-weather-dot{width:.65rem;height:.65rem;border-radius:50%;background:#d59b41;box-shadow:0 0 0 4px #d59b4120}.fl-weather-note{opacity:.75}.fl-weather-bar button{font-size:.75rem;padding:.5rem .8rem;flex-shrink:0}
+.fl-hero{background:linear-gradient(125deg,color-mix(in srgb,#e4a14f 13%,var(--surface-panel,var(--white))),var(--surface-panel,var(--white)) 65%);box-shadow:0 20px 65px #12333d28}
+.fl-panel{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--text) 18%,var(--surface-panel,var(--white)));box-shadow:0 16px 45px #102c3926}
+.fl-panel[data-fl-scene]::before{content:"";display:block;height:7px;position:absolute;inset:0 0 auto;background:var(--fl-band)}
+[data-fl-scene="sunshine"]{--fl-band:linear-gradient(90deg,#e7b044,#f4d68b,#65bcca)}
+[data-fl-scene="thunder"]{--fl-band:linear-gradient(90deg,#4b5278,#92a7ba,#d0c5df)}
+[data-fl-scene="rain"]{--fl-band:linear-gradient(90deg,#316e70,#77af9e,#b3cfb7)}
+[data-fl-scene="sunset"]{--fl-band:linear-gradient(90deg,#805d92,#dc8d91,#edb26f)}
+[data-fl-scene="sunrise"]{--fl-band:linear-gradient(90deg,#6496ad,#edae9a,#f1cc82)}
+.fl-jumps{padding:.75rem;background:var(--surface-panel,var(--white));border-radius:18px;box-shadow:0 8px 25px #102c391a}
+.fl-atmosphere-paused .fl-atmosphere *{animation-play-state:paused!important}.fl-atmosphere-paused .fl-atmosphere,.fl-atmosphere-paused .fl-atmosphere *{transition:none!important}
+@keyframes fl-cloud-drift{to{translate:12vw 2vh}}
+@keyframes fl-breathe{to{transform:scale(1.12);opacity:.8}}
+@keyframes fl-tide{to{transform:translateY(12px);background-position:50px 0,0 0}}
+@keyframes fl-rainfall{to{background-position:-70px 260px}}
+@media(max-width:650px){.fl-weather-bar{align-items:flex-start}.fl-weather-note{display:none}.fl-weather-bar p{font-size:.75rem}.fl-cloud{width:130vw}.fl-page .fl-hero-photo{min-height:390px}}
+@media(prefers-reduced-motion:reduce){.fl-atmosphere,.fl-atmosphere *{animation:none!important;transition:none!important}}
+@media print{.fl-atmosphere,.fl-weather-bar{display:none}.florida-lesson{background:white}.fl-panel[data-fl-scene]::before{display:none}.fl-panel,.fl-hero,.fl-jumps{box-shadow:none}}
+
+/* Typed colors interpolate through every frame, including interrupted transitions. */
+@property --fl-sky-top{syntax:'<color>';inherits:true;initial-value:#4a7d9f}
+@property --fl-sky-mid{syntax:'<color>';inherits:true;initial-value:#ecb2a0}
+@property --fl-sky-low{syntax:'<color>';inherits:true;initial-value:#f6d394}
+@property --fl-water{syntax:'<color>';inherits:true;initial-value:#347f89}
+@property --fl-sun{syntax:'<color>';inherits:true;initial-value:#ffe5ac}
+.florida-lesson{transition:--fl-sky-top 4s ease-in-out,--fl-sky-mid 4s ease-in-out,--fl-sky-low 4s ease-in-out,--fl-water 4s ease-in-out,--fl-sun 4s ease-in-out}
+.fl-atmosphere{transition:none}
+.fl-cloud,.fl-rain,.fl-sky-glow{transition:opacity 4s ease-in-out}
+.fl-nature{position:absolute;bottom:-12px;width:clamp(170px,18vw,290px);height:auto;overflow:visible;opacity:.85;filter:drop-shadow(0 4px 8px #102f3220)}
+.fl-nature-left{left:-45px}.fl-nature-right{right:-55px;width:clamp(180px,17vw,270px)}
+.fl-fronds{transform-box:fill-box;transform-origin:50% 70%;animation:fl-frond-sway 9s ease-in-out infinite alternate}
+.fl-marsh-grass{transform-origin:50% 100%;animation:fl-grass-sway 7s ease-in-out infinite alternate}
+.fl-nature-right .fl-marsh-grass{animation-delay:-3s}
+.fl-crane{transform-origin:60% 94%;animation:fl-crane-rest 13s ease-in-out infinite alternate}
+.fl-birds{position:absolute;top:15%;left:-240px;width:210px;height:70px;opacity:.65;animation:fl-birds-crossing 95s linear infinite}
+.fl-bird-wing{transform-box:fill-box;transform-origin:center;animation:fl-wingbeat 3.5s ease-in-out infinite alternate}
+.fl-bird-wing:nth-child(2){animation-delay:-1.2s}.fl-bird-wing:nth-child(3){animation-delay:-2.4s}
+@keyframes fl-frond-sway{from{rotate:-1.5deg}to{rotate:2deg}}
+@keyframes fl-grass-sway{from{transform:skewX(-1.5deg)}to{transform:skewX(2deg)}}
+@keyframes fl-crane-rest{0%,70%{rotate:0deg}100%{rotate:.7deg}}
+@keyframes fl-birds-crossing{from{translate:0 0}to{translate:calc(100vw + 480px) -50px}}
+@keyframes fl-wingbeat{from{scale:1 1}to{scale:1 .65}}
+.florida-lesson.fl-atmosphere-paused{transition:none}
+@media(max-width:650px){.fl-nature-left{left:-95px;width:190px}.fl-nature-right{right:-100px;width:200px}.fl-birds{width:140px}}
+@media(prefers-reduced-motion:reduce){.florida-lesson{transition:none}}

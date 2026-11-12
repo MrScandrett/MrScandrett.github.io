@@ -8,19 +8,25 @@ const base=process.env.SCORE_TEST_URL||'http://127.0.0.1:8080';
 const browser=await chromium.launch({executablePath:findChromium(),headless:true});
 let checked=0;
 try {
-  for(const [composer,entry] of Object.entries(catalog)) {
+  const selected=process.env.COMPOSER_TEST_FILTER;
+  const entries=Object.entries(catalog).filter(([composer])=>!selected||selected.split(',').includes(composer));
+  for(const [composer,entry] of entries) {
     const page=await browser.newPage({viewport:{width:390,height:844}}), errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(`${base}/lessons/music/pioneers/${composer}.html`,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>!!document.querySelector('#bv-score').scorePlayer);
-    assert.equal(await page.locator('main > :first-child').getAttribute('data-composer-intro'),'');
-    assert.equal(await page.locator('main > :nth-child(2)').getAttribute('id'),'composer-studio');
+    const intro=await page.locator('main > :first-child').getAttribute('data-composer-intro');
+    if(intro!==null) {
+      assert.equal(await page.locator('main > :nth-child(2)').getAttribute('id'),'composer-studio');
+      assert.equal(await page.locator('main > :first-child figure[data-zoomable] img').count(),1);
+    } else {
+      assert.equal(await page.locator('main > :first-child').getAttribute('id'),'composer-studio');
+    }
     assert.equal(await page.locator('main > :first-child h1').count(),1);
-    assert.equal(await page.locator('main > :first-child figure[data-zoomable] img').count(),1);
     assert.equal(await page.locator('#bv-work option').count(),entry.scores.length);
     for(const id of entry.scores) {
       await page.selectOption('#bv-work',id);
-      for(const mode of ['original','piano','alto','tenor','guitar','bass']) {
+      for(const mode of ['original','piano','melody','violin','alto','tenor','guitar','bass']) {
         await page.selectOption('#bv-mode',mode);
         assert.equal(await page.locator('#bv-score .se-error').count(),0,`${id}/${mode}`);
         assert.ok(await page.locator('#bv-score svg').count(),`${id}/${mode}: engraved score`);
@@ -33,6 +39,12 @@ try {
           assert.ok(await page.locator('#bv-score .se-tab-note').first().evaluate(el =>
             !!el.closest('svg').querySelector('.se-ev[data-i="' + el.dataset.i + '"]')
           ),`${id}/${mode}: fret linked to playable note`);
+        }
+        if(mode==='violin') {
+          assert.ok(await page.locator('.bv-violin-controls').isVisible(),`${id}: violin position controls`);
+          await page.check('#bv-violin-show');
+          assert.ok(await page.locator('.bv-violin-bar').count(),`${id}: violin position guide`);
+          await page.uncheck('#bv-violin-show');
         }
         checked++;
       }
@@ -53,5 +65,5 @@ try {
     console.log(`${composer}: ${entry.scores.length} scores, rendering and sampled playback passed`);
     await page.close();
   }
-  console.log(`Composer studio audit passed: 16 lessons, ${checked} arrangements.`);
+  console.log(`Composer studio audit passed: ${entries.length} lessons, ${checked} arrangements.`);
 } finally {await browser.close();}

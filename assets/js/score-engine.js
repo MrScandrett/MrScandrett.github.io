@@ -1319,7 +1319,7 @@
     var secs = Math.round(model.perfTotal * 60 / ((sc.tempo || 90) * unit));
     var time = ' · about ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') + ' at the marked tempo';
     var repeats = model.order.length > model.count ? ' with repeats' : '';
-    if (sc.complete) return 'Complete piece · ' + lastNo + ' bars' + repeats + time;
+    if (sc.complete) return 'Complete piece · ' + lastNo + (lastNo === 1 ? ' bar' : ' bars') + repeats + time;
     if (sc.excerpt) return 'Excerpt · ' + (sc.excerpt.label || ('bars ' + (sc.excerpt.bars || (firstNo + '–' + lastNo)))) + (sc.excerpt.of ? ' of ' + sc.excerpt.of : '') + (repeats ? ' (with repeats)' : '');
     return '';
   }
@@ -1632,14 +1632,15 @@
       fitLabel: 'Fit view', fitTitle: 'Fit a readable line to the score pane ( F )',
       zoom: { fit: fitWidth, steps: [0.5, 0.6, 0.75, 0.9, 1, 1.25, 1.5, 2], get: function () { return screenScale; },
         set: function (z) { staffScale = z; fitMode = false; layout = null; applyScale(); } },
-      fitRoom: function () { return (paper.clientHeight || root.innerHeight * 0.65) - 8; }
+      fitRoom: function () { return ((!workspace.classList.contains('se-short') && paper.clientHeight) || root.innerHeight * 0.65) - 8; }
     });
     toolbar.insertBefore(navigation.el, settings);
     if (guide.length) {
       guideBox = el('section', { class: 'se-guide', 'aria-label': 'Measure-by-measure guide' });
       guideNow = el('div', { class: 'se-guide-now', 'aria-live': 'polite' });
       var all = el('details', { class: 'se-guide-all' });
-      all.appendChild(el('summary', {}, 'Read the whole guide (' + guide.length + ' notes)'));
+      all.appendChild(el('summary', {}, 'Read the whole guide (' + guide.length + (guide.length === 1 ? ' note)' : ' notes)')));
+      if (guide.length === 1) all.hidden = true; // the one note is already showing above
       guideList = el('ol', {});
       guide.slice().sort(function (x, y) { return x.from - y.from || y.to - x.to; }).forEach(function (g) {
         var li = el('li', {});
@@ -1738,6 +1739,9 @@
       // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
       svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
         '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
+      // A one-line study doesn't need a 740px reading pane: let the pane shrink to the music.
+      // Decided by the piece, never by the drawn size: the fit zoom depends on the pane's height.
+      workspace.classList.toggle('se-short', model.count <= 4);
       cursorEl = svgWrap.querySelector('.se-cursor');
       eventNodes = [];
       svgWrap.querySelectorAll('.se-ev').forEach(function (node) { eventNodes[+node.getAttribute('data-i')] = node; });

@@ -619,6 +619,11 @@ document.addEventListener('DOMContentLoaded', function () {
        pitch — that's independent of edit mode, which is builder-only. */
     var playable = !interactive && opts.playable !== false;
 
+    var focusedCell = container.contains(document.activeElement) ? document.activeElement : null;
+    var focusedRow = focusedCell && focusedCell.parentElement;
+    var focusedString = focusedRow && focusedRow.getAttribute('data-string');
+    var focusedColumn = focusedRow ? Array.prototype.indexOf.call(focusedRow.children, focusedCell) : -1;
+    var previousScroll = container.querySelector('.gc-board')?.scrollLeft || 0;
     container.innerHTML = '';
     var board = document.createElement('div');
     board.className = 'gc-board' + (interactive ? ' is-interactive' : '') + (playable ? ' is-playable' : '');
@@ -666,7 +671,8 @@ document.addEventListener('DOMContentLoaded', function () {
       openCell.type = 'button';
       openCell.className = 'gc-cell gc-open-cell';
       var openAria = str.label + ' string, ' + (val === 0 ? 'open' : (val === 'x' || val == null ? 'muted' : 'open or muted')) + (degreeVal ? ', ' + (degreeVal.isRoot ? 'root' : degreeVal.label) : '');
-      openCell.setAttribute('aria-label', openAria);
+      openCell.setAttribute('aria-label', 'String ' + str.num + ', ' + openAria);
+      if (interactive) openCell.setAttribute('aria-pressed', String(val === 0));
       if (val === 0) openCell.classList.add('is-open');
       if (val === 'x' || val === null || val === undefined) openCell.classList.add('is-muted');
       if (val === 0) {
@@ -692,7 +698,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var cell = document.createElement('button');
         cell.type = 'button';
         cell.className = 'gc-cell';
-        cell.setAttribute('aria-label', str.label + ' string, fret ' + fret + (val === fret && degreeVal ? ', ' + (degreeVal.isRoot ? 'root' : degreeVal.label) : ''));
+        cell.setAttribute('aria-label', 'String ' + str.num + ', ' + str.label + ' string, fret ' + fret + (val === fret && degreeVal ? ', ' + (degreeVal.isRoot ? 'root' : degreeVal.label) : ''));
+        if (interactive) cell.setAttribute('aria-pressed', String(val === fret));
         if (val === fret) {
           cell.classList.add('has-note');
           var fretDot = dotInnerHTML();
@@ -732,6 +739,11 @@ document.addEventListener('DOMContentLoaded', function () {
     board.appendChild(markerRow);
 
     container.appendChild(board);
+    board.scrollLeft = previousScroll;
+    if (focusedString && focusedColumn >= 0) {
+      var rowToFocus = Array.from(board.querySelectorAll('[data-string]')).find(function(row) { return row.getAttribute('data-string') === focusedString; });
+      rowToFocus?.children[focusedColumn]?.focus({ preventScroll: true });
+    }
   }
 
   /* ---------- Dot color-coding mode (applies to every board on the page) ---------- */
@@ -833,7 +845,7 @@ document.addEventListener('DOMContentLoaded', function () {
       : null;
     renderBoard(builderBoard, {
       startFret: 0,
-      span: GT.BUILD_FRETS,
+      span: Math.max(GT.BUILD_FRETS, ...builderState.filter(function(f) { return typeof f === 'number'; })),
       frets: builderState,
       fingers: GT.computeFingering(builderState),
       degrees: degrees,
@@ -1089,7 +1101,13 @@ document.addEventListener('DOMContentLoaded', function () {
     builderState = shape.frets.slice();
     renderBuilder();
     var target = document.getElementById('builder');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target) {
+      document.dispatchEvent(new CustomEvent('guitar-reveal', { detail: 'builder' }));
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var heading = target.querySelector('h2');
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    }
   });
 
   function currentEncFrets() {
@@ -1470,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', function () {
     pre.textContent=[5,4,3,2,1,0].map(function(string) { return GT.TUNING[string].label+' |'+route.map(function(n) { return n.string===string ? String(n.fret).padStart(2,'-')+'--' : '----'; }).join('')+'|'; }).join('\n');
     host.appendChild(pre);
     var row=document.createElement('div'); row.className='gc-pick-row';
-    route.forEach(function(n,i) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=(i+1)+'. String '+(6-n.string)+', fret '+n.fret; b.onclick=function() { window.GuitarAudio.stop(); window.GuitarAudio.pluck(GT.noteFreq(n.string,n.fret)); }; row.appendChild(b); });
+    route.forEach(function(n,i) { var b=document.createElement('button'); b.type='button'; b.className='gc-btn'; b.textContent=(i+1)+'. String '+(6-n.string)+', fret '+n.fret; b.onclick=function() { studioStop(); window.GuitarAudio.pluck(GT.noteFreq(n.string,n.fret)); }; row.appendChild(b); });
     host.appendChild(row);
   }
 
@@ -1891,6 +1909,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.gc-pick-row .gc-pick-btn').forEach(function(b) { b.setAttribute('aria-pressed', b.classList.contains('is-active') ? 'true' : 'false'); });
   }
   document.addEventListener('click', function(e) { if (e.target.closest('.gc-pick-btn')) syncPressed(); });
+  syncPressed();
 
   /* ---------- Shared: correctly spelled notes and formula strips ---------- */
   var LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], LETTER_PC = [0, 2, 4, 5, 7, 9, 11];

@@ -12,7 +12,7 @@ export function humanoidLayout(p){
 
 export function humanoidPrims(p,paint,colors){
  const L=humanoidLayout(p),{H,hipY,neckY,shoulderY,headY,sH,hipHalf,depthB,waistHalf,ankleY,kneeY}=L,T=p.torso,outfit=Math.round(p.outfit);
- const skin=paint(colors.skin),cloth=paint(colors.cloth),trousers=paint(colors.trousers),leather=paint(colors.leather),hair=paint(colors.hair),lip=paint(colors.lip),gold=paint(colors.gold),metal=paint(colors.metal),collar=paint(colors.collar);
+ const skin=paint(colors.skin),cloth=paint(colors.cloth),trousers=paint(colors.trousers),leather=paint(colors.leather),hair=paint(colors.hair),gold=paint(colors.gold),metal=paint(colors.metal),collar=paint(colors.collar);
  const shade=(c,k)=>c.map(v=>v*k),prims=[],add=(type,spec)=>prims.push({type,...spec});
  const cap=(a,b,ra,rb,color,k=.1,extra={})=>add('cap',{a,b,ra,rb,color,k,...extra}),ell=(c,r,color,k=.1,extra={})=>add('ell',{c,r,color,k,...extra});
  const robe=outfit===3,longSleeve=outfit===1||robe,legColor=robe?cloth:trousers;
@@ -61,19 +61,20 @@ export function humanoidPrims(p,paint,colors){
   hell(hc(s*.24,-.01,.2),hr(.09,.06,.08),skin,.07);                                        // cheekbone
   hell(hc(s*.405,-.02,-.03),hr(.04,.1,.07),skin,.04);                                       // ear
   hell(hc(s*.41,.02,-.01),hr(.02,.07,.045),shade(skin,.9),.02);
-  hcap(hc(s*.3,.185,.29),hc(s*.07,.205,.385),.048,.05,skin,.05);                            // brow ridge
+  hcap(hc(s*.3,.185,.29),hc(s*.07,.205,.385),.026,.028,skin,.035);                            // brow ridge
   const ex=s*.185,up=.055+eyeR*.9,lo=.055-eyeR*.85;
   hcap(hc(ex+s*.085,up-.005,.33),hc(ex-s*.085,up+.005,.36),.04,.04,skin,.05);                  // upper lid
-  hell(hc(s*.065*Math.sqrt(nz),-.105,.43),hr(.04*nz,.035*nz,.04*nz),skin,.03);              // nostril wing
+  hell(hc(s*.065*Math.sqrt(nz),-.105,.43),hr(.028*nz,.025*nz,.028*nz),skin,.03);              // nostril wing
   hadd('ell',{c:hc(ex,.055,.36),r:hr(eyeR*1.18,eyeR*1.0,.07),color:skin,carve:true,k:.025*H}); // eye socket
  }
  hell(hc(0,-.41,.23),hr(.11*jf+.04,.085,.1),skin,.05);                                       // chin
  hell(hc(0,.18,.39),hr(.09,.06,.05),skin,.05);                                               // glabella
- hcap(hc(0,.11,.36),hc(0,-.06,.455),.036*nz,.055*nz,skin,.05);                              // nose bridge
- hell(hc(0,-.1,.485),hr(.07*nz,.055*nz,.065*nz),skin,.04);                                      // nose tip
- hell(hc(0,-.248,.372),hr(.105*mw,.03,.04),lip,.012);                                         // upper lip
- hell(hc(0,-.287,.368),hr(.09*mw,.036,.045),lip,.012);                                       // lower lip
- for(const s of [-1,1])hcap(hc(s*.27,.178,.34),hc(s*.075,.19+p.brows/150,.43),.021,.03,hair,.02);   // brows
+ hcap(hc(0,.11,.36),hc(0,-.06,.455),.028*nz,.038*nz,skin,.035);                              // nose bridge
+ hell(hc(0,-.1,.485),hr(.05*nz,.04*nz,.045*nz),skin,.04);                                      // nose tip
+ // Keep the mouth integrated with the face, with the same skin material.
+ // A shallow lip plane avoids a separate painted ring at every complexion.
+ hell(hc(0,-.268,.355),hr(.105*mw,.026,.018),skin,.035);
+ for(const s of [-1,1])hcap(hc(s*.27,.178,.34),hc(s*.075,.19+p.brows/150,.43),.012,.016,hair,.012);   // brows
  // --- hair: a shell that stops at a curved hairline (a tilted plane for the nape and sides, a window for the forehead) ---
  // Styles: 0 crop, 1 side-swept bob, 2 long, 3 twists, 4 big round.
  const hs=Math.round(p.hairStyle),hv=p.hair;
