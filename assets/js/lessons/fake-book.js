@@ -759,7 +759,7 @@
     lead: 'reed', from: 1, to: 0,
     vol: { melody: 80, piano: 55, bass: 75, drums: 65, click: 60 },
     sheetView: 'lead', beatCounts: 'off', chordLabels: 'letters',
-    showBass: true, bassFor: 'concert', showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, showLyrics: true, posInst: 'guitar',
+    showBass: true, bassFor: 'concert', showFingers: false, showTab: null, tabPos: 'auto', tabPosKey: null, tabStyle: null, tabPick: false, tabPins: {}, tabPinScope: 'bar', tabOctave: 0, bassLine: 'score', showPos: false, measureShapes: false, saxFingers: false, showAnalysis: false, showLyrics: true, posInst: 'guitar',
     engineInst: 'piano',
     engineMode: 'voicings',
     guitarForm: 'open', guitarVoice: 'manual', chordShapes: {}, pianoShapes: {}, saxShapes: {},
@@ -1533,6 +1533,15 @@
         firstVerseSrc[vi] = keys.length ? keys[0] : -1;
       });
     }
+    // Finger numbers over the melody: one right-hand route through the whole tune (FakeBookMelody's
+    // five-finger positions), so each bar's first finger follows from the last bar's. Suggestions only.
+    var fingerAt = {};
+    if (opts.showFingers && window.FakeBookMelody && opts.sheetView !== 'drums') {
+      var fingerPcs = [];
+      bars.forEach(function (fb) { fb.pieces.forEach(function (fp) { if (fp.p && !fp.tieFrom) fingerPcs.push(fp); }); });
+      var fingerPlan = window.FakeBookMelody.pianoFive(fingerPcs.map(function (fp) { return { dia: fp.p.dia, midi: fp.p.midi, name: fp.p.l }; }), 'right');
+      fingerPcs.forEach(function (fp, fi) { if (fingerPlan[fi]) fingerAt[fp.idx] = fingerPlan[fi].finger; });
+    }
     // Measure: which notes need an accidental, and how much room each piece wants
     // (longer notes get more space, but not proportionally more, as engravers do).
     bars.forEach(function (b) {
@@ -1870,7 +1879,12 @@
             out.push('<rect class="fb-beam" x="' + a.toFixed(1) + '" y="' + (up ? y2 : y2 - th).toFixed(1) + '" width="' + (c - a + 0.12 * S).toFixed(1) + '" height="' + th.toFixed(1) + '"/>');
           });
         });
-        placedBar.forEach(function (n) { if (n.headSvg) n.g.push(n.headSvg); n.g.push('</g>'); out.push(n.g.join('')); });
+        placedBar.forEach(function (n) {
+          if (n.headSvg) n.g.push(n.headSvg);
+          // A finger number sits on the side of the head away from its stem, clear of the chord symbols above.
+          if (fingerAt[n.pc.idx] !== undefined && !n.pc.tieFrom) n.g.push(txt(n.x, n.up === false ? n.y - 1.1 * S : n.y + 2.1 * S, String(fingerAt[n.pc.idx]), 'fb-finger', ' font-size="' + (1.05 * S) + '" text-anchor="middle"'));
+          n.g.push('</g>'); out.push(n.g.join(''));
+        });
         // triplets: a 3 over each beat's worth (bracketed when the notes aren't beamed together)
         var trip = [], tripLen = 0;
         b.pieces.forEach(function (pc) {
@@ -3527,6 +3541,7 @@
     if (quickInstr) { quickInstr.innerHTML = el('[data-fb-instr]').innerHTML; quickInstr.value = opts.instr; }
     el('[data-fb-octave]').value = String(opts.octave);
     root.querySelectorAll('[data-fb-names]').forEach(function (control) { control.checked = !!opts.names; });
+    root.querySelectorAll('[data-fb-show-fingers]').forEach(function (control) { control.checked = !!opts.showFingers; });
     el('[data-fb-beat-counts]').value = /^(quarter|eighth|all|written)$/.test(opts.beatCounts) ? opts.beatCounts : 'off';
     el('[data-fb-chord-labels]').value = opts.chordLabels;
     el('[data-fb-analysis]').checked = !!opts.showAnalysis;
@@ -5263,6 +5278,7 @@
       else if (t.matches('[data-fb-octave]')) { opts.octave = Number(t.value); refresh(); respin(); }
       else if (t.matches('[data-fb-analysis]')) { opts.showAnalysis = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-names]')) { opts.names = t.checked; syncControls(); renderSheet(); save(); }
+      else if (t.matches('[data-fb-show-fingers]')) { opts.showFingers = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-show-lyrics]')) { opts.showLyrics = t.checked; syncControls(); renderSheet(); save(); }
       else if (t.matches('[data-fb-beat-counts]')) { opts.beatCounts = t.value; renderSheet(); save(); }
       else if (t.matches('[data-fb-chord-labels]')) { opts.chordLabels = t.value; renderSheet(); save(); }
