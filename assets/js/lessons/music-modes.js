@@ -653,7 +653,112 @@
     render();
   }
 
-  /* ---------------------------------------------------------------- 07 tuning */
+  /* ---------------------------------------------------------------- 07 in the wild */
+  /* Signature vamps. `deg` are 0-based scale degrees; `roman` is the label shown. */
+  var VAMPS = {
+    Lydian:     { deg: [0, 1],       roman: ['I', 'II'] },
+    Ionian:     { deg: [0, 3, 4, 0], roman: ['I', 'IV', 'V', 'I'] },
+    Mixolydian: { deg: [0, 6],       roman: ['I', '♭VII'] },
+    Dorian:     { deg: [0, 3],       roman: ['i', 'IV'] },
+    Aeolian:    { deg: [0, 5, 6],    roman: ['i', '♭VI', '♭VII'] },
+    Phrygian:   { deg: [0, 1],       roman: ['i', '♭II'] },
+    Locrian:    { deg: [0, 1],       roman: ['i°', '♭II'] }
+  };
+  /* Stack thirds on scale degree `d` of a mode: semitones above the tonic, plus quality. */
+  function triadOn(mode, d) {
+    var s = MODES[mode].steps;
+    var at = function (i) { return s[i % 7] + 12 * Math.floor(i / 7); };
+    var r = at(d), third = at(d + 2) - r, fifth = at(d + 4) - r;
+    var quality = third === 4 && fifth === 7 ? 'maj' : third === 3 && fifth === 7 ? 'min' : third === 3 && fifth === 6 ? 'dim' : third === 4 && fifth === 8 ? 'aug' : '?';
+    return { root: r, tones: [r, r + third, r + fifth], quality: quality };
+  }
+  function initWild() {
+    var host = $('#wildLab'); if (!host) return;
+    var kb = new Keyboard($('#wildKb'), { low: 48, high: 84, label: 'Keyboard showing the selected mode and its chords' });
+    var mode = 'Dorian', beat = 0.4, beats = 4;
+    var pick = $('#wildPick'), strip = $('#wildChords');
+    pick.innerHTML = LADDER.map(function (m) {
+      return '<button type="button" class="mm-seg-btn" data-wild="' + m + '" aria-pressed="' + (m === mode) + '">' + m + '</button>';
+    }).join('');
+    function tonic() { return +$('#wildTonic').value; }
+    function plan() {
+      var t = tonic(), M = MODES[mode], V = VAMPS[mode], names = spell(t, M.steps);
+      return V.deg.map(function (d, i) {
+        var c = triadOn(mode, d), suffix = c.quality === 'min' ? 'm' : c.quality === 'dim' ? '°' : '';
+        var shift = M.steps[d] >= 6 ? 12 : 0;
+        return { label: names[d] + suffix, roman: V.roman[i], bass: t + c.root - shift - 12, tones: c.tones.map(function (x) { return t + x - shift; }) };
+      });
+    }
+    function render() {
+      setPressed(pick, 'data-wild', mode);
+      var t = tonic(), M = MODES[mode], ms = modeMidis(mode, t);
+      kb.clear();
+      ms.forEach(function (m, i) { kb.mark(m, i === 0 || i === 7 ? 'is-final' : (i === M.char ? 'is-char' : 'is-modern')); });
+      strip.innerHTML = plan().map(function (c) { return '<li><b>' + c.label + '</b><small>' + c.roman + '</small></li>'; }).join('');
+      status('wildStatus', 'Press <b>Play the vamp</b>. Characteristic note of ' + mode + ': <b>' + M.charLabel + '</b>.');
+    }
+    function clearLit() { $$('li', strip).forEach(function (li) { li.classList.remove('is-on', 'is-spoil'); }); }
+    document.addEventListener('mm:stop', clearLit);
+    /* Queue a list of chords; `liIndex(n)` says which strip item lights up. */
+    function playChords(list, opt) {
+      opt = opt || {};
+      var at = 0, len = beat * beats;
+      list.forEach(function (c, n) {
+        var li = strip.children[opt.liIndex ? opt.liIndex(n) : n];
+        Sound.tone(etFreq(c.bass), { at: at, dur: len, gain: 0.26 });
+        c.tones.forEach(function (m) { Sound.tone(etFreq(m), { at: at, dur: len, gain: 0.15 }); });
+        Sound.later(function () {
+          clearLit();
+          if (li) li.classList.add(c.spoil ? 'is-spoil' : 'is-on');
+          c.tones.forEach(function (m) { kb.flash(m); });
+        }, at * 1000);
+        if (opt.melody) opt.melody(at);
+        at += len;
+      });
+      Sound.later(clearLit, at * 1000 + 200);
+    }
+    function run(withColor) {
+      Sound.stopAll();
+      var chords = plan(), t = tonic(), M = MODES[mode], names = spell(t, M.steps);
+      var col = t + 12 + M.steps[M.char], third = t + 12 + M.steps[2];
+      var loops = chords.length <= 2 ? 3 : 2, seq = [];
+      for (var k = 0; k < loops; k++) seq = seq.concat(chords);
+      playChords(seq, {
+        liIndex: function (n) { return n % chords.length; },
+        melody: withColor ? function (at) {
+          [[t + 12, 0], [col, 1], [third, 2], [col, 3]].forEach(function (p) {
+            Sound.tone(etFreq(p[0]), { at: at + p[1] * beat, dur: beat * 1.6, gain: 0.3 });
+            Sound.later(function () { kb.flash(p[0]); }, (at + p[1] * beat) * 1000);
+          });
+        } : null
+      });
+      status('wildStatus', withColor
+        ? 'Hear <b>' + names[M.char] + '</b> (' + M.charLabel + ') land twice in every bar. It is the note that separates ' + mode + ' from plain major or minor.'
+        : 'The vamp <b>' + VAMPS[mode].roman.join(' – ') + '</b> keeps the tonic <b>' + names[0] + '</b> in charge. Now press <b>Vamp + color note</b>.');
+    }
+    function spoil() {
+      Sound.stopAll();
+      var chords = plan(), t = tonic(), M = MODES[mode];
+      var flats = /♭/.test(spell(t, [0])[0]);
+      var rootAbs = t + M.steps[4], third = rootAbs + 4;
+      var inMode = M.steps.some(function (x) { return pc(t + x) === pc(third); });
+      var shift = M.steps[4] >= 6 ? 12 : 0;
+      var vChord = { bass: rootAbs - shift - 12, tones: [rootAbs - shift, third - shift, rootAbs + 7 - shift], spoil: true };
+      playChords(chords.concat([vChord, chords[0]]), { liIndex: function (n) { return n < chords.length ? n : 0; } });
+      var vName = keyName(rootAbs, flats), note = keyName(third, flats), home = keyName(t, flats);
+      status('wildStatus', inMode
+        ? 'In ' + home + ' ' + mode + ' the major chord on ' + vName + ' only uses notes of the mode, so the mode survives. Try Dorian or Mixolydian to hear one break.'
+        : 'The <b>' + vName + ' major</b> chord brings in <b>' + note + '</b>, a note that is not in ' + home + ' ' + mode + '. That raised 7th pulls home like a tonal cadence, so the sound drifts toward plain major or minor and the ' + mode + ' color is lost.');
+    }
+    pick.addEventListener('click', function (e) { var b = e.target.closest('[data-wild]'); if (!b) return; mode = b.dataset.wild; render(); });
+    $('#wildTonic').addEventListener('change', render);
+    $('#wildVamp').addEventListener('click', function () { run(false); });
+    $('#wildColor').addEventListener('click', function () { run(true); });
+    $('#wildSpoil').addEventListener('click', spoil);
+    render();
+  }
+
+  /* ---------------------------------------------------------------- 08 tuning */
   function initTuning() {
     var host = $('#tuneLab'); if (!host) return;
     var C4 = etFreq(60);
@@ -1000,7 +1105,7 @@
     // enters the viewport, while startup is no longer one monolithic task.
     var labs = [
       ['genera', initGenus], ['species', initSpecies], ['ethos', initEthos],
-      ['boethius', initChurch], ['modern', initModern], ['temperament', initTuning],
+      ['boethius', initChurch], ['modern', initModern], ['wild', initWild], ['temperament', initTuning],
       ['listen', initEar], ['play', initPlay], ['compose', initCompose]
     ].map(function (item) { return { id: item[0], init: item[1], done: false }; });
     function run(lab) {
@@ -1032,5 +1137,5 @@
     scheduleIdle(fillIdle);
   });
 
-  window.MusicModes = { species: species, tetrachord: tetrachord, gps: gps, MODES: MODES, spell: spell };
+  window.MusicModes = { species: species, tetrachord: tetrachord, gps: gps, MODES: MODES, spell: spell, VAMPS: VAMPS, triadOn: triadOn };
 })();
