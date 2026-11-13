@@ -248,6 +248,8 @@
     }
 
     button.addEventListener('click', function () {
+      // Start fetching lazy photos now, so they have arrived by the time Print is chosen.
+      if (menu.hidden) loadLazyImages();
       menu.hidden = !menu.hidden;
       button.setAttribute('aria-expanded', String(!menu.hidden));
       if (!menu.hidden) menu.querySelector('button').focus();
@@ -949,7 +951,15 @@
     answerRestore = [];
   }
 
+  // Chrome fetches loading="lazy" images when it prints; Safari and every iOS browser (all WebKit)
+  // print them as empty frames. Switch them to eager before printing (and when the print menu
+  // opens, which gives them a head start). They stay eager: the bytes are spent either way.
+  function loadLazyImages() {
+    document.querySelectorAll('img[loading="lazy"]').forEach(function (img) { img.loading = 'eager'; });
+  }
+
   function prepareForPrint() {
+    loadLazyImages();
     restoreAfterPrint();
     // Print-only content (score-engine.js's opening bars) goes in here, so the planner measures it.
     window.dispatchEvent(new Event('classroomos:print-prepare'));

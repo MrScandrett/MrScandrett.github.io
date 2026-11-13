@@ -2297,9 +2297,21 @@
       var paper = fig.querySelector(':scope > .se-paper');
       var cap = fig.querySelector(':scope > figcaption');
       if (paper) paper.after(box); else fig.insertBefore(box, cap);
+      // The player, its guide and help are screen-only, but lesson-print-button.js plans page
+      // breaks from the screen layout: a 700px player made the figure look page-sized, so it was
+      // marked to split and its title stranded at the foot of a page. Tell the planner to skip them.
+      fig.querySelectorAll(':scope > :is(.se-workspace, .se-guide, .se-help, .se-status, .se-source)').forEach(function (part) {
+        if (part.hasAttribute('data-no-print')) return;
+        part.setAttribute('data-no-print', '');
+        part.setAttribute('data-se-print-skip', '');
+      });
     });
   }
   function removePrintOpenings() {
+    document.querySelectorAll('[data-se-print-skip]').forEach(function (part) {
+      part.removeAttribute('data-no-print');
+      part.removeAttribute('data-se-print-skip');
+    });
     document.querySelectorAll('.se-print-opening').forEach(function (box) { box.remove(); });
     document.querySelectorAll('[data-se-print-moved]').forEach(function (h) { h.removeAttribute('data-se-print-moved'); });
   }
