@@ -179,8 +179,8 @@
     dockMode: 'floating', // 'floating', 'dock-right', 'dock-bottom', 'fullscreen'
     x: 80,
     y: 80,
-    w: 640,
-    h: 520,
+    w: 720,
+    h: 620,
     curTool: 'pen', // 'pen', 'counter', 'shape', 'graph', 'solve', 'eraser'
     curMode: 'draw', // 'draw', 'triangle', 'circle', 'graph', '3d_cube', '3d_cylinder', '3d_cone', '3d_sphere', '3d_composite'
     chalkColor: '#f0f6fc',
@@ -2445,6 +2445,8 @@
     if (!ink.strokes.length) return;
     if (!brainReady()) { loadBrain(readInk); return; }
     var read = window.InkRecognizer.readLine(ink.strokes);
+    // Space it the way it would be typed: "2x+5=15" → "2x + 5 = 15" (signs inside an exponent stay tight).
+    read.text = read.text.replace(/(?<=[^(^])([=+\-])/g, ' $1 ').replace(/\s+/g, ' ').trim();
     var meaning = read.text ? window.BoardMath.interpret(read.text) : { kind: 'unknown' };
     if (read.confidence >= 0.4 && meaning.kind !== 'unknown') {
       lastRead = { text: read.text, source: 'ink' };
@@ -2742,6 +2744,7 @@
     if (!brainReady()) { loadBrain(function () { handleCommand(text, source); }); return; }
     var cmd = window.BoardAssist.parseCommand(text);
     if (cmd.action === 'none') return;
+    if (source !== 'ink') lastRead = null; // the "I read" correction box belongs to handwriting only
     if (source === 'voice') logEvent('said', text);
     switch (cmd.action) {
       case 'math': runMath(cmd.text, { source: source === 'ink' ? 'ink' : source }); break;
@@ -2950,6 +2953,10 @@
     if (rec.audio) rec.audio.getTracks().forEach(function (t) { t.stop(); });
   }
 
+  function sizeText(bytes) {
+    return bytes < 1048576 ? Math.max(1, Math.round(bytes / 1024)) + ' KB' : num(bytes / 1048576, 1) + ' MB';
+  }
+
   function finishRecording(blob) {
     var length = rec ? rec.length : 0;
     rec = null;
@@ -2958,8 +2965,8 @@
     lastRecordingUrl = URL.createObjectURL(blob);
     var ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
     var name = 'blackboard-' + new Date().toISOString().slice(0, 10) + '.' + ext;
-    setDetectBanner('⏹ Recording ready: ' + window.BoardAssist.clock(length) + ', ' + num(blob.size / 1048576, 1) + ' MB');
-    showResult('<div class="smart-wb-lookup"><strong>Recording ready</strong> (' + window.BoardAssist.clock(length) + ', ' + num(blob.size / 1048576, 1) + ' MB). It is only in this tab until you save it.' +
+    setDetectBanner('⏹ Recording ready: ' + window.BoardAssist.clock(length) + ', ' + sizeText(blob.size));
+    showResult('<div class="smart-wb-lookup"><strong>Recording ready</strong> (' + window.BoardAssist.clock(length) + ', ' + sizeText(blob.size) + '). It is only in this tab until you save it.' +
       '<div class="smart-wb-panel-row" style="margin-top:6px;">' +
         '<a class="smart-wb-btn" href="' + lastRecordingUrl + '" download="' + name + '">⬇ Save video</a>' +
         '<button type="button" class="smart-wb-btn" data-ask="summary">📋 Class notes</button>' +

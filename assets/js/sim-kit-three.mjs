@@ -13,6 +13,9 @@ export function createScene(canvas, opts) {
   const near = opts.near ?? 0.1;
   const far = opts.far ?? 100;
   const maxDpr = opts.maxDpr ?? 2;
+  // Automatic backing-store budget; CSS layout and camera coordinates stay intact.
+  // Pass maxPixels: 0 for workspaces that explicitly need full resolution.
+  const maxPixels = opts.maxPixels ?? 1920 * 1080;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: opts.antialias !== false, alpha: opts.alpha === true, logarithmicDepthBuffer: opts.logarithmicDepthBuffer === true, preserveDrawingBuffer: opts.preserveDrawingBuffer === true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
@@ -25,10 +28,13 @@ export function createScene(canvas, opts) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
     if (width === 0 || height === 0) return false;
+    let targetRatio = Math.min(window.devicePixelRatio || 1, maxDpr);
+    if (maxPixels > 0) targetRatio = Math.min(targetRatio, Math.sqrt(maxPixels / (width * height)));
+    if (renderer.getPixelRatio() !== targetRatio) renderer.setPixelRatio(targetRatio);
     const pixelRatio = renderer.getPixelRatio();
     const resized =
-      canvas.width !== Math.round(width * pixelRatio) ||
-      canvas.height !== Math.round(height * pixelRatio);
+      canvas.width !== Math.floor(width * pixelRatio) ||
+      canvas.height !== Math.floor(height * pixelRatio);
     if (resized) {
       renderer.setSize(width, height, false);
       camera.aspect = width / height;

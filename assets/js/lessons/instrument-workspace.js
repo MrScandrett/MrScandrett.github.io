@@ -72,6 +72,7 @@
   }
   function show(panel) {
     app.dataset.scoreView = String(!!panel.querySelector('#guitarTechnique'));
+    app.dataset.libraryView = String(!!panel.querySelector('.guitar-library'));
     const previous = pages.find(item => !item.panel.hidden);
     if (previous && previous.panel !== panel) window.AudioKit?.stopAll();
     const focusWasHidden = previous && previous.panel !== panel && previous.panel.contains(document.activeElement);

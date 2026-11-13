@@ -189,7 +189,8 @@ export function mount(panel, host) {
       if (n === 2) acc = 0;
       if (++frames % 15 === 0) updateStats();
     }
-    draw();
+    // Paused edits draw from their input handlers; no full-grid repaint at idle.
+    if (!paused) draw();
     raf = requestAnimationFrame(frame);
   }
 

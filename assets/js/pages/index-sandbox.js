@@ -10,20 +10,43 @@
     }
     var dCtx = drawCanvas.getContext('2d');
     var pCtx = physCanvas.getContext('2d');
-    var DPR = Math.min(window.devicePixelRatio || 1, 2);
     var boardSize = null;
+    function sandboxFullscreen() {
+      return document.fullscreenElement === sandboxPanel || sandboxPanel.classList.contains('creation-app-expanded');
+    }
+    var fullScreenButton = sandboxPanel.querySelector('.creation-app-fullscreen');
+    var toolsButton = document.createElement('button');
+    toolsButton.type = 'button';
+    toolsButton.className = 'creation-app-fullscreen sandbox-tools-toggle';
+    toolsButton.textContent = 'Hide tools';
+    toolsButton.setAttribute('aria-expanded', 'true');
+    toolsButton.setAttribute('aria-controls', 'ppanel-draw ppanel-phys ppanel-rider ppanel-powder');
+    fullScreenButton?.before(toolsButton);
+    toolsButton.addEventListener('click', function () {
+      var hidden = sandboxPanel.classList.toggle('sandbox-tools-hidden');
+      toolsButton.textContent = hidden ? 'Show tools' : 'Hide tools';
+      toolsButton.setAttribute('aria-expanded', String(!hidden));
+      resizeActive(); syncSandbox();
+    });
 
-    function fitCanvas(canvas, ctx) {
+    function fitCanvas(canvas, ctx, maxDpr) {
       var available = canvas.parentElement.clientWidth;
       if (!available) return false;
       if (!boardSize) {
         boardSize = { width: Math.max(240, Math.min(1440, available)), height: innerWidth <= 560 ? 320 : 480 };
       }
-      var scale = Math.min(1, available / boardSize.width);
+      var scale = sandboxFullscreen()
+        ? Math.min(available / boardSize.width, canvas.parentElement.clientHeight / boardSize.height)
+        : Math.min(1, available / boardSize.width);
+      if (!(scale > 0)) return false;
       canvas.style.width = boardSize.width * scale + 'px';
       canvas.style.height = boardSize.height * scale + 'px';
-      canvas.width = Math.round(boardSize.width * DPR);
-      canvas.height = Math.round(boardSize.height * DPR);
+      // Bound raster work independently of saved board coordinates. Recalculate
+      // when moving between displays; small on-screen boards need fewer pixels.
+      var DPR = Math.min(window.devicePixelRatio || 1, maxDpr || 2) * scale;
+      DPR = Math.min(DPR, Math.sqrt(1920 * 1080 / (boardSize.width * boardSize.height)));
+      canvas.width = Math.max(1, Math.floor(boardSize.width * DPR));
+      canvas.height = Math.max(1, Math.floor(boardSize.height * DPR));
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       return true;
     }
@@ -81,11 +104,22 @@
       if (fitCanvas(drawCanvas, dCtx)) redrawD();
     }
 
-    function redrawD() {
+    var drawBase = document.createElement('canvas');
+    var drawBaseCtx = drawBase.getContext('2d');
+    var drawFrame = 0;
+    function redrawD(preview) {
+      if (drawFrame) { cancelAnimationFrame(drawFrame); drawFrame = 0; }
       var w = boardSize.width, h = boardSize.height;
       dCtx.clearRect(0, 0, w, h);
-      drawGrid(dCtx, w, h);
-      strokes.forEach(paintStroke);
+      if (preview && drawBase.width === drawCanvas.width && drawBase.height === drawCanvas.height) {
+        dCtx.save(); dCtx.setTransform(1, 0, 0, 1, 0, 0);
+        dCtx.drawImage(drawBase, 0, 0); dCtx.restore();
+      } else {
+        drawGrid(dCtx, w, h);
+        strokes.forEach(paintStroke);
+        drawBase.width = drawCanvas.width; drawBase.height = drawCanvas.height;
+        drawBaseCtx.drawImage(drawCanvas, 0, 0);
+      }
       if (curStroke) paintStroke(curStroke);
     }
 
@@ -152,7 +186,9 @@
         else if (drawTool === 'rect')   curStroke = { type: 'rect',   color: drawColor, fillColor: drawFillColor, fill: drawFill, size: drawSize, x: shapeStart.x, y: shapeStart.y, w: dx, h: dy };
         else                            curStroke = { type: 'circle', color: drawColor, fillColor: drawFillColor, fill: drawFill, size: drawSize, cx: shapeStart.x, cy: shapeStart.y, r: Math.hypot(dx, dy) };
       }
-      redrawD();
+      // Touchscreens can send several moves per display frame. Keep every
+      // point, but paint only once and reuse the completed artwork bitmap.
+      if (!drawFrame) drawFrame = requestAnimationFrame(function () { drawFrame = 0; redrawD(true); });
     }
 
     function dUp(e) {
@@ -667,7 +703,7 @@
       var riderCoach = document.getElementById('prider-coach');
 
       function resizeR() {
-        if (fitCanvas(riderCanvas, rCtx)) { riderCanvas.style.width='100%'; riderCanvas.style.height=''; drawRider(); }
+        if (fitCanvas(riderCanvas, rCtx)) drawRider();
       }
       function RW() { return boardSize.width; }
       function RH() { return boardSize.height; }
@@ -841,7 +877,12 @@
         var coach = document.getElementById('prider-coach'); if (coach) coach.classList.add('is-hidden');
       }
 
+      function nearSegment(rd, seg, radius) {
+        return rd.x >= Math.min(seg.x1, seg.x2) - radius && rd.x <= Math.max(seg.x1, seg.x2) + radius &&
+          rd.y >= Math.min(seg.y1, seg.y2) - radius && rd.y <= Math.max(seg.y1, seg.y2) + radius;
+      }
       function stepRiders(dt, now) {
+        var bottom = rSegs.reduce(function(v,s){return Math.max(v,s.y1,s.y2);},RH());
         riders.forEach(function (rd) {
           if (rd.offCourse) return;
           rd.vy += RG * dt;
@@ -853,7 +894,7 @@
 
           // Boost lines nudge speed on proximity alone, independent of track contact.
           rSegs.forEach(function (seg) {
-            if (seg.type !== 'accel') return;
+            if (seg.type !== 'accel' || !nearSegment(rd, seg, rd.r + 10)) return;
             var cp = closestOnSeg(rd.x, rd.y, seg.x1, seg.y1, seg.x2, seg.y2);
             if (Math.hypot(rd.x-cp.x, rd.y-cp.y) < rd.r + 10 && now - rd.lastBoost > 260) {
               var tlen = Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1) || 1;
@@ -871,6 +912,9 @@
           // picking one consistent contact per step fixes that.
           var nearest = null, nearestD = Infinity, nearestCp = null;
           rSegs.forEach(function (seg) {
+            // Only segments within a rider radius can make contact. Reject
+            // distant bounds before projections and square roots.
+            if (!nearSegment(rd, seg, rd.r)) return;
             // Boost strokes are rideable too.
             var cp = closestOnSeg(rd.x, rd.y, seg.x1, seg.y1, seg.x2, seg.y2);
             var d = Math.hypot(rd.x-cp.x, rd.y-cp.y);
@@ -893,7 +937,6 @@
 
           var v = Math.hypot(rd.vx, rd.vy) / PPM;
           if (v > bestSpeed) bestSpeed = v;
-          var bottom = rSegs.reduce(function(v,s){return Math.max(v,s.y1,s.y2);},RH());
           if (rd.y > bottom+500 || Math.abs(rd.x)>100000 || rideTime>90) rd.offCourse = true;
         });
         for (var i = 0; i < riders.length; i++) for (var j = i+1; j < riders.length; j++) {
@@ -1004,9 +1047,10 @@
         }
         if(riderRunning && document.getElementById('prider-follow').checked && riders[0]) { camera.x += (riders[0].x-RW()*.35/camera.zoom-camera.x)*.09; camera.y += (riders[0].y-RH()*.4/camera.zoom-camera.y)*.09; }
         drawRider();
-        riderRafId = requestAnimationFrame(riderLoop);
+        if (riderRunning) riderRafId = requestAnimationFrame(riderLoop);
+        else stopRider();
       }
-      function startRider() { if (canAnimate('rider') && !riderRafId) { riderLastT = null; riderRafId = requestAnimationFrame(riderLoop); } }
+      function startRider() { if (riderRunning && canAnimate('rider') && !riderRafId) { riderLastT = null; riderRafId = requestAnimationFrame(riderLoop); } }
       function stopRider()  { if (riderRafId)  { cancelAnimationFrame(riderRafId); riderRafId = null; riderLastT = null; } }
 
       function setRiderRunLabel() {
@@ -1021,6 +1065,7 @@
         if (!rSegs.length) { riderLiveMsg = 'Draw a track or load the starter course first.'; drawRider(); return; }
         if (!riders.length || riders.every(function(rd) { return rd.offCourse; })) spawnRiders();
         riderRunning = !riderRunning;
+        if (riderRunning) startRider(); else stopRider();
         riderLiveMsg = riderRunning ? '' : 'Ride paused. Choose Resume ride to continue.';
         drawRider();
         setRiderRunLabel();
@@ -1042,8 +1087,9 @@
       document.getElementById('prider-ghost').addEventListener('change',function(){updateRiderUi();drawRider();});
       document.getElementById('prider-lesson').addEventListener('change',function(){document.getElementById('prider-ghost').checked=true;updateRiderUi();drawRider();});
       riderCanvas.addEventListener('wheel',function(e){e.preventDefault();var before=rPoint(e);camera.zoom=Math.max(.2,Math.min(4,camera.zoom*Math.exp(-e.deltaY*.001)));var after=rPoint(e);camera.x+=before.x-after.x;camera.y+=before.y-after.y;drawRider();},{passive:false});
-      document.getElementById('prider-fullscreen').addEventListener('click',async function(){try {if(document.fullscreenElement) await document.exitFullscreen();else await document.getElementById('ppanel-rider').requestFullscreen();}catch(e){riderLiveMsg='Full screen is unavailable in this browser.';drawRider();}});
-      document.addEventListener('fullscreenchange',function(){document.getElementById('prider-fullscreen').textContent=document.fullscreenElement?'Exit full screen':'Full screen';resizeR();});
+      // Use the same full-screen workspace and browser fallback in every mode.
+      document.getElementById('prider-fullscreen').addEventListener('click', function () { fullScreenButton?.click(); });
+
       riderProject = {
         capture: function () { return { ...courseState(), tool: rTool }; },
         apply: function (course) {
@@ -1066,7 +1112,8 @@
         powderLoading = import(new URL('assets/js/powder/powder-lab.mjs', document.baseURI).href).then(function (mod) {
           powder = mod.mount(document.getElementById('ppanel-powder'), {
             board: function () { return boardSize; },
-            fit: fitCanvas,
+            // Powder is a pixel grid: supersampling adds cost without detail.
+            fit: function (canvas, ctx) { return fitCanvas(canvas, ctx, 1); },
             point: canvasPoint,
             canAnimate: function () { return canAnimate('powder'); }
           });
@@ -1273,6 +1320,12 @@
       if (canAnimate('rider')) startRider(); else stopRider();
       if (powder) { if (canAnimate('powder')) powder.start(); else powder.stop(); }
     }
+    function syncFullscreen() {
+      document.getElementById('prider-fullscreen').textContent = sandboxFullscreen() ? 'Exit full screen' : 'Full screen';
+      resizeActive(); syncSandbox();
+    }
+    document.addEventListener('creation-app-resize', syncFullscreen);
+    document.addEventListener('fullscreenchange', syncFullscreen);
     window.addEventListener('resize', function () { resizeActive(); syncSandbox(); });
     document.addEventListener('home-tabchange', function () { resizeActive(); syncSandbox(); });
     document.addEventListener('visibilitychange', syncSandbox);
@@ -1282,6 +1335,10 @@
       new IntersectionObserver(syncSandbox, { rootMargin: '200px' }).observe(sandboxPanel);
     } else {
       window.addEventListener('scroll', syncSandbox, { passive: true });
+    }
+    if (window.ResizeObserver) {
+      var stageObserver = new ResizeObserver(function () { resizeActive(); });
+      sandboxPanel.querySelectorAll('.phys-canvas-wrap').forEach(function (stage) { stageObserver.observe(stage); });
     }
     resizeActive();
     syncSandbox();

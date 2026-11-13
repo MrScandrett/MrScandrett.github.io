@@ -728,6 +728,29 @@ tables or "do this in Godot/Blender" steps by hand:
   `tests/rosetta2d.test.mjs` (headless: `new Game()` + `game.step(dt)`). Keyboard input
   goes to `Game.active` (last clicked/focused/started) so several games can share a page.
 
+## AI Smart Blackboard (the ⇧W dock)
+
+`assets/js/smart-whiteboard-dock.js` (+ `components/smart-whiteboard-dock.css`) is the floating board on
+Mathematics, Physics and Chemistry lessons (nav-mobile.js adds the header button; both files gate on the path).
+The dock is wiring only; the thinking is three DOM-free files in `assets/js/smart-board/`, loaded when it opens:
+
+- `board-math.js`: `interpret(line)` decides what a line means (graph, 3D surface `z = f(x, y)`, implicit curve,
+  equation to solve with steps, arithmetic, chemical equation to balance) and `sliceSolid(kind, { tilt, spin, offset })`
+  cuts a cube, cylinder, cone or sphere at any angle and names the section with its area. Its parser is
+  recursive descent: never bring back `new Function` for typed or handwritten input.
+- `ink-recognizer.js`: the ✍️ Write tool. `readLine(strokes)` groups strokes into symbols, matches each against
+  template point clouds ($P), and lays out exponents. It reads printed digits, x y, + − = ( ) / . and, for
+  chemistry, H C N O. To teach it a symbol, add strokes to `GLYPHS`; `sample(text)` writes in the built-in hand
+  (used by the tests and the "Watch it write" chips).
+- `board-assist.js`: `parseCommand()` for the Ask box and the microphone (spoken maths becomes written maths),
+  lesson / glossary / quiz lookup over `data/lessons.json`, `glossary.json`, `daily-double-bank.json`, and
+  `summarize(events)` for 📋 Notes.
+
+Everything stays in the browser: ⏺ Rec is a MediaRecorder over the board canvas saved as a local file, and notes
+download as one HTML page. The one exception is 🎤 voice, which uses the browser's own speech recognition (that can
+send audio to the browser maker), so it stays off until the teacher accepts the notice. From a lesson:
+`SmartBlackboardDock.ask('graph y = x^2 - 4')`, `.write('2x+5=15')`. Tests: `node --test tests/smart-board.test.mjs`.
+
 ## ELEGOO robot car (Robot Car Pilot lesson)
 
 `lessons/engineering/robotics/robot-car-pilot.html` drives the class ELEGOO Smart Robot Car

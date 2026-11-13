@@ -66,6 +66,10 @@
     opts = opts || {};
     var box = opts.box || canvas.parentElement;
     var maxDpr = opts.dpr === false || opts.dpr === 0 ? 0 : (opts.dpr || 2);
+    // Limit the backing store, not the CSS size or simulation coordinates.
+    // 1080p worth of pixels also accommodates portrait and ultrawide canvases.
+    // maxPixels: 0 opts out; dpr:false retains its existing 1:1 behavior.
+    var maxPixels = opts.maxPixels ?? 1920 * 1080;
     var fixedHeight = opts.height;
     var ctx = canvas.getContext('2d', opts.contextAttributes || undefined);
     var width = 0;
@@ -81,6 +85,7 @@
       var cssHeight = Math.max(1, Math.floor(fixedHeight != null ? fixedHeight : box.clientHeight));
       if (maxDpr) {
         var dpr = Math.min(global.devicePixelRatio || 1, maxDpr);
+        if (maxPixels > 0) dpr = Math.min(dpr, Math.sqrt(maxPixels / (cssWidth * cssHeight)));
         canvas.width = Math.floor(cssWidth * dpr);
         canvas.height = Math.floor(cssHeight * dpr);
         canvas.style.width = cssWidth + 'px';
