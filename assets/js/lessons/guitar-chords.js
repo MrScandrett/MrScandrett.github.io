@@ -1626,6 +1626,22 @@ document.addEventListener('DOMContentLoaded', function () {
     return { name: GT.PITCHES[item.rootPC] + ' ' + st.name, sub: st.degrees.length + '-note scale' };
   }
 
+  window.getWeeklyPracticeList = function () {
+    return practiceList.map(function (item) {
+      var info = practiceItemLabel(item);
+      var result = { title: info.name + ' · ' + info.sub, focus: item.kind === 'chord' ? 'Chords' : 'Scales', source: 'encyclopedia', instruction: 'Count four steady beats. Play slowly, listen, then repeat comfortably.', tempo: 60 };
+      if (item.kind === 'chord') {
+        var ct = GT.CHORD_TYPES.find(function(c) { return c.suffix === item.typeSuffix; });
+        if (ct) { var shape = GT.getChordShape(item.rootPC, ct, item.inversionIndex, item.formKey); result.chordFrets = shape.frets; result.chordFingers = shape.fingers; result.instruction = 'Check each string separately, then strum the chord on beat 1 and hold for four beats. ' + info.sub + '. X = do not play; 0 = open string.'; }
+      } else {
+        var scale = GT.SCALE_TYPES.find(function(s) { return s.key === item.scaleKey; });
+        if (scale) result.scaleNames = scale.intervals.map(function(iv) { return GT.PITCHES[GT.mod12(item.rootPC+iv)]; });
+        result.instruction = 'Find these scale notes on your guitar. Play slowly in a familiar position, then make a four-note musical answer. Mark your string and fret choices.';
+      }
+      return result;
+    });
+  };
+
   function renderPracticeListUI() {
     if (!practiceListUI) return;
     practiceListUI.innerHTML = '';
@@ -1644,6 +1660,9 @@ document.addEventListener('DOMContentLoaded', function () {
       removeBtn.addEventListener('click', function () { removePracticeItem(index); });
       li.appendChild(infoWrap);
       li.appendChild(removeBtn);
+      var weekly = document.createElement('button'); weekly.type = 'button'; weekly.className = 'wp-add-existing'; weekly.textContent = 'Add to weekly assignment';
+      weekly.addEventListener('click', function () { window.WeeklyPracticeAdd?.(window.getWeeklyPracticeList()[index]); });
+      li.appendChild(weekly);
       practiceListUI.appendChild(li);
     });
     var clearBtnEl = document.getElementById('gcClearPractice');

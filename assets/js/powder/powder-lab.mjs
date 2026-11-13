@@ -2,14 +2,20 @@
 // index-sandbox.js imports this on first use and drives start/stop/resize, so the
 // loop only runs while the Powder tab is on screen. All physics is in powder-core.mjs.
 import {
-  E, ELEMENTS, REACTIONS, createWorld, clear, step, paint, blow, render, encode, decode, count
+  E, ELEMENTS, REACTIONS, createWorld, clear, step, paint, blow, render, encode, decode, count, thermalBrush, inspect, initialTemperature
 } from './powder-core.mjs';
 
 const GROUPS = [
+  ['science', 'Science tools'],
   ['powder', 'Powders'], ['liquid', 'Liquids'], ['energy', 'Energy & gas'], ['gas', null],
   ['solid', 'Solids'], ['machine', 'Machines'], ['tool', 'Tools']
 ];
 const WIND = { key: 'wind', name: 'Wind', color: [190, 220, 255], hint: 'Drag to blow loose particles around.' };
+const SCIENCE_TOOLS = [
+  { key: 'inspect', name: 'Inspect', color: [210, 210, 220], hint: 'Point to read material, temperature, state and last change. Arrow keys move the probe when the canvas is focused.' },
+  { key: 'heat', name: 'Heat', color: [245, 95, 70], hint: 'Hold to add heat. Watch the thermometer; boiling needs sustained heating.' },
+  { key: 'cool', name: 'Cool', color: [90, 170, 245], hint: 'Hold to remove heat. Try condensing vapor or freezing water.' }
+];
 const BG = '#0c0d14';
 
 export function cellSizeFor(board) { return board.width >= 900 ? 4 : 3; }
@@ -25,6 +31,18 @@ export function mount(panel, host) {
   const foundEl = panel.querySelector('#ppowder-found');
   const listEl = panel.querySelector('#ppowder-reactions');
   const coach = panel.querySelector('#ppowder-coach');
+  const probe = panel.querySelector('#ppowder-probe');
+  const thermalToggle = panel.querySelector('#ppowder-thermal');
+  let thermalView = false;
+  let lastProbe = '';
+  function updateProbe() {
+    const value = world && hover ? inspect(world, hover.x, hover.y) : null;
+    const text = value ? `${value.name} · ${value.state} · ${value.temperature} °C` +
+      (value.oxygen === null ? '' : ` · oxygen ${value.oxygen}%`) +
+      (value.change ? ` · ${value.change}` : '') : 'Probe: point at the world to measure temperature.';
+    if (text !== lastProbe) { probe.textContent = text; lastProbe = text; }
+  }
+  thermalToggle.addEventListener('change', () => { thermalView = thermalToggle.checked; draw(); });
 
   let world = null, cell = 3, off = null, offCtx = null, image = null, pixels = null;
   let element = 'sand', brush = +sizeInput.value, paused = false;
@@ -35,8 +53,9 @@ export function mount(panel, host) {
   // Palette ------------------------------------------------------------
   const byKey = new Map(ELEMENTS.map(el => [el.key, el]));
   byKey.set('wind', WIND);
+  SCIENCE_TOOLS.forEach(tool => byKey.set(tool.key, tool));
   for (const [group, label] of GROUPS) {
-    const items = ELEMENTS.filter(el => el.group === group && el.id !== E.SMOKE);
+    const items = group === 'science' ? SCIENCE_TOOLS : ELEMENTS.filter(el => el.group === group && el.id !== E.SMOKE);
     if (group === 'tool') items.push(WIND);
     if (!items.length) continue;
     let row = label ? null : palette.lastElementChild?.querySelector('.powder-row');
@@ -46,7 +65,7 @@ export function mount(panel, host) {
       set.innerHTML = '<span class="powder-set-label"></span><div class="powder-row"></div>';
       set.firstChild.textContent = label;
       row = set.lastChild;
-      palette.append(set);
+      (group === 'science' ? panel.querySelector('#ppowder-science-tools') : palette).append(set);
     }
     for (const el of items) {
       const b = document.createElement('button');
@@ -64,11 +83,11 @@ export function mount(panel, host) {
   function select(key) {
     if (!byKey.has(key)) key = 'sand';
     element = key;
-    palette.querySelectorAll('.powder-el').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.el === key)));
+    panel.querySelectorAll('.powder-el').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.el === key)));
     const el = byKey.get(key);
     hintEl.textContent = el.name + ': ' + el.hint;
   }
-  palette.addEventListener('click', e => {
+  panel.addEventListener('click', e => {
     const b = e.target.closest('.powder-el');
     if (b) select(b.dataset.el);
   });
@@ -98,7 +117,7 @@ export function mount(panel, host) {
   function draw() {
     if (!world) return;
     const board = host.board();
-    render(world, pixels);
+    render(world, pixels, thermalView);
     offCtx.putImageData(image, 0, 0);
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, board.width, board.height);
@@ -117,6 +136,7 @@ export function mount(panel, host) {
     const n = world ? count(world) : 0;
     countEl.textContent = n.toLocaleString() + (n === 1 ? ' particle' : ' particles');
     if (coach) coach.classList.toggle('is-hidden', n > 0 || !!pointer);
+    updateProbe();
     if (!world) return;
     let total = 0, fresh = null;
     for (let i = 0; i < REACTIONS.length; i++) {
@@ -130,27 +150,29 @@ export function mount(panel, host) {
         listEl.append(li);
       }
     }
-    foundEl.textContent = total + '/' + REACTIONS.length + ' reactions';
-    if (fresh) hintEl.textContent = 'New reaction: ' + fresh.label;
+    foundEl.textContent = total + '/' + REACTIONS.length + ' discoveries';
+    if (fresh) hintEl.textContent = 'Discovered: ' + fresh.label;
   }
 
   // Painting -----------------------------------------------------------
   function toCell(e) {
     const p = host.point(canvas, e);
-    return { x: Math.min(world.W - 1, Math.floor(p.x / cell)), y: Math.min(world.H - 1, Math.floor(p.y / cell)) };
+    return { x: Math.max(0, Math.min(world.W - 1, Math.floor(p.x / cell))), y: Math.max(0, Math.min(world.H - 1, Math.floor(p.y / cell))) };
   }
   function apply(at, from) {
     if (element === 'wind') {
       if (from) blow(world, at.x, at.y, Math.max(2, brush), at.x - from.x, at.y - from.y, 3);
       return;
     }
+    if (element === 'inspect') { updateProbe(); return; }
     const t = byKey.get(element).id;
     // Interpolate so a fast stroke leaves no gaps.
     const steps = from ? Math.max(1, Math.ceil(Math.hypot(at.x - from.x, at.y - from.y) / Math.max(1, brush))) : 1;
     for (let s = 1; s <= steps; s++) {
       const x = from ? Math.round(from.x + (at.x - from.x) * s / steps) : at.x;
       const y = from ? Math.round(from.y + (at.y - from.y) * s / steps) : at.y;
-      paint(world, x, y, brush, t);
+      if (element === 'heat' || element === 'cool') thermalBrush(world, x, y, brush, element === 'heat' ? 8 : -8);
+      else paint(world, x, y, brush, t);
     }
   }
   canvas.addEventListener('pointerdown', e => {
@@ -167,12 +189,24 @@ export function mount(panel, host) {
     const at = toCell(e);
     hover = e.pointerType === 'mouse' || pointer ? at : null;
     if (pointer) { apply(at, pointer); pointer = at; }
+    updateProbe();
     if (paused || !raf) draw();
   });
   const release = () => { pointer = null; updateStats(); };
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', release);
   canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { hover = null; if (!raf || paused) draw(); } });
+
+  canvas.addEventListener('keydown', e => {
+    if (!ensureWorld()) return;
+    const directions = { ArrowLeft: [-1,0], ArrowRight: [1,0], ArrowUp: [0,-1], ArrowDown: [0,1] };
+    if (directions[e.key]) {
+      e.preventDefault(); const [dx,dy] = directions[e.key];
+      hover ||= { x: Math.floor(world.W/2), y: Math.floor(world.H/2) };
+      hover = { x: Math.max(0, Math.min(world.W-1, hover.x+dx)), y: Math.max(0, Math.min(world.H-1, hover.y+dy)) };
+      updateProbe(); draw();
+    } else if (e.key === 'Enter' && hover) { e.preventDefault(); apply(hover, null); draw(); updateStats(); }
+  });
 
   // Loop ---------------------------------------------------------------
   function frame(ts) {
@@ -206,12 +240,24 @@ export function mount(panel, host) {
   });
   panel.querySelector('#ppowder-clear').addEventListener('click', () => {
     if (!ensureWorld()) return;
-    clear(world); draw(); updateStats();
+    clear(world); world.found.fill(0); shown.fill(0); listEl.replaceChildren();
+    panel.querySelector('#ppowder-question').textContent = 'Choose a setup, or build your own. Use Inspect, Heat and Cool in Tools.';
+    draw(); updateStats();
   });
   panel.querySelector('#ppowder-demo').addEventListener('click', () => {
     if (!ensureWorld()) return;
+    world.found.fill(0); shown.fill(0); listEl.replaceChildren();
+    panel.querySelector('#ppowder-question').textContent = 'Demo: explore the volcano, garden and electrical fuse.';
     demo(world); setPaused(false); draw(); updateStats();
     hintEl.textContent = 'Demo: close the gap beside the red battery with Metal to light the fuse.';
+  });
+  panel.querySelector('#ppowder-load-experiment').addEventListener('click', () => {
+    if (!ensureWorld()) return;
+    const key = panel.querySelector('#ppowder-experiment').value;
+    const instruction = loadExperiment(world, key);
+    shown.fill(0); listEl.replaceChildren(); setPaused(false); draw(); updateStats();
+    panel.querySelector('#ppowder-question').textContent = instruction;
+    select('inspect');
   });
   document.addEventListener('keydown', e => {
     if (e.code !== 'Space' || !panel.classList.contains('is-active') || panel.closest('[hidden]')) return;
@@ -232,7 +278,9 @@ export function mount(panel, host) {
     },
     apply(saved) {
       ensureWorld();
-      if (!saved) { clear(world); world.found.fill(0); shown.fill(0); listEl.replaceChildren(); }
+      shown.fill(0); listEl.replaceChildren();
+      panel.querySelector('#ppowder-question').textContent = 'Use Inspect to measure this world, or load an experiment to start again.';
+      if (!saved) { clear(world); world.found.fill(0); }
       else {
         decode(world, saved.grid);
         select(saved.element);
@@ -261,7 +309,7 @@ function demo(w) {
   const put = (x, y, t, life = 0) => {
     if (x < 0 || y < 0 || x >= W || y >= H) return;
     const i = y * W + x;
-    w.type[i] = t; w.life[i] = life; w.shade[i] = (w.rand() * 256) | 0;
+    w.type[i] = t; w.temperature[i] = initialTemperature(t); w.oxygen[i] = t === E.EMPTY ? 0.21 : t === E.OXYGEN ? 1 : 0; w.life[i] = life; w.shade[i] = (w.rand() * 256) | 0;
   };
   const ground = H - 6;
   for (let x = 0; x < W; x++) for (let y = ground; y < H; y++) put(x, y, E.WALL);
@@ -290,3 +338,66 @@ function demo(w) {
   for (let x = wireEnd - 4; x < wireEnd + 4; x++) for (let y = fy + 1; y < fy + 5; y++) put(x, y, E.GUNPOWDER);
 }
 
+
+// Editable classroom setups. Each starts from a clean board; machines supply
+// or remove energy so students can measure a sustained change.
+export function loadExperiment(w, key) {
+  clear(w); w.found.fill(0);
+  const { W, H } = w;
+  const rect = (x0,y0,x1,y1,t) => {
+    for (let y=Math.floor(y0*H); y<Math.ceil(y1*H); y++)
+      for (let x=Math.floor(x0*W); x<Math.ceil(x1*W); x++) {
+        const i=y*W+x; w.type[i]=t; w.temperature[i]=initialTemperature(t);
+        w.oxygen[i] = t === E.EMPTY ? 0.21 : t === E.OXYGEN ? 1 : 0;
+        w.shade[i]=(w.rand()*256)|0;
+      }
+  };
+  const line = (x0,y0,x1,y1,t) => {
+    const ax=Math.floor(x0*W), ay=Math.floor(y0*H), bx=Math.floor(x1*W), by=Math.floor(y1*H);
+    const n=Math.max(Math.abs(bx-ax),Math.abs(by-ay));
+    for (let k=0;k<=n;k++) {
+      const i=Math.round(ay+(by-ay)*k/(n||1))*W+Math.round(ax+(bx-ax)*k/(n||1));
+      w.type[i]=t; w.temperature[i]=initialTemperature(t); w.oxygen[i]=0;
+    }
+  };
+  if (key === 'distill' || key === 'cycle') {
+    line(.1,.25,.9,.25,E.GLASS); line(.1,.25,.1,.9,E.GLASS);
+    line(.9,.25,.9,.9,E.GLASS); line(.1,.9,.9,.9,E.GLASS);
+    line(.5,.58,.5,.9,E.GLASS);
+    line(.13,.89,.45,.89,E.METAL); line(.13,.9,.45,.9,E.HEATER);
+    line(.57,.25,.87,.25,E.COOLER);
+    rect(.14,.79,.44,.88,key === 'distill' ? E.SALTWATER : E.WATER);
+    return key === 'distill'
+      ? 'Distillation: heated salt water is on the left; the cold lid is on the right. Where does the salt stay? Inspect droplets collected on the right: are they fresh water?'
+      : 'Water cycle: watch water evaporate and boil on the left, then condense under the cold lid on the right. Use Cool on the collected water to freeze it. Which changes create a new substance?';
+  }
+  if (key === 'fizz') {
+    line(.25,.5,.25,.9,E.GLASS); line(.75,.5,.75,.9,E.GLASS); line(.25,.9,.75,.9,E.GLASS);
+    rect(.3,.78,.7,.88,E.VINEGAR); rect(.42,.57,.58,.62,E.BAKING);
+    return 'Fizz: baking soda falls into vinegar. Inspect the bubbles and the remaining solution. Which reactant runs out first? Add more of each to test your prediction.';
+  }
+  if (key === 'conduct') {
+    for (const [y,t] of [[.35,E.METAL],[.55,E.GLASS],[.75,E.WOOD]]) {
+      line(.2,y,.8,y,t); line(.18,y-.02,.18,y+.02,E.HEATER);
+      line(.19,y,.2,y,t);
+    }
+    return 'Heat transfer: identical-length strips of metal (top), glass (middle), and wood (bottom). Turn on Temperature colors. Which far end warms first? This compares modeled conductivity, not measured heating times.';
+  }
+  if (key === 'wax') {
+    line(.2,.8,.8,.8,E.GLASS); rect(.3,.7,.45,.79,E.WAX);
+    line(.25,.8,.5,.8,E.METAL);
+    for (let x=Math.floor(.25*W); x<=Math.floor(.5*W); x++) {
+      const i=(Math.floor(.8*H)+1)*W+x;
+      w.type[i]=E.HEATER; w.temperature[i]=150; w.oxygen[i]=0;
+    }
+    line(.68,.8,.8,.8,E.COOLER);
+    return 'Wax: heat the solid wax until it melts. Use Cool on the liquid to solidify it. Melting changes its state; burning molten wax with Fire is a chemical change.';
+  }
+  if (key === 'rust') {
+    line(.15,.85,.85,.85,E.GLASS);
+    rect(.2,.8,.35,.84,E.IRON); rect(.42,.8,.57,.84,E.IRON); rect(.65,.8,.8,.84,E.IRON);
+    rect(.42,.78,.57,.8,E.WATER); rect(.65,.78,.8,.8,E.SALTWATER);
+    return 'Corrosion: compare dry iron (left), fresh-water iron (middle), and salt-water iron (right). Air supplies oxygen. Which rusts fastest? Rusting is accelerated; cell counts are not reaction stoichiometry.';
+  }
+  return '';
+}

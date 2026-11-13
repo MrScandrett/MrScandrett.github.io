@@ -23,6 +23,9 @@
       ['A beat-4 fill', { hat: [0,2,4,6,8,10], snare: [4,12,13], tomHi: [14], tomLo: [15], kick: [0,8] }, 'Play three bars of exercise 1, then this bar. Fill R L R L on beat 4; land on kick + crash at the next 1.']
     ], create: 'Design a beat-4 fill. Label hands R/L, then play three groove bars and one fill bar.', pass: 'Play two four-bar phrases with a controlled fill and an on-time return to 1.' }
   ];
+  window.WeeklyPracticeLibraries = window.WeeklyPracticeLibraries || {};
+  window.WeeklyPracticeLibraries.drums = levels.flatMap((level, index) => level.tasks.map(([title, parts, instruction, ghosts]) => ({ title, group: `Level ${index + 1} · ${level.title}`, focus: index < 1 ? 'Pulse & coordination' : index < 2 ? 'Grooves' : index < 3 ? 'Sixteenths & control' : 'Fills & independence', instruction, success: level.pass, count: 'auto', tempo: 60, tracks: Object.fromEntries(Object.entries(parts).map(([instrument, hits]) => [instrument, Array.from({length:16}, (_, step) => hits.includes(step) ? ghosts?.[instrument]?.includes(step) ? 'g' : 'x' : '-').join('')])) })));
+  window.WeeklyPracticeLibraries.drums.push(...levels.map((level, index) => ({ title: 'Make music · ' + level.title, group: `Level ${index + 1}`, focus: 'Musical application', instruction: level.create, success: level.pass, tempo: 60 })));
   const el = (tag, text, parent, cls) => { const node = document.createElement(tag); if (text) node.textContent = text; if (cls) node.className = cls; if (parent) parent.append(node); return node; };
   function sheet(index) {
     const level = levels[index], page = el('article', null, null, 'dr-ws-page');

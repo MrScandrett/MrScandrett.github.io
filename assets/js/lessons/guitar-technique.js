@@ -100,6 +100,10 @@
   ['techActivity', 'techFret', 'techDirection', 'techSubdivision'].forEach(id => $(id).addEventListener('change', render));
   $('gcScaleRootPicker').addEventListener('click', render);
   $('gcScaleTypePicker').addEventListener('change', render);
+  window.getWeeklyTechnique = () => ({ title: $('techActivity').selectedOptions[0].textContent,
+    focus: 'Technique', instruction: $('techGuide').textContent + ' Pick down/up alternately. Frets and fingers are different numbers.',
+    tempo: Number($('techTempo').value), root: [...$('gcScaleRootPicker').children].findIndex(b => b.classList.contains('is-active')), scaleKey: $('gcScaleTypePicker').value, diatonic: ['thirds','groups3','groups4'].includes($('techActivity').value), preferFlat: $('techDirection').value === 'down', subdivision: Number($('techSubdivision').value),
+    notes: notes.map(n => ({string:n.string, fret:n.fret, finger:n.finger})), source: 'guitarTechnique' });
   render();
   const scaleShortcuts = document.createElement('div'); scaleShortcuts.className = 'gc-pick-row';
   [['C major',0,'ionian'], ['A minor pentatonic',9,'minorPent'], ['E blues',4,'blues'], ['D Dorian',2,'dorian']].forEach(([name, root, key]) => {

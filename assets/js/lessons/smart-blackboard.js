@@ -1,3 +1,6 @@
+import { initBoardStudio } from './smart-blackboard-studio.mjs';
+import { mapAirPoint, airActionValue, strokeNear, calibrationBounds } from './air-chalk-tools.mjs';
+import { makeDevelopable } from './smart-blackboard-solids.mjs';
 import { THREE, OrbitControls } from '../../vendor/three-bundle.min.js';
     import { createScene } from '../sim-kit-three.mjs';
 import { solveTriangle, pointsFromSides } from './geometry-engine.mjs';
@@ -74,7 +77,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         if (isSpeaking) {
           window.speechSynthesis.cancel();
           isSpeaking = false;
-          btnVoice.innerHTML = "<span>🔊 AI Tutor: Read Step-by-Step Explanation</span>"; btnVoice.setAttribute("aria-pressed", "false");
+          btnVoice.innerHTML = "<span>🔊 Read Step-by-Step Explanation</span>"; btnVoice.setAttribute("aria-pressed", "false");
           return;
         }
         var text = aiStepText.innerText.replace(/[$_#\\*]/g, "");
@@ -84,7 +87,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         utterance.pitch = 1.0;
         utterance.onend = function () {
           isSpeaking = false;
-          btnVoice.innerHTML = "<span>🔊 AI Tutor: Read Step-by-Step Explanation</span>"; btnVoice.setAttribute("aria-pressed", "false");
+          btnVoice.innerHTML = "<span>🔊 Read Step-by-Step Explanation</span>"; btnVoice.setAttribute("aria-pressed", "false");
         };
         isSpeaking = true;
         btnVoice.innerHTML = "<span>⏹ Stop Audio Explanation</span>";
@@ -115,10 +118,46 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       var chalkCtx = chalkCanvas.getContext("2d");
       var currentStroke = [];
       var isDrawing = false;
+      var activePointerId = null;
+      var appElement = $("smart-blackboard-app");
+      var deviceStatus = $("bb-device-status");
+      var webglLost = false;
+      function deviceMessage(message) {
+        deviceStatus.textContent = message;
+        deviceStatus.hidden = !message;
+      }
+      // Display drivers often expose touch as a mouse, so large targets are always on.
+      // Larger text is optional and remembered on this browser only.
+      try { $("bb-board-mode").checked = localStorage.getItem("smart-blackboard-large-text") === "true"; } catch (_) {}
+      appElement.classList.toggle("bb-board-mode", $("bb-board-mode").checked);
+      $("bb-board-mode").addEventListener("change", function () {
+        appElement.classList.toggle("bb-board-mode", this.checked);
+        try { localStorage.setItem("smart-blackboard-large-text", String(this.checked)); } catch (_) {}
+        resizeChalk();
+      });
+      $("bb-pen-only").addEventListener("change", function () {
+        cancelPointerStroke();
+        announce(this.checked ? "Only stylus pen input is accepted. Turn Pen only off if your stylus behaves like a finger or mouse." : "Finger, mouse and pen input enabled.", true);
+      });
+      function capturePointer(e) {
+        activePointerId = e.pointerId;
+        try { chalkCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+      }
+      function cancelPointerStroke() {
+        if (activePointerId === null) return;
+        var pointerId = activePointerId;
+        activePointerId = null;
+        isDrawing = false;
+        draggingPoint = null;
+        currentStroke = [];
+        airInkStroke = null;
+        try { chalkCanvas.releasePointerCapture(pointerId); } catch (_) {}
+        draw2D();
+      }
 
       function resizeChalk() {
         var rect = stageWrap.getBoundingClientRect();
-        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(1920 * 1080 / Math.max(1, rect.width * rect.height)));
         chalkCanvas.width = Math.round(rect.width * dpr);
         chalkCanvas.height = Math.round(rect.height * dpr);
         chalkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -128,6 +167,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           airCursorCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
         draw2D();
+        if (boardStudio) boardStudio.refresh();
       }
       window.addEventListener("resize", resizeChalk);
 
@@ -148,31 +188,31 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           geom2D.circle.cx = rec.cx;
           geom2D.circle.cy = rec.cy;
           geom2D.circle.r = Math.max(24, rec.r);
-          showToast((rec.msg || "✨ AI Recognized: Circle (A = πr²)") + confTag);
+          showToast((rec.msg || "✨ Shape recognized: Circle (A = πr²)") + confTag);
           curMode = "circle";
           updateToolbarButtons();
           draw2D();
         } else if (rec.type === "triangle") {
           geom2D.type = "triangle";
           geom2D.pts = rec.pts;
-          showToast((rec.msg || "✨ AI Recognized: Triangle (ΔABC)") + confTag);
+          showToast((rec.msg || "✨ Shape recognized: Triangle (ΔABC)") + confTag);
           curMode = "triangle";
           updateToolbarButtons();
           draw2D();
         } else if (rec.type === "cube_hint") {
-          showToast((rec.msg || "✨ AI Recognized: 3D Rectangular Prism / Cube") + confTag);
+          showToast((rec.msg || "✨ Shape recognized: 3D Rectangular Prism / Cube") + confTag);
           switchTo3D("cube");
         } else if (rec.type === "prism_hint") {
-          showToast((rec.msg || "✨ AI Recognized:Polygonal Base → 3D Irregular Prism") + confTag);
+          showToast((rec.msg || "✨ Shape recognized:Polygonal Base → 3D Irregular Prism") + confTag);
           switchTo3D("prism");
         } else if (rec.type === "cone_hint") {
-          showToast((rec.msg || "✨ AI Recognized: 3D Cone & Sector Net") + confTag);
+          showToast((rec.msg || "✨ Shape recognized: 3D Cone & Sector Net") + confTag);
           switchTo3D("cone");
         } else if (rec.type === "operator_plus") {
-          showToast("✨ AI Recognized: Addition / Axes Operator (+)" + confTag);
+          showToast("✨ Shape recognized: Addition / Axes Operator (+)" + confTag);
           draw2D();
         } else if (rec.type === "operator_equals") {
-          showToast("✨ AI Recognized: Equality Operator (=)" + confTag);
+          showToast("✨ Shape recognized: Equality Operator (=)" + confTag);
           draw2D();
         }
       }
@@ -470,7 +510,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             cy: Math.round(cy),
             r: Math.round(avgR),
             confidence: confC,
-            msg: "✨ AI Recognized: Circle (A = πr²)"
+            msg: "✨ Shape recognized: Circle (A = πr²)"
           };
         }
 
@@ -482,8 +522,8 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             type: "triangle",
             confidence: confT,
             msg: normTri.isRight
-              ? "✨ AI Recognized: Right Triangle (a² + b² = c²)"
-              : "✨ AI Recognized: Triangle (ΔABC)",
+              ? "✨ Shape recognized: Right Triangle (a² + b² = c²)"
+              : "✨ Shape recognized: Triangle (ΔABC)",
             pts: normTri.pts
           };
         }
@@ -497,7 +537,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             cx: cx,
             cy: cy,
             confidence: 0.92,
-            msg: "✨ AI Recognized: Box → 3D Hexahedron (Cube Net)"
+            msg: "✨ Shape recognized: Box → 3D Hexahedron (Cube Net)"
           };
         }
 
@@ -506,7 +546,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           return {
             type: "prism_hint",
             confidence: 0.89,
-            msg: "✨ AI Recognized: 5-Sides → 3D Irregular Polygonal Prism"
+            msg: "✨ Shape recognized: 5-Sides → 3D Irregular Polygonal Prism"
           };
         }
 
@@ -518,7 +558,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             cy: Math.round(cy),
             r: Math.round(avgR),
             confidence: 0.80,
-            msg: "✨ AI Recognized: Circle (A = πr²)"
+            msg: "✨ Shape recognized: Circle (A = πr²)"
           };
         }
 
@@ -615,8 +655,8 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
               type: "triangle",
               confidence: 0.95,
               msg: normTri.isRight
-                ? "✨ AI Recognized: Multi-Stroke Right Triangle (ΔABC)"
-                : "✨ AI Recognized: Multi-Stroke Triangle (ΔABC)",
+                ? "✨ Shape recognized: Multi-Stroke Right Triangle (ΔABC)"
+                : "✨ Shape recognized: Multi-Stroke Triangle (ΔABC)",
               pts: normTri.pts
             };
           }
@@ -629,7 +669,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             return {
               type: "cube_hint",
               confidence: 0.94,
-              msg: "✨ AI Recognized: 4-Stroke Box → 3D Cube"
+              msg: "✨ Shape recognized: 4-Stroke Box → 3D Cube"
             };
           }
         }
@@ -660,6 +700,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       function drawGrid(ctx, w, h) {
+        if (!appElement.classList.contains("bb-grid-visible")) return;
         ctx.strokeStyle = "rgba(255,255,255,0.05)";
         ctx.lineWidth = 1;
         var sz = 35;
@@ -704,7 +745,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           chalkCtx.lineTo(pB.x, pB.y);
           chalkCtx.lineTo(pC.x, pC.y);
           chalkCtx.closePath();
-          chalkCtx.fillStyle = "rgba(16,185,129,0.18)";
+          chalkCtx.fillStyle = "rgba(73,133,223,0.24)";
           chalkCtx.fill();
 
           chalkCtx.strokeStyle = "#38bdf8";
@@ -751,7 +792,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             chalkCtx.stroke();
 
             // Label altitude h
-            chalkCtx.font = "bold 12px 'IBM Plex Mono', monospace";
+            chalkCtx.font = "bold 12px 'Board Sans', system-ui";
             chalkCtx.fillStyle = "#fb7185";
             chalkCtx.fillText("h=" + fmt(altVal,2), (pC.x + pD.x)/2 + 8, (pC.y + pD.y)/2);
           }
@@ -766,21 +807,21 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
               chalkCtx.stroke();
             }
             chalkCtx.beginPath();
-            chalkCtx.arc(pt.x, pt.y, 8, 0, Math.PI * 2);
+            chalkCtx.arc(pt.x, pt.y, 11, 0, Math.PI * 2);
             chalkCtx.fillStyle = "#fff";
             chalkCtx.fill();
             chalkCtx.strokeStyle = "#10b981";
             chalkCtx.lineWidth = 2.5;
             chalkCtx.stroke();
 
-            chalkCtx.font = "bold 13px system-ui, monospace";
+            chalkCtx.font = "bold 13px 'Board Sans', system-ui";
             chalkCtx.fillStyle = "#facc15";
             chalkCtx.fillText(pt.label, pt.x - 4, pt.y - 14);
           });
 
           // Labels on sides
           var unk = selUnknown.value;
-          chalkCtx.font = "600 12px 'IBM Plex Mono', monospace";
+          chalkCtx.font = "600 12px 'Board Sans', system-ui";
           chalkCtx.fillStyle = "#ecfdf5";
 
           var labelC = unk === "side-c" ? "x (UNKNOWN)" : "c = " + c.toFixed(1);
@@ -827,8 +868,10 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             aiStepText.innerHTML = "<strong>Solving Unknown Angle $\\theta$ ($\\angle B$):</strong><br>Law of Cosines (works for acute and obtuse angles): $\\cos\\theta = \\frac{a^2 + c^2 - b^2}{2ac} = \\frac{" + fmt(a*a,2) + " + " + fmt(c*c,2) + " - " + fmt(b*b,2) + "}{" + fmt(2*a*c,2) + "} = " + fmt((a*a+c*c-b*b)/(2*a*c),4) + "$.<br>$\\theta = \\arccos(" + fmt((a*a+c*c-b*b)/(2*a*c),4) + ") = " + fmt(angB,2) + "^\\circ$." + (angB > 90 ? "<br>Note: $\\theta$ is obtuse. A sine alone ($\\arcsin$) would wrongly give " + fmt(180-angB,2) + "$^\\circ$, so use the cosine." : "");
           } else if (unk === "altitude-h") {
             aiStepText.innerHTML = "<strong>Solving Unknown Altitude $h$:</strong><br>Method 1 (Trigonometry): $h = b \\sin A = " + b.toFixed(1) + " \\times " + Math.sin(angA*Math.PI/180).toFixed(3) + " = " + fmt(altVal,2) + "\\text{ cm}$.<br>Method 2 (Area): Area $= " + area.toFixed(2) + "$. Since $A = \\frac{1}{2} c h$, $h = \\frac{2A}{c} = \\frac{" + (2*area).toFixed(1) + "}{" + c.toFixed(1) + "} = " + fmt(altVal,2) + "\\text{ cm}$.";
+          } else if (dropAlt && (Math.abs(T.u) < 1e-9 || Math.abs(T.u - 1) < 1e-9)) {
+            aiStepText.innerHTML = "<strong>Right-triangle altitude:</strong><br>The altitude foot coincides with a base vertex. The original triangle is already right-angled, so there is no second nonzero triangle to add or subtract. Area = ½ × base × height = ½ × " + fmt(c,2) + " × " + fmt(altVal,2) + " = " + fmt(area,2) + " cm².";
           } else if (dropAlt) {
-            aiStepText.innerHTML = "<strong>Altitude Deconstruction:</strong><br>Dropping altitude $h=" + fmt(altVal,2) + "$ splits $\\Delta ABC$ into two right triangles $\\Delta ADC$ and $\\Delta BDC$.<br>Pythagoras on $\\Delta ADC$: $d_1^2 + h^2 = " + (d1*d1).toFixed(1) + " + " + (altVal*altVal).toFixed(1) + " = " + (b*b).toFixed(1) + " = b^2$.<br>Pythagoras on $\\Delta BDC$: $d_2^2 + h^2 = " + (d2*d2).toFixed(1) + " + " + (altVal*altVal).toFixed(1) + " = " + (a*a).toFixed(1) + " = a^2$.<br>Total Area $= \\frac{1}{2}d_1 h + \\frac{1}{2}d_2 h = \\frac{1}{2} c h = " + area.toFixed(2) + "\\text{ cm}^2$.";
+            aiStepText.innerHTML = "<strong>Altitude Deconstruction:</strong><br>Dropping altitude $h=" + fmt(altVal,2) + "$ " + (T.footInside ? "forms two right triangles inside the original triangle:" : "requires extending the base to form two overlapping right triangles:") + " $\\Delta ADC$ and $\\Delta BDC$.<br>Pythagoras on $\\Delta ADC$: $d_1^2 + h^2 = " + (d1*d1).toFixed(1) + " + " + (altVal*altVal).toFixed(1) + " = " + (b*b).toFixed(1) + " = b^2$.<br>Pythagoras on $\\Delta BDC$: $d_2^2 + h^2 = " + (d2*d2).toFixed(1) + " + " + (altVal*altVal).toFixed(1) + " = " + (a*a).toFixed(1) + " = a^2$.<br>" + (T.footInside ? "Add the two areas: $A = \\frac{1}{2}(d_1+d_2)h" : "The altitude foot is outside the base. Subtract the smaller right triangle: $A = \\frac{1}{2}|d_1-d_2|h") + " = \\frac{1}{2} c h = " + area.toFixed(2) + "\\text{ cm}^2$.";
           } else {
             aiStepText.innerHTML = "<strong>Euclidean Triangle:</strong><br>Sides: $a=" + a.toFixed(1) + "$, $b=" + b.toFixed(1) + "$, $c=" + c.toFixed(1) + "$.<br>Angles: $\\angle A=" + angA.toFixed(1) + "^\\circ$, $\\angle B=" + angB.toFixed(1) + "^\\circ$, $\\angle C=" + angC.toFixed(1) + "^\\circ$ (Sum: $180^\\circ$).<br>Check <em>Drop Altitude</em> to deconstruct into two right triangles or choose an unknown variable to solve!";
           }
@@ -861,7 +904,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           chalkCtx.stroke();
 
           chalkCtx.beginPath();
-          chalkCtx.arc(circ.cx + circ.r, circ.cy, 8, 0, Math.PI * 2);
+          chalkCtx.arc(circ.cx + circ.r, circ.cy, 11, 0, Math.PI * 2);
           chalkCtx.fillStyle = "#facc15";
           chalkCtx.fill();
           chalkCtx.stroke();
@@ -884,6 +927,11 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           deconstructPanel.style.display = "none";
         }
 
+        if (boardStudio) boardStudio.refresh();
+        // Air annotations are independent of shape recognition and retain their colour.
+        airInk.forEach(function (stroke) { drawSmoothChalkStroke(chalkCtx, stroke.points, stroke.color, 1, stroke.width); });
+        if (airInkStroke) drawSmoothChalkStroke(chalkCtx, airInkStroke.points, airInkStroke.color, 1, airInkStroke.width);
+
         // Render any pending multi-stroke segments and active freehand chalk stroke
         if (recentStrokes.length > 0) {
           recentStrokes.forEach(function (st) {
@@ -895,12 +943,12 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         }
       }
 
-      function drawSmoothChalkStroke(ctx, pts, color, alpha) {
+      function drawSmoothChalkStroke(ctx, pts, color, alpha, width) {
         if (!pts || pts.length < 2) return;
         ctx.save();
         ctx.globalAlpha = alpha !== undefined ? alpha : 1.0;
         ctx.strokeStyle = color || curColor;
-        ctx.lineWidth = 3.6;
+        ctx.lineWidth = width || 3.6;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.shadowColor = color || curColor;
@@ -943,31 +991,51 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
       /* Chalk Pointer Events */
       chalkCanvas.addEventListener("pointerdown", function (e) {
+        if (activePointerId !== null || isAirPenDown || e.button !== 0) return;
+        if ($("bb-pen-only").checked && e.pointerType !== "pen") return;
+        e.preventDefault();
+        // Commit and leave numeric fields before dragging, so a later blur cannot
+        // overwrite the new geometry with a stale typed value.
+        chalkCanvas.focus({ preventScroll: true });
         var rect = chalkCanvas.getBoundingClientRect();
         var clientX = e.clientX - rect.left, clientY = e.clientY - rect.top;
 
+        if (["ink", "erase"].includes(appElement.dataset.pointerTool)) {
+          startAirStroke(clientX, clientY, 0);
+          capturePointer(e);
+          return;
+        }
+
         // First check if user clicked a draggable vertex/radius handle (unless explicitly in draw mode)
-        if (curMode !== "draw") {
+        if (curMode !== "draw" || appElement.dataset.pointerTool === "select") {
           var hitHandle = findNearest2DHandle(clientX, clientY, 26);
           if (hitHandle) {
             snapshotState();
             draggingPoint = hitHandle.pt;
-            chalkCanvas.setPointerCapture(e.pointerId);
+            capturePointer(e);
             return;
           }
         }
 
+        if (appElement.dataset.pointerTool === "select") return;
         // Otherwise allow sketching new geometry anywhere in open space on the 2D board
         if (!curMode.startsWith("3d")) {
           isDrawing = true;
           currentStroke = [{ x: clientX, y: clientY }];
-          chalkCanvas.setPointerCapture(e.pointerId);
+          capturePointer(e);
         }
       });
 
       chalkCanvas.addEventListener("pointermove", function (e) {
+        if (e.pointerId !== activePointerId) return;
+        e.preventDefault();
         var rect = chalkCanvas.getBoundingClientRect();
         var clientX = e.clientX - rect.left, clientY = e.clientY - rect.top;
+
+        if (appElement.dataset.pointerTool === "erase") { eraseAirInk(clientX, clientY); return; }
+        if (airInkStroke) {
+          airInkStroke.points.push({ x: clientX, y: clientY }); draw2D(); return;
+        }
 
         if (draggingPoint) {
           if (draggingPoint === "circle-r") {
@@ -990,6 +1058,13 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       });
 
       function stopStroke(e) {
+        if (e.pointerId !== activePointerId) return;
+        activePointerId = null;
+        if (airInkStroke || appElement.dataset.pointerTool === "erase") {
+          endAirStroke();
+          try { chalkCanvas.releasePointerCapture(e.pointerId); } catch (_) {}
+          return;
+        }
         if (isDrawing) {
           isDrawing = false;
           try { chalkCanvas.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -1018,7 +1093,15 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       chalkCanvas.addEventListener("pointerup", stopStroke);
-      chalkCanvas.addEventListener("pointercancel", stopStroke);
+      chalkCanvas.addEventListener("pointercancel", function (e) {
+        if (e.pointerId === activePointerId) cancelPointerStroke();
+      });
+      chalkCanvas.addEventListener("lostpointercapture", function (e) {
+        if (e.pointerId === activePointerId) cancelPointerStroke();
+      });
+      chalkCanvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      threeCanvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      window.addEventListener("blur", cancelPointerStroke);
 
       /* ── Keyboard control of vertices / radius ── */
       function clampPt(pt) {
@@ -1118,9 +1201,98 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       var threeSceneKit = null;
       var current3DGroup = null;
       var netHingeGroups = [];
+      var modelControls;
+      function frameModel() {
+        if (!current3DGroup || !modelControls) return;
+        threeSceneKit.syncSize();
+        var box = new THREE.Box3().setFromObject(current3DGroup);
+        var sphere = box.getBoundingSphere(new THREE.Sphere());
+        var camera = threeSceneKit.camera;
+        var halfFov = Math.min(camera.fov * Math.PI / 360, Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect));
+        var distance = sphere.radius / Math.sin(halfFov) * 1.75;
+        camera.setViewOffset(stageWrap.clientWidth, stageWrap.clientHeight, stageWrap.clientWidth * 0.12, 0, stageWrap.clientWidth, stageWrap.clientHeight);
+        var direction = camera.position.clone().sub(modelControls.target).normalize();
+        modelControls.target.copy(sphere.center);
+        camera.position.copy(sphere.center).addScaledVector(direction, distance);
+        modelControls.update();
+      }
       var slicePlaneMesh = null;
       var sliceIntersectionMesh = null;
       var conjoinedConeGroup = null;
+
+      function disposeCurrentModel(scene) {
+        if (!current3DGroup) return;
+        scene.remove(current3DGroup);
+        var geometries = new Set(), materials = new Set();
+        current3DGroup.traverse(function (object) {
+          if (object.geometry) geometries.add(object.geometry);
+          if (object.material) (Array.isArray(object.material) ? object.material : [object.material]).forEach(function (m) { materials.add(m); });
+        });
+        geometries.forEach(function (geometry) { geometry.dispose(); });
+        materials.forEach(function (material) { material.dispose(); });
+      }
+      threeCanvas.addEventListener("webglcontextlost", function (e) {
+        e.preventDefault();
+        webglLost = true;
+        deviceMessage("The 3D view paused while the display recovers. Your 2D tools and investigation notes are still available.");
+      });
+      threeCanvas.addEventListener("webglcontextrestored", function () {
+        webglLost = false;
+        deviceMessage("");
+        frameModel();
+      });
+      function rotateView(angle) {
+        if (!modelControls) return;
+        var camera = threeSceneKit.camera;
+        var offset = camera.position.clone().sub(modelControls.target);
+        offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+        camera.position.copy(modelControls.target).add(offset);
+        modelControls.update();
+      }
+      $("bb-rotate-left").addEventListener("click", function () { rotateView(-Math.PI / 8); });
+      $("bb-rotate-right").addEventListener("click", function () { rotateView(Math.PI / 8); });
+      function zoomView(factor) {
+        if (!modelControls) return;
+        var camera = threeSceneKit.camera;
+        var offset = camera.position.clone().sub(modelControls.target);
+        offset.setLength(Math.max(modelControls.minDistance, Math.min(modelControls.maxDistance, offset.length() * factor)));
+        camera.position.copy(modelControls.target).add(offset);
+        modelControls.update();
+      }
+      $("bb-zoom-in").addEventListener("click", function () { zoomView(0.8); });
+      $("bb-zoom-out").addEventListener("click", function () { zoomView(1.25); });
+      $("bb-reset-view").addEventListener("click", function () {
+        if (!modelControls) return;
+        // Reset controls to clear gesture damping before fitting the model.
+        modelControls.reset();
+        threeSceneKit.camera.position.copy(modelControls.target).add(new THREE.Vector3(0, 4.2, 7.5));
+        frameModel();
+      });
+      // Full-screen, browser zoom and resolution changes can resize the board without
+      // a window resize event. Observe the actual workspace to preserve a usable view.
+      if (window.ResizeObserver) {
+        new ResizeObserver(function () {
+          cancelPointerStroke();
+          resizeChalk();
+          if (threeSceneKit && curMode.startsWith("3d")) frameModel();
+        }).observe(stageWrap);
+      }
+      [["unfold-slider", "net opening", 10], ["slice-slider", "slice height", 10], ["joint-slider", "joint separation", 10]].forEach(function (spec) {
+        var slider = $(spec[0]), row = document.createElement("div");
+        row.className = "bb-step-buttons";
+        [-1, 1].forEach(function (direction) {
+          var button = document.createElement("button");
+          button.type = "button";
+          button.textContent = (direction < 0 ? "−" : "+") + spec[2];
+          button.setAttribute("aria-label", (direction < 0 ? "Decrease " : "Increase ") + spec[1] + " by " + spec[2]);
+          button.addEventListener("click", function () {
+            slider.value = Math.max(Number(slider.min), Math.min(Number(slider.max), Number(slider.value) + direction * spec[2]));
+            slider.dispatchEvent(new Event("input"));
+          });
+          row.appendChild(button);
+        });
+        slider.insertAdjacentElement("afterend", row);
+      });
 
       function initThree() {
         if (threeSceneKit) return;
@@ -1131,8 +1303,12 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
         camera.position.set(0, 4.2, 7.5);
         var controls = new OrbitControls(camera, threeCanvas);
+        modelControls = controls;
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
+        controls.enablePan = false;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 60;
 
         var amb = new THREE.AmbientLight(0xffffff, 0.9);
         scene.add(amb);
@@ -1140,7 +1316,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         dirLight.position.set(5, 10, 7);
         scene.add(dirLight);
 
-        var grid = new THREE.GridHelper(10, 10, 0x10b981, 0x2e4a3e);
+        var grid = new THREE.GridHelper(10, 10, 0x555d70, 0x383d49);
+        grid.visible = appElement.classList.contains("bb-grid-visible");
+        new MutationObserver(function () { grid.visible = appElement.classList.contains("bb-grid-visible"); }).observe(appElement, { attributes: true, attributeFilter: ["class"] });
         grid.position.y = -1.5;
         scene.add(grid);
 
@@ -1157,20 +1335,19 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         slicePlaneMesh.position.y = 0;
         scene.add(slicePlaneMesh);
 
-        function animate() {
-          requestAnimationFrame(animate);
+        SimKit.loop(function () {
+          if (!curMode.startsWith("3d") || webglLost) return;
           controls.update();
           threeSceneKit.syncSize();
           renderer.render(scene, camera);
-        }
-        animate();
+        });
       }
 
       /* 1. Cube Net Unfold */
       function buildCubeNet() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         netHingeGroups = [];
@@ -1178,8 +1355,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         var size = 2.0;
         var faceGeo = new THREE.PlaneGeometry(size, size);
         var faceMat = new THREE.MeshStandardMaterial({
-          color: 0x10b981,
+          color: 0x6da5ed,
           side: THREE.DoubleSide,
+          transparent: true, opacity: 0.18,
           roughness: 0.3,
           metalness: 0.1
         });
@@ -1232,6 +1410,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
         var topHinge = new THREE.Group();
         topHinge.position.set(0, size, 0);
+        topHinge.rotation.z = Math.PI / 2;
         var topFace = createFace();
         topFace.rotation.y = -Math.PI / 2;
         topFace.position.set(0, size / 2, 0);
@@ -1240,7 +1419,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
         current3DGroup.add(rightHinge);
         netHingeGroups.push({ group: rightHinge, axis: "z", targetAng: -Math.PI / 2 });
-        netHingeGroups.push({ group: topHinge, axis: "z", targetAng: -Math.PI / 2 });
+        netHingeGroups.push({ group: topHinge, axis: "z", startAng: Math.PI / 2, targetAng: 0 });
 
         scene.add(current3DGroup);
 
@@ -1262,15 +1441,16 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       function buildCylinder() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         var r = 1.2, h = 2.4;
-        var geo = new THREE.CylinderGeometry(r, r, h, 36);
-        var mat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 });
-        var mesh = new THREE.Mesh(geo, mat);
-        mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff })));
-        current3DGroup.add(mesh);
+        current3DGroup.userData = { type: "cyl", r: r, h: h,
+          unfold: makeDevelopable(THREE, current3DGroup, "cyl", { r: r, h: h }) };
+        var sliceDisc = new THREE.Mesh(new THREE.CircleGeometry(r, 64), new THREE.MeshStandardMaterial({ color: 0xef4444, side: THREE.DoubleSide }));
+        sliceDisc.rotation.x = Math.PI / 2;
+        current3DGroup.add(sliceDisc);
+        current3DGroup.userData.sliceDiscMesh = sliceDisc;
         scene.add(current3DGroup);
 
         entityTitle.textContent = "🥫 Cylinder Deconstruction";
@@ -1293,7 +1473,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       function buildCone() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         var r = 1.3, h = 2.4;
@@ -1301,33 +1481,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         var sectorAngRad = 2 * Math.PI * (r / slant);
         var sectorAngDeg = sectorAngRad * (180 / Math.PI);
 
-        // 3D Cone
-        var coneGeo = new THREE.ConeGeometry(r, h, 40);
-        var coneMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.35, side: THREE.DoubleSide });
-        var coneMesh = new THREE.Mesh(coneGeo, coneMat);
-        coneMesh.position.y = 0;
-        current3DGroup.add(coneMesh);
-
-        // 2D Flat Sector Net Group (placed on ground plane, revealed via unfold slider)
-        var netGroup = new THREE.Group();
-        netGroup.position.set(0, -1.48, 0);
-        netGroup.rotation.x = -Math.PI / 2;
-
-        // Circular Sector Geometry (Ring with innerRadius 0)
-        var sectorGeo = new THREE.RingGeometry(0.01, slant, 48, 1, -sectorAngRad / 2, sectorAngRad);
-        var sectorMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, roughness: 0.3 });
-        var sectorMesh = new THREE.Mesh(sectorGeo, sectorMat);
-        netGroup.add(sectorMesh);
-
-        // Base circle disk attached at apex angle tangent
-        var baseCircleGeo = new THREE.CircleGeometry(r, 36);
-        var baseCircleMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
-        var baseCircleMesh = new THREE.Mesh(baseCircleGeo, baseCircleMat);
-        baseCircleMesh.position.set(0, slant + r, 0.01);
-        netGroup.add(baseCircleMesh);
-
-        netGroup.visible = false;
-        current3DGroup.add(netGroup);
+        var unfoldCone = makeDevelopable(THREE, current3DGroup, "cone", { r: r, h: h });
 
         // Cross section slice disc on cone
         var sliceDiscGeo = new THREE.CircleGeometry(r * 0.5, 36);
@@ -1340,8 +1494,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         current3DGroup.userData = {
           type: "cone",
           r: r, h: h, slant: slant,
-          coneMesh: coneMesh,
-          netGroup: netGroup,
+          unfold: unfoldCone,
           sliceDiscMesh: sliceDiscMesh,
           sectorAngDeg: sectorAngDeg
         };
@@ -1356,7 +1509,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         lblM3.textContent = "Arc Length 2πr"; valM3.textContent = (2*Math.PI*r).toFixed(2) + " cm";
         lblM4.textContent = "Total SA = πrL + πr²"; valM4.textContent = sa.toFixed(2) + " cm²";
 
-        aiStepText.innerHTML = "<strong>Cone Deconstruction into 2D Flat Slices &amp; Sector Net:</strong><br>1. <em>Flat Slices:</em> Move <em>Slicing Plane</em> to cut horizontal circular discs of radius $r' = r(1 - y/h)$.<br>2. <em>2D Sector Net:</em> Move <em>Unfold Net</em> to 100% to unroll the lateral wall into a 2D circular sector of radius equal to slant height $L=" + slant.toFixed(2) + "$, arc length $2\\pi r=" + (2*Math.PI*r).toFixed(2) + "$, and sector angle $\\theta = 360^\\circ \\times (r/L) = " + sectorAngDeg.toFixed(1) + "^\\circ$!";
+        aiStepText.innerHTML = "<strong>Cone Deconstruction into 2D Flat Slices &amp; Sector Net:</strong><br>1. <em>Flat Slices:</em> Move <em>Slicing Plane</em> to cut horizontal discs. Height y is measured from the centre: $r' = r(1/2 - y/h)$. Fold the net to 0% before slicing.<br>2. <em>2D Sector Net:</em> Move <em>Unfold Net</em> to 100% to unroll the lateral wall into a 2D circular sector of radius equal to slant height $L=" + slant.toFixed(2) + "$, arc length $2\\pi r=" + (2*Math.PI*r).toFixed(2) + "$, and sector angle $\\theta = 360^\\circ \\times (r/L) = " + sectorAngDeg.toFixed(1) + "^\\circ$!";
         wrapUnfold.style.display = "block";
         wrapSlice.style.display = "block";
         wrapJoint.style.display = "none";
@@ -1367,7 +1520,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       function buildSphere() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         var R = 1.6;
@@ -1393,7 +1546,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         current3DGroup.userData = { type: "sphere", R: R, sliceDiscMesh: sliceDiscMesh };
         scene.add(current3DGroup);
 
-        entityTitle.textContent = "🔮 Sphere: Slices & Archimedes Net";
+        entityTitle.textContent = "🔮 Sphere: Cross-Sections & Surface Area";
         entityBadge.textContent = "3D Curvature";
         var sa = 4 * Math.PI * R * R;
         var vol = (4/3) * Math.PI * R * R * R;
@@ -1413,7 +1566,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       function buildIrregularPrism() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         // 5 irregular vertices in X-Z
@@ -1443,27 +1596,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         }
         baseArea = Math.abs(baseArea) / 2;
 
-        // 3D Extruded Prism Mesh
-        var shape = new THREE.Shape();
-        shape.moveTo(polyPts[0].x, polyPts[0].z);
-        for (var m = 1; m < polyPts.length; m++) shape.lineTo(polyPts[m].x, polyPts[m].z);
-        shape.closePath();
-
-        var prismGeo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
-        prismGeo.rotateX(Math.PI / 2);
-        prismGeo.translate(0, -h/2, 0);
-
-        var prismMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.35, side: THREE.DoubleSide });
-        var prismMesh = new THREE.Mesh(prismGeo, prismMat);
-        prismMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(prismGeo), new THREE.LineBasicMaterial({ color: 0xffffff })));
-        current3DGroup.add(prismMesh);
-
         current3DGroup.userData = {
-          type: "prism",
-          perim: perim,
-          baseArea: baseArea,
-          h: h,
-          prismMesh: prismMesh
+          type: "prism", perim: perim, baseArea: baseArea, h: h,
+          unfold: makeDevelopable(THREE, current3DGroup, "prism", { points: polyPts, h: h })
         };
 
         scene.add(current3DGroup);
@@ -1489,7 +1624,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       function buildConjoined() {
         if (!threeSceneKit) return;
         var scene = threeSceneKit.scene;
-        if (current3DGroup) scene.remove(current3DGroup);
+        disposeCurrentModel(scene);
 
         current3DGroup = new THREE.Group();
         var r = 1.25;
@@ -1561,9 +1696,18 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       function switchTo3D(shape) {
-        initThree();
+        try { initThree(); }
+        catch (_) {
+          deviceMessage("3D is unavailable in this browser. You can still use Shape Sketch, Triangle and Circle. Try an updated browser or the board’s connected computer for 3D.");
+          return;
+        }
+        if (!webglLost) deviceMessage("");
         curMode = "3d-" + shape;
         active3DShape = shape;
+        unfoldSlider.value = 0; unfoldPct.textContent = "0%";
+        sliceSlider.value = 0; sliceH.textContent = "0.0";
+        jointSlider.value = 0; jointPct.textContent = "0%";
+        if (slicePlaneMesh) slicePlaneMesh.visible = ["cyl", "cone", "sphere"].includes(shape);
         updateToolbarButtons();
         draw2D();
 
@@ -1573,6 +1717,10 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         else if (shape === "sphere") buildSphere();
         else if (shape === "prism") buildIrregularPrism();
         else if (shape === "conjoined") buildConjoined();
+        wrapSlice.style.display = ["cyl", "cone", "sphere"].includes(shape) ? "block" : "none";
+        sliceSlider.dispatchEvent(new Event("input"));
+        frameModel();
+        if (boardStudio) boardStudio.refresh();
       }
 
       /* Unfold net slider event */
@@ -1583,26 +1731,35 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
         if (active3DShape === "cube") {
           netHingeGroups.forEach(function (h) {
-            if (h.axis === "x") h.group.rotation.x = h.targetAng * t;
-            if (h.axis === "z") h.group.rotation.z = h.targetAng * t;
+            if (h.axis === "x") h.group.rotation.x = (h.startAng || 0) * (1 - t) + h.targetAng * t;
+            if (h.axis === "z") h.group.rotation.z = (h.startAng || 0) * (1 - t) + h.targetAng * t;
           });
-        } else if (active3DShape === "cone" && current3DGroup && current3DGroup.userData.type === "cone") {
-          var uData = current3DGroup.userData;
-          if (t > 0.05) {
-            uData.netGroup.visible = true;
-            uData.coneMesh.scale.set(1 - t * 0.9, 1 - t * 0.9, 1 - t * 0.9);
-            uData.coneMesh.position.y = (1 - t) * 0;
-          } else {
-            uData.netGroup.visible = false;
-            uData.coneMesh.scale.set(1, 1, 1);
-          }
+        } else if (current3DGroup && current3DGroup.userData.unfold) {
+          current3DGroup.userData.unfold(t);
         }
+        if (current3DGroup && active3DShape === "cone" && t > 0) {
+          lblM2.textContent = "Sector Angle θ";
+          valM2.textContent = current3DGroup.userData.sectorAngDeg.toFixed(1) + "°";
+        } else if (current3DGroup && active3DShape === "cyl" && t > 0) {
+          lblM3.textContent = "Net width 2πr";
+          valM3.textContent = (2 * Math.PI * current3DGroup.userData.r).toFixed(2) + " cm";
+        }
+        frameModel();
+        // Cross-sections describe the closed solid; fold it before slicing.
+        var folded = t === 0;
+        wrapSlice.style.display = folded && ["cyl", "cone"].includes(active3DShape) ? "block" : "none";
+        if (slicePlaneMesh) slicePlaneMesh.visible = folded && ["cyl", "cone"].includes(active3DShape);
+        if (current3DGroup && current3DGroup.userData.sliceDiscMesh) current3DGroup.userData.sliceDiscMesh.visible = folded;
+        if (folded && ["cyl", "cone"].includes(active3DShape)) sliceSlider.dispatchEvent(new Event("input"));
+
       });
 
       /* Slicing plane slider event */
       sliceSlider.addEventListener("input", function () {
         var val = parseFloat(sliceSlider.value) / 100;
-        var planeY = val * 1.5;
+        var u = current3DGroup ? current3DGroup.userData : {};
+        var extent = u.type === "sphere" ? u.R : (u.h || 3) / 2;
+        var planeY = val * extent;
         if (slicePlaneMesh) {
           slicePlaneMesh.position.y = planeY;
         }
@@ -1618,12 +1775,18 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             var discArea = Math.PI * discR * discR;
             valM2.textContent = discArea.toFixed(2) + " cm²";
             lblM2.textContent = "Slice Area πr² (r=" + discR.toFixed(1) + ")";
+          } else if (u.type === "cyl") {
+            u.sliceDiscMesh.position.y = planeY;
+            lblM3.textContent = "Slice area πr²";
+            valM3.textContent = (Math.PI * u.r * u.r).toFixed(2) + " cm²";
           } else if (u.type === "cone") {
             var rTop = u.r;
             var h = u.h;
             // cone runs y from -h/2 to +h/2
             var coneRatio = Math.max(0, Math.min(1, (h/2 - planeY) / h));
             var sliceR = rTop * coneRatio;
+            lblM2.textContent = "Slice radius / area";
+            valM2.textContent = sliceR.toFixed(2) + " cm / " + (Math.PI * sliceR * sliceR).toFixed(2) + " cm²";
             u.sliceDiscMesh.position.y = planeY;
             u.sliceDiscMesh.scale.set(sliceR / (rTop * 0.5), sliceR / (rTop * 0.5), sliceR / (rTop * 0.5));
           }
@@ -1641,7 +1804,10 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
       /* Toolbar Buttons */
       function updateToolbarButtons() {
-        document.querySelectorAll(".bb-toolbar .bb-tool-btn").forEach(function (btn) {
+        if (isAirPenDown) resetAirInteraction(false);
+        cancelPointerStroke();
+        $("bb-view-controls").hidden = !curMode.startsWith("3d");
+        document.querySelectorAll("#smart-blackboard-app .bb-tool-btn").forEach(function (btn) {
           btn.classList.remove("active");
         });
         if (curMode === "draw") $("btn-mode-draw").classList.add("active");
@@ -1653,7 +1819,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         else if (curMode === "3d-sphere") $("btn-mode-3d-sphere").classList.add("active");
         else if (curMode === "3d-prism") $("btn-mode-3d-prism").classList.add("active");
         else if (curMode === "3d-conjoined") $("btn-mode-3d-conjoined").classList.add("active");
-        document.querySelectorAll('.bb-toolbar .bb-tool-btn[id^="btn-mode-"]').forEach(function (btn) {
+        document.querySelectorAll('#smart-blackboard-app .bb-tool-btn[id^="btn-mode-"]').forEach(function (btn) {
           btn.setAttribute("aria-pressed", btn.classList.contains("active") ? "true" : "false");
         });
         if (curMode.startsWith("3d")) {
@@ -1703,6 +1869,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
       // Clear button
       $("btn-clear").addEventListener("click", function () {
+        if (airInk.length) { saveAirInkUndo(); airInk = []; }
         chalkCtx.clearRect(0, 0, chalkCanvas.width, chalkCanvas.height);
         currentStroke = [];
         recentStrokes = [];
@@ -1775,7 +1942,10 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
       function runAirCommand(name) {
         if (name === "thumbsUp") btnVoice.click();
-        else if (name === "thumbsDown") undoLast();
+        else if (name === "thumbsDown") {
+          if (["ink", "erase"].includes($("air-tool").value)) $("air-undo-ink").click();
+          else undoLast();
+        }
         else if (name === "three") cycleUnknownOrUnfold();
         else if (name === "swipeRight") cycleMode(1);
         else if (name === "swipeLeft") cycleMode(-1);
@@ -1794,6 +1964,106 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       var wasPinching = false;
       var pinchTapCooldown = 0;
       var airDraggingPoint = null;
+
+      var airPaused = false, airRequireRelease = false;
+      var airInk = [], airInkUndo = [], airInkStroke = null;
+      var airBounds = { left: 0.13, top: 0.13, right: 0.87, bottom: 0.87 };
+      var airRawPoint = null, airCalibrationFirst = null, airCalibrating = false;
+      var airLastSeen = 0, airLastSendAt = 0;
+      function airCoach(message) {
+        if ($("air-coach").textContent !== message) $("air-coach").textContent = message;
+      }
+      function resetAirInteraction(commit) {
+        if (commit && isAirPenDown) endAirStroke();
+        else {
+          if (isAirPenDown && isDrawing) { isDrawing = false; currentStroke = []; }
+          airInkStroke = null;
+          airDraggingPoint = null;
+          air3DAnchor = null;
+          if (activePointerId === null) draw2D();
+        }
+        isAirPenDown = false;
+        airRequireRelease = true;
+        wasPinching = false;
+        penDownConfirmCount = 0; penUpGraceCount = 0;
+        poseStab.reset(); cmdDetector.reset(); swipeDetector.reset();
+        cmdRing.progress = 0;
+      }
+      function saveAirInkUndo() {
+        airInkUndo.push(airInk.slice());
+        if (airInkUndo.length > 20) airInkUndo.shift();
+      }
+      function eraseAirInk(x, y) {
+        var remaining = airInk.filter(function (stroke) { return !strokeNear(stroke, x, y, 24); });
+        if (remaining.length !== airInk.length) { airInk = remaining; draw2D(); }
+      }
+      $("air-pause").addEventListener("click", function () {
+        resetAirInteraction(true);
+        airPaused = !airPaused;
+        this.setAttribute("aria-pressed", String(airPaused));
+        this.textContent = airPaused ? "Resume gestures" : "Pause gestures";
+        airCoach(airPaused ? "Gestures paused. The camera stays on; you can reposition without drawing." : "Ready. Open your hand once before starting a new gesture.");
+      });
+      $("air-tool").addEventListener("change", function () { resetAirInteraction(true); airCoach("Tool changed. Open your hand, then pinch or point to begin."); });
+      $("air-3d-action").addEventListener("change", function () { resetAirInteraction(true); airCoach("3D action changed. Open your hand before engaging it."); });
+      $("air-undo-ink").addEventListener("click", function () {
+        resetAirInteraction(false);
+        if (airInkUndo.length) { airInk = airInkUndo.pop(); draw2D(); airCoach("Last ink change undone."); }
+        else airCoach("No ink change to undo.");
+      });
+      $("air-clear-ink").addEventListener("click", function () {
+        resetAirInteraction(false);
+        if (airInk.length) { saveAirInkUndo(); airInk = []; draw2D(); }
+        airCoach("Ink cleared. Undo ink restores it. Geometry is unchanged.");
+      });
+      function updateAirSettings() {
+        $("air-width-value").textContent = $("air-ink-width").value + " px";
+        var smoothing = Number($("air-smoothing").value);
+        $("air-smoothing-value").textContent = smoothing < 35 ? "Responsive" : smoothing > 65 ? "Steady" : "Balanced";
+        $("air-sensitivity-value").textContent = (Number($("air-sensitivity").value) / 100).toFixed(1) + "×";
+        var pinch = Number($("air-pinch").value);
+        $("air-pinch-value").textContent = pinch < 32 ? "Firm" : pinch > 38 ? "Light" : "Normal";
+      }
+      ["air-ink-width", "air-smoothing", "air-sensitivity", "air-pinch"].forEach(function (id) { $(id).addEventListener("input", updateAirSettings); });
+      $("air-calibrate").addEventListener("click", function () {
+        if (!isAirActive) { airCoach("Start the camera before calibrating reach."); return; }
+        resetAirInteraction(true);
+        airCalibrationFirst = null; airCalibrating = true;
+        $("air-calibrate-capture").disabled = false;
+        $("air-calibration-help").textContent = "Move your pointing hand to the comfortable upper-left corner of its camera reach, then tap Capture corner with your other hand. Drawing is suspended.";
+      });
+      $("air-calibrate-capture").addEventListener("click", function () {
+        if (!airRawPoint || performance.now() - airLastSeen > 500) { airCoach("Show your whole hand clearly before capturing a corner."); return; }
+        if (!airCalibrationFirst) {
+          airCalibrationFirst = { x: airRawPoint.x, y: airRawPoint.y };
+          $("air-calibration-help").textContent = "Now move the same hand to the comfortable lower-right corner and tap Capture corner again.";
+        } else {
+          var bounds = calibrationBounds(airCalibrationFirst, airRawPoint);
+          if (!bounds) { airCoach("The second corner must be farther right and lower. Leave at least one fifth of the camera width and height between corners."); return; }
+          airBounds = bounds; airCalibrating = false; airCalibrationFirst = null;
+          this.disabled = true; smoothX = smoothY = null; lastFilterTimestamp = 0;
+          $("air-calibration-help").textContent = "Reach calibrated. Your chosen camera rectangle now fills the board. Reset tracking restores the default reach.";
+          airCoach("Calibration complete. Open your hand before drawing.");
+        }
+      });
+      $("air-reset-settings").addEventListener("click", function () {
+        resetAirInteraction(true);
+        airBounds = { left: 0.13, top: 0.13, right: 0.87, bottom: 0.87 };
+        airCalibrating = false; airCalibrationFirst = null;
+        $("air-calibrate-capture").disabled = true;
+        $("air-smoothing").value = 50; $("air-sensitivity").value = 100; $("air-pinch").value = 35;
+        smoothX = smoothY = null; lastFilterTimestamp = 0;
+        updateAirSettings();
+        $("air-calibration-help").textContent = "Default reach restored. Calibrate again if the board corners are hard to reach.";
+        airCoach("Tracking settings reset. Ink and geometry are unchanged.");
+      });
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden && isAirActive) {
+          resetAirInteraction(false); airPaused = true;
+          $("air-pause").setAttribute("aria-pressed", "true"); $("air-pause").textContent = "Resume gestures";
+          airCoach("Gestures paused after leaving the page. Resume when you are ready.");
+        }
+      });
 
       /* Temporal filtering, One-Euro state & lost-frame resilience */
       var smoothedPinchRatio = 0.55;
@@ -1828,8 +2098,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
         // 1€ (One-Euro) adaptive velocity filter: rock-steady when still, zero-lag when sweeping
         var dCutoff = 1.0;
-        var minCutoff = isAirPenDown ? 1.25 : 1.05;
-        var beta = isAirPenDown ? 0.048 : 0.038;
+        var smoothingScale = 1.8 - Number($("air-smoothing").value) / 100 * 1.4;
+        var minCutoff = (isAirPenDown ? 1.25 : 1.05) * smoothingScale;
+        var beta = (isAirPenDown ? 0.048 : 0.038) * smoothingScale;
 
         var rawDx = (targetX - smoothX) / dt;
         var rawDy = (targetY - smoothY) / dt;
@@ -1996,6 +2267,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           airHandsInstance.onResults(onAirHandResults);
 
           isAirActive = true;
+          airRequireRelease = true; airPaused = false;
+          $("air-pause").setAttribute("aria-pressed", "false"); $("air-pause").textContent = "Pause gestures";
+          airCoach("Camera ready. Open your hand, then engage your selected pen gesture. Use Pause gestures to reposition.");
           smoothedPinchRatio = 0.55;
           penDownConfirmCount = 0;
           penUpGraceCount = 0;
@@ -2020,12 +2294,17 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             btnAirChalk.classList.remove("air-active"); btnAirChalk.setAttribute("aria-pressed", "false");
           }
           var msg = err.name === "NotAllowedError" ? "Camera permission denied" : (err.message || "Failed to initialize");
+          airCoach("Air Chalk could not start: " + msg + ". Check camera access and your connection, then try again. Touch and mouse tools remain available.");
           showToast("⚠️ Air Chalk: " + msg);
         }
       }
 
       function stopAirChalk() {
+        resetAirInteraction(true);
         isAirActive = false;
+        airCalibrating = false; airCalibrationFirst = null; airRawPoint = null;
+        $("air-calibrate-capture").disabled = true;
+        airCoach("Camera off. Your ink and geometry remain on the board.");
         if (airMediaStream) {
           try {
             airMediaStream.getTracks().forEach(function (t) { t.stop(); });
@@ -2070,9 +2349,13 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
 
       function runAirLoop() {
         if (!isAirActive) return;
-        if (airVideo && airVideo.readyState >= 2 && !isProcessingFrame && airHandsInstance) {
+        var now = performance.now();
+        if (!document.hidden && now - airLastSendAt >= 1000 / 24 && airVideo && airVideo.readyState >= 2 && !isProcessingFrame && airHandsInstance) {
+          airLastSendAt = now;
           isProcessingFrame = true;
           airHandsInstance.send({ image: airVideo }).catch(function (e) {
+            resetAirInteraction(false);
+            airCoach("Tracking interrupted. Open your hand to resume, or restart Air Chalk if the camera has stopped.");
             console.warn("Hand tracking frame send error:", e);
           }).finally(function () {
             isProcessingFrame = false;
@@ -2102,7 +2385,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         if (!quality.ok) {
           handLostFrames++;
           // Grace period: survive brief 1-5 frame motion-blur dropouts without severing an active stroke
-          if (handLostFrames <= 5 && smoothX !== null && smoothY !== null) {
+          if (performance.now() - airLastSeen < 180 && smoothX !== null && smoothY !== null) {
             if (airStatus) airStatus.textContent = "⚡ Holding track...";
             renderAirCursor(smoothX, smoothY, isAirPenDown, smoothedPinchRatio, true, lastActiveGestureType, null);
             return;
@@ -2112,10 +2395,8 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             airPinchMeter.style.width = "0%";
             airPinchMeter.classList.remove("active");
           }
-          if (isAirPenDown) {
-            endAirStroke();
-            isAirPenDown = false;
-          }
+          if (isAirPenDown || !airRequireRelease) resetAirInteraction(false);
+          airCoach("Hand not tracked. Show your full hand in good light, then open it before resuming. Partial strokes are discarded.");
           penDownConfirmCount = 0;
           penUpGraceCount = 0;
           smoothX = null;
@@ -2127,6 +2408,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         }
 
         handLostFrames = 0;
+        airLastSeen = performance.now();
         var lm = results.multiHandLandmarks[0];
         var thumbTip = lm[4];
         var indexTip = lm[8];
@@ -2165,13 +2447,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         var normX = 1 - midX;
         var normY = midY;
 
-        // Comfortable active camera ROI margins so corners are easy to reach without stretching
-        var MARGIN_X = 0.13, MARGIN_Y = 0.13;
-        var u = Math.max(0, Math.min(1, (normX - MARGIN_X) / (1 - 2 * MARGIN_X)));
-        var v = Math.max(0, Math.min(1, (normY - MARGIN_Y) / (1 - 2 * MARGIN_Y)));
-
-        var targetX = u * cw;
-        var targetY = v * ch;
+        airRawPoint = { x: normX, y: normY };
+        var mapped = mapAirPoint(normX, normY, airBounds, cw, ch);
+        var targetX = mapped.x, targetY = mapped.y;
 
         // 1€ (One-Euro) velocity-adaptive filter
         var filtered = filterAirCoord(targetX, targetY, performance.now());
@@ -2179,10 +2457,18 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         smoothY = filtered.y;
 
         // Hysteresis thresholds
-        var PINCH_ON_RATIO = 0.35;
-        var PINCH_OFF_RATIO = 0.46;
+        var PINCH_ON_RATIO = Number($("air-pinch").value) / 100;
+        var PINCH_OFF_RATIO = PINCH_ON_RATIO + 0.11;
         var isPinchClose = !pose.isClosedFist && !pose.isPeaceHover && (pinchRatio < PINCH_ON_RATIO);
         var isPinchOpen = pose.isClosedFist || pose.isPeaceHover || (pinchRatio > PINCH_OFF_RATIO);
+
+        if (airRequireRelease && isPinchOpen && !pose.isIndexPointing) airRequireRelease = false;
+        if (airPaused || airCalibrating || airRequireRelease || activePointerId !== null || $("air-tool").value === "laser") {
+          var message = airPaused ? "Paused — camera remains on" : airCalibrating ? "Calibrating reach" : airRequireRelease ? "Open hand to arm gestures" : activePointerId !== null ? "Touch input has control" : "Laser pointer — no changes";
+          if (airStatus) airStatus.textContent = message;
+          renderAirCursor(smoothX, smoothY, false, pinchRatio, true, "laser", null);
+          return;
+        }
 
         var wantsPenDown = false;
         var wantsPenUp = false;
@@ -2263,7 +2549,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         if (quality.warn && airStatus && !isAirPenDown) airStatus.textContent = "⚠️ " + quality.hint;
 
         // Check if hovering near a draggable 2D vertex/radius handle for magnetic visual cue
-        var hoverHandle = (!isAirPenDown && !curMode.startsWith("3d"))
+        var hoverHandle = (!isAirPenDown && !curMode.startsWith("3d") && $("air-tool").value === "geometry")
           ? findNearest2DHandle(smoothX, smoothY, 40)
           : null;
 
@@ -2271,7 +2557,11 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         if (airStatus) {
           if (isAirPenDown) {
             if (curMode.startsWith("3d")) {
-              airStatus.textContent = "🔄 3D Orbiting";
+              airStatus.textContent = "3D: " + $("air-3d-action").selectedOptions[0].textContent.split(":")[0];
+            } else if (airInkStroke) {
+              airStatus.textContent = "Ink annotation";
+            } else if ($("air-tool").value === "erase") {
+              airStatus.textContent = "Erasing ink strokes";
             } else if (airDraggingPoint) {
               airStatus.textContent = "🧲 Dragging Handle";
             } else {
@@ -2322,10 +2612,19 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       function startAirStroke(x, y, z) {
+        if (activePointerId !== null) return;
         if (curMode.startsWith("3d")) {
-          air3DAnchor = { x: x, y: y, z: z };
+          air3DAnchor = { x: x, y: y, z: z, startX: x, startY: y,
+            unfold: Number(unfoldSlider.value), slice: Number(sliceSlider.value), joint: Number(jointSlider.value),
+            zoomDistance: threeSceneKit.camera.position.distanceTo(modelControls.target) };
           return;
         }
+
+        if ($("air-tool").value === "ink") {
+          airInkStroke = { points: [{ x: x, y: y }], color: curColor, width: Number($("air-ink-width").value) };
+          return;
+        }
+        if ($("air-tool").value === "erase") { saveAirInkUndo(); eraseAirInk(x, y); return; }
 
         // First check if user pinched near a draggable vertex or circle radius handle (magnetic 40px radius)
         var nearHandle = findNearest2DHandle(x, y, 40);
@@ -2341,6 +2640,14 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       function moveAirStroke(x, y, z) {
+        if (activePointerId !== null) return;
+        if (!curMode.startsWith("3d") && $("air-tool").value === "erase") { eraseAirInk(x, y); return; }
+        if (airInkStroke) {
+          var previousInkPoint = airInkStroke.points[airInkStroke.points.length - 1];
+          if (Math.hypot(x - previousInkPoint.x, y - previousInkPoint.y) > 2) airInkStroke.points.push({ x: x, y: y });
+          draw2D(); return;
+        }
+
         if (airDraggingPoint) {
           if (airDraggingPoint === "circle-r") {
             geom2D.circle.r = Math.max(20, Math.hypot(x - geom2D.circle.cx, y - geom2D.circle.cy));
@@ -2364,18 +2671,28 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         if (curMode.startsWith("3d") && air3DAnchor) {
           var dx = x - air3DAnchor.x;
           var dy = y - air3DAnchor.y;
-          if (current3DGroup) {
-            current3DGroup.rotation.y += dx * 0.009;
-            current3DGroup.rotation.x += dy * 0.009;
-          }
-          var dz = z - air3DAnchor.z;
-          if (Math.abs(dz) > 0.015 && unfoldSlider && wrapUnfold && wrapUnfold.style.display !== "none") {
-            var curVal = Number(unfoldSlider.value);
-            var nextVal = Math.max(0, Math.min(100, curVal - dz * 160));
-            if (Math.abs(nextVal - curVal) >= 1) {
-              unfoldSlider.value = nextVal;
-              if (unfoldPct) unfoldPct.textContent = Math.round(nextVal) + "%";
-              unfoldSlider.dispatchEvent(new Event("input"));
+          var action = $("air-3d-action").value;
+          var sensitivity = Number($("air-sensitivity").value) / 100;
+          if (action === "orbit" && current3DGroup) {
+            // Orbit the camera, leaving slicing coordinates attached to the solid.
+            rotateView(dx * 0.009 * sensitivity);
+            var cameraOffset = threeSceneKit.camera.position.clone().sub(modelControls.target);
+            var spherical = new THREE.Spherical().setFromVector3(cameraOffset);
+            spherical.phi = Math.max(0.15, Math.min(Math.PI - 0.15, spherical.phi + dy * 0.009 * sensitivity));
+            threeSceneKit.camera.position.copy(modelControls.target).add(new THREE.Vector3().setFromSpherical(spherical));
+            modelControls.update();
+          } else if (action === "zoom") {
+            var distance = air3DAnchor.zoomDistance * Math.exp((y - air3DAnchor.startY) / stageWrap.clientHeight * 2 * sensitivity);
+            var offset = threeSceneKit.camera.position.clone().sub(modelControls.target).setLength(Math.max(modelControls.minDistance, Math.min(modelControls.maxDistance, distance)));
+            threeSceneKit.camera.position.copy(modelControls.target).add(offset); modelControls.update();
+          } else if (action !== "orbit") {
+            var slider = action === "unfold" ? unfoldSlider : action === "slice" ? sliceSlider : jointSlider;
+            var wrapper = action === "unfold" ? wrapUnfold : action === "slice" ? wrapSlice : wrapJoint;
+            if (wrapper.style.display === "none") {
+              airCoach("This action is unavailable for the current solid. For slicing a cone or cylinder, fold its net to 0% first.");
+            } else {
+              slider.value = airActionValue(action, air3DAnchor[action], x - air3DAnchor.startX, y - air3DAnchor.startY, stageWrap.clientWidth, stageWrap.clientHeight, sensitivity);
+              slider.dispatchEvent(new Event("input"));
             }
           }
           air3DAnchor.x = x;
@@ -2385,6 +2702,11 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
       }
 
       function endAirStroke() {
+        if (activePointerId !== null) return;
+        if (airInkStroke) {
+          if (airInkStroke.points.length > 1) { saveAirInkUndo(); airInk.push(airInkStroke); }
+          airInkStroke = null; draw2D();
+        }
         if (isDrawing && !curMode.startsWith("3d")) {
           isDrawing = false;
           var recognized = analyzeStroke(currentStroke);
@@ -2507,7 +2829,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           airCursorCtx.shadowBlur = 14;
 
           airCursorCtx.beginPath();
-          airCursorCtx.arc(x, y, 16, 0, Math.PI * 2);
+          airCursorCtx.arc(x, y, $("air-tool").value === "erase" && !curMode.startsWith("3d") ? 24 : 16, 0, Math.PI * 2);
           airCursorCtx.strokeStyle = curColor;
           airCursorCtx.lineWidth = 2.5;
           airCursorCtx.stroke();
@@ -2520,8 +2842,8 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           airCursorCtx.shadowBlur = 0;
           airCursorCtx.font = "bold 10px system-ui, sans-serif";
           var badge = curMode.startsWith("3d")
-            ? "🔄 3D ORBIT"
-            : (airDraggingPoint ? "🧲 DRAGGING" : (gestureType === "point" ? "☝️ POINT CHALK" : "🤏 PINCH CHALK"));
+            ? "3D " + $("air-3d-action").value.toUpperCase()
+            : ($("air-tool").value === "erase" ? "ERASE INK" : airInkStroke ? "INK" : airDraggingPoint ? "DRAG HANDLE" : "GEOMETRY");
           var tw = airCursorCtx.measureText(badge).width;
           airCursorCtx.fillStyle = "rgba(2, 24, 15, 0.88)";
           airCursorCtx.fillRect(x + 16, y - 16, tw + 10, 18);
@@ -2545,7 +2867,7 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
           airCursorCtx.shadowBlur = 0;
           airCursorCtx.font = "bold 10px system-ui, sans-serif";
           airCursorCtx.fillStyle = "#fda4af";
-          airCursorCtx.fillText("✌️ Laser Pointer", x + 15, y + 4);
+          airCursorCtx.fillText(airPaused ? "Paused" : airCalibrating ? "Calibrating" : airRequireRelease ? "Open hand" : "Laser Pointer", x + 15, y + 4);
         } else {
           // Hover ring
           airCursorCtx.beginPath();
@@ -2614,7 +2936,9 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
             if (modeCycle[i].id === airGestureMode) { idx = i; break; }
           }
           var next = modeCycle[(idx + 1) % modeCycle.length];
+          resetAirInteraction(true);
           airGestureMode = next.id;
+          $("air-input-mode").value = next.id;
           btnAirModeToggle.textContent = next.label;
           if (isAirPenDown) {
             isAirPenDown = false;
@@ -2624,9 +2948,68 @@ import { analyzeHand, assessFrame, PoseStabilizer, CommandDetector, SwipeDetecto
         });
       }
 
+      $("air-input-mode").addEventListener("change", function () {
+        resetAirInteraction(true);
+        airGestureMode = this.value;
+        if (btnAirModeToggle) btnAirModeToggle.textContent = { auto: "Auto", hold: "Pinch", point: "Point", tap: "Tap" }[this.value];
+        airCoach("Pen gesture changed. Open your hand before drawing.");
+      });
+
       window.addEventListener("beforeunload", function () {
         stopAirChalk();
       });
 
+      var investigations = {
+        cyl: { answer: 2 * Math.PI * 1.2, tolerance: 0.02,
+          prompt: "A cylinder has radius 1.2 cm and height 2.4 cm. Predict the width of its rectangular wall when flat. Give your answer in cm.",
+          hint: "The width matches one trip around the base: 2 × π × r.",
+          success: "Correct: about 7.54 cm. Unfold the wall and explain why its width equals the base circumference." },
+        cone: { answer: 360 * 1.3 / Math.hypot(1.3, 2.4), tolerance: 0.1,
+          prompt: "A cone has radius 1.3 cm and height 2.4 cm. Predict its flat sector angle in degrees (nearest tenth). First find the slant height L.",
+          hint: "L = √(1.3² + 2.4²). The sector arc equals 2πr, so its angle is 360 × r/L.",
+          success: "Correct. Open the cone and explain why the arc length stays 2πr while the sector radius is the slant height." },
+        triangle: { answer: 3, tolerance: 0.01,
+          prompt: "Triangle A(0,0), B(3,0), C(−1,2) has an altitude outside base AB. Predict its area in cm². Will you add or subtract the two right-triangle areas?",
+          hint: "The larger right triangle has base 4 and height 2; the smaller has base 1 and height 2. Subtract their areas.",
+          success: "Correct: 3 cm² = 4 − 1. Explore the external altitude and explain why adding would count extra area." }
+      };
+      var investigationNotes = {};
+      var selectedInvestigation = "cyl";
+      $("investigation").addEventListener("change", function () {
+        investigationNotes[selectedInvestigation] = { answer: $("investigation-answer").value, reason: $("investigation-reason").value };
+        selectedInvestigation = this.value;
+        var saved = investigationNotes[this.value] || {};
+        $("investigation-prompt").textContent = investigations[this.value].prompt;
+        $("investigation-answer").value = saved.answer || "";
+        $("investigation-reason").value = saved.reason || "";
+        $("investigation-feedback").textContent = "";
+      });
+      $("investigation-check").addEventListener("click", function () {
+        var task = investigations[selectedInvestigation], field = $("investigation-answer");
+        var answer = Number(field.value);
+        $("investigation-feedback").textContent = field.value.trim() === "" || !Number.isFinite(answer) ? "Enter a numerical prediction first." : Math.abs(answer - task.answer) <= task.tolerance ? task.success : "Try again. " + task.hint;
+      });
+      $("investigation-explore").addEventListener("click", function () {
+        $("ai-step-card").open = false;
+        if (selectedInvestigation === "triangle") {
+          $("btn-mode-triangle").click();
+          geom2D.pts = [{ x: 180, y: 320, label: "A" }, { x: 255, y: 320, label: "B" }, { x: 155, y: 270, label: "C" }];
+          chkAltitude.checked = true;
+          selUnknown.value = "none";
+          draw2D();
+        } else switchTo3D(selectedInvestigation);
+        announce("Investigation model ready. Explore, then write your explanation.", true);
+      });
+
+      // Place the initial example inside narrow boards without changing its lengths.
+      if (stageWrap.clientWidth < 480) {
+        var initialMinX = Math.min.apply(null, geom2D.pts.map(function (point) { return point.x; }));
+        geom2D.pts.forEach(function (point) { point.x += 20 - initialMinX; });
+        geom2D.circle.cx = stageWrap.clientWidth / 2;
+      }
+      var boardStudio = initBoardStudio(function () {
+        return { mode: curMode, type: geom2D.type, points: geom2D.pts, circle: geom2D.circle };
+      });
       resizeChalk();
+      if (document.fonts) Promise.all([document.fonts.load("16px 'Board Sans'"), document.fonts.load("24px 'Board Hand'")]).then(resizeChalk);
     })();

@@ -38,15 +38,16 @@
     const subdivision = Number(options.subdivision) === 2 ? 2 : 1;
     const perBar = 4 * subdivision;
     function draw() {
-      const barsPerSystem = host.clientWidth >= 860 ? 2 : 1;
+      const barsPerSystem = options.printCompact ? 2 : host.clientWidth >= 860 ? 2 : 1;
       if (barsPerSystem === lastBars) return;
       lastBars = barsPerSystem;
       const systems = [];
       const measures = Math.ceil(notes.length / perBar);
-      const width = barsPerSystem === 2 ? 1080 : 600;
+      const width = options.printCompact ? 800 : barsPerSystem === 2 ? 1080 : 600;
       const start = 100, right = width - 20;
       const barWidth = (right - start) / barsPerSystem;
-      const bottom = 160, space = 12, tabTop = 250, tabGap = 14;
+      const bottom = 160, space = 12, tabTop = options.printCompact ? 205 : 250, tabGap = options.printCompact ? 12 : 14;
+      const pickY = options.printCompact ? 292 : 348, countY = options.printCompact ? 318 : 374;
       for (let bar = 0; bar < measures; bar += barsPerSystem) {
         const count = Math.min(barsPerSystem, measures - bar);
         const end = start + count * barWidth;
@@ -59,9 +60,9 @@
         svg += text(70, 130, '4', 'gs-time') + text(70, 154, '4', 'gs-time');
         ['T','A','B'].forEach((c,i) => { svg += text(31, tabTop + 20 + i * 18, c, 'gs-tab-clef'); });
         ['e','B','G','D','A','E'].forEach((c,i) => { svg += text(60, tabTop + i * tabGap + 4, c, 'gs-string'); });
-        svg += text(12, 216, 'Pitch', 'gs-row-label', 'start');
-        svg += text(12, 348, 'Pick', 'gs-row-label', 'start');
-        svg += text(12, 374, 'Count', 'gs-row-label', 'start');
+        if (!options.printCompact) svg += text(12, 216, 'Pitch', 'gs-row-label', 'start');
+        svg += text(12, pickY, 'Pick', 'gs-row-label', 'start');
+        svg += text(12, countY, 'Count', 'gs-row-label', 'start');
         for (let localBar = 0; localBar < count; localBar++) {
           const measure = bar + localBar;
           const x0 = start + localBar * barWidth;
@@ -94,12 +95,12 @@
             // Eighth-note stems and beams are drawn together below.
             svg += subdivision === 2 ? MN.glyph('quarter', x - 7.08, y, space) : MN.note(x, y, space, 1, false, true);
             svg += text(x, Math.min(78, y - 63), n.finger || '0', 'gs-finger');
-            svg += text(x, 216, MN.pitchName(pitch), 'gs-pitch');
+            if (!options.printCompact) svg += text(x, 216, MN.pitchName(pitch), 'gs-pitch');
             const tabY = tabTop + (5 - n.string) * tabGap;
             svg += `<rect class="gs-fret-bg" x="${x-13}" y="${tabY-11}" width="26" height="22" rx="3"/>`;
             svg += text(x, tabY + 5, n.fret, 'gs-fret');
-            svg += text(x, 348, index % 2 ? '↑' : '↓', 'gs-pick');
-            svg += text(x, 374, countLabel, 'gs-count');
+            svg += text(x, pickY, index % 2 ? '↑' : '↓', 'gs-pick');
+            svg += text(x, countY, countLabel, 'gs-count');
             svg += '</g>';
           }
           if (subdivision === 2) {
@@ -111,12 +112,12 @@
               else svg += MN.glyph('flag8Up', pair[0].x+5.64, beamY, space);
             }
           }
-          svg += line(x0, 112, x0, 160, 'gs-bar') + line(x0, tabTop, x0, tabTop + 70, 'gs-bar');
+          svg += line(x0, 112, x0, 160, 'gs-bar') + line(x0, tabTop, x0, tabTop + 5 * tabGap, 'gs-bar');
         }
-        svg += line(end,112,end,160,'gs-bar') + line(end,250,end,320,'gs-bar');
-        if (bar + count === measures) svg += line(end-5,112,end-5,160,'gs-bar') + line(end-5,250,end-5,320,'gs-bar');
+        svg += line(end,112,end,160,'gs-bar') + line(end,tabTop,end,tabTop+5*tabGap,'gs-bar');
+        if (bar + count === measures) svg += line(end-5,112,end-5,160,'gs-bar') + line(end-5,tabTop,end-5,tabTop+5*tabGap,'gs-bar');
         const system = document.createElementNS(ns, 'svg');
-        system.setAttribute('viewBox', `0 0 ${width} 394`);
+        system.setAttribute('viewBox', `0 0 ${width} ${options.printCompact ? 336 : 394}`);
         system.setAttribute('aria-label', `${options.title || 'Guitar exercise'}: staff and tablature, starting at measure ${bar + 1}`);
         system.classList.add('gs-system');
         system.innerHTML = svg;

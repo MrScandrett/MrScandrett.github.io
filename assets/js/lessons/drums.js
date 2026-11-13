@@ -450,6 +450,7 @@
     var tempoIn = document.createElement('input');
     tempoIn.type = 'range'; tempoIn.min = 50; tempoIn.max = 180; tempoIn.value = tempo;
     tempoWrap.appendChild(tempoIn);
+    root.getWeeklyPattern = function () { return { title: P.name || 'My groove', instruction: P.desc || P.tip || 'Count aloud, tap one part, then combine the parts.', tracks: JSON.parse(JSON.stringify(P.tracks)), tempo: Number(tempoIn.value), count: P.count || 'auto', sticking: P.sticking || '', grace: P.grace || {}, graceStick: P.graceStick || {}, qrLessonOnly: !!P.swing, source: root.closest('section')?.id || 'build' }; };
     var tempoOut = htmlEl('output', 'dr-tempo-out', '', tempoWrap);
     var clickLab = htmlEl('label', 'dr-check', null, bar);
     var clickIn = document.createElement('input'); clickIn.type = 'checkbox';
@@ -1112,6 +1113,11 @@
         var btn = htmlEl('button', null, '▶ Play #' + ex.n, meta); btn.type = 'button';
         btn.setAttribute('aria-pressed', 'false');
         btn.addEventListener('click', function () { if (playing && playBtn === btn) { stop(); say('Stopped.'); } else play([i], btn); });
+        var weekly = htmlEl('button', 'wp-add-existing', 'Add to weekly assignment', meta); weekly.type = 'button';
+        weekly.addEventListener('click', function () {
+          window.WeeklyPracticeAdd?.({ title: 'Funk exercise ' + ex.n, tracks: ex.pattern.tracks, count: ex.pattern.count, tempo: Number(tempo.value), instruction: ex.caption + (feel.value === 'swing16' ? ' Use swung sixteenths.' : ' Use straight subdivisions.'), qrLessonOnly: feel.value === 'swing16', source: 'funk-ladder' });
+          weekly.textContent = 'Added to weekly assignment';
+        });
         lines.push({ ex: ex, row: row, view: view, btn: btn });
       });
       say(swingIsMoot() ? swingMootText()

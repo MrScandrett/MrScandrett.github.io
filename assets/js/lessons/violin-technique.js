@@ -115,6 +115,10 @@
     window.AudioKit?.onStop(stop);
     ['violin-user-action', 'violin-triad-start'].forEach(name => window.addEventListener(name, stop));
     document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+    window.getWeeklyTechnique = () => ({ title: get('Activity').selectedOptions[0].textContent + (get('Activity').value === 'crossing' ? '' : ' · ' + get('Root').selectedOptions[0].textContent + ' ' + get('Mode').selectedOptions[0].textContent),
+      focus: 'Technique', instruction: get('Coach').textContent + ' ' + get('Bowing').selectedOptions[0].textContent + '.',
+      tempo: Number(get('Tempo').value), bowing: Number(get('Bowing').value),
+      violinNotes: sequence.map(n => ({ name:n.name, string:n.label, finger:String(T.fingerForOffset(n.offset)) })), source:'violinTechnique' });
     build();
   });
 })();

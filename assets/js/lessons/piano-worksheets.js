@@ -23,6 +23,9 @@
       ['Chord travel','C4 E4 G4 E4 C4 F4 A4 F4','1 2 3 2 1 3 5 3','Right hand quarter notes: one bar of C harmony, then F. Practice without pedal; optionally add a clean pedal change at F.']
     ], transfer:'Play two bars of repertoire twice: first equal loudness, then a clear melody over quieter accompaniment. Describe the difference.', pass:'A listener can hear phrase direction and a quieter bass without loss of pulse.'}
   ];
+  window.WeeklyPracticeLibraries = window.WeeklyPracticeLibraries || {};
+  window.WeeklyPracticeLibraries.piano = levels.flatMap((level, index) => level.tasks.map(([title, pitches, fingers, instruction]) => ({ title, group: `Level ${index + 1} · ${level.title}`, focus: ['Pulse & touch', 'Finger evenness', 'Scales & arpeggios', 'Balance & phrasing'][index], instruction, success: level.pass, tempo: 50, pitches: pitches.split(' '), fingers: fingers.split(' ') })));
+  window.WeeklyPracticeLibraries.piano.push(...levels.map((level, index) => ({ title: 'Make music · ' + level.title, group: `Level ${index + 1}`, focus: 'Musical application', instruction: level.transfer, success: level.pass, tempo: 60 })));
   const add = (tag, text, parent, cls) => { const n=document.createElement(tag); if(text) n.textContent=text; if(cls) n.className=cls; if(parent) parent.append(n); return n; };
   function sheet(index) {
     const level=levels[index], page=add('article',null,null,'pno-sheet');

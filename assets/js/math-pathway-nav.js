@@ -298,7 +298,9 @@
 
       const title = main.querySelector("h1");
       const hero = title && title.closest("section, header");
-      if (hero && main.contains(hero)) hero.insertAdjacentElement("afterend", guidePanel);
+      const creationApp = main.querySelector(":scope > [data-creation-app]");
+      if (creationApp) creationApp.insertAdjacentElement("afterend", guidePanel);
+      else if (hero && main.contains(hero)) hero.insertAdjacentElement("afterend", guidePanel);
       else main.prepend(guidePanel);
 
       const nav = node("nav", "math-pathway");

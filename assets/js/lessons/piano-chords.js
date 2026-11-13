@@ -1408,6 +1408,21 @@ document.addEventListener('DOMContentLoaded', function () {
     return { name: PT.PITCHES[item.rootPC] + ' ' + st.name, sub: st.degrees.length + '-note scale' };
   }
 
+  window.getWeeklyPracticeList = function () {
+    return practiceList.map(function (item) {
+      var info = practiceItemLabel(item);
+      var result = { title: info.name + ' · ' + info.sub, focus: item.kind === 'chord' ? 'Chords' : 'Scales', source: 'encyclopedia', instruction: 'Count four steady beats. Play slowly, listen, then repeat comfortably.', tempo: 60 };
+      if (item.kind === 'chord') {
+        var ct = PT.CHORD_TYPES.find(function(c) { return c.suffix === item.typeSuffix; });
+        if (ct) { var abs = PT.voiceChord(item.rootPC, ct, item.inversionIndex).sort(function(a,b) { return a-b; }); result.pitches = abs.map(function(n) { return window.MusicNotation.pitchNameWithOctave(window.MusicNotation.fromMidi(n+60)).replace('♯','#').replace('♭','b'); }); result.instruction = 'Play these notes together as a chord, then one at a time as shown. ' + info.sub + '. Release and repeat.'; }
+      } else {
+        var scale = PT.SCALE_TYPES.find(function(s) { return s.key === item.scaleKey; });
+        if (scale) { result.pitches = scale.intervals.concat([12]).map(function(n) { return window.MusicNotation.pitchNameWithOctave(window.MusicNotation.fromMidi(60+item.rootPC+n)).replace('♯','#').replace('♭','b'); }); result.instruction = 'Play one note per beat, hands separately. Agree on comfortable fingering with your teacher.'; }
+      }
+      return result;
+    });
+  };
+
   function renderPracticeListUI() {
     if (!practiceListUI) return;
     practiceListUI.innerHTML = '';
@@ -1426,6 +1441,9 @@ document.addEventListener('DOMContentLoaded', function () {
       removeBtn.addEventListener('click', function () { removePracticeItem(index); });
       li.appendChild(infoWrap);
       li.appendChild(removeBtn);
+      var weekly = document.createElement('button'); weekly.type = 'button'; weekly.className = 'wp-add-existing'; weekly.textContent = 'Add to weekly assignment';
+      weekly.addEventListener('click', function () { window.WeeklyPracticeAdd?.(window.getWeeklyPracticeList()[index]); });
+      li.appendChild(weekly);
       practiceListUI.appendChild(li);
     });
     var clearBtnEl = document.getElementById('pcClearPractice');
