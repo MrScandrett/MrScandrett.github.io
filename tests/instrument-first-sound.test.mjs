@@ -30,7 +30,8 @@ for (const [id, kit] of Object.entries(KITS)) {
     const $ = page(id);
     const app = $('main').first().children().first();
     assert.ok(app.is('[data-creation-app]'));
-    assert.equal(app.children().first().attr('data-first-sound'), id);
+    // The "Make a practice week" pill (weekly-practice.js) may sit above it; the panel still opens the studio.
+    assert.equal(app.children().not('.wp-entry').first().attr('data-first-sound'), id);
     const scripts = $('script[src]').map((_, s) => $(s).attr('src')).get().join(' ');
     assert.match(scripts, /instrument-first-sound\.js/);
     assert.match(scripts, /audio-kit\.js/);
