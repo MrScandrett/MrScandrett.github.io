@@ -1363,9 +1363,18 @@
     return e;
   }
 
+  // The score edition stays in place until the reader is back on the page. iOS (Safari, and every
+  // iOS browser, which are all WebKit) returns from print() and fires afterprint before it draws the
+  // pages, so tearing the edition down on afterprint printed the lesson into the score's page count:
+  // the lesson, then a run of blank sheets. Cleaning up on the next tap, click or key is safe
+  // everywhere, since the portal only shows in print.
+  var printScoreCleanup = null;
+  function endPrintScore() { if (printScoreCleanup) printScoreCleanup(); }
+
   function preparePrintScorePages(score, options) {
     options = options || {};
-    if (document.body.classList.contains('se-print-score-active')) return true;
+    // A second Print score (another piece, or the same one again) starts from a fresh edition.
+    endPrintScore();
     var model = prepare(score);
     analyse(model);
     // Engrave at a fixed width so the paper edition does not depend on the
@@ -1448,12 +1457,24 @@
     });
     document.body.appendChild(portal);
     document.body.classList.add('se-print-score-active');
+    var armed = false;
     function cleanup() {
       document.body.classList.remove('se-print-score-active');
       portal.remove();
-      root.removeEventListener('afterprint', cleanup);
+      root.removeEventListener('afterprint', arm);
+      ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (type) { root.removeEventListener(type, cleanup, true); });
+      if (printScoreCleanup === cleanup) printScoreCleanup = null;
     }
-    root.addEventListener('afterprint', cleanup);
+    function arm() {
+      if (armed) return;
+      armed = true;
+      // Deferred a tick so the click that opened the print dialog can't end it.
+      setTimeout(function () {
+        ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (type) { root.addEventListener(type, cleanup, true); });
+      }, 0);
+    }
+    root.addEventListener('afterprint', arm);
+    printScoreCleanup = cleanup;
     return true;
   }
 
