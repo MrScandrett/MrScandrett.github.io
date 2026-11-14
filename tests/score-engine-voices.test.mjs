@@ -39,3 +39,17 @@ test('each overlapping voice must fill the bar independently', () => {
   score.staves[1].voices[0].notes = score.staves[1].voices[0].notes.replace(/^[^|]+/, 'E4/4 ');
   assert.throws(() => engine.prepare(score), /adds up to 1 beats, expected 4/);
 });
+
+test('imported isolated timing ratios do not appear as finger-like tuplet numbers', () => {
+  const model = engine.prepare(library['chopin-prelude-1']);
+  engine.analyse(model);
+  const before = engine.playList(model).map(({ start, dur, midi }) => [start, dur, midi]);
+  for (const width of [390, 1085]) {
+    const layout = engine.engrave(model, width, true);
+    assert.doesNotMatch(layout.svg, /class="se-tuplet"[^>]*>(9|15)<\/text>/);
+    assert.match(layout.svg, /class="se-tuplet"[^>]*>3<\/text>/);
+    assert.match(layout.svg, /class="se-tuplet"[^>]*>5<\/text>/);
+    assert.doesNotMatch(layout.svg, /NaN|undefined/);
+  }
+  assert.deepEqual(engine.playList(model).map(({ start, dur, midi }) => [start, dur, midi]), before);
+});

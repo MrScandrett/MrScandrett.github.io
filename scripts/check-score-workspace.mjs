@@ -11,6 +11,31 @@ const out = '/tmp/score-workspace-qa';
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: findChromium(), args: ['--disable-dev-shm-usage'] });
 try {
+  // Studio scores are rendered programmatically without data-score. Their paper
+  // must still be protected from the night surface pass and skin controls.
+  for (const lighting of ['day', 'night']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.addInitScript(mode => {
+      localStorage.setItem('classroomos-skin', 'underwater');
+      localStorage.setItem('classroomos-lighting-mode', 'manual');
+      localStorage.setItem('classroomos-lighting-phase', mode);
+    }, lighting);
+    await page.goto(`${base}/lessons/music/pioneers/chopin.html`, { waitUntil: 'domcontentloaded' });
+    const studio = page.locator('#bv-score');
+    await studio.locator('.se-score').waitFor({ state: 'attached' });
+    await studio.scrollIntoViewIfNeeded();
+    assert.equal(await page.locator('html').getAttribute('data-lighting'), lighting);
+    await page.waitForTimeout(1500); // Allow the deferred contrast guard to run.
+    const colors = await studio.evaluate(figure => ({
+      paper: getComputedStyle(figure).backgroundColor,
+      ink: getComputedStyle(figure.querySelector('.se-score')).color,
+      toolbar: getComputedStyle(figure.querySelector('.se-toolbar')).backgroundColor
+    }));
+    assert.deepEqual(colors, {
+      paper: 'rgb(255, 253, 246)', ink: 'rgb(22, 19, 15)', toolbar: 'rgb(238, 242, 246)'
+    }, `Underwater/${lighting}: studio preserves readable paper and controls`);
+    await page.close();
+  }
   for (const width of [1440, 390].filter(w => !process.env.SCORE_TEST_WIDTH || w === +process.env.SCORE_TEST_WIDTH)) {
     for (const name of ['bach', 'gershwin', 'mozart', 'tchaikovsky'].filter(n => !process.env.SCORE_TEST_COMPOSER || n === process.env.SCORE_TEST_COMPOSER)) {
       const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
@@ -75,6 +100,11 @@ try {
       assert.ok(printMetrics.every(p => p.height <= 960 && p.svg > 40), `${name}: score pages fit Letter height: ${JSON.stringify(printMetrics)}`);
       if (pdf && width === 1440 && name !== 'tchaikovsky') await page.pdf({ path: `${out}/${name}.pdf`, preferCSSPageSize: true, printBackground: true });
       await page.evaluate(() => window.dispatchEvent(new Event('afterprint')));
+      // WebKit can fire afterprint before drawing the pages. The edition stays
+      // mounted until the next interaction so Safari also prints the score.
+      await page.waitForTimeout(20);
+      await page.emulateMedia({ media: 'screen' });
+      await page.keyboard.press('Escape');
       assert.equal(await page.locator('.se-print-score-pages').count(), 0, 'print cleanup restores the lesson');
       await page.emulateMedia({ media: 'screen' });
       await page.evaluate(() => {

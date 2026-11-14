@@ -19,6 +19,18 @@
   pianoControls.className = 'bv-fields';
   pianoControls.innerHTML = '<label><input type="checkbox" id="bv-piano-show"> Show piano finger numbers</label><p>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = little finger. Enter one number per written note event, skipping rests. Use – to leave a note blank and / for chord fingers, lowest pitch first (for example 1/3/5). Numbers appear below the staff and in print. Choose fingerings with your teacher.</p><div id="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p>';
   violinControls.after(pianoControls);
+  // Keep the score immediately below a small selection row on every composer page.
+  const primaryFields = workspace.querySelector('.bv-fields');
+  primaryFields.classList.add('bv-primary-fields');
+  const settings = document.createElement('details'); settings.className = 'bv-settings';
+  const settingsTitle = document.createElement('summary'); settingsTitle.textContent = 'Settings & files';
+  const settingsBody = document.createElement('div'); settingsBody.className = 'bv-settings-body';
+  const partFields = document.createElement('div'); partFields.className = 'bv-fields';
+  [staff, voice, octave].forEach(select => partFields.append(select.closest('label')));
+  settingsBody.append(partFields, violinControls, pianoControls, note, workspace.querySelector('.bv-actions'));
+  settings.append(settingsTitle, settingsBody); primaryFields.append(settings);
+  work.closest('label').firstChild.textContent = 'Piece';
+  workspace.classList.add('bv-compact');
   const pianoShow = $('piano-show'), pianoInputs = $('piano-inputs');
   const pianoPrefs = {};
   const pianoKey = () => [work.value, mode.value, staff.value, voice.value, octave.value].join(':');
@@ -73,6 +85,41 @@
       const option = document.createElement('option'); option.value = value; option.textContent = label; return option;
     }));
   }
+  function organizeWorks(groups) {
+    const categories = groups.map(group => ({ ...group, ids: group.scores }));
+    const label = document.createElement('label'); label.className = 'bv-form-filter';
+    label.textContent = 'Work type / collection';
+    const filter = document.createElement('select'); filter.id = 'bv-form';
+    label.append(filter); primaryFields.prepend(label);
+    const hint = document.createElement('p'); hint.className = 'bv-catalog-hint'; hint.id = 'bv-catalog-hint';
+    primaryFields.after(hint); filter.setAttribute('aria-describedby', hint.id);
+    options(filter, [{key: 'all', label: 'All selections', ids: allowed}, ...categories]
+      .map(group => [group.key, group.label + ' · ' + group.ids.length]));
+    function describe() {
+      const group = categories.find(group => group.ids.includes(work.value));
+      hint.textContent = group ? group.label + ' — ' + group.hint : '';
+    }
+    function render() {
+      const selected = work.value;
+      work.replaceChildren();
+      categories.filter(group => filter.value === 'all' || group.key === filter.value).forEach(group => {
+        const optgroup = document.createElement('optgroup'); optgroup.label = group.label + ' · ' + group.ids.length;
+        group.ids.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = library.scores[id].title; optgroup.append(option); });
+        work.append(optgroup);
+      });
+      if ([...work.options].some(option => option.value === selected)) work.value = selected;
+      label.dataset.category = filter.value;
+      describe();
+      if (work.value !== selected) work.dispatchEvent(new Event('change'));
+    }
+    filter.addEventListener('change', render);
+    work.addEventListener('change', describe);
+    // Restore the full catalogue before loading an arrangement from another group.
+    $('open').addEventListener('change', () => { filter.value = 'all'; render(); }, true);
+    render();
+    return describe;
+  }
+
   function source() { return library.scores[work.value]; }
   function fillVoices() {
     const st = source().staves[+staff.value];
@@ -187,7 +234,7 @@
       if (!['beethoven-study-1','composer-study-1'].includes(data.format) || !allowed.includes(data.work)) throw new Error('Choose an arrangement saved for this composer lesson.');
       const valid = (select,value) => [...select.options].some(o => o.value === String(value));
       if (!valid(mode,data.mode) || !valid(octave,data.octave)) throw new Error('Unknown arrangement setting.');
-      work.value = data.work; fillStaves();
+      work.value = data.work; work.dispatchEvent(new Event('change')); fillStaves();
       if (!valid(staff,data.staff)) throw new Error('Unknown source staff.');
       staff.value = data.staff; fillVoices();
       if (!valid(voice,data.voice)) throw new Error('Unknown source voice.');
@@ -204,8 +251,9 @@
   ]).then(([data,index]) => {
     library = data; allowed = index[composer].scores;
     options(work,allowed.map(id => [id,data.scores[id].title]));
+    const describeWork = organizeWorks(index[composer].groups);
     if (composer === 'beethoven') work.value = 'beethoven-ode-to-joy';
     if (composer === 'francisco-tarrega') mode.value = 'guitar';
-    fillStaves(); update();
+    describeWork(); fillStaves(); update();
   }).catch(error => { note.textContent = 'Unable to open the studio: ' + error.message + '. Reload to try again.'; });
 })();

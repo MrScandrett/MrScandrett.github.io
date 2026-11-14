@@ -7,7 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg" />
   <meta
     name="description"
-    content="What electricity actually is, told through hands-on analogies, and the true story of how humans figured it out — from rubbed amber in ancient Greece to Franklin's kite, Volta's battery, Faraday's generator, and the War of the Currents."
+    content="What electricity actually is, told through hands-on interactive labs, water-tower analogies, static 3D physics, and the true story of how humans figured it out — from rubbed amber in ancient Greece to Faraday's generator and today's power grid."
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,655 +15,28 @@
   <link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../../assets/css/lesson-layout.css" />
   <link rel="stylesheet" href="../../../assets/css/electricity-path.css" />
-  <style>
-    .sm-page {
-      width: min(100%, 1180px);
-      margin: 0 auto;
-      padding: 1rem clamp(1rem, 3vw, 1.6rem) 1.5rem;
-    }
-    .ll-viewport { --ll-panel-w: 310px; }
-
-    /* ── Hero ── */
-    .sm-hero {
-      position: relative;
-      overflow: hidden;
-      margin: 0 0 1rem;
-      padding: clamp(1.1rem, 3vw, 1.7rem);
-      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 80%, transparent);
-      border-radius: 18px;
-      background:
-        radial-gradient(circle at 100% 0%, rgba(255,214,10,0.22), transparent 34%),
-        linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,251,235,0.88));
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
-      text-align: left;
-    }
-    .sm-hero-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(250px, 0.85fr);
-      gap: clamp(1rem, 3vw, 1.6rem);
-      align-items: center;
-    }
-    .sm-hero-copy { min-width: 0; }
-    .sm-hero h1 {
-      max-width: 20ch;
-      margin-left: 0;
-      margin-right: 0;
-      font-size: clamp(1.7rem, 4vw, 2.55rem);
-    }
-    .sm-hero-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem 0.55rem;
-      margin: 0.55rem 0 0.75rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted, #64748b);
-    }
-    .sm-hero-meta .dot {
-      width: 3px; height: 3px;
-      border-radius: 50%;
-      background: currentColor;
-      align-self: center;
-    }
-    .sm-lede {
-      max-width: 72ch;
-      margin: 0 0 0.95rem;
-      color: #415266;
-      font-size: 0.97rem;
-      line-height: 1.68;
-    }
-    .sm-back-link {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--accent, #007aff);
-      text-decoration: none;
-    }
-    .sm-back-link:hover { text-decoration: underline; }
-
-    /* Feature panel: the atom */
-    .sm-feature-panel {
-      border: 1px solid color-mix(in srgb, var(--line, #d2d2d7) 78%, transparent);
-      border-radius: 16px;
-      background:
-        linear-gradient(135deg, rgba(255,214,10,0.16), transparent 36%),
-        rgba(255,255,255,0.82);
-      padding: 0.9rem;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
-    }
-    .sm-feature-kicker {
-      margin: 0.7rem 0 0.35rem;
-      color: var(--text-muted, #64748b);
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .sm-feature-panel strong {
-      display: block;
-      color: var(--text, #1d1d1f);
-      font-size: 1rem;
-      line-height: 1.25;
-    }
-    .sm-feature-panel small {
-      display: block;
-      margin-top: 0.25rem;
-      color: #415266;
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }
-
-    /* ── Atom diagram ── */
-    .we-atom-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: clamp(160px, 24vw, 210px);
-    }
-    .we-atom {
-      position: relative;
-      width: 170px;
-      height: 170px;
-    }
-    .we-atom-nucleus {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 1px; height: 1px;
-      transform: translate(-50%, -50%);
-      filter: drop-shadow(0 0 8px rgba(217,72,15,0.35));
-    }
-    .we-atom-nucleus .nucleon {
-      position: absolute;
-      top: 50%; left: 50%;
-      width: 11px; height: 11px;
-      border-radius: 50%;
-      transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)));
-    }
-    .we-atom-nucleus .nucleon.proton {
-      background: radial-gradient(circle at 35% 30%, #ff9500, #d9480f);
-    }
-    .we-atom-nucleus .nucleon.neutron {
-      background: radial-gradient(circle at 35% 30%, #cbd5e1, #7d8ba1);
-    }
-    .we-atom-orbit {
-      position: absolute;
-      top: 50%; left: 50%;
-      border: 1.5px dashed rgba(0,113,227,0.35);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .we-atom-orbit.o1 { width: 70px;  height: 70px;  animation: we-spin 3.4s linear infinite; }
-    .we-atom-orbit.o2 { width: 118px; height: 118px; animation: we-spin 5.6s linear infinite reverse; }
-    .we-atom-orbit.o3 { width: 166px; height: 166px; animation: we-spin 8.2s linear infinite; }
-    .we-atom-orbit::before {
-      content: '';
-      position: absolute;
-      top: -4px; left: calc(50% - 4px);
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #007aff;
-      box-shadow: 0 0 7px rgba(0,113,227,0.85);
-    }
-    @keyframes we-spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) {
-      .we-atom-orbit { animation: none; }
-    }
-    .we-atom-legend {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 0.7rem;
-      flex-wrap: wrap;
-    }
-    .we-atom-legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text-muted, #64748b);
-    }
-    .we-atom-legend .swatch { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-    .we-atom-legend .swatch.p { background: linear-gradient(135deg, #ff9500, #d9480f); }
-    .we-atom-legend .swatch.n { background: linear-gradient(135deg, #cbd5e1, #7d8ba1); }
-    .we-atom-legend .swatch.e { background: #007aff; }
-
-    /* ── Cards ── */
-    .sm-card,
-    .sm-quiz {
-      background: var(--white, #fff);
-      border: 1px solid var(--line, #d2d2d7);
-      border-left: 3.5px solid var(--sm-accent, #007aff);
-      border-radius: var(--radius, 18px);
-      box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,.08));
-      padding: 1.35rem 1.55rem;
-      margin-bottom: 1rem;
-    }
-/* Dark surface at night: keep night text tokens. */
-:where(html[data-lighting="night"]) .sm-card, :where(html[data-lighting="night"]) .sm-quiz { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .sm-card, :where(html:not([data-lighting])) .sm-quiz { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; } }
-    .sm-quiz { border-left-color: #ff375f; }
-    .sm-card h2, .sm-quiz h2 {
-      margin: 0 0 0.55rem;
-      font-size: clamp(1.08rem, 2vw, 1.28rem);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-    .sm-card h3 { margin: 0.95rem 0 0.35rem; font-size: 0.98rem; }
-    .sm-card p, .sm-quiz p {
-      margin: 0 0 0.7rem;
-      color: #415266;
-      font-size: 0.9rem;
-      line-height: 1.66;
-    }
-:where(html[data-lighting="night"]) .sm-card p, :where(html[data-lighting="night"]) .sm-quiz p { color: #8297af; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .sm-card p, :where(html:not([data-lighting])) .sm-quiz p { color: #8297af; } }
-    .sm-card ul, .sm-card ol {
-      margin: 0 0 0.7rem;
-      padding-left: 1.25rem;
-      color: #415266;
-      font-size: 0.9rem;
-      line-height: 1.66;
-    }
-    .sm-card li { margin-bottom: 0.3rem; }
-    [data-lighting="night"] .sm-card p,
-    [data-theme="vaporwave"] .sm-card p,
-    [data-theme="bark"] .sm-card p,
-    [data-lighting="night"] .sm-card ul,
-    [data-theme="vaporwave"] .sm-card ul,
-    [data-theme="bark"] .sm-card ul,
-    [data-lighting="night"] .sm-card ol,
-    [data-theme="vaporwave"] .sm-card ol,
-    [data-theme="bark"] .sm-card ol,
-    [data-lighting="night"] .sm-quiz p,
-    [data-theme="vaporwave"] .sm-quiz p,
-    [data-theme="bark"] .sm-quiz p,
-    [data-lighting="night"] .sm-lede,
-    [data-theme="vaporwave"] .sm-lede,
-    [data-theme="bark"] .sm-lede { color: rgba(245,245,247,0.74); }
-
-    /* ── Callouts ── */
-    .sm-callout {
-      border-radius: 12px;
-      padding: 0.9rem 1rem;
-      margin: 0.8rem 0;
-      font-size: 0.84rem;
-      line-height: 1.62;
-    }
-    .sm-callout strong {
-      display: block;
-      margin-bottom: 0.2rem;
-      font-size: 0.76rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted, #64748b);
-    }
-    .sm-callout.warn  { background: rgba(255,149,0,0.12);  border-left: 3px solid #ff9500; }
-    .sm-callout.info  { background: rgba(0,122,255,0.08);  border-left: 3px solid #007aff; }
-    .sm-callout.green { background: rgba(52,199,89,0.10);  border-left: 3px solid #34c759; }
-
-    /* ── Grids ── */
-    .sm-overview-grid,
-    .sm-project-grid,
-    .sm-trouble-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0.8rem;
-      margin-top: 0.85rem;
-    }
-    .sm-overview-card,
-    .sm-project-card,
-    .sm-trouble-card {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      padding: 0.95rem 1rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
-    }
-    .sm-overview-card strong,
-    .sm-project-card strong,
-    .sm-trouble-card strong { display: block; margin-bottom: 0.24rem; font-size: 0.9rem; }
-    .sm-overview-card small,
-    .sm-project-card small,
-    .sm-trouble-card small { display: block; color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.56; }
-    .sm-project-card .we-age {
-      display: inline-block;
-      margin-top: 0.5rem;
-      padding: 0.18rem 0.5rem;
-      border-radius: 999px;
-      background: rgba(0,113,227,0.1);
-      color: #005ec3;
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    /* ── Static electricity demo ── */
-    .we-static-demo {
-      display: grid;
-      grid-template-columns: minmax(180px, 260px) 1fr;
-      gap: 1.1rem;
-      align-items: center;
-      margin: 0.9rem 0;
-      padding: 1rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
-    }
-    .we-balloon-stage {
-      position: relative;
-      height: 230px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .we-balloon-stage canvas {
-      width: 100%;
-      height: 100%;
-      max-width: 260px;
-      cursor: grab;
-    }
-    .we-balloon-stage canvas:active { cursor: grabbing; }
-    .we-static-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      margin-top: 0.9rem;
-      padding: 0.55rem 1rem;
-      border-radius: 999px;
-      border: none;
-      background: #0070eb;
-      color: #fff;
-      font-size: 0.84rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .we-static-btn:hover { background: #005ec3; }
-    .we-static-caption {
-      margin-top: 0.6rem;
-      font-size: 0.8rem;
-      color: var(--text-muted, #64748b);
-      min-height: 2.4em;
-    }
-    @media (max-width: 620px) {
-      .we-static-demo { grid-template-columns: 1fr; }
-    }
-
-    /* ── Circuit flow demo ── */
-    .we-circuit-demo {
-      margin: 0.9rem 0;
-      padding: 1rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
-      text-align: center;
-    }
-    .we-circuit-demo svg { width: 100%; max-width: 420px; height: auto; }
-    .we-circuit-loop {
-      fill: none;
-      stroke: #94a3b8;
-      stroke-width: 5;
-      stroke-linejoin: round;
-      stroke-linecap: round;
-      transition: stroke 0.4s ease;
-    }
-    .we-circuit-demo.is-on .we-circuit-loop { stroke: #60a5fa; }
-    .we-circuit-battery-plate { stroke: #248a3d; stroke-linecap: round; }
-    .we-circuit-switch-post { fill: #64748b; }
-    .we-circuit-switch-lever {
-      stroke: #64748b;
-      stroke-width: 4;
-      stroke-linecap: round;
-      transform-origin: 95px 25px;
-      transform: rotate(-38deg);
-      transition: transform 0.45s cubic-bezier(.34,1.4,.64,1);
-    }
-    .we-circuit-demo.is-on .we-circuit-switch-lever { transform: rotate(0deg); }
-    .we-circuit-bulb-glow { fill: #ffe58a; opacity: 0; transition: opacity 0.5s ease; }
-    .we-circuit-demo.is-on .we-circuit-bulb-glow { opacity: 1; }
-    .we-circuit-bulb { fill: #cbd5e1; stroke: #64748b; stroke-width: 2; transition: fill 0.5s ease; }
-    .we-circuit-demo.is-on .we-circuit-bulb { fill: #ffd60a; }
-    .we-circuit-filament { fill: none; stroke: #94a3b8; stroke-width: 1.4; stroke-linecap: round; transition: stroke 0.5s ease; }
-    .we-circuit-demo.is-on .we-circuit-filament { stroke: #b45309; }
-    .we-charge-dot {
-      offset-path: path('M30,125 L30,25 L210,25 L210,125 L30,125');
-      offset-distance: 0%;
-      offset-rotate: 0deg;
-      fill: #007aff;
-      animation: we-flow 3.2s linear infinite;
-      animation-play-state: paused;
-    }
-    .we-circuit-demo.is-on .we-charge-dot { animation-play-state: running; }
-    .we-charge-dot.d2 { animation-delay: -1.07s; }
-    .we-charge-dot.d3 { animation-delay: -2.14s; }
-    @keyframes we-flow { to { offset-distance: 100%; } }
-    @media (prefers-reduced-motion: reduce) {
-      .we-charge-dot { animation: none; opacity: 0; }
-    }
-    .we-circuit-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      margin-top: 0.6rem;
-      padding: 0.55rem 1.1rem;
-      border-radius: 999px;
-      border: none;
-      background: #23863c;
-      color: #fff;
-      font-size: 0.84rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .we-circuit-btn:hover { background: #248a3d; }
-    .we-circuit-caption {
-      margin-top: 0.6rem;
-      font-size: 0.82rem;
-      color: var(--text-muted, #64748b);
-      max-width: 46ch;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .we-sim-note {
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted, #64748b);
-    }
-    .we-sim-note a { color: #007aff; font-weight: 700; text-decoration: none; }
-    .we-sim-note a:hover { text-decoration: underline; }
-
-    /* ── Water analogy demo ── */
-    .we-water-demo {
-      margin: 0.9rem 0;
-      padding: 1rem;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
-      text-align: center;
-    }
-    .we-water-demo svg { width: 100%; max-width: 420px; height: auto; }
-    .we-water-pipe { fill: none; stroke: #94a3b8; stroke-width: 10; stroke-linejoin: round; }
-    .we-water-tower-tank { fill: #bfe3ff; stroke: #007aff; stroke-width: 2; }
-    .we-water-tower-legs { stroke: #64748b; stroke-width: 3; }
-    .we-water-valve-jaw { fill: #64748b; transition: d 0.3s ease; }
-    .we-water-wheel-hub { fill: #cbd5e1; stroke: #64748b; stroke-width: 2; }
-    .we-water-wheel-spokes {
-      stroke: #64748b;
-      stroke-width: 2.5;
-      transform-origin: 212px 72px;
-      animation: we-water-spin 2s linear infinite;
-    }
-    @keyframes we-water-spin { to { transform: rotate(360deg); } }
-    .we-drop {
-      offset-path: path('M28,128 L28,30 L100,30 L136,30 L212,30 L212,128 L28,128');
-      offset-distance: 0%;
-      fill: #38bdf8;
-      animation: we-flow linear infinite;
-      animation-duration: 1.8s;
-    }
-    .we-drop.d2 { animation-delay: -0.6s; }
-    .we-drop.d3 { animation-delay: -1.2s; }
-    @media (prefers-reduced-motion: reduce) {
-      .we-drop { animation: none; opacity: 0.6; }
-      .we-water-wheel-spokes { animation: none; }
-    }
-    .we-water-controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.4rem;
-      margin-top: 0.7rem;
-    }
-    .we-water-controls label {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text-muted, #64748b);
-    }
-    .we-water-controls input[type="range"] { width: min(280px, 80%); }
-    .we-water-caption {
-      margin-top: 0.5rem;
-      font-size: 0.82rem;
-      color: var(--text-muted, #64748b);
-      max-width: 50ch;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    /* ── Conductor / insulator grid ── */
-    .we-material-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.8rem;
-      margin-top: 0.85rem;
-    }
-    .we-material-card {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      padding: 0.95rem 1rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
-    }
-    .we-material-card strong { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; }
-    .we-material-card small { display: block; color: var(--text-muted, #64748b); font-size: 0.8rem; line-height: 1.56; }
-    .we-electron-bar { display: flex; gap: 3px; margin: 0 0 0.55rem; }
-    .we-electron-bar span { height: 6px; flex: 1; border-radius: 3px; background: rgba(100,116,139,0.18); }
-    .we-material-card.conductor .we-electron-bar span:nth-child(-n+7) { background: #007aff; }
-    .we-material-card.semiconductor .we-electron-bar span:nth-child(-n+3) { background: #ff9500; }
-
-    /* ── Go further links grid ── */
-    .we-links-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0.75rem;
-      margin-top: 0.85rem;
-    }
-    .we-link-card {
-      display: block;
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      padding: 0.85rem 1rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,247,250,0.94));
-      text-decoration: none;
-      color: inherit;
-      transition: border-color 0.15s ease, transform 0.15s ease;
-    }
-    .we-link-card:hover { border-color: #007aff; transform: translateY(-1px); }
-    .we-link-card strong { display: block; margin-bottom: 0.2rem; font-size: 0.88rem; color: var(--text, #1d1d1f); }
-    .we-link-card small { display: block; color: var(--text-muted, #64748b); font-size: 0.78rem; line-height: 1.5; }
-    .we-link-kind {
-      display: inline-block;
-      margin-bottom: 0.35rem;
-      padding: 0.12rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.62rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    .we-link-card.lesson .we-link-kind { background: rgba(0,113,227,0.12); color: #005ec3; }
-    .we-link-card.sim .we-link-kind { background: rgba(52,199,89,0.14); color: #248a3d; }
-
-    /* ── Timeline ── */
-    .we-timeline-nav {
-      display: flex;
-      gap: 0.4rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      margin: 0.6rem 0 0.9rem;
-      scrollbar-width: thin;
-    }
-    .we-timeline-btn {
-      flex: 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.1rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 12px;
-      border: 1.5px solid var(--line, #d2d2d7);
-      background: var(--surface, #f5f5f7);
-      color: var(--text, #1d1d1f);
-      font: inherit;
-      cursor: pointer;
-      text-align: left;
-      min-width: 108px;
-    }
-/* Light surface in every theme: keep day text tokens. */
-.we-timeline-btn { --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349; --text-muted: #5f5f64; --text-subtle: #73737a; --ink: #1d1d1f; --ink-2: #434349; --ink-muted: #5f5f64; --accent: #0066cc; --accent-strong: #005ec3; --accent-hover: #005ec3; --info: #0066cc; --success: #1c8257; --warning: #8f5d0b; --danger: #c23b3b; --lesson-violet-text: #6d28d9; --lesson-orange-text: #8a4500; --blue: #0066cc; --accent-gold: #0066cc; }
-:where(html[data-lighting="night"]) .we-timeline-btn { color: #1d1d1f; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .we-timeline-btn { color: #1d1d1f; } }
-    .we-timeline-btn .yr { font-size: 0.9rem; font-weight: 800; }
-    .we-timeline-btn .lbl { font-size: 0.68rem; color: var(--text-muted, #64748b); line-height: 1.3; }
-    .we-timeline-btn:hover { border-color: #007aff; }
-    .we-timeline-btn[aria-selected="true"] {
-      background: #0070eb;
-      border-color: #007aff;
-    }
-    .we-timeline-btn[aria-selected="true"] .yr,
-    .we-timeline-btn[aria-selected="true"] .lbl { color: #fff; }
-    .we-timeline-panel {
-      border: 1px solid var(--line, #d2d2d7);
-      border-radius: 14px;
-      padding: 1rem 1.1rem;
-      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96));
-      min-height: 9.5em;
-    }
-    .we-timeline-panel h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
-    .we-timeline-panel p { margin: 0; font-size: 0.88rem; color: #415266; line-height: 1.66; }
-    .we-timeline-fig {
-      margin: 0.7rem 0 0;
-      overflow: hidden;
-      border: 1px solid rgba(0,113,227,0.18);
-      border-radius: 14px;
-      background: #0b1220;
-    }
-    .we-timeline-fig img { display: block; width: 100%; max-height: 260px; object-fit: cover; object-position: center; }
-    .we-timeline-fig figcaption {
-      padding: 0.55rem 0.8rem;
-      color: var(--text-muted, #64748b);
-      font-size: 0.75rem;
-      line-height: 1.4;
-      background: var(--white, #fff);
-    }
-:where(html[data-lighting="night"]) .we-timeline-fig figcaption { color: #8888ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .we-timeline-fig figcaption { color: #8888ff; } }
-/* Dark surface at night: keep night text tokens. */
-:where(html[data-lighting="night"]) .we-timeline-fig figcaption { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .we-timeline-fig figcaption { --text: #f5f5f7; --muted: #98989d; --text-primary: #f5f5f7; --text-secondary: #dddde4; --text-muted: #98989d; --text-subtle: #b3b3ba; --ink: #f5f5f7; --ink-2: #dddde4; --ink-muted: #98989d; --accent: #69a8ff; --accent-strong: #8ec0ff; --accent-hover: #8ec0ff; --info: #69a8ff; --success: #4dbd87; --warning: #e0a84b; --danger: #f06a6a; --lesson-violet-text: #c4b5fd; --lesson-orange-text: #ffbd66; --blue: #69a8ff; --accent-gold: #69a8ff; } }
-
-    /* ── Quiz ── */
-    .sm-question { margin-bottom: 1.1rem; }
-    .sm-question:last-child { margin-bottom: 0; }
-    .sm-question p { margin: 0 0 0.5rem; font-size: 0.91rem; font-weight: 700; }
-    .sm-options { display: flex; flex-direction: column; gap: 0.4rem; }
-    .sm-option {
-      padding: 0.48rem 0.75rem;
-      border-radius: 9px;
-      border: 1.5px solid var(--line, #d2d2d7);
-      background: var(--surface, #f5f5f7);
-      color: var(--text, #1d1d1f);
-      font: inherit;
-      font-size: 0.86rem;
-      text-align: left;
-      cursor: pointer;
-    }
-/* Light surface in every theme: keep day text tokens. */
-.sm-option { --text: #1d1d1f; --muted: #5f5f64; --text-primary: #1d1d1f; --text-secondary: #434349; --text-muted: #5f5f64; --text-subtle: #73737a; --ink: #1d1d1f; --ink-2: #434349; --ink-muted: #5f5f64; --accent: #0066cc; --accent-strong: #005ec3; --accent-hover: #005ec3; --info: #0066cc; --success: #1c8257; --warning: #8f5d0b; --danger: #c23b3b; --lesson-violet-text: #6d28d9; --lesson-orange-text: #8a4500; --blue: #0066cc; --accent-gold: #0066cc; }
-:where(html[data-lighting="night"]) .sm-option { color: #1d1d1f; }
-@media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) .sm-option { color: #1d1d1f; } }
-    .sm-option:hover:not(:disabled) { border-color: #007aff; }
-    .sm-option.is-correct { background: #34c75914; border-color: #34c759; color: #248a3d; }
-    .sm-option.is-wrong   { background: #ff3b3014; border-color: #ff3b30; color: #c0392b; }
-    .sm-q-feedback { min-height: 1rem; margin-top: 0.35rem; font-size: 0.82rem; font-weight: 700; color: var(--text-muted, #64748b); }
-
-    @media (max-width: 820px) {
-      .sm-hero-layout { grid-template-columns: 1fr; }
-    }
-      /* Night: links inside the dark cards. */
-    :where(html[data-lighting="night"]) :is(.sm-card, .sm-quiz, .we-timeline-fig) a:not([class]) { color: var(--accent, #8ec0ff); }
-    @media (prefers-color-scheme: dark) { :where(html:not([data-lighting])) :is(.sm-card, .sm-quiz, .we-timeline-fig) a:not([class]) { color: var(--accent, #8ec0ff); } }
-  </style>
+  <link rel="stylesheet" href="../../../assets/css/lessons/what-is-electricity.css" />
 </head>
 <body class="theme-liquid-woodland theme-steam">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <div class="ll-viewport">
     <header class="site-header">
-    <div class="nav-wrap">
-      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
-      <nav class="site-nav" aria-label="Primary">
-        <ul>
-          <li><a href="../../../index.html">Home</a></li>
-          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
-          <li><a href="../../../paths.html">Paths</a></li>
-          <li><a href="../../../showcase.html">Showcase</a></li>
-          <li><a href="../../../applications.html">Apps</a></li>
-          <li><a href="../../../library.html">Library</a></li>
-          <li><a href="../../../about.html">About</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
+      <div class="nav-wrap">
+        <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+        <nav class="site-nav" aria-label="Primary">
+          <ul>
+            <li><a href="../../../index.html">Home</a></li>
+            <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+            <li><a href="../../../paths.html">Paths</a></li>
+            <li><a href="../../../showcase.html">Showcase</a></li>
+            <li><a href="../../../applications.html">Apps</a></li>
+            <li><a href="../../../library.html">Library</a></li>
+            <li><a href="../../../about.html">About</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
 
     <div class="ll-stage">
       <div class="ll-sim">
@@ -678,15 +51,15 @@
                 <div class="sm-hero-meta">
                   <span>Atoms &amp; charge</span><span class="dot"></span>
                   <span>Static vs. current</span><span class="dot"></span>
-                  <span>History</span><span class="dot"></span>
-                  <span>All ages</span>
+                  <span>Conductors &amp; grid</span><span class="dot"></span>
+                  <span>Interactive labs · All ages</span>
                 </div>
-                <p class="sm-lede">Every spark, every lightning bolt, every phone <span data-glossary="electric charge">charge</span> comes down to the same tiny thing: <span data-glossary="electron">electrons</span> moving around. This lesson explains what electricity actually is using things you can touch and see, then tells the true story of how people figured it out — from rubbing amber in ancient Greece to a kite in a thunderstorm to the invention of the power grid.</p>
+                <p class="sm-lede">Every spark, every lightning bolt, every phone <span data-glossary="electric charge">charge</span> comes down to the same tiny thing: <span data-glossary="electron">electrons</span> moving around. Explore how charge works using interactive atom, fluid-pressure, conductivity, 3D static, and grid models — then trace the 2,500-year detective story of how humans figured it out.</p>
                 <a class="sm-back-link" href="../../../steam-lessons.html#module-physics">&larr; Back to Physics</a>
               </div>
-              <aside class="sm-feature-panel" aria-label="A simple atom model">
+              <aside class="sm-feature-panel" aria-label="Interactive atom and ion builder">
                 <div class="we-atom-wrap">
-                  <div class="we-atom" aria-hidden="true">
+                  <div class="we-atom" data-charge="0" aria-hidden="true">
                     <div class="we-atom-nucleus">
                       <span class="nucleon proton" style="--dx:0px;--dy:0px"></span>
                       <span class="nucleon neutron" style="--dx:0px;--dy:-11px"></span>
@@ -695,68 +68,135 @@
                       <span class="nucleon proton" style="--dx:9.5px;--dy:-5.5px"></span>
                       <span class="nucleon neutron" style="--dx:-9.5px;--dy:5.5px"></span>
                       <span class="nucleon proton" style="--dx:9.5px;--dy:5.5px"></span>
+                      <span class="nucleon neutron" style="--dx:-13px;--dy:0px"></span>
+                      <span class="nucleon neutron" style="--dx:13px;--dy:0px"></span>
                     </div>
                     <div class="we-atom-orbit o1"></div>
                     <div class="we-atom-orbit o2"></div>
-                    <div class="we-atom-orbit o3"></div>
+                    <div class="we-atom-orbit o3">
+                      <span class="we-valence-e e-top"></span>
+                      <span class="we-valence-e e-extra"></span>
+                    </div>
                   </div>
                 </div>
-                <p class="sm-feature-kicker">Every atom, everywhere</p>
-                <strong>A nucleus with electrons around it</strong>
-                <small>Electricity is what happens when those outer electrons move — either jumping to a new spot (static) or flowing in a steady stream (current).</small>
+                <p class="sm-feature-kicker">Interactive Atom &amp; Ion Builder</p>
+                <strong>Test what happens when outer electrons move</strong>
+                <small>Protons stay locked in the nucleus, while outer valence electrons can leave or join. Toggle ion states to watch net charge appear.</small>
                 <div class="we-atom-legend" aria-hidden="true">
                   <span><span class="swatch p"></span>Protons (+)</span>
                   <span><span class="swatch n"></span>Neutrons</span>
                   <span><span class="swatch e"></span>Electrons (&minus;)</span>
                 </div>
+                <div class="we-atom-controls" role="group" aria-label="Atom charge state">
+                  <button type="button" class="we-atom-btn" id="we-atom-btn-cat" aria-pressed="false">&minus;1 e&minus; (+1 Cation)</button>
+                  <button type="button" class="we-atom-btn" id="we-atom-btn-neu" aria-pressed="true">Neutral (0)</button>
+                  <button type="button" class="we-atom-btn" id="we-atom-btn-an" aria-pressed="false">+1 e&minus; (&minus;1 Anion)</button>
+                </div>
+                <div class="we-atom-readout" id="we-atom-readout" aria-live="polite">Neutral atom (0 charge): 4 positive protons balance 4 negative electrons — overall electrical neutrality.</div>
               </aside>
             </div>
           </section>
 
-          <!-- ── What electricity actually is ── -->
-          <section class="sm-card" style="--sm-accent:#007aff;">
-            <h2>So What Is It, Really?</h2>
-            <p>Everything in the universe — this screen, the air, your hand — is made of atoms. Every atom has a center (the <strong>nucleus</strong>) made of protons and neutrons, surrounded by tiny particles called <strong>electrons</strong> that carry a negative <span data-glossary="electric charge">electric charge</span>. Protons carry a positive charge. Normally an atom has equal numbers of each, so it's electrically neutral — balanced.</p>
-            <p><strong>Electricity is simply electrons on the move.</strong> When electrons pile up somewhere they don't belong, or stream steadily from one place to another, that motion of charge is what we call electricity. Nothing mystical is happening — it's just very small particles doing very ordinary things, extremely fast.</p>
+          <!-- ── Sticky section jump bar ── -->
+          <nav class="ll-lesson-steps we-jump-bar" aria-label="Lesson sections">
+            <a class="ll-step-active" href="#sec-atoms">1. Atoms &amp; Scale</a>
+            <a href="#sec-water">2. Water Analogy</a>
+            <a href="#sec-materials">3. Materials</a>
+            <a href="#sec-static-current">4. Static &amp; Current</a>
+            <a href="#sec-history">5. History</a>
+            <a href="#sec-grid">6. Power Grid</a>
+            <a href="#sec-activities">7. Activities &amp; Myths</a>
+            <a href="#sec-quiz">8. Practice &amp; Quiz</a>
+          </nav>
+
+          <!-- ── 1. What electricity actually is + Scale Explorer ── -->
+          <section class="sm-card" id="sec-atoms" style="--sm-accent:#007aff;">
+            <h2>1. So What Is Electricity, Really?</h2>
+            <p>Everything in the universe — this screen, the air, your hand — is made of atoms. Every atom has a dense center (the <strong>nucleus</strong>) of positively charged protons and neutral neutrons, surrounded by cloud-like shells of negative <span data-glossary="electron">electrons</span>. Normally an atom has equal numbers of protons and electrons, so those opposite charges cancel out cleanly.</p>
+            <p><strong>Electricity is simply electric charge on the move.</strong> Because electrons sit on the outside of atoms and weigh almost 2,000 times less than protons, outer electrons can jump between surfaces or drift from atom to atom along a wire. Nothing mystical is happening — just tiny charged particles responding to electrical push and pull.</p>
+
+            <div class="we-lab-box" aria-label="Charge and scale explorer">
+              <div class="we-lab-head">
+                <p class="we-lab-kicker">Interactive Scale Explorer</p>
+                <span style="font-size:0.78rem;color:var(--text-muted, #5f5f64);">Compare everyday sparks, electronics, and storms</span>
+              </div>
+              <div class="we-chip-row" id="we-scale-presets" role="group" aria-label="Choose an electrical scenario">
+                <button type="button" class="we-chip" data-scale="led" aria-pressed="true">Red LED</button>
+                <button type="button" class="we-chip" data-scale="usb" aria-pressed="false">Phone Fast Charge</button>
+                <button type="button" class="we-chip" data-scale="toaster" aria-pressed="false">Kitchen Toaster</button>
+                <button type="button" class="we-chip" data-scale="spark" aria-pressed="false">Doorknob Zap</button>
+                <button type="button" class="we-chip" data-scale="lightning" aria-pressed="false">Lightning Bolt</button>
+              </div>
+              <div class="we-readout-strip">
+                <div class="we-metric">
+                  <span>Charge / Rate</span>
+                  <strong id="we-scale-coulombs">0.015 C/s (15 mA)</strong>
+                  <small>1 <span data-glossary="coulomb">coulomb</span> = 6.24 &times; 10¹⁸ e&minus;</small>
+                </div>
+                <div class="we-metric">
+                  <span>Electrons Moving</span>
+                  <strong id="we-scale-electrons">~9.4 &times; 10¹⁶ e&minus;/s</strong>
+                  <small>Sheer particle count</small>
+                </div>
+                <div class="we-metric">
+                  <span>Voltage Push</span>
+                  <strong id="we-scale-voltage">3 V DC (coin cell)</strong>
+                  <small>Energy per unit charge</small>
+                </div>
+                <div class="we-metric">
+                  <span>Power / Energy</span>
+                  <strong id="we-scale-energy">0.045 W (45 mW)</strong>
+                  <small>1 <span data-glossary="watt">watt</span> = 1 joule / sec</small>
+                </div>
+              </div>
+              <p class="we-coach-note" id="we-scale-note" aria-live="polite"></p>
+            </div>
+
             <div class="sm-callout info">
               <strong>For younger learners</strong>
-              Think of electrons like marbles that live inside every tiny building block (atom) of everything around you. Rub two things together and some marbles jump from one to the other. Electricity is just those marbles moving — either jumping in one big static spark, or rolling along a wire in a steady stream.
+              Think of electrons like tiny invisible marbles carried by every building-block atom around you. Rub two things together and some marbles hop across; connect a battery in a loop and those marbles roll smoothly through the wires like cars on a track.
             </div>
             <div class="sm-callout green">
               <strong>For older learners</strong>
-              Charge is conserved and quantized — it moves in whole-electron units and never appears or disappears, only transfers. <span data-glossary="voltage">Voltage</span> is the electrical "pressure" pushing those electrons; current is the rate they flow past a point, measured in <span data-glossary="ampere">amperes</span>. Dig into the math in <a href="coulombs-law.html">Coulomb's Law</a> and <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a> once the concept here feels solid.
+              Charge is conserved and quantized (elementary charge e &approx; 1.602 &times; 10&minus;¹⁹ C) — charge never appears from thin air, it only separates or flows. <span data-glossary="voltage">Voltage</span> (joules per coulomb) provides the energy push, while <span data-glossary="electric current">electric current</span> measures <span data-glossary="coulomb">coulombs</span> per second (<span data-glossary="ampere">amperes</span>).
             </div>
           </section>
 
-          <!-- ── Voltage, current, resistance ── -->
-          <section class="sm-card" style="--sm-accent:#30b0c7;">
-            <h2>The Water Analogy: Voltage, Current, and Resistance</h2>
-            <p>Once you know electricity is moving electrons, the next step is having words for how much is moving and how hard. Physicists and electricians describe electricity with three linked quantities, and the classic way to picture all three at once is water flowing through pipes.</p>
+          <!-- ── 2. Voltage, current, resistance ── -->
+          <section class="sm-card" id="sec-water" style="--sm-accent:#30b0c7;">
+            <h2>2. The Water Analogy: Voltage, Current, and Resistance</h2>
+            <p>Once you know electricity is moving charge, you need words for how hard it is pushed, how fast it flows, and what slows it down. Physicists and electricians link these three quantities using the water-pipe analogy.</p>
             <div class="sm-overview-grid">
               <div class="sm-overview-card">
                 <strong>Voltage (volts, V)</strong>
-                <small>The "push" behind the electrons — like the water pressure created by a tall water tower. A battery's voltage is how hard it shoves electrons around the circuit. No push, no flow, no matter how open the pipe is.</small>
+                <small>The electrical "push" behind charges — like the water pressure created by a tall water tower. Higher pressure forces charge harder around any loop.</small>
               </div>
               <div class="sm-overview-card">
                 <strong>Current (amps, A)</strong>
-                <small>The rate electrons actually flow past a point — like gallons of water passing through a pipe each second. More push (voltage) or a wider pipe (less resistance) both mean more current.</small>
+                <small>The rate charge actually flows past a point — like liters per second passing through a pipe. Measured in <span data-glossary="ampere">amperes</span> (1 A = 1 coulomb/s).</small>
               </div>
               <div class="sm-overview-card">
-                <strong>Resistance (ohms, Ω)</strong>
-                <small>How much the pipe fights the flow — like a narrow valve or a kinked hose. Thin wires, long wires, and materials like rubber all add resistance and choke off current for the same push.</small>
+                <strong>Resistance (<span data-glossary="ohm">ohms</span>, &Omega;)</strong>
+                <small>How much the path fights the flow — like a valve or tight constriction inside the pipe. Raising resistance lowers current for the same voltage.</small>
               </div>
             </div>
 
             <div class="we-water-demo" id="we-water-demo">
-              <svg viewBox="0 0 240 150" aria-hidden="true">
+              <svg viewBox="0 0 260 154" aria-hidden="true">
                 <path class="we-water-pipe" d="M28,128 L28,30 L100,30 L136,30 L212,30 L212,128 L28,128" />
-                <rect class="we-water-tower-tank" x="8" y="4" width="40" height="26" rx="3" />
-                <line class="we-water-tower-legs" x1="12" y1="30" x2="12" y2="44" />
-                <line class="we-water-tower-legs" x1="44" y1="30" x2="44" y2="44" />
-                <text x="28" y="46" font-size="8" font-weight="700" fill="#005ec3" text-anchor="middle">tower</text>
-                <path class="we-water-valve-jaw" id="we-valve-top" d="M100,22 L118,18 L136,22 Z" />
-                <path class="we-water-valve-jaw" id="we-valve-bottom" d="M100,38 L118,42 L136,38 Z" />
-                <text x="118" y="46" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">valve</text>
+                <!-- Tall water tower tank frame + adjustable water level -->
+                <rect class="we-water-tower-frame" x="10" y="34" width="36" height="96" rx="4" />
+                <rect class="we-water-tower-tank" id="we-tank-water" x="12" y="69" width="32" height="59" rx="2" />
+                <line class="we-water-tower-legs" x1="14" y1="130" x2="14" y2="142" />
+                <line class="we-water-tower-legs" x1="42" y1="130" x2="42" y2="142" />
+                <text class="we-svg-label--accent" x="28" y="149" font-size="8.2" text-anchor="middle">Tower = V</text>
+
+                <!-- Adjustable pipe valve jaws -->
+                <path class="we-water-valve-jaw" id="we-valve-top" d="M110,14 L126,14 L126,23 L110,23 Z" />
+                <path class="we-water-valve-jaw" id="we-valve-bottom" d="M110,37 L126,37 L126,46 L110,46 Z" />
+                <text class="we-svg-label" x="118" y="57" font-size="8.2" text-anchor="middle">Valve = R</text>
+
+                <!-- Spinning load wheel -->
                 <circle class="we-water-wheel-hub" cx="212" cy="72" r="14" />
                 <g class="we-water-wheel-spokes" id="we-wheel-spokes">
                   <line x1="212" y1="60" x2="212" y2="84" />
@@ -764,218 +204,442 @@
                   <line x1="203" y1="63" x2="221" y2="81" />
                   <line x1="221" y1="63" x2="203" y2="81" />
                 </g>
-                <text x="212" y="102" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">wheel</text>
+                <text class="we-svg-label" x="212" y="102" font-size="8.2" text-anchor="middle">Wheel = Load (I)</text>
+
                 <circle class="we-drop" r="3.5"></circle>
                 <circle class="we-drop d2" r="3.5"></circle>
                 <circle class="we-drop d3" r="3.5"></circle>
               </svg>
-              <p class="we-water-caption" style="margin-top:0;"><strong>Tower</strong> = voltage (the push) &nbsp;·&nbsp; <strong>valve</strong> = <span data-glossary="resistance">resistance</span> (how open the path is) &nbsp;·&nbsp; <strong>wheel</strong> = the load, spun by current (the flow)</p>
-              <div class="we-water-controls">
-                <label for="we-water-slider">Valve setting: <span id="we-water-level-label">wide open (low resistance)</span></label>
-                <input type="range" id="we-water-slider" min="0" max="2" step="1" value="0" aria-describedby="we-water-caption" />
+
+              <p class="we-water-caption" style="margin-top:0;"><strong>Tower</strong> = voltage push &nbsp;&middot;&nbsp; <strong>Valve</strong> = <span data-glossary="resistance">resistance</span> &nbsp;&middot;&nbsp; <strong>Wheel spin</strong> = current rate</p>
+
+              <div class="we-water-sliders">
+                <div class="we-water-control">
+                  <label for="we-tower-slider">Water tower pressure (Voltage): 3 V · 6 V · 12 V</label>
+                  <input type="range" id="we-tower-slider" min="0" max="2" step="1" value="1" aria-describedby="we-water-caption" />
+                </div>
+                <div class="we-water-control">
+                  <label for="we-water-slider">Valve restriction (Resistance): <span id="we-water-level-label">Wide Open (100 &Omega;) · 6 V &rarr; 60 mA</span></label>
+                  <input type="range" id="we-water-slider" min="0" max="2" step="1" value="0" aria-describedby="we-water-caption" />
+                </div>
               </div>
-              <p class="we-water-caption" id="we-water-caption">Wide-open valve, same water tower height: water rushes through fast and the wheel spins quickly. That's high current at a fixed voltage, thanks to low resistance.</p>
+
+              <div class="we-readout-strip">
+                <div class="we-metric">
+                  <span>Voltage (V)</span>
+                  <strong id="we-water-v">6 V</strong>
+                  <small>Push from source</small>
+                </div>
+                <div class="we-metric">
+                  <span>Resistance (R)</span>
+                  <strong id="we-water-r">100 &Omega;</strong>
+                  <small>Path opposition</small>
+                </div>
+                <div class="we-metric">
+                  <span>Current (I = V/R)</span>
+                  <strong id="we-water-i">60 mA</strong>
+                  <small>Charge flow rate</small>
+                </div>
+                <div class="we-metric">
+                  <span>Power (P = V&middot;I)</span>
+                  <strong id="we-water-p">360 mW</strong>
+                  <small>Work done on wheel</small>
+                </div>
+              </div>
+
+              <p class="we-water-caption" id="we-water-caption" aria-live="polite"></p>
+
+              <div class="we-predict-box">
+                <p><strong>Quick Prediction Check:</strong> Keeping the valve fixed at <strong>300 &Omega;</strong>, if you double Voltage from <strong>6 V</strong> to <strong>12 V</strong>, what happens to Current?</p>
+                <div class="we-chip-row" style="margin-bottom:0.25rem;" role="group" aria-label="Predict how doubling voltage affects current">
+                  <button type="button" class="we-chip" data-water-predict="halves" aria-pressed="false">Cuts in half (0.5&times;)</button>
+                  <button type="button" class="we-chip" data-water-predict="doubles" aria-pressed="false">Doubles (2&times;)</button>
+                  <button type="button" class="we-chip" data-water-predict="same" aria-pressed="false">Stays the same</button>
+                </div>
+                <p class="we-predict-feedback" id="we-water-predict-feedback" aria-live="polite"></p>
+              </div>
             </div>
 
             <div class="sm-callout info">
               <strong>The exact relationship</strong>
-              These three are tied together by one equation, Ohm's Law: voltage = current × resistance (V = IR). Push harder or open the valve wider and current goes up; add resistance and current goes down for the same push. See the full math, with worked examples, in <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a>.
+              All three obey Ohm's Law: voltage = current &times; resistance (V = I &middot; R). Push harder or open the valve wider and current rises; pinch the valve tighter and current drops for the same voltage. Continue to <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a> once you finish here.
             </div>
           </section>
 
-          <!-- ── Conductors and insulators ── -->
-          <section class="sm-card" style="--sm-accent:#ff9500;">
-            <h2>Why Some Materials Carry Electricity and Others Don't</h2>
-            <p>Resistance isn't the same everywhere — it depends heavily on what a material is made of. In some materials, the outermost electrons are barely attached to their atoms and hop easily from one to the next. In others, every electron is locked tightly in place with nowhere to go.</p>
+          <!-- ── 3. Conductors, semiconductors, and insulators + Bench ── -->
+          <section class="sm-card" id="sec-materials" style="--sm-accent:#ff9500;">
+            <h2>3. Why Some Materials Carry Electricity and Others Don't</h2>
+            <p>Resistance depends directly on atomic bonding. In metals, outer electrons detach effortlessly into a shared "electron sea" that drifts the instant voltage appears. In insulators, electrons stay tightly bound to host molecules — unless breakdown voltage is high enough to tear them loose.</p>
+
+            <div class="we-lab-box" aria-label="Material conductivity bench">
+              <div class="we-lab-head">
+                <p class="we-lab-kicker">Interactive Material Conductivity Bench</p>
+                <button type="button" class="we-excite-btn" id="we-silicon-excite" aria-pressed="false">Add Light / Heat / Dopant to Silicon</button>
+              </div>
+              <div class="we-chip-row" role="group" aria-label="Select a material sample to test">
+                <button type="button" class="we-chip" data-mat="copper" aria-pressed="true">Copper Wire</button>
+                <button type="button" class="we-chip" data-mat="graphite" aria-pressed="false">Graphite Lead</button>
+                <button type="button" class="we-chip" data-mat="saltwater" aria-pressed="false">Saltwater</button>
+                <button type="button" class="we-chip" data-mat="silicon" aria-pressed="false">Silicon Wafer</button>
+                <button type="button" class="we-chip" data-mat="wood" aria-pressed="false">Dry Wood</button>
+                <button type="button" class="we-chip" data-mat="rubber" aria-pressed="false">Rubber Jacket</button>
+              </div>
+              <div class="we-mat-stage">
+                <svg id="we-mat-svg" viewBox="0 0 440 165" role="img" aria-label="Test circuit showing bulb brightness, ammeter reading, and atomic-level charge carriers"></svg>
+              </div>
+              <div class="we-readout-strip">
+                <div class="we-metric">
+                  <span>Test Current (at 6 V)</span>
+                  <strong id="we-mat-current">2,400 mA</strong>
+                  <small>Bulb &amp; ammeter response</small>
+                </div>
+                <div class="we-metric">
+                  <span>Material Class</span>
+                  <strong id="we-mat-class">Conductor (Metal)</strong>
+                  <small>Carrier behavior</small>
+                </div>
+              </div>
+              <p class="we-coach-note" id="we-mat-note" aria-live="polite"></p>
+            </div>
+
             <div class="we-material-grid">
               <div class="we-material-card conductor">
-                <strong>Conductors</strong>
+                <strong><span data-glossary="conductor">Conductors</span></strong>
                 <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                <small>Metals like copper, silver, gold, and aluminum have loosely-held outer electrons that move freely between atoms — very low resistance. That's why wires and plug contacts are built from copper and gold-plated metal.</small>
+                <small>Copper, silver, gold, and aluminum have loose outer valence electrons that roam freely across atoms — giving very low resistance for wires and contacts.</small>
               </div>
               <div class="we-material-card semiconductor">
-                <strong>Semiconductors</strong>
+                <strong><span data-glossary="semiconductor">Semiconductors</span></strong>
                 <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                <small>Silicon and germanium sit in between — normally poor conductors, but engineers can precisely control how well they conduct by adding trace impurities. That controllable in-between behavior is the entire basis of transistors and computer chips.</small>
+                <small>Silicon sits in between: nearly insulating when pure and cold, yet tunable on demand by heat, light, or trace impurities ("doping") — the secret behind every <span data-glossary="transistor">transistor</span>.</small>
               </div>
               <div class="we-material-card insulator">
-                <strong>Insulators</strong>
+                <strong><span data-glossary="insulator">Insulators</span></strong>
                 <div class="we-electron-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                <small>Rubber, glass, plastic, and dry wood hold their electrons tightly with almost nowhere to move — extremely high resistance. That's why wires are wrapped in rubber or plastic and power lines hang from glass or ceramic insulators.</small>
+                <small>Rubber, glass, porcelain, and dry wood hold electrons in rigid covalent bonds — high resistance that keeps current safely inside cable insulation.</small>
               </div>
             </div>
+
             <div class="sm-callout warn">
               <strong>Why this matters for safety</strong>
-              Your body is mostly water with dissolved salts, which makes it a decent <span data-glossary="conductor">conductor</span> — much better than dry air, but far worse than copper. That's why standing on dry ground (an <span data-glossary="insulator">insulator</span>) is safer around electricity than standing in a puddle (a much better conductor), and why electricians work on de-energized circuits whenever possible.
+              Pure distilled water is actually a poor conductor, yet tap water, sweat, and body tissues contain dissolved salt ions that conduct far more easily than dry skin or air. That is why wet hands around live outlets dramatically reduce your skin resistance and raise shock risk.
             </div>
           </section>
 
-          <!-- ── Static vs current, with hands-on demo ── -->
-          <section class="sm-card" style="--sm-accent:#ff9500;">
-            <h2>Two Kinds of Electricity</h2>
-            <p>Almost everything electrical falls into one of two categories: charge that stays put (static) and charge that keeps moving in a loop (current). Both are the exact same electrons — just behaving differently.</p>
+          <!-- ── 4. Static vs current, 3D demo, Triboelectric matcher & circuit flow ── -->
+          <section class="sm-card" id="sec-static-current" style="--sm-accent:#ff9500;">
+            <h2>4. Two Kinds of Electricity: Static vs. Current</h2>
+            <p>Almost every electrical effect falls into one of two behaviors: charge piling up on surfaces until it leaps across a gap (static), or charge circulating continuously around a closed loop (current).</p>
 
             <h3>Static Electricity: Charge That Jumps</h3>
-            <p>Rub a balloon on your hair, wool, or a carpet, and electrons scrub off one surface and pile onto the other. Now one object has extra electrons (negative) and the other is short some (positive). Opposite charges attract, so the balloon and your hair pull toward each other — until the extra electrons finally jump back across the gap, sometimes as a visible spark (or a shock when you touch a doorknob after shuffling on carpet).</p>
+            <p>When two different materials rub together, whichever material pulls harder on outer electrons strips some away from the other. Opposite charges attract — pulling hair upward toward a balloon — until excess electrons finally find a conductive path and leap across as an <span data-glossary="electrostatic discharge">electrostatic discharge</span> spark.</p>
 
-            <div class="we-static-demo" id="we-static-demo">
+            <div class="we-static-demo" id="we-static-demo" data-charge-level="0">
               <div class="we-balloon-stage">
                 <canvas id="we-balloon-canvas" aria-hidden="true"></canvas>
                 <p id="we-balloon-nowebgl" class="we-sim-note" hidden>3D preview needs WebGL, which isn't available here — the rest of the demo still works below.</p>
               </div>
               <div>
-                <p style="margin:0 0 0.4rem;font-weight:700;font-size:0.9rem;">Try it here</p>
-                <p style="margin:0 0 0.6rem;font-size:0.84rem;color:#415266;">Click the button to "rub" the balloon on the hair below and watch what happens — drag the 3D scene to look around. Then try it for real with an actual balloon — it works best on a dry day.</p>
-                <button type="button" class="we-static-btn" id="we-static-btn">⚡ Rub the balloon</button>
-                <p class="we-static-caption" id="we-static-caption">The hair hangs straight down — balanced charge, nothing happening yet.</p>
-                <p class="we-sim-note">Want a more detailed version? Try PhET's free <a href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">Balloons and Static Electricity</a> simulation, which shows the actual electrons transferring.</p>
+                <p style="margin:0 0 0.35rem;font-weight:700;font-size:0.92rem;">Interactive 3D Static Lab</p>
+                <p style="margin:0 0 0.5rem;font-size:0.84rem;color:var(--text-secondary, #415266);">Build up static charge step by step and drag the 3D scene to inspect the hair rising toward the balloon. When charged, touch a grounded metal knob to trigger a spark discharge.</p>
+                <div class="we-static-actions">
+                  <button type="button" class="we-static-btn" id="we-static-btn" aria-pressed="false">Rub Balloon on Hair (Step 1/3)</button>
+                  <button type="button" class="we-discharge-btn" id="we-static-discharge" disabled>Touch Doorknob (Spark)</button>
+                </div>
+                <p class="we-static-caption" id="we-static-caption" aria-live="polite"></p>
+                <p class="we-sim-note">Explore further: try PhET's free <a href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">Balloons and Static Electricity</a> or explore <a href="van-de-graaff-generator.html">Van de Graaff Generators</a>.</p>
               </div>
             </div>
 
-            <h3>Current Electricity: Charge That Flows</h3>
-            <p>A battery uses a chemical reaction to push electrons out one terminal, through a wire, through whatever the wire connects to, and back in the other terminal — a continuous loop. That steady flow is <strong>current</strong>, and it's what powers lights, motors, and every device you own. Unlike a static spark, current can keep flowing for as long as the battery (or power plant) can keep pushing.</p>
+            <div class="we-lab-box" aria-label="Triboelectric series matcher">
+              <div class="we-lab-head">
+                <p class="we-lab-kicker">Triboelectric Series Matcher</p>
+                <span style="font-size:0.78rem;color:var(--text-muted, #5f5f64);">Pick any two materials to rub together</span>
+              </div>
+              <div class="we-tribo-controls">
+                <div class="we-tribo-field">
+                  <label for="we-tribo-a">Object A</label>
+                  <select id="we-tribo-a">
+                    <option value="hair" selected>Human Hair (+5)</option>
+                    <option value="glass">Glass (+4)</option>
+                    <option value="nylon">Nylon (+3)</option>
+                    <option value="wool">Wool Sweater (+2)</option>
+                    <option value="silk">Silk (+1)</option>
+                    <option value="paper">Paper (0)</option>
+                    <option value="cotton">Cotton (&minus;1)</option>
+                    <option value="wood">Dry Wood (&minus;2)</option>
+                    <option value="rubber">Rubber Balloon (&minus;4)</option>
+                    <option value="pvc">PVC Pipe (&minus;5)</option>
+                  </select>
+                </div>
+                <span class="we-tribo-vs">rubs on</span>
+                <div class="we-tribo-field">
+                  <label for="we-tribo-b">Object B</label>
+                  <select id="we-tribo-b">
+                    <option value="hair">Human Hair (+5)</option>
+                    <option value="glass">Glass (+4)</option>
+                    <option value="nylon">Nylon (+3)</option>
+                    <option value="wool">Wool Sweater (+2)</option>
+                    <option value="silk">Silk (+1)</option>
+                    <option value="paper">Paper (0)</option>
+                    <option value="cotton">Cotton (&minus;1)</option>
+                    <option value="wood">Dry Wood (&minus;2)</option>
+                    <option value="rubber" selected>Rubber Balloon (&minus;4)</option>
+                    <option value="pvc">PVC Pipe (&minus;5)</option>
+                  </select>
+                </div>
+              </div>
+              <p class="we-coach-note" id="we-tribo-result" aria-live="polite"></p>
+            </div>
 
-            <div class="we-circuit-demo" id="we-circuit-demo">
-              <svg viewBox="0 0 240 150" aria-hidden="true">
-                <!-- wire: bottom-left corner up to the battery's lower terminal -->
-                <path class="we-circuit-loop" d="M30,125 L30,85" />
-                <!-- wire: battery's upper terminal, up and across to the switch's left post -->
-                <path class="we-circuit-loop" d="M30,65 L30,25 L95,25" />
-                <!-- wire: switch's right post, across, down the right side, and back along the bottom -->
+            <h3>Current Electricity: Charge That Flows</h3>
+            <p>A battery uses chemical reactions to maintain a voltage difference between its terminals. Closing a switch completes a closed loop so charge streams steadily around the circuit — powering bulbs and motors until an <span data-glossary="open circuit">open circuit</span> breaks the path.</p>
+
+            <div class="we-circuit-demo" id="we-circuit-demo" data-flow-dir="electrons">
+              <svg viewBox="0 0 265 152" aria-hidden="true">
+                <!-- left vertical wire broken at battery -->
+                <path class="we-circuit-loop" d="M30,125 L30,84" />
+                <path class="we-circuit-loop" d="M30,68 L30,25 L95,25" />
+                <!-- top switch right post -> right vertical -> bottom wire -->
                 <path class="we-circuit-loop" d="M125,25 L210,25 L210,125 L30,125" />
 
-                <!-- battery: long thin plate (+) over a short thick plate (−) -->
-                <line class="we-circuit-battery-plate" x1="18" y1="70" x2="42" y2="70" stroke-width="2" />
-                <line class="we-circuit-battery-plate" x1="22" y1="80" x2="38" y2="80" stroke-width="5.5" />
-                <text x="46" y="72" font-size="8" font-weight="700" fill="#248a3d">+</text>
-                <text x="46" y="86" font-size="9" font-weight="700" fill="#248a3d">&minus;</text>
-                <text x="54" y="79" font-size="8" font-weight="700" fill="#248a3d">battery</text>
+                <!-- battery: short thick (−) plate TOP (y=68), long thin (+) plate BOTTOM (y=84)
+                     Matches clockwise Electron Flow (− → + externally) & counter-clockwise Conventional Current (+ → −) -->
+                <line class="we-circuit-battery-plate" x1="21" y1="68" x2="39" y2="68" stroke-width="5.2" />
+                <line class="we-circuit-battery-plate" x1="16" y1="84" x2="44" y2="84" stroke-width="2.2" />
+                <text class="we-svg-label--accent" x="48" y="69" font-size="9">&minus;</text>
+                <text class="we-svg-label--accent" x="48" y="88" font-size="8.5">+</text>
+                <text class="we-svg-label" x="58" y="79" font-size="8">battery</text>
 
-                <!-- switch: two posts and a lever that lifts open / lies flat closed -->
+                <!-- switch -->
                 <circle class="we-circuit-switch-post" cx="95" cy="25" r="3" />
                 <circle class="we-circuit-switch-post" cx="125" cy="25" r="3" />
                 <line class="we-circuit-switch-lever" x1="95" y1="25" x2="125" y2="25" />
-                <text x="110" y="44" font-size="8" font-weight="700" fill="#64748b" text-anchor="middle">switch</text>
+                <text class="we-svg-label" x="110" y="44" font-size="8" text-anchor="middle">switch</text>
 
-                <!-- bulb: glass globe with a glowing filament -->
+                <!-- bulb 1 (always present on right side) -->
                 <circle class="we-circuit-bulb-glow" cx="210" cy="75" r="22" />
                 <circle class="we-circuit-bulb" cx="210" cy="75" r="12" />
                 <path class="we-circuit-filament" d="M203,70 L207,80 L211,70 L215,80 L217,75" />
-                <text x="192" y="78" font-size="8" font-weight="700" fill="#64748b" text-anchor="end">bulb</text>
+                <text class="we-svg-label" x="228" y="78" font-size="8">bulb 1</text>
 
-                <circle class="we-charge-dot" r="3.5"></circle>
-                <circle class="we-charge-dot d2" r="3.5"></circle>
-                <circle class="we-charge-dot d3" r="3.5"></circle>
+                <!-- bulb 2 (shown when 2 bulbs in series selected) -->
+                <g class="we-bulb-second">
+                  <circle class="we-circuit-bulb-glow" cx="120" cy="125" r="20" />
+                  <circle class="we-circuit-bulb" cx="120" cy="125" r="11" />
+                  <path class="we-circuit-filament" d="M114,121 L117,129 L120,121 L123,129 L125,125" />
+                  <text class="we-svg-label" x="120" y="147" font-size="8" text-anchor="middle">bulb 2 (series)</text>
+                </g>
+
+                <circle class="we-charge-dot" r="3.6"></circle>
+                <circle class="we-charge-dot d2" r="3.6"></circle>
+                <circle class="we-charge-dot d3" r="3.6"></circle>
               </svg>
-              <button type="button" class="we-circuit-btn" id="we-circuit-btn">🔌 Close the switch</button>
-              <p class="we-circuit-caption" id="we-circuit-caption">The switch is open — no path for electrons, so nothing flows and the bulb stays dark.</p>
-              <p class="we-sim-note">Want to build real circuits with batteries, resistors, and switches? Try PhET's free <a href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">Circuit Construction Kit: DC</a> simulation.</p>
+
+              <div class="we-circuit-toolbar">
+                <button type="button" class="we-circuit-btn" id="we-circuit-btn" aria-pressed="false">Close Switch (Turn On)</button>
+                <button type="button" class="we-chip" data-flow-dir="electrons" aria-pressed="true">Electron Flow (&minus; &rarr; +)</button>
+                <button type="button" class="we-chip" data-flow-dir="conventional" aria-pressed="false"><span data-glossary="conventional current">Conventional Current</span> (+ &rarr; &minus;)</button>
+                <button type="button" class="we-chip" data-load-mode="1" aria-pressed="true">1 Bulb</button>
+                <button type="button" class="we-chip" data-load-mode="2" aria-pressed="false">2 Bulbs in Series</button>
+              </div>
+              <p class="we-circuit-caption" id="we-circuit-caption" aria-live="polite"></p>
+              <p class="we-sim-note">Want to wire real virtual components? Open PhET's <a href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">Circuit Construction Kit: DC</a> or explore <a href="../../engineering/arduino-and-electronics/voltage-dividers-kirchhoff.html">Voltage Dividers &amp; Series Circuits</a>.</p>
             </div>
 
             <div class="sm-callout warn">
               <strong>Common misconception</strong>
-              Electricity isn't "used up" by a bulb the way gas is used up by a car. The same electrons flow all the way around the loop and back into the battery. What actually gets used up is the battery's stored chemical energy, which keeps pushing the electrons along. When the chemicals run out, the push stops — even though the electrons are all still there.
+              A light bulb never "uses up" electrons the way a car burns gasoline! Every electron entering a bulb exits the other side and returns to the battery. What gets converted is <em>electrical potential energy</em> carried by those moving charges — transformed into light and heat as current pushes through the filament.
             </div>
           </section>
 
-          <!-- ── History timeline ── -->
-          <section class="sm-card" style="--sm-accent:#5856d6;">
-            <h2>The Long Search to Understand a Spark</h2>
-            <p>Humans noticed electrical effects thousands of years ago but didn't understand what caused them — or how to control them — until surprisingly recently. Click through the timeline to see how the picture came together, piece by piece, over about 2,500 years.</p>
+          <!-- ── 5. History timeline & lightbox gallery ── -->
+          <section class="sm-card" id="sec-history" style="--sm-accent:#5856d6;">
+            <h2>5. The Long Search to Understand a Spark</h2>
+            <p>People noticed electrical attraction thousands of years before knowing why it happened. Step through the 2,500-year chain of discoveries (you can also use the Left/Right arrow keys on the timeline tabs).</p>
 
             <div class="we-timeline-nav" id="we-timeline-nav" role="tablist" aria-label="Electricity history timeline">
-              <button type="button" class="we-timeline-btn" data-era="0" aria-selected="true"><span class="yr">~600 BCE</span><span class="lbl">Amber &amp; fur</span></button>
-              <button type="button" class="we-timeline-btn" data-era="1" aria-selected="false"><span class="yr">1600</span><span class="lbl">Gilbert names it</span></button>
-              <button type="button" class="we-timeline-btn" data-era="2" aria-selected="false"><span class="yr">1745</span><span class="lbl">Leyden jar</span></button>
-              <button type="button" class="we-timeline-btn" data-era="3" aria-selected="false"><span class="yr">1752</span><span class="lbl">Franklin's kite</span></button>
-              <button type="button" class="we-timeline-btn" data-era="4" aria-selected="false"><span class="yr">1800</span><span class="lbl">Volta's battery</span></button>
-              <button type="button" class="we-timeline-btn" data-era="5" aria-selected="false"><span class="yr">1820</span><span class="lbl">Ørsted &amp; Ampère</span></button>
-              <button type="button" class="we-timeline-btn" data-era="6" aria-selected="false"><span class="yr">1831</span><span class="lbl">Faraday's generator</span></button>
-              <button type="button" class="we-timeline-btn" data-era="7" aria-selected="false"><span class="yr">1879</span><span class="lbl">The light bulb</span></button>
-              <button type="button" class="we-timeline-btn" data-era="8" aria-selected="false"><span class="yr">1880s–90s</span><span class="lbl">War of the Currents</span></button>
-              <button type="button" class="we-timeline-btn" data-era="9" aria-selected="false"><span class="yr">1947–today</span><span class="lbl">Electronics age</span></button>
+              <button type="button" class="we-timeline-btn" data-era="0" aria-selected="true"><span class="yr">~600 BCE</span> <span class="lbl">Amber &amp; fur</span></button>
+              <button type="button" class="we-timeline-btn" data-era="1" aria-selected="false"><span class="yr">1600</span> <span class="lbl">Gilbert names it</span></button>
+              <button type="button" class="we-timeline-btn" data-era="2" aria-selected="false"><span class="yr">1745</span> <span class="lbl">Leyden jar</span></button>
+              <button type="button" class="we-timeline-btn" data-era="3" aria-selected="false"><span class="yr">1752</span> <span class="lbl">Franklin's kite</span></button>
+              <button type="button" class="we-timeline-btn" data-era="4" aria-selected="false"><span class="yr">1800</span> <span class="lbl">Volta's battery</span></button>
+              <button type="button" class="we-timeline-btn" data-era="5" aria-selected="false"><span class="yr">1820</span> <span class="lbl">&Oslash;rsted &amp; Amp&egrave;re</span></button>
+              <button type="button" class="we-timeline-btn" data-era="6" aria-selected="false"><span class="yr">1831</span> <span class="lbl">Faraday's generator</span></button>
+              <button type="button" class="we-timeline-btn" data-era="7" aria-selected="false"><span class="yr">1879</span> <span class="lbl">The light bulb</span></button>
+              <button type="button" class="we-timeline-btn" data-era="8" aria-selected="false"><span class="yr">1880s&ndash;90s</span> <span class="lbl">War of the Currents</span></button>
+              <button type="button" class="we-timeline-btn" data-era="9" aria-selected="false"><span class="yr">1947&ndash;today</span> <span class="lbl">Electronics age</span></button>
             </div>
 
-            <div class="we-timeline-panel" id="we-timeline-panel">
-              <!-- filled by script -->
+            <div class="we-timeline-panel" id="we-timeline-panel" aria-live="polite"></div>
+
+            <div class="we-timeline-pager">
+              <button type="button" id="we-timeline-prev">&larr; Previous Era</button>
+              <span class="we-timeline-count" id="we-timeline-count">1 / 10</span>
+              <button type="button" id="we-timeline-next">Next Era &rarr;</button>
             </div>
 
-            <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig" style="margin-top:0.9rem;">
-              <img loading="lazy" decoding="async" src="../../../assets/thumbs/faraday.jpg" alt="Portrait of Michael Faraday, discoverer of electromagnetic induction" />
-              <figcaption>Michael Faraday — a bookbinder's apprentice with almost no formal math training — discovered <span data-glossary="electromagnetic induction">electromagnetic induction</span> in 1831, the principle every <span data-glossary="generator">generator</span> and motor still runs on today.</figcaption>
-            </figure>
-
-            <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig">
-              <img loading="lazy" decoding="async" src="../../../assets/thumbs/tesla.jpg" alt="Portrait of Nikola Tesla, pioneer of alternating current" />
-              <figcaption>Nikola Tesla championed <span data-glossary="alternating current">alternating current</span> (AC), which won out over Thomas Edison's <span data-glossary="direct current">direct current</span> (DC) because <span data-glossary="transformer">transformers</span> could step AC voltage up for efficient long-distance transmission, then back down to a safe level for homes. See <a href="../pioneers/nikola-tesla.html">Nikola Tesla</a> and <a href="ac-vs-dc.html">AC vs. DC</a> for more.</figcaption>
-            </figure>
+            <div class="we-gallery">
+              <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig">
+                <img loading="lazy" decoding="async" src="../../../assets/images/lessons/electrochemistry/galvani.webp" alt="Plate from Luigi Galvani's 1791 book showing experiments with metal probes and frog legs" />
+                <figcaption>
+                  Luigi Galvani noticed two dissimilar metals touching damp muscle caused twitches (1780s), kicking off a debate over "animal electricity" vs. metal chemistry.
+                  <span class="we-fig-credit">Plate from De viribus electricitatis (1791) · Wikimedia Commons · Public domain</span>
+                </figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig">
+                <img loading="lazy" decoding="async" src="../../../assets/images/lessons/electrochemistry/volta.webp" alt="Engraved historical portrait of Alessandro Volta, inventor of the voltaic pile" />
+                <figcaption>
+                  Alessandro Volta proved the metals and salt solution drove the current — inventing the 1800 voltaic pile battery and giving his name to the volt (V).
+                  <span class="we-fig-credit">Engraving by Nicol&ograve; Bettoni · Wikimedia Commons · Public domain</span>
+                </figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig">
+                <img loading="lazy" decoding="async" src="../../../assets/thumbs/faraday.jpg" alt="Portrait of Michael Faraday, discoverer of electromagnetic induction" />
+                <figcaption>
+                  Michael Faraday discovered <span data-glossary="electromagnetic induction">electromagnetic induction</span> in 1831 — showing a changing magnetic field generates electric current in a <span data-glossary="generator">generator</span>.
+                  <span class="we-fig-credit">Historical portrait · Wikimedia Commons · Public domain</span>
+                </figcaption>
+              </figure>
+              <figure data-zoomable data-lightbox-group="what-is-electricity" class="we-timeline-fig">
+                <img loading="lazy" decoding="async" src="../../../assets/thumbs/tesla.jpg" alt="Portrait of Nikola Tesla, pioneer of polyphase alternating current" />
+                <figcaption>
+                  Nikola Tesla championed polyphase <span data-glossary="alternating current">alternating current</span> (AC), allowing <span data-glossary="transformer">transformers</span> to beam power long distances instead of Edison's short-range <span data-glossary="direct current">DC</span>. See <a href="../pioneers/nikola-tesla.html">Nikola Tesla</a> &amp; <a href="ac-vs-dc.html">AC vs. DC</a>.
+                  <span class="we-fig-credit">Portrait by Napoleon Sarony · Wikimedia Commons · Public domain</span>
+                </figcaption>
+              </figure>
+            </div>
           </section>
 
-          <!-- ── How it reaches your house today ── -->
-          <section class="sm-card" style="--sm-accent:#34c759;">
-            <h2>From Power Plant to Your Wall</h2>
-            <p>The electricity in your outlet took a long trip to get there. Here's the tangible version of that journey, for any age.</p>
+          <!-- ── 6. Interactive Power Grid Journey ── -->
+          <section class="sm-card" id="sec-grid" style="--sm-accent:#34c759;">
+            <h2>6. From Power Plant to Your Wall</h2>
+            <p>Click any node along the grid diagram or any stage card below to follow electricity's voltage transformations from generator coils to your wall outlet.</p>
+
+            <div class="we-grid-stage-wrap">
+              <svg id="we-grid-svg" viewBox="0 0 660 112" role="img" aria-label="Interactive electrical power grid diagram from generator to home outlet">
+                <!-- Transmission wires -->
+                <line x1="60" y1="54" x2="600" y2="54" stroke="#334155" stroke-width="3" />
+                <!-- Stage nodes 0..5 -->
+                <g class="we-grid-node" data-grid-stage="0" tabindex="0" role="button" aria-label="Stage 1: Power Plant Generator">
+                  <rect x="12" y="20" width="92" height="68" rx="9" fill="#1e3a5f" stroke="#38bdf8" stroke-width="2.4" />
+                  <text x="58" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">1. Plant</text>
+                  <text x="58" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">13–24 kV AC</text>
+                  <text x="58" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Turbine coils</text>
+                </g>
+                <g class="we-grid-node" data-grid-stage="1" tabindex="0" role="button" aria-label="Stage 2: Step-Up Transformer">
+                  <rect x="118" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
+                  <text x="164" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">2. Step-Up</text>
+                  <text x="164" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">Up to 765 kV</text>
+                  <text x="164" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Low-loss push</text>
+                </g>
+                <g class="we-grid-node" data-grid-stage="2" tabindex="0" role="button" aria-label="Stage 3: Transmission Towers">
+                  <rect x="224" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
+                  <text x="270" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">3. Grid Lines</text>
+                  <text x="270" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">230–500 kV</text>
+                  <text x="270" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Cross-country</text>
+                </g>
+                <g class="we-grid-node" data-grid-stage="3" tabindex="0" role="button" aria-label="Stage 4: Regional Substation">
+                  <rect x="330" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
+                  <text x="376" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">4. Substation</text>
+                  <text x="376" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">7–14 kV AC</text>
+                  <text x="376" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Step-down #1</text>
+                </g>
+                <g class="we-grid-node" data-grid-stage="4" tabindex="0" role="button" aria-label="Stage 5: Pole or Pad Transformer">
+                  <rect x="436" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
+                  <text x="482" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">5. Pole Can</text>
+                  <text x="482" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">120 / 240 V</text>
+                  <text x="482" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Safe drop</text>
+                </g>
+                <g class="we-grid-node" data-grid-stage="5" tabindex="0" role="button" aria-label="Stage 6: Home Breaker Panel and Outlets">
+                  <rect x="542" y="20" width="104" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
+                  <text x="594" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">6. Home Wall</text>
+                  <text x="594" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">120 V Outlets</text>
+                  <text x="594" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Lights &amp; USB</text>
+                </g>
+              </svg>
+            </div>
+
+            <div class="we-readout-strip">
+              <div class="we-metric">
+                <span>Typical Voltage</span>
+                <strong id="we-grid-voltage">13.8–24 kV AC</strong>
+                <small>Grid stage potential</small>
+              </div>
+              <div class="we-metric">
+                <span>Stage Role</span>
+                <strong id="we-grid-type">Generation (3-phase 60 Hz)</strong>
+                <small>Key equipment</small>
+              </div>
+            </div>
+            <p class="we-coach-note" id="we-grid-purpose" aria-live="polite"></p>
+
             <div class="sm-overview-grid">
-              <div class="sm-overview-card">
+              <button type="button" class="sm-overview-card we-grid-stage is-active" data-grid-stage="0" aria-pressed="true">
                 <strong>1. It's generated</strong>
-                <small>A power plant spins a big magnet inside coils of wire (or the reverse) — exactly Faraday's 1831 trick, just at massive scale. Spinning can come from burning fuel, falling water, wind, or a nuclear reactor's heat.</small>
-              </div>
-              <div class="sm-overview-card">
+                <small>A power plant spins a strong magnetic field past coils of copper wire (Faraday's 1831 rule at massive scale) driven by steam, hydro turbines, wind, or nuclear heat.</small>
+              </button>
+              <button type="button" class="sm-overview-card we-grid-stage" data-grid-stage="1" aria-pressed="false">
                 <strong>2. Voltage is stepped up</strong>
-                <small>A transformer raises the voltage to hundreds of thousands of volts. Higher voltage means less energy is wasted as heat while traveling long distances on power lines — the key reason AC won the War of the Currents.</small>
-              </div>
-              <div class="sm-overview-card">
+                <small>A step-up transformer boosts voltage to hundreds of thousands of volts so less current is needed for the same power — slashing heat losses (I²R) over long wires.</small>
+              </button>
+              <button type="button" class="sm-overview-card we-grid-stage" data-grid-stage="2" aria-pressed="false">
                 <strong>3. It travels the grid</strong>
-                <small>Power lines carry electricity across the countryside to substations near your town, often hundreds of miles from where it was generated.</small>
-              </div>
-              <div class="sm-overview-card">
-                <strong>4. Voltage is stepped down</strong>
-                <small>More transformers lower the voltage in stages — first for neighborhoods, then again in the gray can-shaped transformer on the utility pole outside your house — down to a safe 120/240 volts.</small>
-              </div>
-              <div class="sm-overview-card">
-                <strong>5. It flows through your walls</strong>
-                <small>Wires inside your walls carry current to every outlet and switch, all wired back to a breaker panel that can cut the flow instantly if something goes wrong.</small>
-              </div>
-              <div class="sm-overview-card">
-                <strong>6. A device puts it to work</strong>
-                <small>A lamp turns the flow into light, a motor turns it into motion, a phone charger turns it into stored chemical energy in a battery — the same moving electrons, doing something different every time.</small>
-              </div>
+                <small>High-voltage transmission towers carry AC across states to substations near towns, often hundreds of miles away from where turbines spun.</small>
+              </button>
+              <button type="button" class="sm-overview-card we-grid-stage" data-grid-stage="3" aria-pressed="false">
+                <strong>4. Substation steps down</strong>
+                <small>Regional substations drop voltage down to safer town distribution feeders equipped with automated switches and fault protection.</small>
+              </button>
+              <button type="button" class="sm-overview-card we-grid-stage" data-grid-stage="4" aria-pressed="false">
+                <strong>5. Street transformer drop</strong>
+                <small>The gray cylindrical transformer on a utility pole (or green pad box on lawns) reduces street voltage right before it reaches homes, down to 120/240 V.</small>
+              </button>
+              <button type="button" class="sm-overview-card we-grid-stage" data-grid-stage="5" aria-pressed="false">
+                <strong>6. Wall panel &amp; work</strong>
+                <small>Breakers protect indoor parallel circuits to outlets. Lamps use AC directly; USB phone bricks contain miniature circuits converting AC to safe 5–20 V DC.</small>
+              </button>
             </div>
           </section>
 
-          <!-- ── Hands-on activities by age ── -->
-          <section class="sm-card" style="--sm-accent:#af52de;">
-            <h2>Try It Yourself</h2>
-            <p>Electricity is one of the easiest physics topics to make tangible — most of these need nothing but household items. Always do the current-electricity activities with an adult and only ever use a battery, never a wall outlet.</p>
+          <!-- ── 7. Hands-on activities by age ── -->
+          <section class="sm-card" id="sec-activities" style="--sm-accent:#af52de;">
+            <h2>7. Try It Yourself</h2>
+            <p>Electricity is easy to explore safely on a tabletop. Filter activities by age below — and always perform current-electricity projects only with low-voltage batteries (never wall outlets!).</p>
+            <div class="we-chip-row" role="group" aria-label="Filter activities by age group">
+              <button type="button" class="we-chip" data-age-filter="all" aria-pressed="true">All Ages</button>
+              <button type="button" class="we-chip" data-age-filter="4+" aria-pressed="false">Younger Explorers (Any / 4+)</button>
+              <button type="button" class="we-chip" data-age-filter="8+" aria-pressed="false">Builders (Ages 8+)</button>
+            </div>
             <div class="sm-project-grid">
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="4+">
                 <strong>Balloon on the wall</strong>
-                <small>Rub a balloon on your hair or a wool sweater for 20 seconds, then press it to a wall. It sticks — the extra electrons on the balloon attract the wall's positive charges through the surface.</small>
+                <small>Rub a balloon on your hair or a wool sweater for 20 seconds, then press it lightly to a wall. It sticks via <span data-glossary="electrostatic induction">electrostatic induction</span> — negative charges on the balloon push wall electrons slightly inward, creating surface attraction.</small>
                 <span class="we-age">Any age</span>
               </div>
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="4+">
                 <strong>Bending water</strong>
-                <small>Rub a plastic comb on dry hair, then hold it near a thin stream of water from a tap. The stream bends toward the comb — visible proof that a static charge pulls on the water's molecules.</small>
+                <small>Rub a plastic comb on dry hair, then hold it near a thin steady trickle of tap water. Polar water molecules swing toward the charged comb, visibly bending the stream in midair.</small>
                 <span class="we-age">Any age</span>
               </div>
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="4+">
                 <strong>Pick up paper bits</strong>
-                <small>Tear tissue paper into tiny pieces, rub a comb or balloon to charge it, and hold it just above the pieces. They jump up and stick — the same static attraction, on a lighter object.</small>
+                <small>Tear tissue paper into tiny confetti pieces, rub a comb or balloon to charge it, and hover it above the table. Confetti jumps straight up onto the balloon.</small>
                 <span class="we-age">Ages 4+</span>
               </div>
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="8+">
                 <strong>Lemon (or potato) battery</strong>
-                <small>Push a zinc-coated nail and a copper coin into a lemon, a small distance apart. They react chemically with the juice to generate a tiny voltage — enough to register on a multimeter or dimly light an LED with several lemons in series.</small>
+                <small>Press a galvanized zinc nail and a copper coin into a lemon a finger's width apart. Chemical reactions inside the juice push ~0.9 V between the two metals (wire 3–4 in series to light an LED).</small>
                 <span class="we-age">Ages 8+</span>
               </div>
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="8+">
                 <strong>Build a simple circuit</strong>
-                <small>Connect a battery, a switch, and a small bulb or LED with wires in a loop. Open the switch and it's dark; close it and current flows. Full step-by-step in <a href="../../engineering/arduino-and-electronics/breadboard-basics.html">Breadboard Basics</a>.</small>
+                <small>Connect a battery, switch, and LED with resistor in a closed loop — full hands-on wiring guide in <a href="../../engineering/arduino-and-electronics/breadboard-basics.html">Breadboard Basics</a>.</small>
                 <span class="we-age">Ages 8+</span>
               </div>
-              <div class="sm-project-card">
+              <div class="sm-project-card" data-age-group="8+">
                 <strong>Electromagnet from a nail</strong>
-                <small>Wrap insulated wire around an iron nail, connect the ends to a battery, and the nail becomes a magnet strong enough to pick up paper clips — Ørsted's 1820 discovery, recreated on a kitchen table.</small>
+                <small>Wrap insulated magnet wire tightly 40+ times around an iron nail, touch the stripped ends briefly to a D-cell battery, and lift paper clips — Ørsted's 1820 discovery in your hand.</small>
                 <span class="we-age">Ages 8+</span>
               </div>
             </div>
@@ -986,117 +650,185 @@
             <h2>Fun Facts &amp; Myths, Busted</h2>
             <div class="sm-trouble-grid">
               <div class="sm-trouble-card">
-                <strong>Myth: electricity travels through a wire at the speed of light</strong>
-                <small>The individual electrons actually drift quite slowly — often just millimeters per second. What moves near light speed is the electric field's push, so every electron in the wire starts moving almost instantly, even though none of them travel far or fast.</small>
+                <strong>Myth: individual electrons race at the speed of light</strong>
+                <small>Individual electrons inside copper actually drift slower than a snail (around millimeters per second!). What snaps forward at near light speed is the electric field wave pushing all electrons along the wire almost simultaneously.</small>
               </div>
               <div class="sm-trouble-card">
-                <strong>Fact: lightning is roughly 5x hotter than the sun's surface</strong>
-                <small>A lightning bolt can briefly reach about 30,000 Kelvin — hotter than the surface of the sun, which sits around 5,800 Kelvin. The rapid heating of the air is also what causes the shockwave you hear as thunder.</small>
+                <strong>Fact: lightning hits ~30,000 K (5&times; hotter than the Sun's surface)</strong>
+                <small>Superheating air to five times solar surface temperature (~5,800 K) causes explosive thermal expansion — creating the acoustic shockwave you hear as thunder.</small>
               </div>
               <div class="sm-trouble-card">
                 <strong>Myth: Benjamin Franklin discovered electricity</strong>
-                <small>Electricity was known and studied for over 2,000 years before Franklin. His famous 1752 kite experiment showed that lightning is the same kind of electricity as a static spark — a huge discovery, but not the discovery of electricity itself.</small>
+                <small>Static electricity was documented ~2,400 years before Franklin. His 1752 storm insight proved sky lightning and tabletop Leyden-jar sparks share the exact same physical nature.</small>
               </div>
               <div class="sm-trouble-card">
-                <strong>Fact: your body runs on electricity too</strong>
-                <small>Every thought, muscle twitch, and heartbeat is driven by tiny electrical signals traveling along your nerves — the same basic charge-in-motion idea, running inside living cells instead of copper wire.</small>
+                <strong>Fact: your nervous system runs on electrical signals</strong>
+                <small>Every thought, blink, and heartbeat relies on sodium (Na⁺) and potassium (K⁺) ion currents racing down neurons — biology's own bioelectric circuits.</small>
               </div>
             </div>
             <div class="sm-callout warn">
               <strong>Safety first</strong>
-              Never recreate the Franklin kite experiment — it's genuinely dangerous, and at least one scientist trying to repeat it (Georg Wilhelm Richmann, 1753) was killed. <span data-glossary="static electricity">Static electricity</span> from a balloon is harmless; lightning and wall outlets are not. Keep experiments to low-voltage batteries only.
+              Never recreate Franklin's kite experiment — lightning carries millions of volts (fellow researcher Georg Wilhelm Richmann died repeating a lightning-rod test in 1753). Household static sparks are tiny and brief; wall outlets carry lethal sustained current. Experiment with batteries only.
             </div>
           </section>
 
           <!-- ── Go further ── -->
           <section class="sm-card" style="--sm-accent:#007aff;">
             <h2>Go Further</h2>
-            <p>This lesson is the foundation. Here's where to go next depending on what caught your interest — more lessons on this site, and a few free interactive simulations from PhET (University of Colorado Boulder) worth exploring on your own.</p>
+            <p>This lesson is your launchpad into the Electronics &amp; Physics track. Pick any lesson or external simulation below to dive deeper.</p>
             <div class="we-links-grid">
               <a class="we-link-card lesson" href="coulombs-law.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Coulomb's Law</strong>
-                <small>The exact math of how strongly two charges attract or repel, depending on distance.</small>
+                <small>The exact math of how strongly two charges attract or repel depending on charge and distance.</small>
               </a>
               <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/ohms-law.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Ohm's Law</strong>
-                <small>Voltage, current, and resistance with real numbers, worked examples, and circuit math.</small>
+                <small>Voltage, current, and resistance with real component values, worked math, and circuit labs.</small>
               </a>
               <a class="we-link-card lesson" href="faradays-law.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Faraday's Law</strong>
-                <small>The math behind electromagnetic induction — how a moving magnet generates current.</small>
+                <small>How moving magnets generate current — the physics powering wind turbines and hydro generators.</small>
               </a>
               <a class="we-link-card lesson" href="ac-vs-dc.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>AC vs. DC</strong>
-                <small>A deeper look at the two kinds of current and why the grid runs on AC.</small>
+                <small>See oscillating vs. steady waveforms side-by-side and why transformers favor AC grids.</small>
               </a>
               <a class="we-link-card lesson" href="van-de-graaff-generator.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Van de Graaff Generator</strong>
-                <small>A machine that builds up huge static charges on purpose — hair-raising, literally.</small>
+                <small>How moving conveyor belts pump static charge to hundreds of thousands of volts.</small>
               </a>
               <a class="we-link-card lesson" href="cathode-ray-tube.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Cathode Ray Tube</strong>
-                <small>Free electrons shot through a vacuum — the device that led to the discovery of the electron itself.</small>
+                <small>Free electron beams steered through vacuum glass — the experiment that discovered the electron.</small>
               </a>
               <a class="we-link-card lesson" href="faraday-cage.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Faraday Cage</strong>
-                <small>Why a metal enclosure blocks electric fields — and keeps you safe inside a car during a lightning strike.</small>
+                <small>Why a conductive shell shields everything inside from external lightning and radio waves.</small>
               </a>
               <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/breadboard-basics.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Breadboard Basics</strong>
-                <small>Build your first real circuit by hand with a battery, switch, and LED.</small>
+                <small>Plug in batteries, resistors, switches, and LEDs safely without soldering.</small>
               </a>
               <a class="we-link-card lesson" href="../pioneers/benjamin-franklin.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Benjamin Franklin</strong>
-                <small>The kite experiment, and the rest of a life spent well beyond electricity.</small>
+                <small>The kite experiment, single-fluid charge theory, and why lightning rods work.</small>
               </a>
               <a class="we-link-card lesson" href="../pioneers/nikola-tesla.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>Nikola Tesla</strong>
-                <small>The engineer behind alternating current and the War of the Currents.</small>
+                <small>Polyphase motors, rotating magnetic fields, and winning the War of the Currents.</small>
               </a>
               <a class="we-link-card lesson" href="../pioneers/james-clerk-maxwell.html">
                 <span class="we-link-kind">Lesson</span>
                 <strong>James Clerk Maxwell</strong>
-                <small>The physicist who unified electricity, magnetism, and light into one theory.</small>
+                <small>Unifying electricity, magnetism, and light into four foundational equations.</small>
               </a>
               <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">
                 <span class="we-link-kind">PhET simulation</span>
                 <strong>Circuit Construction Kit: DC</strong>
-                <small>Build and measure real circuits on-screen with batteries, resistors, and bulbs. (phet.colorado.edu)</small>
+                <small>Build and probe virtual DC circuits with batteries, switches, resistors, and light bulbs.</small>
               </a>
               <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">
                 <span class="we-link-kind">PhET simulation</span>
                 <strong>Balloons and Static Electricity</strong>
-                <small>See individual electrons transfer between a balloon and a sweater. (phet.colorado.edu)</small>
+                <small>Visualize individual electrons transferring from wool sweater to rubber balloon.</small>
               </a>
               <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/john-travoltage" target="_blank" rel="noopener">
                 <span class="we-link-kind">PhET simulation</span>
                 <strong>John Travoltage</strong>
-                <small>Build up a static charge by dragging a foot on carpet, then discharge it to a doorknob. (phet.colorado.edu)</small>
+                <small>Rub a shoe across carpet and watch negative charges wait until the finger nears a metal doorknob.</small>
               </a>
             </div>
           </section>
 
-          <!-- ── Quiz ── -->
+          <!-- ── 8. Guided Practice + Quick Check Quiz ── -->
+          <section class="sm-card" id="sec-quiz" style="--sm-accent:#005ec3;">
+            <div class="we-quiz-head">
+              <h2>8. Guided Practice</h2>
+              <button type="button" class="we-chip" id="we-hints-toggle" role="switch" aria-checked="false">Show Hints</button>
+            </div>
+            <p>Check your intuition on numbers and concepts before taking the Quick Check below.</p>
+            <div class="we-practice-list">
+              <div class="we-problem" data-ans="4" data-tol="0.05" data-explain="By Ohm's Law, I = V / R = 12 V / 3 Ω = 4 amps.">
+                <p><span class="ll-badge" data-tone="easy">Easy</span> A 12 V car battery drives current through a 3 &Omega; heater coil. Using I = V / R, how many amps (A) flow?</p>
+                <div class="we-problem-row">
+                  <label for="we-p1" class="skip-link">Current in amps</label>
+                  <input class="we-ans-input" id="we-p1" type="number" step="any" placeholder="e.g. 4" />
+                  <span>A</span>
+                  <button type="button" class="we-check-btn">Check</button>
+                  <span class="we-p-feedback" aria-live="polite"></span>
+                </div>
+                <div class="we-hint">Hint: divide Voltage (12 V) by Resistance (3 &Omega;).</div>
+              </div>
+
+              <div class="we-problem" data-ans="electrons" data-explain="Protons sit fixed in the metal crystal nucleus; free outer valence electrons drift to carry electric current in copper.">
+                <p><span class="ll-badge" data-tone="easy">Concept</span> Inside a solid copper wire connected to a battery, which particles drift along the metal to carry current?</p>
+                <div class="we-problem-row">
+                  <label for="we-p2" class="skip-link">Charge carrier inside copper</label>
+                  <select class="we-ans-input" id="we-p2">
+                    <option value="">Choose particle...</option>
+                    <option value="protons">Protons from nuclei</option>
+                    <option value="electrons">Free outer electrons</option>
+                    <option value="neutrons">Neutral neutrons</option>
+                  </select>
+                  <button type="button" class="we-check-btn">Check</button>
+                  <span class="we-p-feedback" aria-live="polite"></span>
+                </div>
+                <div class="we-hint">Hint: look back at the Material Conductivity Bench when Copper is selected.</div>
+              </div>
+
+              <div class="we-problem" data-ans="18" data-tol="0.1" data-explain="Electrical power P = V × I = 9 V × 2 A = 18 watts.">
+                <p><span class="ll-badge" data-tone="mid">Medium</span> A USB fast-charger supplies 9 V at 2 A to a tablet. How many watts (W) of electrical power is that (P = V &times; I)?</p>
+                <div class="we-problem-row">
+                  <label for="we-p3" class="skip-link">Power in watts</label>
+                  <input class="we-ans-input" id="we-p3" type="number" step="any" placeholder="e.g. 18" />
+                  <span>W</span>
+                  <button type="button" class="we-check-btn">Check</button>
+                  <span class="we-p-feedback" aria-live="polite"></span>
+                </div>
+                <div class="we-hint">Hint: multiply voltage (9 V) by current (2 A).</div>
+              </div>
+
+              <div class="we-problem" data-ans="2" data-tol="0.05" data-explain="Because 1 ampere = 1 coulomb per second, Q = I × t = 0.5 C/s × 4 s = 2 coulombs.">
+                <p><span class="ll-badge" data-tone="hard">Challenge</span> A small LED circuit carries 0.5 A steadily for 4 seconds. Since 1 A = 1 coulomb per second, how many coulombs (C) flow past a point?</p>
+                <div class="we-problem-row">
+                  <label for="we-p4" class="skip-link">Charge in coulombs</label>
+                  <input class="we-ans-input" id="we-p4" type="number" step="any" placeholder="e.g. 2" />
+                  <span>C</span>
+                  <button type="button" class="we-check-btn">Check</button>
+                  <span class="we-p-feedback" aria-live="polite"></span>
+                </div>
+                <div class="we-hint">Hint: multiply rate (0.5 C/s) by time (4 seconds).</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── Quick Check Quiz ── -->
           <section class="sm-quiz">
-            <h2>Quick Check</h2>
+            <div class="we-quiz-head">
+              <h2>Quick Check</h2>
+              <div class="we-quiz-tools">
+                <span class="we-quiz-score" id="we-quiz-score" aria-live="polite">Score: 0 / 6</span>
+                <button type="button" class="we-quiz-reset" id="we-quiz-reset">Reset Quiz</button>
+              </div>
+            </div>
 
             <div class="sm-question" data-answer="b" data-explanation="Electricity is electrons moving — either jumping between objects (static) or flowing in a steady stream (current). Protons and neutrons stay put in the nucleus.">
               <p>1. What is electricity, at the most basic level?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">A special kind of invisible gas</button>
-                <button class="sm-option" data-choice="b">Electrons moving — jumping between objects or flowing in a stream</button>
-                <button class="sm-option" data-choice="c">Heat trapped inside metal</button>
-                <button class="sm-option" data-choice="d">A force that only exists inside batteries</button>
+                <button type="button" class="sm-option" data-choice="a">A special kind of invisible gas</button>
+                <button type="button" class="sm-option" data-choice="b">Electrons moving — jumping between objects or flowing in a stream</button>
+                <button type="button" class="sm-option" data-choice="c">Heat trapped inside metal</button>
+                <button type="button" class="sm-option" data-choice="d">A force that only exists inside batteries</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1104,10 +836,10 @@
             <div class="sm-question" data-answer="c" data-explanation="Static electricity is charge that builds up and stays put (like on a rubbed balloon) until it discharges. Current electricity is charge flowing continuously, like in a wire connected to a battery.">
               <p>2. What is the difference between static and current electricity?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">Static is stronger than current</button>
-                <button class="sm-option" data-choice="b">Current only exists in lightning</button>
-                <button class="sm-option" data-choice="c">Static charge builds up and stays put; current charge flows continuously</button>
-                <button class="sm-option" data-choice="d">There is no real difference</button>
+                <button type="button" class="sm-option" data-choice="a">Static is stronger than current</button>
+                <button type="button" class="sm-option" data-choice="b">Current only exists in lightning</button>
+                <button type="button" class="sm-option" data-choice="c">Static charge builds up and stays put; current charge flows continuously</button>
+                <button type="button" class="sm-option" data-choice="d">There is no real difference</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1115,21 +847,21 @@
             <div class="sm-question" data-answer="a" data-explanation="Ancient Greeks (as early as ~600 BCE) noticed that rubbing amber with fur made it attract light objects like feathers. The Greek word for amber, 'elektron,' is where the words electron and electricity come from.">
               <p>3. Where does the word "electricity" come from?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">The Greek word for amber, "elektron," after ancient observations of rubbed amber attracting objects</button>
-                <button class="sm-option" data-choice="b">Thomas Edison's last name</button>
-                <button class="sm-option" data-choice="c">A Latin word meaning "lightning"</button>
-                <button class="sm-option" data-choice="d">Benjamin Franklin coined it during his kite experiment</button>
+                <button type="button" class="sm-option" data-choice="a">The Greek word for amber, "elektron," after ancient observations of rubbed amber attracting objects</button>
+                <button type="button" class="sm-option" data-choice="b">Thomas Edison's last name</button>
+                <button type="button" class="sm-option" data-choice="c">A Latin word meaning "lightning"</button>
+                <button type="button" class="sm-option" data-choice="d">Benjamin Franklin coined it during his kite experiment</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
 
-            <div class="sm-question" data-answer="d" data-explanation="Alessandro Volta invented the voltaic pile in 1800 — stacked discs of two metals separated by acid-soaked cloth. It was the first device to produce a steady, continuous electric current, unlike the brief spark of a static discharge.">
+            <div class="sm-question" data-answer="d" data-explanation="Alessandro Volta invented the voltaic pile in 1800 — stacked discs of two metals separated by brine-soaked cloth. It was the first device to produce a steady, continuous electric current, unlike the brief spark of a static discharge.">
               <p>4. Who invented the first true battery, and why did it matter?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">Benjamin Franklin — it let him fly kites safely</button>
-                <button class="sm-option" data-choice="b">Michael Faraday — it powered the first light bulb</button>
-                <button class="sm-option" data-choice="c">Thomas Edison — it replaced the Leyden jar</button>
-                <button class="sm-option" data-choice="d">Alessandro Volta — it produced the first steady, continuous current instead of a single spark</button>
+                <button type="button" class="sm-option" data-choice="a">Benjamin Franklin — it let him fly kites safely</button>
+                <button type="button" class="sm-option" data-choice="b">Michael Faraday — it powered the first light bulb</button>
+                <button type="button" class="sm-option" data-choice="c">Thomas Edison — it replaced the Leyden jar</button>
+                <button type="button" class="sm-option" data-choice="d">Alessandro Volta — it produced the first steady, continuous current instead of a single spark</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1137,21 +869,21 @@
             <div class="sm-question" data-answer="b" data-explanation="Faraday found that moving a magnet through a coil of wire generates an electric current — electromagnetic induction. It's the operating principle behind every generator, motor, and transformer built since.">
               <p>5. What did Michael Faraday discover in 1831 that still powers every generator today?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">The light bulb filament</button>
-                <button class="sm-option" data-choice="b">Electromagnetic induction — moving a magnet through a coil generates current</button>
-                <button class="sm-option" data-choice="c">Ohm's Law</button>
-                <button class="sm-option" data-choice="d">The lemon battery</button>
+                <button type="button" class="sm-option" data-choice="a">The light bulb filament</button>
+                <button type="button" class="sm-option" data-choice="b">Electromagnetic induction — moving a magnet through a coil generates current</button>
+                <button type="button" class="sm-option" data-choice="c">Ohm's Law</button>
+                <button type="button" class="sm-option" data-choice="d">The lemon battery</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
 
-            <div class="sm-question" data-answer="c" data-explanation="AC won because transformers can step its voltage up for efficient long-distance transmission (less energy wasted as heat) and back down to a safe level for homes — something DC systems of the era could not do." >
+            <div class="sm-question" data-answer="c" data-explanation="AC won because transformers can step its voltage up for efficient long-distance transmission (less energy wasted as heat) and back down to a safe level for homes — something DC systems of the era could not do.">
               <p>6. In the "War of the Currents," why did alternating current (AC) win out over Thomas Edison's direct current (DC) for the power grid?</p>
               <div class="sm-options" role="group">
-                <button class="sm-option" data-choice="a">AC was invented first</button>
-                <button class="sm-option" data-choice="b">DC was too dangerous to use at all</button>
-                <button class="sm-option" data-choice="c">Transformers let AC voltage be stepped up for efficient transmission, then back down for safe home use</button>
-                <button class="sm-option" data-choice="d">Edison switched to promoting AC himself</button>
+                <button type="button" class="sm-option" data-choice="a">AC was invented first</button>
+                <button type="button" class="sm-option" data-choice="b">DC was too dangerous to use at all</button>
+                <button type="button" class="sm-option" data-choice="c">Transformers let AC voltage be stepped up for efficient transmission, then back down for safe home use</button>
+                <button type="button" class="sm-option" data-choice="d">Edison switched to promoting AC himself</button>
               </div>
               <div class="sm-q-feedback" aria-live="polite"></div>
             </div>
@@ -1164,79 +896,55 @@
       <aside class="ll-panel" aria-hidden="false">
         <div class="ll-panel-head">
           <div class="ll-tabs">
-            <button class="ll-tab" aria-selected="true" data-pane="sm-outline">Outline</button>
-            <button class="ll-tab" aria-selected="false" data-pane="sm-notes">Notes</button>
+            <button type="button" class="ll-tab" aria-selected="true" data-pane="sm-outline">Outline</button>
+            <button type="button" class="ll-tab" aria-selected="false" data-pane="sm-notes">Notes</button>
           </div>
-          <button class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
+          <button type="button" class="ll-panel-close" aria-label="Close panel">&#x2715;</button>
         </div>
         <div class="ll-panel-body">
           <div class="ll-pane ll-active" id="sm-outline">
-            <span class="ll-label">This Module Covers</span>
-            <div class="ll-info">
-              <strong>What electricity is</strong>
-              Atoms, electrons, and charge — explained for both first-time learners and students ready for more depth.
-            </div>
-            <div class="ll-info">
-              <strong>Voltage, current, resistance</strong>
-              The water-tower analogy for the three quantities that describe electricity, with an interactive valve demo.
-            </div>
-            <div class="ll-info">
-              <strong>Conductors &amp; insulators</strong>
-              Why metals carry current easily, why rubber and glass don't, and where semiconductors fit in between.
-            </div>
-            <div class="ll-info">
-              <strong>Static vs. current</strong>
-              The two forms of electricity, with a hands-on balloon demo and a circuit-flow demo.
-            </div>
-            <div class="ll-info">
-              <strong>The history</strong>
-              A clickable timeline from ancient amber to Franklin, Volta, Faraday, and the War of the Currents.
-            </div>
-            <div class="ll-info">
-              <strong>Power plant to wall outlet</strong>
-              How electricity actually travels from where it's made to the switch on your wall.
-            </div>
-            <div class="ll-info">
-              <strong>Hands-on activities</strong>
-              Safe experiments sorted by age, from a static balloon trick to a lemon battery.
-            </div>
-            <div class="ll-info">
-              <strong>Myths and facts</strong>
-              Common misconceptions cleared up, plus real safety guidance.
+            <span class="ll-label">Lesson Sections</span>
+            <nav aria-label="Lesson outline">
+              <ul class="we-outline-links">
+                <li><a class="is-active" href="#sec-atoms">1. Atoms &amp; Charge Scale</a></li>
+                <li><a href="#sec-water">2. Water Analogy (V, I, R)</a></li>
+                <li><a href="#sec-materials">3. Material Conductivity Bench</a></li>
+                <li><a href="#sec-static-current">4. Static 3D &amp; Current Loops</a></li>
+                <li><a href="#sec-history">5. History &amp; Portraits</a></li>
+                <li><a href="#sec-grid">6. Power Plant to Wall Outlet</a></li>
+                <li><a href="#sec-activities">7. Try It &amp; Myths Busted</a></li>
+                <li><a href="#sec-quiz">8. Practice &amp; Quick Check</a></li>
+              </ul>
+            </nav>
+            <div class="ll-info" style="margin-top:0.75rem;">
+              <strong>Key Labs in This Lesson</strong>
+              Atom/Ion builder, Charge scale explorer, Dual-control Water Tower (V &amp; R), Material tester, 3D Balloon + Spark lab, Triboelectric matcher, Series Circuit flow, and Grid stepper.
             </div>
           </div>
           <div class="ll-pane" id="sm-notes">
             <div class="ll-info">
-              <strong>Electricity = moving electrons</strong>
-              Static is a charge imbalance that jumps once. Current is charge flowing continuously in a loop.
+              <strong>Electricity = moving charge</strong>
+              Static is charge imbalance piled on surfaces until discharge. Current is charge streaming steadily around a closed loop.
             </div>
             <div class="ll-info">
-              <strong>V = IR</strong>
-              Voltage is the push (like water pressure), current is the flow rate, resistance is how much the path fights the flow. Ohm's Law links all three exactly.
+              <strong>Ohm's Law: V = I &middot; R</strong>
+              Voltage is the push (V), current is the flow rate (A), and resistance (Ω) opposes flow. Power P = V &middot; I (W).
             </div>
             <div class="ll-info">
               <strong>Conductors vs. insulators</strong>
-              Metals have loose outer electrons (low resistance); rubber, glass, and plastic hold theirs tightly (high resistance). Semiconductors sit in between and power every computer chip.
+              Metals share free outer electrons; rubber/glass bind electrons tight; silicon semiconductors switch conductivity under doping, heat, or light.
             </div>
             <div class="ll-info">
-              <strong>"Elektron"</strong>
-              Ancient Greek word for amber. Rubbed amber attracting objects gave electricity its name over 2,000 years before it was understood.
+              <strong>Conventional vs. Electron flow</strong>
+              Electrons flow &minus; &rarr; + outside a battery. Engineers also label + &rarr; &minus; conventional arrows from Franklin's 1752 convention.
             </div>
             <div class="ll-info">
-              <strong>Volta, 1800</strong>
-              First battery — the first source of steady current, not just a single spark.
-            </div>
-            <div class="ll-info">
-              <strong>Faraday, 1831</strong>
-              Discovered that a moving magnet induces current — the basis of every generator and motor since.
-            </div>
-            <div class="ll-info">
-              <strong>Why AC won</strong>
-              Transformers can raise AC voltage for efficient long-distance transmission, then lower it for safe home use.
+              <strong>Why AC runs the grid</strong>
+              Faraday's 1831 induction plus AC transformers step voltage way up to shrink cable heat loss across miles, then step down to 120/240 V at homes.
             </div>
             <div class="ll-info">
               <strong>Next up</strong>
-              Ready for the math? Continue to <a href="coulombs-law.html">Coulomb's Law</a> and <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a>.
+              Continue to <a href="coulombs-law.html">Coulomb's Law</a> and <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a>.
             </div>
           </div>
         </div>
@@ -1244,445 +952,16 @@
     </div>
   </div>
 
-  <script>
-    (function () {
-      // Static electricity demo
-      var demo = document.getElementById('we-static-demo');
-      var staticBtn = document.getElementById('we-static-btn');
-      var staticCaption = document.getElementById('we-static-caption');
-      var charged = false;
-      staticBtn.addEventListener('click', function () {
-        charged = !charged;
-        demo.classList.toggle('is-charged', charged);
-        staticCaption.textContent = charged
-          ? 'Charged! Rubbing scrubbed electrons onto the balloon. Now it has extra negative charge, and the positively-charged hair strands lean toward it.'
-          : 'The hair hangs straight down — balanced charge, nothing happening yet.';
-        staticBtn.textContent = charged ? '↺ Let the charge settle' : '⚡ Rub the balloon';
-      });
-
-      // Circuit flow demo
-      var circuit = document.getElementById('we-circuit-demo');
-      var circuitBtn = document.getElementById('we-circuit-btn');
-      var circuitCaption = document.getElementById('we-circuit-caption');
-      var on = false;
-      circuitBtn.addEventListener('click', function () {
-        on = !on;
-        circuit.classList.toggle('is-on', on);
-        circuitCaption.textContent = on
-          ? 'Switch closed — electrons flow all the way around the loop, and the bulb lights up.'
-          : 'The switch is open — no path for electrons, so nothing flows and the bulb stays dark.';
-        circuitBtn.textContent = on ? '🔌 Open the switch' : '🔌 Close the switch';
-      });
-
-      // Water analogy demo (voltage / current / resistance)
-      var waterSlider = document.getElementById('we-water-slider');
-      var waterLevelLabel = document.getElementById('we-water-level-label');
-      var waterCaption = document.getElementById('we-water-caption');
-      var valveTop = document.getElementById('we-valve-top');
-      var valveBottom = document.getElementById('we-valve-bottom');
-      var wheelSpokes = document.getElementById('we-wheel-spokes');
-      var waterDrops = document.querySelectorAll('.we-drop');
-      var waterLevels = [
-        {
-          label: 'wide open (low resistance)',
-          gap: 24,
-          duration: 1.8,
-          caption: "Wide-open valve, same water tower height: water rushes through fast and the wheel spins quickly. That's high current at a fixed voltage, thanks to low resistance."
-        },
-        {
-          label: 'partly closed (medium resistance)',
-          gap: 12,
-          duration: 3.4,
-          caption: 'Partly closed valve: the tower is pushing exactly as hard as before, but the narrower path only lets so much through. Current drops even though voltage never changed.'
-        },
-        {
-          label: 'nearly shut (high resistance)',
-          gap: 3,
-          duration: 7,
-          caption: 'Almost shut: the pressure (voltage) hasn\'t changed at all, but the tiny opening chokes the flow to a trickle. High resistance can bring current down to almost nothing.'
-        }
-      ];
-
-      function setWaterLevel(index) {
-        var level = waterLevels[index];
-        var topTipY = 30 - level.gap / 2;
-        var bottomTipY = 30 + level.gap / 2;
-        valveTop.setAttribute('d', 'M100,22 L118,' + topTipY + ' L136,22 Z');
-        valveBottom.setAttribute('d', 'M100,38 L118,' + bottomTipY + ' L136,38 Z');
-        wheelSpokes.style.animationDuration = level.duration + 's';
-        waterDrops.forEach(function (drop) {
-          drop.style.animationDuration = level.duration + 's';
-        });
-        waterLevelLabel.textContent = level.label;
-        waterCaption.textContent = level.caption;
-      }
-
-      if (waterSlider) {
-        setWaterLevel(0);
-        waterSlider.addEventListener('input', function () {
-          setWaterLevel(parseInt(waterSlider.value, 10));
-        });
-      }
-
-      // History timeline
-      var eras = [
-        {
-          title: '~600 BCE — Rubbed amber, ancient Greece',
-          body: 'Greek philosopher Thales of Miletus recorded that rubbing amber (fossilized tree resin) with fur made it attract light objects like feathers and straw. Nobody knew why for the next two thousand years — but the Greek word for amber, "elektron," is where "electron" and "electricity" come from.'
-        },
-        {
-          title: '1600 — William Gilbert names the effect',
-          body: 'English scientist William Gilbert studied magnetism and the amber effect systematically, and coined the term "electricus" (Latin for "like amber") to describe it. His work laid the groundwork for treating electricity as something worth studying scientifically, not just a curiosity.'
-        },
-        {
-          title: '1745 — The Leyden jar: the first battery-like device',
-          body: 'Dutch and German experimenters independently invented the Leyden jar, a glass jar lined with metal foil that could store — and then release in a single jolt — a static charge. It was the first capacitor, and it let scientists finally experiment with electricity on demand instead of waiting for a lucky spark.'
-        },
-        {
-          title: '1752 — Franklin’s kite proves lightning is electricity',
-          body: 'Benjamin Franklin flew a kite with a metal key attached during a thunderstorm and showed that the key could charge a Leyden jar — proof that lightning is the very same electricity as a static spark, just enormously scaled up. It was a landmark discovery, but genuinely dangerous; researchers who repeated it were sometimes injured or killed.'
-        },
-        {
-          title: '1800 — Alessandro Volta invents the battery',
-          body: 'Volta stacked alternating discs of zinc and copper separated by acid-soaked cloth, creating the "voltaic pile" — the first device to produce a steady, continuous electric current rather than a single spark. For the first time, scientists had electricity on tap, and the modern study of current electricity began.'
-        },
-        {
-          title: '1820 — Ørsted and Ampère link electricity and magnetism',
-          body: 'Hans Christian Ørsted noticed that a compass needle moved near a current-carrying wire — the first proof that electricity and magnetism are connected. André-Marie Ampère quickly built the mathematics behind it, and the unit of current (the amp) still carries his name.'
-        },
-        {
-          title: '1831 — Michael Faraday builds the first generator',
-          body: 'Faraday discovered that moving a magnet through a coil of wire induces an electric current — electromagnetic induction. It is the exact principle every generator, motor, and transformer on Earth still uses today: mechanical motion in, electricity out (or the reverse).'
-        },
-        {
-          title: '1879 — The practical light bulb',
-          body: 'Thomas Edison in the US and Joseph Swan in England each developed a long-lasting incandescent bulb around the same time. In 1882, Edison opened the Pearl Street power station in New York City — the first commercial power plant, delivering direct current (DC) to nearby customers.'
-        },
-        {
-          title: '1880s–90s — The War of the Currents',
-          body: 'Edison’s DC could not travel far without huge energy losses. Nikola Tesla and George Westinghouse championed alternating current (AC) instead, since transformers could step AC voltage up for long-distance transmission and back down for safe home use. AC won, powering the 1893 Chicago World’s Fair and the 1895 Niagara Falls power station — and it remains the basis of power grids worldwide.'
-        },
-        {
-          title: '1947 to today — The electronics age',
-          body: 'The invention of the transistor at Bell Labs in 1947 replaced bulky vacuum tubes and made small, reliable electronics possible — leading to computers, smartphones, and the internet. Today’s frontier is generating electricity cleanly (solar, wind) and storing it efficiently (lithium-ion batteries), powering everything from phones to electric cars.'
-        }
-      ];
-
-      var timelineNav = document.getElementById('we-timeline-nav');
-      var timelinePanel = document.getElementById('we-timeline-panel');
-      var timelineBtns = timelineNav.querySelectorAll('.we-timeline-btn');
-
-      function showEra(index) {
-        var era = eras[index];
-        timelinePanel.innerHTML = '<h3>' + era.title + '</h3><p>' + era.body + '</p>';
-        timelineBtns.forEach(function (btn, i) {
-          btn.setAttribute('aria-selected', i === index ? 'true' : 'false');
-        });
-      }
-
-      timelineBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          showEra(parseInt(btn.dataset.era, 10));
-        });
-      });
-
-      showEra(0);
-
-      // Quiz
-      document.querySelectorAll('.sm-question').forEach(function (question) {
-        var answer = question.dataset.answer;
-        var explanation = question.dataset.explanation;
-        var feedback = question.querySelector('.sm-q-feedback');
-        var options = question.querySelectorAll('.sm-option');
-
-        options.forEach(function (option) {
-          option.addEventListener('click', function () {
-            if (option.disabled) return;
-            options.forEach(function (item) {
-              item.disabled = true;
-              item.classList.remove('is-correct', 'is-wrong');
-              if (item.dataset.choice === answer) item.classList.add('is-correct');
-            });
-            if (option.dataset.choice !== answer) option.classList.add('is-wrong');
-            if (option.dataset.choice === answer) {
-              feedback.textContent = 'Correct. ' + explanation;
-              feedback.style.color = '#248a3d';
-            } else {
-              feedback.textContent = 'Not quite. ' + explanation;
-              feedback.style.color = '#c0392b';
-            }
-          });
-        });
-      });
-    })();
-  </script>
-
-  <!-- ══ Balloon + hair: real lit 3D scene (Three.js) ══ -->
   <script src="../../../assets/js/sim-kit.js"></script>
-<script type="module">
-    import { THREE, OrbitControls } from '../../../assets/vendor/three-bundle.min.js';
-    import { createScene } from '../../../assets/js/sim-kit-three.mjs';
-
-    function hasWebGL() {
-      try {
-        const probe = document.createElement('canvas');
-        return !!(window.WebGLRenderingContext &&
-          (probe.getContext('webgl') || probe.getContext('experimental-webgl')));
-      } catch (_) { return false; }
-    }
-
-    const canvas = document.getElementById('we-balloon-canvas');
-    const noWebGLMsg = document.getElementById('we-balloon-nowebgl');
-    const staticDemo = document.getElementById('we-static-demo');
-
-    if (!hasWebGL()) {
-      canvas.hidden = true;
-      noWebGLMsg.hidden = false;
-      throw new Error('WebGL not supported — balloon 3D scene disabled');
-    }
-
-    const { renderer, scene, camera, syncSize } = createScene(canvas, {
-      THREE, fov: 36, near: 0.1, far: 20, alpha: true, clearAlpha: 0
-    });
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
-    if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    camera.position.set(0, 0.55, 3.5);
-    camera.lookAt(0, 0.35, 0);
-
-    const controls = new OrbitControls(camera, canvas);
-    controls.target.set(0, 0.35, 0);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.enableZoom = false;
-    controls.enablePan = false;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.1;
-    controls.minPolarAngle = Math.PI * 0.28;
-    controls.maxPolarAngle = Math.PI * 0.62;
-    controls.update();
-
-    /* ── Lighting: three-point + soft ambient fill ── */
-    scene.add(new THREE.HemisphereLight(0xfff6e6, 0x33291f, 0.55));
-    const key = new THREE.DirectionalLight(0xfff1e0, 1.7);
-    key.position.set(2.2, 3.2, 2.6);
-    key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.near = 0.1;
-    key.shadow.camera.far = 8;
-    key.shadow.camera.left = -1.6;
-    key.shadow.camera.right = 1.6;
-    key.shadow.camera.top = 1.6;
-    key.shadow.camera.bottom = -1.6;
-    key.shadow.radius = 3;
-    scene.add(key);
-    const fill = new THREE.DirectionalLight(0xcfe3ff, 0.5);
-    fill.position.set(-2.6, 1.3, 1.9);
-    scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xffffff, 1.0);
-    rim.position.set(-1.1, 2.6, -2.9);
-    scene.add(rim);
-    const chargeLight = new THREE.PointLight(0x38bdf8, 0, 3);
-    chargeLight.position.set(0, 1.0, 0.7);
-    scene.add(chargeLight);
-
-    /* ── Ground contact shadow ── */
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, 4),
-      new THREE.ShadowMaterial({ opacity: 0.22 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.39;
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    /* ── Head ── */
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.55, 32, 32),
-      new THREE.MeshStandardMaterial({ color: 0x93a1b3, roughness: 0.85, metalness: 0.04 })
-    );
-    head.scale.set(1, 0.62, 1);
-    head.position.set(0, -0.05, 0);
-    head.castShadow = true;
-    head.receiveShadow = true;
-    scene.add(head);
-
-    /* ── Balloon (group: sphere + knot + string), lit for real gloss — no painted-on highlights needed ── */
-    const balloonGroup = new THREE.Group();
-    const balloon = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 48, 48),
-      new THREE.MeshPhysicalMaterial({ color: 0xe0331f, roughness: 0.26, clearcoat: 1, clearcoatRoughness: 0.12, metalness: 0 })
-    );
-    balloon.scale.set(0.86, 1.05, 0.86);
-    balloon.castShadow = true;
-    balloonGroup.add(balloon);
-
-    const knotMat = new THREE.MeshStandardMaterial({ color: 0xb3271a, roughness: 0.4 });
-    const knot = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 10), knotMat);
-    knot.rotation.x = Math.PI;
-    knot.position.y = -0.53;
-    balloonGroup.add(knot);
-
-    const stringCurve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(0, -0.57, 0),
-      new THREE.Vector3(-0.03, -0.66, 0),
-      new THREE.Vector3(0, -0.75, 0)
-    );
-    const stringMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(stringCurve, 8, 0.008, 6, false),
-      knotMat
-    );
-    balloonGroup.add(stringMesh);
-
-    balloonGroup.position.set(0, 1.05, 0);
-    scene.add(balloonGroup);
-
-    /* ── Hair: 9 real curved, tapered, S-flicked 3D locks (custom Frenet-swept tube geometry) ── */
-    const HAIR_SEG = 16;
-    const HAIR_RAD = 8;
-    const HAIR_COLOR_BASE = new THREE.Color(0x5c3a1e);
-    const HAIR_COLOR_TIP = new THREE.Color(0xe0a35c);
-
-    function buildIndices(segments, radial) {
-      const indices = [];
-      for (let i = 0; i < segments; i++) {
-        for (let j = 0; j < radial; j++) {
-          const a = (radial + 1) * i + j;
-          const b = (radial + 1) * (i + 1) + j;
-          const c = (radial + 1) * (i + 1) + (j + 1);
-          const d = (radial + 1) * i + (j + 1);
-          indices.push(a, b, d, b, c, d);
-        }
-      }
-      return indices;
-    }
-    const hairIndices = buildIndices(HAIR_SEG, HAIR_RAD);
-    const hairVertCount = (HAIR_SEG + 1) * (HAIR_RAD + 1);
-
-    function fillStrandArrays(curve, baseRadius, tipRadius, posArr, normArr, colorArr) {
-      const frames = curve.computeFrenetFrames(HAIR_SEG, false);
-      const tmpColor = new THREE.Color();
-      let vi = 0, ci = 0;
-      for (let i = 0; i <= HAIR_SEG; i++) {
-        const t = i / HAIR_SEG;
-        const point = curve.getPointAt(t);
-        const radius = THREE.MathUtils.lerp(baseRadius, tipRadius, Math.pow(t, 0.6));
-        const N = frames.normals[i], B = frames.binormals[i];
-        tmpColor.copy(HAIR_COLOR_BASE).lerp(HAIR_COLOR_TIP, t);
-        for (let j = 0; j <= HAIR_RAD; j++) {
-          const v = (j / HAIR_RAD) * Math.PI * 2;
-          const sin = Math.sin(v), cos = -Math.cos(v);
-          const nx = cos * N.x + sin * B.x;
-          const ny = cos * N.y + sin * B.y;
-          const nz = cos * N.z + sin * B.z;
-          posArr[vi] = point.x + radius * nx;
-          posArr[vi + 1] = point.y + radius * ny;
-          posArr[vi + 2] = point.z + radius * nz;
-          normArr[vi] = nx; normArr[vi + 1] = ny; normArr[vi + 2] = nz;
-          vi += 3;
-          colorArr[ci] = tmpColor.r; colorArr[ci + 1] = tmpColor.g; colorArr[ci + 2] = tmpColor.b;
-          ci += 3;
-        }
-      }
-    }
-
-    const STRAND_COUNT = 9;
-    const rootXs      = [-0.34, -0.255, -0.17, -0.085, 0,    0.085, 0.17, 0.255, 0.34];
-    const lengths     = [ 0.28,  0.33,   0.38,  0.43,  0.46, 0.43,  0.38, 0.33,  0.28];
-    const restTipOffs = [-0.05, -0.04,  -0.025,-0.01,  0,    0.01,  0.025,0.04,  0.05];
-    const zOffsets    = [ 0.03, -0.025,  0.035,-0.015, 0.03,-0.015, 0.035,-0.025, 0.03];
-    const rootY = 0.30;
-    const hairMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.48, metalness: 0.06 });
-
-    const strands = [];
-    for (let s = 0; s < STRAND_COUNT; s++) {
-      const geometry = new THREE.BufferGeometry();
-      geometry.setIndex(hairIndices);
-      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
-      geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(hairVertCount * 3), 3));
-      const mesh = new THREE.Mesh(geometry, hairMat);
-      mesh.castShadow = true;
-      scene.add(mesh);
-
-      const rootX = rootXs[s];
-      const z = zOffsets[s];
-      const len = lengths[s];
-      const tipOff = restTipOffs[s];
-      // Rest pose: a gentle S — the strand leans out early, then flicks part-way
-      // back toward vertical near the tip, the way a loose lock of hair falls.
-      strands.push({
-        mesh, geometry, z,
-        root: new THREE.Vector3(rootX, rootY, z),
-        restC1: new THREE.Vector3(rootX + tipOff * 0.9, rootY + len * 0.35, z),
-        restC2: new THREE.Vector3(rootX + tipOff * 0.35, rootY + len * 0.75, z),
-        restTip: new THREE.Vector3(rootX + tipOff, rootY + len, z),
-        // Charged pose: pulled up and inward toward the balloon overhead.
-        chargedC1: new THREE.Vector3(rootX * 0.8, rootY + len * 1.3 * 0.35, z),
-        chargedC2: new THREE.Vector3(rootX * 0.45, rootY + len * 1.3 * 0.75, z),
-        chargedTip: new THREE.Vector3(rootX * 0.28, rootY + len * 1.3, z)
-      });
-    }
-
-    const tmpC1 = new THREE.Vector3();
-    const tmpC2 = new THREE.Vector3();
-    const tmpTip = new THREE.Vector3();
-    function updateStrand(strand, amount) {
-      tmpC1.copy(strand.restC1).lerp(strand.chargedC1, amount);
-      tmpC2.copy(strand.restC2).lerp(strand.chargedC2, amount);
-      tmpTip.copy(strand.restTip).lerp(strand.chargedTip, amount);
-      const curve = new THREE.CubicBezierCurve3(strand.root, tmpC1, tmpC2, tmpTip);
-      fillStrandArrays(
-        curve, 0.021, 0.0032,
-        strand.geometry.attributes.position.array,
-        strand.geometry.attributes.normal.array,
-        strand.geometry.attributes.color.array
-      );
-      strand.geometry.attributes.position.needsUpdate = true;
-      strand.geometry.attributes.normal.needsUpdate = true;
-      strand.geometry.attributes.color.needsUpdate = true;
-      strand.geometry.computeBoundingSphere();
-    }
-
-    /* ── Animate charge amount toward the button's toggled state ── */
-    let chargeAmount = 0;
-    let lastDrawnAmount = -1;
-    const clock = new THREE.Clock();
-
-    function loop() {
-      SimKit.frame(canvas, loop);
-      const dt = Math.min(clock.getDelta(), 0.1);
-      syncSize();
-      controls.update();
-
-      const target = staticDemo.classList.contains('is-charged') ? 1 : 0;
-      const rate = 3.2;
-      if (chargeAmount < target) chargeAmount = Math.min(target, chargeAmount + dt * rate);
-      else if (chargeAmount > target) chargeAmount = Math.max(target, chargeAmount - dt * rate);
-
-      if (Math.abs(chargeAmount - lastDrawnAmount) > 0.0008) {
-        for (const strand of strands) updateStrand(strand, chargeAmount);
-        balloonGroup.position.y = THREE.MathUtils.lerp(1.05, 0.93, chargeAmount);
-        balloonGroup.rotation.z = THREE.MathUtils.lerp(0, -0.05, chargeAmount);
-        chargeLight.intensity = chargeAmount * 1.4;
-        lastDrawnAmount = chargeAmount;
-      }
-
-      renderer.render(scene, camera);
-    }
-    loop();
-  </script>
-
+  <script src="../../../assets/js/lessons/what-is-electricity.js"></script>
+  <script type="module" src="../../../assets/js/lessons/what-is-electricity-3d.mjs"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
-<script src="../../../assets/js/electricity-path.js"></script>
-<script src="../../../assets/js/lesson-print-button.js"></script>
-<script src="../../../assets/js/photo-lightbox.js"></script>
-<script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
-<script src="../../../assets/js/theme-registry.js"></script>
-<script src="../../../assets/js/nav-mobile.js"></script>
+  <script src="../../../assets/js/electricity-path.js"></script>
+  <script src="../../../assets/js/lesson-print-button.js"></script>
+  <script src="../../../assets/js/photo-lightbox.js"></script>
+  <script src="../../../assets/js/site-glossary.js" data-glossary-src="../../../data/electronics-glossary.json"></script>
+  <script src="../../../assets/js/theme-registry.js"></script>
+  <script src="../../../assets/js/nav-mobile.js"></script>
 </body>
 </html>

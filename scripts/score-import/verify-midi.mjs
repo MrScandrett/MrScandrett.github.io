@@ -28,7 +28,7 @@ for (const [k, c] of midiKeys) { const o = ourKeys.get(k) || 0; if (o < c) missi
 for (const [k, c] of ourKeys) { const m = midiKeys.get(k) || 0; if (m < c) extra.push(k + (c - m > 1 ? ' x' + (c - m) : '')); }
 const midiByKey = new Map(midi.map((n) => [key(n), n]));
 ours.forEach((n) => { const m = midiByKey.get(key(n)); if (m && Math.abs(m.dur - n.dur) > 0.3 && Math.abs(m.dur - n.dur) / n.dur > 0.35) durDiff.push(key(n) + ' ours ' + n.dur.toFixed(2) + ' midi ' + m.dur.toFixed(2)); });
-const shortMissing = missing.filter((k) => { const n = midiByKey.get(k.split(' ')[0]); return n && n.dur < 0.2; });
+const shortMissing = missing.filter((k) => { const n = midiByKey.get(k.split(' ')[0]); return n && n.dur < +(opt['grace-tol'] || 0.2); });
 const beatToBar = (beat) => { let pos = 0; model.perfStart.forEach((s, i) => { if (beat * 96 >= Math.round(s * 96)) pos = i; }); return model.order[pos] + (model.score.startMeasure || 1) - (model.pickup ? 1 : 0); };
 const fmt = (list) => list.slice(0, 25).map((k) => { const [b, m] = k.split(':'); return 'bar ' + beatToBar(+b / 96) + ' @' + (+b / 96).toFixed(3) + ' midi ' + m; }).join('\n   ');
 console.log(`${score.title || scoreFile}: ours ${ours.length} notes, MIDI ${midi.length}; written ${model.total} beats, performed ${model.perfTotal}, MIDI ends ${Math.max(...midi.map((n) => n.start + n.dur)).toFixed(2)}`);

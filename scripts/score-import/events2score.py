@@ -11,7 +11,7 @@ from fractions import Fraction as F
 
 LETTERS = 'CDEFGAB'
 ALTER = {F(0): '', F(1, 2): '#', F(-1, 2): 'b', F(1): '##', F(-1): 'bb'}
-BASE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
+BASE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128}
 ART = {'staccato': '.', 'staccatissimo': '.', 'accent': '>', 'tenuto': '-', 'trill': 'tr', 'prall': 'mord',
        'mordent': 'mord', 'prallprall': 'mord', 'turn': 'turn', 'reverseturn': 'turn'}
 DYN = {'pp': 'pp', 'p': 'p', 'mp': 'mp', 'mf': 'mf', 'f': 'f', 'ff': 'ff', 'ppp': 'pp', 'fff': 'ff',
@@ -147,7 +147,7 @@ def convert(path, staff_labels=None, keep=None, instruments=None):
         elif i > 0 and seq[i - 1] == seq[i - 2 if i > 1 else 0] and starts[i - 1][0] in splits:
             meta[i]['number'] = seq[i]
         full = meter_at(s0)
-        if length != full and not (i == 0 and pickup) and not (i == nb - 1 and length < full):
+        if length != full and not (i == 0 and pickup):
             meta[i]['len'] = length
     # Repeats: a start-repeat opens the bar it falls in; an end-repeat closes the bar before it.
     seen = set()
@@ -296,7 +296,7 @@ def convert(path, staff_labels=None, keep=None, instruments=None):
                 while left > 0:
                     bi = bar_index(now)
                     piece = min(left, starts[bi][0] + starts[bi][1] - now)
-                    log_dots = next(((lg, dt) for lg in range(0, 7) for dt in (0, 1) if dur_len(lg, dt, F(1)) == piece), None)
+                    log_dots = next(((lg, dt) for lg in range(0, 8) for dt in (0, 1) if dur_len(lg, dt, F(1)) == piece), None)
                     if log_dots is None:
                         raise ValueError(f'cannot split a note of {e["len"]} across the bar at {now}')
                     c = dict(e)
@@ -474,13 +474,13 @@ def gap_tokens(q, hide):
     """Rest tokens for a gap of q whole notes, largest values first."""
     out = []
     head = 's' if hide else 'r'
-    for log in range(0, 7):
+    for log in range(0, 8):
         val = F(1, 2 ** log)
         while q >= val:
             out.append(f'{head}/{BASE[log]}')
             q -= val
     if q:
-        raise ValueError('gap shorter than a 32nd note')
+        raise ValueError('gap shorter than a 128th note')
     return out
 
 

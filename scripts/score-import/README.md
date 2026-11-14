@@ -91,3 +91,11 @@ Rhythm*). The structural check cannot confirm a hand transcription; compare it w
 For the seventeen Bach collection additions (all remaining two-part Inventions,
 C-major Fugue, Air, Goldberg Aria, Toccata and Fugue, Crab Canon and Jesu), see
 [archived editions, licences, import adjustments and MIDI verification](sources/bach-collection/README.md).
+
+For the sixteen Beethoven additions (Pathétique, Tempest I–II, Für Therese,
+Op. 49 and Op. 79 sonatas, and two Op. 119 Bagatelles), see the
+[archived editions, licenses, practice-bar numbering, import adjustments and independent MEI/MIDI verification](sources/beethoven-collection/README.md).
+
+For the thirteen Mozart additions (K. 331 theme/variation studies and minuet/trio,
+K. 457 movements, K. 397 Fantasia and K. 309 I), see the
+[archived editions, scope labels, completion attribution, repeat adjustments and MIDI verification](sources/mozart-collection/README.md).

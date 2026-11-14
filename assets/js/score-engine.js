@@ -7,7 +7,7 @@
  * same for a score object built in JS.
  *
  * Score text, one string per staff (bars split by "|"):
- *   C#5/8.   pitch / duration (1 2 4 8 16 32 64) + dots      r/4  rest      R  whole-bar rest
+ *   C#5/8.   pitch / duration (1 2 4 8 16 32 64 128) + dots      r/4  rest      R  whole-bar rest
  *   (C4 E4 G4)/2   chord        ~ tie to the next note      ^ fermata     s/4  S  hidden (spacer) rests
  *   !p !mf !f      dynamic for the next note (also sets playback loudness)
  *   For overlapping voices, use staves[].voices = [{ notes, stem: "up"|"down", restStep? }].
@@ -36,7 +36,7 @@
 (function (root) {
   'use strict';
 
-  var BASES = { 1: 4, 2: 2, 4: 1, 8: 0.5, 16: 0.25, 32: 0.125, 64: 0.0625 };
+  var BASES = { 1: 4, 2: 2, 4: 1, 8: 0.5, 16: 0.25, 32: 0.125, 64: 0.0625, 128: 0.03125 };
   var DYN_VEL = { pp: 0.32, p: 0.45, mp: 0.58, mf: 0.7, f: 0.85, ff: 1 };
   var EPS = 1e-6;
 
@@ -99,13 +99,13 @@
           tuplet = null;
           return;
         }
-        var m = /^(g:)?(\([^)]*\)|[A-G](?:##|bb|#|b|n)?-?\d+|r|R|s|S)(?:\/(\d+)(\.{0,2}))?(~?)(\^?)((?:\+(?:tr|mord|turn|\.|>|-))*)$/.exec(tok);
+        var m = /^(g:)?(\([^)]*\)|[A-G](?:##|bb|#|b|n)?-?\d+|r|R|s|S)(?:\/(\d+)(\.{0,3}))?(~?)(\^?)((?:\+(?:tr|mord|turn|\.|>|-))*)$/.exec(tok);
         if (!m) fail(w, 'cannot read this token');
         var grace = !!m[1];
         if (grace && /^[rRsS]$/.test(m[2])) fail(w, 'grace notes must be notes');
         if (m[3]) {
           var base = BASES[m[3]];
-          if (!base) fail(w, 'duration must be 1, 2, 4, 8, 16, 32 or 64');
+          if (!base) fail(w, 'duration must be 1, 2, 4, 8, 16, 32, 64 or 128');
           if (!grace) last = { base: base, dots: m[4].length };
         } else if (!last && m[2] !== 'R' && m[2] !== 'S' && !grace) fail(w, 'first note needs a duration');
         var ev = { start: t, dyn: dyn, fermata: !!m[6], tie: !!m[5], stemDir: stemDir };
@@ -120,7 +120,7 @@
           ev.kind = 'rest'; ev.whole = true; ev.base = 4; ev.dots = 0; ev.dur = null; ev.hidden = spacer;
         } else {
           ev.base = last.base; ev.dots = last.dots;
-          ev.dur = last.base * (last.dots === 2 ? 1.75 : last.dots === 1 ? 1.5 : 1);
+          ev.dur = last.base * (2 - Math.pow(0.5, last.dots));
           if (tuplet) { ev.dur *= tuplet.ratio; ev.tuplet = tuplet; tuplet.events.push(ev); }
           ev.kind = m[2] === 'r' || spacer ? 'rest' : 'note';
           ev.hidden = spacer;
@@ -132,7 +132,7 @@
         }
         if (ev.tie && ev.kind !== 'note') fail(w, 'only notes can be tied');
         if (grace) { graces.push(ev); return; }
-        if (graces.length) { if (ev.kind !== 'note') fail(w, 'grace notes must lead into a note'); ev.graces = graces; graces = []; }
+        if (graces.length) { ev.graces = graces; graces = []; }
         events.push(ev);
         t += ev.dur || 0;
       });
@@ -376,13 +376,13 @@
         var off = perfStart[pos] - model.barStart[bi];
         st.bars[bi].events.forEach(function (ev) {
           if (ev.dyn) vel = DYN_VEL[ev.dyn];
-          if (ev.kind !== 'note') return;
           (ev.graces || []).forEach(function (g, gi, all) {
             var lead = Math.min(0.12, 0.5 / all.length);
             g.pitches.forEach(function (p) {
               out.push({ staff: si, start: Math.max(0, ev.abs + off - lead * (all.length - gi)), dur: lead, midi: p.midi, vel: vel * 0.85, grace: true, written: ev.abs });
             });
           });
+          if (ev.kind !== 'note') return;
           ev.pitches.forEach(function (p) {
             // A tie carried in from the bar written before only counts if that bar was just played.
             if (p.tiedFrom && (p.tiedFromBar === ev.bar || pos === 0 || order[pos - 1] === p.tiedFromBar)) return;
@@ -446,10 +446,12 @@
     bar.events.forEach(function (ev) {
       var beamable = ev.kind === 'note' && ev.base <= 0.5;
       var slot = Math.floor(ev.start / unit + EPS);
-      if (beamable && cur && cur.slot === slot) cur.events.push(ev);
+      if (beamable && cur && cur.slot === slot &&
+          cur.events[cur.events.length - 1].stem === ev.stem &&
+          cur.events[cur.events.length - 1].clef === ev.clef) cur.events.push(ev);
       else {
         if (cur) groups.push(cur);
-        cur = beamable ? { slot: slot, events: [ev] } : null;
+        cur = beamable ? { slot: slot, events: [ev], unit: unit } : null;
       }
     });
     if (cur) groups.push(cur);
@@ -458,8 +460,9 @@
       for (var i = 0; i < groups.length - 1; i++) {
         var a = groups[i], b = groups[i + 1];
         var plain = a.events.concat(b.events).every(function (e) { return e.base === 0.5 && !e.dots; });
-        if (plain && a.events.length === 2 && b.events.length === 2 && a.slot % 2 === 0 && b.slot === a.slot + 1) {
-          groups.splice(i, 2, { slot: a.slot, events: a.events.concat(b.events) });
+        if (plain && a.events.length === 2 && b.events.length === 2 && a.slot % 2 === 0 && b.slot === a.slot + 1 &&
+            a.events[0].stem === b.events[0].stem && a.events[0].clef === b.events[0].clef) {
+          groups.splice(i, 2, { slot: a.slot, unit: unit, events: a.events.concat(b.events) });
         }
       }
     }
@@ -496,7 +499,7 @@
   }
 
   // Column spacing for a gap of `d` quarter-note beats, in staff spaces.
-  function gapFor(d) { return 2.1 + 2.7 * Math.pow(Math.max(d, 0.125), 0.6); }
+  function gapFor(d) { return 2.6 + 2.9 * Math.pow(Math.max(d, 0.125), 0.6); }
 
   // Width, in staff spaces, of a key signature change (cancelling naturals plus the new accidentals).
   function keyChangeUnits(from, to, readableSize) {
@@ -610,7 +613,12 @@
           lo = Math.min(lo, ev.lo - (ev.up ? 1 : 7) - (ev.tupletStart && !ev.up ? 3 : 0));
         });
       });
-      return { hi: hi + 1, lo: lo - 1 - (dyn ? 5 : 0) };
+      // Leave room for optional fingering outside beams and tuplet labels.
+      var fingers = /hand/i.test(st.label || '') || st.instrument === 'piano';
+      // Teaching fingerings sit above the right hand and below the left hand.
+      // Reserving both sides of both staves needlessly separates the grand staff.
+      var rightHand = !/left/i.test(st.label || '') && si === 0;
+      return { hi: hi + 1 + (fingers && rightHand ? 8 : 0), lo: lo - 1 - (dyn ? 5 : 0) - (fingers && !rightHand ? 8 : 0) };
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
@@ -867,8 +875,10 @@
 
   // Tuplet number centred over (or under) its notes.
   function drawTuplet(tp, S, h) {
-    var evs = tp.events.filter(function (e) { return e.x != null; });
-    if (!evs.length) return '';
+    var evs = tp.events.filter(function (e) { return e.x != null && !e.hidden; });
+    // Importers also use ratios for an isolated note's exact playback duration.
+    // These are not visible tuplet groups (e.g. a lone 9:4 or 15:8 note).
+    if (evs.filter(function (e) { return e.kind === 'note'; }).length < 2) return '';
     var notes = evs.filter(function (e) { return e.kind === 'note'; });
     var up = notes.length ? notes[0].up : true;
     var xa = evs[0].x, xb = evs[evs.length - 1].x + (evs[evs.length - 1].headW || 1.2 * S);
@@ -927,7 +937,10 @@
     var minStem = levels >= 2 ? 3.0 * S + (levels - 2) * 0.75 * S : 2.75 * S;
     var noteY = function (e) { return g.up ? b - e.hi * h : b - e.lo * h; };
     var ya = noteY(first) + (g.up ? -3.5 : 3.5) * S, yb = noteY(last) + (g.up ? -3.5 : 3.5) * S;
-    var slope = Math.max(-0.18, Math.min(0.18, (yb - ya) / dx));
+    // A long ascending run must not turn into a diagonal ladder of stems.
+    // Limit the total beam rise as well as its angle; stem clearance follows below.
+    var maxSlope = Math.min(0.18, S / Math.abs(dx));
+    var slope = Math.max(-maxSlope, Math.min(maxSlope, (yb - ya) / dx));
     var mono = true;
     for (var i = 1; i < evs.length; i++) {
       var d = noteY(evs[i]) - noteY(evs[i - 1]);
@@ -959,11 +972,15 @@
     }
     out += bar(g.x0, g.x1, 0);
     var evs = g.events;
-    [0.25, 0.125, 0.0625].forEach(function (lim, li) {
+    [0.25, 0.125, 0.0625, 0.03125].forEach(function (lim, li) {
       for (var i = 0; i < evs.length; i++) {
         if (evs[i].base > lim) continue;
         var j = i;
-        while (j + 1 < evs.length && evs[j + 1].base <= lim) j++;
+        // Keep the primary compound beat intact, but expose its eighth-note
+        // subdivisions in secondary beams (and quarter beats in simple time).
+        var subdivision = g.unit >= 1.5 ? 0.5 : (g.unit || 1);
+        while (j + 1 < evs.length && evs[j + 1].base <= lim &&
+            Math.floor((evs[j + 1].start + EPS) / subdivision) === Math.floor((evs[i].start + EPS) / subdivision)) j++;
         if (j > i) out += bar(stemX(evs[i], S), stemX(evs[j], S), li + 1);
         else {
           var sx = stemX(evs[i], S), toLeft = i > 0 && (i === evs.length - 1 || evs[i - 1].base > evs[i].base);
@@ -1043,8 +1060,8 @@
       var mid = b - ev.restStep * h;
       if (ev.whole || ev.base >= 4) out += M.glyph('restWhole', ev.x, b - 6 * h, S);
       else if (ev.base >= 2) out += M.glyph('restHalf', ev.x, mid, S);
-      else out += M.glyph(ev.base >= 1 ? 'restQuarter' : ev.base >= 0.5 ? 'rest8' : ev.base >= 0.25 ? 'rest16' : ev.base >= 0.125 ? 'rest32' : 'rest64', ev.x, mid, S);
-      if (ev.dots) out += '<circle cx="' + (ev.x + 1.6 * S) + '" cy="' + (mid - h) + '" r="' + 0.18 * S + '" fill="currentColor"/>';
+      else out += M.glyph(ev.base >= 1 ? 'restQuarter' : ev.base >= 0.5 ? 'rest8' : ev.base >= 0.25 ? 'rest16' : ev.base >= 0.125 ? 'rest32' : ev.base >= 0.0625 ? 'rest64' : 'rest128', ev.x, mid, S);
+      for (var rd = 0; rd < ev.dots; rd++) out += '<circle cx="' + (ev.x + (1.6 + rd * 0.55) * S) + '" cy="' + (mid - h) + '" r="' + 0.18 * S + '" fill="currentColor"/>';
       ev.headX = ev.x; ev.headY = mid;
     } else {
       var w = headW(ev, S), name = headName(ev), namedHeads = '';
@@ -1113,7 +1130,7 @@
         var tip = ev.beam ? ev.beam.at(sx) : stemTip(ev, b, S, h);
         out += '<line class="se-stem" x1="' + sx + '" x2="' + sx + '" y1="' + from + '" y2="' + tip + '" stroke="currentColor" stroke-width="' + lw + '"/>';
         if (!ev.beam && ev.base <= 0.5) {
-          var fl = ev.base <= 0.0625 ? '64' : ev.base <= 0.125 ? '32' : ev.base <= 0.25 ? '16' : '8';
+          var fl = ev.base <= 0.03125 ? '128' : ev.base <= 0.0625 ? '64' : ev.base <= 0.125 ? '32' : ev.base <= 0.25 ? '16' : '8';
           out += M.glyph('flag' + fl + (ev.up ? 'Up' : 'Down'), sx - (ev.up ? 0.06 * S : 0.06 * S), tip, S);
         }
         ev.tipY = tip;
@@ -1510,6 +1527,10 @@
       return null;
     }
     fig.classList.add('se-figure');
+    // Programmatically rendered scores do not always have a data-score attribute.
+    // Preserve the light paper and matching controls in night mode and every skin.
+    fig.setAttribute('data-night-keep', '');
+    fig.setAttribute('data-skin-keep', '');
     fig.scoreData = score;
     var head = el('div', { class: 'se-head' });
     var titles = el('div', { class: 'se-titles' });

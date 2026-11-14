@@ -114,18 +114,29 @@
       var group = svg.querySelector('.se-ev[data-i="' + ev.i + '"]');
       if (!group) return;
       var above = handOf(score.staves[ev.staff]) === 'right';
-      fingers[ev.i].forEach(function (finger, pi) {
-        if (!finger) return;
-        var step = ev.steps[pi] == null ? ev.steps[0] : ev.steps[pi];
-        var text = document.createElementNS(NS, 'text');
-        text.setAttribute('class', 'se-finger-number');
-        text.setAttribute('x', ev.x + (ev.headW || layout.S) * 0.5);
-        text.setAttribute('y', ev.bottom - step * (layout.S / 2) + (above ? -1.45 : 2.15) * layout.S);
-        text.setAttribute('font-size', 1.08 * layout.S);
-        text.setAttribute('text-anchor', 'middle');
-        text.textContent = finger;
-        group.appendChild(text);
+      if (ev.fingering) return; // An editor's explicit fingering takes precedence.
+      var S = layout.S, h = S / 2;
+      // One label per chord, in pitch order, outside nearby heads, stems and tuplets.
+      // Looking at neighbours also protects notes in another voice on this staff.
+      var near = layout.events.filter(function (other) {
+        return other.sys === ev.sys && other.staff === ev.staff && !other.hidden &&
+          other.kind === 'note' && Math.abs(other.x - ev.x) < 3 * S;
       });
+      var edge = above ? ev.bottom - 4 * S : ev.bottom;
+      near.forEach(function (other) {
+        var head = other.bottom - (above ? other.hi : other.lo) * h;
+        var tip = other.tipY == null ? head : other.tipY;
+        var pad = other.tuplet ? 3.2 * S : 1.8 * S;
+        edge = above ? Math.min(edge, head - pad, tip - pad) : Math.max(edge, head + pad, tip + pad);
+      });
+      var text = document.createElementNS(NS, 'text');
+      text.setAttribute('class', 'se-finger-number');
+      text.setAttribute('x', ev.x + (ev.headW || S) * 0.5);
+      text.setAttribute('y', edge + (above ? 0 : 0.7 * S));
+      text.setAttribute('font-size', 1.08 * S);
+      text.setAttribute('text-anchor', 'middle');
+      text.textContent = fingers[ev.i].filter(Boolean).join('/');
+      group.appendChild(text);
     });
   }
 

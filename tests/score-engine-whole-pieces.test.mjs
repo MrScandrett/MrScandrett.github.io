@@ -152,3 +152,80 @@ test('isolated sixty-fourth notes and short rests use their own glyphs', () => {
   }
   assert.equal(m.staves[0].bars[0].events[1].base, 0.0625);
 });
+
+test('triple-dotted notes and rests retain their written timing and dots', () => {
+  const score = { time: '4/4', staves: [{ notes: 'C5/2... r/16 | r/2... C5/16' }] };
+  const model = engine.prepare(score); engine.analyse(model);
+  assert.deepEqual(engine.playList(model).map(({ start, dur }) => [start, dur]), [[0, 3.75], [7.75, 0.25]]);
+  const rendered = engine.engrave(model, 700);
+  assert.ok(rendered.svg.includes('<circle'));
+  assert.equal(model.staves[0].bars[0].events[0].dots, 3);
+  assert.equal(model.staves[0].bars[1].events[0].dots, 3);
+});
+
+test('Chopin cadenza stays in printed bar 32 and the closing arpeggio holds', () => {
+  const ids = require('../data/composer-workspaces.json').chopin.scores;
+  assert.equal(ids.length, 23);
+  assert.equal(new Set(ids).size, 23);
+  assert.ok(ids.every(id => library[id].complete));
+  const nocturne = engine.prepare(library['chopin-nocturne-9-2']); engine.analyse(nocturne);
+  assert.equal(nocturne.count, 35); // pickup, 34 printed bars
+  assert.equal(nocturne.staves[0].bars[engine.barIndexOf(nocturne, 32)].length, 24);
+  const prelude = engine.prepare(library['chopin-prelude-1']); engine.analyse(prelude);
+  const ending = engine.playList(prelude).filter(n => n.staff === 1 && n.start >= 32 - 1e-6);
+  assert.deepEqual(ending.map(n => n.midi).sort((a,b) => a-b), [36, 43, 48, 52, 55]);
+  for (const note of ending) assert.ok(Math.abs(note.start + note.dur - 34) < 1e-6);
+});
+
+test('128th notes retain five beams, flags, rests and exact playback timing', () => {
+  const sc = { time: '1/16', staves: [{ notes: 'C5/128 D5/128 E5/128 F5/128 G5/128 A5/128 B5/128 C6/128 | @U C5/128 r/128 r/32 r/64 | @D C5/128 r/128 r/32 r/64' }] };
+  const m = model(sc);
+  assert.equal(m.staves[0].bars[0].events[0].dur, 1 / 32);
+  const svg = engine.engrave(m, 900).svg;
+  for (const glyph of ['flag128Up','flag128Down','rest128']) assert.ok(svg.includes(globalThis.MusicNotation.glyph(glyph, 0, 0, 1).match(/d="([^"]+)/)[1]));
+  assert.ok((svg.match(/class="se-beam"/g) || []).length >= 5);
+  assert.ok(!/NaN|undefined/.test(svg));
+});
+
+test('Beethoven collection preserves complete movements, Bagatelles and free-time bars', () => {
+  const ids = require('../data/composer-workspaces.json').beethoven.scores;
+  assert.equal(ids.length, 23);
+  assert.equal(new Set(ids).size, 23);
+  assert.equal(ids.filter(id => library[id].complete).length, 22);
+  for (const id of ['beethoven-pathetique-1','beethoven-pathetique-2','beethoven-pathetique-3','beethoven-bagatelle-119-10','beethoven-bagatelle-119-11']) assert.ok(ids.includes(id));
+  const bagatelle = model(library['beethoven-bagatelle-119-11']);
+  const notes = engine.playList(bagatelle);
+  // With the opening four-bar repeat, bar 8's chord starts at beat 46.
+  for (const [pitch, end] of [[76,49],[79,49],[82,49.25]]) {
+    const held = notes.find(n => n.midi === pitch && n.staff === 0 && Math.abs(n.start - 46) < 1e-6);
+    assert.ok(held);
+    assert.ok(Math.abs(held.start + held.dur - end) < 1e-6);
+  }
+  const tempest = model(library['beethoven-tempest-1']);
+  assert.equal(tempest.staves[0].bars[96].length, 6);
+});
+
+test('after-grace ornaments can end before a rest and still sound', () => {
+  const m = model({time:'4/4',staves:[{notes:'C5/2 g:D5/16 g:E5/16 r/2'}]});
+  const notes = engine.playList(m);
+  assert.deepEqual(notes.map(n=>n.midi),[72,74,76]);
+  assert.ok(notes.filter(n=>n.grace).every(n=>n.start<2 && n.dur>0));
+  const svg=engine.engrave(m,700).svg;
+  assert.ok(!/NaN|undefined/.test(svg));
+});
+
+test('Mozart collection contains 23 selections with scoped variations and minuet return', () => {
+  const ids=require('../data/composer-workspaces.json').mozart.scores;
+  assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);
+  for(let i=1;i<=6;i++) assert.match(library['mozart-k331-variation-'+i].excerpt.of,/first movement/);
+  const minuet=model(library['mozart-k331-menuetto']);
+  assert.equal(minuet.perfTotal,744);
+  assert.equal(minuet.order.at(-1),47);
+  assert.equal(minuet.order.filter(i=>i===100).length,1);
+  const allegro=model(library['mozart-sonata-k457-1']);
+  assert.equal(allegro.perfTotal,1408);
+  assert.ok(allegro.barMeta[73].repEnd && allegro.barMeta[74].repStart && allegro.barMeta[166].repEnd);
+  const adagio=model(library['mozart-sonata-k457-2']);
+  assert.ok(engine.playList(adagio).some(n=>n.grace));
+  assert.match(library['mozart-fantasia-k397'].subtitle,/probably by August Eberhard Müller/);
+});
