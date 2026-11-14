@@ -2776,7 +2776,7 @@
     var wrap = el('[data-fb-score-parts]'), score = tune.raw.score;
     if (wrap.querySelector('details')) wrap.dataset.open = wrap.querySelector('details[open]') ? '1' : '0';   // keep it as the reader left it
     wrap.hidden = !score || opts.mode !== 'score';
-    wrap.innerHTML = score ? '<details class="fb-voices"' + (wrap.dataset.open === '1' ? ' open' : '') + '><summary>Voices · mute or solo (' + score.parts.length + ')</summary><p>All written voices sound on piano. The sheet shows the melody, a bass reduction and tab. Use the Piano volume in Band settings to adjust score volume. Play the written voices. Tempo changes speed without changing pitch. Mute a voice to play it yourself, or solo voices to listen closely.</p>' + score.parts.map(function (p, i) {
+    wrap.innerHTML = score ? '<details class="fb-voices"' + (wrap.dataset.open === '1' ? ' open' : '') + '><summary>Voices · mute or solo (' + score.parts.length + ')</summary><p>Every written voice sounds on piano; the sheet shows the melody, a bass reduction and tab. Mute a voice to play it yourself, or solo voices to listen closely. Piano volume (Band settings) sets how loud the score is, and Tempo changes speed without changing pitch.</p>' + score.parts.map(function (p, i) {
       var state = scorePractice[p.id] || {};
       return '<fieldset><legend>' + MN.escape(p.label) + '</legend><label><input type="checkbox" data-score-mute="' + i + '"' + (state.mute ? ' checked' : '') + '> Mute</label> <label><input type="checkbox" data-score-solo="' + i + '"' + (state.solo ? ' checked' : '') + '> Solo</label></fieldset>';
     }).join('') + '</details>' : '';

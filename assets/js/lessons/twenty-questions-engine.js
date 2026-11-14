@@ -150,7 +150,7 @@
     },
     {
       id: 'giant_squid', name: 'Giant Squid', category: 'Animals',
-      desc: 'A mysterious deep-ocean cephalopod with dinner-plate eyes and ten tentacles.',
+      desc: 'A mysterious deep-ocean cephalopod with dinner-plate eyes, eight arms, and two long feeding tentacles.',
       traits: { q_alive: 1, q_animal: 1, q_water: 1, q_ocean_depths: 1, q_carnivore: 1, q_larger_than_car: 1, q_mammal: 0, q_has_legs: 0 }
     },
     {
@@ -192,7 +192,7 @@
     },
     {
       id: 'marie_curie', name: 'Marie Curie', category: 'Thinkers',
-      desc: 'Pioneering physicist and chemist who discovered radioactivity and won two Nobel Prizes.',
+      desc: 'Pioneering physicist and chemist who discovered polonium and radium, named radioactivity, and won two Nobel Prizes.',
       traits: { q_alive: 1, q_human: 1, q_historical: 1, q_science_thinker: 1, q_female: 1 }
     },
     {
@@ -1129,7 +1129,9 @@
       document.getElementById('tq-btn-stumped')?.addEventListener('click', () => {
         clearTimeout(this.pendingAnswer);
         this.pendingAnswer = null;
-        this.engine.lastRejectedGuess = this.engine.currentGuess || this.engine.getTopCandidates(1)[0]?.entity;
+        // The taught clue is recorded as false for the guess it separates from. Only a guess the player
+        // was shown counts: writing it onto an arbitrary front-runner would teach the Oracle something untrue.
+        this.engine.lastRejectedGuess = (this.engine.isGuessing && this.engine.currentGuess) || this.engine.lastRejectedGuess || null;
         this.engine.isGameOver = true;
         this.engine.isGuessing = false;
         this.controlsCluster.hidden = true;
@@ -1155,7 +1157,10 @@
 
       // Global Keyboard Shortcuts
       window.addEventListener('keydown', (e) => {
-        if (e.defaultPrevented || (e.key === 'Escape' && (document.fullscreenElement || document.querySelector('.creation-app-expanded'))) || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
+        if (e.defaultPrevented || (e.key === 'Escape' && (document.fullscreenElement || document.querySelector('.creation-app-expanded'))) || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+        // A focused button keeps Enter and Space for itself; letter keys still answer, so the
+        // shortcuts go on working after a mouse click leaves focus on Yes or No.
+        if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape')) return;
 
         const flashBtn = (btn) => {
           if (!btn) return;
@@ -1164,6 +1169,12 @@
         };
 
         const k = e.key.toLowerCase();
+        // "Are you thinking of …?" is a yes/no question too.
+        if (this.engine.isGuessing && !this.engine.isGameOver && (k === 'y' || k === '1' || k === 'n' || k === '2')) {
+          if (k === 'y' || k === '1') { flashBtn(this.btnGuessCorrect); this.handleVictory(); }
+          else { flashBtn(this.btnGuessWrong); this.handleGuessWrong(); }
+          return;
+        }
         if (k === '1' || k === 'y') { flashBtn(this.btnYes); this.handleAnswer('yes'); }
         else if (k === '2' || k === 'n') { flashBtn(this.btnNo); this.handleAnswer('no'); }
         else if (k === '3' || k === 'p') { flashBtn(this.btnProb); this.handleAnswer('probably'); }
@@ -1392,8 +1403,9 @@
       if (this.statCandidates) this.statCandidates.textContent = `${activeCandidates}`;
       const bitsRemoved = Math.max(0, initialH - currentH);
       if (this.statBitsRemoved) this.statBitsRemoved.textContent = `${bitsRemoved.toFixed(2)}`;
-      const efficiency = qNum > 1 ? (bitsRemoved / (qNum - 1)).toFixed(2) : '1.00';
-      if (this.statEfficiency) this.statEfficiency.textContent = `${efficiency} b/q`;
+      // No answers yet means no rate to report; a made-up 1.00 reads as a measurement.
+      const efficiency = qNum > 1 ? `${(bitsRemoved / (qNum - 1)).toFixed(2)} b/q` : '—';
+      if (this.statEfficiency) this.statEfficiency.textContent = efficiency;
 
       // Live Information Gain Split Leaderboard
       this.renderInformationGainLeaderboard();
@@ -1490,7 +1502,7 @@
     renderVictoryState() {
       if (this.lcdText) this.lcdText.textContent = `I GUESSED IT! YOU WERE THINKING OF ${this.engine.currentGuess?.name.toUpperCase()}!`;
       if (this.lcdSubtext) {
-        this.lcdSubtext.textContent = `Solved in ${this.engine.questionCount} questions. Shannon Entropy eliminated: ${(this.engine.initialEntropy - this.engine.currentEntropy).toFixed(2)} bits!`;
+        this.lcdSubtext.textContent = `Solved in ${this.engine.questionCount} question${this.engine.questionCount === 1 ? '' : 's'}. Shannon Entropy eliminated: ${(this.engine.initialEntropy - this.engine.currentEntropy).toFixed(2)} bits!`;
       }
       if (this.lcdFace) this.lcdFace.textContent = '( ^ ▽ ^ )';
       if (this.revealBanner) this.revealBanner.hidden = true;

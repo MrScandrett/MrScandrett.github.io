@@ -15,8 +15,10 @@ console.log('mixed-meter completed, notes',await page.evaluate(()=>audioNotes.ma
 assert.ok((await page.evaluate(()=>audioNotes)).some(n=>Math.abs(n.f-196)<1));
 await page.evaluate(()=>{for(const [sel,val] of [['[data-fb-from]',2],['[data-fb-to]',3]]){const e=document.querySelector(sel);e.value=val;e.dispatchEvent(new Event('change',{bubbles:true}));}const e=document.querySelector('[data-fb-loop]');e.checked=true;e.dispatchEvent(new Event('change',{bubbles:true}));});
 await page.locator('[data-fb-play]').click();await page.waitForTimeout(4800);assert.equal(await page.evaluate(()=>FakeBook.state().playing),true);console.log('loop range',await page.evaluate(()=>[FakeBook.state().opts.from,FakeBook.state().opts.to]));
-await page.locator('[data-score-mute="0"]').check();assert.equal(await page.evaluate(()=>FakeBook.state().playing),true);await page.locator('[data-fb-play]').click();
+await page.locator('.fb-voices > summary').click();await page.locator('[data-score-mute="0"]').check();assert.equal(await page.evaluate(()=>FakeBook.state().playing),true);await page.locator('[data-fb-play]').click();
 await page.evaluate(xml=>FakeBook.importText(xml),fs.readFileSync('tests/fixtures/scores/crazy-jane.musicxml','utf8'));await page.waitForFunction(()=>FakeBook.state().tune.raw.title==='Crazy Jane');
+// An imported score opens in its Original score view, which has no note heads to light up.
+await page.locator('[data-fb-view="lead"]').click();
 await page.locator('[data-fb-play]').click();await page.waitForTimeout(4800);
 const highlights=await page.locator('.fb-n.is-now,.fb-bn.is-now,.fb-tn.is-now').evaluateAll(ns=>ns.map(n=>n.classList[0]));
 assert.ok(highlights.includes('fb-n') && highlights.includes('fb-bn') && highlights.includes('fb-tn'));

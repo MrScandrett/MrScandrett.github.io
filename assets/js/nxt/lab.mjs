@@ -25,7 +25,7 @@ function render(){
     input.addEventListener('change',()=>{const n=Number(input.value);if(!Number.isInteger(n)||n<Number(input.min)||n>Number(input.max)){input.value=s.value;status(`Use a whole number from ${input.min} to ${input.max}.`);return;}s.value=n;persist();code();});
     label.append(input,document.createTextNode(['wait','touch'].includes(s.type)?'s':s.type==='tone'?'Hz':'°'));row.append(label);
     for(const [text,desc,fn,disabled] of [ ['↑','Move up',()=>{[project.steps[i-1],project.steps[i]]=[s,project.steps[i-1]];},i===0],['↓','Move down',()=>{[project.steps[i+1],project.steps[i]]=[s,project.steps[i+1]];},i===project.steps.length-1],['×','Remove',()=>project.steps.splice(i,1),project.steps.length===1] ]){
-      const b=document.createElement('button');b.textContent=text;b.type='button';b.setAttribute('aria-label',`${desc} step ${i+1}`);b.dataset.edge=String(disabled);b.addEventListener('click',()=>{fn();render();persist();});row.append(b);
+      const b=document.createElement('button');b.textContent=text;b.type='button';b.setAttribute('aria-label',`${desc} step ${i+1}`);b.dataset.edge=String(disabled);b.addEventListener('click',()=>{fn();render();persist();const rows=$('steps').children,j=Math.min(rows.length-1,Math.max(0,desc==='Move up'?i-1:desc==='Move down'?i+1:i));const again=rows[j]?.querySelector(`button[aria-label^="${desc}"]:not(:disabled)`)||rows[j]?.querySelector('button:not(:disabled)');again?.focus();});row.append(b);
     }
     li.append(row);$('steps').append(li);
   });
@@ -60,7 +60,7 @@ async function stop(message='Stopped.'){generation++;motion=null;activity();stud
 $('stop').onclick=()=>stop();
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();stop();}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(running||connection))stop('Stopped because the tab was hidden.');});
-window.addEventListener('blur',()=>{if(running)stop('Stopped because the window lost focus.');});
+window.addEventListener('blur',()=>{if(running&&connection)stop('Stopped because the window lost focus.');});
 window.addEventListener('pagehide',()=>{if(connection)stop('Page closed.');});
 async function connect(kind){connecting=true;sync();let candidate;
   try{candidate=new Connection(log,async e=>{generation++;running=false;motion=null;activity();status(`Connection lost: ${e.message} Check the brick; turn it off if necessary.`);connection=null;$('ready').checked=false;sync();await candidate.close();});const volts=await candidate.connect(kind);await candidate.stop();connection=candidate;$('ready').checked=false;status(`NXT connected via ${kind==='usb'?'USB':'Bluetooth serial'} · battery ${volts} V. First test: tone, then wheels lifted.`);}
@@ -71,7 +71,7 @@ async function execute(s,token){
   activity(s.type);
   const guard=()=>token===generation;const cmd=bytes=>connection.command(bytes,guard);
   if(s.type==='wait'){await pause(s.value*1000,token);return;}
-  if(s.type==='tone'){if(connection)await cmd([0,3,...u16(s.value),...u16(300)]);else studio?.playTone(s.value,300);$('progress').textContent=`Tone: ${s.value} Hz${connection?'':' (simulated, no audio)'}`;await pause(350,token);return;}
+  if(s.type==='tone'){if(connection)await cmd([0,3,...u16(s.value),...u16(300)]);else studio?.playTone(s.value,300);$('progress').textContent=`Tone: ${s.value} Hz${connection?' on the brick':' · simulated on this computer’s speaker'}`;await pause(350,token);return;}
   if(s.type==='touch'){
     if(connection){await cmd([0,5,0,1,32]);await pause(100,token);}
     const end=performance.now()+s.value*1000;let pressed=false;
