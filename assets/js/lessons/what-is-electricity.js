@@ -1064,6 +1064,30 @@
     updateScore();
   }
 
+  // The 3D lab is below the opening activities. Load its renderer when the
+  // student approaches it instead of downloading Three.js on every page load.
+  function initStatic3DWhenVisible() {
+    var demo = document.getElementById('we-static-demo');
+    if (!demo) return;
+    var moduleUrl = new URL('what-is-electricity-3d.mjs', document.currentScript.src).href;
+    function load() {
+      import(moduleUrl).catch(function () {
+        var canvas = document.getElementById('we-balloon-canvas');
+        var message = document.getElementById('we-balloon-nowebgl');
+        if (canvas) canvas.hidden = true;
+        if (message) message.hidden = false;
+      });
+    }
+    if (!('IntersectionObserver' in window)) { load(); return; }
+    var observer = new IntersectionObserver(function (entries) {
+      if (!entries.some(function (entry) { return entry.isIntersecting; })) return;
+      observer.disconnect();
+      load();
+    }, { rootMargin: '200px' });
+    observer.observe(demo);
+  }
+
+  initStatic3DWhenVisible();
   initAtomBuilder();
   initJumpNav();
   initScaleExplorer();
