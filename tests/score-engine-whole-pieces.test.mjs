@@ -114,3 +114,41 @@ test('the Turkish March plays each section twice, then the coda once', () => {
   assert.equal(numbers.filter((n) => n === 100).length, 1);
   assert.equal(numbers[numbers.length - 1], 128);
 });
+
+test('sixty-fourth-note runs retain their timing and four beams', () => {
+  const m = model({ time: '1/4', staves: [{ notes: 'C5/64 D5/64 E5/32 F5/16 G5/8' }] });
+  const notes = engine.playList(m);
+  assert.deepEqual(notes.map(n => n.start), [0, 0.0625, 0.125, 0.25, 0.5]);
+  assert.equal(notes[0].dur, 0.0625);
+  for (const width of [320, 1100]) {
+    const out = engine.engrave(m, width);
+    assert.ok(!/NaN|undefined/.test(out.svg));
+    assert.ok(m.staves[0].bars[0].beams.some(group => group.levels === 4));
+    assert.equal((out.svg.match(/class="se-beam"/g) || []).length, 4);
+  }
+});
+
+test('Bach collection includes all fifteen Inventions and every featured addition', () => {
+  const ids = require('../data/composer-workspaces.json').bach.scores;
+  assert.equal(ids.length, 23);
+  for (const id of [
+    ...Array.from({ length: 15 }, (_, i) => 'bach-invention-' + (i + 1)),
+    'bach-fugue-c-major', 'bach-air', 'bach-goldberg-aria',
+    'bach-toccata-fugue-d-minor', 'bach-crab-canon', 'bach-jesu'
+  ]) {
+    assert.ok(ids.includes(id), id + ' is selectable');
+    assert.equal(library[id].complete, true);
+    assert.ok(library[id].source.full);
+  }
+  assert.match(library['bach-jesu'].source.label, /choir and keyboard arrangement/);
+});
+
+test('isolated sixty-fourth notes and short rests use their own glyphs', () => {
+  const m = model({ time: '1/4', staves: [{ notes: 'C5/64 r/64 r/32 r/16 r/8' }] });
+  const out = engine.engrave(m, 320);
+  assert.ok(out.height > 0 && !/NaN|undefined/.test(out.svg));
+  for (const name of ['rest32', 'rest64', 'flag64Up', 'flag64Down']) {
+    assert.ok(globalThis.MusicNotation.glyph(name, 0, 0, 10).includes('<path'));
+  }
+  assert.equal(m.staves[0].bars[0].events[1].base, 0.0625);
+});

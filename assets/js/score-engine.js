@@ -7,7 +7,7 @@
  * same for a score object built in JS.
  *
  * Score text, one string per staff (bars split by "|"):
- *   C#5/8.   pitch / duration (1 2 4 8 16 32) + dots      r/4  rest      R  whole-bar rest
+ *   C#5/8.   pitch / duration (1 2 4 8 16 32 64) + dots      r/4  rest      R  whole-bar rest
  *   (C4 E4 G4)/2   chord        ~ tie to the next note      ^ fermata     s/4  S  hidden (spacer) rests
  *   !p !mf !f      dynamic for the next note (also sets playback loudness)
  *   For overlapping voices, use staves[].voices = [{ notes, stem: "up"|"down", restStep? }].
@@ -36,7 +36,7 @@
 (function (root) {
   'use strict';
 
-  var BASES = { 1: 4, 2: 2, 4: 1, 8: 0.5, 16: 0.25, 32: 0.125 };
+  var BASES = { 1: 4, 2: 2, 4: 1, 8: 0.5, 16: 0.25, 32: 0.125, 64: 0.0625 };
   var DYN_VEL = { pp: 0.32, p: 0.45, mp: 0.58, mf: 0.7, f: 0.85, ff: 1 };
   var EPS = 1e-6;
 
@@ -105,7 +105,7 @@
         if (grace && /^[rRsS]$/.test(m[2])) fail(w, 'grace notes must be notes');
         if (m[3]) {
           var base = BASES[m[3]];
-          if (!base) fail(w, 'duration must be 1, 2, 4, 8, 16 or 32');
+          if (!base) fail(w, 'duration must be 1, 2, 4, 8, 16, 32 or 64');
           if (!grace) last = { base: base, dots: m[4].length };
         } else if (!last && m[2] !== 'R' && m[2] !== 'S' && !grace) fail(w, 'first note needs a duration');
         var ev = { start: t, dyn: dyn, fermata: !!m[6], tie: !!m[5], stemDir: stemDir };
@@ -897,7 +897,7 @@
   }
   function durationLabel(ev) {
     if (ev.whole || ev.base >= 4) return 'whole note';
-    var name = ev.base >= 2 ? 'half' : ev.base >= 1 ? 'quarter' : ev.base >= 0.5 ? 'eighth' : ev.base >= 0.25 ? 'sixteenth' : 'thirty-second';
+    var name = ev.base >= 2 ? 'half' : ev.base >= 1 ? 'quarter' : ev.base >= 0.5 ? 'eighth' : ev.base >= 0.25 ? 'sixteenth' : ev.base >= 0.125 ? 'thirty-second' : 'sixty-fourth';
     return name + (ev.dots ? ' dotted' : '') + ' note';
   }
   function eventLabel(ev, model) {
@@ -923,7 +923,7 @@
   function placeBeam(g, clef, b, S, h) {
     var evs = g.events, first = evs[0], last = evs[evs.length - 1];
     var dx = last.x - first.x || 1;
-    var levels = evs.some(function (e) { return e.base <= 0.25; }) ? (evs.some(function (e) { return e.base <= 0.125; }) ? 3 : 2) : 1;
+    var levels = Math.max.apply(null, evs.map(function (e) { return Math.round(Math.log2(1 / e.base)); }));
     var minStem = levels >= 2 ? 3.0 * S + (levels - 2) * 0.75 * S : 2.75 * S;
     var noteY = function (e) { return g.up ? b - e.hi * h : b - e.lo * h; };
     var ya = noteY(first) + (g.up ? -3.5 : 3.5) * S, yb = noteY(last) + (g.up ? -3.5 : 3.5) * S;
@@ -959,7 +959,7 @@
     }
     out += bar(g.x0, g.x1, 0);
     var evs = g.events;
-    [0.25, 0.125].forEach(function (lim, li) {
+    [0.25, 0.125, 0.0625].forEach(function (lim, li) {
       for (var i = 0; i < evs.length; i++) {
         if (evs[i].base > lim) continue;
         var j = i;
@@ -1043,7 +1043,7 @@
       var mid = b - ev.restStep * h;
       if (ev.whole || ev.base >= 4) out += M.glyph('restWhole', ev.x, b - 6 * h, S);
       else if (ev.base >= 2) out += M.glyph('restHalf', ev.x, mid, S);
-      else out += M.glyph(ev.base >= 1 ? 'restQuarter' : ev.base >= 0.5 ? 'rest8' : 'rest16', ev.x, mid, S);
+      else out += M.glyph(ev.base >= 1 ? 'restQuarter' : ev.base >= 0.5 ? 'rest8' : ev.base >= 0.25 ? 'rest16' : ev.base >= 0.125 ? 'rest32' : 'rest64', ev.x, mid, S);
       if (ev.dots) out += '<circle cx="' + (ev.x + 1.6 * S) + '" cy="' + (mid - h) + '" r="' + 0.18 * S + '" fill="currentColor"/>';
       ev.headX = ev.x; ev.headY = mid;
     } else {
@@ -1113,9 +1113,8 @@
         var tip = ev.beam ? ev.beam.at(sx) : stemTip(ev, b, S, h);
         out += '<line class="se-stem" x1="' + sx + '" x2="' + sx + '" y1="' + from + '" y2="' + tip + '" stroke="currentColor" stroke-width="' + lw + '"/>';
         if (!ev.beam && ev.base <= 0.5) {
-          var fl = ev.base <= 0.125 ? '16' : ev.base <= 0.25 ? '16' : '8';
+          var fl = ev.base <= 0.0625 ? '64' : ev.base <= 0.125 ? '32' : ev.base <= 0.25 ? '16' : '8';
           out += M.glyph('flag' + fl + (ev.up ? 'Up' : 'Down'), sx - (ev.up ? 0.06 * S : 0.06 * S), tip, S);
-          if (ev.base <= 0.125) out += M.glyph('flag8' + (ev.up ? 'Up' : 'Down'), sx - 0.06 * S, tip + (ev.up ? 1.5 : -1.5) * S, S);
         }
         ev.tipY = tip;
       }

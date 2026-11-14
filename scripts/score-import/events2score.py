@@ -11,7 +11,7 @@ from fractions import Fraction as F
 
 LETTERS = 'CDEFGAB'
 ALTER = {F(0): '', F(1, 2): '#', F(-1, 2): 'b', F(1): '##', F(-1): 'bb'}
-BASE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32}
+BASE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
 ART = {'staccato': '.', 'staccatissimo': '.', 'accent': '>', 'tenuto': '-', 'trill': 'tr', 'prall': 'mord',
        'mordent': 'mord', 'prallprall': 'mord', 'turn': 'turn', 'reverseturn': 'turn'}
 DYN = {'pp': 'pp', 'p': 'p', 'mp': 'mp', 'mf': 'mf', 'f': 'f', 'ff': 'ff', 'ppp': 'pp', 'fff': 'ff',
@@ -274,7 +274,7 @@ def convert(path, staff_labels=None, keep=None, instruments=None):
                         c = dict(e)
                         c['now'] = e['now'] + unit * k
                         c['len'] = unit
-                        c['log'] = {1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5}[T]
+                        c['log'] = {1: 0, 2: 1, 4: 2, 8: 3, 16: 4, 32: 5, 64: 6}[T]
                         c['dots'] = 0
                         c['scale'] = F(1)
                         c['pitches'] = [(p[0], p[1] and k == n - 1) for p in e['pitches']]
@@ -296,7 +296,7 @@ def convert(path, staff_labels=None, keep=None, instruments=None):
                 while left > 0:
                     bi = bar_index(now)
                     piece = min(left, starts[bi][0] + starts[bi][1] - now)
-                    log_dots = next(((lg, dt) for lg in range(0, 6) for dt in (0, 1) if dur_len(lg, dt, F(1)) == piece), None)
+                    log_dots = next(((lg, dt) for lg in range(0, 7) for dt in (0, 1) if dur_len(lg, dt, F(1)) == piece), None)
                     if log_dots is None:
                         raise ValueError(f'cannot split a note of {e["len"]} across the bar at {now}')
                     c = dict(e)
@@ -474,7 +474,7 @@ def gap_tokens(q, hide):
     """Rest tokens for a gap of q whole notes, largest values first."""
     out = []
     head = 's' if hide else 'r'
-    for log in range(0, 6):
+    for log in range(0, 7):
         val = F(1, 2 ** log)
         while q >= val:
             out.append(f'{head}/{BASE[log]}')

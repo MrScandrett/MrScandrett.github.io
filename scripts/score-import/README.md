@@ -87,3 +87,7 @@ These excerpts do not represent complete ballet or orchestral scores.
 The Gershwin refrains were transcribed from the original sheet-music scans in
 `assets/images/lessons/jazz-scores/` (and the Ohio State University PDF for the last page of *Fascinating
 Rhythm*). The structural check cannot confirm a hand transcription; compare it with the scan.
+
+For the seventeen Bach collection additions (all remaining two-part Inventions,
+C-major Fugue, Air, Goldberg Aria, Toccata and Fugue, Crab Canon and Jesu), see
+[archived editions, licences, import adjustments and MIDI verification](sources/bach-collection/README.md).
