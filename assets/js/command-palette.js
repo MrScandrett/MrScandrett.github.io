@@ -307,24 +307,17 @@
   };
 
   // ── Search ──────────────────────────────────────────────────────
-  function score(item, q) {
-    var t = item.title.toLowerCase();
-    var d = item.description.toLowerCase();
-    var k = (item.keywords || []).join(' ').toLowerCase();
-    // Direct names and title prefixes outrank incidental mentions of a topic.
-    if (t === q) return 10;
-    if (t.startsWith(q) && /[\s:·—–-]/.test(t.charAt(q.length))) return 8;
-    if (t.startsWith(q)) return 7;
-    if (t.includes(q)) return 3;
-    if (k.includes(q)) return 2;
-    if (d.includes(q)) return 1;
-    // Fuzzy: all chars of q appear in title in order
-    var ci = 0;
-    for (var i = 0; i < t.length && ci < q.length; i++) {
-      if (t[i] === q[ci]) ci++;
-    }
-    if (ci === q.length) return 0.5;
-    return 0;
+  // Ranking lives in search-rank.js (shared with the lesson library's search box),
+  // loaded beside this file by page-modules.js. Until it arrives, fall back to plain
+  // whole-word matches in titles and keywords: never scattered-letter matches.
+  function rankIndex(q) {
+    var ranker = window.ClassroomOSSearchRank;
+    if (ranker) return ranker.rank(index, q).map(function (r) { return r.item; });
+    var tokens = q.split(/[^a-z0-9]+/).filter(Boolean);
+    return index.filter(function (item) {
+      var text = ' ' + (item.title + ' ' + (item.keywords || []).join(' ')).toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+      return tokens.length && tokens.every(function (t) { return text.indexOf(' ' + t) !== -1; });
+    });
   }
 
   function highlightTitle(title, q) {
@@ -348,11 +341,14 @@
       renderDefaults();
       return;
     }
-    filtered = index
-      .map(function (item) { return { item: item, s: score(item, q) }; })
-      .filter(function (x) { return x.s > 0; })
-      .sort(function (a, b) { return b.s - a.s; })
-      .map(function (x) { return x.item; });
+    // A lesson cross-listed in several subjects is in the index once per subject;
+    // show it once, at its best rank.
+    var seen = {};
+    filtered = rankIndex(q).filter(function (item) {
+      if (seen[item.url]) return false;
+      seen[item.url] = true;
+      return true;
+    });
 
     renderResults(filtered, q);
   }

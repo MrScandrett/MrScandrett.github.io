@@ -481,7 +481,7 @@
         line-height: 1.5;
       }
 
-      /* Era sub-labels inside a chapter (Composers). They show only in the Index
+      /* Topic and era sub-labels inside a chapter (Composers, Robotics…). They show only in the Guide
          list: in Cards view a whole-row label would leave one or two tiles per row,
          and each tile's kicker already names the era. */
       .module-era-label {
@@ -1394,6 +1394,8 @@
             (metadata.learningPaths || []).join(" ")
           ].join(" ");
           lesson.searchableText = normalizeText(lesson.searchableText + " " + extraText);
+          lesson.keywords = (metadata.keywords || []).concat(metadata.learningPaths || [], metadata.lessonType || []);
+          lesson.summary = metadata.summary || "";
           lesson.words = lesson.searchableText.split(/[^a-z0-9]+/).filter(Boolean);
           lesson.difficulty = metadata.gradeBand ? "Grades " + metadata.gradeBand : lesson.difficulty;
           lesson.tile.dataset.catalogGrade = metadata.gradeBand || "";
@@ -1446,36 +1448,18 @@
         function searchLessons(query) {
           var normalizedQuery = normalizeText(query);
           if (!normalizedQuery) return lessonCache.slice();
-          var queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
-
-          return lessonCache
-            .filter(function(lesson) {
-              return !lesson.tile.classList.contains("grade-hidden");
-            })
-            .map(function(lesson) {
-              var score = 0;
-              var matched = queryTokens.every(function(token) {
-                if (lesson.searchableText.indexOf(token) !== -1) {
-                  score += 8;
-                  if (normalizeText(lesson.title).indexOf(token) !== -1) score += 10;
-                  if (normalizeText(lesson.topic).indexOf(token) !== -1) score += 6;
-                  if (normalizeText(lesson.id).indexOf(token) !== -1) score += 4;
-                  if (lesson.words.some(function(word) { return word.indexOf(token) === 0; })) score += 3;
-                  return true;
-                }
-                return false;
-              });
-
-              return matched ? { lesson: lesson, score: score } : null;
-            })
-            .filter(Boolean)
-            .sort(function(a, b) {
-              if (b.score !== a.score) return b.score - a.score;
-              return a.lesson.index - b.lesson.index;
-            })
-            .map(function(entry) {
-              return entry.lesson;
-            });
+          var candidates = lessonCache.filter(function(lesson) {
+            return !lesson.tile.classList.contains("grade-hidden");
+          });
+          // search-rank.js: every word must match a whole word or word start.
+          return window.ClassroomOSSearchRank.rank(candidates, normalizedQuery, {
+            fields: {
+              title: function(lesson) { return lesson.title; },
+              keywords: function(lesson) { return [lesson.id].concat(lesson.keywords || []); },
+              topic: function(lesson) { return [lesson.topic, lesson.themeLabel]; },
+              description: function(lesson) { return [lesson.description, lesson.summary || ""]; }
+            }
+          }).map(function(entry) { return entry.item; });
         }
 
         function setDropdownOpen(isOpen) {
@@ -1551,7 +1535,7 @@
         function updateLessonVisibility(results, query) {
           var normalizedQuery = normalizeText(query);
           var matchSet = new Set(results.map(function(lesson) { return lesson.tile; }));
-          var totalMatches = results.length;
+          var totalMatches = new Set(results.map(function(lesson) { return lesson.href; })).size;
 
           moduleSections.forEach(function(section) {
             var tiles = Array.prototype.slice.call(section.querySelectorAll(".tile"));
@@ -1594,9 +1578,14 @@
         function runSearch() {
           var query = searchInput.value;
           clearButton.hidden = !query;
-          lastResults = searchLessons(query);
+          var allMatches = searchLessons(query);
+          // Cross-listed lessons have a tile on each shelf: highlight them all, list them once.
+          var seenHref = {};
+          lastResults = allMatches.filter(function(lesson) {
+            return !seenHref[lesson.href] && (seenHref[lesson.href] = true);
+          });
 
-          updateLessonVisibility(lastResults, query);
+          updateLessonVisibility(allMatches, query);
           renderDropdown(lastResults, query);
         }
 
@@ -1890,6 +1879,7 @@
           <strong>Level 2 · Core Arithmetic (3–5)</strong>
           <small>Fluency with operations, fractions, decimals, units, area/perimeter, data, and the first idea of an unknown.</small>
         </div>
+        <p class="module-era-label">Operations <span>place value, ×, ÷, order</span></p>
         <a class="tile math-topic-tile" id="tile-math-level-2" data-glyph="0" style="--topic-a:10,132,255;--topic-b:88,86,214;" href="lessons/mathematics/foundations/math-foundations-lab.html#place-value">
           <span class="tile-kicker">Pathway · Place Value · Multi-Digit Operations · Decimals</span>
           <strong>Place Value &amp; Operation Sense</strong>
@@ -1902,6 +1892,12 @@
         </a>
         <a class="tile math-topic-tile" data-glyph="×" href="lessons/mathematics/foundations/multiplication.html"><span class="tile-kicker">Skill · Arrays · Mental math · Partial products</span><strong>Multiplication: See the Structure</strong><small>Build arrays, discover useful shortcuts, connect area to written multiplication, and practice products with coached feedback.</small></a>
         <a class="tile math-topic-tile" data-glyph="÷" href="lessons/mathematics/foundations/division.html"><span class="tile-kicker">Skill · Groups · Mental math · Remainders</span><strong>Division: Think in Groups</strong><small>See equal sharing, discover useful shortcuts, step through long division, and build confidence with coached practice.</small></a>
+        <a class="tile" href="lessons/mathematics/foundations/pemdas.html">
+          <span class="tile-kicker">Skill · Basic Operations · Expressions · Order</span>
+          <strong>PEMDAS &amp; Order of Operations</strong>
+          <small>Master the order mathematicians use to evaluate expressions. Practice parentheses, exponents, left-to-right multiplication/division, and left-to-right addition/subtraction.</small>
+        </a>
+        <p class="module-era-label">Fractions &amp; proportion</p>
         <a class="tile math-topic-tile" data-glyph="&#189;" style="--topic-a:52,199,89;--topic-b:175,82,222;" href="lessons/mathematics/foundations/math-foundations-lab.html#fractions">
           <span class="tile-kicker">Pathway · Fractions · Decimals · Equivalence</span>
           <strong>Fraction Sense Lab</strong>
@@ -1912,11 +1908,12 @@
           <strong>Fractions, Decimals &amp; Percents</strong>
           <small>Explore the three costumes of rational numbers: drag on a live tripartite number line, slice pizza and 100-grid models, and compare benchmark equivalents.</small>
         </a>
-        <a class="tile" href="lessons/mathematics/foundations/pemdas.html">
-          <span class="tile-kicker">Skill · Basic Operations · Expressions · Order</span>
-          <strong>PEMDAS &amp; Order of Operations</strong>
-          <small>Master the order mathematicians use to evaluate expressions. Practice parentheses, exponents, left-to-right multiplication/division, and left-to-right addition/subtraction.</small>
+        <a class="tile" href="lessons/mathematics/foundations/proportional-reasoning.html">
+          <span class="tile-kicker">Skill · Ratios · Proportions · Percent · Scaling</span>
+          <strong>Proportional Reasoning</strong>
+          <small>Master unit rates, scaling, percent change, and similar figures. See how this hidden backbone supports physics, finance, engineering, maps, models, and 3D prints.</small>
         </a>
+        <p class="module-era-label">Measurement &amp; data</p>
         <a class="tile" href="lessons/mathematics/foundations/area-perimeter-playground.html">
           <span class="tile-kicker">Skill · Area · Perimeter · Grids · Measurement</span>
           <strong>Area &amp; Perimeter Playground</strong>
@@ -1932,16 +1929,12 @@
           <strong>Data Stories &amp; Graphs</strong>
           <small>Collect data, choose honest displays, compare distributions, and explain what a graph supports—and what it cannot prove.</small>
         </a>
-        <a class="tile" href="lessons/mathematics/foundations/proportional-reasoning.html">
-          <span class="tile-kicker">Skill · Ratios · Proportions · Percent · Scaling</span>
-          <strong>Proportional Reasoning</strong>
-          <small>Master unit rates, scaling, percent change, and similar figures. See how this hidden backbone supports physics, finance, engineering, maps, models, and 3D prints.</small>
-        </a>
 
         <div class="module-cluster-label">
           <strong>Level 3 · Pre-Algebra Systems (6–8)</strong>
           <small>The primary mastery band: variables, functions, graphing, geometry, probability, statistics, and logical problem solving.</small>
         </div>
+        <p class="module-era-label">Toward algebra <span>integers, equations, functions</span></p>
         <a class="tile math-topic-tile" id="tile-math-level-3" data-glyph="&#8484;" style="--topic-a:88,86,214;--topic-b:10,132,255;" href="lessons/mathematics/foundations/math-foundations-lab.html#integers">
           <span class="tile-kicker">Pathway · Integers · Rational Numbers · Coordinate Plane</span>
           <strong>Integers &amp; Rational Numbers</strong>
@@ -1957,6 +1950,7 @@
           <strong>Patterns to Functions</strong>
           <small>Connect tables, graphs, equations, and stories; distinguish proportional from linear relationships; and model change with slope and intercept.</small>
         </a>
+        <p class="module-era-label">Exponents, lines &amp; graphs</p>
         <a class="tile math-topic-tile" data-glyph="x&#8319;" style="--topic-a:255,149,0;--topic-b:255,59,48;" href="lessons/mathematics/algebra/exponent-explorer.html" data-added="2026-09-19">
           <span class="tile-kicker">Skill · Exponents · Scientific Notation · Logarithms · Growth</span>
           <strong>Exponent Explorer</strong>
@@ -1982,6 +1976,7 @@
           <strong>Graphing Calculator</strong>
           <small>Translate algebraic equations into visual geometry in real time. Learn how graphing reveals the hidden shapes of data, motion, and physics.</small>
         </a>
+        <p class="module-era-label">Statistics &amp; probability</p>
         <a class="tile" href="lessons/mathematics/statistics-and-probability/mean-median-mode.html">
           <span class="tile-kicker">Skill · Statistics · Data · Measures of Center</span>
           <strong>Mean, Median &amp; Mode</strong>
@@ -2002,6 +1997,7 @@
           <strong>Galton Board &amp; Pachinko Lab</strong>
           <small>Watch a bell curve emerge on Galton's board, then explore pachinko-style peg boards, binomial distributions, bias, sample size, and expected value through a classroom-safe simulator.</small>
         </a>
+        <p class="module-era-label">Geometry <span>triangles and circles</span></p>
         <a class="tile math-pythagoras-tile" href="lessons/mathematics/geometry-and-trigonometry/pythagoras.html">
           <span class="tile-kicker">Skill · Geometry · Triangles · Pythagorean Theorem</span>
           <strong>Pythagoras &amp; Triangles</strong>
@@ -2481,6 +2477,7 @@
           <strong>Level 4 · Fields &amp; Systems (9–10)</strong>
           <small>Physics becomes mathematical and unified through vectors, work, oscillation, superposition, circuits, fields, induction, and optics.</small>
         </div>
+        <p class="module-era-label">Motion &amp; momentum <span>vectors, collisions, forces</span></p>
         <a class="tile" id="tile-level-4" href="lessons/physics/mechanics/vectors.html" style="border-left:3.5px solid #60a5fa;" data-added="2026-06-02">
           <span class="tile-kicker">Skill · Vectors · Components · Dot Product · Symmetry</span>
           <strong>Vectors</strong>
@@ -2506,6 +2503,7 @@
           <strong>Biomechanics: The Physics of Sports</strong>
           <small>Apply kinematics, projectile motion, torque, conserved angular momentum, impulse, and elastic energy to real sports — free throws, javelin, figure-skating spins, and landings — with two interactive simulators.</small>
         </a>
+        <p class="module-era-label">Oscillation &amp; waves <span>swinging, spreading, standing</span></p>
         <a class="tile physics-pendulum-tile" href="lessons/physics/mechanics/pendulum.html">
           <span class="tile-kicker">Skill · Periodic Motion · Oscillation · Energy Exchange</span>
           <strong>The Pendulum</strong>
@@ -2521,15 +2519,11 @@
           <strong>Cymatics: The Geometry of Sound</strong>
           <small>Watch sand, water, and non-Newtonian slime reveal the invisible shape of a vibrating plate. A real 2D and 3D standing-wave engine — modal superposition and Bessel functions, not a canned animation.</small>
         </a>
+        <p class="module-era-label">Electricity &amp; magnetism <span>charge, fields, induction</span></p>
         <a class="tile" href="lessons/physics/electricity-and-magnetism/what-is-electricity.html" style="border-left:3.5px solid #f59e0b;" data-added="2026-08-16">
           <span class="tile-kicker">Foundations · Atoms &amp; Charge · Static vs. Current · History</span>
           <strong>What Is Electricity?</strong>
           <small>What electricity actually is, explained with tangible demos for any age, plus the true history from rubbed amber in ancient Greece to Franklin, Volta, Faraday, and the War of the Currents.</small>
-        </a>
-        <a class="tile" href="lessons/physics/pioneers/benjamin-franklin.html" style="border-left:3.5px solid #b45309;" data-added="2026-08-16">
-          <span class="tile-kicker">Skill · Electricity · Invention · History of Science</span>
-          <strong>Benjamin Franklin</strong>
-          <small>Follow the kite experiment that proved lightning is electricity, then trace it to the lightning rod and the positive/negative charge convention still used in physics today.</small>
         </a>
         <a class="tile physics-coulomb-tile" href="lessons/physics/electricity-and-magnetism/coulombs-law.html">
           <span class="tile-kicker">Skill · Coulomb's Law · Electric Fields &amp; Forces</span>
@@ -2556,16 +2550,6 @@
           <strong>Faraday's Law</strong>
           <small>Learn how changing magnetic fields induce voltage across a wire. This single breakthrough is the foundation of every power grid and electric motor.</small>
         </a>
-        <a class="tile physics-maxwell-tile" href="lessons/physics/pioneers/james-clerk-maxwell.html">
-          <span class="tile-kicker">Skill · Maxwell's Equations · Light · EM Spectrum · History of Science</span>
-          <strong>James Clerk Maxwell</strong>
-          <small>Meet the physicist who unified electricity, magnetism, and light into four equations — predicted radio waves decades before Hertz, and took the world's first colour photograph. Explore the full EM spectrum interactively.</small>
-        </a>
-        <a class="tile physics-tesla-tile" href="lessons/physics/pioneers/nikola-tesla.html">
-          <span class="tile-kicker">Skill · AC Power · Resonance · History of Science</span>
-          <strong>Nikola Tesla</strong>
-          <small>Trace the life and inventions of the man who electrified the world. Explore AC motors, Tesla Coils, the War of Currents, and Tesla's visionary dream of wireless energy.</small>
-        </a>
         <a class="tile physics-crt-tile" href="lessons/physics/electricity-and-magnetism/cathode-ray-tube.html">
           <span class="tile-kicker">Skill · Electromagnetism · Electron Beams</span>
           <strong>Cathode Ray Tube</strong>
@@ -2576,11 +2560,28 @@
           <strong>Electron Microscopes</strong>
           <small>Use accelerated electrons as tiny waves to see viruses, nanomaterials, and atoms. Compare SEM and TEM while tuning voltage, focus, and resolution.</small>
         </a>
+        <p class="module-era-label">Pioneers <span>the people behind the fields</span></p>
+        <a class="tile" href="lessons/physics/pioneers/benjamin-franklin.html" style="border-left:3.5px solid #b45309;" data-added="2026-08-16">
+          <span class="tile-kicker">Skill · Electricity · Invention · History of Science</span>
+          <strong>Benjamin Franklin</strong>
+          <small>Follow the kite experiment that proved lightning is electricity, then trace it to the lightning rod and the positive/negative charge convention still used in physics today.</small>
+        </a>
+        <a class="tile physics-maxwell-tile" href="lessons/physics/pioneers/james-clerk-maxwell.html">
+          <span class="tile-kicker">Skill · Maxwell's Equations · Light · EM Spectrum · History of Science</span>
+          <strong>James Clerk Maxwell</strong>
+          <small>Meet the physicist who unified electricity, magnetism, and light into four equations — predicted radio waves decades before Hertz, and took the world's first colour photograph. Explore the full EM spectrum interactively.</small>
+        </a>
+        <a class="tile physics-tesla-tile" href="lessons/physics/pioneers/nikola-tesla.html">
+          <span class="tile-kicker">Skill · AC Power · Resonance · History of Science</span>
+          <strong>Nikola Tesla</strong>
+          <small>Trace the life and inventions of the man who electrified the world. Explore AC motors, Tesla Coils, the War of Currents, and Tesla's visionary dream of wireless energy.</small>
+        </a>
         <a class="tile" href="lessons/physics/pioneers/wright-brothers.html" data-added="2026-10-06">
           <span class="tile-kicker">Grades 4–9 · Flight · Engineering · History</span>
           <strong>The Wright Brothers: Learning to Fly</strong>
           <small>Test wing angles in a virtual wind tunnel, explore pitch, roll, and yaw, and read the first-flight photograph as evidence.</small>
         </a>
+
         <div class="module-cluster-label">
           <strong>Level 5 · Modern &amp; Thermal Physics (11–12)</strong>
           <small>Explore atomic matter, relativity, quantum models, heat, and entropy.</small>
@@ -3237,6 +3238,16 @@
           <strong>Bug Bots: Genghis &amp; the Insect Robots</strong>
           <small>How MIT's six-legged robot Genghis walked without a central brain using subsumption architecture — and how you can build the same physics with a toothbrush and a vibrating motor.</small>
         </a>
+        <a class="tile" href="lessons/engineering/mechanical-and-civil-design/mechanisms-gears.html">
+          <span class="tile-kicker">Skill · Simple Machines · Torque · Gear Ratios</span>
+          <strong>Mechanisms and Gear Systems</strong>
+          <small>Trade speed for torque using interactive gear trains. Discover the mechanical advantage principles that drive everything from bicycles to industrial robotics.</small>
+          <div class="engineering-bridge-meta" aria-hidden="true">
+            <span>Gear ratio lab</span>
+            <span>Torque</span>
+            <span>Speed trade-off</span>
+          </div>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Chapter 3 · Electronics Foundations (6–8)</strong>
@@ -3294,16 +3305,16 @@
           <strong>Chapter 4 · Arduino Programming &amp; Robotics (6–9)</strong>
           <small>See how transistors become logic gates and memory, then meet the microcontroller: wire inputs and outputs, write real code, and combine sensors, gears, and networking into working robotic systems.</small>
         </div>
-
-        <a class="tile" href="lessons/engineering/arduino-and-electronics/transistor-to-logic-gate.html" style="border-left:3.5px solid #7c3aed;" data-added="2026-10-06">
-          <span class="tile-kicker">Interactive Lab · MOSFET · Logic Gates · Binary · Memory</span>
-          <strong>From Transistor to Logic Gate</strong>
-          <small>Switch a MOSFET with a voltage, wire transistors into NOT, NAND, and NOR gates, build a half adder that does binary math, and store one bit in a latch.</small>
-        </a>
+        <p class="module-era-label">Getting started <span>robots, logic, your first board</span></p>
         <a class="tile" href="lessons/engineering/mechanical-and-civil-design/robotics-engineering-intro.html" style="border-left:3.5px solid #146b8c;" data-added="2026-08-29">
           <span class="tile-kicker">Interactive Lab · Robot Sim · Lab Safety · Parts ID</span>
           <strong>Robotics Engineering Intro</strong>
           <small>Test what makes a robot with a robot-or-not sort, then drive a robot sim where you pick its sensor, brain rule, loop speed, and motors and watch sense-think-act run as Arduino code. Meet real robots, judge lab-safety scenarios, light up breadboard connections, and identify eight bench parts.</small>
+        </a>
+        <a class="tile" href="lessons/engineering/arduino-and-electronics/transistor-to-logic-gate.html" style="border-left:3.5px solid #7c3aed;" data-added="2026-10-06">
+          <span class="tile-kicker">Interactive Lab · MOSFET · Logic Gates · Binary · Memory</span>
+          <strong>From Transistor to Logic Gate</strong>
+          <small>Switch a MOSFET with a voltage, wire transistors into NOT, NAND, and NOR gates, build a half adder that does binary math, and store one bit in a latch.</small>
         </a>
         <a class="tile" href="lessons/engineering/arduino-and-electronics/arduino-robot-brain.html" style="border-left:3.5px solid #00979d;" data-added="2026-08-29">
           <span class="tile-kicker">Interactive Lab · Arduino IDE · Blink · Morse Code</span>
@@ -3320,6 +3331,7 @@
           <strong>Arduino Programming: Variables, Functions &amp; Libraries</strong>
           <small>Store readings in variables, map an analog sensor to a PWM output, write a custom function with parameters, and pull in a library instead of reinventing the wheel.</small>
         </a>
+        <p class="module-era-label">Inputs, outputs &amp; sensors</p>
         <a class="tile" href="lessons/engineering/arduino-and-electronics/inputs-beyond-the-button.html" style="border-left:3.5px solid #c65e2e;" data-added="2026-08-22">
           <span class="tile-kicker">Project · Inputs · Pull-Ups · Debouncing · Binary Comms</span>
           <strong>Inputs: Beyond the Button</strong>
@@ -3335,20 +3347,11 @@
           <strong>Sensor Modules Kit</strong>
           <small>Sort a beginner sensor kit into useful categories, learn the most practical starter modules, and review power, wiring, and project ideas.</small>
         </a>
+        <p class="module-era-label">Connected projects <span>web pages and the internet</span></p>
         <a class="tile" href="lessons/engineering/arduino-and-electronics/sensor-to-webpage.html" style="border-left:3.5px solid #7ec850;" data-added="2026-09-15">
           <span class="tile-kicker">Project · Arduino · Serial Monitor · Web Serial API</span>
           <strong>Sensor to Webpage</strong>
           <small>Wire an analog sensor to Arduino, print live readings to Serial, then build a simple webpage that reads the same USB stream and displays it in real time.</small>
-        </a>
-        <a class="tile" href="lessons/engineering/mechanical-and-civil-design/mechanisms-gears.html">
-          <span class="tile-kicker">Skill · Simple Machines · Torque · Gear Ratios</span>
-          <strong>Mechanisms and Gear Systems</strong>
-          <small>Trade speed for torque using interactive gear trains. Discover the mechanical advantage principles that drive everything from bicycles to industrial robotics.</small>
-          <div class="engineering-bridge-meta" aria-hidden="true">
-            <span>Gear ratio lab</span>
-            <span>Torque</span>
-            <span>Speed trade-off</span>
-          </div>
         </a>
         <a class="tile" href="lessons/engineering/arduino-and-electronics/internet-of-things.html" style="border-left:3.5px solid #5ce1e6;" data-added="2026-08-16">
           <span class="tile-kicker">Skill · Sensors · Networking · Automation · Cybersecurity</span>
@@ -3412,7 +3415,7 @@
           <strong>Chapter 6 · Signals, Control &amp; Capstone (8–12)</strong>
           <small>Engineering becomes mathematical and dynamic: feedback loops, control systems, signal processing, stability, and two capstones: a walk through the whole design loop, and an electronics build you design, measure, and present.</small>
         </div>
-
+        <p class="module-era-label">Signals &amp; control</p>
         <a class="tile physics-dsp-tile" href="lessons/physics/waves-and-sound/digital-signal-processing.html">
           <span class="tile-kicker">Skill · Signals · Filters · Fourier Bridge</span>
           <strong>Digital Signal Processing</strong>
@@ -3428,6 +3431,7 @@
           <strong>PID Control &amp; Feedback Loops</strong>
           <small>Tune a proportional-integral-derivative controller to stabilize a drone in real time. Understand the feedback math behind autopilots, thermostats, and self-driving cars.</small>
         </a>
+        <p class="module-era-label">Robotics <span>build, drive, map, plan, learn</span></p>
         <a class="tile" href="lessons/engineering/robotics/robot-build-studio.html" style="border-left:3.5px solid #f2bd3f;" data-added="2026-10-17">
           <span class="tile-kicker">Learning Pathway · Design · Fabricate · Integrate · Document</span>
           <strong>Robot Build Studio</strong>
@@ -3468,6 +3472,7 @@
           <strong>Robot Reinforcement Learning</strong>
           <small>Train a robot with Q-learning to reach its charger without falling down the stairs. Tune learning rate, patience, and curiosity, edit the world, and meet deep RL.</small>
         </a>
+        <p class="module-era-label">Sound &amp; stage systems <span>also on the Audio, Lighting &amp; Production shelf</span></p>
         <a class="tile" href="lessons/technical-elements/audio-engineering/live-audio-signal-chain.html" style="border-left:3.5px solid #f0b448;" data-added="2026-07-21">
           <span class="tile-kicker">Skill · Live Sound · Gain Staging · Signal Flow</span>
           <strong>Live Audio Signal Chain</strong>
@@ -3498,6 +3503,7 @@
           <strong>Stage Lighting Design Lab</strong>
           <small>Light a virtual performer from the front, sides, and behind. Mix RGB washes, discover why warm and cool light tell different stories, then save your looks as cues and run your own show.</small>
         </a>
+        <p class="module-era-label">Capstones</p>
         <a class="tile" href="lessons/engineering/mechanical-and-civil-design/maglev-train.html">
           <span class="tile-kicker">Capstone · Transportation · Electromagnetism · Control</span>
           <strong>Maglev Train Engineering</strong>
@@ -3518,6 +3524,7 @@
           <strong>Electronics Capstone: Design, Build, Prove</strong>
           <small>Pick a design brief, write testable requirements, plan a power budget, predict then measure, build and iterate, and present, with a saved engineering notebook and a before-and-after skills check.</small>
         </a>
+
       </div>
       </div><!-- /.module-drawer -->
     </section>
@@ -4212,56 +4219,48 @@
           <strong>Level 3 · Algorithms &amp; Systems (6–8)</strong>
           <small>The core teaching band — where ideas become engines. Students master search and optimization, design state machines and simulations, watch emergence arise from simple rules, and wield data structures, graphs, and grids to tell fast algorithms from slow ones.</small>
         </div>
-
-
+        <p class="module-era-label">Algorithms <span>sorting, states, search</span></p>
         <a class="tile cs-sorting-tile" href="lessons/computer-science/algorithms-and-ai/sorting-algorithms.html">
           <span class="tile-kicker">Skill · Algorithms · Efficiency · Complexity</span>
           <strong>Sorting Algorithms</strong>
           <small>Compare the performance of Bubble, Merge, and Quick sorts. Visualize algorithmic complexity and learn why Big-O notation is critical for scalable software.</small>
         </a>
-
         <a class="tile cs-automata-tile" href="lessons/computer-science/algorithms-and-ai/state-machines.html">
           <span class="tile-kicker">Skill · State Machines · Memory · Transitions</span>
           <strong>State Machines</strong>
           <small>Program digital behaviors using distinct states, inputs, and transitions. See the discrete logic driving traffic lights, network protocols, and game characters.</small>
         </a>
-
         <a class="tile astar-tile" href="lessons/computer-science/algorithms-and-ai/pathfinding.html">
           <span class="tile-kicker">Skill · Search · Optimization · Heuristics</span>
           <strong>A* Pathfinding Agent</strong>
           <small>Guide an autonomous agent through a maze using cost heuristics. Master the pathfinding algorithm that navigates video game NPCs and real-world GPS routing.</small>
         </a>
-
+        <p class="module-era-label">Simulation &amp; graphics <span>emergence, noise, pixels, water</span></p>
         <a class="tile life-lab-tile" href="lessons/computer-science/algorithms-and-ai/life-lab.html">
           <span class="tile-kicker">Skill · Simulation · Emergence · Cellular Automata</span>
           <strong>Life Lab: The Game of Life</strong>
           <small>Apply simple survival rules to a grid of cells to watch complex, lifelike behaviors emerge. Experience the chaotic beauty of Conway's cellular automata.</small>
         </a>
-
         <a class="tile cs-perlin-tile" href="lessons/computer-science/graphics-and-games/perlin-noise.html">
           <span class="tile-kicker">Skill · Procedural Systems · Noise · Generation</span>
           <strong>Perlin Noise</strong>
           <small>Generate organic textures and infinite landscapes using mathematically smoothed randomness. Master the procedural generation technique behind modern video games.</small>
         </a>
-
         <a class="tile cs-perlin-tile cs-ascii-tile" href="lessons/computer-science/graphics-and-games/ascii-art-and-games.html">
           <span class="tile-kicker">Skill · Encoding · ASCII Art · Roguelikes</span>
           <strong>ASCII: Text That Became Games</strong>
           <small>Decode letters into binary, shade 3D shapes with characters, and play a tiny Rogue. Cross-referenced with ASCII City, Crawlspace, and Retro Dungeon Quest.</small>
         </a>
-
         <a class="tile cs-perlin-tile" href="lessons/computer-science/graphics-and-games/demoscene.html" data-added="2026-09-29">
           <span class="tile-kicker">Skill · Real-Time Graphics · Sizecoding · Digital Art</span>
           <strong>The Demoscene</strong>
           <small>Meet the hackers who turned 64 KB into whole animated worlds, then run and remix classic demo effects — plasma, starfield, tunnel, fire, and a sine scroller — live in your browser.</small>
         </a>
-
         <a class="tile cs-cgi-tile" href="lessons/computer-science/graphics-and-games/cgi-water.html">
           <span class="tile-kicker">Skill · Fluid Simulation · Wave Physics · Rendering</span>
           <strong>CGI Water: From Physics to Pixels</strong>
           <small>Discover how movies simulate water using Navier-Stokes equations, SPH particles, Gerstner ocean waves, and the optics of reflection and refraction. Run a real height-field water simulator in your browser.</small>
         </a>
-
         <a class="tile" href="lessons/computer-science/graphics-and-games/liquid-engine-showcase.html" style="border-left:3.5px solid #06b6d4;" data-added="2026-10-20">
           <span class="tile-kicker">Benchmark · WebGL · Shaders · Fluid Simulation</span>
           <strong>Liquid Engine Benchmark</strong>
@@ -4270,35 +4269,107 @@
 
         <div class="module-cluster-label">
           <strong>Level 3 · Build Your Own Web (6–12)</strong>
-          <small>One pathway, start to finish: HTML, CSS and JavaScript from nothing, your student page, GitHub, publishing, and a WebXR extension. Every lesson in the sequence is linked from the pathway page.</small>
-          <ul class="pathway-steps" aria-label="Build Your Own Web lessons">
-            <li><a href="lessons/web-design/web-how-the-web-works.html">0 · How the Web Works</a></li>
-            <li><a href="lessons/web-design/web-first-site.html">1 · First Site</a></li>
-            <li><a href="lessons/web-design/web-html.html">2 · HTML</a></li>
-            <li><a href="lessons/web-design/web-css.html">3 · CSS</a></li>
-            <li><a href="lessons/web-design/web-javascript.html">4 · JavaScript</a></li>
-            <li><a href="lessons/web-design/web-accessibility-debugging.html">5 · Test &amp; Debug</a></li>
-            <li><a href="lessons/web-design/web-project-studio.html">6 · Project Studios</a></li>
-            <li><a href="lessons/web-design/web-flash-history.html">7 · Flash Era</a></li>
-            <li><a href="lessons/web-design/web-creative-lab.html">8 · Interactive Work</a></li>
-            <li><a href="lessons/web-design/web-publish.html">9 · Publish</a></li>
-            <li><a href="lessons/computer-science/graphics-and-games/webxr-gallery.html">10 · WebXR</a></li>
-            <li><a href="lessons/web-design/web-studio.html">+ Web Studio</a></li>
-            <li><a href="lessons/computer-science/foundations/build-your-student-page.html">+ Student Page</a></li>
-            <li><a href="lessons/computer-science/foundations/github-collaboration.html">+ GitHub</a></li>
-            <li><a href="lessons/web-design/pioneers/tim-berners-lee.html">+ Tim Berners-Lee</a></li>
-            <li><a href="lessons/web-design/pioneers/marc-andreessen.html">+ Marc Andreessen</a></li>
-            <li><a href="lessons/web-design/pioneers/hakon-wium-lie.html">+ Håkon Wium Lie</a></li>
-            <li><a href="lessons/web-design/pioneers/brendan-eich.html">+ Brendan Eich</a></li>
-          </ul>
+          <small>One pathway, start to finish: HTML, CSS and JavaScript from nothing, your student page, GitHub, publishing, and a WebXR extension. Follow the course in order, then add the tools and the people who built the web.</small>
         </div>
-
+        <p class="module-era-label">Start here</p>
         <a class="tile tile-hero" href="lessons/web-design/web-design-pathway.html" style="border-left:3.5px solid #8250df;" data-added="2026-09-08">
           <span class="tile-kicker">Pathway · HTML · CSS · JavaScript · Git · Publishing</span>
           <strong>Build Your Own Web — Start Here</strong>
           <small>The full route from three files to a published website you can explain and maintain: first site setup, HTML, CSS, JavaScript, testing &amp; accessibility, project studios, your student page, GitHub collaboration, publishing, the Flash era, and WebXR. No AI required.</small>
         </a>
-
+        <p class="module-era-label">The course <span>eleven steps, in order</span></p>
+        <a class="tile" href="lessons/web-design/web-how-the-web-works.html">
+          <span class="tile-kicker">Step 0 · URL · DNS · IP address</span>
+          <strong>How the Web Works</strong>
+          <small>Follow one page request from the address bar to the screen: URLs, DNS, HTTPS, status codes and packets.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-first-site.html">
+          <span class="tile-kicker">Step 1 · VS Code · index.html · file paths</span>
+          <strong>Set Up Your First Site</strong>
+          <small>Open a folder in VS Code, connect index.html, style.css and script.js, and trace how a browser finds each file.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-html.html">
+          <span class="tile-kicker">Step 2 · HTML · semantics · headings</span>
+          <strong>Give the Page Meaning with HTML</strong>
+          <small>Write headings, landmarks, links, images and forms that carry meaning, with a live HTML editor and preview.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-css.html">
+          <span class="tile-kicker">Step 3 · CSS · box model · Flexbox</span>
+          <strong>Design with CSS</strong>
+          <small>Use the box model, spacing scales, Flexbox, Grid and one media query to build a layout that adapts.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-javascript.html">
+          <span class="tile-kicker">Step 4 · JavaScript · DOM · events</span>
+          <strong>Make It Respond with JavaScript</strong>
+          <small>Connect variables, functions, events and the DOM to build a working search that filters your projects.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-accessibility-debugging.html">
+          <span class="tile-kicker">Step 5 · debugging · DevTools · console</span>
+          <strong>Test, Debug, and Include Everyone</strong>
+          <small>Use developer tools, a keyboard and a narrow screen to find, repair and document a real defect.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-project-studio.html">
+          <span class="tile-kicker">Step 6 · templates · starter packs · portfolio</span>
+          <strong>Website Project Studios</strong>
+          <small>Choose a starter pack and build an original portfolio, business site, practice store, wiki or creation hub.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-flash-history.html">
+          <span class="tile-kicker">Step 7 · Flash · SWF · browser games</span>
+          <strong>The Flash Era: What Happened to Browser Games</strong>
+          <small>Why Flash made 2000s browser games possible, why the plugin ended, and how that work is preserved today.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-creative-lab.html">
+          <span class="tile-kicker">Step 8 · canvas · animation loop · requestAnimationFrame</span>
+          <strong>Build a Home for Interactive Work</strong>
+          <small>Understand animation loops, delta time and canvas drawing, then embed and credit your games and simulations.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/web-publish.html">
+          <span class="tile-kicker">Step 9 · publishing · GitHub Pages · git</span>
+          <strong>Publish and Maintain Your Website</strong>
+          <small>Put your folder on the public web with GitHub Pages, fix what breaks on a real host, and maintain it safely.</small>
+        </a>
+        <a class="tile" href="lessons/computer-science/graphics-and-games/webxr-gallery.html">
+          <span class="tile-kicker">Step 10 · WebXR · VR · 3D</span>
+          <strong>Extend into WebXR</strong>
+          <small>Build a 3D gallery that works on an ordinary screen and offers an optional immersive mode on supported headsets.</small>
+        </a>
+        <p class="module-era-label">Tools &amp; sharing</p>
+        <a class="tile" href="lessons/web-design/web-studio.html">
+          <span class="tile-kicker">Studio Lab · web studio · draw to code · CSS Grid</span>
+          <strong>Web Studio — Draw, Blocks and Code</strong>
+          <small>Build one website three ways: draw boxes and text that become CSS Grid code, add behavior with blocks, edit the files, then share on the class site and export to your own GitHub Pages site.</small>
+        </a>
+        <a class="tile" href="lessons/computer-science/foundations/build-your-student-page.html">
+          <span class="tile-kicker">Interactive Lesson · build · student · page</span>
+          <strong>Build Your Student Page</strong>
+          <small>Build the page you'll publish on this very site — in a live editor with instant preview. Structure it in HTML, style it with real color theory, add one interactive element in JavaScript, and watch the checklists grade themselves.</small>
+        </a>
+        <a class="tile" href="lessons/computer-science/foundations/github-collaboration.html">
+          <span class="tile-kicker">Interactive Lab · GitHub · Git · version control</span>
+          <strong>GitHub — From Idea to Shared Prototype</strong>
+          <small>Practice commits, branches, pull-request review, prototype planning, and safe website publishing with GitHub Pages</small>
+        </a>
+        <p class="module-era-label">Pioneers of the web</p>
+        <a class="tile" href="lessons/web-design/pioneers/tim-berners-lee.html">
+          <span class="tile-kicker">Biography · Tim Berners-Lee · World Wide Web · CERN</span>
+          <strong>Tim Berners-Lee and the First Website</strong>
+          <small>How Berners-Lee invented the web at CERN and gave it away, then restyle the earliest surviving web page with modern CSS.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/pioneers/marc-andreessen.html">
+          <span class="tile-kicker">Biography · Marc Andreessen · NCSA Mosaic · Netscape</span>
+          <strong>Marc Andreessen and the Dawn of the Visual Web</strong>
+          <small>How Marc Andreessen co-created NCSA Mosaic, introduced the &lt;img&gt; tag for inline graphics, and co-founded Netscape to launch the commercial visual web.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/pioneers/hakon-wium-lie.html">
+          <span class="tile-kicker">Biography · Håkon Wium Lie · CSS · Cascading Style Sheets</span>
+          <strong>Håkon Wium Lie and Cascading Style Sheets</strong>
+          <small>How Håkon Wium Lie proposed CSS at CERN to separate style from structure, invented the cascade, and defended web standards with the Acid2 test.</small>
+        </a>
+        <a class="tile" href="lessons/web-design/pioneers/brendan-eich.html">
+          <span class="tile-kicker">Biography · Brendan Eich · JavaScript · Netscape</span>
+          <strong>Brendan Eich and the Creation of JavaScript</strong>
+          <small>How Brendan Eich created JavaScript in ten days at Netscape in 1995, transforming web pages into dynamic software and co-founding Mozilla and Firefox.</small>
+        </a>
 
         <div class="module-cluster-label">
           <strong>Level 3 · Pioneers, Safety &amp; Lab Guides</strong>
@@ -4351,68 +4422,22 @@
           <strong>Level 4 · Architecture &amp; Computation (9–10)</strong>
           <small>Structure determines capability: memory, abstraction, recursion, graph theory, networks, efficiency, encoding, security, and cryptographic systems.</small>
         </div>
-
-        <a class="tile cs-mst-tile" href="lessons/computer-science/algorithms-and-ai/minimum-spanning-tree.html">
-          <span class="tile-kicker">Skill · Graph Theory · Networks · Greedy Algorithms</span>
-          <strong>Minimum Spanning Tree</strong>
-          <small>Optimize a network layout using Kruskal's greedy algorithm. Learn how telecommunications and power grids connect maximum nodes with minimum material.</small>
-        </a>
-        <a class="tile cs-enigma-tile" href="lessons/computer-science/security/cryptography-enigma.html">
-          <span class="tile-kicker">Skill · Cryptography · Encoding · Security</span>
-          <strong>Cryptography &amp; The Enigma</strong>
-          <small>Step through three eras of encryption: Caesar shift ciphers, the Nazi Enigma machine, and modern RSA key exchange. See how codebreaking at Bletchley Park changed the war.</small>
-        </a>
-
-
-
-        <a class="tile turing-tile" href="lessons/computer-science/algorithms-and-ai/turing-test.html">
-          <span class="tile-kicker">Skill · Intelligence · Simulation · Evaluation</span>
-          <strong>Alan Turing and The Turing Test</strong>
-          <small>Play the role of judge in Turing's famous Imitation Game. Examine the philosophical debate over whether simulated conversation equals true intelligence.</small>
-        </a>
-
-        <a class="tile minimax-tile" href="lessons/computer-science/algorithms-and-ai/minimax-1v1.html">
-          <span class="tile-kicker">Skill · Adversarial Search · Game Trees</span>
-          <strong>1v1 Game AI: Minimax</strong>
-          <small>Explore the adversarial search algorithms that powered the first chess computers. Learn how game trees help machines anticipate and counter human strategy.</small>
-        </a>
-
+        <p class="module-era-label">Chess, Go &amp; game AI <span>play, then teach a machine to</span></p>
         <a class="tile cs-chess-tile" href="lessons/computer-science/algorithms-and-ai/chess-origins-how-to-play.html">
           <span class="tile-kicker">Skill · Strategy Games · Rules · History</span>
           <strong>Chess: Origins and How to Play</strong>
           <small>Trace chess from chaturanga to the modern game, then practice board setup, piece movement, captures, check, and checkmate with an interactive movement lab.</small>
         </a>
-
         <a class="tile chess-tile" href="lessons/computer-science/algorithms-and-ai/chess-ai-core.html">
           <span class="tile-kicker">Play · Chess · Strategy · Computer Opponents</span>
           <strong>Chess: Play &amp; Practice · ChessOS</strong>
           <small>Play chess in ChessOS on interactive 2D and 3D boards. Practice strategy, challenge computer opponents, undo turns, and review or export your game.</small>
         </a>
-
-        <a class="tile eliza-tile" href="lessons/computer-science/algorithms-and-ai/ai-eliza.html">
-          <span class="tile-kicker">Skill · Symbolic AI · Pattern Matching</span>
-          <strong>AI Origins: ELIZA Chatbot</strong>
-          <small>Recreate the 1966 program that fooled users into thinking a machine was empathetic. Analyze how simple pattern-matching scripts mimic human conversation.</small>
+        <a class="tile minimax-tile" href="lessons/computer-science/algorithms-and-ai/minimax-1v1.html">
+          <span class="tile-kicker">Skill · Adversarial Search · Game Trees</span>
+          <strong>1v1 Game AI: Minimax</strong>
+          <small>Explore the adversarial search algorithms that powered the first chess computers. Learn how game trees help machines anticipate and counter human strategy.</small>
         </a>
-
-        <a class="tile expert-system-tile" href="lessons/computer-science/algorithms-and-ai/expert-system.html">
-          <span class="tile-kicker">Skill · Expert Systems · IF/THEN Reasoning</span>
-          <strong>Rule Engine Expert System</strong>
-          <small>Build a diagnostic tool using cascading IF-THEN logic and confidence scores. Discover how 1980s expert systems attempted to encode human professional intuition.</small>
-        </a>
-
-        <a class="tile twenty-questions-tile" href="lessons/computer-science/algorithms-and-ai/twenty-questions-information-theory.html">
-          <span class="tile-kicker">Skill · Information Theory · Entropy · Bayesian AI</span>
-          <strong>20Q Mind Reader &amp; Information Theory</strong>
-          <small>Play a retro 20Q handheld clone that guesses what you think in under 20 questions. Explore Shannon entropy, binary decision trees, and how AI optimizes decisions with bits.</small>
-        </a>
-
-        <a class="tile perceptron-tile" href="lessons/computer-science/algorithms-and-ai/perceptron-lab.html">
-          <span class="tile-kicker">Skill · Neural Networks · Training · Inference</span>
-          <strong>Perceptron Lab</strong>
-          <small>Train a single-layer neural network to classify simple data points. Understand the mathematical foundation of modern deep learning architectures.</small>
-        </a>
-
         <a class="tile go-tile" href="lessons/computer-science/algorithms-and-ai/go-ai.html">
           <span class="tile-kicker">Skill · MCTS · Neural Search · Hybrid Intelligence</span>
           <strong>Deep Blue to AlphaGo: The Go Challenge</strong>
@@ -4422,6 +4447,43 @@
             <span>MCTS</span>
             <span>Lee Sedol</span>
           </div>
+        </a>
+        <p class="module-era-label">Thinking machines <span>from ELIZA to neural networks</span></p>
+        <a class="tile turing-tile" href="lessons/computer-science/algorithms-and-ai/turing-test.html">
+          <span class="tile-kicker">Skill · Intelligence · Simulation · Evaluation</span>
+          <strong>Alan Turing and The Turing Test</strong>
+          <small>Play the role of judge in Turing's famous Imitation Game. Examine the philosophical debate over whether simulated conversation equals true intelligence.</small>
+        </a>
+        <a class="tile eliza-tile" href="lessons/computer-science/algorithms-and-ai/ai-eliza.html">
+          <span class="tile-kicker">Skill · Symbolic AI · Pattern Matching</span>
+          <strong>AI Origins: ELIZA Chatbot</strong>
+          <small>Recreate the 1966 program that fooled users into thinking a machine was empathetic. Analyze how simple pattern-matching scripts mimic human conversation.</small>
+        </a>
+        <a class="tile expert-system-tile" href="lessons/computer-science/algorithms-and-ai/expert-system.html">
+          <span class="tile-kicker">Skill · Expert Systems · IF/THEN Reasoning</span>
+          <strong>Rule Engine Expert System</strong>
+          <small>Build a diagnostic tool using cascading IF-THEN logic and confidence scores. Discover how 1980s expert systems attempted to encode human professional intuition.</small>
+        </a>
+        <a class="tile twenty-questions-tile" href="lessons/computer-science/algorithms-and-ai/twenty-questions-information-theory.html">
+          <span class="tile-kicker">Skill · Information Theory · Entropy · Bayesian AI</span>
+          <strong>20Q Mind Reader &amp; Information Theory</strong>
+          <small>Play a retro 20Q handheld clone that guesses what you think in under 20 questions. Explore Shannon entropy, binary decision trees, and how AI optimizes decisions with bits.</small>
+        </a>
+        <a class="tile perceptron-tile" href="lessons/computer-science/algorithms-and-ai/perceptron-lab.html">
+          <span class="tile-kicker">Skill · Neural Networks · Training · Inference</span>
+          <strong>Perceptron Lab</strong>
+          <small>Train a single-layer neural network to classify simple data points. Understand the mathematical foundation of modern deep learning architectures.</small>
+        </a>
+        <p class="module-era-label">Networks &amp; secrets <span>graphs and codes</span></p>
+        <a class="tile cs-mst-tile" href="lessons/computer-science/algorithms-and-ai/minimum-spanning-tree.html">
+          <span class="tile-kicker">Skill · Graph Theory · Networks · Greedy Algorithms</span>
+          <strong>Minimum Spanning Tree</strong>
+          <small>Optimize a network layout using Kruskal's greedy algorithm. Learn how telecommunications and power grids connect maximum nodes with minimum material.</small>
+        </a>
+        <a class="tile cs-enigma-tile" href="lessons/computer-science/security/cryptography-enigma.html">
+          <span class="tile-kicker">Skill · Cryptography · Encoding · Security</span>
+          <strong>Cryptography &amp; The Enigma</strong>
+          <small>Step through three eras of encryption: Caesar shift ciphers, the Nazi Enigma machine, and modern RSA key exchange. See how codebreaking at Bletchley Park changed the war.</small>
         </a>
 
         <div class="module-cluster-label">
@@ -4466,16 +4528,7 @@
           <strong>Level 2 · From Scratch &amp; Your Tools (3–8)</strong>
           <small>Build a game with pure HTML, CSS, and JavaScript — then set up a professional game dev workspace in VS Code with Live Server and essential extensions.</small>
         </div>
-        <a class="tile gamedev-scratch-tile" href="lessons/computer-science/graphics-and-games/from-scratch-browser-game.html">
-          <span class="tile-kicker">Skill · HTML5 Canvas · Game Loop · Vanilla JavaScript</span>
-          <strong>From Scratch: Build a Browser Game</strong>
-          <small>Write a real dodge game with zero libraries. Learn the update/render loop, canvas drawing, keyboard input, and AABB collision detection — then play your creation directly in the browser.</small>
-        </a>
-        <a class="tile" href="lessons/computer-science/graphics-and-games/3d-from-scratch.html" data-added="2026-11-04">
-          <span class="tile-kicker">Interactive Lab · 3D Math · Raycasting · Rasterization</span>
-          <strong>3D from Scratch: Projection, Raycasting &amp; Render Engines</strong>
-          <small>Explore how flat 2D screens create 3D illusions: perspective division math, wireframes, DDA raycasting, Mode 7 affine floors, software rasterization with Z-buffers, and raytracing.</small>
-        </a>
+        <p class="module-era-label">Set up your tools</p>
         <a class="tile gamedev-vscode-tile" href="lessons/computer-science/foundations/vscode-game-dev-setup.html">
           <span class="tile-kicker">Skill · VS Code · Live Server · Extensions · Workflow</span>
           <strong>VS Code for Game Dev</strong>
@@ -4491,11 +4544,23 @@
           <strong>Python Foundations</strong>
           <small>Learn Python from zero: variables, data types, print(), operators, if/elif/else, for and while loops, lists, and functions. Predict-the-output exercises with instant feedback — start here before Pygame.</small>
         </a>
+        <p class="module-era-label">Build from scratch <span>canvas, Pygame, your own 3D</span></p>
+        <a class="tile gamedev-scratch-tile" href="lessons/computer-science/graphics-and-games/from-scratch-browser-game.html">
+          <span class="tile-kicker">Skill · HTML5 Canvas · Game Loop · Vanilla JavaScript</span>
+          <strong>From Scratch: Build a Browser Game</strong>
+          <small>Write a real dodge game with zero libraries. Learn the update/render loop, canvas drawing, keyboard input, and AABB collision detection — then play your creation directly in the browser.</small>
+        </a>
         <a class="tile" href="lessons/computer-science/graphics-and-games/pygame-game-loop.html" style="border-left:3.5px solid #ffd43b;" data-added="2026-07-21">
           <span class="tile-kicker">Skill · Python · Pygame · Game Loop · Delta Time</span>
           <strong>Python &amp; Pygame: The Game Loop</strong>
           <small>Watch real Pygame code run its input-update-render loop live, in slow motion, or one frame at a time. Break your frame rate on purpose, master delta time, and drag AABB collision boxes until colliderect makes sense.</small>
         </a>
+        <a class="tile" href="lessons/computer-science/graphics-and-games/3d-from-scratch.html" data-added="2026-11-04">
+          <span class="tile-kicker">Interactive Lab · 3D Math · Raycasting · Rasterization</span>
+          <strong>3D from Scratch: Projection, Raycasting &amp; Render Engines</strong>
+          <small>Explore how flat 2D screens create 3D illusions: perspective division math, wireframes, DDA raycasting, Mode 7 affine floors, software rasterization with Z-buffers, and raytracing.</small>
+        </a>
+        <p class="module-era-label">Build a classic <span>rebuild a famous game, then remix it</span></p>
         <a class="tile" href="lessons/computer-science/graphics-and-games/trail-game-builder.html" style="border-left:3.5px solid #b45309;" data-added="2026-10-26">
           <span class="tile-kicker">Build a Classic · Game State · Event Tables · Balancing · Spin-offs</span>
           <strong>Trail Game Builder: Make Your Own Oregon Trail</strong>
@@ -5010,11 +5075,13 @@
           <strong>Chapter 1 · Foundations of Language</strong>
           <small>Language begins as sound becoming symbol: phonics, syllables, grammar, expression, and vocabulary in context.</small>
         </div>
+        <p class="module-era-label">Reading &amp; phonics</p>
         <a class="tile lang-foundations-tile" href="lessons/language-literature/languages/language-foundations-lab.html">
           <span class="tile-kicker">Skill · Phonics · Word Building · Reading Fluency</span>
           <strong>Language Foundations Lab</strong>
           <small>Connect sounds, letters, syllables, words, sentences, speech, reading, and writing into one living symbol system. Students begin with alphabet sounds, build words through phonics, clap syllables, arrange sentence tiles, and discover that language works like code for thought.</small>
         </a>
+        <p class="module-era-label">World languages <span>nine languages, one shared layout</span></p>
         <a class="tile lang-foundations-tile" href="lessons/language-literature/languages/japanese-foundations.html">
           <span class="tile-kicker">World Language · Kana &amp; Kanji · SOV · Mora</span>
           <strong>Japanese Language Foundations</strong>
@@ -5060,7 +5127,7 @@
           <strong>German Language Foundations</strong>
           <small>Discover foundational German: universal noun capitalization, the three umlauts and eszett, compound words, and V2 word order.</small>
         </a>
-
+        <p class="module-era-label">Ancient scripts <span>decipher the first writing</span></p>
         <a class="tile" href="lessons/language-literature/egyptian-hieroglyphs.html"><span class="tile-kicker">Ancient Writing · Cartouches · Decipherment</span><strong>Learning Egyptian Hieroglyphs</strong><small>Type with the 24 one-consonant signs, read into the faces, decode royal cartouches, repeat Champollion’s Rosetta Stone breakthrough, solve determinative puzzles, and measure grain in Eye of Horus fractions.</small></a>
         <a class="tile" href="lessons/language-literature/cuneiform.html"><span class="tile-kicker">Ancient Writing · Sign Reading · Guided Practice</span><strong>Learning Cuneiform</strong><small>Recognize Sumerian word signs, build a short sign sequence, and explore context-dependent readings.</small></a>
 
@@ -5640,6 +5707,7 @@
   <footer class="site-footer">
     <p><a href="index.html">Back to ClassroomOS Home</a></p>
   </footer>
+  <script src="assets/js/search-rank.js"></script>
   <script src="assets/js/reveal.js"></script>
   <script src="assets/js/nav-mobile.js?v=20261027-fit5"></script>
   <script src="assets/js/pages/steam-volume-tabs.js"></script>

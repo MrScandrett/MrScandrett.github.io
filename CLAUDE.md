@@ -157,6 +157,20 @@ uncommitted, so it no longer needs a second "regenerate updates" commit.
 - `npm run a11y` — pa11y against `data/a11y-baseline.json` (blocks deploys; `npm run a11y:page -- <fragment>`
   audits matching pages with no baseline)
 
+## Lesson library shelves and search
+
+`steam-lessons.html` is how students find lessons. Each subject shelf is chapters (`.module-cluster-label`)
+of tiles; the default **Guide** view (`assets/js/pages/steam-module-index.js`) turns each tile into a compact row
+(type badge, grades from `data/lessons.json`, the kicker's topics, a two-line summary) and gives the open shelf a
+chapter bar and a "find in this subject" box.
+
+- Every live lesson needs a real tile on a shelf (a link in a chapter blurb doesn't count), and a chapter with more
+  than 12 lessons is split into topic groups with `<p class="module-era-label">Topic <span>detail</span></p>`
+  before each group. `node --test tests/steam-lessons-shelves.test.mjs` enforces both.
+- Site search (⌘K palette and the library search box) ranks with `assets/js/search-rank.js`: every typed word must
+  match a whole word or the start of one; typos are a fallback only. Never add scattered-letter "fuzzy" matching
+  (it put Tycho Brahe under "chess"). Tests: `node --test tests/search-rank.test.mjs`.
+
 ## Lesson rule: every photo must open in the lightbox
 
 Lessons are presented to a class, so any photo, portrait, or figure in a lesson must be

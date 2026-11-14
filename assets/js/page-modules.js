@@ -40,8 +40,12 @@
       why: 'Exhibit links at the end of a lesson.'
     },
     'command-palette': {
-      file: 'command-palette.js',
+      file: 'command-palette.js', with: ['search-rank'],
       why: 'Cmd/Ctrl+K site search.'
+    },
+    'search-rank': {
+      file: 'search-rank.js', global: 'ClassroomOSSearchRank',
+      why: 'Shared search ranking (whole words and word starts, never scattered letters).'
     },
     'vr-mode': {
       file: 'vr-mode.js', global: 'ClassroomOSVR', marker: 'vrModeScript', needs: 'vr',
