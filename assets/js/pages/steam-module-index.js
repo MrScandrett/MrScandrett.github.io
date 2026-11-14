@@ -57,8 +57,79 @@
     return "Gr " + band.replace(/-/g, "–").replace(/^PreK–College$/, "All");
   }
 
+  // ── Icons ─────────────────────────────────────────────────────────────────
+  // Every lesson has an emoji in data/lessons.json ("icon"); chapters and the few
+  // tiles that aren't catalog lessons carry data-icon in steam-lessons.html.
+  // Under the Blocky skin each icon is redrawn as a 16×16 pixel item (the emoji
+  // rendered small, alpha snapped hard) sitting in an inventory slot.
+  var pixelCache = {};
+
+  function blockySkin() {
+    return document.documentElement.getAttribute("data-skin") === "blocky";
+  }
+
+  function pixelArt(emoji) {
+    if (pixelCache[emoji] !== undefined) return pixelCache[emoji];
+    var size = 16;
+    var url = "";
+    try {
+      var canvas = document.createElement("canvas");
+      canvas.width = canvas.height = size;
+      var ctx = canvas.getContext("2d");
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = (size - 1) + 'px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      ctx.fillText(emoji, size / 2, size / 2 + 1);
+      var image = ctx.getImageData(0, 0, size, size);
+      var data = image.data;
+      var solid = 0;
+      for (var i = 3; i < data.length; i += 4) {
+        if (data[i] > 96) { data[i] = 255; solid += 1; } else data[i] = 0;
+      }
+      ctx.putImageData(image, 0, 0);
+      if (solid > 6) url = canvas.toDataURL();
+    } catch (error) { /* no canvas: keep the emoji */ }
+    pixelCache[emoji] = url;
+    return url;
+  }
+
+  function pixelate(el) {
+    var emoji = el.dataset.icon;
+    var url = emoji && blockySkin() ? pixelArt(emoji) : "";
+    el.classList.toggle("has-pixel", Boolean(url));
+    if (url) el.style.setProperty("--pixel-icon", 'url("' + url + '")');
+    else el.style.removeProperty("--pixel-icon");
+  }
+
+  function setIcon(el, emoji) {
+    if (!emoji || el.dataset.icon === emoji) return;
+    el.dataset.icon = emoji;
+    el.textContent = emoji;
+    pixelate(el);
+  }
+
+  new MutationObserver(function () {
+    document.querySelectorAll(".tile-icon[data-icon], .chapter-icon[data-icon], .shelf-chapter-icon[data-icon]").forEach(pixelate);
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin"] });
+
+  document.querySelectorAll(".module-section .module-cluster-label[data-icon]").forEach(function (label) {
+    var icon = document.createElement("span");
+    icon.className = "chapter-icon";
+    icon.setAttribute("aria-hidden", "true");
+    label.insertBefore(icon, label.firstChild);
+    setIcon(icon, label.dataset.icon);
+  });
+
   function decorate(tile, meta) {
     meta = meta || {};
+    var slot = tile.querySelector(".tile-icon");
+    if (!slot) {
+      slot = document.createElement("span");
+      slot.className = "tile-icon";
+      slot.setAttribute("aria-hidden", "true");
+      tile.insertBefore(slot, tile.firstChild);
+    }
+    setIcon(slot, tile.dataset.icon || meta.icon || (tile.classList.contains("tile-coming-soon") ? "🚧" : ""));
     var href = tile.getAttribute("href") || "";
     var parts = kickerParts(tile);
     var kicker = parts.join(" · ");
@@ -176,8 +247,12 @@
       var link = document.createElement("a");
       link.href = "#" + pathway.id;
       link.dataset.chapter = pathway.id;
-      link.innerHTML = '<span class="shelf-chapter-num">' + chapterNumber(text, index) + "</span>" +
+      link.innerHTML = '<span class="shelf-chapter-num shelf-chapter-icon" aria-hidden="true"></span>' +
         '<span class="shelf-chapter-name"></span><span class="shelf-chapter-count"></span>';
+      var chipIcon = link.querySelector(".shelf-chapter-icon");
+      var labelIcon = pathway.querySelector(".module-cluster-label").dataset.icon;
+      if (labelIcon) setIcon(chipIcon, labelIcon);
+      else chipIcon.textContent = chapterNumber(text, index);
       link.querySelector(".shelf-chapter-name").textContent = shortChapter(text) || text;
       link.title = text;
       link.addEventListener("click", function (event) {

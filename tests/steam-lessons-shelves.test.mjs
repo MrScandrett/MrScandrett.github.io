@@ -54,3 +54,16 @@ test('every topic group holds at least one lesson', () => {
     });
   }
 });
+
+test('every live lesson and every chapter has one icon', () => {
+  const graphemes = (s) => [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)].length;
+  for (const lesson of lessons) {
+    assert.ok(lesson.icon, `${lesson.id} needs an "icon" in data/lessons.json`);
+    assert.equal(graphemes(lesson.icon), 1, `${lesson.id}: icon should be one emoji, got "${lesson.icon}"`);
+  }
+  $('.module-section .module-cluster-label').each((_, label) => {
+    const icon = label.attribs['data-icon'];
+    const title = $(label).find('strong').first().text().trim();
+    assert.ok(icon && graphemes(icon) === 1, `chapter "${title}" needs one data-icon emoji`);
+  });
+});

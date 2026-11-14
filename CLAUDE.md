@@ -167,6 +167,10 @@ chapter bar and a "find in this subject" box.
 - Every live lesson needs a real tile on a shelf (a link in a chapter blurb doesn't count), and a chapter with more
   than 12 lessons is split into topic groups with `<p class="module-era-label">Topic <span>detail</span></p>`
   before each group. `node --test tests/steam-lessons-shelves.test.mjs` enforces both.
+- Every lesson has one emoji `icon` in `data/lessons.json` (shown on its row and in ⌘K search) and every chapter
+  label a `data-icon`; pick one for what the lesson is about, not its subject. Under the Blocky skin each icon is
+  redrawn as a 16×16 pixel item in an inventory slot (`pixelArt()` in steam-module-index.js, styles in
+  `skins/blocky.css`). The same test checks that none are missing.
 - Site search (⌘K palette and the library search box) ranks with `assets/js/search-rank.js`: every typed word must
   match a whole word or the start of one; typos are a fallback only. Never add scattered-letter "fuzzy" matching
   (it put Tycho Brahe under "chess"). Tests: `node --test tests/search-rank.test.mjs`.

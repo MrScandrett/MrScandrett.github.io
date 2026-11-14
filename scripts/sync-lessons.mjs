@@ -308,7 +308,7 @@ if (FIX) {
       description: l.summary,
       url: l.url,
       category: l.primaryModule,
-      icon: ICON_BY_MODULE[l.primaryModule] || "📖",
+      icon: l.icon || ICON_BY_MODULE[l.primaryModule] || "📖",
       keywords: l.keywords || [],
     };
     lessonEntries.push(base);
@@ -317,7 +317,7 @@ if (FIX) {
       lessonEntries.push({
         ...base,
         category: also,
-        icon: ICON_BY_MODULE[also] || "📖",
+        icon: l.icon || ICON_BY_MODULE[also] || "📖",
         description: l.summary,
       });
     }
