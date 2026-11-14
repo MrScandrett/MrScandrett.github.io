@@ -5,11 +5,10 @@
  *  - Hero Atom & Ion Builder (+1 / 0 / -1)
  *  - Sticky section jump bar & sidebar outline scroll-spy
  *  - Section 1: Charge & Scale Explorer
- *  - Section 2: Dual-control Water Analogy (Voltage V + Resistance R) + Prediction check
- *  - Section 3: Material Conductivity Bench + Silicon excitation
+ *  - Section 2: Water analogy prediction check (the water loop, the materials bench and the
+ *    power-grid panorama are canvas scenes in what-is-electricity-scenes.js)
  *  - Section 4: Stepped Static Charge / ESD + Triboelectric Series Matcher + Circuit Flow Lab
  *  - Section 5: Enhanced 10-era History Timeline + keyboard/pager navigation
- *  - Section 6: Interactive Power Plant to Wall Grid Stepper
  *  - Section 7: Try It Yourself age filter
  *  - Section 8: Guided Practice (with Hints toggle) & Quick Check Quiz (with score + reset)
  */
@@ -218,104 +217,8 @@
   }
 
   /* ── 4. Section 2: Dual-Control Water Analogy + Prediction Check ── */
+  // The water loop itself is drawn by what-is-electricity-scenes.js; this is its prediction check.
   function initWaterAnalogy() {
-    var towerSlider = document.getElementById('we-tower-slider');
-    var waterSlider = document.getElementById('we-water-slider');
-    var tankWater = document.getElementById('we-tank-water');
-    var valveTop = document.getElementById('we-valve-top');
-    var valveBottom = document.getElementById('we-valve-bottom');
-    var wheelSpokes = document.getElementById('we-wheel-spokes');
-    var levelLabel = document.getElementById('we-water-level-label');
-    var outV = document.getElementById('we-water-v');
-    var outR = document.getElementById('we-water-r');
-    var outI = document.getElementById('we-water-i');
-    var outP = document.getElementById('we-water-p');
-    var caption = document.getElementById('we-water-caption');
-    var drops = document.querySelectorAll('#we-water-demo .we-drop');
-    if (!waterSlider || !valveTop || !valveBottom || !wheelSpokes || !levelLabel || !caption) return;
-
-    var voltages = [3, 6, 12];
-    var tankGeometry = [
-      { y: 98, h: 30, label: '3 V (Low tank head)' },
-      { y: 69, h: 59, label: '6 V (Medium tank head)' },
-      { y: 38, h: 90, label: '12 V (High tank head)' }
-    ];
-    var resistances = [
-      {
-        ohms: 100,
-        label: 'Wide Open (100 Ω)',
-        topD: 'M110,14 L126,14 L126,23 L110,23 Z',
-        bottomD: 'M110,37 L126,37 L126,46 L110,46 Z'
-      },
-      {
-        ohms: 300,
-        label: 'Half Closed (300 Ω)',
-        topD: 'M110,14 L126,14 L126,26.8 L110,26.8 Z',
-        bottomD: 'M110,33.2 L126,33.2 L126,46 L110,46 Z'
-      },
-      {
-        ohms: 1200,
-        label: 'Tightly Pinched (1,200 Ω)',
-        topD: 'M110,14 L126,14 L126,28.7 L110,28.7 Z',
-        bottomD: 'M110,31.3 L126,31.3 L126,46 L110,46 Z'
-      }
-    ];
-
-    function formatCurrent(mA) {
-      return mA >= 10 ? Math.round(mA) + ' mA' : mA.toFixed(1) + ' mA';
-    }
-
-    function formatPower(mW) {
-      if (mW >= 1000) return (mW / 1000).toFixed(2) + ' W';
-      return mW >= 10 ? Math.round(mW) + ' mW' : mW.toFixed(1) + ' mW';
-    }
-
-    function updateWater() {
-      var vIdx = towerSlider ? Math.min(2, Math.max(0, parseInt(towerSlider.value, 10) || 0)) : 1;
-      var rIdx = Math.min(2, Math.max(0, parseInt(waterSlider.value, 10) || 0));
-      var V = voltages[vIdx];
-      var tank = tankGeometry[vIdx];
-      var res = resistances[rIdx];
-
-      var mA = (V / res.ohms) * 1000;
-      var mW = V * mA;
-
-      if (tankWater) {
-        tankWater.setAttribute('y', String(tank.y));
-        tankWater.setAttribute('height', String(tank.h));
-      }
-      valveTop.setAttribute('d', res.topD);
-      valveBottom.setAttribute('d', res.bottomD);
-
-      // Map 2.5 mA .. 120 mA to clean animation durations between 4.8s and 0.6s.
-      var norm = Math.sqrt(mA / 120);
-      var dropDuration = Math.max(0.6, Math.min(4.8, 0.55 / Math.max(norm, 0.115)));
-      var spinDuration = dropDuration * 0.95;
-
-      wheelSpokes.style.animationDuration = spinDuration.toFixed(2) + 's';
-      drops.forEach(function (drop, idx) {
-        drop.style.animationDuration = dropDuration.toFixed(2) + 's';
-        drop.style.animationDelay = (-idx * (dropDuration / 3)).toFixed(2) + 's';
-      });
-
-      var currentStr = formatCurrent(mA);
-      var powerStr = formatPower(mW);
-      levelLabel.textContent = res.label + ' · ' + V + ' V → ' + currentStr;
-      if (outV) outV.textContent = V + ' V';
-      if (outR) outR.textContent = res.ohms.toLocaleString() + ' Ω';
-      if (outI) outI.textContent = currentStr;
-      if (outP) outP.textContent = powerStr;
-
-      caption.textContent =
-        'With ' + V + ' V of pressure (' + tank.label + ') pushing against ' + res.ohms.toLocaleString() +
-        ' Ω of pipe restriction, current is I = V / R = ' + currentStr + ' and the waterwheel does ' +
-        powerStr + ' of work.';
-    }
-
-    if (towerSlider) towerSlider.addEventListener('input', updateWater);
-    waterSlider.addEventListener('input', updateWater);
-    updateWater();
-
     // Micro-prediction question
     var predictButtons = Array.prototype.slice.call(document.querySelectorAll('[data-water-predict]'));
     var predictFeedback = document.getElementById('we-water-predict-feedback');
@@ -327,220 +230,15 @@
           if (choice === 'doubles') {
             predictFeedback.className = 'we-predict-feedback is-ok';
             predictFeedback.textContent =
-              'Spot on! Because I = V / R, doubling V (6 V → 12 V) at a fixed 300 Ω doubles the current from 20 mA to 40 mA. Try setting Tower = 12 V and Valve = 300 Ω above to verify!';
+              'Spot on! Because I = V / R, doubling V (6 V → 12 V) at a fixed 300 Ω doubles the current from 20 mA to 40 mA. Set the tower to 12 V and the valve to 300 Ω above to check it.';
           } else {
             predictFeedback.className = 'we-predict-feedback is-err';
             predictFeedback.textContent =
-              'Close — try testing it with the sliders above! Set Valve to 300 Ω and watch Current change as you slide Water Tower Pressure from 6 V to 12 V.';
+              'Not quite. Test it: set the valve to 300 Ω, then slide the tower from 6 V to 12 V and watch the current readout.';
           }
         });
       });
     }
-  }
-
-  /* ── 5. Section 3: Material Conductivity Bench ── */
-  function initMaterialBench() {
-    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-mat]'));
-    var exciteBtn = document.getElementById('we-silicon-excite');
-    var svg = document.getElementById('we-mat-svg');
-    var note = document.getElementById('we-mat-note');
-    var currentReadout = document.getElementById('we-mat-current');
-    var classReadout = document.getElementById('we-mat-class');
-    if (!buttons.length || !svg || !note) return;
-
-    var currentMat = 'copper';
-    var siliconExcited = false;
-
-    var materials = {
-      copper: {
-        name: 'Copper',
-        kind: 'Conductor (Metal)',
-        ampsText: '2,400 mA',
-        glow: 1,
-        bulbColor: '#fde047',
-        carrierType: 'free-e',
-        carrierCount: 9,
-        note: 'Copper atoms loosely share outer valence electrons in a shared "sea of electrons." Even a tiny voltage sends huge numbers of electrons drifting immediately.'
-      },
-      graphite: {
-        name: 'Graphite (Pencil Lead)',
-        kind: 'Resistive Conductor (Carbon)',
-        ampsText: '420 mA',
-        glow: 0.45,
-        bulbColor: '#facc15',
-        carrierType: 'free-e',
-        carrierCount: 4,
-        note: 'Graphite has fewer mobile electrons per atom than copper and more atomic collisions, so the bulb glows dimmer and some electrical energy turns into heat.'
-      },
-      saltwater: {
-        name: 'Saltwater (NaCl + H₂O)',
-        kind: 'Ionic Conductor (Electrolyte)',
-        ampsText: '185 mA',
-        glow: 0.3,
-        bulbColor: '#fef08a',
-        carrierType: 'ions',
-        carrierCount: 5,
-        note: 'Pure water hardly conducts, but dissolved table salt splits into mobile Na⁺ and Cl⁻ ions! In liquids, whole charged atoms — not free metallic electrons — carry current.'
-      },
-      silicon: {
-        name: 'Silicon Wafer',
-        kind: 'Semiconductor',
-        ampsText: '0.2 mA',
-        glow: 0.04,
-        bulbColor: '#94a3b8',
-        carrierType: 'semi',
-        carrierCount: 1,
-        note: 'Pure silicon locks almost all electrons in crystal bonds at room temperature — practically an insulator until heat, light, or trace dopant atoms shake carriers free.'
-      },
-      wood: {
-        name: 'Dry Wood',
-        kind: 'Insulator',
-        ampsText: '0.00 mA',
-        glow: 0,
-        bulbColor: '#64748b',
-        carrierType: 'bound',
-        carrierCount: 0,
-        note: 'Dry wood’s cellulose molecules grip electrons tightly. With essentially zero free charge carriers at 6 V, the bulb stays completely dark (though wet wood conducts!).'
-      },
-      rubber: {
-        name: 'Rubber Insulation',
-        kind: 'Strong Insulator',
-        ampsText: '0.00 mA',
-        glow: 0,
-        bulbColor: '#64748b',
-        carrierType: 'bound',
-        carrierCount: 0,
-        note: 'Rubber polymers lock electrons in covalent bonds, keeping current inside copper wire jackets and safely out of your hands.'
-      }
-    };
-
-    function buildCarrierMarkup(spec, excited) {
-      var atoms = [
-        [270, 56], [325, 56], [380, 56],
-        [270, 112], [325, 112], [380, 112]
-      ];
-      var out = [];
-      out.push('<rect x="235" y="18" width="185" height="130" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.4"/>');
-      out.push('<text x="327" y="34" text-anchor="middle" font-size="9" font-weight="700" fill="#94a3b8">ATOMIC ZOOM: ' + spec.name.toUpperCase() + '</text>');
-
-      if (spec.carrierType === 'ions') {
-        var ions = [
-          { x: 266, y: 66, q: 'Na⁺', fill: '#f97316' },
-          { x: 318, y: 92, q: 'Cl⁻', fill: '#38bdf8' },
-          { x: 365, y: 62, q: 'Cl⁻', fill: '#38bdf8' },
-          { x: 282, y: 118, q: 'Cl⁻', fill: '#38bdf8' },
-          { x: 356, y: 116, q: 'Na⁺', fill: '#f97316' }
-        ];
-        ions.forEach(function (ion) {
-          out.push('<circle cx="' + ion.x + '" cy="' + ion.y + '" r="11" fill="' + ion.fill + '" opacity="0.9"/>');
-          out.push('<text x="' + ion.x + '" y="' + (ion.y + 3.5) + '" text-anchor="middle" font-size="8.5" font-weight="800" fill="#0b1323">' + ion.q + '</text>');
-        });
-        out.push('<text x="327" y="141" text-anchor="middle" font-size="8" fill="#cbd5e1">Mobile + and − ions drift in opposite directions</text>');
-        return out.join('');
-      }
-
-      atoms.forEach(function (pt) {
-        out.push('<circle cx="' + pt[0] + '" cy="' + pt[1] + '" r="10.5" fill="#1e293b" stroke="#64748b" stroke-width="1.3"/>');
-        out.push('<text x="' + pt[0] + '" y="' + (pt[1] + 3) + '" text-anchor="middle" font-size="8" font-weight="700" fill="#cbd5e1">+</text>');
-        if (spec.carrierType === 'bound' || (spec.carrierType === 'semi' && !excited)) {
-          out.push('<circle cx="' + (pt[0] + 13) + '" cy="' + (pt[1] - 4) + '" r="3.5" fill="#94a3b8"/>');
-        }
-      });
-
-      var freeCount = (spec.carrierType === 'semi' && excited) ? 6 : spec.carrierCount;
-      var freeSpots = [
-        [255, 84], [286, 80], [312, 86], [344, 82], [372, 86],
-        [265, 134], [302, 134], [342, 134], [386, 134]
-      ];
-      for (var i = 0; i < freeCount && i < freeSpots.length; i++) {
-        var fp = freeSpots[i];
-        out.push('<circle cx="' + fp[0] + '" cy="' + fp[1] + '" r="4.2" fill="#38bdf8"/>');
-        out.push('<line x1="' + (fp[0] + 6) + '" y1="' + fp[1] + '" x2="' + (fp[0] + 14) + '" y2="' + fp[1] + '" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/>');
-      }
-
-      var captionText = freeCount > 0
-        ? (freeCount >= 7 ? 'Dense sea of mobile electrons (−)' : 'Freed mobile electrons drifting under voltage')
-        : 'Electrons locked tightly to parent atoms';
-      out.push('<text x="327" y="141" text-anchor="middle" font-size="8" fill="#cbd5e1">' + captionText + '</text>');
-      return out.join('');
-    }
-
-    function renderMaterial() {
-      var base = materials[currentMat] || materials.copper;
-      var isSiExcited = currentMat === 'silicon' && siliconExcited;
-      var spec = isSiExcited ? {
-        name: 'Silicon (Light / Heat / Doped)',
-        kind: 'Excited Semiconductor',
-        ampsText: '85 mA',
-        glow: 0.38,
-        bulbColor: '#fde047',
-        carrierType: 'semi',
-        carrierCount: 6,
-        note: 'Excited Silicon! Adding light, heat, or impurity atoms ("doping") lifts electrons out of crystal bonds so current surges from 0.2 mA to 85 mA — the exact switch principle behind every microchip transistor.'
-      } : base;
-
-      buttons.forEach(function (btn) {
-        btn.setAttribute('aria-pressed', String(btn.dataset.mat === currentMat));
-      });
-      if (exciteBtn) {
-        exciteBtn.setAttribute('aria-pressed', String(isSiExcited));
-      }
-      if (currentReadout) currentReadout.textContent = spec.ampsText;
-      if (classReadout) classReadout.textContent = spec.kind;
-      note.textContent = spec.note;
-
-      var wireStroke = spec.glow > 0 ? '#38bdf8' : '#475569';
-      var sampleColor = currentMat === 'copper' ? '#d97706'
-        : currentMat === 'graphite' ? '#475569'
-        : currentMat === 'saltwater' ? '#0284c7'
-        : currentMat === 'silicon' ? (isSiExcited ? '#6366f1' : '#334155')
-        : currentMat === 'wood' ? '#92400e'
-        : '#1e293b';
-
-      svg.innerHTML =
-        '<rect x="0" y="0" width="440" height="165" fill="#0b1323"/>' +
-        '<path d="M36,132 L36,36 L205,36 L205,132 L152,132" fill="none" stroke="' + wireStroke + '" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>' +
-        '<path d="M90,132 L36,132" fill="none" stroke="' + wireStroke + '" stroke-width="4" stroke-linecap="round"/>' +
-        /* Battery */
-        '<line x1="22" y1="74" x2="50" y2="74" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>' +
-        '<line x1="28" y1="84" x2="44" y2="84" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>' +
-        '<text x="14" y="68" font-size="9" font-weight="800" fill="#86efac">6V</text>' +
-        /* Sample bridge */
-        '<rect x="90" y="121" width="62" height="22" rx="5" fill="' + sampleColor + '" stroke="#94a3b8" stroke-width="1.4"/>' +
-        /* Keep the label on the dark bench, away from changing sample colors. */
-        '<text x="121" y="156" text-anchor="middle" font-size="8" font-weight="800" fill="#f8fafc">' + (currentMat === 'saltwater' ? 'SALT H₂O' : currentMat.toUpperCase()) + ' SAMPLE</text>' +
-        /* Test Bulb */
-        '<circle cx="121" cy="36" r="24" fill="#fde047" opacity="' + (spec.glow * 0.42).toFixed(2) + '"/>' +
-        '<circle cx="121" cy="36" r="13" fill="' + spec.bulbColor + '" stroke="#cbd5e1" stroke-width="1.8"/>' +
-        '<path d="M116,40 L118,32 L121,37 L124,32 L126,40" fill="none" stroke="' + (spec.glow > 0.2 ? '#b45309' : '#334155') + '" stroke-width="1.5" stroke-linecap="round"/>' +
-        /* Ammeter */
-        '<rect x="167" y="64" width="60" height="36" rx="7" fill="#0f172a" stroke="#60a5fa" stroke-width="1.5"/>' +
-        '<text x="197" y="77" text-anchor="middle" font-size="7.2" font-weight="700" fill="#94a3b8">AMMETER</text>' +
-        '<text x="197" y="92" text-anchor="middle" font-size="10.5" font-weight="800" fill="#38bdf8">' + spec.ampsText + '</text>' +
-        buildCarrierMarkup(spec, isSiExcited);
-    }
-
-    buttons.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        currentMat = btn.dataset.mat;
-        if (currentMat !== 'silicon') siliconExcited = false;
-        renderMaterial();
-      });
-    });
-
-    if (exciteBtn) {
-      exciteBtn.addEventListener('click', function () {
-        if (currentMat !== 'silicon') {
-          currentMat = 'silicon';
-          siliconExcited = true;
-        } else {
-          siliconExcited = !siliconExcited;
-        }
-        renderMaterial();
-      });
-    }
-
-    renderMaterial();
   }
 
   /* ── 6. Section 4: Static Charge (3D sync), Triboelectric Series & Current Flow ── */
@@ -815,94 +513,6 @@
     selectEra(0);
   }
 
-  /* ── 8. Section 6: Interactive Power Plant to Wall Grid Stepper ── */
-  function initGridStepper() {
-    var nodes = Array.prototype.slice.call(document.querySelectorAll('#we-grid-svg .we-grid-node[data-grid-stage]'));
-    var cards = Array.prototype.slice.call(document.querySelectorAll('.we-grid-stage[data-grid-stage]'));
-    var outV = document.getElementById('we-grid-voltage');
-    var outT = document.getElementById('we-grid-type');
-    var outP = document.getElementById('we-grid-purpose');
-    if (!nodes.length || !cards.length || !outV || !outT || !outP) return;
-
-    var stages = [
-      {
-        voltage: '13.8–24 kV AC',
-        type: 'Generation (3-phase 60 Hz)',
-        purpose: 'Turbines spin copper coils past strong electromagnets (Faraday induction) to push electrons back and forth 60 times every second.'
-      },
-      {
-        voltage: '138–765 kV AC',
-        type: 'Step-Up Transformer',
-        purpose: 'Multiplies voltage up so the same power flows with far lower current (I = P / V) — drastically cutting heat losses (I²R) in overhead wires.'
-      },
-      {
-        voltage: '230–500 kV AC',
-        type: 'Long-Distance Transmission',
-        purpose: 'Steel lattice towers carry bulk power across states along aluminum-steel cables suspended safely high above the ground.'
-      },
-      {
-        voltage: '7.2–13.8 kV AC',
-        type: 'Regional Substation',
-        purpose: 'Steps ultra-high grid voltage down to safer town distribution voltage and adds protective breakers to isolate faults.'
-      },
-      {
-        voltage: '120 / 240 V AC',
-        type: 'Neighborhood Transformer',
-        purpose: 'The pole cylinder or green lawn box makes the final step-down right before wires enter your home or school.'
-      },
-      {
-        voltage: '120 V AC (or DC via adapter)',
-        type: 'Breaker Panel & Outlets',
-        purpose: 'Parallel circuits keep every wall socket at full voltage while breakers cut off unsafe surges; phone bricks then convert AC to low-voltage DC.'
-      }
-    ];
-
-    function setStage(index) {
-      var idx = Math.max(0, Math.min(stages.length - 1, index));
-      var data = stages[idx];
-
-      nodes.forEach(function (node) {
-        var active = parseInt(node.dataset.gridStage, 10) === idx;
-        var box = node.querySelector('rect');
-        if (box) {
-          box.setAttribute('stroke', active ? '#38bdf8' : '#334155');
-          box.setAttribute('stroke-width', active ? '2.4' : '1.3');
-          box.setAttribute('fill', active ? '#1e3a5f' : '#111c33');
-        }
-      });
-
-      cards.forEach(function (card) {
-        var active = parseInt(card.dataset.gridStage, 10) === idx;
-        card.classList.toggle('is-active', active);
-        card.setAttribute('aria-pressed', String(active));
-      });
-
-      outV.textContent = data.voltage;
-      outT.textContent = data.type;
-      outP.textContent = data.purpose;
-    }
-
-    nodes.forEach(function (node) {
-      node.addEventListener('click', function () {
-        setStage(parseInt(node.dataset.gridStage, 10));
-      });
-      node.addEventListener('keydown', function (ev) {
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          ev.preventDefault();
-          setStage(parseInt(node.dataset.gridStage, 10));
-        }
-      });
-    });
-
-    cards.forEach(function (card) {
-      card.addEventListener('click', function () {
-        setStage(parseInt(card.dataset.gridStage, 10));
-      });
-    });
-
-    setStage(0);
-  }
-
   /* ── 9. Section 7: Activities Age Filter ── */
   function initActivityFilter() {
     var btns = Array.prototype.slice.call(document.querySelectorAll('[data-age-filter]'));
@@ -1092,10 +702,8 @@
   initJumpNav();
   initScaleExplorer();
   initWaterAnalogy();
-  initMaterialBench();
   initStaticAndCurrentLabs();
   initTimeline();
-  initGridStepper();
   initActivityFilter();
   initPracticeProblems();
   initQuickCheckQuiz();

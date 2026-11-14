@@ -181,47 +181,29 @@
               </div>
             </div>
 
-            <div class="we-water-demo" id="we-water-demo">
-              <svg viewBox="0 0 260 154" aria-hidden="true">
-                <path class="we-water-pipe" d="M28,128 L28,30 L100,30 L136,30 L212,30 L212,128 L28,128" />
-                <!-- Tall water tower tank frame + adjustable water level -->
-                <rect class="we-water-tower-frame" x="10" y="34" width="36" height="96" rx="4" />
-                <rect class="we-water-tower-tank" id="we-tank-water" x="12" y="69" width="32" height="59" rx="2" />
-                <line class="we-water-tower-legs" x1="14" y1="130" x2="14" y2="142" />
-                <line class="we-water-tower-legs" x1="42" y1="130" x2="42" y2="142" />
-                <text class="we-svg-label--accent" x="28" y="149" font-size="8.2" text-anchor="middle">Tower = V</text>
-
-                <!-- Adjustable pipe valve jaws -->
-                <path class="we-water-valve-jaw" id="we-valve-top" d="M110,14 L126,14 L126,23 L110,23 Z" />
-                <path class="we-water-valve-jaw" id="we-valve-bottom" d="M110,37 L126,37 L126,46 L110,46 Z" />
-                <text class="we-svg-label" x="118" y="57" font-size="8.2" text-anchor="middle">Valve = R</text>
-
-                <!-- Spinning load wheel -->
-                <circle class="we-water-wheel-hub" cx="212" cy="72" r="14" />
-                <g class="we-water-wheel-spokes" id="we-wheel-spokes">
-                  <line x1="212" y1="60" x2="212" y2="84" />
-                  <line x1="200" y1="72" x2="224" y2="72" />
-                  <line x1="203" y1="63" x2="221" y2="81" />
-                  <line x1="221" y1="63" x2="203" y2="81" />
-                </g>
-                <text class="we-svg-label" x="212" y="102" font-size="8.2" text-anchor="middle">Wheel = Load (I)</text>
-
-                <circle class="we-drop" r="3.5"></circle>
-                <circle class="we-drop d2" r="3.5"></circle>
-                <circle class="we-drop d3" r="3.5"></circle>
-              </svg>
-
-              <p class="we-water-caption" style="margin-top:0;"><strong>Tower</strong> = voltage push &nbsp;&middot;&nbsp; <strong>Valve</strong> = <span data-glossary="resistance">resistance</span> &nbsp;&middot;&nbsp; <strong>Wheel spin</strong> = current rate</p>
+            <div class="we-water-demo" id="we-water-demo" data-present>
+              <figure class="we-scene we-scene--water">
+                <div class="we-scene-box">
+                  <canvas id="we-water-canvas" role="img" aria-label="Cutaway water loop: a water tower and pump push water through a pipe with a shut-off valve, a gate valve and a waterwheel, with pressure gauges before and after. An inset shows the matching electric circuit: battery, switch, resistor and lamp. Readouts below give the numbers."></canvas>
+                </div>
+                <figcaption class="we-scene-hint">Drag the water level in the tower, drag (or tap either side of) the red valve wheel, and tap the red lever to switch the flow on and off.</figcaption>
+              </figure>
 
               <div class="we-water-sliders">
                 <div class="we-water-control">
-                  <label for="we-tower-slider">Water tower pressure (Voltage): 3 V · 6 V · 12 V</label>
-                  <input type="range" id="we-tower-slider" min="0" max="2" step="1" value="1" aria-describedby="we-water-caption" />
+                  <label for="we-tower-slider">Tower height (Voltage): <span id="we-tower-label">6 V · lantern battery</span></label>
+                  <input type="range" id="we-tower-slider" min="0" max="5" step="1" value="3" aria-describedby="we-water-caption" />
+                  <div class="we-range-ticks" aria-hidden="true"><span>1.5 V</span><span>3</span><span>4.5</span><span>6</span><span>9</span><span>12 V</span></div>
                 </div>
                 <div class="we-water-control">
-                  <label for="we-water-slider">Valve restriction (Resistance): <span id="we-water-level-label">Wide Open (100 &Omega;) · 6 V &rarr; 60 mA</span></label>
-                  <input type="range" id="we-water-slider" min="0" max="2" step="1" value="0" aria-describedby="we-water-caption" />
+                  <label for="we-water-slider">Valve (Resistance): <span id="we-water-level-label">Open (100 &Omega;) · 6 V &rarr; 60 mA</span></label>
+                  <input type="range" id="we-water-slider" min="0" max="9" step="1" value="1" aria-describedby="we-water-caption" />
+                  <div class="we-range-ticks" aria-hidden="true"><span>50 &Omega;</span><span>300</span><span>2,000 &Omega;</span></div>
                 </div>
+              </div>
+              <div class="we-scene-toolbar">
+                <button type="button" class="we-chip" id="we-water-switch" aria-pressed="false">Close the shut-off valve (open the switch)</button>
+                <label class="we-toggle"><input type="checkbox" id="we-water-twin" checked /> Show the electric twin</label>
               </div>
 
               <div class="we-readout-strip">
@@ -243,7 +225,7 @@
                 <div class="we-metric">
                   <span>Power (P = V&middot;I)</span>
                   <strong id="we-water-p">360 mW</strong>
-                  <small>Work done on wheel</small>
+                  <small>Energy per second delivered</small>
                 </div>
               </div>
 
@@ -260,6 +242,16 @@
               </div>
             </div>
 
+            <details class="we-analogy-limits">
+              <summary>Where the water analogy works, and where it breaks</summary>
+              <ul>
+                <li><strong>Works:</strong> the pipe is always full. Wires are always full of electrons too, so when you flip a switch the push reaches the far end almost instantly even though each electron creeps along.</li>
+                <li><strong>Works:</strong> the same flow passes every point of a single loop. Put an ammeter anywhere in a series circuit and it reads the same current.</li>
+                <li><strong>Breaks:</strong> cut a water pipe and water spills out. Cut a wire and nothing leaks: the current just stops, because charge needs a complete loop.</li>
+                <li><strong>Breaks:</strong> water has weight and falls on its own. Electrons are pushed by electric fields, not gravity, and they move the opposite way to the "current" arrows.</li>
+              </ul>
+            </details>
+
             <div class="sm-callout info">
               <strong>The exact relationship</strong>
               All three obey Ohm's Law: voltage = current &times; resistance (V = I &middot; R). Push harder or open the valve wider and current rises; pinch the valve tighter and current drops for the same voltage. Continue to <a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a> once you finish here.
@@ -271,10 +263,10 @@
             <h2>3. Why Some Materials Carry Electricity and Others Don't</h2>
             <p>Resistance depends directly on atomic bonding. In metals, outer electrons detach effortlessly into a shared "electron sea" that drifts the instant voltage appears. In insulators, electrons stay tightly bound to host molecules — unless breakdown voltage is high enough to tear them loose.</p>
 
-            <div class="we-lab-box" aria-label="Material conductivity bench">
+            <div class="we-lab-box" aria-label="Material conductivity bench" data-present>
               <div class="we-lab-head">
-                <p class="we-lab-kicker">Interactive Material Conductivity Bench</p>
-                <button type="button" class="we-excite-btn" id="we-silicon-excite" aria-pressed="false">Add Light / Heat / Dopant to Silicon</button>
+                <p class="we-lab-kicker">Material Conductivity Bench</p>
+                <button type="button" class="we-excite-btn" id="we-mat-condition" aria-pressed="false">Heat the wire to 200 &deg;C</button>
               </div>
               <div class="we-chip-row" role="group" aria-label="Select a material sample to test">
                 <button type="button" class="we-chip" data-mat="copper" aria-pressed="true">Copper Wire</button>
@@ -282,21 +274,41 @@
                 <button type="button" class="we-chip" data-mat="saltwater" aria-pressed="false">Saltwater</button>
                 <button type="button" class="we-chip" data-mat="silicon" aria-pressed="false">Silicon Wafer</button>
                 <button type="button" class="we-chip" data-mat="wood" aria-pressed="false">Dry Wood</button>
-                <button type="button" class="we-chip" data-mat="rubber" aria-pressed="false">Rubber Jacket</button>
+                <button type="button" class="we-chip" data-mat="rubber" aria-pressed="false">Rubber</button>
               </div>
-              <div class="we-mat-stage">
-                <svg id="we-mat-svg" viewBox="0 0 440 165" role="img" aria-label="Test circuit showing bulb brightness, ammeter reading, and atomic-level charge carriers"></svg>
+              <div class="we-chip-row we-chip-row--tight" role="group" aria-label="Supply voltage">
+                <span class="we-chip-label">Supply</span>
+                <button type="button" class="we-chip" data-bench-volts="1.5" aria-pressed="false">1.5 V</button>
+                <button type="button" class="we-chip" data-bench-volts="3" aria-pressed="false">3 V</button>
+                <button type="button" class="we-chip" data-bench-volts="6" aria-pressed="true">6 V</button>
+                <button type="button" class="we-chip" data-bench-volts="9" aria-pressed="false">9 V</button>
+                <button type="button" class="we-chip" data-bench-volts="12" aria-pressed="false">12 V</button>
               </div>
+              <figure class="we-scene we-scene--bench">
+                <div class="we-scene-box">
+                  <canvas id="we-mat-canvas" role="img" aria-label="Lab bench: a supply, a 15 watt lamp, an analog ammeter and the chosen sample wired in one loop, with an animated atomic close-up of the sample and a resistivity scale from copper to rubber. Readouts below give the numbers."></canvas>
+                </div>
+              </figure>
               <div class="we-readout-strip">
                 <div class="we-metric">
-                  <span>Test Current (at 6 V)</span>
-                  <strong id="we-mat-current">2,400 mA</strong>
-                  <small>Bulb &amp; ammeter response</small>
+                  <span id="we-mat-current-label">Current (at 6 V)</span>
+                  <strong id="we-mat-current">2.50 A</strong>
+                  <small>Ammeter reading</small>
                 </div>
                 <div class="we-metric">
-                  <span>Material Class</span>
-                  <strong id="we-mat-class">Conductor (Metal)</strong>
-                  <small>Carrier behavior</small>
+                  <span>Sample resistance</span>
+                  <strong id="we-mat-ohms">2.0 m&Omega;</strong>
+                  <small>A 5 cm piece</small>
+                </div>
+                <div class="we-metric">
+                  <span>Lamp power</span>
+                  <strong id="we-mat-bulb">15 W</strong>
+                  <small>Rated 15 W at 6 V</small>
+                </div>
+                <div class="we-metric">
+                  <span>Material class</span>
+                  <strong id="we-mat-class">Conductor (metal)</strong>
+                  <small>How charge moves</small>
                 </div>
               </div>
               <p class="we-coach-note" id="we-mat-note" aria-live="polite"></p>
@@ -514,50 +526,29 @@
           <!-- ── 6. Interactive Power Grid Journey ── -->
           <section class="sm-card" id="sec-grid" style="--sm-accent:#34c759;">
             <h2>6. From Power Plant to Your Wall</h2>
-            <p>Click any node along the grid diagram or any stage card below to follow electricity's voltage transformations from generator coils to your wall outlet.</p>
+            <p>Fly along the grid from the generator to your wall. Press a stage (or drag the landscape sideways), or let the tour carry you. Watch the voltage climb to hundreds of thousands of volts for the long trip, then step back down before it reaches your outlets.</p>
 
-            <div class="we-grid-stage-wrap">
-              <svg id="we-grid-svg" viewBox="0 0 660 112" role="img" aria-label="Interactive electrical power grid diagram from generator to home outlet">
-                <!-- Transmission wires -->
-                <line x1="60" y1="54" x2="600" y2="54" stroke="#334155" stroke-width="3" />
-                <!-- Stage nodes 0..5 -->
-                <g class="we-grid-node" data-grid-stage="0" tabindex="0" role="button" aria-label="Stage 1: Power Plant Generator">
-                  <rect x="12" y="20" width="92" height="68" rx="9" fill="#1e3a5f" stroke="#38bdf8" stroke-width="2.4" />
-                  <text x="58" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">1. Plant</text>
-                  <text x="58" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">13–24 kV AC</text>
-                  <text x="58" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Turbine coils</text>
-                </g>
-                <g class="we-grid-node" data-grid-stage="1" tabindex="0" role="button" aria-label="Stage 2: Step-Up Transformer">
-                  <rect x="118" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
-                  <text x="164" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">2. Step-Up</text>
-                  <text x="164" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">Up to 765 kV</text>
-                  <text x="164" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Low-loss push</text>
-                </g>
-                <g class="we-grid-node" data-grid-stage="2" tabindex="0" role="button" aria-label="Stage 3: Transmission Towers">
-                  <rect x="224" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
-                  <text x="270" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">3. Grid Lines</text>
-                  <text x="270" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">230–500 kV</text>
-                  <text x="270" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Cross-country</text>
-                </g>
-                <g class="we-grid-node" data-grid-stage="3" tabindex="0" role="button" aria-label="Stage 4: Regional Substation">
-                  <rect x="330" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
-                  <text x="376" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">4. Substation</text>
-                  <text x="376" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">7–14 kV AC</text>
-                  <text x="376" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Step-down #1</text>
-                </g>
-                <g class="we-grid-node" data-grid-stage="4" tabindex="0" role="button" aria-label="Stage 5: Pole or Pad Transformer">
-                  <rect x="436" y="20" width="92" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
-                  <text x="482" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">5. Pole Can</text>
-                  <text x="482" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">120 / 240 V</text>
-                  <text x="482" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Safe drop</text>
-                </g>
-                <g class="we-grid-node" data-grid-stage="5" tabindex="0" role="button" aria-label="Stage 6: Home Breaker Panel and Outlets">
-                  <rect x="542" y="20" width="104" height="68" rx="9" fill="#111c33" stroke="#334155" stroke-width="1.3" />
-                  <text x="594" y="45" text-anchor="middle" font-size="10" font-weight="800" fill="#f8fafc">6. Home Wall</text>
-                  <text x="594" y="61" text-anchor="middle" font-size="9" fill="#7dd3fc">120 V Outlets</text>
-                  <text x="594" y="76" text-anchor="middle" font-size="7.8" fill="#cbd5e1">Lights &amp; USB</text>
-                </g>
-              </svg>
+            <div class="we-grid-demo" data-present>
+              <div class="we-grid-steps" role="group" aria-label="Grid stages">
+                <button type="button" class="we-grid-step" data-grid-step="0" aria-pressed="true"><b>1</b> Plant <small>20 kV</small></button>
+                <button type="button" class="we-grid-step" data-grid-step="1" aria-pressed="false"><b>2</b> Step-up <small>345 kV</small></button>
+                <button type="button" class="we-grid-step" data-grid-step="2" aria-pressed="false"><b>3</b> Lines <small>345 kV</small></button>
+                <button type="button" class="we-grid-step" data-grid-step="3" aria-pressed="false"><b>4</b> Substation <small>12.5 kV</small></button>
+                <button type="button" class="we-grid-step" data-grid-step="4" aria-pressed="false"><b>5</b> Pole can <small>240 V</small></button>
+                <button type="button" class="we-grid-step" data-grid-step="5" aria-pressed="false"><b>6</b> Home <small>120 V</small></button>
+              </div>
+              <figure class="we-scene we-scene--grid">
+                <div class="we-scene-box">
+                  <canvas id="we-grid-canvas" role="img" aria-label="Dusk landscape of the power grid: a cooling tower and generator hall, a step-up transformer yard, three lattice transmission towers, a substation, wooden distribution poles with a pole transformer, and a cut-away house. Glowing pulses show energy flowing toward the house."></canvas>
+                </div>
+                <div class="we-grid-profile-box">
+                  <canvas id="we-grid-profile" aria-hidden="true"></canvas>
+                </div>
+              </figure>
+              <div class="we-scene-toolbar">
+                <button type="button" class="we-chip" id="we-grid-tour" aria-pressed="false">&#9654; Follow the power</button>
+                <label class="we-toggle"><input type="checkbox" id="we-grid-electrons" /> Show electrons (slow motion)</label>
+              </div>
             </div>
 
             <div class="we-readout-strip">
@@ -573,6 +564,21 @@
               </div>
             </div>
             <p class="we-coach-note" id="we-grid-purpose" aria-live="polite"></p>
+
+            <div class="we-loss-lab">
+              <p class="we-lab-kicker">Why step the voltage up? Try it.</p>
+              <p class="we-loss-setup">A power plant sends <strong>100 MW</strong> (enough for about 80,000 homes) down a line with <strong>10 &Omega;</strong> of resistance. Current is I = P &divide; V, and the line turns I&sup2;R into heat. Pick the line voltage:</p>
+              <label for="we-loss-slider" class="we-loss-label">Transmission voltage: <strong id="we-loss-volts">345 kV</strong></label>
+              <input type="range" id="we-loss-slider" min="0" max="4" step="1" value="3" />
+              <div class="we-range-ticks" aria-hidden="true"><span>13.8 kV</span><span>69</span><span>138</span><span>345</span><span>765 kV</span></div>
+              <div class="we-readout-strip">
+                <div class="we-metric"><span>Current in the line</span><strong id="we-loss-current">290 A</strong><small>I = P &divide; V</small></div>
+                <div class="we-metric"><span>Heat lost</span><strong id="we-loss-heat">0.8 MW</strong><small>I&sup2; &times; R</small></div>
+                <div class="we-metric"><span>Share lost</span><strong id="we-loss-pct">0.84%</strong><small>of the 100 MW sent</small></div>
+              </div>
+              <div class="we-loss-bar" id="we-loss-bar" style="--loss:0.0084" aria-hidden="true"><span></span></div>
+              <p class="we-coach-note" id="we-loss-verdict" aria-live="polite"></p>
+            </div>
 
             <div class="sm-overview-grid">
               <button type="button" class="sm-overview-card we-grid-stage is-active" data-grid-stage="0" aria-pressed="true">
@@ -611,37 +617,246 @@
               <button type="button" class="we-chip" data-age-filter="4+" aria-pressed="false">Younger Explorers (Any / 4+)</button>
               <button type="button" class="we-chip" data-age-filter="8+" aria-pressed="false">Builders (Ages 8+)</button>
             </div>
-            <div class="sm-project-grid">
-              <div class="sm-project-card" data-age-group="4+">
-                <strong>Balloon on the wall</strong>
-                <small>Rub a balloon on your hair or a wool sweater for 20 seconds, then press it lightly to a wall. It sticks via <span data-glossary="electrostatic induction">electrostatic induction</span> — negative charges on the balloon push wall electrons slightly inward, creating surface attraction.</small>
-                <span class="we-age">Any age</span>
-              </div>
-              <div class="sm-project-card" data-age-group="4+">
-                <strong>Bending water</strong>
-                <small>Rub a plastic comb on dry hair, then hold it near a thin steady trickle of tap water. Polar water molecules swing toward the charged comb, visibly bending the stream in midair.</small>
-                <span class="we-age">Any age</span>
-              </div>
-              <div class="sm-project-card" data-age-group="4+">
-                <strong>Pick up paper bits</strong>
-                <small>Tear tissue paper into tiny confetti pieces, rub a comb or balloon to charge it, and hover it above the table. Confetti jumps straight up onto the balloon.</small>
-                <span class="we-age">Ages 4+</span>
-              </div>
-              <div class="sm-project-card" data-age-group="8+">
-                <strong>Lemon (or potato) battery</strong>
-                <small>Press a galvanized zinc nail and a copper coin into a lemon a finger's width apart. Chemical reactions inside the juice push ~0.9 V between the two metals (wire 3–4 in series to light an LED).</small>
-                <span class="we-age">Ages 8+</span>
-              </div>
-              <div class="sm-project-card" data-age-group="8+">
-                <strong>Build a simple circuit</strong>
-                <small>Connect a battery, switch, and LED with resistor in a closed loop — full hands-on wiring guide in <a href="../../engineering/arduino-and-electronics/breadboard-basics.html">Breadboard Basics</a>.</small>
-                <span class="we-age">Ages 8+</span>
-              </div>
-              <div class="sm-project-card" data-age-group="8+">
-                <strong>Electromagnet from a nail</strong>
-                <small>Wrap insulated magnet wire tightly 40+ times around an iron nail, touch the stripped ends briefly to a D-cell battery, and lift paper clips — Ørsted's 1820 discovery in your hand.</small>
-                <span class="we-age">Ages 8+</span>
-              </div>
+            <div class="sm-project-grid we-act-grid">
+              <article class="sm-project-card we-act" data-age-group="4+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="we-art-balloon" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#fda4af"/><stop offset="0.45" stop-color="#e11d48"/><stop offset="1" stop-color="#881337"/></radialGradient>
+                    <linearGradient id="we-art-wall" x1="0" x2="1"><stop offset="0" stop-color="#e7dccb"/><stop offset="1" stop-color="#cbbba3"/></linearGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#f4efe6"/>
+                  <rect x="168" width="72" height="130" fill="url(#we-art-wall)"/>
+                  <path d="M168 0V130" stroke="#a8977e" stroke-width="2"/>
+                  <g fill="#2563eb" font-size="13" font-weight="900" font-family="system-ui,sans-serif"><text x="172" y="40">+</text><text x="172" y="62">+</text><text x="172" y="84">+</text><text x="172" y="106">+</text></g>
+                  <ellipse cx="133" cy="62" rx="34" ry="40" fill="url(#we-art-balloon)"/>
+                  <ellipse cx="121" cy="46" rx="8" ry="12" fill="#fff" opacity="0.45" transform="rotate(-20 121 46)"/>
+                  <path d="M129 102l4 6 4-6z" fill="#9f1239"/>
+                  <path d="M133 108c-6 8 6 12-2 22" fill="none" stroke="#475569" stroke-width="1.4"/>
+                  <g fill="#fff" font-size="14" font-weight="900" font-family="system-ui,sans-serif"><text x="150" y="44">&#8722;</text><text x="154" y="66">&#8722;</text><text x="150" y="88">&#8722;</text></g>
+                  <path d="M26 92c10-18 32-22 46-10" fill="none" stroke="#a16207" stroke-width="3" stroke-linecap="round"/>
+                  <circle cx="44" cy="70" r="18" fill="#fcd34d"/><path d="M30 62c6-14 26-14 30 0" fill="#78350f"/><circle cx="38" cy="72" r="2" fill="#1f2937"/><circle cx="50" cy="72" r="2" fill="#1f2937"/><path d="M39 80q5 4 10 0" fill="none" stroke="#1f2937" stroke-width="1.6"/>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Balloon on the wall</strong>
+                  <ul class="we-act-meta"><li class="we-age">Any age</li><li>5 min</li><li>Easy</li></ul>
+                  <small>Rub a balloon on your hair or a wool sweater, then press it gently to a wall. It sticks with no glue at all.</small>
+                  <p class="we-act-need"><b>You need:</b> a balloon, dry hair or a wool sweater, a painted wall.</p>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Blow up and tie the balloon.</li>
+                      <li>Rub it briskly on dry hair or wool for 20 seconds.</li>
+                      <li>Hold the rubbed side against a wall and let go gently.</li>
+                      <li>Time how long it stays. Try again on a humid day and compare.</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>Rubbing moves electrons from your hair onto the balloon, so it carries extra negative charge. Near the wall, that charge pushes the wall's electrons slightly away (<span data-glossary="electrostatic induction">electrostatic induction</span>), leaving the wall's surface a little positive, and opposites attract. Humid air lets the charge leak away faster.</p>
+                  </details>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
+              <article class="sm-project-card we-act" data-age-group="4+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="we-art-tap" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e5e7eb"/><stop offset="1" stop-color="#6b7280"/></linearGradient>
+                    <linearGradient id="we-art-stream" x1="0" x2="1"><stop offset="0" stop-color="#93c5fd"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#eef6fb"/>
+                  <rect x="40" y="10" width="70" height="16" rx="6" fill="url(#we-art-tap)"/>
+                  <rect x="88" y="24" width="18" height="12" rx="3" fill="#9ca3af"/>
+                  <path d="M97 36C97 70 104 88 128 128" fill="none" stroke="url(#we-art-stream)" stroke-width="5" stroke-linecap="round"/>
+                  <path d="M97 36V128" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="3 5" opacity="0.35"/>
+                  <g transform="rotate(-12 170 80)">
+                    <rect x="138" y="70" width="80" height="12" rx="4" fill="#1e293b"/>
+                    <g stroke="#1e293b" stroke-width="3"><path d="M144 82v14M152 82v14M160 82v14M168 82v14M176 82v14M184 82v14M192 82v14M200 82v14M208 82v14"/></g>
+                  </g>
+                  <g fill="#e11d48" font-size="14" font-weight="900" font-family="system-ui,sans-serif"><text x="150" y="64">&#8722;</text><text x="174" y="58">&#8722;</text><text x="198" y="52">&#8722;</text></g>
+                  <text x="20" y="118" font-size="11" font-weight="800" fill="#1e40af" font-family="system-ui,sans-serif">stream bends &#8594;</text>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Bending water</strong>
+                  <ul class="we-act-meta"><li class="we-age">Any age</li><li>5 min</li><li>Easy</li></ul>
+                  <small>Charge a plastic comb on dry hair and bring it near a thin, steady trickle of tap water. The stream swerves toward the comb in midair.</small>
+                  <p class="we-act-need"><b>You need:</b> a plastic comb (or balloon), a tap, dry hair.</p>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Open the tap until the stream is pencil-thin and smooth, not dripping.</li>
+                      <li>Comb dry hair 10 times quickly.</li>
+                      <li>Bring the teeth close to the stream (don't touch it) and watch it bend.</li>
+                      <li>Try with the comb uncharged. What changes?</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>Water molecules are polar: the oxygen end is slightly negative and the hydrogen ends slightly positive. The charged comb twists them so their positive ends face it, and the whole stream is pulled sideways. Touch the stream and the charge drains away.</p>
+                  </details>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
+              <article class="sm-project-card we-act" data-age-group="4+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="we-art-balloon2" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#bae6fd"/><stop offset="0.5" stop-color="#0284c7"/><stop offset="1" stop-color="#0c4a6e"/></radialGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#f7f3ea"/>
+                  <rect y="104" width="240" height="26" fill="#d6b88a"/>
+                  <ellipse cx="120" cy="34" rx="46" ry="26" fill="url(#we-art-balloon2)"/>
+                  <ellipse cx="104" cy="24" rx="10" ry="6" fill="#fff" opacity="0.45"/>
+                  <g fill="#f97316"><rect x="92" y="62" width="7" height="5" transform="rotate(20 95 64)"/><rect x="132" y="70" width="6" height="6" transform="rotate(-30 135 73)"/></g>
+                  <g fill="#22c55e"><rect x="112" y="80" width="6" height="5" transform="rotate(40 115 82)"/><rect x="150" y="96" width="7" height="5"/></g>
+                  <g fill="#a855f7"><rect x="78" y="94" width="6" height="6" transform="rotate(15 81 97)"/><rect x="124" y="58" width="6" height="5"/></g>
+                  <g fill="#facc15"><rect x="60" y="98" width="7" height="5"/><rect x="170" y="98" width="6" height="6" transform="rotate(25 173 101)"/><rect x="104" y="100" width="6" height="4"/></g>
+                  <g stroke="#475569" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M96 90v-14m-4 4 4-4 4 4"/><path d="M136 92v-12m-4 4 4-4 4 4"/></g>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Jumping paper bits</strong>
+                  <ul class="we-act-meta"><li class="we-age">Ages 4+</li><li>5 min</li><li>Easy</li></ul>
+                  <small>Tear tissue paper into confetti, charge a balloon, and hover it above the table. The confetti leaps up, clings, and some pieces jump away again.</small>
+                  <p class="we-act-need"><b>You need:</b> tissue paper, a balloon or plastic ruler, a wool sweater.</p>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Tear tissue paper into pieces smaller than your fingernail.</li>
+                      <li>Charge the balloon on wool for 20 seconds.</li>
+                      <li>Hold it 2–3 cm above the pile and slowly lower it.</li>
+                      <li>Watch closely: why do some pieces fly back off?</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>The charged balloon induces opposite charge on the near side of each light paper scrap, so it is attracted. Once a scrap touches the balloon, it picks up some of the balloon's charge, now has the <em>same</em> sign, and is pushed off again.</p>
+                  </details>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
+              <article class="sm-project-card we-act" data-age-group="8+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <radialGradient id="we-art-lemon" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fef9c3"/><stop offset="0.5" stop-color="#facc15"/><stop offset="1" stop-color="#a16207"/></radialGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#f1f5ee"/>
+                  <g>
+                    <ellipse cx="44" cy="84" rx="30" ry="22" fill="url(#we-art-lemon)"/>
+                    <ellipse cx="116" cy="84" rx="30" ry="22" fill="url(#we-art-lemon)"/>
+                    <ellipse cx="188" cy="84" rx="30" ry="22" fill="url(#we-art-lemon)"/>
+                  </g>
+                  <g fill="#c2410c"><rect x="28" y="52" width="10" height="22" rx="2"/><rect x="100" y="52" width="10" height="22" rx="2"/><rect x="172" y="52" width="10" height="22" rx="2"/></g>
+                  <g fill="#94a3b8"><rect x="54" y="46" width="4" height="30"/><rect x="126" y="46" width="4" height="30"/><rect x="198" y="46" width="4" height="30"/></g>
+                  <g fill="none" stroke="#334155" stroke-width="2"><path d="M56 46C70 30 92 32 104 52"/><path d="M128 46C142 30 164 32 176 52"/><path d="M200 46C214 22 228 20 226 14"/><path d="M32 52C24 30 20 22 30 14"/></g>
+                  <circle cx="128" cy="16" r="9" fill="#ef4444"/><circle cx="128" cy="16" r="18" fill="#ef4444" opacity="0.2"/>
+                  <path d="M30 14H119M137 16H226" stroke="#334155" stroke-width="2" fill="none"/>
+                  <text x="14" y="124" font-size="10.5" font-weight="800" fill="#3f6212" font-family="system-ui,sans-serif">copper (+) · zinc nail (&#8722;) · 3 in series</text>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Lemon (or potato) battery</strong>
+                  <ul class="we-act-meta"><li class="we-age">Ages 8+</li><li>20 min</li><li>Medium</li></ul>
+                  <small>Push a galvanized (zinc-coated) nail and a copper coin into a lemon. A chemical reaction between the two metals and the juice pushes about 0.9 V. Chain lemons to add their voltages.</small>
+                  <p class="we-act-need"><b>You need:</b> 3–4 lemons or potatoes, galvanized nails, copper coins or strips, alligator-clip leads, a red LED.</p>
+                  <div class="we-lemon-lab">
+                    <label for="we-lemon-count">How many lemons in series?</label>
+                    <div class="we-lemon-controls">
+                      <input type="range" id="we-lemon-count" min="1" max="6" step="1" value="2" />
+                      <span class="we-lemon-led" id="we-lemon-led" style="--glow:0" aria-hidden="true"></span>
+                    </div>
+                    <p class="we-lemon-row" id="we-lemon-row" aria-hidden="true"></p>
+                    <p class="we-lemon-readout" id="we-lemon-readout" aria-live="polite"></p>
+                  </div>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Roll each lemon on the table to free up the juice inside.</li>
+                      <li>In each lemon, push a nail and a coin in about 2 cm apart. They must not touch.</li>
+                      <li>Wire the copper of one lemon to the nail of the next.</li>
+                      <li>Connect the LED's long leg to the free copper and its short leg to the free nail. Dim the lights.</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>Zinc gives up electrons more easily than copper does. The acid in the juice lets zinc dissolve as ions, leaving electrons behind on the nail; they flow through your wire to the copper. That makes the nail the negative terminal. The lemon is only the salt bridge: the energy comes from the zinc being used up.</p>
+                  </details>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
+              <article class="sm-project-card we-act" data-age-group="8+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="we-art-cell" x1="0" x2="1"><stop offset="0" stop-color="#14532d"/><stop offset="0.5" stop-color="#22c55e"/><stop offset="1" stop-color="#14532d"/></linearGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#eef2f7"/>
+                  <rect x="20" y="44" width="200" height="66" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+                  <g fill="#cbd5e1"><circle cx="40" cy="60" r="2"/><circle cx="52" cy="60" r="2"/><circle cx="64" cy="60" r="2"/><circle cx="76" cy="60" r="2"/><circle cx="88" cy="60" r="2"/><circle cx="100" cy="60" r="2"/><circle cx="112" cy="60" r="2"/><circle cx="124" cy="60" r="2"/><circle cx="136" cy="60" r="2"/><circle cx="148" cy="60" r="2"/><circle cx="160" cy="60" r="2"/><circle cx="172" cy="60" r="2"/><circle cx="184" cy="60" r="2"/><circle cx="196" cy="60" r="2"/><circle cx="40" cy="96" r="2"/><circle cx="52" cy="96" r="2"/><circle cx="64" cy="96" r="2"/><circle cx="76" cy="96" r="2"/><circle cx="88" cy="96" r="2"/><circle cx="100" cy="96" r="2"/><circle cx="112" cy="96" r="2"/><circle cx="124" cy="96" r="2"/><circle cx="136" cy="96" r="2"/><circle cx="148" cy="96" r="2"/><circle cx="160" cy="96" r="2"/><circle cx="172" cy="96" r="2"/><circle cx="184" cy="96" r="2"/><circle cx="196" cy="96" r="2"/></g>
+                  <rect x="24" y="8" width="66" height="28" rx="5" fill="url(#we-art-cell)"/><text x="57" y="27" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" font-family="system-ui,sans-serif">9 V</text>
+                  <path d="M40 36V60M76 36V96" stroke="#dc2626" stroke-width="2.5" fill="none"/>
+                  <path d="M76 36V40" stroke="#111827" stroke-width="2.5"/>
+                  <rect x="94" y="54" width="22" height="12" rx="2" fill="#475569"/><path d="M96 54l14-10" stroke="#111827" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M40 60H94M116 60H130" stroke="#dc2626" stroke-width="2.5" fill="none"/>
+                  <rect x="130" y="55" width="30" height="10" rx="5" fill="#d6b88a"/><g fill="none" stroke-width="3"><path d="M137 55v10" stroke="#a16207"/><path d="M143 55v10" stroke="#111827"/><path d="M149 55v10" stroke="#a16207"/><path d="M155 55v10" stroke="#ca8a04"/></g>
+                  <path d="M160 60H178V72" stroke="#64748b" stroke-width="2" fill="none"/>
+                  <circle cx="182" cy="78" r="9" fill="#ef4444"/><circle cx="182" cy="78" r="18" fill="#ef4444" opacity="0.18"/>
+                  <path d="M186 86V96H76" stroke="#111827" stroke-width="2.5" fill="none"/>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Build a simple circuit</strong>
+                  <ul class="we-act-meta"><li class="we-age">Ages 8+</li><li>20 min</li><li>Medium</li></ul>
+                  <small>Connect a battery, a switch, a resistor and an LED in one closed loop on a breadboard. Then break the loop anywhere and watch it go dark.</small>
+                  <p class="we-act-need"><b>You need:</b> a 9 V battery and snap, a breadboard, a 470 &Omega; resistor, an LED, a slide switch, jumper wires.</p>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Battery + to the switch, switch to the resistor.</li>
+                      <li>Resistor to the LED's long leg (anode).</li>
+                      <li>LED's short leg back to battery &#8722;.</li>
+                      <li>Flip the switch. Then swap in a 1 k&Omega; resistor: is it dimmer?</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>Current only flows around a complete loop. The resistor limits it: (9 V &#8722; 2 V for the LED) &divide; 470 &Omega; &asymp; 15 mA, a safe glow. Without it the LED would take far more current and burn out. Full wiring guide in <a href="../../engineering/arduino-and-electronics/breadboard-basics.html">Breadboard Basics</a>.</p>
+                  </details>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
+              <article class="sm-project-card we-act" data-age-group="8+">
+                <svg class="we-act-art" viewBox="0 0 240 130" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="we-art-nail" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e5e7eb"/><stop offset="0.5" stop-color="#9ca3af"/><stop offset="1" stop-color="#4b5563"/></linearGradient>
+                    <linearGradient id="we-art-dcell" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset="0.5" stop-color="#f59e0b"/><stop offset="1" stop-color="#92400e"/></linearGradient>
+                  </defs>
+                  <rect width="240" height="130" fill="#f3f1f8"/>
+                  <rect x="30" y="34" width="150" height="12" rx="3" fill="url(#we-art-nail)"/>
+                  <path d="M180 34l22 6-22 6z" fill="#6b7280"/>
+                  <rect x="22" y="30" width="10" height="20" rx="2" fill="#9ca3af"/>
+                  <g stroke="#c2410c" stroke-width="3.4"><path d="M48 30l-4 20M56 30l-4 20M64 30l-4 20M72 30l-4 20M80 30l-4 20M88 30l-4 20M96 30l-4 20M104 30l-4 20M112 30l-4 20M120 30l-4 20M128 30l-4 20M136 30l-4 20M144 30l-4 20M152 30l-4 20"/></g>
+                  <path d="M48 50C40 80 60 100 80 104M152 50C164 80 150 100 140 104" stroke="#c2410c" stroke-width="2" fill="none"/>
+                  <rect x="80" y="96" width="60" height="22" rx="4" fill="url(#we-art-dcell)"/><rect x="140" y="102" width="5" height="10" fill="#6b7280"/><text x="110" y="111" text-anchor="middle" font-size="10" font-weight="900" fill="#451a03" font-family="system-ui,sans-serif">D-CELL</text>
+                  <g fill="none" stroke="#475569" stroke-width="2"><path d="M196 46c-6 0-6 12 0 12h6c6 0 6-12 0-12"/><path d="M200 58c-6 0-6 12 0 12h6c6 0 6-12 0-12"/><path d="M196 70c-6 0-6 12 0 12h6c6 0 6-12 0-12"/></g>
+                  <g stroke="#7c3aed" stroke-width="1.2" fill="none" opacity="0.6"><path d="M30 40C10 10 200 0 210 40"/><path d="M30 40C14 76 200 84 210 40"/></g>
+                </svg>
+                <div class="we-act-body">
+                  <strong>Electromagnet from a nail</strong>
+                  <ul class="we-act-meta"><li class="we-age">Ages 8+</li><li>15 min</li><li>Medium</li></ul>
+                  <small>Wrap insulated magnet wire 40+ times around an iron nail, touch the ends to a D-cell, and pick up a chain of paper clips. This is Ørsted's 1820 discovery in your hand.</small>
+                  <p class="we-act-need"><b>You need:</b> a large iron nail, 1 m of enamelled magnet wire, sandpaper, a D-cell, paper clips.</p>
+                  <details>
+                    <summary>Steps</summary>
+                    <ol>
+                      <li>Sand 2 cm of enamel off each wire end.</li>
+                      <li>Wind the wire tightly around the nail, all in one direction.</li>
+                      <li>Hold the ends on the battery terminals for a few seconds at a time (it gets warm).</li>
+                      <li>Count the clips it lifts. Add 20 more turns and count again.</li>
+                    </ol>
+                  </details>
+                  <details>
+                    <summary>What's happening</summary>
+                    <p>Every moving charge makes a magnetic field. Coiling the wire stacks the fields of all the turns together, and the iron nail lines up its own tiny magnetic domains with them, multiplying the field hundreds of times. Break the circuit and the magnet switches off.</p>
+                  </details>
+                  <p class="we-act-safety">Short-circuits a battery: only connect it for a few seconds, and never use a wall supply.</p>
+                  <label class="we-act-done"><input type="checkbox" /> We tried it</label>
+                </div>
+              </article>
             </div>
           </section>
 
@@ -676,78 +891,137 @@
           <section class="sm-card" style="--sm-accent:#007aff;">
             <h2>Go Further</h2>
             <p>This lesson is your launchpad into the Electronics &amp; Physics track. Pick any lesson or external simulation below to dive deeper.</p>
+            <ol class="we-next-path" aria-label="A good order to continue">
+              <li><a href="../../engineering/arduino-and-electronics/ohms-law.html">Ohm's Law</a></li>
+              <li><a href="coulombs-law.html">Coulomb's Law</a></li>
+              <li><a href="faradays-law.html">Faraday's Law</a></li>
+              <li><a href="ac-vs-dc.html">AC vs. DC</a></li>
+            </ol>
+            <h3 class="we-links-head">Keep building the physics</h3>
             <div class="we-links-grid">
-              <a class="we-link-card lesson" href="coulombs-law.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Coulomb's Law</strong>
-                <small>The exact math of how strongly two charges attract or repel depending on charge and distance.</small>
-              </a>
               <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/ohms-law.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Ohm's Law</strong>
-                <small>Voltage, current, and resistance with real component values, worked math, and circuit labs.</small>
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/GeorgeOhm.jpg" alt="" loading="lazy" decoding="async" style="object-position:50% 20%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson &middot; start here</span>
+                  <strong>Ohm's Law</strong>
+                  <small>Voltage, current, and resistance with real component values, worked math, and circuit labs.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson" href="coulombs-law.html">
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/coulomb.png" alt="" loading="lazy" decoding="async" style="object-position:50% 15%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Coulomb's Law</strong>
+                  <small>The exact math of how strongly two charges attract or repel depending on charge and distance.</small>
+                </span>
               </a>
               <a class="we-link-card lesson" href="faradays-law.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Faraday's Law</strong>
-                <small>How moving magnets generate current — the physics powering wind turbines and hydro generators.</small>
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/faraday.jpg" alt="" loading="lazy" decoding="async" style="object-position:50% 20%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Faraday's Law</strong>
+                  <small>How moving magnets generate current: the physics powering wind turbines and hydro generators.</small>
+                </span>
               </a>
               <a class="we-link-card lesson" href="ac-vs-dc.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>AC vs. DC</strong>
-                <small>See oscillating vs. steady waveforms side-by-side and why transformers favor AC grids.</small>
-              </a>
-              <a class="we-link-card lesson" href="van-de-graaff-generator.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Van de Graaff Generator</strong>
-                <small>How moving conveyor belts pump static charge to hundreds of thousands of volts.</small>
-              </a>
-              <a class="we-link-card lesson" href="cathode-ray-tube.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Cathode Ray Tube</strong>
-                <small>Free electron beams steered through vacuum glass — the experiment that discovered the electron.</small>
-              </a>
-              <a class="we-link-card lesson" href="faraday-cage.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Faraday Cage</strong>
-                <small>Why a conductive shell shields everything inside from external lightning and radio waves.</small>
-              </a>
-              <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/breadboard-basics.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Breadboard Basics</strong>
-                <small>Plug in batteries, resistors, switches, and LEDs safely without soldering.</small>
-              </a>
-              <a class="we-link-card lesson" href="../pioneers/benjamin-franklin.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Benjamin Franklin</strong>
-                <small>The kite experiment, single-fluid charge theory, and why lightning rods work.</small>
-              </a>
-              <a class="we-link-card lesson" href="../pioneers/nikola-tesla.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>Nikola Tesla</strong>
-                <small>Polyphase motors, rotating magnetic fields, and winning the War of the Currents.</small>
-              </a>
-              <a class="we-link-card lesson" href="../pioneers/james-clerk-maxwell.html">
-                <span class="we-link-kind">Lesson</span>
-                <strong>James Clerk Maxwell</strong>
-                <small>Unifying electricity, magnetism, and light into four foundational equations.</small>
-              </a>
-              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">
-                <span class="we-link-kind">PhET simulation</span>
-                <strong>Circuit Construction Kit: DC</strong>
-                <small>Build and probe virtual DC circuits with batteries, switches, resistors, and light bulbs.</small>
-              </a>
-              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">
-                <span class="we-link-kind">PhET simulation</span>
-                <strong>Balloons and Static Electricity</strong>
-                <small>Visualize individual electrons transferring from wool sweater to rubber balloon.</small>
-              </a>
-              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/john-travoltage" target="_blank" rel="noopener">
-                <span class="we-link-kind">PhET simulation</span>
-                <strong>John Travoltage</strong>
-                <small>Rub a shoe across carpet and watch negative charges wait until the finger nears a metal doorknob.</small>
+                <span class="we-link-thumb"><svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="90" fill="#0b1323"/><path d="M8 30h104" stroke="#334155" stroke-width="1"/><path d="M8 30C18 6 28 6 38 30S58 54 68 30 88 6 98 30 108 54 112 40" fill="none" stroke="#38bdf8" stroke-width="3"/><path d="M8 68h104" stroke="#fbbf24" stroke-width="3"/></svg></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>AC vs. DC</strong>
+                  <small>See oscillating vs. steady waveforms side by side and why transformers favor AC grids.</small>
+                </span>
               </a>
             </div>
+            <h3 class="we-links-head">See it, build it</h3>
+            <div class="we-links-grid">
+              <a class="we-link-card lesson" href="van-de-graaff-generator.html">
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/van-de-graaff.jpg" alt="" loading="lazy" decoding="async" style="object-position:50% 30%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Van de Graaff Generator</strong>
+                  <small>How a moving belt pumps static charge up to hundreds of thousands of volts.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson" href="cathode-ray-tube.html">
+                <span class="we-link-thumb"><svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="90" fill="#0b1323"/><path d="M14 34h30l40-20v62L44 56H14z" fill="#1e293b" stroke="#64748b"/><circle cx="20" cy="45" r="4" fill="#f97316"/><path d="M24 45C50 45 64 36 82 26" stroke="#4ade80" stroke-width="2.5" fill="none"/><circle cx="83" cy="26" r="4" fill="#bbf7d0"/><rect x="48" y="30" width="8" height="5" fill="#94a3b8"/><rect x="48" y="55" width="8" height="5" fill="#94a3b8"/></svg></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Cathode Ray Tube</strong>
+                  <small>Free electron beams steered through vacuum glass: the experiment that discovered the electron.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson" href="faraday-cage.html">
+                <span class="we-link-thumb"><img src="../../../assets/images/path-previews/faraday-cage.svg" alt="" loading="lazy" decoding="async" style="object-position:50% 50%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Faraday Cage</strong>
+                  <small>Why a conductive shell shields everything inside from lightning and radio waves.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson" href="../../engineering/arduino-and-electronics/breadboard-basics.html">
+                <span class="we-link-thumb"><img src="../../../assets/images/path-previews/breadboard-basics.svg" alt="" loading="lazy" decoding="async" style="object-position:50% 50%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Lesson</span>
+                  <strong>Breadboard Basics</strong>
+                  <small>Plug in batteries, resistors, switches, and LEDs safely without soldering.</small>
+                </span>
+              </a>
+            </div>
+            <h3 class="we-links-head">Meet the pioneers</h3>
+            <div class="we-links-grid">
+              <a class="we-link-card lesson person" href="../pioneers/benjamin-franklin.html">
+                <span class="we-link-thumb"><img src="../../../assets/images/avatars/benjamin-franklin.webp" alt="" loading="lazy" decoding="async" style="object-position:50% 30%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Pioneer</span>
+                  <strong>Benjamin Franklin</strong>
+                  <small>The kite experiment, single-fluid charge theory, and why lightning rods work.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson person" href="../pioneers/nikola-tesla.html">
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/tesla.jpg" alt="" loading="lazy" decoding="async" style="object-position:50% 20%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Pioneer</span>
+                  <strong>Nikola Tesla</strong>
+                  <small>Polyphase motors, rotating magnetic fields, and winning the War of the Currents.</small>
+                </span>
+              </a>
+              <a class="we-link-card lesson person" href="../pioneers/james-clerk-maxwell.html">
+                <span class="we-link-thumb"><img src="../../../assets/thumbs/maxwell.jpg" alt="" loading="lazy" decoding="async" style="object-position:50% 20%" /></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">Pioneer</span>
+                  <strong>James Clerk Maxwell</strong>
+                  <small>Unifying electricity, magnetism, and light into four foundational equations.</small>
+                </span>
+              </a>
+            </div>
+            <h3 class="we-links-head">Free simulations from PhET (opens a new tab)</h3>
+            <div class="we-links-grid">
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc" target="_blank" rel="noopener">
+                <span class="we-link-thumb"><svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="90" fill="#0f2a3d"/><rect x="22" y="22" width="76" height="46" rx="4" fill="none" stroke="#fbbf24" stroke-width="3"/><rect x="14" y="36" width="16" height="18" rx="2" fill="#22c55e"/><circle cx="98" cy="45" r="9" fill="#fde047"/><path d="M54 22h14l-3 -6" stroke="#e2e8f0" stroke-width="2" fill="none"/></svg></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">PhET simulation</span>
+                  <strong>Circuit Construction Kit: DC</strong>
+                  <small>Build and probe virtual DC circuits with batteries, switches, resistors, and light bulbs.</small>
+                </span>
+              </a>
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/balloons-and-static-electricity" target="_blank" rel="noopener">
+                <span class="we-link-thumb"><svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="90" fill="#0f2a3d"/><ellipse cx="66" cy="38" rx="20" ry="25" fill="#f97316"/><path d="M66 63v20" stroke="#cbd5e1"/><rect x="10" y="20" width="30" height="56" rx="6" fill="#a855f7"/><g stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M58 31h7M66 43h7M16 36h7M19.5 32.5v7M24 54h7M27.5 50.5v7"/></g></svg></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">PhET simulation</span>
+                  <strong>Balloons and Static Electricity</strong>
+                  <small>Watch individual electrons move from a wool sweater onto a rubber balloon.</small>
+                </span>
+              </a>
+              <a class="we-link-card sim" href="https://phet.colorado.edu/en/simulations/john-travoltage" target="_blank" rel="noopener">
+                <span class="we-link-thumb"><svg viewBox="0 0 120 90" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="90" fill="#0f2a3d"/><rect x="0" y="72" width="120" height="18" fill="#7c2d12"/><circle cx="50" cy="26" r="12" fill="#fcd34d"/><path d="M50 38v24M50 62l-10 12M50 62l10 12M50 46l26 -10" stroke="#fcd34d" stroke-width="5" stroke-linecap="round"/><rect x="92" y="20" width="18" height="40" fill="#78716c"/><circle cx="96" cy="40" r="3" fill="#fbbf24"/><path d="M78 36l6 4-4 2 6 4" stroke="#fef08a" stroke-width="2" fill="none"/></svg></span>
+                <span class="we-link-text">
+                  <span class="we-link-kind">PhET simulation</span>
+                  <strong>John Travoltage</strong>
+                  <small>Rub a shoe across carpet and watch the charge wait until a finger nears a metal doorknob.</small>
+                </span>
+              </a>
+            </div>
+            <p class="we-links-credit" data-no-glossary>Portraits: public-domain paintings, photographs and engravings via Wikimedia Commons.</p>
           </section>
 
           <!-- ── 8. Guided Practice + Quick Check Quiz ── -->
@@ -954,6 +1228,7 @@
 
   <script src="../../../assets/js/sim-kit.js"></script>
   <script src="../../../assets/js/lessons/what-is-electricity.js"></script>
+  <script src="../../../assets/js/lessons/what-is-electricity-scenes.js"></script>
   <script src="../../../assets/js/classroom-animations.js"></script>
   <script src="../../../assets/js/lesson-layout.js"></script>
   <script src="../../../assets/js/electricity-path.js"></script>
