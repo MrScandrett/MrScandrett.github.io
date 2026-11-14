@@ -507,8 +507,8 @@
         '<text x="14" y="68" font-size="9" font-weight="800" fill="#86efac">6V</text>' +
         /* Sample bridge */
         '<rect x="90" y="121" width="62" height="22" rx="5" fill="' + sampleColor + '" stroke="#94a3b8" stroke-width="1.4"/>' +
-        '<text x="121" y="135.5" text-anchor="middle" font-size="8.5" font-weight="800" fill="#f8fafc">' + (currentMat === 'saltwater' ? 'SALT H₂O' : currentMat.toUpperCase()) + '</text>' +
-        '<text x="121" y="156" text-anchor="middle" font-size="8" fill="#94a3b8">Test Sample</text>' +
+        /* Keep the label on the dark bench, away from changing sample colors. */
+        '<text x="121" y="156" text-anchor="middle" font-size="8" font-weight="800" fill="#f8fafc">' + (currentMat === 'saltwater' ? 'SALT H₂O' : currentMat.toUpperCase()) + ' SAMPLE</text>' +
         /* Test Bulb */
         '<circle cx="121" cy="36" r="24" fill="#fde047" opacity="' + (spec.glow * 0.42).toFixed(2) + '"/>' +
         '<circle cx="121" cy="36" r="13" fill="' + spec.bulbColor + '" stroke="#cbd5e1" stroke-width="1.8"/>' +
