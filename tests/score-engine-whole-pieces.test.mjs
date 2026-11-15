@@ -229,3 +229,35 @@ test('Mozart collection contains 22 selections with scoped variations and minuet
   assert.ok(engine.playList(adagio).some(n=>n.grace));
   assert.match(library['mozart-fantasia-k397'].subtitle,/probably by August Eberhard Müller/);
 });
+
+test('a rest never sits on a note another voice holds at the same time', () => {
+  // Schubert D. 899 No. 2, bass: quarter rest over a dotted-half in the second voice.
+  const m = model({ time: '4/4', staves: [{ clef: 'bass', voices: [
+    { notes: '@U r/4 Bb3/2 r/4' },
+    { notes: '@D Eb3/2. s/4' }] }] });
+  engine.engrave(m, 800, false);
+  const rest = m.staves[0].bars[0].events.find((e) => e.kind === 'rest' && !e.hidden);
+  assert.ok(rest.restStep - 3 > 5 + 1, 'rest is clear above the E♭3 head (step 5)');
+  // A rest with nothing under it keeps its usual height.
+  const solo = model({ time: '4/4', staves: [{ voices: [{ notes: '@U r/4 C5/4 C5/2' }, { notes: '@D C4/1' }] }] });
+  engine.engrave(solo, 800, false);
+  const r2 = solo.staves[0].bars[0].events.find((e) => e.kind === 'rest');
+  assert.equal(r2.restStep, 7);
+});
+
+test('no rest in the library overlaps a note held by another voice', () => {
+  const clashes = [];
+  Object.entries(library).forEach(([id, score]) => {
+    const m = model({ ...score });
+    engine.engrave(m, 800, false);
+    m.staves.forEach((st, si) => st.bars.forEach((bar, bi) => bar.events.forEach((r) => {
+      if (r.kind !== 'rest' || r.hidden || r.whole) return;
+      bar.events.forEach((n) => {
+        if (n.kind !== 'note' || n.grace || n.voice === r.voice) return;
+        if (n.start >= r.start + r.dur - 1e-6 || n.start + n.dur <= r.start + 1e-6) return;
+        if (n.lo - 1 <= r.restStep + 3 && n.hi + 1 >= r.restStep - 3) clashes.push(`${id} staff ${si + 1} bar ${bi + 1}`);
+      });
+    })));
+  });
+  assert.deepEqual(clashes.slice(0, 10), []);
+});

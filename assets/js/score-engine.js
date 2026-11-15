@@ -484,17 +484,20 @@
         // (e.g. a quarter rest over a dotted-half bass note): push it clear of that note.
         bar.events.forEach(function (rest) {
           if (rest.kind !== 'rest' || rest.hidden || rest.whole) return;
-          var up = rest.restStep >= 4, lo = rest.restStep - 3, hi = rest.restStep + 3;
-          var low = Infinity, high = -Infinity;
-          bar.events.forEach(function (n) {
-            if (n.kind !== 'note' || n.grace || n.voice === rest.voice) return;
-            if (n.start >= rest.start + rest.dur - EPS || n.start + n.dur <= rest.start + EPS) return;
-            // pad for dots, ledger lines and seconds beside the head
-            if (n.lo - 1 > hi || n.hi + 1 < lo) return;
-            low = Math.min(low, n.lo); high = Math.max(high, n.hi);
-          });
-          if (high < low) return;
-          rest.restStep = up ? Math.max(rest.restStep, high + 5) : Math.min(rest.restStep, low - 5);
+          var up = rest.restStep >= 4;
+          // Moving clear of one note can land on a third voice's note, so repeat until nothing overlaps.
+          for (var pass = 0; pass < 8; pass++) {
+            var lo = rest.restStep - 3, hi = rest.restStep + 3, low = Infinity, high = -Infinity;
+            bar.events.forEach(function (n) {
+              if (n.kind !== 'note' || n.grace || n.voice === rest.voice) return;
+              if (n.start >= rest.start + rest.dur - EPS || n.start + n.dur <= rest.start + EPS) return;
+              // pad for dots, ledger lines and seconds beside the head
+              if (n.lo - 1 > hi || n.hi + 1 < lo) return;
+              low = Math.min(low, n.lo); high = Math.max(high, n.hi);
+            });
+            if (high < low) break;
+            rest.restStep = up ? Math.max(rest.restStep, high + 5) : Math.min(rest.restStep, low - 5);
+          }
         });
         bar.beams = [];
         st.voices.forEach(function (_, vi) {
