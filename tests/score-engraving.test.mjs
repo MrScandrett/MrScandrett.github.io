@@ -72,7 +72,11 @@ test('Chopin ending and expression marks survive reflow without duplicated chord
     assert.deepEqual(closingBeam.events.map(e => e.staff), [1, 1, 0]);
     assert.doesNotMatch(layout.svg, /NaN|undefined/);
     const inner = model.staves[0].bars[29].events.filter(e => e.voice === 1);
-    assert.equal(inner[0].restStep, 1);
+    const rest = inner[0];
+    assert.ok(rest.clearOf.length, 'the inner-voice rest clears the surrounding notation');
+    for (const [low, high] of rest.clearOf) {
+      assert.ok(low > rest.restStep + rest.restHalf || high < rest.restStep - rest.restHalf);
+    }
     assert.equal(inner[1].up, true);
   }
   assert.deepEqual(E.playList(model).map(({ start, dur, midi }) => [start, dur, midi]), before);
