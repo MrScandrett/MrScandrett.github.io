@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMX Lighting &amp; Addressing · Technical Elements</title>
+<meta name="description" content="Patch a school musical's lighting rig: give every fixture a DMX start address, read channel footprints, find address collisions, set DIP switches in binary, and build a terminated data line.">
+<link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg">
+<link rel="stylesheet" href="../../../assets/css/lessons/technical-elements.css">
+<link rel="stylesheet" href="../../../assets/css/creation-app.css">
+<link rel="stylesheet" href="../../../assets/css/lesson-print.css" media="print">
+<link rel="stylesheet" href="../../../assets/css/lessons/dmx-patch-lab.css">
+<link rel="stylesheet" href="../../../assets/css/components/photo-gallery.css">
+<link rel="stylesheet" href="../../../assets/css/classroom-home.css" />
+</head>
+<body class="te-page dmx-page">
+  <header class="site-header">
+    <div class="nav-wrap">
+      <a class="brand" href="../../../index.html">Mr. Scandrett's ClassroomOS</a>
+      <nav class="site-nav" aria-label="Primary">
+        <ul>
+          <li><a href="../../../index.html">Home</a></li>
+          <li><a href="../../../steam-lessons.html" aria-current="page">Lessons</a></li>
+          <li><a href="../../../paths.html">Paths</a></li>
+          <li><a href="../../../showcase.html">Showcase</a></li>
+          <li><a href="../../../applications.html">Apps</a></li>
+          <li><a href="../../../library.html">Library</a></li>
+          <li><a href="../../../about.html">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+<nav class="te-topbar" data-no-print><a href="stage-lighting-design-lab.html">← Stage Lighting Lab</a><a href="#patch-lab">Patch the rig</a><a href="projection-throw-ratio-lab.html">Next: Projection Lab →</a></nav>
+<main class="te-shell">
+
+<header class="dmx-hero">
+  <div>
+    <p class="course-line">School musical production · Grades 8–12 · 45–60 minutes · <a href="../technical-elements.html">Technical Elements</a></p>
+    <h1>DMX lighting &amp; addressing</h1>
+    <p>The lighting console in the booth talks to every light in the theatre down <strong>one data cable</strong>. That cable carries <strong>512 numbered channels</strong>, over and over, about 44 times a second. Each light listens to its own block of numbers and ignores the rest. Getting those numbers right is called <strong>patching</strong>, and it is the job that decides whether opening night’s first cue works.</p>
+    
+  </div>
+  <aside class="dmx-callout" aria-label="How one fixture reads the data line">
+    <span>Mover 1 · start address 101 · 16 channels</span>
+    <ol class="dmx-callout-strip" aria-hidden="true">
+      <li>101<small>Pan</small></li><li>102<small>Pan fine</small></li><li>103<small>Tilt</small></li><li>…</li><li>116<small>Control</small></li>
+    </ol>
+    <p>It listens to <strong>101 through 116</strong>. The next free address is <strong>117</strong>.</p>
+  </aside>
+</header>
+
+<section class="lesson-block dmx-lab" id="patch-lab" aria-labelledby="patch-title" data-memory-ignore data-creation-app>
+  <div class="dmx-lab-head">
+    <div>
+      <h2 id="patch-title">Patch lab: the <cite>Pirates of Penzance</cite> rig</h2>
+      <p>This is the Act I rig for the same rocky-shore set as the <a href="stage-plotting.html">Stage Plotting</a> ground plan and the <a href="theatre-cue-sheets.html">Cue Sheets</a> prompt book. Every row is one fixture. Change a type, mode or address and watch the universe map. New to DMX? Read <a href="#learn">Three numbers run every light</a> just below first.</p>
+    </div>
+    <span class="dmx-score" id="dmx-score" role="status"></span>
+  </div>
+
+  <div class="dmx-toolbar" data-no-print>
+    <button type="button" class="te-button" id="load-pirates">Load Pirates rig</button>
+    <button type="button" class="te-button" id="load-broken">Load the rushed load-in (find 4 faults)</button>
+    <button type="button" class="te-button" id="add-fixture">Add fixture</button>
+    <label class="dmx-inline">Auto-patch from
+      <select id="auto-align"><option value="1">next free address</option><option value="10" selected>round tens (1, 11, 21…)</option></select>
+    </label>
+    <button type="button" class="te-button" id="auto-patch">Auto-patch</button>
+    <button type="button" class="te-button" id="clear-patch">Clear</button>
+  </div>
+
+  <div class="dmx-workspace">
+    <figure class="dmx-map-figure" data-present>
+      <div class="dmx-map-head">
+        <label class="dmx-inline">Universe
+          <select id="map-universe"><option value="1">1</option></select>
+        </label>
+        <span id="map-usage" class="dmx-usage"></span>
+      </div>
+      <div class="dmx-map" id="dmx-map" role="img" aria-label="Universe map: 512 channel cells coloured by the fixture that uses them"></div>
+      <div class="dmx-legend" id="dmx-legend" aria-hidden="true"></div>
+      <figcaption>
+        <label class="dmx-lookup">What does channel
+          <input id="lookup-address" type="number" min="1" max="512" step="1" value="103" inputmode="numeric">
+          do?</label>
+        <output id="lookup-result" for="lookup-address" aria-live="polite"></output>
+        <span class="dmx-hint">Click any cell to ask the same question.</span>
+      </figcaption>
+    </figure>
+
+    <div class="dmx-patch-panel">
+      <div class="dmx-table-wrap">
+        <table class="dmx-table" id="patch-table">
+          <caption>Patch: one row per fixture</caption>
+          <thead><tr><th scope="col">#</th><th scope="col">Fixture</th><th scope="col">Type</th><th scope="col">Mode</th><th scope="col">Univ.</th><th scope="col">Address</th><th scope="col">Uses</th><th scope="col"><span class="visually-hidden">Status and remove</span></th></tr></thead>
+          <tbody id="patch-rows"></tbody>
+        </table>
+      </div>
+      <div class="te-readout" id="patch-issues" aria-live="polite"></div>
+    </div>
+  </div>
+  <p class="dmx-save" id="save-status" role="status" data-no-print>Your patch saves on this browser and device.</p>
+</section>
+
+<section class="lesson-block" aria-labelledby="learn">
+  <h2 id="learn">Three numbers run every light</h2>
+  <div class="teach-grid">
+    <article>
+      <h3>1 · The universe</h3>
+      <p>One DMX line is a <strong>universe</strong>: 512 channels, numbered 1 to 512. Each channel is one number from 0 to 255, like a fader from off to full. A bigger show uses more universes, and each starts again at 1.</p>
+    </article>
+    <article>
+      <h3>2 · The footprint</h3>
+      <p>A plain light on a dimmer needs 1 channel: brightness. An LED wash needs one for each colour, so 3 to 8. A moving light needs one for pan, tilt, colour, gobo, focus and more: 12 to 16 or beyond. That count is the fixture’s <strong>footprint</strong>, and it changes with the <strong>mode</strong> you set on the fixture.</p>
+    </article>
+    <article>
+      <h3>3 · The start address</h3>
+      <p>You set each fixture’s <strong>start address</strong>, its first channel. It then takes that channel and the next footprint − 1. Start + footprint is the next free address. If two fixtures claim the same channel, fading one makes the other flicker, swing or change colour.</p>
+    </article>
+  </div>
+  <details>
+    <summary>Try it: a 5-channel LED wash starts at 21. What is the next free address?</summary>
+    <p><strong>26.</strong> It uses 21, 22, 23, 24 and 25. Start + footprint = 21 + 5 = 26. A common mistake is 25, which is the wash’s own last channel.</p>
+  </details>
+</section>
+
+
+
+<section class="lesson-block" aria-labelledby="dip-title" data-memory-ignore>
+  <h2 id="dip-title">Set the address on the fixture: DIP switches are binary</h2>
+  <p>Fixtures with a screen let you type the address. Older and cheaper ones use a row of tiny <strong>DIP switches</strong>. Switch 1 is worth 1, switch 2 is worth 2, then 4, 8, 16, 32, 64, 128 and 256. Add up the switches that are ON. That is base 2, the same place value a computer uses. Nine switches reach 1 + 2 + … + 256 = <strong>511</strong>.</p>
+  <div class="dmx-dip-card">
+    <div class="dmx-dip-controls">
+      <label class="dmx-inline">Address
+        <input id="dip-address" type="number" min="1" max="511" step="1" value="37" inputmode="numeric">
+      </label>
+      <button type="button" class="te-button" id="dip-challenge">Give me a challenge</button>
+      <button type="button" class="te-button" id="dip-check" hidden>Check my switches</button>
+    </div>
+    <div class="dmx-dip" id="dip-bank" role="group" aria-label="DIP switch bank, switch 1 on the left"></div>
+    <p class="dmx-dip-sum" id="dip-sum" aria-live="polite"></p>
+  </div>
+</section>
+
+<section class="lesson-block" aria-labelledby="line-title" data-memory-ignore>
+  <h2 id="line-title">The data line: daisy-chain, terminate, don’t Y-split</h2>
+  <p>DMX travels from the console’s <strong>DMX OUT</strong> into the first fixture’s <strong>IN</strong>, out of its <strong>THRU</strong>, into the next, and so on: a <strong>daisy chain</strong>. Every fixture hears the whole universe and picks out its own channels. Build a line and see what the electrician would say.</p>
+  <div class="dmx-line-grid">
+    <div class="dmx-line-controls">
+      <label>Fixtures on this line <output id="line-devices-out">8</output>
+        <input id="line-devices" type="range" min="1" max="48" value="8"></label>
+      <label>Cable
+        <select id="line-cable"><option value="dmx">DMX data cable (110–120 Ω)</option><option value="mic">Microphone cable</option></select></label>
+      <label>Branching
+        <select id="line-split"><option value="none">One chain, no branches</option><option value="y">Y-cable to two pipes</option><option value="opto">Opto-splitter to two pipes</option></select></label>
+      <label>Total cable length <output id="line-length-out">60 m</output>
+        <input id="line-length" type="range" min="10" max="500" step="10" value="60"></label>
+      <label class="dmx-check"><input id="line-term" type="checkbox"> 120 Ω terminator in the last fixture’s THRU</label>
+    </div>
+    <figure class="dmx-line-figure">
+      <svg id="line-svg" viewBox="0 0 640 170" role="img" aria-labelledby="line-svg-title"><title id="line-svg-title">Diagram of the DMX line you built</title></svg>
+      <figcaption id="line-verdict" class="te-readout" aria-live="polite"></figcaption>
+    </figure>
+  </div>
+  <div class="dmx-rate">
+    <h3>How fast is a universe?</h3>
+    <p>DMX sends 250,000 bits a second. Each channel takes 11 bits (a start bit, 8 data bits, 2 stop bits), so 44 µs. A packet is a <em>break</em> (the “start of packet” signal), a short mark, a start code, then every channel in order.</p>
+    <label>Channels sent <output id="rate-slots-out">512</output>
+      <input id="rate-slots" type="range" min="24" max="512" step="1" value="512"></label>
+    <p class="dmx-rate-out" id="rate-out" aria-live="polite"></p>
+  </div>
+</section>
+
+<section class="lesson-block" aria-labelledby="trouble-title">
+  <h2 id="trouble-title">Tech-week troubleshooting: symptom → cause</h2>
+  <p>Every one of these happens in school theatres. Read the symptom and predict the cause before you open it.</p>
+  <div class="dmx-trouble">
+    <details><summary>When the lighting op fades up the stage-left side wash, the stage-right wash turns a little blue.</summary><p><strong>Overlapping addresses.</strong> SR is a 5-channel wash at 21 (21–25). SL was set to 24, so SL’s Dimmer and Red are SR’s Blue and White channels. Move SL to 26. Load the rushed load-in above and look for the red cells.</p></details>
+    <details><summary>Mover 2 swings toward the audience every time Mover 1 changes colour.</summary><p><strong>Overlap again, with a moving light.</strong> Mover 1 uses 101–116 in its 16-channel mode. Mover 2 was set to 110, so Mover 1’s colour wheel channel is Mover 2’s Tilt. Movers that jump are a safety problem: stop and fix the patch before anyone stands under them.</p></details>
+    <details><summary>The two movers are patched correctly on paper, but one ignores most of its channels and acts strangely.</summary><p><strong>Wrong mode.</strong> The console expects 16 channels but the fixture is set to 12-channel mode, so every channel after the first few means something else. Check the mode on the fixture’s menu matches the profile in the console.</p></details>
+    <details><summary>The fixtures nearest the booth are fine; the last three on the pipe flicker randomly.</summary><p><strong>No terminator, or microphone cable.</strong> The signal reflects off the open end of the line. Plug a 120 Ω terminator into the last THRU, and swap any mic cable for DMX cable.</p></details>
+    <details><summary>Everything on the new upstage pipe is dead, but the old pipes work.</summary><p><strong>The new pipe was fed with a Y-cable, or it is on universe 2 and the console only outputs universe 1.</strong> Use an opto-splitter for branches, and check which universe each output port sends.</p></details>
+  </div>
+</section>
+
+<section class="lesson-block" aria-labelledby="dmx-gallery-title">
+  <h2 id="dmx-gallery-title">From levers to data</h2>
+  <p>A hundred years ago a big cue needed several people moving levers together. DMX512 (first published in 1986) let one console command every dimmer down a single cable. Click a photo to enlarge it.</p>
+  <div class="pg-grid">
+    <figure class="pg-card" data-zoomable data-lightbox-group="dmx">
+      <img src="../../../assets/images/lessons/theatre-cue-sheets/napier-lighting-controller-1920.jpg" alt="A tall black theatre lighting controller from about 1920 with rows of metal levers" loading="lazy" />
+      <figcaption><strong>Before DMX: one lever per dimmer</strong><span>Each lever is wired to its own dimmer. There is no address: the wire is the patch. Changing which light a lever controls meant rewiring.</span>
+        <span class="pg-credit" data-no-glossary>Daderot, Faraday Museum of Technology, Napier · CC0 · <a href="https://commons.wikimedia.org/wiki/File:Theatre_Lights_Controller%2C_installed_in_the_Municipal_Theatre_c._1920_-_Faraday_Museum_of_Technology_-_Napier%2C_NZ_-_DSC05419.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+    </figure>
+    <figure class="pg-card" data-zoomable data-lightbox-group="dmx">
+      <img src="../../../assets/images/lessons/theatre-cue-sheets/etc-ion-xe20-console.jpg" alt="An ETC Ion XE 20 lighting console with faders, buttons and two screens in an auditorium control booth" loading="lazy" />
+      <figcaption><strong>After DMX: the patch is a table</strong><span>The console keeps a patch: channel 7 is “Ruth special”, at universe 1, address 11, in HSI mode. Re-patching is typing a new number, not pulling wires.</span>
+        <span class="pg-credit" data-no-glossary>Masonvanmeurs · CC BY-SA 4.0 · <a href="https://commons.wikimedia.org/wiki/File:ETC_Ion_XE20.jpg" target="_blank" rel="noopener">Wikimedia Commons ↗</a></span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="lesson-block" aria-labelledby="sheet-title">
+  <div class="dmx-sheet-head">
+    <h2 id="sheet-title">Your patch sheet</h2>
+    <div class="dmx-toolbar" data-no-print>
+      <button type="button" class="te-button primary" id="print-sheet">Print patch sheet</button>
+      <span data-print-ink-toggle></span>
+    </div>
+  </div>
+  <p>The electricians tape this to the booth wall and carry it up the ladder at focus call. It updates as you patch.</p>
+  <div class="dmx-meta" data-memory-ignore>
+    <label>Production<input id="meta-production" placeholder="Your school musical"></label>
+    <label>Lighting designer / programmer<input id="meta-names" placeholder="Names"></label>
+    <label>Revision / date<input id="meta-revision" placeholder="Rev. 1 / date"></label>
+  </div>
+  <div class="dmx-table-wrap"><table class="dmx-sheet" id="patch-sheet">
+    <thead><tr><th scope="col">#</th><th scope="col">Fixture</th><th scope="col">Type · mode</th><th scope="col">Universe</th><th scope="col">Address</th><th scope="col">Channels</th><th scope="col">DIP switches ON</th></tr></thead>
+    <tbody id="sheet-rows"></tbody>
+  </table></div>
+</section>
+
+<section class="lesson-block" aria-labelledby="task-title">
+  <h2 id="task-title">Your production task</h2>
+  <ol>
+    <li>Load the rushed load-in. Find and fix all four faults, then explain each one to a partner in one sentence: what the crew would have seen on stage, and why.</li>
+    <li>Add your school’s real fixtures (ask your teacher which lights the booth controls). Choose a mode for each LED and moving light and say why you picked it.</li>
+    <li>Patch them with round-tens start addresses, and leave a gap after each group for lights you might add during tech week.</li>
+    <li>Pick one fixture with DIP switches and write down which switches are ON.</li>
+    <li>Print your patch sheet. In the <a href="stage-lighting-design-lab.html">Stage Lighting Lab</a>, design your looks and send them to your <a href="theatre-cue-sheets.html">Cue Sheet</a>.</li>
+  </ol>
+  <p class="source-note">Further reading: <a href="https://en.wikipedia.org/wiki/DMX512" target="_blank" rel="noopener">Wikipedia: DMX512</a> and the standard itself, ANSI E1.11, free from <a href="https://tsp.esta.org/tsp/documents/published_docs.php" target="_blank" rel="noopener">ESTA’s Technical Standards Program</a>. Fixture modes here are simplified examples; always use the manufacturer’s chart for your real fixtures. Never stand or work under a moving light that is behaving unpredictably.</p>
+</section>
+
+</main>
+<script src="../../../assets/js/lessons/dmx-patch.js"></script>
+<script src="../../../assets/js/lessons/dmx-patch-lab.js"></script>
+<script src="../../../assets/js/creation-app.js"></script>
+<script src="../../../assets/js/photo-lightbox.js"></script>
+<script src="../../../assets/js/lesson-print-button.js"></script>
+<script src="../../../assets/js/theme-registry.js"></script>
+<script src="../../../assets/js/nav-mobile.js"></script>
+</body></html>

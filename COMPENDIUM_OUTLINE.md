@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 493 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 494 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -262,7 +262,7 @@ Theme: **Life & Earth Science** · Accent: `#287a58` · Secondary: `#176b87` · 
 
 # Volume IV — Engineering, Fabrication & Technical Production
 
-Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 122 lessons
+Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 123 lessons
 
 ## Engineering Systems & Electronics (ENG)
 
@@ -376,12 +376,13 @@ Theme: **Engineering & Design** · Accent: `#c75a1b` · Secondary: `#526575` · 
 ### Stage & Visual Production Systems
 
 - **TEC-13** — Stage Lighting Design Lab — _also indexed in Engineering Systems & Electronics_
-- **TEC-14** — Camera Exposure Triangle
-- **TEC-15** — White Balance & Color Temperature
-- **TEC-16** — Projection & Throw-Ratio Lab
-- **TEC-17** — Theatre Cue Sheets
-- **TEC-18** — Stage Plotting
-- **TEC-19** — Jim Henson
+- **TEC-14** — DMX Lighting & Addressing
+- **TEC-15** — Camera Exposure Triangle
+- **TEC-16** — White Balance & Color Temperature
+- **TEC-17** — Projection & Throw-Ratio Lab
+- **TEC-18** — Theatre Cue Sheets
+- **TEC-19** — Stage Plotting
+- **TEC-20** — Jim Henson
 
 ## 2D Design (D2D)
 
