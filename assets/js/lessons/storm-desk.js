@@ -213,7 +213,7 @@
     if (!cells.length) {
       setHtml(list, state.warnings == null && !isPractice() ? '<p class="sd-empty">Checking for tornado and severe thunderstorm warnings…</p>'
         : isNonUs ? '<p class="sd-empty">NWS storm warnings cover the United States. Use the practice storm to rehearse the math anywhere.</p>'
-        : `<p class="sd-empty">No tornado or severe thunderstorm warnings${state.meta ? ' in ' + esc(state.meta.state) : ''} right now. That is the normal state. Switch to <em>Practice storm</em> in Section 7 to rehearse one.</p>`);
+        : `<p class="sd-empty">No tornado or severe thunderstorm warnings${state.meta ? ' in ' + esc(state.meta.state) : ''} right now. That is the normal state. Switch to <em>Practice storm</em> in Exhibit 05 (Live Storm Map) to rehearse one.</p>`);
     } else setHtml(list, cells.map(cellCard).join(''));
     if (practiceSlot) setHtml(practiceSlot, isPractice() && cells[0] ? `<article class="ww-alert-item severe sd-practice-alert"><strong>PRACTICE · ${esc(cells[0].event)}</strong><span>${esc(cells[0].approach && cells[0].approach.etaMin != null ? `ETA ≈ ${Math.round(cells[0].approach.etaMin)} min · ` : '')}simulated, not a real warning</span></article>` : '');
     lastCellSig = cells.map(c => c.id).join();

@@ -1517,7 +1517,7 @@
     // Note names: 'under' prints each letter beneath its staff; 'notes' (default) puts it in a coloured badge on the head, MuseScore-style.
     var namesUnder = !!opts.names && opts.nameStyle === 'under', namesOn = !!opts.names && !namesUnder;
     // The same named heads are used in the pioneer lesson scores.
-    var headWidth = function (base) { return namesOn ? (base >= 4 ? 1.6 : 1.34) * S : base === 4 ? wholeW : headW; };
+    var headWidth = function (base) { return namesOn ? (base >= 4 ? 2.1 : 1.84) * S : base === 4 ? wholeW : headW; };
     // ks = the key signature's accidental for this letter on this staff.
     var nameHead = function (p, cx, cy, base, ks) { return MN.namedHead(p, cx, cy, base, ks, S, 'fb-nhead'); };
     var out = [], ties = [], placed = {}, y = S * 0.6, padL = 1.9 * S, padR = 1.1 * S;

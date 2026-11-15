@@ -21,6 +21,9 @@
  *   @K:-3          key signature change at the start of this bar     @T:3/4      time change
  *   @C:bass        clef change for this staff before the next note (treble, bass, alto)
  *   @U @D @A       stems (and rests) up, down or automatic from here on in this voice
+ *   @B             start a new beam group at the next note
+ *   @tieWait       ties may wait through intervening notes for a matching chord
+ *   @tieUp @tieDown ties above or below the notes, independently of stems
  *   @L:3/2         this bar is incomplete: 3/2 quarter beats long (repeat endings, mid-piece pickups)
  *   @N:12          printed bar number of this bar (numbering continues from it)
  *   @Fine  @DC     Fine at the end of this bar; D.C. al Fine at the end of this bar (back to the top,
@@ -58,7 +61,7 @@
   function parseStaff(text, where) {
     var bars = String(text).split('|').map(function (s) { return s.trim(); });
     if (bars[bars.length - 1] === '') bars.pop();
-    var last = null, dyn = null, tuplet = null, tupletId = 0, stemDir = null;
+    var last = null, dyn = null, tuplet = null, tupletId = 0, stemDir = null, tieWait = false, beamBreak = false, tieSide = null;
     return bars.map(function (bar, bi) {
       var events = [], t = 0, meta = {}, clefNext = null, graces = [];
       if (bar.charAt(0) === ':') { meta.repStart = true; bar = bar.slice(1).trim(); }
@@ -71,6 +74,11 @@
           return;
         }
         if (tok === '@U' || tok === '@D' || tok === '@A') { stemDir = { '@U': 'up', '@D': 'down', '@A': null }[tok]; return; }
+        // Arpeggiated chords can hold a pitch through intervening notes until
+        // it reappears in the final chord (LilyPond's tieWaitForNote).
+        if (tok === '@tieWait') { tieWait = true; return; }
+        if (tok === '@tieUp' || tok === '@tieDown') { tieSide = tok === '@tieDown' ? 'below' : 'above'; return; }
+        if (tok === '@B') { beamBreak = true; return; }
         if (tok.charAt(0) === '@') {
           var lm = /^@L:(\d+)(?:\/(\d+))?$/.exec(tok), nm = /^@N:(\d+)$/.exec(tok);
           if (lm) { meta.len = +lm[1] / (lm[2] ? +lm[2] : 1); return; }
@@ -108,7 +116,8 @@
           if (!base) fail(w, 'duration must be 1, 2, 4, 8, 16, 32, 64 or 128');
           if (!grace) last = { base: base, dots: m[4].length };
         } else if (!last && m[2] !== 'R' && m[2] !== 'S' && !grace) fail(w, 'first note needs a duration');
-        var ev = { start: t, dyn: dyn, fermata: !!m[6], tie: !!m[5], stemDir: stemDir };
+        var ev = { start: t, dyn: dyn, fermata: !!m[6], tie: !!m[5], stemDir: stemDir, tieWait: tieWait, tieSide: tieSide };
+        ev.beamBreak = beamBreak; beamBreak = false;
         if (m[7]) ev.orn = m[7].split('+').filter(Boolean);
         if (clefNext && !grace) { ev.clefChange = clefNext; clefNext = null; }
         // Spacers and grace notes leave a pending dynamic for the next real note.
@@ -349,6 +358,16 @@
         if (!ev.tie || ev.kind !== 'note') return;
         var next = flat.slice(i + 1).find(function (candidate) { return candidate.voice === ev.voice; });
         var holds = function (c) { return c && c.kind === 'note' && ev.pitches.some(function (p) { return c.pitches.some(function (q) { return q.midi === p.midi; }); }); };
+        if (ev.tieWait) {
+          next = flat.slice(i + 1).find(function (c) { return c.voice === ev.voice && holds(c); });
+          if (!next) fail(model.id, 'a waiting tie needs a later matching note');
+          next.pitches.forEach(function (q) {
+            if (ev.pitches.some(function (p) { return p.midi === q.midi; })) {
+              q.tiedFrom = true; q.tiedFromBar = ev.bar;
+              if (next.bar !== ev.bar) q.showAcc = null;
+            }
+          });
+        }
         if (!holds(next)) {
           // A tie may pass into another voice on the same staff (a line moving between upper and lower voice).
           var end = ev.abs + ev.dur;
@@ -393,7 +412,8 @@
                 if (order[tiePos + 1] !== target.bar) break;
                 tiePos++;
               }
-              cur = target; dur += cur.dur;
+              dur += (cur.tieWait ? target.abs - (cur.abs + cur.dur) : 0) + target.dur;
+              cur = target;
             }
             // Staccato changes the release, not the written rhythm. If a tied
             // chain ends staccato, detach only its final segment.
@@ -446,7 +466,7 @@
     bar.events.forEach(function (ev) {
       var beamable = ev.kind === 'note' && ev.base <= 0.5;
       var slot = Math.floor(ev.start / unit + EPS);
-      if (beamable && cur && cur.slot === slot &&
+      if (beamable && cur && !ev.beamBreak && cur.slot === slot &&
           cur.events[cur.events.length - 1].stem === ev.stem &&
           cur.events[cur.events.length - 1].clef === ev.clef) cur.events.push(ev);
       else {
@@ -460,7 +480,7 @@
       for (var i = 0; i < groups.length - 1; i++) {
         var a = groups[i], b = groups[i + 1];
         var plain = a.events.concat(b.events).every(function (e) { return e.base === 0.5 && !e.dots; });
-        if (plain && a.events.length === 2 && b.events.length === 2 && a.slot % 2 === 0 && b.slot === a.slot + 1 &&
+        if (plain && !b.events[0].beamBreak && a.events.length === 2 && b.events.length === 2 && a.slot % 2 === 0 && b.slot === a.slot + 1 &&
             a.events[0].stem === b.events[0].stem && a.events[0].clef === b.events[0].clef) {
           groups.splice(i, 2, { slot: a.slot, unit: unit, events: a.events.concat(b.events) });
         }
@@ -554,6 +574,48 @@
   // Column spacing for a gap of `d` quarter-note beats, in staff spaces.
   function gapFor(d) { return 2.6 + 2.9 * Math.pow(Math.max(d, 0.125), 0.6); }
 
+  // Named heads are wider than engraving glyphs. Separate simultaneous
+  // voices as well as seconds within a chord, and share accidental columns.
+  function spaceNamedHeads(column) {
+    var occupied = [], left = 0, right = 1.84, accidentals = {}, maxAcc = 0;
+    column.events.forEach(function (ev) {
+      ev.namedOffset = 0;
+      if (ev.kind !== 'note' || ev.hidden) return;
+      var w = ev.base >= 4 ? 2.1 : 1.84, shift = {}, ps = ev.pitches;
+      if (ev.up) {
+        for (var i = 1; i < ps.length; i++) if (ps[i].diatonic - ps[i - 1].diatonic === 1 && !shift[i - 1]) shift[i] = w - .12;
+      } else {
+        for (var j = ps.length - 2; j >= 0; j--) if (ps[j + 1].diatonic - ps[j].diatonic === 1 && !shift[j + 1]) shift[j] = -(w - .12);
+      }
+      var offset = 0;
+      function clashes() {
+        return ps.some(function (p, k) { return occupied.some(function (q) {
+          return q.staff === ev.staff && p.midi !== q.midi && Math.abs(p.diatonic - q.step) <= 1 &&
+            Math.abs(offset + (shift[k] || 0) + w / 2 - q.center) < (w + q.width) / 2 + .15;
+        }); });
+      }
+      while (clashes()) offset += 2.05;
+      ev.namedOffset = offset;
+      ps.forEach(function (p, k) {
+        var x = offset + (shift[k] || 0);
+        left = Math.min(left, x); right = Math.max(right, x + w);
+        occupied.push({ staff: ev.staff, step: p.diatonic, midi: p.midi, center: x + w / 2, width: w });
+        if (p.showAcc !== null) (accidentals[ev.staff] = accidentals[ev.staff] || []).push(p);
+      });
+    });
+    Object.keys(accidentals).forEach(function (staff) {
+      var cols = [];
+      accidentals[staff].sort(function (a, b) { return b.diatonic - a.diatonic; }).forEach(function (p) {
+        var col = 0;
+        while (cols[col] && cols[col].some(function (s) { return Math.abs(s - p.diatonic) < 6; })) col++;
+        (cols[col] = cols[col] || []).push(p.diatonic); p.namedAccColumn = col;
+      });
+      maxAcc = Math.max(maxAcc, cols.length);
+    });
+    column.acc = maxAcc;
+    column.namedLeft = -left; column.namedExtra = right - 1.84;
+  }
+
   // Width, in staff spaces, of a key signature change (cancelling naturals plus the new accidentals).
   function keyChangeUnits(from, to, readableSize) {
     var cancel = (from > 0 && to <= 0) || (from < 0 && to >= 0) ? Math.abs(from) : Math.max(0, Math.abs(from) - Math.abs(to));
@@ -592,13 +654,16 @@
       var cols = Object.keys(times).map(function (k) { return times[k]; }).sort(function (a, b) { return a.t - b.t; });
       var x = 1.4 + lead, widths = [];
       cols.forEach(function (c, i) {
+        if (root.MusicNotation.preferences.pitchNames) spaceNamedHeads(c);
+        else c.events.forEach(function (ev) { ev.namedOffset = 0; });
         if (c.clef) x += 2.2;
         x += c.grace;
         c.accW = c.acc ? (readableSize ? 1.5 : 1.15) * c.acc + 0.2 : 0;
         x += c.accW;
+        x += c.namedLeft || 0;
         c.x = x;
         var next = i + 1 < cols.length ? cols[i + 1].t : len;
-        var w = gapFor(next - c.t) + (c.seconds ? 1.1 : 0);
+        var w = gapFor(next - c.t) + (c.seconds ? 1.1 : 0) + (c.namedExtra || 0);
         widths.push(w);
         x += w;
       });
@@ -619,6 +684,17 @@
     var tabBars = tabConfig && root.GuitarTablature ? (model.guitarTabBars || (model.guitarTabBars = root.GuitarTablature.finger(model, tabConfig.tuning, tabConfig.pitchShift || 0, tabConfig))) : null;
     function keyW(k) { return Math.abs(k) * (readableSize ? 1.3 : k > 0 ? 1.05 : 0.95) * S; }
     var grand = model.staves.length === 2 && model.score.grand !== false;
+    var expressions = model.score.expressions || {};
+    var suggestedFingers = false;
+    try { suggestedFingers = !!root.document && root.localStorage.getItem('classroomos-score-fingering') === 'on'; } catch (e) { /* optional */ }
+    function endpoint(point) {
+      var st = model.staves[point.staff || 0], bar = st && st.bars[point.bar - 1];
+      var notes = bar && bar.events.filter(function (ev) { return ev.kind === 'note' && ev.voice === (point.voice || 0); });
+      return notes && notes[point.note < 0 ? notes.length + point.note : point.note || 0];
+    }
+    function covers(span, sys, si) {
+      return (span.staff || 0) === si && span.from.bar <= sys.bars[sys.bars.length - 1] + 1 && span.to.bar >= sys.first + 1;
+    }
     var braceW = grand || model.staves.length > 1 ? 1.4 * S : 0;
     var tsDigits = String(model.ts.num).length > String(model.ts.den).length ? String(model.ts.num) : String(model.ts.den);
     var timeW = (tsDigits.length * 1.8 + 1.2) * S;
@@ -667,11 +743,19 @@
         });
       });
       // Leave room for optional fingering outside beams and tuplet labels.
-      var fingers = /hand/i.test(st.label || '') || st.instrument === 'piano';
+      var fingers = (suggestedFingers && (/hand/i.test(st.label || '') || st.instrument === 'piano')) ||
+        st.bars.some(function (bar) { return bar.events.some(function (ev) { return !!ev.fingering; }); });
       // Teaching fingerings sit above the right hand and below the left hand.
       // Reserving both sides of both staves needlessly separates the grand staff.
       var rightHand = !/left/i.test(st.label || '') && si === 0;
-      return { hi: hi + 1 + (fingers && rightHand ? 8 : 0), lo: lo - 1 - (dyn ? 5 : 0) - (fingers && !rightHand ? 8 : 0) };
+      var slurs = (expressions.slurs || []).filter(function (span) { return covers(span, sys, si); });
+      if (slurs.some(function (span) { return span.side === 'below'; })) lo -= 6;
+      if (slurs.some(function (span) { return span.side !== 'below'; })) hi += 6;
+      var directionLo = lo;
+      var hasDirections = (expressions.directions || []).some(function (d) { return (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; }) ||
+        (expressions.hairpins || []).some(function (span) { return covers(span, sys, si); });
+      var hasText = (expressions.directions || []).some(function (d) { return d.text && (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; });
+      return { hi: hi + 1 + (fingers && rightHand ? 8 : 0), lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 8 : 0), directionLo: directionLo };
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
@@ -749,6 +833,16 @@
         var below = Math.max(0, -ext[si].lo) * h;
         var gapAbove = si === 0 ? above : Math.max(above, 2.5 * S);
         var bottom = top + gapAbove;
+        if (grand && si > 0) {
+          // Compare the two hands measure by measure. Combining the lowest
+          // RH note in one measure with the highest LH stem in another adds
+          // empty space that no actual pair of notes needs.
+          var separation = Math.max.apply(null, sys.bars.map(function (bi) {
+            var one = { bars: [bi], first: bi }, upper = extents(one, si - 1), lower = extents(one, si);
+            return (Math.max(0, -upper.lo) + Math.max(8, lower.hi)) * h + 1.2 * S;
+          }));
+          bottom = bottoms[si - 1] + separation;
+        }
         bottoms.push(bottom);
         // Piano staves sit close; ensemble staves need clear air between parts.
         top = bottom + below + (si < model.staves.length - 1 ? (grand ? 1.2 : 3.4) * S : 0);
@@ -849,7 +943,8 @@
           var barModel = st.bars[bi];
           barModel.events.forEach(function (ev) {
             var col = bar.cols.find(function (c) { return Math.abs(c.t - ev.start) < EPS; });
-            ev.x = ev.whole ? bx0 + bw / 2 - 0.7 * S : col.px;
+            ev.x = ev.whole ? bx0 + bw / 2 - 0.7 * S : col.px + (ev.namedOffset || 0) * S;
+            ev.namedAccAnchor = col ? col.px - (col.namedLeft || 0) * S : ev.x;
             ev.accW = col ? col.accW : 0;
             ev.bottom = b; ev.sys = sIndex; ev.sysEnd = x1; ev.sysStart = bx0;
             ev.i = evIndex++;
@@ -857,9 +952,35 @@
           });
           // Beams first, so stems know where to stop.
           barModel.beams.forEach(function (g) { placeBeam(g, st.clef, b, S, h); });
+        });
+        var crossBeams = [];
+        (expressions.crossBeams || []).forEach(function (spec) {
+          if (spec.bar !== bi + 1 || !grand) return;
+          var events = spec.notes.map(endpoint);
+          if (events.some(function (e) { return !e; })) return;
+          var upper = Math.min.apply(null, events.map(function (e) { return e.staff; }));
+          var lower = Math.max.apply(null, events.map(function (e) { return e.staff; }));
+          // A beam between the hands gives upper notes downward stems and
+          // lower notes upward stems, preserving the one rhythmic group.
+          var yy = (bottoms[upper] + bottoms[lower] - 4 * S) / 2;
+          var g = { events: events, up: true, levels: 2, crossStaff: true };
+          events.forEach(function (e) { e.up = e.staff !== upper; e.beam = g; });
+          g.x0 = stemX(events[0], S); g.x1 = stemX(events[events.length - 1], S);
+          g.at = function (x) { return yy - Math.min(S, (g.x1 - g.x0) * .12) * (x - g.x0) / (g.x1 - g.x0); };
+          model.staves.forEach(function (st) {
+            st.bars[bi].beams = st.bars[bi].beams.filter(function (b) { return !b.events.some(function (e) { return events.indexOf(e) >= 0; }); });
+          });
+          crossBeams.push(g);
+        });
+        model.staves.forEach(function (st, si) {
+          var b = bottoms[si], barModel = st.bars[bi];
           barModel.events.forEach(function (ev) { out.push(drawEvent(ev, ev.clef || st.clef, b, S, h, model, readableSize)); });
           barModel.beams.forEach(function (g) { out.push(drawBeam(g, S)); });
-          barModel.events.forEach(function (ev) { if (ev.tupletStart) tupletDraws.push(ev.tupletStart); });
+          barModel.events.forEach(function (ev) { if (ev.tupletStart && !(ev.beam && ev.beam.crossStaff)) tupletDraws.push(ev.tupletStart); });
+        });
+        crossBeams.forEach(function (g) {
+          out.push('<g class="se-cross-staff-beam">' + drawBeam(g, S) +
+            '<text class="se-tuplet" x="' + ((g.x0 + g.x1) / 2) + '" y="' + (g.at((g.x0 + g.x1) / 2) - S) + '" font-size="' + (1.15 * S) + '" text-anchor="middle">3</text></g>');
         });
         if (tabBars) {
           tabBars[bi].forEach(function (group) {
@@ -895,6 +1016,51 @@
         }
         sysCols.push({ t: model.barStart[bi] + model.staves[0].bars[bi].length, x: xe - 0.6 * S, sys: sIndex, barEnd: true });
         bx0 = xe;
+      });
+      // Expression marks belong to each system so screen and paginated print
+      // share the same notation. Continue spans at system boundaries.
+      function timeX(point) {
+        var t = model.barStart[point.bar - 1] + (point.beat || 0);
+        var cols = sysCols.filter(function (c) { return !c.barEnd; });
+        if (t <= cols[0].t) return cols[0].x;
+        for (var ci = 1; ci < sysCols.length; ci++) {
+          var a = sysCols[ci - 1], z = sysCols[ci];
+          if (t <= z.t + EPS && z.t > a.t) return a.x + (z.x - a.x) * (t - a.t) / (z.t - a.t);
+        }
+        return x1 - S;
+      }
+      (expressions.slurs || []).forEach(function (span) {
+        var si = span.staff || 0;
+        if (!covers(span, sys, si)) return;
+        var a = endpoint(Object.assign({ staff: si }, span.from)), z = endpoint(Object.assign({ staff: si }, span.to));
+        if (!a || !z) return;
+        var segment = allEvents.filter(function (ev) { return ev.sys === sIndex && ev.staff === si && ev.kind === 'note' && ev.abs >= a.abs - EPS && ev.abs <= z.abs + EPS; });
+        if (!segment.length) return;
+        var below = span.side === 'below', dir = below ? 1 : -1;
+        var yy = below ? Math.max.apply(null, segment.map(function (e) { return Math.max(e.bottom - e.lo * h, e.tipY || -Infinity); })) :
+          Math.min.apply(null, segment.map(function (e) { return Math.min(e.bottom - e.hi * h, e.tipY || Infinity); }));
+        yy += dir * 2 * S;
+        var xa = a.sys === sIndex ? a.x + 0.6 * S : left + sys.header;
+        var xz = z.sys === sIndex ? z.x + 0.6 * S : x1 - 0.4 * S;
+        var arch = dir * 1.05 * S;
+        out.push('<path class="se-slur" d="M' + xa + ' ' + yy + ' C' + (xa + (xz - xa) / 4) + ' ' + (yy + arch) + ' ' + (xz - (xz - xa) / 4) + ' ' + (yy + arch) + ' ' + xz + ' ' + yy + '" fill="none" stroke="currentColor" stroke-width="' + (0.13 * S) + '"/>');
+      });
+      function directionY(si) { return bottoms[si] - Math.min(0, ext[si].directionLo) * h + 2 * S; }
+      (expressions.directions || []).forEach(function (d) {
+        if (sys.bars.indexOf(d.bar - 1) < 0) return;
+        var xx = timeX(d), yy = directionY(d.staff || 0);
+        out.push('<g class="se-direction">' + (d.dynamic ? dynamicGlyphs(d.dynamic, xx, yy, S) :
+          '<text x="' + xx + '" y="' + (yy + 1.6 * S) + '" font-size="' + (1.2 * S) + '" font-style="italic">' + M.escape(d.text) + '</text>') + '</g>');
+      });
+      (expressions.hairpins || []).forEach(function (span) {
+        var si = span.staff || 0;
+        if (!covers(span, sys, si)) return;
+        var xa = timeX(span.from), xz = timeX(span.to), yy = directionY(si) - 0.4 * S;
+        var open = 0.5 * S, cresc = span.type === 'crescendo';
+        // A continuation retains its open end when a hairpin crosses a line.
+        var ha = cresc ? (span.from.bar < sys.first + 1 ? open * 0.4 : 0) : open;
+        var hz = cresc ? open : (span.to.bar > sys.bars[sys.bars.length - 1] + 1 ? open * 0.4 : 0);
+        out.push('<path class="se-hairpin" d="M' + xa + ' ' + (yy - ha) + ' L' + xz + ' ' + (yy - hz) + ' M' + xa + ' ' + (yy + ha) + ' L' + xz + ' ' + (yy + hz) + '" fill="none" stroke="currentColor" stroke-width="' + (0.12 * S) + '"/>');
       });
       out.push('</g>');
       var inkBottom = tabBars ? sysBottom + 2 * S : sysBottom + Math.max(0, -ext[ext.length - 1].lo) * h + S;
@@ -955,7 +1121,7 @@
 
   function headName(ev) { return ev.base >= 4 ? 'whole' : ev.base >= 2 ? 'half' : 'quarter'; }
   function headW(ev, S) {
-    if (root.MusicNotation.preferences.pitchNames) return (ev.base >= 4 ? 1.6 : 1.34) * S;
+    if (root.MusicNotation.preferences.pitchNames) return (ev.base >= 4 ? 2.1 : 1.84) * S;
     return (ev.base >= 4 ? 426 : 295) / 250 * S;
   }
   function durationLabel(ev) {
@@ -1142,10 +1308,12 @@
       // Accidentals, stacked into columns so they never collide.
       var accCols = [], accBacks = [], accGlyphs = [];
       var accLeft = ev.x - 0.3 * S - (Object.keys(shifted).some(function (k) { return shifted[k] < 0; }) ? w : 0);
+      if (M.preferences.pitchNames) accLeft = ev.namedAccAnchor - .3 * S;
       for (var a = ps.length - 1; a >= 0; a--) {
         if (ps[a].showAcc === null) continue;
         var col = 0;
         while (accCols[col] && accCols[col].some(function (s) { return Math.abs(s - steps[a]) < 6; })) col++;
+        if (M.preferences.pitchNames) col = ps[a].namedAccColumn || 0;
         (accCols[col] = accCols[col] || []).push(steps[a]);
         var aw = ps[a].showAcc === 0 ? 0.68 : ps[a].showAcc < 0 ? 0.9 : 1.0;
         var accScale = readableSize ? 1.3 : 1;
@@ -1180,7 +1348,7 @@
       if (ev.base < 4) {
         var sx = stemX(ev, S);
         var from = ev.up ? b - ev.lo * h : b - ev.hi * h;
-        var tip = ev.beam ? ev.beam.at(sx) : stemTip(ev, b, S, h);
+        var tip = ev.beam ? ev.beam.at(sx) + (ev.beam.crossStaff && !ev.up ? 1.25 * S : 0) : stemTip(ev, b, S, h);
         out += '<line class="se-stem" x1="' + sx + '" x2="' + sx + '" y1="' + from + '" y2="' + tip + '" stroke="currentColor" stroke-width="' + lw + '"/>';
         if (!ev.beam && ev.base <= 0.5) {
           var fl = ev.base <= 0.03125 ? '128' : ev.base <= 0.0625 ? '64' : ev.base <= 0.125 ? '32' : ev.base <= 0.25 ? '16' : '8';
@@ -1209,7 +1377,7 @@
       var k2 = next.pitches.findIndex(function (q) { return q.midi === p.midi; });
       if (k2 < 0) return;
       var y1 = ev.bottom - ev.steps[k] * h;
-      var below = ev.stem ? ev.stem === "down" : ev.pitches.length > 1 ? k < ev.pitches.length / 2 : ev.up;
+      var below = ev.tieSide ? ev.tieSide === 'below' : ev.stem ? ev.stem === "down" : ev.pitches.length > 1 ? k < ev.pitches.length / 2 : ev.up;
       var dir = below ? 1 : -1;
       var xa = ev.headX + ev.headW + 0.15 * S;
       var segs = [];
@@ -2126,6 +2294,8 @@
       noteListToggle.textContent = open ? 'Hide note list' : 'Show note list';
     });
     var offPreferences = root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
+    function fingeringSpacingChanged() { layout = null; requestAnimationFrame(draw); }
+    root.addEventListener('score-fingering:change', fingeringSpacingChanged);
     updatePreferenceButtons();
 
     draw();
@@ -2151,6 +2321,7 @@
       document.removeEventListener('pointerdown', onOutside);
       if (expanded) { expanded = false; fig.classList.remove('se-expanded'); document.documentElement.classList.remove('se-expanded-lock'); if (fig.hasAttribute('popover')) { try { fig.hidePopover(); } catch (err) { /* closed */ } fig.removeAttribute('popover'); } }
       if (offPreferences) offPreferences();
+      root.removeEventListener('score-fingering:change', fingeringSpacingChanged);
       cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
       if (fig.scorePlayer === player) delete fig.scorePlayer;
     };

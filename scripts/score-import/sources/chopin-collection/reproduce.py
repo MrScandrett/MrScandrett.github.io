@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from prelude_1_notation import apply as restore_prelude_1_notation
 
 HERE = Path(__file__).resolve().parent
 IMPORT = HERE.parents[1]
@@ -77,6 +78,7 @@ for entry in json.loads((HERE / 'imports.json').read_text()):
             score['staves'].reverse()
             for staff, label in zip(score['staves'], ['Right hand', 'Left hand']):
                 staff['label'] = label
+            restore_prelude_1_notation(score)
         score_path = OUT / (name + '.json')
         score_path.write_text(json.dumps(score, ensure_ascii=False, indent=2) + '\n')
         midi = source.with_suffix('.midi')

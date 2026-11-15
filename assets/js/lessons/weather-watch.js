@@ -6,6 +6,8 @@
   'use strict';
 
   let currentWeather = null;
+  let currentAirQuality = null;
+  let activeCharacteristic = 'temperature';
   let activeLocation = window.WeatherEngine.DEFAULT_LOCATION;
   let weatherRequestId = 0;
   let drivingSpeed = 55;
@@ -465,14 +467,24 @@
       const pollen = pollenSummary(data.hourly);
       els.statPollen.textContent = pollen.value;
       els.statPollenSub.textContent = pollen.sub;
+      currentAirQuality = {
+        aqi: Number.isFinite(aqi) ? Math.round(aqi) : null,
+        aqiText: Number.isFinite(aqi) ? `${Math.round(aqi)} (${aqiLabel(aqi)})` : 'Unavailable',
+        pm25: Number.isFinite(Number(current.pm2_5)) ? Number(current.pm2_5).toFixed(1) : null,
+        ozone: Number.isFinite(Number(current.ozone)) ? Math.round(Number(current.ozone)) : null,
+        pollen
+      };
       if (window.WWCockpitViz) window.WWCockpitViz.renderAir({ aqi }, pollen);
+      renderCharInspector(activeCharacteristic);
     } catch (err) {
       console.warn('Air quality load error:', err);
+      currentAirQuality = null;
       els.statAqi.textContent = 'Unavailable';
       els.statAqiSub.textContent = 'Air-quality feed unavailable';
       els.statPollen.textContent = 'Unavailable';
       els.statPollenSub.textContent = 'No regional pollen forecast';
       if (window.WWCockpitViz) window.WWCockpitViz.renderAir(null, null);
+      renderCharInspector(activeCharacteristic);
     }
   }
 
@@ -601,6 +613,8 @@
       els.moonName.textContent = data.moon.name;
       els.moonIllum.textContent = `${data.moon.illumination}% lit`;
     }
+
+    renderCharInspector(activeCharacteristic);
   }
 
   // ── RENDER DRIVING ENGINE ───────────────────────────────────────────────────
@@ -1104,10 +1118,653 @@
     }
   }
 
-  // ── INTERACTIVE QUIZ CONTROLLER ─────────────────────────────────────────────
+  // ── CHARACTERISTICS FIELD GUIDE (EXHIBIT 01) ──────────────────────────────
+  function getCharacteristicSpec(key) {
+    const d = currentWeather;
+    const aq = currentAirQuality;
+    const specs = {
+      temperature: {
+        icon: '🌡️',
+        title: 'Air Temperature & Apparent Thermal Load',
+        reading: d ? `${d.temperature}°F (Feels like ${d.feelsLike}°F)` : 'Loading station telemetry…',
+        wing: 'Wing I · Observatory → Wing V · Layering',
+        instrument: 'Shielded Aspiration Thermometer / Thermistor',
+        units: '°F / °C (measured 1.5–2 m above grass in shade)',
+        mechanism: 'Measures the average translational kinetic energy of nitrogen and oxygen molecules, combined with wind and humidity for apparent temperature.',
+        significance: d
+          ? `Today's range is ${d.min}°F to ${d.max}°F (${d.condition}). Large diurnal swings occur under clear, dry skies; humid air damps cooling.`
+          : 'Thermal energy sets air density, saturation capacity, and human metabolic heat loss.',
+        href: '#clothing',
+        cta: 'Open Exhibit 10 · Thermal Layering →'
+      },
+      dew: {
+        icon: '💧',
+        title: 'Dew Point Temperature (Absolute Moisture)',
+        reading: d ? `${d.dewPoint}°F (${d.dewComfort.category})` : 'Loading station telemetry…',
+        wing: 'Wing I · Observatory → Wing II · Cloud Lab',
+        instrument: 'Chilled-Mirror Hygrometer / Capacitive Psychrometer',
+        units: '°F / °C (vapor pressure saturation temperature)',
+        mechanism: 'The exact temperature to which an air parcel must be cooled at constant pressure to reach 100% saturation and condense liquid droplets.',
+        significance: d
+          ? `${d.dewComfort.feel}. Unlike relative humidity, dew point directly measures water vapor mass in the air.`
+          : 'Dew points above 60°F fuel thunderstorms; above 70°F slow human sweat evaporation.',
+        href: '#clouds',
+        cta: 'Explore Exhibit 02 · Moisture & Cloud Lab →'
+      },
+      humidity: {
+        icon: '💦',
+        title: 'Relative Humidity (Saturation Ratio)',
+        reading: d ? `${d.humidity}% RH` : 'Loading station telemetry…',
+        wing: 'Wing II · Hall of Water & Sky',
+        instrument: 'Thin-Film Polymer Capacitive Hygrometer',
+        units: 'Percent (%) of equilibrium vapor pressure at current T',
+        mechanism: 'Ratio of actual water vapor pressure to the maximum saturation vapor pressure possible at that temperature — which doubles roughly every 20°F.',
+        significance: d
+          ? `At ${d.temperature}°F with ${d.dewPoint}°F dew point, the air holds ${d.humidity}% of its maximum vapor capacity.`
+          : 'Relative humidity routinely rises at night simply because temperature falls, even when no moisture is added.',
+        href: '#clouds',
+        cta: 'Compare RH vs Dew Point in Exhibit 02 →'
+      },
+      cloudbase: {
+        icon: '☁️',
+        title: 'Cloud Base Altitude (LCL Ceiling)',
+        reading: d ? `${d.cloudBase.feet.toLocaleString()} ft (~${d.cloudBase.meters.toLocaleString()} m)` : 'Loading station telemetry…',
+        wing: 'Wing II · Hall of Water & Sky',
+        instrument: 'Laser Ceilometer & LCL Thermodynamic Calculation',
+        units: 'Feet or meters above ground level (AGL)',
+        mechanism: 'Rising convective parcels cool faster than their dew point by ~4.4°F per 1,000 ft. Condensation begins at H = ((T − Td) / 4.4) × 1,000 ft.',
+        significance: d
+          ? `A current T − Td spread of ${Math.max(0, d.temperature - d.dewPoint)}°F places convective cloud bases near ${d.cloudBase.feet.toLocaleString()} ft.`
+          : 'Lower cloud bases mean damp air near saturation; high bases indicate dry boundary layers.',
+        href: '#clouds',
+        cta: 'Calculate LCL in Exhibit 02 →'
+      },
+      pressure: {
+        icon: '🧭',
+        title: 'Barometric Pressure (Atmospheric Column Weight)',
+        reading: d ? `${d.pressure.inHg} inHg (${d.pressure.hPa} hPa · ${d.pressure.system})` : 'Loading station telemetry…',
+        wing: 'Wing III · Hall of Air in Motion',
+        instrument: 'Aneroid / Silicon Piezoresistive Barometer',
+        units: 'Hectopascals (hPa / mb) or inches of mercury (inHg)',
+        mechanism: 'Measures the downward gravitational weight of the entire column of atmosphere above the station, corrected to mean sea level (standard = 1013.25 hPa).',
+        significance: d
+          ? `Current column reads ${d.pressure.hPa} hPa (${d.pressure.system}). Rapid drops > 4 hPa in 3 hours signal an intensifying cyclone or front.`
+          : 'Horizontal pressure differences (gradients) initiate wind from High toward Low pressure.',
+        href: '#fronts',
+        cta: 'Explore Wing III · Air Masses & Fronts →'
+      },
+      wind: {
+        icon: '🌬️',
+        title: 'Surface Wind Speed, Direction & Gusts',
+        reading: d ? `${d.wind} MPH ${d.windCompass.short} (Gusts ${d.windGusts} MPH · Beaufort ${d.beaufort.number})` : 'Loading station telemetry…',
+        wing: 'Wing III · Air Motion → Wing IV · Storm Steering',
+        instrument: 'Ultrasonic Anemometer & Wind Vane (10 m tower)',
+        units: 'MPH, knots, or m/s; named for direction air blows FROM',
+        mechanism: 'Driven by the Pressure Gradient Force and deflected right (Northern Hemisphere) by Earth\'s rotation (Coriolis effect), slowed by ground friction.',
+        significance: d
+          ? `Flow is ${d.windCompass.full} (${d.beaufort.name}). Upper winds near 700 hPa steer storms, while low-level shear tilts updrafts.`
+          : 'Wind speed squared controls dynamic pressure on structures and chill factor on exposed skin.',
+        href: '#outlook',
+        cta: 'Check Shear & Steering in Wing IV →'
+      },
+      uv: {
+        icon: '☀️',
+        title: 'Ultraviolet (UV) Solar Irradiance',
+        reading: d ? `UV ${d.uvIndex} · ${d.uvInfo.category} (${d.uvInfo.burnTime})` : 'Loading station telemetry…',
+        wing: 'Wing I · Observatory → Wing V · Outdoor Readiness',
+        instrument: 'Broadband UV Pyranometer (290–400 nm)',
+        units: 'World Health Organization UV Index (0 to 11+)',
+        mechanism: 'Quantifies erythema-weighted shortwave solar UV-A and UV-B photons penetrating stratospheric ozone, clouds, and atmospheric path length.',
+        significance: d
+          ? `Sun exposure risk is ${d.uvInfo.category}; ${d.uvInfo.burnTime.toLowerCase()}. Peak UV happens within ±2 hours of solar noon regardless of air temperature.`
+          : 'Clouds can scatter UV without blocking it completely; snow and sand reflect additional UV upward.',
+        href: '#clothing',
+        cta: 'Plan Sun Protection in Exhibit 10 →'
+      },
+      visibility: {
+        icon: '🌫️',
+        title: 'Horizontal Atmospheric Visibility',
+        reading: d ? `${d.visibilityMiles} miles visual range` : 'Loading station telemetry…',
+        wing: 'Wing II · Moisture → Wing V · Road Friction Physics',
+        instrument: 'Optical Forward-Scatter Transmissometer / ASOS',
+        units: 'Statute miles (mi) or kilometers (km)',
+        mechanism: 'Measures light extinction (scattering + absorption) across the lowest boundary layer caused by fog droplets, mist, blowing dust, snow, or smoke.',
+        significance: d
+          ? `Current runway visual range is ${d.visibilityMiles} mi. Under 1/4 mile activates dense fog advisories requiring low-beam headlights.`
+          : 'Fog forms when surface temperature cools all the way to the dew point (spread ≤ 2°F).',
+        href: '#driving',
+        cta: 'Inspect Fog & Braking in Exhibit 11 →'
+      },
+      aerosols: {
+        icon: '🌿',
+        title: 'Particulates, Ozone & Airborne Pollen',
+        reading: aq ? `US AQI: ${aq.aqiText} · Pollen: ${aq.pollen ? aq.pollen.value : 'Unavailable'}` : 'Loading regional air quality…',
+        wing: 'Wing I · Observatory → Wing II · Condensation Nuclei',
+        instrument: 'Laser Nephelometer (PM2.5), UV Photometer (O₃) & Rotorod Trap',
+        units: 'US EPA AQI (0–500), μg/m³, and pollen grains/m³',
+        mechanism: 'Tracks microscopic solids and droplets (dust, wildfire smoke, sea salt, pollen, sulfate aerosols) suspended in the boundary layer.',
+        significance: aq && aq.pm25
+          ? `PM2.5 is ${aq.pm25} μg/m³ and surface ozone is ${aq.ozone} μg/m³. These tiny aerosols also act as Cloud Condensation Nuclei (CCN) inside Exhibit 02.`
+          : 'Clean air without aerosols makes condensation harder; urban smoke/dust particles seed clouds and scatter sunlight.',
+        href: '#clouds',
+        cta: 'Test Smoke Nuclei in Exhibit 02 →'
+      },
+      ephemeris: {
+        icon: '🌗',
+        title: 'Solar Arc, Day Length & Lunar Cycle',
+        reading: d && d.moon ? `${d.moon.name} (${d.moon.illumination}% lit)` : 'Loading astronomical cycle…',
+        wing: 'Wing I · Observatory Rotunda',
+        instrument: 'Solar Ephemeris Clock & Astronomical Almanac',
+        units: 'Local solar clock time & lunar illumination fraction (%)',
+        mechanism: 'Earth\'s 23.4° axial tilt governs solar elevation angle and daylight duration — the primary energy engine driving all uneven planetary heating.',
+        significance: d && d.sunriseEpoch
+          ? `Sunrise ${new Date(d.sunriseEpoch).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · Sunset ${new Date(d.sunsetEpoch).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Higher sun angles concentrate watts per square meter.`
+          : 'Seasonal shifts in solar heating create the global pressure belts that spawn storms.',
+        href: '#briefing',
+        cta: 'Hear Today\'s Forecast in Exhibit 12 →'
+      }
+    };
+    return specs[key] || specs.temperature;
+  }
+
+  function renderCharInspector(key) {
+    const body = document.getElementById('ww-char-inspector-body');
+    if (!body) return;
+    activeCharacteristic = key || 'temperature';
+    const spec = getCharacteristicSpec(activeCharacteristic);
+
+    document.querySelectorAll('.ww-char-pill').forEach((btn) => {
+      const match = btn.dataset.char === activeCharacteristic;
+      btn.classList.toggle('is-active', match);
+      btn.setAttribute('aria-pressed', String(match));
+    });
+
+    document.querySelectorAll('[data-char-card]').forEach((card) => {
+      card.classList.toggle('is-inspected', card.dataset.charCard === activeCharacteristic);
+    });
+
+    body.innerHTML = `
+      <div class="ww-char-summary">
+        <div class="ww-char-title-row">
+          <span class="ww-char-icon" aria-hidden="true">${spec.icon}</span>
+          <div>
+            <span class="ww-char-wing">${spec.wing}</span>
+            <h4>${spec.title}</h4>
+          </div>
+        </div>
+        <div class="ww-char-live-badge">
+          <small>LIVE READING</small>
+          <strong>${spec.reading}</strong>
+        </div>
+      </div>
+      <div class="ww-char-meta-grid">
+        <div class="ww-char-meta-item">
+          <span class="ww-char-meta-k">Instrument</span>
+          <p>${spec.instrument}</p>
+        </div>
+        <div class="ww-char-meta-item">
+          <span class="ww-char-meta-k">Scale &amp; Units</span>
+          <p>${spec.units}</p>
+        </div>
+        <div class="ww-char-meta-item">
+          <span class="ww-char-meta-k">Atmospheric Physics</span>
+          <p>${spec.mechanism}</p>
+        </div>
+        <div class="ww-char-meta-item">
+          <span class="ww-char-meta-k">Field Diagnosis</span>
+          <p>${spec.significance}</p>
+          <a class="ww-char-jump" href="${spec.href}">${spec.cta}</a>
+        </div>
+      </div>
+    `;
+  }
+
+  function initCharacteristicsInspector() {
+    const pills = document.querySelectorAll('.ww-char-pill');
+    const inspectBtns = document.querySelectorAll('.ww-stat-inspect-btn');
+    if (!pills.length) return;
+
+    pills.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        renderCharInspector(btn.dataset.char);
+      });
+    });
+
+    inspectBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.charTarget;
+        renderCharInspector(target);
+        const guide = document.getElementById('ww-char-inspector');
+        if (guide) guide.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+
+    renderCharInspector(activeCharacteristic);
+  }
+
+  // ── VERTICAL TROPOSPHERE SOUNDING SIMULATOR (EXHIBIT 03) ────────────────────
+  function initSoundingLab() {
+    const svg = document.getElementById('ww-sounding-svg');
+    const aloftEl = document.getElementById('ww-sound-aloft');
+    const surfaceEl = document.getElementById('ww-sound-surface');
+    const depthEl = document.getElementById('ww-sound-depth');
+    const aloftVal = document.getElementById('ww-sound-aloft-val');
+    const surfaceVal = document.getElementById('ww-sound-surface-val');
+    const depthVal = document.getElementById('ww-sound-depth-val');
+    const verdictEl = document.getElementById('ww-sounding-verdict');
+    const syncBtn = document.getElementById('ww-sounding-sync');
+    const presetBtns = document.querySelectorAll('[data-sounding-preset]');
+    if (!svg || !aloftEl || !surfaceEl || !depthEl || !verdictEl) return;
+
+    const PRESETS = {
+      rain: { aloft: 44, surface: 48, depth: 1200 },
+      freezing_rain: { aloft: 39, surface: 27, depth: 1000 },
+      sleet: { aloft: 39, surface: 22, depth: 2800 },
+      snow: { aloft: 22, surface: 24, depth: 1800 }
+    };
+
+    function classifySounding(aloft, surface, depth) {
+      if (aloft <= 32 && surface <= 32) {
+        return {
+          type: 'snow',
+          icon: '❄️',
+          label: 'Snow',
+          color: '#38bdf8',
+          phaseAloft: '❄️',
+          phaseMid: '❄️',
+          phaseGround: '❄️',
+          summary: `Sub-freezing column aloft (${aloft}°F) and at ground (${surface}°F): cloud ice crystals grow into six-sided snowflakes and reach the surface unmelted.`
+        };
+      }
+      if (aloft > 32 && surface <= 32) {
+        if (depth < 2000) {
+          return {
+            type: 'freezing_rain',
+            icon: '🧊',
+            label: 'Freezing Rain (Glaze)',
+            color: '#f472b6',
+            phaseAloft: '❄️',
+            phaseMid: '💧',
+            phaseGround: '🧊',
+            summary: `Warm nose (${aloft}°F) melts snow into liquid drops, then a shallow ${depth.toLocaleString()}-ft freezing wedge (${surface}°F at ground) supercools drops so they glaze onto trees, lines, and pavement on impact.`
+          };
+        }
+        return {
+          type: 'sleet',
+          icon: '⚪',
+          label: 'Sleet (Ice Pellets)',
+          color: '#c084fc',
+          phaseAloft: '❄️',
+          phaseMid: '💧',
+          phaseGround: '⚪',
+          summary: `Warm nose (${aloft}°F) melts falling snow completely, and the deep ${depth.toLocaleString()}-ft freezing wedge (${surface}°F) gives raindrops time to refreeze into bouncing ice pellets before landing.`
+        };
+      }
+      if (aloft <= 32 && surface > 32 && surface <= 35) {
+        return {
+          type: 'snow',
+          icon: '🌨️',
+          label: 'Wet Snow / Rain-Snow Mix',
+          color: '#7dd3fc',
+          phaseAloft: '❄️',
+          phaseMid: '❄️',
+          phaseGround: '🌨️',
+          summary: `Sub-freezing above ground (${aloft}°F at 5,000 ft) with a thin ${surface}°F surface film. Heavy flakes survive down to rooftop height before turning wet.`
+        };
+      }
+      return {
+        type: 'rain',
+        icon: '🌧️',
+        label: 'Liquid Rain',
+        color: '#60a5fa',
+        phaseAloft: '❄️',
+        phaseMid: aloft > 32 ? '💧' : '❄️',
+        phaseGround: '💧',
+        summary: aloft > 32
+          ? `Warm mid-level layer (${aloft}°F) and above-freezing surface (${surface}°F) melt ice crystals completely into falling raindrops.`
+          : `Sub-freezing upper column (${aloft}°F), but surface air (${surface}°F) warms snowflakes above 32°F in the boundary layer so they land as rain.`
+      };
+    }
+
+    function updateSounding() {
+      const aloft = parseInt(aloftEl.value, 10);
+      const surface = parseInt(surfaceEl.value, 10);
+      const depth = parseInt(depthEl.value, 10);
+
+      if (aloftVal) aloftVal.textContent = `${aloft}°F`;
+      if (surfaceVal) surfaceVal.textContent = `${surface}°F`;
+      if (depthVal) depthVal.textContent = `${depth.toLocaleString()} FT`;
+
+      presetBtns.forEach((btn) => {
+        const p = PRESETS[btn.dataset.soundingPreset];
+        const exact = p && p.aloft === aloft && p.surface === surface && p.depth === depth;
+        btn.classList.toggle('is-active', Boolean(exact));
+        btn.setAttribute('aria-pressed', String(Boolean(exact)));
+      });
+
+      const res = classifySounding(aloft, surface, depth);
+      verdictEl.style.borderColor = res.color;
+      verdictEl.innerHTML = `
+        <div class="ww-verdict-top">
+          <span class="ww-verdict-icon" aria-hidden="true">${res.icon}</span>
+          <div>
+            <small>PREDICTED SURFACE PRECIPITATION</small>
+            <strong style="color:${res.color}">${res.label}</strong>
+          </div>
+        </div>
+        <p>${res.summary}</p>
+      `;
+
+      document.querySelectorAll('#precipitation [data-precip-type]').forEach((item) => {
+        item.classList.toggle('is-active-precip', item.dataset.precipType === res.type);
+      });
+
+      // Plot vertical profile SVG (x: temp 5..60°F -> 52..312, y: alt 0..12000 ft -> 215..28)
+      const xForTemp = t => 52 + ((Math.max(5, Math.min(60, t)) - 5) / 55) * 260;
+      const yForAlt = ft => 215 - (Math.max(0, Math.min(12000, ft)) / 12000) * 187;
+      const x32 = xForTemp(32);
+
+      const cloudTemp = 8;
+      const wedgeTopTemp = (aloft > 32 && surface <= 32)
+        ? Math.min(31, surface + 3)
+        : Math.round(surface + (aloft - surface) * (depth / 5000));
+
+      const pts = [
+        { alt: 11500, temp: cloudTemp, label: `${cloudTemp}°F` },
+        { alt: 8200, temp: Math.round((cloudTemp + aloft) / 2), label: null },
+        { alt: 5000, temp: aloft, label: `${aloft}°F` },
+        { alt: depth, temp: wedgeTopTemp, label: `${wedgeTopTemp}°F` },
+        { alt: 0, temp: surface, label: `${surface}°F` }
+      ];
+
+      const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xForTemp(p.temp).toFixed(1)} ${yForAlt(p.alt).toFixed(1)}`).join(' ');
+      const yWedge = yForAlt(depth);
+
+      svg.innerHTML = `
+        <rect x="52" y="28" width="${(x32 - 52).toFixed(1)}" height="187" fill="rgba(56,189,248,0.08)" />
+        <rect x="${x32.toFixed(1)}" y="28" width="${(312 - x32).toFixed(1)}" height="187" fill="rgba(251,146,60,0.08)" />
+        ${surface <= 32 && aloft > 32 ? `<rect x="52" y="${yWedge.toFixed(1)}" width="260" height="${(215 - yWedge).toFixed(1)}" fill="rgba(192,132,252,0.12)" />` : ''}
+        <line x1="52" y1="${yWedge.toFixed(1)}" x2="312" y2="${yWedge.toFixed(1)}" stroke="rgba(148,163,184,0.35)" stroke-dasharray="3 3" />
+        <text x="56" y="${(yWedge - 4).toFixed(1)}" fill="#94a3b8" font-size="9" font-family="monospace">Cold wedge top (${depth.toLocaleString()} ft)</text>
+        <line x1="${x32.toFixed(1)}" y1="22" x2="${x32.toFixed(1)}" y2="220" stroke="#7dd3fc" stroke-width="1.5" stroke-dasharray="4 3" />
+        <text x="${(x32 + 4).toFixed(1)}" y="21" fill="#7dd3fc" font-size="10" font-weight="700">32°F FREEZE LINE</text>
+        <text x="48" y="34" fill="#94a3b8" font-size="9" text-anchor="end">12k ft</text>
+        <text x="48" y="${yForAlt(5000).toFixed(1)}" fill="#94a3b8" font-size="9" text-anchor="end">5k ft</text>
+        <text x="48" y="216" fill="#94a3b8" font-size="9" text-anchor="end">0 ft</text>
+        <text x="58" y="236" fill="#7dd3fc" font-size="9">COLD (&lt;32°F)</text>
+        <text x="308" y="236" fill="#fb923c" font-size="9" text-anchor="end">WARM (&gt;32°F)</text>
+        <line x1="52" y1="215" x2="312" y2="215" stroke="rgba(255,255,255,0.28)" />
+        <line x1="52" y1="28" x2="52" y2="215" stroke="rgba(255,255,255,0.28)" />
+        <path d="${pathD}" fill="none" stroke="${res.color}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+        ${pts.map(p => {
+          const cx = xForTemp(p.temp).toFixed(1);
+          const cy = yForAlt(p.alt).toFixed(1);
+          return `<circle cx="${cx}" cy="${cy}" r="4.2" fill="${res.color}" stroke="#071529" stroke-width="1.5" />` +
+            (p.label ? `<text x="${(Number(cx) + 7).toFixed(1)}" y="${(Number(cy) + 3).toFixed(1)}" fill="#f8fafc" font-size="10" font-weight="700">${p.label}</text>` : '');
+        }).join('')}
+        <text x="335" y="46" font-size="16" text-anchor="middle">${res.phaseAloft}</text>
+        <text x="335" y="${yForAlt(5000).toFixed(1)}" font-size="16" text-anchor="middle">${res.phaseMid}</text>
+        <text x="335" y="212" font-size="16" text-anchor="middle">${res.phaseGround}</text>
+      `;
+    }
+
+    presetBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = PRESETS[btn.dataset.soundingPreset];
+        if (!p) return;
+        aloftEl.value = p.aloft;
+        surfaceEl.value = p.surface;
+        depthEl.value = p.depth;
+        updateSounding();
+      });
+    });
+
+    [aloftEl, surfaceEl, depthEl].forEach((el) => el.addEventListener('input', updateSounding));
+
+    if (syncBtn) {
+      syncBtn.addEventListener('click', () => {
+        if (!currentWeather) return;
+        const clampedSurface = Math.max(10, Math.min(55, Math.round(currentWeather.temperature)));
+        surfaceEl.value = clampedSurface;
+        if (currentWeather.temperature <= 32) {
+          aloftEl.value = Math.min(55, Math.max(15, Math.round(currentWeather.temperature + 4)));
+        } else {
+          aloftEl.value = Math.min(55, Math.max(15, Math.round(currentWeather.temperature - 5)));
+        }
+        updateSounding();
+        if (currentWeather.temperature > 55) {
+          verdictEl.insertAdjacentHTML('beforeend', `<p class="ww-sounding-sync-note">Station is currently ${currentWeather.temperature}°F (clamped to simulator's 55°F ceiling — surface precipitation is liquid rain).</p>`);
+        }
+      });
+    }
+
+    updateSounding();
+  }
+
+  // ── AIR MASS & PRESSURE EXPLORER (EXHIBIT 04) ─────────────────────────────
+  function initAirMassExplorer() {
+    const detail = document.getElementById('ww-airmass-detail');
+    const btns = document.querySelectorAll('[data-airmass]');
+    if (!detail || !btns.length) return;
+
+    const MASSES = {
+      cP: {
+        badge: 'cP · CONTINENTAL POLAR',
+        color: '#60a5fa',
+        title: 'Continental Polar Air Mass (Cold & Dry)',
+        source: 'Central Canada & interior subarctic plains',
+        signature: 'Low specific humidity, low dew point (often 10°F–35°F), high barometric density.',
+        weather: 'Crisp blue skies, deep nighttime radiational cooling, and sharp gusty cold fronts when surging south; spawns lake-effect snow over unfrozen Great Lakes.',
+        frontRole: 'Advances south as the dense cold wedge in the cold-front simulator below, underrunning warm mT air.'
+      },
+      cA: {
+        badge: 'cA · CONTINENTAL ARCTIC',
+        color: '#a5f3fc',
+        title: 'Continental Arctic Air Mass (Extreme Cold & Bone-Dry)',
+        source: 'Snow- and ice-covered Arctic Basin & northern Siberia',
+        signature: 'Sub-zero °F temperatures, single-digit/negative dew points, very dense shallow surface dome.',
+        weather: 'Dangerous wind chills, frozen pipes, ice fog over open water, and high surface pressure readings exceeding 1030–1045 hPa.',
+        frontRole: 'Its shallow, extra-dense wedge routinely forms the surface cold pocket responsible for Exhibit 03 freezing rain & sleet.'
+      },
+      mP: {
+        badge: 'mP · MARITIME POLAR',
+        color: '#7ee7c8',
+        title: 'Maritime Polar Air Mass (Cool & Damp)',
+        source: 'North Pacific & North Atlantic Oceans',
+        signature: 'Cool temperatures (35°F–55°F) with high relative humidity and raw overcast decks.',
+        weather: 'Persistent coastal stratus, drizzle, mountain snowstorms along the Pacific Northwest, and chilly Nor\'easter onshore winds in New England.',
+        frontRole: 'Supplies cool marine moisture behind coastal low-pressure centers and feeds cool wedges east of the Appalachians.'
+      },
+      mT: {
+        badge: 'mT · MARITIME TROPICAL',
+        color: '#fbbf24',
+        title: 'Maritime Tropical Air Mass (Warm, Buoyant & Moisture-Loaded)',
+        source: 'Gulf of Mexico, Caribbean Sea & subtropical Atlantic/Pacific',
+        signature: 'Warm air (75°F–95°F+) paired with oppressive dew points (65°F–78°F+) and massive latent heat energy.',
+        weather: 'Primary fuel for afternoon sea-breeze thunderstorms, tornado-producing supercells, torrential flooding rain, and tropical cyclones.',
+        frontRole: 'Light and buoyant — forced upward rapidly by advancing cP cold fronts or lifted gently over mP wedges along warm fronts.'
+      },
+      cT: {
+        badge: 'cT · CONTINENTAL TROPICAL',
+        color: '#f97316',
+        title: 'Continental Tropical Air Mass (Hot & Arid)',
+        source: 'Mexican Plateau & arid U.S. Southwest desert basins',
+        signature: 'Extreme heat (95°F–115°F+), very low relative humidity (< 20%), very high LCL cloud bases (> 10,000 ft).',
+        weather: 'Blistering clear skies, extreme UV, rapid evaporation, wildfire danger, and drylines where desert air collides with humid Gulf mT air.',
+        frontRole: 'Creates the sharp dryline boundary across the Southern Plains and forms an elevated warm layer (CIN "cap") over adjacent plains.'
+      },
+      pressure_coriolis: {
+        badge: '⚖️ PRESSURE GRADIENTS & CORIOLIS SPIN',
+        color: '#c084fc',
+        title: 'High vs. Low Pressure & Earth\'s Rotation',
+        source: 'Planetary thermal contrasts & conservation of angular momentum',
+        signature: 'High (Anticyclone): sinking air compresses, warms, clears skies, and diverges clockwise (N. Hemisphere). Low (Cyclone): converging air rises, cools to its dew point, and spins counterclockwise.',
+        weather: 'Steeper spacing between isobars produces a stronger Pressure Gradient Force and higher sustained winds.',
+        frontRole: 'Low-pressure cyclones knit cold and warm fronts together into comma-shaped mid-latitude storm systems.'
+      }
+    };
+
+    function renderMass(id) {
+      const m = MASSES[id] || MASSES.cP;
+      btns.forEach((b) => {
+        const active = b.dataset.airmass === id;
+        b.classList.toggle('is-active', active);
+        b.setAttribute('aria-pressed', String(active));
+      });
+      const localComp = currentWeather
+        ? `Compared to ${currentWeather.location.label} right now (${currentWeather.temperature}°F, dew point ${currentWeather.dewPoint}°F, ${currentWeather.pressure.hPa} hPa).`
+        : 'Select any global station in the top search bar to compare live conditions.';
+
+      detail.innerHTML = `
+        <div class="ww-airmass-card" style="border-top-color:${m.color}">
+          <div class="ww-airmass-card-head">
+            <span class="ww-airmass-badge" style="color:${m.color}; border-color:${m.color}">${m.badge}</span>
+            <h4>${m.title}</h4>
+          </div>
+          <div class="ww-char-meta-grid">
+            <div class="ww-char-meta-item"><span class="ww-char-meta-k">Source Region</span><p>${m.source}</p></div>
+            <div class="ww-char-meta-item"><span class="ww-char-meta-k">Physical Signature</span><p>${m.signature}</p></div>
+            <div class="ww-char-meta-item"><span class="ww-char-meta-k">Signature Weather</span><p>${m.weather}</p></div>
+            <div class="ww-char-meta-item"><span class="ww-char-meta-k">Front &amp; Station Context</span><p>${m.frontRole} <em>${localComp}</em></p></div>
+          </div>
+        </div>
+      `;
+    }
+
+    btns.forEach((btn) => {
+      btn.addEventListener('click', () => renderMass(btn.dataset.airmass));
+    });
+    renderMass('cP');
+  }
+
+  // ── MUSEUM FLOOR PLAN & WING SCROLL-SPY NAVIGATION ──────────────────────────
+  function initMuseumNavigation() {
+    const exhibits = Array.from(document.querySelectorAll('section.ww-card[data-wing]'));
+    const wingLabelEl = document.getElementById('ww-museum-active-wing');
+    const floorLinks = Array.from(document.querySelectorAll('.ww-museum-nav a[data-wing]'));
+    const sideLinks = Array.from(document.querySelectorAll('.ww-sidebar-nav a.ww-sidebar-link'));
+    const scrollBox = document.querySelector('.ll-sim');
+    if (!exhibits.length) return;
+
+    const WING_NAMES = {
+      '1': 'Wing I · Observatory Rotunda',
+      '2': 'Wing II · Hall of Water & Sky',
+      '3': 'Wing III · Hall of Air in Motion',
+      '4': 'Wing IV · Radar & Severe Weather Command',
+      '5': 'Wing V · Human Impact & Broadcast Studio'
+    };
+
+    let currentActiveId = '';
+    let rafPending = false;
+    let lockedTargetId = '';
+    let lockExpiresAt = 0;
+
+    function setActiveExhibit(id, wing) {
+      if (!id || id === currentActiveId) return;
+      currentActiveId = id;
+      if (wingLabelEl && WING_NAMES[wing]) {
+        wingLabelEl.textContent = WING_NAMES[wing];
+      }
+      floorLinks.forEach((a) => {
+        a.classList.toggle('ll-step-active', a.getAttribute('href') === `#${id}`);
+      });
+      sideLinks.forEach((a) => {
+        a.classList.toggle('is-active', a.getAttribute('href') === `#${id}`);
+      });
+    }
+
+    function detectActiveExhibit() {
+      rafPending = false;
+      const boxTop = scrollBox ? scrollBox.getBoundingClientRect().top : 0;
+      const triggerY = boxTop + 140;
+      let chosen = exhibits[0];
+      for (const sec of exhibits) {
+        const rect = sec.getBoundingClientRect();
+        if (rect.top <= triggerY) {
+          chosen = sec;
+        } else {
+          break;
+        }
+      }
+      if (chosen) {
+        if (lockedTargetId && Date.now() < lockExpiresAt) {
+          if (chosen.id === lockedTargetId) {
+            lockedTargetId = '';
+            lockExpiresAt = 0;
+          } else {
+            return;
+          }
+        }
+        setActiveExhibit(chosen.id, chosen.dataset.wing || '1');
+      }
+    }
+
+    function requestUpdate() {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(detectActiveExhibit);
+    }
+
+    if (scrollBox) scrollBox.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('.ww-museum-nav a[data-wing], .ww-sidebar-nav a.ww-sidebar-link, .ww-trail-btn, .ww-char-jump, .ww-hero-shortcuts a');
+      if (!link) return;
+      const href = link.getAttribute('href') || '';
+      if (href.startsWith('#')) {
+        const target = document.getElementById(href.slice(1));
+        const exhibit = target ? target.closest('section.ww-card[data-wing]') : null;
+        if (exhibit && exhibit.dataset && exhibit.dataset.wing) {
+          lockedTargetId = exhibit.id;
+          lockExpiresAt = Date.now() + 800;
+          setActiveExhibit(exhibit.id, exhibit.dataset.wing);
+        }
+        setTimeout(() => {
+          lockedTargetId = '';
+          requestUpdate();
+        }, 820);
+      }
+    });
+
+    detectActiveExhibit();
+  }
+
+  // ── INTERACTIVE QUIZ CONTROLLER (EXHIBIT 13 CERTIFICATION) ────────────────
   function initQuiz() {
     const quizContainers = document.querySelectorAll('.ww-quiz-card');
-    quizContainers.forEach((card) => {
+    const scoreEl = document.getElementById('ww-quiz-score');
+    const rankEl = document.getElementById('ww-quiz-rank');
+    const resetBtn = document.getElementById('ww-quiz-reset');
+    const total = quizContainers.length;
+    const answers = new Map();
+
+    function updateScoreboard() {
+      const answered = answers.size;
+      let correctCount = 0;
+      answers.forEach(ok => { if (ok) correctCount += 1; });
+
+      if (scoreEl) {
+        scoreEl.textContent = answered === 0
+          ? `0 / ${total} Answered`
+          : `${answered} / ${total} Answered · ${correctCount} Correct`;
+      }
+      if (rankEl) {
+        if (answered < total) {
+          rankEl.textContent = answered === 0 ? 'Rank: Field Visitor' : `In Progress · ${correctCount}/${answered} accurate`;
+        } else if (correctCount >= 9) {
+          rankEl.textContent = '🏅 Rank: Chief Meteorologist';
+        } else if (correctCount >= 7) {
+          rankEl.textContent = '🎖️ Rank: Senior Forecaster';
+        } else if (correctCount >= 5) {
+          rankEl.textContent = '🧭 Rank: Field Observer';
+        } else {
+          rankEl.textContent = '📘 Rank: Weather Apprentice';
+        }
+      }
+    }
+
+    quizContainers.forEach((card, qIdx) => {
       const opts = card.querySelectorAll('.ww-quiz-opt');
       const feedback = card.querySelector('.ww-quiz-feedback');
       const correctIdx = parseInt(card.dataset.correct, 10);
@@ -1115,7 +1772,9 @@
       opts.forEach((btn, idx) => {
         btn.addEventListener('click', () => {
           opts.forEach(b => b.disabled = true);
-          if (idx === correctIdx) {
+          const isRight = idx === correctIdx;
+          answers.set(qIdx, isRight);
+          if (isRight) {
             btn.classList.add('is-correct');
             if (feedback) {
               feedback.className = 'ww-quiz-feedback correct is-visible';
@@ -1129,9 +1788,31 @@
               feedback.innerHTML = `<strong>Not quite.</strong> ${card.dataset.explanation || 'Review the atmospheric physics section above.'}`;
             }
           }
+          updateScoreboard();
         });
       });
     });
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        answers.clear();
+        quizContainers.forEach((card) => {
+          const opts = card.querySelectorAll('.ww-quiz-opt');
+          const feedback = card.querySelector('.ww-quiz-feedback');
+          opts.forEach((b) => {
+            b.disabled = false;
+            b.classList.remove('is-correct', 'is-incorrect');
+          });
+          if (feedback) {
+            feedback.className = 'ww-quiz-feedback';
+            feedback.textContent = '';
+          }
+        });
+        updateScoreboard();
+      });
+    }
+
+    updateScoreboard();
   }
 
   // ── MAP GESTURES + PUBLIC BRIDGE ────────────────────────────────────────────
@@ -1332,9 +2013,13 @@
   // ── INIT ────────────────────────────────────────────────────────────────────
   function init() {
     setupEventListeners();
+    initCharacteristicsInspector();
+    initSoundingLab();
+    initAirMassExplorer();
     initFrontSimulator();
     initCloudLab();
     initQuiz();
+    initMuseumNavigation();
     updateWardrobeSandbox();
     updateLclCalc();
     loadWeather(activeLocation);

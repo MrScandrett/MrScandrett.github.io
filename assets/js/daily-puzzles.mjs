@@ -1,6 +1,5 @@
 // Home-page daily puzzles (#home-puzzles): crossword, sudoku, Daily Double, chess, and
-// Sokoban, new every day, generated in the browser from the date (see daily-puzzles-core.mjs
-// and daily-sokoban-core.mjs).
+// Sokoban and Rubik’s, generated in the browser from the date.
 // Progress lives in one localStorage key; nothing leaves the browser.
 
 import {
@@ -9,6 +8,9 @@ import {
 } from './daily-puzzles-core.mjs';
 import { Chess } from '../vendor/chess.min.mjs';
 import * as Soko from './daily-sokoban-core.mjs';
+import './lessons/rubiks-cube-solver.js';
+import { makeRubik, recoveryPlan } from './daily-rubik-core.mjs';
+const Cube = globalThis.RubiksCube;
 
 const STORE_KEY = 'classroomos:puzzles:v1';
 const CONTENT_VERSION = 2;
@@ -67,6 +69,7 @@ const ICONS = {
   crossword: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1.4"/><path d="M3.9 3.9h5.1v5.1H3.9zM15 15h5.1v5.1H15zM9 9h6v6H9z" fill="currentColor"/></svg>',
   sudoku: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="12" y="16.1" text-anchor="middle" font-size="9" font-weight="700" font-family="IBM Plex Sans, system-ui, sans-serif" fill="currentColor">7</text></svg>',
   'daily-double': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 4.5 13.6h6.3L9.6 22l9.9-12.4h-6.6z" fill="currentColor"/></svg>',
+  rubik: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 7v10l-10 5-10-5V7zM2 7l10 5 10-5M12 12v10M7 4.5l10 5v10M17 4.5l-10 5v10M2 12l10 5 10-5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
   sokoban: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.8 4.8l14.4 14.4M19.2 4.8 4.8 19.2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9.5h16M4 14.5h16" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>',
   chess: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20.5h11.5v-1.8c0-4.3-1.2-8-3.3-10.6l.9-3.1-2.8 1.5C11.7 5.2 9.6 6 8.2 7.7L5.4 11c-.6.8-.4 1.9.4 2.4l.7.4c.7.4 1.6.3 2.1-.3l1.3-1.4c.4 1.5-.4 3.1-1.8 4.5C7.2 17.5 7 18.8 7 20.5z" fill="currentColor"/><circle cx="10.3" cy="9.3" r="1" fill="var(--dp-icon-eye, #fff)"/></svg>'
 };
@@ -142,7 +145,7 @@ function mount(root, bank, doubleBank, chessBank) {
   const app = root.querySelector('[data-dp-app]');
   const store = loadStore();
   const today = dayKey(new Date());
-  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess', 'sokoban'];
+  const validTabs = ['crossword', 'sudoku', 'daily-double', 'chess', 'sokoban', 'rubik'];
   const state = { key: today, tab: validTabs.includes(store.tab) ? store.tab : 'crossword' };
   const cache = new Map();
 
@@ -152,6 +155,7 @@ function mount(root, bank, doubleBank, chessBank) {
   function puzzlesFor(key) {
     if (!cache.has(key)) {
       cache.set(key, {
+        get rb() { return (this._rb ||= makeRubik(key, Cube)); },
         cw: makeCrossword(key, bank),
         su: makeSudoku(key),
         dd: makeDailyDouble(key, doubleBank),
@@ -167,7 +171,7 @@ function mount(root, bank, doubleBank, chessBank) {
   const isDone = (key, which) => !!(store.days[key] && store.days[key][which] && store.days[key][which].done);
   // A day counts toward the streak when a puzzle was solved without "Reveal all".
   const counts = (key, which) => isDone(key, which) && !store.days[key][which].gaveUp;
-  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess') || counts(key, 'soko');
+  const played = (key) => counts(key, 'cross') || counts(key, 'sudoku') || counts(key, 'double') || counts(key, 'chess') || counts(key, 'soko') || counts(key, 'rubik');
   function streak() {
     let n = 0, k = played(today) ? today : shiftDayKey(today, -1);
     while (played(k)) { n++; k = shiftDayKey(k, -1); }
@@ -191,8 +195,9 @@ function mount(root, bank, doubleBank, chessBank) {
   const tabDouble = makeTab('daily-double', 'Daily Double', 'Double', 'STEAM trivia');
   const tabChess = makeTab('chess', 'Chess Quest', 'Chess', 'Find the mate');
   const tabSoko = makeTab('sokoban', 'Sokoban', 'Sokoban', 'Push the crates');
+  const tabRubik = makeTab('rubik', 'Daily Rubik’s', 'Rubik’s', 'Twist & solve');
   const bar = el('div', { class: 'dp-bar' },
-    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess, tabSoko),
+    el('div', { class: 'dp-tabs', role: 'tablist', 'aria-label': 'Puzzle' }, tabCross, tabSudoku, tabDouble, tabChess, tabSoko, tabRubik),
     el('div', { class: 'dp-nav', role: 'group', 'aria-label': 'Choose a day' },
       el('div', { class: 'dp-daypick' }, prevBtn, dateLabel, nextBtn), todayBtn, streakEl));
   const panel = el('div', { class: 'dp-panel', id: 'dp-panel', role: 'tabpanel' });
@@ -217,6 +222,9 @@ function mount(root, bank, doubleBank, chessBank) {
     tabSudoku.tabIndex = state.tab === 'sudoku' ? 0 : -1;
     tabDouble.tabIndex = state.tab === 'daily-double' ? 0 : -1;
     tabChess.tabIndex = state.tab === 'chess' ? 0 : -1;
+    tabRubik.setAttribute('aria-selected', String(state.tab === 'rubik'));
+    tabRubik.tabIndex = state.tab === 'rubik' ? 0 : -1;
+    tabRubik.classList.toggle('is-done', isDone(state.key, 'rubik'));
     tabSoko.tabIndex = state.tab === 'sokoban' ? 0 : -1;
     tabCross.classList.toggle('is-done', isDone(state.key, 'cross'));
     tabSudoku.classList.toggle('is-done', isDone(state.key, 'sudoku'));
@@ -238,7 +246,9 @@ function mount(root, bank, doubleBank, chessBank) {
           ? buildDailyDouble(panel, p.dd, dayState(state.key), persist, refreshChrome)
           : state.tab === 'chess'
             ? buildChess(panel, p.ch, dayState(state.key), persist, refreshChrome)
-            : buildSokoban(panel, p.sk, dayState(state.key), persist, refreshChrome);
+            : state.tab === 'sokoban'
+              ? buildSokoban(panel, p.sk, dayState(state.key), persist, refreshChrome)
+              : buildRubik(panel, p.rb, dayState(state.key), persist, refreshChrome);
     if (!reducedMotion()) replay(panel, 'is-enter');
   }
 
@@ -247,7 +257,7 @@ function mount(root, bank, doubleBank, chessBank) {
   nextBtn.addEventListener('click', () => goDay(shiftDayKey(state.key, 1)));
   todayBtn.addEventListener('click', () => goDay(today));
 
-  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko };
+  const tabButtons = { 'crossword': tabCross, 'sudoku': tabSudoku, 'daily-double': tabDouble, chess: tabChess, sokoban: tabSoko, rubik: tabRubik };
   const setTab = (tab, focus) => {
     state.tab = tab; store.tab = tab; persist(); show();
     if (focus && tabButtons[tab]) tabButtons[tab].focus();
@@ -257,6 +267,7 @@ function mount(root, bank, doubleBank, chessBank) {
   tabDouble.addEventListener('click', () => setTab('daily-double'));
   tabChess.addEventListener('click', () => setTab('chess'));
   tabSoko.addEventListener('click', () => setTab('sokoban'));
+  tabRubik.addEventListener('click', () => setTab('rubik'));
 
   bar.querySelector('[role="tablist"]').addEventListener('keydown', (ev) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(ev.key)) return;
@@ -278,7 +289,7 @@ function mount(root, bank, doubleBank, chessBank) {
   let staged = false;
   document.addEventListener('creation-app-resize', () => {
     const now = root.matches(':fullscreen, .creation-app-expanded');
-    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board')?.focus({ preventScroll: true });
+    if (now && !staged) panel.querySelector('.dp-xinput, .dp-scell[tabindex="0"], .dp-dcell[tabindex="0"], .dp-chess-square, .dp-soko-board, .dp-rubik-stage')?.focus({ preventScroll: true });
     staged = now;
   });
   root.addEventListener('keydown', (ev) => {
@@ -1689,6 +1700,171 @@ function buildSokoban(panel, pz, saved, persist, onChange) {
   return () => { stopQueue(); persist(); };
 }
 
+// ── Daily Rubik’s ────────────────────────────────────────────────────────
+function buildRubik(panel, pz, saved, persist, onChange) {
+  const validMove = (m) => typeof m === 'string' && /^[URFDLB]'?$/.test(m);
+  const st = saved.rubik?.id === pz.id && Array.isArray(saved.rubik.moves) && saved.rubik.moves.every(validMove)
+    ? saved.rubik : (saved.rubik = { id: pz.id, moves: [], done: false, gaveUp: false });
+  let fac = Cube.applySeq(pz.facelets, st.moves);
+  let timer = 0, turnTimer = 0, busy = false, playing = false, disposed = false;
+  let plan = [], step = 0, pitch = -24, yaw = -32, drag = null;
+  const names = { U: 'Top', R: 'Right', F: 'Front', D: 'Bottom', L: 'Left', B: 'Back' };
+  const normals = { U: [0, 1, 0], R: [1, 0, 0], F: [0, 0, 1], D: [0, -1, 0], L: [-1, 0, 0], B: [0, 0, -1] };
+  const rotations = { U: 'rotateX(90deg)', D: 'rotateX(-90deg)', R: 'rotateY(90deg)', L: 'rotateY(-90deg)', F: '', B: 'rotateY(180deg)' };
+  const axes = { U: [1, 'Y', -1], D: [1, 'Y', 1], R: [0, 'X', 1], L: [0, 'X', -1], F: [2, 'Z', 1], B: [2, 'Z', -1] };
+  const cube = el('div', { class: 'dp-rubik-cube', 'aria-hidden': 'true' });
+  const stage = el('div', { class: 'dp-rubik-stage', 'data-night-keep': '', 'data-skin-keep': '', tabindex: '0', role: 'group', 'aria-label': '3D Rubik’s cube. Drag or use arrow keys to rotate the view. Use the face buttons below to turn a layer.' }, cube);
+  const status = el('p', { class: 'dp-status', role: 'status' });
+  const count = el('strong');
+  const algorithm = el('div', { class: 'dp-rubik-algorithm', hidden: true });
+  const sequence = el('div', { class: 'dp-rubik-sequence', 'aria-label': 'Solution algorithm' });
+  algorithm.append(el('p', { text: 'Inverse-move algorithm: undo your turns in reverse order, then reverse the scramble. Each move is replaced by its opposite. This guarantees a solution; a shorter route may exist.' }), sequence);
+  const btn = (text, action, label = text) => {
+    const b = el('button', { type: 'button', class: 'dp-btn', text, 'aria-label': label });
+    b.addEventListener('click', action); return b;
+  };
+  const turnButtons = [];
+  const controls = el('div', { class: 'dp-rubik-controls', role: 'group', 'aria-label': 'Turn a face' });
+  for (const f of Cube.FACES) {
+    const cw = btn(f, () => turn(f), `${names[f]} face clockwise (${f})`);
+    const ccw = btn(`${f}′`, () => turn(`${f}'`), `${names[f]} face counterclockwise (${f} prime)`);
+    turnButtons.push(cw, ccw);
+    controls.append(el('div', {}, el('small', { text: names[f] }), cw, ccw));
+  }
+  const undo = btn('Undo', () => {
+    if (busy || playing || !st.moves.length) return;
+    fac = Cube.applyMove(fac, Cube.invertMove(st.moves.pop()));
+    plan = []; algorithm.hidden = true; update();
+  });
+  const reset = btn('Restart', () => {
+    stop(); clearTimeout(turnTimer); busy = false;
+    st.moves = []; st.gaveUp = false; st.done = false;
+    fac = pz.facelets.slice(); plan = []; step = 0; algorithm.hidden = true; update();
+  });
+  const solve = btn('Computer solve', () => {
+    if (playing) { stop(); update(); return; }
+    if (busy || Cube.isSolved(fac)) return;
+    preparePlan(); playing = true; update(); advance();
+  });
+  const next = btn('Next step', () => {
+    if (busy || playing || Cube.isSolved(fac)) return;
+    if (!plan.length || step === plan.length) preparePlan();
+    demonstrate();
+  });
+  const net = el('div', { class: 'dp-rubik-net', 'data-night-keep': '', 'data-skin-keep': '', 'aria-label': 'All six faces' });
+  const netCells = [];
+  for (const f of Cube.FACES) {
+    const cells = el('div', { class: 'dp-rubik-face' });
+    const index = Cube.FACES.indexOf(f) * 9;
+    for (let i = 0; i < 9; i++) {
+      const cell = el('span'); netCells[index + i] = cell; cells.append(cell);
+    }
+    net.append(el('div', { class: `dp-rubik-net-${f}` }, el('small', { text: `${f} · ${names[f]}` }), cells));
+  }
+  const allFaces = el('details', {}, el('summary', { text: 'All six faces · labeled color view' }), net);
+  const body = el('div', { class: 'dp-rubik-body' },
+    el('div', { class: 'dp-rubik-visual' },
+      el('p', { class: 'dp-rubik-stats' }, count, ' turns · ', el('strong', { text: String(pz.target) }), ' target'), stage, controls,
+      el('div', { class: 'dp-tools' }, btn('View left', () => orbit(0, -45)), btn('View right', () => orbit(0, 45)), btn('Reset view', () => { pitch = -24; yaw = -32; orient(); })),
+      el('p', { class: 'dp-rubik-note', text: 'Drag the cube or use arrow keys to look around. Rotating the view costs no moves.' }), allFaces),
+    el('div', { class: 'dp-rubik-side' }, el('h4', { text: 'Daily Rubik’s' }),
+      el('p', { text: `Today’s challenge: a cube that needs at least ${pz.target} quarter turns. Aim for ${pz.target} turns, or take as many as you need. There is no turn limit.` }),
+      el('p', { class: 'dp-rubik-note', text: 'Each move turns one face 90°. Clockwise is viewed looking straight at that face. A prime (′) means counterclockwise. Match every sticker to its face’s center. Yellow starts on top; green faces you. The target is the verified minimum number of quarter turns.' }),
+      el('div', { class: 'dp-tools' }, undo, reset, solve, next), status, algorithm,
+      el('a', { href: 'lessons/mathematics/advanced-and-calculus/rubiks-cube-math.html', text: 'Explore our Rubik’s Cube lesson →' })));
+  panel.replaceChildren(body);
+
+  function orient() { cube.style.transform = `scale(var(--rubik-scale, 1)) rotateX(${pitch}deg) rotateY(${yaw}deg)`; }
+  function orbit(dp, dy) { pitch = Math.max(-80, Math.min(80, pitch + dp)); yaw += dy; orient(); }
+  stage.addEventListener('pointerdown', (ev) => {
+    drag = { x: ev.clientX, y: ev.clientY }; stage.setPointerCapture(ev.pointerId); stage.focus({ preventScroll: true });
+  });
+  stage.addEventListener('pointermove', (ev) => {
+    if (!drag) return;
+    orbit(-(ev.clientY - drag.y) * 0.5, (ev.clientX - drag.x) * 0.5);
+    drag = { x: ev.clientX, y: ev.clientY };
+  });
+  const endDrag = () => { drag = null; };
+  stage.addEventListener('pointerup', endDrag); stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('keydown', (ev) => {
+    const delta = { ArrowLeft: [0, -30], ArrowRight: [0, 30], ArrowUp: [-20, 0], ArrowDown: [20, 0] }[ev.key];
+    if (delta) { ev.preventDefault(); orbit(...delta); }
+  });
+  let stickers = [];
+  function draw() {
+    stickers = []; cube.replaceChildren();
+    for (const face of Cube.FACES) {
+      const normal = normals[face];
+      for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+        const p = [x, y, z];
+        if (p.reduce((sum, v, i) => sum + v * normal[i], 0) !== 1) continue;
+        const index = Cube.faceletIndex(face, x, y, z);
+        const sticker = el('span', { class: 'dp-rubik-sticker', 'data-color': Cube.SCHEME[fac[index]], text: fac[index] });
+        sticker.style.transform = `translate3d(${x * 48 + normal[0] * 24}px,${-y * 48 - normal[1] * 24}px,${z * 48 + normal[2] * 24}px) ${rotations[face]}`;
+        cube.append(sticker); stickers.push({ p, sticker });
+      }
+    }
+    netCells.forEach((cell, i) => {
+      const color = Cube.SCHEME[fac[i]];
+      cell.dataset.color = color; cell.textContent = fac[i];
+      cell.setAttribute('aria-label', `${names[Cube.FACES[Math.floor(i / 9)]]} square ${i % 9 + 1}: ${Cube.COLOR_NAME[color]}`);
+    });
+  }
+  function update() {
+    const wasDone = st.done;
+    st.done = Cube.isSolved(fac); count.textContent = String(st.moves.length);
+    turnButtons.forEach((b) => { b.disabled = busy || playing || st.done; });
+    undo.disabled = busy || playing || !st.moves.length;
+    solve.disabled = busy || st.done; solve.textContent = playing ? 'Pause demonstration' : 'Computer solve';
+    solve.setAttribute('aria-label', solve.textContent);
+    next.disabled = busy || playing || st.done;
+    if (st.done) {
+      sayTo(status, st.gaveUp ? 'Computer demonstration complete. Restart to try it yourself!' : `Solved in ${st.moves.length} turns!${st.moves.length <= pz.target ? ' You met the target.' : ' Keep practicing to reach the target.'}`, 'good');
+      if (!wasDone && !st.gaveUp) celebrate(panel);
+    } else if (!plan.length) sayTo(status, `Target: ${pz.target} ${pz.target === 1 ? 'turn' : 'turns'}. Unlimited turns available.`);
+    draw(); orient(); persist(); onChange();
+  }
+  function turn(move, demo = false) {
+    if (busy || disposed || (!demo && (playing || st.done))) return;
+    if (!demo) { plan = []; step = 0; algorithm.hidden = true; }
+    busy = true; update();
+    const [axis, rotation, sign] = axes[move[0]];
+    const layer = normals[move[0]][axis];
+    const group = el('div', { class: 'dp-rubik-layer' });
+    cube.append(group);
+    for (const item of stickers) if (item.p[axis] === layer) group.append(item.sticker);
+    void group.offsetWidth;
+    group.style.transform = `rotate${rotation}(${sign * (move.endsWith("'") ? -90 : 90)}deg)`;
+    turnTimer = setTimeout(() => {
+      if (disposed) return;
+      fac = Cube.applyMove(fac, move); st.moves.push(move); busy = false; update();
+      if (playing) timer = setTimeout(advance, 650);
+    }, reducedMotion() ? 0 : 280);
+  }
+  function preparePlan() {
+    plan = recoveryPlan(pz, st.moves, Cube); step = 0; algorithm.hidden = false;
+    sequence.replaceChildren(...plan.map(({ move }) => el('span', { text: move.replace("'", '′') })));
+    st.gaveUp = true; persist();
+  }
+  function demonstrate() {
+    if (step >= plan.length) return;
+    const item = plan[step];
+    [...sequence.children].forEach((n, i) => { n.classList.toggle('is-current', i === step); });
+    sayTo(status, `${item.phase} · step ${step + 1} of ${plan.length}: ${names[item.move[0]]} ${item.move.endsWith("'") ? 'counterclockwise' : 'clockwise'} (${item.move.replace("'", '′')}).`);
+    step++; turn(item.move, true);
+  }
+  function advance() {
+    if (!playing || disposed) return;
+    if (Cube.isSolved(fac) || step >= plan.length) { stop(); update(); return; }
+    demonstrate();
+  }
+  function stop() { clearTimeout(timer); playing = false; }
+  update();
+  return () => {
+    disposed = true; stop(); clearTimeout(turnTimer);
+  };
+}
+
 // ── boot ─────────────────────────────────────────────────────────────────
 if (typeof document !== 'undefined') {
   const root = document.getElementById('home-puzzles');
@@ -1706,4 +1882,3 @@ if (typeof document !== 'undefined') {
     });
   }
 }
-

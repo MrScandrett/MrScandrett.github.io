@@ -99,3 +99,13 @@ Op. 49 and Op. 79 sonatas, and two Op. 119 Bagatelles), see the
 For the thirteen Mozart additions (K. 331 theme/variation studies and minuet/trio,
 K. 457 movements, K. 397 Fantasia and K. 309 I), see the
 [archived editions, scope labels, completion attribution, repeat adjustments and MIDI verification](sources/mozart-collection/README.md).
+
+For the three Brahms additions (Waltz Op. 39 No. 10, Intermezzo Op. 118 No. 2,
+and Wiegenlied for voice and piano), see the
+[archived sources, attribution, reproduction steps and MIDI comparison limits](sources/brahms-collection/README.md).
+
+For three more Rachmaninoff Op. 23 preludes (Nos. 1, 4 and 6), see the
+[licensed source archive, import compatibility steps, practice numbering and published-MIDI comparisons](sources/rachmaninoff-additions/README.md).
+
+For four additional Schumann Album for the Young pieces (Op. 68 Nos. 2, 8, 10 and 16),
+see the [licensed editions, repeat-boundary numbering, reproduction and exact published-MIDI comparisons](sources/schumann-additions/README.md).

@@ -82,15 +82,17 @@ function namedHead(pitch,cx,cy,base,keyAcc,space,cls,useColor) {
   cls=cls||'mn-nhead';
   var whole=base>=4,hollow=base>=2,acc=p.a?{'-2':'𝄫','-1':'♭','1':'♯','2':'𝄪'}[p.a]:keyAcc?'♮':'';
   var colored=useColor!==false;
-  var wide=acc?1.14:1,rx=(whole?0.9:0.78)*space*wide,ry=0.5*space,fs=1.08*space,col=colored?NAME_COLORS[p.l]:'#16130f';
-  var rot=whole?'':' transform="rotate(-24 '+cx.toFixed(1)+' '+cy.toFixed(1)+')"';
+  // Horizontal, consistently wide teaching heads leave room for both the
+  // letter and its accidental, including in tightly stacked seconds.
+  var rx=(whole?1.05:0.92)*space,ry=0.5*space,fs=1.08*space,col=colored?NAME_COLORS[p.l]:'#16130f';
+  var rot='';
   var oval='<ellipse cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" rx="'+rx.toFixed(2)+'" ry="'+ry.toFixed(2)+'"'+rot+
     ' fill="'+(hollow?'#fffdf7':col)+'" stroke="'+col+'" stroke-width="'+((hollow?0.17:0.06)*space).toFixed(2)+'"/>';
   var ink=colored?(hollow?NAME_INK_HOLLOW[p.l]:NAME_INK[p.l]):(hollow?'#16130f':'#ffffff');
   var dark=!hollow&&ink!=='#ffffff',ax=acc?fs*0.33:0;
   return '<g class="'+escape(cls)+(hollow?' is-hollow':'')+(dark?' ink-dark':'')+'" data-contrast-guard-skip>'+oval+
     '<text class="'+escape(cls)+'-t'+(cls==='se-nhead'?' se-pitch-label':'')+'" x="'+(cx-ax).toFixed(1)+'" y="'+(cy+fs*0.36).toFixed(1)+'" font-size="'+fs.toFixed(1)+'" text-anchor="middle" style="fill:'+ink+'">'+LETTERS[p.l]+'</text>'+
-    (acc?'<g class="'+escape(cls)+'-acc" style="color:'+ink+'">'+accidental(p.a||0,cx+0.04*space,cy,0.44*space)+'</g>':'')+'</g>';
+    (acc?'<g class="'+escape(cls)+'-acc" style="color:'+ink+'">'+accidental(p.a||0,cx+0.12*space,cy,0.32*space)+'</g>':'')+'</g>';
 }
 var preferenceKey = 'classroomos:music-notation:v1';
 var notationPreferences = { pitchNames: false, noteColors: false };

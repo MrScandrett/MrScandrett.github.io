@@ -58,8 +58,13 @@ were also compared with `data/score-library.json` after adding classroom metadat
 ### Import adjustments
 
 - **Prelude No. 1:** `tieWaitForNote` holds five pitches from an arpeggio through the last chord.
-  The converted ending expresses these as five independent sustained voices, retaining every attack,
-  pitch and hold. The event dump encounters the bass staff first; restore the printed upper/lower staff order.
+  `prelude_1_notation.py` restores short written attacks and waiting ties instead of displaying
+  sounding lengths as quarter notes. The second closing triplet shares a beam across the two
+  staves; the final notes form one chord per staff. The same correction restores slurs, dynamics,
+  hairpins and text directions from the archived LilyPond edition. Upper phrase arcs begin at
+  the first right-hand note where the classroom edition keeps the hands on separate staves.
+  The event dump encounters the bass staff first; restore the printed upper/lower staff order.
+  Reproduction confirms all 330 attacks and durations against the edition's MIDI.
 - **Prelude No. 3:** triple-dotted durations are retained. The score engine now parses their exact
   15/8 multiplier and draws all three dots, including on rests.
 - **Prelude No. 9:** the edition contains separate written and ornament-realized MIDI scores.
