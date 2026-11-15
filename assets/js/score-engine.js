@@ -480,6 +480,22 @@
           ev.up = ev.stem ? ev.stem === "up" : (4 - lo) > (hi - 4);
           ev.beam = null;
         });
+        // A rest in one voice must not sit on a note another voice holds at the same time
+        // (e.g. a quarter rest over a dotted-half bass note): push it clear of that note.
+        bar.events.forEach(function (rest) {
+          if (rest.kind !== 'rest' || rest.hidden || rest.whole) return;
+          var up = rest.restStep >= 4, lo = rest.restStep - 3, hi = rest.restStep + 3;
+          var low = Infinity, high = -Infinity;
+          bar.events.forEach(function (n) {
+            if (n.kind !== 'note' || n.grace || n.voice === rest.voice) return;
+            if (n.start >= rest.start + rest.dur - EPS || n.start + n.dur <= rest.start + EPS) return;
+            // pad for dots, ledger lines and seconds beside the head
+            if (n.lo - 1 > hi || n.hi + 1 < lo) return;
+            low = Math.min(low, n.lo); high = Math.max(high, n.hi);
+          });
+          if (high < low) return;
+          rest.restStep = up ? Math.max(rest.restStep, high + 5) : Math.min(rest.restStep, low - 5);
+        });
         bar.beams = [];
         st.voices.forEach(function (_, vi) {
           bar.beams = bar.beams.concat(beamGroups({ events: bar.events.filter(function (ev) { return ev.voice === vi; }) }, model.barMeta[bi].ts));
