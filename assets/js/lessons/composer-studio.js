@@ -223,7 +223,7 @@
   staff.addEventListener('change',() => { fillVoices(); update(); });
   [mode,voice,octave].forEach(select => select.addEventListener('change',update));
   $('print').addEventListener('click',() => {
-    if (!current || !ScoreEngine.preparePrintScore(current)) return;
+    if (!current || !ScoreEngine.preparePrintScore(current, host.scoreFingeringPrint ? host.scoreFingeringPrint() : {})) return;
     if (tab.childNodes.length) {
       const appendix = document.createElement('section'); appendix.className = 'se-print-score-page bv-print-tab';
       appendix.append(...[...tab.childNodes].map(node => node.cloneNode(true)));

@@ -50,7 +50,7 @@
     var figure = work && work.figure;
     if (!figure || !figure.scoreData) return;
     if (figure.dataset.score === 'mozart-turkish-march' && window.MozartRondoPrintScore) window.MozartRondoPrintScore();
-    else if (window.ScoreEngine) window.ScoreEngine.printScore(figure.scoreData);
+    else if (window.ScoreEngine) window.ScoreEngine.printScore(figure.scoreData, figure.scoreFingeringPrint ? figure.scoreFingeringPrint() : {});
   }
   function updateHeaderScorePrint() {
     if (!headerScorePrint) return;
@@ -63,7 +63,7 @@
   window.addEventListener('beforeprint', function () {
     if (!active || !active.figure.scoreData || document.body.hasAttribute('data-print-lesson') ||
       document.body.classList.contains('se-print-score-active') || document.body.classList.contains('mz-print-rondo')) return;
-    if (window.ScoreEngine) window.ScoreEngine.preparePrintScore(active.figure.scoreData);
+    if (window.ScoreEngine) window.ScoreEngine.preparePrintScore(active.figure.scoreData, active.figure.scoreFingeringPrint ? active.figure.scoreFingeringPrint() : {});
   });
   document.addEventListener('DOMContentLoaded', function () {
     var menu = document.querySelector('.lesson-print-menu');

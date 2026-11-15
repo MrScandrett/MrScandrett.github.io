@@ -23,41 +23,101 @@
   const MATERIALS = {
     water: {
       kind: 'water',
+      label: 'Water (20°C)',
+      eta: 0.001,
+      temperatureC: 20,
       density: 1000, viscosity: 0.08, spring: 0.42, damping: 1.65, spread: 0.24,
       color: '#1878c9', deepColor: '#073b88', highlight: 'rgba(210,245,255,.72)',
       flow: 0.18, gravity: 1, particleDrag: 0.02, glow: 'rgba(70,180,255,.12)'
     },
+    coldWater: {
+      kind: 'coldWater',
+      label: 'Cold Water (2°C)',
+      eta: 0.00167,
+      temperatureC: 2,
+      density: 1000, viscosity: 0.12, spring: 0.38, damping: 1.9, spread: 0.21,
+      color: '#0284c7', deepColor: '#082f49', highlight: 'rgba(224,242,254,.82)',
+      flow: 0.14, gravity: 1, particleDrag: 0.035, glow: 'rgba(56,189,248,.16)'
+    },
+    boilingWater: {
+      kind: 'boilingWater',
+      label: 'Boiling Water (100°C)',
+      eta: 0.000282,
+      temperatureC: 100,
+      density: 958, viscosity: 0.03, spring: 0.56, damping: 1.15, spread: 0.30,
+      color: '#38bdf8', deepColor: '#0c4a6e', highlight: 'rgba(240,253,255,.9)',
+      flow: 0.28, gravity: 1, particleDrag: 0.01, glow: 'rgba(125,211,252,.24)'
+    },
     lava: {
       kind: 'lava',
+      label: 'Basaltic Lava (1150°C)',
+      eta: 100.0,
+      temperatureC: 1150,
       density: 2700, viscosity: 0.72, spring: 0.18, damping: 3.2, spread: 0.12,
       color: '#f04a18', deepColor: '#6e160b', highlight: 'rgba(255,224,112,.8)',
       flow: 0.08, gravity: 0.55, particleDrag: 0.18, glow: 'rgba(255,72,16,.3)'
     },
+    magma: {
+      kind: 'magma',
+      label: 'Silicic Magma (850°C)',
+      eta: 1000.0,
+      temperatureC: 850,
+      density: 2400, viscosity: 0.97, spring: 0.08, damping: 5.8, spread: 0.04,
+      color: '#dc2626', deepColor: '#350806', highlight: 'rgba(254,202,202,.78)',
+      flow: 0.012, gravity: 0.35, particleDrag: 0.65, glow: 'rgba(220,38,38,.36)'
+    },
     honey: {
       kind: 'honey',
+      label: 'Honey (20°C)',
+      eta: 10.0,
+      temperatureC: 20,
       density: 1420, viscosity: 0.92, spring: 0.12, damping: 4.5, spread: 0.08,
       color: '#d89018', deepColor: '#6b3508', highlight: 'rgba(255,235,137,.72)',
       flow: 0.025, gravity: 0.75, particleDrag: 0.42, glow: 'rgba(255,172,24,.12)'
     },
+    glycerol: {
+      kind: 'glycerol',
+      label: 'Glycerol (20°C)',
+      eta: 1.40,
+      temperatureC: 20,
+      density: 1260, viscosity: 0.62, spring: 0.19, damping: 3.4, spread: 0.11,
+      color: '#34d399', deepColor: '#064e3b', highlight: 'rgba(236,253,245,.78)',
+      flow: 0.05, gravity: 0.82, particleDrag: 0.28, glow: 'rgba(52,211,153,.15)'
+    },
     oil: {
       kind: 'oil',
-      density: 850, viscosity: 0.3, spring: 0.28, damping: 2.2, spread: 0.16,
+      label: 'Motor Oil (SAE 30)',
+      eta: 0.10,
+      temperatureC: 20,
+      density: 880, viscosity: 0.3, spring: 0.28, damping: 2.2, spread: 0.16,
       color: '#4e5964', deepColor: '#111820', highlight: 'rgba(215,238,255,.4)',
       flow: 0.1, gravity: 0.9, particleDrag: 0.1, glow: 'rgba(190,220,240,.08)'
     },
     mercury: {
       kind: 'mercury',
+      label: 'Mercury (20°C)',
+      eta: 0.00153,
+      temperatureC: 20,
       density: 13546, viscosity: 0.14, spring: 0.68, damping: 1.4, spread: 0.3,
       color: '#a9b8c4', deepColor: '#586773', highlight: 'rgba(255,255,255,.9)',
       flow: 0.12, gravity: 1, particleDrag: 0.04, glow: 'rgba(225,245,255,.16)'
     }
   };
+  const MATERIAL_ALIASES = {
+    'cold-water': 'coldWater',
+    'boiling-water': 'boilingWater'
+  };
 
   function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
   function lerp(a, b, t) { return a + (b - a) * t; }
+  function normalizeMaterialKey(name) {
+    if (typeof name !== 'string') return 'water';
+    const key = MATERIAL_ALIASES[name] || name;
+    return MATERIALS[key] ? key : 'water';
+  }
   function material(input = 'water') {
-    const base = typeof input === 'string' ? MATERIALS[input] : MATERIALS.water;
-    return { ...base, ...(typeof input === 'object' ? input : {}) };
+    const base = typeof input === 'string' ? MATERIALS[normalizeMaterialKey(input)] : MATERIALS.water;
+    return { ...base, ...(typeof input === 'object' && input ? input : {}) };
   }
 
   class Surface {
@@ -627,15 +687,167 @@
     ctx.restore();
   }
 
+  function stokesMetrics(options = {}) {
+    const fluid = material(options.fluid || 'water');
+    const eta = Math.max(1e-7, Number(options.eta ?? fluid.eta) || 0.001);
+    const fluidDensity = Number(options.fluidDensity ?? fluid.density) || 1000;
+    const sphereDensity = Number(options.sphereDensity ?? 7800) || 7800;
+    const radius = Math.max(1e-5, Number(options.radius ?? 0.003) || 0.003);
+    const gravity = Number(options.gravity ?? 9.8);
+    const columnHeight = Math.max(0.01, Number(options.columnHeight ?? 0.50) || 0.50);
+
+    const volume = (4 / 3) * Math.PI * radius * radius * radius;
+    const fg = volume * sphereDensity * gravity;
+    const fb = volume * fluidDensity * gravity;
+    const vt = (2 * radius * radius * (sphereDensity - fluidDensity) * gravity) / (9 * eta);
+    const effectiveMass = volume * (sphereDensity + 0.5 * fluidDensity);
+    const tau = effectiveMass / (6 * Math.PI * eta * radius);
+    const reynolds = (2 * radius * fluidDensity * Math.abs(vt)) / eta;
+    const sinks = vt > 0;
+    const floats = vt <= 0;
+    const fallTime = sinks ? columnHeight / vt : Infinity;
+
+    return {
+      fluid,
+      eta,
+      fluidDensity,
+      sphereDensity,
+      radius,
+      gravity,
+      columnHeight,
+      volume,
+      fg,
+      fb,
+      vt,
+      tau,
+      reynolds,
+      sinks,
+      floats,
+      fallTime
+    };
+  }
+
+  class StokesColumn {
+    constructor(options = {}) {
+      this.fluid = material(options.fluid || 'water');
+      this.eta = options.eta;
+      this.fluidDensity = options.fluidDensity;
+      this.sphereDensity = Number(options.sphereDensity ?? 7800);
+      this.radius = Number(options.radius ?? 0.003);
+      this.gravity = Number(options.gravity ?? 9.8);
+      this.columnHeight = Math.max(0.01, Number(options.columnHeight ?? 0.50));
+      this.depth = 0;
+      this.velocity = 0;
+      this.elapsed = 0;
+      this.done = false;
+      this.floated = false;
+      this.recompute();
+    }
+
+    recompute() {
+      this.metrics = stokesMetrics({
+        fluid: this.fluid,
+        eta: this.eta,
+        fluidDensity: this.fluidDensity,
+        sphereDensity: this.sphereDensity,
+        radius: this.radius,
+        gravity: this.gravity,
+        columnHeight: this.columnHeight
+      });
+      return this.metrics;
+    }
+
+    configure(options = {}) {
+      if (options.fluid !== undefined) {
+        this.fluid = material(options.fluid);
+        if (options.eta === undefined) this.eta = undefined;
+        if (options.fluidDensity === undefined) this.fluidDensity = undefined;
+      }
+      if (options.eta !== undefined) this.eta = options.eta;
+      if (options.fluidDensity !== undefined) this.fluidDensity = options.fluidDensity;
+      if (options.sphereDensity !== undefined) this.sphereDensity = Number(options.sphereDensity);
+      if (options.radius !== undefined) this.radius = Number(options.radius);
+      if (options.gravity !== undefined) this.gravity = Number(options.gravity);
+      if (options.columnHeight !== undefined) this.columnHeight = Math.max(0.01, Number(options.columnHeight));
+      this.recompute();
+      return this;
+    }
+
+    reset() {
+      this.depth = 0;
+      this.velocity = 0;
+      this.elapsed = 0;
+      this.done = false;
+      this.floated = false;
+      this.recompute();
+      return this;
+    }
+
+    step(dt = 1 / 60) {
+      const safeDt = Math.max(0, Number(dt) || 0);
+      if (this.done || safeDt === 0) return this;
+      const { vt, tau, floats } = this.metrics;
+      if (floats) {
+        this.velocity = 0;
+        this.depth = 0;
+        this.floated = true;
+        this.done = true;
+        return this;
+      }
+      const decay = tau > 1e-12 ? Math.exp(-safeDt / tau) : 0;
+      const v0 = this.velocity;
+      const v1 = vt + (v0 - vt) * decay;
+      const dy = vt * safeDt + (v0 - vt) * tau * (1 - decay);
+      if (this.depth + dy >= this.columnHeight) {
+        const target = Math.max(0, this.columnHeight - this.depth);
+        let lo = 0;
+        let hi = safeDt;
+        let t = dy > 0 ? clamp(safeDt * (target / dy), 0, safeDt) : safeDt;
+        for (let k = 0; k < 6; k += 1) {
+          const e = tau > 1e-12 ? Math.exp(-t / tau) : 0;
+          const dist = vt * t + (v0 - vt) * tau * (1 - e);
+          const vel = vt + (v0 - vt) * e;
+          const err = dist - target;
+          if (Math.abs(err) < 1e-9) break;
+          if (err < 0) lo = t;
+          else hi = t;
+          const next = vel > 1e-12 ? t - err / vel : (lo + hi) * 0.5;
+          t = (next > lo && next < hi) ? next : (lo + hi) * 0.5;
+        }
+        const fDecay = tau > 1e-12 ? Math.exp(-t / tau) : 0;
+        this.velocity = vt + (v0 - vt) * fDecay;
+        this.elapsed += t;
+        this.depth = this.columnHeight;
+        this.done = true;
+      } else {
+        this.depth += dy;
+        this.velocity = v1;
+        this.elapsed += safeDt;
+      }
+      return this;
+    }
+
+    dragForce() {
+      return 6 * Math.PI * this.metrics.eta * this.radius * Math.max(0, this.velocity);
+    }
+
+    progress() {
+      return clamp(this.depth / this.columnHeight, 0, 1);
+    }
+  }
+
   return {
-    version: '1.1.0',
+    version: '1.2.0',
     materials: Object.freeze(Object.keys(MATERIALS)),
     material,
+    stokesMetrics,
+    StokesColumn,
     Surface,
     Particles,
     FlowParticles,
     DepthField,
     ThermalBlobs,
+    createStokesColumn: options => new StokesColumn(options),
     createSurface: options => new Surface(options),
     createParticles: options => new Particles(options),
     createFlowParticles: options => new FlowParticles(options),

@@ -755,7 +755,7 @@
       var hasDirections = (expressions.directions || []).some(function (d) { return (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; }) ||
         (expressions.hairpins || []).some(function (span) { return covers(span, sys, si); });
       var hasText = (expressions.directions || []).some(function (d) { return d.text && (d.staff || 0) === si && sys.bars.indexOf(d.bar - 1) >= 0; });
-      return { hi: hi + 1 + (fingers && rightHand ? 8 : 0), lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 8 : 0), directionLo: directionLo };
+      return { hi: hi + 1 + (fingers && rightHand ? 14 : 0), lo: lo - 1 - (hasText ? 9 : dyn || hasDirections ? 6 : 0) - (fingers && !rightHand ? 14 : 0), directionLo: directionLo };
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
@@ -1964,10 +1964,7 @@
     var colorToggle = el('button', { type: 'button', class: 'se-toggle', 'aria-pressed': root.MusicNotation.preferences.noteColors ? 'true' : 'false' }, 'Note colors');
     var printButton = el('button', { type: 'button', class: 'se-toggle se-print-score-button' }, 'Print score');
     printButton.setAttribute('aria-label', 'Print a paginated score of ' + (score.title || 'this piece'));
-    // Mozart's Rondo has its own print edition with an optional fingering overlay.
-    if (score.id !== 'mozart-turkish-march') {
-      printButton.addEventListener('click', function () { printScorePages(score, fig.scoreFingeringPrint ? fig.scoreFingeringPrint() : null); });
-    }
+    printButton.addEventListener('click', function () { printScorePages(score, fig.scoreFingeringPrint ? fig.scoreFingeringPrint() : null); });
 
     function updatePreferenceButtons() {
       var prefs = root.MusicNotation.preferences;
@@ -2300,7 +2297,7 @@
 
     draw();
     settingsBar.appendChild(pitchToggle); settingsBar.appendChild(colorToggle); settingsBar.appendChild(noteListToggle);
-    if (score.id !== 'mozart-turkish-march') settingsBar.appendChild(printButton);
+    settingsBar.appendChild(printButton);
     withFingering(function (F) { F.install(fig, score, settingsBar); });
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');

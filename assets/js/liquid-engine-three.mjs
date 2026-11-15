@@ -6,11 +6,27 @@
 // renders a LiquidEngine.DepthField (lava fields) draped over terrain.
 
 const MATERIALS = {
-  water: { surface: 0x3cb9d2, deep: 0x062e58, foam: 0xd8fbff, roughness: 0.08, opacity: 0.82, glow: 0x1b8fb5 },
-  lava: { surface: 0xf04a18, deep: 0x3d0804, foam: 0xffe277, roughness: 0.7, opacity: 1, glow: 0xf04a18 },
-  honey: { surface: 0xd9951d, deep: 0x482007, foam: 0xffeea1, roughness: 0.28, opacity: 0.98, glow: 0xb86609 },
-  oil: { surface: 0x526b78, deep: 0x081117, foam: 0xd4f3ff, roughness: 0.16, opacity: 0.94, glow: 0x203c4d }
+  water: { surface: 0x3cb9d2, deep: 0x062e58, foam: 0xd8fbff, roughness: 0.08, opacity: 0.82, glow: 0x1b8fb5, damping: 2.0, typeId: 0 },
+  lava: { surface: 0xf04a18, deep: 0x3d0804, foam: 0xffe277, roughness: 0.7, opacity: 1, glow: 0xf04a18, damping: 6.0, typeId: 1 },
+  honey: { surface: 0xd9951d, deep: 0x482007, foam: 0xffeea1, roughness: 0.28, opacity: 0.98, glow: 0xb86609, damping: 6.5, typeId: 2 },
+  oil: { surface: 0x526b78, deep: 0x081117, foam: 0xd4f3ff, roughness: 0.16, opacity: 0.94, glow: 0x203c4d, damping: 3.5, typeId: 3 },
+  coldWater: { surface: 0x38bdf8, deep: 0x072540, foam: 0xe0f7ff, roughness: 0.05, opacity: 0.86, glow: 0x0284c7, damping: 2.4, typeId: 4 },
+  boilingWater: { surface: 0x67e8f9, deep: 0x0b4260, foam: 0xffffff, roughness: 0.11, opacity: 0.80, glow: 0x7dd3fc, damping: 1.4, typeId: 5 },
+  glycerol: { surface: 0x34d399, deep: 0x063d2d, foam: 0xd1fae5, roughness: 0.12, opacity: 0.90, glow: 0x10b981, damping: 5.0, typeId: 6 },
+  magma: { surface: 0xdc2626, deep: 0x1c0504, foam: 0xffc66d, roughness: 0.84, opacity: 1, glow: 0xe11d48, damping: 8.5, typeId: 7 },
+  mercury: { surface: 0xd6e1ea, deep: 0x4b5965, foam: 0xffffff, roughness: 0.03, opacity: 1, glow: 0xe2e8f0, damping: 1.8, typeId: 8 }
 };
+
+const MATERIAL_ALIASES = {
+  'cold-water': 'coldWater',
+  'boiling-water': 'boilingWater'
+};
+
+function normalizeMaterialName(name) {
+  if (typeof name !== 'string') return 'water';
+  const key = MATERIAL_ALIASES[name] || name;
+  return MATERIALS[key] ? key : 'water';
+}
 
 const VERTEX_SHADER = `
   uniform float uTime;
@@ -19,10 +35,23 @@ const VERTEX_SHADER = `
   uniform float uFlow;
   uniform float uChoppiness;
   uniform float uVisualScale;
+  uniform vec2 uImpulseCenter;
+  uniform float uImpulseAge;
+  uniform float uImpulseStrength;
+  uniform float uImpulseDamping;
   varying vec3 vWorldPosition;
   varying vec3 vNormalWorld;
+  varying vec2 vLocalPos;
   varying float vWave;
   varying float vCrest;
+
+  float impulseAt(vec2 p) {
+    if (uImpulseAge <= 0.0 || uImpulseStrength <= 0.001) return 0.0;
+    float dist = length(p - uImpulseCenter);
+    float wave = sin(dist * 7.5 - uImpulseAge * 9.0);
+    float env = exp(-dist * 0.85 - uImpulseAge * uImpulseDamping);
+    return wave * env * uImpulseStrength * 0.14;
+  }
 
   float waveAt(vec2 p) {
     float t = uTime * uFlow;
@@ -31,11 +60,12 @@ const VERTEX_SHADER = `
     float c = sin((p.x + p.y) * 0.77 + t * 1.65) * 0.16 * uDetail;
     float d = sin((p.x * 1.7 - p.y * 1.15) + t * 2.2) * 0.08 * uDetail;
     float chop = sin(p.x * 1.35 + p.y * .55 + t * 2.8) * 0.045 * uDetail;
-    return (a + b + c + d + chop) * uWaveHeight * uVisualScale;
+    return (a + b + c + d + chop) * uWaveHeight * uVisualScale + impulseAt(p);
   }
 
   void main() {
     vec3 p = position;
+    vLocalPos = p.xy;
     float eps = 0.055;
     float h = waveAt(p.xy);
     float dx = (waveAt(p.xy + vec2(eps, 0.0)) - waveAt(p.xy - vec2(eps, 0.0))) / (2.0 * eps);
@@ -62,8 +92,10 @@ const FRAGMENT_SHADER = `
   uniform float uOpacity;
   uniform float uDepth;
   uniform float uMaterialType;
+  uniform float uDiscRadius;
   varying vec3 vWorldPosition;
   varying vec3 vNormalWorld;
+  varying vec2 vLocalPos;
   varying float vWave;
   varying float vCrest;
 
@@ -74,10 +106,15 @@ const FRAGMENT_SHADER = `
                mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
   }
   void main() {
+    if (uDiscRadius > 0.0 && length(vLocalPos) > uDiscRadius) discard;
     vec2 p = vWorldPosition.xz;
     float small = noise(p * 5.0 + vec2(uTime * .23, -uTime * .17));
     float fine = noise(p * 17.0 - vec2(uTime * .35, uTime * .24));
     float micro = (small - .5) * .075 + (fine - .5) * .025;
+    if (uMaterialType > 4.5 && uMaterialType < 5.5) {
+      float roil = noise(p * 12.0 + vec2(uTime * 1.4, -uTime * 1.1));
+      micro += (roil - 0.5) * 0.16;
+    }
     vec3 n = normalize(vNormalWorld + vec3(micro, 0.0, micro * .7));
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
     vec3 lightDir = normalize(vec3(-.61, .57, -.55));
@@ -109,13 +146,48 @@ const FRAGMENT_SHADER = `
       vec3 amber = mix(uDeepColor, uSurfaceColor, .48 + .22 * vWave + .20 * small + .12 * diffuse);
       color = mix(amber, vec3(1.0, .77, .31), fresnel * .46);
       color += vec3(1.0, .83, .50) * (sun * .68 + softbox * .24);
-    } else {
+    } else if (uMaterialType < 3.5) {
       // Oil: almost black body with low-angle sky reflection and thin-film color.
       vec3 body = mix(uDeepColor, uSurfaceColor, .12 + .12 * diffuse);
       color = mix(body, sky * .72, fresnel * .94);
       float film = dot(reflected, lightDir) * 10.0 + small * 2.0;
       color += (vec3(.06, .13, .19) + vec3(.11, .035, .12) * sin(film)) * fresnel;
       color += vec3(.9, .94, 1.0) * sun * .75;
+    } else if (uMaterialType < 4.5) {
+      // Cold water (2°C): crisp icy cyan-blue body, sharp frost specular, crystal shimmer.
+      vec3 body = mix(uDeepColor, uSurfaceColor, .25 + .30 * diffuse + .14 * small);
+      vec3 coldSky = mix(vec3(.28, .48, .66), vec3(.86, .95, 1.0), smoothstep(-.1, .75, reflected.y));
+      color = mix(body, coldSky, fresnel * .90);
+      float glint = pow(fine, 4.0) * 0.25;
+      color += vec3(.88, .97, 1.0) * (sun * 1.05 + glint);
+    } else if (uMaterialType < 5.5) {
+      // Boiling water (100°C): rapid roiling normal perturbation and bright boiling foam cells.
+      float boilCell = noise(p * 11.0 + vec2(uTime * 1.35, -uTime * 1.15));
+      float bubbleRing = smoothstep(0.58, 0.88, boilCell);
+      vec3 body = mix(uDeepColor, uSurfaceColor, .32 + .28 * diffuse + .20 * small);
+      color = mix(body, sky, fresnel * .82);
+      color += vec3(1.0, .96, .88) * sun * .8;
+      float foam = clamp(bubbleRing * 0.65 + smoothstep(.08, .22, abs(vWave)) * 0.45, 0.0, 0.85);
+      color = mix(color, uFoamColor, foam);
+    } else if (uMaterialType < 6.5) {
+      // Glycerol: clear refractive emerald-aqua tint with high-gloss syrup highlights.
+      vec3 syrup = mix(uDeepColor, uSurfaceColor, .38 + .25 * diffuse + .16 * small);
+      color = mix(syrup, mix(sky, vec3(.65, .98, .86), 0.35), fresnel * .62);
+      color += vec3(.85, 1.0, .94) * (sun * .95 + softbox * .22);
+    } else if (uMaterialType < 7.5) {
+      // Silicic Magma (850°C): thick dark crimson-black crust with folding glowing fissures.
+      float fold = noise(p * .68 + vec2(uTime * .018, uTime * .012) + noise(p * .24) * 1.2);
+      float fissure = 1.0 - smoothstep(.018, .065, abs(fold - .5));
+      float glow = clamp(fissure * (.75 + .25 * small) + smoothstep(.14, .28, vWave) * .22, 0.0, 1.0);
+      vec3 darkCrust = mix(uDeepColor * 1.15, vec3(0.08, 0.025, 0.025), small * 0.6);
+      vec3 hotCore = uSurfaceColor * 1.45 + uFoamColor * 0.55;
+      color = mix(darkCrust, hotCore, glow);
+      color += vec3(.08, .02, .015) * diffuse;
+    } else {
+      // Mercury: mirror-like liquid chrome reflection.
+      vec3 chromeBody = mix(uDeepColor, uSurfaceColor, .45 + .40 * diffuse);
+      color = mix(chromeBody, sky * 1.15, 0.72 + 0.25 * fresnel);
+      color += vec3(1.0) * (sun * 1.3 + softbox * 0.35);
     }
     gl_FragColor = vec4(color, clamp(uOpacity + fresnel * .12, .08, 1.0));
     #include <tonemapping_fragment>
@@ -177,22 +249,26 @@ const OCEAN_FRAGMENT_SHADER = `
 `;
 
 function preset(name, override = {}) {
-  return { ...(MATERIALS[name] || MATERIALS.water), ...override };
+  const key = normalizeMaterialName(name);
+  return { ...(MATERIALS[key] || MATERIALS.water), ...override };
 }
 
 export function createLiquidSurface(THREE, options = {}) {
-  const materialName = options.material || 'water';
+  const materialName = normalizeMaterialName(options.material || 'water');
   const presetData = preset(materialName, options);
   const width = options.width || 18;
   const depth = options.depth || 18;
   const segments = Math.min(180, Math.max(24, options.segments || 112));
   const geometry = new THREE.PlaneGeometry(width, depth, segments, segments);
+  const discRadius = options.discRadius ?? (options.shape === 'disc' ? (options.radius || Math.min(width, depth) * 0.5) : 0);
+  const defaultWave = (materialName === 'lava' || materialName === 'magma') ? 0.18 : materialName === 'honey' ? 0.12 : materialName === 'boilingWater' ? 0.42 : 0.34;
+  const defaultFlow = materialName === 'honey' ? 0.35 : materialName === 'magma' ? 0.18 : materialName === 'boilingWater' ? 1.55 : 1;
   const uniforms = {
     uTime: { value: 0 },
-    uWaveHeight: { value: options.waveHeight ?? (materialName === 'lava' ? 0.18 : 0.34) },
+    uWaveHeight: { value: options.waveHeight ?? defaultWave },
     uDetail: { value: options.detail ?? 1 },
-    uFlow: { value: options.flow ?? (materialName === 'honey' ? 0.35 : 1) },
-    uChoppiness: { value: options.choppiness ?? (materialName === 'water' ? 1 : 0.35) },
+    uFlow: { value: options.flow ?? defaultFlow },
+    uChoppiness: { value: options.choppiness ?? (materialName === 'water' || materialName === 'boilingWater' || materialName === 'coldWater' ? 1 : 0.35) },
     uVisualScale: { value: options.visualScale ?? 1 },
     uSurfaceColor: { value: new THREE.Color(presetData.surface) },
     uDeepColor: { value: new THREE.Color(presetData.deep) },
@@ -201,7 +277,12 @@ export function createLiquidSurface(THREE, options = {}) {
     uRoughness: { value: presetData.roughness },
     uOpacity: { value: presetData.opacity },
     uDepth: { value: options.depthTint ?? 1 },
-    uMaterialType: { value: { water: 0, lava: 1, honey: 2, oil: 3 }[materialName] ?? 0 }
+    uMaterialType: { value: presetData.typeId ?? 0 },
+    uDiscRadius: { value: discRadius },
+    uImpulseCenter: { value: new THREE.Vector2(0, 0) },
+    uImpulseAge: { value: 0 },
+    uImpulseStrength: { value: 0 },
+    uImpulseDamping: { value: presetData.damping ?? 2.0 }
   };
   const shader = new THREE.ShaderMaterial({
     uniforms,
@@ -210,14 +291,28 @@ export function createLiquidSurface(THREE, options = {}) {
     transparent: presetData.opacity < 1,
     side: THREE.DoubleSide,
     depthWrite: presetData.opacity >= 1,
-    blending: presetData.opacity < 1 ? THREE.NormalBlending : THREE.NormalBlending
+    blending: THREE.NormalBlending
   });
   const mesh = new THREE.Mesh(geometry, shader);
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.y = options.y || 0;
 
   function update(deltaSeconds = 1 / 60) {
-    uniforms.uTime.value += Math.min(0.05, Math.max(0, deltaSeconds));
+    const dt = Math.min(0.05, Math.max(0, deltaSeconds));
+    uniforms.uTime.value += dt;
+    if (uniforms.uImpulseAge.value > 0) {
+      uniforms.uImpulseAge.value += dt;
+      if (uniforms.uImpulseAge.value > 15) {
+        uniforms.uImpulseAge.value = 0;
+        uniforms.uImpulseStrength.value = 0;
+      }
+    }
+  }
+  function impulse(strength = 1, x = 0, y = 0) {
+    uniforms.uImpulseCenter.value.set(x, y);
+    uniforms.uImpulseAge.value = 0.001;
+    uniforms.uImpulseStrength.value = strength;
+    return api;
   }
   function setMaterial(name, override = {}) {
     const next = preset(name, override);
@@ -226,7 +321,8 @@ export function createLiquidSurface(THREE, options = {}) {
     uniforms.uFoamColor.value.set(next.foam);
     uniforms.uRoughness.value = next.roughness;
     uniforms.uOpacity.value = next.opacity;
-    uniforms.uMaterialType.value = { water: 0, lava: 1, honey: 2, oil: 3 }[name] ?? 0;
+    uniforms.uMaterialType.value = next.typeId ?? 0;
+    uniforms.uImpulseDamping.value = next.damping ?? 2.0;
     shader.transparent = next.opacity < 1;
     shader.depthWrite = next.opacity >= 1;
     return api;
@@ -238,7 +334,7 @@ export function createLiquidSurface(THREE, options = {}) {
     return detail;
   }
   function dispose() { geometry.dispose(); shader.dispose(); }
-  const api = { mesh, geometry, material: shader, uniforms, update, setMaterial, setQuality, dispose };
+  const api = { mesh, geometry, material: shader, uniforms, update, impulse, setMaterial, setQuality, dispose };
   return api;
 }
 
@@ -248,19 +344,29 @@ export function createLiquidSurface(THREE, options = {}) {
 const DEPOSIT_VERTEX_SHADER = `
   varying vec2 flowUV;
   varying vec2 lavaState;
+  varying vec3 vWorldPos;
   attribute vec2 deposit;
   void main() {
     flowUV = uv;
     lavaState = deposit;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vWorldPos = world.xyz;
+    gl_Position = projectionMatrix * viewMatrix * world;
   }`;
 
 const LAVA_DEPOSIT_FRAGMENT_SHADER = `
   uniform float time;
   uniform float fluidity;
   uniform float threshold;
+  uniform vec3 uSurfaceColor;
+  uniform vec3 uDeepColor;
+  uniform vec3 uFoamColor;
+  uniform float uIsIncandescent;
+  uniform float uUsePalette;
+  uniform float uOpacity;
   varying vec2 flowUV;
   varying vec2 lavaState;
+  varying vec3 vWorldPos;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) {
     vec2 i = floor(p), f = fract(p);
@@ -272,13 +378,26 @@ const LAVA_DEPOSIT_FRAGMENT_SHADER = `
     if (lavaState.x < threshold) discard;
     float heatLevel = clamp(lavaState.y, 0.0, 1.0);
     vec2 p = flowUV * 1.8;
-    p.y -= time * 0.16 * heatLevel * fluidity;
+    p.y -= time * 0.16 * max(0.25, heatLevel) * fluidity;
     float n = noise(p + noise(p * 0.45) * 2.5);
     float cracks = 1.0 - smoothstep(0.025, 0.12, abs(n - 0.5));
     float heat = heatLevel * (0.25 + cracks * 0.75);
-    vec3 crust = mix(vec3(0.012, 0.014, 0.016), vec3(0.045, 0.038, 0.035), n);
-    vec3 molten = mix(vec3(0.9, 0.065, 0.005), vec3(1.8, 0.65, 0.06), heat);
-    gl_FragColor = vec4(mix(crust, molten, smoothstep(0.15, 0.8, heat)), 1.0);
+    if (uUsePalette < 0.5) {
+      vec3 crust = mix(vec3(0.012, 0.014, 0.016), vec3(0.045, 0.038, 0.035), n);
+      vec3 molten = mix(vec3(0.9, 0.065, 0.005), vec3(1.8, 0.65, 0.06), heat);
+      gl_FragColor = vec4(mix(crust, molten, smoothstep(0.15, 0.8, heat)), 1.0);
+    } else if (uIsIncandescent > 0.5) {
+      vec3 crust = mix(uDeepColor * 0.45, vec3(0.055, 0.032, 0.03), n);
+      vec3 molten = mix(uSurfaceColor * 1.15, uSurfaceColor * 1.55 + uFoamColor * 0.45, heat);
+      gl_FragColor = vec4(mix(crust, molten, smoothstep(0.14, 0.82, heat)), 1.0);
+    } else {
+      float depthFactor = clamp(lavaState.x * 2.6, 0.0, 1.0);
+      float ripple = noise(flowUV * 4.5 - vec2(0.0, time * (0.3 + fluidity * 1.4)));
+      float sheen = smoothstep(0.55, 0.92, ripple) * 0.32 + smoothstep(0.0, 0.06, lavaState.x) * 0.12;
+      vec3 body = mix(uSurfaceColor, uDeepColor, depthFactor * 0.72);
+      vec3 col = mix(body, uFoamColor, sheen);
+      gl_FragColor = vec4(col, clamp(uOpacity, 0.5, 1.0));
+    }
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`;
@@ -312,14 +431,24 @@ export function createDepthFieldMesh(THREE, field, options = {}) {
   const indices = new Uint32Array((cols - 1) * (rows - 1) * 6);
   geometry.setIndex(new THREE.BufferAttribute(indices, 1).setUsage(THREE.DynamicDrawUsage));
   geometry.setDrawRange(0, 0);
+  const initFluid = options.fluid ? preset(options.fluid) : preset('lava');
+  const usePalette = options.fluid ? 1.0 : 0.0;
+  const isIncandescent = options.fluid ? ((normalizeMaterialName(options.fluid) === 'lava' || normalizeMaterialName(options.fluid) === 'magma') ? 1.0 : 0.0) : 1.0;
   const uniforms = {
     time: { value: 0 },
     fluidity: { value: field.fluidity },
-    threshold: { value: threshold }
+    threshold: { value: threshold },
+    uSurfaceColor: { value: new THREE.Color(initFluid.surface) },
+    uDeepColor: { value: new THREE.Color(initFluid.deep) },
+    uFoamColor: { value: new THREE.Color(initFluid.foam) },
+    uIsIncandescent: { value: isIncandescent },
+    uUsePalette: { value: usePalette },
+    uOpacity: { value: initFluid.opacity ?? 0.92 }
   };
   const material = options.material || new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     uniforms,
+    transparent: usePalette > 0.5 && (initFluid.opacity ?? 1) < 1,
     vertexShader: DEPOSIT_VERTEX_SHADER,
     fragmentShader: LAVA_DEPOSIT_FRAGMENT_SHADER
   });
@@ -327,6 +456,21 @@ export function createDepthFieldMesh(THREE, field, options = {}) {
   mesh.frustumCulled = false;
   mesh.visible = false;
 
+  function setFluidPalette(name, override = {}) {
+    const key = normalizeMaterialName(name);
+    const next = preset(key, override);
+    uniforms.uUsePalette.value = 1.0;
+    uniforms.uSurfaceColor.value.set(next.surface);
+    uniforms.uDeepColor.value.set(next.deep);
+    uniforms.uFoamColor.value.set(next.foam);
+    uniforms.uIsIncandescent.value = (key === 'lava' || key === 'magma') ? 1.0 : 0.0;
+    uniforms.uOpacity.value = next.opacity ?? 0.92;
+    if (!options.material) {
+      material.transparent = (next.opacity ?? 1) < 1;
+      material.needsUpdate = true;
+    }
+    return api;
+  }
   function setGround(groundAt) {
     for (let i = 0; i < count; i++) ground[i] = groundAt(positions[i * 3], positions[i * 3 + 2]);
     return api;
@@ -356,7 +500,7 @@ export function createDepthFieldMesh(THREE, field, options = {}) {
   }
   function update(deltaSeconds = 1 / 60) { uniforms.time.value += Math.max(0, deltaSeconds); return api; }
   function dispose() { geometry.dispose(); if (!options.material) material.dispose(); }
-  const api = { mesh, geometry, material, uniforms, setGround, sync, update, dispose };
+  const api = { mesh, geometry, material, uniforms, setFluidPalette, setGround, sync, update, dispose };
   if (options.groundAt) setGround(options.groundAt);
   return api;
 }
