@@ -252,10 +252,11 @@ test('no rest in the library overlaps a note held by another voice', () => {
     engine.engrave(m, 800, false);
     m.staves.forEach((st, si) => st.bars.forEach((bar, bi) => bar.events.forEach((r) => {
       if (r.kind !== 'rest' || r.hidden || r.whole) return;
+      const hh = r.base >= 2 ? 1.5 : r.base >= 1 ? 3 : r.base >= 0.5 ? 2 : 3;
       bar.events.forEach((n) => {
         if (n.kind !== 'note' || n.grace || n.voice === r.voice) return;
         if (n.start >= r.start + r.dur - 1e-6 || n.start + n.dur <= r.start + 1e-6) return;
-        if (n.lo - 1 <= r.restStep + 3 && n.hi + 1 >= r.restStep - 3) clashes.push(`${id} staff ${si + 1} bar ${bi + 1}`);
+        if (n.lo - 1 <= r.restStep + hh && n.hi + 1 >= r.restStep - hh) clashes.push(`${id} staff ${si + 1} bar ${bi + 1}`);
       });
     })));
   });

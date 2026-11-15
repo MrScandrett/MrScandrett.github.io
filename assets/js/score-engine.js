@@ -484,19 +484,23 @@
         // (e.g. a quarter rest over a dotted-half bass note): push it clear of that note.
         bar.events.forEach(function (rest) {
           if (rest.kind !== 'rest' || rest.hidden || rest.whole) return;
-          var up = rest.restStep >= 4;
-          // Moving clear of one note can land on a third voice's note, so repeat until nothing overlaps.
-          for (var pass = 0; pass < 8; pass++) {
-            var lo = rest.restStep - 3, hi = rest.restStep + 3, low = Infinity, high = -Infinity;
-            bar.events.forEach(function (n) {
-              if (n.kind !== 'note' || n.grace || n.voice === rest.voice) return;
-              if (n.start >= rest.start + rest.dur - EPS || n.start + n.dur <= rest.start + EPS) return;
-              // pad for dots, ledger lines and seconds beside the head
-              if (n.lo - 1 > hi || n.hi + 1 < lo) return;
-              low = Math.min(low, n.lo); high = Math.max(high, n.hi);
-            });
-            if (high < low) break;
-            rest.restStep = up ? Math.max(rest.restStep, high + 5) : Math.min(rest.restStep, low - 5);
+          var home = rest.restStep, up = home >= 4;
+          // Half-height of the glyph in steps: half rest 1.5, quarter 3, eighth 2, shorter 3.
+          var hh = rest.base >= 2 ? 1.5 : rest.base >= 1 ? 3 : rest.base >= 0.5 ? 2 : 3;
+          var others = bar.events.filter(function (n) {
+            return n.kind === 'note' && !n.grace && n.voice !== rest.voice &&
+              n.start < rest.start + rest.dur - EPS && n.start + n.dur > rest.start + EPS;
+          });
+          if (!others.length) return;
+          function free(s) {
+            return others.every(function (n) { return n.lo - 1 > s + hh || n.hi + 1 < s - hh; });
+          }
+          // Nearest clear height, trying the rest's own side first, so a crowded passage
+          // tucks it into a gap instead of sending it far off the staff.
+          for (var d = 0; d <= 24; d++) {
+            var tries = up ? [home + d, home - d] : [home - d, home + d];
+            var hit = tries.filter(free)[0];
+            if (hit !== undefined) { rest.restStep = hit; break; }
           }
         });
         bar.beams = [];
