@@ -7,9 +7,12 @@
    - Circle: the modes separate exactly into R(r)·cos nθ / sin nθ. Each n is a 1-D
      Rayleigh–Ritz problem on the annulus b ≤ r ≤ a, with the bolt (radius b)
      clamped exactly (R = R' = 0 at r = b).
-   - Square: 2-D Rayleigh–Ritz with orthonormal Legendre products. Every stiffness
-     entry is a product of 1-D integrals, so assembly is exact and fast. The bolt is
-     a stiff penalty on w over its footprint.
+   - Square: the bolted square plate uses polar Rayleigh–Ritz (`polarRitz` /
+     `squareBoltedModes`) with Legendre radial basis functions `u² L_k(2u − 1)`
+     over `b ≤ r ≤ ρ(θ)`, clamping `w = ∂w/∂r = 0` at the bolt circle `r = b`
+     exactly and splitting into the square's five symmetry classes (`A1`, `B1`,
+     `A2`, `B2`, `E`). A separate 2-D orthonormal Legendre solver (`freeSquareModes`)
+     provides the unbolted reference check against Leissa's published values.
 
    Results are checked in tests/cymatics-plate.test.mjs against the exact Bessel
    solution of the free circular plate and Leissa's free square plate values.
@@ -19,11 +22,11 @@
    λ = ω² ρh s⁴ / D, where s is the half-side or radius. */
 
 export const MATERIALS = {
-  steel:    { label: 'Steel',          E: 200e9, rho: 7850, nu: 0.29, color: '#a7adb5' },
-  aluminum: { label: 'Aluminium',      E: 69e9,  rho: 2700, nu: 0.33, color: '#cfd5dc' },
-  brass:    { label: 'Brass',          E: 105e9, rho: 8500, nu: 0.34, color: '#c9a24a' },
-  glass:    { label: 'Glass (soda-lime)', E: 70e9, rho: 2500, nu: 0.22, color: '#9fc9c4' },
-  acrylic:  { label: 'Acrylic',        E: 3.2e9, rho: 1180, nu: 0.37, color: '#d9e8f2' }
+  steel:    { label: 'Steel',             E: 200e9, rho: 7850, nu: 0.29, defaultQ: 500, color: '#a7adb5' },
+  aluminum: { label: 'Aluminium',         E: 69e9,  rho: 2700, nu: 0.33, defaultQ: 450, color: '#cfd5dc' },
+  brass:    { label: 'Brass',             E: 105e9, rho: 8500, nu: 0.34, defaultQ: 400, color: '#c9a24a' },
+  glass:    { label: 'Glass (soda-lime)', E: 70e9,  rho: 2500, nu: 0.22, defaultQ: 300, color: '#9fc9c4' },
+  acrylic:  { label: 'Acrylic',           E: 3.2e9, rho: 1180, nu: 0.37, defaultQ: 40,  color: '#d9e8f2' }
 };
 
 export const G = 9.80665;
@@ -671,4 +674,33 @@ export function rmsDisplacement(plate, q) {
   let s = 0;
   for (const [re, im] of q) s += re * re + im * im;
   return Math.sqrt(s / (plate.rhoH * plate.area));
+}
+
+/* Subharmonic Faraday capillary-gravity wavenumber k (1/m) at ω_F = ω/2:
+   solves (ω/2)² = (g k + (σ/ρ_w) k³) tanh(k h_w) via safeguarded Newton–Raphson.
+   σ = 0.0728 N/m and ρ_w = 1000 kg/m³ for clean water at ~20 °C. */
+export function faradayWavenumber(omega, hWater = 0.0015) {
+  if (!(omega > 0) || !Number.isFinite(omega) || !(hWater > 0)) return 0;
+  const wf = omega * 0.5;
+  const target = wf * wf;
+  const sigRho = 0.0728 / 1000;
+  const evalF = k => {
+    const u = G * k + sigRho * k * k * k;
+    const t = Math.tanh(k * hWater);
+    const du = G + 3 * sigRho * k * k;
+    const dt = hWater * (1 - t * t);
+    return [u * t - target, du * t + u * dt];
+  };
+  let lo = 0, hi = Math.max(1e-3, Math.cbrt(target / sigRho));
+  while (evalF(hi)[0] <= 0) hi *= 2;
+  let k = 0.5 * (lo + hi);
+  for (let i = 0; i < 40; i++) {
+    const [f, df] = evalF(k);
+    if (Math.abs(f) <= 1e-12 * target) break;
+    if (f < 0) lo = k; else hi = k;
+    const next = df > 0 ? k - f / df : 0.5 * (lo + hi);
+    k = next > lo && next < hi ? next : 0.5 * (lo + hi);
+    if (Math.abs(hi - lo) <= 1e-12 * k) break;
+  }
+  return k;
 }

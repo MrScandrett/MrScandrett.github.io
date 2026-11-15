@@ -21,3 +21,7 @@ Impromptu: 3143/3143 notes, zero missing or extra, using --offset 9 for
 the source's three silent MIDI lead-in bars. Six duration differences are
 held same-pitch notes overlapping between voices; preserve the written ties.
 The one-beat pickup and source key changes are retained.
+
+Five additional complete settings (four songs and the G-flat Impromptu), including
+archived editions, scope notes and reproducible MIDI verification, are documented
+in [additions/README.md](additions/README.md).

@@ -7,6 +7,9 @@
   let allowed = [];
   const $ = id => document.getElementById('bv-' + id);
   const work = $('work'), mode = $('mode'), staff = $('staff'), voice = $('voice'), octave = $('octave');
+  const soloOption=document.createElement('option');soloOption.value='guitar-solo';soloOption.textContent='Guitar · solo study with source bass';
+  mode.querySelector('option[value="guitar"]').before(soloOption);
+  mode.querySelector('option[value="piano"]').textContent='Piano · solo score / reduction';
   const host = $('score'), tab = $('tab'), note = $('note');
   const script = document.currentScript.src;
   let library, player, current;
@@ -141,16 +144,19 @@
     const header = table.createTHead().insertRow(); ['Bar','Chord','Guitar frets','Bass note'].forEach(text => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = text; header.append(th); });
     chords.forEach((chord,i) => { const row = table.insertRow(); [i+1,chord,shapes[chord],chord === 'D' ? 'D3 · A string fret 5' : 'A2 · open A string'].forEach(value => { row.insertCell().textContent = value; }); }); tab.append(table);
   }
+  function resultNeedsPianoReduction(src) {
+    return !(src.instrument === 'piano' && (src.staves.length <= 2 || src.staves.every(st => /^(Right|Left) hand/i.test(st.label || ''))));
+  }
   function update() {
     if (!library) return;
     if (player) player.destroy(); player = null;
     host.after(tab);
     host.replaceChildren(); tab.replaceChildren();
-    const src = source(), m = mode.value, fullGuitar = m === 'guitar' && (composer === 'francisco-tarrega' || !!src.guitarArrangement), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
+    const src = source(), m = mode.value, fullGuitar = ['guitar','guitar-solo'].includes(m) && (composer === 'francisco-tarrega' || !!src.guitarArrangement || (m === 'guitar-solo' && src.instrument === 'pluck')), isolated = !fullGuitar && !['original','piano','chords'].includes(m);
     pianoControls.hidden = m !== 'piano';
     violinControls.hidden = !['melody','violin'].includes(m);
     violinPosition.disabled = !violinShow.checked;
-    staff.disabled = !isolated && m !== 'piano'; voice.disabled = staff.disabled;
+    staff.disabled = !isolated && (m !== 'piano' || !resultNeedsPianoReduction(src)); voice.disabled = staff.disabled;
     octave.disabled = !isolated;
     let result = ComposerArrangement.arrange(src,{mode:fullGuitar && !src.guitarArrangement ? 'original' : m,staff:staff.value,voice:voice.value,octave:octave.value,id:composer}), message;
     if (fullGuitar) {
@@ -158,7 +164,9 @@
     } else if (m === 'original' || m === 'chords') {
       message = 'Source scoring preserved. Recorded instruments load when you press Play; unsupported sounds use synthesis. Use the part controls to isolate voices.';
     } else if (m === 'piano') {
-      message = src.staves.length <= 2 ? 'Source notes played on piano. Review hand division and register before performing.' : 'Two-part piano study: selected upper voice and a source bass. Inner voices are omitted; redistribute large stretches before performing.';
+      message = result.arrangementNote || 'Complete solo-piano scoring preserved, including all voices and hand assignments. Source difficulty is unchanged; review fingering and stretches before performing.';
+    } else if (m === 'guitar-solo') {
+      message = result.arrangementNote;
     } else {
       message = 'Extracted ' + result.staves[0].label + ', voice ' + (+voice.value + 1) + '. Chords become ' + (m === 'bass' ? 'their lowest' : 'their highest') + ' note; this is a source line, not an automatic melody analysis.';
       if (m === 'alto' || m === 'tenor') message += ' Written ' + (m === 'alto' ? 'E♭ alto' : 'B♭ tenor') + ' part; audio sounds at concert pitch. Check register and breathing.';
@@ -176,25 +184,27 @@
     const chordOption = [...mode.options].find(o => o.value === 'chords');
     chordOption.disabled = work.value !== 'beethoven-ode-to-joy';
     mode.querySelector('option[value="guitar"]').textContent = src.guitarArrangement ? 'Guitar · solo arrangement with bass and harmony' : composer === 'francisco-tarrega' ? 'Guitar · complete tablature' : 'Guitar · melody tablature';
-    result.subtitle = src.guitarArrangement && m === 'guitar' ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (['alto','tenor'].includes(m) ? ' · written saxophone pitch' : '');
+    result.subtitle = src.guitarArrangement && ['guitar','guitar-solo'].includes(m) ? result.subtitle : mode.selectedOptions[0].textContent + ' · ' + (src.subtitle || '') + (['alto','tenor'].includes(m) ? ' · written saxophone pitch' : '');
     if (fullGuitar) {
       // Guitar notation reads one octave above sounding pitch.
       result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
       result.playbackTranspose = -12;
       result.tablature = { ...result.tablature, pitchShift: -12, tuning: [64,59,55,50,45,work.value === 'tarrega-capricho-arabe' ? 38 : 40], label: work.value === 'tarrega-capricho-arabe' ? 'Drop D · D–A–D–G–B–e' : 'Standard · E–A–D–G–B–e' };
     }
-    if (!fullGuitar && (m === 'guitar' || m === 'bass')) {
+    if (!fullGuitar && ['guitar','guitar-solo','bass'].includes(m)) {
       const bass = m === 'bass';
       // Extracted lines are in concert pitch. Guitar and bass notation both
       // read an octave higher; keep playback and fret assignment sounding as before.
       result.staves.forEach(st => (st.voices || [st]).forEach(v => { v.notes = ComposerArrangement.transpose(v.notes,12,7,0); }));
       result.playbackTranspose = -12;
       result.tablature = {
+        ...result.tablature,
         pitchShift: -12,
         tuning: bass ? [43,38,33,28] : [64,59,55,50,45,40],
         label: bass ? 'Bass · G–D–A–E (high to low)' : 'Guitar · e–B–G–D–A–E (high to low)'
       };
-      message += ' Notation reads one octave above sounding pitch. Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review; this selected voice is not a complete solo arrangement.';
+      message += ' Notation reads one octave above sounding pitch. Notation and tablature share each line and follow playback together. Numbers are frets; 0 means an open string; × marks a note outside the available strings or frets. Use the Octave control to adjust the register. Suggested fingerings need player review.';
+      if(m === 'guitar')message += ' This selected voice is not a complete solo arrangement.';
     }
     if (m === 'piano') pianoGuide(result);
     current = result; note.textContent = message;

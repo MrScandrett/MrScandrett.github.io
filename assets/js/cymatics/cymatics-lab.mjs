@@ -1,10 +1,10 @@
 /* Cymatics lesson: the interactive Chladni plate.
-   Physics lives in plate-physics.mjs (modes, drive, ring-up) and granular.mjs
-   (sand / powder hopping). This file wires them to the page: controls, the
-   top-down canvas, the response curve, the mode browser and the lazy 3D view. */
+   Physics lives in plate-physics.mjs (modes, drive, ring-up, Faraday waves)
+   and granular.mjs (sand / powder hopping, spatial-hash separation). This file
+   wires them to the page: controls, the top-down canvas, the response curve,
+   the mode browser and the lazy 3D view. */
 
-import { Engine, Bodies, Body, Composite } from '../../vendor/matter-bundle.min.js';
-import { MATERIALS, buildPlate, modalForces, relaxAmplitude, steadyAmplitude, rmsDisplacement, G } from './plate-physics.mjs';
+import { MATERIALS, buildPlate, modalForces, relaxAmplitude, steadyAmplitude, rmsDisplacement, faradayWavenumber, G } from './plate-physics.mjs';
 import { GrainBed, sampleField } from './granular.mjs';
 
 const $ = id => document.getElementById(id);
@@ -15,7 +15,7 @@ const S = {
   shape: 'square', material: 'steel', size: 0.24, thickness: 0.0008, Q: 500,
   drive: 'driver', driverG: 0.5, bowForce: 0.3, bow: { x: 1, y: 0.42 },
   f: 0, muted: false, sweeping: false, sweepDir: 1,
-  medium: 'sand', air: true, speed: 1, view: '2d', overlay: false
+  medium: 'sand', air: true, speed: 1, view: '3d', overlay: false
 };
 
 let plate = null, amps = [], forces = null, forcesKey = '';
@@ -52,6 +52,7 @@ function rebuildPlate({ keepFrequency = true } = {}) {
     updatePlateNote();
     setFrequency(S.f);
     if (three) three.rebuild();
+    else if (S.view === '3d') init3D();
     solving = false; solvingEl.hidden = true;
   }, 30);
 }
@@ -102,9 +103,8 @@ function excitableModes() {
 
 /* ── Medium on the plate ──────────────────────────────────────── */
 
-const MATTER_RADIUS = { sand: 0.8, powder: 0.55 }; // mm: each dot stands for a pinch of grains
-const COUNT = { sand: 1500, powder: 1500, slime: 480 };
-const matterEngine = Engine.create({ gravity: { x: 0, y: 0 }, positionIterations: 4, velocityIterations: 2 });
+const MATTER_RADIUS = { sand: 0.68, powder: 0.48 }; // mm: each dot stands for a pinch of grains
+const COUNT = { sand: 3000, powder: 3000, slime: 560 };
 
 function spawn(rng) {
   for (;;) {
@@ -114,36 +114,22 @@ function spawn(rng) {
 }
 
 function resetMedium() {
-  Composite.clear(matterEngine.world, false);
   bed = null; slime = [];
   if (S.medium === 'sand' || S.medium === 'powder') {
     bed = new GrainBed({ count: COUNT[S.medium], kind: S.medium, inside: (x, y) => plate.inside(x, y), spawn });
-    const mm = plate.s * 1000;
-    for (const g of bed.grains) {
-      g.body = Bodies.circle(g.x * mm, g.y * mm, MATTER_RADIUS[S.medium], { frictionAir: 1, restitution: 0, friction: 0, slop: 0.02 });
-      Composite.add(matterEngine.world, g.body);
-    }
   } else if (S.medium === 'slime') {
-    slime = Array.from({ length: COUNT.slime }, () => { const [x, y] = spawn(Math.random); return { x, y, spike: 0 }; });
+    slime = Array.from({ length: COUNT.slime }, () => {
+      const [x, y] = spawn(Math.random);
+      return { x, y, spike: 0, rad: 0.75 + 0.55 * Math.random(), ang: Math.random() * Math.PI * 2 };
+    });
   }
 }
 
-/* Resting grains can't overlap: a quick Matter.js pass pushes them apart, so a
-   nodal line's width reflects how much sand is on it. Airborne grains skip it. */
+/* Resting grains can't overlap: a fast spatial-hash pass pushes them apart
+   preferentially along nodal contours, so nodal line width reflects grain count. */
 function separateGrains() {
-  const mm = plate.s * 1000;
-  for (const g of bed.grains) {
-    const p = bed.pose(g);
-    g.body.collisionFilter.mask = g.airborne ? 0 : 0xFFFFFFFF;
-    Body.setPosition(g.body, { x: p.x * mm, y: p.y * mm });
-    Body.setVelocity(g.body, { x: 0, y: 0 });
-  }
-  Engine.update(matterEngine, 1000 / 60);
-  for (const g of bed.grains) {
-    if (g.airborne) continue;
-    const nx = g.body.position.x / mm, ny = g.body.position.y / mm;
-    if (plate.inside(nx, ny)) { g.x = nx; g.y = ny; }
-  }
+  const minDist = (2 * MATTER_RADIUS[S.medium] / 1000) / plate.s;
+  bed.separate(minDist, field);
 }
 
 function stepSlime(dt) {
@@ -151,14 +137,17 @@ function stepSlime(dt) {
   for (const p of slime) {
     sampleField(field, p.x, p.y, smp);
     const gamma = omega * omega * smp.A / G;
-    const target = gamma > 3 ? Math.min(1, (gamma - 3) / 40) : 0;
+    const target = gamma > 3 ? Math.min(1, (gamma - 3) / 36) : 0;
     p.spike += (target - p.spike) * (target > p.spike ? 0.35 : 0.08);
-    if (p.spike < 0.05 && gamma > 1) {
+    if (p.spike < 0.06 && gamma > 0.6) {
       const gm = Math.hypot(smp.gx, smp.gy) || 1, mob = Math.min(1, gamma / 30) * dt;
-      p.x += -smp.gx / gm * 0.05 * mob + (Math.random() * 2 - 1) * 0.04 * mob;
-      p.y += -smp.gy / gm * 0.05 * mob + (Math.random() * 2 - 1) * 0.04 * mob;
+      p.x += -smp.gx / gm * 0.045 * mob + (Math.random() * 2 - 1) * 0.03 * mob;
+      p.y += -smp.gy / gm * 0.045 * mob + (Math.random() * 2 - 1) * 0.03 * mob;
     }
-    if (!plate.inside(p.x, p.y)) { const [x, y] = spawn(Math.random); p.x = x; p.y = y; p.spike = 0; }
+    if (!plate.inside(p.x, p.y) || Math.hypot(p.x, p.y) < plate.bolt * 1.35) {
+      const [x, y] = spawn(Math.random);
+      p.x = x; p.y = y; p.spike = 0;
+    }
   }
 }
 
@@ -393,19 +382,38 @@ function drawFRF() {
 
 const canvas2d = $('cy-canvas2d'), ctx = canvas2d.getContext('2d');
 const off = document.createElement('canvas'), offCtx = off.getContext('2d');
-let offImg = null;
+let offImg = null, sheenTmp = null;
+const waterCanvas = document.createElement('canvas'), waterCtx = waterCanvas.getContext('2d');
+const W_RES = 320;
+let waterImg = null;
+const waterMacro = new Float32Array(W_RES * W_RES);
+const waterCap = new Float32Array(W_RES * W_RES);
+const waterAmp = new Float32Array(W_RES * W_RES);
+const PILE_N = 112;
+const pileCanvas = document.createElement('canvas'), pileCtx = pileCanvas.getContext('2d');
+pileCanvas.width = pileCanvas.height = PILE_N;
+const pileImg = pileCtx.createImageData(PILE_N, PILE_N);
+const pileBuf = new Float32Array(PILE_N * PILE_N), pileTmp = new Float32Array(PILE_N * PILE_N);
+const plateCache = document.createElement('canvas'), plateCacheCtx = plateCache.getContext('2d');
+let plateCacheKey = '';
+let cachedFaradayF = -1, cachedFaradayK = 0;
 let layout = { cx: 0, cy: 0, half: 1 };
 
-function plateFill(c, cx, cy, half) {
-  const mat = MATERIALS[S.material];
-  const grad = c.createRadialGradient(cx - half * 0.3, cy - half * 0.4, half * 0.1, cx, cy, half * 1.5);
-  grad.addColorStop(0, shade(mat.color, 0.15));
-  grad.addColorStop(1, shade(mat.color, -0.45));
-  return grad;
+function getFaradayK(omega) {
+  if (S.f !== cachedFaradayF) {
+    cachedFaradayF = S.f;
+    cachedFaradayK = faradayWavenumber(omega, 0.0015);
+  }
+  return cachedFaradayK;
+}
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
 function shade(hex, amt) {
-  const n = parseInt(hex.slice(1), 16), ch = [n >> 16, (n >> 8) & 255, n & 255];
+  const ch = hexToRgb(hex);
   return 'rgb(' + ch.map(v => Math.round(amt >= 0 ? v + (255 - v) * amt : v * (1 + amt))).join(',') + ')';
 }
 
@@ -415,22 +423,265 @@ function plateOutline(c, cx, cy, half) {
   else c.rect(cx - half, cy - half, half * 2, half * 2);
 }
 
-function drawField(kind) {
+function ensurePlateSurface(half, dpr) {
+  const size = Math.max(64, Math.round(half * 2 * dpr));
+  const key = S.shape + ':' + S.material + ':' + size;
+  if (key === plateCacheKey) return;
+  plateCacheKey = key;
+  plateCache.width = plateCache.height = size;
+  const c = plateCacheCtx, cx = size * 0.5, cy = size * 0.5, r = size * 0.5;
+  const mat = MATERIALS[S.material];
+  const clear = S.material === 'glass' || S.material === 'acrylic';
+
+  c.save();
+  plateOutline(c, cx, cy, r);
+  c.clip();
+
+  if (clear) {
+    // Optical bench visible faintly behind translucent glass/acrylic
+    c.fillStyle = '#111824';
+    c.fillRect(0, 0, size, size);
+    c.strokeStyle = 'rgba(148,163,184,0.08)';
+    c.lineWidth = Math.max(1, size / 240);
+    const step = size / 10;
+    c.beginPath();
+    for (let g = step; g < size; g += step) { c.moveTo(g, 0); c.lineTo(g, size); c.moveTo(0, g); c.lineTo(size, g); }
+    c.stroke();
+
+    const tint = S.material === 'glass' ? 'rgba(130, 196, 188, ' : 'rgba(205, 226, 244, ';
+    const g = c.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.08, cx, cy, r * 1.45);
+    g.addColorStop(0, tint + '0.32)');
+    g.addColorStop(0.65, tint + '0.18)');
+    g.addColorStop(1, tint + '0.34)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, size, size);
+
+    // Subtle specular reflection sweep across glass/acrylic
+    const spec = c.createLinearGradient(0, 0, size, size);
+    spec.addColorStop(0, 'rgba(255,255,255,0.16)');
+    spec.addColorStop(0.35, 'rgba(255,255,255,0.03)');
+    spec.addColorStop(0.65, 'rgba(255,255,255,0)');
+    spec.addColorStop(1, 'rgba(255,255,255,0.08)');
+    c.fillStyle = spec;
+    c.fillRect(0, 0, size, size);
+  } else {
+    const grad = c.createRadialGradient(cx - r * 0.32, cy - r * 0.38, r * 0.08, cx, cy, r * 1.5);
+    grad.addColorStop(0, shade(mat.color, 0.24));
+    grad.addColorStop(0.55, shade(mat.color, -0.06));
+    grad.addColorStop(1, shade(mat.color, -0.42));
+    c.fillStyle = grad;
+    c.fillRect(0, 0, size, size);
+
+    // Anisotropic brushed-metal specular band
+    const sheen = c.createLinearGradient(0, size * 0.15, size, size * 0.85);
+    sheen.addColorStop(0, 'rgba(255,255,255,0)');
+    sheen.addColorStop(0.42, 'rgba(255,255,255,0.09)');
+    sheen.addColorStop(0.52, 'rgba(255,255,255,0.14)');
+    sheen.addColorStop(0.65, 'rgba(255,255,255,0)');
+    c.fillStyle = sheen;
+    c.fillRect(0, 0, size, size);
+
+    // Deterministic brushed metal micro-grain lines
+    let seed = 1337;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const streaks = 260;
+    c.lineWidth = Math.max(0.75, size / 420);
+    for (let i = 0; i < streaks; i++) {
+      const y = rnd() * size;
+      const x0 = rnd() * size * 0.7;
+      const len = size * (0.18 + 0.55 * rnd());
+      c.strokeStyle = rnd() > 0.5 ? 'rgba(255,255,255,0.032)' : 'rgba(0,0,0,0.036)';
+      c.beginPath();
+      c.moveTo(x0, y);
+      c.lineTo(x0 + len, y + (rnd() - 0.5) * 1.5);
+      c.stroke();
+    }
+  }
+
+  // Chamfered rim highlight / bevel
+  c.lineWidth = Math.max(2, size * 0.012);
+  if (S.shape === 'circle') {
+    const rim = c.createLinearGradient(0, 0, size, size);
+    rim.addColorStop(0, clear ? 'rgba(210,245,240,0.5)' : 'rgba(255,255,255,0.34)');
+    rim.addColorStop(0.5, 'rgba(255,255,255,0.08)');
+    rim.addColorStop(1, 'rgba(0,0,0,0.45)');
+    c.strokeStyle = rim;
+    c.beginPath(); c.arc(cx, cy, r - c.lineWidth * 0.5, 0, Math.PI * 2); c.stroke();
+  } else {
+    c.strokeStyle = clear ? 'rgba(210,245,240,0.45)' : 'rgba(255,255,255,0.28)';
+    c.beginPath(); c.moveTo(0, size); c.lineTo(0, 0); c.lineTo(size, 0); c.stroke();
+    c.strokeStyle = 'rgba(0,0,0,0.42)';
+    c.beginPath(); c.moveTo(size, 0); c.lineTo(size, size); c.lineTo(0, size); c.stroke();
+  }
+  c.restore();
+}
+
+function drawSheenAndOverlay() {
+  const N = plate.N;
+  if (!offImg || off.width !== N) {
+    off.width = off.height = N;
+    offImg = offCtx.createImageData(N, N);
+    sheenTmp = new Float32Array(N * N);
+  }
+  const d = offImg.data, omega = 2 * Math.PI * S.f;
+  const cp = Math.cos(phase), sp = Math.sin(phase);
+  const showSheen = peakA > 0 && peakGamma > 0.05;
+  const sheenGain = showSheen ? Math.min(1, Math.sqrt(peakGamma / 4)) : 0;
+  if (showSheen) {
+    for (let k = 0; k < N * N; k++) sheenTmp[k] = (field.re[k] * cp - field.im[k] * sp) / peakA;
+  }
+  for (let gy = 0; gy < N; gy++) {
+    const ym = gy > 0 ? gy - 1 : 0, yp = gy < N - 1 ? gy + 1 : N - 1;
+    for (let gx = 0; gx < N; gx++) {
+      const k = gy * N + gx, o = k * 4;
+      if (!mask[k]) { d[o + 3] = 0; continue; }
+      let r = 0, g = 0, b = 0, a = 0;
+      if (showSheen) {
+        const xm = gx > 0 ? gx - 1 : 0, xp = gx < N - 1 ? gx + 1 : N - 1;
+        const sx = sheenTmp[gy * N + xp] - sheenTmp[gy * N + xm];
+        const sy = sheenTmp[yp * N + gx] - sheenTmp[ym * N + gx];
+        const s = (-0.6 * sx - 0.7 * sy) * 0.85 * sheenGain;
+        if (s > 0.005) { r = 255; g = 255; b = 255; a = Math.min(38, s * 110); }
+        else if (s < -0.005) { r = 0; g = 0; b = 0; a = Math.min(34, -s * 100); }
+      }
+      if (S.overlay && omega * omega * Math.hypot(field.re[k], field.im[k]) < G) {
+        const oa = 95 / 255, ia = a / 255, outA = oa + ia * (1 - oa);
+        r = (34 * oa + r * ia * (1 - oa)) / outA;
+        g = (211 * oa + g * ia * (1 - oa)) / outA;
+        b = (238 * oa + b * ia * (1 - oa)) / outA;
+        a = outA * 255;
+      }
+      d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = a;
+    }
+  }
+  offCtx.putImageData(offImg, 0, 0);
+}
+
+function drawWater() {
+  if (!waterImg) {
+    waterCanvas.width = waterCanvas.height = W_RES;
+    waterImg = waterCtx.createImageData(W_RES, W_RES);
+  }
+  const N = plate.N, s = plate.s, omega = 2 * Math.PI * S.f;
+  const cp = Math.cos(phase), sp = Math.sin(phase), cpHalf = Math.cos(phase * 0.5);
+  const k = getFaradayK(omega);
+  const pxPhys = (2 * s) / W_RES, kNyq = Math.PI / pxPhys;
+  const visFactor = k <= 0.45 * kNyq ? 1 : Math.max(0, 1 - (k - 0.45 * kNyq) / (0.35 * kNyq));
+  const threshold = 1.8 + 0.002 * S.f;
+  const visGain = peakA > 0 ? Math.min(1, Math.max(peakGamma / 0.25, peakA / 5e-6)) : 0;
+  const activeFaraday = !S.muted && visFactor > 0 && k > 0;
+  // Rotate capillary axes 18 deg off grid axes to prevent raster Moiré while preserving lattice symmetry
+  const c1 = 0.95106, s1 = 0.30902, dCos = 0.70711;
+  const isCircle = S.shape === 'circle';
+  const denom = Math.max(1.5, 0.35 * threshold + 0.07 * peakGamma);
+
+  for (let gy = 0; gy < W_RES; gy++) {
+    const y = -1 + 2 * gy / (W_RES - 1);
+    const fy = (gy / (W_RES - 1)) * (N - 1);
+    const j0 = Math.min(N - 2, Math.floor(fy)), ty = fy - j0;
+    const ym = y * s;
+    for (let gx = 0; gx < W_RES; gx++) {
+      const idx = gy * W_RES + gx;
+      const x = -1 + 2 * gx / (W_RES - 1);
+      if (isCircle && x * x + y * y > 1) {
+        waterMacro[idx] = 0; waterCap[idx] = 0; waterAmp[idx] = -1;
+        continue;
+      }
+      const fx = (gx / (W_RES - 1)) * (N - 1);
+      const i0 = Math.min(N - 2, Math.floor(fx)), tx = fx - i0;
+      const k00 = j0 * N + i0;
+      const re = (field.re[k00] * (1 - tx) + field.re[k00 + 1] * tx) * (1 - ty)
+               + (field.re[k00 + N] * (1 - tx) + field.re[k00 + N + 1] * tx) * ty;
+      const im = (field.im[k00] * (1 - tx) + field.im[k00 + 1] * tx) * (1 - ty)
+               + (field.im[k00 + N] * (1 - tx) + field.im[k00 + N + 1] * tx) * ty;
+      const amp = Math.hypot(re, im);
+      const relAmp = peakA > 0 ? (amp / peakA) * visGain : 0;
+      const wInst = re * cp - im * sp;
+      const wNorm = peakA > 0 ? (wInst / peakA) * visGain : 0;
+      waterMacro[idx] = wNorm;
+      waterAmp[idx] = relAmp;
+
+      let cH = 0;
+      if (activeFaraday) {
+        const gamma = omega * omega * amp / G;
+        if (gamma > threshold) {
+          const onset = Math.min(1, Math.sqrt((gamma - threshold) / denom));
+          const rippleScale = Math.min(1, 1.55 / Math.max(0.35, k * pxPhys));
+          const fAmp = 1.05 * visFactor * rippleScale * onset * (0.30 + 0.70 * relAmp);
+          const xm = x * s, xr = xm * c1 - ym * s1, yr = xm * s1 + ym * c1;
+          const d1 = (xr + yr) * dCos, d2 = (xr - yr) * dCos;
+          const warp = wNorm * 0.45;
+          let pat = 0.25 * (Math.cos(k * xr + warp) + Math.cos(k * yr + warp) + Math.cos(k * d1) + Math.cos(k * d2));
+          if (isCircle) {
+            pat = 0.60 * pat + 0.40 * Math.cos(k * Math.hypot(xm, ym) - warp * 0.8);
+          }
+          // Subharmonic f/2 oscillation + weak nonlinear Stokes rectification so steep crests stay faintly visible at zero-crossing
+          cH = fAmp * (pat * cpHalf + 0.22 * (pat * pat - 0.32));
+        }
+      }
+      waterCap[idx] = cH;
+    }
+  }
+
+  // Normalize key & rim half-vectors for overhead studio ring/softbox lighting
+  const h1Len = Math.hypot(-0.42, -0.52, 1.35), h1x = -0.42 / h1Len, h1y = -0.52 / h1Len, h1z = 1.35 / h1Len;
+  const h2Len = Math.hypot(0.52, 0.44, 1.25), h2x = 0.52 / h2Len, h2y = 0.44 / h2Len, h2z = 1.25 / h2Len;
+  const d = waterImg.data;
+
+  for (let gy = 0; gy < W_RES; gy++) {
+    for (let gx = 0; gx < W_RES; gx++) {
+      const idx = gy * W_RES + gx, o = idx * 4;
+      const env = waterAmp[idx];
+      if (env < 0) { d[o + 3] = 0; continue; }
+
+      // Neumann boundary stencil: fall back to center cell outside circular free edge
+      const okL = gx > 0 && waterAmp[idx - 1] >= 0;
+      const okR = gx < W_RES - 1 && waterAmp[idx + 1] >= 0;
+      const okU = gy > 0 && waterAmp[idx - W_RES] >= 0;
+      const okD = gy < W_RES - 1 && waterAmp[idx + W_RES] >= 0;
+      const mC = waterMacro[idx], cC = waterCap[idx];
+      const mL = okL ? waterMacro[idx - 1] : mC, mR = okR ? waterMacro[idx + 1] : mC;
+      const mU = okU ? waterMacro[idx - W_RES] : mC, mD = okD ? waterMacro[idx + W_RES] : mC;
+      const cL = okL ? waterCap[idx - 1] : cC, cR = okR ? waterCap[idx + 1] : cC;
+      const cU = okU ? waterCap[idx - W_RES] : cC, cD = okD ? waterCap[idx + W_RES] : cC;
+
+      const hxM = (mR - mL) * 0.5, hyM = (mD - mU) * 0.5;
+      const lapM = mL + mR + mU + mD - 4 * mC;
+      const hxC = (cR - cL) * 0.5, hyC = (cD - cU) * 0.5;
+      const lapC = cL + cR + cU + cD - 4 * cC;
+      const caustic = Math.max(0.62, Math.min(1.70, 1 - lapM * 48 - lapC * 0.44));
+
+      const nx0 = -(hxM * 14 + hxC * 1.15), ny0 = -(hyM * 14 + hyC * 1.15), nz0 = 1;
+      const nLen = Math.hypot(nx0, ny0, nz0);
+      const nx = nx0 / nLen, ny = ny0 / nLen, nz = nz0 / nLen;
+      const ndh1 = Math.max(0, nx * h1x + ny * h1y + nz * h1z);
+      const broadSoftbox = Math.pow(ndh1, 8) * 68;
+      const spec1 = Math.pow(ndh1, 42);
+      const spec2 = Math.pow(Math.max(0, nx * h2x + ny * h2y + nz * h2z), 16);
+      const fres = 0.04 + 0.36 * Math.pow(1 - Math.max(0, nz), 2.4);
+      // Steep ripple walls deflect upward light away from the dark optical bench
+      const slopeShade = 0.68 + 0.32 * nz;
+
+      const crestLift = (0.80 + 0.26 * mC + 0.16 * env) * slopeShade;
+      const hi = spec1 * 215 + broadSoftbox + spec2 * 95 + fres * 82;
+      d[o]     = Math.min(255, 14 * crestLift * caustic + hi);
+      d[o + 1] = Math.min(255, (92 * crestLift + env * 18) * caustic + hi * 1.02);
+      d[o + 2] = Math.min(255, (148 * crestLift + env * 28) * caustic + hi * 1.06);
+      d[o + 3] = Math.min(255, 126 + 40 * Math.max(0, -mC) + env * 28 + (1 - nz) * 75 + hi * 0.65);
+    }
+  }
+  waterCtx.putImageData(waterImg, 0, 0);
+}
+
+function drawQuietOverlay() {
   const N = plate.N;
   if (!offImg || off.width !== N) { off.width = off.height = N; offImg = offCtx.createImageData(N, N); }
   const d = offImg.data, omega = 2 * Math.PI * S.f;
-  const cp = Math.cos(phase), sp = Math.sin(phase);
   for (let k = 0; k < N * N; k++) {
     const o = k * 4;
     if (!mask[k]) { d[o + 3] = 0; continue; }
-    if (kind === 'water') {
-      const v = peakA > 0 ? (field.re[k] * cp - field.im[k] * sp) / peakA : 0;
-      const t = (v + 1) / 2;
-      d[o] = 10 + t * t * 210; d[o + 1] = 40 + t * 170; d[o + 2] = 95 + t * 140; d[o + 3] = 255;
-    } else {
-      const quiet = omega * omega * Math.hypot(field.re[k], field.im[k]) < G;
-      d[o] = 34; d[o + 1] = 211; d[o + 2] = 238; d[o + 3] = quiet ? 95 : 0;
-    }
+    const quiet = omega * omega * Math.hypot(field.re[k], field.im[k]) < G;
+    d[o] = 34; d[o + 1] = 211; d[o + 2] = 238; d[o + 3] = quiet ? 95 : 0;
   }
   offCtx.putImageData(offImg, 0, 0);
 }
@@ -445,15 +696,34 @@ function draw2D() {
   layout = { cx, cy, half };
   const pxPerM = half / plate.s;
 
+  // Optical-bench drop shadow under the suspended plate
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.68)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetX = 4;
+  ctx.shadowOffsetY = 9;
+  plateOutline(ctx, cx, cy, half);
+  ctx.fillStyle = '#0b0e14';
+  ctx.fill();
+  ctx.restore();
+
+  ensurePlateSurface(half, dpr);
+
   ctx.save();
   plateOutline(ctx, cx, cy, half); ctx.clip();
   if (S.medium === 'water') {
-    drawField('water');
+    ctx.drawImage(plateCache, cx - half, cy - half, half * 2, half * 2);
+    drawWater();
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(off, cx - half, cy - half, half * 2, half * 2);
+    ctx.drawImage(waterCanvas, cx - half, cy - half, half * 2, half * 2);
+    if (S.overlay) { drawQuietOverlay(); ctx.drawImage(off, cx - half, cy - half, half * 2, half * 2); }
   } else {
-    ctx.fillStyle = plateFill(ctx, cx, cy, half); ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
-    if (S.overlay) { drawField('quiet'); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, cx - half, cy - half, half * 2, half * 2); }
+    ctx.drawImage(plateCache, cx - half, cy - half, half * 2, half * 2);
+    if (S.overlay || (peakA > 0 && peakGamma > 0.05)) {
+      drawSheenAndOverlay();
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(off, cx - half, cy - half, half * 2, half * 2);
+    }
     if (bed) drawGrains(cx, cy, half, pxPerM);
     else drawSlime(cx, cy, half);
   }
@@ -461,55 +731,272 @@ function draw2D() {
 
   plateOutline(ctx, cx, cy, half);
   ctx.strokeStyle = 'rgba(148,163,184,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
-  // the bolt
-  ctx.beginPath(); ctx.arc(cx, cy, Math.max(3, plate.bolt * half), 0, Math.PI * 2);
-  ctx.fillStyle = '#1e293b'; ctx.fill(); ctx.strokeStyle = 'rgba(226,232,240,0.75)'; ctx.lineWidth = 1; ctx.stroke();
+  drawBolt(cx, cy, half);
   if (S.drive === 'bow') drawBow(cx, cy, half);
   drawScaleBar(W, H, pxPerM);
 }
 
-function drawGrains(cx, cy, half, pxPerM) {
-  const r = Math.max(1, MATTER_RADIUS[S.medium] / 1000 * pxPerM);
-  const color = S.medium === 'sand' ? '#eadbad' : '#fff4c2';
-  ctx.fillStyle = color;
+function drawBolt(cx, cy, half) {
+  const br = Math.max(4, plate.bolt * half);
+  // Machined washer with drop shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, br * 1.45, 0, Math.PI * 2);
+  const wg = ctx.createRadialGradient(cx - br * 0.4, cy - br * 0.4, br * 0.2, cx, cy, br * 1.45);
+  wg.addColorStop(0, '#cbd5e1'); wg.addColorStop(0.65, '#64748b'); wg.addColorStop(1, '#334155');
+  ctx.fillStyle = wg; ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(226,232,240,0.45)'; ctx.lineWidth = 0.8; ctx.stroke();
+
+  // Chamfered hex cap head
   ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3 + 0.26;
+    const hx = cx + Math.cos(a) * br, hy = cy + Math.sin(a) * br;
+    i ? ctx.lineTo(hx, hy) : ctx.moveTo(hx, hy);
+  }
+  ctx.closePath();
+  const hg = ctx.createLinearGradient(cx - br, cy - br, cx + br, cy + br);
+  hg.addColorStop(0, '#94a3b8'); hg.addColorStop(0.5, '#475569'); hg.addColorStop(1, '#1e293b');
+  ctx.fillStyle = hg; ctx.fill();
+  ctx.strokeStyle = 'rgba(241,245,249,0.55)'; ctx.lineWidth = 0.9; ctx.stroke();
+
+  // Recessed hex socket
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3 + 0.26;
+    const hx = cx + Math.cos(a) * br * 0.5, hy = cy + Math.sin(a) * br * 0.5;
+    i ? ctx.lineTo(hx, hy) : ctx.moveTo(hx, hy);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#0f172a'; ctx.fill();
+}
+
+function drawPileRelief(cx, cy, half) {
+  pileBuf.fill(0);
+  const pm = PILE_N - 1;
+  for (const g of bed.grains) {
+    if (g.airborne) continue;
+    const fx = (g.x + 1) * 0.5 * pm, fy = (g.y + 1) * 0.5 * pm;
+    const i0 = Math.max(0, Math.min(PILE_N - 2, Math.floor(fx))), j0 = Math.max(0, Math.min(PILE_N - 2, Math.floor(fy)));
+    const tx = fx - i0, ty = fy - j0, idx = j0 * PILE_N + i0;
+    pileBuf[idx] += (1 - tx) * (1 - ty);
+    pileBuf[idx + 1] += tx * (1 - ty);
+    pileBuf[idx + PILE_N] += (1 - tx) * ty;
+    pileBuf[idx + PILE_N + 1] += tx * ty;
+  }
+  // Separable 3-tap blur for smooth sand ridges / velvety powder dunes
+  for (let y = 0; y < PILE_N; y++) {
+    const row = y * PILE_N;
+    for (let x = 0; x < PILE_N; x++) {
+      const xm = x > 0 ? x - 1 : 0, xp = x < pm ? x + 1 : pm;
+      pileTmp[row + x] = 0.25 * pileBuf[row + xm] + 0.5 * pileBuf[row + x] + 0.25 * pileBuf[row + xp];
+    }
+  }
+  for (let y = 0; y < PILE_N; y++) {
+    const ym = (y > 0 ? y - 1 : 0) * PILE_N, yc = y * PILE_N, yp = (y < pm ? y + 1 : pm) * PILE_N;
+    for (let x = 0; x < PILE_N; x++) {
+      pileBuf[yc + x] = 0.25 * pileTmp[ym + x] + 0.5 * pileTmp[yc + x] + 0.25 * pileTmp[yp + x];
+    }
+  }
+  const d = pileImg.data, isPowder = S.medium === 'powder';
+  const br = isPowder ? 246 : 214, bg = isPowder ? 234 : 190, bb = isPowder ? 178 : 138;
+  const thresh = isPowder ? 0.07 : 0.14;
+  const alphaGain = isPowder ? 0.44 : 0.28, maxAlpha = isPowder ? 0.88 : 0.64;
+  for (let y = 0; y < PILE_N; y++) {
+    const ym = (y > 0 ? y - 1 : 0) * PILE_N, yc = y * PILE_N, yp = (y < pm ? y + 1 : pm) * PILE_N;
+    for (let x = 0; x < PILE_N; x++) {
+      const idx = yc + x, o = idx * 4, h = pileBuf[idx];
+      if (h <= thresh) { d[o + 3] = 0; continue; }
+      const xm = x > 0 ? x - 1 : 0, xp = x < pm ? x + 1 : pm;
+      const slope = (pileBuf[yc + xm] - pileBuf[yc + xp]) + (pileBuf[ym + x] - pileBuf[yp + x]);
+      const lit = 1 + Math.max(-0.35, Math.min(0.35, slope * 0.55));
+      d[o] = Math.min(255, br * lit);
+      d[o + 1] = Math.min(255, bg * lit);
+      d[o + 2] = Math.min(255, bb * lit);
+      d[o + 3] = Math.min(maxAlpha, (h - thresh) * alphaGain) * 255;
+    }
+  }
+  pileCtx.putImageData(pileImg, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(pileCanvas, cx - half, cy - half, half * 2, half * 2);
+}
+
+const SAND_TONES = ['#cbb07a', '#dfc798', '#ede0be', '#faf0d6'];
+const POWDER_TONES = ['#efe09c', '#fbf2c6'];
+
+function drawGrains(cx, cy, half, pxPerM) {
+  drawPileRelief(cx, cy, half);
+  const isPowder = S.medium === 'powder';
+  const baseR = Math.max(isPowder ? 0.7 : 0.9, MATTER_RADIUS[S.medium] / 1000 * pxPerM);
+  const tones = isPowder ? POWDER_TONES : SAND_TONES;
   const flying = [];
+  const buckets = tones.map(() => []);
+  const glints = [];
+
   for (const g of bed.grains) {
     if (g.airborne) { flying.push(g); continue; }
-    const x = cx + g.x * half, y = cy + g.y * half;
-    ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+    const bi = Math.min(tones.length - 1, Math.floor(g.tone * tones.length));
+    buckets[bi].push(g);
+    if (!isPowder && g.glint > 0.88) glints.push(g);
   }
-  ctx.fill();
-  // airborne grains: shadow where they'll land under, grain lifted by its real height
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  ctx.beginPath();
-  const poses = flying.map(g => bed.pose(g));
-  for (const p of poses) { const x = cx + p.x * half, y = cy + p.y * half; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2); }
-  ctx.fill();
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  for (const p of poses) { const x = cx + p.x * half, y = cy + p.y * half - p.z * pxPerM; ctx.moveTo(x + r * 1.1, y); ctx.arc(x, y, r * 1.1, 0, Math.PI * 2); }
-  ctx.fill();
+
+  for (let b = 0; b < tones.length; b++) {
+    ctx.fillStyle = tones[b];
+    ctx.beginPath();
+    for (const g of buckets[b]) {
+      const r = baseR * (isPowder ? 0.85 : 1) * g.rScale;
+      const x = cx + g.x * half, y = cy + g.y * half;
+      ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+  if (glints.length) {
+    ctx.fillStyle = 'rgba(255, 253, 245, 0.85)';
+    ctx.beginPath();
+    for (const g of glints) {
+      const r = baseR * 0.45 * g.rScale;
+      const x = cx + g.x * half - r * 0.4, y = cy + g.y * half - r * 0.4;
+      ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+
+  if (flying.length) {
+    const poses = flying.map(g => ({ p: bed.pose(g), r: baseR * g.rScale, tone: g.tone }));
+    // Cast shadows on the plate directly under each hopping grain
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    ctx.beginPath();
+    for (const { p, r } of poses) {
+      const x = cx + p.x * half + p.z * pxPerM * 0.25, y = cy + p.y * half + p.z * pxPerM * 0.35;
+      ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    // Airborne grains lifted above the plate
+    ctx.fillStyle = isPowder ? '#fcf5d4' : '#f4e8c6';
+    ctx.beginPath();
+    for (const { p, r } of poses) {
+      const liftR = r * (1.08 + Math.min(0.4, p.z * 200));
+      const x = cx + p.x * half, y = cy + p.y * half - p.z * pxPerM;
+      ctx.moveTo(x + liftR, y); ctx.arc(x, y, liftR, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
 }
 
 function drawSlime(cx, cy, half) {
-  ctx.shadowColor = '#a3e635';
+  // Continuous creamy cornstarch suspension puddle across the plate
+  const puddleAlpha = S.overlay ? 0.5 : 0.86;
+  ctx.save();
+  ctx.beginPath();
+  if (S.shape === 'circle') ctx.arc(cx, cy, half * 0.94, 0, Math.PI * 2);
+  else ctx.roundRect(cx - half * 0.92, cy - half * 0.92, half * 1.84, half * 1.84, half * 0.14);
+  const poolGrad = ctx.createRadialGradient(cx - half * 0.25, cy - half * 0.3, half * 0.08, cx, cy, half);
+  poolGrad.addColorStop(0, 'rgba(248, 244, 234, ' + puddleAlpha + ')');
+  poolGrad.addColorStop(0.75, 'rgba(232, 224, 206, ' + puddleAlpha + ')');
+  poolGrad.addColorStop(1, 'rgba(206, 196, 174, ' + puddleAlpha + ')');
+  ctx.fillStyle = poolGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(182, 170, 145, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.clip();
+
+  // Cohesive height-field relief so jammed oobleck ridges merge seamlessly out of the pool
+  pileBuf.fill(0);
+  const pm = PILE_N - 1;
   for (const p of slime) {
-    ctx.shadowBlur = 3 + p.spike * 10;
-    ctx.fillStyle = 'rgba(163,230,53,' + (0.45 + p.spike * 0.5).toFixed(2) + ')';
-    ctx.beginPath(); ctx.arc(cx + p.x * half, cy + p.y * half, 2.2 + p.spike * 5, 0, Math.PI * 2); ctx.fill();
+    const fx = (p.x + 1) * 0.5 * pm, fy = (p.y + 1) * 0.5 * pm;
+    const i0 = Math.max(0, Math.min(PILE_N - 2, Math.floor(fx))), j0 = Math.max(0, Math.min(PILE_N - 2, Math.floor(fy)));
+    const tx = fx - i0, ty = fy - j0, idx = j0 * PILE_N + i0;
+    const w = (0.45 + p.spike * 2.4) * p.rad;
+    pileBuf[idx] += w * (1 - tx) * (1 - ty);
+    pileBuf[idx + 1] += w * tx * (1 - ty);
+    pileBuf[idx + PILE_N] += w * (1 - tx) * ty;
+    pileBuf[idx + PILE_N + 1] += w * tx * ty;
   }
-  ctx.shadowBlur = 0;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let y = 0; y < PILE_N; y++) {
+      const row = y * PILE_N;
+      for (let x = 0; x < PILE_N; x++) {
+        const xm = x > 0 ? x - 1 : 0, xp = x < pm ? x + 1 : pm;
+        pileTmp[row + x] = 0.25 * pileBuf[row + xm] + 0.5 * pileBuf[row + x] + 0.25 * pileBuf[row + xp];
+      }
+    }
+    for (let y = 0; y < PILE_N; y++) {
+      const ym = (y > 0 ? y - 1 : 0) * PILE_N, yc = y * PILE_N, yp = (y < pm ? y + 1 : pm) * PILE_N;
+      for (let x = 0; x < PILE_N; x++) {
+        pileBuf[yc + x] = 0.25 * pileTmp[ym + x] + 0.5 * pileTmp[yc + x] + 0.25 * pileTmp[yp + x];
+      }
+    }
+  }
+  const d = pileImg.data;
+  for (let y = 0; y < PILE_N; y++) {
+    const ym = (y > 0 ? y - 1 : 0) * PILE_N, yc = y * PILE_N, yp = (y < pm ? y + 1 : pm) * PILE_N;
+    for (let x = 0; x < PILE_N; x++) {
+      const idx = yc + x, o = idx * 4, h = pileBuf[idx];
+      if (h <= 0.04) { d[o + 3] = 0; continue; }
+      const xm = x > 0 ? x - 1 : 0, xp = x < pm ? x + 1 : pm;
+      const sx = pileBuf[yc + xm] - pileBuf[yc + xp], sy = pileBuf[ym + x] - pileBuf[yp + x];
+      const slope = sx + sy;
+      const spec = Math.max(0, slope) > 0.15 ? Math.min(30, (slope - 0.15) * 85) : 0;
+      const lit = 1 + Math.max(-0.22, Math.min(0.16, slope * 0.45));
+      d[o] = Math.min(255, 240 * lit + spec);
+      d[o + 1] = Math.min(255, 234 * lit + spec);
+      d[o + 2] = Math.min(255, 218 * lit + spec);
+      d[o + 3] = Math.min(235, h * 260);
+    }
+  }
+  pileCtx.putImageData(pileImg, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(pileCanvas, cx - half, cy - half, half * 2, half * 2);
+
+  // Subtle wet glossy crests on the highest jammed DST finger tips
+  ctx.fillStyle = 'rgba(255, 253, 246, 0.55)';
+  ctx.beginPath();
+  for (const p of slime) {
+    if (p.spike < 0.35) continue;
+    const tx = cx + p.x * half - p.spike * 2.5, ty = cy + p.y * half - p.spike * 6;
+    const r = (1.6 + p.spike * 2.8) * p.rad;
+    ctx.moveTo(tx + r, ty); ctx.arc(tx, ty, r, 0, Math.PI * 2);
+  }
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawBow(cx, cy, half) {
   const x = cx + S.bow.x * half, y = cy + S.bow.y * half;
   const nx = S.shape === 'circle' ? S.bow.x : (Math.abs(S.bow.x) > Math.abs(S.bow.y) ? Math.sign(S.bow.x) : 0);
   const ny = S.shape === 'circle' ? S.bow.y : (Math.abs(S.bow.x) > Math.abs(S.bow.y) ? 0 : Math.sign(S.bow.y));
-  const tx = -ny, ty = nx, L = 26;
-  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(x - tx * L + nx * 6, y - ty * L + ny * 6); ctx.lineTo(x + tx * L + nx * 6, y + ty * L + ny * 6); ctx.stroke();
-  ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+  const tx = -ny, ty = nx, L = 34;
+  const stroke = S.muted ? 0 : Math.sin(phase) * 7;
+  const bx = x + tx * stroke, by = y + ty * stroke;
+
+  // Horsehair ribbon tangent to plate edge
+  const hx0 = bx - tx * L + nx * 3.5, hy0 = by - ty * L + ny * 3.5;
+  const hx1 = bx + tx * L + nx * 3.5, hy1 = by + ty * L + ny * 3.5;
+  ctx.strokeStyle = '#f4efe2'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(hx0, hy0); ctx.lineTo(hx1, hy1); ctx.stroke();
+
+  // Arched Pernambuco wooden bow stick
+  const sx0 = bx - tx * L + nx * 10, sy0 = by - ty * L + ny * 10;
+  const sx1 = bx + tx * L + nx * 10, sy1 = by + ty * L + ny * 10;
+  const mx = bx + nx * 13.5, my = by + ny * 13.5;
+  ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 3.4;
+  ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.quadraticCurveTo(mx, my, sx1, sy1); ctx.stroke();
+  ctx.strokeStyle = '#a14a24'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.quadraticCurveTo(mx, my, sx1, sy1); ctx.stroke();
+
+  // Ebony frog & silver ferrule at trailing end
+  ctx.fillStyle = '#1c1917';
+  ctx.beginPath(); ctx.arc(sx0, sy0, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.arc((sx0 + hx0) * 0.5, (sy0 + hy0) * 0.5, 2, 0, Math.PI * 2); ctx.fill();
+
+  // Rosin contact point
+  ctx.fillStyle = 'rgba(255, 244, 214, 0.92)';
+  ctx.beginPath(); ctx.arc(x, y, 2.8, 0, Math.PI * 2); ctx.fill();
   ctx.lineCap = 'butt';
 }
 
@@ -531,11 +1018,19 @@ let three = null;
 async function init3D() {
   if (three) { three.resize(); return; }
   const canvas = $('cy-canvas3d');
+  const fallback2D = () => {
+    $('cy-webgl-fallback').hidden = false;
+    S.view = '2d';
+    pressGroup(['cy-view-2d-btn', 'cy-view-3d-btn'], 'cy-view-2d-btn');
+    canvas2d.hidden = false;
+    canvas.hidden = true;
+    $('cy-3d-scale').hidden = true;
+  };
   let mod;
-  try { mod = await import('../../vendor/three-bundle.min.js'); } catch { $('cy-webgl-fallback').hidden = false; return; }
+  try { mod = await import('../../vendor/three-bundle.min.js'); } catch { fallback2D(); return; }
   const { THREE, OrbitControls } = mod;
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); } catch { $('cy-webgl-fallback').hidden = false; return; }
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); } catch { fallback2D(); return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b0e14);
@@ -553,20 +1048,70 @@ async function init3D() {
   const R = 96;
   const geom = new THREE.BufferGeometry();
   const pos = new Float32Array((R + 1) * (R + 1) * 3);
+  const col = new Float32Array((R + 1) * (R + 1) * 3);
   const idx = [];
   for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) { const a = j * (R + 1) + i, b = a + 1, c = a + R + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
   geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geom.setIndex(idx);
-  const plateMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, metalness: 0.6, roughness: 0.35 });
-  const waterMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0x2a7fa8, metalness: 0.1, roughness: 0.15 });
+  const plateMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0xffffff, metalness: 0.6, roughness: 0.35, vertexColors: true });
+  const waterMat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, color: 0x247ba0, metalness: 0.18, roughness: 0.06 });
+  const baseCol = new THREE.Color(), quietCol = new THREE.Color(0x22d3ee);
   const mesh = new THREE.Mesh(geom, plateMat);
   scene.add(mesh);
-  const boltMesh = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.12, 24), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }));
-  scene.add(boltMesh);
-  const bowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x4a2a00 }));
+
+  const boltGroup = new THREE.Group();
+  const metalDark = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85, roughness: 0.28 });
+  const metalBright = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 });
+  const socketMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.6 });
+  const washer = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.45, 0.018, 32), metalBright);
+  washer.position.y = 0.009;
+  const hexHead = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.045, 6), metalDark);
+  hexHead.position.y = 0.038;
+  const hexSocket = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.012, 6), socketMat);
+  hexSocket.position.y = 0.056;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.14, 20), metalDark);
+  shaft.position.y = -0.06;
+  boltGroup.add(washer, hexHead, hexSocket, shaft);
+  scene.add(boltGroup);
+
+  // 3D violin bow (local +X = outward radial normal, +Z = plate-edge tangent)
+  const bowMesh = new THREE.Group();
+  const bowInner = new THREE.Group();
+  bowInner.rotation.set(0.18, 0, -0.32);
+  const bowHair = new THREE.Mesh(
+    new THREE.BoxGeometry(0.01, 0.014, 0.72),
+    new THREE.MeshStandardMaterial({ color: 0xf4efe2, roughness: 0.75, metalness: 0.02 })
+  );
+  bowHair.position.set(0.024, 0, 0);
+  const bowStick = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.007, 0.011, 0.76, 10),
+    new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.35, metalness: 0.08 })
+  );
+  bowStick.rotation.x = Math.PI / 2;
+  bowStick.position.set(0.085, 0.022, 0);
+  const bowTip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.068, 0.014, 0.018),
+    new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.35, metalness: 0.08 })
+  );
+  bowTip.position.set(0.055, 0.011, 0.365);
+  const bowFrog = new THREE.Mesh(
+    new THREE.BoxGeometry(0.062, 0.024, 0.075),
+    new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.55, metalness: 0.05 })
+  );
+  bowFrog.position.set(0.055, 0.008, -0.34);
+  const bowFerrule = new THREE.Mesh(
+    new THREE.BoxGeometry(0.022, 0.018, 0.018),
+    metalBright
+  );
+  bowFerrule.position.set(0.032, 0.003, -0.305);
+  bowInner.add(bowHair, bowStick, bowTip, bowFrog, bowFerrule);
+  bowMesh.add(bowInner);
   scene.add(bowMesh);
+
   const ptsGeom = new THREE.BufferGeometry();
-  ptsGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(2000 * 3), 3));
+  const MAX_PTS = Math.max(COUNT.sand, COUNT.powder, COUNT.slime);
+  ptsGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_PTS * 3), 3));
   const ptsMat = new THREE.PointsMaterial({ size: 0.016, color: 0xeadbad, sizeAttenuation: true });
   const points = new THREE.Points(ptsGeom, ptsMat);
   scene.add(points);
@@ -582,11 +1127,12 @@ async function init3D() {
       pos[k * 3] = x; pos[k * 3 + 2] = y;
     }
     const mat = MATERIALS[S.material];
-    plateMat.color.set(mat.color);
+    baseCol.set(mat.color);
+    plateMat.color.setHex(0xffffff);
     const clear = S.material === 'glass' || S.material === 'acrylic';
     plateMat.transparent = clear; plateMat.opacity = clear ? 0.72 : 1;
     plateMat.metalness = clear ? 0.05 : 0.6; plateMat.roughness = clear ? 0.08 : 0.35;
-    boltMesh.scale.set(plate.bolt, 1, plate.bolt);
+    boltGroup.scale.set(plate.bolt, 1, plate.bolt);
     resize();
   }
 
@@ -599,32 +1145,71 @@ async function init3D() {
 
   function frame() {
     const ex = peakA > 0 ? 0.1 / peakA : 0; // world units per metre of displacement (half-size = 1 unit)
-    const cp = Math.cos(phase), sp = Math.sin(phase), N = plate.N;
-    const heightAt = (x, y) => {
+    const cp = Math.cos(phase), sp = Math.sin(phase), cpHalf = Math.cos(phase * 0.5), N = plate.N;
+    const omega = 2 * Math.PI * S.f;
+    const isWater = S.medium === 'water';
+    const kFar = isWater ? getFaradayK(omega) : 0;
+    const kNyq3d = Math.PI / ((2 * plate.s) / R);
+    const vis3d = kFar <= 0.7 * kNyq3d ? 1 : Math.max(0, 1 - (kFar - 0.7 * kNyq3d) / (0.3 * kNyq3d));
+    const threshold = 1.8 + 0.002 * S.f;
+    const activeFaraday = isWater && !S.muted && vis3d > 0 && kFar > 0;
+    const showOverlay = S.overlay;
+
+    const sampleHeightAndAmp = (x, y) => {
       const fx = (x + 1) / 2 * (N - 1), fy = (y + 1) / 2 * (N - 1);
       const i0 = Math.max(0, Math.min(N - 2, Math.floor(fx))), j0 = Math.max(0, Math.min(N - 2, Math.floor(fy)));
       const tx = fx - i0, ty = fy - j0, k = j0 * N + i0;
-      const v = q => field.re[q] * cp - field.im[q] * sp;
-      return ((v(k) * (1 - tx) + v(k + 1) * tx) * (1 - ty) + (v(k + N) * (1 - tx) + v(k + N + 1) * tx) * ty) * ex;
+      const reVal = (field.re[k] * (1 - tx) + field.re[k + 1] * tx) * (1 - ty) + (field.re[k + N] * (1 - tx) + field.re[k + N + 1] * tx) * ty;
+      const imVal = (field.im[k] * (1 - tx) + field.im[k + 1] * tx) * (1 - ty) + (field.im[k + N] * (1 - tx) + field.im[k + N + 1] * tx) * ty;
+      let h = (reVal * cp - imVal * sp) * ex;
+      const amp = Math.hypot(reVal, imVal);
+      if (activeFaraday) {
+        const gamma = omega * omega * amp / G;
+        if (gamma > threshold) {
+          const fAmp = 0.028 * vis3d * Math.min(1, Math.sqrt((gamma - threshold) / 6));
+          h += fAmp * 0.5 * (Math.cos(kFar * x * plate.s) + Math.cos(kFar * y * plate.s)) * cpHalf;
+        }
+      }
+      return { h, amp };
     };
-    for (let k = 0; k < xz.length / 2; k++) pos[k * 3 + 1] = heightAt(xz[k * 2], xz[k * 2 + 1]);
+    const heightAt = (x, y) => sampleHeightAndAmp(x, y).h;
+
+    for (let k = 0; k < xz.length / 2; k++) {
+      const sHA = sampleHeightAndAmp(xz[k * 2], xz[k * 2 + 1]);
+      pos[k * 3 + 1] = sHA.h;
+      const quiet = showOverlay && omega * omega * sHA.amp < G;
+      const t = quiet ? 0.55 : 0;
+      col[k * 3]     = baseCol.r * (1 - t) + quietCol.r * t;
+      col[k * 3 + 1] = baseCol.g * (1 - t) + quietCol.g * t;
+      col[k * 3 + 2] = baseCol.b * (1 - t) + quietCol.b * t;
+    }
     geom.attributes.position.needsUpdate = true;
+    geom.attributes.color.needsUpdate = true;
     geom.computeVertexNormals();
-    mesh.material = S.medium === 'water' ? waterMat : plateMat;
+    mesh.material = isWater ? waterMat : plateMat;
     const Z = S.drive === 'driver' && !S.muted ? driverStroke(S.f) * cp * ex : 0;
-    boltMesh.position.set(0, Z - 0.055, 0);
+    boltGroup.position.set(0, Z, 0);
     bowMesh.visible = S.drive === 'bow';
-    if (bowMesh.visible) bowMesh.position.set(S.bow.x, heightAt(S.bow.x * 0.98, S.bow.y * 0.98) + 0.03, S.bow.y);
+    if (bowMesh.visible) {
+      const nx = S.shape === 'circle' ? S.bow.x : (Math.abs(S.bow.x) > Math.abs(S.bow.y) ? Math.sign(S.bow.x) : 0);
+      const ny = S.shape === 'circle' ? S.bow.y : (Math.abs(S.bow.x) > Math.abs(S.bow.y) ? 0 : Math.sign(S.bow.y));
+      const nLen = Math.hypot(nx, ny) || 1;
+      const ux = nx / nLen, uz = ny / nLen, tx = -uz, tz = ux;
+      const stroke = S.muted ? 0 : Math.sin(phase) * 0.14;
+      bowMesh.position.set(S.bow.x + tx * stroke, heightAt(S.bow.x * 0.98, S.bow.y * 0.98) + 0.015, S.bow.y + tz * stroke);
+      bowMesh.rotation.set(0, Math.atan2(-uz, ux), 0);
+    }
     const p = ptsGeom.attributes.position.array;
     let n = 0;
     if (bed) {
       ptsMat.color.set(S.medium === 'sand' ? 0xeadbad : 0xfff4c2); ptsMat.size = 0.016;
       for (const g of bed.grains) {
         const q = bed.pose(g);
-        p[n * 3] = q.x; p[n * 3 + 1] = heightAt(q.x, q.y) + 0.008 + q.z / plate.s; p[n * 3 + 2] = q.y; n++;
+        const liftZ = peakA > 0 ? 0.45 * Math.tanh(q.z * ex / 0.35) : q.z / plate.s;
+        p[n * 3] = q.x; p[n * 3 + 1] = heightAt(q.x, q.y) + 0.008 + liftZ; p[n * 3 + 2] = q.y; n++;
       }
     } else if (slime.length) {
-      ptsMat.color.set(0xa3e635); ptsMat.size = 0.04;
+      ptsMat.color.set(0xf4efe4); ptsMat.size = 0.045;
       for (const q of slime) { p[n * 3] = q.x; p[n * 3 + 1] = heightAt(q.x, q.y) + 0.01 + q.spike * 0.25; p[n * 3 + 2] = q.y; n++; }
     }
     ptsGeom.setDrawRange(0, n);
@@ -638,6 +1223,7 @@ async function init3D() {
 
   three = { frame, resize, rebuild };
   rebuild();
+  frame();
   window.addEventListener('resize', resize);
 }
 
@@ -681,6 +1267,11 @@ function syncAmpSlider() {
   $('cy-amp-slider').value = v;
   $('cy-amp-label').textContent = S.drive === 'bow' ? 'Bow force' : 'Driver strength (bolt acceleration)';
   $('cy-amp-val').textContent = S.drive === 'bow' ? S.bowForce.toFixed(S.bowForce < 0.1 ? 3 : 2) + ' N' : S.driverG.toFixed(S.driverG < 0.1 ? 3 : 2) + ' g';
+}
+
+function syncQSlider(q) {
+  $('cy-q-slider').value = Math.round(1000 * Math.log(q / 20) / Math.log(100));
+  $('cy-q-val').textContent = q;
 }
 
 function wire() {
@@ -727,7 +1318,12 @@ function wire() {
   for (const [id, shape] of [['cy-shape-square', 'square'], ['cy-shape-circle', 'circle']]) {
     $(id).addEventListener('click', () => { if (S.shape === shape) return; S.shape = shape; pressGroup(shapeIds, id); rebuildPlate({ keepFrequency: false }); });
   }
-  matSel.addEventListener('change', () => { S.material = matSel.value; rebuildPlate(); });
+  matSel.addEventListener('change', () => {
+    S.material = matSel.value;
+    S.Q = MATERIALS[S.material].defaultQ || 500;
+    syncQSlider(S.Q);
+    rebuildPlate();
+  });
   $('cy-size').addEventListener('change', e => { S.size = +e.target.value; rebuildPlate(); });
   $('cy-thick-slider').addEventListener('input', e => {
     S.thickness = +e.target.value / 1e5;
@@ -753,6 +1349,7 @@ function wire() {
   $('cy-view-2d-btn').addEventListener('click', () => {
     S.view = '2d'; pressGroup(['cy-view-2d-btn', 'cy-view-3d-btn'], 'cy-view-2d-btn');
     canvas2d.hidden = false; $('cy-canvas3d').hidden = true; $('cy-3d-scale').hidden = true;
+    $('cy-webgl-fallback').hidden = true;
   });
   $('cy-view-3d-btn').addEventListener('click', () => {
     S.view = '3d'; pressGroup(['cy-view-2d-btn', 'cy-view-3d-btn'], 'cy-view-3d-btn');
@@ -777,11 +1374,21 @@ function wire() {
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { stopSweep(); setFrequency(S.f + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 0.1 : 1)); e.preventDefault(); }
     else if (e.key === 'PageUp' || e.key === 'PageDown') { jumpMode(e.key === 'PageUp' ? 1 : -1); e.preventDefault(); }
   });
+
+  const openDesktopControls = () => {
+    if (window.innerWidth > 900) {
+      const panel = document.querySelector('.ll-panel');
+      if (panel && panel.dataset.llCollapsed === 'true') {
+        document.querySelector('.ll-open-btn')?.click();
+      }
+    }
+  };
+  if (document.readyState === 'loading') window.addEventListener('DOMContentLoaded', openDesktopControls);
+  else setTimeout(openDesktopControls, 0);
 }
 
 wire();
 syncAmpSlider();
-$('cy-q-slider').value = Math.round(1000 * Math.log(S.Q / 20) / Math.log(100));
-$('cy-q-val').textContent = S.Q;
+syncQSlider(S.Q);
 rebuildPlate({ keepFrequency: false });
 SimKit.loop(tick, { el: SimKit.stage(canvas2d, $('cy-canvas3d')), maxDt: 0.05 });

@@ -12,6 +12,20 @@
   var KHAYYAM = 'language-literature/pioneers/omar-khayyam.html';
 
   var LINKS = {
+    'physics/waves-and-sound/sound-and-vibration.html': [
+      ['physics/waves-and-sound/binaural-beats.html', 'Binaural Beats: Two Ears, Two Tones', 'Send a different tone to each ear and compare it with ordinary acoustic beats and a same-tone control.']
+    ],
+    'technical-elements/audio-engineering/cymatics.html': [
+      ['physics/waves-and-sound/physics-of-music.html', 'Physics of Music', 'Harmonics, resonance and tuning: the standing waves on a string that match the ones on a Chladni plate.'],
+      ['physics/waves-and-sound/binaural-beats.html', 'Binaural Beats: Two Ears, Two Tones', 'From sound you can see to sound your brain assembles: compare beats in the air with beats between the ears.']
+    ],
+    'physics/waves-and-sound/physics-of-music.html': [
+      ['technical-elements/audio-engineering/cymatics.html', 'Cymatics: The Geometry of Sound', 'See standing waves and resonant modes made visible in sand, water and slime on a vibrating plate.'],
+      ['physics/waves-and-sound/binaural-beats.html', 'Binaural Beats: Two Ears, Two Tones', 'Take the interference lab further: what happens when each tone goes to a different ear?']
+    ],
+    'life-sciences/human-ear-anatomy.html': [
+      ['physics/waves-and-sound/binaural-beats.html', 'Binaural Beats: Two Ears, Two Tones', 'Put both ears to work: a listening lab on how the brain compares the signals from each side.']
+    ],
     'language-literature/pioneers/arnaut-daniel.html': [[KHAYYAM, 'Omar Khayyam & the Rubáiyát', 'Another poem built on a rule: the AABA rubāʿī, read in three layers from the Persian to FitzGerald, plus a quatrain forge.']],
     'mathematics/algebra/completing-the-square.html': [[KHAYYAM, 'Omar Khayyam: Cubics by Conics', 'Al-Khwarizmi completed the square with geometry; two centuries later Khayyam solved cubics where a parabola meets a circle.']],
     'cosmology/apollo-moon-landing.html': [['computer-science/pioneers/margaret-hamilton.html', 'Margaret Hamilton: Software for the Moon', 'Investigate Apollo guidance software and compare overload recovery policies in a computer workload lab.']],

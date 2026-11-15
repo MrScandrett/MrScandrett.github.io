@@ -1,4 +1,4 @@
-# Ravel: two opening studies from Miroirs
+# Archived Ravel corpus imports
 
 Retrieved 2026-11-12 from DCMLab's Maurice Ravel – Piano Pieces corpus,
 commit `5a97ccee5383a87dc38688733a59dba499ef44d9`:
@@ -7,7 +7,7 @@ https://github.com/DCMLab/ravel_piano/tree/5a97ccee5383a87dc38688733a59dba499ef4
 The two `.mscx` files are unmodified copies from its `MS3/` directory.
 The corpus and these adaptations are **CC BY-NC-SA 4.0**:
 https://creativecommons.org/licenses/by-nc-sa/4.0/ .
-The printed reference is Durand's first edition of Miroirs (1906), archived in
+The printed reference is E. Demets’s first edition of Miroirs (1906), archived in
 the corpus as `PDF/IMSLP918861-PMLP04225-Ravel-M43-Miroirs-FE.pdf`.
 
 Corpus citation requested by the source:
@@ -15,7 +15,16 @@ Hentschel, J., Rammos, Y., Neuwirth, M., & Rohrmeier, M. (2025).
 A corpus and a modular infrastructure for the empirical study of (an)notated
 music. Scientific Data, 12(1), 685. https://doi.org/10.1038/s41597-025-04976-z
 
-## Scope
+## Replacement studies (2026-11-15)
+
+The live catalog now uses separate readings of the historical print: the five
+metered Noctuelles opening bars and a seven-bar Oiseaux reduction with the
+accompaniment entrance. See `../composer-refinements/README.md` and `refine.py`
+there for current scope, sources and verification. The original corpus files
+below remain archived under their original license; they are not relabeled CC0
+or public domain. The following reproduction notes describe the retired imports.
+
+## Archived scope
 
 - `ravel-noctuelles-opening`: bars 1–12, 241 sounding notes.
 - `ravel-oiseaux-opening`: bars 1–3, 22 sounding notes.

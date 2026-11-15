@@ -1,3 +1,10 @@
+> **2026-11-15 rights remediation:** the Nohpets Sugar Plum Fairy edition,
+> its MusicXML/MIDI/PDF, and the derived playable piano/guitar data were removed
+> from the active catalog and current source tree. Explicit arranger permission
+> could not be established. The notes below about that retired edition document
+> historical work only; they are not instructions or permission to redistribute it.
+> Swan Lake and Waltz of the Flowers retain their recorded CC0 source evidence.
+
 # Tchaikovsky ballet favorites
 
 Retrieved 2026-10-29. The `.mxl` files are archived source editions, downloaded
@@ -19,7 +26,7 @@ The complete source piano editions were exported to PDF with MuseScore Studio
 4.6.3 and are in `assets/scores/tchaikovsky/`. They retain their source titles and
 credits; the lesson supplies the edition/license attribution next to each player.
 These PDFs provide the context beyond each excerpt, not orchestral coverage.
-The three small `.mid` files here were independently exported from the extracted
+The retained small `.mid` files here were independently exported from the extracted
 MusicXML passages with MuseScore Studio 4.6.3.
 
 ## Reproduce the import
@@ -31,7 +38,7 @@ Set `LILYPOND` to its **bin directory**, `PYTHON` to the Python with mido, and
 ```bash
 python3 scripts/score-import/prepare-tchaikovsky-hits.py "$OUT"
 export PATH="$LILYPOND:$PATH"
-for name in swan-theme sugar-plum waltz-flowers; do
+for name in swan-theme waltz-flowers; do
   "$LILYPOND/musicxml2ly" -a --npl -o "$OUT/$name/$name.ly" "$OUT/$name/$name.musicxml"
   staves='Right hand,Left hand'
   if [ "$name" = waltz-flowers ]; then
@@ -72,8 +79,8 @@ and checking the additional measures independently.
 
 ### Sugar Plum Fairy: solo guitar adaptation
 
-The `guitarArrangement` on `tchaikovsky-sugar-plum` in `data/score-library.json`
-is a separate classroom adaptation of piano source bars 1–28. The four-bar introduction alternates
+The retired `guitarArrangement` formerly attached to the Sugar Plum entry
+was a separate classroom adaptation of piano source bars 1–28. The four-bar introduction alternates
 open low E bass notes with offbeat chords; the theme enters in bar 5. The original
 piano score remains available. This version follows the lighter texture of the
 user's reference: the original E minor, melody dyads and selective bass in low positions.

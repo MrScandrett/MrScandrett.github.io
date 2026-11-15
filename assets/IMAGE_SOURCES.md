@@ -142,24 +142,24 @@ used by the lesson it names.
 
 ---
 
-## Educational Fair Use (17 U.S.C. § 107)
-*Thumbnail-size, non-monetized, educational use only. All rights remain with original holders.*
+## Original concept illustrations replacing copyrighted previews
 
-These images appear as small lesson tile thumbnails — transformative, non-commercial, illustrative of a specific educational theme, and unlikely to substitute for the original work.
+On 2026-11-15, the film stills and book-cover images formerly listed here were
+removed from the current source tree. The AI lesson now uses original geometric
+teaching illustrations in `assets/images/lessons/story-concepts/`, with CC0
+credits. The asset-level register is that directory's `sources.json`; regenerate
+with `node scripts/rights-remediation/story-art.mjs`.
 
-| File | Description | Rights Holder |
-|------|-------------|---------------|
-| hal9000.png | HAL 9000 (2001: A Space Odyssey) | Turner Entertainment / Warner Bros. |
-| Interstellar.jpg | Interstellar (2014) | Paramount / Warner Bros. |
-| irobot-asimov.jpg | I, Robot (Asimov cover / film) | Doubleday / Sony Pictures |
-| stars-my-destination.jpg | The Stars My Destination (cover) | Alfred Bester estate |
-| theEndofEternity.jpg | The End of Eternity (Asimov cover) | Doubleday / various |
-| wrinkleInTime.jpg | A Wrinkle in Time (cover) | Farrar, Straus & Giroux |
-| HGwellsTimeMachine.jpg | The Time Machine (H.G. Wells) | 1960 film: MGM; book: public domain |
-| endersgame.jpg | Ender's Game (cover / film) | Tor Books / Summit Entertainment |
-| talos-movie.jpg | Talos from Jason and the Argonauts (1963) | Columbia Pictures |
-| talos-movie.png | Talos (alternate crop) | Columbia Pictures |
-| great-day-in-harlem.jpg | Great Day in Harlem (1958) | © Art Kane / Esquire |
+The School of Athens lesson's Harlem section uses an original alphabetical
+musician explorer and links to the Art Kane archive. It does not embed or bundle
+*A Great Day in Harlem*. These replacements do not reproduce the old artwork.
+Historical Git commits may still contain retired files; current-source removal
+is not a purge of Git history.
+
+Other copyrighted study previews, such as the Rube Goldberg examples, have
+separate use-specific notes. Their educational purpose does not by itself settle
+fair use; see `images/lessons/rube-goldberg/gallery/SOURCES.md`. This register does
+not provide blanket copyright clearance.
 
 ---
 
@@ -190,38 +190,29 @@ These images appear as small lesson tile thumbnails — transformative, non-comm
 
 ---
 
-## Electronics Component Photos
-*Component reference photos used in Arduino/electronics lessons. Likely manufacturer documentation or hobby-community public-use images.*
+## Original electronics reference diagrams
 
-| File |
-|------|
-| accelerationgyroscope.jpg, ACTIVEBUZZER.jpeg, AvoidanceModule.jpg, BIGSOUNDANDSMALLSOUNDMODULE.jpg, BreadboardSUpplyModule.jpg, buttoncomponent.jpg, BUTTON.jpg, ceramiccapacitor.jpg, digitaltempmodule.jpg, Diodes.jpg, DS1307MODULE.jpg, electrolyriccapacitor.jpg, flamesensormodule.jpeg, HOWTOSOLDER.jpeg, IREMISSION.jpg, IRRECIEVER.jpeg, JOYSTICKMODULE.jpeg, LASERTRANSMITTORDIODE.jpg, LCDMODULE.jpg, LED7ColorFlash.jpg, LED.jpg, linearhallmodule.jpg, MEMBRANESWITCH.jpeg, METALTOUCH.jpg, OHMSLAW.jpg, OhmTriangleTransposed.png, PASSIVEBUZZER.jpg, photo-interruptermodule.jpg, photoresistor.jpg, photoresistormodule.jpg, PIRsensor.png, "RBG LED module.jpg", RELAYMODULE.jpg, ROTARYENCODER.jpg, SHAKEMODULE.jpg, SMDRGBMODULE.jpg, solderingARMS.jpg, solderingCLEANING.jpg, solderingFUMEextractor.jpg, solderingiron.jpg, solderingWIRE.jpg, TAPMODULE.jpg, tempandhumiditymodule.jpg, tempsensor18b20.png, TILTSWITCHMODULE.jpg, transistor.jpg, TWOCOLORLEDMODULE.jpg, ultrasonicsensor.png, VoltageCurrentResistanceRelationship.jpg, watersensormodule.png |
+The 50 unverified component/tool images formerly listed here were removed from
+the current source tree on 2026-11-15. Active references now point to original
+schematic teaching illustrations under `assets/images/lessons/electronics-reference/`.
+These are concept views, not photographs, scale drawings or pinout diagrams.
+Each lesson figure credits the original ClassroomOS drawing under CC0 1.0 and
+asks learners to verify their actual component and pin labels.
 
-*Source verification recommended for any component that ships to parents or is published in formal curriculum materials.*
+The directory's `sources.json` records every replacement. The drawings are
+regenerated with `node scripts/rights-remediation/electronics-art.mjs`; the
+migration helper is `scripts/rights-remediation/apply-electronics.py`.
 
----
+## Historical unverified-source list
 
-## Source Verification Needed
-*Images in use whose specific source has not yet been confirmed. Likely public domain but not yet traced to a specific Wikimedia/museum record.*
-
-| File | Description |
-|------|-------------|
-| axolotl.jpg | Axolotl photograph |
-| crt.png | CRT monitor |
-| magneticspring.jpg | Magnetic spring illustration |
-| nautilus.jpg | Nautilus shell |
-| perceptron-lab.jpeg | Perceptron diagram |
-| sakura.png | Sakura blossoms |
-| titration.jpg | Lab titration photo |
-| volcano.jpg | Volcano |
-| xochimilco.jpg | Xochimilco, Mexico |
-| xochimilcoMAP.png | Xochimilco map |
-| LOI.png | Letter of Intent |
-| TLI.png | Trans-Lunar Injection diagram |
+The old list named axolotl.jpg, crt.png, magneticspring.jpg, nautilus.jpg,
+perceptron-lab.jpeg, sakura.png, titration.jpg, volcano.jpg, xochimilco.jpg,
+xochimilcoMAP.png, LOI.png and TLI.png. No matching assets were present under
+those filenames during this remediation. This old list is not license evidence
+for any similarly named or newer image. Verify assets individually from their
+specific creator and source records.
 
 ---
-
-*Last updated: 2026-06-02 — MrScandrett.github.io*
 
 ## Pendulum lesson (`assets/lessons/pendulum/`)
 

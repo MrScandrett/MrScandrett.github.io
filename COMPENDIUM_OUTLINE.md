@@ -2,7 +2,7 @@
 
 Status: **draft-for-review**
 
-This metadata-only draft organizes 494 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
+This metadata-only draft organizes 495 public lessons and classifies 17 supporting pages. It does not alter lesson HTML, simulations, or existing lesson artwork.
 
 ## Organizing Principles
 
@@ -108,7 +108,7 @@ Theme: **Foundations** · Accent: `#3157a4` · Secondary: `#1597a8` · 64 lesson
 
 # Volume II — Physics, Chemistry, Matter & Energy
 
-Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 56 lessons
+Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 57 lessons
 
 ## Physics & Physical Systems (PHY)
 
@@ -136,40 +136,41 @@ Theme: **Physical Science** · Accent: `#1f4e79` · Secondary: `#b45f32` · 56 l
 - **PHY-14** — Point Wave — _also indexed in Audio, Lighting & Production Technology_
 - **PHY-15** — Huygens' Principle
 - **PHY-16** — Physics of Music — _also indexed in Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
-- **PHY-17** — Do Atoms Make Music? — _also indexed in Music: Theory, Instruments & Sound_
-- **PHY-18** — The Speed of Light
-- **PHY-19** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
-- **PHY-20** — Seeing Breath in Wi-Fi — _also indexed in Engineering Systems & Electronics_
+- **PHY-17** — Binaural Beats: Two Ears, Two Tones — _also indexed in Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
+- **PHY-18** — Do Atoms Make Music? — _also indexed in Music: Theory, Instruments & Sound_
+- **PHY-19** — The Speed of Light
+- **PHY-20** — Digital Signal Processing — _also indexed in Engineering Systems & Electronics, Audio, Lighting & Production Technology, Music: Theory, Instruments & Sound_
+- **PHY-21** — Seeing Breath in Wi-Fi — _also indexed in Engineering Systems & Electronics_
 
 ### Electricity, Magnetism & Fields
 
-- **PHY-21** — Coulomb's Law
-- **PHY-22** — Van de Graaff Balloon
-- **PHY-23** — Van de Graaff Generator
-- **PHY-24** — Faraday Cage
-- **PHY-25** — The Falling Coil
-- **PHY-26** — Faraday's Law
-- **PHY-27** — James Clerk Maxwell
-- **PHY-28** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
-- **PHY-29** — Cathode Ray Tube
-- **PHY-30** — What Is Electricity?
+- **PHY-22** — Coulomb's Law
+- **PHY-23** — Van de Graaff Balloon
+- **PHY-24** — Van de Graaff Generator
+- **PHY-25** — Faraday Cage
+- **PHY-26** — The Falling Coil
+- **PHY-27** — Faraday's Law
+- **PHY-28** — James Clerk Maxwell
+- **PHY-29** — AC vs. DC Electricity — _also indexed in Engineering Systems & Electronics_
+- **PHY-30** — Cathode Ray Tube
+- **PHY-31** — What Is Electricity?
 
 ### Heat, Matter & Modern Physics
 
-- **PHY-31** — Thermodynamics
-- **PHY-32** — Entropy
-- **PHY-33** — Fundamental Forces
-- **PHY-34** — Electron Microscopes
-- **PHY-35** — Quantum Physics
-- **PHY-36** — The Standard Model of Particle Physics
+- **PHY-32** — Thermodynamics
+- **PHY-33** — Entropy
+- **PHY-34** — Fundamental Forces
+- **PHY-35** — Electron Microscopes
+- **PHY-36** — Quantum Physics
+- **PHY-37** — The Standard Model of Particle Physics
 
 ### People Who Changed Physics
 
-- **PHY-37** — Nikola Tesla
-- **PHY-38** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
-- **PHY-39** — Albert Einstein
-- **PHY-40** — Benjamin Franklin
-- **PHY-41** — The Wright Brothers: Learning to Fly
+- **PHY-38** — Nikola Tesla
+- **PHY-39** — Marie Curie — _also indexed in Chemistry & Chemical Systems_
+- **PHY-40** — Albert Einstein
+- **PHY-41** — Benjamin Franklin
+- **PHY-42** — The Wright Brothers: Learning to Fly
 
 ## Chemistry & Chemical Systems (CHE)
 

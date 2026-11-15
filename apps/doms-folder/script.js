@@ -25,108 +25,28 @@ const cdOverlays = {
 const worldWidth = 2000;
 const worldHeight = 2000;
 
-// =========================
-// SPRITE
-// =========================
-const godzillaImg = new Image();
-godzillaImg.src = "assets/sprites/godzilla.png";
-
-const kongImg = new Image();
-const mothraImg = new Image();
-const rodanImg = new Image();
-const mechaImg = new Image();
-
-// =========================
-// STAND-IN SPRITES
-// If a sprite file is missing, draw a stand-in so the kaiju you unlocked
-// isn't invisible. Add the real PNG to assets/sprites/ and it's used instead.
-// =========================
-const standInSprites = new Map(); // image -> canvas
-
-function spriteFor(img) {
-    if (img.src && img.complete && img.naturalWidth > 0) return img;
-    return standInSprites.get(img) || img;
+// Original creature artwork; legacy internal IDs preserve existing saved unlocks.
+const standInSprites = new Map();
+function creatureImage(name) {
+    const image = new Image();
+    image.src = `assets/sprites/${name}.svg`;
+    const fallback = document.createElement("canvas");
+    fallback.width = fallback.height = 128;
+    const g = fallback.getContext("2d");
+    g.fillStyle = "#63c6a0";
+    g.beginPath(); g.ellipse(64, 70, 38, 30, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#122d37"; g.fillRect(36, 55, 8, 8);
+    standInSprites.set(image, fallback);
+    return image;
 }
-
-function makeStandIn(img, paint) {
-    const build = () => {
-        const c = document.createElement("canvas");
-        c.width = c.height = 128;
-        paint(c.getContext("2d"));
-        standInSprites.set(img, c);
-    };
-    build();
-    img.addEventListener("error", build);
+function spriteFor(image) {
+    return image.complete && image.naturalWidth > 0 ? image : standInSprites.get(image);
 }
-
-// All stand-ins face left, like godzilla.png
-makeStandIn(kongImg, (g) => {
-    g.fillStyle = "#5a3b22";
-    g.beginPath(); g.ellipse(70, 70, 34, 38, 0, 0, Math.PI * 2); g.fill();      // body
-    g.fillRect(30, 50, 16, 62); g.fillRect(92, 50, 16, 62);                      // arms
-    g.fillRect(50, 98, 16, 26); g.fillRect(76, 98, 16, 26);                      // legs
-    g.beginPath(); g.arc(46, 34, 22, 0, Math.PI * 2); g.fill();                  // head
-    g.fillStyle = "#b08a64";
-    g.beginPath(); g.ellipse(40, 42, 13, 10, 0, 0, Math.PI * 2); g.fill();       // face
-    g.beginPath(); g.ellipse(70, 74, 18, 22, 0, 0, Math.PI * 2); g.fill();       // chest
-    g.fillStyle = "#111";
-    g.fillRect(33, 30, 5, 4); g.fillRect(44, 30, 5, 4);                          // eyes
-});
-
-makeStandIn(mothraImg, (g) => {
-    const wing = (sx) => {
-        g.save(); g.translate(64, 60); g.scale(sx, 1);
-        g.fillStyle = "#f0a020";
-        g.beginPath(); g.moveTo(0, -6); g.quadraticCurveTo(70, -60, 60, 10); g.quadraticCurveTo(40, 30, 0, 10); g.fill();
-        g.fillStyle = "#c0501a";
-        g.beginPath(); g.moveTo(0, 10); g.quadraticCurveTo(50, 30, 34, 56); g.quadraticCurveTo(14, 50, 0, 20); g.fill();
-        g.fillStyle = "#2a6fd0";
-        g.beginPath(); g.arc(36, -10, 9, 0, Math.PI * 2); g.fill();
-        g.fillStyle = "#fff3c4";
-        g.beginPath(); g.arc(36, -10, 4, 0, Math.PI * 2); g.fill();
-        g.restore();
-    };
-    wing(1); wing(-1);
-    g.fillStyle = "#6b4a2a";
-    g.beginPath(); g.ellipse(64, 70, 8, 30, 0, 0, Math.PI * 2); g.fill();       // body
-    g.beginPath(); g.arc(64, 38, 9, 0, Math.PI * 2); g.fill();                   // head
-    g.strokeStyle = "#6b4a2a"; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(60, 32); g.lineTo(50, 14); g.moveTo(68, 32); g.lineTo(78, 14); g.stroke();
-});
-
-makeStandIn(rodanImg, (g) => {
-    g.fillStyle = "#8a2f1c";
-    g.beginPath(); g.moveTo(64, 60); g.lineTo(4, 30); g.lineTo(24, 78); g.closePath(); g.fill();   // near wing
-    g.beginPath(); g.moveTo(64, 60); g.lineTo(124, 30); g.lineTo(104, 78); g.closePath(); g.fill(); // far wing
-    g.fillStyle = "#b5462a";
-    g.beginPath(); g.ellipse(66, 70, 14, 26, 0, 0, Math.PI * 2); g.fill();      // body
-    g.beginPath(); g.moveTo(44, 40); g.lineTo(14, 50); g.lineTo(46, 54); g.closePath(); g.fill();   // beak
-    g.beginPath(); g.arc(52, 46, 11, 0, Math.PI * 2); g.fill();                  // head
-    g.beginPath(); g.moveTo(56, 38); g.lineTo(80, 22); g.lineTo(62, 44); g.closePath(); g.fill();   // crest
-    g.fillStyle = "#ffd23a";
-    g.fillRect(46, 42, 4, 4);                                                     // eye
-    g.fillStyle = "#e8c07a";
-    g.fillRect(58, 94, 5, 16); g.fillRect(70, 94, 5, 16);                        // claws
-});
-
-// Mecha Godzilla: the godzilla.png art painted chrome blue
-makeStandIn(mechaImg, (g) => {
-    const paint = () => {
-        g.clearRect(0, 0, 128, 128);
-        g.drawImage(godzillaImg, 0, 0, 128, 128);
-        g.globalCompositeOperation = "source-atop";
-        const steel = g.createLinearGradient(0, 0, 128, 128);
-        steel.addColorStop(0, "rgba(190, 215, 240, 0.75)");
-        steel.addColorStop(1, "rgba(60, 90, 140, 0.75)");
-        g.fillStyle = steel;
-        g.fillRect(0, 0, 128, 128);
-        g.globalCompositeOperation = "source-over";
-        g.fillStyle = "#ff3030";
-        g.fillRect(8, 10, 5, 3);                                                  // glowing eye
-    };
-    if (godzillaImg.complete && godzillaImg.naturalWidth) paint();
-    else godzillaImg.addEventListener("load", paint);
-});
+const godzillaImg = creatureImage("mossback");
+const kongImg = creatureImage("boulderkin");
+const mothraImg = creatureImage("glowfin");
+const rodanImg = creatureImage("emberkite");
+const mechaImg = creatureImage("gearpod");
 
 // =========================
 // ENTITY
@@ -163,7 +83,7 @@ class Entity {
 
         ctx.save();
         ctx.translate(this.x + this.size / 2, this.y - this.z); // Draw sprite higher based on Z
-        
+
         // Thermo Nuclear Effect (Glow)
         if (this.thermoTimer > 0) {
             const pulseFactor = Math.abs(Math.sin(this.thermoTimer * 0.1));
@@ -261,7 +181,7 @@ function createCivilian() {
     const roadOffset = 100;
     const isCar = Math.random() > 0.7;
     const isVertical = Math.random() > 0.5;
-    
+
     let x, y, dirX, dirY;
 
     if (isVertical) {
@@ -478,7 +398,7 @@ function drawEffects() {
                 ctx.globalCompositeOperation = "lighter";
                 const color = e.data.color || "blue";
                 const isRed = color === "orange" || color === "red";
-                
+
                 // Outer glow
                 ctx.shadowBlur = 20;
                 ctx.shadowColor = isRed ? `rgba(255, 50, 0, ${alpha})` : `rgba(0, 100, 255, ${alpha})`;
@@ -502,7 +422,7 @@ function drawEffects() {
                 const cx = owner.x + owner.size / 2;
                 const cy = owner.y + owner.size / 2;
                 const chargeRatio = 1 - (e.timer / e.max);
-                
+
                 ctx.shadowBlur = 15 * chargeRatio;
                 ctx.shadowColor = "cyan";
                 ctx.fillStyle = `rgba(0, 255, 255, ${chargeRatio})`;
@@ -538,7 +458,7 @@ function drawBackground(camX, camY) {
     // Asphalt base
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, worldWidth, worldHeight);
-    
+
     const blockSize = 200;
     const centerX = camX + canvas.width / 2;
     const centerY = camY + canvas.height / 2;
@@ -553,7 +473,7 @@ function drawBackground(camX, camY) {
     ctx.strokeStyle = "#555";
     ctx.lineWidth = 4;
     ctx.setLineDash([20, 20]);
-    
+
     for (let x = startX; x <= endX; x += blockSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -567,7 +487,7 @@ function drawBackground(camX, camY) {
         ctx.stroke();
     }
     ctx.setLineDash([]);
-    
+
     // Draw city blocks
     for (let x = startX - 200; x <= endX; x += blockSize) {
         for (let y = startY - 200; y <= endY; y += blockSize) {
@@ -579,7 +499,7 @@ function drawBackground(camX, camY) {
             const seed = (x * 17 + y * 23);
             const hue = Math.abs(seed) % 360;
             const inset = 25;
-            
+
             // Base Rect
             const bX = x + inset;
             const bY = y + inset;
@@ -602,11 +522,11 @@ function drawBackground(camX, camY) {
             ctx.beginPath(); ctx.moveTo(bX + bW, bY); ctx.lineTo(bX + bW, bY + bH); ctx.lineTo(rX + bW, rY + bH); ctx.lineTo(rX + bW, rY); ctx.fill(); // Right
             ctx.beginPath(); ctx.moveTo(bX + bW, bY + bH); ctx.lineTo(bX, bY + bH); ctx.lineTo(rX, rY + bH); ctx.lineTo(rX + bW, rY + bH); ctx.fill(); // Bottom
             ctx.beginPath(); ctx.moveTo(bX, bY + bH); ctx.lineTo(bX, bY); ctx.lineTo(rX, rY); ctx.lineTo(rX, rY + bH); ctx.fill(); // Left
-            
+
             // Draw Roof (Lighter)
             ctx.fillStyle = `hsl(${hue}, 15%, 25%)`;
             ctx.fillRect(rX, rY, bW, bH);
-            
+
             // Roof Detail
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             if (seed % 2 === 0) {
@@ -730,10 +650,10 @@ function triggerStompLand(attacker) {
     const cx = attacker.x + attacker.size / 2;
     const cy = attacker.y + attacker.size / 2;
     const r = 80;
-    
+
     const hitbox = circleHitbox(cx, cy, r);
     const targets = getTargets(attacker);
-    
+
     addEffect("stomp", { x: cx, y: cy, r }, 15);
     applyDamage(hitbox, attacker, targets, damage, 0);
 
@@ -808,7 +728,7 @@ function fireBeam(attacker) {
     beamTimer = 40; // Shorter duration for regular move
 
     applyDamage(hitbox, attacker, targets, 50, 15); // Reduced damage for regular move
-    
+
     if (attacker.isPlayer) {
         // log.textContent = "Atomic Breath!";
         playSound("laser");
@@ -828,7 +748,7 @@ function applyDamage(hitbox, attacker, targets, damage, knockback) {
         if (target.health > 0 && hitboxCollides(hitbox, target)) {
             target.health -= damage;
             playSound("hit");
-            
+
             if (damage >= 10000) {
                 addFloatingText(target.x + target.size / 2, target.y, "MELTED!", "orange");
             } else {
@@ -1023,7 +943,7 @@ function setupMatch() {
     player.img = stats.img;
     player.x = 200;
     player.y = 200;
-    
+
     projectiles.length = 0;
     effects.length = 0;
     pendingUltimates.length = 0;
@@ -1045,8 +965,8 @@ function setupMatch() {
 }
 
 function updateGCellsUI() {
-    homeGCells.textContent = `Gcells: ${gCells}`;
-    gameGCells.textContent = `Gcells: ${gCells}`;
+    homeGCells.textContent = `Sparks: ${gCells}`;
+    gameGCells.textContent = `Sparks: ${gCells}`;
 }
 
 // =========================
@@ -1061,7 +981,7 @@ function update() {
     }
 
     ctx.save();
-    
+
     // Camera Logic
     let camX = player.x + player.size / 2 - canvas.width / 2;
     let camY = player.y + player.size / 2 - canvas.height / 2;
@@ -1081,13 +1001,13 @@ function update() {
     // Thermo Nuclear Pulse Logic
     if (player.thermoTimer > 0) {
         player.thermoTimer--;
-        
+
         // Pulse Effect every 60 frames (slower cooldown)
         if (player.thermoTimer % 120 === 0) {
-            addEffect("thermoPulse", { 
-                x: player.x + player.size / 2, 
-                y: player.y + player.size / 2, 
-                r: 400 
+            addEffect("thermoPulse", {
+                x: player.x + player.size / 2,
+                y: player.y + player.size / 2,
+                r: 400
             }, 30);
             shakeAmount = 10;
         }
@@ -1143,7 +1063,7 @@ function update() {
             const footY = player.y + player.size - 20;
             const footW = player.size - 30;
             const footH = 20;
-            
+
             if (c.x > footX && c.x < footX + footW && c.y > footY && c.y < footY + footH) {
                 addEffect("splat", { x: c.x, y: c.y }, 20);
                 civilians.splice(i, 1);
@@ -1372,11 +1292,11 @@ function update() {
 // MENU & KAIJU SELECTION
 // =========================
 const kaijuData = {
-    godzilla: { name: "Godzilla", hp: 500, speed: 3, desc: "Balanced", price: 0, img: godzillaImg },
-    kong: { name: "Kong", hp: 700, speed: 2.5, desc: "Tank", price: 500, img: kongImg },
-    mothra: { name: "Mothra", hp: 300, speed: 5, desc: "Speedster", price: 300, img: mothraImg },
-    rodan: { name: "Rodan", hp: 400, speed: 4, desc: "Aerial", price: 100, img: rodanImg },
-    mecha: { name: "Mecha Godzilla", hp: 450, speed: 3.5, desc: "Attacker", price: 1000, img: mechaImg }
+    godzilla: { name: "Mossback", hp: 500, speed: 3, desc: "Balanced", price: 0, img: godzillaImg },
+    kong: { name: "Boulderkin", hp: 700, speed: 2.5, desc: "Tank", price: 500, img: kongImg },
+    mothra: { name: "Glowfin", hp: 300, speed: 5, desc: "Speedster", price: 300, img: mothraImg },
+    rodan: { name: "Emberkite", hp: 400, speed: 4, desc: "Aerial", price: 100, img: rodanImg },
+    mecha: { name: "Gearpod", hp: 450, speed: 3.5, desc: "Attacker", price: 1000, img: mechaImg }
 };
 
 document.getElementById("mode-survival").onclick = () => setGameMode("survival");
@@ -1406,7 +1326,7 @@ function initMenu() {
         const isUnlocked = unlockedKaijus.includes(key);
         const btn = document.createElement("div");
         btn.className = "kaiju-btn";
-        
+
         if (isUnlocked) {
             if (key === selectedKaiju) btn.classList.add("selected");
             btn.innerHTML = `<span>${k.name}</span><span style='font-size:10px; color:#aaa'>${k.desc}</span>`;
@@ -1428,7 +1348,7 @@ function initMenu() {
                     selectedKaiju = key;
                     initMenu(); // Redraw to show unlocked
                 } else {
-                    alert(`Need ${k.price} Gcells to unlock ${k.name}!`);
+                    alert(`Need ${k.price} Sparks to unlock ${k.name}!`);
                 }
             };
         }

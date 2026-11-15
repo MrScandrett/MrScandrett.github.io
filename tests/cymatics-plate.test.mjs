@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   freeCircleExact, circleRadialModes, freeSquareModes, polarRitz, squareBoltedModes, SQUARE_TRUST,
-  buildPlate, modalForces, steadyAmplitude, relaxAmplitude, besselJ, MATERIALS
+  buildPlate, modalForces, steadyAmplitude, relaxAmplitude, besselJ, faradayWavenumber, MATERIALS
 } from '../assets/js/cymatics/plate-physics.mjs';
 import { GrainBed, takeoff, flightTime, driftDistance, G } from '../assets/js/cymatics/granular.mjs';
 
@@ -157,4 +157,41 @@ test('fine powder goes to the antinodes in air and to the nodes in a vacuum (Far
   };
   assert.ok(run(false).node > 0.9, 'vacuum: powder behaves like sand');
   assert.ok(run(true).antinode > 0.7, 'air: streaming carries it to the antinodes');
+});
+
+test('faradayWavenumber solves capillary-gravity dispersion at ω/2', () => {
+  assert.equal(faradayWavenumber(0), 0);
+  const h = 0.0015, sigRho = 0.0728 / 1000;
+  let prevK = 0;
+  for (const f of [50, 200, 1000]) {
+    const omega = 2 * Math.PI * f;
+    const k = faradayWavenumber(omega, h);
+    assert.ok(k > prevK, `k increases with frequency (${f} Hz: ${k})`);
+    const lhs = (omega * 0.5) ** 2;
+    const rhs = (G * k + sigRho * k ** 3) * Math.tanh(k * h);
+    assert.ok(rel(rhs, lhs) < 1e-10, `dispersion residual at ${f} Hz: ${rhs} vs ${lhs}`);
+    prevK = k;
+  }
+});
+
+test('materials define realistic intrinsic defaultQ (viscoelastic acrylic << metals)', () => {
+  for (const [key, m] of Object.entries(MATERIALS)) {
+    assert.ok(Number.isFinite(m.defaultQ) && m.defaultQ > 10, `${key} defaultQ=${m.defaultQ}`);
+  }
+  assert.ok(MATERIALS.acrylic.defaultQ < MATERIALS.steel.defaultQ / 5);
+});
+
+test('GrainBed.separate pushes overlapping resting grains apart while skipping airborne ones', () => {
+  const inside = (x, y) => Math.abs(x) <= 1 && Math.abs(y) <= 1;
+  const bed = new GrainBed({ count: 3, inside, spawn: () => [0, 0], rng: seeded(3) });
+  bed.grains[0].x = 0.5; bed.grains[0].y = 0.1; bed.grains[0].airborne = false;
+  bed.grains[1].x = 0.5; bed.grains[1].y = 0.1; bed.grains[1].airborne = false;
+  bed.grains[2].x = 0.5; bed.grains[2].y = 0.1; bed.grains[2].airborne = true;
+  const field = stripeField(1e-5);
+  for (let i = 0; i < 6; i++) bed.separate(0.02, field);
+  const d01 = Math.hypot(bed.grains[0].x - bed.grains[1].x, bed.grains[0].y - bed.grains[1].y);
+  assert.ok(d01 > 0.015, `resting grains separated: d=${d01}`);
+  assert.ok(inside(bed.grains[0].x, bed.grains[0].y) && inside(bed.grains[1].x, bed.grains[1].y));
+  assert.equal(bed.grains[2].x, 0.5);
+  assert.equal(bed.grains[2].y, 0.1);
 });

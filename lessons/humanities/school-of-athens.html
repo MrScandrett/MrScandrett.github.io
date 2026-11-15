@@ -339,11 +339,39 @@
     }
 
     .harlem-photo {
-      aspect-ratio: 950 / 553;
-      background:
-        linear-gradient(180deg, rgba(18, 24, 31, 0.03), rgba(18, 24, 31, 0.15)),
-        url("../../assets/thumbs/great-day-in-harlem.jpg") center / cover no-repeat;
+      aspect-ratio: auto;
+      min-height: 32rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+      gap: .5rem;
+      padding: 1rem;
+      background: #eaf0f4;
     }
+    #harlem-photo .athens-hotspot {
+      position: static;
+      width: auto;
+      height: auto;
+      min-height: 2.75rem;
+      margin: 0;
+      padding: .45rem;
+      transform: none;
+      border-radius: .5rem;
+      border: 1px solid #687b8c;
+      background: #fff;
+      color: #183047;
+      font: 600 .78rem/1.25 system-ui, sans-serif;
+      transition: none;
+      box-shadow: none;
+    }
+    #harlem-photo .athens-hotspot.is-active,
+    #harlem-photo .athens-hotspot:hover,
+    #harlem-photo .athens-hotspot:focus-visible {
+      background: #173c57 !important;
+      color: #fff !important;
+      transform: none;
+      outline: 2px solid #1683a3;
+    }
+    #harlem-photo .athens-hotspot::after { display: none; }
 
     .bosch-photo {
       aspect-ratio: 2146 / 2736;
@@ -1188,20 +1216,12 @@
 
       <div class="athens-exhibit-shell">
         <div class="athens-painting-card">
-          <div class="athens-painting harlem-photo" id="harlem-photo" role="img" aria-label="Interactive A Great Day in Harlem photograph with clickable jazz musicians"></div>
+          <div class="athens-painting harlem-photo" id="harlem-photo" role="group" aria-label="Alphabetical explorer of the 57 musicians in A Great Day in Harlem"></div>
           <div class="athens-painting-caption">
-            <span>Art Kane, <em>A Great Day in Harlem</em>, August 12, 1958</span>
-            <span>Tip: if the hotspots feel crowded, use the roster buttons to jump straight to a musician.</span>
+            <span>Explore the musicians · original alphabetical roster</span>
+            <span>Choose a name to read about the musician’s role and influence.</span>
           </div>
-          <figure data-zoomable data-lightbox-group="school-of-athens" class="athens-card-figure">
-            <div class="athens-card-figure-row">
-              <img src="../../assets/thumbs/great-day-in-harlem.jpg" alt="Art Kane, A Great Day in Harlem (1958), 57 jazz musicians on the stoop of 17 East 126th Street" width="600" height="349" loading="lazy" />
-              <span class="athens-zoom-badge">⛶ Click photo to enlarge in lightbox</span>
-            </div>
-            <figcaption>
-              <strong>Art Kane, <em>A Great Day in Harlem</em> (August 12, 1958).</strong> 17 East 126th Street, New York. Fifty-seven jazz masters from swing, bop, and cool eras gathered on a brownstone stoop for Esquire magazine, cementing American jazz artists into modern cultural iconography. Credit: Art Kane Archive / Fair use educational discussion.
-            </figcaption>
-          </figure>
+          <p class="athens-painting-caption"><a href="https://www.artkane.com/" target="_blank" rel="noopener">View Art Kane’s work at the photographer’s official archive ↗</a> This original name explorer does not reproduce the photograph. Compare the gathering in the original image with the biographies here.</p>
         </div>
 
         <div class="athens-panel">
@@ -1227,7 +1247,7 @@
       </div>
 
       <p class="athens-footnote">
-        This interactive roster follows the standard 57-person identification used by Harlem.org and later annotated reproductions. The children in front were neighborhood kids, not part of the 57 musicians list.
+        This original alphabetical roster follows the 57-person identification used by Harlem.org. It does not reproduce the photograph’s composition or positions. The children in the original photograph were neighborhood kids, not part of the musicians list.
       </p>
     </section>
 
@@ -1714,7 +1734,7 @@
         bioRole.textContent = figure.role;
         bioSummary.textContent = figure.summary;
         bioImpact.textContent = figure.impact;
-        bioLookfor.textContent = figure.lookfor;
+        bioLookfor.textContent = config.paintingId === "harlem-photo" ? "Find this musician in the original photograph using the linked archive." : figure.lookfor;
         bioTag.textContent = figure.tag;
       }
 
@@ -1730,14 +1750,14 @@
         if (figure) renderBio(figure);
       }
 
-      config.figures.forEach((figure) => {
+      (config.paintingId === "harlem-photo" ? [...config.figures].sort((a, b) => a.name.localeCompare(b.name)) : config.figures).forEach((figure) => {
         const hotspot = document.createElement("button");
         hotspot.type = "button";
         hotspot.className = "athens-hotspot";
         hotspot.dataset.id = figure.id;
         hotspot.dataset.short = figure.short;
-        hotspot.style.left = figure.x + "%";
-        hotspot.style.top = figure.y + "%";
+        if (config.paintingId === "harlem-photo") hotspot.textContent = figure.name;
+        else { hotspot.style.left = figure.x + "%"; hotspot.style.top = figure.y + "%"; }
         hotspot.setAttribute("aria-label", "Open biography for " + figure.name);
         hotspot.addEventListener("click", () => setActive(figure.id));
         painting.appendChild(hotspot);

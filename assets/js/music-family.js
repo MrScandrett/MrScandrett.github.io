@@ -65,6 +65,7 @@
   });
   var SCIENCE = [
     { file: 'lessons/physics/waves-and-sound/physics-of-music.html', label: 'Physics of Music' },
+    { file: 'lessons/physics/waves-and-sound/binaural-beats.html', label: 'Binaural Beats' },
     { file: 'lessons/physics/waves-and-sound/do-atoms-make-music.html', label: 'Do Atoms Make Music?' },
     { file: 'lessons/technical-elements/audio-engineering/cymatics.html', label: 'Cymatics' }
   ];
@@ -76,64 +77,99 @@
 
   window.MusicFamily = { base: base, eras: ERAS, composers: COMPOSERS, here: here };
 
-  function group(title, items) {
+  function link(it) {
+    var a = document.createElement('a');
+    a.href = base + it.file;
+    a.textContent = it.label;
+    if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
+    return a;
+  }
+
+  function titled(title, short, child) {
     var g = document.createElement('div');
     g.className = 'mf-group';
     var t = document.createElement('span');
     t.className = 'mf-title';
-    t.textContent = title;
+    t.textContent = short;
+    t.title = title;
     g.appendChild(t);
-    var links = document.createElement('div');
-    links.className = 'mf-links';
-    items.forEach(function (it) {
-      var a = document.createElement('a');
-      a.href = base + it.file;
-      a.textContent = it.label;
-      if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
-      links.appendChild(a);
-    });
-    g.appendChild(links);
+    g.appendChild(child);
     return g;
   }
 
-  // Composers fold into one dropdown chip, grouped by era, so the strip stays short on phones.
-  function menu(title, eras) {
-    var items = [];
-    eras.forEach(function (era) { items = items.concat(era.composers); });
+  var menus = [];
+  // A dropdown chip. Its label is the page you're on when that page is inside it.
+  function dropdown(label, title, sections) {
     var d = document.createElement('details');
     d.className = 'mf-menu';
     var sum = document.createElement('summary');
+    var items = [];
+    sections.forEach(function (sec) { items = items.concat(sec.items); });
     var current = items.filter(function (it) { return here(it.file); })[0];
-    sum.textContent = current ? current.label : 'Explore composers';
+    sum.textContent = current ? current.label : label;
     if (current) sum.setAttribute('aria-current', 'page');
     sum.setAttribute('aria-label', title + (current ? ', now on ' + current.label : ''));
     d.appendChild(sum);
     var list = document.createElement('div');
     list.className = 'mf-menu-list';
-    eras.forEach(function (era) {
-      var head = document.createElement('span');
-      head.className = 'mf-menu-era';
-      head.textContent = era.label;
-      list.appendChild(head);
-      era.composers.forEach(function (it) {
-        var a = document.createElement('a');
-        a.href = base + it.file;
-        a.textContent = it.label;
-        if (here(it.file)) { a.setAttribute('aria-current', 'page'); }
-        list.appendChild(a);
-      });
+    sections.forEach(function (sec) {
+      if (sec.label) {
+        var head = document.createElement('span');
+        head.className = 'mf-menu-era';
+        head.textContent = sec.label;
+        list.appendChild(head);
+      }
+      sec.items.forEach(function (it) { list.appendChild(link(it)); });
     });
     d.appendChild(list);
-    document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false; });
     d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && d.open) { d.open = false; sum.focus(); } });
-    var g = document.createElement('div');
-    g.className = 'mf-group';
-    var t = document.createElement('span');
-    t.className = 'mf-title';
-    t.textContent = title;
-    g.appendChild(t);
-    g.appendChild(d);
-    return g;
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      menus.forEach(function (m) { if (m !== d) m.open = false; });
+      // Keep the list on screen: open leftwards when it would run off the right edge.
+      list.style.left = ''; list.style.right = '';
+      var r = list.getBoundingClientRect();
+      if (r.right > window.innerWidth - 8) { list.style.left = 'auto'; list.style.right = '0'; }
+    });
+    menus.push(d);
+    return d;
+  }
+
+  // Theory links sit in one row; whatever doesn't fit moves into a "More" menu
+  // (the page you're on always stays visible), so the strip is one line at any width.
+  function theoryRow() {
+    var row = document.createElement('div');
+    row.className = 'mf-theory';
+    var wrap = document.createElement('div');
+    wrap.className = 'mf-links';
+    var links = THEORY.map(link);
+    links.forEach(function (a) { wrap.appendChild(a); });
+    row.appendChild(wrap);
+    // The menu sits outside the clipped link row so its list can drop below the strip.
+    var more = dropdown('More', 'More music theory and instruments', [{ items: [] }]);
+    more.classList.add('mf-more');
+    var moreList = more.querySelector('.mf-menu-list');
+    row.appendChild(more);
+    var phone = window.matchMedia('(max-width: 720px)');
+    function fit() {
+      links.forEach(function (a) { a.hidden = false; });
+      moreList.textContent = '';
+      more.hidden = true;
+      if (phone.matches || !wrap.clientWidth) return;
+      if (wrap.scrollWidth <= wrap.clientWidth + 1) return;
+      more.hidden = false;
+      var order = links.slice().reverse().filter(function (a) { return !a.hasAttribute('aria-current'); });
+      var moved = [];
+      for (var i = 0; i < order.length && wrap.scrollWidth > wrap.clientWidth + 1; i++) {
+        order[i].hidden = true;
+        moved.unshift(order[i]);
+      }
+      moved.forEach(function (a) {
+        var c = a.cloneNode(true); c.hidden = false; moreList.appendChild(c);
+      });
+    }
+    row._fit = fit;
+    return row;
   }
 
   function build() {
@@ -144,63 +180,81 @@
     // otherwise turns bordered rows into oversized skin inventory panels.
     nav.setAttribute('data-skin-keep', '');
     nav.setAttribute('aria-label', 'Music lessons');
-    // On phones the whole strip folds into one "♪ Music · <this page> ▾" row;
+    // On phones the whole strip folds into one "♪ Music · <this page>" row;
     // on wider screens it stays open and the summary is hidden.
     var fold = document.createElement('details');
     fold.className = 'mf-fold';
     var foldSum = document.createElement('summary');
     var all = THEORY.concat(COMPOSERS, SCIENCE);
     var now = all.filter(function (it) { return here(it.file); })[0];
-    foldSum.textContent = '♪ Music' + (now ? ' · ' + now.label : '') + ' ▾';
+    foldSum.textContent = '♪ Music' + (now ? ' · ' + now.label : '');
     fold.appendChild(foldSum);
     var body = document.createElement('div');
     body.className = 'mf-body';
-    body.appendChild(group('Music theory & instruments', THEORY));
-    body.appendChild(menu('Composers', ERAS));
-    body.appendChild(group('Science of sound', SCIENCE));
+    var theory = theoryRow();
+    body.appendChild(titled('Music theory & instruments', 'Theory', theory));
+    body.appendChild(titled('Composers', 'Composers', dropdown('Composers', 'Composers', ERAS.map(function (era) {
+      return { label: era.label, items: era.composers };
+    }))));
+    body.appendChild(titled('Science of sound', 'Sound', dropdown('Science of sound', 'Science of sound', [{ items: SCIENCE }])));
     fold.appendChild(body);
     nav.appendChild(fold);
+    document.addEventListener('click', function (e) {
+      menus.forEach(function (m) { if (m.open && !m.contains(e.target)) m.open = false; });
+    });
     var phone = window.matchMedia('(max-width: 720px)');
-    function syncFold() { fold.open = !phone.matches; }
+    function syncFold() { fold.open = !phone.matches; theory._fit(); }
     syncFold();
     if (phone.addEventListener) phone.addEventListener('change', syncFold);
     else if (phone.addListener) phone.addListener(syncFold);
+    if (window.ResizeObserver) new ResizeObserver(function () { theory._fit(); }).observe(body);
+    else window.addEventListener('resize', theory._fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(theory._fit);
 
+    // Colours come from the theme (header tokens, --text, --accent) and corners from
+    // the skin (--radius-sm), so the strip reads as part of the site header everywhere.
     var css = document.createElement('style');
     css.textContent =
-      '.music-family{display:block;padding:.65rem clamp(1rem,4vw,2.5rem);background:#241a14;border-bottom:1px solid rgba(255,255,255,.12);font:600 .78rem var(--skin-font-ui,"DM Sans"),system-ui,sans-serif;position:relative;z-index:29;flex-shrink:0}' +
-      '.music-family .mf-body{display:grid;gap:.45rem;max-width:1440px;margin:0 auto}' +
-      '.music-family .mf-fold>summary{display:none;list-style:none;cursor:pointer;color:#ffe9d6;font-weight:700;padding:.1rem 0}' +
+      '.music-family{--mf-ink:var(--header-text,var(--text,#1d1d1f));--mf-muted:var(--text-muted,#6e6e73);--mf-accent:var(--accent,#0066cc);--mf-bg:var(--header-bg,var(--surface-elevated,#fff));--mf-line:var(--header-border,var(--line,rgba(128,128,128,.3)));--mf-r:var(--radius-sm,8px);' +
+        'display:block;padding:.2rem clamp(.75rem,3vw,2rem);background:var(--mf-bg);border-bottom:1px solid var(--mf-line);color:var(--mf-ink);font:600 .8rem/1.3 var(--skin-font-ui,inherit);position:relative;z-index:29;flex-shrink:0;backdrop-filter:saturate(135%) blur(16px)}' +
+      '.music-family .mf-body{display:flex;align-items:center;gap:.25rem 1rem;max-width:1440px;margin:0 auto;min-width:0}' +
+      '.music-family .mf-group{display:flex;align-items:center;gap:.4rem;min-width:0;flex:0 0 auto}' +
+      '.music-family .mf-group:first-child{flex:1 1 auto}' +
+      '.music-family .mf-group+.mf-group{padding-left:1rem;border-left:1px solid var(--mf-line)}' +
+      '.music-family .mf-title{flex:0 0 auto;color:var(--mf-muted);font-size:.64rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
+      '.music-family .mf-theory{display:flex;align-items:center;gap:.25rem;min-width:0;flex:1 1 auto}' +
+      '.music-family .mf-links{display:flex;flex-wrap:nowrap;align-items:center;gap:.1rem;min-width:0;flex:1 1 auto;overflow:hidden}' +
+      '.music-family .mf-links>a{flex:0 0 auto;white-space:nowrap}' +
+      '.music-family a,body.theme-liquid-woodland .music-family a{display:inline-flex;align-items:center;min-height:2rem;box-sizing:border-box;padding:.2rem .55rem;border-radius:var(--mf-r);color:var(--mf-ink);text-decoration:none}' +
+      '.music-family a[hidden],.music-family .mf-more[hidden]{display:none}' +
+      '.music-family a:hover,.music-family a:focus-visible{background:color-mix(in srgb,var(--mf-ink) 12%,transparent);outline:none}' +
+      '.music-family :is(a,summary):focus-visible{box-shadow:0 0 0 2px var(--mf-accent)}' +
+      '.music-family a[aria-current="page"],body.theme-liquid-woodland .music-family a[aria-current="page"],.music-family .mf-menu summary[aria-current="page"]{background:var(--mf-accent);color:var(--accent-contrast,#fff);border-color:var(--mf-accent)}' +
+      '.music-family .mf-fold>summary{display:none;list-style:none;cursor:pointer;font-weight:700;min-height:2rem;align-items:center;gap:.5rem}' +
       '.music-family .mf-fold>summary::-webkit-details-marker{display:none}' +
-      '.music-family .mf-fold>summary:focus-visible{outline:none;box-shadow:0 0 0 2px #ffd166;border-radius:6px}' +
-      '@media (min-width:721px) and (max-width:1000px){.music-family .mf-group{grid-template-columns:9rem minmax(0,1fr)}}' +
-      '@media (max-width:720px){' +
-        '.music-family{padding:.3rem .85rem}' +
-        '.music-family .mf-fold>summary{display:block}' +
-        '.music-family .mf-body{padding:.4rem 0 .2rem;gap:.65rem}' +
-        '.music-family .mf-body .mf-group{grid-template-columns:minmax(0,1fr);gap:.25rem}' +
-      '}' +
-      '.music-family .mf-group{display:grid;grid-template-columns:11.5rem minmax(0,1fr);gap:.25rem 1rem;align-items:start}' +
-      '.music-family .mf-group+.mf-group{border-top:1px solid rgba(255,233,214,.12);padding-top:.45rem}' +
-      '.music-family .mf-links{display:flex;flex-wrap:wrap;gap:.2rem .3rem;min-width:0}' +
-      '.music-family .mf-title{padding:.6rem 0;line-height:1.5;color:#ffb98a;font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
-      '.music-family a,body.theme-liquid-woodland .music-family a{display:inline-flex;align-items:center;min-height:2.25rem;box-sizing:border-box;line-height:1.5;padding:.3rem .6rem;border-radius:6px;color:#ffe9d6;text-decoration:none}' +
-      '.music-family a:hover,.music-family a:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none}' +
-      '.music-family a:focus-visible{box-shadow:0 0 0 2px #ffd166}' +
-      '.music-family a[aria-current="page"],body.theme-liquid-woodland .music-family a[aria-current="page"]{background:#ffd9bd;color:#241a14}' +
-      '.music-family .mf-menu{position:relative;justify-self:start;min-width:0;max-width:100%}' +
-      '.music-family .mf-menu summary{box-sizing:border-box;min-height:2.25rem;line-height:1.5;list-style:none;cursor:pointer;padding:.3rem .6rem;border-radius:6px;color:#ffe9d6;border:1px solid rgba(255,233,214,.35)}' +
+      '.music-family :is(.mf-fold>summary,.mf-menu summary)::after{content:"";flex:0 0 auto;width:.38rem;height:.38rem;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-top:-.2rem}' +
+      '.music-family :is(.mf-fold[open]>summary,.mf-menu[open] summary)::after{transform:rotate(225deg);margin-top:.2rem}' +
+      '.music-family .mf-menu{position:relative;flex:0 0 auto;min-width:0}' +
+      '.music-family .mf-menu summary{box-sizing:border-box;display:flex;align-items:center;gap:.5rem;min-height:2rem;list-style:none;cursor:pointer;padding:.2rem .6rem;border-radius:var(--mf-r);border:1px solid var(--mf-line);white-space:nowrap;font:inherit;outline:none}' +
       '.music-family .mf-menu summary::-webkit-details-marker{display:none}' +
-      '.music-family .mf-menu summary{display:flex;align-items:center;gap:1rem;font:inherit}' +
-      '.music-family .mf-menu summary::after{content:"";width:.4rem;height:.4rem;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-top:-.2rem}' +
-      '.music-family .mf-menu[open] summary::after{transform:rotate(225deg);margin-top:.2rem}' +
-      '.music-family .mf-menu summary:hover,.music-family .mf-menu summary:focus-visible{background:rgba(255,255,255,.16);color:#fff;outline:none;box-shadow:0 0 0 2px #ffd166}' +
-      '.music-family .mf-menu summary[aria-current="page"]{background:#ffd9bd;color:#241a14;border-color:#ffd9bd}' +
-      '.music-family .mf-menu-list{position:absolute;left:0;top:calc(100% + .3rem);z-index:40;display:grid;min-width: min(19rem,calc(100vw - 3rem));padding:.65rem;border-radius:12px;background:#241a14;border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 30px rgba(0,0,0,.35)}' +
-      '.music-family .mf-menu-list a{display:block;border-radius:8px}' +
-      '.music-family .mf-menu-list{max-height:min(32rem,60vh);overscroll-behavior:contain;overflow-y:auto}' +
-      '.music-family .mf-menu-era{padding:.45rem .6rem .1rem;color:#ffb98a;font-size:.62rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
-      '.music-family .mf-menu-era:first-child{padding-top:.15rem}';
+      '.music-family .mf-menu summary:hover{background:color-mix(in srgb,var(--mf-ink) 12%,transparent)}' +
+      '.music-family .mf-menu-list{position:absolute;left:0;top:calc(100% + .3rem);z-index:40;display:grid;min-width:min(14rem,calc(100vw - 2rem));max-height:min(32rem,65vh);overflow-y:auto;overscroll-behavior:contain;padding:.4rem;border-radius:calc(var(--mf-r) + 4px);background:var(--surface-elevated,var(--bg,#fff));color:var(--text,inherit);border:1px solid var(--mf-line);box-shadow:var(--skin-shadow,0 12px 30px rgba(0,0,0,.28))}' +
+      '.music-family .mf-menu-list a{display:flex;color:var(--text,inherit)}' +
+      '.music-family .mf-menu-era{padding:.45rem .55rem .1rem;color:var(--mf-muted);font-size:.62rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase}' +
+      '.music-family .mf-menu-era:first-child{padding-top:.15rem}' +
+      '@media (max-width:720px){' +
+        '.music-family{padding:.15rem .75rem}' +
+        '.music-family .mf-fold>summary{display:flex}' +
+        '.music-family .mf-body{flex-direction:column;align-items:stretch;gap:.5rem;padding:.35rem 0 .5rem}' +
+        '.music-family .mf-group{flex-wrap:wrap;align-items:flex-start}' +
+        '.music-family .mf-group+.mf-group{padding-left:0;border-left:0;padding-top:.5rem;border-top:1px solid var(--mf-line)}' +
+        '.music-family .mf-title{flex-basis:100%}' +
+        '.music-family .mf-theory{flex-basis:100%}' +
+        '.music-family .mf-links{flex-wrap:wrap;overflow:visible}' +
+        '.music-family a{min-height:2.5rem}' +
+        '.music-family .mf-menu summary{min-height:2.5rem}' +
+      '}' +
+      '@media print{.music-family{display:none}}';
     document.head.appendChild(css);
 
     // Viewport lessons scroll inside .ll-sim. Keep the hub in that same flow
@@ -210,6 +264,7 @@
     if (lessonScroller) lessonScroller.insertBefore(nav, lessonScroller.firstChild);
     else if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(nav, anchor.nextSibling);
     else document.body.insertBefore(nav, document.body.firstChild);
+    theory._fit();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();

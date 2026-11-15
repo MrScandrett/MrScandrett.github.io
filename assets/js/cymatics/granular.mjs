@@ -98,7 +98,13 @@ export class GrainBed {
 
   fresh() {
     const [x, y] = this.spawn(this.rng);
-    return { x, y, x0: x, y0: y, x1: x, y1: y, tLaunch: 0, tLand: 0, tNext: 0, v0: 0, airborne: false, spike: 0 };
+    return {
+      x, y, x0: x, y0: y, x1: x, y1: y,
+      tLaunch: 0, tLand: 0, tNext: 0, v0: 0, airborne: false, spike: 0,
+      rScale: 0.75 + 0.55 * this.rng(),
+      tone: this.rng(),
+      glint: this.rng()
+    };
   }
 
   resprinkle() { this.grains = this.grains.map(() => this.fresh()); }
@@ -117,9 +123,11 @@ export class GrainBed {
         // air near the plate drifts toward the antinodes and carries the powder with it
         const p = this.pose(g);
         sampleField(field, p.x, p.y, smp);
-        const [ux, uy] = streamingVelocity(smp.A, smp.gx, smp.gy, omega);
-        const dx = ux * dt / s, dy = uy * dt / s;
-        g.x += dx; g.y += dy; g.x0 += dx; g.y0 += dy; g.x1 += dx; g.y1 += dy;
+        if (g.airborne || smp.A * omega * omega > 0.25 * G) {
+          const [ux, uy] = streamingVelocity(smp.A, smp.gx, smp.gy, omega);
+          const dx = ux * dt / s, dy = uy * dt / s;
+          g.x += dx; g.y += dy; g.x0 += dx; g.y0 += dy; g.x1 += dx; g.y1 += dy;
+        }
       }
       let guard = 0;
       while (Math.max(g.tLand, g.tNext) <= t1 && guard++ < 8) {
@@ -129,7 +137,23 @@ export class GrainBed {
         const now = Math.max(g.tLand, g.tNext, this.t);
         sampleField(field, g.x, g.y, smp);
         const lift = takeoff(smp.A, omega);
-        if (!lift) { g.tLand = g.tNext = t1 + 1e-9; break; }
+        if (!lift) {
+          if (!streaming) {
+            const gamma = omega * omega * smp.A / G;
+            if (gamma > 0.8) {
+              // micro-sliding / slope ratchet near the edge of the quiet band settles grains toward nodes
+              const gm = Math.hypot(smp.gx, smp.gy);
+              if (gm > 1e-12) {
+                const creep = 0.008 * ((gamma - 0.8) / 0.2) * dt / s;
+                const nx = g.x - (smp.gx / gm) * creep;
+                const ny = g.y - (smp.gy / gm) * creep;
+                if (this.inside(nx, ny)) { g.x = nx; g.y = ny; }
+              }
+            }
+          }
+          g.tLand = g.tNext = t1 + 1e-9;
+          break;
+        }
         const ang = this.rng() * 2 * Math.PI, mag = scatter * Math.sqrt(-2 * Math.log(this.rng() + 1e-12)) / Math.SQRT2;
         const tilt = 1 / lift.gamma;
         const vx = lift.v0 * (mag * Math.cos(ang) - smp.gx * tilt), vy = lift.v0 * (mag * Math.sin(ang) - smp.gy * tilt);
@@ -145,6 +169,73 @@ export class GrainBed {
     }
     this.t = t1;
     return hopping / Math.max(1, this.grains.length);
+  }
+
+  /* Fast 2-D spatial-hash repulsion for resting grains (nondimensional minDist).
+     When `field` is provided, repulsion slides grains preferentially along nodal contours
+     so nodal lines stay crisp instead of inflating uphill into antinodes. */
+  separate(minDist, field = null) {
+    if (!(minDist > 0) || this.grains.length < 2) return;
+    const grains = this.grains, n = grains.length;
+    const TABLE = 8192, MASK = TABLE - 1;
+    if (!this._sepHead) this._sepHead = new Int32Array(TABLE);
+    if (!this._sepNext || this._sepNext.length !== n) this._sepNext = new Int32Array(n);
+    const head = this._sepHead, next = this._sepNext;
+    const invCell = 1 / minDist, minD2 = minDist * minDist;
+    const smp = field ? {} : null;
+
+    for (let pass = 0; pass < 2; pass++) {
+      head.fill(-1);
+      for (let i = 0; i < n; i++) {
+        const g = grains[i];
+        if (g.airborne) { next[i] = -1; continue; }
+        const cx = Math.floor((g.x + 1) * invCell), cy = Math.floor((g.y + 1) * invCell);
+        const h = ((cx * 73856093) ^ (cy * 19349663)) & MASK;
+        next[i] = head[h];
+        head[h] = i;
+      }
+      for (let i = 0; i < n; i++) {
+        const gi = grains[i];
+        if (gi.airborne) continue;
+        const cx = Math.floor((gi.x + 1) * invCell), cy = Math.floor((gi.y + 1) * invCell);
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let ox = -1; ox <= 1; ox++) {
+            const h = (((cx + ox) * 73856093) ^ ((cy + oy) * 19349663)) & MASK;
+            for (let j = head[h]; j !== -1; j = next[j]) {
+              if (j <= i) continue;
+              const gj = grains[j];
+              let dx = gj.x - gi.x, dy = gj.y - gi.y;
+              const d2 = dx * dx + dy * dy;
+              if (d2 >= minD2) continue;
+              let d = Math.sqrt(d2), ux, uy;
+              if (d < 1e-12) {
+                const a = (i * 2.39996323) % (Math.PI * 2);
+                ux = Math.cos(a); uy = Math.sin(a); d = 0;
+              } else {
+                ux = dx / d; uy = dy / d;
+              }
+              const push = 0.42 * (minDist - d);
+              let px = ux * push, py = uy * push;
+              if (field) {
+                sampleField(field, 0.5 * (gi.x + gj.x), 0.5 * (gi.y + gj.y), smp);
+                const gm = Math.hypot(smp.gx, smp.gy);
+                if (gm > 1e-12) {
+                  const nx = smp.gx / gm, ny = smp.gy / gm;
+                  const tx = -ny, ty = nx;
+                  const uN = ux * nx + uy * ny, uT = ux * tx + uy * ty;
+                  px = (0.45 * uN * nx + uT * tx) * push;
+                  py = (0.45 * uN * ny + uT * ty) * push;
+                }
+              }
+              const ix = gi.x - px, iy = gi.y - py;
+              const jx = gj.x + px, jy = gj.y + py;
+              if (this.inside(ix, iy)) { gi.x = ix; gi.y = iy; }
+              if (this.inside(jx, jy)) { gj.x = jx; gj.y = jy; }
+            }
+          }
+        }
+      }
+    }
   }
 
   /* Where a grain is right now: position and height above the plate (m). */

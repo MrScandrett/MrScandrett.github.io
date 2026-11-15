@@ -5,6 +5,8 @@ import {chromium} from 'playwright';
 import {findChromium} from '../lib/find-chromium.mjs';
 const catalog=JSON.parse(await readFile(new URL('../data/composer-workspaces.json',import.meta.url)));
 const base=process.env.SCORE_TEST_URL||'http://127.0.0.1:8080';
+const scoreFilter=process.env.COMPOSER_TEST_SCORES?.split(',');
+const modes=process.env.COMPOSER_TEST_MODES?.split(',')||['original','piano','melody','violin','alto','tenor','guitar','guitar-solo','bass'];
 const browser=await chromium.launch({executablePath:findChromium(),headless:true});
 let checked=0;
 try {
@@ -15,6 +17,7 @@ try {
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(`${base}/lessons/music/pioneers/${composer}.html`,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>!!document.querySelector('#bv-score').scorePlayer);
+    await page.locator('.bv-settings > summary').click();
     const intro=await page.locator('main > :first-child').getAttribute('data-composer-intro');
     if(intro!==null) {
       assert.equal(await page.locator('main > :nth-child(2)').getAttribute('id'),'composer-studio');
@@ -24,13 +27,14 @@ try {
     }
     assert.equal(await page.locator('main > :first-child h1').count(),1);
     assert.equal(await page.locator('#bv-work option').count(),entry.scores.length);
-    for(const id of entry.scores) {
+    const scores=entry.scores.filter(id=>!scoreFilter||scoreFilter.includes(id));
+    for(const id of scores) {
       await page.selectOption('#bv-work',id);
-      for(const mode of ['original','piano','melody','violin','alto','tenor','guitar','bass']) {
+      for(const mode of modes) {
         await page.selectOption('#bv-mode',mode);
         assert.equal(await page.locator('#bv-score .se-error').count(),0,`${id}/${mode}`);
         assert.ok(await page.locator('#bv-score svg').count(),`${id}/${mode}: engraved score`);
-        if (mode === 'guitar' || mode === 'bass') {
+        if (mode === 'guitar' || mode === 'guitar-solo' || mode === 'bass') {
           assert.ok(await page.locator('#bv-score .se-tablature').count(),`${id}/${mode}: tab integrated with notation`);
           assert.ok(await page.locator('#bv-score .se-tab-note').count(),`${id}/${mode}: aligned fret numbers`);
           assert.equal(await page.locator('.bv-tab-grid').count(),0,`${id}/${mode}: no separate measure cards`);
@@ -39,6 +43,11 @@ try {
           assert.ok(await page.locator('#bv-score .se-tab-note').first().evaluate(el =>
             !!el.closest('svg').querySelector('.se-ev[data-i="' + el.dataset.i + '"]')
           ),`${id}/${mode}: fret linked to playable note`);
+        }
+        assert.ok(!/undefined|could not be displayed/.test(await page.locator('#bv-note').textContent()),`${id}/${mode}: arrangement explanation`);
+        if(mode==='guitar-solo') {
+          const automatic=await page.evaluate(()=>{const s=document.querySelector('#bv-score').scorePlayer.model.score;return s.tablature?.maxFret===12;});
+          if(automatic)assert.equal(await page.locator('#bv-score .se-tab-note').filter({hasText:'×'}).count(),0,`${id}: playable solo tab`);
         }
         if(mode==='violin') {
           assert.ok(await page.locator('.bv-violin-controls').isVisible(),`${id}: violin position controls`);
@@ -62,7 +71,7 @@ try {
     await page.setViewportSize({width:1440,height:900});
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${composer}: desktop overflow`);
     assert.deepEqual(errors,[],composer);
-    console.log(`${composer}: ${entry.scores.length} scores, rendering and sampled playback passed`);
+    console.log(`${composer}: ${scores.length} scores, rendering and sampled playback passed`);
     await page.close();
   }
   console.log(`Composer studio audit passed: ${entries.length} lessons, ${checked} arrangements.`);

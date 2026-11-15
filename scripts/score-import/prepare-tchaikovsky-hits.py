@@ -13,7 +13,6 @@ import zipfile
 SOURCES = Path(__file__).parent / "sources" / "tchaikovsky-hits"
 PASSAGES = [
     ("tchaikovsky-swan-lake", "swan-theme", 1, 27),
-    ("tchaikovsky-sugar-plum-fairy", "sugar-plum", 1, 28),
     ("tchaikovsky-waltz-of-flowers-4hands", "waltz-flowers", 34, 65),
 ]
 

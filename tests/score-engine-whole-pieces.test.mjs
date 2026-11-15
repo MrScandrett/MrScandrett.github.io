@@ -214,9 +214,9 @@ test('after-grace ornaments can end before a rest and still sound', () => {
   assert.ok(!/NaN|undefined/.test(svg));
 });
 
-test('Mozart collection contains 23 selections with scoped variations and minuet return', () => {
+test('Mozart collection contains 22 selections with scoped variations and minuet return', () => {
   const ids=require('../data/composer-workspaces.json').mozart.scores;
-  assert.equal(ids.length,23);assert.equal(new Set(ids).size,23);
+  assert.equal(ids.length,22);assert.equal(new Set(ids).size,22);
   for(let i=1;i<=6;i++) assert.match(library['mozart-k331-variation-'+i].excerpt.of,/first movement/);
   const minuet=model(library['mozart-k331-menuetto']);
   assert.equal(minuet.perfTotal,744);
