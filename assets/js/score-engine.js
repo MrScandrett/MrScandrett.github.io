@@ -469,6 +469,58 @@
     return groups.filter(function (g) { return g.events.length > 1; });
   }
 
+  // A rest in one voice must not sit on what another voice draws at the same moment: a held
+  // head (a quarter rest over a dotted-half bass note), the stem of a note that starts with it,
+  // or a beam running across it. Pick the nearest clear height, trying the rest's own side
+  // first, so a crowded passage tucks it into a gap instead of sending it far off the staff.
+  // Stem ends sit 7 steps past the head, as in extents(). Obstacles are kept on rest.clearOf
+  // so tests can check the result.
+  function placeRests(bar) {
+    bar.events.forEach(function (rest) {
+      if (rest.kind !== 'rest' || rest.hidden || rest.whole) return;
+      var home = rest.restStep, up = home >= 4;
+      // Half-height of the glyph in steps: half rest 1.5, quarter 3, eighth 2, shorter 3.
+      var hh = rest.base >= 2 ? 1.5 : rest.base >= 1 ? 3 : rest.base >= 0.5 ? 2 : 3;
+      var end = rest.start + rest.dur, obstacles = [], heads = [];
+      bar.events.forEach(function (n) {
+        if (n.kind !== 'note' || n.grace || n.voice === rest.voice) return;
+        if (n.start < end - EPS && n.start + n.dur > rest.start + EPS) { obstacles.push([n.lo - 1, n.hi + 1]); heads.push([n.lo - 1, n.hi + 1]); }
+        if (n.base < 4 && Math.abs(n.start - rest.start) < EPS && !n.beam) obstacles.push(n.up ? [n.hi, n.hi + 7] : [n.lo - 7, n.lo]);
+      });
+      bar.beams.forEach(function (g) {
+        if (g.events[0].voice === rest.voice) {
+          // The run this rest leads into: keep clear of where its beam starts.
+          var f = g.events[0];
+          if (Math.abs(f.start - end) < EPS) { var e0 = g.up ? f.hi + 7 : f.lo - 7; obstacles.push([Math.min(e0, f.lo) - 1, Math.max(e0, f.hi) + 1]); }
+          return;
+        }
+        var first = g.events[0].start, last = g.events[g.events.length - 1].start;
+        if (rest.start < first - EPS || rest.start > last + EPS) return;
+        var ends = g.events.map(function (n) { return g.up ? n.hi + 7 : n.lo - 7; });
+        var heads = g.events.map(function (n) { return g.up ? n.hi : n.lo; });
+        var a = Math.min.apply(null, ends.concat(heads)), z = Math.max.apply(null, ends.concat(heads));
+        obstacles.push([a - 1, z + 1]);
+      });
+      rest.clearOf = obstacles;
+      if (!obstacles.length) return;
+      function search(list, reach) {
+        for (var d = 0; d <= reach; d++) {
+          var tries = up ? [home + d, home - d] : [home - d, home + d];
+          for (var k = 0; k < 2; k++) {
+            if (list.every(function (o) { return o[0] > tries[k] + hh || o[1] < tries[k] - hh; })) return tries[k];
+          }
+        }
+        return undefined;
+      }
+      // Stems and beams are avoided only when a clear gap is close by; a noteheads-only
+      // clearance is the fallback, so a rest never strays far from its voice for a stem.
+      var spot = search(obstacles, 8);
+      if (spot === undefined) { spot = search(heads, 30); rest.clearOf = heads; }
+      if (spot !== undefined) rest.restStep = spot;
+      rest.restHalf = hh;
+    });
+  }
+
   function decideStems(model) {
     model.staves.forEach(function (st) {
       st.bars.forEach(function (bar, bi) {
@@ -479,29 +531,6 @@
           // The note farthest from the middle line decides; a tie points the stem down.
           ev.up = ev.stem ? ev.stem === "up" : (4 - lo) > (hi - 4);
           ev.beam = null;
-        });
-        // A rest in one voice must not sit on a note another voice holds at the same time
-        // (e.g. a quarter rest over a dotted-half bass note): push it clear of that note.
-        bar.events.forEach(function (rest) {
-          if (rest.kind !== 'rest' || rest.hidden || rest.whole) return;
-          var home = rest.restStep, up = home >= 4;
-          // Half-height of the glyph in steps: half rest 1.5, quarter 3, eighth 2, shorter 3.
-          var hh = rest.base >= 2 ? 1.5 : rest.base >= 1 ? 3 : rest.base >= 0.5 ? 2 : 3;
-          var others = bar.events.filter(function (n) {
-            return n.kind === 'note' && !n.grace && n.voice !== rest.voice &&
-              n.start < rest.start + rest.dur - EPS && n.start + n.dur > rest.start + EPS;
-          });
-          if (!others.length) return;
-          function free(s) {
-            return others.every(function (n) { return n.lo - 1 > s + hh || n.hi + 1 < s - hh; });
-          }
-          // Nearest clear height, trying the rest's own side first, so a crowded passage
-          // tucks it into a gap instead of sending it far off the staff.
-          for (var d = 0; d <= 24; d++) {
-            var tries = up ? [home + d, home - d] : [home - d, home + d];
-            var hit = tries.filter(free)[0];
-            if (hit !== undefined) { rest.restStep = hit; break; }
-          }
         });
         bar.beams = [];
         st.voices.forEach(function (_, vi) {
@@ -517,6 +546,7 @@
           g.events.forEach(function (ev) { ev.up = up; ev.beam = g; });
           g.up = up;
         });
+        placeRests(bar);
       });
     });
   }

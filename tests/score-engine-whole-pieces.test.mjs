@@ -262,3 +262,14 @@ test('no rest in the library overlaps a note held by another voice', () => {
   });
   assert.deepEqual(clashes.slice(0, 10), []);
 });
+
+test('rests clear the stems and beams of other voices when a gap is close by', () => {
+  // Quarter rest in voice 1 at beat 1 beside a beamed eighth run in voice 2 (stems down, beam low).
+  const m = model({ time: '4/4', staves: [{ voices: [
+    { notes: '@U r/4 G5/4 G5/2' },
+    { notes: '@D C5/8 D5/8 E5/8 F5/8 G5/2' }] }] });
+  engine.engrave(m, 800, false);
+  const rest = m.staves[0].bars[0].events.find((e) => e.kind === 'rest' && !e.hidden);
+  const hh = rest.restHalf;
+  rest.clearOf.forEach((o) => assert.ok(o[0] > rest.restStep + hh || o[1] < rest.restStep - hh, `rest at ${rest.restStep} overlaps ${o}`));
+});
