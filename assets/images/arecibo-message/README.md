@@ -50,3 +50,10 @@ Retrieved 2026-11-04. Local WebP copies resized to a maximum of 1600 pixels; no 
 - Rights: Public domain · Author dedication
 - Source: https://commons.wikimedia.org/wiki/File:Arecibo_Observatory_Aerial.jpg
 - Original: https://upload.wikimedia.org/wikipedia/commons/8/80/Arecibo_Observatory_Aerial.jpg
+
+## 8. Early observatory and fixed reflector
+- File: `early-observatory.webp`
+- Creator: NASA · NASA Special Publication 419
+- Rights: Public domain · U.S. government work
+- Source: https://commons.wikimedia.org/wiki/File:Arecibo_Observatory_Black_and_White.jpg
+- Original: https://upload.wikimedia.org/wikipedia/commons/c/cb/Arecibo_Observatory_Black_and_White.jpg

@@ -143,9 +143,9 @@
     // ── Canvas setup ─────────────────────────────────────────────────────
     var canvas = document.getElementById("areciboCanvas");
     var ctx = canvas.getContext("2d");
-    var CELL = 6;
-    var ZOOM_LEVELS = [6, 8, 10, 12, 14];
+    var ZOOM_LEVELS = [5, 6, 8, 10, 12, 14];
     var zoomIdx = 0;
+    var CELL = ZOOM_LEVELS[zoomIdx];
     var mirrored = false;
     var inspectedRC = { r: 0, c: 0 };
 
