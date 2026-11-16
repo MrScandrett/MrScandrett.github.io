@@ -1866,6 +1866,25 @@ function buildRubik(panel, pz, saved, persist, onChange) {
 }
 
 // ── boot ─────────────────────────────────────────────────────────────────
+// This script loads lazily, so it can be newer than the stylesheet the page already has (a deploy
+// inside the host's cache window, or an old service-worker entry). Keep this in step with
+// --dp-css-rev in daily-puzzles.css. Resolves once the sheet is current, or after a short wait.
+const CSS_REV = 2;
+function ensureCurrentCss(root) {
+  const have = parseInt(getComputedStyle(root).getPropertyValue('--dp-css-rev'), 10) || 0;
+  if (have >= CSS_REV) return Promise.resolve();
+  const old = document.querySelector('link[rel="stylesheet"][href*="daily-puzzles"]');
+  const href = (old ? old.href : new URL('assets/css/daily-puzzles.css', document.baseURI).href).split('?')[0];
+  return new Promise((resolve) => {
+    const fresh = document.createElement('link');
+    fresh.rel = 'stylesheet';
+    fresh.href = `${href}?rev=${CSS_REV}`; // a query string skips both the HTTP cache entry and the service worker
+    fresh.onload = fresh.onerror = () => resolve();
+    setTimeout(resolve, 3000);
+    (old || document.head.lastElementChild).after(fresh);
+  });
+}
+
 if (typeof document !== 'undefined') {
   const root = document.getElementById('home-puzzles');
   if (root) {
@@ -1875,7 +1894,7 @@ if (typeof document !== 'undefined') {
       fetch('data/daily-chess-bank.json').then((r) => (r.ok ? r.json() : { puzzles: [] })).catch(() => ({ puzzles: [] }))
     ]).then(([crossData, doubleData, chessData]) => {
       if (!crossData.words || crossData.words.length < 40 || !doubleData.questions || doubleData.questions.length < 25 || !chessData.puzzles?.length) return;
-      const start = () => mount(root, crossData.words, doubleData, chessData.puzzles);
+      const start = () => ensureCurrentCss(root).then(() => mount(root, crossData.words, doubleData, chessData.puzzles));
       // Generation takes up to a couple hundred ms; let the first paint finish first.
       if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 1500 });
       else setTimeout(start, 50);
