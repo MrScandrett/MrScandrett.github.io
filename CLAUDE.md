@@ -746,6 +746,27 @@ tables or "do this in Godot/Blender" steps by hand:
   `tests/rosetta2d.test.mjs` (headless: `new Game()` + `game.step(dt)`). Keyboard input
   goes to `Game.active` (last clicked/focused/started) so several games can share a page.
 
+## Formula explainer and its lab
+
+`assets/js/formula-explainer.js` (+ `components/formula-explainer.css`, loaded by page-modules.js) turns a
+lesson's formula box into clickable symbols with an explanation panel. Any formula it can work out also gets
+**the lab**: every quantity on its own slider, the answer written out with the numbers in, Lower / Now / Raise
+cards that show the outcome before you press them, and picture tabs.
+
+- A formula gets a lab two ways. Catalog entries made with `physics({ id, match, init, out, f, line, tokens })`
+  carry real units and hand-written text (`s: [param, min, max, step, unit]` on a token makes its slider;
+  `nudge: 4` makes Lower/Raise step by 4 instead of halving and doubling). Anything else is read by
+  `buildAutoCalc()` as plain arithmetic with unit-free numbers. It returns null rather than guess: trig (angle
+  units unknown), `a / b × c`, `√ab`, relations like `ab = cd`, and boxes holding several equations get no lab.
+- Pictures are scenes: `registerScene(name, { label, draw(ctx, w, h, env), caption(env) })`, where `env` is
+  `{ calc, st, focus, color(param), low, high }`. Every lab has `graph` and `bars`; a formula lists its own
+  first with `scenes: ['beats']`. Draw from `env.st` only, so a scene works for any formula with those inputs.
+  From a lesson: `ClassroomOSFormulaExplainer.define(...)` and `.registerScene(...)`.
+- The hand-built 3D formulas (Stokes, Navier–Stokes, gravitation, Snell) keep their one-symbol slider.
+- The reader understands `|a − b|` (bars that hug their contents; ` | ` with spaces still separates two
+  equations), two-word names (`Beat rate = …` is one result), and a formula line followed by `<br>` and an
+  example sentence. Tests: `node --test tests/formula-explainer.test.mjs`.
+
 ## AI Smart Blackboard (the ⇧W dock)
 
 `assets/js/smart-whiteboard-dock.js` (+ `components/smart-whiteboard-dock.css`) is the floating board on

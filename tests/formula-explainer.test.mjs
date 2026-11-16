@@ -457,17 +457,33 @@ test('Formula packs: common physics, maths and electronics formulas get hand-wri
           const panel = box.querySelector('.cos-fx-panel');
           const role = panel.querySelector('.cos-fx-role-badge').textContent;
           if (generic.test(role)) entry.generic.push(tok.dataset.fxKey + ': ' + role);
+          // Hand-built 3D formulas keep their one-symbol slider.
           const whatIf = panel.querySelector('.cos-fx-whatif');
           if (!whatIf.hidden && role !== 'Operator') {
             entry.sliders++;
-            const slider = panel.querySelector('.cos-fx-whatif-slider');
-            for (const v of [slider.min, slider.max]) {
-              slider.value = v;
-              slider.dispatchEvent(new Event('input', { bubbles: true }));
+            const one = panel.querySelector('.cos-fx-whatif-slider');
+            for (const v of [one.min, one.max]) {
+              one.value = v;
+              one.dispatchEvent(new Event('input', { bubbles: true }));
               const text = panel.querySelector('.cos-fx-whatif-readout').textContent + ' ' + panel.querySelector('.cos-fx-whatif-val').textContent;
               if (/NaN|undefined|_/.test(text)) entry.bad.push(tok.dataset.fxKey + ': ' + text);
             }
           }
+        }
+        // The lab: every quantity has its own slider, and the worked answer and the
+        // Lower / Now / Raise cards stay clean at both ends of each one.
+        const panel = box.querySelector('.cos-fx-panel');
+        for (const slider of panel.querySelectorAll('.cos-fx-lab-row input[type="range"]')) {
+          entry.sliders++;
+          const start = slider.value;
+          for (const v of [slider.min, slider.max, start]) {
+            slider.value = v;
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+            const text = panel.querySelector('.cos-fx-lab').textContent + ' ' + panel.querySelector('.cos-fx-next').textContent;
+            if (/NaN|undefined|_|Infinity/.test(text)) entry.bad.push(slider.closest('.cos-fx-lab-row').dataset.param + ' at ' + v + ': ' + text);
+            if (panel.querySelectorAll('.cos-fx-next-card').length !== 3) entry.bad.push('expected Lower, Now and Raise cards');
+          }
+          for (const view of panel.querySelectorAll('.cos-fx-mode-btn[data-view]')) view.click();
         }
         out.push(entry);
       }
@@ -485,16 +501,22 @@ test('Formula packs: common physics, maths and electronics formulas get hand-wri
 
     // The readout is the formula worked out with units, and it follows the slider.
     const newton = page.locator('[data-case="newton-second"]');
-    const setSlider = (value) => newton.locator('.cos-fx-whatif-slider').evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, value);
-    await newton.locator('.cos-fx-token[data-fx-key="a"]').click();
-    await setSlider('3');
+    const setSlider = (param, value) => newton.locator(`.cos-fx-lab-row[data-param="${param}"] input`).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, value);
+    await setSlider('a', '3');
     await newton.locator('.cos-fx-token[data-fx-key="m"]').click();
-    await setSlider('2');
+    await setSlider('m', '2');
     assert.equal(await newton.locator('.cos-fx-title').textContent(), 'Mass');
-    assert.equal(await newton.locator('.cos-fx-whatif-readout').textContent(), 'F = 2 kg × 3 m/s² = 6 N');
-    await setSlider('4');
-    assert.equal(await newton.locator('.cos-fx-whatif-readout').textContent(), 'F = 4 kg × 3 m/s² = 12 N');
-    assert.equal(await newton.locator('.cos-fx-mode-btn').first().isVisible(), false, 'computed graphs have no 3D toggle');
+    assert.equal(await newton.locator('.cos-fx-lab-result').textContent(), 'F = 2 kg × 3 m/s² = 6 N');
+    // Lower and Raise show the outcome before you commit to it, then apply it on a click.
+    const cards = () => newton.locator('.cos-fx-next-card').allInnerTexts().then(list => list.map(text => text.replace(/\s+/g, ' ').trim()));
+    assert.deepEqual(await cards(), ['▼ Halve m to 1 kg F = 3 N × 0.5, smaller', 'Now: m = 2 kg F = 6 N', '▲ Double m to 4 kg F = 12 N × 2, bigger']);
+    await newton.locator('button.cos-fx-next-card[data-dir="1"]').click();
+    assert.equal(await newton.locator('.cos-fx-lab-result').textContent(), 'F = 4 kg × 3 m/s² = 12 N');
+    assert.equal(await newton.locator('.cos-fx-lab-row[data-param="m"] input').inputValue(), '4');
+    await newton.locator('.cos-fx-lab-reset').click();
+    assert.equal(await newton.locator('.cos-fx-lab-result').textContent(), 'F = 2 kg × 3 m/s² = 6 N');
+    assert.deepEqual(await newton.locator('.cos-fx-mode-btn').allInnerTexts(), ['Graph', 'Sizes'], 'computed formulas offer the graph and the bars, no 3D toggle');
+    await newton.locator('.cos-fx-mode-btn[data-view="graph"]').click();
     const painted = await newton.locator('canvas').evaluate((c) => {
       const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
       let lit = 0;
@@ -560,5 +582,133 @@ test('Auto-loads on real viscosimeter and navier-stokes lesson pages without err
   } finally {
     await browser.close();
     server.close();
+  }
+});
+
+test('The lab: beat rate, absolute values, word names and plain arithmetic formulas can all be worked out and nudged', async (t) => {
+  const browser = await launchBrowser(t);
+  if (!browser) return;
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    page.setDefaultTimeout(5000);
+    const errors = [];
+    page.on('pageerror', err => errors.push(err.message));
+    await page.setContent(`<!doctype html><html><head><meta charset="utf-8"></head><body>
+      <p class="music-formula" id="beats"><strong>Beat rate = |f<sub>right</sub> − f<sub>left</sub>|</strong><br>Example: |224 − 220| = 4 Hz. This predicts the fluctuation rate, not a brain state.</p>
+      <div class="equation-box" id="textbook">f<sub>beat</sub> = |f<sub>1</sub> − f<sub>2</sub>|</div>
+      <div class="equation-box" id="auto-area">A = ½ b h</div>
+      <div class="equation-box" id="auto-words">Speed = distance ÷ time</div>
+      <div class="equation-box" id="auto-root">c = √(a² + b²)</div>
+      <div class="equation-box" id="auto-frac">R = ρL / A</div>
+      <div class="equation-box" id="no-trig">h = L sin θ</div>
+      <div class="equation-box" id="no-ambiguous">y = a / b × c</div>
+      <div class="equation-box" id="no-relation">ab = cd</div>
+      <div class="equation-box" id="no-times-x">f = n / (2L) x sqrt(T / m)</div>
+      <div class="equation-box" id="auto-squared">E<sup>2</sup> = (pc)<sup>2</sup> + (mc<sup>2</sup>)<sup>2</sup></div>
+      <div class="equation-box" id="two">v = g·t | y = ½·g·t²</div>
+    </body></html>`);
+    await page.addStyleTag({ path: CSS_PATH });
+    await page.addScriptTag({ path: SCRIPT_PATH });
+    await page.evaluate(() => window.ClassroomOSFormulaExplainer.upgradeAll());
+
+    const set = (id, n, value) => page.locator(`#${id} .cos-fx-lab-row input`).nth(n).evaluate((el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, value);
+    const result = (id) => page.locator(`#${id} .cos-fx-lab-result`).textContent();
+    const cards = (id) => page.locator(`#${id} .cos-fx-next-card`).allInnerTexts().then(list => list.map(text => text.replace(/\s+/g, ' ').trim()));
+    const lit = (id) => page.locator(`#${id} canvas`).evaluate((c) => {
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 300) n++;
+      return n;
+    });
+
+    // The lesson's own markup: formula line, <br>, then an example sentence that stays as written.
+    const beats = page.locator('#beats');
+    assert.deepEqual(await beats.locator('.cos-fx-token').evaluateAll(list => list.map(b => b.dataset.fxKey)),
+      ['Beat rate', '=', '|', 'f_right', '−', 'f_left', '|']);
+    assert.match(await beats.textContent(), /Example: \|224 − 220\| = 4 Hz\. This predicts/);
+    await beats.locator('.cos-fx-toggle-btn').click();
+    assert.equal(await beats.locator('.cos-fx-title').textContent(), 'Right-ear tone');
+    assert.equal(await result('beats'), 'Beat rate = |224 − 220| = 4 Hz');
+    assert.deepEqual(await beats.locator('.cos-fx-mode-btn').allInnerTexts(), ['Picture', 'Graph', 'Sizes']);
+    assert.deepEqual(await cards('beats'), [
+      '▼ Lower fright to 220 Hz Beat rate = 0 Hz drops to zero',
+      'Now: fright = 224 Hz Beat rate = 4 Hz',
+      '▲ Raise fright to 228 Hz Beat rate = 8 Hz × 2, bigger'
+    ]);
+    // Lower twice: through zero and out the other side, and the bars keep the answer positive.
+    await beats.locator('button.cos-fx-next-card[data-dir="-1"]').click();
+    assert.equal(await result('beats'), 'Beat rate = |220 − 220| = 0 Hz (no beat)');
+    await beats.locator('button.cos-fx-next-card[data-dir="-1"]').click();
+    assert.equal(await result('beats'), 'Beat rate = |216 − 220| = 4 Hz');
+    // Every picture draws, and moving a slider changes the picture.
+    for (const view of ['beats', 'graph', 'bars']) {
+      await beats.locator(`.cos-fx-mode-btn[data-view="${view}"]`).click();
+      assert.ok(await lit('beats') > 200, `${view} scene is drawn`);
+    }
+    await beats.locator('.cos-fx-mode-btn[data-view="beats"]').click();
+    const before = await beats.locator('canvas').evaluate(c => c.toDataURL());
+    await set('beats', 1, '208');
+    assert.equal(await result('beats'), 'Beat rate = |216 − 208| = 8 Hz');
+    assert.notEqual(await beats.locator('canvas').evaluate(c => c.toDataURL()), before);
+    // Picking up the other slider selects its symbol.
+    await beats.locator('.cos-fx-lab-row input').nth(1).focus();
+    assert.equal(await beats.locator('.cos-fx-title').textContent(), 'Left-ear tone');
+    assert.match((await cards('beats'))[1], /^Now: fleft = 208 Hz/);
+
+    await page.locator('#textbook .cos-fx-toggle-btn').click();
+    assert.equal(await result('textbook'), 'f_beat = |224 − 220| = 4 Hz'.replace('f_beat', 'fbeat'));
+
+    // Formulas with no catalog entry are read as arithmetic and get the same lab.
+    const auto = {
+      'auto-area': ['A = ½ × 2 × 3 = 3', 'A = ½ × 4 × 3 = 6'],
+      'auto-words': ['Speed = 2 ÷ 3 = 0.667', 'Speed = 4 ÷ 3 = 1.33'],
+      'auto-root': ['c = √(2² + 3²) = 3.61', 'c = √(4² + 3²) = 5'],
+      'auto-frac': ['R = 2 × 3 ÷ 4 = 1.5', 'R = 4 × 3 ÷ 4 = 3']
+    };
+    for (const [id, [first, second]] of Object.entries(auto)) {
+      await page.locator(`#${id} .cos-fx-toggle-btn`).click();
+      assert.equal(await result(id), first, id);
+      await set(id, 0, '4');
+      assert.equal(await result(id), second, id);
+      assert.equal((await cards(id)).length, 3, id);
+      assert.ok(await lit(id) > 200, `${id} draws`);
+    }
+    // The result keeps the lesson's own markup: "E²", never "E^2".
+    await page.locator('#auto-squared .cos-fx-toggle-btn').click();
+    assert.equal(await result('auto-squared'), 'E2 = (2 × 3)² + (4 × 3²)² = 1332');
+    assert.equal(await page.locator('#auto-squared .cos-fx-lab-result sup').first().textContent(), '2');
+    // Dividing by zero is said in words, never shown as Infinity or NaN.
+    await set('auto-words', 1, '0');
+    assert.match(await result('auto-words'), /no answer/);
+    assert.doesNotMatch(await page.locator('#auto-words .cos-fx-panel').textContent(), /NaN|Infinity/);
+
+    // Nothing is guessed: unknown angle units, "a / b × c", relations and multi-equation boxes get no lab.
+    for (const id of ['no-trig', 'no-ambiguous', 'no-relation', 'no-times-x', 'two']) {
+      assert.ok(await page.locator(`#${id} .cos-fx-token`).count() >= 3, `${id} is still taken apart`);
+      await page.locator(`#${id} .cos-fx-toggle-btn`).click();
+      assert.equal(await page.locator(`#${id} .cos-fx-lab`).isVisible(), false, `${id} has no lab`);
+    }
+    assert.deepEqual(await page.locator('#two .cos-fx-token').evaluateAll(list => list.map(b => b.dataset.fxKey).filter(k => k === '|')), [], '" | " between equations is not an absolute value');
+
+    // Lessons can add their own formula and picture.
+    await page.evaluate(() => {
+      const fx = window.ClassroomOSFormulaExplainer;
+      fx.registerScene('test-scene', { label: 'Mine', draw(ctx, w, h, env) { window.__sceneEnv = { st: { ...env.st }, focus: env.focus.param, low: env.low, high: env.high }; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); } });
+      fx.define({ id: 'test-double', title: 'Doubling', match: ['q=2z'], y: 'q', first: 'z', init: { z: 3 }, out: ['q', 'units'], scenes: ['test-scene'],
+        f: s => 2 * s.z, line: s => 'q = ' + 2 * s.z,
+        tokens: { q: { t: 'Result', c: 'lhs', is: 'x', does: 'y' }, z: { t: 'Input', c: 'drive', is: 'x', does: 'y', s: ['z', 0, 10, 1, 'units'] } } });
+      const box = document.createElement('div');
+      box.className = 'equation-box';
+      box.id = 'custom';
+      box.textContent = 'q = 2z';
+      document.body.appendChild(box);
+      fx.upgrade(box);
+    });
+    await page.locator('#custom .cos-fx-toggle-btn').click();
+    assert.deepEqual(await page.locator('#custom .cos-fx-mode-btn').allInnerTexts(), ['Mine', 'Graph', 'Sizes']);
+    assert.deepEqual(await page.evaluate(() => window.__sceneEnv), { st: { z: 3 }, focus: 'z', low: 2, high: 6 });
+    assert.deepEqual(errors, []);
+  } finally {
+    await browser.close();
   }
 });

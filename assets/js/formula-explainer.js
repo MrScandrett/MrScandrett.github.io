@@ -168,7 +168,7 @@
   // fillText that draws "v_t" / "ρₛ" with a lowered, smaller subscript. Returns the drawn width.
   function drawMathText(ctx, text, x, y) {
     var src = String(text).replace(/[₀₁₂₃₄₅₆₇₈₉ₛᵢₒᵣₜₓᵧₙₐₑₖₘₚₕₗ]/g, function (c) { return '_' + (SUB_MAP[c] || c); });
-    var parts = src.split(/_([A-Za-z0-9])/);
+    var parts = src.split(/_([a-z]{3,}|[A-Za-z0-9])/);
     var font = ctx.font;
     var m = font.match(/(\d+(?:\.\d+)?)px/);
     var size = m ? parseFloat(m[1]) : 12;
@@ -604,6 +604,7 @@
   var PHYSICS_MATCH = {};
   function physics(def) {
     var tokens = {};
+    var vars = [], seenParam = {};
     Object.keys(def.tokens).forEach(function (key) {
       var t = def.tokens[key];
       var bare = key.replace(/\^[0-9]$/, '');
@@ -620,6 +621,11 @@
       if (t.s && def.f) {
         var unit = t.s[4] || '';
         meta.visualType = 'role-calc';
+        meta.calcParam = t.s[0];
+        if (!seenParam[t.s[0]]) {
+          seenParam[t.s[0]] = 1;
+          vars.push({ param: t.s[0], sym: t.x || bare, title: t.t, min: t.s[1], max: t.s[2], step: t.s[3], unit: unit, nudge: t.nudge || 0 });
+        }
         meta.caption = 'The graph is this formula worked out for every slider value, with the other quantities held still.';
         meta.plot = { param: t.s[0], min: t.s[1], max: t.s[2], f: def.f, x: t.x || bare, xu: unit, y: def.out[0], yu: def.out[1] };
         meta.whatIf = {
@@ -637,6 +643,8 @@
       defaultToken: def.first,
       roleLabels: def.labels || { drive: 'Raises ' + def.y, resist: 'Lowers ' + def.y },
       initSim: function () { var o = {}; Object.keys(def.init || {}).forEach(function (k) { o[k] = def.init[k]; }); return o; },
+      // The lab model: every adjustable quantity, the formula as a function, and its pictures.
+      calc: def.f && vars.length ? { vars: vars, f: def.f, out: def.out, line: def.line, scenes: def.scenes || [] } : null,
       tokens: tokens
     };
     (def.match || []).forEach(function (m) { PHYSICS_MATCH[m] = def.id; });
@@ -905,6 +913,39 @@
       T: { t: 'Period', c: 'resist', is: 'The time one complete cycle takes, in seconds.', does: 'It is on the bottom: the longer each cycle takes, the fewer fit in a second. Halve the period and the frequency doubles.', s: ['T', 0.002, 0.2, 0.002, 's'] }
     }
   });
+
+  // Beats: "Beat rate = |f_right − f_left|" and the textbook "f_beat = |f_1 − f_2|".
+  (function () {
+    var tone = function (title, key, sym, role, other) {
+      return { t: title, c: role, role: 'One of the two tones', sym: sym, x: sym, nudge: 4,
+        is: 'The frequency of one of the two steady tones, in hertz (Hz): how many times a second it vibrates.',
+        does: 'Only its distance from ' + other + ' matters. Move it towards the other tone and the beat slows; make the two equal and the beat stops. Move it away, in either direction, and the beat speeds up.',
+        s: [key, 150, 520, 1, 'Hz'] };
+    };
+    var bars = { t: 'Absolute value', c: 'op', role: 'Operator', is: 'The pair of bars means “the size of what is inside”. If the subtraction comes out negative, the bars make it positive.', does: 'They are why it does not matter which tone is higher: 224 − 220 and 220 − 224 both give a beat of 4 Hz.' };
+    var minus = { t: 'Minus', c: 'op', role: 'Operator', is: 'Takes one frequency away from the other.', does: 'What is left is the gap between the two tones. That gap, not either tone alone, sets the beat.' };
+    var make = function (id, out, a, b, match, labels, also) {
+      var tokens = { '|': bars, '−': minus, '-': minus };
+      tokens[out] = { t: 'Beat rate', c: 'lhs', is: 'How many times each second the sound swells and fades, in hertz (Hz). 4 Hz means four swells a second.', does: 'It is the gap between the two tones. It is a rate of loud-and-soft, not a new musical note.' };
+      (also || []).forEach(function (name) { tokens[name] = tokens[out]; });
+      tokens[a[0]] = tone(a[1], 'fa', a[0], 'drive', b[0]);
+      tokens[b[0]] = tone(b[1], 'fb', b[0], 'geo', a[0]);
+      physics({
+        id: id, title: 'Beat rate', match: match, y: 'the beat rate', first: a[0], labels: labels,
+        init: { fa: 224, fb: 220 }, out: [out, 'Hz'], scenes: ['beats'],
+        f: function (s) { return Math.abs(s.fa - s.fb); },
+        line: function (s) {
+          var gap = Math.abs(s.fa - s.fb);
+          return out + ' = |' + fmtNum(s.fa) + ' − ' + fmtNum(s.fb) + '| = ' + fmtNum(gap) + ' Hz' + (gap === 0 ? ' (no beat)' : '');
+        },
+        tokens: tokens
+      });
+    };
+    make('beat-rate', 'Beat rate', ['f_right', 'Right-ear tone'], ['f_left', 'Left-ear tone'],
+      ['Beatrate=|f_right−f_left|', 'Beatfrequency=|f_right−f_left|'], { drive: 'Right-ear tone', geo: 'Left-ear tone' }, ['Beat frequency']);
+    make('beat-frequency', 'f_beat', ['f_1', 'First tone'], ['f_2', 'Second tone'],
+      ['f_beat=|f_1−f_2|', 'f_b=|f_1−f_2|', 'f_beats=|f_1−f_2|'], { drive: 'First tone', geo: 'Second tone' }, ['f_b', 'f_beats']);
+  })();
 
   (function () {
     var lam = { t: 'Wavelength', c: 'resist', is: 'The length of one complete wave, from one crest to the next, in metres.', does: 'It is on the bottom: at the same wave speed, shorter waves arrive more often, so the frequency is higher. Halve a guitar string and the note rises an octave.', s: ['lam', 0.05, 5, 0.05, 'm'], x: 'λ' };
@@ -1518,12 +1559,12 @@
   });
 
   function matchPhysics(norm) {
-    var bare = norm.replace(/[·⋅×\*]/g, '').replace(/÷/g, '/').replace(/-/g, '−');
+    var bare = norm.replace(/[·⋅×\*\s]/g, '').replace(/÷/g, '/').replace(/-/g, '−');
     return PHYSICS_MATCH[bare] || null;
   }
 
   // The graph for a physics-pack symbol: the formula itself, worked out across the slider's range.
-  function drawCalcCurve(ctx, w, h, plot, st, accent) {
+  function drawCalcCurve(ctx, w, h, plot, st, accent, ghosts) {
     var padL = 40, padR = 22, padT = 36, padB = 30;
     var pw = w - padL - padR, ph = h - padT - padB;
     var N = 64, ys = [], lo = 0, hi = 0, i, x;
@@ -1561,6 +1602,22 @@
     ctx.lineWidth = 2.6;
     ctx.stroke();
 
+    (ghosts || []).forEach(function (g) {
+      probe[plot.param] = g.v;
+      var gy = plot.f(probe);
+      if (!isFinite(gy)) return;
+      ctx.beginPath();
+      ctx.arc(px(g.v), py(gy), 4.5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(248, 250, 252, 0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // right beside the dot the ring is enough; a mark there would sit on the label
+      if (Math.abs(px(g.v) - px(Math.min(plot.max, Math.max(plot.min, st[plot.param])))) < 18) return;
+      ctx.font = canvasFont(10.5);
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+      ctx.textAlign = 'center';
+      ctx.fillText(g.mark, px(g.v), Math.max(padT + 10, py(gy) - 9));
+    });
     var cur = Math.min(plot.max, Math.max(plot.min, st[plot.param]));
     probe[plot.param] = cur;
     var yc = plot.f(probe);
@@ -1762,6 +1819,8 @@
     return out;
   }
 
+  var NAME_NOT_WORD = /^(?:lambda|theta|omega|alpha|beta|gamma|delta|epsilon|sigma|constant|const|and|the|for|per)$/i;
+
   function closesBracket(segments) {
     var last = segments[segments.length - 1];
     return !!last && last.kind === 'atom' && (last.text === ')' || last.text === ']');
@@ -1835,6 +1894,41 @@
       }
     }
 
+    // "Beat rate = ...": two words with only a space between them are one name.
+    if (wordMode) {
+      var isNameWord = function (sg) {
+        return !!sg && sg.kind === 'atom' && !sg.isOp && !sg.isNum && /^[A-Za-z]{3,}$/.test(sg.text) &&
+          !FUNCTION_RE.test(sg.text) && !NAME_NOT_WORD.test(sg.text);
+      };
+      for (var nw = 0; nw + 2 < merged.length; nw++) {
+        var nameHead = merged[nw];
+        if (nameHead.kind !== 'atom' || nameHead.isOp || nameHead.isNum || !/^[A-Za-z]{3,}(?: [A-Za-z]{3,})*$/.test(nameHead.text)) continue;
+        if (FUNCTION_RE.test(nameHead.text) || NAME_NOT_WORD.test(nameHead.text)) continue;
+        if (merged[nw + 1].kind === 'space' && merged[nw + 1].text === ' ' && isNameWord(merged[nw + 2])) {
+          nameHead.text += ' ' + merged[nw + 2].text;
+          nameHead.html += ' ' + merged[nw + 2].html;
+          merged.splice(nw + 1, 2);
+          nw--;
+        }
+      }
+    }
+
+    // "|a − b|": bars that hug their contents are an absolute value, opened and closed in pairs.
+    // (" | " with a space on both sides separates two equations and is left alone.)
+    var barAt = [];
+    for (var bi = 0; bi < merged.length; bi++) {
+      var bs = merged[bi];
+      if (bs.kind !== 'space' || bs.text !== '|') continue;
+      var gapBefore = bi > 0 && merged[bi - 1].kind === 'space' && !merged[bi - 1].br;
+      var gapAfter = bi + 1 < merged.length && merged[bi + 1].kind === 'space' && !merged[bi + 1].br;
+      if (!(gapBefore && gapAfter)) barAt.push(bi);
+    }
+    if (barAt.length && barAt.length % 2 === 0) {
+      barAt.forEach(function (at, n) {
+        merged[at] = { kind: 'atom', text: '|', html: '|', isOp: true, absOpen: n % 2 === 0, absClose: n % 2 === 1 };
+      });
+    }
+
     // "Physics equation: d = v² / (2μg)": the label before the colon is plain text.
     var firstEq = 0;
     while (firstEq < merged.length && !(merged[firstEq].kind === 'atom' && /^[=≈∝→]$/.test(merged[firstEq].text))) firstEq++;
@@ -1859,8 +1953,8 @@
     for (var sp = 0; sp < merged.length; sp++) {
       var ms = merged[sp];
       if (ms.kind === 'atom') {
-        if (ms.text === '(' || ms.text === '[') sepDepth++;
-        else if (ms.text === ')' || ms.text === ']') sepDepth = Math.max(0, sepDepth - 1);
+        if (ms.text === '(' || ms.text === '[' || ms.absOpen) sepDepth++;
+        else if (ms.text === ')' || ms.text === ']' || ms.absClose) sepDepth = Math.max(0, sepDepth - 1);
         continue;
       }
       // " | " with spaces around it separates equations; "|v|" is an absolute value
@@ -1890,8 +1984,8 @@
       for (var l = range[0]; l < localEq; l++) {
         var la = merged[l];
         if (la.kind !== 'atom') continue;
-        if (la.text === '(' || la.text === '[') lhsDepth++;
-        else if (la.text === ')' || la.text === ']') lhsDepth--;
+        if (la.text === '(' || la.text === '[' || la.absOpen) lhsDepth++;
+        else if (la.text === ')' || la.text === ']' || la.absClose) lhsDepth--;
         else if (lhsDepth === 0 && la.isOp) { if (lhsValues) lhsOps++; } // a leading "·" is a separator
         else if (lhsDepth === 0) lhsValues++;
       }
@@ -1919,8 +2013,8 @@
         var seg = merged[k];
         if (seg.kind !== 'atom') continue;
         seg.key = normalizeSymbolKey(seg.text);
-        var isOpen = seg.text === '(' || seg.text === '[';
-        var isClose = seg.text === ')' || seg.text === ']';
+        var isOpen = seg.text === '(' || seg.text === '[' || !!seg.absOpen;
+        var isClose = seg.text === ')' || seg.text === ']' || !!seg.absClose;
         if (isOpen) parenDepth++;
         if (eqAt === -1) {
           seg.side = 'expr';
@@ -1937,7 +2031,7 @@
           if (isSlash && topLevel) slashSeenAfterEq = true;
           if (isOpen) {
             var parent = groups[groups.length - 1];
-            groups.push({ hasSum: false, sign: 1, fn: afterFunction, inv: !!parent.inv !== !!parent.slash });
+            groups.push({ hasSum: false, sign: 1, fn: seg.absOpen ? 'abs' : afterFunction, inv: !!parent.inv !== !!parent.slash });
           } else if (!isClose) {
             var group = groups[groups.length - 1];
             if (plusMinus) {
@@ -1979,8 +2073,8 @@
           if (/\S/.test(sq.text)) simple = false;
           continue;
         }
-        if (sq.text === '(' || sq.text === '[') depth++;
-        else if (sq.text === ')' || sq.text === ']') depth--;
+        if (sq.text === '(' || sq.text === '[' || sq.absOpen) depth++;
+        else if (sq.text === ')' || sq.text === ']' || sq.absClose) depth--;
         else if (depth === 0 && sq.text === '/') {
           if (slashAt !== -1) simple = false;
           slashAt = q;
@@ -1993,7 +2087,8 @@
       if (simple && slashAt !== -1 && topAtoms && bottomAtoms) fraction = { eq: eqIdx, slash: slashAt };
     }
 
-    return { plainText: plainText, segments: merged, fraction: fraction, chained: chained, unparsed: unparsed, wordMode: wordMode };
+    return { plainText: plainText, segments: merged, fraction: fraction, chained: chained, unparsed: unparsed, wordMode: wordMode,
+      eqIndex: eqIdx, relation: anyRelation, multi: ranges.length > 1 };
   }
 
   /* ------------------------------------------------------------------------
@@ -2118,6 +2213,20 @@
       for (var m = 0; m < run.length; m++) wrapper.appendChild(run[m]);
       return wrapper;
     }
+    // "<strong>Beat rate = |a − b|</strong><br>Example: ...": the equation is the first line.
+    var brAt = -1;
+    for (var b = 0; b < run.length; b++) if (run[b].nodeType === 1 && run[b].tagName === 'BR') { brAt = b; break; }
+    if (brAt > 0) {
+      var firstLine = run.slice(0, brAt);
+      var lineText = firstLine.map(function (n) { return n.textContent || ''; }).join('');
+      if (lineText.trim() && (trusted || isMathyText(lineText))) {
+        var lineWrap = document.createElement('span');
+        lineWrap.className = 'cos-fx-sym';
+        container.insertBefore(lineWrap, firstLine[0]);
+        for (var fl = 0; fl < firstLine.length; fl++) lineWrap.appendChild(firstLine[fl]);
+        return lineWrap;
+      }
+    }
     if (runText.trim()) return null; // the box opens with prose: not ours to take apart
 
     // 2. Otherwise the first element inside the box that holds just an equation.
@@ -2240,6 +2349,7 @@
         '÷': { t: 'Divided by', m: 'Divides what comes before it by what comes after.', e: 'Making the top bigger grows the answer. Making the bottom bigger shrinks it.', v: 'role-inverse' },
         '(': { t: 'Opening bracket', m: 'Brackets mean “work this out first”.', e: 'Whatever is outside the brackets applies to everything inside them.', v: 'none' },
         ')': { t: 'Closing bracket', m: 'Ends the group that began at the opening bracket.', e: 'Treat everything inside the brackets as one number.', v: 'none' },
+        '|': { t: 'Absolute value', m: 'The pair of bars means “the size of what is inside”. A negative answer inside becomes positive.', e: 'Only how far apart the values are matters, not which one is bigger.', v: 'none' },
         '√': { t: 'Square root', m: 'Finds the number that, multiplied by itself, gives what is inside.', e: 'It softens growth: make the inside four times as big and the root only doubles.', v: 'role-sqrt' }
       }[seg.text] || (seg.isPower ? powerInfo(seg.text) : null) || { t: 'Operator ' + seg.text, m: 'Tells you how to combine the quantities next to it.', e: 'It is part of the structure of the formula.', v: 'none' };
 
@@ -3051,6 +3161,418 @@
   }
 
   /* ------------------------------------------------------------------------
+     The lab: set every value, see the outcome, then lower or raise one.
+     A formula gets a lab when it can be worked out: catalog entries carry
+     their own function, and plain arithmetic formulas are read by buildAutoCalc.
+     Pictures are scenes in a registry, so a formula (or a lesson) can add one.
+     ------------------------------------------------------------------------ */
+  var FRACTION_VALUES = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3 };
+  var AUTO_DEFAULTS = [2, 3, 4, 5, 6, 7];
+
+  // Reads the right-hand side of "result = arithmetic" into a function of its variables.
+  // Returns null for anything it cannot be sure about (trig without known units, "a / b × c",
+  // "√ab", several equations, relations such as PV = nRT). Null means: no lab, nothing guessed.
+  function buildAutoCalc(parsed) {
+    if (!parsed || parsed.multi || parsed.chained || parsed.relation || parsed.unparsed) return null;
+    var segs = parsed.segments, eq = parsed.eqIndex;
+    if (!(eq > 0) || !segs[eq] || !/^[=≈]$/.test(segs[eq].text)) return null;
+    var lhs = [], toks = [];
+    for (var i = 0; i < segs.length; i++) {
+      if (segs[i].kind !== 'atom') continue;
+      if (i < eq) lhs.push(segs[i]); else if (i > eq) toks.push(segs[i]);
+    }
+    if (lhs.length !== 1 || lhs[0].isOp || lhs[0].isNum || !toks.length) return null;
+    // "n / (2L) x sqrt(T / mu)": a lone x with a space on each side is probably a times sign
+    for (i = eq + 2; i + 1 < segs.length; i++) {
+      if (segs[i].kind === 'atom' && /^[xX]$/.test(segs[i].text) && segs[i - 1].kind === 'space' && segs[i + 1].kind === 'space' && !segs[i + 1].br) return null;
+    }
+
+    var vars = [], byKey = {}, pos = 0, shown = [];
+    function fail() { throw new Error('unsupported'); }
+    function peek() { return toks[pos]; }
+    function isOpenTok(tk) { return !!tk && (tk.text === '(' || tk.text === '[' || !!tk.absOpen); }
+    function startsValue(tk) {
+      if (!tk) return false;
+      if (tk.isPower) return false;
+      if (tk.isOp) return isOpenTok(tk) || tk.text === '√';
+      return true;
+    }
+    function splitPower(tk) {
+      var m = String(tk.key || '').match(/^(.+?)\^(\d+)$/);
+      return m ? { base: m[1], pow: parseInt(m[2], 10) } : { base: String(tk.key || ''), pow: 1 };
+    }
+    function powered(fn, pow) { return pow === 1 ? fn : function (s) { return Math.pow(fn(s), pow); }; }
+    function supText(pow) { return pow === 1 ? '' : String(pow).split('').map(function (d) { return SUP_DIGITS[d] || d; }).join(''); }
+
+    function primary() {
+      var tk = peek();
+      if (!tk) fail();
+      if (isOpenTok(tk)) {
+        pos++;
+        var isAbs = !!tk.absOpen;
+        shown.push({ t: isAbs ? '|' : '(', type: 'open' });
+        var inner = expr();
+        var close = peek();
+        if (!close || (isAbs ? !close.absClose : !(close.text === ')' || close.text === ']'))) fail();
+        pos++;
+        shown.push({ t: isAbs ? '|' : ')', type: 'close' });
+        return isAbs ? function (s) { return Math.abs(inner(s)); } : inner;
+      }
+      if (tk.text === '√') {
+        pos++;
+        shown.push({ t: '√', type: 'pre' });
+        var bracketed = isOpenTok(peek());
+        var arg = primary();
+        // "√LC" could mean √(LC) or (√L)·C: not ours to decide
+        if (!bracketed && startsValue(peek())) fail();
+        return function (s) { return Math.sqrt(arg(s)); };
+      }
+      if (tk.isOp) fail();
+      if (FUNCTION_RE.test(tk.text)) {
+        var fnName = tk.text;
+        var fn = { sqrt: Math.sqrt, ln: Math.log, exp: Math.exp, log: function (x) { return Math.log(x) / Math.LN10; } }[fnName];
+        pos++;
+        if (!fn || !isOpenTok(peek()) || peek().absOpen) fail();
+        shown.push({ t: fnName, type: 'pre' });
+        var fnArg = primary();
+        return function (s) { return fn(fnArg(s)); };
+      }
+      pos++;
+      if (tk.isNum) {
+        var np = splitPower(tk);
+        var num = FRACTION_VALUES[np.base] !== undefined ? FRACTION_VALUES[np.base] : /^\d+(?:\.\d+)?$/.test(np.base) ? parseFloat(np.base) : NaN;
+        if (!isFinite(num)) fail();
+        shown.push({ t: np.base + supText(np.pow), type: 'val' });
+        return powered(function () { return num; }, np.pow);
+      }
+      var vp = splitPower(tk);
+      if (!vp.base || /[\^\s]/.test(vp.base) && !/^[A-Za-z]+(?: [A-Za-z]+)+$/.test(vp.base)) fail();
+      if (/^(?:constant|const)$/i.test(vp.base) || vp.base === lhs[0].key) fail();
+      if (vp.base === 'π') {
+        shown.push({ t: 'π' + supText(vp.pow), type: 'val' });
+        return powered(function () { return Math.PI; }, vp.pow);
+      }
+      var v = byKey[vp.base];
+      if (!v) {
+        if (vars.length >= AUTO_DEFAULTS.length) fail();
+        v = { param: 'x' + vars.length, sym: vp.base, html: vp.pow === 1 ? tk.html : '', title: '', min: 0, max: 10, step: 0.5, unit: '', nudge: 0, value: AUTO_DEFAULTS[vars.length] };
+        byKey[vp.base] = v;
+        vars.push(v);
+      }
+      tk.calcParam = v.param;
+      shown.push({ param: v.param, sup: supText(vp.pow), type: 'val' });
+      var param = v.param;
+      return powered(function (s) { return s[param]; }, vp.pow);
+    }
+    function power() {
+      var base = primary();
+      while (peek() && (peek().isPower || peek().text === '^')) {
+        var tk = toks[pos++];
+        var n;
+        if (tk.isPower) n = { '²': 2, '³': 3 }[tk.text] || parseFloat(tk.text.replace(/^\^/, ''));
+        else { var e = toks[pos++]; n = e && e.isNum ? parseFloat(e.text) : NaN; }
+        if (!isFinite(n)) fail();
+        shown.push({ t: supText(n), type: 'post' });
+        base = powered(base, n);
+      }
+      return base;
+    }
+    function unary() {
+      var tk = peek();
+      if (tk && /^[−\-]$/.test(tk.text)) {
+        pos++;
+        shown.push({ t: '−', type: 'pre' });
+        var u = unary();
+        return function (s) { return -u(s); };
+      }
+      return power();
+    }
+    // Symbols written side by side: "2πr", "mgh"
+    function juxtaposed() {
+      var a = unary();
+      while (startsValue(peek())) {
+        shown.push({ t: '×', type: 'bin' });
+        a = (function (l, r) { return function (s) { return l(s) * r(s); }; })(a, power());
+      }
+      return a;
+    }
+    function term() {
+      var a = juxtaposed();
+      var divided = false;
+      for (;;) {
+        var tk = peek();
+        if (tk && /^[×·⋅*]$/.test(tk.text)) {
+          if (divided) fail(); // "a / b × c": is c on the bottom? Ask the lesson, not the engine.
+          pos++;
+          shown.push({ t: '×', type: 'bin' });
+          a = (function (l, r) { return function (s) { return l(s) * r(s); }; })(a, juxtaposed());
+        } else if (tk && /^[\/÷]$/.test(tk.text)) {
+          if (divided) fail();
+          divided = true;
+          pos++;
+          shown.push({ t: '÷', type: 'bin' });
+          a = (function (l, r) { return function (s) { return l(s) / r(s); }; })(a, juxtaposed());
+        } else {
+          return a;
+        }
+      }
+    }
+    function expr() {
+      var a = term();
+      while (peek() && /^[+−\-]$/.test(peek().text)) {
+        var plus = toks[pos++].text === '+';
+        shown.push({ t: plus ? '+' : '−', type: 'bin' });
+        a = (function (l, r, add) { return function (s) { return add ? l(s) + r(s) : l(s) - r(s); }; })(a, term(), plus);
+      }
+      return a;
+    }
+
+    var f;
+    try {
+      f = expr();
+      if (pos !== toks.length) fail();
+    } catch (err) {
+      toks.forEach(function (tk) { delete tk.calcParam; });
+      return null;
+    }
+    if (!vars.length) return null;
+    var init = {};
+    vars.forEach(function (v) { init[v.param] = v.value; });
+    if (!isFinite(f(init))) return null;
+
+    var outName = lhs[0].key.replace(/\^(\d)$/, function (m, d) { return SUP_DIGITS[d] || m; });
+    return {
+      vars: vars, f: f, out: [outName, ''], outHtml: lhs[0].html, scenes: [], auto: true, init: init,
+      line: function (s) { return outName + ' = ' + this.work(s); },
+      // "π × 3² = 28.3": the right-hand side with the numbers written in, then the answer
+      work: function (s) {
+        var text = '';
+        shown.forEach(function (part, n) {
+          var word = part.param ? fmtNum(s[part.param]) + part.sup : part.t;
+          if (part.param && s[part.param] < 0) word = '(' + word + ')';
+          var prev = shown[n - 1];
+          var tight = !prev || prev.type === 'open' || prev.type === 'pre' || part.type === 'close' || part.type === 'post';
+          text += (tight ? '' : ' ') + word;
+        });
+        var y = f(s);
+        if (isFinite(y) && text === fmtNum(y)) return text;
+        return text + ' = ' + (isFinite(y) ? fmtNum(y) : 'no answer (dividing by zero, or a root of a negative)');
+      }
+    };
+  }
+
+  // Lower or raise one quantity: by its own step when the formula names one (nudge), else half and double.
+  function labNudge(v, cur, dir) {
+    var target;
+    if (v.nudge) target = cur + dir * v.nudge;
+    else if (cur === 0) target = dir > 0 ? Math.max(v.step, (v.max - v.min) / 4) : cur;
+    else target = (cur > 0) === (dir > 0) ? cur * 2 : cur / 2;
+    target = Math.min(v.max, Math.max(v.min, target));
+    target = v.min + Math.round((target - v.min) / v.step) * v.step;
+    target = Math.min(v.max, Math.max(v.min, parseFloat(target.toFixed(6))));
+    return Math.abs(target - cur) < 1e-9 ? null : target;
+  }
+  function labWith(st, param, value) {
+    var o = {};
+    Object.keys(st).forEach(function (k) { o[k] = st[k]; });
+    o[param] = value;
+    return o;
+  }
+  function labUnit(text, unit) { return text + (unit ? ' ' + unit : ''); }
+
+  /* Scenes. Each is { label, draw(ctx, w, h, env), caption(env) }.
+     env: { calc, st, focus, color(param), low, high } where low/high are the values the
+     Lower and Raise cards would set (or null at the end of the slider). */
+  var SCENES = {};
+  function registerScene(name, scene) {
+    if (name && scene && typeof scene.draw === 'function') SCENES[name] = scene;
+  }
+
+  registerScene('graph', {
+    label: 'Graph',
+    draw: function (ctx, w, h, env) {
+      var v = env.focus, calc = env.calc;
+      var ghosts = [];
+      if (env.low !== null) ghosts.push({ v: env.low, mark: '▼' });
+      if (env.high !== null) ghosts.push({ v: env.high, mark: '▲' });
+      drawCalcCurve(ctx, w, h, { param: v.param, min: v.min, max: v.max, f: calc.f, x: v.sym, xu: v.unit, y: calc.out[0], yu: calc.out[1] },
+        env.st, env.color(v.param), ghosts);
+    },
+    caption: function (env) {
+      return 'The curve is the formula worked out for every value of ' + env.focus.sym + ', with everything else held still. The white dot is now; the rings are where Lower and Raise would land.';
+    }
+  });
+
+  registerScene('bars', {
+    label: 'Sizes',
+    draw: function (ctx, w, h, env) {
+      var calc = env.calc, st = env.st, vars = calc.vars;
+      var rows = vars.length + 1;
+      var padL = 16, padR = 16, top = 34;
+      var rowH = Math.min(58, (h - top - 8) / rows);
+      var barH = Math.max(6, Math.min(14, rowH - 30));
+      var x0 = padL, bw = w - padL - padR;
+      plotTitle(ctx, 'What goes in, and what comes out', padL);
+      function track(y) {
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.18)';
+        ctx.fillRect(x0, y, bw, barH);
+      }
+      vars.forEach(function (v, i) {
+        var y = top + i * rowH;
+        var frac = (st[v.param] - v.min) / (v.max - v.min);
+        var color = env.color(v.param);
+        ctx.font = canvasFont(11.5, v === env.focus);
+        ctx.fillStyle = v === env.focus ? '#f8fafc' : '#cbd5e1';
+        ctx.textAlign = 'left';
+        drawMathText(ctx, v.sym + ' = ' + labUnit(fmtNum(st[v.param]), v.unit), x0, y + 10);
+        track(y + 15);
+        ctx.fillStyle = color;
+        ctx.fillRect(x0, y + 15, Math.max(2, bw * Math.max(0, Math.min(1, frac))), barH);
+        if (v === env.focus) {
+          [[env.low, '▼'], [env.high, '▲']].forEach(function (g) {
+            if (g[0] === null) return;
+            var gx = x0 + bw * (g[0] - v.min) / (v.max - v.min);
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = canvasFont(10);
+            ctx.textAlign = 'center';
+            ctx.fillRect(gx - 0.75, y + 13, 1.5, barH + 4);
+            ctx.fillText(g[1], Math.max(x0 + 5, Math.min(x0 + bw - 5, gx + (g[1] === '▼' ? -4 : 4))), y + barH + 27);
+          });
+        }
+      });
+      // The result bar is scaled so the Lower and Raise outcomes fit on it too.
+      var now = calc.f(st);
+      var outs = [[now, '']];
+      if (env.low !== null) outs.push([calc.f(labWith(st, env.focus.param, env.low)), '▼']);
+      if (env.high !== null) outs.push([calc.f(labWith(st, env.focus.param, env.high)), '▲']);
+      var scale = 0;
+      outs.forEach(function (o) { if (isFinite(o[0])) scale = Math.max(scale, Math.abs(o[0])); });
+      if (!scale) scale = 1;
+      var ry = top + vars.length * rowH;
+      ctx.font = canvasFont(12, true);
+      ctx.fillStyle = '#f8fafc';
+      ctx.textAlign = 'left';
+      drawMathText(ctx, calc.out[0] + ' = ' + (isFinite(now) ? labUnit(fmtNum(now), calc.out[1]) : 'no answer'), x0, ry + 10);
+      track(ry + 15);
+      var usable = bw * 0.92;
+      if (isFinite(now)) {
+        ctx.fillStyle = STROKE_HEX.lhs;
+        ctx.fillRect(x0, ry + 15, Math.max(2, usable * Math.abs(now) / scale), barH);
+      }
+      outs.slice(1).forEach(function (o) {
+        if (!isFinite(o[0])) return;
+        var gx = x0 + usable * Math.abs(o[0]) / scale;
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(gx - 0.75, ry + 13, 1.5, barH + 4);
+        ctx.font = canvasFont(10);
+        ctx.textAlign = 'center';
+        ctx.fillText(o[1], Math.max(x0 + 5, Math.min(x0 + bw - 5, gx + (o[1] === '▼' ? -4 : 4))), ry + barH + 27);
+      });
+    },
+    caption: function (env) {
+      return 'Each bar is one quantity on its own slider. The bottom bar is the result; ▼ and ▲ mark where it would go if you lowered or raised ' + env.focus.sym + '.';
+    }
+  });
+
+  // |a − b| as a distance on a number line, and what that gap sounds like over one second.
+  registerScene('beats', {
+    label: 'Picture',
+    draw: function (ctx, w, h, env) {
+      var vars = env.calc.vars, st = env.st;
+      var a = st[vars[0].param], b = st[vars[1].param];
+      var gap = Math.abs(a - b);
+      var padL = 18, padR = 18, pw = w - padL - padR;
+      plotTitle(ctx, 'The gap is the beat rate', padL);
+
+      // Number line, zoomed so the gap is always readable
+      var span = Math.max(24, gap * 2.4);
+      var mid = (a + b) / 2;
+      var lo = mid - span / 2, hi = mid + span / 2;
+      var ly = 74;
+      function fx(v) { return padL + ((v - lo) / (hi - lo)) * pw; }
+      ctx.strokeStyle = 'rgba(203, 213, 225, 0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(padL, ly); ctx.lineTo(padL + pw, ly); ctx.stroke();
+      var tick = [1, 2, 5, 10, 20, 50, 100, 200].filter(function (s) { return span / s <= 8; })[0] || 200;
+      ctx.font = canvasFont(10);
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.beginPath();
+      for (var tv = Math.ceil(lo / tick) * tick; tv <= hi; tv += tick) {
+        ctx.moveTo(fx(tv), ly - 3); ctx.lineTo(fx(tv), ly + 3);
+        ctx.fillText(String(tv), fx(tv), ly + 15);
+      }
+      ctx.stroke();
+      ctx.fillText('Hz', padL + pw - 6, ly - 8);
+      if (gap > 0) {
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+        ctx.fillRect(fx(Math.min(a, b)), ly - 5, fx(Math.max(a, b)) - fx(Math.min(a, b)), 10);
+      }
+      [[a, vars[0]], [b, vars[1]]].forEach(function (pair, n) {
+        var x = fx(pair[0]);
+        ctx.beginPath();
+        ctx.arc(x, ly, 6, 0, Math.PI * 2);
+        ctx.fillStyle = env.color(pair[1].param);
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#0b1220';
+        ctx.stroke();
+        ctx.font = canvasFont(11.5, true);
+        ctx.fillStyle = env.color(pair[1].param);
+        var right = gap === 0 ? n === 0 : pair[0] >= (n === 0 ? b : a);
+        ctx.textAlign = right ? 'left' : 'right';
+        if (gap < span * 0.3) drawMathText(ctx, pair[1].sym + ' ' + fmtNum(pair[0]), x + (right ? 9 : -9), ly - 26 + n * 0);
+        else { ctx.textAlign = 'center'; drawMathText(ctx, pair[1].sym + ' ' + fmtNum(pair[0]), x, ly - 26); }
+      });
+      ctx.font = canvasFont(11.5, true);
+      ctx.fillStyle = STROKE_HEX.lhs;
+      ctx.textAlign = 'center';
+      ctx.fillText(gap > 0 ? 'gap ' + fmtNum(gap) + ' Hz' : 'no gap', fx(mid), ly - 10);
+
+      // One second of the two tones added together: the loudness swells once per hertz of gap
+      var top = 110, bottom = h - 26;
+      var cy = (top + bottom) / 2, amp = (bottom - top) / 2 - 2;
+      function env1(t) { return gap === 0 ? 1 : Math.abs(Math.sin(Math.PI * gap * t)); }
+      ctx.beginPath();
+      var N = Math.max(120, Math.round(pw));
+      for (var i = 0; i <= N; i++) { var e1 = env1(i / N) * amp; if (i) ctx.lineTo(padL + (i / N) * pw, cy - e1); else ctx.moveTo(padL, cy - e1); }
+      for (i = N; i >= 0; i--) ctx.lineTo(padL + (i / N) * pw, cy + env1(i / N) * amp);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+      ctx.fill();
+      ctx.strokeStyle = STROKE_HEX.lhs;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      // the tone itself, drawn far slower than it really is so the eye can follow it
+      ctx.beginPath();
+      for (i = 0; i <= N * 2; i++) {
+        var tt = i / (N * 2);
+        var yy = cy - Math.sin(tt * Math.PI * 2 * 46) * env1(tt) * amp * 0.94;
+        if (i) ctx.lineTo(padL + tt * pw, yy); else ctx.moveTo(padL, yy);
+      }
+      ctx.strokeStyle = 'rgba(248, 250, 252, 0.5)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.font = canvasFont(10.5, true);
+      ctx.fillStyle = '#f8fafc';
+      ctx.textAlign = 'center';
+      if (gap > 0 && gap <= 12) for (var k = 0; k < gap; k++) ctx.fillText(String(k + 1), padL + ((k + 0.5) / gap) * pw, top - 2 + 9);
+      ctx.font = canvasFont(11);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.textAlign = 'left';
+      ctx.fillText('0 s', padL, h - 8);
+      ctx.textAlign = 'right';
+      ctx.fillText('1 s', padL + pw, h - 8);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText(gap === 0 ? 'Same tone: steady, no beat' : fmtNum(gap) + (gap === 1 ? ' swell' : ' swells') + ' of loudness in one second', padL + pw / 2, h - 8);
+    },
+    caption: function () {
+      return 'Top: the two tones on a frequency line; the shaded gap is the answer whichever tone is higher. Bottom: the two tones added together for one second. The fine wiggle is slowed down so you can see it.';
+    }
+  });
+
+  /* ------------------------------------------------------------------------
      Controller per Formula Container
      ------------------------------------------------------------------------ */
   function attachExplorer(container) {
@@ -3276,6 +3798,7 @@
             '<input type="range" class="cos-fx-whatif-slider">' +
             '<div class="cos-fx-whatif-readout" aria-live="polite"></div>' +
           '</div>' +
+          '<div class="cos-fx-lab" hidden></div>' +
         '</div>' +
         '<div class="cos-fx-visual-col">' +
           '<div class="cos-fx-visual-bar">' +
@@ -3289,6 +3812,7 @@
             '<canvas class="cos-fx-canvas" width="360" height="225" role="img"></canvas>' +
           '</div>' +
           '<p class="cos-fx-caption"></p>' +
+          '<div class="cos-fx-next" role="group" aria-label="What happens if you lower or raise it" hidden></div>' +
         '</div>' +
       '</div>';
 
@@ -3355,12 +3879,170 @@
       else window.cancelAnimationFrame(id);
     }
 
+    /* The lab: all sliders at once, the worked answer, Lower / Now / Raise cards, and scene tabs. */
+    var calc = catalog ? catalog.calc : buildAutoCalc(parsed);
+    var lab = null;
+    if (calc) {
+      (function () {
+        var labEl = panel.querySelector('.cos-fx-lab');
+        var nextEl = panel.querySelector('.cos-fx-next');
+        var modeGroup = panel.querySelector('.cos-fx-mode-group');
+        function paramOf(seg) { return (seg && seg.meta && seg.meta.calcParam) || (seg && seg.calcParam) || ''; }
+        var roleOf = {}, tokenOf = {};
+        atomTokens.forEach(function (seg, idx) {
+          var p = paramOf(seg);
+          if (!p || tokenOf[p] !== undefined) return;
+          tokenOf[p] = idx;
+          roleOf[p] = seg.meta.colorRole || 'neutral';
+        });
+        var vars = calc.vars.filter(function (v) { return tokenOf[v.param] !== undefined; });
+        if (!vars.length) return;
+        var start = {};
+        vars.forEach(function (v) {
+          if (calc.init && calc.init[v.param] !== undefined) simState[v.param] = calc.init[v.param];
+          if (simState[v.param] === undefined) simState[v.param] = v.min;
+          if (!v.title) v.title = atomTokens[tokenOf[v.param]].meta.title || '';
+        });
+        Object.keys(simState).forEach(function (k) { start[k] = simState[k]; });
+        var focus = vars[0];
+        var sceneNames = (calc.scenes || []).concat(['graph', 'bars']).filter(function (name, i, all) { return SCENES[name] && all.indexOf(name) === i; });
+        var view = sceneNames[0];
+        var labId = 'cos-fx-lab-' + (++uid);
+
+        labEl.hidden = false;
+        nextEl.hidden = false;
+        panel.classList.add('has-lab');
+        canvas.classList.add('is-2d');
+        orbitHint.hidden = true;
+        labEl.innerHTML =
+          '<div class="cos-fx-lab-head"><span class="cos-fx-block-label">Set the values</span>' +
+          '<button type="button" class="cos-fx-lab-reset">Reset</button></div>' +
+          vars.map(function (v, i) {
+            return '<div class="cos-fx-lab-row" data-param="' + escapeHtml(v.param) + '" style="--fx-token-color: ' + (COLOR_MAP[roleOf[v.param]] || COLOR_MAP.neutral) + '">' +
+              '<label for="' + labId + '-' + i + '"><strong class="cos-fx-lab-sym">' + (v.html || mathHtml(v.sym)) + '</strong>' +
+              (v.title && v.title !== v.sym ? ' <span class="cos-fx-lab-name">' + mathHtml(v.title) + '</span>' : '') + '</label>' +
+              '<output class="cos-fx-lab-val" for="' + labId + '-' + i + '"></output>' +
+              '<input type="range" id="' + labId + '-' + i + '" min="' + v.min + '" max="' + v.max + '" step="' + v.step + '">' +
+              '</div>';
+          }).join('') +
+          '<div class="cos-fx-lab-result" aria-live="polite"></div>' +
+          (calc.auto ? '<p class="cos-fx-lab-note">Plain numbers, so you can watch the arithmetic. Use the units your lesson gives.</p>' : '');
+        modeGroup.setAttribute('aria-label', 'Picture');
+        modeGroup.innerHTML = sceneNames.map(function (name) {
+          return '<button type="button" class="cos-fx-mode-btn" data-view="' + name + '" aria-pressed="' + (name === view) + '">' + escapeHtml(SCENES[name].label || name) + '</button>';
+        }).join('');
+
+        var rows = Array.prototype.slice.call(labEl.querySelectorAll('.cos-fx-lab-row'));
+        var resultEl = labEl.querySelector('.cos-fx-lab-result');
+        function colorHex(param) { return STROKE_HEX[roleOf[param]] || STROKE_HEX.neutral; }
+        var outHtml = calc.outHtml || mathHtml(calc.out[0]);
+        function nameHtml(v) { return v.html || mathHtml(v.sym); }
+        function env() {
+          return { calc: calc, st: simState, focus: focus, color: colorHex,
+            low: labNudge(focus, simState[focus.param], -1), high: labNudge(focus, simState[focus.param], 1) };
+        }
+        function outText(y) { return isFinite(y) ? labUnit(fmtNum(y), calc.out[1]) : 'no answer'; }
+        function compare(now, then) {
+          if (!isFinite(now) || !isFinite(then)) return '';
+          if (Math.abs(then - now) <= 1e-9 * Math.max(1, Math.abs(now))) return 'no change';
+          if (Math.abs(then) < 1e-12) return 'drops to zero';
+          if (Math.abs(now) < 1e-12 || (now > 0) !== (then > 0)) return then > now ? 'goes up' : 'goes down';
+          var r = then / now;
+          return '× ' + fmtNum(r) + (r > 1 ? ', bigger' : ', smaller');
+        }
+        function card(dir, e) {
+          var target = dir < 0 ? e.low : e.high;
+          var cur = simState[focus.param];
+          var name = nameHtml(focus);
+          if (target === null) {
+            return '<div class="cos-fx-next-card is-end"><span class="cos-fx-next-do">' + (dir < 0 ? '▼ Lower ' : '▲ Raise ') + name + '</span>' +
+              '<span class="cos-fx-next-note">Already at the ' + (dir < 0 ? 'bottom' : 'top') + ' of this slider</span></div>';
+          }
+          var verb = Math.abs(target - cur * 2) < 1e-9 && cur > 0 ? 'Double ' : Math.abs(target - cur / 2) < 1e-9 && cur > 0 ? 'Halve ' : dir < 0 ? 'Lower ' : 'Raise ';
+          var now = calc.f(simState), then = calc.f(labWith(simState, focus.param, target));
+          return '<button type="button" class="cos-fx-next-card" data-dir="' + dir + '">' +
+            '<span class="cos-fx-next-do">' + (dir < 0 ? '▼ ' : '▲ ') + verb + name + ' to ' + mathHtml(labUnit(fmtNum(target), focus.unit)) + '</span>' +
+            '<span class="cos-fx-next-out">' + outHtml + ' = ' + mathHtml(outText(then)) + '</span>' +
+            '<span class="cos-fx-next-note">' + compare(now, then) + '</span></button>';
+        }
+        function refresh() {
+          var e = env();
+          rows.forEach(function (row, i) {
+            var v = vars[i];
+            row.classList.toggle('is-focus', v === focus);
+            var input = row.querySelector('input');
+            input.value = String(simState[v.param]);
+            // the site's slider skin repaints its filled track when the attribute changes
+            input.setAttribute('value', input.value);
+            row.querySelector('output').innerHTML = mathHtml(labUnit(fmtNum(simState[v.param]), v.unit));
+          });
+          var now = calc.f(simState);
+          resultEl.innerHTML = calc.work ? outHtml + ' = ' + mathHtml(calc.work(simState)) : mathHtml(calc.line ? calc.line(simState) : calc.out[0] + ' = ' + outText(now));
+          nextEl.innerHTML = card(-1, e) +
+            '<div class="cos-fx-next-card is-now"><span class="cos-fx-next-do">Now: ' + nameHtml(focus) + ' = ' + mathHtml(labUnit(fmtNum(simState[focus.param]), focus.unit)) + '</span>' +
+            '<span class="cos-fx-next-out">' + outHtml + ' = ' + mathHtml(outText(now)) + '</span></div>' +
+            card(1, e);
+          nextEl.style.setProperty('--fx-token-color', COLOR_MAP[roleOf[focus.param]] || COLOR_MAP.neutral);
+          var scene = SCENES[view];
+          var cap = scene.caption ? scene.caption(e) : '';
+          captionEl.innerHTML = mathHtml(cap);
+          canvas.setAttribute('aria-label', (calc.line ? calc.line(simState) : cap).replace(/_/g, ' '));
+          ensureRender();
+        }
+        function setFocus(param) {
+          for (var i = 0; i < vars.length; i++) if (vars[i].param === param) focus = vars[i];
+        }
+
+        rows.forEach(function (row, i) {
+          var v = vars[i];
+          var input = row.querySelector('input');
+          // Picking up a slider selects its symbol once; dragging then only changes numbers.
+          function pick() { if (focus !== v || activeIndex !== tokenOf[v.param] || !picked) selectToken(tokenOf[v.param], true); }
+          input.addEventListener('pointerdown', pick);
+          input.addEventListener('focus', pick);
+          input.addEventListener('input', function () {
+            simState[v.param] = parseFloat(input.value);
+            focus = v;
+            refresh();
+          });
+        });
+        nextEl.addEventListener('click', function (ev) {
+          var btn = ev.target.closest ? ev.target.closest('button.cos-fx-next-card') : null;
+          if (!btn) return;
+          var dir = parseInt(btn.getAttribute('data-dir'), 10);
+          var target = labNudge(focus, simState[focus.param], dir);
+          if (target === null) return;
+          simState[focus.param] = target;
+          refresh();
+          var again = nextEl.querySelector('button.cos-fx-next-card[data-dir="' + dir + '"]') || nextEl.querySelector('button.cos-fx-next-card');
+          if (again) again.focus();
+        });
+        labEl.querySelector('.cos-fx-lab-reset').addEventListener('click', function () {
+          Object.keys(start).forEach(function (k) { simState[k] = start[k]; });
+          refresh();
+        });
+        modeGroup.addEventListener('click', function (ev) {
+          var btn = ev.target.closest ? ev.target.closest('[data-view]') : null;
+          if (!btn) return;
+          view = btn.getAttribute('data-view');
+          Array.prototype.forEach.call(modeGroup.querySelectorAll('[data-view]'), function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+          refresh();
+        });
+
+        lab = {
+          refresh: refresh,
+          select: function (seg) { var p = paramOf(seg); if (p) setFocus(p); refresh(); },
+          draw: function (ctx, cw, ch) { SCENES[view].draw(ctx, cw, ch, env()); }
+        };
+      })();
+    }
+
     function drawFrame(now) {
       rafId = 0;
       if (panel.hidden) return;
       var seg = atomTokens[activeIndex] || atomTokens[0];
       var vType = visualOf(seg);
-      if (vType === 'none') return;
+      if (!lab && vType === 'none') return;
       var rect = canvas.getBoundingClientRect();
       var cw = Math.max(260, Math.round(rect.width || 360));
       var ch = Math.max(175, Math.round(rect.height || 225));
@@ -3379,7 +4061,9 @@
       var elapsed = reducedMotion ? 0.5 : (now - startTime) * 0.001;
       var mode3d = has3D(vType) && viewMode === '3d';
 
-      if (vType.indexOf('stokes-') === 0) {
+      if (lab) {
+        lab.draw(ctx, cw, ch);
+      } else if (vType.indexOf('stokes-') === 0) {
         if (mode3d) {
           drawStokes3D(ctx, cw, ch, elapsed, yaw, pitch, vType, simState, accentHex);
         } else {
@@ -3421,6 +4105,7 @@
       whatIfSlider.step = String(wi.step);
       var cur = simState[wi.param] !== undefined ? simState[wi.param] : wi.min;
       whatIfSlider.value = String(cur);
+      whatIfSlider.setAttribute('value', whatIfSlider.value);
       whatIfVal.innerHTML = mathHtml(wi.format(cur, simState));
       whatIfReadout.innerHTML = mathHtml(wi.summary(simState));
     }
@@ -3463,9 +4148,17 @@
       eqRoleEl.innerHTML = mathHtml(meta.equationRole);
       captionEl.innerHTML = mathHtml(meta.caption || '');
       canvas.setAttribute('aria-label', (meta.caption || meta.title).replace(/_/g, ' '));
-      panel.classList.toggle('no-visual', vType === 'none');
-      visualBar.hidden = !has3D(vType);
-      updateWhatIf(meta);
+      if (lab) {
+        // The lab stays on screen for every symbol; a variable also takes the focus.
+        panel.classList.remove('no-visual');
+        visualBar.hidden = false;
+        whatIfBox.hidden = true;
+        lab.select(seg);
+      } else {
+        panel.classList.toggle('no-visual', vType === 'none');
+        visualBar.hidden = !has3D(vType);
+        updateWhatIf(meta);
+      }
 
       if (shouldOpen !== false && !isOpen) {
         isOpen = true;
@@ -3553,6 +4246,7 @@
 
     modeBtns.forEach(function (mBtn) {
       mBtn.addEventListener('click', function () {
+        if (lab) return;
         viewMode = mBtn.getAttribute('data-mode') || '3d';
         modeBtns.forEach(function (b) {
           b.setAttribute('aria-pressed', b === mBtn ? 'true' : 'false');
@@ -3566,7 +4260,7 @@
     // Pointer drag-to-orbit on 3D canvas
     var dragging = false, lastX = 0, lastY = 0;
     canvas.addEventListener('pointerdown', function (e) {
-      if (viewMode !== '3d' || !has3D(visualOf(atomTokens[activeIndex]))) return;
+      if (lab || viewMode !== '3d' || !has3D(visualOf(atomTokens[activeIndex]))) return;
       dragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
@@ -3612,6 +4306,11 @@
   window.ClassroomOSFormulaExplainer = {
     upgrade: attachExplorer,
     upgradeAll: upgradeAll,
+    // define({ id, title, match, init, out, f, line, scenes, tokens }) adds a formula with a lab;
+    // registerScene(name, { label, draw(ctx, w, h, env), caption(env) }) adds a picture for it.
+    define: physics,
+    registerScene: registerScene,
+    SCENES: SCENES,
     FORMULA_CATALOG: FORMULA_CATALOG,
     CONTAINER_SELECTORS: CONTAINER_SELECTORS,
     PATTERN_SELECTORS: PATTERN_SELECTORS
