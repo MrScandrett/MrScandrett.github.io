@@ -1,4 +1,9 @@
   (function () {
+    var messageDiagram = document.getElementById("messageDiagram");
+    document.getElementById("btnDiagram").addEventListener("click", function () {
+      messageDiagram.showModal();
+      messageDiagram.querySelector(".am-diagram-scroll").scrollTop = 0;
+    });
 
     // ── Section definitions ──────────────────────────────────────────────
     var SECTIONS = [
