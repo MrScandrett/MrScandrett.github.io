@@ -1,3 +1,4 @@
+import { describePattern, importPatternSource, presets } from './procedural.mjs';
 import { setupCharacterExport } from './character-export.mjs';
 import { setupRigStudio } from './rig-studio.mjs';
 import { setupMaterialStudio } from './material-studio.mjs';
@@ -63,33 +64,49 @@ async function mount(host){
  host.classList.add('d3w');host.setAttribute('aria-labelledby',id+'-title');
  // the workshop title is the page heading unless the page already shows its own h1
  const hx=[...document.querySelectorAll('h1')].some(h=>!host.contains(h)&&!h.closest('.d3-original-reference'))?'h2':'h1';
- host.innerHTML=`<header class="d3w-head"><p>3D workshop · ${escape(def.technique)}</p><${hx} id="${id}-title">${escape(def.title)}</${hx}><p>${escape(def.challenge)}</p></header>
- <div class="d3w-options"><div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>
- <div class="d3w-scheme"><label for="${id}-scheme">Control scheme</label><select id="${id}-scheme" data-scheme><option value="tinkercad"${state.scheme==='tinkercad'?' selected':''}>Tinkercad / Default</option><option value="blender"${state.scheme==='blender'?' selected':''}>Blender (MMB)</option><option value="fusion"${state.scheme==='fusion'?' selected':''}>Fusion 360 / CAD (Shift+MMB)</option></select><span class="d3w-scheme-hint" data-scheme-hint>Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom</span></div></div>
- ${mode==='character'?`<section class="d3w-character-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a starting character</h2><p>Explore rounded, blocky, stick-figure and animal-mascot styles. Choose a starter, then open Style to change its shape language. Human starters keep your chosen skin tone; use Color to change it independently of role, face or hair.</p></div><div class="d3w-presets">${Object.entries(CHARACTER_PRESETS).map(([key,preset])=>`<button type="button" data-character-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}
- ${mode==='furniture'?`<section class="d3w-character-cast d3w-furniture-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a furniture form</h2><p>Use these as design seeds. Every dimension, detail and color remains editable.</p></div><div class="d3w-presets">${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}
- ${mode==='materials'?`<section class="d3w-character-cast d3w-material-bench" aria-labelledby="${id}-bench"><div><h2 id="${id}-bench">Start with a material hypothesis</h2><p>Apply a swatch, then change one property. The sphere shows highlight width; the beveled block shows edge response.</p></div><div class="d3w-presets">${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>`:''}
+ const pattern=mode==='procedural';
+ const fitted=pattern||Boolean(host.closest('[data-creation-fit]'));
+ const pairedColors=fitted&&mode!=='character';
+ host.classList.toggle('d3w-fit',fitted);
+ const support=`<div class="d3w-level"><label for="${id}-level">Support level</label><select id="${id}-level" data-level><option value="guided">Guided practice</option><option value="independent">Independent design</option><option value="extension">Extension challenge</option></select><span data-level-note></span></div>`;
+ const scheme=`<div class="d3w-scheme"><label for="${id}-scheme">${pattern?'Camera controls':'Control scheme'}</label><select id="${id}-scheme" data-scheme><option value="tinkercad">Tinkercad / Default</option><option value="blender">Blender${pattern?'':' (MMB)'}</option><option value="fusion">Fusion 360 / CAD${pattern?'':' (Shift+MMB)'}</option></select><span class="d3w-scheme-hint" data-scheme-hint>Left-drag: Orbit · Right-drag: Pan · Scroll: Zoom</span></div>`;
+ const guideMarkup=`<ol class="d3w-guide">${def.steps.map(s=>'<li>'+escape(s)+'</li>').join('')}</ol>`;
+ const explain=`<fieldset><legend>Test and explain</legend><label for="${id}-reflection">I changed ___ because ___.</label><textarea id="${id}-reflection" data-reflection rows="3" maxlength="1000">${escape(state.reflection)}</textarea><p>${escape(def.check)}</p><button type="button" data-action="check">Test my design</button><ul data-checks></ul><p class="d3w-completion" data-completion></p></fieldset>`;
+ const projectActions=`<div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${mode==='procedural'?'<button type="button" data-action="glb">Export color GLB</button>':''}${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="workbench">Open in Workbench</button>${mode==='sculpt'?'<button type="button" data-action="printprep">Send to Print Prep</button>':''}<button type="button" data-action="capture">Capture image</button>${fitted&&mode==='character'?'<button type="button" data-character-formats aria-expanded="false">GLB and STL…</button>':''}${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>`;
+ const status='<p role="status" data-status>Loading the editable scene…</p>';
+ host.innerHTML=`${fitted?'<div data-creation-primary>':''}<header class="d3w-head">${fitted?'':`<p>3D workshop · ${escape(def.technique)}</p>`}<${hx} id="${id}-title">${escape(def.title)}</${hx}>${fitted?'':`<p>${escape(def.challenge)}</p>`}</header>
+ ${fitted?'':`<div class="d3w-options">${support}${scheme}</div>`}
+ ${mode==='character'?fitted?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Character starters"><span>Character starters</span>${Object.entries(CHARACTER_PRESETS).map(([key,preset])=>`<button type="button" data-character-preset="${key}">${escape(preset.label)}</button>`).join('')}</div>`:`<section class="d3w-character-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a starting character</h2><p>Explore rounded, blocky, stick-figure and animal-mascot styles. Choose a starter, then open Style to change its shape language. Human starters keep your chosen skin tone; use Color to change it independently of role, face or hair.</p></div><div class="d3w-presets">${Object.entries(CHARACTER_PRESETS).map(([key,preset])=>`<button type="button" data-character-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>` : ''}
+ ${mode==='furniture'?fitted?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Furniture starters"><span>Furniture starters</span>${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div>`:`<section class="d3w-character-cast d3w-furniture-cast" aria-labelledby="${id}-cast"><div><h2 id="${id}-cast">Choose a furniture form</h2><p>Use these as design seeds. Every dimension, detail and color remains editable.</p></div><div class="d3w-presets">${Object.entries(FURNITURE_PRESETS).map(([key,preset])=>`<button type="button" data-furniture-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>` : ''}
+ ${mode==='materials'?fitted?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Material swatches"><span>Material swatches</span>${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div>`:`<section class="d3w-character-cast d3w-material-bench" aria-labelledby="${id}-bench"><div><h2 id="${id}-bench">Start with a material hypothesis</h2><p>Apply a swatch, then change one property. The sphere shows highlight width; the beveled block shows edge response.</p></div><div class="d3w-presets">${Object.entries(MATERIAL_PRESETS).map(([key,preset])=>`<button type="button" data-material-preset="${key}">${escape(preset.label)}</button>`).join('')}</div></section>` : ''}
+ ${pattern?`<div class="d3w-toolbar d3w-starting-tools" role="group" aria-label="Pattern starters"><span>Start with</span>${Object.keys(presets).map(name=>`<button type="button" data-pattern-preset="${name}">${name}</button>`).join('')}<button type="button" data-action="source">Import source OBJ</button><input type="file" data-pattern-file accept=".obj" hidden></div>`:''}
  <div class="d3w-layout"><div class="d3w-stage"><div class="d3w-view"><canvas tabindex="0" aria-label="Editable 3D scene. Drag to orbit; use view buttons or arrow keys. In sculpt mode, turn on Brush mode to edit the mesh." data-canvas></canvas><p class="d3w-unit">${['print','clearance'].includes(mode)?'Coordinates in millimeters':'Y up · starter-scene units · not a manufacturing specification'}</p></div>
  ${mode==='sculpt'?'<div class="d3w-toolbar" role="group" aria-label="Quick sculpt tools"><button type="button" data-sculpt-tool="raise" aria-pressed="true">Raise</button><button type="button" data-sculpt-tool="lower" aria-pressed="false">Lower</button><button type="button" data-sculpt-tool="smooth" aria-pressed="false">Smooth</button><span>Choose a brush, then drag · Shift: smooth · Ctrl: reverse · Undo: one drag</span></div>':''}
  <div class="d3w-toolbar" role="group" aria-label="Camera views"><button type="button" data-view="perspective">Perspective</button><button type="button" data-view="front">Front</button><button type="button" data-view="side">Side</button><button type="button" data-view="top">Top</button><button type="button" data-zoom="in">Zoom in</button><button type="button" data-zoom="out">Zoom out</button><button type="button" data-fit>Fit model</button></div>
- <div class="d3w-actions"><button type="button" data-action="undo">Undo</button><button type="button" data-action="redo">Redo</button><button type="button" data-action="reset">Reset starter</button><button type="button" data-action="save">Save project</button><button type="button" data-action="open">Open project</button><button type="button" data-action="export">Export OBJ</button>${['print','clearance'].includes(mode)?'<button type="button" data-action="stl">Export STL (mm)</button>':''}<button type="button" data-action="workbench">Open in Workbench</button>${mode==='sculpt'?'<button type="button" data-action="printprep">Send to Print Prep</button>':''}<button type="button" data-action="capture">Capture image</button>${mode==='texture'?'<button type="button" data-action="texture">Export texture PNG</button>':''}</div><input type="file" data-file accept=".json" hidden>
- <p class="d3w-help">X runs across · Y is up · Z is depth. Drag to orbit · right-drag to pan · pinch or use Zoom · keyboard arrows orbit, +/− zoom. Numeric controls work without dragging.</p><p data-description class="d3w-description"></p>
+ ${fitted?scheme:projectActions}
+ ${fitted?'':'<p class="d3w-help">X runs across · Y is up · Z is depth. Drag to orbit · right-drag to pan · pinch or use Zoom · keyboard arrows orbit, +/− zoom. Numeric controls work without dragging.</p>'}<p data-description class="d3w-description${fitted?' d3w-sr-only':''}"></p>
  ${mode==='navigate'?`<div class="d3w-missions"><p><strong>Camera practice mission</strong></p><ul data-missions><li data-m="orbit">○ Orbit the view to inspect the stepped silhouette</li><li data-m="views">○ Inspect Front, Side and Top views</li><li data-m="zoom">○ Zoom in or out to examine detail</li><li data-m="fit">○ Use Fit model or view buttons</li><li data-m="proportions">○ Adjust dimensions to set your proportions</li></ul></div>`:''}
- <ol class="d3w-guide">${def.steps.map(s=>'<li>'+escape(s)+'</li>').join('')}</ol>
- <p role="status" data-status>Loading the editable scene…</p></div>
- <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label><input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"></div>`).join('')}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${['texture','procedural','modular','furniture','character'].includes(mode)?`<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">`:''}${['composite','materials'].includes(mode)?`<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">`:''}</fieldset>
+ ${fitted?'':guideMarkup}
+ ${fitted?'':status}</div>
+ <div class="d3w-controls"><fieldset><legend>${mode==='character'?'Character features':'Design controls'}</legend>${def.fields.map((f,index)=>`${mode==='character'&&[0,7,13,14].includes(index)?`<h3 class="d3w-control-heading">${index===0?'Body and proportions':index===7?'Face':index===13?'Hair':'Outfit'}</h3>`:''}<div class="d3w-field"><label for="${id}-${f.key}">${escape(f.label)}</label>${f.options?`<select id="${id}-${f.key}" data-param="${f.key}">${f.options.map((label,value)=>`<option value="${value}">${escape(label)}</option>`).join('')}</select>`:`<input id="${id}-${f.key}" data-param="${f.key}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}"><input data-slider="${f.key}" aria-label="${escape(f.label)} slider" type="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${state.params[f.key]}">`}</div>`).join('')}${pairedColors?'<div class="d3w-color">':''}<label for="${id}-color">${mode==='character'?'Skin tone':'Surface color'}</label><input id="${id}-color" type="color" data-color="color" value="${state.color}">${pairedColors?'</div>':''}${['texture','procedural','modular','furniture','character'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-secondary">${mode==='character'?'Outfit color':'Second color'}</label><input id="${id}-secondary" type="color" data-color="secondary" value="${state.secondary}">${pairedColors?'</div>':''}`:''}${['composite','materials'].includes(mode)?`${pairedColors?'<div class="d3w-color">':''}<label for="${id}-background">Background color</label><input id="${id}-background" type="color" data-color="background" value="${state.background}">${pairedColors?'</div>':''}`:''}</fieldset>
  ${mode==='boolean'?'<button type="button" data-action="cut" aria-pressed="false">Apply Difference</button>':''}
  ${mode==='modular'?'<button type="button" data-action="snap">Snap wall to grid</button>':''}
  ${mode==='sculpt'?'<fieldset><legend>Sculpt tools</legend><label>Brush operation <select data-brush><option value="raise">Raise</option><option value="lower">Lower</option><option value="smooth">Smooth</option></select></label><button type="button" data-action="brushmode" aria-pressed="false">Brush mode: off</button><button type="button" data-action="stroke">Apply brush at numeric position</button><p>In Brush mode, drag on the mesh. Turn it off to orbit. Numeric X/Z and Apply brush offer the same operation without a pointer.</p></fieldset>':''}
  ${mode==='animation'?'<fieldset><legend>Authored action</legend><button type="button" data-action="key">Add / replace keyframe</button><button type="button" data-action="remove-key">Remove key at this time</button><button type="button" data-action="play" aria-pressed="false">Play my action</button><ol data-keys></ol></fieldset>':''}
- <fieldset><legend>Test and explain</legend><label for="${id}-reflection">I changed ___ because ___.</label><textarea id="${id}-reflection" data-reflection rows="3" maxlength="1000">${escape(state.reflection)}</textarea><p>${escape(def.check)}</p><button type="button" data-action="check">Test my design</button><ul data-checks></ul><p class="d3w-completion" data-completion></p></fieldset></div></div>
+ ${fitted?'':explain}</div></div>
+ ${fitted?`${projectActions}
+ ${pattern?`<div class="d3w-pattern-compare" role="group" aria-label="Compare experiments">
+  <div><p><strong>Current</strong> <span data-pattern-current></span></p><p data-pattern-baseline-row hidden><strong>Pinned</strong> <span data-pattern-baseline></span></p></div>
+  <div class="d3w-toolbar"><button type="button" data-action="pin-pattern">Pin current</button><button type="button" data-action="clear-pattern" disabled>Clear pin</button></div>
+ </div>`:''}${status}</div>`:''}
+ ${fitted?`<details class="d3w-transfer"><summary>Practice guide and design check</summary><p>${escape(def.challenge)} ${pattern?'Use a Y-up OBJ to bring in your own source shape.':''}</p>${support}${guideMarkup}${explain}</details>`:''}
  ${def.limit?'<p class="d3w-limit">'+escape(def.limit)+'</p>':''}
  <details class="d3w-transfer"><summary>Use this technique in your chosen software</summary><p>This workshop teaches the idea. Tool Rosetta shows supported app equivalents; an empty or unavailable operation is not a promise that every app supports it.</p><div data-rosetta="${def.rosetta}"></div><label for="${id}-app">My software (any app)</label><input id="${id}-app" data-app placeholder="e.g. FreeCAD, Nomad, Blender, Maya…"><ol><li>Find the equivalent operation, or identify that your app cannot perform it.</li><li>Recreate or import your design. Check scale, axes and materials; OBJ is a static mesh, not a parametric CAD or animation file.</li><li>Save the native editable file and test its export. Record the app, technique and any limitations in your explanation.</li></ol><a href="${new URL('lessons/computer-science/graphics-and-games/tool-rosetta.html',ROOT)}">Open the full Tool Rosetta reference</a></details>`;
  window.ToolRosetta?.init();
  host.closest("main")?.querySelector(".d3-original-reference")?.addEventListener("toggle",()=>window.dispatchEvent(new Event("resize")));
  const $=s=>host.querySelector(s),say=s=>{$('[data-status]').textContent=s;};
  if(mode==='character')setupCharacterExport({host,id,getState:()=>state,getThree:()=>three?.THREE,say,onExport:()=>{state.exported=true;persist();}});
- let inspection='shaded',hairRunning=false;
+ let inspection='shaded',hairRunning=false,patternBaseline='';
  const updateCharacterPanels=mode==='character'?setupCharacterPanels(host,id,style=>{inspection=style;if(group)applyInspection();dirty=true;say(style==='silhouette'?'Silhouette view: look for readable large shapes.':style==='wireframe'?'Wireframe view: inspect the study mesh. Rebuild topology before rigging.':'Shaded view restored.');}):null;
  if(mode==='character'){
   $('[data-hair-motion]').addEventListener('click',()=>{if(!group?.userData.hairSimulation){say('Turn on Dynamic hair and set Hair volume above zero first.');return;}hairRunning=!hairRunning;const button=$('[data-hair-motion]');button.textContent=hairRunning?'Pause hair motion':'Play hair motion';button.setAttribute('aria-pressed',String(hairRunning));say(hairRunning?'Hair simulation playing. Try a gust or adjust stiffness and damping.':'Hair motion paused. You can inspect or capture this pose.');});
@@ -104,7 +121,7 @@ async function mount(host){
  function persist(){try{localStorage.setItem(store,JSON.stringify(state));}catch{say('Browser storage is unavailable. Use Save project to keep your work.');}}
  function checkpoint(){undo.push(clone(state));if(undo.length>40)undo.shift();redo=[];}
  function edit(fn){checkpoint();playing=false;fn();state.saved=false;state.captured=false;state.exported=false;persist();refresh();}
- function updateFields(){for(const f of def.fields){$(`[data-param="${f.key}"]`).value=state.params[f.key];$(`[data-slider="${f.key}"]`).value=state.params[f.key];}for(const n of host.querySelectorAll('[data-color]'))n.value=state[n.dataset.color];$('[data-reflection]').value=state.reflection;$('[data-app]').value=state.app||'';const sc=$('[data-scheme]');if(sc&&state.scheme)sc.value=state.scheme;}
+ function updateFields(){for(const f of def.fields){$(`[data-param="${f.key}"]`).value=state.params[f.key];const slider=$(`[data-slider="${f.key}"]`);if(slider)slider.value=state.params[f.key];}for(const n of host.querySelectorAll('[data-color]'))n.value=state[n.dataset.color];$('[data-reflection]').value=state.reflection;$('[data-app]').value=state.app||'';const sc=$('[data-scheme]');if(sc&&state.scheme)sc.value=state.scheme;}
  function guide(){const text=level==='guided'?'Follow the three steps, then test your design.':level==='independent'?'Choose your own dimensions or appearance. Use the test criteria to guide your design.':def.extension;$('[data-level-note]').textContent=text;$('.d3w-guide').hidden=level!=='guided';}
  function updateMissions(){
   if(mode!=='navigate')return;
@@ -144,12 +161,46 @@ async function mount(host){
  const keys=$('[data-keys]');if(keys)keys.innerHTML=state.keys.map(k=>`<li>Time ${k.time.toFixed(2)} · ${k.angle}°</li>`).join('')||'<li>No keys yet. Choose a time and pose, then add a key.</li>';
  $('[data-action="undo"]').disabled=!undo.length;$('[data-action="redo"]').disabled=!redo.length;$('[data-checks]').replaceChildren();$('[data-completion]').textContent='';
  $('[data-description]').textContent=`${def.technique}. ${def.fields.map(f=>`${f.label}: ${state.params[f.key]}`).join('; ')}. ${mode==='sculpt'?state.strokes.length+' mesh strokes.':''}`;
+ if(mode==='procedural')updatePatternReadout();
  updateMissions();
  }
+ function updatePatternReadout(){
+  $('[data-param="shape"]').options[3].disabled=!state.imported;
+  for(const control of host.querySelectorAll('[data-param="seed"],[data-slider="seed"]'))control.disabled=state.params.field!==3;
+  $('[data-pattern-current]').textContent=describePattern(state.params);
+  $('[data-pattern-baseline]').textContent=patternBaseline;
+  $('[data-pattern-baseline-row]').hidden=!patternBaseline;
+  $('[data-action="clear-pattern"]').disabled=!patternBaseline;
+ }
+ for(const button of host.querySelectorAll('[data-pattern-preset]'))button.addEventListener('click',()=>{
+  const name=button.dataset.patternPreset;
+  edit(()=>{
+   state.params={...freshState(mode).params,...presets[name]};
+   state.edits=Object.keys(presets[name]);
+  });
+  fit();
+  say(`${name} loaded. Pin its measurements, then change one input.`);
+ });
+ $('[data-pattern-file]')?.addEventListener('change',async event=>{
+  const file=event.target.files[0];
+  event.target.value='';
+  if(!file)return;
+  try{
+   if(!three)throw Error('Wait for the 3D preview to load before importing a mesh.');
+   if(file.size>2000000)throw Error('Choose an OBJ smaller than 2 MB.');
+   const root=new three.OBJLoader().parse(await file.text());
+   let source;
+   try{source=importPatternSource(three.THREE,root);}
+   finally{disposeDesign(root);}
+   edit(()=>{state.imported=[source];state.params.shape=3;});
+   fit();
+   say('OBJ imported as your source shape. Change the layout to see the same mesh repeated by a different rule.');
+  }catch(error){say(error.message);}
+ });
  for(const input of host.querySelectorAll('[data-param],[data-slider]'))input.addEventListener(input.dataset.slider?'input':'change',()=>{
  const key=input.dataset.param||input.dataset.slider,f=def.fields.find(f=>f.key===key),v=Number(input.value);
- if(!Number.isFinite(v)||v<f.min||v>f.max){input.setAttribute('aria-invalid','true');say(`Enter ${f.label} between ${f.min} and ${f.max}.`);return;}
- input.removeAttribute('aria-invalid');if(state.params[key]===v)return;edit(()=>{state.params[key]=f.step===1?Math.round(v):v;if(mode==='animation'&&key==='time'&&state.keys.length)state.params.angle=keyAngle(state.keys,v);state.edits=[...new Set([...state.edits,key])];if(mode==='modular'&&['offset','module'].includes(key))state.snapped=false;});say('Design updated. Inspect the result from another view.');
+ if(input.value===''||!Number.isFinite(v)||v<f.min||v>f.max){input.setAttribute('aria-invalid','true');say(`Enter ${f.label} between ${f.min} and ${f.max}.`);return;}
+ input.removeAttribute('aria-invalid');if(state.params[key]===v)return;edit(()=>{state.params[key]=f.step===1?Math.round(v):v;if(mode==='animation'&&key==='time'&&state.keys.length)state.params.angle=keyAngle(state.keys,v);state.edits=[...new Set([...state.edits,key])];if(mode==='modular'&&['offset','module'].includes(key))state.snapped=false;});if(mode==='procedural'&&key==='layout')fit();say('Design updated. Inspect the result from another view.');
  });
  for(const input of host.querySelectorAll('[data-color]'))input.addEventListener('change',()=>edit(()=>{state[input.dataset.color]=input.value;state.edits=[...new Set([...state.edits,input.dataset.color])];}));
  for(const button of host.querySelectorAll('[data-character-preset]'))button.addEventListener('click',()=>{const preset=CHARACTER_PRESETS[button.dataset.characterPreset];edit(()=>{Object.assign(state.params,{artStyle:0},preset.params);if([1,2,3].includes(state.params.artStyle))state.color=preset.color;state.secondary=preset.secondary;state.edits=[...new Set([...state.edits,...Object.keys(preset.params),'color','secondary'])];});fit();for(const b of host.querySelectorAll('[data-character-preset]'))b.setAttribute('aria-pressed',String(b===button));say(`${preset.label} loaded. Adjust any feature to make this character your own.`);});
@@ -187,7 +238,26 @@ async function mount(host){
  key(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);state.keys.push({time:state.params.time,angle:state.params.angle});state.keys.sort((a,b)=>a.time-b.time);state.edits=[...new Set([...state.edits,'angle'])];});say('Your pose is keyed at the selected time.');},
  'remove-key'(){edit(()=>{state.keys=state.keys.filter(k=>Math.abs(k.time-state.params.time)>.001);});say('Keyframe removed at the selected time.');},
  play(){if(state.keys.length<2){say('Add at least two keyframes before playing.');return;}playing=!playing;state.played=true;persist();const b=$('[data-action="play"]');b.textContent=playing?'Pause my action':'Play my action';b.setAttribute('aria-pressed',String(playing));say(playing?'Playing only the keyframes you authored.':'Playback paused.');},
- save(){state.saved=true;persist();const project=clone(state);if(group)project.snapshot=designSnapshot();download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),mode+'.design3d.json');say('Editable project downloaded. Open it here to continue; use its OBJ mesh in other apps.');},
+ save(){state.saved=true;persist();const project=clone(state);if(group&&!(mode==='procedural'&&state.params.shape===3))project.snapshot=designSnapshot();download(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}),mode+'.design3d.json');say(mode==='procedural'?'Editable project downloaded. Open it in the studio to continue or share it with a classmate.':'Editable project downloaded. Open it here to continue; use its OBJ mesh in other apps.');},
+ source(){$('[data-pattern-file]').click();},
+ 'pin-pattern'(){patternBaseline=describePattern(state.params);updatePatternReadout();say('Pattern measurements pinned. Change one input and compare.');},
+ 'clear-pattern'(){patternBaseline='';updatePatternReadout();$('[data-action="pin-pattern"]').focus();say('Pinned measurements cleared.');},
+ async glb(){
+  if(!three||!group){say('The 3D scene is unavailable.');return;}
+  const button=$('[data-action="glb"]');
+  button.disabled=true;
+  const {params, color, secondary, imported}=state;
+  const exportedParams=JSON.stringify(params);
+  const model=buildDesign(three.THREE,state,texture);
+  try{
+   const {GLTFExporter}=await import('../../vendor/three-extras.min.js');
+   const bytes=await new GLTFExporter().parseAsync(model,{binary:true});
+   download(new Blob([bytes],{type:'model/gltf-binary'}),'pattern.glb');
+   if(JSON.stringify(state.params)===exportedParams&&state.color===color&&state.secondary===secondary&&state.imported===imported){state.exported=true;persist();}
+   say('Color GLB downloaded. Import it as a glTF model in Blender or another 3D app.');
+  }catch(error){say(`Could not export GLB. ${error.message}`);}
+  finally{disposeDesign(model);button.disabled=false;}
+ },
  open(){$('[data-file]').click();},
  export(){if(!group){say('The 3D scene is unavailable. Use your chosen app for geometry export.');return;}download(new Blob([toObj(designSnapshot())],{type:'text/plain'}),mode+'.obj');state.exported=true;persist();say('OBJ downloaded: geometry and UVs, without packaged materials, bones or animation. Check size on import.');},
  stl(){if(!group){say('3D is unavailable. Export your model in your chosen app.');return;}download(new Blob([stlBytes()],{type:'model/stl'}),mode+'.stl');state.exported=true;persist();say('STL exported in millimeters with Z up. Verify size, supports and separate parts in your slicer; the print remains untested.');},
@@ -198,7 +268,7 @@ async function mount(host){
  check(){if(!group||host.dataset.ready!=='true'){say('The 3D scene is unavailable. Complete and test the technique in your chosen app.');return;}const checks=checkState(state);$('[data-checks]').innerHTML=checks.map(([text,pass])=>`<li>${pass?'✓':'○'} ${escape(text)}</li>`).join('');const pass=checks.every(c=>c[1]);$('[data-completion]').textContent=pass?'Workshop checkpoint met. Save the project and verify its use in your chosen app.':'Keep designing: complete the open checks, then test again.';host.dataset.check=pass?'pass':'revise';say(pass?'Practice criteria met. These checks do not certify a production asset or physical print.':'Design needs another revision. See the open checks.');}
  };
  for(const button of host.querySelectorAll('[data-action]'))button.addEventListener('click',()=>actions[button.dataset.action]?.());
- $('[data-file]').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>6000000)throw Error('Choose a project smaller than 6 MB.');const raw=JSON.parse(await file.text()),loaded=validateState(raw);if(loaded.mode===mode){edit(()=>{state=loaded;});say('Editable project reopened.');}else if(['navigate','transform','boolean'].includes(mode)&&['navigate','transform','boolean'].includes(loaded.mode)){
+ $('[data-file]').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>6000000)throw Error('Choose a project smaller than 6 MB.');const raw=JSON.parse(await file.text()),loaded=validateState(raw);if(loaded.mode===mode){edit(()=>{state=loaded;});if(mode==='procedural')fit();say('Editable project reopened.');}else if(['navigate','transform','boolean'].includes(mode)&&['navigate','transform','boolean'].includes(loaded.mode)){
  edit(()=>{
   for(const k of ['width','height','depth']){
    if(Number.isFinite(loaded.params?.[k])){

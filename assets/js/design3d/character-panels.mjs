@@ -19,6 +19,14 @@ export function setupCharacterPanels(host, id, onInspection) {
   panel.id = `${id}-panel-${key}`;
   panel.className = 'character-panel';
   panel.hidden = key !== 'style';
+  function addHelp(label, note) {
+   if (!host.classList.contains('d3w-fit')) { panel.append(note); return; }
+   const details=document.createElement('details');
+   const summary=document.createElement('summary');
+   summary.textContent=label;
+   details.append(summary,note);
+   panel.append(details);
+  }
   const heading = document.createElement('h3');
   heading.id = panel.id + '-title';
   heading.textContent = label === 'Body' ? 'Body and proportions' : label;
@@ -30,7 +38,7 @@ export function setupCharacterPanels(host, id, onInspection) {
    select.id=input.id;select.dataset.param='artStyle';
    select.innerHTML=['Rounded humanoid','Blocky character','3D stick figure','Anthropomorphic mascot','Sculpted game hero'].map((label,i)=>`<option value="${i}">${label}</option>`).join('');
    select.value=input.value;input.replaceWith(select);panel.querySelector('[data-slider="artStyle"]').hidden=true;
-   const note=document.createElement('p');note.textContent='Switch shape language while keeping your proportions and colors. Ears, muzzle and tail apply to mascots. Hair and costume detail controls apply to rounded humanoids and sculpted game heroes; the other styles use simplified forms. Mascot tails and ears remain rigid in the starter rig.';panel.append(note);
+   const note=document.createElement('p');note.textContent='Switch shape language while keeping your proportions and colors. Ears, muzzle and tail apply to mascots. Hair and costume detail controls apply to rounded humanoids and sculpted game heroes; the other styles use simplified forms. Mascot tails and ears remain rigid in the starter rig.';addHelp('About character styles',note);
   }
   if (key === 'color') for (const input of [...fieldset.querySelectorAll('[data-color]')]) {
    panel.append(fieldset.querySelector(`label[for="${input.id}"]`), input);
@@ -42,7 +50,7 @@ export function setupCharacterPanels(host, id, onInspection) {
    const note=document.createElement('p');
    note.textContent='Turn on Dynamic hair for simulated locks with pinned roots and head collision. Hair volume controls length; hair style changes the groom. Adjust wind, stiffness and damping, then test a gust. This browser study uses a simplified strand solver; Blender has more detailed simulation and collision controls. JSON saves settings; OBJ captures a static pose.';
    const gust=document.createElement('button');gust.type='button';gust.textContent='Test a gust';gust.dataset.hairGust='';
-   const motion=document.createElement('button');motion.type='button';motion.textContent='Play hair motion';motion.dataset.hairMotion='';motion.setAttribute('aria-pressed','false');panel.append(note,motion,gust);
+   const motion=document.createElement('button');motion.type='button';motion.textContent='Play hair motion';motion.dataset.hairMotion='';motion.setAttribute('aria-pressed','false');panel.append(motion,gust);addHelp('About dynamic hair',note);
   }
   const button = document.createElement('button');
   button.type = 'button';

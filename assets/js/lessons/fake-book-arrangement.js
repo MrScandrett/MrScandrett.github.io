@@ -4,6 +4,7 @@
   var library;
   var states = new WeakMap();
   var engravingId = 0;
+  var profileScore = new URLSearchParams(location.search).has('profileScore');
   // Capture the asset URL while this script is executing, before asynchronous imports.
   var assetURL = new URL('../../vendor/opensheetmusicdisplay.min.js', document.currentScript.src).href;
   function ensureLibrary() {
@@ -28,11 +29,14 @@
   function engrave(host, state) {
     if (states.get(host) !== state || !state.ready || !host.clientWidth) return;
     var width = Math.floor(host.clientWidth);
+    if (state.width === width && state.renderedZoom === state.zoom) return;
     // Re-engrave at the available width; never scale a desktop page down to a phone.
     // An unusually dense measure may extend beyond this width: keep it scrollable.
     state.pages.style.width = width + 'px';
     state.renderer.Zoom = state.zoom;
+    var renderStart = profileScore ? performance.now() : 0;
     state.renderer.render();
+    var renderEnd = profileScore ? performance.now() : 0;
     // OSMD creates a hidden decorative playback-cursor image even in SVG mode.
     state.pages.querySelectorAll('img[id^="cursorImg"]').forEach(function (image) {
       image.alt = ''; image.setAttribute('aria-hidden', 'true');
@@ -43,21 +47,29 @@
     state.pages.querySelectorAll('svg').forEach(function (svg, pageIndex) {
       svg.setAttribute('role', 'img');
       svg.setAttribute('aria-label', 'Original score notation, system page ' + (pageIndex + 1) + '. Source pitch, all instrument staves and written repeats.');
-      var ids = {}, index = 0;
+      var ids = Object.create(null), index = 0;
       svg.querySelectorAll('[id]').forEach(function (node) {
         var old = node.id, id = prefix + pageIndex + '-' + (++index);
         if (!ids[old]) ids[old] = id;
         node.id = id;
       });
       svg.querySelectorAll('*').forEach(function (node) {
-        Array.from(node.attributes).forEach(function (attr) {
-          var value = attr.value.replace(/url\(#([^)]*)\)/g, function (all, id) { return ids[id] ? 'url(#' + ids[id] + ')' : all; });
+        var attributes = node.attributes;
+        for (var i = 0; i < attributes.length; i++) {
+          var attr = attributes[i], value = attr.value;
+          if (value.includes('url(#')) {
+            value = value.replace(/url\(#([^)]*)\)/g, function (all, id) { return ids[id] ? 'url(#' + ids[id] + ')' : all; });
+          }
           if ((attr.name === 'href' || attr.name === 'xlink:href') && value[0] === '#' && ids[value.slice(1)]) value = '#' + ids[value.slice(1)];
-          if (value !== attr.value) node.setAttribute(attr.name, value);
-        });
+          if (value !== attr.value) attr.value = value;
+        }
       });
     });
+    if (profileScore) console.info('Fake Book engraving', {
+      width: width, zoom: state.zoom, renderMs: renderEnd - renderStart, svgCleanupMs: performance.now() - renderEnd
+    });
     state.width = width;
+    state.renderedZoom = state.zoom;
     var label = host.querySelector('[data-arrangement-scale]');
     if (label) label.textContent = Math.round(state.zoom * 100) + '%';
   }

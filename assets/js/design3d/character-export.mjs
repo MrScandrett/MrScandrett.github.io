@@ -56,7 +56,21 @@ export function buildCharacterExport(THREE, state, height = 1.7, rigged = false)
 export function setupCharacterExport({host,id,getState,getThree,say,onExport}) {
  const panel=document.createElement('section');panel.className='d3w-studio-tools';
  panel.innerHTML=`<h2>Take your character to another app</h2><p>Choose a destination. Color GLB keeps vertex colors and separate facial details. The optional starter skeleton includes 16 bones, automatic skin weights and a WaveTest clip.</p><label for="${id}-export-height">Export height</label><select id="${id}-export-height" data-export-height><option value="1.7">1.7 m · game character</option><option value=".1">100 mm · Tinkercad figure</option><option value=".05">50 mm · miniature</option></select><div class="d3w-presets"><button type="button" data-character-export="rig">Godot / animation · rigged GLB</button><button type="button" data-character-export="glb">Blender / sculpting · color GLB</button><button type="button" data-character-export="stl">Tinkercad · STL (mm)</button></div><p>GLB uses meters and Y up. STL uses millimeters and Z up, with no colors, skeleton or motion. Tinkercad imports a mesh rather than editable body controls; check its import dimensions. Separate overlapping parts still need inspection before printing.</p><p>The starter rig is for experiments: test shoulders, elbows and knees and refine weights in Blender. Robes and long hair may need manual weight painting. Hair is exported in its static rest shape; facial controls, fingers, IK and hair simulation are not included. Save project above keeps the editable browser design.</p><p><a href="${new URL('lessons/3d-design/game-asset-studio/game-asset-character-rigging.html#bench',new URL('../../../',import.meta.url))}">Inspect bones on the Rigging Bench</a> · <a href="${new URL('lessons/3d-design/game-asset-studio/game-asset-character-animation.html#bench',new URL('../../../',import.meta.url))}">Play clips on the Animation Bench</a></p><p><a href="${new URL('lessons/3d-design/game-asset-studio/game-asset-uv-export.html#bench',new URL('../../../',import.meta.url))}">UV unwrap and texture your character</a>: open its GLB from Your shelf, inspect the UV checker and download a layout. Body and head colors are vertex colors; these meshes still need UV unwrapping for image painting. The Bench offers quick box projection for tiling tests. For a unique painted character, mark seams and unwrap in Blender, then bring the GLB back with its bones and clips.</p><p>GLB downloads also appear on Your shelf in those lessons in this browser. In Godot, copy the GLB into your project, instance its scene and play WaveTest in AnimationPlayer. In Blender, choose File → Import → glTF 2.0. For OBJ-only sculpting apps, use Export OBJ above; that export has no packaged colors or rig.</p>`;
- host.querySelector('.d3w-actions').before(panel);
+ const formats=host.querySelector('[data-character-formats]');
+ if(formats){
+  panel.id=`${id}-formats`;
+  panel.tabIndex=-1;
+  panel.hidden=true;
+  formats.setAttribute('aria-controls',panel.id);
+  host.querySelector('[data-creation-primary]').after(panel);
+  formats.addEventListener('click',()=>{
+   panel.hidden=!panel.hidden;
+   formats.setAttribute('aria-expanded',String(!panel.hidden));
+   if(!panel.hidden)panel.focus();
+  });
+ }else{
+  host.querySelector('.d3w-actions').before(panel);
+ }
  for(const button of panel.querySelectorAll('[data-character-export]'))button.addEventListener('click',async()=>{
   const THREE=getThree();if(!THREE){say('Wait for the 3D scene to finish loading.');return;}
   const buttons=[...panel.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);let root;

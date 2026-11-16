@@ -169,13 +169,20 @@
         var ornament = false;
         events.forEach(function (ev) {
           ornament = ornament || !!(ev.graces && ev.graces.length) || !!(ev.orn && ev.orn.some(function (o) { return /^(tr|mord|turn)$/.test(o); }));
-          var explicit = ev.fingering && ev.fingering.split('/').map(Number);
+          var explicit;
+          if (ev.fingering) {
+            explicit = new Map();
+            var values = ev.fingering.split('/').map(Number);
+            ev.pitches.slice().sort(function (a, b) { return a.midi - b.midi; }).forEach(function (p, i) {
+              explicit.set(p.midi, values[i]);
+            });
+          }
           ev.pitches.forEach(function (p, pi) {
             var n = pitches.get(p.midi);
             if (!n) { n = { midi: p.midi, end: endOf(ev, p.midi), staff: ev.staff, entries: [] }; pitches.set(p.midi, n); }
             n.end = Math.max(n.end, endOf(ev, p.midi));
             n.attack = n.attack || !p.tiedFrom;
-            if (explicit && explicit[pi]) n.fixed = explicit[pi];
+            if (explicit && explicit.get(p.midi)) n.fixed = explicit.get(p.midi);
             n.entries.push({ ev: ev, pi: pi, tied: !!p.tiedFrom });
           });
         });
@@ -212,21 +219,29 @@
   }
   function plan(layout, score, options) { return planDetailed(layout, score, options).fingers; }
 
-  function addMarks(svg, layout, score, options) {
+  function addMarks(svg, layout, score, options, planned) {
     svg.querySelectorAll('.se-finger-number').forEach(function (n) { n.remove(); });
-    var detail = planDetailed(layout, score, options), fingers = detail.fingers;
+    var detail = planned || planDetailed(layout, score, options), fingers = detail.fingers;
+    var groups = new Map(), byStaffLine = new Map();
+    svg.querySelectorAll('.se-ev[data-i]').forEach(function (node) {
+      groups.set(Number(node.getAttribute('data-i')), node);
+    });
+    function staffLine(ev) { return ev.sys + ':' + ev.staff; }
+    layout.events.forEach(function (ev) {
+      if (ev.hidden || ev.kind !== 'note') return;
+      var key = staffLine(ev);
+      if (!byStaffLine.has(key)) byStaffLine.set(key, []);
+      byStaffLine.get(key).push(ev);
+    });
     detail.groups.forEach(function (onset) {
       var events = onset.events.filter(function (ev) { return !ev.fingering && (fingers[ev.i] || detail.reviews[ev.i]); });
       if (!events.length) return;
       var ev = events[0], group = svg.querySelector('.se-ev[data-i="' + ev.i + '"]');
       if (!group) return;
       var above = onset.hand === 'right', S = layout.S, h = S / 2;
-      var near = layout.events.filter(function (other) {
-        return other.sys === ev.sys && other.staff === ev.staff && !other.hidden &&
-          other.kind === 'note' && Math.abs(other.x - ev.x) < 3 * S;
-      });
       var edge = above ? ev.bottom - 4 * S : ev.bottom;
-      near.forEach(function (other) {
+      (byStaffLine.get(staffLine(ev)) || []).forEach(function (other) {
+        if (Math.abs(other.x - ev.x) >= 3 * S) return;
         var head = other.bottom - (above ? other.hi : other.lo) * h;
         var tip = other.tipY == null ? head : other.tipY;
         var pad = other.tuplet ? 3.2 * S : 1.8 * S;
@@ -288,31 +303,40 @@
       key.hidden = !enabled;
       reachLabel.hidden = !enabled;
     }
+    var planned, plannedLayout, plannedReach;
     function mark() {
       var svg = fig.querySelector('.se-score');
       if (!fig.scoreLayout || !svg) return;
-      if (enabled) addMarks(svg, fig.scoreLayout, score, { reach: reach });
+      if (enabled) {
+        if (plannedLayout !== fig.scoreLayout || plannedReach !== reach) {
+          plannedLayout = fig.scoreLayout;
+          plannedReach = reach;
+          planned = planDetailed(plannedLayout, score, { reach: reach });
+        }
+        addMarks(svg, fig.scoreLayout, score, { reach: reach }, planned);
+      }
       else svg.querySelectorAll('.se-finger-number').forEach(function (n) { n.remove(); });
     }
     button.addEventListener('click', function () {
       enabled = !enabled;
       try { root.localStorage.setItem(STORAGE_KEY, enabled ? 'on' : 'off'); } catch (e) { /* optional */ }
-      paint(); mark();
       root.dispatchEvent(new CustomEvent('score-fingering:change', { detail: { enabled: enabled } }));
     });
     select.addEventListener('change', function () {
       reach = Number(select.value);
       try { root.localStorage.setItem(REACH_KEY, String(reach)); } catch (e) { /* optional */ }
-      mark();
       root.dispatchEvent(new CustomEvent('score-fingering:change', { detail: { enabled: enabled, reach: reach } }));
     });
     // Other scores on the page follow the shared settings.
-    root.addEventListener('score-fingering:change', function (e) {
+    function onChange(e) {
       enabled = e.detail.enabled;
       if ([7, 9, 12].includes(e.detail.reach)) reach = e.detail.reach;
-      select.value = String(reach); paint(); mark();
-    });
+      select.value = String(reach); paint();
+      if (e.detail.reach || !enabled) mark();
+    }
+    root.addEventListener('score-fingering:change', onChange);
     fig.addEventListener('score:draw', mark);
+    fig.addEventListener('score:notation-window', mark);
     // The engine's print button asks for this so numbers reach the paper too.
     fig.scoreFingeringPrint = function () {
       return enabled ? { decorate: function (svg, layout) { addMarks(svg, layout, score, { reach: reach }); },
@@ -322,6 +346,12 @@
     bar.appendChild(reachLabel);
     bar.appendChild(key);
     paint(); mark();
+    return function () {
+      root.removeEventListener('score-fingering:change', onChange);
+      fig.removeEventListener('score:draw', mark);
+      fig.removeEventListener('score:notation-window', mark);
+      delete fig.scoreFingeringPrint;
+    };
   }
 
   root.ScoreFingering = { plan: plan, planDetailed: planDetailed, addMarks: addMarks, install: install, isKeyboard: isKeyboard, handOf: handOf };

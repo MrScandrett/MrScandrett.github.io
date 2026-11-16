@@ -7,7 +7,7 @@ const catalog=JSON.parse(await readFile(new URL('../data/composer-workspaces.jso
 const base=process.env.SCORE_TEST_URL||'http://127.0.0.1:8080';
 const scoreFilter=process.env.COMPOSER_TEST_SCORES?.split(',');
 const modes=process.env.COMPOSER_TEST_MODES?.split(',')||['original','piano','melody','violin','alto','tenor','guitar','guitar-solo','bass'];
-const browser=await chromium.launch({executablePath:findChromium(),headless:true});
+const browser=await chromium.launch({executablePath:findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']),headless:true});
 let checked=0;
 try {
   const selected=process.env.COMPOSER_TEST_FILTER;
@@ -34,6 +34,17 @@ try {
         await page.selectOption('#bv-mode',mode);
         assert.equal(await page.locator('#bv-score .se-error').count(),0,`${id}/${mode}`);
         assert.ok(await page.locator('#bv-score svg').count(),`${id}/${mode}: engraved score`);
+        const display = await page.locator('#bv-score').evaluate(figure => {
+          const model = figure.scorePlayer.model;
+          const events = model.staves.reduce((sum, staff) =>
+            sum + staff.bars.reduce((count, bar) => count + bar.events.length, 0), 0);
+          const large = model.count >= 150 || model.count * model.staves.length >= 600 || events >= 2000;
+          return { large, windowed: !!figure.querySelector('.se-notation-window'),
+            measures: figure.querySelectorAll('.se-measure').length, count: model.count };
+        });
+        assert.equal(display.windowed, display.large, `${id}/${mode}: rendering matches score size`);
+        assert.equal(display.measures, display.count, `${id}/${mode}: every measure remains navigable`);
+
         if (mode === 'guitar' || mode === 'guitar-solo' || mode === 'bass') {
           assert.ok(await page.locator('#bv-score .se-tablature').count(),`${id}/${mode}: tab integrated with notation`);
           assert.ok(await page.locator('#bv-score .se-tab-note').count(),`${id}/${mode}: aligned fret numbers`);

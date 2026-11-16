@@ -26,30 +26,30 @@ export function mount(root) {
   };
   let scale = 1;
 
-  // Use the site's live palette; skins change the material, never the physics.
+  // Keep the canvas and workshop controls on the same theme palette.
   let palette, skin = 'glass';
   const mix = (a, b, amount) => `color-mix(in srgb, ${a} ${amount}%, ${b})`;
   function syncAppearance() {
     const c = SimKit.theme.colors();
+    const style = getComputedStyle(root);
+    const color = (name) => style.getPropertyValue(`--ps-${name}`).trim();
     skin = document.documentElement.dataset.skin || 'glass';
     palette = {
       bg: c.bg, text: c.text, muted: c.textMuted, accent: c.accent,
-      rail: c.accentStrong, hot: mix(c.accent, c.text, 65),
-      cool: mix(c.accentStrong, c.text, 65), light: mix(c.bg, 'white', 35),
-      shadow: mix(c.bg, c.text, 65), panel: mix(c.bg, c.accent, 92),
-      grid: mix(c.text, 'transparent', 22), glow: mix(c.accent, 'transparent', 16),
+      rail: color('ink'), hot: color('scoring'), cool: color('mechanism'),
+      light: mix(c.bg, 'white', 55), shadow: mix(c.bg, c.text, 60),
+      panel: mix(c.bg, c.accent, 92),
+      grid: mix(c.text, 'transparent', 20), glow: mix(c.accent, 'transparent', 13),
     };
     root.dataset.psSkin = skin;
-    el.parts.querySelectorAll('[data-tool] .ps-dot').forEach(dot => {
-      dot.style.background = partColor(dot.closest('[data-tool]').dataset.tool);
-    });
-    renderInspector();
-  }
-  function partColor(type) {
-    return type === 'wall' ? palette.rail : type === 'post' ? palette.muted :
-      type === 'flipper' || type === 'target' ? palette.cool : palette.hot;
   }
 
+  function partColor(type) {
+    if (type === 'post') return palette.muted;
+    if (type === 'flipper' || type === 'sling') return palette.cool;
+    if (type === 'target' || type === 'rollover' || type === 'bumper') return palette.hot;
+    return palette.rail;
+  }
 
   // Skin stylesheets can finish loading after their data attribute is applied.
   document.addEventListener('load', e => { if (e.target.matches?.('link[rel="stylesheet"]')) syncAppearance(); }, true);
@@ -95,7 +95,7 @@ export function mount(root) {
   /* ── canvas sizing and coordinates ───────────────────────── */
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.max(240, canvas.clientWidth);
+    const w = Math.max(1, canvas.clientWidth);
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(w * dpr * 1.5);
     scale = canvas.width / W;
   }
@@ -226,7 +226,7 @@ export function mount(root) {
     if (!p) { box.innerHTML = '<p class="ps-muted">Click a part on the table to edit it, or pick one from the bin to add it. Drag handles to resize.</p>'; return; }
     const def = PART_TYPES[p.type], k = def.kind;
     const size = k === 'circle' ? ['Size', 'r', 4, 60, p.r] : k === 'flipper' ? ['Length', 'len', 40, 140, p.len] : ['Length', 'seg', 10, 400, Math.round(partLength(p))];
-    box.innerHTML = `<h3><span class="ps-dot" style="background:${partColor(p.type)}"></span>${def.label}</h3><p class="ps-muted">${def.hint}</p>
+    box.innerHTML = `<h3><span class="ps-dot" data-part="${p.type}"></span>${def.label}</h3><p class="ps-muted">${def.hint}</p>
       <label class="ps-field">${size[0]}<input type="range" data-f="${size[1]}" min="${size[2]}" max="${size[3]}" value="${size[4]}"><output>${size[4]}</output></label>
       ${k === 'flipper' ? `<label class="ps-field">Side<select data-f="side"><option value="left"${p.side === 'left' ? ' selected' : ''}>Left (Z / ←)</option><option value="right"${p.side === 'right' ? ' selected' : ''}>Right (/ / →)</option></select></label>` : ''}
       <div class="ps-row"><button type="button" data-act="dup">Duplicate</button><button type="button" data-act="del" class="ps-danger">Delete</button></div>`;
@@ -378,7 +378,7 @@ export function mount(root) {
     // Reuse the selected site background, subdued so the ball stays readable.
     const siteBackground = document.getElementById('site-canvas-bg');
     if (siteBackground && siteBackground.width && siteBackground.height && siteBackground.style.display !== 'none') {
-      ctx.save(); ctx.globalAlpha = .18; ctx.drawImage(siteBackground, 0, 0, W, H); ctx.restore();
+      ctx.save(); ctx.globalAlpha = .1; ctx.drawImage(siteBackground, 0, 0, W, H); ctx.restore();
     }
     if (skin === 'notebook' || skin === 'terminal') {
       ctx.strokeStyle = palette.grid; ctx.lineWidth = .7;
@@ -402,9 +402,6 @@ export function mount(root) {
     ctx.save(); ctx.globalAlpha = .6;
     neon(palette.light, 0, 1.5, () => { for (const seg of FRAME) line(seg[0] + 3, seg[1], seg[2] + 3, seg[3]); });
     ctx.restore();
-    ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = palette.grid;
-    ctx.font = '800 28px system-ui'; ctx.fillText('PINBALL', W / 2, 230);
-    ctx.font = '600 10px system-ui'; ctx.fillText('B U I L D   Y O U R   O W N   A R C A D E', W / 2, 250); ctx.restore();
     // plunger
     const pull = g ? g.plunger.charge * 28 : 0;
     ctx.fillStyle = palette.text; ctx.fillRect(PLUNGER.x - 8, PLUNGER.y + BALL_R + pull, 16, 6);
@@ -481,8 +478,8 @@ export function mount(root) {
         state.trail.push({ x: b.x, y: b.y }); if (state.trail.length > 14) state.trail.shift();
         state.trail.forEach((t, i) => { ctx.fillStyle = mix(palette.accent, 'transparent', (i / state.trail.length) * 35); ctx.beginPath(); ctx.arc(t.x, t.y, BALL_R * (i / state.trail.length), 0, 7); ctx.fill(); });
         const gr = ctx.createRadialGradient(b.x - 3, b.y - 3, 1, b.x, b.y, BALL_R);
-        gr.addColorStop(0, palette.text); gr.addColorStop(0.5, palette.light); gr.addColorStop(1, palette.shadow);
-        ctx.save(); ctx.shadowColor = palette.accent; ctx.shadowBlur = 10 * scale; ctx.fillStyle = gr; ctx.beginPath(); if (skin === 'blocky') ctx.rect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 2); else ctx.arc(b.x, b.y, BALL_R, 0, 7); ctx.fill(); ctx.restore();
+        gr.addColorStop(0, '#fff'); gr.addColorStop(0.5, '#c4ced8'); gr.addColorStop(1, '#455464');
+        ctx.save(); ctx.shadowColor = palette.accent; ctx.shadowBlur = 10 * scale; ctx.fillStyle = gr; ctx.beginPath(); if (skin === 'blocky') ctx.rect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 2); else ctx.arc(b.x, b.y, BALL_R, 0, 7); ctx.fill(); ctx.strokeStyle = palette.text; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
       }
       if (g.status === 'ready' && b) { ctx.fillStyle = palette.text; ctx.font = '700 15px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText(matchMedia('(pointer: coarse)').matches ? 'Hold Launch, release to shoot' : 'Hold SPACE, release to launch', 300, 640); }
       if (state.paused) { ctx.fillStyle = mix(palette.bg, 'transparent', 94); ctx.fillRect(0, 340, W, 150); ctx.fillStyle = palette.text; ctx.font = '800 40px system-ui'; ctx.textAlign = 'center'; ctx.fillText('PAUSED', W / 2, 405); ctx.font = '18px system-ui'; ctx.fillText('Press P or Resume to continue', W / 2, 450); }

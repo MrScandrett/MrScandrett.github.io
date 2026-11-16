@@ -100,6 +100,62 @@
         <div class="dna-mini"><strong>3. Nitrogenous base</strong><p>The variable part: adenine (A), thymine (T), cytosine (C), or guanine (G). The sequence of these bases carries information.</p></div>
       </div>
       <p class="dna-task"><strong>Build a paper model:</strong> For each nucleotide, join a paper circle labeled phosphate, a pentagon labeled sugar, and a tab labeled A, T, C, or G. Connect sugars to phosphates to make one backbone, then build a matching strand. These shapes are symbols, not the actual shapes or sizes of the molecules.</p>
+
+      <div class="nuc-explorer" id="nuc-explorer">
+        <div class="nuc-explorer-controls">
+          <div class="nuc-control-group">
+            <span class="nuc-control-label">Select nucleotide</span>
+            <div class="nuc-tab-row" id="nuc-base-tabs" role="group" aria-label="Choose a nucleotide base">
+              <button type="button" class="nuc-tab-btn is-active" data-nuc="A" aria-pressed="true">dAMP · Adenine (A)</button>
+              <button type="button" class="nuc-tab-btn" data-nuc="T" aria-pressed="false">dTMP · Thymine (T)</button>
+              <button type="button" class="nuc-tab-btn" data-nuc="C" aria-pressed="false">dCMP · Cytosine (C)</button>
+              <button type="button" class="nuc-tab-btn" data-nuc="G" aria-pressed="false">dGMP · Guanine (G)</button>
+              <button type="button" class="nuc-tab-btn" data-nuc="U" aria-pressed="false">UMP · Uracil (RNA)</button>
+            </div>
+          </div>
+          <div class="nuc-control-group">
+            <span class="nuc-control-label">Compare molecular scale</span>
+            <div class="nuc-tab-row" id="nuc-scale-tabs" role="group" aria-label="Compare building block scales">
+              <button type="button" class="nuc-scale-btn is-active" data-scale="1nt" aria-pressed="true">1 Nucleotide (3 parts)</button>
+              <button type="button" class="nuc-scale-btn" data-scale="1bp" aria-pressed="false">1 Base Pair (2 nucleotides)</button>
+              <button type="button" class="nuc-scale-btn" data-scale="4bp" aria-pressed="false">4 Base Pairs (8 nucleotides)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nuc-explorer-grid">
+          <div class="nuc-stage-col">
+            <div class="nuc-stage-wrap">
+              <svg id="nuc-anatomy-svg" viewBox="0 0 560 280" role="img" aria-labelledby="nuc-svg-title">
+                <title id="nuc-svg-title">Interactive nucleotide and base-pair anatomy diagram</title>
+              </svg>
+            </div>
+            <div class="nuc-part-bar" id="nuc-part-tabs" role="group" aria-label="Inspect nucleotide component">
+              <button type="button" class="nuc-part-btn is-active" data-part="phosphate" aria-pressed="true">1. Phosphate (5′)</button>
+              <button type="button" class="nuc-part-btn" data-part="sugar" aria-pressed="false">2. Pentose Sugar</button>
+              <button type="button" class="nuc-part-btn" data-part="base" aria-pressed="false">3. Nitrogenous Base</button>
+              <button type="button" class="nuc-part-btn" data-part="bonds" aria-pressed="false">4. Covalent vs. H-Bonds</button>
+            </div>
+          </div>
+
+          <aside class="nuc-inspector-card" aria-live="polite">
+            <p class="dna-kicker" style="margin-bottom:0.25rem;">Molecular Inspector</p>
+            <h3 id="nuc-insp-title">Deoxyadenosine monophosphate (dAMP) · Purine Nucleotide</h3>
+            <p id="nuc-insp-part">The negatively charged phosphate group (PO₄⁻) attaches to the 5′ carbon of deoxyribose and links covalently to the 3′-OH of the neighboring nucleotide to form the outer backbone.</p>
+            <div class="nuc-chem-badges">
+              <span class="nuc-badge" id="nuc-ring-badge">2-Ring Purine</span>
+              <span class="nuc-badge" id="nuc-hbond-badge">2 Hydrogen Bonds (pairs with T)</span>
+              <span class="nuc-badge" id="nuc-sugar-badge">Deoxyribose (2′-H · DNA)</span>
+              <span class="nuc-badge" id="nuc-tuple-badge">Residue [H,C,N,O,P]: [11, 10, 5, 5, 1]</span>
+            </div>
+            <div class="nuc-scale-box">
+              <strong>Scale count</strong>
+              <p id="nuc-scale-summary">1 phosphate + 1 sugar + 1 base = 1 nucleotide</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+
       <h3>One nucleotide, one base pair, or a whole strand?</h3>
       <div class="dna-table-wrap">
         <table class="dna-table">
@@ -155,38 +211,145 @@
       </div>
     </section>
 
-    <section class="dna-card" id="copy">
-      <p class="dna-kicker">Hands-on model</p>
-      <h2>Replication base-pairing lab</h2>
-      <p class="dna-task"><strong>Your challenge:</strong> Can you reconstruct a missing strand using just its partner?</p><p>DNA can copy itself because each base has a specific partner. Complete the new strand by matching each exposed base, then check your evidence. Each letter represents the base of a whole nucleotide: DNA polymerase adds matching nucleotides and joins them to the growing sugar–phosphate backbone. This model shows complementary pairing, not the enzymes or direction of synthesis. Each finished DNA molecule contains one old strand and one new strand.</p>
+    <section class="dna-card" id="copy" aria-labelledby="copy-title">
+      <p class="dna-kicker">Hands-on Molecular Exhibit · Investigation 1</p>
+      <h2 id="copy-title">Replication &amp; Base-Pairing Workbench</h2>
+      <p class="dna-task"><strong>Your challenge:</strong> Reconstruct the antiparallel partner strand using Watson–Crick base pairing, inspect how purine/pyrimidine ring geometry and hydrogen bonds enforce copying fidelity, and compare how a single base mutation turns Mendel’s tall pea allele (<code>T</code>) into the short allele (<code>t</code>).</p>
+
+      <div class="rep-toolbar">
+        <div class="rep-toolbar-group">
+          <span class="rep-toolbar-label">DNA Template Preset</span>
+          <div class="rep-btn-row" id="rep-preset-group" role="group" aria-label="Choose a DNA template preset">
+            <button type="button" class="rep-preset-btn is-active" data-preset="starter" aria-pressed="true">Classic 8-bp</button>
+            <button type="button" class="rep-preset-btn" data-preset="pea-tall" aria-pressed="false">Pea Height: Tall (T)</button>
+            <button type="button" class="rep-preset-btn" data-preset="pea-dwarf" aria-pressed="false">Pea Height: Short (t mutant)</button>
+            <button type="button" class="rep-preset-btn" data-preset="pea-seed" aria-pressed="false">Pea Seed Color (Y)</button>
+            <button type="button" class="rep-preset-btn" data-preset="gc-clamp" aria-pressed="false">GC-Clamp vs. AT-Origin</button>
+            <button type="button" class="rep-preset-btn" id="rep-random-btn">Random 8-bp</button>
+          </div>
+        </div>
+        <div class="rep-toolbar-group">
+          <span class="rep-toolbar-label">Synthesis Mode</span>
+          <div class="rep-btn-row" id="rep-mode-group" role="group" aria-label="Polymerase synthesis mode">
+            <button type="button" class="rep-mode-btn is-active" data-mode="dna" aria-pressed="true">DNA Replication (A, T, C, G)</button>
+            <button type="button" class="rep-mode-btn" data-mode="rna" aria-pressed="false">mRNA Transcription (A, U, C, G)</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rep-preset-banner" id="rep-preset-banner" aria-live="polite">
+        <div class="rep-preset-banner-head">
+          <strong id="rep-preset-title">Classic 8-bp Teaching Strand (5′-ACTGGATC-3′)</strong>
+          <span class="rep-preset-badge" id="rep-preset-badge">Foundations · 20 H-bonds</span>
+        </div>
+        <p id="rep-preset-desc">Balanced 8-base template (4 A–T pairs + 4 G–C pairs) demonstrating antiparallel 5′→3′ / 3′←5′ pairing and Chargaff’s parity rules.</p>
+      </div>
+
+      <div class="rep-phase-strip" id="rep-phase-strip" role="group" aria-label="Replication stages">
+        <button type="button" class="rep-phase-btn" data-rep-stage="1" aria-pressed="false">1. Unzip H-Bonds (Helicase)</button>
+        <button type="button" class="rep-phase-btn is-active" data-rep-stage="2" aria-pressed="true">2. Pair Nucleotides (Polymerase)</button>
+        <button type="button" class="rep-phase-btn" data-rep-stage="3" aria-pressed="false">3. Proofread Geometry (Exonuclease)</button>
+        <button type="button" class="rep-phase-btn" data-rep-stage="4" aria-pressed="false">4. Semiconservative Duplex</button>
+      </div>
+
       <div class="rep-lab">
-        <div class="rep-board">
-          <p class="dna-kicker">Template strand</p>
+        <div class="rep-board" id="rep-board">
+          <div class="rep-stage-wrap">
+            <svg id="rep-helix-svg" viewBox="0 0 760 270" role="img" aria-label="Interactive molecular diagram of antiparallel DNA strands, sugar-phosphate backbones, purine and pyrimidine rings, and hydrogen bonds"></svg>
+          </div>
+
+          <div class="rep-strand-head">
+            <p class="dna-kicker" style="margin:0;">Template strand (5′ → 3′)</p>
+            <span class="rep-strand-note">Covalent sugar–phosphate backbone intact</span>
+          </div>
           <div class="rep-row" id="rep-template-row" aria-label="DNA template strand"></div>
-          <p class="dna-kicker" style="margin-top:1rem;">New strand</p>
+
+          <div class="rep-strand-head" style="margin-top:1rem;">
+            <p class="dna-kicker" id="rep-new-strand-label" style="margin:0;">New partner strand (3′ ← 5′ antiparallel)</p>
+            <span class="rep-strand-note" id="rep-pair-progress">0 / 8 bases paired</span>
+          </div>
           <div class="rep-row" id="rep-slot-row" aria-label="DNA complementary strand slots"></div>
-          <div class="base-bank" id="rep-base-bank" aria-label="Choose a DNA base"></div>
-          <div class="base-bank">
-            <button class="trial-btn" id="rep-check-btn" type="button">Check strand</button>
+
+          <div class="base-bank" id="rep-base-bank" aria-label="Choose a nucleotide base"></div>
+          <div class="base-bank rep-action-bank">
+            <button class="trial-btn rep-primary-btn" id="rep-check-btn" type="button">Check strand</button>
+            <button class="trial-btn" id="rep-step-btn" type="button">Step polymerase (+1)</button>
+            <button class="trial-btn" id="rep-mismatch-btn" type="button">Introduce mismatch</button>
+            <button class="trial-btn" id="rep-proofread-btn" type="button">Proofread &amp; repair</button>
             <button class="trial-btn" id="rep-reset-btn" type="button">Reset strand</button>
           </div>
-          <div class="rep-feedback" id="rep-feedback" aria-live="polite">Select a blank slot, then choose A, T, C, or G.</div>
+          <div class="rep-feedback" id="rep-feedback" aria-live="polite">Select a blank slot (or press A, T, C, G on your keyboard) to pair complementary nucleotides.</div>
         </div>
-        <aside class="rep-evidence" aria-label="Base-pairing evidence">
+
+        <aside class="rep-evidence" aria-label="Molecular telemetry and base-pairing evidence">
+          <div class="rep-telemetry-grid">
+            <div class="rep-stat-tile">
+              <strong id="rep-stat-pairs">0 / 8</strong>
+              <span>Matched Base Pairs</span>
+            </div>
+            <div class="rep-stat-tile">
+              <strong id="rep-stat-nucleotides">8 / 16</strong>
+              <span>Total Nucleotides</span>
+            </div>
+            <div class="rep-stat-tile">
+              <strong id="rep-stat-hbonds">0 / 20</strong>
+              <span>Hydrogen Bonds</span>
+            </div>
+            <div class="rep-stat-tile">
+              <strong id="rep-stat-width">Incomplete</strong>
+              <span>Helix Geometry</span>
+            </div>
+          </div>
+
+          <div class="rep-inspector-card" id="rep-rung-inspector" aria-live="polite">
+            <p class="dna-kicker" style="margin-bottom:0.2rem;">Rung &amp; Codon Inspector</p>
+            <h3 id="rep-insp-heading">Rung #1 · Template 5′-A</h3>
+            <p id="rep-insp-chemistry"></p>
+            <p id="rep-insp-geometry"></p>
+            <div class="rep-insp-codon-box" id="rep-insp-codon"></div>
+          </div>
+
+          <div class="rep-chargaff-card" id="rep-chargaff-card">
+            <div class="rep-chargaff-head">
+              <strong>Chargaff’s Parity &amp; Stability</strong>
+              <span id="rep-chargaff-parity">A=0 · T=0 · C=0 · G=0</span>
+            </div>
+            <div id="rep-chargaff-bars"></div>
+            <p class="rep-chargaff-note" id="rep-chargaff-note"></p>
+          </div>
+
           <div class="rep-evidence-card">
-            <strong>A pairs with T</strong>
-            <span>Adenine and thymine fit together, so an exposed A calls for a T on the new strand.</span>
+            <strong>A pairs with T (2 H-bonds · Purine + Pyrimidine)</strong>
+            <span>Two-ring Adenine fits one-ring Thymine across a uniform 2.0 nm width with two aligned hydrogen bonds.</span>
           </div>
           <div class="rep-evidence-card">
-            <strong>C pairs with G</strong>
-            <span>Cytosine and guanine fit together, so an exposed C calls for a G on the new strand.</span>
-          </div>
-          <div class="rep-evidence-card">
-            <strong>The rule creates evidence</strong>
-            <span>If every slot follows the pairing rule, the copied strand preserves the original information.</span>
+            <strong>G pairs with C (3 H-bonds · Purine + Pyrimidine)</strong>
+            <span>Two-ring Guanine fits one-ring Cytosine across 2.0 nm with three hydrogen bonds, raising thermal stability.</span>
           </div>
         </aside>
       </div>
+
+      <details class="rep-notebook" open>
+        <summary>Your replication &amp; allele evidence log <span class="rep-log-count" id="rep-log-count">0 strands verified</span></summary>
+        <p class="rep-notebook-desc">Check completed strands to compare nucleotide composition, hydrogen bonds, and how a single base substitution changes a pea plant allele.</p>
+        <div class="dna-table-wrap">
+          <table class="dna-table rep-log-table">
+            <thead>
+              <tr>
+                <th scope="col">Preset / Gene</th>
+                <th scope="col">Template (5′→3′)</th>
+                <th scope="col">Partner Strand</th>
+                <th scope="col">H-Bonds</th>
+                <th scope="col">Fidelity &amp; Allele Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="rep-log-body">
+              <tr><td colspan="5">Complete and check a strand above to log your molecular evidence.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <button class="trial-btn rep-log-clear-btn" id="rep-clear-log-btn" type="button">Clear log</button>
+      </details>
     </section>
 
     <section class="dna-grid dna-grid-3">

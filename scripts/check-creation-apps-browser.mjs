@@ -9,9 +9,13 @@ const lessons = JSON.parse(fs.readFileSync(path.join(root, 'data/creation-app-pa
 const standalone = ['workbench.html', 'forge.html', 'music-lab.html', 'OSeditor.html', 'code-bridge.html', 'apps/simple-paint-studio/', 'index.html#sandbox'];
 const browser = await chromium.launch({ executablePath: findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']) || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
 const failures = [];
+const targets = [...lessons.map(page => page.file), ...standalone];
+const match = process.env.CREATION_APPS_MATCH;
+const selected = match ? targets.filter(file => file.includes(match)) : targets;
+if (!selected.length) failures.push(`No creation workspaces matched ${match}.`);
 try {
-  for (const file of [...lessons.map(page => page.file), ...standalone]) {
-    const page = await browser.newPage();
+  for (const file of selected) {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     try {
       await page.goto(new URL(file, base).href, { waitUntil: 'domcontentloaded' });
       const app = page.locator('[data-creation-app]');
@@ -21,6 +25,25 @@ try {
         if (!first) throw new Error('Application must precede the lesson.');
       }
       const button = app.locator('.creation-app-fullscreen').first();
+      if (await app.getAttribute('data-creation-fit') !== null) {
+        const primary = app.locator('[data-creation-primary]');
+        await primary.waitFor({ state: 'visible' });
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+          window.scrollTo(0, 0);
+          await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        });
+        const rect = await primary.boundingBox();
+        if (!rect || rect.y < -1 || rect.y + rect.height > 721 ||
+            rect.x < -1 || rect.x + rect.width > 1281) {
+          throw new Error('Primary workspace must fit the first 1280 × 720 view.');
+        }
+        await page.setViewportSize({ width: 390, height: 844 });
+        if (await primary.evaluate(node => node.scrollWidth > node.clientWidth + 1)) {
+          throw new Error('Primary workspace overflows on a 390px phone.');
+        }
+        await page.setViewportSize({ width: 1280, height: 720 });
+      }
       await button.click();
       await page.waitForFunction(() => document.fullscreenElement || document.querySelector('.creation-app-expanded'));
       await button.click();
@@ -61,4 +84,4 @@ try {
   await page.close();
 } finally { await browser.close(); }
 if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; }
-else console.log(`Passed ${lessons.length + standalone.length} creation workspaces and mobile fullscreen fallback.`);
+else console.log(`Passed ${selected.length} creation workspaces and mobile fullscreen fallback.`);

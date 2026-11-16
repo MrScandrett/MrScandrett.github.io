@@ -5,96 +5,318 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Viscosimeter · Mr. Scandrett's ClassroomOS</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg" />
-  <meta name="description" content="Physics Lesson 19 — drop a sphere through a fluid and measure terminal velocity to calculate viscosity with Stokes' Law." />
+  <meta name="description" content="Physics Lesson 19 — explore 3D fluid viscosity across boiling water, cold water, motor oil, glycerol, honey, basaltic lava, and silicic magma using Stokes' Law." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../../assets/css/classroom-home.css" />
   <link rel="stylesheet" href="../../assets/css/lesson-layout.css" />
+  <link rel="stylesheet" href="../../assets/css/creation-app.css" />
   <style>
     .cl-page { padding-bottom: 0; }
-    .ll-viewport { --ll-panel-w: 280px; }
+    .ll-viewport { --ll-panel-w: 300px; }
 
     .cl-hero { padding: 0.4rem 0 1.3rem; text-align: left; }
     .cl-hero h1 { max-width: 30ch; margin-left: 0; margin-right: 0; font-size: clamp(1.55rem, 3.5vw, 2.3rem); }
     .cl-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--text-muted, #64748b); }
     .cl-hero-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: 0.4; display: inline-block; vertical-align: middle; }
-    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-secondary, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
-    [data-lighting="night"] .cl-lede,
-    [data-theme="vaporwave"] .cl-lede,
-    [data-theme="bark"] .cl-lede { color: rgba(245,245,247,0.7); }
+    .cl-lede { margin: 0.65rem 0 0; max-width: 68ch; color: var(--text-body, #3f4f65); font-size: 0.96rem; line-height: 1.62; }
 
-    .cl-card { background: var(--white,#fff); border: 1px solid var(--line,#d2d2d7); border-left: 3.5px solid var(--card-accent,#30b0c7); border-radius: var(--radius,18px); box-shadow: var(--shadow,0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
-    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; }
-    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; }
-    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-secondary, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
+    .cl-card { background: var(--surface-1, #fff); border: 1px solid var(--border-subtle, #d2d2d7); border-left: 3.5px solid var(--card-accent, #30b0c7); border-radius: var(--radius, 18px); box-shadow: var(--shadow, 0 12px 34px rgba(0,0,0,0.08)); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+    .cl-card h2 { margin: 0 0 0.55rem; font-size: 1.2rem; letter-spacing: -0.02em; color: var(--text-strong, #1d1d1f); }
+    .cl-card h3 { margin: 0.85rem 0 0.3rem; font-size: 1rem; color: var(--text-strong, #1d1d1f); }
+    .cl-card p  { margin: 0 0 0.6rem; color: var(--text-body, #3f4f65); font-size: 0.88rem; line-height: 1.65; }
     .cl-card p:last-child { margin-bottom: 0; }
-    [data-lighting="night"] .cl-card,
-    [data-theme="vaporwave"] .cl-card,
-    [data-theme="bark"] .cl-card { background: var(--white,#2c2c2e); }
-    [data-lighting="night"] .cl-card p,
-    [data-theme="vaporwave"] .cl-card p,
-    [data-theme="bark"] .cl-card p { color: rgba(245,245,247,0.72); }
 
-    .cl-formula-box { background: linear-gradient(135deg,rgba(48,176,199,0.10),rgba(48,176,199,0.03)); border: 1px solid rgba(48,176,199,0.35); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
-    .cl-formula-sym { font-size: clamp(1.3rem,3.5vw,2rem); font-weight: 800; letter-spacing: -0.02em; color: #30b0c7; display: block; margin-bottom: 0.5rem; }
-    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .cl-formula-vars,
-    [data-theme="vaporwave"] .cl-formula-vars,
-    [data-theme="bark"] .cl-formula-vars { color: rgba(245,245,247,0.7); }
+    .vis-sim-card { position: relative; }
+    #vis-lab:not(:fullscreen):not(.creation-app-expanded) > .creation-app-toolbar {
+      float: right;
+      position: static;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      margin: -0.15rem 0 0.35rem 0.75rem;
+    }
+    #vis-lab:not(:fullscreen):not(.creation-app-expanded) .creation-app-fullscreen {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      min-height: 32px;
+      border-color: var(--border-subtle, #d2d2d7);
+      border-radius: 9px;
+      color: var(--text-strong, #1d1d1f);
+      background: var(--surface-2, rgba(0,0,0,0.04));
+    }
 
-    .vis-fluid-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.8rem 0; }
-    .vis-fluid-table th { text-align: left; padding: 0.4rem 0.6rem; background: rgba(48,176,199,0.08); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); }
-    .vis-fluid-table td { padding: 0.4rem 0.6rem; border-top: 1px solid var(--line,#d2d2d7); color: var(--text-secondary, #3f4f65); }
-    [data-lighting="night"] .vis-fluid-table td,
-    [data-theme="vaporwave"] .vis-fluid-table td,
-    [data-theme="bark"] .vis-fluid-table td { color: rgba(245,245,247,0.72); }
+    .vis-view-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin: 0.5rem 0 0.65rem; clear: both; }
+    .vis-view-btn {
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 9px;
+      padding: 0.42rem 0.78rem;
+      background: var(--surface-2, transparent);
+      color: var(--text-body, #3f4f65);
+      font: 700 0.79rem/1 inherit;
+      cursor: pointer;
+      transition: background 0.14s, color 0.14s, border-color 0.14s;
+    }
+    .vis-view-btn.active { background: #146c7d; border-color: #229ab0; color: #fff; }
+    .vis-vectors-label {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-body, #3f4f65);
+      cursor: pointer;
+    }
 
-    .cl-canvas-wrap { border: 1px solid var(--line,#d2d2d7); border-radius: 14px; overflow: hidden; margin: 0.8rem 0; background: #f7f8fa; position: relative; }
-    [data-lighting="night"] .cl-canvas-wrap,
-    [data-theme="vaporwave"] .cl-canvas-wrap,
-    [data-theme="bark"] .cl-canvas-wrap { background: #1c1c1e; }
-    #vis-canvas { width: 100%; height: 300px; display: block; }
+    .vis-fluid-strip { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .vis-sphere-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.65rem;
+      margin-bottom: 0.65rem;
+    }
+    .vis-sphere-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .vis-bar-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted, #64748b);
+      margin-right: 0.15rem;
+    }
+    .vis-radius-inline-wrap {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-body, #3f4f65);
+    }
+    .vis-radius-inline-wrap input[type="range"].nl-slider,
+    .vis-radius-inline-wrap input[type="range"].cos-range { width: 108px; flex: 0 0 108px; }
+    .vis-radius-val {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--text-strong, #1d1d1f);
+      min-width: 3.1em;
+    }
+    .vis-sub-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.65rem;
+      padding: 0.48rem 0.75rem;
+      border-radius: 10px;
+      background: var(--surface-2, rgba(0,0,0,0.04));
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      font-size: 0.8rem;
+      color: var(--text-body, #3f4f65);
+    }
+    .vis-sub-bar[hidden] { display: none !important; }
+    .vis-select {
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 8px;
+      padding: 0.32rem 0.55rem;
+      font: inherit;
+      font-size: 0.8rem;
+      background: var(--surface-1, #fff);
+      color: var(--text-strong, #1d1d1f);
+    }
 
-    .cl-readouts { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.5rem; margin: 0.6rem 0; }
-    .cl-readout { background: rgba(0,0,0,0.04); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; padding: 0.55rem 0.7rem; text-align: center; }
-    [data-lighting="night"] .cl-readout,
-    [data-theme="vaporwave"] .cl-readout,
-    [data-theme="bark"] .cl-readout { background: rgba(255,255,255,0.06); }
-    .cl-readout-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
-    .cl-readout-val   { font-size: 0.95rem; font-weight: 700; color: #30b0c7; }
+    .cl-canvas-wrap {
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 0.4rem 0 0.75rem;
+      background: #0b1320;
+      position: relative;
+    }
+    .cl-canvas-wrap [hidden] { display: none !important; }
+    #vis-3d-canvas, #vis-canvas { width: 100%; height: 420px; display: block; touch-action: none; }
+    #vis-3d-canvas { cursor: grab; }
+    #vis-3d-canvas:active { cursor: grabbing; }
+    .vis-sim-card:fullscreen #vis-3d-canvas,
+    .vis-sim-card:fullscreen #vis-canvas,
+    .vis-sim-card.creation-app-expanded #vis-3d-canvas,
+    .vis-sim-card.creation-app-expanded #vis-canvas { height: min(62vh, 640px); }
 
-    .cl-apps { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.7rem; margin: 0.8rem 0; }
-    .cl-app  { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.8rem; }
+    .vis-hud-badge {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      padding: 0.28rem 0.62rem;
+      border-radius: 8px;
+      background: rgba(11, 19, 32, 0.82);
+      color: #e2e8f0;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-size: 0.74rem;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .vis-float-badge {
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      padding: 0.34rem 0.7rem;
+      border-radius: 8px;
+      background: rgba(217, 119, 6, 0.92);
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .vis-webgl-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+      color: #e2e8f0;
+      background: #0b1320;
+      font-size: 0.88rem;
+    }
+
+    .vis-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.55rem;
+      margin-bottom: 0.65rem;
+    }
+    .vis-action-row .vis-drop-btn,
+    .vis-action-row .vis-reset-btn {
+      width: auto;
+      margin-top: 0;
+      padding: 0.48rem 1rem;
+    }
+    .vis-timescale-wrap {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted, #64748b);
+    }
+
+    .cl-readouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin: 0.5rem 0 0; }
+    .cl-readout { background: var(--surface-2, rgba(0,0,0,0.04)); border: 1px solid var(--border-subtle, #d2d2d7); border-radius: 10px; padding: 0.55rem 0.65rem; text-align: center; }
+    .cl-readout-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted, #64748b); display: block; margin-bottom: 0.2rem; }
+    .cl-readout-val { font-size: 0.93rem; font-weight: 700; color: var(--accent, #0e7490); }
+
+    .cl-formula-box { background: linear-gradient(135deg, rgba(48,176,199,0.10), rgba(48,176,199,0.03)); border: 1px solid rgba(48,176,199,0.35); border-radius: 14px; padding: 1.1rem 1.3rem; margin: 0.8rem 0; text-align: center; }
+    .cl-formula-sym { font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 800; letter-spacing: -0.02em; color: #0e7490; display: block; margin-bottom: 0.5rem; }
+    [data-lighting="night"] .cl-formula-sym,
+    [data-theme="vaporwave"] .cl-formula-sym,
+    [data-theme="bark"] .cl-formula-sym { color: #38bdf8; }
+    .cl-formula-vars { display: flex; flex-wrap: wrap; gap: 0.3rem 1.2rem; justify-content: center; font-size: 0.82rem; color: var(--text-body, #3f4f65); }
+
+    .vis-table-wrap { overflow-x: auto; margin: 0.8rem 0; }
+    .vis-fluid-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .vis-fluid-table th { text-align: left; padding: 0.45rem 0.6rem; background: rgba(48,176,199,0.10); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #64748b); }
+    .vis-fluid-table td { padding: 0.45rem 0.6rem; border-top: 1px solid var(--border-subtle, #d2d2d7); color: var(--text-body, #3f4f65); }
+
+    .vis-figure {
+      margin: 0.9rem 0 0;
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface-2, rgba(0,0,0,0.03));
+    }
+    .vis-figure img {
+      display: block;
+      width: 100%;
+      max-height: 290px;
+      object-fit: cover;
+      cursor: zoom-in;
+    }
+    .vis-figure figcaption {
+      padding: 0.7rem 0.9rem;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: var(--text-body, #3f4f65);
+    }
+    .vis-figure figcaption strong { display: block; color: var(--text-strong, #1d1d1f); margin-bottom: 0.15rem; }
+    .vis-figure-credit { display: block; margin-top: 0.25rem; font-size: 0.72rem; color: var(--text-muted, #64748b); }
+
+    .cl-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.7rem; margin: 0.8rem 0; }
+    .cl-app  { border: 1px solid var(--border-subtle, #d2d2d7); border-radius: 12px; padding: 0.8rem; }
     .cl-app-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
-    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; }
+    .cl-app strong { display: block; font-size: 0.84rem; margin-bottom: 0.2rem; color: var(--text-strong, #1d1d1f); }
     .cl-app small   { font-size: 0.77rem; color: var(--text-muted, #64748b); line-height: 1.5; display: block; }
 
-    .cl-practice .cl-problem { border: 1px solid var(--line,#d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
+    .cl-practice .cl-problem { border: 1px solid var(--border-subtle, #d2d2d7); border-radius: 12px; padding: 0.9rem 1rem; margin-bottom: 0.7rem; }
     .cl-practice .cl-problem p { margin-bottom: 0.5rem; }
     .cl-problem-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .cl-ans-input { border: 1px solid var(--line,#d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 110px; background: var(--white,#fff); color: var(--text,#1d1d1f); }
-    .cl-check-btn { background: #227d8d; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
-    .cl-check-btn:hover { background: #228fa3; }
+    .cl-ans-input { border: 1px solid var(--border-subtle, #d2d2d7); border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.88rem; width: 110px; background: var(--surface-1, #fff); color: var(--text-strong, #1d1d1f); }
+    .cl-check-btn { background: #146c7d; color: #fff; border: none; border-radius: 8px; padding: 0.35rem 0.8rem; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+    .cl-check-btn:hover { background: #1b8195; }
     .cl-feedback { font-size: 0.82rem; font-weight: 600; }
-    .cl-feedback.ok  { color: #34c759; }
-    .cl-feedback.err { color: #ff3b30; }
+    .cl-feedback.ok  { color: #248a3d; }
+    .cl-feedback.err { color: #d70015; }
+    [data-lighting="night"] .cl-feedback.ok { color: #4ade80; }
+    [data-lighting="night"] .cl-feedback.err { color: #f87171; }
     .cl-hint { font-size: 0.78rem; color: var(--text-muted, #64748b); margin-top: 0.4rem; display: none; }
-    .diff-easy { background: rgba(52,199,89,0.15);  color: #248a3d; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-mid  { background: rgba(255,149,0,0.15);  color: #c07000; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
-    .diff-hard { background: rgba(255,59,48,0.12);  color: #c0392b; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-easy { background: rgba(52,199,89,0.15);  color: #1f7a36; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-mid  { background: rgba(255,149,0,0.15);  color: #a65c00; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    .diff-hard { background: rgba(255,59,48,0.12);  color: #b42318; border-radius: 5px; padding: 0.1rem 0.4rem; font-size: 0.72rem; font-weight: 700; margin-right: 0.4rem; }
+    [data-lighting="night"] .diff-easy { color: #4ade80; }
+    [data-lighting="night"] .diff-mid  { color: #fbbf24; }
+    [data-lighting="night"] .diff-hard { color: #f87171; }
 
-    /* Panel styles */
-    .vis-drop-btn { width: 100%; padding: 0.55rem; background: #227d8d; color: #fff; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; margin-top: 0.8rem; }
-    .vis-drop-btn:hover { background: #228fa3; }
-    .vis-reset-btn { width: 100%; padding: 0.45rem; background: transparent; color: var(--text-muted, #64748b); border: 1px solid var(--line,#d2d2d7); border-radius: 10px; font-size: 0.85rem; cursor: pointer; margin-top: 0.4rem; }
-    .vis-reset-btn:hover { background: rgba(0,0,0,0.05); }
+    /* Controls */
+    .vis-drop-btn { width: 100%; padding: 0.55rem 0.9rem; background: #146c7d; color: #fff; border: none; border-radius: 10px; font-size: 0.88rem; font-weight: 700; cursor: pointer; margin-top: 0.8rem; }
+    .vis-drop-btn:hover { background: #1b8195; }
+    .vis-reset-btn { width: 100%; padding: 0.45rem 0.9rem; background: transparent; color: var(--text-body, #3f4f65); border: 1px solid var(--border-subtle, #d2d2d7); border-radius: 10px; font-size: 0.84rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+    .vis-reset-btn:hover { background: var(--surface-2, rgba(0,0,0,0.05)); }
     .vis-fluid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.5rem; }
-    .vis-fluid-btn { padding: 0.4rem 0.3rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: var(--white,#fff); color: var(--text,#1d1d1f); text-align: center; transition: background 0.15s; }
-    .vis-fluid-btn.selected { background: #227d8d; color: #fff; border-color: #30b0c7; }
-    .vis-sphere-btns { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }
-    .vis-sphere-btn { flex: 1; padding: 0.4rem 0.3rem; border: 1px solid var(--line,#d2d2d7); border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: var(--white,#fff); color: var(--text,#1d1d1f); text-align: center; transition: background 0.15s; }
-    .vis-sphere-btn.selected { background: #5856d6; color: #fff; border-color: #5856d6; }
+    .vis-fluid-btn {
+      padding: 0.4rem 0.48rem;
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface-2, #f8fafc);
+      color: var(--text-strong, #1d1d1f);
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .vis-fluid-btn.selected { background: #146c7d; color: #fff; border-color: #229ab0; }
+    .vis-sphere-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.5rem; }
+    .vis-sphere-btn {
+      padding: 0.4rem 0.35rem;
+      border: 1px solid var(--border-subtle, #d2d2d7);
+      border-radius: 8px;
+      font-size: 0.77rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--surface-2, #f8fafc);
+      color: var(--text-strong, #1d1d1f);
+      text-align: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .vis-sphere-btn.selected { background: #4c49c2; color: #fff; border-color: #5856d6; }
+
+    @media (max-width: 720px) {
+      .cl-readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cl-apps { grid-template-columns: 1fr; }
+      #vis-3d-canvas, #vis-canvas { height: 340px; }
+      .vis-vectors-label, .vis-timescale-wrap, .vis-radius-inline-wrap { margin-left: 0; }
+    }
   </style>
 </head>
 <body class="theme-liquid-woodland theme-steam">
@@ -123,6 +345,88 @@
     <div class="ll-sim">
       <main id="main-content" class="cl-page">
 
+        <!-- Interactive 3D Viscosimeter Simulator (first inside main) -->
+        <section class="cl-card vis-sim-card" id="vis-lab" style="--card-accent:#30b0c7;" data-creation-app aria-label="Interactive 3D Viscosimeter Simulator">
+          <h2>Interactive 3D Viscosimeter</h2>
+
+          <div class="vis-view-bar" role="group" aria-label="Simulation views">
+            <button class="vis-view-btn active" type="button" data-vis-view="tube" aria-pressed="true">🧊 3D Tube</button>
+            <button class="vis-view-btn" type="button" data-vis-view="race" aria-pressed="false">🏁 3D 4-Fluid Race</button>
+            <button class="vis-view-btn" type="button" data-vis-view="flow" aria-pressed="false">🌋 3D Inclined Pour</button>
+            <button class="vis-view-btn" type="button" data-vis-view="2d" aria-pressed="false">📐 2D Schematic &amp; Graph</button>
+            <label class="vis-vectors-label"><input type="checkbox" id="vis-vectors-toggle" checked /> Show 3D force vectors (F<sub>g</sub>, F<sub>b</sub>, F<sub>d</sub>)</label>
+          </div>
+
+          <div class="vis-fluid-strip" role="group" aria-label="Quick fluid selector">
+            <button class="vis-fluid-btn" type="button" data-fluid="boilingWater" aria-pressed="false">Boiling Water</button>
+            <button class="vis-fluid-btn selected" type="button" data-fluid="water" aria-pressed="true">Water (20°C)</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="coldWater" aria-pressed="false">Cold Water</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="oil" aria-pressed="false">Motor Oil</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="glycerol" aria-pressed="false">Glycerol</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="honey" aria-pressed="false">Honey</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="lava" aria-pressed="false">Basaltic Lava</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="magma" aria-pressed="false">Silicic Magma</button>
+          </div>
+
+          <div class="vis-sphere-bar">
+            <div class="vis-sphere-strip" role="group" aria-label="Sphere material selector">
+              <span class="vis-bar-label">Sphere</span>
+              <button class="vis-sphere-btn"          type="button" data-mat="plastic"  aria-pressed="false">Plastic (1200)</button>
+              <button class="vis-sphere-btn"          type="button" data-mat="glass"    aria-pressed="false">Glass (2500)</button>
+              <button class="vis-sphere-btn selected" type="button" data-mat="steel"    aria-pressed="true">Steel (7800)</button>
+              <button class="vis-sphere-btn"          type="button" data-mat="tungsten" aria-pressed="false">Tungsten (15600)</button>
+            </div>
+            <label class="vis-radius-inline-wrap" for="vis-radius-inline">
+              <span class="vis-bar-label">Radius</span>
+              <input type="range" class="nl-slider" id="vis-radius-inline" data-vis-radius min="1" max="8" value="3" />
+              <span class="vis-radius-val" id="vis-r-label-inline" data-vis-radius-label>3 mm</span>
+            </label>
+          </div>
+
+          <div class="vis-sub-bar" id="vis-race-bar" hidden>
+            <label for="vis-race-preset"><strong>Race lineup:</strong></label>
+            <select id="vis-race-preset" class="vis-select">
+              <option value="temp">Temperature &amp; Everyday (Boiling, Cold Water, Oil, Honey)</option>
+              <option value="classic">Classic Lab Quartet (Water, Oil, Glycerol, Honey)</option>
+              <option value="extreme">Extreme Rheology (Oil, Honey, Lava, Magma)</option>
+            </select>
+          </div>
+
+          <div class="vis-sub-bar" id="vis-flow-bar" hidden>
+            <span><strong>Shared DepthField Pour:</strong> Watch viscosity &amp; yield strength govern flow down a sloped chute into a catch basin.</span>
+            <button type="button" class="vis-view-btn" id="vis-flow-reset">Clear &amp; Re-Pour</button>
+          </div>
+
+          <div class="cl-canvas-wrap">
+            <canvas id="vis-3d-canvas" aria-label="Interactive 3D viscosimeter fluid simulation. Drag to orbit and scroll to zoom."></canvas>
+            <canvas id="vis-canvas" hidden aria-label="2D viscosimeter schematic and velocity-versus-time graph"></canvas>
+            <div class="vis-hud-badge" id="vis-hud-badge">Water (20°C) · Drag to orbit</div>
+            <div class="vis-float-badge" id="vis-float-badge" hidden>Floats!</div>
+            <div class="vis-webgl-fallback" id="vis-webgl-fallback" hidden>WebGL is unavailable in this browser; using the 2D schematic &amp; graph view.</div>
+          </div>
+
+          <div class="vis-action-row">
+            <button class="vis-drop-btn" type="button" id="vis-drop-main">Drop Sphere</button>
+            <button class="vis-reset-btn" type="button" id="vis-reset-main">Reset</button>
+            <label class="vis-timescale-wrap" for="vis-timescale">Time scale
+              <select id="vis-timescale" class="vis-select">
+                <option value="auto" selected>Auto-Scale (clear visual speed)</option>
+                <option value="0.01">0.01× Slow-Mo</option>
+                <option value="1">1× Real-Time</option>
+                <option value="25">25× Fast-Forward</option>
+                <option value="500">500× Geo Time-Lapse</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="cl-readouts">
+            <div class="cl-readout"><span class="cl-readout-label">Terminal v<sub>t</sub></span><span class="cl-readout-val" id="vis-r-vt">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Viscosity η</span><span class="cl-readout-val" id="vis-r-eta">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Fall Time (50 cm)</span><span class="cl-readout-val" id="vis-r-time">—</span></div>
+            <div class="cl-readout"><span class="cl-readout-label">Reynolds Re</span><span class="cl-readout-val" id="vis-r-re">—</span></div>
+          </div>
+        </section>
+
         <!-- Hero -->
         <section class="hero cl-hero">
           <p class="eyebrow">Physics · Lesson 19</p>
@@ -131,23 +435,23 @@
             <span>Fluid Mechanics</span><span class="dot"></span>
             <span>Stokes' Law</span><span class="dot"></span>
             <span>Terminal Velocity</span><span class="dot"></span>
-            <span>Drag Force</span>
+            <span>Rheology &amp; Magma</span>
           </div>
-          <p class="cl-lede">Drop a steel ball into a column of fluid and time its fall. The slower it falls, the thicker the fluid. This simple technique — Stokes' viscosimetry — lets engineers measure the viscosity of everything from water to motor oil to honey, using only a ball, a ruler, and a stopwatch.</p>
+          <p class="cl-lede">Drop a sphere into a 50&nbsp;cm fluid column and measure its fall. Across boiling water, room-temperature water, cold water, motor oil, glycerol, honey, basaltic lava, and silicic magma, dynamic viscosity spans more than <strong>six orders of magnitude</strong> — powered here by our shared ClassroomOS fluid engines.</p>
         </section>
 
         <!-- Who Was Stokes? -->
         <section class="cl-card" style="--card-accent:#ffcc00;">
           <h2>Who Was George Gabriel Stokes?</h2>
-          <p><strong>George Gabriel Stokes (1819–1903)</strong> was an Irish mathematician and physicist at Cambridge University. In 1851 he derived the drag force on a sphere moving through a viscous fluid — what we now call Stokes' Law. His work is foundational to fluid mechanics, meteorology (how raindrops fall), and particle physics (how droplets behave in bubble chambers). Robert Millikan later used Stokes' Law in his famous oil-drop experiment to measure the charge of an electron.</p>
+          <p><strong>George Gabriel Stokes (1819–1903)</strong> was an Irish mathematician and physicist at Cambridge University. In 1851 he derived the drag force on a sphere moving through a viscous fluid — what we now call Stokes' Law. His work is foundational to fluid mechanics, meteorology (how raindrops fall), volcanology (how crystals settle or gas bubbles rise in magma), and particle physics. Robert Millikan later used Stokes' Law in his famous oil-drop experiment to measure the charge of an electron.</p>
         </section>
 
         <!-- Core Concept -->
         <section class="cl-card" style="--card-accent:#30b0c7;">
           <h2>Stokes' Law &amp; Terminal Velocity</h2>
-          <p>When a sphere falls through a viscous fluid, three forces act on it: gravity (down), buoyancy (up), and drag (up). At <strong>terminal velocity</strong>, these forces balance and the sphere moves at a constant speed.</p>
+          <p>When a sphere falls through a viscous fluid, three forces act on it: gravity (down), buoyancy (up), and viscous drag (up). At <strong>terminal velocity</strong>, these forces balance and the sphere moves at a constant speed. If the sphere is less dense than the fluid (ρ<sub>s</sub> &le; ρ<sub>f</sub>), buoyancy wins and the sphere floats at the meniscus.</p>
 
-          <div class="cl-formula-box" role="img" aria-label="terminal velocity equals 2r squared times density difference times g divided by 9 eta">
+          <div class="cl-formula-box" role="img" data-formula="stokes-vt" data-formula-open aria-label="terminal velocity equals 2r squared times density difference times g divided by 9 eta">
             <span class="cl-formula-sym">v<sub>t</sub> = 2r²(ρ<sub>s</sub> − ρ<sub>f</sub>)g / 9η</span>
             <div class="cl-formula-vars">
               <div><strong>v<sub>t</sub></strong> = terminal velocity (m/s)</div>
@@ -159,33 +463,44 @@
             </div>
           </div>
 
-          <p>Rearranged to find viscosity from a measured terminal velocity: <strong>η = 2r²(ρ<sub>s</sub> − ρ<sub>f</sub>)g / (9v<sub>t</sub>)</strong></p>
+          <p>Rearranged to find viscosity from a measured terminal velocity:</p>
+          <div class="cl-formula-box" data-formula="stokes-eta" aria-label="dynamic viscosity equals 2r squared times density difference times g divided by 9 terminal velocity">
+            <span class="cl-formula-sym">η = 2r²(ρ<sub>s</sub> − ρ<sub>f</sub>)g / (9v<sub>t</sub>)</span>
+          </div>
 
-          <table class="vis-fluid-table">
-            <thead>
-              <tr><th>Fluid</th><th>Viscosity (Pa·s)</th><th>Density (kg/m³)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Water (20°C)</td><td>0.001</td><td>998</td></tr>
-              <tr><td>Motor oil (SAE 30)</td><td>0.10</td><td>880</td></tr>
-              <tr><td>Glycerol</td><td>1.40</td><td>1260</td></tr>
-              <tr><td>Honey</td><td>10.0</td><td>1400</td></tr>
-            </tbody>
-          </table>
+          <div class="vis-table-wrap">
+            <table class="vis-fluid-table">
+              <thead>
+                <tr><th>Fluid</th><th>Temp (°C)</th><th>Viscosity η (Pa·s)</th><th>Density ρ<sub>f</sub> (kg/m³)</th><th>Behavior Notes</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Boiling Water</td><td>100</td><td>0.000282</td><td>958</td><td>Thermal motion weakens H-bonds; lowest viscosity here</td></tr>
+                <tr><td>Water</td><td>20</td><td>0.0010</td><td>998</td><td>Reference Newtonian liquid</td></tr>
+                <tr><td>Cold Water</td><td>2</td><td>0.00167</td><td>1000</td><td>~6× more viscous than boiling water; near max density</td></tr>
+                <tr><td>Motor Oil (SAE 30)</td><td>20</td><td>0.10</td><td>880</td><td>Long hydrocarbon chains increase internal friction</td></tr>
+                <tr><td>Glycerol</td><td>20</td><td>1.40</td><td>1260</td><td>3 OH-groups per molecule form dense H-bond networks</td></tr>
+                <tr><td>Honey</td><td>20</td><td>10.0</td><td>1400</td><td>Concentrated sugar solution resists shear strongly</td></tr>
+                <tr><td>Basaltic Lava</td><td>1150</td><td>100</td><td>2700</td><td>Low-silica (~50% SiO<sub>2</sub>) molten rock; glass floats on it</td></tr>
+                <tr><td>Silicic Magma</td><td>850</td><td>1000</td><td>2400</td><td>Silica tetrahedra polymerize into chains that trap gas</td></tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
-        <!-- Simulator -->
-        <section class="cl-card" style="--card-accent:#5856d6;">
-          <h2>Interactive Viscosimeter</h2>
-          <p style="font-size:0.84rem;color: var(--text-muted, #64748b);">Select a fluid and sphere, then drop the sphere to observe terminal velocity.</p>
-          <div class="cl-canvas-wrap">
-            <canvas id="vis-canvas" aria-label="Viscosimeter simulation showing a sphere falling through fluid"></canvas>
-          </div>
-          <div class="cl-readouts">
-            <div class="cl-readout"><span class="cl-readout-label">Terminal v</span><span class="cl-readout-val" id="vis-r-vt">—</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Viscosity η</span><span class="cl-readout-val" id="vis-r-eta">—</span></div>
-            <div class="cl-readout"><span class="cl-readout-label">Fall Time</span><span class="cl-readout-val" id="vis-r-time">—</span></div>
-          </div>
+        <!-- Temperature & Silicate Composition -->
+        <section class="cl-card" style="--card-accent:#f97316;">
+          <h2>Why Temperature &amp; Silica Content Transform Viscosity</h2>
+          <p><strong>Temperature in Liquids:</strong> Heating water from 2°C to 100°C gives molecules extra kinetic energy to break fleeting hydrogen bonds, dropping viscosity from 0.00167&nbsp;Pa·s to 0.000282&nbsp;Pa·s. That is why hot syrup pours freely while refrigerated honey barely budges.</p>
+          <p><strong>Lava vs. Magma:</strong> Magma beneath Earth's crust and erupted lava on the surface differ dramatically by temperature and chemistry. Hot, iron-rich <strong>basaltic lava</strong> (~1150°C) has fewer linked silica (SiO<sub>4</sub>) chains, so it flows across roads in glowing channels. Cooler, silica-rich <strong>magma</strong> (~850°C) builds tangled silicate polymer networks that boost viscosity by orders of magnitude, trapping volcanic gases until explosive pressure builds.</p>
+
+          <figure class="vis-figure" data-zoomable>
+            <img src="../../assets/images/lessons/rock-cycle/kilauea-lava.webp" width="1000" height="562" loading="lazy" alt="Glowing orange basaltic lava from Kīlauea creeping across dark cooled crust on an asphalt road" />
+            <figcaption>
+              <strong>Real-world rheology: Kīlauea basaltic lava flow</strong>
+              <span>Even fluid Hawaiian basalt (~100&nbsp;Pa·s) is roughly 100,000× more viscous than room-temperature water, forming dark cooling crusts over incandescent molten cores — the exact behavior modeled in the 3D Inclined Pour view above.</span>
+              <span class="vis-figure-credit">Credit: USGS · Public domain</span>
+            </figcaption>
+          </figure>
         </section>
 
         <!-- Real-World Applications -->
@@ -198,19 +513,19 @@
               <small>SAE ratings (5W-30, 10W-40) specify viscosity at cold and hot temperatures. Too thick → hard to start; too thin → poor lubrication.</small>
             </div>
             <div class="cl-app">
+              <div class="cl-app-icon">🌋</div>
+              <strong>Volcanic Hazard Forecasting</strong>
+              <small>Geologists compare basaltic lava and silica-rich magma viscosity to predict whether an eruption will ooze smoothly or erupt explosively.</small>
+            </div>
+            <div class="cl-app">
               <div class="cl-app-icon">🩸</div>
               <strong>Blood Viscosity</strong>
               <small>Blood is a non-Newtonian fluid. High viscosity (thick blood) increases stroke risk. Anticoagulants reduce viscosity to protect circulation.</small>
             </div>
             <div class="cl-app">
-              <div class="cl-app-icon">🍅</div>
-              <strong>Food Industry</strong>
-              <small>Ketchup, sauces, and dressings must have the right viscosity to pour well. Rheology labs measure consistency at every production batch.</small>
-            </div>
-            <div class="cl-app">
               <div class="cl-app-icon">🏭</div>
               <strong>Industrial Quality Control</strong>
-              <small>Paint, adhesives, lubricants, and polymers are all tested for viscosity to ensure consistent application and performance in the field.</small>
+              <small>Paint, adhesives, ketchup, lubricants, and polymers are all tested with falling-sphere and rotational viscosimeters at every batch.</small>
             </div>
           </div>
         </section>
@@ -218,7 +533,10 @@
         <!-- Practice Problems -->
         <section class="cl-card" style="--card-accent:#007aff;">
           <h2>Practice Problems</h2>
-          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use v<sub>t</sub> = 2r²(ρ<sub>s</sub>−ρ<sub>f</sub>)g / 9η and Stokes drag F = 6πηrv.</p>
+          <p style="color: var(--text-muted, #64748b);font-size:0.84rem;">Use v<sub>t</sub> = 2r²(ρ<sub>s</sub>−ρ<sub>f</sub>)g / 9η and Stokes drag:</p>
+          <div class="cl-formula-box" data-formula="stokes-drag" aria-label="Stokes drag force equals 6 pi eta r v">
+            <span class="cl-formula-sym">F<sub>d</sub> = 6πηrv</span>
+          </div>
           <div class="cl-practice">
 
             <div class="cl-problem">
@@ -229,14 +547,14 @@
                   <option value="true">True</option>
                   <option value="false">False</option>
                 </select>
-                <button class="cl-check-btn" onclick="visCheckText(1,'true')">Check</button>
+                <button class="cl-check-btn" type="button" onclick="visCheckText(1,'true')">Check</button>
                 <span class="cl-feedback" id="visfb-1"></span>
               </div>
               <div class="cl-hint" id="vishint-1">Hint: At terminal velocity the net force is zero — gravity = drag + buoyancy.</div>
             </div>
 
             <div class="cl-problem">
-              <p><span class="diff-easy">Easy</span>2. Which fluid has the highest viscosity?</p>
+              <p><span class="diff-easy">Easy</span>2. Among everyday lab liquids, which fluid has the highest viscosity?</p>
               <div class="cl-problem-row">
                 <select class="cl-ans-input" id="visans-2" style="width:130px;">
                   <option value="">Choose…</option>
@@ -245,7 +563,7 @@
                   <option value="oil">Motor oil</option>
                   <option value="glycerol">Glycerol</option>
                 </select>
-                <button class="cl-check-btn" onclick="visCheckText(2,'honey')">Check</button>
+                <button class="cl-check-btn" type="button" onclick="visCheckText(2,'honey')">Check</button>
                 <span class="cl-feedback" id="visfb-2"></span>
               </div>
               <div class="cl-hint" id="vishint-2">Hint: Honey η ≈ 10 Pa·s, far higher than glycerol (1.4), motor oil (0.1), or water (0.001).</div>
@@ -255,14 +573,14 @@
               <p><span class="diff-mid">Medium</span>3. Stokes' Law: F = 6πηrv. A sphere of r = 0.002 m falls at v = 0.01 m/s in glycerol (η = 1.4 Pa·s). What is the drag force? (Answer in scientific notation ×10⁻⁴ N, 2 sig figs.)</p>
               <div class="cl-problem-row">
                 <input type="number" class="cl-ans-input" id="visans-3" step="0.1" placeholder="×10⁻⁴ N" />
-                <button class="cl-check-btn" onclick="visCheck(3, 5.28, 0.2)">Check</button>
+                <button class="cl-check-btn" type="button" onclick="visCheck(3, 5.28, 0.2)">Check</button>
                 <span class="cl-feedback" id="visfb-3"></span>
               </div>
               <div class="cl-hint" id="vishint-3">Hint: F = 6π × 1.4 × 0.002 × 0.01 = 6π × 2.8×10⁻⁵ ≈ 5.28×10⁻⁴ N. Enter 5.28 (value ×10⁻⁴).</div>
             </div>
 
             <div class="cl-problem">
-              <p><span class="diff-mid">Medium</span>4. The same sphere falls in honey (100× more viscous than glycerol). Compared to glycerol, its terminal velocity would be approximately:</p>
+              <p><span class="diff-mid">Medium</span>4. Suppose a sphere falls in a fluid 100× more viscous than glycerol (with similar density difference). Compared to glycerol, its terminal velocity would be approximately:</p>
               <div class="cl-problem-row">
                 <select class="cl-ans-input" id="visans-4" style="width:160px;">
                   <option value="">Choose…</option>
@@ -271,7 +589,7 @@
                   <option value="100x-slower">~100× slower</option>
                   <option value="100x-faster">~100× faster</option>
                 </select>
-                <button class="cl-check-btn" onclick="visCheckText(4,'100x-slower')">Check</button>
+                <button class="cl-check-btn" type="button" onclick="visCheckText(4,'100x-slower')">Check</button>
                 <span class="cl-feedback" id="visfb-4"></span>
               </div>
               <div class="cl-hint" id="vishint-4">Hint: v<sub>t</sub> ∝ 1/η. If η increases 100×, terminal velocity decreases 100×.</div>
@@ -281,10 +599,25 @@
               <p><span class="diff-hard">Challenge</span>5. A steel sphere (r = 1 mm = 0.001 m, ρ<sub>s</sub> = 7800 kg/m³) falls in glycerol (η = 1.4 Pa·s, ρ<sub>f</sub> = 1260 kg/m³). g = 9.8 m/s². Calculate terminal velocity in m/s (3 sig figs).</p>
               <div class="cl-problem-row">
                 <input type="number" class="cl-ans-input" id="visans-5" step="0.001" placeholder="m/s" />
-                <button class="cl-check-btn" onclick="visCheck(5, 0.0102, 0.0005)">Check</button>
+                <button class="cl-check-btn" type="button" onclick="visCheck(5, 0.0102, 0.0005)">Check</button>
                 <span class="cl-feedback" id="visfb-5"></span>
               </div>
               <div class="cl-hint" id="vishint-5">Hint: v<sub>t</sub> = 2×(0.001)²×(7800−1260)×9.8 / (9×1.4) = 2×10⁻⁶×6540×9.8/12.6 ≈ 0.0102 m/s</div>
+            </div>
+
+            <div class="cl-problem">
+              <p><span class="diff-mid">Medium</span>6. Test Glass (ρ<sub>s</sub> = 2500 kg/m³) in Basaltic Lava (ρ<sub>f</sub> = 2700 kg/m³) in the 3D simulator. What happens to the glass sphere?</p>
+              <div class="cl-problem-row">
+                <select class="cl-ans-input" id="visans-6" style="width:190px;">
+                  <option value="">Choose…</option>
+                  <option value="sinks-fast">Sinks rapidly to the bottom</option>
+                  <option value="floats">Floats at the meniscus</option>
+                  <option value="dissolves">Bounces out of the tube</option>
+                </select>
+                <button class="cl-check-btn" type="button" onclick="visCheckText(6,'floats')">Check</button>
+                <span class="cl-feedback" id="visfb-6"></span>
+              </div>
+              <div class="cl-hint" id="vishint-6">Hint: Because ρ<sub>s</sub> (2500) &lt; ρ<sub>f</sub> (2700), buoyancy exceeds gravity and the sphere floats!</div>
             </div>
 
           </div>
@@ -307,35 +640,40 @@
       <div class="ll-panel-body">
 
         <div class="ll-pane ll-active" id="vis-pane-sim">
-          <span class="ll-label">Fluid</span>
+          <span class="ll-label">Fluid Medium</span>
           <div class="vis-fluid-btns">
-            <button class="vis-fluid-btn selected" data-fluid="water"    onclick="visSetFluid('water')">Water</button>
-            <button class="vis-fluid-btn"           data-fluid="oil"      onclick="visSetFluid('oil')">Motor Oil</button>
-            <button class="vis-fluid-btn"           data-fluid="glycerol" onclick="visSetFluid('glycerol')">Glycerol</button>
-            <button class="vis-fluid-btn"           data-fluid="honey"    onclick="visSetFluid('honey')">Honey</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="boilingWater" aria-pressed="false">Boiling Water</button>
+            <button class="vis-fluid-btn selected" type="button" data-fluid="water" aria-pressed="true">Water (20°C)</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="coldWater" aria-pressed="false">Cold Water</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="oil" aria-pressed="false">Motor Oil</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="glycerol" aria-pressed="false">Glycerol</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="honey" aria-pressed="false">Honey</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="lava" aria-pressed="false">Basaltic Lava</button>
+            <button class="vis-fluid-btn" type="button" data-fluid="magma" aria-pressed="false">Silicic Magma</button>
           </div>
           <hr class="ll-hr">
           <span class="ll-label">Sphere Material</span>
           <div class="vis-sphere-btns">
-            <button class="vis-sphere-btn"           data-mat="plastic" onclick="visSetMat('plastic')">Plastic</button>
-            <button class="vis-sphere-btn"           data-mat="glass"   onclick="visSetMat('glass')">Glass</button>
-            <button class="vis-sphere-btn selected"  data-mat="steel"   onclick="visSetMat('steel')">Steel</button>
+            <button class="vis-sphere-btn"          type="button" data-mat="plastic"  aria-pressed="false">Plastic (1200)</button>
+            <button class="vis-sphere-btn"          type="button" data-mat="glass"    aria-pressed="false">Glass (2500)</button>
+            <button class="vis-sphere-btn selected" type="button" data-mat="steel"    aria-pressed="true">Steel (7800)</button>
+            <button class="vis-sphere-btn"          type="button" data-mat="tungsten" aria-pressed="false">Tungsten (15600)</button>
           </div>
           <hr class="ll-hr">
           <span class="ll-label">Sphere Radius</span>
           <div style="margin-bottom:0.8rem;">
-            <label style="font-size:0.8rem;display:flex;justify-content:space-between;">Radius <span id="vis-r-label">3 mm</span></label>
-            <input type="range" class="nl-slider" id="vis-radius" min="1" max="8" value="3" style="width:100%;" />
+            <label for="vis-radius" style="font-size:0.8rem;display:flex;justify-content:space-between;">Radius <span id="vis-r-label" data-vis-radius-label>3 mm</span></label>
+            <input type="range" class="nl-slider" id="vis-radius" data-vis-radius min="1" max="8" value="3" style="width:100%;" />
           </div>
-          <button class="vis-drop-btn" onclick="visDrop()">Drop Sphere</button>
-          <button class="vis-reset-btn" onclick="visReset()">Reset</button>
+          <button class="vis-drop-btn" type="button" id="vis-drop-side">Drop Sphere</button>
+          <button class="vis-reset-btn" type="button" id="vis-reset-side">Reset</button>
         </div>
 
         <div class="ll-pane" id="vis-pane-guide">
-          <div class="ll-info"><strong>Stokes' Law</strong>F_drag = 6πηrv. Drag is proportional to viscosity, radius, and speed.</div>
+          <div class="ll-info"><strong>Stokes' Law</strong>F<sub>d</sub> = 6πηrv. Viscous drag grows linearly with viscosity, radius, and speed.</div>
           <div class="ll-info"><strong>Terminal velocity</strong>Reached when gravity = drag + buoyancy. v<sub>t</sub> = 2r²(ρ<sub>s</sub>−ρ<sub>f</sub>)g / 9η</div>
-          <div class="ll-info"><strong>Viscosity units</strong>Pa·s (Pascal-seconds). Water ≈ 0.001, Honey ≈ 10.</div>
-          <div class="ll-info"><strong>Key relationships</strong>Larger radius → faster terminal velocity (r² factor). Higher viscosity → slower terminal velocity (1/η factor).</div>
+          <div class="ll-info"><strong>6+ orders of magnitude</strong>Boiling Water ≈ 0.000282 Pa·s; Honey ≈ 10 Pa·s; Basaltic Lava ≈ 100 Pa·s; Silicic Magma ≈ 1000 Pa·s.</div>
+          <div class="ll-info"><strong>Shared Fluid Engines</strong>3D surface menisci, inclined DepthField pours, and exact analytical Stokes columns are driven by LiquidEngine + Three.js.</div>
         </div>
 
       </div>
@@ -350,246 +688,15 @@
 
 <script src="../../assets/js/theme-registry.js"></script>
 <script src="../../assets/js/nav-mobile.js"></script>
+<script src="../../assets/js/creation-app.js"></script>
 <script src="../../assets/js/sim-kit.js"></script>
+<script src="../../assets/js/liquid-engine.js"></script>
+<script type="module" src="../../assets/js/lessons/viscosimeter.mjs"></script>
 <script>
-(function () {
-  // ── Data ──────────────────────────────────────────────────────
-  const FLUIDS = {
-    water:    { name: 'Water',     eta: 0.001, rho: 998,  color: 'rgba(100,180,255,0.45)' },
-    oil:      { name: 'Motor Oil', eta: 0.10,  rho: 880,  color: 'rgba(180,140,60,0.55)'  },
-    glycerol: { name: 'Glycerol',  eta: 1.40,  rho: 1260, color: 'rgba(200,230,200,0.65)' },
-    honey:    { name: 'Honey',     eta: 10.0,  rho: 1400, color: 'rgba(220,170,40,0.65)'  }
-  };
-  const MATERIALS = {
-    plastic: { name: 'Plastic', rho: 1200, color: '#a78bfa' },
-    glass:   { name: 'Glass',   rho: 2500, color: '#7dd3fc' },
-    steel:   { name: 'Steel',   rho: 7800, color: '#94a3b8' }
-  };
-
-  const G = 9.8;
-  let fluid = FLUIDS.water;
-  let mat   = MATERIALS.steel;
-  let radius = 0.003; // metres
-  let running = false;
-  let animId  = null;
-
-  // Simulation state
-  let sphereY   = 0; // pixels from top of fluid surface
-  let sphereV   = 0; // m/s (physical)
-  let elapsed   = 0; // seconds
-  let termV     = 0; // m/s
-  let fallDone  = false;
-
-  const FLUID_H_PX = 240; // pixel height of fluid column
-  const FLUID_TOP  = 30;  // pixels from canvas top to fluid surface
-  const COL_W      = 80;  // column width px
-  let   COL_X      = 0;   // set in draw (centred)
-  const SCALE      = 0.05; // metres per pixel (so 240px = 12m virtual column)
-
-  const canvas = document.getElementById('vis-canvas');
-  const ctx    = canvas.getContext('2d');
-
-  // ── Physics ───────────────────────────────────────────────────
-  function calcTerminalV() {
-    const rho_diff = mat.rho - fluid.rho;
-    if (rho_diff <= 0) return 0; // sinks only if denser
-    return (2 * radius * radius * rho_diff * G) / (9 * fluid.eta);
-  }
-
-  function physicsStep(dt) {
-    // Stokes drag + buoyancy + gravity in SI
-    const F_g  = (4/3) * Math.PI * radius**3 * mat.rho * G;
-    const F_b  = (4/3) * Math.PI * radius**3 * fluid.rho * G;
-    const F_d  = 6 * Math.PI * fluid.eta * radius * sphereV;
-    const Fnet = F_g - F_b - F_d;
-    const mass = (4/3) * Math.PI * radius**3 * mat.rho;
-    const accel = Fnet / mass;
-    sphereV += accel * dt;
-    if (sphereV < 0) sphereV = 0;
-    // Convert physical distance to pixels
-    sphereY += sphereV * dt / SCALE;
-    elapsed += dt;
-  }
-
-  // ── Drawing ───────────────────────────────────────────────────
-  function draw() {
-    const W = canvas.offsetWidth || 500;
-    canvas.width  = W;
-    canvas.height = 300;
-    const H = 300;
-    COL_X = W / 2 - COL_W / 2;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // Background
-    const isDark = document.documentElement.getAttribute('data-theme') === 'night';
-    ctx.fillStyle = isDark ? '#1c1c1e' : '#f7f8fa';
-    ctx.fillRect(0, 0, W, H);
-
-    // Fluid column
-    ctx.fillStyle = fluid.color;
-    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.rect(COL_X, FLUID_TOP, COL_W, FLUID_H_PX);
-    ctx.fill();
-    ctx.stroke();
-
-    // Fluid label
-    ctx.font = '600 11px Inter,sans-serif';
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.5)' : '#64748b';
-    ctx.textAlign = 'center';
-    ctx.fillText(fluid.name, W/2, FLUID_TOP - 8);
-
-    // Ruler tick marks
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
-    ctx.font = '9px Inter,sans-serif';
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= 4; i++) {
-      const py = FLUID_TOP + (i / 4) * FLUID_H_PX;
-      ctx.fillRect(COL_X - 8, py, 7, 1);
-      ctx.fillText((i * SCALE * FLUID_H_PX / 4 * 100).toFixed(0) + 'cm', COL_X - 10, py + 4);
-    }
-    ctx.textAlign = 'center';
-
-    // Sphere
-    const R_PX = Math.max(4, Math.min(20, radius / SCALE));
-    const sy = FLUID_TOP + sphereY;
-    const clampedSY = Math.min(FLUID_TOP + FLUID_H_PX - R_PX, Math.max(FLUID_TOP + R_PX, sy));
-
-    // Speed trail
-    if (running && sphereV > 0.001) {
-      const trailLen = Math.min(40, sphereV / SCALE * 20);
-      const grad = ctx.createLinearGradient(W/2, clampedSY - trailLen, W/2, clampedSY);
-      grad.addColorStop(0, 'rgba(48,176,199,0)');
-      grad.addColorStop(1, 'rgba(48,176,199,0.35)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.ellipse(W/2, clampedSY - trailLen/2, R_PX * 0.6, trailLen/2, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    ctx.beginPath();
-    ctx.arc(W/2, clampedSY, R_PX, 0, Math.PI*2);
-    const sGrad = ctx.createRadialGradient(W/2-R_PX*0.3, clampedSY-R_PX*0.3, R_PX*0.1, W/2, clampedSY, R_PX);
-    sGrad.addColorStop(0, 'rgba(255,255,255,0.6)');
-    sGrad.addColorStop(1, mat.color);
-    ctx.fillStyle = sGrad;
-    ctx.fill();
-    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Velocity arrow
-    if (running && sphereV > 0.0001) {
-      const arrowLen = Math.min(50, sphereV / termV * 40);
-      ctx.strokeStyle = '#30b0c7';
-      ctx.fillStyle   = '#30b0c7';
-      ctx.lineWidth = 2;
-      const ax = COL_X + COL_W + 16;
-      const ay1 = clampedSY - 8;
-      const ay2 = clampedSY - 8 + arrowLen;
-      ctx.beginPath(); ctx.moveTo(ax, ay1); ctx.lineTo(ax, ay2); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(ax, ay2);
-      ctx.lineTo(ax - 5, ay2 - 8);
-      ctx.lineTo(ax + 5, ay2 - 8);
-      ctx.closePath(); ctx.fill();
-      ctx.font = '9px Inter,sans-serif';
-      ctx.fillStyle = '#30b0c7';
-      ctx.textAlign = 'left';
-      ctx.fillText('v', ax + 8, clampedSY + 4);
-      ctx.textAlign = 'center';
-    }
-
-    // Status text
-    ctx.font = '11px Inter,sans-serif';
-    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.55)' : '#64748b';
-    ctx.textAlign = 'center';
-    if (!running && !fallDone) {
-      ctx.fillText('Press "Drop Sphere" to begin', W/2, H - 10);
-    } else if (running) {
-      ctx.fillText('v = ' + (sphereV * 100).toFixed(2) + ' cm/s', W/2, H - 10);
-    } else if (fallDone) {
-      ctx.fillText('Reached bottom — t = ' + elapsed.toFixed(2) + ' s', W/2, H - 10);
-    }
-
-    updateReadouts();
-  }
-
-  // ── Animation loop ────────────────────────────────────────────
-  let lastTime = null;
-  function loop(ts) {
-    if (!lastTime) lastTime = ts;
-    const dt = Math.min((ts - lastTime) / 1000, 0.05);
-    lastTime = ts;
-
-    physicsStep(dt);
-
-    const maxY = FLUID_H_PX - radius / SCALE;
-    if (sphereY >= maxY) {
-      sphereY = maxY;
-      running  = false;
-      fallDone = true;
-    }
-
-    draw();
-
-    if (running) animId = SimKit.frame('#vis-canvas', loop);
-  }
-
-  // ── Controls ──────────────────────────────────────────────────
-  window.visSetFluid = function(key) {
-    fluid = FLUIDS[key];
-    document.querySelectorAll('.vis-fluid-btn').forEach(b => b.classList.toggle('selected', b.dataset.fluid === key));
-    visReset();
-  };
-
-  window.visSetMat = function(key) {
-    mat = MATERIALS[key];
-    document.querySelectorAll('.vis-sphere-btn').forEach(b => b.classList.toggle('selected', b.dataset.mat === key));
-    visReset();
-  };
-
-  document.getElementById('vis-radius').addEventListener('input', function() {
-    radius = parseInt(this.value) * 0.001;
-    document.getElementById('vis-r-label').textContent = this.value + ' mm';
-    visReset();
-  });
-
-  window.visDrop = function() {
-    if (running) return;
-    fallDone = false;
-    running  = true;
-    lastTime = null;
-    termV    = calcTerminalV();
-    animId   = SimKit.frame('#vis-canvas', loop);
-  };
-
-  window.visReset = function() {
-    if (animId) SimKit.frame.cancel('#vis-canvas', animId);
-    running  = false;
-    fallDone = false;
-    sphereY  = 0;
-    sphereV  = 0;
-    elapsed  = 0;
-    termV    = calcTerminalV();
-    draw();
-    updateReadouts();
-  };
-
-  function updateReadouts() {
-    termV = calcTerminalV();
-    document.getElementById('vis-r-vt').textContent   = termV > 0 ? (termV * 100).toFixed(3) + ' cm/s' : '—';
-    document.getElementById('vis-r-eta').textContent  = fluid.eta + ' Pa·s';
-    document.getElementById('vis-r-time').textContent = (running || fallDone) ? elapsed.toFixed(2) + ' s' : '—';
-  }
-
-  // ── Practice checkers ─────────────────────────────────────────
-  window.visCheck = function(n, ans, tol) {
-    const val = parseFloat(document.getElementById('visans-' + n).value);
-    const fb   = document.getElementById('visfb-'   + n);
-    const hint = document.getElementById('vishint-' + n);
+  window.visCheck = function (n, ans, tol) {
+    var val = parseFloat(document.getElementById('visans-' + n).value);
+    var fb = document.getElementById('visfb-' + n);
+    var hint = document.getElementById('vishint-' + n);
     if (isNaN(val)) { fb.textContent = 'Enter a number.'; fb.className = 'cl-feedback err'; return; }
     if (Math.abs(val - ans) <= tol) {
       fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
@@ -598,10 +705,10 @@
       hint.style.display = 'block';
     }
   };
-  window.visCheckText = function(n, ans) {
-    const el   = document.getElementById('visans-' + n);
-    const fb   = document.getElementById('visfb-'   + n);
-    const hint = document.getElementById('vishint-' + n);
+  window.visCheckText = function (n, ans) {
+    var el = document.getElementById('visans-' + n);
+    var fb = document.getElementById('visfb-' + n);
+    var hint = document.getElementById('vishint-' + n);
     if (el.value === ans) {
       fb.textContent = '✓ Correct!'; fb.className = 'cl-feedback ok';
     } else {
@@ -609,14 +716,10 @@
       hint.style.display = 'block';
     }
   };
-
-  // ── Init ──────────────────────────────────────────────────────
-  window.addEventListener('resize', draw);
-  visReset();
-})();
 </script>
 <script src="../../assets/js/classroom-animations.js"></script>
-  <script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/lesson-layout.js"></script>
+<script src="../../assets/js/photo-lightbox.js"></script>
 <script src="../../assets/js/lesson-print-button.js"></script>
 </body>
 </html>

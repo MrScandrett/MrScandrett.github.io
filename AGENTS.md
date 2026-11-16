@@ -58,6 +58,17 @@ Project metadata (display name, student, tags, thumbnail) comes from
   Include `assets/css/creation-app.css` and `assets/js/creation-app.js` (with paths
   adjusted for depth) so every creation workspace has Full screen / Exit full screen.
 
+- Fit the working software into the first view on desktop and laptop screens.
+  At 1280 × 720 with the page scrolled to the top, show the live canvas or editor,
+  navigation tabs, and the controls for the active tool together. Keep presets,
+  project actions, and Full screen close to the work. Put theory, walkthroughs,
+  and reflection after the usable workspace. On narrow screens use a readable
+  stack or tool panels with visible navigation and touch-sized controls.
+  Mark the fitted region inside `[data-creation-app]` with
+  `[data-creation-primary]` and opt in with `[data-creation-fit]` on the wrapper
+  so `npm run check:creation-apps:browser` can check it on load. Apply the layout
+  rule to standalone tools as well as lesson software when creating or updating them.
+
 - `npm run check:integrity` — local references and asset signatures
 - `npm run check:themes` — theme contrast
 - `npm run a11y` — pa11y-ci

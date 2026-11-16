@@ -51,9 +51,19 @@ test('engines load only when the page has their markup', () => {
   const page = (sel) => ({ has: (q) => q.split(',').map((s) => s.trim()).includes(sel), vrWanted: false });
   assert.ok(ids(PM.plan('lesson', page('[data-timeline]'))).includes('timeline'));
   assert.ok(ids(PM.plan('lesson', page('canvas'))).includes('sim-present'));
+  assert.ok(ids(PM.plan('lesson', page('[data-formula]'))).includes('formula-explainer'));
+  assert.ok(ids(PM.plan('lesson', page('.cl-formula-box'))).includes('formula-explainer'));
+  assert.ok(ids(PM.plan('lesson', page('[class$="-eq"]'))).includes('formula-explainer'), 'pattern-named formulas load it too');
+  // the loader's selector list must cover everything the explainer itself looks for
+  const explainerSrc = fs.readFileSync(new URL('../assets/js/formula-explainer.js', import.meta.url), 'utf8');
+  const wanted = ['CONTAINER_SELECTORS', 'PATTERN_SELECTORS'].flatMap((name) =>
+    [...explainerSrc.match(new RegExp(`var ${name} = \\[([\\s\\S]*?)\\];`))[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  const needs = fs.readFileSync(new URL('../assets/js/page-modules.js', import.meta.url), 'utf8');
+  for (const sel of wanted) assert.ok(needs.includes(sel), `page-modules.js is missing ${sel}`);
   const tree = ids(PM.plan('lesson', page('[data-family-tree]')));
   assert.ok(tree.includes('family-tree') && tree.includes('photo-lightbox'), 'family tree brings the lightbox');
   assert.ok(!ids(PM.plan('lesson', none)).includes('timeline'));
+  assert.ok(!ids(PM.plan('lesson', none)).includes('formula-explainer'));
 });
 
 test('VR mode is planned only for headsets', () => {

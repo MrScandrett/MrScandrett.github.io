@@ -1242,7 +1242,28 @@
   }
 
   var sheetEl = root.querySelector('[data-fb-sheet]');
-  var nowEls = [], barEls = {}, shapeEls = [];
+  var nowEls = new Set(), nowBarEl = null, barEls = {}, shapeEls = [];
+  var highlightSelectors = [
+    '.fb-n[data-idx], .fb-sx:not(.fb-sxb)[data-idx], .fb-lyr[data-lyr-idx]',
+    '.fb-sxb[data-idx], .fb-bn[data-idx]', '.fb-v2n[data-idx]', '.fb-tn[data-idx]'
+  ];
+  var highlightNodes = [];
+
+  function indexHighlights() {
+    highlightNodes = highlightSelectors.map(function (selector) {
+      var nodesByNote = new Map();
+      sheetEl.querySelectorAll(selector).forEach(function (node) {
+        var lyrics = node.getAttribute('data-lyr-idx');
+        var indices = lyrics ? lyrics.split(/\s+/) : [node.getAttribute('data-idx')];
+        indices.forEach(function (index) {
+          var key = Number(index);
+          if (!nodesByNote.has(key)) nodesByNote.set(key, []);
+          nodesByNote.get(key).push(node);
+        });
+      });
+      return nodesByNote;
+    });
+  }
   function txt(x, y, s, cls, extra) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" class="' + cls + '"' + (extra || '') + '>' + MN.escape(s) + '</text>'; }
   function line(x1, y1, x2, y2, w, cls) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="currentColor" stroke-width="' + w + '"' + (cls ? ' class="' + cls + '"' : '') + '/>'; }
   function beatCountLabels(out, xAt, y, beats, extraClass, positions, pieces, edges) {
@@ -1454,7 +1475,7 @@
     sheetEl.innerHTML = '<svg class="fb-drum-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
       MN.escape(tune.raw.title + ' drum notation chart, ' + STYLES[opts.style].label + ' groove, ' + tune.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
 
-    nowEls = []; barEls = {}; shapeEls = [];
+    nowEls.clear(); nowBarEl = null; barEls = {}; shapeEls = []; highlightNodes = [];
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
     paintLoop();
@@ -1487,7 +1508,7 @@
     if (opts.sheetView === 'arrangement' && tune.raw.score && tune.raw.score.musicxml) {
       var arrangementLegend = el('[data-fb-drum-legend]');
       if (arrangementLegend) arrangementLegend.hidden = true;
-      nowEls = []; barEls = {};
+      nowEls.clear(); nowBarEl = null; barEls = {}; highlightNodes = [];
       window.FakeBookArrangement.render(sheetEl, tune.raw.score.musicxml, opts.zoom || 1);
       scoreNav.refresh();
       return;
@@ -2129,7 +2150,9 @@
     sheetEl.innerHTML = '<svg class="fb-svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="group" aria-label="' +
       MN.escape(t.raw.title + ' lead sheet, written in ' + keyLabel(view.writtenKey) + ', ' + t.meter.join('/') + ' time') + '">' + out.join('') + '</svg>';
     sizeMeasureDiagrams(S);
-    nowEls = []; barEls = {}; shapeEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape'));
+    nowEls.clear(); nowBarEl = null; barEls = {};
+    shapeEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-measure-shape'));
+    indexHighlights();
     sheetEl.querySelectorAll('.fb-bar').forEach(function (r) { barEls[r.getAttribute('data-bar')] = r; });
     scoreNav.refresh();
     paintLoop();
@@ -2684,6 +2707,7 @@
 
   /* ================================================================ transport */
   var P = null;
+  var profilePlayback = new URLSearchParams(location.search).has('profileScore');
   var SWING = 2 / 3;
   function scoreTiming() { return opts.mode === 'score' || opts.mode === 'changes'; }
   function swingOn() { return !scoreTiming() && opts.feel === 'swing'; }
@@ -2732,6 +2756,7 @@
     P = {
       lanes: lanes, kit: window.DrumEngine ? window.DrumEngine.create(ctx, lanes.drums) : null,
       spb: 60 / opts.tempo, anchorBeat: 0, anchorTime: ctx.currentTime + (immediate ? 0.02 : 0.12),
+      lateEvents: 0,
       queue: [], qi: 0, ui: [], range: r, first: first, chorusLen: passLen(r), firstLen: passLen(first), k: 0,
       bodyStart: noClick ? (withPickup ? tune.pickup : 0) : (withPickup ? 2 : 1) * M, withPickup: withPickup, timer: 0, raf: 0
     };
@@ -2905,9 +2930,13 @@
     save();
   }
   function fire(e) {
-    var t = Math.max(ctx.currentTime, timeAt(e.b)), L = P.lanes;
+    var now = ctx.currentTime, at = timeAt(e.b);
+    var t = Math.max(now, at), L = P.lanes;
     // A note that missed its slot by more than LATE_DROP would land on top of the next ones; skip it instead of bunching.
-    if (ctx.currentTime - timeAt(e.b) > LATE_DROP && (e.kind === 'mel' || e.kind === 'harmony' || e.kind === 'pno' || e.kind === 'bass' || e.kind === 'drum' || e.kind === 'click' || e.kind === 'score')) return;
+    if (now - at > LATE_DROP && (e.kind === 'mel' || e.kind === 'harmony' || e.kind === 'pno' || e.kind === 'bass' || e.kind === 'drum' || e.kind === 'click' || e.kind === 'score')) {
+      P.lateEvents++;
+      return;
+    }
     switch (e.kind) {
       case 'score': {
         var shift = shiftBetween(tune.key, view.concertKey).semis;
@@ -2956,6 +2985,9 @@
       var g = P.lanes[k];
       g.gain.setTargetAtTime(0, t, 0.03);
       setTimeout(function () { try { g.disconnect(); } catch (e) { /* gone */ } }, 400);
+    });
+    if (profilePlayback) console.info('Fake Book playback', {
+      score: tune.raw.title, view: opts.sheetView, follow: opts.follow, lateEvents: P.lateEvents
     });
     P = null;
     setPlaying(false);
@@ -3099,9 +3131,23 @@
   }
   function clearNow() {
     paintChangesNow(0);
-    nowEls.forEach(function (n) { n.classList.remove('is-now'); });
-    nowEls = [];
-    Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
+    paintNotesNow(new Set());
+    paintBarNow(null);
+  }
+  function paintNotesNow(nextNodes) {
+    nowEls.forEach(function (node) { if (!nextNodes.has(node)) node.classList.remove('is-now'); });
+    nextNodes.forEach(function (node) { if (!nowEls.has(node)) node.classList.add('is-now'); });
+    nowEls = nextNodes;
+  }
+  function paintBarNow(node) {
+    if (nowBarEl === node) return;
+    if (nowBarEl) nowBarEl.classList.remove('is-now');
+    if (node) node.classList.add('is-now');
+    nowBarEl = node;
+  }
+  function addHighlight(nodes, lane, index) {
+    var matches = highlightNodes[lane] && highlightNodes[lane].get(index);
+    if (matches) matches.forEach(function (node) { nodes.add(node); });
   }
   function beatDots(n, count) {
     dotsEl.querySelectorAll('i').forEach(function (d, i) { d.classList.toggle('on', i === n); d.classList.toggle('one', i === 0); });
@@ -3111,28 +3157,26 @@
   function applyUi(e) {
     if (e.ui === 'beat') { beatDots(e.n, e.count); if (e.label) banner(e.label); }
     else if (e.ui === 'bar') {
-      Object.keys(barEls).forEach(function (k) { barEls[k].classList.remove('is-now'); });
-      if (barEls[e.bar]) barEls[e.bar].classList.add('is-now');
+      paintBarNow(barEls[e.bar] || null);
       banner(e.yours ? (opts.mode === 'band' ? 'You play the melody' : 'Your four bars: answer or improvise') : '');
       if (e.meter) { dotsEl.innerHTML = new Array(e.meter[0] + 1).join('<i></i>'); banner('Bar ' + e.bar + ' · ' + e.meter.join('/')); }
       paintChangesNow(e.bar);
       scoreNav.setCurrent(barEls[e.bar] ? scoreNav.indexOf(barEls[e.bar]) : -1);
     } else if (e.ui === 'score-note') {
-      nowEls.forEach(function (n) { n.classList.remove('is-now'); }); nowEls = [];
-      [['.fb-n', view.concert], ['.fb-sx:not(.fb-sxb)', view.concert], ['.fb-sxb', view.bass || []], ['.fb-bn', view.bass || []], ['.fb-v2n', view.voice2 || []], ['.fb-tn', view.tab || []]].forEach(function (lane) {
-        lane[1].forEach(function (n, i) { if (n.start <= e.start + EPS && (n.dur ? n.start + n.dur : (lane[1][i + 1] ? lane[1][i + 1].start : tune.len)) > e.start + EPS) {
-          nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll(lane[0] + '[data-idx="' + i + '"]')));
-          if (lane[0] === '.fb-n') {
-            nowEls = nowEls.concat(Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-lyr[data-lyr-idx~="' + i + '"]')));
-            if (melodyView) melodyView.setCursor(i);
-          }
-        } });
+      var notes = new Set();
+      [view.concert, view.bass || [], view.voice2 || [], view.tab || []].forEach(function (lane, part) {
+        lane.forEach(function (note, i) {
+          var end = note.dur ? note.start + note.dur : (lane[i + 1] ? lane[i + 1].start : tune.len);
+          if (note.start > e.start + EPS || end <= e.start + EPS) return;
+          addHighlight(notes, part, i);
+          if (part === 0 && melodyView) melodyView.setCursor(i);
+        });
       });
-      nowEls.forEach(function (n) { n.classList.add('is-now'); });
+      paintNotesNow(notes);
     } else if (e.ui === 'note') {
-      nowEls.forEach(function (n) { n.classList.remove('is-now'); });
-      nowEls = Array.prototype.slice.call(sheetEl.querySelectorAll('.fb-n[data-idx="' + e.idx + '"], .fb-sx:not(.fb-sxb)[data-idx="' + e.idx + '"], .fb-lyr[data-lyr-idx~="' + e.idx + '"]'));
-      nowEls.forEach(function (n) { n.classList.add('is-now'); });
+      var melodyNotes = new Set();
+      addHighlight(melodyNotes, 0, e.idx);
+      paintNotesNow(melodyNotes);
       if (melodyView) melodyView.setCursor(e.idx);
     } else if (e.ui === 'chord') { if (e.ci !== chordSel) { chordSel = e.ci; showChord(false); } }
     else if (e.ui === 'end') stop();
@@ -5791,7 +5835,12 @@
     new ResizeObserver(function () {
       var w = sheetEl.clientWidth;
       if (Math.abs(w - lastW) < 8) return;
-      lastW = w; clearTimeout(rt); rt = setTimeout(renderSheet, 120);
+      lastW = w;
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        // Original Arrangement observes its own width and keeps its own zoom.
+        if (!sheetEl.classList.contains('fb-arrangement')) renderSheet();
+      }, 120);
     }).observe(sheetEl);
     el('[data-fb-reset-loop]').addEventListener('click', function () { startBar = 0; opts.from = 1; opts.to = tune.bars; syncControls(); paintLoop(); save(); respin(); });
   }

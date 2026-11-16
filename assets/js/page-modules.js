@@ -69,6 +69,11 @@
       file: 'photo-lightbox.js', global: 'PhotoLightbox',
       why: 'Click-to-enlarge photos.'
     },
+    'formula-explainer': {
+      file: 'formula-explainer.js', global: 'ClassroomOSFormulaExplainer',
+      needs: '[data-formula], .fl-formula-box, .cl-formula-box, .equation-box, .ohm-formula-card, .jcm-eq-card, .iceq-card, .cgi-formula-box, .en-formula-box, .rh-formula-box, .pi-formula-box, .td-formula-box, .ue-formula-box, .fg-formula-box, .ap-formula-box, .nl-formula-box, .pd-formula-box, .ug-formula-box, .mc-formula-box, .ntl-formula-box, .vgb-formula-box, .vgg-formula-box, .al-formula-box, .ldv-formula-box, .ec-formula-box, .ae-equation, .em-formula, .en-formula, .four-formula, .fib-formula, .py-formula, .pn-formula, .music-formula, .acd-equation, [class~="equation"], [class~="formula"], [class~="eq"], [class$="-eq"], [class*="-eq "], [class$="-eqn"], [class*="-eqn "], [class$="-equation"], [class*="-equation "], [class$="-formula"], [class*="-formula "]',
+      why: 'Interactive symbol-by-symbol formula highlighter, explanation panel, and 2D/3D canvas visualizer.'
+    },
     'service-worker': {
       kind: 'service-worker',
       why: 'Content-hashed asset cache for repeat visits (dist/sw.js). Needs https, or ?sw=on on localhost.'
@@ -88,12 +93,14 @@
       ['sim-present', 'idle'],
       ['timeline', 'parsed'],
       ['family-tree', 'parsed'],
+      ['formula-explainer', 'parsed'],
       ['site-glossary', 'parsed']
     ],
     // nav-mobile.js: pages with the site shell.
     site: [
       ['command-palette', 'idle'],
       ['contrast-guard', 'now'],
+      ['formula-explainer', 'idle'],
       ['site-glossary', 'idle'],
       ['vr-mode', 'idle'],
       ['service-worker', 'idle'],

@@ -12,9 +12,10 @@
  * Every pointer action also has a form control in the Layers and Properties panels. */
 import {
   COLUMNS, TAGS, FONTS, emptyDrawing, byId, children, descendants, depth, createItem, removeItem,
-  placeItem, duplicateItem, uniqueName, sanitizeName, clampPlacement, nextRow, generateCSS, generateHTML,
-  checks, contrastRatio, effectiveColors, safeHref, safeSrc,
+  placeItem, canParent, duplicateItem, uniqueName, sanitizeName, clampPlacement, nextRow, generateCSS, generateHTML,
+  checks, contrastRatio, effectiveColors, safeHref, safeSrc, ACTIONS, actionTargets, generateJS,
 } from './draw-model.mjs';
+import { SECTIONS, THEMES, TEMPLATES, ITEM_STYLES, createTemplate, insertSection } from './draw-recipes.mjs';
 
 const TOOLS = [
   { id: 'select', key: 'v', label: 'Select and move', short: 'Select', icon: '<path d="M5 3l14 8-6 2-3 6z"/>' },
@@ -30,13 +31,15 @@ const TAG_LABEL = {
   article: 'article — a self-contained card or post', aside: 'aside — a side note', footer: 'footer — credits and contact', div: 'div — a plain box with no meaning',
   h1: 'Heading 1 — the page title', h2: 'Heading 2 — a section title', h3: 'Heading 3 — a smaller title', p: 'Paragraph',
 };
+const DESKTOP_WIDTH = 760;
+const PHONE_WIDTH = 390;
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
 const CHROME = `
 :host { all: initial; display: block; }
 .ws-frame { position: relative; container-type: inline-size; container-name: page; margin: 0 auto; min-height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; }
-.ws-frame:not(.is-phone) { min-width: 760px; }
-.ws-frame.is-phone { width: 390px; box-shadow: 0 0 0 1px #8a97a0, 0 10px 30px rgb(0 0 0 / .2); }
+.ws-frame:not(.is-phone) { min-width: ${DESKTOP_WIDTH}px; }
+.ws-frame.is-phone { width: ${PHONE_WIDTH}px; box-shadow: 0 0 0 1px #8a97a0, 0 10px 30px rgb(0 0 0 / .2); }
 .ws-page { min-height: 520px; }
 .ws-frame [data-ws-id] { outline: 1px dashed rgb(29 39 51 / .28); outline-offset: -1px; cursor: default; }
 .ws-frame.tool-select [data-ws-id] { cursor: move; }
@@ -55,7 +58,8 @@ const CHROME = `
 .ws-handle[data-handle=e], .ws-handle[data-handle=w] { cursor: ew-resize; }
 .ws-handle[data-handle=ne], .ws-handle[data-handle=sw] { cursor: nesw-resize; }
 .ws-handle[data-handle=nw], .ws-handle[data-handle=se] { cursor: nwse-resize; }
-.ws-empty { position: absolute; left: 50%; top: 120px; transform: translateX(-50%); max-width: 80%; text-align: center; font: 500 16px/1.5 system-ui, sans-serif; color: #45575f; background: rgb(255 255 255 / .85); padding: 14px 18px; border-radius: 8px; }
+.ws-empty { position: absolute; left: 50%; top: 120px; transform: translateX(-50%); max-width: 80%; text-align: center; font: 500 16px/1.5 system-ui, sans-serif; color: #45575f; background: rgb(255 255 255 / .94); padding: 14px 18px; border-radius: 8px; }
+.ws-empty strong { display: block; margin-bottom: 4px; font-size: 24px; color: #1d2733; }
 `;
 
 function el(tag, props = {}, kids = []) {
@@ -84,7 +88,9 @@ export function createDrawEditor(container, options) {
   let selected = null;
   let tool = 'select';
   let phone = false;
-  let showGrid = true;
+  let showGrid = false;
+  let testing = false;
+  let scale = 1;
   let drag = null;
   let editing = null;
   let undoStack = [];
@@ -106,34 +112,65 @@ export function createDrawEditor(container, options) {
   const redoButton = el('button', { type: 'button', textContent: 'Redo', title: 'Redo (Ctrl+Shift+Z)', onclick: () => redo() });
   const viewDesktop = el('button', { type: 'button', textContent: 'Desktop', 'aria-pressed': 'true', onclick: () => setPhone(false) });
   const viewPhone = el('button', { type: 'button', textContent: 'Phone', 'aria-pressed': 'false', onclick: () => setPhone(true) });
-  const gridToggle = el('input', { type: 'checkbox', checked: true, onchange: () => { showGrid = gridToggle.checked; drawOverlay(); } });
-  toolbar.append(undoButton, redoButton, el('span', { class: 'ds-sep' }), el('span', { class: 'ds-view', role: 'group', 'aria-label': 'Preview width' }, [viewDesktop, viewPhone]), el('label', { class: 'ds-check' }, [gridToggle, ' Show columns']));
+  const gridToggle = el('input', { type: 'checkbox', onchange: () => { showGrid = gridToggle.checked; drawOverlay(); } });
+  const zoom = el('select', { 'aria-label': 'Canvas zoom', onchange: () => relayout() }, [
+    new Option('Fit width', 'fit'), new Option('50%', '0.5'), new Option('75%', '0.75'),
+    new Option('100%', '1'), new Option('125%', '1.25'),
+  ]);
+  const previewButton = el('button', { type: 'button', class: 'ds-preview-toggle', 'aria-pressed': 'false', textContent: 'Test page', onclick: () => setTesting(!testing) });
+  toolbar.append(undoButton, redoButton, el('span', { class: 'ds-sep' }), el('span', { class: 'ds-view', role: 'group', 'aria-label': 'Preview width' }, [viewDesktop, viewPhone]), zoom, el('label', { class: 'ds-check' }, [gridToggle, ' Always show columns']), previewButton);
 
   const status = el('p', { class: 'ds-status', role: 'status' });
   const layersList = el('ul', { class: 'ds-layer-list' });
+  const pageLayer = el('button', {
+    type: 'button', class: 'ds-layer ds-page-layer', textContent: 'Page',
+    onclick: () => select(null, true),
+  });
   const addKind = el('select', { 'aria-label': 'Kind of item to add' });
   for (const [value, label] of [['box:section', 'Box (section)'], ['box:header', 'Box (header)'], ['box:main', 'Box (main)'], ['box:footer', 'Box (footer)'], ['text:h1', 'Heading 1'], ['text:h2', 'Heading 2'], ['text:p', 'Paragraph'], ['image:img', 'Image'], ['button:button', 'Button'], ['link:a', 'Link']]) addKind.add(new Option(label, value));
   const addButton = el('button', { type: 'button', textContent: 'Add', onclick: () => addFromPanel() });
   const layers = el('aside', { class: 'ds-layers', 'aria-label': 'Layers' }, [
     el('h3', { textContent: 'Layers' }),
-    el('p', { class: 'ds-small', textContent: 'Top to bottom is reading order: the order of your HTML, of a screen reader, and of the phone layout. Move items on the page to change it.' }),
-    layersList,
     el('div', { class: 'ds-add' }, [addKind, addButton]),
-    el('p', { class: 'ds-small', textContent: 'Adds below everything else, inside the selected box.' }),
+    pageLayer, layersList,
   ]);
   const props = el('aside', { class: 'ds-props', 'aria-label': 'Properties' });
   const checkList = el('ul', { class: 'ds-checks' });
   const stage = el('div', { class: 'ds-stage', tabIndex: 0, 'aria-label': 'Drawing page. Choose a tool, then drag to draw. Arrow keys move the selected item; Shift and arrows resize it; Enter edits its text.' });
   const host = el('div', { class: 'ds-host' });
-  stage.append(host);
-  const codeWhich = el('select', { 'aria-label': 'File to show', onchange: () => renderCode() }, [new Option('style.css', 'css'), new Option('index.html (body)', 'html')]);
+  const testFrame = el('iframe', { class: 'ds-test', title: 'Interactive drawing preview', sandbox: 'allow-scripts', referrerPolicy: 'no-referrer', hidden: true });
+  stage.append(host, testFrame);
+  const codeWhich = el('select', { 'aria-label': 'File to show', onchange: () => renderCode() }, [new Option('style.css', 'css'), new Option('index.html (body)', 'html'), new Option('script.js', 'js')]);
   const codeOut = el('code');
   const codePanel = el('details', { class: 'ds-code', ontoggle: () => renderCode() }, [
     el('summary', { textContent: 'See the code this drawing writes' }),
     el('p', { class: 'ds-small', textContent: 'This is the real code. Send the drawing to Code to keep editing it as text.' }),
     codeWhich, el('pre', {}, [codeOut]),
   ]);
-  container.append(el('div', { class: 'ds' }, [toolbar, status, el('div', { class: 'ds-work' }, [layers, stage, props]), el('div', { class: 'ds-below' }, [el('div', {}, [el('h3', { textContent: 'Design checks' }), checkList]), codePanel])]));
+  const libraryCards = el('div', { class: 'ds-library-cards', id: 'ds-library-cards' });
+  const libraryModes = {
+    Sections: { cards: ['hero', 'cards', 'contact', 'reveal'], recipes: SECTIONS, insert: addSection },
+    Templates: { cards: Object.keys(TEMPLATES), recipes: TEMPLATES, insert: applyTemplate },
+    Interactions: { cards: ['reveal', 'message', 'counter'], recipes: SECTIONS, insert: addSection },
+  };
+  const libraryButtons = el('div', { class: 'ds-library-modes', role: 'group', 'aria-label': 'Insert library' },
+    Object.keys(libraryModes).map((label) => el('button', {
+      type: 'button', textContent: label, 'aria-controls': 'ds-library-cards', onclick: () => showLibrary(label),
+    })));
+  const library = el('div', { class: 'ds-library' }, [libraryButtons, libraryCards]);
+
+  function showLibrary(mode) {
+    const { cards, recipes, insert } = libraryModes[mode];
+    for (const button of libraryButtons.children) button.setAttribute('aria-pressed', String(button.textContent === mode));
+    libraryCards.replaceChildren(...cards.map((key) => el('button', {
+      type: 'button', class: 'ds-section', onclick: () => insert(key),
+    }, [
+      el('span', { class: `ds-section-art is-${key}`, 'aria-hidden': 'true' }, [el('i'), el('i'), el('i')]),
+      el('span', {}, [el('strong', { textContent: recipes[key].label }), el('small', { textContent: recipes[key].description })]),
+    ])));
+  }
+  showLibrary('Sections');
+  container.append(el('div', { class: 'ds' }, [toolbar, library, status, el('div', { class: 'ds-work' }, [stage, layers, props]), el('div', { class: 'ds-below' }, [el('div', {}, [el('h3', { textContent: 'Design checks' }), checkList]), codePanel])]));
 
   // ---------- the canvas (shadow root) ----------
   const shadow = host.attachShadow({ mode: 'open' });
@@ -152,15 +189,15 @@ export function createDrawEditor(container, options) {
   function tracks(node) {
     const cs = getComputedStyle(node);
     const r = node.getBoundingClientRect();
-    const px = (v) => parseFloat(v) || 0;
+    const px = (v) => (parseFloat(v) || 0) * scale;
     const left = r.left + px(cs.borderLeftWidth) + px(cs.paddingLeft);
     const top = r.top + px(cs.borderTopWidth) + px(cs.paddingTop);
-    const parse = (v) => (v && v !== 'none' ? v.split(/\s+/).map(parseFloat).filter(Number.isFinite) : []);
+    const parse = (v) => (v && v !== 'none' ? v.split(/\s+/).map(parseFloat).filter(Number.isFinite).map((track) => track * scale) : []);
     const cols = parse(cs.gridTemplateColumns);
     const rows = parse(cs.gridTemplateRows);
     const colGap = px(cs.columnGap);
     const rowGap = px(cs.rowGap);
-    const minRow = drawing.page.row;
+    const minRow = drawing.page.row * scale;
     const sum = (list, n) => list.slice(0, n).reduce((a, b) => a + b, 0);
     const colStart = (i) => left + sum(cols, i) + i * colGap;
     const rowStart = (i) => (i <= rows.length ? top + sum(rows, i) + i * rowGap : top + sum(rows, rows.length) + rows.length * rowGap + (i - rows.length) * (minRow + rowGap));
@@ -177,20 +214,36 @@ export function createDrawEditor(container, options) {
   }
 
   function cellRect(t, { col, row, colSpan, rowSpan }) {
-    const fr = frame.getBoundingClientRect();
     const c0 = col - 1;
     const c1 = Math.min(t.cols.length, col + colSpan - 1) - 1;
     const x = t.colStart(c0);
     const right = t.colStart(c1) + (t.cols[c1] || 0);
     const y = t.rowStart(row - 1);
     const bottom = t.rowStart(row + rowSpan - 2) + t.rowSize(row + rowSpan - 2);
-    return { x: x - fr.left, y: y - fr.top, w: right - x, h: bottom - y };
+    return overlayRect(x, y, right - x, bottom - y);
+  }
+
+  function overlayRect(left, top, width, height) {
+    const fr = frame.getBoundingClientRect();
+    return { x: (left - fr.left) / scale, y: (top - fr.top) / scale, w: width / scale, h: height / scale };
   }
 
   function relRect(node) {
-    const fr = frame.getBoundingClientRect();
     const r = node.getBoundingClientRect();
-    return { x: r.left - fr.left, y: r.top - fr.top, w: r.width, h: r.height };
+    return overlayRect(r.left, r.top, r.width, r.height);
+  }
+
+  function relayout() {
+    if (!stage.clientWidth || drag) return;
+    const pageWidth = phone ? PHONE_WIDTH : DESKTOP_WIDTH;
+    scale = zoom.value === 'fit' ? Math.min(1, stage.clientWidth / pageWidth) : Number(zoom.value);
+    host.style.width = `${phone ? pageWidth : Math.max(pageWidth, stage.clientWidth)}px`;
+    host.style.zoom = scale;
+    if (testing) {
+      testFrame.style.width = host.style.width;
+      testFrame.style.height = `${stage.clientHeight / scale}px`;
+      testFrame.style.zoom = scale;
+    } else drawOverlay();
   }
 
   // The deepest box under a point that may hold `movingId` (null = the page itself).
@@ -241,29 +294,36 @@ export function createDrawEditor(container, options) {
     if (!keepProps) renderProps();
     renderChecks();
     renderCode();
+    if (testing) testFrame.srcdoc = options.preview(drawing);
     drawOverlay();
   }
 
   function drawOverlay(extra = {}) {
     overlay.replaceChildren();
-    if (!drawing.items.length && !extra.ghost) {
-      overlay.append(el('div', { class: 'ws-empty', textContent: phone ? 'Nothing to preview yet. Switch to Desktop and draw.' : 'Choose Box, Text or Image above, then drag on the page. Everything snaps to 12 columns.' }));
+    if (testing) return;
+    if (!drawing.items.length && tool === 'select' && !extra.ghost) {
+      overlay.append(el('div', { class: 'ws-empty' }, [
+        el('strong', { textContent: 'Design your page' }),
+        el('span', { textContent: 'Add a section, choose a template, or pick a drawing tool.' }),
+      ]));
     }
     const guideFor = extra.guide !== undefined ? extra.guide : (() => {
       const item = byId(drawing, selected);
       if (!item) return null;
       return item.kind === 'box' ? item.id : item.parent;
     })();
-    if (showGrid && !phone) {
+    if ((showGrid || tool !== 'select' || extra.ghost) && !phone) {
       const node = nodeOf(guideFor);
       if (node) {
         const t = tracks(node);
-        const fr = frame.getBoundingClientRect();
         const r = node.getBoundingClientRect();
         const cs = getComputedStyle(node);
-        const inner = r.bottom - (parseFloat(cs.paddingBottom) || 0) - (parseFloat(cs.borderBottomWidth) || 0);
-        const bottom = node === page ? Math.max(inner, t.top + 4 * (drawing.page.row + t.rowGap)) : inner;
-        t.cols.forEach((w, i) => overlay.append(el('div', { class: 'ws-col', style: `left:${t.colStart(i) - fr.left}px;top:${t.top - fr.top}px;width:${w}px;height:${Math.max(0, bottom - t.top)}px` })));
+        const inner = r.bottom - scale * (parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth));
+        const bottom = node === page ? Math.max(inner, t.top + 4 * (drawing.page.row * scale + t.rowGap)) : inner;
+        t.cols.forEach((width, i) => {
+          const { x, y, w, h } = overlayRect(t.colStart(i), t.top, width, Math.max(0, bottom - t.top));
+          overlay.append(el('div', { class: 'ws-col', style: `left:${x}px;top:${y}px;width:${w}px;height:${h}px` }));
+        });
       }
     }
     if (extra.target !== undefined && extra.target !== null) {
@@ -293,6 +353,7 @@ export function createDrawEditor(container, options) {
   }
 
   function renderLayers() {
+    pageLayer.setAttribute('aria-current', String(!selected));
     layersList.replaceChildren();
     const walk = (parentId) => children(drawing, parentId).forEach((item) => {
       const button = el('button', {
@@ -317,9 +378,8 @@ export function createDrawEditor(container, options) {
 
   function renderCode() {
     if (!codePanel.open) return;
-    codeOut.textContent = codeWhich.value === 'css'
-      ? generateCSS(drawing)
-      : generateHTML(drawing, { indent: 1 });
+    const content = { css: generateCSS, html: generateHTML, js: generateJS };
+    codeOut.textContent = content[codeWhich.value](drawing);
   }
 
   // ---------- properties panel ----------
@@ -350,7 +410,7 @@ export function createDrawEditor(container, options) {
   }
 
   function selectField(label, value, entries, onSet) {
-    const select = el('select', {}, entries.map(([v, text]) => new Option(text, v)));
+    const select = el('select', { 'aria-label': label }, entries.map(([v, text]) => new Option(text, v)));
     select.value = value;
     select.addEventListener('change', () => onSet(select.value));
     return field(label, select);
@@ -377,6 +437,44 @@ export function createDrawEditor(container, options) {
     return el('div', { class: 'ds-field' }, [el('span', { textContent: label }), select, el('label', { class: 'ds-upload' }, ['Upload an image ', upload]), el('label', { class: 'ds-small' }, ['…or an image address ', url])]);
   }
 
+  function actionFields(item) {
+    const action = item.action;
+    const controls = [el('div', { class: 'ds-trigger', textContent: 'When this button is clicked' }), selectField('Action', action?.type || '', [['', 'None'], ...Object.entries(ACTIONS)], (type) => {
+      mutate('action', (button) => { const target = actionTargets(drawing, button, type).find(({ id }) => id === action?.target);
+        button.action = type ? { type, target: target?.id || '', text: '' } : null; }, { rerenderProps: true });
+      props.querySelector('[aria-label="Action"]')?.focus();
+    })];
+    if (action) {
+      const targets = actionTargets(drawing, item, action.type);
+      controls.push(selectField('Target layer', targets.some(({ id }) => id === action.target) ? action.target : '', [
+        ['', 'Choose a layer'], ...targets.map((target) => [target.id, `.${target.name}${target.text ? ` · ${target.text.slice(0, 35)}` : ''}`]),
+      ], (target) => mutate('action-target', (button) => { button.action.target = target; })));
+      if (!targets.length) controls.push(el('p', { class: 'ds-small', textContent: 'Add a text layer to give this action a target.' }));
+      if (action.type !== 'toggle') {
+        const message = el('input', { value: action.text, maxLength: 300, placeholder: action.type === 'count' ? 'Clicks: ' : 'New words' });
+        message.addEventListener('input', () => mutate('action-text', (button) => { button.action.text = message.value; }));
+        controls.push(field(action.type === 'count' ? 'Counter prefix' : 'New text', message));
+      }
+    }
+    return el('fieldset', { class: 'ds-action-editor' }, [el('legend', { textContent: 'Interaction' }), ...controls]);
+  }
+
+  function themePicker() {
+    const p = drawing.page;
+    return el('div', { class: 'ds-themes', role: 'group', 'aria-label': 'Page themes' }, Object.values(THEMES).map(({ label, ...theme }) => el('button', {
+      type: 'button', 'aria-pressed': String(Object.keys(theme).every((key) => theme[key] === p[key])),
+      onclick: (event) => {
+        finishEdit(true);
+        remember();
+        Object.assign(drawing.page, theme);
+        const index = [...event.currentTarget.parentElement.children].indexOf(event.currentTarget);
+        render(); changed();
+        props.querySelector('.ds-themes').children[index].focus();
+        setStatus(`Applied the ${label} theme to the page.`);
+      },
+    }, [el('span', { class: 'ds-swatch', style: `background:${theme.background};color:${theme.color};font-family:${FONTS[theme.font]}`, 'aria-hidden': 'true', textContent: 'Aa' }), label])));
+  }
+
   function renderProps() {
     props.replaceChildren();
     const item = byId(drawing, selected);
@@ -385,7 +483,7 @@ export function createDrawEditor(container, options) {
       const setPage = (key, value) => { remember(`page:${key}`); p[key] = value; render({ keepProps: true }); changed(); };
       props.append(
         el('h3', { textContent: 'Page' }),
-        el('p', { class: 'ds-small', textContent: 'Nothing is selected, so these settings style the whole page (the body in your CSS).' }),
+        themePicker(),
         colorField('Background', p.background, (v) => setPage('background', v || '#ffffff')),
         colorField('Text color', p.color, (v) => setPage('color', v || '#1d2733')),
         selectField('Font', p.font, Object.keys(FONTS).map((key) => [key, { system: 'System (clean sans-serif)', serif: 'Serif (bookish)', rounded: 'Rounded (friendly)', mono: 'Monospace (code)' }[key]]), (v) => setPage('font', v)),
@@ -412,6 +510,7 @@ export function createDrawEditor(container, options) {
       words.addEventListener('input', () => mutate('text', (target) => { target.text = words.value; }));
       props.append(field('Words', words, 'Or double-click the item on the page and type.'));
     }
+    if (item.kind === 'button') props.append(actionFields(item));
     if (item.kind === 'link') {
       const href = el('input', { value: item.href, placeholder: '#projects, about.html or https://…', spellcheck: false });
       href.addEventListener('change', () => {
@@ -428,8 +527,40 @@ export function createDrawEditor(container, options) {
       decorative.addEventListener('change', () => mutate('decorative', (target) => { target.decorative = decorative.checked; }, { rerenderProps: true }));
       props.append(field('Alt text', alt, 'What would a reader need to know if the picture vanished?'), el('label', { class: 'ds-check' }, [decorative, ' Decoration only (alt="")']));
     }
+    const presets = ITEM_STYLES[item.kind];
+    if (presets) props.append(el('h4', { textContent: 'Style presets' }), el('div', {
+      class: 'ds-presets', role: 'group', 'aria-label': 'Style presets',
+    }, Object.entries(presets).map(([label, appearance]) => el('button', {
+      type: 'button', textContent: label,
+      style: `--ds-swatch-bg:${appearance.background || 'transparent'}; --ds-swatch-fg:${appearance.color || 'var(--web-ink)'}; --ds-swatch-border:${appearance.borderColor || appearance.background}`,
+      onclick: () => {
+        mutate(`preset-${label}`, (target) => Object.assign(target.style, appearance), { rerenderProps: true });
+        [...props.querySelectorAll('.ds-presets button')].find((button) => button.textContent === label)?.focus();
+        setStatus(`Applied the ${label.toLowerCase()} style to .${item.name}.`);
+      },
+    }))));
     props.append(el('h4', { textContent: 'Place on the grid' }));
-    const place = (key, max) => numberField({ col: 'First column', colSpan: 'Columns wide', row: 'First row', rowSpan: 'Rows tall' }[key], item[key], 1, max, (v) => mutate(`place-${key}`, (target) => Object.assign(target, clampPlacement({ ...target, [key]: v }))));
+    const placementInputs = new Map();
+    const parents = drawing.items.filter((candidate) => candidate.kind === 'box' && canParent(drawing, item.id, candidate.id));
+    props.append(selectField('Container', item.parent || '', [
+      ['', 'Page'], ...parents.map((parent) => [parent.id, `.${parent.name} <${parent.tag}>`]),
+    ], (value) => {
+      const parent = value || null;
+      mutate('parent', (target) => placeItem(drawing, target.id, { parent, row: nextRow(drawing, parent) }));
+      placementInputs.get('row').value = item.row;
+      nodeOf(item.id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      setStatus(`Moved .${item.name} to ${parent ? `.${byId(drawing, parent).name}` : 'the page'}.`);
+    }));
+    const place = (key, max) => {
+      const label = { col: 'First column', colSpan: 'Columns wide', row: 'First row', rowSpan: 'Rows tall' }[key];
+      const field = numberField(label, item[key], 1, max, (value) => {
+        mutate(`place-${key}`, (target) => placeItem(drawing, target.id, { [key]: value }));
+        for (const [property, input] of placementInputs) input.value = item[property];
+      });
+      const input = field.querySelector('input');
+      placementInputs.set(key, input);
+      return field;
+    };
     props.append(el('div', { class: 'ds-grid2' }, [place('col', COLUMNS), place('colSpan', COLUMNS), place('row', 400), place('rowSpan', 60)]));
     props.append(el('h4', { textContent: 'Style' }));
     const setStyle = (key, value) => mutate(`style-${key}`, (target) => { target.style[key] = value; });
@@ -480,7 +611,54 @@ export function createDrawEditor(container, options) {
       toolTag.value = keep;
     }
     if (phone && id !== 'select') setPhone(false);
+    drawOverlay();
     setStatus(id === 'select' ? 'Select: click an item to choose it, drag to move it, drag a handle to resize it.' : `${TOOLS.find((t) => t.id === id).label}: drag across the columns. A single click makes a standard size.`);
+  }
+
+  function useDrawing(next, id) {
+    if (testing) setTesting(false);
+    if (phone) setPhone(false);
+    remember();
+    drawing = next;
+    selected = id;
+    setTool('select');
+    render();
+    changed();
+    nodeOf(id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  function addSection(kind) {
+    finishEdit(true);
+    const next = structuredClone(drawing);
+    try {
+      const section = insertSection(next, kind);
+      const button = children(next, section.id).find((item) => item.kind === 'button');
+      useDrawing(next, (button || section).id);
+      setStatus(`Added ${SECTIONS[kind].label} to the page.${button ? ' Test page to try it.' : ''}`);
+    } catch (error) { setStatus(error.message); }
+  }
+
+  function applyTemplate(kind) {
+    if (drawing.items.length && !window.confirm('Replace the current drawing with this template? You can Undo to bring it back.')) return;
+    finishEdit(true);
+    const next = createTemplate(kind);
+    useDrawing(next, null);
+    stage.scrollTo(0, 0);
+    setStatus(`Applied the ${TEMPLATES[kind].label} template. Double-click text to edit it.`);
+  }
+
+  function setTesting(value) {
+    finishEdit(true);
+    testing = value;
+    previewButton.setAttribute('aria-pressed', String(testing));
+    previewButton.textContent = testing ? 'Back to editing' : 'Test page';
+    host.hidden = testing;
+    testFrame.hidden = !testing;
+    if (testing) testFrame.srcdoc = options.preview(drawing);
+    else testFrame.removeAttribute('srcdoc');
+    relayout();
+    stage.scrollTo(0, 0);
+    setStatus(testing ? 'Test your page by clicking its buttons. Switch back to edit.' : 'Editing the page.');
   }
 
   function setPhone(value) {
@@ -490,6 +668,8 @@ export function createDrawEditor(container, options) {
     viewPhone.setAttribute('aria-pressed', String(value));
     if (value && tool !== 'select') setTool('select');
     render({ keepProps: true });
+    relayout();
+    stage.scrollTo(0, 0);
     setStatus(value ? 'Phone view: one column, in reading order. This is your @media rule at work. Switch back to Desktop to move things.' : 'Desktop view.');
   }
 
@@ -500,7 +680,7 @@ export function createDrawEditor(container, options) {
     if (focusStage) stage.focus({ preventScroll: true });
     const item = byId(drawing, selected);
     if (item) {
-      nodeOf(item.id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (focusStage) nodeOf(item.id)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       setStatus(`Selected .${item.name}, a <${item.tag}> covering columns ${item.col}–${item.col + item.colSpan - 1} and rows ${item.row}–${item.row + item.rowSpan - 1}.`);
     }
   }
@@ -582,7 +762,7 @@ export function createDrawEditor(container, options) {
 
   // ---------- pointer: draw, move, resize ----------
   frame.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || drag || !event.isPrimary) return;
     const target = event.composedPath()[0];
     if (editing && target.closest?.('[contenteditable]')) return;
     if (phone && tool !== 'select') return;
@@ -607,11 +787,12 @@ export function createDrawEditor(container, options) {
       const grab = cellAt(t, x, y);
       drag = { mode: 'move', id: item.id, x, y, moved: false, dCol: Math.max(0, grab.col - item.col), dRow: Math.max(0, grab.row - item.row), place: { ...item } };
     }
+    drag.pointerId = event.pointerId;
     frame.setPointerCapture(event.pointerId);
   });
 
   frame.addEventListener('pointermove', (event) => {
-    if (!drag) return;
+    if (drag?.pointerId !== event.pointerId) return;
     const { clientX: x, clientY: y } = event;
     if (!drag.moved && Math.hypot(x - drag.x, y - drag.y) < 4) return;
     drag.moved = true;
@@ -643,12 +824,12 @@ export function createDrawEditor(container, options) {
     }
   });
 
-  function endDrag(event, cancelled = false) {
-    if (!drag) return;
+  function endDrag(pointerId, cancelled = false) {
+    if (drag?.pointerId !== pointerId) return;
     const d = drag;
     drag = null;
-    try { frame.releasePointerCapture(event.pointerId); } catch { /* already released */ }
-    if (cancelled) { drawOverlay(); return; }
+    if (frame.hasPointerCapture(pointerId)) frame.releasePointerCapture(pointerId);
+    if (cancelled) { relayout(); return; }
     if (d.mode === 'create') {
       remember();
       try {
@@ -668,10 +849,12 @@ export function createDrawEditor(container, options) {
       remember();
       placeItem(drawing, d.id, d.place);
       render(); changed(); select(d.id);
-    } else drawOverlay();
+    }
+    relayout();
   }
-  frame.addEventListener('pointerup', (event) => endDrag(event));
-  frame.addEventListener('pointercancel', (event) => endDrag(event, true));
+  frame.addEventListener('pointerup', (event) => endDrag(event.pointerId));
+  frame.addEventListener('pointercancel', (event) => endDrag(event.pointerId, true));
+  frame.addEventListener('lostpointercapture', (event) => endDrag(event.pointerId, true));
   frame.addEventListener('dblclick', (event) => {
     const hit = event.composedPath()[0].closest?.('[data-ws-id]');
     if (hit && tool === 'select') startEdit(hit.dataset.wsId);
@@ -680,6 +863,7 @@ export function createDrawEditor(container, options) {
   // ---------- keyboard ----------
   stage.addEventListener('keydown', (event) => {
     const origin = event.composedPath()[0];
+    if (testing) return;
     if (editing) {
       if (event.key === 'Escape') { event.preventDefault(); const id = editing; editing = null; render(); select(id, true); setStatus('Edit cancelled.'); }
       else if (event.key === 'Enter' && !(event.shiftKey && byId(drawing, editing)?.tag === 'p')) { event.preventDefault(); const id = editing; finishEdit(true); select(id, true); }
@@ -709,12 +893,12 @@ export function createDrawEditor(container, options) {
     if (arrows[event.key] && selected && !phone) { event.preventDefault(); nudge(...arrows[event.key], event.shiftKey); return; }
     if ((event.key === 'Delete' || event.key === 'Backspace') && selected) { event.preventDefault(); deleteSelected(); return; }
     if (event.key === 'Enter' && selected) { event.preventDefault(); startEdit(selected); return; }
-    if (event.key === 'Escape') { event.preventDefault(); if (drag) endDrag(event, true); else if (tool !== 'select') setTool('select'); else select(null); return; }
+    if (event.key === 'Escape') { event.preventDefault(); if (drag) endDrag(drag.pointerId, true); else if (tool !== 'select') setTool('select'); else select(null); return; }
     const t = TOOLS.find((entry) => entry.key === event.key.toLowerCase());
     if (t) { event.preventDefault(); setTool(t.id); }
   });
 
-  new ResizeObserver(() => { if (!drag) drawOverlay(); }).observe(stage);
+  new ResizeObserver(relayout).observe(stage);
   stage.addEventListener('scroll', () => { if (!drag) drawOverlay(); });
 
   setTool('select');
@@ -724,13 +908,14 @@ export function createDrawEditor(container, options) {
   return {
     load(value) {
       finishEdit(false);
+      if (testing) setTesting(false);
       drawing = structuredClone(value || emptyDrawing());
       selected = null; undoStack = []; redoStack = []; updateUndo();
       render();
     },
     get drawing() { return drawing; },
     refresh() { render({ keepProps: false }); },
-    relayout() { drawOverlay(); },
+    relayout,
     flush() { finishEdit(true); clearTimeout(changeTimer); options.onChange?.(drawing); },
   };
 }

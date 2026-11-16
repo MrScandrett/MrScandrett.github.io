@@ -14,7 +14,7 @@ import {
   FORMAT, VERSION, FILE_NAMES, IMAGE_TYPES, LIMITS, newProject, validateProject, pageDocument, bodyOf,
   slugify, dataUrlBytes, assetsBytes, codeFingerprint, cleanStudentName, submissionSlug,
 } from './project.mjs';
-import { generateCSS, generateHTML } from './draw-model.mjs';
+import { generateCSS, generateHTML, generateJS } from './draw-model.mjs';
 import { createDrawEditor } from './draw-editor.mjs';
 import { makeZip, dataUrlToBytes } from './zip.mjs';
 
@@ -129,7 +129,15 @@ function showTab(name, focus = false) {
   if (history.replaceState) history.replaceState(null, '', `#${name}`);
   if (name === 'draw') draw.relayout();
   if (name === 'blocks') ensureBlocks().then(() => lab?.resize()).catch(() => {});
-  if (name === 'code') { showFile(currentFile); updatePreview(); }
+  if (name === 'code') {
+    showFile(currentFile);
+    // Start with a visible frame so browsers lay out the sandboxed document.
+    const frame = $('preview');
+    const fresh = frame.cloneNode();
+    fresh.removeAttribute('srcdoc');
+    frame.replaceWith(fresh);
+    updatePreview();
+  }
   if (name === 'share') fillShare();
 }
 tabs.forEach((tab, index) => {
@@ -159,15 +167,30 @@ function writeFiles(files, from) {
   scheduleSave();
 }
 
+function drawingFiles(drawing) {
+  return {
+    'index.html': pageDocument(project.title, generateHTML(drawing, { indent: 1 })),
+    'style.css': generateCSS(drawing),
+    'script.js': generateJS(drawing),
+  };
+}
+
 function sendDrawing() {
   draw.flush();
-  if (!project.draw.items.length) { status('Draw something first: choose Box or Text and drag on the page.'); return; }
-  if (!confirmReplace('index.html and style.css', 'the drawing')) { status('Nothing was replaced.'); return; }
-  writeFiles({
-    'index.html': pageDocument(project.title, generateHTML(project.draw, { indent: 1 })),
-    'style.css': generateCSS(project.draw),
-  }, 'draw');
-  status('The drawing is now code: index.html and style.css. Your script.js was kept. Open Code to read it, or Blocks to add behavior.');
+  if (!project.draw.items.length) { status('Draw something first or add a section.'); return; }
+  const files = drawingFiles(project.draw);
+  const previousScript = project.files['script.js'];
+  const start = '// Web Studio Draw actions — start';
+  const end = '// Web Studio Draw actions — end';
+  const existing = /^\/\/ Web Studio Draw actions — start\r?\n[\s\S]*?^\/\/ Web Studio Draw actions — end(?:\r?\n|$)/m;
+  const block = files['script.js'] ? `${start}\n${files['script.js']}${end}\n` : '';
+  files['script.js'] = existing.test(previousScript)
+    ? previousScript.replace(existing, () => block)
+    : block ? `${previousScript}${previousScript && !previousScript.endsWith('\n') ? '\n' : ''}${block}` : previousScript;
+  const updatesScript = files['script.js'] !== previousScript;
+  if (!confirmReplace(updatesScript ? 'index.html, style.css and the Draw actions in script.js' : 'index.html and style.css', 'the drawing')) { status('Nothing was replaced.'); return; }
+  writeFiles(files, 'draw');
+  status('Drawing sent to Code. Open the files to see the HTML, CSS and JavaScript.');
   $('after-send').hidden = false;
 }
 
@@ -249,11 +272,11 @@ editor.addEventListener('keydown', (event) => {
 function inlineAssets(text) {
   return text.replace(/(["'(=]\s*)(images\/[a-z0-9-]+\.(?:png|jpg|gif|webp))/g, (match, lead, path) => (project.assets[path] ? lead + project.assets[path].data : match));
 }
-function previewDocument() {
+function previewDocument(files = project.files, drawPreview = false) {
   const notes = [];
-  let html = inlineAssets(project.files['index.html']);
-  const css = inlineAssets(project.files['style.css']).replace(/<\/style/gi, '<\\/style');
-  const js = project.files['script.js'].replace(/<\/script/gi, '<\\/script');
+  let html = inlineAssets(files['index.html']);
+  const css = inlineAssets(files['style.css']).replace(/<\/style/gi, '<\\/style');
+  const js = files['script.js'].replace(/<\/script/gi, '<\\/script');
   const linkPattern = /<link\b[^>]*href=["']style\.css["'][^>]*>/i;
   const scriptPattern = /<script\b[^>]*src=["']script\.js["'][^>]*>\s*<\/script>/i;
   if (linkPattern.test(html)) html = html.replace(linkPattern, () => `<style>\n${css}</style>`);
@@ -261,19 +284,22 @@ function previewDocument() {
   if (scriptPattern.test(html)) {
     html = html.replace(scriptPattern, '');
     html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, () => `<script>\n${js}</script>\n</body>`) : `${html}<script>\n${js}</script>`;
-  } else if (project.files['script.js'].replace(/\/\/.*$/gm, '').trim()) notes.push('index.html does not load script.js, so your JavaScript never runs.');
-  for (const [, path] of project.files['index.html'].matchAll(/(?:src|href)=["']([^"'#?]+)["']/g)) {
+  } else if (files['script.js'].replace(/\/\/.*$/gm, '').trim()) notes.push('index.html does not load script.js, so your JavaScript never runs.');
+  for (const [, path] of files['index.html'].matchAll(/(?:src|href)=["']([^"'#?]+)["']/g)) {
     if (/^(https?:|mailto:|data:)/.test(path) || ['style.css', 'script.js'].includes(path) || /\.html$/.test(path)) continue;
     if (path.startsWith('/') || /^[a-z]:\\/i.test(path)) notes.push(`${path} is an absolute path; it will break on a real host. Use images/… instead.`);
     else if (!project.assets[path]) notes.push(`${path} is not in your project. Upload it under Images, or fix the name (capital letters count).`);
   }
-  previewToken = crypto.randomUUID();
-  const bridge = `<script>(()=>{const send=(kind,text)=>parent.postMessage({webStudio:${JSON.stringify(previewToken)},kind,text:String(text).slice(0,2000)},'*');addEventListener('error',e=>send('error',e.message));addEventListener('unhandledrejection',e=>send('error',e.reason&&e.reason.message||e.reason));const log=console.log;console.log=(...a)=>{log.apply(console,a);send('log',a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' '))};document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(a&&!a.getAttribute('href').startsWith('#')){e.preventDefault();send('note','Links to other pages open on your real site, not in this preview: '+a.getAttribute('href'))}});})();</script>`;
+  const token = crypto.randomUUID();
+  if (!drawPreview) previewToken = token;
+  const bridge = `<script>(()=>{const send=(kind,text)=>parent.postMessage({webStudio:${JSON.stringify(token)},kind,text:String(text).slice(0,2000)},'*');addEventListener('error',e=>send('error',e.message));addEventListener('unhandledrejection',e=>send('error',e.reason&&e.reason.message||e.reason));const log=console.log;console.log=(...a)=>{log.apply(console,a);send('log',a.map(x=>typeof x==='object'?JSON.stringify(x):String(x)).join(' '))};document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href]');if(a&&!a.getAttribute('href').startsWith('#')){e.preventDefault();send('note','Links to other pages open on your real site, not in this preview: '+a.getAttribute('href'))}});})();</script>`;
   const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src https: data:; font-src https: data:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">`;
   html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (head) => `${head}${csp}${bridge}`) : `${csp}${bridge}${html}`;
   return { html, notes };
 }
 function updatePreview() {
+  if (document.getElementById('panel-code').hidden) return;
+  clearTimeout(previewTimer);
   const { html, notes } = previewDocument();
   $('messages').textContent = '';
   $('preview').srcdoc = html;
@@ -518,6 +544,7 @@ draw = createDrawEditor($('draw'), {
   assetUrl: (path) => project.assets[path]?.data || '',
   assets: () => Object.keys(project.assets).sort(),
   addAsset,
+  preview: (drawing) => previewDocument(drawingFiles(drawing), true).html,
 });
 
 (async () => {

@@ -235,7 +235,7 @@
     staves.forEach(function (st, si) {
       var fingers = (score.fingerings || [])[si] || [], index = 0;
       st.bars.forEach(function (bar) { bar.events.forEach(function (ev) {
-        if (ev.kind === 'note') {
+        if (ev.kind === 'note' && !ev.hidden) {
           var value = String(fingers[index++] || '');
           if (/^[1-5](?:\/[1-5]){0,4}$/.test(value)) ev.fingering = value;
         }
@@ -674,7 +674,7 @@
     });
   }
 
-  function engrave(model, width, readableSize) {
+  function engrave(model, width, readableSize, windowed) {
     var M = root.MusicNotation;
     var S = (width < 520 ? 7.5 : width < 820 ? 8.5 : 9.5) * (readableSize ? 1.45 : 1);
     var h = S / 2;
@@ -744,10 +744,10 @@
       });
       // Leave room for optional fingering outside beams and tuplet labels.
       var fingers = (suggestedFingers && (/hand/i.test(st.label || '') || st.instrument === 'piano')) ||
-        st.bars.some(function (bar) { return bar.events.some(function (ev) { return !!ev.fingering; }); });
+        sys.bars.some(function (bi) { return st.bars[bi].events.some(function (ev) { return !!ev.fingering; }); });
       // Teaching fingerings sit above the right hand and below the left hand.
       // Reserving both sides of both staves needlessly separates the grand staff.
-      var rightHand = !/left/i.test(st.label || '') && si === 0;
+      var rightHand = rightHandStaff(st);
       var slurs = (expressions.slurs || []).filter(function (span) { return covers(span, sys, si); });
       if (slurs.some(function (span) { return span.side === 'below'; })) lo -= 6;
       if (slurs.some(function (span) { return span.side !== 'below'; })) hi += 6;
@@ -759,6 +759,8 @@
     }
 
     var out = [], hl = [], y = 0, evIndex = 0;
+    var measureRects = [], crossSystemTies = [];
+    var separator = '<!--score-system-->';
     var ink = 'currentColor';
     var lineW = Math.max(1, 0.11 * S);
     var allEvents = [];
@@ -857,6 +859,7 @@
       var sysKey = model.barMeta[sys.first].key;
       var barRanges = grand ? [[sysTop, sysBottom]] : bottoms.map(function (bb) { return [bb - 8 * h, bb]; });
 
+      if (windowed) out.push(separator);
       out.push('<g data-se-system="' + sIndex + '">');
       // Staff lines, clefs, key and time signatures.
       model.staves.forEach(function (st, si) {
@@ -893,11 +896,12 @@
       if (firstBarNo > 1) out.push('<text class="se-barno" x="' + (x0 + 0.2 * S) + '" y="' + (sysTop - 1.0 * S - Math.max(0, ext[0].hi - 9) * h) + '" font-size="' + (1.1 * S) + '">' + firstBarNo + '</text>');
 
       var bx0 = x0 + sys.header;
-      var sysCols = [];
+      var sysCols = [], systemEvents = [];
       var volta = null;
       sys.bars.forEach(function (bi, k) {
         var bar = bars[bi], bw = bar.width * stretch, meta = model.barMeta[bi];
-        out.push('<rect class="se-measure" data-measure="' + bi + '" x="' + bx0 + '" y="' + (sysTop - S) + '" width="' + bw + '" height="' + (sysBottom - sysTop + 2 * S) + '"/>');
+        var barEvents = [];
+        (windowed ? measureRects : out).push('<rect class="se-measure" data-measure="' + bi + '" x="' + bx0 + '" y="' + (sysTop - S) + '" width="' + bw + '" height="' + (sysBottom - sysTop + 2 * S) + '"/>');
         // Start-of-bar marks: repeat sign, key and time changes, clef changes.
         var lx = bx0 + 0.3 * S;
         if (meta.repStart) {
@@ -949,6 +953,8 @@
             ev.bottom = b; ev.sys = sIndex; ev.sysEnd = x1; ev.sysStart = bx0;
             ev.i = evIndex++;
             allEvents.push(ev);
+            systemEvents.push(ev);
+            barEvents.push(ev);
           });
           // Beams first, so stems know where to stop.
           barModel.beams.forEach(function (g) { placeBeam(g, st.clef, b, S, h); });
@@ -986,7 +992,7 @@
           tabBars[bi].forEach(function (group) {
             var col = bar.cols.find(function (c) { return Math.abs(c.t - group.start) < EPS; });
             group.notes.forEach(function (note) {
-              var event = allEvents.find(function (ev) { return ev.bar === bi && Math.abs(ev.start - group.start) < EPS && ev.kind === 'note' && ev.pitches.some(function (p) { return p.midi + (tabConfig.pitchShift || 0) === note.midi; }); });
+              var event = barEvents.find(function (ev) { return Math.abs(ev.start - group.start) < EPS && ev.kind === 'note' && ev.pitches.some(function (p) { return p.midi + (tabConfig.pitchShift || 0) === note.midi; }); });
               if (!event || !col) return;
               var tx = col.px + 0.65 * S, ty = tabTop + Math.max(0, note.string) * tabGap;
               var label = note.string < 0 ? '×' : String(note.fret), tw = Math.max(1.25, label.length * 0.85) * S;
@@ -1034,7 +1040,7 @@
         if (!covers(span, sys, si)) return;
         var a = endpoint(Object.assign({ staff: si }, span.from)), z = endpoint(Object.assign({ staff: si }, span.to));
         if (!a || !z) return;
-        var segment = allEvents.filter(function (ev) { return ev.sys === sIndex && ev.staff === si && ev.kind === 'note' && ev.abs >= a.abs - EPS && ev.abs <= z.abs + EPS; });
+        var segment = systemEvents.filter(function (ev) { return ev.staff === si && ev.kind === 'note' && ev.abs >= a.abs - EPS && ev.abs <= z.abs + EPS; });
         if (!segment.length) return;
         var below = span.side === 'below', dir = below ? 1 : -1;
         var yy = below ? Math.max.apply(null, segment.map(function (e) { return Math.max(e.bottom - e.lo * h, e.tipY || -Infinity); })) :
@@ -1069,7 +1075,25 @@
     });
 
     // Ties need every event placed first (they can cross bars and systems).
-    allEvents.forEach(function (ev) { if (ev.tie && ev.tieTo) out.push('<g data-se-from="' + ev.sys + '" data-se-to="' + ev.tieTo.sys + '">' + drawTie(ev, S, h, model) + '</g>'); });
+    allEvents.forEach(function (ev) {
+      if (!ev.tie || !ev.tieTo) return;
+      var tie = '<g data-se-from="' + ev.sys + '" data-se-to="' + ev.tieTo.sys + '">' + drawTie(ev, S, h, model) + '</g>';
+      if (windowed) crossSystemTies.push({ from: ev.sys, to: ev.tieTo.sys, svg: tie });
+      else out.push(tie);
+    });
+    if (windowed) {
+      // Decorations that belong to a single system are mounted alongside its notes.
+      var decorations = systems.map(function () { return []; });
+      tupletDraws.forEach(function (tp) {
+        decorations[tp.events[0].sys].push(drawTuplet(tp, S, h));
+      });
+      var chunks = shareGlyphs(out.join(''), model.id).split(separator);
+      return {
+        svg: chunks[0] + measureRects.join(''), height: Math.ceil(y + S), width: width, systems: hl, events: allEvents, S: S,
+        notation: hl.map(function (_, i) { return chunks[i + 1] + decorations[i].join(''); }),
+        ties: crossSystemTies
+      };
+    }
     tupletDraws.forEach(function (tp) { out.push('<g data-se-system="' + tp.events[0].sys + '">' + drawTuplet(tp, S, h) + '</g>'); });
 
     var height = Math.ceil(y + S);
@@ -1264,6 +1288,15 @@
     return out;
   }
 
+  function rightHandStaff(staff) {
+    var label = staff.label || '';
+    if (/left/i.test(label)) return false;
+    if (/right/i.test(label)) return true;
+    if (/accompaniment/i.test(label)) return false;
+    if (/lead|melody/i.test(label)) return true;
+    return staff.clef !== 'bass';
+  }
+
   function drawEvent(ev, clef, b, S, h, model, readableSize) {
     var M = root.MusicNotation;
     var out = '<g class="se-ev" data-i="' + ev.i + '">';
@@ -1272,7 +1305,12 @@
       var cx0 = ev.x - ((ev.accW || 0) + graceUnits(ev) + 2.2) * S + 0.1 * S;
       out += '<g class="se-clef-change">' + M.glyph(ev.clefChange, cx0, b - M.clefs[ev.clefChange].anchor * h, 2 * h * 0.72) + '</g>';
     }
-    if (ev.fingering) out += '<text class="se-fingering" x="' + ev.x + '" y="' + (b + 3 * S) + '" font-size="' + S + '" text-anchor="middle">' + ev.fingering + '</text>';
+    if (ev.fingering) {
+      var above = rightHandStaff(model.staves[ev.staff]);
+      var step = above ? Math.max(8, ev.hi + (ev.up ? 7 : 1)) : Math.min(0, ev.lo - (ev.up ? 1 : 7));
+      var fingerY = b - step * h + (above ? -2 : 3) * S;
+      out += '<text class="se-fingering" x="' + (ev.x + headW(ev, S) / 2) + '" y="' + fingerY + '" font-size="' + S + '" text-anchor="middle">' + ev.fingering + '</text>';
+    }
     if (ev.graces) out += drawGraces(ev, clef, b, S, h);
     if (ev.hidden) { ev.headX = ev.x; ev.headY = b - 4 * h; return out + '</g>'; }
     if (ev.kind === 'rest') {
@@ -1446,7 +1484,7 @@
     return this.loop && this.range ? this.range : { from: 0, to: this.model.perfTotal };
   };
   Player.prototype.qpm = function () { return this.baseQpm * this.rate; };
-  Player.prototype.play = function () {
+  Player.prototype.play = function (restartTime) {
     if (this.playing || this.destroyed) return;
     var self = this;
     players.forEach(function (p) { if (p !== self && (p.playing || p.loading)) p.halt(); });
@@ -1454,16 +1492,16 @@
     var span = this.span();
     if (this.pos >= span.to - EPS || this.pos < span.from - EPS) this.pos = span.from;
     this.playing = true;
-    this.t0 = c.currentTime + 0.08;
+    this.t0 = restartTime === undefined ? c.currentTime + 0.08 : restartTime;
     this.b0 = this.pos;
     // Include notes already sustaining at a seek/pause position. Prefix maximum
     // note ends let a late seek skip all earlier, fully completed polyphony.
     this.next = floorIndex(this.ends, this.pos + EPS) + 1;
     this.lastUiTime = null;
     this.timer = setInterval(function () { self.schedule(); }, 25);
-    this.schedule();
     this.frame();
     this.ui.update();
+    this.schedule();
   };
   Player.prototype.requestPlay = async function () {
     if (this.destroyed || this.loading || this.playing) return;
@@ -1515,8 +1553,13 @@
       this.voices.add(v);
     }
     if (this.timeOf(span.to) < c.currentTime) {
-      if (this.loop) { this.pos = span.from; this.stopVoices(false); clearInterval(this.timer); cancelAnimationFrame(this.raf); this.play(); }
-      else this.stop();
+      if (this.loop) {
+        this.pos = span.from;
+        this.playing = false;
+        clearInterval(this.timer);
+        cancelAnimationFrame(this.raf);
+        this.play(c.currentTime);
+      } else this.stop();
     }
   };
   Player.prototype.stopVoices = function (hard) {
@@ -1860,6 +1903,17 @@
     var player = new Player(fig, model);
     players.push(player);
     fig.scorePlayer = player;
+    function hasDenseNotation() {
+      var events = 0;
+      return model.staves.some(function (staff) {
+        events += staff.bars.reduce(function (count, bar) { return count + bar.events.length; }, 0);
+        return events >= 2000;
+      });
+    }
+    var windowed = fig.hasAttribute('data-score-windowed') &&
+      (model.count >= 150 || model.count * model.staves.length >= 600 || hasDenseNotation());
+    var notationLayer, systemTops, windowStart = -1, windowEnd = -1;
+    var scrollFrame = 0;
     var layout = null, eventsByBar = [], eventNodes = [], tabEventNodes = [], cursorColumns = [], cursorTimes = [], lit = new Set(), cursorEl = null, staffScale = 1, screenScale = 1, fitMode = true, lastDrawWidth = null, lastDrawHeight = null;
     function paperWidth() {
       return Math.max(120, Math.round(svgWrap.clientWidth || paper.clientWidth || 640));
@@ -2005,7 +2059,48 @@
       updateNoteList(layout.events.find(function (ev) { return lit.has(ev.i); }));
     }
 
+    function indexRenderedNotes() {
+      eventNodes = [];
+      (notationLayer || svgWrap).querySelectorAll('.se-ev').forEach(function (node) {
+        var i = +node.getAttribute('data-i');
+        eventNodes[i] = node;
+        if (lit.has(i)) node.classList.add('is-on');
+      });
+      tabEventNodes = [];
+      (notationLayer || svgWrap).querySelectorAll('.se-tab-note').forEach(function (node) {
+        var i = +node.getAttribute('data-i');
+        (tabEventNodes[i] = tabEventNodes[i] || []).push(node);
+        if (lit.has(i)) node.classList.add('is-on');
+      });
+    }
+
+    function showVisibleNotation() {
+      if (!notationLayer) return false;
+      var height = paper.clientHeight;
+      var top = paper.scrollTop / screenScale;
+      var bottom = (paper.scrollTop + height) / screenScale;
+      var first = Math.max(0, floorIndex(systemTops, top) - 1);
+      var last = Math.min(systemTops.length - 1, floorIndex(systemTops, bottom) + 1);
+      if (first === windowStart && last === windowEnd) return false;
+      windowStart = first; windowEnd = last;
+      var ties = layout.ties.filter(function (tie) {
+        return tie.from <= last && tie.to >= first;
+      });
+      notationLayer.innerHTML = layout.notation.slice(first, last + 1).join('') +
+        ties.map(function (tie) { return tie.svg; }).join('');
+      indexRenderedNotes();
+      return true;
+    }
+
+    function onPaperScroll() {
+      if (!scrollFrame) scrollFrame = requestAnimationFrame(function () {
+        scrollFrame = 0;
+        if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
+      });
+    }
+
     function draw() {
+      if (player.destroyed) return;
       var w = drawWidth(), room = paper.clientHeight;
       if (layout && lastDrawWidth !== null && Math.abs(lastDrawWidth - w) < 2) {
         if (room === lastDrawHeight) return;
@@ -2015,25 +2110,29 @@
           var svg = svgWrap.querySelector('svg');
           svg.setAttribute('width', layout.width * screenScale); svg.setAttribute('height', layout.height * screenScale);
         }
+        if (showVisibleNotation()) fig.dispatchEvent(new CustomEvent('score:notation-window'));
         navigation.refresh(); return;
       }
       lastDrawWidth = w; lastDrawHeight = room;
-      layout = engrave(model, w, fig.hasAttribute('data-score-readable'));
+      layout = engrave(model, w, fig.hasAttribute('data-score-readable'), windowed);
       screenScale = fitMode ? Math.min(staffScale, paperWidth() / layout.width,
         Math.max(120, paper.clientHeight - 12) / layout.systems[0].bottom) : staffScale;
       var label = (score.title || 'Score') + '. ' + model.count + ' bars in ' + model.ts.num + '/' + model.ts.den + (score.keyName ? ', ' + score.keyName : '') + '.';
       // The score is always paper with its own ink, so contrast-guard's text pass stays out: it reads the
       // cursor rect's accent fill without its fill-opacity and would repaint labels under it white.
       svgWrap.innerHTML = '<svg class="se-score" data-contrast-guard-skip role="img" aria-label="' + root.MusicNotation.escape(label) + '" viewBox="0 0 ' + layout.width + ' ' + layout.height + '" width="' + (layout.width * screenScale) + '" height="' + (layout.height * screenScale) + '"' + (fig.hasAttribute('data-score-zoom') ? ' style="max-width:none"' : '') + '>' +
-        '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + '</svg>';
+        '<rect class="se-cursor" x="0" y="0" width="' + (layout.S * 0.35) + '" height="0" rx="' + layout.S * 0.15 + '" opacity="0"/>' + layout.svg + (windowed ? '<g class="se-notation-window"/>' : '') + '</svg>';
       // A one-line study doesn't need a 740px reading pane: let the pane shrink to the music.
       // Decided by the piece, never by the drawn size: the fit zoom depends on the pane's height.
       workspace.classList.toggle('se-short', model.count <= 4);
       cursorEl = svgWrap.querySelector('.se-cursor');
-      eventNodes = [];
-      svgWrap.querySelectorAll('.se-ev').forEach(function (node) { eventNodes[+node.getAttribute('data-i')] = node; });
-      tabEventNodes = [];
-      svgWrap.querySelectorAll('.se-tab-note').forEach(function (node) { var i = +node.getAttribute('data-i'); (tabEventNodes[i] = tabEventNodes[i] || []).push(node); });
+      lit = new Set();
+      if (windowed) {
+        notationLayer = svgWrap.querySelector('.se-notation-window');
+        systemTops = layout.systems.map(function (system) { return system.top; });
+        windowStart = -1; windowEnd = -1;
+        showVisibleNotation();
+      } else indexRenderedNotes();
       cursorColumns = [];
       layout.systems.forEach(function (system) {
         system.cols.slice(0, -1).forEach(function (col, i) { cursorColumns.push({ a: col, b: system.cols[i + 1], sys: system }); });
@@ -2046,7 +2145,6 @@
       eventsByBar = [];
       layout.events.forEach(function (ev) { (eventsByBar[ev.bar] = eventsByBar[ev.bar] || []).push(ev); });
       fig.dispatchEvent(new CustomEvent('score:draw', { detail: { layout: layout } }));
-      lit = new Set();
       if (!player.playing) player.ui.cursor(writtenBeat(model, player.pos));
       renderNoteList();
       navigation.refresh();
@@ -2128,11 +2226,12 @@
     updateTimeline(0);
     function togglePlay() { if (player.loading) player.stop(); else if (player.playing) player.pause(); else player.requestPlay(); }
     playBtn.addEventListener('click', togglePlay);
-    fig.addEventListener('keydown', function (event) {
+    function onSpace(event) {
       if (event.code !== 'Space' || event.ctrlKey || event.metaKey || event.altKey ||
         event.target.closest('input, select, textarea, button, summary, a, [contenteditable="true"], [role="slider"]')) return;
       event.preventDefault(); togglePlay();
-    });
+    }
+    fig.addEventListener('keydown', onSpace);
     paper.tabIndex = 0;
     paper.setAttribute('role', 'region');
     paper.setAttribute('aria-label', (score.title || 'Score') + ' notation. Space to play or pause.');
@@ -2291,14 +2390,18 @@
       noteListToggle.textContent = open ? 'Hide note list' : 'Show note list';
     });
     var offPreferences = root.MusicNotation.onPreferencesChange(function () { layout = null; updatePreferenceButtons(); requestAnimationFrame(draw); });
-    function fingeringSpacingChanged() { layout = null; requestAnimationFrame(draw); }
+    function fingeringSpacingChanged(e) { if (!e.detail.reach) { layout = null; requestAnimationFrame(draw); } }
     root.addEventListener('score-fingering:change', fingeringSpacingChanged);
     updatePreferenceButtons();
 
     draw();
+    if (windowed) paper.addEventListener('scroll', onPaperScroll, { passive: true });
     settingsBar.appendChild(pitchToggle); settingsBar.appendChild(colorToggle); settingsBar.appendChild(noteListToggle);
     settingsBar.appendChild(printButton);
-    withFingering(function (F) { F.install(fig, score, settingsBar); });
+    var offFingering;
+    withFingering(function (F) {
+      if (!player.destroyed) offFingering = F.install(fig, score, settingsBar);
+    });
     fig.insertBefore(noteList, cap);
     var pieceGroup = fig.closest('details.composer-piece-group');
     if (pieceGroup) pieceGroup.addEventListener('toggle', function () {
@@ -2318,7 +2421,12 @@
       document.removeEventListener('pointerdown', onOutside);
       if (expanded) { expanded = false; fig.classList.remove('se-expanded'); document.documentElement.classList.remove('se-expanded-lock'); if (fig.hasAttribute('popover')) { try { fig.hidePopover(); } catch (err) { /* closed */ } fig.removeAttribute('popover'); } }
       if (offPreferences) offPreferences();
+      if (offFingering) offFingering();
+      navigation.destroy();
+      fig.removeEventListener('keydown', onSpace);
       root.removeEventListener('score-fingering:change', fingeringSpacingChanged);
+      if (windowed) paper.removeEventListener('scroll', onPaperScroll);
+      cancelAnimationFrame(scrollFrame);
       cancelAnimationFrame(drawFrame); players = players.filter(function (p) { return p !== player; });
       if (fig.scorePlayer === player) delete fig.scorePlayer;
     };
@@ -2334,7 +2442,7 @@
       library = fetch(url).then(function (r) {
         if (!r.ok) throw new Error('score library ' + r.status);
         return r.json();
-      });
+      }).catch(function (err) { library = null; throw err; });
     }
     return library;
   }
@@ -2564,7 +2672,7 @@
     root.addEventListener('afterprint', removePrintOpenings);
   }
 
-  root.ScoreEngine = { previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
+  root.ScoreEngine = { loadLibrary: loadLibrary, previewSvg: previewSvg, openingFigure: openingFigure, prepare: prepare, analyse: analyse, playList: playList, engrave: engrave, render: render, printScore: printScorePages, preparePrintScore: preparePrintScorePages, parseStaff: parseStaff,
     barNumber: barNumber, barIndexOf: barIndexOf, buildGuide: buildGuide, coverageText: coverageText, writtenBeat: writtenBeat, perfBeat: perfBeat, Player: Player };
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', function () { if (document.hidden) players.forEach(function (p) { if (p.playing || p.loading) p.halt(); }); });

@@ -3,9 +3,43 @@ import assert from 'node:assert/strict';
 import LiquidEngine from '../assets/js/liquid-engine.js';
 
 test('provides named liquid material presets', () => {
-  assert.deepEqual(LiquidEngine.materials, ['water', 'lava', 'honey', 'oil', 'mercury']);
+  assert.deepEqual(LiquidEngine.materials, [
+    'water', 'coldWater', 'boilingWater', 'lava', 'magma', 'honey', 'glycerol', 'oil', 'mercury'
+  ]);
   assert.ok(LiquidEngine.material('honey').viscosity > LiquidEngine.material('water').viscosity);
   assert.ok(LiquidEngine.material('lava').density > LiquidEngine.material('water').density);
+  assert.equal(LiquidEngine.material('cold-water').kind, 'coldWater');
+  assert.equal(LiquidEngine.material('boiling-water').kind, 'boilingWater');
+  assert.ok(LiquidEngine.material('boilingWater').eta < LiquidEngine.material('coldWater').eta);
+  assert.ok(LiquidEngine.material('magma').eta > LiquidEngine.material('lava').eta);
+});
+
+test('stokesMetrics and StokesColumn compute realistic fall and float behavior across fluids', () => {
+  const hot = LiquidEngine.stokesMetrics({ fluid: 'boilingWater', sphereDensity: 7800, radius: 0.003 });
+  const cold = LiquidEngine.stokesMetrics({ fluid: 'coldWater', sphereDensity: 7800, radius: 0.003 });
+  const oil = LiquidEngine.stokesMetrics({ fluid: 'oil', sphereDensity: 7800, radius: 0.003 });
+  const glycerol = LiquidEngine.stokesMetrics({ fluid: 'glycerol', sphereDensity: 7800, radius: 0.001 });
+  const honey = LiquidEngine.stokesMetrics({ fluid: 'honey', sphereDensity: 7800, radius: 0.003 });
+  const lava = LiquidEngine.stokesMetrics({ fluid: 'lava', sphereDensity: 7800, radius: 0.003 });
+  const magma = LiquidEngine.stokesMetrics({ fluid: 'magma', sphereDensity: 7800, radius: 0.003 });
+
+  assert.ok(hot.vt > cold.vt, 'boiling water has lower viscosity and higher terminal velocity than cold water');
+  assert.ok(cold.vt > oil.vt && oil.vt > honey.vt && honey.vt > lava.vt && lava.vt > magma.vt);
+  assert.ok(Math.abs(glycerol.vt - 0.01017) < 0.0002, 'matches Stokes Law benchmark in glycerol');
+
+  const plasticInHoney = LiquidEngine.createStokesColumn({ fluid: 'honey', sphereDensity: 1200, radius: 0.003 });
+  plasticInHoney.step(1 / 60);
+  assert.equal(plasticInHoney.floated, true);
+  assert.equal(plasticInHoney.done, true);
+
+  const glassInLava = LiquidEngine.createStokesColumn({ fluid: 'lava', sphereDensity: 2500, radius: 0.003 });
+  glassInLava.step(1 / 60);
+  assert.equal(glassInLava.floated, true);
+
+  const steelInHoney = LiquidEngine.createStokesColumn({ fluid: 'honey', fluidDensity: 1400, sphereDensity: 7800, radius: 0.003, columnHeight: 0.50 });
+  for (let i = 0; i < 600 && !steelInHoney.done; i += 1) steelInHoney.step(0.1);
+  assert.equal(steelInHoney.done, true);
+  assert.ok(Math.abs(steelInHoney.elapsed - steelInHoney.metrics.fallTime) < 0.05);
 });
 
 test('surface impulses propagate and settle toward the rest line', () => {

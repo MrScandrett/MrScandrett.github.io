@@ -11,7 +11,7 @@ import { findChromium } from '../lib/find-chromium.mjs';
 import { validateProject } from '../assets/js/web-studio/project.mjs';
 
 const base = process.env.WEB_STUDIO_URL || 'http://localhost:8080';
-const browser = await chromium.launch({ headless: true, executablePath: findChromium() });
+const browser = await chromium.launch({ headless: true, executablePath: findChromium(['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH']) });
 const errors = [];
 try {
   const context = await browser.newContext({ viewport: { width: 1500, height: 1000 }, acceptDownloads: true });
@@ -50,7 +50,9 @@ try {
   // 2. Click inside the header with the Text tool: a heading lands on the header's own grid, then type.
   await page.getByRole('button', { name: /^Text$/ }).click();
   await page.locator('.ds-tool-tag').selectOption('h1');
-  await page.mouse.click(frame.x + 80, frame.y + 60);
+  await page.evaluate(() => document.querySelector('.ds-toolbar').scrollIntoView({ block: 'start' }));
+  const textFrame = await page.locator('.ds-host').boundingBox();
+  await page.mouse.click(textFrame.x + 80, textFrame.y + 60);
   await page.keyboard.type('Robot Garden');
   await page.keyboard.press('Enter');
   assert.match(await html(), /<header class="header">\n    <h1 class="title">Robot Garden<\/h1>\n  <\/header>/, 'heading nested inside the header with typed text');
@@ -176,6 +178,88 @@ try {
   assert.equal(await preview.locator('h1').textContent(), 'From a pack');
   assert.equal(await preview.locator('h1').evaluate((h) => getComputedStyle(h).color), 'rgb(1, 2, 3)');
   assert.equal(await preview.locator('img').evaluate((img) => img.naturalWidth), 1, 'uploaded image resolves as images/dot.png');
+
+  // 14. Fit the canvas to a narrow viewport and draw across all 12 columns.
+  const narrow = await browser.newPage({ viewport: { width: 420, height: 850 } });
+  narrow.on('pageerror', (e) => errors.push(e.message));
+  await narrow.goto(`${base}/lessons/web-design/web-studio.html#draw`);
+  await narrow.waitForFunction(() => /Saved in this browser/.test(document.querySelector('[data-ws-saved]').textContent));
+  const narrowStage = narrow.locator('.ds-stage');
+  const narrowHost = narrow.locator('.ds-host');
+  assert.ok(await narrowStage.evaluate((el) => el.scrollWidth <= el.clientWidth + 1), 'fit width shows the whole canvas');
+  await narrow.getByRole('button', { name: 'Box', exact: true }).click();
+  await narrowStage.scrollIntoViewIfNeeded();
+  const grid = narrowHost.locator('.ws-col');
+  const first = await grid.first().boundingBox();
+  const last = await grid.last().boundingBox();
+  await narrow.mouse.move(first.x + first.width / 2, first.y + 8);
+  await narrow.mouse.down();
+  await narrow.mouse.move(last.x + last.width / 2, first.y + 36, { steps: 5 });
+  await narrow.mouse.up();
+  assert.equal(await narrow.getByLabel('Columns wide').inputValue(), '12', 'drag snaps correctly at fit zoom');
+
+  // 15. Move a heading from the page into that box using only the form controls.
+  await narrow.getByRole('button', { name: 'Page', exact: true }).click();
+  await narrow.getByLabel('Kind of item to add').selectOption('text:h1');
+  await narrow.locator('.ds-add button').click();
+  await narrow.getByLabel('Container', { exact: true }).selectOption({ label: '.section <section>' });
+  assert.equal(await narrowHost.locator('section > h1').count(), 1);
+  await narrow.getByRole('button', { name: 'Undo', exact: true }).click();
+  assert.equal(await narrowHost.locator('.ws-page > h1').count(), 1);
+  await narrow.getByRole('button', { name: 'Redo', exact: true }).click();
+  assert.equal(await narrowHost.locator('section > h1').count(), 1);
+
+  // 16. Build a themed page from sections and test a real click action from Draw.
+  const builder = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  builder.on('pageerror', (e) => errors.push(e.message));
+  builder.on('dialog', (dialog) => dialog.accept());
+  await builder.goto(`${base}/lessons/web-design/web-studio.html#draw`);
+  await builder.waitForFunction(() => /Saved in this browser/.test(document.querySelector('[data-ws-saved]').textContent));
+  await builder.getByRole('button', { name: 'Midnight', exact: true }).click();
+  await builder.getByRole('button', { name: 'Hero Title and introduction' }).click();
+  await builder.getByRole('button', { name: 'Feature cards Two side-by-side cards' }).click();
+  await builder.getByRole('button', { name: 'Show / hide Button and answer' }).click();
+  await builder.getByRole('button', { name: 'Test page', exact: true }).click();
+  const draftPreview = builder.frameLocator('.ds-test');
+  const answer = draftPreview.getByText('Write your answer here.');
+  const reveal = draftPreview.getByRole('button', { name: 'Show or hide the answer' });
+  await answer.waitFor({ state: 'visible' });
+  await reveal.click();
+  await answer.waitFor({ state: 'hidden' });
+  assert.equal(await reveal.getAttribute('aria-expanded'), 'false');
+  await reveal.click();
+  await answer.waitFor({ state: 'visible' });
+  await builder.getByRole('button', { name: 'Phone', exact: true }).click();
+  const cards = draftPreview.locator('article');
+  assert.ok((await cards.last().boundingBox()).y > (await cards.first().boundingBox()).y, 'feature cards stack in phone preview');
+
+  // 17. Wire a counter and check hand-off, resending and reload.
+  await builder.getByRole('button', { name: 'Back to editing' }).click();
+  await builder.locator('.ds-layer', { hasText: '.button' }).click();
+  await builder.getByLabel('Action', { exact: true }).selectOption('count');
+  await builder.getByLabel('Target layer').selectOption({ label: '.text-4 · Write your answer here.' });
+  await builder.getByLabel('Counter prefix').fill('Answers: ');
+  await builder.locator('[data-ws-tab="code"]').click();
+  await builder.locator('[data-ws-file-tab="script.js"]').click();
+  await builder.locator('[data-ws-editor]').fill('window.studentCode = true\n');
+  await builder.locator('[data-ws-tab="draw"]').click();
+  await builder.locator('[data-ws-send-draw]').click();
+  await builder.locator('[data-ws-send-draw]').click();
+  await builder.locator('[data-ws-tab="code"]').click();
+  const sentScript = await builder.locator('[data-ws-editor]').inputValue();
+  assert.equal(sentScript.match(/Draw actions — start/g)?.length, 1);
+  assert.match(sentScript, /window.studentCode = true/);
+  const sentPreview = builder.frameLocator('[data-ws-preview]');
+  const countButton = sentPreview.getByRole('button', { name: 'Show or hide the answer' });
+  await countButton.click();
+  await countButton.click();
+  await sentPreview.getByText('Answers: 2', { exact: true }).waitFor();
+  await builder.getByText(/^Saved in this browser at/).waitFor();
+  await builder.reload();
+  await builder.locator('[data-ws-tab="draw"]').click();
+  await builder.locator('.ds-layer', { hasText: '.button' }).click();
+  assert.equal(await builder.getByLabel('Action', { exact: true }).inputValue(), 'count');
+  assert.equal(await builder.getByLabel('Counter prefix').inputValue(), 'Answers: ');
 
   assert.deepEqual(errors, [], 'no page errors');
   console.log('web-studio-browser: all checks passed');

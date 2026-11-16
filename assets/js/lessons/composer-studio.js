@@ -11,8 +11,12 @@
   mode.querySelector('option[value="guitar"]').before(soloOption);
   mode.querySelector('option[value="piano"]').textContent='Piano · solo score / reduction';
   const host = $('score'), tab = $('tab'), note = $('note');
+  host.setAttribute('data-score-windowed', '');
+  document.querySelectorAll('figure[data-score]').forEach(figure => figure.setAttribute('data-score-windowed', ''));
   const script = document.currentScript.src;
-  let library, player, current;
+  let library, player, current, showWork;
+  const openFile = $('open');
+  openFile.disabled = true;
   const violinControls = document.createElement('div');
   violinControls.className = 'bv-fields bv-violin-controls';
   violinControls.innerHTML = '<label><input type="checkbox" id="bv-violin-show"> Show violin positions</label><label>Violin hand position <select id="bv-violin-position"><option value="auto">Automatic · fewest shifts</option><option value="1">First position</option><option value="2">Second position</option><option value="3">Third position</option><option value="4">Fourth position</option><option value="5">Fifth position</option><option value="6">Sixth position</option><option value="7">Seventh position</option></select></label>';
@@ -20,7 +24,7 @@
   const violinShow = $('violin-show'), violinPosition = $('violin-position');
   const pianoControls = document.createElement('div');
   pianoControls.className = 'bv-fields';
-  pianoControls.innerHTML = '<label><input type="checkbox" id="bv-piano-show"> Show piano finger numbers</label><p>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = little finger. Enter one number per written note event, skipping rests. Use – to leave a note blank and / for chord fingers, lowest pitch first (for example 1/3/5). Numbers appear below the staff and in print. Choose fingerings with your teacher.</p><div id="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p>';
+  pianoControls.innerHTML = '<label><input type="checkbox" id="bv-piano-show"> Show my piano finger numbers</label><p>1 = thumb, 2 = index, 3 = middle, 4 = ring, 5 = little finger. Enter one number per written note event, skipping rests. Use – to leave a note blank and / for chord fingers, lowest pitch first (for example 1/3/5). Your numbers appear in the score and in print. Use Finger numbers in the score controls for suggestions. Choose fingerings with your teacher.</p><div id="bv-piano-inputs"></div><p role="status" id="bv-piano-status"></p>';
   violinControls.after(pianoControls);
   // Keep the score immediately below a small selection row on every composer page.
   const primaryFields = workspace.querySelector('.bv-fields');
@@ -44,7 +48,7 @@
     const model = ScoreEngine.prepare(score);
     model.staves.forEach((st, i) => {
       const label = document.createElement('label');
-      label.textContent = (st.label || 'Staff ' + (i + 1)) + ' · ' + st.bars.flatMap(b => b.events).filter(e => e.kind === 'note').length + ' note events ';
+      label.textContent = (st.label || 'Staff ' + (i + 1)) + ' · ' + st.bars.flatMap(b => b.events).filter(e => e.kind === 'note' && !e.hidden).length + ' note events ';
       const input = document.createElement('textarea'); input.rows = 2; input.value = prefs.values[i] || '';
       input.dataset.staff = i; label.append(input); pianoInputs.append(label);
     });
@@ -102,7 +106,7 @@
       const group = categories.find(group => group.ids.includes(work.value));
       hint.textContent = group ? group.label + ' — ' + group.hint : '';
     }
-    function render() {
+    function render(dispatchChange = true) {
       const selected = work.value;
       work.replaceChildren();
       categories.filter(group => filter.value === 'all' || group.key === filter.value).forEach(group => {
@@ -113,14 +117,19 @@
       if ([...work.options].some(option => option.value === selected)) work.value = selected;
       label.dataset.category = filter.value;
       describe();
-      if (work.value !== selected) work.dispatchEvent(new Event('change'));
+      if (dispatchChange && work.value !== selected) work.dispatchEvent(new Event('change'));
     }
-    filter.addEventListener('change', render);
+    filter.addEventListener('change', () => render());
     work.addEventListener('change', describe);
-    // Restore the full catalogue before loading an arrangement from another group.
-    $('open').addEventListener('change', () => { filter.value = 'all'; render(); }, true);
-    render();
-    return describe;
+    render(false);
+    return id => {
+      if (![...work.options].some(option => option.value === id)) {
+        filter.value = 'all';
+        render(false);
+      }
+      work.value = id;
+      describe();
+    };
   }
 
   function source() { return library.scores[work.value]; }
@@ -236,34 +245,54 @@
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link = document.createElement('a'); link.href = url; link.download = work.value + '-arrangement.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000);
   });
-  $('open').addEventListener('change',async event => {
+  openFile.addEventListener('change', async () => {
+    const file = openFile.files[0];
+    if (!file) return;
+    openFile.value = '';
+    openFile.disabled = true;
     try {
-      const file = event.target.files[0]; if (!file) return;
-      if (file.size > 10000) throw new Error('Choose a saved studio arrangement.');
-      const data = JSON.parse(await file.text());
-      if (!['beethoven-study-1','composer-study-1'].includes(data.format) || !allowed.includes(data.work)) throw new Error('Choose an arrangement saved for this composer lesson.');
-      const valid = (select,value) => [...select.options].some(o => o.value === String(value));
-      if (!valid(mode,data.mode) || !valid(octave,data.octave)) throw new Error('Unknown arrangement setting.');
-      work.value = data.work; work.dispatchEvent(new Event('change')); fillStaves();
-      if (!valid(staff,data.staff)) throw new Error('Unknown source staff.');
-      staff.value = data.staff; fillVoices();
-      if (!valid(voice,data.voice)) throw new Error('Unknown source voice.');
+      let data;
+      try { data = JSON.parse(await file.text()); }
+      catch { throw new Error('Choose a JSON file created with Save arrangement.'); }
+      if (!data || !['beethoven-study-1','composer-study-1'].includes(data.format) || !allowed.includes(data.work)) {
+        throw new Error('Choose an arrangement saved for this composer lesson.');
+      }
+      const valid = (select, value) => [...select.options].some(option => option.value === String(value));
+      if (!valid(mode, data.mode) || !valid(octave, data.octave) || (data.mode === 'chords' && data.work !== 'beethoven-ode-to-joy')) {
+        throw new Error('Unknown arrangement setting.');
+      }
+      const staves = library.scores[data.work].staves;
+      const validIndex = (value, items) => /^(0|[1-9]\d*)$/.test(String(value)) && Number(value) < items.length;
+      if (!validIndex(data.staff, staves)) throw new Error('Unknown source staff.');
+      const savedStaff = staves[Number(data.staff)];
+      if (!validIndex(data.voice, savedStaff.voices || [savedStaff])) throw new Error('Unknown source voice.');
+
+      showWork(data.work);
+      fillStaves(); staff.value = data.staff; fillVoices();
       voice.value = data.voice; mode.value = data.mode; octave.value = data.octave;
-      if (data.piano && Array.isArray(data.piano.values)) pianoPrefs[pianoKey()] = { show: data.piano.show === true, values: data.piano.values.map(v => String(v).slice(0, 5000)) };
-      const v = data.violin || {}; violinShow.checked = v.show === true; violinPosition.value = valid(violinPosition, v.position) ? v.position : 'auto'; rememberViolin(); update();
+      if (data.piano && Array.isArray(data.piano.values)) {
+        pianoPrefs[pianoKey()] = { show: data.piano.show === true, values: data.piano.values.map(value => typeof value === 'string' ? value : '') };
+      } else delete pianoPrefs[pianoKey()];
+      const v = data.violin || {};
+      violinShow.checked = v.show === true;
+      violinPosition.value = valid(violinPosition, v.position) ? v.position : 'auto';
+      rememberViolin(); update();
     } catch (error) { note.textContent = error.message; }
-    event.target.value = '';
+    finally { openFile.disabled = false; }
   });
-  document.addEventListener('visibilitychange',() => { if (document.hidden && player) player.stop(); });
   Promise.all([
-    fetch(new URL('../../../data/score-library.json',script)).then(response => { if (!response.ok) throw new Error('Score library unavailable'); return response.json(); }),
+    ScoreEngine.loadLibrary(),
     fetch(new URL('../../../data/composer-workspaces.json',script)).then(response => { if (!response.ok) throw new Error('Composer index unavailable'); return response.json(); })
   ]).then(([data,index]) => {
     library = data; allowed = index[composer].scores;
     options(work,allowed.map(id => [id,data.scores[id].title]));
-    const describeWork = organizeWorks(index[composer].groups);
-    if (composer === 'beethoven') work.value = 'beethoven-ode-to-joy';
+    showWork = organizeWorks(index[composer].groups);
+    showWork(composer === 'beethoven' ? 'beethoven-ode-to-joy' : work.value);
     if (composer === 'francisco-tarrega') mode.value = 'guitar';
-    describeWork(); fillStaves(); update();
-  }).catch(error => { note.textContent = 'Unable to open the studio: ' + error.message + '. Reload to try again.'; });
+    fillStaves(); update();
+    openFile.disabled = false;
+  }).catch(error => {
+    primaryFields.after(note);
+    note.textContent = 'Unable to open the studio: ' + error.message + '. Reload to try again.';
+  });
 })();

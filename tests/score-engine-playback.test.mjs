@@ -97,3 +97,16 @@ test('sample preparation requests sounding pitches and the individual source ins
   assert.equal(requests[1].instrument,'cello');assert.equal(requests[1].pitches[0],46);
   assert.equal(calls.length,2);player.stop();
 });
+
+test('loop playback schedules the selected passage again after its end', () => {
+  const { player, calls, context } = fixture({ staves: [{ notes: 'C4/1 | D4/1' }] });
+  player.loop = true;
+  player.range = { from: 4, to: 8 };
+  player.play();
+  context().currentTime = 4.1;
+  player.schedule();
+  assert.equal(player.playing, true);
+  assert.deepEqual(calls.map(voice => voice.midi), [62, 62]);
+  assert.equal(calls[1].time, 4.1);
+  player.stop();
+});

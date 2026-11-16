@@ -25,6 +25,7 @@ export const FONTS = {
   mono: 'ui-monospace, Consolas, "Courier New", monospace',
 };
 export const PHONE_WIDTH = 700;
+export const ACTIONS = { toggle: 'Show / hide', text: 'Change text', count: 'Count clicks' };
 const ALIGN = ['', 'left', 'center', 'right'];
 const VALIGN = ['', 'start', 'center', 'end'];
 const WEIGHTS = ['', '400', '700'];
@@ -78,7 +79,11 @@ export function uniqueName(drawing, base, ignoreId = null) {
   const clean = sanitizeName(base) || 'item';
   const taken = new Set(drawing.items.filter((item) => item.id !== ignoreId).map((item) => item.name));
   if (!taken.has(clean)) return clean;
-  for (let n = 2; ; n++) if (!taken.has(`${clean}-${n}`)) return `${clean}-${n}`;
+  for (let n = 2; ; n++) {
+    const suffix = `-${n}`;
+    const candidate = `${clean.slice(0, 40 - suffix.length).replace(/-$/, '')}${suffix}`;
+    if (!taken.has(candidate)) return candidate;
+  }
 }
 
 export function clampPlacement({ col, row, colSpan, rowSpan }) {
@@ -117,6 +122,7 @@ export function createItem(drawing, kind, placement = {}, tag) {
     alt: '',
     decorative: false,
     href: def.href || '',
+    action: null,
     style: { ...blankStyle(), ...def.style, ...(heading ? { size: heading.size, weight: heading.weight } : {}) },
   };
   item.name = uniqueName(drawing, { box: chosenTag === 'div' ? 'box' : chosenTag, text: chosenTag === 'p' ? 'text' : chosenTag === 'h1' ? 'title' : 'heading', image: 'picture', button: 'button', link: 'link' }[kind]);
@@ -127,6 +133,7 @@ export function createItem(drawing, kind, placement = {}, tag) {
 export function removeItem(drawing, id) {
   const gone = new Set([id, ...descendants(drawing, id).map((item) => item.id)]);
   drawing.items = drawing.items.filter((item) => !gone.has(item.id));
+  for (const item of drawing.items) if (gone.has(item.action?.target)) item.action.target = '';
 }
 
 export function canParent(drawing, id, parentId) {
@@ -160,7 +167,12 @@ export function duplicateItem(drawing, id) {
     children(drawing, item.id).filter((child) => !map.has(child.id) && child.id !== clone.id).forEach((child) => copy(child, clone.id, 0));
     return clone;
   };
-  return copy(source, source.parent, nextRow(drawing, source.parent) - source.row);
+  const root = copy(source, source.parent, nextRow(drawing, source.parent) - source.row);
+  for (const id of map.values()) {
+    const item = byId(drawing, id);
+    if (map.has(item.action?.target)) item.action.target = map.get(item.action.target);
+  }
+  return root;
 }
 
 // ---------- validation (drawings come back from files and browser storage) ----------
@@ -194,6 +206,11 @@ export function validateDrawing(value) {
       alt: typeof raw.alt === 'string' ? raw.alt.slice(0, 300) : '',
       decorative: raw.decorative === true,
       href: typeof raw.href === 'string' && safeHref(raw.href) ? raw.href : '',
+      action: raw.kind === 'button' && Object.hasOwn(ACTIONS, raw.action?.type) ? {
+        type: raw.action.type,
+        target: typeof raw.action.target === 'string' ? raw.action.target : '',
+        text: typeof raw.action.text === 'string' ? raw.action.text.slice(0, 300) : '',
+      } : null,
       style: {
         background: color(s.background), color: color(s.color), size: num(s.size, 0, 160, 0),
         weight: pick(String(s.weight ?? ''), WEIGHTS, ''), align: pick(s.align, ALIGN, ''), valign: pick(s.valign, VALIGN, ''),
@@ -218,6 +235,9 @@ export function validateDrawing(value) {
     }
   }
   for (const item of drawing.items) if (!item.name) item.name = uniqueName(drawing, item.kind, item.id);
+  for (const item of drawing.items) {
+    if (item.action && !actionTargets(drawing, item, item.action.type).some(({ id }) => id === item.action.target)) item.action.target = '';
+  }
   drawing.next = Math.max(highest + 1, Number(value.next) || 0);
   return drawing;
 }
@@ -230,6 +250,55 @@ export function safeSrc(value) {
 // Links: another site, an email address, a #section on this page, or a page in this site.
 export function safeHref(value) {
   return value === '' || /^(https?:\/\/|mailto:)[^\s"'<>\\]+$/i.test(value) || /^#[A-Za-z][\w-]*$/.test(value) || /^[a-z0-9][a-z0-9-_/]*\.html(#[\w-]+)?$/i.test(value);
+}
+
+export function actionTargets(drawing, button, type) {
+  if (type !== 'toggle') return drawing.items.filter((item) => item.kind === 'text');
+  const excluded = new Set([button.id]);
+  for (let parent = byId(drawing, button.parent); parent; parent = byId(drawing, parent.parent)) excluded.add(parent.id);
+  return drawing.items.filter((item) => !excluded.has(item.id));
+}
+
+function configuredActions(drawing) {
+  return drawing.items.flatMap((button) => {
+    if (button.kind !== 'button' || !Object.hasOwn(ACTIONS, button.action?.type)) return [];
+    const target = actionTargets(drawing, button, button.action.type).find(({ id }) => id === button.action.target);
+    return target ? [{ button, target }] : [];
+  });
+}
+
+export function generateJS(drawing) {
+  const actions = configuredActions(drawing);
+  if (!actions.length) return '';
+  const lines = [';(() => {'];
+  for (const [index, { button, target }] of actions.entries()) {
+    const n = index + 1;
+    const source = `button${n}`;
+    const dest = `target${n}`;
+    lines.push(`  const ${source} = document.querySelector(".${button.name}");`);
+    lines.push(`  const ${dest} = document.querySelector(".${target.name}");`);
+    lines.push(`  if (${source} && ${dest}) {`);
+    if (button.action.type === 'count') lines.push('    let clicks = 0;');
+    if (button.action.type !== 'toggle') lines.push(`    ${dest}.setAttribute("aria-live", "polite");`);
+    if (button.action.type === 'toggle') {
+      const group = actions.filter((action) => action.target === target && action.button.action.type === 'toggle');
+      const selectors = group.map((action) => `.${action.button.name}`).join(', ');
+      lines.push(`    ${source}.setAttribute("aria-expanded", String(!${dest}.hidden));`);
+      lines.push(`    ${source}.addEventListener("click", () => {`);
+      lines.push(`      ${dest}.hidden = !${dest}.hidden;`);
+      lines.push(`      document.querySelectorAll("${selectors}").forEach((control) => {`);
+      lines.push(`        control.setAttribute("aria-expanded", String(!${dest}.hidden));`);
+      lines.push('      });');
+    } else {
+      lines.push(`    ${source}.addEventListener("click", () => {`);
+      lines.push(button.action.type === 'count'
+        ? `      ${dest}.textContent = ${JSON.stringify(button.action.text || 'Clicks: ')} + (++clicks);`
+        : `      ${dest}.textContent = ${JSON.stringify(button.action.text)};`);
+    }
+    lines.push('    });', '  }', '');
+  }
+  lines.push('})();');
+  return `${lines.join('\n')}\n`;
 }
 
 // ---------- code generation ----------
@@ -293,6 +362,7 @@ export function generateCSS(drawing, options = {}) {
   out.push('  box-sizing: border-box;');
   out.push('}');
   out.push('');
+  if (root === 'body') out.push(`html { background: ${p.background}; }`, '');
   out.push(`${root} {`);
   out.push('  margin: 0 auto;');
   out.push(`  max-width: ${p.maxWidth}px;`);
@@ -329,6 +399,9 @@ export function generateCSS(drawing, options = {}) {
   out.push(`${root} a {`);
   out.push('  color: inherit;');
   out.push('}');
+  if (configuredActions(drawing).some(({ button }) => button.action.type === 'toggle')) {
+    out.push('', `${root} [hidden] { display: none !important; }`);
+  }
   const ordered = [];
   const walk = (parentId) => children(drawing, parentId).forEach((item) => { ordered.push(item); walk(item.id); });
   walk(null);
@@ -425,6 +498,7 @@ export function checks(drawing) {
   if (h1s.length !== 1) results.push({ level: 'fix', text: h1s.length ? `${h1s.length} items use <h1>. Keep one main title and make the others <h2>.` : 'No <h1> yet. Give the page one main title: a Text item set to h1.' });
   if (!all.some((item) => item.kind === 'box' && item.tag === 'main')) results.push({ level: 'note', text: 'No <main> box yet. Set the box that holds your page’s own content to main.' });
   for (const item of all) {
+    if (item.action && !actionTargets(drawing, item, item.action.type).some(({ id }) => id === item.action.target)) results.push({ level: 'fix', id: item.id, text: `${item.name} needs a target for its click action.` });
     if (item.kind === 'image' && !item.src) results.push({ level: 'fix', id: item.id, text: `${item.name} has no image chosen.` });
     if (item.kind === 'image' && !item.alt.trim() && !item.decorative) results.push({ level: 'fix', id: item.id, text: `${item.name} needs alt text, or tick “decoration only”.` });
     if (item.kind === 'link' && (!item.href || item.href === '#')) results.push({ level: 'note', id: item.id, text: `${item.name} does not go anywhere yet.` });

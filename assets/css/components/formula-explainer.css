@@ -1,0 +1,684 @@
+/* ==========================================================================
+   ClassroomOS Interactive Formula Explainer
+   Site-wide symbol-by-symbol formula highlighter, explanation panel,
+   live "What If?" parameter probe, and 2D/3D canvas visualizer.
+   Loaded conditionally by assets/js/page-modules.js.
+   ========================================================================== */
+
+:root {
+  --fx-panel-bg: var(--surface-1, #ffffff);
+  --fx-panel-surface: var(--surface-2, #f8fafc);
+  --fx-border: var(--border-subtle, rgba(15, 23, 42, 0.14));
+  --fx-text-strong: var(--text-strong, #0f172a);
+  --fx-text-body: var(--text-body, #334155);
+  --fx-text-muted: var(--text-muted, #475569);
+  --fx-accent: var(--accent, #0284c7);
+  --fx-tint: color-mix(in srgb, var(--fx-text-strong) 6%, transparent);
+  --fx-tint-strong: color-mix(in srgb, var(--fx-text-strong) 14%, transparent);
+  --fx-c-lhs: #0369a1;
+  --fx-c-geo: #6d28d9;
+  --fx-c-drive: #b45309;
+  --fx-c-resist: #be185d;
+  --fx-c-const: #047857;
+  --fx-c-op: #475569;
+  --fx-c-neutral: #1d4ed8;
+  --fx-canvas-bg: #0f172a;
+}
+
+html[data-lighting="night"],
+html[data-theme="night"],
+html[data-theme="vaporwave"],
+html[data-theme="bark"],
+html[data-theme="diamond"],
+html[data-theme="emerald"],
+html[data-theme="mandelbrot"],
+html[data-theme="lavalamp"] {
+  --fx-panel-bg: var(--surface-1, #111827);
+  --fx-panel-surface: var(--surface-2, #1e293b);
+  --fx-border: var(--border-subtle, rgba(226, 232, 240, 0.18));
+  --fx-text-strong: var(--text-strong, #f8fafc);
+  --fx-text-body: var(--text-body, #e2e8f0);
+  --fx-text-muted: var(--text-muted, #cbd5e1);
+  --fx-accent: var(--accent, #38bdf8);
+  --fx-c-lhs: #38bdf8;
+  --fx-c-geo: #c084fc;
+  --fx-c-drive: #fbbf24;
+  --fx-c-resist: #f472b6;
+  --fx-c-const: #34d399;
+  --fx-c-op: #cbd5e1;
+  --fx-c-neutral: #60a5fa;
+  --fx-canvas-bg: #070b14;
+}
+
+/* Zero-specificity fallback surface for pages without creation-app.css */
+:where(.cos-fx-box) {
+  margin: 0.9rem 0;
+  padding: 0.95rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-panel-surface);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+:where(.cos-fx-box .cl-formula-vars) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.65rem;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.84rem;
+}
+
+/* Formula size for pages that do not set one themselves (zero specificity: page CSS wins) */
+:where(.cos-fx-box .cos-fx-sym) {
+  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
+  font-weight: 700;
+}
+
+/* A formula inside a sentence: no box, no stacking, just clickable symbols */
+:where(.cos-fx-box.cos-fx-inline) {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+}
+
+.cos-fx-box.cos-fx-inline .cos-fx-sym {
+  display: inline;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.cos-fx-panel.cos-fx-panel-detached {
+  margin: 0.6rem 0 1rem;
+}
+
+/* Upgraded formula container */
+.cos-fx-box {
+  position: relative;
+  text-align: left;
+}
+
+.cos-fx-box .cos-fx-sym {
+  display: block;
+  text-align: center;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+/* Each symbol is a button, but it should still read as a formula: the glyph takes its
+   role colour and gets a dotted underline. The filled chip appears only on hover or selection.
+   High specificity so lesson-wide button CSS cannot restyle it. */
+.cos-fx-box button.cos-fx-token {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 0.02em;
+  padding: 0.02em 0.14em;
+  border: 0;
+  border-bottom: 2px dotted color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 60%, transparent);
+  border-radius: 5px 5px 2px 2px;
+  background: transparent;
+  color: var(--fx-token-color, inherit);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  vertical-align: baseline;
+  cursor: pointer;
+  box-shadow: none;
+  text-transform: none;
+  transition: background-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.cos-fx-box button.cos-fx-token.is-operator {
+  color: inherit;
+  border-bottom-color: transparent;
+  padding: 0.02em 0.1em;
+}
+
+.cos-fx-box button.cos-fx-token sub,
+.cos-fx-box button.cos-fx-token sup {
+  font-size: 0.68em;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.cos-fx-box button.cos-fx-token:hover,
+.cos-fx-box button.cos-fx-token:focus-visible,
+.cos-fx-box button.cos-fx-token.is-peek {
+  background: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 16%, transparent);
+  border-bottom-style: solid;
+  border-bottom-color: var(--fx-token-color, var(--fx-accent));
+}
+
+.cos-fx-box button.cos-fx-token.is-active {
+  background: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 24%, transparent);
+  border-bottom-style: solid;
+  border-bottom-color: var(--fx-token-color, var(--fx-accent));
+  box-shadow: 0 0 0 2px var(--fx-token-color, var(--fx-accent));
+  border-radius: 5px;
+}
+
+.cos-fx-box button.cos-fx-token:focus-visible {
+  outline: 2px solid var(--fx-token-color, var(--fx-accent));
+  outline-offset: 2px;
+}
+
+/* Stacked fraction: numerator over denominator, the bar is the division button */
+.cos-fx-box .cos-fx-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  vertical-align: middle;
+  margin-left: 0.2em;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.cos-fx-box .cos-fx-num,
+.cos-fx-box .cos-fx-den {
+  display: block;
+  padding: 0 0.3em;
+  white-space: nowrap;
+}
+
+.cos-fx-box .cos-fx-sym.has-frac {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding: 4px 2px;
+}
+
+@media (max-width: 480px) {
+  .cos-fx-box .cos-fx-sym.has-frac {
+    font-size: 1.1rem;
+  }
+}
+
+/* The bar is drawn as a border on the inner span, not a background, so
+   contrast-guard.js never mistakes it for a bright panel and recolours it. */
+.cos-fx-box button.cos-fx-token.cos-fx-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 0.5em;
+  min-height: 14px;
+  margin: 0.04em 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+}
+
+.cos-fx-box .cos-fx-bar-glyph {
+  display: block;
+  flex: 1 1 auto;
+  height: 0;
+  overflow: hidden;
+  border-top: 2px solid;
+  font-size: 0;
+}
+
+/* Interactive legend rows synced with tokens */
+.cos-fx-box .cos-fx-var-item {
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 0.22rem 0.45rem;
+  border: 1px solid transparent;
+  transition: background-color 0.14s ease;
+}
+
+.cos-fx-box .cos-fx-var-item strong,
+.cos-fx-box .cos-fx-var-item b {
+  color: var(--fx-token-color, inherit);
+}
+
+.cos-fx-box .cos-fx-var-item:hover,
+.cos-fx-box .cos-fx-var-item:focus-visible,
+.cos-fx-box .cos-fx-var-item.is-active {
+  background: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 14%, transparent);
+  border-color: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 55%, transparent);
+}
+
+.cos-fx-box .cos-fx-var-item:focus-visible {
+  outline: 2px solid var(--fx-token-color, var(--fx-accent));
+  outline-offset: 1px;
+}
+
+/* Colour key */
+.cos-fx-box .cos-fx-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem 1rem;
+  margin-top: 0.75rem;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fx-text-muted);
+}
+
+.cos-fx-box .cos-fx-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cos-fx-box .cos-fx-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--fx-token-color, var(--fx-accent));
+  flex: 0 0 auto;
+}
+
+/* Hint line and toggle under the formula */
+.cos-fx-box .cos-fx-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--fx-border);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--fx-text-muted);
+}
+
+.cos-fx-box .cos-fx-hint-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.cos-fx-box .cos-fx-hint-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--fx-accent);
+  flex: 0 0 auto;
+}
+
+.cos-fx-box .cos-fx-hint-sym {
+  color: var(--fx-token-color, var(--fx-text-strong));
+  font-weight: 700;
+}
+
+.cos-fx-box .cos-fx-hint-text {
+  color: var(--fx-text-body);
+}
+
+.cos-fx-box button.cos-fx-toggle-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  min-height: 32px;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-tint);
+  color: var(--fx-text-strong);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.cos-fx-box button.cos-fx-toggle-btn:hover,
+.cos-fx-box button.cos-fx-toggle-btn:focus-visible {
+  border-color: var(--fx-accent);
+  background: var(--fx-tint-strong);
+}
+
+.cos-fx-box button.cos-fx-toggle-btn:focus-visible {
+  outline: 2px solid var(--fx-accent);
+  outline-offset: 2px;
+}
+
+/* Explorer panel */
+.cos-fx-panel {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--fx-border);
+  border-top: 3px solid var(--fx-token-color, var(--fx-accent));
+  background: var(--fx-panel-bg);
+  color: var(--fx-text-body);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.cos-fx-panel[hidden],
+.cos-fx-panel [hidden] {
+  display: none;
+}
+
+.cos-fx-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.cos-fx-head-left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.cos-fx-symbol-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 20%, transparent);
+  box-shadow: inset 0 0 0 2px var(--fx-token-color, var(--fx-accent));
+  color: var(--fx-text-strong);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cos-fx-symbol-pill sub,
+.cos-fx-panel sub {
+  font-size: 0.72em;
+  line-height: 0;
+}
+
+.cos-fx-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.cos-fx-panel .cos-fx-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fx-text-strong);
+}
+
+.cos-fx-role-badge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fx-token-color, var(--fx-text-muted));
+}
+
+.cos-fx-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cos-fx-step-count {
+  min-width: 3.6rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--fx-text-muted);
+}
+
+.cos-fx-panel button.cos-fx-step-btn,
+.cos-fx-panel button.cos-fx-close-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-tint);
+  color: var(--fx-text-strong);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.cos-fx-panel button.cos-fx-step-btn:hover,
+.cos-fx-panel button.cos-fx-close-btn:hover {
+  border-color: var(--fx-accent);
+  background: var(--fx-tint-strong);
+}
+
+.cos-fx-panel button.cos-fx-step-btn:focus-visible,
+.cos-fx-panel button.cos-fx-close-btn:focus-visible,
+.cos-fx-panel button.cos-fx-mode-btn:focus-visible {
+  outline: 2px solid var(--fx-accent);
+  outline-offset: 2px;
+}
+
+/* Two columns: words on the left, picture on the right */
+.cos-fx-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.cos-fx-panel.no-visual .cos-fx-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cos-fx-panel.no-visual .cos-fx-visual-col {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .cos-fx-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cos-fx-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.cos-fx-block {
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: var(--fx-tint);
+}
+
+.cos-fx-block-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fx-text-muted);
+}
+
+.cos-fx-panel .cos-fx-block p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--fx-text-body);
+}
+
+/* "Try it" slider */
+.cos-fx-whatif {
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fx-token-color, var(--fx-accent)) 40%, transparent);
+}
+
+.cos-fx-whatif-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--fx-text-strong);
+}
+
+.cos-fx-whatif-val {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cos-fx-whatif input[type="range"] {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  accent-color: var(--fx-token-color, var(--fx-accent));
+  cursor: pointer;
+}
+
+.cos-fx-whatif-readout {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  color: var(--fx-text-strong);
+}
+
+/* Picture column */
+.cos-fx-visual-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.cos-fx-visual-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.cos-fx-mode-group {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9px;
+  background: var(--fx-tint);
+  box-shadow: inset 0 0 0 1px var(--fx-border);
+}
+
+.cos-fx-panel button.cos-fx-mode-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  width: auto;
+  min-height: 28px;
+  padding: 0.2rem 0.7rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fx-text-muted);
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  text-transform: none;
+}
+
+.cos-fx-panel button.cos-fx-mode-btn[aria-pressed="true"] {
+  background: var(--fx-tint-strong);
+  color: var(--fx-text-strong);
+  box-shadow: inset 0 0 0 1px var(--fx-border);
+}
+
+.cos-fx-orbit-hint {
+  font-size: 0.8rem;
+  color: var(--fx-text-muted);
+}
+
+.cos-fx-canvas-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--fx-border);
+  background: var(--fx-canvas-bg);
+  aspect-ratio: 16 / 10;
+  min-height: 195px;
+}
+
+.cos-fx-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.cos-fx-canvas:active {
+  cursor: grabbing;
+}
+
+.cos-fx-canvas.is-2d {
+  cursor: default;
+  touch-action: auto;
+}
+
+.cos-fx-panel .cos-fx-caption {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--fx-text-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cos-fx-box button.cos-fx-token,
+  .cos-fx-box .cos-fx-var-item {
+    transition: none;
+  }
+}
+
+@media print {
+  .cos-fx-panel,
+  .cos-fx-hint,
+  .cos-fx-key {
+    display: none;
+  }
+
+  .cos-fx-box button.cos-fx-token {
+    background: transparent;
+    border-bottom-color: transparent;
+    box-shadow: none;
+    color: inherit;
+  }
+
+}

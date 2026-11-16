@@ -1,3 +1,4 @@
+import { makeInstances } from './procedural.mjs';
 import { addHeroEquipment } from './hero-detail.mjs';
 import { buildStyledCharacter } from './character-styles.mjs';
 import { createDynamicHair } from './hair-physics.mjs';
@@ -98,7 +99,27 @@ export function buildDesign(THREE, state, texture) {
  } else if(mode==='props'){
   const shape=new THREE.Shape();const w=p.width/2,h=p.height/2;shape.moveTo(-w,-h);shape.lineTo(w,-h);shape.lineTo(w,h);shape.lineTo(-w,h);shape.closePath();const geo=new THREE.ExtrudeGeometry(shape,{depth:.5,bevelEnabled:p.bevel>0,bevelSize:p.bevel,bevelThickness:p.bevel,bevelSegments:3,steps:1});geo.translate(0,0,-.25);mesh(geo,0,p.handle+p.height/2);box(.25,p.handle,.3,0,p.handle/2,0,state.secondary);
  } else if(mode==='procedural'){
-  for(let i=0;i<p.count;i++){const h=p.height*(1+p.variation*Math.sin(i*1.4));box(.3,h,.6,(i-(p.count-1)/2)*p.spacing,h/2,0,i%2?state.secondary:state.color);}
+  const source = state.imported?.[0];
+  let geometry;
+  if (p.shape === 3 && source) {
+   geometry = new THREE.BufferGeometry();
+   geometry.setAttribute('position', new THREE.Float32BufferAttribute(source.positions, 3));
+   geometry.computeVertexNormals();
+  } else {
+   if (p.shape === 2) geometry = new THREE.ConeGeometry(.5, 1, 16);
+   else if (p.shape === 1) geometry = new THREE.CylinderGeometry(.5, .5, 1, 16);
+   else geometry = new THREE.BoxGeometry(1, 1, 2);
+   geometry.translate(0, .5, 0);
+  }
+  const colors = [mat(state.color), mat(state.secondary)];
+  for (const [i, item] of makeInstances(p).entries()) {
+   const instance = new THREE.Mesh(geometry, colors[i % 2]);
+   instance.name = 'Copy ' + (i + 1);
+   instance.position.set(item.x, 0, item.z);
+   instance.rotation.y = item.yaw;
+   instance.scale.set(p.width, item.height, p.width);
+   group.add(instance);
+  }
  } else if(mode==='materials'){
   // A curved surface reveals highlight width; a bevel reveals edge response;
   // the small wedge makes the direction of the key light legible.
@@ -129,7 +150,14 @@ export function buildDesign(THREE, state, texture) {
  if(mode==='uv')group.traverse(m=>{if(!m.isMesh)return;const uv=m.geometry.attributes.uv;if(uv){for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*p.uScale+p.uOffset,uv.getY(i)*p.vScale+p.vOffset);uv.needsUpdate=true;}});
  return group;
 }
-export function disposeDesign(group){group.traverse(m=>{m.geometry?.dispose();if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])mat.dispose();});}
+export function disposeDesign(group){
+ const resources=new Set();
+ group.traverse(object=>{
+  if(object.geometry)resources.add(object.geometry);
+  if(object.material)for(const material of Array.isArray(object.material)?object.material:[object.material])resources.add(material);
+ });
+ for(const resource of resources)resource.dispose();
+}
 export function snapshotDesign(THREE,group){
  group.updateMatrixWorld(true);const out=[];
  group.traverse(m=>{if(!m.isMesh)return;const geo=m.geometry,positions=[],uvs=[],point=new THREE.Vector3();const index=geo.index;const n=index?index.count:geo.attributes.position.count;
