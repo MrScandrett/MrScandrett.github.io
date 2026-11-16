@@ -255,10 +255,10 @@ test('Stokes formula highlights every variable and element with synced legend, p
       document.body.appendChild(liveEl);
       fx.upgrade(liveEl);
       return {
-        sum: roles(make('div', 'kin-eq', 'v = v₀ + at')),
-        subtract: roles(make('div', 'kin-eq', 'y = v₀·sin(θ)·t − ½g·t²')),
+        sum: roles(make('div', 'kin-eq', 'v₁ = v₀ + at')),
+        subtract: roles(make('div', 'kin-eq', 'h = v₀·sin(θ)·t − ½g·t²')),
         nested: roles(make('div', 'wa-eq', 'F_load = F_effort × (R / r)')),
-        root: roles(make('div', 'pn-eq', 'T = 2π √(L / g)')),
+        root: roles(make('div', 'pn-eq', 'T₀ = 2π √(L / g)')),
         relation: roles(make('div', 'gas-eq', 'PV = nRT')),
         several: roles(make('div', 'equation-box', 'v = g · t | y = ½ · g · t²')),
         inlineIsInline: inline.classList.contains('cos-fx-inline') && !inline.querySelector('.cos-fx-panel'),
@@ -273,8 +273,8 @@ test('Stokes formula highlights every variable and element with synced legend, p
         }
       };
     });
-    // A box that holds an equation plus a sentence: only the equation becomes buttons,
-    // and the sentence supplies what each symbol means.
+    // For formulas outside the catalog, only the equation becomes buttons, and
+    // the accompanying sentence supplies what each symbol means.
     const boxed = await page.evaluate(() => {
       const fx = window.ClassroomOSFormulaExplainer;
       const add = (html) => {
@@ -290,8 +290,8 @@ test('Stokes formula highlights every variable and element with synced legend, p
         const panel = el.querySelector('.cos-fx-panel');
         return { title: panel.querySelector('.cos-fx-title').textContent, meaning: panel.querySelector('.cos-fx-meaning').textContent };
       };
-      const entropy = add('<div class="en-formula"><div class="en-formula-line"><span class="en-symbol">S = k ln W</span><span class="en-note">Boltzmann\'s idea: entropy S grows with W, the number of microstates.</span></div></div>');
-      const acdc = add('<article class="acd-equation"><code>f = 1 ÷ T</code><p>Frequency <em>f</em> is measured in hertz. Period <em>T</em> is the time for one full cycle in seconds.</p></article>');
+      const entropy = add('<div class="en-formula"><div class="en-formula-line"><span class="en-symbol">S ∝ ln W</span><span class="en-note">Boltzmann\'s idea: entropy S grows with W, the number of microstates.</span></div></div>');
+      const acdc = add('<article class="acd-equation"><code>T = 1 ÷ f</code><p>Frequency <em>f</em> is measured in hertz. Period <em>T</em> is the time for one full cycle in seconds.</p></article>');
       const defs = add('<div class="music-formula">f = v / L<small>v = wave speed, L = string length</small></div>');
       return {
         entropyTokens: [...entropy.querySelectorAll('.cos-fx-token')].map((t) => t.textContent),
@@ -310,12 +310,12 @@ test('Stokes formula highlights every variable and element with synced legend, p
         ].map((el) => el.classList.contains('cos-fx-box'))
       };
     });
-    assert.deepEqual(boxed.entropyTokens, ['S', '=', 'k', 'ln', 'W']);
+    assert.deepEqual(boxed.entropyTokens, ['S', '∝', 'ln', 'W']);
     assert.match(boxed.noteIntact, /^Boltzmann's idea/);
     assert.equal(boxed.S.title, 'Entropy');
     assert.match(boxed.S.meaning, /entropy S grows with W/);
     assert.equal(boxed.W.title, 'Number of microstates');
-    assert.deepEqual(boxed.acdcTokens, ['f', '=', '1', '÷', 'T']);
+    assert.deepEqual(boxed.acdcTokens, ['T', '=', '1', '÷', 'f']);
     assert.equal(boxed.T.title, 'Period');
     assert.match(boxed.T.meaning, /time for one full cycle/);
     assert.equal(boxed.L.title, 'String length');
